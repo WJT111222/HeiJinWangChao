@@ -1,4 +1,6 @@
-# M0 工程开发说明
+# 工程开发说明
+
+M1 已实现领域 Schema、正式状态、独立草稿及 IndexedDB 存档基础，见 [M1 开发与验收说明](M1-DEVELOPMENT.md)。以下保留 M0 的初始化记录和启动方式。
 
 本次仅完成工程初始化。正式依据为原有 `docs/` 开发文档、`prompts/docs/ASSEMBLY.md` 与 `prompts/manifest.json`；这些文件及提示词原文保持不变。
 
