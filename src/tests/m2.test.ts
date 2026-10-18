@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import {
   buildCreationState,
+  CreationSchema,
+  selectProfession,
   cities,
   createProfileSave,
   newCreation,
@@ -14,6 +16,7 @@ import { GameStateSchema } from '../domain/state';
 import { SpecialNpcSchema } from '../domain/npc/schema';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { uiFixture } from './fixtures/ui';
+import { companionProfileKey, loadCompanionProfile } from '../services/local/companionProfile';
 
 function filled() {
   return {
@@ -31,6 +34,60 @@ function filled() {
     openingPreference: '从日常工作开始',
   };
 }
+function storageFixture() {
+  const data = new Map<string, string>();
+  return {
+    getItem: (key: string) => data.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      data.set(key, value);
+    },
+  };
+}
+function withCompanion() {
+  return {
+    ...filled(),
+    hasCompanion: true,
+    companion: {
+      name: '陈宁',
+      age: '29',
+      identity: '记者',
+      appearance: '短发',
+      personality: '耐心',
+      skills: '采访\n写作',
+      background: '旧同事',
+      relationship: '多年朋友',
+    },
+  };
+}
+describe('职业技能来源', () => {
+  it.each(professions)('自动填写的技能随职业更新为 $name 默认值', (job) => {
+    const teacher = selectProfession(newCreation(), '教师');
+    expect(selectProfession(teacher, job.name).skills).toBe(job.abilities);
+    expect(selectProfession(teacher, job.name).skillsSource).toBe('automatic');
+  });
+  it('手动补充、清空或改回默认文案均保留，跨自定义职业及刷新不丢来源', () => {
+    const teacher = selectProfession(newCreation(), '教师');
+    for (const skills of ['手动填写', '', teacher.skills]) {
+      const manual = CreationSchema.parse(
+        JSON.parse(JSON.stringify({ ...teacher, skills, skillsSource: 'manual' })),
+      );
+      expect(selectProfession(selectProfession(manual, 'custom'), '律师').skills).toBe(skills);
+    }
+    const automatic = selectProfession(selectProfession(teacher, 'custom'), '律师');
+    expect(automatic.skills).toBe(professions.find((job) => job.name === '律师')!.abilities);
+  });
+  it('旧创角草稿仅对未改动的默认技能更新，保留不同的玩家输入', () => {
+    const legacy = { ...selectProfession(newCreation(), '教师') };
+    delete legacy.skillsSource;
+    const restored = CreationSchema.parse(legacy);
+    expect(selectProfession(restored, '律师').skills).toBe(
+      professions.find((job) => job.name === '律师')!.abilities,
+    );
+    expect(selectProfession({ ...restored, skills: '玩家旧输入' }, '律师').skills).toBe(
+      '玩家旧输入',
+    );
+  });
+});
 describe('M2 创角资料与真实存档', () => {
   it('16 个职业均有两段正式介绍，且没有新增职业', () => {
     expect(professions).toHaveLength(16);
@@ -131,6 +188,129 @@ describe('玩家可见资料投影', () => {
     expect(visible.npc).toHaveLength(1);
     expect(visible.timeline.map((t) => t.title)).toEqual(['更早的公开事件', '公开会面']);
     expect(visible.organizations[0].name).toBe('相关组织');
+  });
+  it('在场、互动、正文/已知事件关联均不自动公开 NPC 内部身份和关系', () => {
+    const state = uiFixture();
+    const person = state.npc['npc-a'];
+    person.lastInteractionAt = state.worldClock;
+    person.affinity = 87;
+    state.journal[0].relatedActorRefs = [{ kind: 'npc', id: person.id }];
+    const visible = playerView(state);
+    expect(visible.npc[0]).toMatchObject({
+      identity: undefined,
+      relationshipText: undefined,
+      affinity: 87,
+    });
+    expect(JSON.stringify(visible)).not.toContain('内部身份');
+    expect(JSON.stringify(visible)).not.toContain('内部关系');
+    person.onScene = false;
+    expect(playerView(state).npc[0].identity).toBeUndefined();
+  });
+  it('组织被已知事件关联不公开内部关系；已知事件不暴露内部预计结束时间', () => {
+    const state = uiFixture();
+    const visible = playerView(state);
+    expect(visible.organizations[0]).not.toHaveProperty('protagonistRelation');
+    expect(visible.events.every((event) => !('estimatedEndAt' in event))).toBe(true);
+    expect(JSON.stringify(visible)).not.toContain('2099-12-31');
+    expect(JSON.stringify(visible)).not.toContain('组织内部关系');
+  });
+  it('公开记忆只提供明确公开的原文事实，不据此解封关联实体内部字段', () => {
+    const state = uiFixture();
+    state.memories.short[0].affectedEntityRefs = [
+      { kind: 'npc', id: 'npc-a' },
+      { kind: 'organization', id: 'org-a' },
+    ];
+    const visible = playerView(state);
+    expect(visible.memories.some((memory) => memory.text === '已知记忆：一次公开会面')).toBe(true);
+    expect(visible.npc[0].identity).toBeUndefined();
+    expect(JSON.stringify(visible)).not.toContain('不可见');
+  });
+  it('初始同伴创角资料跨回合、刷新及内部变化仍可见，占位好感不变成已确认值', async () => {
+    const storage = storageFixture();
+    const repo = await SaveRepository.open('companion-profile', new IDBFactory());
+    try {
+      const state = await createProfileSave(repo, withCompanion(), defaultSettings(), storage);
+      const initial = loadCompanionProfile(storage, state)!;
+      expect(initial).toBeDefined();
+      const later = structuredClone(state);
+      later.turnNumber = 3;
+      later.revision = 3;
+      later.journal = [1, 2, 3].map((revision) => ({
+        turnId: `test-turn-${revision}`,
+        revision,
+        story: {
+          turnKind: 'regular' as const,
+          narrative: '隔离测试正文',
+          summary: '',
+          variableGuide: [],
+        },
+        relatedActorRefs: [],
+      }));
+      expect(GameStateSchema.safeParse(later).success).toBe(true);
+      Object.assign(later.npc.companion, {
+        identity: '后续私有身份不可见',
+        relationshipText: '后续私有关系不可见',
+        background: '后续私有背景不可见',
+        affinity: 99,
+      });
+      const restored = loadCompanionProfile(storage, later)!;
+      expect(restored).toEqual(initial);
+      const visible = playerView(later, restored);
+      expect(visible.npc[0]).toMatchObject({
+        identity: '记者',
+        relationshipText: '多年朋友',
+        affinity: null,
+        profile: {
+          age: 29,
+          appearance: '短发',
+          temperament: '耐心',
+          skills: ['采访', '写作'],
+          background: '旧同事',
+        },
+      });
+      expect(JSON.stringify(visible)).not.toContain('不可见');
+      expect(await repo.load(state.saveId)).toEqual(state);
+    } finally {
+      repo.close();
+    }
+  });
+  it('旧存档仅在未提交的创角状态回填档案；缺失来源、串档及损坏数据保守隐藏', () => {
+    const state = buildCreationState(withCompanion(), defaultSettings());
+    const storage = storageFixture();
+    const profile = loadCompanionProfile(storage, state)!;
+    const later = { ...state, turnNumber: 2, revision: 2 };
+    expect(loadCompanionProfile(storageFixture(), later)).toBeUndefined();
+    expect(playerView(later).npc[0].profile).toBeUndefined();
+    expect(
+      playerView(later, { ...profile, saveId: 'another-save' }).npc[0].profile,
+    ).toBeUndefined();
+    expect(
+      playerView(later, { ...profile, identityKey: 'another-person' }).npc[0].identity,
+    ).toBeUndefined();
+    storage.setItem(companionProfileKey(state.saveId), '{invalid');
+    expect(() => loadCompanionProfile(storage, later)).toThrow();
+    expect(storage.getItem(companionProfileKey(state.saveId))).toBe('{invalid');
+  });
+  it('创角公开档案写入失败可重试，不重复建档或改写正式状态', async () => {
+    const repo = await SaveRepository.open('companion-profile-failure', new IDBFactory());
+    const form = withCompanion();
+    const storage = storageFixture();
+    const failure = vi.spyOn(storage, 'setItem').mockImplementationOnce(() => {
+      throw new Error('档案写入失败');
+    });
+    try {
+      await expect(createProfileSave(repo, form, defaultSettings(), storage)).rejects.toThrow(
+        '档案写入失败',
+      );
+      const before = await repo.load(form.saveId);
+      await createProfileSave(repo, form, defaultSettings(), storage);
+      expect(await repo.list()).toHaveLength(1);
+      expect(await repo.load(form.saveId)).toEqual(before);
+      expect(loadCompanionProfile(storage, before)?.profile.background).toBe('旧同事');
+    } finally {
+      failure.mockRestore();
+      repo.close();
+    }
   });
   it('未知金额不伪装成零，人民币分正确转为元', () => {
     expect(money(null)).toBe('未确认');

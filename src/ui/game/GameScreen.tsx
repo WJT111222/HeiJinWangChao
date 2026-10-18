@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { GameState } from '../../domain/state';
+import type { CompanionProfile } from '../../services/local/companionProfile';
 import type { TurnDraft } from '../../domain/drafts';
 import type { Settings } from '../settings/model';
 import { Dialog, Detail, Empty } from '../Dialog';
@@ -10,19 +11,21 @@ import { playerView, money, dateTime } from '../panels/playerView';
 export function GameScreen({
   state,
   draft,
+  companionProfile,
   settings,
   onSettings,
   onSaves,
 }: {
   state: GameState;
   draft?: TurnDraft;
+  companionProfile?: CompanionProfile;
   settings: Settings;
   onSettings: (settings: Settings) => void;
   onSaves: () => void;
 }) {
   const [panel, setPanel] = useState<PanelName | '人物档案' | '经济与资产'>();
   const [input, setInput] = useState('');
-  const view = useMemo(() => playerView(state), [state]);
+  const view = useMemo(() => playerView(state, companionProfile), [state, companionProfile]);
   const hero = state.protagonist;
   const itemName = (id?: string) => (id ? state.items[id]?.name || '无' : '无');
   const equipment: [string, string][] = [

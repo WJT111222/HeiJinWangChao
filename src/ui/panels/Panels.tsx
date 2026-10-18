@@ -29,7 +29,7 @@ export function Panels({ name, view }: { name: PanelName; view: PlayerView }) {
     const selected = view.npc.find((p) => p.id === personId);
     return (
       <>
-        <p className="muted">只记录已经建立联系或主角已知的人物。好感倾向不代表恋爱关系。</p>
+        <p className="muted">人物档案与创角设定。好感倾向不代表恋爱关系。</p>
         <label className="search">
           搜索人物
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="输入姓名" />
@@ -51,7 +51,7 @@ export function Panels({ name, view }: { name: PanelName; view: PlayerView }) {
                       <span className="avatar">{person.name.slice(0, 1)}</span>
                       <span>
                         <strong>{person.name}</strong>
-                        <small>{person.relationshipText}</small>
+                        <small>{person.relationshipText ? '创角关系设定' : '关系尚未公开'}</small>
                       </span>
                       <span aria-hidden="true">↗</span>
                     </button>
@@ -65,13 +65,17 @@ export function Panels({ name, view }: { name: PanelName; view: PlayerView }) {
           <section className="card">
             {selected ? (
               <>
-                <span className="tag">人物档案</span>
+                <span className="tag">
+                  {selected.profile ? '创角设定 · 非当前关系判定' : '人物档案'}
+                </span>
                 <h3>{selected.name}</h3>
                 <dl>
                   <Detail label="身份">{selected.identity || '尚未了解'}</Detail>
-                  <Detail label="与主角关系">{selected.relationshipText}</Detail>
+                  <Detail label={selected.profile ? '创角关系设定' : '与主角关系'}>
+                    {selected.relationshipText || '尚未公开'}
+                  </Detail>
                   <Detail label="关系倾向">
-                    {selected.affinity === null ? '待开局确认' : selected.affinity}
+                    {selected.affinity === null ? '尚未确认' : selected.affinity}
                   </Detail>
                   <Detail label="当前位置">
                     {selected.onScene
@@ -110,7 +114,7 @@ export function Panels({ name, view }: { name: PanelName; view: PlayerView }) {
                 .map((org) => (
                   <article className="entry" key={org.id}>
                     <h4>{org.name}</h4>
-                    <p>{org.protagonistRelation}</p>
+                    <p>与主角关系尚未公开</p>
                   </article>
                 ))}
               {!view.organizations.some((o) => o.kind === kind) && <Empty>尚无已知组织</Empty>}
@@ -171,10 +175,7 @@ export function Panels({ name, view }: { name: PanelName; view: PlayerView }) {
             <article className="card entry" key={event.id}>
               <span className="tag">{eventStatuses[event.status]}</span>
               <h3>{event.title}</h3>
-              <p>
-                {dateTime(event.startAt)}
-                {event.estimatedEndAt ? ` — ${dateTime(event.estimatedEndAt)}` : ''}
-              </p>
+              <p>{dateTime(event.startAt)}</p>
               {event.resolutionText && <p>{event.resolutionText}</p>}
             </article>
           ))
