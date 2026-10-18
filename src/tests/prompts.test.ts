@@ -6,6 +6,9 @@ import manifest from '../../prompts/manifest.json';
 import sources from '../../prompts/sources.lock.json';
 import { promptManifest, PromptManifestSchema } from '../prompts/manifest';
 import { defaultSettings } from '../ui/settings/model';
+import { DomainCommandSchema } from '../domain/commands';
+import { VariableResultSchema, WorldResultSchema } from '../domain/drafts';
+import { WorldEventSchema, WorldTaskSchema } from '../domain/events/schema';
 
 const root = resolve(import.meta.dirname, '../../prompts');
 const sha = (bytes: string | Uint8Array) => createHash('sha256').update(bytes).digest('hex');
@@ -368,5 +371,126 @@ describe('正式文本来源与旧架构保留', () => {
     }
     expect(text('stages/regular/story.md')).not.toMatch(/出身候选|天赋候选/);
     expect(promptManifest.runtimeImplemented).toBe(false);
+  });
+});
+
+describe('M3-P1 审阅修订与 P2 协议差异记录', () => {
+  it('亲密边界保留自愿与独立人格，场景/好感不成为机械门槛或自动惩罚', () => {
+    const boundary = text('writing/intimacy_boundaries.md');
+    for (const required of [
+      '双方自愿',
+      '人物不分性别',
+      '明确拒绝或无法自由同意',
+      '不是必须同时满足的一组门槛',
+      '好感度不设固定门槛',
+      '不一律拒绝或自动推进',
+      '提出亲密请求本身不自动降低好感或生成负面记忆',
+      'NoControl',
+      '仍须校验和正式提交',
+    ])
+      expect(boundary).toContain(required);
+    expect(boundary).not.toMatch(/缺任一关键条件时|好感不足时.*通常降低|默认拒绝|ASD|亲密边界档案/);
+    expect(moduleById('writing.intimacy_boundaries').version).toBe('0.1.1-boundary-review');
+    expect(sources.resources['writing/intimacy_boundaries.md'].treatment).toBe(
+      'reviewed-boundary-adaptation',
+    );
+    expect(moduleById('writing.intimacy_boundaries')).toMatchObject({
+      activation: 'always',
+      configurable: false,
+      toggle: null,
+    });
+    expect(promptManifest.contentGaps).toContainEqual(
+      expect.objectContaining({ id: 'nsfw-verbatim-import', status: 'not-completed' }),
+    );
+  });
+  it('实际命令接受类型专属字段，拒绝旧名称及通用 payload 包装；差异列入 P2 待办', () => {
+    const actual = {
+      commandId: 'clock-change',
+      type: 'SetWorldClock',
+      evidence: '正文中已经过十分钟',
+      worldClock: '2026-10-19T08:10:00+08:00',
+    };
+    expect(DomainCommandSchema.safeParse(actual).success).toBe(true);
+    const legacy = {
+      commandId: actual.commandId,
+      evidence: actual.evidence,
+      group: 'time',
+      type: 'WorldClockSet',
+      entityId: 'world',
+      payload: { worldClock: actual.worldClock },
+    };
+    expect(DomainCommandSchema.safeParse(legacy).success).toBe(false);
+    expect(DomainCommandSchema.safeParse({ ...legacy, type: actual.type }).success).toBe(false);
+    expect(DomainCommandSchema.safeParse({ ...actual, group: 'time' }).success).toBe(false);
+    expect(
+      VariableResultSchema.safeParse({
+        commands: [actual],
+        rejectedSuggestions: [],
+        unresolved: [],
+      }).success,
+    ).toBe(true);
+    expect(
+      VariableResultSchema.safeParse({
+        commands: [legacy],
+        rejectedSuggestions: [],
+        unresolved: [],
+      }).success,
+    ).toBe(false);
+    const todo = text('docs/OUTPUT_CONTRACT.md');
+    expect(todo).toContain('M3-P2 待办');
+    expect(DomainCommandSchema.options).toHaveLength(14);
+    for (const option of DomainCommandSchema.options)
+      expect(todo).toContain(option.shape.type.value);
+    for (const required of [
+      'group/entityId/payload',
+      '整数人民币分',
+      '不能回退使用旧推荐集合',
+      '不实现解析器',
+    ])
+      expect(todo).toContain(required);
+  });
+  it('提示词最小事件对象不足以通过真实 Schema，事件/任务状态与世界候选结构分别校验', () => {
+    const event = {
+      id: 'event-test',
+      title: '待处理事项',
+      status: 'scheduled',
+      startAt: '2026-10-19T08:00:00+08:00',
+      actorRefs: [],
+      visibility: 'known',
+      impact: 'minor',
+      sourceTurnIds: [],
+    };
+    expect(WorldEventSchema.safeParse(event).success).toBe(false);
+    const complete = {
+      ...event,
+      linkedTaskIds: [],
+      prerequisites: [],
+      blockers: [],
+      completionCondition: '事项办结',
+    };
+    expect(WorldEventSchema.safeParse(complete).success).toBe(true);
+    expect(WorldEventSchema.safeParse({ ...complete, status: 'completed' }).success).toBe(false);
+    const task = {
+      id: 'task-test',
+      actorRef: { kind: 'npc', id: 'npc-test' },
+      goal: '处理事项',
+      startAt: event.startAt,
+      status: 'planned',
+      prerequisites: [],
+      blockers: [],
+    };
+    expect(WorldTaskSchema.safeParse(task).success).toBe(true);
+    expect(WorldTaskSchema.safeParse({ ...task, status: 'scheduled' }).success).toBe(false);
+    const world = {
+      worldCommands: [],
+      taskCommands: [],
+      eventCommands: [],
+      futureEvents: [complete],
+      visibleHooks: [{ text: '已公开的办理信息' }],
+      timelineCandidates: [],
+      unresolved: [],
+    };
+    expect(WorldResultSchema.safeParse(world).success).toBe(true);
+    expect(WorldResultSchema.safeParse({ ...world, futureEvents: [event] }).success).toBe(false);
   });
 });

@@ -1606,7 +1606,7 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 1273,
+      "characters": 1287,
       "version": "0.1.0-m3-p1",
       "messageRole": null,
       "activation": "never",
@@ -1616,7 +1616,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "8211b62e0f5742ea3fdb79615c84038a83e8ec460138c8ee7ec73081c835b613",
+      "contentSha256": "c02e0aae615d748fe27aa12b4e096f848ddf6e04d9f5290c93ca405aa08db04c",
       "placeholders": [
         "playerName"
       ]
@@ -1640,7 +1640,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "12e5737ee7276f943944dcc7253a33f730c653b7b811f4f247ef4c357b686c52",
+      "contentSha256": "b3bbbe2d59736830765f5b5d8f9c671fb04ffa088e656b5c2c907cf75f59667a",
       "placeholders": [
         "worldWeekday"
       ]
@@ -1654,7 +1654,7 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 2205,
+      "characters": 4968,
       "version": "0.1.0-m3-p1",
       "messageRole": null,
       "activation": "never",
@@ -1664,7 +1664,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "b960cd08efffa759ac080b317cdaf7ca2b1531710a4e3bb3618c2b27ec513f83",
+      "contentSha256": "c82d02029d8c497af0f2f27e5e3663f1baeae37dfb5e4621f198e9342947ec8d",
       "placeholders": [
         "immediateMemoryTurns",
         "minNarrativeChars",
@@ -1961,7 +1961,7 @@
     {
       "id": "writing.intimacy_boundaries",
       "path": "writing/intimacy_boundaries.md",
-      "title": "人物亲密与自愿边界（节选）",
+      "title": "人物亲密与自愿边界（关系发展审阅版）",
       "kind": "prompt",
       "applicableStages": [
         "story"
@@ -1972,8 +1972,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 365,
-      "version": "0.1.0-excerpt",
+      "characters": 672,
+      "version": "0.1.1-boundary-review",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -1982,7 +1982,7 @@
       "orderGroup": "writing",
       "reorderable": false,
       "category": "writing",
-      "contentSha256": "9460e578e1087d306943cff946889c148071a75d5614eddd83196b70578d49a9",
+      "contentSha256": "ac61c6575a53977767cc203dbd5a26ae117946b22e5a13dd6c990bd8a5d92834",
       "placeholders": []
     },
     {

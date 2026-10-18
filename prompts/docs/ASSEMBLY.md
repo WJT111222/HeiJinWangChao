@@ -22,7 +22,7 @@ M3-P1 没有组装器、占位符替换、API 或实际发送记录。下列顺�
 | 30–70 | shared.01_agency 至 shared.05_context_protocol | 通用权限、知识、游戏时间、真值和容器 |
 | 80–82 | conflict_pacing / emotion_guard / action_feasibility | 仅这三项可在此组内调整顺序 |
 | 210–227 | min_length、一个人称、style_general、四个既有写作开关 | 四个可选增强仅在各自可移动槽位内排序，不能跨固定锚点 |
-| 250–251 | writing.nsfw / writing.intimacy_boundaries | 常驻非露骨节选，无设置条件；原版全文迁入缺口明确记录 |
+| 250–251 | writing.nsfw / writing.intimacy_boundaries | 常驻非露骨资源，无设置条件；原版全文迁入缺口明确记录 |
 | 300 | opening.story 或 regular.story | 恰好一个 |
 | 406 / 409 | story_output / dialogue_labels | 保持既有输出协议 |
 | 此后 | 当前资料、已确认背景、历史和玩家输入等数据容器 | P2 实现，不能反向覆盖系统规则 |
