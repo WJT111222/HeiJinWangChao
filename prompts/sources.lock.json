@@ -187,8 +187,9 @@
       "origin": "reference",
       "sourcePath": "prompts/runtime/nsfw.ts",
       "sourceSha256": "d5f1b6a2550bd3b3f590105fdb007ca2a0a4032768970031d3e458d7a9ea4f7e",
-      "treatment": "non-graphic-excerpt",
-      "notes": "只保留逐字非露骨主题/自愿边界节选，未迁入露骨性描写生成指令；移除私密档案/ASD 数值两条。不是完整原版移植。"
+      "treatment": "reviewed-boundary-adaptation",
+      "notes": "依据本轮用户审阅要求修正：保留成年人物自愿、独立人格与拒绝权；场所/好感/情绪等按具体事实判断，不设固定门槛、不默认拒绝、不自动扣好感。沿用非露骨边界内容，不引入私密档案/ASD 数值；NSFW 原版全文迁入缺口保持未完成。",
+      "reviewedFromSha256": "9460e578e1087d306943cff946889c148071a75d5614eddd83196b70578d49a9"
     },
     "reference/cot_legacy.txt": {
       "origin": "reference",
