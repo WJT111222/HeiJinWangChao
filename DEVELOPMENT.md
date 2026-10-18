@@ -1,5 +1,7 @@
 # 工程开发说明
 
+M3-P1 的资源、静态注册与明确未完成项见 [M3-P1 开发说明](M3-P1-DEVELOPMENT.md)。当前仍无提示词组装器或 AI 请求。
+
 M2 已实现入口、五步角色创建、三栏界面、七个资料面板和四类本地设置，见 [M2 开发与验收说明](M2-DEVELOPMENT.md)。M1 的领域与存档说明保留在 [M1-DEVELOPMENT.md](M1-DEVELOPMENT.md)。以下为 M0 初始化记录，启动命令仍适用。
 
 本次仅完成工程初始化。正式依据为原有 `docs/` 开发文档、`prompts/docs/ASSEMBLY.md` 与 `prompts/manifest.json`；这些文件及提示词原文保持不变。
