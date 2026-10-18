@@ -22,7 +22,7 @@ M3-P1 没有组装器、占位符替换、API 或实际发送记录。下列顺�
 | 30–70 | shared.01_agency 至 shared.05_context_protocol | 通用权限、知识、游戏时间、真值和容器 |
 | 80–82 | conflict_pacing / emotion_guard / action_feasibility | 仅这三项可在此组内调整顺序 |
 | 210–227 | min_length、一个人称、style_general、四个既有写作开关 | 四个可选增强仅在各自可移动槽位内排序，不能跨固定锚点 |
-| 250–251 | writing.nsfw / writing.intimacy_boundaries | 常驻非露骨资源，无设置条件；原版全文迁入缺口明确记录 |
+| 250–251 | writing.nsfw / writing.intimacy_boundaries | NSFW 为用户手动适配正文，边界为独立审阅版；两项各登记一次、无设置条件，原版逐字移植不声明完成 |
 | 300 | opening.story 或 regular.story | 恰好一个 |
 | 406 / 409 | story_output / dialogue_labels | 保持既有输出协议 |
 | 此后 | 当前资料、已确认背景、历史和玩家输入等数据容器 | P2 实现，不能反向覆盖系统规则 |
@@ -88,4 +88,4 @@ P2 须从当前正式存档替换 playerName、worldClock、派生 worldWeekday�
 
 manifest.futureExtensions 仅列出 npc_private_archive 与 special_nsfw_traits 的设计入口，不是运行模块、提示词占位文件或 NPC 空字段。没有移植名器概率表、图片规则、武侠战斗/数值判定或任何 `<judge>` 输出体系。
 
-NSFW 原版露骨生成指令未迁入，当前非露骨常驻节选不等于满足原文完整移植。该缺口在 manifest.contentGaps 与开发说明中持续公开，不通过测试隐藏或声称已获模型验证。模型服务权限和内容规则不能被身份声明改变。
+用户已在 690d01d 补充成人题材提示词，本轮完整保留该正文，仅同步元数据与来源。当前资源是用户手动整理的适配版，不是旧版未经修改的全文逐字移植；该项在 manifest.contentGaps 中仍为 not-completed。NSFW 与独立亲密边界只按各自唯一 ID 登记一次，不额外拼接边界正文；两者常驻正文，无开关。P1 只有静态配置验证，实际请求注入/去重由 P2 实现与验证，不声称已获模型验证。模型服务权限和内容规则不能被身份声明改变。

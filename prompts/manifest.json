@@ -52,7 +52,7 @@
     {
       "id": "nsfw-verbatim-import",
       "status": "not-completed",
-      "note": "原版露骨性描写生成指令未迁入；只有明确标注的非露骨常驻节选，不能声称完成原版全文移植。"
+      "note": "用户已在提交 690d01d 补充成人题材提示词，当前资源为用户手动整理的适配版本；旧版未经修改的全文逐字移植仍不声明完成。"
     }
   ],
   "modules": [
@@ -1606,7 +1606,7 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 1287,
+      "characters": 1354,
       "version": "0.1.0-m3-p1",
       "messageRole": null,
       "activation": "never",
@@ -1616,7 +1616,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "c02e0aae615d748fe27aa12b4e096f848ddf6e04d9f5290c93ca405aa08db04c",
+      "contentSha256": "8b34e3cc54ce7a1349c3d7e18379051603200e063e7d1a19e0a31e3e8be12d3b",
       "placeholders": [
         "playerName"
       ]
@@ -1630,7 +1630,7 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 4875,
+      "characters": 5014,
       "version": "0.1.0-m3-p1",
       "messageRole": null,
       "activation": "never",
@@ -1640,7 +1640,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "b3bbbe2d59736830765f5b5d8f9c671fb04ffa088e656b5c2c907cf75f59667a",
+      "contentSha256": "e7a1727d3266946781771727e4c668ad72b693d9bf1725fc8d33c4b74269a876",
       "placeholders": [
         "worldWeekday"
       ]
@@ -1684,7 +1684,7 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 1442,
+      "characters": 1547,
       "version": "0.1.0-m3-p1",
       "messageRole": null,
       "activation": "never",
@@ -1694,7 +1694,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "2630bc383d8fdf2b7aec3a519b36d939e2ffced2bfe90ad1d0ed76b8441bf8c7",
+      "contentSha256": "42c4a95c69aae787d0908557ee87af4e2bc7ccd57c05d7e2249884c7b47975f3",
       "placeholders": []
     },
     {
@@ -1934,7 +1934,7 @@
     {
       "id": "writing.nsfw",
       "path": "writing/nsfw.md",
-      "title": "成人题材常驻规则（非露骨节选，原版迁入未完成）",
+      "title": "成人题材常驻规则（用户手动适配版，非原版逐字移植）",
       "kind": "prompt",
       "applicableStages": [
         "story"
@@ -1945,8 +1945,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 406,
-      "version": "0.1.0-excerpt",
+      "characters": 3199,
+      "version": "0.1.1-user-adapted",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -1955,7 +1955,7 @@
       "orderGroup": "writing",
       "reorderable": false,
       "category": "writing",
-      "contentSha256": "fb715313d90e2f6a4f5c6b4c5d2c826f7f2a1fa3657d65e4a692b923819b9db4",
+      "contentSha256": "7fb4f10a265d3a95a3eb3ac2da1f6ade78fb46698616ce5258f3b57854a7f3ed",
       "placeholders": []
     },
     {
