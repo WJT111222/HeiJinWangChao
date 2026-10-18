@@ -1,6 +1,11 @@
 import type { GameState } from '../../domain/state';
+import { initialCompanionProfile, matchesCompanion } from '../../services/local/companionProfile';
+import type { CompanionProfile } from '../../services/local/companionProfile';
 
-export function playerView(state: GameState) {
+// M2 展示投影；玩家视角与主角认知并非同一概念，最终档案开放范围尚待设计。
+export function playerView(state: GameState, authoredCompanion?: CompanionProfile) {
+  const archive = authoredCompanion ?? initialCompanionProfile(state);
+  const companion = archive && matchesCompanion(state, archive) ? archive : undefined;
   const events = Object.values(state.events).filter((event) => event.visibility === 'known');
   const memories = [
     ...state.memories.short.map((memory) => ({ ...memory, layer: '短期' })),
@@ -33,26 +38,15 @@ export function playerView(state: GameState) {
     )
     .map((person) => ({
       id: person.id,
-      name: person.name,
+      name: person.id === companion?.npcId ? companion.name : person.name,
       kind: person.kind,
-      relationshipText: person.relationshipText,
-      affinity:
-        person.id === state.initialCompanionId && state.turnNumber === 0 ? null : person.affinity,
-      // M1 没有字段级公开标记，私有目标、知识、深层背景和场外位置均不传入资料组件。
+      // M2 暂不凭在场或引用公开内部身份/关系，不定义最终的玩家视角模式。
+      relationshipText: person.id === companion?.npcId ? companion.relationshipText : undefined,
+      affinity: person.id === state.initialCompanionId ? null : person.affinity,
       locationId: person.onScene ? person.locationId : undefined,
       onScene: person.onScene,
-      identity:
-        person.id === state.initialCompanionId || person.onScene ? person.identity : undefined,
-      profile:
-        person.id === state.initialCompanionId && state.turnNumber === 0
-          ? {
-              age: person.age,
-              appearance: person.appearance,
-              temperament: person.temperament,
-              skills: person.skills,
-              background: person.background,
-            }
-          : undefined,
+      identity: person.id === companion?.npcId ? companion.identity : undefined,
+      profile: person.id === companion?.npcId ? companion.profile : undefined,
     }));
   const organizations = Object.values(state.organizations)
     .filter((org) => knownActors.has(`organization:${org.id}`))
@@ -60,7 +54,6 @@ export function playerView(state: GameState) {
       id: org.id,
       name: org.name,
       kind: org.kind,
-      protagonistRelation: org.protagonistRelation,
     }));
   const items = Object.values(state.items).filter(
     (item) => item.ownerRef?.kind === 'protagonist' && item.ownerRef.id === state.protagonist.id,
@@ -98,7 +91,6 @@ export function playerView(state: GameState) {
       id: e.id,
       title: e.title,
       startAt: e.startAt,
-      estimatedEndAt: e.estimatedEndAt,
       status: e.status,
       resolutionText: e.resolutionText,
     })),

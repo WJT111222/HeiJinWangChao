@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// 只保存界面草稿与偏好；正式游戏状态始终通过 SaveRepository 读写。
+// 只保存界面草稿、偏好与玩家创角档案；正式游戏状态始终通过 SaveRepository 读写。
 export function readDocument<S extends z.ZodType>(
   storage: Pick<Storage, 'getItem'>,
   key: string,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cities, professions, professionName, validateStep } from './model';
+import { cities, professions, professionName, validateStep, selectProfession } from './model';
 import type { Creation } from './model';
 import { Detail } from '../Dialog';
 import { dateTime } from '../panels/playerView';
@@ -151,12 +151,7 @@ export function CreationWizard({
                       name="profession"
                       value={job.name}
                       checked={form.profession === job.name}
-                      onChange={() =>
-                        change({
-                          profession: job.name,
-                          skills: form.skills.trim() ? form.skills : job.abilities,
-                        })
-                      }
+                      onChange={() => onChange(selectProfession(form, job.name))}
                     />
                     <strong>{job.name}</strong>
                     <p>
@@ -174,7 +169,7 @@ export function CreationWizard({
                     type="radio"
                     name="profession"
                     checked={form.profession === 'custom'}
-                    onChange={() => change({ profession: 'custom' })}
+                    onChange={() => onChange(selectProfession(form, 'custom'))}
                   />
                   <strong>自定义职业</strong>
                   <p>以你自己的文字描述职业与专业经历。</p>
@@ -195,11 +190,11 @@ export function CreationWizard({
                 <textarea
                   rows={4}
                   value={form.skills}
-                  onChange={(e) => change({ skills: e.target.value })}
+                  onChange={(e) => change({ skills: e.target.value, skillsSource: 'manual' })}
                   placeholder="可编辑或补充，一行一项"
                 />
               </label>
-              <p className="field-hint">切换职业会保留你已经填写的技能，请按需要调整。</p>
+              <p className="field-hint">切换职业会更新自动填入的技能；你手动编辑的内容将会保留。</p>
             </>
           )}
           {form.step === 3 && (

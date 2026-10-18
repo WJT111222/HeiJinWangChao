@@ -4,7 +4,11 @@ import { game, npc, gameTime, event, organizations, story } from './game';
 export function uiFixture() {
   const state = game('ui-test');
   state.title = '界面测试存档（隔离）';
-  state.npc['npc-a'] = npc();
+  state.npc['npc-a'] = {
+    ...npc(),
+    identity: '在场人物内部身份不可见',
+    relationshipText: '内部关系判断不可见',
+  };
   state.npc.secretNpc = { ...npc('secretNpc'), onScene: false, name: '隐藏人物不可见' };
   state.memories.short = [
     {
@@ -35,7 +39,11 @@ export function uiFixture() {
       knowledgeSource: '私下观察',
     },
   ];
-  state.organizations['org-a'] = { ...organizations[1], description: '组织内部描述不可见' };
+  state.organizations['org-a'] = {
+    ...organizations[1],
+    description: '组织内部描述不可见',
+    protagonistRelation: '组织内部关系不可见',
+  };
   state.locations.secretPlace = { id: 'secretPlace', name: '隐藏地点不可见' };
   state.events.secretEvent = {
     ...event('secretEvent'),
@@ -56,7 +64,7 @@ export function uiFixture() {
       ...event(id),
       title,
       startAt: date,
-      estimatedEndAt: date,
+      estimatedEndAt: '2099-12-31T23:00:00+08:00',
       resolvedAt: date,
       status: 'resolved',
       resolutionText: '已公开结案',

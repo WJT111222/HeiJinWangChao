@@ -63,6 +63,13 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
   await begin(page, '林舟');
   await expect(page.getByRole('radio')).toHaveCount(17);
   await page.getByRole('radio', { name: /^教师/ }).check();
+  const teacherSkills = await page.getByLabel('个人技能与专长').inputValue();
+  await page.getByRole('radio', { name: /^律师/ }).check();
+  const lawyerSkills = await page.getByLabel('个人技能与专长').inputValue();
+  expect(lawyerSkills).not.toBe(teacherSkills);
+  await page.reload();
+  await page.getByRole('radio', { name: /^教师/ }).check();
+  await expect(page.getByLabel('个人技能与专长')).toHaveValue(teacherSkills);
   await page.getByLabel('个人技能与专长').fill('我填写的技能\n沟通');
   await page.getByRole('button', { name: /下一步/ }).click();
   await expect(page.getByRole('radio')).toHaveCount(4);
@@ -123,6 +130,71 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
   const input = await page.getByLabel('你的行动').boundingBox();
   expect(workflow!.y).toBeLessThan(input!.y);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  // 仅测试环境推进到后续回合，并加入不可公开的内部变化。
+  await page.evaluate(async () => {
+    await new Promise<void>((resolve, reject) => {
+      const open = indexedDB.open('heijinwangchao', 1);
+      open.onerror = () => reject(open.error);
+      open.onsuccess = () => {
+        const db = open.result;
+        const tx = db.transaction('saves', 'readwrite');
+        const store = tx.objectStore('saves');
+        const request = store.getAll();
+        request.onsuccess = () => {
+          const saved = request.result[0];
+          saved.turnNumber = 2;
+          saved.revision = 2;
+          saved.journal = [1, 2].map((revision) => ({
+            turnId: `test-turn-${revision}`,
+            revision,
+            story: {
+              turnKind: 'regular',
+              narrative: '隔离测试后续回合',
+              summary: '',
+              variableGuide: [],
+            },
+            relatedActorRefs: [],
+          }));
+          saved.npc.companion.identity = '后续内部身份不可见';
+          saved.npc.companion.relationshipText = '后续内部关系不可见';
+          saved.npc.companion.background = '后续内部背景不可见';
+          saved.npc.companion.affinity = 90;
+          store.put(saved);
+        };
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onabort = () => {
+          db.close();
+          reject(tx.error);
+        };
+      };
+    });
+  });
+  await page.reload();
+  await page
+    .getByRole('complementary', { name: '世界资料' })
+    .getByRole('button', { name: /NPC/ })
+    .click();
+  const companionPanel = page.getByRole('dialog', { name: 'NPC', exact: true });
+  await companionPanel.getByRole('button', { name: /陈宁/ }).click();
+  for (const fact of [
+    '创角设定',
+    '记者',
+    '多年朋友',
+    '戴眼镜',
+    '耐心',
+    '采访',
+    '大学时期相识',
+    '尚未确认',
+  ])
+    await expect(companionPanel).toContainText(fact);
+  await expect(companionPanel).not.toContainText('不可见');
+  await expect(companionPanel.locator('.detail').filter({ hasText: '关系倾向' })).not.toContainText(
+    '90',
+  );
+  await page.keyboard.press('Escape');
   expect(errors).toEqual([]);
 });
 test('自定义职业、跳过同伴，多存档选择切换与确认删除', async ({ page }) => {
@@ -178,8 +250,12 @@ test('七面板一键打开、键盘关闭、保留阅读位置并隔离秘密�
     if (title === 'NPC') {
       await page.getByLabel('搜索人物').fill('同事');
       await page.getByRole('button', { name: /同事/ }).click();
-      await expect(modal).toContainText('工作中相互信任');
+      await expect(modal).toContainText('尚未公开');
+      await expect(modal).toContainText('尚未了解');
+      await expect(modal.locator('.detail').filter({ hasText: '关系倾向' })).toContainText('30');
+      await expect(modal).not.toContainText('不可见');
     }
+    if (title === '世界事件') await expect(modal).not.toContainText('2099');
     if (title === '历史时间轴')
       expect(await modal.locator('li h3').allTextContents()).toEqual([
         '更早的公开事件',

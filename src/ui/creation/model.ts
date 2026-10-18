@@ -7,6 +7,7 @@ import { fingerprint } from '../../domain/commands';
 import { SaveRepository } from '../../services/storage/saveRepository';
 import type { Settings } from '../settings/model';
 import professions from './professions.json';
+import { loadCompanionProfile } from '../../services/local/companionProfile';
 
 export { professions };
 export const cities = [
@@ -55,6 +56,7 @@ export const CreationSchema = z.strictObject({
   profession: z.string(),
   customProfession: z.string(),
   skills: z.string(),
+  skillsSource: z.enum(['automatic', 'manual']).optional(),
   city: z.enum(['chongqing', 'shanghai', 'harbin', 'guangzhou']),
   background: z.string(),
   hasCompanion: z.boolean(),
@@ -82,6 +84,7 @@ export function newCreation(): Creation {
     profession: '',
     customProfession: '',
     skills: '',
+    skillsSource: 'automatic',
     city: 'chongqing',
     background: '',
     hasCompanion: false,
@@ -105,6 +108,22 @@ const lines = (text: string) =>
     .filter(Boolean);
 export function professionName(form: Creation) {
   return form.profession === 'custom' ? form.customProfession.trim() : form.profession;
+}
+// 兼容旧 UI 草稿：仅空值或与原职业默认文案完全一致时视作自动填写。
+export function selectProfession(form: Creation, profession: string): Creation {
+  const previous = professions.find((job) => job.name === form.profession)?.abilities ?? '';
+  const automatic =
+    form.skillsSource === 'automatic'
+      ? form.skills === previous
+      : form.skillsSource !== 'manual' && (form.skills === '' || form.skills === previous);
+  return {
+    ...form,
+    profession,
+    skills: automatic
+      ? (professions.find((job) => job.name === profession)?.abilities ?? '')
+      : form.skills,
+    skillsSource: automatic ? 'automatic' : 'manual',
+  };
 }
 function age(value: string) {
   requireData(
@@ -202,6 +221,7 @@ export async function createProfileSave(
   repository: SaveRepository,
   form: Creation,
   settings: Settings,
+  profileStorage?: Pick<Storage, 'getItem' | 'setItem'>,
 ) {
   const expected = buildCreationState(form, settings);
   let state;
@@ -218,6 +238,8 @@ export async function createProfileSave(
       '存档已存在且资料不同，请从首页读取',
     );
   }
+  // UI 创角档案写入失败时保留表单，重试沿用同一正式存档。
+  if (profileStorage) loadCompanionProfile(profileStorage, state);
   const existing = await repository.loadDraft(form.saveId);
   if (!existing)
     await repository.saveDraft(

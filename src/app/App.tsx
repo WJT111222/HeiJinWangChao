@@ -4,6 +4,8 @@ import type { GameState } from '../domain/state';
 import type { TurnDraft } from '../domain/drafts';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { readDocument, writeDocument } from '../services/local/documents';
+import { loadCompanionProfile, companionProfileKey } from '../services/local/companionProfile';
+import type { CompanionProfile } from '../services/local/companionProfile';
 import { CreationWizard } from '../ui/creation/CreationWizard';
 import { CreationSchema, creationKey, newCreation, createProfileSave } from '../ui/creation/model';
 import type { Creation } from '../ui/creation/model';
@@ -52,7 +54,11 @@ export function App() {
   const [form, setForm] = useState(initial.form);
   const [hasDraft, setHasDraft] = useState(initial.hasDraft);
   const [selected, setSelected] = useState(initial.selected);
-  const [loaded, setLoaded] = useState<{ state: GameState; draft?: TurnDraft }>();
+  const [loaded, setLoaded] = useState<{
+    state: GameState;
+    draft?: TurnDraft;
+    companionProfile?: CompanionProfile;
+  }>();
   const [error, setError] = useState(initial.warning);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -96,7 +102,13 @@ export function App() {
       Promise.all([repository.load(id), repository.loadDraft(id)])
         .then(([state, draft]) => {
           if (!disposed) {
-            setLoaded({ state, draft });
+            let companionProfile: CompanionProfile | undefined;
+            try {
+              companionProfile = loadCompanionProfile(localStorage, state);
+            } catch {
+              setError('同伴创角档案无法读取，已隐藏无法确认来源的资料；正式存档未被修改。');
+            }
+            setLoaded({ state, draft, companionProfile });
             setLoading(false);
           }
         })
@@ -163,7 +175,7 @@ export function App() {
     setBusy(true);
     setError('');
     try {
-      const state = await createProfileSave(repository, form, settings);
+      const state = await createProfileSave(repository, form, settings, localStorage);
       try {
         localStorage.removeItem(creationKey);
       } catch {
@@ -185,6 +197,11 @@ export function App() {
     setBusy(true);
     try {
       await repository.delete(deleting.saveId, deleting.revision);
+      try {
+        localStorage.removeItem(companionProfileKey(deleting.saveId));
+      } catch {
+        // 已删除的正式存档不再读取此 UI 档案。
+      }
       setSaves(await repository.list());
       if (selected === deleting.saveId) {
         setSelected('');
@@ -240,6 +257,7 @@ export function App() {
             key={loaded.state.saveId}
             state={loaded.state}
             draft={loaded.draft}
+            companionProfile={loaded.companionProfile}
             settings={settings}
             onSettings={(next) => {
               try {
