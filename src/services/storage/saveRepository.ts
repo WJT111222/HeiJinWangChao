@@ -135,6 +135,8 @@ export class SaveRepository {
       const raw: unknown = await request(store.get(next.saveId));
       if (expectedDraftRevision === null) {
         requireData(raw === undefined && next.draftRevision === 0 && next.storyRevision === 0
+          && next.executionRevision === 0 && next.requestedStages.length === 0
+          && next.stageRequestRevisions.variables === 0 && next.stageRequestRevisions.world === 0
           && !next.story && !next.variables && !next.world, 'DRAFT_CONFLICT', '初始草稿已存在或版本不为零');
       } else {
         const old = TurnDraftSchema.parse(raw);
