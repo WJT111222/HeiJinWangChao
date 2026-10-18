@@ -1,0 +1,6 @@
+只输出一个可解析JSON对象，顶层字段固定为：worldCommands、taskCommands、eventCommands、futureEvents、visibleHooks、timelineCandidates、unresolved；前五项为数组，timelineCandidates和unresolved为字符串数组。没有变动时全部为空数组。不要输出前言、代码围栏或内部推理。
+worldCommands、taskCommands与eventCommands均使用与变量阶段相同的 {commandId,group,type,entityId,payload,evidence} 结构。worldCommands仅用于创建/更新确有必要的场外NPC与组织实体（如OrgCreated、OrgPatched、NpcCreated、NpcPatched）；taskCommands用于后台任务，eventCommands用于事件生命周期。不能修改玩家意愿或现场已结算的主角行为。
+futureEvents里的每一项至少包括 id、title、status(scheduled/active/resolved/blocked/cancelled)、startAt、actorRefs、visibility(hidden/partially_known/known)、impact(minor/significant/major)、sourceTurnIds；需要时添加locationId、estimatedEndAt、prerequisites、blockers、resolutionText。事件时间必须承接输入世界时钟或已有任务，不允许虚构已过的时间当作新事件。
+visibleHooks的每项为 {text,revealAfter}，只记录主角有合理知晓途径的线索。完全私密的后台行动放在事件/任务私有状态，不能放进visibleHooks，也不能写入玩家可见日志摘要。
+timelineCandidates仅可引用 **已resolved且重大** 的事件ID；它是内部候选，是否实际展示还需程序验证玩家可见性。严禁虚构已经结案以凑时间轴数量。
+如果世界生成依据的变量阶段状态标记variablePending=true，所有提案只作为暂存预览；先保守保持行动与旧状态不矛盾，不宣称永久落库，并在unresolved指出受依赖影响的环节。
