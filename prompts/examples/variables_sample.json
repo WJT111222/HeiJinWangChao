@@ -1,0 +1,39 @@
+{
+  "commands": [
+    {
+      "commandId": "turn-101-balance-001",
+      "group": "economy",
+      "type": "BalanceChanged",
+      "entityId": "protagonist:cash",
+      "payload": {
+        "account": "cash",
+        "oldValue": 15000,
+        "newValue": 7000,
+        "reason": "正文明确用现金支付8000元购买二手摩托车"
+      },
+      "evidence": "主角数出八千元，卖家点清后当面交付了车辆和钥匙。"
+    },
+    {
+      "commandId": "turn-101-car-001",
+      "group": "economy",
+      "type": "VehicleAssetUpserted",
+      "entityId": "vehicle:used-motorcycle-001",
+      "payload": {
+        "name": "二手摩托车",
+        "ownerRef": "protagonist",
+        "acquisitionCost": 8000,
+        "acquiredInTurnId": "turn-101"
+      },
+      "evidence": "卖家确认收到款项，交付摩托车及钥匙。"
+    }
+  ],
+  "rejectedSuggestions": [
+    {
+      "reason": "正文未证明主角买了保险",
+      "reference": "变量规划提出新增保险合同"
+    }
+  ],
+  "unresolved": [
+    "机动车手续是否完成过户，尚无证据。"
+  ]
+}

@@ -1,0 +1,930 @@
+{
+  "project": "黑金王朝",
+  "version": "0.1.0-prompts",
+  "authoredAt": "2026-10-18",
+  "status": "unvalidated-original-draft",
+  "globalDefaults": {
+    "immediateMemoryTurns": 10,
+    "minNarrativeChars": 1500,
+    "perspective": "third",
+    "style": "general",
+    "noControl": true,
+    "naturalProse": true,
+    "actionOptions": true,
+    "realWorld": true,
+    "variableStageEnabled": true,
+    "worldStageEnabled": true,
+    "maxTotalAttemptsPerStage": 3
+  },
+  "modules": [
+    {
+      "id": "shared.00_world",
+      "path": "shared/00_world.md",
+      "title": "世界与现实底座",
+      "kind": "prompt",
+      "applicableStages": [
+        "story",
+        "variables",
+        "world"
+      ],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 603
+    },
+    {
+      "id": "shared.01_agency",
+      "path": "shared/01_agency.md",
+      "title": "玩家自主权与因果",
+      "kind": "prompt",
+      "applicableStages": [
+        "story",
+        "variables",
+        "world"
+      ],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 447
+    },
+    {
+      "id": "shared.02_knowledge",
+      "path": "shared/02_knowledge.md",
+      "title": "信息域和保密分层",
+      "kind": "prompt",
+      "applicableStages": [
+        "story",
+        "variables",
+        "world"
+      ],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 484
+    },
+    {
+      "id": "shared.03_time_events",
+      "path": "shared/03_time_events.md",
+      "title": "统一时间与事件预检",
+      "kind": "prompt",
+      "applicableStages": [
+        "story",
+        "variables",
+        "world"
+      ],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 537
+    },
+    {
+      "id": "shared.04_state_authority",
+      "path": "shared/04_state_authority.md",
+      "title": "状态真值与执行边界",
+      "kind": "prompt",
+      "applicableStages": [
+        "story",
+        "variables",
+        "world"
+      ],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 495
+    },
+    {
+      "id": "shared.05_context_protocol",
+      "path": "shared/05_context_protocol.md",
+      "title": "上下文容器与可信度",
+      "kind": "prompt",
+      "applicableStages": [
+        "story",
+        "variables",
+        "world"
+      ],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 712
+    },
+    {
+      "id": "shared.06_story_output",
+      "path": "shared/06_story_output.md",
+      "title": "正文输出协议（标签与JSON规划）",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 756
+    },
+    {
+      "id": "shared.07_command_output",
+      "path": "shared/07_command_output.md",
+      "title": "变量更新输出协议（严格JSON）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 1087
+    },
+    {
+      "id": "shared.08_world_output",
+      "path": "shared/08_world_output.md",
+      "title": "动态世界输出协议（严格JSON）",
+      "kind": "prompt",
+      "applicableStages": [
+        "world"
+      ],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 1026
+    },
+    {
+      "id": "stages.opening.story",
+      "path": "stages/opening/story.md",
+      "title": "开局正文生成主提示词",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 840
+    },
+    {
+      "id": "stages.opening.variables",
+      "path": "stages/opening/variables.md",
+      "title": "开局变量初始化主提示词",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 687
+    },
+    {
+      "id": "stages.opening.world",
+      "path": "stages/opening/world.md",
+      "title": "开局动态世界初始化主提示词",
+      "kind": "prompt",
+      "applicableStages": [
+        "world"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 642
+    },
+    {
+      "id": "stages.regular.story",
+      "path": "stages/regular/story.md",
+      "title": "普通回合正文主提示词",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 684
+    },
+    {
+      "id": "stages.regular.variables",
+      "path": "stages/regular/variables.md",
+      "title": "普通回合变量更新主提示词",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 587
+    },
+    {
+      "id": "stages.regular.world",
+      "path": "stages/regular/world.md",
+      "title": "普通回合动态世界主提示词",
+      "kind": "prompt",
+      "applicableStages": [
+        "world"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 765
+    },
+    {
+      "id": "variableGroups.protagonist.init",
+      "path": "variableGroups/protagonist/init.md",
+      "title": "主角｜初始化",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "protagonist",
+      "characters": 432
+    },
+    {
+      "id": "variableGroups.protagonist.update",
+      "path": "variableGroups/protagonist/update.md",
+      "title": "主角｜常规更新",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "protagonist",
+      "characters": 390
+    },
+    {
+      "id": "variableGroups.protagonist.offscreen",
+      "path": "variableGroups/protagonist/offscreen.md",
+      "title": "主角｜场外规则",
+      "kind": "prompt",
+      "applicableStages": [
+        "world"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "protagonist",
+      "characters": 316
+    },
+    {
+      "id": "variableGroups.npc_ordinary.init",
+      "path": "variableGroups/npc_ordinary/init.md",
+      "title": "普通NPC｜初始化",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "npc_ordinary",
+      "characters": 383
+    },
+    {
+      "id": "variableGroups.npc_ordinary.update",
+      "path": "variableGroups/npc_ordinary/update.md",
+      "title": "普通NPC｜常规更新",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "npc_ordinary",
+      "characters": 400
+    },
+    {
+      "id": "variableGroups.npc_ordinary.offscreen",
+      "path": "variableGroups/npc_ordinary/offscreen.md",
+      "title": "普通NPC｜场外规则",
+      "kind": "prompt",
+      "applicableStages": [
+        "world"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "npc_ordinary",
+      "characters": 371
+    },
+    {
+      "id": "variableGroups.npc_special.init",
+      "path": "variableGroups/npc_special/init.md",
+      "title": "特殊NPC｜初始化",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "npc_special",
+      "characters": 368
+    },
+    {
+      "id": "variableGroups.npc_special.update",
+      "path": "variableGroups/npc_special/update.md",
+      "title": "特殊NPC｜常规更新",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "npc_special",
+      "characters": 392
+    },
+    {
+      "id": "variableGroups.npc_special.offscreen",
+      "path": "variableGroups/npc_special/offscreen.md",
+      "title": "特殊NPC｜场外规则",
+      "kind": "prompt",
+      "applicableStages": [
+        "world"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "npc_special",
+      "characters": 359
+    },
+    {
+      "id": "variableGroups.items.init",
+      "path": "variableGroups/items/init.md",
+      "title": "重要物品｜初始化",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "items",
+      "characters": 352
+    },
+    {
+      "id": "variableGroups.items.update",
+      "path": "variableGroups/items/update.md",
+      "title": "重要物品｜常规更新",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "items",
+      "characters": 370
+    },
+    {
+      "id": "variableGroups.items.offscreen",
+      "path": "variableGroups/items/offscreen.md",
+      "title": "重要物品｜场外规则",
+      "kind": "prompt",
+      "applicableStages": [
+        "world"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "items",
+      "characters": 326
+    },
+    {
+      "id": "variableGroups.economy.init",
+      "path": "variableGroups/economy/init.md",
+      "title": "经济与资产｜初始化",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "economy",
+      "characters": 423
+    },
+    {
+      "id": "variableGroups.economy.update",
+      "path": "variableGroups/economy/update.md",
+      "title": "经济与资产｜常规更新",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "economy",
+      "characters": 457
+    },
+    {
+      "id": "variableGroups.economy.offscreen",
+      "path": "variableGroups/economy/offscreen.md",
+      "title": "经济与资产｜场外规则",
+      "kind": "prompt",
+      "applicableStages": [
+        "world"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "economy",
+      "characters": 383
+    },
+    {
+      "id": "variableGroups.org_gang.init",
+      "path": "variableGroups/org_gang/init.md",
+      "title": "黑帮势力｜初始化",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables",
+        "world"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "org_gang",
+      "characters": 334
+    },
+    {
+      "id": "variableGroups.org_gang.update",
+      "path": "variableGroups/org_gang/update.md",
+      "title": "黑帮势力｜常规更新",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "org_gang",
+      "characters": 340
+    },
+    {
+      "id": "variableGroups.org_gang.offscreen",
+      "path": "variableGroups/org_gang/offscreen.md",
+      "title": "黑帮势力｜场外规则",
+      "kind": "prompt",
+      "applicableStages": [
+        "world"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "org_gang",
+      "characters": 314
+    },
+    {
+      "id": "variableGroups.org_government.init",
+      "path": "variableGroups/org_government/init.md",
+      "title": "官方势力｜初始化",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables",
+        "world"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "org_government",
+      "characters": 370
+    },
+    {
+      "id": "variableGroups.org_government.update",
+      "path": "variableGroups/org_government/update.md",
+      "title": "官方势力｜常规更新",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "org_government",
+      "characters": 367
+    },
+    {
+      "id": "variableGroups.org_government.offscreen",
+      "path": "variableGroups/org_government/offscreen.md",
+      "title": "官方势力｜场外规则",
+      "kind": "prompt",
+      "applicableStages": [
+        "world"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "org_government",
+      "characters": 350
+    },
+    {
+      "id": "variableGroups.org_civil.init",
+      "path": "variableGroups/org_civil/init.md",
+      "title": "民间组织｜初始化",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables",
+        "world"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "org_civil",
+      "characters": 284
+    },
+    {
+      "id": "variableGroups.org_civil.update",
+      "path": "variableGroups/org_civil/update.md",
+      "title": "民间组织｜常规更新",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "org_civil",
+      "characters": 283
+    },
+    {
+      "id": "variableGroups.org_civil.offscreen",
+      "path": "variableGroups/org_civil/offscreen.md",
+      "title": "民间组织｜场外规则",
+      "kind": "prompt",
+      "applicableStages": [
+        "world"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "org_civil",
+      "characters": 295
+    },
+    {
+      "id": "variableGroups.org_business.init",
+      "path": "variableGroups/org_business/init.md",
+      "title": "企业与资本势力｜初始化",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables",
+        "world"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "org_business",
+      "characters": 323
+    },
+    {
+      "id": "variableGroups.org_business.update",
+      "path": "variableGroups/org_business/update.md",
+      "title": "企业与资本势力｜常规更新",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "org_business",
+      "characters": 348
+    },
+    {
+      "id": "variableGroups.org_business.offscreen",
+      "path": "variableGroups/org_business/offscreen.md",
+      "title": "企业与资本势力｜场外规则",
+      "kind": "prompt",
+      "applicableStages": [
+        "world"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "org_business",
+      "characters": 328
+    },
+    {
+      "id": "writing.perspective_first",
+      "path": "writing/perspective_first.md",
+      "title": "人称：第一人称",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [],
+      "toggle": "perspective:first",
+      "domain": null,
+      "characters": 155
+    },
+    {
+      "id": "writing.perspective_second",
+      "path": "writing/perspective_second.md",
+      "title": "人称：第二人称",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [],
+      "toggle": "perspective:second",
+      "domain": null,
+      "characters": 110
+    },
+    {
+      "id": "writing.perspective_third",
+      "path": "writing/perspective_third.md",
+      "title": "人称：第三人称",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [],
+      "toggle": "perspective:third",
+      "domain": null,
+      "characters": 128
+    },
+    {
+      "id": "writing.style_general",
+      "path": "writing/style_general.md",
+      "title": "剧情风格：一般",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [],
+      "toggle": "style:general",
+      "domain": null,
+      "characters": 139
+    },
+    {
+      "id": "writing.min_length",
+      "path": "writing/min_length.md",
+      "title": "硬性最低正文字数",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [],
+      "toggle": "minNarrativeChars",
+      "domain": null,
+      "characters": 180
+    },
+    {
+      "id": "writing.no_control",
+      "path": "writing/no_control.md",
+      "title": "防抢话 NoControl（可开关增强版）",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [],
+      "toggle": "noControl:true",
+      "domain": null,
+      "characters": 215
+    },
+    {
+      "id": "writing.natural_prose",
+      "path": "writing/natural_prose.md",
+      "title": "自然文风修复（黑金王朝适配稿）",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [],
+      "toggle": "naturalProse:true",
+      "domain": null,
+      "characters": 425
+    },
+    {
+      "id": "writing.action_options",
+      "path": "writing/action_options.md",
+      "title": "行动选项（开启时3～5条）",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [],
+      "toggle": "actionOptions:true",
+      "domain": null,
+      "characters": 161
+    },
+    {
+      "id": "writing.real_world",
+      "path": "writing/real_world.md",
+      "title": "真实世界模式协议（开启时）",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [],
+      "toggle": "realWorld:true",
+      "domain": null,
+      "characters": 257
+    },
+    {
+      "id": "memory.short_to_medium",
+      "path": "memory/short_to_medium.md",
+      "title": "短期→中期记忆压缩",
+      "kind": "prompt",
+      "applicableStages": [
+        "memory"
+      ],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 576
+    },
+    {
+      "id": "memory.medium_to_long",
+      "path": "memory/medium_to_long.md",
+      "title": "中期→长期记忆压缩",
+      "kind": "prompt",
+      "applicableStages": [
+        "memory"
+      ],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 498
+    },
+    {
+      "id": "memory.npc_summarize",
+      "path": "memory/npc_summarize.md",
+      "title": "NPC独立记忆总结",
+      "kind": "prompt",
+      "applicableStages": [
+        "memory"
+      ],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 493
+    },
+    {
+      "id": "memory.recall_select",
+      "path": "memory/recall_select.md",
+      "title": "历史剧情回忆检索辅助",
+      "kind": "prompt",
+      "applicableStages": [
+        "memory"
+      ],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 389
+    },
+    {
+      "id": "memory.timeline_entry",
+      "path": "memory/timeline_entry.md",
+      "title": "重大结案事件历史时间轴条目整理",
+      "kind": "prompt",
+      "applicableStages": [
+        "memory"
+      ],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 586
+    },
+    {
+      "id": "shared.09_dialogue_labels",
+      "path": "shared/09_dialogue_labels.md",
+      "title": "正文旁白／人物对白标记协议",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 365
+    },
+    {
+      "id": "docs.README",
+      "path": "docs/README.md",
+      "title": "提示词库总说明",
+      "kind": "documentation",
+      "applicableStages": [],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 1404
+    },
+    {
+      "id": "docs.ASSEMBLY",
+      "path": "docs/ASSEMBLY.md",
+      "title": "运行时组包与两套三阶段选择",
+      "kind": "documentation",
+      "applicableStages": [],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 2834
+    },
+    {
+      "id": "docs.OUTPUT_CONTRACT",
+      "path": "docs/OUTPUT_CONTRACT.md",
+      "title": "数据契约与输出校验",
+      "kind": "documentation",
+      "applicableStages": [],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 1834
+    },
+    {
+      "id": "docs.ACCEPTANCE",
+      "path": "docs/ACCEPTANCE.md",
+      "title": "提示词验收清单",
+      "kind": "documentation",
+      "applicableStages": [],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 1093
+    },
+    {
+      "id": "examples.story_sample.",
+      "path": "examples/story_sample.txt",
+      "title": "示例：已关闭最低字数的结构解析测试",
+      "kind": "example",
+      "applicableStages": [],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 348
+    },
+    {
+      "id": "examples.variables_sample.j",
+      "path": "examples/variables_sample.json",
+      "title": "示例：变量阶段输出（合法JSON）",
+      "kind": "example",
+      "applicableStages": [],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 890
+    },
+    {
+      "id": "examples.world_sample.j",
+      "path": "examples/world_sample.json",
+      "title": "示例：场外世界阶段输出（合法JSON）",
+      "kind": "example",
+      "applicableStages": [],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 609
+    }
+  ]
+}

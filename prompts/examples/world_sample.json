@@ -1,0 +1,31 @@
+{
+  "worldCommands": [],
+  "taskCommands": [],
+  "eventCommands": [],
+  "futureEvents": [
+    {
+      "id": "event:meeting-001",
+      "title": "已约定的会面",
+      "status": "scheduled",
+      "startAt": "2026-05-12T15:00:00+08:00",
+      "actorRefs": [
+        "npc:li-ming"
+      ],
+      "visibility": "known",
+      "impact": "minor",
+      "sourceTurnIds": [
+        "turn-101"
+      ],
+      "locationId": "loc:chongqing-home",
+      "prerequisites": [
+        "李明仍愿意赴约"
+      ],
+      "blockers": [
+        "主角通知取消"
+      ]
+    }
+  ],
+  "visibleHooks": [],
+  "timelineCandidates": [],
+  "unresolved": []
+}
