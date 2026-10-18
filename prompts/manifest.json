@@ -1,8 +1,8 @@
 {
   "project": "黑金王朝",
-  "version": "0.1.0-prompts",
+  "version": "0.1.0-m3-p1",
   "authoredAt": "2026-10-18",
-  "status": "unvalidated-original-draft",
+  "status": "static-registry-with-documented-content-gap",
   "globalDefaults": {
     "immediateMemoryTurns": 10,
     "minNarrativeChars": 1500,
@@ -16,21 +16,67 @@
     "worldStageEnabled": true,
     "maxTotalAttemptsPerStage": 3
   },
+  "schemaVersion": 2,
+  "runtimeImplemented": false,
+  "tokenAccounting": {
+    "characters": "unicode-code-points",
+    "tokens": "requires-model-tokenizer",
+    "actualUsage": "requires-api-response"
+  },
+  "ordering": {
+    "roleMeaning": "logical-default-not-an-actual-request",
+    "lockedPrefix": [
+      "identity.fusheng",
+      "worldbooks.heijin.worldview",
+      "worldbooks.heijin.modern_underworld"
+    ],
+    "adjustableGroups": [
+      "narrative_core",
+      "writing"
+    ],
+    "overrideRule": "Only reorder movable modules within their existing group and order slots; never cross locked anchors, roles, stages or output protocols."
+  },
+  "futureExtensions": [
+    {
+      "id": "npc_private_archive",
+      "status": "design-only",
+      "note": "未注册运行模块，无提示词文件、NPC 字段或概率表；后续可独立新增模块。"
+    },
+    {
+      "id": "special_nsfw_traits",
+      "status": "design-only",
+      "note": "未注册运行模块，无提示词文件、NPC 字段或概率表；后续可独立新增模块。"
+    }
+  ],
+  "contentGaps": [
+    {
+      "id": "nsfw-verbatim-import",
+      "status": "not-completed",
+      "note": "用户已在提交 690d01d 补充成人题材提示词，当前资源为用户手动整理的适配版本；旧版未经修改的全文逐字移植仍不声明完成。"
+    }
+  ],
   "modules": [
     {
       "id": "shared.00_world",
       "path": "shared/00_world.md",
       "title": "世界与现实底座",
       "kind": "prompt",
-      "applicableStages": [
-        "story",
-        "variables",
-        "world"
-      ],
+      "applicableStages": [],
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 603
+      "characters": 156,
+      "version": "0.1.0-compatibility",
+      "messageRole": null,
+      "activation": "never",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 20,
+      "orderGroup": "shared",
+      "reorderable": false,
+      "category": "shared",
+      "contentSha256": "17e686f64eaf4919b77b0a8ab47616dab90a65ab90705da4ad6740eb2e86e308",
+      "placeholders": []
     },
     {
       "id": "shared.01_agency",
@@ -42,10 +88,24 @@
         "variables",
         "world"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": null,
       "domain": null,
-      "characters": 447
+      "characters": 447,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 30,
+      "orderGroup": "shared",
+      "reorderable": false,
+      "category": "shared",
+      "contentSha256": "0c66f864f0a2943f89e6fe197df992c9e6aecd74b9cd7ad670693b2e3375192f",
+      "placeholders": []
     },
     {
       "id": "shared.02_knowledge",
@@ -57,10 +117,24 @@
         "variables",
         "world"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": null,
       "domain": null,
-      "characters": 484
+      "characters": 849,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 40,
+      "orderGroup": "shared",
+      "reorderable": false,
+      "category": "shared",
+      "contentSha256": "05cddffcee504689d1f7dba0cfc77c169913114db6a85de3c6fe247d1c39047a",
+      "placeholders": []
     },
     {
       "id": "shared.03_time_events",
@@ -72,10 +146,27 @@
         "variables",
         "world"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": null,
       "domain": null,
-      "characters": 537
+      "characters": 992,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 50,
+      "orderGroup": "shared",
+      "reorderable": false,
+      "category": "shared",
+      "contentSha256": "1ac29fe5cd27ccfb15f6655c3a9e18b3706c89a48b4ab7fc78ad770931763eb9",
+      "placeholders": [
+        "worldClock",
+        "worldWeekday"
+      ]
     },
     {
       "id": "shared.04_state_authority",
@@ -87,10 +178,24 @@
         "variables",
         "world"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": null,
       "domain": null,
-      "characters": 495
+      "characters": 495,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 60,
+      "orderGroup": "shared",
+      "reorderable": false,
+      "category": "shared",
+      "contentSha256": "4f79534b7a8980284a8cab25dc4bc63a9a58d9031b9d205e466ccf07fec609ec",
+      "placeholders": []
     },
     {
       "id": "shared.05_context_protocol",
@@ -102,10 +207,24 @@
         "variables",
         "world"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": null,
       "domain": null,
-      "characters": 712
+      "characters": 712,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 70,
+      "orderGroup": "shared",
+      "reorderable": false,
+      "category": "shared",
+      "contentSha256": "be733d3966385c9cef20010f2e69c60917870e92c94eca86c539a040641f770c",
+      "placeholders": []
     },
     {
       "id": "shared.06_story_output",
@@ -115,10 +234,26 @@
       "applicableStages": [
         "story"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": null,
       "domain": null,
-      "characters": 756
+      "characters": 756,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 406,
+      "orderGroup": "output",
+      "reorderable": false,
+      "category": "output",
+      "contentSha256": "606d0459789198dacf095e61b6efe122803a4af0336f90b9819b86251463eee8",
+      "placeholders": [
+        "minNarrativeChars"
+      ]
     },
     {
       "id": "shared.07_command_output",
@@ -128,10 +263,24 @@
       "applicableStages": [
         "variables"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": null,
       "domain": null,
-      "characters": 1087
+      "characters": 1087,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 407,
+      "orderGroup": "output",
+      "reorderable": false,
+      "category": "output",
+      "contentSha256": "e81cac2a5104af3afa25039c847793ddf01209c7fd4a3b94e79617d6f9b30482",
+      "placeholders": []
     },
     {
       "id": "shared.08_world_output",
@@ -141,10 +290,24 @@
       "applicableStages": [
         "world"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": null,
       "domain": null,
-      "characters": 1026
+      "characters": 1026,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 408,
+      "orderGroup": "output",
+      "reorderable": false,
+      "category": "output",
+      "contentSha256": "ff9d4ebdfa6575ccbd9f3228334688c70220ebd3d16ae425c0bfa33526e5f2da",
+      "placeholders": []
     },
     {
       "id": "stages.opening.story",
@@ -159,7 +322,20 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 840
+      "characters": 843,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 300,
+      "orderGroup": "stage",
+      "reorderable": false,
+      "category": "stage",
+      "contentSha256": "7c2794eddbc2f67aa6be1dbcadc16bec984a55ab47d27ab1c92e0ae4b02e8a2d",
+      "placeholders": [
+        "minNarrativeChars"
+      ]
     },
     {
       "id": "stages.opening.variables",
@@ -174,7 +350,18 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 687
+      "characters": 687,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 300,
+      "orderGroup": "stage",
+      "reorderable": false,
+      "category": "stage",
+      "contentSha256": "b8fa79eb972d24ae744256a657c48d2c42ebf2d3bffd1b873e0a5f0b84ffa530",
+      "placeholders": []
     },
     {
       "id": "stages.opening.world",
@@ -189,7 +376,18 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 642
+      "characters": 642,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 300,
+      "orderGroup": "stage",
+      "reorderable": false,
+      "category": "stage",
+      "contentSha256": "2b484f46cd74e560c19d4b813ccc04f260395689a0a1034b84276ce4435bc948",
+      "placeholders": []
     },
     {
       "id": "stages.regular.story",
@@ -204,7 +402,21 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 684
+      "characters": 686,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 300,
+      "orderGroup": "stage",
+      "reorderable": false,
+      "category": "stage",
+      "contentSha256": "5e9d258ac09981aabde0cb8ad8ce82c6cea3abbdc066de9728d8f747cf062dc5",
+      "placeholders": [
+        "immediateMemoryTurns",
+        "minNarrativeChars"
+      ]
     },
     {
       "id": "stages.regular.variables",
@@ -219,7 +431,18 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 587
+      "characters": 587,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 300,
+      "orderGroup": "stage",
+      "reorderable": false,
+      "category": "stage",
+      "contentSha256": "7e4d6e6c59e6159aa84274c00becf48c143750d1b348fbc3acefbe96effdd4af",
+      "placeholders": []
     },
     {
       "id": "stages.regular.world",
@@ -234,7 +457,18 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 765
+      "characters": 765,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 300,
+      "orderGroup": "stage",
+      "reorderable": false,
+      "category": "stage",
+      "contentSha256": "0d8e6d583fc429cbab272da5a953719aad3168a9e274ede6cb4bf021fd50f0ba",
+      "placeholders": []
     },
     {
       "id": "variableGroups.protagonist.init",
@@ -249,7 +483,18 @@
       ],
       "toggle": null,
       "domain": "protagonist",
-      "characters": 432
+      "characters": 432,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 500,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "6b1637419f178435cf11202a06bb59404d5e7e1aac08d1de9bb396427e60233e",
+      "placeholders": []
     },
     {
       "id": "variableGroups.protagonist.update",
@@ -264,7 +509,18 @@
       ],
       "toggle": null,
       "domain": "protagonist",
-      "characters": 390
+      "characters": 390,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 501,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "c0974899e3fe95d6f5ab1842dfed72a08d7f73ac0b1e3d1b1b4833b127699cd9",
+      "placeholders": []
     },
     {
       "id": "variableGroups.protagonist.offscreen",
@@ -280,7 +536,18 @@
       ],
       "toggle": null,
       "domain": "protagonist",
-      "characters": 316
+      "characters": 316,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 502,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "4f5414dfb5488a061ab8e56056421be1b482420d15429e42ccc23643e462cc88",
+      "placeholders": []
     },
     {
       "id": "variableGroups.npc_ordinary.init",
@@ -295,7 +562,18 @@
       ],
       "toggle": null,
       "domain": "npc_ordinary",
-      "characters": 383
+      "characters": 665,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 510,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "d3dec13b0fc0044cc072481673295686ba01df33843b946d5b239a9e5b631064",
+      "placeholders": []
     },
     {
       "id": "variableGroups.npc_ordinary.update",
@@ -310,7 +588,18 @@
       ],
       "toggle": null,
       "domain": "npc_ordinary",
-      "characters": 400
+      "characters": 880,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 511,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "2049a758543ce5459fe7ca653952b935580a89f55e53548fb84d4a85945588e2",
+      "placeholders": []
     },
     {
       "id": "variableGroups.npc_ordinary.offscreen",
@@ -326,7 +615,18 @@
       ],
       "toggle": null,
       "domain": "npc_ordinary",
-      "characters": 371
+      "characters": 542,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 512,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "69ac45bc3e25a2fe573a6ecdf2ca26f9772e4775fa949c006aa9cb6671600196",
+      "placeholders": []
     },
     {
       "id": "variableGroups.npc_special.init",
@@ -341,7 +641,18 @@
       ],
       "toggle": null,
       "domain": "npc_special",
-      "characters": 368
+      "characters": 650,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 520,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "9bf6cabbb584c06b57a952506ba6ae9177064bb0deca7380df12f322cad0991b",
+      "placeholders": []
     },
     {
       "id": "variableGroups.npc_special.update",
@@ -356,7 +667,18 @@
       ],
       "toggle": null,
       "domain": "npc_special",
-      "characters": 392
+      "characters": 872,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 521,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "bf13ab09d5feb55ec7a5f56203e4c1957bb21ff13bed1e32872e184072c54244",
+      "placeholders": []
     },
     {
       "id": "variableGroups.npc_special.offscreen",
@@ -372,7 +694,18 @@
       ],
       "toggle": null,
       "domain": "npc_special",
-      "characters": 359
+      "characters": 530,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 522,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "9ebfcd196a6af7f89d6e0bfa09d83088429de4bf3d48a2a9b307a4bece653fc7",
+      "placeholders": []
     },
     {
       "id": "variableGroups.items.init",
@@ -387,7 +720,18 @@
       ],
       "toggle": null,
       "domain": "items",
-      "characters": 352
+      "characters": 352,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 530,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "a59afc86db6f05bd21bc7188980fb9f8de856700046023438b0b635559252e56",
+      "placeholders": []
     },
     {
       "id": "variableGroups.items.update",
@@ -402,7 +746,18 @@
       ],
       "toggle": null,
       "domain": "items",
-      "characters": 370
+      "characters": 370,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 531,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "20220e10ad5f04a519290a0513bc73f34b22846b5ef3b03a34193ed81e17317a",
+      "placeholders": []
     },
     {
       "id": "variableGroups.items.offscreen",
@@ -418,7 +773,18 @@
       ],
       "toggle": null,
       "domain": "items",
-      "characters": 326
+      "characters": 326,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 532,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "5d006e86c18f1725671d8475870b99cdaf98ddaedfbd0a2b0704ff99fd133a5a",
+      "placeholders": []
     },
     {
       "id": "variableGroups.economy.init",
@@ -433,7 +799,18 @@
       ],
       "toggle": null,
       "domain": "economy",
-      "characters": 423
+      "characters": 423,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 540,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "0ffc5e603b45da886c9ed4b1e27f77319e4fbfb406db5454c9626dbad6fc2f53",
+      "placeholders": []
     },
     {
       "id": "variableGroups.economy.update",
@@ -448,7 +825,18 @@
       ],
       "toggle": null,
       "domain": "economy",
-      "characters": 457
+      "characters": 457,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 541,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "823db7e82689a24c5b5acf6e47fa43fc4aee2ab67eedc1eb3a80edb6446edee4",
+      "placeholders": []
     },
     {
       "id": "variableGroups.economy.offscreen",
@@ -464,7 +852,18 @@
       ],
       "toggle": null,
       "domain": "economy",
-      "characters": 383
+      "characters": 383,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 542,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "594ce4c6260dbbd77b7349f6b90af96b29da72db33c3ad0b352490c72a12107e",
+      "placeholders": []
     },
     {
       "id": "variableGroups.org_gang.init",
@@ -480,7 +879,18 @@
       ],
       "toggle": null,
       "domain": "org_gang",
-      "characters": 334
+      "characters": 334,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 550,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "2cea435019da283fd7338f56947f72aefd3a34da66bfe0cc5245f95f32c590ac",
+      "placeholders": []
     },
     {
       "id": "variableGroups.org_gang.update",
@@ -495,7 +905,18 @@
       ],
       "toggle": null,
       "domain": "org_gang",
-      "characters": 340
+      "characters": 340,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 551,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "3112bf562fde8608478759c7dad76ab49e3a7d3b966d80f05bf031296ecec629",
+      "placeholders": []
     },
     {
       "id": "variableGroups.org_gang.offscreen",
@@ -511,7 +932,18 @@
       ],
       "toggle": null,
       "domain": "org_gang",
-      "characters": 314
+      "characters": 314,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 552,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "07de8c715b0e0bc9fa0a31c0ba22404bde05cb95b4704bdc97d78bcd008e2d02",
+      "placeholders": []
     },
     {
       "id": "variableGroups.org_government.init",
@@ -527,7 +959,18 @@
       ],
       "toggle": null,
       "domain": "org_government",
-      "characters": 370
+      "characters": 370,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 560,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "48c7488dcce2a15662a53959e4c6042e84446e45026756b8de10042634d9c3eb",
+      "placeholders": []
     },
     {
       "id": "variableGroups.org_government.update",
@@ -542,7 +985,18 @@
       ],
       "toggle": null,
       "domain": "org_government",
-      "characters": 367
+      "characters": 367,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 561,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "0c87a041c535fd7608c0f1f04a31abcd723c35c78530293199909b69a11a7431",
+      "placeholders": []
     },
     {
       "id": "variableGroups.org_government.offscreen",
@@ -558,7 +1012,18 @@
       ],
       "toggle": null,
       "domain": "org_government",
-      "characters": 350
+      "characters": 350,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 562,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "5aaf1ec5718f359074d24a2036e046a0ce9fc68de4a10388e062c7cf1079be8a",
+      "placeholders": []
     },
     {
       "id": "variableGroups.org_civil.init",
@@ -574,7 +1039,18 @@
       ],
       "toggle": null,
       "domain": "org_civil",
-      "characters": 284
+      "characters": 284,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 570,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "f05622cd8905804ab74cb43f28c1f0616188db5dec7073c3c4bf9e8cee7b01fe",
+      "placeholders": []
     },
     {
       "id": "variableGroups.org_civil.update",
@@ -589,7 +1065,18 @@
       ],
       "toggle": null,
       "domain": "org_civil",
-      "characters": 283
+      "characters": 283,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 571,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "8097eb90ac6c34bb0a85535f28183fdf9c96d4237012842ca008415a5462f6f1",
+      "placeholders": []
     },
     {
       "id": "variableGroups.org_civil.offscreen",
@@ -605,7 +1092,18 @@
       ],
       "toggle": null,
       "domain": "org_civil",
-      "characters": 295
+      "characters": 295,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 572,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "f59b95a561a10b6a0ff61e23b85298e4533b98937ff5f588e1cfb511e8aa233c",
+      "placeholders": []
     },
     {
       "id": "variableGroups.org_business.init",
@@ -621,7 +1119,18 @@
       ],
       "toggle": null,
       "domain": "org_business",
-      "characters": 323
+      "characters": 323,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 580,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "2bedd9dcc03d9233b5109f845679b6a14f7acca6d4de0505a2a5ec3390f796cf",
+      "placeholders": []
     },
     {
       "id": "variableGroups.org_business.update",
@@ -636,7 +1145,18 @@
       ],
       "toggle": null,
       "domain": "org_business",
-      "characters": 348
+      "characters": 348,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 581,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "e5c3837b70eaa6a3bba4752471bdd41b3f8538c066a57fc4e5d00d6d317d7786",
+      "placeholders": []
     },
     {
       "id": "variableGroups.org_business.offscreen",
@@ -652,7 +1172,18 @@
       ],
       "toggle": null,
       "domain": "org_business",
-      "characters": 328
+      "characters": 328,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 582,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "329a7dd071af7aad7c87e9ad523cf8cf80eb45e41351ff1bc025a347e8001244",
+      "placeholders": []
     },
     {
       "id": "writing.perspective_first",
@@ -662,10 +1193,24 @@
       "applicableStages": [
         "story"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": "perspective:first",
       "domain": null,
-      "characters": 155
+      "characters": 155,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 220,
+      "orderGroup": "writing",
+      "reorderable": false,
+      "category": "writing",
+      "contentSha256": "d3cc26678d0c4c268c80490df812de8e5ab878308e7000df00a4a21c1bda1616",
+      "placeholders": []
     },
     {
       "id": "writing.perspective_second",
@@ -675,10 +1220,24 @@
       "applicableStages": [
         "story"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": "perspective:second",
       "domain": null,
-      "characters": 110
+      "characters": 110,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 221,
+      "orderGroup": "writing",
+      "reorderable": false,
+      "category": "writing",
+      "contentSha256": "b248dfd5bbe883a05bd5da767c66ea40c2a28a108155df039d9699fef6917a4f",
+      "placeholders": []
     },
     {
       "id": "writing.perspective_third",
@@ -688,10 +1247,26 @@
       "applicableStages": [
         "story"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": "perspective:third",
       "domain": null,
-      "characters": 128
+      "characters": 128,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 222,
+      "orderGroup": "writing",
+      "reorderable": false,
+      "category": "writing",
+      "contentSha256": "f202746ba812e4fc3bbfeabc03c7fb1de67ef0589d464933a8f5f42d036ab7c5",
+      "placeholders": [
+        "playerName"
+      ]
     },
     {
       "id": "writing.style_general",
@@ -701,10 +1276,24 @@
       "applicableStages": [
         "story"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": "style:general",
       "domain": null,
-      "characters": 139
+      "characters": 139,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 223,
+      "orderGroup": "writing",
+      "reorderable": false,
+      "category": "writing",
+      "contentSha256": "f76e9abf8313663a921ea7aaccf1bc84cf724ab40cb7318a9ea08aceb21c6ed1",
+      "placeholders": []
     },
     {
       "id": "writing.min_length",
@@ -714,10 +1303,26 @@
       "applicableStages": [
         "story"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": "minNarrativeChars",
       "domain": null,
-      "characters": 180
+      "characters": 180,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": true,
+      "defaultOrder": 210,
+      "orderGroup": "writing",
+      "reorderable": false,
+      "category": "writing",
+      "contentSha256": "2fa17dbc24358bd3fd739d8c5db6dc43b7bc24972d05648076ac45ea12a794d4",
+      "placeholders": [
+        "minNarrativeChars"
+      ]
     },
     {
       "id": "writing.no_control",
@@ -727,10 +1332,24 @@
       "applicableStages": [
         "story"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": "noControl:true",
       "domain": null,
-      "characters": 215
+      "characters": 215,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 224,
+      "orderGroup": "writing",
+      "reorderable": true,
+      "category": "writing",
+      "contentSha256": "6545d6fc3907838bda3f1483401981555f978ae28fa7d9b879b1d1d8016da6f6",
+      "placeholders": []
     },
     {
       "id": "writing.natural_prose",
@@ -740,10 +1359,24 @@
       "applicableStages": [
         "story"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": "naturalProse:true",
       "domain": null,
-      "characters": 425
+      "characters": 877,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 225,
+      "orderGroup": "writing",
+      "reorderable": true,
+      "category": "writing",
+      "contentSha256": "9e0a9ef91022ef5a3d85c7bbf1ee624d85bb2b11b31c343188949a128fad14c0",
+      "placeholders": []
     },
     {
       "id": "writing.action_options",
@@ -753,10 +1386,24 @@
       "applicableStages": [
         "story"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": "actionOptions:true",
       "domain": null,
-      "characters": 161
+      "characters": 513,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 226,
+      "orderGroup": "writing",
+      "reorderable": true,
+      "category": "writing",
+      "contentSha256": "7eda7ecd6ecc972f8dd3cd24d8d0799434ac8b0380562f69b51b8bd461cb8c5e",
+      "placeholders": []
     },
     {
       "id": "writing.real_world",
@@ -766,10 +1413,24 @@
       "applicableStages": [
         "story"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": "realWorld:true",
       "domain": null,
-      "characters": 257
+      "characters": 257,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 227,
+      "orderGroup": "writing",
+      "reorderable": true,
+      "category": "writing",
+      "contentSha256": "ca8943e8729aff6f7747e166424b4883bb7f455607847edf0cd5faeb25301e60",
+      "placeholders": []
     },
     {
       "id": "memory.short_to_medium",
@@ -779,10 +1440,24 @@
       "applicableStages": [
         "memory"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": null,
       "domain": null,
-      "characters": 576
+      "characters": 576,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "memory-task",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 600,
+      "orderGroup": "memory",
+      "reorderable": false,
+      "category": "memory",
+      "contentSha256": "a8392d995585266fe7c92463af02328392e760671776ed85d5700d7557e8c27a",
+      "placeholders": []
     },
     {
       "id": "memory.medium_to_long",
@@ -792,10 +1467,24 @@
       "applicableStages": [
         "memory"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": null,
       "domain": null,
-      "characters": 498
+      "characters": 498,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "memory-task",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 601,
+      "orderGroup": "memory",
+      "reorderable": false,
+      "category": "memory",
+      "contentSha256": "24d209bf74984a1898a30d8f9dcce32eede6884afbcc8cad3832b8ff0eaf68d2",
+      "placeholders": []
     },
     {
       "id": "memory.npc_summarize",
@@ -805,10 +1494,27 @@
       "applicableStages": [
         "memory"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": null,
       "domain": null,
-      "characters": 493
+      "characters": 493,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "memory-task",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 602,
+      "orderGroup": "memory",
+      "reorderable": false,
+      "category": "memory",
+      "contentSha256": "acbbbddc2a6c1cd857ffb14f9582684e1b91d12d8eef6be91578f627db12b787",
+      "placeholders": [
+        "npcId",
+        "npcSummaryThreshold"
+      ]
     },
     {
       "id": "memory.recall_select",
@@ -818,10 +1524,24 @@
       "applicableStages": [
         "memory"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": null,
       "domain": null,
-      "characters": 389
+      "characters": 389,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "memory-task",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 603,
+      "orderGroup": "memory",
+      "reorderable": false,
+      "category": "memory",
+      "contentSha256": "fa5662846a6142f1b72b4509552b65935312f090966320d9c9ea24c0c223e64b",
+      "placeholders": []
     },
     {
       "id": "memory.timeline_entry",
@@ -831,10 +1551,24 @@
       "applicableStages": [
         "memory"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": null,
       "domain": null,
-      "characters": 586
+      "characters": 586,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "memory-task",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 604,
+      "orderGroup": "memory",
+      "reorderable": false,
+      "category": "memory",
+      "contentSha256": "403d87160d791d8ea9d50c597e09ba92867b949095eff157b491fc9140953a90",
+      "placeholders": []
     },
     {
       "id": "shared.09_dialogue_labels",
@@ -844,10 +1578,24 @@
       "applicableStages": [
         "story"
       ],
-      "modes": [],
+      "modes": [
+        "opening",
+        "regular"
+      ],
       "toggle": null,
       "domain": null,
-      "characters": 365
+      "characters": 365,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 409,
+      "orderGroup": "output",
+      "reorderable": false,
+      "category": "output",
+      "contentSha256": "305d289bc786fdbfc50d5a29fb553c9768feb967eec06c3b308c772fc4d38dfb",
+      "placeholders": []
     },
     {
       "id": "docs.README",
@@ -858,7 +1606,20 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 1404
+      "characters": 1354,
+      "version": "0.1.0-m3-p1",
+      "messageRole": null,
+      "activation": "never",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 0,
+      "orderGroup": "reference",
+      "reorderable": false,
+      "category": "documentation",
+      "contentSha256": "8b34e3cc54ce7a1349c3d7e18379051603200e063e7d1a19e0a31e3e8be12d3b",
+      "placeholders": [
+        "playerName"
+      ]
     },
     {
       "id": "docs.ASSEMBLY",
@@ -869,7 +1630,20 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 2834
+      "characters": 5014,
+      "version": "0.1.0-m3-p1",
+      "messageRole": null,
+      "activation": "never",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 0,
+      "orderGroup": "reference",
+      "reorderable": false,
+      "category": "documentation",
+      "contentSha256": "e7a1727d3266946781771727e4c668ad72b693d9bf1725fc8d33c4b74269a876",
+      "placeholders": [
+        "worldWeekday"
+      ]
     },
     {
       "id": "docs.OUTPUT_CONTRACT",
@@ -880,7 +1654,26 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 1834
+      "characters": 4968,
+      "version": "0.1.0-m3-p1",
+      "messageRole": null,
+      "activation": "never",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 0,
+      "orderGroup": "reference",
+      "reorderable": false,
+      "category": "documentation",
+      "contentSha256": "c82d02029d8c497af0f2f27e5e3663f1baeae37dfb5e4621f198e9342947ec8d",
+      "placeholders": [
+        "immediateMemoryTurns",
+        "minNarrativeChars",
+        "npcId",
+        "npcSummaryThreshold",
+        "playerName",
+        "worldClock",
+        "worldWeekday"
+      ]
     },
     {
       "id": "docs.ACCEPTANCE",
@@ -891,7 +1684,18 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 1093
+      "characters": 1547,
+      "version": "0.1.0-m3-p1",
+      "messageRole": null,
+      "activation": "never",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 0,
+      "orderGroup": "reference",
+      "reorderable": false,
+      "category": "documentation",
+      "contentSha256": "42c4a95c69aae787d0908557ee87af4e2bc7ccd57c05d7e2249884c7b47975f3",
+      "placeholders": []
     },
     {
       "id": "examples.story_sample.",
@@ -902,7 +1706,18 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 348
+      "characters": 348,
+      "version": "0.1.0-m3-p1",
+      "messageRole": null,
+      "activation": "never",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 0,
+      "orderGroup": "reference",
+      "reorderable": false,
+      "category": "example",
+      "contentSha256": "e148b6d2461a30cd37ebcb3ad44e5c71da5fa54824b78cebf3be7881eee88e7f",
+      "placeholders": []
     },
     {
       "id": "examples.variables_sample.j",
@@ -913,7 +1728,18 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 890
+      "characters": 890,
+      "version": "0.1.0-m3-p1",
+      "messageRole": null,
+      "activation": "never",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 0,
+      "orderGroup": "reference",
+      "reorderable": false,
+      "category": "example",
+      "contentSha256": "36a08ac7fe4d01d53e4c52555ee9fb1140a2beeeb313f19a73e7a9f77bb7dbf1",
+      "placeholders": []
     },
     {
       "id": "examples.world_sample.j",
@@ -924,7 +1750,320 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 609
+      "characters": 609,
+      "version": "0.1.0-m3-p1",
+      "messageRole": null,
+      "activation": "never",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 0,
+      "orderGroup": "reference",
+      "reorderable": false,
+      "category": "example",
+      "contentSha256": "62200d30ecebd0a865e482bf1c5a0157a26abbc401fc41e188749aeac692e88b",
+      "placeholders": []
+    },
+    {
+      "id": "identity.fusheng",
+      "path": "identity/fusheng.md",
+      "title": "万界叙事官·浮生",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 880,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 0,
+      "orderGroup": "identity",
+      "reorderable": false,
+      "category": "identity",
+      "contentSha256": "10f44e531fdb82aee0a477142fef7ba7dc54d98e27a30ab1aa3af2236f2404a8",
+      "placeholders": [
+        "playerName"
+      ]
+    },
+    {
+      "id": "worldbooks.heijin.worldview",
+      "path": "worldbooks/heijin/01_worldview.md",
+      "title": "黑金王朝·世界观 V2.0",
+      "kind": "prompt",
+      "applicableStages": [
+        "story",
+        "variables",
+        "world"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 2685,
+      "version": "2.0.0",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 10,
+      "orderGroup": "worldbooks",
+      "reorderable": false,
+      "category": "worldbook",
+      "contentSha256": "5c826154def8538373c875245ab2d1f78280a763e87b6aa9118b0496b39490b0",
+      "placeholders": []
+    },
+    {
+      "id": "worldbooks.heijin.modern_underworld",
+      "path": "worldbooks/heijin/02_modern_underworld.md",
+      "title": "现代现实基本逻辑与地下社会生态 V2.0",
+      "kind": "prompt",
+      "applicableStages": [
+        "story",
+        "variables",
+        "world"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 4376,
+      "version": "2.0.0",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 20,
+      "orderGroup": "worldbooks",
+      "reorderable": false,
+      "category": "worldbook",
+      "contentSha256": "9f59b875c57705a2880697c7f071f9a363cf44f2dedace9011d1baf520658c22",
+      "placeholders": []
+    },
+    {
+      "id": "writing.conflict_pacing",
+      "path": "writing/conflict_pacing.md",
+      "title": "现代现实冲突节奏",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 595,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 80,
+      "orderGroup": "narrative_core",
+      "reorderable": true,
+      "category": "narrative_core",
+      "contentSha256": "5b8f7fb8986d897bd77e6225e3657f19c3d5578fe933aac2ca1d514fe526192e",
+      "placeholders": []
+    },
+    {
+      "id": "writing.emotion_guard",
+      "path": "writing/emotion_guard.md",
+      "title": "人物情绪真实性",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 505,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 81,
+      "orderGroup": "narrative_core",
+      "reorderable": true,
+      "category": "narrative_core",
+      "contentSha256": "28524baed67552e7c28a81c5a684f782c3cb349ef80a050f9b2aade5512daf2b",
+      "placeholders": []
+    },
+    {
+      "id": "writing.action_feasibility",
+      "path": "writing/action_feasibility.md",
+      "title": "现实行动可行性",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 516,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 82,
+      "orderGroup": "narrative_core",
+      "reorderable": true,
+      "category": "narrative_core",
+      "contentSha256": "54d1c4ba8a4326391c40a118c92548c4f299d08560140dee62582de8fe1e07a9",
+      "placeholders": []
+    },
+    {
+      "id": "writing.nsfw",
+      "path": "writing/nsfw.md",
+      "title": "成人题材常驻规则（用户手动适配版，非原版逐字移植）",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 3199,
+      "version": "0.1.1-user-adapted",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 250,
+      "orderGroup": "writing",
+      "reorderable": false,
+      "category": "writing",
+      "contentSha256": "7fb4f10a265d3a95a3eb3ac2da1f6ade78fb46698616ce5258f3b57854a7f3ed",
+      "placeholders": []
+    },
+    {
+      "id": "writing.intimacy_boundaries",
+      "path": "writing/intimacy_boundaries.md",
+      "title": "人物亲密与自愿边界（关系发展审阅版）",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 672,
+      "version": "0.1.1-boundary-review",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 251,
+      "orderGroup": "writing",
+      "reorderable": false,
+      "category": "writing",
+      "contentSha256": "ac61c6575a53977767cc203dbd5a26ae117946b22e5a13dd6c990bd8a5d92834",
+      "placeholders": []
+    },
+    {
+      "id": "compatibility.cot_format_ack",
+      "path": "compatibility/cot_format_ack.md",
+      "title": "COT 兼容格式确认模板（P2 待接入）",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 141,
+      "version": "0.1.0-protocol-adaptation",
+      "messageRole": "assistant",
+      "activation": "protocol-compatibility",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 900,
+      "orderGroup": "assistant_tail",
+      "reorderable": false,
+      "category": "compatibility",
+      "contentSha256": "c1a3a940656403975007a864d382ac64018318fc65368ec8d031616752a067ea",
+      "placeholders": [
+        "playerName"
+      ]
+    },
+    {
+      "id": "reference.cot_legacy",
+      "path": "reference/cot_legacy.txt",
+      "title": "上游 COT 原模板（仅参考，禁止注入）",
+      "kind": "reference",
+      "applicableStages": [],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 114,
+      "version": "0.1.0-m3-p1",
+      "messageRole": null,
+      "activation": "never",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 0,
+      "orderGroup": "reference",
+      "reorderable": false,
+      "category": "reference",
+      "contentSha256": "d434543c08a857044b9c3e20fc91ec3f16e28f4decc8673b25740112c00a1e51",
+      "placeholders": []
+    },
+    {
+      "id": "docs.legacy_compilation",
+      "path": "完整提示词库_汇编阅读版.md",
+      "title": "M0 历史汇编阅读版（非运行资源）",
+      "kind": "documentation",
+      "applicableStages": [],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 40430,
+      "version": "0.1.0-m3-p1",
+      "messageRole": null,
+      "activation": "never",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 0,
+      "orderGroup": "reference",
+      "reorderable": false,
+      "category": "documentation",
+      "contentSha256": "f8261874af16a881efeadfc9848f3f13dcff4fb9d041e8a19cce28eeddc2ba8c",
+      "placeholders": [
+        "immediateMemoryTurns",
+        "minNarrativeChars",
+        "npcId",
+        "npcSummaryThreshold",
+        "playerName",
+        "worldClock"
+      ]
     }
   ]
 }
