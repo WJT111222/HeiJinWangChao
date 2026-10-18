@@ -1,0 +1,160 @@
+import { z } from 'zod';
+import { ActorRefSchema, CountSchema, GameTimeSchema, IdSchema, TextSchema, entityTable } from './common';
+import { ProtagonistSchema } from './protagonist/schema';
+import { NpcSchema, SpecialNpcSchema } from './npc/schema';
+import { ImportantItemSchema } from './items/schema';
+import { EconomySchema } from './economy/schema';
+import { OrganizationSchema } from './organizations/schema';
+import { TimelineEntrySchema, WorldEventSchema, WorldTaskSchema } from './events/schema';
+import { MemoryStateSchema } from './memories/schema';
+
+export const LocationSchema = z.strictObject({ id: IdSchema, name: TextSchema, parentId: IdSchema.optional() });
+export const StorySchema = z.strictObject({
+  turnKind: z.enum(['opening', 'regular']), narrative: TextSchema, summary: z.string(),
+  variableGuide: z.array(z.strictObject({
+    group: z.enum(['protagonist', 'npc', 'items', 'economy', 'organization', 'time', 'event']),
+    subjectHint: z.string().optional(), observedFact: TextSchema, textEvidence: z.string().optional(),
+  })), actionOptions: z.array(TextSchema).optional(),
+});
+export const SaveShape = {
+  schemaVersion: z.literal(2), saveId: IdSchema, title: TextSchema,
+  createdAt: GameTimeSchema, updatedAt: GameTimeSchema, revision: CountSchema, turnNumber: CountSchema,
+  worldClock: GameTimeSchema, weatherText: z.string(), environmentText: z.string(),
+  protagonist: ProtagonistSchema, initialCompanionId: IdSchema.optional(),
+  npc: entityTable(NpcSchema), items: entityTable(ImportantItemSchema), economy: EconomySchema,
+  organizations: entityTable(OrganizationSchema), locations: entityTable(LocationSchema),
+  events: entityTable(WorldEventSchema), tasks: entityTable(WorldTaskSchema), memories: MemoryStateSchema,
+  timeline: z.array(TimelineEntrySchema),
+  journal: z.array(z.strictObject({
+    turnId: IdSchema, revision: CountSchema, story: StorySchema, relatedActorRefs: z.array(ActorRefSchema),
+  })),
+  appliedCommands: z.array(z.strictObject({
+    turnId: IdSchema, commandId: IdSchema, fingerprint: TextSchema,
+  })),
+};
+
+export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) => {
+  function check(ok: unknown, message: string) {
+    if (!ok) ctx.addIssue({ code: 'custom', message });
+  }
+  const allIds = [s.protagonist.id];
+  const tables = [s.npc, s.items, s.organizations, s.locations, s.events, s.tasks,
+    s.economy.incomes, s.economy.debts, s.economy.properties, s.economy.vehicles, s.economy.otherAssets];
+  for (const table of tables) allIds.push(...Object.keys(table));
+  check(new Set(allIds).size === allIds.length, '实体 ID 必须在存档内全局唯一');
+  function actor(ref: z.infer<typeof ActorRefSchema>) {
+    check(ref.kind === 'protagonist' ? ref.id === s.protagonist.id
+      : ref.kind === 'npc' ? Object.hasOwn(s.npc, ref.id) : Object.hasOwn(s.organizations, ref.id), '参与者引用不存在');
+  }
+  function location(id?: string) { if (id) check(Object.hasOwn(s.locations, id), '地点引用不存在'); }
+  function timeRange(start: string, end?: string) {
+    if (end) check(Date.parse(end) >= Date.parse(start), '结束时间早于开始时间');
+  }
+  timeRange(s.createdAt, s.updatedAt);
+  location(s.protagonist.locationId);
+  if (s.initialCompanionId) check(s.npc[s.initialCompanionId]?.kind === 'special', '初始同伴必须是特殊 NPC');
+  const identities = Object.values(s.npc).map((npc) => npc.identityKey);
+  check(new Set(identities).size === identities.length, 'NPC 稳定身份重复');
+  for (const node of Object.values(s.locations)) {
+    location(node.parentId);
+    const visited = new Set([node.id]);
+    let parent = node.parentId;
+    while (parent && s.locations[parent]) {
+      if (visited.has(parent)) { check(false, '地点层级存在环'); break; }
+      visited.add(parent); parent = s.locations[parent].parentId;
+    }
+  }
+  for (const npc of Object.values(s.npc)) {
+    location(npc.locationId);
+    if (npc.onScene && npc.locationId) check(npc.locationId === s.protagonist.locationId, '在场 NPC 与主角地点不一致');
+    if (npc.kind === 'special') for (const id of npc.offscreenTaskIds) {
+      check(s.tasks[id]?.actorRef.kind === 'npc' && s.tasks[id]?.actorRef.id === npc.id, 'NPC 任务归属错误');
+    }
+    for (const memory of [...npc.memories, ...(npc.kind === 'special' ? npc.longTermMemories : [])]) {
+      for (const ref of memory.affectedEntityRefs) actor(ref);
+    }
+  }
+  const wear = s.protagonist.currentWear;
+  const equipped = [wear.topItemId, wear.bottomItemId, wear.shoesItemId,
+    ...wear.accessoryItemIds, wear.primaryWeaponItemId, wear.secondaryWeaponItemId].filter((id) => id !== undefined);
+  check(new Set(equipped).size === equipped.length, '同一物品不能重复装备');
+  const slots = [[wear.topItemId, 'top'], [wear.bottomItemId, 'bottom'], [wear.shoesItemId, 'shoes'],
+    ...wear.accessoryItemIds.map((id) => [id, 'accessory']),
+    [wear.primaryWeaponItemId, 'weapon'], [wear.secondaryWeaponItemId, 'weapon']];
+  for (const [id, category] of slots) if (id) {
+    const item = s.items[id];
+    check(item?.category === category && item?.ownerRef?.kind === 'protagonist'
+      && item?.ownerRef?.id === s.protagonist.id, '装备类别或物品归属错误');
+  }
+  if (wear.currentVehicleAssetId) {
+    const vehicle = s.economy.vehicles[wear.currentVehicleAssetId];
+    check(vehicle?.ownerRef.kind === 'protagonist' && vehicle?.ownerRef.id === s.protagonist.id, '载具引用归属错误');
+  }
+  for (const item of Object.values(s.items)) { if (item.ownerRef) actor(item.ownerRef); location(item.locationId); }
+  const assets = [...Object.values(s.economy.properties), ...Object.values(s.economy.vehicles), ...Object.values(s.economy.otherAssets)];
+  for (const asset of assets) {
+    actor(asset.ownerRef);
+    if ('locationId' in asset) location(asset.locationId);
+    if (asset.kind === 'property' && asset.mortgageDebtId) check(Object.hasOwn(s.economy.debts, asset.mortgageDebtId), '房贷不存在');
+  }
+  for (const debt of Object.values(s.economy.debts)) {
+    for (const id of debt.collateralAssetIds) check(assets.some((a) => a.id === id), '抵押资产不存在');
+    if (debt.principal !== null && debt.outstanding !== null) check(debt.outstanding <= debt.principal, '未偿本金超过本金');
+    if (debt.status === 'repaid') check(debt.outstanding === 0, '已还清债务余额必须为零');
+  }
+  for (const income of Object.values(s.economy.incomes)) if (income.status === 'received') {
+    check(income.amount !== null && income.receivedAt && Date.parse(income.receivedAt) <= Date.parse(s.worldClock), '已入账收入缺少实际金额或合法到账时间');
+  }
+  for (const org of Object.values(s.organizations)) {
+    for (const id of org.keyNpcIds) check(Object.hasOwn(s.npc, id), '组织成员不存在');
+    for (const id of org.currentTaskIds) check(s.tasks[id]?.actorRef.kind === 'organization'
+      && s.tasks[id]?.actorRef.id === org.id, '组织任务归属错误');
+  }
+  for (const event of Object.values(s.events)) {
+    location(event.locationId); event.actorRefs.forEach(actor); timeRange(event.startAt, event.estimatedEndAt);
+    check(event.estimatedEndAt || event.resolvedAt || event.completionCondition?.trim(), '事件缺少预计结束时间或完成条件');
+    timeRange(event.startAt, event.resolvedAt);
+    if (event.status === 'resolved') check(event.resolvedAt && event.resolutionText
+      && Date.parse(event.resolvedAt) <= Date.parse(s.worldClock), '已完成事件缺少合法结案时间或结局');
+    for (const id of event.linkedTaskIds) check(s.tasks[id]?.linkedEventId === event.id, '事件关联任务错误');
+  }
+  for (const task of Object.values(s.tasks)) {
+    actor(task.actorRef); location(task.locationId); timeRange(task.startAt, task.dueAt);
+    check(task.dueAt || task.completionCondition?.trim(), '任务缺少截止时间或完成条件');
+    if (task.linkedEventId) check(s.events[task.linkedEventId]?.linkedTaskIds.includes(task.id), '任务关联事件错误');
+  }
+  check(new Set(s.timeline.map((entry) => entry.eventId)).size === s.timeline.length, '历史事件重复归档');
+  for (const entry of s.timeline) {
+    const event = s.events[entry.eventId];
+    check(event?.status === 'resolved' && event.impact === 'major' && event.visibility === 'known', '历史条目必须引用已知重大结案事件');
+    location(entry.locationId); entry.actorRefs.forEach(actor);
+  }
+  for (const id of Object.keys(s.memories.npcSummaries)) check(Object.hasOwn(s.npc, id), '记忆所属 NPC 不存在');
+  for (const memory of [...s.memories.short, ...s.memories.medium, ...s.memories.long, ...Object.values(s.memories.npcSummaries).flat()]) memory.affectedEntityRefs.forEach(actor);
+  check(new Set(s.journal.map((entry) => entry.turnId)).size === s.journal.length, '回合原文重复');
+  check(s.turnNumber === s.journal.length, '已提交回合数与永久原文数量不一致');
+  for (const entry of s.journal) { check(entry.revision <= s.revision, '回合版本超前'); entry.relatedActorRefs.forEach(actor); }
+  check(new Set(s.appliedCommands.map((c) => JSON.stringify([c.turnId, c.commandId]))).size === s.appliedCommands.length, '幂等凭据重复');
+});
+export type GameState = z.infer<typeof GameStateSchema>;
+
+export function createGameState(input: {
+  saveId: string; title: string; worldClock: string;
+  protagonist: z.infer<typeof ProtagonistSchema>;
+  locations: Record<string, z.infer<typeof LocationSchema>>;
+  cash?: number | null; onlineBalance?: number | null;
+  companion?: z.infer<typeof SpecialNpcSchema>;
+}, now = new Date().toISOString()): GameState {
+  return GameStateSchema.parse({
+    schemaVersion: 2, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
+    createdAt: now, updatedAt: now, revision: 0, turnNumber: 0,
+    weatherText: '', environmentText: '', protagonist: input.protagonist,
+    initialCompanionId: input.companion?.id,
+    npc: input.companion ? { [input.companion.id]: input.companion } : {},
+    locations: input.locations, items: {}, organizations: {}, events: {}, tasks: {},
+    economy: { cash: input.cash ?? null, onlineBalance: input.onlineBalance ?? null,
+      incomes: {}, debts: {}, properties: {}, vehicles: {}, otherAssets: {} },
+    memories: { immediateWindowSize: 10, short: [], medium: [], long: [], npcSummaries: {} },
+    timeline: [], journal: [], appliedCommands: [],
+  });
+}
