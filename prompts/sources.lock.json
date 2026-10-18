@@ -1,0 +1,430 @@
+{
+  "version": 1,
+  "baseCommit": "6304d9c",
+  "archives": [
+    {
+      "id": "m3-review",
+      "filename": "黑金王朝_M3_提示词整理审核包_20261018.zip",
+      "sha256": "47912f216b1ac41e756bb10e3c920b0722d33131e724fede0f339bd7cd863431"
+    },
+    {
+      "id": "worldbooks-v2",
+      "filename": "黑金王朝_双世界书_V2.0_审核包.zip",
+      "sha256": "1e08d77497243523a2bbcd41d3df8045eb8c240daa46f8141e7154f5e1bb2d56"
+    }
+  ],
+  "reference": {
+    "repository": "WJT111222/MoRanJiangHu",
+    "commit": "70df74835b969a049c6512a81716eaa0f5591c5a",
+    "license": "MIT",
+    "files": {
+      "prompts/runtime/nsfw.ts": "d5f1b6a2550bd3b3f590105fdb007ca2a0a4032768970031d3e458d7a9ea4f7e",
+      "prompts/runtime/defaults.ts": "6e9ab201d56128064184287811b8fd7ae2f4d313d82f76149789eed4cd2f0a15",
+      "hooks/useGame/promptRuntime.ts": "a36ae81484987a50d19ab4ddf8ce53da33a55688880d848195752dda6d277e2f",
+      "hooks/useGame/mainStoryRequest.ts": "72cdd65f09c959b224f9f219665c272b7d4912238d5c00df4d165c4c6445953f",
+      "hooks/useGame/openingStoryWorkflow.ts": "c6882b51461491392d90c912f913f78b295d5892aa3f309df6d5a046ed3922f9"
+    }
+  },
+  "resources": {
+    "identity/fusheng.md": {
+      "origin": "m3-review",
+      "sourcePath": "prompts/shared/role_fusheng.md",
+      "sourceSha256": "10f44e531fdb82aee0a477142fef7ba7dc54d98e27a30ab1aa3af2236f2404a8",
+      "treatment": "verbatim"
+    },
+    "worldbooks/heijin/01_worldview.md": {
+      "origin": "worldbooks-v2",
+      "sourcePath": "prompts/worldbooks/heijin/01_worldview.md",
+      "sourceSha256": "5c826154def8538373c875245ab2d1f78280a763e87b6aa9118b0496b39490b0",
+      "treatment": "verbatim"
+    },
+    "worldbooks/heijin/02_modern_underworld.md": {
+      "origin": "worldbooks-v2",
+      "sourcePath": "prompts/worldbooks/heijin/02_modern_underworld.md",
+      "sourceSha256": "9f59b875c57705a2880697c7f071f9a363cf44f2dedace9011d1baf520658c22",
+      "treatment": "verbatim"
+    },
+    "shared/02_knowledge.md": {
+      "origin": "m3-review",
+      "sourcePath": "prompts/shared/02_knowledge.md",
+      "sourceSha256": "05cddffcee504689d1f7dba0cfc77c169913114db6a85de3c6fe247d1c39047a",
+      "treatment": "verbatim"
+    },
+    "shared/03_time_events.md": {
+      "origin": "m3-review",
+      "sourcePath": "prompts/shared/03_time_events.md",
+      "sourceSha256": "1ac29fe5cd27ccfb15f6655c3a9e18b3706c89a48b4ab7fc78ad770931763eb9",
+      "treatment": "verbatim"
+    },
+    "writing/natural_prose.md": {
+      "origin": "m3-review",
+      "sourcePath": "prompts/writing/natural_prose.md",
+      "sourceSha256": "9e0a9ef91022ef5a3d85c7bbf1ee624d85bb2b11b31c343188949a128fad14c0",
+      "treatment": "verbatim"
+    },
+    "writing/action_options.md": {
+      "origin": "m3-review",
+      "sourcePath": "prompts/writing/action_options.md",
+      "sourceSha256": "7eda7ecd6ecc972f8dd3cd24d8d0799434ac8b0380562f69b51b8bd461cb8c5e",
+      "treatment": "verbatim"
+    },
+    "writing/conflict_pacing.md": {
+      "origin": "m3-review",
+      "sourcePath": "prompts/writing/conflict_pacing.md",
+      "sourceSha256": "5b8f7fb8986d897bd77e6225e3657f19c3d5578fe933aac2ca1d514fe526192e",
+      "treatment": "verbatim"
+    },
+    "writing/emotion_guard.md": {
+      "origin": "m3-review",
+      "sourcePath": "prompts/writing/emotion_guard.md",
+      "sourceSha256": "28524baed67552e7c28a81c5a684f782c3cb349ef80a050f9b2aade5512daf2b",
+      "treatment": "verbatim"
+    },
+    "writing/action_feasibility.md": {
+      "origin": "m3-review",
+      "sourcePath": "prompts/writing/action_feasibility.md",
+      "sourceSha256": "54d1c4ba8a4326391c40a118c92548c4f299d08560140dee62582de8fe1e07a9",
+      "treatment": "verbatim"
+    },
+    "shared/00_world.md": {
+      "origin": "baseline",
+      "sourceSha256": "a17ab5f0c49d0832d0df70dde44b1c3f23bad3c2c7ee459a0998f9753bf33e59",
+      "treatment": "retired-duplicate",
+      "notes": "已由双世界书覆盖；保留 ID，所有阶段停用，无重复世界观注入。"
+    },
+    "stages/opening/story.md": {
+      "origin": "baseline",
+      "sourceSha256": "7eda8dd41e74dc1b5f7d3390e56c6089369257c82d373675ac2e61ab897649b9",
+      "treatment": "stage-role-only",
+      "replacement": {
+        "from": "你是《黑金王朝》的**开局正文导演**",
+        "to": "本阶段负责《黑金王朝》的**开局正文生成**"
+      }
+    },
+    "stages/regular/story.md": {
+      "origin": "baseline",
+      "sourceSha256": "af46bf07991d6c2837a08432b28a8e8039ae99d6b3922e138f576d4a2d7c7b06",
+      "treatment": "stage-role-only",
+      "replacement": {
+        "from": "你是《黑金王朝》的**普通回合叙事执行者**",
+        "to": "本阶段负责《黑金王朝》的**普通回合正文生成**"
+      }
+    },
+    "variableGroups/npc_ordinary/init.md": {
+      "origin": "m3-review",
+      "sourcePath": "docs/NPC_记忆规则_集成补丁.md",
+      "sourceSha256": "165049e2e36161af1727fa77720e1682261ba5f62be22015a16211ed942cae9f",
+      "baselineSha256": "7295a5f087e38e958279bf6ca6b52c04891d9c56356e990826209bb30fc44873",
+      "treatment": "incremental-npc-patch",
+      "section": "init",
+      "sectionSha256": "2a574d03412412db8cefef6470df7a484d271bc3598bd6828be53d94c22c2aea",
+      "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
+      "baselineBytes": 1007
+    },
+    "variableGroups/npc_ordinary/update.md": {
+      "origin": "m3-review",
+      "sourcePath": "docs/NPC_记忆规则_集成补丁.md",
+      "sourceSha256": "165049e2e36161af1727fa77720e1682261ba5f62be22015a16211ed942cae9f",
+      "baselineSha256": "b308018ae0bb26f39d0c5b2f7c01b26fe619be9595d48377b58ca9ca9053d115",
+      "treatment": "incremental-npc-patch",
+      "section": "update",
+      "sectionSha256": "4553d1806dc1b5a35ec9c016d63b9847c79a381d73d7560029c39df6dd2f488f",
+      "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
+      "baselineBytes": 1032
+    },
+    "variableGroups/npc_ordinary/offscreen.md": {
+      "origin": "m3-review",
+      "sourcePath": "docs/NPC_记忆规则_集成补丁.md",
+      "sourceSha256": "165049e2e36161af1727fa77720e1682261ba5f62be22015a16211ed942cae9f",
+      "baselineSha256": "b39e54e730e91b813afe51a393dfacf85562fef254809b3446d254d751ef82c1",
+      "treatment": "incremental-npc-patch",
+      "section": "offscreen",
+      "sectionSha256": "46abe6d6e38ee8b7433ca313ed4e92c0f9f9474cddd9868a6af4f8bf05f8e80f",
+      "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
+      "baselineBytes": 935
+    },
+    "variableGroups/npc_special/init.md": {
+      "origin": "m3-review",
+      "sourcePath": "docs/NPC_记忆规则_集成补丁.md",
+      "sourceSha256": "165049e2e36161af1727fa77720e1682261ba5f62be22015a16211ed942cae9f",
+      "baselineSha256": "49ee42821b35d66e01a2a258736c545ce22f246be400679a08696ff4b86ae483",
+      "treatment": "incremental-npc-patch",
+      "section": "init",
+      "sectionSha256": "2a574d03412412db8cefef6470df7a484d271bc3598bd6828be53d94c22c2aea",
+      "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
+      "baselineBytes": 1012
+    },
+    "variableGroups/npc_special/update.md": {
+      "origin": "m3-review",
+      "sourcePath": "docs/NPC_记忆规则_集成补丁.md",
+      "sourceSha256": "165049e2e36161af1727fa77720e1682261ba5f62be22015a16211ed942cae9f",
+      "baselineSha256": "362508e5d381b89272c31a9df72d72c4ed50a2d2ef2568f47b34189824dc84ec",
+      "treatment": "incremental-npc-patch",
+      "section": "update",
+      "sectionSha256": "4553d1806dc1b5a35ec9c016d63b9847c79a381d73d7560029c39df6dd2f488f",
+      "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
+      "baselineBytes": 1092
+    },
+    "variableGroups/npc_special/offscreen.md": {
+      "origin": "m3-review",
+      "sourcePath": "docs/NPC_记忆规则_集成补丁.md",
+      "sourceSha256": "165049e2e36161af1727fa77720e1682261ba5f62be22015a16211ed942cae9f",
+      "baselineSha256": "ed97bd1ce1d6bd81db7cce349fa47332f261327cc78eeeda9cd51f90d8d7c1b8",
+      "treatment": "incremental-npc-patch",
+      "section": "offscreen",
+      "sectionSha256": "46abe6d6e38ee8b7433ca313ed4e92c0f9f9474cddd9868a6af4f8bf05f8e80f",
+      "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
+      "baselineBytes": 993
+    },
+    "writing/nsfw.md": {
+      "origin": "reference",
+      "sourcePath": "prompts/runtime/nsfw.ts",
+      "sourceSha256": "d5f1b6a2550bd3b3f590105fdb007ca2a0a4032768970031d3e458d7a9ea4f7e",
+      "treatment": "non-graphic-excerpt",
+      "notes": "只保留逐字非露骨主题/自愿边界节选，未迁入露骨性描写生成指令；移除私密档案/ASD 数值两条。不是完整原版移植。"
+    },
+    "writing/intimacy_boundaries.md": {
+      "origin": "reference",
+      "sourcePath": "prompts/runtime/nsfw.ts",
+      "sourceSha256": "d5f1b6a2550bd3b3f590105fdb007ca2a0a4032768970031d3e458d7a9ea4f7e",
+      "treatment": "non-graphic-excerpt",
+      "notes": "只保留逐字非露骨主题/自愿边界节选，未迁入露骨性描写生成指令；移除私密档案/ASD 数值两条。不是完整原版移植。"
+    },
+    "reference/cot_legacy.txt": {
+      "origin": "reference",
+      "sourcePath": "prompts/runtime/defaults.ts",
+      "symbol": "默认COT伪装历史消息提示词",
+      "sourceSha256": "6e9ab201d56128064184287811b8fd7ae2f4d313d82f76149789eed4cd2f0a15",
+      "fragmentSha256": "d434543c08a857044b9c3e20fc91ec3f16e28f4decc8673b25740112c00a1e51",
+      "treatment": "reference-only",
+      "notes": "仅存原模板；额外 thinking/剧情规划 与现有输出不兼容，永不作为运行模板。"
+    },
+    "compatibility/cot_format_ack.md": {
+      "origin": "reference",
+      "sourcePath": "prompts/runtime/defaults.ts",
+      "sourceSha256": "6e9ab201d56128064184287811b8fd7ae2f4d313d82f76149789eed4cd2f0a15",
+      "treatment": "protocol-adaptation",
+      "notes": "仅保留 assistant 格式确认用途；删除 think/thinking/剧情规划 输出引导，身份为浮生，主角仍动态替换；P2 按协议兼容显式选择。"
+    },
+    "shared/01_agency.md": {
+      "origin": "baseline",
+      "sourceSha256": "0c66f864f0a2943f89e6fe197df992c9e6aecd74b9cd7ad670693b2e3375192f",
+      "treatment": "verbatim"
+    },
+    "shared/04_state_authority.md": {
+      "origin": "baseline",
+      "sourceSha256": "4f79534b7a8980284a8cab25dc4bc63a9a58d9031b9d205e466ccf07fec609ec",
+      "treatment": "verbatim"
+    },
+    "shared/05_context_protocol.md": {
+      "origin": "baseline",
+      "sourceSha256": "be733d3966385c9cef20010f2e69c60917870e92c94eca86c539a040641f770c",
+      "treatment": "verbatim"
+    },
+    "shared/06_story_output.md": {
+      "origin": "baseline",
+      "sourceSha256": "606d0459789198dacf095e61b6efe122803a4af0336f90b9819b86251463eee8",
+      "treatment": "verbatim"
+    },
+    "shared/07_command_output.md": {
+      "origin": "baseline",
+      "sourceSha256": "e81cac2a5104af3afa25039c847793ddf01209c7fd4a3b94e79617d6f9b30482",
+      "treatment": "verbatim"
+    },
+    "shared/08_world_output.md": {
+      "origin": "baseline",
+      "sourceSha256": "ff9d4ebdfa6575ccbd9f3228334688c70220ebd3d16ae425c0bfa33526e5f2da",
+      "treatment": "verbatim"
+    },
+    "stages/opening/variables.md": {
+      "origin": "baseline",
+      "sourceSha256": "b8fa79eb972d24ae744256a657c48d2c42ebf2d3bffd1b873e0a5f0b84ffa530",
+      "treatment": "verbatim"
+    },
+    "stages/opening/world.md": {
+      "origin": "baseline",
+      "sourceSha256": "2b484f46cd74e560c19d4b813ccc04f260395689a0a1034b84276ce4435bc948",
+      "treatment": "verbatim"
+    },
+    "stages/regular/variables.md": {
+      "origin": "baseline",
+      "sourceSha256": "7e4d6e6c59e6159aa84274c00becf48c143750d1b348fbc3acefbe96effdd4af",
+      "treatment": "verbatim"
+    },
+    "stages/regular/world.md": {
+      "origin": "baseline",
+      "sourceSha256": "0d8e6d583fc429cbab272da5a953719aad3168a9e274ede6cb4bf021fd50f0ba",
+      "treatment": "verbatim"
+    },
+    "variableGroups/protagonist/init.md": {
+      "origin": "baseline",
+      "sourceSha256": "6b1637419f178435cf11202a06bb59404d5e7e1aac08d1de9bb396427e60233e",
+      "treatment": "verbatim"
+    },
+    "variableGroups/protagonist/update.md": {
+      "origin": "baseline",
+      "sourceSha256": "c0974899e3fe95d6f5ab1842dfed72a08d7f73ac0b1e3d1b1b4833b127699cd9",
+      "treatment": "verbatim"
+    },
+    "variableGroups/protagonist/offscreen.md": {
+      "origin": "baseline",
+      "sourceSha256": "4f5414dfb5488a061ab8e56056421be1b482420d15429e42ccc23643e462cc88",
+      "treatment": "verbatim"
+    },
+    "variableGroups/items/init.md": {
+      "origin": "baseline",
+      "sourceSha256": "a59afc86db6f05bd21bc7188980fb9f8de856700046023438b0b635559252e56",
+      "treatment": "verbatim"
+    },
+    "variableGroups/items/update.md": {
+      "origin": "baseline",
+      "sourceSha256": "20220e10ad5f04a519290a0513bc73f34b22846b5ef3b03a34193ed81e17317a",
+      "treatment": "verbatim"
+    },
+    "variableGroups/items/offscreen.md": {
+      "origin": "baseline",
+      "sourceSha256": "5d006e86c18f1725671d8475870b99cdaf98ddaedfbd0a2b0704ff99fd133a5a",
+      "treatment": "verbatim"
+    },
+    "variableGroups/economy/init.md": {
+      "origin": "baseline",
+      "sourceSha256": "0ffc5e603b45da886c9ed4b1e27f77319e4fbfb406db5454c9626dbad6fc2f53",
+      "treatment": "verbatim"
+    },
+    "variableGroups/economy/update.md": {
+      "origin": "baseline",
+      "sourceSha256": "823db7e82689a24c5b5acf6e47fa43fc4aee2ab67eedc1eb3a80edb6446edee4",
+      "treatment": "verbatim"
+    },
+    "variableGroups/economy/offscreen.md": {
+      "origin": "baseline",
+      "sourceSha256": "594ce4c6260dbbd77b7349f6b90af96b29da72db33c3ad0b352490c72a12107e",
+      "treatment": "verbatim"
+    },
+    "variableGroups/org_gang/init.md": {
+      "origin": "baseline",
+      "sourceSha256": "2cea435019da283fd7338f56947f72aefd3a34da66bfe0cc5245f95f32c590ac",
+      "treatment": "verbatim"
+    },
+    "variableGroups/org_gang/update.md": {
+      "origin": "baseline",
+      "sourceSha256": "3112bf562fde8608478759c7dad76ab49e3a7d3b966d80f05bf031296ecec629",
+      "treatment": "verbatim"
+    },
+    "variableGroups/org_gang/offscreen.md": {
+      "origin": "baseline",
+      "sourceSha256": "07de8c715b0e0bc9fa0a31c0ba22404bde05cb95b4704bdc97d78bcd008e2d02",
+      "treatment": "verbatim"
+    },
+    "variableGroups/org_government/init.md": {
+      "origin": "baseline",
+      "sourceSha256": "48c7488dcce2a15662a53959e4c6042e84446e45026756b8de10042634d9c3eb",
+      "treatment": "verbatim"
+    },
+    "variableGroups/org_government/update.md": {
+      "origin": "baseline",
+      "sourceSha256": "0c87a041c535fd7608c0f1f04a31abcd723c35c78530293199909b69a11a7431",
+      "treatment": "verbatim"
+    },
+    "variableGroups/org_government/offscreen.md": {
+      "origin": "baseline",
+      "sourceSha256": "5aaf1ec5718f359074d24a2036e046a0ce9fc68de4a10388e062c7cf1079be8a",
+      "treatment": "verbatim"
+    },
+    "variableGroups/org_civil/init.md": {
+      "origin": "baseline",
+      "sourceSha256": "f05622cd8905804ab74cb43f28c1f0616188db5dec7073c3c4bf9e8cee7b01fe",
+      "treatment": "verbatim"
+    },
+    "variableGroups/org_civil/update.md": {
+      "origin": "baseline",
+      "sourceSha256": "8097eb90ac6c34bb0a85535f28183fdf9c96d4237012842ca008415a5462f6f1",
+      "treatment": "verbatim"
+    },
+    "variableGroups/org_civil/offscreen.md": {
+      "origin": "baseline",
+      "sourceSha256": "f59b95a561a10b6a0ff61e23b85298e4533b98937ff5f588e1cfb511e8aa233c",
+      "treatment": "verbatim"
+    },
+    "variableGroups/org_business/init.md": {
+      "origin": "baseline",
+      "sourceSha256": "2bedd9dcc03d9233b5109f845679b6a14f7acca6d4de0505a2a5ec3390f796cf",
+      "treatment": "verbatim"
+    },
+    "variableGroups/org_business/update.md": {
+      "origin": "baseline",
+      "sourceSha256": "e5c3837b70eaa6a3bba4752471bdd41b3f8538c066a57fc4e5d00d6d317d7786",
+      "treatment": "verbatim"
+    },
+    "variableGroups/org_business/offscreen.md": {
+      "origin": "baseline",
+      "sourceSha256": "329a7dd071af7aad7c87e9ad523cf8cf80eb45e41351ff1bc025a347e8001244",
+      "treatment": "verbatim"
+    },
+    "writing/perspective_first.md": {
+      "origin": "baseline",
+      "sourceSha256": "d3cc26678d0c4c268c80490df812de8e5ab878308e7000df00a4a21c1bda1616",
+      "treatment": "verbatim"
+    },
+    "writing/perspective_second.md": {
+      "origin": "baseline",
+      "sourceSha256": "b248dfd5bbe883a05bd5da767c66ea40c2a28a108155df039d9699fef6917a4f",
+      "treatment": "verbatim"
+    },
+    "writing/perspective_third.md": {
+      "origin": "baseline",
+      "sourceSha256": "f202746ba812e4fc3bbfeabc03c7fb1de67ef0589d464933a8f5f42d036ab7c5",
+      "treatment": "verbatim"
+    },
+    "writing/style_general.md": {
+      "origin": "baseline",
+      "sourceSha256": "f76e9abf8313663a921ea7aaccf1bc84cf724ab40cb7318a9ea08aceb21c6ed1",
+      "treatment": "verbatim"
+    },
+    "writing/min_length.md": {
+      "origin": "baseline",
+      "sourceSha256": "2fa17dbc24358bd3fd739d8c5db6dc43b7bc24972d05648076ac45ea12a794d4",
+      "treatment": "verbatim"
+    },
+    "writing/no_control.md": {
+      "origin": "baseline",
+      "sourceSha256": "6545d6fc3907838bda3f1483401981555f978ae28fa7d9b879b1d1d8016da6f6",
+      "treatment": "verbatim"
+    },
+    "writing/real_world.md": {
+      "origin": "baseline",
+      "sourceSha256": "ca8943e8729aff6f7747e166424b4883bb7f455607847edf0cd5faeb25301e60",
+      "treatment": "verbatim"
+    },
+    "memory/short_to_medium.md": {
+      "origin": "baseline",
+      "sourceSha256": "a8392d995585266fe7c92463af02328392e760671776ed85d5700d7557e8c27a",
+      "treatment": "verbatim"
+    },
+    "memory/medium_to_long.md": {
+      "origin": "baseline",
+      "sourceSha256": "24d209bf74984a1898a30d8f9dcce32eede6884afbcc8cad3832b8ff0eaf68d2",
+      "treatment": "verbatim"
+    },
+    "memory/npc_summarize.md": {
+      "origin": "baseline",
+      "sourceSha256": "acbbbddc2a6c1cd857ffb14f9582684e1b91d12d8eef6be91578f627db12b787",
+      "treatment": "verbatim"
+    },
+    "memory/recall_select.md": {
+      "origin": "baseline",
+      "sourceSha256": "fa5662846a6142f1b72b4509552b65935312f090966320d9c9ea24c0c223e64b",
+      "treatment": "verbatim"
+    },
+    "memory/timeline_entry.md": {
+      "origin": "baseline",
+      "sourceSha256": "403d87160d791d8ea9d50c597e09ba92867b949095eff157b491fc9140953a90",
+      "treatment": "verbatim"
+    },
+    "shared/09_dialogue_labels.md": {
+      "origin": "baseline",
+      "sourceSha256": "305d289bc786fdbfc50d5a29fb553c9768feb967eec06c3b308c772fc4d38dfb",
+      "treatment": "verbatim"
+    }
+  }
+}
