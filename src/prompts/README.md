@@ -6,4 +6,4 @@ M3-P1：`manifest.ts` 使用 Zod 校验根目录 `prompts/manifest.json` 的元�
 
 `npm run prompts:check` 仅检查文件、来源、元数据及六套静态配置的作用域。显式修改文本后，先审核原文与来源，再用 `npm run prompts:refresh` 刷新字符数/hash/占位符元数据；测试不会自动修复漂移。
 
-原版露骨 NSFW 生成指令未迁入，当前常驻资源仅为标注的非露骨节选；见根目录 `M3-P1-DEVELOPMENT.md` 的未完成项。NPC 私密档案/名器录仅在 manifest.futureExtensions 记录设计入口，没有运行模块。
+用户已在 690d01d 手动补充成人题材适配正文，本轮完整保留并同步注册/来源元数据；该资源不是旧版未经修改的全文逐字移植，后者仍为 not-completed。NSFW 与独立亲密边界各登记一次、常驻正文、无开关。见根目录 `M3-P1-DEVELOPMENT.md` 的验收边界。NPC 私密档案/名器录仅在 manifest.futureExtensions 记录设计入口，没有运行模块。

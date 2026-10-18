@@ -177,11 +177,21 @@
       "baselineBytes": 993
     },
     "writing/nsfw.md": {
-      "origin": "reference",
-      "sourcePath": "prompts/runtime/nsfw.ts",
-      "sourceSha256": "d5f1b6a2550bd3b3f590105fdb007ca2a0a4032768970031d3e458d7a9ea4f7e",
-      "treatment": "non-graphic-excerpt",
-      "notes": "只保留逐字非露骨主题/自愿边界节选，未迁入露骨性描写生成指令；移除私密档案/ASD 数值两条。不是完整原版移植。"
+      "origin": "user",
+      "repository": "WJT111222/HeiJinWangChao",
+      "sourcePath": "prompts/writing/nsfw.md",
+      "sourceCommit": "690d01dc9f4302c5b42edb2166327553b78eb8fd",
+      "sourceSha256": "7fb4f10a265d3a95a3eb3ac2da1f6ade78fb46698616ce5258f3b57854a7f3ed",
+      "sourceGitBlob": "1fefe07d9ab5ba3975b63d33d9378682a4cfb272",
+      "treatment": "user-adapted",
+      "notes": "用户通过 GitHub 网页手动整理并提交的成人题材适配版本。本轮完整保留该提交正文，仅同步注册元数据和说明；不是参考仓库原始源码的未经修改全文逐字复制。独立亲密边界仍只在自身模块登记一次，不拼接或合并。",
+      "upstreamReference": {
+        "repository": "WJT111222/MoRanJiangHu",
+        "commit": "70df74835b969a049c6512a81716eaa0f5591c5a",
+        "path": "prompts/runtime/nsfw.ts",
+        "sourceSha256": "d5f1b6a2550bd3b3f590105fdb007ca2a0a4032768970031d3e458d7a9ea4f7e",
+        "relation": "historical-reference-not-verbatim-source"
+      }
     },
     "writing/intimacy_boundaries.md": {
       "origin": "reference",

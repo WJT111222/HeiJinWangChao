@@ -494,3 +494,55 @@ describe('M3-P1 审阅修订与 P2 协议差异记录', () => {
     expect(WorldResultSchema.safeParse({ ...world, futureEvents: [event] }).success).toBe(false);
   });
 });
+
+describe('用户手动成人题材资源同步', () => {
+  it('保留用户提交的完整文件，以当前仓库用户适配版记录来源和 hash', () => {
+    const resource = moduleById('writing.nsfw');
+    const provenance = sources.resources['writing/nsfw.md'];
+    const bytes = readFileSync(resolve(root, resource.path));
+    expect(provenance).toMatchObject({
+      origin: 'user',
+      repository: 'WJT111222/HeiJinWangChao',
+      sourcePath: 'prompts/writing/nsfw.md',
+      sourceCommit: '690d01dc9f4302c5b42edb2166327553b78eb8fd',
+      sourceGitBlob: '1fefe07d9ab5ba3975b63d33d9378682a4cfb272',
+      treatment: 'user-adapted',
+    });
+    expect(sha(bytes)).toBe(provenance.sourceSha256);
+    expect(resource.contentSha256).toBe(provenance.sourceSha256);
+    expect(resource.characters).toBe(Array.from(bytes.toString('utf8')).length);
+    expect(resource.version).toBe('0.1.1-user-adapted');
+    expect(resource.title).toContain('用户手动适配版');
+    expect(resource.title).not.toContain('非露骨节选');
+    expect(provenance.upstreamReference).toMatchObject({
+      repository: 'WJT111222/MoRanJiangHu',
+      relation: 'historical-reference-not-verbatim-source',
+    });
+    expect(promptManifest.contentGaps).toContainEqual(
+      expect.objectContaining({ id: 'nsfw-verbatim-import', status: 'not-completed' }),
+    );
+  });
+  it('两种正文模式的静态登记各含一个独立 NSFW 和亲密边界，不拼接重复全文', () => {
+    const ids = ['writing.nsfw', 'writing.intimacy_boundaries'];
+    for (const mode of ['opening', 'regular'] as const) {
+      const declared = promptManifest.modules.filter(
+        (resource) => resource.applicableStages.includes('story') && resource.modes.includes(mode),
+      );
+      for (const id of ids) {
+        expect(declared.filter((resource) => resource.id === id)).toHaveLength(1);
+        expect(moduleById(id)).toMatchObject({
+          activation: 'always',
+          permanent: true,
+          configurable: false,
+          toggle: null,
+        });
+      }
+    }
+    const nsfw = text(moduleById(ids[0]).path);
+    const boundaries = text(moduleById(ids[1]).path);
+    expect(nsfw.includes(boundaries.trim())).toBe(false);
+    expect(boundaries.includes(nsfw.trim())).toBe(false);
+    expect(ids.map((id) => moduleById(id).defaultOrder)).toEqual([250, 251]);
+    expect(new Set(ids.map((id) => moduleById(id).path)).size).toBe(2);
+  });
+});
