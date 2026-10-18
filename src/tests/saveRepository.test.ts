@@ -1,12 +1,36 @@
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SaveRepository } from '../services/storage/saveRepository';
-import { createTurnDraft, rerollStory } from '../domain/drafts';
+import { TurnDraftSchema, createTurnDraft, rerollStory, startStageAttempt } from '../domain/drafts';
+import type { TurnDraft } from '../domain/drafts';
 import { game, purchase, story } from './fixtures/game';
 
 let factory: IDBFactory;
 let repository: SaveRepository;
 const name = 'm1-test';
+
+function variableCandidate(draft: TurnDraft) {
+  return { storyRevision: draft.storyRevision, candidateRevision: 1,
+    requestRevision: draft.stageRequestRevisions.variables, validation: 'validated' as const,
+    result: { commands: [purchase()], rejectedSuggestions: [], unresolved: [] } };
+}
+function worldCandidate(draft: TurnDraft) {
+  return { storyRevision: draft.storyRevision, candidateRevision: 1,
+    requestRevision: draft.stageRequestRevisions.world, basedOnVariableRevision: draft.variables?.candidateRevision,
+    validation: 'validated' as const,
+    result: { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] } };
+}
+async function storedCandidates(): Promise<TurnDraft> {
+  const initial = createTurnDraft('save-a', 0, 'turn-a', 'regular', '输入');
+  await repository.saveDraft(initial, null);
+  const selected = rerollStory(initial, story); await repository.saveDraft(selected, 0);
+  const variables = { ...selected, draftRevision: 2, variables: variableCandidate(selected),
+    stageStatus: { ...selected.stageStatus, variables: 'ready' as const } };
+  await repository.saveDraft(variables, 1);
+  const complete = { ...variables, draftRevision: 3, world: worldCandidate(variables),
+    stageStatus: { ...variables.stageStatus, world: 'ready' as const } };
+  return repository.saveDraft(complete, 2);
+}
 
 // 仅供测试模拟磁盘损坏/历史版本，生产代码没有裸数据覆盖入口。
 async function rawStore(action: (store: IDBObjectStore) => void): Promise<void> {
@@ -135,13 +159,73 @@ describe('IndexedDB 正式存档', () => {
 });
 
 describe('草稿、候选与失败恢复数据', () => {
+  it('双阶段关闭反复 Roll 后开启补算，正文和正式存档保持不变，关闭重开可恢复新尝试', async () => {
+    const before = await repository.create(game());
+    const initial = createTurnDraft('save-a', 0, 'turn-a', 'regular', '输入', false, false);
+    await repository.saveDraft(initial, null);
+    const first = rerollStory(initial, story); await repository.saveDraft(first, 0);
+    const selected = rerollStory(first, { ...story, narrative: '选定正文' }); await repository.saveDraft(selected, 1);
+    const attempt = startStageAttempt(selected, ['variables', 'world'], { useVariableStage: true, useWorldStage: true });
+    await repository.saveDraft(attempt, 2);
+    const variables = { ...attempt, draftRevision: 4, variables: variableCandidate(attempt),
+      stageStatus: { ...attempt.stageStatus, variables: 'ready' as const } };
+    await repository.saveDraft(variables, 3);
+    const complete = { ...variables, draftRevision: 5, world: worldCandidate(variables),
+      stageStatus: { ...variables.stageStatus, world: 'ready' as const } };
+    await repository.saveDraft(complete, 4);
+    repository.close(); repository = await SaveRepository.open(name, factory);
+    expect(await repository.loadDraft('save-a')).toEqual(complete);
+    expect(complete.story).toEqual(selected.story); expect(complete.storyRevision).toBe(selected.storyRevision);
+    expect(await repository.load('save-a')).toEqual(before);
+  });
+  it('仅补算变量清除旧世界依赖，变量结果写入草稿后不直接扣款', async () => {
+    const before = await repository.create(game());
+    const selected = await storedCandidates();
+    const attempt = startStageAttempt(selected, ['variables'], { useWorldStage: false });
+    await repository.saveDraft(attempt, selected.draftRevision);
+    const result = { ...attempt, draftRevision: attempt.draftRevision + 1, variables: variableCandidate(attempt),
+      stageStatus: { ...attempt.stageStatus, variables: 'ready' as const } };
+    await repository.saveDraft(result, attempt.draftRevision);
+    expect((await repository.loadDraft('save-a'))?.world).toBeUndefined();
+    expect(result.storyRevision).toBe(selected.storyRevision); expect(result.story).toEqual(selected.story);
+    expect(await repository.load('save-a')).toEqual(before);
+  });
+  it('仅补算动态世界复用既有变量候选，采用独立的新开关配置', async () => {
+    const before = await repository.create(game());
+    const selected = await storedCandidates();
+    const attempt = startStageAttempt(selected, ['world'], { useVariableStage: false, useWorldStage: true });
+    await repository.saveDraft(attempt, selected.draftRevision);
+    const result = { ...attempt, draftRevision: attempt.draftRevision + 1, world: worldCandidate(attempt),
+      stageStatus: { ...attempt.stageStatus, world: 'ready' as const } };
+    await repository.saveDraft(result, attempt.draftRevision);
+    expect(result.variables).toEqual(selected.variables); expect(result.storyRevision).toBe(selected.storyRevision);
+    expect(result.useVariableStage).toBe(false); expect(selected.useVariableStage).toBe(true);
+    expect(await repository.load('save-a')).toEqual(before);
+  });
+  it.each(['variables', 'world'] as const)('%s 旧请求迟到时，无论使用旧草稿还是合并到最新草稿都不能覆盖新候选', async (stage) => {
+    await repository.create(game());
+    const selected = await storedCandidates();
+    const first = startStageAttempt(selected, [stage]); await repository.saveDraft(first, selected.draftRevision);
+    const second = startStageAttempt(first, [stage]); await repository.saveDraft(second, first.draftRevision);
+    const fresh = stage === 'variables' ? variableCandidate(second) : worldCandidate(second);
+    const complete = TurnDraftSchema.parse({ ...second, draftRevision: second.draftRevision + 1,
+      [stage]: fresh, stageStatus: { ...second.stageStatus, [stage]: 'ready' } });
+    await repository.saveDraft(complete, second.draftRevision);
+    const late = stage === 'variables' ? variableCandidate(first) : worldCandidate(first);
+    await expect(repository.saveDraft(TurnDraftSchema.parse({ ...first, draftRevision: first.draftRevision + 1,
+      [stage]: late, stageStatus: { ...first.stageStatus, [stage]: 'ready' } }), first.draftRevision))
+      .rejects.toMatchObject({ code: 'DRAFT_CONFLICT' });
+    await expect(repository.saveDraft({ ...complete, draftRevision: complete.draftRevision + 1, [stage]: late }, complete.draftRevision))
+      .rejects.toThrow('过期阶段请求');
+    expect((await repository.loadDraft('save-a'))?.[stage]).toEqual(fresh);
+  });
   it('草稿、候选、失败信息可重开恢复，且完全不改变正式状态', async () => {
     const before = await repository.create(game());
     let draft = createTurnDraft('save-a', 0, 'turn-a', 'regular', '买衣服');
     await repository.saveDraft(draft, null);
     draft = rerollStory(draft, story); await repository.saveDraft(draft, 0);
     draft = { ...draft, draftRevision: 2,
-      variables: { storyRevision: 1, candidateRevision: 1, validation: 'validated', result: { commands: [purchase()], rejectedSuggestions: [], unresolved: [] } },
+      variables: { storyRevision: 1, candidateRevision: 1, requestRevision: 0, validation: 'validated', result: { commands: [purchase()], rejectedSuggestions: [], unresolved: [] } },
       stageStatus: { story: 'ready', variables: 'ready', world: 'failed' },
       failures: [{ stage: 'world', attempt: 3, storyRevision: 1, errorCode: 'TIMEOUT', retryable: true }],
     };
@@ -158,7 +242,7 @@ describe('草稿、候选与失败恢复数据', () => {
     const second = rerollStory(first, { ...story, narrative: '第二版正文' }); await repository.saveDraft(second, 1);
     expect((await repository.loadDraft('save-a'))?.variables).toBeUndefined();
     await expect(repository.saveDraft({ ...first, draftRevision: 2 }, 1)).rejects.toMatchObject({ code: 'DRAFT_CONFLICT' });
-    await expect(repository.saveDraft({ ...second, draftRevision: 3, variables: { storyRevision: 1, candidateRevision: 1, validation: 'validated', result: { commands: [purchase()], rejectedSuggestions: [], unresolved: [] } }, stageStatus: { ...second.stageStatus, variables: 'ready' } }, 2)).rejects.toThrow();
+    await expect(repository.saveDraft({ ...second, draftRevision: 3, variables: { storyRevision: 1, candidateRevision: 1, requestRevision: 0, validation: 'validated', result: { commands: [purchase()], rejectedSuggestions: [], unresolved: [] } }, stageStatus: { ...second.stageStatus, variables: 'ready' } }, 2)).rejects.toThrow();
   });
   it.each([[false, false], [false, true], [true, false]])('运行开关 variables=%s world=%s 被保存，未执行阶段不会产生副作用', async (variables, world) => {
     const before = await repository.create(game());
@@ -173,7 +257,7 @@ describe('草稿、候选与失败恢复数据', () => {
     const initial = createTurnDraft('save-a', 0, 'turn-a', 'regular', '输入', false, true);
     await repository.saveDraft(initial, null);
     const first = rerollStory(initial, story); await repository.saveDraft(first, 0);
-    const preview = { ...first, draftRevision: 2, world: { storyRevision: 1, candidateRevision: 1, validation: 'preview' as const,
+    const preview = { ...first, draftRevision: 2, world: { storyRevision: 1, candidateRevision: 1, requestRevision: 0, validation: 'preview' as const,
       result: { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] } },
       stageStatus: { ...first.stageStatus, world: 'preview' as const } };
     await repository.saveDraft(preview, 1);

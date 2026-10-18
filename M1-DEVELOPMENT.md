@@ -49,9 +49,24 @@ repository.close();
 
 ## 草稿与失败恢复基础
 
-`TurnDraft` 保存 `baseSaveRevision`、独立 `draftRevision`、`storyRevision`、回合种类、原始输入、两个运行开关快照、正文、变量候选、世界候选、阶段状态和带尝试编号/错误码的失败记录。
+`TurnDraft` 保存 `baseSaveRevision`、独立 `draftRevision`、`storyRevision`、回合种类、原始输入、两个运行开关快照、正文、变量候选、世界候选、阶段状态和带尝试编号/错误码的失败记录。执行尝试另有 `executionRevision`、内部请求阶段清单 `requestedStages` 和各阶段的 `stageRequestRevisions`；这些是版本与来源元数据，不是新增玩家设置。
 
-候选绑定正文版本；世界候选额外绑定变量候选版本。`rerollStory` 创建新正文版本并清除旧变量/世界候选，保留输入及失败历史。改变变量候选时必须清除世界候选。关闭阶段只可标记 skipped；缺少已验证变量时世界结果只可保存为 preview。草稿写入采用自身版本比较，并要求基础正式版本仍有效，拒绝迟到响应和双页面覆盖。过期草稿可读取作恢复检查，但不能继续写入；`deleteDraft` 显式丢弃草稿。
+候选绑定正文版本和所属阶段的 `requestRevision`；世界候选额外绑定变量候选版本。`rerollStory` 创建新正文版本并清除旧变量/世界候选，保留输入及失败历史。改变变量候选时必须清除世界候选。缺少已验证变量时世界结果只可保存为 preview。草稿写入采用自身版本比较，并要求基础正式版本仍有效，拒绝迟到响应和双页面覆盖。过期草稿可读取作恢复检查，但不能继续写入；`deleteDraft` 显式丢弃草稿。
+
+按技术计划 5.1、5.3、5.4 和游戏设计规范 5.3，开关只在**同次执行尝试**内冻结。玩家显式补算时调用 `startStageAttempt(draft, stages, config)`，持久化新尝试后再开始请求；正文、`storyRevision`、输入、基础正式版本和失败历史均保留。`stages` 表示本次“重新加载变量/世界”操作所请求的阶段，不是额外的玩家配置项。新的开关配置独立保存，不修改旧请求使用的快照。
+
+仅补算变量时清除旧变量及依赖它的世界候选，并更新请求版本；仅补算世界时可复用未变化的已验证变量候选，不强制重算变量。关闭阶段禁止本次新请求；没有可复用结果时标记 skipped，已有且未失效的已验证结果可以保留 ready 供依赖校验。保留旧候选不代表本次执行了该阶段，也不自动应用候选命令。
+
+响应必须携带**发起请求时捕获**的正文版本、阶段请求版本及变量依赖版本；不能在回写时将这些字段换成最新值。`saveDraft` 同时校验草稿 CAS 和响应来源：旧草稿直接写入会冲突；即使先读取最新草稿再合并旧响应，过期 `requestRevision` 也会被拒绝。新尝试只可按明确阶段重置依赖，不能夹带正文变化或新候选。旧版草稿缺少新增字段时默认版本 0，原有正文及候选保持不变；第一次补算即获得新的请求版本。
+
+```ts
+// 两阶段关闭、反复 Roll 后，保留选定正文重新开启。
+const attempt = startStageAttempt(selected, ['variables', 'world'], {
+  useVariableStage: true, useWorldStage: true,
+});
+await repository.saveDraft(attempt, selected.draftRevision);
+// 后续阶段结果绑定 attempt.stageRequestRevisions 对应值，只保存为候选。
+```
 
 本阶段没有候选自动执行或转正式状态接口，没有自动重试、阶段编排、正文生成或完整回合提交。后续 M4 应在此基础上补充权限/证据校验、固定事实命令 ID、完整事务提交与原文/摘要同步，而不是直接把模型 JSON 当成可执行命令。
 
@@ -67,7 +82,7 @@ repository.close();
 
 自动测试覆盖用户要求的 12 类场景，并补充多连接并发、写入后中止、跨 store 删除失败回滚、候选依赖失效、来源版本、坏档保留、未知余额、四类组织边界及时间合法性。另使用 Chromium 原生 IndexedDB 验证 CRUD、多存档隔离、并发重放、整批失败回滚、草稿隔离及关闭重开恢复。
 
-本次结果：Node.js 24.19.0 / npm 11.9.0；锁文件 `npm ci` 安装成功；`npm run check` 全部通过（4 个测试文件、74/74 测试、ESLint 零警告、TypeScript 类型检查、Vite 生产构建）。Chromium 原生 IndexedDB 检查通过；69 个正式文档/提示词文件 SHA-256 一致，`git diff --check` 通过。
+本次结果：Node.js 24.19.0 / npm 11.9.0；锁文件 `npm ci` 安装成功。补算修复后 `npm run check` 全部通过（4 个测试文件、88/88 测试、ESLint 零警告、TypeScript 类型检查、Vite 生产构建）。新增 14 项测试覆盖双关闭后开启、仅补算变量、仅补算世界、原尝试配置不变、旧响应直接/合并回写拒绝、依赖失效、旧版草稿及持久化恢复；补算及候选写入均不改变正式状态。原 M1 的 Chromium 原生 IndexedDB 检查通过；69 个正式文档/提示词文件 SHA-256 一致，`git diff --check` 通过。
 
 新增：`src/domain/common.ts`、`state.ts`、`commands.ts`、`drafts.ts`，各领域 `schema.ts`，`src/services/storage/{saveRepository,migrations}.ts`，测试 `domain.test.ts`、`drafts.test.ts`、`saveRepository.test.ts` 和 `fixtures/game.ts`，以及本文。
 
