@@ -88,7 +88,7 @@ function publicNpc(state: GameState, id: string, archive?: CompanionProfile) {
     appearance: person.appearance ?? authored?.profile.appearance,
     temperament: person.temperament ?? authored?.profile.temperament,
     // 叙事人物反应的参考，不把数值当作主角已知事实；初始同伴仍无已确认好感值。
-    affinity: id === state.initialCompanionId ? null : person.affinity,
+    affinity: id === state.initialCompanionId && !person.affinityConfirmed ? null : person.affinity,
     relationshipText: knownRelationship ?? authored?.relationshipText,
     relationshipSource: knownRelationship
       ? 'player_known_memory'
@@ -188,6 +188,15 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
   }
   if (stage === 'variables')
     return {
+      TURN_CONTEXT: {
+        turnId: draft!.turnId,
+        turnKind: draft!.turnKind,
+        baseSaveRevision: draft!.baseSaveRevision,
+        storyRevision: draft!.storyRevision,
+        executionRevision: draft!.executionRevision,
+        requestRevision: draft!.stageRequestRevisions.variables,
+      },
+      SELECTED_VARIABLE_DOMAINS: input.domains ?? [],
       SAVE_STATE: state,
       STORY_RESULT: draft!.story,
       VARIABLE_GUIDE: draft!.story!.variableGuide,

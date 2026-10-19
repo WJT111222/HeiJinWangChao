@@ -235,7 +235,7 @@ export function App() {
         <nav>
           <button onClick={() => navigate()}>游戏首页</button>
           <button onClick={() => setSettingsOpen(true)}>设置</button>
-          <span className="version">V0.1 · M4-P1</span>
+          <span className="version">V0.1 · M4-P2</span>
         </nav>
       </header>
       {error && (
@@ -334,7 +334,7 @@ export function App() {
             </div>
             <div className="home-footnote">
               <span>四座城市 · 自由职业 · 开放人生</span>
-              <span>正文生成已开放 · 正式回合结算开发中</span>
+              <span>正文与变量候选已开放 · 正式回合结算开发中</span>
             </div>
           </section>
           <section className="save-library" aria-label="已有存档">

@@ -2,11 +2,12 @@ import { StorySchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
 import { VariableResultSchema, WorldResultSchema } from '../../domain/drafts';
 import type { TurnDraft } from '../../domain/drafts';
-import { commitCommands } from '../../domain/commands';
+import { commitCommands, fingerprint } from '../../domain/commands';
 import type { DomainCommand } from '../../domain/commands';
 import { AiError } from '../ai/errors';
 import { worldTypes } from './commandCatalog';
 import type { Settings } from '../../ui/settings/model';
+import { economicAmount, factEvidence, variablePermission, completedPayment } from './evidence';
 
 function json(text: string): unknown {
   try {
@@ -49,16 +50,7 @@ export function parseStory(text: string, mode: 'opening' | 'regular', settings: 
   return parsed.data;
 }
 export function checkMoneyEvidence(command: DomainCommand) {
-  const amount =
-    command.type === 'PurchaseItem' || command.type === 'PurchaseVehicle'
-      ? command.price
-      : command.type === 'TransferFunds' || command.type === 'RepayDebt'
-        ? command.amount
-        : command.type === 'ReceiveIncome'
-          ? command.income.amount
-          : command.type === 'Borrow'
-            ? command.debt.principal
-            : undefined;
+  const amount = economicAmount(command);
   const matches = [...command.evidence.matchAll(/(\d+(?:\.\d{1,2})?)\s*(元|分)/g)];
   // 只对一处明确货币证据比较；复杂报价/多金额不臆测事实对应关系。
   if (amount === undefined || matches.length !== 1) return;
@@ -86,9 +78,29 @@ function simulate(state: GameState, turnId: string, commands: DomainCommand[]) {
 export function parseVariables(text: string, state: GameState, draft: TurnDraft) {
   const checked = VariableResultSchema.safeParse(json(text));
   if (!checked.success || !draft.story) throw new AiError('invalid_output');
+  const facts = checked.data.commands.map((command) => fingerprint({ ...command, commandId: '' }));
+  if (new Set(facts).size !== facts.length) throw new AiError('invalid_output');
+  const permissionState = {
+    ...state,
+    npc: {
+      ...state.npc,
+      ...Object.fromEntries(
+        checked.data.commands.flatMap((command) =>
+          command.type === 'CreateNpc' ? [[command.npc.id, command.npc]] : [],
+        ),
+      ),
+    },
+  };
+  for (const command of checked.data.commands)
+    if (command.type === 'UpdateNpc' && command.changes.onScene === true) {
+      const person = permissionState.npc[command.npcId];
+      if (person) permissionState.npc[command.npcId] = { ...person, onScene: true };
+    }
   for (const command of checked.data.commands) {
     evidenceCheck(command, draft.story.narrative);
-    if (command.type === 'CreateNpc' && !command.npc.onScene) throw new AiError('permission');
+    factEvidence(command, draft.story.narrative);
+    completedPayment(command);
+    variablePermission(command, permissionState, draft);
   }
   simulate(state, draft.turnId, checked.data.commands);
   return checked.data;

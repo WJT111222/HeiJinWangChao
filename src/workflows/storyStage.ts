@@ -15,6 +15,7 @@ import { runStageRequest } from '../services/ai/runtime';
 import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { StoryStream } from './storyStream';
+import { StageGuard } from './stageGuard';
 
 type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>;
 export interface StoryProgress {
@@ -29,48 +30,23 @@ interface StoryInput {
   companionProfile?: CompanionProfile;
   onProgress?: (progress: StoryProgress) => void;
 }
-// 页面内互斥 + IndexedDB 乐观锁；跨标签页仍由 expectedDraftRevision 仲裁。
-const active = new Map<string, symbol>();
 export class StoryStage {
-  private attempt?: { id: symbol; saveId: string; controller: AbortController; saving: boolean };
+  private guard = new StageGuard();
   constructor(
     private repository: Repository,
     private client = new AiClient(),
   ) {}
 
   cancel() {
-    if (this.attempt?.saving) return false;
-    this.dispose();
-    return true;
+    return this.guard.cancel();
   }
   dispose() {
-    const attempt = this.attempt;
-    if (!attempt) return;
-    this.attempt = undefined;
-    attempt.controller.abort();
-    if (active.get(attempt.saveId) === attempt.id) active.delete(attempt.saveId);
+    this.guard.dispose();
   }
   async generate(input: StoryInput): Promise<TurnDraft> {
     const expected = TurnDraftSchema.parse(input.draft);
-    if (this.attempt || active.has(expected.saveId))
-      throw new DataError('STORY_BUSY', '本存档已有正文请求，请等待或取消。');
-    const attempt = {
-      id: Symbol('story'),
-      saveId: expected.saveId,
-      controller: new AbortController(),
-      saving: false,
-    };
-    this.attempt = attempt;
-    active.set(expected.saveId, attempt.id);
-    const current = () => {
-      if (
-        this.attempt !== attempt ||
-        attempt.controller.signal.aborted ||
-        active.get(expected.saveId) !== attempt.id
-      )
-        throw new AiError('cancelled');
-    };
-    try {
+    return this.guard.run(expected.saveId, async (attempt) => {
+      const current = attempt.check;
       // 在第一个 await 之前快照本次设置；运行开关始终取绑定草稿，不被界面切换重写。
       const settings = SettingsSchema.parse(input.settings);
       const config = AiConfigSchema.parse(input.config);
@@ -105,7 +81,7 @@ export class StoryStage {
         input.vault,
         {
           stream: true,
-          signal: attempt.controller.signal,
+          signal: attempt.signal,
           onDelta: (delta) => {
             current();
             input.onProgress?.({
@@ -140,20 +116,13 @@ export class StoryStage {
         throw new AiError('invalid_output');
       const next = rerollStory(draft, story);
       current();
-      attempt.saving = true;
+      attempt.saving();
       input.onProgress?.({ phase: 'saving', narrative: story.narrative });
       // 网络从不放入 IDB 事务；整份草稿用现有乐观锁原子替换。
-      const saved = await this.repository.saveDraft(
-        next,
-        draft.draftRevision,
-        attempt.controller.signal,
-      );
+      const saved = await this.repository.saveDraft(next, draft.draftRevision, attempt.signal);
       current();
       return saved;
-    } finally {
-      if (this.attempt === attempt) this.attempt = undefined;
-      if (active.get(expected.saveId) === attempt.id) active.delete(expected.saveId);
-    }
+    });
   }
 }
 
@@ -163,7 +132,7 @@ export function storyError(error: unknown): string {
     ['STORY_BUSY', 'DRAFT_CONFLICT', 'REVISION_CONFLICT'].includes(error.code)
   )
     return error.code === 'STORY_BUSY'
-      ? '此存档已有正文请求，请等待或取消。'
+      ? '此存档已有阶段请求，请等待或取消。'
       : '存档或草稿已被其他操作更新，本次结果未保存。请重新读取存档。';
   return safeAiError(error).message;
 }
