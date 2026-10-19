@@ -67,7 +67,7 @@ export const PromptManifestSchema = z
     authoredAt: z.string(),
     status: z.string().min(1),
     schemaVersion: z.literal(2),
-    runtimeImplemented: z.literal(false),
+    runtimeImplemented: z.literal(true),
     globalDefaults: z.strictObject({
       immediateMemoryTurns: z.number().int().positive(),
       minNarrativeChars: z.number().int().positive(),

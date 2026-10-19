@@ -1,8 +1,8 @@
 # 运行时组包指南（给Codex）
 
-## 1. 当前仅为静态注册契约
+## 1. 注册契约与实现状态
 
-M3-P1 没有组装器、占位符替换、API 或实际发送记录。下列顺序是 P2 必须实现的配置约束，静态检查不意味着真实加载或模型遵循。
+M3-P1 仅提供静态注册契约。M3-P2 已在 `src/prompts/loader.ts`、`context.ts`、`composer.ts` 与 `src/services/ai/` 实现原文加载、消息组装及独立请求，详见根目录 `M3-P2-DEVELOPMENT.md`。下列顺序继续作为固定约束；原文组装与 Mock 请求通过不代表真实模型一定遵循。
 
 - 主模板每次仅选一个 `stages/{opening|regular}/{story|variables|world}`；开局和普通模式互斥。
 - `activation=always` 表示在所属 stage/mode 内常驻；setting 仅由原七项设置控制；relevant-domain 按相关实体域；memory-task 只选当前维护任务；protocol-compatibility 须显式协议兼容；never 永不注入。

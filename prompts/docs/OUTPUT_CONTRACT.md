@@ -6,7 +6,7 @@
 
 ## 阶段② 变量输出
 返回JSON对象`{commands: DomainCommand[],rejectedSuggestions:{reason,reference}[],unresolved:string[]}`。
-`DomainCommand`包含`commandId,group,type,entityId?,payload,evidence`；命令类型是程序内白名单，正文证据必须可回溯。推荐命令类型见`shared/07_command_output.md`。字段对象与最终数据库结构由代码Schema校验；模型输出不是可信SQL和对象路径。
+`DomainCommand` 是严格的 `type` 判别联合，包含 `commandId/type/evidence` 及类型专属的同级字段，不接受旧 group/entityId/payload 包装。真实 COMMAND_CATALOG 由程序从 DomainCommandSchema 生成，JSON 解析后须通过结构与副本业务验证；候选不直接写库。
 
 ## 阶段③ 世界输出
 返回JSON对象`{worldCommands:DomainCommand[],taskCommands:DomainCommand[],eventCommands:DomainCommand[],futureEvents:WorldEvent[],visibleHooks:{text,revealAfter?}[],timelineCandidates:string[],unresolved:string[]}`。`futureEvents`需要稳定ID、开始时间、status、actorRefs、visibility、impact、sourceTurnIds；其它字段以技术文档定义为准。
@@ -36,7 +36,7 @@
 
 ## M3-P2 待办：实际命令 Schema 与提示词协议对齐
 
-**状态：待实现，不是已有适配器。** 本节依据 `src/domain/commands.ts` 的 DomainCommandSchema、`src/domain/drafts.ts` 的 VariableResultSchema/WorldResultSchema、`src/domain/events/schema.ts` 及 common.ts 核对。P1 保留既有输出段落和正式 Schema，不能宣称模型响应已能直接落库。
+**M3-P2 状态：真实目录、严格解析和副本候选校验已实现。** 下面保留 P1 差异清单供追溯；采用直接对齐真实类型并拒绝旧包装的策略，没有旧别名或任意 payload 展开适配器。正式回合编排和写库仍属 M4。 本节依据 `src/domain/commands.ts` 的 DomainCommandSchema、`src/domain/drafts.ts` 的 VariableResultSchema/WorldResultSchema、`src/domain/events/schema.ts` 及 common.ts 核对。P1 保留既有输出段落和正式 Schema，不能宣称模型响应已能直接落库。
 
 ### 1. 命令对象结构与名称
 
@@ -74,4 +74,17 @@
 
 - [ ] 缺少真实目录时阻止发送或明确失败，不能回退使用旧推荐集合；未知 type、多余字段、错误单位/账户、缺少事件数组等均明确报错。
 - [ ] 覆盖真实命令正例、旧包装/旧名称反例、未支持更新列 unresolved、交易整体语义及阶段越权；不以“重命名成功”冒充语义等价。
-- [ ] 解析/规范化后仍须经过 Schema、业务语义、引用、版本、证据与幂等校验。候选不直接写库，保持 M1 的补算版本依赖及最终原子提交边界。本轮只用确定性 Schema 测试记录差异，不实现解析器、目录生成器或 API 请求。
+- [ ] 解析/规范化后仍须经过 Schema、业务语义、引用、版本、证据与幂等校验。候选不直接写库，保持 M1 的补算版本依赖及最终原子提交边界。M3-P2 用真实命令目录、解析器及 Mock API 请求验证差异；候选不直接写库，后续仍需 M4 正式事务编排。
+
+
+## M3-P2 当前接入边界
+
+上节“ M3-P2 待办”是 P1 的历史差异清单。当前已实现其中的命令目录、严格解析、结构/引用/整批业务验证与阶段权限限制；不支持操作明确拒绝或要求列 unresolved。清单保留用于溯源，不代表新增通用更新命令。M4 正式提交编排和更强的事实语义判断仍待后续实现。
+
+目录直接从现有 Zod 命令 Schema 生成，变量接受十四类真实命令；世界三类数组按实际类型白名单和场外对象进一步限制。未支持类型与旧包装明确失败；不存在的更新应由模型列 unresolved，不做猜测映射。
+
+正文解析严格检查标签顺序、JSON 变量规划、行动选项开关/3～5 条，以及正文移除空白后的 Unicode code point 最低数量（标点和对白标签计数，摘要及其它块不计数）。未知附加顶层标签/内部思考不接受。
+
+金额必须为整数分；证据只有一处明确“元/分”金额时，校验其与命令数值一致。多金额、折扣、税费或缺少数字的证据不能仅靠字符串推断单位/交易真实性，仍需后续更强的事实校验与人工审查，不能声称已自动识别所有语义错误。
+
+候选通过 M1 commitCommands 在脱离仓库的副本上模拟，检查归属、余额、引用、时间和整批回滚，不写 SaveRepository；世界变量 pending 时只读旧快照，不冒充正式结算。正文上下文保守选择现场与公开资料，不把 NPC 后台知识作为玩家可见内容；最终玩家视角仍非本阶段的新玩法设置。
