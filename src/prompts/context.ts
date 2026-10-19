@@ -64,16 +64,44 @@ function publicNpc(state: GameState, id: string, archive?: CompanionProfile) {
   const person = state.npc[id];
   const authored =
     archive && matchesCompanion(state, archive) && archive.npcId === id ? archive : undefined;
+  const knownMemories = [
+    ...person.memories,
+    ...(person.kind === 'special' ? person.longTermMemories : []),
+    ...(state.memories.npcSummaries[id] ?? []),
+    ...[...state.memories.short, ...state.memories.medium, ...state.memories.long].filter(
+      (memory) => memory.affectedEntityRefs.some((ref) => ref.kind === 'npc' && ref.id === id),
+    ),
+  ].filter((memory) => memory.visibility === 'player_known');
+  // 文字字段没有独立可见性标记；只提升与公开记录完整一致的字段，不把否认/传闻中的提及当成确认。
+  const knownText = (value?: string) =>
+    value?.trim() && knownMemories.some((memory) => memory.text.trim() === value.trim())
+      ? value
+      : undefined;
+  const knownRelationship = knownText(person.relationshipText);
   return {
     id,
     name: authored?.name ?? person.name,
     kind: person.kind,
     onScene: person.onScene,
     locationId: person.onScene ? person.locationId : undefined,
+    appearance: person.appearance ?? authored?.profile.appearance,
+    temperament: person.temperament ?? authored?.profile.temperament,
+    // 叙事人物反应的参考，不把数值当作主角已知事实；初始同伴仍无已确认好感值。
+    affinity: id === state.initialCompanionId ? null : person.affinity,
+    relationshipText: knownRelationship ?? authored?.relationshipText,
+    relationshipSource: knownRelationship
+      ? 'player_known_memory'
+      : authored
+        ? 'creation'
+        : undefined,
+    healthText: knownText(person.healthText),
+    lastInteractionAt: person.lastInteractionAt,
     creationFacts: authored,
-    knownMemories: person.memories
-      .filter((memory) => memory.visibility === 'player_known')
-      .map((memory) => ({ text: memory.text, knowledgeSource: memory.knowledgeSource })),
+    knownMemories: knownMemories.map((memory) => ({
+      text: memory.text,
+      knowledgeSource: 'knowledgeSource' in memory ? memory.knowledgeSource : undefined,
+      createdAtGameTime: memory.createdAtGameTime,
+    })),
   };
 }
 export function contextFor(input: ComposeInput): Record<string, unknown> {
