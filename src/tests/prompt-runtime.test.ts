@@ -23,6 +23,8 @@ import { SaveRepository } from '../services/storage/saveRepository';
 import { defaultSettings } from '../ui/settings/model';
 import { game, npc, purchase, event, task, organizations, gameTime } from './fixtures/game';
 import { uiFixture } from './fixtures/ui';
+import { buildCreationState, newCreation } from '../ui/creation/model';
+import { initialCompanionProfile } from '../services/local/companionProfile';
 
 function input(
   stage: 'story' | 'variables' | 'world' | 'memory' = 'story',
@@ -210,6 +212,216 @@ describe('真实资源加载与消息组装', () => {
     expect(world.messages.at(-1)!.content.includes('秘密计划不可见')).toBe(true);
     expect(JSON.stringify(world.modules).includes('不可见')).toBe(false);
     expect(world.audience).toBe('internal');
+  });
+  it('已有普通 NPC 的外貌、性格、好感和有公开依据的关系/健康进入正文，状态不被修改', async () => {
+    const a = input();
+    a.state.npc['npc-a'] = {
+      ...npc(),
+      affinity: 0,
+      appearance: '灰色夹克，戴细框眼镜',
+      temperament: '说话谨慎但待人耐心',
+      healthText: '左手打着石膏',
+      lastInteractionAt: gameTime,
+      memories: [
+        {
+          id: 'public-interaction',
+          text: '工作中相互信任',
+          visibility: 'player_known',
+          sourceTurnIds: [],
+          affectedEntityRefs: [],
+          createdAtGameTime: gameTime,
+          knowledgeSource: '当面交流与观察',
+        },
+        {
+          id: 'public-health',
+          text: '左手打着石膏',
+          visibility: 'player_known',
+          sourceTurnIds: [],
+          affectedEntityRefs: [],
+          createdAtGameTime: gameTime,
+          knowledgeSource: '当面观察',
+        },
+      ],
+    };
+    const before = structuredClone(a.state);
+    const result = await composePrompt(a);
+    expect(result.context.SCENE_NPCS).toEqual([
+      expect.objectContaining({
+        id: 'npc-a',
+        appearance: '灰色夹克，戴细框眼镜',
+        temperament: '说话谨慎但待人耐心',
+        affinity: 0,
+        relationshipText: '工作中相互信任',
+        relationshipSource: 'player_known_memory',
+        healthText: '左手打着石膏',
+        lastInteractionAt: gameTime,
+      }),
+    ]);
+    const sent = result.messages.at(-1)!.content;
+    for (const value of [
+      '灰色夹克，戴细框眼镜',
+      '说话谨慎但待人耐心',
+      '工作中相互信任',
+      '左手打着石膏',
+    ])
+      expect(sent).toContain(value);
+    expect(a.state).toEqual(before);
+  });
+  it('特殊 NPC 的公开长期记忆和人物摘要可供持续叙事，私有目标、知识和隐藏任务不进入正文', async () => {
+    const a = input();
+    const memory = {
+      id: 'public-long',
+      text: '继续合作',
+      visibility: 'player_known' as const,
+      sourceTurnIds: [],
+      affectedEntityRefs: [],
+      createdAtGameTime: gameTime,
+      knowledgeSource: '当面约定',
+    };
+    a.state.npc['npc-a'] = {
+      ...npc(),
+      kind: 'special',
+      appearance: '黑色短发',
+      temperament: '冷静而直接',
+      relationshipText: '继续合作',
+      identity: '秘密身份不可见',
+      background: '秘密经历不可见',
+      detailedBackground: '深入秘密不可见',
+      activeGoals: ['秘密目标不可见'],
+      habits: ['私密习惯不可见'],
+      knownInformation: [{ text: '秘密情报不可见', source: '私下渠道不可见', learnedAt: gameTime }],
+      memories: [
+        { ...memory, id: 'private-short', text: '私人记忆不可见', visibility: 'npc_private' },
+      ],
+      longTermMemories: [
+        memory,
+        { ...memory, id: 'private-long', text: '私有长期记忆不可见', visibility: 'npc_private' },
+      ],
+      offscreenTaskIds: ['hidden-task'],
+    };
+    a.state.tasks['hidden-task'] = {
+      ...task('hidden-task'),
+      actorRef: { kind: 'npc', id: 'npc-a' },
+      goal: '秘密任务不可见',
+    };
+    const summary = {
+      sourceTurnIds: [],
+      affectedEntityRefs: [],
+      createdAtGameTime: gameTime,
+      visibility: 'player_known' as const,
+    };
+    a.state.memories.npcSummaries['npc-a'] = [
+      { ...summary, id: 'public-summary', text: '已知人物摘要：上次会面态度平和' },
+      { ...summary, id: 'internal-summary', text: '内部人物摘要不可见', visibility: 'internal' },
+    ];
+    const result = await composePrompt(a);
+    expect(result.context.SCENE_NPCS).toEqual([
+      expect.objectContaining({
+        temperament: '冷静而直接',
+        affinity: 30,
+        relationshipText: '继续合作',
+        knownMemories: [
+          { text: memory.text, knowledgeSource: '当面约定', createdAtGameTime: gameTime },
+          { text: '已知人物摘要：上次会面态度平和', createdAtGameTime: gameTime },
+        ],
+      }),
+    ]);
+    const sent = result.messages.at(-1)!.content;
+    expect(sent).not.toContain('不可见');
+    expect(sent).not.toContain('hidden-task');
+    expect(JSON.stringify(result.modules)).not.toContain('上次会面态度平和');
+  });
+  it('公开分层记忆必须关联当前 NPC 才能确认状态，私有或无关记忆不能公开关系和病情', async () => {
+    const a = input();
+    a.state.npc['npc-a'] = { ...npc(), healthText: '手腕受伤', relationshipText: '互相信任' };
+    const memory = {
+      id: 'public-state',
+      text: '互相信任',
+      visibility: 'player_known' as const,
+      sourceTurnIds: [],
+      affectedEntityRefs: [{ kind: 'npc' as const, id: 'npc-a' }],
+      createdAtGameTime: gameTime,
+    };
+    a.state.memories.long = [memory, { ...memory, id: 'public-health', text: '手腕受伤' }];
+    expect((await composePrompt(a)).context.SCENE_NPCS).toEqual([
+      expect.objectContaining({ relationshipText: '互相信任', healthText: '手腕受伤' }),
+    ]);
+    a.state.memories.long = [{ ...memory, text: '他们并非互相信任，他也否认手腕受伤' }];
+    const denied = (await composePrompt(a)).context.SCENE_NPCS as Record<string, unknown>[];
+    expect(denied[0].relationshipText).toBeUndefined();
+    expect(denied[0].healthText).toBeUndefined();
+    a.state.memories.long[0].visibility = 'internal';
+    a.state.memories.short = [{ ...memory, id: 'unrelated', affectedEntityRefs: [] }];
+    const hidden = (await composePrompt(a)).context.SCENE_NPCS as Record<string, unknown>[];
+    expect(hidden[0].relationshipText).toBeUndefined();
+    expect(hidden[0].healthText).toBeUndefined();
+    expect(hidden[0].knownMemories).toEqual([]);
+    a.state.npc['npc-a'].onScene = false;
+    expect((await composePrompt(a)).context.SCENE_NPCS).toEqual([]);
+  });
+  it('同伴创角关系跨回合保留并标记来源，占位好感不冒充已确认结果，公开新关系优先', async () => {
+    const form = newCreation();
+    form.person = { name: '林舟', age: '30', gender: '男', appearance: '', personality: '' };
+    form.profession = '教师';
+    form.hasCompanion = true;
+    form.companion = {
+      name: '陈宁',
+      age: '29',
+      identity: '记者',
+      appearance: '短发',
+      personality: '耐心',
+      skills: '采访',
+      background: '旧同事',
+      relationship: '多年朋友',
+    };
+    const state = buildCreationState(form, defaultSettings());
+    const archive = initialCompanionProfile(state)!;
+    state.turnNumber = 1;
+    state.revision = 1;
+    state.journal = [
+      {
+        turnId: 'past-turn',
+        revision: 1,
+        story: { turnKind: 'regular', narrative: '公开会面', summary: '', variableGuide: [] },
+        relatedActorRefs: [],
+      },
+    ];
+    state.npc.companion.relationshipText = '内部立场不可见';
+    state.npc.companion.onScene = true;
+    const a = { ...input(), state, draft: undefined, companionProfile: archive };
+    const before = await composePrompt(a);
+    expect(before.context.SCENE_NPCS).toEqual([
+      expect.objectContaining({
+        appearance: '短发',
+        temperament: '耐心',
+        affinity: null,
+        relationshipText: '多年朋友',
+        relationshipSource: 'creation',
+      }),
+    ]);
+    expect(before.messages.at(-1)!.content).not.toContain('内部立场不可见');
+    expect(
+      (await composePrompt({ ...a, companionProfile: { ...archive, saveId: 'another-save' } }))
+        .context.SCENE_NPCS,
+    ).toEqual([expect.objectContaining({ relationshipText: undefined })]);
+    state.npc.companion.relationshipText = '已经明确和解';
+    state.npc.companion.memories = [
+      {
+        id: 'public-reconciliation',
+        text: '已经明确和解',
+        visibility: 'player_known',
+        sourceTurnIds: ['past-turn'],
+        affectedEntityRefs: [],
+        createdAtGameTime: state.worldClock,
+        knowledgeSource: '当面交谈',
+      },
+    ];
+    expect((await composePrompt(a)).context.SCENE_NPCS).toEqual([
+      expect.objectContaining({
+        relationshipText: '已经明确和解',
+        relationshipSource: 'player_known_memory',
+      }),
+    ]);
   });
   it('记忆任务只选一个，NPC 参数缺失或残留占位符阻止发送', async () => {
     const a = input('memory');
