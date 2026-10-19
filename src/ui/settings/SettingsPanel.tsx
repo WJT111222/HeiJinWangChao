@@ -1,14 +1,23 @@
-import { useState } from 'react';
+import type { SaveRepository } from '../../services/storage/saveRepository';
+import { lazy, Suspense, useState } from 'react';
 import { AiConnections } from './AiConnections';
 import { SettingsSchema } from './model';
 import type { Settings } from './model';
 
-const tabs = ['AI 连接', '提示词', '记忆', '运行'] as const;
+const PromptInspector = lazy(() =>
+  import('./PromptInspector').then((module) => ({ default: module.PromptInspector })),
+);
+
+const tabs = ['AI 连接', '提示词', '记忆', '运行', '提示词管理'] as const;
 export function SettingsPanel({
   settings,
   onSave,
+  repository,
+  activeSaveId,
 }: {
   settings: Settings;
+  repository?: SaveRepository;
+  activeSaveId?: string;
   onSave: (settings: Settings) => void;
 }) {
   const [tab, setTab] = useState<(typeof tabs)[number]>('AI 连接');
@@ -32,7 +41,7 @@ export function SettingsPanel({
     }
   }
   return (
-    <div className="settings-layout">
+    <div className={`settings-layout ${tab === '提示词管理' ? 'prompt-settings-layout' : ''}`}>
       <nav aria-label="设置分类" className="settings-nav">
         {tabs.map((name) => (
           <button
@@ -49,6 +58,15 @@ export function SettingsPanel({
       </nav>
       <div className="settings-content">
         <h3>{tab}</h3>
+        {tab === '提示词管理' && (
+          <Suspense fallback={<p>正在打开提示词管理中心…</p>}>
+            <PromptInspector
+              settings={editing}
+              repository={repository}
+              activeSaveId={activeSaveId}
+            />
+          </Suspense>
+        )}
         {tab === 'AI 连接' && <AiConnections timeoutSeconds={settings.runtime.timeoutSeconds} />}
         {tab === '提示词' && (
           <>
@@ -198,7 +216,7 @@ export function SettingsPanel({
         <div role="status" className="field-hint">
           {notice}
         </div>
-        {tab !== 'AI 连接' && (
+        {tab !== 'AI 连接' && tab !== '提示词管理' && (
           <button className="primary" onClick={save}>
             保存本地设置
           </button>
