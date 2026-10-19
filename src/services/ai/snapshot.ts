@@ -33,22 +33,13 @@ export function channelSnapshot(
     throw new AiError('configuration');
   const diagnostics: string[] = [];
   const compatibility = parsed.data.compatibility;
-  const useCot =
-    stage === 'story' &&
-    compatibility.cotMode === 'confirmation' &&
-    parsed.data.protocol === 'openai' &&
-    compatibility.cotModels.includes(model) &&
-    !/deepseek|glm/i.test(model);
+  const useCot = cotSupported(parsed.data, model, stage);
   if (compatibility.cotMode !== 'off' && !useCot) diagnostics.push('COT_SKIPPED_PROTOCOL_OR_MODEL');
   const snapshot = freeze({ channel: parsed.data, model, stage, useCot, diagnostics });
   secrets.set(snapshot, secret);
   return snapshot;
 }
-export function requestSnapshot(
-  config: AiConfig,
-  stage: AiStage,
-  vault: CredentialVault,
-): RequestSnapshot {
+export function resolveModelRoute(config: AiConfig, stage: AiStage) {
   const checked = AiConfigSchema.safeParse(config);
   if (!checked.success) throw new AiError('configuration');
   const selected = checked.data.routes[stage];
@@ -59,6 +50,23 @@ export function requestSnapshot(
   if (!channel) throw new AiError('configuration');
   const model = route.modelId || channel.defaultModel;
   if (!modelIdSchema.safeParse(model).success) throw new AiError('configuration');
+  return { channel, model };
+}
+export function cotSupported(channel: Channel, model: string, stage: AiStage) {
+  return (
+    stage === 'story' &&
+    channel.compatibility.cotMode === 'confirmation' &&
+    channel.protocol === 'openai' &&
+    channel.compatibility.cotModels.includes(model) &&
+    !/deepseek|glm/i.test(model)
+  );
+}
+export function requestSnapshot(
+  config: AiConfig,
+  stage: AiStage,
+  vault: CredentialVault,
+): RequestSnapshot {
+  const { channel, model } = resolveModelRoute(config, stage);
   return channelSnapshot(channel, vault, model, stage);
 }
 export function secretFor(snapshot: RequestSnapshot) {

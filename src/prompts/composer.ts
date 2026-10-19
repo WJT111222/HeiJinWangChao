@@ -1,9 +1,11 @@
-import { promptManifest } from './manifest';
+import { selectPromptModules } from './selection';
+import { projectPromptOrder } from './order';
 import type { PromptModule } from './manifest';
 import { readPromptResource } from './loader';
 import { checkedInput, contextFor, contextMessage, worldWeekday } from './context';
 import type { ComposeInput } from './context';
 import type { AiMessage } from '../services/ai/protocols';
+import { estimateTokens } from './statistics';
 import { AiError } from '../services/ai/errors';
 
 export interface ModuleRecord {
@@ -13,34 +15,14 @@ export interface ModuleRecord {
   role: AiMessage['role'];
   order: number;
   characters: number;
+  estimatedTokens: number;
 }
 export async function composePrompt(unchecked: ComposeInput) {
   const input = checkedInput(unchecked);
-  const domainSet = new Set(input.domains ?? []);
-  const knownDomains = new Set(promptManifest.modules.filter((m) => m.domain).map((m) => m.domain));
-  if ([...domainSet].some((domain) => !knownDomains.has(domain)))
-    throw new AiError('configuration');
-  if (
-    input.stage === 'memory' &&
-    !promptManifest.modules.some((m) => m.id === input.memoryTask && m.activation === 'memory-task')
-  )
-    throw new AiError('configuration');
-  const selected = promptManifest.modules.filter((module) => {
-    if (
-      module.activation === 'never' ||
-      !module.applicableStages.includes(input.stage) ||
-      !module.modes.includes(input.mode)
-    )
-      return false;
-    if (module.activation === 'always') return true;
-    if (module.activation === 'relevant-domain') return domainSet.has(module.domain!);
-    if (module.activation === 'memory-task') return module.id === input.memoryTask;
-    if (module.activation === 'protocol-compatibility')
-      return input.stage === 'story' && input.cotAllowed === true;
-    const [field, value] = module.toggle!.split(':');
-    return String(input.settings.prompts[field as keyof typeof input.settings.prompts]) === value;
-  });
-  const overrides = input.orderOverrides ?? {};
+  const selected = selectPromptModules(input);
+  if (input.orderOverrides && input.orderPreferences) throw new AiError('configuration');
+  const overrides =
+    input.orderOverrides ?? projectPromptOrder(input.orderPreferences ?? {}, selected);
   for (const [id, order] of Object.entries(overrides)) {
     const module = selected.find((m) => m.id === id);
     if (!module?.reorderable || !Number.isInteger(order)) throw new AiError('configuration');
@@ -90,6 +72,7 @@ export async function composePrompt(unchecked: ComposeInput) {
       role,
       order: order(module),
       characters: Array.from(content).length,
+      estimatedTokens: estimateTokens(content).estimatedTokens,
     });
     if (role === 'assistant') confirmation = { role, content };
     else messages.push({ role, content });

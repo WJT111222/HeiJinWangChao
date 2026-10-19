@@ -24,6 +24,7 @@ export interface ComposeInput {
   npcSummaryThreshold?: number;
   companionProfile?: CompanionProfile;
   orderOverrides?: Record<string, number>;
+  orderPreferences?: Record<string, number>;
   cotAllowed?: boolean;
 }
 export function worldWeekday(worldClock: string) {
