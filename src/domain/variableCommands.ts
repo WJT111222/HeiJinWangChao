@@ -33,7 +33,13 @@ const npcChanges = OrdinaryNpcSchema.pick({
   relationshipText: true,
   healthText: true,
   lastInteractionAt: true,
-}).partial();
+})
+  .partial()
+  .extend({
+    locationId: IdSchema.nullable()
+      .optional()
+      .describe('合法地点 ID；null 显式清除未知去向的地点，须同时离场；省略保持原值'),
+  });
 const itemChanges = z.strictObject({
   quantity: CountSchema.optional(),
   conditionText: z.string().optional(),
@@ -178,7 +184,13 @@ export function applyVariableCommand(
           'NPC_TIME',
           '互动时间未发生或倒退',
         );
-      Object.assign(npc, command.changes);
+      const { locationId, ...changes } = command.changes;
+      Object.assign(npc, changes);
+      // null 是命令层的显式清除，正式 NPC 仍使用原 Schema 的可选地点。
+      if (locationId === null) {
+        requireData(!npc.onScene, 'SCENE_LOCATION', '在场 NPC 不能清除地点');
+        delete npc.locationId;
+      } else if (locationId !== undefined) npc.locationId = locationId;
       if (command.changes.onScene === true)
         requireData(npc.locationId, 'SCENE_LOCATION', '入场必须明确地点');
       break;

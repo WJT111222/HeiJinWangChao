@@ -156,13 +156,25 @@ describe('M4-P2 八类严格领域命令', () => {
       changes: { locationId: 'clinic' },
     };
     expect(() => apply([location, move], state)).toThrow();
-    const after = apply([location, move, update({ onScene: false })], state);
+    const after = apply(
+      [location, move, { ...update({ onScene: false }), evidence: '同事留在重庆。' }],
+      state,
+    );
     expect(after.protagonist.locationId).toBe('clinic');
     expect(after.npc['npc-a'].locationId).toBe('chongqing');
     expect(after.npc['npc-a'].onScene).toBe(false);
     expect(
-      apply([location, move, update({ onScene: true, locationId: 'clinic' })], state).npc['npc-a']
-        .locationId,
+      apply(
+        [
+          location,
+          move,
+          {
+            ...update({ onScene: true, locationId: 'clinic' }),
+            evidence: '同事和主角一起走进社区诊所。',
+          },
+        ],
+        state,
+      ).npc['npc-a'].locationId,
     ).toBe('clinic');
     expect(() => apply([update({ onScene: true, locationId: 'missing' })], state)).toThrow();
   });
