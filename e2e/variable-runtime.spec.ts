@@ -312,3 +312,70 @@ test('无依据跟随整批失败；明确留在原地可重试为未结算候�
   expect(accepted.draft.variables.result.commands[1].changes).toEqual({ onScene: false });
   expect(accepted.formal).toBe(before);
 });
+
+for (const scenario of [
+  { kind: 'spend', denied: '主角没用现金支付30元吃饭' },
+  { kind: 'spend', denied: '不是主角已经用现金支付30元吃饭' },
+  { kind: 'scene', denied: '不是同事和主角一起走进社区诊所' },
+  { kind: 'scene', denied: '并非同事和主角一起走进社区诊所' },
+] as const) {
+  test(`否定证据拒绝后可保留同句/同段的合法事实：${scenario.denied}`, async ({ page }) => {
+    const scene = scenario.kind === 'scene';
+    const text = scene
+      ? `${scenario.denied}。主角独自走进社区诊所，同事留在重庆。`
+      : `${scenario.denied}，但主角已经用线上支付30元吃饭。`;
+    const before = await seed(page, true, false, text, scene);
+    let corrected = false;
+    await page.route('https://variables.mock.invalid/**', (route) => {
+      const commands = scene
+        ? [
+            {
+              type: 'UpdateProtagonist',
+              commandId: 'move',
+              expectedRevision: 0,
+              protagonistId: 'hero',
+              evidence: '主角独自走进社区诊所',
+              changes: { locationId: 'clinic' },
+            },
+            {
+              type: 'UpdateNpc',
+              commandId: 'npc-move',
+              expectedRevision: 0,
+              npcId: 'npc-a',
+              evidence: corrected ? '同事留在重庆' : '同事和主角一起走进社区诊所',
+              changes: corrected ? { onScene: false } : { onScene: true, locationId: 'clinic' },
+            },
+          ]
+        : [
+            {
+              type: 'SpendFunds',
+              commandId: 'meal',
+              evidence: corrected ? '线上支付30元吃饭' : '现金支付30元吃饭',
+              account: corrected ? 'onlineBalance' : 'cash',
+              amount: 3000,
+              purpose: '午餐',
+            },
+          ];
+      return route.fulfill({
+        contentType: 'application/json',
+        body: response({ commands, rejectedSuggestions: [], unresolved: [] }),
+      });
+    });
+    await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+    await expect(page.getByRole('alert')).toBeVisible();
+    const rejected = await stored(page);
+    expect(rejected.draft.stageStatus.variables).toBe('failed');
+    expect(rejected.draft.variables).toBeUndefined();
+    expect(rejected.draft.story.narrative).toBe(text);
+    expect(rejected.formal).toBe(before);
+    corrected = true;
+    await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+    await ready(page);
+    const accepted = await stored(page);
+    expect(accepted.formal).toBe(before);
+    expect(accepted.draft.story.narrative).toBe(text);
+    expect(accepted.draft.variables.result.commands[scene ? 1 : 0]).toMatchObject(
+      scene ? { changes: { onScene: false } } : { account: 'onlineBalance' },
+    );
+  });
+}

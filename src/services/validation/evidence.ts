@@ -2,10 +2,11 @@ import type { DomainCommand } from '../../domain/commands';
 import type { GameState } from '../../domain/state';
 import type { TurnDraft } from '../../domain/drafts';
 import { AiError } from '../ai/errors';
+import { isNegatedFact } from '../../domain/factPolarity';
 
 // 只识别明确的反证/高风险语境，不声称能判定所有中文因果、反讽或真假陈述。
 const uncertain =
-  /准备|打算|计划|将要|明天|后天|如果|假如|假设|可能|或许|预计|尚未|并未|没有|取消|未能|不曾|没(?:有)?(?:付|买|转|到|收|借)|声称|自称|谎称|听说|据说|传闻|据传|猜测/;
+  /准备|打算|计划|将要|明天|后天|如果|假如|假设|可能|或许|预计|取消|声称|自称|谎称|听说|据说|传闻|据传|猜测/;
 
 // 行内标签只作用于本行；独占一行的标签只延续到紧接的下一行。
 // 未标记的新行可以是旁白，不能从整篇正文继承最近一个角色身份。
@@ -42,16 +43,30 @@ function evidenceContext(narrative: string, index: number, length: number) {
     else if ((char === '”' && quotes.at(-1) === '“') || (char === '」' && quotes.at(-1) === '「'))
       quotes.pop();
   }
-  return { sentence, dialogue: dialogue || quotes.length > 0 };
+  return { sentence, sentenceStart: left, dialogue: dialogue || quotes.length > 0 };
 }
 export function factEvidence(command: DomainCommand, narrative: string) {
   let index = narrative.indexOf(command.evidence);
   let safe = false;
   while (index >= 0) {
-    const { sentence, dialogue } = evidenceContext(narrative, index, command.evidence.length);
+    const { sentence, sentenceStart, dialogue } = evidenceContext(
+      narrative,
+      index,
+      command.evidence.length,
+    );
     const reportedMemory =
       command.type === 'RecordNpcMemory' && command.knowledgeKind !== 'observed';
-    if (reportedMemory || (!uncertain.test(sentence) && !/[“”「」]/.test(sentence) && !dialogue))
+    if (
+      reportedMemory ||
+      (!uncertain.test(sentence) &&
+        !isNegatedFact(
+          sentence,
+          index - sentenceStart,
+          index - sentenceStart + command.evidence.length,
+        ) &&
+        !/[“”「」]/.test(sentence) &&
+        !dialogue)
+    )
       safe = true;
     index = narrative.indexOf(command.evidence, index + 1);
   }
@@ -109,7 +124,10 @@ export function variablePermission(command: DomainCommand, state: GameState, dra
   if ((command.type === 'UpdateNpc' || command.type === 'RecordNpcMemory') && !scene(command.npcId))
     throw new AiError('permission');
   if (command.type === 'RecordNpcMemory') {
-    if (command.knowledgeKind === 'observed' && uncertain.test(command.evidence))
+    if (
+      command.knowledgeKind === 'observed' &&
+      (uncertain.test(command.evidence) || isNegatedFact(command.evidence))
+    )
       throw new AiError('invalid_output');
     if (!command.evidence.includes(command.memory.knowledgeSource))
       throw new AiError('invalid_output');

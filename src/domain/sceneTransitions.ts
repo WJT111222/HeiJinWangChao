@@ -2,12 +2,13 @@ import type { DomainCommand } from './commands';
 import type { NPC } from './npc/schema';
 import type { GameState } from './state';
 import { requireData } from './common';
+import { isNegatedFact } from './factPolarity';
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const alternatives = (names: string[]) => `(?:${names.map(escape).join('|')})`;
 const movement = '(?:走进|走入|进入|来到|到达|抵达|走到|前往|去往)';
 const counterEvidence =
-  /准备|打算|计划|将要|明天|如果|假如|假设|可能|或许|尚未|并未|没有|取消|未能|不曾|声称|自称|听说|据说|传闻|猜测|不跟|不同行|未跟|未同行/;
+  /准备|打算|计划|将要|明天|如果|假如|假设|可能|或许|取消|声称|自称|听说|据说|传闻|猜测/;
 
 function npcReference(state: GameState, npc: NPC) {
   // 同名/别名有歧义时必须改用稳定 ID，不能凭同名证据决定谁同行。
@@ -39,7 +40,11 @@ function supportsMove(evidence: string, npc: string, destination: string, hero?:
           `${npc}(?:随后|之后)?(?:也)?${arrive}[，,]?(?:并)?与${hero}会合`,
         ]
       : [`${npc}(?:已经|已|随后|独自)?${arrive}`];
-    return patterns.some((pattern) => new RegExp(pattern).test(sentence));
+    return patterns.some((pattern) =>
+      [...sentence.matchAll(new RegExp(pattern, 'g'))].some(
+        (match) => !isNegatedFact(sentence, match.index, match.index + match[0].length),
+      ),
+    );
   });
 }
 
@@ -85,9 +90,16 @@ export function validateSceneTransition(
       const place = before.locations[next.locationId];
       requireData(
         place &&
-          new RegExp(
-            `${person}(?:仍然|仍|继续)?(?:留在|停留在|留守)${alternatives([place.id, place.name])}`,
-          ).test(spatial.evidence),
+          [
+            ...spatial.evidence.matchAll(
+              new RegExp(
+                `${person}(?:仍然|仍|继续)?(?:留在|停留在|留守)${alternatives([place.id, place.name])}`,
+                'g',
+              ),
+            ),
+          ].some(
+            (match) => !isNegatedFact(spatial.evidence, match.index, match.index + match[0].length),
+          ),
         'SCENE_EVIDENCE',
         '不能推定 NPC 留守；去向不明时显式清除地点引用',
       );
