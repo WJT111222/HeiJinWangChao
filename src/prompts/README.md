@@ -1,9 +1,15 @@
-# 提示词静态注册
+# 提示词运行时
 
-M3-P1：`manifest.ts` 使用 Zod 校验根目录 `prompts/manifest.json` 的元数据和固定作用域/排序约束。提示词正文唯一来源仍为根目录文件，不复制到 src，不导入 React，不读取游戏状态。
+根目录 `prompts/` 是正文唯一来源。`manifest.ts` 只校验注册元数据；`loader.ts` 通过 Vite raw import 延迟读取 Markdown，核对 SHA-256 和 Unicode code point 字符数，不复制一套 TS 正文。
 
-当前没有正文加载器、占位符替换器、消息组装器、API 客户端、路由或预览 UI。注册表的角色与顺序是 P2 的逻辑约束，不能当成实际发送记录；不会因导入本文件而调用模型。
+`composePrompt()` 读取调用者提供的正式状态快照、严格 V1 设置和相符的 M1 草稿，根据阶段、opening/regular、七项设置、相关变量域和单一记忆任务选择资源。固定身份/双世界书/输出/常驻模块不能排序，可移动模块只允许同组已有槽位置换。所有必需占位符替换后仍有 `{{...}}` 会阻止请求。
 
-`npm run prompts:check` 仅检查文件、来源、元数据及六套静态配置的作用域。显式修改文本后，先审核原文与来源，再用 `npm run prompts:refresh` 刷新字符数/hash/占位符元数据；测试不会自动修复漂移。
+`context.ts` 按阶段选择资料，并以 user 数据容器提供给模型；正文不接收 NPC 内部知识、隐藏事件和私有记忆。`worldWeekday` 由 `worldClock` 在 Asia/Shanghai 派生，不保存独立字段。候选投影只在脱离仓库的副本上运行。记忆模块只提供任务级组装基础，不实现 M5 调度、压缩或检索引擎。
 
-用户已在 690d01d 手动补充成人题材适配正文，本轮完整保留并同步注册/来源元数据；该资源不是旧版未经修改的全文逐字移植，后者仍为 not-completed。NSFW 与独立亲密边界各登记一次、常驻正文、无开关。见根目录 `M3-P1-DEVELOPMENT.md` 的验收边界。NPC 私密档案/名器录仅在 manifest.futureExtensions 记录设计入口，没有运行模块。
+`src/services/ai/runtime.ts` 提供独立三阶段请求入口，协议层负责 OpenAI-compatible / 原生 Gemini / 原生 Anthropic 的实际消息结构。返回值是内部候选，包含版本依据，`commitAllowed=false`，不调用 SaveRepository，不执行下游阶段、重试或正式提交。没有导入即请求，也没有把游戏发送按钮接成完整回合系统。
+
+`npm run prompts:check` 覆盖原有静态检查和真实组装/候选测试；`npm run check` 覆盖全部测试与生产构建。显式修改允许修改的文本后，用 `npm run prompts:refresh` 刷新元数据，再运行检查；测试不会自动掩盖资源漂移。
+
+用户 690d01d 的 NSFW 适配正文完整保留，NSFW 与独立亲密边界在正文请求各注入一次、无开关。旧版未经修改的全文逐字移植仍为 not-completed。未来 NPC 私密档案/名器录仅有原 manifest 设计入口，没有运行模块。
+
+实际模块顺序、Mock 验收结果及 API 边界见根目录 `M3-P2-DEVELOPMENT.md`。M3-P3 的完整提示词管理和上下文预览界面尚未开发。

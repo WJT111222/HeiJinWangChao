@@ -370,7 +370,7 @@ describe('正式文本来源与旧架构保留', () => {
       );
     }
     expect(text('stages/regular/story.md')).not.toMatch(/出身候选|天赋候选/);
-    expect(promptManifest.runtimeImplemented).toBe(false);
+    expect(promptManifest.runtimeImplemented).toBe(true);
   });
 });
 
@@ -445,7 +445,7 @@ describe('M3-P1 审阅修订与 P2 协议差异记录', () => {
       'group/entityId/payload',
       '整数人民币分',
       '不能回退使用旧推荐集合',
-      '不实现解析器',
+      '候选不直接写库',
     ])
       expect(todo).toContain(required);
   });

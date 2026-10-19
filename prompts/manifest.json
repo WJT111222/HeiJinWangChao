@@ -1,8 +1,8 @@
 {
   "project": "黑金王朝",
-  "version": "0.1.0-m3-p1",
+  "version": "0.1.1-m3-p2",
   "authoredAt": "2026-10-18",
-  "status": "static-registry-with-documented-content-gap",
+  "status": "runtime-integrated-mock-verified",
   "globalDefaults": {
     "immediateMemoryTurns": 10,
     "minNarrativeChars": 1500,
@@ -17,7 +17,7 @@
     "maxTotalAttemptsPerStage": 3
   },
   "schemaVersion": 2,
-  "runtimeImplemented": false,
+  "runtimeImplemented": true,
   "tokenAccounting": {
     "characters": "unicode-code-points",
     "tokens": "requires-model-tokenizer",
@@ -269,8 +269,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1087,
-      "version": "0.1.0-m3-p1",
+      "characters": 958,
+      "version": "0.2.0-command-contract",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -279,7 +279,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "e81cac2a5104af3afa25039c847793ddf01209c7fd4a3b94e79617d6f9b30482",
+      "contentSha256": "468f306ba09918b8a6106aba49ab3ed0da7928d6bda07c8757f0b575077d016b",
       "placeholders": []
     },
     {
@@ -296,8 +296,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1026,
-      "version": "0.1.0-m3-p1",
+      "characters": 1287,
+      "version": "0.2.0-command-contract",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -306,7 +306,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "ff9d4ebdfa6575ccbd9f3228334688c70220ebd3d16ae425c0bfa33526e5f2da",
+      "contentSha256": "d36d2e4410c3d214bc198e88120dd88bd98007f055ad6f59044f1fdf495fc6a8",
       "placeholders": []
     },
     {
@@ -1630,8 +1630,8 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 5014,
-      "version": "0.1.0-m3-p1",
+      "characters": 5129,
+      "version": "0.1.1-m3-p2",
       "messageRole": null,
       "activation": "never",
       "permanent": false,
@@ -1640,7 +1640,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "e7a1727d3266946781771727e4c668ad72b693d9bf1725fc8d33c4b74269a876",
+      "contentSha256": "93e6326dcdc6d7c73142288925aacab1fba04cbc4c463a6a71fd2c9ec4fa3656",
       "placeholders": [
         "worldWeekday"
       ]
@@ -1654,8 +1654,8 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 4968,
-      "version": "0.1.0-m3-p1",
+      "characters": 5724,
+      "version": "0.1.1-m3-p2",
       "messageRole": null,
       "activation": "never",
       "permanent": false,
@@ -1664,7 +1664,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "c82d02029d8c497af0f2f27e5e3663f1baeae37dfb5e4621f198e9342947ec8d",
+      "contentSha256": "8bd253ecade6c0e47c25340460bcd1c1714986fe55aac1d8508be15218af5eaf",
       "placeholders": [
         "immediateMemoryTurns",
         "minNarrativeChars",
