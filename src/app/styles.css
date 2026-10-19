@@ -956,6 +956,19 @@ fieldset label {
 .reader-heading .eyebrow {
   margin: 0;
 }
+.story-error {
+  color: #f1b3a0;
+  border-left: 2px solid #b46a55;
+  padding: 0.65rem 0.85rem;
+  overflow-wrap: anywhere;
+}
+.bound-input {
+  margin: 0.65rem 0;
+  max-height: 150px;
+  overflow: auto;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
 .opening-empty {
   min-height: 330px;
   display: flex;

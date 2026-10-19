@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameState } from '../../domain/state';
 import type { CompanionProfile } from '../../services/local/companionProfile';
 import type { TurnDraft } from '../../domain/drafts';
@@ -7,6 +7,8 @@ import { Dialog, Detail, Empty } from '../Dialog';
 import { Panels, panelNames } from '../panels/Panels';
 import type { PanelName } from '../panels/Panels';
 import { playerView, money, dateTime } from '../panels/playerView';
+import type { SaveRepository } from '../../services/storage/saveRepository';
+import { useStoryGeneration } from './useStoryGeneration';
 
 export function GameScreen({
   state,
@@ -15,6 +17,8 @@ export function GameScreen({
   settings,
   onSettings,
   onSaves,
+  repository,
+  onDraftSaved,
 }: {
   state: GameState;
   draft?: TurnDraft;
@@ -22,9 +26,29 @@ export function GameScreen({
   settings: Settings;
   onSettings: (settings: Settings) => void;
   onSaves: () => void;
+  repository: SaveRepository;
+  onDraftSaved: (draft: TurnDraft) => void;
 }) {
   const [panel, setPanel] = useState<PanelName | '人物档案' | '经济与资产'>();
   const [input, setInput] = useState('');
+  const { generate, cancel, progress, error } = useStoryGeneration(
+    repository,
+    draft,
+    settings,
+    companionProfile,
+    onDraftSaved,
+  );
+  const reader = useRef<HTMLDivElement>(null);
+  const follow = useRef(true);
+  const [following, setFollowing] = useState(true);
+  const validDraft =
+    draft &&
+    draft.baseSaveRevision === state.revision &&
+    !state.journal.some((entry) => entry.turnId === draft.turnId) &&
+    (draft.turnKind !== 'opening' || state.turnNumber === 0);
+  useEffect(() => {
+    if (follow.current && reader.current) reader.current.scrollTop = reader.current.scrollHeight;
+  }, [progress?.narrative, draft?.storyRevision]);
   const view = useMemo(() => playerView(state, companionProfile), [state, companionProfile]);
   const hero = state.protagonist;
   const itemName = (id?: string) => (id ? state.items[id]?.name || '无' : '无');
@@ -102,14 +126,28 @@ export function GameScreen({
       </aside>
       <section className="story-column" aria-label="剧情与行动">
         <div
-          className={`reader ${!view.journal.length && !draft?.story ? 'reader-empty' : ''}`}
+          className={`reader ${!view.journal.length && !draft?.story && !progress ? 'reader-empty' : ''}`}
+          ref={reader}
+          onScroll={() => {
+            const element = reader.current!;
+            follow.current = element.scrollHeight - element.scrollTop - element.clientHeight < 64;
+            setFollowing(follow.current);
+          }}
           data-testid="story-reader"
           tabIndex={0}
           aria-label="正文阅读区域"
         >
           <div className="reader-heading">
             <span className="eyebrow">THE STORY</span>
-            <span className="tag">{state.journal.length ? '已保存正文' : '等待开局'}</span>
+            <span className="tag">
+              {progress
+                ? '生成预览 · 尚未保存'
+                : draft?.story
+                  ? '已保存草稿'
+                  : state.journal.length
+                    ? '已结算历史'
+                    : '等待开局'}
+            </span>
           </div>
           {view.journal.map((entry, index) => (
             <article className="story-entry" key={entry.turnId}>
@@ -117,7 +155,13 @@ export function GameScreen({
               <p className="prose">{entry.narrative}</p>
             </article>
           ))}
-          {draft?.story ? (
+          {progress ? (
+            <article className="story-entry" aria-label="流式正文预览" aria-busy="true">
+              <span className="tag">临时预览 · 完整校验前不保存</span>
+              <p className="prose">{progress.narrative || '正在等待正文…'}</p>
+              {draft?.story && <small>原有效正文仍保留，失败或取消可恢复。</small>}
+            </article>
+          ) : draft?.story ? (
             <article className="story-entry">
               <span className="tag">正文草稿 · 世界状态尚未确认</span>
               <p className="prose">{draft.story.narrative}</p>
@@ -133,21 +177,50 @@ export function GameScreen({
                 <p>
                   你的资料已保存。
                   <br />
-                  这座城市中的第一幕，将在 AI 开局接入后生成。
+                  配置 AI 渠道后，即可生成这座城市中的第一幕。
                 </p>
-                <button disabled className="primary">
-                  生成开局 · 后续阶段开放
-                </button>
-                <small>本阶段不会生成剧情或改变世界状态</small>
+                {draft?.turnKind !== 'regular' && (
+                  <button
+                    disabled={!validDraft}
+                    className="primary"
+                    onClick={() => void generate()}
+                  >
+                    生成开局正文
+                  </button>
+                )}
+                <small>仅生成正文草稿，不结算世界状态；主动生成可能产生模型费用。</small>
               </div>
             )
           )}
         </div>
         <div className="composer">
+          {progress && !following && (
+            <button
+              onClick={() => {
+                follow.current = true;
+                setFollowing(true);
+                if (reader.current) reader.current.scrollTop = reader.current.scrollHeight;
+              }}
+            >
+              跟随最新正文 ↓
+            </button>
+          )}
+          {error && (
+            <p className="story-error" role="alert">
+              {error} 原有合法草稿已保留，可手动重试。
+            </p>
+          )}
+          {!validDraft && (
+            <p className="field-hint">
+              {draft
+                ? '当前草稿已过期，请重新读取存档。'
+                : '没有可执行的回合草稿；新回合创建与正式结算将在后续 M4 阶段开放。'}
+            </p>
+          )}
           <section className="workflow" aria-label="三阶段工作流">
             <div className="workflow-heading">
               <h3>三阶段工作流</h3>
-              <small>AI 尚未接入</small>
+              <small>正文已开放 · 变量与世界后续接入</small>
             </div>
             <ol>
               {(['story', 'variables', 'world'] as const).map((stage, i) => {
@@ -157,13 +230,23 @@ export function GameScreen({
                     <span className="stage-number">0{i + 1}</span>
                     <strong>{['正文生成', '变量管理', '动态世界'][i]}</strong>
                     <small>
-                      {status === 'skipped'
-                        ? '用户跳过'
-                        : status === 'failed'
-                          ? '待后续恢复'
-                          : status === 'ready' || status === 'preview'
-                            ? '已保存 · 未提交'
-                            : '后续开放'}
+                      {stage === 'story'
+                        ? progress
+                          ? progress.phase === 'saving'
+                            ? '完整校验通过 · 正在保存'
+                            : '正在生成 · 临时预览'
+                          : draft?.story
+                            ? '正文已生成 · 未正式结算'
+                            : error
+                              ? '本次未完成 · 可手动重试'
+                              : '待生成'
+                        : status === 'skipped'
+                          ? '用户跳过'
+                          : status === 'failed'
+                            ? '待后续恢复'
+                            : status === 'ready' || status === 'preview'
+                              ? '已有候选 · 未正式结算'
+                              : '待执行 · 后续开放'}
                     </small>
                   </li>
                 );
@@ -172,11 +255,19 @@ export function GameScreen({
             <details>
               <summary>重试与变更详情</summary>
               <p className="muted">
-                尚无本阶段产生的请求或变量变更。阶段重试、变更校验及原子提交将在后续阶段接入。
+                本阶段只生成并保存正文草稿。实际请求和 Token 统计可在设置 → 提示词管理中查看。
+                变量与世界的执行、自动重试和正式原子提交将在后续 M4 阶段接入。
               </p>
               <button disabled>重新加载失败阶段（后续开放）</button>
             </details>
           </section>
+          {draft && (
+            <details className="bound-input">
+              <summary>本回合已绑定输入（只读）</summary>
+              <p className="prose">{draft.userInput || '未填写开局偏好，按人物资料正常生成。'}</p>
+              <small>生成与重新 Roll 始终使用此输入；下方编辑不会覆盖它。</small>
+            </details>
+          )}
           <div className="runtime-switches">
             {(
               [
@@ -201,7 +292,7 @@ export function GameScreen({
             <small>仅保存后续尝试偏好</small>
           </div>
           {settings.prompts.actionOptions &&
-            (options && options.length >= 3 && options.length <= 5 ? (
+            (!progress && options && options.length >= 3 && options.length <= 5 ? (
               <div className="action-options">
                 {options.map((option) => (
                   <button key={option} onClick={() => setInput(option)}>
@@ -220,12 +311,24 @@ export function GameScreen({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             rows={3}
-            placeholder="写下你想做的事……（发送将在后续阶段开放）"
+            placeholder="可编辑下一步行动建议；新回合发送将在后续 M4 阶段开放"
           />
           <div className="composer-footer">
-            <span>开局与回合生成将在后续阶段开放</span>
+            <span>正文为未结算草稿；生成可能产生模型费用</span>
             <div>
-              <button disabled>重新 Roll</button>
+              {progress ? (
+                <button disabled={progress.phase === 'saving'} onClick={cancel}>
+                  {progress.phase === 'saving' ? '正在保存…' : '取消生成'}
+                </button>
+              ) : (
+                <button disabled={!validDraft} onClick={() => void generate()}>
+                  {draft?.story
+                    ? '重新 Roll'
+                    : draft?.turnKind === 'regular'
+                      ? '生成本回合正文'
+                      : '生成正文'}
+                </button>
+              )}
               <button disabled>继续推演</button>
               <button className="primary" disabled>
                 发送
