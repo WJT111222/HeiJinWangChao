@@ -8,6 +8,8 @@ import { OrganizationSchema } from './organizations/schema';
 import { WorldEventSchema, WorldTaskSchema } from './events/schema';
 import { GameStateSchema } from './state';
 import type { GameState } from './state';
+import { variableCommandSchemas, applyVariableCommand, assertImportantItem, unequipItem } from './variableCommands';
+import { validateSceneTransition } from './sceneTransitions';
 
 const base = { commandId: IdSchema, evidence: TextSchema };
 const positiveMoney = MoneySchema.refine((amount) => amount > 0, '金额必须为正');
@@ -20,12 +22,13 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('RepayDebt'), account: AccountSchema, debtId: IdSchema, amount: positiveMoney }),
   z.strictObject({ ...base, type: z.literal('CreateNpc'), npc: NpcSchema }),
   z.strictObject({ ...base, type: z.literal('SetEquipment'), equipment: EquipmentSchema }),
-  z.strictObject({ ...base, type: z.literal('TransferItem'), itemId: IdSchema, from: ActorRefSchema, to: ActorRefSchema }),
+  z.strictObject({ ...base, type: z.literal('TransferItem'), itemId: IdSchema, from: ActorRefSchema.nullable(), to: ActorRefSchema }),
   z.strictObject({ ...base, type: z.literal('SetWorldClock'), worldClock: GameTimeSchema }),
   z.strictObject({ ...base, type: z.literal('SaveEvent'), event: WorldEventSchema }),
   z.strictObject({ ...base, type: z.literal('SaveTask'), task: WorldTaskSchema }),
   z.strictObject({ ...base, type: z.literal('CreateOrganization'), organization: OrganizationSchema }),
   z.strictObject({ ...base, type: z.literal('RecordOrgRelation'), organizationId: IdSchema, relation: TextSchema, reason: TextSchema }),
+  ...variableCommandSchemas,
 ]);
 export type DomainCommand = z.infer<typeof DomainCommandSchema>;
 
@@ -55,10 +58,10 @@ function balance(s: GameState, account: 'cash' | 'onlineBalance', change: number
 function ownedByProtagonist(s: GameState, ref: z.infer<typeof ActorRefSchema> | undefined) {
   requireData(ref?.kind === 'protagonist' && ref.id === s.protagonist.id, 'OWNERSHIP', '购买对象必须归主角持有');
 }
-function apply(s: GameState, c: DomainCommand) {
+function apply(s: GameState, c: DomainCommand, turnId: string) {
   switch (c.type) {
     case 'PurchaseItem':
-      newEntity(s, c.item.id); ownedByProtagonist(s, c.item.ownerRef);
+      newEntity(s, c.item.id); ownedByProtagonist(s, c.item.ownerRef); assertImportantItem(s, c.item);
       balance(s, c.account, -c.price); s.items[c.item.id] = c.item; break;
     case 'PurchaseVehicle':
       newEntity(s, c.vehicle.id); ownedByProtagonist(s, c.vehicle.ownerRef);
@@ -85,18 +88,18 @@ function apply(s: GameState, c: DomainCommand) {
     case 'CreateNpc':
       newEntity(s, c.npc.id);
       requireData(!Object.values(s.npc).some((npc) => npc.identityKey === c.npc.identityKey), 'DUPLICATE_NPC', 'NPC 稳定身份已存在');
+      requireData(!Object.values(s.npc).some((npc) => npc.aliases.includes(c.npc.name)
+        || c.npc.aliases.includes(npc.name) || npc.aliases.some((alias) => c.npc.aliases.includes(alias))
+        || (npc.id === s.initialCompanionId && npc.name === c.npc.name)),
+        'AMBIGUOUS_NPC', '别名或初始同伴身份重叠，需先确认已有稳定 ID');
       s.npc[c.npc.id] = c.npc; break;
     case 'SetEquipment': s.protagonist.currentWear = c.equipment; break;
     case 'TransferItem': {
       const item = s.items[c.itemId];
-      requireData(item && fingerprint(item.ownerRef) === fingerprint(c.from), 'OWNERSHIP', '物品前持有人不符');
+      requireData(item && (c.from === null ? item.ownerRef === undefined : fingerprint(item.ownerRef) === fingerprint(c.from)), 'OWNERSHIP', '物品前持有人不符');
       item.ownerRef = c.to;
       if (c.to.kind !== 'protagonist' || c.to.id !== s.protagonist.id) {
-        const wear = s.protagonist.currentWear;
-        for (const slot of ['topItemId', 'bottomItemId', 'shoesItemId', 'primaryWeaponItemId', 'secondaryWeaponItemId'] as const) {
-          if (wear[slot] === item.id) delete wear[slot];
-        }
-        wear.accessoryItemIds = wear.accessoryItemIds.filter((id) => id !== item.id);
+        unequipItem(s, item.id);
       }
       break;
     }
@@ -123,6 +126,7 @@ function apply(s: GameState, c: DomainCommand) {
       requireData(org, 'NOT_FOUND', '组织不存在');
       org.protagonistRelation = c.relation; org.relationHistory.push(c.reason); break;
     }
+    default: applyVariableCommand(s, c, turnId, (id) => newEntity(s, id), (account, amount) => balance(s, account, -amount));
   }
 }
 
@@ -143,9 +147,10 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
   requireData(current.revision === expectedRevision, 'REVISION_CONFLICT', '存档版本已变化，请重新读取');
   if (fresh.length === 0) return current;
   for (const command of fresh) {
-    apply(current, command);
+    apply(current, command, turnId);
     current.appliedCommands.push({ turnId, commandId: command.commandId, fingerprint: fingerprint(command) });
   }
+  validateSceneTransition(state, current, fresh);
   current.revision += 1;
   current.updatedAt = now;
   return GameStateSchema.parse(current);
