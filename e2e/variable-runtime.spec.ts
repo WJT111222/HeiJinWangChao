@@ -25,10 +25,10 @@ const response = (value: unknown = result) =>
     ],
     usage: { prompt_tokens: 61, completion_tokens: 12, total_tokens: 73 },
   });
-async function seed(page: Page, ready = true, disabled = false) {
+async function seed(page: Page, ready = true, disabled = false, text = narrative, withNpc = false) {
   await page.goto('/');
   const before = await page.evaluate(
-    async ({ ready, disabled, narrative }) => {
+    async ({ ready, disabled, narrative, withNpc }) => {
       const repoPath = '/src/services/storage/saveRepository.ts',
         fixturePath = '/src/tests/fixtures/game.ts';
       const draftsPath = '/src/domain/drafts.ts',
@@ -36,7 +36,7 @@ async function seed(page: Page, ready = true, disabled = false) {
       const configPath = '/src/services/ai/configuration.ts',
         vaultPath = '/src/services/ai/credentials.ts';
       const { SaveRepository } = await import(repoPath),
-        { game } = await import(fixturePath);
+        { game, npc } = await import(fixturePath);
       const { createTurnDraft, rerollStory } = await import(draftsPath);
       const { defaultSettings, settingsKey } = await import(settingsPath);
       const { defaultAiConfig, newChannel, saveAiConfig } = await import(configPath);
@@ -54,7 +54,12 @@ async function seed(page: Page, ready = true, disabled = false) {
       saveAiConfig(localStorage, config);
       new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-var-browser-secret');
       const repo = await SaveRepository.open();
-      const state = await repo.create({ ...game('variable-e2e'), title: '变量阶段测试（隔离）' });
+      const initialState = { ...game('variable-e2e'), title: '变量阶段测试（隔离）' };
+      if (withNpc) {
+        initialState.npc = { 'npc-a': npc() };
+        initialState.locations.clinic = { id: 'clinic', name: '社区诊所', parentId: 'chongqing' };
+      }
+      const state = await repo.create(initialState);
       for (const id of ['variable-e2e', 'other-e2e']) {
         if (id !== state.saveId)
           await repo.create({ ...game(id), title: '另一份变量存档（隔离）' });
@@ -82,7 +87,7 @@ async function seed(page: Page, ready = true, disabled = false) {
       repo.close();
       return JSON.stringify(state);
     },
-    { ready, disabled, narrative },
+    { ready, disabled, narrative: text, withNpc },
   );
   await page.goto('/#game/variable-e2e');
   await page.reload();
@@ -243,4 +248,67 @@ test('错误 JSON 安全失败可重试；取消、重复点击和切档迟到�
   expect((await stored(page)).draft.story).toEqual(saved.draft.story);
   expect((await stored(page)).draft.variables).toBeUndefined();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('角色对白后换行的客观消费可保存候选，不改变正式资金', async ({ page }) => {
+  const text = `【店员】欢迎光临。\n${narrative}`;
+  const before = await seed(page, true, false, text);
+  await page.route('https://variables.mock.invalid/**', (route) =>
+    route.fulfill({ contentType: 'application/json', body: response() }),
+  );
+  await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+  await ready(page);
+  const saved = await stored(page);
+  expect(saved.formal).toBe(before);
+  expect(saved.draft.story.narrative).toBe(text);
+  expect(saved.draft.variables.result.commands[0]).toMatchObject({
+    type: 'SpendFunds',
+    amount: 3000,
+  });
+});
+
+test('无依据跟随整批失败；明确留在原地可重试为未结算候选', async ({ page }) => {
+  const text = '主角独自走进社区诊所。同事留在重庆。';
+  const before = await seed(page, true, false, text, true);
+  let follow = true;
+  await page.route('https://variables.mock.invalid/**', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: response({
+        commands: [
+          {
+            type: 'UpdateProtagonist',
+            commandId: 'move',
+            expectedRevision: 0,
+            protagonistId: 'hero',
+            evidence: '主角独自走进社区诊所。',
+            changes: { locationId: 'clinic' },
+          },
+          {
+            type: 'UpdateNpc',
+            commandId: 'npc-move',
+            expectedRevision: 0,
+            npcId: 'npc-a',
+            evidence: follow ? '主角独自走进社区诊所。' : '同事留在重庆。',
+            changes: follow ? { onScene: true, locationId: 'clinic' } : { onScene: false },
+          },
+        ],
+        rejectedSuggestions: [],
+        unresolved: [],
+      }),
+    }),
+  );
+  await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+  await expect(page.getByRole('alert')).toBeVisible();
+  const rejected = await stored(page);
+  expect(rejected.draft.stageStatus.variables).toBe('failed');
+  expect(rejected.draft.variables).toBeUndefined();
+  expect(rejected.draft.story.narrative).toBe(text);
+  expect(rejected.formal).toBe(before);
+  follow = false;
+  await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+  await ready(page);
+  const accepted = await stored(page);
+  expect(accepted.draft.variables.result.commands[1].changes).toEqual({ onScene: false });
+  expect(accepted.formal).toBe(before);
 });

@@ -9,6 +9,7 @@ import { WorldEventSchema, WorldTaskSchema } from './events/schema';
 import { GameStateSchema } from './state';
 import type { GameState } from './state';
 import { variableCommandSchemas, applyVariableCommand, assertImportantItem, unequipItem } from './variableCommands';
+import { validateSceneTransition } from './sceneTransitions';
 
 const base = { commandId: IdSchema, evidence: TextSchema };
 const positiveMoney = MoneySchema.refine((amount) => amount > 0, '金额必须为正');
@@ -149,11 +150,7 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
     apply(current, command, turnId);
     current.appliedCommands.push({ turnId, commandId: command.commandId, fingerprint: fingerprint(command) });
   }
-  if (current.protagonist.locationId !== state.protagonist.locationId) {
-    for (const npc of Object.values(state.npc).filter((person) => person.onScene)) requireData(
-      fresh.some((command) => command.type === 'UpdateNpc' && command.npcId === npc.id
-        && command.changes.onScene !== undefined), 'SCENE_TRANSITION', '主角移动时必须依据正文明确处理每个原在场 NPC，不自动跟随');
-  }
+  validateSceneTransition(state, current, fresh);
   current.revision += 1;
   current.updatedAt = now;
   return GameStateSchema.parse(current);
