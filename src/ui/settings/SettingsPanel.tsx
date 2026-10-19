@@ -35,7 +35,7 @@ export function SettingsPanel({
     }
     try {
       onSave(checked.data);
-      setNotice('本地偏好已保存；适用于后续独立请求，正式游戏回合将在 M4 接入。');
+      setNotice('本地偏好已保存，将用于下一次正文请求；不会改写进行中的请求或已保存草稿。');
     } catch {
       setNotice('本地保存失败，请检查浏览器存储权限后重试。');
     }
@@ -70,7 +70,7 @@ export function SettingsPanel({
         {tab === 'AI 连接' && <AiConnections timeoutSeconds={settings.runtime.timeoutSeconds} />}
         {tab === '提示词' && (
           <>
-            <p className="muted">七项叙事偏好供提示词组装使用；正式游戏回合将在 M4 接入。</p>
+            <p className="muted">七项叙事偏好用于下一次正文请求的提示词与输出校验。</p>
             <div className="settings-fields">
               <label>
                 叙事人称
@@ -148,7 +148,7 @@ export function SettingsPanel({
             </label>
             <p className="muted">
               默认 10
-              回合。修改读取窗口不会删除原文。本地偏好用于后续上下文接入和新存档，不改写已有存档；压缩与检索将在
+              回合。修改读取窗口不会删除原文。本地偏好用于下一次正文上下文和新存档，不改写已有存档；压缩与检索将在
               M5 实现。
             </p>
           </>

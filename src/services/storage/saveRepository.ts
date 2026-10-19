@@ -15,8 +15,9 @@ function request<T>(operation: IDBRequest<T>): Promise<T> {
 }
 
 async function transaction<T>(database: IDBDatabase, stores: string[], mode: IDBTransactionMode,
-  work: (tx: IDBTransaction) => Promise<T>): Promise<T> {
+  work: (tx: IDBTransaction) => Promise<T>, signal?: AbortSignal): Promise<T> {
   const tx = database.transaction(stores, mode);
+  const abort = () => { try { tx.abort(); } catch { /* 已提交或中止。 */ } };
   const done = new Promise<void>((resolve, reject) => {
     tx.oncomplete = () => resolve();
     tx.onabort = () => reject(tx.error ?? new DataError('TRANSACTION_ABORTED', '事务已回滚'));
@@ -24,6 +25,8 @@ async function transaction<T>(database: IDBDatabase, stores: string[], mode: IDB
   });
   // 及时安装拒绝处理；work 中仅等待同一事务的 IDB 请求，不能等待网络或定时器。
   void done.catch(() => undefined);
+  signal?.addEventListener('abort', abort, { once: true });
+  if (signal?.aborted) abort();
   try {
     const result = await work(tx);
     await done;
@@ -32,6 +35,8 @@ async function transaction<T>(database: IDBDatabase, stores: string[], mode: IDB
     try { tx.abort(); } catch { /* 已经完成或中止。 */ }
     await done.catch(() => undefined);
     throw error;
+  } finally {
+    signal?.removeEventListener('abort', abort);
   }
 }
 
@@ -126,7 +131,7 @@ export class SaveRepository {
     });
   }
 
-  async saveDraft(draft: TurnDraft, expectedDraftRevision: number | null): Promise<TurnDraft> {
+  async saveDraft(draft: TurnDraft, expectedDraftRevision: number | null, signal?: AbortSignal): Promise<TurnDraft> {
     const next = TurnDraftSchema.parse(draft);
     return transaction(this.database, ['saves', 'drafts'], 'readwrite', async (tx) => {
       const current = readState(await request(tx.objectStore('saves').get(next.saveId)), next.saveId);
@@ -145,7 +150,7 @@ export class SaveRepository {
       }
       await request(store.put(next));
       return next;
-    });
+    }, signal);
   }
 
   async loadDraft(saveId: string): Promise<TurnDraft | undefined> {
