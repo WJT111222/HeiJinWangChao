@@ -243,3 +243,87 @@ describe('PR #11 NPC 移动的明确依据', () => {
     expect(selectVariableDomains(state, draft).domains).toHaveLength(9);
   });
 });
+
+describe('PR #11 否定事实与分句作用范围', () => {
+  it.each([
+    '主角没用现金支付30元吃饭。',
+    '不是主角已经用现金支付30元吃饭。',
+    '并非主角已经用现金支付30元吃饭。',
+    '主角没用现金支付30元吃饭，但同事已经吃完。',
+    '主角已经用现金支付30元吃饭，这并非事实。',
+    '主角已经用现金支付30元吃饭，但这不是事实。',
+    '主角已经用现金支付30元吃饭，但没有成功。',
+    '不是主角，已经用现金支付30元吃饭。',
+    '主角没有付款，也已经用现金支付30元吃饭。',
+  ])('否定上下文不能被截掉以生成扣款：%s', (text) => {
+    const before = game();
+    expect(() => parse([{ ...spend, evidence: '现金支付30元吃饭' }], text, before)).toThrow();
+    expect(before.economy.cash).toBe(10000);
+  });
+  it.each(['主角没用现金支付30元吃饭。', '不是主角已经用现金支付30元吃饭。'])(
+    '完整否定句作为 evidence 也不能扣款：%s',
+    (text) => {
+      expect(() => parse([{ ...spend, evidence: text }], text)).toThrow();
+    },
+  );
+  it.each([
+    '同事没付款，但主角已经用现金支付30元吃饭。',
+    '同事不是付款人，主角已经用现金支付30元吃饭。',
+    '同事并非付款人；主角已经用现金支付30元吃饭。',
+    '同事没有付款，主角已经用现金支付30元吃饭。',
+    '主角没有赊账，而是已经用现金支付30元吃饭。',
+    '主角没去便利店，却已经用现金支付30元吃饭。',
+    '主角已经用现金支付30元吃饭，但同事没有付款。',
+    '主角已经用现金支付30元吃饭，同事并非付款人。',
+    '主角不慌不忙，已经用现金支付30元吃饭。',
+    '主角已经用现金支付30元吃饭，同事没有完成工作。',
+    '同事没有付款，主角已经用现金支付30元吃饭，但同事没有完成工作。',
+  ])('同一句中独立的已完成事实仍可生成消费候选：%s', (text) => {
+    expect(parse([{ ...spend, evidence: '现金支付30元吃饭' }], text).commands).toHaveLength(1);
+  });
+  it.each([
+    '不是同事和主角一起走进社区诊所。',
+    '并非同事和主角一起走进社区诊所。',
+    '同事没和主角一起走进社区诊所。',
+    '同事和主角一起走进社区诊所，这不是事实。',
+    '并非同事和主角一起走进社区诊所，但店员已经开门。',
+  ])('领域模拟与变量解析都拒绝否定的同行：%s', (text) => {
+    const state = scene(),
+      before = structuredClone(state);
+    const commands = movement(text, { onScene: true, locationId: 'clinic' });
+    expect(() => commitCommands(state, 'turn-a', 0, commands)).toThrow();
+    expect(() => parse(commands, text, state)).toThrow();
+    expect(state).toEqual(before);
+  });
+  it.each(['不是', '并非'])('不能从 %s 同行的正文中裁出正向证据', (prefix) => {
+    const fact = '同事和主角一起走进社区诊所';
+    const text = `${prefix}${fact}。`;
+    expect(() =>
+      parse(movement(fact, { onScene: true, locationId: 'clinic' }), text, scene()),
+    ).toThrow();
+  });
+  it.each([
+    '同事没去便利店，但同事和主角一起走进社区诊所。',
+    '同事不是病人，同事和主角一起走进社区诊所。',
+    '不是店员，而是同事和主角一起走进社区诊所。',
+    '同事和主角一起走进社区诊所，但店员没有进来。',
+  ])('无关的否定不污染明确同行的事实：%s', (text) => {
+    const fact = '同事和主角一起走进社区诊所';
+    const state = scene(),
+      commands = movement(fact, { onScene: true, locationId: 'clinic' });
+    expect(parse(commands, text, state).commands).toHaveLength(2);
+    // 领域校验也应能在较长证据中定位实际匹配句式，而非封禁整句。
+    expect(
+      commitCommands(state, 'turn-a', 0, movement(text, { onScene: true, locationId: 'clinic' }))
+        .npc['npc-a'].onScene,
+    ).toBe(true);
+  });
+  it.each(['不是同事留在重庆。', '并非同事留在重庆。'])(
+    '否定留守也不能被当成正向空间事实：%s',
+    (text) => {
+      const state = scene(),
+        commands = movement(text, { onScene: false });
+      expect(() => commitCommands(state, 'turn-a', 0, commands)).toThrow();
+    },
+  );
+});
