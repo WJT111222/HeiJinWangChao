@@ -1,3 +1,4 @@
+import { readAiConfig } from './configuration';
 // 密钥独立于渠道配置、游戏状态及提示词。默认 sessionStorage；长期保留只由显式用户选择触发。
 type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const keyFor = (id: string) => `heijin.credential.v1:${id}`;
@@ -25,5 +26,17 @@ export class CredentialVault {
   delete(id: string) {
     this.session.removeItem(keyFor(id));
     this.persistent.removeItem(keyFor(id));
+  }
+}
+
+// 只供脱敏使用；不向查看器返回凭证，也不持久化调试内容。
+export function browserCredentials(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const config = readAiConfig(window.localStorage);
+    const vault = new CredentialVault(window.sessionStorage, window.localStorage);
+    return config.channels.map((channel) => vault.get(channel.id)).filter(Boolean);
+  } catch {
+    return [];
   }
 }

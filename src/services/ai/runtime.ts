@@ -1,3 +1,5 @@
+import { AiError } from './errors';
+import { browserPromptOrder } from '../../prompts/order';
 import { composePrompt } from '../../prompts/composer';
 import { checkedInput } from '../../prompts/context';
 import type { ComposeInput } from '../../prompts/context';
@@ -16,11 +18,25 @@ export async function runStageRequest(
   options: RequestOptions = {},
   client = new AiClient(),
 ) {
-  const captured = checkedInput(input) as ComposeInput & { stage: AiStage };
+  if (input.orderOverrides && input.orderPreferences) throw new AiError('configuration');
+  const captured = checkedInput({
+    ...input,
+    orderPreferences: input.orderOverrides
+      ? undefined
+      : (input.orderPreferences ?? browserPromptOrder()),
+  }) as ComposeInput & { stage: AiStage };
   const snapshot = requestSnapshot(config, captured.stage, vault);
   const prompt = await composePrompt({ ...captured, cotAllowed: snapshot.useCot });
   const response = await client.generate(snapshot, prompt.messages, {
     ...options,
+    inspection: {
+      kind: 'stage',
+      mode: captured.mode,
+      saveId: captured.state.saveId,
+      revision: captured.state.revision,
+      storyRevision: captured.draft?.storyRevision,
+      modules: prompt.modules,
+    },
     timeoutSeconds: options.timeoutSeconds ?? captured.settings.runtime.timeoutSeconds,
     stream: options.stream ?? captured.stage === 'story',
   });

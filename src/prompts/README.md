@@ -12,4 +12,6 @@
 
 用户 690d01d 的 NSFW 适配正文完整保留，NSFW 与独立亲密边界在正文请求各注入一次、无开关。旧版未经修改的全文逐字移植仍为 not-completed。未来 NPC 私密档案/名器录仅有原 manifest 设计入口，没有运行模块。
 
-实际模块顺序、Mock 验收结果及 API 边界见根目录 `M3-P2-DEVELOPMENT.md`。M3-P3 的完整提示词管理和上下文预览界面尚未开发。
+实际模块顺序、Mock 验收结果及 API 边界见根目录 `M3-P2-DEVELOPMENT.md`。M3-P3 管理界面见 `M3-P3-DEVELOPMENT.md`：共享 `selection.ts`，独立 `order.ts` 保存受限排序，`preview.ts` 只调用真实 Composer，不发送请求。浏览器独立阶段请求默认读取已保存的排序；显式 orderOverrides 继续遵守原 P2 校验，不能与 orderPreferences 混用。
+
+`services/ai/inspection.ts` 在真实客户端发送边界捕获脱敏原生 payload，只在内存保留最近 12 条；查看器默认仅显示结构，完整内部内容须主动查看。`statistics.ts` 将 Unicode 启发式 Token 估算与供应商 usage 分开，不补算未提供的真实总量。没有改动正式存档或七项写作设置 Schema。

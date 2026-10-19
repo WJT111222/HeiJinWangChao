@@ -1,4 +1,6 @@
-import { AiError } from './errors';
+import { AiError, safeAiError } from './errors';
+import { requestInspections } from './inspection';
+import type { InspectionScope } from './inspection';
 import type { RequestSnapshot } from './snapshot';
 import { secretFor } from './snapshot';
 import { modelIdSchema } from './configuration';
@@ -20,6 +22,7 @@ export interface RequestOptions {
   timeoutSeconds?: number;
   stream?: boolean;
   onDelta?: (text: string) => void;
+  inspection?: InspectionScope;
 }
 export interface AiResponse {
   text: string;
@@ -103,71 +106,83 @@ export class AiClient {
     options: RequestOptions = {},
   ): Promise<AiResponse> {
     const wire = wireRequest(snapshot, messages, options.stream === true);
-    return operation(options, async (signal) => {
-      const response = await this.response(wire.url, wire.init, signal);
-      const protocol = snapshot.channel.protocol;
-      let text = '',
-        usage: Usage | undefined;
-      if (!options.stream) {
-        let data: unknown;
-        try {
-          data = await response.json();
-        } catch {
-          throw new AiError('invalid_json');
-        }
-        text = responseText(data, protocol);
-        usage = usageFrom(data, protocol);
-      } else {
-        if (!response.body || !response.headers.get('content-type')?.includes('text/event-stream'))
-          throw new AiError('stream_interrupted');
-        let terminal = false;
-        for await (const event of readSse(response.body, signal)) {
-          if (event.data === '[DONE]' && protocol === 'openai') {
-            terminal = true;
-            break;
-          }
-          let data: Record<string, unknown>;
+    let inspectionId: string | undefined;
+    try {
+      return await operation(options, async (signal) => {
+        if (signal.aborted) throw new AiError('cancelled');
+        inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection);
+        const response = await this.response(wire.url, wire.init, signal);
+        const protocol = snapshot.channel.protocol;
+        let text = '',
+          usage: Usage | undefined;
+        if (!options.stream) {
+          let data: unknown;
           try {
-            data = record(JSON.parse(event.data));
+            data = await response.json();
           } catch {
             throw new AiError('invalid_json');
           }
-          if (data.error || data.type === 'error' || event.event === 'error')
-            throw new AiError('rejected');
-          let delta = '';
-          if (protocol === 'openai') {
-            const choice = record(array(data.choices)[0]);
-            if (choice.finish_reason && choice.finish_reason !== 'stop')
-              throw new AiError('stream_interrupted');
-            delta = string(record(choice.delta).content);
-          } else if (protocol === 'gemini') {
-            const candidate = record(array(data.candidates)[0]);
-            if (candidate.finishReason && candidate.finishReason !== 'STOP')
-              throw new AiError('stream_interrupted');
-            if (candidate.finishReason === 'STOP') terminal = true;
-            delta = array(record(candidate.content).parts)
-              .filter((part) => record(part).thought !== true)
-              .map((part) => string(record(part).text))
-              .join('');
-          } else {
-            if (data.type === 'content_block_delta' && record(data.delta).type === 'text_delta')
-              delta = string(record(data.delta).text);
-            const stop = record(data.delta).stop_reason;
-            if (stop && stop !== 'end_turn' && stop !== 'stop_sequence')
-              throw new AiError('stream_interrupted');
-            if (data.type === 'message_stop') terminal = true;
+          text = responseText(data, protocol);
+          usage = usageFrom(data, protocol);
+        } else {
+          if (
+            !response.body ||
+            !response.headers.get('content-type')?.includes('text/event-stream')
+          )
+            throw new AiError('stream_interrupted');
+          let terminal = false;
+          for await (const event of readSse(response.body, signal)) {
+            if (event.data === '[DONE]' && protocol === 'openai') {
+              terminal = true;
+              break;
+            }
+            let data: Record<string, unknown>;
+            try {
+              data = record(JSON.parse(event.data));
+            } catch {
+              throw new AiError('invalid_json');
+            }
+            if (data.error || data.type === 'error' || event.event === 'error')
+              throw new AiError('rejected');
+            let delta = '';
+            if (protocol === 'openai') {
+              const choice = record(array(data.choices)[0]);
+              if (choice.finish_reason && choice.finish_reason !== 'stop')
+                throw new AiError('stream_interrupted');
+              delta = string(record(choice.delta).content);
+            } else if (protocol === 'gemini') {
+              const candidate = record(array(data.candidates)[0]);
+              if (candidate.finishReason && candidate.finishReason !== 'STOP')
+                throw new AiError('stream_interrupted');
+              if (candidate.finishReason === 'STOP') terminal = true;
+              delta = array(record(candidate.content).parts)
+                .filter((part) => record(part).thought !== true)
+                .map((part) => string(record(part).text))
+                .join('');
+            } else {
+              if (data.type === 'content_block_delta' && record(data.delta).type === 'text_delta')
+                delta = string(record(data.delta).text);
+              const stop = record(data.delta).stop_reason;
+              if (stop && stop !== 'end_turn' && stop !== 'stop_sequence')
+                throw new AiError('stream_interrupted');
+              if (data.type === 'message_stop') terminal = true;
+            }
+            const nextUsage = usageFrom(data, protocol);
+            if (nextUsage) usage = { ...usage, ...nextUsage };
+            text += delta;
+            if (text.length > 8_000_000) throw new AiError('invalid_output');
+            if (delta && !signal.aborted) options.onDelta?.(delta);
           }
-          const nextUsage = usageFrom(data, protocol);
-          if (nextUsage) usage = { ...usage, ...nextUsage };
-          text += delta;
-          if (text.length > 8_000_000) throw new AiError('invalid_output');
-          if (delta && !signal.aborted) options.onDelta?.(delta);
+          if (!terminal) throw new AiError('stream_interrupted');
         }
-        if (!terminal) throw new AiError('stream_interrupted');
-      }
-      if (!text.trim()) throw new AiError('empty');
-      return { text, usage, diagnostics: wire.diagnostics, protocol, model: snapshot.model };
-    });
+        if (!text.trim()) throw new AiError('empty');
+        requestInspections.finish(inspectionId!, usage);
+        return { text, usage, diagnostics: wire.diagnostics, protocol, model: snapshot.model };
+      });
+    } catch (error) {
+      if (inspectionId) requestInspections.finish(inspectionId, undefined, safeAiError(error).code);
+      throw error;
+    }
   }
   async listModels(snapshot: RequestSnapshot, options: RequestOptions = {}): Promise<string[]> {
     return operation(options, async (signal) => {
