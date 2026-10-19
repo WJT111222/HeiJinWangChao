@@ -240,12 +240,14 @@
     "shared/07_command_output.md": {
       "origin": "baseline",
       "sourceSha256": "e81cac2a5104af3afa25039c847793ddf01209c7fd4a3b94e79617d6f9b30482",
-      "treatment": "verbatim"
+      "treatment": "command-contract-alignment",
+      "notes": "M3-P2 精确更新命令结构/名称、整数分与阶段权限；保留原外层输出字段，不改变世界书、身份、NSFW 或 M1 Schema。"
     },
     "shared/08_world_output.md": {
       "origin": "baseline",
       "sourceSha256": "ff9d4ebdfa6575ccbd9f3228334688c70220ebd3d16ae425c0bfa33526e5f2da",
-      "treatment": "verbatim"
+      "treatment": "command-contract-alignment",
+      "notes": "M3-P2 精确更新命令结构/名称、整数分与阶段权限；保留原外层输出字段，不改变世界书、身份、NSFW 或 M1 Schema。"
     },
     "stages/opening/variables.md": {
       "origin": "baseline",
