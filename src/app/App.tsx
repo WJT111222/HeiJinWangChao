@@ -232,7 +232,7 @@ export function App() {
         <nav>
           <button onClick={() => navigate()}>游戏首页</button>
           <button onClick={() => setSettingsOpen(true)}>设置</button>
-          <span className="version">V0.1 · M2</span>
+          <span className="version">V0.1 · M3-P3</span>
         </nav>
       </header>
       {error && (
@@ -399,7 +399,12 @@ export function App() {
       )}
       {settingsOpen && (
         <Dialog title="设置" onClose={() => setSettingsOpen(false)}>
-          <SettingsPanel settings={settings} onSave={saveSettings} />
+          <SettingsPanel
+            settings={settings}
+            onSave={saveSettings}
+            repository={repository}
+            activeSaveId={loaded?.state.saveId ?? active?.saveId}
+          />
         </Dialog>
       )}
       {deleting && (

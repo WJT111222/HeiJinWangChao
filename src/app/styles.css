@@ -1454,3 +1454,32 @@ summary {
 .settings-content details { margin-block: 1rem; }
 .settings-content summary { cursor: pointer; padding-block: .65rem; }
 .wide-field { grid-column: 1 / -1; }
+
+/* M3-P3: settings-only prompt inspector; ordinary game panels remain unchanged. */
+.prompt-settings-layout { display: block; }
+.prompt-settings-layout .settings-nav { flex-direction: row; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.inspector-toolbar, .inspector-actions, .domain-choices { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; }
+.inspector-toolbar > label { flex: 1 1 180px; min-width: 0; }
+.prompt-inspector details { margin: 1rem 0; }
+.inspector-columns { display: grid; grid-template-columns: minmax(170px,.75fr) minmax(0,1.35fr) minmax(0,1fr); gap: 1rem; align-items: start; }
+.inspector-columns > section { min-width: 0; padding: .75rem; border: 1px solid var(--line); border-radius: 6px; }
+.prompt-inspector h4 { color: var(--gold); margin: .6rem 0 1rem; }
+.prompt-inspector label { display: block; margin-bottom: .75rem; }
+.prompt-inspector .toggle { display: flex; margin: 0; }
+.module-library-list { max-height: 38rem; overflow-y: auto; display: grid; gap: .5rem; }
+.module-library-list button { text-align: left; display: grid; gap: .3rem; overflow-wrap: anywhere; }
+.module-library-list small, .prompt-order-list small { display: block; font-size: .72rem; color: var(--muted); }
+.module-library-list [aria-pressed='true'] { border-color: var(--gold); background: #303522; }
+.module-metadata, .inspection-statistics { display: grid; grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); gap: .6rem; font-size: .82rem; }
+.module-metadata dd, .inspection-statistics dd { margin: 0; }
+.module-metadata dt, .inspection-statistics dt { color: var(--muted); }
+.prompt-inspector pre { max-height: 32rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; background: #101710; border: 1px solid var(--line); padding: .8rem; font-size: .8rem; line-height: 1.85; }
+.prompt-inspector p, .prompt-inspector li, .prompt-inspector dd { overflow-wrap: anywhere; }
+.prompt-order-list { padding-left: 1.2rem; }
+.prompt-order-list li { padding: .6rem 0; border-bottom: 1px solid var(--line); font-size: .78rem; }
+.prompt-order-list button { padding: .3rem .7rem; margin: .3rem .4rem 0 0; }
+.prompt-order-list em { font-size: .7rem; color: var(--muted); }
+.stage-stat-cards { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .75rem; margin-top: 1rem; }
+.stage-stat-cards section { padding: .75rem; border: 1px solid var(--line); font-size: .8rem; overflow-wrap: anywhere; }
+@media (max-width: 1000px) { .inspector-columns { grid-template-columns: minmax(170px,.7fr) minmax(0,1.3fr); } .inspector-context { grid-column: 1 / -1; } }
+@media (max-width: 650px) { .inspector-columns, .stage-stat-cards { grid-template-columns: minmax(0,1fr); } .inspector-context { grid-column: auto; } .module-library-list { max-height: 20rem; } .prompt-inspector pre { max-height: 24rem; } }

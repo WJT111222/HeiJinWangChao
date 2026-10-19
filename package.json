@@ -17,7 +17,7 @@
     "check": "npm run lint && npm run test && npm run build",
     "test:e2e": "playwright test",
     "prompts:refresh": "node scripts/refresh-prompt-metadata.mjs",
-    "prompts:check": "vitest run src/tests/prompts.test.ts src/tests/prompt-runtime.test.ts"
+    "prompts:check": "vitest run src/tests/prompts.test.ts src/tests/prompt-runtime.test.ts src/tests/prompt-inspector.test.ts"
   },
   "dependencies": {
     "react": "^19.3.1",
