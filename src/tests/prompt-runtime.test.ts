@@ -525,11 +525,11 @@ describe('只读世界星期派生', () => {
   });
 });
 describe('真实命令目录、解析与安全候选验证', () => {
-  it('十四类命令直接来自实际 Schema，支持类型专属字段而非旧包装', () => {
+  it('扩展命令直接来自实际 Schema，支持类型专属字段而非旧包装', () => {
     expect(commandCatalog('variables').commandTypes).toEqual(
       DomainCommandSchema.options.map((option) => option.shape.type.value),
     );
-    expect(commandCatalog('variables').commandTypes).toHaveLength(14);
+    expect(commandCatalog('variables').commandTypes).toHaveLength(22);
     expect(commandCatalog('world').commandTypes).not.toContain('PurchaseItem');
     const a = input('variables');
     for (const value of [
@@ -638,7 +638,24 @@ describe('真实命令目录、解析与安全候选验证', () => {
         reason: '沟通',
       },
     ];
-    commands[0].evidence = evidence;
+    // 原 14 类整批验证保留，证据升级为每笔已完成交易的明确金额，而非通用测试占位。
+    for (const command of commands) {
+      const amount =
+        command.type === 'PurchaseItem' || command.type === 'PurchaseVehicle'
+          ? command.price
+          : command.type === 'TransferFunds' || command.type === 'RepayDebt'
+            ? command.amount
+            : command.type === 'ReceiveIncome'
+              ? command.income.amount
+              : command.type === 'Borrow'
+                ? command.debt.principal
+                : undefined;
+      command.evidence =
+        amount === undefined
+          ? `${evidence}，同事在场`
+          : `现金与线上账户已完成 ${command.type} ${amount}分`;
+    }
+    a.draft.story!.narrative = commands.map((command) => command.evidence).join('。');
     const before = structuredClone(a.state);
     expect(
       parseVariables(JSON.stringify({ ...emptyVariables, commands }), a.state, a.draft).commands,

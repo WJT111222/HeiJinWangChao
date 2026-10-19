@@ -42,7 +42,7 @@ export function playerView(state: GameState, authoredCompanion?: CompanionProfil
       kind: person.kind,
       // M2 暂不凭在场或引用公开内部身份/关系，不定义最终的玩家视角模式。
       relationshipText: person.id === companion?.npcId ? companion.relationshipText : undefined,
-      affinity: person.id === state.initialCompanionId ? null : person.affinity,
+      affinity: person.id === state.initialCompanionId && !person.affinityConfirmed ? null : person.affinity,
       locationId: person.onScene ? person.locationId : undefined,
       onScene: person.onScene,
       identity: person.id === companion?.npcId ? companion.identity : undefined,
