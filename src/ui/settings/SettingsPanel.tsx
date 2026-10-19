@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AiConnections } from './AiConnections';
 import { SettingsSchema } from './model';
 import type { Settings } from './model';
 
@@ -25,7 +26,7 @@ export function SettingsPanel({
     }
     try {
       onSave(checked.data);
-      setNotice('本地偏好已保存；AI 与工作流功能尚未接入。');
+      setNotice('本地偏好已保存；适用于后续独立请求，正式游戏回合将在 M4 接入。');
     } catch {
       setNotice('本地保存失败，请检查浏览器存储权限后重试。');
     }
@@ -48,70 +49,10 @@ export function SettingsPanel({
       </nav>
       <div className="settings-content">
         <h3>{tab}</h3>
-        {tab === 'AI 连接' && (
-          <>
-            <p className="notice">
-              AI 连接将在 M3 开放。此页仅展示配置结构，不发送请求，也不收集或保存密钥。
-            </p>
-            <fieldset disabled>
-              <legend>API 渠道</legend>
-              <label>
-                渠道名称
-                <input placeholder="后续可添加多个渠道" />
-              </label>
-              <label>
-                协议
-                <select defaultValue="openai">
-                  <option value="openai">OpenAI 兼容</option>
-                  <option>Gemini</option>
-                  <option>Anthropic</option>
-                  <option>其他</option>
-                </select>
-              </label>
-              <label>
-                服务地址
-                <input placeholder="M3 开放填写" />
-              </label>
-              <label>
-                API 密钥
-                <input type="password" placeholder="本阶段无需填写真实密钥" autoComplete="off" />
-              </label>
-              <label>
-                默认模型
-                <input placeholder="后续支持模型列表或手填 ID" />
-              </label>
-              <button>测试连接（后续开放）</button>
-              <button>添加渠道（后续开放）</button>
-            </fieldset>
-            <fieldset disabled>
-              <legend>三阶段模型路由</legend>
-              {['正文生成', '变量管理', '动态世界'].map((stage, i) => (
-                <div className="card entry" key={stage}>
-                  <strong>{stage}</strong>
-                  {i > 0 && (
-                    <label className="toggle">
-                      <input type="checkbox" defaultChecked />
-                      跟随正文模型
-                    </label>
-                  )}
-                  <label>
-                    {stage}渠道
-                    <select>
-                      <option>后续选择渠道</option>
-                    </select>
-                  </label>
-                  <label>
-                    {stage}模型
-                    <input placeholder="模型 ID" />
-                  </label>
-                </div>
-              ))}
-            </fieldset>
-          </>
-        )}
+        {tab === 'AI 连接' && <AiConnections timeoutSeconds={settings.runtime.timeoutSeconds} />}
         {tab === '提示词' && (
           <>
-            <p className="muted">七项叙事偏好。当前仅保存偏好，实际提示词组装将在后续阶段接入。</p>
+            <p className="muted">七项叙事偏好供提示词组装使用；正式游戏回合将在 M4 接入。</p>
             <div className="settings-fields">
               <label>
                 叙事人称

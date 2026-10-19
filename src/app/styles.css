@@ -1446,3 +1446,11 @@ summary {
     scroll-behavior: auto !important;
   }
 }
+
+/* AI 渠道沿用现有设置布局；避免长模型 ID 撑出移动视口。 */
+.ai-toolbar, .ai-actions { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; margin-block: 1rem; }
+.ai-toolbar label { flex: 1 1 14rem; min-width: 0; }
+.settings-content fieldset { min-width: 0; }
+.settings-content details { margin-block: 1rem; }
+.settings-content summary { cursor: pointer; padding-block: .65rem; }
+.wide-field { grid-column: 1 / -1; }
