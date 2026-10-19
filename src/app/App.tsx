@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { IdSchema } from '../domain/common';
 import type { GameState } from '../domain/state';
 import type { TurnDraft } from '../domain/drafts';
@@ -12,9 +12,12 @@ import type { Creation } from '../ui/creation/model';
 import { SettingsPanel } from '../ui/settings/SettingsPanel';
 import { SettingsSchema, defaultSettings, settingsKey } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
-import { GameScreen } from '../ui/game/GameScreen';
 import { dateTime } from '../ui/panels/playerView';
 import { Dialog, Empty } from '../ui/Dialog';
+
+const GameScreen = lazy(() =>
+  import('../ui/game/GameScreen').then((module) => ({ default: module.GameScreen })),
+);
 
 type SaveSummary = Awaited<ReturnType<SaveRepository['list']>>[number];
 const selectedKey = 'heijin.selected.v1';
@@ -232,7 +235,7 @@ export function App() {
         <nav>
           <button onClick={() => navigate()}>游戏首页</button>
           <button onClick={() => setSettingsOpen(true)}>设置</button>
-          <span className="version">V0.1 · M3-P3</span>
+          <span className="version">V0.1 · M4-P1</span>
         </nav>
       </header>
       {error && (
@@ -253,21 +256,35 @@ export function App() {
         />
       ) : route.startsWith('#game/') ? (
         loaded ? (
-          <GameScreen
-            key={loaded.state.saveId}
-            state={loaded.state}
-            draft={loaded.draft}
-            companionProfile={loaded.companionProfile}
-            settings={settings}
-            onSettings={(next) => {
-              try {
-                saveSettings(next);
-              } catch {
-                setError('运行偏好保存失败，请检查浏览器存储权限。');
+          <Suspense
+            fallback={
+              <main className="page">
+                <Empty>正在打开游戏界面…</Empty>
+              </main>
+            }
+          >
+            <GameScreen
+              key={loaded.state.saveId}
+              state={loaded.state}
+              draft={loaded.draft}
+              repository={repository!}
+              onDraftSaved={(draft) =>
+                setLoaded((current) =>
+                  current?.state.saveId === draft.saveId ? { ...current, draft } : current,
+                )
               }
-            }}
-            onSaves={() => navigate()}
-          />
+              companionProfile={loaded.companionProfile}
+              settings={settings}
+              onSettings={(next) => {
+                try {
+                  saveSettings(next);
+                } catch {
+                  setError('运行偏好保存失败，请检查浏览器存储权限。');
+                }
+              }}
+              onSaves={() => navigate()}
+            />
+          </Suspense>
         ) : (
           <main className="page">
             <Empty>{loading ? '正在读取存档…' : '未能打开存档，请返回首页重新选择。'}</Empty>
@@ -317,7 +334,7 @@ export function App() {
             </div>
             <div className="home-footnote">
               <span>四座城市 · 自由职业 · 开放人生</span>
-              <span>当前为界面开发版，AI 生成尚未开放</span>
+              <span>正文生成已开放 · 正式回合结算开发中</span>
             </div>
           </section>
           <section className="save-library" aria-label="已有存档">
