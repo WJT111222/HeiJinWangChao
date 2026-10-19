@@ -241,7 +241,8 @@
       "origin": "baseline",
       "sourceSha256": "e81cac2a5104af3afa25039c847793ddf01209c7fd4a3b94e79617d6f9b30482",
       "treatment": "command-contract-alignment",
-      "notes": "M3-P2 精确更新命令结构/名称、整数分与阶段权限；保留原外层输出字段，不改变世界书、身份、NSFW 或 M1 Schema。"
+      "notes": "M3-P2 精确更新命令结构/名称、整数分与阶段权限；保留原外层输出字段，不改变世界书、身份、NSFW 或 M1 Schema。",
+      "m4P2": "在 main@dac41b7 的现有正文后追加领域命令与候选执行说明，保留历史原文；非上游逐字资源。"
     },
     "shared/08_world_output.md": {
       "origin": "baseline",
@@ -438,6 +439,13 @@
       "origin": "baseline",
       "sourceSha256": "305d289bc786fdbfc50d5a29fb553c9768feb967eec06c3b308c772fc4d38dfb",
       "treatment": "verbatim"
+    },
+    "docs/OUTPUT_CONTRACT.md": {
+      "origin": "project",
+      "treatment": "project-authored",
+      "m4P2": "在 main@dac41b7 的现有正文后追加领域命令与候选执行说明，保留历史原文；非上游逐字资源。",
+      "sourcePath": "prompts/docs/OUTPUT_CONTRACT.md@dac41b7",
+      "sourceSha256": "8bd253ecade6c0e47c25340460bcd1c1714986fe55aac1d8508be15218af5eaf"
     }
   }
 }

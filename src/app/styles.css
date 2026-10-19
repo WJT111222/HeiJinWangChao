@@ -962,6 +962,9 @@ fieldset label {
   padding: 0.65rem 0.85rem;
   overflow-wrap: anywhere;
 }
+.variable-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin: 0.75rem 0; }
+.variable-actions small { color: var(--muted); font-size: 0.7rem; }
+.candidate-json { white-space: pre-wrap; overflow-wrap: anywhere; overflow: auto; max-height: 55svh; padding: 1rem; background: #111710; }
 .bound-input {
   margin: 0.65rem 0;
   max-height: 150px;
