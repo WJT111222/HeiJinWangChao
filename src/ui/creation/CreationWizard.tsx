@@ -355,7 +355,7 @@ export function CreationWizard({
                 />
               </label>
               <p className="notice">
-                本阶段只创建存档。AI 开局生成将在后续阶段开放，不会自动生成剧情、财富或装备。
+                确认后创建存档，进入游戏可主动生成开局正文；创建时不会自动生成剧情、财富或装备。
               </p>
             </>
           )}
