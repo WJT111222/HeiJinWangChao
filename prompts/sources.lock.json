@@ -248,7 +248,19 @@
       "origin": "baseline",
       "sourceSha256": "ff9d4ebdfa6575ccbd9f3228334688c70220ebd3d16ae425c0bfa33526e5f2da",
       "treatment": "command-contract-alignment",
-      "notes": "M3-P2 精确更新命令结构/名称、整数分与阶段权限；保留原外层输出字段，不改变世界书、身份、NSFW 或 M1 Schema。"
+      "notes": "M3-P2 精确更新命令结构/名称、整数分与阶段权限；保留原外层输出字段，不改变世界书、身份、NSFW 或 M1 Schema。",
+      "m4P3": {
+        "notes": "M4-P3：受限场外命令、来源与时间窗口，手动运行不代表正式提交。",
+        "sha256": "5646e99ceb7258ee3ef870c8dc15362d176e8d93230f615d60f1416165e2c016"
+      },
+      "m4P3Review2": {
+        "notes": "PR #13 二轮：地点存在事实、估计/实际结案、一人一任务、完成来源与终止语义；生命周期仅规划，无正式 Schema 改动。",
+        "sha256": "2008a2aa5b5766d40d5fcfe53d7e5a25fa2dcfb61977f980e2cfbc2b226fae45"
+      },
+      "m4P3CancellationFix": {
+        "notes": "A5 定点修复：取消绑定自身来源、肯定终止事实与 derived 具体原因/结果；保留提前取消语义，无正式 Schema 改动。",
+        "sha256": "b6776a066a9fc6a017f084f416dd256b27071a7a9be3ec2de74623d2eab0ddf2"
+      }
     },
     "stages/opening/variables.md": {
       "origin": "baseline",
@@ -258,7 +270,11 @@
     "stages/opening/world.md": {
       "origin": "baseline",
       "sourceSha256": "2b484f46cd74e560c19d4b813ccc04f260395689a0a1034b84276ce4435bc948",
-      "treatment": "verbatim"
+      "treatment": "runtime-contract-update",
+      "m4P3": {
+        "notes": "M4-P3：受限场外命令、来源与时间窗口，手动运行不代表正式提交。",
+        "sha256": "21af05cb79cf42ea2546ba1d9b72f93110a42479b945329ee8fa7f06df741ac4"
+      }
     },
     "stages/regular/variables.md": {
       "origin": "baseline",
@@ -268,7 +284,11 @@
     "stages/regular/world.md": {
       "origin": "baseline",
       "sourceSha256": "0d8e6d583fc429cbab272da5a953719aad3168a9e274ede6cb4bf021fd50f0ba",
-      "treatment": "verbatim"
+      "treatment": "runtime-contract-update",
+      "m4P3": {
+        "notes": "M4-P3：受限场外命令、来源与时间窗口，手动运行不代表正式提交。",
+        "sha256": "55f7e129700c228d0fe92ef869f7e3bac27b2a76e8f1e21e9658e5c99b8ac334"
+      }
     },
     "variableGroups/protagonist/init.md": {
       "origin": "baseline",
@@ -445,7 +465,29 @@
       "treatment": "project-authored",
       "m4P2": "在 main@dac41b7 的现有正文后追加领域命令与候选执行说明，保留历史原文；非上游逐字资源。",
       "sourcePath": "prompts/docs/OUTPUT_CONTRACT.md@dac41b7",
-      "sourceSha256": "8bd253ecade6c0e47c25340460bcd1c1714986fe55aac1d8508be15218af5eaf"
+      "sourceSha256": "8bd253ecade6c0e47c25340460bcd1c1714986fe55aac1d8508be15218af5eaf",
+      "m4P3": {
+        "notes": "M4-P3：受限场外命令、来源与时间窗口，手动运行不代表正式提交。",
+        "sha256": "5b62675c8c878262a2a0a7b066799585dd4032cf1250e0e0dc6b078d1f7420eb"
+      },
+      "m4P3Review2": {
+        "notes": "PR #13 二轮：地点存在事实、估计/实际结案、一人一任务、完成来源与终止语义；生命周期仅规划，无正式 Schema 改动。",
+        "sha256": "2c61455cad1a99aba4241d29c976b4dc6a208a8a139c0ffb87b51713404680d1"
+      },
+      "m4P3CancellationFix": {
+        "notes": "A5 定点修复：取消绑定自身来源、肯定终止事实与 derived 具体原因/结果；保留提前取消语义，无正式 Schema 改动。",
+        "sha256": "f5ddc8f17116c96a463ee01fc5e42689354f31487a596a8662957dd597c1608f"
+      }
+    },
+    "docs/ASSEMBLY.md": {
+      "origin": "project",
+      "treatment": "project-authored",
+      "m4P3": {
+        "notes": "M4-P3：受限场外命令、来源与时间窗口，手动运行不代表正式提交。",
+        "sha256": "bafe86a5e4576dc0a2d0e33d04d1fa7701e66751d7a3a26035e4e1bc00492f7d"
+      },
+      "sourceSha256": "93e6326dcdc6d7c73142288925aacab1fba04cbc4c463a6a71fd2c9ec4fa3656",
+      "sourcePath": "prompts/docs/ASSEMBLY.md@6bf9e25"
     }
   }
 }
