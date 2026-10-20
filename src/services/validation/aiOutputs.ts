@@ -1,11 +1,11 @@
 import { StorySchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
-import { VariableResultSchema, WorldResultSchema } from '../../domain/drafts';
+import { VariableResultSchema } from '../../domain/drafts';
 import type { TurnDraft } from '../../domain/drafts';
 import { commitCommands, fingerprint } from '../../domain/commands';
 import type { DomainCommand } from '../../domain/commands';
 import { AiError } from '../ai/errors';
-import { worldTypes } from './commandCatalog';
+import { validateWorldOutput } from './worldOutput';
 import type { Settings } from '../../ui/settings/model';
 import { economicAmount, factEvidence, variablePermission, completedPayment } from './evidence';
 
@@ -105,65 +105,13 @@ export function parseVariables(text: string, state: GameState, draft: TurnDraft)
   simulate(state, draft.turnId, checked.data.commands);
   return checked.data;
 }
-function strings(value: unknown): string[] {
-  if (typeof value === 'string') return [value];
-  if (value && typeof value === 'object') return Object.values(value).flatMap(strings);
-  return [];
-}
 export function parseWorld(text: string, state: GameState, draft: TurnDraft) {
-  const checked = WorldResultSchema.safeParse(json(text));
-  if (!checked.success || !draft.story) throw new AiError('invalid_output');
-  const result = checked.data;
-  const base =
-    draft.variables?.validation === 'validated'
-      ? simulate(state, draft.turnId, draft.variables.result.commands)
-      : state;
-  const isSceneNpc = (id: string) => base.npc[id]?.onScene === true;
-  for (const command of result.worldCommands) {
-    if (!(worldTypes as readonly string[]).includes(command.type)) throw new AiError('permission');
-    if (command.type === 'CreateNpc' && command.npc.onScene) throw new AiError('permission');
-  }
-  for (const command of result.taskCommands) {
-    if (
-      command.type !== 'SaveTask' ||
-      command.task.actorRef.kind === 'protagonist' ||
-      (command.task.actorRef.kind === 'npc' && isSceneNpc(command.task.actorRef.id))
-    )
-      throw new AiError('permission');
-  }
-  for (const command of result.eventCommands)
-    if (command.type !== 'SaveEvent') throw new AiError('permission');
-  const events = [
-    ...result.futureEvents,
-    ...result.eventCommands.flatMap((c) => (c.type === 'SaveEvent' ? [c.event] : [])),
-  ];
-  if (new Set(events.map((e) => e.id)).size !== events.length) throw new AiError('invalid_output');
-  if (
-    events.some((event) => event.actorRefs.some((ref) => ref.kind === 'npc' && isSceneNpc(ref.id)))
-  )
-    throw new AiError('permission');
-  const facts = [
-    draft.story.narrative,
-    ...strings(Object.values(base.tasks)),
-    ...strings(Object.values(base.events)),
-    ...strings(Object.values(base.npc).filter((npc) => !npc.onScene)),
-    ...strings(base.organizations),
-  ].join('\n');
-  const commands = [...result.worldCommands, ...result.taskCommands, ...result.eventCommands];
-  for (const command of commands) evidenceCheck(command, facts);
-  const future = result.futureEvents.map((event): DomainCommand => ({
-    commandId: `future:${event.id}`,
-    type: 'SaveEvent',
-    event,
-    evidence: '后台事件候选结构验证',
-  }));
-  const projected = simulate(base, draft.turnId, [...commands, ...future]);
-  if (
-    result.timelineCandidates.some(
-      (id) =>
-        projected.events[id]?.status !== 'resolved' || projected.events[id]?.impact !== 'major',
-    )
-  )
+  if (draft.variables?.validation === 'validated')
+    parseVariables(JSON.stringify(draft.variables.result), state, draft);
+  try {
+    return validateWorldOutput(json(text), state, draft);
+  } catch (error) {
+    if (error instanceof AiError) throw error;
     throw new AiError('invalid_output');
-  return result;
+  }
 }

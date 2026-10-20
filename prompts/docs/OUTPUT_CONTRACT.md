@@ -94,3 +94,8 @@
 原十四类保留，新增八类：UpdateProtagonist（白名单人物状态）、UpdateNpc（稳定 ID 的现场变化及有依据关系）、RecordNpcMemory（当回合来源/可见性/知识性质）、CreateLocation（合法层级）、SpendFunds（普通消费）、AcquireItem（无偿获得）、UpdateItem（数量/状态/位置）、LoseItem（遗失解除持有）。每种字段严格来自 COMMAND_CATALOG，不接受任意路径或深合并。
 初始同伴新增向后兼容的可选 affinityConfirmed=true 标记；缺失仍表示创角占位，不迁移猜测数值。只有明确的 UpdateNpc.affinityChange 可在候选副本中确认，正式落库仍待 M4-P5。RecordNpcMemory 的转述/推测保留文字标记，不提升成客观事实。
 变量阶段每次手动执行先保存 startStageAttempt，保持正文版本与输入；按已选正文、正式 revision、执行/请求版本验证，再保存 validated 变量候选。此处 validated 仅表示程序校验通过的草稿，不是正式世界结算。不执行世界阶段或自动重试，不调用正式 SaveRepository.save。
+
+
+## M4-P3 世界候选运行契约
+
+本阶段复用原有八种受限命令，不增加领域命令或正式存档字段。世界命令 evidence 在原字符串字段中编码 WORLD_EVIDENCE_V1 JSON，详见 shared/08_world_output.md 和运行时 COMMAND_CATALOG；变量命令 evidence 仍引用正文原文，二者不能混用。新场外 derived 候选根据可信来源、时间窗口及动机形成，不要求逐字出现在正文。futureEvents 只镜像已验证的 scheduled SaveEvent，不是独立命令入口。visibleHooks、revealAfter、timelineCandidates 不自动披露。无合法变量时世界只能 preview；已有合法变量即使本次变量开关关闭也可复用。所有结果只保存 TurnDraft；正式状态、时间和历史不受影响。

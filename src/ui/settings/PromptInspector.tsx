@@ -567,7 +567,7 @@ export function PromptInspector({
               </p>
               {!stageRecords.length && (
                 <p className="notice">
-                  此阶段/模式没有实际请求快照。正文与变量生成已开放，世界执行尚未接入；不会用预览冒充发送。
+                  此阶段/模式没有实际请求快照。正文、变量和世界支持手动生成；不会用组装预览冒充发送。
                 </p>
               )}
               <label>

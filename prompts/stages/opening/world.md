@@ -4,3 +4,5 @@
 如果开局已形成未结案件、纠纷、合同争议、职业处分、财产争执等，将它们放入scheduled或active事件；只有正文确实已完成且结果确定的事件才可resolved。历史时间轴不必为所有开局内容立即建立条目，重大且完结时才成为候选。
 场外势力不能凭空得知主角的私人秘密，也不得把所有事情都围绕主角展开；允许背景世界保持正常运转。输出只有有因果依据的更新，没有事项时返回空数组。
 输出严格JSON {worldCommands,taskCommands,eventCommands,futureEvents,visibleHooks,timelineCandidates,unresolved}，并遵循共享的世界输出协议。变量阶段失败时读取variablePending标记，仅生成可复核的临时方案，不能以已提交状态自居。
+
+M4-P3 接入：在 TIME_WINDOW 内允许基于合法世界状态与动机初始化新的场外人物、组织、任务和事件候选；新推演依据 WORLD_EVIDENCE_V1 标记 derived，未来计划标记 planned。上述“只有正文确实已完成”的限制用于主角现场事件；独立场外事件也可在满足来源、耗时、条件与具体 outcome 后形成完成候选。不得改写开局同伴或主角现场。不能完成的初始化或状态操作列入 unresolved。

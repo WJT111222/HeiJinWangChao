@@ -1,7 +1,15 @@
 import { z } from 'zod';
 import { DomainCommandSchema } from '../../domain/commands';
 import type { AiStage } from '../ai/configuration';
-export const worldTypes = ['CreateNpc', 'CreateOrganization', 'RecordOrgRelation'] as const;
+import { WorldEvidenceSchema } from './worldEvidence';
+export const worldTypes = [
+  'CreateNpc',
+  'UpdateNpc',
+  'RecordNpcMemory',
+  'CreateLocation',
+  'CreateOrganization',
+  'RecordOrgRelation',
+] as const;
 export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
   const options = DomainCommandSchema.options.filter(
     (option) =>
@@ -28,9 +36,25 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
           },
     rules: [
       '严格使用各 type 的同级字段，不接受 group/entityId/payload 包装或旧别名。',
-      'evidence 引用已提供事实原文；金额为整数人民币分，price/amount 等正值限制以 Schema 为准。',
+      stage === 'world'
+        ? 'evidence 使用 WORLD_EVIDENCE_V1 JSON 字符串；区分既有事实、新生成场外候选、计划与转述。不得要求新推演事实逐字出现在旧正文。'
+        : 'evidence 引用已提供事实原文；金额为整数人民币分，price/amount 等正值限制以 Schema 为准。',
       '不存在的更新操作列入 unresolved；CreateNpc/CreateOrganization 不是更新命令。',
       'Schema 仅描述结构；仍须进行权限、证据、引用、金额、时间、版本与幂等校验。',
     ],
+    ...(stage === 'world'
+      ? {
+          evidenceEncoding:
+            'evidence = JSON.stringify(WORLD_EVIDENCE_V1)。sources 只引用 WORLD_SOURCES 的 id；derived 可描述新推演结果，不要求逐字存在于来源。',
+          worldEvidenceSchema: z.toJSONSchema(WorldEvidenceSchema, { target: 'draft-7' }),
+          npcFieldPermissions: {
+            UpdateNpc:
+              '仅离场已有 NPC：locationId/healthText/activeGoals 与 onScene=false；禁止 affinityChange、relationshipText、lastInteractionAt、onScene=true。开局同伴不得更新。',
+            CreateNpc: '离场、好感中性0且未确认、无互动时间、不得内联记忆/知晓信息。',
+            RecordNpcMemory:
+              '当回合有来源的自身知识，不是记忆压缩；记忆正文与 evidence.fact 一致，来源标识写入 knowledgeSource。',
+          },
+        }
+      : {}),
   };
 }
