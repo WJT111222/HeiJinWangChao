@@ -375,3 +375,73 @@ describe('世界并发、迟到与取消', () => {
     expect(await repo.load('save-a')).toEqual(before);
   });
 });
+
+describe('A5 取消候选的真实保存边界', () => {
+  it.each(['task', 'event'] as const)('%s 无终止依据整批失败，合法终止仅保存候选', async (kind) => {
+    await repo.delete('save-a', 0);
+    const actor = { kind: 'npc' as const, id: 'npc-a' },
+      oldTask = { ...task(), actorRef: actor },
+      oldEvent = { ...event(), actorRefs: [actor] };
+    await repo.create({
+      ...worldState(),
+      tasks: kind === 'task' ? { 'task-a': oldTask } : {},
+      events: kind === 'event' ? { 'event-a': oldEvent } : {},
+    });
+    const initial = createTurnDraft('save-a', 0, 'turn-a', 'regular', '');
+    await repo.saveDraft(initial, null);
+    const ready = worldDraft(),
+      story = rerollStory(initial, ready.story!);
+    await repo.saveDraft(story, 0);
+    draft = await repo.saveDraft({ ...ready, draftRevision: 2 }, 1);
+    const before = await repo.load('save-a');
+    const response = (valid: boolean) => {
+      const result = worldResult(),
+        evidence = proof({
+          sources: [`${kind}:${kind}-a`, 'goal:npc-a:0'],
+          fact: valid ? '同事未能完成器材清点，行动已经终止。' : '同事整理了资料。',
+          outcome: valid
+            ? '器材损坏使清点失败，负责人撤销安排并保留已核对清单。'
+            : '文档已按年份归类。',
+        });
+      if (kind === 'task')
+        result.taskCommands = [
+          {
+            type: 'SaveTask',
+            commandId: 'cancel',
+            task: { ...oldTask, status: 'cancelled' },
+            evidence,
+          },
+        ];
+      else
+        result.eventCommands = [
+          {
+            type: 'SaveEvent',
+            commandId: 'cancel',
+            event: { ...oldEvent, status: 'cancelled' },
+            evidence,
+          },
+        ];
+      return result;
+    };
+    await expect(
+      runner(async () => wire(response(false))).generate({ ...setup(), draft }),
+    ).rejects.toMatchObject({ code: 'invalid_output' });
+    const failed = await repo.loadDraft('save-a');
+    expect(failed?.world).toBeUndefined();
+    expect(await repo.load('save-a')).toEqual(before);
+    const saved = await runner(async () => wire(response(true))).generate({
+      ...setup(),
+      draft: failed!,
+    });
+    expect(saved.stageStatus.world).toBe('ready');
+    expect(saved.world?.validation).toBe('validated');
+    expect(
+      kind === 'task' ? saved.world?.result.taskCommands[0] : saved.world?.result.eventCommands[0],
+    ).toMatchObject(
+      kind === 'task' ? { task: { status: 'cancelled' } } : { event: { status: 'cancelled' } },
+    );
+    expect(saved.story).toEqual(draft.story);
+    expect(saved.variables).toEqual(draft.variables);
+    expect(await repo.load('save-a')).toEqual(before);
+  });
+});

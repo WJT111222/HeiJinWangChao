@@ -5,7 +5,13 @@ import type { TurnDraft } from '../../domain/drafts';
 import type { GameState } from '../../domain/state';
 import { projectTurn } from '../../domain/turnProjection';
 import { worldTypes } from './commandCatalog';
-import { readWorldEvidence, requireWorld, worldSources, speculative } from './worldEvidence';
+import {
+  readWorldEvidence,
+  requireWorld,
+  worldSources,
+  speculative,
+  hasAffirmedTermination,
+} from './worldEvidence';
 import { isNegatedFact } from '../../domain/factPolarity';
 import type { WorldEvidence, WorldSource } from './worldEvidence';
 import type { DomainCommand } from '../../domain/commands';
@@ -82,6 +88,20 @@ function outcome(
         ),
     );
     requireWorld(!speculative.test(proof.outcome) && !isNegatedFact(proof.outcome));
+  }
+}
+function cancellationEvidence(proof: WorldEvidence, sources: readonly WorldSource[], key: string) {
+  requireWorld(proof.kind === 'established' || proof.kind === 'derived');
+  requireWorld(sources.some((source) => source.id === key));
+  requireWorld(hasAffirmedTermination(proof.fact));
+  if (proof.kind === 'derived') {
+    requireWorld(proof.outcome && proof.outcome !== proof.fact && !speculative.test(proof.outcome));
+    // 终止原因/实际后果必须另行交代；重复“任务已取消”不能作为自证结果。
+    requireWorld(
+      !/^(?:(?:该|此|本次)?(?:任务|事件|行动|工作|安排|排程))?(?:已经|现已|已|正式|最终)?(?:被)?(?:取消|撤销|终止|放弃|叫停|停止执行|停止|结束)(?:了)?[。！!]?$/u.test(
+        proof.outcome.replace(/\s/g, ''),
+      ),
+    );
   }
 }
 export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnDraft) {
@@ -359,7 +379,10 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
         }
         if (task.status === 'completed')
           outcome(proof, origins, `task:${task.id}`, task.startAt, base.worldClock, Boolean(old));
-        if (task.status === 'cancelled') requireWorld(old && proof.kind !== 'planned');
+        if (task.status === 'cancelled') {
+          requireWorld(old);
+          cancellationEvidence(proof, origins, `task:${task.id}`);
+        }
         break;
       }
       case 'SaveEvent': {
@@ -452,7 +475,10 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
           requireWorld(event.resolutionText?.trim());
           requireWorld(event.resolvedAt && Date.parse(event.resolvedAt) === Date.parse(proof.at));
         }
-        if (event.status === 'cancelled') requireWorld(old && proof.kind !== 'planned');
+        if (event.status === 'cancelled') {
+          requireWorld(old);
+          cancellationEvidence(proof, origins, `event:${event.id}`);
+        }
         // 候选不发布消息；模型也不能通过改 visibility 伪造主角已知。
         if (event.visibility !== 'hidden' && event.visibility !== old?.visibility)
           requireWorld(proof.kind === 'established', 'permission');

@@ -473,7 +473,11 @@ describe('额外来源与状态阻断回归', () => {
     r.taskCommands = [
       saveTask(
         { ...t, status: 'cancelled' },
-        proof({ sources: ['task:task-a', 'goal:npc-a:0'], fact: '同事取消了明日的器材清点安排。' }),
+        proof({
+          sources: ['task:task-a', 'goal:npc-a:0'],
+          fact: '同事取消了明日的器材清点安排。',
+          outcome: '钥匙交付中断且无法按期取得，负责人撤销原定排程。',
+        }),
       ),
     ];
     expect(parse(r, withTask(t))).toBeDefined();
