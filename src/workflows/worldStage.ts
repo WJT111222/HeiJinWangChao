@@ -16,12 +16,13 @@ import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { assertWorldCoverage, selectWorldDomains } from '../prompts/worldDomains';
 import { StageGuard } from './stageGuard';
+import type { OrderPreferences } from '../prompts/order';
 
 export class WorldStage {
-  private guard = new StageGuard();
   constructor(
     private repository: Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>,
     private client = new AiClient(),
+    private guard = new StageGuard(),
   ) {}
   cancel() {
     return this.guard.cancel();
@@ -34,6 +35,7 @@ export class WorldStage {
     settings: Settings;
     config: AiConfig;
     vault: CredentialVault;
+    orderPreferences?: OrderPreferences;
     onDraft?: (draft: TurnDraft) => void;
     onProgress?: (phase: 'generating' | 'saving') => void;
   }): Promise<TurnDraft> {
@@ -81,6 +83,7 @@ export class WorldStage {
             userInput: '',
             settings,
             domains: selection.domains,
+            orderPreferences: input.orderPreferences,
           },
           config,
           input.vault,
