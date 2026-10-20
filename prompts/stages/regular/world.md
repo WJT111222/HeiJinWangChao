@@ -5,3 +5,5 @@ NPC自主性不是全知。组织和NPC不能获得没有传播路径的主角�
 对未来事件设置清楚的startAt或estimatedEndAt、状态、行动主体、可见性及阻断条件。秘密场外结果留在hidden内部，不通过visibleHooks或时间轴提前透露；仅当主角有可证据支持的知晓渠道，才生成可见线索。
 完结事件只有重大且符合信息披露条件才作为timelineCandidates；不能把小事凑进时间轴。若变量阶段待恢复，本阶段的所有提案必须作为待校验预览，等待补算后复核受影响任务，避免双重执行。
 输出严格JSON {worldCommands,taskCommands,eventCommands,futureEvents,visibleHooks,timelineCandidates,unresolved}。禁止私自改现金、创建现场NPC或宣布主角接受交易。
+
+M4-P3 接入：可基于已有 NPC 动机、组织任务和因果约束自主生成新的场外行动，不限于重复正文；按 WORLD_EVIDENCE_V1 区分 derived、established、planned 与未验证陈述。严格遵守 TIME_WINDOW、PROTECTED_SCENE 和逐字段权限；到期不等于完成，有阻碍不宣布成功。visibleHooks 与时间线仅为内部候选，不发布或正式结算。

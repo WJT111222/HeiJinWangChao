@@ -25,6 +25,8 @@ export async function runStageRequest(
       ? undefined
       : (input.orderPreferences ?? browserPromptOrder()),
   }) as ComposeInput & { stage: AiStage };
+  if (captured.stage === 'world' && captured.draft?.variables?.validation === 'validated')
+    parseVariables(JSON.stringify(captured.draft.variables.result), captured.state, captured.draft);
   const snapshot = requestSnapshot(config, captured.stage, vault);
   const prompt = await composePrompt({ ...captured, cotAllowed: snapshot.useCot });
   const response = await client.generate(snapshot, prompt.messages, {

@@ -17,6 +17,7 @@ export type AiErrorCode =
   | 'resource'
   | 'placeholder'
   | 'permission'
+  | 'npc_task_conflict'
   | 'money_unit';
 const messages: Record<AiErrorCode, string> = {
   configuration: '渠道、模型或路由配置无效，请检查设置。',
@@ -38,6 +39,7 @@ const messages: Record<AiErrorCode, string> = {
   resource: '提示词资源缺失或与注册校验值不符。',
   placeholder: '提示词缺少必需参数或仍有未解析占位符，已阻止发送。',
   permission: '候选超出本阶段允许的命令或对象范围。',
+  npc_task_conflict: 'NPC 已有未终结后台任务，候选存在任务占用冲突；未改写或删除已有任务。',
   money_unit: '候选金额与证据中的人民币元/分不一致。',
 };
 export class AiError extends Error {

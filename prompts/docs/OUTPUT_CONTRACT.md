@@ -94,3 +94,21 @@
 原十四类保留，新增八类：UpdateProtagonist（白名单人物状态）、UpdateNpc（稳定 ID 的现场变化及有依据关系）、RecordNpcMemory（当回合来源/可见性/知识性质）、CreateLocation（合法层级）、SpendFunds（普通消费）、AcquireItem（无偿获得）、UpdateItem（数量/状态/位置）、LoseItem（遗失解除持有）。每种字段严格来自 COMMAND_CATALOG，不接受任意路径或深合并。
 初始同伴新增向后兼容的可选 affinityConfirmed=true 标记；缺失仍表示创角占位，不迁移猜测数值。只有明确的 UpdateNpc.affinityChange 可在候选副本中确认，正式落库仍待 M4-P5。RecordNpcMemory 的转述/推测保留文字标记，不提升成客观事实。
 变量阶段每次手动执行先保存 startStageAttempt，保持正文版本与输入；按已选正文、正式 revision、执行/请求版本验证，再保存 validated 变量候选。此处 validated 仅表示程序校验通过的草稿，不是正式世界结算。不执行世界阶段或自动重试，不调用正式 SaveRepository.save。
+
+
+## M4-P3 世界候选运行契约
+
+本阶段复用原有八种受限命令，不增加领域命令或正式存档字段。世界命令 evidence 在原字符串字段中编码 WORLD_EVIDENCE_V1 JSON，详见 shared/08_world_output.md 和运行时 COMMAND_CATALOG；变量命令 evidence 仍引用正文原文，二者不能混用。新场外 derived 候选根据可信来源、时间窗口及动机形成，不要求逐字出现在正文。futureEvents 只镜像已验证的 scheduled SaveEvent，不是独立命令入口。visibleHooks、revealAfter、timelineCandidates 不自动披露。无合法变量时世界只能 preview；已有合法变量即使本次变量开关关闭也可复用。所有结果只保存 TurnDraft；正式状态、时间和历史不受影响。
+
+
+## M4-P3 二轮审查：实体、估计与任务状态
+
+- CreateLocation 仅接受 established 或合法 derived 存在事实，不能将 planned 建设直接建成实体；计划或不确定项进入任务/未来事件/unresolved。
+- estimatedEndAt/dueAt 允许 AI 自主估计、调整，但到期只重新评估。scheduled/active/blocked 事件不得有 resolvedAt/resolutionText；真实 resolved 要有合法实际时间和非空结局，允许晚于预计。cancelled 保留兼容的可选说明/时间组合，不能预存未来实际终止时间。futureEvents 无旁路。
+- NPC 的 planned/active/blocked 任务占用唯一名额，completed/cancelled 释放；正式、变量投影和候选合查，本批终结不能立即接新任务。组织可多任务，实际执行者未被 actorRef 表达的情况不假装能硬校验。
+- 既有完成必须明确关联自身 task:<id>/event:<id>，可结合动机生成新结果，不要求正文预先证明。失败终止使用 cancelled 并在原 evidence 来源凭据中保存真实结果，blocked 不算成功。
+- 正式状态不变，旧冲突不静默清理；冲突候选安全失败，旧任务冲突在内部 unresolved 报告。后续生命周期与阶段分工见 DEVELOPMENT.md，仅作规划，不注入删除/休眠功能。
+
+## M4-P3 A5 取消证据定点修复
+
+取消与完成都需目标自身来源：SaveTask.cancelled 引用 task:<id>，SaveEvent.cancelled 引用 event:<id>。取消还需 fact 中肯定成立的终止谓语；无关普通场外动作或人物动机不能替代。derived 必须有区别于取消宣告的具体 outcome 原因/后果，空缺或仅“任务取消了”不能自证。明确失败后终止允许；否定终止和准备重试不允许借取消释放名额。继续保留未来安排提前取消、完成条件无需满足、事件实际结案字段可缺失的语义。详见 shared/08_world_output.md，正式 Schema/状态字段不变。

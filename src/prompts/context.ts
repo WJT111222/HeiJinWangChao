@@ -2,7 +2,8 @@ import { GameStateSchema } from '../domain/state';
 import type { GameState } from '../domain/state';
 import { TurnDraftSchema } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
-import { commitCommands } from '../domain/commands';
+import { projectTurn } from '../domain/turnProjection';
+import { worldSources } from '../services/validation/worldEvidence';
 import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { initialCompanionProfile, matchesCompanion } from '../services/local/companionProfile';
@@ -207,30 +208,50 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
     let temporary = state;
     if (!variablePending) {
       try {
-        temporary = commitCommands(
-          state,
-          draft!.turnId,
-          state.revision,
-          draft!.variables!.result.commands,
-          state.updatedAt,
-        );
+        temporary = projectTurn(state, draft!);
       } catch {
         throw new AiError('invalid_output');
       }
     }
     return {
+      TURN_CONTEXT: {
+        turnId: draft!.turnId,
+        turnKind: draft!.turnKind,
+        baseSaveRevision: state.revision,
+        storyRevision: draft!.storyRevision,
+        executionRevision: draft!.executionRevision,
+        requestRevision: draft!.stageRequestRevisions.world,
+        basedOnVariableRevision: draft!.variables?.candidateRevision,
+      },
       BASE_SAVE_REVISION: state.revision,
       worldClock: temporary.worldClock,
+      TIME_WINDOW: { from: state.worldClock, to: temporary.worldClock },
       variablePending,
-      STORY_RESULT: draft!.story,
+      STORY_RESULT: { narrative: draft!.story!.narrative, summary: draft!.story!.summary },
       VARIABLE_RESULT: variablePending ? undefined : draft!.variables,
+      WORLD_SOURCES: worldSources(temporary, draft!, state),
+      PROTECTED_SCENE: {
+        protagonistId: state.protagonist.id,
+        initialCompanionId: state.initialCompanionId,
+        sceneNpcIds: [
+          ...new Set(
+            [...Object.values(state.npc), ...Object.values(temporary.npc)]
+              .filter((npc) => npc.onScene)
+              .map((npc) => npc.id),
+          ),
+        ],
+      },
       OFFSCREEN_STATE: {
-        npc: Object.values(temporary.npc).filter((npc) => !npc.onScene),
+        npc: Object.values(temporary.npc).filter(
+          (npc) => !npc.onScene && !state.npc[npc.id]?.onScene,
+        ),
         organizations: temporary.organizations,
         tasks: Object.values(temporary.tasks).filter(
           (task) =>
             task.actorRef.kind === 'organization' ||
-            (task.actorRef.kind === 'npc' && !temporary.npc[task.actorRef.id]?.onScene),
+            (task.actorRef.kind === 'npc' &&
+              !temporary.npc[task.actorRef.id]?.onScene &&
+              !state.npc[task.actorRef.id]?.onScene),
         ),
         events: temporary.events,
         locations: temporary.locations,
