@@ -134,3 +134,50 @@ visibleHooks、revealAfter 和 timelineCandidates 都留在内部候选。reveal
 - 世界来源目录基于已存在正式/变量投影的实体。新人物可创建并关联任务/事件，但需要其自身来源的后续更新/记忆留到下一次合法投影，不用本批新来源自证。
 - M4-P4 协调和自动恢复、M4-P5 正式结算/重新验证、M5 记忆压缩与调度仍未实现。preview 不会自动升级为 validated，变量补算后需要显式重新生成世界候选。
 - NPC 角色迷雾、私人档案、作弊编辑器及其他 V0.2 功能没有开发。
+
+## PR #13 二轮审查修复
+
+本轮继续原分支及 PR，不改 main，不合并或部署。下列为本轮变化，前面的验证记录保留为首轮记录。
+
+### 当前实现 A1–A5
+
+1. **地点事实**：CreateLocation 不再接受 planned，只接受 established/合法 derived。现实地点可补录、新场外事实可自主生成；计划建设进入任务或未来事件，未知实体进入 unresolved。ID/父级/循环引用沿用原有整批模拟。
+2. **估计与实际结案**：scheduled/active/blocked 的 resolvedAt 和 resolutionText 必须缺失，空串也拒绝；resolved 须合法时间及非空实际结局。estimatedEndAt/dueAt 仍可由 AI 估计、保留或调整，到期只重新评估，实际结案可晚于估计。cancelled 保留现有可选说明/终止时间组合，时间不得晚于当前事实时点；未来安排可在开始前取消而不伪造 resolvedAt。futureEvents 镜像没有旁路。
+3. **一人一任务**：确定性检查 actorRef.kind=npc 的正式状态、变量投影及本批候选；planned/active/blocked 占用，completed/cancelled 不占用。占用 ID 用 Set 去重，不能换 ID 或负责人绕过，同批终结不释放新任务名额；本批新建并终结 A 再给同人创建 B 也拒绝。组织可多任务。正式状态/变量投影已有旧冲突不自动删改；允许没有冲突性新占用的其他候选，但在内部 unresolved 追加程序诊断。冲突候选整批失败，并保留安全 npc_task_conflict 错误码与说明。
+4. **完成来源**：已有任务/事件完成必须引用对应 task:<id>/event:<id>，established 也不豁免；仍可结合人物目标、能力、组织背景自主生成新成果。新建任务/事件不伪造尚未存在的自身来源，继续沿用合法动机/事实和窗口约束。完成条件、旧目标、行动者及已知阻碍保护不变；增加正式行动者核对，不能继承变量投影的改派绕过旧任务归属。
+5. **终止与失败**：成功 completed；暂时受阻 blocked 且占位；实际失败并终止/合理取消用 cancelled，真实原因及结果保留在本轮 evidence.fact/rationale/outcome 中。对“未能/没能完成清点，行动已终止”，仅肯定的终止分句能支持取消，否定完成不支持成功、否定终止不支持取消。沿用分句否定作用域，没有添加语义通用推断器。笼统“时间到了/任务完成了”不能作为 derived 的具体成果。
+
+### 本轮无法确定性验证的情况
+
+- 组织任务的实际执行人没有结构化引用。程序只能核验 actorRef，不能识别自由目标文字中是否偷偷使用同一忙碌 NPC；提示词禁止借组织名义规避并要求不确定项 unresolved，不能宣称此处已完成硬校验。
+- task 没有独立 failed 状态、实际结束时间及结果字段。当前 cancelled + 原有 evidence 能在 TurnDraft 保留真实失败/取消原因，但不能让任务状态本身区分全部失败类型。后续结算须把需要长期保留的结果衔接到合法事件/记忆，必要结构扩展另行设计审查。
+- 任意复杂资源、耗时、自然语言成果与行动者指代仍需模型和人工判断；时间/状态/来源结构检查不是完整语义求真。没有为了减少 Token 取消九域约束，没有修改现有玩家资料面板可见性。
+
+### 生命周期规范仅记录，未实现
+
+正式产品规范完整记录于 DEVELOPMENT.md 的“动态世界生命周期正式决策”：NPC 任务接力不重指派旧任务；无继续职责时真正从正式活跃实体表删除，不设休眠池或永久完整备份；重要信息由现有记忆保存、重大事件由时间线保存；恢复人物优先依据可靠历史记忆；删除必须处理全部引用、保留历史并原子执行，不安全则阻止，保留重要同伴/剧情角色。上下文只重点模拟当前有职责对象，不永久模拟所有历史人物。
+
+M4-P4 负责自动协调、到期重新评估、任务接力与调度范围；M4-P5 负责正式结算（重验变量+世界整批占用/引用，不只相信旧 validated）、成果交接及安全原子退场；M5 负责重要信息提取/记忆保存/人物恢复及长期规模控制。依赖不满足时不强行删除。当前没有 DeleteNpc、休眠字段、调度数据库、自动到期调用或正式状态提交。
+
+### 本轮文件
+
+- src/services/validation/worldOutput.ts：地点/事件校验、任务占用、旧对象完成来源、旧冲突诊断。
+- src/services/validation/worldEvidence.ts、src/domain/factPolarity.ts：失败与肯定终止的分句边界、没能否定、任务冲突错误类型。
+- src/services/validation/commandCatalog.ts、src/services/ai/errors.ts：真实阶段约束与安全错误说明。
+- src/tests/world-lifecycle.test.ts（新增）、world-stage.test.ts：实体/估计/终态/来源/任务占用与真实 Runtime 不落正式状态回归。
+- e2e/world-runtime.spec.ts：桌面/移动计划地点、预结案、任务冲突与合法估计重试。
+- prompts/shared/08_world_output.md、docs/OUTPUT_CONTRACT.md、manifest.json、sources.lock.json：同步运行契约、版本、字符数与 SHA；保留历史来源记录。
+- DEVELOPMENT.md、M4-P3-DEVELOPMENT.md：后续生命周期正式规范、阶段分工及本轮记录。
+
+### 本轮最终检查
+
+| 命令 | 本轮结果 |
+| --- | --- |
+| `npm run prompts:check` | 3 文件、82 项通过；Manifest/真实资源/哈希及既有协议回归 |
+| `npm run check` | ESLint 零警告；16 文件、531 项通过；TypeScript 与 Vite 生产构建通过 |
+| `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e` | 58 项通过，桌面29、移动29，包括原有56项和本轮2项 |
+| `git diff --check` | 通过 |
+
+本轮新增49项自动化测试（world-lifecycle 47项、world-stage 2项），保留原有482项；新增一个浏览器场景在桌面/移动各运行一次。测试覆盖计划地点拒绝与存在事实、父级/重复ID、预计时间保留/延期/晚于估计的实际结案、非法实际结案字段及futureEvents旁路、兼容取消、planned/active/blocked占用、terminal释放、多NPC/多组织任务、同批接力与旧档冲突、正式/变量投影占用、旧完成自身来源、失败终止与分句否定、网络到草稿安全失败及正式整对象不变。原三协议、补算/取消/迟到、opening/regular及既有M0–M4-P3回归保留。
+
+无未通过测试。全部使用 Mock 或浏览器拦截，没有真实付费调用。正式 Schema/版本、世界书、NSFW原文、七项写作设置、玩家资料面板、Runtime/Composer/StageGuard/SaveRepository实现保持不变。世界结果仍仅存候选，不提交正式 GameState。

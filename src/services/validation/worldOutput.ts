@@ -8,6 +8,7 @@ import { worldTypes } from './commandCatalog';
 import { readWorldEvidence, requireWorld, worldSources, speculative } from './worldEvidence';
 import { isNegatedFact } from '../../domain/factPolarity';
 import type { WorldEvidence, WorldSource } from './worldEvidence';
+import type { DomainCommand } from '../../domain/commands';
 
 function sameActor(a: ActorRef, b: ActorRef) {
   return a.kind === b.kind && a.id === b.id;
@@ -26,24 +27,61 @@ function readyConditions(state: GameState, conditions: readonly string[]) {
     return task?.status === 'completed' || event?.status === 'resolved';
   });
 }
+function npcTaskOccupancy(state: GameState, base: GameState, commands: readonly DomainCommand[]) {
+  const occupied = new Map<string, Set<string>>();
+  const occupy = (npcId: string, taskId: string) => {
+    const tasks = occupied.get(npcId) ?? new Set<string>();
+    tasks.add(taskId);
+    occupied.set(npcId, tasks);
+    return tasks;
+  };
+  // 正式状态和变量投影都算占用；本批完成/取消不立即释放，避免同批接力。
+  for (const task of [...Object.values(state.tasks), ...Object.values(base.tasks)])
+    if (task.actorRef.kind === 'npc' && !['completed', 'cancelled'].includes(task.status))
+      occupy(task.actorRef.id, task.id);
+  const existingConflicts = [...occupied].filter(([, tasks]) => tasks.size > 1);
+  // 同批新建并终结的临时任务也不能被用作“先完成 A 再接 B”的绕行路径。
+  for (const command of commands)
+    if (
+      command.type === 'SaveTask' &&
+      command.task.actorRef.kind === 'npc' &&
+      !base.tasks[command.task.id] &&
+      ['completed', 'cancelled'].includes(command.task.status)
+    )
+      occupy(command.task.actorRef.id, command.task.id);
+  for (const command of commands) {
+    if (command.type !== 'SaveTask') continue;
+    const task = command.task;
+    if (task.actorRef.kind !== 'npc' || ['completed', 'cancelled'].includes(task.status)) continue;
+    requireWorld(occupy(task.actorRef.id, task.id).size === 1, 'npc_task_conflict');
+  }
+  // 旧数据保留原样；即便本轮没有新增任务，也在内部 unresolved 明确报告。
+  return existingConflicts.map(
+    ([id, tasks]) =>
+      `已有 NPC ${id} 的未终结任务冲突：${[...tasks].sort().join('、')}。未自动删除或改派任务；本轮不得新增占用。`,
+  );
+}
 function outcome(
   proof: WorldEvidence,
   sources: readonly WorldSource[],
   key: string,
   start: string,
   to: string,
+  existing: boolean,
 ) {
   requireWorld(proof.kind === 'established' || proof.kind === 'derived');
   requireWorld(Date.parse(start) <= Date.parse(proof.at) && Date.parse(proof.at) <= Date.parse(to));
+  requireWorld(!existing || sources.some((source) => source.id === key));
   if (proof.kind === 'derived') {
     requireWorld(
       Date.parse(proof.at) > Date.parse(start) &&
         proof.outcome &&
         proof.outcome !== proof.fact &&
-        !/^(?:任务|事件)?(?:已)?(?:到期|完成|结束)[。！]?$/u.test(proof.outcome),
+        !/^(?:(?:任务|事件|行动|工作|时间)(?:已经|已)?|已经|已)?(?:到期|到(?:了)?|完成|结束|成功|失败)(?:了)?[。！!]?$/u.test(
+          proof.outcome,
+        ),
     );
     requireWorld(!speculative.test(proof.outcome) && !isNegatedFact(proof.outcome));
-    requireWorld(sources.some((source) => source.id === key || source.knowledge === 'motive'));
   }
 }
 export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnDraft) {
@@ -53,6 +91,7 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
     base = projectTurn(state, draft);
   const sources = worldSources(base, draft, state);
   const commands = [...result.worldCommands, ...result.taskCommands, ...result.eventCommands];
+  const taskConflicts = npcTaskOccupancy(state, base, commands);
   const allowed = new Set<string>(worldTypes);
   for (const command of result.worldCommands) requireWorld(allowed.has(command.type), 'permission');
   for (const command of result.taskCommands)
@@ -264,13 +303,13 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
         );
         break;
       case 'CreateLocation':
-        requireWorld(
-          proof.kind === 'established' || proof.kind === 'derived' || proof.kind === 'planned',
-        );
+        requireWorld(proof.kind === 'established' || proof.kind === 'derived');
         break;
       case 'SaveTask': {
         const task = command.task,
           old = base.tasks[task.id];
+        const formal = state.tasks[task.id];
+        requireWorld(!formal || sameActor(formal.actorRef, task.actorRef), 'permission');
         requireWorld(
           actorAllowed(task.actorRef) &&
             (!old || (actorAllowed(old.actorRef) && sameActor(old.actorRef, task.actorRef))),
@@ -319,13 +358,19 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
           );
         }
         if (task.status === 'completed')
-          outcome(proof, origins, `task:${task.id}`, task.startAt, base.worldClock);
+          outcome(proof, origins, `task:${task.id}`, task.startAt, base.worldClock, Boolean(old));
         if (task.status === 'cancelled') requireWorld(old && proof.kind !== 'planned');
         break;
       }
       case 'SaveEvent': {
         const event = command.event,
           old = base.events[event.id];
+        // 预计时间是可调整的估计，非终态不能预存实际结案字段（空串也不接受）。
+        if (['scheduled', 'active', 'blocked'].includes(event.status))
+          requireWorld(event.resolvedAt === undefined && event.resolutionText === undefined);
+        // cancelled 可沿用既有的取消说明/实际终止时间；不强迫其使用 resolved 的字段组合。
+        if (event.status === 'cancelled' && event.resolvedAt !== undefined)
+          requireWorld(Date.parse(event.resolvedAt) <= Date.parse(proof.at));
         if (!old) {
           requireWorld(
             !Object.values(base.events).some(
@@ -396,7 +441,15 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
           );
         }
         if (event.status === 'resolved') {
-          outcome(proof, origins, `event:${event.id}`, event.startAt, base.worldClock);
+          outcome(
+            proof,
+            origins,
+            `event:${event.id}`,
+            event.startAt,
+            base.worldClock,
+            Boolean(old),
+          );
+          requireWorld(event.resolutionText?.trim());
           requireWorld(event.resolvedAt && Date.parse(event.resolvedAt) === Date.parse(proof.at));
         }
         if (event.status === 'cancelled') requireWorld(old && proof.kind !== 'planned');
@@ -433,5 +486,6 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
         projected.events[id]?.status === 'resolved' && projected.events[id]?.impact === 'major',
     ),
   );
+  result.unresolved = [...new Set([...result.unresolved, ...taskConflicts])];
   return result;
 }

@@ -12,7 +12,7 @@ import type { TurnDraft } from '../domain/drafts';
 import { defaultSettings } from '../ui/settings/model';
 import { requestInspections } from '../services/ai/inspection';
 import { worldState, worldDraft, worldResult, npcUpdate, proof } from './fixtures/world';
-import { gameTime } from './fixtures/game';
+import { gameTime, task, event } from './fixtures/game';
 function setup(protocol: Protocol = 'openai') {
   const config = defaultAiConfig(),
     story = newChannel(),
@@ -228,6 +228,50 @@ describe('世界阶段实际 Runtime → 候选，不提交正式状态', () => 
       retryable: true,
     });
   });
+});
+
+describe('二轮审查错误通过真实 Runtime 安全失败', () => {
+  it.each(['event-result', 'npc-quota'] as const)(
+    '%s 不污染正文、变量或正式对象，保留明确错误码',
+    async (scenario) => {
+      const before = await repo.load('save-a'),
+        result = worldResult();
+      if (scenario === 'event-result')
+        result.eventCommands = [
+          {
+            type: 'SaveEvent',
+            commandId: 'premature',
+            event: {
+              ...event(),
+              actorRefs: [{ kind: 'npc', id: 'npc-a' }],
+              resolutionText: '未来行动已经成功',
+            },
+            evidence: proof({ kind: 'planned' }),
+          },
+        ];
+      else
+        result.taskCommands = ['a', 'b'].map((id) => ({
+          type: 'SaveTask',
+          commandId: `job-${id}`,
+          task: { ...task(id), goal: `清点器材 ${id}`, actorRef: { kind: 'npc', id: 'npc-a' } },
+          evidence: proof({ kind: 'planned' }),
+        }));
+      await expect(
+        runner(async () => wire(result)).generate({ ...setup(), draft }),
+      ).rejects.toMatchObject({
+        code: scenario === 'event-result' ? 'invalid_output' : 'npc_task_conflict',
+      });
+      const saved = await repo.loadDraft('save-a');
+      expect(saved?.world).toBeUndefined();
+      expect(saved?.stageStatus.world).toBe('failed');
+      expect(saved?.story).toEqual(draft.story);
+      expect(saved?.variables).toEqual(draft.variables);
+      expect(saved?.failures.at(-1)?.errorCode).toBe(
+        scenario === 'event-result' ? 'invalid_output' : 'npc_task_conflict',
+      );
+      expect(await repo.load('save-a')).toEqual(before);
+    },
+  );
 });
 
 describe('世界并发、迟到与取消', () => {

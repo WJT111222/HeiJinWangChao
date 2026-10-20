@@ -99,3 +99,12 @@
 ## M4-P3 世界候选运行契约
 
 本阶段复用原有八种受限命令，不增加领域命令或正式存档字段。世界命令 evidence 在原字符串字段中编码 WORLD_EVIDENCE_V1 JSON，详见 shared/08_world_output.md 和运行时 COMMAND_CATALOG；变量命令 evidence 仍引用正文原文，二者不能混用。新场外 derived 候选根据可信来源、时间窗口及动机形成，不要求逐字出现在正文。futureEvents 只镜像已验证的 scheduled SaveEvent，不是独立命令入口。visibleHooks、revealAfter、timelineCandidates 不自动披露。无合法变量时世界只能 preview；已有合法变量即使本次变量开关关闭也可复用。所有结果只保存 TurnDraft；正式状态、时间和历史不受影响。
+
+
+## M4-P3 二轮审查：实体、估计与任务状态
+
+- CreateLocation 仅接受 established 或合法 derived 存在事实，不能将 planned 建设直接建成实体；计划或不确定项进入任务/未来事件/unresolved。
+- estimatedEndAt/dueAt 允许 AI 自主估计、调整，但到期只重新评估。scheduled/active/blocked 事件不得有 resolvedAt/resolutionText；真实 resolved 要有合法实际时间和非空结局，允许晚于预计。cancelled 保留兼容的可选说明/时间组合，不能预存未来实际终止时间。futureEvents 无旁路。
+- NPC 的 planned/active/blocked 任务占用唯一名额，completed/cancelled 释放；正式、变量投影和候选合查，本批终结不能立即接新任务。组织可多任务，实际执行者未被 actorRef 表达的情况不假装能硬校验。
+- 既有完成必须明确关联自身 task:<id>/event:<id>，可结合动机生成新结果，不要求正文预先证明。失败终止使用 cancelled 并在原 evidence 来源凭据中保存真实结果，blocked 不算成功。
+- 正式状态不变，旧冲突不静默清理；冲突候选安全失败，旧任务冲突在内部 unresolved 报告。后续生命周期与阶段分工见 DEVELOPMENT.md，仅作规划，不注入删除/休眠功能。
