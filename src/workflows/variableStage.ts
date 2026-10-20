@@ -14,12 +14,13 @@ import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { assertVariableCoverage, selectVariableDomains } from '../prompts/variableDomains';
 import { StageGuard } from './stageGuard';
+import type { OrderPreferences } from '../prompts/order';
 
 export class VariableStage {
-  private guard = new StageGuard();
   constructor(
     private repository: Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>,
     private client = new AiClient(),
+    private guard = new StageGuard(),
   ) {}
   cancel() {
     return this.guard.cancel();
@@ -32,6 +33,7 @@ export class VariableStage {
     settings: Settings;
     config: AiConfig;
     vault: CredentialVault;
+    orderPreferences?: OrderPreferences;
     onDraft?: (draft: TurnDraft) => void;
     onProgress?: (phase: 'generating' | 'saving') => void;
   }): Promise<TurnDraft> {
@@ -78,6 +80,7 @@ export class VariableStage {
             userInput: draft.userInput,
             settings,
             domains: selection.domains,
+            orderPreferences: input.orderPreferences,
           },
           config,
           input.vault,
