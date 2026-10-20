@@ -108,3 +108,7 @@
 - NPC 的 planned/active/blocked 任务占用唯一名额，completed/cancelled 释放；正式、变量投影和候选合查，本批终结不能立即接新任务。组织可多任务，实际执行者未被 actorRef 表达的情况不假装能硬校验。
 - 既有完成必须明确关联自身 task:<id>/event:<id>，可结合动机生成新结果，不要求正文预先证明。失败终止使用 cancelled 并在原 evidence 来源凭据中保存真实结果，blocked 不算成功。
 - 正式状态不变，旧冲突不静默清理；冲突候选安全失败，旧任务冲突在内部 unresolved 报告。后续生命周期与阶段分工见 DEVELOPMENT.md，仅作规划，不注入删除/休眠功能。
+
+## M4-P3 A5 取消证据定点修复
+
+取消与完成都需目标自身来源：SaveTask.cancelled 引用 task:<id>，SaveEvent.cancelled 引用 event:<id>。取消还需 fact 中肯定成立的终止谓语；无关普通场外动作或人物动机不能替代。derived 必须有区别于取消宣告的具体 outcome 原因/后果，空缺或仅“任务取消了”不能自证。明确失败后终止允许；否定终止和准备重试不允许借取消释放名额。继续保留未来安排提前取消、完成条件无需满足、事件实际结案字段可缺失的语义。详见 shared/08_world_output.md，正式 Schema/状态字段不变。

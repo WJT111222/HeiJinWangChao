@@ -256,6 +256,10 @@
       "m4P3Review2": {
         "notes": "PR #13 二轮：地点存在事实、估计/实际结案、一人一任务、完成来源与终止语义；生命周期仅规划，无正式 Schema 改动。",
         "sha256": "2008a2aa5b5766d40d5fcfe53d7e5a25fa2dcfb61977f980e2cfbc2b226fae45"
+      },
+      "m4P3CancellationFix": {
+        "notes": "A5 定点修复：取消绑定自身来源、肯定终止事实与 derived 具体原因/结果；保留提前取消语义，无正式 Schema 改动。",
+        "sha256": "b6776a066a9fc6a017f084f416dd256b27071a7a9be3ec2de74623d2eab0ddf2"
       }
     },
     "stages/opening/variables.md": {
@@ -469,6 +473,10 @@
       "m4P3Review2": {
         "notes": "PR #13 二轮：地点存在事实、估计/实际结案、一人一任务、完成来源与终止语义；生命周期仅规划，无正式 Schema 改动。",
         "sha256": "2c61455cad1a99aba4241d29c976b4dc6a208a8a139c0ffb87b51713404680d1"
+      },
+      "m4P3CancellationFix": {
+        "notes": "A5 定点修复：取消绑定自身来源、肯定终止事实与 derived 具体原因/结果；保留提前取消语义，无正式 Schema 改动。",
+        "sha256": "f5ddc8f17116c96a463ee01fc5e42689354f31487a596a8662957dd597c1608f"
       }
     },
     "docs/ASSEMBLY.md": {

@@ -33,6 +33,14 @@ export interface WorldSource {
 }
 export const speculative =
   /准备|打算|计划|将要|明天|后天|如果|假如|假设|可能|或许|预计|声称|自称|谎称|听说|据说|传闻|据传|猜测/;
+export function hasAffirmedTermination(text: string) {
+  // 接受明确的动作完成/终止谓语，不把“整理取消通知”等名词提及当作已终止。
+  const statements =
+    /(?:已经|现已|已|正式|最终)(?:被)?(?:取消|撤销|终止|放弃|叫停|停止执行)|(?:取消|撤销|终止|放弃|叫停)了|(?:任务|事件|行动|工作|安排|排程)(?:被)?(?:取消|撤销|终止|放弃|叫停)(?=[。！？；，,\n]|$)/g;
+  return [...text.matchAll(statements)].some(
+    (match) => !isNegatedFact(text, match.index, match.index + match[0].length),
+  );
+}
 export function worldSources(state: GameState, draft: TurnDraft, before = state): WorldSource[] {
   const sources: WorldSource[] = [
     { id: 'story:current', knowledge: 'fact', text: draft.story?.narrative ?? '', actors: [] },
@@ -183,11 +191,7 @@ export function readWorldEvidence(
       const cancellation =
         (command.type === 'SaveTask' && command.task.status === 'cancelled') ||
         (command.type === 'SaveEvent' && command.event.status === 'cancelled');
-      const affirmedTermination =
-        cancellation &&
-        [...proof.fact.matchAll(/取消|撤销|终止|中止|放弃/g)].some(
-          (match) => !isNegatedFact(proof.fact, match.index, match.index + match[0].length),
-        );
+      const affirmedTermination = cancellation && hasAffirmedTermination(proof.fact);
       requireWorld(
         !speculative.test(proof.fact) && (!isNegatedFact(proof.fact) || affirmedTermination),
       );

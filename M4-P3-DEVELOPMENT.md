@@ -181,3 +181,19 @@ M4-P4 负责自动协调、到期重新评估、任务接力与调度范围；M4
 本轮新增49项自动化测试（world-lifecycle 47项、world-stage 2项），保留原有482项；新增一个浏览器场景在桌面/移动各运行一次。测试覆盖计划地点拒绝与存在事实、父级/重复ID、预计时间保留/延期/晚于估计的实际结案、非法实际结案字段及futureEvents旁路、兼容取消、planned/active/blocked占用、terminal释放、多NPC/多组织任务、同批接力与旧档冲突、正式/变量投影占用、旧完成自身来源、失败终止与分句否定、网络到草稿安全失败及正式整对象不变。原三协议、补算/取消/迟到、opening/regular及既有M0–M4-P3回归保留。
 
 无未通过测试。全部使用 Mock 或浏览器拦截，没有真实付费调用。正式 Schema/版本、世界书、NSFW原文、七项写作设置、玩家资料面板、Runtime/Composer/StageGuard/SaveRepository实现保持不变。世界结果仍仅存候选，不提交正式 GameState。
+
+## A5 取消/终止证据定点修复
+
+针对取消分支仅检查“已有对象且不是 planned”的缺口，先添加12项任务/事件对称回归：修复前8项因错误接受候选而失败，确认可复现普通场外动作、无关动机、缺少具体原因/结果及 established 普通事实越权取消。修复后全部通过。
+
+- SaveTask.cancelled / SaveEvent.cancelled 共用 cancellationEvidence，明确绑定自身 task:<id>/event:<id> 来源，只允许 established/derived。
+- 复用带分句否定作用域的肯定终止谓语检查。普通整理资料或仅提到取消通知不能支持终止；“未能完成，行动已终止”可支持，“未能终止行动”不可支持；准备重试不视为终态。
+- derived 必须另有 outcome 说明具体原因/实际后果，不能为空、重复 fact 或仅写“任务取消了/行动已终止”。既有合法取消测试保留，补上本轮明确要求的具体结果凭据，没有删除或放宽原断言。
+- 不复用完成分支的 startAt/完成条件检查，因此未来安排仍能提前合理取消，有未满足条件/阻碍也能合法撤销。cancelled 事件仍不强制 resolvedAt/resolutionText，原可选时间约束不变。
+- 两项真实 Runtime/IndexedDB 回归先拒绝无依据取消，再保存合法终止候选；正式 GameState 整对象、正文及变量候选保持不变。
+
+本轮修改：src/services/validation/worldOutput.ts、worldEvidence.ts；src/tests/world-lifecycle.test.ts、world-stage.test.ts、world-validation.test.ts；prompts/shared/08_world_output.md、docs/OUTPUT_CONTRACT.md、manifest.json、sources.lock.json；本报告。没有修改正式 Schema、状态字段、任务占用规则、完成/受阻流程、UI、世界书或 NSFW。
+
+此检查是保守的明确句式识别，不是任意中文语义求真器。复杂或无法可靠判定的表达应 unresolved，不用虚构的终止宣告填充候选。
+
+检查：`npm run prompts:check` 82项通过；`npm run check` 545项通过（新增12项取消验证、2项真实存储链路，保留既有531项），Lint、类型检查与生产构建通过。`CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e` 完整58项通过（桌面/移动各29），`git diff --check` 通过，无失败测试。浏览器启动曾遇自动审批超时，按允许流程重试一次后正常运行完成。未调用真实付费 API，未合并或部署。

@@ -224,6 +224,7 @@ describe('二轮 A2 预计时间与实际结案相互独立', () => {
             eventCommand(cancelled, {
               sources: ['event:event-a', 'goal:npc-a:0'],
               fact: '同事因设备故障取消了器材整理安排。',
+              outcome: '器材电路损坏导致安全条件不满足，负责人撤销排程。',
             }),
           ]),
           state,
@@ -241,6 +242,7 @@ describe('二轮 A2 预计时间与实际结案相互独立', () => {
           eventCommand(c, {
             sources: ['event:event-a', 'goal:npc-a:0'],
             fact: '同事取消了该项筹备安排。',
+            outcome: '场地无法按期开放，筹备人员撤回，原排程不再执行。',
           }),
         ]),
         state,
@@ -324,7 +326,15 @@ describe('二轮 A3 一名 NPC 一项未终结任务', () => {
         state = stateWith([old]);
       const end = taskCommand(
           { ...old, status },
-          { sources: ['task:task-a', 'goal:npc-a:0'], ...completion },
+          {
+            sources: ['task:task-a', 'goal:npc-a:0'],
+            ...(status === 'cancelled'
+              ? {
+                  fact: '同事因器材损坏取消了清点安排。',
+                  outcome: '关键器材损坏，原排程撤销，现场工作停止。',
+                }
+              : completion),
+          },
         ),
         next = taskCommand(job('next'));
       for (const commands of [
@@ -382,7 +392,11 @@ describe('二轮 A3 一名 NPC 一项未终结任务', () => {
     );
     const cancel = taskCommand(
       { ...state.tasks.a, status: 'cancelled' },
-      { sources: ['task:a', 'goal:npc-a:0'], fact: '同事因任务重叠取消了器材清点安排。' },
+      {
+        sources: ['task:a', 'goal:npc-a:0'],
+        fact: '同事因任务重叠取消了器材清点安排。',
+        outcome: '工作排程冲突，负责人撤销重复安排并保留另一项任务。',
+      },
     );
     const reduced = parse(withTasks([cancel]), state);
     expect(reduced.unresolved.join(' ')).toContain('未自动删除或改派');
@@ -462,7 +476,11 @@ describe('二轮 A4/A5 完成来源与失败终止语义', () => {
           withTasks([
             taskCommand(
               { ...old, status: 'cancelled' },
-              { sources: ['task:task-a', 'goal:npc-a:0'], fact },
+              {
+                sources: ['task:task-a', 'goal:npc-a:0'],
+                fact,
+                outcome: '关键器材损坏，清点失败后负责人撤销原安排。',
+              },
             ),
           ]),
           state,
@@ -478,7 +496,11 @@ describe('二轮 A4/A5 完成来源与失败终止语义', () => {
           withTasks([
             taskCommand(
               { ...old, status: 'cancelled' },
-              { sources: ['task:task-a', 'goal:npc-a:0'], fact },
+              {
+                sources: ['task:task-a', 'goal:npc-a:0'],
+                fact,
+                outcome: '关键器材损坏，清点失败后负责人撤销原安排。',
+              },
             ),
           ]),
           state,
@@ -627,5 +649,100 @@ describe('二轮 A4/A5 完成来源与失败终止语义', () => {
           state,
         ),
       ).toThrow();
+  });
+});
+
+describe('A5 取消证据定点回归', () => {
+  const stopFact = '同事因场地封闭终止了原定的器材清点行动。';
+  const stopOutcome = '场地封闭导致器材无法进入，负责人撤销了原排程。';
+  function proposal(kind: 'task' | 'event', options: Partial<WorldEvidence>, futureStart = false) {
+    const t = {
+      ...job(),
+      ...(futureStart ? { startAt: future, dueAt: '2026-10-18T10:00:00+08:00' } : {}),
+    };
+    const e = {
+      ...incident(),
+      ...(futureStart ? { startAt: future, estimatedEndAt: '2026-10-18T10:00:00+08:00' } : {}),
+    };
+    const result =
+      kind === 'task'
+        ? withTasks([taskCommand({ ...t, status: 'cancelled' }, options)])
+        : withEvents([eventCommand({ ...e, status: 'cancelled' }, options)]);
+    return { result, state: stateWith(kind === 'task' ? [t] : [], kind === 'event' ? [e] : []) };
+  }
+  it.each(['task', 'event'] as const)('%s 普通场外动作不能取消旧对象，即使来源 ID 合法', (kind) => {
+    const p = proposal(kind, {
+      sources: [`${kind}:${kind}-a`, 'goal:npc-a:0'],
+      fact: '同事整理了资料。',
+      outcome: '文档按年份完成归类。',
+    });
+    expect(() => parse(p.result, p.state)).toThrow();
+  });
+  it.each(['task', 'event'] as const)('%s 仅人物动机不能替代旧对象自身来源', (kind) => {
+    const p = proposal(kind, { sources: ['goal:npc-a:0'], fact: stopFact, outcome: stopOutcome });
+    expect(() => parse(p.result, p.state)).toThrow();
+  });
+  it.each(['task', 'event'] as const)(
+    '%s derived 终止须有具体原因/结果，不能重复取消宣告自证',
+    (kind) => {
+      for (const outcome of [undefined, '任务取消了。', '行动已终止。', stopFact]) {
+        const p = proposal(kind, {
+          sources: [`${kind}:${kind}-a`, 'goal:npc-a:0'],
+          fact: stopFact,
+          outcome,
+        });
+        expect(() => parse(p.result, p.state)).toThrow();
+      }
+    },
+  );
+  it.each(['task', 'event'] as const)('%s 合理取消未来安排，无需满足开始时间或完成条件', (kind) => {
+    const p = proposal(
+      kind,
+      { sources: [`${kind}:${kind}-a`, 'goal:npc-a:0'], fact: stopFact, outcome: stopOutcome },
+      true,
+    );
+    const result = parse(p.result, p.state);
+    expect(result).toEqual(p.result);
+    const command = kind === 'task' ? result.taskCommands[0] : result.eventCommands[0];
+    expect(command).toMatchObject(
+      kind === 'task' ? { task: { status: 'cancelled' } } : { event: { status: 'cancelled' } },
+    );
+    if (command.type === 'SaveEvent') {
+      expect(command.event.resolvedAt).toBeUndefined();
+      expect(command.event.resolutionText).toBeUndefined();
+    }
+  });
+  it.each(['task', 'event'] as const)(
+    '%s 实际失败并明确停止允许；否定终止、暂时失败并准备重试拒绝',
+    (kind) => {
+      const options = {
+        sources: [`${kind}:${kind}-a`, 'goal:npc-a:0'],
+        outcome: '设备故障导致器材清点失败，负责人撤销了该安排。',
+      };
+      const valid = proposal(kind, { ...options, fact: '同事未能完成清点，行动已经终止。' });
+      expect(parse(valid.result, valid.state)).toBeDefined();
+      for (const fact of [
+        '同事未能终止行动。',
+        '同事没能完成清点，准备重试。',
+        '同事没有取消任务，但整理了资料。',
+      ]) {
+        const p = proposal(kind, { ...options, fact });
+        expect(() => parse(p.result, p.state)).toThrow();
+      }
+    },
+  );
+  it.each(['task', 'event'] as const)('%s established 终止仍须自身来源且为客观终止事实', (kind) => {
+    const options = {
+      kind: 'established' as const,
+      sources: [`${kind}:${kind}-a`, 'story:current'],
+      fact: stopFact,
+    };
+    const p = proposal(kind, options),
+      draft = worldDraft();
+    draft.story!.narrative += stopFact;
+    expect(parse(p.result, p.state, draft)).toBeDefined();
+    const ordinary = proposal(kind, { ...options, fact: '同事整理了资料。' });
+    draft.story!.narrative += '同事整理了资料。';
+    expect(() => parse(ordinary.result, ordinary.state, draft)).toThrow();
   });
 });
