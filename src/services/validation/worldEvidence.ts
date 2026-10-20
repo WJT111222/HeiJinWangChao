@@ -125,7 +125,7 @@ export function worldSources(state: GameState, draft: TurnDraft, before = state)
 }
 export function requireWorld(
   ok: unknown,
-  code: 'invalid_output' | 'permission' = 'invalid_output',
+  code: 'invalid_output' | 'permission' | 'npc_task_conflict' = 'invalid_output',
 ): asserts ok {
   if (!ok) throw new AiError(code);
 }
@@ -179,7 +179,18 @@ export function readWorldEvidence(
       requireWorld(
         resolved.some((source) => source.knowledge === 'motive' || source.knowledge === 'fact'),
       );
-      requireWorld(!speculative.test(proof.fact) && !isNegatedFact(proof.fact));
+      // “未能完成清点，行动已终止”可支持取消，不能支持成功；只看被肯定的终止分句。
+      const cancellation =
+        (command.type === 'SaveTask' && command.task.status === 'cancelled') ||
+        (command.type === 'SaveEvent' && command.event.status === 'cancelled');
+      const affirmedTermination =
+        cancellation &&
+        [...proof.fact.matchAll(/取消|撤销|终止|中止|放弃/g)].some(
+          (match) => !isNegatedFact(proof.fact, match.index, match.index + match[0].length),
+        );
+      requireWorld(
+        !speculative.test(proof.fact) && (!isNegatedFact(proof.fact) || affirmedTermination),
+      );
     }
   }
   return { proof, sources: resolved };

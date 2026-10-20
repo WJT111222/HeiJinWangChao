@@ -19,7 +19,7 @@ TIME_WINDOW.from 为正式基线 worldClock，to 为合法变量候选的时间�
 - planned：未来计划、目标或排程，不表示执行成功。可基于传闻计划调查，但不得将传闻变成客观结果。
 - reported / suspected：仅用于 RecordNpcMemory，保持 [转述] / [推测] 前缀与知识性质，必须对应原有 statement 来源。不能据此修改客观状态或结案。
 
-例如一名场外医师在十分钟空档中整理诊室，可引用 goal:npc-id:0 与 npc:npc-id，生成 derived 候选及具体耗时。不得要求旧正文提前逐字描述该行动。新建人物与地点须符合因果、稳定 ID、引用和层级约束，不扩充全国数据库。
+例如一名场外医师在十分钟空档中整理诊室，可引用 goal:npc-id:0 与 npc:npc-id，生成 derived 候选及具体耗时。不得要求旧正文提前逐字描述该行动。新建人物与地点须符合因果、稳定 ID、引用和层级约束，不扩充全国数据库。CreateLocation 仅接受 established 或有充分依据的 derived；纯 planned 的修建计划不能创建现实地点，可记录任务/未来事件，无法确认是否存在则 unresolved。
 
 ### 场外字段权限
 
@@ -41,8 +41,21 @@ SaveTask 不得更换既有 actorRef、goal、startAt、completionCondition；�
 
 active / completed / resolved 必须已开始且在窗口内，所有旧、新 prerequisites/blockers 都须可确定性验证已满足。当前程序只认识已完成任务或已结案事件 ID（可加 task: / event: 前缀）；文本条件、未解决条件或需要同批次才能证明的条件应 unresolved，不擅自清除阻碍。
 
+已有任务完成必须引用自身 task:<id> 来源，已有事件结案必须引用自身 event:<id> 来源；不能仅凭任意人物动机或另一任务/事件的来源完成它。允许同时引用人物目标、能力、组织背景及有关事实，以自主推演正文尚未出现的新结果。
+
 derived 完成还必须提供 outcome，说明可观察的实际成果，区别于 fact 的结果宣告。必须确实执行、具备足够时间与资源，不能只有到期或计划。任务/事件完成条件保持有效；未来开始的任务不能提前完成。程序检查结构、来源、时间、终态和已知阻断，但不声称完整理解自然语言；无法可靠证明的事项保持 unresolved。
 
 futureEvents 仅是 eventCommands 中同 ID、完全相同的合法 SaveEvent 的镜像，必须新建且 scheduled，startAt>=to；不能作为独立执行命令、不能复制既有终态。预计结束/dueAt 可以在未来，但绝不证明当前已完成。
 
 visibleHooks、revealAfter、timelineCandidates 全部仅为内部候选；revealAfter 到达也不自动发布，不写普通正文/日志/历史，不改变主角认知。正式揭示与原子提交等待后续阶段。
+
+
+### 二轮确认：估计、任务占用与终止
+
+AI 可以根据难度、准备、资源和现实耗时自主估计 estimatedEndAt 与 dueAt，不预先决定成功或失败。estimatedEndAt 是事件预计结束，dueAt 是任务预计截止；resolvedAt 与 resolutionText 仅描述实际结案。scheduled、active、blocked 不得携带 resolvedAt/resolutionText（含空串），可保留或有理由地调整估计。到期只触发后续重新评估，可能完成、失败、受阻、延期或取消，不自动成功。实际结案时间可以早于或晚于原估计，但必须在当前合法时间窗口内。
+
+cancelled 保留现有取消语义：允许合法的取消说明、可选实际终止时间，不强制与 resolved 使用同一字段组合；取消未来安排不必假装该事件已经开始。取消的实际时间不得在未来。非终态不能借取消说明提前存放实际结案字段，futureEvents 镜像同样遵守。
+
+每个 NPC 最多一项未终结后台任务。planned、active、blocked 均占用唯一名额；completed、cancelled 不占用。可以有多个长期目标，一个任务内部可包含调查/谈判/执行等连续步骤，不把每个动作拆成独立任务。正式状态、变量投影与本批候选均检查；本轮不允许在同批终结任务 A 后再创建任务 B，留到后续合法推演。不得换 ID、换负责人或借组织名义绕过。同一组织可以有多任务；组织任务实际执行人缺少结构化引用时必须说明无法可靠验证，不伪造程序硬校验。旧数据有多任务冲突时不能静默删改，冲突候选拒绝；内部 unresolved 会保留已有冲突说明。
+
+任务成功完成使用 completed。实际失败且终止、合理取消使用 cancelled，在 evidence.fact/rationale/outcome 中保留真实原因与结果，不冒充成功。暂时无法推进使用 blocked，继续占用。明确失败后已经终止的肯定分句可支持取消；“没能完成”或被否定的终止不支持成功完成。当前 task 没有专门的失败结果字段，不发明 failed 状态；后续正式结算须将必要结果通过合法事件/记忆保留，具体语义扩展留后续。世界阶段仍仅保存候选，不做自动到期调用或正式结算。
