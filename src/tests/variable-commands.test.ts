@@ -84,7 +84,9 @@ describe('M4-P2 八类严格领域命令', () => {
       'LoseItem',
     ]) {
       expect(commandCatalog('variables').commandTypes).toContain(type);
-      expect(commandCatalog('world').commandTypes).not.toContain(type);
+      expect(commandCatalog('world').commandTypes.some((candidate) => candidate === type)).toBe(
+        ['UpdateNpc', 'RecordNpcMemory', 'CreateLocation'].includes(type),
+      );
     }
     expect(DomainCommandSchema.safeParse({ ...spend, arbitraryPath: 'economy.cash' }).success).toBe(
       false,

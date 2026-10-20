@@ -1,7 +1,7 @@
 import { DataError } from '../domain/common';
 import { AiError } from '../services/ai/errors';
 
-// 正文与变量共用同页锁和取消身份；跨标签页由 SaveRepository 的乐观锁仲裁。
+// 正文、变量与世界共用同页锁和取消身份；跨标签页由 SaveRepository 的乐观锁仲裁。
 const active = new Map<string, symbol>();
 export class StageGuard {
   private attempt?: { id: symbol; saveId: string; controller: AbortController; saving: boolean };

@@ -89,3 +89,8 @@ P2 须从当前正式存档替换 playerName、worldClock、派生 worldWeekday�
 manifest.futureExtensions 仅列出 npc_private_archive 与 special_nsfw_traits 的设计入口，不是运行模块、提示词占位文件或 NPC 空字段。没有移植名器概率表、图片规则、武侠战斗/数值判定或任何 `<judge>` 输出体系。
 
 用户已在 690d01d 补充成人题材提示词，本轮完整保留该正文，仅同步元数据与来源。当前资源是用户手动整理的适配版，不是旧版未经修改的全文逐字移植；该项在 manifest.contentGaps 中仍为 not-completed。NSFW 与独立亲密边界只按各自唯一 ID 登记一次，不额外拼接边界正文；两者常驻正文，无开关。P1 只有静态配置验证，实际请求注入/去重由 P2 实现与验证，不声称已获模型验证。模型服务权限和内容规则不能被身份声明改变。
+
+
+## M4-P3 手动世界阶段
+
+WorldStage 复用 Runtime、模型路由、StageGuard、Composer 与 saveDraft 乐观锁。opening/regular 分别使用独立 world 主提示词；保守加载九域 offscreen，开局还按既有注册加载组织 init。无额外分类请求。输入包含正式→变量投影 TIME_WINDOW、受保护现场并集、真实来源目录与受限命令目录，不传入待选行动或玩家未来输入。变量投影与变量+世界整批模拟始终从同一正式 revision 开始。正文/变量/执行/世界请求版本变化均令旧回包失效。手动失败恢复不等于 M4-P4 自动重试；候选未正式提交，揭示与提交分别留待后续。

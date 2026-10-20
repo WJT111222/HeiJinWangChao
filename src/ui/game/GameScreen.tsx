@@ -11,6 +11,8 @@ import type { SaveRepository } from '../../services/storage/saveRepository';
 import { useStoryGeneration } from './useStoryGeneration';
 import { useVariableGeneration } from './useVariableGeneration';
 import { VariableCandidates } from './VariableCandidates';
+import { useWorldGeneration } from './useWorldGeneration';
+import { WorldCandidates } from './WorldCandidates';
 
 export function GameScreen({
   state,
@@ -41,7 +43,8 @@ export function GameScreen({
     onDraftSaved,
   );
   const variables = useVariableGeneration(repository, draft, settings, onDraftSaved);
-  const busy = Boolean(progress || variables.phase);
+  const world = useWorldGeneration(repository, draft, settings, onDraftSaved);
+  const busy = Boolean(progress || variables.phase || world.phase);
   const reader = useRef<HTMLDivElement>(null);
   const follow = useRef(true);
   const [following, setFollowing] = useState(true);
@@ -229,7 +232,7 @@ export function GameScreen({
           <section className="workflow" aria-label="三阶段工作流">
             <div className="workflow-heading">
               <h3>三阶段工作流</h3>
-              <small>正文与变量已开放 · 世界后续接入</small>
+              <small>三阶段可手动运行 · 尚未正式结算</small>
             </div>
             <ol>
               {(['story', 'variables', 'world'] as const).map((stage, i) => {
@@ -249,23 +252,31 @@ export function GameScreen({
                             : error
                               ? '本次未完成 · 可手动重试'
                               : '待生成'
-                        : stage === 'variables' && variables.phase
-                          ? variables.phase === 'saving'
-                            ? '校验通过 · 正在保存候选'
-                            : '正在生成变量候选'
-                          : stage === 'variables' && variables.error
+                        : stage === 'world' && world.phase
+                          ? world.phase === 'saving'
+                            ? '正在保存世界候选'
+                            : '正在生成世界候选'
+                          : stage === 'world' && world.error
                             ? '本次未完成 · 可手动重试'
-                            : status === 'skipped'
-                              ? '用户跳过'
-                              : status === 'failed'
-                                ? stage === 'variables'
-                                  ? '上次变量失败 · 可手动重试'
-                                  : '待后续恢复'
-                                : status === 'ready' || status === 'preview'
-                                  ? stage === 'variables'
-                                    ? '变量已完成 · 候选未正式结算'
-                                    : '已有候选 · 未正式结算'
-                                  : '待执行 · 后续开放'}
+                            : stage === 'variables' && variables.phase
+                              ? variables.phase === 'saving'
+                                ? '校验通过 · 正在保存候选'
+                                : '正在生成变量候选'
+                              : stage === 'variables' && variables.error
+                                ? '本次未完成 · 可手动重试'
+                                : status === 'skipped'
+                                  ? '用户跳过'
+                                  : status === 'failed'
+                                    ? stage === 'variables'
+                                      ? '上次变量失败 · 可手动重试'
+                                      : '上次世界失败 · 可手动重试'
+                                    : status === 'ready' || status === 'preview'
+                                      ? stage === 'variables'
+                                        ? '变量已完成 · 候选未正式结算'
+                                        : status === 'preview'
+                                          ? '世界预览 · 变量依赖未完成'
+                                          : '世界已完成 · 候选未正式结算'
+                                      : '待执行'}
                     </small>
                   </li>
                 );
@@ -274,8 +285,8 @@ export function GameScreen({
             <details>
               <summary>重试与变更详情</summary>
               <p className="muted">
-                正文与变量结果均保存在草稿。实际请求和 Token 统计可在设置 → 提示词管理中查看。
-                动态世界、自动重试和正式原子提交将在后续 M4 阶段接入。
+                三阶段结果均只保存在草稿。实际请求和 Token 统计可在设置 → 提示词管理中查看。
+                自动协调、自动重试和正式原子提交将在后续 M4 阶段接入。
               </p>
               <button disabled>重新加载失败阶段（后续开放）</button>
             </details>
@@ -308,6 +319,39 @@ export function GameScreen({
             )}
             <small>手动启动新尝试；保留正文，使旧变量及世界候选失效，不正式结算。</small>
           </div>
+          <div className="variable-actions">
+            {world.phase ? (
+              <button disabled={world.phase === 'saving'} onClick={world.cancel}>
+                取消世界生成
+              </button>
+            ) : (
+              <button
+                disabled={
+                  !validDraft ||
+                  !draft?.story ||
+                  draft.stageStatus.story !== 'ready' ||
+                  !settings.runtime.useWorldStage ||
+                  busy
+                }
+                onClick={() => void world.generate()}
+              >
+                {draft?.world
+                  ? '重新生成世界候选'
+                  : draft?.useWorldStage === false
+                    ? '启用并补算世界'
+                    : '生成世界候选'}
+              </button>
+            )}
+            {draft?.world && (
+              <WorldCandidates key={`${draft.turnId}-${draft.draftRevision}`} draft={draft} />
+            )}
+            <small>保留正文及合法变量；缺少变量时仅作预览。世界候选不会自动发布或结算。</small>
+          </div>
+          {world.error && (
+            <p className="error" role="alert">
+              {world.error}
+            </p>
+          )}
           {draft && (
             <details className="bound-input">
               <summary>本回合已绑定输入（只读）</summary>
