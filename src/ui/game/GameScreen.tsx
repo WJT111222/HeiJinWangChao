@@ -13,6 +13,7 @@ import { useVariableGeneration } from './useVariableGeneration';
 import { VariableCandidates } from './VariableCandidates';
 import { useWorldGeneration } from './useWorldGeneration';
 import { WorldCandidates } from './WorldCandidates';
+import { useTurnGeneration } from './useTurnGeneration';
 
 export function GameScreen({
   state,
@@ -35,16 +36,20 @@ export function GameScreen({
 }) {
   const [panel, setPanel] = useState<PanelName | '人物档案' | '经济与资产'>();
   const [input, setInput] = useState('');
-  const { generate, cancel, progress, error } = useStoryGeneration(
-    repository,
-    draft,
-    settings,
-    companionProfile,
-    onDraftSaved,
-  );
+  const {
+    generate,
+    cancel,
+    progress: manualProgress,
+    error,
+  } = useStoryGeneration(repository, draft, settings, companionProfile, onDraftSaved);
   const variables = useVariableGeneration(repository, draft, settings, onDraftSaved);
   const world = useWorldGeneration(repository, draft, settings, onDraftSaved);
-  const busy = Boolean(progress || variables.phase || world.phase);
+  const automatic = useTurnGeneration(repository, draft, settings, companionProfile, onDraftSaved);
+  const progress =
+    automatic.progress?.stage === 'story' && automatic.progress.phase !== 'retrying'
+      ? { phase: automatic.progress.phase, narrative: automatic.progress.narrative ?? '' }
+      : manualProgress;
+  const busy = Boolean(automatic.running || progress || variables.phase || world.phase);
   const reader = useRef<HTMLDivElement>(null);
   const follow = useRef(true);
   const [following, setFollowing] = useState(true);
@@ -187,15 +192,11 @@ export function GameScreen({
                   配置 AI 渠道后，即可生成这座城市中的第一幕。
                 </p>
                 {draft?.turnKind !== 'regular' && (
-                  <button
-                    disabled={!validDraft || busy}
-                    className="primary"
-                    onClick={() => void generate()}
-                  >
+                  <button disabled={!validDraft || busy} onClick={() => void generate()}>
                     生成开局正文
                   </button>
                 )}
-                <small>仅生成正文草稿，不结算世界状态；主动生成可能产生模型费用。</small>
+                <small>下方可一键自动执行三阶段。此处仅手动生成正文草稿，可能产生模型费用。</small>
               </div>
             )
           )}
@@ -232,51 +233,102 @@ export function GameScreen({
           <section className="workflow" aria-label="三阶段工作流">
             <div className="workflow-heading">
               <h3>三阶段工作流</h3>
-              <small>三阶段可手动运行 · 尚未正式结算</small>
+              <small>自动依次生成候选 · 尚未正式结算</small>
             </div>
+            <div className="variable-actions">
+              <button
+                className="primary"
+                disabled={!validDraft || busy}
+                onClick={() => void automatic.generate()}
+              >
+                {draft?.story
+                  ? '继续自动执行'
+                  : draft?.turnKind === 'regular'
+                    ? '自动生成本回合'
+                    : '自动生成开局'}
+              </button>
+              {automatic.running && (
+                <button
+                  disabled={automatic.progress?.phase === 'saving'}
+                  onClick={automatic.cancel}
+                >
+                  取消自动执行
+                </button>
+              )}
+              <small>
+                仅生成候选，不正式结算。瞬时服务错误最多自动重试一次，可能产生额外 API 费用。
+              </small>
+            </div>
+            <p role="status" aria-live="polite">
+              {automatic.running
+                ? automatic.progress
+                  ? `${{ story: '正文生成', variables: '变量管理', world: '动态世界' }[automatic.progress.stage]} · ${automatic.progress.phase === 'retrying' ? '瞬时服务错误，准备自动重试' : automatic.progress.phase === 'saving' ? '正在原子保存候选' : '正在生成'} · 第 ${automatic.progress.attempt}/2 次`
+                  : '正在检查草稿、模型路由与凭证…'
+                : automatic.outcome?.draft.draftRevision === draft?.draftRevision &&
+                    automatic.outcome
+                  ? automatic.outcome.status === 'complete'
+                    ? '三阶段候选已完成，等待正式结算功能（M4-P5）。'
+                    : automatic.outcome.status === 'preview'
+                      ? '世界仅为预览，缺少合法变量；未完成完整三阶段，未正式结算。'
+                      : '已按开关跳过关闭阶段；未完成完整三阶段，未正式结算。'
+                  : '自动执行会保留已完成阶段，从尚未完成的阶段继续。'}
+            </p>
+            {automatic.error && (
+              <p className="story-error" role="alert">
+                {automatic.error} 已保存的合法上游候选仍保留，可继续自动执行恢复。
+              </p>
+            )}
             <ol>
               {(['story', 'variables', 'world'] as const).map((stage, i) => {
                 const status = draft?.stageStatus[stage];
+                const auto = automatic.progress?.stage === stage ? automatic.progress : undefined;
+                const skipped =
+                  automatic.outcome?.draft.draftRevision === draft?.draftRevision &&
+                  automatic.outcome?.skipped.includes(stage);
                 return (
                   <li key={stage}>
                     <span className="stage-number">0{i + 1}</span>
                     <strong>{['正文生成', '变量管理', '动态世界'][i]}</strong>
                     <small>
-                      {stage === 'story'
-                        ? progress
-                          ? progress.phase === 'saving'
-                            ? '完整校验通过 · 正在保存'
-                            : '正在生成 · 临时预览'
-                          : draft?.story
-                            ? '正文已生成 · 未正式结算'
-                            : error
-                              ? '本次未完成 · 可手动重试'
-                              : '待生成'
-                        : stage === 'world' && world.phase
-                          ? world.phase === 'saving'
-                            ? '正在保存世界候选'
-                            : '正在生成世界候选'
-                          : stage === 'world' && world.error
-                            ? '本次未完成 · 可手动重试'
-                            : stage === 'variables' && variables.phase
-                              ? variables.phase === 'saving'
-                                ? '校验通过 · 正在保存候选'
-                                : '正在生成变量候选'
-                              : stage === 'variables' && variables.error
+                      {skipped
+                        ? `本次按开关跳过${draft?.[stage] ? ' · 已有候选保留' : ''}`
+                        : auto
+                          ? `${auto.phase === 'saving' ? '正在保存' : auto.phase === 'retrying' ? '准备重试' : '正在生成'} · 第 ${auto.attempt}/2 次`
+                          : stage === 'story'
+                            ? progress
+                              ? progress.phase === 'saving'
+                                ? '完整校验通过 · 正在保存'
+                                : '正在生成 · 临时预览'
+                              : draft?.story
+                                ? '正文已生成 · 未正式结算'
+                                : error || status === 'failed'
+                                  ? '本次未完成 · 可手动重试'
+                                  : '待生成'
+                            : stage === 'world' && world.phase
+                              ? world.phase === 'saving'
+                                ? '正在保存世界候选'
+                                : '正在生成世界候选'
+                              : stage === 'world' && world.error
                                 ? '本次未完成 · 可手动重试'
-                                : status === 'skipped'
-                                  ? '用户跳过'
-                                  : status === 'failed'
-                                    ? stage === 'variables'
-                                      ? '上次变量失败 · 可手动重试'
-                                      : '上次世界失败 · 可手动重试'
-                                    : status === 'ready' || status === 'preview'
-                                      ? stage === 'variables'
-                                        ? '变量已完成 · 候选未正式结算'
-                                        : status === 'preview'
-                                          ? '世界预览 · 变量依赖未完成'
-                                          : '世界已完成 · 候选未正式结算'
-                                      : '待执行'}
+                                : stage === 'variables' && variables.phase
+                                  ? variables.phase === 'saving'
+                                    ? '校验通过 · 正在保存候选'
+                                    : '正在生成变量候选'
+                                  : stage === 'variables' && variables.error
+                                    ? '本次未完成 · 可手动重试'
+                                    : status === 'skipped'
+                                      ? '用户跳过'
+                                      : status === 'failed'
+                                        ? stage === 'variables'
+                                          ? '上次变量失败 · 可手动重试'
+                                          : '上次世界失败 · 可手动重试'
+                                        : status === 'ready' || status === 'preview'
+                                          ? stage === 'variables'
+                                            ? '变量已完成 · 候选未正式结算'
+                                            : status === 'preview'
+                                              ? '世界预览 · 变量依赖未完成'
+                                              : '世界已完成 · 候选未正式结算'
+                                          : '待执行'}
                     </small>
                   </li>
                 );
@@ -286,9 +338,20 @@ export function GameScreen({
               <summary>重试与变更详情</summary>
               <p className="muted">
                 三阶段结果均只保存在草稿。实际请求和 Token 统计可在设置 → 提示词管理中查看。
-                自动协调、自动重试和正式原子提交将在后续 M4 阶段接入。
+                自动执行会跳过已经合法完成的阶段；正式原子提交将在 M4-P5 接入。
               </p>
-              <button disabled>重新加载失败阶段（后续开放）</button>
+              {draft?.failures
+                .filter((failure) => failure.storyRevision === draft.storyRevision)
+                .slice(-6)
+                .map((failure, index) => (
+                  <p className="muted" key={index}>
+                    {{ story: '正文生成', variables: '变量管理', world: '动态世界' }[failure.stage]}{' '}
+                    · 安全失败码：{failure.errorCode} · 已保存结果未正式结算
+                  </p>
+                ))}
+              <button disabled={!validDraft || busy} onClick={() => void automatic.generate()}>
+                继续失败阶段及后续阶段
+              </button>
             </details>
           </section>
           <div className="variable-actions">
@@ -407,9 +470,9 @@ export function GameScreen({
           <div className="composer-footer">
             <span>正文为未结算草稿；生成可能产生模型费用</span>
             <div>
-              {progress ? (
-                <button disabled={progress.phase === 'saving'} onClick={cancel}>
-                  {progress.phase === 'saving' ? '正在保存…' : '取消生成'}
+              {manualProgress ? (
+                <button disabled={manualProgress.phase === 'saving'} onClick={cancel}>
+                  {manualProgress.phase === 'saving' ? '正在保存…' : '取消生成'}
                 </button>
               ) : (
                 <button disabled={!validDraft || busy} onClick={() => void generate()}>

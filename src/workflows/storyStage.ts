@@ -16,6 +16,7 @@ import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { StoryStream } from './storyStream';
 import { StageGuard } from './stageGuard';
+import type { OrderPreferences } from '../prompts/order';
 
 type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>;
 export interface StoryProgress {
@@ -28,13 +29,14 @@ interface StoryInput {
   config: AiConfig;
   vault: CredentialVault;
   companionProfile?: CompanionProfile;
+  orderPreferences?: OrderPreferences;
   onProgress?: (progress: StoryProgress) => void;
 }
 export class StoryStage {
-  private guard = new StageGuard();
   constructor(
     private repository: Repository,
     private client = new AiClient(),
+    private guard = new StageGuard(),
   ) {}
 
   cancel() {
@@ -76,6 +78,7 @@ export class StoryStage {
           userInput: draft.userInput,
           settings,
           companionProfile,
+          orderPreferences: input.orderPreferences,
         },
         config,
         input.vault,

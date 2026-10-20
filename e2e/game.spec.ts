@@ -110,7 +110,8 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
   await page.getByLabel('开局偏好（可选）').fill('从日常工作开始。');
   await page.getByRole('button', { name: '确认并创建存档' }).click();
   await expect(page.getByRole('heading', { name: '故事，尚未落笔。' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /生成开局/ })).toBeEnabled();
+  await expect(page.getByRole('button', { name: '自动生成开局', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: '生成开局正文', exact: true })).toBeEnabled();
   const { state, draft } = await readSave(page);
   expect(state.economy.cash).toBeNull();
   expect(state.economy.onlineBalance).toBeNull();
