@@ -6,6 +6,7 @@ import { TurnDraftSchema } from './drafts';
 import type { TurnDraft } from './drafts';
 import { GameStateSchema } from './state';
 import type { GameState } from './state';
+import { MemoryEntrySchema } from './memories/schema';
 
 export const TurnSubmissionSchema = z.strictObject({
   draft: TurnDraftSchema,
@@ -88,8 +89,20 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
         occupy(task.actorRef.id, task.id);
     }
   const projected = commitCommands(current, draft.turnId, current.revision, commands, now);
+  requireData(draft.story!.summary.trim(), 'MISSING_SUMMARY', '正文缺少有效摘要，请重新生成正文后重试');
+  const shortMemory = MemoryEntrySchema.parse({
+    id: draft.turnId,
+    text: draft.story!.summary,
+    sourceTurnIds: [draft.turnId],
+    affectedEntityRefs: [],
+    visibility: 'player_known',
+    createdAtGameTime: projected.worldClock,
+  });
+  requireData(!projected.memories.short.some((entry) => entry.id === shortMemory.id || entry.sourceTurnIds.includes(draft.turnId)),
+    'MEMORY_ID_CONFLICT', '短期记忆 ID 冲突');
   const next = {
     ...projected,
+    memories: { ...projected.memories, short: [...projected.memories.short, shortMemory] },
     revision: current.revision + 1,
     updatedAt: now,
     turnNumber: current.turnNumber + 1,

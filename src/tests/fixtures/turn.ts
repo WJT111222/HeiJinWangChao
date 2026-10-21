@@ -9,6 +9,7 @@ export async function completeDraft(
     variables?: NonNullable<TurnDraft['variables']>['result'];
     world?: NonNullable<TurnDraft['world']>['result'];
     narrative?: string;
+    summary?: string;
   } = {},
 ) {
   const state = await repo.load('save-a');
@@ -27,7 +28,7 @@ export async function completeDraft(
     rerollStory(initial, {
       turnKind: initial.turnKind,
       narrative: options.narrative ?? worldNarrative,
-      summary: '已完成用餐',
+      summary: options.summary ?? '已完成用餐',
       variableGuide: [],
     }),
     initial.draftRevision,

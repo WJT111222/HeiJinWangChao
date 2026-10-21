@@ -99,7 +99,9 @@ export function GameScreen({
     } catch (failure) {
       if (submitToken.current === token)
         setSubmitError(
-          failure instanceof DataError
+          failure instanceof DataError && failure.code === 'MISSING_SUMMARY'
+            ? '正文缺少有效摘要，未正式结算。请重新生成正文后重试。'
+            : failure instanceof DataError
             ? '结算未完成：候选不完整、版本冲突或存储失败。请重新读取或补齐草稿后重试。'
             : storyError(failure),
         );
@@ -113,7 +115,7 @@ export function GameScreen({
   useEffect(() => {
     if (follow.current && reader.current) reader.current.scrollTop = reader.current.scrollHeight;
   }, [progress?.narrative, draft?.storyRevision]);
-  const view = useMemo(() => playerView(state, companionProfile), [state, companionProfile]);
+  const view = useMemo(() => playerView(state, companionProfile, settings.memory.immediateWindowSize), [state, companionProfile, settings.memory.immediateWindowSize]);
   const hero = state.protagonist;
   const itemName = (id?: string) => (id ? state.items[id]?.name || '无' : '无');
   const equipment: [string, string][] = [
