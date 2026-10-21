@@ -14,17 +14,18 @@ import type { StagePreview } from '../../prompts/preview';
 import { requestInspections, redactInspection } from '../../services/ai/inspection';
 import { browserCredentials } from '../../services/ai/credentials';
 import { defaultAiConfig, readAiConfig } from '../../services/ai/configuration';
-import type { AiStage } from '../../services/ai/configuration';
+import type { AiStage, AiTask } from '../../services/ai/configuration';
 import { safeAiError } from '../../services/ai/errors';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import { loadCompanionProfile } from '../../services/local/companionProfile';
 import type { Settings } from './model';
 import { ContextInspection, TokenStatistics } from './ContextInspection';
 
-const stages: Record<AiStage, string> = {
+const stages: Record<AiTask, string> = {
   story: '正文生成',
   variables: '变量管理',
   world: '动态世界',
+  memory: '记忆维护（独立任务）',
 };
 const statusNames = { enabled: '当前启用', disabled: '未启用', 'not-applicable': '不适用' };
 const categories: Record<string, string> = {
@@ -113,7 +114,8 @@ export function PromptInspector({
       (!saveId || record.scope.saveId === saveId),
   );
   const connectionRecords = records.filter((record) => !record.scope);
-  const availableRecords = [...stageRecords, ...connectionRecords];
+  const memoryRecords = records.filter((record) => record.scope?.kind === 'memory' && (!saveId || record.scope.saveId === saveId));
+  const availableRecords = [...stageRecords, ...memoryRecords, ...connectionRecords];
   const actual = availableRecords.find((record) => record.id === requestId) ?? stageRecords[0];
   const safe = <T,>(value: T) => redactInspection(value, secrets);
   useEffect(() => {
@@ -570,6 +572,7 @@ export function PromptInspector({
                   此阶段/模式没有实际请求快照。正文、变量和世界支持手动生成；不会用组装预览冒充发送。
                 </p>
               )}
+              <p>记忆维护快照在选择请求中独立标识，不属于三阶段或开局/普通回合预览。</p>
               <label>
                 选择请求
                 <select
@@ -580,7 +583,7 @@ export function PromptInspector({
                   {availableRecords.map((record) => (
                     <option key={record.id} value={record.id}>
                       {record.scope
-                        ? `${record.scope.mode} ${stages[record.stage]}`
+                        ? record.scope.kind === 'memory' ? `记忆维护 ${record.scope.memoryTask}` : `${record.scope.mode} ${stages[record.stage]}`
                         : '连接测试（非游戏阶段）'}{' '}
                       · {record.createdAt} · {record.status}
                     </option>
@@ -604,7 +607,7 @@ export function PromptInspector({
                   </p>
                   <p>
                     {actual.scope
-                      ? `${actual.scope.mode} / ${stages[actual.stage]} / 存档版本 ${actual.scope.revision}`
+                      ? actual.scope.kind === 'memory' ? `记忆维护 / ${actual.scope.memoryTask} / 存档版本 ${actual.scope.revision}` : `${actual.scope.mode} / ${stages[actual.stage]} / 存档版本 ${actual.scope.revision}`
                       : '连接测试；没有游戏阶段或模块组装'}
                   </p>
                   <p>
