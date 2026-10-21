@@ -35,7 +35,7 @@ async function storedCandidates(): Promise<TurnDraft> {
 // 仅供测试模拟磁盘损坏/历史版本，生产代码没有裸数据覆盖入口。
 async function rawStore(action: (store: IDBObjectStore) => void): Promise<void> {
   const db = await new Promise<IDBDatabase>((resolve, reject) => {
-    const open = factory.open(name, 1);
+    const open = factory.open(name);
     open.onsuccess = () => resolve(open.result); open.onerror = () => reject(open.error);
   });
   try {
