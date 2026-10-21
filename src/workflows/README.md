@@ -13,3 +13,5 @@ M4-P4 的 `turnCoordinator.ts` 冻结配置、凭证及排序，预检查全部�
 M4-P5 的 `SaveRepository.commitTurn` 在玩家发送下一步行动时取得同一会话和浏览器锁，在单个 IDB 事务内重读、重验、整批结算，并保存正式状态、提交回执及绑定行动的 regular 草稿。纯结算见 `domain/turnCommit.ts`，正式边界重验见 `services/validation/turnCommit.ts`。事务完成后 UI 同步更新正式状态和草稿，再把返回的新草稿传给原协调器；重复回执不重新请求 AI。刷新使用 `loadGame` 一致读取两者，不自动付费生成。详见根目录 M4-P5-DEVELOPMENT.md。
 
 M5-P1 在同一 `settleTurn` 结果中建立公开短期摘要，随原正式事务保存，不新增记忆数据库或工作流阶段。正文 Composer 使用当前 Settings 的最近 N 回合完整正文，再通过 `domain/memories/history.ts` 从永久 journal 有界召回相关旧史。`publicMemory.ts` 统一公开摘要和旧档只读投影；查阅或搜索不调用 AI。详见根目录 M5-P1-DEVELOPMENT.md。
+
+M5-P2 的 `memoryMaintenance.ts` 是三阶段之外的独立维护任务，复用真实 memory 资源和 AiClient。独立 Web Lock 覆盖选批、模型请求及保存，网络不占 IDB 事务或游戏锁；SaveRepository 在一次事务重读最新状态，仅合并已核验记忆批次，不推进正式 revision 或使草稿失效。新正式提交可按玩家默认关闭的 opt-in 非阻断触发一批，刷新不运行。详见根目录 M5-P2-DEVELOPMENT.md。

@@ -11,7 +11,8 @@ export const SettingsSchema = z.strictObject({
     actionOptions: z.boolean(),
     realWorld: z.boolean(),
   }),
-  memory: z.strictObject({ immediateWindowSize: z.number().int().positive().max(10000) }),
+  memory: z.strictObject({ immediateWindowSize: z.number().int().positive().max(10000),
+    automaticMaintenance: z.boolean().default(false) }),
   runtime: z.strictObject({
     useVariableStage: z.boolean(),
     useWorldStage: z.boolean(),
@@ -31,7 +32,7 @@ export function defaultSettings(): Settings {
       actionOptions: true,
       realWorld: true,
     },
-    memory: { immediateWindowSize: 10 },
+    memory: { immediateWindowSize: 10, automaticMaintenance: false },
     runtime: { useVariableStage: true, useWorldStage: true, timeoutSeconds: 120 },
   };
 }

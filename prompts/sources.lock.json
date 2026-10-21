@@ -434,12 +434,14 @@
     "memory/short_to_medium.md": {
       "origin": "baseline",
       "sourceSha256": "a8392d995585266fe7c92463af02328392e760671776ed85d5700d7557e8c27a",
-      "treatment": "verbatim"
+      "treatment": "memory-output-contract-alignment",
+      "notes": "M5-P2 对齐公开批次纯文本输出；确定性来源、ActorRef、时间、权限由程序重建。保留原来源hash用于溯源，当前资源hash见Manifest。"
     },
     "memory/medium_to_long.md": {
       "origin": "baseline",
       "sourceSha256": "24d209bf74984a1898a30d8f9dcce32eede6884afbcc8cad3832b8ff0eaf68d2",
-      "treatment": "verbatim"
+      "treatment": "memory-output-contract-alignment",
+      "notes": "M5-P2 对齐公开批次纯文本输出；确定性来源、ActorRef、时间、权限由程序重建。保留原来源hash用于溯源，当前资源hash见Manifest。"
     },
     "memory/npc_summarize.md": {
       "origin": "baseline",

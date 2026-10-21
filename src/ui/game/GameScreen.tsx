@@ -19,6 +19,8 @@ import type { TurnCommitResult } from '../../services/storage/saveRepository';
 import { DataError } from '../../domain/common';
 import { storyError } from '../../workflows/storyStage';
 import { assessSummary } from '../../domain/memories/summary';
+import { useMemoryMaintenance } from './useMemoryMaintenance';
+import { MemoryMaintenanceControls } from '../panels/MemoryMaintenanceControls';
 
 export function GameScreen({
   state,
@@ -30,6 +32,7 @@ export function GameScreen({
   repository,
   onDraftSaved,
   onCommitted,
+  onMemorySaved,
 }: {
   state: GameState;
   draft?: TurnDraft;
@@ -40,6 +43,7 @@ export function GameScreen({
   repository: SaveRepository;
   onDraftSaved: (draft: TurnDraft) => void;
   onCommitted: (result: TurnCommitResult) => void;
+  onMemorySaved: (state: GameState) => void;
 }) {
   const [panel, setPanel] = useState<PanelName | '人物档案' | '经济与资产'>();
   const [input, setInput] = useState('');
@@ -62,6 +66,7 @@ export function GameScreen({
   const variables = useVariableGeneration(repository, draft, settings, onDraftSaved);
   const world = useWorldGeneration(repository, draft, settings, onDraftSaved);
   const automatic = useTurnGeneration(repository, draft, settings, companionProfile, onDraftSaved);
+  const memory = useMemoryMaintenance(repository, state.saveId, settings, onMemorySaved);
   const progress =
     automatic.progress?.stage === 'story' && automatic.progress.phase !== 'retrying'
       ? { phase: automatic.progress.phase, narrative: automatic.progress.narrative ?? '' }
@@ -93,6 +98,7 @@ export function GameScreen({
       });
       if (submitToken.current !== token) return;
       onCommitted(result);
+      if (!result.replayed) void memory.run(true);
       setInput('');
       setSubmitting(false);
       // 发送明确授权下一轮请求；重复回执只恢复数据库真值，不再次发起付费生成。
@@ -662,7 +668,11 @@ export function GameScreen({
               ))}
             </>
           ) : (
-            <Panels name={panel} view={view} />
+            <>
+              {panel === '记忆' && <MemoryMaintenanceControls state={state} phase={memory.phase} notice={memory.notice}
+                onRun={() => void memory.run()} onCancel={memory.cancel} />}
+              <Panels name={panel} view={view} />
+            </>
           )}
         </Dialog>
       )}

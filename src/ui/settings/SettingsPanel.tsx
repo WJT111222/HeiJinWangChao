@@ -141,7 +141,7 @@ export function SettingsPanel({
                 onChange={(e) =>
                   setEditing({
                     ...editing,
-                    memory: { immediateWindowSize: e.target.valueAsNumber },
+                    memory: { ...editing.memory, immediateWindowSize: e.target.valueAsNumber },
                   })
                 }
               />
@@ -149,8 +149,14 @@ export function SettingsPanel({
             <p className="muted">
               默认 10
               回合。这里保存的数字决定下一次正文请求的完整回合窗口，不改变正式存档版本或删除原文。
-              更早的相关历史可通过独立的有界本地检索重新引用；分层压缩将在后续阶段开放。
+              更早的相关历史可通过独立的有界本地检索重新引用。整理记忆会使用记忆总结模型，可能产生额外API费用。
             </p>
+            <label className="toggle">
+              <input type="checkbox" checked={editing.memory.automaticMaintenance}
+                onChange={(e) => setEditing({ ...editing, memory: { ...editing.memory, automaticMaintenance: e.target.checked } })} />
+              自动记忆维护（额外API费用，默认关闭）
+            </label>
+            <p className="muted">开启后仅在新的正式回合提交成功、达到阈值时尝试整理一批；刷新不触发，失败不自动付费重试。</p>
           </>
         )}
         {tab === '运行' && (
