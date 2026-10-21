@@ -8,16 +8,17 @@ import {
   removeChannel,
   saveAiConfig,
 } from '../../services/ai/configuration';
-import type { AiConfig, AiStage, Channel, Protocol } from '../../services/ai/configuration';
+import type { AiConfig, AiTask, Channel, Protocol } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
 import { channelSnapshot } from '../../services/ai/snapshot';
 import { AiClient } from '../../services/ai/client';
 import { safeAiError } from '../../services/ai/errors';
 
-const stages: [AiStage, string][] = [
+const stages: [AiTask, string][] = [
   ['story', '正文生成'],
   ['variables', '变量管理'],
   ['world', '动态世界'],
+  ['memory', '记忆总结'],
 ];
 function initial() {
   try {
@@ -433,7 +434,7 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
         </div>
       )}
       <fieldset disabled={busy}>
-        <legend>三阶段模型路由</legend>
+        <legend>三阶段与记忆总结模型路由</legend>
         {stages.map(([stage, label]) => {
           const route = config.routes[stage];
           const follows = 'mode' in route && route.mode === 'follow-story';

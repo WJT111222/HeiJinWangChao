@@ -7,7 +7,8 @@ import { browserCredentials } from './credentials';
 import { contextStatistics } from '../../prompts/statistics';
 
 export interface InspectionScope {
-  kind: 'stage';
+  kind: 'stage' | 'memory';
+  memoryTask?: string;
   mode: 'opening' | 'regular';
   saveId: string;
   revision: number;

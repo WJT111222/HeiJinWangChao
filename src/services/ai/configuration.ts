@@ -6,6 +6,7 @@ export const aiConfigKey = 'heijin.ai.v1';
 export const ProtocolSchema = z.enum(['openai', 'gemini', 'anthropic']);
 export type Protocol = z.infer<typeof ProtocolSchema>;
 export type AiStage = 'story' | 'variables' | 'world';
+export type AiTask = AiStage | 'memory';
 export const modelIdSchema = z
   .string()
   .max(200)
@@ -59,7 +60,8 @@ export const AiConfigSchema = z
   .strictObject({
     version: z.literal(1),
     channels: z.array(ChannelSchema),
-    routes: z.strictObject({ story: direct, variables: optionalRoute, world: optionalRoute }),
+    routes: z.strictObject({ story: direct, variables: optionalRoute, world: optionalRoute,
+      memory: optionalRoute.default({ mode: 'follow-story' }) }),
   })
   .superRefine((config, ctx) => {
     if (new Set(config.channels.map((c) => c.id)).size !== config.channels.length)
@@ -82,6 +84,7 @@ export function defaultAiConfig(): AiConfig {
       story: { channelId: '', modelId: '' },
       variables: { mode: 'follow-story' },
       world: { mode: 'follow-story' },
+      memory: { mode: 'follow-story' },
     },
   };
 }
@@ -128,6 +131,10 @@ export function removeChannel(config: AiConfig, id: string): AiConfig {
         'channelId' in config.routes.world && config.routes.world.channelId === id
           ? { mode: 'follow-story' }
           : config.routes.world,
+      memory:
+        config.routes.memory?.mode === 'independent' && config.routes.memory.channelId === id
+          ? { mode: 'follow-story' }
+          : config.routes.memory,
     },
   });
 }

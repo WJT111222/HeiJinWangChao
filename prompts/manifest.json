@@ -1446,8 +1446,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 576,
-      "version": "0.1.0-m3-p1",
+      "characters": 808,
+      "version": "0.1.0-m5-p2",
       "messageRole": "system",
       "activation": "memory-task",
       "permanent": false,
@@ -1456,7 +1456,7 @@
       "orderGroup": "memory",
       "reorderable": false,
       "category": "memory",
-      "contentSha256": "a8392d995585266fe7c92463af02328392e760671776ed85d5700d7557e8c27a",
+      "contentSha256": "940a685a3ed39c905428c34d80969e0b37ef833aa099b4aca92a85585c2f5656",
       "placeholders": []
     },
     {
@@ -1473,8 +1473,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 498,
-      "version": "0.1.0-m3-p1",
+      "characters": 793,
+      "version": "0.1.0-m5-p2",
       "messageRole": "system",
       "activation": "memory-task",
       "permanent": false,
@@ -1483,7 +1483,7 @@
       "orderGroup": "memory",
       "reorderable": false,
       "category": "memory",
-      "contentSha256": "24d209bf74984a1898a30d8f9dcce32eede6884afbcc8cad3832b8ff0eaf68d2",
+      "contentSha256": "f7afa12b76af757610ce02df17500f451a317fa504bf33ba3c542e4f856c0a80",
       "placeholders": []
     },
     {
