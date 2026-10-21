@@ -240,8 +240,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 756,
-      "version": "0.1.0-m3-p1",
+      "characters": 905,
+      "version": "0.1.1-m5-p1",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -250,7 +250,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "606d0459789198dacf095e61b6efe122803a4af0336f90b9819b86251463eee8",
+      "contentSha256": "34632160280fad20fb1f022d5f51c50ce8308ef2a209eda6f0871dad1bce92ca",
       "placeholders": [
         "minNarrativeChars"
       ]
