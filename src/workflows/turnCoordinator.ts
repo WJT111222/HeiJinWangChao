@@ -15,7 +15,7 @@ import type { SaveRepository } from '../services/storage/saveRepository';
 import { parseVariables, parseWorld } from '../services/validation/aiOutputs';
 import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
-import { reserveStageSession } from './stageGuard';
+import { reserveStageSession, withBrowserLock } from './stageGuard';
 import { StoryStage } from './storyStage';
 import { VariableStage } from './variableStage';
 import { WorldStage } from './worldStage';
@@ -48,15 +48,6 @@ interface ActiveTurn {
   savingFailure?: boolean;
   stage?: StoryStage | VariableStage | WorldStage;
   release: () => void;
-}
-async function withBrowserLock<T>(saveId: string, work: () => Promise<T>): Promise<T> {
-  // 支持 Web Locks 的浏览器同时阻止其他标签启动自动工作流；不支持时仍有 IDB CAS。
-  if (typeof navigator !== 'undefined' && navigator.locks)
-    return navigator.locks.request(`heijin.turn:${saveId}`, { ifAvailable: true }, (lock) => {
-      if (!lock) throw new DataError('STORY_BUSY', '其他标签正在执行此存档的工作流');
-      return work();
-    });
-  return work();
 }
 // 网络错误可能是固定 CORS/TLS/地址问题，429 也可能是额度耗尽；不据此盲目自动付费重试。
 export function transientStageError(error: unknown) {

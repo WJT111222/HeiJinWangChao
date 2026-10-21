@@ -1,11 +1,29 @@
 import { CountSchema, DataError, IdSchema, requireData } from '../../domain/common';
-import { commitCommands } from '../../domain/commands';
+import { commitCommands, fingerprint } from '../../domain/commands';
+import { z } from 'zod';
 import type { DomainCommand } from '../../domain/commands';
 import { GameStateSchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
-import { TurnDraftSchema, validateDraftUpdate } from '../../domain/drafts';
+import { TurnDraftSchema, validateDraftUpdate, createTurnDraft } from '../../domain/drafts';
 import type { TurnDraft } from '../../domain/drafts';
 import { migrateSave } from './migrations';
+import { TurnSubmissionSchema, settleTurn } from '../../domain/turnCommit';
+import type { TurnSubmission } from '../../domain/turnCommit';
+import { validateTurnCandidates } from '../validation/turnCommit';
+import { reserveStageSession, withBrowserLock } from '../../workflows/stageGuard';
+
+const ReceiptSchema = z.strictObject({
+  saveId: IdSchema,
+  turnId: IdSchema,
+  requestHash: z.string().regex(/^[a-f0-9]{64}$/),
+  revision: CountSchema,
+  nextTurnId: IdSchema,
+});
+export interface TurnCommitResult {
+  state: GameState;
+  draft: TurnDraft;
+  replayed: boolean;
+}
 
 function request<T>(operation: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -54,10 +72,13 @@ export class SaveRepository {
     if (!factory) return Promise.reject(new DataError('STORAGE_UNAVAILABLE', '当前环境不支持 IndexedDB'));
     return new Promise((resolve, reject) => {
       // IndexedDB 结构版本独立于每个存档的 schemaVersion。
-      const operation = factory.open(name, 1);
+      const operation = factory.open(name, 2);
       operation.onupgradeneeded = () => {
-        operation.result.createObjectStore('saves', { keyPath: 'saveId' });
-        operation.result.createObjectStore('drafts', { keyPath: 'saveId' });
+        const db = operation.result;
+        if (!db.objectStoreNames.contains('saves')) db.createObjectStore('saves', { keyPath: 'saveId' });
+        if (!db.objectStoreNames.contains('drafts')) db.createObjectStore('drafts', { keyPath: 'saveId' });
+        if (!db.objectStoreNames.contains('turnReceipts'))
+          db.createObjectStore('turnReceipts', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
       };
       operation.onerror = () => reject(operation.error);
       let blocked = false;
@@ -97,6 +118,21 @@ export class SaveRepository {
     });
   }
 
+  async loadGame(saveId: string): Promise<{ state: GameState; draft?: TurnDraft }> {
+    IdSchema.parse(saveId);
+    return transaction(this.database, ['saves', 'drafts'], 'readwrite', async (tx) => {
+      const store = tx.objectStore('saves');
+      const raw: unknown = await request(store.get(saveId));
+      const state = readState(raw, saveId);
+      const rawDraft: unknown = await request(tx.objectStore('drafts').get(saveId));
+      const draft = rawDraft === undefined ? undefined : TurnDraftSchema.parse(rawDraft);
+      requireData(!draft || draft.saveId === saveId, 'CORRUPT_DRAFT', '草稿主键不符');
+      if (z.object({ schemaVersion: z.number() }).parse(raw).schemaVersion !== state.schemaVersion)
+        await request(store.put(state));
+      return { state, draft };
+    });
+  }
+
   async list(): Promise<Array<Pick<GameState, 'saveId' | 'title' | 'revision' | 'schemaVersion' | 'updatedAt'>>> {
     return transaction(this.database, ['saves'], 'readonly', async (tx) => {
       const raw: unknown[] = await request(tx.objectStore('saves').getAll());
@@ -107,7 +143,7 @@ export class SaveRepository {
     });
   }
 
-  // 正式状态唯一写入入口：从数据库当前快照计算，拒绝任意覆盖客户端旧副本。
+  // M1 独立领域命令兼容入口；完整回合必须走 commitTurn，不拼接 save/saveDraft。
   async save(saveId: string, expectedRevision: number, turnId: string,
     commands: readonly DomainCommand[]): Promise<GameState> {
     IdSchema.parse(saveId); CountSchema.parse(expectedRevision);
@@ -120,13 +156,107 @@ export class SaveRepository {
     });
   }
 
+  // 完整回合唯一入口；摘要计算在事务外，事务中只等待同一 IDB 的请求。
+  async commitTurn(input: TurnSubmission): Promise<TurnCommitResult> {
+    const parsed = TurnSubmissionSchema.parse(input);
+    const session = reserveStageSession(parsed.draft.saveId);
+    try {
+      return await withBrowserLock(parsed.draft.saveId, async () => {
+        const digest = await crypto.subtle.digest(
+          'SHA-256',
+          new TextEncoder().encode(fingerprint(parsed)),
+        );
+        const requestHash = Array.from(new Uint8Array(digest), (byte) =>
+          byte.toString(16).padStart(2, '0'),
+        ).join('');
+        const nextTurnId = `turn-${crypto.randomUUID()}`;
+        return transaction(
+          this.database,
+          ['saves', 'drafts', 'turnReceipts'],
+          'readwrite',
+          async (tx) => {
+            session.check();
+            const saves = tx.objectStore('saves'),
+              drafts = tx.objectStore('drafts'),
+              receipts = tx.objectStore('turnReceipts');
+            const state = readState(
+              await request(saves.get(parsed.draft.saveId)),
+              parsed.draft.saveId,
+            );
+            const rawDraft: unknown = await request(drafts.get(parsed.draft.saveId));
+            const current = TurnDraftSchema.parse(rawDraft);
+            const prior: unknown = await request(receipts.get([state.saveId, parsed.draft.turnId]));
+            if (prior !== undefined) {
+              const receipt = ReceiptSchema.parse(prior);
+              requireData(
+                receipt.requestHash === requestHash,
+                'TURN_CONFLICT',
+                '相同回合的提交内容不同',
+              );
+              requireData(
+                state.journal.some(
+                  (entry) => entry.turnId === receipt.turnId && entry.revision === receipt.revision,
+                ) &&
+                  (current.turnId === receipt.nextTurnId || state.journal.some((entry) => entry.turnId === receipt.nextTurnId)) &&
+                  current.saveId === state.saveId &&
+                  current.baseSaveRevision === state.revision &&
+                  !state.journal.some((entry) => entry.turnId === current.turnId),
+                'CORRUPT_RECEIPT',
+                '提交回执与存档不一致',
+              );
+              return { state, draft: current, replayed: true };
+            }
+            requireData(
+              current.saveId === state.saveId && fingerprint(current) === fingerprint(parsed.draft),
+              'DRAFT_CONFLICT',
+              '草稿已变化，请重新读取',
+            );
+            requireData(
+              state.revision === current.baseSaveRevision,
+              'REVISION_CONFLICT',
+              '正式版本已改变',
+            );
+            validateTurnCandidates(state, current);
+            const next = settleTurn(state, current, new Date().toISOString());
+            requireData(!next.journal.some((entry) => entry.turnId === nextTurnId), 'DUPLICATE_TURN', '下一回合 ID 重复');
+            const draft = createTurnDraft(
+              state.saveId,
+              next.revision,
+              nextTurnId,
+              'regular',
+              parsed.nextAction,
+              parsed.useVariableStage,
+              parsed.useWorldStage,
+            );
+            const receipt = ReceiptSchema.parse({
+              saveId: state.saveId,
+              turnId: current.turnId,
+              requestHash,
+              revision: next.revision,
+              nextTurnId,
+            });
+            await request(saves.put(next));
+            await request(drafts.put(draft));
+            await request(receipts.add(receipt));
+            return { state: next, draft, replayed: false };
+          },
+        );
+      });
+    } finally {
+      session.release();
+    }
+  }
+
   async delete(saveId: string, expectedRevision: number): Promise<void> {
     IdSchema.parse(saveId); CountSchema.parse(expectedRevision);
-    return transaction(this.database, ['saves', 'drafts'], 'readwrite', async (tx) => {
+    return transaction(this.database, ['saves', 'drafts', 'turnReceipts'], 'readwrite', async (tx) => {
       const store = tx.objectStore('saves');
       const current = readState(await request(store.get(saveId)), saveId);
       requireData(current.revision === expectedRevision, 'REVISION_CONFLICT', '删除时存档版本已变化');
       await request(tx.objectStore('drafts').delete(saveId));
+      const receipts = tx.objectStore('turnReceipts');
+      const keys = await request(receipts.index('saveId').getAllKeys(saveId));
+      for (const key of keys) await request(receipts.delete(key));
       await request(store.delete(saveId));
     });
   }

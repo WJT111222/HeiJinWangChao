@@ -131,7 +131,7 @@ async function mock(
 }
 const workflow = (page: Page) => page.getByRole('region', { name: '三阶段工作流' });
 async function complete(page: Page) {
-  await expect(workflow(page)).toContainText('三阶段候选已完成，等待正式结算功能');
+  await expect(workflow(page)).toContainText('三阶段候选已完成，填写下一步行动');
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
 }
 for (const mode of ['opening', 'regular'] as const) {

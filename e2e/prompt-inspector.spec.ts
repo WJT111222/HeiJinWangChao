@@ -15,7 +15,7 @@ async function seed(page: Page, ready = true) {
     const repo = await SaveRepository.open();
     repo.close();
     await new Promise<void>((resolve, reject) => {
-      const open = indexedDB.open('heijinwangchao', 1);
+      const open = indexedDB.open('heijinwangchao');
       open.onerror = () => reject(open.error);
       open.onsuccess = () => {
         const db = open.result;
