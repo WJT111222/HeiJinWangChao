@@ -8,4 +8,6 @@ M4-P2 的 `variableStage.ts` 复用同一 runtime 和 SaveRepository，先显式
 
 M4-P3 的 `worldStage.ts` 复用上述 Runtime/StageGuard。重读正文与变量候选、校验来源/权限/时间，在同一正式基线整批模拟，只通过 saveDraft 保存 world（无变量时 preview）。重新补算世界保持正文及合法变量；取消、跨标签页更新或旧回包无法覆盖新草稿。详见根目录 M4-P3-DEVELOPMENT.md。
 
-M4-P4 的 `turnCoordinator.ts` 冻结配置、凭证及排序，预检查全部待执行路由，按顺序调用三个原阶段；恢复时跳过已经合法完成的上游。StageGuard 会话所有权防止嵌套锁冲突，Web Locks 排斥其他标签的自动工作流，IDB CAS 保持最终版本保护。明确瞬时服务错误最多自动重试一次，变量失败不继续世界。只生成候选，正式原子提交与下一回合仍待 M4-P5。详见根目录 M4-P4-DEVELOPMENT.md。
+M4-P4 的 `turnCoordinator.ts` 冻结配置、凭证及排序，预检查全部待执行路由，按顺序调用三个原阶段；恢复时跳过已经合法完成的上游。StageGuard 会话所有权防止嵌套锁冲突，Web Locks 排斥其他标签的自动工作流，IDB CAS 保持最终版本保护。明确瞬时服务错误最多自动重试一次，变量失败不继续世界。协调器本身只生成候选。详见根目录 M4-P4-DEVELOPMENT.md。
+
+M4-P5 的 `SaveRepository.commitTurn` 在玩家发送下一步行动时取得同一会话和浏览器锁，在单个 IDB 事务内重读、重验、整批结算，并保存正式状态、提交回执及绑定行动的 regular 草稿。纯结算见 `domain/turnCommit.ts`，正式边界重验见 `services/validation/turnCommit.ts`。事务完成后 UI 同步更新正式状态和草稿，再把返回的新草稿传给原协调器；重复回执不重新请求 AI。刷新使用 `loadGame` 一致读取两者，不自动付费生成。详见根目录 M4-P5-DEVELOPMENT.md。

@@ -14,6 +14,10 @@ import { VariableCandidates } from './VariableCandidates';
 import { useWorldGeneration } from './useWorldGeneration';
 import { WorldCandidates } from './WorldCandidates';
 import { useTurnGeneration } from './useTurnGeneration';
+import { completeTurnDraft } from '../../domain/turnCommit';
+import type { TurnCommitResult } from '../../services/storage/saveRepository';
+import { DataError } from '../../domain/common';
+import { storyError } from '../../workflows/storyStage';
 
 export function GameScreen({
   state,
@@ -24,6 +28,7 @@ export function GameScreen({
   onSaves,
   repository,
   onDraftSaved,
+  onCommitted,
 }: {
   state: GameState;
   draft?: TurnDraft;
@@ -33,9 +38,20 @@ export function GameScreen({
   onSaves: () => void;
   repository: SaveRepository;
   onDraftSaved: (draft: TurnDraft) => void;
+  onCommitted: (result: TurnCommitResult) => void;
 }) {
   const [panel, setPanel] = useState<PanelName | '人物档案' | '经济与资产'>();
   const [input, setInput] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const submitLock = useRef(false),
+    submitToken = useRef(0);
+  useEffect(
+    () => () => {
+      submitToken.current++;
+    },
+    [],
+  );
   const {
     generate,
     cancel,
@@ -49,7 +65,9 @@ export function GameScreen({
     automatic.progress?.stage === 'story' && automatic.progress.phase !== 'retrying'
       ? { phase: automatic.progress.phase, narrative: automatic.progress.narrative ?? '' }
       : manualProgress;
-  const busy = Boolean(automatic.running || progress || variables.phase || world.phase);
+  const busy = Boolean(
+    submitting || automatic.running || progress || variables.phase || world.phase,
+  );
   const reader = useRef<HTMLDivElement>(null);
   const follow = useRef(true);
   const [following, setFollowing] = useState(true);
@@ -58,6 +76,40 @@ export function GameScreen({
     draft.baseSaveRevision === state.revision &&
     !state.journal.some((entry) => entry.turnId === draft.turnId) &&
     (draft.turnKind !== 'opening' || state.turnNumber === 0);
+  const canCommit = Boolean(validDraft && draft && completeTurnDraft(draft));
+  async function send() {
+    if (!draft || !canCommit || busy || submitLock.current || !input.trim()) return;
+    submitLock.current = true;
+    const token = submitToken.current;
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      const result = await repository.commitTurn({
+        draft,
+        nextAction: input,
+        useVariableStage: settings.runtime.useVariableStage,
+        useWorldStage: settings.runtime.useWorldStage,
+      });
+      if (submitToken.current !== token) return;
+      onCommitted(result);
+      setInput('');
+      setSubmitting(false);
+      // 发送明确授权下一轮请求；重复回执只恢复数据库真值，不再次发起付费生成。
+      if (!result.replayed) await automatic.generate(result.draft);
+    } catch (failure) {
+      if (submitToken.current === token)
+        setSubmitError(
+          failure instanceof DataError
+            ? '结算未完成：候选不完整、版本冲突或存储失败。请重新读取或补齐草稿后重试。'
+            : storyError(failure),
+        );
+    } finally {
+      if (submitToken.current === token) {
+        submitLock.current = false;
+        setSubmitting(false);
+      }
+    }
+  }
   useEffect(() => {
     if (follow.current && reader.current) reader.current.scrollTop = reader.current.scrollHeight;
   }, [progress?.narrative, draft?.storyRevision]);
@@ -218,6 +270,11 @@ export function GameScreen({
               {error} 原有合法草稿已保留，可手动重试。
             </p>
           )}
+          {submitError && (
+            <p className="story-error" role="alert">
+              {submitError}
+            </p>
+          )}
           {variables.error && (
             <p className="story-error" role="alert">
               {variables.error} 正文已保留，未正式结算。
@@ -267,11 +324,13 @@ export function GameScreen({
                 : automatic.outcome?.draft.draftRevision === draft?.draftRevision &&
                     automatic.outcome
                   ? automatic.outcome.status === 'complete'
-                    ? '三阶段候选已完成，等待正式结算功能（M4-P5）。'
+                    ? '三阶段候选已完成，填写下一步行动并发送以正式结算。'
                     : automatic.outcome.status === 'preview'
                       ? '世界仅为预览，缺少合法变量；未完成完整三阶段，未正式结算。'
                       : '已按开关跳过关闭阶段；未完成完整三阶段，未正式结算。'
-                  : '自动执行会保留已完成阶段，从尚未完成的阶段继续。'}
+                  : canCommit
+                    ? '三阶段候选已完成，填写下一步行动并发送以正式结算。'
+                    : '自动执行会保留已完成阶段，从尚未完成的阶段继续。'}
             </p>
             {automatic.error && (
               <p className="story-error" role="alert">
@@ -338,7 +397,7 @@ export function GameScreen({
               <summary>重试与变更详情</summary>
               <p className="muted">
                 三阶段结果均只保存在草稿。实际请求和 Token 统计可在设置 → 提示词管理中查看。
-                自动执行会跳过已经合法完成的阶段；正式原子提交将在 M4-P5 接入。
+                自动执行会跳过已经合法完成的阶段；填写下一步行动并发送后，当前回合与下一草稿一并原子保存。
               </p>
               {draft?.failures
                 .filter((failure) => failure.storyRevision === draft.storyRevision)
@@ -462,10 +521,11 @@ export function GameScreen({
           </label>
           <textarea
             id="player-input"
+            disabled={submitting}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             rows={3}
-            placeholder="可编辑下一步行动建议；新回合发送将在后续 M4 阶段开放"
+            placeholder="填写下一步行动；发送将结算当前回合，并生成下一回合"
           />
           <div className="composer-footer">
             <span>正文为未结算草稿；生成可能产生模型费用</span>
@@ -484,8 +544,12 @@ export function GameScreen({
                 </button>
               )}
               <button disabled>继续推演</button>
-              <button className="primary" disabled>
-                发送
+              <button
+                className="primary"
+                disabled={!canCommit || busy || !input.trim()}
+                onClick={() => void send()}
+              >
+                {submitting ? '正在原子结算…' : '发送'}
               </button>
             </div>
           </div>

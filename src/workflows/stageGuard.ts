@@ -83,3 +83,13 @@ export class StageGuard {
     }
   }
 }
+
+export async function withBrowserLock<T>(saveId: string, work: () => Promise<T>): Promise<T> {
+  // 支持 Web Locks 的浏览器同时阻止其他标签启动自动工作流；不支持时仍有 IDB CAS。
+  if (typeof navigator !== 'undefined' && navigator.locks)
+    return navigator.locks.request(`heijin.turn:${saveId}`, { ifAvailable: true }, (lock) => {
+      if (!lock) throw new DataError('STORY_BUSY', '其他标签正在执行此存档的工作流');
+      return work();
+    });
+  return work();
+}
