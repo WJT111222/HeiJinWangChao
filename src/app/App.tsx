@@ -102,8 +102,9 @@ export function App() {
     let disposed = false;
     if (route.startsWith('#game/')) {
       const id = route.slice(6);
-      Promise.all([repository.load(id), repository.loadDraft(id)])
-        .then(([state, draft]) => {
+      repository
+        .loadGame(id)
+        .then(({ state, draft }) => {
           if (!disposed) {
             let companionProfile: CompanionProfile | undefined;
             try {
@@ -235,7 +236,7 @@ export function App() {
         <nav>
           <button onClick={() => navigate()}>游戏首页</button>
           <button onClick={() => setSettingsOpen(true)}>设置</button>
-          <span className="version">V0.1 · M4-P4</span>
+          <span className="version">V0.1 · M4-P5</span>
         </nav>
       </header>
       {error && (
@@ -271,6 +272,13 @@ export function App() {
               onDraftSaved={(draft) =>
                 setLoaded((current) =>
                   current?.state.saveId === draft.saveId ? { ...current, draft } : current,
+                )
+              }
+              onCommitted={({ state, draft }) =>
+                setLoaded((current) =>
+                  current?.state.saveId === state.saveId && current.state.revision <= state.revision
+                    ? { ...current, state, draft }
+                    : current,
                 )
               }
               companionProfile={loaded.companionProfile}
@@ -334,7 +342,7 @@ export function App() {
             </div>
             <div className="home-footnote">
               <span>四座城市 · 自由职业 · 开放人生</span>
-              <span>正文与变量候选已开放 · 正式回合结算开发中</span>
+              <span>三阶段生成 · 原子结算 · 连续回合</span>
             </div>
           </section>
           <section className="save-library" aria-label="已有存档">

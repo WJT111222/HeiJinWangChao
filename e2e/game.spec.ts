@@ -12,7 +12,7 @@ async function seed(page: Page) {
     repo.close();
     // 隔离浏览器上下文中的界面测试数据，生产代码无此入口。
     await new Promise<void>((resolve, reject) => {
-      const open = indexedDB.open('heijinwangchao', 1);
+      const open = indexedDB.open('heijinwangchao');
       open.onerror = () => reject(open.error);
       open.onsuccess = () => {
         const db = open.result;
@@ -134,7 +134,7 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
   // 仅测试环境推进到后续回合，并加入不可公开的内部变化。
   await page.evaluate(async () => {
     await new Promise<void>((resolve, reject) => {
-      const open = indexedDB.open('heijinwangchao', 1);
+      const open = indexedDB.open('heijinwangchao');
       open.onerror = () => reject(open.error);
       open.onsuccess = () => {
         const db = open.result;

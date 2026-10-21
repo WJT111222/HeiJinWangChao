@@ -34,8 +34,8 @@ export function useTurnGeneration(
     },
     [runner],
   );
-  async function generate() {
-    if (!draft || active.current) return;
+  async function generate(expected = draft) {
+    if (!expected || active.current) return;
     active.current = true;
     const id = ++token.current;
     setRunning(true);
@@ -45,7 +45,7 @@ export function useTurnGeneration(
     pending.current = undefined;
     try {
       const result = await runner.generate({
-        draft,
+        draft: expected,
         settings,
         companionProfile,
         config: readAiConfig(localStorage),
