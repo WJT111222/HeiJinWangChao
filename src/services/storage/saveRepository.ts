@@ -11,6 +11,9 @@ import { TurnSubmissionSchema, settleTurn } from '../../domain/turnCommit';
 import type { TurnSubmission } from '../../domain/turnCommit';
 import { validateTurnCandidates } from '../validation/turnCommit';
 import { reserveStageSession, withBrowserLock } from '../../workflows/stageGuard';
+import { applyCompression, CompressionBatchSchema } from '../../domain/memories/compression';
+import type { CompressionBatch } from '../../domain/memories/compression';
+import { MemoryEntrySchema } from '../../domain/memories/schema';
 
 const ReceiptSchema = z.strictObject({
   saveId: IdSchema,
@@ -131,6 +134,18 @@ export class SaveRepository {
         await request(store.put(state));
       return { state, draft };
     });
+  }
+
+  async saveMemoryCompression(batch: CompressionBatch, output: z.infer<typeof MemoryEntrySchema>, signal?: AbortSignal): Promise<GameState> {
+    const parsed = CompressionBatchSchema.parse(batch), result = MemoryEntrySchema.parse(output);
+    return transaction(this.database, ['saves'], 'readwrite', async (tx) => {
+      const store = tx.objectStore('saves');
+      const current = readState(await request(store.get(parsed.saveId)), parsed.saveId);
+      // 从最新整份状态仅替换已核对的记忆批次，不提升世界版本、不写草稿。
+      const next = applyCompression(current, parsed, result);
+      await request(store.put(next));
+      return next;
+    }, signal);
   }
 
   async list(): Promise<Array<Pick<GameState, 'saveId' | 'title' | 'revision' | 'schemaVersion' | 'updatedAt'>>> {

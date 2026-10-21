@@ -236,7 +236,7 @@ export function App() {
         <nav>
           <button onClick={() => navigate()}>游戏首页</button>
           <button onClick={() => setSettingsOpen(true)}>设置</button>
-          <span className="version">V0.1 · M4-P5</span>
+          <span className="version">V0.1 · M5-P2</span>
         </nav>
       </header>
       {error && (
@@ -281,6 +281,9 @@ export function App() {
                     : current,
                 )
               }
+              onMemorySaved={(state) => setLoaded((current) =>
+                current?.state.saveId === state.saveId && current.state.revision === state.revision
+                  ? { ...current, state } : current)}
               companionProfile={loaded.companionProfile}
               settings={settings}
               onSettings={(next) => {
