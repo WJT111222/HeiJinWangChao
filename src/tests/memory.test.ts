@@ -159,6 +159,46 @@ describe('有界、可追溯的本地永久历史检索', () => {
 });
 
 describe('真实 Composer 的即时窗口、召回与信息隔离', () => {
+  it.each(['medium', 'long'] as const)('前30回合已压缩至 %s，不从永久档案复活为短期摘要或抢占上层摘要', (layer) => {
+    const state = historyState(40);
+    const short = state.journal.map((entry) => MemoryEntrySchema.parse({
+      id: entry.turnId, text: entry.story.summary, sourceTurnIds: [entry.turnId],
+      affectedEntityRefs: [], visibility: 'player_known', createdAtGameTime: gameTime,
+    }));
+    state.memories.short = short.slice(30);
+    state.memories[layer] = [MemoryEntrySchema.parse({
+      id: 'compressed-1-30', text: '前30回合的正式分层摘要，保留约定和因果。',
+      sourceTurnIds: state.journal.slice(0, 30).map((entry) => entry.turnId),
+      affectedEntityRefs: [], visibility: 'player_known', createdAtGameTime: gameTime,
+    })];
+    const before = structuredClone(state);
+    expect(publicShortMemories(state).map((entry) => entry.sourceTurnIds[0])).toEqual(state.journal.slice(30).map((entry) => entry.turnId));
+    const context = storyMemoryContext(state, 5, '', true);
+    expect(context.summaries.some((entry) => entry.text === state.memories[layer][0].text)).toBe(true);
+    const sourceIds = [...context.recentTurns.map((entry) => entry.turnId), ...context.summaries.flatMap((entry) => entry.sourceTurnIds)];
+    expect(new Set(sourceIds).size).toBe(sourceIds.length);
+    expect(context.summaries.filter((entry) => entry.sourceTurnIds.some((id) => state.journal.slice(0, 30).some((turn) => turn.turnId === id)))).toHaveLength(1);
+    expect(state).toEqual(before);
+  });
+  it('长期摘要优先于残留中期/短期，来源覆盖一直保留；未覆盖旧M4回合仍有只读投影', () => {
+    const state = historyState(40);
+    const memory = MemoryEntrySchema.parse({ id: 'medium', text: '旧中期摘要', sourceTurnIds: state.journal.slice(0, 30).map((entry) => entry.turnId), affectedEntityRefs: [], visibility: 'player_known', createdAtGameTime: gameTime });
+    state.memories.medium = [memory];
+    state.memories.long = [{ ...memory, id: 'long', text: '正式长期摘要' }];
+    state.memories.short = [{ ...memory, id: 'stale-short', text: '残留短期摘要' }];
+    expect(publicShortMemories(state)).toHaveLength(10);
+    expect(publicShortMemories(state).every((entry) => entry.origin === 'journal')).toBe(true);
+    const context = storyMemoryContext(state, 5, '', true);
+    expect(JSON.stringify(context.summaries)).toContain('正式长期摘要');
+    expect(JSON.stringify(context.summaries)).not.toMatch(/旧中期摘要|残留短期摘要/);
+    expect(state.journal).toHaveLength(40);
+  });
+  it.each(['internal', 'npc_private'] as const)('%s 上层记忆不冒充公开压缩覆盖，也不抑制旧档公开摘要', (visibility) => {
+    const state = historyState(3);
+    state.memories.medium = [MemoryEntrySchema.parse({ id: 'private-layer', text: '非公开推断', sourceTurnIds: ['history-1', 'history-2'], affectedEntityRefs: [], visibility, createdAtGameTime: gameTime })];
+    expect(publicShortMemories(state)).toHaveLength(3);
+    expect(JSON.stringify(storyMemoryContext(state, 1, '', true))).not.toContain('非公开推断');
+  });
   it.each([1, 10, 20])('N=%s 时只注入最近 N 回合完整正文，忽略存档旧窗口值', async (size) => {
     const state = historyState(70), before = structuredClone(state), settings = defaultSettings();
     state.memories.immediateWindowSize = 99;

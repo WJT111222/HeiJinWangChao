@@ -104,6 +104,7 @@ test('真实正文请求使用设置N=1/10/20，并独立召回第3回合；查�
   await page.route('https://memory.mock.invalid/**', async (route) => {
     const body: unknown = route.request().postDataJSON();
     const messages = array(record(body).messages).map((message) => string(record(message).content));
+    expect(messages.some((message) => message.replace(/\s/g, '').includes('目标约100～200汉字'))).toBe(true);
     const text = messages.join('\n').match(/<GAME_CONTEXT>\n([\s\S]*?)\n<\/GAME_CONTEXT>/)![1];
     contexts.push(record(JSON.parse(text)));
     await new Promise<void>((resolve) => { release = resolve; });
@@ -130,6 +131,10 @@ test('真实正文请求使用设置N=1/10/20，并独立召回第3回合；查�
     release?.();
     await expect(page.getByTestId('story-reader')).toContainText('主角阅读先前留下的约定');
     await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toBeEnabled();
+    if (size === 1) await page.getByText('重试与变更详情', { exact: true }).click();
+    await expect(page.getByTestId('summary-length')).toBeVisible();
+    await expect(page.getByTestId('summary-length')).toContainText('4 汉字');
+    await expect(page.getByTestId('summary-length')).toContainText('可继续');
     expect(await load(page)).toEqual(before);
   }
   expect(contexts).toHaveLength(3);

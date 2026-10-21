@@ -22,13 +22,13 @@
 
 相同请求回执继续直接返回数据库真值，不再次调用 settleTurn，因此不重复摘要。摘要处理不执行任何新领域命令，也不修改金钱、NPC 或事件事实。
 
-新提交若 summary 为空或纯空白，抛出 `MISSING_SUMMARY`，整个事务拒绝；UI 明确说明缺少有效摘要，需要重新生成正文。保留原 StorySchema 兼容旧空摘要，不用正文开头、visibleHooks、unresolved 或 NPC 私有消息捏造摘要。
+新生成若 summary 为空或纯空白，正文解析就拒绝；旧草稿提交仍受 `MISSING_SUMMARY` 保护，整个事务拒绝。UI 明确说明缺少有效摘要，需要重新生成正文。保留原 StorySchema 兼容旧空摘要，不用正文开头、visibleHooks、unresolved 或 NPC 私有消息捏造摘要。复审补充的约100～200汉字目标及非阻断长度检查见末节。
 
 ## 旧存档兼容
 
 正式存档 schemaVersion 和 IndexedDB 结构版本都保持 **2**。原 saves/drafts/turnReceipts 布局及请求摘要契约不变，无需迁移。
 
-`publicShortMemories` 提供只读兼容投影：已有公开短期摘要正常展示；没有摘要条目、但 journal 有可用 Story.summary 的旧回合，从原摘要投影为“短期（历史摘要，只读）”，保存原 turnId 来源。既有条目和兼容投影按来源回合排序，避免升级后新旧摘要混排导致读取较旧内容。
+`publicShortMemories` 提供只读兼容投影：公开中期/长期的 sourceTurnIds 是已压缩历史的持久覆盖凭据；未被上层完整覆盖的公开短期摘要仍有效。只有没有被任何公开层覆盖、且 journal 有可用 Story.summary 的旧回合，才从原摘要投影为“短期（历史摘要，只读）”，保存原 turnId 来源。既有条目和兼容投影按来源回合排序，避免升级后新旧摘要混排导致读取较旧内容。内部及 NPC 私有知识不冒充公开压缩覆盖。
 
 旧 journal 没有每回合游戏时间，因此兼容投影不填写虚构时间，UI 显示“历史回合时间未记录”。缺少摘要的旧回合不补造内容，永久原文仍可搜索/阅读。读取、搜索和窗口设置不会回填存档、改变 revision 或重写 journal；升级后下一次正式提交只新增该回合的真实摘要。旧提交回执仍可安全重放，不强制回填历史记忆。
 
@@ -91,7 +91,7 @@ GameState.memories.immediateWindowSize 是保留的旧序列化字段，不再�
 修改：
 
 - `src/domain/turnCommit.ts`：同一正式结算结果中追加可追溯短期摘要，缺失摘要拒绝。
-- `src/prompts/context.ts`：复用统一窗口/公开摘要/召回投影，没有修改提示词资源。
+- `src/prompts/context.ts`：复用统一窗口/公开摘要/召回投影；复审追加的共享输出协议要求见末节。
 - `src/ui/game/GameScreen.tsx`：传入有效设置窗口，缺失摘要的安全错误说明。
 - `src/ui/panels/playerView.ts`：公开摘要只读投影和永久历史投影，显示实际设置窗口。
 - `src/ui/panels/Panels.tsx`：记忆界面委托给 MemoryPanel，其他六面板不变。
@@ -101,7 +101,7 @@ GameState.memories.immediateWindowSize 是保留的旧序列化字段，不再�
 - `e2e/continuous-turns.spec.ts`：原十回合实际 UI 流程逐轮检查摘要数量、原文来源、可见性和游戏时间。
 - `DEVELOPMENT.md`、`src/workflows/README.md`：阶段索引和职责说明。
 
-## 验证记录
+## 首次交付验证记录（本轮复审结果见末节）
 
 全部使用 Fake IndexedDB、Mock API 或浏览器网络拦截，没有真实付费 API 调用。
 
@@ -127,4 +127,39 @@ GameState.memories.immediateWindowSize 是保留的旧序列化字段，不再�
 - 旧文档中 M5 同时包含压缩/调度；本轮按明确任务仅交付基础。M4 已确认的完整三阶段提交、失败恢复和重试规则继续保留，未借本轮改写正式设计文档。
 - M5-P2 可复用 `historyRecords`/`searchHistory`/`recallHistory` 的来源、序号与理由，`publicShortMemories` 的只读兼容，以及 `storyMemoryContext` 的即时/摘要/召回分区。MemoryEntry 的 sourceTurnIds、createdAtGameTime、visibility 和原正式原子提交入口可继续承载后续压缩；具体压缩事务、阈值和失败恢复需另行审查。
 
-全部检查通过后提交独立分支和 Draft PR；不合并、不正式部署，等待代码审查。未遗留未通过的检查；未进行真实付费模型试玩。
+全部检查通过后提交独立分支和 Draft PR；不合并、不正式部署，等待代码审查。未进行真实付费模型试玩。
+
+## PR #16 定点复审修复：覆盖延续与摘要长度
+
+### A：公开来源覆盖跨层延续
+
+覆盖规则区分三种情况：未被公开分层记录覆盖的旧 M4 回合使用 journal 只读投影；仍有有效 short 条目的回合读取该条目；已进入公开 medium/long 的来源不再补回 short。完全被上层覆盖的残留 short 条目也不作为当前有效短期摘要展示。
+
+现有 MemoryEntry.sourceTurnIds 已持久化并能准确表达来源，因此不需要增加覆盖字段、Schema 版本或迁移。未来中期→长期替换必须保留原来源的并集，不能同时删除所有上层来源凭据；压缩和删除的事务实现仍由 M5-P2 负责。本次不新增压缩执行器。
+
+上下文优先选长期→中期→短期，再应用已有窗口、来源去重和预算规则。遇到部分重叠，原条目不被拆分或改写，不能安全去重的整条摘要不注入；相关原文仍可按需检索。不会用低层或兼容投影覆盖上层摘要，也不会为了修复投影删除任何 journal。
+
+新增 5 项覆盖回归：前30条压到中期、进一步压到长期、残留低层被上层覆盖及两种私有可见性的隔离。先在旧代码运行，3 项精确复现失败；修复后 28 项记忆测试通过。40回合夹具中仅后10条仍作为短期；上下文保留前30回合的分层摘要且来源不重复，原存档整对象保持不变。
+
+### B：同次正文请求的100～200汉字目标
+
+只在 `prompts/shared/06_story_output.md` 的既有短期记忆协议后追加要求：同一次正文请求附带约100～200汉字事实摘要，忠于关键既成事实和未了条件，不编造凑字，不靠截断牺牲含义。六套主提示词、标签顺序和独立阶段架构均不变。
+
+共享资源版本更新为 `0.1.1-m5-p1`，使用原 `npm run prompts:refresh` 流程更新字符数、SHA-256 和占位符元数据。sources.lock 保留原基线 sourceSha256，并改为说明当前正文追加了目标规则，不再声称与基线逐字相同；NSFW/世界书资源没有变化。
+
+新增纯函数 `assessSummary`，按 Unicode Script=Han 统计汉字，标点、空白、数字和英文不计数，扩展汉字按一个字符计数。100～200 为 within_target，低于/高于目标产生质量提示，不阻断合法正文或正式结算，不自动重试，不增加付费请求，也不修改摘要正文。空白摘要在新正文解析时仍属于无效输出；旧档/旧草稿继续使用原 Schema 读取及正式提交保护。
+
+“重试与变更详情”显示当前候选摘要的汉字数、目标和非阻断提示，没有新增设置或持久状态字段。现有上下文摘录预算只作用于请求副本，和对正式摘要的目标长度校验分开，不截断存档中的原摘要。
+
+新增14项测试覆盖目标边界、95/99/201/205轻微偏离、短/长有效摘要原样保留、汉字计数与旧空摘要兼容，以及 opening/regular 的实际共享协议加载。浏览器原记忆请求拦截增加协议与4汉字短摘要的可继续提示断言；既有请求次数检查继续证明没有额外摘要请求。
+
+本次复审修改文件：`src/domain/memories/publicMemory.ts`、`src/domain/memories/summary.ts`（新增）、`src/services/validation/aiOutputs.ts`、`src/ui/game/GameScreen.tsx`、`src/tests/memory.test.ts`、`src/tests/summary.test.ts`（新增）、`e2e/memory.spec.ts`、`prompts/shared/06_story_output.md`、`prompts/manifest.json`、`prompts/sources.lock.json`、本报告。最终完整复审检查结果在下方记录。
+
+### 复审最终验证
+
+- `npm run prompts:check`：82项通过，当前共享资源字符数905、SHA-256为 `34632160280fad20fb1f022d5f51c50ce8308ef2a209eda6f0871dad1bce92ca`。
+- `npm run check`：20文件、665项通过（原646 + 本轮新增19），ESLint零警告、TypeScript类型检查及Vite生产构建通过。
+- `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e`：完整98项通过，桌面/移动各49项；保留原全部用例并增加协议和非阻断提示断言。
+- `git diff --check`：通过。
+
+没有未解决的测试失败。全部使用Mock，不调用真实付费API；只推送原分支并更新Draft PR #16，不合并或部署。压缩执行、来源交接事务及分层质量评估仍留给M5-P2，本轮只修复覆盖投影与逐回合摘要目标。

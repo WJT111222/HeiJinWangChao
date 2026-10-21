@@ -18,6 +18,7 @@ import { completeTurnDraft } from '../../domain/turnCommit';
 import type { TurnCommitResult } from '../../services/storage/saveRepository';
 import { DataError } from '../../domain/common';
 import { storyError } from '../../workflows/storyStage';
+import { assessSummary } from '../../domain/memories/summary';
 
 export function GameScreen({
   state,
@@ -116,6 +117,7 @@ export function GameScreen({
     if (follow.current && reader.current) reader.current.scrollTop = reader.current.scrollHeight;
   }, [progress?.narrative, draft?.storyRevision]);
   const view = useMemo(() => playerView(state, companionProfile, settings.memory.immediateWindowSize), [state, companionProfile, settings.memory.immediateWindowSize]);
+  const summaryQuality = draft?.story ? assessSummary(draft.story.summary) : undefined;
   const hero = state.protagonist;
   const itemName = (id?: string) => (id ? state.items[id]?.name || '无' : '无');
   const equipment: [string, string][] = [
@@ -397,6 +399,14 @@ export function GameScreen({
             </ol>
             <details>
               <summary>重试与变更详情</summary>
+              {summaryQuality && <p className="muted" data-testid="summary-length">
+                本回合摘要：{summaryQuality.hanCharacters} 汉字，目标约 100～200 汉字。
+                {summaryQuality.status === 'empty'
+                  ? '缺少有效摘要，无法正式结算。'
+                  : summaryQuality.status === 'within_target'
+                    ? '符合目标范围。'
+                    : '长度偏离建议范围；摘要原文保留，可继续，不会自动追加模型请求。'}
+              </p>}
               <p className="muted">
                 三阶段结果均只保存在草稿。实际请求和 Token 统计可在设置 → 提示词管理中查看。
                 自动执行会跳过已经合法完成的阶段；填写下一步行动并发送后，当前回合与下一草稿一并原子保存。
