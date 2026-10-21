@@ -11,6 +11,7 @@ import type { CompanionProfile } from '../services/local/companionProfile';
 import { commandCatalog } from '../services/validation/commandCatalog';
 import { AiError } from '../services/ai/errors';
 import type { AiStage } from '../services/ai/configuration';
+import { storyMemoryContext } from '../domain/memories/publicMemory';
 
 export interface ComposeInput {
   stage: AiStage | 'memory';
@@ -165,18 +166,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       SCENE_NPCS: Object.values(state.npc)
         .filter((npc) => npc.onScene)
         .map((npc) => publicNpc(state, npc.id, archive)),
-      MEMORY_CONTEXT: {
-        recentTurns: state.journal.slice(-settings.memory.immediateWindowSize).map((entry) => ({
-          turnId: entry.turnId,
-          narrative: entry.story.narrative,
-          summary: entry.story.summary,
-        })),
-        summaries: [
-          ...state.memories.short,
-          ...state.memories.medium,
-          ...state.memories.long,
-        ].filter((memory) => memory.visibility === 'player_known'),
-      },
+      MEMORY_CONTEXT: storyMemoryContext(state, settings.memory.immediateWindowSize, input.userInput, input.mode === 'regular'),
       KNOWN_EVENTS: events.map((event) => ({
         id: event.id,
         title: event.title,
