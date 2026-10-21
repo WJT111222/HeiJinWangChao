@@ -8,6 +8,7 @@ import { AiError } from '../ai/errors';
 import { validateWorldOutput } from './worldOutput';
 import type { Settings } from '../../ui/settings/model';
 import { economicAmount, factEvidence, variablePermission, completedPayment } from './evidence';
+import { assessSummary } from '../../domain/memories/summary';
 
 function json(text: string): unknown {
   try {
@@ -29,6 +30,9 @@ export function parseStory(text: string, mode: 'opening' | 'regular', settings: 
   )
     throw new AiError('invalid_output');
   const narrative = match[1].trim();
+  const summary = match[2].trim();
+  // 100～200 汉字为质量目标，偏离仅提示；空摘要不能充当有效的本回合事实记录。
+  if (assessSummary(summary).status === 'empty') throw new AiError('invalid_output');
   if (Array.from(narrative.replace(/\s/gu, '')).length < settings.prompts.minNarrativeChars)
     throw new AiError('invalid_output');
   const actionOptions = actions
@@ -42,7 +46,7 @@ export function parseStory(text: string, mode: 'opening' | 'regular', settings: 
   const parsed = StorySchema.safeParse({
     turnKind: mode,
     narrative,
-    summary: match[2].trim(),
+    summary,
     variableGuide: json(match[3]),
     ...(actions ? { actionOptions } : {}),
   });

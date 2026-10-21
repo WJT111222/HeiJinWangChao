@@ -11,8 +11,14 @@ export type PublicShortMemory = Omit<MemoryEntry, 'createdAtGameTime'> & {
 
 // 旧 journal 没有每轮世界时间；只读展示真实摘要，不虚构时间，不回写或改变 revision。
 export function publicShortMemories(state: GameState): PublicShortMemory[] {
-  const stored = state.memories.short.filter((entry) => entry.visibility === 'player_known');
-  const covered = new Set(stored.flatMap((entry) => entry.sourceTurnIds));
+  // 分层摘要的来源就是持久覆盖凭据；压缩后必须保留来源的并集。
+  // 知识范围独立：私有/内部摘要不代表公开历史已经压缩。
+  const compressed = [...state.memories.medium, ...state.memories.long]
+    .filter((entry) => entry.visibility === 'player_known');
+  const compressedTurns = new Set(compressed.flatMap((entry) => entry.sourceTurnIds));
+  const stored = state.memories.short.filter((entry) => entry.visibility === 'player_known' &&
+    (!entry.sourceTurnIds.length || !entry.sourceTurnIds.every((id) => compressedTurns.has(id))));
+  const covered = new Set([...compressed, ...stored].flatMap((entry) => entry.sourceTurnIds));
   const order = new Map(state.journal.map((entry, index) => [entry.turnId, index]));
   const lastSource = (entry: PublicShortMemory) => Math.max(-1, ...entry.sourceTurnIds.map((id) => order.get(id) ?? -1));
   return [
@@ -38,10 +44,10 @@ export function storyMemoryContext(state: GameState, windowSize: number, query: 
   let budget = 6000;
   const summaries: { text: string; sourceTurnIds: string[]; truncated: boolean }[] = [];
   const candidates = [
-    ...state.memories.long,
-    ...state.memories.medium,
-    ...publicShortMemories(state),
-  ].reverse();
+    ...[...state.memories.long].reverse(),
+    ...[...state.memories.medium].reverse(),
+    ...publicShortMemories(state).reverse(),
+  ];
   for (const entry of candidates) {
     if (summaries.length >= 12 || budget === 0) break;
     if (entry.visibility !== 'player_known' || entry.sourceTurnIds.some((id) => excluded.has(id))) continue;
