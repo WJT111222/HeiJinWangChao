@@ -6,7 +6,7 @@ import { ImportantItemSchema } from './items/schema';
 import { EconomySchema } from './economy/schema';
 import { OrganizationSchema } from './organizations/schema';
 import { TimelineEntrySchema, WorldEventSchema, WorldTaskSchema } from './events/schema';
-import { MemoryStateSchema } from './memories/schema';
+import { MemoryStateSchema, npcKnowledgeKind } from './memories/schema';
 
 export const LocationSchema = z.strictObject({ id: IdSchema, name: TextSchema, parentId: IdSchema.optional() });
 export const StorySchema = z.strictObject({
@@ -130,6 +130,28 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     location(entry.locationId); entry.actorRefs.forEach(actor);
   }
   for (const id of Object.keys(s.memories.npcSummaries)) check(Object.hasOwn(s.npc, id), '记忆所属 NPC 不存在');
+  for (const [id, summaries] of Object.entries(s.memories.npcSummaries)) {
+    const covered = summaries.flatMap((entry) => entry.npcProvenance?.sourceMemoryIds ?? []);
+    check(new Set(covered).size === covered.length, '私人总结重复覆盖原始来源');
+    for (const summary of summaries) {
+      const source = summary.npcProvenance;
+      if (!source) continue; // 旧档不补造来源。
+      const npc = s.npc[id];
+      check(npc && source.npcId === id && source.identityKey === npc.identityKey, '私人总结所属身份不符');
+      check(summary.visibility === (source.sourceVisibility === 'internal' ? 'internal' : 'npc_private'), '私人总结权限升级');
+      const raw = npc ? [...npc.memories, ...(npc.kind === 'special' ? npc.longTermMemories : [])] : [];
+      const selected = raw.filter((entry) => source.sourceMemoryIds.includes(entry.id));
+      for (const memoryId of source.sourceMemoryIds) {
+        const entries = raw.filter((memory) => memory.id === memoryId);
+        check(entries.length === 1 && entries[0].visibility === source.sourceVisibility && npcKnowledgeKind(entries[0]) === source.knowledgeKind, '私人总结来源或认知性质不符');
+      }
+      check(selected.every((entry) => entry.affectedEntityRefs.some((ref) => ref.kind === 'npc' && ref.id === id)), '私人总结缺少原始所属引用');
+      const sameIds = (a: string[], b: string[]) => [...new Set(a)].sort().join('|') === [...new Set(b)].sort().join('|');
+      check(sameIds(summary.sourceTurnIds, selected.flatMap((entry) => entry.sourceTurnIds)), '私人总结回合来源不符');
+      check(sameIds(summary.affectedEntityRefs.map((ref) => `${ref.kind}:${ref.id}`), selected.flatMap((entry) => entry.affectedEntityRefs.map((ref) => `${ref.kind}:${ref.id}`))), '私人总结对象来源不符');
+      check(Date.parse(summary.createdAtGameTime) === Math.max(...selected.map((entry) => Date.parse(entry.createdAtGameTime))), '私人总结时间来源不符');
+    }
+  }
   for (const memory of [...s.memories.short, ...s.memories.medium, ...s.memories.long, ...Object.values(s.memories.npcSummaries).flat()]) memory.affectedEntityRefs.forEach(actor);
   check(new Set(s.journal.map((entry) => entry.turnId)).size === s.journal.length, '回合原文重复');
   check(s.turnNumber === s.journal.length, '已提交回合数与永久原文数量不一致');

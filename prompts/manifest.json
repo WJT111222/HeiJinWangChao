@@ -1500,8 +1500,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 493,
-      "version": "0.1.0-m3-p1",
+      "characters": 841,
+      "version": "0.1.0-m5-p3",
       "messageRole": "system",
       "activation": "memory-task",
       "permanent": false,
@@ -1510,7 +1510,7 @@
       "orderGroup": "memory",
       "reorderable": false,
       "category": "memory",
-      "contentSha256": "acbbbddc2a6c1cd857ffb14f9582684e1b91d12d8eef6be91578f627db12b787",
+      "contentSha256": "d3e2ff53a8d85ae7d2dc158e0d5f214035dea133c5b40e0a0ac8c01ca1d4c680",
       "placeholders": [
         "npcId",
         "npcSummaryThreshold"

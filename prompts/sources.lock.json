@@ -446,7 +446,8 @@
     "memory/npc_summarize.md": {
       "origin": "baseline",
       "sourceSha256": "acbbbddc2a6c1cd857ffb14f9582684e1b91d12d8eef6be91578f627db12b787",
-      "treatment": "verbatim"
+      "treatment": "npc-memory-contract-alignment",
+      "notes": "M5-P3 按单一所属NPC、认知/可见性分组归纳；来源、权限、时间由程序重建，保留原来源hash。"
     },
     "memory/recall_select.md": {
       "origin": "baseline",

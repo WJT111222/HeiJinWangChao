@@ -670,7 +670,7 @@ export function GameScreen({
           ) : (
             <>
               {panel === '记忆' && <MemoryMaintenanceControls state={state} phase={memory.phase} notice={memory.notice}
-                onRun={() => void memory.run()} onCancel={memory.cancel} />}
+                onRun={() => void memory.run()} onNpcRun={() => void memory.run(false, 'npc')} onCancel={memory.cancel} />}
               <Panels name={panel} view={view} />
             </>
           )}
