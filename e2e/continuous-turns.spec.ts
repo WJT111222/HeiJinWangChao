@@ -192,6 +192,14 @@ test('真实创角后连续正式游玩十回合；输入、资料、正文历�
     expect(result.state.turnNumber).toBe(index);
     expect(result.state.revision).toBe(index);
     expect(result.state.journal).toHaveLength(index);
+    expect(result.state.memories.short).toHaveLength(index);
+    expect(result.state.memories.short.at(-1)).toMatchObject({
+      text: `第${index}幕的街边休息`,
+      sourceTurnIds: [result.state.journal[index - 1].turnId],
+      createdAtGameTime: result.state.worldClock,
+      visibility: 'player_known',
+      affectedEntityRefs: [],
+    });
     expect(result.draft.userInput).toBe(action);
     expect(result.draft.turnKind).toBe('regular');
     expect(Date.parse(result.state.worldClock)).toBe(start + index * 60000);

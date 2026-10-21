@@ -242,6 +242,7 @@ describe('真实 Repository → 候选重验 → 单事务正式结算', () => {
       const results = await Promise.allSettled([repo.commitTurn(input), second.commitTurn(input)]);
       expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
       expect((await repo.loadGame('save-a')).state.turnNumber).toBe(1);
+      expect((await repo.load('save-a')).memories.short).toHaveLength(1);
       expect((await repo.load('save-a')).economy.cash).toBe(7000);
     } finally {
       second.close();

@@ -235,7 +235,8 @@
     "shared/06_story_output.md": {
       "origin": "baseline",
       "sourceSha256": "606d0459789198dacf095e61b6efe122803a4af0336f90b9819b86251463eee8",
-      "treatment": "verbatim"
+      "treatment": "summary-target-clarification",
+      "notes": "PR #16 复审：在既有共享正文输出协议中追加同次请求约100～200汉字事实摘要目标；保留原文和标签，不是旧版逐字资源。sourceSha256 保留原始基线来源，当前资源哈希由 Manifest 记录。"
     },
     "shared/07_command_output.md": {
       "origin": "baseline",

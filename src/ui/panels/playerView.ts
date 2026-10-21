@@ -1,14 +1,16 @@
 import type { GameState } from '../../domain/state';
 import { initialCompanionProfile, matchesCompanion } from '../../services/local/companionProfile';
 import type { CompanionProfile } from '../../services/local/companionProfile';
+import { publicShortMemories } from '../../domain/memories/publicMemory';
+import { historyRecords } from '../../domain/memories/history';
 
 // M2 展示投影；玩家视角与主角认知并非同一概念，最终档案开放范围尚待设计。
-export function playerView(state: GameState, authoredCompanion?: CompanionProfile) {
+export function playerView(state: GameState, authoredCompanion?: CompanionProfile, effectiveWindowSize = state.memories.immediateWindowSize) {
   const archive = authoredCompanion ?? initialCompanionProfile(state);
   const companion = archive && matchesCompanion(state, archive) ? archive : undefined;
   const events = Object.values(state.events).filter((event) => event.visibility === 'known');
   const memories = [
-    ...state.memories.short.map((memory) => ({ ...memory, layer: '短期' })),
+    ...publicShortMemories(state).map((memory) => ({ ...memory, layer: memory.origin === 'journal' ? '短期（历史摘要，只读）' : '短期' })),
     ...state.memories.medium.map((memory) => ({ ...memory, layer: '中期' })),
     ...state.memories.long.map((memory) => ({ ...memory, layer: '长期' })),
     ...Object.values(state.memories.npcSummaries)
@@ -110,17 +112,13 @@ export function playerView(state: GameState, authoredCompanion?: CompanionProfil
       sourceTurnIds: memory.sourceTurnIds,
       createdAtGameTime: memory.createdAtGameTime,
     })),
-    immediateWindowSize: state.memories.immediateWindowSize,
+    immediateWindowSize: effectiveWindowSize,
     memoryLayers: {
-      short: state.memories.short.filter((m) => m.visibility === 'player_known').length,
+      short: publicShortMemories(state).length,
       medium: state.memories.medium.filter((m) => m.visibility === 'player_known').length,
       long: state.memories.long.filter((m) => m.visibility === 'player_known').length,
     },
-    journal: state.journal.map((entry) => ({
-      turnId: entry.turnId,
-      narrative: entry.story.narrative,
-      summary: entry.story.summary,
-    })),
+    journal: historyRecords(state.journal),
   };
 }
 export type PlayerView = ReturnType<typeof playerView>;

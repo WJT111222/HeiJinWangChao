@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Detail, Empty } from '../Dialog';
 import { categoryLabels, dateTime, orgLabels } from './playerView';
 import type { PlayerView } from './playerView';
+import { MemoryPanel } from './MemoryPanel';
 
 export const panelNames = [
   'NPC',
@@ -205,40 +206,5 @@ export function Panels({ name, view }: { name: PanelName; view: PlayerView }) {
         )}
       </>
     );
-  return (
-    <>
-      <div className="metric-row">
-        <span>即时窗口：最近 {view.immediateWindowSize} 回合</span>
-        <span>短期 {view.memoryLayers.short}</span>
-        <span>中期 {view.memoryLayers.medium}</span>
-        <span>长期 {view.memoryLayers.long}</span>
-      </div>
-      <h3>已知记忆</h3>
-      {view.memories.length ? (
-        view.memories.map((memory, i) => (
-          <article className="card entry" key={`${memory.id}-${i}`}>
-            <span className="tag">{memory.layer}</span>{' '}
-            <time>{dateTime(memory.createdAtGameTime)}</time>
-            <p className="prose">{memory.text}</p>
-            <small>来源回合：{memory.sourceTurnIds.join('、') || '未记录'}</small>
-          </article>
-        ))
-      ) : (
-        <Empty>尚无可查看的记忆摘要。</Empty>
-      )}
-      <h3>永久正文档案</h3>
-      {view.journal.length ? (
-        view.journal.map((entry, i) => (
-          <details className="card entry" key={entry.turnId}>
-            <summary>
-              第 {i + 1} 回合 · {entry.summary || '正文记录'}
-            </summary>
-            <p className="prose">{entry.narrative}</p>
-          </details>
-        ))
-      ) : (
-        <Empty>开局尚未生成，正文档案为空。</Empty>
-      )}
-    </>
-  );
+  return <MemoryPanel view={view} />;
 }
