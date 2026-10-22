@@ -48,6 +48,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
             'evidence = JSON.stringify(WORLD_EVIDENCE_V1)。sources 只引用 WORLD_SOURCES 的 id；derived 可描述新推演结果，不要求逐字存在于来源。',
           worldEvidenceSchema: z.toJSONSchema(WorldEvidenceSchema, { target: 'draft-7' }),
           worldStateRules: [
+            'worldEventOnly标记的事件是后台世界事实，不是NPC知情来源；NPC行动/任务/记忆须引用自身独立观察或转述来源，不能引用非公开事件ID代替知晓依据。事件本身仍可正常创建和演化，参与者列表不等同于已知者列表。',
             'npc-summary 来源仅能支持所属人物的计划任务或个人目标，不是客观事实、完成证据或其他人物的知识。',
             'player_known 记忆和事件可见信息的新增/更新必须有 playerKnownText 中的肯定事实依据；客观成立不等于主角已知，缺少公开依据时保持私有/hidden或列入unresolved。',
             'CreateLocation 只接受实际存在或合法 derived 事实，planned 建设只可记录任务/未来事件。',

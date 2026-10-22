@@ -110,7 +110,7 @@ describe('独立NPC来源与认知模型', () => {
     const duplicate = npcMemoryState(); duplicate.npc['npc-b'].memories[0].id = duplicate.npc['npc-a'].memories[0].id;
     expect(planNpcSummary(duplicate)).toBeUndefined();
     const large = npcMemoryState(); large.npc['npc-a'].memories[0].text = '私有经历'.repeat(10000);
-    expect(() => planNpcSummary(large)).toThrow(); expect(large.npc['npc-a'].memories[0].text).toHaveLength(40000);
+    expect(planNpcSummary(large)).toBeUndefined(); expect(large.npc['npc-a'].memories[0].text).toHaveLength(40000);
   });
   it.each(['broken', JSON.stringify({ summaries: [], npcId: 'invented', unresolved: [], contradictions: [] }),
     JSON.stringify({ summaries: [{ groupId: 'observed:npc_private', text: '摘要', sourceMemoryIds: ['invented'] }], unresolved: [], contradictions: [] }),

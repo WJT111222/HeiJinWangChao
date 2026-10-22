@@ -40,7 +40,7 @@ export function npcSummaryCandidates(state: GameState, npcId: string) {
     Date.parse(entry.createdAtGameTime) <= Date.parse(state.worldClock))
     .sort((a, b) => Date.parse(a.createdAtGameTime) - Date.parse(b.createdAtGameTime));
 }
-export const npcMaintenanceAvailable = (state: GameState) => Object.keys(state.npc).some((id) => npcSummaryCandidates(state, id).length > npcMemoryPolicy.threshold);
+export const npcMaintenanceAvailable = (state: GameState) => Boolean(planNpcSummary(state));
 export function npcSummaryInput(batch: NpcMemoryBatch) {
   const groups = new Map<string, { groupId: string; knowledgeKind: z.infer<typeof KnowledgeNatureSchema>; visibility: z.infer<typeof NpcMemorySchema>['visibility']; entries: NpcMemoryBatch['entries'] }>();
   for (const entry of batch.entries) {
@@ -62,7 +62,8 @@ export function planNpcSummary(state: GameState, npcId?: string): NpcMemoryBatch
       if (text.length > compressionPolicy.inputCharacters || estimateTokens(text).estimatedTokens > compressionPolicy.inputEstimatedTokens) break;
       batch.entries.push(entry);
     }
-    requireData(batch.entries.length >= 2, 'MEMORY_BUDGET', '原始条目超出整理预算，未调用模型');
+    // 不跳过/截断此人的最早来源；仅跳过无法安全组批的人，继续寻找其他人物。
+    if (batch.entries.length < 2) continue;
     return NpcMemoryBatchSchema.parse(batch);
   }
 }

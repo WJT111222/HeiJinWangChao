@@ -145,3 +145,44 @@ test('公开自动维护开关不授权NPC额外收费；新正式回合和下�
   const panel = await memory(page); await expect(panel.getByRole('button', { name: '整理NPC私人记忆（可能产生费用）', exact: true })).toBeEnabled();
   await expect(panel).not.toContainText('未公开人物A'); await expect(panel).not.toContainText('A的私人经历');
 });
+
+for (const blockedB of [false, true]) {
+  test(`预算跳过与可维护状态一致：A超长、B${blockedB ? '也超长不请求' : '正常只整理B'}`, async ({ page }) => {
+    let requests = 0;
+    await page.route('https://npc-memory.mock.invalid/**', async (route) => {
+      requests++; const body: unknown = route.request().postDataJSON();
+      expect(record(context(body).MEMORY_TASK).npcId).toBe('npc-b');
+      expect(JSON.stringify(body)).not.toContain('A的超长原始记忆');
+      await route.fulfill({ contentType: 'application/json', body: wire(reply(body)) });
+    });
+    await seed(page);
+    await page.evaluate(async (blockedB) => {
+      const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open();
+      const state = await repo.load('save-a'); repo.close();
+      state.npc['npc-b'].memories = state.npc['npc-a'].memories.map((entry: { id: string }, index: number) => ({ ...entry,
+        id: `budget-b-${index}`, text: `B自己的合法经历${index}`, affectedEntityRefs: [{ kind: 'npc', id: 'npc-b' }] }));
+      state.npc['npc-a'].memories[0].text = 'A的超长原始记忆'.repeat(10000);
+      if (blockedB) state.npc['npc-b'].memories[0].text = 'B的超长原始记忆'.repeat(10000);
+      await new Promise<void>((resolve, reject) => {
+        const request = indexedDB.open('heijinwangchao');
+        request.onsuccess = () => { const db = request.result, tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(state);
+          tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); }; };
+        request.onerror = () => reject(request.error);
+      });
+    }, blockedB);
+    await page.reload(); await expect(page.getByRole('complementary', { name: '主角信息' })).toBeVisible();
+    const before = await load(page), panel = await memory(page), button = panel.getByRole('button', { name: '整理NPC私人记忆（可能产生费用）', exact: true });
+    if (blockedB) {
+      await expect(panel).toContainText('暂无可安全维护任务'); await expect(button).toBeDisabled();
+      expect(requests).toBe(0); expect(await load(page)).toEqual(before);
+    } else {
+      await expect(button).toBeEnabled(); await button.click();
+      await expect(panel).toContainText('一批私人记忆已整理并原子保存');
+      await expect(panel).toContainText('暂无可安全维护任务'); await expect(button).toBeDisabled();
+      const after = await load(page); expect(after.npc).toEqual(before.npc);
+      expect(after.memories.npcSummaries['npc-a']).toBeUndefined();
+      expect(after.memories.npcSummaries['npc-b'][0].npcProvenance!.sourceMemoryIds).toHaveLength(10);
+      await page.reload(); expect(requests).toBe(1); expect(await load(page)).toEqual(after);
+    }
+  });
+}
