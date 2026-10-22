@@ -13,6 +13,7 @@ import { AiError } from '../services/ai/errors';
 import type { AiStage } from '../services/ai/configuration';
 import { npcKnowledgeContext, rawNpcMemories, npcMemoryPolicy, planNpcSummary, npcSummaryInput } from '../domain/memories/npcMemory';
 import { storyMemoryContext } from '../domain/memories/publicMemory';
+import { timePreflight } from '../domain/timePreflight';
 
 export interface ComposeInput {
   stage: AiStage | 'memory';
@@ -128,6 +129,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       }
     }
     const archive = input.companionProfile ?? initialCompanionProfile(state);
+    const preflight = input.mode === 'regular' ? timePreflight(state, input.userInput) : undefined;
     return {
       SAVE_STATE: {
         saveId: state.saveId,
@@ -183,6 +185,17 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         resolutionText: event.resolutionText,
       })),
       PLAYER_ACTION: input.userInput,
+      TIME_PREFLIGHT: preflight ? {
+        ...preflight,
+        candidates: preflight.candidates.map((candidate) => ({ ...candidate, weekday: worldWeekday(candidate.at) })),
+        calendar: { fromWeekday: worldWeekday(state.worldClock),
+          targetWeekday: preflight.targetAt ? worldWeekday(preflight.targetAt) : undefined,
+          earliestWeekday: preflight.endWindow ? worldWeekday(preflight.endWindow.from) : undefined,
+          latestWeekday: preflight.endWindow ? worldWeekday(preflight.endWindow.to) : undefined },
+        basis: { saveId: state.saveId, revision: state.revision, turnId: draft?.turnId,
+          draftRevision: draft?.draftRevision, storyRevision: draft?.storyRevision,
+          worldClock: state.worldClock, locationId: state.protagonist.locationId },
+      } : undefined,
     };
   }
   if (stage === 'variables')
