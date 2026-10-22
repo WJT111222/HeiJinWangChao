@@ -31,6 +31,7 @@ export interface WorldSource {
   actors: ActorRef[];
   ownerNpcId?: string;
   npcSummary?: boolean;
+  worldEventOnly?: true;
   playerKnownText?: string;
   at?: string;
 }
@@ -135,6 +136,8 @@ export function worldSources(state: GameState, draft: TurnDraft, before = state)
   for (const event of Object.values(state.events))
     sources.push({
       id: `event:${event.id}`,
+      // 参与者/事件客观状态不代表人物已经获知；旧档同样按当前可见性重建边界。
+      worldEventOnly: event.visibility !== 'known' ? true : undefined,
       playerKnownText: event.visibility === 'known' ? JSON.stringify({ title: event.title, startAt: event.startAt, status: event.status, resolutionText: event.resolutionText }) : undefined,
       knowledge: event.status === 'resolved' ? 'fact' : 'plan',
       text: JSON.stringify(event),
@@ -170,6 +173,11 @@ export function readWorldEvidence(
     requireWorld(source && (!source.at || Date.parse(source.at) <= Date.parse(proof.at)));
     return source;
   });
+  // 非公开事件供世界因果/生命周期推演，不直接授予任何NPC知识。
+  // 人物行动或新认知应引用其独立观察/转述等自身来源，不能借事件ID洗掉所属关系。
+  const npcCommand = command.type === 'UpdateNpc' || command.type === 'RecordNpcMemory' ||
+    (command.type === 'SaveTask' && command.task.actorRef.kind === 'npc');
+  requireWorld(!npcCommand || !resolved.some((source) => source.worldEventOnly), 'permission');
   if (resolved.some((source) => source.npcSummary)) {
     // 总结不是事实凭据；只允许同一所属人物的未执行计划，不能传播或更新世界真值。
     const owner = command.type === 'SaveTask' && command.task.status === 'planned' && command.task.actorRef.kind === 'npc'
