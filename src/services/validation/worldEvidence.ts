@@ -1,3 +1,4 @@
+import { npcKnowledgeContext } from '../../domain/memories/npcMemory';
 import { z } from 'zod';
 import { GameTimeSchema, TextSchema } from '../../domain/common';
 import type { ActorRef } from '../../domain/common';
@@ -29,6 +30,9 @@ export interface WorldSource {
   text: string;
   actors: ActorRef[];
   ownerNpcId?: string;
+  npcSummary?: boolean;
+  worldEventOnly?: true;
+  playerKnownText?: string;
   at?: string;
 }
 export const speculative =
@@ -43,7 +47,7 @@ export function hasAffirmedTermination(text: string) {
 }
 export function worldSources(state: GameState, draft: TurnDraft, before = state): WorldSource[] {
   const sources: WorldSource[] = [
-    { id: 'story:current', knowledge: 'fact', text: draft.story?.narrative ?? '', actors: [] },
+    { id: 'story:current', knowledge: 'fact', text: draft.story?.narrative ?? '', playerKnownText: draft.story?.narrative ?? '', actors: [] },
   ];
   for (const npc of Object.values(state.npc).filter(
     (person) => !person.onScene && !before.npc[person.id]?.onScene,
@@ -74,19 +78,26 @@ export function worldSources(state: GameState, draft: TurnDraft, before = state)
           ownerNpcId: npc.id,
         }),
       );
-    for (const memory of [...npc.memories, ...(npc.kind === 'special' ? npc.longTermMemories : [])])
+    const knowledge = npcKnowledgeContext(state, npc.id);
+    for (const summary of knowledge.summaries) sources.push({
+      id: `npc-summary:${npc.id}:${summary.id}`, knowledge: 'motive', text: summary.text,
+      actors: [{ kind: 'npc', id: npc.id }], ownerNpcId: npc.id, at: summary.createdAtGameTime, npcSummary: true,
+    });
+    for (const memory of knowledge.raw)
       sources.push({
         id: `memory:${npc.id}:${memory.id}`,
         knowledge:
-          /^\[(?:转述|推测)\]/.test(memory.text) || speculative.test(memory.knowledgeSource)
+          memory.knowledgeKind !== 'observed' || speculative.test(memory.knowledgeSource)
             ? 'statement'
             : 'fact',
         text: memory.text,
+        playerKnownText: memory.visibility === 'player_known' ? memory.text : undefined,
         actors: [{ kind: 'npc', id: npc.id }],
         ownerNpcId: npc.id,
         at: memory.createdAtGameTime,
       });
-    npc.knownInformation.forEach((info, index) =>
+    npc.knownInformation.forEach((info, index) => {
+      if ([...npc.memories, ...(npc.kind === 'special' ? npc.longTermMemories : [])].some((memory) => memory.text === info.text && memory.knowledgeSource === info.source)) return;
       sources.push({
         id: `knowledge:${npc.id}:${index}`,
         knowledge:
@@ -97,8 +108,8 @@ export function worldSources(state: GameState, draft: TurnDraft, before = state)
         actors: [{ kind: 'npc', id: npc.id }],
         ownerNpcId: npc.id,
         at: info.learnedAt,
-      }),
-    );
+      });
+    });
   }
   for (const org of Object.values(state.organizations))
     sources.push({
@@ -116,6 +127,7 @@ export function worldSources(state: GameState, draft: TurnDraft, before = state)
       continue;
     sources.push({
       id: `task:${task.id}`,
+      ownerNpcId: task.actorRef.kind === 'npc' ? task.actorRef.id : undefined,
       knowledge: task.status === 'completed' ? 'fact' : 'plan',
       text: JSON.stringify(task),
       actors: [task.actorRef],
@@ -124,6 +136,9 @@ export function worldSources(state: GameState, draft: TurnDraft, before = state)
   for (const event of Object.values(state.events))
     sources.push({
       id: `event:${event.id}`,
+      // 参与者/事件客观状态不代表人物已经获知；旧档同样按当前可见性重建边界。
+      worldEventOnly: event.visibility !== 'known' ? true : undefined,
+      playerKnownText: event.visibility === 'known' ? JSON.stringify({ title: event.title, startAt: event.startAt, status: event.status, resolutionText: event.resolutionText }) : undefined,
       knowledge: event.status === 'resolved' ? 'fact' : 'plan',
       text: JSON.stringify(event),
       actors: event.actorRefs,
@@ -158,6 +173,17 @@ export function readWorldEvidence(
     requireWorld(source && (!source.at || Date.parse(source.at) <= Date.parse(proof.at)));
     return source;
   });
+  // 非公开事件供世界因果/生命周期推演，不直接授予任何NPC知识。
+  // 人物行动或新认知应引用其独立观察/转述等自身来源，不能借事件ID洗掉所属关系。
+  const npcCommand = command.type === 'UpdateNpc' || command.type === 'RecordNpcMemory' ||
+    (command.type === 'SaveTask' && command.task.actorRef.kind === 'npc');
+  requireWorld(!npcCommand || !resolved.some((source) => source.worldEventOnly), 'permission');
+  if (resolved.some((source) => source.npcSummary)) {
+    // 总结不是事实凭据；只允许同一所属人物的未执行计划，不能传播或更新世界真值。
+    const owner = command.type === 'SaveTask' && command.task.status === 'planned' && command.task.actorRef.kind === 'npc'
+      ? command.task.actorRef.id : command.type === 'UpdateNpc' && Object.keys(command.changes).length === 0 && !command.affinityChange && command.activeGoals !== undefined ? command.npcId : undefined;
+    requireWorld(proof.kind === 'planned' && owner && resolved.every((source) => !source.ownerNpcId || source.ownerNpcId === owner), 'permission');
+  }
   if (proof.kind === 'reported' || proof.kind === 'suspected') {
     requireWorld(
       command.type === 'RecordNpcMemory' && command.knowledgeKind === proof.kind,
@@ -198,4 +224,12 @@ export function readWorldEvidence(
     }
   }
   return { proof, sources: resolved };
+}
+
+// “客观已发生”与“玩家已获知”是两条独立约束；仅承认可公开投影中的肯定事实。
+export function hasPlayerKnownFact(command: DomainCommand, proof: WorldEvidence, sources: readonly WorldSource[]) {
+  return proof.kind === 'established' && sources.some((source) => {
+    if (source.knowledge !== 'fact' || !source.playerKnownText?.includes(proof.fact)) return false;
+    try { factEvidence({ ...command, evidence: proof.fact }, source.playerKnownText); return true; } catch { return false; }
+  });
 }
