@@ -1,6 +1,7 @@
 import { DataError, requireData } from '../domain/common';
 import type { GameState } from '../domain/state';
 import { fingerprint } from '../domain/commands';
+import { planNpcSummary, npcSummaryInput, parseNpcSummary, npcMemoryPolicy } from '../domain/memories/npcMemory';
 import { planCompression, compressionInput, parseCompression, memoryTask, compressionPolicy } from '../domain/memories/compression';
 import { selectPromptModules } from '../prompts/selection';
 import { readPromptResource } from '../prompts/loader';
@@ -25,13 +26,13 @@ export const browserMemoryLock: MemoryLock = async (saveId, work) => {
 };
 export class MemoryMaintenance {
   private active?: { controller: AbortController; saving: boolean };
-  constructor(private repository: Pick<SaveRepository, 'load' | 'saveMemoryCompression'>,
+  constructor(private repository: Pick<SaveRepository, 'load' | 'saveMemoryCompression' | 'saveNpcSummary'>,
     private client = new AiClient(), private lock: MemoryLock = browserMemoryLock) {}
   cancel() {
     if (this.active?.saving) return false;
     this.active?.controller.abort(); return true;
   }
-  async run(input: { saveId: string; config: AiConfig; vault: CredentialVault; timeoutSeconds: number;
+  async run(input: { saveId: string; config: AiConfig; vault: CredentialVault; timeoutSeconds: number; task?: 'public' | 'npc'; npcId?: string;
     onPhase?: (phase: 'generating' | 'saving') => void }): Promise<GameState | undefined> {
     if (this.active) throw new DataError('MEMORY_BUSY', '记忆维护已在运行');
     const attempt = { controller: new AbortController(), saving: false };
@@ -41,31 +42,38 @@ export class MemoryMaintenance {
       return await this.lock(input.saveId, async () => {
         check();
         const state = await this.repository.load(input.saveId);
-        const batch = planCompression(state);
+        const batch = input.task === 'npc' ? planNpcSummary(state, input.npcId) : planCompression(state);
         if (!batch) return undefined;
+        const task = 'npcId' in batch ? 'memory.npc_summarize' : memoryTask(batch.layer);
         const snapshot = requestSnapshot(input.config, 'memory', input.vault);
         const keys = input.config.channels.map((channel) => input.vault.get(channel.id)).filter((key): key is string => Boolean(key));
         const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(fingerprint(batch)));
         const id = 'memory-' + Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
-        const selected = selectPromptModules({ stage: 'memory', mode: 'regular', settings: defaultSettings(), memoryTask: memoryTask(batch.layer) });
-        const resources = await Promise.all(selected.map(async (module) => ({ module, text: await readPromptResource(module.id) })));
+        const selected = selectPromptModules({ stage: 'memory', mode: 'regular', settings: defaultSettings(), memoryTask: task });
+        const resources = await Promise.all(selected.map(async (module) => ({ module, text: (await readPromptResource(module.id)).replace(/\{\{(npcId|npcSummaryThreshold)\}\}/g, (_, key: string) =>
+          key === 'npcId' && 'npcId' in batch ? batch.npcId : String(npcMemoryPolicy.threshold)) })));
         const modules = resources.map(({ module, text }) => ({ id: module.id, version: module.version, contentSha256: module.contentSha256,
           role: 'system' as const, order: module.defaultOrder, characters: Array.from(text).length, estimatedTokens: estimateTokens(text).estimatedTokens }));
         const messages = [...resources.map(({ text }) => ({ role: 'system' as const, content: text })),
-          { role: 'user' as const, content: contextMessage({ MEMORY_TASK: compressionInput(batch) }) }];
+          { role: 'user' as const, content: contextMessage({ MEMORY_TASK: 'npcId' in batch ? npcSummaryInput(batch) : compressionInput(batch) }) }];
         const size = contextStatistics(messages);
         requireData(size.characters <= compressionPolicy.requestCharacters && size.estimatedTokens <= compressionPolicy.requestEstimatedTokens, 'MEMORY_BUDGET', '完整请求超出预算，未调用模型');
         requireData(!keys.some((key) => [key, encodeURIComponent(key), JSON.stringify(key).slice(1, -1)].some((value) => JSON.stringify(messages).includes(value))),
           'MEMORY_PERMISSION', '输入包含凭证内容，未发送；原条目已保留');
         check(); input.onPhase?.('generating');
         const response = await this.client.generate(snapshot, messages, { timeoutSeconds: input.timeoutSeconds, signal: attempt.controller.signal,
-          inspection: { kind: 'memory', memoryTask: memoryTask(batch.layer), mode: 'regular', saveId: state.saveId, revision: state.revision, modules } });
+          inspection: { kind: 'memory', memoryTask: task, mode: 'regular', saveId: state.saveId, revision: state.revision, modules } });
         check();
         if ([secretFor(snapshot), ...keys].some((key) => [key, encodeURIComponent(key), JSON.stringify(key).slice(1, -1)].some((value) => response.text.includes(value))))
           throw new AiError('invalid_output');
+        if ('npcId' in batch) {
+          const results = parseNpcSummary(response.text, batch, id);
+          if ([secretFor(snapshot), ...keys].some((key) => results.some((result) => result.text.includes(key)))) throw new AiError('invalid_output');
+          check(); attempt.saving = true; input.onPhase?.('saving');
+          return await this.repository.saveNpcSummary(batch, results, attempt.controller.signal);
+        }
         const result = parseCompression(response.text, batch, id);
-        if ([secretFor(snapshot), ...keys].some((key) => result.text.includes(key)))
-          throw new AiError('invalid_output');
+        if ([secretFor(snapshot), ...keys].some((key) => result.text.includes(key))) throw new AiError('invalid_output');
         check(); attempt.saving = true; input.onPhase?.('saving');
         return await this.repository.saveMemoryCompression(batch, result, attempt.controller.signal);
       });

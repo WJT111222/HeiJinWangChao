@@ -15,3 +15,5 @@ M4-P5 的 `SaveRepository.commitTurn` 在玩家发送下一步行动时取得同
 M5-P1 在同一 `settleTurn` 结果中建立公开短期摘要，随原正式事务保存，不新增记忆数据库或工作流阶段。正文 Composer 使用当前 Settings 的最近 N 回合完整正文，再通过 `domain/memories/history.ts` 从永久 journal 有界召回相关旧史。`publicMemory.ts` 统一公开摘要和旧档只读投影；查阅或搜索不调用 AI。详见根目录 M5-P1-DEVELOPMENT.md。
 
 M5-P2 的 `memoryMaintenance.ts` 是三阶段之外的独立维护任务，复用真实 memory 资源和 AiClient。独立 Web Lock 覆盖选批、模型请求及保存，网络不占 IDB 事务或游戏锁；SaveRepository 在一次事务重读最新状态，仅合并已核验记忆批次，不推进正式 revision 或使草稿失效。新正式提交可按玩家默认关闭的 opt-in 非阻断触发一批，刷新不运行。详见根目录 M5-P2-DEVELOPMENT.md。
+
+M5-P3 继续复用 `memoryMaintenance.ts`，单次NPC任务仅处理一个人物的一批原始记忆；`domain/memories/npcMemory.ts` 按稳定身份、原始记忆ID及认知/可见性分组验证来源，SaveRepository只追加总结，不删除原文或推进正式revision。NPC自动维护未启用，公开自动偏好不授权NPC收费；私有知识仅在内部按ownerNpcId分区。详见根目录M5-P3-DEVELOPMENT.md。

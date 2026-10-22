@@ -48,6 +48,9 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
             'evidence = JSON.stringify(WORLD_EVIDENCE_V1)。sources 只引用 WORLD_SOURCES 的 id；derived 可描述新推演结果，不要求逐字存在于来源。',
           worldEvidenceSchema: z.toJSONSchema(WorldEvidenceSchema, { target: 'draft-7' }),
           worldStateRules: [
+            'worldEventOnly标记的事件是后台世界事实，不是NPC知情来源；NPC行动/任务/记忆须引用自身独立观察或转述来源，不能引用非公开事件ID代替知晓依据。事件本身仍可正常创建和演化，参与者列表不等同于已知者列表。',
+            'npc-summary 来源仅能支持所属人物的计划任务或个人目标，不是客观事实、完成证据或其他人物的知识。',
+            'player_known 记忆和事件可见信息的新增/更新必须有 playerKnownText 中的肯定事实依据；客观成立不等于主角已知，缺少公开依据时保持私有/hidden或列入unresolved。',
             'CreateLocation 只接受实际存在或合法 derived 事实，planned 建设只可记录任务/未来事件。',
             'scheduled/active/blocked 事件不得包含 resolvedAt 或 resolutionText；estimatedEndAt/dueAt 是估计，到期只应重新评估，不自动完成。',
             'NPC 的 planned/active/blocked 任务均占用唯一名额；正式状态、变量投影和本批任务一起检查，本批终结旧任务不立即允许新任务。组织可以有多任务，禁止用组织名义规避 NPC 任务限制。',
@@ -60,7 +63,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
               '仅离场已有 NPC：locationId/healthText/activeGoals 与 onScene=false；禁止 affinityChange、relationshipText、lastInteractionAt、onScene=true。开局同伴不得更新。',
             CreateNpc: '离场、好感中性0且未确认、无互动时间、不得内联记忆/知晓信息。',
             RecordNpcMemory:
-              '当回合有来源的自身知识，不是记忆压缩；记忆正文与 evidence.fact 一致，来源标识写入 knowledgeSource。',
+              '当回合有来源的自身知识，不是记忆压缩；正文与evidence.fact一致，来源写入knowledgeSource，认知类型由命令固定；player_known另需公开事实来源，不能凭自己的私有记忆公开。',
           },
         }
       : {}),

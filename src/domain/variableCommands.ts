@@ -225,10 +225,13 @@ export function applyVariableCommand(
         'KNOWLEDGE_KIND',
         '转述或猜测必须保持其知识性质',
       );
+      requireData(memory.knowledgeKind === undefined || memory.knowledgeKind === command.knowledgeKind,
+        'KNOWLEDGE_KIND', '记忆认知类型与命令不符');
+      const recorded = { ...memory, knowledgeKind: command.knowledgeKind };
       if (command.layer === 'longTerm') {
         requireData(npc.kind === 'special', 'NPC_KIND', '普通 NPC 无长期记忆字段');
-        npc.longTermMemories.push(memory);
-      } else npc.memories.push(memory);
+        npc.longTermMemories.push(recorded);
+      } else npc.memories.push(recorded);
       if (command.addToKnownInformation) {
         requireData(
           !npc.knownInformation.some(

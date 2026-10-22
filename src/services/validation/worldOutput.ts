@@ -11,6 +11,7 @@ import {
   worldSources,
   speculative,
   hasAffirmedTermination,
+  hasPlayerKnownFact,
 } from './worldEvidence';
 import { isNegatedFact } from '../../domain/factPolarity';
 import type { WorldEvidence, WorldSource } from './worldEvidence';
@@ -270,7 +271,7 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
               `${command.knowledgeKind === 'reported' ? '[转述]' : '[推测]'}${proof.fact}`,
         );
         if (command.memory.visibility === 'player_known')
-          requireWorld(proof.kind === 'established', 'permission');
+          requireWorld(hasPlayerKnownFact(command, proof, origins), 'permission');
         break;
       }
       case 'CreateNpc': {
@@ -480,8 +481,8 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
           cancellationEvidence(proof, origins, `event:${event.id}`);
         }
         // 候选不发布消息；模型也不能通过改 visibility 伪造主角已知。
-        if (event.visibility !== 'hidden' && event.visibility !== old?.visibility)
-          requireWorld(proof.kind === 'established', 'permission');
+        if (event.visibility !== 'hidden' && (event.visibility !== old?.visibility || event.title !== old?.title || event.status !== old?.status || event.resolutionText !== old?.resolutionText))
+          requireWorld(hasPlayerKnownFact(command, proof, origins), 'permission');
         break;
       }
       default:

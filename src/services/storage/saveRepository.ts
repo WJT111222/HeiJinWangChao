@@ -13,7 +13,9 @@ import { validateTurnCandidates } from '../validation/turnCommit';
 import { reserveStageSession, withBrowserLock } from '../../workflows/stageGuard';
 import { applyCompression, CompressionBatchSchema } from '../../domain/memories/compression';
 import type { CompressionBatch } from '../../domain/memories/compression';
-import { MemoryEntrySchema } from '../../domain/memories/schema';
+import { applyNpcSummary, NpcMemoryBatchSchema } from '../../domain/memories/npcMemory';
+import type { NpcMemoryBatch } from '../../domain/memories/npcMemory';
+import { NpcSummarySchema, MemoryEntrySchema } from '../../domain/memories/schema';
 
 const ReceiptSchema = z.strictObject({
   saveId: IdSchema,
@@ -143,6 +145,17 @@ export class SaveRepository {
       const current = readState(await request(store.get(parsed.saveId)), parsed.saveId);
       // 从最新整份状态仅替换已核对的记忆批次，不提升世界版本、不写草稿。
       const next = applyCompression(current, parsed, result);
+      await request(store.put(next));
+      return next;
+    }, signal);
+  }
+
+  async saveNpcSummary(batch: NpcMemoryBatch, output: z.infer<typeof NpcSummarySchema>[], signal?: AbortSignal): Promise<GameState> {
+    const parsed = NpcMemoryBatchSchema.parse(batch), result = z.array(NpcSummarySchema).parse(output);
+    return transaction(this.database, ['saves'], 'readwrite', async (tx) => {
+      const store = tx.objectStore('saves');
+      const current = readState(await request(store.get(parsed.saveId)), parsed.saveId);
+      const next = GameStateSchema.parse(applyNpcSummary(current, parsed, result));
       await request(store.put(next));
       return next;
     }, signal);

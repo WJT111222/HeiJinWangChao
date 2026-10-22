@@ -626,13 +626,13 @@ export function PromptInspector({
                       </li>
                     ))}
                   </ol>
-                  <ContextInspection
+                  {actual.scope?.memoryTask === 'memory.npc_summarize' ? <p className="notice">NPC私人维护仅展示模块结构与用量，不在此界面开放人物身份或私人请求正文。</p> : <ContextInspection
                     key={actual.id}
                     messages={actual.messages}
                     body={actual.body}
                     modules={actual.scope?.modules ?? []}
                     secrets={secrets}
-                  />
+                  />}
                 </div>
               )}
             </>
