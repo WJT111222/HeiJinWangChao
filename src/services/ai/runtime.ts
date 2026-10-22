@@ -9,6 +9,7 @@ import type { CredentialVault } from './credentials';
 import { requestSnapshot } from './snapshot';
 import { AiClient } from './client';
 import type { RequestOptions } from './client';
+import { timeOutcome } from '../../domain/timePreflight';
 
 // 独立阶段请求入口；没有 SaveRepository、写库、重试或自动执行下游阶段。
 export async function runStageRequest(
@@ -42,12 +43,14 @@ export async function runStageRequest(
     timeoutSeconds: options.timeoutSeconds ?? captured.settings.runtime.timeoutSeconds,
     stream: options.stream ?? captured.stage === 'story',
   });
-  const result =
-    captured.stage === 'story'
-      ? parseStory(response.text, captured.mode, captured.settings)
-      : captured.stage === 'variables'
+  const story = captured.stage === 'story' ? parseStory(response.text, captured.mode, captured.settings) : undefined;
+  if (story) {
+    try { timeOutcome(captured.state, { userInput: captured.userInput, turnKind: captured.mode, story }, true); }
+    catch { throw new AiError('time_preflight'); }
+  }
+  const result = story ?? (captured.stage === 'variables'
         ? parseVariables(response.text, captured.state, captured.draft!)
-        : parseWorld(response.text, captured.state, captured.draft!);
+        : parseWorld(response.text, captured.state, captured.draft!));
   return {
     result,
     usage: response.usage,

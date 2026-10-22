@@ -85,11 +85,13 @@ export function factEvidence(command: DomainCommand, narrative: string) {
   )
     throw new AiError('invalid_output');
 }
-export function variablePermission(command: DomainCommand, state: GameState, draft: TurnDraft) {
+export function variablePermission(command: DomainCommand, state: GameState, draft: TurnDraft,
+  confirmedTime?: { at: string; evidence: string }) {
   if (!draft.story) throw new AiError('configuration');
   if (
     command.type === 'SetWorldClock' &&
     Date.parse(command.worldClock) > Date.parse(state.worldClock) &&
+    !(confirmedTime && Date.parse(command.worldClock) === Date.parse(confirmedTime.at) && command.evidence === confirmedTime.evidence) &&
     !/(?:\d{1,2}[:：]\d{2}|\d+月\d+日|(?:经过|过了|耗时|等待|行驶|分钟后|小时后)|[一二三四五六七八九十\d]+(?:分钟|小时)后)/.test(
       command.evidence,
     )

@@ -17,3 +17,5 @@ M5-P1 在同一 `settleTurn` 结果中建立公开短期摘要，随原正式事
 M5-P2 的 `memoryMaintenance.ts` 是三阶段之外的独立维护任务，复用真实 memory 资源和 AiClient。独立 Web Lock 覆盖选批、模型请求及保存，网络不占 IDB 事务或游戏锁；SaveRepository 在一次事务重读最新状态，仅合并已核验记忆批次，不推进正式 revision 或使草稿失效。新正式提交可按玩家默认关闭的 opt-in 非阻断触发一批，刷新不运行。详见根目录 M5-P2-DEVELOPMENT.md。
 
 M5-P3 继续复用 `memoryMaintenance.ts`，单次NPC任务仅处理一个人物的一批原始记忆；`domain/memories/npcMemory.ts` 按稳定身份、原始记忆ID及认知/可见性分组验证来源，SaveRepository只追加总结，不删除原文或推进正式revision。NPC自动维护未启用，公开自动偏好不授权NPC收费；私有知识仅在内部按ownerNpcId分区。详见根目录M5-P3-DEVELOPMENT.md。
+
+M5-P4 不增加执行器或付费阶段。普通 Story Context 调用纯函数 `domain/timePreflight.ts` 构造时间窗口和已知条件候选，Runtime 校验既有变量规划中的实际停止时间；变量解析及原正式提交边界再验时钟。Roll、恢复、取消、版本和原子性继续使用上述执行器与仓库机制。隐藏事件不因预检公开。详见根目录 M5-P4-DEVELOPMENT.md。
