@@ -119,6 +119,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
       && s.tasks[id]?.actorRef.id === org.id, '组织任务归属错误');
   }
   for (const event of Object.values(s.events)) {
+    if (event.resultKnowledge) check(['resolved', 'cancelled'].includes(event.status), '未结案事件不能预存成果分类');
     location(event.locationId); event.actorRefs.forEach((ref) => actor(ref, true)); timeRange(event.startAt, event.estimatedEndAt);
     check(event.estimatedEndAt || event.resolvedAt || event.completionCondition?.trim(), '事件缺少预计结束时间或完成条件');
     timeRange(event.startAt, event.resolvedAt);

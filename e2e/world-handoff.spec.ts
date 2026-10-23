@@ -4,12 +4,12 @@ import { handoffState, handoffResult, retireCommand, resultText, finishTask } fr
 import { event } from '../src/tests/fixtures/game';
 import { worldResult, proof } from '../src/tests/fixtures/world';
 
-async function seed(page: Page, variant?: 'mixed-result' | 'unindexed-history') {
+async function seed(page: Page, variant?: 'mixed-result' | 'unindexed-history' | 'event-report' | 'refused-confirmation') {
   await page.goto('/');
   const before = await page.evaluate(async (variant) => {
     const repoPath = '/src/services/storage/saveRepository.ts', fixturePath = '/src/tests/fixtures/handoff.ts', turnPath = '/src/tests/fixtures/turn.ts',
       configPath = '/src/services/ai/configuration.ts', vaultPath = '/src/services/ai/credentials.ts';
-    const { SaveRepository } = await import(repoPath), { handoffState } = await import(fixturePath), { completeDraft } = await import(turnPath),
+    const { SaveRepository } = await import(repoPath), { handoffState } = await import(fixturePath), { completeDraft, elapsedVariables } = await import(turnPath),
       { defaultAiConfig, newChannel, saveAiConfig } = await import(configPath), { CredentialVault } = await import(vaultPath);
     const config = defaultAiConfig(), channel = newChannel(); channel.baseUrl = 'https://handoff.mock.invalid/v1';
     config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'story' }; config.routes.world = { mode: 'independent', channelId: channel.id, modelId: 'world' };
@@ -20,14 +20,18 @@ async function seed(page: Page, variant?: 'mixed-result' | 'unindexed-history') 
       initial.tasks.work.resolution = { at: initial.worldClock, outcome: 'success', result: '同事归档了一份未经核实的举报：蓝仓暗格藏着违禁货物。', reason: '登记完成', sourceTurnId: 'past',
         resultKnowledge: { facts: ['同事归档了一份举报。'], reported: ['蓝仓暗格藏着违禁货物。'], suspected: [] } };
     }
-    if (variant === 'unindexed-history') {
+    if (variant === 'event-report') initial.events.report = { id: 'report', title: '举报受理', status: 'resolved', startAt: initial.worldClock,
+      resolvedAt: initial.worldClock, resolutionText: '同事归档了一份举报，未经核实的内容为：蓝仓暗格藏着违禁货物。',
+      actorRefs: [{ kind: 'npc', id: 'npc-a' }], sourceTurnIds: ['past'], linkedTaskIds: [], prerequisites: [], blockers: [], visibility: 'hidden', impact: 'minor',
+      resultKnowledge: { facts: ['同事归档了一份举报。'], reported: ['蓝仓暗格藏着违禁货物。'], suspected: [] } };
+    if (variant === 'unindexed-history' || variant === 'refused-confirmation') {
       initial.npc['npc-a'].relationshipText = '尚未与主角接触'; initial.npc['npc-a'].affinity = 0;
       initial.contactReviewNpcIds = ['npc-a']; initial.revision = 1; initial.turnNumber = 1;
       initial.journal = [{ turnId: 'past', revision: 1, relatedActorRefs: [], story: { turnKind: 'opening',
         narrative: '主角与同事交换联系方式，约好以后经常联系。', summary: '与同事建立联系。', variableGuide: [] } }];
     }
     const repo = await SaveRepository.open();
-    if (variant === 'unindexed-history') {
+    if (variant === 'unindexed-history' || variant === 'refused-confirmation') {
       // 隔离的旧档夹具：创建接口禁止伪装已提交的新游戏，直接种入真实V2格式后验证迁移读取。
       await repo.create(handoffState());
       const raw = { ...initial, schemaVersion: 2 }; Reflect.deleteProperty(raw, 'contactNpcIds'); Reflect.deleteProperty(raw, 'contactReviewNpcIds'); Reflect.deleteProperty(raw, 'retiredNpcs');
@@ -36,7 +40,13 @@ async function seed(page: Page, variant?: 'mixed-result' | 'unindexed-history') 
         tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); };
       }; request.onerror = () => reject(request.error); });
     } else await repo.create(initial);
-    await completeDraft(repo); const state = await repo.load('save-a'); repo.close(); return state;
+    if (variant === 'refused-confirmation') {
+      const path = '/src/domain/drafts.ts', { createTurnDraft } = await import(path), state = await repo.load('save-a');
+      await repo.saveDraft(createTurnDraft('save-a', state.revision, 'refused-turn', 'regular', '我不确认同事属于非联系人临时人员，先不要删除。'), null);
+    }
+    const narrative = '主角确认同事属于非联系人临时人员。';
+    await completeDraft(repo, variant === 'refused-confirmation' ? { narrative, variables: await elapsedVariables(repo, narrative, 600) } : {});
+    const state = await repo.load('save-a'); repo.close(); return state;
   }, variant);
   await page.goto('/#game/save-a'); await page.reload();
   await expect(page.getByRole('heading', { name: '林舟', exact: true })).toBeVisible(); return before;
@@ -73,6 +83,40 @@ test('真实浏览器：世界成果/交接/退场只是候选，主动查看、
   expect((await stored(page)).state).toEqual(final.first.state); expect(calls).toBe(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('world-handoff-committed.png'), fullPage: true });
+});
+
+for (const variant of ['event-report', 'refused-confirmation'] as const) test(`第三轮审查${variant}：拒绝信息洗白或否定授权，合法重试及正式提交保持隔离`, async ({ page }) => {
+  const before = await seed(page, variant), initial = await stored(page), bad = worldResult(), good = worldResult();
+  if (variant === 'event-report') {
+    const makeEvent = (text: string) => ({ type: 'SaveEvent' as const, commandId: 'next-event',
+      event: { ...event('next-event'), title: '后续归档', actorRefs: [{ kind: 'npc' as const, id: 'npc-b' }], status: 'resolved' as const,
+        startAt: before.worldClock, estimatedEndAt: '2026-10-18T08:10:00+08:00', resolvedAt: '2026-10-18T08:05:00+08:00', resolutionText: text, sourceTurnIds: [initial.draft.turnId] },
+      evidence: proof({ kind: 'established', sources: ['event:report', 'npc:npc-b'], fact: text }) });
+    bad.eventCommands = [makeEvent('蓝仓暗格藏着违禁货物。')]; good.eventCommands = [makeEvent('同事归档了一份举报。')];
+  } else {
+    const retirement = retireCommand(before), evidence = JSON.parse(retirement.evidence);
+    retirement.contactReview = { conclusion: 'non_contact', basis: 'player_confirmed', reason: '截取玩家确认片段。', playerConfirmation: '同事属于非联系人临时人员' };
+    evidence.kind = 'established'; evidence.fact = '主角确认同事属于非联系人临时人员。'; evidence.sources = ['story:current', 'npc:npc-a']; retirement.evidence = JSON.stringify(evidence);
+    bad.worldCommands = [retirement]; bad.taskCommands = [finishTask(before)]; good.taskCommands = [finishTask(before)];
+    expect(initial.draft.userInput).toContain('我不确认');
+  }
+  let calls = 0;
+  await page.route('https://handoff.mock.invalid/**', async (route) => { calls++; await route.fulfill({ contentType: 'application/json',
+    body: JSON.stringify({ choices: [{ message: { content: JSON.stringify(calls === 1 ? bad : good) }, finish_reason: 'stop' }] }) }); });
+  await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click(); await expect(page.getByRole('alert')).toBeVisible();
+  await expect.poll(() => calls).toBe(1);
+  expect((await stored(page)).state).toEqual(before); await page.reload(); expect((await stored(page)).state).toEqual(before);
+  await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click();
+  await expect(page.getByRole('region', { name: '三阶段工作流' })).toContainText('世界已完成 · 候选未正式结算');
+  expect((await stored(page)).state).toEqual(before);
+  const committed = await page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try {
+    const draft = await repo.loadDraft('save-a'), input = { draft, nextAction: '在街边休息', useVariableStage: true, useWorldStage: true };
+    return { result: await repo.commitTurn(input), replay: await repo.commitTurn(input) };
+  } finally { repo.close(); } });
+  expect(committed.result.state.npc['npc-a']).toBeDefined(); expect(committed.result.state.retiredNpcs['npc-a']).toBeUndefined(); expect(committed.replay.replayed).toBe(true);
+  if (variant === 'event-report') expect(committed.result.state.events['next-event'].resolutionText).toBe('同事归档了一份举报。');
+  else expect(committed.result.state.contactReviewNpcIds).toContain('npc-a');
+  await page.reload(); await expect(page.locator('main')).not.toContainText('蓝仓暗格'); expect((await stored(page)).state).toEqual(committed.result.state); expect(calls).toBe(2);
 });
 
 for (const variant of ['mixed-result', 'unindexed-history'] as const) test(`第二轮审查${variant}：越权候选拒绝，正式状态不变，可安全重试`, async ({ page }) => {

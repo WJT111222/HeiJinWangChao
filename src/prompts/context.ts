@@ -264,8 +264,8 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         ],
       },
       NPC_LIFECYCLE: { contactNpcIds: temporary.contactNpcIds, contactReviewNpcIds: temporary.contactReviewNpcIds, initialCompanionId: temporary.initialCompanionId,
-        playerConfirmationInput: draft!.userInput, // 玩家原输入仅供确认来源核验，不作为已发生事实加入WORLD_SOURCES。
-        retiredIdentities: temporary.retiredNpcs, policy: '联系人永久保留完整档案；contactReviewNpcIds中的旧档身份待确认，须明确复核非联系人，不默认删除或永久升级；其他NPC仅在无后续职责且必要成果已留存时可提议RetireNpc。历史身份不授予知识或恢复旧关系。' },
+        playerConfirmationInput: draft!.userInput, // 仅保留输入数据兼容；不是已发生事实或删除授权。
+        retiredIdentities: temporary.retiredNpcs, policy: '联系人永久保留完整档案；旧档待复核人物存在历史时继续保护。当前没有独立可信删除确认入口，player_confirmed不可用于退场；玩家原输入、子串及AI正文都不替代该授权。无历史、无联系迹象的临时人物仍可按no_known_connection复核，其他非联系人仅在无后续职责且必要成果留存时可提议RetireNpc。历史身份不授予知识或恢复旧关系。' },
       OFFSCREEN_STATE: {
         npc: Object.values(withoutPrivateMemories(temporary).npc).filter(
           (npc) => !npc.onScene && !state.npc[npc.id]?.onScene,

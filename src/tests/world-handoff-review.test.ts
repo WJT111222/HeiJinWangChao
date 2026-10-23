@@ -116,7 +116,7 @@ describe('旧档联系人暂缓保护与合法退场', () => {
     expect(committed.state.retiredNpcs['npc-a']).toBeDefined(); expect(committed.state.tasks.work.resolution).toBeDefined();
     expect((await repo.load('save-a')).schemaVersion).toBe(4);
   });
-  it('有既往联系的旧NPC保持待确认，AI自称“无联系”不能绕过；真实公开确认可以复核', () => {
+  it('有既往联系的旧NPC保持待确认；自称无联系或自由文本确认均不能绕过保护', () => {
     const state = migrateSave(legacy()), d = worldDraft(), retirement = reviewRetirement(state);
     let r = { ...worldResult([retirement]), taskCommands: [finishTask(state)] };
     expect(() => parseWorld(JSON.stringify(r), state, d)).toThrow();
@@ -125,7 +125,7 @@ describe('旧档联系人暂缓保护与合法退场', () => {
     const evidence = JSON.parse(retirement.evidence); evidence.kind = 'established'; evidence.sources = ['story:current', 'npc:npc-a']; evidence.fact = fact; retirement.evidence = JSON.stringify(evidence);
     d.userInput = fact;
     r = { ...worldResult([{ ...retirement, contactReview: { ...retirement.contactReview, playerConfirmation: fact } }]), taskCommands: [finishTask(state)] };
-    expect(() => parseWorld(JSON.stringify(r), state, d)).not.toThrow();
+    expect(() => parseWorld(JSON.stringify(r), state, d)).toThrow();
     state.contactNpcIds = ['npc-a']; state.contactReviewNpcIds = state.contactReviewNpcIds.filter((id) => id !== 'npc-a');
     expect(() => parseWorld(JSON.stringify(r), state, d)).toThrow();
   });

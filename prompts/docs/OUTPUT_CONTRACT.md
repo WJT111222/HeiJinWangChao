@@ -158,4 +158,11 @@ TaskHandoff.summaryBasis?={mode:"faithful_summary",resultExcerpt}允许有可靠
 
 decision.resultKnowledge?与resolution.resultKnowledge?使用同一严格结构{facts:string[],reported:string[],suspected:string[]}。完整result原样保留且只作为task-result:<id>的statement资料；task:<id>只暴露程序终态/时间及明确facts，不能从整段result中截取举报内容充当世界真值。缺少分类的旧成果不补造facts，已提交状态、原文及reported交接仍可使用。observed交接需原始锚点属于明确事实。全部分类在同次世界请求内完成，不增加AI裁判，元数据继续由程序从凭据和当前回合重建。
 
-contactReviewNpcIds中的旧人物只要存在旧journal或公开记忆，就不能用缺少关联ID来证明从未联系，保守暂缓no_known_connection。player_confirmed需要contactReview.playerConfirmation是NPC_LIFECYCLE.playerConfirmationInput中本轮真实玩家输入片段并明确指向人物，同时有当前正文公开事实；不能靠AI自行写入主角确认。不增加玩家设置，不解除真正联系人保护。新增字段均可选，保持V4及旧档迁移兼容；旧待提交候选若违反新边界应显式补算，不静默改写。
+contactReviewNpcIds中的旧人物只要存在旧journal或公开记忆，就不能用缺少关联ID来证明从未联系，保守暂缓no_known_connection。当前不具备独立可信的玩家删除确认入口，player_confirmed和playerConfirmation仅兼容存量格式，不能授予退场权限；自由文本子串和AI正文均不是删除授权。不增加玩家设置，不解除真正联系人保护。新增字段均可选，保持V4及旧档迁移兼容；旧待提交候选若违反新边界应显式补算，不静默改写。
+
+
+### PR #22 第三轮审查：事件混合成果与文本授权缺口
+
+WorldEvent.resultKnowledge?沿用任务现有严格分类，不新增AI阶段。resolved/cancelled事件由程序从decision.resultKnowledge重建并核对；非终态不得预存分类。event:只投影结案元数据和明确facts，event-result:保留自由标题、resolutionText及reported/suspected标签，性质始终statement；event-plan:保留计划资料，性质为plan。旧已结案事件缺字段仍可读取，保留原文且不补造facts。隐藏/非完全公开事件的新来源继续worldEventOnly保护，公开事实投影也不包含未经分类的标题或引述。
+
+文本存在不证明玩家肯定授权。没有可信独立确认交互时，待复核旧人的player_confirmed在世界验证和领域模拟两层均拒绝，包括真实肯定文本。旧字段继续可读，历史回执不改写；旧待提交的不安全删除候选须重新生成世界候选。有历史者保留完整实体，无历史且无联系迹象的临时人物仍可按原流程安全退出。未新增玩家设置、中文关键词分类器或联系人管理UI；事实分类语义仍由原世界AI负责，程序验证明确类型、来源、状态和事务边界。

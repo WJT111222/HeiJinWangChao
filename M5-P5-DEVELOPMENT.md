@@ -21,15 +21,16 @@
 | 数据 | 用途与限制 |
 | --- | --- |
 | `contactNpcIds` | 明确且永久的联系人归属。新档初始同伴自动登记；变量阶段可依据正文实际联络事实执行 RegisterContact。无移除保护命令。人物面板可见不等于联系人。 |
-| `contactReviewNpcIds` | 旧档联系人身份待确认的临时保护，不是正式联系人；未复核不删除。无联系证据的临时人物可在RetireNpc中明确复核，存在既往联系痕迹则需可靠的主角确认。 |
+| `contactReviewNpcIds` | 旧档联系人身份待确认的临时保护，不是正式联系人；未复核不删除。无联系证据的临时人物可在RetireNpc中明确复核，存在旧历史或联系痕迹时保守保留；当前未开放可靠独立的玩家删除确认入口。 |
 | `retiredNpcs` | 仅含 id、identityKey、name、aliases、retiredAt、sourceTurnIds。保留稳定历史身份，不保存职业、性格、背景、目标、关系、原始私人记忆或完整 NPC 备用档案。 |
 | `WorldTask.resolution?` | at、outcome(success/failure/cancelled)、result、reason、sourceTurnId及可选resultKnowledge(facts/reported/suspected)。由已校验 evidence 决策和当前回合确定性建立，模型若提供必须完全吻合。旧终态不会静默补造时间或成果。 |
+| `WorldEvent.resultKnowledge?` | 复用任务现有facts/reported/suspected严格分类，仅终态可保存；从同次decision确定性建立，旧事件缺省仍可读取，不补造事实。 |
 | `WorldTask.handoff?` | fromTaskId、at、channel、content、necessity、knowledgeKind(observed/reported)。只描述实际传递的具体成果和必要职责，不传递发送者全部私有知识。可选summaryBasis(mode=faithful_summary,resultExcerpt)区分可核验原文依据与AI忠实概括。 |
 | `memories.long[].retiredNpcSource?` | npcId、sourceMemoryId、knowledgeKind、knowledgeSource。标记退场时选择留存的局部历史材料，保存原始回合、时间、认知性质与权限。不是整回合压缩覆盖。 |
 
 V1 严格验证后补齐原有天气/环境；V1/V2迁移不再把所有NPC永久登记为联系人，仅初始同伴保持确认，其余人物保留完整实体并进入contactReviewNpcIds。V3预览也迁移至V4：真实RegisterContact命令凭据与初始同伴确认正式身份；曾列在contactNpcIds但缺少确认凭据者改为待复核，不能自动删除；原本就未登记的V3非联系人不被无故加锁。所有迁移保持幂等，未知身份不会被默默认定为联系人或非联系人。
 
-待复核与永久联系人分离是本轮审查修复，取代首版“全部旧NPC永久保护”的不合理策略。只有沿用系统中性未接触标识且无既往互动、已确认关系倾向、公开记忆/事件/journal引用等联系痕迹的人物，才允许世界AI明确声明no_known_connection复核；有联系痕迹者继续保留，除非当前正文中存在可靠主角确认(player_confirmed)，且playerConfirmation锚定本轮真实玩家输入。存在旧journal或公开记忆时，缺少关联索引不能证明从未联系，继续保守保护。真实联系人和初始同伴不能通过该复核解除永久保护。
+待复核与永久联系人分离是本轮审查修复，取代首版“全部旧NPC永久保护”的不合理策略。只有沿用系统中性未接触标识且无既往互动、已确认关系倾向、公开记忆/事件/journal引用等联系痕迹的人物，才允许世界AI明确声明no_known_connection复核；有联系痕迹者继续保留；当前没有独立可信授权入口，player_confirmed及其输入片段不授予删除权限。存在旧journal或公开记忆时，缺少关联索引不能证明从未联系，继续保守保护。真实联系人和初始同伴不能通过该复核解除永久保护。
 
 升级不推进 revision、worldClock，不重写 journal、既有任务、记忆或回执。损坏/未来版本拒绝读取和覆盖。真实 IndexedDB 回归验证升级、旧回执重放以及继续下一正式回合。
 
@@ -53,6 +54,7 @@ V1 严格验证后补齐原有天气/环境；V1/V2迁移不再把所有NPC永�
 
 - 原执行者知道、结果客观成立、接收者获得内容、主角已知分别处理。
 - `task:<taskId>`只把程序终态/时间及明确resultKnowledge.facts投影为事实。完整resolution.result及reported/suspected放入task-result:<taskId>并保持statement；目标、条件和理由置于task-plan:<taskId>，性质仍为plan。旧成果缺少分类时保留原文，不补造事实；旧任务没有可靠resolution时保持plan。
+- 已结案事件的event:只投影确定性元数据及明确facts；event-result:为自由标题/原始结局的statement，event-plan:为计划。所有别名沿用worldEventOnly，原文不直接变事实或NPC知识。
 - `handoff:<taskId>` 是接收方独立来源，仅包含实际传递片段。reported 保持转述性质；不能直接据此认定世界真值或标记 player_known。
 - 非公开事件的 worldEventOnly 继续禁止作为人物行动/任务/新认知授权；组织任务同样不能通过隐藏事件 ID 洗掉人物私有来源。
 - 原人物退场不意味着可以继续以其旧任务 ID 伪造当前私人通信。已有实际交接的接收者可继续履行自己的职责；若人物真实再出现须先以可靠历史身份建档。
@@ -63,7 +65,7 @@ V1 严格验证后补齐原有天气/环境；V1/V2迁移不再把所有NPC永�
 
 ## 安全退场与历史一致性
 
-世界专属 `RetireNpc(npcId,expectedIdentityKey,reason,retainMemoryIds,contactReview?)`；需要针对同一人物的 retired 决策、无继续职责声明、必要成果处理依据与匹配原因。旧档待确认人物还需contactReview={conclusion:non_contact,basis:no_known_connection|player_confirmed,reason,playerConfirmation?}，该受限复核不能解除真实联系人的永久保护。
+世界专属 `RetireNpc(npcId,expectedIdentityKey,reason,retainMemoryIds,contactReview?)`；需要针对同一人物的 retired 决策、无继续职责声明、必要成果处理依据与匹配原因。旧档待确认人物还需contactReview={conclusion:non_contact,basis:no_known_connection|player_confirmed,reason,playerConfirmation?}，该受限复核不能解除真实联系人的永久保护；player_confirmed仅兼容存量字段，当前两层验证均不接受其删除授权。
 
 确定性拒绝：联系人、初始同伴、正式或变量投影现场人物、未终结任务、特殊 NPC 的有效长期目标、组织关键职务、当前物品/资产持有、未安全接续的重要事件引用、缺少独立成果的旧任务、无效/歧义记忆来源。不能为方便删除而自动取消职责或转移财产。
 
@@ -111,13 +113,13 @@ V1 严格验证后补齐原有天气/环境；V1/V2迁移不再把所有NPC永�
 | 命令 | 结果 |
 | --- | --- |
 | `npm run prompts:check` | 82/82，通过 |
-| `npm run check` | 909/909；ESLint、TypeScript、Vite生产构建通过 |
-| `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e` | 144/144，通过；桌面与移动端，7.9分钟 |
+| `npm run check` | 934/934；ESLint、TypeScript、Vite生产构建通过 |
+| `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e` | 148/148，通过，桌面/移动完整 Chromium，8.6分钟 |
 | `git diff --check` | 通过 |
 
 - 基线：817 项单元/集成，134 项 Chromium E2E；本轮保留全部。
-- M5-P5累计新增：92项单元/集成、10项浏览器执行；第一轮审查修复新增20项单元/集成、2项E2E，本次第二轮新增24项单元/集成、4项E2E（2场景×桌面/移动）。未删除旧用例。
-- 最终单元/集成总数：909 项单元/集成、144 项 Chromium E2E；prompts:check 的82项是前者子集，不重复计数。
+- M5-P5累计新增：117项单元/集成、14项浏览器执行；第三轮审查基线909/144，本次新增25项单元/集成和4项E2E（2场景×桌面/移动）。原用例均保留；两个旧自由文本授权正例按本轮明确允许的保守策略收紧为拒绝。
+- 最终单元/集成总数：934 项单元/集成、148 项 Chromium E2E；prompts:check 的82项是前者子集，不重复计数。
 - 新 E2E 用真实 UI 生成/主动查看/刷新候选，再调用真实 Repository 正式提交，以隔离生命周期验证并避免额外下一轮请求；原完整发送及连续十回合 UI 用例继续保留。
 - 一次开发中的 E2E 运行被源码热更新干扰（面板重载），已中止，不计为最终通过；最终整套检查期间冻结应用源码。
 - 截图：Playwright 对桌面/移动的新场景生成 `world-handoff-committed.png`，位于对应 `test-results/world-handoff-*` 目录；测试产物不混入正式存档或Git。
@@ -127,7 +129,7 @@ V1 严格验证后补齐原有天气/环境；V1/V2迁移不再把所有NPC永�
 1. 复杂语义（实际成果是否充分、通信是否可信、原人物是否还有隐含职责）由同次世界 AI 判断，程序不声称能证明所有自然语言。结构化决策不是额外裁判或真实内部思维链。Mock 成功不代表真实模型长期稳定性验证。
 2. 重复交接按同一前序成果、接收者与目标识别，循环依赖严格拒绝；不能保证识别所有通过改写目标措辞制造的语义循环。没有固定接力深度或机械截断。
 3. 未解决的自由文本前置条件/阻碍不会因模型打勾而被程序清除；无法确定性验证时仍 unresolved/blocked。实际组织任务若暗中依赖忙碌个人而没有结构化 actorRef，仍需模型遵循职责规则，不宣称程序能识别所有文字执行者。
-4. V1/V2及V3预览中没有可靠联系人凭据的人物保留为待复核；存在旧journal、公开记忆或联系痕迹者不能仅凭AI自称无联系就删除；即使索引未标记该人物也暂缓，需要本轮真实玩家确认及当前正文公开依据。该保守策略可能保留实际不相关的旧NPC，不通过文本关键词猜测解锁。没有新玩家设置、全面联系人UI或解除永久保护命令。
+4. V1/V2及V3预览中没有可靠联系人凭据的人物保留为待复核；存在旧journal、公开记忆或联系痕迹者不能仅凭AI自称无联系就删除；即使索引未标记该人物也暂缓。当前没有独立可信删除确认入口，真实肯定自由文本也不能解除保护；会有意拒绝部分确实由玩家希望清理的旧人，不通过文本关键词猜测解锁。没有新玩家设置、全面联系人UI或解除永久保护命令。
 5. 概括是否忠实由同次世界AI判断；程序核验原始依据、角色权限、时间和知识性质，不能通过字符串证明任意自然语言概括没有虚构。伪造原始片段、越权来源与越时确定性拒绝，不使用额外裁判模型。
 6. 未能安全处理资产持有、组织职务或重要职责引用的人物继续保留。后台经营/物品/经济扩展不在本轮，不能以退场名义清空这些引用。
 7. 只留最小稳定身份及 AI 明确选择的必要历史材料，不提供完整私密档案恢复、永久休眠池或 NPC 独立叙事。未公开历史材料不自动成为当前人物知识。
@@ -188,3 +190,35 @@ V1 严格验证后补齐原有天气/环境；V1/V2迁移不再把所有NPC永�
 - 协议资源：`prompts/shared/08_world_output.md`、`prompts/docs/OUTPUT_CONTRACT.md`、`prompts/manifest.json`、`prompts/sources.lock.json`。
 - 回归：新增`src/tests/world-handoff-review2.test.ts`，修改`src/tests/fixtures/handoff.ts`、`src/tests/world-handoff-review.test.ts`、`e2e/world-handoff.spec.ts`；保留所有旧用例。
 - 本开发报告`M5-P5-DEVELOPMENT.md`。
+
+
+## PR #22 第三轮审查修复（当前规则，覆盖旧记录中的文本确认方案）
+
+审查评论：[6366466357](https://github.com/WJT111222/HeiJinWangChao/pull/22#issuecomment-6366466357)。开始状态：codex/m5-p5-world-handoff，HEAD与远端均为86891335b09d604cb9408acd854b094166451044，工作区干净。没有切换、修改或推送main。
+
+### 修改前的实际复现
+
+在修改产品代码前新增world-handoff-review3.test.ts并运行5项反例：全部5/5失败，原因均为应拒绝的Promise实际完成正式提交，不是Schema或缺少实体的偶然失败。
+
+- A接收未核实举报的事件由真实SaveEvent验证并正式结案，resolutionText保留举报；下一回合B的SaveEvent通过event:report+established引用内嵌主张，错误创建第二个resolved事件。原世界时钟和journal确实进入第二个正式回合。
+- 使用真实上一回合提交产生的下一草稿，保留玩家的否定、条件、引述、明确拒绝四种原输入。AI只截取内部肯定片段，并在正文错误写入肯定确认；旧验证实际放行RetireNpc，正式state中NPC被删除并进入retiredNpcs。记录了5条promise resolved instead of rejecting；四个授权反例的旧执行结果均存在retiredNpcs.npc-a。
+
+### 最小修复方案
+
+事件只新增一个可选WorldEvent.resultKnowledge，复用现有严格TaskResultKnowledgeSchema及facts/reported/suspected；没有新增认知类型、数据库、AI阶段或变量命令。终态decision中的分类由程序建立到事件，若模型对象不一致则整批拒绝；scheduled/active/blocked不能预存分类。旧已结案对象没有字段仍可读取，不回填核实结论。cancelled仍不强制resolvedAt/resolutionText，不影响完成、失败、取消、受阻的原生命周期判断。
+
+event:对终态只暴露确定性元数据及显式facts，resolved仍可作事实来源，原有cancelled来源性质保持不变。完整title/resolutionText及reported/suspected分离为event-result:（statement），计划条件分离为event-plan:（plan）。两种别名复用同一事件的依赖、时间和状态检查，同批验证后才可引用。隐藏/非完全公开来源的worldEventOnly全部保留；参与者列表不授予认知。即使事件为known，playerKnownText也只投影元数据和明确facts，不能从标题或引述洗出真值。真实“接收并归档举报”与有独立观察依据的事件成果继续能够被后续合法世界事件使用。
+
+授权采用本轮明确允许的保守方案：目前没有独立、可确定性验证的玩家删除确认交互，因此在World验证和领域模拟两层拒绝待复核旧人的player_confirmed。playerConfirmation原字段、枚举和原输入数据保留兼容，但不具有授权效力。否定/条件/引述/拒绝和真实肯定自由文本一律不能清理这些历史旧人；不以中文关键词判断同意，不设计“AI语义已可靠确认”的假保证，也不开发联系人管理UI或额外设置。无历史、无联系迹象的临时人物仍可用no_known_connection安全退出，正式联系人和初始同伴永久保护。
+
+保留V4，不新增迁移版本或object store；V1/V2/V3/V4读取及原回执重放验证通过。候选仍先进入TurnDraft，正式事件、分类、原文、NPC退场材料与回执只在原回合事务中生效。注入turnReceipts写入失败验证全部回滚，重试幂等。没有改变CAS、StageGuard、三阶段执行器、六套主模板、双世界书、NSFW原文及七项设置。
+
+### 测试范围与误拒风险
+
+新增25项单元/集成：原始跨回合信息洗白、四种授权反例、收到举报事实正例、独立观察核验正例、隐藏事件三种来源隔离、established/derived拒绝statement、已知事件事实投影、同批逆序依赖、分类篡改与未来预存拒绝、V1–V4真实IndexedDB读取/回执、事务回滚/重试、肯定输入仍暂缓、直接命令模拟防绕过、联系人/同伴保护及正常临时NPC原子退场。原909项保留；两个旧“自由文本即可解锁”期望按新授权边界收紧，而非移除安全检查。
+
+新增2个浏览器场景，桌面/移动各执行共4项：模型确实收到请求后，错误事件事实或否定授权被拒绝；刷新正式数据不变，合法重试可正式提交且回执可重放，NPC保留、隐藏举报不进入普通界面。初次新夹具错误复用了与正文不符的用餐变量，被既有变量证据检查阻止；已改为与新正文一致的Mock时钟候选，并新增请求次数断言，确保反例实际到达世界验证器。没有为夹具放宽生产校验。
+
+限制：事实分类的语义仍由原世界AI负责，程序不证明模型显式标为facts的每句话都真实；旧未分类的结局不能自动作为文字事实，后续需独立依据。旧历史待复核人物即使玩家真想清理，也因缺少可靠授权入口而保守暂留；本轮未实现可信交互，不能宣称手动确认已经可靠解决。已经在更早版本正式提交的错误事件/删除不自动回退或重写历史。所有调用Mock，本地全绿不代表真实付费模型或长期试玩已验证。
+
+本轮相对86891335的文件：新增src/tests/world-handoff-review3.test.ts；修改src/domain/events/schema.ts、src/domain/state.ts、src/domain/npc/contactReview.ts、src/domain/npc/lifecycle.ts、src/prompts/context.ts、src/services/validation/worldEvidence.ts、worldOutput.ts、worldDependencies.ts、commandCatalog.ts；收紧src/tests/world-handoff-review.test.ts、world-handoff-review2.test.ts的旧文本授权用例；修改e2e/world-handoff.spec.ts、prompts/shared/08_world_output.md、prompts/docs/OUTPUT_CONTRACT.md、prompts/manifest.json、prompts/sources.lock.json及本报告。共18个文件。

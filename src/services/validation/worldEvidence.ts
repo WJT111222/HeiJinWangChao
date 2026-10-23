@@ -155,17 +155,32 @@ export function worldSources(state: GameState, draft: TurnDraft, before = state)
     if (task.handoff) sources.push({ id: `handoff:${task.id}`, knowledge: task.handoff.knowledgeKind === 'reported' ? 'statement' : 'fact',
       text: task.handoff.content, actors: [task.actorRef], ownerNpcId: task.actorRef.kind === 'npc' ? task.actorRef.id : undefined, at: task.handoff.at });
   }
-  for (const event of Object.values(state.events))
+  for (const event of Object.values(state.events)) {
+    const terminal = ['resolved', 'cancelled'].includes(event.status);
+    const metadata = { id: event.id, status: event.status, startAt: event.startAt,
+      resolvedAt: event.resolvedAt, locationId: event.locationId, actorRefs: event.actorRefs,
+      facts: event.resultKnowledge?.facts ?? [] };
     sources.push({
       id: `event:${event.id}`,
       // 参与者/事件客观状态不代表人物已经获知；旧档同样按当前可见性重建边界。
       worldEventOnly: event.visibility !== 'known' ? true : undefined,
-      playerKnownText: event.visibility === 'known' ? JSON.stringify({ title: event.title, startAt: event.startAt, status: event.status, resolutionText: event.resolutionText }) : undefined,
+      playerKnownText: event.visibility === 'known' ? JSON.stringify(metadata) : undefined,
       knowledge: event.status === 'resolved' ? 'fact' : 'plan',
-      text: JSON.stringify(event),
+      text: JSON.stringify(terminal ? metadata : event),
       actors: event.actorRefs,
       at: event.resolvedAt,
     });
+    if (terminal) {
+      sources.push({ id: `event-result:${event.id}`, knowledge: 'statement',
+        text: JSON.stringify({ title: event.title, resolutionText: event.resolutionText,
+          reported: event.resultKnowledge?.reported ?? [], suspected: event.resultKnowledge?.suspected ?? [] }),
+        actors: event.actorRefs, worldEventOnly: event.visibility !== 'known' ? true : undefined, at: event.resolvedAt });
+      sources.push({ id: `event-plan:${event.id}`, knowledge: 'plan',
+        text: JSON.stringify({ title: event.title, completionCondition: event.completionCondition,
+          estimatedEndAt: event.estimatedEndAt, prerequisites: event.prerequisites, blockers: event.blockers }),
+        actors: event.actorRefs, worldEventOnly: event.visibility !== 'known' ? true : undefined });
+    }
+  }
   return sources;
 }
 export function requireWorld(
