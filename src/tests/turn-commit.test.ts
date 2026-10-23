@@ -619,7 +619,7 @@ describe('最终重验与存储兼容', () => {
     legacy.close();
     repo = await SaveRepository.open('legacy', legacyFactory);
     expect(await repo.loadGame('save-a')).toEqual({ state, draft });
-    expect((await repo.load('save-a')).schemaVersion).toBe(2);
+    expect((await repo.load('save-a')).schemaVersion).toBe(4);
   });
   it('删除存档时回执一并删除，不污染同 ID 的新游戏', async () => {
     const draft = await completeDraft(repo);

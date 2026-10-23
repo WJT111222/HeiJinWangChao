@@ -25,7 +25,7 @@ export const sourceUnion = (entries: readonly z.infer<typeof MemoryEntrySchema>[
 export function compressionCandidates(state: GameState, layer: CompressionBatch['layer']) {
   const journal = new Map(state.journal.map((entry, index) => [entry.turnId, index]));
   const upper = layer === 'short' ? [...state.memories.medium, ...state.memories.long] : state.memories.long;
-  const covered = new Set(upper.filter((entry) => entry.visibility === 'player_known').flatMap((entry) => entry.sourceTurnIds));
+  const covered = new Set(upper.filter((entry) => entry.visibility === 'player_known' && !('retiredNpcSource' in entry && entry.retiredNpcSource)).flatMap((entry) => entry.sourceTurnIds));
   return state.memories[layer].filter((entry) => entry.visibility === 'player_known' && entry.sourceTurnIds.length &&
     entry.sourceTurnIds.every((id) => journal.has(id) && !covered.has(id)) &&
     Date.parse(entry.createdAtGameTime) <= Date.parse(state.worldClock))

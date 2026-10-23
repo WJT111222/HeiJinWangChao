@@ -248,7 +248,11 @@
       "sourceSha256": "e81cac2a5104af3afa25039c847793ddf01209c7fd4a3b94e79617d6f9b30482",
       "treatment": "command-contract-alignment",
       "notes": "M3-P2 精确更新命令结构/名称、整数分与阶段权限；保留原外层输出字段，不改变世界书、身份、NSFW 或 M1 Schema。",
-      "m4P2": "在 main@dac41b7 的现有正文后追加领域命令与候选执行说明，保留历史原文；非上游逐字资源。"
+      "m4P2": "在 main@dac41b7 的现有正文后追加领域命令与候选执行说明，保留历史原文；非上游逐字资源。",
+      "m5P5": {
+        "notes": "M5-P5最小协议增量：自主成果判断、经验证的同窗承接、联系人及安全退场；不改六套主提示词、世界书、NSFW。",
+        "sha256": "2f8c901460f8f1788acc7a7193e4a391d6015e1f12ea778f0cf98496bf53e49b"
+      }
     },
     "shared/08_world_output.md": {
       "origin": "baseline",
@@ -266,6 +270,22 @@
       "m4P3CancellationFix": {
         "notes": "A5 定点修复：取消绑定自身来源、肯定终止事实与 derived 具体原因/结果；保留提前取消语义，无正式 Schema 改动。",
         "sha256": "b6776a066a9fc6a017f084f416dd256b27071a7a9be3ec2de74623d2eab0ddf2"
+      },
+      "m5P5": {
+        "notes": "M5-P5最小协议增量：自主成果判断、经验证的同窗承接、联系人及安全退场；不改六套主提示词、世界书、NSFW。",
+        "sha256": "774042bc559d6558efab27f3c1b5ddfbd7278bc76bb573e54558fb60a775c7da"
+      },
+      "m5P5Review2": {
+        "notes": "PR22首轮审查修复：区分任务成果/计划/转述；联系人待确认保护；有原始依据的忠实概括。未更改世界书、六主模板、NSFW和七项设置。",
+        "sha256": "9ebc73817385a11ef7b3dfd2a6653157d547fee72b0269123f19f1b73e9ea4f3"
+      },
+      "m5P5Review3": {
+        "notes": "PR22第二轮审查修复：混合成果显式facts/reported/suspected分类，旧未分类原文不自动成为事实；未索引历史保守保护和真实玩家确认来源。无新增AI阶段，不改六主模板、世界书、NSFW或七项设置。",
+        "sha256": "b6fcbe07e43d967e84956493ccda9a6d68c28dee37a0fda72dd98739459a8095"
+      },
+      "m5P5Review4": {
+        "notes": "PR22第三轮：事件复用成果认知分类及event-result/event-plan来源隔离；没有可靠独立授权时停用旧人player_confirmed退场。原任务协议、六主模板、世界书、NSFW与七项设置不变。",
+        "sha256": "5723dab9e45a24b33575514d79ae60f7f202169099fcb2b2414cce6cd972f484"
       }
     },
     "stages/opening/variables.md": {
@@ -494,6 +514,22 @@
       "m5P4TurnTimePolicy": {
         "notes": "最新产品决策：每个正式剧情回合正向估时，无正文时间词门槛；仅玩家明确要求的他人纯过去视角允许只读零耗时。保留原来源哈希与此前适配记录。",
         "sha256": "bc4fb3331ddc85ea3dfbce6ad448dc9adbdbbbff6ebe20c393ee58ff9b709eb7"
+      },
+      "m5P5": {
+        "notes": "M5-P5最小协议增量：自主成果判断、经验证的同窗承接、联系人及安全退场；不改六套主提示词、世界书、NSFW。",
+        "sha256": "b434b1118076b107e145ddb0828ed0086b46056e00e115393555c55be595f988"
+      },
+      "m5P5Review2": {
+        "notes": "PR22首轮审查修复：区分任务成果/计划/转述；联系人待确认保护；有原始依据的忠实概括。未更改世界书、六主模板、NSFW和七项设置。",
+        "sha256": "a803259265894758e4f46297cda66fd52603ab9b29c0e293d93d5d296bbfbf35"
+      },
+      "m5P5Review3": {
+        "notes": "PR22第二轮审查修复：混合成果显式facts/reported/suspected分类，旧未分类原文不自动成为事实；未索引历史保守保护和真实玩家确认来源。无新增AI阶段，不改六主模板、世界书、NSFW或七项设置。",
+        "sha256": "3091edd85b4a3e02b44312bc3ae60be6970182eb2b011c09927f67c0ddc25dfd"
+      },
+      "m5P5Review4": {
+        "notes": "PR22第三轮：事件复用成果认知分类及event-result/event-plan来源隔离；没有可靠独立授权时停用旧人player_confirmed退场。原任务协议、六主模板、世界书、NSFW与七项设置不变。",
+        "sha256": "c7fab0623d75d4d1f1bdd2bd236c03732bc4a97b4fd8f70733ed54f82d4c771b"
       }
     },
     "docs/ASSEMBLY.md": {

@@ -138,3 +138,31 @@
 两段Request必须分别是玩家原输入的不同子串，人物必须存在且不是主角，人物身份需在视角请求中明确。不能拿AI自己写的回忆当玩家要求。语义分类由本次正文模型完成；程序严格验证声明、人物和原请求/正文来源，不声称能证明所有自然语言语义。现在的他人视角、NPC当前讲述往事、AI自行闪回或混合当前剧情不得声明past_only。没有有效声明仍按正常正向耗时提交。
 
 纯回顾不推进或倒退当前时钟，不接受当前状态变量变更、世界命令、futureEvents、visibleHooks或时间线候选；可保留内部unresolved说明，正文/摘要按原原子事务归档，不将回忆事件再结算为现在事实。不开新设置、阶段或Schema字段，原七项设置、六套主提示词及输出标签不变。旧档和回执仍可读取/重放；尚未提交的旧零耗时候选需补算变量，不能绕过新正式提交规则。
+
+## M5-P5 成果、交接与生命周期增量（最新产品契约）
+
+新增严格命令RegisterContact（变量阶段，npcId/reason）和RetireNpc（世界阶段，npcId/expectedIdentityKey/reason/retainMemoryIds）。没有任意字段补丁或新付费阶段。WorldTask新增可选resolution和handoff，WORLD_EVIDENCE_V1新增可选decision，具体字段以COMMAND_CATALOG导出的真实JSON Schema及shared/08为准；程序从决策重建确定性成果元数据。旧取消谓词检查仅为旧协议兼容，不作为新决策的唯一语义依据。
+
+同批来源先验证、无环、再使用，不接受自证；允许按真实时间释放占用和按需承接，取代上文M4-P3同批禁止接力的旧限制。新任务不改变原执行者，只有实际传递的内容可以成为接收者知识，隐藏事件参与者不等于知情者。无后续必要时直接结束，不造接班任务。正文标签、六套主提示词、NPC私有认知权限和正式回合原子提交保持原有架构。Save schema为V4，包含contactNpcIds/retiredNpcs/contactReviewNpcIds；旧档联系人身份待确认与永久联系人分开保护，保留revision、journal和回执。已终结任务新增的可选成果与交接字段兼容旧对象，无来源的旧终态不补造实际成果或时间。
+
+退场保留的必要材料使用现有memories.long；可选retiredNpcSource记录npcId/sourceMemoryId/knowledgeKind/knowledgeSource，只标记局部历史来源，不作为整回合压缩覆盖。未公开材料保持internal，不进入普通正文、玩家记忆、变量认知输入或其他人物WORLD_SOURCES。新生成的终态任务（含旧凭据兼容路径）均先补齐来源可验证的resolution并保存候选；正式提交保持完整候选指纹一致性，缺少该元数据的旧待提交候选明确补算，不在提交事务内静默改候选。
+
+
+### PR #22 第二轮：修复首轮审查三项问题
+
+正式save升级V4，新增contactReviewNpcIds以区分旧档临时保护与contactNpcIds。V1/V2及旧V3预览经过严格迁移；真实登记凭据及初始同伴保持联系人，其余需要复核者保留完整实体。RetireNpc可选contactReview只用于待确认身份的受限复核，不是解除正式联系人保护。
+
+TaskHandoff.summaryBasis?={mode:"faithful_summary",resultExcerpt}允许有可靠原文锚点的忠实概括；保留实体、时间、传递渠道、权限和知识性质，取消fact与content逐字相等要求。task:成果事实不含handoff、目标或理由；task-plan:为计划资料；handoff:为接收者知识，reported不因任务结案变为事实。旧字段和逐字交接仍可读，候选指纹、CAS和正式事务不变。
+
+### PR #22 第二轮审查：成果认知分层及未索引历史
+
+decision.resultKnowledge?与resolution.resultKnowledge?使用同一严格结构{facts:string[],reported:string[],suspected:string[]}。完整result原样保留且只作为task-result:<id>的statement资料；task:<id>只暴露程序终态/时间及明确facts，不能从整段result中截取举报内容充当世界真值。缺少分类的旧成果不补造facts，已提交状态、原文及reported交接仍可使用。observed交接需原始锚点属于明确事实。全部分类在同次世界请求内完成，不增加AI裁判，元数据继续由程序从凭据和当前回合重建。
+
+contactReviewNpcIds中的旧人物只要存在旧journal或公开记忆，就不能用缺少关联ID来证明从未联系，保守暂缓no_known_connection。当前不具备独立可信的玩家删除确认入口，player_confirmed和playerConfirmation仅兼容存量格式，不能授予退场权限；自由文本子串和AI正文均不是删除授权。不增加玩家设置，不解除真正联系人保护。新增字段均可选，保持V4及旧档迁移兼容；旧待提交候选若违反新边界应显式补算，不静默改写。
+
+
+### PR #22 第三轮审查：事件混合成果与文本授权缺口
+
+WorldEvent.resultKnowledge?沿用任务现有严格分类，不新增AI阶段。resolved/cancelled事件由程序从decision.resultKnowledge重建并核对；非终态不得预存分类。event:只投影结案元数据和明确facts，event-result:保留自由标题、resolutionText及reported/suspected标签，性质始终statement；event-plan:保留计划资料，性质为plan。旧已结案事件缺字段仍可读取，保留原文且不补造facts。隐藏/非完全公开事件的新来源继续worldEventOnly保护，公开事实投影也不包含未经分类的标题或引述。
+
+文本存在不证明玩家肯定授权。没有可信独立确认交互时，待复核旧人的player_confirmed在世界验证和领域模拟两层均拒绝，包括真实肯定文本。旧字段继续可读，历史回执不改写；旧待提交的不安全删除候选须重新生成世界候选。有历史者保留完整实体，无历史且无联系迹象的临时人物仍可按原流程安全退出。未新增玩家设置、中文关键词分类器或联系人管理UI；事实分类语义仍由原世界AI负责，程序验证明确类型、来源、状态和事务边界。

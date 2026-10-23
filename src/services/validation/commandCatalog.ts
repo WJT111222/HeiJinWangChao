@@ -9,12 +9,13 @@ export const worldTypes = [
   'CreateLocation',
   'CreateOrganization',
   'RecordOrgRelation',
+  'RetireNpc',
 ] as const;
 export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
   const options = DomainCommandSchema.options.filter(
     (option) =>
-      stage === 'variables' ||
-      [...worldTypes, 'SaveTask', 'SaveEvent'].includes(option.shape.type.value),
+      (stage === 'variables' && option.shape.type.value !== 'RetireNpc') ||
+      (stage === 'world' && [...worldTypes, 'SaveTask', 'SaveEvent'].includes(option.shape.type.value)),
   );
   return {
     currencyUnit: 'CNY_FEN_INTEGER',
@@ -39,23 +40,29 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
       stage === 'world'
         ? 'evidence 使用 WORLD_EVIDENCE_V1 JSON 字符串；区分既有事实、新生成场外候选、计划与转述。不得要求新推演事实逐字出现在旧正文。'
         : 'evidence 引用已提供事实原文；金额为整数人民币分，price/amount 等正值限制以 Schema 为准。',
-      '不存在的更新操作列入 unresolved；CreateNpc/CreateOrganization 不是更新命令。',
+      '不存在的更新操作列入 unresolved；CreateNpc/CreateOrganization 不是更新命令。RegisterContact仅变量阶段据实际交换联系方式登记，不可撤销保护；RetireNpc仅世界阶段提议，联系人、同伴、现场和有未完职责/当前资产引用者不能删除。',
       'Schema 仅描述结构；仍须进行权限、证据、引用、金额、时间、版本与幂等校验。',
       '遵守TURN_TIME_POLICY：普通及开局正式回合必须正向SetWorldClock，由变量AI根据实际行动和对话估时，证据不必含时间词，无固定步长。只有有效HISTORICAL_PERSPECTIVE的纯过去视角允许零耗时且不更新当前变量或推演世界。',
     ],
     ...(stage === 'world'
       ? {
           evidenceEncoding:
-            'evidence = JSON.stringify(WORLD_EVIDENCE_V1)。sources 只引用 WORLD_SOURCES 的 id；derived 可描述新推演结果，不要求逐字存在于来源。',
+            'evidence = JSON.stringify(WORLD_EVIDENCE_V1)。sources 引用 WORLD_SOURCES 的 id 或经过依赖校验的本批 task:/event:/handoff: 来源；derived 可描述新推演结果，不要求逐字存在于来源。',
           worldEvidenceSchema: z.toJSONSchema(WorldEvidenceSchema, { target: 'draft-7' }),
           worldStateRules: [
-            'worldEventOnly标记的事件是后台世界事实，不是NPC知情来源；NPC行动/任务/记忆须引用自身独立观察或转述来源，不能引用非公开事件ID代替知晓依据。事件本身仍可正常创建和演化，参与者列表不等同于已知者列表。',
+            'worldEventOnly标记的事件是后台世界事实，不是NPC或组织的知情来源；行动/任务/记忆须引用自身独立观察或转述来源，不能引用非公开事件ID代替知晓依据。事件本身仍可正常创建和演化，参与者列表不等同于已知者列表。',
             'npc-summary 来源仅能支持所属人物的计划任务或个人目标，不是客观事实、完成证据或其他人物的知识。',
             'player_known 记忆和事件可见信息的新增/更新必须有 playerKnownText 中的肯定事实依据；客观成立不等于主角已知，缺少公开依据时保持私有/hidden或列入unresolved。',
             'CreateLocation 只接受实际存在或合法 derived 事实，planned 建设只可记录任务/未来事件。',
-            'scheduled/active/blocked 事件不得包含 resolvedAt 或 resolutionText；estimatedEndAt/dueAt 是估计，到期只应重新评估，不自动完成。',
-            'NPC 的 planned/active/blocked 任务均占用唯一名额；正式状态、变量投影和本批任务一起检查，本批终结旧任务不立即允许新任务。组织可以有多任务，禁止用组织名义规避 NPC 任务限制。',
+            'scheduled/active/blocked 事件不得包含 resolvedAt、resolutionText或resultKnowledge；estimatedEndAt/dueAt 是估计，到期只应重新评估，不自动完成。',
+            'NPC 的 planned/active/blocked 任务均占用唯一名额；正式状态、变量投影和本批任务一起检查，本批真实终结可按 resolution.at 释放；新任务 startAt 不早于释放或 handoff.at，依赖须先验证且无环。组织可以有多任务，禁止用组织名义规避 NPC 任务限制。',
             '只有 actorRef 能确定执行者；组织任务若实际依赖忙碌 NPC，不能仅换组织名义规避。现有 Schema 无法确定实际执行人时明确 unresolved，不声称程序已验证文字中的执行者。',
+            '任务成果采用decision声明，由程序确定性重建resolution(at,outcome,result,reason,sourceTurnId,resultKnowledge?)。result保留混合叙述；用resultKnowledge={facts,reported,suspected}区分实际行动/独立核验成果、收到的未核实主张、猜测。facts不复制未证实引述。completed需要conditionsSatisfied=true、continues=false；cancelled说明实际失败/取消原因与结果，continues=false；blocked继续占用，不要求固定词语。',
+            '按需交接：新任务handoff(fromTaskId,at,channel,content,necessity,knowledgeKind)仅引用已验证终态的具体成果；旧逐字交接可直接引用前序result片段；忠实概括使用summaryBasis={mode:faithful_summary,resultExcerpt}锚定原始结果，content可概括，fact可叙述交接动作，另引接收方npc:/org:职责来源。不需要接班就不造任务；来源依赖必须无环。handoff:<新taskId>是接收方的独立知识来源，reported仍是转述，不能成为主角已知或将传闻当世界事实。',
+            'task:来源只投影程序终态/时间及resultKnowledge.facts；完整resolution.result和reported/suspected在task-result:中始终是statement，旧成果缺少分类不补造事实。目标/条件另在task-plan:中作为plan；handoff:保持接收者知识性质。不能用任务完成替报告背书，不能把task-result、task-plan或转述升级为既成事实。observed交接还需明确事实锚点，未核实内容只能reported。',
+            '事件复用resultKnowledge={facts,reported,suspected}，由程序从终态decision建立到WorldEvent。event:的结案事实只含确定性元数据和显式facts；完整resolutionText与标题在event-result:中保持statement，计划说明在event-plan:中保持plan；隐藏事件各来源保留worldEventOnly。接收举报不证明举报内容属实，旧事件缺少分类也不补造facts，独立核验成果仍可正常使用。',
+            '旧档contactReviewNpcIds独立暂缓清理，不是联系人；当前无独立可信玩家删除确认入口，player_confirmed/playerConfirmation仅兼容存量，不授予退场权限。自由文本、肯定子串、条件、引述及AI正文都不能替代授权。存在旧journal或公开记忆时继续保护；无历史、无联系迹象的临时人物仍可用no_known_connection复核。真正联系人永久保护。',
+            '退场需decision.status=retired、targetId、reason/result、conditionsSatisfied=true、continues=false；retainMemoryIds选取确需留存的原始私有材料ID。公开记忆必保留，其他必要材料进入internal历史，不授予其他NPC知识。',
             '旧任务/事件完成必须引用自身 task:<id>/event:<id> 来源，仍可结合动机自主推演新结果，不要求正文预先记载。',
             '任务成功使用 completed；失败且终止或取消使用 cancelled，并在 evidence.fact/rationale/outcome 记录实际结果；暂时受阻用 blocked，不宣称成功。',
           ],

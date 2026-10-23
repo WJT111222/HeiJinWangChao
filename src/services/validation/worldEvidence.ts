@@ -1,6 +1,6 @@
 import { npcKnowledgeContext } from '../../domain/memories/npcMemory';
 import { z } from 'zod';
-import { GameTimeSchema, TextSchema } from '../../domain/common';
+import { GameTimeSchema, TextSchema, IdSchema } from '../../domain/common';
 import type { ActorRef } from '../../domain/common';
 import type { GameState } from '../../domain/state';
 import type { TurnDraft } from '../../domain/drafts';
@@ -8,8 +8,9 @@ import type { DomainCommand } from '../../domain/commands';
 import { factEvidence } from './evidence';
 import { isNegatedFact } from '../../domain/factPolarity';
 import { AiError } from '../ai/errors';
+import { TaskResultKnowledgeSchema } from '../../domain/events/schema';
 
-// 来源凭据编码在原有 evidence 字符串中，不新增正式存档或草稿字段。
+// 来源凭据仍编码在原有evidence字符串中；可选成果分类从同次决策确定性写入resolution。
 export const WorldEvidenceSchema = z.strictObject({
   version: z.literal(1),
   kind: z.enum(['established', 'derived', 'planned', 'reported', 'suspected']),
@@ -22,6 +23,11 @@ export const WorldEvidenceSchema = z.strictObject({
   fact: TextSchema.max(8000),
   rationale: TextSchema.max(4000),
   outcome: TextSchema.max(4000).optional(),
+  decision: z.strictObject({ targetId: IdSchema, status: z.enum(['completed', 'resolved', 'cancelled', 'blocked', 'retired']),
+    reason: TextSchema.max(4000), result: TextSchema.max(4000), conditionsSatisfied: z.boolean(), continues: z.boolean(),
+    failure: z.boolean().optional(),
+    resultKnowledge: TaskResultKnowledgeSchema.optional(),
+  }).optional(),
 });
 export type WorldEvidence = z.infer<typeof WorldEvidenceSchema>;
 export interface WorldSource {
@@ -118,6 +124,7 @@ export function worldSources(state: GameState, draft: TurnDraft, before = state)
       text: JSON.stringify(org),
       actors: [{ kind: 'organization', id: org.id }],
     });
+  for (const history of Object.values(state.retiredNpcs)) sources.push({ id: `identity:${history.id}`, knowledge: 'fact', text: JSON.stringify(history), actors: [] });
   for (const task of Object.values(state.tasks)) {
     if (
       task.actorRef.kind === 'protagonist' ||
@@ -128,22 +135,52 @@ export function worldSources(state: GameState, draft: TurnDraft, before = state)
     sources.push({
       id: `task:${task.id}`,
       ownerNpcId: task.actorRef.kind === 'npc' ? task.actorRef.id : undefined,
-      knowledge: task.status === 'completed' ? 'fact' : 'plan',
-      text: JSON.stringify(task),
+      knowledge: task.resolution ? 'fact' : 'plan',
+      // 任务终态/时间是程序事实；混合成果叙述不自动成为事实，只投影明确分层的事实。
+      text: JSON.stringify(task.resolution ? { id: task.id, status: task.status,
+        at: task.resolution.at, facts: task.resolution.resultKnowledge?.facts ?? [] } : { ...task, handoff: undefined }),
       actors: [task.actorRef],
+      at: task.resolution?.at,
     });
+    if (task.resolution) sources.push({ id: `task-result:${task.id}`, knowledge: 'statement',
+      text: JSON.stringify({ result: task.resolution.result,
+        reported: task.resolution.resultKnowledge?.reported ?? [], suspected: task.resolution.resultKnowledge?.suspected ?? [] }),
+      actors: [task.actorRef], ownerNpcId: task.actorRef.kind === 'npc' ? task.actorRef.id : undefined,
+      at: task.resolution.at });
+    if (task.resolution) sources.push({ id: `task-plan:${task.id}`, knowledge: 'plan',
+      text: JSON.stringify({ id: task.id, goal: task.goal, startAt: task.startAt, dueAt: task.dueAt,
+        completionCondition: task.completionCondition, prerequisites: task.prerequisites, blockers: task.blockers,
+        reason: task.resolution.reason }),
+      actors: [task.actorRef], ownerNpcId: task.actorRef.kind === 'npc' ? task.actorRef.id : undefined });
+    if (task.handoff) sources.push({ id: `handoff:${task.id}`, knowledge: task.handoff.knowledgeKind === 'reported' ? 'statement' : 'fact',
+      text: task.handoff.content, actors: [task.actorRef], ownerNpcId: task.actorRef.kind === 'npc' ? task.actorRef.id : undefined, at: task.handoff.at });
   }
-  for (const event of Object.values(state.events))
+  for (const event of Object.values(state.events)) {
+    const terminal = ['resolved', 'cancelled'].includes(event.status);
+    const metadata = { id: event.id, status: event.status, startAt: event.startAt,
+      resolvedAt: event.resolvedAt, locationId: event.locationId, actorRefs: event.actorRefs,
+      facts: event.resultKnowledge?.facts ?? [] };
     sources.push({
       id: `event:${event.id}`,
       // 参与者/事件客观状态不代表人物已经获知；旧档同样按当前可见性重建边界。
       worldEventOnly: event.visibility !== 'known' ? true : undefined,
-      playerKnownText: event.visibility === 'known' ? JSON.stringify({ title: event.title, startAt: event.startAt, status: event.status, resolutionText: event.resolutionText }) : undefined,
+      playerKnownText: event.visibility === 'known' ? JSON.stringify(metadata) : undefined,
       knowledge: event.status === 'resolved' ? 'fact' : 'plan',
-      text: JSON.stringify(event),
+      text: JSON.stringify(terminal ? metadata : event),
       actors: event.actorRefs,
       at: event.resolvedAt,
     });
+    if (terminal) {
+      sources.push({ id: `event-result:${event.id}`, knowledge: 'statement',
+        text: JSON.stringify({ title: event.title, resolutionText: event.resolutionText,
+          reported: event.resultKnowledge?.reported ?? [], suspected: event.resultKnowledge?.suspected ?? [] }),
+        actors: event.actorRefs, worldEventOnly: event.visibility !== 'known' ? true : undefined, at: event.resolvedAt });
+      sources.push({ id: `event-plan:${event.id}`, knowledge: 'plan',
+        text: JSON.stringify({ title: event.title, completionCondition: event.completionCondition,
+          estimatedEndAt: event.estimatedEndAt, prerequisites: event.prerequisites, blockers: event.blockers }),
+        actors: event.actorRefs, worldEventOnly: event.visibility !== 'known' ? true : undefined });
+    }
+  }
   return sources;
 }
 export function requireWorld(
@@ -175,8 +212,8 @@ export function readWorldEvidence(
   });
   // 非公开事件供世界因果/生命周期推演，不直接授予任何NPC知识。
   // 人物行动或新认知应引用其独立观察/转述等自身来源，不能借事件ID洗掉所属关系。
-  const npcCommand = command.type === 'UpdateNpc' || command.type === 'RecordNpcMemory' ||
-    (command.type === 'SaveTask' && command.task.actorRef.kind === 'npc');
+  const npcCommand = command.type === 'UpdateNpc' || command.type === 'RecordNpcMemory' || command.type === 'RetireNpc' ||
+    command.type === 'SaveTask';
   requireWorld(!npcCommand || !resolved.some((source) => source.worldEventOnly), 'permission');
   if (resolved.some((source) => source.npcSummary)) {
     // 总结不是事实凭据；只允许同一所属人物的未执行计划，不能传播或更新世界真值。
@@ -213,14 +250,19 @@ export function readWorldEvidence(
       requireWorld(
         resolved.some((source) => source.knowledge === 'motive' || source.knowledge === 'fact'),
       );
-      // “未能完成清点，行动已终止”可支持取消，不能支持成功；只看被肯定的终止分句。
-      const cancellation =
-        (command.type === 'SaveTask' && command.task.status === 'cancelled') ||
-        (command.type === 'SaveEvent' && command.event.status === 'cancelled');
-      const affirmedTermination = cancellation && hasAffirmedTermination(proof.fact);
-      requireWorld(
-        !speculative.test(proof.fact) && (!isNegatedFact(proof.fact) || affirmedTermination),
-      );
+      // 生命周期的明确结构化决策由同次世界AI作语义判断；不用固定词汇审判复杂结果。
+      // 来源、时间、目标/状态、条件和权限仍由后续验证器逐项约束。其他事实命令保持原保护。
+      const decision = proof.decision;
+      const lifecycleDecision = decision && (
+        (command.type === 'SaveTask' && decision.targetId === command.task.id && decision.status === command.task.status)
+        || (command.type === 'SaveEvent' && decision.targetId === command.event.id && decision.status === command.event.status)
+        || (command.type === 'RetireNpc' && decision.targetId === command.npcId && decision.status === 'retired'));
+      if (!lifecycleDecision) {
+        const cancellation = (command.type === 'SaveTask' && command.task.status === 'cancelled')
+          || (command.type === 'SaveEvent' && command.event.status === 'cancelled');
+        const affirmedTermination = cancellation && hasAffirmedTermination(proof.fact);
+        requireWorld(!speculative.test(proof.fact) && (!isNegatedFact(proof.fact) || affirmedTermination));
+      }
     }
   }
   return { proof, sources: resolved };

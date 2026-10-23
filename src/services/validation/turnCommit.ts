@@ -13,7 +13,8 @@ import { isNegatedFact } from '../../domain/factPolarity';
 export function validateTurnCandidates(state: GameState, draft: TurnDraft) {
   requireData(completeTurnDraft(draft), 'TURN_INCOMPLETE', '三阶段尚未完整完成');
   parseVariables(JSON.stringify(draft.variables!.result), state, draft);
-  parseWorld(JSON.stringify(draft.world!.result), state, draft);
+  const world = parseWorld(JSON.stringify(draft.world!.result), state, draft);
+  requireData(fingerprint(world) === fingerprint(draft.world!.result), 'WORLD_NORMALIZATION', '世界候选需先保存程序校验后的完整成果元数据');
   validateCommittedTime(state, draft);
   // 现场 SaveTask/SaveEvent 原来只有字符串事实与结构检查；正式落库前补足时间/终态边界。
   const projected = projectTurn(state, draft);
