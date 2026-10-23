@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { requireData } from './common';
-import { commitCommands, fingerprint } from './commands';
+import { commitCommands } from './commands';
 import type { DomainCommand } from './commands';
 import { TurnDraftSchema } from './drafts';
 import type { TurnDraft } from './drafts';
@@ -65,31 +65,6 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
     'TURN_CONTEXT',
     '回合已有独立命令记录',
   );
-  const occupied = new Map<string, Set<string>>();
-  const occupy = (id: string, taskId: string) => {
-    const tasks = occupied.get(id) ?? new Set<string>();
-    tasks.add(taskId);
-    occupied.set(id, tasks);
-    requireData(tasks.size <= 1, 'NPC_TASK_CONFLICT', 'NPC 后台任务占用冲突');
-  };
-  for (const task of Object.values(current.tasks))
-    if (task.actorRef.kind === 'npc' && !['completed', 'cancelled'].includes(task.status))
-      occupy(task.actorRef.id, task.id);
-  for (const command of commands)
-    if (command.type === 'SaveTask') {
-      const task = command.task,
-        old = current.tasks[task.id];
-      requireData(
-        !old || fingerprint(old.actorRef) === fingerprint(task.actorRef),
-        'TASK_ACTOR',
-        '任务不能改派执行人',
-      );
-      if (
-        task.actorRef.kind === 'npc' &&
-        (!old || !['completed', 'cancelled'].includes(task.status))
-      )
-        occupy(task.actorRef.id, task.id);
-    }
   const projected = commitCommands(current, draft.turnId, current.revision, commands, now);
   requireData(draft.story!.summary.trim(), 'MISSING_SUMMARY', '正文缺少有效摘要，请重新生成正文后重试');
   const shortMemory = MemoryEntrySchema.parse({

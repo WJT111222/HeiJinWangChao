@@ -553,7 +553,9 @@ describe('二轮 A4/A5 完成来源与失败终止语义', () => {
       ),
     ]);
     expect(worldDraft().story!.narrative).not.toContain('器材清点');
-    expect(parse(r, state).taskCommands).toEqual(r.taskCommands);
+    const accepted = parse(r, state);
+    expect(accepted.taskCommands).toMatchObject(r.taskCommands);
+    expect(accepted.taskCommands[0]).toMatchObject({ task: { resolution: { result: completion.outcome, sourceTurnId: 'turn-a' } } });
     expect(state).toEqual(before);
   });
   it('established 完成也须有自身来源，不能只有 unrelated 客观事实', () => {
@@ -702,7 +704,7 @@ describe('A5 取消证据定点回归', () => {
       true,
     );
     const result = parse(p.result, p.state);
-    expect(result).toEqual(p.result);
+    expect(result).toMatchObject(p.result);
     const command = kind === 'task' ? result.taskCommands[0] : result.eventCommands[0];
     expect(command).toMatchObject(
       kind === 'task' ? { task: { status: 'cancelled' } } : { event: { status: 'cancelled' } },

@@ -438,7 +438,7 @@ describe('M3-P1 审阅修订与 P2 协议差异记录', () => {
     ).toBe(false);
     const todo = text('docs/OUTPUT_CONTRACT.md');
     expect(todo).toContain('M3-P2 待办');
-    expect(DomainCommandSchema.options).toHaveLength(22);
+    expect(DomainCommandSchema.options).toHaveLength(24);
     for (const option of DomainCommandSchema.options)
       expect(todo).toContain(option.shape.type.value);
     for (const required of [
