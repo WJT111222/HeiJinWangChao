@@ -527,9 +527,9 @@ describe('只读世界星期派生', () => {
 describe('真实命令目录、解析与安全候选验证', () => {
   it('扩展命令直接来自实际 Schema，支持类型专属字段而非旧包装', () => {
     expect(commandCatalog('variables').commandTypes).toEqual(
-      DomainCommandSchema.options.map((option) => option.shape.type.value),
+      DomainCommandSchema.options.map((option) => option.shape.type.value).filter((type) => type !== 'RetireNpc'),
     );
-    expect(commandCatalog('variables').commandTypes).toHaveLength(22);
+    expect(commandCatalog('variables').commandTypes).toHaveLength(23);
     expect(commandCatalog('world').commandTypes).not.toContain('PurchaseItem');
     const a = input('variables');
     for (const value of [

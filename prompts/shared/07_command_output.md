@@ -13,3 +13,5 @@ SpendFunds 是已完成的普通消费，只扣指定账户，不创建永久物
 经济证据必须包含一处可核对的数字元/分金额及已完成事实。切勿从长句裁掉“没有/准备/取消/声称”等上下文；计划、条件、否定、传闻、NPC自述而未证实的到账均列 rejectedSuggestions 或 unresolved。字符串包含不证明真实性，模型负责语义核验；程序只做确定性反证、单位/权限/引用与整批副本校验。单条非法命令导致本次候选整体拒绝，不部分接受。
 TransferItem 的 from 额外允许 null，仅表示已存在且当前无持有人的实体（例如遗失后拾回）；必须明确已有 itemId，不能新建副本，不能以 null 抢走仍有持有人的物品。原 ActorRef → ActorRef 转移继续有效。
 变量阶段 CreateNpc 只建基本档案，memories/knownInformation/longTermMemories 必须为空；有意义的新知识另用 RecordNpcMemory 逐条证明来源，避免用新建人物绕过知识校验。新记忆 sourceTurnIds 仅为当前 TURN_CONTEXT.turnId；旧记忆保留，本轮不伪造历史摘要或引用。经济命令 evidence 还须明确现金或线上渠道，账户不明时列 unresolved。
+
+M5-P5：RegisterContact仅用于正文实际成立的联络关系，字段npcId、reason，保持原commandId/evidence；登记后永久保留完整档案，面板可见不自动成为联系人。RetireNpc只允许动态世界阶段。场外任务resolution/handoff只经世界协议校验，变量阶段不能自行编造后台成果或交接；不存在安全命令时列unresolved。

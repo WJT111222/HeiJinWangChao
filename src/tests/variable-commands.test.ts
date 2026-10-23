@@ -71,8 +71,8 @@ function withItem() {
 
 describe('M4-P2 八类严格领域命令', () => {
   it('真实目录包含旧十四类和八类新命令，所有类型均可导出严格 JSON Schema', () => {
-    expect(DomainCommandSchema.options).toHaveLength(22);
-    expect(commandCatalog('variables').schema.oneOf).toHaveLength(22);
+    expect(DomainCommandSchema.options).toHaveLength(24);
+    expect(commandCatalog('variables').schema.oneOf).toHaveLength(23);
     for (const type of [
       'UpdateProtagonist',
       'UpdateNpc',

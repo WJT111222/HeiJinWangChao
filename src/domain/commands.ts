@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AccountSchema, DebtRecordSchema, IncomeRecordSchema, VehicleAssetSchema } from './economy/schema';
-import { ActorRefSchema, CountSchema, IdSchema, MoneySchema, TextSchema, GameTimeSchema, requireData } from './common';
+import { ActorRefSchema, CountSchema, IdSchema, IdsSchema, MoneySchema, TextSchema, GameTimeSchema, requireData } from './common';
 import { EquipmentSchema } from './protagonist/schema';
 import { ImportantItemSchema } from './items/schema';
 import { NpcSchema } from './npc/schema';
@@ -9,6 +9,8 @@ import { WorldEventSchema, WorldTaskSchema } from './events/schema';
 import { GameStateSchema } from './state';
 import type { GameState } from './state';
 import { variableCommandSchemas, applyVariableCommand, assertImportantItem, unequipItem } from './variableCommands';
+import { ContactReviewSchema } from './npc/contactReview';
+import { retireNpc, validateTaskTransitions } from './npc/lifecycle';
 import { validateSceneTransition } from './sceneTransitions';
 
 const base = { commandId: IdSchema, evidence: TextSchema };
@@ -28,6 +30,8 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('SaveTask'), task: WorldTaskSchema }),
   z.strictObject({ ...base, type: z.literal('CreateOrganization'), organization: OrganizationSchema }),
   z.strictObject({ ...base, type: z.literal('RecordOrgRelation'), organizationId: IdSchema, relation: TextSchema, reason: TextSchema }),
+  z.strictObject({ ...base, type: z.literal('RegisterContact'), npcId: IdSchema, reason: TextSchema }),
+  z.strictObject({ ...base, type: z.literal('RetireNpc'), npcId: IdSchema, expectedIdentityKey: TextSchema, reason: TextSchema, retainMemoryIds: IdsSchema, contactReview: ContactReviewSchema.optional() }),
   ...variableCommandSchemas,
 ]);
 export type DomainCommand = z.infer<typeof DomainCommandSchema>;
@@ -42,7 +46,7 @@ export function fingerprint(value: unknown): string {
 }
 
 function allEntityIds(s: GameState): string[] {
-  return [s.protagonist.id, ...[s.npc, s.items, s.organizations, s.events, s.tasks, s.locations,
+  return [s.protagonist.id, ...[s.npc, s.retiredNpcs, s.items, s.organizations, s.events, s.tasks, s.locations,
     s.economy.incomes, s.economy.debts, s.economy.properties, s.economy.vehicles, s.economy.otherAssets].flatMap(Object.keys)];
 }
 function newEntity(s: GameState, id: string) {
@@ -86,13 +90,26 @@ function apply(s: GameState, c: DomainCommand, turnId: string) {
       break;
     }
     case 'CreateNpc':
+      // 再出现只能复用历史稳定身份，不能把旧人换ID重新建档或恢复不存在的旧关系。
+      if (s.retiredNpcs[c.npc.id]) {
+        const prior = s.retiredNpcs[c.npc.id];
+        requireData(prior.identityKey === c.npc.identityKey && prior.name === c.npc.name, 'NPC_IDENTITY', '历史身份不一致');
+        delete s.retiredNpcs[c.npc.id];
+      }
       newEntity(s, c.npc.id);
+      requireData(!Object.values(s.retiredNpcs).some((n) => n.identityKey === c.npc.identityKey), 'DUPLICATE_NPC', '历史人物应复用稳定ID');
       requireData(!Object.values(s.npc).some((npc) => npc.identityKey === c.npc.identityKey), 'DUPLICATE_NPC', 'NPC 稳定身份已存在');
       requireData(!Object.values(s.npc).some((npc) => npc.aliases.includes(c.npc.name)
         || c.npc.aliases.includes(npc.name) || npc.aliases.some((alias) => c.npc.aliases.includes(alias))
         || (npc.id === s.initialCompanionId && npc.name === c.npc.name)),
         'AMBIGUOUS_NPC', '别名或初始同伴身份重叠，需先确认已有稳定 ID');
       s.npc[c.npc.id] = c.npc; break;
+    case 'RegisterContact':
+      requireData(s.npc[c.npcId], 'NOT_FOUND', '联系人不存在');
+      if (!s.contactNpcIds.includes(c.npcId)) s.contactNpcIds.push(c.npcId);
+      s.contactReviewNpcIds = s.contactReviewNpcIds.filter((id) => id !== c.npcId);
+      break;
+    case 'RetireNpc': retireNpc(s, c.npcId, c.expectedIdentityKey, c.retainMemoryIds, turnId, c.contactReview); break;
     case 'SetEquipment': s.protagonist.currentWear = c.equipment; break;
     case 'TransferItem': {
       const item = s.items[c.itemId];
@@ -146,10 +163,13 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
   if (parsed.length > 0 && fresh.length === 0) return current;
   requireData(current.revision === expectedRevision, 'REVISION_CONFLICT', '存档版本已变化，请重新读取');
   if (fresh.length === 0) return current;
-  for (const command of fresh) {
+  // 退场最后执行，先让同批经过验证的成果、后续职责及记忆完整落到投影。
+  const ordered = [...fresh.filter((c) => c.type !== 'RetireNpc'), ...fresh.filter((c) => c.type === 'RetireNpc')];
+  for (const command of ordered) {
     apply(current, command, turnId);
     current.appliedCommands.push({ turnId, commandId: command.commandId, fingerprint: fingerprint(command) });
   }
+  validateTaskTransitions(state, current, fresh.flatMap((c) => c.type === 'SaveTask' ? [c.task] : []));
   validateSceneTransition(state, current, fresh);
   current.revision += 1;
   current.updatedAt = now;

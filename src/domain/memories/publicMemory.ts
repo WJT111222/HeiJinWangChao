@@ -14,7 +14,7 @@ export function publicShortMemories(state: GameState): PublicShortMemory[] {
   // 分层摘要的来源就是持久覆盖凭据；压缩后必须保留来源的并集。
   // 知识范围独立：私有/内部摘要不代表公开历史已经压缩。
   const compressed = [...state.memories.medium, ...state.memories.long]
-    .filter((entry) => entry.visibility === 'player_known');
+    .filter((entry) => entry.visibility === 'player_known' && !('retiredNpcSource' in entry && entry.retiredNpcSource));
   const compressedTurns = new Set(compressed.flatMap((entry) => entry.sourceTurnIds));
   const stored = state.memories.short.filter((entry) => entry.visibility === 'player_known' &&
     (!entry.sourceTurnIds.length || !entry.sourceTurnIds.every((id) => compressedTurns.has(id))));
@@ -67,7 +67,7 @@ export function storyMemoryContext(state: GameState, windowSize: number, query: 
     dataBudget -= size; budget -= text.length;
     summaries.push(summary);
     selected.add(entry.id);
-    entry.sourceTurnIds.forEach((id) => excluded.add(id));
+    if (!('retiredNpcSource' in entry && entry.retiredNpcSource)) entry.sourceTurnIds.forEach((id) => excluded.add(id));
   }
   return {
     immediateWindowSize: windowSize,
