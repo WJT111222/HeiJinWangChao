@@ -21,6 +21,10 @@ async function stored(page: Page) { return page.evaluate(async () => { const pat
 
 test('真实浏览器：世界成果/交接/退场只是候选，主动查看、刷新、正式原子提交后才生效', async ({ page }, info) => {
   const before = await seed(page), state = handoffState(), raw = handoffResult(state); raw.worldCommands = [retireCommand(state)];
+  const receiver = raw.taskCommands[0];
+  receiver.task.handoff = { ...receiver.task.handoff!, content: '登记号318的三份材料均已核对齐全。',
+    summaryBasis: { mode: 'faithful_summary', resultExcerpt: resultText } };
+  const transferProof = JSON.parse(receiver.evidence); transferProof.fact = '核对人通过电话传达清单要点。'; receiver.evidence = JSON.stringify(transferProof);
   let calls = 0;
   await page.route('https://handoff.mock.invalid/**', async (route) => { calls++; await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ choices: [{ message: { content: JSON.stringify(raw) }, finish_reason: 'stop' }] }) }); });
   await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click();
@@ -39,6 +43,7 @@ test('真实浏览器：世界成果/交接/退场只是候选，主动查看、
   } finally { repo.close(); } });
   expect(final.first.state.npc['npc-a']).toBeUndefined(); expect(final.first.state.retiredNpcs['npc-a'].identityKey).toBe('identity-npc-a');
   expect(final.first.state.tasks.work.resolution.result).toBe(resultText); expect(final.first.state.tasks.next.actorRef.id).toBe('npc-b');
+  expect(final.first.state.tasks.next.handoff).toMatchObject({ content: '登记号318的三份材料均已核对齐全。', knowledgeKind: 'reported' });
   expect(final.first.state.journal).toHaveLength(1); expect(final.replay.replayed).toBe(true); expect(final.replay.state).toEqual(final.first.state);
   await page.reload(); await expect(page.locator('main')).not.toContainText(resultText);
   expect((await stored(page)).state).toEqual(final.first.state); expect(calls).toBe(1);
@@ -56,4 +61,25 @@ test('联系人标签来自真实持久数据，刷新后档案仍保留', async
   await expect(panel).toContainText('联系人 · 永久保留档案');
   await page.keyboard.press('Escape'); await page.reload();
   expect((await stored(page)).state.contactNpcIds).toContain('scene');
+});
+
+
+test('V3预览误标的NPC迁移后显示待确认身份，不冒充联系人且不自动删除', async ({ page }) => {
+  const before = await seed(page);
+  await page.evaluate(async () => {
+    const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open();
+    const state = await repo.load('save-a'); repo.close();
+    const raw = { ...state, schemaVersion: 3, contactNpcIds: Object.keys(state.npc) }; Reflect.deleteProperty(raw, 'contactReviewNpcIds');
+    await new Promise<void>((resolve, reject) => { const request = indexedDB.open('heijinwangchao'); request.onsuccess = () => {
+      const db = request.result, tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(raw);
+      tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); };
+    }; request.onerror = () => reject(request.error); });
+  });
+  await page.reload(); await page.getByRole('button', { name: /NPC/ }).click();
+  const panel = page.getByRole('dialog'); await panel.getByRole('button', { name: /现场人物/ }).click();
+  await expect(panel).toContainText('旧档联系人身份待确认 · 暂缓清理');
+  await expect(panel).not.toContainText('联系人 · 永久保留档案');
+  const migrated = (await stored(page)).state; expect(migrated.schemaVersion).toBe(4); expect(migrated.contactNpcIds).toEqual([]);
+  expect(migrated.contactReviewNpcIds).toContain('scene'); expect(migrated.npc).toEqual(before.npc); expect(migrated.revision).toBe(before.revision);
+  await page.reload(); expect((await stored(page)).state).toEqual(migrated);
 });

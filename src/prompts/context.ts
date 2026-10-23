@@ -263,8 +263,8 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
           ),
         ],
       },
-      NPC_LIFECYCLE: { contactNpcIds: temporary.contactNpcIds, initialCompanionId: temporary.initialCompanionId,
-        retiredIdentities: temporary.retiredNpcs, policy: '联系人永久保留完整档案；其他NPC仅在无后续职责且必要成果已留存时可提议RetireNpc。历史身份不授予知识或恢复旧关系。' },
+      NPC_LIFECYCLE: { contactNpcIds: temporary.contactNpcIds, contactReviewNpcIds: temporary.contactReviewNpcIds, initialCompanionId: temporary.initialCompanionId,
+        retiredIdentities: temporary.retiredNpcs, policy: '联系人永久保留完整档案；contactReviewNpcIds中的旧档身份待确认，须明确复核非联系人，不默认删除或永久升级；其他NPC仅在无后续职责且必要成果已留存时可提议RetireNpc。历史身份不授予知识或恢复旧关系。' },
       OFFSCREEN_STATE: {
         npc: Object.values(withoutPrivateMemories(temporary).npc).filter(
           (npc) => !npc.onScene && !state.npc[npc.id]?.onScene,

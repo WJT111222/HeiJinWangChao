@@ -26,7 +26,8 @@ export function orderWorldCommands(commands: readonly DomainCommand[]) {
     }
     if (command.type === 'SaveTask' && command.task.handoff) dependencies.push(`task:${command.task.handoff.fromTaskId}`);
     for (const source of dependencies) {
-      const lookup = source.startsWith('handoff:') ? `task:${source.slice(8)}` : source;
+      const lookup = source.startsWith('handoff:') ? `task:${source.slice(8)}`
+        : source.startsWith('task-plan:') ? `task:${source.slice(10)}` : source;
       const prior = keyed.get(lookup);
       if (prior && prior !== command) visit(prior);
       // task:<self> 可引用旧正式任务；新建任务自证会在来源查找中被拒绝。

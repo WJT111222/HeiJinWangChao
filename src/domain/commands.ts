@@ -9,6 +9,7 @@ import { WorldEventSchema, WorldTaskSchema } from './events/schema';
 import { GameStateSchema } from './state';
 import type { GameState } from './state';
 import { variableCommandSchemas, applyVariableCommand, assertImportantItem, unequipItem } from './variableCommands';
+import { ContactReviewSchema } from './npc/contactReview';
 import { retireNpc, validateTaskTransitions } from './npc/lifecycle';
 import { validateSceneTransition } from './sceneTransitions';
 
@@ -30,7 +31,7 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('CreateOrganization'), organization: OrganizationSchema }),
   z.strictObject({ ...base, type: z.literal('RecordOrgRelation'), organizationId: IdSchema, relation: TextSchema, reason: TextSchema }),
   z.strictObject({ ...base, type: z.literal('RegisterContact'), npcId: IdSchema, reason: TextSchema }),
-  z.strictObject({ ...base, type: z.literal('RetireNpc'), npcId: IdSchema, expectedIdentityKey: TextSchema, reason: TextSchema, retainMemoryIds: IdsSchema }),
+  z.strictObject({ ...base, type: z.literal('RetireNpc'), npcId: IdSchema, expectedIdentityKey: TextSchema, reason: TextSchema, retainMemoryIds: IdsSchema, contactReview: ContactReviewSchema.optional() }),
   ...variableCommandSchemas,
 ]);
 export type DomainCommand = z.infer<typeof DomainCommandSchema>;
@@ -106,8 +107,9 @@ function apply(s: GameState, c: DomainCommand, turnId: string) {
     case 'RegisterContact':
       requireData(s.npc[c.npcId], 'NOT_FOUND', '联系人不存在');
       if (!s.contactNpcIds.includes(c.npcId)) s.contactNpcIds.push(c.npcId);
+      s.contactReviewNpcIds = s.contactReviewNpcIds.filter((id) => id !== c.npcId);
       break;
-    case 'RetireNpc': retireNpc(s, c.npcId, c.expectedIdentityKey, c.retainMemoryIds, turnId); break;
+    case 'RetireNpc': retireNpc(s, c.npcId, c.expectedIdentityKey, c.retainMemoryIds, turnId, c.contactReview); break;
     case 'SetEquipment': s.protagonist.currentWear = c.equipment; break;
     case 'TransferItem': {
       const item = s.items[c.itemId];

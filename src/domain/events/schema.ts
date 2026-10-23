@@ -20,6 +20,7 @@ export const TaskHandoffSchema = z.strictObject({
   fromTaskId: IdSchema, at: GameTimeSchema, channel: TextSchema.max(500),
   content: TextSchema.max(4000), necessity: TextSchema.max(2000),
   knowledgeKind: z.enum(['observed', 'reported']),
+  summaryBasis: z.strictObject({ mode: z.literal('faithful_summary'), resultExcerpt: TextSchema.max(4000) }).optional(),
 });
 export const WorldTaskSchema = z.strictObject({
   id: IdSchema, actorRef: ActorRefSchema, goal: TextSchema,

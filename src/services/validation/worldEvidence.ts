@@ -133,11 +133,18 @@ export function worldSources(state: GameState, draft: TurnDraft, before = state)
     sources.push({
       id: `task:${task.id}`,
       ownerNpcId: task.actorRef.kind === 'npc' ? task.actorRef.id : undefined,
-      knowledge: task.resolution || task.status === 'completed' ? 'fact' : 'plan',
-      text: JSON.stringify(task),
+      knowledge: task.resolution ? 'fact' : 'plan',
+      // 只有实际结果是事实材料；目标、理由、收到的报告不能借整个任务JSON升级。
+      text: JSON.stringify(task.resolution ? { id: task.id, status: task.status,
+        at: task.resolution.at, result: task.resolution.result } : { ...task, handoff: undefined }),
       actors: [task.actorRef],
       at: task.resolution?.at,
     });
+    if (task.resolution) sources.push({ id: `task-plan:${task.id}`, knowledge: 'plan',
+      text: JSON.stringify({ id: task.id, goal: task.goal, startAt: task.startAt, dueAt: task.dueAt,
+        completionCondition: task.completionCondition, prerequisites: task.prerequisites, blockers: task.blockers,
+        reason: task.resolution.reason }),
+      actors: [task.actorRef], ownerNpcId: task.actorRef.kind === 'npc' ? task.actorRef.id : undefined });
     if (task.handoff) sources.push({ id: `handoff:${task.id}`, knowledge: task.handoff.knowledgeKind === 'reported' ? 'statement' : 'fact',
       text: task.handoff.content, actors: [task.actorRef], ownerNpcId: task.actorRef.kind === 'npc' ? task.actorRef.id : undefined, at: task.handoff.at });
   }

@@ -279,7 +279,7 @@ describe('版本迁移与损坏处理', () => {
     current.journal = [{ turnId: 'turn-a', revision: 1, story, relatedActorRefs: [] }];
     current.turnNumber = 1;
     const legacy = { ...current, schemaVersion: 1 };
-    Reflect.deleteProperty(legacy, 'contactNpcIds'); Reflect.deleteProperty(legacy, 'retiredNpcs');
+    Reflect.deleteProperty(legacy, 'contactNpcIds'); Reflect.deleteProperty(legacy, 'retiredNpcs'); Reflect.deleteProperty(legacy, 'contactReviewNpcIds');
     Reflect.deleteProperty(legacy, 'weatherText'); Reflect.deleteProperty(legacy, 'environmentText');
     await rawStore((store) => { store.put(legacy); });
     const migrated = await repository.load('save-a');

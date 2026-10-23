@@ -21,11 +21,11 @@ export const RetiredNpcSchema = z.strictObject({
   retiredAt: GameTimeSchema, sourceTurnIds: IdsSchema,
 });
 export const SaveShape = {
-  schemaVersion: z.literal(3), saveId: IdSchema, title: TextSchema,
+  schemaVersion: z.literal(4), saveId: IdSchema, title: TextSchema,
   createdAt: GameTimeSchema, updatedAt: GameTimeSchema, revision: CountSchema, turnNumber: CountSchema,
   worldClock: GameTimeSchema, weatherText: z.string(), environmentText: z.string(),
   protagonist: ProtagonistSchema, initialCompanionId: IdSchema.optional(),
-  contactNpcIds: IdsSchema, retiredNpcs: entityTable(RetiredNpcSchema),
+  contactNpcIds: IdsSchema, contactReviewNpcIds: IdsSchema, retiredNpcs: entityTable(RetiredNpcSchema),
   npc: entityTable(NpcSchema), items: entityTable(ImportantItemSchema), economy: EconomySchema,
   organizations: entityTable(OrganizationSchema), locations: entityTable(LocationSchema),
   events: entityTable(WorldEventSchema), tasks: entityTable(WorldTaskSchema), memories: MemoryStateSchema,
@@ -59,6 +59,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
   location(s.protagonist.locationId);
   if (s.initialCompanionId) check(s.npc[s.initialCompanionId]?.kind === 'special', '初始同伴必须是特殊 NPC');
   for (const id of s.contactNpcIds) check(Object.hasOwn(s.npc, id), '联系人必须保留完整 NPC');
+  for (const id of s.contactReviewNpcIds) check(Object.hasOwn(s.npc, id) && !s.contactNpcIds.includes(id), '旧档待复核人物须存在且不是正式联系人');
   for (const retired of Object.values(s.retiredNpcs)) check(Date.parse(retired.retiredAt) <= Date.parse(s.worldClock), '退场时间在未来');
   const identities = [...Object.values(s.npc), ...Object.values(s.retiredNpcs)].map((npc) => npc.identityKey);
   check(new Set(identities).size === identities.length, 'NPC 稳定身份重复');
@@ -139,7 +140,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
       check(prior && ['completed', 'cancelled'].includes(prior.status) && prior.resolution, '交接缺少已成立的前序成果');
       check(prior?.resolution && Date.parse(prior.resolution.at) <= Date.parse(task.handoff.at)
         && Date.parse(task.handoff.at) <= Date.parse(task.startAt), '交接时间不合法');
-      check(prior?.resolution?.result.includes(task.handoff.content), '交接内容超出实际成果');
+      check(prior?.resolution?.result.includes(task.handoff.summaryBasis?.resultExcerpt ?? task.handoff.content), '交接内容超出实际成果');
       const visited = new Set([task.id]);
       let cursor: typeof task | undefined = prior;
       while (cursor) {
@@ -195,10 +196,11 @@ export function createGameState(input: {
   companion?: z.infer<typeof SpecialNpcSchema>;
 }, now = new Date().toISOString()): GameState {
   return GameStateSchema.parse({
-    schemaVersion: 3, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
+    schemaVersion: 4, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
     createdAt: now, updatedAt: now, revision: 0, turnNumber: 0,
     weatherText: '', environmentText: '', protagonist: input.protagonist,
     initialCompanionId: input.companion?.id,
+    contactReviewNpcIds: [],
     contactNpcIds: input.companion ? [input.companion.id] : [], retiredNpcs: {},
     npc: input.companion ? { [input.companion.id]: input.companion } : {},
     locations: input.locations, items: {}, organizations: {}, events: {}, tasks: {},

@@ -77,10 +77,19 @@ derived 取消必须另提供 outcome，说明具体终止原因或实际后果�
 
 任务终态的resolution={at,outcome,result,reason,sourceTurnId}由程序依decision和当前回合确定性建立，outcome为success/failure/cancelled。若模型提供该对象，必须完全吻合；不能伪造来源回合或时间。原任务actorRef、goal、startAt和completionCondition不可改写。终态不再作为活跃任务反复调度，历史成果仍可供有权限的因果分析。
 
-需要承接才新建任务，并提供handoff={fromTaskId,at,channel,content,necessity,knowledgeKind}：前序必须已合法completed/cancelled并留有resolution；content仅引用其result原文中实际传递的片段，fact等于content；channel说明实际通信/见面/报告/文件等途径，necessity说明为何接收方有必要接手，knowledgeKind=observed/reported。另引接收方自身npc:/org:或已验证新人物/组织来源说明职责。resolution.at<=handoff.at<=新任务startAt，交接已发生且不超出本轮窗口。允许同批交接，必须先验证前序，不得自证或成环。不能为重复相同成果、对象、目标换ID造任务；不要循环移交来延长已解决的事情。
+需要承接才新建任务，并提供handoff={fromTaskId,at,channel,content,necessity,knowledgeKind}：前序必须已合法completed/cancelled并留有resolution；逐字交接的content引用其result原文片段；忠实概括可提供summaryBasis={mode:"faithful_summary",resultExcerpt}，resultExcerpt锚定实际原文，content可整理、概括，fact可另行叙述实际交接动作；channel说明实际通信/见面/报告/文件等途径，necessity说明为何接收方有必要接手，knowledgeKind=observed/reported。另引接收方自身npc:/org:或已验证新人物/组织来源说明职责。resolution.at<=handoff.at<=新任务startAt，交接已发生且不超出本轮窗口。允许同批交接，必须先验证前序，不得自证或成环。不能为重复相同成果、对象、目标换ID造任务；不要循环移交来延长已解决的事情。
 
 执行者知道、世界事实成立、接收者收到与主角已知是不同状态。已验证交接生成handoff:<新taskId>供接收者自己的记忆/计划引用，reported只代表转述，不能提升为已验证事实或player_known。隐藏event来源仍不得代替NPC/组织实际获知；其他私有记忆不能搭便车传递。组织可承接自身持续职责，不必立即创建人物；不能借组织名义掩盖忙碌NPC实际执行的职责。
 
-RegisterContact只由变量阶段据正文实际联络事实登记；联系人和初始同伴永久保留完整档案，人物面板可见不等于联系人。RetireNpc仅世界阶段可提议，字段npcId、expectedIdentityKey、reason、retainMemoryIds，decision必须targetId=该NPC、status=retired、conditionsSatisfied=true、continues=false，reason与命令相同，并交代必要成果处理。只清理非联系人、非现场且无未终结任务/长期目标/组织职务/当前资产持有或未交接重要事件职责的人物。不要为了删除强行清除其合理职责。
+RegisterContact只由变量阶段据正文实际联络事实登记；联系人和初始同伴永久保留完整档案，人物面板可见不等于联系人；旧档contactReviewNpcIds仅表示身份待确认、暂缓清理，不是正式联系人。RetireNpc仅世界阶段可提议，字段npcId、expectedIdentityKey、reason、retainMemoryIds，decision必须targetId=该NPC、status=retired、conditionsSatisfied=true、continues=false，reason与命令相同，并交代必要成果处理。只清理非联系人、非现场且无未终结任务/长期目标/组织职务/当前资产持有或未交接重要事件职责的人物。不要为了删除强行清除其合理职责。
 
 必要成果先保留任务结果/事件。retainMemoryIds只选确需保留的原始私有记忆；公开记忆自动保留，必要私有材料仅转成internal历史，绝不授予其他角色或公开。完整NPC和所属私人总结删除，retiredNpcs仅留稳定ID、identityKey、name、aliases、retiredAt、sourceTurnIds，不是完整休眠备份。未来再出现须复用可信历史身份，不能编造旧关系或恢复不存在的旧经历。历史回顾回合仍禁止任何任务推演或退场；全部只是候选，正式回合事务提交前不改GameState。
+
+
+### PR #22 首轮审查修订：来源性质、旧档复核与概括性交接
+
+WORLD_SOURCES不再把整个任务JSON标为fact：task:<id>的成果事实仅包含实际resolution.result及程序状态/时间；目标、条件等在task-plan:<id>中仍是plan，理由不充当事实；handoff:<id>只表示接收者实际收到的内容，reported仍是statement。任务B完成其他职责不证明A报告的内容属实。其他人物不能通过task JSON、任务目标或隐藏事件ID绕过NPC知识边界。缺少独立核实来源时保持转述、计划调查或unresolved，不将其记录为客观事实。
+
+忠实概括与原文锚点分工：summaryBasis.mode固定faithful_summary，resultExcerpt为来源成果的真实片段，由程序核验；content由同次世界AI忠实概括、转述，不机械要求逐字子串，fact可描述通信本身。AI必须保持原始认知性质，不添加原来源没有的人物、金额、结论或秘密；不确定性不能丢失。不存在/越权来源、伪造原始片段、时间越界仍拒绝；程序不声称能仅凭字符串证明任意概括的语义正确，不增加额外裁判请求。未声明summaryBasis的旧逐字交接保持兼容。
+
+V1/V2迁移仅确认初始同伴为联系人，其余旧人物进入contactReviewNpcIds；V3预览误标也会修复，真实RegisterContact命令凭据与初始同伴继续永久保护。待确认不是非联系人，不自动清理。若确需RetireNpc，另提供contactReview={conclusion:"non_contact",basis,reason}：no_known_connection仅适用于沿用系统“尚未与主角接触”中性标识、无既往互动/已确认关系倾向/公开记忆或历史引用的人物；存在联系痕迹时继续保留，除非player_confirmed有当前正文中的明确主角确认及可靠公开来源。不能仅凭NPC动机虚构主角确认。此复核不能解除正式联系人的永久保护。复核、成果留存和删除仍只在正式提交同一事务中生效，不增加玩家设置或联系人管理界面。
