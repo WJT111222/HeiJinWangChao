@@ -106,7 +106,9 @@ export function GameScreen({
     } catch (failure) {
       if (submitToken.current === token)
         setSubmitError(
-          failure instanceof DataError && failure.code === 'MISSING_SUMMARY'
+          failure instanceof DataError && failure.code === 'TURN_TIME_REQUIRED'
+            ? '本回合尚未推进时间，未正式结算。请补算变量；正文无需写出时间。'
+            : failure instanceof DataError && failure.code === 'MISSING_SUMMARY'
             ? '正文缺少有效摘要，未正式结算。请重新生成正文后重试。'
             : failure instanceof DataError
             ? '结算未完成：候选不完整、版本冲突或存储失败。请重新读取或补齐草稿后重试。'

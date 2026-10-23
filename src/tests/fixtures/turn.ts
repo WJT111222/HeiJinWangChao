@@ -10,6 +10,7 @@ export async function completeDraft(
     world?: NonNullable<TurnDraft['world']>['result'];
     narrative?: string;
     summary?: string;
+    variableGuide?: NonNullable<TurnDraft['story']>['variableGuide'];
   } = {},
 ) {
   const state = await repo.load('save-a');
@@ -29,7 +30,7 @@ export async function completeDraft(
       turnKind: initial.turnKind,
       narrative: options.narrative ?? worldNarrative,
       summary: options.summary ?? '已完成用餐',
-      variableGuide: [],
+      variableGuide: options.variableGuide ?? [],
     }),
     initial.draftRevision,
   );
@@ -71,3 +72,11 @@ export const submission = (draft: TurnDraft, nextAction = '去社区诊所咨询
   useVariableStage: true,
   useWorldStage: true,
 });
+
+// 仅用于Mock：耗时由每个测试明确给出，不是产品中的默认步长。
+export async function elapsedVariables(repo: SaveRepository, evidence: string, seconds: number) {
+  const state = await repo.load('save-a');
+  return { commands: [{ type: 'SetWorldClock' as const, commandId: `clock-${state.turnNumber}`,
+    evidence, worldClock: new Date(Date.parse(state.worldClock) + seconds * 1000).toISOString() }],
+    rejectedSuggestions: [], unresolved: [] };
+}

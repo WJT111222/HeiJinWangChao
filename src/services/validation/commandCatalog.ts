@@ -41,6 +41,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
         : 'evidence 引用已提供事实原文；金额为整数人民币分，price/amount 等正值限制以 Schema 为准。',
       '不存在的更新操作列入 unresolved；CreateNpc/CreateOrganization 不是更新命令。',
       'Schema 仅描述结构；仍须进行权限、证据、引用、金额、时间、版本与幂等校验。',
+      '遵守TURN_TIME_POLICY：普通及开局正式回合必须正向SetWorldClock，由变量AI根据实际行动和对话估时，证据不必含时间词，无固定步长。只有有效HISTORICAL_PERSPECTIVE的纯过去视角允许零耗时且不更新当前变量或推演世界。',
     ],
     ...(stage === 'world'
       ? {

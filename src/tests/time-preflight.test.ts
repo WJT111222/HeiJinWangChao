@@ -123,13 +123,14 @@ describe('只读事件节点筛选、知识与生命周期', () => {
   });
 });
 
-it('中文自然时间证据可使用已验证的时间事实；没有该结构记录仍不能凭空精确推进', () => {
+it('中文自然时间无需词法门槛；旧正文无记录仍允许模型估时但不得越过行动终点', () => {
   const state = visitor(), selected = draft(state, undefined, true), evidence = '凌晨三点，已约定访客敲门声将你唤醒。';
   selected.story!.narrative = evidence; selected.story!.variableGuide[0].textEvidence = evidence;
   const result = { commands: [{ type: 'SetWorldClock', commandId: 'chinese-time', worldClock: '2027-01-01T03:00:00+08:00', evidence }], rejectedSuggestions: [], unresolved: [] };
   expect(() => parseVariables(JSON.stringify(result), state, selected)).not.toThrow();
   selected.story!.variableGuide = [];
-  expect(() => parseVariables(JSON.stringify(result), state, selected)).toThrow();
+  expect(() => parseVariables(JSON.stringify(result), state, selected)).not.toThrow();
+  expect(() => parseVariables(JSON.stringify({ ...result, commands: [{ ...result.commands[0], worldClock: '2027-01-01T09:00:00+08:00' }] }), state, selected)).toThrow();
 });
 
 it('预检保留ISO毫秒，不把思考未来或询问能力当成无条件长行动', () => {
