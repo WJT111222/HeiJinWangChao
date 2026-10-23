@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { SaveRepository } from '../services/storage/saveRepository';
-import { completeDraft, submission } from './fixtures/turn';
+import { completeDraft, submission, elapsedVariables } from './fixtures/turn';
 import { worldState, worldResult } from './fixtures/world';
 import { gameTime, event } from './fixtures/game';
 import { historyState } from './fixtures/history';
@@ -13,7 +13,6 @@ import { defaultSettings } from '../ui/settings/model';
 import { playerView } from '../ui/panels/playerView';
 import { array, record } from '../services/ai/protocols';
 
-const emptyVariables = { commands: [], rejectedSuggestions: [], unresolved: [] };
 afterEach(() => vi.restoreAllMocks());
 async function repository() {
   const repo = await SaveRepository.open('memory', new IDBFactory());
@@ -22,16 +21,16 @@ async function repository() {
 }
 
 describe('正式原子短期记忆', () => {
-  it('开局、普通和空命令十回合各写一次摘要，来源和真实游戏时间正确', async () => {
+  it('开局、普通和仅时钟命令十回合各写一次摘要，来源和真实游戏时间正确', async () => {
     const repo = await repository();
     try {
       for (let number = 1; number <= 10; number++) {
-        const draft = await completeDraft(repo, { variables: emptyVariables });
+        const draft = await completeDraft(repo, { narrative: '主角喝水休息。', variables: await elapsedVariables(repo, '主角喝水休息。', 10 + number) });
         const result = await repo.commitTurn(submission(draft));
         expect(result.state.memories.short).toHaveLength(number);
         expect(result.state.memories.short.at(-1)).toEqual({
           id: draft.turnId, text: draft.story!.summary, sourceTurnIds: [draft.turnId],
-          affectedEntityRefs: [], visibility: 'player_known', createdAtGameTime: gameTime,
+          affectedEntityRefs: [], visibility: 'player_known', createdAtGameTime: result.state.worldClock,
         });
         expect(result.state.memories.short.map((entry) => entry.sourceTurnIds[0])).toEqual(result.state.journal.map((entry) => entry.turnId));
         expect(await repo.commitTurn(submission(draft))).toMatchObject({ replayed: true, state: result.state });
@@ -86,7 +85,7 @@ describe('正式原子短期记忆', () => {
     const repo = await SaveRepository.open('legacy-memory', factory);
     try {
       await repo.create(worldState());
-      const first = await completeDraft(repo, { variables: emptyVariables });
+      const first = await completeDraft(repo, { variables: await elapsedVariables(repo, '经过十分钟，主角完成用餐。', 600) });
       await repo.commitTurn(submission(first));
       // 构造升级前 M4-P5 的原样记录：回执已有，short 尚为空。
       const legacy = await repo.load('save-a');
@@ -105,7 +104,7 @@ describe('正式原子短期记忆', () => {
       expect(projection[0]).toMatchObject({ origin: 'journal', sourceTurnIds: [first.turnId] });
       expect(projection[0].createdAtGameTime).toBeUndefined();
       expect(await repo.load('save-a')).toEqual(legacy);
-      const second = await completeDraft(repo, { variables: emptyVariables });
+      const second = await completeDraft(repo, { variables: await elapsedVariables(repo, '经过十分钟，主角完成用餐。', 600) });
       const result = await repo.commitTurn(submission(second));
       expect(result.state.journal).toHaveLength(2);
       expect(result.state.memories.short).toHaveLength(1);

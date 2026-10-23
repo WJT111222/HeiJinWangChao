@@ -13,7 +13,7 @@ import { AiError } from '../services/ai/errors';
 import type { AiStage } from '../services/ai/configuration';
 import { npcKnowledgeContext, rawNpcMemories, npcMemoryPolicy, planNpcSummary, npcSummaryInput } from '../domain/memories/npcMemory';
 import { storyMemoryContext } from '../domain/memories/publicMemory';
-import { timePreflight } from '../domain/timePreflight';
+import { timePreflight, turnTimePolicy, historicalPerspective } from '../domain/timePreflight';
 
 export interface ComposeInput {
   stage: AiStage | 'memory';
@@ -185,6 +185,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         resolutionText: event.resolutionText,
       })),
       PLAYER_ACTION: input.userInput,
+      TURN_TIME_POLICY: turnTimePolicy,
       TIME_PREFLIGHT: preflight ? {
         ...preflight,
         candidates: preflight.candidates.map((candidate) => ({ ...candidate, weekday: worldWeekday(candidate.at) })),
@@ -208,6 +209,9 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         executionRevision: draft!.executionRevision,
         requestRevision: draft!.stageRequestRevisions.variables,
       },
+      TURN_TIME_POLICY: turnTimePolicy,
+      HISTORICAL_PERSPECTIVE: historicalPerspective(state, draft!),
+      PLAYER_ACTION: draft!.userInput,
       SELECTED_VARIABLE_DOMAINS: input.domains ?? [],
       SAVE_STATE: withoutPrivateMemories(state),
       NPC_KNOWLEDGE_POLICY: npcKnowledgePolicy,
@@ -236,6 +240,8 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         requestRevision: draft!.stageRequestRevisions.world,
         basedOnVariableRevision: draft!.variables?.candidateRevision,
       },
+      TURN_TIME_POLICY: turnTimePolicy,
+      HISTORICAL_PERSPECTIVE: historicalPerspective(state, draft!),
       BASE_SAVE_REVISION: state.revision,
       worldClock: temporary.worldClock,
       TIME_WINDOW: { from: state.worldClock, to: temporary.worldClock },

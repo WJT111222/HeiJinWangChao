@@ -9,7 +9,7 @@ import { validateWorldOutput } from './worldOutput';
 import type { Settings } from '../../ui/settings/model';
 import { economicAmount, factEvidence, variablePermission, completedPayment } from './evidence';
 import { assessSummary } from '../../domain/memories/summary';
-import { validateTimeCommands } from '../../domain/timePreflight';
+import { validateTimeCommands, validateHistoricalWorld } from '../../domain/timePreflight';
 
 function json(text: string): unknown {
   try {
@@ -101,14 +101,13 @@ export function parseVariables(text: string, state: GameState, draft: TurnDraft)
       const person = permissionState.npc[command.npcId];
       if (person) permissionState.npc[command.npcId] = { ...person, onScene: true };
     }
-  let confirmedTime: ReturnType<typeof validateTimeCommands>;
-  try { confirmedTime = validateTimeCommands(state, draft, checked.data.commands); }
+  try { validateTimeCommands(state, draft, checked.data.commands); }
   catch { throw new AiError('time_preflight'); }
   for (const command of checked.data.commands) {
     evidenceCheck(command, draft.story.narrative);
     factEvidence(command, draft.story.narrative);
     completedPayment(command);
-    variablePermission(command, permissionState, draft, confirmedTime);
+    variablePermission(command, permissionState, draft);
   }
   simulate(state, draft.turnId, checked.data.commands);
   return checked.data;
@@ -117,7 +116,9 @@ export function parseWorld(text: string, state: GameState, draft: TurnDraft) {
   if (draft.variables?.validation === 'validated')
     parseVariables(JSON.stringify(draft.variables.result), state, draft);
   try {
-    return validateWorldOutput(json(text), state, draft);
+    const result = validateWorldOutput(json(text), state, draft);
+    try { validateHistoricalWorld(state, draft, result); } catch { throw new AiError('time_preflight'); }
+    return result;
   } catch (error) {
     if (error instanceof AiError) throw error;
     throw new AiError('invalid_output');

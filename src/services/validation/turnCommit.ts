@@ -6,6 +6,7 @@ import type { GameState } from '../../domain/state';
 import { projectTurn } from '../../domain/turnProjection';
 import { parseVariables, parseWorld } from './aiOutputs';
 import { hasAffirmedTermination } from './worldEvidence';
+import { validateCommittedTime } from '../../domain/timePreflight';
 import { isNegatedFact } from '../../domain/factPolarity';
 
 // 提交边界重新验证，不信任持久化 validated；同一事务内仅运行同步纯计算。
@@ -13,6 +14,7 @@ export function validateTurnCandidates(state: GameState, draft: TurnDraft) {
   requireData(completeTurnDraft(draft), 'TURN_INCOMPLETE', '三阶段尚未完整完成');
   parseVariables(JSON.stringify(draft.variables!.result), state, draft);
   parseWorld(JSON.stringify(draft.world!.result), state, draft);
+  validateCommittedTime(state, draft);
   // 现场 SaveTask/SaveEvent 原来只有字符串事实与结构检查；正式落库前补足时间/终态边界。
   const projected = projectTurn(state, draft);
   const ready = (conditions: string[]) =>
