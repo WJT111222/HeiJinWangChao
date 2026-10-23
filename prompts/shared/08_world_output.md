@@ -75,7 +75,7 @@ derived 取消必须另提供 outcome，说明具体终止原因或实际后果�
 
 优先在 WORLD_EVIDENCE_V1 使用可选 decision：{targetId,status,reason,result,conditionsSatisfied,continues,failure?}。status为completed/resolved/cancelled/blocked/retired，必须与目标命令一致。它是模型在同次请求内的明确决策和具体结果说明，不是内部思维链。completed/resolved需要实际成果、条件满足、continues=false；cancelled说明实际取消或失败原因、后果且continues=false，未来安排可以提前取消；blocked仍承担职责，continues=true。不要求正文或fact含指定的“完成/终止”字样，不能把普通动作或暂时失败伪装成终结。旧凭据仍按原保守规则兼容；新决策不绕过实体、权限、来源、时间和阻碍检查。
 
-任务终态的resolution={at,outcome,result,reason,sourceTurnId}由程序依decision和当前回合确定性建立，outcome为success/failure/cancelled。若模型提供该对象，必须完全吻合；不能伪造来源回合或时间。原任务actorRef、goal、startAt和completionCondition不可改写。终态不再作为活跃任务反复调度，历史成果仍可供有权限的因果分析。
+任务终态的resolution={at,outcome,result,reason,sourceTurnId,resultKnowledge?}由程序依decision和当前回合确定性建立，outcome为success/failure/cancelled。若模型提供该对象，必须完全吻合；不能伪造来源回合或时间。result保留完整成果叙述，可能包含转述，不自动成为世界事实。原任务actorRef、goal、startAt和completionCondition不可改写。终态不再作为活跃任务反复调度，历史成果仍可供有权限的因果分析。
 
 需要承接才新建任务，并提供handoff={fromTaskId,at,channel,content,necessity,knowledgeKind}：前序必须已合法completed/cancelled并留有resolution；逐字交接的content引用其result原文片段；忠实概括可提供summaryBasis={mode:"faithful_summary",resultExcerpt}，resultExcerpt锚定实际原文，content可整理、概括，fact可另行叙述实际交接动作；channel说明实际通信/见面/报告/文件等途径，necessity说明为何接收方有必要接手，knowledgeKind=observed/reported。另引接收方自身npc:/org:或已验证新人物/组织来源说明职责。resolution.at<=handoff.at<=新任务startAt，交接已发生且不超出本轮窗口。允许同批交接，必须先验证前序，不得自证或成环。不能为重复相同成果、对象、目标换ID造任务；不要循环移交来延长已解决的事情。
 
@@ -88,8 +88,14 @@ RegisterContact只由变量阶段据正文实际联络事实登记；联系人�
 
 ### PR #22 首轮审查修订：来源性质、旧档复核与概括性交接
 
-WORLD_SOURCES不再把整个任务JSON标为fact：task:<id>的成果事实仅包含实际resolution.result及程序状态/时间；目标、条件等在task-plan:<id>中仍是plan，理由不充当事实；handoff:<id>只表示接收者实际收到的内容，reported仍是statement。任务B完成其他职责不证明A报告的内容属实。其他人物不能通过task JSON、任务目标或隐藏事件ID绕过NPC知识边界。缺少独立核实来源时保持转述、计划调查或unresolved，不将其记录为客观事实。
+WORLD_SOURCES不再把整个任务JSON或完整resolution.result标为fact：task:<id>仅包含程序终态/时间及明确分类的resultKnowledge.facts；完整成果叙述在task-result:<id>中始终为statement；目标、条件等在task-plan:<id>中仍是plan，理由不充当事实；handoff:<id>只表示接收者实际收到的内容，reported仍是statement。任务B完成其他职责不证明A报告的内容属实。其他人物不能通过task JSON、任务目标或隐藏事件ID绕过NPC知识边界。缺少独立核实来源时保持转述、计划调查或unresolved，不将其记录为客观事实。
 
 忠实概括与原文锚点分工：summaryBasis.mode固定faithful_summary，resultExcerpt为来源成果的真实片段，由程序核验；content由同次世界AI忠实概括、转述，不机械要求逐字子串，fact可描述通信本身。AI必须保持原始认知性质，不添加原来源没有的人物、金额、结论或秘密；不确定性不能丢失。不存在/越权来源、伪造原始片段、时间越界仍拒绝；程序不声称能仅凭字符串证明任意概括的语义正确，不增加额外裁判请求。未声明summaryBasis的旧逐字交接保持兼容。
 
-V1/V2迁移仅确认初始同伴为联系人，其余旧人物进入contactReviewNpcIds；V3预览误标也会修复，真实RegisterContact命令凭据与初始同伴继续永久保护。待确认不是非联系人，不自动清理。若确需RetireNpc，另提供contactReview={conclusion:"non_contact",basis,reason}：no_known_connection仅适用于沿用系统“尚未与主角接触”中性标识、无既往互动/已确认关系倾向/公开记忆或历史引用的人物；存在联系痕迹时继续保留，除非player_confirmed有当前正文中的明确主角确认及可靠公开来源。不能仅凭NPC动机虚构主角确认。此复核不能解除正式联系人的永久保护。复核、成果留存和删除仍只在正式提交同一事务中生效，不增加玩家设置或联系人管理界面。
+V1/V2迁移仅确认初始同伴为联系人，其余旧人物进入contactReviewNpcIds；V3预览误标也会修复，真实RegisterContact命令凭据与初始同伴继续永久保护。待确认不是非联系人，不自动清理。若确需RetireNpc，另提供contactReview={conclusion:"non_contact",basis,reason,playerConfirmation?}：no_known_connection仅适用于沿用系统“尚未与主角接触”中性标识、无既往互动/已确认关系倾向且无旧journal/公开记忆待确认的人物。历史引用数组不完整，不能因为找不到人物ID就推定从未联系；存在历史时继续保留。player_confirmed另需playerConfirmation引用NPC_LIFECYCLE.playerConfirmationInput中本轮真实玩家输入的明确人物确认，以及当前正文可靠公开事实；AI自行写出“主角确认”不等于玩家确认。确认语义仍由同次AI判断，程序只验证真实输入、人物与公开来源，不增加关键词审判。此复核不能解除正式联系人的永久保护。复核、成果留存和删除仍只在正式提交同一事务中生效，不增加玩家设置或联系人管理界面。
+
+### PR #22 第二轮审查修订：混合成果的认知边界
+
+同次世界请求在任务终态decision中可提供resultKnowledge={facts:[],reported:[],suspected:[]}，程序原样建立到resolution并核验候选一致性。facts只放实际完成的行动及有独立核验依据的成果；reported放收到、引用、转发的未核实主张；suspected保留猜测性质。不要把完整result复制到facts，不因任务完成就抹掉引述中的不确定性。例如result="已接收一份未经核实的举报，原话：蓝仓暗格藏着违禁货物。"，facts可写"已接收并归档一份举报。"，举报内容只能在reported。该分类由原世界AI完成，不新增裁判请求；程序不声称能判断所有自由文本的真假。
+
+task-result:<id>保留完整原始叙述及reported/suspected标签，但只能作为所属人物的转述认知或未执行计划来源，不支持established/derived事实命令。task:<id>只把明确facts和确定性元数据作为事实来源。旧成果缺少resultKnowledge时保留原文、终态、时间和交接能力，但不自动补造facts。逐字或忠实概括的reported交接仍正常使用原始结果；observed交接另需锚点属于明确facts，不能通过改knowledgeKind洗掉未核实性质。真正的事实条目继续支持正常世界事件与后续行动。

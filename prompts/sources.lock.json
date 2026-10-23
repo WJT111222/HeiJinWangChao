@@ -278,6 +278,10 @@
       "m5P5Review2": {
         "notes": "PR22首轮审查修复：区分任务成果/计划/转述；联系人待确认保护；有原始依据的忠实概括。未更改世界书、六主模板、NSFW和七项设置。",
         "sha256": "9ebc73817385a11ef7b3dfd2a6653157d547fee72b0269123f19f1b73e9ea4f3"
+      },
+      "m5P5Review3": {
+        "notes": "PR22第二轮审查修复：混合成果显式facts/reported/suspected分类，旧未分类原文不自动成为事实；未索引历史保守保护和真实玩家确认来源。无新增AI阶段，不改六主模板、世界书、NSFW或七项设置。",
+        "sha256": "b6fcbe07e43d967e84956493ccda9a6d68c28dee37a0fda72dd98739459a8095"
       }
     },
     "stages/opening/variables.md": {
@@ -514,6 +518,10 @@
       "m5P5Review2": {
         "notes": "PR22首轮审查修复：区分任务成果/计划/转述；联系人待确认保护；有原始依据的忠实概括。未更改世界书、六主模板、NSFW和七项设置。",
         "sha256": "a803259265894758e4f46297cda66fd52603ab9b29c0e293d93d5d296bbfbf35"
+      },
+      "m5P5Review3": {
+        "notes": "PR22第二轮审查修复：混合成果显式facts/reported/suspected分类，旧未分类原文不自动成为事实；未索引历史保守保护和真实玩家确认来源。无新增AI阶段，不改六主模板、世界书、NSFW或七项设置。",
+        "sha256": "3091edd85b4a3e02b44312bc3ae60be6970182eb2b011c09927f67c0ddc25dfd"
       }
     },
     "docs/ASSEMBLY.md": {
