@@ -41,6 +41,7 @@ export function playerView(state: GameState, authoredCompanion?: CompanionProfil
     .map((person) => ({
       id: person.id,
       isContact: state.contactNpcIds.includes(person.id),
+      contactReviewPending: state.contactReviewNpcIds.includes(person.id),
       name: person.id === companion?.npcId ? companion.name : person.name,
       kind: person.kind,
       // M2 暂不凭在场或引用公开内部身份/关系，不定义最终的玩家视角模式。

@@ -1,3 +1,4 @@
+import { hasKnownPlayerConnection } from '../../domain/npc/contactReview';
 import { DataError } from '../../domain/common';
 import { orderWorldCommands } from './worldDependencies';
 import { fingerprint } from '../../domain/commands';
@@ -165,7 +166,8 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
     if (proof.kind === 'derived') {
       // 不能借“依据已有任务”绕过其关键阻碍，再只写人物结果而不写任务状态。
       for (const source of origins) {
-        const task = source.id.startsWith('task:') ? causal.tasks[source.id.slice(5)] : undefined;
+        const task = source.id.startsWith('task:') ? causal.tasks[source.id.slice(5)]
+          : source.id.startsWith('task-plan:') ? causal.tasks[source.id.slice(10)] : undefined;
         const event = source.id.startsWith('event:') ? causal.events[source.id.slice(6)] : undefined;
         const work = task ?? event;
         const cancelling =
@@ -314,6 +316,12 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
         const npc = base.npc[command.npcId], decision = proof.decision;
         requireWorld(npc && actorAllowed({ kind: 'npc', id: npc.id }) && base.initialCompanionId !== npc.id, 'permission');
         requireWorld(tiedTo({ kind: 'npc', id: npc.id }) && ownPrivateSources({ kind: 'npc', id: npc.id }), 'permission');
+        if (base.contactReviewNpcIds.includes(npc.id)) {
+          const review = command.contactReview;
+          requireWorld(review?.conclusion === 'non_contact', 'permission');
+          requireWorld(review.basis === 'no_known_connection' ? !hasKnownPlayerConnection(base, npc.id)
+            : hasPlayerKnownFact(command, proof, origins) && [npc.id, npc.name, ...npc.aliases].some((name) => proof.fact.includes(name)), 'permission');
+        }
         requireWorld(proof.kind === 'derived' || proof.kind === 'established');
         requireWorld(decision?.targetId === npc.id && decision.status === 'retired' && !decision.continues && decision.conditionsSatisfied
           && decision.reason === command.reason);
@@ -332,10 +340,9 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
         if (task.handoff && !old) {
           const transfer = task.handoff, prior = causal.tasks[transfer.fromTaskId];
           requireWorld(proof.kind === 'derived' || proof.kind === 'established');
-          requireWorld(proof.fact === transfer.content);
           requireWorld(prior?.resolution && ['completed', 'cancelled'].includes(prior.status));
           requireWorld(actorAllowed(prior.actorRef), 'permission'); // 已退场者不能凭旧成果在当前凭空通信。
-          requireWorld(proof.sources.includes(`task:${prior.id}`) && prior.resolution.result.includes(transfer.content));
+          requireWorld(proof.sources.includes(`task:${prior.id}`) && prior.resolution.result.includes(transfer.summaryBasis?.resultExcerpt ?? transfer.content));
           requireWorld(Date.parse(transfer.at) >= Date.parse(state.worldClock) && Date.parse(prior.resolution.at) <= Date.parse(transfer.at) && Date.parse(transfer.at) <= Date.parse(task.startAt)
             && Date.parse(transfer.at) <= Date.parse(proof.at));
           // 接收方有明确职责/能力来源；不以发送方秘密替代接收渠道。
@@ -529,7 +536,7 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
     if (command.type === 'SaveTask' || command.type === 'SaveEvent') {
       if (command.type === 'SaveTask') causal.tasks[command.task.id] = command.task;
       else causal.events[command.event.id] = command.event;
-      const keys = command.type === 'SaveTask' ? [`task:${command.task.id}`, `handoff:${command.task.id}`] : [`event:${command.event.id}`];
+      const keys = command.type === 'SaveTask' ? [`task:${command.task.id}`, `task-plan:${command.task.id}`, `handoff:${command.task.id}`] : [`event:${command.event.id}`];
       for (const id of keys) {
         const fresh = worldSources(causal, draft, state).find((source) => source.id === id);
         if (fresh) { const index = sources.findIndex((source) => source.id === id); if (index >= 0) sources[index] = fresh; else sources.push(fresh); }

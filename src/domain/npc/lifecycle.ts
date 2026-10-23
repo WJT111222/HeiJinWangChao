@@ -1,3 +1,5 @@
+import { hasKnownPlayerConnection } from './contactReview';
+import type { ContactReview } from './contactReview';
 import { npcKnowledgeKind } from '../memories/schema';
 import { requireData } from '../common';
 import type { GameState } from '../state';
@@ -39,11 +41,14 @@ export function validateTaskTransitions(before: GameState, after: GameState, cha
 }
 
 export function retireNpc(state: GameState, npcId: string, expectedIdentityKey: string,
-  retainMemoryIds: readonly string[], turnId: string) {
+  retainMemoryIds: readonly string[], turnId: string, contactReview?: ContactReview) {
   const npc = state.npc[npcId];
   requireData(npc && npc.identityKey === expectedIdentityKey, 'NPC_IDENTITY', '退场人物身份已经变化');
   requireData(!state.contactNpcIds.includes(npcId) && state.initialCompanionId !== npcId && !npc.onScene,
     'NPC_PROTECTED', '联系人、初始同伴和现场人物保留完整档案');
+  if (state.contactReviewNpcIds.includes(npcId)) requireData(contactReview?.conclusion === 'non_contact'
+    && (contactReview.basis === 'player_confirmed' || !hasKnownPlayerConnection(state, npcId)),
+    'CONTACT_UNREVIEWED', '旧档联系人身份尚未可靠复核，暂缓清理');
   requireData(npc.kind !== 'special' || npc.activeGoals.length === 0, 'NPC_DUTIES', '人物仍有明确长期职责');
   const duties = Object.values(state.tasks).filter((task) => task.actorRef.kind === 'npc' && task.actorRef.id === npcId);
   requireData(duties.every(terminalTask), 'NPC_DUTIES', '未终结任务不能随人物删除');
@@ -76,5 +81,6 @@ export function retireNpc(state: GameState, npcId: string, expectedIdentityKey: 
   state.retiredNpcs[npcId] = { id: npc.id, identityKey: npc.identityKey, name: npc.name, aliases: npc.aliases,
     retiredAt: state.worldClock, sourceTurnIds: [turnId] };
   delete state.memories.npcSummaries[npcId];
+  state.contactReviewNpcIds = state.contactReviewNpcIds.filter((id) => id !== npcId);
   delete state.npc[npcId];
 }

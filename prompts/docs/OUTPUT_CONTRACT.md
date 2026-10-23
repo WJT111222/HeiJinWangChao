@@ -146,3 +146,10 @@
 同批来源先验证、无环、再使用，不接受自证；允许按真实时间释放占用和按需承接，取代上文M4-P3同批禁止接力的旧限制。新任务不改变原执行者，只有实际传递的内容可以成为接收者知识，隐藏事件参与者不等于知情者。无后续必要时直接结束，不造接班任务。正文标签、六套主提示词、NPC私有认知权限和正式回合原子提交保持原有架构。Save schema升级V3仅新增contactNpcIds/retiredNpcs；V1/V2迁移保守保护所有既有NPC，保留revision、journal和回执。已终结任务新增的可选成果与交接字段兼容旧对象，无来源的旧终态不补造实际成果或时间。
 
 退场保留的必要材料使用现有memories.long；可选retiredNpcSource记录npcId/sourceMemoryId/knowledgeKind/knowledgeSource，只标记局部历史来源，不作为整回合压缩覆盖。未公开材料保持internal，不进入普通正文、玩家记忆、变量认知输入或其他人物WORLD_SOURCES。新生成的终态任务（含旧凭据兼容路径）均先补齐来源可验证的resolution并保存候选；正式提交保持完整候选指纹一致性，缺少该元数据的旧待提交候选明确补算，不在提交事务内静默改候选。
+
+
+### PR #22 第二轮：修复首轮审查三项问题
+
+正式save升级V4，新增contactReviewNpcIds以区分旧档临时保护与contactNpcIds。V1/V2及旧V3预览经过严格迁移；真实登记凭据及初始同伴保持联系人，其余需要复核者保留完整实体。RetireNpc可选contactReview只用于待确认身份的受限复核，不是解除正式联系人保护。
+
+TaskHandoff.summaryBasis?={mode:"faithful_summary",resultExcerpt}允许有可靠原文锚点的忠实概括；保留实体、时间、传递渠道、权限和知识性质，取消fact与content逐字相等要求。task:成果事实不含handoff、目标或理由；task-plan:为计划资料；handoff:为接收者知识，reported不因任务结案变为事实。旧字段和逐字交接仍可读，候选指纹、CAS和正式事务不变。
