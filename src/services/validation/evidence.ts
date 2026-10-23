@@ -126,6 +126,12 @@ export function variablePermission(command: DomainCommand, state: GameState, dra
     if (!command.evidence.includes(command.memory.knowledgeSource))
       throw new AiError('invalid_output');
   }
+  if (command.type === 'SaveTask' && (command.task.resolution !== undefined || command.task.handoff !== undefined))
+    throw new AiError('permission'); // 场外成果/交接只能经世界协议验证，现场旧任务仍走原流程。
+  if (command.type === 'RetireNpc') throw new AiError('permission');
+  if (command.type === 'RegisterContact' && (!scene(command.npcId) ||
+    ![command.npcId, state.npc[command.npcId]?.name].some((name) => name && command.evidence.includes(name))))
+    throw new AiError('permission');
   const ownerAllowed = (ref: { kind: string; id: string } | undefined | null) =>
     !ref ||
     (ref.kind === 'protagonist' && ref.id === state.protagonist.id) ||

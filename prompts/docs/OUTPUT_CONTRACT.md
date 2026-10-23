@@ -138,3 +138,11 @@
 两段Request必须分别是玩家原输入的不同子串，人物必须存在且不是主角，人物身份需在视角请求中明确。不能拿AI自己写的回忆当玩家要求。语义分类由本次正文模型完成；程序严格验证声明、人物和原请求/正文来源，不声称能证明所有自然语言语义。现在的他人视角、NPC当前讲述往事、AI自行闪回或混合当前剧情不得声明past_only。没有有效声明仍按正常正向耗时提交。
 
 纯回顾不推进或倒退当前时钟，不接受当前状态变量变更、世界命令、futureEvents、visibleHooks或时间线候选；可保留内部unresolved说明，正文/摘要按原原子事务归档，不将回忆事件再结算为现在事实。不开新设置、阶段或Schema字段，原七项设置、六套主提示词及输出标签不变。旧档和回执仍可读取/重放；尚未提交的旧零耗时候选需补算变量，不能绕过新正式提交规则。
+
+## M5-P5 成果、交接与生命周期增量（最新产品契约）
+
+新增严格命令RegisterContact（变量阶段，npcId/reason）和RetireNpc（世界阶段，npcId/expectedIdentityKey/reason/retainMemoryIds）。没有任意字段补丁或新付费阶段。WorldTask新增可选resolution和handoff，WORLD_EVIDENCE_V1新增可选decision，具体字段以COMMAND_CATALOG导出的真实JSON Schema及shared/08为准；程序从决策重建确定性成果元数据。旧取消谓词检查仅为旧协议兼容，不作为新决策的唯一语义依据。
+
+同批来源先验证、无环、再使用，不接受自证；允许按真实时间释放占用和按需承接，取代上文M4-P3同批禁止接力的旧限制。新任务不改变原执行者，只有实际传递的内容可以成为接收者知识，隐藏事件参与者不等于知情者。无后续必要时直接结束，不造接班任务。正文标签、六套主提示词、NPC私有认知权限和正式回合原子提交保持原有架构。Save schema升级V3仅新增contactNpcIds/retiredNpcs；V1/V2迁移保守保护所有既有NPC，保留revision、journal和回执。已终结任务新增的可选成果与交接字段兼容旧对象，无来源的旧终态不补造实际成果或时间。
+
+退场保留的必要材料使用现有memories.long；可选retiredNpcSource记录npcId/sourceMemoryId/knowledgeKind/knowledgeSource，只标记局部历史来源，不作为整回合压缩覆盖。未公开材料保持internal，不进入普通正文、玩家记忆、变量认知输入或其他人物WORLD_SOURCES。新生成的终态任务（含旧凭据兼容路径）均先补齐来源可验证的resolution并保存候选；正式提交保持完整候选指纹一致性，缺少该元数据的旧待提交候选明确补算，不在提交事务内静默改候选。

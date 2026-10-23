@@ -113,7 +113,8 @@ function withoutPrivateMemories(state: GameState): GameState {
   return { ...state, npc: Object.fromEntries(Object.entries(state.npc).map(([id, npc]) => [id, {
     ...npc, memories: [], ...(npc.kind === 'special' ? { longTermMemories: [] } : {}),
     knownInformation: npc.knownInformation.filter((info) => !rawNpcMemories(npc).some((entry) => entry.text === info.text && entry.knowledgeSource === info.source)),
-  }])), memories: { ...state.memories, npcSummaries: {} } };
+  }])), memories: { ...state.memories, npcSummaries: {},
+    long: state.memories.long.filter((entry) => !entry.retiredNpcSource || entry.visibility === 'player_known') } };
 }
 const npcKnowledgePolicy = '内部角色认知按ownerNpcId隔离，只属于该人物。亲历/转述/推测/来源未分类不能混同世界真值；总结是历史认知，较新原始记忆中的纠正优先。不能自动传播给其他人物或写入公开线索、正文、日志。总结只能为所属NPC的计划提供参考，不能直接证明完成、到账、关系变化或新增世界事实。worldEventOnly事件及其参与者列表不授予NPC知情；人物行动和记忆须引用自己独立合法的观察或转述来源，事件记录仅作后台因果资料。';
 export function contextFor(input: ComposeInput): Record<string, unknown> {
@@ -262,6 +263,8 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
           ),
         ],
       },
+      NPC_LIFECYCLE: { contactNpcIds: temporary.contactNpcIds, initialCompanionId: temporary.initialCompanionId,
+        retiredIdentities: temporary.retiredNpcs, policy: '联系人永久保留完整档案；其他NPC仅在无后续职责且必要成果已留存时可提议RetireNpc。历史身份不授予知识或恢复旧关系。' },
       OFFSCREEN_STATE: {
         npc: Object.values(withoutPrivateMemories(temporary).npc).filter(
           (npc) => !npc.onScene && !state.npc[npc.id]?.onScene,
@@ -269,10 +272,10 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         organizations: temporary.organizations,
         tasks: Object.values(temporary.tasks).filter(
           (task) =>
-            task.actorRef.kind === 'organization' ||
+            !['completed', 'cancelled'].includes(task.status) && (task.actorRef.kind === 'organization' ||
             (task.actorRef.kind === 'npc' &&
               !temporary.npc[task.actorRef.id]?.onScene &&
-              !state.npc[task.actorRef.id]?.onScene),
+              !state.npc[task.actorRef.id]?.onScene)),
         ),
         events: temporary.events,
         locations: temporary.locations,

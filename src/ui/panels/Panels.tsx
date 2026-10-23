@@ -70,6 +70,7 @@ export function Panels({ name, view }: { name: PanelName; view: PlayerView }) {
                   {selected.profile ? '创角设定 · 非当前关系判定' : '人物档案'}
                 </span>
                 <h3>{selected.name}</h3>
+                <p className="muted">{selected.isContact ? '联系人 · 永久保留档案' : '人物档案 · 尚未登记为联系人'}</p>
                 <dl>
                   <Detail label="身份">{selected.identity || '尚未了解'}</Detail>
                   <Detail label={selected.profile ? '创角关系设定' : '与主角关系'}>

@@ -273,12 +273,13 @@ describe('草稿、候选与失败恢复数据', () => {
 });
 
 describe('版本迁移与损坏处理', () => {
-  it('V1 整体迁移到 V2，保留余额、revision、原文、命令凭据且迁移幂等', async () => {
+  it('V1 整体迁移到 V3，保留余额、revision、原文、命令凭据且迁移幂等', async () => {
     await repository.create(game());
     const current = await repository.save('save-a', 0, 'turn-a', [purchase()]);
     current.journal = [{ turnId: 'turn-a', revision: 1, story, relatedActorRefs: [] }];
     current.turnNumber = 1;
     const legacy = { ...current, schemaVersion: 1 };
+    Reflect.deleteProperty(legacy, 'contactNpcIds'); Reflect.deleteProperty(legacy, 'retiredNpcs');
     Reflect.deleteProperty(legacy, 'weatherText'); Reflect.deleteProperty(legacy, 'environmentText');
     await rawStore((store) => { store.put(legacy); });
     const migrated = await repository.load('save-a');

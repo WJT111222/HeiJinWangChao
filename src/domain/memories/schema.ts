@@ -25,8 +25,13 @@ export const NpcSummarySchema = MemoryEntrySchema.extend({
     sourceVisibility: MemoryEntrySchema.shape.visibility,
   }).optional(), // 既有总结可原样读取；没有可靠来源时不伪造覆盖凭据。
 });
+// 退场仅保留必要历史材料，属于局部经历，不充当公开分层摘要的整回合覆盖凭据。
+export const HistoricalMemorySchema = MemoryEntrySchema.extend({
+  retiredNpcSource: z.strictObject({ npcId: IdSchema, sourceMemoryId: IdSchema,
+    knowledgeKind: KnowledgeNatureSchema, knowledgeSource: TextSchema }).optional(),
+});
 export const MemoryStateSchema = z.strictObject({
   immediateWindowSize: z.number().int().positive(),
-  short: z.array(MemoryEntrySchema), medium: z.array(MemoryEntrySchema), long: z.array(MemoryEntrySchema),
+  short: z.array(MemoryEntrySchema), medium: z.array(MemoryEntrySchema), long: z.array(HistoricalMemorySchema),
   npcSummaries: z.record(IdSchema, z.array(NpcSummarySchema)),
 });

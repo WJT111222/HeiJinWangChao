@@ -248,7 +248,11 @@
       "sourceSha256": "e81cac2a5104af3afa25039c847793ddf01209c7fd4a3b94e79617d6f9b30482",
       "treatment": "command-contract-alignment",
       "notes": "M3-P2 精确更新命令结构/名称、整数分与阶段权限；保留原外层输出字段，不改变世界书、身份、NSFW 或 M1 Schema。",
-      "m4P2": "在 main@dac41b7 的现有正文后追加领域命令与候选执行说明，保留历史原文；非上游逐字资源。"
+      "m4P2": "在 main@dac41b7 的现有正文后追加领域命令与候选执行说明，保留历史原文；非上游逐字资源。",
+      "m5P5": {
+        "notes": "M5-P5最小协议增量：自主成果判断、经验证的同窗承接、联系人及安全退场；不改六套主提示词、世界书、NSFW。",
+        "sha256": "2f8c901460f8f1788acc7a7193e4a391d6015e1f12ea778f0cf98496bf53e49b"
+      }
     },
     "shared/08_world_output.md": {
       "origin": "baseline",
@@ -266,6 +270,10 @@
       "m4P3CancellationFix": {
         "notes": "A5 定点修复：取消绑定自身来源、肯定终止事实与 derived 具体原因/结果；保留提前取消语义，无正式 Schema 改动。",
         "sha256": "b6776a066a9fc6a017f084f416dd256b27071a7a9be3ec2de74623d2eab0ddf2"
+      },
+      "m5P5": {
+        "notes": "M5-P5最小协议增量：自主成果判断、经验证的同窗承接、联系人及安全退场；不改六套主提示词、世界书、NSFW。",
+        "sha256": "774042bc559d6558efab27f3c1b5ddfbd7278bc76bb573e54558fb60a775c7da"
       }
     },
     "stages/opening/variables.md": {
@@ -494,6 +502,10 @@
       "m5P4TurnTimePolicy": {
         "notes": "最新产品决策：每个正式剧情回合正向估时，无正文时间词门槛；仅玩家明确要求的他人纯过去视角允许只读零耗时。保留原来源哈希与此前适配记录。",
         "sha256": "bc4fb3331ddc85ea3dfbce6ad448dc9adbdbbbff6ebe20c393ee58ff9b709eb7"
+      },
+      "m5P5": {
+        "notes": "M5-P5最小协议增量：自主成果判断、经验证的同窗承接、联系人及安全退场；不改六套主提示词、世界书、NSFW。",
+        "sha256": "b434b1118076b107e145ddb0828ed0086b46056e00e115393555c55be595f988"
       }
     },
     "docs/ASSEMBLY.md": {
