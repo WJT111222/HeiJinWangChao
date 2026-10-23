@@ -7,6 +7,7 @@ import type { TurnDraft } from './drafts';
 import { GameStateSchema } from './state';
 import type { GameState } from './state';
 import { MemoryEntrySchema } from './memories/schema';
+import { validateCommittedTime } from './timePreflight';
 
 export const TurnSubmissionSchema = z.strictObject({
   draft: TurnDraftSchema,
@@ -36,7 +37,7 @@ export function turnCommands(draft: TurnDraft): DomainCommand[] {
     ...(draft.world?.result.eventCommands ?? []),
   ];
 }
-// 保留 commitCommands 的旧契约；回合即使零命令，也独立递增一次正式版本并追加原文。
+// 保留独立 commitCommands 的旧契约；正式剧情提交另验正向时间及纯历史视角例外。
 export function settleTurn(state: GameState, input: TurnDraft, now: string): GameState {
   const current = GameStateSchema.parse(state),
     draft = TurnDraftSchema.parse(input);
@@ -56,6 +57,7 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
     '回合模式不符',
   );
   requireData(completeTurnDraft(draft), 'TURN_INCOMPLETE', '需要完整合法的三阶段候选');
+  validateCommittedTime(current, draft);
   const commands = turnCommands(draft);
   // 不能混入同 turnId 先前独立 save 的命令，再把一次不完整结算伪装为新回合。
   requireData(

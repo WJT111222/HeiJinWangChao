@@ -58,6 +58,8 @@ export function factEvidence(command: DomainCommand, narrative: string) {
       command.type === 'RecordNpcMemory' && command.knowledgeKind !== 'observed';
     if (
       reportedMemory ||
+      // 真实对话本身也耗时；对白内容的未来计划不是时钟的目标时间。
+      (command.type === 'SetWorldClock' && (dialogue || /[“”「」]/.test(sentence))) ||
       (!uncertain.test(sentence) &&
         !isNegatedFact(
           sentence,
@@ -87,14 +89,6 @@ export function factEvidence(command: DomainCommand, narrative: string) {
 }
 export function variablePermission(command: DomainCommand, state: GameState, draft: TurnDraft) {
   if (!draft.story) throw new AiError('configuration');
-  if (
-    command.type === 'SetWorldClock' &&
-    Date.parse(command.worldClock) > Date.parse(state.worldClock) &&
-    !/(?:\d{1,2}[:：]\d{2}|\d+月\d+日|(?:经过|过了|耗时|等待|行驶|分钟后|小时后)|[一二三四五六七八九十\d]+(?:分钟|小时)后)/.test(
-      command.evidence,
-    )
-  )
-    throw new AiError('invalid_output');
   const scene = (id: string) => {
     const person = state.npc[id];
     return (

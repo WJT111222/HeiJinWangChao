@@ -11,7 +11,7 @@ async function seed(page: Page, automatic = false) {
       turnPath = '/src/tests/fixtures/turn.ts', settingsPath = '/src/ui/settings/model.ts',
       configPath = '/src/services/ai/configuration.ts', vaultPath = '/src/services/ai/credentials.ts';
     const { npcMemoryState } = await import(fixturePath), { SaveRepository } = await import(repoPath),
-      { completeDraft } = await import(turnPath), { defaultSettings, settingsKey } = await import(settingsPath),
+      { completeDraft, elapsedVariables } = await import(turnPath), { defaultSettings, settingsKey } = await import(settingsPath),
       { defaultAiConfig, newChannel, saveAiConfig } = await import(configPath), { CredentialVault } = await import(vaultPath);
     const state = npcMemoryState(automatic ? 30 : 21), repo = await SaveRepository.open(); repo.close();
     if (automatic) state.memories.short = state.journal.map((entry: { turnId: string; story: { summary: string } }, i: number) => ({ id: `short-${i}`, text: entry.story.summary, sourceTurnIds: [entry.turnId], affectedEntityRefs: [], visibility: 'player_known', createdAtGameTime: state.worldClock }));
@@ -22,7 +22,7 @@ async function seed(page: Page, automatic = false) {
         tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); };
       }; request.onerror = () => reject(request.error);
     });
-    if (automatic) { const storage = await SaveRepository.open(); try { await completeDraft(storage, { variables: { commands: [], rejectedSuggestions: [], unresolved: [] } }); } finally { storage.close(); } }
+    if (automatic) { const storage = await SaveRepository.open(); try { await completeDraft(storage, { variables: await elapsedVariables(storage, '经过十分钟，主角完成用餐。', 600) }); } finally { storage.close(); } }
     const settings = defaultSettings(); settings.memory.automaticMaintenance = automatic;
     settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));

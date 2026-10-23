@@ -11,7 +11,7 @@ async function seed(page: Page, count = 31, automatic = false, ready = false) {
       turnPath = '/src/tests/fixtures/turn.ts', settingsPath = '/src/ui/settings/model.ts',
       configPath = '/src/services/ai/configuration.ts', vaultPath = '/src/services/ai/credentials.ts';
     const { compressionState } = await import(fixturePath), { SaveRepository } = await import(repoPath),
-      { completeDraft } = await import(turnPath), { defaultSettings, settingsKey } = await import(settingsPath),
+      { completeDraft, elapsedVariables } = await import(turnPath), { defaultSettings, settingsKey } = await import(settingsPath),
       { defaultAiConfig, newChannel, saveAiConfig } = await import(configPath), { CredentialVault } = await import(vaultPath);
     const state = compressionState('short', count), repo = await SaveRepository.open(); repo.close();
     await new Promise<void>((resolve, reject) => {
@@ -26,7 +26,7 @@ async function seed(page: Page, count = 31, automatic = false, ready = false) {
     });
     if (ready) {
       const storage = await SaveRepository.open();
-      try { await completeDraft(storage, { variables: { commands: [], rejectedSuggestions: [], unresolved: [] } }); }
+      try { await completeDraft(storage, { variables: await elapsedVariables(storage, '经过十分钟，主角完成用餐。', 600) }); }
       finally { storage.close(); }
     }
     const settings = defaultSettings(); settings.memory.automaticMaintenance = automatic;
