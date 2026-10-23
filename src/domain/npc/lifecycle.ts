@@ -47,7 +47,7 @@ export function retireNpc(state: GameState, npcId: string, expectedIdentityKey: 
   requireData(!state.contactNpcIds.includes(npcId) && state.initialCompanionId !== npcId && !npc.onScene,
     'NPC_PROTECTED', '联系人、初始同伴和现场人物保留完整档案');
   if (state.contactReviewNpcIds.includes(npcId)) requireData(contactReview?.conclusion === 'non_contact'
-    && (contactReview.basis === 'player_confirmed' || !hasKnownPlayerConnection(state, npcId)),
+    && (contactReview.basis === 'player_confirmed' ? contactReview.playerConfirmation : !hasKnownPlayerConnection(state, npcId)),
     'CONTACT_UNREVIEWED', '旧档联系人身份尚未可靠复核，暂缓清理');
   requireData(npc.kind !== 'special' || npc.activeGoals.length === 0, 'NPC_DUTIES', '人物仍有明确长期职责');
   const duties = Object.values(state.tasks).filter((task) => task.actorRef.kind === 'npc' && task.actorRef.id === npcId);

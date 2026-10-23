@@ -12,9 +12,16 @@ export const WorldEventSchema = z.strictObject({
   resolutionText: z.string().optional(), sourceTurnIds: IdsSchema,
 });
 // 只保留实际结果与经过明确传递的内容，不将执行者的全部知识授予接收者。
+// result是完整叙述，可能混有引述；不能默认将其每个子句都视为客观事实。
+export const TaskResultKnowledgeSchema = z.strictObject({
+  facts: z.array(TextSchema.max(4000)).max(12),
+  reported: z.array(TextSchema.max(4000)).max(12),
+  suspected: z.array(TextSchema.max(4000)).max(12),
+});
 export const TaskResolutionSchema = z.strictObject({
   at: GameTimeSchema, outcome: z.enum(['success', 'failure', 'cancelled']),
   result: TextSchema.max(4000), reason: TextSchema.max(4000), sourceTurnId: IdSchema,
+  resultKnowledge: TaskResultKnowledgeSchema.optional(), // 旧档缺省不补造核实结论。
 });
 export const TaskHandoffSchema = z.strictObject({
   fromTaskId: IdSchema, at: GameTimeSchema, channel: TextSchema.max(500),

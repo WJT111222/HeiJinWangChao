@@ -19,7 +19,8 @@ export function finishTask(state: GameState, id = 'work', at = actionTime, statu
     evidence: proof({ at, sources: [`task:${id}`, state.tasks[id].actorRef.kind === 'npc' ? `npc:${state.tasks[id].actorRef.id}` : `org:${state.tasks[id].actorRef.id}`],
       fact: status === 'completed' ? '清单与三份材料逐一吻合。' : '材料封存，核对人员离开工作岗位。',
       decision: { targetId: id, status, result: resultText, reason: status === 'completed' ? '逐份比对登记记录，无缺失。' : '场地被封，原排程不再执行，留下登记清单。',
-        conditionsSatisfied: status === 'completed', continues: false, failure: status === 'cancelled' } }) };
+        conditionsSatisfied: status === 'completed', continues: false, failure: status === 'cancelled',
+        resultKnowledge: { facts: [resultText], reported: [], suspected: [] } } }) };
 }
 export function receiveTask(actor: WorldTask['actorRef'] = { kind: 'npc', id: 'npc-b' }, id = 'next'): Extract<DomainCommand, { type: 'SaveTask' }> {
   return { type: 'SaveTask', commandId: `receive-${id}`, task: { ...task(id), actorRef: actor, goal: '根据清单核验登记手续', status: 'active', startAt: '2026-10-18T08:06:00+08:00', dueAt: '2026-10-18T09:00:00+08:00',

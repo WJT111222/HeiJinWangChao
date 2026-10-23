@@ -32,7 +32,7 @@ describe('PR22审查：先复现三条真实路径', () => {
     const secret = '蓝仓暗格藏着违禁货物。', state = handoffState(); state.npc['npc-c'] = { ...npc('npc-c'), name: 'C', onScene: false };
     const repo = await repository(state), initial = handoffResult(state), finish = initial.taskCommands[1], receive = initial.taskCommands[0];
     if (finish.type !== 'SaveTask' || receive.type !== 'SaveTask') throw Error();
-    const evidence = JSON.parse(finish.evidence); evidence.decision.result = `已接收一份未经核实的举报，原话：${secret}`; finish.evidence = JSON.stringify(evidence);
+    const evidence = JSON.parse(finish.evidence); evidence.decision.result = `已接收一份未经核实的举报，原话：${secret}`; delete evidence.decision.resultKnowledge; finish.evidence = JSON.stringify(evidence);
     receive.task.handoff!.content = secret; receive.evidence = proof({ at: receive.task.startAt, sources: ['task:work', 'npc:npc-b'], fact: secret });
     const first = await commit(repo, initial);
     const ending = finishTask(first.state, 'next', '2026-10-18T08:15:00+08:00'), ended = worldResult(); ended.taskCommands = [ending];
@@ -75,7 +75,8 @@ describe('任务来源分隔与人物认知', () => {
     const state = handoffState(), report = '未核实的蓝仓情报';
     state.tasks.work.status = 'completed';
     state.tasks.work.goal = `核实${report}`;
-    state.tasks.work.resolution = { at: state.worldClock, outcome: 'success', result: '只完成了文件归档。', reason: report, sourceTurnId: 'past' };
+    state.tasks.work.resolution = { at: state.worldClock, outcome: 'success', result: '只完成了文件归档。', reason: report, sourceTurnId: 'past',
+      resultKnowledge: { facts: ['只完成了文件归档。'], reported: [], suspected: [] } };
     state.tasks.work.handoff = { fromTaskId: 'prior', at: state.worldClock, channel: '电话', content: report, necessity: '接收工作报告', knowledgeKind: 'reported' };
     const sources = worldSources(state, worldDraft()), objective = sources.find((s) => s.id === 'task:work');
     expect(objective?.knowledge).toBe('fact'); expect(objective?.text).toContain('文件归档'); expect(objective?.text).not.toContain(report);
@@ -122,7 +123,8 @@ describe('旧档联系人暂缓保护与合法退场', () => {
     retirement.contactReview.basis = 'player_confirmed'; expect(() => parseWorld(JSON.stringify(r), state, d)).toThrow();
     const fact = '主角确认同事属于非联系人临时人员。'; d.story!.narrative += fact;
     const evidence = JSON.parse(retirement.evidence); evidence.kind = 'established'; evidence.sources = ['story:current', 'npc:npc-a']; evidence.fact = fact; retirement.evidence = JSON.stringify(evidence);
-    r = { ...worldResult([retirement]), taskCommands: [finishTask(state)] };
+    d.userInput = fact;
+    r = { ...worldResult([{ ...retirement, contactReview: { ...retirement.contactReview, playerConfirmation: fact } }]), taskCommands: [finishTask(state)] };
     expect(() => parseWorld(JSON.stringify(r), state, d)).not.toThrow();
     state.contactNpcIds = ['npc-a']; state.contactReviewNpcIds = state.contactReviewNpcIds.filter((id) => id !== 'npc-a');
     expect(() => parseWorld(JSON.stringify(r), state, d)).toThrow();

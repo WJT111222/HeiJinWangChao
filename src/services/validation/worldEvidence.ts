@@ -8,8 +8,9 @@ import type { DomainCommand } from '../../domain/commands';
 import { factEvidence } from './evidence';
 import { isNegatedFact } from '../../domain/factPolarity';
 import { AiError } from '../ai/errors';
+import { TaskResultKnowledgeSchema } from '../../domain/events/schema';
 
-// 来源凭据编码在原有 evidence 字符串中，不新增正式存档或草稿字段。
+// 来源凭据仍编码在原有evidence字符串中；可选成果分类从同次决策确定性写入resolution。
 export const WorldEvidenceSchema = z.strictObject({
   version: z.literal(1),
   kind: z.enum(['established', 'derived', 'planned', 'reported', 'suspected']),
@@ -25,6 +26,7 @@ export const WorldEvidenceSchema = z.strictObject({
   decision: z.strictObject({ targetId: IdSchema, status: z.enum(['completed', 'resolved', 'cancelled', 'blocked', 'retired']),
     reason: TextSchema.max(4000), result: TextSchema.max(4000), conditionsSatisfied: z.boolean(), continues: z.boolean(),
     failure: z.boolean().optional(),
+    resultKnowledge: TaskResultKnowledgeSchema.optional(),
   }).optional(),
 });
 export type WorldEvidence = z.infer<typeof WorldEvidenceSchema>;
@@ -134,12 +136,17 @@ export function worldSources(state: GameState, draft: TurnDraft, before = state)
       id: `task:${task.id}`,
       ownerNpcId: task.actorRef.kind === 'npc' ? task.actorRef.id : undefined,
       knowledge: task.resolution ? 'fact' : 'plan',
-      // 只有实际结果是事实材料；目标、理由、收到的报告不能借整个任务JSON升级。
+      // 任务终态/时间是程序事实；混合成果叙述不自动成为事实，只投影明确分层的事实。
       text: JSON.stringify(task.resolution ? { id: task.id, status: task.status,
-        at: task.resolution.at, result: task.resolution.result } : { ...task, handoff: undefined }),
+        at: task.resolution.at, facts: task.resolution.resultKnowledge?.facts ?? [] } : { ...task, handoff: undefined }),
       actors: [task.actorRef],
       at: task.resolution?.at,
     });
+    if (task.resolution) sources.push({ id: `task-result:${task.id}`, knowledge: 'statement',
+      text: JSON.stringify({ result: task.resolution.result,
+        reported: task.resolution.resultKnowledge?.reported ?? [], suspected: task.resolution.resultKnowledge?.suspected ?? [] }),
+      actors: [task.actorRef], ownerNpcId: task.actorRef.kind === 'npc' ? task.actorRef.id : undefined,
+      at: task.resolution.at });
     if (task.resolution) sources.push({ id: `task-plan:${task.id}`, knowledge: 'plan',
       text: JSON.stringify({ id: task.id, goal: task.goal, startAt: task.startAt, dueAt: task.dueAt,
         completionCondition: task.completionCondition, prerequisites: task.prerequisites, blockers: task.blockers,

@@ -148,6 +148,8 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
       state.worldClock,
       base.worldClock,
     );
+    requireWorld(!proof.decision?.resultKnowledge || (command.type === 'SaveTask'
+      && ['completed', 'cancelled'].includes(command.task.status)));
     const tiedTo = (ref: ActorRef) =>
       origins.some(
         (source) =>
@@ -167,7 +169,8 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
       // 不能借“依据已有任务”绕过其关键阻碍，再只写人物结果而不写任务状态。
       for (const source of origins) {
         const task = source.id.startsWith('task:') ? causal.tasks[source.id.slice(5)]
-          : source.id.startsWith('task-plan:') ? causal.tasks[source.id.slice(10)] : undefined;
+          : source.id.startsWith('task-plan:') ? causal.tasks[source.id.slice(10)]
+            : source.id.startsWith('task-result:') ? causal.tasks[source.id.slice(12)] : undefined;
         const event = source.id.startsWith('event:') ? causal.events[source.id.slice(6)] : undefined;
         const work = task ?? event;
         const cancelling =
@@ -320,7 +323,10 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
           const review = command.contactReview;
           requireWorld(review?.conclusion === 'non_contact', 'permission');
           requireWorld(review.basis === 'no_known_connection' ? !hasKnownPlayerConnection(base, npc.id)
-            : hasPlayerKnownFact(command, proof, origins) && [npc.id, npc.name, ...npc.aliases].some((name) => proof.fact.includes(name)), 'permission');
+            : review.playerConfirmation && draft.userInput.includes(review.playerConfirmation)
+              && [npc.id, npc.name, ...npc.aliases].some((name) => review.playerConfirmation?.includes(name))
+              && hasPlayerKnownFact(command, proof, origins)
+              && [npc.id, npc.name, ...npc.aliases].some((name) => proof.fact.includes(name)), 'permission');
         }
         requireWorld(proof.kind === 'derived' || proof.kind === 'established');
         requireWorld(decision?.targetId === npc.id && decision.status === 'retired' && !decision.continues && decision.conditionsSatisfied
@@ -343,6 +349,8 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
           requireWorld(prior?.resolution && ['completed', 'cancelled'].includes(prior.status));
           requireWorld(actorAllowed(prior.actorRef), 'permission'); // 已退场者不能凭旧成果在当前凭空通信。
           requireWorld(proof.sources.includes(`task:${prior.id}`) && prior.resolution.result.includes(transfer.summaryBasis?.resultExcerpt ?? transfer.content));
+          if (transfer.knowledgeKind === 'observed') requireWorld(prior.resolution.resultKnowledge?.facts.some(
+            (fact) => fact.includes(transfer.summaryBasis?.resultExcerpt ?? transfer.content)));
           requireWorld(Date.parse(transfer.at) >= Date.parse(state.worldClock) && Date.parse(prior.resolution.at) <= Date.parse(transfer.at) && Date.parse(transfer.at) <= Date.parse(task.startAt)
             && Date.parse(transfer.at) <= Date.parse(proof.at));
           // 接收方有明确职责/能力来源；不以发送方秘密替代接收渠道。
@@ -403,7 +411,8 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
               && Date.parse(task.startAt) < Date.parse(proof.at)));
             const resolution = { at: proof.at, outcome: task.status === 'completed' ? 'success' as const
               : decision.failure ? 'failure' as const : 'cancelled' as const,
-              result: decision.result, reason: decision.reason, sourceTurnId: draft.turnId };
+              result: decision.result, reason: decision.reason, sourceTurnId: draft.turnId,
+              ...(decision.resultKnowledge ? { resultKnowledge: decision.resultKnowledge } : {}) };
             requireWorld(!task.resolution || fingerprint(task.resolution) === fingerprint(resolution));
             task.resolution = resolution;
           } else {
@@ -536,7 +545,7 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
     if (command.type === 'SaveTask' || command.type === 'SaveEvent') {
       if (command.type === 'SaveTask') causal.tasks[command.task.id] = command.task;
       else causal.events[command.event.id] = command.event;
-      const keys = command.type === 'SaveTask' ? [`task:${command.task.id}`, `task-plan:${command.task.id}`, `handoff:${command.task.id}`] : [`event:${command.event.id}`];
+      const keys = command.type === 'SaveTask' ? [`task:${command.task.id}`, `task-plan:${command.task.id}`, `task-result:${command.task.id}`, `handoff:${command.task.id}`] : [`event:${command.event.id}`];
       for (const id of keys) {
         const fresh = worldSources(causal, draft, state).find((source) => source.id === id);
         if (fresh) { const index = sources.findIndex((source) => source.id === id); if (index >= 0) sources[index] = fresh; else sources.push(fresh); }
