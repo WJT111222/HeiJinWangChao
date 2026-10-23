@@ -209,7 +209,7 @@ describe('旧档历史索引不完整不能推断无联系', () => {
     const projected = projectTurn(state, draft, [...result.taskCommands, ...result.worldCommands]);
     expect(projected.npc['npc-a']).toBeUndefined(); expect(state.npc['npc-a']).toBeDefined();
   });
-  it('AI自行写入“主角确认”不是玩家确认，必须提供真实本轮玩家输入依据', () => {
+  it('AI写入确认及真实玩家自由文本都不是独立可靠删除授权，旧人继续保护', () => {
     const state = pendingState(), draft = worldDraft();
     state.journal = [{ turnId: 'past', revision: 1, story, relatedActorRefs: [] }];
     state.revision = 1; state.turnNumber = 1; draft.baseSaveRevision = 1;
@@ -220,7 +220,7 @@ describe('旧档历史索引不完整不能推断无联系', () => {
     const raw = { ...worldResult([retirement]), taskCommands: [finishTask(state)] };
     expect(() => parseWorld(JSON.stringify(raw), state, draft)).toThrow();
     draft.userInput = fact;
-    expect(() => parseWorld(JSON.stringify(raw), state, draft)).not.toThrow();
+    expect(() => parseWorld(JSON.stringify(raw), state, draft)).toThrow();
     state.contactNpcIds = ['npc-a']; state.contactReviewNpcIds = [];
     expect(() => parseWorld(JSON.stringify(raw), state, draft)).toThrow();
   });

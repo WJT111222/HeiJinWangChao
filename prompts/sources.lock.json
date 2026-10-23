@@ -282,6 +282,10 @@
       "m5P5Review3": {
         "notes": "PR22第二轮审查修复：混合成果显式facts/reported/suspected分类，旧未分类原文不自动成为事实；未索引历史保守保护和真实玩家确认来源。无新增AI阶段，不改六主模板、世界书、NSFW或七项设置。",
         "sha256": "b6fcbe07e43d967e84956493ccda9a6d68c28dee37a0fda72dd98739459a8095"
+      },
+      "m5P5Review4": {
+        "notes": "PR22第三轮：事件复用成果认知分类及event-result/event-plan来源隔离；没有可靠独立授权时停用旧人player_confirmed退场。原任务协议、六主模板、世界书、NSFW与七项设置不变。",
+        "sha256": "5723dab9e45a24b33575514d79ae60f7f202169099fcb2b2414cce6cd972f484"
       }
     },
     "stages/opening/variables.md": {
@@ -522,6 +526,10 @@
       "m5P5Review3": {
         "notes": "PR22第二轮审查修复：混合成果显式facts/reported/suspected分类，旧未分类原文不自动成为事实；未索引历史保守保护和真实玩家确认来源。无新增AI阶段，不改六主模板、世界书、NSFW或七项设置。",
         "sha256": "3091edd85b4a3e02b44312bc3ae60be6970182eb2b011c09927f67c0ddc25dfd"
+      },
+      "m5P5Review4": {
+        "notes": "PR22第三轮：事件复用成果认知分类及event-result/event-plan来源隔离；没有可靠独立授权时停用旧人player_confirmed退场。原任务协议、六主模板、世界书、NSFW与七项设置不变。",
+        "sha256": "c7fab0623d75d4d1f1bdd2bd236c03732bc4a97b4fd8f70733ed54f82d4c771b"
       }
     },
     "docs/ASSEMBLY.md": {

@@ -5,7 +5,7 @@ import type { GameState } from '../state';
 // 迁移保护与正式联系人含义分离；不能只因为见过面就永久登记，也不能默认删除不确定人物。
 export const ContactReviewSchema = z.strictObject({
   conclusion: z.literal('non_contact'), basis: z.enum(['no_known_connection', 'player_confirmed']), reason: TextSchema,
-  playerConfirmation: TextSchema.max(4000).optional(),
+  playerConfirmation: TextSchema.max(4000).optional(), // 仅兼容存量；player_confirmed不再作为退场授权。
 });
 export type ContactReview = z.infer<typeof ContactReviewSchema>;
 export function hasKnownPlayerConnection(state: GameState, npcId: string) {

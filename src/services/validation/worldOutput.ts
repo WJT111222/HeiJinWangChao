@@ -149,7 +149,8 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
       base.worldClock,
     );
     requireWorld(!proof.decision?.resultKnowledge || (command.type === 'SaveTask'
-      && ['completed', 'cancelled'].includes(command.task.status)));
+      && ['completed', 'cancelled'].includes(command.task.status)) || (command.type === 'SaveEvent'
+      && ['resolved', 'cancelled'].includes(command.event.status)));
     const tiedTo = (ref: ActorRef) =>
       origins.some(
         (source) =>
@@ -171,7 +172,9 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
         const task = source.id.startsWith('task:') ? causal.tasks[source.id.slice(5)]
           : source.id.startsWith('task-plan:') ? causal.tasks[source.id.slice(10)]
             : source.id.startsWith('task-result:') ? causal.tasks[source.id.slice(12)] : undefined;
-        const event = source.id.startsWith('event:') ? causal.events[source.id.slice(6)] : undefined;
+        const event = source.id.startsWith('event:') ? causal.events[source.id.slice(6)]
+          : source.id.startsWith('event-plan:') ? causal.events[source.id.slice(11)]
+            : source.id.startsWith('event-result:') ? causal.events[source.id.slice(13)] : undefined;
         const work = task ?? event;
         const cancelling =
           (command.type === 'SaveTask' &&
@@ -321,12 +324,9 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
         requireWorld(tiedTo({ kind: 'npc', id: npc.id }) && ownPrivateSources({ kind: 'npc', id: npc.id }), 'permission');
         if (base.contactReviewNpcIds.includes(npc.id)) {
           const review = command.contactReview;
-          requireWorld(review?.conclusion === 'non_contact', 'permission');
-          requireWorld(review.basis === 'no_known_connection' ? !hasKnownPlayerConnection(base, npc.id)
-            : review.playerConfirmation && draft.userInput.includes(review.playerConfirmation)
-              && [npc.id, npc.name, ...npc.aliases].some((name) => review.playerConfirmation?.includes(name))
-              && hasPlayerKnownFact(command, proof, origins)
-              && [npc.id, npc.name, ...npc.aliases].some((name) => proof.fact.includes(name)), 'permission');
+          // 自由文本子串与AI正文均不是独立玩家授权；没有可信确认入口时保守保护旧人。
+          requireWorld(review?.conclusion === 'non_contact' && review.basis === 'no_known_connection'
+            && !hasKnownPlayerConnection(base, npc.id), 'permission');
         }
         requireWorld(proof.kind === 'derived' || proof.kind === 'established');
         requireWorld(decision?.targetId === npc.id && decision.status === 'retired' && !decision.continues && decision.conditionsSatisfied
@@ -435,7 +435,7 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
           && proof.decision.continues === (event.status === 'blocked'));
         // 预计时间是可调整的估计，非终态不能预存实际结案字段（空串也不接受）。
         if (['scheduled', 'active', 'blocked'].includes(event.status))
-          requireWorld(event.resolvedAt === undefined && event.resolutionText === undefined);
+          requireWorld(event.resolvedAt === undefined && event.resolutionText === undefined && event.resultKnowledge === undefined);
         // cancelled 可沿用既有的取消说明/实际终止时间；不强迫其使用 resolved 的字段组合。
         if (event.status === 'cancelled' && event.resolvedAt !== undefined)
           requireWorld(Date.parse(event.resolvedAt) <= Date.parse(proof.at));
@@ -527,6 +527,13 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
           requireWorld(old);
           cancellationEvidence(proof, origins, `event:${event.id}`);
         }
+        if (['resolved', 'cancelled'].includes(event.status)) {
+          const knowledge = proof.decision?.resultKnowledge;
+          if (knowledge) {
+            requireWorld(!event.resultKnowledge || fingerprint(event.resultKnowledge) === fingerprint(knowledge));
+            event.resultKnowledge = knowledge;
+          } else requireWorld(event.resultKnowledge === undefined || (old && fingerprint(old) === fingerprint(event)));
+        }
         // 候选不发布消息；模型也不能通过改 visibility 伪造主角已知。
         if (event.visibility !== 'hidden' && (event.visibility !== old?.visibility || event.title !== old?.title || event.status !== old?.status || event.resolutionText !== old?.resolutionText))
           requireWorld(hasPlayerKnownFact(command, proof, origins), 'permission');
@@ -545,7 +552,8 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
     if (command.type === 'SaveTask' || command.type === 'SaveEvent') {
       if (command.type === 'SaveTask') causal.tasks[command.task.id] = command.task;
       else causal.events[command.event.id] = command.event;
-      const keys = command.type === 'SaveTask' ? [`task:${command.task.id}`, `task-plan:${command.task.id}`, `task-result:${command.task.id}`, `handoff:${command.task.id}`] : [`event:${command.event.id}`];
+      const keys = command.type === 'SaveTask' ? [`task:${command.task.id}`, `task-plan:${command.task.id}`, `task-result:${command.task.id}`, `handoff:${command.task.id}`]
+        : [`event:${command.event.id}`, `event-result:${command.event.id}`, `event-plan:${command.event.id}`];
       for (const id of keys) {
         const fresh = worldSources(causal, draft, state).find((source) => source.id === id);
         if (fresh) { const index = sources.findIndex((source) => source.id === id); if (index >= 0) sources[index] = fresh; else sources.push(fresh); }

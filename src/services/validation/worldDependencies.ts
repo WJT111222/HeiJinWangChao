@@ -28,7 +28,9 @@ export function orderWorldCommands(commands: readonly DomainCommand[]) {
     for (const source of dependencies) {
       const lookup = source.startsWith('handoff:') ? `task:${source.slice(8)}`
         : source.startsWith('task-plan:') ? `task:${source.slice(10)}`
-          : source.startsWith('task-result:') ? `task:${source.slice(12)}` : source;
+          : source.startsWith('task-result:') ? `task:${source.slice(12)}`
+            : source.startsWith('event-result:') ? `event:${source.slice(13)}`
+              : source.startsWith('event-plan:') ? `event:${source.slice(11)}` : source;
       const prior = keyed.get(lookup);
       if (prior && prior !== command) visit(prior);
       // task:<self> 可引用旧正式任务；新建任务自证会在来源查找中被拒绝。

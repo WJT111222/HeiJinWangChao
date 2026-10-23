@@ -92,10 +92,21 @@ WORLD_SOURCES不再把整个任务JSON或完整resolution.result标为fact：tas
 
 忠实概括与原文锚点分工：summaryBasis.mode固定faithful_summary，resultExcerpt为来源成果的真实片段，由程序核验；content由同次世界AI忠实概括、转述，不机械要求逐字子串，fact可描述通信本身。AI必须保持原始认知性质，不添加原来源没有的人物、金额、结论或秘密；不确定性不能丢失。不存在/越权来源、伪造原始片段、时间越界仍拒绝；程序不声称能仅凭字符串证明任意概括的语义正确，不增加额外裁判请求。未声明summaryBasis的旧逐字交接保持兼容。
 
-V1/V2迁移仅确认初始同伴为联系人，其余旧人物进入contactReviewNpcIds；V3预览误标也会修复，真实RegisterContact命令凭据与初始同伴继续永久保护。待确认不是非联系人，不自动清理。若确需RetireNpc，另提供contactReview={conclusion:"non_contact",basis,reason,playerConfirmation?}：no_known_connection仅适用于沿用系统“尚未与主角接触”中性标识、无既往互动/已确认关系倾向且无旧journal/公开记忆待确认的人物。历史引用数组不完整，不能因为找不到人物ID就推定从未联系；存在历史时继续保留。player_confirmed另需playerConfirmation引用NPC_LIFECYCLE.playerConfirmationInput中本轮真实玩家输入的明确人物确认，以及当前正文可靠公开事实；AI自行写出“主角确认”不等于玩家确认。确认语义仍由同次AI判断，程序只验证真实输入、人物与公开来源，不增加关键词审判。此复核不能解除正式联系人的永久保护。复核、成果留存和删除仍只在正式提交同一事务中生效，不增加玩家设置或联系人管理界面。
+V1/V2迁移仅确认初始同伴为联系人，其余旧人物进入contactReviewNpcIds；V3预览误标也会修复，真实RegisterContact命令凭据与初始同伴继续永久保护。待确认不是非联系人，不自动清理。若确需RetireNpc，另提供contactReview={conclusion:"non_contact",basis,reason,playerConfirmation?}：no_known_connection仅适用于沿用系统“尚未与主角接触”中性标识、无既往互动/已确认关系倾向且无旧journal/公开记忆待确认的人物。历史引用数组不完整，不能因为找不到人物ID就推定从未联系；存在历史时继续保留。当前没有独立可信的玩家删除确认入口，player_confirmed和playerConfirmation只兼容存量格式，不授予退场权限。玩家自由文本、截取的肯定片段以及AI自行写出的“主角确认”均不能替代授权；即使玩家使用肯定表达，也继续保守保护有历史的待复核旧人，不伪装成程序已能证明中文授权语义。此复核不能解除正式联系人的永久保护。复核、成果留存和删除仍只在正式提交同一事务中生效，不增加玩家设置或联系人管理界面。
 
 ### PR #22 第二轮审查修订：混合成果的认知边界
 
 同次世界请求在任务终态decision中可提供resultKnowledge={facts:[],reported:[],suspected:[]}，程序原样建立到resolution并核验候选一致性。facts只放实际完成的行动及有独立核验依据的成果；reported放收到、引用、转发的未核实主张；suspected保留猜测性质。不要把完整result复制到facts，不因任务完成就抹掉引述中的不确定性。例如result="已接收一份未经核实的举报，原话：蓝仓暗格藏着违禁货物。"，facts可写"已接收并归档一份举报。"，举报内容只能在reported。该分类由原世界AI完成，不新增裁判请求；程序不声称能判断所有自由文本的真假。
 
 task-result:<id>保留完整原始叙述及reported/suspected标签，但只能作为所属人物的转述认知或未执行计划来源，不支持established/derived事实命令。task:<id>只把明确facts和确定性元数据作为事实来源。旧成果缺少resultKnowledge时保留原文、终态、时间和交接能力，但不自动补造facts。逐字或忠实概括的reported交接仍正常使用原始结果；observed交接另需锚点属于明确facts，不能通过改knowledgeKind洗掉未核实性质。真正的事实条目继续支持正常世界事件与后续行动。
+
+
+### PR #22 第三轮：事件成果分层与可靠授权边界
+
+WorldEvent可选resultKnowledge复用现有{facts:[],reported:[],suspected:[]}。同次世界请求在resolved/cancelled事件decision中提供分类，由程序建立到事件并比对候选；若模型同时提供事件字段，必须一致。scheduled/active/blocked不得预存分类，cancelled仍不强制填写resolvedAt或resolutionText。AI仍自主判断完成、失败、取消或继续，不增加裁判请求或固定中文谓词。
+
+event:<id>对已结案事件仅投影确定性状态、时间、地点/参与者引用及明确facts；完整标题与resolutionText在event-result:<id>中始终为statement，条件、预计时间等在event-plan:<id>中为plan。resolved的确定性元数据和独立核验事实仍可成为事实来源，不是禁止世界因果演化。“实际接收举报”可放入facts，但举报内容未经核实只能reported，猜测仍suspected，不能因事件结案就全部认作事实。旧已结案事件没有分类时保留全部原文和生命周期，不自动生成facts。
+
+隐藏及非完全公开事件的event:/event-result:/event-plan:均保留worldEventOnly；事件发生和参与者列表不授予NPC知识，不能通过新来源别名绕过既有知晓边界，也不自动公开给主角。公开事件的标题和引述同样不进入playerKnownText的事实投影。来源先验证、按依赖排序、同窗口约束、候选保存及正式提交规则不变。
+
+有旧历史的contactReviewNpcIds人物只能暂缓退场。本阶段不开放player_confirmed授权；NPC_LIFECYCLE.playerConfirmationInput只是原输入数据，不是授权凭据。不要尝试把“我不确认……”“如果……”“别人说……”中的子串当肯定授权，也不要通过AI正文替玩家确认。此处不做中文语义识别；不存在可信确认入口就拒绝。无历史、无联系迹象的普通临时人物仍可沿用no_known_connection；真正联系人、初始同伴、现场人物及未处理职责/资产者继续保护。不能为删除旧人而伪造联系记录、清空历史、改派任务或绕过原子事务。
