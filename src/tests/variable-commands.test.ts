@@ -554,10 +554,10 @@ describe('证据防护与领域提示词绑定', () => {
           type: 'SetWorldClock',
           commandId: 'clock',
           evidence: '现金支付30元吃饭',
-          worldClock: '2026-10-19T08:00:00+08:00',
+          worldClock: '2026-10-18T08:02:00+08:00',
         },
       ]),
-    ).toThrow();
+    ).not.toThrow();
   });
   it.each(['opening', 'regular'] as const)(
     '%s 即使指导遗漏，也加载现场五组和不确定组织规则，且只装配对应主模板',

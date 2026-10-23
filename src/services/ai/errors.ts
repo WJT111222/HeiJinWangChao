@@ -18,6 +18,7 @@ export type AiErrorCode =
   | 'placeholder'
   | 'permission'
   | 'npc_task_conflict'
+  | 'time_preflight'
   | 'money_unit';
 const messages: Record<AiErrorCode, string> = {
   configuration: '渠道、模型或路由配置无效，请检查设置。',
@@ -40,6 +41,7 @@ const messages: Record<AiErrorCode, string> = {
   placeholder: '提示词缺少必需参数或仍有未解析占位符，已阻止发送。',
   permission: '候选超出本阶段允许的命令或对象范围。',
   npc_task_conflict: 'NPC 已有未终结后台任务，候选存在任务占用冲突；未改写或删除已有任务。',
+  time_preflight: '时间预检与正文或变量停止时间不一致，候选未保存。请检查行动或重新生成正文。',
   money_unit: '候选金额与证据中的人民币元/分不一致。',
 };
 export class AiError extends Error {

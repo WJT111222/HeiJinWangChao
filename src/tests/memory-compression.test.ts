@@ -12,7 +12,7 @@ import { planCompression, parseCompression, sourceUnion, applyCompression } from
 import { MemoryMaintenance, browserMemoryLock } from '../workflows/memoryMaintenance';
 import type { MemoryLock } from '../workflows/memoryMaintenance';
 import { compressionState } from './fixtures/compression';
-import { completeDraft, submission } from './fixtures/turn';
+import { completeDraft, submission, elapsedVariables } from './fixtures/turn';
 import { storyMemoryContext, publicShortMemories } from '../domain/memories/publicMemory';
 import { composePrompt } from '../prompts/composer';
 import { record, array } from '../services/ai/protocols';
@@ -200,7 +200,7 @@ describe('真实AI Client + 公开批次请求 + 原子记忆维护', () => {
     try {
       const pending = runner.run({ saveId: 'save-a', config, vault, timeoutSeconds: 10 });
       await ready;
-      const draft = await completeDraft(repo, { variables: { commands: [], rejectedSuggestions: [], unresolved: [] } });
+      const draft = await completeDraft(repo, { variables: await elapsedVariables(repo, '经过十分钟，主角完成用餐。', 600) });
       const committed = await repo.commitTurn(submission(draft));
       release(); const result = await pending;
       expect(result!.revision).toBe(32); expect(result!.turnNumber).toBe(32);

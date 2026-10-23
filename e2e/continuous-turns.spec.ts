@@ -73,10 +73,12 @@ async function mock(page: Page) {
       stories.push({ number, action: string(ctx.PLAYER_ACTION), context: JSON.stringify(ctx) });
       const paid = typeof record(state.economy).cash === 'number';
       const narrative = `第${number}幕。${number === 1 ? '主角收到了公司寄出的解雇通知。' : '主角仍保留着此前收到的通知。'}经过一分钟，主角在街边休息。主角心情趋于平静。${paid ? '主角已经用现金支付30元吃饭。' : ''}`;
+      const preflight = ctx.TIME_PREFLIGHT ? record(ctx.TIME_PREFLIGHT) : undefined;
+      const timeGuide = preflight?.targetAt ? [{ group: 'time', subjectHint: 'time:end', observedFact: preflight.targetAt, textEvidence: '经过一分钟，主角在街边休息。' }] : [];
       text =
         plan.badStoryNumber === number
           ? '{bad-output'
-          : `<正文>${narrative}</正文><短期记忆>第${number}幕的街边休息</短期记忆><变量规划>[]</变量规划><行动选项>留在街边\n看看四周\n询问路线</行动选项>`;
+          : `<正文>${narrative}</正文><短期记忆>第${number}幕的街边休息</短期记忆><变量规划>${JSON.stringify(timeGuide)}</变量规划><行动选项>留在街边\n看看四周\n询问路线</行动选项>`;
       await route.fulfill({
         contentType: 'text/event-stream',
         body: `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`,

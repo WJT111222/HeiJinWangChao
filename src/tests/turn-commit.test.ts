@@ -4,7 +4,7 @@ import { SaveRepository } from '../services/storage/saveRepository';
 import { GameStateSchema } from '../domain/state';
 import { createTurnDraft, rerollStory } from '../domain/drafts';
 import { commitCommands } from '../domain/commands';
-import { completeDraft, submission } from './fixtures/turn';
+import { completeDraft, submission, elapsedVariables } from './fixtures/turn';
 import { worldState, worldResult, npcUpdate, proof } from './fixtures/world';
 import { gameTime, task, event, purchase, npc } from './fixtures/game';
 import { reserveStageSession } from '../workflows/stageGuard';
@@ -52,10 +52,10 @@ describe('真实 Repository → 候选重验 → 单事务正式结算', () => {
     expect(await repo.loadGame('save-a')).toEqual({ state: result.state, draft: result.draft });
     expect(GameStateSchema.safeParse(result.state).success).toBe(true);
   });
-  it('十个连续开局/普通空命令回合，各递增一次，正文与摘要永久保留', async () => {
+  it('十个连续开局/普通仅时钟命令回合，各递增一次，正文与摘要永久保留', async () => {
     for (let index = 1; index <= 10; index++) {
       const draft = await completeDraft(repo, {
-        variables: emptyVariables(),
+        variables: await elapsedVariables(repo, `主角坐在公园休息，第${index}幕。`, index * 10),
         narrative: `主角坐在公园休息，第${index}幕。`,
       });
       const result = await repo.commitTurn(submission(draft, `第${index + 1}幕行动`));
@@ -65,8 +65,8 @@ describe('真实 Repository → 候选重验 → 单事务正式结算', () => {
       expect(result.state.journal.at(-1)?.revision).toBe(index);
       expect(result.state.journal.at(-1)?.story.turnKind).toBe(index === 1 ? 'opening' : 'regular');
       expect(result.state.journal.at(-1)?.story.summary).toBe('已完成用餐');
-      expect(result.state.appliedCommands).toEqual([]);
-      expect(result.state.worldClock).toBe(gameTime);
+      expect(result.state.appliedCommands).toHaveLength(index);
+      expect(Date.parse(result.state.worldClock)).toBe(Date.parse(gameTime) + (index * (index + 1) / 2) * 10000);
     }
   });
   it('保持旧 commitCommands 的空命令与幂等契约', () => {
@@ -83,6 +83,7 @@ describe('真实 Repository → 候选重验 → 单事务正式结算', () => {
       variables: {
         ...emptyVariables(),
         commands: [
+          ...(await elapsedVariables(repo, fact, 120)).commands,
           buy,
           {
             type: 'SetEquipment',
@@ -154,6 +155,7 @@ describe('真实 Repository → 候选重验 → 单事务正式结算', () => {
       variables: {
         ...emptyVariables(),
         commands: [
+          ...(await elapsedVariables(repo, evidence, 30)).commands,
           {
             type: 'CreateNpc',
             commandId: 'create-zhou',
@@ -167,7 +169,7 @@ describe('真实 Repository → 候选重验 → 单事务正式结算', () => {
     const replay = await repo.commitTurn(submission(draft));
     expect(replay.state.npc).toEqual(first.state.npc);
     expect(replay.state.npc.zhou.name).toBe('周霖');
-    expect(replay.state.appliedCommands).toHaveLength(1);
+    expect(replay.state.appliedCommands).toHaveLength(2);
   });
   it.each(['world', 'variables', 'story'] as const)('%s 未 ready 不得部分结算', async (stage) => {
     const draft = await completeDraft(repo);
@@ -227,7 +229,7 @@ describe('真实 Repository → 候选重验 → 单事务正式结算', () => {
     const first = await repo.commitTurn(input),
       retry = await repo.commitTurn(input);
     expect(retry).toEqual({ ...first, replayed: true });
-    const secondDraft = await completeDraft(repo, { variables: emptyVariables() });
+    const secondDraft = await completeDraft(repo, { variables: await elapsedVariables(repo, '经过十分钟，主角完成用餐。', 600) });
     await repo.commitTurn(submission(secondDraft));
     const later = await repo.commitTurn(input);
     expect(later.state.turnNumber).toBe(2);
@@ -474,7 +476,7 @@ describe('最终重验与存储兼容', () => {
     };
     await repo.create(state);
     const draft = await completeDraft(repo, {
-      variables: emptyVariables(),
+      variables: await elapsedVariables(repo, '经过十分钟，主角完成用餐。', 600),
       world: { ...worldResult(), timelineCandidates: ['public'] },
     });
     const result = await repo.commitTurn(submission(draft));
@@ -550,6 +552,7 @@ describe('最终重验与存储兼容', () => {
       variables: {
         ...emptyVariables(),
         commands: [
+          ...(await elapsedVariables(repo, evidence, 40)).commands,
           {
             type: 'SaveTask',
             commandId: 'stop',
@@ -576,6 +579,7 @@ describe('最终重验与存储兼容', () => {
       variables: {
         ...emptyVariables(),
         commands: [
+          ...(await elapsedVariables(repo, evidence, 90)).commands,
           {
             type: 'SaveTask',
             commandId: 'done',
