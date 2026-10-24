@@ -1606,7 +1606,7 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 1354,
+      "characters": 1639,
       "version": "0.1.0-m3-p1",
       "messageRole": null,
       "activation": "never",
@@ -1616,7 +1616,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "8b34e3cc54ce7a1349c3d7e18379051603200e063e7d1a19e0a31e3e8be12d3b",
+      "contentSha256": "b7dfe5eb188ad5074787a47b620abf92bc4e2d03ed2681930611aa07f06d56da",
       "placeholders": [
         "playerName"
       ]

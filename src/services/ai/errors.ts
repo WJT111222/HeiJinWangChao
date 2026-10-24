@@ -20,8 +20,12 @@ export type AiErrorCode =
   | 'permission'
   | 'npc_task_conflict'
   | 'time_preflight'
-  | 'money_unit';
+  | 'money_unit'
+  | 'model_list_format'
+  | 'model_list_pagination';
 const messages: Record<AiErrorCode, string> = {
+  model_list_format: '模型列表返回格式不受支持，未读取到约定的模型数组。',
+  model_list_pagination: '模型列表分页信息无效或不受支持，未能安全读取完整列表。',
   configuration: '渠道、模型或路由配置无效，请检查设置。',
   credentials: '此渠道尚未提供 API 密钥。',
   authorization: '服务返回授权错误，请核对密钥及账户权限。',

@@ -133,7 +133,7 @@ test('AI 多渠道、原生模型列表与连接测试、路由和会话凭证�
     await expect(
       page.getByText('AI 配置已保存；模型列表会自动获取，尚未发起生成请求。', { exact: true }),
     ).toBeVisible();
-    await expect(page.getByRole('group', { name: '默认模型选择', exact: true })).toContainText('已获取 1 个模型；也可手动填写。');
+    await expect(page.getByRole('group', { name: '默认模型选择', exact: true })).toContainText('当前接口返回 1 个模型。列表由服务端提供，可能不是该平台全部可用模型。');
     await optionCount(page, '默认模型', 2);
     await page.getByRole('button', { name: /测试连接（/ }).click();
     await expect(page.getByText(/连接测试成功，已收到模型文本响应/)).toBeVisible();
