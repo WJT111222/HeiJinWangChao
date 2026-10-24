@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   AiConfigSchema,
   defaultAiConfig,
@@ -8,18 +8,21 @@ import {
   removeChannel,
   saveAiConfig,
 } from '../../services/ai/configuration';
-import type { AiConfig, AiTask, Channel, Protocol } from '../../services/ai/configuration';
+import type { AiConfig, AiTask, Channel } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
 import { channelSnapshot } from '../../services/ai/snapshot';
 import { AiClient } from '../../services/ai/client';
 import { safeAiError } from '../../services/ai/errors';
+import { ThemedSelect } from '../components/ThemedSelect';
+import { ModelCatalog } from './modelCatalog';
+import { ModelPicker } from './ModelPicker';
 import { OutputTokenLimit } from './OutputTokenLimit';
 
 const stages: [AiTask, string][] = [
   ['story', '正文生成'],
   ['variables', '变量管理'],
   ['world', '动态世界'],
-  ['memory', '记忆总结'],
+  ['memory', '记忆维护'],
 ];
 function initial() {
   try {
@@ -55,7 +58,9 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
     }
   });
   const [dirty, setDirty] = useState(false);
-  const [models, setModels] = useState<string[]>([]);
+  const [catalog] = useState(() => new ModelCatalog());
+  const lists = useSyncExternalStore(catalog.subscribe, catalog.getSnapshot);
+  const saved = useRef(start.config);
   const [notice, setNotice] = useState(start.notice);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -63,9 +68,10 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
   useEffect(
     () => () => {
       active.current?.abort();
+      catalog.dispose();
       active.current = undefined;
     },
-    [],
+    [catalog],
   );
   const channel = config.channels.find((c) => c.id === selectedId);
   function update(next: AiConfig) {
@@ -88,7 +94,6 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
       setKey(start.vault?.get(id) ?? '');
       setRemember(start.vault?.remembered(id) ?? false);
       setSelectedId(id);
-      setModels([]);
       setNotice('');
       setDeleting(false);
     } catch {
@@ -110,12 +115,26 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
       saveAiConfig(localStorage, checked.data);
       setConfig(checked.data);
       setDirty(false);
-      setNotice('AI 配置已保存；尚未发起模型请求。');
+      saved.current = checked.data;
+      setNotice('AI 配置已保存；模型列表会自动获取，尚未发起生成请求。');
+      const ids = new Set([selectedId, ...Object.values(checked.data.routes).flatMap((route) => 'channelId' in route ? [route.channelId] : [])]);
+      for (const target of checked.data.channels) if (ids.has(target.id))
+        void catalog.load(target, start.vault, timeoutSeconds);
     } catch {
       setNotice('保存失败，请检查浏览器存储权限或空间后重试。');
     }
   }
-  async function request(kind: 'models' | 'connection') {
+  function loadModels(id: string, force = false) {
+    const target = saved.current.channels.find((item) => item.id === id);
+    if (target && start.vault) void catalog.load(target, start.vault, timeoutSeconds, force);
+  }
+  function canLoad(id: string) {
+    const target = saved.current.channels.find((item) => item.id === id), current = config.channels.find((item) => item.id === id);
+    try { return Boolean(target && current && target.baseUrl === current.baseUrl && target.protocol === current.protocol
+      && start.vault?.get(id) && (id !== selectedId || key.trim() === start.vault.get(id))); }
+    catch { return false; }
+  }
+  async function request() {
     if (!channel || !start.vault || dirty || active.current) return;
     const controller = new AbortController();
     active.current = controller;
@@ -123,43 +142,21 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
     setNotice('请求进行中…');
     try {
       const client = new AiClient();
-      const target =
-        kind === 'connection'
-          ? {
-              ...channel,
-              parameters: {
-                ...channel.parameters,
-                maxOutputTokens: Math.min(channel.parameters.maxOutputTokens ?? 32, 32),
-              },
-            }
-          : channel;
+      const target = { ...channel, parameters: { ...channel.parameters,
+        maxOutputTokens: Math.min(channel.parameters.maxOutputTokens ?? 32, 32) } };
       const snapshot = channelSnapshot(target, start.vault);
-      if (kind === 'models') {
-        const result = await client.listModels(snapshot, {
+      const result = await client.generate(
+        snapshot,
+        [{ role: 'user', content: '请仅回复 OK。' }],
+        {
           signal: controller.signal,
           timeoutSeconds,
-        });
-        if (active.current !== controller) return;
-        setModels(result);
-        setNotice(
-          result.length
-            ? `已获取 ${result.length} 个模型；也可手动填写。`
-            : '服务未返回可用模型，可手动填写模型 ID。',
-        );
-      } else {
-        const result = await client.generate(
-          snapshot,
-          [{ role: 'user', content: '请仅回复 OK。' }],
-          {
-            signal: controller.signal,
-            timeoutSeconds,
-          },
-        );
-        if (active.current !== controller) return;
-        setNotice(
-          ['连接测试成功，已收到模型文本响应；游戏回合未运行。', ...result.diagnostics].join(' '),
-        );
-      }
+        },
+      );
+      if (active.current !== controller) return;
+      setNotice(
+        ['连接测试成功，已收到模型文本响应；游戏回合未运行。', ...result.diagnostics].join(' '),
+      );
     } catch (error) {
       if (active.current === controller) setNotice(safeAiError(error).message);
     } finally {
@@ -174,12 +171,13 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
       const next = removeChannel(config, selectedId);
       saveAiConfig(localStorage, next);
       start.vault?.delete(selectedId);
+      saved.current = next;
+      catalog.remove(selectedId);
       setConfig(next);
       setDirty(false);
       setSelectedId(next.channels[0]?.id ?? '');
       setKey(start.vault?.get(next.channels[0]?.id ?? '') ?? '');
       setRemember(start.vault?.remembered(next.channels[0]?.id ?? '') ?? false);
-      setModels([]);
       setDeleting(false);
       setNotice('渠道及凭证已删除，引用该渠道的路由已重置。');
     } catch {
@@ -193,17 +191,9 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
         代理。服务及同源脚本可能接触密钥；浏览器存储不是安全密钥库。默认仅本次会话保留，密钥不进入游戏存档、提示词或诊断详情。
       </p>
       <div className="ai-toolbar">
-        <label>
-          当前渠道
-          <select value={selectedId} disabled={busy} onChange={(e) => select(e.target.value)}>
-            {!config.channels.length && <option value="">尚无渠道</option>}
-            {config.channels.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name || '未命名渠道'}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ThemedSelect label="当前渠道" value={selectedId} disabled={busy}
+          options={config.channels.length ? config.channels.map((item) => ({ value: item.id, label: item.name || '未命名渠道' })) : [{ value: '', label: '尚无渠道' }]}
+          onChange={select} />
         <button
           disabled={busy || dirty}
           onClick={() => {
@@ -221,7 +211,6 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
             setSelectedId(created.id);
             setKey('');
             setRemember(false);
-            setModels([]);
           }}
         >
           新增渠道
@@ -234,32 +223,13 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
             渠道名称
             <input value={channel?.name ?? ''} onChange={(e) => patch({ name: e.target.value })} />
           </label>
-          <label>
-            协议
-            <select
-              value={channel?.protocol ?? 'openai'}
-              onChange={(e) => {
-                const protocol = e.target.value as Protocol;
-                patch({
-                  protocol,
-                  baseUrl: defaultUrls[protocol],
-                  defaultModel: '',
-                  compatibility: {
-                    temperature: true,
-                    maxOutputTokens: true,
-                    jsonMode: false,
-                    cotMode: 'confirmation',
-                    cotModels: [],
-                  },
-                });
-                setModels([]);
-              }}
-            >
-              <option value="openai">OpenAI 兼容</option>
-              <option value="gemini">原生 Gemini</option>
-              <option value="anthropic">原生 Anthropic</option>
-            </select>
-          </label>
+          <ThemedSelect label="协议" value={channel?.protocol ?? 'openai'} disabled={!channel || busy}
+            options={[{ value: 'openai', label: 'OpenAI 兼容' }, { value: 'gemini', label: '原生 Gemini' }, { value: 'anthropic', label: '原生 Anthropic' }]}
+            onChange={(value) => {
+              if (value !== 'openai' && value !== 'gemini' && value !== 'anthropic') return;
+              patch({ protocol: value, baseUrl: defaultUrls[value], defaultModel: '',
+                compatibility: { temperature: true, maxOutputTokens: true, jsonMode: false, cotMode: 'confirmation', cotModels: [] } });
+            }} />
           <label className="wide-field">
             API Base URL
             <input
@@ -282,21 +252,10 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
               }}
             />
           </label>
-          <label>
-            默认模型 ID
-            <input
-              list="ai-models"
-              value={channel?.defaultModel ?? ''}
-              onChange={(e) => patch({ defaultModel: e.target.value })}
-              placeholder="可手填或从已获取列表选择"
-            />
-          </label>
+          <ModelPicker key={selectedId} label="默认" value={channel?.defaultModel ?? ''}
+            list={canLoad(selectedId) ? lists[selectedId] : undefined} disabled={!channel || busy} canLoad={canLoad(selectedId)}
+            onLoad={(refresh) => loadModels(selectedId, refresh)} onChange={(defaultModel) => patch({ defaultModel })} />
         </div>
-        <datalist id="ai-models">
-          {models.map((id) => (
-            <option value={id} key={id} />
-          ))}
-        </datalist>
         <label className="toggle">
           <input
             type="checkbox"
@@ -348,24 +307,12 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
               {field === 'jsonMode' ? '支持原生 JSON 模式' : `支持 ${field}`}
             </label>
           ))}
-          <label>
-            COT 协议兼容
-            <select
-              value={channel?.compatibility.cotMode ?? 'off'}
-              onChange={(e) =>
-                patch({
-                  compatibility: {
-                    ...channel!.compatibility,
-                    cotMode: e.target.value as Channel['compatibility']['cotMode'],
-                  },
-                })
-              }
-            >
-              <option value="off">关闭兼容历史（旧配置保留，不关闭叙事规划）</option>
-              <option value="confirmation">完整 assistant 格式确认历史（新渠道默认）</option>
-              <option value="prefix">旧 Prefix 配置（降级完整历史，不发送扩展）</option>
-            </select>
-          </label>
+          <ThemedSelect label="COT 协议兼容" value={channel?.compatibility.cotMode ?? 'off'} disabled={!channel || busy}
+            options={[{ value: 'off', label: '关闭兼容历史（旧配置保留，不关闭叙事规划）' },
+              { value: 'confirmation', label: '完整 assistant 格式确认历史（新渠道默认）' },
+              { value: 'prefix', label: '旧 Prefix 配置（降级完整历史，不发送扩展）' }]}
+            onChange={(value) => { if (channel && (value === 'off' || value === 'confirmation' || value === 'prefix'))
+              patch({ compatibility: { ...channel.compatibility, cotMode: value } }); }} />
           <p className="muted">
             三协议使用完整确认历史并以 user 收尾，不依赖尾部预填充。旧 cotModels 数据保留读取兼容，
             不再作为模型白名单。原生协议按已核实型号或服务能力声明自动请求公开思考摘要，不发送未经确认支持的扩展，
@@ -376,17 +323,17 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
       <button className="primary" disabled={busy || !start.vault} onClick={save}>
         保存 AI 配置
       </button>
-      <p className="field-hint">保存后再获取模型或测试连接。测试连接会调用模型，可能产生费用。</p>
+      <p className="field-hint">保存有效渠道后自动获取模型列表；列表请求不会生成内容。测试连接会调用模型，可能产生费用。</p>
       <div className="ai-actions">
         <button
-          disabled={!channel || dirty || busy || !start.vault}
-          onClick={() => void request('models')}
+          disabled={!channel || dirty || busy || !start.vault || lists[selectedId]?.status === 'loading'}
+          onClick={() => loadModels(selectedId, true)}
         >
-          获取模型列表
+          刷新渠道模型列表
         </button>
         <button
           disabled={!channel || dirty || busy || !start.vault}
-          onClick={() => void request('connection')}
+          onClick={() => void request()}
         >
           测试连接（可能产生费用）
         </button>
@@ -408,6 +355,7 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
           const route = config.routes[stage];
           const follows = 'mode' in route && route.mode === 'follow-story';
           const current = 'channelId' in route ? route : config.routes.story;
+          const routeChannel = config.channels.find((item) => item.id === current.channelId);
           const changeRoute = (patch: Partial<typeof current>) =>
             update({
               ...config,
@@ -446,30 +394,14 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
                   {label}跟随正文模型
                 </label>
               )}
-              <label>
-                {label}渠道
-                <select
-                  disabled={follows}
-                  value={current.channelId}
-                  onChange={(e) => changeRoute({ channelId: e.target.value, modelId: '' })}
-                >
-                  <option value="">请选择</option>
-                  {config.channels.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                {label}模型 ID
-                <input
-                  disabled={follows}
-                  value={current.modelId}
-                  placeholder="留空使用渠道默认模型"
-                  onChange={(e) => changeRoute({ modelId: e.target.value })}
-                />
-              </label>
+              {follows && <p className="field-hint">继承正文：{routeChannel?.name || '尚未选择渠道'} / {current.modelId || routeChannel?.defaultModel || '尚未选择默认模型'}</p>}
+              <ThemedSelect label={`${label}渠道`} disabled={follows} value={current.channelId}
+                options={[{ value: '', label: '请选择渠道' }, ...config.channels.map((item) => ({ value: item.id, label: item.name }))]}
+                onChange={(channelId) => { changeRoute({ channelId, modelId: '' }); if (canLoad(channelId)) loadModels(channelId); }} />
+              <ModelPicker key={`${stage}-${current.channelId}-${follows}`} label={label} value={current.modelId}
+                defaultModel={routeChannel?.defaultModel ?? ''} list={canLoad(current.channelId) ? lists[current.channelId] : undefined}
+                disabled={follows || !routeChannel} canLoad={canLoad(current.channelId)}
+                onLoad={(refresh) => loadModels(current.channelId, refresh)} onChange={(modelId) => changeRoute({ modelId })} />
             </section>
           );
         })}
