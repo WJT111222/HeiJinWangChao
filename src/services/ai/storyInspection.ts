@@ -1,13 +1,5 @@
-import { estimateTokens } from '../../prompts/statistics';
 import { freeze } from './snapshot';
 
-export function storyBudget(maxOutputTokens: number | undefined, minNarrativeChars: number, mode: 'opening' | 'regular') {
-  // 仅规模提示，不是供应商tokenizer/计费，也不阻止或更改用户的输出上限。
-  const estimatedTokens = estimateTokens('文'.repeat(minNarrativeChars)).estimatedTokens + (mode === 'opening' ? 1800 : 3000) + 600;
-  return { maxOutputTokens, estimatedTokens, warning: maxOutputTokens === undefined
-    ? '输出上限未提供；规划、正文和供应商原生思考可能共享预算。'
-    : maxOutputTokens < estimatedTokens ? '当前输出上限可能不足以容纳完整规划和正文；程序不会自动提高预算。' : undefined };
-}
 export interface StoryInspection {
   id: string;
   saveId: string;
@@ -18,7 +10,6 @@ export interface StoryInspection {
   planning: string;
   nativeReasoning: string;
   activity?: 'content' | 'reasoning';
-  budget: ReturnType<typeof storyBudget>;
 }
 // 只保留本页面最近四次临时请求，受客户端单次输出上限约束；无Storage/IDB通道。刷新、clear或淘汰即清除。
 class StoryInspectionStore {

@@ -100,7 +100,7 @@ export function newChannel(protocol: Protocol = 'openai'): Channel {
     protocol,
     baseUrl: defaultUrls[protocol],
     defaultModel: '',
-    parameters: { maxOutputTokens: 4096 },
+    parameters: { maxOutputTokens: 8192 },
     compatibility: {
       temperature: true,
       maxOutputTokens: true,

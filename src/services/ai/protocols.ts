@@ -1,6 +1,7 @@
 import type { RequestSnapshot } from './snapshot';
 import { secretFor } from './snapshot';
 import { AiError } from './errors';
+import { thinkingParameters } from './thinking';
 export interface AiMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -50,15 +51,17 @@ export function wireRequest(
     : messages;
   const { protocol, parameters: params, compatibility: cap } = snapshot.channel;
   const diagnostics = [...snapshot.diagnostics];
+  const max = cap.maxOutputTokens ? params.maxOutputTokens : undefined;
+  const thinking = thinkingParameters(snapshot.thinkingCapability, protocol === 'anthropic' ? max ?? 4096 : max);
   const temperature =
-    cap.temperature && !(protocol === 'anthropic' && (params.temperature ?? 0) > 1)
+    cap.temperature && !thinking.anthropic && !(protocol === 'anthropic' && (params.temperature ?? 0) > 1)
       ? params.temperature
       : undefined;
   if (params.temperature !== undefined && temperature === undefined)
     diagnostics.push('TEMPERATURE_SKIPPED_UNSUPPORTED');
-  const max = cap.maxOutputTokens ? params.maxOutputTokens : undefined;
   if (params.maxOutputTokens !== undefined && max === undefined)
     diagnostics.push('MAX_TOKENS_SKIPPED_UNSUPPORTED');
+  if (thinking.gemini || thinking.anthropic) diagnostics.push('NATIVE_THINKING_AUTO_ENABLED');
   const structured = snapshot.stage !== 'story';
   if (structured && (!cap.jsonMode || protocol === 'anthropic'))
     diagnostics.push('NATIVE_JSON_MODE_SKIPPED_STRICT_PROMPT_RETAINED');
@@ -90,6 +93,7 @@ export function wireRequest(
         ...(temperature !== undefined ? { temperature } : {}),
         ...(max !== undefined ? { maxOutputTokens: max } : {}),
         ...(structured && cap.jsonMode ? { responseMimeType: 'application/json' } : {}),
+        ...(thinking.gemini ? { thinkingConfig: thinking.gemini } : {}),
       },
     };
   } else {
@@ -101,6 +105,7 @@ export function wireRequest(
       messages: conversation,
       stream,
       max_tokens: max ?? 4096,
+      ...(thinking.anthropic ? { thinking: thinking.anthropic } : {}),
       ...(temperature !== undefined ? { temperature } : {}),
     };
   }
@@ -116,6 +121,14 @@ export function wireRequest(
 }
 const token = (v: unknown) =>
   typeof v === 'number' && Number.isSafeInteger(v) && v >= 0 ? v : undefined;
+// Anthropic input_tokens仅为未缓存部分；完整输入还包括供应商提供的缓存读/写计数。
+function anthropicInputTokens(usage: Record<string, unknown>) {
+  const input = token(usage.input_tokens);
+  if (input === undefined) return undefined;
+  const caches = [usage.cache_creation_input_tokens, usage.cache_read_input_tokens].filter((value) => value !== undefined).map(token);
+  if (caches.some((value) => value === undefined)) return undefined;
+  return token(caches.reduce<number>((sum, value) => sum + (value ?? 0), input));
+}
 export function usageFrom(
   value: unknown,
   protocol: RequestSnapshot['channel']['protocol'],
@@ -140,7 +153,8 @@ export function usageFrom(
             totalTokens: token(usage.totalTokenCount),
             reasoningTokens: token(usage.thoughtsTokenCount),
           }
-        : { inputTokens: token(usage.input_tokens), outputTokens: token(usage.output_tokens) };
+        : { inputTokens: anthropicInputTokens(usage), outputTokens: token(usage.output_tokens),
+            reasoningTokens: token(record(usage.output_tokens_details).thinking_tokens) };
   return Object.values(result).some((v) => v !== undefined)
     ? Object.fromEntries(Object.entries(result).filter(([, v]) => v !== undefined))
     : undefined;

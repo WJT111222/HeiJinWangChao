@@ -192,7 +192,7 @@ describe('三种原生协议与响应规范化', () => {
         expect(String(url)).toMatch(/\/v1\/messages$/);
         expect(body.system).toBe('系统规则');
         expect(body.messages).toEqual([messages[1]]);
-        expect(body.max_tokens).toBe(4096);
+        expect(body.max_tokens).toBe(8192);
         expect(headers.get('anthropic-version')).toBe('2023-06-01');
         expect(headers.get('x-api-key')).toBe('mock-key-not-real');
       }

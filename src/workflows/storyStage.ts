@@ -7,8 +7,7 @@ import type { CompanionProfile } from '../services/local/companionProfile';
 import type { SaveRepository } from '../services/storage/saveRepository';
 import { AiClient } from '../services/ai/client';
 import { AiConfigSchema } from '../services/ai/configuration';
-import { resolveModelRoute } from '../services/ai/snapshot';
-import { storyInspections, storyBudget } from '../services/ai/storyInspection';
+import { storyInspections } from '../services/ai/storyInspection';
 import type { AiConfig } from '../services/ai/configuration';
 import type { CredentialVault } from '../services/ai/credentials';
 import { AiError, safeAiError } from '../services/ai/errors';
@@ -70,11 +69,8 @@ export class StoryStage {
       )
         throw new DataError('DRAFT_CONFLICT', '草稿或正式版本已变化，请重新读取存档。');
       const stream = new StoryStream();
-      const route = resolveModelRoute(config, 'story');
       const inspectionId = storyInspections.begin({ saveId: draft.saveId, turnId: draft.turnId,
-        baseSaveRevision: draft.baseSaveRevision, basedOnStoryRevision: draft.storyRevision,
-        budget: storyBudget(route.channel.compatibility.maxOutputTokens ? route.channel.parameters.maxOutputTokens : undefined,
-          settings.prompts.minNarrativeChars, draft.turnKind) });
+        baseSaveRevision: draft.baseSaveRevision, basedOnStoryRevision: draft.storyRevision });
       let reasoning = '';
       try {
         input.onProgress?.({ phase: 'generating', narrative: '' });

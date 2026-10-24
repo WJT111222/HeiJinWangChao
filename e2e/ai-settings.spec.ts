@@ -225,3 +225,52 @@ test('连接授权错误不展示服务详情，网络错误不误报密钥，�
   await expect(page.getByRole('status').filter({ hasText: '取消' })).toBeVisible();
   await expect(page.getByRole('button', { name: /测试连接（/ })).toBeEnabled();
 });
+
+test('P6完善：输出档位映射、旧渠道值与渠道隔离，新渠道默认8K', async ({ page }) => {
+  await page.goto('/');
+  const ids = await page.evaluate(async () => {
+    const path = '/src/services/ai/configuration.ts', vaultPath = '/src/services/ai/credentials.ts';
+    const { defaultAiConfig, newChannel, saveAiConfig } = await import(path), { CredentialVault } = await import(vaultPath);
+    const config = defaultAiConfig(), first = newChannel(), second = newChannel();
+    first.name = '旧4K渠道'; first.parameters.maxOutputTokens = 4096;
+    second.name = '旧自定义渠道'; second.parameters.maxOutputTokens = 32768; config.channels = [first, second];
+    saveAiConfig(localStorage, config); const vault = new CredentialVault(sessionStorage, localStorage);
+    config.channels.forEach((channel: { id: string }) => vault.set(channel.id, 'mock-budget-key'));
+    return [first.id, second.id];
+  });
+  await page.reload(); await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
+  await page.getByText('生成参数与模型兼容', { exact: true }).click();
+  const selector = page.getByLabel('最大输出 Token 档位', { exact: true }); await expect(selector).toHaveValue('4096');
+  await selector.selectOption('16384'); await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
+  await page.getByRole('combobox', { name: '当前渠道', exact: true }).selectOption(ids[1]);
+  await expect(selector).toHaveValue('custom'); await expect(page.getByLabel('自定义最大输出 Token')).toHaveValue('32768');
+  const values = await page.evaluate(async () => { const path = '/src/services/ai/configuration.ts', { readAiConfig } = await import(path);
+    return readAiConfig(localStorage).channels.map((channel: { parameters: { maxOutputTokens: number } }) => channel.parameters.maxOutputTokens); });
+  expect(values).toEqual([16384, 32768]);
+  await page.getByRole('button', { name: '新增渠道', exact: true }).click(); await expect(selector).toHaveValue('8192');
+  await page.getByLabel('API 密钥', { exact: true }).fill('new-mock-key'); await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
+  await page.reload(); await page.getByRole('button', { name: '设置', exact: true }).click(); await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
+  await page.getByText('生成参数与模型兼容', { exact: true }).click(); await expect(selector).toHaveValue('16384');
+  await page.getByRole('combobox', { name: '当前渠道', exact: true }).selectOption(ids[1]); await expect(selector).toHaveValue('custom');
+  await expect(page.getByLabel('自定义最大输出 Token')).toHaveValue('32768');
+});
+
+test('P6完善：自定义合法范围与4K/8K/16K往返，只保存玩家明确设置', async ({ page }) => {
+  await page.goto('/'); await page.getByRole('button', { name: '设置', exact: true }).click(); await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
+  await page.getByRole('button', { name: '新增渠道', exact: true }).click();
+  await page.getByText('生成参数与模型兼容', { exact: true }).click();
+  const selector = page.getByLabel('最大输出 Token 档位', { exact: true }); await expect(selector).toHaveValue('8192');
+  for (const value of ['4096', '8192', '16384']) { await selector.selectOption(value); await expect(selector).toHaveValue(value); }
+  await selector.selectOption('custom'); const custom = page.getByLabel('自定义最大输出 Token', { exact: true }); await expect(custom).toHaveValue('16384');
+  await custom.fill('12345'); await page.getByLabel('API 密钥', { exact: true }).fill('custom-mock-key');
+  await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
+  for (const value of ['0', '1000001']) {
+    await custom.fill(value); await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
+    await expect(page.getByText(/配置无效：请核对/)).toBeVisible();
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.ai.v1')!).channels[0].parameters.maxOutputTokens)).toBe(12345);
+  }
+  await custom.fill('1000000'); await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
+  await page.reload(); await page.getByRole('button', { name: '设置', exact: true }).click(); await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
+  await page.getByText('生成参数与模型兼容', { exact: true }).click(); await expect(selector).toHaveValue('custom'); await expect(custom).toHaveValue('1000000');
+});
