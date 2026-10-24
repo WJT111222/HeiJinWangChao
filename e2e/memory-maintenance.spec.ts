@@ -64,6 +64,7 @@ function wire(content = text) {
 test('选择并恢复独立模型；手动整理、原文来源及真实memory快照/Token统计', async ({ page }) => {
   let requests = 0;
   await page.route('https://maintenance.mock.invalid/**', async (route) => {
+    if (route.request().method() === 'GET') { await route.fulfill({ json: { data: [{ id: 'memory-summary' }] } }); return; }
     requests++;
     const body = record(route.request().postDataJSON());
     expect(body.model).toBe('memory-summary');
@@ -76,11 +77,12 @@ test('选择并恢复独立模型；手动整理、原文来源及真实memory�
   const before = await load(page);
   await page.getByRole('button', { name: '设置', exact: true }).click();
   const settings = page.getByRole('dialog');
-  await expect(settings.getByLabel('记忆总结跟随正文模型')).not.toBeChecked();
-  await settings.getByLabel('记忆总结跟随正文模型').check();
-  await expect(settings.getByLabel('记忆总结模型 ID', { exact: true })).toBeDisabled();
-  await settings.getByLabel('记忆总结跟随正文模型').uncheck();
-  await settings.getByLabel('记忆总结模型 ID', { exact: true }).fill('memory-summary');
+  await expect(settings.getByLabel('记忆维护跟随正文模型')).not.toBeChecked();
+  await settings.getByLabel('记忆维护跟随正文模型').check();
+  await expect(settings.getByRole('combobox', { name: '记忆维护模型', exact: true })).toBeDisabled();
+  await settings.getByLabel('记忆维护跟随正文模型').uncheck();
+  await settings.getByRole('button', { name: '手动填写记忆维护模型 ID', exact: true }).click();
+  await settings.getByLabel('记忆维护模型 ID', { exact: true }).fill('memory-summary');
   await settings.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
   await settings.getByRole('button', { name: '记忆', exact: true }).click();
   await expect(settings.getByLabel('自动记忆维护（额外API费用，默认关闭）')).not.toBeChecked();
