@@ -1,16 +1,16 @@
 import { AiError, safeAiError } from './errors';
-import { requestInspections } from './inspection';
+import { redactInspection, requestInspections } from './inspection';
 import type { InspectionScope } from './inspection';
 import type { RequestSnapshot } from './snapshot';
 import { secretFor } from './snapshot';
-import { modelIdSchema } from './configuration';
+import { canTryModelCandidate, modelListCandidates, parseModelPage } from './modelListing';
+import type { ModelListDiagnostics } from './modelListing';
 import {
   wireRequest,
   responseText,
   nativeReasoning,
   usageFrom,
   authHeaders,
-  endpoint,
   record,
   array,
   string,
@@ -27,6 +27,9 @@ export interface RequestOptions {
   onReasoningDelta?: (text: string) => void;
   onActivity?: (kind: 'content' | 'reasoning') => void;
   inspection?: InspectionScope;
+}
+export interface ModelListOptions extends RequestOptions {
+  onDiagnostics?: (diagnostics: ModelListDiagnostics) => void;
 }
 export interface AiResponse {
   text: string;
@@ -212,51 +215,55 @@ export class AiClient {
       throw error;
     }
   }
-  async listModels(snapshot: RequestSnapshot, options: RequestOptions = {}): Promise<string[]> {
+  async listModels(snapshot: RequestSnapshot, options: ModelListOptions = {}): Promise<string[]> {
     return operation(options, async (signal) => {
-      const protocol = snapshot.channel.protocol;
-      const ids = new Set<string>();
-      let next = '';
-      for (let page = 0; page < 20; page++) {
-        const path =
-          protocol === 'anthropic'
-            ? `models?limit=100${next ? '&after_id=' + encodeURIComponent(next) : ''}`
-            : `models${next ? '?pageToken=' + encodeURIComponent(next) : ''}`;
-        const response = await this.response(
-          endpoint(snapshot, path),
-          { headers: authHeaders(snapshot) },
-          signal,
-        );
-        let data: Record<string, unknown>;
-        try {
-          data = record(await response.json());
-        } catch {
-          throw new AiError('invalid_json');
-        }
-        if (data.error) throw new AiError('rejected');
+      const candidates = modelListCandidates(snapshot), protocol = snapshot.channel.protocol;
+      async function read(client: AiClient, url: string) {
         if (signal.aborted) throw new AiError('cancelled');
-        const entries = protocol === 'gemini' ? array(data.models) : array(data.data);
-        for (const item of entries) {
-          const id = string(record(item)[protocol === 'gemini' ? 'name' : 'id']).replace(
-            protocol === 'gemini' ? /^models\// : /$^/,
-            '',
-          );
-          if (modelIdSchema.safeParse(id).success && !id.includes(secretFor(snapshot))) {
-            ids.add(id); rememberThinkingCapability(snapshot.channel, id, item);
-          }
-        }
-        const token =
-          protocol === 'gemini'
-            ? string(data.nextPageToken)
-            : protocol === 'anthropic' && data.has_more === true
-              ? string(data.last_id)
-              : '';
-        if (!token) return [...ids].sort();
-        if (token === next || page === 19 || token.includes(secretFor(snapshot)))
-          throw new AiError('invalid_output');
-        next = token;
+        const response = await client.response(url, { headers: authHeaders(snapshot) }, signal);
+        let data: unknown;
+        try { data = await response.json(); } catch { throw new AiError('invalid_json', response.status); }
+        if (signal.aborted) throw new AiError('cancelled');
+        try { return { ...parseModelPage(data, protocol, secretFor(snapshot)), httpStatus: response.status }; }
+        catch (error) { if (error instanceof AiError) throw new AiError(error.code, response.status); throw error; }
       }
-      throw new AiError('invalid_output');
+      let first: Awaited<ReturnType<typeof read>> | undefined, selected = '', attempts = 0;
+      let failure: unknown = new AiError('not_found');
+      for (const url of candidates) {
+        attempts++;
+        try { first = await read(this, url); selected = url; break; }
+        catch (error) {
+          if (signal.aborted || !canTryModelCandidate(error)) throw error;
+          // 不用后续404覆盖更明确的JSON/格式/网络错误；不展示原始服务响应。
+          if (!(error instanceof AiError && [404, 405].includes(error.status ?? 0))
+            || (failure instanceof AiError && failure.code === 'not_found')) failure = error;
+        }
+      }
+      if (!first) throw failure;
+      const ids = new Set<string>(), seen = new Set([selected]);
+      let page = first, rawEntries = 0, validEntries = 0;
+      const paginationKey = first.next?.key;
+      for (let number = 1; number <= 20; number++) {
+        rawEntries += page.rawEntries; validEntries += page.entries.length;
+        for (const item of page.entries) {
+          ids.add(item.id); rememberThinkingCapability(snapshot.channel, item.id, item.source);
+        }
+        if (page.next && page.next.key !== paginationKey) throw new AiError('model_list_pagination');
+        const next = new URL(selected);
+        if (page.next) next.searchParams.set(page.next.key, page.next.value);
+        if (page.next && seen.has(next.href)) throw new AiError('model_list_pagination');
+        if (!page.next || number === 20) {
+          const safeEndpoint = new URL(selected); safeEndpoint.search = '';
+          options.onDiagnostics?.({ rawEntries, validEntries, filteredEntries: rawEntries - validEntries,
+            duplicateEntries: validEntries - ids.size, uniqueModels: ids.size, pages: number,
+            attemptedEndpoints: attempts, complete: !page.next,
+            fullEndpointInput: protocol === 'openai' && /\/(?:chat\/completions|models)\/*$/i.test(new URL(snapshot.channel.baseUrl).pathname),
+            endpoint: redactInspection(safeEndpoint.href, [secretFor(snapshot)]), httpStatus: first.httpStatus });
+          return [...ids].sort();
+        }
+        seen.add(next.href); page = await read(this, next.href);
+      }
+      throw new AiError('model_list_pagination');
     });
   }
 }
