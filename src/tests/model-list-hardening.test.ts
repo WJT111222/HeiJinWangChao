@@ -175,3 +175,54 @@ it('Fetch错误Response的status=0不能冒充HTTP状态码', async () => {
   await expect(new AiClient(async () => Response.error()).listModels(setup('openai', '/v1').snapshot, { onFailureDiagnostics: failure })).rejects.toMatchObject({ code: 'network' });
   expect(failure.mock.calls[0][0].httpStatus).toBeUndefined(); expect(failure.mock.calls[0][0].attemptedEndpoints).toBe(2);
 });
+
+describe('最终审查：编码分隔符和不同候选错误', () => {
+  it.each(['token%2Fprivate-value', 'api_key%3Dprivate-value', 'token%252Fprivate-value',
+    'token%25252Fprivate-value', 'api_key%25253Dprivate-value', 'token%2F/private-value',
+    'token/private-value', 'token%25252525252Fprivate-value'])('未知路径令牌%s不进入诊断', (path) => {
+    const result = safeModelListEndpoint(`https://harden.mock.invalid/${path}/models`, 'different-configured-key');
+    expect(result).not.toContain('private-value'); expect(result).toContain('[敏感路径已隐藏]');
+  });
+  it('编码结构不明确时保守遮蔽，正常自定义路径仍可读', () => {
+    expect(safeModelListEndpoint('https://harden.mock.invalid/%ZZprivate-value/models', 'unused')).not.toContain('private-value');
+    expect(safeModelListEndpoint('https://harden.mock.invalid/custom/%E4%B8%AD%E6%96%87/v1/models', 'unused'))
+      .toBe('https://harden.mock.invalid/custom/%E4%B8%AD%E6%96%87/v1/models');
+  });
+  it.each(['configured-key', '%63onfigured-key', '%2563onfigured-key'])('已知凭证%s仍隐藏', (key) => {
+    expect(safeModelListEndpoint(`https://harden.mock.invalid/${key}/models`, 'configured-key')).not.toContain(key);
+    expect(safeModelListEndpoint(`https://harden.mock.invalid/${key}/models`, 'configured-key')).toContain('[密钥已隐藏]');
+  });
+  it.each(['success', 'failure'] as const)('仅%s诊断脱敏，不改变真实URL、请求数或鉴权', async (outcome) => {
+    const a = setup('gemini', '/token%2Fprivate-value'), before = structuredClone(a.channel), success = vi.fn(), failure = vi.fn();
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => outcome === 'success' ? Response.json(body('gemini')) : new Response('', { status: 401 }));
+    const pending = new AiClient(fetcher).listModels(a.snapshot, { onDiagnostics: success, onFailureDiagnostics: failure });
+    if (outcome === 'success') await expect(pending).resolves.toEqual(['actual-model']); else await expect(pending).rejects.toMatchObject({ code: 'authorization', status: 401 });
+    expect(fetcher).toHaveBeenCalledTimes(1); expect(String(fetcher.mock.calls[0][0])).toBe('https://harden.mock.invalid/token%2Fprivate-value/models');
+    expect(new Headers(fetcher.mock.calls[0][1]?.headers).get('x-goog-api-key')).toBe('harden-secret');
+    expect(JSON.stringify([success.mock.calls, failure.mock.calls])).not.toContain('private-value'); expect(a.channel).toEqual(before);
+  });
+  it.each(['405', 'format'] as const)('%s→404：保留前因但明确分离最后端点状态和旧列表', async (first) => {
+    const a = setup('openai', '/v1'), fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(Response.json(body('openai')));
+    const catalog = new ModelCatalog(new AiClient(fetcher)); await catalog.load(a.channel, a.vault, 10);
+    const previous = catalog.getSnapshot()[a.channel.id];
+    fetcher.mockResolvedValueOnce(first === '405' ? new Response('', { status: 405 }) : Response.json({ unsupported: true }))
+      .mockResolvedValueOnce(new Response('', { status: 404 }));
+    await catalog.load(a.channel, a.vault, 10, true); const state = catalog.getSnapshot()[a.channel.id];
+    expect(fetcher).toHaveBeenCalledTimes(3); expect(state.models).toEqual(previous.models); expect(state.diagnostics).toEqual(previous.diagnostics);
+    expect(state.failureDiagnostics).toMatchObject({ endpoint: 'https://harden.mock.invalid/models', attemptedEndpoints: 2, httpStatus: 404,
+      errorCode: first === '405' ? 'rejected' : 'model_list_format' });
+    expect(state.message).toContain('保留的错误（可能来自此前候选）'); expect(state.message).toContain(first === '405' ? '（405）' : '模型列表返回格式不受支持');
+    expect(state.message).toContain('最后端点状态：HTTP 404'); expect(state.message).not.toContain('最后端点状态：HTTP 405');
+    expect(state.message).toContain('非本次请求结果'); expect(a.channel.defaultModel).toBe('kept'); expect(a.vault.get(a.channel.id)).toBe('harden-secret');
+  });
+  it('第二页网络失败显示未知的最后状态，不误称此前候选HTTP错误', async () => {
+    const a = setup('openai', '/v1'), fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ data: [{ id: 'a' }], next_cursor: 'private-cursor' }))
+      .mockRejectedValueOnce(new TypeError('private-server-error'));
+    const catalog = new ModelCatalog(new AiClient(fetcher)); await catalog.load(a.channel, a.vault, 10);
+    const state = catalog.getSnapshot()[a.channel.id];
+    expect(state.failureDiagnostics).toMatchObject({ attemptedEndpoints: 1, pagesRead: 1, errorCode: 'network' });
+    expect(state.failureDiagnostics?.httpStatus).toBeUndefined(); expect(state.message).toContain('最后端点状态：未获得 HTTP 状态');
+    expect(state.message).not.toMatch(/HTTP 200|此前候选|private-cursor|private-server-error/); expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+});

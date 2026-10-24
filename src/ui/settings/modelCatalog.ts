@@ -49,10 +49,11 @@ export class ModelCatalog {
       if (this.entries.get(channel.id) !== entry || entry.controller.signal.aborted) return;
       const status = safeAiError(error).status;
       const http = failureDiagnostics || status === undefined || status === 404 ? '' : `（HTTP ${status}）`;
-      const details = failureDiagnostics ? ` 最后尝试：${failureDiagnostics.endpoint ?? '尚未发出请求'}；候选 ${failureDiagnostics.attemptedEndpoints} 个；已读取 ${failureDiagnostics.pagesRead} 页；${failureDiagnostics.httpStatus === undefined ? '未获得 HTTP 状态' : `HTTP ${failureDiagnostics.httpStatus}`}。` : '';
+      const cause = failureDiagnostics && failureDiagnostics.attemptedEndpoints > 1 ? '保留的错误（可能来自此前候选）：' : '';
+      const details = failureDiagnostics ? ` 最后尝试：${failureDiagnostics.endpoint ?? '尚未发出请求'}；候选 ${failureDiagnostics.attemptedEndpoints} 个；已读取 ${failureDiagnostics.pagesRead} 页；最后端点状态：${failureDiagnostics.httpStatus === undefined ? '未获得 HTTP 状态' : `HTTP ${failureDiagnostics.httpStatus}`}。` : '';
       const retained = models.length ? ` 保留上次模型列表 ${models.length} 个，非本次请求结果。` : '';
       this.publish(channel.id, { status: 'error', models, diagnostics: previousDiagnostics, failureDiagnostics,
-        message: `本次获取失败：${modelListFailureMessage(error) ?? safeAiError(error).message}${http}${details}${retained} 可刷新重试或手动填写模型 ID。` });
+        message: `本次获取失败：${cause}${modelListFailureMessage(error) ?? safeAiError(error).message}${http}${details}${retained} 可刷新重试或手动填写模型 ID。` });
     }).finally(() => { if (this.entries.get(channel.id) === entry) entry.pending = undefined; });
     return entry.pending;
   }
