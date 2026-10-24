@@ -30,15 +30,16 @@ export function safeModelListEndpoint(value: string, secret: string) {
   const url = new URL(value); url.search = ''; url.hash = '';
   let hideNext = false;
   const path = url.pathname.split('/').map((part) => {
-    let decoded = part;
+    let decoded = part, invalidEncoding = false;
     for (let layer = 0; layer < 5; layer++) {
-      let next: string; try { next = decodeURIComponent(decoded); } catch { break; }
+      let next: string; try { next = decodeURIComponent(decoded); } catch { invalidEncoding = true; break; }
       if (next === decoded) break; decoded = next;
     }
     const sensitive = secretForms(secret).some((key) => decoded.includes(key) || part.includes(key));
-    const hidden = hideNext; hideNext = /^(?:api[-_]?key|access[-_]?token|token|authorization)$/i.test(decoded);
+    // 编码分隔符可能把令牌键和值装在同一段；键后跨原始斜杠的值也继续隐藏。
+    const hidden = hideNext; hideNext = /^(?:api[-_]?key|access[-_]?token|token|authorization)$/i.test(decoded.split(/[/\\=;?#&]/).filter(Boolean).at(-1) ?? '');
     if (sensitive) return '[密钥已隐藏]';
-    if (hidden || /^(?:Bearer|Basic)\s/i.test(decoded) || /%[0-9a-f]{2}/i.test(decoded)) return '[敏感路径已隐藏]';
+    if (hidden || invalidEncoding || /[/\\=;?#&]/.test(decoded) || /^(?:Bearer|Basic)\s/i.test(decoded) || /%[0-9a-f]{2}/i.test(decoded)) return '[敏感路径已隐藏]';
     return part;
   }).join('/');
   return redactInspection(url.origin + path, [secret]);
