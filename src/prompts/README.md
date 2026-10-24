@@ -1,5 +1,8 @@
 # 提示词运行时
 
+> **当前状态（2026-10-24）**：本页是 Prompt Composer/运行时技术说明，其中部分“M3 当前没有接通游戏按钮”等句子属于**当时开发阶段的历史限定**。M4-P5 已完成正式回合事务和连续回合，M5-P6 已添加开局 9 步/普通回合 15 步叙事规划与原生公开 Thinking 隔离。请对照 [当前架构](../../docs/CURRENT_ARCHITECTURE.md)、[PR #23](https://github.com/WJT111222/HeiJinWangChao/pull/23) 与最新源码；旧段落不能倒推当前未实现。以下保留技术线索供追溯。
+
+
 根目录 `prompts/` 是正文唯一来源。`manifest.ts` 只校验注册元数据；`loader.ts` 通过 Vite raw import 延迟读取 Markdown，核对 SHA-256 和 Unicode code point 字符数，不复制一套 TS 正文。
 
 `composePrompt()` 读取调用者提供的正式状态快照、严格 V1 设置和相符的 M1 草稿，根据阶段、opening/regular、七项设置、相关变量域和单一记忆任务选择资源。固定身份/双世界书/输出/常驻模块不能排序，可移动模块只允许同组已有槽位置换。所有必需占位符替换后仍有 `{{...}}` 会阻止请求。

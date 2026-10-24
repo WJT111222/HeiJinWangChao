@@ -1,5 +1,8 @@
 # 工作流
 
+> **当前状态（2026-10-24）**：此文件下方原 M4-P1～M5-P4 段落是分阶段实现说明，而不是最新待开发清单。M5-P5 的任务终态、成果接力及有条件 NPC 安全退场已随 PR #22 合并；M5-P6 的项目 Thinking/9 步开局与 15 步普通回合规划、独立原生 Thinking 已随 PR #23 合并；四阶段模型选择 UI 见 PR #25。当前宏观工作流与严格边界详见 [架构概览](../../docs/CURRENT_ARCHITECTURE.md)。
+
+
 M4-P1 的 `storyStage.ts` 从 SaveRepository 重读已绑定回合，复用 runStageRequest / Composer / AiClient，完整校验后通过 rerollStory 与 saveDraft 乐观锁原子替换正文草稿。`storyStream.ts` 仅投影明确落入正文块的临时文本，不执行任何命令。
 
 M4-P2 的 `variableStage.ts` 复用同一 runtime 和 SaveRepository，先显式创建执行尝试，再装配九域适用规则、校验并保存变量候选。`stageGuard.ts` 从正文提取共用锁、取消与尝试身份，正文、变量和世界不能在同页同时覆盖同一存档。
