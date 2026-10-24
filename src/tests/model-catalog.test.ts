@@ -28,7 +28,7 @@ describe('设置页共享模型列表：复用真实客户端、不生成内容'
     expect(JSON.stringify(cache.getSnapshot())).not.toContain('catalog-mock-key');
   });
   it('四阶段同时请求同一渠道只发一次，结果复用直到手动刷新', async () => {
-    const { channel, vault } = setup(), fetcher = vi.fn<typeof fetch>().mockResolvedValue(json()), cache = new ModelCatalog(new AiClient(fetcher));
+    const { channel, vault } = setup(), fetcher = vi.fn<typeof fetch>().mockImplementation(async () => json()), cache = new ModelCatalog(new AiClient(fetcher));
     await Promise.all(Array.from({ length: 4 }, () => cache.load(channel, vault, 10)));
     expect(fetcher).toHaveBeenCalledTimes(1); await cache.load(channel, vault, 10); expect(fetcher).toHaveBeenCalledTimes(1);
     await cache.load(channel, vault, 10, true); expect(fetcher).toHaveBeenCalledTimes(2);
@@ -54,7 +54,7 @@ describe('设置页共享模型列表：复用真实客户端、不生成内容'
     await cache.load(channel, vault, 10, true); expect(cache.getSnapshot()[channel.id].status).toBe('ready');
   });
   it('地址/协议或凭证改变后失效旧缓存；默认模型和参数改变不重复查询', async () => {
-    const { channel, vault } = setup(), fetcher = vi.fn<typeof fetch>().mockResolvedValue(json()), cache = new ModelCatalog(new AiClient(fetcher));
+    const { channel, vault } = setup(), fetcher = vi.fn<typeof fetch>().mockImplementation(async () => json()), cache = new ModelCatalog(new AiClient(fetcher));
     await cache.load(channel, vault, 10); await cache.load({ ...channel, defaultModel: 'different-model', parameters: {} }, vault, 10);
     expect(fetcher).toHaveBeenCalledTimes(1); vault.set(channel.id, 'rotated-key'); await cache.load(channel, vault, 10);
     expect(fetcher).toHaveBeenCalledTimes(2); await cache.load({ ...channel, baseUrl: 'https://changed.mock.invalid/v1' }, vault, 10);
@@ -80,5 +80,23 @@ describe('设置页共享模型列表：复用真实客户端、不生成内容'
     const { channel, vault } = setup(); vault.delete(channel.id);
     const fetcher = vi.fn<typeof fetch>(), cache = new ModelCatalog(new AiClient(fetcher)); await cache.load(channel, vault, 10);
     expect(fetcher).not.toHaveBeenCalled(); expect(cache.getSnapshot()[channel.id].status).toBe('error');
+  });
+});
+
+describe('列表数量和分页诊断', () => {
+  it('20页仍有后续时明确告知部分列表，不冒充完整平台模型', async () => {
+    const { channel, vault } = setup(); let number = 0;
+    const transport = vi.fn<typeof fetch>().mockImplementation(async () => { number++; return Response.json({ data: [{ id: `model-${number}` }], next_cursor: `page-${number}` }); });
+    const cache = new ModelCatalog(new AiClient(transport)); await cache.load(channel, vault, 10);
+    expect(cache.getSnapshot()[channel.id]).toMatchObject({ status: 'ready', diagnostics: { pages: 20, complete: false, uniqueModels: 20 } });
+    expect(cache.getSnapshot()[channel.id].message).toContain('20页读取上限'); expect(cache.getSnapshot()[channel.id].message).toContain('可能不是该平台全部可用模型'); expect(transport).toHaveBeenCalledTimes(20);
+  });
+  it('失败刷新保留上次成功列表的数量诊断，当前错误不冒充新结果', async () => {
+    const { channel, vault } = setup(); let fail = false;
+    const transport = vi.fn<typeof fetch>().mockImplementation(async () => fail ? new Response('', { status: 404 }) : json());
+    const cache = new ModelCatalog(new AiClient(transport)); await cache.load(channel, vault, 10);
+    const previous = cache.getSnapshot()[channel.id]; fail = true; await cache.load(channel, vault, 10, true);
+    expect(cache.getSnapshot()[channel.id]).toMatchObject({ status: 'error', models: previous.models, diagnostics: previous.diagnostics });
+    expect(cache.getSnapshot()[channel.id].message).toContain('模型列表接口不存在'); expect(vault.get(channel.id)).toBe('catalog-mock-key');
   });
 });

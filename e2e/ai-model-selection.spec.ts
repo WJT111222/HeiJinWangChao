@@ -40,7 +40,7 @@ test('保存后自动GET、输入时不请求、四阶段独立搜索选择及�
   expect(lists).toBe(0); await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
   await expect(page.getByRole('group', { name: '默认模型选择', exact: true })).toContainText('正在获取模型列表');
   await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click(); expect(lists).toBe(1); release();
-  await expect(page.getByRole('group', { name: '默认模型选择', exact: true })).toContainText('已获取 5 个模型'); expect(lists).toBe(1);
+  await expect(page.getByRole('group', { name: '默认模型选择', exact: true })).toContainText('当前接口返回 5 个模型'); expect(lists).toBe(1);
   await searchChoose(page, '默认模型', 'default', 'city-default');
   const id = await page.getByRole('combobox', { name: '当前渠道', exact: true }).getAttribute('value'); expect(id).toBeTruthy();
   for (const [label, model] of [['正文生成', 'city-story'], ['变量管理', 'city-variables'], ['动态世界', 'city-world'], ['记忆维护', 'city-memory']]) {
@@ -52,7 +52,7 @@ test('保存后自动GET、输入时不请求、四阶段独立搜索选择及�
   expect(Object.values(config.routes).map((route) => (route as { modelId: string }).modelId)).toEqual(['city-story', 'city-variables', 'city-world', 'city-memory']);
   for (const label of ['正文生成', '变量管理', '动态世界', '记忆维护']) {
     await page.getByRole('button', { name: `刷新${label}模型`, exact: true }).click();
-    await expect(page.getByRole('group', { name: `${label}模型选择`, exact: true })).toContainText('已获取 5 个模型');
+    await expect(page.getByRole('group', { name: `${label}模型选择`, exact: true })).toContainText('当前接口返回 5 个模型');
   }
   expect(lists).toBe(5); expect(generated).toBe(0);
   await page.reload(); await open(page);
@@ -72,13 +72,13 @@ test('旧配置恢复、渠道切换清除旧路由模型、默认与跟随显�
   await searchChoose(page, '正文生成模型', 'custom', 'backup-custom');
   await expect(page.getByText('继承正文：备用渠道 / backup-custom', { exact: true })).toHaveCount(3);
   await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
-  await expect(page.getByRole('group', { name: '默认模型选择', exact: true })).toContainText('已获取');
+  await expect(page.getByRole('group', { name: '默认模型选择', exact: true })).toContainText('当前接口返回');
   const before = await page.evaluate(() => ({ config: localStorage.getItem('heijin.ai.v1'), keys: JSON.stringify(sessionStorage) }));
   fail = true; await page.getByRole('button', { name: '刷新正文生成模型', exact: true }).click();
   await expect(page.getByRole('group', { name: '正文生成模型选择', exact: true })).toContainText('手动填写');
   await selected(page, '正文生成模型', 'backup-custom'); await optionContains(page, '正文生成模型', 'backup-default');
   expect(await page.evaluate(() => ({ config: localStorage.getItem('heijin.ai.v1'), keys: JSON.stringify(sessionStorage) }))).toEqual(before);
-  await expect(page.getByRole('dialog')).not.toContainText('hidden-server-detail'); expect(city).toBe(1); expect(backup).toBe(2);
+  await expect(page.getByRole('dialog')).not.toContainText('hidden-server-detail'); expect(city).toBe(1); expect(backup).toBe(3);
 });
 async function optionContains(page: Page, label: string, text: string) {
   await page.getByRole('combobox', { name: label, exact: true }).click();
