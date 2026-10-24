@@ -21,7 +21,7 @@
 
 - 运行时 Prompt 正文的唯一来源为 `prompts/` 与 `prompts/manifest.json`，装配代码在 `src/prompts/`，三协议客户端在 `src/services/ai/`。不要将历史汇编 Markdown 直接当做当前注入文本。
 - 开局 9 步 `prompts/planning/opening.md`，普通 15 步 `prompts/planning/regular.md`，属于项目专用的 **`<thinking>` 叙事规划标签**；供应商公开的原生 Thinking 单独解析和临时展示，均不写入正式状态或作为世界事实证据。详见 PR #23。
-- API 路由区分 **Story、Variables、World、Memory**，允许单独选择渠道/模型或跟随 Story；PR #25 已完成模型列表 UI，但不同中转站的实际列表 URL 和 JSON 兼容是后续 [M6 专项](API-MODEL-LIST-COMPATIBILITY.md)。
+- API 路由区分 **Story、Variables、World、Memory**，允许单独选择渠道/模型或跟随 Story；PR #25 已完成模型列表 UI，PR #27 已合并同源列表兼容、分页与诊断；最终加固和真实服务限制见 [M6 状态](API-MODEL-LIST-COMPATIBILITY.md)。
 - 所有阶段的输出经 Zod、领域引用、经济、时间、证据和权限校验；模型说“发生了”不代表立即可信或可结算。
 
 ## 世界与记忆
@@ -36,6 +36,6 @@
 - 浏览器本地存档不是账户云备份；清站点数据可能损失进度。密钥/请求内容、项目规划与 NPC 私密信息不得写进公开调试文档。
 - Cloudflare 当前 `wrangler.jsonc` 配置静态 `./dist` 资产；**不能据此宣称有安全的动态 API GET 代理**。
 - 测试记录主要是 Mock/本地浏览器执行，真实付费模型兼容、长时间游玩和完整导入/回滚需单独核实。
-- 已合并：M0～M5-P6、PR #25。当前专项：M6 模型列表兼容修复。未来 M7 UI/UX 和 Issue #6/#24 需求均未自动排期。
+- 已合并：M0～M5-P6、PR #25、PR #27 模型列表主体。当前专项：M6 列表最终加固与验收。未来 M7 UI/UX 和 Issue #6/#24 需求均未自动排期。
 
 历史设计稿及 `M*-DEVELOPMENT.md` 保留可追溯性；**实现以最新 main 为准**。

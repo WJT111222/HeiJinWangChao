@@ -2,6 +2,8 @@ import { modelIdSchema } from './configuration';
 import type { Protocol } from './configuration';
 import { AiError } from './errors';
 import { record } from './protocols';
+import { redactInspection } from './inspection';
+import type { AiErrorCode } from './errors';
 import type { RequestSnapshot } from './snapshot';
 
 export interface ModelListDiagnostics {
@@ -16,6 +18,31 @@ export interface ModelListDiagnostics {
   fullEndpointInput: boolean;
   endpoint: string;
   httpStatus: number;
+}
+export interface ModelListFailureDiagnostics {
+  endpoint?: string;
+  attemptedEndpoints: number;
+  httpStatus?: number;
+  pagesRead: number;
+  errorCode: AiErrorCode | 'unknown';
+}
+export function safeModelListEndpoint(value: string, secret: string) {
+  const url = new URL(value); url.search = ''; url.hash = '';
+  let hideNext = false;
+  const path = url.pathname.split('/').map((part) => {
+    let decoded = part, invalidEncoding = false;
+    for (let layer = 0; layer < 5; layer++) {
+      let next: string; try { next = decodeURIComponent(decoded); } catch { invalidEncoding = true; break; }
+      if (next === decoded) break; decoded = next;
+    }
+    const sensitive = secretForms(secret).some((key) => decoded.includes(key) || part.includes(key));
+    // 编码分隔符可能把令牌键和值装在同一段；键后跨原始斜杠的值也继续隐藏。
+    const hidden = hideNext; hideNext = /^(?:api[-_]?key|access[-_]?token|token|authorization)$/i.test(decoded.split(/[/\\=;?#&]/).filter(Boolean).at(-1) ?? '');
+    if (sensitive) return '[密钥已隐藏]';
+    if (hidden || invalidEncoding || /[/\\=;?#&]/.test(decoded) || /^(?:Bearer|Basic)\s/i.test(decoded) || /%[0-9a-f]{2}/i.test(decoded)) return '[敏感路径已隐藏]';
+    return part;
+  }).join('/');
+  return redactInspection(url.origin + path, [secret]);
 }
 export interface ModelPage {
   entries: { id: string; source: unknown }[];
@@ -35,7 +62,7 @@ export function modelListCandidates(snapshot: RequestSnapshot): string[] {
     if (candidate.origin !== url.origin) throw new AiError('configuration');
     if (!paths.includes(candidate.href)) paths.push(candidate.href);
   };
-  if (snapshot.channel.protocol !== 'openai') { push(`${base}/models`); return paths; }
+  if (snapshot.channel.protocol !== 'openai') { push(/\/models$/i.test(base) ? base : `${base}/models`); return paths; }
   const completeModels = /\/models$/i.test(base);
   const configuredModels = base;
   base = base.replace(/\/(?:chat\/completions|models)$/i, '');
@@ -82,8 +109,18 @@ export function parseModelPage(raw: unknown, protocol: Protocol, secret: string)
     : Array.isArray(raw) ? raw : Array.isArray(data.data) ? data.data : data.models;
   if (!Array.isArray(values)) throw new AiError('model_list_format');
   const entries: ModelPage['entries'] = [];
+  // 仅识别 Ollama 官方 ListModelResponse：model 是请求标识，name 不作为回退ID。
+  const ollamaModel = (item: unknown) => {
+    const value = record(item);
+    return protocol === 'openai' && values === data.models && typeof value.model === 'string'
+      && typeof value.modified_at === 'string' && Number.isFinite(Date.parse(value.modified_at))
+      && typeof value.size === 'number' && Number.isSafeInteger(value.size) && value.size >= 0
+      && typeof value.digest === 'string' && Boolean(value.digest);
+  };
+  if (protocol === 'openai' && values.length && !values.some((item) => typeof item === 'string'
+    || Object.hasOwn(record(item), 'id') || ollamaModel(item))) throw new AiError('model_list_format');
   for (const item of values) {
-    const value = protocol === 'gemini' ? record(item).name : typeof item === 'string' && protocol === 'openai' ? item : record(item).id;
+    const value = protocol === 'gemini' ? record(item).name : typeof item === 'string' && protocol === 'openai' ? item : Object.hasOwn(record(item), 'id') ? record(item).id : ollamaModel(item) ? record(item).model : undefined;
     const id = typeof value === 'string' ? value.trim().replace(protocol === 'gemini' ? /^models\// : /$^/, '') : '';
     if (modelIdSchema.safeParse(id).success && !secretForms(secret).some((part) => id.includes(part))) entries.push({ id, source: item });
   }
@@ -95,5 +132,6 @@ export function canTryModelCandidate(error: unknown) {
 }
 export function modelListFailureMessage(error: unknown) {
   if (error instanceof AiError && error.code === 'not_found') return '模型列表接口不存在或路径不受支持（404）；未更改模型配置。';
+  if (error instanceof AiError && error.status === 405) return '模型列表请求方法或路径不受支持（405）；未更改模型配置。';
   return undefined;
 }

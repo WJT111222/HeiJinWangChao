@@ -72,7 +72,7 @@ npm run test:e2e
 - **[PR #22](https://github.com/WJT111222/HeiJinWangChao/pull/22)：已合并**任务终态、成果交接及 NPC 安全退场。
 - **[PR #23](https://github.com/WJT111222/HeiJinWangChao/pull/23)：已合并**原创 9/15 步规划、Thinking 隔离、输出档位与用量展示。
 - **[PR #25](https://github.com/WJT111222/HeiJinWangChao/pull/25)：已合并**渠道自动取模型、四阶段主题化选模、缓存及手填。
-- **M6：进行中的质量与兼容阶段**；下一专项是[模型列表兼容修复](docs/API-MODEL-LIST-COMPATIBILITY.md)，并继续验证真实 API、长时间游玩与存档安全。
+- **M6：进行中的质量与兼容阶段**；[模型列表主体](docs/API-MODEL-LIST-COMPATIBILITY.md)已随 PR #27 合并，当前进行最终加固与验收，并继续验证真实 API、长时间游玩与存档安全。
 - **[M7](https://github.com/WJT111222/HeiJinWangChao/issues/8)：未来规划**，集中 UI/UX、移动端、阅读体验与视觉统一；尚未实施。
 
 未来需求已记录在 [Issue #6（15 项与三款免费 DLC）](https://github.com/WJT111222/HeiJinWangChao/issues/6) 与 [Issue #24（“我的势力”，未排期）](https://github.com/WJT111222/HeiJinWangChao/issues/24)；包括重要 NPC 独立叙事、组织休眠、角色迷雾、玩家变量编辑器、小剧场和外部预设等，**不能当作当前已经交付的玩法**。三款 DLC 分别为现代美国、20 世纪英国（具体年代未定）和赛博朋克；均未上线。
