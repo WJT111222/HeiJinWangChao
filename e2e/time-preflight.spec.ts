@@ -49,7 +49,7 @@ async function mock(page: Page, interrupt = false, kind: 'default' | 'drink' | '
       const narrative = past ? '昨天晚上，陈宁独自回顾了此前已知的约定。' : kind === 'chat' ? '陈宁笑着说：“你好。”你也问候了他。' : '你喝了一口可乐。';
       const story = bounded ? timeStory(interrupt) : { turnKind: 'regular', narrative, summary: past ? '回顾已知往事' : '短暂的当前行动',
         variableGuide: past ? [{ group: 'time', subjectHint: 'time:retrospective', observedFact: JSON.stringify({ npcId: 'npc-a', perspectiveRequest: '切换到陈宁的视角', pastRequest: '描写他昨天晚上独自经历的事情', temporalScope: 'past_only', currentPlotAdvances: false }), textEvidence: narrative }] : [] };
-      text = `<正文>${story.narrative}</正文><短期记忆>${story.summary}</短期记忆><变量规划>${JSON.stringify(story.variableGuide)}</变量规划>`;
+      text = `<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>${story.narrative}</正文><短期记忆>${story.summary}</短期记忆><变量规划>${JSON.stringify(story.variableGuide)}</变量规划>`;
       if (control.hold) await control.hold;
       await route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n` }).catch(() => undefined); return;
     }

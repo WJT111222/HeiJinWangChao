@@ -108,7 +108,7 @@ test('真实正文请求使用设置N=1/10/20，并独立召回第3回合；查�
     const text = messages.join('\n').match(/<GAME_CONTEXT>\n([\s\S]*?)\n<\/GAME_CONTEXT>/)![1];
     contexts.push(record(JSON.parse(text)));
     await new Promise<void>((resolve) => { release = resolve; });
-    const output = '<正文>主角阅读先前留下的约定，等待对方回复。</正文><短期记忆>查看约定</短期记忆><变量规划>[]</变量规划>';
+    const output = '<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>主角阅读先前留下的约定，等待对方回复。</正文><短期记忆>查看约定</短期记忆><变量规划>[]</变量规划>';
     await route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content: output } }] })}\n\ndata: [DONE]\n\n` });
   });
   await seed(page);

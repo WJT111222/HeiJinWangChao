@@ -7,6 +7,7 @@ import { modelIdSchema } from './configuration';
 import {
   wireRequest,
   responseText,
+  nativeReasoning,
   usageFrom,
   authHeaders,
   endpoint,
@@ -22,10 +23,13 @@ export interface RequestOptions {
   timeoutSeconds?: number;
   stream?: boolean;
   onDelta?: (text: string) => void;
+  onReasoningDelta?: (text: string) => void;
+  onActivity?: (kind: 'content' | 'reasoning') => void;
   inspection?: InspectionScope;
 }
 export interface AiResponse {
   text: string;
+  nativeReasoning?: string;
   usage?: Usage;
   diagnostics: string[];
   protocol: RequestSnapshot['channel']['protocol'];
@@ -107,13 +111,14 @@ export class AiClient {
   ): Promise<AiResponse> {
     const wire = wireRequest(snapshot, messages, options.stream === true);
     let inspectionId: string | undefined;
+    let observedUsage: Usage | undefined;
     try {
       return await operation(options, async (signal) => {
         if (signal.aborted) throw new AiError('cancelled');
         inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection);
         const response = await this.response(wire.url, wire.init, signal);
         const protocol = snapshot.channel.protocol;
-        let text = '',
+        let text = '', reasoning = '',
           usage: Usage | undefined;
         if (!options.stream) {
           let data: unknown;
@@ -122,8 +127,9 @@ export class AiClient {
           } catch {
             throw new AiError('invalid_json');
           }
+          usage = usageFrom(data, protocol); observedUsage = usage;
           text = responseText(data, protocol);
-          usage = usageFrom(data, protocol);
+          reasoning = nativeReasoning(data, protocol);
         } else {
           if (
             !response.body ||
@@ -144,14 +150,19 @@ export class AiClient {
             }
             if (data.error || data.type === 'error' || event.event === 'error')
               throw new AiError('rejected');
+            const nextUsage = usageFrom(data, protocol);
+            if (nextUsage) usage = { ...usage, ...nextUsage };
+            observedUsage = usage;
             let delta = '';
             if (protocol === 'openai') {
               const choice = record(array(data.choices)[0]);
+              if (choice.finish_reason === 'length') throw new AiError('output_limit');
               if (choice.finish_reason && choice.finish_reason !== 'stop')
                 throw new AiError('stream_interrupted');
               delta = string(record(choice.delta).content);
             } else if (protocol === 'gemini') {
               const candidate = record(array(data.candidates)[0]);
+              if (candidate.finishReason === 'MAX_TOKENS') throw new AiError('output_limit');
               if (candidate.finishReason && candidate.finishReason !== 'STOP')
                 throw new AiError('stream_interrupted');
               if (candidate.finishReason === 'STOP') terminal = true;
@@ -160,27 +171,36 @@ export class AiClient {
                 .map((part) => string(record(part).text))
                 .join('');
             } else {
+              if (data.type === 'content_block_start' && record(data.content_block).type === 'text')
+                delta = string(record(data.content_block).text);
               if (data.type === 'content_block_delta' && record(data.delta).type === 'text_delta')
                 delta = string(record(data.delta).text);
               const stop = record(data.delta).stop_reason;
+              if (stop === 'max_tokens') throw new AiError('output_limit');
               if (stop && stop !== 'end_turn' && stop !== 'stop_sequence')
                 throw new AiError('stream_interrupted');
               if (data.type === 'message_stop') terminal = true;
             }
-            const nextUsage = usageFrom(data, protocol);
-            if (nextUsage) usage = { ...usage, ...nextUsage };
+            const reasoningDelta = nativeReasoning(data, protocol, true);
+            reasoning += reasoningDelta;
+            if (reasoning.length > 2_000_000) throw new AiError('invalid_output');
+            if (!signal.aborted) {
+              if (reasoningDelta) { options.onActivity?.('reasoning'); options.onReasoningDelta?.(reasoningDelta); }
+              if (delta) options.onActivity?.('content');
+            }
             text += delta;
             if (text.length > 8_000_000) throw new AiError('invalid_output');
             if (delta && !signal.aborted) options.onDelta?.(delta);
           }
           if (!terminal) throw new AiError('stream_interrupted');
         }
+        if (text.length > 8_000_000 || reasoning.length > 2_000_000) throw new AiError('invalid_output');
         if (!text.trim()) throw new AiError('empty');
         requestInspections.finish(inspectionId!, usage);
-        return { text, usage, diagnostics: wire.diagnostics, protocol, model: snapshot.model };
+        return { text, ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics: wire.diagnostics, protocol, model: snapshot.model };
       });
     } catch (error) {
-      if (inspectionId) requestInspections.finish(inspectionId, undefined, safeAiError(error).code);
+      if (inspectionId) requestInspections.finish(inspectionId, observedUsage, safeAiError(error).code);
       throw error;
     }
   }

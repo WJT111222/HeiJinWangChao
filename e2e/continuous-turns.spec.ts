@@ -78,7 +78,7 @@ async function mock(page: Page) {
       text =
         plan.badStoryNumber === number
           ? '{bad-output'
-          : `<正文>${narrative}</正文><短期记忆>第${number}幕的街边休息</短期记忆><变量规划>${JSON.stringify(timeGuide)}</变量规划><行动选项>留在街边\n看看四周\n询问路线</行动选项>`;
+          : `<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>${narrative}</正文><短期记忆>第${number}幕的街边休息</短期记忆><变量规划>${JSON.stringify(timeGuide)}</变量规划><行动选项>留在街边\n看看四周\n询问路线</行动选项>`;
       await route.fulfill({
         contentType: 'text/event-stream',
         body: `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`,
