@@ -1,10 +1,10 @@
 import { AiError, safeAiError } from './errors';
-import { redactInspection, requestInspections } from './inspection';
+import { requestInspections } from './inspection';
 import type { InspectionScope } from './inspection';
 import type { RequestSnapshot } from './snapshot';
 import { secretFor } from './snapshot';
-import { canTryModelCandidate, modelListCandidates, parseModelPage } from './modelListing';
-import type { ModelListDiagnostics } from './modelListing';
+import { canTryModelCandidate, modelListCandidates, parseModelPage, safeModelListEndpoint } from './modelListing';
+import type { ModelListDiagnostics, ModelListFailureDiagnostics } from './modelListing';
 import {
   wireRequest,
   responseText,
@@ -30,6 +30,7 @@ export interface RequestOptions {
 }
 export interface ModelListOptions extends RequestOptions {
   onDiagnostics?: (diagnostics: ModelListDiagnostics) => void;
+  onFailureDiagnostics?: (diagnostics: ModelListFailureDiagnostics) => void;
 }
 export interface AiResponse {
   text: string;
@@ -216,22 +217,33 @@ export class AiClient {
     }
   }
   async listModels(snapshot: RequestSnapshot, options: ModelListOptions = {}): Promise<string[]> {
-    return operation(options, async (signal) => {
+    let lastEndpoint: string | undefined, lastHttpStatus: number | undefined, attempts = 0, pagesRead = 0;
+    try { return await operation(options, async (signal) => {
       const candidates = modelListCandidates(snapshot), protocol = snapshot.channel.protocol;
-      async function read(client: AiClient, url: string) {
+      async function read(client: AiClient, url: string, candidate = false) {
         if (signal.aborted) throw new AiError('cancelled');
-        const response = await client.response(url, { headers: authHeaders(snapshot) }, signal);
+        const headers = authHeaders(snapshot);
+        lastEndpoint = url; lastHttpStatus = undefined;
+        if (candidate) attempts++;
+        let response: Response;
+        try { response = await client.response(url, { headers }, signal); }
+        catch (error) {
+          if (error instanceof AiError && error.status === 0) throw new AiError('network');
+          if (!signal.aborted && error instanceof AiError) lastHttpStatus = error.status;
+          throw error;
+        }
+        if (signal.aborted) throw new AiError('cancelled');
+        lastHttpStatus = response.status;
         let data: unknown;
         try { data = await response.json(); } catch { throw new AiError('invalid_json', response.status); }
         if (signal.aborted) throw new AiError('cancelled');
-        try { return { ...parseModelPage(data, protocol, secretFor(snapshot)), httpStatus: response.status }; }
+        try { const page = parseModelPage(data, protocol, secretFor(snapshot)); pagesRead++; return { ...page, httpStatus: response.status }; }
         catch (error) { if (error instanceof AiError) throw new AiError(error.code, response.status); throw error; }
       }
-      let first: Awaited<ReturnType<typeof read>> | undefined, selected = '', attempts = 0;
+      let first: Awaited<ReturnType<typeof read>> | undefined, selected = '';
       let failure: unknown = new AiError('not_found');
       for (const url of candidates) {
-        attempts++;
-        try { first = await read(this, url); selected = url; break; }
+        try { first = await read(this, url, true); selected = url; break; }
         catch (error) {
           if (signal.aborted || !canTryModelCandidate(error)) throw error;
           // 不用后续404覆盖更明确的JSON/格式/网络错误；不展示原始服务响应。
@@ -253,17 +265,22 @@ export class AiClient {
         if (page.next) next.searchParams.set(page.next.key, page.next.value);
         if (page.next && seen.has(next.href)) throw new AiError('model_list_pagination');
         if (!page.next || number === 20) {
-          const safeEndpoint = new URL(selected); safeEndpoint.search = '';
           options.onDiagnostics?.({ rawEntries, validEntries, filteredEntries: rawEntries - validEntries,
             duplicateEntries: validEntries - ids.size, uniqueModels: ids.size, pages: number,
             attemptedEndpoints: attempts, complete: !page.next,
-            fullEndpointInput: protocol === 'openai' && /\/(?:chat\/completions|models)\/*$/i.test(new URL(snapshot.channel.baseUrl).pathname),
-            endpoint: redactInspection(safeEndpoint.href, [secretFor(snapshot)]), httpStatus: first.httpStatus });
+            fullEndpointInput: /\/models\/*$/i.test(new URL(snapshot.channel.baseUrl).pathname)
+              || (protocol === 'openai' && /\/chat\/completions\/*$/i.test(new URL(snapshot.channel.baseUrl).pathname)),
+            endpoint: safeModelListEndpoint(selected, secretFor(snapshot)), httpStatus: first.httpStatus });
           return [...ids].sort();
         }
         seen.add(next.href); page = await read(this, next.href);
       }
       throw new AiError('model_list_pagination');
-    });
+    }); } catch (error) {
+      try { options.onFailureDiagnostics?.({ endpoint: lastEndpoint ? safeModelListEndpoint(lastEndpoint, secretFor(snapshot)) : undefined,
+        attemptedEndpoints: attempts, httpStatus: lastHttpStatus, pagesRead, errorCode: error instanceof AiError ? error.code : 'unknown' }); }
+      catch { /* 诊断观察器失败不能改变请求的原始错误或取消语义。 */ }
+      throw error;
+    }
   }
 }

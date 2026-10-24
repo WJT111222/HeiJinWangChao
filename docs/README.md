@@ -6,7 +6,7 @@
 
 - [项目介绍、运行及当前里程碑](../README.md)
 - [当前架构和状态安全边界](CURRENT_ARCHITECTURE.md)
-- [M6 API 模型列表兼容专项任务](API-MODEL-LIST-COMPATIBILITY.md)（**待实施**，并非已完成）
+- [M6 API 模型列表兼容专项任务](API-MODEL-LIST-COMPATIBILITY.md)（主体已随 PR #27 合并；最终加固及真实服务边界见补充报告）
 - [项目变更记录](../CHANGELOG.md)
 - [运行中的提示词结构](../src/prompts/README.md)、[Prompt 资源库与历史说明](../prompts/docs/README.md)
 - [工作流模块与阶段说明](../src/workflows/README.md)

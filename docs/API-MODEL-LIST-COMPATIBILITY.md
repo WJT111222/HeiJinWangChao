@@ -1,6 +1,8 @@
-# M6：API 模型列表兼容性集中修复（待实施）
+# M6：API 模型列表兼容性集中修复（原始任务书与实施状态）
 
 > 源于三代目最后确认的开发指令，2026-10-24 归档。基线 `main@9176ed6` 已包含 [PR #25](https://github.com/WJT111222/HeiJinWangChao/pull/25) 的自动获取模型、四阶段独立选择、同渠道缓存与主题选择器。**本文件只是任务书，未授权自动实现、合并或部署；开始时必须重新核对最新 main。**
+
+> **实施状态**：主体已随 [PR #27](https://github.com/WJT111222/HeiJinWangChao/pull/27) 合并（`7867228`），原验收记录见 [M6 开发报告](../M6-MODEL-LIST-DEVELOPMENT.md)。完整原生 Models URL、失败诊断与受限字段兼容的最终加固另见 [补充报告](../M6-MODEL-LIST-HARDENING.md)，本轮等待审查。下文保留三代目任务来源；Mock 通过不代表真实中转站或 CORS 已验证，P1 代理尚未实施。
 
 ## 背景与目标
 

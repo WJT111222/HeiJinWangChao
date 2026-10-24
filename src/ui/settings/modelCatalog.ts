@@ -4,10 +4,10 @@ import type { CredentialVault } from '../../services/ai/credentials';
 import { channelSnapshot, secretFor } from '../../services/ai/snapshot';
 import type { RequestSnapshot } from '../../services/ai/snapshot';
 import { modelListFailureMessage } from '../../services/ai/modelListing';
-import type { ModelListDiagnostics } from '../../services/ai/modelListing';
+import type { ModelListDiagnostics, ModelListFailureDiagnostics } from '../../services/ai/modelListing';
 import { safeAiError } from '../../services/ai/errors';
 
-export interface ModelList { status: 'loading' | 'ready' | 'empty' | 'error'; models: readonly string[]; message: string; diagnostics?: ModelListDiagnostics }
+export interface ModelList { status: 'loading' | 'ready' | 'empty' | 'error'; models: readonly string[]; message: string; diagnostics?: ModelListDiagnostics; failureDiagnostics?: ModelListFailureDiagnostics }
 interface Entry { snapshot: RequestSnapshot; controller: AbortController; pending?: Promise<void> }
 // 设置页面共享：四条路由复用同渠道结果。凭证只保存在原快照 WeakMap，不进入可观察状态或存储。
 export class ModelCatalog {
@@ -34,9 +34,9 @@ export class ModelCatalog {
     const models = same ? this.state[channel.id]?.models ?? [] : [];
     const previousDiagnostics = same ? this.state[channel.id]?.diagnostics : undefined;
     this.publish(channel.id, { status: 'loading', models, diagnostics: previousDiagnostics, message: '正在获取模型列表…' });
-    let diagnostics: ModelListDiagnostics | undefined;
+    let diagnostics: ModelListDiagnostics | undefined, failureDiagnostics: ModelListFailureDiagnostics | undefined;
     entry.pending = this.client.listModels(snapshot, { signal: entry.controller.signal, timeoutSeconds,
-      onDiagnostics: (value) => { diagnostics = value; } }).then((result) => {
+      onDiagnostics: (value) => { diagnostics = value; }, onFailureDiagnostics: (value) => { failureDiagnostics = value; } }).then((result) => {
       if (this.entries.get(channel.id) !== entry || entry.controller.signal.aborted) return;
       const counts = diagnostics ? ` 原始条目 ${diagnostics.rawEntries}，有效 ${diagnostics.validEntries}，过滤 ${diagnostics.filteredEntries}，重复 ${diagnostics.duplicateEntries}；列表模型 ${diagnostics.uniqueModels} 个，读取 ${diagnostics.pages} 页，同源端点尝试 ${diagnostics.attemptedEndpoints} 个（不含默认或手填项）。` : '';
       const limit = diagnostics?.complete === false ? ' 已达20页读取上限，列表尚未完整获取，可手动补充模型。' : '';
@@ -48,8 +48,11 @@ export class ModelCatalog {
     }).catch((error: unknown) => {
       if (this.entries.get(channel.id) !== entry || entry.controller.signal.aborted) return;
       const status = safeAiError(error).status;
-      const http = status === undefined || status === 404 ? '' : `（HTTP ${status}）`;
-      this.publish(channel.id, { status: 'error', models, diagnostics: previousDiagnostics, message: `${modelListFailureMessage(error) ?? safeAiError(error).message}${http} 可刷新重试或手动填写模型 ID。` });
+      const http = failureDiagnostics || status === undefined || status === 404 ? '' : `（HTTP ${status}）`;
+      const details = failureDiagnostics ? ` 最后尝试：${failureDiagnostics.endpoint ?? '尚未发出请求'}；候选 ${failureDiagnostics.attemptedEndpoints} 个；已读取 ${failureDiagnostics.pagesRead} 页；${failureDiagnostics.httpStatus === undefined ? '未获得 HTTP 状态' : `HTTP ${failureDiagnostics.httpStatus}`}。` : '';
+      const retained = models.length ? ` 保留上次模型列表 ${models.length} 个，非本次请求结果。` : '';
+      this.publish(channel.id, { status: 'error', models, diagnostics: previousDiagnostics, failureDiagnostics,
+        message: `本次获取失败：${modelListFailureMessage(error) ?? safeAiError(error).message}${http}${details}${retained} 可刷新重试或手动填写模型 ID。` });
     }).finally(() => { if (this.entries.get(channel.id) === entry) entry.pending = undefined; });
     return entry.pending;
   }
