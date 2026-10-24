@@ -1507,3 +1507,26 @@ summary {
 
 .request-usage { min-width: 0; max-height: 12rem; overflow: auto; overflow-wrap: anywhere; font-size: .75rem; }
 .request-usage p { margin-block: .4rem; }
+
+/* AI设置：主题化选择浮层，不改变其他页面的原生控件。 */
+.themed-select { min-width: 0; display: grid; gap: .4rem; }
+.select-label { display: block; }
+.select-trigger { width: 100%; display: flex; justify-content: space-between; gap: .75rem; text-align: left; background: #111a15; min-height: 44px; }
+.select-trigger > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.select-trigger[aria-expanded='true'] { border-color: var(--gold); }
+.select-popup { position: fixed; z-index: 30; background: #152119; border: 1px solid var(--gold); border-radius: 6px; padding: .4rem; box-shadow: 0 12px 32px #0009; display: flex; flex-direction: column; gap: .4rem; }
+.select-popup input { min-width: 0; width: 100%; flex-shrink: 0; }
+.select-popup [role='listbox'] { overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
+.select-popup [role='option'] { display: flex; width: 100%; justify-content: space-between; gap: .5rem; border: 1px solid transparent; text-align: left; padding: .65rem; overflow-wrap: anywhere; min-height: 44px; }
+.select-popup [role='option'].option-active { background: #303d2a; border-color: #a28f60; }
+.select-popup [role='option'][aria-selected='true'] { color: #ead19a; background: #293525; }
+.model-picker { min-width: 0; display: grid; align-content: start; gap: .4rem; }
+.model-picker > button { justify-self: start; }
+.model-picker label { display: grid; gap: .4rem; }
+.manual-model-toggle { font-size: .8rem; padding: .35rem .5rem; color: var(--muted); }
+.ai-toolbar > .themed-select { flex: 1 1 14rem; }
+
+.settings-content .select-trigger { margin: 0; }
+.settings-content .themed-select { align-content: start; font-size: .86rem; color: #cfd5c6; }
+.settings-content .model-picker .field-hint { margin: .3rem 0; }
+.settings-content .model-picker > button { margin: .2rem 0; }
