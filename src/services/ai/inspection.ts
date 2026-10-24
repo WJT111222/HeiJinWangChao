@@ -162,6 +162,7 @@ export class RequestInspectionStore {
                   inputTokens: usage?.inputTokens,
                   outputTokens: usage?.outputTokens,
                   totalTokens: usage?.totalTokens,
+                  ...(usage?.reasoningTokens !== undefined ? { reasoningTokens: usage.reasoningTokens } : {}),
                 },
               },
             }),

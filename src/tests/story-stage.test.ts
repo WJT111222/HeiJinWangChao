@@ -15,7 +15,7 @@ import { game } from './fixtures/game';
 
 const narrative = '【旁白】街边的公交车缓缓驶过。\n\n你看着窗外的路灯，没有作出决定。';
 function output(body = narrative, actions = true) {
-  return `<正文>${body}</正文><短期记忆>等车</短期记忆><变量规划>[{"group":"time","observedFact":"公交车驶过"}]</变量规划>${actions ? '<行动选项>留在原地\n看看周围\n询问站台</行动选项>' : ''}`;
+  return `<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>${body}</正文><短期记忆>等车</短期记忆><变量规划>[{"group":"time","observedFact":"公交车驶过"}]</变量规划>${actions ? '<行动选项>留在原地\n看看周围\n询问站台</行动选项>' : ''}`;
 }
 const frame = (value: unknown) => `data: ${JSON.stringify(value)}\n\n`;
 function sse(text: string, protocol: Protocol = 'openai') {
@@ -119,7 +119,7 @@ describe('正文流式阅读投影', () => {
     for (const prefix of ['<think>秘密</think>', '错误前缀'])
       expect(new StoryStream().push(prefix + output())).toBe('');
     const stream = new StoryStream();
-    expect(stream.push('<正文>可见<变量规')).toBe('可见');
+    expect(stream.push('<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>可见<变量规')).toBe('可见');
     expect(stream.push('划>[{"内部":1}]')).toBe('可见');
   });
 });
@@ -238,7 +238,7 @@ describe('真实正文入口与草稿原子替换', () => {
   });
   it.each([
     '短正文',
-    '<正文>缺失尾部</正文>',
+    '<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>缺失尾部</正文>',
     output(''),
     output(narrative).replace('变量规划>', '错误标签>'),
   ])('非法输出失败保留原正文：%s', async (bad) => {

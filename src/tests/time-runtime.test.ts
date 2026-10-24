@@ -43,7 +43,7 @@ function context(init?: RequestInit) {
   return { model: string(body.model), ctx: record(JSON.parse(match[1])) };
 }
 function wireStory(interrupt = false, bad = false) {
-  const story = timeStory(interrupt), text = `<正文>${story.narrative}</正文><短期记忆>${story.summary}</短期记忆><变量规划>${JSON.stringify(bad ? [] : story.variableGuide)}</变量规划>`;
+  const story = timeStory(interrupt), text = `<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>${story.narrative}</正文><短期记忆>${story.summary}</短期记忆><变量规划>${JSON.stringify(bad ? [] : story.variableGuide)}</变量规划>`;
   return new Response(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`, { headers: { 'content-type': 'text/event-stream' } });
 }
 function variableResult(state: GameState, draft: TurnDraft, interrupt = false) {

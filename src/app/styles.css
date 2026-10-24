@@ -1499,3 +1499,8 @@ summary {
 .stage-stat-cards section { padding: .75rem; border: 1px solid var(--line); font-size: .8rem; overflow-wrap: anywhere; }
 @media (max-width: 1000px) { .inspector-columns { grid-template-columns: minmax(170px,.7fr) minmax(0,1.3fr); } .inspector-context { grid-column: 1 / -1; } }
 @media (max-width: 650px) { .inspector-columns, .stage-stat-cards { grid-template-columns: minmax(0,1fr); } .inspector-context { grid-column: auto; } .module-library-list { max-height: 20rem; } .prompt-inspector pre { max-height: 24rem; } }
+
+/* P6 临时调试查看不进入正文阅读区；长文本在面板内滚动。 */
+.story-inspection { min-width: 0; margin-block: .75rem; }
+.story-inspection pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 24rem; overflow: auto; font: inherit; }
+.story-inspection details { margin-block: .5rem; }

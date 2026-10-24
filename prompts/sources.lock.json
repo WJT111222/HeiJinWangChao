@@ -104,6 +104,10 @@
       "replacement": {
         "from": "你是《黑金王朝》的**开局正文导演**",
         "to": "本阶段负责《黑金王朝》的**开局正文生成**"
+      },
+      "m5P6": {
+        "notes": "用户明确批准thinking结构/开局契机与兼容消息调整，原始来源及历史适配记录保留。",
+        "sha256": "84b61c70d74e9ee23108658c8ccaa5c5aa548af1da2a6f404415821bd2aaa90b"
       }
     },
     "stages/regular/story.md": {
@@ -113,6 +117,10 @@
       "replacement": {
         "from": "你是《黑金王朝》的**普通回合叙事执行者**",
         "to": "本阶段负责《黑金王朝》的**普通回合正文生成**"
+      },
+      "m5P6": {
+        "notes": "用户明确批准thinking结构/开局契机与兼容消息调整，原始来源及历史适配记录保留。",
+        "sha256": "7c31d0a140b0a3ee5c7937f6a0650a0dc54f78307a98ed87f36c325f18a5af27"
       }
     },
     "variableGroups/npc_ordinary/init.md": {
@@ -220,7 +228,11 @@
       "sourcePath": "prompts/runtime/defaults.ts",
       "sourceSha256": "6e9ab201d56128064184287811b8fd7ae2f4d313d82f76149789eed4cd2f0a15",
       "treatment": "protocol-adaptation",
-      "notes": "仅保留 assistant 格式确认用途；删除 think/thinking/剧情规划 输出引导，身份为浮生，主角仍动态替换；P2 按协议兼容显式选择。"
+      "notes": "仅保留 assistant 格式确认用途；删除 think/thinking/剧情规划 输出引导，身份为浮生，主角仍动态替换；P2 按协议兼容显式选择。",
+      "m5P6": {
+        "notes": "用户明确批准thinking结构/开局契机与兼容消息调整，原始来源及历史适配记录保留。",
+        "sha256": "8333d0523447d7433c7955bec8a28463d572a67b26b913c6ba9e63312fefa17a"
+      }
     },
     "shared/01_agency.md": {
       "origin": "baseline",
@@ -241,7 +253,11 @@
       "origin": "baseline",
       "sourceSha256": "606d0459789198dacf095e61b6efe122803a4af0336f90b9819b86251463eee8",
       "treatment": "summary-target-clarification",
-      "notes": "PR #16 复审：在既有共享正文输出协议中追加同次请求约100～200汉字事实摘要目标；保留原文和标签，不是旧版逐字资源。sourceSha256 保留原始基线来源，当前资源哈希由 Manifest 记录。"
+      "notes": "PR #16 复审：在既有共享正文输出协议中追加同次请求约100～200汉字事实摘要目标；保留原文和标签，不是旧版逐字资源。sourceSha256 保留原始基线来源，当前资源哈希由 Manifest 记录。",
+      "m5P6": {
+        "notes": "用户明确批准thinking结构/开局契机与兼容消息调整，原始来源及历史适配记录保留。",
+        "sha256": "5aa1285ab4fda4f5bf5603fd0d1921f6b536ec3580e0c854860c6e2363ac0967"
+      }
     },
     "shared/07_command_output.md": {
       "origin": "baseline",
@@ -530,6 +546,10 @@
       "m5P5Review4": {
         "notes": "PR22第三轮：事件复用成果认知分类及event-result/event-plan来源隔离；没有可靠独立授权时停用旧人player_confirmed退场。原任务协议、六主模板、世界书、NSFW与七项设置不变。",
         "sha256": "c7fab0623d75d4d1f1bdd2bd236c03732bc4a97b4fd8f70733ed54f82d4c771b"
+      },
+      "m5P6": {
+        "notes": "用户明确批准thinking结构/开局契机与兼容消息调整，原始来源及历史适配记录保留。",
+        "sha256": "918fd653ccc55c84f943609b8dbdec85728fc668b726e331d68e95d0df45d848"
       }
     },
     "docs/ASSEMBLY.md": {
@@ -540,7 +560,43 @@
         "sha256": "bafe86a5e4576dc0a2d0e33d04d1fa7701e66751d7a3a26035e4e1bc00492f7d"
       },
       "sourceSha256": "93e6326dcdc6d7c73142288925aacab1fba04cbc4c463a6a71fd2c9ec4fa3656",
-      "sourcePath": "prompts/docs/ASSEMBLY.md@6bf9e25"
+      "sourcePath": "prompts/docs/ASSEMBLY.md@6bf9e25",
+      "m5P6": {
+        "notes": "用户明确批准thinking结构/开局契机与兼容消息调整，原始来源及历史适配记录保留。",
+        "sha256": "43c442b9e8b87b450e224d159174c2f80c5b708162af43e5c39e3bc339ef22c4"
+      }
+    },
+    "planning/opening.md": {
+      "origin": "user-approved-m5-p6",
+      "sourcePath": "附录A",
+      "sourceSha256": "4d71e81a009892b1a56fd9afae28f6194a14f4a67e635b9b867ffbaa8bd4da63",
+      "treatment": "verbatim"
+    },
+    "planning/regular.md": {
+      "origin": "user-approved-m5-p6",
+      "sourcePath": "附录B",
+      "sourceSha256": "bfb22bff472fbe8916b58915a7cead540f10763ded99d5b187a2999fe9905097",
+      "treatment": "verbatim"
+    }
+  },
+  "m5P6": {
+    "instructionFile": "已粘贴的文本.txt",
+    "instructionSha256": "d08952e5ff44be7de33886e885ab0206a2322cfbaaba6354d4cab6c4b9c73198",
+    "notes": "附录A/B原文提取，仅借鉴ypq123456789/MoRanJiangHu技术组织，无业务代码或修仙规划移植。",
+    "reference": {
+      "repository": "ypq123456789/MoRanJiangHu",
+      "commit": "ed7040a34180d058a580d6d7339bd7432c27ae58",
+      "treatment": "technical-study-only-no-business-code-copy",
+      "files": {
+        "hooks/useGame/mainStoryRequest.ts": "72cdd65f09c959b224f9f219665c272b7d4912238d5c00df4d165c4c6445953f",
+        "hooks/useGame/openingStoryWorkflow.ts": "9401705e1b7b4f59aa1270619aaba97939359ffa9d6786be071584fd4306c3b8",
+        "hooks/useGame/thinkingContext.ts": "c7e3a6aeb2a0a77fc3feff1bf97fa12950b66c7529cae2fef746596bf92036bc",
+        "hooks/useGame/promptRuntime.ts": "a36ae81484987a50d19ab4ddf8ce53da33a55688880d848195752dda6d277e2f",
+        "services/ai/chatCompletionClient.ts": "ce4df3e1f6955fc3a4578eee67ce6aec9cba55e55a9cf65001f50af8f2f8ae7d",
+        "services/ai/storyResponseParser.ts": "99bff5289779349a8cc8ff6ce857e79525ad97df3d47ade794785fbc36766fdc",
+        "prompts/runtime/defaults.ts": "6e9ab201d56128064184287811b8fd7ae2f4d313d82f76149789eed4cd2f0a15",
+        "components/features/Chat/TurnItem.tsx": "203177b76d7fa199d580d256f904e4bb545deb9072377096d9f8ffdda4357e3f"
+      }
     }
   }
 }

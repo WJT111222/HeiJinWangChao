@@ -81,7 +81,7 @@ export async function composePrompt(unchecked: ComposeInput) {
     role: 'user',
     content: contextMessage({ ...context, PROMPT_SETTINGS: input.settings.prompts }),
   });
-  if (confirmation) messages.push(confirmation);
+  if (confirmation) messages.push(confirmation, { role: 'user', content: '请按已确认的本阶段协议生成当前回合。' });
   if (messages.some((m) => /\{\{[^{}]*\}\}/.test(m.content))) throw new AiError('placeholder');
   return {
     messages,

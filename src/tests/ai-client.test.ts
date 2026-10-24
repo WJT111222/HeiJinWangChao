@@ -232,19 +232,22 @@ describe('三种原生协议与响应规范化', () => {
     expect(response.diagnostics).toContain('TEMPERATURE_SKIPPED_UNSUPPORTED');
     expect(response.diagnostics).toContain('NATIVE_JSON_MODE_SKIPPED_STRICT_PROMPT_RETAINED');
   });
-  it('COT 默认关闭，只有显式确认的 OpenAI 模型可用，Prefix 与特殊模型跳过', () => {
+  it('COT新渠道默认完整历史，旧off保留，Prefix降级且不按模型名单猜测能力', () => {
     const a = configured();
+    expect(requestSnapshot(a.config, 'story', a.vault).useCot).toBe(true);
+    a.channel.compatibility.cotMode = 'off';
     expect(requestSnapshot(a.config, 'story', a.vault).useCot).toBe(false);
     a.channel.compatibility.cotMode = 'confirmation';
     a.channel.compatibility.cotModels = ['mock-model'];
     expect(requestSnapshot(a.config, 'story', a.vault).useCot).toBe(true);
     expect(requestSnapshot(a.config, 'variables', a.vault).useCot).toBe(false);
     a.channel.compatibility.cotMode = 'prefix';
-    expect(requestSnapshot(a.config, 'story', a.vault).useCot).toBe(false);
+    expect(requestSnapshot(a.config, 'story', a.vault).useCot).toBe(true);
+    expect(requestSnapshot(a.config, 'story', a.vault).diagnostics).toContain('COT_PREFIX_FALLBACK_COMPLETE_HISTORY');
     a.channel.compatibility.cotMode = 'confirmation';
     a.channel.defaultModel = 'deepseek-test';
-    a.channel.compatibility.cotModels = ['deepseek-test'];
-    expect(requestSnapshot(a.config, 'story', a.vault).useCot).toBe(false);
+    a.channel.compatibility.cotModels = [];
+    expect(requestSnapshot(a.config, 'story', a.vault).useCot).toBe(true);
   });
 });
 describe('安全错误、取消、超时和流式分片', () => {

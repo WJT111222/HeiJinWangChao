@@ -105,7 +105,7 @@ export function newChannel(protocol: Protocol = 'openai'): Channel {
       temperature: true,
       maxOutputTokens: true,
       jsonMode: false,
-      cotMode: 'off',
+      cotMode: 'confirmation',
       cotModels: [],
     },
   };

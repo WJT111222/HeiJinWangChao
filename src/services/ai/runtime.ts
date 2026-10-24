@@ -3,7 +3,7 @@ import { browserPromptOrder } from '../../prompts/order';
 import { composePrompt } from '../../prompts/composer';
 import { checkedInput } from '../../prompts/context';
 import type { ComposeInput } from '../../prompts/context';
-import { parseStory, parseVariables, parseWorld } from '../validation/aiOutputs';
+import { parseStoryEnvelope, parseVariables, parseWorld } from '../validation/aiOutputs';
 import type { AiConfig, AiStage } from './configuration';
 import type { CredentialVault } from './credentials';
 import { requestSnapshot } from './snapshot';
@@ -43,7 +43,8 @@ export async function runStageRequest(
     timeoutSeconds: options.timeoutSeconds ?? captured.settings.runtime.timeoutSeconds,
     stream: options.stream ?? captured.stage === 'story',
   });
-  const story = captured.stage === 'story' ? parseStory(response.text, captured.mode, captured.settings) : undefined;
+  const envelope = captured.stage === 'story' ? parseStoryEnvelope(response.text, captured.mode, captured.settings) : undefined;
+  const story = envelope?.story;
   if (story) {
     try { timeOutcome(captured.state, { userInput: captured.userInput, turnKind: captured.mode, story }, true); }
     catch { throw new AiError('time_preflight'); }
@@ -53,6 +54,8 @@ export async function runStageRequest(
         : parseWorld(response.text, captured.state, captured.draft!));
   return {
     result,
+    // 临时诊断单独返回；StorySchema和后续阶段永远不接收这些字段。
+    storyInspection: envelope ? { planning: envelope.planning, nativeReasoning: response.nativeReasoning } : undefined,
     usage: response.usage,
     diagnostics: response.diagnostics,
     modules: prompt.modules,

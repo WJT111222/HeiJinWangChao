@@ -28,7 +28,7 @@ export function moduleActivation(module: PromptModule, input: SelectionInput) {
   }
   if (module.activation === 'protocol-compatibility') {
     enabled = input.stage === 'story' && input.cotAllowed === true;
-    reason = '仅在具体协议/模型确认兼容时激活';
+    reason = '正文完整格式确认历史；按既有渠道配置启用，不用模型名单';
   }
   if (module.activation === 'setting') {
     const [field, value] = module.toggle!.split(':');

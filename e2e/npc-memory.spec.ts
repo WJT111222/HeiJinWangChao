@@ -128,7 +128,7 @@ test('公开自动维护开关不授权NPC额外收费；新正式回合和下�
       await route.fulfill({ contentType: 'application/json', body: wire(JSON.stringify({ entries: [{ text: '公开经历的整理' }], unresolved: [], contradictions: [] })) }); return;
     }
     if (model === 'story') {
-      const text = '<正文>主角安静观察周围。</正文><短期记忆>在原地观察</短期记忆><变量规划>[]</变量规划>';
+      const text = '<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>主角安静观察周围。</正文><短期记忆>在原地观察</短期记忆><变量规划>[]</变量规划>';
       await route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n` }); return;
     }
     const text = model === 'variables' ? JSON.stringify({ commands: [], rejectedSuggestions: [], unresolved: [] })
