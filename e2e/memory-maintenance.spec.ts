@@ -91,6 +91,9 @@ test('选择并恢复独立模型；手动整理、原文来源及真实memory�
   await expect(memory).toContainText('可信活跃短期 31');
   await memory.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true }).click();
   await expect(memory).toContainText('一批记忆已整理并原子保存');
+  const usage = memory.getByRole('region', { name: '记忆请求 Token 用量', exact: true });
+  await expect(usage).toContainText('估算输入 Token'); await expect(usage).toContainText('实际输入：40');
+  await expect(usage).toContainText('实际输出：10'); await expect(usage).toContainText('实际总量：50');
   await expect(memory).toContainText('短期 21'); await expect(memory).toContainText('中期 1');
   await memory.getByRole('button', { name: '查看第 3 回合原文', exact: true }).click();
   await expect(memory.getByRole('region', { name: '摘要来源原文' })).toContainText('蓝色钥匙');
@@ -164,7 +167,7 @@ test('自动维护仅由新正式提交触发，不阻断下一轮；设置保�
       await route.fulfill({ contentType: 'application/json', body: wire() }); return;
     }
     if (model === 'story') {
-      const content = '<正文>主角仍在原地休息，并观察窗外。</正文><短期记忆>在原地观察窗外</短期记忆><变量规划>[]</变量规划>';
+      const content = '<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>主角仍在原地休息，并观察窗外。</正文><短期记忆>在原地观察窗外</短期记忆><变量规划>[]</变量规划>';
       await route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\ndata: [DONE]\n\n` }); return;
     }
     const content = model === 'variables' ? JSON.stringify({ commands: [], rejectedSuggestions: [], unresolved: [] })

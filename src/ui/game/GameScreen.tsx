@@ -20,6 +20,8 @@ import { DataError } from '../../domain/common';
 import { storyError } from '../../workflows/storyStage';
 import { assessSummary } from '../../domain/memories/summary';
 import { useMemoryMaintenance } from './useMemoryMaintenance';
+import { RequestUsage } from './RequestUsage';
+import { StoryInspectionPanel } from './StoryInspectionPanel';
 import { MemoryMaintenanceControls } from '../panels/MemoryMaintenanceControls';
 
 export function GameScreen({
@@ -501,6 +503,8 @@ export function GameScreen({
               <small>生成与重新 Roll 始终使用此输入；下方编辑不会覆盖它。</small>
             </details>
           )}
+          <RequestUsage saveId={state.saveId} />
+          {draft && <StoryInspectionPanel key={`${draft.turnId}-${draft.storyRevision}`} draft={draft} />}
           <div className="runtime-switches">
             {(
               [

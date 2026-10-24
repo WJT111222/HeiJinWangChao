@@ -68,7 +68,7 @@ function payload(stage: Stage, bad = false) {
   const text = bad
     ? '{bad-json'
     : stage === 'story'
-      ? `<正文>${narrative}</正文><短期记忆>用餐</短期记忆><变量规划>[]</变量规划>`
+      ? `<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>${narrative}</正文><短期记忆>用餐</短期记忆><变量规划>[]</变量规划>`
       : JSON.stringify(
           stage === 'variables'
             ? {
@@ -325,4 +325,34 @@ test('只开启世界时明确预览；补开变量会失效旧世界并顺序�
   await complete(page);
   expect(plan.calls).toEqual(['story', 'world', 'variables', 'world']);
   expect((await stored(page)).formal).toBe(before);
+});
+
+test('P6完善：生成附近逐请求显示完整输入估算、真实usage与输出设置，不汇总三阶段', async ({ page }) => {
+  const before = await seed(page), gate = holdRequest(), calls: Stage[] = [];
+  await page.route('https://turn.mock.invalid/**', async (route) => {
+    const stage: Stage = route.request().postDataJSON().model; calls.push(stage);
+    if (stage === 'world') await gate.hold;
+    const index = { story: 1, variables: 2, world: 3 }[stage];
+    const usage = { prompt_tokens: index * 101, completion_tokens: index * 10, total_tokens: index * 111,
+      completion_tokens_details: { reasoning_tokens: index } };
+    const body = stage === 'story' ? payload(stage).replace('data: [DONE]', `data: ${JSON.stringify({ choices: [], usage })}\n\ndata: [DONE]`)
+      : JSON.stringify({ ...JSON.parse(payload(stage)), usage });
+    await route.fulfill({ contentType: stage === 'story' ? 'text/event-stream' : 'application/json', body });
+  });
+  await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
+  const usage = page.getByRole('region', { name: '本次请求 Token 用量', exact: true });
+  await expect(usage).toContainText('动态世界 · world · 请求中');
+  await expect(usage).toContainText('估算输入 Token'); await expect(usage).toContainText('8,192');
+  await expect(usage.locator(':scope > div').first()).toContainText('实际输入：未提供');
+  gate.release(); await complete(page); await expect(usage.locator(':scope > div')).toHaveCount(3);
+  for (const [position, input, output, total] of [[0, 303, 30, 333], [1, 202, 20, 222], [2, 101, 10, 111]]) {
+    const card = usage.locator(':scope > div').nth(position); await expect(card).toContainText(`实际输入：${input}`);
+    await expect(card).toContainText(`实际输出：${output}`); await expect(card).toContainText(`实际总量：${total}`);
+  }
+  expect(calls).toEqual(['story', 'variables', 'world']); expect((await stored(page)).formal).toBe(before);
+  await expect(page.locator('main')).not.toContainText('预计需要'); await expect(page.locator('main')).not.toContainText('输出上限可能不足');
+  const records = await page.evaluate(async () => { const path = '/src/services/ai/inspection.ts', { requestInspections } = await import(path);
+    return requestInspections.getSnapshot(); });
+  expect(records.every((item: { statistics: { estimatedTokens: number } }) => item.statistics.estimatedTokens > 100)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

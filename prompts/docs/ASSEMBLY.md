@@ -24,9 +24,10 @@ M3-P1 仅提供静态注册契约。M3-P2 已在 `src/prompts/loader.ts`、`cont
 | 210–227 | min_length、一个人称、style_general、四个既有写作开关 | 四个可选增强仅在各自可移动槽位内排序，不能跨固定锚点 |
 | 250–251 | writing.nsfw / writing.intimacy_boundaries | NSFW 为用户手动适配正文，边界为独立审阅版；两项各登记一次、无设置条件，原版逐字移植不声明完成 |
 | 300 | opening.story 或 regular.story | 恰好一个 |
+| 350 | planning.opening 或 planning.regular | 只在对应正文模式常驻、互斥，原文全文；不得进入变量/世界/记忆 |
 | 406 / 409 | story_output / dialogue_labels | 保持既有输出协议 |
 | 此后 | 当前资料、已确认背景、历史和玩家输入等数据容器 | P2 实现，不能反向覆盖系统规则 |
-| 900 | compatibility.cot_format_ack | 仅兼容时，以独立 assistant 消息处于正确尾部位置；当前不发送 |
+| 900 | compatibility.cot_format_ack | 按既有cotMode启用完整assistant确认历史，随后以user执行请求收尾；Prefix降级普通历史，不发扩展或探测请求 |
 
 变量/世界使用相同两本世界书作为背景事实，以及 shared.01–05；不加入浮生正文身份、小说写作、成人题材或 COT 模板。随后加载各自唯一主模板（300）、command_output（407）或 world_output（408）、相关变量组（500–582）和数据容器。不能误加载 story_output。
 
@@ -94,3 +95,7 @@ manifest.futureExtensions 仅列出 npc_private_archive 与 special_nsfw_traits 
 ## M4-P3 手动世界阶段
 
 WorldStage 复用 Runtime、模型路由、StageGuard、Composer 与 saveDraft 乐观锁。opening/regular 分别使用独立 world 主提示词；保守加载九域 offscreen，开局还按既有注册加载组织 init。无额外分类请求。输入包含正式→变量投影 TIME_WINDOW、受保护现场并集、真实来源目录与受限命令目录，不传入待选行动或玩家未来输入。变量投影与变量+世界整批模拟始终从同一正式 revision 开始。正文/变量/执行/世界请求版本变化均令旧回包失效。手动失败恢复不等于 M4-P4 自动重试；候选未正式提交，揭示与提交分别留待后续。
+
+## M5-P6 当前叙事规划与Thinking
+
+新增planning两模块，默认顺序350、模式互斥且固定；正文输出先thinking后正文与原结构化段落。开局按角色与契机自由创作，取消强制灾难；六主模板保持各自职责。新渠道默认格式确认，旧off配置保留，cotModels保留读取但不作模型能力白名单。原生输出仅按真实公开响应提取，未知模型不强发专用思考参数；无原生内容不失败。临时查看不存档、不自动传入后续阶段。上文P1/P2历史状态不代表当前未实现的功能；以当前Runtime与M5-P6报告为准。

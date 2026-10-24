@@ -23,6 +23,7 @@ export function contextStatistics(messages: readonly AiMessage[], usage?: Usage)
       inputTokens: usage?.inputTokens,
       outputTokens: usage?.outputTokens,
       totalTokens: usage?.totalTokens,
+      ...(usage?.reasoningTokens !== undefined ? { reasoningTokens: usage.reasoningTokens } : {}),
     },
   };
 }

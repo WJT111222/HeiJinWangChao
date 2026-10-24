@@ -10,6 +10,7 @@ export type AiErrorCode =
   | 'timeout'
   | 'cancelled'
   | 'empty'
+  | 'output_limit'
   | 'stream_interrupted'
   | 'invalid_json'
   | 'invalid_output'
@@ -33,6 +34,7 @@ const messages: Record<AiErrorCode, string> = {
   timeout: '请求超时，未提交任何游戏状态。',
   cancelled: '请求已取消，未提交任何游戏状态。',
   empty: '服务没有返回可用文本。',
+  output_limit: '模型达到输出上限，规划、原生思考与正文可能共享预算；本次结果不完整且未保存。请检查最大输出 Token，程序不会自动提高付费上限或重发。',
   stream_interrupted: '流式响应未完整结束，不能作为有效结果。',
   invalid_json: '响应不是完整合法的 JSON。',
   invalid_output: '模型输出未通过结构或事实校验，候选未被接受。',

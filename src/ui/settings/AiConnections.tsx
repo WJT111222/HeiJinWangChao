@@ -13,6 +13,7 @@ import { CredentialVault } from '../../services/ai/credentials';
 import { channelSnapshot } from '../../services/ai/snapshot';
 import { AiClient } from '../../services/ai/client';
 import { safeAiError } from '../../services/ai/errors';
+import { OutputTokenLimit } from './OutputTokenLimit';
 
 const stages: [AiTask, string][] = [
   ['story', '正文生成'],
@@ -247,7 +248,7 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
                     temperature: true,
                     maxOutputTokens: true,
                     jsonMode: false,
-                    cotMode: 'off',
+                    cotMode: 'confirmation',
                     cotModels: [],
                   },
                 });
@@ -328,23 +329,8 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
                 }
               />
             </label>
-            <label>
-              Max Output Tokens
-              <input
-                type="number"
-                min="1"
-                max="1000000"
-                value={channel?.parameters.maxOutputTokens ?? ''}
-                onChange={(e) =>
-                  patch({
-                    parameters: {
-                      ...channel!.parameters,
-                      maxOutputTokens: e.target.value === '' ? undefined : e.target.valueAsNumber,
-                    },
-                  })
-                }
-              />
-            </label>
+            {channel && <OutputTokenLimit key={channel.id} value={channel.parameters.maxOutputTokens}
+              onChange={(maxOutputTokens) => patch({ parameters: { ...channel.parameters, maxOutputTokens } })} />}
           </div>
           <p className="muted">
             按当前渠道与模型的文档声明能力。未支持的可选参数会跳过并提供诊断；Anthropic
@@ -375,32 +361,15 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
                 })
               }
             >
-              <option value="off">关闭格式确认（默认）</option>
-              <option value="confirmation">独立 assistant 格式确认</option>
-              <option value="prefix">特殊 Prefix（尚不支持，跳过并诊断）</option>
+              <option value="off">关闭兼容历史（旧配置保留，不关闭叙事规划）</option>
+              <option value="confirmation">完整 assistant 格式确认历史（新渠道默认）</option>
+              <option value="prefix">旧 Prefix 配置（降级完整历史，不发送扩展）</option>
             </select>
           </label>
-          <label>
-            已确认兼容格式确认的模型 ID（每行一个）
-            <textarea
-              rows={2}
-              value={channel?.compatibility.cotModels.join('\n') ?? ''}
-              onChange={(e) =>
-                patch({
-                  compatibility: {
-                    ...channel!.compatibility,
-                    cotModels: e.target.value
-                      .split('\n')
-                      .map((id) => id.trim())
-                      .filter(Boolean),
-                  },
-                })
-              }
-            />
-          </label>
           <p className="muted">
-            仅对显式列出且支持该消息结构的 OpenAI 兼容模型启用。Gemini、Anthropic、DeepSeek/GLM 及
-            Prefix 模式不会强行加入通用确认。此项属于协议兼容，不是写作设置。
+            三协议使用完整确认历史并以 user 收尾，不依赖尾部预填充。旧 cotModels 数据保留读取兼容，
+            不再作为模型白名单。原生协议按已核实型号或服务能力声明自动请求公开思考摘要，不发送未经确认支持的扩展，
+            不额外收费探测；项目叙事规划始终启用。
           </p>
         </details>
       </fieldset>

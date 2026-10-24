@@ -18,18 +18,18 @@ function json(text: string): unknown {
     throw new AiError('invalid_json');
   }
 }
-export function parseStory(text: string, mode: 'opening' | 'regular', settings: Settings) {
+// 只解析结构；叙事规划不属于 StorySchema，也不检查文学步骤的内容质量。
+export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', settings: Settings) {
   const actions = settings.prompts.actionOptions;
   const pattern = actions
-    ? /^\s*<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*<变量规划>([\s\S]*?)<\/变量规划>\s*<行动选项>([\s\S]*?)<\/行动选项>\s*$/
-    : /^\s*<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*<变量规划>([\s\S]*?)<\/变量规划>\s*$/;
-  const match = text.match(pattern);
-  if (
-    !match ||
-    /<\/?(?:thinking|think|judge)\b[^>]*>/i.test(text) ||
-    match.slice(1).some((part) => /<\/?(?:正文|短期记忆|变量规划|行动选项)>/.test(part))
-  )
+    ? /^\s*<thinking>([\s\S]*?)<\/thinking>\s*<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*<变量规划>([\s\S]*?)<\/变量规划>\s*<行动选项>([\s\S]*?)<\/行动选项>\s*$/
+    : /^\s*<thinking>([\s\S]*?)<\/thinking>\s*<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*<变量规划>([\s\S]*?)<\/变量规划>\s*$/;
+  const envelope = text.match(pattern);
+  if (!envelope || !envelope[1].trim() || envelope.slice(1).some((part) =>
+    /<\s*\/?\s*(?:thinking|think|judge|正文|短期记忆|变量规划|行动选项)(?=[\s/>])[^>]*>/i.test(part)))
     throw new AiError('invalid_output');
+  const planning = envelope[1].trim();
+  const match = envelope.slice(1);
   const narrative = match[1].trim();
   const summary = match[2].trim();
   // 100～200 汉字为质量目标，偏离仅提示；空摘要不能充当有效的本回合事实记录。
@@ -52,7 +52,10 @@ export function parseStory(text: string, mode: 'opening' | 'regular', settings: 
     ...(actions ? { actionOptions } : {}),
   });
   if (!parsed.success) throw new AiError('invalid_output');
-  return parsed.data;
+  return { story: parsed.data, planning };
+}
+export function parseStory(text: string, mode: 'opening' | 'regular', settings: Settings) {
+  return parseStoryEnvelope(text, mode, settings).story;
 }
 export function checkMoneyEvidence(command: DomainCommand) {
   const amount = economicAmount(command);
