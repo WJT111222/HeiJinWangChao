@@ -9,8 +9,9 @@ export type AiStage = 'story' | 'variables' | 'world';
 export type AiTask = AiStage | 'memory';
 export const modelIdSchema = z
   .string()
+  .min(1)
   .max(200)
-  .regex(/^[A-Za-z0-9][A-Za-z0-9_.:/@-]*$/);
+  .refine((value) => value === value.trim() && !/[\p{Cc}\p{Cf}\p{Cs}\p{Zl}\p{Zp}]/u.test(value), '模型 ID 不能包含控制字符或首尾空白');
 const endpointSchema = z
   .string()
   .url()
