@@ -13,7 +13,7 @@ export function TokenStatistics({
     <dl className="inspection-statistics">
       <dt>上下文字符数</dt>
       <dd>{statistics?.characters ?? '未知'}</dd>
-      <dt>估算 Token</dt>
+      <dt>估算输入 Token</dt>
       <dd>{statistics ? `≈ ${statistics.estimatedTokens}` : '未知'}</dd>
       <dt>供应商输入 Token</dt>
       <dd>{statistics?.actual.inputTokens ?? '未提供'}</dd>

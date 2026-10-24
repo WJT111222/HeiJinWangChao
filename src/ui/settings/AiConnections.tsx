@@ -13,6 +13,7 @@ import { CredentialVault } from '../../services/ai/credentials';
 import { channelSnapshot } from '../../services/ai/snapshot';
 import { AiClient } from '../../services/ai/client';
 import { safeAiError } from '../../services/ai/errors';
+import { OutputTokenLimit } from './OutputTokenLimit';
 
 const stages: [AiTask, string][] = [
   ['story', '正文生成'],
@@ -328,23 +329,8 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
                 }
               />
             </label>
-            <label>
-              Max Output Tokens
-              <input
-                type="number"
-                min="1"
-                max="1000000"
-                value={channel?.parameters.maxOutputTokens ?? ''}
-                onChange={(e) =>
-                  patch({
-                    parameters: {
-                      ...channel!.parameters,
-                      maxOutputTokens: e.target.value === '' ? undefined : e.target.valueAsNumber,
-                    },
-                  })
-                }
-              />
-            </label>
+            {channel && <OutputTokenLimit key={channel.id} value={channel.parameters.maxOutputTokens}
+              onChange={(maxOutputTokens) => patch({ parameters: { ...channel.parameters, maxOutputTokens } })} />}
           </div>
           <p className="muted">
             按当前渠道与模型的文档声明能力。未支持的可选参数会跳过并提供诊断；Anthropic
@@ -382,7 +368,7 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
           </label>
           <p className="muted">
             三协议使用完整确认历史并以 user 收尾，不依赖尾部预填充。旧 cotModels 数据保留读取兼容，
-            不再作为模型白名单。原生内容仅在服务实际公开返回时接收，不发送未经确认支持的思考参数，
+            不再作为模型白名单。原生协议按已核实型号或服务能力声明自动请求公开思考摘要，不发送未经确认支持的扩展，
             不额外收费探测；项目叙事规划始终启用。
           </p>
         </details>

@@ -17,6 +17,7 @@ import {
 } from './protocols';
 import type { AiMessage, Usage } from './protocols';
 import { readSse } from './sse';
+import { rememberThinkingCapability, unsupportedThinkingParameter, blockThinkingCapability } from './thinking';
 
 export interface RequestOptions {
   signal?: AbortSignal;
@@ -78,7 +79,7 @@ async function operation<T>(
 }
 export class AiClient {
   constructor(private transport: typeof fetch = (input, init) => globalThis.fetch(input, init)) {}
-  private async response(url: string, init: RequestInit, signal: AbortSignal) {
+  private async response(url: string, init: RequestInit, signal: AbortSignal, snapshot?: RequestSnapshot) {
     const response = await this.transport(url, {
       ...init,
       signal,
@@ -89,6 +90,13 @@ export class AiClient {
     });
     if (!response.ok) {
       const status = response.status;
+      if (snapshot && snapshot.thinkingCapability !== 'none' && [400, 422].includes(status)
+        && response.headers.get('content-type')?.includes('application/json')) {
+        try {
+          const error: unknown = await response.json();
+          if (!signal.aborted && unsupportedThinkingParameter(error)) blockThinkingCapability(snapshot.channel, snapshot.model);
+        } catch { /* 错误正文不外传，不猜测兼容能力，也不重发当前请求。 */ }
+      }
       throw new AiError(
         status === 401 || status === 403
           ? 'authorization'
@@ -116,7 +124,7 @@ export class AiClient {
       return await operation(options, async (signal) => {
         if (signal.aborted) throw new AiError('cancelled');
         inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection);
-        const response = await this.response(wire.url, wire.init, signal);
+        const response = await this.response(wire.url, wire.init, signal, snapshot);
         const protocol = snapshot.channel.protocol;
         let text = '', reasoning = '',
           usage: Usage | undefined;
@@ -226,13 +234,16 @@ export class AiClient {
           throw new AiError('invalid_json');
         }
         if (data.error) throw new AiError('rejected');
+        if (signal.aborted) throw new AiError('cancelled');
         const entries = protocol === 'gemini' ? array(data.models) : array(data.data);
         for (const item of entries) {
           const id = string(record(item)[protocol === 'gemini' ? 'name' : 'id']).replace(
             protocol === 'gemini' ? /^models\// : /$^/,
             '',
           );
-          if (modelIdSchema.safeParse(id).success && !id.includes(secretFor(snapshot))) ids.add(id);
+          if (modelIdSchema.safeParse(id).success && !id.includes(secretFor(snapshot))) {
+            ids.add(id); rememberThinkingCapability(snapshot.channel, id, item);
+          }
         }
         const token =
           protocol === 'gemini'

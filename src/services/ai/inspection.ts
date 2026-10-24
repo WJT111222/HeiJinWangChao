@@ -31,6 +31,7 @@ export interface RequestInspection {
   errorCode?: string;
   body: Record<string, unknown>;
   messages: AiMessage[];
+  outputTokenLimit?: number;
   statistics: ReturnType<typeof contextStatistics>;
 }
 export function redactInspection<T>(value: T, secrets: readonly string[] = []): T {
@@ -140,6 +141,10 @@ export class RequestInspectionStore {
         status: 'pending' as const,
         body: original,
         messages,
+        outputTokenLimit: typeof original.max_tokens === 'number' ? original.max_tokens
+          : typeof original.max_completion_tokens === 'number' ? original.max_completion_tokens
+            : typeof record(original.generationConfig).maxOutputTokens === 'number'
+              ? Number(record(original.generationConfig).maxOutputTokens) : undefined,
         statistics: contextStatistics(messages),
       },
       [secretFor(snapshot), ...browserCredentials()],

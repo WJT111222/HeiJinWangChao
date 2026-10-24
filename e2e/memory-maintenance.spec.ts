@@ -91,6 +91,9 @@ test('选择并恢复独立模型；手动整理、原文来源及真实memory�
   await expect(memory).toContainText('可信活跃短期 31');
   await memory.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true }).click();
   await expect(memory).toContainText('一批记忆已整理并原子保存');
+  const usage = memory.getByRole('region', { name: '记忆请求 Token 用量', exact: true });
+  await expect(usage).toContainText('估算输入 Token'); await expect(usage).toContainText('实际输入：40');
+  await expect(usage).toContainText('实际输出：10'); await expect(usage).toContainText('实际总量：50');
   await expect(memory).toContainText('短期 21'); await expect(memory).toContainText('中期 1');
   await memory.getByRole('button', { name: '查看第 3 回合原文', exact: true }).click();
   await expect(memory.getByRole('region', { name: '摘要来源原文' })).toContainText('蓝色钥匙');

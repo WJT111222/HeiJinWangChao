@@ -1,5 +1,7 @@
 # M5-P6：Thinking、格式确认与原创叙事规划
 
+> 前半部分保留初版交付记录（`0bb9aa0`）。最新产品规则及本轮验证见文末“最终针对性完善”；新渠道默认值、原生自动启用与输出预算说明以该节为准。
+
 ## 开发前勘查
 
 - 基线：远端 main@41a1c23df114b3d411173ec2a3c640db4b36a3cf（已合并 PR #22）。开始工作区干净；独立分支 codex/m5-p6-thinking-planning，不修改 main。
@@ -141,3 +143,101 @@ StoryStream作为临时投影按任意delta及UTF-8边界处理规划开闭标�
 - `src/ui/settings/PromptInspector.tsx`
 - `src/workflows/storyStage.ts`
 - `src/workflows/storyStream.ts`
+
+
+## 最终针对性完善（2026-10-24，北京时间）
+
+本轮在原分支 `codex/m5-p6-thinking-planning`、原 Draft PR #23 上继续；开始核对远端和本地均为 `0bb9aa0fe1077e6b49a6243157708d9e9bd36fa8`，工作区干净。只处理输出档位、原生自动启用、移除输出需求预测和每请求完整输入统计，不重做 P6。
+
+### 输出档位与预算原则
+
+- 使用既有 `parameters.maxOutputTokens`，提供 4K/4096、8K/8192、16K/16384、自定义；自定义仍由原 Zod Schema 校验 1～1,000,000 的整数。
+- 仅 `newChannel()` 的新渠道默认值改为 8192。旧渠道的 4096、8192、16384、自定义值及未配置值原样读取；没有配置迁移或加载时补写。切换渠道独立显示和保存，切换至自定义本身不改数值，非法输入不覆盖已保存配置。
+- 完整删除 `storyBudget`、StoryInspection 的 budget 字段、StoryStage 的预算预测调用及临时面板预测提示；不再估计规划/最低字数需要多少输出 Token。保留通用输入估算器和供应商实际 usage。
+- 不根据输入规模或输出需求阻止请求，不自动调大上限、不增加弹窗、不自动补发预算不足的请求。已有 length/MAX_TOKENS/max_tokens 截断拒绝、结构完整性检查和旧草稿保护继续有效。
+
+### 原生 Thinking 的自动启用与兼容矩阵
+
+自动选择依据是**原生协议 + 官方已核实型号契约，或当前渠道 Models 返回的明确官方能力元数据**，不是端点域名、模糊关键词或玩家填写的名单。OpenAI-compatible 的模型即使名为 Claude/Gemini/DeepSeek/GLM，也不会因此收到非标准启用参数。
+
+| 原生协议 / 已核实契约 | 本轮请求行为 |
+| --- | --- |
+| Gemini 2.5 Pro / Flash | `thinkingConfig.includeThoughts=true`，保留模型默认思考机制，不指定固定预算。 |
+| Gemini 2.5 Flash-Lite | `includeThoughts=true`、`thinkingBudget=-1`，启用其默认关闭的动态思考，不更改 maxOutputTokens。 |
+| Gemini 3 Pro/Flash、3.1 Pro/Flash-Lite（包括对应 preview ID），3.5 Flash-Lite、3.6/3.8 Flash、4 Argon | 请求公开摘要，保留各模型原生默认预算/level，不向新系列套用 2.5 的预算字段。 |
+| Claude Opus 4.6/4.7/4.8、Sonnet 4.6；已核实 5/5.5 Opus/Sonnet/Haiku、5/5.1 Fable/Mythos 和 Mythos preview | `thinking={type:adaptive,display:summarized}`，请求公开摘要，省略不兼容的 temperature。 |
+| Claude Opus/Sonnet/Haiku 4.5、Opus 4.1、Opus/Sonnet 4、3.7 Sonnet（对应日期 ID） | `thinking={type:enabled,budget_tokens:1024}`，且必须小于实际发送的 max_tokens；上限不超过 1024 时采用普通请求，不提高玩家预算、不阻止生成。 |
+| 官方格式 Models 能力声明 / 原生协议中转别名 | Gemini 读取 `thinking` 与可用的 `baseModelId`；Anthropic 读取 `capabilities.thinking.supported/types`。服务明确不支持优先于型号契约；未知别名只有在明确能力声明后启用。 |
+| 未知、旧版或无法可靠启用的型号；OpenAI-compatible | 保留兼容请求。继续被动读取 OpenAI 的 reasoning_content/reasoning/reasoning_text、Gemini thought 文本、Anthropic thinking 增量；没有公开原生内容仍可正常生成。 |
+
+已有的手动 Models 查询可以提供能力声明；本轮不为探测增加任何网络调用或付费调用。能力缓存仅在本页内存，按渠道 ID、协议、URL、模型隔离，最多 500 项；请求快照冻结其能力，查询取消后的迟到回包不能更新后续请求的能力。新渠道及原生中转遵循相同规则，没有新增开关或持久化名单。
+
+如果服务返回 JSON 400/422 并明确指出 thinking 参数不支持，本次请求安全失败，**不自动修改请求重发**；仅缓存该渠道型号的拒绝，下一次玩家手动发起的新请求采用普通兼容路径。普通 400 不猜成 thinking 失败；取消请求的迟到错误不改变新请求能力。未知错误保持原错误处理，不能保证不合规中转的所有错误文本均可自动识别。页面重载会清除能力缓存，后续新的明确 Models 声明也可更新能力。
+
+这不是读取模型隐藏内部思维。只显示服务公开返回的摘要/推理字段，项目 9/15 步规划仍独立启用。没有新增 AI 阶段、付费探测、额外玩家设置或暗中兼容重试。
+
+### 完整输入统计与供应商用量
+
+- `AiClient.generate` 在 `wireRequest` 完成**最终消息改写**之后、transport 之前建立真实 RequestInspection。统计从最终 payload 还原消息，包含系统提示词、世界书、阶段/规划模块、上下文数据、角色/NPC/记忆、玩家输入、assistant 确认和协议层追加的 user 尾消息；不只计算输入框，也不另组一份假请求。
+- 输入规模复用原 `contextStatistics/estimateTokens` Unicode 启发式，脱敏前计算数值；界面明确标注“估算输入 Token”。该算法不含厂商消息包装/隐藏控制 Token，不使用模型精确 tokenizer，误差依模型、语言和服务端处理而异，不能用作账单或上下文容量保证。无论估算多少都不据此阻断请求。
+- 上限读取实际序列化请求的 max_tokens/max_completion_tokens/generationConfig.maxOutputTokens；未发送时标为服务默认，不把配置中已被兼容层跳过的数值冒充已发送参数。
+- 新的简洁 `RequestUsage` 位于生成操作附近及记忆维护控制区；按存档和阶段过滤，分别显示最近各请求的模型、状态、估算输入、实际发送上限和供应商 usage，不合并三阶段。原 AI 上下文查看器继续提供完整实际请求记录。
+- 供应商未提供的实际输入/输出/总量/思考计数显示“未提供”。Anthropic 完整输入按其官方 usage 语义汇总 input_tokens（未缓存部分）+ cache_creation_input_tokens + cache_read_input_tokens；缺失或非法基础计数不臆测。其 output_tokens_details.thinking_tokens 仅在提供时读取，不与已含思考的 output_tokens 重复相加。没有 total 就保持未知，不以输入加输出伪造供应商总量或费用。
+- 简洁面板只渲染脱敏模型和数值，不渲染 NPC 身份、私有记忆或请求正文。真实请求记录沿用最多 12 条的页面内存容器，不写正式存档/普通日志；项目规划与原生查看仍独立折叠、最多 4 次临时记录、刷新清除。
+
+### 官方协议核对
+
+核对日期：2026-10-24（北京时间）。型号契约是代码内的已核实协议适配规则，不是玩家维护名单；未列入的新版本不外推能力，可由明确的 Models 元数据确认。
+
+- [Gemini Thinking](https://ai.google.dev/gemini-api/docs/generate-content/thinking)：公开摘要、默认启用差异与动态预算。
+- [Gemini Models](https://ai.google.dev/api/models)：thinking 与 baseModelId。
+- [Claude Thinking](https://platform.claude.com/docs/en/build-with-claude/thinking) / [Extended thinking](https://platform.claude.com/docs/en/build-with-claude/extended-thinking)：adaptive、summarized、手动最小预算和 temperature 限制。
+- [Claude Models](https://platform.claude.com/docs/en/api/models)：能力声明。
+- [Claude prompt caching](https://platform.claude.com/docs/en/build-with-claude/prompt-caching) / [Thinking usage](https://platform.claude.com/docs/en/build-with-claude/thinking-steering-and-cost)：缓存输入、公开思考用量与不重复计数。
+- [OpenAI reasoning](https://developers.openai.com/api/docs/guides/reasoning)：本轮未将现有 Chat Completions 客户端重构成 Responses，也不对未知中转猜测专用参数。
+
+### 本轮测试与保护证据
+
+新增 `thinking-refinements.test.ts` 共 37 项，覆盖档位底层兼容、无预算阻断、原生/中转协议参数、Models 别名与明确拒绝、快照冻结、取消迟到、真实 wire 完整输入、四类独立请求及供应商缓存/思考用量。旧 `thinking.test.ts` 保留原截断、分流、隔离等断言，仅同步移除已取消的预测要求；原新渠道默认断言从 4096 改为 8192，旧值兼容另有测试。
+
+新增 3 个浏览器场景，在桌面/移动各执行，共 6 项：4K/8K/16K/自定义与旧值恢复、范围校验与渠道隔离、完整三阶段的每请求输入及真实 usage。既有记忆维护场景补充输入与实际用量断言，没有新增付费调用。初次定向浏览器测试发现新增控件缺少精确的可访问名称，已补 aria-label；新增测试对旧“当前渠道”选择器改用语义 combobox 定位，保留原有结构与安全断言。定向重跑 6/6 通过。
+
+| 最终命令 | 结果 |
+| --- | --- |
+| `npm run prompts:check` | 82/82 通过（全量测试子集）。 |
+| `npm run check` | 1019/1019 通过；32 个测试文件，原 982 项 + 新增 37 项。ESLint、TypeScript 和 Vite 生产构建均通过。 |
+| `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e` | 158/158 通过；原 152 项 + 新增 6 项，完整桌面/移动 Chromium，9.0 分钟；`.last-run.json` 为 passed、无失败。 |
+| `git diff --check` | 通过，应用代码与报告完成后最终复核。 |
+
+构建保留既有大于 500kB chunk 的非阻断提示（主包 509.81kB，gzip 161.06kB）；没有为本轮引入打包重构。
+
+所有模型调用均为 Mock，不曾使用真实付费 API。通过表示适配、UI、事务和隔离回归成立，不代表真实供应商/第三方中转已实测或生成质量已验证。中转可能隐藏摘要、忽略 Models 能力字段或拒绝合法原生参数；未知能力保留普通路径，明确拒绝不暗中重发。没有精确 tokenizer，统计不是费用报价。
+
+本轮 `git diff 0bb9aa0` 的 prompts/、src/domain/、src/services/storage/、TurnCoordinator 与七项写作设置模型均无改动，保留两份审定规划原文、六套主模板、NSFW、世界书、GameState/TurnDraft、领域命令、正式事务与 M5-P5。未新增 M6、部署、发布或合并。
+
+### 本轮文件清单（相对 0bb9aa0）
+
+新增 4 个文件：
+
+- `src/services/ai/thinking.ts`：协议能力、官方已核实契约、页面能力缓存与原生请求参数。
+- `src/ui/settings/OutputTokenLimit.tsx`：四档输出上限控件。
+- `src/ui/game/RequestUsage.tsx`：按请求显示完整输入规模和实际用量。
+- `src/tests/thinking-refinements.test.ts`：37 项针对性回归。
+
+修改 19 个文件：
+
+- `src/services/ai/configuration.ts`：仅新渠道默认 8K。
+- `src/services/ai/snapshot.ts`：冻结本请求的原生能力。
+- `src/services/ai/protocols.ts`：差异化原生参数、兼容温度及实际 usage。
+- `src/services/ai/client.ts`：复用已有 Models 元数据、明确拒绝缓存、不额外重发。
+- `src/services/ai/inspection.ts`：记录实际发送的输出上限。
+- `src/services/ai/storyInspection.ts`、`src/workflows/storyStage.ts`：删除输出需求预测。
+- `src/ui/settings/AiConnections.tsx`：接入档位、更新原生能力说明。
+- `src/ui/settings/ContextInspection.tsx`：明确输入估算标签。
+- `src/ui/game/StoryInspectionPanel.tsx`：删除预算预测展示。
+- `src/ui/game/GameScreen.tsx`、`src/ui/panels/MemoryMaintenanceControls.tsx`：展示独立请求用量。
+- `src/app/styles.css`：请求统计紧凑滚动及窄屏换行。
+- `src/tests/ai-client.test.ts`、`src/tests/thinking.test.ts`：适配新默认值及已取消的预测，保留原用例。
+- `e2e/ai-settings.spec.ts`、`e2e/turn-coordinator.spec.ts`：3 个新增场景，双视口 6 次执行。
+- `e2e/memory-maintenance.spec.ts`：原记忆请求增加估算/实际数值验证。
+- `M5-P6-DEVELOPMENT.md`：本轮决策、官方依据、验证与限制。

@@ -14,7 +14,7 @@ import { CredentialVault } from '../services/ai/credentials';
 import { requestSnapshot } from '../services/ai/snapshot';
 import { wireRequest } from '../services/ai/protocols';
 import { requestInspections } from '../services/ai/inspection';
-import { storyBudget, storyInspections } from '../services/ai/storyInspection';
+import { storyInspections } from '../services/ai/storyInspection';
 import { parseStory, parseStoryEnvelope, parseVariables } from '../services/validation/aiOutputs';
 import { StoryStream } from '../workflows/storyStream';
 import { StoryStage } from '../workflows/storyStage';
@@ -98,7 +98,7 @@ describe('P6 原创资源与兼容历史', () => {
     const wire = wireRequest(snapshot, prompt.messages, true), body = JSON.parse(wire.init.body);
     expect(body.messages?.at(-1)?.role ?? body.contents?.at(-1)?.role).toBe('user');
     for (const parameter of ['thinking', 'reasoning_effort', 'disable_thinking', 'prefix']) expect(wire.init.body).not.toContain(`"${parameter}":`);
-    expect(a.channel.parameters.maxOutputTokens).toBe(4096);
+    expect(a.channel.parameters.maxOutputTokens).toBe(8192);
   });
   it('旧off/名单配置继续读取，Prefix不发送扩展也不重试，不关闭项目规划', async () => {
     const a = setup(); a.channel.compatibility.cotMode = 'off'; a.channel.compatibility.cotModels = ['old-id'];
@@ -246,12 +246,10 @@ describe('结构隔离、流式与事务', () => {
     expect(JSON.stringify(storyInspections.getSnapshot())).not.toContain('p6-test-credential');
     expect(storyInspections.getSnapshot()[0].status).toBe('failed'); storyInspections.clear(); expect(storyInspections.getSnapshot()).toEqual([]);
   });
-  it('预算只诊断不改上限，无自动付费请求；按原生用量另存思考Token而不伪造', async () => {
-    expect(storyBudget(4096, 1500, 'regular').warning).toBeDefined(); expect(storyBudget(undefined, 1500, 'regular').warning).toBeDefined();
-    expect(storyBudget(20000, 1500, 'regular').warning).toBeUndefined();
+  it('输出上限只由配置决定；按原生用量另存思考Token而不伪造', async () => {
     const a = setup(), result = await new AiClient(async () => Response.json({ ...response('openai', output()),
       usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30, completion_tokens_details: { reasoning_tokens: 7 } } }))
       .generate(requestSnapshot(a.config, 'story', a.vault), [{ role: 'user', content: '生成' }]);
-    expect(result.usage).toEqual({ inputTokens: 10, outputTokens: 20, totalTokens: 30, reasoningTokens: 7 }); expect(a.channel.parameters.maxOutputTokens).toBe(4096);
+    expect(result.usage).toEqual({ inputTokens: 10, outputTokens: 20, totalTokens: 30, reasoningTokens: 7 }); expect(a.channel.parameters.maxOutputTokens).toBe(8192);
   });
 });
