@@ -9,11 +9,12 @@
 - [PR #22](https://github.com/WJT111222/HeiJinWangChao/pull/22)：动态世界任务终态、合法成果交接、非联系人 NPC 安全退场及历史信息边界。
 - [PR #23](https://github.com/WJT111222/HeiJinWangChao/pull/23)：原创开局 9 步/普通回合 15 步规划、项目 Thinking 与原生公开内容隔离、输出档位和请求用量。
 - [PR #25](https://github.com/WJT111222/HeiJinWangChao/pull/25)：渠道自动获取模型、四阶段模型选择、同渠道缓存及 UI 主题适配。
+- [PR #27](https://github.com/WJT111222/HeiJinWangChao/pull/27)：模型列表同源候选、解析与模型 ID、受限分页和安全诊断；真实中转兼容及最终加固仍需单独验证。
 - **产品规则变更**：开局不再强制发生重大灾难、不公或复仇；NPC 完整活跃档案也并非一律永久保留，符合 PR #22 规则时可安全退场。
 
 ### 当前已知限制 / 未完成验收
 
-- 部分第三方中转站不能正确列模型或列表不全；后续 M6 专项见 [任务书](docs/API-MODEL-LIST-COMPATIBILITY.md)。
+- 部分第三方中转站不能正确列模型或列表不全；已合并主体及后续加固状态见 [任务书](docs/API-MODEL-LIST-COMPATIBILITY.md)。
 - 自动测试主要是 Mock 和 Chromium 浏览器场景；不等于全供应商真实收费 API 验收或百回合长期压力测试。
 - 浏览器本地 IndexedDB 数据不能视为云备份；生产入口、发布 Tag、存档导入导出与完整恢复保障需要分别验证。
 - M7 UI/UX 全面改版及 Issue #6/#24 未来玩法尚未交付。
