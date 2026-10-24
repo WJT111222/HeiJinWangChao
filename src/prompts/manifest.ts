@@ -37,6 +37,7 @@ const ModuleSchema = z.strictObject({
     'variable_group',
     'memory',
     'assistant_tail',
+    'planning',
     'reference',
   ]),
   reorderable: z.boolean(),
@@ -51,6 +52,7 @@ const ModuleSchema = z.strictObject({
     'variable_group',
     'memory',
     'compatibility',
+    'planning',
     'documentation',
     'example',
     'reference',
@@ -257,8 +259,14 @@ export const PromptManifestSchema = z
         !cot.permanent &&
         cot.toggle === null &&
         !cot.configurable,
-      'COT 仅预留正文 assistant 协议兼容模板',
+      'COT 仅用于正文完整 assistant 格式确认历史',
     );
+    for (const mode of ['opening', 'regular'] as const) {
+      const planning = byId.get(`planning.${mode}`);
+      check(planning?.permanent && planning.applicableStages.join() === 'story' && planning.modes.join() === mode
+        && planning.category === 'planning' && planning.messageRole === 'system' && planning.defaultOrder === 350
+        && !planning.configurable && !planning.reorderable && planning.toggle === null, '叙事规划仅按回合模式互斥常驻');
+    }
     for (const extension of manifest.futureExtensions)
       check(!byId.has(extension.id), '未来扩展不能注册成当前运行模块');
   });

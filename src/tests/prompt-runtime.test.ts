@@ -499,14 +499,15 @@ describe('真实资源加载与消息组装', () => {
     const opened = startStageAttempt(closed, ['variables'], { useVariableStage: true });
     expect((await composePrompt({ ...a, draft: opened })).storyRevision).toBe(closed.storyRevision);
   });
-  it('确认模板只在明确允许时处于 user 数据之后，独立一次，不支持时运行时覆盖跳过', async () => {
+  it('确认模板处于user数据之后，独立一次且以user收尾，旧off仍可跳过', async () => {
     const a = input();
     expect(
       (await composePrompt(a)).modules.some((m) => m.id === 'compatibility.cot_format_ack'),
     ).toBe(false);
     const enabled = await composePrompt({ ...a, cotAllowed: true });
-    expect(enabled.messages.at(-1)?.role).toBe('assistant');
-    expect(enabled.messages.at(-2)?.role).toBe('user');
+    expect(enabled.messages.at(-1)?.role).toBe('user');
+    expect(enabled.messages.at(-2)?.role).toBe('assistant');
+    expect(enabled.messages.at(-3)?.role).toBe('user');
     expect(enabled.modules.filter((m) => m.id === 'compatibility.cot_format_ack')).toHaveLength(1);
   });
 });
@@ -710,7 +711,7 @@ describe('真实命令目录、解析与安全候选验证', () => {
     const settings = defaultSettings();
     settings.prompts.minNarrativeChars = 1;
     const valid =
-      '<正文>【旁白】继续工作。</正文><短期记忆>工作</短期记忆><变量规划>[]</变量规划><行动选项>观察\n询问\n离开</行动选项>';
+      '<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>【旁白】继续工作。</正文><短期记忆>工作</短期记忆><变量规划>[]</变量规划><行动选项>观察\n询问\n离开</行动选项>';
     expect(parseStory(valid, 'regular', settings).actionOptions).toHaveLength(3);
     settings.prompts.actionOptions = false;
     expect(() => parseStory(valid, 'regular', settings)).toThrow();
@@ -742,7 +743,7 @@ describe('真实命令目录、解析与安全候选验证', () => {
       config.routes.story = { channelId: channel.id, modelId: '' };
       const vault = tinyVault(channel.id);
       const narration =
-        '<正文>【旁白】继续工作。</正文><短期记忆>工作</短期记忆><变量规划>[]</变量规划>';
+        '<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>【旁白】继续工作。</正文><短期记忆>工作</短期记忆><变量规划>[]</变量规划>';
       const frame = (value: unknown) => 'data: ' + JSON.stringify(value) + '\n\n';
       const stream =
         protocol === 'gemini'
@@ -775,7 +776,7 @@ describe('真实命令目录、解析与安全候选验证', () => {
           client,
         );
         expect(storyResult.modules.some((m) => m.id === 'compatibility.cot_format_ack')).toBe(
-          false,
+          true,
         );
         const draft = rerollStory(
           createTurnDraft(a.state.saveId, a.state.revision, 'new-turn', 'regular', '行动'),

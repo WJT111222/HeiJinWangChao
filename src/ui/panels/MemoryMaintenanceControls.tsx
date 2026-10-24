@@ -4,6 +4,7 @@ import { compressionCandidates, compressionPolicy } from '../../domain/memories/
 import { readAiConfig } from '../../services/ai/configuration';
 import { browserCredentials } from '../../services/ai/credentials';
 import { redactInspection } from '../../services/ai/inspection';
+import { RequestUsage } from '../game/RequestUsage';
 import { resolveModelRoute } from '../../services/ai/snapshot';
 
 export function MemoryMaintenanceControls({ state, phase, notice, onRun, onNpcRun, onCancel }: {
@@ -25,5 +26,6 @@ export function MemoryMaintenanceControls({ state, phase, notice, onRun, onNpcRu
     <button disabled={Boolean(phase) || !npcDue} onClick={onNpcRun}>整理NPC私人记忆（可能产生费用）</button>
     {phase && <button disabled={phase === 'saving'} onClick={onCancel}>取消记忆整理</button>}
     <p role="status">{notice}</p>
+    <RequestUsage saveId={state.saveId} memoryOnly />
   </section>;
 }

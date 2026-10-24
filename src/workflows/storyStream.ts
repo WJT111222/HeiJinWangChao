@@ -1,35 +1,36 @@
-// 临时阅读投影，不替代 parseStory。标签可以在任意 delta / UTF-8 字节边界断开。
-// 遇到未识别的尖括号内容停止预览，等待完整解析，避免把内部块当作小说。
+// 临时结构投影，不替代最终严格解析。任何 delta/UTF-8 边界均不公开规划或尾部 JSON。
 export class StoryStream {
-  private phase: 'opening' | 'body' | 'closed' = 'opening';
+  private phase: 'planning-open' | 'planning' | 'body-open' | 'body' | 'closed' = 'planning-open';
   private pending = '';
   private narrative = '';
+  planning = '';
 
   push(delta: string): string {
     if (this.phase === 'closed') return this.narrative;
     this.pending += delta;
-    if (this.phase === 'opening') {
-      this.pending = this.pending.trimStart();
-      const opening = '<正文>';
-      if (opening.startsWith(this.pending)) return this.narrative;
-      if (!this.pending.startsWith(opening)) {
-        this.phase = 'closed';
-        this.pending = '';
-        return this.narrative;
+    while (true) {
+      if (this.phase === 'planning-open' || this.phase === 'body-open') {
+        this.pending = this.pending.trimStart();
+        const opening = this.phase === 'planning-open' ? '<thinking>' : '<正文>';
+        if (opening.startsWith(this.pending)) break;
+        if (!this.pending.startsWith(opening)) { this.phase = 'closed'; break; }
+        this.pending = this.pending.slice(opening.length);
+        this.phase = this.phase === 'planning-open' ? 'planning' : 'body';
       }
-      this.pending = this.pending.slice(opening.length);
-      this.phase = 'body';
+      const boundary = this.pending.indexOf('<');
+      const text = boundary < 0 ? this.pending : this.pending.slice(0, boundary);
+      if (this.phase === 'planning') this.planning += text;
+      else this.narrative += text;
+      this.pending = boundary < 0 ? '' : this.pending.slice(boundary);
+      if (boundary < 0) break;
+      if (this.phase === 'body') { this.phase = 'closed'; break; }
+      const closing = '</thinking>';
+      if (closing.startsWith(this.pending)) break;
+      if (!this.pending.startsWith(closing) || !this.planning.trim()) { this.phase = 'closed'; break; }
+      this.pending = this.pending.slice(closing.length);
+      this.phase = 'body-open';
     }
-    const boundary = this.pending.indexOf('<');
-    if (boundary < 0) {
-      this.narrative += this.pending;
-      this.pending = '';
-    } else {
-      this.narrative += this.pending.slice(0, boundary);
-      // 不论结束标签是否完整，都不再输出它或其后面的结构化资料。
-      this.phase = 'closed';
-      this.pending = '';
-    }
+    if (this.phase === 'closed') this.pending = '';
     return this.narrative;
   }
 }

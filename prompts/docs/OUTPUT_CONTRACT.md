@@ -1,7 +1,7 @@
 # 输出协议、命令类型与校验要求
 
 ## 阶段① 正文输出
-结构顺序必须为 `<正文>...</正文><短期记忆>...</短期记忆><变量规划>[{...}]</变量规划>`，若开启行动选项再加 `<行动选项>3～5行</行动选项>`。最终解析成 `StoryResult{turnKind,narrative,summary,variableGuide,actionOptions?}`。其中变量规划条目的 `group` 属于 `protagonist|npc|items|economy|organization|time|event`；字段为`group,subjectHint,observedFact,textEvidence`。
+结构顺序必须为 `<thinking>...</thinking><正文>...</正文><短期记忆>...</短期记忆><变量规划>[{...}]</变量规划>`，若开启行动选项再加 `<行动选项>3～5行</行动选项>`。最终解析成 `StoryResult{turnKind,narrative,summary,variableGuide,actionOptions?}`。项目规划不加入StoryResult或正式存档，原生公开返回内容也单独处理。其中变量规划条目的 `group` 属于 `protagonist|npc|items|economy|organization|time|event`；字段为`group,subjectHint,observedFact,textEvidence`。
 叙事流式显示时，只能实时展示解析明确落入正文标签的文本；`【旁白】`代表普通叙述，`【角色名】`只代表角色直接对白（详见`shared/09_dialogue_labels.md`）；任何变量变更可见信息都属于候选，不能在流式时写库。仅`narrative`参加硬最低字数校验，`minNarrativeChars`由玩家任意合法正整数设置，具体字符口径须统一。
 
 ## 阶段② 变量输出
@@ -22,12 +22,12 @@
 标签平衡与唯一、变量规划JSON解析、命令枚举和对象校验、时间不倒退、同一事实幂等、余额来源、物品归属/数量、NPC在场区分、不同组织Schema、秘密隔离、重大结案时间轴去重。来源证据无法确认时列unresolved或拒绝；不允许生成半段后“尽量提交”。
 
 ## 兼容性声明
-本协议是面向V0.1的建议可实现格式，与已有技术文档中的数据结构对齐。若Codex实现更可靠的原生JSON schema/工具调用，可以替换传输层，但不能改变已确认的四项正文输出、变量指导性质、六主提示词、世界职责和事务边界。
+本协议是面向V0.1的建议可实现格式，与已有技术文档中的数据结构对齐。若Codex实现更可靠的原生JSON schema/工具调用，可以替换传输层，但不能改变各正式正文结果字段、变量指导性质、六主提示词、世界职责和事务边界。
 
 
 ## M3-P1 补充（不改变以上输出结构）
 
-新增输入占位符 `{{worldWeekday}}`，P2 按 `worldClock` 在 Asia/Shanghai 的日期派生，不能成为 AI 可写状态或独立时钟。当前只注册资源，不替换占位符或发送请求。原版 COT 的额外 thinking/剧情规划仅作非注入参考；兼容模板不得增加任何顶层输出段。
+新增输入占位符 `{{worldWeekday}}`，P2 按 `worldClock` 在 Asia/Shanghai 的日期派生，不能成为 AI 可写状态或独立时钟。当前只注册资源，不替换占位符或发送请求。原版修仙COT仅作非注入参考。M5-P6以用户审定的两套原创叙事规划替代，新增独立thinking顶层块；不引入旧剧情规划标签或额外世界命令。
 
 变量协议中的推荐命令仍不是 M1 实际 COMMAND_CATALOG。P2 必须提供真实目录，缺少目录/类型不匹配时阻止请求或明确失败；本轮未修改 M1 的正式命令、Schema 与原子提交。NPC 记忆补丁中暂不支持的变更只能 unresolved，不能靠自由路径写入。
 
@@ -166,3 +166,7 @@ contactReviewNpcIds中的旧人物只要存在旧journal或公开记忆，就不
 WorldEvent.resultKnowledge?沿用任务现有严格分类，不新增AI阶段。resolved/cancelled事件由程序从decision.resultKnowledge重建并核对；非终态不得预存分类。event:只投影结案元数据和明确facts，event-result:保留自由标题、resolutionText及reported/suspected标签，性质始终statement；event-plan:保留计划资料，性质为plan。旧已结案事件缺字段仍可读取，保留原文且不补造facts。隐藏/非完全公开事件的新来源继续worldEventOnly保护，公开事实投影也不包含未经分类的标题或引述。
 
 文本存在不证明玩家肯定授权。没有可信独立确认交互时，待复核旧人的player_confirmed在世界验证和领域模拟两层均拒绝，包括真实肯定文本。旧字段继续可读，历史回执不改写；旧待提交的不安全删除候选须重新生成世界候选。有历史者保留完整实体，无历史且无联系迹象的临时人物仍可按原流程安全退出。未新增玩家设置、中文关键词分类器或联系人管理UI；事实分类语义仍由原世界AI负责，程序验证明确类型、来源、状态和事务边界。
+
+## M5-P6：项目规划与原生公开内容
+
+新请求必须依序完整输出thinking、正文、短期记忆、变量规划及启用时的行动选项；保留标签唯一、不嵌套。缺少thinking的新响应拒绝，旧已保存Story/草稿/journal保持可读，不重解析为新响应。thinking仅为创作提纲，不是私有隐藏推理或世界事实，不计正文长度、不流入下游证据、NPC知识或记忆。只校验结构，不评审每一步的文学内容。原生reasoning/thought/thinking由客户端独立接收，不要求存在，不写进Story。临时调试仅本页内存保留，默认折叠，刷新清除。输出长度终止拒绝保存，不自动提高预算或额外收费重发。

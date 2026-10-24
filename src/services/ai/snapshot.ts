@@ -2,6 +2,8 @@ import { AiConfigSchema, ChannelSchema, modelIdSchema } from './configuration';
 import type { AiConfig, AiTask, Channel } from './configuration';
 import type { CredentialVault } from './credentials';
 import { AiError } from './errors';
+import { thinkingCapability } from './thinking';
+import type { ThinkingCapability } from './thinking';
 
 const secrets = new WeakMap<object, string>();
 export interface RequestSnapshot {
@@ -9,6 +11,7 @@ export interface RequestSnapshot {
   readonly model: string;
   readonly stage: AiTask;
   readonly useCot: boolean;
+  readonly thinkingCapability: ThinkingCapability;
   readonly diagnostics: readonly string[];
 }
 export function freeze<T>(value: T): T {
@@ -34,8 +37,10 @@ export function channelSnapshot(
   const diagnostics: string[] = [];
   const compatibility = parsed.data.compatibility;
   const useCot = cotSupported(parsed.data, model, stage);
+  if (stage === 'story' && compatibility.cotMode === 'prefix') diagnostics.push('COT_PREFIX_FALLBACK_COMPLETE_HISTORY');
   if (compatibility.cotMode !== 'off' && !useCot) diagnostics.push('COT_SKIPPED_PROTOCOL_OR_MODEL');
-  const snapshot = freeze({ channel: parsed.data, model, stage, useCot, diagnostics });
+  const snapshot = freeze({ channel: parsed.data, model, stage, useCot, diagnostics,
+    thinkingCapability: thinkingCapability(parsed.data, model) });
   secrets.set(snapshot, secret);
   return snapshot;
 }
@@ -52,14 +57,9 @@ export function resolveModelRoute(config: AiConfig, stage: AiTask) {
   if (!modelIdSchema.safeParse(model).success) throw new AiError('configuration');
   return { channel, model };
 }
-export function cotSupported(channel: Channel, model: string, stage: AiTask) {
-  return (
-    stage === 'story' &&
-    channel.compatibility.cotMode === 'confirmation' &&
-    channel.protocol === 'openai' &&
-    channel.compatibility.cotModels.includes(model) &&
-    !/deepseek|glm/i.test(model)
-  );
+// 完整历史确认不依赖模型名单；旧名单仅为配置读取兼容保留。
+export function cotSupported(channel: Channel, _model: string, stage: AiTask) {
+  return stage === 'story' && channel.compatibility.cotMode !== 'off';
 }
 export function requestSnapshot(
   config: AiConfig,

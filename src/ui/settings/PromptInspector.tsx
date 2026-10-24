@@ -33,6 +33,7 @@ const categories: Record<string, string> = {
   worldbook: '世界书',
   shared: '共享规则',
   narrative_core: '核心叙事',
+  planning: '叙事规划',
   writing: '写作规则',
   stage: '阶段模板',
   output: '输出协议',

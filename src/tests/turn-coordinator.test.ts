@@ -47,7 +47,7 @@ function wire(stage: AiStage, invalid = false) {
   const text = invalid
     ? '{bad'
     : stage === 'story'
-      ? `<正文>${worldNarrative}</正文><短期记忆>用餐</短期记忆><变量规划>[]</变量规划>`
+      ? `<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>${worldNarrative}</正文><短期记忆>用餐</短期记忆><变量规划>[]</变量规划>`
       : JSON.stringify(
           stage === 'variables' ? worldDraft().variables!.result : worldResult([npcUpdate()]),
         );

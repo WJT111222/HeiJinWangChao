@@ -114,8 +114,8 @@ describe('真实资源库、选择器与独立排序', () => {
     expect(state('stages.opening.story')).toBe('not-applicable');
     expect(state('docs.ASSEMBLY')).toBe('not-applicable');
     const difference = comparePromptModes(a);
-    expect(difference.openingOnly.map((m) => m.id)).toEqual(['stages.opening.story']);
-    expect(difference.regularOnly.map((m) => m.id)).toEqual(['stages.regular.story']);
+    expect(difference.openingOnly.map((m) => m.id)).toEqual(['stages.opening.story', 'planning.opening']);
+    expect(difference.regularOnly.map((m) => m.id)).toEqual(['stages.regular.story', 'planning.regular']);
     expect(difference.shared.some((m) => m.id === 'writing.nsfw')).toBe(true);
     expect(state('variableGroups.economy.update')).toBe('not-applicable');
     expect(promptManifest.modules.find((m) => m.id === 'writing.nsfw')).toMatchObject({
@@ -324,7 +324,7 @@ describe('内存请求快照、安全边界和 Token 统计', () => {
     await expect(
       runStageRequest({ ...source, orderOverrides: {}, orderPreferences: {} }, a.config, a.vault),
     ).rejects.toMatchObject({ code: 'configuration' });
-    const text = '<正文>【旁白】观察街道。</正文><短期记忆>观察</短期记忆><变量规划>[]</变量规划>';
+    const text = '<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>【旁白】观察街道。</正文><短期记忆>观察</短期记忆><变量规划>[]</变量规划>';
     source.settings.prompts.actionOptions = false;
     const client = new AiClient(vi.fn<typeof fetch>().mockResolvedValue(response('openai', text)));
     await runStageRequest(source, a.config, a.vault, { stream: false }, client);

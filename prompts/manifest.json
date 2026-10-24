@@ -240,8 +240,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 905,
-      "version": "0.1.1-m5-p1",
+      "characters": 1208,
+      "version": "0.5.6",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -250,7 +250,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "34632160280fad20fb1f022d5f51c50ce8308ef2a209eda6f0871dad1bce92ca",
+      "contentSha256": "5aa1285ab4fda4f5bf5603fd0d1921f6b536ec3580e0c854860c6e2363ac0967",
       "placeholders": [
         "minNarrativeChars"
       ]
@@ -322,8 +322,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 843,
-      "version": "0.1.0-m3-p1",
+      "characters": 829,
+      "version": "0.5.6",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -332,7 +332,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "7c2794eddbc2f67aa6be1dbcadc16bec984a55ab47d27ab1c92e0ae4b02e8a2d",
+      "contentSha256": "84b61c70d74e9ee23108658c8ccaa5c5aa548af1da2a6f404415821bd2aaa90b",
       "placeholders": [
         "minNarrativeChars"
       ]
@@ -402,8 +402,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 686,
-      "version": "0.1.0-m3-p1",
+      "characters": 717,
+      "version": "0.5.6",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -412,7 +412,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "5e9d258ac09981aabde0cb8ad8ce82c6cea3abbdc066de9728d8f747cf062dc5",
+      "contentSha256": "7c31d0a140b0a3ee5c7937f6a0650a0dc54f78307a98ed87f36c325f18a5af27",
       "placeholders": [
         "immediateMemoryTurns",
         "minNarrativeChars"
@@ -1630,8 +1630,8 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 5450,
-      "version": "0.3.0-world-runtime",
+      "characters": 5815,
+      "version": "0.5.6",
       "messageRole": null,
       "activation": "never",
       "permanent": false,
@@ -1640,7 +1640,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "bafe86a5e4576dc0a2d0e33d04d1fa7701e66751d7a3a26035e4e1bc00492f7d",
+      "contentSha256": "43c442b9e8b87b450e224d159174c2f80c5b708162af43e5c39e3bc339ef22c4",
       "placeholders": [
         "worldWeekday"
       ]
@@ -1654,8 +1654,8 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 11730,
-      "version": "0.5.5-review4",
+      "characters": 12113,
+      "version": "0.5.6",
       "messageRole": null,
       "activation": "never",
       "permanent": false,
@@ -1664,7 +1664,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "c7fab0623d75d4d1f1bdd2bd236c03732bc4a97b4fd8f70733ed54f82d4c771b",
+      "contentSha256": "918fd653ccc55c84f943609b8dbdec85728fc668b726e331d68e95d0df45d848",
       "placeholders": [
         "immediateMemoryTurns",
         "minNarrativeChars",
@@ -1988,7 +1988,7 @@
     {
       "id": "compatibility.cot_format_ack",
       "path": "compatibility/cot_format_ack.md",
-      "title": "COT 兼容格式确认模板（P2 待接入）",
+      "title": "原创完整格式确认历史（不依赖尾部预填充）",
       "kind": "prompt",
       "applicableStages": [
         "story"
@@ -1999,8 +1999,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 141,
-      "version": "0.1.0-protocol-adaptation",
+      "characters": 160,
+      "version": "0.5.6",
       "messageRole": "assistant",
       "activation": "protocol-compatibility",
       "permanent": false,
@@ -2009,7 +2009,7 @@
       "orderGroup": "assistant_tail",
       "reorderable": false,
       "category": "compatibility",
-      "contentSha256": "c1a3a940656403975007a864d382ac64018318fc65368ec8d031616752a067ea",
+      "contentSha256": "8333d0523447d7433c7955bec8a28463d572a67b26b913c6ba9e63312fefa17a",
       "placeholders": [
         "playerName"
       ]
@@ -2064,6 +2064,58 @@
         "playerName",
         "worldClock"
       ]
+    },
+    {
+      "id": "planning.opening",
+      "path": "planning/opening.md",
+      "title": "开局原创叙事规划（Step 0–8）",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 3548,
+      "version": "0.5.6",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 350,
+      "orderGroup": "planning",
+      "reorderable": false,
+      "category": "planning",
+      "contentSha256": "4d71e81a009892b1a56fd9afae28f6194a14f4a67e635b9b867ffbaa8bd4da63",
+      "placeholders": []
+    },
+    {
+      "id": "planning.regular",
+      "path": "planning/regular.md",
+      "title": "普通回合原创叙事规划（Step 0–14）",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 4832,
+      "version": "0.5.6",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 350,
+      "orderGroup": "planning",
+      "reorderable": false,
+      "category": "planning",
+      "contentSha256": "bfb22bff472fbe8916b58915a7cead540f10763ded99d5b187a2999fe9905097",
+      "placeholders": []
     }
   ]
 }

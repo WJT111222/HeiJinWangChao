@@ -10,7 +10,7 @@ import { game } from './fixtures/game';
 const settings = defaultSettings();
 settings.prompts.minNarrativeChars = 1;
 settings.prompts.actionOptions = false;
-const output = (summary: string) => `<正文>主角在站台等待。</正文><短期记忆>${summary}</短期记忆><变量规划>[]</变量规划>`;
+const output = (summary: string) => `<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>主角在站台等待。</正文><短期记忆>${summary}</短期记忆><变量规划>[]</变量规划>`;
 
 describe('逐回合事实摘要：100～200汉字质量目标，不机械截断或阻断', () => {
   it.each([100, 150, 200])('%s 汉字符合目标', (count) => {
@@ -46,7 +46,7 @@ describe('逐回合事实摘要：100～200汉字质量目标，不机械截断�
     expect(protocol).toContain('同一次正文生成请求');
     expect(protocol).toContain('不另行请求模型');
     expect(prompt.modules.filter((module) => module.id === 'shared.06_story_output')).toHaveLength(1);
-    expect(prompt.modules.find((module) => module.id === 'shared.06_story_output')?.version).toBe('0.1.1-m5-p1');
+    expect(prompt.modules.find((module) => module.id === 'shared.06_story_output')?.version).toBe('0.5.6');
     expect(prompt.modules.filter((module) => module.id.startsWith('stages.')).map((module) => module.id)).toEqual([`stages.${mode}.story`]);
   });
 });

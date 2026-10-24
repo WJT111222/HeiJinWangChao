@@ -3,10 +3,10 @@ import type { Server } from 'node:http';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-type Plan = { chunks?: string[]; status?: number; gap?: number; delay?: number };
+type Plan = { chunks?: string[]; status?: number; gap?: number; delay?: number; reasoning?: string; finishReason?: string };
 const story = '【旁白】公交车在街边缓缓停下。\n\n行人沿着站台散开，你仍站在原地。';
 const result = (narrative = story) =>
-  `<正文>${narrative}</正文><短期记忆>等车</短期记忆><变量规划>[{"group":"time","observedFact":"内部指导绝不进入阅读区"}]</变量规划><行动选项>看看站台\n留在原地\n询问路线</行动选项>`;
+  `<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>${narrative}</正文><短期记忆>等车</短期记忆><变量规划>[{"group":"time","observedFact":"内部指导绝不进入阅读区"}]</变量规划><行动选项>看看站台\n留在原地\n询问路线</行动选项>`;
 let server: Server;
 let baseUrl: string;
 let plans: Plan[];
@@ -42,6 +42,7 @@ test.beforeEach(async () => {
       response.writeHead(200, { 'Content-Type': 'text/event-stream' });
       response.flushHeaders();
       const chunks = plan.chunks ?? [result()];
+      if (plan.reasoning) response.write('data: ' + JSON.stringify({ choices: [{ delta: { reasoning_content: plan.reasoning } }] }) + '\n\n');
       let index = 0;
       function send() {
         if (response.destroyed) return;
@@ -49,7 +50,7 @@ test.beforeEach(async () => {
           response.end(
             'data: ' +
               JSON.stringify({
-                choices: [],
+                choices: plan.finishReason ? [{ delta: {}, finish_reason: plan.finishReason }] : [],
                 usage: { prompt_tokens: 42, completion_tokens: 7, total_tokens: 49 },
               }) +
               '\n\ndata: [DONE]\n\n',
@@ -163,6 +164,8 @@ test('真实开局流式分片、资料面板不打断、只展示正文，草�
   const before = await seed(page);
   plans.push({
     chunks: [
+      '<thinking>按真实场景续写，不代替玩家决定。',
+      '</thinking>',
       '<正',
       '文>【旁白】公交车',
       '在街边缓缓停下。\n\n',
@@ -231,7 +234,7 @@ test('重新 Roll 授权失败、短正文及非法格式保留旧草稿，成�
   for (const plan of [
     { status: 401 },
     { chunks: [result('短')] },
-    { chunks: ['<正文>缺少完整结构</正文>'] },
+    { chunks: ['<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>缺少完整结构</正文>'] },
   ]) {
     plans.push(plan);
     await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
@@ -319,7 +322,7 @@ test('长篇流式阅读自动跟随、手动上滚暂停、恢复跟随，移�
   const long = '【旁白】雨落在站台上，行人安静等候。\n\n'.repeat(140);
   plans.push({
     chunks: [
-      '<正文>' + long,
+      '<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>' + long,
       '新到的车辆停在站台旁。',
       '</正文><短期记忆>等候</短期记忆><变量规划>[]</变量规划><行动选项>看看站台\n留在原地\n询问路线</行动选项>',
     ],
@@ -341,4 +344,39 @@ test('长篇流式阅读自动跟随、手动上滚暂停、恢复跟随，移�
   await generated(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await expect(reader).not.toContainText('变量规划');
+});
+
+
+test('P6：原生公开内容与项目规划只主动查看，正文/存档隔离，刷新清除临时资料', async ({ page }) => {
+  const before = await seed(page);
+  plans.push({ reasoning: '公开原生标记 mock-browser-key', chunks: [result().replace('本轮创作提纲：保持人物与场景连续，按行动呈现事实。', '私人规划标记，不是正文事实。')] });
+  await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
+  const reader = page.getByTestId('story-reader'); await expect(reader).toContainText(story);
+  await expect(reader).not.toContainText('私人规划标记'); await expect(reader).not.toContainText('公开原生标记');
+  const inspection = page.locator('.story-inspection'); await expect(inspection.locator('pre')).toHaveCount(0);
+  const saved = await stored(page); expect(saved.state).toBe(before); expect(JSON.stringify(saved.draft)).not.toContain('私人规划标记');
+  await inspection.getByText('本次生成的叙事规划与原生输出（临时调试）', { exact: true }).click();
+  await inspection.getByText('项目叙事规划 · thinking', { exact: true }).click(); await expect(inspection).toContainText('私人规划标记');
+  await inspection.getByText('供应商公开返回的原生内容', { exact: true }).click(); await expect(inspection).toContainText('公开原生标记');
+  await expect(inspection).not.toContainText('mock-browser-key'); expect(await stored(page)).toEqual(saved); expect(requests).toHaveLength(1);
+  const messages = requests[0].messages as { role: string; content: string }[];
+  expect(messages.slice(-3).map((message) => message.role)).toEqual(['user', 'assistant', 'user']);
+  expect(messages.filter((message) => message.content.includes('### Step 0｜'))).toHaveLength(1);
+  await page.reload(); await inspection.getByText('本次生成的叙事规划与原生输出（临时调试）', { exact: true }).click();
+  await expect(inspection).toContainText('没有对应请求的临时内容'); await expect(reader).toContainText(story);
+  expect(await stored(page)).toEqual(saved); expect(requests).toHaveLength(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('P6：截断Roll不覆盖旧正文，明确预算诊断；无原生输出依然成功', async ({ page }) => {
+  await seed(page); plans.push({}); await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
+  const saved = await stored(page);
+  plans.push({ reasoning: '只有临时原生内容', finishReason: 'length', chunks: ['<thinking>长规划尚未结束'] });
+  await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('达到输出上限'); expect(await stored(page)).toEqual(saved); expect(requests).toHaveLength(2);
+  await expect(page.getByTestId('story-reader')).toContainText(story);
+  plans.push({}); await page.getByRole('button', { name: '重新 Roll', exact: true }).click(); await generated(page);
+  expect((await stored(page)).draft.storyRevision).toBe(saved.draft.storyRevision + 1); expect(requests).toHaveLength(3);
+  const inspection = page.locator('.story-inspection'); await inspection.locator(':scope > summary').click();
+  await inspection.getByText('供应商公开返回的原生内容', { exact: true }).click(); await expect(inspection).toContainText('供应商未提供');
 });

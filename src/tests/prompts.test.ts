@@ -251,7 +251,7 @@ describe('M3-P1 静态资源注册（不是提示词组装或 API 请求）', ()
       ),
     ).toBe(false);
   });
-  it('COT 仅为正文 assistant 兼容资源，不输出 thinking 或旧剧情规划', () => {
+  it('COT 为正文完整确认资源，支持原创 thinking，不引入旧剧情规划', () => {
     expect(moduleById('compatibility.cot_format_ack')).toMatchObject({
       messageRole: 'assistant',
       activation: 'protocol-compatibility',
@@ -260,7 +260,8 @@ describe('M3-P1 静态资源注册（不是提示词组装或 API 请求）', ()
       applicableStages: ['story'],
     });
     const adapted = text('compatibility/cot_format_ack.md');
-    expect(adapted).not.toMatch(/<think>|<thinking>|<剧情规划>|<judge>/);
+    expect(adapted).not.toMatch(/<think>|<剧情规划>|<judge>/);
+    expect(adapted).toContain('<thinking>');
     expect(adapted).toContain('{{playerName}}');
     expect(adapted).toContain('万界叙事官·浮生');
     expect(text('reference/cot_legacy.txt')).toContain('<thinking>');
@@ -293,14 +294,12 @@ describe('正式文本来源与旧架构保留', () => {
       sources.resources['reference/cot_legacy.txt'].fragmentSha256,
     );
   });
-  it('六主模板仍完整：两篇正文仅调整阶段身份，其他四篇字节保留', () => {
+  it('六主模板仍完整：两篇正文按P6批准更新契机/规划协议，其他四篇字节保留', () => {
     expect(promptManifest.modules.filter((m) => m.category === 'stage')).toHaveLength(6);
     for (const mode of ['opening', 'regular'] as const) {
       const path = `stages/${mode}/story.md` as const;
       const record = sources.resources[path];
-      expect(sha(text(path).replace(record.replacement.to, record.replacement.from))).toBe(
-        record.sourceSha256,
-      );
+      expect(sha(text(path))).toBe(record.m5P6.sha256);
     }
     expect(text('stages/opening/story.md')).toContain('不得死亡、背叛主角');
     expect(text('stages/regular/story.md')).toContain('不是开局');
