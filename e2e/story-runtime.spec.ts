@@ -110,6 +110,9 @@ async function seed(page: Page, mode: 'opening' | 'regular' | 'none' = 'opening'
       new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-browser-key');
       savePromptOrder(localStorage, { 'writing.conflict_pacing': 81, 'writing.emotion_guard': 80 });
       const form = newCreation();
+      // 此套专门验证既有固定时钟草稿的流式/恢复；新待定开局另有真实创角回归。
+      delete form.openingTimePending;
+      form.worldClock = '2026-10-18T08:00:00+08:00';
       form.saveId = 'story-e2e-a';
       form.person = {
         name: '正文测试角色',

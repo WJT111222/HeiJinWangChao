@@ -233,6 +233,9 @@ describe('玩家可见资料投影', () => {
       const initial = loadCompanionProfile(storage, state)!;
       expect(initial).toBeDefined();
       const later = structuredClone(state);
+      // 本用例手工建立已提交历史夹具；时间也须从待定转为已确定。
+      delete later.openingTimePending;
+      later.worldClock = '2026-10-18T08:00:00+08:00';
       later.turnNumber = 3;
       later.revision = 3;
       later.journal = [1, 2, 3].map((revision) => ({

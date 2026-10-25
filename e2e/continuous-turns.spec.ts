@@ -73,9 +73,11 @@ async function mock(page: Page) {
         number = Number(state.turnNumber) + 1;
       stories.push({ number, action: string(ctx.PLAYER_ACTION), context: JSON.stringify(ctx) });
       const paid = typeof record(state.economy).cash === 'number';
-      const narrative = `第${number}幕。${number === 1 ? '主角收到了公司寄出的解雇通知。' : '主角仍保留着此前收到的通知。'}经过一分钟，主角在街边休息。主角心情趋于平静。${paid ? '主角已经用现金支付30元吃饭。' : ''}`;
+      const pending = Boolean(ctx.OPENING_TIME && record(ctx.OPENING_TIME).status === 'pending');
+      const anchor = pending ? '2015年7月8日14:00，重庆街头。' : '';
+      const narrative = `${anchor}第${number}幕。${number === 1 ? '主角收到了公司寄出的解雇通知。' : '主角仍保留着此前收到的通知。'}经过一分钟，主角在街边休息。主角心情趋于平静。${paid ? '主角已经用现金支付30元吃饭。' : ''}`;
       const preflight = ctx.TIME_PREFLIGHT ? record(ctx.TIME_PREFLIGHT) : undefined;
-      const timeGuide = preflight?.targetAt ? [{ group: 'time', subjectHint: 'time:end', observedFact: preflight.targetAt, textEvidence: '经过一分钟，主角在街边休息。' }] : [];
+      const timeGuide = pending ? [{ group: 'time', subjectHint: 'time:opening', observedFact: JSON.stringify({ startAt: '2015-07-08T14:00:00+08:00', endAt: '2015-07-08T14:01:00+08:00' }), textEvidence: anchor }] : preflight?.targetAt ? [{ group: 'time', subjectHint: 'time:end', observedFact: preflight.targetAt, textEvidence: '经过一分钟，主角在街边休息。' }] : [];
       text =
         plan.badStoryNumber === number
           ? '{bad-output'
@@ -183,7 +185,8 @@ test('真实创角后连续正式游玩十回合；输入、资料、正文历�
   await createCharacter(page);
   await ready(page);
   const initial = await stored(page),
-    start = Date.parse(initial.state.worldClock);
+    start = Date.parse('2015-07-08T14:00:00+08:00');
+  expect(initial.state.openingTimePending).toBe(true); // 尚未发送，正式时钟仍待确认。
   expect(initial.state.economy.cash).toBeNull();
   await expect(page.getByRole('complementary', { name: '主角信息' })).toContainText('未确认');
   for (let index = 1; index <= 10; index++) {

@@ -152,8 +152,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 2267,
-      "version": "0.1.0-m5-p4-turn-time",
+      "characters": 2904,
+      "version": "1.3.0-m7-p3",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -162,7 +162,7 @@
       "orderGroup": "shared",
       "reorderable": false,
       "category": "shared",
-      "contentSha256": "9a4bcef5acb6132a70e6e1f9cd9af679aed941977ae159c3796744c4faad6bb1",
+      "contentSha256": "c50e64da02afd591ab25b36958c3de48d0ecbcd47019e89e3267fd77e5576d56",
       "placeholders": [
         "worldClock",
         "worldWeekday"

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { pendingOpeningClock } from './openingTime';
 import { ActorRefSchema, IdsSchema, CountSchema, GameTimeSchema, IdSchema, TextSchema, entityTable } from './common';
 import { ProtagonistSchema } from './protagonist/schema';
 import { NpcSchema, SpecialNpcSchema } from './npc/schema';
@@ -23,7 +24,7 @@ export const RetiredNpcSchema = z.strictObject({
 export const SaveShape = {
   schemaVersion: z.literal(4), saveId: IdSchema, title: TextSchema,
   createdAt: GameTimeSchema, updatedAt: GameTimeSchema, revision: CountSchema, turnNumber: CountSchema,
-  worldClock: GameTimeSchema, weatherText: z.string(), environmentText: z.string(),
+  worldClock: GameTimeSchema, openingTimePending: z.literal(true).optional(), weatherText: z.string(), environmentText: z.string(),
   protagonist: ProtagonistSchema, initialCompanionId: IdSchema.optional(),
   contactNpcIds: IdsSchema, contactReviewNpcIds: IdsSchema, retiredNpcs: entityTable(RetiredNpcSchema),
   npc: entityTable(NpcSchema), items: entityTable(ImportantItemSchema), economy: EconomySchema,
@@ -42,6 +43,13 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
   function check(ok: unknown, message: string) {
     if (!ok) ctx.addIssue({ code: 'custom', message });
   }
+  if (s.openingTimePending) check(s.worldClock === pendingOpeningClock && s.revision === 0 && s.turnNumber === 0
+    && s.journal.length === 0 && s.appliedCommands.length === 0 && Object.keys(s.events).length === 0
+    && Object.keys(s.tasks).length === 0 && s.timeline.length === 0
+    && [...s.memories.short, ...s.memories.medium, ...s.memories.long, ...Object.values(s.memories.npcSummaries).flat(),
+      ...Object.values(s.npc).flatMap((npc) => [...npc.memories, ...(npc.kind === 'special' ? npc.longTermMemories : [])])].length === 0
+    && Object.values(s.npc).every((npc) => !npc.lastInteractionAt) && Object.keys(s.retiredNpcs).length === 0
+    && Object.keys(s.economy.incomes).length === 0, '待定开局只能保留无已发生时间事实的初始存档');
   const allIds = [s.protagonist.id];
   const tables = [s.npc, s.retiredNpcs, s.items, s.organizations, s.locations, s.events, s.tasks,
     s.economy.incomes, s.economy.debts, s.economy.properties, s.economy.vehicles, s.economy.otherAssets];
