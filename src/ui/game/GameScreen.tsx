@@ -102,6 +102,8 @@ export function GameScreen({
     submitting || automatic.running || progress || variables.phase || world.phase,
   );
   const reader = useRef<HTMLDivElement>(null);
+  const workflowDetails = useRef<HTMLDetailsElement>(null);
+  const runtimeSwitches = useRef<HTMLDivElement>(null);
   const follow = useRef(true);
   const [following, setFollowing] = useState(true);
   const validDraft =
@@ -177,6 +179,36 @@ export function GameScreen({
   const options = draft?.story?.actionOptions;
   const workflowError = error || variables.error || world.error || automatic.error || submitError;
   const failedStage = (['story', 'variables', 'world'] as const).some((stage) => draft?.stageStatus[stage] === 'failed');
+  // 仅用于入口展示，与 TurnCoordinator 的 needed 条件保持一致；实际执行仍由协调器重验。
+  const storyNeeded = !draft?.story || draft.stageStatus.story !== 'ready';
+  const variablesNeeded = settings.runtime.useVariableStage &&
+    (draft?.stageStatus.variables !== 'ready' || draft.variables?.validation !== 'validated' || storyNeeded);
+  const worldNeeded = settings.runtime.useWorldStage &&
+    (!draft?.world || !['ready', 'preview'].includes(draft.stageStatus.world) || variablesNeeded || storyNeeded);
+  const canGenerate = Boolean(validDraft && (storyNeeded || variablesNeeded || worldNeeded));
+  const disabledGuidance = !settings.runtime.useVariableStage && !settings.runtime.useWorldStage
+    ? '变量管理和动态世界阶段已关闭。需要启用并完成必要候选后，才能正式结算本回合。'
+    : !settings.runtime.useVariableStage
+      ? draft?.world?.validation === 'preview'
+        ? '变量阶段未启用，当前世界结果仅为预览。请启用变量阶段并补全必要候选。'
+        : '变量阶段已关闭。需要启用该阶段并完成候选后，才能正式结算本回合。'
+      : !settings.runtime.useWorldStage
+        ? '动态世界阶段已关闭。需要启用该阶段并完成候选后，才能正式结算本回合。'
+        : '';
+  const workflowGuidance = validDraft && !busy && !canCommit
+    ? disabledGuidance || (!canGenerate
+      ? draft?.world?.validation === 'preview'
+        ? '当前世界结果仅为预览。请在高级操作中补算世界候选，完成后才能正式结算。'
+        : '当前候选尚不满足正式结算条件。请展开高级设置检查并补算必要候选。'
+      : '')
+    : '';
+  function openRuntimeSettings() {
+    if (workflowDetails.current) workflowDetails.current.open = true;
+    runtimeSwitches.current?.scrollIntoView({ block: 'nearest' });
+    (runtimeSwitches.current?.querySelector<HTMLInputElement>('input:not(:checked)') ??
+      runtimeSwitches.current?.querySelector<HTMLInputElement>('input'))?.focus({ preventScroll: true });
+  }
+
   const workflowLabel = submitting ? '正在正式结算'
     : automatic.running ? automatic.progress
       ? { story: '正在生成正文', variables: '正在整理变量', world: '正在更新世界' }[automatic.progress.stage]
@@ -356,7 +388,7 @@ export function GameScreen({
               </p>
             )}
             <section className="workflow" aria-label="三阶段工作流">
-              <details className="workflow-disclosure">
+              <details className="workflow-disclosure" ref={workflowDetails}>
                 <summary>
                   <span>三阶段工作流</span>
                   <strong role="status" aria-live="polite">{workflowLabel}</strong>
@@ -530,7 +562,7 @@ export function GameScreen({
                   )}
                   <RequestUsage saveId={state.saveId} />
                   {draft && <StoryInspectionPanel key={`${draft.turnId}-${draft.storyRevision}`} draft={draft} />}
-                  <div className="runtime-switches">
+                  <div className="runtime-switches" id="workflow-runtime-switches" ref={runtimeSwitches}>
                     {(
                       [
                         ['useVariableStage', '变量管理'],
@@ -555,7 +587,11 @@ export function GameScreen({
                   </div>
                 </div>
               </details>
-              {(automatic.running || !canCommit) && <div className="workflow-primary">
+              {workflowGuidance && <div className="field-hint" role="note" aria-label="阶段设置提示">
+                <p>{workflowGuidance}</p>
+                <button onClick={openRuntimeSettings} aria-controls="workflow-runtime-switches">展开高级设置</button>
+              </div>}
+              {(automatic.running || (!busy && !canCommit && canGenerate)) && <div className="workflow-primary">
                 {automatic.running ? (
                   <button disabled={automatic.progress?.phase === 'saving'} onClick={automatic.cancel}>
                     取消自动执行
