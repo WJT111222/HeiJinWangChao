@@ -339,9 +339,9 @@ export function CreationWizard({
                 </section>
                 <section className="card">
                   <h3>开局准备</h3>
-                  <p>初始游戏时间：{dateTime(form.worldClock)}</p>
+                  <p>{form.openingTimePending ? '开局时间待确认' : `初始游戏时间：${dateTime(form.worldClock)}`}</p>
                   <p className="muted">
-                    时间以创角开始时刻初始化；之后不会随现实时间自动推进。资产、健康与天气等待开局确认，同伴关系倾向暂不作推断。
+                    可以在开局偏好中指定故事年份、季节或日期；未指定时由 AI 在开局正文中根据剧情安排。请用明确年份，不以设备日期解释“今年”。首次正式结算后时间成为存档事实。资产、健康与天气等待开局确认，同伴关系倾向暂不作推断。
                   </p>
                 </section>
               </div>
