@@ -23,6 +23,7 @@ import { useMemoryMaintenance } from './useMemoryMaintenance';
 import { RequestUsage } from './RequestUsage';
 import { StoryInspectionPanel } from './StoryInspectionPanel';
 import { MemoryMaintenanceControls } from '../panels/MemoryMaintenanceControls';
+import type { OpeningStart } from './openingStart';
 
 const sidebarMedia = '(max-width: 900px)';
 function subscribeSidebarSize(changed: () => void) {
@@ -32,6 +33,8 @@ function subscribeSidebarSize(changed: () => void) {
 }
 
 export function GameScreen({
+  openingStart,
+  onOpenSettings,
   state,
   draft,
   companionProfile,
@@ -43,6 +46,8 @@ export function GameScreen({
   onCommitted,
   onMemorySaved,
 }: {
+  openingStart?: OpeningStart;
+  onOpenSettings: () => void;
   state: GameState;
   draft?: TurnDraft;
   companionProfile?: CompanionProfile;
@@ -76,6 +81,18 @@ export function GameScreen({
   const variables = useVariableGeneration(repository, draft, settings, onDraftSaved);
   const world = useWorldGeneration(repository, draft, settings, onDraftSaved);
   const automatic = useTurnGeneration(repository, draft, settings, companionProfile, onDraftSaved);
+  // 延后一微任务，让 StrictMode 的首次 effect 清理先完成。消费的是创角事件授权，
+  // 而不是“草稿没有正文”；刷新、读档和重新挂载没有新的授权。
+  useEffect(() => {
+    if (!openingStart) return;
+    let disposed = false;
+    queueMicrotask(() => {
+      if (disposed) return;
+      if (window.location.hash !== `#game/${state.saveId}`) { openingStart.revoke(); return; }
+      if (openingStart.claim(state, draft)) void automatic.generate(draft);
+    });
+    return () => { disposed = true; };
+  }, [openingStart, state, draft, automatic.generate]);
   const memory = useMemoryMaintenance(repository, state.saveId, settings, onMemorySaved);
   const progress =
     automatic.progress?.stage === 'story' && automatic.progress.phase !== 'retrying'
@@ -169,7 +186,7 @@ export function GameScreen({
     : world.phase ? '正在更新世界'
     : workflowError?.includes('取消') ? '已取消 · 可恢复'
     : workflowError || failedStage ? '需要处理'
-    : canCommit ? '三阶段候选已完成'
+    : canCommit ? '三阶段候选已完成 · 可发送行动'
     : automatic.outcome && automatic.outcome.draft.draftRevision === draft?.draftRevision && automatic.outcome.status === 'skipped' ? '需要处理 · 已按开关跳过'
     : draft?.stageStatus.world === 'preview' ? '需要处理 · 世界仅为预览'
     : draft?.story ? '等待继续 · 部分候选已保存' : '等待开始';
@@ -285,12 +302,7 @@ export function GameScreen({
                   <br />
                   配置 AI 渠道后，即可生成这座城市中的第一幕。
                 </p>
-                {draft?.turnKind !== 'regular' && (
-                  <button disabled={!validDraft || busy} onClick={() => void generate()}>
-                    生成开局正文
-                  </button>
-                )}
-                <small>下方可一键自动执行三阶段。此处仅手动生成正文草稿，可能产生模型费用。</small>
+                <small>开局未生成时，可使用下方开始入口；配置后需要你主动继续，刷新不会自动请求。</small>
               </div>
             )
           )}
@@ -367,6 +379,12 @@ export function GameScreen({
                           ? '三阶段候选已完成，填写下一步行动并发送以正式结算。'
                           : '自动执行会保留已完成阶段，从尚未完成的阶段继续。'}
                   </p>
+                  <div className="variable-actions">
+                    <button disabled={!validDraft || busy} onClick={() => void generate()}>
+                      {draft?.story ? '仅重新生成正文（高级）' : draft?.turnKind === 'regular' ? '生成本回合正文' : '生成开局正文'}
+                    </button>
+                    <small>高级手动操作：只生成正文，不自动执行后续阶段，可能产生 API 费用。</small>
+                  </div>
                   <ol>
                     {(['story', 'variables', 'world'] as const).map((stage, i) => {
                       const status = draft?.stageStatus[stage];
@@ -446,9 +464,6 @@ export function GameScreen({
                           · 安全失败码：{failure.errorCode} · 已保存结果未正式结算
                         </p>
                       ))}
-                    <button disabled={!validDraft || busy} onClick={() => void automatic.generate()}>
-                      继续失败阶段及后续阶段
-                    </button>
                   </details>
                   <div className="variable-actions">
                     {variables.phase ? (
@@ -540,28 +555,21 @@ export function GameScreen({
                   </div>
                 </div>
               </details>
-            <div className="workflow-primary">
-                <button
-                  className="primary"
-                  disabled={!validDraft || busy}
-                  onClick={() => void automatic.generate()}
-                >
-                  {draft?.story
-                    ? '继续自动执行'
-                    : draft?.turnKind === 'regular'
-                      ? '自动生成本回合'
-                      : '自动生成开局'}
-                </button>
-                {automatic.running && (
-                  <button
-                    disabled={automatic.progress?.phase === 'saving'}
-                    onClick={automatic.cancel}
-                  >
+              {(automatic.running || !canCommit) && <div className="workflow-primary">
+                {automatic.running ? (
+                  <button disabled={automatic.progress?.phase === 'saving'} onClick={automatic.cancel}>
                     取消自动执行
                   </button>
+                ) : (
+                  <button className="primary" disabled={!validDraft || busy} onClick={() => void automatic.generate()}>
+                    {draft?.story || failedStage || workflowError ? '继续未完成阶段' : draft?.turnKind === 'regular' ? '自动生成本回合' : '自动生成开局'}
+                  </button>
                 )}
-              </div>
-            {automatic.error && <p className="story-error" role="alert">{automatic.error} 已保存的合法上游候选仍保留，可继续自动执行恢复。</p>}
+              </div>}
+              {automatic.error && <div className="story-error" role="alert">
+                {automatic.error} 已保存的合法上游候选仍保留，可继续未完成阶段。
+                <button onClick={onOpenSettings}>打开 AI 设置</button>
+              </div>}
             </section>
           </div>
           <label className="sr-only" htmlFor="player-input">
@@ -587,16 +595,11 @@ export function GameScreen({
                 <button disabled={manualProgress.phase === 'saving'} onClick={cancel}>
                   {manualProgress.phase === 'saving' ? '正在保存…' : '取消生成'}
                 </button>
-              ) : (
+              ) : draft?.story ? (
                 <button disabled={!validDraft || busy} onClick={() => void generate()}>
-                  {draft?.story
-                    ? '重新 Roll'
-                    : draft?.turnKind === 'regular'
-                      ? '生成本回合正文'
-                      : '生成正文'}
+                  重新 Roll
                 </button>
-              )}
-              <button disabled>继续推演</button>
+              ) : null}
               <button
                 className="primary"
                 disabled={!canCommit || busy || !input.trim()}
