@@ -1530,3 +1530,90 @@ summary {
 .settings-content .themed-select { align-content: start; font-size: .86rem; color: #cfd5c6; }
 .settings-content .model-picker .field-hint { margin: .3rem 0; }
 .settings-content .model-picker > button { margin: .2rem 0; }
+
+/* M7-P1: only the game route fills the visible viewport. Other pages keep document scrolling. */
+.app-shell-game {
+  position: fixed;
+  inset-inline: 0;
+  top: var(--game-viewport-top, 0px);
+  height: 100vh;
+  height: var(--game-viewport-height, 100dvh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+}
+.app-shell-game > .app-header { flex: 0 0 auto; height: calc(64px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); }
+.app-shell-game > .app-error { flex: 0 0 auto; max-height: 20%; overflow: auto; }
+.app-shell-game > .page { flex: 1; min-height: 0; overflow: auto; }
+.app-shell-game .game-layout {
+  flex: 1;
+  height: auto;
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  overflow: hidden;
+  margin: 0;
+  display: grid;
+  grid-template-columns: clamp(190px, 20vw, 280px) minmax(0, 1fr) clamp(155px, 16vw, 230px);
+}
+.game-layout > .hero-sidebar, .game-layout > .world-sidebar { min-height: 0; padding: 0; overflow: auto; }
+.sidebar-disclosure { height: auto; min-height: 0; }
+.sidebar-disclosure > summary { display: none; }
+.sidebar-body { height: auto; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 1.25rem; overflow-wrap: anywhere; }
+.game-layout .reader { flex: 1 1 0; min-height: 0; height: auto; max-height: none; padding: 1.5rem clamp(1rem, 3vw, 4rem); }
+.game-layout .composer { display: flex; flex-direction: column; flex-shrink: 1; gap: .4rem; min-height: 0; max-height: min(calc(100% - 24px), max(75%, 180px)); padding: .6rem 1rem max(.6rem, env(safe-area-inset-bottom)); overflow: hidden; }
+.composer-tools { flex: 0 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.game-layout .workflow { position: relative; padding: 0; }
+.workflow-disclosure > summary { padding: .55rem 160px .55rem .7rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .2rem .7rem; font-size: .7rem; min-height: 44px; }
+.workflow-disclosure > summary::after { content: '展开 ▾'; color: var(--muted); }
+.workflow-disclosure[open] > summary::after { content: '收起 ▴'; }
+.workflow-disclosure > summary strong { color: var(--gold); font-weight: 500; }
+.workflow-details { padding: .7rem; border-top: 1px solid var(--line); }
+.workflow-primary { position: absolute; top: .35rem; right: .5rem; display: flex; flex-direction: column; gap: .3rem; max-width: 145px; }
+.workflow:has(.workflow-primary > button:nth-child(2)) > details > summary { min-height: 80px; }
+.workflow-primary button { font-size: .72rem; padding: .35rem .6rem; min-height: 32px; }
+.game-layout .composer textarea { flex: 0 0 auto; height: clamp(52px, calc(var(--game-viewport-height, 100dvh) * .12), 76px); min-height: 52px; max-height: max(52px, calc(var(--game-viewport-height, 100dvh) * .18)); resize: vertical; margin: 0; }
+.game-layout .composer-footer { flex: 0 0 auto; margin: 0; }
+.game-layout .composer-footer > span { font-size: .6rem; }
+.game-layout .composer-footer > div { flex-wrap: wrap; }
+.game-layout .story-error { font-size: .75rem; margin: .4rem 0; padding: .35rem .6rem; }
+.game-layout .opening-empty { min-height: 0; padding: 1.5rem 0; }
+.game-layout .opening-empty small { max-width: 30rem; }
+/* Top-layer dialogs use their own scroll container even while the game shell is fixed. */
+.modal { max-height: 90svh; max-height: min(94dvh, calc(var(--game-viewport-height, 100dvh) - 1rem)); }
+.modal[open] { display: flex; flex-direction: column; }
+.modal-heading { flex: 0 0 auto; }
+.modal-body { flex: 1 1 auto; min-height: 0; max-height: none; overflow: auto; }
+.app-shell-game .modal { position: fixed; top: calc(var(--game-viewport-top, 0px) + .5rem); bottom: auto; margin-block: 0; }
+@media (max-width: 900px) {
+  .app-shell-game > .app-header { height: calc(56px + env(safe-area-inset-top)); padding-inline: .75rem; }
+  .app-shell-game .brand { font-size: .95rem; gap: .4rem; letter-spacing: .08em; }
+  .app-shell-game .brand-mark { font-size: 1.1rem; }
+  .app-shell-game .version { padding-left: .4rem; margin-left: .15rem; }
+  .app-shell-game .game-layout { grid-template-columns: minmax(0,1fr) minmax(0,1fr); grid-template-rows: auto minmax(0,1fr); }
+  .game-layout > .hero-sidebar, .game-layout > .world-sidebar { grid-row: 1; order: 0; max-height: none; border: 0; border-bottom: 1px solid var(--line); }
+  .game-layout > .world-sidebar { grid-column: 2; }
+  .game-layout > .hero-sidebar { grid-column: 1; border-right: 1px solid var(--line); }
+  .sidebar-disclosure { height: auto; }
+  .sidebar-disclosure > summary { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .3rem; padding: .55rem .75rem; min-height: 40px; font-size: .75rem; color: var(--gold); }
+  .sidebar-disclosure > summary::after { content: '▾'; }
+  .sidebar-disclosure[open] > summary::after { content: '▴'; }
+  .sidebar-disclosure > summary span { color: var(--muted); font-size: .65rem; }
+  .sidebar-body { height: auto; max-height: min(26dvh, 230px); padding: .8rem; }
+  .game-layout > .story-column { grid-row: 2; grid-column: 1 / -1; order: 1; }
+  .game-layout .reader { padding: 1rem; }
+  .game-layout .composer { padding: .4rem .65rem max(.4rem, env(safe-area-inset-bottom)); }
+  .game-layout .composer-footer { justify-content: space-between; flex-wrap: nowrap; }
+  .game-layout .composer-footer > span { display: none; }
+  .game-layout .composer-footer > div { width: 100%; justify-content: flex-end; gap: .4rem; }
+  .game-layout .composer-footer button { padding: .4rem .55rem; }
+  .game-layout .world-sidebar h2 { margin-bottom: .7rem; }
+}
+@media (max-height: 520px) {
+  .game-layout .composer { gap: .25rem; padding-block: .35rem; max-height: min(calc(100% - 24px), max(80%, 160px)); }
+  .workflow-disclosure > summary { padding-block: .3rem; min-height: 36px; }
+  .workflow-primary { padding-bottom: .3rem; }
+  .game-layout .composer textarea { min-height: 44px; }
+  .game-layout .composer-footer button { padding-block: .3rem; }
+}

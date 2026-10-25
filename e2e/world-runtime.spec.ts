@@ -1,3 +1,4 @@
+import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 const result = {
@@ -81,8 +82,8 @@ async function seed(page: Page, variables = true, disabled = false) {
     },
     { variables, disabled },
   );
-  await page.goto('/#game/save-a');
-  await page.reload();
+  await page.goto('/#game/save-a'); await openGameTools(page);
+  await page.reload(); await openGameTools(page);
   await expect(page.getByRole('heading', { name: '林舟', exact: true })).toBeVisible();
   return before;
 }
@@ -150,7 +151,7 @@ test('世界生成、补算、只读查看与刷新恢复，真实路由和快�
   await expect(inspection).toContainText('110');
   await expect(inspection).not.toContainText('mock-world-browser-secret');
   await page.keyboard.press('Escape');
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await ready(page);
   expect((await stored(page)).formal).toBe(before);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
