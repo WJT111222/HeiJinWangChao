@@ -1,3 +1,4 @@
+import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { GameStateSchema, StorySchema } from '../src/domain/state';
@@ -27,7 +28,7 @@ async function configure(page: Page) {
     settings.prompts.minNarrativeChars = 5;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
   });
-  await page.reload();
+  await page.reload(); await openGameTools(page);
 }
 async function createCharacter(page: Page) {
   await page.getByRole('button', { name: /开始新游戏/ }).click();
@@ -48,7 +49,7 @@ async function createCharacter(page: Page) {
   await page.getByLabel('同伴身份', { exact: true }).fill('记者');
   await page.getByLabel('与主角的关系', { exact: true }).fill('多年朋友');
   await page.getByRole('button', { name: /下一步/ }).click();
-  await page.getByRole('button', { name: '确认并创建存档' }).click();
+  await page.getByRole('button', { name: '确认并创建存档' }).click(); await openGameTools(page, true);
   await expect(page.getByRole('heading', { name: '故事，尚未落笔。' })).toBeVisible();
 }
 function contextFrom(body: unknown) {
@@ -216,7 +217,7 @@ test('真实创角后连续正式游玩十回合；输入、资料、正文历�
       `第${index}幕的街边休息`,
     );
     if (index === 5) {
-      await page.reload();
+      await page.reload(); await openGameTools(page);
       await ready(page, 6);
     }
   }
@@ -227,7 +228,7 @@ test('真实创角后连续正式游玩十回合；输入、资料、正文历�
   expect(JSON.stringify(final.state)).not.toContain('绝不自动发布的后台线索');
   expect(JSON.stringify(final.state.journal)).not.toContain('内部未解决事项');
   await expect(page.locator('main')).not.toContainText('绝不自动发布的后台线索');
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   expect(await stored(page)).toEqual(final);
   await ready(page, 11);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -247,7 +248,7 @@ test('下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完�
   expect(failed.state.turnNumber).toBe(1);
   expect(failed.draft.userInput).toBe('去街边等待');
   expect(failed.draft.stageStatus.story).toBe('failed');
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   server.plan.badStoryNumber = 0;
   await workflow(page).getByRole('button', { name: '自动生成本回合', exact: true }).click();
   await ready(page, 2);
@@ -356,7 +357,7 @@ test('正式资金与时间显示新版本，结算后刷新不重复扣款', as
     await repo.saveDraft(createTurnDraft('save-a', 0, 'opening-known-money', 'opening', ''), null);
     repo.close();
   });
-  await page.goto('/#game/save-a');
+  await page.goto('/#game/save-a'); await openGameTools(page);
   await opening(page);
   await page.getByLabel('你的行动', { exact: true }).fill('继续休息');
   await page.getByRole('button', { name: '发送', exact: true }).click();
@@ -365,6 +366,6 @@ test('正式资金与时间显示新版本，结算后刷新不重复扣款', as
   expect(state.economy.cash).toBe(7000);
   expect(state.worldClock).not.toBe('2026-10-18T08:00:00+08:00');
   await expect(page.getByRole('complementary', { name: '主角信息' })).toContainText('70.00 元');
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   expect((await stored(page)).state).toEqual(state);
 });

@@ -1,3 +1,4 @@
+import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
@@ -29,7 +30,7 @@ async function seed(page: Page) {
       };
     });
   });
-  await page.reload();
+  await page.reload(); await openGameTools(page);
 }
 async function begin(page: Page, name: string) {
   await page.goto('/');
@@ -67,7 +68,7 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
   await page.getByRole('radio', { name: /^律师/ }).check();
   const lawyerSkills = await page.getByLabel('个人技能与专长').inputValue();
   expect(lawyerSkills).not.toBe(teacherSkills);
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await page.getByRole('radio', { name: /^教师/ }).check();
   await expect(page.getByLabel('个人技能与专长')).toHaveValue(teacherSkills);
   await page.getByLabel('个人技能与专长').fill('我填写的技能\n沟通');
@@ -80,7 +81,7 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
       '已婚，有明确家庭经历，不应被覆盖。',
     );
   }
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await expect(page.getByLabel('人物背景（可选）')).toHaveValue(
     '已婚，有明确家庭经历，不应被覆盖。',
   );
@@ -108,7 +109,7 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
   await expect(page.getByLabel('姓名', { exact: true })).toHaveValue('林舟');
   await page.getByRole('button', { name: /确认与开局/ }).click();
   await page.getByLabel('开局偏好（可选）').fill('从日常工作开始。');
-  await page.getByRole('button', { name: '确认并创建存档' }).click();
+  await page.getByRole('button', { name: '确认并创建存档' }).click(); await openGameTools(page, true);
   await expect(page.getByRole('heading', { name: '故事，尚未落笔。' })).toBeVisible();
   await expect(page.getByRole('button', { name: '自动生成开局', exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: '生成开局正文', exact: true })).toBeEnabled();
@@ -121,7 +122,7 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
   expect(state.npc.companion.background).toBe('大学时期相识');
   expect(draft.userInput).toBe('从日常工作开始。');
   expect(draft.story).toBeUndefined();
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await expect(page.getByRole('heading', { name: '林舟' })).toBeVisible();
   const sidebar = page.getByRole('complementary', { name: '主角信息' });
   await expect(sidebar).toContainText('未确认');
@@ -173,7 +174,7 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
       };
     });
   });
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await page
     .getByRole('complementary', { name: '世界资料' })
     .getByRole('button', { name: /NPC/ })
@@ -206,7 +207,7 @@ test('自定义职业、跳过同伴，多存档选择切换与确认删除', as
   await page.getByRole('button', { name: /下一步/ }).click();
   await page.getByRole('button', { name: '跳过背景，继续' }).click();
   await page.getByRole('button', { name: '跳过同伴，继续' }).click();
-  await page.getByRole('button', { name: '确认并创建存档' }).click();
+  await page.getByRole('button', { name: '确认并创建存档' }).click(); await openGameTools(page, true);
   await expect(page.getByRole('heading', { name: '自定义角色' })).toBeVisible();
   await page.getByRole('button', { name: '游戏首页', exact: true }).click();
   await expect(page.locator('.save-card')).toHaveCount(2);
@@ -229,12 +230,12 @@ test('自定义职业、跳过同伴，多存档选择切换与确认删除', as
     .click();
   await page.getByRole('button', { name: '确认删除' }).click();
   await expect(page.locator('.save-card')).toHaveCount(1);
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await expect(page.locator('.save-card')).toHaveCount(1);
 });
 test('七面板一键打开、键盘关闭、保留阅读位置并隔离秘密资料', async ({ page }) => {
   await seed(page);
-  await page.getByRole('button', { name: /读取存档/ }).click();
+  await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
   const reader = page.getByTestId('story-reader');
   await reader.evaluate((el) => {
     el.scrollTop = 500;
@@ -298,7 +299,7 @@ test('四类设置可键盘操作、保存恢复，七项提示词与两个运�
   await expect(page.getByLabel('动态世界', { exact: true })).toBeChecked();
   await page.getByRole('button', { name: '保存本地设置' }).click();
   await page.keyboard.press('Escape');
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await page.getByRole('button', { name: '设置', exact: true }).click();
   await page.getByRole('button', { name: '提示词', exact: true }).click();
   await expect(page.getByLabel('叙事人称')).toHaveValue('first');

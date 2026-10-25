@@ -1,3 +1,4 @@
+import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
@@ -43,8 +44,8 @@ async function seed(page: Page, mode: 'opening' | 'regular' = 'opening') {
     repo.close();
     return JSON.stringify(state);
   }, mode);
-  await page.goto('/#game/save-a');
-  await page.reload();
+  await page.goto('/#game/save-a'); await openGameTools(page);
+  await page.reload(); await openGameTools(page);
   await expect(page.getByRole('region', { name: '三阶段工作流' })).toBeVisible();
   return before;
 }
@@ -145,7 +146,7 @@ for (const mode of ['opening', 'regular'] as const) {
         exact: true,
       })
       .click();
-    await expect(workflow(page).getByRole('status')).toContainText('变量管理');
+    await expect(workflow(page).getByRole('status')).toContainText('整理变量');
     await expect(page.getByTestId('story-reader')).toContainText(narrative);
     waiting.release();
     await complete(page);
@@ -188,7 +189,7 @@ for (const failed of ['variables', 'world'] as const) {
     );
     const partial = await stored(page);
     expect(partial.draft.story.narrative).toBe(narrative);
-    await page.reload();
+    await page.reload(); await openGameTools(page);
     plan.options.bad = undefined;
     await workflow(page).getByRole('button', { name: '继续自动执行', exact: true }).click();
     await complete(page);
@@ -267,7 +268,7 @@ test('离开页面取消当前请求，不自动启动下游；再次打开可�
   await expect.poll(() => plan.calls.length).toBe(2);
   await page.getByRole('button', { name: '切换存档', exact: true }).click();
   plan.options.slow = undefined;
-  await page.goto('/#game/save-a');
+  await page.goto('/#game/save-a'); await openGameTools(page);
   await workflow(page).getByRole('button', { name: '继续自动执行', exact: true }).click();
   await complete(page);
   waiting.release();
@@ -303,7 +304,7 @@ test('正文失败不启动下游，安全失败状态刷新后仍保留并可�
   expect(failed.draft.stageStatus.story).toBe('failed');
   expect(failed.draft.story).toBeUndefined();
   expect(plan.calls).toEqual(['story']);
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await expect(workflow(page)).toContainText('本次未完成');
   plan.options.bad = undefined;
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();

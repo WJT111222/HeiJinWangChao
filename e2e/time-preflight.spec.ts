@@ -1,3 +1,4 @@
+import { openGameTools } from './helpers/gameLayout';
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { array, record, string } from '../src/services/ai/protocols';
@@ -25,7 +26,7 @@ async function seed(page: Page, visitor = false, disabled = false, action = '睡
     config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' }; config.routes.world = { mode: 'independent', channelId: channel.id, modelId: 'world' };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'time-e2e-mock-secret');
   }, { visitor, disabled, action });
-  await page.reload(); await page.getByRole('button', { name: /读取存档/ }).click();
+  await page.reload(); await openGameTools(page); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
 }
 async function load(page: Page) {
   const value: unknown = await page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try { return await repo.loadGame('save-a'); } finally { repo.close(); } });
@@ -82,14 +83,14 @@ for (const interrupt of [false, true]) test(`长睡眠interrupt=${interrupt}：�
   await expect.poll(async () => (await load(page)).state.worldClock).toBe(ready.draft.story!.variableGuide[0].observedFact);
   const committed = (await load(page)).state; expect(committed.journal).toHaveLength(2);
   if (interrupt) expect(committed.events.visitor.status).toBe('active');
-  await page.reload(); expect((await load(page)).state).toEqual(committed);
+  await page.reload(); await openGameTools(page); expect((await load(page)).state).toEqual(committed);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 test('变量失败与刷新恢复保留正文，Roll清除旧候选但不推进正式时间', async ({ page }) => {
   const api = await mock(page, true); api.control.failVariables = true; await seed(page, true); const before = (await load(page)).state;
   await page.getByRole('button', { name: '自动生成本回合', exact: true }).click();
   await expect(page.getByText(/已保存的合法上游候选仍保留/)).toBeVisible();
-  expect((await load(page)).state).toEqual(before); await page.reload(); api.control.failVariables = false;
+  expect((await load(page)).state).toEqual(before); await page.reload(); await openGameTools(page); api.control.failVariables = false;
   await page.getByRole('button', { name: '继续自动执行', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: '三阶段候选已完成' }).first()).toBeVisible(); expect(api.calls.filter((call) => call === 'story')).toHaveLength(1);
   const ready = (await load(page)).draft; await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
@@ -122,7 +123,7 @@ for (const kind of ['drink', 'chat', 'past'] as const) test(`最新时间规则$
   const saved = (await load(page)).state;
   expect(Date.parse(saved.worldClock) - Date.parse(before.worldClock)).toBe(kind === 'past' ? 0 : kind === 'chat' ? 15000 : 120000);
   if (kind === 'past') { expect(saved.npc).toEqual(before.npc); expect(saved.events).toEqual(before.events); expect(saved.tasks).toEqual(before.tasks); }
-  await page.reload(); expect((await load(page)).state).toEqual(saved);
+  await page.reload(); await openGameTools(page); expect((await load(page)).state).toEqual(saved);
 });
 for (const action of ['喝一口可乐', '切换到陈宁的视角，描述他现在正在做的事情']) test(`漏掉耗时不能正式提交：${action}`, async ({ page }) => {
   await mock(page, false, 'zero'); await seed(page, false, false, action); const before = (await load(page)).state;
