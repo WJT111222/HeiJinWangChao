@@ -14,6 +14,8 @@ import { SettingsSchema, defaultSettings, settingsKey } from '../ui/settings/mod
 import type { Settings } from '../ui/settings/model';
 import { dateTime } from '../ui/panels/playerView';
 import { Dialog, Empty } from '../ui/Dialog';
+import { PRODUCT_VERSION } from './product';
+import { useGameViewport } from './useGameViewport';
 
 const GameScreen = lazy(() =>
   import('../ui/game/GameScreen').then((module) => ({ default: module.GameScreen })),
@@ -52,6 +54,8 @@ export function App() {
   const [initial] = useState(bootstrap);
   const [repository, setRepository] = useState<SaveRepository>();
   const [route, setRoute] = useState(window.location.hash);
+  const gameRoute = route.startsWith('#game/');
+  const shell = useGameViewport(gameRoute);
   const [saves, setSaves] = useState<SaveSummary[]>([]);
   const [settings, setSettings] = useState(initial.settings);
   const [form, setForm] = useState(initial.form);
@@ -225,7 +229,7 @@ export function App() {
   }
   const active = saves.find((save) => save.saveId === selected) ?? saves[0];
   return (
-    <>
+    <div ref={shell} className={gameRoute ? 'app-shell app-shell-game' : 'app-shell'}>
       <header className="app-header">
         <a className="brand" href="#" aria-label="黑金王朝首页">
           <span className="brand-mark">黑</span>
@@ -236,7 +240,7 @@ export function App() {
         <nav>
           <button onClick={() => navigate()}>游戏首页</button>
           <button onClick={() => setSettingsOpen(true)}>设置</button>
-          <span className="version">V0.1 · M5-P3</span>
+          <span className="version">{PRODUCT_VERSION}</span>
         </nav>
       </header>
       {error && (
@@ -454,6 +458,6 @@ export function App() {
           </div>
         </Dialog>
       )}
-    </>
+    </div>
   );
 }

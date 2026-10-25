@@ -1,3 +1,4 @@
+import { openGameTools } from './helpers/gameLayout';
 import { createServer } from 'node:http';
 import type { Server } from 'node:http';
 import { expect, test } from '@playwright/test';
@@ -136,8 +137,8 @@ async function seed(page: Page, mode: 'opening' | 'regular' | 'none' = 'opening'
     },
     { baseUrl, mode },
   );
-  await page.goto('/#game/story-e2e-a');
-  await page.reload();
+  await page.goto('/#game/story-e2e-a'); await openGameTools(page);
+  await page.reload(); await openGameTools(page);
   await expect(page.getByRole('heading', { name: '正文测试角色' })).toBeVisible();
   return before;
 }
@@ -179,6 +180,7 @@ test('真实开局流式分片、资料面板不打断、只展示正文，草�
   await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
   await expect(page.getByRole('article', { name: '流式正文预览' })).toContainText('公交车');
   expect((await stored(page)).draft.story).toBeUndefined();
+  await openGameTools(page);
   await page
     .getByRole('complementary', { name: '世界资料' })
     .getByRole('button', { name: /NPC/ })
@@ -220,7 +222,7 @@ test('真实开局流式分片、资料面板不打断、只展示正文，草�
     order.findIndex((value) => value.includes('writing.conflict_pacing')),
   );
   await page.keyboard.press('Escape');
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await generated(page);
   await expect(page.getByTestId('story-reader')).toContainText(story);
   expect((await stored(page)).state).toBe(before);
@@ -285,12 +287,12 @@ test('快速重复点击、取消重试、迟到请求与切档隔离、刷新�
   expect((await stored(page)).draft).toEqual(old);
   expect((await stored(page, 'story-e2e-b')).draft.storyRevision).toBe(1);
   expect((await stored(page)).state).toBe(before);
-  await page.goto('/#game/story-e2e-a');
+  await page.goto('/#game/story-e2e-a'); await openGameTools(page);
   await generated(page);
   plans.push({ delay: 1200 });
   await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
   await expect.poll(() => requests.length).toBe(5);
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await generated(page);
   expect((await stored(page)).draft).toEqual(old);
 });
@@ -311,7 +313,7 @@ test('已有 regular 草稿生成正确模式，没有草稿时不自动创建�
     await repo.deleteDraft('story-e2e-a', draft.draftRevision);
     repo.close();
   });
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await expect(page.getByText(/没有可执行的回合草稿/)).toBeVisible();
   await expect(page.getByRole('button', { name: '生成正文', exact: true })).toBeDisabled();
   expect((await stored(page)).draft).toBeUndefined();
@@ -362,7 +364,7 @@ test('P6：原生公开内容与项目规划只主动查看，正文/存档隔�
   const messages = requests[0].messages as { role: string; content: string }[];
   expect(messages.slice(-3).map((message) => message.role)).toEqual(['user', 'assistant', 'user']);
   expect(messages.filter((message) => message.content.includes('### Step 0｜'))).toHaveLength(1);
-  await page.reload(); await inspection.getByText('本次生成的叙事规划与原生输出（临时调试）', { exact: true }).click();
+  await page.reload(); await openGameTools(page); await inspection.getByText('本次生成的叙事规划与原生输出（临时调试）', { exact: true }).click();
   await expect(inspection).toContainText('没有对应请求的临时内容'); await expect(reader).toContainText(story);
   expect(await stored(page)).toEqual(saved); expect(requests).toHaveLength(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

@@ -1,3 +1,4 @@
+import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { GameStateSchema } from '../src/domain/state';
@@ -31,7 +32,7 @@ async function seed(page: Page, automatic = false) {
     for (const stage of ['variables', 'world', 'memory']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'npc-browser-mock-secret');
   }, automatic);
-  await page.reload(); await page.getByRole('button', { name: /读取存档/ }).click();
+  await page.reload(); await openGameTools(page); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
 }
 async function load(page: Page) {
   const value: unknown = await page.evaluate(async () => {
@@ -40,6 +41,7 @@ async function load(page: Page) {
   }); return GameStateSchema.parse(value);
 }
 async function memory(page: Page) {
+  await openGameTools(page);
   await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
   return page.getByRole('dialog', { name: '记忆', exact: true });
 }
@@ -75,6 +77,7 @@ test('手动仅一人一批；普通界面不暴露身份、原文、总结和�
   expect(after.memories.npcSummaries['npc-b']).toBeUndefined();
   await panel.getByLabel('搜索历史回合').fill('私人总结A'); await expect(panel).toContainText('未找到相关的已提交历史');
   await panel.getByRole('button', { name: '关闭资料界面' }).click();
+  await openGameTools(page);
   await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
   await expect(page.getByRole('dialog')).not.toContainText('未公开人物A'); await expect(page.getByRole('dialog')).not.toContainText('私人总结A');
   await page.getByRole('dialog').getByRole('button', { name: '关闭资料界面' }).click();
@@ -89,7 +92,7 @@ test('手动仅一人一批；普通界面不暴露身份、原文、总结和�
   await expect(settings.locator('.inspection-statistics dd').nth(2)).toHaveText('50');
   await expect(settings.locator('.inspection-statistics dd').nth(3)).toHaveText('20');
   await expect(settings).not.toContainText('未公开人物A'); await expect(settings).not.toContainText('A的私人经历');
-  await page.reload(); expect(requests).toBe(1); expect(await load(page)).toEqual(after);
+  await page.reload(); await openGameTools(page); expect(requests).toBe(1); expect(await load(page)).toEqual(after);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
@@ -135,7 +138,7 @@ test('公开自动维护开关不授权NPC额外收费；新正式回合和下�
       : JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] });
     await route.fulfill({ contentType: 'application/json', body: wire(text) });
   });
-  await seed(page, true); await page.reload(); expect(tasks).toEqual([]);
+  await seed(page, true); await page.reload(); await openGameTools(page); expect(tasks).toEqual([]);
   await page.getByLabel('你的行动', { exact: true }).fill('继续观察'); await page.getByRole('button', { name: '发送', exact: true }).click();
   await expect.poll(() => stages.filter((model) => model !== 'memory')).toEqual(['story', 'variables', 'world']);
   await expect.poll(async () => (await load(page)).memories.medium.length).toBe(1);
@@ -170,7 +173,7 @@ for (const blockedB of [false, true]) {
         request.onerror = () => reject(request.error);
       });
     }, blockedB);
-    await page.reload(); await expect(page.getByRole('complementary', { name: '主角信息' })).toBeVisible();
+    await page.reload(); await openGameTools(page); await expect(page.getByRole('complementary', { name: '主角信息' })).toBeVisible();
     const before = await load(page), panel = await memory(page), button = panel.getByRole('button', { name: '整理NPC私人记忆（可能产生费用）', exact: true });
     if (blockedB) {
       await expect(panel).toContainText('暂无可安全维护任务'); await expect(button).toBeDisabled();
@@ -182,7 +185,7 @@ for (const blockedB of [false, true]) {
       const after = await load(page); expect(after.npc).toEqual(before.npc);
       expect(after.memories.npcSummaries['npc-a']).toBeUndefined();
       expect(after.memories.npcSummaries['npc-b'][0].npcProvenance!.sourceMemoryIds).toHaveLength(10);
-      await page.reload(); expect(requests).toBe(1); expect(await load(page)).toEqual(after);
+      await page.reload(); await openGameTools(page); expect(requests).toBe(1); expect(await load(page)).toEqual(after);
     }
   });
 }

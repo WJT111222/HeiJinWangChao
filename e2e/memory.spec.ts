@@ -1,3 +1,4 @@
+import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { array, record, string } from '../src/services/ai/protocols';
@@ -40,8 +41,8 @@ async function seed(page: Page) {
     saveAiConfig(localStorage, config);
     new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-memory-only');
   });
-  await page.reload();
-  await page.getByRole('button', { name: /读取存档/ }).click();
+  await page.reload(); await openGameTools(page);
+  await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
 }
 async function load(page: Page) {
   const state: unknown = await page.evaluate(async () => {
@@ -51,6 +52,7 @@ async function load(page: Page) {
   return GameStateSchema.parse(state);
 }
 async function memoryPanel(page: Page) {
+  await openGameTools(page);
   await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
   return page.getByRole('dialog', { name: '记忆', exact: true });
 }
@@ -90,7 +92,7 @@ test('旧M4七十回合档案：搜索约定、读取来源原文、分页和窗
   await panel.getByRole('button', { name: '关闭资料界面' }).click();
   await windowSize(page, 20);
   await expect(await memoryPanel(page)).toContainText('即时窗口：最近 20 回合');
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await expect(await memoryPanel(page)).toContainText('即时窗口：最近 20 回合');
   expect(await load(page)).toEqual(before);
   expect(requests).toBe(0);
@@ -138,6 +140,6 @@ test('真实正文请求使用设置N=1/10/20，并独立召回第3回合；查�
     expect(await load(page)).toEqual(before);
   }
   expect(contexts).toHaveLength(3);
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   expect(await load(page)).toEqual(before);
 });

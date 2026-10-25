@@ -1,3 +1,4 @@
+import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 const narrative = '主角已经用现金支付30元吃饭。';
@@ -89,8 +90,8 @@ async function seed(page: Page, ready = true, disabled = false, text = narrative
     },
     { ready, disabled, narrative: text, withNpc },
   );
-  await page.goto('/#game/variable-e2e');
-  await page.reload();
+  await page.goto('/#game/variable-e2e'); await openGameTools(page);
+  await page.reload(); await openGameTools(page);
   await expect(page.getByRole('heading', { name: '林舟', exact: true })).toBeVisible();
   return before;
 }
@@ -152,7 +153,7 @@ test('变量正常生成、真实独立路由/模块/usage，完整候选主动�
   await expect(inspection).toContainText('73');
   await expect(inspection).not.toContainText('mock-var-browser-secret');
   await page.keyboard.press('Escape');
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await ready(page);
   expect((await stored(page)).formal).toBe(before);
   await expect(page.getByRole('complementary', { name: '主角信息' })).toContainText('100.00 元');
@@ -179,7 +180,7 @@ test('正文未完成不能运行；双阶段关闭后仅补算变量，正文�
     );
     repo.close();
   });
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await page.getByLabel('动态世界', { exact: true }).uncheck();
   await page.route('https://variables.mock.invalid/**', (route) =>
     route.fulfill({ contentType: 'application/json', body: response() }),
@@ -240,6 +241,7 @@ test('错误 JSON 安全失败可重试；取消、重复点击和切档迟到�
     .filter({ hasText: '另一份变量存档' })
     .getByRole('button', { name: /读取存档/ })
     .click();
+  await openGameTools(page, true);
   mode = 'good';
   await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
   await ready(page);

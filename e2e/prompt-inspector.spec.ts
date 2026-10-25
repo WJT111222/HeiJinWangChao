@@ -1,3 +1,4 @@
+import { openGameTools } from './helpers/gameLayout';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -119,7 +120,7 @@ test('真实存档六种模式预览、内部内容主动揭示、合法排序�
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   const before = await seed(page);
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await inspector(page);
   await page.getByRole('combobox', { name: '回合模式', exact: true }).selectOption('regular');
   await page.getByRole('button', { name: '下移 writing.conflict_pacing', exact: true }).click();
@@ -163,7 +164,7 @@ test('真实存档六种模式预览、内部内容主动揭示、合法排序�
   await page.getByRole('combobox', { name: '检查阶段', exact: true }).selectOption('variables');
   await expect(page.getByRole('region', { name: '上下文与统计' })).toContainText('模式不匹配');
   expect(await readFormal(page)).toBe(before);
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await inspector(page);
   const saved = await page.evaluate(() =>
     JSON.parse(localStorage.getItem('heijin.prompt-order.v1')!),
@@ -181,7 +182,7 @@ test('真实存档六种模式预览、内部内容主动揭示、合法排序�
     reset.indexOf('writing.emotion_guard'),
   );
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: /读取存档/ }).click();
+  await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
   await page
     .getByRole('complementary', { name: '世界资料' })
     .getByRole('button', { name: /NPC/ })
@@ -194,7 +195,7 @@ test('已发送阶段快照保留原请求数据与真实 usage，默认隐藏�
   page,
 }, testInfo) => {
   const before = await seed(page);
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   let transmitted = '';
   await page.route('https://inspector.mock.invalid/**', async (route) => {
     transmitted = route.request().postData() ?? '';
@@ -304,7 +305,7 @@ test('已发送阶段快照保留原请求数据与真实 usage，默认隐藏�
   const persisted = await page.evaluate(() => JSON.stringify(localStorage));
   expect(persisted).not.toContain('秘密计划不可见');
   expect(persisted).not.toContain('e2e-inspection-key');
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await inspector(page);
   await page.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');
   await expect(page.getByText(/此阶段\/模式没有实际请求快照/)).toBeVisible();
@@ -313,7 +314,7 @@ test('已发送阶段快照保留原请求数据与真实 usage，默认隐藏�
 
 test('无正文草稿的阶段预览诚实失败，七项写作偏好不因管理中心改变', async ({ page }) => {
   await seed(page, false);
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   await inspector(page);
   await page.getByRole('button', { name: '生成三阶段组装预览（不联网）' }).click();
   await expect(

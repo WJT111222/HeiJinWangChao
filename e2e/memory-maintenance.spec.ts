@@ -1,3 +1,4 @@
+import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { GameStateSchema } from '../src/domain/state';
@@ -42,8 +43,8 @@ async function seed(page: Page, count = 31, automatic = false, ready = false) {
     saveAiConfig(localStorage, config);
     new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-maintenance-secret');
   }, { count, automatic, ready });
-  await page.reload();
-  await page.getByRole('button', { name: /读取存档/ }).click();
+  await page.reload(); await openGameTools(page);
+  await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
 }
 async function load(page: Page) {
   const state: unknown = await page.evaluate(async () => {
@@ -53,6 +54,7 @@ async function load(page: Page) {
   return GameStateSchema.parse(state);
 }
 async function panel(page: Page) {
+  await openGameTools(page);
   await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
   return page.getByRole('dialog', { name: '记忆', exact: true });
 }
@@ -87,7 +89,7 @@ test('选择并恢复独立模型；手动整理、原文来源及真实memory�
   await settings.getByRole('button', { name: '记忆', exact: true }).click();
   await expect(settings.getByLabel('自动记忆维护（额外API费用，默认关闭）')).not.toBeChecked();
   await settings.getByRole('button', { name: '关闭资料界面' }).click();
-  await page.reload();
+  await page.reload(); await openGameTools(page);
   const memory = await panel(page);
   await expect(memory).toContainText('memory-summary');
   await expect(memory).toContainText('可信活跃短期 31');
@@ -117,7 +119,7 @@ test('选择并恢复独立模型；手动整理、原文来源及真实memory�
   await expect(settings.getByLabel('完整内部上下文', { exact: true })).toContainText('MEMORY_TASK');
   await expect(settings.getByLabel('完整内部上下文', { exact: true })).not.toContainText('mock-maintenance-secret');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.reload(); expect(requests).toBe(1); expect(await load(page)).toEqual(after);
+  await page.reload(); await openGameTools(page); expect(requests).toBe(1); expect(await load(page)).toEqual(after);
 });
 
 test('跨标签真实Web Lock阻止第二次付费；取消/迟到和服务失败保留全部来源', async ({ page, context }) => {
@@ -145,7 +147,7 @@ test('跨标签真实Web Lock阻止第二次付费；取消/迟到和服务失�
   await expect.poll(() => requests).toBe(2);
   await expect(memory.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true })).toBeEnabled();
   expect(await load(page)).toEqual(before);
-  await other.close(); await page.reload(); expect(requests).toBe(2);
+  await other.close(); await page.reload(); await openGameTools(page); expect(requests).toBe(2);
 });
 
 test('无跨标签互斥时手动整理明确拒绝，刷新不触发付费', async ({ page }) => {
@@ -183,7 +185,7 @@ test('自动维护仅由新正式提交触发，不阻断下一轮；设置保�
   await settings.getByLabel('自动记忆维护（额外API费用，默认关闭）').check();
   await settings.getByRole('button', { name: '保存本地设置', exact: true }).click();
   await settings.getByRole('button', { name: '关闭资料界面' }).click();
-  await page.reload(); expect(calls).toHaveLength(0);
+  await page.reload(); await openGameTools(page); expect(calls).toHaveLength(0);
   await page.getByLabel('你的行动', { exact: true }).fill('继续观察窗外');
   await page.getByRole('button', { name: '发送', exact: true }).click();
   await expect.poll(() => calls.filter((call) => call === 'memory').length).toBe(1);
@@ -198,5 +200,5 @@ test('自动维护仅由新正式提交触发，不阻断下一轮；设置保�
   const memory = await panel(page);
   await expect(memory).toContainText('一批记忆已整理并原子保存');
   await memory.getByRole('button', { name: '关闭资料界面' }).click();
-  await page.reload(); expect(calls.filter((call) => call === 'memory')).toHaveLength(1);
+  await page.reload(); await openGameTools(page); expect(calls.filter((call) => call === 'memory')).toHaveLength(1);
 });
