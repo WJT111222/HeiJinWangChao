@@ -354,8 +354,8 @@ export function CreationWizard({
                   placeholder="对故事起点的期待，将随开局草稿保存。"
                 />
               </label>
-              <p className="notice">
-                确认后创建存档，进入游戏可主动生成开局正文；创建时不会自动生成剧情、财富或装备。
+              <p className="notice" id="opening-generation-notice">
+                确认后创建存档并自动开始开局，可能产生第三方 API 费用。按已启用的阶段顺序生成候选，不会自动结算；未配置 AI 时会安全停止，设置后由你主动继续。
               </p>
             </>
           )}
@@ -369,7 +369,7 @@ export function CreationWizard({
             上一步
           </button>
           <span>0{form.step} / 05</span>
-          <button className="primary" disabled={busy} type="submit">
+          <button className="primary" disabled={busy} type="submit" aria-describedby={form.step === 5 ? 'opening-generation-notice' : undefined}>
             {busy ? '正在保存…' : form.step === 5 ? '确认并创建存档' : '下一步 →'}
           </button>
         </footer>

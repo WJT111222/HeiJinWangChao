@@ -91,7 +91,7 @@ test('变量失败与刷新恢复保留正文，Roll清除旧候选但不推进�
   await page.getByRole('button', { name: '自动生成本回合', exact: true }).click();
   await expect(page.getByText(/已保存的合法上游候选仍保留/)).toBeVisible();
   expect((await load(page)).state).toEqual(before); await page.reload(); await openGameTools(page); api.control.failVariables = false;
-  await page.getByRole('button', { name: '继续自动执行', exact: true }).click();
+  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: '三阶段候选已完成' }).first()).toBeVisible(); expect(api.calls.filter((call) => call === 'story')).toHaveLength(1);
   const ready = (await load(page)).draft; await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
   await expect.poll(async () => (await load(page)).draft.storyRevision).toBe(ready.storyRevision + 1);
@@ -102,8 +102,8 @@ test('取消和迟到不推进时间；关闭阶段只保留正文草稿', async
   let release!: () => void; api.control.hold = new Promise<void>((resolve) => { release = resolve; });
   await page.getByRole('button', { name: '自动生成本回合', exact: true }).click(); await expect.poll(() => api.calls.length).toBe(1);
   await page.getByRole('button', { name: '取消自动执行', exact: true }).click(); release(); api.control.hold = undefined;
-  await expect(page.getByRole('button', { name: /自动生成本回合|继续自动执行/, exact: true })).toBeEnabled();
-  await page.getByRole('button', { name: /自动生成本回合|继续自动执行/, exact: true }).click();
+  await expect(page.getByRole('button', { name: /自动生成本回合|继续未完成阶段/, exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: /自动生成本回合|继续未完成阶段/, exact: true }).click();
   await expect(page.getByText(/已按开关跳过关闭阶段/)).toBeVisible(); const saved = await load(page);
   expect(saved.state).toEqual(before); expect(saved.draft.variables).toBeUndefined(); expect(saved.draft.world).toBeUndefined();
   expect(api.calls).toEqual(['story', 'story']); await page.getByLabel('你的行动', { exact: true }).fill('继续观察'); await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
@@ -128,6 +128,8 @@ for (const kind of ['drink', 'chat', 'past'] as const) test(`最新时间规则$
 for (const action of ['喝一口可乐', '切换到陈宁的视角，描述他现在正在做的事情']) test(`漏掉耗时不能正式提交：${action}`, async ({ page }) => {
   await mock(page, false, 'zero'); await seed(page, false, false, action); const before = (await load(page)).state;
   await page.getByRole('button', { name: '自动生成本回合', exact: true }).click();
+  // 等真实候选事务结束后再验证UI与零耗时拒绝；不把三阶段保存耗时限定为UI断言的5秒。
+  await expect.poll(async () => (await load(page)).draft.stageStatus.world, { timeout: 15000 }).toBe('ready');
   await expect(page.getByRole('status').filter({ hasText: '三阶段候选已完成' }).first()).toBeVisible();
   await page.getByLabel('你的行动', { exact: true }).fill('继续观察'); await page.getByRole('button', { name: '发送', exact: true }).click();
   await expect(page.getByText('本回合尚未推进时间，未正式结算。请补算变量；正文无需写出时间。')).toBeVisible();

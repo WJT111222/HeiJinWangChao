@@ -16,6 +16,8 @@ import { dateTime } from '../ui/panels/playerView';
 import { Dialog, Empty } from '../ui/Dialog';
 import { PRODUCT_VERSION } from './product';
 import { useGameViewport } from './useGameViewport';
+import { authorizeOpening } from '../ui/game/openingStart';
+import type { OpeningStart } from '../ui/game/openingStart';
 
 const GameScreen = lazy(() =>
   import('../ui/game/GameScreen').then((module) => ({ default: module.GameScreen })),
@@ -70,6 +72,8 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
+  const openingStart = useRef<OpeningStart | undefined>(undefined);
+  const navigationRevision = useRef(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [deleting, setDeleting] = useState<SaveSummary>();
   useEffect(() => {
@@ -93,7 +97,12 @@ export function App() {
     };
   }, []);
   useEffect(() => {
-    const changed = () => {
+    const changed = (event: HashChangeEvent) => {
+      navigationRevision.current++;
+      if (new URL(event.newURL).hash !== `#game/${openingStart.current?.saveId}`) {
+        openingStart.current?.revoke();
+        openingStart.current = undefined;
+      }
       setLoaded(undefined);
       setLoading(true);
       setRoute(window.location.hash);
@@ -148,12 +157,19 @@ export function App() {
     };
   }, [repository, route]);
   function navigate(hash = '') {
+    navigationRevision.current++;
+    if (hash !== `game/${openingStart.current?.saveId}`) {
+      openingStart.current?.revoke();
+      openingStart.current = undefined;
+    }
     setLoaded(undefined);
     setLoading(true);
     window.location.hash = hash;
     if (window.location.hash === route) setLoading(false);
   }
-  function openSave(id: string) {
+  function openSave(id: string, start?: OpeningStart) {
+    openingStart.current?.revoke();
+    openingStart.current = start;
     setSelected(id);
     setError('');
     try {
@@ -180,6 +196,7 @@ export function App() {
   async function create() {
     if (!repository || lock.current) return;
     lock.current = true;
+    const creationNavigation = navigationRevision.current;
     setBusy(true);
     setError('');
     try {
@@ -191,7 +208,9 @@ export function App() {
       }
       setHasDraft(false);
       setForm(newCreation());
-      openSave(state.saveId);
+      // 创角保存期间离开过页面，不再持有自动开局授权；存档仍可从首页主动读取。
+      if (window.location.hash === '#create' && navigationRevision.current === creationNavigation)
+        openSave(state.saveId, authorizeOpening(state));
     } catch (e) {
       setError(e instanceof Error ? e.message : '保存失败，请重试。');
     } finally {
@@ -270,6 +289,8 @@ export function App() {
           >
             <GameScreen
               key={loaded.state.saveId}
+              openingStart={openingStart.current}
+              onOpenSettings={() => setSettingsOpen(true)}
               state={loaded.state}
               draft={loaded.draft}
               repository={repository!}

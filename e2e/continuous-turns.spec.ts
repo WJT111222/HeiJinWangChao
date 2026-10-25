@@ -6,9 +6,9 @@ import { TurnDraftSchema } from '../src/domain/drafts';
 import { record, array, string } from '../src/services/ai/protocols';
 import type { DomainCommand } from '../src/domain/commands';
 
-async function configure(page: Page) {
+async function configure(page: Page, useWorldStage = true) {
   await page.goto('/');
-  await page.evaluate(async () => {
+  await page.evaluate(async (useWorldStage) => {
     const configPath = '/src/services/ai/configuration.ts',
       vaultPath = '/src/services/ai/credentials.ts',
       settingsPath = '/src/ui/settings/model.ts';
@@ -26,8 +26,9 @@ async function configure(page: Page) {
     new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-loop-secret');
     const settings = defaultSettings();
     settings.prompts.minNarrativeChars = 5;
+    settings.runtime.useWorldStage = useWorldStage;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
-  });
+  }, useWorldStage);
   await page.reload(); await openGameTools(page);
 }
 async function createCharacter(page: Page) {
@@ -50,7 +51,6 @@ async function createCharacter(page: Page) {
   await page.getByLabel('与主角的关系', { exact: true }).fill('多年朋友');
   await page.getByRole('button', { name: /下一步/ }).click();
   await page.getByRole('button', { name: '确认并创建存档' }).click(); await openGameTools(page, true);
-  await expect(page.getByRole('heading', { name: '故事，尚未落笔。' })).toBeVisible();
 }
 function contextFrom(body: unknown) {
   const messages = array(record(body).messages).map((m) => string(record(m).content));
@@ -181,7 +181,7 @@ test('真实创角后连续正式游玩十回合；输入、资料、正文历�
   await configure(page);
   const server = await mock(page);
   await createCharacter(page);
-  await opening(page);
+  await ready(page);
   const initial = await stored(page),
     start = Date.parse(initial.state.worldClock);
   expect(initial.state.economy.cash).toBeNull();
@@ -239,7 +239,7 @@ test('下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完�
   await configure(page);
   const server = await mock(page);
   await createCharacter(page);
-  await opening(page);
+  await ready(page);
   server.plan.badStoryNumber = 2;
   await page.getByLabel('你的行动', { exact: true }).fill('去街边等待');
   await page.getByRole('button', { name: '发送', exact: true }).click();
@@ -250,7 +250,7 @@ test('下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完�
   expect(failed.draft.stageStatus.story).toBe('failed');
   await page.reload(); await openGameTools(page);
   server.plan.badStoryNumber = 0;
-  await workflow(page).getByRole('button', { name: '自动生成本回合', exact: true }).click();
+  await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await ready(page, 2);
   expect((await stored(page)).state).toEqual(failed.state);
   expect(server.calls).toEqual([
@@ -268,7 +268,7 @@ test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', a
   await configure(page);
   await mock(page);
   await createCharacter(page);
-  await opening(page);
+  await ready(page);
   const before = await stored(page);
   await page.evaluate(() => {
     const original = IDBObjectStore.prototype.put;
@@ -303,7 +303,7 @@ test('快速双击与另一标签发送最多结算一次；成功后数据库�
   await configure(page);
   await mock(page);
   await createCharacter(page);
-  await opening(page);
+  await ready(page);
   const other = await context.newPage();
   await other.goto(page.url());
   await page.getByLabel('你的行动', { exact: true }).fill('在街边等待');
@@ -325,17 +325,16 @@ test('快速双击与另一标签发送最多结算一次；成功后数据库�
 });
 
 test('阶段未完成或主动关闭时，即使填写行动也不能部分结算', async ({ page }) => {
-  await configure(page);
+  await configure(page, false);
   const server = await mock(page);
   await createCharacter(page);
-  await page.getByLabel('动态世界', { exact: true }).uncheck();
-  await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
+  await expect(page.getByLabel('动态世界', { exact: true })).not.toBeChecked();
   await expect(workflow(page).getByRole('status')).toContainText('按开关跳过');
   await page.getByLabel('你的行动', { exact: true }).fill('等待');
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
   expect((await stored(page)).state.turnNumber).toBe(0);
   await page.getByLabel('动态世界', { exact: true }).check();
-  await workflow(page).getByRole('button', { name: '继续自动执行', exact: true }).click();
+  await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await ready(page);
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
   expect(server.calls).toEqual(['story', 'variables', 'world']);
