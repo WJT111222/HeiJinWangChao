@@ -1617,3 +1617,7 @@ summary {
   .game-layout .composer textarea { min-height: 44px; }
   .game-layout .composer-footer button { padding-block: .3rem; }
 }
+
+/* M7-P2: one start/recovery action, or cancel; completed candidates leave room for reading. */
+.workflow:not(:has(.workflow-primary)) > .workflow-disclosure > summary { padding-right: .7rem; }
+.game-layout .workflow .story-error > button { margin-left: .4rem; font-size: .72rem; }

@@ -282,6 +282,7 @@ test('快速重复点击、取消重试、迟到请求与切档隔离、刷新�
     .filter({ hasText: '另一个存档角色' })
     .getByRole('button', { name: /读取存档/ })
     .click();
+  await openGameTools(page, true);
   await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
   await generated(page);
   expect((await stored(page)).draft).toEqual(old);
@@ -315,7 +316,7 @@ test('已有 regular 草稿生成正确模式，没有草稿时不自动创建�
   });
   await page.reload(); await openGameTools(page);
   await expect(page.getByText(/没有可执行的回合草稿/)).toBeVisible();
-  await expect(page.getByRole('button', { name: '生成正文', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '生成开局正文', exact: true })).toBeDisabled();
   expect((await stored(page)).draft).toBeUndefined();
   expect(requests).toHaveLength(1);
 });

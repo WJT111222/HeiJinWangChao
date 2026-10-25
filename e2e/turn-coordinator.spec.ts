@@ -167,7 +167,7 @@ for (const mode of ['opening', 'regular'] as const) {
           .scope.modules.some((m: { id: string }) => m.id === `stages.${mode}.${stage}`),
       ).toBe(true);
     expect(JSON.stringify(snapshot)).not.toContain('mock-auto-key');
-    await workflow(page).getByRole('button', { name: '继续自动执行', exact: true }).click();
+    await expect(workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true })).toHaveCount(0);
     await complete(page);
     expect(calls).toHaveLength(3);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -191,7 +191,7 @@ for (const failed of ['variables', 'world'] as const) {
     expect(partial.draft.story.narrative).toBe(narrative);
     await page.reload(); await openGameTools(page);
     plan.options.bad = undefined;
-    await workflow(page).getByRole('button', { name: '继续自动执行', exact: true }).click();
+    await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
     await complete(page);
     expect(plan.calls).toEqual(
       failed === 'variables'
@@ -227,7 +227,7 @@ test('取消世界后保留上游；快速双击不重复，旧回包不能推�
   await workflow(page).getByRole('button', { name: '取消自动执行', exact: true }).click();
   await expect(workflow(page).getByRole('alert')).toContainText('取消');
   plan.options.slow = undefined;
-  await workflow(page).getByRole('button', { name: '继续自动执行', exact: true }).click();
+  await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await complete(page);
   waiting.release();
   expect(plan.calls).toEqual(['story', 'variables', 'world', 'world']);
@@ -243,7 +243,7 @@ test('关闭两个阶段只生成正文，再开启后补算不 Roll', async ({ 
   expect(plan.calls).toEqual(['story']);
   await page.getByLabel('变量管理', { exact: true }).check();
   await page.getByLabel('动态世界', { exact: true }).check();
-  await workflow(page).getByRole('button', { name: '继续自动执行', exact: true }).click();
+  await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await complete(page);
   expect(plan.calls).toEqual(['story', 'variables', 'world']);
   expect((await stored(page)).formal).toBe(before);
@@ -269,7 +269,7 @@ test('离开页面取消当前请求，不自动启动下游；再次打开可�
   await page.getByRole('button', { name: '切换存档', exact: true }).click();
   plan.options.slow = undefined;
   await page.goto('/#game/save-a'); await openGameTools(page);
-  await workflow(page).getByRole('button', { name: '继续自动执行', exact: true }).click();
+  await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await complete(page);
   waiting.release();
   expect(plan.calls).toEqual(['story', 'variables', 'variables', 'world']);
@@ -307,7 +307,7 @@ test('正文失败不启动下游，安全失败状态刷新后仍保留并可�
   await page.reload(); await openGameTools(page);
   await expect(workflow(page)).toContainText('本次未完成');
   plan.options.bad = undefined;
-  await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
+  await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await complete(page);
   expect(plan.calls).toEqual(['story', 'story', 'variables', 'world']);
   expect((await stored(page)).formal).toBe(before);
@@ -322,7 +322,7 @@ test('只开启世界时明确预览；补开变量会失效旧世界并顺序�
   expect(plan.calls).toEqual(['story', 'world']);
   expect((await stored(page)).draft.world.validation).toBe('preview');
   await page.getByLabel('变量管理', { exact: true }).check();
-  await workflow(page).getByRole('button', { name: '继续自动执行', exact: true }).click();
+  await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await complete(page);
   expect(plan.calls).toEqual(['story', 'world', 'variables', 'world']);
   expect((await stored(page)).formal).toBe(before);
