@@ -15,13 +15,53 @@ export function chinaCalendar(time: string) {
     weekday: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][local.getUTCDay()] };
 }
 interface TimeConstraint { year?: number; month?: number; day?: number; hour?: number; minute?: number; second?: number; season?: string; period?: string }
-// 只识别明确的数字日历约束，不宣称理解任意中文。历史履历日期不自动成为开局设定。
+// 日期用途只按局部、可解释的句式区分；标签“人物背景”本身不是故事年代指令。
+const openingLead = /(?:(?:故事|剧情)(?:背景|年代|时间)?(?:发生|开始|始于|从|在|于|设定|设置|定在|定为|是|：|:|\s)*|(?:开局|开场)(?:日期|时间)?(?:设定|设置|定|从|在|于|为|是|开始|：|:|\s)*|(?:背景|时代|年代|日期|时间)(?:设定|设置|设|定)?(?:在|于|为|是|：|:)\s*|(?:设定|设置|安排)(?:在|于|为)?\s*|设(?:在|于)\s*)$/;
+const lifeEvent = '出生|毕业|入学|入职|任职|参加工作|开始工作|工作|搬迁|搬家|迁居|移居|搬到|迁往|结婚|退伍|退休';
+const lifeBefore = new RegExp(`(?:${lifeEvent})(?:时间|日期|年份)?(?:设定|设|定)?(?:于|在|为|是|：|:|\\s)*$`);
+const lifeAfter = new RegExp(`^(?:${lifeEvent})`);
+const lifeMention = new RegExp(lifeEvent);
+function openingClauses(input: string, preference: boolean): string[] {
+  const selected: string[] = [];
+  for (const sentence of input.split(/[。！？；\n]/)) {
+    let openingContext = false;
+    for (const raw of sentence.split(/[，,]/)) {
+      const clause = raw.replace(/^\s*(?:人物|角色|个人)(?:背景|履历|经历)\s*[:：]?\s*/, '');
+      const dates = [...clause.matchAll(/\d{4}\s*(?:年|-)/g)];
+      if (!dates.length) {
+        const temporal = clause.search(/今年|明年|去年|今天|明天|昨天|后天|很久以前|[春夏秋冬][天季]/);
+        const beforeTime = temporal < 0 ? clause : clause.slice(0, temporal);
+        const relative = /今年|明年|去年|今天|明天|昨天|后天|很久以前/.test(clause);
+        const biography = lifeBefore.test(beforeTime) || (!relative && lifeMention.test(clause));
+        const explicit = /故事|剧情|开局|开场|时代|年代|日期|时间|设定|设[在于]|背景(?:设|在|为|是)/.test(clause) && !lifeBefore.test(beforeTime);
+        if ((preference || openingContext || explicit) && (explicit || !biography)) selected.push(clause);
+        continue;
+      }
+      for (const [index, date] of dates.entries()) {
+        const previous = dates[index - 1];
+        const left = clause.slice(previous ? previous.index + previous[0].length : 0, date.index);
+        const right = clause.slice(date.index + date[0].length, dates[index + 1]?.index);
+        // 仅为辨别出生/毕业等谓语移开日期前缀；实际日历仍由原提取器与ISO Schema校验。
+        const afterDate = right.replace(/^\s*(?:\d{1,2}\s*(?:月|-)\s*(?:\d{1,2}\s*(?:日|号)?)?)?\s*(?:(?:T|\s)*\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?)?\s*(?:[春夏秋冬][天季])?\s*/, '');
+        const biography = lifeBefore.test(left) || lifeAfter.test(afterDate);
+        const explicit = openingLead.test(left) && !lifeBefore.test(left);
+        const framing = /(?:以|从)\s*$/.test(left) && /^(?:为(?:起点|开端)|起|开始|开局|开场)/.test(afterDate);
+        const debut = /^(?:登场|开局|开场|开始|为(?:起点|开端))/.test(afterDate);
+        if (explicit || (!biography && (framing || debut || (preference && !left.trim())))) {
+          requireData(!isNegatedFact(clause, date.index, date.index + date[0].length)
+            && !/不要|别(?=设定|设置|安排|让|把|将)|如果|假如|假设/.test(left), 'OPENING_TIME_INPUT',
+            '开局年份带有否定或条件，无法作为确定设定。请用肯定句明确希望采用的开局日期。');
+          selected.push(date[0] + right);
+          openingContext = true;
+        } else requireData(biography, 'OPENING_TIME_INPUT',
+          '无法确认年份属于开局还是人物履历。请用“故事发生在2015年”明确开局，或注明出生、毕业等履历用途。');
+      }
+    }
+  }
+  return selected;
+}
 export function openingTimeConstraints(background: string, preference: string): TimeConstraint[] {
-  const clauses = [
-    ...background.split(/[。；\n]/).filter((text) => /(?:故事|背景|开局|时代|时间|设在|发生在)/.test(text)),
-    ...preference.split(/[。；\n]/).filter((text) => /(?:故事|背景|开局|时代|时间|设在|发生在|开始)/.test(text) || /^\s*\d{4}\s*(?:年|-)/.test(text)
-      || /今年|明年|去年|今天|明天|昨天|后天|很久以前|[春夏秋冬][天季]/.test(text)),
-  ];
+  const clauses = [...openingClauses(background, false), ...openingClauses(preference, true)];
   requireData(!clauses.some((text) => /今年|明年|去年|今天|明天|昨天|后天|很久以前/.test(text)), 'OPENING_TIME_INPUT',
     '开局时间需要明确年份；“今年”等相对时间不会按设备日期解释，请在开局偏好中写明或删除该约束。');
   const constraints: TimeConstraint[] = [];

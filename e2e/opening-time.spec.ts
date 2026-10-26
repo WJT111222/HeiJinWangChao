@@ -20,11 +20,12 @@ async function prepare(page: Page) {
   });
   await page.reload();
 }
-async function creation(page: Page, preference: string) {
+async function creation(page: Page, preference: string, background = '') {
   await page.getByRole('button', { name: /开始新游戏/ }).click();
   await page.getByLabel('姓名', { exact: true }).fill('林舟'); await page.getByLabel('年龄', { exact: true }).fill('30');
   await page.getByLabel('性别', { exact: true }).fill('女'); await page.getByRole('button', { name: /下一步/ }).click();
   await page.getByRole('radio', { name: /^教师/ }).check(); await page.getByRole('button', { name: /下一步/ }).click();
+  if (background) await page.getByLabel('人物背景（可选）').fill(background);
   await page.getByRole('button', { name: '跳过背景，继续' }).click(); await page.getByRole('button', { name: '跳过同伴，继续' }).click();
   await expect(page.getByText('开局时间待确认', { exact: true })).toBeVisible();
   await expect(page.locator('.creation-card')).not.toContainText('时间以创角开始时刻初始化');
@@ -65,6 +66,8 @@ async function mock(page: Page, startAt: string, endAt: string) {
 }
 const workflow = (page: Page) => page.getByRole('region', { name: '三阶段工作流', exact: true });
 const ready = async (page: Page) => {
+  // 创角先异步持久化，再懒加载游戏；界面打开前不能假定已有存档可查询。
+  await expect(page.locator('.game-layout')).toBeVisible();
   await expect.poll(async () => (await stored(page)).draft.stageStatus.world, { timeout: 15000 }).toBe('ready');
   await expect(workflow(page).getByRole('status')).toContainText('三阶段候选已完成');
 };
@@ -73,9 +76,11 @@ for (const scenario of [
   { preference: '2022年12月31日晚上开始。', startAt: '2022-12-31T23:59:00+08:00', endAt: '2023-01-01T00:02:00+08:00' },
   { preference: '故事发生在2015年夏天。', startAt: '2015-07-08T14:00:00+08:00', endAt: '2015-07-08T14:02:00+08:00' },
   { preference: '', startAt: '2008-08-10T10:00:00+08:00', endAt: '2008-08-10T10:01:00+08:00' },
-]) test(`开局时间待定→候选→首次发送正式确立：${scenario.preference || '无时间设定'}`, async ({ page }) => {
+  { preference: '希望设定在2015年。', background: '人物背景：2001年出生，2023年毕业。', startAt: '2015-07-08T14:00:00+08:00', endAt: '2015-07-08T14:02:00+08:00' },
+  { preference: '', background: '角色成长于重庆，故事发生在2008年夏天。', startAt: '2008-08-10T10:00:00+08:00', endAt: '2008-08-10T10:01:00+08:00' },
+]) test(`开局时间待定→候选→首次发送正式确立：${scenario.preference || ('background' in scenario ? scenario.background : '无时间设定')}`, async ({ page }) => {
   test.setTimeout(60000); await prepare(page);
-  const server = await mock(page, scenario.startAt, scenario.endAt); await creation(page, scenario.preference);
+  const server = await mock(page, scenario.startAt, scenario.endAt); await creation(page, scenario.preference, 'background' in scenario ? scenario.background : '');
   await page.getByRole('button', { name: '确认并创建存档', exact: true }).click(); await ready(page);
   const initial = await stored(page), sidebar = await showClock(page);
   expect(initial.state.openingTimePending).toBe(true); expect(initial.state.worldClock).toBe(pendingOpeningClock);
@@ -120,4 +125,19 @@ test('含糊相对年份在创角阶段清楚报错，无存档、无AI请求；
   await page.getByLabel('开局偏好（可选）').fill('故事发生在2015年夏天。');
   await page.getByRole('button', { name: '确认并创建存档', exact: true }).click(); await ready(page);
   expect(server.calls).toHaveLength(3); expect((await stored(page)).state.openingTimePending).toBe(true);
+});
+
+
+test('明确日期设定的真实开局请求不能接受其它年份；履历不覆盖约束且拒绝后不发下游', async ({ page }) => {
+  test.setTimeout(60000); await prepare(page);
+  const server = await mock(page, '2008-08-10T10:00:00+08:00', '2008-08-10T10:01:00+08:00');
+  await creation(page, '日期定为2015年。', '人物背景：2001年出生，2023年毕业。');
+  await page.getByRole('button', { name: '确认并创建存档', exact: true }).click();
+  await expect(workflow(page).getByRole('alert')).toBeVisible();
+  expect(server.calls.map((call) => call.stage)).toEqual(['story']);
+  expect(record(server.calls[0].context.OPENING_TIME).playerConstraints).toEqual([expect.objectContaining({ year: 2015 })]);
+  const failed = await stored(page); expect(failed.draft.story).toBeUndefined(); expect(failed.state.openingTimePending).toBe(true);
+  expect(failed.state.protagonist.background).toBe('人物背景：2001年出生，2023年毕业。');
+  await page.reload(); await expect(workflow(page).getByRole('status')).toHaveText('需要处理');
+  expect(server.calls).toHaveLength(1); expect(await stored(page)).toEqual(failed);
 });
