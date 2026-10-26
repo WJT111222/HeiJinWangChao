@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { pendingOpeningClock, openingTimeConstraints } from '../../domain/openingTime';
+import { pendingOpeningClock } from '../../domain/openingTime';
 import { IdSchema, GameTimeSchema, requireData, DataError } from '../../domain/common';
 import { createGameState, GameStateSchema } from '../../domain/state';
 import { SpecialNpcSchema } from '../../domain/npc/schema';
@@ -163,7 +163,6 @@ export function validateStep(form: Creation, step = form.step) {
 }
 export function buildCreationState(form: Creation, settings: Settings) {
   for (let i = 1; i <= 4; i++) validateStep(form, i);
-  if (form.openingTimePending) openingTimeConstraints(form.background, form.openingPreference);
   const city = cities.find((c) => c.id === form.city)!;
   const companion = form.hasCompanion
     ? SpecialNpcSchema.parse({

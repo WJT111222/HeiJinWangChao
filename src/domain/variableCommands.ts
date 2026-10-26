@@ -220,7 +220,7 @@ export function applyVariableCommand(
       );
       requireData(
         command.knowledgeKind === 'observed'
-          ? !/听说|传闻|猜测|谎称/.test(memory.knowledgeSource)
+          ? !/^\[(?:转述|推测)\]/.test(memory.text)
           : memory.text.startsWith(command.knowledgeKind === 'reported' ? '[转述]' : '[推测]'),
         'KNOWLEDGE_KIND',
         '转述或猜测必须保持其知识性质',

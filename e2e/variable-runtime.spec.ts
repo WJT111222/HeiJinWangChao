@@ -269,7 +269,7 @@ test('角色对白后换行的客观消费可保存候选，不改变正式资�
   });
 });
 
-test('无依据跟随整批失败；明确留在原地可重试为未结算候选', async ({ page }) => {
+test('场景引用不一致整批失败；合法离场可恢复为未结算候选', async ({ page }) => {
   const text = '主角独自走进社区诊所。同事留在重庆。';
   const before = await seed(page, true, false, text, true);
   let follow = true;
@@ -292,7 +292,7 @@ test('无依据跟随整批失败；明确留在原地可重试为未结算候�
             expectedRevision: 0,
             npcId: 'npc-a',
             evidence: follow ? '主角独自走进社区诊所。' : '同事留在重庆。',
-            changes: follow ? { onScene: true, locationId: 'clinic' } : { onScene: false },
+            changes: follow ? { onScene: true, locationId: 'chongqing' } : { onScene: false },
           },
         ],
         rejectedSuggestions: [],
@@ -321,7 +321,7 @@ for (const scenario of [
   { kind: 'scene', denied: '不是同事和主角一起走进社区诊所' },
   { kind: 'scene', denied: '并非同事和主角一起走进社区诊所' },
 ] as const) {
-  test(`否定证据拒绝后可保留同句/同段的合法事实：${scenario.denied}`, async ({ page }) => {
+  test(`小说否定由模型判断；真正非法数据拒绝后可恢复：${scenario.denied}`, async ({ page }) => {
     const scene = scenario.kind === 'scene';
     const text = scene
       ? `${scenario.denied}。主角独自走进社区诊所，同事留在重庆。`
@@ -345,7 +345,7 @@ for (const scenario of [
               expectedRevision: 0,
               npcId: 'npc-a',
               evidence: corrected ? '同事留在重庆' : '同事和主角一起走进社区诊所',
-              changes: corrected ? { onScene: false } : { onScene: true, locationId: 'clinic' },
+              changes: corrected ? { onScene: false } : { onScene: true, locationId: 'missing' },
             },
           ]
         : [
@@ -354,7 +354,7 @@ for (const scenario of [
               commandId: 'meal',
               evidence: corrected ? '线上支付30元吃饭' : '现金支付30元吃饭',
               account: corrected ? 'onlineBalance' : 'cash',
-              amount: 3000,
+              amount: corrected ? 3000 : 999999,
               purpose: '午餐',
             },
           ];

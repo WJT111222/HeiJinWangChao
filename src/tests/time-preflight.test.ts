@@ -98,20 +98,22 @@ describe('只读事件节点筛选、知识与生命周期', () => {
     const selected = draft(state, undefined, true); state.worldClock = state.events.visitor.startAt;
     state.journal[0].story = selected.story!;
     expect(timePreflight(state, '睡到早上8点').candidates).toEqual([]);
+    state.journal[0].story.variableGuide[0].textEvidence = '访客实际触发中断的概括说明';
+    expect(timePreflight(state, '睡到早上8点').candidates).toEqual([]);
     state.journal[0].story.variableGuide = []; state.protagonist.locationId = 'chongqing';
     expect(timePreflight(state, '睡到早上8点').candidates).toEqual([]);
   });
-  it('停止记录必须唯一、有原文依据、使用有效候选和候选时间', () => {
+  it('结构化中断记录保持唯一/有效候选与时间，不要求逐字来源', () => {
     const state = visitor(), selected = draft(state, undefined, true);
     expect(timeOutcome(state, selected, true)?.at).toBe(state.events.visitor.startAt);
     for (const bad of [
-      { ...selected, story: { ...selected.story!, variableGuide: [] } },
       { ...selected, story: { ...selected.story!, variableGuide: [...selected.story!.variableGuide, ...selected.story!.variableGuide] } },
       { ...selected, story: { ...selected.story!, variableGuide: [{ ...selected.story!.variableGuide[0], observedFact: '2027-01-01T04:00:00+08:00' }] } },
-      { ...selected, story: { ...selected.story!, variableGuide: [{ ...selected.story!.variableGuide[0], textEvidence: '不存在的正文证据' }] } },
     ]) expect(() => timeOutcome(state, bad, true)).toThrow();
     const commands = [{ type: 'SetWorldClock' as const, commandId: 'time', worldClock: state.events.visitor.startAt, evidence: selected.story!.variableGuide[0].textEvidence! }];
-    expect(() => validateTimeCommands(state, selected, commands)).not.toThrow(); expect(() => validateTimeCommands(state, selected, [])).toThrow();
+    expect(() => validateTimeCommands(state, selected, commands)).not.toThrow(); expect(() => validateTimeCommands(state, selected, [])).not.toThrow();
+    expect(timeOutcome(state, { ...selected, story: { ...selected.story!, variableGuide: [] } }, true)).toBeUndefined();
+    expect(timeOutcome(state, { ...selected, story: { ...selected.story!, variableGuide: [{ ...selected.story!.variableGuide[0], textEvidence: '对中断原因的概括' }] } }, true)?.at).toBe(state.events.visitor.startAt);
     expect(() => validateTimeCommands(state, selected, [{ ...commands[0], worldClock: '2027-01-01T08:00:00+08:00' }])).toThrow();
   });
   it('开局不加载普通预检，不强制开局补写时间记录；旧正文可读且不伪造预检记录', async () => {
@@ -123,14 +125,14 @@ describe('只读事件节点筛选、知识与生命周期', () => {
   });
 });
 
-it('中文自然时间无需词法门槛；旧正文无记录仍允许模型估时但不得越过行动终点', () => {
+it('中文时间无需词法门槛；无明确结构化中断时不以玩家目标强制限制耗时', () => {
   const state = visitor(), selected = draft(state, undefined, true), evidence = '凌晨三点，已约定访客敲门声将你唤醒。';
   selected.story!.narrative = evidence; selected.story!.variableGuide[0].textEvidence = evidence;
   const result = { commands: [{ type: 'SetWorldClock', commandId: 'chinese-time', worldClock: '2027-01-01T03:00:00+08:00', evidence }], rejectedSuggestions: [], unresolved: [] };
   expect(() => parseVariables(JSON.stringify(result), state, selected)).not.toThrow();
   selected.story!.variableGuide = [];
   expect(() => parseVariables(JSON.stringify(result), state, selected)).not.toThrow();
-  expect(() => parseVariables(JSON.stringify({ ...result, commands: [{ ...result.commands[0], worldClock: '2027-01-01T09:00:00+08:00' }] }), state, selected)).toThrow();
+  expect(() => parseVariables(JSON.stringify({ ...result, commands: [{ ...result.commands[0], worldClock: '2027-01-01T09:00:00+08:00' }] }), state, selected)).not.toThrow();
 });
 
 it('预检保留ISO毫秒，不把思考未来或询问能力当成无条件长行动', () => {
