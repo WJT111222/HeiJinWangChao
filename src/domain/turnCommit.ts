@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { openingTimeBase } from './openingTime';
 import { requireData } from './common';
 import { commitCommands } from './commands';
 import type { DomainCommand } from './commands';
@@ -65,7 +66,7 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
     'TURN_CONTEXT',
     '回合已有独立命令记录',
   );
-  const projected = commitCommands(current, draft.turnId, current.revision, commands, now);
+  const projected = commitCommands(openingTimeBase(current, draft), draft.turnId, current.revision, commands, now);
   requireData(draft.story!.summary.trim(), 'MISSING_SUMMARY', '正文缺少有效摘要，请重新生成正文后重试');
   const shortMemory = MemoryEntrySchema.parse({
     id: draft.turnId,

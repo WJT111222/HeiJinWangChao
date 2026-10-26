@@ -1,3 +1,4 @@
+import { openingTimeBase } from '../domain/openingTime';
 import { selectPromptModules } from './selection';
 import { projectPromptOrder } from './order';
 import type { PromptModule } from './manifest';
@@ -42,11 +43,13 @@ export async function composePrompt(unchecked: ComposeInput) {
     throw new AiError('configuration');
   const context = contextFor(input);
   const clock =
-    typeof context.worldClock === 'string' ? context.worldClock : input.state.worldClock;
+    typeof context.worldClock === 'string' ? context.worldClock : input.state.openingTimePending
+      ? input.stage === 'variables' || input.stage === 'world' ? openingTimeBase(input.state, input.draft!).worldClock : undefined
+      : input.state.worldClock;
   const replacements: Record<string, string | number | undefined> = {
     playerName: input.state.protagonist.name,
-    worldClock: clock,
-    worldWeekday: worldWeekday(clock),
+    worldClock: clock ?? '开局时间待确认（由本次正文按玩家设定或剧情确定）',
+    worldWeekday: clock ? worldWeekday(clock) : '待开局日期确定后由程序计算',
     minNarrativeChars: input.settings.prompts.minNarrativeChars,
     immediateMemoryTurns: input.settings.memory.immediateWindowSize,
     npcId: input.npcId,

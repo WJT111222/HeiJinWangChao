@@ -150,6 +150,7 @@ function apply(s: GameState, c: DomainCommand, turnId: string) {
 export function commitCommands(state: GameState, turnId: string, expectedRevision: number,
   commands: readonly DomainCommand[], now = new Date().toISOString()): GameState {
   const current = GameStateSchema.parse(state);
+  requireData(!current.openingTimePending, 'OPENING_TIME', '开局时间待确认，不能将内部占位时钟用于命令执行');
   IdSchema.parse(turnId);
   CountSchema.parse(expectedRevision);
   const parsed = z.array(DomainCommandSchema).parse(commands);

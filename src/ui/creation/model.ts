@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { pendingOpeningClock, openingTimeConstraints } from '../../domain/openingTime';
 import { IdSchema, GameTimeSchema, requireData, DataError } from '../../domain/common';
 import { createGameState, GameStateSchema } from '../../domain/state';
 import { SpecialNpcSchema } from '../../domain/npc/schema';
@@ -51,6 +52,7 @@ export const CreationSchema = z.strictObject({
   version: z.literal(1),
   saveId: IdSchema,
   worldClock: GameTimeSchema,
+  openingTimePending: z.literal(true).optional(),
   step: z.number().int().min(1).max(5),
   person: PersonFormSchema,
   profession: z.string(),
@@ -78,7 +80,8 @@ export function newCreation(): Creation {
   return {
     version: 1,
     saveId: crypto.randomUUID(),
-    worldClock: new Date().toISOString(),
+    worldClock: pendingOpeningClock,
+    openingTimePending: true,
     step: 1,
     person: { name: '', age: '', gender: '', appearance: '', personality: '' },
     profession: '',
@@ -160,6 +163,7 @@ export function validateStep(form: Creation, step = form.step) {
 }
 export function buildCreationState(form: Creation, settings: Settings) {
   for (let i = 1; i <= 4; i++) validateStep(form, i);
+  if (form.openingTimePending) openingTimeConstraints(form.background, form.openingPreference);
   const city = cities.find((c) => c.id === form.city)!;
   const companion = form.hasCompanion
     ? SpecialNpcSchema.parse({
@@ -213,6 +217,7 @@ export function buildCreationState(form: Creation, settings: Settings) {
   });
   return GameStateSchema.parse({
     ...state,
+    ...(form.openingTimePending ? { openingTimePending: true } : {}),
     memories: { ...state.memories, immediateWindowSize: settings.memory.immediateWindowSize },
   });
 }
