@@ -96,7 +96,7 @@ async function mock(page: Page) {
           type: 'SetWorldClock',
           commandId: 'minute',
           evidence: '经过一分钟，主角在街边休息。',
-          worldClock: new Date(Date.parse(state.worldClock) + 60000).toISOString(),
+          worldClock: ctx.OPENING_TIME ? string(record(ctx.OPENING_TIME).endAt) : new Date(Date.parse(state.worldClock) + 60000).toISOString(),
         },
         {
           type: 'UpdateProtagonist',

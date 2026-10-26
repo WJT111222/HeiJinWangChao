@@ -63,6 +63,10 @@
       "m7P3OpeningTime": {
         "notes": "仅调整共享时间规则：新档显式待定；同一次开局正文提供起止日期，变量核验、原子结算后确立。旧档无标记保持原时钟；原始来源及历次适配记录保留。",
         "sha256": "c50e64da02afd591ab25b36958c3de48d0ecbcd47019e89e3267fd77e5576d56"
+      },
+      "m8P0AMinimalValidation": {
+        "notes": "用户批准的规则减负适配：移除文学正则/逐字证据及重复时间证明，保留原来源哈希和历次适配记录。",
+        "sha256": "47a8f3ba9632c22cfdcc93e0c458160f34a889cc4c0d08654de82a6bb34b6cbf"
       }
     },
     "writing/natural_prose.md": {
@@ -272,6 +276,10 @@
       "m5P5": {
         "notes": "M5-P5最小协议增量：自主成果判断、经验证的同窗承接、联系人及安全退场；不改六套主提示词、世界书、NSFW。",
         "sha256": "2f8c901460f8f1788acc7a7193e4a391d6015e1f12ea778f0cf98496bf53e49b"
+      },
+      "m8P0AMinimalValidation": {
+        "notes": "用户批准的规则减负适配：移除文学正则/逐字证据及重复时间证明，保留原来源哈希和历次适配记录。",
+        "sha256": "820346900e251530212ce5d213352bded2268aad059649ddc94541cefee3e74d"
       }
     },
     "shared/08_world_output.md": {

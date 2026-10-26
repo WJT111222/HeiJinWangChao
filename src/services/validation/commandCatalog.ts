@@ -39,10 +39,10 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
       '严格使用各 type 的同级字段，不接受 group/entityId/payload 包装或旧别名。',
       stage === 'world'
         ? 'evidence 使用 WORLD_EVIDENCE_V1 JSON 字符串；区分既有事实、新生成场外候选、计划与转述。不得要求新推演事实逐字出现在旧正文。'
-        : 'evidence 引用已提供事实原文；金额为整数人民币分，price/amount 等正值限制以 Schema 为准。',
+        : 'evidence为简洁来源说明，可概括而不必逐字引用或包含关键词；金额为整数人民币分，price/amount等正值限制以Schema为准。',
       '不存在的更新操作列入 unresolved；CreateNpc/CreateOrganization 不是更新命令。RegisterContact仅变量阶段据实际交换联系方式登记，不可撤销保护；RetireNpc仅世界阶段提议，联系人、同伴、现场和有未完职责/当前资产引用者不能删除。',
-      'Schema 仅描述结构；仍须进行权限、证据、引用、金额、时间、版本与幂等校验。',
-      '遵守TURN_TIME_POLICY：普通及开局正式回合必须正向SetWorldClock，由变量AI根据实际行动和对话估时，证据不必含时间词，无固定步长。只有有效HISTORICAL_PERSPECTIVE的纯过去视角允许零耗时且不更新当前变量或推演世界。',
+      'Schema描述严格结构；程序校验权限、引用、归属、金额、时间、版本与幂等。变量语义由AI判断，不以正则审判小说；世界来源协议继续独立保护私有知识。',
+      '遵守TURN_TIME_POLICY：待定开局由程序统一应用Story结构化时钟，变量无需重复SetWorldClock。普通回合按实际行动估时，可零耗时，不固定步长，不要求正文时间词；禁止日期非法或倒退。有效HISTORICAL_PERSPECTIVE不更新当前变量或推演世界。',
     ],
     ...(stage === 'world'
       ? {

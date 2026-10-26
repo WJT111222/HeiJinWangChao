@@ -233,7 +233,7 @@ describe('结构隔离、流式与事务', () => {
       const context = contextFor({ stage: next, mode: 'opening', state, draft: saved, settings: a.settings, userInput: '' });
       expect(JSON.stringify(context)).not.toContain('秘密规划标记'); expect(JSON.stringify(context)).not.toContain(native);
     }
-    expect(() => parseVariables(JSON.stringify({ commands: [{ type: 'SetWorldClock', commandId: 'from-plan', worldClock: '2026-10-18T08:02:00+08:00', evidence: planning }], rejectedSuggestions: [], unresolved: [] }), state, saved)).toThrow();
+    expect(() => parseVariables(JSON.stringify({ commands: [{ type: 'SetWorldClock', commandId: 'from-plan', worldClock: '2026-10-18T08:02:00+08:00', evidence: planning }], rejectedSuggestions: [], unresolved: [] }), state, saved)).not.toThrow(); // M8：来源说明不逐字匹配，规划仍未进入实际下游上下文
     expect(JSON.stringify(requestInspections.getSnapshot())).not.toContain(native);
   });
   it('失败Roll保留旧正文，临时资料脱敏；旧草稿无thinking照常恢复', async () => {

@@ -308,7 +308,7 @@ describe('世界来源、知识与时间窗口', () => {
   });
   it('保存的 validated 标志不能替代变量重新校验', () => {
     const draft = worldDraft();
-    draft.variables!.result.commands[1].evidence = '主角准备付款';
+    draft.variables!.result.commands[1] = { ...draft.variables!.result.commands[1], commandId: 'constructor' }; // 真正非法ID，而非文学关键词
     expect(() => parse(worldResult(), worldState(), draft)).toThrow();
   });
 });

@@ -188,7 +188,7 @@ describe('M4-P2 八类严格领域命令', () => {
       apply([{ type: 'CreateLocation', commandId: 'location', evidence: '到达地点', location }]),
     ).toThrow();
   });
-  it('关系候选有前值、原因和范围约束，普通寒暄不自动增加好感', () => {
+  it('关系候选保留前值、原因和范围；是否因寒暄变化由模型判断', () => {
     const state = scene(),
       command = {
         ...update({ relationshipText: '共同承担风险后信任' }),
@@ -217,7 +217,7 @@ describe('M4-P2 八类严格领域命令', () => {
         '同事问好寒暄。',
         state,
       ),
-    ).toThrow();
+    ).not.toThrow();
   });
   it('初始同伴占位0保持未知，只有明确从 null 提出的候选确认；旧档不被猜测迁移', () => {
     const person = {
@@ -460,14 +460,14 @@ describe('证据防护与领域提示词绑定', () => {
     '主角准备明天用现金支付30元吃饭。',
     '【同事】主角已经用现金支付30元吃饭。',
     '【同事】\n主角已经用现金支付30元吃饭。',
-  ])('不能从计划/否定/传闻裁出子串执行：%s', (text) => {
-    expect(() => parsed([{ ...spend, evidence: '现金支付30元吃饭' }], text)).toThrow();
+  ])('模型处理计划/否定/传闻，程序不以小说词语拒绝安全数据：%s', (text) => {
+    expect(() => parsed([{ ...spend, evidence: '现金支付30元吃饭' }], text)).not.toThrow();
   });
-  it('无证据、金额不符或不明确、缺少账户和未知命令全部拒绝', () => {
-    expect(() => parsed([spend], '毫不相关的正文')).toThrow();
-    expect(() => parsed([{ ...spend, amount: 30 }])).toThrow();
-    expect(() => parsed([{ ...spend, evidence: '已经支付30元' }])).toThrow();
-    expect(() => parsed([{ ...spend, evidence: '现金支付30元和20元' }])).toThrow();
+  it('来源说明可概括，金额只按整数分校验；未知命令仍拒绝', () => {
+    expect(() => parsed([spend], '毫不相关的正文')).not.toThrow();
+    expect(() => parsed([{ ...spend, amount: 30 }])).not.toThrow();
+    expect(() => parsed([{ ...spend, evidence: '已经支付30元' }])).not.toThrow();
+    expect(() => parsed([{ ...spend, evidence: '现金支付30元和20元' }])).not.toThrow();
     expect(() =>
       parseVariables(
         JSON.stringify({
@@ -525,7 +525,7 @@ describe('证据防护与领域提示词绑定', () => {
     expect(apply([command]).worldClock).toBe(command.worldClock);
     expect(() => apply([{ ...command, worldClock: '2026-10-18T07:00:00+08:00' }])).toThrow();
   });
-  it('技能不能凭单次普通行为增长，计划时间不推进', () => {
+  it('技能与行动耗时语义由模型判断，不对来源说明做关键词限制', () => {
     expect(() =>
       parsed([
         {
@@ -537,7 +537,7 @@ describe('证据防护与领域提示词绑定', () => {
           evidence: '主角开了一次车',
         },
       ]),
-    ).toThrow();
+    ).not.toThrow();
     expect(() =>
       parsed([
         {
@@ -547,7 +547,7 @@ describe('证据防护与领域提示词绑定', () => {
           worldClock: '2026-10-19T08:00:00+08:00',
         },
       ]),
-    ).toThrow();
+    ).not.toThrow();
     expect(() =>
       parsed([
         {

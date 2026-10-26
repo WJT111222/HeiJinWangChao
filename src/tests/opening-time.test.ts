@@ -29,7 +29,7 @@ describe('开局时间不取设备日期', () => {
 });
 
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
-import { openingTimeSelection, openingTimeBase, openingTimeConstraints, chinaCalendar, pendingOpeningClock } from '../domain/openingTime';
+import { openingTimeSelection, openingTimeBase, openingTimeContext, chinaCalendar, pendingOpeningClock } from '../domain/openingTime';
 import { createTurnDraft, rerollStory } from '../domain/drafts';
 import { GameStateSchema, StorySchema } from '../domain/state';
 import { commitCommands } from '../domain/commands';
@@ -79,13 +79,13 @@ describe('开局时间确定性边界', () => {
     expect(state.openingTimePending).toBe(true);
   });
   it.each(['故事时间是今年。', '背景设在很久以前。', '2023年2月29日开始。', '2024年13月1日开始。',
-    '2024年1月1日25:00开始。', '背景在2008年。故事在2015年。', '2024年1月1日开始；2024年2月1日开始。'])('非法或矛盾玩家输入在请求前拒绝：%s', (text) => {
-    expect(() => buildCreationState({ ...form(), openingPreference: text }, defaultSettings())).toThrow();
+    '2024年1月1日25:00开始。', '背景在2008年。故事在2015年。', '2024年1月1日开始；2024年2月1日开始。'])('含糊或矛盾玩家文本交由同一次Story处理：%s', (text) => {
+    const state = buildCreationState({ ...form(), openingPreference: text }, defaultSettings());
+    expect(openingTimeContext(state, text)?.playerPreference).toBe(text);
   });
   it('历史履历日期不会不加区分地覆盖开局年代', () => {
-    expect(openingTimeConstraints('2001年出生，2023年毕业。', '故事发生在2015年夏天。')).toEqual([
-      expect.objectContaining({ year: 2015, season: '夏' }),
-    ]);
+    const { state, draft } = chosen('故事发生在2015年夏天。'); state.protagonist.background = '2001年出生，2023年毕业。';
+    expect(openingTimeContext(state, draft.userInput)).toMatchObject({ playerBackground: state.protagonist.background, playerPreference: draft.userInput });
   });
   it.each([
     ['故事发生在2016年。', start, end],
@@ -95,9 +95,10 @@ describe('开局时间确定性边界', () => {
     ['2015年7月8日晚上开始。', start, end],
     ['', start, start],
     ['', start, '2015-07-08T13:59:00+08:00'],
-  ])('拒绝不符合玩家约束或零/负耗时：%s %s %s', (preference, from, to) => {
+  ])('结构化日历独立于文学约束，零耗时合法、倒退拒绝：%s %s %s', (preference, from, to) => {
     const { state, draft } = chosen(preference, from, to);
-    expect(() => openingTimeSelection(state, draft)).toThrow();
+    if (Date.parse(to) < Date.parse(from)) expect(() => openingTimeSelection(state, draft)).toThrow();
+    else expect(openingTimeSelection(state, draft)?.endAt).toBe(to);
   });
   it.each([
     ['2015年7月9日14:00，重庆街头。', start],
@@ -107,28 +108,28 @@ describe('开局时间确定性边界', () => {
     ['2015年7月8日冬天，重庆街头。', start],
     ['重庆街头。', start],
     ['不是2015年7月8日，重庆街头。', start],
-  ])('正文时间锚点矛盾/不完整不能保存：%s', (anchor, from) => {
+  ])('不再用正文日期/星期/时段/否定词审判合法结构化候选：%s', (anchor, from) => {
     const { state, draft } = chosen(); draft.story = selectedStory(from, end, anchor);
-    expect(() => openingTimeSelection(state, draft)).toThrow();
+    expect(openingTimeSelection(state, draft)?.startAt).toBe(from);
   });
   it.each(['2015-02-29T08:00:00+08:00', '2024-02-30T08:00:00+08:00', '2015-07-08T06:00:00Z', 'not-a-date'])('模型非法日期或非中国标准偏移拒绝：%s', (at) => {
     const { state, draft } = chosen(); draft.story!.variableGuide[0].observedFact = JSON.stringify({ startAt: at, endAt: end });
     expect(() => openingTimeSelection(state, draft)).toThrow();
   });
   it('拒绝缺失、重复、额外时间协议、伪造证据及未知字段', () => {
-    for (const change of ['missing', 'duplicate', 'retrospective', 'evidence', 'unknown']) {
+    for (const change of ['missing', 'duplicate', 'retrospective', 'unknown']) {
       const { state, draft } = chosen(), guide = draft.story!.variableGuide;
       if (change === 'missing') guide.length = 0;
       if (change === 'duplicate') guide.push({ ...guide[0] });
       if (change === 'retrospective') guide.push({ ...guide[0], subjectHint: 'time:retrospective' });
-      if (change === 'evidence') guide[0].textEvidence = '未在正文出现';
       if (change === 'unknown') guide[0].observedFact = JSON.stringify({ startAt: start, endAt: end, weekday: '星期一' });
       expect(() => openingTimeSelection(state, draft)).toThrow();
     }
   });
-  it('SetWorldClock必须唯一且等于选定正文结束；不能漏掉或再加一遍耗时', () => {
+  it('开局允许空变量，重复/冲突时间仍拒绝，未确定正式时钟不能独立执行', () => {
     const { state, draft } = chosen();
-    for (const commands of [[], [...variables().commands, { ...variables().commands[0], commandId: 'again' }], variables('2015-07-08T14:04:00+08:00').commands])
+    expect(parseVariables(JSON.stringify({ ...variables(), commands: [] }), state, draft).commands).toEqual([]);
+    for (const commands of [[...variables().commands, { ...variables().commands[0], commandId: 'again' }], variables('2015-07-08T14:04:00+08:00').commands])
       expect(() => parseVariables(JSON.stringify({ ...variables(), commands }), state, draft)).toThrow();
     expect(() => commitCommands(state, draft.turnId, 0, variables().commands)).toThrow('开局时间待确认');
     expect(() => timePreflight(state, '睡到明天早上8点')).toThrow('尚未确定');
@@ -208,7 +209,7 @@ describe('开局时间真实Runtime、投影与原子事务', () => {
     const run = await runtime('故事发生在2015年夏天。'), result = await run.generate();
     expect(run.calls).toEqual(['story', 'variables', 'world']); expect(await run.repo.load(run.state.saveId)).toEqual(run.state);
     expect(record(run.contexts[0].SAVE_STATE).worldClock).toBeNull();
-    expect(run.contexts[1].SAVE_STATE).toHaveProperty('worldClock', start);
+    expect(run.contexts[1].SAVE_STATE).toHaveProperty('worldClock', end);
     expect(run.contexts[2].TIME_WINDOW).toEqual({ from: start, to: end });
     expect(JSON.stringify(run.contexts)).not.toContain(pendingOpeningClock);
     const committed = await run.repo.commitTurn(submission(result.draft));
@@ -258,10 +259,10 @@ describe('开局时间真实Runtime、投影与原子事务', () => {
     expect((await run.generate()).status).toBe('complete');
     expect(run.contexts.at(-1)?.TIME_WINDOW).toEqual({ from: '2008-08-10T10:00:00+08:00', to: '2008-08-10T10:05:00+08:00' });
   });
-  it('无合法变量时world preview使用开局候选起点，仍不能正式提交', async () => {
+  it('无合法变量时world preview使用同一Story候选时钟，仍不能正式提交', async () => {
     const run = await runtime(); run.settings.runtime.useVariableStage = false;
     const result = await run.generate(); expect(result.status).toBe('preview');
-    expect(run.calls).toEqual(['story', 'world']); expect(run.contexts[1].TIME_WINDOW).toEqual({ from: start, to: start });
+    expect(run.calls).toEqual(['story', 'world']); expect(run.contexts[1].TIME_WINDOW).toEqual({ from: start, to: end });
     await expect(run.repo.commitTurn(submission(result.draft))).rejects.toThrow();
     expect(await run.repo.load(run.state.saveId)).toEqual(run.state);
   });
@@ -272,8 +273,8 @@ describe('开局时间补充恢复与兼容', () => {
     const { state, draft } = chosen('2022 年 12 月 31 日晚上8点半开始。', '2022-12-31T20:30:00+08:00', '2022-12-31T20:32:00+08:00');
     expect(openingTimeSelection(state, draft)?.startAt).toBe('2022-12-31T20:30:00+08:00');
     draft.story = selectedStory('2022-12-31T21:30:00+08:00', '2022-12-31T21:32:00+08:00');
-    expect(() => openingTimeSelection(state, draft)).toThrow('违反玩家');
-    expect(() => openingTimeConstraints('', '2015年12月，故事发生在2015年夏天。')).toThrow('季节');
+    expect(openingTimeSelection(state, draft)?.startAt).toBe('2022-12-31T21:30:00+08:00');
+    expect(openingTimeContext(state, '2015年12月，故事发生在2015年夏天。')?.playerPreference).toContain('2015年12月');
   });
   it('旧版未完成创角草稿没有标记，仍保留原时钟而非静默套用新规则', () => {
     const legacy = form(); delete legacy.openingTimePending; legacy.worldClock = '2020-01-02T03:04:00+08:00';

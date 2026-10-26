@@ -5,7 +5,7 @@ import type { ActorRef } from '../../domain/common';
 import type { GameState } from '../../domain/state';
 import type { TurnDraft } from '../../domain/drafts';
 import type { DomainCommand } from '../../domain/commands';
-import { factEvidence } from './evidence';
+import { worldFactEvidence } from './evidence';
 import { isNegatedFact } from '../../domain/factPolarity';
 import { AiError } from '../ai/errors';
 import { TaskResultKnowledgeSchema } from '../../domain/events/schema';
@@ -239,7 +239,7 @@ export function readWorldEvidence(
         resolved.some((source) => {
           if (source.knowledge !== 'fact' || !source.text.includes(proof.fact)) return false;
           try {
-            factEvidence({ ...command, evidence: proof.fact }, source.text);
+            worldFactEvidence({ ...command, evidence: proof.fact }, source.text);
             return true;
           } catch {
             return false;
@@ -272,6 +272,6 @@ export function readWorldEvidence(
 export function hasPlayerKnownFact(command: DomainCommand, proof: WorldEvidence, sources: readonly WorldSource[]) {
   return proof.kind === 'established' && sources.some((source) => {
     if (source.knowledge !== 'fact' || !source.playerKnownText?.includes(proof.fact)) return false;
-    try { factEvidence({ ...command, evidence: proof.fact }, source.playerKnownText); return true; } catch { return false; }
+    try { worldFactEvidence({ ...command, evidence: proof.fact }, source.playerKnownText); return true; } catch { return false; }
   });
 }
