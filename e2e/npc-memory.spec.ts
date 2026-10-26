@@ -42,8 +42,11 @@ async function load(page: Page) {
 }
 async function memory(page: Page) {
   await openGameTools(page);
-  await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
-  return page.getByRole('dialog', { name: '记忆', exact: true });
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  const settings = page.getByRole('dialog', { name: '设置', exact: true });
+  await settings.getByRole('button', { name: '记忆', exact: true }).click();
+  await settings.getByText('记忆维护（高级操作）', { exact: true }).click();
+  return settings;
 }
 function context(body: unknown) {
   const content = array(record(body).messages).map((entry) => string(record(entry).content)).join('\n');
@@ -75,8 +78,13 @@ test('手动仅一人一批；普通界面不暴露身份、原文、总结和�
   expect(after.npc).toEqual(before.npc); expect(after.journal).toEqual(before.journal); expect(after.revision).toBe(before.revision);
   expect(after.memories.npcSummaries['npc-a'][0].npcProvenance!.sourceMemoryIds).toHaveLength(10);
   expect(after.memories.npcSummaries['npc-b']).toBeUndefined();
-  await panel.getByLabel('搜索历史回合').fill('私人总结A'); await expect(panel).toContainText('未找到相关的已提交历史');
   await panel.getByRole('button', { name: '关闭资料界面' }).click();
+  await openGameTools(page);
+  await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
+  const reading = page.getByRole('dialog', { name: '记忆', exact: true });
+  await expect(reading).not.toContainText('未公开人物A'); await expect(reading).not.toContainText('私人总结A');
+  await reading.getByLabel('搜索历史回合').fill('私人总结A'); await expect(reading).toContainText('未找到相关的已提交历史');
+  await reading.getByRole('button', { name: '关闭资料界面' }).click();
   await openGameTools(page);
   await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
   await expect(page.getByRole('dialog')).not.toContainText('未公开人物A'); await expect(page.getByRole('dialog')).not.toContainText('私人总结A');

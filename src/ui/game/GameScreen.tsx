@@ -1,5 +1,6 @@
 import { openingTimeSelection } from '../../domain/openingTime';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import type { ReactNode } from 'react';
 import type { GameState } from '../../domain/state';
 import type { CompanionProfile } from '../../services/local/companionProfile';
 import type { TurnDraft } from '../../domain/drafts';
@@ -46,6 +47,7 @@ export function GameScreen({
   onDraftSaved,
   onCommitted,
   onMemorySaved,
+  renderSettings,
 }: {
   openingStart?: OpeningStart;
   onOpenSettings: () => void;
@@ -59,6 +61,7 @@ export function GameScreen({
   onDraftSaved: (draft: TurnDraft) => void;
   onCommitted: (result: TurnCommitResult) => void;
   onMemorySaved: (state: GameState) => void;
+  renderSettings?: (maintenance: ReactNode) => ReactNode;
 }) {
   const openingTime = useMemo(() => {
     try { return draft && openingTimeSelection(state, draft); } catch { return undefined; }
@@ -753,13 +756,13 @@ export function GameScreen({
             </>
           ) : (
             <>
-              {panel === '记忆' && <MemoryMaintenanceControls state={state} phase={memory.phase} notice={memory.notice}
-                onRun={() => void memory.run()} onNpcRun={() => void memory.run(false, 'npc')} onCancel={memory.cancel} />}
               <Panels name={panel} view={view} />
             </>
           )}
         </Dialog>
       )}
+      {renderSettings?.(<MemoryMaintenanceControls state={state} phase={memory.phase} notice={memory.notice}
+        onRun={() => void memory.run()} onNpcRun={() => void memory.run(false, 'npc')} onCancel={memory.cancel} />)}
     </main>
   );
 }

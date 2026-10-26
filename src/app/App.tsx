@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { IdSchema } from '../domain/common';
 import type { GameState } from '../domain/state';
 import type { TurnDraft } from '../domain/drafts';
@@ -247,6 +248,13 @@ export function App() {
     }
   }
   const active = saves.find((save) => save.saveId === selected) ?? saves[0];
+  // 游戏中由原GameScreen提供唯一维护控制器；设置只是展示，不拥有任务生命周期。
+  const renderSettings = (memoryMaintenance?: ReactNode) => (
+    <Dialog title="设置" onClose={() => setSettingsOpen(false)}>
+      <SettingsPanel settings={settings} onSave={saveSettings} repository={repository}
+        activeSaveId={loaded?.state.saveId ?? active?.saveId} memoryMaintenance={memoryMaintenance} />
+    </Dialog>
+  );
   return (
     <div ref={shell} className={gameRoute ? 'app-shell app-shell-game' : 'app-shell'}>
       <header className="app-header">
@@ -309,6 +317,7 @@ export function App() {
               onMemorySaved={(state) => setLoaded((current) =>
                 current?.state.saveId === state.saveId && current.state.revision === state.revision
                   ? { ...current, state } : current)}
+              renderSettings={settingsOpen ? renderSettings : undefined}
               companionProfile={loaded.companionProfile}
               settings={settings}
               onSettings={(next) => {
@@ -450,16 +459,7 @@ export function App() {
           </section>
         </main>
       )}
-      {settingsOpen && (
-        <Dialog title="设置" onClose={() => setSettingsOpen(false)}>
-          <SettingsPanel
-            settings={settings}
-            onSave={saveSettings}
-            repository={repository}
-            activeSaveId={loaded?.state.saveId ?? active?.saveId}
-          />
-        </Dialog>
-      )}
+      {settingsOpen && !(gameRoute && loaded) && renderSettings()}
       {deleting && (
         <Dialog
           title="删除这份存档？"
