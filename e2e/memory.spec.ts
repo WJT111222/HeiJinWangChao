@@ -82,7 +82,8 @@ test('旧M4七十回合档案：搜索约定、读取来源原文、分页和窗
   await result.locator('summary').click();
   await expect(result).toContainText('同事陈宁在社区诊所约定下周三再次见面');
   await panel.getByRole('button', { name: '查看第 3 回合原文', exact: true }).click();
-  await expect(panel.getByRole('region', { name: '摘要来源原文' })).toContainText('history-3');
+  await expect(panel.getByRole('region', { name: '摘要来源原文' })).toContainText(before.journal.find((entry) => entry.turnId === 'history-3')!.story.narrative);
+  await expect(panel.getByRole('region', { name: '摘要来源原文' })).not.toContainText('history-3');
   await expect(panel.getByRole('region', { name: '摘要来源原文' })).toContainText('蓝色钥匙');
   await panel.getByLabel('搜索历史回合').fill('保密调查口令');
   await expect(panel).toContainText('未找到相关的已提交历史');

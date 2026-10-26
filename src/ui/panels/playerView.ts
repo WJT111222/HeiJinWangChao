@@ -9,17 +9,21 @@ export function playerView(state: GameState, authoredCompanion?: CompanionProfil
   const archive = authoredCompanion ?? initialCompanionProfile(state);
   const companion = archive && matchesCompanion(state, archive) ? archive : undefined;
   const events = Object.values(state.events).filter((event) => event.visibility === 'known');
+  const short = publicShortMemories(state);
+  const journal = historyRecords(state.journal);
+  const turnTimes = new Map(short.filter((memory) => memory.origin === 'stored' && memory.sourceTurnIds.length === 1)
+    .map((memory) => [memory.sourceTurnIds[0], memory.createdAtGameTime]));
   const memories = [
-    ...publicShortMemories(state).map((memory) => ({ ...memory, layer: memory.origin === 'journal' ? '短期（历史摘要，只读）' : '短期' })),
-    ...state.memories.medium.map((memory) => ({ ...memory, layer: '中期' })),
-    ...state.memories.long.map((memory) => ({ ...memory, layer: '长期' })),
+    ...short.map((memory) => ({ ...memory, tier: 'short' as const, layer: memory.origin === 'journal' ? '短期（历史摘要，只读）' : '短期' })),
+    ...state.memories.medium.map((memory) => ({ ...memory, tier: 'medium' as const, origin: 'stored' as const, layer: '中期' })),
+    ...state.memories.long.map((memory) => ({ ...memory, tier: 'long' as const, origin: 'stored' as const, layer: '长期' })),
     ...Object.values(state.memories.npcSummaries)
       .flat()
-      .map((memory) => ({ ...memory, layer: '人物摘要' })),
+      .map((memory) => ({ ...memory, tier: 'long' as const, origin: 'stored' as const, layer: '人物摘要' })),
     ...Object.values(state.npc).flatMap((npc) => [
-      ...npc.memories.map((memory) => ({ ...memory, layer: '人物记忆' })),
+      ...npc.memories.map((memory) => ({ ...memory, tier: 'short' as const, origin: 'stored' as const, layer: '人物记忆' })),
       ...(npc.kind === 'special'
-        ? npc.longTermMemories.map((memory) => ({ ...memory, layer: '人物长期记忆' }))
+        ? npc.longTermMemories.map((memory) => ({ ...memory, tier: 'long' as const, origin: 'stored' as const, layer: '人物长期记忆' }))
         : []),
     ]),
   ].filter((memory) => memory.visibility === 'player_known');
@@ -110,17 +114,21 @@ export function playerView(state: GameState, authoredCompanion?: CompanionProfil
     memories: memories.map((memory) => ({
       id: memory.id,
       layer: memory.layer,
+      tier: memory.tier,
+      origin: memory.origin,
       text: memory.text,
       sourceTurnIds: memory.sourceTurnIds,
       createdAtGameTime: memory.createdAtGameTime,
     })),
+    // 即时只是永久正文的只读窗口，不创建MemoryEntry，也不借当前时钟填补旧历史。
+    immediateMemories: journal.slice(-effectiveWindowSize).map((entry) => ({ ...entry, createdAtGameTime: turnTimes.get(entry.turnId) })),
     immediateWindowSize: effectiveWindowSize,
     memoryLayers: {
-      short: publicShortMemories(state).length,
-      medium: state.memories.medium.filter((m) => m.visibility === 'player_known').length,
-      long: state.memories.long.filter((m) => m.visibility === 'player_known').length,
+      short: memories.filter((m) => m.tier === 'short').length,
+      medium: memories.filter((m) => m.tier === 'medium').length,
+      long: memories.filter((m) => m.tier === 'long').length,
     },
-    journal: historyRecords(state.journal),
+    journal,
   };
 }
 export type PlayerView = ReturnType<typeof playerView>;
