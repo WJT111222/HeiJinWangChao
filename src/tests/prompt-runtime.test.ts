@@ -8,7 +8,6 @@ import {
   parseStory,
   parseVariables,
   parseWorld,
-  checkMoneyEvidence,
 } from '../services/validation/aiOutputs';
 import { runStageRequest } from '../services/ai/runtime';
 import { AiClient } from '../services/ai/client';
@@ -677,10 +676,9 @@ describe('真实命令目录、解析与安全候选验证', () => {
     ).toThrow();
     const buy = purchase();
     if (buy.type !== 'PurchaseItem') throw new Error('fixture');
-    expect(() => checkMoneyEvidence({ ...buy, price: 25, evidence: '已支付25元' })).toThrowError(
-      expect.objectContaining({ code: 'money_unit' }),
-    );
-    expect(() => checkMoneyEvidence({ ...buy, price: 2500, evidence: '已支付25元' })).not.toThrow();
+    // M8-P0A：金额以严格整数分字段和账户余额为准，不用证据中的“元”正则推断。
+    expect(() => parseVariables(JSON.stringify({ ...emptyVariables, commands: [{ ...buy, price: 25, evidence: '概括购买经过' }] }), a.state, a.draft)).not.toThrow();
+    expect(() => parseVariables(JSON.stringify({ ...emptyVariables, commands: [{ ...buy, price: 2500, evidence: '另一种来源说明' }] }), a.state, a.draft)).not.toThrow();
   });
   it('世界三数组分权限，拒绝主角交易、主角任务、现场 NPC 和事件状态混用', () => {
     const a = input('world');

@@ -44,7 +44,7 @@ async function showClock(page: Page) {
   return page.getByRole('complementary', { name: '主角信息' });
 }
 async function mock(page: Page, startAt: string, endAt: string) {
-  const calls: { stage: string; context: Record<string, unknown> }[] = [], plan = { badDate: false };
+  const calls: { stage: string; context: Record<string, unknown> }[] = [], plan = { badDate: false, minimal: false, variableCase: 'empty' };
   await page.route('https://opening-ui.mock.invalid/**', async (route) => {
     const body = record(route.request().postDataJSON()), stage = string(body.model);
     const messages = array(body.messages).map((message) => string(record(message).content)).join('\n');
@@ -52,13 +52,19 @@ async function mock(page: Page, startAt: string, endAt: string) {
     let text: string;
     if (stage === 'story') {
       const opening = record(context.OPENING_TIME).status === 'pending', calendar = chinaCalendar(startAt);
-      const anchor = opening ? `${calendar.year}年${calendar.month}月${calendar.day}日${String(calendar.hour).padStart(2, '0')}:${String(calendar.minute).padStart(2, '0')}，${calendar.weekday}。` : '';
-      const guide = opening ? [{ group: 'time', subjectHint: 'time:opening', observedFact: JSON.stringify({ startAt: plan.badDate ? '2023-02-29T08:00:00+08:00' : startAt, endAt }), textEvidence: anchor }] : [];
+      const anchor = opening && !plan.minimal ? `${calendar.year}年${calendar.month}月${calendar.day}日${String(calendar.hour).padStart(2, '0')}:${String(calendar.minute).padStart(2, '0')}，${calendar.weekday}。` : '';
+      const guide = opening ? [{ group: 'time', subjectHint: 'time:opening', observedFact: JSON.stringify({ startAt: plan.badDate ? '2023-02-29T08:00:00+08:00' : startAt, endAt }), textEvidence: plan.minimal ? '本幕时间由场景安排，无需逐字引用。' : anchor }] : [];
       text = `<thinking>本轮创作提纲：时间和人物连续。</thinking><正文>${anchor}主角在街边喝了一口水。</正文><短期记忆>主角在街边喝水。</短期记忆><变量规划>${JSON.stringify(guide)}</变量规划>`;
-    } else text = JSON.stringify(stage === 'variables' ? {
-      commands: [{ type: 'SetWorldClock', commandId: 'clock', evidence: '主角在街边喝了一口水。',
-        worldClock: context.OPENING_TIME ? string(record(context.OPENING_TIME).endAt) : new Date(Date.parse(string(record(context.SAVE_STATE).worldClock)) + 15000).toISOString() }], rejectedSuggestions: [], unresolved: [],
-    } : { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] });
+    } else {
+      const opening = Boolean(context.OPENING_TIME), hero = record(record(context.SAVE_STATE).protagonist);
+      const minimalCommands = !opening || plan.variableCase === 'empty' ? [] : plan.variableCase === 'npc'
+        ? [{ type: 'CreateNpc', commandId: 'scene-person', evidence: '本幕在场服务人员', npc: { id: 'new-npc', identityKey: 'identity-new-npc', kind: 'ordinary', name: '店员', aliases: [], skills: [], onScene: true, locationId: hero.locationId, affinity: 0, relationshipText: '初次见面', memories: [], knownInformation: [] } }]
+        : [{ type: 'AcquireItem', commandId: 'gift', evidence: '临别得到一份证件', item: { id: 'gift', name: '证件', category: 'document', quantity: 1, conditionText: '完好', ownerRef: { kind: 'protagonist', id: hero.id } } }];
+      text = JSON.stringify(stage === 'variables' ? {
+        commands: plan.minimal ? minimalCommands : [{ type: 'SetWorldClock', commandId: 'clock', evidence: '主角在街边喝了一口水。',
+          worldClock: opening ? string(record(context.OPENING_TIME).endAt) : new Date(Date.parse(string(record(context.SAVE_STATE).worldClock)) + 15000).toISOString() }], rejectedSuggestions: [], unresolved: [],
+      } : { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] });
+    }
     await route.fulfill(stage === 'story' ? { contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n` }
       : { json: { choices: [{ message: { content: text } }] } });
   });
@@ -117,27 +123,47 @@ test('非法AI日期拒绝保存、不调用下游；刷新无隐式重发，主
   expect((await stored(page)).state).toEqual(before.state);
 });
 
-test('含糊相对年份在创角阶段清楚报错，无存档、无AI请求；玩家改为明确年份后才创建', async ({ page }) => {
+test('相对年份和履历完整交给同一次Story，不以中文正则阻断创角', async ({ page }) => {
   test.setTimeout(60000); await prepare(page); const server = await mock(page, '2015-07-08T14:00:00+08:00', '2015-07-08T14:02:00+08:00');
-  await creation(page, '故事发生在今年夏天。'); await page.getByRole('button', { name: '确认并创建存档', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('明确年份'); expect(server.calls).toHaveLength(0);
-  expect(await page.evaluate(async () => { const p = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(p), repo = await SaveRepository.open(); try { return await repo.list(); } finally { repo.close(); } })).toEqual([]);
-  await page.getByLabel('开局偏好（可选）').fill('故事发生在2015年夏天。');
-  await page.getByRole('button', { name: '确认并创建存档', exact: true }).click(); await ready(page);
-  expect(server.calls).toHaveLength(3); expect((await stored(page)).state.openingTimePending).toBe(true);
+  await creation(page, '故事发生在今年夏天。'); await page.getByRole('button', { name: '确认并创建存档', exact: true }).click(); await ready(page);
+  expect(server.calls).toHaveLength(3);
+  expect(record(server.calls[0].context.OPENING_TIME).playerPreference).toBe('故事发生在今年夏天。');
+  expect((await stored(page)).state.openingTimePending).toBe(true);
 });
 
-
-test('明确日期设定的真实开局请求不能接受其它年份；履历不覆盖约束且拒绝后不发下游', async ({ page }) => {
+test('年代优先指令完整传入Story；程序不二次判定自然语言年代', async ({ page }) => {
   test.setTimeout(60000); await prepare(page);
   const server = await mock(page, '2008-08-10T10:00:00+08:00', '2008-08-10T10:01:00+08:00');
   await creation(page, '日期定为2015年。', '人物背景：2001年出生，2023年毕业。');
-  await page.getByRole('button', { name: '确认并创建存档', exact: true }).click();
-  await expect(workflow(page).getByRole('alert')).toBeVisible();
-  expect(server.calls.map((call) => call.stage)).toEqual(['story']);
-  expect(record(server.calls[0].context.OPENING_TIME).playerConstraints).toEqual([expect.objectContaining({ year: 2015 })]);
-  const failed = await stored(page); expect(failed.draft.story).toBeUndefined(); expect(failed.state.openingTimePending).toBe(true);
-  expect(failed.state.protagonist.background).toBe('人物背景：2001年出生，2023年毕业。');
-  await page.reload(); await expect(workflow(page).getByRole('status')).toHaveText('需要处理');
-  expect(server.calls).toHaveLength(1); expect(await stored(page)).toEqual(failed);
+  await page.getByRole('button', { name: '确认并创建存档', exact: true }).click(); await ready(page);
+  expect(server.calls.map((call) => call.stage)).toEqual(['story', 'variables', 'world']);
+  expect(record(server.calls[0].context.OPENING_TIME)).toMatchObject({ playerPreference: '日期定为2015年。', playerBackground: '人物背景：2001年出生，2023年毕业。' });
+  const saved = await stored(page); expect(saved.state.openingTimePending).toBe(true);
+  await page.reload(); await ready(page); expect(server.calls).toHaveLength(3); expect(await stored(page)).toEqual(saved);
+});
+
+for (const kind of ['empty', 'npc', 'item']) test(`M8最小开局${kind}：无正文时间/重复时钟/逐字证据，发送后正式结算并自动下一回合`, async ({ page }) => {
+  test.setTimeout(60000); await prepare(page);
+  const startAt = '2015-07-08T14:00:00+08:00', endAt = '2015-07-08T14:02:00+08:00';
+  const server = await mock(page, startAt, endAt); server.plan.minimal = true; server.plan.variableCase = kind;
+  await creation(page, '故事发生在2015年夏天。');
+  await page.getByRole('button', { name: '确认并创建存档', exact: true }).click(); await ready(page);
+  const first = await stored(page);
+  expect(first.draft.variables!.result.commands.some((c) => c.type === 'SetWorldClock')).toBe(false);
+  expect(first.state.openingTimePending).toBe(true); expect(first.state.worldClock).toBe(pendingOpeningClock);
+  expect(server.calls[1].context.SAVE_STATE).toHaveProperty('worldClock', endAt);
+  expect(server.calls[2].context.TIME_WINDOW).toEqual({ from: startAt, to: endAt });
+  const rounds = kind === 'empty' ? 10 : 1;
+  for (let index = 1; index <= rounds; index++) {
+    await page.getByLabel('你的行动', { exact: true }).fill(`观察周围${index}`);
+    await page.getByRole('button', { name: '发送', exact: true }).click();
+    await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(index); await ready(page);
+    expect((await stored(page)).state.worldClock).toBe(endAt); // 普通回合合法空变更不固定加时。
+  }
+  const saved = await stored(page);
+  expect(saved.state.appliedCommands.filter((c) => c.commandId.startsWith('opening-clock:'))).toHaveLength(1);
+  expect(saved.state.journal).toHaveLength(rounds); expect(server.calls).toHaveLength((rounds + 1) * 3);
+  if (kind === 'npc') expect(saved.state.npc['new-npc']).toHaveProperty('onScene', true);
+  if (kind === 'item') expect(saved.state.items.gift.ownerRef).toEqual({ kind: 'protagonist', id: saved.state.protagonist.id });
+  await page.reload(); await ready(page); expect(await stored(page)).toEqual(saved); expect(server.calls).toHaveLength((rounds + 1) * 3);
 });

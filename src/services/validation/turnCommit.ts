@@ -5,9 +5,7 @@ import type { TurnDraft } from '../../domain/drafts';
 import type { GameState } from '../../domain/state';
 import { projectTurn } from '../../domain/turnProjection';
 import { parseVariables, parseWorld } from './aiOutputs';
-import { hasAffirmedTermination } from './worldEvidence';
 import { validateCommittedTime } from '../../domain/timePreflight';
-import { isNegatedFact } from '../../domain/factPolarity';
 
 // 提交边界重新验证，不信任持久化 validated；同一事务内仅运行同步纯计算。
 export function validateTurnCandidates(state: GameState, draft: TurnDraft) {
@@ -30,14 +28,6 @@ export function validateTurnCandidates(state: GameState, draft: TurnDraft) {
     const event = command.type === 'SaveEvent' ? command.event : undefined;
     const work = task ?? event!;
     const old = task ? state.tasks[work.id] : state.events[work.id];
-    const target = old ?? work;
-    const label = 'goal' in target ? target.goal : target.title;
-    const matches = task
-      ? Object.values(projected.tasks).filter((item) => item.goal === label)
-      : Object.values(projected.events).filter((item) => item.title === label);
-    const namesTarget =
-      command.evidence.includes(work.id) ||
-      (matches.length === 1 && command.evidence.includes(label));
     const refs = task ? [task.actorRef] : event!.actorRefs;
     requireData(
       refs.every((ref) => ref.kind !== 'npc' || Boolean(projected.npc[ref.id]?.onScene)),
@@ -77,7 +67,6 @@ export function validateTurnCandidates(state: GameState, draft: TurnDraft) {
         '未来行动尚未发生',
       );
     if (terminal) {
-      requireData(namesTarget, 'WORK_EVIDENCE', '完成事实未关联目标任务或事件');
       requireData(
         ready([
           ...(old?.prerequisites ?? []),
@@ -88,23 +77,9 @@ export function validateTurnCandidates(state: GameState, draft: TurnDraft) {
         'WORK_BLOCKED',
         '完成条件未满足',
       );
-      const match = /已(?:经)?(?:完成|结束|办妥|成功)|完成了|已结案/g;
-      requireData(
-        [...command.evidence.matchAll(match)].some(
-          (m) => !isNegatedFact(command.evidence, m.index, m.index + m[0].length),
-        ),
-        'WORK_EVIDENCE',
-        '缺少肯定成立的实际完成依据',
-      );
     }
-    if (work.status === 'cancelled') {
-      // 正文无需暴露后台 ID；已存在且名称无歧义时可用原任务目标/事件标题关联。
-      requireData(
-        old && namesTarget && hasAffirmedTermination(command.evidence),
-        'WORK_EVIDENCE',
-        '取消需绑定已有对象和肯定终止事实',
-      );
-    }
+    if (work.status === 'cancelled')
+      requireData(old, 'WORK_CONTEXT', '取消必须关联已有任务或事件');
     if (event) {
       requireData(
         event.sourceTurnIds.includes(draft.turnId) &&
@@ -139,7 +114,7 @@ export function validateTurnCandidates(state: GameState, draft: TurnDraft) {
         );
     }
   }
-  const commands = turnCommands(draft);
+  const commands = turnCommands(draft, state);
   requireData(
     new Set(commands.map((c) => c.commandId)).size === commands.length,
     'DUPLICATE_COMMAND',

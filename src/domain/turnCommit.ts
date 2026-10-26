@@ -1,7 +1,6 @@
 import { z } from 'zod';
-import { openingTimeBase } from './openingTime';
+import { projectTurn, variableCommandsForTurn } from './turnProjection';
 import { requireData } from './common';
-import { commitCommands } from './commands';
 import type { DomainCommand } from './commands';
 import { TurnDraftSchema } from './drafts';
 import type { TurnDraft } from './drafts';
@@ -30,15 +29,15 @@ export function completeTurnDraft(draft: TurnDraft) {
     draft.world.basedOnVariableRevision === draft.variables.candidateRevision
   );
 }
-export function turnCommands(draft: TurnDraft): DomainCommand[] {
+export function turnCommands(draft: TurnDraft, state: GameState): DomainCommand[] {
   return [
-    ...(draft.variables?.result.commands ?? []),
+    ...variableCommandsForTurn(state, draft, draft.variables?.result.commands ?? []),
     ...(draft.world?.result.worldCommands ?? []),
     ...(draft.world?.result.taskCommands ?? []),
     ...(draft.world?.result.eventCommands ?? []),
   ];
 }
-// 保留独立 commitCommands 的旧契约；正式剧情提交另验正向时间及纯历史视角例外。
+// 正式提交保持同一候选投影，另验历史回顾不修改当前世界。
 export function settleTurn(state: GameState, input: TurnDraft, now: string): GameState {
   const current = GameStateSchema.parse(state),
     draft = TurnDraftSchema.parse(input);
@@ -59,14 +58,14 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
   );
   requireData(completeTurnDraft(draft), 'TURN_INCOMPLETE', '需要完整合法的三阶段候选');
   validateCommittedTime(current, draft);
-  const commands = turnCommands(draft);
   // 不能混入同 turnId 先前独立 save 的命令，再把一次不完整结算伪装为新回合。
   requireData(
     !current.appliedCommands.some((entry) => entry.turnId === draft.turnId),
     'TURN_CONTEXT',
     '回合已有独立命令记录',
   );
-  const projected = commitCommands(openingTimeBase(current, draft), draft.turnId, current.revision, commands, now);
+  const projected = projectTurn(current, draft, [...draft.world!.result.worldCommands, ...draft.world!.result.taskCommands, ...draft.world!.result.eventCommands]);
+  projected.updatedAt = now;
   requireData(draft.story!.summary.trim(), 'MISSING_SUMMARY', '正文缺少有效摘要，请重新生成正文后重试');
   const shortMemory = MemoryEntrySchema.parse({
     id: draft.turnId,

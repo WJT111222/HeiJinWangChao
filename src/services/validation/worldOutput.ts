@@ -87,11 +87,12 @@ function cancellationEvidence(proof: WorldEvidence, sources: readonly WorldSourc
   }
 }
 export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnDraft) {
+  const original = state;
   state = openingTimeBase(state, draft);
   const checked = WorldResultSchema.safeParse(raw);
   requireWorld(checked.success && draft.story);
   const result = checked.data,
-    base = projectTurn(state, draft);
+    base = projectTurn(original, draft);
   const sources = worldSources(base, draft, state);
   const commands = [...result.worldCommands, ...result.taskCommands, ...result.eventCommands];
 
@@ -579,7 +580,7 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
     );
   }
   let projected: GameState;
-  try { projected = projectTurn(state, draft, commands); }
+  try { projected = projectTurn(original, draft, commands); }
   catch (error) { if (error instanceof DataError && error.code === 'NPC_TASK_CONFLICT') requireWorld(false, 'npc_task_conflict'); throw error; }
   requireWorld(new Set(result.timelineCandidates).size === result.timelineCandidates.length);
   requireWorld(

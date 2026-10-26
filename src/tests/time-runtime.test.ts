@@ -88,10 +88,11 @@ describe('真实三阶段、正式事务及恢复中的时间预检', () => {
     const result = await runner.generate({ draft, ...setup() }); const saved = await repo.commitTurn(submission(result.draft));
     expect(saved.state.worldClock).toBe('2027-01-01T08:00:00+08:00'); expect(saved.state.events.visitor).toEqual(state.events.visitor);
   });
-  it('缺少实际停止记录的有界正文拒绝保存；原时钟和旧草稿完整', async () => {
+  it('缺少停止规划不拒绝正常正文；正式时钟仍完整不提前推进', async () => {
     const { state, repo, draft } = await seed();
-    await expect(storyRunner(repo, async () => wireStory(false, true)).generate({ draft, ...setup() })).rejects.toMatchObject({ code: 'time_preflight' });
-    expect(await repo.loadDraft(state.saveId)).toEqual(draft); expect(await repo.load(state.saveId)).toEqual(state);
+    const saved = await storyRunner(repo, async () => wireStory(false, true)).generate({ draft, ...setup() });
+    expect(saved.story?.variableGuide).toEqual([]);
+    expect(await repo.loadDraft(state.saveId)).toEqual(saved); expect(await repo.load(state.saveId)).toEqual(state);
   });
   it('变量失败后刷新只恢复下游；预检不预先推进时间，也不重复支付正文', async () => {
     const { state, repo, factory, draft } = await seed(timeState(true)); let fail = true; const calls: string[] = [];
