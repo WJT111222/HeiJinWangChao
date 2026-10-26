@@ -205,7 +205,7 @@ describe('M8-P0A：场景数据约束与文学判断分离', () => {
       evidence: '同事手臂受伤。',
       changes: { healthText: '手臂受伤' },
     };
-    expect(() => parse([command], command.evidence, state)).not.not.toThrow();
+    expect(() => parse([command], command.evidence, state)).not.toThrow();
     expect(commitCommands(state, 'turn-a', 0, [command]).npc['npc-a'].healthText).toBe('手臂受伤');
   });
   it('分步更新由最终场景一致性验证，不匹配最后一句证据', () => {
@@ -231,7 +231,7 @@ describe('M8-P0A：场景数据约束与文学判断分离', () => {
     const explicit = 'npc-a和主角一起走进社区诊所。';
     expect(() =>
       parse(movement(explicit, { onScene: true, locationId: 'clinic' }), explicit, state),
-    ).not.not.toThrow();
+    ).not.toThrow();
   });
   it('没有组织线索不等于可以证明没有组织领域：保留九域安全兜底', () => {
     const state = game();
