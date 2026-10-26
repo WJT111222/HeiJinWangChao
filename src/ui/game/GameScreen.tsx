@@ -1,3 +1,4 @@
+import { openingTimeSelection } from '../../domain/openingTime';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { GameState } from '../../domain/state';
 import type { CompanionProfile } from '../../services/local/companionProfile';
@@ -59,6 +60,9 @@ export function GameScreen({
   onCommitted: (result: TurnCommitResult) => void;
   onMemorySaved: (state: GameState) => void;
 }) {
+  const openingTime = useMemo(() => {
+    try { return draft && openingTimeSelection(state, draft); } catch { return undefined; }
+  }, [state, draft]);
   const [panel, setPanel] = useState<PanelName | '人物档案' | '经济与资产'>();
   const compactSidebars = useSyncExternalStore(subscribeSidebarSize, () => window.matchMedia(sidebarMedia).matches, () => false);
   const [input, setInput] = useState('');
@@ -232,7 +236,8 @@ export function GameScreen({
               <p className="eyebrow">YOUR LIFE</p>
               <span className="tag">第 {state.turnNumber} 回合</span>
             </div>
-            <p className="game-clock">{dateTime(state.worldClock)}</p>
+            <p className="game-clock">{state.openingTimePending ? '开局时间待确认' : dateTime(state.worldClock)}</p>
+            {openingTime && <p className="field-hint">候选时间：{dateTime(openingTime.endAt)}（未正式结算）</p>}
             <p className="location">⌖ {state.locations[hero.locationId]?.name || '地点未确认'}</p>
             <div className="weather">
               <span>{state.weatherText || '天气待确认'}</span>

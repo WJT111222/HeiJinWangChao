@@ -1,3 +1,4 @@
+import { openingTimeBase } from '../../domain/openingTime';
 import { StorySchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
 import { VariableResultSchema } from '../../domain/drafts';
@@ -84,6 +85,8 @@ function simulate(state: GameState, turnId: string, commands: DomainCommand[]) {
   }
 }
 export function parseVariables(text: string, state: GameState, draft: TurnDraft) {
+  const timeState = state;
+  state = openingTimeBase(state, draft);
   const checked = VariableResultSchema.safeParse(json(text));
   if (!checked.success || !draft.story) throw new AiError('invalid_output');
   const facts = checked.data.commands.map((command) => fingerprint({ ...command, commandId: '' }));
@@ -104,7 +107,7 @@ export function parseVariables(text: string, state: GameState, draft: TurnDraft)
       const person = permissionState.npc[command.npcId];
       if (person) permissionState.npc[command.npcId] = { ...person, onScene: true };
     }
-  try { validateTimeCommands(state, draft, checked.data.commands); }
+  try { validateTimeCommands(timeState, draft, checked.data.commands); }
   catch { throw new AiError('time_preflight'); }
   for (const command of checked.data.commands) {
     evidenceCheck(command, draft.story.narrative);

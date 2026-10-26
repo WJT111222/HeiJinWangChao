@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { openingTimeBase, openingTimeSelection } from './openingTime';
 import { GameTimeSchema, requireData } from './common';
 import type { GameState } from './state';
 import type { TurnDraft } from './drafts';
@@ -89,6 +90,7 @@ function completed(state: GameState, ref: string) {
   return task?.status === 'completed' || event?.status === 'resolved';
 }
 export function timePreflight(state: GameState, action: string) {
+  requireData(!state.openingTimePending, 'OPENING_TIME', '尚未确定开局时间，不能执行普通时间预检');
   const intent = timeIntent(state.worldClock, action), end = intent.targetAt ?? intent.endWindow?.to;
   const candidates: TimeCandidate[] = [];
   if (end) for (const event of Object.values(state.events)) {
@@ -145,11 +147,15 @@ export function historicalPerspective(state: GameState, draft: Pick<TurnDraft, '
   return proof;
 }
 export const turnTimePolicy = {
-  normal: '每个正式剧情回合（包括开局）必须正向推进世界时钟。变量AI按正文实际行动/对话和世界状态估算耗时，可为秒；无需正文包含时间词，无固定步长。漏掉SetWorldClock不能正式提交。开局从已给基线初始化到实际场景结束时间，不再叠加固定耗时。',
+  normal: '每个正式剧情回合（包括开局）必须正向推进世界时钟。变量AI按正文实际行动/对话和世界状态估算耗时，可为秒；无需正文包含时间词，无固定步长。漏掉SetWorldClock不能正式提交。待定开局按OPENING_TIME先确定起点和本幕实际结束时间；已确定的旧开局从原基线推进，不再叠加固定耗时。',
   retrospective: '唯一零耗时例外：玩家明确要求其他已有NPC视角，且只回顾此前发生的事。正文在变量规划用group=time、subjectHint=time:retrospective，observedFact为JSON：{npcId,perspectiveRequest,pastRequest,temporalScope:"past_only",currentPlotAdvances:false}。两段Request分别完整引用玩家要求切换人物和回顾过去的不同原文，不能引用AI自插回忆；textEvidence引用回顾正文。当前人物视角、NPC讲往事、现在的其他人物视角、过去与现在混合均不适用；不明确时按普通正向时间处理。纯回顾不更新任何当前事实或推演世界，仍遵守既有事实和NPC认知边界，不授予私有知识。',
 };
 export function timeOutcome(state: GameState, draft: Pick<TurnDraft, 'userInput' | 'turnKind' | 'story'>, required = false) {
   if (!draft.story) return undefined;
+  if (state.openingTimePending) {
+    const selected = openingTimeSelection(state, draft)!;
+    return { at: selected.endAt, evidence: selected.evidence };
+  }
   if (historicalPerspective(state, draft)) return undefined;
   if (draft.turnKind !== 'regular') return undefined;
   const plan = timePreflight(state, draft.userInput), end = plan.targetAt ?? plan.endWindow?.to;
@@ -166,6 +172,13 @@ export function timeOutcome(state: GameState, draft: Pick<TurnDraft, 'userInput'
   return { at: guide.observedFact, evidence };
 }
 export function validateTimeCommands(state: GameState, draft: TurnDraft, commands: readonly DomainCommand[]) {
+  const opening = openingTimeSelection(state, draft);
+  if (opening) {
+    const clocks = commands.filter((command) => command.type === 'SetWorldClock');
+    requireData(clocks.length === 1 && Date.parse(clocks[0].worldClock) === Date.parse(opening.endAt),
+      'OPENING_TIME', '变量时间必须与本版开局的实际结束时间一致');
+    return;
+  }
   if (historicalPerspective(state, draft)) {
     requireData(commands.every((command) => command.type === 'SetWorldClock' && Date.parse(command.worldClock) === Date.parse(state.worldClock)),
       'TIME_PREFLIGHT', '历史回顾不能更改当前世界或时钟');
@@ -189,6 +202,7 @@ export function validateHistoricalWorld(state: GameState, draft: TurnDraft, resu
 export function validateCommittedTime(state: GameState, draft: TurnDraft) {
   const commands = draft.variables?.result.commands ?? [];
   validateTimeCommands(state, draft, commands);
+  state = openingTimeBase(state, draft);
   if (draft.world) validateHistoricalWorld(state, draft, draft.world.result);
   if (historicalPerspective(state, draft)) return;
   const clocks = commands.filter((command) => command.type === 'SetWorldClock');

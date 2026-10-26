@@ -1,3 +1,4 @@
+import { chinaCalendar, openingTimeBase, openingTimeContext, openingTimeSelection } from '../domain/openingTime';
 import { GameStateSchema } from '../domain/state';
 import type { GameState } from '../domain/state';
 import { TurnDraftSchema } from '../domain/drafts';
@@ -32,16 +33,13 @@ export interface ComposeInput {
   cotAllowed?: boolean;
 }
 export function worldWeekday(worldClock: string) {
-  const value = new Date(worldClock);
-  if (!Number.isFinite(value.getTime())) throw new AiError('placeholder');
-  return new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', weekday: 'long' }).format(
-    value,
-  );
+  return chinaCalendar(worldClock).weekday;
 }
 export function checkedInput(input: ComposeInput): ComposeInput {
   try {
     const state = GameStateSchema.parse(input.state);
     const settings = SettingsSchema.parse(input.settings);
+    if (state.openingTimePending && input.mode !== 'opening') throw new Error();
     const draft = input.draft ? TurnDraftSchema.parse(input.draft) : undefined;
     if (
       draft &&
@@ -118,7 +116,12 @@ function withoutPrivateMemories(state: GameState): GameState {
 }
 const npcKnowledgePolicy = '内部角色认知按ownerNpcId隔离，只属于该人物。亲历/转述/推测/来源未分类不能混同世界真值；总结是历史认知，较新原始记忆中的纠正优先。不能自动传播给其他人物或写入公开线索、正文、日志。总结只能为所属NPC的计划提供参考，不能直接证明完成、到账、关系变化或新增世界事实。worldEventOnly事件及其参与者列表不授予NPC知情；人物行动和记忆须引用自己独立合法的观察或转述来源，事件记录仅作后台因果资料。';
 export function contextFor(input: ComposeInput): Record<string, unknown> {
-  const { state, stage, settings, draft } = input;
+  const { stage, settings, draft } = input;
+  const original = input.state;
+  const candidateStage = stage === 'variables' || stage === 'world';
+  const state = candidateStage && original.openingTimePending && draft ? openingTimeBase(original, draft) : original;
+  const opening = stage === 'story' ? openingTimeContext(original, input.userInput)
+    : candidateStage && original.openingTimePending && draft ? { status: 'candidate', ...openingTimeSelection(original, draft) } : undefined;
   if (stage === 'story') {
     const events = Object.values(state.events).filter((event) => event.visibility === 'known');
     const locations = new Set<string>([state.protagonist.locationId]);
@@ -136,7 +139,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         saveId: state.saveId,
         revision: state.revision,
         turnNumber: state.turnNumber,
-        worldClock: state.worldClock,
+        worldClock: state.openingTimePending ? null : state.worldClock,
         protagonist: state.protagonist,
         weatherText: state.weatherText,
         environmentText: state.environmentText,
@@ -186,6 +189,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         resolutionText: event.resolutionText,
       })),
       PLAYER_ACTION: input.userInput,
+      OPENING_TIME: opening,
       TURN_TIME_POLICY: turnTimePolicy,
       TIME_PREFLIGHT: preflight ? {
         ...preflight,
@@ -210,6 +214,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         executionRevision: draft!.executionRevision,
         requestRevision: draft!.stageRequestRevisions.variables,
       },
+      OPENING_TIME: opening,
       TURN_TIME_POLICY: turnTimePolicy,
       HISTORICAL_PERSPECTIVE: historicalPerspective(state, draft!),
       PLAYER_ACTION: draft!.userInput,
@@ -241,6 +246,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         requestRevision: draft!.stageRequestRevisions.world,
         basedOnVariableRevision: draft!.variables?.candidateRevision,
       },
+      OPENING_TIME: opening,
       TURN_TIME_POLICY: turnTimePolicy,
       HISTORICAL_PERSPECTIVE: historicalPerspective(state, draft!),
       BASE_SAVE_REVISION: state.revision,

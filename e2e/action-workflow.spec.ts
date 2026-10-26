@@ -61,8 +61,11 @@ async function mock(page: Page) {
     if (plan.hold === stage) await plan.gate;
     if (plan.failure === stage && plan.network) { await route.abort('failed'); return; }
     const state = record(ctx.SAVE_STATE), number = Number(state.turnNumber) + 1;
+    const pending = Boolean(ctx.OPENING_TIME && record(ctx.OPENING_TIME).status === 'pending');
+    const anchor = pending ? '2015年7月8日14:00，重庆街头。' : '';
+    const openingGuide = pending ? [{ group: 'time', subjectHint: 'time:opening', observedFact: JSON.stringify({ startAt: '2015-07-08T14:00:00+08:00', endAt: '2015-07-08T14:01:00+08:00' }), textEvidence: anchor }] : [];
     const text = plan.failure === stage && !plan.status ? '{invalid-json' : stage === 'story'
-      ? `<thinking>本轮创作提纲：保持连续，按当前行动呈现事实。</thinking><正文>第${number}幕。主角在街边观察周围，街道上人来人往。</正文><短期记忆>${plan.badSummary ? '' : `主角第${number}次在街边观察环境。`}</短期记忆><变量规划>[]</变量规划>`
+      ? `<thinking>本轮创作提纲：保持连续，按当前行动呈现事实。</thinking><正文>${anchor}第${number}幕。主角在街边观察周围，街道上人来人往。</正文><短期记忆>${plan.badSummary ? '' : `主角第${number}次在街边观察环境。`}</短期记忆><变量规划>${JSON.stringify(openingGuide)}</变量规划>`
       : JSON.stringify(stage === 'variables' ? { commands: [{ type: 'SetWorldClock', commandId: 'clock', worldClock: new Date(Date.parse(string(state.worldClock)) + 60000).toISOString(), evidence: '主角在街边观察周围，街道上人来人往。' }], rejectedSuggestions: [], unresolved: [] }
         : { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [{ text: '尚未公开的内部线索' }], timelineCandidates: [], unresolved: [] });
     await route.fulfill({ status: plan.failure === stage ? plan.status ?? 200 : 200,

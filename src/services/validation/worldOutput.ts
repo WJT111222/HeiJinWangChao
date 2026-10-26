@@ -1,3 +1,4 @@
+import { openingTimeBase } from '../../domain/openingTime';
 import { hasKnownPlayerConnection } from '../../domain/npc/contactReview';
 import { DataError } from '../../domain/common';
 import { orderWorldCommands } from './worldDependencies';
@@ -86,6 +87,7 @@ function cancellationEvidence(proof: WorldEvidence, sources: readonly WorldSourc
   }
 }
 export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnDraft) {
+  state = openingTimeBase(state, draft);
   const checked = WorldResultSchema.safeParse(raw);
   requireWorld(checked.success && draft.story);
   const result = checked.data,

@@ -376,6 +376,9 @@ describe('真实资源加载与消息组装', () => {
     };
     const state = buildCreationState(form, defaultSettings());
     const archive = initialCompanionProfile(state)!;
+    // 已提交历史夹具，非未确认的新开局。
+    delete state.openingTimePending;
+    state.worldClock = gameTime;
     state.turnNumber = 1;
     state.revision = 1;
     state.journal = [

@@ -130,7 +130,7 @@ export const money = (value: number | null) =>
     : `${new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value / 100)} 元`;
 export const dateTime = (time: string) =>
   new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Shanghai',
+    timeZone: 'Etc/GMT-8',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

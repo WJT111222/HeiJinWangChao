@@ -1,3 +1,4 @@
+import { openingTimeBase } from './openingTime';
 import { commitCommands } from './commands';
 import type { DomainCommand } from './commands';
 import type { TurnDraft } from './drafts';
@@ -12,7 +13,7 @@ export function projectTurn(
   const variables =
     draft.variables?.validation === 'validated' ? draft.variables.result.commands : [];
   return commitCommands(
-    state,
+    openingTimeBase(state, draft),
     draft.turnId,
     state.revision,
     [...variables, ...worldCommands],
