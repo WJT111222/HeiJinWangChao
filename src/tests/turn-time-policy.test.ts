@@ -40,11 +40,12 @@ describe('每个正式剧情回合的可变耗时', () => {
     const prompt = await composePrompt({ state, draft, stage: 'variables', mode: 'regular', userInput: draft.userInput, settings: defaultSettings() });
     expect(prompt.context.PLAYER_ACTION).toBe(draft.userInput);
   });
-  it('普通回合即使候选结构合法，也不能零耗时正式提交', async () => {
+  it('普通回合允许合法零耗时，不增加固定步长', async () => {
     const { repo, state } = await repository();
     const draft = await completeDraft(repo, { narrative: '你喝了一口可乐。', variables: variables() });
-    await expect(repo.commitTurn(submission(draft))).rejects.toThrow();
-    expect(await repo.load(state.saveId)).toEqual(state);
+    const result = await repo.commitTurn(submission(draft));
+    expect(result.state.worldClock).toBe(state.worldClock);
+    expect(result.state.turnNumber).toBe(state.turnNumber + 1);
   });
   it.each([false, true])('opening=%s：正式正向推进一次，刷新/重复提交不叠加耗时', async (opening) => {
     const { repo, state } = await repository(opening);
@@ -55,11 +56,10 @@ describe('每个正式剧情回合的可变耗时', () => {
     expect(await repo.commitTurn(input)).toMatchObject({ replayed: true, state: result.state });
     expect((await repo.loadGame(state.saveId)).state).toEqual(result.state);
   });
-  it.each([false, true])('opening=%s：不允许漏时间，也不允许倒退，纯结算入口也不能绕过', async (opening) => {
+  it.each([false, true])('opening=%s：允许零耗时但不能倒退，两个入口均保护时钟', async (opening) => {
     const { repo, state } = await repository(opening);
     const draft = await completeDraft(repo, { narrative: '你喝了一口可乐。', variables: variables() });
-    expect(() => settleTurn(state, draft, state.updatedAt)).toThrow();
-    await expect(repo.commitTurn(submission(draft))).rejects.toMatchObject({ code: 'TURN_TIME_REQUIRED' });
+    expect(settleTurn(state, draft, state.updatedAt).worldClock).toBe(state.worldClock);
     const backwards = await completeDraft(repo, { narrative: '你喝了一口可乐。', variables: variables('2026-12-31T22:59:59+08:00') });
     expect(() => parseVariables(JSON.stringify(backwards.variables!.result), state, backwards)).toThrow();
     await expect(repo.commitTurn(submission(backwards))).rejects.toThrow();
@@ -125,11 +125,11 @@ describe('其他人物纯历史视角的唯一零耗时例外', () => {
     expect(() => historicalPerspective(state, draft)).toThrow();
     await expect(repo.commitTurn(submission(draft))).rejects.toThrow();
   });
-  it('AI插入闪回而无玩家要求，仍必须推进当前时间', async () => {
+  it('AI插入闪回不会取得过去视角特权，合法零耗时仍可提交', async () => {
     const { repo, state } = await repository();
     const draft = await completeDraft(repo, { narrative: pastStory + '你继续观察周围。', variables: variables() });
-    await expect(repo.commitTurn(submission(draft))).rejects.toMatchObject({ code: 'TURN_TIME_REQUIRED' });
-    expect(await repo.load(state.saveId)).toEqual(state);
+    expect(historicalPerspective(state, draft)).toBeUndefined();
+    expect((await repo.commitTurn(submission(draft))).state.worldClock).toBe(state.worldClock);
   });
   it('例外不开放现在的变量、记忆或世界候选写入，也不能借回忆推进几个小时', async () => {
     const { repo, state } = await repository(), draft = await retrospective(repo);

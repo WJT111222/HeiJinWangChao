@@ -219,7 +219,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       HISTORICAL_PERSPECTIVE: historicalPerspective(state, draft!),
       PLAYER_ACTION: draft!.userInput,
       SELECTED_VARIABLE_DOMAINS: input.domains ?? [],
-      SAVE_STATE: withoutPrivateMemories(state),
+      SAVE_STATE: withoutPrivateMemories(opening?.status === 'candidate' ? { ...state, worldClock: openingTimeSelection(original, draft!)!.endAt } : state),
       NPC_KNOWLEDGE_POLICY: npcKnowledgePolicy,
       NPC_KNOWLEDGE: Object.values(state.npc).filter((npc) => npc.onScene).map((npc) => npcKnowledgeContext(state, npc.id)),
       STORY_RESULT: draft!.story,
@@ -228,10 +228,10 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
     };
   if (stage === 'world') {
     const variablePending = !draft?.variables || draft.variables.validation !== 'validated';
-    let temporary = state;
+    let temporary = original.openingTimePending ? projectTurn(original, draft!) : state;
     if (!variablePending) {
       try {
-        temporary = projectTurn(state, draft!);
+        temporary = projectTurn(original, draft!);
       } catch {
         throw new AiError('invalid_output');
       }

@@ -1,4 +1,4 @@
-import { openingTimeBase } from '../domain/openingTime';
+import { openingTimeSelection } from '../domain/openingTime';
 import { selectPromptModules } from './selection';
 import { projectPromptOrder } from './order';
 import type { PromptModule } from './manifest';
@@ -44,7 +44,7 @@ export async function composePrompt(unchecked: ComposeInput) {
   const context = contextFor(input);
   const clock =
     typeof context.worldClock === 'string' ? context.worldClock : input.state.openingTimePending
-      ? input.stage === 'variables' || input.stage === 'world' ? openingTimeBase(input.state, input.draft!).worldClock : undefined
+      ? input.stage === 'variables' || input.stage === 'world' ? openingTimeSelection(input.state, input.draft!)?.endAt : undefined
       : input.state.worldClock;
   const replacements: Record<string, string | number | undefined> = {
     playerName: input.state.protagonist.name,

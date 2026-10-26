@@ -536,7 +536,7 @@ describe('最终重验与存储兼容', () => {
     });
     await unchanged(submission(draft));
   });
-  it.each([true, false])('现场终止绑定原目标，不要求正文展示后台 ID：绑定=%s', async (bound) => {
+  it.each([true, false])('现场终止由明确task.id绑定，不要求说明逐字命中目标：原文=%s', async (bound) => {
     await repo.delete('save-a', 0);
     const state = worldState();
     state.tasks.future = {
@@ -562,13 +562,11 @@ describe('最终重验与存储兼容', () => {
         ],
       },
     });
-    if (!bound) await unchanged(submission(draft));
-    else
-      expect((await repo.commitTurn(submission(draft))).state.tasks.future.status).toBe(
+    expect((await repo.commitTurn(submission(draft))).state.tasks.future.status).toBe(
         'cancelled',
       );
   });
-  it.each([true, false])('现场任务完成必须关联同一目标：绑定=%s', async (bound) => {
+  it.each([true, false])('现场任务由稳定ID与时间/前置条件约束：原文=%s', async (bound) => {
     await repo.delete('save-a', 0);
     const state = worldState();
     state.tasks.appointment = { ...task('appointment'), goal: '预约' };
@@ -589,11 +587,9 @@ describe('最终重验与存储兼容', () => {
         ],
       },
     });
-    if (bound)
-      expect((await repo.commitTurn(submission(draft))).state.tasks.appointment.status).toBe(
+    expect((await repo.commitTurn(submission(draft))).state.tasks.appointment.status).toBe(
         'completed',
       );
-    else await unchanged(submission(draft));
   });
   it('V1 IndexedDB 升级仅加回执表，旧正式/草稿完全保留', async () => {
     repo.close();

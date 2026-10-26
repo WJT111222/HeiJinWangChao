@@ -1,3 +1,4 @@
+import { DataError } from '../../domain/common';
 export type AiErrorCode =
   | 'configuration'
   | 'credentials'
@@ -12,6 +13,11 @@ export type AiErrorCode =
   | 'empty'
   | 'output_limit'
   | 'stream_interrupted'
+  | 'schema_fields'
+  | 'data_integrity'
+  | 'amount_balance'
+  | 'time_data'
+  | 'candidate_conflict'
   | 'invalid_json'
   | 'invalid_output'
   | 'unsupported'
@@ -40,6 +46,11 @@ const messages: Record<AiErrorCode, string> = {
   empty: '服务没有返回可用文本。',
   output_limit: '模型达到输出上限，规划、原生思考与正文可能共享预算；本次结果不完整且未保存。请检查最大输出 Token，程序不会自动提高付费上限或重发。',
   stream_interrupted: '流式响应未完整结束，不能作为有效结果。',
+  schema_fields: '变量候选字段或类型不符合命令Schema，候选未保存。',
+  data_integrity: '变量候选的实体引用、归属、数量或状态不合法，候选未保存。',
+  amount_balance: '变量候选的金额、账户余额或债务数据不合法，候选未保存。',
+  time_data: '候选日期无效、时间倒退或结构化时钟发生冲突，候选未保存。',
+  candidate_conflict: '存档版本、命令或候选存在冲突，请重新读取后继续。',
   invalid_json: '响应不是完整合法的 JSON。',
   invalid_output: '模型输出未通过结构或事实校验，候选未被接受。',
   unsupported: '当前协议不支持此请求特性，请检查兼容配置。',
@@ -54,14 +65,17 @@ export class AiError extends Error {
   constructor(
     public readonly code: AiErrorCode,
     public readonly status?: number,
+    public readonly details?: { fieldPath?: string; commandType?: string; commandIndex?: number },
   ) {
-    super(messages[code]);
+    super(messages[code] + (details?.fieldPath ? ` 字段：${details.fieldPath}${details.commandType ? `（${details.commandType}，第${(details.commandIndex ?? 0) + 1}条）` : ''}。` : ''));
     this.name = 'AiError';
   }
 }
 // 不返回供应商正文、URL、请求头、原始异常或 Zod 错误内容。
 export function safeAiError(error: unknown) {
   return error instanceof AiError
-    ? { code: error.code, message: error.message, status: error.status }
+    ? { code: error.code, message: error.message, status: error.status, ...(error.details ? { details: error.details } : {}) }
+    : error instanceof DataError && ['REVISION_CONFLICT', 'DRAFT_CONFLICT', 'ENTITY_CONFLICT', 'COMMAND_CONFLICT', 'DUPLICATE_COMMAND'].includes(error.code)
+      ? { code: 'candidate_conflict', message: messages.candidate_conflict, status: undefined }
     : { code: 'unknown', message: '操作失败，请检查配置或浏览器存储权限后重试。' };
 }

@@ -45,7 +45,8 @@ function evidenceContext(narrative: string, index: number, length: number) {
   }
   return { sentence, sentenceStart: left, dialogue: dialogue || quotes.length > 0 };
 }
-export function factEvidence(command: DomainCommand, narrative: string) {
+// 仅世界来源验证使用；变量候选不走文学词法判断。
+export function worldFactEvidence(command: DomainCommand, narrative: string) {
   let index = narrative.indexOf(command.evidence);
   let safe = false;
   while (index >= 0) {
@@ -73,39 +74,19 @@ export function factEvidence(command: DomainCommand, narrative: string) {
     index = narrative.indexOf(command.evidence, index + 1);
   }
   if (!safe) throw new AiError('invalid_output');
-  if (command.type === 'UpdateNpc' && command.affinityChange) {
-    if (
-      !narrative.includes(command.affinityChange.reason) ||
-      /寒暄|打招呼|问好|你好|客套/.test(command.evidence)
-    )
-      throw new AiError('invalid_output');
-  }
-  if (
-    command.type === 'UpdateProtagonist' &&
-    command.changes.skills &&
-    !/长期|多年|训练|培训|考核|资格|认证|毕业|学习.*(?:完成|掌握)/.test(command.evidence)
-  )
-    throw new AiError('invalid_output');
 }
-export function variablePermission(command: DomainCommand, state: GameState, draft: TurnDraft) {
+export function variablePermission(command: DomainCommand, state: GameState, draft: TurnDraft, interactionNpcIds: ReadonlySet<string> = new Set()) {
   if (!draft.story) throw new AiError('configuration');
   const scene = (id: string) => {
     const person = state.npc[id];
     return (
       person &&
-      (person.onScene ||
-        (/电话|通话|视频|短信|来信/.test(command.evidence) &&
-          [person.id, person.name, ...person.aliases].some((name) =>
-            command.evidence.includes(name),
-          )))
+      (person.onScene || interactionNpcIds.has(id))
     );
   };
   if (
     command.type === 'CreateNpc' &&
-    (!command.npc.onScene ||
-      ![command.npc.name, command.npc.id, ...command.npc.aliases].some((name) =>
-        command.evidence.includes(name),
-      ))
+    !command.npc.onScene
   )
     throw new AiError('permission');
   if (
@@ -117,27 +98,16 @@ export function variablePermission(command: DomainCommand, state: GameState, dra
     throw new AiError('permission');
   if ((command.type === 'UpdateNpc' || command.type === 'RecordNpcMemory') && !scene(command.npcId))
     throw new AiError('permission');
-  if (command.type === 'RecordNpcMemory') {
-    if (
-      command.knowledgeKind === 'observed' &&
-      (uncertain.test(command.evidence) || isNegatedFact(command.evidence))
-    )
-      throw new AiError('invalid_output');
-    if (!command.evidence.includes(command.memory.knowledgeSource))
-      throw new AiError('invalid_output');
-  }
   if (command.type === 'SaveTask' && (command.task.resolution !== undefined || command.task.handoff !== undefined))
     throw new AiError('permission'); // 场外成果/交接只能经世界协议验证，现场旧任务仍走原流程。
   if (command.type === 'RetireNpc') throw new AiError('permission');
-  if (command.type === 'RegisterContact' && (!scene(command.npcId) ||
-    ![command.npcId, state.npc[command.npcId]?.name].some((name) => name && command.evidence.includes(name))))
+  if (command.type === 'RegisterContact' && !scene(command.npcId))
     throw new AiError('permission');
   const ownerAllowed = (ref: { kind: string; id: string } | undefined | null) =>
     !ref ||
     (ref.kind === 'protagonist' && ref.id === state.protagonist.id) ||
     (ref.kind === 'npc' && scene(ref.id)) ||
-    (ref.kind === 'organization' &&
-      command.evidence.includes(state.organizations[ref.id]?.name ?? '\0'));
+    (ref.kind === 'organization' && Boolean(state.organizations[ref.id]));
   if (
     (command.type === 'UpdateItem' || command.type === 'LoseItem') &&
     !ownerAllowed(state.items[command.itemId]?.ownerRef)
@@ -147,43 +117,4 @@ export function variablePermission(command: DomainCommand, state: GameState, dra
     throw new AiError('permission');
   if (command.type === 'TransferItem' && (!ownerAllowed(command.from) || !ownerAllowed(command.to)))
     throw new AiError('permission');
-}
-export function economicAmount(command: DomainCommand): number | undefined {
-  switch (command.type) {
-    case 'PurchaseItem':
-    case 'PurchaseVehicle':
-      return command.price;
-    case 'TransferFunds':
-    case 'RepayDebt':
-    case 'SpendFunds':
-      return command.amount;
-    case 'ReceiveIncome':
-      return command.income.amount;
-    case 'Borrow':
-      return command.debt.principal;
-    default:
-      return undefined;
-  }
-}
-export function completedPayment(command: DomainCommand) {
-  if (economicAmount(command) === undefined) return;
-  if (
-    !/已|完成|付清|支付|付了|花了|花费|扣除|到账|收到|转入|转出|归还|偿还|借到/.test(
-      command.evidence,
-    ) ||
-    [...command.evidence.matchAll(/(\d+(?:\.\d{1,2})?)\s*(元|分)/g)].length !== 1
-  )
-    throw new AiError('invalid_output');
-  const account =
-    command.type === 'TransferFunds'
-      ? undefined
-      : command.type === 'ReceiveIncome'
-        ? command.income.account
-        : 'account' in command
-          ? command.account
-          : undefined;
-  const cash = /现金|零钱|纸币/.test(command.evidence),
-    online = /线上|电子|微信|支付宝|银行卡|银行账户/.test(command.evidence);
-  if (command.type === 'TransferFunds' ? !cash || !online : account === 'cash' ? !cash : !online)
-    throw new AiError('invalid_output');
 }

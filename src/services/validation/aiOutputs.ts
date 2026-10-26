@@ -4,11 +4,12 @@ import type { GameState } from '../../domain/state';
 import { VariableResultSchema } from '../../domain/drafts';
 import type { TurnDraft } from '../../domain/drafts';
 import { commitCommands, fingerprint } from '../../domain/commands';
-import type { DomainCommand } from '../../domain/commands';
 import { AiError } from '../ai/errors';
 import { validateWorldOutput } from './worldOutput';
 import type { Settings } from '../../ui/settings/model';
-import { economicAmount, factEvidence, variablePermission, completedPayment } from './evidence';
+import { variablePermission } from './evidence';
+import { variableCommandsForTurn } from '../../domain/turnProjection';
+import { variableValidationError } from './variableDiagnostics';
 import { assessSummary } from '../../domain/memories/summary';
 import { validateTimeCommands, validateHistoricalWorld } from '../../domain/timePreflight';
 
@@ -58,39 +59,16 @@ export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', se
 export function parseStory(text: string, mode: 'opening' | 'regular', settings: Settings) {
   return parseStoryEnvelope(text, mode, settings).story;
 }
-export function checkMoneyEvidence(command: DomainCommand) {
-  const amount = economicAmount(command);
-  const matches = [...command.evidence.matchAll(/(\d+(?:\.\d{1,2})?)\s*(元|分)/g)];
-  // 只对一处明确货币证据比较；复杂报价/多金额不臆测事实对应关系。
-  if (amount === undefined || matches.length !== 1) return;
-  const [, value, unit] = matches[0];
-  const [integer, fraction = ''] = value.split('.');
-  const cents =
-    unit === '元'
-      ? BigInt(integer) * 100n + BigInt(fraction.padEnd(2, '0'))
-      : !fraction
-        ? BigInt(integer)
-        : -1n;
-  if (cents !== BigInt(amount)) throw new AiError('money_unit');
-}
-function evidenceCheck(command: DomainCommand, facts: string) {
-  if (!facts.includes(command.evidence)) throw new AiError('invalid_output');
-  checkMoneyEvidence(command);
-}
-function simulate(state: GameState, turnId: string, commands: DomainCommand[]) {
-  try {
-    return commitCommands(state, turnId, state.revision, commands, state.updatedAt);
-  } catch {
-    throw new AiError('invalid_output');
-  }
-}
 export function parseVariables(text: string, state: GameState, draft: TurnDraft) {
   const timeState = state;
-  state = openingTimeBase(state, draft);
-  const checked = VariableResultSchema.safeParse(json(text));
-  if (!checked.success || !draft.story) throw new AiError('invalid_output');
+  const raw = json(text);
+  const checked = VariableResultSchema.safeParse(raw);
+  if (!checked.success) throw variableValidationError(checked.error, raw);
+  if (!draft.story) throw new AiError('candidate_conflict');
+  try { state = openingTimeBase(state, draft); } catch (error) { throw variableValidationError(error); }
+  if (new Set(checked.data.commands.map((c) => c.commandId)).size !== checked.data.commands.length) throw new AiError('candidate_conflict');
   const facts = checked.data.commands.map((command) => fingerprint({ ...command, commandId: '' }));
-  if (new Set(facts).size !== facts.length) throw new AiError('invalid_output');
+  if (new Set(facts).size !== facts.length) throw new AiError('candidate_conflict');
   const permissionState = {
     ...state,
     npc: {
@@ -107,15 +85,13 @@ export function parseVariables(text: string, state: GameState, draft: TurnDraft)
       const person = permissionState.npc[command.npcId];
       if (person) permissionState.npc[command.npcId] = { ...person, onScene: true };
     }
-  try { validateTimeCommands(timeState, draft, checked.data.commands); }
-  catch { throw new AiError('time_preflight'); }
-  for (const command of checked.data.commands) {
-    evidenceCheck(command, draft.story.narrative);
-    factEvidence(command, draft.story.narrative);
-    completedPayment(command);
-    variablePermission(command, permissionState, draft);
-  }
-  simulate(state, draft.turnId, checked.data.commands);
+  try {
+    validateTimeCommands(timeState, draft, checked.data.commands);
+    const interactions = new Set(checked.data.commands.flatMap((command) =>
+      command.type === 'UpdateNpc' && command.changes.lastInteractionAt ? [command.npcId] : []));
+    for (const command of checked.data.commands) variablePermission(command, permissionState, draft, interactions);
+    commitCommands(state, draft.turnId, state.revision, variableCommandsForTurn(timeState, draft, checked.data.commands), state.updatedAt);
+  } catch (error) { throw variableValidationError(error); }
   return checked.data;
 }
 export function parseWorld(text: string, state: GameState, draft: TurnDraft) {

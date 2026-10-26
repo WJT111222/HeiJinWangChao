@@ -98,7 +98,7 @@ export class VariableStage {
           basis.executionRevision !== draft.executionRevision ||
           basis.stageRequestRevision !== draft.stageRequestRevisions.variables
         )
-          throw new AiError('invalid_output');
+          throw new AiError('candidate_conflict');
         const result = VariableResultSchema.parse(response.result);
         assertVariableCoverage(selection.domains, state, result.commands);
         const serialized = JSON.stringify(result);

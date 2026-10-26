@@ -9,6 +9,7 @@ import type { CredentialVault } from './credentials';
 import { requestSnapshot } from './snapshot';
 import { AiClient } from './client';
 import type { RequestOptions } from './client';
+import { variableValidationError } from '../validation/variableDiagnostics';
 import { timeOutcome } from '../../domain/timePreflight';
 
 // 独立阶段请求入口；没有 SaveRepository、写库、重试或自动执行下游阶段。
@@ -47,7 +48,7 @@ export async function runStageRequest(
   const story = envelope?.story;
   if (story) {
     try { timeOutcome(captured.state, { userInput: captured.userInput, turnKind: captured.mode, story }, true); }
-    catch { throw new AiError('time_preflight'); }
+    catch (error) { throw variableValidationError(error); }
   }
   const result = story ?? (captured.stage === 'variables'
         ? parseVariables(response.text, captured.state, captured.draft!)
