@@ -1,5 +1,6 @@
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import { lazy, Suspense, useState } from 'react';
+import type { ReactNode } from 'react';
 import { AiConnections } from './AiConnections';
 import { SettingsSchema } from './model';
 import type { Settings } from './model';
@@ -14,10 +15,12 @@ export function SettingsPanel({
   onSave,
   repository,
   activeSaveId,
+  memoryMaintenance,
 }: {
   settings: Settings;
   repository?: SaveRepository;
   activeSaveId?: string;
+  memoryMaintenance?: ReactNode;
   onSave: (settings: Settings) => void;
 }) {
   const [tab, setTab] = useState<(typeof tabs)[number]>('AI 连接');
@@ -157,6 +160,10 @@ export function SettingsPanel({
               自动记忆维护（额外API费用，默认关闭）
             </label>
             <p className="muted">开启后仅在新的正式回合提交成功、达到阈值时尝试整理一批；刷新不触发，失败不自动付费重试。</p>
+            <details className="memory-maintenance-settings">
+              <summary>记忆维护（高级操作）</summary>
+              {memoryMaintenance ?? <p className="empty">请先进入有效的游戏存档，再手动整理记忆。当前不会发起维护请求。</p>}
+            </details>
           </>
         )}
         {tab === '运行' && (

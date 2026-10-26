@@ -1621,3 +1621,20 @@ summary {
 /* M7-P2: one start/recovery action, or cancel; completed candidates leave room for reading. */
 .workflow:not(:has(.workflow-primary)) > .workflow-disclosure > summary { padding-right: .7rem; }
 .game-layout .workflow .story-error > button { margin-left: .4rem; font-size: .72rem; }
+
+/* 记忆为只读阅读页；维护工具仅在设置内。长文跟随现有弹窗滚动。 */
+.memory-reader { min-width: 0; }
+.memory-navigation { display: flex; flex-wrap: wrap; gap: .45rem; position: sticky; top: 0; z-index: 1; background: var(--bg, #111a14); padding-block: .65rem; }
+.memory-navigation button { margin: 0; padding: .65rem .9rem; }
+.memory-navigation button[aria-pressed='true'] { border-color: var(--gold); color: var(--gold); background: #303427; }
+.memory-navigation span { font-size: .78rem; color: #b7bfaa; }
+.memory-reader details summary { cursor: pointer; overflow-wrap: anywhere; line-height: 1.8; padding-block: .5rem; }
+.memory-reader time { color: var(--gold); font-size: .82rem; }
+.memory-reader .entry { min-width: 0; }
+.memory-pagination, .memory-source-list { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+.memory-pagination button, .memory-source-list button { margin: 0; }
+.memory-pagination { margin-block: 1rem; }
+@media (max-width: 600px) {
+  .memory-navigation button { flex: 1 1 auto; padding: .6rem; }
+  .memory-reader .prose { font-size: .98rem; }
+}

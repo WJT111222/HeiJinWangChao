@@ -266,7 +266,14 @@ test('七面板一键打开、键盘关闭、保留阅读位置并隔离秘密�
         '更早的公开事件',
         '公开会面',
       ]);
-    if (title === '记忆') await expect(modal).toContainText('已知记忆：一次公开会面');
+    if (title === '记忆') {
+      await modal.getByRole('button', { name: '短期记忆', exact: true }).click();
+      await expect(modal).toContainText('已知记忆：一次公开会面');
+      for (const name of ['即时记忆', '短期记忆', '中期记忆', '长期记忆']) {
+        await modal.getByRole('button', { name, exact: true }).click();
+        await expect(modal).not.toContainText('不可见');
+      }
+    }
     await page.keyboard.press('Tab');
     expect(await modal.evaluate((el) => el.contains(document.activeElement))).toBe(true);
     await page.keyboard.press('Escape');
