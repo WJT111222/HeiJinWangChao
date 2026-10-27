@@ -1,3 +1,4 @@
+import { variableCommandsForTurn } from '../domain/turnProjection';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { newCreation, buildCreationState } from '../ui/creation/model';
 import { defaultSettings } from '../ui/settings/model';
@@ -126,11 +127,13 @@ describe('开局时间确定性边界', () => {
       expect(() => openingTimeSelection(state, draft)).toThrow();
     }
   });
-  it('开局允许空变量，重复/冲突时间仍拒绝，未确定正式时钟不能独立执行', () => {
+  it('开局允许空变量，等值时间统一注入一次，冲突时间与未确认正式时钟仍拒绝', () => {
     const { state, draft } = chosen();
     expect(parseVariables(JSON.stringify({ ...variables(), commands: [] }), state, draft).commands).toEqual([]);
-    for (const commands of [[...variables().commands, { ...variables().commands[0], commandId: 'again' }], variables('2015-07-08T14:04:00+08:00').commands])
-      expect(() => parseVariables(JSON.stringify({ ...variables(), commands }), state, draft)).toThrow();
+    const repeated = [...variables().commands, { ...variables().commands[0], commandId: 'again' }];
+    const accepted = parseVariables(JSON.stringify({ ...variables(), commands: repeated }), state, draft);
+    expect(variableCommandsForTurn(state, draft, accepted.commands).filter((command) => command.type === 'SetWorldClock')).toHaveLength(1);
+    expect(() => parseVariables(JSON.stringify(variables('2015-07-08T14:04:00+08:00')), state, draft)).toThrow();
     expect(() => commitCommands(state, draft.turnId, 0, variables().commands)).toThrow('开局时间待确认');
     expect(() => timePreflight(state, '睡到明天早上8点')).toThrow('尚未确定');
   });

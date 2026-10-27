@@ -1,4 +1,3 @@
-import { AiError } from '../services/ai/errors';
 import { promptManifest } from './manifest';
 import type { GameState } from '../domain/state';
 import type { TurnDraft } from '../domain/drafts';
@@ -57,31 +56,4 @@ export function selectVariableDomains(state: GameState, draft: TurnDraft) {
     domains,
     reasons: domains.map((domain) => ({ domain, reason: reasons.get(domain) ?? '保守覆盖' })),
   };
-}
-
-export function assertVariableCoverage(
-  domains: readonly string[],
-  state: GameState,
-  commands: readonly import('../domain/commands').DomainCommand[],
-) {
-  for (const command of commands) {
-    const kind =
-      command.type === 'CreateOrganization'
-        ? command.organization.kind
-        : command.type === 'RecordOrgRelation'
-          ? state.organizations[command.organizationId]?.kind
-          : undefined;
-    if (
-      kind &&
-      !domains.includes(
-        {
-          gang: 'org_gang',
-          government: 'org_government',
-          civil: 'org_civil',
-          business: 'org_business',
-        }[kind],
-      )
-    )
-      throw new AiError('permission');
-  }
 }

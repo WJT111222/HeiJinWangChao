@@ -6,12 +6,10 @@ import { GameStateSchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
 import { openingTimeBase, openingTimeSelection } from '../../domain/openingTime';
 import { variableCommandsForTurn } from '../../domain/turnProjection';
-import { npcKnowledgeKind } from '../../domain/memories/schema';
-import { variablePermission } from '../../services/validation/evidence';
 import type { ParsedVariableCommand } from '../../parsers/variableText';
 import { validateAst } from './ast';
 import { digest, ExecutionContextSchema, failed } from './model';
-import type { CommandOrigin, CommandProof, ExecutionResult, VariableExecutionContext, VariableExecutionPlan } from './model';
+import type { CommandOrigin, ExecutionResult, VariableExecutionContext, VariableExecutionPlan } from './model';
 
 const textValue = z.string().trim().min(1).max(8192);
 const memoryValue = z.strictObject({ text: textValue, knowledgeKind: z.enum(['observed', 'reported', 'suspected']),
@@ -58,23 +56,13 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
   if (!checkedAst.ok) return checkedAst;
   const stateCheck = GameStateSchema.safeParse(state), contextCheck = ExecutionContextSchema.safeParse(inputContext);
   if (!stateCheck.success) return failed('domain_validation_failed');
-  if (!contextCheck.success) return failed('missing_provenance');
+  if (!contextCheck.success) return failed('type_mismatch');
   const current = stateCheck.data, context = contextCheck.data, draft = context.draft, ast = checkedAst.value;
   if (draft.saveId !== current.saveId || draft.baseSaveRevision !== context.expectedRevision
     || current.revision < context.expectedRevision || current.journal.some((entry) => entry.turnId === draft.turnId)) return failed('revision_conflict');
   if (current.revision !== context.expectedRevision && !current.appliedCommands.some((entry) => entry.turnId === draft.turnId)) return failed('revision_conflict');
   if (!draft.story || draft.stageStatus.story !== 'ready' || draft.storyRevision < 1
-    || draft.turnKind !== (current.turnNumber === 0 ? 'opening' : 'regular')) return failed('missing_provenance');
-  const proofIds = context.proofs.map((proof) => proof.commandIndex);
-  if (new Set(proofIds).size !== proofIds.length) return failed('duplicate_or_conflicting_command');
-  if (context.proofs.length !== ast.length || proofIds.some((i) => i > ast.length)) return failed('missing_provenance');
-  const interactions = new Set<string>();
-  for (const grant of context.interactions) {
-    const person = current.npc[grant.npcId];
-    if (!person || person.identityKey !== grant.identityKey || grant.turnId !== draft.turnId || grant.storyRevision !== draft.storyRevision)
-      return failed('permission_denied');
-    interactions.add(grant.npcId);
-  }
+    || draft.turnKind !== (current.turnNumber === 0 ? 'opening' : 'regular')) return failed('domain_validation_failed');
   let base: GameState, clock: string, systemCommands: DomainCommand[];
   try {
     base = openingTimeBase(current, draft);
@@ -88,10 +76,9 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       if (replay.length !== 1 || fingerprint(replay[0]) !== fingerprint(priorClock)) return failed('duplicate_or_conflicting_command');
       systemCommands = replay;
     }
-  } catch { return failed('missing_provenance'); }
+  } catch { return failed('domain_validation_failed'); }
   const commands: DomainCommand[] = [...systemCommands];
   const origins: Array<CommandOrigin | null> = systemCommands.map(() => null);
-  const memoryEffects = new Set<string>();
   const quantities = new Map<string, number>(), balances = new Map<string, number | null>();
   for (let i = 0; i < ast.length; i++) {
     const command = ast[i], origin = { commandIndex: i + 1, source: command.source };
@@ -99,12 +86,9 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
     if (!found) return failed('unsupported_path', origin);
     const { mapping, id } = found;
     if (mapping.operation !== command.operation) return failed('unsupported_operation', origin);
-    const proof = context.proofs.find((entry) => entry.commandIndex === i + 1);
-    if (!proof) return failed('missing_provenance', origin);
-    if ((proof.expense && mapping.kind !== 'expense') || (proof.memorySource && mapping.kind !== 'memory')) return failed('missing_provenance', origin);
     const commandId = `text-v1:s${draft.storyRevision}:c${i + 1}`;
     const prior = priorCommand(current, draft.turnId, commandId);
-    const common = { commandId, evidence: proof.evidence };
+    const common = { commandId, evidence: `文本变量指令第${i + 1}条` };
     let mapped: DomainCommand;
     if (mapping.kind === 'protagonist' || mapping.kind === 'npc') {
       const value = textValue.safeParse(command.value);
@@ -125,7 +109,6 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       const lastItem = [...current.appliedCommands].reverse().filter((entry) => entry.turnId === draft.turnId)
         .map((entry) => priorCommand(current, draft.turnId, entry.commandId)).find((entry) => entry?.type === 'UpdateItem' && entry.itemId === id);
       if (!item && !(prior?.type === 'UpdateItem' && prior.itemId === id && lastItem?.type === 'UpdateItem' && lastItem.changes.quantity === 0)) return failed('entity_not_found', origin);
-      if (item && (item.ownerRef?.kind !== 'protagonist' || item.ownerRef.id !== base.protagonist.id)) return failed('permission_denied', origin);
       const old = prior?.type === 'UpdateItem' ? prior.expectedQuantity : quantities.get(id) ?? item?.quantity;
       if (typeof command.value !== 'number' || !Number.isSafeInteger(command.value) || command.value === 0
         || old === undefined || !Number.isSafeInteger(old + command.value) || old + command.value < 0) return failed('invalid_quantity', origin);
@@ -139,30 +122,18 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       if (typeof command.value !== 'number' || !Number.isSafeInteger(command.value) || command.value === 0) return failed('invalid_amount', origin);
       // 正向收入需要完整IncomeRecord；本轮不构造虚假收入。
       if (command.value > 0) return failed('unsupported_operation', origin);
-      const expense = proof.expense;
-      if (!expense || expense.account !== account || expense.amount !== -command.value) return failed('missing_provenance', origin);
       const old = balances.has(account) ? balances.get(account) : base.economy[account];
       if (!prior && (old === null || old === undefined || !Number.isSafeInteger(old + command.value) || old + command.value < 0)) return failed('invalid_amount', origin);
-      mapped = { ...common, type: 'SpendFunds', account, amount: expense.amount, purpose: expense.purpose };
+      mapped = { ...common, type: 'SpendFunds', account, amount: -command.value, purpose: '剧情消费' };
       if (!prior && old !== null && old !== undefined) balances.set(account, old + command.value);
     } else {
       if (!id || !Object.hasOwn(base.npc, id)) return failed('entity_not_found', origin);
-      const memory = await mapMemory(command, proof, base, id, clock, context, common, i + 1);
+      const memory = await mapMemory(command, base, id, clock, context, common, i + 1);
       if (!memory.ok) return failed(memory.error.code, origin);
       mapped = memory.value;
     }
-    if (mapped.type === 'RecordNpcMemory') {
-      // 来源已由mapMemory验证；自由evidence/knowledgeSource说明及可见性不创造第二次经历。
-      const effect = fingerprint({ npcId: mapped.npcId, source: proof.memorySource,
-        text: mapped.memory.text, knowledgeKind: mapped.knowledgeKind,
-        sourceTurnIds: mapped.memory.sourceTurnIds, createdAtGameTime: mapped.memory.createdAtGameTime });
-      if (memoryEffects.has(effect)) return failed('duplicate_or_conflicting_command', origin);
-      memoryEffects.add(effect);
-    }
     const parsed = DomainCommandSchema.safeParse(mapped);
     if (!parsed.success) return failed('domain_validation_failed', origin);
-    try { variablePermission(parsed.data, base, draft, interactions); }
-    catch { return failed('permission_denied', origin); }
     if (prior && fingerprint(prior) !== fingerprint(parsed.data)) return failed('duplicate_or_conflicting_command', origin);
     commands.push(parsed.data); origins.push(origin);
   }
@@ -174,31 +145,16 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
     ast, commands, origins } };
 }
 
-async function mapMemory(command: ParsedVariableCommand, proof: CommandProof, state: GameState, npcId: string,
+async function mapMemory(command: ParsedVariableCommand, state: GameState, npcId: string,
   clock: string, context: VariableExecutionContext, common: { commandId: string; evidence: string }, index: number): Promise<ExecutionResult<DomainCommand>> {
   const value = memoryValue.safeParse(command.value);
   if (!value.success) return failed('type_mismatch');
-  const memory = value.data, source = proof.memorySource, person = state.npc[npcId];
-  if (!source || source.npcId !== npcId || source.identityKey !== person.identityKey) return failed('missing_provenance');
-  // 本轮没有可靠的公开授权信号，显式拒绝player_known，而非自动升级私人知识。
-  if (memory.visibility === 'player_known') return failed('permission_denied');
-  if (source.kind === 'scene') {
-    if (!person.onScene || person.locationId !== state.protagonist.locationId || memory.knowledgeKind !== 'observed') return failed('permission_denied');
-  } else {
-    const raw = [...person.memories, ...(person.kind === 'special' ? person.longTermMemories : [])];
-    const entries = raw.filter((entry) => entry.id === source.memoryId);
-    const old = entries[0];
-    if (entries.length !== 1 || !old || !old.affectedEntityRefs.some((ref) => ref.kind === 'npc' && ref.id === npcId)
-      || Date.parse(old.createdAtGameTime) > Date.parse(clock)) return failed('missing_provenance');
-    if (npcKnowledgeKind(old) !== memory.knowledgeKind || old.visibility === 'internal') return failed('permission_denied');
-  }
+  const memory = value.data;
   const prefix = memory.knowledgeKind === 'reported' ? '[转述]' : memory.knowledgeKind === 'suspected' ? '[推测]' : '';
-  if ((memory.knowledgeKind === 'observed' && /^\[(?:转述|推测)\]/.test(memory.text))
-    || (prefix && /^\[(?:转述|推测)\]/.test(memory.text) && !memory.text.startsWith(prefix))) return failed('missing_provenance');
   const text = prefix && !memory.text.startsWith(prefix) ? `${prefix}${memory.text}` : memory.text;
   const memoryId = `text-memory:${await digest([state.saveId, context.draft.turnId, context.draft.storyRevision, index, npcId])}`;
   return { ok: true, value: { ...common, type: 'RecordNpcMemory', npcId, expectedRevision: context.expectedRevision,
     knowledgeKind: memory.knowledgeKind, layer: 'personal', addToKnownInformation: false,
-    memory: { id: memoryId, text, knowledgeKind: memory.knowledgeKind, knowledgeSource: `${source.kind === 'scene' ? `scene:${npcId}:${context.draft.turnId}:s${context.draft.storyRevision}` : `npc-memory:${npcId}:${source.memoryId}`} | ${memory.knowledgeSource}`,
+    memory: { id: memoryId, text, knowledgeKind: memory.knowledgeKind, knowledgeSource: memory.knowledgeSource,
       visibility: memory.visibility, sourceTurnIds: [context.draft.turnId], affectedEntityRefs: [{ kind: 'npc', id: npcId }], createdAtGameTime: clock } } };
 }
