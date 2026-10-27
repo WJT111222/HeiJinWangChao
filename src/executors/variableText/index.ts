@@ -10,7 +10,7 @@ import type { ExecutionResult, VariableExecutionContext, VariableExecutionPlan }
 export { compileVariableCommands } from './compile';
 export type { VariableExecutionContext, VariableExecutionPlan, ExecutionError, ExecutionErrorCode, ExecutionResult, CommandOrigin } from './model';
 
-/** 不信任可序列化计划本身的授权；必须重新提供当前可信上下文，重编译后才整批模拟。 */
+/** 绑定当前存档/草稿快照，确保模拟使用相同指令及版本；不审查剧情事实。 */
 export async function simulateVariablePlan(plan: VariableExecutionPlan, state: GameState,
   context: VariableExecutionContext): Promise<ExecutionResult<GameState>> {
   try { return await simulateChecked(plan, state, context); }
@@ -22,7 +22,7 @@ async function simulateChecked(plan: VariableExecutionPlan, state: GameState,
   // 在首个await前冻结输入，调用方的后续对象修改不会偷换本次模拟。
   const stateCheck = GameStateSchema.safeParse(state), contextCheck = ExecutionContextSchema.safeParse(context);
   if (!stateCheck.success) return failed('domain_validation_failed');
-  if (!contextCheck.success) return failed('missing_provenance');
+  if (!contextCheck.success) return failed('type_mismatch');
   state = stateCheck.data; context = contextCheck.data;
   try { plan = structuredClone(plan); } catch { return failed('type_mismatch'); }
   const checked = await compileVariableCommands(plan.ast, state, context);

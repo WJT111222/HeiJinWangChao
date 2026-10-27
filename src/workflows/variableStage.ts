@@ -12,7 +12,7 @@ import { runStageRequest } from '../services/ai/runtime';
 import { requestSnapshot } from '../services/ai/snapshot';
 import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
-import { assertVariableCoverage, selectVariableDomains } from '../prompts/variableDomains';
+import { selectVariableDomains } from '../prompts/variableDomains';
 import { StageGuard } from './stageGuard';
 import type { OrderPreferences } from '../prompts/order';
 
@@ -100,7 +100,6 @@ export class VariableStage {
         )
           throw new AiError('candidate_conflict');
         const result = VariableResultSchema.parse(response.result);
-        assertVariableCoverage(selection.domains, state, result.commands);
         const serialized = JSON.stringify(result);
         if (
           secrets.some((secret) =>
