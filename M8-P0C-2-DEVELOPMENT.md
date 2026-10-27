@@ -188,7 +188,7 @@ DomainCommand ID为`text-v1:s<storyRevision>:c<1-based序号>`，实际幂等键
 
 先写并运行最小全链路测试，因新执行器不存在而失败（不是旧游戏漏洞）；实现后通过。初次117条回归中115通过，发现同批重复push未被拦住，新增确定性去重后通过；另一条并发冻结测试误建了具有不同现实审计时间的第二份fixture，触发了正确的状态快照冲突，已改用原fixture的克隆以真实验证await冻结，不降低断言。补充更多来源、开局重放、旧流程和隔离用例后，定向131/131通过。
 
-## 最终验证
+## 初始交付验证（3989dcb）
 
 | 实际命令 | 结果 |
 | --- | --- |
@@ -212,3 +212,45 @@ DomainCommand ID为`text-v1:s<storyRevision>:c<1-based序号>`，实际幂等键
 7. 整批失败是唯一语义，不支持部分接纳或独立事务组。全状态摘要可能在同revision的合法记忆维护后保守拒绝旧计划，调用方应重读并重新编译，不应绕过快照检查。
 
 未调用真实付费模型。没有新增API或收费场景，Mock通过不代表真实模型效果已验证。未主动部署生产环境；后续Draft PR预览可由现有Cloudflare自动流程部署。不自动合并、不开始P0C-3。
+
+
+## PR #35 复审修补：同批NPC记忆去重
+
+审查基线为 `3989dcbe134918275cc8e805c770ba1fb6c106f1`，继续在原分支修复。已完整阅读[四代目审查](https://github.com/WJT111222/HeiJinWangChao/pull/35#pullrequestreview-5661892931)。本次只修改compile.ts中的去重键、对应测试及本报告。
+
+### 根因与失败复现
+
+旧键包含proof.evidence，以及除id之外的整个memory。memory.knowledgeSource又拼接了AI自由来源说明，因此只换evidence或knowledgeSource措辞即可改变指纹。命令序号生成的不同memoryId只能证明ID不同，不能识别同一次经历。
+
+先新增并运行13项回归，旧实现得到144项中的136通过、8失败：scene/npc_memory各自的不同evidence、不同knowledgeSource和两者同时变化共6项；不同可见性1项；合法状态修改后跟随重复记忆的整批拒绝1项。失败原因均是预期拒绝却返回成功计划。仅有最终文本前后空白的2项已经由既有trim正确处理；独立来源、跨回合经历及精确重放正例也通过。
+
+### 新去重身份
+
+仅在mapMemory已经验证来源后，使用以下明确字段：
+
+- 稳定npcId。
+- 严格解析且已验证的proof.memorySource：kind、npcId、identityKey，以及npc_memory来源的memoryId。
+- mapped.memory.text：沿用原有文本trim及认知类型前缀生成后的最终文字，不新增语义或近似文本算法。
+- knowledgeKind、sourceTurnIds、createdAtGameTime。
+
+排除evidence、AI填写的knowledgeSource说明、生成的memoryId及可见性元数据。换说明或切换私人/内部标记不代表新的经历；原有隐私权限仍独立校验，拒绝重复不会让任何权限升级。实际写入的knowledgeSource及其可信程序前缀完全保留，未删除来源说明，也未改变领域命令内容。
+
+可信来源结构与自由说明现在在去重计算中明确分离。两个已验证的不同原始memoryId仍是不同来源，即使生成文字相同也可分别保存；每个来源仍须通过本人身份、权限、时间和知识性质验证。集合仍局限于当前批次，不扫描旧正文或以相同记忆文字作跨回合全局去重，因此之后回合的真实独立经历不会被旧文本误杀。scene协议目前只提供人物/回合级来源，没有独立事件ID；同批同源同文按重复拒绝，不在此补丁新增来源字段。
+
+### 身份、回滚与范围
+
+commandId及memoryId生成算法没有任何修改。原指纹幂等比较、版本、CAS、开局时间、资金/物品、NPC权限及来源检查均保持原样。新增精确重放正例同时比对原命令ID形式和原SHA-256记忆ID计算结果，并验证重复模拟不增加记忆或revision。去重失败仍返回duplicate_or_conflicting_command及原序号/来源坐标，没有部分执行计划，原状态、AST和上下文均不变。
+
+新增13项测试覆盖A/B的scene与npc_memory双来源、说明同时改写、最终文本trim、可见性变化、C的不同原始来源、D的整批拒绝、E的精确重放及不同回合独立记忆。原有131项定向断言完整保留。
+
+### 本轮最终验证
+
+| 实际命令 | 本轮结果 |
+| --- | --- |
+| `npx vitest run src/tests/variable-text-executor.test.ts` | 144/144通过（原131+新增13） |
+| `npm run prompts:check` | 3个文件、82/82通过（工程测试子集） |
+| `npm run check` | 42个文件、1577/1577通过（原1564+新增13）；ESLint、TypeScript、Vite生产构建均通过 |
+| `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e` | 290/290通过，桌面145、移动145，17.4分钟；无跳过、无重试 |
+| `git diff --check`、暂存区空白检查 | 通过 |
+
+保留原有大于500kB的构建分块警告，没有扩大范围处理。没有删除、跳过或降低旧测试断言；本次仅修改compile.ts去重键、追加13项测试和更新报告。所有模型场景使用Mock，不新增请求、付费场景或工作流接入；Mock通过不代表真实模型已验证。不主动部署生产环境、不合并，保持原PR为Draft；预览环境可由既有Cloudflare流程自动更新。

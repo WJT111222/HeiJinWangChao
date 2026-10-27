@@ -152,8 +152,10 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       mapped = memory.value;
     }
     if (mapped.type === 'RecordNpcMemory') {
-      const effect = fingerprint({ npcId: mapped.npcId, knowledgeKind: mapped.knowledgeKind, evidence: mapped.evidence,
-        memory: { ...mapped.memory, id: '' } });
+      // 来源已由mapMemory验证；自由evidence/knowledgeSource说明及可见性不创造第二次经历。
+      const effect = fingerprint({ npcId: mapped.npcId, source: proof.memorySource,
+        text: mapped.memory.text, knowledgeKind: mapped.knowledgeKind,
+        sourceTurnIds: mapped.memory.sourceTurnIds, createdAtGameTime: mapped.memory.createdAtGameTime });
       if (memoryEffects.has(effect)) return failed('duplicate_or_conflicting_command', origin);
       memoryEffects.add(effect);
     }

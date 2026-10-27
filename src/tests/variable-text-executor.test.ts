@@ -488,3 +488,87 @@ describe('额外来源、运行边界与旧流程回归', () => {
     expect(readFileSync('src/services/validation/aiOutputs.ts', 'utf8')).not.toContain('executors/variableText');
   });
 });
+
+describe('PR35复审：事实身份去重不依赖自由说明', () => {
+  function batch(sourceKind: 'scene' | 'npc_memory', secondValue = {}, withUpdate = false) {
+    const body = `${withUpdate ? 'set protagonist.emotionText = "轻松"\n' : ''}push npc[npc_001].memories = ${memoryText()}\npush npc[npc_001].memories = ${memoryText(secondValue)}`;
+    const data = setup(body);
+    data.state.npc.npc_001.memories.push(...['source-a', 'source-b'].map((id) => ({
+      id, text: '曾经与同伴抵达车站', knowledgeKind: 'observed' as const, knowledgeSource: '原始亲历记录',
+      sourceTurnIds: [`turn-${id}`], affectedEntityRefs: [{ kind: 'npc' as const, id: 'npc_001' }],
+      createdAtGameTime: data.state.worldClock, visibility: 'npc_private' as const,
+    })));
+    const source = sourceKind === 'scene'
+      ? { kind: 'scene' as const, npcId: 'npc_001', identityKey: data.state.npc.npc_001.identityKey }
+      : { kind: 'npc_memory' as const, npcId: 'npc_001', identityKey: data.state.npc.npc_001.identityKey, memoryId: 'source-a' };
+    const context: import('../executors/variableText').VariableExecutionContext = {
+      ...data.context, proofs: data.ast.map((_, i) => ({ commandIndex: i + 1, evidence: '共同抵达',
+        ...(withUpdate && i === 0 ? {} : { memorySource: source }) })),
+    };
+    return { ...data, context };
+  }
+  for (const source of ['scene', 'npc_memory'] as const) {
+    it.each(['evidence', 'knowledgeSource', 'both', 'trimmedText'] as const)(
+      `${source}来源相同：仅修改%s不能绕过去重`, async (difference) => {
+        const data = batch(source, difference === 'knowledgeSource' || difference === 'both'
+          ? { knowledgeSource: '本人经历的换一种说法' } : difference === 'trimmedText' ? { text: '  一起抵达车站  ' } : {});
+        if (difference === 'evidence' || difference === 'both') data.context.proofs[1].evidence = '二人已经到达目的地';
+        const before = structuredClone(data), result = await compileVariableCommands(data.ast, data.state, data.context);
+        expectCode(result, 'duplicate_or_conflicting_command');
+        expect(result).not.toHaveProperty('value');
+        if (!result.ok) expect(result.error).toMatchObject({ commandIndex: 2, source: data.ast[1].source });
+        expect(data).toEqual(before);
+      });
+  }
+  it('只切换私人/内部可见性也不把同一次经历变成第二次', async () => {
+    const data = batch('scene', { visibility: 'internal' });
+    expectCode(await compileVariableCommands(data.ast, data.state, data.context), 'duplicate_or_conflicting_command');
+  });
+  it('两个合法不同原始来源的独立经历，即使最终文本与说明相同也可分别记录', async () => {
+    const data = batch('npc_memory'), second = data.context.proofs[1].memorySource;
+    if (second?.kind !== 'npc_memory') throw new Error('固定来源类型');
+    // 第一、二项原始经历属于不同旧回合，只改变第二条的可信来源ID，不靠说明换词区分。
+    data.context.proofs[1].memorySource = { ...second, memoryId: 'source-b' };
+    const plan = unwrap(await compileVariableCommands(data.ast, data.state, data.context));
+    const result = unwrap(await simulateVariablePlan(plan, data.state, data.context));
+    const memories = result.npc.npc_001.memories.slice(2);
+    expect(memories).toHaveLength(2); expect(memories.map((m) => m.text)).toEqual(['一起抵达车站', '一起抵达车站']);
+    expect(memories[0].knowledgeSource).toContain('npc-memory:npc_001:source-a');
+    expect(memories[1].knowledgeSource).toContain('npc-memory:npc_001:source-b');
+    expect(memories[0].id).not.toBe(memories[1].id); expect(data.state.npc.npc_001.memories).toHaveLength(2);
+  });
+  it('合法状态修改后跟随两条换说明的重复记忆，整批失败且没有部分计划或状态', async () => {
+    const data = batch('scene', { knowledgeSource: '亲历过程的另一种描述' }, true);
+    data.context.proofs[2].evidence = '已到车站的另一个说明';
+    const before = structuredClone(data), result = await compileVariableCommands(data.ast, data.state, data.context);
+    expectCode(result, 'duplicate_or_conflicting_command'); expect(result).not.toHaveProperty('value');
+    if (!result.ok) expect(result.error).toMatchObject({ commandIndex: 3, source: data.ast[2].source });
+    expect(data).toEqual(before); expect(data.state.protagonist.emotionText).toBe('平静');
+  });
+  it('两个独立来源的批次精确重放不再写入，commandId和memoryId算法不变', async () => {
+    const data = batch('npc_memory'), second = data.context.proofs[1].memorySource;
+    if (second?.kind !== 'npc_memory') throw new Error('固定来源类型');
+    data.context.proofs[1].memorySource = { ...second, memoryId: 'source-b' };
+    const plan = unwrap(await compileVariableCommands(data.ast, data.state, data.context));
+    const first = unwrap(await simulateVariablePlan(plan, data.state, data.context));
+    const repeated = unwrap(await compileVariableCommands(data.ast, first, data.context));
+    expect(repeated.commands).toEqual(plan.commands);
+    expect(unwrap(await simulateVariablePlan(repeated, first, data.context))).toEqual(first);
+    const { createHash } = await import('node:crypto');
+    for (const [i, command] of plan.commands.entries()) {
+      expect(command.commandId).toBe(`text-v1:s1:c${i + 1}`);
+      if (command.type !== 'RecordNpcMemory') throw new Error('固定命令类型');
+      const expected = createHash('sha256').update(JSON.stringify([data.state.saveId, data.context.draft.turnId, 1, i + 1, 'npc_001'])).digest('hex');
+      expect(command.memory.id).toBe(`text-memory:${expected}`);
+    }
+    expect(first.npc.npc_001.memories).toHaveLength(4);
+  });
+  it('另一回合重新经历同一场景，不以旧记忆文本作全局去重', async () => {
+    const data = memorySetup(); data.context.draft.turnId = 'new-independent-turn';
+    data.state.npc.npc_001.memories.push({ id: 'old-scene', text: '一起抵达车站', knowledgeKind: 'observed', knowledgeSource: '旧回合亲历',
+      sourceTurnIds: ['previous-turn'], affectedEntityRefs: [{ kind: 'npc', id: 'npc_001' }],
+      createdAtGameTime: data.state.worldClock, visibility: 'npc_private' });
+    const result = unwrap(await run(data)); expect(result.npc.npc_001.memories).toHaveLength(2);
+    expect(result.npc.npc_001.memories[1].sourceTurnIds).toEqual(['new-independent-turn']);
+  });
+});
