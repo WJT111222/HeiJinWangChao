@@ -3,11 +3,10 @@ import { StorySchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
 import { VariableResultSchema } from '../../domain/drafts';
 import type { TurnDraft } from '../../domain/drafts';
-import { commitCommands, fingerprint } from '../../domain/commands';
+import { commitCommands } from '../../domain/commands';
 import { AiError } from '../ai/errors';
 import { validateWorldOutput } from './worldOutput';
 import type { Settings } from '../../ui/settings/model';
-import { variablePermission } from './evidence';
 import { variableCommandsForTurn } from '../../domain/turnProjection';
 import { variableValidationError } from './variableDiagnostics';
 import { assessSummary } from '../../domain/memories/summary';
@@ -67,29 +66,8 @@ export function parseVariables(text: string, state: GameState, draft: TurnDraft)
   if (!draft.story) throw new AiError('candidate_conflict');
   try { state = openingTimeBase(state, draft); } catch (error) { throw variableValidationError(error); }
   if (new Set(checked.data.commands.map((c) => c.commandId)).size !== checked.data.commands.length) throw new AiError('candidate_conflict');
-  const facts = checked.data.commands.map((command) => fingerprint({ ...command, commandId: '' }));
-  if (new Set(facts).size !== facts.length) throw new AiError('candidate_conflict');
-  const permissionState = {
-    ...state,
-    npc: {
-      ...state.npc,
-      ...Object.fromEntries(
-        checked.data.commands.flatMap((command) =>
-          command.type === 'CreateNpc' ? [[command.npc.id, command.npc]] : [],
-        ),
-      ),
-    },
-  };
-  for (const command of checked.data.commands)
-    if (command.type === 'UpdateNpc' && command.changes.onScene === true) {
-      const person = permissionState.npc[command.npcId];
-      if (person) permissionState.npc[command.npcId] = { ...person, onScene: true };
-    }
   try {
     validateTimeCommands(timeState, draft, checked.data.commands);
-    const interactions = new Set(checked.data.commands.flatMap((command) =>
-      command.type === 'UpdateNpc' && command.changes.lastInteractionAt ? [command.npcId] : []));
-    for (const command of checked.data.commands) variablePermission(command, permissionState, draft, interactions);
     commitCommands(state, draft.turnId, state.revision, variableCommandsForTurn(timeState, draft, checked.data.commands), state.updatedAt);
   } catch (error) { throw variableValidationError(error); }
   return checked.data;

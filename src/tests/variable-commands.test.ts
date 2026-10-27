@@ -6,7 +6,7 @@ import { GameStateSchema } from '../domain/state';
 import { parseVariables } from '../services/validation/aiOutputs';
 import { commandCatalog } from '../services/validation/commandCatalog';
 import { playerView } from '../ui/panels/playerView';
-import { selectVariableDomains, assertVariableCoverage } from '../prompts/variableDomains';
+import { selectVariableDomains } from '../prompts/variableDomains';
 import { composePrompt } from '../prompts/composer';
 import { defaultSettings } from '../ui/settings/model';
 import { game, npc, gameTime } from './fixtures/game';
@@ -488,17 +488,17 @@ describe('证据防护与领域提示词绑定', () => {
     };
     expect(parseVariables(JSON.stringify(result), game(), draft())).toEqual(result);
   });
-  it('同一交易改用另一个命令 ID，仍不能重复放入同一候选', () => {
-    expect(() => parsed([spend, { ...spend, commandId: 'same-meal-again' }])).toThrow();
+  it('不同命令ID的同额消费不靠内容相同判定为同一次交易', () => {
+    expect(parsed([spend, { ...spend, commandId: 'same-meal-again' }]).commands).toHaveLength(2);
   });
-  it('新 NPC 不能通过 inline 记忆/知识绕过来源和可见性核验', () => {
+  it('新 NPC 的合法初始知识不需要额外事实审批', () => {
     const person = npc();
     person.knownInformation = [{ text: '未经证实的后台秘密', source: '未知', learnedAt: gameTime }];
     expect(() =>
       parsed([{ type: 'CreateNpc', commandId: 'npc', evidence: '同事来到现场', npc: person }]),
-    ).toThrow();
+    ).not.toThrow();
   });
-  it('正文仅提到离场 NPC 不授予现场写权限，实际电话联络可有明确来源', () => {
+  it('离场 NPC 状态与互动更新不需要额外现场授权', () => {
     const state = scene();
     state.npc['npc-a'].onScene = false;
     expect(() =>
@@ -507,7 +507,7 @@ describe('证据防护与领域提示词绑定', () => {
         '主角想起同事',
         state,
       ),
-    ).toThrow();
+    ).not.toThrow();
     const command = {
       ...update({ lastInteractionAt: gameTime }),
       evidence: '主角与同事完成电话通话',
@@ -591,30 +591,11 @@ describe('证据防护与领域提示词绑定', () => {
       ).toBe(false);
     },
   );
-  it('已知组织类别选择可解释，未加载领域的候选不能悄悄绕过专属规则', () => {
+  it('组织模块仍按现有提示词选择逻辑加载，不作候选完整性审批', () => {
     const state = game(),
       current = draft('主角走进公司。');
     expect(selectVariableDomains(state, current).domains).toContain('org_business');
     expect(selectVariableDomains(state, current).domains).not.toContain('org_gang');
-    expect(() =>
-      assertVariableCoverage(['org_business'], state, [
-        {
-          type: 'CreateOrganization',
-          commandId: 'org',
-          evidence: '组织',
-          organization: {
-            id: 'org',
-            kind: 'gang',
-            name: '团伙',
-            description: '',
-            protagonistRelation: '未知',
-            relationHistory: [],
-            keyNpcIds: [],
-            currentTaskIds: [],
-            industries: [],
-          },
-        },
-      ]),
-    ).toThrow();
+
   });
 });

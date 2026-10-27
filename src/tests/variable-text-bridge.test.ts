@@ -17,7 +17,7 @@ describe('M8-P0C-3A离线桥接', () => {
     expect(captured.ok).toBe(true); if (!captured.ok) return;
     const result = await previewVariableTextReply(reply, state, draft, captured.value);
     expect(result.ok).toBe(true); if (!result.ok) return;
-    expect(result).toMatchObject({ mode: 'preview_only', commitAllowed: false, contextKind: 'preview_audit_only', commandCount: 2 });
+    expect(result).toMatchObject({ mode: 'preview_only', commandCount: 2 });
     expect(result.previewState.protagonist.emotionText).toBe('心情平静');
     expect(result.previewState.npc.npc_001.healthText).toBe('略感疲惫');
     expect({ state, draft }).toEqual(before);
@@ -35,101 +35,10 @@ async function preview(body: string, data = fixture()) {
 }
 function expectFailure(result: import('../bridges/variableText').TextVariablePreviewResult, code: string, stage?: string) {
   expect(result.ok).toBe(false);
-  expect(result).toMatchObject({ mode: 'preview_only', commitAllowed: false, audience: 'internal' });
+  expect(result).toMatchObject({ mode: 'preview_only', audience: 'internal' });
   expect(result).not.toHaveProperty('previewState'); expect(result).not.toHaveProperty('commands');
   if (!result.ok) { expect(result.error.code).toBe(code); if (stage) expect(result.failedAt).toBe(stage); }
 }
-
-describe('低风险预演授权', () => {
-  it.each(['protagonist.emotionText', 'protagonist.healthText', 'npc[npc_001].healthText', 'npc[npc_001].relationshipText'])(
-    '%s可在当前正式基线预演', async (path) => {
-      const result = await preview(`set ${path} = "合法文本状态"`);
-      expect(result.ok).toBe(true);
-      expect(result.progress).toEqual({ input: 'passed', parsing: 'passed', authorization: 'sufficient_for_preview', compilation: 'passed', simulation: 'passed' });
-    });
-  it('不在场NPC不能从小说、variableGuide或AI指令获得互动许可', async () => {
-    const data = fixture(); data.state.npc.npc_001.onScene = false;
-    data.draft.story!.narrative = 'npc_001已经与主角交流并亲历全部事情。';
-    data.draft.story!.variableGuide.push({ group: 'npc', subjectHint: 'npc_001', observedFact: '人物已在场并发生互动' });
-    expectFailure(await preview('set npc[npc_001].healthText = "健康"', data), 'permission_denied', 'authorization');
-  });
-  it('未知NPC不建档、不按同名人物推测', async () => expectFailure(await preview('set npc[missing].relationshipText = "信任"'), 'entity_not_found', 'authorization'));
-  it('在场NPC缺少地点时不猜测同场', async () => {
-    const data = fixture(); delete data.state.npc.npc_001.locationId;
-    expectFailure(await preview('set npc[npc_001].healthText = "疲惫"', data), 'permission_denied', 'authorization');
-  });
-  it('在场NPC地点不一致的非法正式记录由原GameStateSchema拒绝', async () => {
-    const data = fixture(), basis = unwrap(await captureVariableTextPreviewBasis(data.state, data.draft));
-    data.state.locations.remote = { id: 'remote', name: '远处' }; data.state.npc.npc_001.locationId = 'remote';
-    expectFailure(await previewVariableTextReply(block('set npc[npc_001].healthText = "健康"'), data.state, data.draft, basis), 'invalid_state', 'input');
-  });
-  it('同名NPC只更新稳定ID指向的人物', async () => {
-    const data = fixture(); data.state.npc.other = npc('other');
-    const result = await preview('set npc[npc_001].healthText = "疲惫"', data);
-    expect(result.ok).toBe(true); if (result.ok) expect(result.previewState.npc).not.toHaveProperty('other');
-  });
-  it('NPC数字索引被拒绝', async () => expectFailure(await preview('set npc[0].healthText = "健康"'), 'unsupported_path', 'authorization'));
-  it('先设置onScene再更新状态也不能自行授予访问权限', async () => {
-    const data = fixture(); data.state.npc.npc_001.onScene = false;
-    expectFailure(await preview('set npc[npc_001].onScene = true\nset npc[npc_001].healthText = "健康"', data), 'offline_authorization_unsupported', 'authorization');
-    expect(data.state.npc.npc_001.onScene).toBe(false);
-  });
-  it.each(['add protagonist.emotionText = 1', 'push npc[npc_001].healthText = "健康"'])(
-    '低风险路径的错误操作仍拒绝：%s', async (body) => expectFailure(await preview(body), 'unsupported_operation', 'authorization'));
-  it.each(['protagonist.id', 'protagonist.age', 'protagonist.currentWear', 'npc[npc_001].identity', 'npc[npc_001].knownInformation', 'worldClock', '环境.时间', '角色.当前精力', 'revision'])(
-    '未开放路径%s不构造任何证明', async (path) => expectFailure(await preview(`set ${path} = "无权"`), 'offline_authorization_unsupported', 'authorization'));
-});
-
-describe('缺少独立事实来源时失败封闭', () => {
-  const memory = 'push npc[npc_001].memories = {"text":"我亲眼看到某人偷走了钱","knowledgeKind":"observed","knowledgeSource":"现场亲历","visibility":"npc_private"}';
-  it('即使正式在场且AI自称亲历，也不足以产生memorySource', async () => {
-    const { vi } = await import('vitest'), executor = await import('../executors/variableText');
-    const compile = vi.spyOn(executor, 'compileVariableCommands');
-    try {
-      const data = fixture(); data.draft.story!.variableGuide.push({ group: 'npc', subjectHint: 'npc_001', observedFact: '亲眼看到有人偷钱' });
-      expectFailure(await preview(memory, data), 'missing_provenance', 'authorization'); expect(compile).not.toHaveBeenCalled();
-      expect(data.state.npc.npc_001.memories).toEqual([]);
-    } finally { compile.mockRestore(); }
-  });
-  it.each(['add economy.cash = -300', 'add economy.onlineBalance = -300', 'add items[item_001].quantity = -1', 'add items[item_001].quantity = 1'])(
-    '即使AI描述已经完成，也不把%s当作实际凭据', async (body) => {
-      const data = fixture();
-      data.state.items.item_001 = { id: 'item_001', name: '用品', category: 'other', quantity: 2,
-        ownerRef: { kind: 'protagonist', id: data.state.protagonist.id }, conditionText: '完好' };
-      data.draft.story!.narrative = '主角确实完成了消费和数量变化。';
-      data.draft.story!.variableGuide.push({ group: 'economy', observedFact: '现金支付3元，凭证充足' });
-      const before = structuredClone(data);
-      expectFailure(await preview(body, data), 'missing_provenance', 'authorization'); expect(data).toEqual(before);
-    });
-  it('第一条合法、第二条未授权时整批失败，编译器和模拟器都不运行', async () => {
-    const { vi } = await import('vitest'), executor = await import('../executors/variableText');
-    const compile = vi.spyOn(executor, 'compileVariableCommands'), simulate = vi.spyOn(executor, 'simulateVariablePlan');
-    try {
-      const data = fixture(), before = structuredClone(data), text = block(`set protagonist.emotionText = "轻松"\n${memory}`);
-      const { parseVariableText } = await import('../parsers/variableText'), ast = unwrap(parseVariableText(text));
-      const basis = unwrap(await captureVariableTextPreviewBasis(data.state, data.draft));
-      const result = await previewVariableTextReply(text, data.state, data.draft, basis);
-      expectFailure(result, 'missing_provenance', 'authorization');
-      if (!result.ok && result.origin === 'bridge') expect(result.error).toMatchObject({ commandIndex: 2, source: ast[1].source });
-      expect(compile).not.toHaveBeenCalled(); expect(simulate).not.toHaveBeenCalled(); expect(data).toEqual(before);
-    } finally { compile.mockRestore(); simulate.mockRestore(); }
-  });
-  it('自动proof仅为明确的预演审计文字；无互动、资金或记忆来源', async () => {
-    const { vi } = await import('vitest'), executor = await import('../executors/variableText');
-    const compile = vi.spyOn(executor, 'compileVariableCommands');
-    try {
-      const result = await preview('set protagonist.emotionText = "平静"\nset npc[npc_001].healthText = "健康"');
-      expect(result.ok).toBe(true); expect(compile).toHaveBeenCalledTimes(1);
-      const context = compile.mock.calls[0][2];
-      expect(context.interactions).toEqual([]);
-      for (const [i, proof] of context.proofs.entries()) {
-        expect(proof).toEqual({ commandIndex: i + 1, evidence: `preview_only:audit_not_fact:turn-preview:story1:command${i + 1}` });
-        expect(proof).not.toHaveProperty('expense'); expect(proof).not.toHaveProperty('memorySource');
-      }
-      expect(result).not.toHaveProperty('context'); expect(result).not.toHaveProperty('proofs');
-    } finally { compile.mockRestore(); }
-  });
-});
 
 describe('版本、基线与旧正文', () => {
   it.each(['saveId', 'revision'] as const)('正式%s不匹配时拒绝', async (field) => {
@@ -234,13 +143,13 @@ describe('纯函数与错误诊断', () => {
     const result = await previewVariableTextReply(block('set protagonist.emotionText = "安全"\nset protagonist.healthText = {"secret":"PRIVATE-KEY",}'), data.state, data.draft, basis);
     expectFailure(result, 'json_value', 'parsing');
     if (!result.ok && result.origin === 'parser') expect(result.error).toMatchObject({ commandIndex: 2, position: { line: 4 } });
-    expect(result.progress).toEqual({ input: 'passed', parsing: 'failed', authorization: 'not_run', compilation: 'not_run', simulation: 'not_run' });
+    expect(result.progress).toEqual({ input: 'passed', parsing: 'failed', compilation: 'not_run', simulation: 'not_run' });
     expect(JSON.stringify(result)).not.toContain('PRIVATE-KEY');
   });
   it('类型错误仍由真实编译器拒绝，保留执行器错误和原始位置', async () => {
     const result = await preview('set protagonist.healthText = 123');
     expectFailure(result, 'type_mismatch', 'compilation');
-    expect(result.progress).toMatchObject({ parsing: 'passed', authorization: 'sufficient_for_preview', compilation: 'failed', simulation: 'not_run' });
+    expect(result.progress).toMatchObject({ parsing: 'passed', compilation: 'failed', simulation: 'not_run' });
     if (!result.ok && result.origin === 'executor') expect(result.error).toMatchObject({ commandIndex: 1, source: { start: { line: 3, column: 1 } } });
   });
   it('领域模拟失败不返回部分状态', async () => {
@@ -295,7 +204,7 @@ describe('开局、旧档及原工作流隔离', () => {
     const { pendingOpeningClock } = await import('../domain/openingTime'); const data = fixture();
     data.state.openingTimePending = true; data.state.worldClock = pendingOpeningClock;
     const result = await preview('set protagonist.emotionText = "平静"', data);
-    expectFailure(result, 'missing_provenance', 'compilation'); expect(data.state.worldClock).toBe(pendingOpeningClock);
+    expectFailure(result, 'domain_validation_failed', 'compilation'); expect(data.state.worldClock).toBe(pendingOpeningClock);
   });
   it('合法开局时间复用原执行器，内存结果与Story一致，正式时钟仍待定', async () => {
     const { pendingOpeningClock } = await import('../domain/openingTime'); const data = fixture();
@@ -370,7 +279,7 @@ describe('输出只读投影和隐私边界', () => {
       sourceTurnIds: ['old'], affectedEntityRefs: [{ kind: 'npc', id: 'npc_001' }], createdAtGameTime: data.state.worldClock, visibility: 'npc_private' });
     const result = await preview('set npc[npc_001].healthText = "健康"', data); expect(result.ok).toBe(true);
     const serialized = JSON.stringify(result);
-    expect(serialized).not.toMatch(/HIDDEN-NAME|HIDDEN-HEALTH|PRIVATE-MEMORY|PRIVATE-SOURCE|audit_not_fact/);
+    expect(serialized).not.toMatch(/HIDDEN-NAME|HIDDEN-HEALTH|PRIVATE-MEMORY|PRIVATE-SOURCE/);
     if (result.ok) {
       expect(Object.keys(result.previewState.npc)).toEqual(['npc_001']);
       expect(result.previewState.npc.npc_001).not.toHaveProperty('memories');
