@@ -1,6 +1,4 @@
 import type { DomainCommand } from '../../domain/commands';
-import type { GameState } from '../../domain/state';
-import type { TurnDraft } from '../../domain/drafts';
 import { AiError } from '../ai/errors';
 import { isNegatedFact } from '../../domain/factPolarity';
 
@@ -74,47 +72,4 @@ export function worldFactEvidence(command: DomainCommand, narrative: string) {
     index = narrative.indexOf(command.evidence, index + 1);
   }
   if (!safe) throw new AiError('invalid_output');
-}
-export function variablePermission(command: DomainCommand, state: GameState, draft: TurnDraft, interactionNpcIds: ReadonlySet<string> = new Set()) {
-  if (!draft.story) throw new AiError('configuration');
-  const scene = (id: string) => {
-    const person = state.npc[id];
-    return (
-      person &&
-      (person.onScene || interactionNpcIds.has(id))
-    );
-  };
-  if (
-    command.type === 'CreateNpc' &&
-    !command.npc.onScene
-  )
-    throw new AiError('permission');
-  if (
-    command.type === 'CreateNpc' &&
-    (command.npc.memories.length > 0 ||
-      command.npc.knownInformation.length > 0 ||
-      (command.npc.kind === 'special' && command.npc.longTermMemories.length > 0))
-  )
-    throw new AiError('permission');
-  if ((command.type === 'UpdateNpc' || command.type === 'RecordNpcMemory') && !scene(command.npcId))
-    throw new AiError('permission');
-  if (command.type === 'SaveTask' && (command.task.resolution !== undefined || command.task.handoff !== undefined))
-    throw new AiError('permission'); // 场外成果/交接只能经世界协议验证，现场旧任务仍走原流程。
-  if (command.type === 'RetireNpc') throw new AiError('permission');
-  if (command.type === 'RegisterContact' && !scene(command.npcId))
-    throw new AiError('permission');
-  const ownerAllowed = (ref: { kind: string; id: string } | undefined | null) =>
-    !ref ||
-    (ref.kind === 'protagonist' && ref.id === state.protagonist.id) ||
-    (ref.kind === 'npc' && scene(ref.id)) ||
-    (ref.kind === 'organization' && Boolean(state.organizations[ref.id]));
-  if (
-    (command.type === 'UpdateItem' || command.type === 'LoseItem') &&
-    !ownerAllowed(state.items[command.itemId]?.ownerRef)
-  )
-    throw new AiError('permission');
-  if (command.type === 'AcquireItem' && !ownerAllowed(command.item.ownerRef))
-    throw new AiError('permission');
-  if (command.type === 'TransferItem' && (!ownerAllowed(command.from) || !ownerAllowed(command.to)))
-    throw new AiError('permission');
 }
