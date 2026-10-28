@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { DomainCommandSchema, fingerprint } from '../../domain/commands';
 import type { DomainCommand } from '../../domain/commands';
-import { IdSchema } from '../../domain/common';
-import { GameStateSchema } from '../../domain/state';
+import { GameTimeSchema, IdSchema } from '../../domain/common';
+import { variableCommandSchemas } from '../../domain/variableCommands';
+import { GameStateSchema, LocationSchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
 import { openingTimeBase, openingTimeSelection } from '../../domain/openingTime';
 import { variableCommandsForTurn } from '../../domain/turnProjection';
@@ -17,23 +18,37 @@ const memoryValue = z.strictObject({ text: textValue, knowledgeKind: z.enum(['ob
 const fields = new Map<string, Mapping>([
   ['protagonist.healthText', { operation: 'set', kind: 'protagonist', field: 'healthText' }],
   ['protagonist.emotionText', { operation: 'set', kind: 'protagonist', field: 'emotionText' }],
+  ...['locationId', 'profession', 'publicStatus', 'legalStatus', 'skills'].map((field): [string, Mapping] =>
+    [`protagonist.${field}`, { operation: 'set', kind: 'protagonist', field }]),
+  ['worldClock', { operation: 'set', kind: 'clock', field: 'worldClock' }],
+  ['locations', { operation: 'set', kind: 'location', field: 'location' }],
   ['npc.relationshipText', { operation: 'set', kind: 'npc', field: 'relationshipText' }],
   ['npc.healthText', { operation: 'set', kind: 'npc', field: 'healthText' }],
+  ...['locationId', 'onScene', 'lastInteractionAt'].map((field): [string, Mapping] =>
+    [`npc.${field}`, { operation: 'set', kind: 'npc', field }]),
   ['npc.memories', { operation: 'push', kind: 'memory', field: 'memories' }],
   ['items.quantity', { operation: 'add', kind: 'item', field: 'quantity' }],
   ['economy.cash', { operation: 'add', kind: 'expense', field: 'cash' }],
   ['economy.onlineBalance', { operation: 'add', kind: 'expense', field: 'onlineBalance' }],
 ] as const);
-interface Mapping { operation: 'set' | 'add' | 'push'; kind: 'protagonist' | 'npc' | 'memory' | 'item' | 'expense'; field: string }
+interface Mapping { operation: 'set' | 'add' | 'push'; kind: 'protagonist' | 'npc' | 'memory' | 'item' | 'expense' | 'clock' | 'location'; field: string }
 function lookup(command: ParsedVariableCommand): { mapping: Mapping; id?: string } | undefined {
   const [root, middle, last] = command.path.nodes;
+  if (command.path.nodes.length === 1 && root.name === 'worldClock') {
+    const mapping = fields.get('worldClock');
+    return mapping ? { mapping } : undefined;
+  }
+  if (command.path.nodes.length === 2 && root.name === 'locations' && middle?.kind === 'id' && IdSchema.safeParse(middle.id).success) {
+    const mapping = fields.get('locations');
+    return mapping ? { mapping, id: middle.id } : undefined;
+  }
   if (command.path.nodes.length === 2 && middle?.kind === 'field') {
     const mapping = fields.get(`${root.name}.${middle.name}`);
     if (mapping && ['protagonist', 'expense'].includes(mapping.kind)) return { mapping };
   }
   if (command.path.nodes.length === 3 && middle?.kind === 'id' && last?.kind === 'field') {
     const mapping = fields.get(`${root.name}.${last.name}`);
-    if (mapping && !['protagonist', 'expense'].includes(mapping.kind) && IdSchema.safeParse(middle.id).success) return { mapping, id: middle.id };
+    if (mapping && ['npc', 'memory', 'item'].includes(mapping.kind) && IdSchema.safeParse(middle.id).success) return { mapping, id: middle.id };
   }
 }
 function priorCommand(state: GameState, turnId: string, commandId: string) {
@@ -77,6 +92,18 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       systemCommands = replay;
     }
   } catch { return failed('domain_validation_failed'); }
+  const openingClock = systemCommands.find((command) => command.type === 'SetWorldClock');
+  for (let i = 0; i < ast.length; i++) {
+    const entry = ast[i];
+    if (lookup(entry)?.mapping.kind !== 'clock') continue;
+    const origin = { commandIndex: i + 1, source: entry.source };
+    if (entry.operation !== 'set') return failed('unsupported_operation', origin);
+    const time = GameTimeSchema.safeParse(entry.value);
+    if (!time.success) return failed('type_mismatch', origin);
+    // Story开局时间仍是唯一开局基线；等值文本不产生第二条时钟命令。
+    if (openingClock && Date.parse(time.data) !== Date.parse(openingClock.worldClock)) return failed('domain_validation_failed', origin);
+    clock = openingClock?.worldClock ?? time.data;
+  }
   const commands: DomainCommand[] = [...systemCommands];
   const origins: Array<CommandOrigin | null> = systemCommands.map(() => null);
   const quantities = new Map<string, number>(), balances = new Map<string, number | null>();
@@ -91,17 +118,29 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
     const common = { commandId, evidence: `文本变量指令第${i + 1}条` };
     let mapped: DomainCommand;
     if (mapping.kind === 'protagonist' || mapping.kind === 'npc') {
-      const value = textValue.safeParse(command.value);
-      if (!value.success) return failed('type_mismatch', origin);
+      if (['healthText', 'emotionText', 'relationshipText'].includes(mapping.field)
+        && !textValue.safeParse(command.value).success) return failed('type_mismatch', origin);
       if (mapping.kind === 'protagonist') {
-        const changes = mapping.field === 'healthText' ? { healthText: value.data } : { emotionText: value.data };
+        const changes = variableCommandSchemas[0].shape.changes.safeParse({ [mapping.field]: command.value });
+        if (!changes.success) return failed('type_mismatch', origin);
         mapped = { ...common, type: 'UpdateProtagonist', expectedRevision: context.expectedRevision,
-          protagonistId: base.protagonist.id, changes };
+          protagonistId: base.protagonist.id, changes: changes.data };
       } else {
         if (!id || !Object.hasOwn(base.npc, id)) return failed('entity_not_found', origin);
-        const changes = mapping.field === 'healthText' ? { healthText: value.data } : { relationshipText: value.data };
-        mapped = { ...common, type: 'UpdateNpc', npcId: id, expectedRevision: context.expectedRevision, changes };
+        const changes = variableCommandSchemas[1].shape.changes.safeParse({ [mapping.field]: command.value });
+        if (!changes.success) return failed('type_mismatch', origin);
+        mapped = { ...common, type: 'UpdateNpc', npcId: id, expectedRevision: context.expectedRevision, changes: changes.data };
       }
+    } else if (mapping.kind === 'clock') {
+      if (openingClock) continue;
+      const time = GameTimeSchema.safeParse(command.value);
+      if (!time.success) return failed('type_mismatch', origin);
+      mapped = { ...common, type: 'SetWorldClock', worldClock: time.data };
+    } else if (mapping.kind === 'location') {
+      if (!id) return failed('unsupported_path', origin);
+      const location = LocationSchema.omit({ id: true }).safeParse(command.value);
+      if (!location.success) return failed('type_mismatch', origin);
+      mapped = { ...common, type: 'CreateLocation', location: { ...location.data, id } };
     } else if (mapping.kind === 'item') {
       if (!id) return failed('unsupported_path', origin);
       const item = base.items[id];
@@ -137,12 +176,18 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
     if (prior && fingerprint(prior) !== fingerprint(parsed.data)) return failed('duplicate_or_conflicting_command', origin);
     commands.push(parsed.data); origins.push(origin);
   }
+  // 时间先应用，之后的互动/记忆统一使用本批最终时钟；其他指令保持文本顺序。
+  // 不逐条提交或增加中间revision，倒退仍由原领域命令在整批模拟中拒绝。
+  const entries = commands.map((command, index) => ({ command, origin: origins[index] }));
+  const ordered = [...entries.filter((entry) => entry.command.type === 'SetWorldClock'),
+    ...entries.filter((entry) => entry.command.type !== 'SetWorldClock')];
+  const orderedCommands = ordered.map((entry) => entry.command);
   const priorTurn = current.appliedCommands.filter((entry) => entry.turnId === draft.turnId);
   const exactReplay = commands.length > 0 && commands.every((c) => priorTurn.some((old) => old.commandId === c.commandId && old.fingerprint === fingerprint(c)));
   if (priorTurn.length && (!exactReplay || priorTurn.length !== commands.length)) return failed('duplicate_or_conflicting_command');
   if (current.revision !== context.expectedRevision && !exactReplay) return failed('revision_conflict');
   return { ok: true, value: { version: 1, stateDigest: await digest(fingerprint(current)), contextDigest: await digest(fingerprint(context)),
-    ast, commands, origins } };
+    ast, commands: orderedCommands, origins: ordered.map((entry) => entry.origin) } };
 }
 
 async function mapMemory(command: ParsedVariableCommand, state: GameState, npcId: string,

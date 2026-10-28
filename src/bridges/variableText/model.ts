@@ -31,7 +31,7 @@ interface PreviewOnly {
 /** 只读输出投影：不含journal、经济、私人记忆、命令指纹或可持久化GameState形状。 */
 export interface TextVariablePreviewState {
   readonly worldClock: string;
-  readonly clockKind: 'opening_candidate' | 'unchanged';
+  readonly clockKind: 'opening_candidate' | 'updated' | 'unchanged';
   readonly protagonist: { readonly healthText: string; readonly emotionText: string };
   readonly npc: Readonly<Record<string, { readonly healthText?: string; readonly relationshipText: string }>>;
 }

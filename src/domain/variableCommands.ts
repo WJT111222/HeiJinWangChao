@@ -188,11 +188,8 @@ export function applyVariableCommand(
       Object.assign(npc, changes);
       // null 是命令层的显式清除，正式 NPC 仍使用原 Schema 的可选地点。
       if (locationId === null) {
-        requireData(!npc.onScene, 'SCENE_LOCATION', '在场 NPC 不能清除地点');
         delete npc.locationId;
       } else if (locationId !== undefined) npc.locationId = locationId;
-      if (command.changes.onScene === true)
-        requireData(npc.locationId, 'SCENE_LOCATION', '入场必须明确地点');
       break;
     }
     case 'RecordNpcMemory': {
