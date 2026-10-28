@@ -1560,7 +1560,9 @@ summary {
 .game-layout > .hero-sidebar, .game-layout > .world-sidebar { min-height: 0; padding: 0; overflow: auto; }
 .sidebar-disclosure { height: auto; min-height: 0; }
 .sidebar-disclosure > summary { display: none; }
-.sidebar-body { height: auto; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 1.25rem; overflow-wrap: anywhere; }
+/* Desktop scrolls the aside itself. An unconstrained nested scrollport with
+   overscroll containment would consume wheel/trackpad input before it reaches the aside. */
+.sidebar-body { height: auto; overflow: visible; padding: 1.25rem; overflow-wrap: anywhere; }
 .game-layout .reader { flex: 1 1 0; min-height: 0; height: auto; max-height: none; padding: 1.5rem clamp(1rem, 3vw, 4rem); }
 .game-layout .composer { display: flex; flex-direction: column; flex-shrink: 1; gap: .4rem; min-height: 0; max-height: min(calc(100% - 24px), max(75%, 180px)); padding: .6rem 1rem max(.6rem, env(safe-area-inset-bottom)); overflow: hidden; }
 .composer-tools { flex: 0 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
@@ -1600,7 +1602,7 @@ summary {
   .sidebar-disclosure > summary::after { content: '▾'; }
   .sidebar-disclosure[open] > summary::after { content: '▴'; }
   .sidebar-disclosure > summary span { color: var(--muted); font-size: .65rem; }
-  .sidebar-body { height: auto; max-height: min(26dvh, 230px); padding: .8rem; }
+  .sidebar-body { height: auto; max-height: min(26dvh, 230px); padding: .8rem; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
   .game-layout > .story-column { grid-row: 2; grid-column: 1 / -1; order: 1; }
   .game-layout .reader { padding: 1rem; }
   .game-layout .composer { padding: .4rem .65rem max(.4rem, env(safe-area-inset-bottom)); }
