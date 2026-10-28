@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { RuntimeLogEntry } from './runtimeLog';
 import { runtimeStageNames } from './runtimeLog';
 
@@ -10,8 +10,14 @@ export function RuntimeLogPanel({
   onClear: () => void;
 }) {
   const [copyError, setCopyError] = useState(false);
+  const logElement = useRef<HTMLDetailsElement>(null);
   const errorCount = entries.filter((entry) => entry.kind === 'failed').length;
   const latestError = [...entries].reverse().find((entry) => entry.kind === 'failed');
+  const latestErrorId = latestError?.id;
+  // Only new failures reopen the log; the player can still collapse it manually.
+  useEffect(() => {
+    if (latestErrorId !== undefined && logElement.current) logElement.current.open = true;
+  }, [latestErrorId]);
   async function copy() {
     try {
       // Entries are derived only from fixed messages and sanitized error metadata.
@@ -22,7 +28,7 @@ export function RuntimeLogPanel({
     }
   }
   return (
-    <details className="runtime-log" data-testid="runtime-log">
+    <details ref={logElement} className="runtime-log" data-testid="runtime-log">
       <summary>
         <span>运行日志 · {entries.length} 条</span>
         {errorCount > 0 && <strong className="runtime-log-error-count">错误 {errorCount} 条{latestError?.code ? ` · ${latestError.code}` : ''}</strong>}
