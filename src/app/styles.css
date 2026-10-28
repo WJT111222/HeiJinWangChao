@@ -1648,6 +1648,8 @@ summary {
 .runtime-log-content { border-top: 1px solid var(--line); max-height: min(40dvh, 280px); overflow: auto; overscroll-behavior: contain; padding: .6rem .75rem; }
 .runtime-log-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .5rem 0; }
 .runtime-log-actions button { font-size: .68rem; padding: .35rem .55rem; }
+.runtime-log-entry-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .4rem; }
+.runtime-log-entry-header button { font-size: .68rem; padding: .28rem .5rem; flex-shrink: 0; }
 .runtime-log ol { margin: .5rem 0; padding-left: 1.3rem; }
 .runtime-log li { padding: .5rem 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
 .runtime-log li:first-child { border-top: 0; }
