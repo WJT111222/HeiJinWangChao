@@ -8,6 +8,7 @@ import { storyError } from '../../workflows/storyStage';
 import { TurnCoordinator } from '../../workflows/turnCoordinator';
 import type { TurnOutcome, TurnProgress } from '../../workflows/turnCoordinator';
 import type { Settings } from '../settings/model';
+import type { RuntimeLogReporter } from './runtimeLog';
 
 export function useTurnGeneration(
   repository: SaveRepository,
@@ -15,6 +16,7 @@ export function useTurnGeneration(
   settings: Settings,
   companionProfile: CompanionProfile | undefined,
   onSaved: (draft: TurnDraft) => void,
+  onRuntimeEvent?: RuntimeLogReporter,
 ) {
   const [runner] = useState(() => new TurnCoordinator(repository));
   const [running, setRunning] = useState(false);
@@ -25,6 +27,7 @@ export function useTurnGeneration(
     token = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pending = useRef<TurnProgress | undefined>(undefined);
+  const lastLoggedStage = useRef<TurnProgress['stage'] | undefined>(undefined);
   const lastProgress = () => pending.current;
   useEffect(
     () => () => {
@@ -39,6 +42,8 @@ export function useTurnGeneration(
     active.current = true;
     const id = ++token.current;
     setRunning(true);
+    onRuntimeEvent?.('workflow', 'started');
+    lastLoggedStage.current = undefined;
     setError('');
     setOutcome(undefined);
     setProgress(undefined);
@@ -56,6 +61,10 @@ export function useTurnGeneration(
         onProgress: (next) => {
           if (token.current !== id) return;
           pending.current = next;
+          if (next.stage !== lastLoggedStage.current) {
+            lastLoggedStage.current = next.stage;
+            onRuntimeEvent?.(next.stage, 'started');
+          }
           if (next.stage !== 'story' || next.phase !== 'generating') {
             clearTimeout(timer.current);
             timer.current = undefined;
@@ -68,10 +77,14 @@ export function useTurnGeneration(
           }
         },
       });
-      if (token.current === id) setOutcome(result);
+      if (token.current === id) {
+        setOutcome(result);
+        onRuntimeEvent?.('workflow', 'completed');
+      }
     } catch (failure) {
       if (token.current === id) {
         const stage = lastProgress()?.stage;
+        onRuntimeEvent?.(stage ?? 'workflow', 'failed', failure);
         setError(
           `${stage ? { story: '正文生成', variables: '变量管理', world: '动态世界' }[stage] + '：' : ''}${storyError(failure)}`,
         );
@@ -90,6 +103,7 @@ export function useTurnGeneration(
     if (!runner.cancel()) return;
     // 等当前执行器退出后才开放新运行，避免宣称仍在保存的事务已经取消。
     setError('正在取消自动执行；已完整保存的合法候选将保留。');
+    onRuntimeEvent?.('workflow', 'cancelled');
   }
   return { generate, cancel, running, progress, error, outcome };
 }
