@@ -1654,7 +1654,7 @@
       "toggle": null,
       "domain": null,
       "characters": 5943,
-      "version": "0.5.6",
+      "version": "0.8.0-live-text",
       "messageRole": null,
       "activation": "never",
       "permanent": false,
@@ -1678,7 +1678,7 @@
       "toggle": null,
       "domain": null,
       "characters": 12924,
-      "version": "0.8.0-m8-p0a",
+      "version": "0.8.0-live-text",
       "messageRole": null,
       "activation": "never",
       "permanent": false,
@@ -2143,7 +2143,7 @@
     {
       "id": "shared.07_command_output.text",
       "path": "shared/07_command_output.md",
-      "title": "变量更新输出协议（严格JSON）（文本协议准备）",
+      "title": "变量更新输出协议（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2171,7 +2171,7 @@
     {
       "id": "stages.opening.variables.text",
       "path": "stages/opening/variables.md",
-      "title": "开局变量初始化主提示词（文本协议准备）",
+      "title": "开局变量初始化主提示词（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2198,7 +2198,7 @@
     {
       "id": "stages.regular.variables.text",
       "path": "stages/regular/variables.md",
-      "title": "普通回合变量更新主提示词（文本协议准备）",
+      "title": "普通回合变量更新主提示词（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2225,7 +2225,7 @@
     {
       "id": "variableGroups.protagonist.init.text",
       "path": "variableGroups/protagonist/init.md",
-      "title": "主角｜初始化（文本协议准备）",
+      "title": "主角｜初始化（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2252,7 +2252,7 @@
     {
       "id": "variableGroups.protagonist.update.text",
       "path": "variableGroups/protagonist/update.md",
-      "title": "主角｜常规更新（文本协议准备）",
+      "title": "主角｜常规更新（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2279,7 +2279,7 @@
     {
       "id": "variableGroups.npc_ordinary.init.text",
       "path": "variableGroups/npc_ordinary/init.md",
-      "title": "普通NPC｜初始化（文本协议准备）",
+      "title": "普通NPC｜初始化（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2306,7 +2306,7 @@
     {
       "id": "variableGroups.npc_ordinary.update.text",
       "path": "variableGroups/npc_ordinary/update.md",
-      "title": "普通NPC｜常规更新（文本协议准备）",
+      "title": "普通NPC｜常规更新（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2333,7 +2333,7 @@
     {
       "id": "variableGroups.npc_special.init.text",
       "path": "variableGroups/npc_special/init.md",
-      "title": "特殊NPC｜初始化（文本协议准备）",
+      "title": "特殊NPC｜初始化（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2360,7 +2360,7 @@
     {
       "id": "variableGroups.npc_special.update.text",
       "path": "variableGroups/npc_special/update.md",
-      "title": "特殊NPC｜常规更新（文本协议准备）",
+      "title": "特殊NPC｜常规更新（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2387,7 +2387,7 @@
     {
       "id": "variableGroups.items.init.text",
       "path": "variableGroups/items/init.md",
-      "title": "重要物品｜初始化（文本协议准备）",
+      "title": "重要物品｜初始化（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2414,7 +2414,7 @@
     {
       "id": "variableGroups.items.update.text",
       "path": "variableGroups/items/update.md",
-      "title": "重要物品｜常规更新（文本协议准备）",
+      "title": "重要物品｜常规更新（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2441,7 +2441,7 @@
     {
       "id": "variableGroups.economy.init.text",
       "path": "variableGroups/economy/init.md",
-      "title": "经济与资产｜初始化（文本协议准备）",
+      "title": "经济与资产｜初始化（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2468,7 +2468,7 @@
     {
       "id": "variableGroups.economy.update.text",
       "path": "variableGroups/economy/update.md",
-      "title": "经济与资产｜常规更新（文本协议准备）",
+      "title": "经济与资产｜常规更新（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2495,7 +2495,7 @@
     {
       "id": "variableGroups.org_gang.init.text",
       "path": "variableGroups/org_gang/init.md",
-      "title": "黑帮势力｜初始化（文本协议准备）",
+      "title": "黑帮势力｜初始化（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2522,7 +2522,7 @@
     {
       "id": "variableGroups.org_gang.update.text",
       "path": "variableGroups/org_gang/update.md",
-      "title": "黑帮势力｜常规更新（文本协议准备）",
+      "title": "黑帮势力｜常规更新（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2549,7 +2549,7 @@
     {
       "id": "variableGroups.org_government.init.text",
       "path": "variableGroups/org_government/init.md",
-      "title": "官方势力｜初始化（文本协议准备）",
+      "title": "官方势力｜初始化（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2576,7 +2576,7 @@
     {
       "id": "variableGroups.org_government.update.text",
       "path": "variableGroups/org_government/update.md",
-      "title": "官方势力｜常规更新（文本协议准备）",
+      "title": "官方势力｜常规更新（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2603,7 +2603,7 @@
     {
       "id": "variableGroups.org_civil.init.text",
       "path": "variableGroups/org_civil/init.md",
-      "title": "民间组织｜初始化（文本协议准备）",
+      "title": "民间组织｜初始化（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2630,7 +2630,7 @@
     {
       "id": "variableGroups.org_civil.update.text",
       "path": "variableGroups/org_civil/update.md",
-      "title": "民间组织｜常规更新（文本协议准备）",
+      "title": "民间组织｜常规更新（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2657,7 +2657,7 @@
     {
       "id": "variableGroups.org_business.init.text",
       "path": "variableGroups/org_business/init.md",
-      "title": "企业与资本势力｜初始化（文本协议准备）",
+      "title": "企业与资本势力｜初始化（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2684,7 +2684,7 @@
     {
       "id": "variableGroups.org_business.update.text",
       "path": "variableGroups/org_business/update.md",
-      "title": "企业与资本势力｜常规更新（文本协议准备）",
+      "title": "企业与资本势力｜常规更新（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2711,7 +2711,7 @@
     {
       "id": "shared.04_state_authority.text",
       "path": "shared/04_state_authority.md",
-      "title": "状态真值与执行边界（文本协议准备）",
+      "title": "状态真值与执行边界（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
@@ -2739,7 +2739,7 @@
     {
       "id": "shared.05_context_protocol.text",
       "path": "shared/05_context_protocol.md",
-      "title": "上下文容器与可信度（文本协议准备）",
+      "title": "上下文容器与可信度（文本变量）",
       "kind": "prompt",
       "applicableStages": [
         "variables"
