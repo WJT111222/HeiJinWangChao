@@ -85,7 +85,7 @@ describe('精确路径与操作白名单', () => {
       expect(plan.commands).toHaveLength(1);
       expect((await simulateVariablePlan(plan, data.state, data.context)).ok).toBe(true);
     });
-  it.each(['protagonist', 'protagonist.id', 'protagonist.age', 'protagonist.currentWear',
+  it.each(['protagonist', 'protagonist.id', 'protagonist.age',
     'npc[npc_001].identity', 'npc[npc_001].knownInformation',
     'npc[0].healthText', 'npc[npc_001].memories[0].visibility', 'npc[npc_001].affinity', '角色.当前精力',
     '环境.时间', 'revision', 'schemaVersion', 'appliedCommands', 'memories.npcSummaries', 'items[item_001].ownerRef', 'economy.incomes'])(
@@ -115,7 +115,7 @@ describe('NPC实体与稳定身份', () => {
     expect(after.npc.npc_001).toMatchObject({ onScene: true, healthText: '健康' });
     expect(data.state.npc.npc_001.onScene).toBe(false);
   });
-  it.each(['protagonist.locationId', 'npc[npc_001].onScene', 'npc[npc_001].locationId', 'worldClock'])(
+  it.each(['protagonist.locationId', 'npc[npc_001].onScene', 'npc[npc_001].locationId', 'worldClock', 'protagonist.currentWear'])(
     '新注册路径%s仍拒绝错误字段类型', async (path) => expectCode((await compile(`set ${path} = "不能写入"`)).result, 'type_mismatch'));
 
   it('同名NPC始终由稳定ID区分，不影响另一个人', async () => {
@@ -162,15 +162,13 @@ describe('明确资金支出', () => {
   });
   it('余额不足整批拒绝，即使之前的状态更新合法', async () => {
     const data = setup('set protagonist.emotionText = "轻松"\nadd economy.cash = -10001');
-    const context = data.context;
-    expectCode(await compileVariableCommands(data.ast, data.state, context), 'invalid_amount'); expect(data.state.protagonist.emotionText).toBe('平静');
+    expectCode(await run(data), 'invalid_amount'); expect(data.state.protagonist.emotionText).toBe('平静');
   });
   it.each([-0.1, 0, -9007199254740992])('金额 %s 非法', async (value) => expectCode((await compile(`add economy.cash = ${value}`)).result, 'invalid_amount'));
   it('正向收入不自动构造IncomeRecord', async () => expectCode((await compile('add economy.cash = 100')).result, 'unsupported_operation'));
   it('多笔消费整体核对余额而不是只核对单笔', async () => {
     const data = setup('add economy.cash = -6000\nadd economy.cash = -6000');
-    const context = data.context;
-    expectCode(await compileVariableCommands(data.ast, data.state, context), 'invalid_amount'); expect(data.state.economy.cash).toBe(10000);
+    expectCode(await run(data), 'invalid_amount'); expect(data.state.economy.cash).toBe(10000);
   });
 });
 
