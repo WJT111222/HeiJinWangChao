@@ -142,10 +142,11 @@ set npc[lin].identity = "自由改写已有身份"
 
 ## 本轮文件清单
 
-共59个文件，其中23个是原提示词逐字快照；不存在无内容占位文件。
+共60个文件，其中23个是原提示词逐字快照；不存在无内容占位文件。
 
 ```text
 M8-P0C-3D1-TEXT-PROTOCOL-READINESS.md
+e2e/prompt-inspector.spec.ts
 prompts/legacy/variables_json/shared/04_state_authority.md
 prompts/legacy/variables_json/shared/05_context_protocol.md
 prompts/legacy/variables_json/shared/07_command_output.md
@@ -211,3 +212,7 @@ src/tests/variable-text-executor.test.ts
 说明区只是非执行文本，本轮没有将它转成正式unresolved持久记录。文本命令仅形成计划/内存副本；即使所有离线测试通过，现行玩家Variables请求仍使用JSON，不能把本轮描述为已正式接入文本模型输出。原始字段约束仍由编译器和领域命令共同执行，类型目录不是新审批器。NPC的原生长期记录与知晓信息组合若需同一次记忆同时写入两者，当前各路径分别表达，不能假装已提供所有任意RecordNpcMemory标志组合；3D-2接线前可按真实需求再核对该组合及未支持初始化缺口。
 
 第三次阶段性提交：共享04/05的两项实际组装失败测试已验证并修复，最终工程检查1857/1857通过后推送代码；完整浏览器回归继续运行，不把中途主动终止的旧运行计作通过。
+
+## E2E注册数量断言适配
+
+第一次完整浏览器执行为288通过、2失败（19.8分钟），两项均是e2e/prompt-inspector.spec.ts在桌面/移动端仍写死77/77；错误上下文显示页面实际100/100，符合77个原模块+23个新文本资源。只将断言改为导入真实Manifest计算总数，并额外核对列表实际按钮数。未删除用例、放宽断言或修改UI。Node24原生JSON导入需要with {type: json}，已按运行环境补齐。该文件8/8定向E2E通过，Lint与类型检查再次通过；完整290项已从头重跑，结果待补录。

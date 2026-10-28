@@ -2,6 +2,7 @@ import { openGameTools } from './helpers/gameLayout';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import manifest from '../prompts/manifest.json' with { type: 'json' };
 
 async function seed(page: Page, ready = true) {
   await page.goto('/');
@@ -78,7 +79,9 @@ test('无存档浏览真实模块、过滤与全文，缺少阶段请求时不�
   });
   await page.goto('/');
   await inspector(page);
-  await expect(page.getByText(/模块库 · 77\/77/)).toBeVisible();
+  const moduleCount = manifest.modules.length;
+  await expect(page.getByText(`模块库 · ${moduleCount}/${moduleCount}`, { exact: true })).toBeVisible();
+  await expect(page.locator('.module-library-list button')).toHaveCount(moduleCount);
   await page.getByText('开局与普通回合的模块差异', { exact: true }).click();
   await expect(page.getByRole('region', { name: '回合模式差异' })).toContainText(
     'stages.opening.story',
