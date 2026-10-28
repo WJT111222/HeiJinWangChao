@@ -8,7 +8,6 @@ import type { ComposeInput } from './context';
 import type { AiMessage } from '../services/ai/protocols';
 import { estimateTokens } from './statistics';
 import { AiError } from '../services/ai/errors';
-import { textVariableCatalog } from '../executors/variableText/catalog';
 
 export interface ModuleRecord {
   id: string;
@@ -20,9 +19,10 @@ export interface ModuleRecord {
   estimatedTokens: number;
 }
 export async function composePrompt(unchecked: ComposeInput) {
+  if (unchecked.stage === 'variables') return composeTextVariablesPrompt({ ...unchecked, stage: 'variables' });
   return compose(unchecked, 'json');
 }
-/** 3D-1准备入口：纯离线组装，不接入runStageRequest或存档。 */
+/** 正式Variables及离线预览共用同一组装器；组装本身不请求模型或写库。 */
 export async function composeTextVariablesPrompt(input: ComposeInput & { stage: 'variables' }) {
   if (input.stage !== 'variables') throw new AiError('configuration');
   return compose(input, 'text');
@@ -51,10 +51,6 @@ async function compose(unchecked: ComposeInput, variableProtocol: 'json' | 'text
   )
     throw new AiError('configuration');
   const context = contextFor(input);
-  if (variableProtocol === 'text') {
-    delete context.COMMAND_CATALOG;
-    context.TEXT_COMMAND_CATALOG = textVariableCatalog();
-  }
   const clock =
     typeof context.worldClock === 'string' ? context.worldClock : input.state.openingTimePending
       ? input.stage === 'variables' || input.stage === 'world' ? openingTimeSelection(input.state, input.draft!)?.endAt : undefined
