@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { DataError } from '../domain/common';
 import { AiError } from '../services/ai/errors';
 import { runtimeLogEvent } from '../ui/game/runtimeLog';
+import { parseTextVariables } from '../services/validation/aiOutputs';
+import { createTurnDraft, rerollStory } from '../domain/drafts';
+import { game, npc, story } from './fixtures/game';
 
 describe('safe runtime log diagnostics', () => {
   it('shows only allowlisted AI status and field metadata', () => {
@@ -34,6 +37,27 @@ describe('safe runtime log diagnostics', () => {
       fieldPath: `token.${secret}`,
     }));
     expect(unsafe.fieldPath).toBeUndefined();
+  });
+
+  it('carries actual compiler mismatch into the safe UI log', async () => {
+    const state = game();
+    state.npc.npc_001 = npc('npc_001');
+    const draft = rerollStory(createTurnDraft(state.saveId, state.revision, 'turn-a', 'opening', ''), {
+      ...story, turnKind: 'opening',
+    });
+    let caught: unknown;
+    try {
+      await parseTextVariables('<命令>\\nset npc[npc_001].onScene = "secret-input"\\n</命令>', state, draft);
+    } catch (failure) { caught = failure; }
+    expect(caught).toBeInstanceOf(AiError);
+    const logged = runtimeLogEvent(10, 'variables', 'failed', caught);
+    expect(logged).toMatchObject({
+      code: 'schema_fields', fieldPath: 'text.type_mismatch', commandIndex: 1,
+      valuePath: 'npc[id].onScene', expectedType: 'boolean',
+      actualType: 'string', validationRule: 'invalid_type',
+    });
+    expect(JSON.stringify(logged)).not.toContain('npc_001');
+    expect(JSON.stringify(logged)).not.toContain('secret-input');
   });
 
   it('shows sanitized field path, expected/actual type and rule', () => {
