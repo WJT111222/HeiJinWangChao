@@ -17,6 +17,7 @@ export interface RuntimeLogEntry {
   fieldPath?: string;
   commandIndex?: number;
   commandType?: string;
+  relatedCommandIndices?: number[];
 }
 
 export const runtimeStageNames: Record<RuntimeLogStage, string> = {
@@ -67,5 +68,9 @@ export function runtimeLogEvent(
     ...(typeof details?.commandIndex === 'number' && details.commandIndex >= 0
       ? { commandIndex: details.commandIndex + 1 } : {}),
     ...(type && /^[A-Za-z0-9_]+$/.test(type) ? { commandType: type } : {}),
+    ...(details?.relatedCommandIndices?.length
+      ? { relatedCommandIndices: [...new Set(details.relatedCommandIndices
+        .filter((index) => Number.isSafeInteger(index) && index > 0))].slice(0, 20) }
+      : {}),
   };
 }
