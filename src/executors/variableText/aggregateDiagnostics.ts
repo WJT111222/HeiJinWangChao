@@ -11,7 +11,7 @@ export const domainRuleNames = {
   duplicate_entity_id: '实体 ID 重复',
   duplicate_npc_identity: 'NPC 身份重复或与历史身份冲突',
   npc_kind: 'NPC 类型不允许该操作',
-  npc_task_ownership: 'NPC 或组织任务归属不一致',
+  npc_task_ownership: '任务归属不一致',
   scene_transition: '主角移动时缺少原在场 NPC 的状态更新',
   scene_location: '在场 NPC 缺少明确地点',
   equipment_ownership: '装备类别或归属不符合要求',
