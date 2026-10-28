@@ -49,6 +49,7 @@ export function RuntimeLogPanel({
                 {entry.fieldPath && <small>字段：{entry.fieldPath}</small>}
                 {entry.commandIndex && <small>命令序号：第 {entry.commandIndex} 条</small>}
                 {entry.commandType && <small>命令类型：{entry.commandType}</small>}
+                {entry.relatedCommandIndices?.length ? <small>相关命令：{entry.relatedCommandIndices.map((index) => `第${index}条`).join('、')}（整批失败，无法确定唯一出错命令）</small> : null}
               </li>
             ))}
           </ol>
