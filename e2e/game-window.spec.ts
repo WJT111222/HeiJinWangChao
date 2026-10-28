@@ -94,6 +94,30 @@ test('三栏独立滚动；移动端侧栏默认收起且可独立展开', async
   expect(await page.evaluate(() => scrollY)).toBe(0); await fit(page);
 });
 
+test('鼠标滚轮进入左右资料栏时滚动该栏，不带动正文或整页', async ({ page }, info) => {
+  await seed(page);
+  const mobile = info.project.name === 'mobile';
+  await page.setViewportSize({ width: mobile ? 392 : 1100, height: 480 });
+  await openSidebar(page, '.hero-sidebar'); await openSidebar(page, '.world-sidebar');
+  const reader = page.getByTestId('story-reader');
+  await reader.evaluate((el) => { el.scrollTop = 260; });
+  for (const side of ['hero', 'world'] as const) {
+    const selector = `.${side}-sidebar`;
+    const scroller = page.locator(mobile ? `${selector} .sidebar-body` : selector);
+    const body = page.locator(`${selector} .sidebar-body`);
+    await scroller.evaluate((el) => { el.scrollTop = 0; });
+    expect(await scroller.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+    const rect = await body.boundingBox();
+    expect(rect).not.toBeNull();
+    await page.mouse.move(rect!.x + rect!.width / 2, rect!.y + Math.min(40, rect!.height / 2));
+    await page.mouse.wheel(0, 600);
+    await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+    expect(await reader.evaluate((el) => el.scrollTop)).toBe(260);
+  }
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+  await fit(page);
+});
+
 test('默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态', async ({ page }, info) => {
   const before = await seed(page), disclosure = page.locator('.workflow-disclosure'), summary = disclosure.locator(':scope > summary');
   await expect(disclosure).not.toHaveAttribute('open'); await expect(summary).toContainText('等待继续');
