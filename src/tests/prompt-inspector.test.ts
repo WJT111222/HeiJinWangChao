@@ -144,7 +144,7 @@ describe('真实资源库、选择器与独立排序', () => {
         expect(preview.ok).toBe(true);
         if (!preview.ok) throw new Error();
         const ids = preview.prompt.modules.map((m) => m.id);
-        expect(ids.filter((id) => id.startsWith('stages.'))).toEqual([`stages.${mode}.${stage}`]);
+        expect(ids.filter((id) => id.startsWith('stages.'))).toEqual([`stages.${mode}.${stage}${stage === 'variables' ? '.text' : ''}`]);
         expect(ids.filter((id) => id === 'writing.nsfw')).toHaveLength(stage === 'story' ? 1 : 0);
         expect(preview.statistics.actual.inputTokens).toBeUndefined();
         expect(preview.prompt.modules.every((m) => m.estimatedTokens > 0)).toBe(true);

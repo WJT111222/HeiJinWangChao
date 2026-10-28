@@ -62,7 +62,8 @@ export function wireRequest(
   if (params.maxOutputTokens !== undefined && max === undefined)
     diagnostics.push('MAX_TOKENS_SKIPPED_UNSUPPORTED');
   if (thinking.gemini || thinking.anthropic) diagnostics.push('NATIVE_THINKING_AUTO_ENABLED');
-  const structured = snapshot.stage !== 'story';
+  const structured = snapshot.stage === 'world' || snapshot.stage === 'memory';
+  if (snapshot.stage === 'variables' && cap.jsonMode) diagnostics.push('VARIABLE_TEXT_MODE_JSON_DISABLED');
   if (structured && (!cap.jsonMode || protocol === 'anthropic'))
     diagnostics.push('NATIVE_JSON_MODE_SKIPPED_STRICT_PROMPT_RETAINED');
   const system = ordered

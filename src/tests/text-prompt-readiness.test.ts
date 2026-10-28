@@ -24,13 +24,13 @@ function input(mode:'opening'|'regular'='regular') {
 const textModules=promptManifest.modules.filter(m=>m.variableProtocol==='text');
 const sha=(content:string)=>createHash('sha256').update(content).digest('hex');
 describe('文本协议真实资源与离线组装',()=>{
-  it('38条路径目录类型齐备，不包含World/任意资产操作',()=>{
+  it('40条路径目录类型齐备，现场任务事件复用旧命令',()=>{
     const catalog=textVariableCatalog();
-    expect(catalog.entries).toHaveLength(38);
-    expect(new Set(catalog.entries.map(e=>`${e.operation}:${e.path}`)).size).toBe(38);
-    expect(new Set(catalog.entries.map(e=>e.commandType)).size).toBe(21);
+    expect(catalog.entries).toHaveLength(40);
+    expect(new Set(catalog.entries.map(e=>`${e.operation}:${e.path}`)).size).toBe(40);
+    expect(new Set(catalog.entries.map(e=>e.commandType)).size).toBe(23);
     for(const e of catalog.entries)expect(e.valueSchema).toHaveProperty('$schema');
-    expect(catalog.entries.some(e=>['SaveTask','SaveEvent','RetireNpc'].includes(e.commandType))).toBe(false);
+    expect(catalog.entries.some(e=>['RetireNpc'].includes(e.commandType))).toBe(false);
     expect(catalog.entries.some(e=>e.path==='economy.cash'&&e.operation==='set')).toBe(false);
   });
   it.each(['opening','regular'] as const)('%s文本组装只加载相应主模板/九组，不混入旧JSON协议',async(mode)=>{
@@ -43,16 +43,17 @@ describe('文本协议真实资源与离线组装',()=>{
     expect(ids).toContain('shared.07_command_output.text');
     expect(ids).not.toContain('shared.07_command_output');
     expect(r.context).not.toHaveProperty('COMMAND_CATALOG');expect(r.context).toHaveProperty('TEXT_COMMAND_CATALOG',textVariableCatalog());
+    for(const m of textModules){expect(m.title).not.toMatch(/严格JSON|协议准备/);expect(sources.resources[m.path as keyof typeof sources.resources]).toHaveProperty('textProtocol.note',expect.stringContaining('3D-2正式Variables'));}
     const systems=r.messages.filter(m=>m.role==='system').map(m=>m.content).join('\n');
     expect(systems).not.toContain('输出严格JSON {commands,rejectedSuggestions,unresolved}');
     expect(systems).toContain('不输出旧的领域命令JSON对象');expect(systems).toContain('VARIABLE_TEXT_V1');
     expect(ids).not.toContain(`stages.${mode==='opening'?'regular':'opening'}.variables.text`);
   });
-  it.each(['opening','regular'] as const)('%s默认正式组装继续使用原JSON资源，World不加载文本init',async(mode)=>{
+  it.each(['opening','regular'] as const)('%s默认正式组装使用文本资源，World不加载文本init',async(mode)=>{
     const a=input(mode),r=await composePrompt(a);
-    expect(r.context).toHaveProperty('COMMAND_CATALOG');expect(r.context).not.toHaveProperty('TEXT_COMMAND_CATALOG');
-    expect(r.modules.some(m=>m.id.endsWith('.text'))).toBe(false);
-    expect(r.messages.some(m=>m.content.includes('输出严格JSON {commands,rejectedSuggestions,unresolved}'))).toBe(true);
+    expect(r.context).toHaveProperty('TEXT_COMMAND_CATALOG');expect(r.context).not.toHaveProperty('COMMAND_CATALOG');
+    expect(r.modules.some(m=>m.id.endsWith('.text'))).toBe(true);
+    expect(r.messages.some(m=>m.content.includes('输出严格JSON {commands,rejectedSuggestions,unresolved}'))).toBe(false);
     const world=selectPromptModules({...a,stage:'world'});
     expect(world.some(m=>m.variableProtocol==='text')).toBe(false);
     expect(world.some(m=>m.id==='shared.08_world_output')).toBe(true);

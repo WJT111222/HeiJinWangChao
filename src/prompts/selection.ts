@@ -7,13 +7,13 @@ export type SelectionInput = Pick<
   ComposeInput,
   'stage' | 'mode' | 'settings' | 'domains' | 'memoryTask' | 'cotAllowed'
 >;
-export function moduleActivation(module: PromptModule, input: SelectionInput, variableProtocol: 'json' | 'text' = 'json') {
+export function moduleActivation(module: PromptModule, input: SelectionInput, variableProtocol: 'json' | 'text' = input.stage === 'variables' ? 'text' : 'json') {
   if (module.activation === 'never')
     return { status: 'not-applicable', reason: '参考/文档资源，永不注入' } as const;
   if (!module.applicableStages.includes(input.stage) || !module.modes.includes(input.mode))
     return { status: 'not-applicable', reason: '不适用当前阶段或回合模式' } as const;
   if (module.variableProtocol && module.variableProtocol !== variableProtocol)
-    return { status: 'not-applicable', reason: '不适用当前协议；文本资源本轮仅供离线组装' } as const;
+    return { status: 'not-applicable', reason: '不适用当前协议；Variables使用文本，其他阶段保留各自协议' } as const;
   let enabled = false;
   let reason: string = module.activation;
   if (module.activation === 'always') {
@@ -40,7 +40,7 @@ export function moduleActivation(module: PromptModule, input: SelectionInput, va
   }
   return { status: enabled ? 'enabled' : 'disabled', reason } as const;
 }
-export function selectPromptModules(input: SelectionInput, variableProtocol: 'json' | 'text' = 'json') {
+export function selectPromptModules(input: SelectionInput, variableProtocol: 'json' | 'text' = input.stage === 'variables' ? 'text' : 'json') {
   const knownDomains = new Set(promptManifest.modules.filter((m) => m.domain).map((m) => m.domain));
   if ((input.domains ?? []).some((domain) => !knownDomains.has(domain)))
     throw new AiError('configuration');

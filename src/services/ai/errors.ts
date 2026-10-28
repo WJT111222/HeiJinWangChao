@@ -19,6 +19,7 @@ export type AiErrorCode =
   | 'time_data'
   | 'candidate_conflict'
   | 'invalid_json'
+  | 'variable_text_syntax'
   | 'invalid_output'
   | 'unsupported'
   | 'resource'
@@ -52,6 +53,7 @@ const messages: Record<AiErrorCode, string> = {
   time_data: '候选日期无效、时间倒退或结构化时钟发生冲突，候选未保存。',
   candidate_conflict: '存档版本、命令或候选存在冲突，请重新读取后继续。',
   invalid_json: '响应不是完整合法的 JSON。',
+  variable_text_syntax: '变量文本命令区块或JSON值格式不合法，候选未保存。',
   invalid_output: '模型输出未通过结构或事实校验，候选未被接受。',
   unsupported: '当前协议不支持此请求特性，请检查兼容配置。',
   resource: '提示词资源缺失或与注册校验值不符。',

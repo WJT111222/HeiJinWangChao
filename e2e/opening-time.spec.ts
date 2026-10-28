@@ -1,3 +1,4 @@
+import { variableReply } from '../src/tests/fixtures/variableReply';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { record, array, string } from '../src/services/ai/protocols';
@@ -60,7 +61,7 @@ async function mock(page: Page, startAt: string, endAt: string) {
       const minimalCommands = !opening || plan.variableCase === 'empty' ? [] : plan.variableCase === 'npc'
         ? [{ type: 'CreateNpc', commandId: 'scene-person', evidence: '本幕在场服务人员', npc: { id: 'new-npc', identityKey: 'identity-new-npc', kind: 'ordinary', name: '店员', aliases: [], skills: [], onScene: true, locationId: hero.locationId, affinity: 0, relationshipText: '初次见面', memories: [], knownInformation: [] } }]
         : [{ type: 'AcquireItem', commandId: 'gift', evidence: '临别得到一份证件', item: { id: 'gift', name: '证件', category: 'document', quantity: 1, conditionText: '完好', ownerRef: { kind: 'protagonist', id: hero.id } } }];
-      text = JSON.stringify(stage === 'variables' ? {
+      text = (stage === 'variables' ? variableReply : JSON.stringify)(stage === 'variables' ? {
         commands: plan.minimal ? minimalCommands : [{ type: 'SetWorldClock', commandId: 'clock', evidence: '主角在街边喝了一口水。',
           worldClock: opening ? string(record(context.OPENING_TIME).endAt) : new Date(Date.parse(string(record(context.SAVE_STATE).worldClock)) + 15000).toISOString() }], rejectedSuggestions: [], unresolved: [],
       } : { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] });
@@ -149,7 +150,7 @@ for (const kind of ['empty', 'npc', 'item']) test(`M8最小开局${kind}：无�
   await creation(page, '故事发生在2015年夏天。');
   await page.getByRole('button', { name: '确认并创建存档', exact: true }).click(); await ready(page);
   const first = await stored(page);
-  expect(first.draft.variables!.result.commands.some((c) => c.type === 'SetWorldClock')).toBe(false);
+  expect(first.draft.variables!.result.commands.filter((c) => c.type === 'SetWorldClock')).toEqual([{ type: 'SetWorldClock', commandId: 'opening-clock:1', worldClock: endAt, evidence: 'Story结构化开局时间' }]);
   expect(first.state.openingTimePending).toBe(true); expect(first.state.worldClock).toBe(pendingOpeningClock);
   expect(server.calls[1].context.SAVE_STATE).toHaveProperty('worldClock', endAt);
   expect(server.calls[2].context.TIME_WINDOW).toEqual({ from: startAt, to: endAt });

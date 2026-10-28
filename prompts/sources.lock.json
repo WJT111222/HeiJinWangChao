@@ -144,7 +144,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/npc_ordinary/init.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "cda75734b44d3c28b71acf0bdc299371a1a0255b517bf86bbfa3ee21a3b2bb4d"
       }
     },
@@ -161,7 +161,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/npc_ordinary/update.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "eaa377f9004ff32b5765d6f7f59776ac7431d44f1e0f3130109fc330ba956715"
       }
     },
@@ -189,7 +189,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/npc_special/init.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "93a249fd544748759e14e09d1a97a4372edbdfbb13c539127b79ea5648182996"
       }
     },
@@ -206,7 +206,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/npc_special/update.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "151e45b51b410b63a36353fb9d4e7562850a29c7bba6029024852b8af98b8afb"
       }
     },
@@ -278,7 +278,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/shared/04_state_authority.md",
-        "note": "仅文本Variables资源：移除AI生成命令元数据和旧JSON错误数组要求。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "1eae7d53ea96b6655a8bfbc1ff3ec5a99e20e175d2007a9466baacd0e861c5ae"
       }
     },
@@ -289,7 +289,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/shared/05_context_protocol.md",
-        "note": "仅文本Variables资源：移除AI生成命令元数据和旧JSON错误数组要求。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "b24da73fc93ed7e6b42aff6dfb0a1aab7cddd03c042c1362f296eb05cd0fcb9a"
       }
     },
@@ -320,8 +320,8 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/shared/07_command_output.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
-        "sha256": "61bd170fe376d85ca55c1778633e82cda79c9119f9bc94f777d60c355ea9d794"
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求；3D-2共享输出协议补齐现场SaveTask/SaveEvent。",
+        "sha256": "d802bf841a1a89ffbcb6a1291f4e3a07b9bf7c20170c36a68c3d922c85ebaf58"
       }
     },
     "shared/08_world_output.md": {
@@ -365,7 +365,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/stages/opening/variables.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "9aaa890d436b61b6c33f1b603b02047314b01a5b9eb4d284aa48fc183aacb0e8"
       }
     },
@@ -385,7 +385,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/stages/regular/variables.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "e2f1d8993d210a01a7924e44c3440321274d43c336c16d1451eb33672ad40bd7"
       }
     },
@@ -405,7 +405,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/protagonist/init.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "9d2642091d55dcdb41b9eb134eb55357e91a3580b91b3309b96e5764ae9e47a4"
       }
     },
@@ -416,7 +416,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/protagonist/update.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "fe9b33dcfa6273caf030a956e599750049e9f2edf3fc77dff173f9322620f97e"
       }
     },
@@ -432,7 +432,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/items/init.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "a5e4755b8643caf8f0118eff1f00a2207d63c7754399308955c3325b6ea8e527"
       }
     },
@@ -443,7 +443,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/items/update.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "ef423a8921c691273e863d97331c9f3a0aacc06efb3348952251b32600c1bfba"
       }
     },
@@ -459,7 +459,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/economy/init.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "28345b03f40a1cd9d278af29886582d31c2d0c3de6bed066b801de1ecb2b5086"
       }
     },
@@ -470,7 +470,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/economy/update.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "48a2e87b1e0d1f7938007b0f3cad0d1462e4c288b007cad7c74791a18db3a1b5"
       }
     },
@@ -486,7 +486,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/org_gang/init.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "31caee43fd43c138bd4c3bb9275bc7add42fd74e01012161c1f46e95faa60ccc"
       }
     },
@@ -497,7 +497,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/org_gang/update.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "c56e03738711f0ff4112b7c7be1493709b7c487ca8b28cddc93edafd784a78e9"
       }
     },
@@ -513,7 +513,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/org_government/init.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "0156d823c14be5dcb34b2dc71ccb438fbbcdd8152a3f45f2587a0a2328f0da89"
       }
     },
@@ -524,7 +524,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/org_government/update.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "e793d9d332b936a4b5bd3ce548fcd201c92b1f2d364b707273c9b073d586716d"
       }
     },
@@ -540,7 +540,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/org_civil/init.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "02c0d8aacfda841799e5529db459f5d5e4dfa71a3e92fbe8d67e6b9dfdde4038"
       }
     },
@@ -551,7 +551,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/org_civil/update.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "adf4ad2905b4dbeadf6b8f58dc1c9c3b7d0be7635ab880aada1a2f2f53d30350"
       }
     },
@@ -567,7 +567,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/org_business/init.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "971c03b13484751442d0d34500834cb9e7571e64da85a7e11390ebc0b5d4cdeb"
       }
     },
@@ -578,7 +578,7 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/variableGroups/org_business/update.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "f413ff74fcb637b2a32cdec28b6cdffc9c9645c892dd3f81a02c80d9546777d3"
       }
     },

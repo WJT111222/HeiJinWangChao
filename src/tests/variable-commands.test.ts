@@ -576,12 +576,12 @@ describe('证据防护与领域提示词绑定', () => {
         userInput: current.userInput,
         domains: selection.domains,
       });
-      expect(prompt.modules.some((module) => module.id === `stages.${mode}.variables`)).toBe(true);
+      expect(prompt.modules.some((module) => module.id === `stages.${mode}.variables.text`)).toBe(true);
       for (const domain of selection.domains)
         expect(
           prompt.modules.filter(
             (module) =>
-              module.id === `variableGroups.${domain}.${mode === 'opening' ? 'init' : 'update'}`,
+              module.id === `variableGroups.${domain}.${mode === 'opening' ? 'init' : 'update'}.text`,
           ),
         ).toHaveLength(1);
       expect(

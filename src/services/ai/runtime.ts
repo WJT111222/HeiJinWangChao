@@ -1,9 +1,9 @@
 import { AiError } from './errors';
 import { browserPromptOrder } from '../../prompts/order';
-import { composePrompt } from '../../prompts/composer';
+import { composePrompt, composeTextVariablesPrompt } from '../../prompts/composer';
 import { checkedInput } from '../../prompts/context';
 import type { ComposeInput } from '../../prompts/context';
-import { parseStoryEnvelope, parseVariables, parseWorld } from '../validation/aiOutputs';
+import { parseStoryEnvelope, parseTextVariables, parseVariables, parseWorld } from '../validation/aiOutputs';
 import type { AiConfig, AiStage } from './configuration';
 import type { CredentialVault } from './credentials';
 import { requestSnapshot } from './snapshot';
@@ -30,7 +30,9 @@ export async function runStageRequest(
   if (captured.stage === 'world' && captured.draft?.variables?.validation === 'validated')
     parseVariables(JSON.stringify(captured.draft.variables.result), captured.state, captured.draft);
   const snapshot = requestSnapshot(config, captured.stage, vault);
-  const prompt = await composePrompt({ ...captured, cotAllowed: snapshot.useCot });
+  const prompt = captured.stage === 'variables'
+    ? await composeTextVariablesPrompt({ ...captured, stage: 'variables', cotAllowed: snapshot.useCot })
+    : await composePrompt({ ...captured, cotAllowed: snapshot.useCot });
   const response = await client.generate(snapshot, prompt.messages, {
     ...options,
     inspection: {
@@ -51,7 +53,7 @@ export async function runStageRequest(
     catch (error) { throw variableValidationError(error); }
   }
   const result = story ?? (captured.stage === 'variables'
-        ? parseVariables(response.text, captured.state, captured.draft!)
+        ? await parseTextVariables(response.text, captured.state, captured.draft!)
         : parseWorld(response.text, captured.state, captured.draft!));
   return {
     result,
