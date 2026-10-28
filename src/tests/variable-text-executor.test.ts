@@ -106,6 +106,47 @@ describe('精确路径与操作白名单', () => {
   });
 });
 
+describe('安全校验诊断（不改变执行器接受/拒绝结果）', () => {
+  it('bool 字段收到字符串时，指明规范化路径与两侧类型，不泄露实体 ID 或值', async () => {
+    const { result } = await compile('set npc[npc_001].onScene = "secret-should-not-appear"');
+    expectCode(result, 'type_mismatch');
+    if (result.ok) return;
+    expect(result.error).toMatchObject({
+      commandIndex: 1,
+      diagnostic: {
+        valuePath: 'npc[id].onScene', expectedType: 'boolean',
+        actualType: 'string', validationRule: 'invalid_type',
+      },
+    });
+    expect(JSON.stringify(result.error)).not.toContain('npc_001');
+    expect(JSON.stringify(result.error)).not.toContain('secret-should-not-appear');
+  });
+
+  it('NPC记忆字段格式约束只暴露静态字段名与值类型', async () => {
+    const { result } = await compile(`push npc[npc_001].memories = ${memoryText({ visibility: 12345 })}`);
+    expectCode(result, 'type_mismatch');
+    if (result.ok) return;
+    expect(result.error.diagnostic).toMatchObject({
+      valuePath: 'npc[id].memories.visibility', actualType: 'number',
+      validationRule: 'schema_constraint',
+    });
+    expect(result.error.diagnostic).not.toHaveProperty('expectedType');
+    expect(JSON.stringify(result.error)).not.toContain('npc_001');
+  });
+
+  it('交易对象不应提交字符串，不复制内容到诊断', async () => {
+    const { result } = await compile('set items[item_001] = "private-text"');
+    expectCode(result, 'type_mismatch');
+    if (result.ok) return;
+    expect(result.error.diagnostic).toMatchObject({
+      valuePath: 'items[id]', expectedType: 'object',
+      actualType: 'string', validationRule: 'invalid_type',
+    });
+    expect(JSON.stringify(result.error)).not.toContain('private-text');
+    expect(JSON.stringify(result.error)).not.toContain('item_001');
+  });
+});
+
 describe('NPC实体与稳定身份', () => {
   it('未知NPC不自动建档', async () => expectCode((await compile('set npc[missing].healthText = "健康"')).result, 'entity_not_found'));
   it('合法在场字段更新与健康状态可同批执行，不需要互动许可', async () => {
