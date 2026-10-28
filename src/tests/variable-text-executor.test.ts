@@ -134,6 +134,16 @@ describe('安全校验诊断（不改变执行器接受/拒绝结果）', () => 
     expect(JSON.stringify(result.error)).not.toContain('npc_001');
   });
 
+  it('时间值违反日期格式规则时，不将字符串内容写入错误', async () => {
+    const { result } = await compile('set worldClock = "private-invalid-date"');
+    expectCode(result, 'type_mismatch');
+    if (result.ok) return;
+    expect(result.error.diagnostic).toMatchObject({
+      valuePath: 'worldClock', actualType: 'string', validationRule: 'value_constraint',
+    });
+    expect(JSON.stringify(result.error)).not.toContain('private-invalid-date');
+  });
+
   it('交易对象不应提交字符串，不复制内容到诊断', async () => {
     const { result } = await compile('set items[item_001] = "private-text"');
     expectCode(result, 'type_mismatch');
