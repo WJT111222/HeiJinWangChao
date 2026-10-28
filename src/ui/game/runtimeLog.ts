@@ -60,7 +60,7 @@ export function runtimeLogEvent(
   const path = details?.fieldPath;
   const type = details?.commandType;
   return {
-    ...entry, code: safe.code, message: safe.message,
+    ...entry, code: safe.code, message: safe.message.split(' 字段：')[0],
     ...(typeof status === 'number' && status >= 100 && status < 600
       ? { httpStatus: status } : {}),
     ...(path && /^[A-Za-z0-9_.]+$/.test(path) ? { fieldPath: path } : {}),
