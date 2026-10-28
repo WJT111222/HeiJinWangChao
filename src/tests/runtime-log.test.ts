@@ -89,6 +89,28 @@ describe('safe runtime log diagnostics', () => {
     expect(event).not.toHaveProperty('validationRule');
   });
 
+  it('carries real aggregate scene failure through parser, workflow error and safe UI event', async () => {
+    const state = game();
+    state.npc.npc_001 = npc('npc_001');
+    state.locations.remote = { id: 'remote', name: '远处' };
+    const before = structuredClone(state);
+    const draft = rerollStory(createTurnDraft(state.saveId, state.revision, 'turn-a', 'opening', ''), {
+      ...story, turnKind: 'opening',
+    });
+    let caught: unknown;
+    try {
+      await parseTextVariables('<命令>\nset protagonist.locationId = "remote"\n</命令>', state, draft);
+    } catch (failure) { caught = failure; }
+    expect(caught).toBeInstanceOf(AiError);
+    const event = runtimeLogEvent(13, 'variables', 'failed', caught);
+    expect(event).toMatchObject({
+      code: 'data_integrity', fieldPath: 'text.domain_validation_failed',
+      domainRule: 'scene_transition', relatedCommandIndices: [1],
+    });
+    expect(JSON.stringify(event)).not.toContain('npc_001');
+    expect(state).toEqual(before);
+  });
+
   it('retains safe aggregate domain rule while rejecting forged free text', () => {
     const event = runtimeLogEvent(11, 'variables', 'failed', new AiError('data_integrity', undefined, {
       fieldPath: 'text.domain_validation_failed',
