@@ -43,7 +43,8 @@ export async function previewVariableTextReply(text: string, inputState: GameSta
       return root.name === 'npc' && id?.kind === 'id' ? [id.id] : [];
     }));
     const previewState: TextVariablePreviewState = { worldClock: simulated.value.worldClock,
-      clockKind: state.openingTimePending ? 'opening_candidate' as const : 'unchanged' as const,
+      clockKind: state.openingTimePending ? 'opening_candidate' as const
+        : simulated.value.worldClock === state.worldClock ? 'unchanged' as const : 'updated' as const,
       protagonist: { healthText: simulated.value.protagonist.healthText, emotionText: simulated.value.protagonist.emotionText },
       npc: Object.fromEntries([...npcIds].map((id) => [id, { healthText: simulated.value.npc[id].healthText,
         relationshipText: simulated.value.npc[id].relationshipText }])) };

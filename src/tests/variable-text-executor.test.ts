@@ -85,10 +85,10 @@ describe('精确路径与操作白名单', () => {
       expect(plan.commands).toHaveLength(1);
       expect((await simulateVariablePlan(plan, data.state, data.context)).ok).toBe(true);
     });
-  it.each(['protagonist', 'protagonist.id', 'protagonist.age', 'protagonist.currentWear', 'protagonist.locationId',
-    'npc[npc_001].identity', 'npc[npc_001].onScene', 'npc[npc_001].locationId', 'npc[npc_001].knownInformation',
+  it.each(['protagonist', 'protagonist.id', 'protagonist.age', 'protagonist.currentWear',
+    'npc[npc_001].identity', 'npc[npc_001].knownInformation',
     'npc[0].healthText', 'npc[npc_001].memories[0].visibility', 'npc[npc_001].affinity', '角色.当前精力',
-    'worldClock', '环境.时间', 'revision', 'schemaVersion', 'appliedCommands', 'memories.npcSummaries', 'items[item_001].ownerRef', 'economy.incomes'])(
+    '环境.时间', 'revision', 'schemaVersion', 'appliedCommands', 'memories.npcSummaries', 'items[item_001].ownerRef', 'economy.incomes'])(
     '未注册路径 %s 明确拒绝', async (path) => {
       const { result } = await compile(`set ${path} = "不能写入"`);
       expectCode(result, 'unsupported_path');
@@ -108,10 +108,16 @@ describe('精确路径与操作白名单', () => {
 
 describe('NPC实体与稳定身份', () => {
   it('未知NPC不自动建档', async () => expectCode((await compile('set npc[missing].healthText = "健康"')).result, 'entity_not_found'));
-  it('AST不能先设置在场，再给自己授予NPC修改权限', async () => {
+  it('合法在场字段更新与健康状态可同批执行，不需要互动许可', async () => {
     const data = setup('set npc[npc_001].onScene = true\nset npc[npc_001].healthText = "健康"');
-    data.state.npc.npc_001.onScene = false; expectCode(await run(data), 'unsupported_path');
+    data.state.npc.npc_001.onScene = false;
+    const after = unwrap(await run(data));
+    expect(after.npc.npc_001).toMatchObject({ onScene: true, healthText: '健康' });
+    expect(data.state.npc.npc_001.onScene).toBe(false);
   });
+  it.each(['protagonist.locationId', 'npc[npc_001].onScene', 'npc[npc_001].locationId', 'worldClock'])(
+    '新注册路径%s仍拒绝错误字段类型', async (path) => expectCode((await compile(`set ${path} = "不能写入"`)).result, 'type_mismatch'));
+
   it('同名NPC始终由稳定ID区分，不影响另一个人', async () => {
     const data = setup('set npc[npc_001].healthText = "疲惫"'); data.state.npc.other = npc('other');
     const result = unwrap(await run(data)); expect(result.npc.npc_001.healthText).toBe('疲惫'); expect(result.npc.other.healthText).toBeUndefined();
