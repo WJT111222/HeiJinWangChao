@@ -95,7 +95,9 @@ describe('只保留执行和数据安全边界', () => {
     '非法数据仍整批拒绝：%s', async (body) => {
       const { state, draft } = setup(), before = structuredClone(state);
       const ast = parseVariableText(block(`set protagonist.emotionText = "轻松"\n${body}`)); if (!ast.ok) throw new Error('样本');
-      const result = await compileVariableCommands(ast.value, state, { draft, expectedRevision: 0 });
+      const context = { draft, expectedRevision: 0 };
+      const plan = await compileVariableCommands(ast.value, state, context);
+      const result = plan.ok ? await simulateVariablePlan(plan.value, state, context) : plan;
       expect(result.ok).toBe(false); expect(result).not.toHaveProperty('value'); expect(state).toEqual(before);
     });
 });

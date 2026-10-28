@@ -8,6 +8,7 @@ import type { GameState } from '../../domain/state';
 import { openingTimeBase, openingTimeSelection } from '../../domain/openingTime';
 import { variableCommandsForTurn } from '../../domain/turnProjection';
 import type { ParsedVariableCommand } from '../../parsers/variableText';
+import { compileTransaction } from './transactions';
 import { validateAst } from './ast';
 import { digest, ExecutionContextSchema, failed } from './model';
 import type { CommandOrigin, ExecutionResult, VariableExecutionContext, VariableExecutionPlan } from './model';
@@ -27,11 +28,13 @@ const fields = new Map<string, Mapping>([
   ...['locationId', 'onScene', 'lastInteractionAt'].map((field): [string, Mapping] =>
     [`npc.${field}`, { operation: 'set', kind: 'npc', field }]),
   ['npc.memories', { operation: 'push', kind: 'memory', field: 'memories' }],
+  ['items.conditionText', { operation: 'set', kind: 'itemState', field: 'conditionText' }],
+  ['items.locationId', { operation: 'set', kind: 'itemState', field: 'locationId' }],
   ['items.quantity', { operation: 'add', kind: 'item', field: 'quantity' }],
   ['economy.cash', { operation: 'add', kind: 'expense', field: 'cash' }],
   ['economy.onlineBalance', { operation: 'add', kind: 'expense', field: 'onlineBalance' }],
 ] as const);
-interface Mapping { operation: 'set' | 'add' | 'push'; kind: 'protagonist' | 'npc' | 'memory' | 'item' | 'expense' | 'clock' | 'location'; field: string }
+interface Mapping { operation: 'set' | 'add' | 'push'; kind: 'protagonist' | 'npc' | 'memory' | 'item' | 'itemState' | 'expense' | 'clock' | 'location'; field: string }
 function lookup(command: ParsedVariableCommand): { mapping: Mapping; id?: string } | undefined {
   const [root, middle, last] = command.path.nodes;
   if (command.path.nodes.length === 1 && root.name === 'worldClock') {
@@ -48,7 +51,7 @@ function lookup(command: ParsedVariableCommand): { mapping: Mapping; id?: string
   }
   if (command.path.nodes.length === 3 && middle?.kind === 'id' && last?.kind === 'field') {
     const mapping = fields.get(`${root.name}.${last.name}`);
-    if (mapping && ['npc', 'memory', 'item'].includes(mapping.kind) && IdSchema.safeParse(middle.id).success) return { mapping, id: middle.id };
+    if (mapping && ['npc', 'memory', 'item', 'itemState'].includes(mapping.kind) && IdSchema.safeParse(middle.id).success) return { mapping, id: middle.id };
   }
 }
 function priorCommand(state: GameState, turnId: string, commandId: string) {
@@ -106,75 +109,94 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
   }
   const commands: DomainCommand[] = [...systemCommands];
   const origins: Array<CommandOrigin | null> = systemCommands.map(() => null);
-  const quantities = new Map<string, number>(), balances = new Map<string, number | null>();
+  const quantities = new Map(Object.values(base.items).map((item) => [item.id, item.quantity]));
+  const createdIds = new Set<string>();
   for (let i = 0; i < ast.length; i++) {
     const command = ast[i], origin = { commandIndex: i + 1, source: command.source };
-    const found = lookup(command);
-    if (!found) return failed('unsupported_path', origin);
-    const { mapping, id } = found;
-    if (mapping.operation !== command.operation) return failed('unsupported_operation', origin);
     const commandId = `text-v1:s${draft.storyRevision}:c${i + 1}`;
     const prior = priorCommand(current, draft.turnId, commandId);
     const common = { commandId, evidence: `文本变量指令第${i + 1}条` };
     let mapped: DomainCommand;
-    if (mapping.kind === 'protagonist' || mapping.kind === 'npc') {
-      if (['healthText', 'emotionText', 'relationshipText'].includes(mapping.field)
-        && !textValue.safeParse(command.value).success) return failed('type_mismatch', origin);
-      if (mapping.kind === 'protagonist') {
-        const changes = variableCommandSchemas[0].shape.changes.safeParse({ [mapping.field]: command.value });
-        if (!changes.success) return failed('type_mismatch', origin);
-        mapped = { ...common, type: 'UpdateProtagonist', expectedRevision: context.expectedRevision,
-          protagonistId: base.protagonist.id, changes: changes.data };
+    const transaction = compileTransaction(command, common, context.expectedRevision);
+    if (transaction) {
+      if (!transaction.ok) return failed(transaction.error.code, origin);
+      mapped = transaction.value;
+    } else {
+      const found = lookup(command);
+      if (!found) return failed('unsupported_path', origin);
+      const { mapping, id } = found;
+      if (mapping.operation !== command.operation) return failed('unsupported_operation', origin);
+      if (mapping.kind === 'protagonist' || mapping.kind === 'npc') {
+        if (['healthText', 'emotionText', 'relationshipText'].includes(mapping.field)
+          && !textValue.safeParse(command.value).success) return failed('type_mismatch', origin);
+        if (mapping.kind === 'protagonist') {
+          const changes = variableCommandSchemas[0].shape.changes.safeParse({ [mapping.field]: command.value });
+          if (!changes.success) return failed('type_mismatch', origin);
+          mapped = { ...common, type: 'UpdateProtagonist', expectedRevision: context.expectedRevision,
+            protagonistId: base.protagonist.id, changes: changes.data };
+        } else {
+          if (!id || !Object.hasOwn(base.npc, id)) return failed('entity_not_found', origin);
+          const changes = variableCommandSchemas[1].shape.changes.safeParse({ [mapping.field]: command.value });
+          if (!changes.success) return failed('type_mismatch', origin);
+          mapped = { ...common, type: 'UpdateNpc', npcId: id, expectedRevision: context.expectedRevision, changes: changes.data };
+        }
+      } else if (mapping.kind === 'clock') {
+        if (openingClock) continue;
+        const time = GameTimeSchema.safeParse(command.value);
+        if (!time.success) return failed('type_mismatch', origin);
+        mapped = { ...common, type: 'SetWorldClock', worldClock: time.data };
+      } else if (mapping.kind === 'location') {
+        if (!id) return failed('unsupported_path', origin);
+        const location = LocationSchema.omit({ id: true }).safeParse(command.value);
+        if (!location.success) return failed('type_mismatch', origin);
+        mapped = { ...common, type: 'CreateLocation', location: { ...location.data, id } };
+      } else if (mapping.kind === 'item' || mapping.kind === 'itemState') {
+        if (!id) return failed('unsupported_path', origin);
+        // 原始前值来自已有物品、同批创建/更新，或精确重放的既有命令指纹。
+        const old = prior?.type === 'UpdateItem' && prior.itemId === id ? prior.expectedQuantity : quantities.get(id);
+        if (old === undefined || old === 0) return failed('entity_not_found', origin);
+        if (mapping.kind === 'item') {
+          if (typeof command.value !== 'number' || !Number.isSafeInteger(command.value) || command.value === 0
+            || !Number.isSafeInteger(old + command.value) || old + command.value < 0) return failed('invalid_quantity', origin);
+          mapped = { ...common, type: 'UpdateItem', itemId: id, expectedRevision: context.expectedRevision,
+            expectedQuantity: old, changes: { quantity: old + command.value }, quantityReason: command.value > 0 ? 'gain' : 'consumption' };
+        } else {
+          const changes = variableCommandSchemas[6].shape.changes.safeParse({[mapping.field]:command.value});
+          if (!changes.success) return failed('type_mismatch', origin);
+          mapped = {...common,type:'UpdateItem',itemId:id,expectedRevision:context.expectedRevision,expectedQuantity:old,changes:changes.data};
+        }
+      } else if (mapping.kind === 'expense') {
+        const account = mapping.field === 'cash' ? 'cash' : 'onlineBalance';
+        if (typeof command.value !== 'number' || !Number.isSafeInteger(command.value) || command.value === 0) return failed('invalid_amount', origin);
+        // 正向收入需要完整IncomeRecord；本轮不构造虚假收入。
+        if (command.value > 0) return failed('unsupported_operation', origin);
+        // 余额按原领域引擎的交易顺序统一检查，不能在这里仅看初始余额。
+        mapped = { ...common, type: 'SpendFunds', account, amount: -command.value, purpose: '剧情消费' };
       } else {
         if (!id || !Object.hasOwn(base.npc, id)) return failed('entity_not_found', origin);
-        const changes = variableCommandSchemas[1].shape.changes.safeParse({ [mapping.field]: command.value });
-        if (!changes.success) return failed('type_mismatch', origin);
-        mapped = { ...common, type: 'UpdateNpc', npcId: id, expectedRevision: context.expectedRevision, changes: changes.data };
+        const memory = await mapMemory(command, base, id, clock, context, common, i + 1);
+        if (!memory.ok) return failed(memory.error.code, origin);
+        mapped = memory.value;
       }
-    } else if (mapping.kind === 'clock') {
-      if (openingClock) continue;
-      const time = GameTimeSchema.safeParse(command.value);
-      if (!time.success) return failed('type_mismatch', origin);
-      mapped = { ...common, type: 'SetWorldClock', worldClock: time.data };
-    } else if (mapping.kind === 'location') {
-      if (!id) return failed('unsupported_path', origin);
-      const location = LocationSchema.omit({ id: true }).safeParse(command.value);
-      if (!location.success) return failed('type_mismatch', origin);
-      mapped = { ...common, type: 'CreateLocation', location: { ...location.data, id } };
-    } else if (mapping.kind === 'item') {
-      if (!id) return failed('unsupported_path', origin);
-      const item = base.items[id];
-      // 耗尽后的精确重放仅能复用已落入幂等指纹的前值，不能复活或新造物品。
-      const lastItem = [...current.appliedCommands].reverse().filter((entry) => entry.turnId === draft.turnId)
-        .map((entry) => priorCommand(current, draft.turnId, entry.commandId)).find((entry) => entry?.type === 'UpdateItem' && entry.itemId === id);
-      if (!item && !(prior?.type === 'UpdateItem' && prior.itemId === id && lastItem?.type === 'UpdateItem' && lastItem.changes.quantity === 0)) return failed('entity_not_found', origin);
-      const old = prior?.type === 'UpdateItem' ? prior.expectedQuantity : quantities.get(id) ?? item?.quantity;
-      if (typeof command.value !== 'number' || !Number.isSafeInteger(command.value) || command.value === 0
-        || old === undefined || !Number.isSafeInteger(old + command.value) || old + command.value < 0) return failed('invalid_quantity', origin);
-      if (!prior && quantities.get(id) === 0) return failed('entity_not_found', origin);
-      const quantity = old + command.value;
-      mapped = { ...common, type: 'UpdateItem', itemId: id, expectedRevision: context.expectedRevision,
-        expectedQuantity: old, changes: { quantity }, quantityReason: command.value > 0 ? 'gain' : 'consumption' };
-      quantities.set(id, quantity);
-    } else if (mapping.kind === 'expense') {
-      const account = mapping.field === 'cash' ? 'cash' : 'onlineBalance';
-      if (typeof command.value !== 'number' || !Number.isSafeInteger(command.value) || command.value === 0) return failed('invalid_amount', origin);
-      // 正向收入需要完整IncomeRecord；本轮不构造虚假收入。
-      if (command.value > 0) return failed('unsupported_operation', origin);
-      const old = balances.has(account) ? balances.get(account) : base.economy[account];
-      if (!prior && (old === null || old === undefined || !Number.isSafeInteger(old + command.value) || old + command.value < 0)) return failed('invalid_amount', origin);
-      mapped = { ...common, type: 'SpendFunds', account, amount: -command.value, purpose: '剧情消费' };
-      if (!prior && old !== null && old !== undefined) balances.set(account, old + command.value);
-    } else {
-      if (!id || !Object.hasOwn(base.npc, id)) return failed('entity_not_found', origin);
-      const memory = await mapMemory(command, base, id, clock, context, common, i + 1);
-      if (!memory.ok) return failed(memory.error.code, origin);
-      mapped = memory.value;
     }
     const parsed = DomainCommandSchema.safeParse(mapped);
     if (!parsed.success) return failed('domain_validation_failed', origin);
     if (prior && fingerprint(prior) !== fingerprint(parsed.data)) return failed('duplicate_or_conflicting_command', origin);
-    commands.push(parsed.data); origins.push(origin);
+    const c = parsed.data;
+    const created = c.type === 'AcquireItem' || c.type === 'PurchaseItem' ? c.item.id
+      : c.type === 'PurchaseVehicle' ? c.vehicle.id : c.type === 'ReceiveIncome' ? c.income.id
+      : c.type === 'Borrow' ? c.debt.id : c.type === 'CreateLocation' ? c.location.id : undefined;
+    if (created !== undefined) {
+      if (createdIds.has(created)) return failed('duplicate_or_conflicting_command', origin);
+      createdIds.add(created);
+    }
+    // 这里只计算UpdateItem所需的前值，不执行余额、归属或资产修改。
+    if (c.type === 'AcquireItem' || c.type === 'PurchaseItem') quantities.set(c.item.id,c.item.quantity);
+    if (c.type === 'UpdateItem') {
+      const quantity = c.changes.quantity ?? c.expectedQuantity;
+      if (quantity === 0) quantities.delete(c.itemId); else quantities.set(c.itemId,quantity);
+    }
+    commands.push(c); origins.push(origin);
   }
   // 时间先应用，之后的互动/记忆统一使用本批最终时钟；其他指令保持文本顺序。
   // 不逐条提交或增加中间revision，倒退仍由原领域命令在整批模拟中拒绝。
