@@ -104,6 +104,6 @@ export function diagnosticForSchema(
     ...(path ? { valuePath: path } : {}),
     validationRule: rule,
     ...(expected ? { expectedType: expected } : {}),
-    ...(expected && actual ? { actualType: actual } : {}),
+    ...(actual ? { actualType: actual } : {}),
   };
 }
