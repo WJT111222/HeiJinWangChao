@@ -23,7 +23,6 @@ export const runtimeStageNames: Record<RuntimeLogStage, string> = {
   story: '正文生成',
   variables: '变量管理',
   world: '动态世界',
-  memory: '记忆维护',
   workflow: '自动工作流',
   commit: '正式结算',
 };
@@ -56,15 +55,17 @@ export function runtimeLogEvent(
     return { ...entry, code: failure.code, message: safeCommitCodes[failure.code] };
   }
   const safe = safeAiError(failure);
-  const path = safe.details?.fieldPath;
-  const type = safe.details?.commandType;
+  const details = 'details' in safe ? safe.details : undefined;
+  const status = 'status' in safe ? safe.status : undefined;
+  const path = details?.fieldPath;
+  const type = details?.commandType;
   return {
     ...entry, code: safe.code, message: safe.message,
-    ...(typeof safe.status === 'number' && safe.status >= 100 && safe.status < 600
-      ? { httpStatus: safe.status } : {}),
+    ...(typeof status === 'number' && status >= 100 && status < 600
+      ? { httpStatus: status } : {}),
     ...(path && /^[A-Za-z0-9_.]+$/.test(path) ? { fieldPath: path } : {}),
-    ...(typeof safe.details?.commandIndex === 'number' && safe.details.commandIndex >= 0
-      ? { commandIndex: safe.details.commandIndex + 1 } : {}),
+    ...(typeof details?.commandIndex === 'number' && details.commandIndex >= 0
+      ? { commandIndex: details.commandIndex + 1 } : {}),
     ...(type && /^[A-Za-z0-9_]+$/.test(type) ? { commandType: type } : {}),
   };
 }
