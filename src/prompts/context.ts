@@ -10,6 +10,7 @@ import type { Settings } from '../ui/settings/model';
 import { initialCompanionProfile, matchesCompanion } from '../services/local/companionProfile';
 import type { CompanionProfile } from '../services/local/companionProfile';
 import { commandCatalog } from '../services/validation/commandCatalog';
+import { textVariableCatalog } from '../executors/variableText/catalog';
 import { AiError } from '../services/ai/errors';
 import type { AiStage } from '../services/ai/configuration';
 import { npcKnowledgeContext, rawNpcMemories, npcMemoryPolicy, planNpcSummary, npcSummaryInput } from '../domain/memories/npcMemory';
@@ -224,7 +225,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       NPC_KNOWLEDGE: Object.values(state.npc).filter((npc) => npc.onScene).map((npc) => npcKnowledgeContext(state, npc.id)),
       STORY_RESULT: draft!.story,
       VARIABLE_GUIDE: draft!.story!.variableGuide,
-      COMMAND_CATALOG: commandCatalog('variables'),
+      TEXT_COMMAND_CATALOG: textVariableCatalog(),
     };
   if (stage === 'world') {
     const variablePending = !draft?.variables || draft.variables.validation !== 'validated';
