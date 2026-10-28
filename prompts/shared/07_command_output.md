@@ -1,13 +1,20 @@
-只输出一个可解析的JSON对象，不包含Markdown、自然语言前言、代码围栏或隐藏思考。顶层字段固定为：commands（数组）、rejectedSuggestions（数组）、unresolved（数组）。无变化时可全部为空数组，不需要为了凑结果制造变更。
-每个commands对象包含commandId（本回合稳定且唯一的字符串）、type、evidence（简洁的来源/原因说明，可以概括，无需逐字引用），以及该type专属同级字段。严格使用运行时COMMAND_CATALOG中的真实JSON Schema；不得使用group/entityId/payload通用包装、未知字段、任意路径、JS、SQL或直接写库。
-真实目录支持PurchaseItem、PurchaseVehicle、TransferFunds、ReceiveIncome、Borrow、RepayDebt、CreateNpc、SetEquipment、TransferItem、SetWorldClock、SaveEvent、SaveTask、CreateOrganization、RecordOrgRelation、RegisterContact、UpdateProtagonist、UpdateNpc、RecordNpcMemory、CreateLocation、SpendFunds、AcquireItem、UpdateItem、LoseItem。RetireNpc只允许世界阶段。以实际COMMAND_CATALOG为准，不支持的更新列入unresolved，不用创建冒充更新。
-AI负责理解正文、核验实际发生的事实：计划、否定、条件、未核实转述不能擅自成为已完成交易或世界真相；具体关系/技能变化应符合人物经历。程序不对小说使用关键词黑名单、不要求evidence带指定词语/账户/数字金额，不逐字审判语义；它严格校验数据类型、ID、引用、归属、余额、权限、时间单向性、版本、幂等及整批模拟。任何一条命令违反数据底线时整批拒绝，不静默吞掉或部分接纳。
-金额为整数人民币分，账户仅cash/onlineBalance，正值和具体字段以Schema为准。不直接设置余额；未知余额不能当0，不能透支。购买、消费、内部转账、收入、借还款各用真实命令；内部转账不是收入。SpendFunds只扣账户，不创建永久物品；车辆和房产只属于资产，不重复生成重要物品。
-UpdateProtagonist仅更新白名单字段。UpdateNpc使用已有稳定npcId、expectedRevision和限定changes；特殊目标只能写特殊NPC。affinityChange保留from/to/reason与关系说明；初始同伴未确认时from=null，不能把占位0当关系结果。由AI判断关系意义，不机械因寒暄加分。
-CreateNpc仅建立实际场内基本档案，memories/knownInformation/longTermMemories为空；已有同伴/人物不得重复建档。场外变化交给世界阶段。远程互动通过已有NPC的合法lastInteractionAt更新表达，不能凭临时来源说明直接改写不相关场外人物。
-RecordNpcMemory记录本回合真实来源、sourceTurnIds=[当前turnId]、合法createdAtGameTime、knowledgeSource、visibility、affectedEntityRefs及knowledgeKind；reported/suspected文本保留[转述]/[推测]前缀，绝不升级为世界真相。只记录所属NPC实际拥有的认知，不把他人私有知识复制为公开事实，不执行压缩。普通回合需要SetWorldClock时排在相关新时间记录之前。
-开局OPENING_TIME.status=candidate时，Story的合法结构化endAt是唯一权威时钟候选；程序统一应用，不需要再次输出SetWorldClock，不重复加时。普通回合可根据实际行动估时，也允许没有实际耗时变化；不固定步长，不要求正文有时间词。只允许合法日期且不得倒退；明确中断不能越过停止点，纯历史回顾不改当前世界。不能因预计到期自动完成任务或事件。
-CreateLocation按需增量创建，父级须存在且无环。主角移动时明确处理原在场NPC的onScene，不自动跟随；AI负责判断去向，程序检查位置/场景引用一致性，不按姓名和移动词正则判断。入场须有合法地点，去向未知可onScene=false且locationId=null。
-AcquireItem明确归属；UpdateItem保留expectedQuantity和白名单变化，数量方向用consumption/gain，消耗至0删除并解除装备引用。LoseItem保持实体ID、解除原持有和装备。TransferItem.from=null仅限当前无主的已有实体，不复制物品或抢占其他人所有权。
-RegisterContact仅据正文实际联络关系登记；永久保护不撤销。场外任务resolution/handoff只经世界协议验证，变量阶段不能编造后台成果/交接；NPC私有知识不自动进入主角记忆或普通历史。
-被模型判断为不成立的建议在rejectedSuggestions中以{reason,reference}说明；证据不足或没有合法命令的变化放unresolved。输出仅是候选，只有后续原子提交成功才生效。
+# 现场变量文本协议 VARIABLE_TEXT_V1
+
+只返回一个顶层 `<命令>` 区块，内部每条指令为 `操作 路径 = JSON值`，以换行分隔；对象和数组可以跨行，字符串用双引号并正确转义。无变化时返回空的 `<命令></命令>`。可在命令块前提供简短 `<说明>`，说明不参与执行；不要求或输出隐藏思维过程。
+不输出旧的领域命令JSON对象、commands/rejectedSuggestions/unresolved数组或代码围栏。程序生成稳定commandId、版本、记忆ID及当前回合元数据，AI不填这些程序字段。真实值结构见 TEXT_COMMAND_CATALOG，示例ID必须换成当前实体稳定ID。
+
+- set：设置目录中的最终字段值，或用稳定路径创建完整记录。不是任意JSON补丁；创建值中省略id，由路径绑定。已有NPC与组织不能通过再次set整个实体冒充更新。
+- add：仅用于cash/onlineBalance的负整数分消费，以及已有重要物品quantity的非零整数增减。正数余额不是收入，不能直接set余额。
+- push：用于目录内的NPC个人/长期/知晓记忆、内部转账和债务还款。不是任意数组写入。
+
+AI根据选定Story理解已发生变化，不替World推演后台任务、事件或组织经营结果。原变量规划是线索，不是审批；没有额外凭据、覆盖许可、正文逐字引用或独立复核。不能处理的变化在说明中清楚列明，不伪造成功或静默遗漏。
+程序仅使用严格字段类型、稳定引用、金额、归属、数量、合法日期、版本、幂等及整批领域执行约束；任一非法操作整批失败，不返回半笔交易。
+
+开局OPENING_TIME为candidate时，Story结构化endAt是唯一开局时钟候选，程序统一应用一次，不再输出时钟指令。普通回合可用 `set worldClock = "2026-10-18T09:00:00+08:00"` 更新，不能倒退或使用设备日期；没有实际耗时也可保持原值。回顾过去不改写现在，预计到期不代表任务完成。
+创建地点：`set locations[clinic] = {"name":"社区诊所","parentId":"chongqing"}`；人物地点引用需真实存在，主角移动时分别处理同行/留守NPC，不自动决定跟随。去向未知可set该NPC的onScene=false、locationId=null。
+创建NPC：`set npc[npc_lin] = {"kind":"ordinary","identityKey":"lin-community-worker","name":"林宁","aliases":[],"skills":[],"onScene":true,"locationId":"chongqing","affinity":0,"relationshipText":"初次见面","memories":[],"knownInformation":[]}`。开局和普通回合均可建档；先检索已有稳定ID、身份键、别名与同伴，避免重复。初始同伴已经存在，不能重建。
+更新好感用 `set npc[npc_lin].affinityChange = {"from":0,"to":5,"reason":"一起解决问题","relationshipText":"愿意协作"}`，关系不等于恋爱。未确认同伴from=null，不把占位0当确认结果。登记联系人用 `set npc[npc_lin].contact = {"reason":"互换联系方式"}`，不撤销永久保护。
+记忆用 `push npc[npc_lin].memories = {"text":"共同处理了现场问题","knowledgeKind":"observed","knowledgeSource":"当面经历","visibility":"npc_private"}`。亲历、转述reported、推测suspected由AI区分，后两类由程序保留标记；记忆只属于指定人物，不自动公开或传播。特殊人物另有longTermMemories与activeGoals路径，知晓信息用knownInformation路径，值结构同个人记忆。
+收入必须set economy.incomes[id]完整记录，借款必须set economy.debts[id]完整债务；转账用push economy.transfers，还款用push economy.debts[id].repayments。均为整数人民币分；未知余额不能当0，不能透支，不能提前使用后面的收入。完整示例见经济组及目录。
+物品获得set items[id]；购买set items[id].purchase一次扣款入库；转交set items[id].transfer；遗失set items[id].loss；数量用add items[id].quantity。装备用set protagonist.currentWear完整装备对象。车辆购买set economy.vehicles[id].purchase，车辆房产不重复进重要物品表。
+组织用set organizations[id]创建四类之一的完整对象；关系用set organizations[id].protagonistRelation={relation,reason}开放文字。已有经营/资产等未支持字段放说明，不覆盖组织表。

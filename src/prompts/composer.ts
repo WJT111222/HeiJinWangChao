@@ -8,6 +8,7 @@ import type { ComposeInput } from './context';
 import type { AiMessage } from '../services/ai/protocols';
 import { estimateTokens } from './statistics';
 import { AiError } from '../services/ai/errors';
+import { textVariableCatalog } from '../executors/variableText/catalog';
 
 export interface ModuleRecord {
   id: string;
@@ -19,8 +20,16 @@ export interface ModuleRecord {
   estimatedTokens: number;
 }
 export async function composePrompt(unchecked: ComposeInput) {
+  return compose(unchecked, 'json');
+}
+/** 3D-1准备入口：纯离线组装，不接入runStageRequest或存档。 */
+export async function composeTextVariablesPrompt(input: ComposeInput & { stage: 'variables' }) {
+  if (input.stage !== 'variables') throw new AiError('configuration');
+  return compose(input, 'text');
+}
+async function compose(unchecked: ComposeInput, variableProtocol: 'json' | 'text') {
   const input = checkedInput(unchecked);
-  const selected = selectPromptModules(input);
+  const selected = selectPromptModules(input, variableProtocol);
   if (input.orderOverrides && input.orderPreferences) throw new AiError('configuration');
   const overrides =
     input.orderOverrides ?? projectPromptOrder(input.orderPreferences ?? {}, selected);
@@ -42,6 +51,10 @@ export async function composePrompt(unchecked: ComposeInput) {
   )
     throw new AiError('configuration');
   const context = contextFor(input);
+  if (variableProtocol === 'text') {
+    delete context.COMMAND_CATALOG;
+    context.TEXT_COMMAND_CATALOG = textVariableCatalog();
+  }
   const clock =
     typeof context.worldClock === 'string' ? context.worldClock : input.state.openingTimePending
       ? input.stage === 'variables' || input.stage === 'world' ? openingTimeSelection(input.state, input.draft!)?.endAt : undefined

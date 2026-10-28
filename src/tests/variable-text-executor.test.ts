@@ -86,7 +86,7 @@ describe('精确路径与操作白名单', () => {
       expect((await simulateVariablePlan(plan, data.state, data.context)).ok).toBe(true);
     });
   it.each(['protagonist', 'protagonist.id', 'protagonist.age',
-    'npc[npc_001].identity', 'npc[npc_001].knownInformation',
+    'npc[npc_001].identity', 'npc[npc_001].knownInformation[0]',
     'npc[0].healthText', 'npc[npc_001].memories[0].visibility', 'npc[npc_001].affinity', '角色.当前精力',
     '环境.时间', 'revision', 'schemaVersion', 'appliedCommands', 'memories.npcSummaries', 'items[item_001].ownerRef', 'economy.incomes'])(
     '未注册路径 %s 明确拒绝', async (path) => {

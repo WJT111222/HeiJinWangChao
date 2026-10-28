@@ -170,7 +170,7 @@
     },
     {
       "id": "shared.04_state_authority",
-      "path": "shared/04_state_authority.md",
+      "path": "legacy/variables_json/shared/04_state_authority.md",
       "title": "状态真值与执行边界",
       "kind": "prompt",
       "applicableStages": [
@@ -195,11 +195,12 @@
       "reorderable": false,
       "category": "shared",
       "contentSha256": "4f79534b7a8980284a8cab25dc4bc63a9a58d9031b9d205e466ccf07fec609ec",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "shared.05_context_protocol",
-      "path": "shared/05_context_protocol.md",
+      "path": "legacy/variables_json/shared/05_context_protocol.md",
       "title": "上下文容器与可信度",
       "kind": "prompt",
       "applicableStages": [
@@ -224,7 +225,8 @@
       "reorderable": false,
       "category": "shared",
       "contentSha256": "be733d3966385c9cef20010f2e69c60917870e92c94eca86c539a040641f770c",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "shared.06_story_output",
@@ -257,7 +259,7 @@
     },
     {
       "id": "shared.07_command_output",
-      "path": "shared/07_command_output.md",
+      "path": "legacy/variables_json/shared/07_command_output.md",
       "title": "变量更新输出协议（严格JSON）",
       "kind": "prompt",
       "applicableStages": [
@@ -280,7 +282,8 @@
       "reorderable": false,
       "category": "output",
       "contentSha256": "820346900e251530212ce5d213352bded2268aad059649ddc94541cefee3e74d",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "shared.08_world_output",
@@ -339,7 +342,7 @@
     },
     {
       "id": "stages.opening.variables",
-      "path": "stages/opening/variables.md",
+      "path": "legacy/variables_json/stages/opening/variables.md",
       "title": "开局变量初始化主提示词",
       "kind": "prompt",
       "applicableStages": [
@@ -361,7 +364,8 @@
       "reorderable": false,
       "category": "stage",
       "contentSha256": "b8fa79eb972d24ae744256a657c48d2c42ebf2d3bffd1b873e0a5f0b84ffa530",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "stages.opening.world",
@@ -420,7 +424,7 @@
     },
     {
       "id": "stages.regular.variables",
-      "path": "stages/regular/variables.md",
+      "path": "legacy/variables_json/stages/regular/variables.md",
       "title": "普通回合变量更新主提示词",
       "kind": "prompt",
       "applicableStages": [
@@ -442,7 +446,8 @@
       "reorderable": false,
       "category": "stage",
       "contentSha256": "7e4d6e6c59e6159aa84274c00becf48c143750d1b348fbc3acefbe96effdd4af",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "stages.regular.world",
@@ -472,7 +477,7 @@
     },
     {
       "id": "variableGroups.protagonist.init",
-      "path": "variableGroups/protagonist/init.md",
+      "path": "legacy/variables_json/variableGroups/protagonist/init.md",
       "title": "主角｜初始化",
       "kind": "prompt",
       "applicableStages": [
@@ -494,11 +499,12 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "6b1637419f178435cf11202a06bb59404d5e7e1aac08d1de9bb396427e60233e",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.protagonist.update",
-      "path": "variableGroups/protagonist/update.md",
+      "path": "legacy/variables_json/variableGroups/protagonist/update.md",
       "title": "主角｜常规更新",
       "kind": "prompt",
       "applicableStages": [
@@ -520,7 +526,8 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "c0974899e3fe95d6f5ab1842dfed72a08d7f73ac0b1e3d1b1b4833b127699cd9",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.protagonist.offscreen",
@@ -551,7 +558,7 @@
     },
     {
       "id": "variableGroups.npc_ordinary.init",
-      "path": "variableGroups/npc_ordinary/init.md",
+      "path": "legacy/variables_json/variableGroups/npc_ordinary/init.md",
       "title": "普通NPC｜初始化",
       "kind": "prompt",
       "applicableStages": [
@@ -573,11 +580,12 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "d3dec13b0fc0044cc072481673295686ba01df33843b946d5b239a9e5b631064",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.npc_ordinary.update",
-      "path": "variableGroups/npc_ordinary/update.md",
+      "path": "legacy/variables_json/variableGroups/npc_ordinary/update.md",
       "title": "普通NPC｜常规更新",
       "kind": "prompt",
       "applicableStages": [
@@ -599,7 +607,8 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "2049a758543ce5459fe7ca653952b935580a89f55e53548fb84d4a85945588e2",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.npc_ordinary.offscreen",
@@ -630,7 +639,7 @@
     },
     {
       "id": "variableGroups.npc_special.init",
-      "path": "variableGroups/npc_special/init.md",
+      "path": "legacy/variables_json/variableGroups/npc_special/init.md",
       "title": "特殊NPC｜初始化",
       "kind": "prompt",
       "applicableStages": [
@@ -652,11 +661,12 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "9bf6cabbb584c06b57a952506ba6ae9177064bb0deca7380df12f322cad0991b",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.npc_special.update",
-      "path": "variableGroups/npc_special/update.md",
+      "path": "legacy/variables_json/variableGroups/npc_special/update.md",
       "title": "特殊NPC｜常规更新",
       "kind": "prompt",
       "applicableStages": [
@@ -678,7 +688,8 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "bf13ab09d5feb55ec7a5f56203e4c1957bb21ff13bed1e32872e184072c54244",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.npc_special.offscreen",
@@ -709,7 +720,7 @@
     },
     {
       "id": "variableGroups.items.init",
-      "path": "variableGroups/items/init.md",
+      "path": "legacy/variables_json/variableGroups/items/init.md",
       "title": "重要物品｜初始化",
       "kind": "prompt",
       "applicableStages": [
@@ -731,11 +742,12 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "a59afc86db6f05bd21bc7188980fb9f8de856700046023438b0b635559252e56",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.items.update",
-      "path": "variableGroups/items/update.md",
+      "path": "legacy/variables_json/variableGroups/items/update.md",
       "title": "重要物品｜常规更新",
       "kind": "prompt",
       "applicableStages": [
@@ -757,7 +769,8 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "20220e10ad5f04a519290a0513bc73f34b22846b5ef3b03a34193ed81e17317a",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.items.offscreen",
@@ -788,7 +801,7 @@
     },
     {
       "id": "variableGroups.economy.init",
-      "path": "variableGroups/economy/init.md",
+      "path": "legacy/variables_json/variableGroups/economy/init.md",
       "title": "经济与资产｜初始化",
       "kind": "prompt",
       "applicableStages": [
@@ -810,11 +823,12 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "0ffc5e603b45da886c9ed4b1e27f77319e4fbfb406db5454c9626dbad6fc2f53",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.economy.update",
-      "path": "variableGroups/economy/update.md",
+      "path": "legacy/variables_json/variableGroups/economy/update.md",
       "title": "经济与资产｜常规更新",
       "kind": "prompt",
       "applicableStages": [
@@ -836,7 +850,8 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "823db7e82689a24c5b5acf6e47fa43fc4aee2ab67eedc1eb3a80edb6446edee4",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.economy.offscreen",
@@ -867,7 +882,7 @@
     },
     {
       "id": "variableGroups.org_gang.init",
-      "path": "variableGroups/org_gang/init.md",
+      "path": "legacy/variables_json/variableGroups/org_gang/init.md",
       "title": "黑帮势力｜初始化",
       "kind": "prompt",
       "applicableStages": [
@@ -890,11 +905,12 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "2cea435019da283fd7338f56947f72aefd3a34da66bfe0cc5245f95f32c590ac",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.org_gang.update",
-      "path": "variableGroups/org_gang/update.md",
+      "path": "legacy/variables_json/variableGroups/org_gang/update.md",
       "title": "黑帮势力｜常规更新",
       "kind": "prompt",
       "applicableStages": [
@@ -916,7 +932,8 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "3112bf562fde8608478759c7dad76ab49e3a7d3b966d80f05bf031296ecec629",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.org_gang.offscreen",
@@ -947,7 +964,7 @@
     },
     {
       "id": "variableGroups.org_government.init",
-      "path": "variableGroups/org_government/init.md",
+      "path": "legacy/variables_json/variableGroups/org_government/init.md",
       "title": "官方势力｜初始化",
       "kind": "prompt",
       "applicableStages": [
@@ -970,11 +987,12 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "48c7488dcce2a15662a53959e4c6042e84446e45026756b8de10042634d9c3eb",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.org_government.update",
-      "path": "variableGroups/org_government/update.md",
+      "path": "legacy/variables_json/variableGroups/org_government/update.md",
       "title": "官方势力｜常规更新",
       "kind": "prompt",
       "applicableStages": [
@@ -996,7 +1014,8 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "0c87a041c535fd7608c0f1f04a31abcd723c35c78530293199909b69a11a7431",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.org_government.offscreen",
@@ -1027,7 +1046,7 @@
     },
     {
       "id": "variableGroups.org_civil.init",
-      "path": "variableGroups/org_civil/init.md",
+      "path": "legacy/variables_json/variableGroups/org_civil/init.md",
       "title": "民间组织｜初始化",
       "kind": "prompt",
       "applicableStages": [
@@ -1050,11 +1069,12 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "f05622cd8905804ab74cb43f28c1f0616188db5dec7073c3c4bf9e8cee7b01fe",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.org_civil.update",
-      "path": "variableGroups/org_civil/update.md",
+      "path": "legacy/variables_json/variableGroups/org_civil/update.md",
       "title": "民间组织｜常规更新",
       "kind": "prompt",
       "applicableStages": [
@@ -1076,7 +1096,8 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "8097eb90ac6c34bb0a85535f28183fdf9c96d4237012842ca008415a5462f6f1",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.org_civil.offscreen",
@@ -1107,7 +1128,7 @@
     },
     {
       "id": "variableGroups.org_business.init",
-      "path": "variableGroups/org_business/init.md",
+      "path": "legacy/variables_json/variableGroups/org_business/init.md",
       "title": "企业与资本势力｜初始化",
       "kind": "prompt",
       "applicableStages": [
@@ -1130,11 +1151,12 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "2bedd9dcc03d9233b5109f845679b6a14f7acca6d4de0505a2a5ec3390f796cf",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.org_business.update",
-      "path": "variableGroups/org_business/update.md",
+      "path": "legacy/variables_json/variableGroups/org_business/update.md",
       "title": "企业与资本势力｜常规更新",
       "kind": "prompt",
       "applicableStages": [
@@ -1156,7 +1178,8 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "e5c3837b70eaa6a3bba4752471bdd41b3f8538c066a57fc4e5d00d6d317d7786",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "variableGroups.org_business.offscreen",
@@ -2116,6 +2139,630 @@
       "category": "planning",
       "contentSha256": "bfb22bff472fbe8916b58915a7cead540f10763ded99d5b187a2999fe9905097",
       "placeholders": []
+    },
+    {
+      "id": "shared.07_command_output.text",
+      "path": "shared/07_command_output.md",
+      "title": "变量更新输出协议（严格JSON）（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 2295,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 407,
+      "orderGroup": "output",
+      "reorderable": false,
+      "category": "output",
+      "contentSha256": "61bd170fe376d85ca55c1778633e82cda79c9119f9bc94f777d60c355ea9d794",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "stages.opening.variables.text",
+      "path": "stages/opening/variables.md",
+      "title": "开局变量初始化主提示词（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 423,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 300,
+      "orderGroup": "stage",
+      "reorderable": false,
+      "category": "stage",
+      "contentSha256": "9aaa890d436b61b6c33f1b603b02047314b01a5b9eb4d284aa48fc183aacb0e8",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "stages.regular.variables.text",
+      "path": "stages/regular/variables.md",
+      "title": "普通回合变量更新主提示词（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 388,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 300,
+      "orderGroup": "stage",
+      "reorderable": false,
+      "category": "stage",
+      "contentSha256": "e2f1d8993d210a01a7924e44c3440321274d43c336c16d1451eb33672ad40bd7",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.protagonist.init.text",
+      "path": "variableGroups/protagonist/init.md",
+      "title": "主角｜初始化（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "protagonist",
+      "characters": 766,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 500,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "9d2642091d55dcdb41b9eb134eb55357e91a3580b91b3309b96e5764ae9e47a4",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.protagonist.update.text",
+      "path": "variableGroups/protagonist/update.md",
+      "title": "主角｜常规更新（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "protagonist",
+      "characters": 757,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 501,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "fe9b33dcfa6273caf030a956e599750049e9f2edf3fc77dff173f9322620f97e",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.npc_ordinary.init.text",
+      "path": "variableGroups/npc_ordinary/init.md",
+      "title": "普通NPC｜初始化（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "npc_ordinary",
+      "characters": 1351,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 510,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "cda75734b44d3c28b71acf0bdc299371a1a0255b517bf86bbfa3ee21a3b2bb4d",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.npc_ordinary.update.text",
+      "path": "variableGroups/npc_ordinary/update.md",
+      "title": "普通NPC｜常规更新（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "npc_ordinary",
+      "characters": 1342,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 511,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "eaa377f9004ff32b5765d6f7f59776ac7431d44f1e0f3130109fc330ba956715",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.npc_special.init.text",
+      "path": "variableGroups/npc_special/init.md",
+      "title": "特殊NPC｜初始化（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "npc_special",
+      "characters": 1960,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 520,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "93a249fd544748759e14e09d1a97a4372edbdfbb13c539127b79ea5648182996",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.npc_special.update.text",
+      "path": "variableGroups/npc_special/update.md",
+      "title": "特殊NPC｜常规更新（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "npc_special",
+      "characters": 1951,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 521,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "151e45b51b410b63a36353fb9d4e7562850a29c7bba6029024852b8af98b8afb",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.items.init.text",
+      "path": "variableGroups/items/init.md",
+      "title": "重要物品｜初始化（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "items",
+      "characters": 1006,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 530,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "a5e4755b8643caf8f0118eff1f00a2207d63c7754399308955c3325b6ea8e527",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.items.update.text",
+      "path": "variableGroups/items/update.md",
+      "title": "重要物品｜常规更新（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "items",
+      "characters": 997,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 531,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "ef423a8921c691273e863d97331c9f3a0aacc06efb3348952251b32600c1bfba",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.economy.init.text",
+      "path": "variableGroups/economy/init.md",
+      "title": "经济与资产｜初始化（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "economy",
+      "characters": 1665,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 540,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "28345b03f40a1cd9d278af29886582d31c2d0c3de6bed066b801de1ecb2b5086",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.economy.update.text",
+      "path": "variableGroups/economy/update.md",
+      "title": "经济与资产｜常规更新（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "economy",
+      "characters": 1656,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 541,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "48a2e87b1e0d1f7938007b0f3cad0d1462e4c288b007cad7c74791a18db3a1b5",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.org_gang.init.text",
+      "path": "variableGroups/org_gang/init.md",
+      "title": "黑帮势力｜初始化（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "org_gang",
+      "characters": 789,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 550,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "31caee43fd43c138bd4c3bb9275bc7add42fd74e01012161c1f46e95faa60ccc",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.org_gang.update.text",
+      "path": "variableGroups/org_gang/update.md",
+      "title": "黑帮势力｜常规更新（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "org_gang",
+      "characters": 812,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 551,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "c56e03738711f0ff4112b7c7be1493709b7c487ca8b28cddc93edafd784a78e9",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.org_government.init.text",
+      "path": "variableGroups/org_government/init.md",
+      "title": "官方势力｜初始化（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "org_government",
+      "characters": 831,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 560,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "0156d823c14be5dcb34b2dc71ccb438fbbcdd8152a3f45f2587a0a2328f0da89",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.org_government.update.text",
+      "path": "variableGroups/org_government/update.md",
+      "title": "官方势力｜常规更新（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "org_government",
+      "characters": 854,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 561,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "e793d9d332b936a4b5bd3ce548fcd201c92b1f2d364b707273c9b073d586716d",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.org_civil.init.text",
+      "path": "variableGroups/org_civil/init.md",
+      "title": "民间组织｜初始化（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "org_civil",
+      "characters": 782,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 570,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "02c0d8aacfda841799e5529db459f5d5e4dfa71a3e92fbe8d67e6b9dfdde4038",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.org_civil.update.text",
+      "path": "variableGroups/org_civil/update.md",
+      "title": "民间组织｜常规更新（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "org_civil",
+      "characters": 805,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 571,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "adf4ad2905b4dbeadf6b8f58dc1c9c3b7d0be7635ab880aada1a2f2f53d30350",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.org_business.init.text",
+      "path": "variableGroups/org_business/init.md",
+      "title": "企业与资本势力｜初始化（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": "org_business",
+      "characters": 808,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 580,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "971c03b13484751442d0d34500834cb9e7571e64da85a7e11390ebc0b5d4cdeb",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "variableGroups.org_business.update.text",
+      "path": "variableGroups/org_business/update.md",
+      "title": "企业与资本势力｜常规更新（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": "org_business",
+      "characters": 831,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "relevant-domain",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 581,
+      "orderGroup": "variable_group",
+      "reorderable": false,
+      "category": "variable_group",
+      "contentSha256": "f413ff74fcb637b2a32cdec28b6cdffc9c9645c892dd3f81a02c80d9546777d3",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "shared.04_state_authority.text",
+      "path": "shared/04_state_authority.md",
+      "title": "状态真值与执行边界（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 522,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 60,
+      "orderGroup": "shared",
+      "reorderable": false,
+      "category": "shared",
+      "contentSha256": "1eae7d53ea96b6655a8bfbc1ff3ec5a99e20e175d2007a9466baacd0e861c5ae",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "shared.05_context_protocol.text",
+      "path": "shared/05_context_protocol.md",
+      "title": "上下文容器与可信度（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 813,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 70,
+      "orderGroup": "shared",
+      "reorderable": false,
+      "category": "shared",
+      "contentSha256": "b24da73fc93ed7e6b42aff6dfb0a1aab7cddd03c042c1362f296eb05cd0fcb9a",
+      "placeholders": [],
+      "variableProtocol": "text"
     }
   ]
 }

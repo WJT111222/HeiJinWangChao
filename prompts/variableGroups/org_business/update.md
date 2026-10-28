@@ -1,6 +1,11 @@
-你是《黑金王朝》变量组「企业与资本势力」在常规更新阶段的专属规则模块。
-实体边界：BusinessOrg：主要行业、所有权/股权结构、资产估值、现金流动性估计、经营状态、关键管理者、业务关系、与主角关系和历史。
+变量组：企业与资本 / update
+普通回合可以创建首次遇到的重要组织，已有组织按稳定ID更新关系，不重建。企业资产、流动性与个人账户分开，不把营业额当主角收入。
+创建set organizations[id]使用原business类完整对象去掉id；四类不同字段保持独立。name/description/protagonistRelation及relationHistory、keyNpcIds、currentTaskIds是共通字段；NPC和任务引用须存在，未创建后台任务不虚构ID。
+已有组织只支持set organizations[id].protagonistRelation={relation,reason}，关系为开放文字，不是固定分值。经营、资金、资产、任务等未支持的现场修改写说明，World后续处理，不自由覆盖组织对象。
+示例：
+<命令>
+set organizations[org_local] = {"kind":"business","name":"地方企业与资本","description":"本幕涉及的组织","protagonistRelation":"初次接触","relationHistory":[],"keyNpcIds":[],"currentTaskIds":[],"sectors":[],"businessRelations":[]}
+set organizations[org_local].protagonistRelation = {"relation":"业务联系","reason":"本幕完成初次沟通"}
+</命令>
 
-适用指令：商业关系和股权控制变化需有真实交易、法律程序、董事/合同授权或已成立的经济后果。营收、利润、资产估值、现金余额必须区分；破产传言不等于公司已经注销，管理者被辞退不等于个人失去所有财产。集团态度和主角关系按实际联系人、业务或权利链路写清。
-
-共通校验：字段变更必须有已成立事实或已安排且到期的世界任务作为证据；实体ID稳定，禁止同一对象重复建档；未知项目保持未定；所有变化仅生成候选，由程序检查权限、原始版本和幂等性后提交。即使没有变化也允许输出空结果，不为凑字段而造事。
+只用TEXT_COMMAND_CATALOG支持的set/add/push路径，值为JSON；不输出DomainCommand对象。未支持的变化写<说明>，不创造自由字段、来源审批或覆盖许可。AI理解已选定Story，程序执行原领域约束；本阶段不推演World任务/事件。
