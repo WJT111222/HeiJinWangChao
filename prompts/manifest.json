@@ -170,7 +170,7 @@
     },
     {
       "id": "shared.04_state_authority",
-      "path": "shared/04_state_authority.md",
+      "path": "legacy/variables_json/shared/04_state_authority.md",
       "title": "状态真值与执行边界",
       "kind": "prompt",
       "applicableStages": [
@@ -195,11 +195,12 @@
       "reorderable": false,
       "category": "shared",
       "contentSha256": "4f79534b7a8980284a8cab25dc4bc63a9a58d9031b9d205e466ccf07fec609ec",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "shared.05_context_protocol",
-      "path": "shared/05_context_protocol.md",
+      "path": "legacy/variables_json/shared/05_context_protocol.md",
       "title": "上下文容器与可信度",
       "kind": "prompt",
       "applicableStages": [
@@ -224,7 +225,8 @@
       "reorderable": false,
       "category": "shared",
       "contentSha256": "be733d3966385c9cef20010f2e69c60917870e92c94eca86c539a040641f770c",
-      "placeholders": []
+      "placeholders": [],
+      "variableProtocol": "json"
     },
     {
       "id": "shared.06_story_output",
@@ -2703,6 +2705,62 @@
       "reorderable": false,
       "category": "variable_group",
       "contentSha256": "f413ff74fcb637b2a32cdec28b6cdffc9c9645c892dd3f81a02c80d9546777d3",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "shared.04_state_authority.text",
+      "path": "shared/04_state_authority.md",
+      "title": "状态真值与执行边界（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 522,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 60,
+      "orderGroup": "shared",
+      "reorderable": false,
+      "category": "shared",
+      "contentSha256": "1eae7d53ea96b6655a8bfbc1ff3ec5a99e20e175d2007a9466baacd0e861c5ae",
+      "placeholders": [],
+      "variableProtocol": "text"
+    },
+    {
+      "id": "shared.05_context_protocol.text",
+      "path": "shared/05_context_protocol.md",
+      "title": "上下文容器与可信度（文本协议准备）",
+      "kind": "prompt",
+      "applicableStages": [
+        "variables"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 813,
+      "version": "1.0.0-text-v1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 70,
+      "orderGroup": "shared",
+      "reorderable": false,
+      "category": "shared",
+      "contentSha256": "b24da73fc93ed7e6b42aff6dfb0a1aab7cddd03c042c1362f296eb05cd0fcb9a",
       "placeholders": [],
       "variableProtocol": "text"
     }

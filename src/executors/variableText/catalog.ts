@@ -10,17 +10,19 @@ import { variableCommandSchemas } from '../../domain/variableCommands';
 import type { DomainCommand } from '../../domain/commands';
 import type { VariableOperation } from '../../parsers/variableText';
 import { variableTextLimits } from '../../parsers/variableText';
-import { memoryInputSchema } from './entities';
+import { memoryInputSchema, textInputSchema } from './entities';
 
 const positive = MoneySchema.refine(n=>n>0);
 const npcChanges = variableCommandSchemas[1].shape.changes.shape;
 const heroChanges = variableCommandSchemas[0].shape.changes.shape;
 interface Entry { operation:VariableOperation; path:string; commandType:DomainCommand['type']; value:z.ZodType }
 const entries:Entry[] = [
-  ...Object.entries(heroChanges).map(([field,value]):Entry=>({operation:'set',path:`protagonist.${field}`,commandType:'UpdateProtagonist',value:value.unwrap()})),
+  ...Object.entries(heroChanges).map(([field,value]):Entry=>({operation:'set',path:`protagonist.${field}`,commandType:'UpdateProtagonist',
+    value:['healthText','emotionText'].includes(field)?textInputSchema:value.unwrap()})),
   {operation:'set',path:'worldClock',commandType:'SetWorldClock',value:GameTimeSchema},
   {operation:'set',path:'locations[id]',commandType:'CreateLocation',value:LocationSchema.omit({id:true})},
-  ...Object.entries(npcChanges).map(([field,value]):Entry=>({operation:'set',path:`npc[id].${field}`,commandType:'UpdateNpc',value:value.unwrap()})),
+  ...Object.entries(npcChanges).map(([field,value]):Entry=>({operation:'set',path:`npc[id].${field}`,commandType:'UpdateNpc',
+    value:['healthText','relationshipText'].includes(field)?textInputSchema:value.unwrap()})),
   ...(['memories','longTermMemories','knownInformation'] as const).map((field):Entry=>({operation:'push',path:`npc[id].${field}`,commandType:'RecordNpcMemory',value:memoryInputSchema})),
   {operation:'set',path:'npc[id]',commandType:'CreateNpc',value:z.union([OrdinaryNpcSchema.omit({id:true}),SpecialNpcSchema.omit({id:true})])},
   {operation:'set',path:'npc[id].affinityChange',commandType:'UpdateNpc',value:variableCommandSchemas[1].shape.affinityChange.unwrap().extend({relationshipText:TextSchema})},

@@ -111,3 +111,19 @@ describe('真实模块示例经解析器/编译器/领域执行',()=>{
     }
   });
 });
+
+describe('共享指令不能污染文本输出契约',()=>{
+  it.each(['opening','regular'] as const)('%s实际消息不要求AI补程序命令元数据或旧JSON错误数组',async(mode)=>{
+    const r=await composeTextVariablesPrompt(input(mode)),systems=r.messages.filter(m=>m.role==='system').map(m=>m.content).join('\n');
+    expect(systems).not.toContain('每条变更提案必须给出命令类别、对象、证据和稳定的唯一命令标识');
+    expect(systems).not.toContain('必要时通过 unresolved 报告');
+    expect(systems).not.toContain('宁可把它列入 unresolved');
+  });
+});
+
+it('文本目录保留既有状态文本长度约束，不把无效空值宣称为合法输入',()=>{
+  const catalog=textVariableCatalog();
+  for(const path of ['protagonist.healthText','protagonist.emotionText','npc[id].healthText','npc[id].relationshipText']){
+    expect(catalog.entries.find(e=>e.path===path)?.valueSchema).toMatchObject({type:'string',minLength:1,maxLength:8192});
+  }
+});
