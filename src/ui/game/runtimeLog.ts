@@ -1,5 +1,7 @@
 import { DataError } from '../../domain/common';
 import { safeAiError } from '../../services/ai/errors';
+import { isSafeVariablePath } from '../../executors/variableText/diagnostics';
+import type { DiagnosticType, DiagnosticRule } from '../../executors/variableText/diagnostics';
 import type { AiStage } from '../../services/ai/configuration';
 
 export type RuntimeLogStage = AiStage | 'workflow' | 'commit';
@@ -18,6 +20,10 @@ export interface RuntimeLogEntry {
   commandIndex?: number;
   commandType?: string;
   relatedCommandIndices?: number[];
+  valuePath?: string;
+  expectedType?: DiagnosticType;
+  actualType?: DiagnosticType;
+  validationRule?: DiagnosticRule;
 }
 
 export const runtimeStageNames: Record<RuntimeLogStage, string> = {
@@ -27,6 +33,14 @@ export const runtimeStageNames: Record<RuntimeLogStage, string> = {
   workflow: '自动工作流',
   commit: '正式结算',
 };
+
+const diagnosticTypes = new Set<DiagnosticType>([
+  'string', 'number', 'integer', 'boolean', 'object', 'array', 'null', 'undefined',
+]);
+const diagnosticRules = new Set<DiagnosticRule>([
+  'invalid_type', 'required_field', 'schema_constraint', 'value_constraint',
+  'reserved_field', 'path_identity', 'domain_schema',
+]);
 
 const safeCommitCodes: Record<string, string> = {
   TURN_TIME_REQUIRED: '时间条件未满足，当前回合未正式结算。',
@@ -68,6 +82,10 @@ export function runtimeLogEvent(
     ...(typeof details?.commandIndex === 'number' && details.commandIndex >= 0
       ? { commandIndex: details.commandIndex + 1 } : {}),
     ...(type && /^[A-Za-z0-9_]+$/.test(type) ? { commandType: type } : {}),
+    ...(details?.valuePath && isSafeVariablePath(details.valuePath) ? { valuePath: details.valuePath } : {}),
+    ...(details?.expectedType && diagnosticTypes.has(details.expectedType) ? { expectedType: details.expectedType } : {}),
+    ...(details?.actualType && diagnosticTypes.has(details.actualType) ? { actualType: details.actualType } : {}),
+    ...(details?.validationRule && diagnosticRules.has(details.validationRule) ? { validationRule: details.validationRule } : {}),
     ...(details?.relatedCommandIndices?.length
       ? { relatedCommandIndices: [...new Set(details.relatedCommandIndices
         .filter((index) => Number.isSafeInteger(index) && index > 0))].slice(0, 20) }

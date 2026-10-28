@@ -4,6 +4,7 @@ import type { DomainCommand } from '../../domain/commands';
 import { IdSchema } from '../../domain/common';
 import type { ParsedVariableCommand } from '../../parsers/variableText';
 import { failed } from './model';
+import { diagnosticForObject, diagnosticForRule } from './diagnostics';
 import type { ExecutionResult } from './model';
 
 type TransactionType = 'ReceiveIncome' | 'Borrow' | 'TransferFunds' | 'RepayDebt'
@@ -43,44 +44,44 @@ export function compileTransaction(command: ParsedVariableCommand, common: {comm
   if (!path) return;
   if (command.operation !== path.operation) return failed('unsupported_operation');
   const value = object.safeParse(command.value);
-  if (!value.success) return failed('type_mismatch');
+  if (!value.success) return failed('type_mismatch', null, [], diagnosticForObject(command));
   const data = value.data;
   // 这些是程序的命令身份/版本及路径绑定，不能被输入覆盖。不是剧情凭据或授权。
-  if (['commandId','type','evidence','expectedRevision'].some((key) => Object.hasOwn(data,key))) return failed('type_mismatch');
+  if (['commandId','type','evidence','expectedRevision'].some((key) => Object.hasOwn(data,key))) return failed('type_mismatch', null, [], diagnosticForRule(command, 'reserved_field'));
   let raw: unknown;
   switch (path.type) {
     case 'ReceiveIncome': {
-      const income = identified(data,path.id); if (!income) return failed('type_mismatch');
+      const income = identified(data,path.id); if (!income) return failed('type_mismatch', null, [], diagnosticForRule(command, 'path_identity'));
       raw = {...common,type:path.type,income}; break;
     }
     case 'AcquireItem': {
-      const item = identified(data,path.id); if (!item) return failed('type_mismatch');
+      const item = identified(data,path.id); if (!item) return failed('type_mismatch', null, [], diagnosticForRule(command, 'path_identity'));
       raw = {...common,type:path.type,item}; break;
     }
     case 'Borrow': {
-      const debt = identified(data.debt,path.id); if (!debt) return failed('type_mismatch');
+      const debt = identified(data.debt,path.id); if (!debt) return failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
       raw = {...data,...common,type:path.type,debt}; break;
     }
     case 'PurchaseItem': {
-      const item = identified(data.item,path.id); if (!item) return failed('type_mismatch');
+      const item = identified(data.item,path.id); if (!item) return failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
       raw = {...data,...common,type:path.type,item}; break;
     }
     case 'PurchaseVehicle': {
-      const vehicle = identified(data.vehicle,path.id); if (!vehicle) return failed('type_mismatch');
+      const vehicle = identified(data.vehicle,path.id); if (!vehicle) return failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
       raw = {...data,...common,type:path.type,vehicle}; break;
     }
     case 'LoseItem':
-      if (Object.hasOwn(data,'itemId')) return failed('type_mismatch');
+      if (Object.hasOwn(data,'itemId')) return failed('type_mismatch', null, [], diagnosticForRule(command, 'reserved_field'));
       raw = {...data,...common,type:path.type,itemId:path.id,expectedRevision}; break;
     case 'TransferItem':
-      if (Object.hasOwn(data,'itemId')) return failed('type_mismatch');
+      if (Object.hasOwn(data,'itemId')) return failed('type_mismatch', null, [], diagnosticForRule(command, 'reserved_field'));
       raw = {...data,...common,type:path.type,itemId:path.id}; break;
     case 'RepayDebt':
-      if (Object.hasOwn(data,'debtId')) return failed('type_mismatch');
+      if (Object.hasOwn(data,'debtId')) return failed('type_mismatch', null, [], diagnosticForRule(command, 'reserved_field'));
       raw = {...data,...common,type:path.type,debtId:path.id}; break;
     case 'TransferFunds': raw = {...data,...common,type:path.type}; break;
     case 'SetEquipment': raw = {...common,type:path.type,equipment:data}; break;
   }
   const parsed = DomainCommandSchema.safeParse(raw);
-  return parsed.success ? {ok:true,value:parsed.data} : failed('type_mismatch');
+  return parsed.success ? {ok:true,value:parsed.data} : failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
 }

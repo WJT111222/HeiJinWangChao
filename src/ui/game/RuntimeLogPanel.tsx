@@ -2,6 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import type { RuntimeLogEntry } from './runtimeLog';
 import { runtimeStageNames } from './runtimeLog';
 
+const ruleNames = {
+  invalid_type: '字段值类型不符合要求',
+  required_field: '必填字段缺失',
+  schema_constraint: '值未通过 Schema 约束',
+  value_constraint: '字段值不满足格式或范围约束',
+  reserved_field: '提交了由程序维护的保留字段',
+  path_identity: '实体 ID 必须由命令路径绑定',
+  domain_schema: '领域 Schema 校验失败，无法安全细分字段',
+} as const;
+
 export function RuntimeLogPanel({
   entries,
   onClear,
@@ -55,6 +65,10 @@ export function RuntimeLogPanel({
                 {entry.fieldPath && <small>字段：{entry.fieldPath}</small>}
                 {entry.commandIndex && <small>命令序号：第 {entry.commandIndex} 条</small>}
                 {entry.commandType && <small>命令类型：{entry.commandType}</small>}
+                {entry.valuePath && <small>变量路径：{entry.valuePath}（实体 ID 已隐藏）</small>}
+                {entry.expectedType && <small>期望类型：{entry.expectedType}</small>}
+                {entry.actualType && <small>实际类型：{entry.actualType}</small>}
+                {entry.validationRule && <small>校验规则：{ruleNames[entry.validationRule]}</small>}
                 {entry.relatedCommandIndices?.length ? <small>相关命令：{entry.relatedCommandIndices.map((index) => `第${index}条`).join('、')}（整批失败，无法确定唯一出错命令）</small> : null}
               </li>
             ))}

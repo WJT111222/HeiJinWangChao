@@ -11,6 +11,7 @@ import { compileTransaction } from './transactions';
 import { compileEntity, memoryInputSchema, textInputSchema as textValue } from './entities';
 import { validateAst } from './ast';
 import { digest, ExecutionContextSchema, failed } from './model';
+import { diagnosticForRule, diagnosticForSchema } from './diagnostics';
 import type { CommandOrigin, ExecutionResult, VariableExecutionContext, VariableExecutionPlan } from './model';
 
 const fields = new Map<string, Mapping>([
@@ -101,7 +102,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
     const origin = { commandIndex: i + 1, source: entry.source };
     if (entry.operation !== 'set') return failed('unsupported_operation', origin);
     const time = GameTimeSchema.safeParse(entry.value);
-    if (!time.success) return failed('type_mismatch', origin);
+    if (!time.success) return failed('type_mismatch', origin, [], diagnosticForSchema(entry, time.error));
     // Story开局时间仍是唯一开局基线；等值文本不产生第二条时钟命令。
     if (openingClock && Date.parse(time.data) !== Date.parse(openingClock.worldClock)) return failed('domain_validation_failed', origin);
     clock = openingClock?.worldClock ?? time.data;
@@ -120,7 +121,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
     const transaction = compileTransaction(command, common, context.expectedRevision)
       ?? compileEntity(command, common, context.expectedRevision);
     if (transaction) {
-      if (!transaction.ok) return failed(transaction.error.code, origin);
+      if (!transaction.ok) return failed(transaction.error.code, origin, [], transaction.error.diagnostic);
       mapped = transaction.value;
     } else {
       const found = lookup(command);
@@ -128,28 +129,30 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       const { mapping, id } = found;
       if (mapping.operation !== command.operation) return failed('unsupported_operation', origin);
       if (mapping.kind === 'protagonist' || mapping.kind === 'npc') {
-        if (['healthText', 'emotionText', 'relationshipText'].includes(mapping.field)
-          && !textValue.safeParse(command.value).success) return failed('type_mismatch', origin);
+        if (['healthText', 'emotionText', 'relationshipText'].includes(mapping.field)) {
+          const text = textValue.safeParse(command.value);
+          if (!text.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, text.error));
+        }
         if (mapping.kind === 'protagonist') {
           const changes = variableCommandSchemas[0].shape.changes.safeParse({ [mapping.field]: command.value });
-          if (!changes.success) return failed('type_mismatch', origin);
+          if (!changes.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, changes.error, mapping.field));
           mapped = { ...common, type: 'UpdateProtagonist', expectedRevision: context.expectedRevision,
             protagonistId: base.protagonist.id, changes: changes.data };
         } else {
           if (!id || !npcIds.has(id)) return failed('entity_not_found', origin);
           const changes = variableCommandSchemas[1].shape.changes.safeParse({ [mapping.field]: command.value });
-          if (!changes.success) return failed('type_mismatch', origin);
+          if (!changes.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, changes.error, mapping.field));
           mapped = { ...common, type: 'UpdateNpc', npcId: id, expectedRevision: context.expectedRevision, changes: changes.data };
         }
       } else if (mapping.kind === 'clock') {
         if (openingClock) continue;
         const time = GameTimeSchema.safeParse(command.value);
-        if (!time.success) return failed('type_mismatch', origin);
+        if (!time.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, time.error));
         mapped = { ...common, type: 'SetWorldClock', worldClock: time.data };
       } else if (mapping.kind === 'location') {
         if (!id) return failed('unsupported_path', origin);
         const location = LocationSchema.omit({ id: true }).safeParse(command.value);
-        if (!location.success) return failed('type_mismatch', origin);
+        if (!location.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, location.error));
         mapped = { ...common, type: 'CreateLocation', location: { ...location.data, id } };
       } else if (mapping.kind === 'item' || mapping.kind === 'itemState') {
         if (!id) return failed('unsupported_path', origin);
@@ -163,7 +166,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
             expectedQuantity: old, changes: { quantity: old + command.value }, quantityReason: command.value > 0 ? 'gain' : 'consumption' };
         } else {
           const changes = variableCommandSchemas[6].shape.changes.safeParse({[mapping.field]:command.value});
-          if (!changes.success) return failed('type_mismatch', origin);
+          if (!changes.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, changes.error, mapping.field));
           mapped = {...common,type:'UpdateItem',itemId:id,expectedRevision:context.expectedRevision,expectedQuantity:old,changes:changes.data};
         }
       } else if (mapping.kind === 'expense') {
@@ -176,12 +179,12 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       } else {
         if (!id || !npcIds.has(id)) return failed('entity_not_found', origin);
         const memory = await mapMemory(command, base, id, clock, context, common, i + 1, mapping.field);
-        if (!memory.ok) return failed(memory.error.code, origin);
+        if (!memory.ok) return failed(memory.error.code, origin, [], memory.error.diagnostic);
         mapped = memory.value;
       }
     }
     const parsed = DomainCommandSchema.safeParse(mapped);
-    if (!parsed.success) return failed('domain_validation_failed', origin);
+    if (!parsed.success) return failed('domain_validation_failed', origin, [], diagnosticForRule(command, 'domain_schema'));
     if (prior && fingerprint(prior) !== fingerprint(parsed.data)) return failed('duplicate_or_conflicting_command', origin);
     const c = parsed.data;
     const created = c.type === 'AcquireItem' || c.type === 'PurchaseItem' ? c.item.id
@@ -219,7 +222,7 @@ async function mapMemory(command: ParsedVariableCommand, state: GameState, npcId
   clock: string, context: VariableExecutionContext, common: { commandId: string; evidence: string }, index: number,
   field: string): Promise<ExecutionResult<DomainCommand>> {
   const value = memoryInputSchema.safeParse(command.value);
-  if (!value.success) return failed('type_mismatch');
+  if (!value.success) return failed('type_mismatch', null, [], diagnosticForSchema(command, value.error));
   const memory = value.data;
   const prefix = memory.knowledgeKind === 'reported' ? '[转述]' : memory.knowledgeKind === 'suspected' ? '[推测]' : '';
   const text = prefix && !memory.text.startsWith(prefix) ? `${prefix}${memory.text}` : memory.text;
