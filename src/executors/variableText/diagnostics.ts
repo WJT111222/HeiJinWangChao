@@ -99,7 +99,7 @@ export function diagnosticForSchema(
   const actual = diagnosticType(value);
   const rule: DiagnosticRule = expected
     ? actual === 'undefined' ? 'required_field' : 'invalid_type'
-    : 'schema_constraint';
+    : ['too_small', 'too_big', 'invalid_format'].includes(issue.code) ? 'value_constraint' : 'schema_constraint';
   return {
     ...(path ? { valuePath: path } : {}),
     validationRule: rule,
