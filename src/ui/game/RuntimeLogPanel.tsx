@@ -20,46 +20,50 @@ export function RuntimeLogPanel({
   entries: readonly RuntimeLogEntry[];
   onClear: () => void;
 }) {
-  const [copyError, setCopyError] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState<{ id: number; ok: boolean } | null>(null);
   const logElement = useRef<HTMLDetailsElement>(null);
-  const errorCount = entries.filter((entry) => entry.kind === 'failed').length;
-  const latestError = [...entries].reverse().find((entry) => entry.kind === 'failed');
+  const errors = entries.filter((entry) => entry.kind === 'failed');
+  const latestError = errors[errors.length - 1];
   const latestErrorId = latestError?.id;
   // Only new failures reopen the log; the player can still collapse it manually.
   useEffect(() => {
     if (latestErrorId !== undefined && logElement.current) logElement.current.open = true;
   }, [latestErrorId]);
-  async function copy() {
+  async function copyOne(entry: RuntimeLogEntry) {
     try {
-      // Entries are derived only from fixed messages and sanitized error metadata.
-      await navigator.clipboard.writeText(JSON.stringify(entries, null, 2));
-      setCopyError(false);
+      // Copy exactly one already-sanitized failed event; never include earlier workflow events.
+      await navigator.clipboard.writeText(JSON.stringify(entry, null, 2));
+      setCopyFeedback({ id: entry.id, ok: true });
     } catch {
-      setCopyError(true);
+      setCopyFeedback({ id: entry.id, ok: false });
     }
   }
   return (
     <details ref={logElement} className="runtime-log" data-testid="runtime-log">
       <summary>
-        <span>运行日志 · {entries.length} 条</span>
-        {errorCount > 0 && <strong className="runtime-log-error-count">错误 {errorCount} 条{latestError?.code ? ` · ${latestError.code}` : ''}</strong>}
+        <span>运行日志 · 错误 {errors.length} 条</span>
+        {latestError?.code && <strong className="runtime-log-error-count">最近错误 · {latestError.code}</strong>}
       </summary>
       <div className="runtime-log-content">
-        <p className="field-hint">仅显示本次页面会话的安全诊断；不保存原始模型响应、请求正文、密钥或 NPC 私密数据。刷新即清空。</p>
+        <p className="field-hint">仅显示本次页面会话的错误；每条可单独复制安全诊断，不含原始模型响应、请求正文或密钥。刷新即清空。</p>
         <div className="runtime-log-actions">
-          <button type="button" disabled={!entries.length} onClick={() => void copy()}>复制安全日志</button>
-          <button type="button" disabled={!entries.length} onClick={onClear}>清空日志</button>
-          {copyError && <span role="status">复制失败，请检查浏览器剪贴板权限。</span>}
+          <button type="button" disabled={!errors.length} onClick={onClear}>清空日志</button>
         </div>
-        {entries.length ? (
-          <ol aria-label="运行日志条目">
-            {[...entries].reverse().map((entry) => (
+        {errors.length ? (
+          <ol aria-label="错误日志条目">
+            {[...errors].reverse().map((entry) => (
               <li key={entry.id}>
-                <time dateTime={entry.timestamp}>{new Date(entry.timestamp).toLocaleTimeString('zh-CN', { hour12: false })}</time>
-                <strong>{runtimeStageNames[entry.stage]}</strong>
-                <span className={entry.kind === 'failed' ? 'runtime-log-failure' : 'muted'}>
-                  {entry.kind === 'started' ? '开始' : entry.kind === 'completed' ? '完成' : entry.kind === 'cancelled' ? '取消' : '错误'}
-                </span>
+                <div className="runtime-log-entry-header">
+                  <div>
+                    <time dateTime={entry.timestamp}>{new Date(entry.timestamp).toLocaleTimeString('zh-CN', { hour12: false })}</time>
+                    <strong>{runtimeStageNames[entry.stage]}</strong>
+                    <span className="runtime-log-failure">错误</span>
+                  </div>
+                  <button type="button" onClick={() => void copyOne(entry)}>复制此条</button>
+                </div>
+                {copyFeedback?.id === entry.id && (
+                  <small role="status">{copyFeedback.ok ? '已复制此条错误日志' : '复制失败，请检查浏览器剪贴板权限'}</small>
+                )}
                 <p>{entry.message}</p>
                 {entry.code && <small>错误码：{entry.code}</small>}
                 {entry.httpStatus && <small>HTTP 状态：{entry.httpStatus}</small>}
@@ -75,7 +79,7 @@ export function RuntimeLogPanel({
               </li>
             ))}
           </ol>
-        ) : <p className="muted">本次页面尚无运行事件。</p>}
+        ) : <p className="muted">本次页面尚无错误。</p>}
       </div>
     </details>
   );
