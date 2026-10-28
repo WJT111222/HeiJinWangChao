@@ -89,6 +89,23 @@ describe('safe runtime log diagnostics', () => {
     expect(event).not.toHaveProperty('validationRule');
   });
 
+  it('retains safe aggregate domain rule while rejecting forged free text', () => {
+    const event = runtimeLogEvent(11, 'variables', 'failed', new AiError('data_integrity', undefined, {
+      fieldPath: 'text.domain_validation_failed',
+      domainRule: 'npc_scene_location',
+      relatedCommandIndices: [1, 2],
+    }));
+    expect(event).toMatchObject({
+      code: 'data_integrity', domainRule: 'npc_scene_location',
+      relatedCommandIndices: [1, 2],
+    });
+    const forged = runtimeLogEvent(12, 'variables', 'failed', new AiError('data_integrity', undefined, {
+      domainRule: 'npc-id-secret' as 'npc_scene_location',
+    }));
+    expect(forged).not.toHaveProperty('domainRule');
+    expect(JSON.stringify(forged)).not.toContain('npc-id-secret');
+  });
+
   it('displays only safe known commit errors', () => {
     expect(runtimeLogEvent(4, 'commit', 'failed', new DataError('TURN_TIME_REQUIRED', 'unsafe input')))
       .toMatchObject({ code: 'TURN_TIME_REQUIRED', message: '时间条件未满足，当前回合未正式结算。' });
