@@ -141,6 +141,8 @@ test('已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema
 
 test('生成中折叠不打断；取消和错误不被隐藏，Roll成功保留正式状态', async ({ page }) => {
   const before = await seed(page); let mode: 'hold' | 'error' | 'success' = 'hold', release!: () => void, calls = 0;
+  const runtimeLog = page.getByTestId('runtime-log');
+  await expect(runtimeLog).toHaveCount(0);
   const hold = new Promise<void>((resolve) => { release = resolve; });
   await page.route('https://layout.mock.invalid/**', async (route) => {
     const selected = mode; calls++; if (selected === 'hold') await hold;
@@ -152,18 +154,25 @@ test('生成中折叠不打断；取消和错误不被隐藏，Roll成功保留�
   await summary.click(); await summary.click(); await expect.poll(() => calls).toBe(1);
   await page.getByRole('button', { name: '取消生成', exact: true }).click(); await expect(summary).toContainText('已取消');
   release(); expect((await stored(page)).draft.story).toEqual(before.draft.story);
+  await expect(runtimeLog).toHaveCount(0);
   mode = 'error'; await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
   await expect(summary).toContainText('需要处理'); await expect(page.getByRole('alert').first()).toBeVisible();
   await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open'); expect((await stored(page)).state).toEqual(before.state);
-  const runtimeLog = page.getByTestId('runtime-log');
   await expect(runtimeLog).toContainText('错误 1 条');
-  await runtimeLog.locator('summary').click();
+  await expect(runtimeLog).toHaveAttribute('open', '');
   await expect(runtimeLog).toContainText('authorization');
   await expect(runtimeLog).toContainText('HTTP 状态：401');
   await expect(runtimeLog).not.toContainText('private-provider-error');
+  await runtimeLog.locator('summary').click();
+  await expect(runtimeLog).not.toHaveAttribute('open');
   mode = 'success'; await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
   await expect(page.getByTestId('story-reader')).toContainText('你仍在街边');
   await expect(summary).toContainText('等待继续'); expect((await stored(page)).state).toEqual(before.state); expect(calls).toBe(3);
+  // Existing diagnostic evidence stays available without forcing the panel open again.
+  await expect(runtimeLog).not.toHaveAttribute('open');
+  await runtimeLog.locator('summary').click();
+  await runtimeLog.getByRole('button', { name: '清空日志' }).click();
+  await expect(runtimeLog).toHaveCount(0);
 });
 
 test('缩短视口及模拟软键盘VisualViewport不遮住输入和发送', async ({ page }) => {
