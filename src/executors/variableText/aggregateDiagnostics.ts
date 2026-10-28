@@ -86,6 +86,17 @@ const stateIssues: Record<string, DomainRule> = {
   '初始同伴必须是特殊 NPC': 'npc_kind',
   '组织成员不存在': 'missing_actor',
   '组织任务归属错误': 'npc_task_ownership',
+  '联系人必须保留完整 NPC': 'missing_actor',
+  '已入账收入缺少实际金额或合法到账时间': 'invalid_balance',
+  '已还清债务余额必须为零': 'invalid_balance',
+  '未偿本金超过本金': 'invalid_balance',
+  '抵押资产不存在': 'missing_reference',
+  '同一物品不能重复装备': 'equipment_ownership',
+  '退场时间在未来': 'invalid_time',
+  '结束时间早于开始时间': 'invalid_time',
+  '任务交接存在环': 'task_event_links',
+  '任务交接时间不合法': 'invalid_time',
+  '交接缺少已成立的前序成果': 'premature_result',
 };
 
 export function aggregateDomainDiagnostic(error: z.ZodError | DataError): ExecutionDiagnostic {
