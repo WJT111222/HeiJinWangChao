@@ -11,6 +11,43 @@ import { variableCommandsForTurn } from '../../domain/turnProjection';
 import { variableValidationError } from './variableDiagnostics';
 import { assessSummary } from '../../domain/memories/summary';
 import { validateTimeCommands, validateHistoricalWorld } from '../../domain/timePreflight';
+import { parseVariableText, extractCommandBlock } from '../../parsers/variableText';
+import { compileVariableCommands, simulateVariablePlan } from '../../executors/variableText';
+import type { ExecutionError } from '../../executors/variableText';
+
+function textExecutionError(error: ExecutionError) {
+  const code = error.code === 'invalid_amount' ? 'amount_balance'
+    : ['revision_conflict', 'duplicate_or_conflicting_command'].includes(error.code) ? 'candidate_conflict'
+    : ['unsupported_path', 'unsupported_operation', 'type_mismatch'].includes(error.code) ? 'schema_fields' : 'data_integrity';
+  return new AiError(code, undefined, { fieldPath: `text.${error.code}`,
+    ...(error.commandIndex === null ? {} : { commandIndex: error.commandIndex - 1 }) });
+}
+/** 新模型响应只允许文本协议。旧JSON仅由下方parseVariables复核已保存的领域候选。 */
+export async function parseTextVariables(text: string, state: GameState, draft: TurnDraft) {
+  const ast = parseVariableText(text);
+  if (!ast.ok) throw new AiError('variable_text_syntax', undefined, {
+    fieldPath: `text.${ast.error.code}.line${ast.error.position.line}.column${ast.error.position.column}`,
+    ...(ast.error.commandIndex === null ? {} : { commandIndex: ast.error.commandIndex - 1 }) });
+  const context = { draft, expectedRevision: state.revision };
+  const compiled = await compileVariableCommands(ast.value, state, context);
+  if (!compiled.ok) throw textExecutionError(compiled.error);
+  try { validateTimeCommands(state, draft, compiled.value.commands); }
+  catch (error) { throw variableValidationError(error); }
+  const simulated = await simulateVariablePlan(compiled.value, state, context);
+  if (!simulated.ok) throw textExecutionError(simulated.error);
+  // 复用正式提交已有的场景权限底线；文本任务/事件不能冒充World后台操作。
+  for (const [commandIndex, command] of compiled.value.commands.entries()) {
+    const actors = command.type === 'SaveTask' ? [command.task.actorRef]
+      : command.type === 'SaveEvent' ? command.event.actorRefs : [];
+    if (actors.some((actor) => actor.kind === 'npc' && !simulated.value.npc[actor.id]?.onScene))
+      throw new AiError('data_integrity', undefined, { fieldPath: 'commands.actorRef', commandIndex, commandType: command.type });
+  }
+  const block = extractCommandBlock(text);
+  // 说明只产生固定安全提示，不复制私有内容、密钥、未知建议或模型原文到候选/日志。
+  const outside = block.ok ? text.slice(0, block.value.source.start.offset) + text.slice(block.value.source.end.offset) : '';
+  return VariableResultSchema.parse({ commands: compiled.value.commands, rejectedSuggestions: [],
+    unresolved: outside.includes('<说明>') ? ['模型附带非执行说明；说明未转为命令或存档事实，只有列出的领域命令通过模拟。'] : [] });
+}
 
 function json(text: string): unknown {
   try {

@@ -60,7 +60,7 @@ M3-P1 仅提供静态注册契约。M3-P2 已在 `src/prompts/loader.ts`、`cont
 - `memory/recall_select`为可选二级检索，首版可以不增加AI调用；`memory/timeline_entry`仅在重大完结事件且准备归档时按需使用。
 
 ## 6. 模型兼容策略
-- 流式正文优先分段标签，变量与世界阶段严格JSON；支持模型端JSON schema时可转换到schema模式，但**向下游暴露同一种规范化对象**。
+- 流式正文使用既有分段标签；Variables 正式使用 VARIABLE_TEXT_V1 和 `.text` 模块、TEXT_COMMAND_CATALOG，不启用原生 JSON Mode。World/Memory 保持原 JSON 协议。文本变量经解析、编译、整批模拟后，**向下游暴露既有规范化领域命令对象**，不新增持久化协议。
 - 在结构输出不满足契约时将该次尝试判失败并保留错误码；不能吞掉非法命令或绕过程序校验。
 - 输入人物/记忆/创角文本仅作为数据，不让其更改模块、命令Catalog、密钥等系统边界。
 
@@ -81,7 +81,7 @@ P2 须从当前正式存档替换 playerName、worldClock、派生 worldWeekday�
 | GPT 标记 | 改变触发消息分支，不单独关闭 COT；上游最新玩家输入也可能使用 assistant 角色 | 不照搬上游输入角色，须按目标 API 的可信边界正确映射玩家输入 |
 | DeepSeek/GLM 锁格式 | 有条件附加 assistant Prefix，重试要保持 Prefix 在尾部 | Prefix 与通用模板互斥；不得复制旧 thinking/HTML 注释推理输出策略 |
 | 酒馆预设 | 有独立外部预设消息链与专用分支 | 本阶段不移植，也不能声明兼容 |
-| 变量/世界严格 JSON | 与正文叙事规则不同 | 禁止加入正文 COT、NSFW、正文标签协议 |
+| 变量文本 / 世界严格 JSON | Variables 使用 `.text` 资源和文本目录；World 使用原资源 | 禁止加入正文 COT、NSFW、正文标签协议 |
 
 不兼容时跳过该兼容模板并给出诊断，而不是损坏 JSON 或泄露内部推理。P1 没有配置 COT 用户开关、模型路由或请求发送器；未来属于模型协议配置，不是第八项写作设置。
 

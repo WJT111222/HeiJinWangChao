@@ -11,12 +11,15 @@ import type { DomainCommand } from '../../domain/commands';
 import type { VariableOperation } from '../../parsers/variableText';
 import { variableTextLimits } from '../../parsers/variableText';
 import { memoryInputSchema, textInputSchema } from './entities';
+import { WorldEventSchema, WorldTaskSchema } from '../../domain/events/schema';
 
 const positive = MoneySchema.refine(n=>n>0);
 const npcChanges = variableCommandSchemas[1].shape.changes.shape;
 const heroChanges = variableCommandSchemas[0].shape.changes.shape;
 interface Entry { operation:VariableOperation; path:string; commandType:DomainCommand['type']; value:z.ZodType }
 const entries:Entry[] = [
+  {operation:'set',path:'events[id]',commandType:'SaveEvent',value:WorldEventSchema.omit({id:true})},
+  {operation:'set',path:'tasks[id]',commandType:'SaveTask',value:WorldTaskSchema.omit({id:true})},
   ...Object.entries(heroChanges).map(([field,value]):Entry=>({operation:'set',path:`protagonist.${field}`,commandType:'UpdateProtagonist',
     value:['healthText','emotionText'].includes(field)?textInputSchema:value.unwrap()})),
   {operation:'set',path:'worldClock',commandType:'SetWorldClock',value:GameTimeSchema},
@@ -45,7 +48,7 @@ const entries:Entry[] = [
   {operation:'set',path:'protagonist.currentWear',commandType:'SetEquipment',value:EquipmentSchema},
   {operation:'set',path:'economy.vehicles[id].purchase',commandType:'PurchaseVehicle',value:z.strictObject({account:AccountSchema,price:positive,vehicle:VehicleAssetSchema.omit({id:true})})},
 ];
-/** 离线文本组装的值结构目录；不执行、审批或写入状态。 */
+/** 正式及离线文本组装共用的值结构目录；不执行、审批或写入状态。 */
 export function textVariableCatalog() {
   return { protocol:'VARIABLE_TEXT_V1', currencyUnit:'CNY_FEN_INTEGER', limits:variableTextLimits,
     entries:entries.map(({value,...entry})=>({...entry,valueSchema:z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'})})),
@@ -53,7 +56,7 @@ export function textVariableCatalog() {
       '只输出一个<命令>块；set/add/push 操作 路径 = JSON值，以换行分隔；值可多行。不输出DomainCommand JSON、commandId、evidence、expectedRevision。',
       '[id]替换为真实稳定ID；创建对象省略id，由路径注入。条目是有限操作入口，不是任意深层赋值。',
       '内联NPC初始记忆保持空；用push记忆路径新增，由程序填充当前回合、人物引用和游戏时间。knownInformation同时记录一条个人记忆。',
-      '只能更新目录内字段。没有原生命令的余额初始化、旧资产无交易登记、房产购买、任务与事件变化写入<说明>，不伪造路径。',
+      '只能更新目录内字段。没有原生命令的余额初始化、旧资产无交易登记、房产购买写入<说明>，不伪造路径。events/tasks仅记录正文已发生的现场结果，不推演场外任务或事件；保留原有提交权限、状态和时间校验。',
       '开局程序统一注入Story时间，不重复计时。普通回合set worldClock为合法ISO时间且不倒退。',
     ] };
 }

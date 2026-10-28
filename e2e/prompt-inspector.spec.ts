@@ -142,7 +142,7 @@ test('真实存档六种模式预览、内部内容主动揭示、合法排序�
   for (const stage of ['story', 'variables', 'world']) {
     await page.getByRole('combobox', { name: '检查阶段', exact: true }).selectOption(stage);
     await expect(
-      page.locator(`.prompt-order-list [data-module-id="stages.regular.${stage}"]`),
+      page.locator(`.prompt-order-list [data-module-id="stages.regular.${stage}${stage === 'variables' ? '.text' : ''}"]`),
     ).toBeVisible();
     await expect(page.getByLabel('完整内部上下文', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('region', { name: '上下文与统计' })).not.toContainText(

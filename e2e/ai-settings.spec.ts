@@ -64,7 +64,7 @@ test('真实浏览器加载原文、校验哈希并组装六种模式，记录�
   for (const example of examples) {
     const ids = example.modules.map((module) => module.id);
     expect(ids.filter((id) => id.startsWith('stages.'))).toEqual([
-      `stages.${example.mode}.${example.stage}`,
+      `stages.${example.mode}.${example.stage}${example.stage === 'variables' ? '.text' : ''}`,
     ]);
     expect(example.roles.at(-1)).toBe('user');
     if (example.stage === 'story') {

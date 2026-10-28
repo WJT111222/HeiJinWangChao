@@ -1,3 +1,4 @@
+import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -20,7 +21,7 @@ const response = (value: unknown = result) =>
   JSON.stringify({
     choices: [
       {
-        message: { content: typeof value === 'string' ? value : JSON.stringify(value) },
+        message: { content: typeof value === 'string' ? value : variableReply(value) },
         finish_reason: 'stop',
       },
     ],
@@ -49,6 +50,7 @@ async function seed(page: Page, ready = true, disabled = false, text = narrative
         channel = newChannel();
       channel.baseUrl = 'https://variables.mock.invalid/v1';
       channel.defaultModel = 'variable-browser-model';
+      channel.compatibility.jsonMode = true;
       config.channels = [channel];
       config.routes.story = { channelId: channel.id, modelId: 'story-browser-model' };
       config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: '' };
@@ -120,7 +122,7 @@ test('变量正常生成、真实独立路由/模块/usage，完整候选主动�
     bodies: Record<string, unknown>[] = [];
   await page.route('https://variables.mock.invalid/**', async (route) => {
     bodies.push(route.request().postDataJSON());
-    await route.fulfill({ contentType: 'application/json', body: response() });
+    await route.fulfill({ contentType: 'application/json', body: response('<说明>内部候选事项不可默认公开</说明>' + variableReply(result)) });
   });
   await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
   await ready(page);
@@ -131,6 +133,7 @@ test('变量正常生成、真实独立路由/模块/usage，完整候选主动�
   expect(saved.draft.story.narrative).toBe(narrative);
   expect(bodies).toHaveLength(1);
   expect(bodies[0].model).toBe('variable-browser-model');
+  expect(bodies[0]).not.toHaveProperty('response_format');
   expect(JSON.stringify(bodies[0])).toContain('TURN_CONTEXT');
   expect(JSON.stringify(bodies[0])).toContain('SpendFunds');
   await expect(page.locator('main')).not.toContainText('内部候选事项不可默认公开');
@@ -139,7 +142,8 @@ test('变量正常生成、真实独立路由/模块/usage，完整候选主动�
   await expect(modal).toContainText('SpendFunds');
   await expect(modal).not.toContainText('内部候选事项不可默认公开');
   await modal.getByRole('button', { name: '主动查看完整变量候选', exact: true }).click();
-  await expect(modal.getByLabel('完整变量候选')).toContainText('内部候选事项不可默认公开');
+  await expect(modal.getByLabel('完整变量候选')).not.toContainText('内部候选事项不可默认公开');
+  await expect(modal.getByLabel('完整变量候选')).toContainText('说明未转为命令或存档事实');
   await expect(modal).not.toContainText('mock-var-browser-secret');
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: '设置', exact: true }).click();
@@ -148,7 +152,7 @@ test('变量正常生成、真实独立路由/模块/usage，完整候选主动�
   await page.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');
   const inspection = page.getByRole('region', { name: '上下文与统计' });
   await expect(inspection).toContainText('variable-browser-model');
-  await expect(inspection).toContainText('stages.opening.variables');
+  await expect(inspection).toContainText('stages.opening.variables.text');
   await expect(inspection).toContainText('61');
   await expect(inspection).toContainText('73');
   await expect(inspection).not.toContainText('mock-var-browser-secret');
@@ -381,3 +385,22 @@ for (const scenario of [
     );
   });
 }
+
+test('正式文本命令映射NPC状态、私人记忆与消费；已启用JSON Mode仍为文本请求，候选不提前结算', async ({ page }) => {
+  const before = await seed(page, true, false, '与同事聊天后付了午餐费。', true);
+  let calls = 0;
+  await page.route('https://variables.mock.invalid/**', async route => {
+    calls++; expect(route.request().postDataJSON()).not.toHaveProperty('response_format');
+    await route.fulfill({contentType:'application/json',body:response(`<thinking>当前变化整理。</thinking><说明>说明不是执行结果。</说明><命令>
+set npc[npc-a].healthText = "略感疲倦"
+push npc[npc-a].memories = {"text":"本轮一起吃过午饭","knowledgeKind":"observed","knowledgeSource":"亲历","visibility":"npc_private"}
+add economy.cash = -3000
+</命令>`)});
+  });
+  await page.getByRole('button', {name:'生成变量候选',exact:true}).click(); await ready(page);
+  const saved = await stored(page); expect(saved.formal).toBe(before); expect(calls).toBe(1);
+  expect(saved.draft.variables.result.commands.map((c:{type:string})=>c.type)).toEqual(['UpdateNpc','RecordNpcMemory','SpendFunds']);
+  expect(saved.draft.variables.result.commands[1].memory.visibility).toBe('npc_private');
+  await expect(page.getByRole('complementary',{name:'主角信息'})).toContainText('100.00 元');
+  await page.reload(); await openGameTools(page); await ready(page); expect(calls).toBe(1); expect((await stored(page)).formal).toBe(before);
+});

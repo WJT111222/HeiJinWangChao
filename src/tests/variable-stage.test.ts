@@ -1,3 +1,5 @@
+import { completeDraft, submission } from './fixtures/turn';
+import { variableReply } from './fixtures/variableReply';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { VariableStage } from '../workflows/variableStage';
@@ -17,12 +19,12 @@ const text = '主角已经用现金支付30元吃饭。';
 const result = {
   commands: [
     {
-      commandId: 'meal',
+      commandId: 'text-v1:s1:c1',
       type: 'SpendFunds',
-      evidence: text,
+      evidence: '文本变量指令第1条',
       account: 'cash',
       amount: 3000,
-      purpose: '午餐',
+      purpose: '剧情消费',
     },
   ],
   rejectedSuggestions: [],
@@ -50,7 +52,7 @@ function setup(protocol: Protocol = 'openai') {
   return { config, vault, settings: defaultSettings() };
 }
 function wire(value: unknown = result, protocol: Protocol = 'openai') {
-  const text = typeof value === 'string' ? value : JSON.stringify(value);
+  const text = typeof value === 'string' ? value : variableReply(value);
   return Response.json(
     protocol === 'openai'
       ? {
@@ -128,7 +130,7 @@ describe('变量阶段真实请求到草稿保存', () => {
       const [inspection] = requestInspections.getSnapshot();
       expect(inspection.stage).toBe('variables');
       expect(inspection.route.model).toBe('variables-only');
-      expect(inspection.scope?.modules.some((m) => m.id === 'stages.opening.variables')).toBe(true);
+      expect(inspection.scope?.modules.some((m) => m.id === 'stages.opening.variables.text')).toBe(true);
       expect(
         inspection.scope?.modules.filter((m) => m.id.startsWith('variableGroups.')),
       ).toHaveLength(9);
@@ -229,7 +231,12 @@ describe('变量阶段真实请求到草稿保存', () => {
     '%s 使用各自 init/update 模块，不混用正文或世界协议',
     async (mode) => {
       await repo.deleteDraft('save-a', draft.draftRevision);
-      const initial = createTurnDraft('save-a', 0, 'existing', mode, '输入');
+      if (mode === 'regular') {
+        const completed = await completeDraft(repo, { variables: { commands: [], rejectedSuggestions: [], unresolved: [] }, world: { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] } });
+        const committed = await repo.commitTurn(submission(completed));
+        await repo.deleteDraft('save-a', committed.draft.draftRevision);
+      }
+      const initial = createTurnDraft('save-a', (await repo.load('save-a')).revision, 'existing', mode, '输入');
       await repo.saveDraft(initial, null);
       const current = rerollStory(initial, {
         turnKind: mode,
@@ -240,8 +247,8 @@ describe('变量阶段真实请求到草稿保存', () => {
       await repo.saveDraft(current, 0);
       await runner(async () => wire()).generate({ ...setup(), draft: current });
       const ids = requestInspections.getSnapshot()[0].scope?.modules.map((m) => m.id) ?? [];
-      expect(ids).toContain(`stages.${mode}.variables`);
-      expect(ids).toContain(`variableGroups.economy.${mode === 'opening' ? 'init' : 'update'}`);
+      expect(ids).toContain(`stages.${mode}.variables.text`);
+      expect(ids).toContain(`variableGroups.economy.${mode === 'opening' ? 'init' : 'update'}.text`);
       expect(ids).not.toContain('shared.06_story_output');
       expect(ids).not.toContain('shared.08_world_output');
     },
@@ -249,7 +256,7 @@ describe('变量阶段真实请求到草稿保存', () => {
   it.each([
     '{not-json',
     { ...result, commands: [{ ...result.commands[0], amount: 999999 }] },
-    { ...result, commands: [{ type: 'UpdateAnything', commandId: 'bad', evidence: text }] },
+    '<命令>set unsupported.field = 1</命令>',
   ])('非法候选整批拒绝并记录安全失败元数据，不污染正文或正式状态', async (value) => {
     const before = await repo.load('save-a');
     await expect(
@@ -408,9 +415,9 @@ describe('变量阶段真实请求到草稿保存', () => {
     expect(saved?.story).toEqual(draft.story);
     expect(saved?.variables).toBeUndefined();
   });
-  it('模型在未解决事项中回显凭证也拒绝保存，失败记录不含原始响应', async () => {
+  it('模型在命令中回显凭证也拒绝保存，失败记录不含原始响应', async () => {
     await expect(
-      runner(async () => wire({ ...result, unresolved: ['mock-variable-key'] })).generate({
+      runner(async () => wire('<命令>set protagonist.emotionText = "mock-variable-key"</命令>')).generate({
         ...setup(),
         draft,
       }),

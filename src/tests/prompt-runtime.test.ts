@@ -1,3 +1,4 @@
+import { variableReply } from './fixtures/variableReply';
 import { describe, it, expect, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { composePrompt } from '../prompts/composer';
@@ -144,9 +145,9 @@ describe('真实资源加载与消息组装', () => {
       const a = input(stage);
       const result = await composePrompt({ ...a, domains: ['economy'] });
       const ids = result.modules.map((m) => m.id);
-      expect(ids.filter((id) => id.startsWith('stages.'))).toEqual([`stages.regular.${stage}`]);
+      expect(ids.filter((id) => id.startsWith('stages.'))).toEqual([`stages.regular.${stage}${stage === 'variables' ? '.text' : ''}`]);
       expect(ids.filter((id) => id.startsWith('variableGroups.'))).toEqual([
-        `variableGroups.economy.${stage === 'variables' ? 'update' : 'offscreen'}`,
+        `variableGroups.economy.${stage === 'variables' ? 'update.text' : 'offscreen'}`,
       ]);
       expect(ids).not.toContain('shared.06_story_output');
       expect(ids).not.toContain('writing.nsfw');
@@ -736,7 +737,7 @@ describe('真实命令目录、解析与安全候选验证', () => {
   it.each(['openai', 'gemini', 'anthropic'] as const)(
     '%s 三阶段真实组装 → Mock HTTP → 规范化 → 解析，仓库与输入保持不变',
     async (protocol) => {
-      const a = input();
+      const a = input('story', 'opening');
       a.settings.prompts.actionOptions = false;
       const channel = { ...newChannel(protocol), defaultModel: 'mock-model' };
       const config = defaultAiConfig();
@@ -762,7 +763,7 @@ describe('真实命令目录、解析与安全候选验证', () => {
         .mockResolvedValueOnce(
           new Response(stream, { headers: { 'Content-Type': 'text/event-stream' } }),
         )
-        .mockResolvedValueOnce(wire(JSON.stringify(emptyVariables), protocol))
+        .mockResolvedValueOnce(wire(variableReply(emptyVariables), protocol))
         .mockResolvedValueOnce(wire(JSON.stringify(emptyWorld), protocol));
       const client = new AiClient(transport);
       const before = structuredClone(a.state);
@@ -780,7 +781,7 @@ describe('真实命令目录、解析与安全候选验证', () => {
           true,
         );
         const draft = rerollStory(
-          createTurnDraft(a.state.saveId, a.state.revision, 'new-turn', 'regular', '行动'),
+          createTurnDraft(a.state.saveId, a.state.revision, 'new-turn', a.mode, '行动'),
           StorySchema.parse(storyResult.result),
         );
         const variables = await runStageRequest(

@@ -230,7 +230,7 @@ describe('三种原生协议与响应规范化', () => {
     expect(body.temperature).toBeUndefined();
     expect(body.response_format).toBeUndefined();
     expect(response.diagnostics).toContain('TEMPERATURE_SKIPPED_UNSUPPORTED');
-    expect(response.diagnostics).toContain('NATIVE_JSON_MODE_SKIPPED_STRICT_PROMPT_RETAINED');
+    expect(response.diagnostics).toContain('VARIABLE_TEXT_MODE_JSON_DISABLED');
   });
   it('COT新渠道默认完整历史，旧off保留，Prefix降级且不按模型名单猜测能力', () => {
     const a = configured();

@@ -15,7 +15,7 @@ export function compileEntity(command: ParsedVariableCommand, common: { commandI
   expectedRevision: number): ExecutionResult<DomainCommand> | undefined {
   const [root, id, field] = command.path.nodes;
   if (id?.kind !== 'id' || !IdSchema.safeParse(id.id).success) return;
-  const creation = command.path.nodes.length === 2 && ['npc', 'organizations'].includes(root.name);
+  const creation = command.path.nodes.length === 2 && ['npc', 'organizations', 'events', 'tasks'].includes(root.name);
   const relation = command.path.nodes.length === 3 && root.name === 'organizations' && field?.kind === 'field' && field.name === 'protagonistRelation';
   const npc = command.path.nodes.length === 3 && root.name === 'npc' && field?.kind === 'field'
     && ['affinityChange', 'activeGoals', 'contact'].includes(field.name);
@@ -30,8 +30,10 @@ export function compileEntity(command: ParsedVariableCommand, common: { commandI
     const data = value.data;
     if (creation) {
       if (Object.hasOwn(data, 'id')) return failed('type_mismatch');
-      raw = root.name === 'npc' ? { ...common, type: 'CreateNpc', npc: { ...data, id: id.id } }
-        : { ...common, type: 'CreateOrganization', organization: { ...data, id: id.id } };
+      if (root.name === 'npc') raw = { ...common, type: 'CreateNpc', npc: { ...data, id: id.id } };
+      else if (root.name === 'events') raw = { ...common, type: 'SaveEvent', event: { ...data, id: id.id } };
+      else if (root.name === 'tasks') raw = { ...common, type: 'SaveTask', task: { ...data, id: id.id } };
+      else raw = { ...common, type: 'CreateOrganization', organization: { ...data, id: id.id } };
     } else if (relation) {
       if (Object.keys(data).some((key) => !['relation', 'reason'].includes(key))) return failed('type_mismatch');
       raw = { ...common, type: 'RecordOrgRelation', organizationId: id.id, ...data };
