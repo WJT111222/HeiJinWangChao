@@ -36,13 +36,13 @@ export function compileEntity(command: ParsedVariableCommand, common: { commandI
       else if (root.name === 'tasks') raw = { ...common, type: 'SaveTask', task: { ...data, id: id.id } };
       else raw = { ...common, type: 'CreateOrganization', organization: { ...data, id: id.id } };
     } else if (relation) {
-      if (Object.keys(data).some((key) => !['relation', 'reason'].includes(key))) return failed('type_mismatch', null, [], diagnosticForRule(command, 'reserved_field'));
+      if (Object.keys(data).some((key) => !['relation', 'reason'].includes(key))) return failed('type_mismatch', null, [], diagnosticForRule(command, 'schema_constraint'));
       raw = { ...common, type: 'RecordOrgRelation', organizationId: id.id, ...data };
     } else if (field?.kind === 'field' && field.name === 'contact') {
-      if (Object.keys(data).some((key) => key !== 'reason')) return failed('type_mismatch', null, [], diagnosticForRule(command, 'reserved_field'));
+      if (Object.keys(data).some((key) => key !== 'reason')) return failed('type_mismatch', null, [], diagnosticForRule(command, 'schema_constraint'));
       raw = { ...common, type: 'RegisterContact', npcId: id.id, ...data };
     } else {
-      if (Object.keys(data).some((key) => !['from', 'to', 'reason', 'relationshipText'].includes(key))) return failed('type_mismatch', null, [], diagnosticForRule(command, 'reserved_field'));
+      if (Object.keys(data).some((key) => !['from', 'to', 'reason', 'relationshipText'].includes(key))) return failed('type_mismatch', null, [], diagnosticForRule(command, 'schema_constraint'));
       const { relationshipText, ...affinityChange } = data;
       raw = { ...common, type: 'UpdateNpc', expectedRevision, npcId: id.id, changes: { relationshipText }, affinityChange };
     }
