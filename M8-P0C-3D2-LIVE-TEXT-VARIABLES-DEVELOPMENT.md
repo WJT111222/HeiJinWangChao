@@ -101,25 +101,41 @@ Variables上下文、模拟、World的`TIME_WINDOW`、投影和正式Commit使�
 
 最小开局浏览器原断言“候选没有时钟”调整为“唯一opening-clock:1”；同时继续检查正式时钟提交前不变、回执一次、刷新及多回合不重复计时。说明原文展示断言改为固定非执行提示与秘密不落库。
 
-阶段性结果：全部Vitest 1,885项通过（原1,857保留，新增28）；提示词检查82项通过；完整check构建及最终桌面/移动E2E仍在执行，最终结果将在提交前补录。此前的JSON Mock失败仅作为迁移记录，不视为最终验证。
+最终检查（全部模型请求使用Mock）：
+
+| 实际命令 | 结果 |
+| --- | --- |
+| `npx vitest run src/tests/live-text-variables.test.ts src/tests/live-text-turn.test.ts` | 28通过；随后补强旧JSON只恢复World的用例，`npx vitest run src/tests/live-text-turn.test.ts` 16通过 |
+| `npm run prompts:check` | 3文件、82通过；100项真实资源hash/路径/注册契约通过 |
+| `npm run check` | Lint零警告；50文件、1,885项Vitest通过；TypeScript与Vite生产构建通过 |
+| `npm run lint` | 最后两处E2E定位器更新后再检查，零警告 |
+| `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e` | 完整执行292项：289通过、3失败，20.9分钟；失败均为测试仍期待旧Variables模块ID |
+| 两组六模式测试桌面/移动定向复测（独立output目录） | 各2/2通过，保留排序、完整上下文揭示和隐私原断言 |
+| `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e -- --last-failed` | 3/3通过，22.9秒；重验全量运行的全部失败项 |
+| `git diff --check` | 通过 |
+
+工程基线原1,857项保留，新增28项，共1,885。浏览器原290项保留，新增一项场景分别运行桌面/移动，共292个独立场景。最终采用“完整运行 + 修复失败项后定向重跑”的验证方式，292个场景均有通过记录；**不将首次全量的289/292伪报成单次292全绿**。已修复断言只把`stages.*.variables`改为正式`.text`ID，未删除、跳过或降低安全断言。当前没有尚未修复或未复测的失败项。
+
+迁移过程：首轮定向浏览器59项中55通过，另4项为旧开局时钟断言及不合法的regular测试初始化；修正后在后续完整运行中通过。一次全量运行因资源显示名称收尾主动停止（8通过、2中断、282未跑），未计为通过，随后重新完整执行全部292项。生产构建保留Vite大于500KB chunk的非阻断提示，本轮未扩大为打包重构。
+
 
 ## 已知缺口与实际影响
 
-1. 原生领域没有未知现金/线上余额初始化、历史已持有资产无交易登记、完整房产购买，以及部分NPC/组织字段更新能力。本轮不增加任意余额覆盖器、假收入或假借款。余额null时不能消费，即使新增一笔收入也不能推断原余额；此类开局交易仍会安全失败，需要后续独立领域设计。合法无交易开局已能空块完成并进入下一回合。
+1. 原生领域没有未知现金/线上余额初始化、历史已持有资产无交易登记、完整房产购买，以及部分NPC/组织字段更新能力。本轮不增加任意余额覆盖器、假收入或假借款。余额null时不能消费，即使新增一笔收入也不能推断原余额；此类开局交易仍会安全失败，最小后续方案是单独设计“仅未知账户首次确立余额”的原生命令及无交易资产登记，区分初始化与收入；本轮未实施。合法无交易开局已能空块完成并进入下一回合。
 2. 不支持的能力模型可写说明，但说明不自动落实，也不保证保留完整建议文字。玩家主动查看候选只能看到已执行模拟的规范化命令和固定提示。
 3. 模型仍须输出合法文本路径和原Schema字段。非法JSON值、无效实体、余额不足等仍会阻断整批；这是数据完整性限制。没有声称任意真实模型都已兼容。
 4. 新Variables若仍返回旧JSON会明确失败，不猜测或重发；已有合法JSON领域候选可继续恢复/提交。
-5. 全部模型调用均Mock，不验证真实供应商格式遵从、计费、CORS或真机键盘行为。没有调用真实收费模型，没有新付费场景。
+5. 全部模型调用均Mock，不验证真实供应商格式遵从、计费、CORS或真机键盘行为。没有调用真实收费模型，没有新付费场景。新增两条目录会增加输入上下文；原有估算和真实usage继续展示，不承诺相同Token消耗。
 6. 未主动部署生产环境；PR预览若发生，由既有Cloudflare自动流程处理。不合并、不部署、不修改main。
 
 ## 文件清单
 
-正式接线：`src/services/ai/runtime.ts`、`protocols.ts`、`errors.ts`，`src/services/validation/aiOutputs.ts`，`src/prompts/composer.ts`、`selection.ts`、`context.ts`。
+正式接线：`src/services/ai/runtime.ts`、`protocols.ts`、`errors.ts`，`src/services/validation/aiOutputs.ts`，`src/prompts/composer.ts`、`selection.ts`、`context.ts`；`manifest.ts`仅更新过时的离线资源错误说明。
 
 有限现场能力：`src/executors/variableText/entities.ts`、`catalog.ts`。
 
 提示词及契约说明：`prompts/shared/07_command_output.md`、`prompts/manifest.json`、`prompts/sources.lock.json`、`prompts/docs/ASSEMBLY.md`、`prompts/docs/OUTPUT_CONTRACT.md`。
 
-测试：上述两个新测试、`src/tests/fixtures/variableReply.ts`；更新`ai-client`、`opening-time`、`prompt-inspector`、`prompt-runtime`、`text-prompt-readiness`、`time-runtime`、`turn-coordinator`、`variable-commands`、`variable-stage`、`variable-text-executor`测试；更新E2E `action-workflow`、`continuous-turns`、`memory-maintenance`、`npc-memory`、`opening-time`、`time-preflight`、`turn-coordinator`、`variable-runtime`。
+测试：上述两个新测试、`src/tests/fixtures/variableReply.ts`；更新`ai-client`、`opening-time`、`prompt-inspector`、`prompt-runtime`、`text-prompt-readiness`、`time-runtime`、`turn-coordinator`、`variable-commands`、`variable-stage`、`variable-text-executor`测试；更新E2E `ai-settings`、`prompt-inspector`、`action-workflow`、`continuous-turns`、`memory-maintenance`、`npc-memory`、`opening-time`、`time-preflight`、`turn-coordinator`、`variable-runtime`。
 
-本报告为新增文件。正式设计文档、原世界书、NSFW及六套Story/World主模板不改。
+本报告为新增文件。正式设计文档、原世界书、NSFW及六套已有阶段主模板不改；正式入口切换到已登记的Variables文本主模板。
