@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RuntimeLogEntry } from './runtimeLog';
 import { runtimeStageNames } from './runtimeLog';
+import { domainRuleNames } from '../../executors/variableText/aggregateDiagnostics';
 
 const ruleNames = {
   invalid_type: '字段值类型不符合要求',
@@ -69,6 +70,7 @@ export function RuntimeLogPanel({
                 {entry.expectedType && <small>期望类型：{entry.expectedType}</small>}
                 {entry.actualType && <small>实际类型：{entry.actualType}</small>}
                 {entry.validationRule && <small>校验规则：{ruleNames[entry.validationRule]}</small>}
+                {entry.domainRule && <small>整批校验原因：{domainRuleNames[entry.domainRule]}</small>}
                 {entry.relatedCommandIndices?.length ? <small>相关命令：{entry.relatedCommandIndices.map((index) => `第${index}条`).join('、')}（整批失败，无法确定唯一出错命令）</small> : null}
               </li>
             ))}
