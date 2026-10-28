@@ -59,15 +59,15 @@ export function compileTransaction(command: ParsedVariableCommand, common: {comm
       raw = {...common,type:path.type,item}; break;
     }
     case 'Borrow': {
-      const debt = identified(data.debt,path.id); if (!debt) return failed('type_mismatch', null, [], diagnosticForRule(command, 'path_identity'));
+      const debt = identified(data.debt,path.id); if (!debt) return failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
       raw = {...data,...common,type:path.type,debt}; break;
     }
     case 'PurchaseItem': {
-      const item = identified(data.item,path.id); if (!item) return failed('type_mismatch', null, [], diagnosticForRule(command, 'path_identity'));
+      const item = identified(data.item,path.id); if (!item) return failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
       raw = {...data,...common,type:path.type,item}; break;
     }
     case 'PurchaseVehicle': {
-      const vehicle = identified(data.vehicle,path.id); if (!vehicle) return failed('type_mismatch', null, [], diagnosticForRule(command, 'path_identity'));
+      const vehicle = identified(data.vehicle,path.id); if (!vehicle) return failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
       raw = {...data,...common,type:path.type,vehicle}; break;
     }
     case 'LoseItem':
