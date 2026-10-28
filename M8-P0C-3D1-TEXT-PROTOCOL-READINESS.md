@@ -60,3 +60,81 @@
 先运行7项新验收（普通回合新NPC+同批更新、特殊目标/长期/知晓、好感/联系人、四类组织创建关系），原实现7/7均因unsupported_path失败。随后才新增有限映射。
 
 最终检查、提示词准备、完整实例与3D-2接线清单将在实现完成后补录，当前不声称尚未执行的检查已通过。
+
+## 模块化Prompt准备与正式入口隔离
+
+直接把原Variables提示词改为文本、同时保留JSON解析器，会使现有正式回合请求失败。因此本轮保留21份原变量资源的逐字快照于`prompts/legacy/variables_json/`，原模块ID、角色、顺序、域选择和模式不变；Manifest中标记`variableProtocol=json`。这些快照均与基线git对象逐字核对，不是新写一套JSON规则。
+
+原要求路径已更新为文本版本，使用原ID加`.text`后缀注册，标记`variableProtocol=text`、版本`1.0.0-text-v1`，仅适用于Variables，默认不被现行请求选择。两套资源按协议互斥，不重复注入。源文件、SHA-256、字符数、来源锁和固定顺序都可验证。原六套主模板继续供正式请求使用；另两份文本变量主模板供明确的离线准备入口使用，不是第七/八个AI阶段。开局World仍使用原组织init快照，不误加载新文本Variables指令。
+
+`composeTextVariablesPrompt()`只做真实Manifest选模块/加载原文/占位符替换/上下文组装，无网络、无AI、无存储；不能组装Story或World。它移除旧COMMAND_CATALOG，改用真实38条文本路径的TEXT_COMMAND_CATALOG值结构。目录使用原经济、物品、NPC、组织、地点与变量命令Schema派生，只描述有限值类型，不增加审批。`composePrompt()`和真实runStageRequest仍默认JSON；不新增玩家协议开关，也不自动猜测回复格式或创建双解析执行链。
+
+| 模块 | 本轮变化 |
+| --- | --- |
+| shared/07_command_output | 唯一命令块、set/add/push语义、38路径目录、无变化可空块、说明不执行；删除旧顶层JSON输出要求 |
+| opening/variables | 只初始化本幕必要现场状态，保留创角及同伴；Story开局时钟由程序应用，不重复计时；显式说明缺少余额/旧资产初始化命令 |
+| regular/variables | 普通回合新NPC也可建档，已有ID更新；现场变化与World后续分工；说明未支持操作 |
+| protagonist init/update | 白名单主角字段、skills字符串数组、地点增量、完整Equipment；不创建第二主角 |
+| npc_ordinary init/update | 完整新人物、现场字段、结构化好感、联系人、个人/知晓记忆；稳定身份去重，不设额外在场授权 |
+| npc_special init/update | 继承普通能力；完整特殊字段、目标替换、长期原始记忆；无现成更新字段不假装可改 |
+| items init/update | 获得/购买/赠送/遗失、数量/状态/位置、装备，明确车辆房产不重复登记 |
+| economy init/update | 整数分、完整收入/借款记录、内部转账/还款、车辆购买；未知金额和旧资产登记缺口写说明 |
+| 四类org init/update | 各自原生结构创建，keyNpcIds/currentTaskIds合法引用；开放文字关系更新，未支持经营变化不编路径 |
+
+只更改上述21份文本资源，offscreen、两本世界书、Story/World原模板、Thinking、NSFW及七项设置未改。原NPC审核补丁的字节保护测试转至冻结JSON资源，依旧验证全部前缀/已审核附录；新文本适配另用真实组装和示例执行验证。原文件没有删除。
+
+## 完整示例
+
+下面示例前提：主角`hero`位于`chongqing`、cash=10000，游戏时间已确定；本轮首次遇到社区同事。
+
+```text
+<说明>记录本幕第一次交流、收到报酬和购买手机；不处理后台任务。</说明>
+<命令>
+set npc[lin] = {"kind":"ordinary","identityKey":"lin-community-worker","name":"林宁","aliases":[],"skills":[],"onScene":true,"locationId":"chongqing","affinity":0,"relationshipText":"初次见面","memories":[],"knownInformation":[]}
+set npc[lin].healthText = "健康"
+set npc[lin].affinityChange = {"from":0,"to":5,"reason":"共同解决问题","relationshipText":"愿意协作"}
+set npc[lin].contact = {"reason":"交换联系方式"}
+push npc[lin].memories = {"text":"共同处理社区问题","knowledgeKind":"observed","knowledgeSource":"当面经历","visibility":"npc_private"}
+set organizations[community] = {"kind":"civil","name":"社区志愿团","description":"地方志愿组织","protagonistRelation":"初次接触","relationHistory":[],"keyNpcIds":["lin"],"currentTaskIds":[],"activities":[]}
+set organizations[community].protagonistRelation = {"relation":"协作","reason":"完成现场沟通"}
+set economy.incomes[pay] = {"source":"已到账报酬","amount":5000,"status":"received","account":"cash","receivedAt":"2026-10-18T08:00:00+08:00"}
+set items[phone].purchase = {"account":"cash","price":3000,"item":{"name":"手机","category":"device","quantity":1,"conditionText":"全新","ownerRef":{"kind":"protagonist","id":"hero"}}}
+</命令>
+```
+
+所得内存副本cash=12000，生成lin与community，关系/联系人/私有记忆正确；正式输入对象不变。记录ID来自路径，commandId保持`text-v1:s正文版本:c原序号`；记忆ID生成机制不变。代码中针对普通回合/开局和各组示例均使用真实解析器与原commitCommands测试，不把Mock AI成功当实模验证。
+
+失败示例（必须整体拒绝，不能先把主角情绪更新落盘）：
+
+```text
+<命令>
+set protagonist.emotionText = "轻松"
+set npc[lin].identity = "自由改写已有身份"
+</命令>
+```
+
+`identity`没有现成UpdateNpc字段，明确unsupported_path；不会返回部分成功计划或状态。affinity前值错误、普通人物写特殊目标/长期记忆、重复稳定身份、错误组织类型/引用、余额不足等也由原类型/领域约束整批失败。
+
+## 3D-2具体接线清单（本轮未实施）
+
+- `src/services/ai/runtime.ts`：仅Variables改用文本组装和真实文本解析/编译/模拟；Story/World各自原协议继续分离；不能调用两个模型生成同一变量结果。
+- `src/workflows/variableStage.ts`：保存新的文本结果对应原领域候选，保持Story/request/execution/candidate版本及世界失效关系，不绕CAS/StageGuard。
+- `src/domain/drafts.ts`、`src/services/storage/saveRepository.ts`、`src/domain/turnProjection.ts`、`src/domain/turnCommit.ts`：先审查如何保存/复核确定性编译产物及精确重放，避免重复注入开局时钟；是否需要持久契约改动另行决策。本轮这些文件完全未改。
+- `src/prompts/context.ts`、`src/prompts/composer.ts`、`src/prompts/selection.ts`：切换正式Variables目录和选模块入口，明确何时撤下JSON冻结资源；当前离线helper可直接复用。
+- `src/services/validation/aiOutputs.ts`、`src/services/validation/commandCatalog.ts`及变量失败诊断：把正式Variables输出解析接至文本入口，保留数据约束及安全错误定位，不恢复剧情审批。
+- `src/workflows/worldStage.ts`、`src/workflows/turnCoordinator.ts`：确认世界只读同一变量投影、时间与修订基线，失败恢复不重复上游调用。
+- 正式切换前必须决定旧经济/资产初始化缺口如何处理，不能把现有文本可表达21类命令写成全部开局数据都能凭原生命令初始化。
+
+以上为文件级后续计划，不是已完成的接线，也不新增UI协议设置。
+
+## 本次验证进度
+
+- 新增实体映射测试：41项（含最初7项失败复现，新增开局/同伴/跨组测试）；新增文本资源和组装测试：50项，共新增91项。
+- 既有1761项全部保留，`npm run check`本次48文件、1852/1852通过，耗时27.86秒；内含Lint零警告、TypeScript和Vite生产构建（370毫秒）。既有大于500kB分块提示不在本轮扩大处理。
+- `npm run prompts:check`：原3文件82/82通过，8.21秒；新文本组装/示例执行50项另包含于工程测试。
+- 单独`npm run typecheck`及`npm run lint`通过。
+- 两个新测试文件定向91/91通过；初批4文件312/312通过。
+- `git diff --check`通过；JSON提示词快照21/21与基线git对象字节一致；领域/存档/正式工作流、UI、解析器、World/Story模板及世界书/写作资源未改。
+- Chromium E2E尚在执行，不计作通过。初次启动受沙箱本地监听EPERM阻止，未运行浏览器用例；已仅调整执行权限后重新运行，未改项目配置或断言。
+
+本轮所有模型场景使用Mock，未调用付费AI；没有新增API请求或收费场景。不自动合并，不主动部署生产环境；PR预览由既有Cloudflare自动流程处理。

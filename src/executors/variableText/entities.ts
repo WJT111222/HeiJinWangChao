@@ -7,6 +7,9 @@ import { failed } from './model';
 import type { ExecutionResult } from './model';
 
 const object = z.record(z.string(), z.unknown());
+const memoryText = z.string().trim().min(1).max(8192);
+export const memoryInputSchema = z.strictObject({ text: memoryText, knowledgeKind: z.enum(['observed', 'reported', 'suspected']),
+  knowledgeSource: memoryText, visibility: z.enum(['npc_private', 'internal', 'player_known']) });
 /** 有限实体操作；创建值使用原领域Schema，路径只绑定稳定ID，不是任意字段补丁。 */
 export function compileEntity(command: ParsedVariableCommand, common: { commandId: string; evidence: string },
   expectedRevision: number): ExecutionResult<DomainCommand> | undefined {

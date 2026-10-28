@@ -95,7 +95,7 @@ describe('M3-P1 静态资源注册（不是提示词组装或 API 请求）', ()
         // 只检查注册声明，不生成消息或拼接任何正文。
         const eligible = promptManifest.modules.filter(
           (module) =>
-            module.activation !== 'never' &&
+            module.activation !== 'never' && module.variableProtocol !== 'text' &&
             module.applicableStages.includes(stage) &&
             module.modes.includes(mode),
         );
@@ -130,7 +130,7 @@ describe('M3-P1 静态资源注册（不是提示词组装或 API 请求）', ()
       expect(PromptManifestSchema.safeParse(altered(id, patch)).success).toBe(false);
   });
   it('九个变量组各保留 init/update/offscreen，五项记忆仍为独立按需任务', () => {
-    const groups = promptManifest.modules.filter((m) => m.category === 'variable_group');
+    const groups = promptManifest.modules.filter((m) => m.category === 'variable_group' && m.variableProtocol !== 'text');
     const domains = [
       'protagonist',
       'npc_ordinary',
@@ -295,7 +295,7 @@ describe('正式文本来源与旧架构保留', () => {
     );
   });
   it('六主模板仍完整：两篇正文按P6批准更新契机/规划协议，其他四篇字节保留', () => {
-    expect(promptManifest.modules.filter((m) => m.category === 'stage')).toHaveLength(6);
+    expect(promptManifest.modules.filter((m) => m.category === 'stage' && m.variableProtocol !== 'text')).toHaveLength(6);
     for (const mode of ['opening', 'regular'] as const) {
       const path = `stages/${mode}/story.md` as const;
       const record = sources.resources[path];
@@ -310,7 +310,9 @@ describe('正式文本来源与旧架构保留', () => {
       for (const mode of ['init', 'update', 'offscreen'] as const) {
         const path = `variableGroups/${group}/${mode}.md` as const;
         const record = sources.resources[path];
-        const bytes = readFileSync(resolve(root, path));
+        // 原审核前缀在正式JSON冻结资源中继续逐字验证；文本适配另有端到端测试。
+        const preserved = mode === 'offscreen' ? path : `legacy/variables_json/${path}`;
+        const bytes = readFileSync(resolve(root, preserved));
         expect(sha(bytes.subarray(0, record.baselineBytes))).toBe(record.baselineSha256);
         const suffix = bytes.subarray(record.baselineBytes).toString('utf8');
         const section = suffix.split('补充规则：\n')[1].split('\n\n记忆写入受实际')[0];

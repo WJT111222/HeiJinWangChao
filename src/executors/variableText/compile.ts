@@ -9,14 +9,12 @@ import { openingTimeBase, openingTimeSelection } from '../../domain/openingTime'
 import { variableCommandsForTurn } from '../../domain/turnProjection';
 import type { ParsedVariableCommand } from '../../parsers/variableText';
 import { compileTransaction } from './transactions';
-import { compileEntity } from './entities';
+import { compileEntity, memoryInputSchema } from './entities';
 import { validateAst } from './ast';
 import { digest, ExecutionContextSchema, failed } from './model';
 import type { CommandOrigin, ExecutionResult, VariableExecutionContext, VariableExecutionPlan } from './model';
 
 const textValue = z.string().trim().min(1).max(8192);
-const memoryValue = z.strictObject({ text: textValue, knowledgeKind: z.enum(['observed', 'reported', 'suspected']),
-  knowledgeSource: textValue, visibility: z.enum(['npc_private', 'internal', 'player_known']) });
 const fields = new Map<string, Mapping>([
   ['protagonist.healthText', { operation: 'set', kind: 'protagonist', field: 'healthText' }],
   ['protagonist.emotionText', { operation: 'set', kind: 'protagonist', field: 'emotionText' }],
@@ -222,7 +220,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
 async function mapMemory(command: ParsedVariableCommand, state: GameState, npcId: string,
   clock: string, context: VariableExecutionContext, common: { commandId: string; evidence: string }, index: number,
   field: string): Promise<ExecutionResult<DomainCommand>> {
-  const value = memoryValue.safeParse(command.value);
+  const value = memoryInputSchema.safeParse(command.value);
   if (!value.success) return failed('type_mismatch');
   const memory = value.data;
   const prefix = memory.knowledgeKind === 'reported' ? '[转述]' : memory.knowledgeKind === 'suspected' ? '[推测]' : '';
