@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { DataError } from '../domain/common';
 import { AiError } from '../services/ai/errors';
 import { runtimeLogEvent } from '../ui/game/runtimeLog';
+import { parseTextVariables } from '../services/validation/aiOutputs';
+import { createTurnDraft, rerollStory } from '../domain/drafts';
+import { game, npc, story } from './fixtures/game';
 
 describe('safe runtime log diagnostics', () => {
   it('shows only allowlisted AI status and field metadata', () => {
@@ -34,6 +37,56 @@ describe('safe runtime log diagnostics', () => {
       fieldPath: `token.${secret}`,
     }));
     expect(unsafe.fieldPath).toBeUndefined();
+  });
+
+  it('carries actual compiler mismatch into the safe UI log', async () => {
+    const state = game();
+    state.npc.npc_001 = npc('npc_001');
+    const draft = rerollStory(createTurnDraft(state.saveId, state.revision, 'turn-a', 'opening', ''), {
+      ...story, turnKind: 'opening',
+    });
+    let caught: unknown;
+    try {
+      await parseTextVariables('<命令>\nset npc[npc_001].onScene = "secret-input"\n</命令>', state, draft);
+    } catch (failure) { caught = failure; }
+    expect(caught).toBeInstanceOf(AiError);
+    const logged = runtimeLogEvent(10, 'variables', 'failed', caught);
+    expect(logged).toMatchObject({
+      code: 'schema_fields', fieldPath: 'text.type_mismatch', commandIndex: 1,
+      valuePath: 'npc[id].onScene', expectedType: 'boolean',
+      actualType: 'string', validationRule: 'invalid_type',
+    });
+    expect(JSON.stringify(logged)).not.toContain('npc_001');
+    expect(JSON.stringify(logged)).not.toContain('secret-input');
+  });
+
+  it('shows sanitized field path, expected/actual type and rule', () => {
+    const event = runtimeLogEvent(8, 'variables', 'failed', new AiError('schema_fields', undefined, {
+      fieldPath: 'text.type_mismatch', commandIndex: 19,
+      valuePath: 'npc[id].onScene', expectedType: 'boolean',
+      actualType: 'string', validationRule: 'invalid_type',
+    }));
+    expect(event).toMatchObject({
+      commandIndex: 20, fieldPath: 'text.type_mismatch',
+      valuePath: 'npc[id].onScene', expectedType: 'boolean',
+      actualType: 'string', validationRule: 'invalid_type',
+    });
+  });
+
+  it('never echoes unknown path segments, raw entity IDs, or forged type metadata', () => {
+    const event = runtimeLogEvent(9, 'variables', 'failed', new AiError('schema_fields', undefined, {
+      valuePath: 'npc[secret-real-id].onScene',
+      expectedType: 'secret' as 'boolean',
+      actualType: 'private-text' as 'string',
+      validationRule: 'leak' as 'invalid_type',
+    }));
+    const json = JSON.stringify(event);
+    expect(json).not.toContain('secret-real-id');
+    expect(json).not.toContain('private-text');
+    expect(event).not.toHaveProperty('valuePath');
+    expect(event).not.toHaveProperty('expectedType');
+    expect(event).not.toHaveProperty('actualType');
+    expect(event).not.toHaveProperty('validationRule');
   });
 
   it('displays only safe known commit errors', () => {
