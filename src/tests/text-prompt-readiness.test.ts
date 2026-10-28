@@ -43,6 +43,7 @@ describe('文本协议真实资源与离线组装',()=>{
     expect(ids).toContain('shared.07_command_output.text');
     expect(ids).not.toContain('shared.07_command_output');
     expect(r.context).not.toHaveProperty('COMMAND_CATALOG');expect(r.context).toHaveProperty('TEXT_COMMAND_CATALOG',textVariableCatalog());
+    for(const m of textModules){expect(m.title).not.toMatch(/严格JSON|协议准备/);expect(sources.resources[m.path as keyof typeof sources.resources]).toHaveProperty('textProtocol.note',expect.stringContaining('3D-2正式Variables'));}
     const systems=r.messages.filter(m=>m.role==='system').map(m=>m.content).join('\n');
     expect(systems).not.toContain('输出严格JSON {commands,rejectedSuggestions,unresolved}');
     expect(systems).toContain('不输出旧的领域命令JSON对象');expect(systems).toContain('VARIABLE_TEXT_V1');

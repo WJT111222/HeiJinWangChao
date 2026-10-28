@@ -203,7 +203,7 @@ export const PromptManifestSchema = z
     }
     for (const module of modules.filter((m) => m.variableProtocol === 'text')) {
       check(module.applicableStages.join() === 'variables' && !module.configurable && !module.reorderable,
-        '文本准备资源只能用于变量离线组装，不能流入世界/正文或变成玩家设置');
+        '文本变量资源只用于Variables，不能流入世界/正文或变成玩家设置');
       const original = byId.get(module.id.replace(/\.text$/, ''));
       check(original?.variableProtocol === 'json' && original.defaultOrder === module.defaultOrder
         && original.modes.join() === module.modes.join(), '文本资源必须对应同顺序同模式的原变量模块');
