@@ -401,7 +401,9 @@ export function GameScreen({
               </p>
             )}
             {world.error && <p className="story-error" role="alert">{world.error}</p>}
-            <RuntimeLogPanel entries={runtimeLogs} onClear={() => setRuntimeLogs([])} />
+            {runtimeLogs.some((entry) => entry.kind === 'failed') && (
+              <RuntimeLogPanel entries={runtimeLogs} onClear={() => setRuntimeLogs([])} />
+            )}
             {!validDraft && (
               <p className="field-hint">
                 {draft
