@@ -24,7 +24,9 @@ function textExecutionError(error: ExecutionError) {
     // 整批失败时不能指认某一条：只暴露相关命令序号，不复制原始变量或实体 ID。
     ...(error.commandIndex === null && error.relatedCommands.length
       ? { relatedCommandIndices: [...new Set(error.relatedCommands.map((origin) => origin.commandIndex))].slice(0, 20) }
-      : {}) });
+      : {}),
+    // Compiler-created metadata contains only normalized paths / type names / fixed rules.
+    ...(error.diagnostic ?? {}) });
 }
 /** 新模型响应只允许文本协议。旧JSON仅由下方parseVariables复核已保存的领域候选。 */
 export async function parseTextVariables(text: string, state: GameState, draft: TurnDraft) {
