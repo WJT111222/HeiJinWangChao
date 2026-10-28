@@ -1653,7 +1653,7 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 5815,
+      "characters": 5943,
       "version": "0.5.6",
       "messageRole": null,
       "activation": "never",
@@ -1663,7 +1663,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "43c442b9e8b87b450e224d159174c2f80c5b708162af43e5c39e3bc339ef22c4",
+      "contentSha256": "78cc81a37879f46514dc9d31cdc9823873f9e108b440fe0630ed7ee6c56533e7",
       "placeholders": [
         "worldWeekday"
       ]
@@ -1677,7 +1677,7 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 12636,
+      "characters": 12924,
       "version": "0.8.0-m8-p0a",
       "messageRole": null,
       "activation": "never",
@@ -1687,7 +1687,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "bc15db1db483238dc92de4f4ec072c144cc69ce2165af155f4e2d387c1448d56",
+      "contentSha256": "76932c800353ce83f179eb6eb2eed413bfb4863204a440223dbd9b91b261c272",
       "placeholders": [
         "immediateMemoryTurns",
         "minNarrativeChars",
@@ -2154,8 +2154,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 2295,
-      "version": "1.0.0-text-v1",
+      "characters": 2513,
+      "version": "1.0.1-live-text",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -2164,7 +2164,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "61bd170fe376d85ca55c1778633e82cda79c9119f9bc94f777d60c355ea9d794",
+      "contentSha256": "d802bf841a1a89ffbcb6a1291f4e3a07b9bf7c20170c36a68c3d922c85ebaf58",
       "placeholders": [],
       "variableProtocol": "text"
     },

@@ -1,3 +1,4 @@
+import { variableReply } from './fixtures/variableReply';
 import { variableCommandsForTurn } from '../domain/turnProjection';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { newCreation, buildCreationState } from '../ui/creation/model';
@@ -200,7 +201,7 @@ async function runtime(preference = '') {
     const value = model === 'variables' ? variables(context.OPENING_TIME ? string(record(context.OPENING_TIME).endAt)
       : new Date(Date.parse(string(record(context.SAVE_STATE).worldClock)) + 15000).toISOString())
       : { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] };
-    return Response.json({ choices: [{ message: { content: JSON.stringify(value) } }] });
+    return Response.json({ choices: [{ message: { content: model==='variables'?variableReply(value):JSON.stringify(value) } }] });
   });
   const runner = new TurnCoordinator(repo, client); cleanup.push(() => runner.dispose());
   const generate = async () => runner.generate({ draft: (await repo.loadDraft(state.saveId))!, config, vault, settings });

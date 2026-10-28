@@ -4,6 +4,8 @@ import { CredentialVault } from '../services/ai/credentials';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import type { Protocol } from '../services/ai/configuration';
 import { runStageRequest } from '../services/ai/runtime';
+import { wireRequest, record } from '../services/ai/protocols';
+import { requestSnapshot } from '../services/ai/snapshot';
 import { defaultSettings } from '../ui/settings/model';
 import { createTurnDraft, rerollStory, VariableResultSchema } from '../domain/drafts';
 import { game, story } from './fixtures/game';
@@ -32,4 +34,22 @@ describe('正式Variables文本请求',()=>{
     expect(body).not.toHaveProperty('response_format');expect(body.generationConfig??{}).not.toHaveProperty('responseMimeType');
     expect(JSON.stringify(body)).toContain('TEXT_COMMAND_CATALOG');expect(transport).toHaveBeenCalledTimes(1);expect(a.input).toEqual(before);
   });
+});
+
+// JSON Mode只在Variables关闭，不影响其他阶段的原生参数与Anthropic严格提示协议。
+describe('三协议格式隔离',()=>{
+  for (const protocol of ['openai','gemini','anthropic'] as const) {
+    it.each(['story','world','memory'] as const)(`${protocol} %s 保持原格式与请求地址`,(stage)=>{
+      const a=setup(protocol);
+      a.config.routes.memory={mode:'follow-story'};
+      const snapshot=requestSnapshot(a.config,stage,a.vault);
+      const sent=wireRequest(snapshot,[{role:'system',content:'本阶段原协议'},{role:'user',content:'输入'}],false);
+      const body=record(JSON.parse(String(sent.init.body)));
+      const structured=stage!=='story';
+      if(protocol==='openai')expect(body.response_format).toEqual(structured?{type:'json_object'}:undefined);
+      if(protocol==='gemini')expect(record(body.generationConfig).responseMimeType).toBe(structured?'application/json':undefined);
+      if(protocol==='anthropic'){expect(body).not.toHaveProperty('response_format');expect(sent.url).toMatch(/\/messages$/);if(structured)expect(sent.diagnostics).toContain('NATIVE_JSON_MODE_SKIPPED_STRICT_PROMPT_RETAINED');}
+      expect(sent.diagnostics).not.toContain('VARIABLE_TEXT_MODE_JSON_DISABLED');
+    });
+  }
 });

@@ -1,3 +1,4 @@
+import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -67,7 +68,7 @@ async function mock(page: Page, interrupt = false, kind: 'default' | 'drink' | '
         commands.push({ type: 'SetWorldClock', commandId: 'estimated-elapsed', evidence: story.narrative,
           worldClock: new Date(Date.parse(state.worldClock) + (kind === 'chat' ? 15 : 120) * 1000).toISOString() });
       }
-      text = JSON.stringify({ commands, rejectedSuggestions: [], unresolved: [] });
+      text = variableReply({ commands, rejectedSuggestions: [], unresolved: [] });
     } else text = JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] });
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ choices: [{ message: { content: text } }], usage: { prompt_tokens: 50, completion_tokens: 20, total_tokens: 70 } }) });
   }); return { calls, preflights, control };

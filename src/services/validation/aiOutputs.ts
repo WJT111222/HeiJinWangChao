@@ -35,6 +35,13 @@ export async function parseTextVariables(text: string, state: GameState, draft: 
   catch (error) { throw variableValidationError(error); }
   const simulated = await simulateVariablePlan(compiled.value, state, context);
   if (!simulated.ok) throw textExecutionError(simulated.error);
+  // 复用正式提交已有的场景权限底线；文本任务/事件不能冒充World后台操作。
+  for (const [commandIndex, command] of compiled.value.commands.entries()) {
+    const actors = command.type === 'SaveTask' ? [command.task.actorRef]
+      : command.type === 'SaveEvent' ? command.event.actorRefs : [];
+    if (actors.some((actor) => actor.kind === 'npc' && !simulated.value.npc[actor.id]?.onScene))
+      throw new AiError('data_integrity', undefined, { fieldPath: 'commands.actorRef', commandIndex, commandType: command.type });
+  }
   const block = extractCommandBlock(text);
   // 说明只产生固定安全提示，不复制私有内容、密钥、未知建议或模型原文到候选/日志。
   const outside = block.ok ? text.slice(0, block.value.source.start.offset) + text.slice(block.value.source.end.offset) : '';

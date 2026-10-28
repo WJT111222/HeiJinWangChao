@@ -1,3 +1,4 @@
+import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -184,7 +185,7 @@ test('自动维护仅由新正式提交触发，不阻断下一轮；设置保�
       const content = '<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>主角仍在原地休息，并观察窗外。</正文><短期记忆>在原地观察窗外</短期记忆><变量规划>[]</变量规划>';
       await route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\ndata: [DONE]\n\n` }); return;
     }
-    const content = model === 'variables' ? JSON.stringify({ commands: [], rejectedSuggestions: [], unresolved: [] })
+    const content = model === 'variables' ? variableReply({ commands: [], rejectedSuggestions: [], unresolved: [] })
       : JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] });
     await route.fulfill({ contentType: 'application/json', body: wire(content) });
   });
