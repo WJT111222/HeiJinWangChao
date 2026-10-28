@@ -160,6 +160,38 @@ test('生成中折叠不打断；取消和错误不被隐藏，Roll成功保留�
   await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open'); expect((await stored(page)).state).toEqual(before.state);
   await expect(runtimeLog).toContainText('错误 1 条');
   await expect(runtimeLog).toHaveAttribute('open', '');
+  await expect(runtimeLog.locator('li')).toHaveCount(1);
+  await expect(runtimeLog.locator('li')).not.toContainText('开始');
+  await expect(runtimeLog.getByRole('button', { name: '复制安全日志' })).toHaveCount(0);
+  await page.evaluate(() => {
+    const target = window as Window & { __copiedRuntimeEntries?: string[] };
+    target.__copiedRuntimeEntries = [];
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: async (value: string) => { target.__copiedRuntimeEntries!.push(value); } },
+    });
+  });
+  await runtimeLog.locator('li').first().getByRole('button', { name: '复制此条' }).click();
+  await expect(runtimeLog).toContainText('已复制此条错误日志');
+  const firstCopied = await page.evaluate(() =>
+    (window as Window & { __copiedRuntimeEntries?: string[] }).__copiedRuntimeEntries ?? []);
+  expect(firstCopied).toHaveLength(1);
+  expect(JSON.parse(firstCopied[0])).toMatchObject({ stage: 'story', kind: 'failed', code: 'authorization' });
+  expect(firstCopied[0]).not.toContain('private-provider-error');
+  expect(firstCopied[0]).not.toContain('started');
+  // 第二次失败应生成第二个独立复制入口，不复制首条或非错误事件。
+  await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
+  await expect(summary).toContainText('需要处理');
+  await expect(runtimeLog).toContainText('错误 2 条');
+  await expect(runtimeLog).toHaveAttribute('open', '');
+  await expect(runtimeLog.locator('li')).toHaveCount(2);
+  await expect(runtimeLog.getByRole('button', { name: '复制此条' })).toHaveCount(2);
+  await runtimeLog.locator('li').first().getByRole('button', { name: '复制此条' }).click();
+  const copied = await page.evaluate(() =>
+    (window as Window & { __copiedRuntimeEntries?: string[] }).__copiedRuntimeEntries ?? []);
+  expect(copied).toHaveLength(2);
+  expect(JSON.parse(copied[1])).toMatchObject({ stage: 'story', kind: 'failed', code: 'authorization' });
+  expect(JSON.parse(copied[1]).id).not.toBe(JSON.parse(copied[0]).id);
   await expect(runtimeLog).toContainText('authorization');
   await expect(runtimeLog).toContainText('HTTP 状态：401');
   await expect(runtimeLog).not.toContainText('private-provider-error');
@@ -167,7 +199,7 @@ test('生成中折叠不打断；取消和错误不被隐藏，Roll成功保留�
   await expect(runtimeLog).not.toHaveAttribute('open');
   mode = 'success'; await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
   await expect(page.getByTestId('story-reader')).toContainText('你仍在街边');
-  await expect(summary).toContainText('等待继续'); expect((await stored(page)).state).toEqual(before.state); expect(calls).toBe(3);
+  await expect(summary).toContainText('等待继续'); expect((await stored(page)).state).toEqual(before.state); expect(calls).toBe(4);
   // Existing diagnostic evidence stays available without forcing the panel open again.
   await expect(runtimeLog).not.toHaveAttribute('open');
   await runtimeLog.locator('summary').click();
