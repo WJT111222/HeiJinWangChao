@@ -4,6 +4,7 @@ import type { DomainCommand } from '../../domain/commands';
 import { IdSchema } from '../../domain/common';
 import type { ParsedVariableCommand } from '../../parsers/variableText';
 import { failed } from './model';
+import { diagnosticForObject, diagnosticForRule } from './diagnostics';
 import type { ExecutionResult } from './model';
 
 const object = z.record(z.string(), z.unknown());
@@ -26,26 +27,26 @@ export function compileEntity(command: ParsedVariableCommand, common: { commandI
     raw = { ...common, type: 'UpdateNpc', expectedRevision, npcId: id.id, changes: {}, activeGoals: command.value };
   } else {
     const value = object.safeParse(command.value);
-    if (!value.success) return failed('type_mismatch');
+    if (!value.success) return failed('type_mismatch', null, [], diagnosticForObject(command));
     const data = value.data;
     if (creation) {
-      if (Object.hasOwn(data, 'id')) return failed('type_mismatch');
+      if (Object.hasOwn(data, 'id')) return failed('type_mismatch', null, [], diagnosticForRule(command, 'path_identity'));
       if (root.name === 'npc') raw = { ...common, type: 'CreateNpc', npc: { ...data, id: id.id } };
       else if (root.name === 'events') raw = { ...common, type: 'SaveEvent', event: { ...data, id: id.id } };
       else if (root.name === 'tasks') raw = { ...common, type: 'SaveTask', task: { ...data, id: id.id } };
       else raw = { ...common, type: 'CreateOrganization', organization: { ...data, id: id.id } };
     } else if (relation) {
-      if (Object.keys(data).some((key) => !['relation', 'reason'].includes(key))) return failed('type_mismatch');
+      if (Object.keys(data).some((key) => !['relation', 'reason'].includes(key))) return failed('type_mismatch', null, [], diagnosticForRule(command, 'reserved_field'));
       raw = { ...common, type: 'RecordOrgRelation', organizationId: id.id, ...data };
     } else if (field?.kind === 'field' && field.name === 'contact') {
-      if (Object.keys(data).some((key) => key !== 'reason')) return failed('type_mismatch');
+      if (Object.keys(data).some((key) => key !== 'reason')) return failed('type_mismatch', null, [], diagnosticForRule(command, 'reserved_field'));
       raw = { ...common, type: 'RegisterContact', npcId: id.id, ...data };
     } else {
-      if (Object.keys(data).some((key) => !['from', 'to', 'reason', 'relationshipText'].includes(key))) return failed('type_mismatch');
+      if (Object.keys(data).some((key) => !['from', 'to', 'reason', 'relationshipText'].includes(key))) return failed('type_mismatch', null, [], diagnosticForRule(command, 'reserved_field'));
       const { relationshipText, ...affinityChange } = data;
       raw = { ...common, type: 'UpdateNpc', expectedRevision, npcId: id.id, changes: { relationshipText }, affinityChange };
     }
   }
   const parsed = DomainCommandSchema.safeParse(raw);
-  return parsed.success ? { ok: true, value: parsed.data } : failed('type_mismatch');
+  return parsed.success ? { ok: true, value: parsed.data } : failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
 }
