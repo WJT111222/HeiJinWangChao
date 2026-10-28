@@ -3,6 +3,7 @@ import { CountSchema } from '../../domain/common';
 import type { DomainCommand } from '../../domain/commands';
 import { TurnDraftSchema } from '../../domain/drafts';
 import type { ParsedVariableCommand, SourceSpan } from '../../parsers/variableText';
+import type { ExecutionDiagnostic } from './diagnostics';
 
 export const ExecutionContextSchema = z.strictObject({
   draft: TurnDraftSchema,
@@ -29,6 +30,7 @@ export interface ExecutionError {
   message: string;
   /** 终态整批一致性错误无法确定归因时保留所有来源，不虚构失败的单条命令。 */
   relatedCommands: CommandOrigin[];
+  diagnostic?: ExecutionDiagnostic;
 }
 export type ExecutionResult<T> = { ok: true; value: T } | { ok: false; error: ExecutionError };
 const messages: Record<ExecutionErrorCode, string> = {
@@ -41,10 +43,12 @@ const messages: Record<ExecutionErrorCode, string> = {
   domain_validation_failed: '领域Schema或整体状态一致性校验失败。', transaction_failed: '整批内存模拟失败，未返回部分状态。',
 };
 export function failed(code: ExecutionErrorCode, origin: CommandOrigin | null = null,
-  relatedCommands: readonly CommandOrigin[] = []): { ok: false; error: ExecutionError } {
+  relatedCommands: readonly CommandOrigin[] = [],
+  diagnostic?: ExecutionDiagnostic): { ok: false; error: ExecutionError } {
   return { ok: false, error: { code, commandIndex: origin?.commandIndex ?? null,
     source: origin ? structuredClone(origin.source) : null, message: messages[code],
-    relatedCommands: structuredClone([...relatedCommands]) } };
+    relatedCommands: structuredClone([...relatedCommands]),
+    ...(diagnostic ? { diagnostic: { ...diagnostic } } : {}) } };
 }
 // 只调用标准确定性摘要，不调用网络、数据库、时钟或随机数。Node24和现代浏览器均支持。
 export async function digest(value: unknown): Promise<string> {
