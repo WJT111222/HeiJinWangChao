@@ -16,6 +16,15 @@ describe('safe runtime log diagnostics', () => {
     expect(event.timestamp).toEqual(expect.any(String));
   });
 
+  it('marks related commands without pretending to identify the single failing command', () => {
+    const event = runtimeLogEvent(7, 'variables', 'failed', new AiError('data_integrity', undefined, {
+      fieldPath: 'text.domain_validation_failed',
+      relatedCommandIndices: [1, 2, 2, 0, 3],
+    }));
+    expect(event.commandIndex).toBeUndefined();
+    expect(event.relatedCommandIndices).toEqual([1, 2, 3]);
+  });
+
   it('does not echo unknown error messages or secret-like paths', () => {
     const secret = 'sk-very-private-key';
     const unknown = runtimeLogEvent(2, 'world', 'failed', new Error(`request ${secret} failed`));
