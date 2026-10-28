@@ -6,7 +6,7 @@
 
 本轮使用已有解析器和领域引擎补齐文本交易映射，不修改正式JSON变量工作流、World后台、Prompt/Manifest、UI、存档Schema或迁移。没有凭据审批、来源审批、互动授权、覆盖许可、候选封印或新增AI调用。
 
-阶段性状态：实现已完成并通过初步定向回归；先提交、推送防止云环境故障丢失，随后补齐异常及重放测试、运行完整检查。最终测试结果在本报告末尾更新，未执行项不标为通过。
+阶段性实现已在定向237项、Lint和类型检查通过后，以`341f28f`提前提交并推送。此后补齐至本轮101项测试，当前5文件328项全部通过。完整检查结果在本报告末尾更新，未执行项不标为通过。
 
 ## 新增文本映射
 
@@ -45,8 +45,70 @@
 
 原测试中关于余额不足的两个断言从“编译即失败”改为通过真实领域模拟检查同一invalid_amount；没有放松余额底线。旧currentWear不支持路径断言改为新字段的错误类型拒绝，旧用例数量不减少。
 
+## 完整成功样例
+
+前提：cash=10000、onlineBalance=20000；old_phone归主角hero，NPC b存在且可不在场；已有loan债务为active、未偿本金2000；游戏时间为2026-10-18 08:00（中国标准时间）。以下一次批次表示报酬→购买→赠送→还款：
+
+```text
+<说明>记录本回合已发生的交易。</说明>
+<命令>
+set economy.incomes[pay] = {"source":"工作报酬","amount":5000,"status":"received","account":"cash","receivedAt":"2026-10-18T08:00:00+08:00"}
+set items[phone].purchase = {"account":"cash","price":8000,"item":{"name":"新手机","category":"device","quantity":1,"ownerRef":{"kind":"protagonist","id":"hero"},"conditionText":"全新"}}
+set items[old_phone].transfer = {"from":{"kind":"protagonist","id":"hero"},"to":{"kind":"npc","id":"b"}}
+push economy.debts[loan].repayments = {"account":"cash","amount":1000}
+</命令>
+```
+
+结果：cash=6000、onlineBalance不变，收入表新增pay，phone入库归hero，old_phone归b，loan未偿本金变1000且仍active。真实执行只发生在内存模拟的副本；正式GameState不变。购买用单个PurchaseItem完成扣款和入库，不拆成两个独立事务。
+
+借款和车辆的完整创建值例如：
+
+```text
+<命令>
+set economy.debts[new_loan] = {"account":"cash","debt":{"creditor":"朋友","principal":3000,"outstanding":3000,"status":"active","repaymentTerms":"协商还款","collateralAssetIds":[],"autoPaymentAuthorized":false,"source":"本轮借款"}}
+set economy.vehicles[car].purchase = {"account":"onlineBalance","price":2000,"vehicle":{"kind":"vehicle","name":"轿车","ownerRef":{"kind":"protagonist","id":"hero"},"estimatedValue":2000,"acquiredAt":"2026-10-18T08:00:00+08:00","source":"本轮购买","statusText":"完好","model":"普通车型","locationId":"chongqing"}}
+set protagonist.currentWear = {"currentVehicleAssetId":"car","accessoryItemIds":[]}
+</命令>
+```
+
+装备设置替换完整Equipment对象，不能按任意深层属性写入。autoPaymentAuthorized仅按原债务Schema保存，不启动任何自动扣款或维护任务。
+
+## 完整失败样例
+
+前提cash=10000：
+
+```text
+<命令>
+set protagonist.emotionText = "轻松"
+add economy.cash = -15000
+set economy.incomes[late_pay] = {"source":"后面的报酬","amount":20000,"status":"received","account":"cash","receivedAt":"2026-10-18T08:00:00+08:00"}
+</命令>
+```
+
+消费位置即触发原领域INSUFFICIENT_FUNDS，不能预支后面的收入；没有返回部分状态，情绪、余额和收入表均保持原输入。receivedAt晚于本轮投影时钟也不能入账。格式错误在编译时拒绝；余额、归属和引用等合法执行约束由真实领域模拟拒绝。两者都不是剧情事实审批。编译错误绑定原命令序号和SourceSpan；原领域整批失败继续保留relatedCommands整组来源，无法唯一归因时不伪造单条错误行。
+
+## 文件与既有流程边界
+
+- `src/executors/variableText/transactions.ts`：有限交易路径到原DomainCommandSchema的映射，不复制领域定义。
+- `src/executors/variableText/compile.ts`：接入新映射，支持数量前值；移除只看初始余额的重复检查，由原领域引擎处理完整交易顺序。
+- `src/tests/economy-item-text.test.ts`：101项新增，使用真实解析器/编译器/内存模拟；只有无IO检查使用spy。
+- `src/tests/variable-text-executor.test.ts`：保持105项；currentWear错误类型归类以及余额失败验证位置与新执行逻辑对齐。
+- `src/tests/variable-execution-without-review.test.ts`：保持14项；真正非法数据仍必须经过领域模拟整批拒绝。
+- 本报告。
+
+未修改DomainCommandSchema、领域命令执行实现、GameStateSchema、存储/CAS/事务、Story/Variables/World协调、Prompt/Manifest、UI、凭证或设置。没有新增依赖，也没有JSON/Text双协议兼容层。正式模型仍使用现有JSON协议，新文本映射没有接入正式请求；浏览器回归不应被描述为新文本协议已在玩家流程中生效。
+
 ## 验证与剩余工作
 
-阶段性5文件237项定向测试通过，Lint与类型检查通过；本轮新增测试当前10项。后续完整工程/提示词/Chromium结果待执行后记录。本轮尚不支持房产购买、其他资产交易、无原生命令的资产出售/估值修改、物品任意深层属性编辑或自由经济对象覆盖。未接入真实AI工作流。
+| 本次命令 | 实际结果 |
+| --- | --- |
+| 定向5文件Vitest | 328/328通过，新增101项；原67+105+41+14保留 |
+| `npm run prompts:check` | 3文件、82/82通过，1.81秒（工程测试子集） |
+| `npm run check` | 46文件、1761/1761通过，测试84.87秒；Lint零警告、TypeScript与Vite构建通过（1.04秒） |
+| `npm run lint` / `npm run typecheck` | 另外执行也通过 |
+| `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e` | 完整桌面/移动测试运行中，结束后补录 |
+| `git diff --check` | 通过 |
+
+原1660项工程测试保留，新增101项，共1761；未删除或跳过原测试。阶段性提交前的237项定向、Lint、类型检查也通过。既有大于500kB构建分块提示仍在，不扩大范围处理。本轮尚不支持房产购买、其他资产交易、无原生命令的资产出售/估值修改、物品任意深层属性编辑或自由经济对象覆盖。未接入真实AI工作流。未新增部分堆叠物品拆分赠送、资产出售、任意itemDetails修改等无现成对应映射的能力；现有车辆/房产分类约束按原领域规则执行，不开发新的文学名称识别器。
 
 所有模型场景仅Mock，不调用真实付费模型；不自动合并，不主动部署生产环境。保持Draft等待审查。
