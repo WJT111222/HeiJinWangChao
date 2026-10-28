@@ -6,6 +6,7 @@ import { GameStateSchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
 import { compileVariableCommands } from './compile';
 import { ExecutionContextSchema, failed } from './model';
+import { aggregateDomainDiagnostic } from './aggregateDiagnostics';
 import type { ExecutionResult, VariableExecutionContext, VariableExecutionPlan } from './model';
 export { compileVariableCommands } from './compile';
 export type { VariableExecutionContext, VariableExecutionPlan, ExecutionError, ExecutionErrorCode, ExecutionResult, CommandOrigin } from './model';
@@ -37,14 +38,15 @@ async function simulateChecked(plan: VariableExecutionPlan, state: GameState,
       context.expectedRevision, checked.value.commands, state.updatedAt) };
   } catch (error) {
     const related = checked.value.origins.filter((origin) => origin !== null);
-    if (error instanceof z.ZodError) return failed('domain_validation_failed', null, related);
+    if (error instanceof z.ZodError)
+      return failed('domain_validation_failed', null, related, aggregateDomainDiagnostic(error));
     if (error instanceof DataError) {
       const code = ['REVISION_CONFLICT', 'ENTITY_CONFLICT'].includes(error.code) ? 'revision_conflict'
         : ['DUPLICATE_COMMAND', 'COMMAND_CONFLICT', 'DUPLICATE_MEMORY'].includes(error.code) ? 'duplicate_or_conflicting_command'
         : ['UNKNOWN_BALANCE', 'INSUFFICIENT_FUNDS'].includes(error.code) ? 'invalid_amount'
         : ['OWNERSHIP', 'KNOWLEDGE_KIND', 'MEMORY_SOURCE'].includes(error.code) ? 'permission_denied'
         : 'domain_validation_failed';
-      return failed(code, null, related);
+      return failed(code, null, related, aggregateDomainDiagnostic(error));
     }
     return failed('transaction_failed', null, related);
   }

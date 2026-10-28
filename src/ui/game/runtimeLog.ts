@@ -1,6 +1,8 @@
 import { DataError } from '../../domain/common';
 import { safeAiError } from '../../services/ai/errors';
 import { isSafeVariablePath } from '../../executors/variableText/diagnostics';
+import { isDomainRule } from '../../executors/variableText/aggregateDiagnostics';
+import type { DomainRule } from '../../executors/variableText/aggregateDiagnostics';
 import type { DiagnosticType, DiagnosticRule } from '../../executors/variableText/diagnostics';
 import type { AiStage } from '../../services/ai/configuration';
 
@@ -24,6 +26,7 @@ export interface RuntimeLogEntry {
   expectedType?: DiagnosticType;
   actualType?: DiagnosticType;
   validationRule?: DiagnosticRule;
+  domainRule?: DomainRule;
 }
 
 export const runtimeStageNames: Record<RuntimeLogStage, string> = {
@@ -86,6 +89,7 @@ export function runtimeLogEvent(
     ...(details?.expectedType && diagnosticTypes.has(details.expectedType) ? { expectedType: details.expectedType } : {}),
     ...(details?.actualType && diagnosticTypes.has(details.actualType) ? { actualType: details.actualType } : {}),
     ...(details?.validationRule && diagnosticRules.has(details.validationRule) ? { validationRule: details.validationRule } : {}),
+    ...(isDomainRule(details?.domainRule) ? { domainRule: details.domainRule } : {}),
     ...(details?.relatedCommandIndices?.length
       ? { relatedCommandIndices: [...new Set(details.relatedCommandIndices
         .filter((index) => Number.isSafeInteger(index) && index > 0))].slice(0, 20) }

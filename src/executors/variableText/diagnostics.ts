@@ -11,6 +11,7 @@ export interface ExecutionDiagnostic {
   expectedType?: DiagnosticType;
   actualType?: DiagnosticType;
   validationRule: DiagnosticRule;
+  domainRule?: import('./aggregateDiagnostics').DomainRule;
 }
 
 const allowedPaths = new Set([
