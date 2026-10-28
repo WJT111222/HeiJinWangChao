@@ -6,12 +6,14 @@ import { CredentialVault } from '../../services/ai/credentials';
 import { WorldStage } from '../../workflows/worldStage';
 import { storyError } from '../../workflows/storyStage';
 import type { Settings } from '../settings/model';
+import type { RuntimeLogReporter } from './runtimeLog';
 
 export function useWorldGeneration(
   repository: SaveRepository,
   draft: TurnDraft | undefined,
   settings: Settings,
   onSaved: (draft: TurnDraft) => void,
+  onRuntimeEvent?: RuntimeLogReporter,
 ) {
   const [runner] = useState(() => new WorldStage(repository));
   const [phase, setPhase] = useState<'generating' | 'saving'>();
@@ -32,6 +34,7 @@ export function useWorldGeneration(
     errorStory.current = draft.storyRevision;
     const id = ++token.current;
     setError('');
+    onRuntimeEvent?.('world', 'started');
     setPhase('generating');
     try {
       const saved = await runner.generate({
@@ -46,9 +49,15 @@ export function useWorldGeneration(
           if (token.current === id) setPhase(next);
         },
       });
-      if (token.current === id) onSaved(saved);
+      if (token.current === id) {
+        onSaved(saved);
+        onRuntimeEvent?.('world', 'completed');
+      }
     } catch (failure) {
-      if (token.current === id) setError(storyError(failure));
+      if (token.current === id) {
+        setError(storyError(failure));
+        onRuntimeEvent?.('world', 'failed', failure);
+      }
     } finally {
       if (token.current === id) {
         running.current = false;
@@ -62,6 +71,7 @@ export function useWorldGeneration(
     running.current = false;
     setPhase(undefined);
     setError('世界请求已取消，正文与正式世界状态保持不变。');
+    onRuntimeEvent?.('world', 'cancelled');
   }
   return {
     generate,
