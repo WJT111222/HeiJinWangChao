@@ -155,6 +155,12 @@ test('生成中折叠不打断；取消和错误不被隐藏，Roll成功保留�
   mode = 'error'; await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
   await expect(summary).toContainText('需要处理'); await expect(page.getByRole('alert').first()).toBeVisible();
   await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open'); expect((await stored(page)).state).toEqual(before.state);
+  const runtimeLog = page.getByTestId('runtime-log');
+  await expect(runtimeLog).toContainText('错误 1 条');
+  await runtimeLog.locator('summary').click();
+  await expect(runtimeLog).toContainText('authorization');
+  await expect(runtimeLog).toContainText('HTTP 状态：401');
+  await expect(runtimeLog).not.toContainText('private-provider-error');
   mode = 'success'; await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
   await expect(page.getByTestId('story-reader')).toContainText('你仍在街边');
   await expect(summary).toContainText('等待继续'); expect((await stored(page)).state).toEqual(before.state); expect(calls).toBe(3);

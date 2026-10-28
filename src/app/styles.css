@@ -1640,3 +1640,17 @@ summary {
   .memory-navigation button { flex: 1 1 auto; padding: .6rem; }
   .memory-reader .prose { font-size: .98rem; }
 }
+
+/* Session-only runtime diagnostics; the compact summary stays visible without expanding tools. */
+.runtime-log { border: 1px solid var(--line); border-radius: 4px; font-size: .72rem; margin: .35rem 0; min-width: 0; }
+.runtime-log > summary { cursor: pointer; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem; padding: .5rem .7rem; color: var(--muted); }
+.runtime-log-error-count, .runtime-log-failure { color: #f1b3a0; font-weight: 600; }
+.runtime-log-content { border-top: 1px solid var(--line); max-height: min(40dvh, 280px); overflow: auto; overscroll-behavior: contain; padding: .6rem .75rem; }
+.runtime-log-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .5rem 0; }
+.runtime-log-actions button { font-size: .68rem; padding: .35rem .55rem; }
+.runtime-log ol { margin: .5rem 0; padding-left: 1.3rem; }
+.runtime-log li { padding: .5rem 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.runtime-log li:first-child { border-top: 0; }
+.runtime-log li time, .runtime-log li strong, .runtime-log li span { display: inline-block; margin-right: .55rem; }
+.runtime-log li p { margin: .25rem 0; }
+.runtime-log li small { display: inline-block; margin-right: .7rem; color: var(--muted); }
