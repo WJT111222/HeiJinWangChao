@@ -47,8 +47,8 @@ export function runtimeLogEvent(
   const entry: RuntimeLogEntry = {
     id, timestamp: new Date().toISOString(), stage, kind,
     message: kind === 'started' ? `${label}已开始`
-      : kind === 'completed' ? `${label}已完成`
-      : kind === 'cancelled' ? `${label}已取消`
+      : kind === 'completed' ? (stage === 'workflow' ? '本次自动执行已结束' : `${label}已完成`)
+      : kind === 'cancelled' ? (stage === 'workflow' ? '已请求取消自动执行' : `${label}已取消`)
       : `${label}失败`,
   };
   if (kind !== 'failed') return entry;
