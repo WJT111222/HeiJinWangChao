@@ -6,7 +6,7 @@ import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { record, array, string } from '../services/ai/protocols';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
-import { createTurnDraft, rerollStory } from '../domain/drafts';
+import { createTurnDraft, rerollStory, startStageAttempt } from '../domain/drafts';
 import { completeTurnDraft } from '../domain/turnCommit';
 import { projectTurn, variableCommandsForTurn } from '../domain/turnProjection';
 import { parseTextVariables } from '../services/validation/aiOutputs';
@@ -165,9 +165,13 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
   });
   it('旧JSON领域候选继续恢复World与Commit，不重新调用Variables',async()=>{
     const a=await fixture('regular');const old=await completeDraft(a.repo,{variables:{commands:[],rejectedSuggestions:[],unresolved:[]},world:worldResult()});
+    const pending = startStageAttempt(old, ['world'], { useVariableStage: true, useWorldStage: true });
+    await a.repo.saveDraft(pending, old.draftRevision);
     const t=transport(()=>{throw new Error('should not call variables');});
-    const out=await coordinator(a.repo,t.fetcher).generate({...a,draft:old});expect(out.status).toBe('complete');expect(t.calls).toEqual([]);
-    const result=await a.repo.commitTurn(submission(old));expect(result.state.turnNumber).toBe(2);
+    const out=await coordinator(a.repo,t.fetcher).generate({...a,draft:pending});
+    expect(out.status).toBe('complete');expect(t.calls.map(c=>c.stage)).toEqual(['world']);
+    expect(out.draft.variables).toEqual(old.variables);
+    const result=await a.repo.commitTurn(submission(out.draft));expect(result.state.turnNumber).toBe(2);
   });
   it('数据库写入异常整体回滚，不重复扣款或保存半份记忆',async()=>{
     const a=await fixture(),t=transport(()=>block('add economy.cash = -3000'));
