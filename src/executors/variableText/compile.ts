@@ -9,6 +9,7 @@ import { openingTimeBase, openingTimeSelection } from '../../domain/openingTime'
 import { variableCommandsForTurn } from '../../domain/turnProjection';
 import type { ParsedVariableCommand } from '../../parsers/variableText';
 import { compileTransaction } from './transactions';
+import { compileEntity } from './entities';
 import { validateAst } from './ast';
 import { digest, ExecutionContextSchema, failed } from './model';
 import type { CommandOrigin, ExecutionResult, VariableExecutionContext, VariableExecutionPlan } from './model';
@@ -28,6 +29,8 @@ const fields = new Map<string, Mapping>([
   ...['locationId', 'onScene', 'lastInteractionAt'].map((field): [string, Mapping] =>
     [`npc.${field}`, { operation: 'set', kind: 'npc', field }]),
   ['npc.memories', { operation: 'push', kind: 'memory', field: 'memories' }],
+  ['npc.longTermMemories', { operation: 'push', kind: 'memory', field: 'longTermMemories' }],
+  ['npc.knownInformation', { operation: 'push', kind: 'memory', field: 'knownInformation' }],
   ['items.conditionText', { operation: 'set', kind: 'itemState', field: 'conditionText' }],
   ['items.locationId', { operation: 'set', kind: 'itemState', field: 'locationId' }],
   ['items.quantity', { operation: 'add', kind: 'item', field: 'quantity' }],
@@ -111,13 +114,15 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
   const origins: Array<CommandOrigin | null> = systemCommands.map(() => null);
   const quantities = new Map(Object.values(base.items).map((item) => [item.id, item.quantity]));
   const createdIds = new Set<string>();
+  const npcIds = new Set(Object.keys(base.npc));
   for (let i = 0; i < ast.length; i++) {
     const command = ast[i], origin = { commandIndex: i + 1, source: command.source };
     const commandId = `text-v1:s${draft.storyRevision}:c${i + 1}`;
     const prior = priorCommand(current, draft.turnId, commandId);
     const common = { commandId, evidence: `文本变量指令第${i + 1}条` };
     let mapped: DomainCommand;
-    const transaction = compileTransaction(command, common, context.expectedRevision);
+    const transaction = compileTransaction(command, common, context.expectedRevision)
+      ?? compileEntity(command, common, context.expectedRevision);
     if (transaction) {
       if (!transaction.ok) return failed(transaction.error.code, origin);
       mapped = transaction.value;
@@ -135,7 +140,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
           mapped = { ...common, type: 'UpdateProtagonist', expectedRevision: context.expectedRevision,
             protagonistId: base.protagonist.id, changes: changes.data };
         } else {
-          if (!id || !Object.hasOwn(base.npc, id)) return failed('entity_not_found', origin);
+          if (!id || !npcIds.has(id)) return failed('entity_not_found', origin);
           const changes = variableCommandSchemas[1].shape.changes.safeParse({ [mapping.field]: command.value });
           if (!changes.success) return failed('type_mismatch', origin);
           mapped = { ...common, type: 'UpdateNpc', npcId: id, expectedRevision: context.expectedRevision, changes: changes.data };
@@ -173,8 +178,8 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
         // 余额按原领域引擎的交易顺序统一检查，不能在这里仅看初始余额。
         mapped = { ...common, type: 'SpendFunds', account, amount: -command.value, purpose: '剧情消费' };
       } else {
-        if (!id || !Object.hasOwn(base.npc, id)) return failed('entity_not_found', origin);
-        const memory = await mapMemory(command, base, id, clock, context, common, i + 1);
+        if (!id || !npcIds.has(id)) return failed('entity_not_found', origin);
+        const memory = await mapMemory(command, base, id, clock, context, common, i + 1, mapping.field);
         if (!memory.ok) return failed(memory.error.code, origin);
         mapped = memory.value;
       }
@@ -185,11 +190,13 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
     const c = parsed.data;
     const created = c.type === 'AcquireItem' || c.type === 'PurchaseItem' ? c.item.id
       : c.type === 'PurchaseVehicle' ? c.vehicle.id : c.type === 'ReceiveIncome' ? c.income.id
-      : c.type === 'Borrow' ? c.debt.id : c.type === 'CreateLocation' ? c.location.id : undefined;
+      : c.type === 'Borrow' ? c.debt.id : c.type === 'CreateLocation' ? c.location.id
+      : c.type === 'CreateNpc' ? c.npc.id : c.type === 'CreateOrganization' ? c.organization.id : undefined;
     if (created !== undefined) {
       if (createdIds.has(created)) return failed('duplicate_or_conflicting_command', origin);
       createdIds.add(created);
     }
+    if (c.type === 'CreateNpc') npcIds.add(c.npc.id);
     // 这里只计算UpdateItem所需的前值，不执行余额、归属或资产修改。
     if (c.type === 'AcquireItem' || c.type === 'PurchaseItem') quantities.set(c.item.id,c.item.quantity);
     if (c.type === 'UpdateItem') {
@@ -213,7 +220,8 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
 }
 
 async function mapMemory(command: ParsedVariableCommand, state: GameState, npcId: string,
-  clock: string, context: VariableExecutionContext, common: { commandId: string; evidence: string }, index: number): Promise<ExecutionResult<DomainCommand>> {
+  clock: string, context: VariableExecutionContext, common: { commandId: string; evidence: string }, index: number,
+  field: string): Promise<ExecutionResult<DomainCommand>> {
   const value = memoryValue.safeParse(command.value);
   if (!value.success) return failed('type_mismatch');
   const memory = value.data;
@@ -221,7 +229,7 @@ async function mapMemory(command: ParsedVariableCommand, state: GameState, npcId
   const text = prefix && !memory.text.startsWith(prefix) ? `${prefix}${memory.text}` : memory.text;
   const memoryId = `text-memory:${await digest([state.saveId, context.draft.turnId, context.draft.storyRevision, index, npcId])}`;
   return { ok: true, value: { ...common, type: 'RecordNpcMemory', npcId, expectedRevision: context.expectedRevision,
-    knowledgeKind: memory.knowledgeKind, layer: 'personal', addToKnownInformation: false,
+    knowledgeKind: memory.knowledgeKind, layer: field === 'longTermMemories' ? 'longTerm' : 'personal', addToKnownInformation: field === 'knownInformation',
     memory: { id: memoryId, text, knowledgeKind: memory.knowledgeKind, knowledgeSource: memory.knowledgeSource,
       visibility: memory.visibility, sourceTurnIds: [context.draft.turnId], affectedEntityRefs: [{ kind: 'npc', id: npcId }], createdAtGameTime: clock } } };
 }
