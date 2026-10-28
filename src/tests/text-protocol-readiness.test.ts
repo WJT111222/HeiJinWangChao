@@ -103,3 +103,39 @@ describe('实体映射的执行与安全回归',()=>{
     expect(parseVariables(JSON.stringify({commands:r.plan.commands,rejectedSuggestions:[],unresolved:[]}),r.state,r.context.draft).commands).toEqual(r.plan.commands);
   });
 });
+
+describe('开局初始化和跨变量组整批执行',()=>{
+  it('待定开局只注入一次Story时钟，同时创建NPC/组织/物品并更新同伴',async()=>{
+    const state=game();state.openingTimePending=true;state.worldClock='0001-01-01T00:00:00+08:00';
+    state.npc.companion={...npc('companion'),name:'初始同伴',affinity:0,kind:'special',detailedBackground:'创角资料',activeGoals:[],habits:[],longTermMemories:[],offscreenTaskIds:[]};
+    state.initialCompanionId='companion';
+    const endAt='2015-07-08T08:05:00+08:00';
+    const draft=rerollStory(createTurnDraft(state.saveId,0,'opening','opening',''),{...story,turnKind:'opening',variableGuide:[{group:'time',subjectHint:'time:opening',observedFact:JSON.stringify({startAt:'2015-07-08T08:00:00+08:00',endAt})}]});
+    const {id:_id,...org}=organizations[3];void _id;
+    const parsed=parseVariableText(`<命令>\n${[
+      set('npc[new-person]',ordinary()),set('npc[new-person].relationshipText','初次交流后愿意帮忙'),
+      set('npc[companion].affinityChange',{from:null,to:10,reason:'开局互助',relationshipText:'彼此支持'}),
+      set('organizations[office]',{...org,keyNpcIds:['new-person']}),
+      set('items[note]',{name:'便条',category:'document',quantity:1,conditionText:'完好',ownerRef:{kind:'npc',id:'new-person'}}),
+      push('npc[new-person].knownInformation',memory),
+    ].join('\n')}\n</命令>`);
+    if(!parsed.ok)throw new Error(parsed.error.code);
+    const context={draft,expectedRevision:0},before=structuredClone(state),plan=unwrap(await compileVariableCommands(parsed.value,state,context));
+    expect(plan.commands.filter(c=>c.type==='SetWorldClock')).toHaveLength(1);
+    const after=unwrap(await simulateVariablePlan(plan,state,context));
+    expect(after.worldClock).toBe(endAt);expect(after.npc.companion.affinity).toBe(10);
+    expect(after.npc['new-person'].memories[0].createdAtGameTime).toBe(endAt);
+    const replay=unwrap(await compileVariableCommands(parsed.value,after,context));
+    expect(unwrap(await simulateVariablePlan(replay,after,context))).toEqual(after);expect(state).toEqual(before);
+  });
+  it('原同伴身份键和别名不能换ID重建，新身份不污染已有联系人',async()=>{
+    const state=game();state.turnNumber=1;state.journal=[{turnId:'past',revision:0,story,relatedActorRefs:[]}];
+    state.npc.companion={...npc('companion'),kind:'special',detailedBackground:'',activeGoals:[],habits:[],longTermMemories:[],offscreenTaskIds:[]};state.initialCompanionId='companion';
+    for(const value of [{...ordinary(),identityKey:state.npc.companion.identityKey},{...ordinary(),name:state.npc.companion.name}]){
+      const parsed=parseVariableText(`<命令>\n${set('npc[copy]',value)}\n</命令>`);if(!parsed.ok)throw new Error(parsed.error.code);
+      const context={draft:rerollStory(createTurnDraft(state.saveId,0,'turn','regular',''),story),expectedRevision:0};
+      const plan=unwrap(await compileVariableCommands(parsed.value,state,context));
+      expect((await simulateVariablePlan(plan,state,context)).ok).toBe(false);expect(state.npc.copy).toBeUndefined();
+    }
+  });
+});

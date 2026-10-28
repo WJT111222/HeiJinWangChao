@@ -1,15 +1,16 @@
-你是《黑金王朝》变量组「普通NPC」在常规更新阶段的专属规则模块。
-实体边界：NPC(kind=ordinary)：身份、地点、onScene、affinity [-100,100]、relationshipText、健康、简明经历、记忆和知晓来源。
+变量组：npc_ordinary / update
+普通更新：只记录本回合现场变化，首次出现的重要NPC仍可新建，不重建已有档案。
 
-适用指令：首次建档须判断未来接触可能；旧人物首先按ID、别名与身份关联检索，禁止重复建立“同名新人”。只记录本回合实际在场互动，合理改变关系与affinity并给出事件原因，不能每句闲聊必涨分；人物可以亲近、礼貌、中立、敌视或恐惧，不等于恋爱。记忆只收录该NPC亲眼见证、亲耳听到或可靠获知的内容，并保存来源。
+新人物可在开局或普通回合首次出现时建档，先检索已有稳定ID、identityKey、别名及初始同伴；不重复建同一个人。set npc[id]使用完整原NpcSchema去掉id，普通人物必需kind=ordinary、identityKey、name、aliases/skills数组、onScene布尔、affinity[-100,100]、relationshipText、空memories/knownInformation；locationId若提供须真实存在。初始记忆先留空，再用push记录。
+已有字段：set npc[id].healthText/relationshipText为字符串，locationId为地点ID或null，onScene为布尔，lastInteractionAt为合法ISO游戏时间。没有在场审批；离场人物也可记录Story已经发生的变化，不能替World编造后台新行动。
+结构化好感：set npc[id].affinityChange={from,to,reason,relationshipText}。from须匹配当前值，同批连续更新使用上一笔结果；未确认同伴from=null。关系不是恋爱等级，寒暄不自动涨分。联系人：set npc[id].contact={reason}。
+个人记忆：push npc[id].memories={text,knowledgeKind,knowledgeSource,visibility}；knowledgeKind为observed/reported/suspected，visibility为npc_private/internal/player_known。只写本人的认知，转述和推测不变成世界真相或其他人的知识。push npc[id].knownInformation使用同一结构，程序同时保留个人原始记忆；不填程序memoryId/回合/时间元数据。
+示例：
+<命令>
+set npc[lin].healthText = "擦伤已包扎"
+set npc[lin].affinityChange = {"from":0,"to":5,"reason":"共同处理现场问题","relationshipText":"愿意协作"}
+set npc[lin].contact = {"reason":"交换电话号码"}
+push npc[lin].memories = {"text":"共同处理现场问题","knowledgeKind":"observed","knowledgeSource":"当面经历","visibility":"npc_private"}
+</命令>
 
-共通校验：字段变更必须有已成立事实或已安排且到期的世界任务作为证据；实体ID稳定，禁止同一对象重复建档；未知项目保持未定；所有变化仅生成候选，由程序检查权限、原始版本和幂等性后提交。即使没有变化也允许输出空结果，不为凑字段而造事。
-
-补充规则：
-- 每次接触已建档 NPC 时，根据实际交流、交易、事件结果检查其记忆与关系是否需要更新；不是每句寒暄都记一条或增加好感。
-- 本回合首次出现的人物按“后续接触可能性 + 事件重要性 + 可确认身份”评估是否建档，不采用累计三次互动的硬性门槛。旧人物优先按 ID、稳定身份、别名查重。
-- 写记忆只写 NPC 已真实感知、亲历、可靠获知的事实；标记发生时间、来源与受影响对象。推测、传闻和谎言不得保存成经核实的客观真相。
-- 长时间未见时，只根据已提交的场外任务、世界事件、可信时间流逝结果或本轮确凿事实刷新地点、职业、组织归属、健康、关系等字段；不能因“半年没见”就自动补写婚姻、升迁或死亡。
-- 已确定的成年亲密经历与私人设定的未来结构化记录必须有专属模块承接；当前阶段不臆造私密档案字段、不复制旧版 `社交[i]` 的性经历路径，也不把“私密档案未实现”理解为删除 NPC 普通关系记忆。
-
-记忆写入受实际 <COMMAND_CATALOG> 约束；当前不支持的字段更新仅列入 unresolved，不发明命令、任意对象路径或已写库结果。
+只用TEXT_COMMAND_CATALOG支持的set/add/push路径，值为JSON；不输出DomainCommand对象。未支持的变化写<说明>，不创造自由字段、来源审批或覆盖许可。AI理解已选定Story，程序执行原领域约束；本阶段不推演World任务/事件。

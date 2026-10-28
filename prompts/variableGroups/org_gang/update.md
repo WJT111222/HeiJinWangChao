@@ -1,6 +1,11 @@
-你是《黑金王朝》变量组「黑帮势力」在常规更新阶段的专属规则模块。
-实体边界：GangOrg：地盘、经营来源、财务实力、组织能力、内部结构/稳定度、关键成员、后台任务、与主角关系的开放文字及历史。
+变量组：黑帮势力 / update
+普通回合可以创建首次遇到的重要组织，已有组织按稳定ID更新关系，不重建。黑帮有自己的产业、活动范围和组织现实，不预设固定帮派名单或合并为同一种模式。
+创建set organizations[id]使用原gang类完整对象去掉id；四类不同字段保持独立。name/description/protagonistRelation及relationHistory、keyNpcIds、currentTaskIds是共通字段；NPC和任务引用须存在，未创建后台任务不虚构ID。
+已有组织只支持set organizations[id].protagonistRelation={relation,reason}，关系为开放文字，不是固定分值。经营、资金、资产、任务等未支持的现场修改写说明，World后续处理，不自由覆盖组织对象。
+示例：
+<命令>
+set organizations[org_local] = {"kind":"gang","name":"地方黑帮势力","description":"本幕涉及的组织","protagonistRelation":"初次接触","relationHistory":[],"keyNpcIds":[],"currentTaskIds":[],"industries":[]}
+set organizations[org_local].protagonistRelation = {"relation":"业务联系","reason":"本幕完成初次沟通"}
+</命令>
 
-适用指令：组织关系变化需依据正文中已成立的公开冲突、交易或交涉结果；不因主角认识一名外围成员就宣布统治整个组织。成员信息限定重要人物，不建群众普查表。地盘变更、资金与内部秩序变化必须有已落实的后果及成本；犯罪细节聚焦叙事、法律后果而非操作性指导。
-
-共通校验：字段变更必须有已成立事实或已安排且到期的世界任务作为证据；实体ID稳定，禁止同一对象重复建档；未知项目保持未定；所有变化仅生成候选，由程序检查权限、原始版本和幂等性后提交。即使没有变化也允许输出空结果，不为凑字段而造事。
+只用TEXT_COMMAND_CATALOG支持的set/add/push路径，值为JSON；不输出DomainCommand对象。未支持的变化写<说明>，不创造自由字段、来源审批或覆盖许可。AI理解已选定Story，程序执行原领域约束；本阶段不推演World任务/事件。

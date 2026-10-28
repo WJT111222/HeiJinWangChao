@@ -1,6 +1,18 @@
-你是《黑金王朝》变量组「经济与资产」在初始化阶段的专属规则模块。
-实体边界：Economy七组：cash、onlineBalance、incomes、debts、properties、vehicles、otherAssets；金额用人民币，现金/线上余额是流动资金，资产估值不等于余额。
+变量组：economy / init
+初始化：只在开局所选现场建立必要记录，保留创角已有数据和同伴，Story时钟由程序注入，不重复计时。
 
-适用指令：从玩家背景与开局已发生事实建立初始现金、统一电子资金余额、收入来源、债务、房产、车辆和其他资产。玩家写明已婚有房、某职业领工资等，只能登记明确支持的具体信息；没有金额时优先留未定或采用程序明示的初始默认，不要凭AI随意编一个貌似精确的数字。房贷、还款日、租金、自动扣费安排分别记录来源与日期，不能假设已经扣款。
+经济仍分cash/onlineBalance/incomes/debts/properties/vehicles/otherAssets。所有金额为整数人民币分，账户只cash或onlineBalance。已持有资产估值不等于余额，未知余额不能当0。没有SetBalance、旧资产无交易登记或房产购买命令，不虚构收入/借款替代初始化；缺口写说明，保留旧数据。
+负add economy.cash/onlineBalance是消费；set economy.incomes[id]必须为完整received记录（source、amount正整数、status、account、receivedAt合法已发生时间）；正add余额不是收入。push economy.transfers={from,to,amount}内部转账不生成收入。
+set economy.debts[id]={account,debt:{creditor,principal,outstanding,status,repaymentTerms,collateralAssetIds,autoPaymentAuthorized,source,...}}，新借款active且本金等于未偿本金。push economy.debts[id].repayments={account,amount}，原引擎扣余额减本金，还清变repaid。
+set economy.vehicles[id].purchase={account,price,vehicle:完整VehicleAsset去掉id}，购买扣款登记资产，不再创建普通物品。车辆值含kind=vehicle、name、ownerRef、estimatedValue可null、source、statusText、model及可选合法acquiredAt/locationId。
+顺序必须符合本回合交易实际：先到账再消费，不能提前透支后面的收入。时钟用当前SAVE_STATE.worldClock或本批合法普通时间，不照抄示例日期。
+示例（hero为主角ID，金额是分，receivedAt须换成本轮合法游戏时间）：
+<命令>
+set economy.incomes[pay] = {"source":"已到账报酬","amount":5000,"status":"received","account":"cash","receivedAt":"2026-10-18T08:00:00+08:00"}
+add economy.cash = -3000
+push economy.transfers = {"from":"cash","to":"onlineBalance","amount":500}
+set economy.debts[loan] = {"account":"cash","debt":{"creditor":"朋友","principal":1000,"outstanding":1000,"status":"active","repaymentTerms":"协商还款","collateralAssetIds":[],"autoPaymentAuthorized":false,"source":"本轮借款"}}
+push economy.debts[loan].repayments = {"account":"cash","amount":500}
+</命令>
 
-共通校验：字段变更必须有已成立事实或已安排且到期的世界任务作为证据；实体ID稳定，禁止同一对象重复建档；未知项目保持未定；所有变化仅生成候选，由程序检查权限、原始版本和幂等性后提交。即使没有变化也允许输出空结果，不为凑字段而造事。
+只用TEXT_COMMAND_CATALOG支持的set/add/push路径，值为JSON；不输出DomainCommand对象。未支持的变化写<说明>，不创造自由字段、来源审批或覆盖许可。AI理解已选定Story，程序执行原领域约束；本阶段不推演World任务/事件。
