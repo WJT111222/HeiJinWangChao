@@ -36,6 +36,35 @@ describe('safe runtime log diagnostics', () => {
     expect(unsafe.fieldPath).toBeUndefined();
   });
 
+  it('shows sanitized field path, expected/actual type and rule', () => {
+    const event = runtimeLogEvent(8, 'variables', 'failed', new AiError('schema_fields', undefined, {
+      fieldPath: 'text.type_mismatch', commandIndex: 19,
+      valuePath: 'npc[id].onScene', expectedType: 'boolean',
+      actualType: 'string', validationRule: 'invalid_type',
+    }));
+    expect(event).toMatchObject({
+      commandIndex: 20, fieldPath: 'text.type_mismatch',
+      valuePath: 'npc[id].onScene', expectedType: 'boolean',
+      actualType: 'string', validationRule: 'invalid_type',
+    });
+  });
+
+  it('never echoes unknown path segments, raw entity IDs, or forged type metadata', () => {
+    const event = runtimeLogEvent(9, 'variables', 'failed', new AiError('schema_fields', undefined, {
+      valuePath: 'npc[secret-real-id].onScene',
+      expectedType: 'secret' as 'boolean',
+      actualType: 'private-text' as 'string',
+      validationRule: 'leak' as 'invalid_type',
+    }));
+    const json = JSON.stringify(event);
+    expect(json).not.toContain('secret-real-id');
+    expect(json).not.toContain('private-text');
+    expect(event).not.toHaveProperty('valuePath');
+    expect(event).not.toHaveProperty('expectedType');
+    expect(event).not.toHaveProperty('actualType');
+    expect(event).not.toHaveProperty('validationRule');
+  });
+
   it('displays only safe known commit errors', () => {
     expect(runtimeLogEvent(4, 'commit', 'failed', new DataError('TURN_TIME_REQUIRED', 'unsafe input')))
       .toMatchObject({ code: 'TURN_TIME_REQUIRED', message: '时间条件未满足，当前回合未正式结算。' });
