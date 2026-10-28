@@ -7,6 +7,7 @@ import { CredentialVault } from '../../services/ai/credentials';
 import { StoryStage, storyError } from '../../workflows/storyStage';
 import type { StoryProgress } from '../../workflows/storyStage';
 import type { Settings } from '../settings/model';
+import type { RuntimeLogReporter } from './runtimeLog';
 
 export function useStoryGeneration(
   repository: SaveRepository,
@@ -14,6 +15,7 @@ export function useStoryGeneration(
   settings: Settings,
   companionProfile: CompanionProfile | undefined,
   onSaved: (draft: TurnDraft) => void,
+  onRuntimeEvent?: RuntimeLogReporter,
 ) {
   const [runner] = useState(() => new StoryStage(repository));
   const [progress, setProgress] = useState<StoryProgress>();
@@ -35,6 +37,7 @@ export function useStoryGeneration(
     running.current = true;
     const id = ++token.current;
     setError('');
+    onRuntimeEvent?.('story', 'started');
     setProgress({ phase: 'generating', narrative: '' });
     try {
       const saved = await runner.generate({
@@ -59,9 +62,15 @@ export function useStoryGeneration(
           }
         },
       });
-      if (token.current === id) onSaved(saved);
+      if (token.current === id) {
+        onSaved(saved);
+        onRuntimeEvent?.('story', 'completed');
+      }
     } catch (failure) {
-      if (token.current === id) setError(storyError(failure));
+      if (token.current === id) {
+        setError(storyError(failure));
+        onRuntimeEvent?.('story', 'failed', failure);
+      }
     } finally {
       if (token.current === id) {
         clearTimeout(timer.current);
@@ -79,6 +88,7 @@ export function useStoryGeneration(
     timer.current = undefined;
     setProgress(undefined);
     setError('请求已取消，已保存的正文草稿保持不变。');
+    onRuntimeEvent?.('story', 'cancelled');
   }
   return { generate, cancel, progress, error };
 }
