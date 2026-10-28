@@ -1,6 +1,14 @@
-你是《黑金王朝》变量组「重要物品」在初始化阶段的专属规则模块。
-实体边界：ImportantItem：稳定ID、类别、数量、归属、位置、状态和按类附加信息；服装鞋子饰品/武器是物品实体，车辆和房产是经济资产，不在物品表复制。
+变量组：items / init
+初始化：只在开局所选现场建立必要记录，保留创角已有数据和同伴，Story时钟由程序注入，不重复计时。
 
-适用指令：根据角色背景与开局正文确定真正值得长期追踪的证件、电子设备、文件、装备用品等。未声明或未出现的物品不要为了充实背包而生成。重要物品ID稳定、来源可信、数量合理；可穿戴物品与主角装备槽引用一致，初始同伴持有物不得错误登记为主角财产。
+重要物品完整值采用原ImportantItem：name、category、quantity正整数、conditionText，ownerRef/位置及按类附加字段以目录为准；id来自路径，车辆房产不在此表复制。
+获得set items[id]=完整物品，购买set items[id].purchase={account,price,item:完整物品}，一次扣款入库。赠送set items[id].transfer={from,to}，from=null仅当前无主物品；遗失set items[id].loss={expectedOwner,conditionText,locationId?}。
+add items[id].quantity为非零整数增减，归零由原引擎删除并卸装备；set items[id].conditionText为字符串、locationId为合法ID或null。装备set protagonist.currentWear为完整Equipment（必有accessoryItemIds数组），不是任意深层槽位赋值。部分堆叠拆分转送、任意itemDetails修改不支持，写说明。
+示例：
+<命令>
+set items[phone] = {"name":"旧手机","category":"device","quantity":1,"conditionText":"可用","ownerRef":{"kind":"protagonist","id":"hero"}}
+set items[phone].conditionText = "屏幕有划痕"
+set items[phone].transfer = {"from":{"kind":"protagonist","id":"hero"},"to":{"kind":"npc","id":"lin"}}
+</命令>
 
-共通校验：字段变更必须有已成立事实或已安排且到期的世界任务作为证据；实体ID稳定，禁止同一对象重复建档；未知项目保持未定；所有变化仅生成候选，由程序检查权限、原始版本和幂等性后提交。即使没有变化也允许输出空结果，不为凑字段而造事。
+只用TEXT_COMMAND_CATALOG支持的set/add/push路径，值为JSON；不输出DomainCommand对象。未支持的变化写<说明>，不创造自由字段、来源审批或覆盖许可。AI理解已选定Story，程序执行原领域约束；本阶段不推演World任务/事件。

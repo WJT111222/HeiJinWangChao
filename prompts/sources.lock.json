@@ -136,22 +136,34 @@
       "sourcePath": "docs/NPC_记忆规则_集成补丁.md",
       "sourceSha256": "165049e2e36161af1727fa77720e1682261ba5f62be22015a16211ed942cae9f",
       "baselineSha256": "7295a5f087e38e958279bf6ca6b52c04891d9c56356e990826209bb30fc44873",
-      "treatment": "incremental-npc-patch",
+      "treatment": "text-protocol-adaptation",
       "section": "init",
       "sectionSha256": "2a574d03412412db8cefef6470df7a484d271bc3598bd6828be53d94c22c2aea",
       "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
-      "baselineBytes": 1007
+      "baselineBytes": 1007,
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/npc_ordinary/init.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "cda75734b44d3c28b71acf0bdc299371a1a0255b517bf86bbfa3ee21a3b2bb4d"
+      }
     },
     "variableGroups/npc_ordinary/update.md": {
       "origin": "m3-review",
       "sourcePath": "docs/NPC_记忆规则_集成补丁.md",
       "sourceSha256": "165049e2e36161af1727fa77720e1682261ba5f62be22015a16211ed942cae9f",
       "baselineSha256": "b308018ae0bb26f39d0c5b2f7c01b26fe619be9595d48377b58ca9ca9053d115",
-      "treatment": "incremental-npc-patch",
+      "treatment": "text-protocol-adaptation",
       "section": "update",
       "sectionSha256": "4553d1806dc1b5a35ec9c016d63b9847c79a381d73d7560029c39df6dd2f488f",
       "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
-      "baselineBytes": 1032
+      "baselineBytes": 1032,
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/npc_ordinary/update.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "eaa377f9004ff32b5765d6f7f59776ac7431d44f1e0f3130109fc330ba956715"
+      }
     },
     "variableGroups/npc_ordinary/offscreen.md": {
       "origin": "m3-review",
@@ -169,22 +181,34 @@
       "sourcePath": "docs/NPC_记忆规则_集成补丁.md",
       "sourceSha256": "165049e2e36161af1727fa77720e1682261ba5f62be22015a16211ed942cae9f",
       "baselineSha256": "49ee42821b35d66e01a2a258736c545ce22f246be400679a08696ff4b86ae483",
-      "treatment": "incremental-npc-patch",
+      "treatment": "text-protocol-adaptation",
       "section": "init",
       "sectionSha256": "2a574d03412412db8cefef6470df7a484d271bc3598bd6828be53d94c22c2aea",
       "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
-      "baselineBytes": 1012
+      "baselineBytes": 1012,
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/npc_special/init.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "93a249fd544748759e14e09d1a97a4372edbdfbb13c539127b79ea5648182996"
+      }
     },
     "variableGroups/npc_special/update.md": {
       "origin": "m3-review",
       "sourcePath": "docs/NPC_记忆规则_集成补丁.md",
       "sourceSha256": "165049e2e36161af1727fa77720e1682261ba5f62be22015a16211ed942cae9f",
       "baselineSha256": "362508e5d381b89272c31a9df72d72c4ed50a2d2ef2568f47b34189824dc84ec",
-      "treatment": "incremental-npc-patch",
+      "treatment": "text-protocol-adaptation",
       "section": "update",
       "sectionSha256": "4553d1806dc1b5a35ec9c016d63b9847c79a381d73d7560029c39df6dd2f488f",
       "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
-      "baselineBytes": 1092
+      "baselineBytes": 1092,
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/npc_special/update.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "151e45b51b410b63a36353fb9d4e7562850a29c7bba6029024852b8af98b8afb"
+      }
     },
     "variableGroups/npc_special/offscreen.md": {
       "origin": "m3-review",
@@ -250,12 +274,24 @@
     "shared/04_state_authority.md": {
       "origin": "baseline",
       "sourceSha256": "4f79534b7a8980284a8cab25dc4bc63a9a58d9031b9d205e466ccf07fec609ec",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/shared/04_state_authority.md",
+        "note": "仅文本Variables资源：移除AI生成命令元数据和旧JSON错误数组要求。",
+        "sha256": "1eae7d53ea96b6655a8bfbc1ff3ec5a99e20e175d2007a9466baacd0e861c5ae"
+      }
     },
     "shared/05_context_protocol.md": {
       "origin": "baseline",
       "sourceSha256": "be733d3966385c9cef20010f2e69c60917870e92c94eca86c539a040641f770c",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/shared/05_context_protocol.md",
+        "note": "仅文本Variables资源：移除AI生成命令元数据和旧JSON错误数组要求。",
+        "sha256": "b24da73fc93ed7e6b42aff6dfb0a1aab7cddd03c042c1362f296eb05cd0fcb9a"
+      }
     },
     "shared/06_story_output.md": {
       "origin": "baseline",
@@ -270,7 +306,7 @@
     "shared/07_command_output.md": {
       "origin": "baseline",
       "sourceSha256": "e81cac2a5104af3afa25039c847793ddf01209c7fd4a3b94e79617d6f9b30482",
-      "treatment": "command-contract-alignment",
+      "treatment": "text-protocol-adaptation",
       "notes": "M3-P2 精确更新命令结构/名称、整数分与阶段权限；保留原外层输出字段，不改变世界书、身份、NSFW 或 M1 Schema。",
       "m4P2": "在 main@dac41b7 的现有正文后追加领域命令与候选执行说明，保留历史原文；非上游逐字资源。",
       "m5P5": {
@@ -280,6 +316,12 @@
       "m8P0AMinimalValidation": {
         "notes": "用户批准的规则减负适配：移除文学正则/逐字证据及重复时间证明，保留原来源哈希和历次适配记录。",
         "sha256": "820346900e251530212ce5d213352bded2268aad059649ddc94541cefee3e74d"
+      },
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/shared/07_command_output.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "61bd170fe376d85ca55c1778633e82cda79c9119f9bc94f777d60c355ea9d794"
       }
     },
     "shared/08_world_output.md": {
@@ -319,7 +361,13 @@
     "stages/opening/variables.md": {
       "origin": "baseline",
       "sourceSha256": "b8fa79eb972d24ae744256a657c48d2c42ebf2d3bffd1b873e0a5f0b84ffa530",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/stages/opening/variables.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "9aaa890d436b61b6c33f1b603b02047314b01a5b9eb4d284aa48fc183aacb0e8"
+      }
     },
     "stages/opening/world.md": {
       "origin": "baseline",
@@ -333,7 +381,13 @@
     "stages/regular/variables.md": {
       "origin": "baseline",
       "sourceSha256": "7e4d6e6c59e6159aa84274c00becf48c143750d1b348fbc3acefbe96effdd4af",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/stages/regular/variables.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "e2f1d8993d210a01a7924e44c3440321274d43c336c16d1451eb33672ad40bd7"
+      }
     },
     "stages/regular/world.md": {
       "origin": "baseline",
@@ -347,12 +401,24 @@
     "variableGroups/protagonist/init.md": {
       "origin": "baseline",
       "sourceSha256": "6b1637419f178435cf11202a06bb59404d5e7e1aac08d1de9bb396427e60233e",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/protagonist/init.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "9d2642091d55dcdb41b9eb134eb55357e91a3580b91b3309b96e5764ae9e47a4"
+      }
     },
     "variableGroups/protagonist/update.md": {
       "origin": "baseline",
       "sourceSha256": "c0974899e3fe95d6f5ab1842dfed72a08d7f73ac0b1e3d1b1b4833b127699cd9",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/protagonist/update.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "fe9b33dcfa6273caf030a956e599750049e9f2edf3fc77dff173f9322620f97e"
+      }
     },
     "variableGroups/protagonist/offscreen.md": {
       "origin": "baseline",
@@ -362,12 +428,24 @@
     "variableGroups/items/init.md": {
       "origin": "baseline",
       "sourceSha256": "a59afc86db6f05bd21bc7188980fb9f8de856700046023438b0b635559252e56",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/items/init.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "a5e4755b8643caf8f0118eff1f00a2207d63c7754399308955c3325b6ea8e527"
+      }
     },
     "variableGroups/items/update.md": {
       "origin": "baseline",
       "sourceSha256": "20220e10ad5f04a519290a0513bc73f34b22846b5ef3b03a34193ed81e17317a",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/items/update.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "ef423a8921c691273e863d97331c9f3a0aacc06efb3348952251b32600c1bfba"
+      }
     },
     "variableGroups/items/offscreen.md": {
       "origin": "baseline",
@@ -377,12 +455,24 @@
     "variableGroups/economy/init.md": {
       "origin": "baseline",
       "sourceSha256": "0ffc5e603b45da886c9ed4b1e27f77319e4fbfb406db5454c9626dbad6fc2f53",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/economy/init.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "28345b03f40a1cd9d278af29886582d31c2d0c3de6bed066b801de1ecb2b5086"
+      }
     },
     "variableGroups/economy/update.md": {
       "origin": "baseline",
       "sourceSha256": "823db7e82689a24c5b5acf6e47fa43fc4aee2ab67eedc1eb3a80edb6446edee4",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/economy/update.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "48a2e87b1e0d1f7938007b0f3cad0d1462e4c288b007cad7c74791a18db3a1b5"
+      }
     },
     "variableGroups/economy/offscreen.md": {
       "origin": "baseline",
@@ -392,12 +482,24 @@
     "variableGroups/org_gang/init.md": {
       "origin": "baseline",
       "sourceSha256": "2cea435019da283fd7338f56947f72aefd3a34da66bfe0cc5245f95f32c590ac",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/org_gang/init.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "31caee43fd43c138bd4c3bb9275bc7add42fd74e01012161c1f46e95faa60ccc"
+      }
     },
     "variableGroups/org_gang/update.md": {
       "origin": "baseline",
       "sourceSha256": "3112bf562fde8608478759c7dad76ab49e3a7d3b966d80f05bf031296ecec629",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/org_gang/update.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "c56e03738711f0ff4112b7c7be1493709b7c487ca8b28cddc93edafd784a78e9"
+      }
     },
     "variableGroups/org_gang/offscreen.md": {
       "origin": "baseline",
@@ -407,12 +509,24 @@
     "variableGroups/org_government/init.md": {
       "origin": "baseline",
       "sourceSha256": "48c7488dcce2a15662a53959e4c6042e84446e45026756b8de10042634d9c3eb",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/org_government/init.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "0156d823c14be5dcb34b2dc71ccb438fbbcdd8152a3f45f2587a0a2328f0da89"
+      }
     },
     "variableGroups/org_government/update.md": {
       "origin": "baseline",
       "sourceSha256": "0c87a041c535fd7608c0f1f04a31abcd723c35c78530293199909b69a11a7431",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/org_government/update.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "e793d9d332b936a4b5bd3ce548fcd201c92b1f2d364b707273c9b073d586716d"
+      }
     },
     "variableGroups/org_government/offscreen.md": {
       "origin": "baseline",
@@ -422,12 +536,24 @@
     "variableGroups/org_civil/init.md": {
       "origin": "baseline",
       "sourceSha256": "f05622cd8905804ab74cb43f28c1f0616188db5dec7073c3c4bf9e8cee7b01fe",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/org_civil/init.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "02c0d8aacfda841799e5529db459f5d5e4dfa71a3e92fbe8d67e6b9dfdde4038"
+      }
     },
     "variableGroups/org_civil/update.md": {
       "origin": "baseline",
       "sourceSha256": "8097eb90ac6c34bb0a85535f28183fdf9c96d4237012842ca008415a5462f6f1",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/org_civil/update.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "adf4ad2905b4dbeadf6b8f58dc1c9c3b7d0be7635ab880aada1a2f2f53d30350"
+      }
     },
     "variableGroups/org_civil/offscreen.md": {
       "origin": "baseline",
@@ -437,12 +563,24 @@
     "variableGroups/org_business/init.md": {
       "origin": "baseline",
       "sourceSha256": "2bedd9dcc03d9233b5109f845679b6a14f7acca6d4de0505a2a5ec3390f796cf",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/org_business/init.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "971c03b13484751442d0d34500834cb9e7571e64da85a7e11390ebc0b5d4cdeb"
+      }
     },
     "variableGroups/org_business/update.md": {
       "origin": "baseline",
       "sourceSha256": "e5c3837b70eaa6a3bba4752471bdd41b3f8538c066a57fc4e5d00d6d317d7786",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/variableGroups/org_business/update.md",
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
+        "sha256": "f413ff74fcb637b2a32cdec28b6cdffc9c9645c892dd3f81a02c80d9546777d3"
+      }
     },
     "variableGroups/org_business/offscreen.md": {
       "origin": "baseline",
@@ -589,6 +727,293 @@
       "sourcePath": "附录B",
       "sourceSha256": "bfb22bff472fbe8916b58915a7cead540f10763ded99d5b187a2999fe9905097",
       "treatment": "verbatim"
+    },
+    "legacy/variables_json/shared/07_command_output.md": {
+      "origin": "baseline",
+      "sourceSha256": "e81cac2a5104af3afa25039c847793ddf01209c7fd4a3b94e79617d6f9b30482",
+      "treatment": "command-contract-alignment",
+      "notes": "M3-P2 精确更新命令结构/名称、整数分与阶段权限；保留原外层输出字段，不改变世界书、身份、NSFW 或 M1 Schema。",
+      "m4P2": "在 main@dac41b7 的现有正文后追加领域命令与候选执行说明，保留历史原文；非上游逐字资源。",
+      "m5P5": {
+        "notes": "M5-P5最小协议增量：自主成果判断、经验证的同窗承接、联系人及安全退场；不改六套主提示词、世界书、NSFW。",
+        "sha256": "2f8c901460f8f1788acc7a7193e4a391d6015e1f12ea778f0cf98496bf53e49b"
+      },
+      "m8P0AMinimalValidation": {
+        "notes": "用户批准的规则减负适配：移除文学正则/逐字证据及重复时间证明，保留原来源哈希和历次适配记录。",
+        "sha256": "820346900e251530212ce5d213352bded2268aad059649ddc94541cefee3e74d"
+      },
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "shared/07_command_output.md",
+        "sha256": "820346900e251530212ce5d213352bded2268aad059649ddc94541cefee3e74d",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/stages/opening/variables.md": {
+      "origin": "baseline",
+      "sourceSha256": "b8fa79eb972d24ae744256a657c48d2c42ebf2d3bffd1b873e0a5f0b84ffa530",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "stages/opening/variables.md",
+        "sha256": "b8fa79eb972d24ae744256a657c48d2c42ebf2d3bffd1b873e0a5f0b84ffa530",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/stages/regular/variables.md": {
+      "origin": "baseline",
+      "sourceSha256": "7e4d6e6c59e6159aa84274c00becf48c143750d1b348fbc3acefbe96effdd4af",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "stages/regular/variables.md",
+        "sha256": "7e4d6e6c59e6159aa84274c00becf48c143750d1b348fbc3acefbe96effdd4af",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/protagonist/init.md": {
+      "origin": "baseline",
+      "sourceSha256": "6b1637419f178435cf11202a06bb59404d5e7e1aac08d1de9bb396427e60233e",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/protagonist/init.md",
+        "sha256": "6b1637419f178435cf11202a06bb59404d5e7e1aac08d1de9bb396427e60233e",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/protagonist/update.md": {
+      "origin": "baseline",
+      "sourceSha256": "c0974899e3fe95d6f5ab1842dfed72a08d7f73ac0b1e3d1b1b4833b127699cd9",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/protagonist/update.md",
+        "sha256": "c0974899e3fe95d6f5ab1842dfed72a08d7f73ac0b1e3d1b1b4833b127699cd9",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/npc_ordinary/init.md": {
+      "origin": "m3-review",
+      "sourcePath": "docs/NPC_记忆规则_集成补丁.md",
+      "sourceSha256": "165049e2e36161af1727fa77720e1682261ba5f62be22015a16211ed942cae9f",
+      "baselineSha256": "7295a5f087e38e958279bf6ca6b52c04891d9c56356e990826209bb30fc44873",
+      "treatment": "incremental-npc-patch",
+      "section": "init",
+      "sectionSha256": "2a574d03412412db8cefef6470df7a484d271bc3598bd6828be53d94c22c2aea",
+      "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
+      "baselineBytes": 1007,
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/npc_ordinary/init.md",
+        "sha256": "d3dec13b0fc0044cc072481673295686ba01df33843b946d5b239a9e5b631064",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/npc_ordinary/update.md": {
+      "origin": "m3-review",
+      "sourcePath": "docs/NPC_记忆规则_集成补丁.md",
+      "sourceSha256": "165049e2e36161af1727fa77720e1682261ba5f62be22015a16211ed942cae9f",
+      "baselineSha256": "b308018ae0bb26f39d0c5b2f7c01b26fe619be9595d48377b58ca9ca9053d115",
+      "treatment": "incremental-npc-patch",
+      "section": "update",
+      "sectionSha256": "4553d1806dc1b5a35ec9c016d63b9847c79a381d73d7560029c39df6dd2f488f",
+      "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
+      "baselineBytes": 1032,
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/npc_ordinary/update.md",
+        "sha256": "2049a758543ce5459fe7ca653952b935580a89f55e53548fb84d4a85945588e2",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/npc_special/init.md": {
+      "origin": "m3-review",
+      "sourcePath": "docs/NPC_记忆规则_集成补丁.md",
+      "sourceSha256": "165049e2e36161af1727fa77720e1682261ba5f62be22015a16211ed942cae9f",
+      "baselineSha256": "49ee42821b35d66e01a2a258736c545ce22f246be400679a08696ff4b86ae483",
+      "treatment": "incremental-npc-patch",
+      "section": "init",
+      "sectionSha256": "2a574d03412412db8cefef6470df7a484d271bc3598bd6828be53d94c22c2aea",
+      "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
+      "baselineBytes": 1012,
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/npc_special/init.md",
+        "sha256": "9bf6cabbb584c06b57a952506ba6ae9177064bb0deca7380df12f322cad0991b",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/npc_special/update.md": {
+      "origin": "m3-review",
+      "sourcePath": "docs/NPC_记忆规则_集成补丁.md",
+      "sourceSha256": "165049e2e36161af1727fa77720e1682261ba5f62be22015a16211ed942cae9f",
+      "baselineSha256": "362508e5d381b89272c31a9df72d72c4ed50a2d2ef2568f47b34189824dc84ec",
+      "treatment": "incremental-npc-patch",
+      "section": "update",
+      "sectionSha256": "4553d1806dc1b5a35ec9c016d63b9847c79a381d73d7560029c39df6dd2f488f",
+      "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
+      "baselineBytes": 1092,
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/npc_special/update.md",
+        "sha256": "bf13ab09d5feb55ec7a5f56203e4c1957bb21ff13bed1e32872e184072c54244",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/items/init.md": {
+      "origin": "baseline",
+      "sourceSha256": "a59afc86db6f05bd21bc7188980fb9f8de856700046023438b0b635559252e56",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/items/init.md",
+        "sha256": "a59afc86db6f05bd21bc7188980fb9f8de856700046023438b0b635559252e56",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/items/update.md": {
+      "origin": "baseline",
+      "sourceSha256": "20220e10ad5f04a519290a0513bc73f34b22846b5ef3b03a34193ed81e17317a",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/items/update.md",
+        "sha256": "20220e10ad5f04a519290a0513bc73f34b22846b5ef3b03a34193ed81e17317a",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/economy/init.md": {
+      "origin": "baseline",
+      "sourceSha256": "0ffc5e603b45da886c9ed4b1e27f77319e4fbfb406db5454c9626dbad6fc2f53",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/economy/init.md",
+        "sha256": "0ffc5e603b45da886c9ed4b1e27f77319e4fbfb406db5454c9626dbad6fc2f53",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/economy/update.md": {
+      "origin": "baseline",
+      "sourceSha256": "823db7e82689a24c5b5acf6e47fa43fc4aee2ab67eedc1eb3a80edb6446edee4",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/economy/update.md",
+        "sha256": "823db7e82689a24c5b5acf6e47fa43fc4aee2ab67eedc1eb3a80edb6446edee4",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/org_gang/init.md": {
+      "origin": "baseline",
+      "sourceSha256": "2cea435019da283fd7338f56947f72aefd3a34da66bfe0cc5245f95f32c590ac",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/org_gang/init.md",
+        "sha256": "2cea435019da283fd7338f56947f72aefd3a34da66bfe0cc5245f95f32c590ac",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/org_gang/update.md": {
+      "origin": "baseline",
+      "sourceSha256": "3112bf562fde8608478759c7dad76ab49e3a7d3b966d80f05bf031296ecec629",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/org_gang/update.md",
+        "sha256": "3112bf562fde8608478759c7dad76ab49e3a7d3b966d80f05bf031296ecec629",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/org_government/init.md": {
+      "origin": "baseline",
+      "sourceSha256": "48c7488dcce2a15662a53959e4c6042e84446e45026756b8de10042634d9c3eb",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/org_government/init.md",
+        "sha256": "48c7488dcce2a15662a53959e4c6042e84446e45026756b8de10042634d9c3eb",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/org_government/update.md": {
+      "origin": "baseline",
+      "sourceSha256": "0c87a041c535fd7608c0f1f04a31abcd723c35c78530293199909b69a11a7431",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/org_government/update.md",
+        "sha256": "0c87a041c535fd7608c0f1f04a31abcd723c35c78530293199909b69a11a7431",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/org_civil/init.md": {
+      "origin": "baseline",
+      "sourceSha256": "f05622cd8905804ab74cb43f28c1f0616188db5dec7073c3c4bf9e8cee7b01fe",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/org_civil/init.md",
+        "sha256": "f05622cd8905804ab74cb43f28c1f0616188db5dec7073c3c4bf9e8cee7b01fe",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/org_civil/update.md": {
+      "origin": "baseline",
+      "sourceSha256": "8097eb90ac6c34bb0a85535f28183fdf9c96d4237012842ca008415a5462f6f1",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/org_civil/update.md",
+        "sha256": "8097eb90ac6c34bb0a85535f28183fdf9c96d4237012842ca008415a5462f6f1",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/org_business/init.md": {
+      "origin": "baseline",
+      "sourceSha256": "2bedd9dcc03d9233b5109f845679b6a14f7acca6d4de0505a2a5ec3390f796cf",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/org_business/init.md",
+        "sha256": "2bedd9dcc03d9233b5109f845679b6a14f7acca6d4de0505a2a5ec3390f796cf",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/variableGroups/org_business/update.md": {
+      "origin": "baseline",
+      "sourceSha256": "e5c3837b70eaa6a3bba4752471bdd41b3f8538c066a57fc4e5d00d6d317d7786",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "variableGroups/org_business/update.md",
+        "sha256": "e5c3837b70eaa6a3bba4752471bdd41b3f8538c066a57fc4e5d00d6d317d7786",
+        "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/shared/04_state_authority.md": {
+      "origin": "baseline",
+      "sourceSha256": "4f79534b7a8980284a8cab25dc4bc63a9a58d9031b9d205e466ccf07fec609ec",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "shared/04_state_authority.md",
+        "sha256": "4f79534b7a8980284a8cab25dc4bc63a9a58d9031b9d205e466ccf07fec609ec",
+        "note": "正式JSON及Story/World共享规则逐字快照。"
+      }
+    },
+    "legacy/variables_json/shared/05_context_protocol.md": {
+      "origin": "baseline",
+      "sourceSha256": "be733d3966385c9cef20010f2e69c60917870e92c94eca86c539a040641f770c",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "shared/05_context_protocol.md",
+        "sha256": "be733d3966385c9cef20010f2e69c60917870e92c94eca86c539a040641f770c",
+        "note": "正式JSON及Story/World共享规则逐字快照。"
+      }
     }
   },
   "m5P6": {

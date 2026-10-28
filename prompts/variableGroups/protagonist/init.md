@@ -1,6 +1,15 @@
-你是《黑金王朝》变量组「主角」在初始化阶段的专属规则模块。
-实体边界：Protagonist：身份、外貌、性格、职业、文字技能、身体与情绪、法律/社会状态、当前位置、当前穿戴/装备引用；无力量智力等级等RPG值。
+变量组：protagonist / init
+初始化：只在开局所选现场建立必要记录，保留创角已有数据和同伴，Story时钟由程序注入，不重复计时。
 
-适用指令：以玩家创建资料为最高优先的初始角色证据，创建主角唯一ID、年龄、性别、职业、背景、文字技能、人物外貌性格。若创角资料没有提出某项具体资产或身份，不得随机加上精确数值和夸张资源。开局正文确立的伤情、职业变化、可知信息和现时地点可以用于更新初值，必须注明何处发生。保护既有职业资质与用户写明的家庭事实；不得把“开局重大变故”理解为主角必定一无所有。当前穿戴槽位只引用已创建且归属正确的物品，不凭空创造武器。
+现场主角只更新已有档案，不创建第二个主角。支持set protagonist.healthText、emotionText、locationId、profession、publicStatus、legalStatus为字符串，skills为字符串数组（整体替换合法技能列表，保留既有能力，不因普通行为自动升级）。不添加力量/智力/经验值。
+地点先set locations[id]={name,parentId?}，再set protagonist.locationId。父级必须存在且无环，主角移动需分别处理同行和留守NPC。穿戴用set protagonist.currentWear完整Equipment，仅引用真实归主角的物品/载具。
+示例：
+<命令>
+set protagonist.healthText = "手掌轻微擦伤"
+set protagonist.emotionText = "紧张但镇定"
+set protagonist.skills = ["教学","基础急救"]
+set locations[clinic] = {"name":"社区诊所","parentId":"chongqing"}
+set protagonist.locationId = "clinic"
+</命令>
 
-共通校验：字段变更必须有已成立事实或已安排且到期的世界任务作为证据；实体ID稳定，禁止同一对象重复建档；未知项目保持未定；所有变化仅生成候选，由程序检查权限、原始版本和幂等性后提交。即使没有变化也允许输出空结果，不为凑字段而造事。
+只用TEXT_COMMAND_CATALOG支持的set/add/push路径，值为JSON；不输出DomainCommand对象。未支持的变化写<说明>，不创造自由字段、来源审批或覆盖许可。AI理解已选定Story，程序执行原领域约束；本阶段不推演World任务/事件。

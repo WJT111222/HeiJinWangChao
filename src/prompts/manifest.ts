@@ -5,6 +5,7 @@ const StageSchema = z.enum(['story', 'variables', 'world', 'memory']);
 const ModeSchema = z.enum(['opening', 'regular']);
 const ModuleSchema = z.strictObject({
   id: z.string().min(1),
+  variableProtocol: z.enum(['json', 'text']).optional(),
   path: z.string().regex(/^(?!\/)(?!.*(?:^|\/)\.{1,2}(?:\/|$))[\p{L}\p{N}_./-]+\.(?:md|txt|json)$/u),
   title: z.string().min(1),
   kind: z.enum(['prompt', 'documentation', 'example', 'reference']),
@@ -188,13 +189,24 @@ export const PromptManifestSchema = z
       for (const mode of ['opening', 'regular'] as const) {
         const main = modules.filter(
           (m) =>
-            m.category === 'stage' && m.applicableStages.includes(stage) && m.modes.includes(mode),
+            m.variableProtocol !== 'text' && m.category === 'stage' && m.applicableStages.includes(stage) && m.modes.includes(mode),
         );
         check(
           main.length === 1 && main[0].id === `stages.${mode}.${stage}`,
           `${stage}/${mode} 必须仅有对应主提示词`,
         );
       }
+    }
+    for (const mode of ['opening', 'regular'] as const) {
+      const main = modules.filter((m) => m.variableProtocol === 'text' && m.category === 'stage' && m.modes.includes(mode));
+      check(main.length === 1 && main[0].id === `stages.${mode}.variables.text`, '文本变量主模板必须按模式互斥');
+    }
+    for (const module of modules.filter((m) => m.variableProtocol === 'text')) {
+      check(module.applicableStages.join() === 'variables' && !module.configurable && !module.reorderable,
+        '文本准备资源只能用于变量离线组装，不能流入世界/正文或变成玩家设置');
+      const original = byId.get(module.id.replace(/\.text$/, ''));
+      check(original?.variableProtocol === 'json' && original.defaultOrder === module.defaultOrder
+        && original.modes.join() === module.modes.join(), '文本资源必须对应同顺序同模式的原变量模块');
     }
     const prefix = manifest.ordering.lockedPrefix.map((id) => byId.get(id));
     check(
