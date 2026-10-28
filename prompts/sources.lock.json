@@ -320,8 +320,8 @@
       "textProtocol": {
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/shared/07_command_output.md",
-        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。",
-        "sha256": "61bd170fe376d85ca55c1778633e82cda79c9119f9bc94f777d60c355ea9d794"
+        "note": "3D-1按现有解析器/领域映射适配；仅离线组装入口，正式JSON入口仍使用冻结资源。 3D-2正式使用文本协议，并补齐原有现场SaveTask/SaveEvent映射，不改变World后台职责。",
+        "sha256": "d802bf841a1a89ffbcb6a1291f4e3a07b9bf7c20170c36a68c3d922c85ebaf58"
       }
     },
     "shared/08_world_output.md": {

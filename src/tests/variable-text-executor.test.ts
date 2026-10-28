@@ -385,13 +385,13 @@ describe('运行边界与旧流程回归', () => {
     try { expect((await run(memorySetup())).ok).toBe(true); expect(fetch).not.toHaveBeenCalled(); expect(indexedDB.open).not.toHaveBeenCalled(); }
     finally { vi.unstubAllGlobals(); }
   });
-  it('新模块不被业务调用，不导入存储、UI或AI运行时', async () => {
+  it('正式入口调用执行器，但执行器仍不导入存储、UI或AI运行时', async () => {
     const { readdirSync, readFileSync } = await import('node:fs');
     for (const name of readdirSync('src/executors/variableText')) {
       const source = readFileSync(`src/executors/variableText/${name}`, 'utf8');
       expect(source).not.toMatch(/from\s+['"][^'"]*(?:storage|ui\/|workflows|services\/ai)/);
       expect(source).not.toMatch(/\beval\s*\(|new\s+Function|\bfetch\s*\(|\bconsole\./);
     }
-    expect(readFileSync('src/services/validation/aiOutputs.ts', 'utf8')).not.toContain('executors/variableText');
+    expect(readFileSync('src/services/validation/aiOutputs.ts', 'utf8')).toContain('executors/variableText');
   });
 });

@@ -1,3 +1,4 @@
+import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -130,7 +131,7 @@ async function mock(page: Page) {
           purpose: '用餐',
           evidence: '主角已经用现金支付30元吃饭。',
         });
-      text = JSON.stringify({ commands, rejectedSuggestions: [], unresolved: [] });
+      text = variableReply({ commands, rejectedSuggestions: [], unresolved: [] });
     } else {
       if (plan.holdWorld) await plan.holdWorld;
       text = JSON.stringify({

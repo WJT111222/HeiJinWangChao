@@ -1,3 +1,4 @@
+import { variableReply } from './fixtures/variableReply';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import type { GameState } from '../domain/state';
@@ -53,7 +54,7 @@ function variableResult(state: GameState, draft: TurnDraft, interrupt = false) {
     event: { ...state.events.visitor, status: 'active', sourceTurnIds: [...state.events.visitor.sourceTurnIds, draft.turnId] } });
   return { commands, rejectedSuggestions: [], unresolved: [] };
 }
-const jsonWire = (value: unknown) => Response.json({ choices: [{ message: { content: JSON.stringify(value) } }] });
+const jsonWire = (value: unknown) => Response.json({ choices: [{ message: { content: value && typeof value==='object' && 'commands' in value ? variableReply(value) : JSON.stringify(value) } }] });
 function coordinator(repo: SaveRepository, fetcher: typeof fetch) { const value = new TurnCoordinator(repo, new AiClient(fetcher)); resources.push(value); return value; }
 function storyRunner(repo: SaveRepository, fetcher: typeof fetch) { const value = new StoryStage(repo, new AiClient(fetcher)); resources.push(value); return value; }
 

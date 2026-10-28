@@ -18,3 +18,5 @@ AI根据选定Story理解已发生变化，不替World推演后台任务、事�
 收入必须set economy.incomes[id]完整记录，借款必须set economy.debts[id]完整债务；转账用push economy.transfers，还款用push economy.debts[id].repayments。均为整数人民币分；未知余额不能当0，不能透支，不能提前使用后面的收入。完整示例见经济组及目录。
 物品获得set items[id]；购买set items[id].purchase一次扣款入库；转交set items[id].transfer；遗失set items[id].loss；数量用add items[id].quantity。装备用set protagonist.currentWear完整装备对象。车辆购买set economy.vehicles[id].purchase，车辆房产不重复进重要物品表。
 组织用set organizations[id]创建四类之一的完整对象；关系用set organizations[id].protagonistRelation={relation,reason}开放文字。已有经营/资产等未支持字段放说明，不覆盖组织表。
+
+现场事件与任务：仅记录正文已经发生、关联主角或现场NPC的结果。set events[id] = 完整WorldEvent去掉id；set tasks[id] = 完整WorldTask去掉id。结构、演员、引用、来源回合、状态与游戏时间使用TEXT_COMMAND_CATALOG原Schema；更新保留已有起点和完成条件，已终结不重复修改。场外任务/事件、未来推演仍交给World，不因预计到期判成功。缺字段写说明，不自由补丁。

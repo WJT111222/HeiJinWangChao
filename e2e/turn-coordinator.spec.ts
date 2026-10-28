@@ -1,3 +1,4 @@
+import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -32,6 +33,7 @@ async function seed(page: Page, mode: 'opening' | 'regular' = 'opening') {
     const channel = newChannel(),
       config = defaultAiConfig();
     channel.baseUrl = 'https://turn.mock.invalid/v1';
+    channel.compatibility.jsonMode = true;
     config.channels = [channel];
     config.routes.story = { channelId: channel.id, modelId: 'story' };
     config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' };
@@ -39,8 +41,16 @@ async function seed(page: Page, mode: 'opening' | 'regular' = 'opening') {
     saveAiConfig(localStorage, config);
     new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-auto-key');
     const repo = await SaveRepository.open();
-    const state = await repo.create({ ...worldState(), title: '自动协调测试（隔离）' });
-    await repo.saveDraft(createTurnDraft('save-a', 0, 'turn-a', mode, ''), null);
+    let state = await repo.create({ ...worldState(), title: '自动协调测试（隔离）' });
+    if (mode === 'regular') {
+      const turnFixturePath = '/src/tests/fixtures/turn.ts';
+      const { completeDraft, submission } = await import(turnFixturePath);
+      const completed = await completeDraft(repo, { variables: { commands: [], rejectedSuggestions: [], unresolved: [] }, world: { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] } });
+      const committed = await repo.commitTurn(submission(completed));
+      state = committed.state;
+      await repo.deleteDraft(state.saveId, committed.draft.draftRevision);
+    }
+    await repo.saveDraft(createTurnDraft('save-a', state.revision, 'turn-a', mode, ''), null);
     repo.close();
     return JSON.stringify(state);
   }, mode);
@@ -70,7 +80,7 @@ function payload(stage: Stage, bad = false) {
     ? '{bad-json'
     : stage === 'story'
       ? `<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>${narrative}</正文><短期记忆>用餐</短期记忆><变量规划>[]</变量规划>`
-      : JSON.stringify(
+      : (stage === 'variables' ? variableReply : JSON.stringify)(
           stage === 'variables'
             ? {
                 commands: [
@@ -164,7 +174,7 @@ for (const mode of ['opening', 'regular'] as const) {
       expect(
         snapshot
           .find((s: { stage: string }) => s.stage === stage)
-          .scope.modules.some((m: { id: string }) => m.id === `stages.${mode}.${stage}`),
+          .scope.modules.some((m: { id: string }) => m.id === `stages.${mode}.${stage}${stage === 'variables' ? '.text' : ''}`),
       ).toBe(true);
     expect(JSON.stringify(snapshot)).not.toContain('mock-auto-key');
     await expect(workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true })).toHaveCount(0);

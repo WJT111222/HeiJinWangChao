@@ -1,3 +1,5 @@
+import { completeDraft, submission } from './fixtures/turn';
+import { variableReply } from './fixtures/variableReply';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { AiClient } from '../services/ai/client';
@@ -43,14 +45,12 @@ function setup() {
   settings.prompts.actionOptions = false;
   return { config, vault, settings };
 }
-function wire(stage: AiStage, invalid = false) {
+function wire(stage: AiStage, invalid = false, expectedRevision = 0) {
   const text = invalid
     ? '{bad'
     : stage === 'story'
       ? `<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>${worldNarrative}</正文><短期记忆>用餐</短期记忆><变量规划>[]</变量规划>`
-      : JSON.stringify(
-          stage === 'variables' ? worldDraft().variables!.result : worldResult([npcUpdate()]),
-        );
+      : (stage === 'variables' ? variableReply(worldDraft().variables!.result) : JSON.stringify(worldResult([{ ...npcUpdate(), expectedRevision }])));
   return stage === 'story'
     ? new Response(
         `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`,
@@ -109,7 +109,13 @@ describe('真实三阶段顺序协调及恢复，正式 GameState 不变', () =>
     '%s 独立主提示词、最新变量投影、全部保存，不重复付费',
     async (mode) => {
       await repo.deleteDraft('save-a', 0);
-      draft = createTurnDraft('save-a', 0, 'turn-a', mode, '');
+      if (mode === 'regular') {
+        const completed = await completeDraft(repo, { variables: { commands: [], rejectedSuggestions: [], unresolved: [] }, world: { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] } });
+        const committed = await repo.commitTurn(submission(completed));
+        await repo.deleteDraft('save-a', committed.draft.draftRevision);
+      }
+      const formal=await repo.load('save-a');
+      draft = createTurnDraft('save-a', formal.revision, 'turn-a', mode, '');
       await repo.saveDraft(draft, null);
       const before = await repo.load('save-a'),
         calls: AiStage[] = [],
@@ -119,7 +125,7 @@ describe('真实三阶段顺序协调及恢复，正式 GameState 不变', () =>
         calls.push(stage);
         if (stage === 'variables') expect((await currentDraft()).stageStatus.story).toBe('ready');
         if (stage === 'world') expect((await currentDraft()).stageStatus.variables).toBe('ready');
-        return wire(stage);
+        return wire(stage, false, formal.revision);
       });
       const coordinator = runner(transport),
         input = setup();
@@ -141,7 +147,7 @@ describe('真实三阶段顺序协调及恢复，正式 GameState 不变', () =>
       expect(await repo.load('save-a')).toEqual(before);
       for (const stage of stages) {
         const inspection = requestInspections.getSnapshot().find((r) => r.stage === stage)!;
-        expect(inspection.scope?.modules.some((m) => m.id === `stages.${mode}.${stage}`)).toBe(
+        expect(inspection.scope?.modules.some((m) => m.id === `stages.${mode}.${stage}${stage === 'variables' ? '.text' : ''}`)).toBe(
           true,
         );
         expect(
@@ -174,7 +180,7 @@ describe('真实三阶段顺序协调及恢复，正式 GameState 不变', () =>
       }),
       input = setup();
     await expect(coordinator.generate({ ...input, draft })).rejects.toMatchObject({
-      code: failedStage === 'story' ? 'invalid_output' : 'invalid_json',
+      code: failedStage === 'story' ? 'invalid_output' : failedStage === 'variables' ? 'variable_text_syntax' : 'invalid_json',
     });
     const failed = await currentDraft();
     expect(calls).toEqual(stages.slice(0, stages.indexOf(failedStage) + 1));

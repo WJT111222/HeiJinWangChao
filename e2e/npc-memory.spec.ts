@@ -1,3 +1,4 @@
+import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -142,7 +143,7 @@ test('公开自动维护开关不授权NPC额外收费；新正式回合和下�
       const text = '<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>主角安静观察周围。</正文><短期记忆>在原地观察</短期记忆><变量规划>[]</变量规划>';
       await route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n` }); return;
     }
-    const text = model === 'variables' ? JSON.stringify({ commands: [], rejectedSuggestions: [], unresolved: [] })
+    const text = model === 'variables' ? variableReply({ commands: [], rejectedSuggestions: [], unresolved: [] })
       : JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] });
     await route.fulfill({ contentType: 'application/json', body: wire(text) });
   });
