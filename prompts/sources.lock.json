@@ -274,12 +274,24 @@
     "shared/04_state_authority.md": {
       "origin": "baseline",
       "sourceSha256": "4f79534b7a8980284a8cab25dc4bc63a9a58d9031b9d205e466ccf07fec609ec",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/shared/04_state_authority.md",
+        "note": "仅文本Variables资源：移除AI生成命令元数据和旧JSON错误数组要求。",
+        "sha256": "1eae7d53ea96b6655a8bfbc1ff3ec5a99e20e175d2007a9466baacd0e861c5ae"
+      }
     },
     "shared/05_context_protocol.md": {
       "origin": "baseline",
       "sourceSha256": "be733d3966385c9cef20010f2e69c60917870e92c94eca86c539a040641f770c",
-      "treatment": "verbatim"
+      "treatment": "text-protocol-adaptation",
+      "textProtocol": {
+        "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "legacyPath": "legacy/variables_json/shared/05_context_protocol.md",
+        "note": "仅文本Variables资源：移除AI生成命令元数据和旧JSON错误数组要求。",
+        "sha256": "b24da73fc93ed7e6b42aff6dfb0a1aab7cddd03c042c1362f296eb05cd0fcb9a"
+      }
     },
     "shared/06_story_output.md": {
       "origin": "baseline",
@@ -979,6 +991,28 @@
         "path": "variableGroups/org_business/update.md",
         "sha256": "e5c3837b70eaa6a3bba4752471bdd41b3f8538c066a57fc4e5d00d6d317d7786",
         "note": "3D-1保留正式JSON请求使用的原资源，未修改正文。"
+      }
+    },
+    "legacy/variables_json/shared/04_state_authority.md": {
+      "origin": "baseline",
+      "sourceSha256": "4f79534b7a8980284a8cab25dc4bc63a9a58d9031b9d205e466ccf07fec609ec",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "shared/04_state_authority.md",
+        "sha256": "4f79534b7a8980284a8cab25dc4bc63a9a58d9031b9d205e466ccf07fec609ec",
+        "note": "正式JSON及Story/World共享规则逐字快照。"
+      }
+    },
+    "legacy/variables_json/shared/05_context_protocol.md": {
+      "origin": "baseline",
+      "sourceSha256": "be733d3966385c9cef20010f2e69c60917870e92c94eca86c539a040641f770c",
+      "treatment": "verbatim",
+      "snapshot": {
+        "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
+        "path": "shared/05_context_protocol.md",
+        "sha256": "be733d3966385c9cef20010f2e69c60917870e92c94eca86c539a040641f770c",
+        "note": "正式JSON及Story/World共享规则逐字快照。"
       }
     }
   },

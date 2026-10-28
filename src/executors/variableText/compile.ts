@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import { DomainCommandSchema, fingerprint } from '../../domain/commands';
 import type { DomainCommand } from '../../domain/commands';
 import { GameTimeSchema, IdSchema } from '../../domain/common';
@@ -9,12 +8,11 @@ import { openingTimeBase, openingTimeSelection } from '../../domain/openingTime'
 import { variableCommandsForTurn } from '../../domain/turnProjection';
 import type { ParsedVariableCommand } from '../../parsers/variableText';
 import { compileTransaction } from './transactions';
-import { compileEntity, memoryInputSchema } from './entities';
+import { compileEntity, memoryInputSchema, textInputSchema as textValue } from './entities';
 import { validateAst } from './ast';
 import { digest, ExecutionContextSchema, failed } from './model';
 import type { CommandOrigin, ExecutionResult, VariableExecutionContext, VariableExecutionPlan } from './model';
 
-const textValue = z.string().trim().min(1).max(8192);
 const fields = new Map<string, Mapping>([
   ['protagonist.healthText', { operation: 'set', kind: 'protagonist', field: 'healthText' }],
   ['protagonist.emotionText', { operation: 'set', kind: 'protagonist', field: 'emotionText' }],
