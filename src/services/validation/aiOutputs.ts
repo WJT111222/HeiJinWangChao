@@ -20,7 +20,11 @@ function textExecutionError(error: ExecutionError) {
     : ['revision_conflict', 'duplicate_or_conflicting_command'].includes(error.code) ? 'candidate_conflict'
     : ['unsupported_path', 'unsupported_operation', 'type_mismatch'].includes(error.code) ? 'schema_fields' : 'data_integrity';
   return new AiError(code, undefined, { fieldPath: `text.${error.code}`,
-    ...(error.commandIndex === null ? {} : { commandIndex: error.commandIndex - 1 }) });
+    ...(error.commandIndex === null ? {} : { commandIndex: error.commandIndex - 1 }),
+    // 整批失败时不能指认某一条：只暴露相关命令序号，不复制原始变量或实体 ID。
+    ...(error.commandIndex === null && error.relatedCommands.length
+      ? { relatedCommandIndices: [...new Set(error.relatedCommands.map((origin) => origin.commandIndex))].slice(0, 20) }
+      : {}) });
 }
 /** 新模型响应只允许文本协议。旧JSON仅由下方parseVariables复核已保存的领域候选。 */
 export async function parseTextVariables(text: string, state: GameState, draft: TurnDraft) {

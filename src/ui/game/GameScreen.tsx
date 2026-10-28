@@ -1,5 +1,5 @@
 import { openingTimeSelection } from '../../domain/openingTime';
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import type { GameState } from '../../domain/state';
 import type { CompanionProfile } from '../../services/local/companionProfile';
@@ -26,6 +26,9 @@ import { RequestUsage } from './RequestUsage';
 import { StoryInspectionPanel } from './StoryInspectionPanel';
 import { MemoryMaintenanceControls } from '../panels/MemoryMaintenanceControls';
 import type { OpeningStart } from './openingStart';
+import { RuntimeLogPanel } from './RuntimeLogPanel';
+import { runtimeLogEvent } from './runtimeLog';
+import type { RuntimeLogEntry, RuntimeLogReporter } from './runtimeLog';
 
 const sidebarMedia = '(max-width: 900px)';
 function subscribeSidebarSize(changed: () => void) {
@@ -73,6 +76,12 @@ export function GameScreen({
   const [submitError, setSubmitError] = useState('');
   const submitLock = useRef(false),
     submitToken = useRef(0);
+  const [runtimeLogs, setRuntimeLogs] = useState<RuntimeLogEntry[]>([]);
+  const runtimeLogId = useRef(0);
+  const reportRuntimeEvent = useCallback<RuntimeLogReporter>((stage, kind, failure) => {
+    const entry = runtimeLogEvent(++runtimeLogId.current, stage, kind, failure);
+    setRuntimeLogs((current) => [...current.slice(-49), entry]);
+  }, []);
   useEffect(
     () => () => {
       submitToken.current++;
@@ -84,10 +93,10 @@ export function GameScreen({
     cancel,
     progress: manualProgress,
     error,
-  } = useStoryGeneration(repository, draft, settings, companionProfile, onDraftSaved);
-  const variables = useVariableGeneration(repository, draft, settings, onDraftSaved);
-  const world = useWorldGeneration(repository, draft, settings, onDraftSaved);
-  const automatic = useTurnGeneration(repository, draft, settings, companionProfile, onDraftSaved);
+  } = useStoryGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent);
+  const variables = useVariableGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent);
+  const world = useWorldGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent);
+  const automatic = useTurnGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent);
   // 延后一微任务，让 StrictMode 的首次 effect 清理先完成。消费的是创角事件授权，
   // 而不是“草稿没有正文”；刷新、读档和重新挂载没有新的授权。
   useEffect(() => {
@@ -125,6 +134,7 @@ export function GameScreen({
     const token = submitToken.current;
     setSubmitting(true);
     setSubmitError('');
+    reportRuntimeEvent('commit', 'started');
     try {
       const result = await repository.commitTurn({
         draft,
@@ -133,6 +143,7 @@ export function GameScreen({
         useWorldStage: settings.runtime.useWorldStage,
       });
       if (submitToken.current !== token) return;
+      reportRuntimeEvent('commit', 'completed');
       onCommitted(result);
       if (!result.replayed) void memory.run(true);
       setInput('');
@@ -140,7 +151,8 @@ export function GameScreen({
       // 发送明确授权下一轮请求；重复回执只恢复数据库真值，不再次发起付费生成。
       if (!result.replayed) await automatic.generate(result.draft);
     } catch (failure) {
-      if (submitToken.current === token)
+      if (submitToken.current === token) {
+        reportRuntimeEvent('commit', 'failed', failure);
         setSubmitError(
           failure instanceof DataError && failure.code === 'TURN_TIME_REQUIRED'
             ? '本回合尚未推进时间，未正式结算。请补算变量；正文无需写出时间。'
@@ -150,6 +162,7 @@ export function GameScreen({
             ? '结算未完成：候选不完整、版本冲突或存储失败。请重新读取或补齐草稿后重试。'
             : storyError(failure),
         );
+      }
     } finally {
       if (submitToken.current === token) {
         submitLock.current = false;
@@ -388,6 +401,7 @@ export function GameScreen({
               </p>
             )}
             {world.error && <p className="story-error" role="alert">{world.error}</p>}
+            <RuntimeLogPanel entries={runtimeLogs} onClear={() => setRuntimeLogs([])} />
             {!validDraft && (
               <p className="field-hint">
                 {draft

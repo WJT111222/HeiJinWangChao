@@ -6,12 +6,14 @@ import { CredentialVault } from '../../services/ai/credentials';
 import { VariableStage } from '../../workflows/variableStage';
 import { storyError } from '../../workflows/storyStage';
 import type { Settings } from '../settings/model';
+import type { RuntimeLogReporter } from './runtimeLog';
 
 export function useVariableGeneration(
   repository: SaveRepository,
   draft: TurnDraft | undefined,
   settings: Settings,
   onSaved: (draft: TurnDraft) => void,
+  onRuntimeEvent?: RuntimeLogReporter,
 ) {
   const [runner] = useState(() => new VariableStage(repository));
   const [phase, setPhase] = useState<'generating' | 'saving'>();
@@ -32,6 +34,7 @@ export function useVariableGeneration(
     errorStory.current = draft.storyRevision;
     const id = ++token.current;
     setError('');
+    onRuntimeEvent?.('variables', 'started');
     setPhase('generating');
     try {
       const saved = await runner.generate({
@@ -46,9 +49,15 @@ export function useVariableGeneration(
           if (token.current === id) setPhase(next);
         },
       });
-      if (token.current === id) onSaved(saved);
+      if (token.current === id) {
+        onSaved(saved);
+        onRuntimeEvent?.('variables', 'completed');
+      }
     } catch (failure) {
-      if (token.current === id) setError(storyError(failure));
+      if (token.current === id) {
+        setError(storyError(failure));
+        onRuntimeEvent?.('variables', 'failed', failure);
+      }
     } finally {
       if (token.current === id) {
         running.current = false;
@@ -62,6 +71,7 @@ export function useVariableGeneration(
     running.current = false;
     setPhase(undefined);
     setError('变量请求已取消，正文与正式世界状态保持不变。');
+    onRuntimeEvent?.('variables', 'cancelled');
   }
   return {
     generate,
