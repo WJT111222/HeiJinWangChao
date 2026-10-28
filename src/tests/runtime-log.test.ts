@@ -47,7 +47,7 @@ describe('safe runtime log diagnostics', () => {
     });
     let caught: unknown;
     try {
-      await parseTextVariables('<命令>\\nset npc[npc_001].onScene = "secret-input"\\n</命令>', state, draft);
+      await parseTextVariables('<命令>\nset npc[npc_001].onScene = "secret-input"\n</命令>', state, draft);
     } catch (failure) { caught = failure; }
     expect(caught).toBeInstanceOf(AiError);
     const logged = runtimeLogEvent(10, 'variables', 'failed', caught);
