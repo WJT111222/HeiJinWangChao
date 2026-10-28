@@ -67,7 +67,7 @@ export class AiError extends Error {
   constructor(
     public readonly code: AiErrorCode,
     public readonly status?: number,
-    public readonly details?: { fieldPath?: string; commandType?: string; commandIndex?: number },
+    public readonly details?: { fieldPath?: string; commandType?: string; commandIndex?: number; relatedCommandIndices?: number[] },
   ) {
     super(messages[code] + (details?.fieldPath ? ` 字段：${details.fieldPath}${details.commandType ? `（${details.commandType}，第${(details.commandIndex ?? 0) + 1}条）` : ''}。` : ''));
     this.name = 'AiError';
