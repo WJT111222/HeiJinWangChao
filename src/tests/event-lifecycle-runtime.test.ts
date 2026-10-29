@@ -242,3 +242,10 @@ it('纯过去视角不消费当前世界积压事件，也不被到期处理强�
   const context=contextFor({stage:'world',mode:a.draft.turnKind,state:a.state,draft:a.draft,settings:defaultSettings(),userInput:''});
   expect(context.EVENT_SCHEDULE).toMatchObject({readOnly:true});
 });
+
+it('开局同伴的受保护事件不被排入强制场外处置，保持原World权限',()=>{
+  const a=prepared();a.state.initialCompanionId='npc-a';
+  expect(worldEventSchedule(a.state,projectTurn(a.state,a.draft)).due).toEqual([]);
+  expect(worldEventSchedule(a.state,projectTurn(a.state,a.draft)).scenePending).toContain('investigation');
+  expect(()=>resultFor(a.state,a.draft,[])).not.toThrow();
+});
