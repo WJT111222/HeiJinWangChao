@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { contextFor } from '../prompts/context';
+import { defaultSettings } from '../ui/settings/model';
 import { commitCommands } from '../domain/commands';
 import { GameStateSchema } from '../domain/state';
 import { WorldEventSchema } from '../domain/events/schema';
@@ -228,4 +230,15 @@ it('旧缺排程事件可真实终结并安全清理，不为清理补造历史�
   expect(after.events[old.id]).toBeUndefined();expect(after.retiredEvents[old.id]).toBeDefined();
   const created={...finish(old),event:{...finish(old).event,id:'brand-new'}};
   expect(()=>resultFor(a.state,a.draft,[created])).toThrow();
+});
+
+it('纯过去视角不消费当前世界积压事件，也不被到期处理强制改写当前世界',()=>{
+  const a=prepared([{...ongoing(),startAt:'2026-10-18T07:00:00+08:00',estimatedEndAt:'2026-10-18T07:30:00+08:00'}]);
+  a.draft.userInput='切换到同事的视角，描写他昨天晚上的经历。';
+  a.draft.story!.variableGuide=[{group:'time',subjectHint:'time:retrospective',observedFact:JSON.stringify({npcId:'npc-a',perspectiveRequest:'切换到同事的视角',pastRequest:'描写他昨天晚上的经历',temporalScope:'past_only',currentPlotAdvances:false})}];
+  a.draft.variables!.result.commands=[];const before=structuredClone(a.state);
+  expect(()=>parseWorld(JSON.stringify({...worldResult(),visibleHooks:[],unresolved:[]}),a.state,a.draft)).not.toThrow();
+  expect(a.state).toEqual(before);expect(worldEventSchedule(a.state,a.state).due).toHaveLength(1);
+  const context=contextFor({stage:'world',mode:a.draft.turnKind,state:a.state,draft:a.draft,settings:defaultSettings(),userInput:''});
+  expect(context.EVENT_SCHEDULE).toMatchObject({readOnly:true});
 });
