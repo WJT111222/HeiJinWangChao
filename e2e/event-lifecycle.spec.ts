@@ -52,3 +52,44 @@ test('未处理到期事件不能伪装World成功，合法重试仍仅保存候
   await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();await expect(page.getByRole('region',{name:'三阶段工作流'})).toContainText('世界已完成 · 候选未正式结算');
   expect(calls).toBe(2);expect((await stored(page)).state).toEqual(data.state);
 });
+
+test('Variables拒绝纯组织事件，合法现场更新可恢复；组织事件只能经World候选正式结算',async({page})=>{
+  await page.goto('/');
+  const seeded=await page.evaluate(async()=>{
+    const storage='/src/services/storage/saveRepository.ts',world='/src/tests/fixtures/world.ts',fixtures='/src/tests/fixtures/game.ts',turn='/src/tests/fixtures/turn.ts',
+      configPath='/src/services/ai/configuration.ts',vaultPath='/src/services/ai/credentials.ts';
+    const {SaveRepository}=await import(storage),{worldState}=await import(world),{event,organizations}=await import(fixtures),{completeDraft}=await import(turn),
+      {defaultAiConfig,newChannel,saveAiConfig}=await import(configPath),{CredentialVault}=await import(vaultPath);
+    const config=defaultAiConfig(),channel=newChannel();channel.baseUrl='https://scene-permission.mock.invalid/v1';channel.defaultModel='variables';
+    config.channels=[channel];config.routes.story={channelId:channel.id,modelId:'variables'};config.routes.world={mode:'independent',channelId:channel.id,modelId:'world'};
+    saveAiConfig(localStorage,config);new CredentialVault(sessionStorage,localStorage).set(channel.id,'mock-only-secret');
+    const state=worldState();state.organizations['org-a']=organizations[3];
+    state.events.background={...event('background'),status:'active',actorRefs:[{kind:'organization',id:'org-a'}],estimatedEndAt:'2026-10-19T08:00:00+08:00',sourceTurnIds:[],impact:'minor'};
+    state.events.local={...event('local'),status:'active',estimatedEndAt:'2026-10-19T08:00:00+08:00',sourceTurnIds:[],impact:'minor'};
+    const repo=await SaveRepository.open();try{await repo.create(state);const draft=await completeDraft(repo);return {state,draft};}finally{repo.close();}
+  });
+  await page.goto('/#game/save-a');await openGameTools(page);
+  let safe=false;const calls:string[]=[];
+  await page.route('https://scene-permission.mock.invalid/**',async route=>{
+    const body=route.request().postDataJSON();calls.push(body.model);
+    const content=body.model==='world'?JSON.stringify({...worldResult(),eventCommands:[{
+      type:'SaveEvent',commandId:'world-background',event:{...seeded.state.events.background,status:'blocked',sourceTurnIds:[seeded.draft.turnId]},
+      evidence:proof({sources:['event:background','org:org-a'],fact:'组织清点暂时受阻。',decision:{targetId:'background',status:'blocked',reason:'材料尚未齐备',result:'等待补齐材料',conditionsSatisfied:false,continues:true}}),
+    }]}):safe?'<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset events[local].sceneState = {"status":"blocked"}\n</命令>':'<命令>set events[background].sceneState = {"status":"blocked"}</命令>';
+    await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content},finish_reason:'stop'}]})});
+  });
+  await page.getByRole('button',{name:/^(?:重新)?生成变量候选$/}).click();await expect(page.getByRole('alert')).toBeVisible();
+  let saved=await stored(page);expect(calls).toEqual(['variables']);expect(saved.state).toEqual(seeded.state);
+  expect(saved.draft.variables).toBeUndefined();expect(saved.draft.stageStatus.variables).toBe('failed');expect(saved.draft.story).toEqual(seeded.draft.story);
+  safe=true;await page.getByRole('button',{name:/^(?:重新)?生成变量候选$/}).click();
+  await expect(page.getByRole('region',{name:'三阶段工作流'})).toContainText('变量已完成 · 候选未正式结算');
+  saved=await stored(page);expect(saved.state).toEqual(seeded.state);expect(saved.draft.variables.result.commands).toContainEqual(expect.objectContaining({type:'SaveEvent',event:expect.objectContaining({id:'local',status:'blocked'})}));
+  await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();
+  await expect(page.getByRole('region',{name:'三阶段工作流'})).toContainText('世界已完成 · 候选未正式结算');
+  expect(calls).toEqual(['variables','variables','world']);expect((await stored(page)).state).toEqual(seeded.state);
+  const committed=await page.evaluate(async()=>{const path='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(path),repo=await SaveRepository.open();try{
+    const draft=await repo.loadDraft('save-a');return await repo.commitTurn({draft,nextAction:'继续休息',useVariableStage:true,useWorldStage:true});
+  }finally{repo.close();}});
+  expect(committed.state.events.local.status).toBe('blocked');expect(committed.state.events.background.status).toBe('blocked');
+  await page.reload();expect(calls).toHaveLength(3);expect((await stored(page)).state).toEqual(committed.state);
+});
