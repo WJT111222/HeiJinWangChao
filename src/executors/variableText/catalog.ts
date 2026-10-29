@@ -48,15 +48,35 @@ const entries:Entry[] = [
   {operation:'set',path:'protagonist.currentWear',commandType:'SetEquipment',value:EquipmentSchema},
   {operation:'set',path:'economy.vehicles[id].purchase',commandType:'PurchaseVehicle',value:z.strictObject({account:AccountSchema,price:positive,vehicle:VehicleAssetSchema.omit({id:true})})},
 ];
+// WorldTaskSchema / WorldEventSchema permit optional fields individually. Their
+// *combined* completion requirement is checked by GameStateSchema.superRefine.
+// Expose the same rule in the JSON catalog sent to the model; never invent a
+// deadline or change which commands the domain engine accepts.
+const nonBlankCondition = {
+  required: ['completionCondition'],
+  properties: { completionCondition: { type: 'string', pattern: '\\S' } },
+};
+function schemaForTextEntry(entry: Entry) {
+  const schema = z.toJSONSchema(entry.value, { target: 'draft-7', unrepresentable: 'any' });
+  if (entry.path === 'tasks[id]') {
+    return { ...schema, anyOf: [{ required: ['dueAt'] }, nonBlankCondition] };
+  }
+  if (entry.path === 'events[id]') {
+    return { ...schema, anyOf: [{ required: ['estimatedEndAt'] }, { required: ['resolvedAt'] }, nonBlankCondition] };
+  }
+  return schema;
+}
+
 /** 正式及离线文本组装共用的值结构目录；不执行、审批或写入状态。 */
 export function textVariableCatalog() {
   return { protocol:'VARIABLE_TEXT_V1', currencyUnit:'CNY_FEN_INTEGER', limits:variableTextLimits,
-    entries:entries.map(({value,...entry})=>({...entry,valueSchema:z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'})})),
+    entries:entries.map(({value,...entry})=>({...entry,valueSchema:schemaForTextEntry({ ...entry, value })})),
     rules:[
       '只输出一个<命令>块；set/add/push 操作 路径 = JSON值，以换行分隔；值可多行。不输出DomainCommand JSON、commandId、evidence、expectedRevision。',
       '[id]替换为真实稳定ID；创建对象省略id，由路径注入。条目是有限操作入口，不是任意深层赋值。',
       '内联NPC初始记忆保持空；用push记忆路径新增，由程序填充当前回合、人物引用和游戏时间。knownInformation同时记录一条个人记忆。',
       '只能更新目录内字段。没有原生命令的余额初始化、旧资产无交易登记、房产购买写入<说明>，不伪造路径。events/tasks仅记录正文已发生的现场结果，不推演场外任务或事件；保留原有提交权限、状态和时间校验。',
+      '创建或更新tasks[id]的最终完整记录，必须至少提供合法dueAt或非空白completionCondition；创建或更新events[id]，必须至少有合法estimatedEndAt、合法resolvedAt或非空白completionCondition。JSON Schema的anyOf表达同一整批存档约束。不得为了凑字段虚构日期或成功条件；证据不充分则不生成该任务/事件命令，在<说明>中列出。不能以status=completed/resolved代替上述结束依据。',
       '开局程序统一注入Story时间，不重复计时。普通回合set worldClock为合法ISO时间且不倒退。',
     ] };
 }
