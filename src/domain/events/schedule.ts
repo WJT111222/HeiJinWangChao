@@ -6,7 +6,7 @@ export function worldEventSchedule(before:GameState,projected:GameState) {
   const due=Object.values(projected.events).filter(e=>!terminalEvent(e)&&e.estimatedEndAt&&Date.parse(e.estimatedEndAt)<=to)
     .sort((a,b)=>Date.parse(a.estimatedEndAt!)-Date.parse(b.estimatedEndAt!)||a.id.localeCompare(b.id));
   const actionable=(e:typeof due[number])=>e.actorRefs.length>0 && e.actorRefs.every(ref=>ref.kind==='organization'
-    || (ref.kind==='npc'&&Boolean(projected.npc[ref.id])&&!projected.npc[ref.id].onScene&&!before.npc[ref.id]?.onScene));
+    || (ref.kind==='npc'&&!(before.turnNumber===0 && ref.id===before.initialCompanionId)&&Boolean(projected.npc[ref.id])&&!projected.npc[ref.id].onScene&&!before.npc[ref.id]?.onScene));
   return {from:before.worldClock,to:projected.worldClock,
     due:due.filter(actionable).map(e=>({eventId:e.id,estimatedEndAt:e.estimatedEndAt!,overdue:Date.parse(e.estimatedEndAt!)<Date.parse(before.worldClock),
       status:e.status,predecessorEventIds:e.predecessorEventIds??[],prerequisites:e.prerequisites,blockers:e.blockers})),
