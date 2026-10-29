@@ -1,6 +1,7 @@
 import { historicalEvent, terminalEvent, isPublicHistory } from '../../domain/events/lifecycle';
 import { conditionEnded, worldEventSchedule } from '../../domain/events/schedule';
 import { WorldEventSchema } from '../../domain/events/schema';
+import { historicalPerspective } from '../../domain/timePreflight';
 import { openingTimeBase } from '../../domain/openingTime';
 import { hasKnownPlayerConnection } from '../../domain/npc/contactReview';
 import { DataError } from '../../domain/common';
@@ -605,7 +606,7 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
         && (event.visibility==='known' || projected.timeline.some(entry=>entry.eventId===id&&isPublicHistory(projected,entry))));
     }),
   );
-  if (draft.variables?.validation === 'validated') for (const due of worldEventSchedule(state,base).due) {
+  if (draft.variables?.validation === 'validated' && !historicalPerspective(state,draft)) for (const due of worldEventSchedule(state,base).due) {
     const after=projected.events[due.eventId] ?? projected.retiredEvents[due.eventId];
     requireWorld(after && (terminalEvent(after) || ('estimatedEndAt' in after && after.estimatedEndAt && Date.parse(after.estimatedEndAt)>Date.parse(base.worldClock))));
   }
