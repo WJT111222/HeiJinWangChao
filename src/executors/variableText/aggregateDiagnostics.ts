@@ -16,7 +16,7 @@ export const domainRuleNames = {
   scene_location: '在场 NPC 缺少明确地点',
   equipment_ownership: '装备类别或归属不符合要求',
   task_event_links: '任务与事件的关联不一致',
-  missing_completion_condition: '任务或事件缺少截止时间或完成条件',
+  missing_completion_condition: '任务新写入缺少截止时间或完成条件',
   premature_result: '未完成任务或事件不能预填成果',
   illegal_transition: '任务或事件状态变更不合法',
   invalid_time: '游戏时间或事实发生时间不合法',
@@ -61,6 +61,9 @@ const dataErrors: Record<string, DomainRule> = {
   REVISION_CONFLICT: 'revision_conflict',
   ENTITY_CONFLICT: 'revision_conflict',
   NOT_FOUND: 'missing_reference',
+  TASK_PLAN: 'missing_completion_condition',
+  EVENT_CONTEXT: 'illegal_transition', EVENT_STATUS: 'illegal_transition', EVENT_NOT_TERMINAL: 'illegal_transition',
+  EVENT_SOURCE: 'missing_reference', EVENT_TIME: 'invalid_time', EVENT_CYCLE: 'illegal_transition',
 };
 
 // 只识别 GameStateSchema.superRefine 中的固定静态消息；

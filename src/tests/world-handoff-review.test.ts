@@ -45,7 +45,7 @@ describe('PR22审查：先复现三条真实路径', () => {
     expect((await repo.load('save-a')).events['false-truth']).toBeUndefined();
   });
   it('V2非联系人不能永久误标成联系人，尚未确认身份应独立暂缓清理', () => {
-    const v2 = { ...handoffState(), schemaVersion: 2 }; Reflect.deleteProperty(v2, 'contactNpcIds'); Reflect.deleteProperty(v2, 'retiredNpcs'); Reflect.deleteProperty(v2, 'contactReviewNpcIds');
+    const v2 = { ...handoffState(), schemaVersion: 2 }; Reflect.deleteProperty(v2, 'retiredEvents'); Reflect.deleteProperty(v2, 'contactNpcIds'); Reflect.deleteProperty(v2, 'retiredNpcs'); Reflect.deleteProperty(v2, 'contactReviewNpcIds');
     const state = migrateSave(v2); expect(state.contactNpcIds).toEqual([]);
   });
   it('有原文依据的忠实概括可交接，叙述事实不必等于报告正文', () => {
@@ -60,7 +60,7 @@ describe('PR22审查：先复现三条真实路径', () => {
 
 
 function legacy(state = handoffState(), version: 1 | 2 | 3 = 2) {
-  const raw = { ...state, schemaVersion: version }; Reflect.deleteProperty(raw, 'contactReviewNpcIds');
+  const raw = { ...state, schemaVersion: version }; Reflect.deleteProperty(raw, 'retiredEvents'); Reflect.deleteProperty(raw, 'contactReviewNpcIds');
   if (version < 3) { Reflect.deleteProperty(raw, 'contactNpcIds'); Reflect.deleteProperty(raw, 'retiredNpcs'); }
   if (version === 1) { Reflect.deleteProperty(raw, 'weatherText'); Reflect.deleteProperty(raw, 'environmentText'); }
   return raw;
@@ -114,7 +114,7 @@ describe('旧档联系人暂缓保护与合法退场', () => {
     result.worldCommands = [reviewRetirement(state)];
     const committed = await commit(repo, result); expect(committed.state.npc['npc-a']).toBeUndefined(); expect(committed.state.contactReviewNpcIds).not.toContain('npc-a');
     expect(committed.state.retiredNpcs['npc-a']).toBeDefined(); expect(committed.state.tasks.work.resolution).toBeDefined();
-    expect((await repo.load('save-a')).schemaVersion).toBe(4);
+    expect((await repo.load('save-a')).schemaVersion).toBe(5);
   });
   it('有既往联系的旧NPC保持待确认；自称无联系或自由文本确认均不能绕过保护', () => {
     const state = migrateSave(legacy()), d = worldDraft(), retirement = reviewRetirement(state);

@@ -55,7 +55,7 @@ describe('PR22第二轮先复现：混合成果和未索引旧正文', () => {
     expect((await repo.load('save-a')).events['false-truth']).toBeUndefined();
   });
   it('旧journal明确交换联系方式但引用为空，不能推定从未联系并批准退场', () => {
-    const raw = { ...handoffState(), schemaVersion: 2 };
+    const raw = { ...handoffState(), schemaVersion: 2 }; Reflect.deleteProperty(raw, 'retiredEvents');
     raw.npc['npc-a'].relationshipText = '尚未与主角接触'; raw.npc['npc-a'].affinity = 0;
     raw.journal = [{ turnId: 'past', revision: 1, relatedActorRefs: [],
       story: { ...story, narrative: '主角与同事交换联系方式，约好以后经常联系。', summary: '与同事建立长期联系。' } }];
@@ -92,7 +92,7 @@ describe('混合任务成果的认知分层与旧档保留', () => {
   it.each([1, 2, 3, 4])('V%s旧成果原文与终态保留，迁移不伪造认知分类或推进正式版本', (version) => {
     const state = handoffState(); state.tasks.work.status = 'completed';
     state.tasks.work.resolution = { at: state.worldClock, outcome: 'success', result: '收到一份未经核实的举报，声称蓝仓藏有违禁品。', reason: '完成举报登记', sourceTurnId: 'past' };
-    const raw = { ...state, schemaVersion: version };
+    const raw = { ...state, schemaVersion: version }; Reflect.deleteProperty(raw, 'retiredEvents');
     if (version < 4) Reflect.deleteProperty(raw, 'contactReviewNpcIds');
     if (version < 3) { Reflect.deleteProperty(raw, 'contactNpcIds'); Reflect.deleteProperty(raw, 'retiredNpcs'); }
     if (version === 1) { Reflect.deleteProperty(raw, 'weatherText'); Reflect.deleteProperty(raw, 'environmentText'); }

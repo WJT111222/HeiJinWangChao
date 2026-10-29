@@ -67,6 +67,10 @@
       "m8P0AMinimalValidation": {
         "notes": "用户批准的规则减负适配：移除文学正则/逐字证据及重复时间证明，保留原来源哈希和历次适配记录。",
         "sha256": "47a8f3ba9632c22cfdcc93e0c458160f34a889cc4c0d08654de82a6bb34b6cbf"
+      },
+      "eventLifecycle": {
+        "notes": "依本轮产品确认适配：事件必须有预计终止时间，World单请求到期推演/清理/公开归档，Task规则独立；保留原来源和历史适配。",
+        "sha256": "3b4f9c83e44576966d83af31d398d9f70e9f7e8a8ee23f8031ea7bca6d8d94aa"
       }
     },
     "writing/natural_prose.md": {
@@ -321,7 +325,11 @@
         "baselineCommit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "legacyPath": "legacy/variables_json/shared/07_command_output.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求；3D-2共享输出协议补齐现场SaveTask/SaveEvent。",
-        "sha256": "d802bf841a1a89ffbcb6a1291f4e3a07b9bf7c20170c36a68c3d922c85ebaf58"
+        "sha256": "90999f850b26527bc8887cd6ee7cacf5b59890ce76d3804d7e48a9a0ef7f2db0"
+      },
+      "eventLifecycle": {
+        "notes": "依本轮产品确认适配：事件必须有预计终止时间，World单请求到期推演/清理/公开归档，Task规则独立；保留原来源和历史适配。",
+        "sha256": "90999f850b26527bc8887cd6ee7cacf5b59890ce76d3804d7e48a9a0ef7f2db0"
       }
     },
     "shared/08_world_output.md": {
@@ -356,6 +364,10 @@
       "m5P5Review4": {
         "notes": "PR22第三轮：事件复用成果认知分类及event-result/event-plan来源隔离；没有可靠独立授权时停用旧人player_confirmed退场。原任务协议、六主模板、世界书、NSFW与七项设置不变。",
         "sha256": "5723dab9e45a24b33575514d79ae60f7f202169099fcb2b2414cce6cd972f484"
+      },
+      "eventLifecycle": {
+        "notes": "依本轮产品确认适配：事件必须有预计终止时间，World单请求到期推演/清理/公开归档，Task规则独立；保留原来源和历史适配。",
+        "sha256": "2916f2afa820dc20fafabcfdd1deb8247b2e05bbefc52fbb93718e0ee4a57197"
       }
     },
     "stages/opening/variables.md": {
@@ -376,6 +388,10 @@
       "m4P3": {
         "notes": "M4-P3：受限场外命令、来源与时间窗口，手动运行不代表正式提交。",
         "sha256": "21af05cb79cf42ea2546ba1d9b72f93110a42479b945329ee8fa7f06df741ac4"
+      },
+      "eventLifecycle": {
+        "notes": "依本轮产品确认适配：事件必须有预计终止时间，World单请求到期推演/清理/公开归档，Task规则独立；保留原来源和历史适配。",
+        "sha256": "0f3de1226ceab0e38534b08f43ce489aa58c0f3f93b75bde55edfc9648e0031e"
       }
     },
     "stages/regular/variables.md": {
@@ -396,6 +412,10 @@
       "m4P3": {
         "notes": "M4-P3：受限场外命令、来源与时间窗口，手动运行不代表正式提交。",
         "sha256": "55f7e129700c228d0fe92ef869f7e3bac27b2a76e8f1e21e9658e5c99b8ac334"
+      },
+      "eventLifecycle": {
+        "notes": "依本轮产品确认适配：事件必须有预计终止时间，World单请求到期推演/清理/公开归档，Task规则独立；保留原来源和历史适配。",
+        "sha256": "58d3d62eab34e0d54df29db4b6cdde70606e35810f794234d6dde2e9f23ce624"
       }
     },
     "variableGroups/protagonist/init.md": {

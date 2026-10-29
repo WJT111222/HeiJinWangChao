@@ -11,7 +11,7 @@
 `DomainCommand` 是严格的 `type` 判别联合，包含 `commandId/type/evidence` 及类型专属的同级字段，不接受旧 group/entityId/payload 包装。旧候选的 JSON 领域命令仍通过结构与副本业务验证；新请求通过 TEXT_COMMAND_CATALOG 的文本映射由程序生成 commandId/evidence/expectedRevision。模型不得自行输出这些程序元数据；候选不直接写入正式状态。
 
 ## 阶段③ 世界输出
-返回JSON对象`{worldCommands:DomainCommand[],taskCommands:DomainCommand[],eventCommands:DomainCommand[],futureEvents:WorldEvent[],visibleHooks:{text,revealAfter?}[],timelineCandidates:string[],unresolved:string[]}`。`futureEvents`需要稳定ID、开始时间、status、actorRefs、visibility、impact、sourceTurnIds；其它字段以技术文档定义为准。
+返回JSON对象`{worldCommands:DomainCommand[],taskCommands:DomainCommand[],eventCommands:DomainCommand[],futureEvents:WorldEvent[],visibleHooks:{text,revealAfter?}[],timelineCandidates:string[],unresolved:string[]}`。`futureEvents`是本批已验证SaveEvent的未来计划镜像，不能单独写库。新事件必需id/title/startAt/estimatedEndAt/backgroundText/goalText/非空actorRefs，以及linkedTaskIds/prerequisites/blockers/visibility/impact/sourceTurnIds。完成条件不能代替预计时间；Task继续使用dueAt或completionCondition。事件终态可outcome=success/failure/changed/cancelled，到期不是成功。
 **与先前技术文档接口的调整说明：** 因开局世界阶段需要真正初始化场外组织，建议将原`WorldStageResult`扩展一个`worldCommands`字段，仅允许操作场外NPC与组织，代码层须严格校验权限。否则由变量阶段预先建组织将违反“只更新在场NPC”的设计分工。
 
 ## 三层不同时间与可见性
@@ -179,3 +179,11 @@ WorldEvent.resultKnowledge?沿用任务现有严格分类，不新增AI阶段。
 evidence保持原字符串Schema，作为来源说明，不是逐字引用证明。AI负责计划/否定/事实、关系及技能变化的语义判断；程序不使用factEvidence/completedPayment或金额文本正则拒绝变量候选。严格JSON、命令白名单、整数分金额、余额、归属、引用、场景一致性、NPC知识类型与权限、生命周期和时间完整性、CAS、幂等及原子提交继续保留。任何单条数据底线错误整批拒绝，无静默部分接纳。空commands合法。
 
 失败安全分类：invalid_json、schema_fields、data_integrity、amount_balance、time_data、candidate_conflict，以及既有permission。可查看白名单字段路径/命令类型/序号，不包含值、原始校验异常、NPC私有内容或供应商响应。世界阶段自身的结构化来源与worldEventOnly/ownerNpcId知识隔离契约不因变量减负而关闭。
+
+## 当前事件生命周期（本次产品决策优先）
+
+World 的 eventCommands 允许 SaveEvent、DeleteEvent、ArchiveEvent。DeleteEvent(eventId,expectedStatus,reason)清理已终止的完整对象；ArchiveEvent(eventId,title,summary)仅凭独立公开来源归档重大实际结案的公开文本，同时清理完整对象。两者保留稳定commandId/evidence，仍受权限、来源、版本、整批模拟和原子事务保护。retiredEvents保存轻量身份与必要成果引用，不能自动授予NPC或主角知识。历史时间线不要求保留完整活跃事件。
+
+EVENT_SCHEDULE含正式时间至变量投影时间内（包括积压）的可处理场外到期事件；同一World请求按时间和依赖推演。正常结束、失败、取消、合理延期均可，无需强制后继；延期的下一预计时间必须晚于本轮窗口。futureEvents不能绕过该验证。旧缺预计时间的事件只读兼容并列unplannedLegacy，不补造历史日期。
+
+Variables只通过TEXT_COMMAND_CATALOG的`set events[id].sceneState`更新已有现场事件的有限状态字段，不规划全新后台事件。新事件规划归World。普通Task保留原有独立语义，不因本次Event调度被强制要求dueAt。权威细则见`docs/WORLD_EVENT_LIFECYCLE.md`。

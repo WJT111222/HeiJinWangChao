@@ -24,7 +24,7 @@ export function purchase(commandId = 'buy-shirt', price = 2500, itemId = 'shirt'
       ownerRef: { kind: 'protagonist', id: 'hero' }, conditionText: '完好' } };
 }
 export function event(id = 'event-a'): WorldEvent {
-  return { id, title: '预约', status: 'scheduled', startAt: gameTime, estimatedEndAt: gameTime,
+  return { id, title: '预约', backgroundText: '既有预约安排', goalText: '完成预约事项', status: 'scheduled', startAt: gameTime, estimatedEndAt: gameTime,
     actorRefs: [{ kind: 'protagonist', id: 'hero' }], linkedTaskIds: [], prerequisites: [], blockers: [],
     visibility: 'hidden', impact: 'major', sourceTurnIds: ['turn-a'] };
 }

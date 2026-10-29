@@ -278,7 +278,7 @@ describe('版本迁移与损坏处理', () => {
     const current = await repository.save('save-a', 0, 'turn-a', [purchase()]);
     current.journal = [{ turnId: 'turn-a', revision: 1, story, relatedActorRefs: [] }];
     current.turnNumber = 1;
-    const legacy = { ...current, schemaVersion: 1 };
+    const legacy = { ...current, schemaVersion: 1 }; Reflect.deleteProperty(legacy, 'retiredEvents');
     Reflect.deleteProperty(legacy, 'contactNpcIds'); Reflect.deleteProperty(legacy, 'retiredNpcs'); Reflect.deleteProperty(legacy, 'contactReviewNpcIds');
     Reflect.deleteProperty(legacy, 'weatherText'); Reflect.deleteProperty(legacy, 'environmentText');
     await rawStore((store) => { store.put(legacy); });
@@ -301,7 +301,7 @@ describe('版本迁移与损坏处理', () => {
     expect(await rawRead()).toEqual(raw);
   });
   it('旧版结构合法但引用损坏时迁移失败并保留原数据', async () => {
-    const raw = { ...game(), schemaVersion: 1, initialCompanionId: 'missing' };
+    const raw = { ...game(), schemaVersion: 1, initialCompanionId: 'missing' }; Reflect.deleteProperty(raw, 'retiredEvents');
     Reflect.deleteProperty(raw, 'weatherText'); Reflect.deleteProperty(raw, 'environmentText');
     await rawStore((store) => { store.put(raw); });
     await expect(repository.load('save-a')).rejects.toMatchObject({ code: 'CORRUPT_SAVE' });

@@ -1,3 +1,4 @@
+import { conditionEnded } from './events/schedule';
 import { z } from 'zod';
 import { openingTimeSelection } from './openingTime';
 import { GameTimeSchema, requireData } from './common';
@@ -84,23 +85,22 @@ function timeIntent(clock: string, action: string): Intent {
   return unknown;
 }
 export interface TimeCandidate { id: string; at: string; title: string; channel: 'door' | 'communication' | 'obstruction' | 'appointment'; conditional: true }
-function completed(state: GameState, ref: string) {
-  const task = state.tasks[ref] ?? state.tasks[ref.replace(/^task:/, '')];
-  const event = state.events[ref] ?? state.events[ref.replace(/^event:/, '')];
-  return task?.status === 'completed' || event?.status === 'resolved';
-}
+const completed = conditionEnded;
 export function timePreflight(state: GameState, action: string) {
   requireData(!state.openingTimePending, 'OPENING_TIME', '尚未确定开局时间，不能执行普通时间预检');
   const intent = timeIntent(state.worldClock, action), end = intent.targetAt ?? intent.endWindow?.to;
   const candidates: TimeCandidate[] = [];
   if (end) for (const event of Object.values(state.events)) {
     if (event.visibility !== 'known' || !['scheduled', 'active'].includes(event.status) ||
-      Date.parse(event.startAt) < Date.parse(state.worldClock) || Date.parse(event.startAt) > Date.parse(end) ||
+      Date.parse(event.startAt) > Date.parse(end) ||
       ![...event.prerequisites, ...event.blockers].every((ref) => completed(state, ref))) continue;
     if (event.linkedTaskIds.some((id) => { const task = state.tasks[id]; return !task || ['blocked', 'cancelled'].includes(task.status) ||
       Date.parse(task.startAt) > Date.parse(event.startAt) || ![...task.prerequisites, ...task.blockers].every((ref) => completed(state, ref)); })) continue;
+    const triggerAt = Date.parse(event.startAt) >= Date.parse(state.worldClock) ? event.startAt
+      : event.estimatedEndAt && Date.parse(event.estimatedEndAt) >= Date.parse(state.worldClock) && Date.parse(event.estimatedEndAt) <= Date.parse(end) ? event.estimatedEndAt : undefined;
+    if (!triggerAt) continue;
     if (state.journal.some((entry) => entry.story.variableGuide.some((guide) => guide.group === 'time' &&
-      guide.subjectHint === `time:interrupt:${event.id}` && Date.parse(guide.observedFact) === Date.parse(event.startAt)))) continue;
+      guide.subjectHint === `time:interrupt:${event.id}` && Date.parse(guide.observedFact) === Date.parse(triggerAt)))) continue;
     const own = event.actorRefs.some((ref) => ref.kind === 'protagonist' && ref.id === state.protagonist.id);
     const sameScene = event.locationId === state.protagonist.locationId && Boolean(state.locations[state.protagonist.locationId]?.parentId);
     const rules = [
@@ -110,11 +110,11 @@ export function timePreflight(state: GameState, action: string) {
       ['appointment', /预约|约定|会面|到场/, own && sameScene && intent.actionKind !== 'travel'],
     ] as const;
     const channel = rules.find(([, pattern, eligible]) => { const match = event.title.match(pattern); return eligible && match && !isNegatedFact(event.title, match.index, match.index! + match[0].length); })?.[0];
-    if (channel) candidates.push({ id: event.id, at: event.startAt, title: event.title, channel, conditional: true });
+    if (channel) candidates.push({ id: event.id, at: triggerAt, title: event.title, channel, conditional: true });
   }
   candidates.sort((a, b) => Date.parse(a.at) - Date.parse(b.at) || a.id.localeCompare(b.id));
   return { ...intent, from: state.worldClock, locationId: state.protagonist.locationId, candidates,
-    policy: '这是条件候选，不是已经发生或必然中断。需有实际敲门/声音/可及时获知通讯/直接阻碍的正文事实；不能因到期自动完成，不代替玩家接受或回应。没有实际中断可继续原行动。时间只由后续变量候选及正式事务提交。',
+    policy: '这是条件候选，预计终止节点不表示完成、通知或必然中断。需有实际敲门/声音/可及时获知通讯/直接阻碍的正文事实；不能因到期自动完成，不代替玩家接受或回应。没有实际中断可继续原行动。时间只由后续变量候选及正式事务提交。',
     guideContract: '明确/有界长行动须在变量规划给出一条group=time，subjectHint=time:end（完成）、time:pause（其他真实原因提前停下）或time:interrupt:<候选id>；observedFact填写本轮实际停止时间ISO（+08:00），textEvidence简述实际行动或停止原因，可概括而无需逐字引用。中断只能停在候选时间，不能先到终点再回写。估计不是保证抵达，可在窗口内交还控制权；早晨6至12点仅为估计语义范围，不是固定唤醒时间。' };
 }
 // 语义分类由同一次正文请求完成；程序验证人物和两段玩家原请求来源，不解析小说文风。

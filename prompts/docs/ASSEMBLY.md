@@ -99,3 +99,7 @@ WorldStage 复用 Runtime、模型路由、StageGuard、Composer 与 saveDraft �
 ## M5-P6 当前叙事规划与Thinking
 
 新增planning两模块，默认顺序350、模式互斥且固定；正文输出先thinking后正文与原结构化段落。开局按角色与契机自由创作，取消强制灾难；六主模板保持各自职责。新渠道默认格式确认，旧off配置保留，cotModels保留读取但不作模型能力白名单。原生输出仅按真实公开响应提取，未知模型不强发专用思考参数；无原生内容不失败。临时查看不存档、不自动传入后续阶段。上文P1/P2历史状态不代表当前未实现的功能；以当前Runtime与M5-P6报告为准。
+
+## 当前事件调度契约
+
+World上下文新增内部EVENT_SCHEDULE（due/scenePending/unplannedLegacy），与TIME_WINDOW共用正式→变量投影时钟，不进入Story或公开日志。到期事件在同一次World请求中推演终态或延期，不额外逐事件收费，不以到期替代成功证据。新事件必备estimatedEndAt、backgroundText、goalText、非空actorRefs；Task保留独立dueAt或条件规则。World eventCommands可SaveEvent/DeleteEvent/ArchiveEvent，清理与归档仍仅为候选并在正式回合原子提交。Variables有限路径events[id].sceneState只操作已有现场事件状态，不规划新后台排程。旧记录缺时间不伪造日期，轻量retiredEvents保留知识隔离及引用，参见docs/WORLD_EVENT_LIFECYCLE.md。
