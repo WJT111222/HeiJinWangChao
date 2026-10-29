@@ -33,6 +33,27 @@ describe('文本协议真实资源与离线组装',()=>{
     expect(catalog.entries.some(e=>['RetireNpc'].includes(e.commandType))).toBe(false);
     expect(catalog.entries.some(e=>e.path==='economy.cash'&&e.operation==='set')).toBe(false);
   });
+  it('任务事件的文本目录包含和最终存档一致的结束依据，不要求模型杜撰时间',async()=>{
+    const catalog=textVariableCatalog();
+    const task=catalog.entries.find(e=>e.path==='tasks[id]')!;
+    const event=catalog.entries.find(e=>e.path==='events[id]')!;
+    expect(task.valueSchema).toMatchObject({
+      type:'object',anyOf:[
+        {required:['dueAt']},
+        {required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\\\S'}}},
+      ],
+    });
+    expect(event.valueSchema).toMatchObject({
+      type:'object',anyOf:[
+        {required:['estimatedEndAt']},
+        {required:['resolvedAt']},
+        {required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\\\S'}}},
+      ],
+    });
+    expect(catalog.rules.join(' ')).toContain('不得为了凑字段虚构日期或成功条件');
+    const actual=await composeTextVariablesPrompt(input());
+    expect(actual.context).toHaveProperty('TEXT_COMMAND_CATALOG',catalog);
+  });
   it.each(['opening','regular'] as const)('%s文本组装只加载相应主模板/九组，不混入旧JSON协议',async(mode)=>{
     const a=input(mode),before=structuredClone(a),r=await composeTextVariablesPrompt(a);
     expect(a).toEqual(before);
