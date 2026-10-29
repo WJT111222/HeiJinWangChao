@@ -157,6 +157,48 @@ describe('安全校验诊断（不改变执行器接受/拒绝结果）', () => 
   });
 });
 
+describe('任务事件完成依据与真实整批校验一致', () => {
+  const task = (extra: Record<string, unknown> = {}) => JSON.stringify({
+    actorRef: { kind: 'protagonist', id: 'hero' },
+    goal: '完成已约定的现场核实',
+    startAt: '2026-10-18T08:00:00+08:00',
+    status: 'planned', prerequisites: [], blockers: [], ...extra,
+  });
+  const event = (extra: Record<string, unknown> = {}) => JSON.stringify({
+    title: '现场约定',
+    status: 'scheduled', startAt: '2026-10-18T08:00:00+08:00',
+    actorRefs: [{ kind: 'protagonist', id: 'hero' }], linkedTaskIds: [],
+    prerequisites: [], blockers: [], visibility: 'known', impact: 'minor',
+    sourceTurnIds: ['turn-a'], ...extra,
+  });
+  it('缺少任务完成依据时原子模拟拒绝，不能部分写入', async () => {
+    const data = setup(`set tasks[new_task] = ${task()}`);
+    const before = structuredClone(data.state);
+    const result = await run(data);
+    expectCode(result, 'domain_validation_failed');
+    if (!result.ok) expect(result.error.diagnostic?.domainRule).toBe('missing_completion_condition');
+    expect(data.state).toEqual(before);
+  });
+  it('具有非空白完成条件的任务原子模拟成功', async () => {
+    const data = setup(`set tasks[new_task] = ${task({ completionCondition: '现场核实完成且提交结果' })}`);
+    const result = await run(data);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value.tasks.new_task.completionCondition).toBe('现场核实完成且提交结果');
+  });
+  it('缺少事件结束依据时原子模拟拒绝', async () => {
+    const data = setup(`set events[new_event] = ${event()}`);
+    const result = await run(data);
+    expectCode(result, 'domain_validation_failed');
+    if (!result.ok) expect(result.error.diagnostic?.domainRule).toBe('missing_completion_condition');
+  });
+  it('具有预计结束时间的事件仍能正常原子模拟', async () => {
+    const data = setup(`set events[new_event] = ${event({ estimatedEndAt: '2026-10-18T09:00:00+08:00' })}`);
+    const result = await run(data);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value.events.new_event.estimatedEndAt).toBe('2026-10-18T09:00:00+08:00');
+  });
+});
+
 describe('NPC实体与稳定身份', () => {
   it('未知NPC不自动建档', async () => expectCode((await compile('set npc[missing].healthText = "健康"')).result, 'entity_not_found'));
   it('合法在场字段更新与健康状态可同批执行，不需要互动许可', async () => {
