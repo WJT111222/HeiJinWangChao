@@ -309,7 +309,7 @@ it('NPC亲历的私有事实不能仅因established就被升级为player_known�
 });
 it('NPC私有事实不能直接转成新公开事件，已有公开来源的正例仍成立', () => {
   const state = npcMemoryState(), original = state.npc['npc-a'].memories.at(-1)!, draft = { ...worldDraft(), baseSaveRevision: state.revision };
-  const command: DomainCommand = { type: 'SaveEvent', commandId: 'publish-private', event: { ...event(), actorRefs: [{ kind: 'npc', id: 'npc-a' }], visibility: 'known' },
+  const command: DomainCommand = { type: 'SaveEvent', commandId: 'publish-private', event: { ...event(), estimatedEndAt:'2026-10-20T08:00:00+08:00', actorRefs: [{ kind: 'npc', id: 'npc-a' }], visibility: 'known' },
     evidence: proof({ kind: 'established', sources: [`memory:npc-a:${original.id}`], fact: original.text }) };
   const output = { ...worldResult(), eventCommands: [command] };
   expect(() => parseWorld(JSON.stringify(output), state, draft)).toThrow();

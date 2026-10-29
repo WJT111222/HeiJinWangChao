@@ -1,3 +1,4 @@
+import { isPublicHistory } from '../../domain/events/lifecycle';
 import type { GameState } from '../../domain/state';
 import { initialCompanionProfile, matchesCompanion } from '../../services/local/companionProfile';
 import type { CompanionProfile } from '../../services/local/companionProfile';
@@ -67,12 +68,7 @@ export function playerView(state: GameState, authoredCompanion?: CompanionProfil
     (item) => item.ownerRef?.kind === 'protagonist' && item.ownerRef.id === state.protagonist.id,
   );
   const timeline = state.timeline
-    .filter((entry) => {
-      const event = state.events[entry.eventId];
-      return (
-        event?.status === 'resolved' && event.impact === 'major' && event.visibility === 'known'
-      );
-    })
+    .filter((entry) => isPublicHistory(state,entry))
     .sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt));
   const visibleLocations = new Set([
     state.protagonist.locationId,

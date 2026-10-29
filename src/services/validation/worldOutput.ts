@@ -1,3 +1,6 @@
+import { historicalEvent, terminalEvent, isPublicHistory } from '../../domain/events/lifecycle';
+import { conditionEnded, worldEventSchedule } from '../../domain/events/schedule';
+import { WorldEventSchema } from '../../domain/events/schema';
 import { openingTimeBase } from '../../domain/openingTime';
 import { hasKnownPlayerConnection } from '../../domain/npc/contactReview';
 import { DataError } from '../../domain/common';
@@ -28,15 +31,7 @@ function offscreen(state: GameState, ref: ActorRef) {
     ? Boolean(state.npc[ref.id] && !state.npc[ref.id].onScene)
     : ref.kind === 'organization' && Boolean(state.organizations[ref.id]);
 }
-function readyConditions(state: GameState, conditions: readonly string[]) {
-  return conditions.every((ref) => {
-    const task =
-      state.tasks[ref] ?? (ref.startsWith('task:') ? state.tasks[ref.slice(5)] : undefined);
-    const event =
-      state.events[ref] ?? (ref.startsWith('event:') ? state.events[ref.slice(6)] : undefined);
-    return task?.status === 'completed' || event?.status === 'resolved';
-  });
-}
+function readyConditions(state: GameState, conditions: readonly string[]) { return conditions.every(ref=>conditionEnded(state,ref)); }
 function outcome(
   proof: WorldEvidence,
   sources: readonly WorldSource[],
@@ -44,6 +39,7 @@ function outcome(
   start: string,
   to: string,
   existing: boolean,
+  failure = false,
 ) {
   requireWorld(proof.kind === 'established' || proof.kind === 'derived');
   requireWorld(Date.parse(start) <= Date.parse(proof.at) && Date.parse(proof.at) <= Date.parse(to));
@@ -51,7 +47,7 @@ function outcome(
   if (proof.decision) {
     const decision = proof.decision;
     requireWorld(decision.targetId === key.slice(key.indexOf(':') + 1)
-      && ['completed', 'resolved'].includes(decision.status) && decision.conditionsSatisfied && !decision.continues && !decision.failure
+      && ['completed', 'resolved'].includes(decision.status) && (failure || decision.conditionsSatisfied) && !decision.continues && (failure || !decision.failure)
       && Date.parse(start) < Date.parse(proof.at));
     return;
   }
@@ -101,7 +97,7 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
   for (const command of result.taskCommands)
     requireWorld(command.type === 'SaveTask', 'permission');
   for (const command of result.eventCommands)
-    requireWorld(command.type === 'SaveEvent', 'permission');
+    requireWorld(['SaveEvent','DeleteEvent','ArchiveEvent'].includes(command.type), 'permission');
   const variableIds =
     draft.variables?.validation === 'validated'
       ? draft.variables.result.commands.map((c) => c.commandId)
@@ -116,7 +112,7 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
       ? [`task:${c.task.id}`]
       : c.type === 'SaveEvent'
         ? [`event:${c.event.id}`]
-        : [],
+        : c.type === 'DeleteEvent' || c.type === 'ArchiveEvent' ? [`cleanup:${c.eventId}`] : [],
   );
   requireWorld(new Set(entityKeys).size === entityKeys.length);
   const createdNpcs = new Map(
@@ -188,7 +184,9 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
             event?.id === command.event.id);
         const terminalTransfer = command.type === 'SaveTask' && !base.tasks[command.task.id]
           && command.task.handoff?.fromTaskId === task?.id && task?.resolution && ['completed', 'cancelled'].includes(task.status);
-        if (work && !cancelling && !terminalTransfer)
+        const eventLifecycle = event && ((command.type === 'SaveEvent' && command.event.id === event.id && (command.event.status === 'blocked' || command.event.outcome === 'failure' || proof.decision?.failure))
+          || ((command.type === 'DeleteEvent' || command.type === 'ArchiveEvent') && command.eventId===event.id));
+        if (work && !cancelling && !terminalTransfer && !eventLifecycle)
           requireWorld(
             (work.status !== 'cancelled' || (command.type === 'SaveTask' && command.task.handoff?.fromTaskId === task?.id && task?.resolution)) &&
               Date.parse(work.startAt) <= Date.parse(proof.at) &&
@@ -434,6 +432,8 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
       case 'SaveEvent': {
         const event = command.event,
           old = base.events[event.id];
+        // 旧缺规划记录可真实终结，不为清理补造过去的预计日期；继续排程必须补齐规划。
+        if(!old || !terminalEvent(event)) requireWorld(WorldEventSchema.safeParse(event).success);
         if (proof.decision) requireWorld(proof.decision.targetId === event.id && proof.decision.status === event.status
           && proof.decision.continues === (event.status === 'blocked'));
         // 预计时间是可调整的估计，非终态不能预存实际结案字段（空串也不接受）。
@@ -488,6 +488,11 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
           if (old.status === 'active' || old.status === 'blocked')
             requireWorld(event.status !== 'scheduled');
         }
+        for (const id of event.predecessorEventIds??[]) {
+          const predecessor=historicalEvent(causal,id);
+          requireWorld(predecessor && terminalEvent(predecessor) && proof.sources.includes(`event:${id}`));
+          requireWorld(predecessor.resolvedAt && Date.parse(predecessor.resolvedAt)<=Date.parse(event.startAt));
+        }
         const knownTurns = new Set([draft.turnId, ...state.journal.map((entry) => entry.turnId)]);
         requireWorld(
           event.sourceTurnIds.includes(draft.turnId) &&
@@ -500,18 +505,12 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
           requireWorld(
             proof.kind !== 'planned' && Date.parse(event.startAt) <= Date.parse(proof.at),
           );
+        const failedEnd = event.status === 'resolved' && (event.outcome === 'failure' || proof.decision?.failure === true);
         if (event.status === 'active' || event.status === 'resolved') {
           requireWorld(
             proof.kind !== 'planned' && Date.parse(event.startAt) <= Date.parse(proof.at),
           );
-          requireWorld(
-            readyConditions(causal, [
-              ...(old?.prerequisites ?? []),
-              ...(old?.blockers ?? []),
-              ...event.prerequisites,
-              ...event.blockers,
-            ]),
-          );
+          requireWorld(failedEnd || readyConditions(causal, [...(old?.prerequisites??[]),...(old?.blockers??[]),...event.prerequisites,...event.blockers]));
         }
         if (event.status === 'resolved') {
           outcome(
@@ -521,7 +520,12 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
             event.startAt,
             base.worldClock,
             Boolean(old),
+            failedEnd,
           );
+          if (proof.decision) {
+            const resultOutcome = proof.decision.failure ? 'failure' : event.outcome ?? 'success';
+            requireWorld(!event.outcome || event.outcome===resultOutcome); event.outcome=resultOutcome;
+          }
           requireWorld(event.resolutionText?.trim());
           requireWorld(!proof.decision || (proof.decision.status === 'resolved' && event.resolutionText === proof.decision.result));
           requireWorld(event.resolvedAt && Date.parse(event.resolvedAt) === Date.parse(proof.at));
@@ -540,6 +544,17 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
         // 候选不发布消息；模型也不能通过改 visibility 伪造主角已知。
         if (event.visibility !== 'hidden' && (event.visibility !== old?.visibility || event.title !== old?.title || event.status !== old?.status || event.resolutionText !== old?.resolutionText))
           requireWorld(hasPlayerKnownFact(command, proof, origins), 'permission');
+        break;
+      }
+      case 'DeleteEvent':
+      case 'ArchiveEvent': {
+        const event=historicalEvent(causal,command.eventId);
+        requireWorld(event && terminalEvent(event));
+        requireWorld(proof.sources.includes(`event:${command.eventId}`) && (proof.kind==='derived'||proof.kind==='established'));
+        requireWorld(!proof.decision || (proof.decision.targetId===command.eventId && proof.decision.status==='retired' && !proof.decision.continues));
+        if(command.type==='DeleteEvent') requireWorld(causal.events[command.eventId]?.status===command.expectedStatus);
+        else requireWorld(event.impact==='major' && event.resolvedAt && hasPlayerKnownFact(command,proof,origins)
+          && proof.fact.includes(command.title) && proof.fact.includes(command.summary),'permission');
         break;
       }
       default:
@@ -584,11 +599,18 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
   catch (error) { if (error instanceof DataError && error.code === 'NPC_TASK_CONFLICT') requireWorld(false, 'npc_task_conflict'); throw error; }
   requireWorld(new Set(result.timelineCandidates).size === result.timelineCandidates.length);
   requireWorld(
-    result.timelineCandidates.every(
-      (id) =>
-        projected.events[id]?.status === 'resolved' && projected.events[id]?.impact === 'major',
-    ),
+    result.timelineCandidates.every((id) => {
+      const event=historicalEvent(projected,id);
+      return Boolean(event && terminalEvent(event) && event.resolvedAt && event.impact==='major'
+        && (event.visibility==='known' || projected.timeline.some(entry=>entry.eventId===id&&isPublicHistory(projected,entry))));
+    }),
   );
+  if (draft.variables?.validation === 'validated') for (const due of worldEventSchedule(state,base).due) {
+    const after=projected.events[due.eventId] ?? projected.retiredEvents[due.eventId];
+    requireWorld(after && (terminalEvent(after) || ('estimatedEndAt' in after && after.estimatedEndAt && Date.parse(after.estimatedEndAt)>Date.parse(base.worldClock))));
+  }
+  for(const command of result.eventCommands) if(command.type==='SaveEvent' && !terminalEvent(command.event))
+    requireWorld(command.event.estimatedEndAt && Date.parse(command.event.estimatedEndAt)>Date.parse(base.worldClock));
   const conflicts = Object.values(base.npc).flatMap((npc) => {
     const tasks = Object.values(base.tasks).filter((task) => task.actorRef.kind === 'npc' && task.actorRef.id === npc.id && !['completed', 'cancelled'].includes(task.status));
     return tasks.length > 1 ? [`已有 NPC ${npc.id} 的未终结任务冲突：${tasks.map((task) => task.id).sort().join('、')}。未自动删除或改派任务；本轮不得新增占用。`] : [];

@@ -1,3 +1,4 @@
+import { historicalEvent, isPublicHistory } from './events/lifecycle';
 import { z } from 'zod';
 import { projectTurn, variableCommandsForTurn } from './turnProjection';
 import { requireData } from './common';
@@ -95,9 +96,11 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
   };
   const knownTurns = new Set(next.journal.map((entry) => entry.turnId));
   for (const id of draft.world!.result.timelineCandidates) {
-    const event = next.events[id];
+    const priorEntry=next.timeline.find(entry=>entry.eventId===id);
+    if(priorEntry && isPublicHistory(next,priorEntry))continue;
+    const event = historicalEvent(next,id);
     requireData(
-      event?.status === 'resolved' &&
+      event && ['resolved','cancelled'].includes(event.status) &&
         event.visibility === 'known' &&
         event.impact === 'major' &&
         event.resolvedAt &&
@@ -121,5 +124,6 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
         ...(event.locationId ? { locationId: event.locationId } : {}),
       });
   }
+  requireData(next.timeline.every(entry=>isPublicHistory(next,entry)),'TIMELINE_NOT_PUBLIC','历史公开依据失效');
   return GameStateSchema.parse(next);
 }

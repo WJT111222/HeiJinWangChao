@@ -141,11 +141,12 @@ describe('运行时 Schema', () => {
     state.events[e.id].visibility = 'hidden'; expect(GameStateSchema.safeParse(state).success).toBe(false);
     state.events[e.id].visibility = 'known'; state.timeline.push(entry); expect(GameStateSchema.safeParse(state).success).toBe(false);
   });
-  it('事件和任务需要结束时间或明确完成条件，但不自动推进或结算', () => {
+  it('旧事件和任务缺规划仍可读取，写入新事件不能用条件替代预计时间', () => {
     const state = game();
     state.events['event-a'] = { ...event(), estimatedEndAt: undefined };
     state.tasks['task-a'] = { ...task(), dueAt: undefined };
-    expect(GameStateSchema.safeParse(state).success).toBe(false);
+    expect(GameStateSchema.safeParse(state).success).toBe(true);
+    expect(()=>commitCommands(game(),'new-missing-plan',0,[{type:'SaveEvent',commandId:'new',event:state.events['event-a'],evidence:'创建'}])).toThrow();
     state.events['event-a'].completionCondition = '当事人结束会面';
     state.tasks['task-a'].completionCondition = '完成预约';
     expect(GameStateSchema.safeParse(state).success).toBe(true);

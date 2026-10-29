@@ -188,7 +188,7 @@ describe('联系人与最小身份历史，严格引用边界', () => {
     expect(projected.memories.npcSummaries['npc-a']).toBeUndefined();
   });
   it('事件仍在推进但已有真实继任职责可退出，不改写历史参与者', () => {
-    const state = handoffState(); state.events.case = { ...event('case'), actorRefs: [{ kind: 'npc', id: 'npc-a' }], linkedTaskIds: ['work'] }; state.tasks.work.linkedEventId = 'case';
+    const state = handoffState(); state.events.case = { ...event('case'), estimatedEndAt:'2026-10-19T08:00:00+08:00', actorRefs: [{ kind: 'npc', id: 'npc-a' }], linkedTaskIds: ['work'] }; state.tasks.work.linkedEventId = 'case';
     const r = handoffResult(state), next = r.taskCommands[0]; if (next.type !== 'SaveTask') throw Error(); next.task.linkedEventId = 'case';
     r.worldCommands = [retireCommand(state)];
     r.eventCommands = [{ type: 'SaveEvent', commandId: 'case-link', event: { ...state.events.case, linkedTaskIds: ['work', 'next'] }, evidence: proof({ kind: 'planned', sources: ['event:case', 'npc:npc-a'], fact: '保留核验安排。' }) }];
@@ -202,10 +202,10 @@ describe('联系人与最小身份历史，严格引用边界', () => {
     expect(() => commitCommands(retired, 'later', retired.revision, [command])).toThrow();
   });
   it('V2迁移将既有NPC独立标记为待复核，V1链式升级，保持revision/journal和幂等；损坏档不洗白', () => {
-    const state = handoffState(), v2 = { ...state, schemaVersion: 2 }; Reflect.deleteProperty(v2, 'contactNpcIds'); Reflect.deleteProperty(v2, 'retiredNpcs'); Reflect.deleteProperty(v2, 'contactReviewNpcIds');
+    const state = handoffState(), v2 = { ...state, schemaVersion: 2 }; Reflect.deleteProperty(v2, 'retiredEvents'); Reflect.deleteProperty(v2, 'contactNpcIds'); Reflect.deleteProperty(v2, 'retiredNpcs'); Reflect.deleteProperty(v2, 'contactReviewNpcIds');
     const migrated = migrateSave(v2); expect(migrated.contactNpcIds).toEqual([]); expect([...migrated.contactReviewNpcIds].sort()).toEqual(Object.keys(state.npc).sort()); expect(migrated.revision).toBe(state.revision); expect(migrated.journal).toEqual(state.journal);
     expect(migrateSave(migrated)).toEqual(migrated);
-    const v1 = { ...v2, schemaVersion: 1 }; Reflect.deleteProperty(v1, 'weatherText'); Reflect.deleteProperty(v1, 'environmentText'); expect(migrateSave(v1).contactNpcIds).toEqual([]);
+    const v1 = { ...v2, schemaVersion: 1 }; Reflect.deleteProperty(v1, 'retiredEvents'); Reflect.deleteProperty(v1, 'weatherText'); Reflect.deleteProperty(v1, 'environmentText'); expect(migrateSave(v1).contactNpcIds).toEqual([]);
     expect(() => migrateSave({ ...v2, npc: { bad: npc() } })).toThrow();
   });
 });
@@ -434,10 +434,10 @@ describe('真实IndexedDB旧档升级与回执', () => {
   it('V2档与已有回执升级后可读取、重放并继续；正式revision和原文不变', async () => {
     const factory = new IDBFactory(), repo = await SaveRepository.open('old-v2', factory); resources.push(repo); await repo.create(handoffState());
     const draft = await completeDraft(repo), first = await repo.commitTurn(submission(draft));
-    const v2 = { ...first.state, schemaVersion: 2 }; Reflect.deleteProperty(v2, 'contactNpcIds'); Reflect.deleteProperty(v2, 'retiredNpcs'); Reflect.deleteProperty(v2, 'contactReviewNpcIds');
+    const v2 = { ...first.state, schemaVersion: 2 }; Reflect.deleteProperty(v2, 'retiredEvents'); Reflect.deleteProperty(v2, 'contactNpcIds'); Reflect.deleteProperty(v2, 'retiredNpcs'); Reflect.deleteProperty(v2, 'contactReviewNpcIds');
     const db = await new Promise<IDBDatabase>((resolve) => { const request = factory.open('old-v2'); request.onsuccess = () => resolve(request.result); });
     await new Promise<void>((resolve, reject) => { const tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(v2); tx.oncomplete = () => resolve(); tx.onabort = () => reject(tx.error); }); db.close();
-    const upgraded = await repo.load('save-a'); expect(upgraded.schemaVersion).toBe(4); expect(upgraded.revision).toBe(first.state.revision); expect(upgraded.journal).toEqual(first.state.journal);
+    const upgraded = await repo.load('save-a'); expect(upgraded.schemaVersion).toBe(5); expect(upgraded.revision).toBe(first.state.revision); expect(upgraded.journal).toEqual(first.state.journal);
     expect(upgraded.contactNpcIds).toEqual([]); expect([...upgraded.contactReviewNpcIds].sort()).toEqual(Object.keys(upgraded.npc).sort());
     const replay = await repo.commitTurn(submission(draft)); expect(replay.replayed).toBe(true); expect(replay.state).toEqual(upgraded);
     const next = await completeDraft(repo, { variables: await elapsedVariables(repo, worldDraft().story!.narrative, 600) });

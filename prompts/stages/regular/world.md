@@ -2,8 +2,10 @@
 输入包含已验证候选世界时间、主角事件结果（或标记variablePending的临时版本）、现有offscreen任务、组织状态、相关NPC个体记忆及已处理事件ID。按照事件真实耗时、前提、阻断条件和任务依赖推进；先检查任务是否仍有效、行动者是否不在主角现场、同一事件是否已结算。
 正常世界里大量事情保持平稳：店铺正常营业、公司继续经营、机关按程序处理事务、NPC照常学习工作或休息。不得为了每轮有输出而强制组织碰撞、NPC遇险或“幕后有人盯上主角”。没有合理变化可以返回全部空数组。
 NPC自主性不是全知。组织和NPC不能获得没有传播路径的主角秘密；长距离行动需要交通时间和资源。官方组织调查遵循证据、权限与程序，商业活动遵循经营条件，黑帮/民间团体有内部利益与成本。
-对未来事件设置清楚的startAt或estimatedEndAt、状态、行动主体、可见性及阻断条件。秘密场外结果留在hidden内部，不通过visibleHooks或时间轴提前透露；仅当主角有可证据支持的知晓渠道，才生成可见线索。
+对未来事件设置清楚的startAt和必填estimatedEndAt、backgroundText、goalText、状态、行动主体、可见性及阻断条件。秘密场外结果留在hidden内部，不通过visibleHooks或时间轴提前透露；仅当主角有可证据支持的知晓渠道，才生成可见线索。
 完结事件只有重大且符合信息披露条件才作为timelineCandidates；不能把小事凑进时间轴。若变量阶段待恢复，本阶段的所有提案必须作为待校验预览，等待补算后复核受影响任务，避免双重执行。
 输出严格JSON {worldCommands,taskCommands,eventCommands,futureEvents,visibleHooks,timelineCandidates,unresolved}。禁止私自改现金、创建现场NPC或宣布主角接受交易。
 
 M4-P3 接入：可基于已有 NPC 动机、组织任务和因果约束自主生成新的场外行动，不限于重复正文；按 WORLD_EVIDENCE_V1 区分 derived、established、planned 与未验证陈述。严格遵守 TIME_WINDOW、PROTECTED_SCENE 和逐字段权限；到期不等于完成，有阻碍不宣布成功。visibleHooks 与时间线仅为内部候选，不发布或正式结算。
+
+必须读取EVENT_SCHEDULE：依预计时间与来源依赖处理实际窗口内到期和积压事项。到期意味着重新推演，不代表成功；受阻则合理更新下一预计时间，成功/失败/取消按实际结果保存。普通终态用DeleteEvent清理，只有值得追踪的新发展才承接；重大且符合公开条件才归档，不无限堆积或强制续篇。全部仍是候选，正式事务前不改变世界。

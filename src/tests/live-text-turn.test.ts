@@ -125,13 +125,15 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
     expect(saved.state.tasks['task-a'].status).toBe('planned');expect(saved.state.events['event-a'].visibility).toBe('hidden');
     expect(JSON.stringify(saved.state.journal)).not.toContain('内部候选线索');
   });
-  it('正文现场任务/事件保留旧JSON能力，文本创建及更新后按原Commit规则结算',async()=>{
+  it('正文现场任务可创建，已有事件用sceneState更新后按原Commit规则结算',async()=>{
     const a=await fixture('regular'),at='2026-10-18T08:10:00+08:00';
+    await a.repo.save('save-a',1,'seed-scene',[{type:'SaveEvent',commandId:'scene-event',event:{...event('scene-event'),sourceTurnIds:[(await a.repo.load('save-a')).journal[0].turnId]},evidence:'已有现场安排'}]);
+    await a.repo.deleteDraft('save-a',a.draft.draftRevision);
+    a.draft=createTurnDraft('save-a',2,'scene-update','regular','继续');await a.repo.saveDraft(a.draft,null);
     const {id:_task,...sceneTask}=task('scene-task');void _task;
-    const {id:_event,...sceneEvent}=event('scene-event');void _event;
     const t=transport(()=>block([set('worldClock',at),
       set('tasks[scene-task]',{...sceneTask,status:'active'}),
-      set('events[scene-event]',{...sceneEvent,status:'active',visibility:'known',sourceTurnIds:[a.draft.turnId]}),
+      set('events[scene-event].sceneState',{status:'active'}),
     ].join('\n')));
     const done=await coordinator(a.repo,t.fetcher).generate(a);
     const saved=await a.repo.commitTurn(submission(done.draft));
@@ -208,5 +210,58 @@ describe('非执行说明及安全诊断',()=>{
     const a=await fixture('regular'),state=await a.repo.load('save-a');const draft=rerollStory(a.draft,{turnKind:'regular',narrative:'会面',summary:'会面',variableGuide:[]});
     const result=await parseTextVariables('<命令>set protagonist.emotionText = "想到<说明>中的句子"</命令>',state,draft);
     expect(result.unresolved).toEqual([]);expect(result.commands).toHaveLength(1);
+  });
+});
+
+describe('事件生命周期贯通真实Runtime、协调器和存档事务',()=>{
+  async function dueFixture() {
+    const a=await fixture('regular');
+    const incident={...event('due-event'),title:'清点诊室',impact:'minor' as const,backgroundText:'值班间隙整理物资',goalText:'完成清点',
+      actorRefs:[{kind:'npc' as const,id:'npc-a'}],status:'active' as const,estimatedEndAt:'2026-10-18T08:05:00+08:00',
+      sourceTurnIds:[(await a.repo.load('save-a')).journal[0].turnId]};
+    await a.repo.save('save-a',1,'seed-due',[{type:'SaveEvent',commandId:'seed-due-event',event:incident,evidence:'已有排程'}]);
+    await a.repo.deleteDraft('save-a',a.draft.draftRevision);
+    a.draft=createTurnDraft('save-a',2,'due-turn','regular','在家休息十分钟');await a.repo.saveDraft(a.draft,null);
+    return {...a,incident};
+  }
+  function dueTransport(a:Awaited<ReturnType<typeof dueFixture>>,badVariables=false) {
+    return transport(()=>block(badVariables?'add economy.cash = -999999':set('worldClock','2026-10-18T08:10:00+08:00')),(ctx)=>{
+      expect(record(ctx.EVENT_SCHEDULE).due).toEqual([expect.objectContaining({eventId:'due-event'})]);
+      const id=string(record(ctx.TURN_CONTEXT).turnId),result='同事完成清点并封存清单。';
+      return {...worldResult(),eventCommands:[
+        {type:'SaveEvent',commandId:'due-finish',event:{...a.incident,status:'resolved',resolvedAt:'2026-10-18T08:05:00+08:00',resolutionText:result,outcome:'success',sourceTurnIds:[...a.incident.sourceTurnIds,id]},
+          evidence:proof({sources:['event:due-event','npc:npc-a'],fact:result,decision:{targetId:'due-event',status:'resolved',reason:'工作正常完成',result,conditionsSatisfied:true,continues:false,resultKnowledge:{facts:[result],reported:[],suspected:[]}}})},
+        {type:'DeleteEvent',commandId:'due-clean',eventId:'due-event',expectedStatus:'resolved',reason:'普通事务结束无需继续追踪',evidence:proof({at:'2026-10-18T08:06:00+08:00',sources:['event:due-event'],fact:'事项完成后清理完整记录。',decision:{targetId:'due-event',status:'retired',reason:'清点已结束',result:'保留最小身份',conditionsSatisfied:true,continues:false}})},
+      ]};
+    });
+  }
+  it('一次World请求完成到期推演与清理；刷新、重复提交不重复执行，下一轮没有旧排程',async()=>{
+    const a=await dueFixture(),before=await a.repo.load('save-a'),t=dueTransport(a);
+    const done=await coordinator(a.repo,t.fetcher).generate(a);expect(t.calls.map(c=>c.stage)).toEqual(['story','variables','world']);
+    expect(await a.repo.load('save-a')).toEqual(before);expect((await a.repo.loadDraft('save-a'))?.world).toEqual(done.draft.world);
+    const resumed=await coordinator(a.repo,t.fetcher).generate({...a,draft:done.draft});expect(resumed.status).toBe('complete');expect(t.calls).toHaveLength(3);
+    const input=submission(done.draft),saved=await a.repo.commitTurn(input),replay=await a.repo.commitTurn(input);
+    expect(saved.state.events['due-event']).toBeUndefined();expect(saved.state.retiredEvents['due-event'].detail).toBeUndefined();
+    expect(saved.state.timeline).toEqual([]);expect(replay.replayed).toBe(true);expect(await a.repo.load('save-a')).toEqual(saved.state);
+    const next=transport(()=>block());await coordinator(a.repo,next.fetcher).generate({...a,draft:saved.draft});
+    expect(record(next.calls[2].context.EVENT_SCHEDULE).due).toEqual([]);expect(JSON.stringify(next.calls[2].context.OFFSCREEN_STATE)).not.toContain('due-event');
+  });
+  it('删除与journal、记忆同事务回滚；重试只落库一次',async()=>{
+    const a=await dueFixture(),t=dueTransport(a),done=await coordinator(a.repo,t.fetcher).generate(a),before=await a.repo.loadGame('save-a');
+    const put=IDBObjectStore.prototype.put;
+    const spy=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementation(function(this:IDBObjectStore,...args:Parameters<IDBObjectStore['put']>){if(this.name==='saves')throw new Error('mock lifecycle transaction failure');return put.apply(this,args);});
+    await expect(a.repo.commitTurn(submission(done.draft))).rejects.toThrow();spy.mockRestore();
+    expect(await a.repo.loadGame('save-a')).toEqual(before);expect((await a.repo.load('save-a')).events['due-event']).toBeDefined();
+    const saved=await a.repo.commitTurn(submission(done.draft));expect(saved.state.events['due-event']).toBeUndefined();expect(saved.state.journal).toHaveLength(2);
+  });
+  it.each(['world-disabled','variables-failed'] as const)('%s不能结算或清理到期事件，不额外请求',async(mode)=>{
+    const a=await dueFixture(),before=await a.repo.load('save-a'),t=dueTransport(a,mode==='variables-failed');
+    if(mode==='world-disabled')a.settings.runtime.useWorldStage=false;
+    const runner=coordinator(a.repo,t.fetcher);
+    if(mode==='variables-failed')await expect(runner.generate(a)).rejects.toThrow();
+    else expect((await runner.generate(a)).status).toBe('skipped');
+    expect(t.calls.map(c=>c.stage)).toEqual(['story','variables']);expect(await a.repo.load('save-a')).toEqual(before);
+    const pending=await a.repo.loadDraft('save-a');if(!pending)throw Error('missing draft');
+    await expect(a.repo.commitTurn(submission(pending))).rejects.toThrow();expect(await a.repo.load('save-a')).toEqual(before);
   });
 });

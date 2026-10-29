@@ -106,6 +106,7 @@ export function parseVariables(text: string, state: GameState, draft: TurnDraft)
   const raw = json(text);
   const checked = VariableResultSchema.safeParse(raw);
   if (!checked.success) throw variableValidationError(checked.error, raw);
+  if(checked.data.commands.some(c=>c.type==='DeleteEvent'||c.type==='ArchiveEvent'))throw new AiError('permission');
   if (!draft.story) throw new AiError('candidate_conflict');
   try { state = openingTimeBase(state, draft); } catch (error) { throw variableValidationError(error); }
   if (new Set(checked.data.commands.map((c) => c.commandId)).size !== checked.data.commands.length) throw new AiError('candidate_conflict');

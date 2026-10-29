@@ -66,7 +66,7 @@ describe('隐藏事件不是NPC知情授权', () => {
     const before = structuredClone(state);
     const next: DomainCommand = { type: 'SaveEvent', commandId: 'hidden-followup',
       evidence: proof({ at, sources: ['event:private-incident'], fact: '暗格附近的看守开始轮值。' }),
-      event: { ...event('followup'), title: '暗格看守轮值', status: 'active', startAt: state.worldClock, estimatedEndAt: at,
+      event: { ...event('followup'), title: '暗格看守轮值', status: 'active', startAt: state.worldClock, estimatedEndAt: '2026-10-20T08:00:00+08:00',
         sourceTurnIds: [draft.turnId], actorRefs: [{ kind: 'npc', id: 'npc-a' }, { kind: 'npc', id: 'npc-b' }] } };
     expect(() => parseWorld(JSON.stringify({ ...worldResult(), eventCommands: [next] }), state, draft)).not.toThrow();
     expect(state).toEqual(before); expect(state.npc['npc-b'].memories).toHaveLength(1);

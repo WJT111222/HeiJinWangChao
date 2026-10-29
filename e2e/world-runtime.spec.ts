@@ -240,6 +240,8 @@ test('二轮约束：计划地点、事件预结案和 NPC 双任务拒绝，合
     const e = {
       id: 'event-a',
       title: '诊室器材清点',
+      backgroundText: '值班后核对现有器材',
+      goalText: '完成器材清点',
       status: 'scheduled',
       startAt: '2026-10-18T09:00:00+08:00',
       estimatedEndAt: '2026-10-18T10:30:00+08:00',

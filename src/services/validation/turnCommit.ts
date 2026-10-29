@@ -1,3 +1,4 @@
+import { eventById } from '../../domain/events/lifecycle';
 import { requireData } from '../../domain/common';
 import { fingerprint } from '../../domain/commands';
 import { completeTurnDraft, turnCommands } from '../../domain/turnCommit';
@@ -19,7 +20,7 @@ export function validateTurnCandidates(state: GameState, draft: TurnDraft) {
   const ready = (conditions: string[]) =>
     conditions.every((id) => {
       const task = state.tasks[id.replace(/^task:/, '')];
-      const event = state.events[id.replace(/^event:/, '')];
+      const event = eventById(state,id.replace(/^event:/, ''));
       return task?.status === 'completed' || event?.status === 'resolved';
     });
   for (const command of draft.variables!.result.commands) {

@@ -19,4 +19,4 @@ AI根据选定Story理解已发生变化，不替World推演后台任务、事�
 物品获得set items[id]；购买set items[id].purchase一次扣款入库；转交set items[id].transfer；遗失set items[id].loss；数量用add items[id].quantity。装备用set protagonist.currentWear完整装备对象。车辆购买set economy.vehicles[id].purchase，车辆房产不重复进重要物品表。
 组织用set organizations[id]创建四类之一的完整对象；关系用set organizations[id].protagonistRelation={relation,reason}开放文字。已有经营/资产等未支持字段放说明，不覆盖组织表。
 
-现场事件与任务：仅记录正文已经发生、关联主角或现场NPC的结果。set events[id] = 完整WorldEvent去掉id；set tasks[id] = 完整WorldTask去掉id。结构、演员、引用、来源回合、状态与游戏时间使用TEXT_COMMAND_CATALOG原Schema；更新保留已有起点和完成条件，已终结不重复修改。场外任务/事件、未来推演仍交给World，不因预计到期判成功。缺字段写说明，不自由补丁。
+现场事件与任务：变量阶段不负责新建追踪事件或估计后台结束时间。仅对正式状态中已有、正文实际涉及的现场事件使用 set events[id].sceneState = {"status":"active"}；结案可给 status=resolved、resolvedAt、resolutionText、outcome(success/failure/changed)，取消为cancelled。程序保留原排程/参与者/关联并添加当前来源回合；不能改预计时间、背景、目标、前序或清理。新事件与延期、承接、归档交给World根据Story处理，不写不支持的旧 events[id] 路径。Task仍用set tasks[id]完整对象，其dueAt或非空completionCondition至少一项；Task不套用事件强制预计时间规则。已有缺规划旧记录可记录现场状态，不编造历史日期。未知操作写说明，不自由补丁。
