@@ -630,7 +630,7 @@ describe('真实命令目录、解析与安全候选验证', () => {
         to: { kind: 'npc', id: 'npc-a' },
       },
       { type: 'SetWorldClock', commandId: 'clock', evidence, worldClock: gameTime },
-      { type: 'SaveEvent', commandId: 'event', evidence, event: event() },
+      { type: 'SaveEvent', commandId: 'event', evidence, event: { ...event(), status: 'active' } },
       { type: 'SaveTask', commandId: 'task', evidence, task: task() },
       { type: 'CreateOrganization', commandId: 'org', evidence, organization: organizations[1] },
       {
@@ -660,10 +660,12 @@ describe('真实命令目录、解析与安全候选验证', () => {
           : `现金与线上账户已完成 ${command.type} ${amount}分`;
     }
     a.draft.story!.narrative = commands.map((command) => command.evidence).join('。');
+    // Variables只更新已有现场事件；新事件规划归World，保留十四类命令的整批与经济断言。
+    a.state.events['event-a'] = event();
     const before = structuredClone(a.state);
-    expect(
-      parseVariables(JSON.stringify({ ...emptyVariables, commands }), a.state, a.draft).commands,
-    ).toHaveLength(14);
+    const parsed = parseVariables(JSON.stringify({ ...emptyVariables, commands }), a.state, a.draft);
+    expect(parsed.commands).toHaveLength(14);
+    expect(parsed.commands).toContainEqual(expect.objectContaining({ type: 'SaveEvent', event: expect.objectContaining({ status: 'active' }) }));
     expect(a.state).toEqual(before);
     expect(() =>
       parseVariables(

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { commitCommands, fingerprint } from '../../domain/commands';
 import { DataError } from '../../domain/common';
+import { validateSceneEventUpdate } from '../../domain/events/scenePermission';
 import { openingTimeBase } from '../../domain/openingTime';
 import { GameStateSchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
@@ -34,8 +35,11 @@ async function simulateChecked(plan: VariableExecutionPlan, state: GameState,
     return failed('duplicate_or_conflicting_command');
   try {
     // 整份批次只调用一次；不以逐条commit产生中间revision，不使用设备当前时间。
-    return { ok: true, value: commitCommands(openingTimeBase(state, context.draft), context.draft.turnId,
-      context.expectedRevision, checked.value.commands, state.updatedAt) };
+    const projected = commitCommands(openingTimeBase(state, context.draft), context.draft.turnId,
+      context.expectedRevision, checked.value.commands, state.updatedAt);
+    for (const command of checked.value.commands)
+      if (command.type === 'SaveEvent') validateSceneEventUpdate(state, projected, command.event);
+    return { ok: true, value: projected };
   } catch (error) {
     const related = checked.value.origins.filter((origin) => origin !== null);
     if (error instanceof z.ZodError)
@@ -44,7 +48,7 @@ async function simulateChecked(plan: VariableExecutionPlan, state: GameState,
       const code = ['REVISION_CONFLICT', 'ENTITY_CONFLICT'].includes(error.code) ? 'revision_conflict'
         : ['DUPLICATE_COMMAND', 'COMMAND_CONFLICT', 'DUPLICATE_MEMORY'].includes(error.code) ? 'duplicate_or_conflicting_command'
         : ['UNKNOWN_BALANCE', 'INSUFFICIENT_FUNDS'].includes(error.code) ? 'invalid_amount'
-        : ['OWNERSHIP', 'KNOWLEDGE_KIND', 'MEMORY_SOURCE'].includes(error.code) ? 'permission_denied'
+        : ['OWNERSHIP', 'KNOWLEDGE_KIND', 'MEMORY_SOURCE', 'SCENE_PERMISSION'].includes(error.code) ? 'permission_denied'
         : 'domain_validation_failed';
       return failed(code, null, related, aggregateDomainDiagnostic(error));
     }

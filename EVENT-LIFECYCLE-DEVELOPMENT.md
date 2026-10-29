@@ -1,5 +1,61 @@
 # 动态世界事件生命周期
 
+## PR #50 五代目审查：Variables / World 事件权限修补
+
+本节为审查基线 `e36919e` 之后的实际新修补与本次重新执行结果；下方原实现的测试记录仅为历史，不作为本轮验证。
+审查：[issuecomment-6496830870](https://github.com/WJT111222/HeiJinWangChao/pull/50#issuecomment-6496830870)。
+
+### 实际复现
+
+先新增6项测试，在未修改业务代码时运行：4失败、2通过。四条失败分别证明纯组织事件被文本Variables解析、独立计划模拟、规范化候选解析和真实IndexedDB `commitTurn` 错误接受；最后一条确实形成了正式提交，不是仅测试helper。合法主角现场与原World组织事件对照均通过。另以失败测试确认不能把新ID伪装为已有事件绕过文本入口。
+
+### 最小修补
+
+新增 `validateSceneEventUpdate()`，从正式状态按ID查找原事件，使用原始参与者判断权限。必须正向关联主角或本幕在场NPC，且其中所有NPC都属于本幕现场集合。纯组织、空参与者和混合离场NPC被拒绝；相同地点、组织拥有现场成员等间接线索不能单独授权。
+
+本幕现场集合采用正式快照在场NPC与整批合法投影在场NPC的并集，避免合法入场和离场被误伤。不从正文关键词、名字或关系说明猜测在场，不要求新增事实凭据。参与者不能借候选改写，继续受既有领域不可变约束保护。
+
+同一函数用于：
+
+1. 文本解析后的合法模拟结果检查。
+2. 独立 `simulateVariablePlan()`：重新编译并调用原 `commitCommands` 得到副本，权限检查通过后才返回；失败无部分value。
+3. 已保存/直接提供的规范化Variables候选 `parseVariables()`，也覆盖World启动前的变量复核。
+4. 正式 `validateTurnCandidates()` 重验，不信任validated标记。
+
+编译器仍只做结构映射，中间计划不代表执行许可。没有在全局 `commitCommands` 加Variables限制，World仍按其原来源协议处理纯组织场外事件。Task权限保持原规则。
+
+### 本次文件
+
+- 新增 `src/domain/events/scenePermission.ts`：共享正向权限判定。
+- 修改 `src/executors/variableText/index.ts`：独立模拟完成后检查权限，返回安全permission_denied。
+- 修改 `src/services/validation/aiOutputs.ts`：文本及规范化变量结果共用判定。
+- 修改 `src/services/validation/turnCommit.ts`：正式提交同边界重验。
+- 新增 `src/tests/scene-event-permission.test.ts`：21项安全及合法场景回归。
+- 修改 `src/tests/prompt-runtime.test.ts`：保留十四类整批和经济断言，将SaveEvent夹具改为已有事件scheduled→active，另验证实际状态更新；不再把创建新事件混为变量现场更新。
+- 修改 `e2e/event-lifecycle.spec.ts`：新增一项桌面/移动浏览器场景（共2项），验证纯组织被Variables拒绝、合法现场恢复、组织变化仅经World候选正式提交。
+- 更新本报告。
+
+未改GameState/DomainCommand Schema、迁移、World来源校验、三阶段执行器、Prompt/Manifest、UI、模型协议、重试或费用规则。
+
+### 本次重新执行的验证
+
+- 修复前最小复现：4失败、2对照通过；另一个新ID绕过反例修复前失败。日志为本环境临时文件，不含真实模型数据。
+- `npx vitest run src/tests/scene-event-permission.test.ts src/tests/event-lifecycle-runtime.test.ts src/tests/live-text-turn.test.ts`：69项通过，其中新增21项。
+- `npm run prompts:check`：82项通过。
+- `npm run check`：53个文件、1954项通过，包含本次全部新增用例；ESLint、TypeScript及Vite生产构建通过。仅有既有包体积建议。
+- `CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/event-lifecycle.spec.ts e2e/variable-runtime.spec.ts e2e/world-runtime.spec.ts`：36/36通过（桌面18、移动18；新增场景各执行一次，共2项；2.2分钟）。
+- `git diff --check`：通过。旧断言未删除、未跳过；本轮只运行上述相关E2E，不以先前300项结果代替本次执行。
+
+新增回归覆盖组织-only（包括同地点）、空参与者、现场/离场混合、伪造validated、新ID、伪加主角、合法主角/现场NPC/组织+现场NPC、入/离场、批次失败无部分修改、正式回执幂等与World原组织权限。浏览器网络为Mock，未调用真实付费模型。
+
+### 边界
+
+结构化onScene状态是当前现场依据，不声称程序能独立证明小说语义，不新增审判或审批机制。旧越权或非既有事件的Variables候选会在复核时拒绝；原文和正式状态保留，需玩家显式恢复，不自动追加模型请求。资金、NPC知识隔离、CAS、版本、幂等和事务机制保持原样。
+
+---
+
+以下为首次生命周期实现记录（`e36919e`），保留追溯。
+
 ## 基线与审计
 
 从 main@9d930cf6b2e5197149f6dc89634f478089228c27 创建 codex/world-event-lifecycle。
