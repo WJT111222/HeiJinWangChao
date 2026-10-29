@@ -249,3 +249,15 @@ it('开局同伴的受保护事件不被排入强制场外处置，保持原Worl
   expect(worldEventSchedule(a.state,projectTurn(a.state,a.draft)).scenePending).toContain('investigation');
   expect(()=>resultFor(a.state,a.draft,[])).not.toThrow();
 });
+
+it('未来安排可提前取消并记录真实终止时刻；公开重大取消可归档，不伪造未来时间',()=>{
+  const e={...ongoing(),impact:'major' as const,status:'scheduled' as const,startAt:'2026-10-20T08:00:00+08:00',estimatedEndAt:'2026-10-20T10:00:00+08:00'},a=prepared([e]);
+  const publicText='公开通知：排程撤销。无需再赴约。';a.draft.story!.narrative=publicText;
+  const cancelled:DomainCommand={type:'SaveEvent',commandId:'future-cancel-at',event:{...e,status:'cancelled',resolvedAt:actionTime,resolutionText:'未来排程已撤销。'},
+    evidence:proof({sources:[`event:${e.id}`,'npc:npc-a'],fact:'排程已撤销。',decision:{targetId:e.id,status:'cancelled',reason:'安排不再必要',result:'未来排程已撤销。',conditionsSatisfied:false,continues:false}})};
+  const archive:DomainCommand={type:'ArchiveEvent',commandId:'future-cancel-archive',eventId:e.id,title:'排程撤销',summary:'无需再赴约',
+    evidence:proof({kind:'established',at:'2026-10-18T08:06:00+08:00',sources:[`event:${e.id}`,'story:current'],fact:publicText})};
+  const result=resultFor(a.state,a.draft,[cancelled,archive]),after=projectTurn(a.state,a.draft,result.eventCommands);
+  expect(after.timeline[0].occurredAt).toBe(actionTime);expect(after.retiredEvents[e.id].detail?.startAt).toBe(e.startAt);
+  expect(GameStateSchema.safeParse(after).success).toBe(true);
+});

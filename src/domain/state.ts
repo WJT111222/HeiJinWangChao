@@ -130,7 +130,8 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
   for (const event of Object.values(s.events)) {
     if (event.resultKnowledge) check(['resolved', 'cancelled'].includes(event.status), '未结案事件不能预存成果分类');
     location(event.locationId); event.actorRefs.forEach((ref) => actor(ref, true)); timeRange(event.startAt, event.estimatedEndAt);
-    timeRange(event.startAt, event.resolvedAt);
+    if(event.status!=='cancelled')timeRange(event.startAt, event.resolvedAt);
+    if(event.resolvedAt)check(Date.parse(event.resolvedAt)<=Date.parse(s.worldClock),'事件实际终止时间在未来');
     if (event.status === 'resolved') check(event.resolvedAt && event.resolutionText
       && Date.parse(event.resolvedAt) <= Date.parse(s.worldClock), '已完成事件缺少合法结案时间或结局');
     for (const id of event.linkedTaskIds) check(s.tasks[id]?.linkedEventId === event.id, '事件关联任务错误');
@@ -167,7 +168,8 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     check(Date.parse(event.retiredAt) <= Date.parse(s.worldClock), '事件清理时间在未来');
     if (event.detail) {
       location(event.detail.locationId); event.detail.actorRefs.forEach((ref) => actor(ref, true));
-      timeRange(event.detail.startAt, event.detail.estimatedEndAt); timeRange(event.detail.startAt,event.detail.resolvedAt);
+      timeRange(event.detail.startAt, event.detail.estimatedEndAt);
+      if(event.status!=='cancelled')timeRange(event.detail.startAt,event.detail.resolvedAt);
       if (event.detail.resolvedAt) check(Date.parse(event.detail.resolvedAt) <= Date.parse(s.worldClock), '事件结案时间在未来');
     }
     check(!event.publication || Boolean(event.detail?.resolvedAt && event.detail.impact === 'major' && Date.parse(event.publication.at)<=Date.parse(s.worldClock) && Date.parse(event.publication.at)>=Date.parse(event.detail.resolvedAt)), '事件公开归档缺少重大实际结案');
