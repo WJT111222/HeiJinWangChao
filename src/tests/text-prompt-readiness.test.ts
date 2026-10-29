@@ -40,14 +40,14 @@ describe('文本协议真实资源与离线组装',()=>{
     expect(task.valueSchema).toMatchObject({
       type:'object',anyOf:[
         {required:['dueAt']},
-        {required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\\\S'}}},
+        {required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}},
       ],
     });
     expect(event.valueSchema).toMatchObject({
       type:'object',anyOf:[
         {required:['estimatedEndAt']},
         {required:['resolvedAt']},
-        {required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\\\S'}}},
+        {required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}},
       ],
     });
     expect(catalog.rules.join(' ')).toContain('不得为了凑字段虚构日期或成功条件');
