@@ -7,7 +7,7 @@ import { ImportantItemSchema } from './items/schema';
 import { EconomySchema } from './economy/schema';
 import { OrganizationSchema } from './organizations/schema';
 import { TimelineEntrySchema, StoredWorldEventSchema, WorldTaskSchema, RetiredEventSchema } from './events/schema';
-import { isPublicHistory, eventById, validateEventLinks } from './events/lifecycle';
+import { isHistoricalEntry, eventById, validateEventLinks } from './events/lifecycle';
 import { MemoryStateSchema, npcKnowledgeKind } from './memories/schema';
 
 export const LocationSchema = z.strictObject({ id: IdSchema, name: TextSchema, parentId: IdSchema.optional() });
@@ -161,7 +161,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
   }
   check(new Set(s.timeline.map((entry) => entry.eventId)).size === s.timeline.length, '历史事件重复归档');
   for (const entry of s.timeline) {
-    check(isPublicHistory(s, entry), '历史条目必须引用已知重大结案事件');
+    check(isHistoricalEntry(s, entry), '历史条目必须引用重大实际结案事件');
     location(entry.locationId); entry.actorRefs.forEach((ref) => actor(ref, true));
   }
   for (const event of Object.values(s.retiredEvents)) {

@@ -1,3 +1,130 @@
+# PR #50：玩家全量观察、独立认知与事件权限最终修订
+
+本节对应 [最终确认产品设计](https://github.com/WJT111222/HeiJinWangChao/pull/50#issuecomment-6506784194)，在 `75b7f5c` 上继续实现。**本节与 `docs/WORLD_EVENT_LIFECYCLE.md` 优先于本文下方历史记录中“玩家资料遮蔽/仅主角知晓才归档/重要事件先清理再公开”的描述。** 历史测试数字不作为本轮验证结果。
+
+## 差异审计与方案
+
+| 原差异 | 本次实现与文件范围 |
+| --- | --- |
+| playerView以knownActors及visibility过滤人物、组织、地点、物品、事件和记忆 | 独立玩家观察投影返回全部正式记录，Panels与MemoryPanel只读展示；不供Story复用 |
+| NPC详情缺个人原始/长期记忆、knownInformation与人物总结 | 复用现有MemoryEntry/NpcSummary与覆盖凭据，人物详情及记忆页均能按人物/内容/来源搜索、每页20条；完整来源按需展开 |
+| internal与npc_private展示遮蔽混同于角色认知 | 保留存量标记、owner/source/knowledgeKind不变，internal明确标注“不代表任何角色已知”，转述/推测/未知不会显示为事实 |
+| DeleteEvent允许重要或有必要引用的终态丢弃完整对象 | 只允许minor独立终态；主角参与/前序主线、任务、记忆、组织、后继与历史引用均保守保护；ArchiveEvent保留重要完整对象 |
+| 历史归档依赖主角先知道 | 移除玩家展示/归档的知晓资格；可信fact可归档，timelineCandidates只写明确facts，不复制完整混合结果叙述 |
+| 规范化Variables可借SaveEvent改sceneState外字段 | 共用validateSceneEventUpdate，比较除五个sceneState字段及程序来源之外的全部字段；sourceTurnIds精确保留旧来源并追加本回合 |
+
+本轮无需拆出新PR：前端消费现有正式状态，领域调整限定事件保留/历史与Variables权限；不需要新增存档字段、Schema版本、玩家开关、模型协议或AI阶段。没有把全部NPC私有资料加入Story。共享VisibilitySchema不删除、不重写，以保留角色认知语义和旧档兼容。
+
+## 实际失败复现
+
+先增加7项玩家观察/保留/归档测试，以及12项非sceneState字段权限回归，在修改业务代码前运行两文件：**40项中17失败、23通过**。失败实际复现了隐藏/部分知晓事件和场外档案无法查看、重要/主角/必要任务引用事件被普通清理、可信场外成果归档被知晓资格阻挡，以及部分规划/影响/背景等字段被规范化候选错误接受。已有引用和环检测本来就拒绝的反例继续作为对照，不宣称全部都是新漏洞。
+
+字段测试走 `parseVariables` 和真实 fake-indexeddb `SaveRepository.commitTurn`，伪造validated标记不能绕过，失败整份正式状态与草稿保持原样。此前纯组织/空参与者/混合离场NPC拒绝、合法入离场与World正常组织推演的21项回归全部保留。
+
+## 玩家观察与角色认知
+
+- 玩家能查看所有正式NPC、当前身份/关系/位置/状态、创角原始设定（另列，不覆盖当前资料）、组织分类资料、地图、全部重要物品及正式经济资产。
+- 世界事件列出hidden/partially_known/known的全部正式记录、开始/预计/实际时间、背景目标、状态、参与者和引用。任务进展、旧清理成果和退场人物保留资料可独立展开。
+- 原即时/短/中/长与永久journal继续使用现有来源；新增“人物记忆”阅读分组，不新增存储层或复制数据。NPC原始记忆、特殊NPC长期记忆、npcSummaries都保留所有者、游戏时间、认知性质、知识来源、sourceTurnIds和sourceMemoryIds。无可靠来源的旧总结显示未知，不补造亲历。全量实际short记录另行补充显示，不作为新的压缩产物，publicShortMemories与Story检索/压缩算法不改。
+- 原人物记忆不会因为被总结而从只读UI消失。搜索/分页/展开来源只读，无AI调用。完整内部世界记录不冒充该NPC已经记住。永久正文搜索仍只检索journal，不把NPC秘密混入历史正文或主角回忆。
+- `contextFor`、publicNpc、storyMemoryContext、npcKnowledgeContext、worldSources、ownerNpcId和worldEventOnly不因UI开放而放宽。打开面板前后正式state及真实Story上下文相等；B不会仅凭A的event ID获得A的秘密。API凭证/设置/认证头不传入世界记录组件。
+- 记忆维护Hook、阈值、模型预算、原始来源覆盖、授权与取消机制不变；公开自动维护不获得NPC额外付费授权。
+
+## 事件规则与旧数据
+
+所有非终态保留。significant/major终态保留；没有独立主线标记，程序保守保护主角参与及其前序承接链、有任务/事件/知识/组织/历史引用的事件，不用中文关键词猜测脱离主线。只有minor独立终态能清理，保留最小retired身份避免ID复活。确有承接时保留被引用的原记录，不强制造后继。
+
+重要事件通过ArchiveEvent归档后仍保存完整原对象，可信事件facts可独立支持归档；timelineCandidates的标题、摘要和结果只采用resultKnowledge.facts。resolutionText、reported和suspected仍可只读查看，但不能被自动写成历史客观结论。旧无分类成果仍可读取，不补造facts；若有独立已核实来源，可沿ArchiveEvent归档。
+
+不新增迁移或重写正式玩家存档：V1–V4按既有链迁移到V5，V5原样读取；新增测试覆盖各版本的时钟、revision、原事件和时间线不变，以及旧retiredEvents.detail/publication继续读取和归档。旧已清理且没有保留的背景无法恢复，不调用AI捏造。旧候选可以读取，但越权非sceneState修改、重要事件清理或缺客观成果的自动时间线在正式重验时会拒绝，需用户主动补算，不隐式重发请求。
+
+## 提示词与费用
+
+只改World共享输出契约、开局/普通World职责的相关段落，以及命令目录和权威技术文档。Manifest刷新字符数/版本/hash；sources.lock新增本轮适配记录，保留原来源历史。世界书、NSFW、Thinking、Story/Variables主模板、三阶段引擎与API协议不改。不新增AI请求、自动维护、逐事件调用、隐式重试或收费开关。
+
+## 回归调整说明
+
+保留全部旧用例，不删除或跳过。旧玩家投影“必须看不到”断言按本次产品决策改为“完整可读且不改认知/状态”；原Story、历史检索、NPC跨人物来源拒绝、金额、CAS、回执、取消/迟到、Schema和事务断言保留。生命周期用例改为重要/必要引用事件清理应拒绝且原记录保留，归档不删除；同时增加facts、传闻拒绝、主线承接和V1–V5/旧retired兼容正反测试。十四类原命令夹具的SaveEvent追加程序当前回合来源，与实际sceneState编译契约一致，不放松领域规则。
+
+浏览器开发期曾暴露过时的隐藏断言、旧档夹具误调用新游戏create、公开短期投影排序差异；已按正式旧档夹具、原公开排序和新只读规则修正。一次开发期HMR导致移动浏览器导航上下文销毁，最终验证需使用停止代码编辑后的完整运行结果。
+
+## 本轮验证
+
+| 命令 | 本轮实际结果 |
+| --- | --- |
+| `npx vitest run src/tests/world-observer.test.ts src/tests/scene-event-permission.test.ts` | 49/49通过（本轮新增28项，原权限21项保留） |
+| `npm run check` | 54文件、1982/1982通过；Lint、TypeScript、Vite生产构建通过 |
+| `npm run prompts:check` | 82/82通过 |
+| 相关桌面/移动Chromium阅读与事件回归 | 24/24通过 |
+| `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e` | 完整304项正在执行，尚未计入通过 |
+| `git diff --check` | 通过 |
+
+相较75b7f5c保留1954项旧工程用例，新增28项；浏览器保留原302项并新增全量只读观察桌面/移动2项。模型与网络均Mock，没有真实付费API调用。构建仍有既存大于500KB bundle的非阻断提示，不掩盖或删除。
+
+
+## 本轮修改文件（47个）
+
+- `EVENT-LIFECYCLE-DEVELOPMENT.md`
+- `docs/WORLD_EVENT_LIFECYCLE.md`
+- `e2e/event-lifecycle.spec.ts`
+- `e2e/game.spec.ts`
+- `e2e/npc-memory.spec.ts`
+- `e2e/player-memory.spec.ts`
+- `e2e/world-observer.spec.ts`
+- `prompts/docs/OUTPUT_CONTRACT.md`
+- `prompts/manifest.json`
+- `prompts/shared/08_world_output.md`
+- `prompts/sources.lock.json`
+- `prompts/stages/opening/world.md`
+- `prompts/stages/regular/world.md`
+- `src/app/styles.css`
+- `src/domain/events/lifecycle.ts`
+- `src/domain/events/scenePermission.ts`
+- `src/domain/state.ts`
+- `src/domain/turnCommit.ts`
+- `src/executors/variableText/index.ts`
+- `src/services/validation/aiOutputs.ts`
+- `src/services/validation/commandCatalog.ts`
+- `src/services/validation/turnCommit.ts`
+- `src/services/validation/worldOutput.ts`
+- `src/tests/domain.test.ts`
+- `src/tests/event-lifecycle-runtime.test.ts`
+- `src/tests/fixtures/npcMemory.ts`
+- `src/tests/m2.test.ts`
+- `src/tests/memory.test.ts`
+- `src/tests/npc-memory-review.test.ts`
+- `src/tests/npc-memory.test.ts`
+- `src/tests/player-memory.test.ts`
+- `src/tests/prompt-inspector.test.ts`
+- `src/tests/prompt-runtime.test.ts`
+- `src/tests/scene-event-permission.test.ts`
+- `src/tests/turn-commit.test.ts`
+- `src/tests/variable-commands.test.ts`
+- `src/tests/world-handoff-review.test.ts`
+- `src/tests/world-handoff-review2.test.ts`
+- `src/tests/world-handoff-review3.test.ts`
+- `src/tests/world-handoff.test.ts`
+- `src/tests/world-observer.test.ts`
+- `src/tests/world-validation.test.ts`
+- `src/ui/panels/MemoryPanel.tsx`
+- `src/ui/panels/MemoryRecord.tsx`
+- `src/ui/panels/Panels.tsx`
+- `src/ui/panels/WorldRecord.tsx`
+- `src/ui/panels/playerView.ts`
+
+## 已知限制
+
+- 主线/必要引用保护偏保守，可能多保留记录；没有新增主线状态字段、引用重构、NPC恢复或高级清理器。
+- 程序不能证明任意自然语言facts完全真实，仍依赖同一次World模型正确区分已核实事实、转述和推测；Mock不是实机模型验证。
+- UI展示全量保存记录不等于角色内全知，玩家行为仍经原Story与角色知识约束；面板不自动写入主角或NPC记忆。
+- 普通世界记录/资产完整详情是轻量只读展开；人物与记忆采用20条分页。本轮不引入大型虚拟列表或整体UI重做。
+- 原始journal和幂等账本保留；最小retired身份仍会增长。旧版本已经丢弃的原始资料不能凭空恢复。
+- 未主动部署生产环境；PR预览环境由现有Cloudflare自动流程处理。保持Draft，不合并。
+
+---
+
+以下为此前实现与审查的历史记录；与上文冲突的产品描述已被本轮确认覆盖，数字不作本轮验证。
+
 # 动态世界事件生命周期
 
 ## PR #50 五代目审查：Variables / World 事件权限修补

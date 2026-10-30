@@ -39,7 +39,7 @@ async function hiddenEvent(participantB = false) {
     await repo.commitTurn(submission(draft));
     const state = await repo.load(initial.saveId);
     expect(state.events['private-incident']).toEqual(saved.event);
-    expect(state.npc).toEqual(initial.npc); expect(JSON.stringify(playerView(state))).not.toContain(secret);
+    expect(state.npc).toEqual(initial.npc); expect(JSON.stringify(playerView(state))).toContain(secret);
     const next = worldDraft(); next.baseSaveRevision = state.revision; next.turnId = (await repo.loadDraft(state.saveId))!.turnId;
     next.variables!.result.commands = [{ type: 'SetWorldClock', commandId: 'next-clock', evidence: '经过十分钟，主角完成用餐。', worldClock: '2026-10-18T08:20:00+08:00' }];
     return { state, draft: TurnDraftSchema.parse(next), at: '2026-10-18T08:15:00+08:00' };
@@ -99,7 +99,7 @@ describe('隐藏事件不是NPC知情授权', () => {
     const bPlan: DomainCommand = { ...aPlan, commandId: 'b-own-plan', task: { ...aPlan.task, id: 'b-plan', actorRef: { kind: 'npc', id: 'npc-b' } }, evidence: proof({ at, kind: 'planned', sources: ['knowledge:npc-b:0'], fact: 'B准备核查自己已经看见的钥匙。' }) };
     expect(() => parseWorld(JSON.stringify({ ...worldResult(), taskCommands: [bPlan] }), state, draft)).not.toThrow();
     expect(state.memories.npcSummaries['npc-b']).toBeUndefined();
-    expect(JSON.stringify(playerView(state))).not.toContain(secret);
+    expect(JSON.stringify(playerView(state))).toContain(secret);
   });
 });
 

@@ -368,6 +368,10 @@
       "eventLifecycle": {
         "notes": "依本轮产品确认适配：事件必须有预计终止时间，World单请求到期推演/清理/公开归档，Task规则独立；保留原来源和历史适配。",
         "sha256": "2916f2afa820dc20fafabcfdd1deb8247b2e05bbefc52fbb93718e0ee4a57197"
+      },
+      "playerObservation": {
+        "notes": "依PR #50确认产品边界适配：玩家全量只读、角色独立认知；重要/主线/必要引用事件保留；可信重大成果归档无需主角知晓。沿用原模型请求，不改世界书或NSFW。",
+        "sha256": "7b3ae0e7f6d3afb5a0d56ad7d3f6aa227e4759db2056fc50f1f863238a11050e"
       }
     },
     "stages/opening/variables.md": {
@@ -392,6 +396,10 @@
       "eventLifecycle": {
         "notes": "依本轮产品确认适配：事件必须有预计终止时间，World单请求到期推演/清理/公开归档，Task规则独立；保留原来源和历史适配。",
         "sha256": "0f3de1226ceab0e38534b08f43ce489aa58c0f3f93b75bde55edfc9648e0031e"
+      },
+      "playerObservation": {
+        "notes": "依PR #50确认产品边界适配：玩家全量只读、角色独立认知；重要/主线/必要引用事件保留；可信重大成果归档无需主角知晓。沿用原模型请求，不改世界书或NSFW。",
+        "sha256": "f2d9986b72dae21be5ae867c25ce4ae1ab96450e39c9a884def1566faaef9b8c"
       }
     },
     "stages/regular/variables.md": {
@@ -416,6 +424,10 @@
       "eventLifecycle": {
         "notes": "依本轮产品确认适配：事件必须有预计终止时间，World单请求到期推演/清理/公开归档，Task规则独立；保留原来源和历史适配。",
         "sha256": "58d3d62eab34e0d54df29db4b6cdde70606e35810f794234d6dde2e9f23ce624"
+      },
+      "playerObservation": {
+        "notes": "依PR #50确认产品边界适配：玩家全量只读、角色独立认知；重要/主线/必要引用事件保留；可信重大成果归档无需主角知晓。沿用原模型请求，不改世界书或NSFW。",
+        "sha256": "be9a62a21e0306092800bb01779d3cd983cc5518a0023da42a3d8479c17c0077"
       }
     },
     "variableGroups/protagonist/init.md": {

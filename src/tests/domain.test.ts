@@ -133,12 +133,12 @@ describe('运行时 Schema', () => {
     expect(GameStateSchema.safeParse(state).success).toBe(false);
     expect(DomainCommandSchema.safeParse({ ...purchase(), item: { id: 'car', name: '车', category: 'vehicle', quantity: 1, conditionText: '' } }).success).toBe(false);
   });
-  it('历史引用只允许已知重大结案事件，重复归档被拒绝', () => {
+  it('历史引用允许场外重大结案，重复归档被拒绝', () => {
     const state = game(); const e = { ...event(), status: 'resolved' as const, resolvedAt: gameTime, resolutionText: '结束', visibility: 'known' as const };
     state.events[e.id] = e;
     const entry = { eventId: e.id, occurredAt: gameTime, title: e.title, summary: '摘要', outcome: '结束', longTermImpact: '', actorRefs: [], sourceTurnIds: [] };
     state.timeline.push(entry); expect(GameStateSchema.safeParse(state).success).toBe(true);
-    state.events[e.id].visibility = 'hidden'; expect(GameStateSchema.safeParse(state).success).toBe(false);
+    state.events[e.id].visibility = 'hidden'; expect(GameStateSchema.safeParse(state).success).toBe(true);
     state.events[e.id].visibility = 'known'; state.timeline.push(entry); expect(GameStateSchema.safeParse(state).success).toBe(false);
   });
   it('旧事件和任务缺规划仍可读取，写入新事件不能用条件替代预计时间', () => {

@@ -58,7 +58,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
           worldStateRules: [
             '事件创建必须提供estimatedEndAt、backgroundText、goalText及actorRefs。completionCondition不能替代日期。EVENT_SCHEDULE.due按预计时间和依赖处理，保留积压；一次World请求处理本轮全部可处理节点，到期不是成功。受阻/延期需合理下一预计时间且晚于窗口结束；原始缺规划事件列unplannedLegacy，不编造过去日期。',
             'resolved表示已经结束，可outcome=success/failure/changed；失败结束不要求成功条件已满足，不能把受阻伪装成功。cancelled仍按原终止来源约束。无需强制后继；只有合理发展才创建新事件，以predecessorEventIds及event:来源承接真实结果。',
-            'DeleteEvent(eventId,expectedStatus,reason)只清理终态完整对象，保留轻量身份和必要成果引用；ArchiveEvent(eventId,title,summary)只把重大实际结案的公开文本归档并清理。后者必须有独立主角已知事实，不自动公开秘密成果；已知重大也可继续使用timelineCandidates。两个命令不得用于未终结事件。',
+            'DeleteEvent(eventId,expectedStatus,reason)仅清理minor、无主角参与、无必要任务/因果/知识引用的独立终态事件，保留轻量身份。重要或主线相关事件保留完整对象。ArchiveEvent(eventId,title,summary)凭可信fact来源归档重大实际结束结果，无需主角知晓且不清理重要对象；timelineCandidates仅用resultKnowledge.facts写入客观历史，不能将转述/推测冒充事实。两个命令不得用于未终结事件。',
             'worldEventOnly标记的事件是后台世界事实，不是NPC或组织的知情来源；行动/任务/记忆须引用自身独立观察或转述来源，不能引用非公开事件ID代替知晓依据。事件本身仍可正常创建和演化，参与者列表不等同于已知者列表。',
             'npc-summary 来源仅能支持所属人物的计划任务或个人目标，不是客观事实、完成证据或其他人物的知识。',
             'player_known 记忆和事件可见信息的新增/更新必须有 playerKnownText 中的肯定事实依据；客观成立不等于主角已知，缺少公开依据时保持私有/hidden或列入unresolved。',

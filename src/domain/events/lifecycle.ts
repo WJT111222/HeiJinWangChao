@@ -12,11 +12,11 @@ export function historicalEvent(state: EventState, id: string) {
   if(!record?.detail)return undefined;
   return {...record.detail,id:record.id,status:record.status,sourceTurnIds:record.sourceTurnIds,linkedTaskIds:record.linkedTaskIds};
 }
-export function isPublicHistory(state: EventState, entry: TimelineEntry) {
+export function isHistoricalEntry(state: EventState, entry: TimelineEntry) {
   const event=historicalEvent(state,entry.eventId),publication=state.retiredEvents[entry.eventId]?.publication;
   return Boolean(event && terminalEvent(event) && event.impact==='major' && event.resolvedAt
     && Date.parse(event.resolvedAt)===Date.parse(entry.occurredAt)
-    && (event.visibility==='known' || (publication && publication.title===entry.title && publication.summary===entry.outcome
+    && (!publication || (publication.title===entry.title && publication.summary===entry.outcome
       && publication.summary===entry.summary && entry.sourceTurnIds.includes(publication.sourceTurnId))));
 }
 const same = (a: unknown,b: unknown)=>JSON.stringify(a)===JSON.stringify(b);
@@ -61,31 +61,38 @@ function hasReferences(state: GameState,event:WorldEvent) {
     || refs.some(r=>('linkedEventId' in r && r.linkedEventId===event.id)||[...r.prerequisites,...r.blockers].some(condition)
       || ('predecessorEventIds' in r && r.predecessorEventIds?.includes(event.id)))
     || Object.values(state.retiredEvents).some(r=>r.predecessorEventIds.includes(event.id))
-    || memories.some(m=>JSON.stringify(m).includes(`event:${event.id}`)||JSON.stringify(m).includes(`event-result:${event.id}`)||JSON.stringify(m).includes(`event-plan:${event.id}`));
+    || [...memories,...Object.values(state.organizations)].some(m=>JSON.stringify(m).includes(`event:${event.id}`)||JSON.stringify(m).includes(`event-result:${event.id}`)||JSON.stringify(m).includes(`event-plan:${event.id}`)||JSON.stringify(m).includes(JSON.stringify(event.id)));
 }
-/** 清理的是活跃完整对象；最小身份阻止重建同ID，重要/引用成果才保留紧凑资料。 */
+
+function mainlineRelated(state: GameState, event: WorldEvent, visited = new Set<string>()): boolean {
+  if(visited.has(event.id))return false;
+  visited.add(event.id);
+  if(event.actorRefs.some(ref=>ref.kind==='protagonist'))return true;
+  return (event.predecessorEventIds??[]).some(id=> {
+    const prior=historicalEvent(state,id);
+    return prior && (prior.actorRefs.some(ref=>ref.kind==='protagonist') || (state.events[id] && mainlineRelated(state,state.events[id],visited)));
+  });
+}
+/** 新清理只允许独立普通终态。存量retiredEvents仍原样保留用于兼容引用。 */
 export function deleteEvent(state: GameState,eventId:string,expectedStatus:'resolved'|'cancelled',turnId:string) {
   const event=state.events[eventId];
   requireData(event && event.status===expectedStatus && terminalEvent(event),'EVENT_NOT_TERMINAL','只能清理已结束事件');
   requireData(!state.retiredEvents[eventId],'DUPLICATE_ID','事件已清理');
-  const detail = event.impact==='major'||hasReferences(state,event) ? {
-    title:event.title,startAt:event.startAt,estimatedEndAt:event.estimatedEndAt,resolvedAt:event.resolvedAt,
-    actorRefs:event.actorRefs,locationId:event.locationId,visibility:event.visibility,impact:event.impact,
-    resolutionText:event.resolutionText,resultKnowledge:event.resultKnowledge,outcome:event.outcome,
-  }:undefined;
+  // 没有独立主线字段：主角参与、任务/事件承接、时间线或知识引用一律保守保留。
+  requireData(event.impact==='minor' && !mainlineRelated(state,event) && !hasReferences(state,event),
+    'EVENT_RETAINED','重要、主角相关或存在必要引用的事件不能按普通杂事清理');
   state.retiredEvents[eventId]={id:event.id,status:expectedStatus,retiredAt:state.worldClock,
     sourceTurnIds:[...new Set([...event.sourceTurnIds,turnId])],linkedTaskIds:event.linkedTaskIds,
-    predecessorEventIds:event.predecessorEventIds??[],...(detail?{detail}:{})};
+    predecessorEventIds:event.predecessorEventIds??[]};
   delete state.events[eventId];
 }
-/** 公布的只有本次公开来源支持的标题/摘要，不把秘密完整成果公开。 */
+/** 世界事实历史与角色知情无关；重要完整事件保留，旧retired记录仍可补充归档。 */
 export function archiveEvent(state:GameState,eventId:string,title:string,summary:string,turnId:string) {
   const view=historicalEvent(state,eventId);
   requireData(view && terminalEvent(view)&&view.impact==='major'&&view.resolvedAt
     && Date.parse(view.resolvedAt)<=Date.parse(state.worldClock),'TIMELINE_NOT_PUBLIC','仅重大实际结案可以归档');
   requireData(!state.timeline.some(e=>e.eventId===eventId),'TIMELINE_DUPLICATE','事件已归档');
-  if(state.events[eventId])deleteEvent(state,eventId,view.status==='resolved'?'resolved':'cancelled',turnId);
-  const record=state.retiredEvents[eventId];requireData(record?.detail,'EVENT_SOURCE','缺少必要历史成果');
-  record.publication={title,summary,at:state.worldClock,sourceTurnId:turnId};
+  const record=state.retiredEvents[eventId];
+  if(record) { requireData(record.detail,'EVENT_SOURCE','缺少必要历史成果'); record.publication={title,summary,at:state.worldClock,sourceTurnId:turnId}; }
   state.timeline.push({eventId,occurredAt:view.resolvedAt,title,summary,outcome:summary,longTermImpact:'',actorRefs:[],sourceTurnIds:[turnId]});
 }

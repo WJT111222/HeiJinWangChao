@@ -1,8 +1,8 @@
 只输出一个可解析JSON对象，顶层字段固定为：worldCommands、taskCommands、eventCommands、futureEvents、visibleHooks、timelineCandidates、unresolved；前五项为数组，timelineCandidates和unresolved为字符串数组。没有变动时全部为空数组。不要输出前言、代码围栏或内部推理。
 worldCommands、taskCommands 与 eventCommands 使用实际 COMMAND_CATALOG 中的 type 专属同级字段结构 {commandId,type,evidence,...类型专属字段}，不接受 group/entityId/payload 包装或旧命令别名。worldCommands 仅可 CreateNpc（onScene=false）、UpdateNpc、RecordNpcMemory、CreateLocation、CreateOrganization、RecordOrgRelation、RetireNpc（均需下述逐字段场外校验）；taskCommands 仅 SaveTask，eventCommands 可 SaveEvent、DeleteEvent、ArchiveEvent。禁止推进主角自主任务、主角交易、独立修改时钟或重复结算现场 NPC。不存在的补丁操作列入 unresolved。evidence 使用下述 WORLD_EVIDENCE_V1 来源凭据；既有事实引用原文，新场外推演不要求逐字存在于旧正文。
 futureEvents 必须满足完整 WorldEventSchema：id、title、status(scheduled/active/resolved/blocked/cancelled)、startAt、actorRefs、linkedTaskIds、prerequisites、blockers、visibility(hidden/partially_known/known)、impact(minor/significant/major)、sourceTurnIds 必填；数组无内容时仍提供 []。estimatedEndAt、backgroundText、goalText同样必填，actorRefs至少一项；completionCondition只是附加条件，resolvedAt不能替代预计时间。结案需resolvedAt和resolutionText；resolved表示已结束，可用outcome=success/failure/changed区分结果，cancelled表示取消。SaveTask 使用完整 task，状态为 planned/active/completed/blocked/cancelled，不混用事件状态。遵从目录中的字段与正式状态引用校验。
-visibleHooks的每项为 {text,revealAfter}，只记录主角有合理知晓途径的线索。完全私密的后台行动放在事件/任务私有状态，不能放进visibleHooks，也不能写入玩家可见日志摘要。
-timelineCandidates仅引用已经实际结案、重大且主角已知的事件ID；不会因到期自动归档。严禁虚构已经结案以凑时间轴数量。
+visibleHooks的每项为 {text,revealAfter}，只记录主角有合理知晓途径的线索。人物尚未知晓的后台行动保留原认知标记，不能放进visibleHooks或主角正文摘要；玩家可只读查看正式世界记录，查看不产生角色知识。
+timelineCandidates仅引用已经实际结束、重大且resultKnowledge.facts含可信客观成果的事件ID；不要求主角先获知，程序只将facts写入时间线，不将完整resolutionText中的举报或猜测当事实。不会因到期自动归档。严禁虚构已经结案以凑时间轴数量。
 如果世界生成依据的变量阶段状态标记variablePending=true，所有提案只作为暂存预览；先保守保持行动与旧状态不矛盾，不宣称永久落库，并在unresolved指出受依赖影响的环节。
 
 
@@ -83,7 +83,7 @@ derived 取消必须另提供 outcome，说明具体终止原因或实际后果�
 
 RegisterContact只由变量阶段据正文实际联络事实登记；联系人和初始同伴永久保留完整档案，人物面板可见不等于联系人；旧档contactReviewNpcIds仅表示身份待确认、暂缓清理，不是正式联系人。RetireNpc仅世界阶段可提议，字段npcId、expectedIdentityKey、reason、retainMemoryIds，decision必须targetId=该NPC、status=retired、conditionsSatisfied=true、continues=false，reason与命令相同，并交代必要成果处理。只清理非联系人、非现场且无未终结任务/长期目标/组织职务/当前资产持有或未交接重要事件职责的人物。不要为了删除强行清除其合理职责。
 
-必要成果先保留任务结果/事件。retainMemoryIds只选确需保留的原始私有记忆；公开记忆自动保留，必要私有材料仅转成internal历史，绝不授予其他角色或公开。完整NPC和所属私人总结删除，retiredNpcs仅留稳定ID、identityKey、name、aliases、retiredAt、sourceTurnIds，不是完整休眠备份。未来再出现须复用可信历史身份，不能编造旧关系或恢复不存在的旧经历。历史回顾回合仍禁止任何任务推演或退场；全部只是候选，正式回合事务提交前不改GameState。
+必要成果先保留任务结果/事件。retainMemoryIds只选确需保留的原始私有记忆；公开记忆自动保留，必要私有材料仅转成internal历史，不授予其他角色或主角认知；玩家仍可只读查看。完整NPC和所属私人总结删除，retiredNpcs仅留稳定ID、identityKey、name、aliases、retiredAt、sourceTurnIds，不是完整休眠备份。未来再出现须复用可信历史身份，不能编造旧关系或恢复不存在的旧经历。历史回顾回合仍禁止任何任务推演或退场；全部只是候选，正式回合事务提交前不改GameState。
 
 
 ### PR #22 首轮审查修订：来源性质、旧档复核与概括性交接
@@ -117,12 +117,17 @@ EVENT_SCHEDULE来自唯一worldClock到变量投影时间窗口，due按estimate
 
 SaveEvent的新规划始终包含startAt、estimatedEndAt、backgroundText、goalText、非空actorRefs和既有Schema字段。时钟、排程与实际结案不同；不重写既有起点、参与者、附加条件，不将未来标已完成。resolved可有outcome=success/failure/changed；failure决策仅表示失败结束，不得改写为成功。cancelled可不填resolvedAt，未来安排仍可提前取消；若要进入真实历史时间线则必须保有实际终止时刻。
 
-无需继续的普通终态使用DeleteEvent：{commandId,type:"DeleteEvent",eventId,expectedStatus:"resolved"或"cancelled",reason,evidence}，来源必须event:<id>。可以与本批SaveEvent配合，先结案再清理。程序保留轻量身份和必要因果/任务/记忆引用，不永久保留普通事件背景及整个对象。不清理未终结事件、不重用清理后的ID。
+只有已终态、impact=minor、无主角参与、无必要任务/记忆/因果引用的独立普通事件使用DeleteEvent：{commandId,type:"DeleteEvent",eventId,expectedStatus:"resolved"或"cancelled",reason,evidence}，来源必须event:<id>。可以与本批SaveEvent配合，先结案再清理。重要事件（significant/major）、主角相关或仍有任务/记忆/因果引用的事件保留完整对象，不得用清理规避。符合清理条件的独立普通事件仅保留轻量身份，不保留整个对象。不清理未终结事件、不重用清理后的ID。
 
 确有新发展才新建事件，以predecessorEventIds和event:<前序id>来源承接已经成立且不晚于新起点的结果。无因果必要不造后继，不为维持活跃制造冲突。承接无环；清理原记录不会删除任务成果、必要来源或历史时间线。
 
-已知重大实际结案可以沿用timelineCandidates；即使同时DeleteEvent也保留历史。隐藏重大终态可清理为内部紧凑成果，不能自动公开。未来主角通过合法公开信息获知时可用ArchiveEvent：{commandId,type:"ArchiveEvent",eventId,title,summary,evidence}。title和summary必须由本次独立playerKnownText事实支持，不能仅引用隐藏事件自证公开；归档只公开这段文字，不公开全部内部成果、人物秘密、位置或认知。来源仍保持worldEventOnly，NPC知情需独立观察/告知证据。ArchiveEvent同时归档与清理，不能再对同一ID重复DeleteEvent。
+重大实际结束且有可信客观facts可沿用timelineCandidates，不以主角知晓为条件。也可用ArchiveEvent：{commandId,type:"ArchiveEvent",eventId,title,summary,evidence}，引用event:<id>和已验证fact来源，kind=established，title和summary须由fact支持；可以直接使用事件自身已分类facts，无需主角披露。归档不删除重要完整事件；旧retiredEvents的必要成果仍可按相同事实边界归档。禁止把未经核实的reported/suspected或完整resolutionText变成历史真相。玩家能阅读全部世界记录，但NPC知情仍需独立观察/告知来源，worldEventOnly与ownerNpcId的认知边界不变。
 
 清理与其他候选一起在正式事务落库。World关闭不请求、不处理、不收费；到期事件保留，恢复后的同一次World请求处理积压。没有合法变量时仍为preview，不得正式结算。失败、重试、Roll和刷新不重复完成或清理。
 
 兼容旧缺规划事件：如果已有事件缺estimatedEndAt/backgroundText/goalText，真实终结或取消时可以保留缺项并按原来源/时间/结果规则结束，不为清理编造过去排程。新建事件绝不适用此例外；若旧事件仍需继续或延期，须合理安排下一预计时间并补足规划描述。
+
+
+### 玩家观察与角色认知（当前产品规则）
+
+玩家可只读查看全部正式保存的世界变量，包括场外人物、任务、组织、排程、人物记忆和总结。visibility存量字段仅保留角色知情/来源语义，不限制玩家面板或可信历史归档。不得为开放界面将hidden改known或将npc_private/internal改player_known；internal不是某个NPC已经知道。正文仅获得主角合法知晓的信息，NPC各自保留observed/reported/suspected/unknown及来源；玩家打开面板不构成传播。无新AI阶段或额外付费请求。

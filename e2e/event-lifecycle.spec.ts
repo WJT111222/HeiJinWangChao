@@ -22,11 +22,12 @@ async function prepare(page:Page,major=false) {
 async function stored(page:Page){return page.evaluate(async()=>{const path='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(path),repo=await SaveRepository.open();try{return await repo.loadGame('save-a');}finally{repo.close();}});}
 function endResult(data:Awaited<ReturnType<typeof prepare>>) {
   const text='同事完成内部清点并封存清单。';
-  return {...worldResult(),eventCommands:[
+  const commands = [
     {type:'SaveEvent',commandId:'end-review',event:{...data.state.events.review,status:'resolved',resolvedAt:'2026-10-18T08:05:00+08:00',resolutionText:text,outcome:'success',sourceTurnIds:[data.draft.turnId]},
       evidence:proof({sources:['event:review','npc:npc-a'],fact:text,decision:{targetId:'review',status:'resolved',reason:'按工作安排完成清点',result:text,conditionsSatisfied:true,continues:false,resultKnowledge:{facts:[text],reported:[],suspected:[]}}})},
     {type:'DeleteEvent',commandId:'clean-review',eventId:'review',expectedStatus:'resolved',reason:'结束完整排程',evidence:proof({at:'2026-10-18T08:06:00+08:00',sources:['event:review'],fact:'事毕清理完整记录。',decision:{targetId:'review',status:'retired',reason:'事毕',result:'只保留必要引用',conditionsSatisfied:true,continues:false}})},
-  ]};
+  ];
+  return {...worldResult(),eventCommands:data.state.events.review.impact==='major'?commands.slice(0,1):commands};
 }
 for(const major of [false,true])test(`到期${major?'隐藏重大':'普通'}事件：候选、刷新、原子清理及幂等`,async({page},info)=>{
   const data=await prepare(page,major);let calls=0;
@@ -39,8 +40,8 @@ for(const major of [false,true])test(`到期${major?'隐藏重大':'普通'}事�
   const committed=await page.evaluate(async()=>{const path='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(path),repo=await SaveRepository.open();try{
     const draft=await repo.loadDraft('save-a'),input={draft,nextAction:'稍作休息',useVariableStage:true,useWorldStage:true};return {first:await repo.commitTurn(input),replay:await repo.commitTurn(input)};
   }finally{repo.close();}});
-  expect(committed.first.state.events.review).toBeUndefined();expect(committed.first.state.retiredEvents.review.status).toBe('resolved');
-  expect(Boolean(committed.first.state.retiredEvents.review.detail)).toBe(major);expect(committed.first.state.timeline).toEqual([]);expect(committed.replay.replayed).toBe(true);
+  if(major){expect(committed.first.state.events.review.status).toBe('resolved');expect(committed.first.state.retiredEvents.review).toBeUndefined();}
+  else {expect(committed.first.state.events.review).toBeUndefined();expect(committed.first.state.retiredEvents.review.status).toBe('resolved');expect(committed.first.state.retiredEvents.review.detail).toBeUndefined();}expect(committed.first.state.timeline).toEqual([]);expect(committed.replay.replayed).toBe(true);
   await page.reload();expect((await stored(page)).state).toEqual(committed.first.state);expect(calls).toBe(1);
   await expect(page.locator('main')).not.toContainText('封存清单');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.screenshot({path:info.outputPath('event-lifecycle.png'),fullPage:true});

@@ -396,7 +396,7 @@ describe('世界任务与事件的状态、终态、来源和依赖', () => {
       expect(() => parseWorld(JSON.stringify(bad), worldState(), worldDraft())).toThrow();
     expect(() => parse(r, withEvent(e))).toThrow();
   });
-  it('隐藏重大事件不进入公开时间线候选；结案仍可保存为内部世界结果', () => {
+  it('未分类重大成果不自动进入时间线；结案原始结果仍可保存', () => {
     const e = backgroundEvent(),
       state = withEvent(e),
       before = structuredClone(state),

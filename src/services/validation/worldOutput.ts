@@ -1,4 +1,4 @@
-import { historicalEvent, terminalEvent, isPublicHistory } from '../../domain/events/lifecycle';
+import { historicalEvent, terminalEvent, isHistoricalEntry } from '../../domain/events/lifecycle';
 import { conditionEnded, worldEventSchedule } from '../../domain/events/schedule';
 import { WorldEventSchema } from '../../domain/events/schema';
 import { historicalPerspective } from '../../domain/timePreflight';
@@ -554,7 +554,7 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
         requireWorld(proof.sources.includes(`event:${command.eventId}`) && (proof.kind==='derived'||proof.kind==='established'));
         requireWorld(!proof.decision || (proof.decision.targetId===command.eventId && proof.decision.status==='retired' && !proof.decision.continues));
         if(command.type==='DeleteEvent') requireWorld(causal.events[command.eventId]?.status===command.expectedStatus);
-        else requireWorld(event.impact==='major' && event.resolvedAt && hasPlayerKnownFact(command,proof,origins)
+        else requireWorld(event.impact==='major' && event.resolvedAt && proof.kind==='established'
           && proof.fact.includes(command.title) && proof.fact.includes(command.summary),'permission');
         break;
       }
@@ -603,7 +603,7 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
     result.timelineCandidates.every((id) => {
       const event=historicalEvent(projected,id);
       return Boolean(event && terminalEvent(event) && event.resolvedAt && event.impact==='major'
-        && (event.visibility==='known' || projected.timeline.some(entry=>entry.eventId===id&&isPublicHistory(projected,entry))));
+        && (event.resultKnowledge?.facts.length || projected.timeline.some(entry=>entry.eventId===id&&isHistoricalEntry(projected,entry))));
     }),
   );
   if (draft.variables?.validation === 'validated' && !historicalPerspective(state,draft)) for (const due of worldEventSchedule(state,base).due) {
