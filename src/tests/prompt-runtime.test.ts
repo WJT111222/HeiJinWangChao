@@ -630,7 +630,7 @@ describe('真实命令目录、解析与安全候选验证', () => {
         to: { kind: 'npc', id: 'npc-a' },
       },
       { type: 'SetWorldClock', commandId: 'clock', evidence, worldClock: gameTime },
-      { type: 'SaveEvent', commandId: 'event', evidence, event: { ...event(), status: 'active' } },
+      { type: 'SaveEvent', commandId: 'event', evidence, event: { ...event(), status: 'active', sourceTurnIds: [...new Set([...event().sourceTurnIds, a.draft.turnId])] } },
       { type: 'SaveTask', commandId: 'task', evidence, task: task() },
       { type: 'CreateOrganization', commandId: 'org', evidence, organization: organizations[1] },
       {

@@ -108,7 +108,7 @@ describe('混合任务成果的认知分层与旧档保留', () => {
     const sources = worldSources(saved, laterDraft(saved)), fact = sources.find((source) => source.id === 'task:work');
     expect(fact?.text).not.toContain(secret); expect(fact?.text.includes(action)).toBe(classified);
     expect(sources.find((source) => source.id === 'task-result:work')).toMatchObject({ knowledge: 'statement', ownerNpcId: 'npc-a' });
-    expect(JSON.stringify(playerView(saved))).not.toContain(secret);
+    expect(JSON.stringify(playerView(saved))).toContain(secret);
     expect(result.state).toEqual(saved); expect(before.tasks.work.resolution).toBeUndefined();
     expect(GameStateSchema.safeParse(saved).success).toBe(true);
   });

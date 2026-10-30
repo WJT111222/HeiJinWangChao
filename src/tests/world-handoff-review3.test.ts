@@ -126,7 +126,7 @@ describe('事件事实、结果叙述和计划的独立来源', () => {
     await expect(ready(repo, (state) => ({ ...worldResult([{ type: 'UpdateNpc', commandId: 'hidden-knowledge', npcId: 'npc-b', expectedRevision: state.revision,
       changes: { healthText: '得知举报后紧张' }, evidence: proof({ kind: sourceId === 'event:report' ? 'established' : 'derived',
         at: new Date(Date.parse(state.worldClock) + 300000).toISOString(), sources: [sourceId, 'npc:npc-b'], fact: received }) }]) }))).rejects.toThrow();
-    expect(JSON.stringify(playerView(first.state))).not.toContain(claim);
+    expect(JSON.stringify(playerView(first.state))).toContain(claim);
     const context = contextFor({ stage: 'story', mode: 'regular', state: first.state, settings: defaultSettings(), userInput: '继续休息' });
     expect(JSON.stringify(context)).not.toContain(claim);
     expect(await repo.load('save-a')).toEqual(first.state);

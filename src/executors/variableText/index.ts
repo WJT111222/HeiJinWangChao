@@ -38,7 +38,7 @@ async function simulateChecked(plan: VariableExecutionPlan, state: GameState,
     const projected = commitCommands(openingTimeBase(state, context.draft), context.draft.turnId,
       context.expectedRevision, checked.value.commands, state.updatedAt);
     for (const command of checked.value.commands)
-      if (command.type === 'SaveEvent') validateSceneEventUpdate(state, projected, command.event);
+      if (command.type === 'SaveEvent') validateSceneEventUpdate(state, projected, command.event, context.draft.turnId);
     return { ok: true, value: projected };
   } catch (error) {
     const related = checked.value.origins.filter((origin) => origin !== null);

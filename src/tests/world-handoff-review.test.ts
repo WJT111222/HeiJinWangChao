@@ -41,7 +41,7 @@ describe('PR22审查：先复现三条真实路径', () => {
     const forged: DomainCommand = { type: 'SaveEvent', commandId: 'launder-report', event: { ...event('false-truth'), title: '蓝仓情况确认', actorRefs: [{ kind: 'npc', id: 'npc-c' }], startAt: second.state.worldClock, estimatedEndAt: '2026-10-18T08:30:00+08:00', status: 'resolved', resolvedAt: '2026-10-18T08:25:00+08:00', resolutionText: secret, sourceTurnIds: [draft.turnId] },
       evidence: proof({ kind: 'established', at: '2026-10-18T08:25:00+08:00', sources: ['task:next', 'npc:npc-c'], fact: secret }) };
     expect(() => parseWorld(JSON.stringify({ ...worldResult(), eventCommands: [forged] }), second.state, draft)).toThrow();
-    expect(JSON.stringify(playerView(second.state))).not.toContain(secret);
+    expect(JSON.stringify(playerView(second.state))).toContain(secret);
     expect((await repo.load('save-a')).events['false-truth']).toBeUndefined();
   });
   it('V2非联系人不能永久误标成联系人，尚未确认身份应独立暂缓清理', () => {

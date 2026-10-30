@@ -160,3 +160,22 @@ it('直接伪造候选也不能把新事件冒充既有现场事件', () => {
   command.event.id = 'new-incident';
   expect(() => parseVariables(JSON.stringify(result), a.state, a.draft)).toThrow();
 });
+
+describe('现场事件不授予Variables整对象写权限', () => {
+  const changes = {
+    estimatedEndAt: '2026-10-20T08:00:00+08:00', impact: 'major', title: '被篡改标题',
+    backgroundText: '被篡改背景', goalText: '被篡改目标', locationId: undefined,
+    visibility: 'known', prerequisites: ['event:incident'], blockers: ['task:unknown'],
+    linkedTaskIds: ['unknown'], predecessorEventIds: ['incident'], sourceTurnIds: [],
+  };
+  it.each(Object.entries(changes))('%s：规范化候选及正式提交均拒绝', async (field, value) => {
+    const a = fixture([hero]), result = candidate(a), command = result.commands[0];
+    if (command.type !== 'SaveEvent') throw Error('fixture');
+    Object.assign(command.event, { [field]: value });
+    expect(() => parseVariables(JSON.stringify(result), a.state, a.draft)).toThrow();
+    const repo = await repository(a), draft = await completeDraft(repo, { variables: result, world: worldResult() });
+    const before = await repo.loadGame(a.state.saveId);
+    await expect(repo.commitTurn(submission(draft))).rejects.toBeDefined();
+    expect(await repo.loadGame(a.state.saveId)).toEqual(before);
+  });
+});

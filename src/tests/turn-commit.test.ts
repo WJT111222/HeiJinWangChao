@@ -447,7 +447,7 @@ describe('最终重验与存储兼容', () => {
     });
     await unchanged(submission(draft));
   });
-  it('隐藏重大结案事件不能通过 timelineCandidates 自动揭示', async () => {
+  it('缺少客观成果的重大结案不能通过timelineCandidates冒充事实历史', async () => {
     await repo.delete('save-a', 0);
     const state = worldState();
     state.events.hidden = {
@@ -471,6 +471,7 @@ describe('最终重验与存储兼容', () => {
       status: 'resolved',
       resolvedAt: gameTime,
       resolutionText: '预约已完成',
+      resultKnowledge: { facts: ['预约已完成'], reported: [], suspected: [] },
       visibility: 'known',
       sourceTurnIds: [],
     };
@@ -484,8 +485,8 @@ describe('最终重验与存储兼容', () => {
       {
         eventId: 'public',
         occurredAt: gameTime,
-        title: '预约',
-        summary: '预约',
+        title: '预约已完成',
+        summary: '预约已完成',
         outcome: '预约已完成',
         longTermImpact: '',
         actorRefs: [],

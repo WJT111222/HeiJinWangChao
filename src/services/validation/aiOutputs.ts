@@ -44,7 +44,7 @@ export async function parseTextVariables(text: string, state: GameState, draft: 
   if (!simulated.ok) throw textExecutionError(simulated.error);
   // 复用正式提交已有的场景权限底线；文本任务/事件不能冒充World后台操作。
   for (const [commandIndex, command] of compiled.value.commands.entries()) {
-    if (command.type === 'SaveEvent') validateSceneEventUpdate(state, simulated.value, command.event);
+    if (command.type === 'SaveEvent') validateSceneEventUpdate(state, simulated.value, command.event, draft.turnId);
     const actors = command.type === 'SaveTask' ? [command.task.actorRef] : [];
     if (actors.some((actor) => actor.kind === 'npc' && !simulated.value.npc[actor.id]?.onScene))
       throw new AiError('data_integrity', undefined, { fieldPath: 'commands.actorRef', commandIndex, commandType: command.type });
@@ -115,7 +115,7 @@ export function parseVariables(text: string, state: GameState, draft: TurnDraft)
     validateTimeCommands(timeState, draft, checked.data.commands);
     const projected = commitCommands(state, draft.turnId, state.revision, variableCommandsForTurn(timeState, draft, checked.data.commands), state.updatedAt);
     for (const command of checked.data.commands)
-      if (command.type === 'SaveEvent') validateSceneEventUpdate(state, projected, command.event);
+      if (command.type === 'SaveEvent') validateSceneEventUpdate(state, projected, command.event, draft.turnId);
   } catch (error) { throw variableValidationError(error); }
   return checked.data;
 }
