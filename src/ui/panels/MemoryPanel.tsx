@@ -4,16 +4,18 @@ import { dateTime } from './playerView';
 import type { PlayerView } from './playerView';
 import { historySearchLimit, searchHistory } from '../../domain/memories/history';
 import type { HistoryRecord } from '../../domain/memories/history';
+import { MemoryRecord } from './MemoryRecord';
 
 const levels = [
-  ['immediate', '即时记忆'], ['short', '短期记忆'], ['medium', '中期记忆'], ['long', '长期记忆'], ['archive', '永久正文档案'],
+  ['immediate', '即时记忆'], ['short', '短期记忆'], ['medium', '中期记忆'], ['long', '长期记忆'], ['npc', '人物记忆'], ['archive', '永久正文档案'],
 ] as const;
 type Level = typeof levels[number][0];
 const emptyText = {
   immediate: '还没有正式提交的经历。当前正文候选会在正式结算后进入记忆。',
-  short: '暂时没有公开的短期摘要；永久正文仍保留在档案中。',
+  short: '暂时没有短期摘要；永久正文仍保留在档案中。',
   medium: '尚无中期记忆。经历整理后，会在这里留下重要的约定与因果。',
   long: '尚无长期记忆。值得长久铭记的经历，会在这里保存。',
+  npc: '尚无已保存的人物记忆或总结。',
 };
 function RecordedTime({ time }: { time?: string }) {
   return time ? <time>{dateTime(time)}</time> : <span className="muted">历史回合时间未记录</span>;
@@ -21,6 +23,7 @@ function RecordedTime({ time }: { time?: string }) {
 export function MemoryPanel({ view }: { view: PlayerView }) {
   const [level, setLevel] = useState<Level>('immediate');
   const [query, setQuery] = useState('');
+  const [memoryQuery, setMemoryQuery] = useState('');
   const [page, setPage] = useState(0);
   const [sourceId, setSourceId] = useState<string>();
   const [sources, setSources] = useState<HistoryRecord[]>([]);
@@ -32,12 +35,14 @@ export function MemoryPanel({ view }: { view: PlayerView }) {
   }, [sourceId, sources]);
   const turns = useMemo(() => new Map(view.journal.map((entry) => [entry.turnId, entry])), [view.journal]);
   const results = useMemo(() => query.trim() ? searchHistory(view.journal, query) : [...view.journal].reverse(), [view.journal, query]);
-  const memories = view.memories.filter((memory) => memory.tier === level);
+  const memories = view.memories.filter(memory => memory.tier === level &&
+    [memory.text, memory.knowledgeSource, memory.ownerNpcId && view.npc.find(npc => npc.id === memory.ownerNpcId)?.name]
+      .some(text => text?.toLocaleLowerCase().includes(memoryQuery.trim().toLocaleLowerCase())));
   const count = level === 'immediate' ? view.immediateMemories.length : level === 'archive' ? results.length : memories.length;
   const currentPage = Math.min(page, Math.max(0, Math.ceil(count / historySearchLimit) - 1));
   const visibleTurns = (level === 'immediate' ? view.immediateMemories : results).slice(currentPage * historySearchLimit, (currentPage + 1) * historySearchLimit);
   const source = sourceId ? turns.get(sourceId) : undefined;
-  const turnTime = (id: string) => view.memories.find((memory) => memory.layer === '短期' && memory.origin === 'stored'
+  const turnTime = (id: string) => view.memories.find((memory) => memory.visibility === 'player_known' && memory.layer === '短期' && memory.origin === 'stored'
     && memory.sourceTurnIds.length === 1 && memory.sourceTurnIds[0] === id)?.createdAtGameTime;
   function changeLevel(next: Level) {
     setLevel(next); setPage(0); setSourceId(undefined); setSources([]);
@@ -49,7 +54,7 @@ export function MemoryPanel({ view }: { view: PlayerView }) {
   }
   const label = levels.find(([key]) => key === level)![1];
   return <div className="memory-reader">
-    <p className="muted">即时窗口：最近 {view.immediateWindowSize} 回合</p>
+    <p className="muted">即时窗口：最近 {view.immediateWindowSize} 回合。玩家可查看全部已保存记录；阅读不会让主角或其他人物自动知情。内部记录不代表人物记忆。</p>
     <nav className="memory-navigation" aria-label="记忆层级">
       {levels.map(([key, name]) => <button key={key} aria-label={name} aria-pressed={level === key} onClick={() => changeLevel(key)}>
         {key === 'short' ? '短期' : key === 'medium' ? '中期' : key === 'long' ? '长期' : name}{' '}
@@ -59,6 +64,9 @@ export function MemoryPanel({ view }: { view: PlayerView }) {
     <label className="search">搜索历史回合
       <input value={query} onChange={(event) => { setQuery(event.target.value); changeLevel('archive'); }} placeholder="搜索人物、约定、地点或经历" maxLength={4000} />
     </label>
+    {level !== 'immediate' && level !== 'archive' && <label className="search">搜索当前记忆层级
+      <input value={memoryQuery} maxLength={4000} onChange={event => { setMemoryQuery(event.target.value); setPage(0); }} placeholder="人物、内容或知识来源" />
+    </label>}
     {source && <section ref={sourceArea} tabIndex={-1} className="card entry" aria-label="摘要来源原文">
       <h3>第 {source.turnNumber} 回合原文</h3>
       <RecordedTime time={turnTime(source.turnId)} />
@@ -97,7 +105,7 @@ export function MemoryPanel({ view }: { view: PlayerView }) {
           return <article className="card entry" key={`${memory.id}-${index}`}>
             <span className="tag">{memory.origin === 'journal' ? '历史摘要，只读' : '已保存摘要'}</span>{' '}
             <RecordedTime time={memory.createdAtGameTime} />
-            <p className="prose">{memory.text}</p>
+            <MemoryRecord memory={memory} view={view} />
             <p className="muted">{originals.length ? `对应 ${originals.length} 个已提交回合` : '来源回合未记录或原文档案暂不可用'}</p>
             {originals.length > 0 && <button onClick={() => showSources(memory.sourceTurnIds)}>
               {originals.length === 1 ? `查看第 ${originals[0].turnNumber} 回合原文` : '查看来源回合'}

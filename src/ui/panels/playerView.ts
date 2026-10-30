@@ -1,132 +1,77 @@
+import { isHistoricalEntry } from '../../domain/events/lifecycle';
 import type { GameState } from '../../domain/state';
 import { initialCompanionProfile, matchesCompanion } from '../../services/local/companionProfile';
 import type { CompanionProfile } from '../../services/local/companionProfile';
 import { publicShortMemories } from '../../domain/memories/publicMemory';
 import { historyRecords } from '../../domain/memories/history';
+import { npcKnowledgeKind } from '../../domain/memories/schema';
+import type { KnowledgeNatureSchema, MemoryEntrySchema, NpcSummarySchema } from '../../domain/memories/schema';
+import type { z } from 'zod';
 
-// M2 展示投影；玩家视角与主角认知并非同一概念，最终档案开放范围尚待设计。
+export interface ObservedMemory extends Omit<z.infer<typeof MemoryEntrySchema>, 'createdAtGameTime'> {
+  createdAtGameTime?: string;
+  recordKey: string;
+  layer: string;
+  tier: 'short' | 'medium' | 'long' | 'npc';
+  origin: 'stored' | 'journal';
+  ownerNpcId?: string;
+  knowledgeKind?: z.infer<typeof KnowledgeNatureSchema>;
+  knowledgeSource?: string;
+  npcProvenance?: z.infer<typeof NpcSummarySchema>['npcProvenance'];
+}
+
+// 仅用于玩家只读观察。不得复用为Story或NPC认知上下文，不改变任何visibility/来源。
 export function playerView(state: GameState, authoredCompanion?: CompanionProfile, effectiveWindowSize = state.memories.immediateWindowSize) {
   const archive = authoredCompanion ?? initialCompanionProfile(state);
   const companion = archive && matchesCompanion(state, archive) ? archive : undefined;
-  const events = Object.values(state.events).filter((event) => event.visibility === 'known');
-  const short = publicShortMemories(state);
+  const storedShortIds = new Set(state.memories.short.map(memory => memory.id));
+  const publicShort = publicShortMemories(state).filter(memory => memory.origin !== 'journal' || !storedShortIds.has(memory.id));
+  const displayedIds = new Set(publicShort.map(memory => memory.id));
+  // 保留原公开来源排序与只读旧档投影；补全尚未显示的实际记录，不影响压缩候选或Story窗口。
+  const short = [...publicShort, ...state.memories.short.filter(memory => !displayedIds.has(memory.id)).map(memory => ({ ...memory, origin: 'stored' as const }))];
   const journal = historyRecords(state.journal);
-  const turnTimes = new Map(short.filter((memory) => memory.origin === 'stored' && memory.sourceTurnIds.length === 1)
-    .map((memory) => [memory.sourceTurnIds[0], memory.createdAtGameTime]));
-  const memories = [
-    ...short.map((memory) => ({ ...memory, tier: 'short' as const, layer: memory.origin === 'journal' ? '短期（历史摘要，只读）' : '短期' })),
-    ...state.memories.medium.map((memory) => ({ ...memory, tier: 'medium' as const, origin: 'stored' as const, layer: '中期' })),
-    ...state.memories.long.map((memory) => ({ ...memory, tier: 'long' as const, origin: 'stored' as const, layer: '长期' })),
-    ...Object.values(state.memories.npcSummaries)
-      .flat()
-      .map((memory) => ({ ...memory, tier: 'long' as const, origin: 'stored' as const, layer: '人物摘要' })),
-    ...Object.values(state.npc).flatMap((npc) => [
-      ...npc.memories.map((memory) => ({ ...memory, tier: 'short' as const, origin: 'stored' as const, layer: '人物记忆' })),
-      ...(npc.kind === 'special'
-        ? npc.longTermMemories.map((memory) => ({ ...memory, tier: 'long' as const, origin: 'stored' as const, layer: '人物长期记忆' }))
-        : []),
-    ]),
-  ].filter((memory) => memory.visibility === 'player_known');
-  const knownActors = new Set(
-    [
-      ...state.journal.flatMap((entry) => entry.relatedActorRefs),
-      ...events.flatMap((event) => event.actorRefs),
-      ...memories.flatMap((memory) => memory.affectedEntityRefs),
-    ].map((ref) => `${ref.kind}:${ref.id}`),
-  );
-  const npc = Object.values(state.npc)
-    .filter(
-      (person) =>
-        person.onScene ||
-        person.lastInteractionAt ||
-        person.id === state.initialCompanionId ||
-        knownActors.has(`npc:${person.id}`),
-    )
-    .map((person) => ({
-      id: person.id,
-      isContact: state.contactNpcIds.includes(person.id),
-      contactReviewPending: state.contactReviewNpcIds.includes(person.id),
-      name: person.id === companion?.npcId ? companion.name : person.name,
-      kind: person.kind,
-      // M2 暂不凭在场或引用公开内部身份/关系，不定义最终的玩家视角模式。
-      relationshipText: person.id === companion?.npcId ? companion.relationshipText : undefined,
-      affinity: person.id === state.initialCompanionId && !person.affinityConfirmed ? null : person.affinity,
-      locationId: person.onScene ? person.locationId : undefined,
-      onScene: person.onScene,
-      identity: person.id === companion?.npcId ? companion.identity : undefined,
-      profile: person.id === companion?.npcId ? companion.profile : undefined,
-    }));
-  const organizations = Object.values(state.organizations)
-    .filter((org) => knownActors.has(`organization:${org.id}`))
-    .map((org) => ({
-      id: org.id,
-      name: org.name,
-      kind: org.kind,
-    }));
-  const items = Object.values(state.items).filter(
-    (item) => item.ownerRef?.kind === 'protagonist' && item.ownerRef.id === state.protagonist.id,
-  );
-  const timeline = state.timeline
-    .filter((entry) => {
-      const event = state.events[entry.eventId];
-      return (
-        event?.status === 'resolved' && event.impact === 'major' && event.visibility === 'known'
-      );
-    })
-    .sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt));
-  const visibleLocations = new Set([
-    state.protagonist.locationId,
-    ...npc.map((p) => p.locationId),
-    ...items.map((i) => i.locationId),
-    ...events.map((e) => e.locationId),
-    ...timeline.map((t) => t.locationId),
-  ]);
-  for (const id of [...visibleLocations]) {
-    let parent = id ? state.locations[id]?.parentId : undefined;
-    const visited = new Set<string>();
-    while (parent && !visited.has(parent)) {
-      visited.add(parent);
-      visibleLocations.add(parent);
-      parent = state.locations[parent]?.parentId;
-    }
-  }
+  const turnTimes = new Map(short.filter(memory => memory.visibility === 'player_known' && memory.origin === 'stored' && memory.sourceTurnIds.length === 1)
+    .map(memory => [memory.sourceTurnIds[0], memory.createdAtGameTime]));
+  const memories: ObservedMemory[] = [
+    ...short.map(memory => ({ ...memory, recordKey: `short:${memory.id}`, tier: 'short' as const, layer: memory.origin === 'journal' ? '短期（历史摘要，只读）' : '短期' })),
+    ...state.memories.medium.map(memory => ({ ...memory, recordKey: `medium:${memory.id}`, tier: 'medium' as const, origin: 'stored' as const, layer: '中期' })),
+    ...state.memories.long.map(memory => ({ ...memory, recordKey: `long:${memory.id}`, tier: 'long' as const, origin: 'stored' as const, layer: memory.retiredNpcSource ? '退场人物保留记录' : '长期',
+      ownerNpcId: memory.retiredNpcSource?.npcId, knowledgeKind: memory.retiredNpcSource?.knowledgeKind, knowledgeSource: memory.retiredNpcSource?.knowledgeSource })),
+    ...Object.entries(state.memories.npcSummaries).flatMap(([npcId, entries]) => entries.map(memory => ({
+      ...memory, recordKey: `summary:${npcId}:${memory.id}`, ownerNpcId: npcId, knowledgeKind: memory.npcProvenance?.knowledgeKind ?? 'unknown',
+      tier: 'npc' as const, origin: 'stored' as const, layer: '人物总结',
+    }))),
+    ...Object.values(state.npc).flatMap(person => [
+      ...person.memories.map(memory => ({ ...memory, layer: '人物原始记忆' })),
+      ...(person.kind === 'special' ? person.longTermMemories.map(memory => ({ ...memory, layer: '人物长期记忆' })) : []),
+    ].map(memory => ({ ...memory, recordKey: `npc:${person.id}:${memory.layer}:${memory.id}`, ownerNpcId: person.id,
+      knowledgeKind: npcKnowledgeKind(memory), tier: 'npc' as const, origin: 'stored' as const }))),
+  ];
+  const npc = Object.values(state.npc).map(person => ({
+    ...person,
+    isContact: state.contactNpcIds.includes(person.id),
+    contactReviewPending: state.contactReviewNpcIds.includes(person.id),
+    affinity: person.id === state.initialCompanionId && !person.affinityConfirmed ? null : person.affinity,
+    storedAffinity: person.affinity,
+    profile: person.id === companion?.npcId ? companion.profile : undefined,
+    authoredProfile: person.id === companion?.npcId ? companion : undefined,
+    summaries: state.memories.npcSummaries[person.id] ?? [],
+  }));
   return {
-    npc,
-    organizations,
-    items,
-    locations: Object.values(state.locations).filter((place) => visibleLocations.has(place.id)),
-    events: events.map((e) => ({
-      id: e.id,
-      title: e.title,
-      startAt: e.startAt,
-      status: e.status,
-      resolutionText: e.resolutionText,
-    })),
-    timeline: timeline.map((entry) => ({
-      eventId: entry.eventId,
-      occurredAt: entry.occurredAt,
-      title: entry.title,
-      summary: entry.summary,
-      outcome: entry.outcome,
-      longTermImpact: entry.longTermImpact,
-      sourceTurnIds: entry.sourceTurnIds,
-    })),
-    memories: memories.map((memory) => ({
-      id: memory.id,
-      layer: memory.layer,
-      tier: memory.tier,
-      origin: memory.origin,
-      text: memory.text,
-      sourceTurnIds: memory.sourceTurnIds,
-      createdAtGameTime: memory.createdAtGameTime,
-    })),
-    // 即时只是永久正文的只读窗口，不创建MemoryEntry，也不借当前时钟填补旧历史。
-    immediateMemories: journal.slice(-effectiveWindowSize).map((entry) => ({ ...entry, createdAtGameTime: turnTimes.get(entry.turnId) })),
+    npc, organizations: Object.values(state.organizations), items: Object.values(state.items),
+    locations: Object.values(state.locations), events: Object.values(state.events),
+    retiredEvents: Object.values(state.retiredEvents), retiredNpcs: Object.values(state.retiredNpcs),
+    tasks: Object.values(state.tasks), economy: state.economy,
+    protagonist: state.protagonist,
+    timeline: state.timeline.filter(entry => isHistoricalEntry(state, entry)).sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt)),
+    memories,
+    immediateMemories: journal.slice(-effectiveWindowSize).map(entry => ({ ...entry, createdAtGameTime: turnTimes.get(entry.turnId) })),
     immediateWindowSize: effectiveWindowSize,
     memoryLayers: {
-      short: memories.filter((m) => m.tier === 'short').length,
-      medium: memories.filter((m) => m.tier === 'medium').length,
-      long: memories.filter((m) => m.tier === 'long').length,
+      short: memories.filter(m => m.tier === 'short').length,
+      medium: memories.filter(m => m.tier === 'medium').length,
+      long: memories.filter(m => m.tier === 'long').length,
+      npc: memories.filter(m => m.tier === 'npc').length,
     },
     journal,
   };

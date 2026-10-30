@@ -1,3 +1,5 @@
+import { validateSceneEventUpdate } from '../../domain/events/scenePermission';
+import { eventById } from '../../domain/events/lifecycle';
 import { requireData } from '../../domain/common';
 import { fingerprint } from '../../domain/commands';
 import { completeTurnDraft, turnCommands } from '../../domain/turnCommit';
@@ -19,7 +21,7 @@ export function validateTurnCandidates(state: GameState, draft: TurnDraft) {
   const ready = (conditions: string[]) =>
     conditions.every((id) => {
       const task = state.tasks[id.replace(/^task:/, '')];
-      const event = state.events[id.replace(/^event:/, '')];
+      const event = eventById(state,id.replace(/^event:/, ''));
       return task?.status === 'completed' || event?.status === 'resolved';
     });
   for (const command of draft.variables!.result.commands) {
@@ -28,11 +30,11 @@ export function validateTurnCandidates(state: GameState, draft: TurnDraft) {
     const event = command.type === 'SaveEvent' ? command.event : undefined;
     const work = task ?? event!;
     const old = task ? state.tasks[work.id] : state.events[work.id];
-    const refs = task ? [task.actorRef] : event!.actorRefs;
-    requireData(
-      refs.every((ref) => ref.kind !== 'npc' || Boolean(projected.npc[ref.id]?.onScene)),
+    if (event) validateSceneEventUpdate(state, projected, event, draft.turnId);
+    if (task) requireData(
+      task.actorRef.kind !== 'npc' || Boolean(projected.npc[task.actorRef.id]?.onScene),
       'SCENE_PERMISSION',
-      '场外任务或事件必须由世界阶段处理',
+      '场外任务必须由世界阶段处理',
     );
     if (old) {
       requireData(

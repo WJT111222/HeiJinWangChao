@@ -1,3 +1,4 @@
+import { validateSceneEventUpdate } from '../../domain/events/scenePermission';
 import { openingTimeBase } from '../../domain/openingTime';
 import { StorySchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
@@ -43,8 +44,8 @@ export async function parseTextVariables(text: string, state: GameState, draft: 
   if (!simulated.ok) throw textExecutionError(simulated.error);
   // 复用正式提交已有的场景权限底线；文本任务/事件不能冒充World后台操作。
   for (const [commandIndex, command] of compiled.value.commands.entries()) {
-    const actors = command.type === 'SaveTask' ? [command.task.actorRef]
-      : command.type === 'SaveEvent' ? command.event.actorRefs : [];
+    if (command.type === 'SaveEvent') validateSceneEventUpdate(state, simulated.value, command.event, draft.turnId);
+    const actors = command.type === 'SaveTask' ? [command.task.actorRef] : [];
     if (actors.some((actor) => actor.kind === 'npc' && !simulated.value.npc[actor.id]?.onScene))
       throw new AiError('data_integrity', undefined, { fieldPath: 'commands.actorRef', commandIndex, commandType: command.type });
   }
@@ -106,12 +107,15 @@ export function parseVariables(text: string, state: GameState, draft: TurnDraft)
   const raw = json(text);
   const checked = VariableResultSchema.safeParse(raw);
   if (!checked.success) throw variableValidationError(checked.error, raw);
+  if(checked.data.commands.some(c=>c.type==='DeleteEvent'||c.type==='ArchiveEvent'))throw new AiError('permission');
   if (!draft.story) throw new AiError('candidate_conflict');
   try { state = openingTimeBase(state, draft); } catch (error) { throw variableValidationError(error); }
   if (new Set(checked.data.commands.map((c) => c.commandId)).size !== checked.data.commands.length) throw new AiError('candidate_conflict');
   try {
     validateTimeCommands(timeState, draft, checked.data.commands);
-    commitCommands(state, draft.turnId, state.revision, variableCommandsForTurn(timeState, draft, checked.data.commands), state.updatedAt);
+    const projected = commitCommands(state, draft.turnId, state.revision, variableCommandsForTurn(timeState, draft, checked.data.commands), state.updatedAt);
+    for (const command of checked.data.commands)
+      if (command.type === 'SaveEvent') validateSceneEventUpdate(state, projected, command.event, draft.turnId);
   } catch (error) { throw variableValidationError(error); }
   return checked.data;
 }

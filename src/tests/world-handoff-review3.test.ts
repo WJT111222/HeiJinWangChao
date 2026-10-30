@@ -126,7 +126,7 @@ describe('事件事实、结果叙述和计划的独立来源', () => {
     await expect(ready(repo, (state) => ({ ...worldResult([{ type: 'UpdateNpc', commandId: 'hidden-knowledge', npcId: 'npc-b', expectedRevision: state.revision,
       changes: { healthText: '得知举报后紧张' }, evidence: proof({ kind: sourceId === 'event:report' ? 'established' : 'derived',
         at: new Date(Date.parse(state.worldClock) + 300000).toISOString(), sources: [sourceId, 'npc:npc-b'], fact: received }) }]) }))).rejects.toThrow();
-    expect(JSON.stringify(playerView(first.state))).not.toContain(claim);
+    expect(JSON.stringify(playerView(first.state))).toContain(claim);
     const context = contextFor({ stage: 'story', mode: 'regular', state: first.state, settings: defaultSettings(), userInput: '继续休息' });
     expect(JSON.stringify(context)).not.toContain(claim);
     expect(await repo.load('save-a')).toEqual(first.state);
@@ -168,7 +168,7 @@ describe('事件事实、结果叙述和计划的独立来源', () => {
   it.each([1, 2, 3, 4])('真实IndexedDB中的V%s旧已结案事件可读取，不补造事实，回执可重放', async (version) => {
     const factory = new IDBFactory(), repo = await repository(handoffState(), factory);
     const selected = await ready(repo, (state, draft) => ({ ...worldResult(), eventCommands: [reportEvent(state, draft)] })), input = submission(selected);
-    const first = await repo.commitTurn(input), raw = { ...first.state, schemaVersion: version };
+    const first = await repo.commitTurn(input), raw = { ...first.state, schemaVersion: version }; Reflect.deleteProperty(raw, 'retiredEvents');
     if (version < 4) Reflect.deleteProperty(raw, 'contactReviewNpcIds');
     if (version < 3) { Reflect.deleteProperty(raw, 'contactNpcIds'); Reflect.deleteProperty(raw, 'retiredNpcs'); }
     if (version === 1) { Reflect.deleteProperty(raw, 'weatherText'); Reflect.deleteProperty(raw, 'environmentText'); }

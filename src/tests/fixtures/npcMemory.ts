@@ -5,7 +5,7 @@ import type { NpcMemoryBatch } from '../../domain/memories/npcMemory';
 import { npc, gameTime } from './game';
 import { historyState } from './history';
 
-// 仅测试使用：秘密人物/经历不能进入正式创角或普通玩家资料。
+// 仅测试使用：隔离测试人物/经历不进入正式创角；玩家只读观察可查看，不授予主角/NPC知识。
 export function npcMemoryState(count = 21, special = false) {
   const state = historyState(count);
   state.journal.forEach((entry) => { entry.relatedActorRefs = []; }); // 场外秘密人物尚未向主角公开。

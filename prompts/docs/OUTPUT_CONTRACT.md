@@ -11,11 +11,11 @@
 `DomainCommand` 是严格的 `type` 判别联合，包含 `commandId/type/evidence` 及类型专属的同级字段，不接受旧 group/entityId/payload 包装。旧候选的 JSON 领域命令仍通过结构与副本业务验证；新请求通过 TEXT_COMMAND_CATALOG 的文本映射由程序生成 commandId/evidence/expectedRevision。模型不得自行输出这些程序元数据；候选不直接写入正式状态。
 
 ## 阶段③ 世界输出
-返回JSON对象`{worldCommands:DomainCommand[],taskCommands:DomainCommand[],eventCommands:DomainCommand[],futureEvents:WorldEvent[],visibleHooks:{text,revealAfter?}[],timelineCandidates:string[],unresolved:string[]}`。`futureEvents`需要稳定ID、开始时间、status、actorRefs、visibility、impact、sourceTurnIds；其它字段以技术文档定义为准。
+返回JSON对象`{worldCommands:DomainCommand[],taskCommands:DomainCommand[],eventCommands:DomainCommand[],futureEvents:WorldEvent[],visibleHooks:{text,revealAfter?}[],timelineCandidates:string[],unresolved:string[]}`。`futureEvents`是本批已验证SaveEvent的未来计划镜像，不能单独写库。新事件必需id/title/startAt/estimatedEndAt/backgroundText/goalText/非空actorRefs，以及linkedTaskIds/prerequisites/blockers/visibility/impact/sourceTurnIds。完成条件不能代替预计时间；Task继续使用dueAt或completionCondition。事件终态可outcome=success/failure/changed/cancelled，到期不是成功。
 **与先前技术文档接口的调整说明：** 因开局世界阶段需要真正初始化场外组织，建议将原`WorldStageResult`扩展一个`worldCommands`字段，仅允许操作场外NPC与组织，代码层须严格校验权限。否则由变量阶段预先建组织将违反“只更新在场NPC”的设计分工。
 
 ## 三层不同时间与可见性
-程序记录的是**世界真值**（所有已合法提交的真实事件）。主角只知道经感知、告知或媒体合理传播的部分；玩家视图只展示主角已知的合法部分。后台JSON中`hidden`字段允许存在，但UI日志、记忆查看和时间轴不能直接复制后台完整JSON。
+程序记录的是**世界真值**（所有已合法提交的真实事件）。主角只知道经感知、告知或媒体合理传播的部分；玩家可只读查看全部正式世界变量；查看不改变角色认知。`hidden`/`npc_private`/`internal`存量字段仍保留角色来源含义，不再屏蔽玩家面板。主角正文/回忆上下文继续按主角知晓范围构造，不复用玩家观察投影。
 
 ## 参数占位符（由程序替换，不能让模型自行改）
 `{{worldClock}}`、`{{playerName}}`、`{{minNarrativeChars}}`、`{{immediateMemoryTurns}}`、`{{npcSummaryThreshold}}`、`{{npcId}}`。所有占位符必须在最终发出的消息中消失；若缺值应作为组包错误停止，而不是让AI看到原始花括号。
@@ -33,7 +33,7 @@
 
 变量协议中的推荐命令仍不是 M1 实际 COMMAND_CATALOG。P2 必须提供真实目录，缺少目录/类型不匹配时阻止请求或明确失败；本轮未修改 M1 的正式命令、Schema 与原子提交。NPC 记忆补丁中暂不支持的变更只能 unresolved，不能靠自由路径写入。
 
-玩家可见视图与主角认知分别建模；本轮不改 M2 展示，也不借本补充确定最终 NPC 全档案开放模式。
+玩家可见视图与主角认知分别建模；当前玩家全量观察界面与角色知情分别维护；面板不注入Story，不授予任何角色新知识。
 
 
 ## M3-P2 待办：实际命令 Schema 与提示词协议对齐
@@ -89,7 +89,7 @@
 
 金额必须为整数分；证据只有一处明确“元/分”金额时，校验其与命令数值一致。多金额、折扣、税费或缺少数字的证据不能仅靠字符串推断单位/交易真实性，仍需后续更强的事实校验与人工审查，不能声称已自动识别所有语义错误。
 
-候选通过 M1 commitCommands 在脱离仓库的副本上模拟，检查归属、余额、引用、时间和整批回滚，不写 SaveRepository；世界变量 pending 时只读旧快照，不冒充正式结算。正文上下文保守选择现场与公开资料，不把 NPC 后台知识作为玩家可见内容；最终玩家视角仍非本阶段的新玩法设置。
+候选通过 M1 commitCommands 在脱离仓库的副本上模拟，检查归属、余额、引用、时间和整批回滚，不写 SaveRepository；世界变量 pending 时只读旧快照，不冒充正式结算。正文上下文保守选择现场与主角已知资料，不把 NPC 后台知识注入正文；玩家只读观察另行开放，不改变模型认知。
 
 ## M4-P2 当前命令能力与候选运行
 
@@ -179,3 +179,11 @@ WorldEvent.resultKnowledge?沿用任务现有严格分类，不新增AI阶段。
 evidence保持原字符串Schema，作为来源说明，不是逐字引用证明。AI负责计划/否定/事实、关系及技能变化的语义判断；程序不使用factEvidence/completedPayment或金额文本正则拒绝变量候选。严格JSON、命令白名单、整数分金额、余额、归属、引用、场景一致性、NPC知识类型与权限、生命周期和时间完整性、CAS、幂等及原子提交继续保留。任何单条数据底线错误整批拒绝，无静默部分接纳。空commands合法。
 
 失败安全分类：invalid_json、schema_fields、data_integrity、amount_balance、time_data、candidate_conflict，以及既有permission。可查看白名单字段路径/命令类型/序号，不包含值、原始校验异常、NPC私有内容或供应商响应。世界阶段自身的结构化来源与worldEventOnly/ownerNpcId知识隔离契约不因变量减负而关闭。
+
+## 当前事件生命周期（本次产品决策优先）
+
+World 的 eventCommands 允许 SaveEvent、DeleteEvent、ArchiveEvent。DeleteEvent(eventId,expectedStatus,reason)清理已终止的完整对象；ArchiveEvent(eventId,title,summary)凭可信fact来源归档重大实际结束结果，无需主角先知晓，也不清理重要完整对象。DeleteEvent仅清理minor、无主角参与和必要引用的独立普通终态。两者保留稳定commandId/evidence，仍受权限、来源、版本、整批模拟和原子事务保护。retiredEvents保存轻量身份与必要成果引用，不能自动授予NPC或主角知识。历史时间线不要求保留完整活跃事件。
+
+EVENT_SCHEDULE含正式时间至变量投影时间内（包括积压）的可处理场外到期事件；同一World请求按时间和依赖推演。正常结束、失败、取消、合理延期均可，无需强制后继；延期的下一预计时间必须晚于本轮窗口。futureEvents不能绕过该验证。旧缺预计时间的事件只读兼容并列unplannedLegacy，不补造历史日期。
+
+Variables只通过TEXT_COMMAND_CATALOG的`set events[id].sceneState`更新已有现场事件的有限状态字段，不规划全新后台事件。新事件规划归World。普通Task保留原有独立语义，不因本次Event调度被强制要求dueAt。权威细则见`docs/WORLD_EVENT_LIFECYCLE.md`。

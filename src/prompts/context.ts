@@ -1,3 +1,4 @@
+import { worldEventSchedule } from '../domain/events/schedule';
 import { chinaCalendar, openingTimeBase, openingTimeContext, openingTimeSelection } from '../domain/openingTime';
 import { GameStateSchema } from '../domain/state';
 import type { GameState } from '../domain/state';
@@ -253,6 +254,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       BASE_SAVE_REVISION: state.revision,
       worldClock: temporary.worldClock,
       TIME_WINDOW: { from: state.worldClock, to: temporary.worldClock },
+      EVENT_SCHEDULE: historicalPerspective(state,draft!) ? {readOnly:true,policy:'纯过去视角只读，不处理当前世界到期事件；原排程保留到正常世界回合。'} : worldEventSchedule(state, temporary),
       variablePending,
       STORY_RESULT: { narrative: draft!.story!.narrative, summary: draft!.story!.summary },
       VARIABLE_RESULT: variablePending ? undefined : draft!.variables,
@@ -286,6 +288,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
               !state.npc[task.actorRef.id]?.onScene)),
         ),
         events: temporary.events,
+        retiredEvents: Object.fromEntries(Object.entries(temporary.retiredEvents).filter(([,record])=>record.detail)),
         locations: temporary.locations,
       },
       COMMAND_CATALOG: commandCatalog('world'),

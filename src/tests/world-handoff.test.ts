@@ -59,7 +59,7 @@ describe('自主终结与有依据的同窗口交接', () => {
     expect(projected.tasks.next.actorRef.kind).toBe(kind);
     expect(Object.keys(projected.npc)).toEqual(Object.keys(state.npc));
     expect(state).toEqual(before);
-    expect(JSON.stringify(playerView(projected))).not.toContain(resultText);
+    expect(JSON.stringify(playerView(projected))).toContain(resultText);
   });
   it('同一 NPC 结束旧职责后可在实际释放时间之后开始新职责，不强制隔回合', () => {
     const state = handoffState(), result = handoffResult(state, { kind: 'npc', id: 'npc-a' });
@@ -137,7 +137,7 @@ describe('自主终结与有依据的同窗口交接', () => {
     r.worldCommands = [memory];
     const projected = project(state, r);
     expect(projected.npc['npc-b'].memories[0].knowledgeKind).toBe('reported');
-    expect(JSON.stringify(playerView(projected))).not.toContain(resultText);
+    expect(JSON.stringify(playerView(projected))).toContain(resultText);
     memory.memory.visibility = 'player_known'; expect(() => parse(state, r)).toThrow();
   });
   it('隐藏事件ID仍不能给B授权，缺少实际交接也不能借A私有task来源', () => {
@@ -184,11 +184,11 @@ describe('联系人与最小身份历史，严格引用边界', () => {
     const r = retireCandidate(state); const retire = r.worldCommands[0]; if (retire.type !== 'RetireNpc') throw Error(); retire.retainMemoryIds = ['m1'];
     const projected = project(state, r);
     expect(projected.memories.long.map((m) => m.visibility)).toEqual(['player_known', 'internal']);
-    expect(JSON.stringify(playerView(projected))).not.toContain('私有账册');
+    expect(JSON.stringify(playerView(projected))).toContain('私有账册');
     expect(projected.memories.npcSummaries['npc-a']).toBeUndefined();
   });
   it('事件仍在推进但已有真实继任职责可退出，不改写历史参与者', () => {
-    const state = handoffState(); state.events.case = { ...event('case'), actorRefs: [{ kind: 'npc', id: 'npc-a' }], linkedTaskIds: ['work'] }; state.tasks.work.linkedEventId = 'case';
+    const state = handoffState(); state.events.case = { ...event('case'), estimatedEndAt:'2026-10-19T08:00:00+08:00', actorRefs: [{ kind: 'npc', id: 'npc-a' }], linkedTaskIds: ['work'] }; state.tasks.work.linkedEventId = 'case';
     const r = handoffResult(state), next = r.taskCommands[0]; if (next.type !== 'SaveTask') throw Error(); next.task.linkedEventId = 'case';
     r.worldCommands = [retireCommand(state)];
     r.eventCommands = [{ type: 'SaveEvent', commandId: 'case-link', event: { ...state.events.case, linkedTaskIds: ['work', 'next'] }, evidence: proof({ kind: 'planned', sources: ['event:case', 'npc:npc-a'], fact: '保留核验安排。' }) }];
@@ -202,10 +202,10 @@ describe('联系人与最小身份历史，严格引用边界', () => {
     expect(() => commitCommands(retired, 'later', retired.revision, [command])).toThrow();
   });
   it('V2迁移将既有NPC独立标记为待复核，V1链式升级，保持revision/journal和幂等；损坏档不洗白', () => {
-    const state = handoffState(), v2 = { ...state, schemaVersion: 2 }; Reflect.deleteProperty(v2, 'contactNpcIds'); Reflect.deleteProperty(v2, 'retiredNpcs'); Reflect.deleteProperty(v2, 'contactReviewNpcIds');
+    const state = handoffState(), v2 = { ...state, schemaVersion: 2 }; Reflect.deleteProperty(v2, 'retiredEvents'); Reflect.deleteProperty(v2, 'contactNpcIds'); Reflect.deleteProperty(v2, 'retiredNpcs'); Reflect.deleteProperty(v2, 'contactReviewNpcIds');
     const migrated = migrateSave(v2); expect(migrated.contactNpcIds).toEqual([]); expect([...migrated.contactReviewNpcIds].sort()).toEqual(Object.keys(state.npc).sort()); expect(migrated.revision).toBe(state.revision); expect(migrated.journal).toEqual(state.journal);
     expect(migrateSave(migrated)).toEqual(migrated);
-    const v1 = { ...v2, schemaVersion: 1 }; Reflect.deleteProperty(v1, 'weatherText'); Reflect.deleteProperty(v1, 'environmentText'); expect(migrateSave(v1).contactNpcIds).toEqual([]);
+    const v1 = { ...v2, schemaVersion: 1 }; Reflect.deleteProperty(v1, 'retiredEvents'); Reflect.deleteProperty(v1, 'weatherText'); Reflect.deleteProperty(v1, 'environmentText'); expect(migrateSave(v1).contactNpcIds).toEqual([]);
     expect(() => migrateSave({ ...v2, npc: { bad: npc() } })).toThrow();
   });
 });
@@ -253,7 +253,7 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
     expect(next.state.tasks.next.status).toBe('completed'); expect(Object.keys(next.state.tasks).sort()).toEqual(['next', 'work']);
     expect(next.state.journal).toHaveLength(2); expect(next.state.npc['npc-a']).toBeUndefined(); expect(next.state.npc['npc-b']).toBeDefined();
     expect(next.state.economy.cash).toBe(7000); // 只有首回合正文中的一次真实消费，交接没有发放任何资金。
-    expect(JSON.stringify(playerView(next.state))).not.toContain(resultText);
+    expect(JSON.stringify(playerView(next.state))).toContain(resultText);
   });
   it('联系人正式登记、刷新、完成任务后仍完整保留；世界不能注册联系人', async () => {
     const repo = await repository(), before = await repo.load('save-a');
@@ -298,7 +298,7 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
       expect((await repo.loadDraft('save-a'))?.world).toBeUndefined();
     }
   });
-  it('隐藏调查成果仅在独立正文汇报后公开；已知重大结案可入时间线，普通事件无需入列', async () => {
+  it('玩家可读后台成果，角色传播须独立依据；可信重大成果可入历史', async () => {
     const repo = await repository();
     const state = await repo.load('save-a'), d = await prepared(repo);
     const secret = { ...event('investigation'), title: '材料核验结果', actorRefs: [{ kind: 'npc' as const, id: 'npc-a' }], status: 'resolved' as const, resolvedAt: actionTime, resolutionText: resultText, sourceTurnIds: [d.turnId] };
@@ -307,7 +307,7 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
     const validated = parseWorld(JSON.stringify(raw), state, d);
     const ready = await repo.saveDraft({ ...d, draftRevision: d.draftRevision + 1, world: { ...d.world!, candidateRevision: 2, result: validated } }, d.draftRevision);
     const first = await repo.commitTurn(submission(ready));
-    expect(first.state.timeline).toEqual([]); expect(JSON.stringify(playerView(first.state))).not.toContain(resultText);
+    expect(first.state.timeline).toEqual([]); expect(JSON.stringify(playerView(first.state))).toContain(resultText);
     expect(recallHistory(historyRecords(first.state.journal), '登记编号318', new Set())).toEqual([]);
     const fact = `主角收到了核验结果：${resultText}`;
     const draft = await completeDraft(repo, { narrative: fact, variables: await elapsedVariables(repo, fact, 600) });
@@ -316,8 +316,8 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
       evidence: proof({ at: '2026-10-18T08:15:00+08:00', kind: 'established', sources: ['story:current', 'npc:npc-a'], fact: resultText }) }], timelineCandidates: ['investigation'] };
     // 已结案事件不可重写：改公开状态属于未来正式揭示协议，本轮必须拒绝而非绕过终态。
     expect(() => parseWorld(JSON.stringify(result), first.state, draft)).toThrow();
-    const publicEvent = { ...disclosed, id: 'public-report', startAt: '2026-10-18T08:15:00+08:00', resolvedAt: '2026-10-18T08:15:00+08:00', estimatedEndAt: '2026-10-18T08:20:00+08:00' };
-    const publicResult = { ...worldResult(), eventCommands: [{ ...result.eventCommands[0], event: publicEvent }], timelineCandidates: [publicEvent.id] };
+    const publicEvent = { ...disclosed, resultKnowledge: { facts: [resultText], reported: [], suspected: [] }, id: 'public-report', startAt: '2026-10-18T08:14:00+08:00', resolvedAt: '2026-10-18T08:15:00+08:00', estimatedEndAt: '2026-10-18T08:20:00+08:00' };
+    const publicResult = { ...worldResult(), eventCommands: [{ ...result.eventCommands[0], event: publicEvent, evidence: proof({at:'2026-10-18T08:15:00+08:00',kind:'established',sources:['story:current','npc:npc-a'],fact:resultText,decision:{targetId:'public-report',status:'resolved',reason:'核验结果已传达',result:resultText,conditionsSatisfied:true,continues:false,resultKnowledge:{facts:[resultText],reported:[],suspected:[]}}}) }], timelineCandidates: [publicEvent.id] };
     publicEvent.sourceTurnIds = [draft.turnId];
     const checked = parseWorld(JSON.stringify(publicResult), first.state, draft);
     const accepted = await repo.saveDraft({ ...draft, draftRevision: draft.draftRevision + 1, world: { ...draft.world!, candidateRevision: 2, result: checked } }, draft.draftRevision);
@@ -434,10 +434,10 @@ describe('真实IndexedDB旧档升级与回执', () => {
   it('V2档与已有回执升级后可读取、重放并继续；正式revision和原文不变', async () => {
     const factory = new IDBFactory(), repo = await SaveRepository.open('old-v2', factory); resources.push(repo); await repo.create(handoffState());
     const draft = await completeDraft(repo), first = await repo.commitTurn(submission(draft));
-    const v2 = { ...first.state, schemaVersion: 2 }; Reflect.deleteProperty(v2, 'contactNpcIds'); Reflect.deleteProperty(v2, 'retiredNpcs'); Reflect.deleteProperty(v2, 'contactReviewNpcIds');
+    const v2 = { ...first.state, schemaVersion: 2 }; Reflect.deleteProperty(v2, 'retiredEvents'); Reflect.deleteProperty(v2, 'contactNpcIds'); Reflect.deleteProperty(v2, 'retiredNpcs'); Reflect.deleteProperty(v2, 'contactReviewNpcIds');
     const db = await new Promise<IDBDatabase>((resolve) => { const request = factory.open('old-v2'); request.onsuccess = () => resolve(request.result); });
     await new Promise<void>((resolve, reject) => { const tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(v2); tx.oncomplete = () => resolve(); tx.onabort = () => reject(tx.error); }); db.close();
-    const upgraded = await repo.load('save-a'); expect(upgraded.schemaVersion).toBe(4); expect(upgraded.revision).toBe(first.state.revision); expect(upgraded.journal).toEqual(first.state.journal);
+    const upgraded = await repo.load('save-a'); expect(upgraded.schemaVersion).toBe(5); expect(upgraded.revision).toBe(first.state.revision); expect(upgraded.journal).toEqual(first.state.journal);
     expect(upgraded.contactNpcIds).toEqual([]); expect([...upgraded.contactReviewNpcIds].sort()).toEqual(Object.keys(upgraded.npc).sort());
     const replay = await repo.commitTurn(submission(draft)); expect(replay.replayed).toBe(true); expect(replay.state).toEqual(upgraded);
     const next = await completeDraft(repo, { variables: await elapsedVariables(repo, worldDraft().story!.narrative, 600) });

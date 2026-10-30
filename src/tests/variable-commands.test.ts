@@ -71,7 +71,7 @@ function withItem() {
 
 describe('M4-P2 八类严格领域命令', () => {
   it('真实目录包含旧十四类和八类新命令，所有类型均可导出严格 JSON Schema', () => {
-    expect(DomainCommandSchema.options).toHaveLength(24);
+    expect(DomainCommandSchema.options).toHaveLength(26);
     expect(commandCatalog('variables').schema.oneOf).toHaveLength(23);
     for (const type of [
       'UpdateProtagonist',
@@ -311,7 +311,7 @@ describe('M4-P2 八类严格领域命令', () => {
     expect(next.npc['npc-a'].memories[0].visibility).toBe('npc_private');
     expect(next.npc['npc-a'].knownInformation[0].text).toMatch(/^\[转述\]/);
     expect(next.economy).toEqual(state.economy);
-    expect(playerView(next).memories).toEqual([]);
+    expect(playerView(next).memories).toContainEqual(expect.objectContaining({ text: '[转述]听到有人自称收款，尚未证实', visibility: 'npc_private', knowledgeKind: 'reported' }));
     expect(() =>
       apply([{ ...command, memory: { ...command.memory, text: '已客观到账一百万' } }], state),
     ).toThrow();

@@ -439,7 +439,7 @@ describe('M3-P1 审阅修订与 P2 协议差异记录', () => {
     ).toBe(false);
     const todo = text('docs/OUTPUT_CONTRACT.md');
     expect(todo).toContain('M3-P2 待办');
-    expect(DomainCommandSchema.options).toHaveLength(24);
+    expect(DomainCommandSchema.options).toHaveLength(26);
     for (const option of DomainCommandSchema.options)
       expect(todo).toContain(option.shape.type.value);
     for (const required of [
@@ -467,7 +467,7 @@ describe('M3-P1 审阅修订与 P2 协议差异记录', () => {
       linkedTaskIds: [],
       prerequisites: [],
       blockers: [],
-      completionCondition: '事项办结',
+      completionCondition: '事项办结', estimatedEndAt:'2026-10-19T09:00:00+08:00',backgroundText:'既有事项',goalText:'办理事项',actorRefs:[{kind:'npc',id:'npc-test'}],
     };
     expect(WorldEventSchema.safeParse(complete).success).toBe(true);
     expect(WorldEventSchema.safeParse({ ...complete, status: 'completed' }).success).toBe(false);

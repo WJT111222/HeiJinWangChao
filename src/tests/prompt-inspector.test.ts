@@ -358,7 +358,7 @@ describe('内存请求快照、安全边界和 Token 统计', () => {
     });
     expect(inspectedContext(captured.messages)?.OFFSCREEN_STATE).toBeDefined();
     expect(JSON.stringify(captured)).toContain('秘密计划不可见');
-    expect(JSON.stringify(playerView(source.state))).not.toContain('不可见');
+    expect(JSON.stringify(playerView(source.state))).toContain('不可见');
     expect(source.state).toEqual(before);
     expect(store.setItem).toHaveBeenCalledTimes(1);
   });
