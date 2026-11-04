@@ -1,4 +1,4 @@
-import { DataError } from '../../domain/common';
+import { DataError, IdSchema } from '../../domain/common';
 import { safeAiError } from '../../services/ai/errors';
 import { isSafeVariablePath } from '../../executors/variableText/diagnostics';
 import { isDomainRule } from '../../executors/variableText/aggregateDiagnostics';
@@ -27,6 +27,8 @@ export interface RuntimeLogEntry {
   actualType?: DiagnosticType;
   validationRule?: DiagnosticRule;
   domainRule?: DomainRule;
+  /** 仅对场景校验错误安全携带的 NPC ID，经 IdSchema 校验。 */
+  relatedNpcId?: string;
 }
 
 export const runtimeStageNames: Record<RuntimeLogStage, string> = {
@@ -90,6 +92,8 @@ export function runtimeLogEvent(
     ...(details?.actualType && diagnosticTypes.has(details.actualType) ? { actualType: details.actualType } : {}),
     ...(details?.validationRule && diagnosticRules.has(details.validationRule) ? { validationRule: details.validationRule } : {}),
     ...(isDomainRule(details?.domainRule) ? { domainRule: details.domainRule } : {}),
+    ...(details?.relatedNpcId && IdSchema.safeParse(details.relatedNpcId).success
+      ? { relatedNpcId: details.relatedNpcId } : {}),
     ...(details?.relatedCommandIndices?.length
       ? { relatedCommandIndices: [...new Set(details.relatedCommandIndices
         .filter((index) => Number.isSafeInteger(index) && index > 0))].slice(0, 20) }
