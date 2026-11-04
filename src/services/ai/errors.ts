@@ -1,5 +1,6 @@
 import { DataError } from '../../domain/common';
 import type { ExecutionDiagnostic } from '../../executors/variableText/diagnostics';
+import type { WorldRule } from '../validation/worldDiagnostics';
 export type AiErrorCode =
   | 'configuration'
   | 'credentials'
@@ -48,7 +49,7 @@ const messages: Record<AiErrorCode, string> = {
   empty: '服务没有返回可用文本。',
   output_limit: '模型达到输出上限，规划、原生思考与正文可能共享预算；本次结果不完整且未保存。请检查最大输出 Token，程序不会自动提高付费上限或重发。',
   stream_interrupted: '流式响应未完整结束，不能作为有效结果。',
-  schema_fields: '变量候选字段或类型不符合命令Schema，候选未保存。',
+  schema_fields: '候选字段或类型不符合命令Schema，候选未保存。',
   data_integrity: '变量候选的实体引用、归属、数量或状态不合法，候选未保存。',
   amount_balance: '变量候选的金额、账户余额或债务数据不合法，候选未保存。',
   time_data: '候选日期无效、时间倒退或结构化时钟发生冲突，候选未保存。',
@@ -68,7 +69,7 @@ export class AiError extends Error {
   constructor(
     public readonly code: AiErrorCode,
     public readonly status?: number,
-    public readonly details?: { fieldPath?: string; commandType?: string; commandIndex?: number; relatedCommandIndices?: number[] } & Partial<ExecutionDiagnostic>,
+    public readonly details?: { fieldPath?: string; commandType?: string; commandIndex?: number; relatedCommandIndices?: number[]; worldRule?: WorldRule } & Partial<ExecutionDiagnostic>,
   ) {
     super(messages[code] + (details?.fieldPath ? ` 字段：${details.fieldPath}${details.commandType ? `（${details.commandType}，第${(details.commandIndex ?? 0) + 1}条）` : ''}。` : ''));
     this.name = 'AiError';

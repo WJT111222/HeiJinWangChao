@@ -7,7 +7,7 @@ import type { GameState } from '../../domain/state';
 import { TurnDraftSchema, validateDraftUpdate, createTurnDraft } from '../../domain/drafts';
 import type { TurnDraft } from '../../domain/drafts';
 import { migrateSave } from './migrations';
-import { TurnSubmissionSchema, settleTurn } from '../../domain/turnCommit';
+import { TurnSubmissionSchema, settleTurn, awaitingPlayerAction } from '../../domain/turnCommit';
 import type { TurnSubmission } from '../../domain/turnCommit';
 import { validateTurnCandidates } from '../validation/turnCommit';
 import { reserveStageSession, withBrowserLock } from '../../workflows/stageGuard';
@@ -287,6 +287,23 @@ export class SaveRepository {
       for (const key of keys) await request(receipts.delete(key));
       await request(store.delete(saveId));
     });
+  }
+
+  // 唯一允许绑定空待输入草稿的入口。输入绑定后仍不可由saveDraft改写；不提升正式revision。
+  async bindTurnAction(expected: TurnDraft, action: string, useVariableStage: boolean, useWorldStage: boolean): Promise<TurnDraft> {
+    const snapshot = TurnDraftSchema.parse(expected), userInput = z.string().trim().min(1).max(100000).parse(action);
+    const session = reserveStageSession(snapshot.saveId);
+    try {
+      return await withBrowserLock(snapshot.saveId, () => transaction(this.database, ['saves', 'drafts'], 'readwrite', async tx => {
+        session.check();
+        const state = readState(await request(tx.objectStore('saves').get(snapshot.saveId)), snapshot.saveId);
+        const store = tx.objectStore('drafts'), current = TurnDraftSchema.parse(await request(store.get(snapshot.saveId)));
+        requireData(fingerprint(current) === fingerprint(snapshot), 'DRAFT_CONFLICT', '行动草稿已被其他操作更新');
+        requireData(awaitingPlayerAction(state, current), 'DRAFT_CONFLICT', '只能为未生成的待输入回合绑定行动');
+        const next = TurnDraftSchema.parse({ ...createTurnDraft(current.saveId, state.revision, current.turnId, 'regular', userInput, useVariableStage, useWorldStage), draftRevision: current.draftRevision + 1 });
+        await request(store.put(next)); return next;
+      }));
+    } finally { session.release(); }
   }
 
   async saveDraft(draft: TurnDraft, expectedDraftRevision: number | null, signal?: AbortSignal): Promise<TurnDraft> {
