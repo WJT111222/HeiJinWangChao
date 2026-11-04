@@ -4,11 +4,7 @@ import type { GameState } from '../domain/state';
 import { NpcSchema } from '../domain/npc/schema';
 
 function makeState(npc: ReturnType<typeof NpcSchema.parse>): GameState {
-  return {
-    revision: 1,
-    npc: { [npc.id]: npc },
-    // minimal stubs for other required fields if tests touch them
-  } as unknown as GameState;
+  return { revision: 1, npc: { [npc.id]: npc } } as unknown as GameState;
 }
 
 describe('privateProfile via UpdateNpc', () => {
@@ -26,7 +22,6 @@ describe('privateProfile via UpdateNpc', () => {
     } as any, 't1', () => {}, () => {});
     expect((state.npc.n1 as any).privateProfile?.chestDescription).toBe('描述A');
     expect((state.npc.n1 as any).privateProfile?.isVirgin).toBe(true);
-    expect((state.npc.n1 as any).privateProfile?.buttocksDescription).toBeUndefined();
 
     applyVariableCommand(state, {
       type: 'UpdateNpc', commandId: 'c2', evidence: 'e', expectedRevision: 1, npcId: 'n1',
@@ -36,21 +31,45 @@ describe('privateProfile via UpdateNpc', () => {
     expect((state.npc.n1 as any).privateProfile?.buttocksDescription).toBe('描述B');
   });
 
-  it('does not overwrite existing first experience', () => {
-    const npc = NpcSchema.parse({
-      id: 'n2', identityKey: 'k2', aliases: [], name: '测试2', age: 20, gender: 'female', skills: [],
+  it('rejects privateProfile on ordinary or male NPC', () => {
+    const ordinary = NpcSchema.parse({
+      id: 'o1', identityKey: 'ko', aliases: [], name: '普通', skills: [],
+      kind: 'ordinary', onScene: true, affinity: 0, relationshipText: 'r', memories: [], knownInformation: [],
+    });
+    const stateO = makeState(ordinary);
+    expect(() => applyVariableCommand(stateO, {
+      type: 'UpdateNpc', commandId: 'c', evidence: 'e', expectedRevision: 1, npcId: 'o1',
+      changes: { privateProfile: { chestDescription: 'x' } },
+    } as any, 't1', () => {}, () => {})).toThrow();
+
+    const male = NpcSchema.parse({
+      id: 'm1', identityKey: 'km', aliases: [], name: '男', age: 25, gender: 'male', skills: [],
       kind: 'special', detailedBackground: 'bg', activeGoals: [], habits: [],
       longTermMemories: [], offscreenTaskIds: [],
       onScene: true, affinity: 0, relationshipText: 'r', memories: [], knownInformation: [],
-      privateProfile: { firstExperienceText: '原记录', firstExperienceTarget: '原对象', isVirgin: false },
+    });
+    const stateM = makeState(male);
+    expect(() => applyVariableCommand(stateM, {
+      type: 'UpdateNpc', commandId: 'c', evidence: 'e', expectedRevision: 1, npcId: 'm1',
+      changes: { privateProfile: { chestDescription: 'x' } },
+    } as any, 't1', () => {}, () => {})).toThrow();
+  });
+
+  it('protects partial first experience records', () => {
+    const npc = NpcSchema.parse({
+      id: 'n3', identityKey: 'k3', aliases: [], name: '测试3', age: 21, gender: 'female', skills: [],
+      kind: 'special', detailedBackground: 'bg', activeGoals: [], habits: [],
+      longTermMemories: [], offscreenTaskIds: [],
+      onScene: true, affinity: 0, relationshipText: 'r', memories: [], knownInformation: [],
+      privateProfile: { firstExperienceTarget: '原对象', isVirgin: false },
     });
     const state = makeState(npc);
     applyVariableCommand(state, {
-      type: 'UpdateNpc', commandId: 'c3', evidence: 'e', expectedRevision: 1, npcId: 'n2',
-      changes: { privateProfile: { firstExperienceText: '新记录', chestDescription: '新胸' } },
+      type: 'UpdateNpc', commandId: 'c', evidence: 'e', expectedRevision: 1, npcId: 'n3',
+      changes: { privateProfile: { firstExperienceText: '试图覆盖', chestDescription: '新' } },
     } as any, 't1', () => {}, () => {});
-    expect((state.npc.n2 as any).privateProfile?.firstExperienceText).toBe('原记录');
-    expect((state.npc.n2 as any).privateProfile?.firstExperienceTarget).toBe('原对象');
-    expect((state.npc.n2 as any).privateProfile?.chestDescription).toBe('新胸');
+    expect((state.npc.n3 as any).privateProfile?.firstExperienceTarget).toBe('原对象');
+    expect((state.npc.n3 as any).privateProfile?.firstExperienceText).toBeUndefined();
+    expect((state.npc.n3 as any).privateProfile?.chestDescription).toBe('新');
   });
 });

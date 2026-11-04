@@ -93,6 +93,11 @@ function apply(s: GameState, c: DomainCommand, turnId: string) {
       break;
     }
     case 'CreateNpc':
+      // 仅重要成年女性可携带私密档案
+      if (c.npc.kind === 'special' && c.npc.privateProfile) {
+        requireData(c.npc.gender === 'female' && (c.npc.age === undefined || c.npc.age >= 18),
+          'NPC_KIND', '仅重要成年女性 NPC 可持有私密档案');
+      }
       // 再出现只能复用历史稳定身份，不能把旧人换ID重新建档或恢复不存在的旧关系。
       if (s.retiredNpcs[c.npc.id]) {
         const prior = s.retiredNpcs[c.npc.id];
