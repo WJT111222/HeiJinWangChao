@@ -61,7 +61,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
             'DeleteEvent(eventId,expectedStatus,reason)仅清理minor、无主角参与、无必要任务/因果/知识引用的独立终态事件，保留轻量身份。重要或主线相关事件保留完整对象。ArchiveEvent(eventId,title,summary)凭可信fact来源归档重大实际结束结果，无需主角知晓且不清理重要对象；timelineCandidates仅用resultKnowledge.facts写入客观历史，不能将转述/推测冒充事实。两个命令不得用于未终结事件。',
             'worldEventOnly标记的事件是后台世界事实，不是NPC或组织的知情来源；行动/任务/记忆须引用自身独立观察或转述来源，不能引用非公开事件ID代替知晓依据。事件本身仍可正常创建和演化，参与者列表不等同于已知者列表。',
             'npc-summary 来源仅能支持所属人物的计划任务或个人目标，不是客观事实、完成证据或其他人物的知识。',
-            'player_known 记忆和事件可见信息的新增/更新必须有 playerKnownText 中的肯定事实依据；客观成立不等于主角已知，缺少公开依据时保持私有/hidden或列入unresolved。',
+            'player_known记忆和事件知情标记的提升仍需playerKnownText中的肯定事实依据。既有事件的客观进展不要求主角先知晓，保持旧visibility即可；程序保留主角此前已知快照，protagonistKnowledge仅供程序维护，不得编造。客观进展不能自动成为角色知识或公开线索。',
             'CreateLocation 只接受实际存在或合法 derived 事实，planned 建设只可记录任务/未来事件。',
             'scheduled/active/blocked 事件不得包含 resolvedAt、resolutionText或resultKnowledge；estimatedEndAt/dueAt 是估计，到期只应重新评估，不自动完成。',
             'NPC 的 planned/active/blocked 任务均占用唯一名额；正式状态、变量投影和本批任务一起检查，本批真实终结可按 resolution.at 释放；新任务 startAt 不早于释放或 handoff.at，依赖须先验证且无环。组织可以有多任务，禁止用组织名义规避 NPC 任务限制。',

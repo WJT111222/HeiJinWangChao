@@ -7,9 +7,15 @@ export const TaskResultKnowledgeSchema = z.strictObject({
   reported: z.array(TextSchema.max(4000)).max(12),
   suspected: z.array(TextSchema.max(4000)).max(12),
 });
+const EventStatusSchema = z.enum(['scheduled', 'active', 'resolved', 'blocked', 'cancelled']);
+// 程序保存主角此前已知的事件投影；世界更新不能借旧known标记传播新进展。
+export const ProtagonistEventKnowledgeSchema = z.strictObject({
+  worldUpdateTurnId: IdSchema, title: TextSchema, startAt: GameTimeSchema,
+  status: EventStatusSchema, resolutionText: z.string().optional(),
+}).meta({ readOnly: true, description: '程序维护的主角已知快照，模型不得编造或修改。' });
 export const StoredWorldEventSchema = z.strictObject({
   id: IdSchema, title: TextSchema,
-  status: z.enum(['scheduled', 'active', 'resolved', 'blocked', 'cancelled']),
+  status: EventStatusSchema,
   startAt: GameTimeSchema, estimatedEndAt: GameTimeSchema.optional(), completionCondition: z.string().optional(),
   resolvedAt: GameTimeSchema.optional(), locationId: IdSchema.optional(),
   actorRefs: z.array(ActorRefSchema), linkedTaskIds: IdsSchema,
@@ -20,6 +26,7 @@ export const StoredWorldEventSchema = z.strictObject({
   backgroundText: TextSchema.optional(), goalText: TextSchema.optional(),
   outcome: z.enum(['success', 'failure', 'changed', 'cancelled']).optional(),
   predecessorEventIds: IdsSchema.optional(),
+  protagonistKnowledge: ProtagonistEventKnowledgeSchema.optional(),
 });
 // 新规划的权威写入契约；旧档/旧候选只用StoredWorldEventSchema读取，不伪造缺失规划。
 export const WorldEventSchema = StoredWorldEventSchema.extend({
@@ -30,6 +37,7 @@ export const SceneEventStateSchema = StoredWorldEventSchema.pick({status:true,re
 const RetiredEventDetailSchema = StoredWorldEventSchema.pick({
   title: true, startAt: true, estimatedEndAt: true, resolvedAt: true, actorRefs: true,
   locationId: true, visibility: true, impact: true, resolutionText: true, resultKnowledge: true, outcome: true,
+  protagonistKnowledge: true,
 });
 export const RetiredEventSchema = z.strictObject({
   id: IdSchema, status: z.enum(['resolved', 'cancelled']), retiredAt: GameTimeSchema,

@@ -20,6 +20,8 @@ import { playerView } from '../ui/panels/playerView';
 import { searchHistory } from '../domain/memories/history';
 import { worldSources, readWorldEvidence } from '../services/validation/worldEvidence';
 import { parseWorld } from '../services/validation/aiOutputs';
+import { contextFor } from '../prompts/context';
+import { projectTurn } from '../domain/turnProjection';
 import { createTurnDraft } from '../domain/drafts';
 import { completeDraft, submission } from './fixtures/turn';
 import { npcMemoryState, npcSummaryOutput } from './fixtures/npcMemory';
@@ -314,7 +316,13 @@ it('NPC私有事实不能直接转成新公开事件，已有公开来源的正�
   const output = { ...worldResult(), eventCommands: [command] };
   expect(() => parseWorld(JSON.stringify(output), state, draft)).toThrow();
   state.events[command.event.id] = { ...command.event, title: '先前已知的预约' };
-  expect(() => parseWorld(JSON.stringify(output), state, draft)).toThrow(); // 不能借已知事件更新字段泄漏私人进展。
+  // 已有事件的客观变化可以成立，但不能借旧known标记传播新进展。
+  const before = structuredClone(state), result = parseWorld(JSON.stringify(output), state, draft);
+  const after = projectTurn(state, draft, result.eventCommands);
+  const knownEvents = (value: GameState) => contextFor({ state: value, stage: 'story', mode: 'regular', settings: defaultSettings(), userInput: '继续工作' }).KNOWN_EVENTS;
+  expect(knownEvents(after)).toEqual(knownEvents(before)); expect(after.npc).toEqual(before.npc);
+  expect(worldSources(after, draft).find(source => source.id === `event:${command.event.id}`)).toMatchObject({ worldEventOnly: true });
+  expect(state).toEqual(before);
   original.visibility = 'player_known';
   expect(() => parseWorld(JSON.stringify(output), state, draft)).not.toThrow();
 });

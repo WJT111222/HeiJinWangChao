@@ -1,4 +1,5 @@
 import { worldEventSchedule } from '../domain/events/schedule';
+import { protagonistKnownEvent } from '../domain/events/knowledge';
 import { chinaCalendar, openingTimeBase, openingTimeContext, openingTimeSelection } from '../domain/openingTime';
 import { GameStateSchema } from '../domain/state';
 import type { GameState } from '../domain/state';
@@ -125,7 +126,10 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
   const opening = stage === 'story' ? openingTimeContext(original, input.userInput)
     : candidateStage && original.openingTimePending && draft ? { status: 'candidate', ...openingTimeSelection(original, draft) } : undefined;
   if (stage === 'story') {
-    const events = Object.values(state.events).filter((event) => event.visibility === 'known');
+    const events = Object.values(state.events).flatMap((event) => {
+      const known = protagonistKnownEvent(event);
+      return known ? [known] : [];
+    });
     const locations = new Set<string>([state.protagonist.locationId]);
     for (const id of [...locations]) {
       let parent = state.locations[id]?.parentId;
@@ -183,13 +187,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         .filter((npc) => npc.onScene)
         .map((npc) => publicNpc(state, npc.id, archive)),
       MEMORY_CONTEXT: storyMemoryContext(state, settings.memory.immediateWindowSize, input.userInput, input.mode === 'regular'),
-      KNOWN_EVENTS: events.map((event) => ({
-        id: event.id,
-        title: event.title,
-        startAt: event.startAt,
-        status: event.status,
-        resolutionText: event.resolutionText,
-      })),
+      KNOWN_EVENTS: events,
       PLAYER_ACTION: input.userInput,
       OPENING_TIME: opening,
       TURN_TIME_POLICY: turnTimePolicy,

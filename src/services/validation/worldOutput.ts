@@ -12,6 +12,7 @@ import { WorldResultSchema } from '../../domain/drafts';
 import type { TurnDraft } from '../../domain/drafts';
 import type { GameState } from '../../domain/state';
 import { projectTurn } from '../../domain/turnProjection';
+import { protagonistKnownEvent } from '../../domain/events/knowledge';
 import { worldTypes } from './commandCatalog';
 import {
   readWorldEvidence,
@@ -542,9 +543,24 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
             event.resultKnowledge = knowledge;
           } else requireWorld(event.resultKnowledge === undefined || (old && fingerprint(old) === fingerprint(event)));
         }
-        // 候选不发布消息；模型也不能通过改 visibility 伪造主角已知。
-        if (event.visibility !== 'hidden' && (event.visibility !== old?.visibility || event.title !== old?.title || event.status !== old?.status || event.resolutionText !== old?.resolutionText))
+        // 只把显式提升知情标记作为知识传播；客观进展不要求主角先收到消息。
+        if (event.visibility !== 'hidden' && event.visibility !== old?.visibility)
           requireWorld(hasPlayerKnownFact(command, proof, origins), 'permission');
+        if (!old || !terminalEvent(old)) {
+          const priorKnowledge = old && protagonistKnownEvent(old);
+          const informed = event.visibility === 'known' && hasPlayerKnownFact(command, proof, origins);
+          const snapshot = priorKnowledge && !informed ? {
+            worldUpdateTurnId: draft.turnId, title: priorKnowledge.title, startAt: priorKnowledge.startAt,
+            status: priorKnowledge.status, ...(priorKnowledge.resolutionText === undefined ? {} : { resolutionText: priorKnowledge.resolutionText }),
+          } : undefined;
+          // 模型只可沿用旧元数据或重放程序规范化结果，不能借快照伪造角色知识。
+          requireWorld(!event.protagonistKnowledge || fingerprint(event.protagonistKnowledge) === fingerprint(old?.protagonistKnowledge)
+            || fingerprint(event.protagonistKnowledge) === fingerprint(snapshot), 'permission');
+          if (snapshot) {
+            event.protagonistKnowledge = snapshot;
+            event.sourceTurnIds = [...event.sourceTurnIds.filter(id => id !== draft.turnId), draft.turnId];
+          } else delete event.protagonistKnowledge;
+        }
         break;
       }
       case 'DeleteEvent':

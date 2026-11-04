@@ -3,9 +3,9 @@ import type { Page } from '@playwright/test';
 import { openGameTools } from './helpers/gameLayout';
 import { worldResult, proof } from '../src/tests/fixtures/world';
 
-async function prepare(page:Page,major=false) {
+async function prepare(page:Page,major=false,visibility:'hidden'|'partially_known'|'known'='hidden') {
   await page.goto('/');
-  const data=await page.evaluate(async(major)=>{
+  const data=await page.evaluate(async({major,visibility})=>{
     const storage='/src/services/storage/saveRepository.ts',world='/src/tests/fixtures/world.ts',fixtures='/src/tests/fixtures/game.ts',turn='/src/tests/fixtures/turn.ts',
       configPath='/src/services/ai/configuration.ts',vaultPath='/src/services/ai/credentials.ts';
     const {SaveRepository}=await import(storage),{worldState}=await import(world),{event}=await import(fixtures),{completeDraft}=await import(turn),
@@ -14,9 +14,9 @@ async function prepare(page:Page,major=false) {
     config.channels=[channel];config.routes.story={channelId:channel.id,modelId:'story'};config.routes.world={mode:'independent',channelId:channel.id,modelId:'world'};
     saveAiConfig(localStorage,config);new CredentialVault(sessionStorage,localStorage).set(channel.id,'mock-only-secret');
     const state=worldState();state.events.review={...event('review'),title:'内部清点',status:'active',backgroundText:'诊室值班清点',goalText:'清点完成',
-      actorRefs:[{kind:'npc',id:'npc-a'}],estimatedEndAt:'2026-10-18T08:05:00+08:00',impact:major?'major':'minor',sourceTurnIds:[]};
+      actorRefs:[{kind:'npc',id:'npc-a'}],estimatedEndAt:'2026-10-18T08:05:00+08:00',impact:major?'major':'minor',visibility,sourceTurnIds:[]};
     const repo=await SaveRepository.open();try{await repo.create(state);const draft=await completeDraft(repo);return {state,draft};}finally{repo.close();}
-  },major);
+  },{major,visibility});
   await page.goto('/#game/save-a');await openGameTools(page);return data;
 }
 async function stored(page:Page){return page.evaluate(async()=>{const path='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(path),repo=await SaveRepository.open();try{return await repo.loadGame('save-a');}finally{repo.close();}});}
@@ -52,6 +52,45 @@ test('未处理到期事件不能伪装World成功，合法重试仍仅保存候
   await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();await expect(page.getByRole('alert')).toBeVisible();expect(calls).toBe(1);expect((await stored(page)).state).toEqual(data.state);
   await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();await expect(page.getByRole('region',{name:'三阶段工作流'})).toContainText('世界已完成 · 候选未正式结算');
   expect(calls).toBe(2);expect((await stored(page)).state).toEqual(data.state);
+});
+
+for (const visibility of ['known','partially_known','hidden'] as const) test(`${visibility}场外事件自主延期：玩家可查、角色不自动知晓、刷新不重复请求`,async({page},info)=>{
+  const data=await prepare(page,true,visibility);let calls=0;
+  const knownEvents=()=>page.evaluate(async()=>{
+    const storage='/src/services/storage/saveRepository.ts',context='/src/prompts/context.ts',settings='/src/ui/settings/model.ts';
+    const {SaveRepository}=await import(storage),{contextFor}=await import(context),{defaultSettings}=await import(settings),repo=await SaveRepository.open();
+    try{return contextFor({state:await repo.load('save-a'),stage:'story',mode:'regular',settings:defaultSettings(),userInput:'继续休息'}).KNOWN_EVENTS;}finally{repo.close();}
+  });
+  const known=await knownEvents();
+  await page.route('https://events.mock.invalid/**',async route=>{
+    calls++;expect(route.request().postDataJSON().model).toBe('world');
+    const fact='清点因缺少原始单据暂时受阻。';
+    const result={...worldResult(),eventCommands:[{type:'SaveEvent',commandId:'postpone-review',
+      event:{...data.state.events.review,status:'blocked',estimatedEndAt:'2026-10-19T08:00:00+08:00',sourceTurnIds:[data.draft.turnId]},
+      evidence:proof({sources:['event:review','npc:npc-a'],fact,decision:{targetId:'review',status:'blocked',reason:'缺少原始单据',result:fact,conditionsSatisfied:false,continues:true}})}]};
+    await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:JSON.stringify(result)},finish_reason:'stop'}]})});
+  });
+  await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();
+  await expect(page.getByRole('region',{name:'三阶段工作流'})).toContainText('世界已完成 · 候选未正式结算');
+  expect((await stored(page)).state).toEqual(data.state);
+  const committed=await page.evaluate(async()=>{
+    const path='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(path),repo=await SaveRepository.open();
+    try{const draft=await repo.loadDraft('save-a'),input={draft,nextAction:'继续休息',useVariableStage:true,useWorldStage:true};
+      return {first:await repo.commitTurn(input),replay:await repo.commitTurn(input)};
+    }finally{repo.close();}
+  });
+  expect(committed.first.state.events.review).toMatchObject({status:'blocked',visibility,estimatedEndAt:'2026-10-19T08:00:00+08:00'});
+  expect(committed.first.state.npc).toEqual(data.state.npc);expect(committed.first.state.protagonist).toEqual(data.state.protagonist);
+  expect(committed.replay.replayed).toBe(true);expect(await knownEvents()).toEqual(known);
+  await page.reload();await openGameTools(page);
+  await page.getByRole('complementary',{name:'世界资料'}).getByRole('button',{name:/世界事件/}).click();
+  const panel=page.getByRole('dialog',{name:'世界事件',exact:true});
+  await expect(panel).toContainText('内部清点');await expect(panel).toContainText('受阻');
+  await expect(panel).toContainText('2026');
+  await page.screenshot({path:info.outputPath('autonomous-event-knowledge.png')});
+  await panel.getByRole('button',{name:'关闭资料界面'}).click();
+  expect(calls).toBe(1);expect(await knownEvents()).toEqual(known);
+  expect((await stored(page)).state).toEqual(committed.first.state);
 });
 
 test('Variables拒绝纯组织事件，合法现场更新可恢复；组织事件只能经World候选正式结算',async({page})=>{
