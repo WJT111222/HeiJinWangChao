@@ -33,12 +33,22 @@ const npcChanges = OrdinaryNpcSchema.pick({
   relationshipText: true,
   healthText: true,
   lastInteractionAt: true,
+  gender: true,
 })
   .partial()
   .extend({
     locationId: IdSchema.nullable()
       .optional()
       .describe('合法地点 ID；null 显式清除未知去向的地点，须同时离场；省略保持原值'),
+    privateProfile: z.strictObject({
+      chestDescription: z.string().optional(),
+      buttocksDescription: z.string().optional(),
+      privatePartDescription: z.string().optional(),
+      isVirgin: z.boolean().optional(),
+      firstExperienceTarget: z.string().optional(),
+      firstExperienceTime: z.string().optional(),
+      firstExperienceText: z.string().optional(),
+    }).optional(),
   });
 const itemChanges = z.strictObject({
   quantity: CountSchema.optional(),
@@ -184,7 +194,20 @@ export function applyVariableCommand(
           'NPC_TIME',
           '互动时间未发生或倒退',
         );
-      const { locationId, ...changes } = command.changes;
+      const { locationId, privateProfile, ...changes } = command.changes;
+      if (privateProfile !== undefined) {
+        requireData(npc.kind === 'special', 'NPC_KIND', '普通 NPC 无私密档案');
+        const current = npc.privateProfile ?? {};
+        // 初次经历已有记录时不覆盖
+        const protectedFirst = current.firstExperienceText != null;
+        const merged = { ...current, ...privateProfile };
+        if (protectedFirst) {
+          merged.firstExperienceText = current.firstExperienceText;
+          merged.firstExperienceTarget = current.firstExperienceTarget;
+          merged.firstExperienceTime = current.firstExperienceTime;
+        }
+        npc.privateProfile = merged;
+      }
       Object.assign(npc, changes);
       // null 是命令层的显式清除，正式 NPC 仍使用原 Schema 的可选地点。
       if (locationId === null) {
