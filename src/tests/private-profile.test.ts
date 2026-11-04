@@ -73,3 +73,40 @@ describe('privateProfile via UpdateNpc', () => {
     expect((state.npc.n3 as any).privateProfile?.chestDescription).toBe('新');
   });
 });
+
+import { parseVariableText } from '../parsers/variableText';
+import { compileVariableCommands, simulateVariablePlan } from '../executors/variableText';
+import { createTurnDraft, rerollStory } from '../domain/drafts';
+import { game, npc, story } from './fixtures/game';
+
+describe('privateProfile text integration', () => {
+  it('parses, compiles and applies privateProfile via text command', async () => {
+    const state = game();
+    const female = npc('f1');
+    (female as any).kind = 'special';
+    (female as any).gender = 'female';
+    (female as any).age = 22;
+    (female as any).detailedBackground = 'bg';
+    (female as any).activeGoals = [];
+    (female as any).habits = [];
+    (female as any).longTermMemories = [];
+    (female as any).offscreenTaskIds = [];
+    state.npc.f1 = female;
+    const draft = rerollStory(createTurnDraft(state.saveId, state.revision, 't1', 'opening', ''), { ...story, turnKind: 'opening' });
+    const context = { draft, expectedRevision: state.revision };
+    const textCmd = `<命令>
+set npc[f1].privateProfile = {"chestDescription":"文字描述","isVirgin":true}
+</命令>`;
+    const parsed = parseVariableText(textCmd);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const plan = await compileVariableCommands(parsed.value, state, context);
+    expect(plan.ok).toBe(true);
+    if (!plan.ok) return;
+    const result = await simulateVariablePlan(plan.value, state, context);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.value.npc.f1 as any).privateProfile?.chestDescription).toBe('文字描述');
+    expect((result.value.npc.f1 as any).privateProfile?.isVirgin).toBe(true);
+  });
+});
