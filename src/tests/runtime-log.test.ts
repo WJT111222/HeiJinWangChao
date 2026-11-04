@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DataError } from '../domain/common';
 import { AiError } from '../services/ai/errors';
+import { domainRuleNames } from '../executors/variableText/aggregateDiagnostics';
 import { runtimeLogEvent } from '../ui/game/runtimeLog';
 import { parseTextVariables } from '../services/validation/aiOutputs';
 import { createTurnDraft, rerollStory } from '../domain/drafts';
@@ -105,10 +106,79 @@ describe('safe runtime log diagnostics', () => {
     const event = runtimeLogEvent(13, 'variables', 'failed', caught);
     expect(event).toMatchObject({
       code: 'data_integrity', fieldPath: 'text.domain_validation_failed',
-      domainRule: 'scene_transition', relatedCommandIndices: [1],
+      domainRule: 'scene_transition', relatedCommandIndices: [1], relatedNpcId: 'npc_001',
     });
-    expect(JSON.stringify(event)).not.toContain('npc_001');
+    expect(JSON.stringify(event)).toContain('npc_001');
+    expect(`${domainRuleNames.scene_transition}（NPC：${event.relatedNpcId}）`)
+      .toBe('主角移动时缺少原在场 NPC 的状态更新（NPC：npc_001）');
     expect(state).toEqual(before);
+  });
+
+  it('real multi-NPC scene failure names only the NPC that was not updated', async () => {
+    const state = game();
+    state.npc.npc_001 = npc('npc_001');
+    state.npc.npc_002 = npc('npc_002');
+    state.locations.remote = { id: 'remote', name: '远处' };
+    const before = structuredClone(state);
+    const draft = rerollStory(createTurnDraft(state.saveId, state.revision, 'turn-a', 'opening', ''), {
+      ...story, turnKind: 'opening',
+    });
+    let caught: unknown;
+    try {
+      await parseTextVariables('<命令>\nset protagonist.locationId = "remote"\nset npc[npc_001].locationId = "remote"\n</命令>', state, draft);
+    } catch (failure) { caught = failure; }
+    const event = runtimeLogEvent(14, 'variables', 'failed', caught);
+    expect(event.relatedNpcId).toBe('npc_002');
+    expect(event.domainRule).toBe('scene_transition');
+    expect(`${domainRuleNames[event.domainRule!]}（NPC：${event.relatedNpcId}）`)
+      .toBe('主角移动时缺少原在场 NPC 的状态更新（NPC：npc_002）');
+    expect(state).toEqual(before);
+  });
+
+  it('real SCENE_LOCATION failure reaches the player log with that NPC id', async () => {
+    const { commitCommands } = await import('../domain/commands');
+    const { variableValidationError } = await import('../services/validation/variableDiagnostics');
+    const state = game();
+    state.npc.npc_gap = npc('npc_gap');
+    const before = structuredClone(state);
+    let caught: unknown;
+    try {
+      commitCommands(state, 'scene-gap', 0, [{
+        type: 'UpdateNpc', commandId: 'clear-place', evidence: '地点被清空', npcId: 'npc_gap',
+        expectedRevision: 0, changes: { locationId: null },
+      }], state.updatedAt);
+    } catch (failure) { caught = failure; }
+    expect(caught).toBeInstanceOf(DataError);
+    const event = runtimeLogEvent(15, 'variables', 'failed', variableValidationError(caught));
+    expect(event).toMatchObject({
+      code: 'data_integrity', domainRule: 'scene_location', relatedNpcId: 'npc_gap',
+    });
+    expect(`${domainRuleNames.scene_location}（NPC：${event.relatedNpcId}）`)
+      .toBe('在场 NPC 缺少明确地点（NPC：npc_gap）');
+    expect(state).toEqual(before);
+  });
+
+  it('variableValidationError carries safe NPC ID for SCENE errors', async () => {
+    const { variableValidationError } = await import('../services/validation/variableDiagnostics');
+    const { DataError } = await import('../domain/common');
+    const error = variableValidationError(new DataError('SCENE_TRANSITION', '主角移动时须显式更新原在场 NPC（npc_abc）的地点或在场状态，不自动跟随'));
+    expect(error).toBeInstanceOf(AiError);
+    expect(error.details?.relatedNpcId).toBe('npc_abc');
+    expect(error.details?.domainRule).toBe('scene_transition');
+    const bad = variableValidationError(new DataError('SCENE_LOCATION', '在场 NPC（__proto__）必须有明确地点'));
+    expect(bad.details?.relatedNpcId).toBeUndefined();
+    expect(bad.details?.domainRule).toBe('scene_location');
+  });
+
+  it('rejects forged or invalid relatedNpcId in runtime log', () => {
+    const forged = runtimeLogEvent(20, 'variables', 'failed', new AiError('data_integrity', undefined, {
+      domainRule: 'scene_transition', relatedNpcId: '__proto__',
+    }));
+    expect(forged).not.toHaveProperty('relatedNpcId');
+    const valid = runtimeLogEvent(21, 'variables', 'failed', new AiError('data_integrity', undefined, {
+      domainRule: 'scene_transition', relatedNpcId: 'npc_safe_001',
+    }));
+    expect(valid.relatedNpcId).toBe('npc_safe_001');
   });
 
   it('retains safe aggregate domain rule while rejecting forged free text', () => {
