@@ -190,7 +190,8 @@ test('真实存档六种模式预览、内部内容主动揭示、合法排序�
     .getByRole('complementary', { name: '世界资料' })
     .getByRole('button', { name: /NPC/ })
     .click();
-  await expect(page.getByRole('dialog', { name: 'NPC', exact: true })).not.toContainText('不可见');
+  await expect(page.getByRole('dialog', { name: 'NPC', exact: true })).toContainText('隐藏人物不可见');
+  expect(await readFormal(page)).toBe(before);
   expect(errors).toEqual([]);
 });
 
