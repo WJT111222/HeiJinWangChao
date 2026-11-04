@@ -24,6 +24,7 @@ import {
 } from './worldEvidence';
 import { isNegatedFact } from '../../domain/factPolarity';
 import type { WorldEvidence, WorldSource } from './worldEvidence';
+import { worldValidationError } from './worldDiagnostics';
 
 function sameActor(a: ActorRef, b: ActorRef) {
   return a.kind === b.kind && a.id === b.id;
@@ -43,6 +44,7 @@ function outcome(
   existing: boolean,
   failure = false,
 ) {
+  try {
   requireWorld(proof.kind === 'established' || proof.kind === 'derived');
   requireWorld(Date.parse(start) <= Date.parse(proof.at) && Date.parse(proof.at) <= Date.parse(to));
   requireWorld(!existing || sources.some((source) => source.id === key));
@@ -64,8 +66,10 @@ function outcome(
     );
     requireWorld(!speculative.test(proof.outcome) && !isNegatedFact(proof.outcome));
   }
+  } catch (error) { throw worldValidationError(error, { worldRule: 'completion_evidence' }); }
 }
 function cancellationEvidence(proof: WorldEvidence, sources: readonly WorldSource[], key: string) {
+  try {
   requireWorld(proof.kind === 'established' || proof.kind === 'derived');
   requireWorld(sources.some((source) => source.id === key));
   if (proof.decision) {
@@ -83,12 +87,18 @@ function cancellationEvidence(proof: WorldEvidence, sources: readonly WorldSourc
       ),
     );
   }
+  } catch (error) { throw worldValidationError(error, { worldRule: 'cancellation_evidence' }); }
 }
 export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnDraft) {
+  try { return validateWorldOutputChecked(raw, state, draft); }
+  catch (error) { throw worldValidationError(error, {}, raw); }
+}
+function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnDraft) {
   const original = state;
   state = openingTimeBase(state, draft);
   const checked = WorldResultSchema.safeParse(raw);
-  requireWorld(checked.success && draft.story);
+  if (!checked.success) throw checked.error;
+  requireWorld(draft.story, 'invalid_output', 'command_structure');
   const result = checked.data,
     base = projectTurn(original, draft);
   const sources = worldSources(base, draft, state);
@@ -143,6 +153,9 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
   // 经过验证的前序任务/事件才可进入下一项的来源与条件投影。
   const causal = structuredClone(base);
   for (const command of orderWorldCommands(commands)) {
+    const group = result.worldCommands.includes(command) ? 'worldCommands' : result.taskCommands.includes(command) ? 'taskCommands' : 'eventCommands';
+    const fieldPath = `${group}.${result[group].indexOf(command)}`;
+    try {
     const { proof, sources: origins } = readWorldEvidence(
       command,
       sources,
@@ -435,9 +448,13 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
         const event = command.event,
           old = base.events[event.id];
         // 旧缺规划记录可真实终结，不为清理补造过去的预计日期；继续排程必须补齐规划。
-        if(!old || !terminalEvent(event)) requireWorld(WorldEventSchema.safeParse(event).success);
+        if(!old || !terminalEvent(event)) {
+          const planned = WorldEventSchema.safeParse(event);
+          if (!planned.success) throw worldValidationError(planned.error, { fieldPath: 'event', worldRule: 'event_plan' });
+        }
+        requireWorld(!event.estimatedEndAt || Date.parse(event.estimatedEndAt) >= Date.parse(event.startAt), 'invalid_output', 'event_time');
         if (proof.decision) requireWorld(proof.decision.targetId === event.id && proof.decision.status === event.status
-          && proof.decision.continues === (event.status === 'blocked'));
+          && proof.decision.continues === (event.status === 'blocked'), 'invalid_output', 'event_transition');
         // 预计时间是可调整的估计，非终态不能预存实际结案字段（空串也不接受）。
         if (['scheduled', 'active', 'blocked'].includes(event.status))
           requireWorld(event.resolvedAt === undefined && event.resolutionText === undefined && event.resultKnowledge === undefined);
@@ -594,6 +611,7 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
         if (fresh) { const index = sources.findIndex((source) => source.id === id); if (index >= 0) sources[index] = fresh; else sources.push(fresh); }
       }
     }
+    } catch (error) { throw worldValidationError(error, { fieldPath, commandIndex: commands.indexOf(command), commandType: command.type }); }
   }
   // futureEvents 是已验证未来 SaveEvent 的镜像，不是第二条免证据写入路径。
   requireWorld(
@@ -621,10 +639,11 @@ export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnD
       return Boolean(event && terminalEvent(event) && event.resolvedAt && event.impact==='major'
         && (event.resultKnowledge?.facts.length || projected.timeline.some(entry=>entry.eventId===id&&isHistoricalEntry(projected,entry))));
     }),
+    'invalid_output', 'timeline_fact',
   );
   if (draft.variables?.validation === 'validated' && !historicalPerspective(state,draft)) for (const due of worldEventSchedule(state,base).due) {
     const after=projected.events[due.eventId] ?? projected.retiredEvents[due.eventId];
-    requireWorld(after && (terminalEvent(after) || ('estimatedEndAt' in after && after.estimatedEndAt && Date.parse(after.estimatedEndAt)>Date.parse(base.worldClock))));
+    requireWorld(after && (terminalEvent(after) || ('estimatedEndAt' in after && after.estimatedEndAt && Date.parse(after.estimatedEndAt)>Date.parse(base.worldClock))), 'invalid_output', 'due_event_unhandled');
   }
   for(const command of result.eventCommands) if(command.type==='SaveEvent' && !terminalEvent(command.event))
     requireWorld(command.event.estimatedEndAt && Date.parse(command.event.estimatedEndAt)>Date.parse(base.worldClock));

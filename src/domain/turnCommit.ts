@@ -12,11 +12,17 @@ import { validateCommittedTime } from './timePreflight';
 
 export const TurnSubmissionSchema = z.strictObject({
   draft: TurnDraftSchema,
-  nextAction: z.string().trim().min(1).max(100000),
+  // 空字符串仅表示已提交后等待玩家输入，不授权下一次生成。
+  nextAction: z.string().max(100000).refine(value => value === '' || value.trim().length > 0).transform(value => value.trim()),
   useVariableStage: z.boolean(),
   useWorldStage: z.boolean(),
 });
 export type TurnSubmission = z.infer<typeof TurnSubmissionSchema>;
+export function awaitingPlayerAction(state: GameState, draft?: TurnDraft) {
+  return Boolean(draft && state.turnNumber > 0 && draft.turnKind === 'regular' && draft.userInput === ''
+    && draft.baseSaveRevision === state.revision && draft.storyRevision === 0 && draft.executionRevision === 0
+    && !draft.story && !draft.variables && !draft.world && draft.failures.length === 0);
+}
 export function completeTurnDraft(draft: TurnDraft) {
   return (
     draft.useVariableStage &&
