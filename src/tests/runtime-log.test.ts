@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DataError } from '../domain/common';
 import { AiError } from '../services/ai/errors';
-import { domainRuleNames } from '../executors/variableText/aggregateDiagnostics';
+import { domainRuleNames, isDomainRule } from '../executors/variableText/aggregateDiagnostics';
 import { runtimeLogEvent } from '../ui/game/runtimeLog';
 import { parseTextVariables } from '../services/validation/aiOutputs';
 import { createTurnDraft, rerollStory } from '../domain/drafts';
@@ -179,6 +179,35 @@ describe('safe runtime log diagnostics', () => {
       domainRule: 'scene_transition', relatedNpcId: 'npc_safe_001',
     }));
     expect(valid.relatedNpcId).toBe('npc_safe_001');
+  });
+
+  it.each(Object.keys(domainRuleNames).filter(isDomainRule).filter(rule =>
+    rule !== 'scene_transition' && rule !== 'scene_location'))('does not expose NPC ID for non-scene rule %s', (domainRule) => {
+    const entry = runtimeLogEvent(30, 'variables', 'failed', new AiError('data_integrity', undefined, {
+      domainRule, relatedNpcId: 'npc_unrelated_secret',
+    }));
+    expect(entry.domainRule).toBe(domainRule);
+    expect(entry).not.toHaveProperty('relatedNpcId');
+    expect(JSON.stringify(entry)).not.toContain('npc_unrelated_secret');
+  });
+
+  it.each(['scene_transition', 'scene_location'] as const)('allows only a valid NPC ID for %s without dropping World diagnostics', (domainRule) => {
+    const entry = runtimeLogEvent(31, 'world', 'failed', new AiError('data_integrity', undefined, {
+      domainRule, relatedNpcId: 'npc_valid', worldRule: 'actor_permission',
+    }));
+    expect(entry).toMatchObject({ domainRule, relatedNpcId: 'npc_valid', worldRule: 'actor_permission' });
+    for (const relatedNpcId of ['__proto__', 'prototype', 'constructor', 'npc/private', 'npc\nprivate', 'npc?key=private', 'x'.repeat(129)]) {
+      const invalid = runtimeLogEvent(32, 'variables', 'failed', new AiError('data_integrity', undefined, { domainRule, relatedNpcId }));
+      expect(invalid).not.toHaveProperty('relatedNpcId');
+    }
+  });
+
+  it('drops NPC ID without a scene rule while retaining a World rule', () => {
+    const entry = runtimeLogEvent(33, 'world', 'failed', new AiError('data_integrity', undefined, {
+      relatedNpcId: 'npc_unrelated_secret', worldRule: 'source_missing',
+    }));
+    expect(entry.worldRule).toBe('source_missing');
+    expect(entry).not.toHaveProperty('relatedNpcId');
   });
 
   it('retains safe aggregate domain rule while rejecting forged free text', () => {

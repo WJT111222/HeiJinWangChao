@@ -172,7 +172,7 @@ async function ready(page: Page, number = 1) {
   await expect(page.getByTestId('story-reader').locator('article').last()).toContainText(
     `第${number}幕`,
   );
-  await expect(workflow(page)).toContainText('三阶段候选已完成，填写下一步行动');
+  await expect(workflow(page)).toContainText('本回合已结算');
 }
 async function opening(page: Page) {
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
@@ -187,34 +187,35 @@ test('真实创角后连续正式游玩十回合；输入、资料、正文历�
   await ready(page);
   const initial = await stored(page),
     start = Date.parse('2015-07-08T14:00:00+08:00');
-  expect(initial.state.openingTimePending).toBe(true); // 尚未发送，正式时钟仍待确认。
+  expect(initial.state.openingTimePending).toBeUndefined(); // 开局自动正式结算，待下一条行动。
+  expect(initial.state.turnNumber).toBe(1);
   expect(initial.state.economy.cash).toBeNull();
   await expect(page.getByRole('complementary', { name: '主角信息' })).toContainText('未确认');
-  for (let index = 1; index <= 10; index++) {
+  for (let index = 1; index <= 9; index++) {
     const action = `行动${index}：在街边等待一分钟`;
     await page.getByLabel('你的行动', { exact: true }).fill(action);
     await page.getByRole('button', { name: '发送', exact: true }).click();
     await ready(page, index + 1);
     const result = await stored(page);
-    expect(result.state.turnNumber).toBe(index);
-    expect(result.state.revision).toBe(index);
-    expect(result.state.journal).toHaveLength(index);
-    expect(result.state.memories.short).toHaveLength(index);
+    expect(result.state.turnNumber).toBe(index + 1);
+    expect(result.state.revision).toBe(index + 1);
+    expect(result.state.journal).toHaveLength(index + 1);
+    expect(result.state.memories.short).toHaveLength(index + 1);
     expect(result.state.memories.short.at(-1)).toMatchObject({
-      text: `第${index}幕的街边休息`,
-      sourceTurnIds: [result.state.journal[index - 1].turnId],
+      text: `第${index + 1}幕的街边休息`,
+      sourceTurnIds: [result.state.journal[index].turnId],
       createdAtGameTime: result.state.worldClock,
       visibility: 'player_known',
       affectedEntityRefs: [],
     });
-    expect(result.draft.userInput).toBe(action);
+    expect(result.draft.userInput).toBe('');
     expect(result.draft.turnKind).toBe('regular');
-    expect(Date.parse(result.state.worldClock)).toBe(start + index * 60000);
+    expect(Date.parse(result.state.worldClock)).toBe(start + (index + 1) * 60000);
     expect(result.state.items.notice.ownerRef?.id).toBe(result.state.protagonist.id);
     expect(result.state.initialCompanionId).toBe(initial.state.initialCompanionId);
     expect(result.state.npc.companion).toEqual(initial.state.npc.companion);
     await expect(page.getByRole('complementary', { name: '主角信息' })).toContainText(
-      `第 ${index} 回合`,
+      `第 ${index + 1} 回合`,
     );
     expect(server.stories.find((s) => s.number === index + 1)?.action).toBe(action);
     expect(server.stories.find((s) => s.number === index + 1)?.context).toContain(
@@ -226,7 +227,7 @@ test('真实创角后连续正式游玩十回合；输入、资料、正文历�
     }
   }
   const final = await stored(page);
-  expect(server.calls).toHaveLength(33);
+  expect(server.calls).toHaveLength(30);
   expect(final.state.journal[0].story.turnKind).toBe('opening');
   expect(final.state.journal.slice(1).every((j) => j.story.turnKind === 'regular')).toBe(true);
   expect(JSON.stringify(final.state)).not.toContain('绝不自动发布的后台线索');
@@ -234,7 +235,7 @@ test('真实创角后连续正式游玩十回合；输入、资料、正文历�
   await expect(page.locator('main')).not.toContainText('绝不自动发布的后台线索');
   await page.reload(); await openGameTools(page);
   expect(await stored(page)).toEqual(final);
-  await ready(page, 11);
+  await ready(page, 10);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('ten-committed-turns.png'), fullPage: true });
 });
@@ -256,7 +257,8 @@ test('下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完�
   server.plan.badStoryNumber = 0;
   await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await ready(page, 2);
-  expect((await stored(page)).state).toEqual(failed.state);
+  expect((await stored(page)).state.turnNumber).toBe(2);
+  expect((await stored(page)).state.journal[0]).toEqual(failed.state.journal[0]);
   expect(server.calls).toEqual([
     'story',
     'variables',
@@ -297,7 +299,7 @@ test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', a
   });
   await page.getByRole('button', { name: '发送', exact: true }).click();
   await ready(page, 2);
-  expect((await stored(page)).state.turnNumber).toBe(1);
+  expect((await stored(page)).state.turnNumber).toBe(2);
 });
 
 test('快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿', async ({
@@ -320,11 +322,11 @@ test('快速双击与另一标签发送最多结算一次；成功后数据库�
       }),
     ),
   );
-  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(1);
+  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);
   const result = await stored(page);
-  expect(result.state.journal).toHaveLength(1);
-  expect(result.draft.baseSaveRevision).toBe(1);
-  expect(result.draft.userInput).toBe('在街边等待');
+  expect(result.state.journal).toHaveLength(2);
+  expect(result.draft.baseSaveRevision).toBe(2);
+  expect(result.draft.userInput).toBe('');
   await other.close();
 });
 
@@ -366,9 +368,9 @@ test('正式资金与时间显示新版本，结算后刷新不重复扣款', as
   await page.getByRole('button', { name: '发送', exact: true }).click();
   await ready(page, 2);
   const state = (await stored(page)).state;
-  expect(state.economy.cash).toBe(7000);
+  expect(state.economy.cash).toBe(4000);
   expect(state.worldClock).not.toBe('2026-10-18T08:00:00+08:00');
-  await expect(page.getByRole('complementary', { name: '主角信息' })).toContainText('70.00 元');
+  await expect(page.getByRole('complementary', { name: '主角信息' })).toContainText('40.00 元');
   await page.reload(); await openGameTools(page);
   expect((await stored(page)).state).toEqual(state);
 });

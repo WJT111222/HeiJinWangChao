@@ -17,6 +17,8 @@ import type { Settings } from '../ui/settings/model';
 import { assertWorldCoverage, selectWorldDomains } from '../prompts/worldDomains';
 import { StageGuard } from './stageGuard';
 import type { OrderPreferences } from '../prompts/order';
+import { stageResponses } from '../services/ai/stageResponses';
+import { worldValidationError } from '../services/validation/worldDiagnostics';
 
 export class WorldStage {
   constructor(
@@ -71,6 +73,7 @@ export class WorldStage {
       const draft = await this.repository.saveDraft(started, current.draftRevision, attempt.signal);
       attempt.check();
       input.onDraft?.(draft);
+      let responseInspectionId: string | undefined;
       try {
         input.onProgress?.('generating');
         const selection = selectWorldDomains(projectTurn(state, draft), draft);
@@ -90,6 +93,7 @@ export class WorldStage {
           { signal: attempt.signal, stream: false },
           this.client,
         );
+        responseInspectionId = response.responseInspectionId;
         attempt.check();
         const basis = response.requestBasis;
         const preview = draft.variables?.validation !== 'validated';
@@ -104,9 +108,10 @@ export class WorldStage {
           basis.basedOnVariableRevision !== draft.variables?.candidateRevision ||
           response.variablePending !== preview
         )
-          throw new AiError('invalid_output');
+          throw new AiError('candidate_conflict', undefined, { worldRule: 'request_basis' });
         const result = WorldResultSchema.parse(response.result);
-        assertWorldCoverage(selection.domains, projectTurn(state, draft), result.worldCommands);
+        try { assertWorldCoverage(selection.domains, projectTurn(state, draft), result.worldCommands); }
+        catch (error) { throw worldValidationError(error, { worldRule: 'domain_modules' }); }
         const serialized = JSON.stringify(result);
         if (
           secrets.some((secret) =>
@@ -115,7 +120,7 @@ export class WorldStage {
             ),
           )
         )
-          throw new AiError('invalid_output');
+          throw new AiError('invalid_output', undefined, { worldRule: 'secret_in_output' });
         const next = TurnDraftSchema.parse({
           ...draft,
           draftRevision: draft.draftRevision + 1,
@@ -138,6 +143,7 @@ export class WorldStage {
         attempt.check();
         return saved;
       } catch (error) {
+        if (responseInspectionId) stageResponses.update(responseInspectionId, { status: 'failed', error: safeAiError(error) }, secrets);
         try {
           attempt.check();
           const safe = safeAiError(error);
