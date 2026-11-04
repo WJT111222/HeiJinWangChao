@@ -50,26 +50,36 @@
 
 ## 本轮验证
 
+环境于2026-11-04恢复后，已核实业务提交`fa836a6`及未提交断言补丁完整保留，远端仍为原Draft PR #50。原`/tmp`验证日志已丢失，因此本表为恢复后重新执行的结果，不把上次未完成的E2E计为通过。本次日志持久保存在工作区`/workspace/pr50-verification/`。
+
 | 命令 | 本轮实际结果 |
 | --- | --- |
 | `npx vitest run src/tests/world-observer.test.ts src/tests/scene-event-permission.test.ts` | 49/49通过（本轮新增28项，原权限21项保留） |
 | `npm run check` | 54文件、1982/1982通过；Lint、TypeScript、Vite生产构建通过 |
 | `npm run prompts:check` | 82/82通过 |
-| 相关桌面/移动Chromium阅读与事件回归 | 24/24通过 |
-| `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e` | 完整304项正在执行，尚未计入通过 |
+| `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e` | 完整执行304项：303通过、1条旧UI计数断言失败；19.4分钟 |
+| 桌面/移动 `e2e/memory.spec.ts` 定向复跑 | 4/4通过，保留N=1/10/20真实prompt及不传播私有知识断言 |
+| `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e -- --last-failed` | 1/1通过，退出码0，无尚未修复失败 |
+| `npm run lint`、`npm run typecheck` | 最终测试补丁后再次通过 |
 | `git diff --check` | 通过 |
+
+首次全量唯一失败是旧M4阅读夹具仍要求“短期70”，而实际包含70条journal只读摘要和1条正式私有短期记录。按已确认全量展示应计71；只修测试并增加人物记忆可读、保留主角正文/永久搜索隔离及整份正式状态不变断言。相关桌面/移动4项与失败项1项均重新通过。另将提示词检查器返回NPC面板的旧遮蔽断言改为全量可读并再次比较正式存档，恢复后的全量中桌面/移动均通过。没有删测试、跳过场景、放宽Schema或修改业务引擎以迎合断言。**不是一次初跑304/304，不掩盖初跑的1条过时断言失败；全部304个场景均已验证，失败项已完成复跑。**
+
+业务实现提交`fa836a6`，两处浏览器断言分别由`2e622a3`与`5954b08`提交推送到原分支。
 
 相较75b7f5c保留1954项旧工程用例，新增28项；浏览器保留原302项并新增全量只读观察桌面/移动2项。模型与网络均Mock，没有真实付费API调用。构建仍有既存大于500KB bundle的非阻断提示，不掩盖或删除。
 
 
-## 本轮修改文件（47个）
+## 本轮修改文件（49个）
 
 - `EVENT-LIFECYCLE-DEVELOPMENT.md`
 - `docs/WORLD_EVENT_LIFECYCLE.md`
 - `e2e/event-lifecycle.spec.ts`
 - `e2e/game.spec.ts`
+- `e2e/memory.spec.ts`
 - `e2e/npc-memory.spec.ts`
 - `e2e/player-memory.spec.ts`
+- `e2e/prompt-inspector.spec.ts`
 - `e2e/world-observer.spec.ts`
 - `prompts/docs/OUTPUT_CONTRACT.md`
 - `prompts/manifest.json`
