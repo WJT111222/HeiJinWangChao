@@ -201,14 +201,11 @@ export function applyVariableCommand(
       if (privateProfile !== undefined) {
         requireData(isEligible, 'NPC_KIND', '仅重要成年女性 NPC 可持有私密档案');
         const current = npc.privateProfile ?? {};
-        // 初次经历任一字段已有记录则整体保护，不覆盖对象/时间/描述
-        const protectedFirst = current.firstExperienceText != null || current.firstExperienceTarget != null || current.firstExperienceTime != null;
+        // 已有值的初次经历字段不可覆盖，未填写的允许后续补齐
         const merged = { ...current, ...privateProfile };
-        if (protectedFirst) {
-          merged.firstExperienceText = current.firstExperienceText;
-          merged.firstExperienceTarget = current.firstExperienceTarget;
-          merged.firstExperienceTime = current.firstExperienceTime;
-        }
+        if (current.firstExperienceText != null) merged.firstExperienceText = current.firstExperienceText;
+        if (current.firstExperienceTarget != null) merged.firstExperienceTarget = current.firstExperienceTarget;
+        if (current.firstExperienceTime != null) merged.firstExperienceTime = current.firstExperienceTime;
         npc.privateProfile = merged;
       }
       // 性别变更后若不再符合资格，清除私密档案

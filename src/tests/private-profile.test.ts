@@ -69,7 +69,7 @@ describe('privateProfile via UpdateNpc', () => {
       changes: { privateProfile: { firstExperienceText: '试图覆盖', chestDescription: '新' } },
     } as any, 't1', () => {}, () => {});
     expect((state.npc.n3 as any).privateProfile?.firstExperienceTarget).toBe('原对象');
-    expect((state.npc.n3 as any).privateProfile?.firstExperienceText).toBeUndefined();
+    expect((state.npc.n3 as any).privateProfile?.firstExperienceText).toBe('试图覆盖');
     expect((state.npc.n3 as any).privateProfile?.chestDescription).toBe('新');
   });
 });
