@@ -73,9 +73,12 @@ test('旧M4七十回合档案：搜索约定、读取来源原文、分页和窗
   const before = await load(page);
   const panel = await memoryPanel(page);
   await expect(panel).toContainText('即时窗口：最近 1 回合');
-  await expect(panel).toContainText('短期 70');
+  await expect(panel).toContainText('短期 71'); // 70条journal只读摘要和1条实际保存的私有短期记录。
   await expect(panel).toContainText('历史回合时间未记录');
   await expect(panel).not.toContainText('保密调查口令');
+  await panel.getByRole('button', { name: '人物记忆', exact: true }).click();
+  await expect(panel.getByRole('region', { name: '人物记忆', exact: true })).toContainText('保密调查口令');
+  await expect(panel).toContainText('人物私有记录 · 不代表主角已知');
   await panel.getByLabel('搜索历史回合').fill('蓝色钥匙');
   const result = panel.locator('details').filter({ hasText: '第 3 回合' });
   await expect(result).toHaveCount(1);
