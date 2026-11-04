@@ -110,6 +110,28 @@ export function Panels({ name, view }: { name: PanelName; view: PlayerView }) {
                     </>
                   )}
                 </dl>
+                {selected.kind === 'special' && selected.gender === 'female' && (selected.age === undefined || selected.age >= 18) && (
+                  <section className="card" style={{ marginTop: '1rem', borderTop: '1px solid #ddd', paddingTop: '1rem' }}>
+                    <h4>香闺秘档</h4>
+                    {selected.privateProfile ? (
+                      <>
+                        <dl>
+                          <Detail label="胸部描述">{selected.privateProfile.chestDescription || '未记录'}</Detail>
+                          <Detail label="臀部描述">{selected.privateProfile.buttocksDescription || '未记录'}</Detail>
+                          <Detail label="私密部位描述">{selected.privateProfile.privatePartDescription || '未记录'}</Detail>
+                          <Detail label="是否处女">{selected.privateProfile.isVirgin === true ? '是' : selected.privateProfile.isVirgin === false ? '否' : '未记录'}</Detail>
+                        </dl>
+                        <div style={{ marginTop: '0.5rem' }}>
+                          <strong>初次性经历</strong>
+                          {selected.privateProfile.firstExperienceText ? (
+                            <p>{selected.privateProfile.firstExperienceText}<br />
+                            <small>对象：{selected.privateProfile.firstExperienceTarget || '未记录'} · 时间：{selected.privateProfile.firstExperienceTime || '未记录'}</small></p>
+                          ) : <Empty>尚未记录初次经历</Empty>}
+                        </div>
+                      </>
+                    ) : <Empty>私密档案尚未建立</Empty>}
+                  </section>
+                )}
                 {selected.authoredProfile && <WorldRecord title="创角原始设定（不替代当前状态）" value={selected.authoredProfile} />}
                 <WorldRecord title="完整人物资料" value={{ ...selected, memories: undefined, longTermMemories: undefined, knownInformation: undefined, summaries: undefined }} />
                 <RecordList key={`${selected.id}:knowledge`} label="人物已知信息" entries={selected.knownInformation} render={info => <article className="entry"><p>{info.text}</p><p>来源：{info.source}</p><time>{dateTime(info.learnedAt)}</time></article>} />
