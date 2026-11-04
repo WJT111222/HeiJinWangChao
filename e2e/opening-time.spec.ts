@@ -75,8 +75,8 @@ const workflow = (page: Page) => page.getByRole('region', { name: '三阶段工�
 const ready = async (page: Page) => {
   // 创角先异步持久化，再懒加载游戏；界面打开前不能假定已有存档可查询。
   await expect(page.locator('.game-layout')).toBeVisible();
-  await expect.poll(async () => (await stored(page)).draft.stageStatus.world, { timeout: 15000 }).toBe('ready');
-  await expect(workflow(page).getByRole('status')).toContainText('三阶段候选已完成');
+  await expect.poll(async () => (await stored(page)).state.turnNumber > 0, { timeout: 15000 }).toBe(true);
+  await expect(workflow(page).getByRole('status')).toContainText('本回合已结算');
 };
 
 for (const scenario of [
@@ -90,9 +90,8 @@ for (const scenario of [
   const server = await mock(page, scenario.startAt, scenario.endAt); await creation(page, scenario.preference, 'background' in scenario ? scenario.background : '');
   await page.getByRole('button', { name: '确认并创建存档', exact: true }).click(); await ready(page);
   const initial = await stored(page), sidebar = await showClock(page);
-  expect(initial.state.openingTimePending).toBe(true); expect(initial.state.worldClock).toBe(pendingOpeningClock);
-  await expect(sidebar.locator('.game-clock')).toHaveText('开局时间待确认');
-  await expect(sidebar).toContainText('候选时间：'); await expect(sidebar).toContainText('未正式结算');
+  expect(initial.state.openingTimePending).toBeUndefined(); expect(initial.state.worldClock).toBe(scenario.endAt);
+  expect(initial.state.turnNumber).toBe(1); await expect(sidebar.locator('.game-clock')).not.toHaveText('开局时间待确认');
   expect(server.calls.map((call) => call.stage)).toEqual(['story', 'variables', 'world']);
   expect(server.calls[0].context.SAVE_STATE).toHaveProperty('worldClock', null);
   expect(server.calls[2].context.TIME_WINDOW).toEqual({ from: scenario.startAt, to: scenario.endAt });
@@ -101,10 +100,10 @@ for (const scenario of [
   // 手机侧栏退出后输入区仍可操作；改变设置/读取都不重新授予开局收费权限。
   await page.getByLabel('你的行动', { exact: true }).fill('继续观察街道');
   await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect.poll(async () => (await stored(page)).state.revision).toBe(1); await ready(page);
+  await expect.poll(async () => (await stored(page)).state.revision).toBe(2); await ready(page);
   const committed = await stored(page);
-  expect(committed.state.openingTimePending).toBeUndefined(); expect(committed.state.worldClock).toBe(scenario.endAt);
-  expect(committed.state.journal).toHaveLength(1); expect(committed.draft.turnKind).toBe('regular');
+  expect(committed.state.openingTimePending).toBeUndefined(); expect(Date.parse(committed.state.worldClock)).toBe(Date.parse(scenario.endAt) + 15000);
+  expect(committed.state.journal).toHaveLength(2); expect(committed.draft.turnKind).toBe('regular');
   await expect((await showClock(page)).locator('.game-clock')).not.toHaveText('开局时间待确认');
   expect(server.calls.map((call) => call.stage)).toEqual(['story', 'variables', 'world', 'story', 'variables', 'world']);
   await page.reload(); await ready(page); expect(await stored(page)).toEqual(committed); expect(server.calls).toHaveLength(6);
@@ -121,7 +120,7 @@ test('非法AI日期拒绝保存、不调用下游；刷新无隐式重发，主
   expect((await stored(page)).draft.failures).toEqual(before.draft.failures); expect(server.calls).toHaveLength(1);
   server.plan.badDate = false; await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await ready(page);
   expect(server.calls.map((call) => call.stage)).toEqual(['story', 'story', 'variables', 'world']);
-  expect((await stored(page)).state).toEqual(before.state);
+  expect((await stored(page)).state.turnNumber).toBe(1); expect((await stored(page)).state.protagonist).toEqual(before.state.protagonist);
 });
 
 test('相对年份和履历完整交给同一次Story，不以中文正则阻断创角', async ({ page }) => {
@@ -129,7 +128,7 @@ test('相对年份和履历完整交给同一次Story，不以中文正则阻断
   await creation(page, '故事发生在今年夏天。'); await page.getByRole('button', { name: '确认并创建存档', exact: true }).click(); await ready(page);
   expect(server.calls).toHaveLength(3);
   expect(record(server.calls[0].context.OPENING_TIME).playerPreference).toBe('故事发生在今年夏天。');
-  expect((await stored(page)).state.openingTimePending).toBe(true);
+  expect((await stored(page)).state.openingTimePending).toBeUndefined();
 });
 
 test('年代优先指令完整传入Story；程序不二次判定自然语言年代', async ({ page }) => {
@@ -139,7 +138,7 @@ test('年代优先指令完整传入Story；程序不二次判定自然语言年
   await page.getByRole('button', { name: '确认并创建存档', exact: true }).click(); await ready(page);
   expect(server.calls.map((call) => call.stage)).toEqual(['story', 'variables', 'world']);
   expect(record(server.calls[0].context.OPENING_TIME)).toMatchObject({ playerPreference: '日期定为2015年。', playerBackground: '人物背景：2001年出生，2023年毕业。' });
-  const saved = await stored(page); expect(saved.state.openingTimePending).toBe(true);
+  const saved = await stored(page); expect(saved.state.openingTimePending).toBeUndefined();
   await page.reload(); await ready(page); expect(server.calls).toHaveLength(3); expect(await stored(page)).toEqual(saved);
 });
 
@@ -150,20 +149,20 @@ for (const kind of ['empty', 'npc', 'item']) test(`M8最小开局${kind}：无�
   await creation(page, '故事发生在2015年夏天。');
   await page.getByRole('button', { name: '确认并创建存档', exact: true }).click(); await ready(page);
   const first = await stored(page);
-  expect(first.draft.variables!.result.commands.filter((c) => c.type === 'SetWorldClock')).toEqual([{ type: 'SetWorldClock', commandId: 'opening-clock:1', worldClock: endAt, evidence: 'Story结构化开局时间' }]);
-  expect(first.state.openingTimePending).toBe(true); expect(first.state.worldClock).toBe(pendingOpeningClock);
+  expect(first.state.appliedCommands.filter(c => c.commandId === 'opening-clock:1').map(c => JSON.parse(c.fingerprint))).toEqual([{ type: 'SetWorldClock', commandId: 'opening-clock:1', worldClock: endAt, evidence: 'Story结构化开局时间' }]);
+  expect(first.state.openingTimePending).toBeUndefined(); expect(first.state.worldClock).toBe(endAt);
   expect(server.calls[1].context.SAVE_STATE).toHaveProperty('worldClock', endAt);
   expect(server.calls[2].context.TIME_WINDOW).toEqual({ from: startAt, to: endAt });
-  const rounds = kind === 'empty' ? 10 : 1;
+  const rounds = kind === 'empty' ? 9 : 1;
   for (let index = 1; index <= rounds; index++) {
     await page.getByLabel('你的行动', { exact: true }).fill(`观察周围${index}`);
     await page.getByRole('button', { name: '发送', exact: true }).click();
-    await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(index); await ready(page);
+    await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(index + 1); await ready(page);
     expect((await stored(page)).state.worldClock).toBe(endAt); // 普通回合合法空变更不固定加时。
   }
   const saved = await stored(page);
   expect(saved.state.appliedCommands.filter((c) => c.commandId.startsWith('opening-clock:'))).toHaveLength(1);
-  expect(saved.state.journal).toHaveLength(rounds); expect(server.calls).toHaveLength((rounds + 1) * 3);
+  expect(saved.state.journal).toHaveLength(rounds + 1); expect(server.calls).toHaveLength((rounds + 1) * 3);
   if (kind === 'npc') expect(saved.state.npc['new-npc']).toHaveProperty('onScene', true);
   if (kind === 'item') expect(saved.state.items.gift.ownerRef).toEqual({ kind: 'protagonist', id: saved.state.protagonist.id });
   await page.reload(); await ready(page); expect(await stored(page)).toEqual(saved); expect(server.calls).toHaveLength((rounds + 1) * 3);

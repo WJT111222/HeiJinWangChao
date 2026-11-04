@@ -646,8 +646,8 @@ export function GameScreen({
                 <button onClick={onOpenSettings}>打开 AI 设置</button>
               </div>}
             </section>
+            <StageResponsesPanel saveId={state.saveId} turnId={awaitingAction ? state.journal.at(-1)?.turnId : draft?.turnId} />
           </div>
-          <StageResponsesPanel saveId={state.saveId} turnId={awaitingAction ? state.journal.at(-1)?.turnId : draft?.turnId} />
           <label className="sr-only" htmlFor="player-input">
             你的行动
           </label>

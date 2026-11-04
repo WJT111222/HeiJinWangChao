@@ -227,7 +227,7 @@ export function readWorldEvidence(
     // 总结不是事实凭据；只允许同一所属人物的未执行计划，不能传播或更新世界真值。
     const owner = command.type === 'SaveTask' && command.task.status === 'planned' && command.task.actorRef.kind === 'npc'
       ? command.task.actorRef.id : command.type === 'UpdateNpc' && Object.keys(command.changes).length === 0 && !command.affinityChange && command.activeGoals !== undefined ? command.npcId : undefined;
-    requireWorld(proof.kind === 'planned' && owner && resolved.every((source) => !source.ownerNpcId || source.ownerNpcId === owner), 'permission');
+    requireWorld(proof.kind === 'planned' && owner && resolved.every((source) => !source.ownerNpcId || source.ownerNpcId === owner), 'permission', 'source_owner');
   }
   if (proof.kind === 'reported' || proof.kind === 'suspected') {
     requireWorld(
@@ -241,7 +241,7 @@ export function readWorldEvidence(
     );
   } else {
     if (proof.kind !== 'planned')
-      requireWorld(!resolved.some((source) => source.knowledge === 'statement'));
+      requireWorld(!resolved.some((source) => source.knowledge === 'statement'), 'invalid_output', 'source_knowledge');
     if (proof.kind === 'established') {
       requireWorld(
         resolved.some((source) => {
@@ -252,11 +252,11 @@ export function readWorldEvidence(
           } catch {
             return false;
           }
-        }),
+        }), 'invalid_output', 'source_knowledge',
       );
     } else if (proof.kind === 'derived') {
       requireWorld(
-        resolved.some((source) => source.knowledge === 'motive' || source.knowledge === 'fact'),
+        resolved.some((source) => source.knowledge === 'motive' || source.knowledge === 'fact'), 'invalid_output', 'source_knowledge',
       );
       // 生命周期的明确结构化决策由同次世界AI作语义判断；不用固定词汇审判复杂结果。
       // 来源、时间、目标/状态、条件和权限仍由后续验证器逐项约束。其他事实命令保持原保护。

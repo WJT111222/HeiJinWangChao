@@ -4,6 +4,7 @@ import { createTurnDraft } from '../domain/drafts';
 import { awaitingPlayerAction } from '../domain/turnCommit';
 import { AiClient } from '../services/ai/client';
 import { record } from '../services/ai/protocols';
+import { AiError } from '../services/ai/errors';
 import { CredentialVault } from '../services/ai/credentials';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { stageResponses, safeResponseText } from '../services/ai/stageResponses';
@@ -95,5 +96,28 @@ describe('真实协调器→自动正式结算→等待玩家', () => {
     expect(protectedText).not.toMatch(/private-token|other-secret|mock-secret/);
     const id = stageResponses.begin({ stage: 'world', saveId: 'save-a', turnId: 'turn-a' }); stageResponses.update(id, { text, normalized: '{}', status: 'validated' }, []);
     expect(stageResponses.getSnapshot()[0].text).toBe(text); stageResponses.clear(); expect(stageResponses.getSnapshot()).toEqual([]);
+  });
+  it('取消发生在下游启动前时不提交，合法Story/Variables保留', async () => {
+    const value = server(), input = setup(), commit = vi.spyOn(repo, 'commitTurn');
+    const draft = (await repo.loadDraft('save-a'))!;
+    await expect(generateAndSettleTurn(value.runner, repo, { ...input, draft, onProgress: progress => {
+      if (progress.stage === 'world' && progress.phase === 'generating') value.runner.cancel();
+    } }, { check: () => undefined, onSettling: () => undefined })).rejects.toMatchObject({ code: 'cancelled' });
+    expect(commit).not.toHaveBeenCalled(); expect((await repo.load('save-a')).revision).toBe(0);
+    const saved = (await repo.loadDraft('save-a'))!; expect(saved.story).toBeDefined(); expect(saved.variables?.validation).toBe('validated'); expect(saved.world).toBeUndefined();
+  });
+  it('离开页面的有效性检查在结算前失败，不会提交或继续请求', async () => {
+    const value = server(), draft = (await repo.loadDraft('save-a'))!, commit = vi.spyOn(repo, 'commitTurn');
+    await expect(generateAndSettleTurn(value.runner, repo, { ...setup(), draft }, { check: () => { throw new AiError('cancelled'); }, onSettling: () => undefined })).rejects.toMatchObject({ code: 'cancelled' });
+    expect(commit).not.toHaveBeenCalled(); expect((await repo.load('save-a')).turnNumber).toBe(0); expect(value.calls).toHaveLength(3);
+  });
+  it('生成完成到提交之间正式版本变化时CAS拒绝，不覆盖其他标签的状态', async () => {
+    const value = server(), original = repo.commitTurn.bind(repo);
+    vi.spyOn(repo, 'commitTurn').mockImplementationOnce(async input => {
+      await repo.save('save-a', 0, 'other-tab', [{ type: 'UpdateProtagonist', protagonistId: 'hero', expectedRevision: 0, commandId: 'other', evidence: '其他标签的合法更新', changes: { emotionText: '来自另一标签' } }]);
+      return original(input);
+    });
+    await expect(run(value)).rejects.toThrow();
+    const state = await repo.load('save-a'); expect(state.protagonist.emotionText).toBe('来自另一标签'); expect(state.turnNumber).toBe(0); expect(state.economy.cash).toBe(10000); expect(value.calls).toHaveLength(3);
   });
 });
