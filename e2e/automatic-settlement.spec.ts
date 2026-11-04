@@ -49,6 +49,7 @@ test('完整原文可读，开局与下一条行动各自动结算一次，刷�
   expect(await page.getByLabel('变量模型完整原文').textContent()).toBe(server.responses.variables);
   await page.getByText('动态世界模型原文', { exact: true }).click(); expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
   await page.getByLabel('你的行动', { exact: true }).fill('继续在街边用餐'); await page.getByRole('button', { name: '发送', exact: true }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
+  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);
   await settled(page); data = await stored(page); expect(data.state.turnNumber).toBe(2); expect(data.state.economy.cash).toBe(4000); expect(data.state.journal).toHaveLength(2); expect(data.draft.userInput).toBe(''); expect(server.calls).toHaveLength(6);
   await page.reload(); await openGameTools(page); await settled(page); expect(await stored(page)).toEqual(data); expect(server.calls).toHaveLength(6);
   await rawPanel(page); await page.getByText('变量模型原文', { exact: true }).click(); await expect(page.locator('.stage-responses')).toContainText('本页面没有可恢复的模型原文');

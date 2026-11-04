@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { stageResponses } from '../../services/ai/stageResponses';
 import { worldRuleNames } from '../../services/validation/worldDiagnostics';
 import type { AiStage } from '../../services/ai/configuration';
@@ -14,10 +14,11 @@ export function StageResponseText({ saveId, turnId, stage }: { saveId: string; t
 
 export function StageResponsesPanel({ saveId, turnId }: { saveId: string; turnId?: string }) {
   const records = useSyncExternalStore(stageResponses.subscribe, stageResponses.getSnapshot);
-  return <details className="stage-responses">
+  const [expanded, setExpanded] = useState(false);
+  return <details className="stage-responses" onToggle={event => setExpanded(event.currentTarget.open)}>
     <summary>查看三阶段模型完整原文与执行结果</summary>
     <p className="field-hint">仅本页面临时保存，刷新或淘汰后无法恢复；模型原文不等于已执行结果。不会写入正式世界或剧情历史，不会发起请求。系统凭证会隐藏。</p>
-    {(['story', 'variables', 'world'] as const).map(stage => {
+    {expanded && (['story', 'variables', 'world'] as const).map(stage => {
       const record = records.find(item => item.saveId === saveId && item.turnId === turnId && item.stage === stage);
       const label = { story: '正文', variables: '变量', world: '动态世界' }[stage];
       return <details key={stage}>

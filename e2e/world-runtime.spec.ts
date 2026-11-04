@@ -128,7 +128,9 @@ test('世界生成、补算、只读查看与刷新恢复，真实路由和快�
   await expect(page.locator('main')).not.toContainText('尚未发布的诊室线索');
   await page.getByRole('button', { name: '查看世界候选（未结算）', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '世界候选 · 未正式结算', exact: true });
-  await expect(dialog).not.toContainText('尚未发布的诊室线索');
+  await expect(dialog.getByRole('region', { name: '模型原文', exact: true })).toContainText('尚未发布的诊室线索');
+  await expect(page.getByTestId('story-reader')).not.toContainText('尚未发布的诊室线索');
+  expect((await stored(page)).formal).toBe(before);
   await dialog.getByRole('button', { name: '主动查看完整世界候选', exact: true }).click();
   await expect(dialog.getByLabel('完整世界候选')).toContainText('尚未发布的诊室线索');
   await expect(dialog).not.toContainText('mock-world-browser-secret');

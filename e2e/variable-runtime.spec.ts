@@ -140,7 +140,9 @@ test('变量正常生成、真实独立路由/模块/usage，完整候选主动�
   await page.getByRole('button', { name: '查看变量候选（未结算）', exact: true }).click();
   const modal = page.getByRole('dialog', { name: '变量候选 · 未正式结算', exact: true });
   await expect(modal).toContainText('SpendFunds');
-  await expect(modal).not.toContainText('内部候选事项不可默认公开');
+  await expect(modal.getByRole('region', { name: '模型原文', exact: true })).toContainText('内部候选事项不可默认公开');
+  await expect(page.getByTestId('story-reader')).not.toContainText('内部候选事项不可默认公开');
+  expect((await stored(page)).formal).toBe(before);
   await modal.getByRole('button', { name: '主动查看完整变量候选', exact: true }).click();
   await expect(modal.getByLabel('完整变量候选')).not.toContainText('内部候选事项不可默认公开');
   await expect(modal.getByLabel('完整变量候选')).toContainText('说明未转为命令或存档事实');

@@ -68,7 +68,10 @@ test('真实浏览器：世界成果/交接/退场只是候选，主动查看、
   await expect(page.locator('main')).not.toContainText(resultText);
   await page.getByRole('button', { name: '查看世界候选（未结算）', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '世界候选 · 未正式结算', exact: true });
-  await expect(dialog).not.toContainText(resultText); await dialog.getByRole('button', { name: '主动查看完整世界候选', exact: true }).click();
+  await expect(dialog.getByRole('region', { name: '模型原文', exact: true })).toContainText(resultText);
+  await expect(page.getByTestId('story-reader')).not.toContainText(resultText);
+  expect((await stored(page)).state).toEqual(before);
+  await dialog.getByRole('button', { name: '主动查看完整世界候选', exact: true }).click();
   await expect(dialog.getByLabel('完整世界候选')).toContainText('RetireNpc'); await expect(dialog.getByLabel('完整世界候选')).toContainText(resultText);
   await page.keyboard.press('Escape'); await page.reload(); await openGameTools(page); saved = await stored(page); expect(saved.state).toEqual(before); expect(calls).toBe(1);
   // 用真实存储提交接口隔离本轮新增生命周期的验证，不发送下一轮付费请求。

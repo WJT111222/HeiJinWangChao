@@ -529,7 +529,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
           requireWorld(
             proof.kind !== 'planned' && Date.parse(event.startAt) <= Date.parse(proof.at),
           );
-          requireWorld(failedEnd || readyConditions(causal, [...(old?.prerequisites??[]),...(old?.blockers??[]),...event.prerequisites,...event.blockers]));
+          requireWorld(failedEnd || readyConditions(causal, [...(old?.prerequisites??[]),...(old?.blockers??[]),...event.prerequisites,...event.blockers]), 'invalid_output', 'completion_conditions');
         }
         if (event.status === 'resolved') {
           outcome(
@@ -547,7 +547,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
           }
           requireWorld(event.resolutionText?.trim());
           requireWorld(!proof.decision || (proof.decision.status === 'resolved' && event.resolutionText === proof.decision.result));
-          requireWorld(event.resolvedAt && Date.parse(event.resolvedAt) === Date.parse(proof.at));
+          requireWorld(event.resolvedAt && Date.parse(event.resolvedAt) === Date.parse(proof.at), 'invalid_output', 'event_time');
         }
         if (event.status === 'cancelled') {
           requireWorld(old);
@@ -562,7 +562,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         }
         // 只把显式提升知情标记作为知识传播；客观进展不要求主角先收到消息。
         if (event.visibility !== 'hidden' && event.visibility !== old?.visibility)
-          requireWorld(hasPlayerKnownFact(command, proof, origins), 'permission');
+          requireWorld(hasPlayerKnownFact(command, proof, origins), 'permission', 'player_knowledge');
         if (!old || !terminalEvent(old)) {
           const priorKnowledge = old && protagonistKnownEvent(old);
           const informed = event.visibility === 'known' && hasPlayerKnownFact(command, proof, origins);
