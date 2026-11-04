@@ -1,3 +1,4 @@
+import { SceneEventStateSchema } from '../../domain/events/schema';
 import { DomainCommandSchema, fingerprint } from '../../domain/commands';
 import type { DomainCommand } from '../../domain/commands';
 import { GameTimeSchema, IdSchema } from '../../domain/common';
@@ -112,15 +113,25 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
   const quantities = new Map(Object.values(base.items).map((item) => [item.id, item.quantity]));
   const createdIds = new Set<string>();
   const npcIds = new Set(Object.keys(base.npc));
+  const sceneEvents = new Map(Object.entries(base.events));
   for (let i = 0; i < ast.length; i++) {
     const command = ast[i], origin = { commandIndex: i + 1, source: command.source };
     const commandId = `text-v1:s${draft.storyRevision}:c${i + 1}`;
     const prior = priorCommand(current, draft.turnId, commandId);
     const common = { commandId, evidence: `文本变量指令第${i + 1}条` };
     let mapped: DomainCommand;
+    const [root,node,field]=command.path.nodes;
+    const sceneEvent=command.path.nodes.length===3 && root.name==='events' && node?.kind==='id' && field?.kind==='field'&&field.name==='sceneState';
     const transaction = compileTransaction(command, common, context.expectedRevision)
       ?? compileEntity(command, common, context.expectedRevision);
-    if (transaction) {
+    if (sceneEvent && node.kind==='id') {
+      if(command.operation!=='set')return failed('unsupported_operation',origin);
+      const old=sceneEvents.get(node.id),delta=SceneEventStateSchema.safeParse(command.value);
+      if(!old)return failed('entity_not_found',origin);
+      if(!delta.success)return failed('type_mismatch',origin,[],diagnosticForSchema(command,delta.error));
+      mapped={...common,type:'SaveEvent',event:{...old,...delta.data,sourceTurnIds:[...new Set([...old.sourceTurnIds,draft.turnId])]}};
+      sceneEvents.set(node.id,mapped.event);
+    } else if (transaction) {
       if (!transaction.ok) return failed(transaction.error.code, origin, [], transaction.error.diagnostic);
       mapped = transaction.value;
     } else {

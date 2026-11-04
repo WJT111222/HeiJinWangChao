@@ -447,7 +447,7 @@ describe('最终重验与存储兼容', () => {
     });
     await unchanged(submission(draft));
   });
-  it('隐藏重大结案事件不能通过 timelineCandidates 自动揭示', async () => {
+  it('缺少客观成果的重大结案不能通过timelineCandidates冒充事实历史', async () => {
     await repo.delete('save-a', 0);
     const state = worldState();
     state.events.hidden = {
@@ -471,6 +471,7 @@ describe('最终重验与存储兼容', () => {
       status: 'resolved',
       resolvedAt: gameTime,
       resolutionText: '预约已完成',
+      resultKnowledge: { facts: ['预约已完成'], reported: [], suspected: [] },
       visibility: 'known',
       sourceTurnIds: [],
     };
@@ -484,8 +485,8 @@ describe('最终重验与存储兼容', () => {
       {
         eventId: 'public',
         occurredAt: gameTime,
-        title: '预约',
-        summary: '预约',
+        title: '预约已完成',
+        summary: '预约已完成',
         outcome: '预约已完成',
         longTermImpact: '',
         actorRefs: [],
@@ -615,7 +616,7 @@ describe('最终重验与存储兼容', () => {
     legacy.close();
     repo = await SaveRepository.open('legacy', legacyFactory);
     expect(await repo.loadGame('save-a')).toEqual({ state, draft });
-    expect((await repo.load('save-a')).schemaVersion).toBe(4);
+    expect((await repo.load('save-a')).schemaVersion).toBe(5);
   });
   it('删除存档时回执一并删除，不污染同 ID 的新游戏', async () => {
     const draft = await completeDraft(repo);

@@ -20,6 +20,8 @@ import { playerView } from '../ui/panels/playerView';
 import { searchHistory } from '../domain/memories/history';
 import { worldSources, readWorldEvidence } from '../services/validation/worldEvidence';
 import { parseWorld } from '../services/validation/aiOutputs';
+import { contextFor } from '../prompts/context';
+import { projectTurn } from '../domain/turnProjection';
 import { createTurnDraft } from '../domain/drafts';
 import { completeDraft, submission } from './fixtures/turn';
 import { npcMemoryState, npcSummaryOutput } from './fixtures/npcMemory';
@@ -86,7 +88,7 @@ describe('独立NPC来源与认知模型', () => {
     expect(JSON.stringify(result)).toContain('[转述]'); expect(JSON.stringify(result)).toContain('[推测]');
     expect(npcKnowledgeKind(memories[2])).toBe('unknown');
     expect(playerView(after).memories.map((entry) => entry.text)).toContain(memories[3].text);
-    expect(JSON.stringify(playerView(after))).not.toContain('本组经历');
+    expect(JSON.stringify(playerView(after))).toContain('本组经历');
   });
   it('缺少journal来源的真实NPC记忆仍按自身ID及knowledgeSource整理，不捏造回合或时间', () => {
     const before = npcMemoryState(); before.npc['npc-a'].memories.forEach((entry) => { entry.sourceTurnIds = []; delete entry.knowledgeKind; });
@@ -215,13 +217,13 @@ describe('真实运行、维护事务和异常', () => {
   });
 });
 
-describe('内部接入与公开泄露阻断', () => {
-  it('在场也不公开私人总结；普通正文、记忆面板和历史搜索不接收私有内容', async () => {
+describe('NPC独立认知与玩家只读观察', () => {
+  it('玩家可读私人总结；主角正文和永久历史搜索不接收私有内容', async () => {
     const { state } = summarize(); state.npc['npc-a'].onScene = true;
     const prompt = await composePrompt({ state, stage: 'story', mode: 'regular', settings: defaultSettings(), userInput: '看看四周' });
     expect(JSON.stringify(prompt.context)).not.toMatch(/本组经历|A的私人经历|B的独占秘密/);
     expect(JSON.stringify(prompt.context.MEMORY_CONTEXT)).toContain('"history-1"'); // NPC来源不抑制玩家公开历史。
-    expect(JSON.stringify(playerView(state))).not.toMatch(/本组经历|A的私人经历|B的独占秘密/);
+    expect(JSON.stringify(playerView(state))).toMatch(/本组经历|A的私人经历|B的独占秘密/);
     expect(searchHistory(playerView(state).journal, '本组经历')).toEqual([]);
   });
   it('变量/世界使用所属NPC知识分区，已总结原文不重复注入；只向场景适用人物提供资料', async () => {
@@ -309,12 +311,18 @@ it('NPC亲历的私有事实不能仅因established就被升级为player_known�
 });
 it('NPC私有事实不能直接转成新公开事件，已有公开来源的正例仍成立', () => {
   const state = npcMemoryState(), original = state.npc['npc-a'].memories.at(-1)!, draft = { ...worldDraft(), baseSaveRevision: state.revision };
-  const command: DomainCommand = { type: 'SaveEvent', commandId: 'publish-private', event: { ...event(), actorRefs: [{ kind: 'npc', id: 'npc-a' }], visibility: 'known' },
+  const command: DomainCommand = { type: 'SaveEvent', commandId: 'publish-private', event: { ...event(), estimatedEndAt:'2026-10-20T08:00:00+08:00', actorRefs: [{ kind: 'npc', id: 'npc-a' }], visibility: 'known' },
     evidence: proof({ kind: 'established', sources: [`memory:npc-a:${original.id}`], fact: original.text }) };
   const output = { ...worldResult(), eventCommands: [command] };
   expect(() => parseWorld(JSON.stringify(output), state, draft)).toThrow();
   state.events[command.event.id] = { ...command.event, title: '先前已知的预约' };
-  expect(() => parseWorld(JSON.stringify(output), state, draft)).toThrow(); // 不能借已知事件更新字段泄漏私人进展。
+  // 已有事件的客观变化可以成立，但不能借旧known标记传播新进展。
+  const before = structuredClone(state), result = parseWorld(JSON.stringify(output), state, draft);
+  const after = projectTurn(state, draft, result.eventCommands);
+  const knownEvents = (value: GameState) => contextFor({ state: value, stage: 'story', mode: 'regular', settings: defaultSettings(), userInput: '继续工作' }).KNOWN_EVENTS;
+  expect(knownEvents(after)).toEqual(knownEvents(before)); expect(after.npc).toEqual(before.npc);
+  expect(worldSources(after, draft).find(source => source.id === `event:${command.event.id}`)).toMatchObject({ worldEventOnly: true });
+  expect(state).toEqual(before);
   original.visibility = 'player_known';
   expect(() => parseWorld(JSON.stringify(output), state, draft)).not.toThrow();
 });

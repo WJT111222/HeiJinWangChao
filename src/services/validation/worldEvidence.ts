@@ -1,3 +1,4 @@
+import { historicalEvent, terminalEvent } from '../../domain/events/lifecycle';
 import { npcKnowledgeContext } from '../../domain/memories/npcMemory';
 import { z } from 'zod';
 import { GameTimeSchema, TextSchema, IdSchema } from '../../domain/common';
@@ -155,17 +156,21 @@ export function worldSources(state: GameState, draft: TurnDraft, before = state)
     if (task.handoff) sources.push({ id: `handoff:${task.id}`, knowledge: task.handoff.knowledgeKind === 'reported' ? 'statement' : 'fact',
       text: task.handoff.content, actors: [task.actorRef], ownerNpcId: task.actorRef.kind === 'npc' ? task.actorRef.id : undefined, at: task.handoff.at });
   }
-  for (const event of Object.values(state.events)) {
+  const eventViews = [...Object.values(state.events), ...Object.keys(state.retiredEvents).flatMap(id => { const view=historicalEvent(state,id); return view ? [view] : []; })];
+  for (const event of eventViews) {
     const terminal = ['resolved', 'cancelled'].includes(event.status);
+    // 现场sceneState只观察状态/结果，不会公开World另行修改的标题、背景或排程。
+    // 快照存在期间，整条事件来源继续仅供世界推演；人物应使用独立知晓渠道。
+    const progressKnown = event.visibility === 'known' && !event.protagonistKnowledge;
     const metadata = { id: event.id, status: event.status, startAt: event.startAt,
       resolvedAt: event.resolvedAt, locationId: event.locationId, actorRefs: event.actorRefs,
       facts: event.resultKnowledge?.facts ?? [] };
     sources.push({
       id: `event:${event.id}`,
       // 参与者/事件客观状态不代表人物已经获知；旧档同样按当前可见性重建边界。
-      worldEventOnly: event.visibility !== 'known' ? true : undefined,
-      playerKnownText: event.visibility === 'known' ? JSON.stringify(metadata) : undefined,
-      knowledge: event.status === 'resolved' ? 'fact' : 'plan',
+      worldEventOnly: !progressKnown ? true : undefined,
+      playerKnownText: progressKnown ? JSON.stringify(metadata) : undefined,
+      knowledge: terminalEvent(event) ? 'fact' : event.estimatedEndAt && Date.parse(event.estimatedEndAt)<=Date.parse(state.worldClock) ? 'motive' : 'plan',
       text: JSON.stringify(terminal ? metadata : event),
       actors: event.actorRefs,
       at: event.resolvedAt,
@@ -174,11 +179,11 @@ export function worldSources(state: GameState, draft: TurnDraft, before = state)
       sources.push({ id: `event-result:${event.id}`, knowledge: 'statement',
         text: JSON.stringify({ title: event.title, resolutionText: event.resolutionText,
           reported: event.resultKnowledge?.reported ?? [], suspected: event.resultKnowledge?.suspected ?? [] }),
-        actors: event.actorRefs, worldEventOnly: event.visibility !== 'known' ? true : undefined, at: event.resolvedAt });
+        actors: event.actorRefs, worldEventOnly: !progressKnown ? true : undefined, at: event.resolvedAt });
       sources.push({ id: `event-plan:${event.id}`, knowledge: 'plan',
-        text: JSON.stringify({ title: event.title, completionCondition: event.completionCondition,
-          estimatedEndAt: event.estimatedEndAt, prerequisites: event.prerequisites, blockers: event.blockers }),
-        actors: event.actorRefs, worldEventOnly: event.visibility !== 'known' ? true : undefined });
+        text: JSON.stringify({ title: event.title, completionCondition: 'completionCondition' in event ? event.completionCondition : undefined,
+          estimatedEndAt: event.estimatedEndAt, prerequisites: 'prerequisites' in event ? event.prerequisites : undefined, blockers: 'blockers' in event ? event.blockers : undefined }),
+        actors: event.actorRefs, worldEventOnly: !progressKnown ? true : undefined });
     }
   }
   return sources;
@@ -256,7 +261,8 @@ export function readWorldEvidence(
       const lifecycleDecision = decision && (
         (command.type === 'SaveTask' && decision.targetId === command.task.id && decision.status === command.task.status)
         || (command.type === 'SaveEvent' && decision.targetId === command.event.id && decision.status === command.event.status)
-        || (command.type === 'RetireNpc' && decision.targetId === command.npcId && decision.status === 'retired'));
+        || (command.type === 'RetireNpc' && decision.targetId === command.npcId && decision.status === 'retired')
+        || ((command.type === 'DeleteEvent' || command.type === 'ArchiveEvent') && decision.targetId === command.eventId && decision.status === 'retired'));
       if (!lifecycleDecision) {
         const cancellation = (command.type === 'SaveTask' && command.task.status === 'cancelled')
           || (command.type === 'SaveEvent' && command.event.status === 'cancelled');

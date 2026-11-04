@@ -35,7 +35,7 @@ async function seed(page: Page, variant?: 'mixed-result' | 'unindexed-history' |
     if (variant === 'unindexed-history' || variant === 'refused-confirmation') {
       // 隔离的旧档夹具：创建接口禁止伪装已提交的新游戏，直接种入真实V2格式后验证迁移读取。
       await repo.create(handoffState());
-      const raw = { ...initial, schemaVersion: 2 }; Reflect.deleteProperty(raw, 'contactNpcIds'); Reflect.deleteProperty(raw, 'contactReviewNpcIds'); Reflect.deleteProperty(raw, 'retiredNpcs');
+      const raw = { ...initial, schemaVersion: 2 }; Reflect.deleteProperty(raw, 'retiredEvents'); Reflect.deleteProperty(raw, 'contactNpcIds'); Reflect.deleteProperty(raw, 'contactReviewNpcIds'); Reflect.deleteProperty(raw, 'retiredNpcs');
       await new Promise<void>((resolve, reject) => { const request = indexedDB.open('heijinwangchao'); request.onsuccess = () => {
         const db = request.result, tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(raw);
         tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); };
@@ -164,7 +164,7 @@ test('V3预览误标的NPC迁移后显示待确认身份，不冒充联系人且
   await page.evaluate(async () => {
     const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open();
     const state = await repo.load('save-a'); repo.close();
-    const raw = { ...state, schemaVersion: 3, contactNpcIds: Object.keys(state.npc) }; Reflect.deleteProperty(raw, 'contactReviewNpcIds');
+    const raw = { ...state, schemaVersion: 3, contactNpcIds: Object.keys(state.npc) }; Reflect.deleteProperty(raw, 'retiredEvents'); Reflect.deleteProperty(raw, 'contactReviewNpcIds');
     await new Promise<void>((resolve, reject) => { const request = indexedDB.open('heijinwangchao'); request.onsuccess = () => {
       const db = request.result, tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(raw);
       tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); };
@@ -174,7 +174,7 @@ test('V3预览误标的NPC迁移后显示待确认身份，不冒充联系人且
   const panel = page.getByRole('dialog'); await panel.getByRole('button', { name: /现场人物/ }).click();
   await expect(panel).toContainText('旧档联系人身份待确认 · 暂缓清理');
   await expect(panel).not.toContainText('联系人 · 永久保留档案');
-  const migrated = (await stored(page)).state; expect(migrated.schemaVersion).toBe(4); expect(migrated.contactNpcIds).toEqual([]);
+  const migrated = (await stored(page)).state; expect(migrated.schemaVersion).toBe(5); expect(migrated.contactNpcIds).toEqual([]);
   expect(migrated.contactReviewNpcIds).toContain('scene'); expect(migrated.npc).toEqual(before.npc); expect(migrated.revision).toBe(before.revision);
   await page.reload(); await openGameTools(page); expect((await stored(page)).state).toEqual(migrated);
 });

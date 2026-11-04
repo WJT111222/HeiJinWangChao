@@ -5,12 +5,13 @@ import { EquipmentSchema } from './protagonist/schema';
 import { ImportantItemSchema } from './items/schema';
 import { NpcSchema } from './npc/schema';
 import { OrganizationSchema } from './organizations/schema';
-import { WorldEventSchema, WorldTaskSchema } from './events/schema';
+import { StoredWorldEventSchema, WorldTaskSchema } from './events/schema';
 import { GameStateSchema } from './state';
 import type { GameState } from './state';
 import { variableCommandSchemas, applyVariableCommand, assertImportantItem, unequipItem } from './variableCommands';
 import { ContactReviewSchema } from './npc/contactReview';
 import { retireNpc, validateTaskTransitions } from './npc/lifecycle';
+import { archiveEvent, deleteEvent, validateEventLinks, validateEventWrite } from './events/lifecycle';
 import { validateSceneTransition } from './sceneTransitions';
 
 const base = { commandId: IdSchema, evidence: TextSchema };
@@ -26,7 +27,9 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('SetEquipment'), equipment: EquipmentSchema }),
   z.strictObject({ ...base, type: z.literal('TransferItem'), itemId: IdSchema, from: ActorRefSchema.nullable(), to: ActorRefSchema }),
   z.strictObject({ ...base, type: z.literal('SetWorldClock'), worldClock: GameTimeSchema }),
-  z.strictObject({ ...base, type: z.literal('SaveEvent'), event: WorldEventSchema }),
+  z.strictObject({ ...base, type: z.literal('SaveEvent'), event: StoredWorldEventSchema }),
+  z.strictObject({ ...base, type: z.literal('DeleteEvent'), eventId: IdSchema, expectedStatus: z.enum(['resolved','cancelled']), reason: TextSchema }),
+  z.strictObject({ ...base, type: z.literal('ArchiveEvent'), eventId: IdSchema, title: TextSchema, summary: TextSchema }),
   z.strictObject({ ...base, type: z.literal('SaveTask'), task: WorldTaskSchema }),
   z.strictObject({ ...base, type: z.literal('CreateOrganization'), organization: OrganizationSchema }),
   z.strictObject({ ...base, type: z.literal('RecordOrgRelation'), organizationId: IdSchema, relation: TextSchema, reason: TextSchema }),
@@ -46,7 +49,7 @@ export function fingerprint(value: unknown): string {
 }
 
 function allEntityIds(s: GameState): string[] {
-  return [s.protagonist.id, ...[s.npc, s.retiredNpcs, s.items, s.organizations, s.events, s.tasks, s.locations,
+  return [s.protagonist.id, ...[s.npc, s.retiredNpcs, s.items, s.organizations, s.events, s.retiredEvents, s.tasks, s.locations,
     s.economy.incomes, s.economy.debts, s.economy.properties, s.economy.vehicles, s.economy.otherAssets].flatMap(Object.keys)];
 }
 function newEntity(s: GameState, id: string) {
@@ -128,9 +131,13 @@ function apply(s: GameState, c: DomainCommand, turnId: string) {
       if (!old) newEntity(s, c.event.id);
       requireData(!old || !['resolved', 'cancelled'].includes(old.status) || fingerprint(old) === fingerprint(c.event),
         'TERMINAL_EVENT', '已结案或取消事件不能再次变更');
+      validateEventWrite(old,c.event);
       s.events[c.event.id] = c.event; break;
     }
+    case 'DeleteEvent': deleteEvent(s,c.eventId,c.expectedStatus,turnId); break;
+    case 'ArchiveEvent': archiveEvent(s,c.eventId,c.title,c.summary,turnId); break;
     case 'SaveTask': {
+      requireData(c.task.dueAt || c.task.completionCondition?.trim(),'TASK_PLAN','任务新写入需要截止时间或完成条件');
       const old = s.tasks[c.task.id];
       if (!old) newEntity(s, c.task.id);
       requireData(!old || !['completed', 'cancelled'].includes(old.status) || fingerprint(old) === fingerprint(c.task),
@@ -165,13 +172,15 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
   requireData(current.revision === expectedRevision, 'REVISION_CONFLICT', '存档版本已变化，请重新读取');
   if (fresh.length === 0) return current;
   // 退场最后执行，先让同批经过验证的成果、后续职责及记忆完整落到投影。
-  const ordered = [...fresh.filter((c) => c.type !== 'RetireNpc'), ...fresh.filter((c) => c.type === 'RetireNpc')];
+  const cleanup = (c: DomainCommand) => c.type==='DeleteEvent'||c.type==='ArchiveEvent';
+  const ordered = [...fresh.filter((c) => c.type !== 'RetireNpc'&&!cleanup(c)), ...fresh.filter(cleanup), ...fresh.filter((c) => c.type === 'RetireNpc')];
   for (const command of ordered) {
     apply(current, command, turnId);
     current.appliedCommands.push({ turnId, commandId: command.commandId, fingerprint: fingerprint(command) });
   }
   validateTaskTransitions(state, current, fresh.flatMap((c) => c.type === 'SaveTask' ? [c.task] : []));
   validateSceneTransition(state, current, fresh);
+  validateEventLinks(current);
   current.revision += 1;
   current.updatedAt = now;
   return GameStateSchema.parse(current);

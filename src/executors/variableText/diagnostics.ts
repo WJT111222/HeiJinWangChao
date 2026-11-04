@@ -25,7 +25,7 @@ const allowedPatterns = [
   /^items\[id\](?:\.(?:conditionText|locationId|quantity|purchase|transfer|loss))?$/,
   /^locations\[id\]$/,
   /^organizations\[id\](?:\.protagonistRelation)?$/,
-  /^events\[id\]$/,
+  /^events\[id\]\.sceneState$/,
   /^tasks\[id\]$/,
   /^economy\.(?:incomes|debts|vehicles)\[id\](?:\.(?:repayments|purchase))?$/,
 ];

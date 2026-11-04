@@ -6,6 +6,7 @@
 
 - [项目介绍、运行及当前里程碑](../README.md)
 - [当前架构和状态安全边界](CURRENT_ARCHITECTURE.md)
+- [动态世界事件生命周期（当前规则，替代Event的旧OR规则）](WORLD_EVENT_LIFECYCLE.md)
 - [M6 API 模型列表兼容专项任务](API-MODEL-LIST-COMPATIBILITY.md)（主体已随 PR #27 合并；最终加固及真实服务边界见补充报告）
 - [项目变更记录](../CHANGELOG.md)
 - [运行中的提示词结构](../src/prompts/README.md)、[Prompt 资源库与历史说明](../prompts/docs/README.md)

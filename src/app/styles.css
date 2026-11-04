@@ -1626,6 +1626,14 @@ summary {
 
 /* 记忆为只读阅读页；维护工具仅在设置内。长文跟随现有弹窗滚动。 */
 .memory-reader { min-width: 0; }
+.world-record { min-width: 0; max-width: 100%; overflow-wrap: anywhere; margin-block: .75rem; }
+.world-record summary { cursor: pointer; color: var(--gold); padding-block: .5rem; }
+.world-record dl { display: block; }
+.world-record-field { padding-block: .3rem; border-bottom: 1px solid var(--line); }
+.world-record dt { color: var(--gold); font-size: .85rem; }
+.world-record dd { margin: .2rem 0 .2rem .5rem; white-space: pre-wrap; }
+.world-record ol { padding-inline-start: 1.25rem; }
+.archive-split > * { min-width: 0; }
 .memory-navigation { display: flex; flex-wrap: wrap; gap: .45rem; position: sticky; top: 0; z-index: 1; background: var(--bg, #111a14); padding-block: .65rem; }
 .memory-navigation button { margin: 0; padding: .65rem .9rem; }
 .memory-navigation button[aria-pressed='true'] { border-color: var(--gold); color: var(--gold); background: #303427; }

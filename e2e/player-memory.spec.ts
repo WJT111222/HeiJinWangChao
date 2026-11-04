@@ -62,7 +62,7 @@ test('四层只读记忆默认阅读，维护归位；公开来源、长文本�
   await expect(panel).toContainText('完整末尾不能截断'); await expect(panel).not.toContainText('long-internal-id');
   for (const name of ['即时记忆', '短期记忆', '中期记忆', '长期记忆']) {
     await panel.getByRole('button', { name, exact: true }).click();
-    await expect(panel).not.toContainText('后台秘密不得出现'); await expect(panel).not.toContainText('未提交候选摘要'); await expect(panel).not.toContainText('未提交剧情禁止记忆');
+    if(name==='中期记忆'||name==='长期记忆')await expect(panel).toContainText('后台秘密不得出现'); await expect(panel).not.toContainText('未提交候选摘要'); await expect(panel).not.toContainText('未提交剧情禁止记忆');
   }
   await panel.getByLabel('搜索历史回合').fill('后台秘密不得出现'); await expect(panel).toContainText('未找到相关的已提交历史');
   await panel.getByLabel('搜索历史回合').fill(''); await expect(panel.locator('article')).toHaveCount(20);

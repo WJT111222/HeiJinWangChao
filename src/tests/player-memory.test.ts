@@ -42,16 +42,17 @@ describe('玩家四层记忆只读投影', () => {
     const state = historyState(1); state.journal[0].story.summary = '';
     expect(playerView(state)).toMatchObject({ immediateMemories: [{ summary: '', narrative: state.journal[0].story.narrative }] });
   });
-  it('中长期顺序、完整文本与来源保持原样，全部私有记忆不进入公开投影', () => {
+  it('中长期完整保存并向玩家开放，来源和认知标记保持原样', () => {
     const state = compressionState('short', 4), base = state.memories.short[0];
     state.memories.medium = [{ ...base, id: 'm-public', text: '完整中期经历'.repeat(100), sourceTurnIds: ['history-1'] },
       { ...base, id: 'm-secret', text: '隐藏的中期秘密', visibility: 'internal' }];
     state.memories.long = [{ ...base, id: 'l-public', text: '完整长期经历'.repeat(100), sourceTurnIds: ['history-2'] },
       { ...base, id: 'l-secret', text: '隐藏的长期秘密', visibility: 'npc_private' }];
     const before = structuredClone(state), view = playerView(state);
-    expect(view.memories.filter((entry) => entry.layer === '中期')).toEqual([expect.objectContaining({ tier: 'medium', text: state.memories.medium[0].text, sourceTurnIds: ['history-1'], createdAtGameTime: base.createdAtGameTime })]);
-    expect(view.memories.filter((entry) => entry.layer === '长期')).toEqual([expect.objectContaining({ tier: 'long', text: state.memories.long[0].text, sourceTurnIds: ['history-2'] })]);
-    expect(JSON.stringify(view)).not.toMatch(/隐藏的中期秘密|隐藏的长期秘密|私有调查/);
+    expect(view.memories.filter((entry) => entry.layer === '中期').map(m => m.text)).toEqual(state.memories.medium.map(m => m.text));
+    expect(view.memories.filter((entry) => entry.layer === '长期').map(m => m.text)).toEqual(state.memories.long.map(m => m.text));
+    expect(view.memories.find(m => m.id === 'm-secret')?.visibility).toBe('internal');
+    expect(view.memories.find(m => m.id === 'l-secret')?.visibility).toBe('npc_private');
     expect(state).toEqual(before);
   });
   it('已压缩历史不因新的阅读分层重新投影为短期', () => {
@@ -59,28 +60,28 @@ describe('玩家四层记忆只读投影', () => {
     state.memories.medium = [{ ...before[0], id: 'compressed', sourceTurnIds: state.journal.slice(0, 30).map((turn) => turn.turnId) }];
     state.memories.short = before.slice(30);
     const view = playerView(state);
-    expect(view.memoryLayers).toEqual({ short: 10, medium: 1, long: 0 });
+    expect(view.memoryLayers).toEqual({ short: 10, medium: 1, long: 0, npc: 1 });
     expect(view.memories.filter((entry) => entry.layer.startsWith('短期'))).toHaveLength(10);
   });
-  it('人物在场、联系人或初始同伴身份都不公开其私人原始、长期和总结', () => {
+  it('人物私有原始、长期和总结向玩家开放，不依赖在场或联系人身份', () => {
     const state = game();
     const secret = { id: 'private-source', text: '私有经历不可展示', sourceTurnIds: [], affectedEntityRefs: [], visibility: 'npc_private' as const, createdAtGameTime: state.worldClock };
     state.npc.hidden = { ...npc('hidden'), kind: 'special', name: '未公开人物身份', onScene: false,
       detailedBackground: '', activeGoals: [], habits: [], offscreenTaskIds: [],
       memories: [{ ...secret, knowledgeSource: '私人观察' }], longTermMemories: [{ ...secret, id: 'private-long', knowledgeSource: '私人经历' }] };
     state.memories.npcSummaries.hidden = [{ ...secret, id: 'private-summary' }];
-    expect(JSON.stringify(playerView(state))).not.toMatch(/私有经历不可展示|未公开人物身份|private-source|private-summary/);
+    expect(playerView(state).memories.filter(m => m.ownerNpcId === 'hidden')).toHaveLength(3);
     state.contactNpcIds = ['hidden']; state.initialCompanionId = 'hidden'; state.npc.hidden.onScene = true;
     const view = playerView(state);
-    expect(view.memories).toEqual([]); expect(view.memoryLayers).toEqual({ short: 0, medium: 0, long: 0 });
+    expect(view.memories).toHaveLength(3); expect(view.memoryLayers).toEqual({ short: 0, medium: 0, long: 0, npc: 3 });
     expect(view.immediateMemories).toEqual([]); expect(view.journal).toEqual([]);
-    expect(JSON.stringify(view.memories)).not.toContain('私有经历不可展示');
+    expect(view.memories.every(m => m.visibility === 'npc_private')).toBe(true);
   });
   it('已合法公开的人物记忆仍可查看，分组不额外复制或提升私有内容', () => {
     const state = historyState(1);
     state.npc['npc-a'].memories = [{ id: 'known-npc-memory', text: '已公开的共同经历', sourceTurnIds: ['history-1'], affectedEntityRefs: [], visibility: 'player_known', createdAtGameTime: state.worldClock, knowledgeSource: '公开交流' }];
     const view = playerView(state);
-    expect(view.memories.filter((entry) => entry.id === 'known-npc-memory')).toEqual([expect.objectContaining({ text: '已公开的共同经历', tier: 'short' })]);
+    expect(view.memories.filter((entry) => entry.id === 'known-npc-memory')).toEqual([expect.objectContaining({ text: '已公开的共同经历', tier: 'npc' })]);
     expect(view.memoryLayers.short).toBe(view.memories.filter((entry) => entry.tier === 'short').length);
   });
 

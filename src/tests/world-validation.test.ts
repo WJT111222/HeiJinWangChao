@@ -396,7 +396,7 @@ describe('世界任务与事件的状态、终态、来源和依赖', () => {
       expect(() => parseWorld(JSON.stringify(bad), worldState(), worldDraft())).toThrow();
     expect(() => parse(r, withEvent(e))).toThrow();
   });
-  it('场外重大事件结案只成为内部时间线候选；不公开 hooks、不写历史', () => {
+  it('未分类重大成果不自动进入时间线；结案原始结果仍可保存', () => {
     const e = backgroundEvent(),
       state = withEvent(e),
       before = structuredClone(state),
@@ -411,6 +411,8 @@ describe('世界任务与事件的状态、终态、来源和依赖', () => {
       ),
     ];
     r.timelineCandidates = ['event-a'];
+    expect(()=>parse(r,state)).toThrow();
+    r.timelineCandidates=[];
     expect(parse(r, state)).toEqual(r);
     expect(state).toEqual(before);
     for (const bad of [
@@ -507,7 +509,7 @@ describe('额外来源与状态阻断回归', () => {
     ];
     r.eventCommands = [
       saveEvent(
-        { ...backgroundEvent(), actorRefs: [{ kind: 'npc', id: 'new' }], status: 'active' },
+        { ...backgroundEvent(), estimatedEndAt:'2026-10-19T08:00:00+08:00', actorRefs: [{ kind: 'npc', id: 'new' }], status: 'active' },
         proof({ sources: ['story:current'], fact: '值班护士正在场外整理器材。' }),
       ),
     ];

@@ -147,7 +147,7 @@ describe('开局时间确定性边界', () => {
   });
   it.each([1, 2, 3, 4])('旧V%s开局及已提交存档读取不添加标记、不改世界时间', (version) => {
     for (const original of [game(), historyState(2)]) {
-      const raw: Record<string, unknown> = { ...original, schemaVersion: version };
+      const raw: Record<string, unknown> = { ...original, schemaVersion: version }; Reflect.deleteProperty(raw, 'retiredEvents');
       if (version < 4) delete raw.contactReviewNpcIds;
       if (version < 3) { delete raw.contactNpcIds; delete raw.retiredNpcs; }
       if (version < 2) { delete raw.weatherText; delete raw.environmentText; }

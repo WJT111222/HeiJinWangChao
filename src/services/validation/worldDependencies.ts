@@ -3,7 +3,8 @@ import { WorldEvidenceSchema, requireWorld } from './worldEvidence';
 
 // 仅排序具体来源依赖，不从自然语言猜测职责，也不把尚未验证的输出加入事实池。
 export function orderWorldCommands(commands: readonly DomainCommand[]) {
-  const key = (c: DomainCommand) => c.type === 'SaveTask' ? `task:${c.task.id}`
+  const cleanup = (c: DomainCommand) => c.type === 'DeleteEvent' || c.type === 'ArchiveEvent';
+  const key = (c: DomainCommand) => cleanup(c) && 'eventId' in c ? `cleanup:${c.eventId}` : c.type === 'SaveTask' ? `task:${c.task.id}`
     : c.type === 'SaveEvent' ? `event:${c.event.id}` : c.type === 'CreateNpc' ? `npc:${c.npc.id}`
       : c.type === 'CreateOrganization' ? `org:${c.organization.id}` : undefined;
   const keyed = new Map(commands.flatMap((c) => key(c) ? [[key(c), c] as const] : []));
@@ -17,6 +18,8 @@ export function orderWorldCommands(commands: readonly DomainCommand[]) {
     const checked = WorldEvidenceSchema.safeParse(raw);
     requireWorld(checked.success);
     const dependencies = [...checked.data.sources];
+    if (cleanup(command) && 'eventId' in command) dependencies.push(`event:${command.eventId}`);
+    if (command.type === 'SaveEvent') dependencies.push(...(command.event.predecessorEventIds??[]).map(id=>`event:${id}`));
     if (command.type === 'SaveTask' || command.type === 'SaveEvent') {
       const work = command.type === 'SaveTask' ? command.task : command.event;
       for (const ref of [...work.prerequisites, ...work.blockers]) {
@@ -38,7 +41,9 @@ export function orderWorldCommands(commands: readonly DomainCommand[]) {
     }
     visiting.delete(command); visited.add(command); result.push(command);
   }
-  for (const command of commands.filter((c) => c.type !== 'RetireNpc')) visit(command);
+  const timed=[...commands].sort((a,b)=>{ const at=(c:DomainCommand)=>{try{return Date.parse(JSON.parse(c.evidence).at);}catch{return 0;}};return at(a)-at(b);});
+  for (const command of timed.filter((c) => c.type !== 'RetireNpc'&&!cleanup(c))) visit(command);
+  for (const command of timed.filter(cleanup)) visit(command);
   for (const command of commands.filter((c) => c.type === 'RetireNpc')) visit(command);
   return result;
 }

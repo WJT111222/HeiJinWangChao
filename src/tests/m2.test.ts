@@ -180,16 +180,16 @@ describe('M2 创角资料与真实存档', () => {
   });
 });
 describe('玩家可见资料投影', () => {
-  it('过滤私有记忆、场外计划、未知人物和地点，不把完整内部对象传给面板', () => {
+  it('玩家只读查看全量世界资料，不再按主角认知遮蔽', () => {
     const visible = playerView(uiFixture());
     const text = JSON.stringify(visible);
-    expect(text).not.toContain('不可见');
+    expect(text).toContain('不可见');
     expect(text).toContain('已知记忆');
-    expect(visible.npc).toHaveLength(1);
+    expect(visible.npc).toHaveLength(2);
     expect(visible.timeline.map((t) => t.title)).toEqual(['更早的公开事件', '公开会面']);
     expect(visible.organizations[0].name).toBe('相关组织');
   });
-  it('在场、互动、正文/已知事件关联均不自动公开 NPC 内部身份和关系', () => {
+  it('玩家可查看NPC身份与关系，不依赖在场、互动或正文引用', () => {
     const state = uiFixture();
     const person = state.npc['npc-a'];
     person.lastInteractionAt = state.worldClock;
@@ -197,24 +197,24 @@ describe('玩家可见资料投影', () => {
     state.journal[0].relatedActorRefs = [{ kind: 'npc', id: person.id }];
     const visible = playerView(state);
     expect(visible.npc[0]).toMatchObject({
-      identity: undefined,
-      relationshipText: undefined,
+      identity: person.identity,
+      relationshipText: person.relationshipText,
       affinity: 87,
     });
-    expect(JSON.stringify(visible)).not.toContain('内部身份');
-    expect(JSON.stringify(visible)).not.toContain('内部关系');
+    expect(JSON.stringify(visible)).toContain('内部身份');
+    expect(JSON.stringify(visible)).toContain('内部关系');
     person.onScene = false;
-    expect(playerView(state).npc[0].identity).toBeUndefined();
+    expect(playerView(state).npc[0].identity).toBe(person.identity);
   });
-  it('组织被已知事件关联不公开内部关系；已知事件不暴露内部预计结束时间', () => {
+  it('全量组织关系与事件预计时间均可查看', () => {
     const state = uiFixture();
     const visible = playerView(state);
-    expect(visible.organizations[0]).not.toHaveProperty('protagonistRelation');
-    expect(visible.events.every((event) => !('estimatedEndAt' in event))).toBe(true);
-    expect(JSON.stringify(visible)).not.toContain('2099-12-31');
-    expect(JSON.stringify(visible)).not.toContain('组织内部关系');
+    expect(visible.organizations[0].protagonistRelation).toBe(state.organizations['org-a'].protagonistRelation);
+    expect(visible.events).toEqual(Object.values(state.events));
+    expect(JSON.stringify(visible)).toContain('2099-12-31');
+    expect(JSON.stringify(visible)).toContain('组织内部关系');
   });
-  it('公开记忆只提供明确公开的原文事实，不据此解封关联实体内部字段', () => {
+  it('玩家阅读无需借公开记忆解锁关联资料，不改动正式数据', () => {
     const state = uiFixture();
     state.memories.short[0].affectedEntityRefs = [
       { kind: 'npc', id: 'npc-a' },
@@ -222,8 +222,8 @@ describe('玩家可见资料投影', () => {
     ];
     const visible = playerView(state);
     expect(visible.memories.some((memory) => memory.text === '已知记忆：一次公开会面')).toBe(true);
-    expect(visible.npc[0].identity).toBeUndefined();
-    expect(JSON.stringify(visible)).not.toContain('不可见');
+    expect(visible.npc[0].identity).toBe(state.npc['npc-a'].identity);
+    expect(JSON.stringify(visible)).toContain('不可见');
   });
   it('初始同伴创角资料跨回合、刷新及内部变化仍可见，占位好感不变成已确认值', async () => {
     const storage = storageFixture();
@@ -260,8 +260,9 @@ describe('玩家可见资料投影', () => {
       expect(restored).toEqual(initial);
       const visible = playerView(later, restored);
       expect(visible.npc[0]).toMatchObject({
-        identity: '记者',
-        relationshipText: '多年朋友',
+        identity: '后续私有身份不可见',
+        relationshipText: '后续私有关系不可见',
+        authoredProfile: expect.objectContaining({ identity: '记者', relationshipText: '多年朋友' }),
         affinity: null,
         profile: {
           age: 29,
@@ -271,7 +272,7 @@ describe('玩家可见资料投影', () => {
           background: '旧同事',
         },
       });
-      expect(JSON.stringify(visible)).not.toContain('不可见');
+      expect(JSON.stringify(visible)).toContain('不可见');
       expect(await repo.load(state.saveId)).toEqual(state);
     } finally {
       repo.close();
@@ -288,7 +289,7 @@ describe('玩家可见资料投影', () => {
       playerView(later, { ...profile, saveId: 'another-save' }).npc[0].profile,
     ).toBeUndefined();
     expect(
-      playerView(later, { ...profile, identityKey: 'another-person' }).npc[0].identity,
+      playerView(later, { ...profile, identityKey: 'another-person' }).npc[0].authoredProfile,
     ).toBeUndefined();
     storage.setItem(companionProfileKey(state.saveId), '{invalid');
     expect(() => loadCompanionProfile(storage, later)).toThrow();

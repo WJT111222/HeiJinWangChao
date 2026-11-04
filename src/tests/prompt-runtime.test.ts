@@ -531,7 +531,7 @@ describe('只读世界星期派生', () => {
 describe('真实命令目录、解析与安全候选验证', () => {
   it('扩展命令直接来自实际 Schema，支持类型专属字段而非旧包装', () => {
     expect(commandCatalog('variables').commandTypes).toEqual(
-      DomainCommandSchema.options.map((option) => option.shape.type.value).filter((type) => type !== 'RetireNpc'),
+      DomainCommandSchema.options.map((option) => option.shape.type.value).filter((type) => !['RetireNpc','DeleteEvent','ArchiveEvent'].includes(type)),
     );
     expect(commandCatalog('variables').commandTypes).toHaveLength(23);
     expect(commandCatalog('world').commandTypes).not.toContain('PurchaseItem');
@@ -630,7 +630,7 @@ describe('真实命令目录、解析与安全候选验证', () => {
         to: { kind: 'npc', id: 'npc-a' },
       },
       { type: 'SetWorldClock', commandId: 'clock', evidence, worldClock: gameTime },
-      { type: 'SaveEvent', commandId: 'event', evidence, event: event() },
+      { type: 'SaveEvent', commandId: 'event', evidence, event: { ...event(), status: 'active', sourceTurnIds: [...new Set([...event().sourceTurnIds, a.draft.turnId])] } },
       { type: 'SaveTask', commandId: 'task', evidence, task: task() },
       { type: 'CreateOrganization', commandId: 'org', evidence, organization: organizations[1] },
       {
@@ -660,10 +660,12 @@ describe('真实命令目录、解析与安全候选验证', () => {
           : `现金与线上账户已完成 ${command.type} ${amount}分`;
     }
     a.draft.story!.narrative = commands.map((command) => command.evidence).join('。');
+    // Variables只更新已有现场事件；新事件规划归World，保留十四类命令的整批与经济断言。
+    a.state.events['event-a'] = event();
     const before = structuredClone(a.state);
-    expect(
-      parseVariables(JSON.stringify({ ...emptyVariables, commands }), a.state, a.draft).commands,
-    ).toHaveLength(14);
+    const parsed = parseVariables(JSON.stringify({ ...emptyVariables, commands }), a.state, a.draft);
+    expect(parsed.commands).toHaveLength(14);
+    expect(parsed.commands).toContainEqual(expect.objectContaining({ type: 'SaveEvent', event: expect.objectContaining({ status: 'active' }) }));
     expect(a.state).toEqual(before);
     expect(() =>
       parseVariables(
