@@ -209,8 +209,8 @@ export function applyVariableCommand(
         npc.privateProfile = merged;
       }
       // 性别变更后若不再符合资格，清除私密档案
-      if (gender !== undefined && gender !== 'female' && (npc as any).privateProfile) {
-        delete (npc as any).privateProfile;
+      if (gender !== undefined && gender !== 'female' && npc.kind === 'special' && npc.privateProfile) {
+        delete npc.privateProfile;
       }
       if (gender !== undefined) npc.gender = gender;
       Object.assign(npc, changes);

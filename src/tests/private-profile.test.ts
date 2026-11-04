@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it } from 'vitest';
 import { applyVariableCommand } from '../domain/variableCommands';
 import type { GameState } from '../domain/state';
@@ -108,5 +109,50 @@ set npc[f1].privateProfile = {"chestDescription":"文字描述","isVirgin":true}
     if (!result.ok) return;
     expect((result.value.npc.f1 as any).privateProfile?.chestDescription).toBe('文字描述');
     expect((result.value.npc.f1 as any).privateProfile?.isVirgin).toBe(true);
+  });
+});
+
+import { IDBFactory } from 'fake-indexeddb';
+import { SaveRepository } from '../services/storage/saveRepository';
+import { game as makeGame, npc as makeNpc } from './fixtures/game';
+
+describe('privateProfile IndexedDB round-trip', () => {
+  it('saves privateProfile, closes, reopens and retains data', async () => {
+    const factory = new IDBFactory();
+    let repo = await SaveRepository.open('pp-test', factory);
+    const state = makeGame('pp-save');
+    const female = makeNpc('f1');
+    (female as any).kind = 'special';
+    (female as any).gender = 'female';
+    (female as any).age = 24;
+    (female as any).detailedBackground = 'bg';
+    (female as any).activeGoals = [];
+    (female as any).habits = [];
+    (female as any).longTermMemories = [];
+    (female as any).offscreenTaskIds = [];
+    (female as any).privateProfile = { chestDescription: '测试描述', isVirgin: true };
+    state.npc.f1 = female;
+    await repo.create(state);
+    repo.close();
+    repo = await SaveRepository.open('pp-test', factory);
+    const loaded = await repo.load('pp-save');
+    expect((loaded.npc.f1 as any).privateProfile?.chestDescription).toBe('测试描述');
+    expect((loaded.npc.f1 as any).privateProfile?.isVirgin).toBe(true);
+    repo.close();
+  });
+
+  it('loads old save without privateProfile', async () => {
+    const factory = new IDBFactory();
+    let repo = await SaveRepository.open('old-test', factory);
+    const state = makeGame('old-save');
+    const ordinary = makeNpc('o1');
+    state.npc.o1 = ordinary;
+    await repo.create(state);
+    repo.close();
+    repo = await SaveRepository.open('old-test', factory);
+    const loaded = await repo.load('old-save');
+    expect(loaded.npc.o1.kind).toBe('ordinary');
+    expect((loaded.npc.o1 as any).privateProfile).toBeUndefined();
+    repo.close();
   });
 });
