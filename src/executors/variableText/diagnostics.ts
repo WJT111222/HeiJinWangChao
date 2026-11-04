@@ -12,6 +12,8 @@ export interface ExecutionDiagnostic {
   actualType?: DiagnosticType;
   validationRule: DiagnosticRule;
   domainRule?: import('./aggregateDiagnostics').DomainRule;
+  /** 仅对 SCENE_* 错误安全提取并经 IdSchema 校验后的 NPC ID，其他错误不携带。 */
+  relatedNpcId?: string;
 }
 
 const allowedPaths = new Set([
@@ -100,7 +102,7 @@ export function diagnosticForSchema(
   const actual = diagnosticType(value);
   const rule: DiagnosticRule = expected
     ? actual === 'undefined' ? 'required_field' : 'invalid_type'
-    : ['too_small', 'too_big', 'invalid_format'].includes(issue.code) ? 'value_constraint' : 'schema_constraint';
+    : 'schema_constraint';
   return {
     ...(path ? { valuePath: path } : {}),
     validationRule: rule,
