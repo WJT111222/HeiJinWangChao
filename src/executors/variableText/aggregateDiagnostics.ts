@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DataError } from '../../domain/common';
+import { DataError, IdSchema } from '../../domain/common';
 import type { ExecutionDiagnostic } from './diagnostics';
 
 // 固定代码词典，不把异常消息、Zod路径、实体ID、自由文本或非法数据带出模拟器。
@@ -104,8 +104,15 @@ const stateIssues: Record<string, DomainRule> = {
 
 export function aggregateDomainDiagnostic(error: z.ZodError | DataError): ExecutionDiagnostic {
   let rule: DomainRule = 'invalid_domain_state';
+  let relatedNpcId: string | undefined;
   if (error instanceof DataError) {
     rule = dataErrors[error.code] ?? rule;
+    // 只从 SCENE_* 的固定模板中提取 NPC ID，并用 IdSchema 二次校验后才允许带出。
+    if (error.code === 'SCENE_TRANSITION' || error.code === 'SCENE_LOCATION') {
+      const match = error.message.match(/NPC（([^）]+)）/);
+      const parsed = match ? IdSchema.safeParse(match[1]) : null;
+      if (parsed?.success) relatedNpcId = parsed.data;
+    }
   } else {
     const distinct = new Set(error.issues.map((issue) =>
       Object.hasOwn(stateIssues, issue.message)
@@ -114,5 +121,5 @@ export function aggregateDomainDiagnostic(error: z.ZodError | DataError): Execut
     if (distinct.size === 1) rule = [...distinct][0];
     else if (distinct.size > 1) rule = 'multiple_domain_rules';
   }
-  return { validationRule: 'domain_schema', domainRule: rule };
+  return { validationRule: 'domain_schema', domainRule: rule, ...(relatedNpcId ? { relatedNpcId } : {}) };
 }
