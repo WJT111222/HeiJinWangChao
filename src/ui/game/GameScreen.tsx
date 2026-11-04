@@ -140,7 +140,6 @@ export function GameScreen({
     const token = submitToken.current;
     setSubmitting(true);
     setSubmitError('');
-    reportRuntimeEvent('commit', 'started');
     try {
       if (awaitingAction) {
         const bound = await repository.bindTurnAction(draft, input, settings.runtime.useVariableStage, settings.runtime.useWorldStage);
@@ -150,6 +149,7 @@ export function GameScreen({
         return;
       }
       // 兼容升级前尚未结算的完整候选；用户本次输入仅绑定一次。
+      reportRuntimeEvent('commit', 'started');
       const result = await repository.commitTurn({
         draft,
         nextAction: input,
@@ -166,9 +166,11 @@ export function GameScreen({
       if (!result.replayed) await automatic.generate(result.draft);
     } catch (failure) {
       if (submitToken.current === token) {
-        reportRuntimeEvent('commit', 'failed', failure);
+        reportRuntimeEvent(awaitingAction ? 'workflow' : 'commit', 'failed', failure);
         setSubmitError(
-          failure instanceof DataError && failure.code === 'TURN_TIME_REQUIRED'
+          awaitingAction
+            ? '行动未发送：草稿版本冲突或存储失败。输入仍保留，请重新读取存档后重试。'
+            : failure instanceof DataError && failure.code === 'TURN_TIME_REQUIRED'
             ? '本回合尚未推进时间，未正式结算。请补算变量；正文无需写出时间。'
             : failure instanceof DataError && failure.code === 'MISSING_SUMMARY'
             ? '正文缺少有效摘要，未正式结算。请重新生成正文后重试。'

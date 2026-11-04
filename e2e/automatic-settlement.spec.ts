@@ -65,3 +65,31 @@ test('World字段错误可定位并查看完整失败原文，不提交；恢复
   server.control.bad = false; await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
   expect((await stored(page)).state.turnNumber).toBe(1); expect(server.calls).toEqual(['story','variables','world','world']);
 });
+
+test('发送下一条行动仅绑定草稿，commit日志必须等到三阶段完成才开始', async ({ page }) => {
+  // 仅观察真实日志函数的调用，不替换返回值、工作流或存储行为。
+  await page.route('**/src/ui/game/runtimeLog.ts*', async route => {
+    const response = await route.fetch(), source = await response.text();
+    const anchor = 'const label = runtimeStageNames[stage];';
+    expect(source).toContain(anchor);
+    await route.fulfill({ response, body: source.replace(anchor, `${anchor}\n(window.__commitAudit ??= []).push({stage, kind});`) });
+  });
+  const commits = (kind: string) => page.evaluate(kind => {
+    const events: unknown = Reflect.get(window, '__commitAudit');
+    return Array.isArray(events) ? events.filter((entry: unknown) => entry && typeof entry === 'object' && 'stage' in entry && 'kind' in entry && entry.stage === 'commit' && entry.kind === kind).length : 0;
+  }, kind);
+  await seed(page); const server = await mock(page);
+  await page.getByRole('button', { name: '自动生成开局', exact: true }).click(); await settled(page);
+  expect(await commits('started')).toBe(1); expect(await commits('completed')).toBe(1);
+  let release!: () => void; server.control.hold = new Promise<void>(resolve => { release = resolve; });
+  await page.getByLabel('你的行动', { exact: true }).fill('继续在街边用餐');
+  await page.getByRole('button', { name: '发送', exact: true }).click();
+  await expect.poll(() => server.calls.length).toBe(6);
+  try {
+    expect((await stored(page)).state.turnNumber).toBe(1);
+    expect(await commits('started')).toBe(1); expect(await commits('completed')).toBe(1);
+  } finally { release(); }
+  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2); await settled(page);
+  expect(await commits('started')).toBe(2); expect(await commits('completed')).toBe(2);
+  await page.reload(); await openGameTools(page); await settled(page); expect(server.calls).toHaveLength(6);
+});
