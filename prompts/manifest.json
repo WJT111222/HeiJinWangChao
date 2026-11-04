@@ -152,8 +152,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 2677,
-      "version": "0.8.0-m8-p0a",
+      "characters": 2946,
+      "version": "1.1.0-event-lifecycle",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -162,7 +162,7 @@
       "orderGroup": "shared",
       "reorderable": false,
       "category": "shared",
-      "contentSha256": "47a8f3ba9632c22cfdcc93e0c458160f34a889cc4c0d08654de82a6bb34b6cbf",
+      "contentSha256": "3b4f9c83e44576966d83af31d398d9f70e9f7e8a8ee23f8031ea7bca6d8d94aa",
       "placeholders": [
         "worldClock",
         "worldWeekday"
@@ -299,8 +299,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 10583,
-      "version": "0.5.5-review4",
+      "characters": 12848,
+      "version": "1.5.0",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -309,7 +309,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "5723dab9e45a24b33575514d79ae60f7f202169099fcb2b2414cce6cd972f484",
+      "contentSha256": "7b3ae0e7f6d3afb5a0d56ad7d3f6aa227e4759db2056fc50f1f863238a11050e",
       "placeholders": []
     },
     {
@@ -380,8 +380,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 857,
-      "version": "0.3.0-world-runtime",
+      "characters": 1143,
+      "version": "1.5.0",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -390,7 +390,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "21af05cb79cf42ea2546ba1d9b72f93110a42479b945329ee8fa7f06df741ac4",
+      "contentSha256": "f2d9986b72dae21be5ae867c25ce4ae1ab96450e39c9a884def1566faaef9b8c",
       "placeholders": []
     },
     {
@@ -462,8 +462,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 965,
-      "version": "0.3.0-world-runtime",
+      "characters": 1228,
+      "version": "1.5.0",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -472,7 +472,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "55f7e129700c228d0fe92ef869f7e3bac27b2a76e8f1e21e9658e5c99b8ac334",
+      "contentSha256": "be9a62a21e0306092800bb01779d3cd983cc5518a0023da42a3d8479c17c0077",
       "placeholders": []
     },
     {
@@ -1653,7 +1653,7 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 5943,
+      "characters": 6376,
       "version": "0.8.0-live-text",
       "messageRole": null,
       "activation": "never",
@@ -1663,7 +1663,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "78cc81a37879f46514dc9d31cdc9823873f9e108b440fe0630ed7ee6c56533e7",
+      "contentSha256": "5d6ca3f1aadbee73a5e915dc791155a6db2e6c1ba718a5dff07e7740c864b2ff",
       "placeholders": [
         "worldWeekday"
       ]
@@ -1677,8 +1677,8 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 12924,
-      "version": "0.8.0-live-text",
+      "characters": 13874,
+      "version": "0.9.0-player-observer",
       "messageRole": null,
       "activation": "never",
       "permanent": false,
@@ -1687,7 +1687,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "76932c800353ce83f179eb6eb2eed413bfb4863204a440223dbd9b91b261c272",
+      "contentSha256": "46ebfc9e3c4dfe0ad2a5b19a42fdb05b06edb88ed8f3c7359b6b30c7064a38d6",
       "placeholders": [
         "immediateMemoryTurns",
         "minNarrativeChars",
@@ -2154,8 +2154,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 2513,
-      "version": "1.0.1-live-text",
+      "characters": 2701,
+      "version": "1.1.0-event-lifecycle",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -2164,7 +2164,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "d802bf841a1a89ffbcb6a1291f4e3a07b9bf7c20170c36a68c3d922c85ebaf58",
+      "contentSha256": "90999f850b26527bc8887cd6ee7cacf5b59890ce76d3804d7e48a9a0ef7f2db0",
       "placeholders": [],
       "variableProtocol": "text"
     },

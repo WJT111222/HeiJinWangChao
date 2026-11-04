@@ -9,7 +9,7 @@ function commandText(value:unknown):string[]{
   const c=object(value),nested=(key:string)=>object(c[key]);
   switch(c.type){
     case 'SetWorldClock':return[line('set','worldClock',c.worldClock)];
-    case 'SaveEvent':return[line('set',`events[${nested('event').id}]`,withoutId(c.event))];
+    case 'SaveEvent':{const e=nested('event');return[line('set',`events[${e.id}].sceneState`,Object.fromEntries(Object.entries(e).filter(([key])=>['status','resolvedAt','resolutionText','outcome','resultKnowledge'].includes(key))))];}
     case 'SaveTask':return[line('set',`tasks[${nested('task').id}]`,withoutId(c.task))];
     case 'SpendFunds':return[line('add',`economy.${c.account}`,typeof c.amount==='number'?-c.amount:c.amount)];
     case 'UpdateProtagonist':return Object.entries(nested('changes')).map(([key,v])=>line('set',`protagonist.${key}`,v));

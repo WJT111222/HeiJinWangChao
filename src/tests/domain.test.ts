@@ -133,19 +133,20 @@ describe('运行时 Schema', () => {
     expect(GameStateSchema.safeParse(state).success).toBe(false);
     expect(DomainCommandSchema.safeParse({ ...purchase(), item: { id: 'car', name: '车', category: 'vehicle', quantity: 1, conditionText: '' } }).success).toBe(false);
   });
-  it('历史引用只允许已知重大结案事件，重复归档被拒绝', () => {
+  it('历史引用允许场外重大结案，重复归档被拒绝', () => {
     const state = game(); const e = { ...event(), status: 'resolved' as const, resolvedAt: gameTime, resolutionText: '结束', visibility: 'known' as const };
     state.events[e.id] = e;
     const entry = { eventId: e.id, occurredAt: gameTime, title: e.title, summary: '摘要', outcome: '结束', longTermImpact: '', actorRefs: [], sourceTurnIds: [] };
     state.timeline.push(entry); expect(GameStateSchema.safeParse(state).success).toBe(true);
-    state.events[e.id].visibility = 'hidden'; expect(GameStateSchema.safeParse(state).success).toBe(false);
+    state.events[e.id].visibility = 'hidden'; expect(GameStateSchema.safeParse(state).success).toBe(true);
     state.events[e.id].visibility = 'known'; state.timeline.push(entry); expect(GameStateSchema.safeParse(state).success).toBe(false);
   });
-  it('事件和任务需要结束时间或明确完成条件，但不自动推进或结算', () => {
+  it('旧事件和任务缺规划仍可读取，写入新事件不能用条件替代预计时间', () => {
     const state = game();
     state.events['event-a'] = { ...event(), estimatedEndAt: undefined };
     state.tasks['task-a'] = { ...task(), dueAt: undefined };
-    expect(GameStateSchema.safeParse(state).success).toBe(false);
+    expect(GameStateSchema.safeParse(state).success).toBe(true);
+    expect(()=>commitCommands(game(),'new-missing-plan',0,[{type:'SaveEvent',commandId:'new',event:state.events['event-a'],evidence:'创建'}])).toThrow();
     state.events['event-a'].completionCondition = '当事人结束会面';
     state.tasks['task-a'].completionCondition = '完成预约';
     expect(GameStateSchema.safeParse(state).success).toBe(true);

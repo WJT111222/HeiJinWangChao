@@ -195,7 +195,7 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
     '尚未确认',
   ])
     await expect(companionPanel).toContainText(fact);
-  await expect(companionPanel).not.toContainText('不可见');
+  await expect(companionPanel).toContainText('后续内部背景不可见');
   await expect(companionPanel.locator('.detail').filter({ hasText: '关系倾向' })).not.toContainText(
     '90',
   );
@@ -236,7 +236,7 @@ test('自定义职业、跳过同伴，多存档选择切换与确认删除', as
   await page.reload(); await openGameTools(page);
   await expect(page.locator('.save-card')).toHaveCount(1);
 });
-test('七面板一键打开、键盘关闭、保留阅读位置并隔离秘密资料', async ({ page }) => {
+test('七面板一键打开、键盘关闭、全量资料只读且保留阅读位置', async ({ page }) => {
   await seed(page);
   await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
   const reader = page.getByTestId('story-reader');
@@ -251,16 +251,14 @@ test('七面板一键打开、键盘关闭、保留阅读位置并隔离秘密�
     await opener.click();
     const modal = page.getByRole('dialog', { name: title, exact: true });
     await expect(modal).toBeVisible();
-    await expect(modal).not.toContainText('不可见');
     if (title === 'NPC') {
       await page.getByLabel('搜索人物').fill('同事');
       await page.getByRole('button', { name: /同事/ }).click();
-      await expect(modal).toContainText('尚未公开');
-      await expect(modal).toContainText('尚未了解');
+      await expect(modal).toContainText('内部关系判断不可见');
+      await expect(modal).toContainText('在场人物内部身份不可见');
       await expect(modal.locator('.detail').filter({ hasText: '关系倾向' })).toContainText('30');
-      await expect(modal).not.toContainText('不可见');
     }
-    if (title === '世界事件') await expect(modal).not.toContainText('2099');
+    if (title === '世界事件') {await expect(modal).toContainText('2099');await expect(modal).toContainText('秘密计划不可见');}
     if (title === '历史时间轴')
       expect(await modal.locator('li h3').allTextContents()).toEqual([
         '更早的公开事件',
@@ -271,7 +269,7 @@ test('七面板一键打开、键盘关闭、保留阅读位置并隔离秘密�
       await expect(modal).toContainText('已知记忆：一次公开会面');
       for (const name of ['即时记忆', '短期记忆', '中期记忆', '长期记忆']) {
         await modal.getByRole('button', { name, exact: true }).click();
-        await expect(modal).not.toContainText('不可见');
+        await expect(modal.getByRole('button', { name, exact: true })).toHaveAttribute('aria-pressed', 'true');
       }
     }
     await page.keyboard.press('Tab');

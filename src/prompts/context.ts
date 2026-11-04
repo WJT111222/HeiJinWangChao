@@ -1,3 +1,5 @@
+import { worldEventSchedule } from '../domain/events/schedule';
+import { protagonistKnownEvent } from '../domain/events/knowledge';
 import { chinaCalendar, openingTimeBase, openingTimeContext, openingTimeSelection } from '../domain/openingTime';
 import { GameStateSchema } from '../domain/state';
 import type { GameState } from '../domain/state';
@@ -124,7 +126,10 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
   const opening = stage === 'story' ? openingTimeContext(original, input.userInput)
     : candidateStage && original.openingTimePending && draft ? { status: 'candidate', ...openingTimeSelection(original, draft) } : undefined;
   if (stage === 'story') {
-    const events = Object.values(state.events).filter((event) => event.visibility === 'known');
+    const events = Object.values(state.events).flatMap((event) => {
+      const known = protagonistKnownEvent(event);
+      return known ? [known] : [];
+    });
     const locations = new Set<string>([state.protagonist.locationId]);
     for (const id of [...locations]) {
       let parent = state.locations[id]?.parentId;
@@ -182,13 +187,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         .filter((npc) => npc.onScene)
         .map((npc) => publicNpc(state, npc.id, archive)),
       MEMORY_CONTEXT: storyMemoryContext(state, settings.memory.immediateWindowSize, input.userInput, input.mode === 'regular'),
-      KNOWN_EVENTS: events.map((event) => ({
-        id: event.id,
-        title: event.title,
-        startAt: event.startAt,
-        status: event.status,
-        resolutionText: event.resolutionText,
-      })),
+      KNOWN_EVENTS: events,
       PLAYER_ACTION: input.userInput,
       OPENING_TIME: opening,
       TURN_TIME_POLICY: turnTimePolicy,
@@ -253,6 +252,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       BASE_SAVE_REVISION: state.revision,
       worldClock: temporary.worldClock,
       TIME_WINDOW: { from: state.worldClock, to: temporary.worldClock },
+      EVENT_SCHEDULE: historicalPerspective(state,draft!) ? {readOnly:true,policy:'纯过去视角只读，不处理当前世界到期事件；原排程保留到正常世界回合。'} : worldEventSchedule(state, temporary),
       variablePending,
       STORY_RESULT: { narrative: draft!.story!.narrative, summary: draft!.story!.summary },
       VARIABLE_RESULT: variablePending ? undefined : draft!.variables,
@@ -286,6 +286,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
               !state.npc[task.actorRef.id]?.onScene)),
         ),
         events: temporary.events,
+        retiredEvents: Object.fromEntries(Object.entries(temporary.retiredEvents).filter(([,record])=>record.detail)),
         locations: temporary.locations,
       },
       COMMAND_CATALOG: commandCatalog('world'),

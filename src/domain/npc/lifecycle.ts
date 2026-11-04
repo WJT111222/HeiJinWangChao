@@ -1,3 +1,4 @@
+import { eventById } from '../events/lifecycle';
 import { hasKnownPlayerConnection } from './contactReview';
 import type { ContactReview } from './contactReview';
 import { npcKnowledgeKind } from '../memories/schema';
@@ -52,7 +53,7 @@ export function retireNpc(state: GameState, npcId: string, expectedIdentityKey: 
   requireData(npc.kind !== 'special' || npc.activeGoals.length === 0, 'NPC_DUTIES', '人物仍有明确长期职责');
   const duties = Object.values(state.tasks).filter((task) => task.actorRef.kind === 'npc' && task.actorRef.id === npcId);
   requireData(duties.every(terminalTask), 'NPC_DUTIES', '未终结任务不能随人物删除');
-  requireData(duties.every((task) => task.resolution || (task.linkedEventId && ['resolved', 'cancelled'].includes(state.events[task.linkedEventId]?.status))),
+  requireData(duties.every((task) => task.resolution || (task.linkedEventId && ['resolved', 'cancelled'].includes(eventById(state,task.linkedEventId)?.status))),
     'NPC_OUTCOMES', '历史任务的必要成果尚未独立留存');
   requireData(!Object.values(state.organizations).some((org) => org.keyNpcIds.includes(npcId)), 'NPC_REFERENCED', '人物仍承担组织职务');
   const owned = [...Object.values(state.items), ...Object.values(state.economy.properties),
