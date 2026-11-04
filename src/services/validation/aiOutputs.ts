@@ -7,6 +7,7 @@ import type { TurnDraft } from '../../domain/drafts';
 import { commitCommands } from '../../domain/commands';
 import { AiError } from '../ai/errors';
 import { validateWorldOutput } from './worldOutput';
+import { worldValidationError } from './worldDiagnostics';
 import type { Settings } from '../../ui/settings/model';
 import { variableCommandsForTurn } from '../../domain/turnProjection';
 import { variableValidationError } from './variableDiagnostics';
@@ -127,7 +128,6 @@ export function parseWorld(text: string, state: GameState, draft: TurnDraft) {
     try { validateHistoricalWorld(state, draft, result); } catch { throw new AiError('time_preflight'); }
     return result;
   } catch (error) {
-    if (error instanceof AiError) throw error;
-    throw new AiError('invalid_output');
+    throw worldValidationError(error);
   }
 }

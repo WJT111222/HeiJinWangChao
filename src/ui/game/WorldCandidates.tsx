@@ -3,6 +3,7 @@ import type { TurnDraft } from '../../domain/drafts';
 import { redactInspection } from '../../services/ai/inspection';
 import { browserCredentials } from '../../services/ai/credentials';
 import { Dialog } from '../Dialog';
+import { StageResponseText } from './StageResponsesPanel';
 
 export function WorldCandidates({ draft }: { draft: TurnDraft }) {
   const [opened, setOpened] = useState(false),
@@ -22,6 +23,8 @@ export function WorldCandidates({ draft }: { draft: TurnDraft }) {
       </button>
       {opened && (
         <Dialog title="世界候选 · 未正式结算" onClose={() => setOpened(false)}>
+          <StageResponseText saveId={draft.saveId} turnId={draft.turnId} stage="world" />
+          <h3>程序校验后的候选</h3>
           <p>
             正文版本 {candidate.storyRevision} · 变量候选版本{' '}
             {candidate.basedOnVariableRevision ?? '缺失'} · 世界候选版本{' '}

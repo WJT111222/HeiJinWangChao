@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { DataError, IdSchema } from '../../domain/common';
 import type { ExecutionDiagnostic } from './diagnostics';
 
-// 固定代码词典，不把异常消息、Zod路径、实体ID、自由文本或非法数据带出模拟器。
+// 固定代码词典不带出异常原文；仅下方两个场景错误允许带出经 IdSchema 校验的 NPC ID。
 export const domainRuleNames = {
   npc_scene_location: '在场 NPC 与主角的地点不一致',
   missing_location: '所引用地点不存在',
