@@ -91,7 +91,8 @@ export function timePreflight(state: GameState, action: string) {
   const intent = timeIntent(state.worldClock, action), end = intent.targetAt ?? intent.endWindow?.to;
   const candidates: TimeCandidate[] = [];
   if (end) for (const event of Object.values(state.events)) {
-    if (event.visibility !== 'known' || !['scheduled', 'active'].includes(event.status) ||
+    // sceneState被观察不代表World的其他新规划已告知；不把旧known当作新排程的公开依据。
+    if (event.visibility !== 'known' || event.protagonistKnowledge || !['scheduled', 'active'].includes(event.status) ||
       Date.parse(event.startAt) > Date.parse(end) ||
       ![...event.prerequisites, ...event.blockers].every((ref) => completed(state, ref))) continue;
     if (event.linkedTaskIds.some((id) => { const task = state.tasks[id]; return !task || ['blocked', 'cancelled'].includes(task.status) ||

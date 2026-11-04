@@ -1,3 +1,56 @@
+# PR #50 第三轮：客观事件更新与主角知情解耦
+
+本节对应[审查评论6627047972](https://github.com/WJT111222/HeiJinWangChao/pull/50#issuecomment-6627047972)，基线为`3d3ebf30c983518addd44466a8370d1001b54574`。只修复World更新与角色知情的耦合，不重做事件生命周期、玩家界面、人物记忆或三阶段工作流。下文旧轮次的测试数字不是本轮结果。
+
+## 失败复现与最小修复
+
+先增加20项真实parseWorld/projectTurn、IndexedDB提交/重载与来源引用回归，原代码实测9失败、11通过。known/partially_known事件合法derived受阻延期、结案以及正式提交被原知情门槛阻挡；hidden及来源/时间反例作为通过对照。
+
+随后仅改原判断为visibility显式变化时要求hasPlayerKnownFact，同一20项仍有5失败：下一次Story的KNOWN_EVENTS直接出现新状态/结果。该失败证明只删原门槛无法满足“世界变化、角色不自动知晓”，需要保留旧认知，而不是假设UI不显示就没有传播。
+
+最终仅解除客观title/status/resolutionText变化的主角知情要求；visibility知情提升、player_known人物记忆等hasPlayerKnownFact检查保留。来源知识类别、ownerNpcId、场外行动者、时间窗口、结案decision、到期重新排程、Variables现场/字段权限与原子提交均不放宽。
+
+增加严格、可选、程序维护的事件protagonistKnowledge快照，保存此前Story已知投影，不新建记忆库、人物字段、Schema版本或迁移。不加快照会使known旧标记自动公开新结果；直接改hidden又会抹掉此前已知资料，因此使用此最小兼容元数据。旧档缺字段仍按原known解释，不读设备时间、不伪造既有知识。规范化结果能重复复核；模型不能编造快照，Variables不能越权修改快照。
+
+Story读取旧快照；WORLD_SOURCES保留最新世界事实但将尚未告知的进展标记worldEventOnly，防止跨回合借event ID传播给NPC。真实人物来源仍可正常使用。TIME_PREFLIGHT仅加同一知情过滤，不改时间解析、时钟推进、中断或调度规则。后续合法现场更新沿既有sourceTurnIds追加契约提供已观察的状态/结果，保留旧已知标题；显式公开事实仍可更新主角的事件认知。玩家面板、历史归档、清理规则和NPC记忆内容不变。
+
+原NPC记忆回归中一条“known标题一变就整批拒绝”的断言与本次产品规则冲突，改为“客观更新通过，但Story旧认知、NPC记忆、输入状态不变且来源仍worldEventOnly”；新建known事件仍需公开来源的拒绝断言和具有公开来源的正例保留。没有删除或跳过用例，没有放松Schema、CAS、金额、生命周期或来源分类。
+
+## 本轮文件与边界
+
+- `src/domain/events/schema.ts`、新增`knowledge.ts`：可选旧认知快照与主角投影；旧retired.detail兼容读取。
+- `worldOutput.ts`：解耦与程序规范化；`worldEvidence.ts`：事件新进展不自动成为人物来源。
+- `src/prompts/context.ts`、`src/domain/timePreflight.ts`：共享知情边界；`commandCatalog.ts`：纠正与旧门槛冲突的目录说明。不改六套主模板、世界书、NSFW或Manifest资源。
+- 新增`src/tests/world-event-knowledge.test.ts`，调整`npc-memory.test.ts`，扩展`e2e/event-lifecycle.spec.ts`，同步本报告及权威事件文档。
+
+## 验证记录
+
+本轮全部模型/网络使用Mock；没有真实付费API调用，没有新增请求、重试或授权。日志保存在`/workspace/pr50-review3/`。
+
+| 本轮实际命令 | 结果 |
+| --- | --- |
+| 新增`world-event-knowledge.test.ts` | 27/27通过；基线先运行20项为9失败、11通过；仅删除门槛后为5失败、15通过，失败链路和修复过程如上 |
+| World/生命周期/NPC认知/来源/Variables权限10文件定向 | 309/309通过（含新增27项） |
+| `npm run check` 最终稳定代码 | 55文件、2009/2009通过；Lint、TypeScript、Vite生产构建通过 |
+| `npm run prompts:check` | 82/82通过 |
+| Chromium桌面/移动相关8文件 | 106/106通过，含新增6项；覆盖事件、World/Variables、交接、NPC认知、观察、协调、连续正式回合 |
+| 最终事件生命周期桌面/移动复跑 | 14/14通过，最终代码保持稳定后重新运行；不是额外14个不同场景 |
+| `git diff --check` | 通过 |
+
+本轮保留1982项既有工程测试，新增27项（总2009），原NPC记忆测试只调整一项与新产品规则冲突的断言并加强隔离检查。浏览器保留原304项、增加6项（`--list`共310），本轮按任务要求执行相关106项，**没有重跑全部310项**；复跑不重复计算新增测试。开发期完整检查曾因该旧断言和补充中的现场来源回归各失败一次，最终稳定代码完整检查通过，不把中途失败描述成初跑全绿。构建保留既有>500KB bundle非阻断提示。
+
+后续现场状态回归还确认，单纯追加现场来源会使整事件误变为角色来源；已保持快照存在期间整事件worldEventOnly，仅独立合法知晓来源能授予人物知识。原NPC私有原文、转述/推测、V1–V5读取、越权Variables、经济、CAS、事务回滚和幂等用例全部保留。
+
+## 限制
+
+程序仍不证明模型所有自然语言事实；合法来源、角色边界和结构检查继续使用现有实现。无法从旧known字段恢复以前未保存的角色知情历史，因此旧档保持原语义，新World变化才建立快照。没有开发新的全角色事件认知系统、独立披露工作流或知识传播AI。只读玩家面板不影响任何角色认知。快照存在期间，对完整事件来源和预检采取保守处理；单独看到现场状态不视为知道全部后台规划，可能暂缓使用一条实际已获知、但缺少显式知晓记录的新安排。终态不可改写规则不变，后续人物获知仍应沿现有Story/记忆渠道，不在本轮新增终态披露命令。
+
+本轮实际修改12个文件：`src/services/validation/worldOutput.ts`、`src/services/validation/worldEvidence.ts`、`src/services/validation/commandCatalog.ts`、`src/domain/events/schema.ts`、`src/domain/events/knowledge.ts`（新增）、`src/domain/timePreflight.ts`、`src/prompts/context.ts`、`src/tests/world-event-knowledge.test.ts`（新增）、`src/tests/npc-memory.test.ts`、`e2e/event-lifecycle.spec.ts`、`docs/WORLD_EVENT_LIFECYCLE.md`、`EVENT-LIFECYCLE-DEVELOPMENT.md`。
+
+未主动部署生产环境；PR预览环境由现有Cloudflare自动流程管理。不合并、不新建PR、不修改正式玩家存档。
+
+---
+
 # PR #50：玩家全量观察、独立认知与事件权限最终修订
 
 本节对应 [最终确认产品设计](https://github.com/WJT111222/HeiJinWangChao/pull/50#issuecomment-6506784194)，在 `75b7f5c` 上继续实现。**本节与 `docs/WORLD_EVENT_LIFECYCLE.md` 优先于本文下方历史记录中“玩家资料遮蔽/仅主角知晓才归档/重要事件先清理再公开”的描述。** 历史测试数字不作为本轮验证结果。
