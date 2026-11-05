@@ -12,6 +12,8 @@ export interface ExecutionDiagnostic {
   actualType?: DiagnosticType;
   validationRule: DiagnosticRule;
   domainRule?: import('./aggregateDiagnostics').DomainRule;
+  /** 仅对 SCENE_* 错误安全提取并经 IdSchema 校验后的 NPC ID，其他错误不携带。 */
+  relatedNpcId?: string;
 }
 
 const allowedPaths = new Set([

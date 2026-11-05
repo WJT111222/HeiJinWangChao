@@ -79,15 +79,15 @@ async function mock(page: Page) {
 }
 const workflow = (page: Page) => page.getByRole('region', { name: '三阶段工作流', exact: true });
 async function ready(page: Page) {
-  await expect(workflow(page).getByRole('status')).toContainText('三阶段候选已完成');
+  await expect(workflow(page).getByRole('status')).toContainText('本回合已结算');
 }
 
 test('一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求', async ({ page }) => {
   await prepare(page); const server = await mock(page); await creation(page);
   await confirm(page); await ready(page);
   expect(server.calls.map((call) => call.stage)).toEqual(['story', 'variables', 'world']);
-  const result = await stored(page); expect(result.state.turnNumber).toBe(0); expect(result.state.revision).toBe(0);
-  expect(result.state.journal).toEqual([]); expect(result.draft.stageStatus).toEqual({ story: 'ready', variables: 'ready', world: 'ready' });
+  const result = await stored(page); expect(result.state.turnNumber).toBe(1); expect(result.state.revision).toBe(1);
+  expect(result.state.journal).toHaveLength(1); expect(result.draft.userInput).toBe(''); expect(result.draft.stageStatus).toEqual({ story: 'pending', variables: 'pending', world: 'pending' });
   expect(server.calls[0].context.CREATION_PROFILE).toBeTruthy();
   await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');
   await expect(page.getByRole('button', { name: '生成变量候选', exact: true })).toBeHidden();
@@ -131,8 +131,8 @@ test('发送行动只结算一次并自动串联下一轮，刷新及再次读�
   const before = await stored(page); await page.getByLabel('你的行动', { exact: true }).fill('在街边继续观察');
   await page.getByRole('button', { name: '发送', exact: true }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
   await expect(page.getByTestId('story-reader')).toContainText('第2幕'); await ready(page);
-  const after = await stored(page); expect(after.state.revision).toBe(1); expect(after.state.journal).toHaveLength(1);
-  expect(after.state.memories.short).toHaveLength(1); expect(after.draft.userInput).toBe('在街边继续观察');
+  const after = await stored(page); expect(after.state.revision).toBe(2); expect(after.state.journal).toHaveLength(2);
+  expect(after.state.memories.short).toHaveLength(2); expect(after.draft.userInput).toBe('');
   expect(after.state.economy).toEqual(before.state.economy); expect(after.state.npc).toEqual(before.state.npc);
   expect(server.calls.map((call) => call.stage)).toEqual(['story', 'variables', 'world', 'story', 'variables', 'world']);
   expect(server.calls[0].context.CREATION_PROFILE).toBeTruthy(); expect(server.calls[3].context.CREATION_PROFILE).toBeUndefined();
@@ -152,7 +152,7 @@ for (const stage of ['variables', 'world'] as const) {
     await page.reload(); await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeEnabled();
     expect(await stored(page)).toEqual(failed); server.plan.failure = undefined;
     await page.getByRole('button', { name: '继续未完成阶段', exact: true }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
-    await ready(page); const after = await stored(page); expect(after.state).toEqual(failed.state); expect(after.draft.story).toEqual(failed.draft.story);
+    await ready(page); const after = await stored(page); expect(after.state.revision).toBe(1); expect(after.state.journal[0].story).toEqual(failed.draft.story); expect(after.draft.userInput).toBe('');
     expect(server.calls.map((call) => call.stage)).toEqual(stage === 'variables' ? ['story', 'variables', 'variables', 'world'] : ['story', 'variables', 'world', 'world']);
   });
 }
@@ -274,15 +274,15 @@ for (const disabled of ['world', 'variables'] as const) {
     await page.locator('.workflow-disclosure > summary').click();
     await resume.click(); await ready(page);
     const complete = await stored(page);
-    expect(complete.state).toEqual(before.state); expect(complete.draft.story).toEqual(before.draft.story);
-    if (disabled === 'world') expect(complete.draft.variables).toEqual(before.draft.variables);
+    expect(complete.state.revision).toBe(1); expect(complete.state.journal[0].story).toEqual(before.draft.story);
+    if (disabled === 'world') expect(complete.state.appliedCommands).toEqual(expect.arrayContaining(before.draft.variables!.result.commands.map(command => expect.objectContaining({ commandId: command.commandId }))));
     const completedCalls = disabled === 'world' ? ['story', 'variables', 'world'] : ['story', 'world', 'variables', 'world'];
     expect(server.calls.map((call) => call.stage)).toEqual(completedCalls);
     await expect(resume).toHaveCount(0); await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
     await page.getByRole('button', { name: '发送', exact: true }).click();
     await expect(page.getByTestId('story-reader')).toContainText('第2幕'); await ready(page);
-    const committed = await stored(page); expect(committed.state.revision).toBe(1); expect(committed.state.journal).toHaveLength(1);
-    expect(committed.draft.userInput).toBe('继续观察街道');
+    const committed = await stored(page); expect(committed.state.revision).toBe(2); expect(committed.state.journal).toHaveLength(2);
+    expect(committed.draft.userInput).toBe('');
     expect(server.calls.map((call) => call.stage)).toEqual([...completedCalls, 'story', 'variables', 'world']);
   });
 }

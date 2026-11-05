@@ -16,7 +16,7 @@ import { VariableCandidates } from './VariableCandidates';
 import { useWorldGeneration } from './useWorldGeneration';
 import { WorldCandidates } from './WorldCandidates';
 import { useTurnGeneration } from './useTurnGeneration';
-import { completeTurnDraft } from '../../domain/turnCommit';
+import { completeTurnDraft, awaitingPlayerAction } from '../../domain/turnCommit';
 import type { TurnCommitResult } from '../../services/storage/saveRepository';
 import { DataError } from '../../domain/common';
 import { storyError } from '../../workflows/storyStage';
@@ -28,6 +28,7 @@ import { MemoryMaintenanceControls } from '../panels/MemoryMaintenanceControls';
 import type { OpeningStart } from './openingStart';
 import { RuntimeLogPanel } from './RuntimeLogPanel';
 import { runtimeLogEvent } from './runtimeLog';
+import { StageResponsesPanel } from './StageResponsesPanel';
 import type { RuntimeLogEntry, RuntimeLogReporter } from './runtimeLog';
 
 const sidebarMedia = '(max-width: 900px)';
@@ -96,7 +97,7 @@ export function GameScreen({
   } = useStoryGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent);
   const variables = useVariableGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent);
   const world = useWorldGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent);
-  const automatic = useTurnGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent);
+  const automatic = useTurnGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent, handleSettled);
   // 延后一微任务，让 StrictMode 的首次 effect 清理先完成。消费的是创角事件授权，
   // 而不是“草稿没有正文”；刷新、读档和重新挂载没有新的授权。
   useEffect(() => {
@@ -110,6 +111,10 @@ export function GameScreen({
     return () => { disposed = true; };
   }, [openingStart, state, draft, automatic.generate]);
   const memory = useMemoryMaintenance(repository, state.saveId, settings, onMemorySaved);
+  function handleSettled(result: TurnCommitResult) {
+    onCommitted(result);
+    if (!result.replayed) void memory.run(true);
+  }
   const progress =
     automatic.progress?.stage === 'story' && automatic.progress.phase !== 'retrying'
       ? { phase: automatic.progress.phase, narrative: automatic.progress.narrative ?? '' }
@@ -128,14 +133,23 @@ export function GameScreen({
     !state.journal.some((entry) => entry.turnId === draft.turnId) &&
     (draft.turnKind !== 'opening' || state.turnNumber === 0);
   const canCommit = Boolean(validDraft && draft && completeTurnDraft(draft));
+  const awaitingAction = awaitingPlayerAction(state, draft);
   async function send() {
-    if (!draft || !canCommit || busy || submitLock.current || !input.trim()) return;
+    if (!draft || (!canCommit && !awaitingAction) || busy || submitLock.current || !input.trim()) return;
     submitLock.current = true;
     const token = submitToken.current;
     setSubmitting(true);
     setSubmitError('');
-    reportRuntimeEvent('commit', 'started');
     try {
+      if (awaitingAction) {
+        const bound = await repository.bindTurnAction(draft, input, settings.runtime.useVariableStage, settings.runtime.useWorldStage);
+        if (submitToken.current !== token) return;
+        onDraftSaved(bound); setInput(''); setSubmitting(false);
+        await automatic.generate(bound);
+        return;
+      }
+      // 兼容升级前尚未结算的完整候选；用户本次输入仅绑定一次。
+      reportRuntimeEvent('commit', 'started');
       const result = await repository.commitTurn({
         draft,
         nextAction: input,
@@ -152,9 +166,11 @@ export function GameScreen({
       if (!result.replayed) await automatic.generate(result.draft);
     } catch (failure) {
       if (submitToken.current === token) {
-        reportRuntimeEvent('commit', 'failed', failure);
+        reportRuntimeEvent(awaitingAction ? 'workflow' : 'commit', 'failed', failure);
         setSubmitError(
-          failure instanceof DataError && failure.code === 'TURN_TIME_REQUIRED'
+          awaitingAction
+            ? '行动未发送：草稿版本冲突或存储失败。输入仍保留，请重新读取存档后重试。'
+            : failure instanceof DataError && failure.code === 'TURN_TIME_REQUIRED'
             ? '本回合尚未推进时间，未正式结算。请补算变量；正文无需写出时间。'
             : failure instanceof DataError && failure.code === 'MISSING_SUMMARY'
             ? '正文缺少有效摘要，未正式结算。请重新生成正文后重试。'
@@ -196,7 +212,7 @@ export function GameScreen({
     ...Object.values(state.economy.vehicles),
     ...Object.values(state.economy.otherAssets),
   ].filter((asset) => asset.ownerRef.kind === 'protagonist' && asset.ownerRef.id === hero.id);
-  const options = draft?.story?.actionOptions;
+  const options = draft?.story?.actionOptions ?? (awaitingAction ? state.journal.at(-1)?.story.actionOptions : undefined);
   const workflowError = error || variables.error || world.error || automatic.error || submitError;
   const failedStage = (['story', 'variables', 'world'] as const).some((stage) => draft?.stageStatus[stage] === 'failed');
   // 仅用于入口展示，与 TurnCoordinator 的 needed 条件保持一致；实际执行仍由协调器重验。
@@ -205,7 +221,7 @@ export function GameScreen({
     (draft?.stageStatus.variables !== 'ready' || draft.variables?.validation !== 'validated' || storyNeeded);
   const worldNeeded = settings.runtime.useWorldStage &&
     (!draft?.world || !['ready', 'preview'].includes(draft.stageStatus.world) || variablesNeeded || storyNeeded);
-  const canGenerate = Boolean(validDraft && (storyNeeded || variablesNeeded || worldNeeded));
+  const canGenerate = Boolean(validDraft && !awaitingAction && (storyNeeded || variablesNeeded || worldNeeded));
   const disabledGuidance = !settings.runtime.useVariableStage && !settings.runtime.useWorldStage
     ? '变量管理和动态世界阶段已关闭。需要启用并完成必要候选后，才能正式结算本回合。'
     : !settings.runtime.useVariableStage
@@ -215,7 +231,7 @@ export function GameScreen({
       : !settings.runtime.useWorldStage
         ? '动态世界阶段已关闭。需要启用该阶段并完成候选后，才能正式结算本回合。'
         : '';
-  const workflowGuidance = validDraft && !busy && !canCommit
+  const workflowGuidance = validDraft && !awaitingAction && !busy && !canCommit
     ? disabledGuidance || (!canGenerate
       ? draft?.world?.validation === 'preview'
         ? '当前世界结果仅为预览。请在高级操作中补算世界候选，完成后才能正式结算。'
@@ -229,7 +245,7 @@ export function GameScreen({
       runtimeSwitches.current?.querySelector<HTMLInputElement>('input'))?.focus({ preventScroll: true });
   }
 
-  const workflowLabel = submitting ? '正在正式结算'
+  const workflowLabel = submitting || automatic.settling ? '正在正式结算'
     : automatic.running ? automatic.progress
       ? { story: '正在生成正文', variables: '正在整理变量', world: '正在更新世界' }[automatic.progress.stage]
       : '正在检查执行条件'
@@ -238,7 +254,8 @@ export function GameScreen({
     : world.phase ? '正在更新世界'
     : workflowError?.includes('取消') ? '已取消 · 可恢复'
     : workflowError || failedStage ? '需要处理'
-    : canCommit ? '三阶段候选已完成 · 可发送行动'
+    : awaitingAction ? '本回合已结算 · 等待行动'
+    : canCommit ? '三阶段候选已完成 · 等待结算'
     : automatic.outcome && automatic.outcome.draft.draftRevision === draft?.draftRevision && automatic.outcome.status === 'skipped' ? '需要处理 · 已按开关跳过'
     : draft?.stageStatus.world === 'preview' ? '需要处理 · 世界仅为预览'
     : draft?.story ? '等待继续 · 部分候选已保存' : '等待开始';
@@ -418,7 +435,7 @@ export function GameScreen({
                   <strong role="status" aria-live="polite">{workflowLabel}</strong>
                 </summary>
                 <div className="workflow-details">
-                  <p className="field-hint">仅生成候选；瞬时服务错误最多重试一次，可能产生额外 API 费用。</p>
+                  <p className="field-hint">三阶段校验完成后自动原子结算，然后等待玩家输入。瞬时服务错误最多重试一次，可能产生额外 API 费用。</p>
                   <p className="field-hint">
                     {automatic.running
                       ? automatic.progress
@@ -427,16 +444,16 @@ export function GameScreen({
                       : automatic.outcome?.draft.draftRevision === draft?.draftRevision &&
                           automatic.outcome
                         ? automatic.outcome.status === 'complete'
-                          ? '三阶段候选已完成，填写下一步行动并发送以正式结算。'
+                          ? '三阶段候选已完成；自动正式结算后等待下一步行动。'
                           : automatic.outcome.status === 'preview'
                             ? '世界仅为预览，缺少合法变量；未完成完整三阶段，未正式结算。'
                             : '已按开关跳过关闭阶段；未完成完整三阶段，未正式结算。'
                         : canCommit
-                          ? '三阶段候选已完成，填写下一步行动并发送以正式结算。'
+                          ? '三阶段候选已完成，可继续完成结算；不会重复调用已完成阶段。'
                           : '自动执行会保留已完成阶段，从尚未完成的阶段继续。'}
                   </p>
                   <div className="variable-actions">
-                    <button disabled={!validDraft || busy} onClick={() => void generate()}>
+                    <button disabled={!validDraft || awaitingAction || busy} onClick={() => void generate()}>
                       {draft?.story ? '仅重新生成正文（高级）' : draft?.turnKind === 'regular' ? '生成本回合正文' : '生成开局正文'}
                     </button>
                     <small>高级手动操作：只生成正文，不自动执行后续阶段，可能产生 API 费用。</small>
@@ -509,7 +526,7 @@ export function GameScreen({
                     </p>}
                     <p className="muted">
                       三阶段结果均只保存在草稿。实际请求和 Token 统计可在设置 → 提示词管理中查看。
-                      自动执行会跳过已经合法完成的阶段；填写下一步行动并发送后，当前回合与下一草稿一并原子保存。
+                      自动执行会跳过已经合法完成的阶段；全部通过后当前回合与待输入草稿一并原子保存，不会自动决定下一步行动。
                     </p>
                     {draft?.failures
                       .filter((failure) => failure.storyRevision === draft.storyRevision)
@@ -615,14 +632,14 @@ export function GameScreen({
                 <p>{workflowGuidance}</p>
                 <button onClick={openRuntimeSettings} aria-controls="workflow-runtime-switches">展开高级设置</button>
               </div>}
-              {(automatic.running || (!busy && !canCommit && canGenerate)) && <div className="workflow-primary">
+              {(automatic.running || (!busy && (canCommit || canGenerate))) && <div className="workflow-primary">
                 {automatic.running ? (
-                  <button disabled={automatic.progress?.phase === 'saving'} onClick={automatic.cancel}>
+                  <button disabled={automatic.settling || automatic.progress?.phase === 'saving'} onClick={automatic.cancel}>
                     取消自动执行
                   </button>
                 ) : (
                   <button className="primary" disabled={!validDraft || busy} onClick={() => void automatic.generate()}>
-                    {draft?.story || failedStage || workflowError ? '继续未完成阶段' : draft?.turnKind === 'regular' ? '自动生成本回合' : '自动生成开局'}
+                    {canCommit ? '完成本回合结算' : draft?.story || failedStage || workflowError ? '继续未完成阶段' : draft?.turnKind === 'regular' ? '自动生成本回合' : '自动生成开局'}
                   </button>
                 )}
               </div>}
@@ -631,6 +648,7 @@ export function GameScreen({
                 <button onClick={onOpenSettings}>打开 AI 设置</button>
               </div>}
             </section>
+            <StageResponsesPanel saveId={state.saveId} turnId={awaitingAction ? state.journal.at(-1)?.turnId : draft?.turnId} />
           </div>
           <label className="sr-only" htmlFor="player-input">
             你的行动
@@ -646,10 +664,10 @@ export function GameScreen({
             }}
             onChange={(e) => setInput(e.target.value)}
             rows={2}
-            placeholder="填写下一步行动；发送将结算当前回合，并生成下一回合"
+            placeholder="填写你的行动；发送后生成三阶段并自动结算"
           />
           <div className="composer-footer">
-            <span>正文为未结算草稿；生成可能产生模型费用</span>
+            <span>{awaitingAction ? '已正式结算，等待你的行动' : '校验完成后自动结算；生成可能产生模型费用'}</span>
             <div>
               {manualProgress ? (
                 <button disabled={manualProgress.phase === 'saving'} onClick={cancel}>
@@ -662,7 +680,7 @@ export function GameScreen({
               ) : null}
               <button
                 className="primary"
-                disabled={!canCommit || busy || !input.trim()}
+                disabled={(!canCommit && !awaitingAction) || busy || !input.trim()}
                 onClick={() => void send()}
               >
                 {submitting ? '正在原子结算…' : '发送'}

@@ -13,7 +13,11 @@ export function validateSceneTransition(
     && (command.changes.onScene === true || command.changes.locationId === null)) {
     const person = after.npc[command.npcId];
     if (!person) continue; // 同批合法退场已由RetireNpc的领域约束处理。
-    requireData(!person.onScene || person.locationId, 'SCENE_LOCATION', '在场 NPC 必须有明确地点');
+    requireData(
+      !person.onScene || person.locationId,
+      'SCENE_LOCATION',
+      `在场 NPC（${command.npcId}）必须有明确地点`,
+    );
   }
   if (after.protagonist.locationId === before.protagonist.locationId) return;
   for (const npc of Object.values(before.npc).filter((person) => person.onScene)) {
@@ -23,7 +27,7 @@ export function validateSceneTransition(
     requireData(
       updates.some((command) => command.changes.onScene !== undefined || command.changes.locationId !== undefined),
       'SCENE_TRANSITION',
-      '主角移动时须显式更新原在场 NPC 的地点或在场状态，不自动跟随',
+      `主角移动时须显式更新原在场 NPC（${npc.id}）的地点或在场状态，不自动跟随`,
     );
     // 归属、合法地点和onScene与主角位置一致性由GameStateSchema统一校验。
   }
