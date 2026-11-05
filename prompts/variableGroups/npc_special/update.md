@@ -32,3 +32,5 @@ set npc[id].privateProfile 为对象，可含 chestDescription / buttocksDescrip
 
 可set/add npc[id].affinity，程序读取真实前值生成原关系命令，不需要AI填写版本或前值；需更改关系描述时先set relationshipText。整个人物与原始记忆不允许delete。
 activeGoals支持push单项、set已有索引、delete已有索引（多个索引倒序）；原整体set数组仍可用。
+
+未确认初始同伴的affinity占位不是已知数值，不能直接add。由模型决定最终绝对好感后用set（原显式affinityChange.from=null也仍可用），再做后续相对增减。

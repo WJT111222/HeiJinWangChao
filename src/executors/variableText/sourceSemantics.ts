@@ -90,6 +90,9 @@ export async function compileSourceOperation(command: ParsedVariableCommand, val
     if (!person) return failed('entity_not_found');
     if (command.operation !== 'set' && command.operation !== 'add') return failed('unsupported_operation');
     if (typeof command.value !== 'number' || !Number.isFinite(command.value)) return failed('type_mismatch');
+    if (command.operation === 'add' && person.from === null) return failed('type_mismatch', null, [], {
+      valuePath: 'npc[id].affinity', validationRule: 'value_constraint', expectedType: 'number', actualType: 'null',
+    });
     const to = command.operation === 'add' ? person.affinity + command.value : command.value;
     if (to < -100 || to > 100 || !person.relationshipText.trim()) return failed('type_mismatch');
     mapped = { ...base, type: 'UpdateNpc', expectedRevision, npcId: second.id, changes: { relationshipText: person.relationshipText },

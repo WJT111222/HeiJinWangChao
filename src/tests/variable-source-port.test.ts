@@ -153,3 +153,18 @@ describe('三标签严格失败与安全步骤诊断', () => {
     expect(runtimeLogEvent(2, 'world', 'failed', new AiError('data_integrity', undefined, { worldRule: 'source_owner' }))).toMatchObject({ worldRule: 'source_owner' });
   });
 });
+
+it('未确认同伴的好感占位不能作为add的数值基线', async () => {
+  const { state, draft } = fixture(); state.initialCompanionId = 'npc-a'; state.npc['npc-a'].affinity = 0; delete state.npc['npc-a'].affinityConfirmed;
+  const before = structuredClone(state), ast = parseVariableText(reply('add npc[npc-a].affinity = 5')); if (!ast.ok) throw Error('parser');
+  const result = await compileVariableCommands(ast.value, state, { draft, expectedRevision: state.revision });
+  expect(result).toMatchObject({ ok: false, error: { code: 'type_mismatch' } }); expect(state).toEqual(before);
+});
+it('未确认同伴由模型set绝对好感后可在同批add，原from=null边界不变', async () => {
+  const { state, draft } = fixture(); state.initialCompanionId = 'npc-a'; state.npc['npc-a'].affinity = 0; delete state.npc['npc-a'].affinityConfirmed;
+  const ast = parseVariableText(reply('set npc[npc-a].affinity = 2\nadd npc[npc-a].affinity = 3')); if (!ast.ok) throw Error('parser');
+  const context = { draft, expectedRevision: state.revision }, plan = await compileVariableCommands(ast.value, state, context); if (!plan.ok) throw Error(plan.error.code);
+  expect(plan.value.commands[0]).toMatchObject({ type: 'UpdateNpc', affinityChange: { from: null, to: 2 } });
+  const result = await simulateVariablePlan(plan.value, state, context); if (!result.ok) throw Error(result.error.code);
+  expect(result.value.npc['npc-a'].affinity).toBe(5); expect(result.value.npc['npc-a'].affinityConfirmed).toBe(true);
+});

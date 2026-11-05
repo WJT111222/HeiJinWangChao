@@ -153,7 +153,7 @@
       },
       "variableSourcePort": {
         "reference": "variableProtocolReference",
-        "sha256": "1779276924f4703c9ccea10ed7edcee8ebbae00ac4ac2beefc2dc43562bede8b",
+        "sha256": "bd147d206dbd86609c6d50a3bffab38757b7af73d3a883b96d860d4c163c8b5b",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
@@ -175,7 +175,7 @@
       },
       "variableSourcePort": {
         "reference": "variableProtocolReference",
-        "sha256": "cab938b030e0fa535bc7211b7cb89b3e03103182d633771e962e8a9f8175e0bf",
+        "sha256": "705a1104a2129dd82b0673bef8b3f9135df9c2569bb506326f257e390f63577b",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
@@ -208,7 +208,7 @@
       },
       "variableSourcePort": {
         "reference": "variableProtocolReference",
-        "sha256": "367cc91d03c4fa2e91f2ec847537518337950b52a47d5a8f74313a29884814dd",
+        "sha256": "855ab2a843b0100e83055312dba20fafb3ce7c47c7086de4aa01662c511409c3",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
@@ -230,7 +230,7 @@
       },
       "variableSourcePort": {
         "reference": "variableProtocolReference",
-        "sha256": "ee907f265eedc12b506cda2e70c03039041f8e20b9e33c8a874403b33f2f7b27",
+        "sha256": "6faf4a5d52587ca3fb98bd2819c5e6f974aeba24985d98e309801851a81f51a7",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
@@ -353,7 +353,7 @@
       },
       "variableSourcePort": {
         "reference": "variableProtocolReference",
-        "sha256": "b9738a95e23219c762e4d733be1eec6a65ed7a584ec6d0de4bf98d7bee6ad433",
+        "sha256": "3b0364a9f4b1db19b30d2b4d826fb76760608334416374424cab79aebab00c06",
         "notes": "同一次三标签与标准set/add/push/delete；仅白名单领域适配，不复制武侠业务、语义审核、任意深合并或额外请求。"
       }
     },

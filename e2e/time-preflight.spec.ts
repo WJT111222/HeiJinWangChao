@@ -1,3 +1,4 @@
+import { VariableStateProjectionSchema } from '../src/tests/fixtures/variableState';
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
 import { test, expect } from '@playwright/test';
@@ -60,10 +61,10 @@ async function mock(page: Page, interrupt = false, kind: 'default' | 'drink' | '
       const story = StorySchema.parse(ctx.STORY_RESULT), guide = story.variableGuide.find((entry) => entry.subjectHint?.startsWith('time:') && entry.subjectHint !== 'time:retrospective'), commands: DomainCommand[] = [];
       if (guide) {
         commands.push({ type: 'SetWorldClock', commandId: 'sleep-clock', worldClock: guide.observedFact, evidence: guide.textEvidence! });
-        if (guide.subjectHint === 'time:interrupt:visitor') { const state = GameStateSchema.parse(ctx.SAVE_STATE); commands.push({ type: 'SaveEvent', commandId: 'visitor-contact', evidence: guide.textEvidence!, event: { ...state.events.visitor, status: 'active', sourceTurnIds: [...state.events.visitor.sourceTurnIds, string(record(ctx.TURN_CONTEXT).turnId)] } }); }
+        if (guide.subjectHint === 'time:interrupt:visitor') { const state = VariableStateProjectionSchema.parse(ctx.SAVE_STATE); commands.push({ type: 'SaveEvent', commandId: 'visitor-contact', evidence: guide.textEvidence!, event: { ...state.events.visitor, status: 'active', sourceTurnIds: [...state.events.visitor.sourceTurnIds, string(record(ctx.TURN_CONTEXT).turnId)] } }); }
       }
       if (!guide && !story.variableGuide.some((entry) => entry.subjectHint === 'time:retrospective') && kind !== 'zero') {
-        const state = GameStateSchema.parse(ctx.SAVE_STATE);
+        const state = VariableStateProjectionSchema.parse(ctx.SAVE_STATE);
         // Mock的实际估时输出；产品代码不会自行补这个数值。
         commands.push({ type: 'SetWorldClock', commandId: 'estimated-elapsed', evidence: story.narrative,
           worldClock: new Date(Date.parse(state.worldClock) + (kind === 'chat' ? 15 : 120) * 1000).toISOString() });
