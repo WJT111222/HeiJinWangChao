@@ -117,6 +117,13 @@ function withoutPrivateMemories(state: GameState): GameState {
   }])), memories: { ...state.memories, npcSummaries: {},
     long: state.memories.long.filter((entry) => !entry.retiredNpcSource || entry.visibility === 'player_known') } };
 }
+/** 适配源variableModelWorkflow的活动变量快照：不把永久正文/幂等指纹重复发给模型。
+ * 正式状态不变；NPC私人知识仍走既有owner隔离上下文，不改可见性。 */
+function variableStateSnapshot(state: GameState) {
+  const { journal, appliedCommands, memories, timeline, ...snapshot } = withoutPrivateMemories(state);
+  void journal; void appliedCommands; void memories; void timeline;
+  return snapshot;
+}
 const npcKnowledgePolicy = '内部角色认知按ownerNpcId隔离，只属于该人物。亲历/转述/推测/来源未分类不能混同世界真值；总结是历史认知，较新原始记忆中的纠正优先。不能自动传播给其他人物或写入公开线索、正文、日志。总结只能为所属NPC的计划提供参考，不能直接证明完成、到账、关系变化或新增世界事实。worldEventOnly事件及其参与者列表不授予NPC知情；人物行动和记忆须引用自己独立合法的观察或转述来源，事件记录仅作后台因果资料。';
 export function contextFor(input: ComposeInput): Record<string, unknown> {
   const { stage, settings, draft } = input;
@@ -219,7 +226,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       HISTORICAL_PERSPECTIVE: historicalPerspective(state, draft!),
       PLAYER_ACTION: draft!.userInput,
       SELECTED_VARIABLE_DOMAINS: input.domains ?? [],
-      SAVE_STATE: withoutPrivateMemories(opening?.status === 'candidate' ? { ...state, worldClock: openingTimeSelection(original, draft!)!.endAt } : state),
+      SAVE_STATE: variableStateSnapshot(opening?.status === 'candidate' ? { ...state, worldClock: openingTimeSelection(original, draft!)!.endAt } : state),
       NPC_KNOWLEDGE_POLICY: npcKnowledgePolicy,
       NPC_KNOWLEDGE: Object.values(state.npc).filter((npc) => npc.onScene).map((npc) => npcKnowledgeContext(state, npc.id)),
       STORY_RESULT: draft!.story,

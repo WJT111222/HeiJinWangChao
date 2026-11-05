@@ -40,5 +40,10 @@ function commandText(value:unknown):string[]{
 }
 export function variableReply(value:unknown):string{
   const result=object(value);if(!Array.isArray(result.commands))throw new Error('missing fixture commands');
-  return `<命令>\n${result.commands.flatMap(commandText).join('\n')}\n</命令>`;
+  return variableTextEnvelope(`<命令>\n${result.commands.flatMap(commandText).join('\n')}\n</命令>`);
+}
+
+/** 仅升级旧Mock为源仓库三标签协议；生产入口不会导入或宽容补标签。 */
+export function variableTextEnvelope(text: string): string {
+  return text.trimStart().startsWith('<thinking>') ? text : `<thinking>变量分析结果：保持未变化字段。</thinking>\n${text.trimStart().startsWith('<说明>') ? '' : '<说明></说明>\n'}${text}`;
 }

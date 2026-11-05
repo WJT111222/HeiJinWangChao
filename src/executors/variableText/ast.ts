@@ -13,7 +13,7 @@ const child = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('id'), id: name }),
 ]);
 const position = z.strictObject({ offset: CountSchema, line: CountSchema.min(1), column: CountSchema.min(1) });
-const command = z.strictObject({ operation: z.enum(['set', 'add', 'push']),
+const command = z.strictObject({ operation: z.enum(['set', 'add', 'push', 'delete']),
   path: z.strictObject({ nodes: z.tuple([root]).rest(child).refine((nodes) => nodes.length <= variableTextLimits.pathDepth) }),
   value: z.unknown(), source: z.strictObject({ start: position, end: position }),
 });
@@ -35,6 +35,9 @@ export function validateAst(input: readonly ParsedVariableCommand[]): ExecutionR
     if (c.operation === 'add') {
       if (typeof value.value !== 'number') return failed('type_mismatch', origin);
       output.push({ ...c, operation: 'add', value: value.value });
+    } else if (c.operation === 'delete') {
+      if (value.value !== null) return failed('type_mismatch', origin);
+      output.push({ ...c, operation: 'delete', value: null });
     } else output.push({ ...c, operation: c.operation, value: value.value });
   }
   return { ok: true, value: output };

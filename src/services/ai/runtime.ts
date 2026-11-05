@@ -9,7 +9,7 @@ import type { CredentialVault } from './credentials';
 import { requestSnapshot } from './snapshot';
 import { AiClient } from './client';
 import type { RequestOptions } from './client';
-import { variableValidationError } from '../validation/variableDiagnostics';
+import { variableFailure, variableValidationError } from '../validation/variableDiagnostics';
 import { timeOutcome } from '../../domain/timePreflight';
 import { stageResponses } from './stageResponses';
 import { safeAiError } from './errors';
@@ -22,6 +22,11 @@ export async function runStageRequest(
   options: RequestOptions = {},
   client = new AiClient(),
 ) {
+  try { return await runStageRequestUnchecked(input, config, vault, options, client); }
+  catch (error) { throw input.stage === 'variables' ? variableFailure(error, 'context') : error; }
+}
+async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }, config: AiConfig,
+  vault: CredentialVault, options: RequestOptions, client: AiClient) {
   if (input.orderOverrides && input.orderPreferences) throw new AiError('configuration');
   const captured = checkedInput({
     ...input,
@@ -38,6 +43,7 @@ export async function runStageRequest(
   const responseId = stageResponses.begin({ saveId: captured.state.saveId, turnId: captured.draft?.turnId, stage: captured.stage, storyRevision: captured.draft?.storyRevision });
   const secrets = config.channels.map(channel => vault.get(channel.id)).filter(Boolean);
   let received = '';
+  let step: 'request' | 'response' = 'request';
   try {
   const response = await client.generate(snapshot, prompt.messages, {
     ...options,
@@ -53,6 +59,7 @@ export async function runStageRequest(
     timeoutSeconds: options.timeoutSeconds ?? captured.settings.runtime.timeoutSeconds,
     stream: options.stream ?? captured.stage === 'story',
   });
+  step = 'response';
   received = response.text;
   stageResponses.update(responseId, { text: received, status: 'received' }, secrets);
   const envelope = captured.stage === 'story' ? parseStoryEnvelope(response.text, captured.mode, captured.settings) : undefined;
@@ -94,7 +101,8 @@ export async function runStageRequest(
     audience: 'internal' as const,
   };
   } catch (error) {
-    stageResponses.update(responseId, { status: 'failed', ...(received ? { text: received } : {}), error: safeAiError(error) }, secrets);
-    throw error;
+    const failure = captured.stage === 'variables' ? variableFailure(error, step) : error;
+    stageResponses.update(responseId, { status: 'failed', ...(received ? { text: received } : {}), error: safeAiError(failure) }, secrets);
+    throw failure;
   }
 }

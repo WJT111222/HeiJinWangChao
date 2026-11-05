@@ -1,3 +1,4 @@
+import { variableTextEnvelope } from './fixtures/variableReply';
 import { afterEach, describe, expect, it } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import type { ActorRef } from '../domain/common';
@@ -15,7 +16,7 @@ const repos: SaveRepository[] = [];
 afterEach(() => repos.splice(0).forEach(repo => repo.close()));
 const org: ActorRef = { kind: 'organization', id: 'org-a' };
 const hero: ActorRef = { kind: 'protagonist', id: 'hero' };
-const text = '<命令>set events[incident].sceneState = {"status":"blocked"}</命令>';
+const text = variableTextEnvelope('<命令>set events[incident].sceneState = {"status":"blocked"}</命令>');
 function fixture(actors: ActorRef[] = [org]) {
   const state = worldState(), draft = worldDraft(false, 'opening');
   state.organizations['org-a'] = structuredClone(organizations[3]);
@@ -125,7 +126,7 @@ describe('共享现场权限的正反边界', () => {
   it.each(['arrival', 'departure'] as const)('%s：使用本幕正式现场与整批合法投影，合法入/离场不误伤', async mode => {
     const actor = mode === 'arrival' ? offscreenNpc : sceneNpc, a = fixture([actor]);
     const input = `<命令>\nset npc[${actor.id}].onScene = ${mode === 'arrival'}\nset events[incident].sceneState = {"status":"blocked"}\n</命令>`;
-    const result = await parseTextVariables(input, a.state, a.draft);
+    const result = await parseTextVariables(variableTextEnvelope(input), a.state, a.draft);
     expect(parseVariables(JSON.stringify(result), a.state, a.draft)).toEqual(result);
     const simulation = await simulateVariablePlan(await compiled(a, input), a.state, a.context);
     expect(simulation.ok).toBe(true);
@@ -147,7 +148,7 @@ describe('共享现场权限的正反边界', () => {
   it('前面合法人物更新不能在后续组织事件越权时部分成功', async () => {
     const a = fixture(), before = structuredClone(a.state);
     const input = '<命令>\nset protagonist.emotionText = "安心"\nset events[incident].sceneState = {"status":"blocked"}\n</命令>';
-    await expect(parseTextVariables(input, a.state, a.draft)).rejects.toMatchObject({ code: 'data_integrity' });
+    await expect(parseTextVariables(variableTextEnvelope(input), a.state, a.draft)).rejects.toMatchObject({ code: 'data_integrity' });
     const simulation = await simulateVariablePlan(await compiled(a, input), a.state, a.context);
     expect(simulation).toMatchObject({ ok: false, error: { code: 'permission_denied' } });
     expect(simulation).not.toHaveProperty('value'); expect(a.state).toEqual(before);

@@ -1,3 +1,4 @@
+import { compileSourceOperation, normalizeSourcePath, sourceValues, trackSourceValues } from './sourceSemantics';
 import { SceneEventStateSchema } from '../../domain/events/schema';
 import { DomainCommandSchema, fingerprint } from '../../domain/commands';
 import type { DomainCommand } from '../../domain/commands';
@@ -98,7 +99,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
   } catch { return failed('domain_validation_failed'); }
   const openingClock = systemCommands.find((command) => command.type === 'SetWorldClock');
   for (let i = 0; i < ast.length; i++) {
-    const entry = ast[i];
+    const entry = normalizeSourcePath(ast[i]);
     if (lookup(entry)?.mapping.kind !== 'clock') continue;
     const origin = { commandIndex: i + 1, source: entry.source };
     if (entry.operation !== 'set') return failed('unsupported_operation', origin);
@@ -111,18 +112,20 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
   const commands: DomainCommand[] = [...systemCommands];
   const origins: Array<CommandOrigin | null> = systemCommands.map(() => null);
   const quantities = new Map(Object.values(base.items).map((item) => [item.id, item.quantity]));
+  const values = sourceValues(base);
   const createdIds = new Set<string>();
   const npcIds = new Set(Object.keys(base.npc));
   const sceneEvents = new Map(Object.entries(base.events));
   for (let i = 0; i < ast.length; i++) {
-    const command = ast[i], origin = { commandIndex: i + 1, source: command.source };
+    const command = normalizeSourcePath(ast[i]), origin = { commandIndex: i + 1, source: command.source };
     const commandId = `text-v1:s${draft.storyRevision}:c${i + 1}`;
     const prior = priorCommand(current, draft.turnId, commandId);
     const common = { commandId, evidence: `文本变量指令第${i + 1}条` };
     let mapped: DomainCommand;
     const [root,node,field]=command.path.nodes;
     const sceneEvent=command.path.nodes.length===3 && root.name==='events' && node?.kind==='id' && field?.kind==='field'&&field.name==='sceneState';
-    const transaction = compileTransaction(command, common, context.expectedRevision)
+    const transaction = await compileSourceOperation(command, values, base, quantities, prior, common, context.expectedRevision)
+      ?? compileTransaction(command, common, context.expectedRevision)
       ?? compileEntity(command, common, context.expectedRevision);
     if (sceneEvent && node.kind==='id') {
       if(command.operation!=='set')return failed('unsupported_operation',origin);
@@ -132,7 +135,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       mapped={...common,type:'SaveEvent',event:{...old,...delta.data,sourceTurnIds:[...new Set([...old.sourceTurnIds,draft.turnId])]}};
       sceneEvents.set(node.id,mapped.event);
     } else if (transaction) {
-      if (!transaction.ok) return failed(transaction.error.code, origin, [], transaction.error.diagnostic);
+      if (!transaction.ok) return failed(transaction.error.code, origin, [], transaction.error.diagnostic ?? diagnosticForRule(command, 'value_constraint'));
       mapped = transaction.value;
     } else {
       const found = lookup(command);
@@ -207,6 +210,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       createdIds.add(created);
     }
     if (c.type === 'CreateNpc') npcIds.add(c.npc.id);
+    trackSourceValues(values, c);
     // 这里只计算UpdateItem所需的前值，不执行余额、归属或资产修改。
     if (c.type === 'AcquireItem' || c.type === 'PurchaseItem') quantities.set(c.item.id,c.item.quantity);
     if (c.type === 'UpdateItem') {
