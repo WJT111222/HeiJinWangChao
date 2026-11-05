@@ -136,7 +136,7 @@
 
 VariableStage保留原STORY_BUSY、DRAFT_CONFLICT、REVISION_CONFLICT等执行器错误契约和CAS行为；日志层转安全分类。保存失败仍可保存不含内容的失败元数据，正式GameState不变；失败元数据也不能强行覆盖新版本。
 
-## 本轮验证（进行中）
+## 阶段性验证（历史记录）
 
 - 新源码协议/适配/真实请求集成两文件39项通过（涵盖三协议、流缺终态、Token截断、完整开局与普通回合自动结算）。
 - 初步相关4文件82项及旧parser/执行器回归已实跑；旧过时能力断言已按新增映射调整，保留非法类型、保留字段、无权限和原子性断言。
@@ -147,3 +147,130 @@ VariableStage保留原STORY_BUSY、DRAFT_CONFLICT、REVISION_CONFLICT等执行�
 阶段性代码在2102项工程、82项提示词和12项定向桌面/移动浏览器通过后提交推送；完整324项未完成前不声称最终验收。
 
 本轮采用源streamIntegrity已存在的强制非流式分支：源在没有onStreamDelta时也如此，一次请求生成三标签。显式流式调用仍按目标AiClient检查终态，半截输出整体失败；不额外复制源审核重发分支。
+
+## 最终复现、修正与结果
+
+完整Chromium初跑324项：302通过、22失败，无跳过。20项来自旧Mock把Variables活动状态投影当完整GameState，要求已不再注入的journal/appliedCommands/memories/timeline，导致Mock本身在生成响应前抛ZodError；另2项把说明拼在已经完整三标签的Mock之前，产生重复说明。不是通过削弱正式Schema使模型结果过关：只将两个Mock读取器改为从原SaveShape派生的测试专用投影类型，并修正重复说明。正式存档读取/输出仍用原完整GameStateSchema及全部业务校验。增加opening/regular两项单元测试验证投影符合真实类型、原始完整状态不变且合法。三个涉及文件完整桌面/移动50项复跑通过，含原22项。
+
+新add affinity适配的自查发现未知前值边界：初始同伴的占位0不是已知数值。在4ee978f隔离工作树中，仅筛选新增2项，实际1失败、1通过（其余31未选中，不是最终验收跳过）。合法旧档样本采用affinity=0、affinityConfirmed缺省，未使用非法false标记。修复后未知前值的add明确拒绝，可先由AI set绝对值，再连续add；原显式affinityChange.from=null不变。该文件最终33/33通过，最终完整工程和核心浏览器再次通过。临时工作树已移除，参考仓库保持干净。
+
+| 命令/检查 | 本轮实际结果 |
+| --- | --- |
+| 初始7项失败复现 | 修复前6失败、1通过；修复后全部通过 |
+| 新源码协议/请求集成两文件 | 最终33+8=41项，完整工程检查包含全部 |
+| npm run check（最终） | 60个文件、2106/2106通过，包含Lint、TypeScript和生产构建 |
+| npm run prompts:check（最终） | 3文件82/82通过 |
+| 完整Chromium桌面/移动 | 实际324项；初跑302通过、22旧Mock失败，均已定位并修正 |
+| 上述三个文件完整复跑 | 桌面/移动50/50通过，含原22项；不与324相加 |
+| 最终核心自动结算/双诊断/源协议/保存恢复E2E | 桌面/移动12/12通过；不与324相加 |
+| git diff --check | 最终通过 |
+
+没有仍未解决的已知测试失败。没有第二次整批324，不能把复跑结果拼成最后SHA的单批324/324。原2063项工程用例保留并通过，本轮新增43项：源码协议/数据适配33、真实请求/全流程8、输入投影2。浏览器原320项保留，新增4项（2种场景分别桌面/移动）。所有模型响应均Mock，没有真实付费模型验证。
+
+完整日志在/workspace/variables-source-port-verification/；日志不进入源码仓库。构建保留既有大于500kB主bundle提示，非阻断，没有为本次引入依赖。开发期间也处理了旧协议Mock/能力预期和测试夹具错误，不宣称全程无失败；没有删除或跳过原有用例，没有通过放松真实存档/角色知识/事件权限取得通过。
+
+## 成功与失败样例
+
+已知现金10000分、合法现有主角及技能状态：
+
+```text
+<thinking>本回合变量分析结果：用餐扣款，并调整已有技能记录。</thinking>
+<说明>
+- 实际消费30元，以3000分记录；没有新增资产。
+</说明>
+<命令>
+set worldClock = "2026-10-18T08:10:00+08:00"
+set protagonist.skills = ["驾驶","急救"]
+add economy.cash = -3000
+push protagonist.skills = "烹饪"
+delete protagonist.skills[0]
+</命令>
+```
+
+普通回合模拟后现金7000分，技能为急救/烹饪；开局有Story结构化时间时不重复生成时钟。模型分析与说明可从临时完整原文查看，不复制为存档事实。
+
+失败例：完整封套中先set合法情绪，再delete npc[npc-a]；因为没有合法整个人物删除映射，整批失败，不返回部分计划、不改变情绪。缺</命令>时为variable_text_syntax/envelope；合法封套但非法JSON值为commands步骤；不存在NPC/错误字段在mapping；负余额等领域错误在simulation；QuotaExceededError为storage/candidate_save。正式提交存储异常日志为storage/commit，原CAS/回执/回滚仍生效。
+
+## 未改变的事务及费用边界
+
+正式链仍是Story选定结果 → 同一次Variables文本请求 → 三标签提取 → parseVariableText → compileVariableCommands → simulateVariablePlan → 原VariableResult.commands候选保存 → World读取projectTurn投影 → commitTurn重验与原子提交。模型文本不能直接写库。旧合法规范化JSON候选继续复核；新模型只走文本，不回退模型JSON解析或双重执行。
+
+StageGuard/Web Locks、草稿/正文/请求/候选版本、原子事务、回执、精确重放、Story Roll失效下游、取消迟到拒绝均保留。World、NPC独立认知、来源、事件生命周期、#51双诊断、#52自动结算及完整原文、#53香闺秘档未重构。正式Schema/迁移、AI Client、模型路由/POST地址、Thinking设置、七项写作设置、NSFW原文和世界书均未改。
+
+正常每阶段的模型请求数不变；无新增分析、修复或审核模型请求，也未自动提高输出Token。三标签分析文字和目录变化会影响实际Token，不能据Mock预测真实费用；既有用量统计保留。默认非流式和原有有界服务错误重试/玩家明确恢复政策不变。
+
+## 剩余实机边界
+
+无法取得当时unknown故障的完整模型响应/异常栈，本次证实并修复了同类保存错误的不可定位问题，不能声称已还原全部线上原因。真实中转站的返回格式、浏览器实际存储权限/配额、模型遵循Prompt程度仍需用户实机验证；未为诊断主动付费。
+
+未支持的领域能力仍明确拒绝/说明，尤其未知余额初始化、历史资产无交易登记、房产购买和无法保证引用的删除，不通过伪造经济记录或任意对象覆盖器补齐。原始响应按#52只存临时内存，刷新不可恢复；合法规范化候选与永久正文仍按原机制保留。
+
+本分支只供Draft PR审查；未合并、未主动部署生产环境、未修改正式玩家存档。PR预览由既有Cloudflare自动流程处理。
+
+## 完整修改文件清单
+
+相对本任务main基线共61个文件；清单包含本报告本身。
+
+```text
+VARIABLES-SOURCE-PORT-DEVELOPMENT.md
+e2e/automatic-settlement.spec.ts
+e2e/continuous-turns.spec.ts
+e2e/event-lifecycle.spec.ts
+e2e/time-preflight.spec.ts
+e2e/variable-runtime.spec.ts
+prompts/docs/ASSEMBLY.md
+prompts/docs/OUTPUT_CONTRACT.md
+prompts/manifest.json
+prompts/shared/07_command_output.md
+prompts/sources.lock.json
+prompts/stages/opening/variables.md
+prompts/stages/regular/variables.md
+prompts/variableGroups/economy/init.md
+prompts/variableGroups/economy/update.md
+prompts/variableGroups/items/init.md
+prompts/variableGroups/items/update.md
+prompts/variableGroups/npc_ordinary/init.md
+prompts/variableGroups/npc_ordinary/update.md
+prompts/variableGroups/npc_special/init.md
+prompts/variableGroups/npc_special/update.md
+prompts/variableGroups/org_business/init.md
+prompts/variableGroups/org_business/update.md
+prompts/variableGroups/org_civil/init.md
+prompts/variableGroups/org_civil/update.md
+prompts/variableGroups/org_gang/init.md
+prompts/variableGroups/org_gang/update.md
+prompts/variableGroups/org_government/init.md
+prompts/variableGroups/org_government/update.md
+prompts/variableGroups/protagonist/init.md
+prompts/variableGroups/protagonist/update.md
+src/executors/variableText/ast.ts
+src/executors/variableText/catalog.ts
+src/executors/variableText/compile.ts
+src/executors/variableText/diagnostics.ts
+src/executors/variableText/sourceSemantics.ts
+src/parsers/variableText/common.ts
+src/parsers/variableText/index.ts
+src/parsers/variableText/response.ts
+src/prompts/context.ts
+src/services/ai/errors.ts
+src/services/ai/runtime.ts
+src/services/validation/aiOutputs.ts
+src/services/validation/variableDiagnostics.ts
+src/tests/event-lifecycle-runtime.test.ts
+src/tests/fixtures/variableReply.ts
+src/tests/fixtures/variableState.ts
+src/tests/live-text-turn.test.ts
+src/tests/live-text-variables.test.ts
+src/tests/runtime-log.test.ts
+src/tests/scene-event-permission.test.ts
+src/tests/text-prompt-readiness.test.ts
+src/tests/variable-source-port.test.ts
+src/tests/variable-source-runtime.test.ts
+src/tests/variable-stage.test.ts
+src/tests/variable-text-executor.test.ts
+src/tests/variable-text-parser.test.ts
+src/tests/world-event-knowledge.test.ts
+src/ui/game/RuntimeLogPanel.tsx
+src/ui/game/runtimeLog.ts
+src/workflows/variableStage.ts
+```

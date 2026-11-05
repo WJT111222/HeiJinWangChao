@@ -32,3 +32,5 @@ AI根据选定Story理解已发生变化，不替World推演后台任务、事�
 现场事件与任务：变量阶段不负责新建追踪事件或估计后台结束时间。仅对正式状态中已有、正文实际涉及的现场事件使用 set events[id].sceneState = {"status":"active"}；结案可给 status=resolved、resolvedAt、resolutionText、outcome(success/failure/changed)，取消为cancelled。程序保留原排程/参与者/关联并添加当前来源回合；不能改预计时间、背景、目标、前序或清理。新事件与延期、承接、归档交给World根据Story处理，不写不支持的旧 events[id] 路径。Task仍用set tasks[id]完整对象，其dueAt或非空completionCondition至少一项；Task不套用事件强制预计时间规则。已有缺规划旧记录可记录现场状态，不编造历史日期。未知操作写说明，不自由补丁。
 
 主角skills允许push单项、set skills[index]及delete skills[index]。特殊NPC的activeGoals同理；普通NPC不能写特殊目标。好感可set/add npc[id].affinity，程序根据当前前值生成原affinityChange；原显式affinityChange路径继续可用。需要新关系描述时先set relationshipText，不把数值当成恋爱或主角已知事实。set protagonist只接受已有UpdateProtagonist白名单字段的局部对象，不覆盖身份/ID或整个存档。
+
+未确认初始同伴的affinity占位不是已知数值，不能直接add。由模型决定最终绝对好感后用set（原显式affinityChange.from=null也仍可用），再做后续相对增减。

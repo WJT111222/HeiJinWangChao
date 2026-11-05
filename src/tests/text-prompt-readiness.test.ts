@@ -1,3 +1,5 @@
+import { VariableStateProjectionSchema } from './fixtures/variableState';
+import { GameStateSchema } from '../domain/state';
 import { describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -127,4 +129,12 @@ it('文本目录保留既有状态文本长度约束，不把无效空值宣称�
   for(const path of ['protagonist.healthText','protagonist.emotionText','npc[id].healthText','npc[id].relationshipText']){
     expect(catalog.entries.find(e=>e.path===path)?.valueSchema).toMatchObject({type:'string',minLength:1,maxLength:8192});
   }
+});
+
+// 源活动变量输入不等于正式存档，不能让Mock错误要求永久档案再次注入模型。
+it.each(['opening','regular'] as const)('%s变量输入只投影活动状态，真实存档仍完整且可读', async mode => {
+  const a = input(mode), before = structuredClone(a.state), prompt = await composeTextVariablesPrompt(a);
+  expect(VariableStateProjectionSchema.safeParse(prompt.context.SAVE_STATE).success).toBe(true);
+  for (const field of ['journal','appliedCommands','memories','timeline']) expect(prompt.context.SAVE_STATE).not.toHaveProperty(field);
+  expect(a.state).toEqual(before); expect(GameStateSchema.safeParse(a.state).success).toBe(true);
 });
