@@ -299,8 +299,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 12848,
-      "version": "1.5.0",
+      "characters": 13347,
+      "version": "0.1.6-world-diagnostics-contract",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -309,7 +309,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "7b3ae0e7f6d3afb5a0d56ad7d3f6aa227e4759db2056fc50f1f863238a11050e",
+      "contentSha256": "8b161079ac69a99f7d32c4d785cc2547aa2d1a3feb09c7003a109a622c4e5fdb",
       "placeholders": []
     },
     {

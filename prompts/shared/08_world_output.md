@@ -1,6 +1,6 @@
 只输出一个可解析JSON对象，顶层字段固定为：worldCommands、taskCommands、eventCommands、futureEvents、visibleHooks、timelineCandidates、unresolved；前五项为数组，timelineCandidates和unresolved为字符串数组。没有变动时全部为空数组。不要输出前言、代码围栏或内部推理。
 worldCommands、taskCommands 与 eventCommands 使用实际 COMMAND_CATALOG 中的 type 专属同级字段结构 {commandId,type,evidence,...类型专属字段}，不接受 group/entityId/payload 包装或旧命令别名。worldCommands 仅可 CreateNpc（onScene=false）、UpdateNpc、RecordNpcMemory、CreateLocation、CreateOrganization、RecordOrgRelation、RetireNpc（均需下述逐字段场外校验）；taskCommands 仅 SaveTask，eventCommands 可 SaveEvent、DeleteEvent、ArchiveEvent。禁止推进主角自主任务、主角交易、独立修改时钟或重复结算现场 NPC。不存在的补丁操作列入 unresolved。evidence 使用下述 WORLD_EVIDENCE_V1 来源凭据；既有事实引用原文，新场外推演不要求逐字存在于旧正文。
-futureEvents 必须满足完整 WorldEventSchema：id、title、status(scheduled/active/resolved/blocked/cancelled)、startAt、actorRefs、linkedTaskIds、prerequisites、blockers、visibility(hidden/partially_known/known)、impact(minor/significant/major)、sourceTurnIds 必填；数组无内容时仍提供 []。estimatedEndAt、backgroundText、goalText同样必填，actorRefs至少一项；completionCondition只是附加条件，resolvedAt不能替代预计时间。结案需resolvedAt和resolutionText；resolved表示已结束，可用outcome=success/failure/changed区分结果，cancelled表示取消。SaveTask 使用完整 task，状态为 planned/active/completed/blocked/cancelled，不混用事件状态。遵从目录中的字段与正式状态引用校验。
+futureEvents 必须满足完整 WorldEventSchema：id、title、status（futureEvents镜像只能为scheduled；其他SaveEvent可为scheduled/active/resolved/blocked/cancelled）、startAt、actorRefs、linkedTaskIds、prerequisites、blockers、visibility(hidden/partially_known/known)、impact(minor/significant/major)、sourceTurnIds 必填；数组无内容时仍提供 []。estimatedEndAt、backgroundText、goalText同样必填，actorRefs至少一项；completionCondition只是附加条件，resolvedAt不能替代预计时间。结案需resolvedAt和resolutionText；resolved表示已结束，可用outcome=success/failure/changed区分结果，cancelled表示取消。SaveTask 使用完整 task，状态为 planned/active/completed/blocked/cancelled，不混用事件状态。遵从目录中的字段与正式状态引用校验。
 visibleHooks的每项为 {text,revealAfter}，只记录主角有合理知晓途径的线索。人物尚未知晓的后台行动保留原认知标记，不能放进visibleHooks或主角正文摘要；玩家可只读查看正式世界记录，查看不产生角色知识。
 timelineCandidates仅引用已经实际结束、重大且resultKnowledge.facts含可信客观成果的事件ID；不要求主角先获知，程序只将facts写入时间线，不将完整resolutionText中的举报或猜测当事实。不会因到期自动归档。严禁虚构已经结案以凑时间轴数量。
 如果世界生成依据的变量阶段状态标记variablePending=true，所有提案只作为暂存预览；先保守保持行动与旧状态不矛盾，不宣称永久落库，并在unresolved指出受依赖影响的环节。
@@ -64,7 +64,7 @@ cancelled 保留现有取消语义：允许合法的取消说明、可选实际�
 
 SaveTask.cancelled 必须引用目标自身 task:<id>，SaveEvent.cancelled 必须引用目标自身 event:<id>；可以同时引用动机与其他事实，但不能用它们替代目标来源。fact 必须明确表达肯定成立的取消、撤销、终止、放弃或失败后已经停止执行；普通的整理资料、仅提到取消通知、临时失败后准备重试都不等于终止。
 
-derived 取消必须另提供 outcome，说明具体终止原因或实际后果，不能留空、复述 fact 或只写“任务取消了/行动已终止”。例如 fact=“同事未能完成清点，行动已经终止”，outcome=“关键器材损坏导致清点失败，负责人撤销排程并保留已核对清单”。“未能终止行动”不支持终止。复杂且无法可靠识别的表述应 unresolved，不声称程序能验证全部自然语言因果。
+derived取消优先提供后文的结构化decision，status=cancelled、continues=false，并在reason/result说明具体终止原因与后果；未使用decision的旧凭据才必须另提供outcome，不能留空、复述fact或只写“任务取消了/行动已终止”。例如 fact=“同事未能完成清点，行动已经终止”，outcome=“关键器材损坏导致清点失败，负责人撤销排程并保留已核对清单”。“未能终止行动”不支持终止。复杂且无法可靠识别的表述应 unresolved，不声称程序能验证全部自然语言因果。
 
 合理主动取消未来安排不要求 startAt 已到，也不要求满足原任务/事件的全部完成条件或解除全部阻碍；cancelled 事件仍不强制 resolvedAt/resolutionText，填写时沿用已有合法时间约束。本次只生成候选，不立即释放正式世界中的任务名额。
 
@@ -131,3 +131,9 @@ SaveEvent的新规划始终包含startAt、estimatedEndAt、backgroundText、goa
 ### 玩家观察与角色认知（当前产品规则）
 
 玩家可只读查看全部正式保存的世界变量，包括场外人物、任务、组织、排程、人物记忆和总结。visibility存量字段仅保留角色知情/来源语义，不限制玩家面板或可信历史归档。不得为开放界面将hidden改known或将npc_private/internal改player_known；internal不是某个NPC已经知道。正文仅获得主角合法知晓的信息，NPC各自保留observed/reported/suspected/unknown及来源；玩家打开面板不构成传播。无新AI阶段或额外付费请求。
+
+### 客观进展与安全执行提示
+
+既有known/partially_known场外事件的状态、延期及结案可按合法derived独立发展，不要求主角预先收到消息；保持原visibility，不借此公开人物记忆。protagonistKnowledge只由程序维护，不要编造或改写。来源、时间、行动者和结案条件仍须满足。
+
+没有实际变更时合法输出为：{"worldCommands":[],"taskCommands":[],"eventCommands":[],"futureEvents":[],"visibleHooks":[],"timelineCandidates":[],"unresolved":[]}。所有顶层数组都需保留。新事件的estimatedEndAt、backgroundText、goalText必填；仅既有旧事件真实终结可沿用缺项。

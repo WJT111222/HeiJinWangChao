@@ -2,6 +2,7 @@ import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import type { StageResponse } from '../src/services/ai/stageResponses';
 
 type Stage = 'story' | 'variables' | 'world';
 function holdRequest() {
@@ -50,7 +51,7 @@ async function seed(page: Page, mode: 'opening' | 'regular' = 'opening') {
       state = committed.state;
       await repo.deleteDraft(state.saveId, committed.draft.draftRevision);
     }
-    await repo.saveDraft(createTurnDraft('save-a', state.revision, 'turn-a', mode, ''), null);
+    await repo.saveDraft(createTurnDraft('save-a', state.revision, 'turn-a', mode, mode === 'regular' ? '主角完成用餐' : ''), null);
     repo.close();
     return JSON.stringify(state);
   }, mode);
@@ -142,7 +143,7 @@ async function mock(
 }
 const workflow = (page: Page) => page.getByRole('region', { name: '三阶段工作流' });
 async function complete(page: Page) {
-  await expect(workflow(page)).toContainText('三阶段候选已完成，填写下一步行动');
+  await expect(workflow(page)).toContainText('本回合已结算');
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
 }
 for (const mode of ['opening', 'regular'] as const) {
@@ -162,8 +163,9 @@ for (const mode of ['opening', 'regular'] as const) {
     await complete(page);
     const after = await stored(page);
     expect(calls).toEqual(['story', 'variables', 'world']);
-    expect(after.formal).toBe(before);
-    expect(after.draft.stageStatus).toEqual({ story: 'ready', variables: 'ready', world: 'ready' });
+    expect(JSON.parse(after.formal).revision).toBe(JSON.parse(before).revision + 1);
+    expect(JSON.parse(after.formal).journal.at(-1).story.narrative).toBe(narrative);
+    expect(after.draft.userInput).toBe(''); expect(after.draft.stageStatus).toEqual({ story: 'pending', variables: 'pending', world: 'pending' });
     await expect(page.locator('main')).not.toContainText('未发布的后台线索');
     const snapshot = await page.evaluate(async () => {
       const path = '/src/services/ai/inspection.ts',
@@ -208,7 +210,7 @@ for (const failed of ['variables', 'world'] as const) {
         ? ['story', 'variables', 'variables', 'world']
         : ['story', 'variables', 'world', 'world'],
     );
-    expect((await stored(page)).formal).toBe(before);
+    expect(JSON.parse((await stored(page)).formal).revision).toBe(JSON.parse(before).revision + 1);
   });
 }
 test('瞬时服务失败重试一次后完成，费用与次数可见', async ({ page }) => {
@@ -218,10 +220,12 @@ test('瞬时服务失败重试一次后完成，费用与次数可见', async ({
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
   await complete(page);
   expect(plan.calls).toEqual(['story', 'variables', 'variables', 'world']);
-  expect((await stored(page)).draft.failures[0]).toMatchObject({
-    stage: 'variables',
-    errorCode: 'server',
+  const failure = await page.evaluate(async () => {
+    const path = '/src/services/ai/stageResponses.ts', { stageResponses } = await import(path);
+    return stageResponses.getSnapshot().find((item: StageResponse) => item.stage === 'variables' && item.status === 'failed')?.error;
   });
+  expect(failure?.code).toBe('server');
+  expect(JSON.parse((await stored(page)).formal).turnNumber).toBe(1);
 });
 test('取消世界后保留上游；快速双击不重复，旧回包不能推进新会话', async ({ page }) => {
   const waiting = holdRequest();
@@ -241,7 +245,7 @@ test('取消世界后保留上游；快速双击不重复，旧回包不能推�
   await complete(page);
   waiting.release();
   expect(plan.calls).toEqual(['story', 'variables', 'world', 'world']);
-  expect((await stored(page)).formal).toBe(before);
+  expect(JSON.parse((await stored(page)).formal).revision).toBe(JSON.parse(before).revision + 1);
 });
 test('关闭两个阶段只生成正文，再开启后补算不 Roll', async ({ page }) => {
   const before = await seed(page),
@@ -256,7 +260,7 @@ test('关闭两个阶段只生成正文，再开启后补算不 Roll', async ({ 
   await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await complete(page);
   expect(plan.calls).toEqual(['story', 'variables', 'world']);
-  expect((await stored(page)).formal).toBe(before);
+  expect(JSON.parse((await stored(page)).formal).revision).toBe(JSON.parse(before).revision + 1);
 });
 test('运行中切换开关不会改变本次冻结配置', async ({ page }) => {
   await seed(page);
@@ -283,7 +287,7 @@ test('离开页面取消当前请求，不自动启动下游；再次打开可�
   await complete(page);
   waiting.release();
   expect(plan.calls).toEqual(['story', 'variables', 'variables', 'world']);
-  expect((await stored(page)).formal).toBe(before);
+  expect(JSON.parse((await stored(page)).formal).revision).toBe(JSON.parse(before).revision + 1);
 });
 test('其他标签持有会话时拒绝第二个自动工作流', async ({ page, context }) => {
   await seed(page);
@@ -320,7 +324,7 @@ test('正文失败不启动下游，安全失败状态刷新后仍保留并可�
   await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await complete(page);
   expect(plan.calls).toEqual(['story', 'story', 'variables', 'world']);
-  expect((await stored(page)).formal).toBe(before);
+  expect(JSON.parse((await stored(page)).formal).revision).toBe(JSON.parse(before).revision + 1);
 });
 
 test('只开启世界时明确预览；补开变量会失效旧世界并顺序重算', async ({ page }) => {
@@ -335,7 +339,7 @@ test('只开启世界时明确预览；补开变量会失效旧世界并顺序�
   await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await complete(page);
   expect(plan.calls).toEqual(['story', 'world', 'variables', 'world']);
-  expect((await stored(page)).formal).toBe(before);
+  expect(JSON.parse((await stored(page)).formal).revision).toBe(JSON.parse(before).revision + 1);
 });
 
 test('P6完善：生成附近逐请求显示完整输入估算、真实usage与输出设置，不汇总三阶段', async ({ page }) => {
@@ -360,7 +364,7 @@ test('P6完善：生成附近逐请求显示完整输入估算、真实usage与�
     const card = usage.locator(':scope > div').nth(position); await expect(card).toContainText(`实际输入：${input}`);
     await expect(card).toContainText(`实际输出：${output}`); await expect(card).toContainText(`实际总量：${total}`);
   }
-  expect(calls).toEqual(['story', 'variables', 'world']); expect((await stored(page)).formal).toBe(before);
+  expect(calls).toEqual(['story', 'variables', 'world']); expect(JSON.parse((await stored(page)).formal).revision).toBe(JSON.parse(before).revision + 1);
   await expect(page.locator('main')).not.toContainText('预计需要'); await expect(page.locator('main')).not.toContainText('输出上限可能不足');
   const records = await page.evaluate(async () => { const path = '/src/services/ai/inspection.ts', { requestInspections } = await import(path);
     return requestInspections.getSnapshot(); });

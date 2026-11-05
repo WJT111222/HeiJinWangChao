@@ -76,12 +76,11 @@ async function mock(page: Page, interrupt = false, kind: 'default' | 'drink' | '
 for (const interrupt of [false, true]) test(`长睡眠interrupt=${interrupt}：真实三阶段、候选时间、正式结算及刷新`, async ({ page }) => {
   const api = await mock(page, interrupt); await seed(page, interrupt); const before = (await load(page)).state;
   await page.getByRole('button', { name: '自动生成本回合', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: '三阶段候选已完成' }).first()).toBeVisible();
-  const ready = await load(page); expect(ready.state).toEqual(before);
-  expect(ready.draft.story!.variableGuide[0].observedFact).toBe(interrupt ? '2027-01-01T03:00:00+08:00' : '2027-01-01T08:00:00+08:00');
+  await expect(page.getByRole('status').filter({ hasText: '本回合已结算' }).first()).toBeVisible();
+  const ready = await load(page); expect(ready.state.revision).toBe(before.revision + 1);
+  expect(ready.state.journal.at(-1)!.story.variableGuide[0].observedFact).toBe(interrupt ? '2027-01-01T03:00:00+08:00' : '2027-01-01T08:00:00+08:00');
   expect(api.calls).toEqual(['story', 'variables', 'world']); expect(record(api.preflights[0]).calendar).toMatchObject({ targetWeekday: '星期五' });
-  await page.getByLabel('你的行动', { exact: true }).fill('看看周围'); await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect.poll(async () => (await load(page)).state.worldClock).toBe(ready.draft.story!.variableGuide[0].observedFact);
+  expect(ready.state.worldClock).toBe(ready.state.journal.at(-1)!.story.variableGuide[0].observedFact);
   const committed = (await load(page)).state; expect(committed.journal).toHaveLength(2);
   if (interrupt) expect(committed.events.visitor.status).toBe('active');
   await page.reload(); await openGameTools(page); expect((await load(page)).state).toEqual(committed);
@@ -92,8 +91,9 @@ test('变量失败与刷新恢复保留正文，Roll清除旧候选但不推进�
   await page.getByRole('button', { name: '自动生成本回合', exact: true }).click();
   await expect(page.getByText(/已保存的合法上游候选仍保留/)).toBeVisible();
   expect((await load(page)).state).toEqual(before); await page.reload(); await openGameTools(page); api.control.failVariables = false;
-  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: '三阶段候选已完成' }).first()).toBeVisible(); expect(api.calls.filter((call) => call === 'story')).toHaveLength(1);
+  // 高级单阶段补算保留未结算候选，以验证Roll的原失效边界；正常自动恢复另有覆盖。
+  await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+  await expect.poll(async () => (await load(page)).draft.stageStatus.variables).toBe('ready'); expect(api.calls.filter((call) => call === 'story')).toHaveLength(1);
   const ready = (await load(page)).draft; await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
   await expect.poll(async () => (await load(page)).draft.storyRevision).toBe(ready.storyRevision + 1);
   const rolled = await load(page); expect(rolled.draft.variables).toBeUndefined(); expect(rolled.draft.world).toBeUndefined(); expect(rolled.state).toEqual(before);
@@ -115,11 +115,10 @@ for (const kind of ['drink', 'chat', 'past'] as const) test(`最新时间规则$
   await seed(page, false, false, kind === 'past' ? pastRequest : kind === 'chat' ? '和陈宁简单聊两句' : '喝一口可乐');
   const before = (await load(page)).state;
   await page.getByRole('button', { name: '自动生成本回合', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: '三阶段候选已完成' }).first()).toBeVisible();
-  expect(api.calls).toEqual(['story', 'variables', 'world']); expect((await load(page)).state).toEqual(before);
-  const ready = (await load(page)).draft;
-  expect(ready.story!.narrative).not.toMatch(/\d{1,2}:\d{2}|分钟|小时/);
-  await page.getByLabel('你的行动', { exact: true }).fill('看看周围'); await page.getByRole('button', { name: '发送', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: '本回合已结算' }).first()).toBeVisible();
+  expect(api.calls).toEqual(['story', 'variables', 'world']); expect((await load(page)).state.revision).toBe(before.revision + 1);
+  const ready = (await load(page)).state.journal.at(-1)!.story;
+  expect(ready.narrative).not.toMatch(/\d{1,2}:\d{2}|分钟|小时/);
   await expect.poll(async () => (await load(page)).state.turnNumber).toBe(before.turnNumber + 1);
   const saved = (await load(page)).state;
   expect(Date.parse(saved.worldClock) - Date.parse(before.worldClock)).toBe(kind === 'past' ? 0 : kind === 'chat' ? 15000 : 120000);
@@ -130,9 +129,8 @@ for (const action of ['喝一口可乐', '切换到陈宁的视角，描述他�
   await mock(page, false, 'zero'); await seed(page, false, false, action); const before = (await load(page)).state;
   await page.getByRole('button', { name: '自动生成本回合', exact: true }).click();
   // 等真实候选事务结束后再验证UI与零耗时拒绝；不把三阶段保存耗时限定为UI断言的5秒。
-  await expect.poll(async () => (await load(page)).draft.stageStatus.world, { timeout: 15000 }).toBe('ready');
-  await expect(page.getByRole('status').filter({ hasText: '三阶段候选已完成' }).first()).toBeVisible();
-  await page.getByLabel('你的行动', { exact: true }).fill('继续观察'); await page.getByRole('button', { name: '发送', exact: true }).click();
+  await expect.poll(async () => (await load(page)).state.turnNumber, { timeout: 15000 }).toBe(before.turnNumber + 1);
+  await expect(page.getByRole('status').filter({ hasText: '本回合已结算' }).first()).toBeVisible();
   await expect.poll(async () => (await load(page)).state.turnNumber).toBe(before.turnNumber + 1);
   expect((await load(page)).state.worldClock).toBe(before.worldClock);
 });
