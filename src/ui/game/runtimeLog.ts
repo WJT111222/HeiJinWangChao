@@ -1,4 +1,4 @@
-import { DataError } from '../../domain/common';
+import { DataError, IdSchema } from '../../domain/common';
 import { safeAiError } from '../../services/ai/errors';
 import { isSafeVariablePath } from '../../executors/variableText/diagnostics';
 import { isDomainRule } from '../../executors/variableText/aggregateDiagnostics';
@@ -29,6 +29,8 @@ export interface RuntimeLogEntry {
   actualType?: DiagnosticType;
   validationRule?: DiagnosticRule;
   domainRule?: DomainRule;
+  /** 仅 scene_transition / scene_location 可携带经 IdSchema 校验的 NPC ID。 */
+  relatedNpcId?: string;
   worldRule?: WorldRule;
 }
 
@@ -93,6 +95,10 @@ export function runtimeLogEvent(
     ...(details?.actualType && diagnosticTypes.has(details.actualType) ? { actualType: details.actualType } : {}),
     ...(details?.validationRule && diagnosticRules.has(details.validationRule) ? { validationRule: details.validationRule } : {}),
     ...(isDomainRule(details?.domainRule) ? { domainRule: details.domainRule } : {}),
+    ...(details?.relatedNpcId &&
+      (details.domainRule === 'scene_transition' || details.domainRule === 'scene_location') &&
+      IdSchema.safeParse(details.relatedNpcId).success
+      ? { relatedNpcId: details.relatedNpcId } : {}),
     ...(isWorldRule(details?.worldRule) ? { worldRule: details.worldRule } : {}),
     ...(details?.relatedCommandIndices?.length
       ? { relatedCommandIndices: [...new Set(details.relatedCommandIndices

@@ -364,14 +364,26 @@ describe('内存事务、开局基线及旧系统隔离', () => {
     }
     expect(data.state).toEqual(before);
   });
-  it('主角移动未处理在场NPC时区分场景迁移规则', async () => {
+  it('主角移动未处理在场NPC时区分场景迁移规则并携带安全NPC ID', async () => {
     const data = setup('set protagonist.locationId = "remote"');
     data.state.locations.remote = { id: 'remote', name: '远处' };
     const before = structuredClone(data.state);
     const result = await run(data);
     expectCode(result, 'domain_validation_failed');
     if (!result.ok) expect(result.error.diagnostic).toMatchObject({
-      validationRule: 'domain_schema', domainRule: 'scene_transition',
+      validationRule: 'domain_schema', domainRule: 'scene_transition', relatedNpcId: 'npc_001',
+    });
+    expect(data.state).toEqual(before);
+  });
+  it('多个在场NPC时只报告未被显式更新的那个NPC', async () => {
+    const data = setup('set protagonist.locationId = "remote"\nset npc[npc_001].locationId = "remote"');
+    data.state.locations.remote = { id: 'remote', name: '远处' };
+    data.state.npc.npc_002 = npc('npc_002');
+    const before = structuredClone(data.state);
+    const result = await run(data);
+    expectCode(result, 'domain_validation_failed');
+    if (!result.ok) expect(result.error.diagnostic).toMatchObject({
+      validationRule: 'domain_schema', domainRule: 'scene_transition', relatedNpcId: 'npc_002',
     });
     expect(data.state).toEqual(before);
   });
