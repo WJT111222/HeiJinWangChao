@@ -150,6 +150,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/npc_ordinary/init.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "cda75734b44d3c28b71acf0bdc299371a1a0255b517bf86bbfa3ee21a3b2bb4d"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "1779276924f4703c9ccea10ed7edcee8ebbae00ac4ac2beefc2dc43562bede8b",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/npc_ordinary/update.md": {
@@ -167,6 +172,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/npc_ordinary/update.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "eaa377f9004ff32b5765d6f7f59776ac7431d44f1e0f3130109fc330ba956715"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "cab938b030e0fa535bc7211b7cb89b3e03103182d633771e962e8a9f8175e0bf",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/npc_ordinary/offscreen.md": {
@@ -195,6 +205,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/npc_special/init.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "93a249fd544748759e14e09d1a97a4372edbdfbb13c539127b79ea5648182996"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "367cc91d03c4fa2e91f2ec847537518337950b52a47d5a8f74313a29884814dd",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/npc_special/update.md": {
@@ -212,6 +227,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/npc_special/update.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "151e45b51b410b63a36353fb9d4e7562850a29c7bba6029024852b8af98b8afb"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "ee907f265eedc12b506cda2e70c03039041f8e20b9e33c8a874403b33f2f7b27",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/npc_special/offscreen.md": {
@@ -330,6 +350,11 @@
       "eventLifecycle": {
         "notes": "依本轮产品确认适配：事件必须有预计终止时间，World单请求到期推演/清理/公开归档，Task规则独立；保留原来源和历史适配。",
         "sha256": "90999f850b26527bc8887cd6ee7cacf5b59890ce76d3804d7e48a9a0ef7f2db0"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "b9738a95e23219c762e4d733be1eec6a65ed7a584ec6d0de4bf98d7bee6ad433",
+        "notes": "同一次三标签与标准set/add/push/delete；仅白名单领域适配，不复制武侠业务、语义审核、任意深合并或额外请求。"
       }
     },
     "shared/08_world_output.md": {
@@ -387,6 +412,11 @@
         "legacyPath": "legacy/variables_json/stages/opening/variables.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "9aaa890d436b61b6c33f1b603b02047314b01a5b9eb4d284aa48fc183aacb0e8"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "0ff56859980308e7462c699fda5bed08a219256124c8d8db549becee1e8c1bf4",
+        "notes": "同一次三标签与标准set/add/push/delete；仅白名单领域适配，不复制武侠业务、语义审核、任意深合并或额外请求。"
       }
     },
     "stages/opening/world.md": {
@@ -415,6 +445,11 @@
         "legacyPath": "legacy/variables_json/stages/regular/variables.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "e2f1d8993d210a01a7924e44c3440321274d43c336c16d1451eb33672ad40bd7"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "b28df1a77ae7b9ad2fec2354fdd57dfddd1eb06ee9715dd21ce23d3a3c59beb1",
+        "notes": "同一次三标签与标准set/add/push/delete；仅白名单领域适配，不复制武侠业务、语义审核、任意深合并或额外请求。"
       }
     },
     "stages/regular/world.md": {
@@ -443,6 +478,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/protagonist/init.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "9d2642091d55dcdb41b9eb134eb55357e91a3580b91b3309b96e5764ae9e47a4"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "4ebe5d35b9e77716cb8c450ae21607fc074822a3665b9d70361f4cfcf94c0fe9",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/protagonist/update.md": {
@@ -454,6 +494,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/protagonist/update.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "fe9b33dcfa6273caf030a956e599750049e9f2edf3fc77dff173f9322620f97e"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "6a0d0e3f7caafa6b3f3fc986a1b4c2a6404e4bcde4b6e4f2f080e219b4eff668",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/protagonist/offscreen.md": {
@@ -470,6 +515,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/items/init.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "a5e4755b8643caf8f0118eff1f00a2207d63c7754399308955c3325b6ea8e527"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "fdb761ecc3d2bc0b7cc71e40a120d9e29bd4aa2b32f5a8f6a5c120308c8e9315",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/items/update.md": {
@@ -481,6 +531,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/items/update.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "ef423a8921c691273e863d97331c9f3a0aacc06efb3348952251b32600c1bfba"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "13367d6064216cc232a4221ec874c5eb64a20b66b986de4ed4e0d4a22d9be542",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/items/offscreen.md": {
@@ -497,6 +552,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/economy/init.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "28345b03f40a1cd9d278af29886582d31c2d0c3de6bed066b801de1ecb2b5086"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "6cc01b19a73bf8546480659b54520e8367ecf7421858192ff8349812128b5f41",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/economy/update.md": {
@@ -508,6 +568,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/economy/update.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "48a2e87b1e0d1f7938007b0f3cad0d1462e4c288b007cad7c74791a18db3a1b5"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "85a2955185568b82940f236e41b074206c1cf27ef99dcf58059c737b2dfa1a96",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/economy/offscreen.md": {
@@ -524,6 +589,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/org_gang/init.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "31caee43fd43c138bd4c3bb9275bc7add42fd74e01012161c1f46e95faa60ccc"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "f40dae98698d440b39203b5da0e55313742f98041da2018eff3e1eceb9c4956b",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/org_gang/update.md": {
@@ -535,6 +605,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/org_gang/update.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "c56e03738711f0ff4112b7c7be1493709b7c487ca8b28cddc93edafd784a78e9"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "5510630c3db75ab69be1c634f5ad2bb8456538377fbb988777bbce89dcdfd8ed",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/org_gang/offscreen.md": {
@@ -551,6 +626,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/org_government/init.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "0156d823c14be5dcb34b2dc71ccb438fbbcdd8152a3f45f2587a0a2328f0da89"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "7134a58faaea82e39ab762b4cead539a4f1f4b86848a150d698bc05e2e7a08eb",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/org_government/update.md": {
@@ -562,6 +642,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/org_government/update.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "e793d9d332b936a4b5bd3ce548fcd201c92b1f2d364b707273c9b073d586716d"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "cec0987402a0f298986a8e1c2035e01897377fca67b58846bc50c65f257274f0",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/org_government/offscreen.md": {
@@ -578,6 +663,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/org_civil/init.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "02c0d8aacfda841799e5529db459f5d5e4dfa71a3e92fbe8d67e6b9dfdde4038"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "e84c4dd350b29d470f90d07fb2e0f14c41012a2a3db09c6fdb83c7e48aef37c6",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/org_civil/update.md": {
@@ -589,6 +679,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/org_civil/update.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "adf4ad2905b4dbeadf6b8f58dc1c9c3b7d0be7635ab880aada1a2f2f53d30350"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "538a069f5fc0048d3796683f54e8a43022de7fa38e6261f4fd31e1935a37ff00",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/org_civil/offscreen.md": {
@@ -605,6 +700,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/org_business/init.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "971c03b13484751442d0d34500834cb9e7571e64da85a7e11390ebc0b5d4cdeb"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "a0efde722e962d47e7766c1ff6479b5ff147a1860090c8bdae3edba50d6742cd",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/org_business/update.md": {
@@ -616,6 +716,11 @@
         "legacyPath": "legacy/variables_json/variableGroups/org_business/update.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "f413ff74fcb637b2a32cdec28b6cdffc9c9645c892dd3f81a02c80d9546777d3"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "2d3a9780f2070adfc28d1a2f74513003d341598f77a5e4a254dcb891f091ba05",
+        "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
       }
     },
     "variableGroups/org_business/offscreen.md": {
@@ -736,6 +841,11 @@
       "m5P6": {
         "notes": "用户明确批准thinking结构/开局契机与兼容消息调整，原始来源及历史适配记录保留。",
         "sha256": "918fd653ccc55c84f943609b8dbdec85728fc668b726e331d68e95d0df45d848"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "0ee8b40873c36fe28be8bda28b16746154d559fb50c95d431138e4f36066e293",
+        "notes": "同一次三标签与标准set/add/push/delete；仅白名单领域适配，不复制武侠业务、语义审核、任意深合并或额外请求。"
       }
     },
     "docs/ASSEMBLY.md": {
@@ -750,6 +860,11 @@
       "m5P6": {
         "notes": "用户明确批准thinking结构/开局契机与兼容消息调整，原始来源及历史适配记录保留。",
         "sha256": "43c442b9e8b87b450e224d159174c2f80c5b708162af43e5c39e3bc339ef22c4"
+      },
+      "variableSourcePort": {
+        "reference": "variableProtocolReference",
+        "sha256": "d8a590ded67fc1e556e7a7928b20ab79cfd1198a63a06239e074b1df395b7997",
+        "notes": "同一次三标签与标准set/add/push/delete；仅白名单领域适配，不复制武侠业务、语义审核、任意深合并或额外请求。"
       }
     },
     "planning/opening.md": {
@@ -1070,6 +1185,27 @@
         "prompts/runtime/defaults.ts": "6e9ab201d56128064184287811b8fd7ae2f4d313d82f76149789eed4cd2f0a15",
         "components/features/Chat/TurnItem.tsx": "203177b76d7fa199d580d256f904e4bb545deb9072377096d9f8ffdda4357e3f"
       }
+    }
+  },
+  "variableProtocolReference": {
+    "repository": "WJT111222/MoRanJiangHu",
+    "commit": "74aa92722b1ea1304210393679328aed07476972",
+    "treatment": "source-driven-game-state-adaptation",
+    "files": {
+      "prompts/runtime/variableModel.ts": "0e792787bb06746f575b01ddc90ebc011e1d3b283c628dd5bcf1549f8dca277e",
+      "prompts/runtime/variableCot.ts": "6258de080b009373e23d0893b28c3d1ed3a3b04d23f5d032c01f4e2b87d2bc5f",
+      "prompts/runtime/variableGeneration.ts": "19973b048b95660dec3d35687fb5be53ecb3023009830c539d1c23b20ee86b45",
+      "prompts/runtime/openingVariableGenerationInit.ts": "9a00ba9c0031acf4f97a0970137d891f6f0806e8c74e44c193f6f0bb5ae31180",
+      "services/ai/storyTasks.ts": "10f83b24ca3ca0c69fe48eff90d118698f8755615f227e1020221c56b4c2edfd",
+      "services/ai/storyResponseParser.ts": "99bff5289779349a8cc8ff6ce857e79525ad97df3d47ade794785fbc36766fdc",
+      "hooks/useGame/variableModelWorkflow.ts": "d8c01089cf9a35718ac692b813946012f626b16a527c90260e51bf909b9c5b29",
+      "hooks/useGame/variableCalibrationCoordinator.ts": "6530a7f835eba25c92f382bbed8827f63509257e5881804ef346c1a0785b9d5c",
+      "hooks/useGame/variableCalibrationMerge.ts": "a12f7e37b4053c664c7a7aa98457e79ea6a664e7727f997b1bbfdf1a6f177bf4",
+      "hooks/useGame/variableCommandValidation.ts": "a27197ccec4cc24bcc9c828ee85806e765adf89d12f2addefbba2a67021f9aae",
+      "hooks/useGame/responseCommandProcessor.ts": "1c7e43591b0291b17408685d24d683ab8ff6343e513fa472af8fc6b9dbbd4554",
+      "utils/variableRegistry.ts": "bb434d0759d2b8495dbd5217c9396dfe67ffc15652d308bf8d900513c6ca4aa6",
+      "utils/stateHelpers.ts": "85291e29cbb84fc93d12ab9e96816fbdd5b9c8fa7ebb9f0e95a68def995c3261",
+      "hooks/useGame/streamIntegrity.ts": "05f230c149fa6ef874c2e9e5eaccd393628c51c7bc54d4e2ef5a33609102011f"
     }
   }
 }

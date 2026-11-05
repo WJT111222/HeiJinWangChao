@@ -1,3 +1,4 @@
+import { variableTextEnvelope } from './fixtures/variableReply';
 import { describe, expect, it } from 'vitest';
 import { contextFor } from '../prompts/context';
 import { defaultSettings } from '../ui/settings/model';
@@ -24,7 +25,7 @@ describe('事件生命周期旧设计失败复现',()=>{
     state.events[incident.id]=incident;state.tasks[job.id]=job;
     expect(GameStateSchema.safeParse(state).success).toBe(true);
     const draft=worldDraft(false,'opening');
-    const result=await parseTextVariables('<命令>set protagonist.emotionText = "平静"</命令>',state,draft);
+    const result=await parseTextVariables(variableTextEnvelope('<命令>set protagonist.emotionText = "平静"</命令>'),state,draft);
     expect(result.commands[0].type).toBe('UpdateProtagonist');
     expect(commitCommands(state,draft.turnId,0,result.commands).protagonist.emotionText).toBe('平静');
   });

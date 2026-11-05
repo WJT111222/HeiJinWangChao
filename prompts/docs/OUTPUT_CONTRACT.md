@@ -5,7 +5,7 @@
 叙事流式显示时，只能实时展示解析明确落入正文标签的文本；`【旁白】`代表普通叙述，`【角色名】`只代表角色直接对白（详见`shared/09_dialogue_labels.md`）；任何变量变更可见信息都属于候选，不能在流式时写库。仅`narrative`参加硬最低字数校验，`minNarrativeChars`由玩家任意合法正整数设置，具体字符口径须统一。
 
 ## 阶段② 变量输出
-正式新请求使用 `VARIABLE_TEXT_V1`：只执行唯一 `<命令>` 区块内的 `set/add/push 路径 = JSON值`；真实有限路径和类型由 `TEXT_COMMAND_CATALOG` 给出。`<thinking>`/`<说明>` 不执行，不要求整份模型回复为 JSON。
+正式新请求使用 `VARIABLE_TEXT_V1`：同次响应依次完整输出 `<thinking>`、`<说明>`、`<命令>`；只执行唯一命令区块内的 `set/add/push 路径 = JSON值` 或 `delete 路径`；真实有限路径和类型由 `TEXT_COMMAND_CATALOG` 给出。`<thinking>`/`<说明>` 不执行，不要求整份模型回复为 JSON。
 
 程序解析、编译并整批模拟后，仍保存规范化对象 `{commands: DomainCommand[],rejectedSuggestions:{reason,reference}[],unresolved:string[]}`。已有 JSON 领域候选保持可读可复核；新模型请求不猜测协议、不回退 JSON、不追加修复请求。说明原文不复制到候选，仅记录固定非执行提示。
 `DomainCommand` 是严格的 `type` 判别联合，包含 `commandId/type/evidence` 及类型专属的同级字段，不接受旧 group/entityId/payload 包装。旧候选的 JSON 领域命令仍通过结构与副本业务验证；新请求通过 TEXT_COMMAND_CATALOG 的文本映射由程序生成 commandId/evidence/expectedRevision。模型不得自行输出这些程序元数据；候选不直接写入正式状态。

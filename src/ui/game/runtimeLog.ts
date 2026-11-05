@@ -1,4 +1,7 @@
 import { DataError, IdSchema } from '../../domain/common';
+import { variableFailure } from '../../services/validation/variableDiagnostics';
+import { isVariableStep } from '../../services/ai/errors';
+import type { VariableStep } from '../../services/ai/errors';
 import { safeAiError } from '../../services/ai/errors';
 import { isSafeVariablePath } from '../../executors/variableText/diagnostics';
 import { isDomainRule } from '../../executors/variableText/aggregateDiagnostics';
@@ -32,6 +35,7 @@ export interface RuntimeLogEntry {
   /** 仅 scene_transition / scene_location 可携带经 IdSchema 校验的 NPC ID。 */
   relatedNpcId?: string;
   worldRule?: WorldRule;
+  variableStep?: VariableStep;
 }
 
 export const runtimeStageNames: Record<RuntimeLogStage, string> = {
@@ -77,7 +81,7 @@ export function runtimeLogEvent(
   if (failure instanceof DataError && safeCommitCodes[failure.code]) {
     return { ...entry, code: failure.code, message: safeCommitCodes[failure.code] };
   }
-  const safe = safeAiError(failure);
+  const safe = safeAiError(stage === 'commit' ? variableFailure(failure, 'commit') : stage === 'variables' ? variableFailure(failure, 'context') : failure);
   const details = 'details' in safe ? safe.details : undefined;
   const status = 'status' in safe ? safe.status : undefined;
   const path = details?.fieldPath;
@@ -100,6 +104,7 @@ export function runtimeLogEvent(
       IdSchema.safeParse(details.relatedNpcId).success
       ? { relatedNpcId: details.relatedNpcId } : {}),
     ...(isWorldRule(details?.worldRule) ? { worldRule: details.worldRule } : {}),
+    ...(isVariableStep(details?.variableStep) ? { variableStep: details.variableStep } : {}),
     ...(details?.relatedCommandIndices?.length
       ? { relatedCommandIndices: [...new Set(details.relatedCommandIndices
         .filter((index) => Number.isSafeInteger(index) && index > 0))].slice(0, 20) }

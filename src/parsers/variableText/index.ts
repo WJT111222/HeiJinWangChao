@@ -10,7 +10,7 @@ export { variableTextLimits } from './common';
 export type { JsonValue, ParsedVariableCommand, ParsedVariablePath, ParseError, ParseErrorCode, ParseResult,
   ParserLimit, PathNode, SourcePosition, SourceSpan, VariableOperation } from './common';
 
-const forbidden = new Set(['delete', 'splice', 'eval', 'Function', 'function']);
+const forbidden = new Set(['splice', 'eval', 'Function', 'function']);
 export function parseVariableText(text: string): ParseResult<ParsedVariableCommand[]> {
   const block = extractCommandBlock(text);
   if (!block.ok) return block;
@@ -25,13 +25,31 @@ export function parseVariableText(text: string): ParseResult<ParsedVariableComma
   while (index < body.length) {
     const start = index;
     if (commands.length >= variableTextLimits.commandCount) return errorAt('limit_exceeded', index, 'commandCount');
-    const op = /^[^\s=]+/u.exec(body.slice(index))?.[0];
+    const rawOp = /^[^\s=]+/u.exec(body.slice(index))?.[0];
+    const op = rawOp?.toLowerCase();
     if (!op) return errorAt('command_syntax', index);
     if (forbidden.has(op)) return errorAt('forbidden_operation', index);
-    if (op !== 'set' && op !== 'add' && op !== 'push') return errorAt('unknown_operation', index);
+    if (op !== 'set' && op !== 'add' && op !== 'push' && op !== 'delete') return errorAt('unknown_operation', index);
     index += op.length;
     if (body[index] !== ' ' && body[index] !== '\t') return errorAt('command_syntax', index);
     while (body[index] === ' ' || body[index] === '\t') index++;
+    // 来源：MoRanJiangHu storyResponseParser.parse命令块 的标准 delete 路径体例。
+    // 不忽略多余操作数：兼容显式 null，其他值严格拒绝，避免损坏输出变为成功。
+    if (op === 'delete') {
+      const length = body.slice(index).search(/[\r\n]/u);
+      const end = length < 0 ? body.length : index + length;
+      const line = body.slice(index, end), separator = line.indexOf('=');
+      const pathText = (separator < 0 ? line : line.slice(0, separator)).trimEnd();
+      const path = parseVariablePath(pathText);
+      if (!path.ok) return errorAt(path.error.code, index + path.error.position.offset, path.error.limit);
+      if (separator >= 0) {
+        const value = readJsonValue(body, index + separator + 1);
+        if (!value.ok || value.value.value !== null || value.value.endOffset > end || body.slice(value.value.endOffset, end).trim()) return errorAt('json_value', index + separator + 1);
+      }
+      commands.push({ operation: 'delete', path: path.value, value: null,
+        source: { start: positionAt(text, base + start), end: positionAt(text, base + end) } });
+      index = skipWhitespace(body, end); continue;
+    }
     const pathStart = index, equal = body.indexOf('=', index);
     const lineEnd = body.slice(index).search(/[\r\n]/u);
     if (equal < 0 || (lineEnd >= 0 && equal >= index + lineEnd)) return errorAt('command_syntax', index);
@@ -55,3 +73,5 @@ export function parseVariableText(text: string): ParseResult<ParsedVariableComma
   }
   return { ok: true, value: commands };
 }
+
+export { parseVariableResponse } from './response';

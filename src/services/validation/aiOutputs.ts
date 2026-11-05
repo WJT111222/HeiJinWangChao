@@ -10,18 +10,18 @@ import { validateWorldOutput } from './worldOutput';
 import { worldValidationError } from './worldDiagnostics';
 import type { Settings } from '../../ui/settings/model';
 import { variableCommandsForTurn } from '../../domain/turnProjection';
-import { variableValidationError } from './variableDiagnostics';
+import { variableFailure, variableValidationError } from './variableDiagnostics';
 import { assessSummary } from '../../domain/memories/summary';
 import { validateTimeCommands, validateHistoricalWorld } from '../../domain/timePreflight';
-import { parseVariableText, extractCommandBlock } from '../../parsers/variableText';
+import { parseVariableText, parseVariableResponse } from '../../parsers/variableText';
 import { compileVariableCommands, simulateVariablePlan } from '../../executors/variableText';
 import type { ExecutionError } from '../../executors/variableText';
 
-function textExecutionError(error: ExecutionError) {
-  const code = error.code === 'invalid_amount' ? 'amount_balance'
+function textExecutionError(error: ExecutionError, variableStep: 'mapping' | 'simulation') {
+  const code = error.code === 'transaction_failed' ? 'variable_runtime' : error.code === 'invalid_amount' ? 'amount_balance'
     : ['revision_conflict', 'duplicate_or_conflicting_command'].includes(error.code) ? 'candidate_conflict'
     : ['unsupported_path', 'unsupported_operation', 'type_mismatch'].includes(error.code) ? 'schema_fields' : 'data_integrity';
-  return new AiError(code, undefined, { fieldPath: `text.${error.code}`,
+  return new AiError(code, undefined, { variableStep, fieldPath: `text.${error.code}`,
     ...(error.commandIndex === null ? {} : { commandIndex: error.commandIndex - 1 }),
     // 整批失败时不能指认某一条：只暴露相关命令序号，不复制原始变量或实体 ID。
     ...(error.commandIndex === null && error.relatedCommands.length
@@ -32,29 +32,31 @@ function textExecutionError(error: ExecutionError) {
 }
 /** 新模型响应只允许文本协议。旧JSON仅由下方parseVariables复核已保存的领域候选。 */
 export async function parseTextVariables(text: string, state: GameState, draft: TurnDraft) {
+  const envelope = parseVariableResponse(text);
+  if (!envelope.ok) throw new AiError('variable_text_syntax', undefined, { variableStep: 'envelope', fieldPath: `text.${envelope.error.code}` });
   const ast = parseVariableText(text);
   if (!ast.ok) throw new AiError('variable_text_syntax', undefined, {
-    fieldPath: `text.${ast.error.code}.line${ast.error.position.line}.column${ast.error.position.column}`,
+    variableStep: 'commands', fieldPath: `text.${ast.error.code}.line${ast.error.position.line}.column${ast.error.position.column}`,
     ...(ast.error.commandIndex === null ? {} : { commandIndex: ast.error.commandIndex - 1 }) });
   const context = { draft, expectedRevision: state.revision };
   const compiled = await compileVariableCommands(ast.value, state, context);
-  if (!compiled.ok) throw textExecutionError(compiled.error);
+  if (!compiled.ok) throw textExecutionError(compiled.error, 'mapping');
   try { validateTimeCommands(state, draft, compiled.value.commands); }
-  catch (error) { throw variableValidationError(error); }
+  catch (error) { throw variableFailure(error, 'simulation'); }
   const simulated = await simulateVariablePlan(compiled.value, state, context);
-  if (!simulated.ok) throw textExecutionError(simulated.error);
+  if (!simulated.ok) throw textExecutionError(simulated.error, 'simulation');
   // 复用正式提交已有的场景权限底线；文本任务/事件不能冒充World后台操作。
+  try {
   for (const [commandIndex, command] of compiled.value.commands.entries()) {
     if (command.type === 'SaveEvent') validateSceneEventUpdate(state, simulated.value, command.event, draft.turnId);
     const actors = command.type === 'SaveTask' ? [command.task.actorRef] : [];
     if (actors.some((actor) => actor.kind === 'npc' && !simulated.value.npc[actor.id]?.onScene))
       throw new AiError('data_integrity', undefined, { fieldPath: 'commands.actorRef', commandIndex, commandType: command.type });
   }
-  const block = extractCommandBlock(text);
-  // 说明只产生固定安全提示，不复制私有内容、密钥、未知建议或模型原文到候选/日志。
-  const outside = block.ok ? text.slice(0, block.value.source.start.offset) + text.slice(block.value.source.end.offset) : '';
+  // 分析及说明只保留于临时原文；不将它们提升成已执行事实。
   return VariableResultSchema.parse({ commands: compiled.value.commands, rejectedSuggestions: [],
-    unresolved: outside.includes('<说明>') ? ['模型附带非执行说明；说明未转为命令或存档事实，只有列出的领域命令通过模拟。'] : [] });
+    unresolved: envelope.value.description.trim() ? ['模型附带非执行说明；说明未转为命令或存档事实，只有列出的领域命令通过模拟。'] : [] });
+  } catch (error) { throw variableFailure(error, 'simulation'); }
 }
 
 function json(text: string): unknown {

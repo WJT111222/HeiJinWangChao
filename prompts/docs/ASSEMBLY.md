@@ -60,7 +60,7 @@ M3-P1 仅提供静态注册契约。M3-P2 已在 `src/prompts/loader.ts`、`cont
 - `memory/recall_select`为可选二级检索，首版可以不增加AI调用；`memory/timeline_entry`仅在重大完结事件且准备归档时按需使用。
 
 ## 6. 模型兼容策略
-- 流式正文使用既有分段标签；Variables 正式使用 VARIABLE_TEXT_V1 和 `.text` 模块、TEXT_COMMAND_CATALOG，不启用原生 JSON Mode。World/Memory 保持原 JSON 协议。文本变量经解析、编译、整批模拟后，**向下游暴露既有规范化领域命令对象**，不新增持久化协议。
+- 流式正文使用既有分段标签；Variables 正式使用源仓库标准三标签thinking/说明/命令、set/add/push/delete的VARIABLE_TEXT_V1和 `.text` 模块、TEXT_COMMAND_CATALOG，不启用原生 JSON Mode。World/Memory 保持原 JSON 协议。文本变量经解析、编译、整批模拟后，**向下游暴露既有规范化领域命令对象**，不新增持久化协议。
 - 在结构输出不满足契约时将该次尝试判失败并保留错误码；不能吞掉非法命令或绕过程序校验。
 - 输入人物/记忆/创角文本仅作为数据，不让其更改模块、命令Catalog、密钥等系统边界。
 

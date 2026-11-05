@@ -1,3 +1,4 @@
+import { variableTextEnvelope } from './fixtures/variableReply';
 import { describe, expect, it } from 'vitest';
 import { DataError } from '../domain/common';
 import { AiError } from '../services/ai/errors';
@@ -48,7 +49,7 @@ describe('safe runtime log diagnostics', () => {
     });
     let caught: unknown;
     try {
-      await parseTextVariables('<命令>\nset npc[npc_001].onScene = "secret-input"\n</命令>', state, draft);
+      await parseTextVariables(variableTextEnvelope('<命令>\nset npc[npc_001].onScene = "secret-input"\n</命令>'), state, draft);
     } catch (failure) { caught = failure; }
     expect(caught).toBeInstanceOf(AiError);
     const logged = runtimeLogEvent(10, 'variables', 'failed', caught);
@@ -100,7 +101,7 @@ describe('safe runtime log diagnostics', () => {
     });
     let caught: unknown;
     try {
-      await parseTextVariables('<命令>\nset protagonist.locationId = "remote"\n</命令>', state, draft);
+      await parseTextVariables(variableTextEnvelope('<命令>\nset protagonist.locationId = "remote"\n</命令>'), state, draft);
     } catch (failure) { caught = failure; }
     expect(caught).toBeInstanceOf(AiError);
     const event = runtimeLogEvent(13, 'variables', 'failed', caught);
@@ -125,7 +126,7 @@ describe('safe runtime log diagnostics', () => {
     });
     let caught: unknown;
     try {
-      await parseTextVariables('<命令>\nset protagonist.locationId = "remote"\nset npc[npc_001].locationId = "remote"\n</命令>', state, draft);
+      await parseTextVariables(variableTextEnvelope('<命令>\nset protagonist.locationId = "remote"\nset npc[npc_001].locationId = "remote"\n</命令>'), state, draft);
     } catch (failure) { caught = failure; }
     const event = runtimeLogEvent(14, 'variables', 'failed', caught);
     expect(event.relatedNpcId).toBe('npc_002');

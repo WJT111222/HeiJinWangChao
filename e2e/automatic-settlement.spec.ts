@@ -1,3 +1,4 @@
+import { variableTextEnvelope } from '../src/tests/fixtures/variableReply';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openGameTools } from './helpers/gameLayout';
@@ -26,7 +27,7 @@ async function mock(page: Page) {
   await page.route('https://auto-settlement.mock.invalid/**', async route => {
     const stage = String(route.request().postDataJSON().model); calls.push(stage);
     const turn = calls.filter(stage => stage === 'story').length;
-    const variables = control.variables ?? `<说明>原始说明：第${turn}轮消费，保留换行。🟡</说明>\n<命令>\nset worldClock = "2026-10-18T08:${turn === 1 ? '10' : '20'}:00+08:00"\nadd economy.cash = -3000\n</命令>`;
+    const variables = variableTextEnvelope(control.variables ?? `<说明>原始说明：第${turn}轮消费，保留换行。🟡</说明>\n<命令>\nset worldClock = "2026-10-18T08:${turn === 1 ? '10' : '20'}:00+08:00"\nadd economy.cash = -3000\n</命令>`);
     const world = control.bad ? '{\n "worldCommands": [], "taskCommands": [], "eventCommands": [ {"type":"SaveEvent","commandId":"missing-end","evidence":"{}","event":{"id":"review","title":"清点","status":"scheduled","startAt":"2026-10-19T08:00:00+08:00","actorRefs":[{"kind":"npc","id":"npc-a"}],"linkedTaskIds":[],"prerequisites":[],"blockers":[],"visibility":"hidden","impact":"minor","sourceTurnIds":["auto-opening"],"backgroundText":"值班清点","goalText":"完成清点"}} ], "futureEvents": [], "visibleHooks": [], "timelineCandidates": [], "unresolved": []\n}'
       : '{\n "worldCommands": [], "taskCommands": [], "eventCommands": [], "futureEvents": [], "visibleHooks": [], "timelineCandidates": [], "unresolved": []\n}';
     const worldText = world.replace('"evidence":"{}"', `"evidence":${JSON.stringify(JSON.stringify({ version: 1, kind: 'planned', at: '2026-10-18T08:05:00+08:00', sources: ['npc:npc-a'], fact: '计划进行内部清点。', rationale: '根据日常工作安排准备清点。' }))}`);
@@ -126,4 +127,44 @@ test('NPC场景ID诊断与World规则同时保留，逐阶段恢复后只结算�
   await expect(log).toContainText('世界校验：event_plan'); await expect(log).toContainText('（NPC：scene）');
   await page.reload(); await openGameTools(page); await settled(page); expect(server.calls).toHaveLength(5);
   expect(await stored(page)).toEqual(committed);
+});
+
+test('源三标签截断保留正文；明确恢复后四操作自动结算并完整显示原文', async ({ page }, info) => {
+  await seed(page); const server = await mock(page), before = await stored(page);
+  server.control.variables = '<thinking>本轮状态分析。</thinking><说明>- 更新本幕变量。</说明><命令>set protagonist.emotionText = "安心"';
+  await page.getByRole('button', { name: '自动生成开局', exact: true }).click();
+  await expect(page.getByTestId('runtime-log')).toContainText('解析三个标签区块');
+  const failed = await stored(page); expect(failed.state).toEqual(before.state); expect(failed.draft.story).toBeDefined(); expect(failed.draft.variables).toBeUndefined();
+  expect(server.calls).toEqual(['story','variables']);
+  server.control.variables = '<thinking>本轮变量变化分析结果。</thinking>\n<说明>\n- 用餐并更新技能记录。\n</说明>\n<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset protagonist = {"emotionText":"安心","skills":["驾驶","急救"]}\nadd economy.cash = -3000\npush protagonist.skills = "烹饪"\ndelete protagonist.skills[0]\n</命令>';
+  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
+  const data = await stored(page); expect(data.state.turnNumber).toBe(1); expect(data.state.economy.cash).toBe(7000); expect(data.state.protagonist.skills).toEqual(['急救','烹饪']);
+  expect(server.calls).toEqual(['story','variables','variables','world']); expect(data.draft.userInput).toBe('');
+  await rawPanel(page); await page.getByText('变量模型原文', { exact: true }).click();
+  expect(await page.getByLabel('变量模型完整原文').textContent()).toBe(server.control.variables);
+  await page.screenshot({ path: info.outputPath('source-variable-protocol.png') });
+  await page.reload(); await openGameTools(page); await settled(page); expect(await stored(page)).toEqual(data); expect(server.calls).toHaveLength(4);
+});
+
+test('候选写库配额失败显示具体步骤而非unknown，保留正文后只补失败阶段', async ({ page }) => {
+  await seed(page); const server = await mock(page), before = await stored(page);
+  await page.evaluate(async () => {
+    const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), original = SaveRepository.prototype.saveDraft;
+    Reflect.set(window, '__failSourceSave', true);
+    SaveRepository.prototype.saveDraft = async function(this: unknown, ...args: unknown[]) {
+      const next = args[0], status = next && typeof next === 'object' && 'stageStatus' in next ? next.stageStatus : undefined;
+      if (Reflect.get(window, '__failSourceSave') && status && typeof status === 'object' && 'variables' in status && status.variables === 'ready')
+        throw new DOMException('private-storage-detail', 'QuotaExceededError');
+      return Reflect.apply(original, this, args);
+    };
+  });
+  await page.getByRole('button', { name: '自动生成开局', exact: true }).click();
+  const log = page.getByTestId('runtime-log'); await expect(log).toContainText('错误码：storage'); await expect(log).toContainText('保存变量候选');
+  await expect(log).not.toContainText('private-storage-detail');
+  const failed = await stored(page); expect(failed.state).toEqual(before.state); expect(failed.draft.story).toBeDefined(); expect(failed.draft.stageStatus.variables).toBe('failed');
+  expect(server.calls).toEqual(['story','variables']);
+  await page.evaluate(() => Reflect.set(window, '__failSourceSave', false));
+  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
+  const committed = await stored(page); expect(committed.state.turnNumber).toBe(1); expect(committed.state.economy.cash).toBe(7000);
+  expect(server.calls).toEqual(['story','variables','variables','world']);
 });
