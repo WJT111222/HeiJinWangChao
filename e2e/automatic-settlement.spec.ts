@@ -2,9 +2,9 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openGameTools } from './helpers/gameLayout';
 
-async function seed(page: Page) {
+async function seed(page: Page, remoteLocation = false) {
   await page.goto('/');
-  await page.evaluate(async () => {
+  await page.evaluate(async remoteLocation => {
     const storage = '/src/services/storage/saveRepository.ts', fixtures = '/src/tests/fixtures/world.ts', drafts = '/src/domain/drafts.ts',
       configuration = '/src/services/ai/configuration.ts', credentials = '/src/services/ai/credentials.ts', settingsPath = '/src/ui/settings/model.ts';
     const { SaveRepository } = await import(storage), { worldState } = await import(fixtures), { createTurnDraft } = await import(drafts),
@@ -13,18 +13,20 @@ async function seed(page: Page) {
     const channel = newChannel(), config = defaultAiConfig(); channel.baseUrl = 'https://auto-settlement.mock.invalid/v1'; channel.compatibility.jsonMode = true;
     config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'story' }; config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' }; config.routes.world = { mode: 'independent', channelId: channel.id, modelId: 'world' };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-auto-settlement-key');
-    const repo = await SaveRepository.open(); try { await repo.create(worldState()); await repo.saveDraft(createTurnDraft('save-a', 0, 'auto-opening', 'opening', ''), null); } finally { repo.close(); }
-  });
+    const state = worldState();
+    if (remoteLocation) state.locations.remote = { id: 'remote', name: '诊所' };
+    const repo = await SaveRepository.open(); try { await repo.create(state); await repo.saveDraft(createTurnDraft('save-a', 0, 'auto-opening', 'opening', ''), null); } finally { repo.close(); }
+  }, remoteLocation);
   await page.goto('/#game/save-a'); await page.reload(); await openGameTools(page);
 }
 async function stored(page: Page) { return page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try { return await repo.loadGame('save-a'); } finally { repo.close(); } }); }
 async function mock(page: Page) {
   const calls: string[] = [], responses: { variables: string; world: string } = { variables: '', world: '' };
-  const control: { bad?: boolean; hold?: Promise<void> } = {};
+  const control: { bad?: boolean; hold?: Promise<void>; variables?: string } = {};
   await page.route('https://auto-settlement.mock.invalid/**', async route => {
     const stage = String(route.request().postDataJSON().model); calls.push(stage);
     const turn = calls.filter(stage => stage === 'story').length;
-    const variables = `<说明>原始说明：第${turn}轮消费，保留换行。🟡</说明>\n<命令>\nset worldClock = "2026-10-18T08:${turn === 1 ? '10' : '20'}:00+08:00"\nadd economy.cash = -3000\n</命令>`;
+    const variables = control.variables ?? `<说明>原始说明：第${turn}轮消费，保留换行。🟡</说明>\n<命令>\nset worldClock = "2026-10-18T08:${turn === 1 ? '10' : '20'}:00+08:00"\nadd economy.cash = -3000\n</命令>`;
     const world = control.bad ? '{\n "worldCommands": [], "taskCommands": [], "eventCommands": [ {"type":"SaveEvent","commandId":"missing-end","evidence":"{}","event":{"id":"review","title":"清点","status":"scheduled","startAt":"2026-10-19T08:00:00+08:00","actorRefs":[{"kind":"npc","id":"npc-a"}],"linkedTaskIds":[],"prerequisites":[],"blockers":[],"visibility":"hidden","impact":"minor","sourceTurnIds":["auto-opening"],"backgroundText":"值班清点","goalText":"完成清点"}} ], "futureEvents": [], "visibleHooks": [], "timelineCandidates": [], "unresolved": []\n}'
       : '{\n "worldCommands": [], "taskCommands": [], "eventCommands": [], "futureEvents": [], "visibleHooks": [], "timelineCandidates": [], "unresolved": []\n}';
     const worldText = world.replace('"evidence":"{}"', `"evidence":${JSON.stringify(JSON.stringify({ version: 1, kind: 'planned', at: '2026-10-18T08:05:00+08:00', sources: ['npc:npc-a'], fact: '计划进行内部清点。', rationale: '根据日常工作安排准备清点。' }))}`);
@@ -69,7 +71,8 @@ test('World字段错误可定位并查看完整失败原文，不提交；恢复
 test('发送下一条行动仅绑定草稿，commit日志必须等到三阶段完成才开始', async ({ page }) => {
   // 仅观察真实日志函数的调用，不替换返回值、工作流或存储行为。
   await page.route('**/src/ui/game/runtimeLog.ts*', async route => {
-    const response = await route.fetch(), source = await response.text();
+    // 仅本地 Vite 模块读取可重试一次 ECONNRESET；不重试任何模型或业务请求。
+    const response = await route.fetch({ maxRetries: 1 }), source = await response.text();
     const anchor = 'const label = runtimeStageNames[stage];';
     expect(source).toContain(anchor);
     await route.fulfill({ response, body: source.replace(anchor, `${anchor}\n(window.__commitAudit ??= []).push({stage, kind});`) });
@@ -92,4 +95,35 @@ test('发送下一条行动仅绑定草稿，commit日志必须等到三阶段�
   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2); await settled(page);
   expect(await commits('started')).toBe(2); expect(await commits('completed')).toBe(2);
   await page.reload(); await openGameTools(page); await settled(page); expect(server.calls).toHaveLength(6);
+});
+
+test('NPC场景ID诊断与World规则同时保留，逐阶段恢复后只结算一次', async ({ page }, info) => {
+  await seed(page, true); const server = await mock(page);
+  server.control.variables = '<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset protagonist.locationId = "remote"\n</命令>';
+  server.control.bad = true;
+  await page.getByRole('button', { name: '自动生成开局', exact: true }).click();
+  const log = page.getByTestId('runtime-log');
+  await expect(log).toContainText('主角移动时缺少原在场 NPC 的状态更新（NPC：scene）');
+  expect(server.calls).toEqual(['story', 'variables']);
+  const initial = await stored(page); expect(initial.state.revision).toBe(0);
+  expect(initial.draft.stageStatus.variables).toBe('failed'); expect(initial.draft.world).toBeUndefined();
+
+  server.control.variables = '<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset protagonist.locationId = "remote"\nset npc[scene].locationId = "remote"\n</命令>';
+  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
+  await expect(log).toContainText('estimatedEndAt'); await expect(log).toContainText('世界校验：event_plan');
+  await expect(log).toContainText('（NPC：scene）');
+  const worldFailed = await stored(page); expect(worldFailed.state).toEqual(initial.state);
+  expect(worldFailed.draft.variables.validation).toBe('validated'); expect(worldFailed.draft.stageStatus.world).toBe('failed');
+  expect(server.calls).toEqual(['story', 'variables', 'variables', 'world']);
+  await expect(log).not.toContainText('mock-auto-settlement-key');
+  await page.screenshot({ path: info.outputPath('world-and-npc-diagnostics.png') });
+
+  server.control.bad = false;
+  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
+  const committed = await stored(page); expect(committed.state.turnNumber).toBe(1); expect(committed.state.journal).toHaveLength(1);
+  expect(committed.state.protagonist.locationId).toBe('remote'); expect(committed.state.npc.scene.locationId).toBe('remote');
+  expect(committed.draft.userInput).toBe(''); expect(server.calls).toEqual(['story', 'variables', 'variables', 'world', 'world']);
+  await expect(log).toContainText('世界校验：event_plan'); await expect(log).toContainText('（NPC：scene）');
+  await page.reload(); await openGameTools(page); await settled(page); expect(server.calls).toHaveLength(5);
+  expect(await stored(page)).toEqual(committed);
 });

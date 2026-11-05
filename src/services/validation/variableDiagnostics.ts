@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DataError } from '../../domain/common';
+import { DataError, IdSchema } from '../../domain/common';
 import { DomainCommandSchema } from '../../domain/commands';
 import { AiError } from '../ai/errors';
 
@@ -26,6 +26,16 @@ export function variableValidationError(error: unknown, input?: unknown): AiErro
       ...(commandIndex === undefined ? {} : { commandIndex }), ...(type ? { commandType: type } : {}),
     });
   }
-  if (error instanceof DataError) return new AiError(moneyCodes.has(error.code) ? 'amount_balance' : timeCodes.has(error.code) ? 'time_data' : conflictCodes.has(error.code) ? 'candidate_conflict' : 'data_integrity');
+  if (error instanceof DataError) {
+    const code = moneyCodes.has(error.code) ? 'amount_balance' : timeCodes.has(error.code) ? 'time_data' : conflictCodes.has(error.code) ? 'candidate_conflict' : 'data_integrity';
+    if (error.code === 'SCENE_TRANSITION' || error.code === 'SCENE_LOCATION') {
+      const match = error.message.match(/NPC（([^）]+)）/);
+      const parsed = match ? IdSchema.safeParse(match[1]) : null;
+      const relatedNpcId = parsed?.success ? parsed.data : undefined;
+      const domainRule = error.code === 'SCENE_TRANSITION' ? 'scene_transition' as const : 'scene_location' as const;
+      return new AiError(code, undefined, { domainRule, ...(relatedNpcId ? { relatedNpcId } : {}) });
+    }
+    return new AiError(code);
+  }
   return new AiError('data_integrity');
 }
