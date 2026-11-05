@@ -202,12 +202,16 @@ test('自动维护仅由新正式提交触发，不阻断下一轮；设置保�
   await expect.poll(() => calls.filter((call) => call === 'memory').length).toBe(1);
   // 维护网络尚未完成，下一正式回合的三阶段生成仍能完成。
   await expect.poll(() => calls.filter((call) => call !== 'memory')).toEqual(['story', 'variables', 'world']);
+  await expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toContainText('本回合已结算');
   await page.getByLabel('你的行动', { exact: true }).fill('继续等待');
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
-  const during = await load(page); expect(during.revision).toBe(31); expect(during.memories.short).toHaveLength(31);
+  // 旧候选由发送结算为31；新生成回合自动结算为32，且等待新行动，不再自动生成。
+  const during = await load(page); expect(during.revision).toBe(32); expect(during.turnNumber).toBe(32);
+  expect(during.memories.short).toHaveLength(32); expect(during.journal).toHaveLength(32);
+  expect(new Set(during.journal.map(entry => entry.turnId)).size).toBe(32);
   release?.();
   await expect.poll(async () => (await load(page)).memories.medium.length).toBe(1);
-  const after = await load(page); expect(after.revision).toBe(31); expect(after.journal).toEqual(during.journal);
+  const after = await load(page); expect(after.revision).toBe(32); expect(after.journal).toEqual(during.journal);
   const memory = await panel(page);
   await expect(memory).toContainText('一批记忆已整理并原子保存');
   await memory.getByRole('button', { name: '关闭资料界面' }).click();

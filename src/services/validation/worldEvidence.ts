@@ -9,6 +9,7 @@ import type { DomainCommand } from '../../domain/commands';
 import { worldFactEvidence } from './evidence';
 import { isNegatedFact } from '../../domain/factPolarity';
 import { AiError } from '../ai/errors';
+import type { WorldRule } from './worldDiagnostics';
 import { TaskResultKnowledgeSchema } from '../../domain/events/schema';
 
 // 来源凭据仍编码在原有evidence字符串中；可选成果分类从同次决策确定性写入resolution。
@@ -191,8 +192,9 @@ export function worldSources(state: GameState, draft: TurnDraft, before = state)
 export function requireWorld(
   ok: unknown,
   code: 'invalid_output' | 'permission' | 'npc_task_conflict' = 'invalid_output',
+  worldRule?: WorldRule,
 ): asserts ok {
-  if (!ok) throw new AiError(code);
+  if (!ok) throw new AiError(code, undefined, worldRule ? { worldRule } : undefined);
 }
 export function readWorldEvidence(
   command: DomainCommand,
@@ -204,27 +206,28 @@ export function readWorldEvidence(
   try {
     raw = JSON.parse(command.evidence);
   } catch {
-    throw new AiError('invalid_output');
+    throw new AiError('invalid_output', undefined, { worldRule: 'source_format', fieldPath: 'evidence' });
   }
   const checked = WorldEvidenceSchema.safeParse(raw);
-  requireWorld(checked.success);
+  requireWorld(checked.success, 'invalid_output', 'source_format');
   const proof = checked.data;
-  requireWorld(Date.parse(proof.at) >= Date.parse(from) && Date.parse(proof.at) <= Date.parse(to));
+  requireWorld(Date.parse(proof.at) >= Date.parse(from) && Date.parse(proof.at) <= Date.parse(to), 'invalid_output', 'source_time');
   const resolved = proof.sources.map((id) => {
     const source = sources.find((item) => item.id === id);
-    requireWorld(source && (!source.at || Date.parse(source.at) <= Date.parse(proof.at)));
+    requireWorld(source, 'invalid_output', 'source_missing');
+    requireWorld(!source.at || Date.parse(source.at) <= Date.parse(proof.at), 'invalid_output', 'source_time');
     return source;
   });
   // 非公开事件供世界因果/生命周期推演，不直接授予任何NPC知识。
   // 人物行动或新认知应引用其独立观察/转述等自身来源，不能借事件ID洗掉所属关系。
   const npcCommand = command.type === 'UpdateNpc' || command.type === 'RecordNpcMemory' || command.type === 'RetireNpc' ||
     command.type === 'SaveTask';
-  requireWorld(!npcCommand || !resolved.some((source) => source.worldEventOnly), 'permission');
+  requireWorld(!npcCommand || !resolved.some((source) => source.worldEventOnly), 'permission', 'source_owner');
   if (resolved.some((source) => source.npcSummary)) {
     // 总结不是事实凭据；只允许同一所属人物的未执行计划，不能传播或更新世界真值。
     const owner = command.type === 'SaveTask' && command.task.status === 'planned' && command.task.actorRef.kind === 'npc'
       ? command.task.actorRef.id : command.type === 'UpdateNpc' && Object.keys(command.changes).length === 0 && !command.affinityChange && command.activeGoals !== undefined ? command.npcId : undefined;
-    requireWorld(proof.kind === 'planned' && owner && resolved.every((source) => !source.ownerNpcId || source.ownerNpcId === owner), 'permission');
+    requireWorld(proof.kind === 'planned' && owner && resolved.every((source) => !source.ownerNpcId || source.ownerNpcId === owner), 'permission', 'source_owner');
   }
   if (proof.kind === 'reported' || proof.kind === 'suspected') {
     requireWorld(
@@ -238,7 +241,7 @@ export function readWorldEvidence(
     );
   } else {
     if (proof.kind !== 'planned')
-      requireWorld(!resolved.some((source) => source.knowledge === 'statement'));
+      requireWorld(!resolved.some((source) => source.knowledge === 'statement'), 'invalid_output', 'source_knowledge');
     if (proof.kind === 'established') {
       requireWorld(
         resolved.some((source) => {
@@ -249,11 +252,11 @@ export function readWorldEvidence(
           } catch {
             return false;
           }
-        }),
+        }), 'invalid_output', 'source_knowledge',
       );
     } else if (proof.kind === 'derived') {
       requireWorld(
-        resolved.some((source) => source.knowledge === 'motive' || source.knowledge === 'fact'),
+        resolved.some((source) => source.knowledge === 'motive' || source.knowledge === 'fact'), 'invalid_output', 'source_knowledge',
       );
       // 生命周期的明确结构化决策由同次世界AI作语义判断；不用固定词汇审判复杂结果。
       // 来源、时间、目标/状态、条件和权限仍由后续验证器逐项约束。其他事实命令保持原保护。

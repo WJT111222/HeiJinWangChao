@@ -11,6 +11,8 @@ import { AiClient } from './client';
 import type { RequestOptions } from './client';
 import { variableValidationError } from '../validation/variableDiagnostics';
 import { timeOutcome } from '../../domain/timePreflight';
+import { stageResponses } from './stageResponses';
+import { safeAiError } from './errors';
 
 // 独立阶段请求入口；没有 SaveRepository、写库、重试或自动执行下游阶段。
 export async function runStageRequest(
@@ -33,8 +35,13 @@ export async function runStageRequest(
   const prompt = captured.stage === 'variables'
     ? await composeTextVariablesPrompt({ ...captured, stage: 'variables', cotAllowed: snapshot.useCot })
     : await composePrompt({ ...captured, cotAllowed: snapshot.useCot });
+  const responseId = stageResponses.begin({ saveId: captured.state.saveId, turnId: captured.draft?.turnId, stage: captured.stage, storyRevision: captured.draft?.storyRevision });
+  const secrets = config.channels.map(channel => vault.get(channel.id)).filter(Boolean);
+  let received = '';
+  try {
   const response = await client.generate(snapshot, prompt.messages, {
     ...options,
+    onDelta: (delta) => { received += delta; options.onDelta?.(delta); },
     inspection: {
       kind: 'stage',
       mode: captured.mode,
@@ -46,6 +53,8 @@ export async function runStageRequest(
     timeoutSeconds: options.timeoutSeconds ?? captured.settings.runtime.timeoutSeconds,
     stream: options.stream ?? captured.stage === 'story',
   });
+  received = response.text;
+  stageResponses.update(responseId, { text: received, status: 'received' }, secrets);
   const envelope = captured.stage === 'story' ? parseStoryEnvelope(response.text, captured.mode, captured.settings) : undefined;
   const story = envelope?.story;
   if (story) {
@@ -55,8 +64,10 @@ export async function runStageRequest(
   const result = story ?? (captured.stage === 'variables'
         ? await parseTextVariables(response.text, captured.state, captured.draft!)
         : parseWorld(response.text, captured.state, captured.draft!));
+  stageResponses.update(responseId, { status: 'validated', normalized: JSON.stringify(result, null, 2) }, secrets);
   return {
     result,
+    responseInspectionId: responseId,
     // 临时诊断单独返回；StorySchema和后续阶段永远不接收这些字段。
     storyInspection: envelope ? { planning: envelope.planning, nativeReasoning: response.nativeReasoning } : undefined,
     usage: response.usage,
@@ -82,4 +93,8 @@ export async function runStageRequest(
     commitAllowed: false as const,
     audience: 'internal' as const,
   };
+  } catch (error) {
+    stageResponses.update(responseId, { status: 'failed', ...(received ? { text: received } : {}), error: safeAiError(error) }, secrets);
+    throw error;
+  }
 }

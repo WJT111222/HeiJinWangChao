@@ -3,6 +3,7 @@ import type { TurnDraft } from '../../domain/drafts';
 import { redactInspection } from '../../services/ai/inspection';
 import { browserCredentials } from '../../services/ai/credentials';
 import { Dialog } from '../Dialog';
+import { StageResponseText } from './StageResponsesPanel';
 
 export function VariableCandidates({ draft }: { draft: TurnDraft }) {
   const [opened, setOpened] = useState(false),
@@ -21,6 +22,8 @@ export function VariableCandidates({ draft }: { draft: TurnDraft }) {
       </button>
       {opened && (
         <Dialog title="变量候选 · 未正式结算" onClose={() => setOpened(false)}>
+          <StageResponseText saveId={draft.saveId} turnId={draft.turnId} stage="variables" />
+          <h3>程序编译和校验后的候选</h3>
           <p>
             正文版本 {draft.storyRevision} · 执行版本 {draft.executionRevision} · 候选版本{' '}
             {draft.variables?.candidateRevision}
