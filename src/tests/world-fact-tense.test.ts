@@ -54,6 +54,50 @@ describe('World 中文事实性质：真实 evidence 与合成合法上下文', 
     expect(JSON.stringify(logged)).not.toContain('org_school_38th');
   });
 
+  const goalStatements = [
+    '学校力保迎检准备落实到位。',
+    '学校确保整改计划落实到位。',
+    '学校保障整改计划落实到位。',
+  ];
+  it.each(goalStatements)('单独目标不能启动新任务：%s', fact => {
+    expect(() => parse(fact)).toThrow(expect.objectContaining({ details: expect.objectContaining({ worldRule: 'fact_plan' }) }));
+  });
+  it.each(goalStatements)('另一条合法任务不能替目标句背书场外已发生事件：%s', fact => {
+    const { state, draft } = schoolContext(), before = structuredClone(state), batch = syntheticSchoolBatch();
+    batch.eventCommands[0].evidence = JSON.stringify({ ...schoolEvidence, fact });
+    expect(() => parseWorld(JSON.stringify(batch), state, draft)).toThrow(expect.objectContaining({ details: expect.objectContaining({
+      worldRule: 'fact_plan', commandType: 'SaveEvent', fieldPath: 'eventCommands.0.evidence.fact',
+    }) }));
+    expect(state).toEqual(before);
+  });
+  it.each(['力保', '确保', '保障'])('实际行为后的同主语目标保留为目的，不否定已开展工作：%s', goal => {
+    expect(parse(`学校正在排查账目，${goal}整改计划落实到位。`).taskCommands[0]).toMatchObject({ task: { status: 'active' } });
+  });
+  it('同一分句先启动工作再说明目的，不把目的动词一律禁用', () => {
+    expect(() => parse('学校已经启动食堂检查准备工作以确保整改计划落实到位。')).not.toThrow();
+  });
+  it('保障部门作为主语名词，仍可描述真实正在执行的计划', () => {
+    expect(() => parse('保障部门正在执行既定整改计划。')).not.toThrow();
+  });
+  it('不能因保障后的工作名词而绕过实际执行要求', () => {
+    expect(() => parse('学校保障工作落实到位。')).toThrow(expect.objectContaining({ details: expect.objectContaining({ worldRule: 'fact_plan' }) }));
+  });
+  it.each(goalStatements)('实际工作不能把另一个仅有目标的outcome洗成已完成结果：%s', outcome => {
+    const { state, draft } = schoolContext(), command = schoolTask();
+    command.task.status = 'completed';
+    command.evidence = JSON.stringify({ ...schoolEvidence, outcome });
+    expect(() => parseWorld(JSON.stringify(schoolResult(command)), state, draft)).toThrow(expect.objectContaining({ details: expect.objectContaining({
+      worldRule: 'fact_plan', fieldPath: 'taskCommands.0.evidence.outcome',
+    }) }));
+    expect(state.tasks).toEqual({});
+  });
+  it.each([
+    '学校正在排查账目。确保整改计划落实到位。',
+    '学校正在排查账目，其他企业确保整改计划落实到位。',
+  ])('不跨句或向另一个显式主体借执行依据：%s', fact => {
+    expect(() => parse(fact)).toThrow(expect.objectContaining({ details: expect.objectContaining({ worldRule: 'fact_plan' }) }));
+  });
+
   it('future/planned 仍可保存为未执行任务，不能伪装 active', () => {
     const { state, draft } = schoolContext(), command = schoolTask('学校准备明天检查食堂。');
     command.evidence = JSON.stringify({ ...schoolEvidence, kind: 'planned', fact: '学校准备明天检查食堂。' });
