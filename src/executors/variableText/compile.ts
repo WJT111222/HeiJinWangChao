@@ -24,7 +24,7 @@ const fields = new Map<string, Mapping>([
   ['locations', { operation: 'set', kind: 'location', field: 'location' }],
   ['npc.relationshipText', { operation: 'set', kind: 'npc', field: 'relationshipText' }],
   ['npc.healthText', { operation: 'set', kind: 'npc', field: 'healthText' }],
-  ...['locationId', 'onScene', 'lastInteractionAt'].map((field): [string, Mapping] =>
+  ...['locationId', 'onScene', 'lastInteractionAt', 'gender', 'privateProfile'].map((field): [string, Mapping] =>
     [`npc.${field}`, { operation: 'set', kind: 'npc', field }]),
   ['npc.memories', { operation: 'push', kind: 'memory', field: 'memories' }],
   ['npc.longTermMemories', { operation: 'push', kind: 'memory', field: 'longTermMemories' }],
