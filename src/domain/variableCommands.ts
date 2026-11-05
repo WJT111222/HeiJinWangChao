@@ -33,12 +33,22 @@ const npcChanges = OrdinaryNpcSchema.pick({
   relationshipText: true,
   healthText: true,
   lastInteractionAt: true,
+  gender: true,
 })
   .partial()
   .extend({
     locationId: IdSchema.nullable()
       .optional()
       .describe('合法地点 ID；null 显式清除未知去向的地点，须同时离场；省略保持原值'),
+    privateProfile: z.strictObject({
+      chestDescription: z.string().optional(),
+      buttocksDescription: z.string().optional(),
+      privatePartDescription: z.string().optional(),
+      isVirgin: z.boolean().optional(),
+      firstExperienceTarget: z.string().optional(),
+      firstExperienceTime: z.string().optional(),
+      firstExperienceText: z.string().optional(),
+    }).optional(),
   });
 const itemChanges = z.strictObject({
   quantity: CountSchema.optional(),
@@ -184,7 +194,25 @@ export function applyVariableCommand(
           'NPC_TIME',
           '互动时间未发生或倒退',
         );
-      const { locationId, ...changes } = command.changes;
+      const { locationId, privateProfile, gender, ...changes } = command.changes;
+      // 资格：仅 special + female + (年龄未知或 >=18) 可持有私密档案
+      const effectiveGender = gender ?? npc.gender;
+      const isEligible = npc.kind === 'special' && effectiveGender === 'female' && (npc.age === undefined || npc.age >= 18);
+      if (privateProfile !== undefined) {
+        requireData(isEligible, 'NPC_KIND', '仅重要成年女性 NPC 可持有私密档案');
+        const current = npc.privateProfile ?? {};
+        // 已有值的初次经历字段不可覆盖，未填写的允许后续补齐
+        const merged = { ...current, ...privateProfile };
+        if (current.firstExperienceText != null) merged.firstExperienceText = current.firstExperienceText;
+        if (current.firstExperienceTarget != null) merged.firstExperienceTarget = current.firstExperienceTarget;
+        if (current.firstExperienceTime != null) merged.firstExperienceTime = current.firstExperienceTime;
+        npc.privateProfile = merged;
+      }
+      // 性别变更后若不再符合资格，清除私密档案
+      if (gender !== undefined && gender !== 'female' && npc.kind === 'special' && npc.privateProfile) {
+        delete npc.privateProfile;
+      }
+      if (gender !== undefined) npc.gender = gender;
       Object.assign(npc, changes);
       // null 是命令层的显式清除，正式 NPC 仍使用原 Schema 的可选地点。
       if (locationId === null) {

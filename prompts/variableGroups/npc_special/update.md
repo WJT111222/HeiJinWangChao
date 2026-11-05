@@ -23,4 +23,9 @@ set npc[lin].activeGoals = ["完成资格考试"]
 push npc[lin].longTermMemories = {"text":"记住共同作出的约定","knowledgeKind":"observed","knowledgeSource":"当面约定","visibility":"npc_private"}
 </命令>
 
+
+重要成年女性特殊NPC（gender=female 且年龄未知或>=18）应在创建或更新时维护基础 privateProfile。
+set npc[id].privateProfile 为对象，可含 chestDescription / buttocksDescription / privatePartDescription（文字描述）、isVirgin（布尔）、firstExperienceTarget / firstExperienceTime / firstExperienceText。
+已有初次经历字段不可覆盖，未填写的允许后续补齐。普通NPC、男性或未成年不可写入该档案。
+
 只用TEXT_COMMAND_CATALOG支持的set/add/push路径，值为JSON；不输出DomainCommand对象。未支持的变化写<说明>，不创造自由字段、来源审批或覆盖许可。AI理解已选定Story，程序执行原领域约束；本阶段不推演World任务/事件。

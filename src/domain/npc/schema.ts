@@ -2,9 +2,20 @@ import { z } from 'zod';
 import { IdSchema, IdsSchema, TextSchema, StringsSchema, GameTimeSchema } from '../common';
 import { NpcMemorySchema } from '../memories/schema';
 
+const PrivateProfileSchema = z.strictObject({
+  chestDescription: z.string().optional(),
+  buttocksDescription: z.string().optional(),
+  privatePartDescription: z.string().optional(),
+  isVirgin: z.boolean().optional(),
+  firstExperienceTarget: z.string().optional(),
+  firstExperienceTime: z.string().optional(),
+  firstExperienceText: z.string().optional(),
+}).optional();
+
 const base = {
   id: IdSchema, identityKey: TextSchema, aliases: StringsSchema,
   name: TextSchema, age: z.number().int().nonnegative().optional(),
+  gender: z.enum(['female', 'male', 'unknown']).optional(),
   identity: z.string().optional(), appearance: z.string().optional(), temperament: z.string().optional(),
   background: z.string().optional(), skills: StringsSchema,
   locationId: IdSchema.optional(), onScene: z.boolean(),
@@ -20,6 +31,7 @@ export const SpecialNpcSchema = z.strictObject({
   ...base, kind: z.literal('special'), detailedBackground: z.string(),
   activeGoals: StringsSchema, habits: StringsSchema,
   longTermMemories: z.array(NpcMemorySchema), offscreenTaskIds: IdsSchema,
+  privateProfile: PrivateProfileSchema,
 });
 export const NpcSchema = z.discriminatedUnion('kind', [OrdinaryNpcSchema, SpecialNpcSchema]);
 export type NPC = z.infer<typeof NpcSchema>;
