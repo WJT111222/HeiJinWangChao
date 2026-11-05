@@ -71,7 +71,8 @@ test('World字段错误可定位并查看完整失败原文，不提交；恢复
 test('发送下一条行动仅绑定草稿，commit日志必须等到三阶段完成才开始', async ({ page }) => {
   // 仅观察真实日志函数的调用，不替换返回值、工作流或存储行为。
   await page.route('**/src/ui/game/runtimeLog.ts*', async route => {
-    const response = await route.fetch(), source = await response.text();
+    // 仅本地 Vite 模块读取可重试一次 ECONNRESET；不重试任何模型或业务请求。
+    const response = await route.fetch({ maxRetries: 1 }), source = await response.text();
     const anchor = 'const label = runtimeStageNames[stage];';
     expect(source).toContain(anchor);
     await route.fulfill({ response, body: source.replace(anchor, `${anchor}\n(window.__commitAudit ??= []).push({stage, kind});`) });
@@ -109,7 +110,7 @@ test('NPC场景ID诊断与World规则同时保留，逐阶段恢复后只结算�
 
   server.control.variables = '<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset protagonist.locationId = "remote"\nset npc[scene].locationId = "remote"\n</命令>';
   await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
-  await expect(log).toContainText('estimatedEndAt'); await expect(log).toContainText('世界校验：schema');
+  await expect(log).toContainText('estimatedEndAt'); await expect(log).toContainText('世界校验：event_plan');
   await expect(log).toContainText('（NPC：scene）');
   const worldFailed = await stored(page); expect(worldFailed.state).toEqual(initial.state);
   expect(worldFailed.draft.variables.validation).toBe('validated'); expect(worldFailed.draft.stageStatus.world).toBe('failed');
@@ -122,7 +123,7 @@ test('NPC场景ID诊断与World规则同时保留，逐阶段恢复后只结算�
   const committed = await stored(page); expect(committed.state.turnNumber).toBe(1); expect(committed.state.journal).toHaveLength(1);
   expect(committed.state.protagonist.locationId).toBe('remote'); expect(committed.state.npc.scene.locationId).toBe('remote');
   expect(committed.draft.userInput).toBe(''); expect(server.calls).toEqual(['story', 'variables', 'variables', 'world', 'world']);
-  await expect(log).toContainText('世界校验：schema'); await expect(log).toContainText('（NPC：scene）');
+  await expect(log).toContainText('世界校验：event_plan'); await expect(log).toContainText('（NPC：scene）');
   await page.reload(); await openGameTools(page); await settled(page); expect(server.calls).toHaveLength(5);
   expect(await stored(page)).toEqual(committed);
 });
