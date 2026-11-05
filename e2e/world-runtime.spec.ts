@@ -1,6 +1,7 @@
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { schoolEvidence, schoolResult, schoolTask, syntheticSchoolBatch } from '../src/tests/fixtures/worldChineseFact';
 const result = {
   worldCommands: [
     {
@@ -36,10 +37,10 @@ const response = (value: unknown = result) =>
     ],
     usage: { prompt_tokens: 80, completion_tokens: 30, total_tokens: 110 },
   });
-async function seed(page: Page, variables = true, disabled = false) {
+async function seed(page: Page, variables = true, disabled = false, school = false) {
   await page.goto('/');
   const before = await page.evaluate(
-    async ({ variables, disabled }) => {
+    async ({ variables, disabled, school }) => {
       const repoPath = '/src/services/storage/saveRepository.ts',
         fixturePath = '/src/tests/fixtures/world.ts',
         draftPath = '/src/domain/drafts.ts',
@@ -69,18 +70,20 @@ async function seed(page: Page, variables = true, disabled = false) {
         channel.id,
         'mock-world-browser-secret',
       );
+      const schoolFixturePath = '/src/tests/fixtures/worldChineseFact.ts';
+      const context = school ? (await import(schoolFixturePath)).schoolContext() : undefined;
       const repo = await SaveRepository.open(),
-        state = await repo.create({ ...worldState(), title: '世界阶段测试（隔离）' }),
+        state = await repo.create({ ...(context?.state ?? worldState()), title: '世界阶段测试（隔离）' }),
         initial = createTurnDraft('save-a', 0, 'turn-a', 'regular', '', !disabled, !disabled);
       await repo.saveDraft(initial, null);
-      const d = worldDraft(variables),
+      const d = context?.draft ?? worldDraft(variables),
         ready = rerollStory(initial, d.story);
       await repo.saveDraft(ready, 0);
       if (variables) await repo.saveDraft({ ...d, draftRevision: 2 }, 1);
       repo.close();
       return JSON.stringify(state);
     },
-    { variables, disabled },
+    { variables, disabled, school },
   );
   await page.goto('/#game/save-a'); await openGameTools(page);
   await page.reload(); await openGameTools(page);
@@ -107,6 +110,39 @@ async function ready(page: Page) {
     '世界已完成 · 候选未正式结算',
   );
 }
+
+test('真实迎检准备证据片段：计划安全失败，明确恢复后任务及合成事件入候选，正式状态不变', async ({ page }) => {
+  const before = await seed(page, true, false, true), initial = await stored(page);
+  let valid = false, calls = 0;
+  await page.route('https://world.mock.invalid/**', async route => {
+    calls++;
+    await route.fulfill({ contentType: 'application/json', body: response(valid ? syntheticSchoolBatch()
+      : schoolResult(schoolTask('学校准备明天检查食堂。'))) });
+  });
+  await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
+  const log = page.getByTestId('runtime-log');
+  await expect(log).toContainText('fact_plan');
+  await expect(log).toContainText('尚未执行的计划');
+  await expect(log).toContainText('taskCommands.0.evidence.fact');
+  const failed = await stored(page);
+  expect(failed.formal).toBe(before);
+  expect(failed.draft.world).toBeUndefined();
+  expect(failed.draft.story).toEqual(initial.draft.story);
+  expect(failed.draft.variables).toEqual(initial.draft.variables);
+  expect(calls).toBe(1);
+  valid = true;
+  await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
+  await ready(page);
+  const saved = await stored(page);
+  expect(saved.formal).toBe(before);
+  expect(saved.draft.world.validation).toBe('validated');
+  expect(JSON.parse(saved.draft.world.result.taskCommands[0].evidence).fact).toBe(schoolEvidence.fact);
+  expect(saved.draft.world.result.eventCommands).toHaveLength(2);
+  expect(calls).toBe(2);
+  await page.reload(); await openGameTools(page); await ready(page);
+  expect((await stored(page)).formal).toBe(before);
+  expect(calls).toBe(2);
+});
 
 test('世界生成、补算、只读查看与刷新恢复，真实路由和快照；正式世界不变', async ({ page }, info) => {
   const before = await seed(page),
