@@ -1,3 +1,4 @@
+import { variableTextEnvelope } from './fixtures/variableReply';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { AiClient } from '../services/ai/client';
@@ -202,13 +203,13 @@ describe('非执行说明及安全诊断',()=>{
   it('说明含秘密或未执行事项时只保存固定提示，不提升为状态或公开内容',async()=>{
     const a=await fixture(),state=await a.repo.load('save-a');
     const draft=rerollStory(a.draft,{turnKind:'opening',narrative:'普通会面',summary:'会面',variableGuide:[{group:'time',subjectHint:'time:opening',observedFact:JSON.stringify({startAt:initialAt,endAt:openingEnd})}]});
-    const result=await parseTextVariables('<说明>NPC内部秘密，消费一百万元；test-live-secret</说明><命令></命令>',state,draft);
+    const result=await parseTextVariables(variableTextEnvelope('<说明>NPC内部秘密，消费一百万元；test-live-secret</说明><命令></命令>'),state,draft);
     expect(result.commands).toHaveLength(1);expect(result.unresolved).toEqual(['模型附带非执行说明；说明未转为命令或存档事实，只有列出的领域命令通过模拟。']);
     expect(JSON.stringify(result)).not.toMatch(/一百万元|NPC内部秘密|test-live-secret/);
   });
   it('命令字符串里的说明标签只是值，不能触发非执行说明提示',async()=>{
     const a=await fixture('regular'),state=await a.repo.load('save-a');const draft=rerollStory(a.draft,{turnKind:'regular',narrative:'会面',summary:'会面',variableGuide:[]});
-    const result=await parseTextVariables('<命令>set protagonist.emotionText = "想到<说明>中的句子"</命令>',state,draft);
+    const result=await parseTextVariables(variableTextEnvelope('<命令>set protagonist.emotionText = "想到<说明>中的句子"</命令>'),state,draft);
     expect(result.unresolved).toEqual([]);expect(result.commands).toHaveLength(1);
   });
 });

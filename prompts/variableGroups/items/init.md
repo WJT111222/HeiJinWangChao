@@ -11,4 +11,6 @@ set items[phone].conditionText = "屏幕有划痕"
 set items[phone].transfer = {"from":{"kind":"protagonist","id":"hero"},"to":{"kind":"npc","id":"lin"}}
 </命令>
 
-只用TEXT_COMMAND_CATALOG支持的set/add/push路径，值为JSON；不输出DomainCommand对象。未支持的变化写<说明>，不创造自由字段、来源审批或覆盖许可。AI理解已选定Story，程序执行原领域约束；本阶段不推演World任务/事件。
+只用TEXT_COMMAND_CATALOG列明的set/add/push/delete路径；前三者值为JSON，delete不带值；不输出DomainCommand对象。未支持的变化写<说明>，不创造自由字段、来源审批或覆盖许可。AI理解已选定Story，程序执行原领域约束；本阶段不推演World任务/事件。
+
+set items[id].quantity为最终非负整数数量；delete items[id]代表彻底消耗移除，复用归零及卸装备行为。遗失用loss路径保留状态，不用delete冒充。装备槽支持set/delete，饰品ID数组支持push及按索引delete。

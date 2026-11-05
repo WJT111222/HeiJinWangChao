@@ -1,3 +1,4 @@
+import { variableTextEnvelope } from './fixtures/variableReply';
 import { describe, expect, it, vi } from 'vitest';
 import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
@@ -25,7 +26,7 @@ function wire(text:string,protocol:Protocol) {
 }
 describe('正式Variables文本请求',()=>{
   it.each(['openai','gemini','anthropic'] as const)('%s启用JSON Mode仍请求文本；空开局候选只含一次程序时钟',async(protocol)=>{
-    const a=setup(protocol),before=structuredClone(a.input),transport=vi.fn<typeof fetch>(async()=>wire('<命令></命令>',protocol));
+    const a=setup(protocol),before=structuredClone(a.input),transport=vi.fn<typeof fetch>(async()=>wire(variableTextEnvelope('<命令></命令>'),protocol));
     const response=await runStageRequest(a.input,a.config,a.vault,{},new AiClient(transport));
     const result=VariableResultSchema.parse(response.result);
     expect(result.commands).toEqual([{type:'SetWorldClock',commandId:'opening-clock:1',worldClock:'2015-07-08T08:05:00+08:00',evidence:'Story结构化开局时间'}]);

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { DataError, IdSchema } from '../../domain/common';
 import { DomainCommandSchema } from '../../domain/commands';
 import { AiError } from '../ai/errors';
+import type { VariableStep } from '../ai/errors';
 
 // 不输出校验器原文、非法值、动态实体ID或供应商响应。路径只保留白名单字段。
 const fields = new Set(['commands', 'type', 'commandId', 'evidence', 'changes', 'worldClock', 'expectedRevision',
@@ -10,7 +11,7 @@ const fields = new Set(['commands', 'type', 'commandId', 'evidence', 'changes', 
   'quantity', 'ownerRef', 'locationId', 'memory', 'rejectedSuggestions', 'unresolved']);
 const moneyCodes = new Set(['UNKNOWN_BALANCE', 'INSUFFICIENT_FUNDS', 'DEBT_AMOUNT', 'SAME_ACCOUNT', 'FUTURE_INCOME']);
 const timeCodes = new Set(['OPENING_TIME', 'TIME_PREFLIGHT', 'TIME_REVERSED', 'NPC_TIME', 'WORK_TIME', 'EVENT_TIME']);
-const conflictCodes = new Set(['REVISION_CONFLICT', 'ENTITY_CONFLICT', 'DRAFT_CONFLICT', 'COMMAND_CONFLICT', 'DUPLICATE_COMMAND']);
+const conflictCodes = new Set(['STORY_BUSY', 'REVISION_CONFLICT', 'ENTITY_CONFLICT', 'DRAFT_CONFLICT', 'COMMAND_CONFLICT', 'DUPLICATE_COMMAND']);
 export function variableValidationError(error: unknown, input?: unknown): AiError {
   if (error instanceof AiError) return error;
   if (error instanceof z.ZodError) {
@@ -38,4 +39,14 @@ export function variableValidationError(error: unknown, input?: unknown): AiErro
     return new AiError(code);
   }
   return new AiError('data_integrity');
+}
+
+/** 阶段边界仅追加静态步骤，不复制异常消息、堆栈或供应商数据。 */
+export function variableFailure(error: unknown, step: VariableStep): AiError {
+  const storage = ['load', 'draft_start', 'candidate_save', 'commit'].includes(step);
+  const base = error instanceof AiError ? error
+    : error instanceof DataError || error instanceof z.ZodError ? variableValidationError(error)
+    : new AiError(storage || error instanceof Error && ['QuotaExceededError', 'SecurityError', 'InvalidStateError'].includes(error.name) ? 'storage' : 'variable_runtime');
+  return new AiError(base.code, base.status, { ...base.details,
+    variableStep: base.details?.variableStep ?? (['stream_interrupted', 'output_limit', 'empty', 'invalid_json'].includes(base.code) && step === 'request' ? 'response' : step) });
 }

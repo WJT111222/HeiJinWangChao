@@ -115,8 +115,8 @@ describe('严格结构、整块失败与安全错误', () => {
     '<命令 >set x = 1</命令>', '<命令', '<命令/>', '<thinking>未闭合',
     '<说明 属性="示例"><命令>set fake = 1</命令>', '<命令><说明>set x = 1</说明></命令>',
   ])('结构错误：%s', (text) => { rejected(parseVariableText(text), 'block_structure'); });
-  it.each(['remove', 'SET', 'update', 'unknown'])('未知操作：%s', (op) => { rejected(parseVariableText(wrap(`${op} x = 1`)), 'unknown_operation'); });
-  it.each(['delete', 'splice', 'eval', 'Function', 'function'])('禁止操作：%s', (op) => { rejected(parseVariableText(wrap(`${op} x = 1`)), 'forbidden_operation'); });
+  it.each(['remove', 'REPLACE', 'update', 'unknown'])('未知操作：%s', (op) => { rejected(parseVariableText(wrap(`${op} x = 1`)), 'unknown_operation'); });
+  it.each(['FUNCTION', 'splice', 'eval', 'Function', 'function'])('禁止操作：%s', (op) => { rejected(parseVariableText(wrap(`${op} x = 1`)), 'forbidden_operation'); });
   it.each(['set x 1', 'set', 'set\nx = 1', 'push x\n= {}'])('缺少等号/非法头部：%s', (line) => { rejected(parseVariableText(wrap(line)), 'command_syntax'); });
   it.each(['{"a":}', '{"a":1,}', '[1,]', '{"a":[1}', 'undefined', 'NaN', 'Infinity', '1e400', '{"n":1e400}', '[1e400]', '+1', '01', '0x10', '(1)', "'文本'", '"\\x41"', '', '/*注释*/1'])('非法JSON或非有限数字：%s', (json) => { rejected(parseVariableText(wrap(`set x = ${json}`)), 'json_value'); });
   it('第二条失败不返回第一条成功AST，位置与序号保留且不输出敏感文本', () => {

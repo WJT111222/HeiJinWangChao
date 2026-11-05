@@ -12,4 +12,6 @@ set locations[clinic] = {"name":"社区诊所","parentId":"chongqing"}
 set protagonist.locationId = "clinic"
 </命令>
 
-只用TEXT_COMMAND_CATALOG支持的set/add/push路径，值为JSON；不输出DomainCommand对象。未支持的变化写<说明>，不创造自由字段、来源审批或覆盖许可。AI理解已选定Story，程序执行原领域约束；本阶段不推演World任务/事件。
+只用TEXT_COMMAND_CATALOG列明的set/add/push/delete路径；前三者值为JSON，delete不带值；不输出DomainCommand对象。未支持的变化写<说明>，不创造自由字段、来源审批或覆盖许可。AI理解已选定Story，程序执行原领域约束；本阶段不推演World任务/事件。
+
+沿源数组语义：push protagonist.skills追加一项，set protagonist.skills[index]修改现有项，delete protagonist.skills[index]移除现有项（多项倒序删除）。也可set protagonist局部白名单对象；不改ID/姓名/年龄或自造数值。
