@@ -85,15 +85,15 @@ describe('精确路径与操作白名单', () => {
       expect(plan.commands).toHaveLength(1);
       expect((await simulateVariablePlan(plan, data.state, data.context)).ok).toBe(true);
     });
-  it.each(['protagonist', 'protagonist.id', 'protagonist.age',
+  it.each(['protagonist.unregisteredField', 'protagonist.id', 'protagonist.age',
     'npc[npc_001].identity', 'npc[npc_001].knownInformation[0]',
-    'npc[0].healthText', 'npc[npc_001].memories[0].visibility', 'npc[npc_001].affinity', '角色.当前精力',
+    'npc[0].healthText', 'npc[npc_001].memories[0].visibility', 'npc[npc_001].unregisteredAffinity', '角色.当前精力',
     '环境.时间', 'revision', 'schemaVersion', 'appliedCommands', 'memories.npcSummaries', 'items[item_001].ownerRef', 'economy.incomes'])(
     '未注册路径 %s 明确拒绝', async (path) => {
       const { result } = await compile(`set ${path} = "不能写入"`);
       expectCode(result, 'unsupported_path');
     });
-  it.each(['add protagonist.healthText = 1', 'push protagonist.emotionText = {}', 'set items[item_001].quantity = 1', 'set economy.cash = 0', 'set npc[npc_001].memories = []'])(
+  it.each(['add protagonist.healthText = 1', 'push protagonist.emotionText = {}', 'push items[item_001].quantity = 1', 'set economy.cash = 0', 'set npc[npc_001].memories = []'])(
     '路径已注册但操作不支持：%s', async (body) => expectCode((await compile(body)).result, 'unsupported_operation'));
   it.each(['null', '3', 'true', '[]', '{}', '""', '"   "'])(
     '文本状态拒绝非文本或空值 %s', async (value) => expectCode((await compile(`set protagonist.healthText = ${value}`)).result, 'type_mismatch'));

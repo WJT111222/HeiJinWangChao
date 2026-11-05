@@ -1,6 +1,6 @@
 /** 仅描述JSON数据，不含执行器、存档对象或函数。数字使用JSON.parse的IEEE-754语义。 */
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
-export type VariableOperation = 'set' | 'add' | 'push';
+export type VariableOperation = 'set' | 'add' | 'push' | 'delete';
 export type PathNode =
   | { kind: 'root'; name: string }
   | { kind: 'field'; name: string }
@@ -16,6 +16,7 @@ interface CommandSource { path: ParsedVariablePath; source: SourceSpan }
 export type ParsedVariableCommand = CommandSource & (
   | { operation: 'add'; value: number }
   | { operation: 'set' | 'push'; value: JsonValue }
+  | { operation: 'delete'; value: null }
 );
 export type ParseErrorCode =
   | 'input_type' | 'missing_block' | 'block_structure' | 'command_syntax'
@@ -39,7 +40,7 @@ const messages: Record<ParseErrorCode, string> = {
   input_type: '输入必须是文本。', missing_block: '未找到顶层命令区块。',
   block_structure: '命令或外围区块的标签缺失、重复、嵌套或不匹配。',
   command_syntax: '命令须使用“操作 路径 = JSON值”，并以换行分隔。',
-  unknown_operation: '不支持此操作类型。', forbidden_operation: '禁止脚本或删除类操作。',
+  unknown_operation: '不支持此操作类型。', forbidden_operation: '禁止脚本或未支持的数组脚本操作。',
   path_syntax: '路径包含空段、非法标识符或不完整括号。', unsafe_path: '路径包含禁止访问的属性。',
   json_value: '值不是完整、有限的标准JSON数据。', add_number: 'add的操作数必须是有限JSON数字。',
   limit_exceeded: '输入超过解析器安全上限。',

@@ -1,3 +1,4 @@
+import { variableTextEnvelope } from './fixtures/variableReply';
 import { afterEach, describe, expect, it } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import type { DomainCommand } from '../domain/commands';
@@ -143,7 +144,7 @@ describe('第三轮：世界事件自主变化不要求角色先知晓', () => {
     const after = (await repo.commitTurn(submission(saved))).state;
     after.npc['npc-a'].onScene = true;
     const next = worldDraft(true); next.turnId = 'scene-next'; next.baseSaveRevision = after.revision;
-    const result = await parseTextVariables('<命令>set events[investigation].sceneState = {"status":"active"}</命令>', after, next);
+    const result = await parseTextVariables(variableTextEnvelope('<命令>set events[investigation].sceneState = {"status":"active"}</命令>'), after, next);
     const observed = projectTurn(after, { ...next, variables: { ...next.variables!, result } });
     expect(storyEvents(observed)).toContainEqual(expect.objectContaining({ status: 'active', title: a.state.events.investigation.title }));
     // 现场状态可被观察，但旧World私下修改的规划/背景不能借此全部变成人物来源。
