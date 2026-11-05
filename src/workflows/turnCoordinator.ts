@@ -32,7 +32,7 @@ export interface TurnOutcome {
   status: 'complete' | 'skipped' | 'preview';
   skipped: AiStage[];
 }
-interface TurnInput {
+export interface TurnInput {
   draft: TurnDraft;
   settings: Settings;
   config: AiConfig;

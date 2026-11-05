@@ -5,6 +5,8 @@ import { isDomainRule } from '../../executors/variableText/aggregateDiagnostics'
 import type { DomainRule } from '../../executors/variableText/aggregateDiagnostics';
 import type { DiagnosticType, DiagnosticRule } from '../../executors/variableText/diagnostics';
 import type { AiStage } from '../../services/ai/configuration';
+import { isWorldRule } from '../../services/validation/worldDiagnostics';
+import type { WorldRule } from '../../services/validation/worldDiagnostics';
 
 export type RuntimeLogStage = AiStage | 'workflow' | 'commit';
 export type RuntimeLogKind = 'started' | 'completed' | 'failed' | 'cancelled';
@@ -27,6 +29,7 @@ export interface RuntimeLogEntry {
   actualType?: DiagnosticType;
   validationRule?: DiagnosticRule;
   domainRule?: DomainRule;
+  worldRule?: WorldRule;
 }
 
 export const runtimeStageNames: Record<RuntimeLogStage, string> = {
@@ -90,6 +93,7 @@ export function runtimeLogEvent(
     ...(details?.actualType && diagnosticTypes.has(details.actualType) ? { actualType: details.actualType } : {}),
     ...(details?.validationRule && diagnosticRules.has(details.validationRule) ? { validationRule: details.validationRule } : {}),
     ...(isDomainRule(details?.domainRule) ? { domainRule: details.domainRule } : {}),
+    ...(isWorldRule(details?.worldRule) ? { worldRule: details.worldRule } : {}),
     ...(details?.relatedCommandIndices?.length
       ? { relatedCommandIndices: [...new Set(details.relatedCommandIndices
         .filter((index) => Number.isSafeInteger(index) && index > 0))].slice(0, 20) }
