@@ -18,13 +18,13 @@ import {
   readWorldEvidence,
   requireWorld,
   worldSources,
-  speculative,
   hasAffirmedTermination,
   hasPlayerKnownFact,
 } from './worldEvidence';
-import { isNegatedFact } from '../../domain/factPolarity';
+import { AiError } from '../ai/errors';
 import type { WorldEvidence, WorldSource } from './worldEvidence';
 import { worldValidationError } from './worldDiagnostics';
+import { derivedFactRule } from './worldFactNature';
 
 function sameActor(a: ActorRef, b: ActorRef) {
   return a.kind === b.kind && a.id === b.id;
@@ -64,7 +64,8 @@ function outcome(
           proof.outcome,
         ),
     );
-    requireWorld(!speculative.test(proof.outcome) && !isNegatedFact(proof.outcome));
+    const rule = derivedFactRule(proof.outcome);
+    if (rule) throw new AiError('invalid_output', undefined, { worldRule: rule, fieldPath: 'evidence.outcome' });
   }
   } catch (error) { throw worldValidationError(error, { worldRule: 'completion_evidence' }); }
 }
@@ -79,7 +80,10 @@ function cancellationEvidence(proof: WorldEvidence, sources: readonly WorldSourc
   }
   requireWorld(hasAffirmedTermination(proof.fact));
   if (proof.kind === 'derived') {
-    requireWorld(proof.outcome && proof.outcome !== proof.fact && !speculative.test(proof.outcome));
+    requireWorld(proof.outcome && proof.outcome !== proof.fact);
+    const rule = derivedFactRule(proof.outcome);
+    // 取消原因可包含“未能完成”；不新增对既有终止原因的否定词限制。
+    if (rule && rule !== 'fact_negated') throw new AiError('invalid_output', undefined, { worldRule: rule, fieldPath: 'evidence.outcome' });
     // 终止原因/实际后果必须另行交代；重复“任务已取消”不能作为自证结果。
     requireWorld(
       !/^(?:(?:该|此|本次)?(?:任务|事件|行动|工作|安排|排程))?(?:已经|现已|已|正式|最终)?(?:被)?(?:取消|撤销|终止|放弃|叫停|停止执行|停止|结束)(?:了)?[。！!]?$/u.test(
@@ -381,9 +385,9 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
               old.completionCondition === task.completionCondition,
           );
           if (['completed', 'cancelled'].includes(old.status))
-            requireWorld(fingerprint(old) === fingerprint(task));
+            requireWorld(fingerprint(old) === fingerprint(task), 'invalid_output', 'task_state');
           if (old.status === 'active' || old.status === 'blocked')
-            requireWorld(task.status !== 'planned');
+            requireWorld(task.status !== 'planned', 'invalid_output', 'task_state');
         } else
           requireWorld(
             !Object.values(base.tasks).some(
@@ -396,14 +400,14 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         if (!old && proof.kind !== 'established')
           requireWorld(Date.parse(task.startAt) >= Date.parse(state.worldClock));
         if (task.status === 'planned')
-          requireWorld(proof.kind === 'planned' || proof.kind === 'established' || (proof.kind === 'derived' && task.handoff));
+          requireWorld(proof.kind === 'planned' || proof.kind === 'established' || (proof.kind === 'derived' && task.handoff), 'invalid_output', 'task_state');
         if (task.status === 'blocked')
           requireWorld(
-            proof.kind !== 'planned' && Date.parse(task.startAt) <= Date.parse(proof.at),
+            proof.kind !== 'planned' && Date.parse(task.startAt) <= Date.parse(proof.at), 'invalid_output', 'task_state',
           );
         if (task.status === 'active' || task.status === 'completed') {
           requireWorld(
-            proof.kind !== 'planned' && Date.parse(task.startAt) <= Date.parse(proof.at),
+            proof.kind !== 'planned' && Date.parse(task.startAt) <= Date.parse(proof.at), 'invalid_output', 'task_state',
           );
           requireWorld(
             readyConditions(causal, [
@@ -411,7 +415,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
               ...(old?.blockers ?? []),
               ...task.prerequisites,
               ...task.blockers,
-            ]),
+            ]), 'invalid_output', 'completion_conditions',
           );
         }
         const decision = proof.decision;
