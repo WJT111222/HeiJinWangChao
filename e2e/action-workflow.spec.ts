@@ -1,5 +1,6 @@
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
+import { openWorkflow } from './helpers/gameLayout';
 import type { Page } from '@playwright/test';
 import { GameStateSchema } from '../src/domain/state';
 import { TurnDraftSchema } from '../src/domain/drafts';
@@ -101,7 +102,7 @@ test('一次创角确认自动执行开局三阶段，StrictMode和重复点击�
 test('缺少AI配置零请求，设置后不自动补发，只在明确开始时运行', async ({ page }) => {
   await prepare(page, false); const server = await mock(page); await creation(page);
   await expect(page.locator('.notice')).toContainText('API 费用'); await confirm(page);
-  await expect(workflow(page).getByRole('alert')).toContainText('配置'); expect(server.calls).toHaveLength(0);
+  await openWorkflow(page); await expect(workflow(page).getByRole('alert')).toContainText('配置'); expect(server.calls).toHaveLength(0);
   const before = await stored(page); await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: '打开 AI 设置', exact: true }).click();
   await page.getByRole('button', { name: '新增渠道', exact: true }).click();
@@ -143,13 +144,13 @@ test('发送行动只结算一次并自动串联下一轮，刷新及再次读�
 for (const stage of ['variables', 'world'] as const) {
   test(`${stage}失败保留上游，仅明确恢复缺少阶段，折叠无额外请求`, async ({ page }) => {
     await prepare(page); const server = await mock(page); server.plan.failure = stage;
-    await creation(page); await confirm(page); await expect(workflow(page).getByRole('alert')).toBeVisible();
+    await creation(page); await confirm(page); await openWorkflow(page); await expect(workflow(page).getByRole('alert')).toBeVisible();
     const failed = await stored(page); expect(failed.state.revision).toBe(0); expect(failed.draft.story).toBeTruthy();
     expect(server.calls.map((call) => call.stage)).toEqual(stage === 'variables' ? ['story', 'variables'] : ['story', 'variables', 'world']);
     await page.getByLabel('你的行动', { exact: true }).fill('下一步行动'); await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
     const summary = page.locator('.workflow-disclosure > summary'); await summary.click(); await summary.click();
     expect(server.calls).toHaveLength(stage === 'variables' ? 2 : 3);
-    await page.reload(); await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeEnabled();
+    await page.reload(); await openWorkflow(page); await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeEnabled();
     expect(await stored(page)).toEqual(failed); server.plan.failure = undefined;
     await page.getByRole('button', { name: '继续未完成阶段', exact: true }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
     await ready(page); const after = await stored(page); expect(after.state.revision).toBe(1); expect(after.state.journal[0].story).toEqual(failed.draft.story); expect(after.draft.userInput).toBe('');
@@ -160,10 +161,10 @@ for (const stage of ['variables', 'world'] as const) {
 for (const status of [401, 403, 429]) {
   test(`自动开局HTTP ${status}停止、不无限重试，刷新不重新授权`, async ({ page }) => {
     await prepare(page); const server = await mock(page); server.plan.failure = 'story'; server.plan.status = status;
-    await creation(page); await confirm(page); await expect(workflow(page).getByRole('alert')).toBeVisible();
+    await creation(page); await confirm(page); await openWorkflow(page); await expect(workflow(page).getByRole('alert')).toBeVisible();
     expect(server.calls.map((call) => call.stage)).toEqual(['story']); const failed = await stored(page);
     expect(failed.draft.story).toBeUndefined(); expect(failed.state.revision).toBe(0);
-    await page.reload(); await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeEnabled();
+    await page.reload(); await openWorkflow(page); await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeEnabled();
     expect(server.calls).toHaveLength(1); expect(await stored(page)).toEqual(failed);
   });
 }
@@ -172,10 +173,10 @@ test('取消中的迟到响应不启动下游，刷新保留待生成草稿且�
   await prepare(page); const server = await mock(page), held = gate(); server.plan.hold = 'story'; server.plan.gate = held.pending;
   await creation(page); await confirm(page); await expect.poll(() => server.calls.length).toBe(1);
   const summary = page.locator('.workflow-disclosure > summary'); await summary.click(); await summary.click();
-  expect(server.calls).toHaveLength(1); await page.getByRole('button', { name: '取消自动执行', exact: true }).click();
+  expect(server.calls).toHaveLength(1); await openWorkflow(page); await page.getByRole('button', { name: '取消自动执行', exact: true }).click();
   await expect(workflow(page).getByRole('status')).toContainText('取消'); held.release();
   const cancelled = await stored(page); expect(cancelled.draft.story).toBeUndefined(); expect(cancelled.state.revision).toBe(0);
-  await page.reload(); await expect(page.getByRole('button', { name: '自动生成开局', exact: true })).toBeEnabled();
+  await page.reload(); await openWorkflow(page); await expect(page.getByRole('button', { name: '自动生成开局', exact: true })).toBeEnabled();
   expect(server.calls).toHaveLength(1); server.plan.hold = undefined;
   await page.getByRole('button', { name: '自动生成开局', exact: true }).click(); await ready(page); expect(server.calls).toHaveLength(4);
 });
@@ -185,7 +186,7 @@ test('快速离开并重读同一存档或新标签不能延续开局收费授�
   await creation(page); await confirm(page); await expect.poll(() => server.calls.length).toBe(2);
   const url = page.url(); await page.getByRole('button', { name: '游戏首页', exact: true }).click();
   await page.getByRole('button', { name: /读取存档/ }).click();
-  await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeVisible();
+  await openWorkflow(page); await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeVisible();
   const other = await context.newPage(); let otherRequests = 0;
   await other.route('https://action.mock.invalid/**', async (route) => { otherRequests++; await route.abort(); });
   await other.goto(url); await expect(other.locator('.game-layout')).toBeVisible();
@@ -204,7 +205,7 @@ test('关闭变量时世界只能预览，不因自动开局而强行启用或�
 
 test('正文摘要不合法时不保存、不运行下游、不结算', async ({ page }) => {
   await prepare(page); const server = await mock(page); server.plan.badSummary = true; await creation(page); await confirm(page);
-  await expect(workflow(page).getByRole('alert')).toBeVisible(); expect(server.calls.map((call) => call.stage)).toEqual(['story']);
+  await openWorkflow(page); await expect(workflow(page).getByRole('alert')).toBeVisible(); expect(server.calls.map((call) => call.stage)).toEqual(['story']);
   const result = await stored(page); expect(result.draft.story).toBeUndefined(); expect(result.state.journal).toEqual([]);
   await page.getByLabel('你的行动', { exact: true }).fill('继续'); await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
 });
@@ -216,7 +217,7 @@ test('开局组件加载前刷新销毁授权，未生成草稿保留且仅主�
   await creation(page); await page.getByRole('button', { name: '确认并创建存档', exact: true }).click();
   await expect.poll(() => loading).toBe(true); expect(server.calls).toHaveLength(0);
   await page.unroute(modulePath); await page.reload(); held.release();
-  await expect(page.getByRole('button', { name: '自动生成开局', exact: true })).toBeEnabled();
+  await openWorkflow(page); await expect(page.getByRole('button', { name: '自动生成开局', exact: true })).toBeEnabled();
   const before = await stored(page); expect(before.draft.draftRevision).toBe(0); expect(before.draft.story).toBeUndefined(); expect(server.calls).toHaveLength(0);
   await page.getByRole('button', { name: '自动生成开局', exact: true }).click(); await ready(page); expect(server.calls).toHaveLength(3);
 });
@@ -235,10 +236,10 @@ for (const failure of ['network', 'timeout'] as const) {
     if (failure === 'network') { server.plan.failure = 'story'; server.plan.network = true; }
     else { server.plan.hold = 'story'; server.plan.gate = held.pending; }
     await creation(page); await confirm(page);
-    await expect(workflow(page).getByRole('alert')).toContainText(failure === 'network' ? '网络请求失败' : '超时');
+    await openWorkflow(page); await expect(workflow(page).getByRole('alert')).toContainText(failure === 'network' ? '网络请求失败' : '超时');
     held.release(); expect(server.calls.map((call) => call.stage)).toEqual(['story']);
     const failed = await stored(page); expect(failed.state.revision).toBe(0); expect(failed.draft.story).toBeUndefined();
-    await page.reload(); await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeEnabled();
+    await page.reload(); await openWorkflow(page); await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeEnabled();
     expect(server.calls).toHaveLength(1); expect(await stored(page)).toEqual(failed);
   });
 }
@@ -248,17 +249,20 @@ for (const disabled of ['world', 'variables'] as const) {
     test.setTimeout(60000);
     await prepare(page, true, { variables: disabled !== 'variables', world: disabled !== 'world' });
     const server = await mock(page); await creation(page); await confirm(page);
-    await expect(workflow(page).getByRole('status')).toContainText(disabled === 'world' ? '跳过' : '预览');
+    await expect(workflow(page).getByRole('status')).toContainText(disabled === 'world' ? '阶段已关闭' : '预览');
     const before = await stored(page), initial = disabled === 'world' ? ['story', 'variables'] : ['story', 'world'];
     expect(server.calls.map((call) => call.stage)).toEqual(initial);
     await expect(workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true })).toHaveCount(0);
+    await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');
+    await openWorkflow(page);
     const guidance = workflow(page).getByRole('note', { name: '阶段设置提示', exact: true });
     await expect(guidance).toContainText(disabled === 'world' ? '动态世界阶段已关闭' : '变量阶段未启用，当前世界结果仅为预览');
+    await page.locator('.workflow-disclosure > summary').click();
     await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');
     await page.getByLabel('你的行动', { exact: true }).fill('继续观察街道');
     await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
     await page.reload();
-    await expect(guidance).toBeVisible();
+    await openWorkflow(page); await expect(guidance).toBeVisible();
     await page.getByLabel('你的行动', { exact: true }).fill('继续观察街道');
     await expect(workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true })).toHaveCount(0);
     expect(await stored(page)).toEqual(before); expect(server.calls.map((call) => call.stage)).toEqual(initial);
@@ -272,7 +276,7 @@ for (const disabled of ['world', 'variables'] as const) {
     await expect(resume).toBeEnabled(); expect(server.calls.map((call) => call.stage)).toEqual(initial);
     expect(await stored(page)).toEqual(before);
     await page.locator('.workflow-disclosure > summary').click();
-    await resume.click(); await ready(page);
+    await expect(resume).toBeHidden(); await openWorkflow(page); await resume.click(); await ready(page);
     const complete = await stored(page);
     expect(complete.state.revision).toBe(1); expect(complete.state.journal[0].story).toEqual(before.draft.story);
     if (disabled === 'world') expect(complete.state.appliedCommands).toEqual(expect.arrayContaining(before.draft.variables!.result.commands.map(command => expect.objectContaining({ commandId: command.commandId }))));
@@ -286,3 +290,69 @@ for (const disabled of ['world', 'variables'] as const) {
     expect(server.calls.map((call) => call.stage)).toEqual([...completedCalls, 'story', 'variables', 'world']);
   });
 }
+
+test('单行状态跟随三个实际请求，展开收起不重发且自动结算后等待行动', async ({ page }) => {
+  await prepare(page); const server = await mock(page);
+  let held = gate(); server.plan.hold = 'story'; server.plan.gate = held.pending;
+  await creation(page); await confirm(page);
+  const details = page.locator('.workflow-disclosure'), summary = details.locator(':scope > summary');
+  for (const [index, stage] of (['story', 'variables', 'world'] as const).entries()) {
+    await expect(summary).toContainText(`${{ story: '正文', variables: '变量', world: '动态世界' }[stage]}生成中 · ${index + 1}/3`);
+    await expect.poll(() => server.calls.map(call => call.stage)).toEqual(['story', 'variables', 'world'].slice(0, index + 1));
+    await expect(details).not.toHaveAttribute('open');
+    await expect(workflow(page).getByRole('button', { name: '取消自动执行' })).toBeHidden();
+    const before = await stored(page);
+    await summary.focus(); await page.keyboard.press('Enter');
+    await expect(workflow(page).getByRole('button', { name: '取消自动执行' })).toBeEnabled();
+    if (!(await page.locator('.bound-input').evaluate(el => el.hasAttribute('open'))))
+      await page.getByText('本回合已绑定输入（只读）', { exact: true }).click();
+    await expect(page.locator('.bound-input .prose')).toBeVisible();
+    await summary.click();
+    expect(server.calls.map(call => call.stage)).toEqual(['story', 'variables', 'world'].slice(0, index + 1));
+    expect(await stored(page)).toEqual(before);
+    const release = held.release;
+    held = gate(); server.plan.hold = (['variables', 'world'] as const)[index]; server.plan.gate = held.pending;
+    release();
+  }
+  await ready(page); await expect(details).not.toHaveAttribute('open');
+  const complete = await stored(page);
+  expect(complete.state.revision).toBe(1); expect(complete.state.journal).toHaveLength(1);
+  expect(complete.draft.userInput).toBe(''); expect(server.calls).toHaveLength(3);
+  await openWorkflow(page); await expect(page.locator('.workflow-stages > li')).toHaveCount(3);
+  for (const stage of await page.locator('.workflow-stages > li').all()) await expect(stage).toContainText('已结算');
+  await summary.click(); await page.reload(); await ready(page);
+  await expect(details).not.toHaveAttribute('open'); expect(await stored(page)).toEqual(complete); expect(server.calls).toHaveLength(3);
+});
+
+test('最新阶段失败覆盖旧手动错误，状态栏准确指出World失败', async ({ page }) => {
+  await prepare(page); const server = await mock(page); server.plan.failure = 'variables';
+  await creation(page); await confirm(page); await openWorkflow(page);
+  await expect(workflow(page).getByRole('status')).toHaveText('变量生成失败 · 查看详情');
+  server.plan.failure = 'story'; server.plan.status = 401;
+  await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
+  await expect(workflow(page).getByRole('status')).toHaveText('正文生成失败 · 查看详情');
+  server.plan.failure = 'world'; server.plan.status = undefined;
+  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
+  await expect(workflow(page).getByRole('status')).toHaveText('动态世界生成失败 · 查看详情');
+  const result = await stored(page); expect(result.state.revision).toBe(0);
+  expect(result.draft.story).toBeTruthy(); expect(result.draft.variables?.validation).toBe('validated');
+  expect(server.calls.slice(-2).map(call => call.stage)).toEqual(['variables', 'world']);
+});
+
+test('下一条行动绑定冲突显示发送失败，不误报等待行动且不请求模型', async ({ page }) => {
+  await prepare(page); const server = await mock(page); await creation(page); await confirm(page); await ready(page);
+  // 模拟另一标签真实绑定草稿；当前界面保留旧 revision，让现有 CAS 拒绝发送。
+  await page.evaluate(async () => {
+    const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open();
+    try { const draft = await repo.loadDraft(location.hash.slice(6)); await repo.bindTurnAction(draft, '另一标签已绑定的行动', true, true); }
+    finally { repo.close(); }
+  });
+  const before = await stored(page);
+  await page.getByLabel('你的行动', { exact: true }).fill('当前页面的行动');
+  await page.getByRole('button', { name: '发送', exact: true }).click();
+  await expect(workflow(page).getByRole('status')).toHaveText('行动发送失败 · 查看详情');
+  await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');
+  await openWorkflow(page); await expect(workflow(page).getByRole('alert')).toContainText('行动未发送');
+  await expect(page.getByLabel('你的行动', { exact: true })).toHaveValue('当前页面的行动');
+  expect(await stored(page)).toEqual(before); expect(server.calls).toHaveLength(3);
+});

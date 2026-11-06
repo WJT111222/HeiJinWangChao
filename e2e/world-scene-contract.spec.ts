@@ -1,7 +1,7 @@
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { hanhaiSceneContext } from '../src/tests/fixtures/hanhaiSceneContext';
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools, openWorkflowDiagnostics } from './helpers/gameLayout';
 
 async function seed(page: Page) {
   const a = hanhaiSceneContext();
@@ -33,7 +33,7 @@ test('自然现场记录与JSON围栏：候选自动结算，原文保留围栏�
   await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
   await expect.poll(async()=>(await stored(page)).state.turnNumber).toBe(1);
   const saved=await stored(page);expect(saved.state.events.event_hanhai_lens_extortion.status).toBe('active');expect(saved.state.economy).toEqual(a.state.economy);expect(saved.state.npc).toEqual(a.state.npc);
-  await page.getByText('查看三阶段模型完整原文与执行结果',{exact:true}).click();await page.getByText('动态世界模型原文',{exact:true}).click();
+  await openWorkflowDiagnostics(page); await page.getByText('查看三阶段模型完整原文与执行结果',{exact:true}).click();await page.getByText('动态世界模型原文',{exact:true}).click();
   expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(text);
   await page.reload();expect(await stored(page)).toEqual(saved);expect(calls).toBe(1);
 });
@@ -44,7 +44,7 @@ test('无效人物引用保留失败原文和上游；明确恢复只请求World
   await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
   await expect(page.getByTestId('runtime-log')).toContainText('actor_permission');
   const failed=await stored(page);expect(failed.state).toEqual(a.state);expect(failed.draft.variables.validation).toBe('validated');expect(failed.draft.story.narrative).toBe(a.draft.story!.narrative);
-  await page.getByText('查看三阶段模型完整原文与执行结果',{exact:true}).click();await page.getByText('动态世界模型原文 · 未通过验收',{exact:true}).click();
+  await openWorkflowDiagnostics(page); await page.getByText('查看三阶段模型完整原文与执行结果',{exact:true}).click();await page.getByText('动态世界模型原文 · 未通过验收',{exact:true}).click();
   expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(bad);
   await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();await expect.poll(async()=>(await stored(page)).state.turnNumber).toBe(1);expect(calls).toBe(2);
 });

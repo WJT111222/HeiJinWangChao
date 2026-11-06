@@ -1,4 +1,5 @@
 import { expect, test } from './helpers/test';
+import { openWorkflow, openWorkflowDiagnostics } from './helpers/gameLayout';
 import type { Page } from '@playwright/test';
 
 async function seed(page: Page, mode: 'long' | 'complete' | 'history' = 'long') {
@@ -134,7 +135,7 @@ test('已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema
   await page.goto('/'); await expect(page.locator('.version')).toHaveText('V1.0');
   const before = await seed(page, 'complete');
   await expect(page.locator('.version')).toHaveText('V1.0'); await expect(page.locator('.app-header')).not.toContainText('M5-P3');
-  await expect(page.locator('.workflow summary').first()).toContainText('三阶段候选已完成');
+  await expect(page.locator('.workflow summary').first()).toContainText('候选已完成');
   await page.reload(); await expect(page.getByTestId('story-reader')).toBeVisible(); expect(await stored(page)).toEqual(before);
   await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');
 });
@@ -149,15 +150,16 @@ test('生成中折叠不打断；取消和错误不被隐藏，Roll成功保留�
     const text = '<thinking>本轮创作提纲：按现有地点保持人物连续。</thinking><正文>【旁白】你仍在街边，行人经过身旁。</正文><短期记忆>主角继续观察街道。</短期记忆><变量规划>[]</变量规划>';
     await route.fulfill(selected === 'error' ? { status: 401, body: 'private-provider-error' } : { contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n` }).catch(() => undefined);
   });
-  await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
-  const summary = page.locator('.workflow-disclosure > summary'); await expect(summary).toContainText('正在生成正文');
+  await openWorkflow(page); await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
+  const summary = page.locator('.workflow-disclosure > summary'); await expect(summary).toContainText('正文生成中 · 1/3');
   await summary.click(); await summary.click(); await expect.poll(() => calls).toBe(1);
-  await page.getByRole('button', { name: '取消生成', exact: true }).click(); await expect(summary).toContainText('已取消');
+  await openWorkflow(page); await page.getByRole('button', { name: '取消生成', exact: true }).click(); await expect(summary).toContainText('已取消');
   release(); expect((await stored(page)).draft.story).toEqual(before.draft.story);
   await expect(runtimeLog).toHaveCount(0);
-  mode = 'error'; await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
-  await expect(summary).toContainText('需要处理'); await expect(page.getByRole('alert').first()).toBeVisible();
+  mode = 'error'; await page.getByRole('button', { name: '重新 Roll', exact: true }).click(); await summary.click();
+  await expect(summary).toContainText('正文生成失败 · 查看详情'); await expect(page.getByRole('alert').first()).toBeHidden();
   await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open'); expect((await stored(page)).state).toEqual(before.state);
+  await openWorkflow(page); await expect(page.getByRole('alert').first()).toBeVisible();
   await expect(runtimeLog).toContainText('错误 1 条');
   await expect(runtimeLog).toHaveAttribute('open', '');
   await expect(runtimeLog.locator('li')).toHaveCount(1);
@@ -171,7 +173,7 @@ test('生成中折叠不打断；取消和错误不被隐藏，Roll成功保留�
       value: { writeText: async (value: string) => { target.__copiedRuntimeEntries!.push(value); } },
     });
   });
-  await runtimeLog.locator('li').first().getByRole('button', { name: '复制此条' }).click();
+  await openWorkflowDiagnostics(page); await runtimeLog.locator('li').first().getByRole('button', { name: '复制此条' }).click();
   await expect(runtimeLog).toContainText('已复制此条错误日志');
   const firstCopied = await page.evaluate(() =>
     (window as Window & { __copiedRuntimeEntries?: string[] }).__copiedRuntimeEntries ?? []);
@@ -181,7 +183,7 @@ test('生成中折叠不打断；取消和错误不被隐藏，Roll成功保留�
   expect(firstCopied[0]).not.toContain('started');
   // 第二次失败应生成第二个独立复制入口，不复制首条或非错误事件。
   await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
-  await expect(summary).toContainText('需要处理');
+  await expect(summary).toContainText('正文生成失败 · 查看详情');
   await expect(runtimeLog).toContainText('错误 2 条');
   await expect(runtimeLog).toHaveAttribute('open', '');
   await expect(runtimeLog.locator('li')).toHaveCount(2);
@@ -247,4 +249,26 @@ test('设置、历史检索及创角长页仍可滚动，关闭资料保留阅�
   await page.getByLabel('姓名', { exact: true }).fill('布局测试'); await page.getByLabel('年龄', { exact: true }).fill('28'); await page.getByLabel('性别', { exact: true }).fill('女');
   await page.getByRole('button', { name: /下一步/ }).click(); await expect(page.getByLabel('个人技能与专长')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollHeight > innerHeight)).toBe(true);
+});
+
+test('工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间', async ({ page }, info) => {
+  const before = await seed(page), workflow = page.getByRole('region', { name: '三阶段工作流', exact: true });
+  const disclosure = page.locator('.workflow-disclosure'), summary = disclosure.locator(':scope > summary');
+  await expect(disclosure).not.toHaveAttribute('open'); await expect(summary).toContainText('详情');
+  expect((await workflow.boundingBox())!.height).toBeLessThanOrEqual(44);
+  await expect(workflow.locator('button:visible')).toHaveCount(0);
+  await expect(page.locator('.composer-tools > .stage-responses, .composer-tools > .runtime-log')).toHaveCount(0);
+  for (const text of ['三阶段校验完成后自动原子结算', '自动执行会保留已完成阶段', '高级手动操作：', '手动启动新尝试；', '保留正文及合法变量；', '仅保存后续尝试偏好'])
+    await expect(page.getByText(text, { exact: false })).toHaveCount(0);
+  const collapsedHeight = (await page.getByTestId('story-reader').boundingBox())!.height;
+  await page.getByTestId('story-reader').evaluate(el => { el.scrollTop = 0; });
+  await fit(page); await page.screenshot({ path: `docs/screenshots/compact-workflow/after-${info.project.name}-collapsed.png` });
+  await summary.click();
+  await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeVisible();
+  await expect(page.locator('.workflow-stages > li')).toHaveCount(3);
+  await expect(page.getByText('重试与变更详情', { exact: true })).toBeVisible();
+  await fit(page); await page.screenshot({ path: `docs/screenshots/compact-workflow/after-${info.project.name}-expanded.png` });
+  await summary.click(); await fit(page);
+  expect((await page.getByTestId('story-reader').boundingBox())!.height).toBe(collapsedHeight);
+  expect(await stored(page)).toEqual(before);
 });
