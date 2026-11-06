@@ -17,9 +17,11 @@ import { validateTimeCommands, validateHistoricalWorld } from '../../domain/time
 import { parseVariableText, parseVariableResponse } from '../../parsers/variableText';
 import { compileVariableCommands, simulateVariablePlan } from '../../executors/variableText';
 import type { ExecutionError } from '../../executors/variableText';
+import { isTimeDomainRule } from '../../executors/variableText/aggregateDiagnostics';
 
 function textExecutionError(error: ExecutionError, variableStep: 'mapping' | 'simulation') {
-  const code = error.code === 'transaction_failed' ? 'variable_runtime' : error.code === 'invalid_amount' ? 'amount_balance'
+  const code = isTimeDomainRule(error.diagnostic?.domainRule) ? 'time_data'
+    : error.code === 'transaction_failed' ? 'variable_runtime' : error.code === 'invalid_amount' ? 'amount_balance'
     : ['revision_conflict', 'duplicate_or_conflicting_command'].includes(error.code) ? 'candidate_conflict'
     : ['unsupported_path', 'unsupported_operation', 'type_mismatch'].includes(error.code) ? 'schema_fields' : 'data_integrity';
   return new AiError(code, undefined, { variableStep, fieldPath: `text.${error.code}`,

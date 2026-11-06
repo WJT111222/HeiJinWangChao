@@ -8,6 +8,7 @@ export const worldRuleNames = {
   constraint: '世界命令未满足执行约束', command_structure: '命令类型或分组不符合世界协议',
   task_state: '任务状态、成果或执行时间不合法',
   actor_permission: '行动者或字段超出场外权限', event_plan: '事件规划字段不完整', event_time: '事件开始、预计或结案时间冲突',
+  organization_initialization: 'World 新建组织的 relationHistory 必须为空，关系变化请使用独立关系命令',
   event_transition: '事件状态转换不合法', completion_conditions: '完成所需前置条件尚未满足',
   future_event_mirror: '未来事件不是合法新事件的相同镜像',
   timeline_state: '历史归档需要重大且已经结案的事件', due_event_unhandled: '到期事件未结案或未重新安排预计时间',
@@ -24,7 +25,7 @@ interface Scope { fieldPath?: string; commandIndex?: number; commandType?: strin
 export function worldValidationError(error: unknown, scope: Scope = {}, raw?: unknown): AiError {
   if (error instanceof z.ZodError) {
     const path = error.issues[0]?.path ?? [];
-    const group = path[0], local = typeof path[1] === 'number' ? path[1] : undefined;
+    const group = path[0], local = ['worldCommands', 'taskCommands', 'eventCommands'].includes(String(group)) && typeof path[1] === 'number' ? path[1] : undefined;
     const array = raw && typeof raw === 'object' && typeof group === 'string' && group in raw ? Reflect.get(raw, group) : undefined;
     const candidate: unknown = Array.isArray(array) && local !== undefined ? array[local] : undefined;
     const type = candidate && typeof candidate === 'object' && 'type' in candidate && DomainCommandSchema.options.some(option => option.shape.type.value === candidate.type) ? String(candidate.type) : scope.commandType;

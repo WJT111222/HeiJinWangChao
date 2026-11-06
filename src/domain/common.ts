@@ -32,6 +32,13 @@ export class DataError extends Error {
   }
 }
 
+/** 仅记录实际 apply 失败的位置；最终整批检查不附会到单条命令。 */
+export class CommandDataError extends DataError {
+  constructor(error: DataError, public readonly commandIndex: number, public readonly commandType: string) {
+    super(error.code, error.message);
+  }
+}
+
 export function requireData(condition: unknown, code: string, message: string): asserts condition {
   if (!condition) throw new DataError(code, message);
 }
