@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { GameTimeSchema, requireData } from './common';
+import { GameTimeSchema } from './common';
+import { requireStoryData, storyFieldPath } from './storyDiagnostics';
 import type { GameState } from './state';
 import type { TurnDraft } from './drafts';
 
@@ -16,20 +17,22 @@ export function chinaCalendar(time: string) {
 const OpeningTimeSchema = z.strictObject({ startAt: GameTimeSchema, endAt: GameTimeSchema });
 export function openingTimeSelection(state: GameState, draft: Pick<TurnDraft, 'turnKind' | 'story' | 'userInput'>) {
   if (!state.openingTimePending) return undefined;
-  requireData(draft.turnKind === 'opening' && state.turnNumber === 0, 'OPENING_TIME', '待定时钟只能用于新开局');
-  requireData(!draft.story?.variableGuide.some((entry) => entry.group === 'time' && entry.subjectHint?.startsWith('time:') && entry.subjectHint !== 'time:opening'),
-    'OPENING_TIME', '待定开局不能混用普通回合的时间停止或历史回顾协议');
+  requireStoryData(draft.turnKind === 'opening' && state.turnNumber === 0, 'OPENING_TIME', '待定时钟只能用于新开局', { storyRule: 'opening_context' });
+  requireStoryData(!draft.story?.variableGuide.some((entry) => entry.group === 'time' && entry.subjectHint?.startsWith('time:') && entry.subjectHint !== 'time:opening'),
+    'OPENING_TIME', '待定开局不能混用普通回合的时间停止或历史回顾协议', { storyRule: 'opening_protocol' });
   const entries = draft.story?.variableGuide.filter((entry) => entry.group === 'time' && entry.subjectHint === 'time:opening') ?? [];
-  requireData(entries.length === 1, 'OPENING_TIME', '开局缺少唯一的结构化时间，请重新生成开局正文。');
+  requireStoryData(entries.length === 1, 'OPENING_TIME', '开局缺少唯一的结构化时间，请重新生成开局正文。', { storyRule: entries.length === 0 ? 'opening_missing' : 'opening_duplicate' });
   let raw: unknown;
-  try { raw = JSON.parse(entries[0].observedFact); } catch { requireData(false, 'OPENING_TIME', '开局时间不是合法JSON'); }
+  try { raw = JSON.parse(entries[0].observedFact); } catch { requireStoryData(false, 'OPENING_TIME', '开局时间不是合法JSON', { storyRule: 'opening_json' }); }
   const parsed = OpeningTimeSchema.safeParse(raw);
-  requireData(parsed.success, 'OPENING_TIME', '开局时间格式或日历日期无效');
+  requireStoryData(parsed.success, 'OPENING_TIME', '开局时间格式或日历日期无效', { storyRule: 'opening_format',
+    fieldPath: storyFieldPath(['openingTime', ...(parsed.success ? [] : parsed.error.issues[0]?.path ?? [])]) });
   const selected = parsed.data, { startAt, endAt } = selected;
-  requireData(startAt.endsWith('+08:00') && endAt.endsWith('+08:00') && Date.parse(endAt) >= Date.parse(startAt),
-    'OPENING_TIME', '开局须采用中国标准时间，结束时间不可早于起点。');
+  requireStoryData(startAt.endsWith('+08:00') && endAt.endsWith('+08:00') && Date.parse(endAt) >= Date.parse(startAt),
+    'OPENING_TIME', '开局须采用中国标准时间，结束时间不可早于起点。', {
+      storyRule: !startAt.endsWith('+08:00') || !endAt.endsWith('+08:00') ? 'opening_timezone' : 'opening_reversed' });
   const calendar = chinaCalendar(startAt);
-  requireData(calendar.year >= 1, 'OPENING_TIME', '开局年份必须是合法公历年份');
+  requireStoryData(calendar.year >= 1, 'OPENING_TIME', '开局年份必须是合法公历年份', { storyRule: 'opening_year' });
   // 年代/季节/文风由同次Story遵守玩家设定；程序不再从小说文字反推日历。
   const evidence = entries[0].textEvidence?.trim() || 'Story结构化开局时间';
   return { ...selected, evidence, weekday: calendar.weekday };

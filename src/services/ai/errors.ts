@@ -1,3 +1,5 @@
+import { safeStoryDiagnostic, storyDiagnosticMessage } from '../../domain/storyDiagnostics';
+import type { StoryDiagnostic } from '../../domain/storyDiagnostics';
 import { DataError } from '../../domain/common';
 import type { ExecutionDiagnostic } from '../../executors/variableText/diagnostics';
 import type { WorldRule } from '../validation/worldDiagnostics';
@@ -83,9 +85,10 @@ export class AiError extends Error {
   constructor(
     public readonly code: AiErrorCode,
     public readonly status?: number,
-    public readonly details?: { fieldPath?: string; commandType?: string; commandIndex?: number; relatedCommandIndices?: number[]; worldRule?: WorldRule; variableStep?: VariableStep } & Partial<ExecutionDiagnostic>,
+    public readonly details?: { fieldPath?: string; commandType?: string; commandIndex?: number; relatedCommandIndices?: number[]; worldRule?: WorldRule; variableStep?: VariableStep } & Partial<ExecutionDiagnostic> & Partial<StoryDiagnostic>,
   ) {
-    super(messages[code] + (details?.fieldPath ? ` 字段：${details.fieldPath}${details.commandType ? `（${details.commandType}，第${(details.commandIndex ?? 0) + 1}条）` : ''}。` : ''));
+    super(details?.storyRule ? storyDiagnosticMessage(safeStoryDiagnostic(details)) : messages[code] + (details?.fieldPath ? ` 字段：${details.fieldPath}${details.commandType ? `（${details.commandType}，第${(details.commandIndex ?? 0) + 1}条）` : ''}。` : ''));
+    if (details?.storyRule) this.details = safeStoryDiagnostic(details);
     this.name = 'AiError';
   }
 }

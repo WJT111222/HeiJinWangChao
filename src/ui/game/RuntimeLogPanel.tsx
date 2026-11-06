@@ -1,3 +1,4 @@
+import { storyRuleNames } from '../../domain/storyDiagnostics';
 import { variableStepNames } from '../../services/ai/errors';
 import { useEffect, useRef, useState } from 'react';
 import type { RuntimeLogEntry } from './runtimeLog';
@@ -68,6 +69,7 @@ export function RuntimeLogPanel({
                 )}
                 <p>{entry.message}</p>
                 {entry.code && <small>错误码：{entry.code}</small>}
+                {entry.storyRule && <small>正文失败类型：{entry.storyRule} · {storyRuleNames[entry.storyRule]}</small>}
                 {entry.httpStatus && <small>HTTP 状态：{entry.httpStatus}</small>}
                 {entry.fieldPath && <small>字段：{entry.fieldPath}</small>}
                 {entry.commandIndex && <small>命令序号：第 {entry.commandIndex} 条</small>}
