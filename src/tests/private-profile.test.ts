@@ -26,10 +26,10 @@ describe('privateProfile via UpdateNpc', () => {
 
     applyVariableCommand(state, {
       type: 'UpdateNpc', commandId: 'c2', evidence: 'e', expectedRevision: 1, npcId: 'n1',
-      changes: { privateProfile: { buttocksDescription: '描述B' } },
+      changes: { privateProfile: { bodyDescription: '描述B' } },
     } as any, 't1', () => {}, () => {});
     expect((state.npc.n1 as any).privateProfile?.chestDescription).toBe('描述A');
-    expect((state.npc.n1 as any).privateProfile?.buttocksDescription).toBe('描述B');
+    expect((state.npc.n1 as any).privateProfile?.bodyDescription).toBe('描述B');
   });
 
   it('rejects privateProfile on ordinary or male NPC', () => {
