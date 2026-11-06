@@ -43,33 +43,55 @@ function evidenceContext(narrative: string, index: number, length: number) {
   }
   return { sentence, sentenceStart: left, dialogue: dialogue || quotes.length > 0 };
 }
+function worldFactAt(command: DomainCommand, narrative: string, index: number) {
+  const { sentence, sentenceStart, dialogue } = evidenceContext(
+    narrative,
+    index,
+    command.evidence.length,
+  );
+  const reportedMemory =
+    command.type === 'RecordNpcMemory' && command.knowledgeKind !== 'observed';
+  return (
+    reportedMemory ||
+    // 真实对话本身也耗时；对白内容的未来计划不是时钟的目标时间。
+    (command.type === 'SetWorldClock' && (dialogue || /[“”「」]/.test(sentence))) ||
+    (!uncertain.test(sentence) &&
+      !isNegatedFact(
+        sentence,
+        index - sentenceStart,
+        index - sentenceStart + command.evidence.length,
+      ) &&
+      !/[“”「」]/.test(sentence) &&
+      !dialogue)
+  );
+}
 // 仅世界来源验证使用；变量候选不走文学词法判断。
 export function worldFactEvidence(command: DomainCommand, narrative: string) {
   let index = narrative.indexOf(command.evidence);
   let safe = false;
   while (index >= 0) {
-    const { sentence, sentenceStart, dialogue } = evidenceContext(
-      narrative,
-      index,
-      command.evidence.length,
-    );
-    const reportedMemory =
-      command.type === 'RecordNpcMemory' && command.knowledgeKind !== 'observed';
-    if (
-      reportedMemory ||
-      // 真实对话本身也耗时；对白内容的未来计划不是时钟的目标时间。
-      (command.type === 'SetWorldClock' && (dialogue || /[“”「」]/.test(sentence))) ||
-      (!uncertain.test(sentence) &&
-        !isNegatedFact(
-          sentence,
-          index - sentenceStart,
-          index - sentenceStart + command.evidence.length,
-        ) &&
-        !/[“”「」]/.test(sentence) &&
-        !dialogue)
-    )
-      safe = true;
+    if (worldFactAt(command, narrative, index)) safe = true;
     index = narrative.indexOf(command.evidence, index + 1);
   }
   if (!safe) throw new AiError('invalid_output');
+}
+
+/** Only the formal leading narrator marker is formatting, never arbitrary speaker tags. */
+export function narrationQuoteBody(quote: string) {
+  return quote.replace(/^【旁白】\s*/u, '');
+}
+
+/** Match the complete original sentence and check the context at that same occurrence. */
+export function affirmativeWorldSceneQuote(command: DomainCommand, narrative: string, quote: string) {
+  const body = narrationQuoteBody(quote);
+  if (!body) return false;
+  for (const match of narrative.matchAll(/[^。！？\n]+[。！？]?/gu)) {
+    if (narrationQuoteBody(match[0].trim()) !== body) continue;
+    // Retained standalone tags may precede the sentence on the previous line. Require
+    // the exact raw quote there; neither punctuation nor intervening text is rewritten.
+    const index = match.index + match[0].indexOf(body) - (quote.length - body.length);
+    if (index < 0 || narrative.slice(index, index + quote.length) !== quote) continue;
+    if (worldFactAt({ ...command, evidence: quote }, narrative, index)) return true;
+  }
+  return false;
 }

@@ -401,6 +401,10 @@
       "worldDiagnosticsContract": {
         "notes": "修正futureEvents只允许scheduled镜像、decision取消与旧outcome二选一的歧义；补充空结果实例与客观进展/角色知情边界，不放宽验证或新增AI请求。",
         "sha256": "8b161079ac69a99f7d32c4d785cc2547aa2d1a3feb09c7003a109a622c4e5fdb"
+      },
+      "worldSceneAnchors": {
+        "notes": "World现场记录采用可选完整肯定正文锚点、逐参与者绑定和确定性非执行描述；不把自由概括/对白主张当作事实。旧来源协议保持兼容，不增加模型调用。",
+        "sha256": "468b8226c0ed03a7859328923cf63cc555b5e8da37517ecf1b29417dc63809f6"
       }
     },
     "stages/opening/variables.md": {
@@ -434,6 +438,10 @@
       "playerObservation": {
         "notes": "依PR #50确认产品边界适配：玩家全量只读、角色独立认知；重要/主线/必要引用事件保留；可信重大成果归档无需主角知晓。沿用原模型请求，不改世界书或NSFW。",
         "sha256": "f2d9986b72dae21be5ae867c25ce4ae1ab96450e39c9a884def1566faaef9b8c"
+      },
+      "worldSceneAnchors": {
+        "notes": "World现场记录采用可选完整肯定正文锚点、逐参与者绑定和确定性非执行描述；不把自由概括/对白主张当作事实。旧来源协议保持兼容，不增加模型调用。",
+        "sha256": "9b295a63fff9a9b3a2c4034ee7b4135869b1f97bef21b84748add052f9a9ec87"
       }
     },
     "stages/regular/variables.md": {

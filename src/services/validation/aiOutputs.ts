@@ -66,6 +66,14 @@ function json(text: string): unknown {
     throw new AiError('invalid_json');
   }
 }
+/** Strip only a whole World JSON fence, never extract/repair a partial object. */
+function worldJson(text: string): unknown {
+  const trimmed = text.trim();
+  const opening = /^```(?:json)?[ \t]*\r?\n/i.exec(trimmed);
+  if (!opening) return json(text);
+  const body = trimmed.slice(opening[0].length).replace(/\r?\n```[ \t]*$/, '');
+  return json(body);
+}
 // 只解析结构；叙事规划不属于 StorySchema，也不检查文学步骤的内容质量。
 export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', settings: Settings) {
   const actions = settings.prompts.actionOptions;
@@ -126,7 +134,7 @@ export function parseWorld(text: string, state: GameState, draft: TurnDraft) {
   if (draft.variables?.validation === 'validated')
     parseVariables(JSON.stringify(draft.variables.result), state, draft);
   try {
-    const result = validateWorldOutput(json(text), state, draft);
+    const result = validateWorldOutput(worldJson(text), state, draft);
     try { validateHistoricalWorld(state, draft, result); } catch { throw new AiError('time_preflight'); }
     return result;
   } catch (error) {

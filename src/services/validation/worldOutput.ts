@@ -27,6 +27,7 @@ import { AiError } from '../ai/errors';
 import type { WorldEvidence, WorldSource } from './worldEvidence';
 import { worldValidationError } from './worldDiagnostics';
 import { derivedFactRule } from './worldFactNature';
+import { validateAnchoredScene } from './worldSceneRecord';
 
 function sameActor(a: ActorRef, b: ActorRef) {
   return a.kind === b.kind && a.id === b.id;
@@ -454,6 +455,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
       case 'SaveEvent': {
         const event = command.event,
           old = base.events[event.id];
+        if (proof.sceneRecord) validateAnchoredScene(event, old, proof, base);
         // Referencing a protected participant in a sourced scene record is not authority to act for them.
         const protectedActors = event.actorRefs.filter(ref => ref.kind === 'protagonist' ||
           (ref.kind === 'npc' && !actorAllowed(ref) && Boolean(base.npc[ref.id])));
@@ -464,7 +466,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
           requireWorld(proof.kind === 'established' && narrative, 'permission', 'actor_permission');
           requireWorld(protectedActors.every(ref => tiedTo(ref)), 'permission', 'actor_permission');
           // Source-ground every changed descriptive field; no invented scene decisions hidden in prose.
-          for (const field of ['title', 'backgroundText', 'goalText', 'resolutionText'] as const) {
+          if (!proof.sceneRecord) for (const field of ['title', 'backgroundText', 'goalText', 'resolutionText'] as const) {
             const text = event[field];
             if (text !== undefined && text !== old?.[field])
               requireWorld(narrative.includes(text), 'permission', 'actor_permission');
