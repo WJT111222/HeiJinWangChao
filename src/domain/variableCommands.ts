@@ -41,9 +41,9 @@ const npcChanges = OrdinaryNpcSchema.pick({
       .optional()
       .describe('合法地点 ID；null 显式清除未知去向的地点，须同时离场；省略保持原值'),
     privateProfile: z.strictObject({
+      bodyDescription: z.string().optional(),
       chestDescription: z.string().optional(),
-      buttocksDescription: z.string().optional(),
-      privatePartDescription: z.string().optional(),
+      pussyDescription: z.string().optional(),
       isVirgin: z.boolean().optional(),
       firstExperienceTarget: z.string().optional(),
       firstExperienceTime: z.string().optional(),
