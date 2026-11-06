@@ -1,5 +1,5 @@
 import { openGameTools } from './helpers/gameLayout';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { array, record, string } from '../src/services/ai/protocols';
 import { GameStateSchema } from '../src/domain/state';

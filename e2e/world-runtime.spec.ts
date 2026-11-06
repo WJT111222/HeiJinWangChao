@@ -1,5 +1,5 @@
 import { openGameTools } from './helpers/gameLayout';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { schoolEvidence, schoolResult, schoolTask, syntheticSchoolBatch } from '../src/tests/fixtures/worldChineseFact';
 const result = {

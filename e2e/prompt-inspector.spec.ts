@@ -1,6 +1,6 @@
 import { openGameTools } from './helpers/gameLayout';
 import { writeFile } from 'node:fs/promises';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import manifest from '../prompts/manifest.json' with { type: 'json' };
 

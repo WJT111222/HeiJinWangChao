@@ -1,5 +1,5 @@
 import { variableTextEnvelope } from '../src/tests/fixtures/variableReply';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { openGameTools } from './helpers/gameLayout';
 import { worldResult, proof } from '../src/tests/fixtures/world';
