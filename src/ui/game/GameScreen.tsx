@@ -1,3 +1,4 @@
+import { StoryReading } from './StoryReading';
 import { openingTimeSelection } from '../../domain/openingTime';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
@@ -345,7 +346,7 @@ export function GameScreen({
           {view.journal.map((entry, index) => (
             <article className="story-entry" key={entry.turnId}>
               <p className="eyebrow">第 {index + 1} 回合</p>
-              <p className="prose">{entry.narrative}</p>
+              <StoryReading narrative={entry.narrative} protagonistName={hero.name} />
             </article>
           ))}
           {progress ? (
@@ -357,7 +358,7 @@ export function GameScreen({
           ) : draft?.story ? (
             <article className="story-entry">
               <span className="tag">正文草稿 · 世界状态尚未确认</span>
-              <p className="prose">{draft.story.narrative}</p>
+              <StoryReading narrative={draft.story.narrative} protagonistName={hero.name} />
             </article>
           ) : (
             !view.journal.length && (
