@@ -339,3 +339,53 @@ it('Runtime rejects an omitted narrative entry before Variables/World; explicit 
   expect(retry.calls.map(c=>c.stage)).toEqual(['story','variables','world']);expect(await a.repo.load('save-a')).toEqual(saved.state);
   const committed=await a.repo.commitTurn(submission(completed.draft,''));expect(committed.state.events.call.protagonistEntry?.status).toBe('presented');
 });
+
+// 本轮只依据已确认的错误形态构造中性 Mock，不冒充尚未取得的实机原文/存档。
+it.each(['knowledge-shape', 'timeline-object', 'organization-history', 'interaction-time'] as const)(
+  '协议可靠性 %s：真实请求失败保留Story，明确重试后Variables→World→Commit→重载', async failure => {
+    const a = await fixture('opening'), before = await a.repo.load('save-a');
+    let corrected = false;
+    const t = transport(() => block([
+      set('protagonist.emotionText', '从容'),
+      ...(failure === 'interaction-time' ? [set('npc[scene].lastInteractionAt', corrected ? openingEnd : '2015-07-09T08:05:00+08:00')] : []),
+      `push npc[scene].knownInformation = ${JSON.stringify(!corrected && failure === 'knowledge-shape'
+        ? { text: '收到值班安排', source: '同事通知', learnedAt: openingEnd }
+        : { text: '收到值班安排', knowledgeKind: 'reported', knowledgeSource: '同事通知', visibility: 'npc_private' })}`,
+    ].join('\n')), context => ({
+      ...worldResult(),
+      worldCommands: [{ type: 'CreateOrganization', commandId: 'community-org', evidence: '登记社区服务团队', organization: {
+        id: 'org-community', kind: 'civil', name: '社区服务团队', description: '社区日常协调', protagonistRelation: '暂无往来',
+        relationHistory: !corrected && failure === 'organization-history' ? ['提前填写的历史'] : [], keyNpcIds: [], currentTaskIds: [], activities: [],
+      } }],
+      eventCommands: [{ type: 'SaveEvent', commandId: 'community-result', evidence: '社区完成协调', event: {
+        ...event('routine-finished'), title: '社区日常协调', startAt: initialAt, estimatedEndAt: openingEnd,
+        status: 'resolved', resolvedAt: openingEnd, resolutionText: '已完成日常协调', outcome: 'success', impact: 'significant',
+        actorRefs: [{ kind: 'organization', id: 'org-community' }], sourceTurnIds: [record(context.TURN_CONTEXT).turnId],
+        continuation: { direction: 'end', reason: '无后续追踪需要' },
+      } }],
+      timelineCandidates: !corrected && failure === 'timeline-object' ? [{ eventId: 'routine-finished', title: '日常协调' }] : [],
+    }));
+    const runner = coordinator(a.repo, t.fetcher);
+    await expect(runner.generate(a)).rejects.toMatchObject({ code: failure === 'organization-history' ? 'permission' : failure === 'interaction-time' ? 'time_data' : 'schema_fields' });
+    const failed = await a.repo.loadDraft('save-a');
+    expect(failed?.story).toBeTruthy(); expect(failed?.world).toBeUndefined();
+    const variableFailure = failure === 'knowledge-shape' || failure === 'interaction-time';
+    expect(Boolean(failed?.variables)).toBe(!variableFailure);
+    expect(t.calls.map(call => call.stage)).toEqual(variableFailure ? ['story', 'variables'] : ['story', 'variables', 'world']);
+    expect(await a.repo.load('save-a')).toEqual(before);
+    corrected = true;
+    const outcome = await runner.generate({ ...a, draft: failed! });
+    expect(outcome.status).toBe('complete'); expect(outcome.draft.story).toEqual(failed!.story);
+    expect(t.calls.map(call => call.stage)).toEqual(variableFailure ? ['story', 'variables', 'variables', 'world'] : ['story', 'variables', 'world', 'world']);
+    const request = t.calls.find(call => call.stage === 'world')!.context;
+    expect(record(record(request.COMMAND_CATALOG).outputFields).timelineCandidates).toMatchObject({ type: 'array', items: { type: 'string' } });
+    const receipt = await a.repo.commitTurn(submission(outcome.draft, '继续工作'));
+    expect(receipt.state.npc.scene.knownInformation).toEqual([{ text: '[转述]收到值班安排', source: '同事通知', learnedAt: openingEnd }]);
+    expect(receipt.state.npc['npc-a'].memories).toEqual(before.npc['npc-a'].memories);
+    expect(receipt.state.organizations['org-community'].relationHistory).toEqual([]);
+    expect(receipt.state.events['routine-finished'].status).toBe('resolved'); expect(receipt.state.timeline).toEqual([]);
+    expect(receipt.state.worldClock).toBe(openingEnd); expect(receipt.state.journal).toHaveLength(1);
+    expect((await a.repo.commitTurn(submission(outcome.draft, '继续工作'))).replayed).toBe(true);
+    expect(await a.repo.load('save-a')).toEqual(receipt.state); expect(t.calls).toHaveLength(4);
+  },
+);
