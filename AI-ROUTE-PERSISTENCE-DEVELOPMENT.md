@@ -63,9 +63,9 @@
 | AI 设置定向 Chromium：路由持久化、模型选择、AI 设置 | desktop 17/17 + mobile 17/17，共 34/34 通过 |
 | `npm run prompts:check` | 82/82 通过 |
 | 单独 `npm run lint`、`npm run typecheck` | 通过 |
-| `npm run check`（Lint、全部 Vitest、类型检查、生产构建） | 最终结果待完整执行完成后填写 |
-| 完整 desktop/mobile Chromium | 最终结果待完整执行完成后填写 |
-| `git diff --check` | 当前通过，交付前再核对 |
+| `npm run check`（Lint、全部 Vitest、类型检查、生产构建） | 68 个文件、2365/2365 测试通过；Lint、类型检查、生产构建通过 |
+| 完整 desktop/mobile Chromium | desktop 175/175 + mobile 175/175，共 350/350；0 失败、0 跳过、0 重试，25.3 分钟 |
+| `git diff --check` | 通过 |
 
 完整浏览器命令：
 
@@ -73,7 +73,9 @@
 CHROMIUM_PATH=/usr/bin/chromium npx playwright test --project=desktop --project=mobile
 ```
 
-本地运行增加 line/json reporter 仅用于准确统计和保留日志，不筛选、跳过或重试失败用例。新增保存栏测试产生 `ai-route-save-bar.png` 桌面与移动截图，验证保存按钮和未保存提示可触达且没有横向溢出。
+本地运行增加 line/json reporter 仅用于准确统计和保留日志，不筛选、跳过或重试失败用例。完整批次验证实现提交 `e8bb64bf3741d1297f335c5e2fcb31d0dc948b03`；后续提交只补齐本报告结果，生产代码与测试未再变化。350 项包含原有 334 项及新增 16 项，2365 项包含原有 2345 项及新增 20 项，不能再与定向测试数相加。
+
+新增保存栏测试产生 `ai-route-save-bar.png` 桌面与移动截图，验证保存按钮和未保存提示可触达且没有横向溢出。移动端采用仓库的 Chromium Pixel 7 模拟配置，未验证真实 Android/iOS 设备。生产构建成功，仍有原有的大于 500 kB 分块提示，本轮不做打包架构改造。
 
 ## 文件清单
 
@@ -91,4 +93,4 @@ CHROMIUM_PATH=/usr/bin/chromium npx playwright test --project=desktop --project=
 
 勾选、取消勾选、恢复配置、打开关闭设置均未新增生成请求。显式保存后的模型列表 GET、手动连接测试和游戏生成保持已有规则。本轮不增加收费调用、自动恢复或重试。
 
-不把 Mock 通过表述为供应商实机验证；未调用真实平台。多标签页同时编辑 AI 配置仍沿用原来的最后一次显式保存语义，未在本轮新增跨页编辑锁。未主动部署生产环境；PR 预览环境由现有 Cloudflare 自动流程部署（实际状态以 PR 检查为准）。
+不把 Mock 通过表述为供应商实机验证；未调用真实平台。多标签页同时编辑 AI 配置仍沿用原来的最后一次显式保存语义，未在本轮新增跨页编辑锁。未主动部署生产环境；PR 预览环境由现有 Cloudflare 自动流程处理。当前 GitHub 连接器返回空的 commit statuses / Actions 列表，直接读取 Checks API 返回 Forbidden，故未独立核实 Workers Builds 成功状态，不能将本地构建通过写作远端预览部署成功。
