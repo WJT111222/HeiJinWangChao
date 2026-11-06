@@ -99,7 +99,9 @@ describe('渠道、凭证与请求快照', () => {
     setup.vault.set(second.id, 'another-mock-key');
     expect(requestSnapshot(setup.config, 'variables', setup.vault).model).toBe('mock-model');
     expect(requestSnapshot(setup.config, 'world', setup.vault).model).toBe('override-model');
-    expect(removeChannel(setup.config, second.id).routes.world).toEqual({ mode: 'follow-story' });
+    const removed = removeChannel(setup.config, second.id);
+    expect(removed.routes.world).toEqual({ mode: 'independent', channelId: '', modelId: '' });
+    expect(() => requestSnapshot(removed, 'world', setup.vault)).toThrow(expect.objectContaining({ code: 'configuration' }));
     expect(readAiConfig(store()).channels).toEqual([]);
   });
   it('凭证默认会话级，长期记住只在显式选择时；删除或撤回会清理持久副本', () => {
