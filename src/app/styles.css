@@ -1015,6 +1015,53 @@ fieldset label {
   padding: 2rem 0;
   border-bottom: 1px solid var(--line);
 }
+.story-reading {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+  margin-top: 1rem;
+}
+.story-narration { margin: 0; }
+.story-dialogue {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  max-width: 90%;
+  align-self: flex-start;
+  min-width: 0;
+}
+.story-dialogue-hero {
+  flex-direction: row-reverse;
+  align-self: flex-end;
+}
+.story-avatar { border-radius: 50%; margin-top: 0.15rem; }
+.story-speech { min-width: 0; }
+.story-speaker {
+  margin: 0 0 0.4rem;
+  color: var(--gold);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+.story-dialogue-hero .story-speaker { text-align: right; }
+.story-bubble {
+  margin: 0;
+  padding: 0.65rem 1rem;
+  background: #202c23;
+  border: 1px solid #46513c;
+  border-radius: 3px 14px 14px;
+  line-height: 1.9;
+}
+.story-dialogue-hero .story-bubble {
+  background: #2d3022;
+  border-color: #756540;
+  border-radius: 14px 3px 14px 14px;
+}
+@media (max-width: 600px) {
+  .story-dialogue { max-width: 100%; gap: 0.5rem; }
+  .story-avatar { width: 32px; height: 32px; }
+  .story-bubble { padding: 0.55rem 0.75rem; }
+}
 .composer {
   flex-shrink: 0;
   padding: 1.2rem 2rem;
