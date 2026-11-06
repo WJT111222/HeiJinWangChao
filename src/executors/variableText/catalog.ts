@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { OpeningInitialStateSchema } from '../../domain/openingInitialization';
 import { ActorRefSchema, GameTimeSchema, MoneySchema, TextSchema } from '../../domain/common';
 import { OrdinaryNpcSchema, SpecialNpcSchema } from '../../domain/npc/schema';
 import { GangOrgSchema, GovernmentOrgSchema, CivilOrgSchema, BusinessOrgSchema } from '../../domain/organizations/schema';
@@ -19,6 +20,7 @@ const heroChanges = variableCommandSchemas[0].shape.changes.shape;
 interface Entry { operation:VariableOperation; path:string; commandType:DomainCommand['type']; value:z.ZodType }
 const slotFields = ['topItemId','bottomItemId','shoesItemId','primaryWeaponItemId','secondaryWeaponItemId','currentVehicleAssetId'];
 const entries:Entry[] = [
+  {operation:'set',path:'opening.initialState',commandType:'InitializeOpeningState',value:OpeningInitialStateSchema},
   {operation:'set',path:'protagonist',commandType:'UpdateProtagonist',value:variableCommandSchemas[0].shape.changes},
   {operation:'push',path:'protagonist.skills',commandType:'UpdateProtagonist',value:TextSchema},
   {operation:'set',path:'protagonist.skills[index]',commandType:'UpdateProtagonist',value:TextSchema},
@@ -73,7 +75,8 @@ export function textVariableCatalog() {
       '同一次响应依次输出完整<thinking>、<说明>、<命令>。只执行命令块；set/add/push 路径 = JSON值；delete 路径，无操作数。以换行分隔，值可多行。不输出DomainCommand JSON、commandId、evidence、expectedRevision。',
       '可选gameState.前缀与源仓库一致，根和字段仍以本目录为准；[index]仅用于列明的普通数组，NPC/实体表必须用稳定ID。[id]替换为真实稳定ID；创建对象省略id，由路径注入。条目是有限操作入口，不是任意深层赋值。',
       '内联NPC初始记忆保持空；用push记忆路径新增，由程序填充当前回合、人物引用和游戏时间。knownInformation同时记录一条个人记忆。',
-      '只能更新目录内字段。没有原生命令的余额初始化、旧资产无交易登记、房产购买写入<说明>，不伪造路径。events[id].sceneState仅更新已存在现场事件的实际状态和结果，程序保留旧规划并填写来源；新事件、预计终止时间、延期、承接及清理由World处理。tasks仍须截止时间或非空完成条件，不套用事件新规。',
+      '只能更新目录内字段。旧资产无交易登记、历史债务无到账登记、房产购买尚无原生命令，写入<说明>，不伪造交易。events[id].sceneState仅更新已存在现场事件的实际状态和结果，程序保留旧规划并填写来源；新事件、预计终止时间、延期、承接及清理由World处理。tasks仍须截止时间或非空完成条件，不套用事件新规。',
+      'opening.initialState仅供带openingInitializationPending=true的新游戏开局，一批最多一条set。填写缺失weatherText/environmentText、原有cash/onlineBalance及expectedIncomes，不覆盖明确数据。expectedIncomes内每条需稳定id、source、整数分amount、status=expected、account、scheduleText，可选expectedAt不早于当前候选游戏时间；不是到账，不填receivedAt/sourceTurnId，不增加余额。普通回合及无标记旧档禁用。先初始化再处理真实交易。',
       '数组set替换、push追加一个元素、delete按当前索引删除；同一数组多个delete按索引从大到小输出，程序按文本顺序执行，不静默重排。NPC整体/原始记忆、账目记录、地点和组织整体删除没有安全领域命令，明确拒绝；不采用任意深合并。',
       '开局程序统一注入Story时间，不重复计时。普通回合set worldClock为合法ISO时间且不倒退。',
     ] };

@@ -120,6 +120,10 @@
       "m5P6": {
         "notes": "用户明确批准thinking结构/开局契机与兼容消息调整，原始来源及历史适配记录保留。",
         "sha256": "84b61c70d74e9ee23108658c8ccaa5c5aa548af1da2a6f404415821bd2aaa90b"
+      },
+      "openingLifeInitialization": {
+        "notes": "六代目任务明确批准：开局完整人生叙事与一次性生活初始化；保留此前来源和适配哈希，普通回合与输出协议不变。",
+        "sha256": "ba1c458c12e6841a5923badca91b677501f68196b028d755bdb749dfcca87ee8"
       }
     },
     "stages/regular/story.md": {
@@ -355,6 +359,10 @@
         "reference": "variableProtocolReference",
         "sha256": "3b0364a9f4b1db19b30d2b4d826fb76760608334416374424cab79aebab00c06",
         "notes": "同一次三标签与标准set/add/push/delete；仅白名单领域适配，不复制武侠业务、语义审核、任意深合并或额外请求。"
+      },
+      "openingLifeInitialization": {
+        "notes": "六代目任务明确批准：开局完整人生叙事与一次性生活初始化；保留此前来源和适配哈希，普通回合与输出协议不变。",
+        "sha256": "911a5a9b0bc1516a334cad92d7d6b085084cce28788cf1fe6a4dccd698010c19"
       }
     },
     "shared/08_world_output.md": {
@@ -421,6 +429,10 @@
         "reference": "variableProtocolReference",
         "sha256": "0ff56859980308e7462c699fda5bed08a219256124c8d8db549becee1e8c1bf4",
         "notes": "同一次三标签与标准set/add/push/delete；仅白名单领域适配，不复制武侠业务、语义审核、任意深合并或额外请求。"
+      },
+      "openingLifeInitialization": {
+        "notes": "六代目任务明确批准：开局完整人生叙事与一次性生活初始化；保留此前来源和适配哈希，普通回合与输出协议不变。",
+        "sha256": "2a5edcf7f3e2c4db1d93ef3bd326b07878d944dccddeb8fd1205d7436961cf6d"
       }
     },
     "stages/opening/world.md": {
@@ -491,6 +503,10 @@
         "reference": "variableProtocolReference",
         "sha256": "4ebe5d35b9e77716cb8c450ae21607fc074822a3665b9d70361f4cfcf94c0fe9",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
+      },
+      "openingLifeInitialization": {
+        "notes": "六代目任务明确批准：开局完整人生叙事与一次性生活初始化；保留此前来源和适配哈希，普通回合与输出协议不变。",
+        "sha256": "f4aee53c16be6d5778b5b6c963512cf5905ee05a08969becc7b86282d55bfa43"
       }
     },
     "variableGroups/protagonist/update.md": {
@@ -565,6 +581,10 @@
         "reference": "variableProtocolReference",
         "sha256": "6cc01b19a73bf8546480659b54520e8367ecf7421858192ff8349812128b5f41",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
+      },
+      "openingLifeInitialization": {
+        "notes": "六代目任务明确批准：开局完整人生叙事与一次性生活初始化；保留此前来源和适配哈希，普通回合与输出协议不变。",
+        "sha256": "0088b33ac7ce1092a976766b82284f44b7cc06ef4e50eaa6baec2d6e968fc6b0"
       }
     },
     "variableGroups/economy/update.md": {

@@ -378,6 +378,7 @@ describe('真实资源加载与消息组装', () => {
     const archive = initialCompanionProfile(state)!;
     // 已提交历史夹具，非未确认的新开局。
     delete state.openingTimePending;
+    delete state.openingInitializationPending;
     state.worldClock = gameTime;
     state.turnNumber = 1;
     state.revision = 1;
@@ -533,7 +534,8 @@ describe('真实命令目录、解析与安全候选验证', () => {
     expect(commandCatalog('variables').commandTypes).toEqual(
       DomainCommandSchema.options.map((option) => option.shape.type.value).filter((type) => !['RetireNpc','DeleteEvent','ArchiveEvent'].includes(type)),
     );
-    expect(commandCatalog('variables').commandTypes).toHaveLength(23);
+    expect(commandCatalog('variables').commandTypes).toHaveLength(24);
+    expect(commandCatalog('world').commandTypes).not.toContain('InitializeOpeningState');
     expect(commandCatalog('world').commandTypes).not.toContain('PurchaseItem');
     const a = input('variables');
     for (const value of [

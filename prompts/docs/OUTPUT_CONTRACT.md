@@ -178,3 +178,9 @@ World 的 eventCommands 允许 SaveEvent、DeleteEvent、ArchiveEvent。DeleteEv
 EVENT_SCHEDULE含正式时间至变量投影时间内（包括积压）的可处理场外到期事件；同一World请求按时间和依赖推演。正常结束、失败、取消、合理延期均可，无需强制后继；延期的下一预计时间必须晚于本轮窗口。futureEvents不能绕过该验证。旧缺预计时间的事件只读兼容并列unplannedLegacy，不补造历史日期。
 
 Variables只通过TEXT_COMMAND_CATALOG的`set events[id].sceneState`更新已有现场事件的有限状态字段，不规划全新后台事件。新事件规划归World。普通Task保留原有独立语义，不因本次Event调度被强制要求dueAt。权威细则见`docs/WORLD_EVENT_LIFECYCLE.md`。
+
+## 新开局生活初始化
+
+`set opening.initialState = {weatherText?,environmentText?,cash?,onlineBalance?,expectedIncomes?}` 映射 `InitializeOpeningState(changes)`。仅新创角显式持有 `openingInitializationPending=true` 的未结算开局可使用一次，普通回合、旧档无标记和World均禁用。首次正式结算关闭该入口，即使模型没有输出初始化命令也不增加审批门槛。
+
+只填空环境及null余额，已有明确值（包括0）不能覆盖。expectedIncomes复用IncomeRecord，每条含稳定id、source、整数分amount、status=expected、account、scheduleText，可选合法expectedAt不早于本轮候选时间；禁止receivedAt/sourceTurnId。预期记录不会入账，原有资金不是本幕收入。实际到账继续ReceiveIncome并使用新的记录ID；当前没有自动发薪或预期收入核销功能。初始化与普通命令同批模拟、同事务提交，不另存中间状态。

@@ -13,10 +13,12 @@ import { ContactReviewSchema } from './npc/contactReview';
 import { retireNpc, validateTaskTransitions } from './npc/lifecycle';
 import { archiveEvent, deleteEvent, validateEventLinks, validateEventWrite } from './events/lifecycle';
 import { validateSceneTransition } from './sceneTransitions';
+import { OpeningInitialStateSchema, initializeOpeningState } from './openingInitialization';
 
 const base = { commandId: IdSchema, evidence: TextSchema };
 const positiveMoney = MoneySchema.refine((amount) => amount > 0, '金额必须为正');
 export const DomainCommandSchema = z.discriminatedUnion('type', [
+  z.strictObject({ ...base, type: z.literal('InitializeOpeningState'), changes: OpeningInitialStateSchema }),
   z.strictObject({ ...base, type: z.literal('PurchaseItem'), account: AccountSchema, price: positiveMoney, item: ImportantItemSchema }),
   z.strictObject({ ...base, type: z.literal('PurchaseVehicle'), account: AccountSchema, price: positiveMoney, vehicle: VehicleAssetSchema }),
   z.strictObject({ ...base, type: z.literal('TransferFunds'), from: AccountSchema, to: AccountSchema, amount: positiveMoney }),
@@ -67,6 +69,7 @@ function ownedByProtagonist(s: GameState, ref: z.infer<typeof ActorRefSchema> | 
 }
 function apply(s: GameState, c: DomainCommand, turnId: string) {
   switch (c.type) {
+    case 'InitializeOpeningState': initializeOpeningState(s, c.changes, (id) => newEntity(s, id)); break;
     case 'PurchaseItem':
       newEntity(s, c.item.id); ownedByProtagonist(s, c.item.ownerRef); assertImportantItem(s, c.item);
       balance(s, c.account, -c.price); s.items[c.item.id] = c.item; break;
@@ -186,6 +189,9 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
   validateTaskTransitions(state, current, fresh.flatMap((c) => c.type === 'SaveTask' ? [c.task] : []));
   validateSceneTransition(state, current, fresh);
   validateEventLinks(current);
+  // A first committed batch consumes the opening-only right even if the model omitted initialization.
+  // Projections mutate only this parsed copy; failed/cancelled drafts keep the formal marker.
+  delete current.openingInitializationPending;
   current.revision += 1;
   current.updatedAt = now;
   return GameStateSchema.parse(current);

@@ -17,6 +17,7 @@ export interface ExecutionDiagnostic {
 }
 
 const allowedPaths = new Set([
+  'opening.initialState',
   'protagonist', 'worldClock', 'protagonist.healthText', 'protagonist.emotionText',
   'protagonist.locationId', 'protagonist.profession', 'protagonist.publicStatus',
   'protagonist.legalStatus', 'protagonist.skills', 'protagonist.currentWear',

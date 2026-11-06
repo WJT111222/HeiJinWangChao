@@ -73,6 +73,7 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
   );
   const projected = projectTurn(current, draft, [...draft.world!.result.worldCommands, ...draft.world!.result.taskCommands, ...draft.world!.result.eventCommands]);
   projected.updatedAt = now;
+  delete projected.openingInitializationPending;
   requireData(draft.story!.summary.trim(), 'MISSING_SUMMARY', '正文缺少有效摘要，请重新生成正文后重试');
   const shortMemory = MemoryEntrySchema.parse({
     id: draft.turnId,

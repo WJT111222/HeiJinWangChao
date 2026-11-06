@@ -1,0 +1,133 @@
+# 开局人生叙事与初始变量生成
+
+基线：`main@26eca529baadc8f3c3ba25eb38ee4a31081c7245`，独立分支 `codex/opening-life-initialization`。本轮不改变三阶段协议、模型路由、Story长度要求、World规则或自动结算入口。
+
+## 原问题与已复现缺口
+
+正式开局Story偏重契机与四种叙事原型；正式文本Variables与economy/init明确要求未知余额保持null，缺少环境、原有余额和预期收入初始化入口。`ReceiveIncome`只能实际到账，不能拿来补存款；`Borrow`会增加资金，不能补历史欠债。
+
+修复前先运行新测试：2项均失败。真实`parseTextVariables()`对`set opening.initialState`报`schema_fields / text.unsupported_path`；实际创角没有一次性初始化标记。不是根据模型失败日志猜测。
+
+## 提示词调整
+
+- `stages/opening/story.md`：先建立成长、家庭、教育能力、工作收入、居住交通、性格经历与当前处境，再自然引出机会。以日常活动、环境、回忆、物件和对话呈现，不按字段朗读履历；玩家明确设定优先，缺少背景时主动补全。取消四类困境原型的导向，允许平凡、幸福、富裕和稳定人生，保留同伴保护、行动自由、原标签及输出协议。
+- `stages/opening/variables.md`：开局主动初始化，普通回合仍记录变化。允许推定天气、生活氛围、原有余额和预期收入，不要求小说逐字报数；区分存款、预期安排与本幕交易。
+- `variableGroups/economy/init.md`：改为与新命令一致的完整可执行示例；工资、生活费与暂无固定收入分别处理。`protagonist/init.md`补充合理初始健康、情绪和生活地点，取消示例默认受伤紧张的倾向。
+- `shared/07_command_output.md`与文本目录说明开局例外，维持set/add/push/delete原协议。普通回合仍禁止余额任意set及正add冒充收入。
+- Manifest更新内容哈希、字符数和所改模块版本；来源锁追加本轮批准记录，保留历史哈希。普通正文/变量update模板、Thinking和旧JSON参考资源未改。
+
+## 最小写入能力
+
+新增唯一文本路径：
+
+| 操作/路径 | 领域命令 | 可写字段 |
+| --- | --- | --- |
+| `set opening.initialState = {...}` | `InitializeOpeningState { changes }` | `weatherText?`, `environmentText?`, `cash?`, `onlineBalance?`, `expectedIncomes?` |
+
+字段严格限定，至少提供一个字段。环境为非空字符串、账户为非负安全整数人民币分。只填空环境或null余额；已有明确值（含0）只接受相同值或省略，冲突整批拒绝。
+
+expectedIncomes最多30项，直接复用现有IncomeRecord：稳定id、source、整数分amount、`status=expected`、account、非空scheduleText，可选expectedAt不早于当前候选时间。禁止receivedAt/sourceTurnId；不会加余额、生成到账、借款或购买。无固定安排可以为空数组。ID使用既有全局唯一校验，不能覆盖已有记录。后续实际收入仍走ReceiveIncome并用新记录ID，没有新增自动发薪或预期收入核销功能。
+
+示例（模型须依人物调整数值，非默认数值）：
+
+```text
+<thinking>开局生活基础的简短分析结论。</thinking>
+<说明>
+- 原有资金与预期工资分别记录，没有实际到账。
+</说明>
+<命令>
+set opening.initialState = {"weatherText":"夏日多云","environmentText":"住宅楼下早餐铺刚开门，楼道传来邻居的脚步声。","cash":30000,"onlineBalance":3200000,"expectedIncomes":[{"id":"salary_teaching","source":"教师工资","amount":580000,"status":"expected","account":"onlineBalance","scheduleText":"每月15日发薪"}]}
+</命令>
+```
+
+`cash=-1`、小数或字符串金额、received预期记录、覆盖明确余额、重复收入ID、第二条初始化、普通回合初始化均整批失败。初始化后可以在同批按实际顺序消费，预期工资不会提供透支额度。时间仍由Story结构化候选统一应用一次，不读取设备日期。
+
+## 一次性状态与兼容
+
+新增Schema V5的可选`openingInitializationPending: true`，不升级版本，不迁移、不默认补值。只在真实创角构造器设置，且Schema要求revision/turnNumber为0、无journal和命令记录。旧V1–V5档案及旧开局草稿没有此标记，继续读取和原流程验证，绝不从turnNumber=0或openingTimePending推定授权。已明确旧值不改写。
+
+增加标记的必要性：单靠turnNumber不能区分旧未结算开局；借用openingTimePending会在Story时间投影时消失，且旧开局已有同名标记，无法安全区分。没有新增工资表或第二套候选。旧客户端的严格Schema不能读取尚带新标记的新开局，属于向旧客户端回退的限制；新版本读取旧档不受影响。首次结算后该字段消失。
+
+```text
+创角：标记+未知基础字段
+  → Story同一次请求：人生正文+结构化时间
+  → Variables同一次请求：原文本协议
+  → 编译DomainCommand（原稳定commandId）
+  → 整批模拟：开局时钟、初始化、现场变化
+  → World读取既有projectTurn投影
+  → commitTurn重验+原子事务：存档/journal/记忆/草稿/回执
+  → 清除标记，等待下一步行动
+```
+
+初始化命令在模拟副本中消耗标记；失败/取消/刷新不改变正式标记。首次正式命令批次或空开局正式结算都会关闭入口。未输出初始化不引入覆盖率/完整性审批，也不自动补数或补请求。精确重放仍先查已有命令指纹，原commandId与时钟幂等机制不变。正式提交重验与World命令权限拒绝伪造初始化；旧版本/Roll计划不能覆盖新状态。
+
+## 四种Mock人生对比
+
+完整中性小说样例在`src/tests/fixtures/openingLives.ts`，不是实机模型生成。样例刻意未写账户数字或天气，Variables Mock独立给出背景相符的基础状态：
+
+| 背景 | 小说中的人生基础 | 现金/线上余额（元） | 预期收入（元） |
+| --- | --- | --- | --- |
+| 30岁教师，仅填少量背景 | 北碚普通家庭、师范教育、租房教学、亲友与社区活动 | 300 / 32,000 | 工资5,800，每月15日 |
+| 20岁大学生，详细指定家庭和专业 | 广州成长、父母和睦、重庆读建筑、宿舍与速写 | 80 / 2,600 | 家庭生活费1,800，每月月初 |
+| 28岁暂未就业 | 有家人支持、曾做维护工作、离职休整、靠积蓄生活 | 120 / 18,000 | 空，无虚构工资 |
+| 27岁富裕家庭设计师 | 父母健在、设计教育、稳定工作、优裕生活与公益展 | 1,500 / 128,000 | 工资16,000，每月底 |
+
+真实链路测试证明这些结果可写入、预期收入不入账、下一回合可消费并收到实际收入；Prompt测试证明正确模板和原玩家背景送入请求。不能由Mock证明文学质量、现实估值准确性或真实模型必然保留每项设定，后续真实模型体验需单独授权。
+
+## 验证记录
+
+- 首轮失败复现：2/2按预期失败（未实现路径和标记）。
+- 新增定向：38项通过（30项数据/执行边界，8项真实协调器、持久化与Prompt），无付费调用。
+- 新增Chromium：桌面2、移动2，共4项通过；真实五步创角自动请求、自动结算、重载、下一步行动与World失败后只恢复World。
+- 首轮全工程：2297项中2288通过、9失败，均为需随新契约更新的旧夹具/断言：命令/路径数量、开局旧哈希与四原型文案；两个历史同伴夹具未清理新标记；开局经济示例被当成普通回合执行。已分别修正，未削弱数据安全断言。相关分组已复测通过。
+- 冻结实现提交：`b834d90cd1c6ecf86c20b832805c7d8da5eb87b9`。
+- `npm run check`：74个文件、2297项Vitest全通过（原有2259项保留，本轮新增38项）；Lint、TypeScript、生产构建均通过。构建保留既有大于500 kB分块警告，本轮不扩展打包优化。
+- `npm run prompts:check`：3文件、82项通过（已包含于上述2297项，不重复相加）。
+- `git diff --check`：通过。
+- 相关Chromium desktop/mobile最终批次：84/84通过，desktop 42/42、mobile 42/42，失败0、跳过0，用时7.6分钟。包括本轮新增4项，不与此前定向成绩相加。实际命令：
+
+```bash
+CHROMIUM_PATH=/usr/bin/chromium PLAYWRIGHT_JSON_OUTPUT_FILE=/tmp/opening-browser-final.json npx playwright test e2e/opening-life.spec.ts e2e/opening-time.spec.ts e2e/automatic-settlement.spec.ts e2e/continuous-turns.spec.ts e2e/action-workflow.spec.ts --project=desktop --project=mobile --reporter=line,json
+```
+
+覆盖五步创角、完整原文、十回合连续游玩、自动结算、双击/跨标签CAS、旧候选恢复、刷新、取消、超时与World失败恢复。本轮未运行其余不相关浏览器文件，未声称全部E2E套件通过。最终追加提交只更新本报告，已验证的实现、Prompt与测试文件保持冻结。
+
+## 剩余限制与费用边界
+
+- 工资/生活费是预期资料，不会自动按日历到账、改余额或产生收费任务。
+- 历史债务无到账登记、已有车辆/房产无交易登记、房产购买缺少原领域能力，本轮仅在说明中诚实记录，不伪造收入、借款和购买；已有普通物品可沿AcquireItem登记。
+- 旧档缺失余额不回填；模型若省略初始化也可保留null，程序不会偷偷猜值。用户请求是主动生成能力，不新增文学或完成度审批。
+- 每回合仍为既有Story、Variables、World各一次请求；取消、失败恢复、自动记忆设置和重试规则不改。Prompt输入内容增长会影响供应商按Token计费，未增加输出预算或请求次数。
+- 不修改用户真实存档，不调用真实模型，不主动部署生产环境；PR预览若由既有Cloudflare流程自动创建，不属于主动生产发布。
+
+## 实际修改文件
+
+- `OPENING-LIFE-INITIALIZATION-DEVELOPMENT.md`
+- `e2e/opening-life.spec.ts`
+- `prompts/docs/OUTPUT_CONTRACT.md`
+- `prompts/manifest.json`
+- `prompts/shared/07_command_output.md`
+- `prompts/sources.lock.json`
+- `prompts/stages/opening/story.md`
+- `prompts/stages/opening/variables.md`
+- `prompts/variableGroups/economy/init.md`
+- `prompts/variableGroups/protagonist/init.md`
+- `src/domain/commands.ts`
+- `src/domain/openingInitialization.ts`
+- `src/domain/state.ts`
+- `src/domain/turnCommit.ts`
+- `src/domain/turnProjection.ts`
+- `src/executors/variableText/aggregateDiagnostics.ts`
+- `src/executors/variableText/catalog.ts`
+- `src/executors/variableText/compile.ts`
+- `src/executors/variableText/diagnostics.ts`
+- `src/tests/fixtures/openingLives.ts`
+- `src/tests/m2.test.ts`
+- `src/tests/opening-initialization.test.ts`
+- `src/tests/opening-life-workflow.test.ts`
+- `src/tests/prompt-runtime.test.ts`
+- `src/tests/prompts.test.ts`
+- `src/tests/text-prompt-readiness.test.ts`
+- `src/tests/thinking.test.ts`
+- `src/tests/variable-commands.test.ts`
+- `src/ui/creation/model.ts`
