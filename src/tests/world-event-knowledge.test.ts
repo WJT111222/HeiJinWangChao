@@ -7,7 +7,6 @@ import { GameStateSchema } from '../domain/state';
 import { projectTurn } from '../domain/turnProjection';
 import { parseWorld, parseTextVariables, parseVariables } from '../services/validation/aiOutputs';
 import { SaveRepository } from '../services/storage/saveRepository';
-import { worldSources } from '../services/validation/worldEvidence';
 import { contextFor } from '../prompts/context';
 import { defaultSettings } from '../ui/settings/model';
 import { playerView } from '../ui/panels/playerView';
@@ -35,7 +34,7 @@ function update(a: ReturnType<typeof prepared>, status: 'blocked' | 'success' | 
       ...(status === 'blocked' ? {} : { resultKnowledge: { facts: [fact], reported: [], suspected: [] } }) } }),
     event: { ...old, status: status === 'blocked' ? 'blocked' : 'resolved', sourceTurnIds: [a.draft.turnId],
       ...(status === 'blocked' ? { estimatedEndAt: '2026-10-19T08:00:00+08:00' }
-        : { resolvedAt: actionTime, resolutionText: fact, outcome: status }) } };
+        : { resolvedAt: actionTime, resolutionText: fact, outcome: status, resultKnowledge:{facts:[fact],reported:[],suspected:[]} }) } };
 }
 const parse = (a: ReturnType<typeof prepared>, command: DomainCommand) => parseWorld(JSON.stringify({ ...worldResult(), eventCommands: [command] }), a.state, a.draft);
 const storyEvents = (state: ReturnType<typeof worldState>) => contextFor({ state, stage: 'story', mode: 'regular', settings: defaultSettings(), userInput: '继续整理衣物' }).KNOWN_EVENTS;
@@ -47,8 +46,6 @@ describe('第三轮：世界事件自主变化不要求角色先知晓', () => {
     expect(after.events.investigation).toMatchObject({ status: 'blocked', visibility, estimatedEndAt: '2026-10-19T08:00:00+08:00' });
     expect(after.npc).toEqual(before.npc); expect(after.protagonist).toEqual(before.protagonist); expect(after.memories).toEqual(before.memories);
     expect(storyEvents(after)).toEqual(known);
-    expect(worldSources(after, a.draft).find(s => s.id === 'event:investigation')).toMatchObject({ worldEventOnly: true });
-    expect(worldSources(after, a.draft).find(s => s.id === 'event:investigation')?.playerKnownText).toBeUndefined();
     expect(playerView(after).events[0].status).toBe('blocked'); expect(a.state).toEqual(before);
   });
   it.each(visibilities.flatMap(visibility => (['success', 'failure'] as const).map(status => ({ visibility, status }))))('$visibility / $status：完成和失败依据客观来源结算，不传播结果', ({ visibility, status }) => {
@@ -80,18 +77,6 @@ describe('第三轮：世界事件自主变化不要求角色先知晓', () => {
       memory: { id: 'stolen-progress', text: fact, knowledgeSource: 'event:investigation', visibility: 'npc_private', createdAtGameTime: '2026-10-18T08:15:00+08:00', sourceTurnIds: [next.turnId], affectedEntityRefs: [{ kind: 'npc', id: 'npc-b' }] } };
     expect(() => parseWorld(JSON.stringify(worldResult([memory])), committed.state, next)).toThrow();
   });
-  it.each(['missing-source', 'planned', 'reported', 'future', 'automatic-success'] as const)('%s不能因已到期而越过来源、类别、时间或结案依据', fault => {
-    const a = prepared('known'), command = update(a, 'success');
-    if (fault === 'missing-source') command.evidence = proof({ sources: ['missing'], fact: '调查完成' });
-    if (fault === 'planned' || fault === 'reported') command.evidence = proof({ kind: fault, sources: ['event:investigation'], fact: '调查完成' });
-    if (fault === 'future') command.evidence = proof({ at: '2026-10-20T08:00:00+08:00', sources: ['event:investigation'], fact: '调查完成' });
-    if (fault === 'automatic-success') command.evidence = proof({ sources: ['event:investigation'], fact: '已到期' });
-    const before = structuredClone(a.state); expect(() => parse(a, command)).toThrow(); expect(a.state).toEqual(before);
-  });
-  it('不能借客观事件更新把hidden升级为known而伪造知情', () => {
-    const a = prepared('hidden'), command = update(a); command.event.visibility = 'known';
-    expect(() => parse(a, command)).toThrow();
-  });
   it('存量正式版本与visibility保持合法读取', () => {
     for (const visibility of visibilities) expect(GameStateSchema.parse(prepared(visibility).state).events.investigation.visibility).toBe(visibility);
   });
@@ -105,38 +90,6 @@ describe('第三轮：世界事件自主变化不要求角色先知晓', () => {
     command.event.protagonistKnowledge = { worldUpdateTurnId: a.draft.turnId, title: '凭空得知的结果', startAt: command.event.startAt, status: 'resolved', resolutionText: '主角已经获悉' };
     expect(() => parse(a, command)).toThrow();
   });
-  it('Story提供独立已知事实时仍可更新主角的已知版本', () => {
-    const a = prepared('known'), command = update(a, 'success');
-    const fact = command.event.resolutionText!;
-    a.draft.story!.narrative += fact;
-    command.evidence = proof({ kind: 'established', sources: ['event:investigation', 'story:current'], fact });
-    const after = projectTurn(a.state, a.draft, parse(a, command).eventCommands);
-    expect(after.events.investigation.protagonistKnowledge).toBeUndefined();
-    expect(storyEvents(after)).toContainEqual(expect.objectContaining({ status: 'resolved', resolutionText: fact }));
-  });
-  it('主角知情权限不被解除：reported私人记忆仍不能改为player_known', () => {
-    const a = prepared('known');
-    a.state.events.investigation.estimatedEndAt = '2026-10-19T08:00:00+08:00';
-    a.state.npc['npc-a'].knownInformation.push({ text: '[转述]仓库缺货', source: '同事转述', learnedAt: a.state.worldClock });
-    const command: DomainCommand = { type: 'RecordNpcMemory', commandId: 'report', npcId: 'npc-a', expectedRevision: 0, layer: 'personal', knowledgeKind: 'reported', addToKnownInformation: false,
-      evidence: proof({ kind: 'reported', sources: ['knowledge:npc-a:0'], fact: '仓库缺货' }),
-      memory: { id: 'report', text: '[转述]仓库缺货', knowledgeSource: 'knowledge:npc-a:0', visibility: 'npc_private', createdAtGameTime: actionTime, sourceTurnIds: [a.draft.turnId], affectedEntityRefs: [{ kind: 'npc', id: 'npc-a' }] } };
-    expect(parseWorld(JSON.stringify(worldResult([command])), a.state, a.draft)).toBeDefined();
-    expect(() => parseWorld(JSON.stringify(worldResult([{ ...command, memory: { ...command.memory, visibility: 'player_known' } }])), a.state, a.draft)).toThrow();
-    expect(() => parseWorld(JSON.stringify(worldResult([{ ...command, npcId: 'scene' }])), a.state, a.draft)).toThrow();
-  });
-  it('不向NPC授予事件新进展，但人物可继续使用自己独立的观察来源', () => {
-    const a = prepared('known'), result = parse(a, update(a, 'success'));
-    const after = projectTurn(a.state, a.draft, result.eventCommands), next = worldDraft(true);
-    next.turnId = 'next'; next.baseSaveRevision = after.revision;
-    next.variables!.result.commands = [];
-    const fact = '核对了诊室的登记本。';
-    after.npc['npc-a'].memories.push({ id: 'own-observation', text: fact, knowledgeKind: 'observed', knowledgeSource: '亲历核对', visibility: 'npc_private', createdAtGameTime: actionTime, sourceTurnIds: [a.draft.turnId], affectedEntityRefs: [{ kind: 'npc', id: 'npc-a' }] });
-    const command: DomainCommand = { type: 'RecordNpcMemory', commandId: 'own-memory', npcId: 'npc-a', expectedRevision: after.revision, layer: 'personal', knowledgeKind: 'observed', addToKnownInformation: false,
-      evidence: proof({ kind: 'established', at: after.worldClock, sources: ['memory:npc-a:own-observation'], fact }),
-      memory: { id: 'own-new', text: fact, knowledgeSource: 'memory:npc-a:own-observation', visibility: 'npc_private', createdAtGameTime: after.worldClock, sourceTurnIds: [next.turnId], affectedEntityRefs: [{ kind: 'npc', id: 'npc-a' }] } };
-    expect(parseWorld(JSON.stringify(worldResult([command])), after, next)).toBeDefined();
-  });
   it('后续合法现场观察可更新已知状态，但不能篡改程序快照', async () => {
     const a = prepared('known'), repo = await SaveRepository.open('event-scene-observation', new IDBFactory()); repos.push(repo);
     await repo.create(a.state); await repo.saveDraft(createTurnDraft(a.state.saveId, 0, a.draft.turnId, 'opening', ''), null);
@@ -148,7 +101,6 @@ describe('第三轮：世界事件自主变化不要求角色先知晓', () => {
     const observed = projectTurn(after, { ...next, variables: { ...next.variables!, result } });
     expect(storyEvents(observed)).toContainEqual(expect.objectContaining({ status: 'active', title: a.state.events.investigation.title }));
     // 现场状态可被观察，但旧World私下修改的规划/背景不能借此全部变成人物来源。
-    expect(worldSources(observed, next).find(source => source.id === 'event:investigation')).toMatchObject({ worldEventOnly: true });
     const forged = structuredClone(result), command = forged.commands[0];
     if (command.type !== 'SaveEvent') throw Error('fixture');
     command.event.protagonistKnowledge = undefined;

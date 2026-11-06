@@ -1,8 +1,7 @@
 import type { DomainCommand } from '../../domain/commands';
-import { WorldEvidenceSchema, requireWorld } from './worldEvidence';
-import { AiError } from '../ai/errors';
+import { requireWorld } from './worldDiagnostics';
 
-// 仅排序具体来源依赖，不从自然语言猜测职责，也不把尚未验证的输出加入事实池。
+// 只排序结构化实体依赖；保留无依赖命令的原始顺序。
 export function orderWorldCommands(commands: readonly DomainCommand[]) {
   const cleanup = (c: DomainCommand) => c.type === 'DeleteEvent' || c.type === 'ArchiveEvent';
   const key = (c: DomainCommand) => cleanup(c) && 'eventId' in c ? `cleanup:${c.eventId}` : c.type === 'SaveTask' ? `task:${c.task.id}`
@@ -14,13 +13,7 @@ export function orderWorldCommands(commands: readonly DomainCommand[]) {
     if (visited.has(command)) return;
     requireWorld(!visiting.has(command));
     visiting.add(command);
-    const sourceError = () => new AiError('invalid_output', undefined, { worldRule: 'source_format',
-      commandIndex: commands.indexOf(command), commandType: command.type, fieldPath: 'evidence' });
-    let raw: unknown;
-    try { raw = JSON.parse(command.evidence); } catch { throw sourceError(); }
-    const checked = WorldEvidenceSchema.safeParse(raw);
-    if (!checked.success) throw sourceError();
-    const dependencies = [...checked.data.sources];
+    const dependencies: string[] = [];
     if (cleanup(command) && 'eventId' in command) dependencies.push(`event:${command.eventId}`);
     if (command.type === 'SaveEvent') dependencies.push(...(command.event.predecessorEventIds??[]).map(id=>`event:${id}`));
     if (command.type === 'SaveTask' || command.type === 'SaveEvent') {
@@ -31,22 +24,17 @@ export function orderWorldCommands(commands: readonly DomainCommand[]) {
       }
     }
     if (command.type === 'SaveTask' && command.task.handoff) dependencies.push(`task:${command.task.handoff.fromTaskId}`);
+    if (command.type === 'SaveTask') dependencies.push(`${command.task.actorRef.kind === 'organization' ? 'org' : 'npc'}:${command.task.actorRef.id}`);
+    if (command.type === 'SaveEvent') for (const ref of command.event.actorRefs) dependencies.push(`${ref.kind === 'organization' ? 'org' : 'npc'}:${ref.id}`);
     for (const source of dependencies) {
-      const lookup = source.startsWith('handoff:') ? `task:${source.slice(8)}`
-        : source.startsWith('task-plan:') ? `task:${source.slice(10)}`
-          : source.startsWith('task-result:') ? `task:${source.slice(12)}`
-            : source.startsWith('event-result:') ? `event:${source.slice(13)}`
-              : source.startsWith('event-plan:') ? `event:${source.slice(11)}` : source;
-      const prior = keyed.get(lookup);
+      const prior = keyed.get(source);
       if (prior && prior !== command) visit(prior);
-      // task:<self> 可引用旧正式任务；新建任务自证会在来源查找中被拒绝。
-      if (prior === command && source.startsWith('handoff:')) requireWorld(false);
+      requireWorld(prior !== command);
     }
     visiting.delete(command); visited.add(command); result.push(command);
   }
-  const timed=[...commands].sort((a,b)=>{ const at=(c:DomainCommand)=>{try{return Date.parse(JSON.parse(c.evidence).at);}catch{return 0;}};return at(a)-at(b);});
-  for (const command of timed.filter((c) => c.type !== 'RetireNpc'&&!cleanup(c))) visit(command);
-  for (const command of timed.filter(cleanup)) visit(command);
+  for (const command of commands.filter(c => c.type !== 'RetireNpc' && !cleanup(c))) visit(command);
+  for (const command of commands.filter(cleanup)) visit(command);
   for (const command of commands.filter((c) => c.type === 'RetireNpc')) visit(command);
   return result;
 }

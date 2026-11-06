@@ -150,7 +150,7 @@ describe('三标签严格失败与安全步骤诊断', () => {
     const { runtimeLogEvent } = await import('../ui/game/runtimeLog'); const { AiError } = await import('../services/ai/errors');
     const entry = runtimeLogEvent(1, 'commit', 'failed', new DOMException('private detail', 'QuotaExceededError'));
     expect(entry).toMatchObject({ code: 'storage', variableStep: 'commit' }); expect(JSON.stringify(entry)).not.toContain('private detail');
-    expect(runtimeLogEvent(2, 'world', 'failed', new AiError('data_integrity', undefined, { worldRule: 'source_owner' }))).toMatchObject({ worldRule: 'source_owner' });
+    expect(runtimeLogEvent(2, 'world', 'failed', new AiError('data_integrity', undefined, { worldRule: 'actor_permission' }))).toMatchObject({ worldRule: 'actor_permission' });
   });
 });
 

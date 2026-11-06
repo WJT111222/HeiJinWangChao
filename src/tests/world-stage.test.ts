@@ -377,7 +377,7 @@ describe('世界并发、迟到与取消', () => {
 });
 
 describe('A5 取消候选的真实保存边界', () => {
-  it.each(['task', 'event'] as const)('%s 无终止依据整批失败，合法终止仅保存候选', async (kind) => {
+  it.each(['task', 'event'] as const)('%s 非法结构整批失败，合法终止仅保存候选', async (kind) => {
     await repo.delete('save-a', 0);
     const actor = { kind: 'npc' as const, id: 'npc-a' },
       oldTask = { ...task(), actorRef: actor },
@@ -408,7 +408,7 @@ describe('A5 取消候选的真实保存边界', () => {
           {
             type: 'SaveTask',
             commandId: 'cancel',
-            task: { ...oldTask, status: 'cancelled' },
+            task: { ...oldTask, status: 'cancelled', ...(valid ? {resolution:{at:actionTime,outcome:'cancelled',result:'已结束排程',reason:'场地不再可用',sourceTurnId:draft.turnId}} : {}) },
             evidence,
           },
         ];
@@ -417,7 +417,7 @@ describe('A5 取消候选的真实保存边界', () => {
           {
             type: 'SaveEvent',
             commandId: 'cancel',
-            event: { ...oldEvent, status: 'cancelled' },
+            event: { ...oldEvent, status: 'cancelled',sourceTurnIds: valid ? [draft.turnId] : ['unknown-turn'] },
             evidence,
           },
         ];

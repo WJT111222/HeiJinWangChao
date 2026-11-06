@@ -10,7 +10,7 @@ import { createTurnDraft, rerollStory } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
 import { defaultSettings } from '../ui/settings/model';
 import { runtimeLogEvent } from '../ui/game/runtimeLog';
-import { schoolContext, schoolEvidence, schoolResult, schoolTask, syntheticSchoolBatch } from './fixtures/worldChineseFact';
+import { schoolContext, schoolResult, schoolTask, syntheticSchoolBatch } from './fixtures/worldChineseFact';
 import { original, originalSchoolContext } from './fixtures/worldSchoolOriginalContext';
 
 let repo: SaveRepository, draft: TurnDraft;
@@ -61,15 +61,15 @@ it.each(['openai', 'gemini', 'anthropic'] as const)('%s 实际 Runtime→WorldSt
   expect(fetcher).toHaveBeenCalledTimes(1);
 });
 
-it('计划仍失败且只显示静态诊断；明确重试只补World，上游和正式状态不变', async () => {
+it('不存在的行动者失败且只显示静态诊断；明确重试只补World，上游和正式状态不变', async () => {
   const before = await repo.load('save-a');
   let valid = false;
-  const fetcher = vi.fn<typeof fetch>(async () => wire(schoolResult(schoolTask(valid ? schoolEvidence.fact : '学校准备明天检查食堂。'))));
+  const fetcher = vi.fn<typeof fetch>(async () => {const command=schoolTask();if(!valid)command.task.actorRef.id='missing-organization';return wire(schoolResult(command));});
   const stage = runner(fetcher), input = options();
   let caught: unknown;
   try { await stage.generate({ ...input, draft }); } catch (error) { caught = error; }
   const log = runtimeLogEvent(1, 'world', 'failed', caught);
-  expect(log).toMatchObject({ worldRule: 'fact_plan', commandType: 'SaveTask', commandIndex: 1, fieldPath: 'taskCommands.0.evidence.fact' });
+  expect(log).toMatchObject({ worldRule: 'actor_permission', commandType: 'SaveTask', commandIndex: 1, fieldPath: 'taskCommands.0' });
   expect(JSON.stringify(log)).not.toContain('学校');
   expect(JSON.stringify(log)).not.toContain('mock-school-key');
   const failed = await repo.loadDraft('save-a');
@@ -84,18 +84,10 @@ it('计划仍失败且只显示静态诊断；明确重试只补World，上游�
   expect(fetcher).toHaveBeenCalledTimes(2);
 });
 
-it('完整原始响应走实际Runtime后定位到下一条现场事件，不把真实整批失败伪称成功', async () => {
-  repo.close();
-  await seed(originalSchoolContext());
-  const before = await repo.load('save-a'), fetcher = vi.fn<typeof fetch>(async () => wire(original));
-  await expect(runner(fetcher).generate({ ...options(), draft })).rejects.toMatchObject({ details: {
-    worldRule: 'actor_permission', commandType: 'SaveEvent', fieldPath: 'eventCommands.0',
-  } });
-  const failed = await repo.loadDraft('save-a');
-  expect(failed!.world).toBeUndefined();
-  expect(failed!.stageStatus.world).toBe('failed');
-  expect(failed!.story).toEqual(draft.story);
-  expect(failed!.variables).toEqual(draft.variables);
-  expect(await repo.load('save-a')).toEqual(before);
-  expect(fetcher).toHaveBeenCalledTimes(1);
+it('完整原始响应在合成合法状态通过Runtime，保留上游与正式存档边界',async()=>{
+  repo.close();await seed(originalSchoolContext());
+  const before=await repo.load('save-a'),fetcher=vi.fn<typeof fetch>(async()=>wire(original));
+  const ready=await runner(fetcher).generate({...options(),draft});
+  expect(ready.world?.result.eventCommands).toHaveLength(2);expect(ready.stageStatus.world).toBe('ready');
+  expect(await repo.load('save-a')).toEqual(before);expect(fetcher).toHaveBeenCalledTimes(1);
 });

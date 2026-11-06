@@ -5,7 +5,7 @@ import type { GameState } from '../domain/state';
 import type { DomainCommand } from '../domain/commands';
 import { commitCommands } from '../domain/commands';
 import { NpcSummarySchema, NpcMemorySchema, npcKnowledgeKind } from '../domain/memories/schema';
-import { planNpcSummary, parseNpcSummary, applyNpcSummary, npcSummaryCandidates, rawNpcMemories, npcKnowledgeContext, npcSummaryInput } from '../domain/memories/npcMemory';
+import { planNpcSummary, parseNpcSummary, applyNpcSummary, npcSummaryCandidates, rawNpcMemories, npcKnowledgeContext } from '../domain/memories/npcMemory';
 import { MemoryMaintenance } from '../workflows/memoryMaintenance';
 import type { MemoryLock } from '../workflows/memoryMaintenance';
 import { SaveRepository } from '../services/storage/saveRepository';
@@ -18,15 +18,11 @@ import { composePrompt } from '../prompts/composer';
 import { defaultSettings } from '../ui/settings/model';
 import { playerView } from '../ui/panels/playerView';
 import { searchHistory } from '../domain/memories/history';
-import { worldSources, readWorldEvidence } from '../services/validation/worldEvidence';
-import { parseWorld } from '../services/validation/aiOutputs';
-import { contextFor } from '../prompts/context';
-import { projectTurn } from '../domain/turnProjection';
 import { createTurnDraft } from '../domain/drafts';
 import { completeDraft, submission } from './fixtures/turn';
 import { npcMemoryState, npcSummaryOutput } from './fixtures/npcMemory';
-import { proof, worldDraft, worldResult, actionTime, projectedTime } from './fixtures/world';
-import { gameTime, task, event } from './fixtures/game';
+import { proof, worldDraft, worldResult, actionTime } from './fixtures/world';
+import { gameTime } from './fixtures/game';
 
 const locks = new Set<string>();
 const lock: MemoryLock = async (id, work) => {
@@ -238,32 +234,6 @@ describe('NPC独立认知与玩家只读观察', () => {
     expect(JSON.stringify(variables.context.NPC_KNOWLEDGE)).toContain('本组经历');
     expect(JSON.stringify(variables.context.NPC_KNOWLEDGE)).not.toContain('B的独占秘密');
   });
-  it('总结允许所属NPC建立计划；拒绝跨人物、客观完成、公开事件及新知识自动传播', () => {
-    const input = npcMemoryState(21, true); input.npc['npc-a'].memories[0].affectedEntityRefs.push({ kind: 'npc', id: 'npc-b' });
-    const { state, result } = summarize(input); const draft = { ...worldDraft(), baseSaveRevision: state.revision };
-    const source = `npc-summary:npc-a:${result[0].id}`, sources = worldSources(state, draft);
-    expect(sources.find((entry) => entry.id === source)!.actors).toEqual([{ kind: 'npc', id: 'npc-a' }]);
-    const evidence = proof({ kind: 'planned', sources: [source], fact: '同事准备核对自己的约定' });
-    const command: DomainCommand = { type: 'SaveTask', commandId: 'own-plan', evidence, task: { ...task(), actorRef: { kind: 'npc', id: 'npc-a' } } };
-    expect(() => parseWorld(JSON.stringify({ ...worldResult(), taskCommands: [command] }), state, draft)).not.toThrow();
-    expect(() => readWorldEvidence({ ...command, task: { ...command.task, actorRef: { kind: 'npc', id: 'npc-b' } } }, sources, gameTime, projectedTime)).toThrow();
-    expect(() => readWorldEvidence({ ...command, evidence: proof({ kind: 'established', sources: [source], fact: result[0].text }), task: { ...command.task, status: 'completed' } }, sources, gameTime, projectedTime)).toThrow();
-    expect(() => readWorldEvidence({ type: 'SaveEvent', commandId: 'leak', evidence, event: { ...event(), visibility: 'known' } }, sources, gameTime, projectedTime)).toThrow();
-    const memory: DomainCommand = { type: 'RecordNpcMemory', commandId: 'leak-memory', evidence, expectedRevision: state.revision, npcId: 'npc-b', memory: state.npc['npc-b'].memories[0], knowledgeKind: 'observed', layer: 'personal', addToKnownInformation: false };
-    expect(() => readWorldEvidence(memory, sources, gameTime, projectedTime)).toThrow();
-    expect(npcSummaryInput(planNpcSummary(npcMemoryState())!)).not.toHaveProperty('priorSummaries');
-  });
-});
-
-
-it('总结形成的NPC计划仍有所属身份，不能被另一人物借用为私有行动依据', () => {
-  const { state } = summarize(npcMemoryState(21, true));
-  state.tasks['private-task'] = { ...task('private-task'), actorRef: { kind: 'npc', id: 'npc-a' } };
-  const draft = { ...worldDraft(), baseSaveRevision: state.revision };
-  const command: DomainCommand = { type: 'UpdateNpc', commandId: 'borrow-private-plan', expectedRevision: state.revision,
-    npcId: 'npc-b', changes: { healthText: '稍感疲劳' }, evidence: proof({ sources: ['npc:npc-b', 'task:private-task'], fact: '未公开人物B整理了资料' }) };
-  expect(worldSources(state, draft).find((entry) => entry.id === 'task:private-task')!.ownerNpcId).toBe('npc-a');
-  expect(() => parseWorld(JSON.stringify(worldResult([command])), state, draft)).toThrow();
 });
 it('新增来源记录禁止认知前缀冲突，持久总结禁止重复覆盖和权限篡改', () => {
   const { state, result } = summarize();
@@ -297,41 +267,10 @@ it('同一游戏时间记录的最新纠正仍进入原始认知窗口，不能�
   expect(context.raw.some((entry) => entry.text.includes('最新纠正'))).toBe(true);
 });
 
-it('NPC亲历的私有事实不能仅因established就被升级为player_known记忆', () => {
-  const state = npcMemoryState(), original = state.npc['npc-a'].memories.at(-1)!;
-  const draft = { ...worldDraft(), baseSaveRevision: state.revision }, source = `memory:npc-a:${original.id}`;
-  const command: DomainCommand = { type: 'RecordNpcMemory', commandId: 'private-promotion', npcId: 'npc-a', expectedRevision: state.revision,
-    knowledgeKind: 'observed', layer: 'personal', addToKnownInformation: false,
-    evidence: proof({ kind: 'established', sources: [source], fact: original.text }),
-    memory: { ...original, id: 'promoted-memory', text: original.text, sourceTurnIds: ['turn-a'], createdAtGameTime: actionTime, knowledgeSource: source, visibility: 'player_known' } };
-  expect(() => parseWorld(JSON.stringify(worldResult([command])), state, draft)).toThrow();
-  expect(() => parseWorld(JSON.stringify(worldResult([{ ...command, memory: { ...command.memory, visibility: 'npc_private' } }])), state, draft)).not.toThrow();
-  original.visibility = 'player_known'; // 明确已有公开来源时仍可正常引用。
-  expect(() => parseWorld(JSON.stringify(worldResult([command])), state, draft)).not.toThrow();
-});
-it('NPC私有事实不能直接转成新公开事件，已有公开来源的正例仍成立', () => {
-  const state = npcMemoryState(), original = state.npc['npc-a'].memories.at(-1)!, draft = { ...worldDraft(), baseSaveRevision: state.revision };
-  const command: DomainCommand = { type: 'SaveEvent', commandId: 'publish-private', event: { ...event(), estimatedEndAt:'2026-10-20T08:00:00+08:00', actorRefs: [{ kind: 'npc', id: 'npc-a' }], visibility: 'known' },
-    evidence: proof({ kind: 'established', sources: [`memory:npc-a:${original.id}`], fact: original.text }) };
-  const output = { ...worldResult(), eventCommands: [command] };
-  expect(() => parseWorld(JSON.stringify(output), state, draft)).toThrow();
-  state.events[command.event.id] = { ...command.event, title: '先前已知的预约' };
-  // 已有事件的客观变化可以成立，但不能借旧known标记传播新进展。
-  const before = structuredClone(state), result = parseWorld(JSON.stringify(output), state, draft);
-  const after = projectTurn(state, draft, result.eventCommands);
-  const knownEvents = (value: GameState) => contextFor({ state: value, stage: 'story', mode: 'regular', settings: defaultSettings(), userInput: '继续工作' }).KNOWN_EVENTS;
-  expect(knownEvents(after)).toEqual(knownEvents(before)); expect(after.npc).toEqual(before.npc);
-  expect(worldSources(after, draft).find(source => source.id === `event:${command.event.id}`)).toMatchObject({ worldEventOnly: true });
-  expect(state).toEqual(before);
-  original.visibility = 'player_known';
-  expect(() => parseWorld(JSON.stringify(output), state, draft)).not.toThrow();
-});
-
 
 it('内部世界记录即使放在NPC容器且带亲历类型，也不能作为NPC已经获知的资料', () => {
   const state = npcMemoryState(); const internal = state.npc['npc-a'].memories[0];
   internal.visibility = 'internal'; internal.text = '后台知道但角色尚不知情的秘密';
   expect(planNpcSummary(state)).toBeUndefined(); // 只剩20条合法知识，不能用内部资料凑阈值。
   expect(JSON.stringify(npcKnowledgeContext(state, 'npc-a'))).not.toContain(internal.text);
-  expect(JSON.stringify(worldSources(state, { ...worldDraft(), baseSaveRevision: state.revision }))).not.toContain(internal.text);
 });
