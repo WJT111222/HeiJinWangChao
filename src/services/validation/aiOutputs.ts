@@ -1,3 +1,4 @@
+import { nestedStoryTag, storyEnvelopeDiagnostic, storySchemaError } from './storyDiagnostics';
 import { validateSceneEventUpdate } from '../../domain/events/scenePermission';
 import { openingTimeBase } from '../../domain/openingTime';
 import { StorySchema } from '../../domain/state';
@@ -81,17 +82,19 @@ export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', se
     ? /^\s*<thinking>([\s\S]*?)<\/thinking>\s*<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*<变量规划>([\s\S]*?)<\/变量规划>\s*<行动选项>([\s\S]*?)<\/行动选项>\s*$/
     : /^\s*<thinking>([\s\S]*?)<\/thinking>\s*<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*<变量规划>([\s\S]*?)<\/变量规划>\s*$/;
   const envelope = text.match(pattern);
-  if (!envelope || !envelope[1].trim() || envelope.slice(1).some((part) =>
-    /<\s*\/?\s*(?:thinking|think|judge|正文|短期记忆|变量规划|行动选项)(?=[\s/>])[^>]*>/i.test(part)))
-    throw new AiError('invalid_output');
+  if (!envelope) throw new AiError('invalid_output', undefined, storyEnvelopeDiagnostic(text, actions));
+  if (!envelope[1].trim()) throw new AiError('invalid_output', undefined, { storyRule: 'planning_empty', storyTag: 'thinking' });
+  const nested = envelope.slice(1).map(nestedStoryTag).find(Boolean);
+  if (nested) throw new AiError('invalid_output', undefined, { storyRule: 'tag_nested', storyTag: nested });
   const planning = envelope[1].trim();
   const match = envelope.slice(1);
   const narrative = match[1].trim();
   const summary = match[2].trim();
   // 100～200 汉字为质量目标，偏离仅提示；空摘要不能充当有效的本回合事实记录。
-  if (assessSummary(summary).status === 'empty') throw new AiError('invalid_output');
-  if (Array.from(narrative.replace(/\s/gu, '')).length < settings.prompts.minNarrativeChars)
-    throw new AiError('invalid_output');
+  if (assessSummary(summary).status === 'empty') throw new AiError('invalid_output', undefined, { storyRule: 'summary_empty', storyTag: '短期记忆' });
+  const narrativeChars = Array.from(narrative.replace(/\s/gu, '')).length;
+  if (narrativeChars < settings.prompts.minNarrativeChars)
+    throw new AiError('invalid_output', undefined, { storyRule: 'narrative_short', actualCount: narrativeChars, minimumCount: settings.prompts.minNarrativeChars });
   const actionOptions = actions
     ? match[4]
         .split('\n')
@@ -99,15 +102,18 @@ export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', se
         .filter(Boolean)
     : undefined;
   if (actions && (!actionOptions || actionOptions.length < 3 || actionOptions.length > 5))
-    throw new AiError('invalid_output');
+    throw new AiError('invalid_output', undefined, { storyRule: 'actions_count', actualCount: actionOptions?.length ?? 0, minimumCount: 3, maximumCount: 5 });
+  let variableGuide: unknown;
+  try { variableGuide = json(match[3]); }
+  catch { throw new AiError('invalid_json', undefined, { storyRule: 'guide_json', storyTag: '变量规划' }); }
   const parsed = StorySchema.safeParse({
     turnKind: mode,
     narrative,
     summary,
-    variableGuide: json(match[3]),
+    variableGuide,
     ...(actions ? { actionOptions } : {}),
   });
-  if (!parsed.success) throw new AiError('invalid_output');
+  if (!parsed.success) throw storySchemaError(parsed.error);
   return { story: parsed.data, planning };
 }
 export function parseStory(text: string, mode: 'opening' | 'regular', settings: Settings) {

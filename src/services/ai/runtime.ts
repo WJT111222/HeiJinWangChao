@@ -1,4 +1,3 @@
-import { DataError } from '../../domain/common';
 import { validateStoryEventInteractions } from '../../domain/events/interactions';
 import { AiError } from './errors';
 import { browserPromptOrder } from '../../prompts/order';
@@ -12,6 +11,7 @@ import { requestSnapshot } from './snapshot';
 import { AiClient } from './client';
 import type { RequestOptions } from './client';
 import { variableFailure, variableValidationError } from '../validation/variableDiagnostics';
+import { storyFailure } from '../validation/storyDiagnostics';
 import { timeOutcome } from '../../domain/timePreflight';
 import { stageResponses } from './stageResponses';
 import { safeAiError } from './errors';
@@ -69,11 +69,10 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   if (story) {
     try { validateStoryEventInteractions(captured.state, story); }
     catch (error) {
-      if (error instanceof DataError && error.code==='EVENT_ENTRY') throw new AiError('event_entry');
-      throw error;
+      throw storyFailure(error);
     }
     try { timeOutcome(captured.state, { userInput: captured.userInput, turnKind: captured.mode, story }, true); }
-    catch (error) { throw variableValidationError(error); }
+    catch (error) { const failure = storyFailure(error); throw failure instanceof AiError ? failure : variableValidationError(error); }
   }
   const result = story ?? (captured.stage === 'variables'
         ? await parseTextVariables(response.text, captured.state, captured.draft!)
