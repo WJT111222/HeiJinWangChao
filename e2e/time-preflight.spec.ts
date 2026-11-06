@@ -90,7 +90,8 @@ for (const interrupt of [false, true]) test(`长睡眠interrupt=${interrupt}：�
 test('变量失败与刷新恢复保留正文，Roll清除旧候选但不推进正式时间', async ({ page }) => {
   const api = await mock(page, true); api.control.failVariables = true; await seed(page, true); const before = (await load(page)).state;
   await page.getByRole('button', { name: '自动生成本回合', exact: true }).click();
-  await expect(page.getByText(/已保存的合法上游候选仍保留/)).toBeVisible();
+  await expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toHaveText('变量生成失败 · 查看详情');
+  expect((await load(page)).draft.story).toBeTruthy();
   expect((await load(page)).state).toEqual(before); await page.reload(); await openGameTools(page); api.control.failVariables = false;
   // 高级单阶段补算保留未结算候选，以验证Roll的原失效边界；正常自动恢复另有覆盖。
   await page.getByRole('button', { name: '生成变量候选', exact: true }).click();

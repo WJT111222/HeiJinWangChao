@@ -385,6 +385,7 @@ test('P6：截断Roll不覆盖旧正文，明确预算诊断；无原生输出�
   await expect(page.getByTestId('story-reader')).toContainText(displayedStory);
   plans.push({}); await page.getByRole('button', { name: '重新 Roll', exact: true }).click(); await generated(page);
   expect((await stored(page)).draft.storyRevision).toBe(saved.draft.storyRevision + 1); expect(requests).toHaveLength(3);
+  await openWorkflowDiagnostics(page);
   const inspection = page.locator('.story-inspection'); await inspection.locator(':scope > summary').click();
   await inspection.getByText('供应商公开返回的原生内容', { exact: true }).click(); await expect(inspection).toContainText('供应商未提供');
 });
