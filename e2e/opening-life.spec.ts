@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { openingLives, openingValues, openingStart, openingEnd } from '../src/tests/fixtures/openingLives';
 import { variableTextEnvelope } from '../src/tests/fixtures/variableReply';

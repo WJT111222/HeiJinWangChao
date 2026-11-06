@@ -670,6 +670,53 @@ fieldset label {
   box-shadow: 0 24px 100px #0009;
   overflow: hidden;
 }
+.notice-modal {
+  width: min(740px, 94vw);
+  max-height: calc(100dvh - 2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+}
+.notice-modal[open] { display: flex; flex-direction: column; }
+.notice-modal .modal-heading { flex-shrink: 0; padding: 1.25rem 1.5rem; }
+.notice-modal .modal-heading h2 { font-size: clamp(1rem, 3.4vw, 1.4rem); }
+.notice-modal .modal-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: none;
+  padding: 0;
+  overflow: hidden;
+}
+.notice-content {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 1.5rem;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+.notice-content h3 { margin: 1.2rem 0 .4rem; font-size: 1rem; color: var(--gold); }
+.notice-content p { margin: 0; }
+.notice-content p + p { margin-top: .8rem; }
+.notice-age {
+  display: inline-block;
+  border: 1px solid var(--gold);
+  border-radius: .5rem;
+  padding: .2rem .75rem;
+  color: var(--gold);
+  font-size: 1.65rem;
+  font-weight: 700;
+}
+.notice-content .notice-theme { margin-top: 0; font-size: 1.2rem; }
+.notice-content ul { padding-left: 1.25rem; }
+.notice-content li + li { margin-top: .6rem; }
+.notice-content .notice-message { margin-top: 1.5rem; color: var(--gold); }
+.notice-footer { flex-shrink: 0; border-top: 1px solid var(--line); padding: .85rem 1.5rem; }
+.notice-footer label { display: flex; flex-direction: row; align-items: center; gap: .6rem; width: fit-content; min-height: 2rem; cursor: pointer; }
+.notice-footer input { width: 1.1rem; height: 1.1rem; margin: 0; accent-color: var(--gold); }
+.notice-links { display: flex; flex-wrap: wrap; gap: .4rem 1rem; }
+.notice-links button { background: transparent; border-color: transparent; color: var(--gold); padding: .45rem 0; font-size: .85rem; }
+.notice-links button:hover { text-decoration: underline; }
+.home-hero > .notice-links { margin-top: .8rem; }
+.settings-nav .notice-links { border-top: 1px solid var(--line); padding-top: .6rem; }
 .modal-small {
   width: min(480px, 94vw);
 }

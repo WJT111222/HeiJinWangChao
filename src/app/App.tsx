@@ -21,6 +21,8 @@ import { PRODUCT_VERSION } from './product';
 import { useGameViewport } from './useGameViewport';
 import { authorizeOpening } from '../ui/game/openingStart';
 import type { OpeningStart } from '../ui/game/openingStart';
+import { NoticeDialog, NoticeLinks } from '../ui/notices/Notices';
+import { useNotices } from '../ui/notices/useNotices';
 
 const GameScreen = lazy(() =>
   import('../ui/game/GameScreen').then((module) => ({ default: module.GameScreen })),
@@ -62,6 +64,7 @@ function bootstrap() {
   return { settings, form, hasDraft, selected, warning: warnings.join(' ') };
 }
 export function App() {
+  const notices = useNotices();
   const [initial] = useState(bootstrap);
   const [repository, setRepository] = useState<SaveRepository>();
   const [route, setRoute] = useState(window.location.hash);
@@ -281,7 +284,7 @@ export function App() {
     }}>
       <SettingsPanel settings={settings} onSave={saveSettings} repository={repository}
         activeSaveId={loaded?.state.saveId ?? active?.saveId} memoryMaintenance={memoryMaintenance}
-        onAiDirtyChange={setAiSettingsDirty} />
+        onAiDirtyChange={setAiSettingsDirty} onOpenNotice={notices.open} />
     </Dialog>
   );
   return (
@@ -400,6 +403,7 @@ export function App() {
                 继续游戏 →
               </button>
             </div>
+            <NoticeLinks onOpen={notices.open} />
             {hasDraft && <p className="field-hint">有尚未完成的创角资料，开始新游戏可继续填写。</p>}
             <div className="skyline" aria-hidden="true">
               {[38, 62, 42, 84, 55, 100, 68, 48, 74, 40, 58].map((height, i) => (
@@ -470,6 +474,8 @@ export function App() {
           </section>
         </main>
       )}
+      {notices.kind && <NoticeDialog key={notices.kind} kind={notices.kind} muted={notices.muted}
+        onMutedChange={notices.setMuted} onClose={notices.close} />}
       {settingsOpen && !(gameRoute && loaded) && renderSettings()}
       {settingsOpen && confirmSettingsClose && <UnsavedAiChanges onContinue={() => setConfirmSettingsClose(false)} onDiscard={() => {
         setConfirmSettingsClose(false);

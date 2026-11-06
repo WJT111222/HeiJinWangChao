@@ -5,6 +5,8 @@ import { AiConnections } from './AiConnections';
 import { UnsavedAiChanges } from './UnsavedAiChanges';
 import { SettingsSchema } from './model';
 import type { Settings } from './model';
+import { NoticeLinks } from '../notices/Notices';
+import type { NoticeKind } from '../notices/useNotices';
 
 const PromptInspector = lazy(() =>
   import('./PromptInspector').then((module) => ({ default: module.PromptInspector })),
@@ -18,12 +20,14 @@ export function SettingsPanel({
   activeSaveId,
   memoryMaintenance,
   onAiDirtyChange,
+  onOpenNotice,
 }: {
   settings: Settings;
   repository?: SaveRepository;
   activeSaveId?: string;
   memoryMaintenance?: ReactNode;
   onAiDirtyChange?: (dirty: boolean) => void;
+  onOpenNotice?: (kind: NoticeKind) => void;
   onSave: (settings: Settings) => void;
 }) {
   const [tab, setTab] = useState<(typeof tabs)[number]>('AI 连接');
@@ -68,6 +72,7 @@ export function SettingsPanel({
             {name}
           </button>
         ))}
+        {onOpenNotice && <NoticeLinks onOpen={onOpenNotice} />}
       </nav>
       <div className="settings-content">
         <h3>{tab}</h3>

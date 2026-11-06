@@ -1,7 +1,7 @@
 import { VariableStateProjectionSchema } from '../src/tests/fixtures/variableState';
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { array, record, string } from '../src/services/ai/protocols';
 import { GameStateSchema, StorySchema } from '../src/domain/state';
