@@ -22,7 +22,7 @@
 - 运行时 Prompt 正文的唯一来源为 `prompts/` 与 `prompts/manifest.json`，装配代码在 `src/prompts/`，三协议客户端在 `src/services/ai/`。不要将历史汇编 Markdown 直接当做当前注入文本。
 - 开局 9 步 `prompts/planning/opening.md`，普通 15 步 `prompts/planning/regular.md`，属于项目专用的 **`<thinking>` 叙事规划标签**；供应商公开的原生 Thinking 单独解析和临时展示，均不写入正式状态或作为世界事实证据。详见 PR #23。
 - API 路由区分 **Story、Variables、World、Memory**，允许单独选择渠道/模型或跟随 Story；PR #25 已完成模型列表 UI，PR #27 已合并同源列表兼容、分页与诊断；最终加固和真实服务限制见 [M6 状态](API-MODEL-LIST-COMPATIBILITY.md)。
-- 输出经Zod、领域引用、经济、时间、权限及版本保护；Variables没有额外文学事实审批，World保留来源与角色知识隔离。模型结果仍是候选，不直接结算。
+- 输出经Zod、领域引用、经济、时间、权限及版本保护；Variables与World均没有额外文学事实审批；World保留命令权限与按人物、可见性区分的上下文。模型结果仍是候选，不直接结算。
 
 ## 世界与记忆
 

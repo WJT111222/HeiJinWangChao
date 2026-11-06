@@ -13,4 +13,8 @@ set npc[lin].contact = {"reason":"交换电话号码"}
 push npc[lin].memories = {"text":"共同处理现场问题","knowledgeKind":"observed","knowledgeSource":"当面经历","visibility":"npc_private"}
 </命令>
 
-只用TEXT_COMMAND_CATALOG支持的set/add/push路径，值为JSON；不输出DomainCommand对象。未支持的变化写<说明>，不创造自由字段、来源审批或覆盖许可。AI理解已选定Story，程序执行原领域约束；本阶段不推演World任务/事件。
+只用TEXT_COMMAND_CATALOG列明的set/add/push/delete路径；前三者值为JSON，delete不带值；不输出DomainCommand对象。未支持的变化写<说明>，不创造自由字段、来源审批或覆盖许可。AI理解已选定Story，程序执行原领域约束；本阶段不推演World任务/事件。
+
+可set/add npc[id].affinity，程序读取真实前值生成原关系命令，不需要AI填写版本或前值；需更改关系描述时先set relationshipText。整个人物与原始记忆不允许delete。
+
+未确认初始同伴的affinity占位不是已知数值，不能直接add。由模型决定最终绝对好感后用set（原显式affinityChange.from=null也仍可用），再做后续相对增减。

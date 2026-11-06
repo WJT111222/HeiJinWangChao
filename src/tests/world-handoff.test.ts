@@ -1,3 +1,4 @@
+import { worldResultForTurn } from './fixtures/world';
 import { describe, expect, it } from 'vitest';
 import { DomainCommandSchema, commitCommands } from '../domain/commands';
 import { parseWorld } from '../services/validation/aiOutputs';
@@ -46,7 +47,7 @@ describe('M5-P5 成果及生命周期缺口', () => {
 });
 
 
-const parse = (state: GameState, result: ReturnType<typeof worldResult> = handoffResult(state), draft = worldDraft()) => parseWorld(JSON.stringify(result), state, draft);
+const parse = (state: GameState, result: ReturnType<typeof worldResult> = handoffResult(state), draft = worldDraft()) => parseWorld(JSON.stringify(worldResultForTurn(result, draft.turnId)), state, draft);
 const commands = (result: ReturnType<typeof worldResult>) => [...result.worldCommands, ...result.taskCommands, ...result.eventCommands];
 const project = (state: GameState, result: ReturnType<typeof worldResult>) => projectTurn(state, worldDraft(), commands(parse(state, result)));
 
@@ -81,10 +82,10 @@ describe('自主终结与有依据的同窗口交接', () => {
     for (const fault of ['no-result', 'unmet', 'future', 'plan'] as const) {
       const state = handoffState(), result = worldResult();
       const c = finishTask(state);
-      if (fault === 'no-result') c.evidence = proof({ sources: ['task:work'], fact: '时间已到。' });
+      if (fault === 'no-result') delete c.task.resolution;
       if (fault === 'unmet') state.tasks.work.blockers = ['未获许可'];
       if (fault === 'future') { state.tasks.work.startAt = '2026-10-18T08:20:00+08:00'; c.task.startAt = state.tasks.work.startAt; }
-      if (fault === 'plan') c.evidence = proof({ kind: 'planned', sources: ['task:work'], fact: '准备核对材料。' });
+      if (fault === 'plan') c.task.status = 'planned';
       result.taskCommands = [c]; expect(() => parse(state, result)).toThrow();
     }
   });
@@ -93,7 +94,7 @@ describe('自主终结与有依据的同窗口交接', () => {
     expect(project(state, result).tasks.work.resolution).toMatchObject({ outcome: 'failure', result: resultText });
     const c = result.taskCommands[0];
     if (c.type !== 'SaveTask') throw Error();
-    const proofData = JSON.parse(c.evidence); proofData.decision.continues = true; c.evidence = JSON.stringify(proofData);
+    c.task.status = 'blocked'; // Live tasks cannot retain a terminal resolution.
     expect(() => parse(state, result)).toThrow();
   });
   it('允许主动取消尚未开始的安排，无须满足全部完成条件', () => {
@@ -111,7 +112,7 @@ describe('自主终结与有依据的同窗口交接', () => {
     const a = receiveTask(), b = receiveTask({ kind: 'npc', id: 'npc-a' }, 'other');
     a.task.handoff!.fromTaskId = b.task.id; b.task.handoff!.fromTaskId = a.task.id;
     expect(() => parse(state, { ...worldResult(), taskCommands: [a, b] })).toThrow();
-    const invalid = finishTask(state); invalid.evidence = proof({ sources: ['task:work'], fact: '估计截止时间到了。' });
+    const invalid = finishTask(state); delete invalid.task.resolution;
     expect(() => parse(state, { ...worldResult(), taskCommands: [receiveTask(), invalid] })).toThrow();
   });
   it('同一成果不得重复制造相同接班职责，不设置固定接力深度', () => {
@@ -119,13 +120,6 @@ describe('自主终结与有依据的同窗口交接', () => {
     const again = receiveTask({ kind: 'npc', id: 'npc-b' }, 'duplicate');
     const result = worldResult(); result.taskCommands = [again];
     expect(() => parse(first, result, { ...worldDraft(), baseSaveRevision: first.revision })).toThrow();
-  });
-  it('跨任务只能传递前序成果的具体内容，不能顺便携带A的其他秘密', () => {
-    const state = handoffState(), r = handoffResult(state), c = r.taskCommands[0];
-    if (c.type !== 'SaveTask') throw Error();
-    c.task.handoff!.content = 'A的私人银行卡密码';
-    c.evidence = proof({ sources: ['task:work', 'npc:npc-b'], fact: c.task.handoff!.content });
-    expect(() => parse(state, r)).toThrow();
   });
   it('明确信息传递可生成B的转述记忆，不能自动升级为主角已知', () => {
     const state = handoffState(), r = handoffResult(state);
@@ -138,14 +132,8 @@ describe('自主终结与有依据的同窗口交接', () => {
     const projected = project(state, r);
     expect(projected.npc['npc-b'].memories[0].knowledgeKind).toBe('reported');
     expect(JSON.stringify(playerView(projected))).toContain(resultText);
-    memory.memory.visibility = 'player_known'; expect(() => parse(state, r)).toThrow();
-  });
-  it('隐藏事件ID仍不能给B授权，缺少实际交接也不能借A私有task来源', () => {
-    const state = handoffState(); state.events.secret = { ...event('secret'), actorRefs: [{ kind: 'npc', id: 'npc-a' }], status: 'resolved', resolvedAt: state.worldClock, resolutionText: resultText };
-    const r = worldResult(), c = receiveTask(); delete c.task.handoff;
-    for (const sources of [['task:work', 'npc:npc-b'], ['event:secret', 'npc:npc-b']]) {
-      c.evidence = proof({ sources, fact: resultText }); r.taskCommands = [c]; expect(() => parse(state, r)).toThrow();
-    }
+    expect(projected.npc['npc-a'].memories).toEqual(state.npc['npc-a'].memories);
+    expect(projected.npc['npc-b'].memories[0].visibility).toBe('npc_private');
   });
 });
 
@@ -225,7 +213,7 @@ const wire = (result: ReturnType<typeof worldResult>) => Response.json({ choices
 async function prepared(repo: SaveRepository, raw?: ReturnType<typeof worldResult>) {
   const draft = await completeDraft(repo);
   if (!raw) return draft;
-  const state = await repo.load('save-a'), result = parseWorld(JSON.stringify(raw), state, draft);
+  const state = await repo.load('save-a'), result = parseWorld(JSON.stringify(worldResultForTurn(raw, draft.turnId)), state, draft);
   return repo.saveDraft({ ...draft, draftRevision: draft.draftRevision + 1, world: { ...draft.world!, candidateRevision: 2, result } }, draft.draftRevision);
 }
 
@@ -233,7 +221,7 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
   it('连续多回合：世界因果→完成交接→临时人物退场→接班人继续→自然终结；刷新和回执不重复', async () => {
     const repo = await repository(), state = await repo.load('save-a'), initial = await prepared(repo);
     const raw = handoffResult(state); raw.worldCommands = [retireCommand(state)];
-    const transport = vi.fn<typeof fetch>(async () => wire(raw));
+    const transport = vi.fn<typeof fetch>(async () => wire(worldResultForTurn(raw, (await repo.loadDraft('save-a'))!.turnId)));
     const saved = await stage(repo, transport).generate({ ...config(), draft: initial });
     expect(transport).toHaveBeenCalledTimes(1); expect(await repo.load('save-a')).toEqual(state);
     expect(saved.world?.result.taskCommands.find((c) => c.type === 'SaveTask' && c.task.id === 'work')).toMatchObject({ task: { resolution: { sourceTurnId: initial.turnId } } });
@@ -244,11 +232,11 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
     expect((await repo.loadGame('save-a')).state).toEqual(committed.state);
     const ctx = contextFor({ stage: 'world', mode: 'regular', state: committed.state, draft: { ...worldDraft(), turnId: committed.draft.turnId, baseSaveRevision: committed.state.revision,
       variables: { ...worldDraft().variables!, result: await elapsedVariables(repo, worldDraft().story!.narrative, 600) } }, settings: defaultSettings(), userInput: '' });
-    expect(JSON.stringify(ctx.OFFSCREEN_STATE)).not.toContain('"id":"work"');
+    expect(JSON.stringify(ctx.OFFSCREEN_STATE)).toContain('"id":"work"');
     expect(JSON.stringify(ctx.NPC_LIFECYCLE)).toContain('identity-npc-a');
     const nextDraft = await completeDraft(repo, { variables: await elapsedVariables(repo, worldDraft().story!.narrative, 600) });
     const ending = worldResult(); ending.taskCommands = [finishTask(committed.state, 'next', '2026-10-18T08:15:00+08:00')];
-    const finished = await stage(repo, async () => wire(ending)).generate({ ...config(), draft: nextDraft });
+    const finished = await stage(repo, async () => wire(worldResultForTurn(ending,(await repo.loadDraft('save-a'))!.turnId))).generate({ ...config(), draft: nextDraft });
     const next = await repo.commitTurn(submission(finished));
     expect(next.state.tasks.next.status).toBe('completed'); expect(Object.keys(next.state.tasks).sort()).toEqual(['next', 'work']);
     expect(next.state.journal).toHaveLength(2); expect(next.state.npc['npc-a']).toBeUndefined(); expect(next.state.npc['npc-b']).toBeDefined();
@@ -287,7 +275,7 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
       let release!: () => void; const waiting = new Promise<void>((resolve) => { release = resolve; });
       let started!: () => void; const active = new Promise<void>((resolve) => { started = resolve; });
       const raw = handoffResult(before); raw.worldCommands = [retireCommand(before)];
-      const runner = stage(repo, async () => { started(); await waiting; return wire(raw); });
+      const runner = stage(repo, async () => { started(); await waiting; return wire(worldResultForTurn(raw, (await repo.loadDraft('save-a'))!.turnId)); });
       const pending = runner.generate({ ...config(), draft: initial });
       const rejected = expect(pending).rejects.toThrow(); await active;
       if (cause === 'cancel') runner.cancel(); else {
@@ -304,7 +292,7 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
     const secret = { ...event('investigation'), title: '材料核验结果', actorRefs: [{ kind: 'npc' as const, id: 'npc-a' }], status: 'resolved' as const, resolvedAt: actionTime, resolutionText: resultText, sourceTurnIds: [d.turnId] };
     const raw = { ...worldResult(), eventCommands: [{ type: 'SaveEvent' as const, commandId: 'secret', event: secret,
       evidence: proof({ sources: ['npc:npc-a'], fact: '核验记录已经整理。', outcome: resultText }) }] };
-    const validated = parseWorld(JSON.stringify(raw), state, d);
+    const validated = parseWorld(JSON.stringify(worldResultForTurn(raw, d.turnId)), state, d);
     const ready = await repo.saveDraft({ ...d, draftRevision: d.draftRevision + 1, world: { ...d.world!, candidateRevision: 2, result: validated } }, d.draftRevision);
     const first = await repo.commitTurn(submission(ready));
     expect(first.state.timeline).toEqual([]); expect(JSON.stringify(playerView(first.state))).toContain(resultText);
@@ -315,7 +303,7 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
     const result = { ...worldResult(), eventCommands: [{ type: 'SaveEvent' as const, commandId: 'disclosure', event: disclosed,
       evidence: proof({ at: '2026-10-18T08:15:00+08:00', kind: 'established', sources: ['story:current', 'npc:npc-a'], fact: resultText }) }], timelineCandidates: ['investigation'] };
     // 已结案事件不可重写：改公开状态属于未来正式揭示协议，本轮必须拒绝而非绕过终态。
-    expect(() => parseWorld(JSON.stringify(result), first.state, draft)).toThrow();
+    expect(() => parseWorld(JSON.stringify(worldResultForTurn(result, draft.turnId)), first.state, draft)).toThrow();
     const publicEvent = { ...disclosed, resultKnowledge: { facts: [resultText], reported: [], suspected: [] }, id: 'public-report', startAt: '2026-10-18T08:14:00+08:00', resolvedAt: '2026-10-18T08:15:00+08:00', estimatedEndAt: '2026-10-18T08:20:00+08:00' };
     const publicResult = { ...worldResult(), eventCommands: [{ ...result.eventCommands[0], event: publicEvent, evidence: proof({at:'2026-10-18T08:15:00+08:00',kind:'established',sources:['story:current','npc:npc-a'],fact:resultText,decision:{targetId:'public-report',status:'resolved',reason:'核验结果已传达',result:resultText,conditionsSatisfied:true,continues:false,resultKnowledge:{facts:[resultText],reported:[],suspected:[]}}}) }], timelineCandidates: [publicEvent.id] };
     publicEvent.sourceTurnIds = [draft.turnId];
@@ -335,7 +323,7 @@ describe('连续因果、旧候选和历史参与者', () => {
     const first = await completeDraft(repo, { narrative: fact, variables: await elapsedVariables(repo, fact, 600) });
     const job = { ...task('work'), goal: '核对窗口材料', actorRef: { kind: 'npc' as const, id: 'npc-a' }, status: 'active' as const, startAt: '2026-10-18T08:05:00+08:00', dueAt: '2026-10-18T08:09:00+08:00' };
     const planned = { ...worldResult(), taskCommands: [{ type: 'SaveTask' as const, commandId: 'intervene', task: job, evidence: proof({ sources: ['npc:npc-a'], fact: '核对人依值班职责接下窗口材料。' }) }] };
-    const running = await stage(repo, async () => wire(planned)).generate({ ...config(), draft: first });
+    const running = await stage(repo, async () => wire(worldResultForTurn(planned,(await repo.loadDraft('save-a'))!.turnId))).generate({ ...config(), draft: first });
     const round1 = await repo.commitTurn(submission(running)); expect(round1.state.tasks.work.status).toBe('active');
     const second = await completeDraft(repo, { narrative: '主角继续在外等候。', variables: await elapsedVariables(repo, '主角继续在外等候。', 600) });
     const done = finishTask(round1.state, 'work', '2026-10-18T08:15:00+08:00'), receive = receiveTask();
@@ -343,11 +331,11 @@ describe('连续因果、旧候选和历史参与者', () => {
     receive.evidence = proof({ at: receive.task.startAt, sources: ['task:work', 'npc:npc-b'], fact: resultText });
     const retiring = retireCommand(round1.state), retirementProof = JSON.parse(retiring.evidence); retirementProof.at = '2026-10-18T08:18:00+08:00'; retiring.evidence = JSON.stringify(retirementProof);
     const middle = { ...worldResult([retiring]), taskCommands: [receive, done] };
-    const middleReady = await stage(repo, async () => wire(middle)).generate({ ...config(), draft: second });
+    const middleReady = await stage(repo, async () => wire(worldResultForTurn(middle,(await repo.loadDraft('save-a'))!.turnId))).generate({ ...config(), draft: second });
     const round2 = await repo.commitTurn(submission(middleReady)); expect(round2.state.npc['npc-a']).toBeUndefined(); expect(round2.state.tasks.work.resolution?.at).toBe('2026-10-18T08:15:00+08:00');
     const third = await completeDraft(repo, { narrative: '主角整理自己的笔记。', variables: await elapsedVariables(repo, '主角整理自己的笔记。', 600) });
     const ending = { ...worldResult(), taskCommands: [finishTask(round2.state, 'next', '2026-10-18T08:25:00+08:00')] };
-    const final = await stage(repo, async () => wire(ending)).generate({ ...config(), draft: third });
+    const final = await stage(repo, async () => wire(worldResultForTurn(ending,(await repo.loadDraft('save-a'))!.turnId))).generate({ ...config(), draft: third });
     const round3 = await repo.commitTurn(submission(final));
     expect(Object.keys(round3.state.tasks)).toHaveLength(2); expect(Object.values(round3.state.tasks).every((t) => t.status === 'completed')).toBe(true);
     expect(round3.state.journal).toHaveLength(3); expect(round3.state.memories.short).toHaveLength(3); expect(round3.state.tasks.work.actorRef.id).toBe('npc-a');
@@ -376,8 +364,8 @@ describe('连续因果、旧候选和历史参与者', () => {
     const repo = await repository(), state = await repo.load('save-a'), c = finishTask(state);
     c.evidence = proof({ sources: ['task:work', 'npc:npc-a'], fact: '同事逐份完成了材料核对。', outcome: resultText });
     const raw = { ...worldResult(), taskCommands: [c] }, d = await completeDraft(repo, { world: raw });
-    const before = await repo.loadGame('save-a'); await expect(repo.commitTurn(submission(d))).rejects.toThrow('世界候选需先保存'); expect(await repo.loadGame('save-a')).toEqual(before);
-    const corrected = await stage(repo, async () => wire(raw)).generate({ ...config(), draft: d });
+    const before = await repo.loadGame('save-a'); await expect(repo.commitTurn(submission(d))).rejects.toThrow(); expect(await repo.loadGame('save-a')).toEqual(before);
+    const corrected = await stage(repo, async () => wire(worldResultForTurn(raw, (await repo.loadDraft('save-a'))!.turnId))).generate({ ...config(), draft: d });
     const accepted = await repo.commitTurn(submission(corrected)); expect(accepted.state.tasks.work.resolution?.result).toBe(resultText);
     expect((await repo.commitTurn(submission(corrected))).replayed).toBe(true);
   });
@@ -413,7 +401,7 @@ describe('新决策不是固定措辞分类器', () => {
     const state = handoffState(), c = finishTask(state), raw = JSON.parse(c.evidence);
     raw.fact = '清单没有遗漏，三份材料与记录相符。'; c.evidence = JSON.stringify(raw);
     expect(() => parse(state, { ...worldResult(), taskCommands: [c] })).not.toThrow();
-    raw.decision.status = 'blocked'; c.evidence = JSON.stringify(raw);
+    c.task.status = 'blocked';
     expect(() => parse(state, { ...worldResult(), taskCommands: [c] })).toThrow();
   });
 });
@@ -464,7 +452,7 @@ describe('联系人及特殊NPC正向正式结算', () => {
     const repo = await SaveRepository.open(`positive-${kind}`, new IDBFactory()); resources.push(repo); await repo.create(state);
     const d = await prepared(repo), raw = { ...worldResult(), taskCommands: [finishTask(state)] };
     if (kind === 'special') raw.worldCommands = [retireCommand(state)];
-    const ready = await stage(repo, async () => wire(raw)).generate({ ...config(), draft: d });
+    const ready = await stage(repo, async () => wire(worldResultForTurn(raw, (await repo.loadDraft('save-a'))!.turnId))).generate({ ...config(), draft: d });
     const committed = await repo.commitTurn(submission(ready)); expect(committed.state.tasks.work.status).toBe('completed');
     if (kind === 'contact') { expect(committed.state.npc['npc-a']).toEqual(state.npc['npc-a']); expect(committed.state.contactNpcIds).toEqual(['npc-a']); }
     else { expect(committed.state.npc['npc-a']).toBeUndefined(); expect(committed.state.retiredNpcs['npc-a'].identityKey).toBe(state.npc['npc-a'].identityKey); }

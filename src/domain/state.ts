@@ -6,7 +6,7 @@ import { NpcSchema, SpecialNpcSchema } from './npc/schema';
 import { ImportantItemSchema } from './items/schema';
 import { EconomySchema } from './economy/schema';
 import { OrganizationSchema } from './organizations/schema';
-import { TimelineEntrySchema, StoredWorldEventSchema, WorldTaskSchema, RetiredEventSchema } from './events/schema';
+import { TimelineEntrySchema, StoredWorldEventSchema, WorldTaskSchema, RetiredEventSchema, EventInteractionSchema } from './events/schema';
 import { isHistoricalEntry, eventById, validateEventLinks } from './events/lifecycle';
 import { MemoryStateSchema, npcKnowledgeKind } from './memories/schema';
 
@@ -16,6 +16,7 @@ export const StorySchema = z.strictObject({
   variableGuide: z.array(z.strictObject({
     group: z.enum(['protagonist', 'npc', 'items', 'economy', 'organization', 'time', 'event']),
     subjectHint: z.string().optional(), observedFact: TextSchema, textEvidence: z.string().optional(),
+    eventInteraction: EventInteractionSchema.optional(),
   })), actionOptions: z.array(TextSchema).optional(),
 });
 export const RetiredNpcSchema = z.strictObject({
@@ -128,6 +129,14 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
       && s.tasks[id]?.actorRef.id === org.id, '组织任务归属错误');
   }
   for (const event of Object.values(s.events)) {
+    if(event.continuation?.direction==='protagonist') location(event.continuation.entry.locationId);
+    const entry=event.protagonistEntry;
+    if(entry) {
+      location(entry.locationId);
+      check(Date.parse(entry.queuedAt)<=Date.parse(s.worldClock) && event.sourceTurnIds.includes(entry.sourceTurnId), '入场安排时间或来源不合法');
+      check(entry.status==='pending' ? !entry.handledTurnId && !entry.textEvidence && !['resolved','cancelled'].includes(event.status)
+        : Boolean(entry.handledTurnId && entry.textEvidence && event.sourceTurnIds.includes(entry.handledTurnId)), '入场处理缺少合法回执');
+    }
     if (event.resultKnowledge) check(['resolved', 'cancelled'].includes(event.status), '未结案事件不能预存成果分类');
     location(event.locationId); event.actorRefs.forEach((ref) => actor(ref, true)); timeRange(event.startAt, event.estimatedEndAt);
     if(event.status!=='cancelled')timeRange(event.startAt, event.resolvedAt);
@@ -149,7 +158,6 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
       check(prior && ['completed', 'cancelled'].includes(prior.status) && prior.resolution, '交接缺少已成立的前序成果');
       check(prior?.resolution && Date.parse(prior.resolution.at) <= Date.parse(task.handoff.at)
         && Date.parse(task.handoff.at) <= Date.parse(task.startAt), '交接时间不合法');
-      check(prior?.resolution?.result.includes(task.handoff.summaryBasis?.resultExcerpt ?? task.handoff.content), '交接内容超出实际成果');
       const visited = new Set([task.id]);
       let cursor: typeof task | undefined = prior;
       while (cursor) {

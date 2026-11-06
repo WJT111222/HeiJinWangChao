@@ -5,7 +5,7 @@
 叙事流式显示时，只能实时展示解析明确落入正文标签的文本；`【旁白】`代表普通叙述，`【角色名】`只代表角色直接对白（详见`shared/09_dialogue_labels.md`）；任何变量变更可见信息都属于候选，不能在流式时写库。仅`narrative`参加硬最低字数校验，`minNarrativeChars`由玩家任意合法正整数设置，具体字符口径须统一。
 
 ## 阶段② 变量输出
-正式新请求使用 `VARIABLE_TEXT_V1`：只执行唯一 `<命令>` 区块内的 `set/add/push 路径 = JSON值`；真实有限路径和类型由 `TEXT_COMMAND_CATALOG` 给出。`<thinking>`/`<说明>` 不执行，不要求整份模型回复为 JSON。
+正式新请求使用 `VARIABLE_TEXT_V1`：同次响应依次完整输出 `<thinking>`、`<说明>`、`<命令>`；只执行唯一命令区块内的 `set/add/push 路径 = JSON值` 或 `delete 路径`；真实有限路径和类型由 `TEXT_COMMAND_CATALOG` 给出。`<thinking>`/`<说明>` 不执行，不要求整份模型回复为 JSON。
 
 程序解析、编译并整批模拟后，仍保存规范化对象 `{commands: DomainCommand[],rejectedSuggestions:{reason,reference}[],unresolved:string[]}`。已有 JSON 领域候选保持可读可复核；新模型请求不猜测协议、不回退 JSON、不追加修复请求。说明原文不复制到候选，仅记录固定非执行提示。
 `DomainCommand` 是严格的 `type` 判别联合，包含 `commandId/type/evidence` 及类型专属的同级字段，不接受旧 group/entityId/payload 包装。旧候选的 JSON 领域命令仍通过结构与副本业务验证；新请求通过 TEXT_COMMAND_CATALOG 的文本映射由程序生成 commandId/evidence/expectedRevision。模型不得自行输出这些程序元数据；候选不直接写入正式状态。
@@ -98,22 +98,13 @@
 变量阶段每次手动执行先保存 startStageAttempt，保持正文版本与输入；按已选正文、正式 revision、执行/请求版本验证，再保存 validated 变量候选。此处 validated 仅表示程序校验通过的草稿，不是正式世界结算。不执行世界阶段或自动重试，不调用正式 SaveRepository.save。
 
 
-## M4-P3 世界候选运行契约
+## 当前World候选运行契约
 
-本阶段复用原有八种受限命令，不增加领域命令或正式存档字段。世界命令 evidence 在原字符串字段中编码 WORLD_EVIDENCE_V1 JSON，详见 shared/08_world_output.md 和运行时 COMMAND_CATALOG；变量命令evidence为来源说明，可概括而无需逐字引用，二者不能混用。新场外 derived 候选根据可信来源、时间窗口及动机形成，不要求逐字出现在正文。futureEvents 只镜像已验证的 scheduled SaveEvent，不是独立命令入口。visibleHooks、revealAfter、timelineCandidates 不自动披露。无合法变量时世界只能 preview；已有合法变量即使本次变量开关关闭也可复用。所有结果只保存 TurnDraft；正式状态、时间和历史不受影响。
+World沿用JSON及DomainCommand结构；evidence是非执行说明，不再有证据JSON、来源令牌、中文语义分类或正文锚点。模型自主判断事实与知识传播；程序只检查字段、实体引用、命令权限、时间、生命周期及事务。
 
+任务直接输出resolution和必要handoff，事件直接输出结案字段。交接可概括成果，不要求原文片段。futureEvents仅镜像同批新scheduled事件；visibleHooks仅内部候选；timelineCandidates只归档重大合法终态。NPC_KNOWLEDGE按ownerNpcId分组，正文仍使用角色可见投影，玩家观察不改变角色认知。
 
-## M4-P3 二轮审查：实体、估计与任务状态
-
-- CreateLocation 仅接受 established 或合法 derived 存在事实，不能将 planned 建设直接建成实体；计划或不确定项进入任务/未来事件/unresolved。
-- estimatedEndAt/dueAt 允许 AI 自主估计、调整，但到期只重新评估。scheduled/active/blocked 事件不得有 resolvedAt/resolutionText；真实 resolved 要有合法实际时间和非空结局，允许晚于预计。cancelled 保留兼容的可选说明/时间组合，不能预存未来实际终止时间。futureEvents 无旁路。
-- NPC 的 planned/active/blocked 任务占用唯一名额，completed/cancelled 释放；正式、变量投影和候选合查，本批终结不能立即接新任务。组织可多任务，实际执行者未被 actorRef 表达的情况不假装能硬校验。
-- 既有完成必须明确关联自身 task:<id>/event:<id>，可结合动机生成新结果，不要求正文预先证明。失败终止使用 cancelled 并在原 evidence 来源凭据中保存真实结果，blocked 不算成功。
-- 正式状态不变，旧冲突不静默清理；冲突候选安全失败，旧任务冲突在内部 unresolved 报告。后续生命周期与阶段分工见 DEVELOPMENT.md，仅作规划，不注入删除/休眠功能。
-
-## M4-P3 A5 取消证据定点修复
-
-取消与完成都需目标自身来源：SaveTask.cancelled 引用 task:<id>，SaveEvent.cancelled 引用 event:<id>。取消还需 fact 中肯定成立的终止谓语；无关普通场外动作或人物动机不能替代。derived 必须有区别于取消宣告的具体 outcome 原因/后果，空缺或仅“任务取消了”不能自证。明确失败后终止允许；否定终止和准备重试不允许借取消释放名额。继续保留未来安排提前取消、完成条件无需满足、事件实际结案字段可缺失的语义。详见 shared/08_world_output.md，正式 Schema/状态字段不变。
+World没有主角交易、移动、时钟或现场NPC直接更新权限。合法事件记录可以自然概括场内人物的参与，不意味着执行其动作。详细字段与限制以shared/08_world_output.md和COMMAND_CATALOG为准。本文此前M4来源审批/A5语义取消规则已删除，不作为兼容层保留。
 
 ## M5-P4 时间预检的变量规划约定
 
@@ -144,11 +135,11 @@ M8-P0A取代此前“所有回合必须正向耗时”的规则：普通回合�
 
 ## M5-P5 成果、交接与生命周期增量（最新产品契约）
 
-新增严格命令RegisterContact（变量阶段，npcId/reason）和RetireNpc（世界阶段，npcId/expectedIdentityKey/reason/retainMemoryIds）。没有任意字段补丁或新付费阶段。WorldTask新增可选resolution和handoff，WORLD_EVIDENCE_V1新增可选decision，具体字段以COMMAND_CATALOG导出的真实JSON Schema及shared/08为准；程序从决策重建确定性成果元数据。旧取消谓词检查仅为旧协议兼容，不作为新决策的唯一语义依据。
+新增严格命令RegisterContact（变量阶段，npcId/reason）和RetireNpc（世界阶段，npcId/expectedIdentityKey/reason/retainMemoryIds）。没有任意字段补丁或新付费阶段。WorldTask新增可选resolution和handoff，具体字段以COMMAND_CATALOG导出的真实JSON Schema及shared/08为准；模型直接输出结构化成果，程序不再从evidence重建结果。
 
-同批来源先验证、无环、再使用，不接受自证；允许按真实时间释放占用和按需承接，取代上文M4-P3同批禁止接力的旧限制。新任务不改变原执行者，只有实际传递的内容可以成为接收者知识，隐藏事件参与者不等于知情者。无后续必要时直接结束，不造接班任务。正文标签、六套主提示词、NPC私有认知权限和正式回合原子提交保持原有架构。Save schema为V4，包含contactNpcIds/retiredNpcs/contactReviewNpcIds；旧档联系人身份待确认与永久联系人分开保护，保留revision、journal和回执。已终结任务新增的可选成果与交接字段兼容旧对象，无来源的旧终态不补造实际成果或时间。
+同批实体依赖按结构化ID排序且无环；允许按真实时间释放占用和按需承接，取代上文M4-P3同批禁止接力的旧限制。新任务不改变原执行者，只有实际传递的内容可以成为接收者知识，隐藏事件参与者不等于知情者。无后续必要时直接结束，不造接班任务。正文标签、六套主提示词、NPC私有认知权限和正式回合原子提交保持原有架构。Save schema为V4，包含contactNpcIds/retiredNpcs/contactReviewNpcIds；旧档联系人身份待确认与永久联系人分开保护，保留revision、journal和回执。已终结任务新增的可选成果与交接字段兼容旧对象，无来源的旧终态不补造实际成果或时间。
 
-退场保留的必要材料使用现有memories.long；可选retiredNpcSource记录npcId/sourceMemoryId/knowledgeKind/knowledgeSource，只标记局部历史来源，不作为整回合压缩覆盖。未公开材料保持internal，不进入普通正文、玩家记忆、变量认知输入或其他人物WORLD_SOURCES。新生成的终态任务（含旧凭据兼容路径）均先补齐来源可验证的resolution并保存候选；正式提交保持完整候选指纹一致性，缺少该元数据的旧待提交候选明确补算，不在提交事务内静默改候选。
+退场保留的必要材料使用现有memories.long；可选retiredNpcSource记录npcId/sourceMemoryId/knowledgeKind/knowledgeSource，只标记局部历史来源，不作为整回合压缩覆盖。未公开材料保持internal，不进入普通正文、玩家记忆、变量认知输入或其他人物认知资料。新生成的终态任务由模型直接填写结构合法的resolution并保存候选；正式提交保持完整候选指纹一致性，缺少该元数据的旧待提交候选明确补算，不在提交事务内静默改候选。
 
 
 ### PR #22 第二轮：修复首轮审查三项问题
@@ -178,11 +169,11 @@ WorldEvent.resultKnowledge?沿用任务现有严格分类，不新增AI阶段。
 
 evidence保持原字符串Schema，作为来源说明，不是逐字引用证明。AI负责计划/否定/事实、关系及技能变化的语义判断；程序不使用factEvidence/completedPayment或金额文本正则拒绝变量候选。严格JSON、命令白名单、整数分金额、余额、归属、引用、场景一致性、NPC知识类型与权限、生命周期和时间完整性、CAS、幂等及原子提交继续保留。任何单条数据底线错误整批拒绝，无静默部分接纳。空commands合法。
 
-失败安全分类：invalid_json、schema_fields、data_integrity、amount_balance、time_data、candidate_conflict，以及既有permission。可查看白名单字段路径/命令类型/序号，不包含值、原始校验异常、NPC私有内容或供应商响应。世界阶段自身的结构化来源与worldEventOnly/ownerNpcId知识隔离契约不因变量减负而关闭。
+失败安全分类：invalid_json、schema_fields、data_integrity、amount_balance、time_data、candidate_conflict，以及既有permission。可查看白名单字段路径/命令类型/序号，不包含值、原始校验异常、NPC私有内容或供应商响应。World同样不做自然语言来源审批；角色上下文按身份与可见性隔离。
 
 ## 当前事件生命周期（本次产品决策优先）
 
-World 的 eventCommands 允许 SaveEvent、DeleteEvent、ArchiveEvent。DeleteEvent(eventId,expectedStatus,reason)清理已终止的完整对象；ArchiveEvent(eventId,title,summary)凭可信fact来源归档重大实际结束结果，无需主角先知晓，也不清理重要完整对象。DeleteEvent仅清理minor、无主角参与和必要引用的独立普通终态。两者保留稳定commandId/evidence，仍受权限、来源、版本、整批模拟和原子事务保护。retiredEvents保存轻量身份与必要成果引用，不能自动授予NPC或主角知识。历史时间线不要求保留完整活跃事件。
+World 的 eventCommands 允许 SaveEvent、DeleteEvent、ArchiveEvent。DeleteEvent(eventId,expectedStatus,reason)清理已终止的完整对象；ArchiveEvent(eventId,title,summary)归档重大实际结束结果，无需主角先知晓，也不清理重要完整对象。DeleteEvent仅清理minor、无主角参与和必要引用的独立普通终态。两者保留稳定commandId/evidence，仍受权限、引用、版本、整批模拟和原子事务保护。retiredEvents保存轻量身份与必要成果引用，不能自动授予NPC或主角知识。历史时间线不要求保留完整活跃事件。
 
 EVENT_SCHEDULE含正式时间至变量投影时间内（包括积压）的可处理场外到期事件；同一World请求按时间和依赖推演。正常结束、失败、取消、合理延期均可，无需强制后继；延期的下一预计时间必须晚于本轮窗口。futureEvents不能绕过该验证。旧缺预计时间的事件只读兼容并列unplannedLegacy，不补造历史日期。
 

@@ -1,3 +1,4 @@
+import { variableTextEnvelope } from '../src/tests/fixtures/variableReply';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openGameTools } from './helpers/gameLayout';
@@ -115,7 +116,7 @@ test('Variables拒绝纯组织事件，合法现场更新可恢复；组织事�
     const content=body.model==='world'?JSON.stringify({...worldResult(),eventCommands:[{
       type:'SaveEvent',commandId:'world-background',event:{...seeded.state.events.background,status:'blocked',sourceTurnIds:[seeded.draft.turnId]},
       evidence:proof({sources:['event:background','org:org-a'],fact:'组织清点暂时受阻。',decision:{targetId:'background',status:'blocked',reason:'材料尚未齐备',result:'等待补齐材料',conditionsSatisfied:false,continues:true}}),
-    }]}):safe?'<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset events[local].sceneState = {"status":"blocked"}\n</命令>':'<命令>set events[background].sceneState = {"status":"blocked"}</命令>';
+    }]}):safe?variableTextEnvelope('<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset events[local].sceneState = {"status":"blocked"}\n</命令>'):variableTextEnvelope('<命令>set events[background].sceneState = {"status":"blocked"}</命令>');
     await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content},finish_reason:'stop'}]})});
   });
   await page.getByRole('button',{name:/^(?:重新)?生成变量候选$/}).click();await expect(page.getByRole('alert')).toBeVisible();

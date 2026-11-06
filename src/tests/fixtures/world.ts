@@ -2,7 +2,7 @@ import { createTurnDraft, rerollStory, TurnDraftSchema } from '../../domain/draf
 import type { TurnDraft } from '../../domain/drafts';
 import { GameStateSchema } from '../../domain/state';
 import type { DomainCommand } from '../../domain/commands';
-import type { WorldEvidence } from '../../services/validation/worldEvidence';
+export interface LegacyWorldEvidence { version: 1; kind: 'derived'|'established'|'planned'|'reported'|'suspected'; at: string; sources: string[]; fact: string; rationale: string; outcome?: string; sceneRecord?: {anchors:{source:'story:current';quote:string;actorRefs:import('../../domain/common').ActorRef[]}[]}; decision?: {targetId:string;status:'completed'|'resolved'|'cancelled'|'blocked'|'retired';reason:string;result:string;conditionsSatisfied:boolean;continues:boolean;failure?:boolean;resultKnowledge?:{facts:string[];reported:string[];suspected:string[]}} }
 import { game, npc, gameTime } from './game';
 
 export const projectedTime = '2026-10-18T08:10:00+08:00';
@@ -68,7 +68,7 @@ export function worldDraft(variables = true, mode: 'opening' | 'regular' = 'regu
       : {}),
   });
 }
-export function proof(overrides: Partial<WorldEvidence> = {}) {
+export function proof(overrides: Partial<LegacyWorldEvidence> = {}) {
   return JSON.stringify({
     version: 1,
     kind: 'derived',
@@ -103,4 +103,11 @@ export function worldResult(
     timelineCandidates: [] as string[],
     unresolved: ['财务与物品经营变化尚无场外授权命令，不结算。'],
   };
+}
+
+/** Bind newly authored Mock task results to the test's actual draft, never used by production. */
+export function worldResultForTurn(result: ReturnType<typeof worldResult>, turnId: string) {
+  const next=structuredClone(result);
+  for (const command of next.taskCommands) if(command.type==='SaveTask' && command.task.resolution) command.task.resolution.sourceTurnId=turnId;
+  return next;
 }

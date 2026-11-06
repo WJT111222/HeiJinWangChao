@@ -65,7 +65,8 @@ describe('记忆模型路由及旧配置兼容', () => {
     saveAiConfig(storage, config);
     expect(readAiConfig(storage).routes.memory).toEqual(config.routes.memory);
     const removed = removeChannel(config, channel.id);
-    expect(removed.routes.memory).toEqual({ mode: 'follow-story' });
+    expect(removed.routes.memory).toEqual({ mode: 'independent', channelId: '', modelId: '' });
+    expect(() => resolveModelRoute(removed, 'memory')).toThrow(expect.objectContaining({ code: 'configuration' }));
     expect(removed.channels).toHaveLength(0);
   });
   it('独立模型冻结路由、参数和凭证；失败不回退', () => {

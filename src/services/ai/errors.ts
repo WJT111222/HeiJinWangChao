@@ -1,7 +1,17 @@
 import { DataError } from '../../domain/common';
 import type { ExecutionDiagnostic } from '../../executors/variableText/diagnostics';
 import type { WorldRule } from '../validation/worldDiagnostics';
+export const variableStepNames = {
+  context: '构造变量上下文', load: '读取正式存档与草稿', draft_start: '保存变量请求版本',
+  request: '请求变量模型', response: '读取完整模型响应', envelope: '解析三个标签区块',
+  commands: '解析文本命令', mapping: '映射领域命令', simulation: '整批模拟与数据校验',
+  candidate_save: '保存变量候选', commit: '正式回合原子结算',
+} as const;
+export type VariableStep = keyof typeof variableStepNames;
+export const isVariableStep = (value: unknown): value is VariableStep => typeof value === 'string' && Object.hasOwn(variableStepNames, value);
 export type AiErrorCode =
+  | 'storage'
+  | 'variable_runtime'
   | 'configuration'
   | 'credentials'
   | 'authorization'
@@ -28,11 +38,14 @@ export type AiErrorCode =
   | 'placeholder'
   | 'permission'
   | 'npc_task_conflict'
+  | 'event_entry'
   | 'time_preflight'
   | 'money_unit'
   | 'model_list_format'
   | 'model_list_pagination';
 const messages: Record<AiErrorCode, string> = {
+  storage: '浏览器存储读取或保存失败，未接受新的变量候选。请检查存储空间及权限后明确重试。',
+  variable_runtime: '变量处理未完成，请查看处理步骤定位错误；合法正文及正式存档仍保留。',
   model_list_format: '模型列表返回格式不受支持，未读取到约定的模型数组。',
   model_list_pagination: '模型列表分页信息无效或不受支持，未能安全读取完整列表。',
   configuration: '渠道、模型或路由配置无效，请检查设置。',
@@ -56,12 +69,13 @@ const messages: Record<AiErrorCode, string> = {
   candidate_conflict: '存档版本、命令或候选存在冲突，请重新读取后继续。',
   invalid_json: '响应不是完整合法的 JSON。',
   variable_text_syntax: '变量文本命令区块或JSON值格式不合法，候选未保存。',
-  invalid_output: '模型输出未通过结构或事实校验，候选未被接受。',
+  invalid_output: '模型输出未通过结构或状态校验，候选未被接受。',
   unsupported: '当前协议不支持此请求特性，请检查兼容配置。',
   resource: '提示词资源缺失或与注册校验值不符。',
   placeholder: '提示词缺少必需参数或仍有未解析占位符，已阻止发送。',
   permission: '候选超出本阶段允许的命令或对象范围。',
   npc_task_conflict: 'NPC 已有未终结后台任务，候选存在任务占用冲突；未改写或删除已有任务。',
+  event_entry: '正文遗漏或未正确处理待入场事件，候选未接受。请检查正文并明确重试；已保存的入场安排仍保留。',
   time_preflight: '时间预检与正文或变量停止时间不一致，候选未保存。请检查行动或重新生成正文。',
   money_unit: '候选金额与证据中的人民币元/分不一致。',
 };
@@ -69,7 +83,7 @@ export class AiError extends Error {
   constructor(
     public readonly code: AiErrorCode,
     public readonly status?: number,
-    public readonly details?: { fieldPath?: string; commandType?: string; commandIndex?: number; relatedCommandIndices?: number[]; worldRule?: WorldRule } & Partial<ExecutionDiagnostic>,
+    public readonly details?: { fieldPath?: string; commandType?: string; commandIndex?: number; relatedCommandIndices?: number[]; worldRule?: WorldRule; variableStep?: VariableStep } & Partial<ExecutionDiagnostic>,
   ) {
     super(messages[code] + (details?.fieldPath ? ` 字段：${details.fieldPath}${details.commandType ? `（${details.commandType}，第${(details.commandIndex ?? 0) + 1}条）` : ''}。` : ''));
     this.name = 'AiError';
@@ -79,7 +93,9 @@ export class AiError extends Error {
 export function safeAiError(error: unknown) {
   return error instanceof AiError
     ? { code: error.code, message: error.message, status: error.status, ...(error.details ? { details: error.details } : {}) }
-    : error instanceof DataError && ['REVISION_CONFLICT', 'DRAFT_CONFLICT', 'ENTITY_CONFLICT', 'COMMAND_CONFLICT', 'DUPLICATE_COMMAND'].includes(error.code)
+    : error instanceof DataError && error.code==='EVENT_ENTRY'
+      ? {code:'event_entry',message:messages.event_entry,status:undefined}
+    : error instanceof DataError && ['STORY_BUSY', 'REVISION_CONFLICT', 'DRAFT_CONFLICT', 'ENTITY_CONFLICT', 'COMMAND_CONFLICT', 'DUPLICATE_COMMAND'].includes(error.code)
       ? { code: 'candidate_conflict', message: messages.candidate_conflict, status: undefined }
     : { code: 'unknown', message: '操作失败，请检查配置或浏览器存储权限后重试。' };
 }

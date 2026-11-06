@@ -1,5 +1,5 @@
 import { completeDraft, submission } from './fixtures/turn';
-import { variableReply } from './fixtures/variableReply';
+import { variableReply, variableTextEnvelope } from './fixtures/variableReply';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { VariableStage } from '../workflows/variableStage';
@@ -52,7 +52,7 @@ function setup(protocol: Protocol = 'openai') {
   return { config, vault, settings: defaultSettings() };
 }
 function wire(value: unknown = result, protocol: Protocol = 'openai') {
-  const text = typeof value === 'string' ? value : variableReply(value);
+  const text = typeof value === 'string' ? value.includes('<命令>') ? variableTextEnvelope(value) : value : variableReply(value);
   return Response.json(
     protocol === 'openai'
       ? {
