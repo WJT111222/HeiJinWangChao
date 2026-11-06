@@ -79,7 +79,7 @@ export function deleteEvent(state: GameState,eventId:string,expectedStatus:'reso
   requireData(event && event.status===expectedStatus && terminalEvent(event),'EVENT_NOT_TERMINAL','只能清理已结束事件');
   requireData(!state.retiredEvents[eventId],'DUPLICATE_ID','事件已清理');
   // 没有独立主线字段：主角参与、任务/事件承接、时间线或知识引用一律保守保留。
-  requireData(event.impact==='minor' && !mainlineRelated(state,event) && !hasReferences(state,event),
+  requireData(!['pending','presented'].includes(event.protagonistEntry?.status??'') && event.impact==='minor' && !mainlineRelated(state,event) && !hasReferences(state,event),
     'EVENT_RETAINED','重要、主角相关或存在必要引用的事件不能按普通杂事清理');
   state.retiredEvents[eventId]={id:event.id,status:expectedStatus,retiredAt:state.worldClock,
     sourceTurnIds:[...new Set([...event.sourceTurnIds,turnId])],linkedTaskIds:event.linkedTaskIds,

@@ -1,3 +1,4 @@
+import { pendingEventEntries } from '../domain/events/interactions';
 import { worldEventSchedule } from '../domain/events/schedule';
 import { protagonistKnownEvent } from '../domain/events/knowledge';
 import { chinaCalendar, openingTimeBase, openingTimeContext, openingTimeSelection } from '../domain/openingTime';
@@ -195,6 +196,9 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         .map((npc) => publicNpc(state, npc.id, archive)),
       MEMORY_CONTEXT: storyMemoryContext(state, settings.memory.immediateWindowSize, input.userInput, input.mode === 'regular'),
       KNOWN_EVENTS: events,
+      EVENT_ENTRIES: pendingEventEntries(state),
+      EVENT_PARTICIPATION: Object.values(state.events).flatMap(event=>event.protagonistEntry?.status==='presented' && !['resolved','cancelled'].includes(event.status)
+        ? [{eventId:event.id,entryId:event.protagonistEntry.id,status:'presented'}] : []),
       PLAYER_ACTION: input.userInput,
       OPENING_TIME: opening,
       TURN_TIME_POLICY: turnTimePolicy,
@@ -261,7 +265,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       TIME_WINDOW: { from: state.worldClock, to: temporary.worldClock },
       EVENT_SCHEDULE: historicalPerspective(state,draft!) ? {readOnly:true,policy:'纯过去视角只读，不处理当前世界到期事件；原排程保留到正常世界回合。'} : worldEventSchedule(state, temporary),
       variablePending,
-      STORY_RESULT: { narrative: draft!.story!.narrative, summary: draft!.story!.summary },
+      STORY_RESULT: { narrative: draft!.story!.narrative, summary: draft!.story!.summary, eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction) },
       VARIABLE_RESULT: variablePending ? undefined : draft!.variables,
       WORLD_SOURCES: worldSources(temporary, draft!, state),
       NPC_KNOWLEDGE_POLICY: npcKnowledgePolicy,
