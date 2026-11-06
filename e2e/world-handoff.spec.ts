@@ -64,7 +64,7 @@ test('真实浏览器：世界成果/交接/退场只是候选，主动查看、
   let calls = 0;
   await page.route('https://handoff.mock.invalid/**', async (route) => { calls++; await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ choices: [{ message: { content: JSON.stringify(worldResultForTurn(raw,currentTurn)) }, finish_reason: 'stop' }] }) }); });
   await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click();
-  await expect(page.getByRole('region', { name: '三阶段工作流' })).toContainText('世界已完成 · 候选未正式结算');
+  await expect(page.getByRole('region', { name: '三阶段工作流' }).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
   let saved = await stored(page); expect(saved.state).toEqual(before); expect(saved.state.npc['npc-a']).toBeDefined();
   await expect(page.locator('main')).not.toContainText(resultText);
   await page.getByRole('button', { name: '查看世界候选（未结算）', exact: true }).click();
@@ -114,7 +114,7 @@ for (const variant of ['event-report', 'refused-confirmation'] as const) test(`�
   await expect.poll(() => calls).toBe(1);
   expect((await stored(page)).state).toEqual(before); await page.reload(); await openGameTools(page); expect((await stored(page)).state).toEqual(before);
   await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click();
-  await expect(page.getByRole('region', { name: '三阶段工作流' })).toContainText('世界已完成 · 候选未正式结算');
+  await expect(page.getByRole('region', { name: '三阶段工作流' }).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
   expect((await stored(page)).state).toEqual(before);
   const committed = await page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try {
     const draft = await repo.loadDraft('save-a'), input = { draft, nextAction: '在街边休息', useVariableStage: true, useWorldStage: true };
@@ -148,7 +148,7 @@ for (const variant of ['mixed-result', 'unindexed-history'] as const) test(`第�
   expect((await stored(page)).state).toEqual(before); await expect(page.locator('main')).not.toContainText('蓝仓暗格');
   await page.reload(); await openGameTools(page); expect((await stored(page)).state).toEqual(before);
   await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click();
-  await expect(page.getByRole('region', { name: '三阶段工作流' })).toContainText('世界已完成 · 候选未正式结算');
+  await expect(page.getByRole('region', { name: '三阶段工作流' }).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
   const saved = await stored(page); expect(saved.state).toEqual(before); expect(saved.state.npc['npc-a']).toBeDefined(); expect(calls).toBe(2);
   if (variant === 'mixed-result') expect(saved.draft.world.result.eventCommands[0].event.resolutionText).toBe('同事归档了一份举报。');
   else expect(saved.draft.world.result.worldCommands).toEqual([]);

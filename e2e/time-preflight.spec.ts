@@ -106,7 +106,7 @@ test('取消和迟到不推进时间；关闭阶段只保留正文草稿', async
   await page.getByRole('button', { name: '取消自动执行', exact: true }).click(); release(); api.control.hold = undefined;
   await expect(page.getByRole('button', { name: /自动生成本回合|继续未完成阶段/, exact: true })).toBeEnabled();
   await page.getByRole('button', { name: /自动生成本回合|继续未完成阶段/, exact: true }).click();
-  await expect(page.getByText(/已按开关跳过关闭阶段/)).toBeVisible(); const saved = await load(page);
+  await expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toContainText('阶段已关闭'); const saved = await load(page);
   expect(saved.state).toEqual(before); expect(saved.draft.variables).toBeUndefined(); expect(saved.draft.world).toBeUndefined();
   expect(api.calls).toEqual(['story', 'story']); await page.getByLabel('你的行动', { exact: true }).fill('继续观察'); await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
 });

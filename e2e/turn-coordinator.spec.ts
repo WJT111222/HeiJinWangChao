@@ -1,5 +1,5 @@
 import { variableReply } from '../src/tests/fixtures/variableReply';
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools, openWorkflowDiagnostics } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import type { StageResponse } from '../src/services/ai/stageResponses';
@@ -253,7 +253,7 @@ test('关闭两个阶段只生成正文，再开启后补算不 Roll', async ({ 
   await page.getByLabel('变量管理', { exact: true }).uncheck();
   await page.getByLabel('动态世界', { exact: true }).uncheck();
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
-  await expect(workflow(page).getByRole('status')).toContainText('已按开关跳过');
+  await expect(workflow(page).getByRole('status')).toContainText('阶段已关闭');
   expect(plan.calls).toEqual(['story']);
   await page.getByLabel('变量管理', { exact: true }).check();
   await page.getByLabel('动态世界', { exact: true }).check();
@@ -299,7 +299,7 @@ test('其他标签持有会话时拒绝第二个自动工作流', async ({ page,
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
   await expect.poll(() => first.calls.length).toBe(1);
   const other = await context.newPage();
-  await other.goto('/#game/save-a');
+  await other.goto('/#game/save-a'); await openGameTools(other);
   const second = await mock(other);
   await workflow(other).getByRole('button', { name: '自动生成开局', exact: true }).click();
   await expect(workflow(other).getByRole('alert')).toContainText('此存档已有阶段请求');
@@ -319,7 +319,7 @@ test('正文失败不启动下游，安全失败状态刷新后仍保留并可�
   expect(failed.draft.story).toBeUndefined();
   expect(plan.calls).toEqual(['story']);
   await page.reload(); await openGameTools(page);
-  await expect(workflow(page)).toContainText('本次未完成');
+  await expect(workflow(page).locator('.workflow-stages > li').nth(0)).toContainText('失败 · 可重试');
   plan.options.bad = undefined;
   await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await complete(page);
@@ -355,6 +355,7 @@ test('P6完善：生成附近逐请求显示完整输入估算、真实usage与�
     await route.fulfill({ contentType: stage === 'story' ? 'text/event-stream' : 'application/json', body });
   });
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
+  await openWorkflowDiagnostics(page);
   const usage = page.getByRole('region', { name: '本次请求 Token 用量', exact: true });
   await expect(usage).toContainText('动态世界 · world · 请求中');
   await expect(usage).toContainText('估算输入 Token'); await expect(usage).toContainText('8,192');
