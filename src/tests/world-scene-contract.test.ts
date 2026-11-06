@@ -12,6 +12,8 @@ import { defaultSettings } from '../ui/settings/model';
 import { submission } from './fixtures/turn';
 import { worldSources } from '../services/validation/worldEvidence';
 import { projectTurn } from '../domain/turnProjection';
+import { npc } from './fixtures/game';
+import { DomainCommandSchema } from '../domain/commands';
 import { worldDraft, worldResult, worldState } from './fixtures/world';
 
 import { hanhaiSceneContext as context, narrative, quotes } from './fixtures/hanhaiSceneContext';
@@ -149,8 +151,8 @@ describe('anchored scene security and diagnostics', () => {
 
 const repos: SaveRepository[] = [], stages: WorldStage[] = [];
 afterEach(() => { stages.splice(0).forEach(stage => stage.dispose()); repos.splice(0).forEach(repo => repo.close()); vi.restoreAllMocks(); stageResponses.clear(); });
-async function live() {
-  const a = context(), repo = await SaveRepository.open('natural-scene-contract', new IDBFactory()); repos.push(repo);
+async function live(a = context()) {
+  const repo = await SaveRepository.open('natural-scene-contract', new IDBFactory()); repos.push(repo);
   await repo.create(a.state);
   const initial = createTurnDraft(a.state.saveId, a.state.revision, a.draft.turnId, 'opening', '');
   await repo.saveDraft(initial, null);
@@ -207,5 +209,143 @@ describe('real WorldStage/Runtime -> candidate -> Commit -> reload', () => {
     const failed = await a.repo.loadDraft('save-a'); expect(failed!.story).toEqual(a.draft.story); expect(failed!.variables).toEqual(a.draft.variables); expect(failed!.world).toBeUndefined();
     expect(await a.repo.load('save-a')).toEqual(a.state);
     a.reply.text = valid; const ready = await a.run(failed!); await a.repo.commitTurn(submission(ready,'')); expect(a.fetcher).toHaveBeenCalledTimes(2);
+  });
+});
+
+function overlap(alias = false) {
+  const a = context();
+  a.state.npc['npc-wu-jie'] = { ...npc('npc-wu-jie'), name: alias ? '周桐' : '吴杰', aliases: alias ? ['吴杰'] : [], locationId: 'hanhai_studio' };
+  return a;
+}
+function bindShortName(a: ReturnType<typeof context>, both: boolean) {
+  const ref = { kind: 'npc', id: 'npc-wu-jie' };
+  if (both) {
+    a.response.eventCommands[0].event.actorRefs.push(ref);
+    a.evidence.sceneRecord.anchors[0].actorRefs.push(ref);
+  } else {
+    a.response.eventCommands[0].event.actorRefs[0] = ref;
+    a.evidence.sceneRecord.anchors[0].actorRefs = [ref];
+  }
+  evidenceInto(a);
+}
+describe('R2 stable actor identity, not a matching name prefix', () => {
+  it.each([false, true])('rejects the shorter %s name/alias even when the real subject is omitted from actorRefs', alias => {
+    const a = overlap(alias); bindShortName(a, false);
+    expect(() => parse(a)).toThrow(failure('actor_permission'));
+  });
+  it.each([false, true])('rejects one observation bound to two identities via a shorter %s name/alias', alias => {
+    const a = overlap(alias); bindShortName(a, true);
+    expect(() => parse(a)).toThrow(failure('actor_permission'));
+  });
+  it.each([false, true])('keeps distinct, fully supported %s names/aliases through candidate and commit', async alias => {
+    const a = overlap(alias), ref = { kind: 'npc', id: 'npc-wu-jie' }, quote = '吴杰取回自己的水杯。';
+    a.draft.story!.narrative += `\n【旁白】${quote}`;
+    a.response.eventCommands[0].event.actorRefs.push(ref);
+    a.evidence.sceneRecord.anchors.push({ source: 'story:current', quote, actorRefs: [ref] });
+    syncAnchors(a);
+    expect(() => parse(a)).not.toThrow();
+    const runtime = await live(a), ready = await runtime.run();
+    const committed = await runtime.repo.commitTurn(submission(ready, ''));
+    expect(committed.state.events.event_hanhai_lens_extortion.actorRefs).toEqual(a.response.eventCommands[0].event.actorRefs);
+    expect(committed.state.npc).toEqual(a.state.npc);
+    expect(await runtime.repo.load('save-a')).toEqual(committed.state);
+    expect((await runtime.repo.commitTurn(submission(ready, ''))).replayed).toBe(true);
+    expect(runtime.fetcher).toHaveBeenCalledTimes(1);
+  });
+  it.each([false, true])('rejects equally long names/aliases across stable identities: %s', alias => {
+    const a = overlap(alias);
+    if (alias) a.state.npc['npc-wu-jie'].aliases = ['吴杰涛'];
+    else a.state.npc['npc-wu-jie'].name = '吴杰涛';
+    expect(() => parse(a)).toThrow(failure('actor_permission'));
+  });
+  it('allows a matching name and alias when both identify the same NPC', () => {
+    const a = context(); a.state.npc.npc_chen_hao.aliases.push('陈浩');
+    expect(() => parse(a)).not.toThrow();
+  });
+  it('rejects wrong identity at runtime, preserves upstream and only retries on explicit action', async () => {
+    const a = overlap(); bindShortName(a, true);
+    const runtime = await live(a);
+    await expect(runtime.run()).rejects.toThrow(failure('actor_permission'));
+    expect(await runtime.repo.load('save-a')).toEqual(a.state);
+    const failed = await runtime.repo.loadDraft('save-a');
+    expect(failed!.story).toEqual(runtime.draft.story); expect(failed!.variables).toEqual(runtime.draft.variables);
+    expect(failed!.world).toBeUndefined();
+    a.response.eventCommands[0].event.actorRefs.pop(); a.evidence.sceneRecord.anchors[0].actorRefs.pop(); evidenceInto(a);
+    runtime.reply.text = JSON.stringify(a.response);
+    const ready = await runtime.run(failed!);
+    await runtime.repo.commitTurn(submission(ready, ''));
+    expect(runtime.fetcher).toHaveBeenCalledTimes(2);
+  });
+  it('revalidates an identity forged in an already persisted candidate before commit', async () => {
+    const a = overlap(), runtime = await live(a), ready = await runtime.run();
+    bindShortName(a, true);
+    ready.world!.result.eventCommands = a.response.eventCommands.map(command => DomainCommandSchema.parse(command));
+    ready.world!.candidateRevision += 1;
+    const forged = await runtime.repo.saveDraft({ ...ready, draftRevision: ready.draftRevision + 1 }, ready.draftRevision);
+    await expect(runtime.repo.commitTurn(submission(forged, ''))).rejects.toThrow();
+    expect(await runtime.repo.load('save-a')).toEqual(a.state);
+    expect((await runtime.repo.loadDraft('save-a'))!.story).toEqual(runtime.draft.story);
+  });
+});
+
+function syncAnchors(a: ReturnType<typeof context>) {
+  a.response.eventCommands[0].event.backgroundText = `现场依据：\n${a.evidence.sceneRecord.anchors.map(anchor => anchor.quote).join('\n')}`;
+  evidenceInto(a);
+}
+function labelledContext(standalone: boolean, includeLabel: boolean) {
+  const a=context();
+  if (standalone) a.draft.story!.narrative=a.draft.story!.narrative.replaceAll('【旁白】','【旁白】\n');
+  if (includeLabel) for (const anchor of a.evidence.sceneRecord.anchors) anchor.quote=`【旁白】${standalone?'\n':''}${anchor.quote}`;
+  syncAnchors(a);return a;
+}
+describe('R1 formal narration labels through parseWorld and persistence',()=>{
+  it.each([[false,false],[false,true],[true,false],[true,true]])('inline/standalone=%s, retained label=%s: full source and stable subjects are compatible',async(standalone,includeLabel)=>{
+    const a=labelledContext(standalone,includeLabel),before=structuredClone(a.state);
+    expect(()=>parse(a)).not.toThrow();
+    const runtime=await live(a),ready=await runtime.run();
+    expect(stageResponses.getSnapshot()[0]).toMatchObject({text:runtime.reply.text,status:'validated'});
+    expect(await runtime.repo.load('save-a')).toEqual(before);
+    const saved=await runtime.repo.commitTurn(submission(ready,''));
+    expect(saved.state.journal[0].story.narrative).toBe(a.draft.story!.narrative);
+    expect(saved.state.npc).toEqual(before.npc);expect(saved.state.economy).toEqual(before.economy);
+    expect(saved.state.events.event_hanhai_lens_extortion.backgroundText).toBe(a.response.eventCommands[0].event.backgroundText);
+    expect(await runtime.repo.load('save-a')).toEqual(saved.state);
+    expect((await runtime.repo.commitTurn(submission(ready,''))).replayed).toBe(true);expect(runtime.fetcher).toHaveBeenCalledTimes(1);
+  });
+  it.each([
+    ['inline speaker','【吴杰涛】'+quotes[0],quotes[0]],
+    ['retained speaker','【吴杰涛】'+quotes[0],'【吴杰涛】'+quotes[0]],
+    ['standalone speaker','【吴杰涛】\n'+quotes[0],quotes[0]],
+    ['quote','【旁白】周建斌说：“'+quotes[0]+'”',quotes[0]],
+    ['clipped denial','【旁白】并非'+quotes[0],quotes[0]],
+    ['retained denial','【旁白】并非'+quotes[0],'【旁白】并非'+quotes[0]],
+    ['uncertainty','【旁白】吴杰涛可能已经付款。','吴杰涛可能已经付款。'],
+    ['false signing','【旁白】吴杰涛没有签字。','吴杰涛已经签字。'],
+    ['unverified defect','【旁白】周建斌声称镜头本来就有暗病。','镜头本来就有暗病。'],
+  ])('rejects %s instead of laundering speaker or context',(_name,source,quote)=>{
+    const a=context();a.draft.story!.narrative=a.draft.story!.narrative.replace('【旁白】'+quotes[0],source);
+    a.evidence.sceneRecord.anchors[0].quote=quote;syncAnchors(a);
+    expect(()=>parse(a)).toThrow(failure('source_knowledge'));
+  });
+  it('does not combine a whole dialogue sentence with a safe substring in a different narration', () => {
+    const a = context();
+    a.draft.story!.narrative = a.draft.story!.narrative.replace('【旁白】' + quotes[0],
+      `【吴杰涛】\n${quotes[0]}\n【旁白】此时${quotes[0]}`);
+    expect(() => parse(a)).toThrow(failure('source_knowledge'));
+  });
+  it('does not accept a narrator tag fabricated inside a quoted utterance', () => {
+    const a = context();
+    a.draft.story!.narrative = a.draft.story!.narrative.replace('【旁白】' + quotes[0],
+      `【周建斌】“\n【旁白】${quotes[0]}\n”`);
+    a.evidence.sceneRecord.anchors[0].quote = '【旁白】' + quotes[0]; syncAnchors(a);
+    expect(() => parse(a)).toThrow(failure('source_knowledge'));
+  });
+  it('retains exact CRLF standalone formatting and rejects invented label formatting', () => {
+    const a = labelledContext(true, true);
+    a.draft.story!.narrative = a.draft.story!.narrative.replaceAll('\n', '\r\n');
+    for (const anchor of a.evidence.sceneRecord.anchors) anchor.quote = anchor.quote.replaceAll('\n', '\r\n');
+    syncAnchors(a); expect(() => parse(a)).not.toThrow();
+    a.evidence.sceneRecord.anchors[0].quote = a.evidence.sceneRecord.anchors[0].quote.replace('\r\n', ''); syncAnchors(a);
+    expect(() => parse(a)).toThrow(failure('source_knowledge'));
   });
 });

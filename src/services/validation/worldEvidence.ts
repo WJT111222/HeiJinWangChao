@@ -6,7 +6,7 @@ import type { ActorRef } from '../../domain/common';
 import type { GameState } from '../../domain/state';
 import type { TurnDraft } from '../../domain/drafts';
 import type { DomainCommand } from '../../domain/commands';
-import { worldFactEvidence } from './evidence';
+import { affirmativeWorldSceneQuote, worldFactEvidence } from './evidence';
 import { isNegatedFact } from '../../domain/factPolarity';
 import { AiError } from '../ai/errors';
 import type { WorldRule } from './worldDiagnostics';
@@ -203,10 +203,7 @@ export function requireWorld(
   if (!ok) throw new AiError(code, undefined, worldRule ? { worldRule } : undefined);
 }
 function affirmativeSceneQuote(command: DomainCommand, narrative: string, quote: string) {
-  // Whole sentence + original context; clipping a positive substring out of a denial is insufficient.
-  if (![...narrative.matchAll(/[^。！？\n]+[。！？]?/gu)].some(match => match[0].trim() === quote)) return false;
-  try { worldFactEvidence({ ...command, evidence: quote }, narrative); return true; }
-  catch { return false; }
+  return affirmativeWorldSceneQuote(command, narrative, quote);
 }
 export function readWorldEvidence(
   command: DomainCommand,
