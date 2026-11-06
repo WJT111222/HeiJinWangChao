@@ -1,3 +1,4 @@
+import { openWorkflow } from './helpers/gameLayout';
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
@@ -113,12 +114,12 @@ test('非法AI日期拒绝保存、不调用下游；刷新无隐式重发，主
   test.setTimeout(60000); await prepare(page); const server = await mock(page, '2015-07-08T14:00:00+08:00', '2015-07-08T14:02:00+08:00');
   server.plan.badDate = true; await creation(page, '故事发生在2015年夏天。');
   await page.getByRole('button', { name: '确认并创建存档', exact: true }).click();
-  await expect(workflow(page).getByRole('alert')).toBeVisible();
+  await openWorkflow(page); await expect(workflow(page).getByRole('alert')).toBeVisible();
   const before = await stored(page); expect(before.draft.story).toBeUndefined(); expect(before.state.openingTimePending).toBe(true);
   expect(server.calls.map((call) => call.stage)).toEqual(['story']);
-  await page.reload(); await expect(workflow(page).getByRole('status')).toHaveText('需要处理');
+  await page.reload(); await expect(workflow(page).getByRole('status')).toHaveText('正文生成失败 · 查看详情');
   expect((await stored(page)).draft.failures).toEqual(before.draft.failures); expect(server.calls).toHaveLength(1);
-  server.plan.badDate = false; await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await ready(page);
+  server.plan.badDate = false; await openWorkflow(page); await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await ready(page);
   expect(server.calls.map((call) => call.stage)).toEqual(['story', 'story', 'variables', 'world']);
   expect((await stored(page)).state.turnNumber).toBe(1); expect((await stored(page)).state.protagonist).toEqual(before.state.protagonist);
 });

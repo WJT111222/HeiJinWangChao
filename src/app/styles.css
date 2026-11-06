@@ -1123,27 +1123,17 @@ fieldset label {
   padding: 0.9rem 1rem;
   border-radius: 4px;
 }
-.workflow-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.workflow-heading h3 {
-  font-size: 0.75rem;
-  margin: 0;
-}
-.workflow-heading small {
-  font-size: 0.65rem;
-}
-.workflow ol {
+.workflow-stages {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   list-style: none;
   padding: 0;
-  margin: 0.9rem 0;
+  margin: 0.65rem 0;
   gap: 0.7rem;
 }
-.workflow li {
+.workflow-stages > li {
+  min-width: 0;
+  align-content: start;
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 0.3rem 0.5rem;
@@ -1153,21 +1143,21 @@ fieldset label {
   color: #8f9d7b;
   font-family: monospace;
 }
-.workflow li strong {
+.workflow-stages > li strong {
   font-weight: 500;
 }
-.workflow li small {
+.workflow-stages > li small {
   grid-column: 2;
   font-size: 0.65rem;
   color: #9ea98f;
 }
-.workflow details {
+.workflow-details > details {
   border-top: 1px solid #414c34;
   padding-top: 0.7rem;
   font-size: 0.7rem;
   color: #a4af95;
 }
-.workflow details button {
+.workflow button {
   font-size: 0.7rem;
 }
 summary {
@@ -1417,10 +1407,10 @@ summary {
   .composer {
     padding: 1rem 1.2rem;
   }
-  .workflow ol {
+  .workflow-stages {
     gap: 0.4rem;
   }
-  .workflow li {
+  .workflow-stages > li {
     font-size: 0.7rem;
   }
   .runtime-switches {
@@ -1666,16 +1656,21 @@ summary {
 .game-layout .composer { display: flex; flex-direction: column; flex-shrink: 1; gap: .4rem; min-height: 0; max-height: min(calc(100% - 24px), max(75%, 180px)); padding: .6rem 1rem max(.6rem, env(safe-area-inset-bottom)); overflow: hidden; }
 .composer-tools { flex: 0 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .game-layout .workflow { position: relative; padding: 0; }
-.workflow-disclosure > summary { padding: .55rem 160px .55rem .7rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .2rem .7rem; font-size: .7rem; min-height: 44px; }
-.workflow-disclosure > summary::after { content: '展开 ▾'; color: var(--muted); }
-.workflow-disclosure[open] > summary::after { content: '收起 ▴'; }
+.workflow-disclosure > summary { padding: .4rem .7rem; display: flex; align-items: center; justify-content: space-between; gap: .65rem; font-size: .75rem; min-height: 40px; list-style: none; }
+.workflow-disclosure > summary::-webkit-details-marker { display: none; }
+.workflow-toggle { flex-shrink: 0; color: var(--muted); }
+.workflow-toggle::after { content: ' ▾'; }
+.workflow-disclosure[open] > summary .workflow-toggle::after { content: ' ▴'; }
+.workflow-disclosure > summary:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
 .workflow-disclosure > summary strong { color: var(--gold); font-weight: 500; }
 .workflow-details { padding: .7rem; border-top: 1px solid var(--line); }
-.workflow-primary { position: absolute; top: .35rem; right: .5rem; display: flex; flex-direction: column; gap: .3rem; max-width: 145px; }
-.workflow:has(.workflow-primary > button:nth-child(2)) > details > summary { min-height: 80px; }
+.workflow-primary { display: flex; flex-wrap: wrap; gap: .4rem; }
+.workflow-fee { color: var(--muted); font-size: .7rem; margin: .4rem 0; }
+.workflow-stages > li > .variable-actions { align-content: start; grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .35rem; margin: 0; }
+.workflow-stages button { max-width: 100%; min-height: 36px; padding: .35rem .5rem; }
 .workflow-primary button { font-size: .72rem; padding: .35rem .6rem; min-height: 32px; }
 .game-layout .composer textarea { flex: 0 0 auto; height: clamp(52px, calc(var(--game-viewport-height, 100dvh) * .12), 76px); min-height: 52px; max-height: max(52px, calc(var(--game-viewport-height, 100dvh) * .18)); resize: vertical; margin: 0; }
-.game-layout .composer-footer { flex: 0 0 auto; margin: 0; }
+.game-layout .composer-footer { flex: 0 0 auto; margin: 0; justify-content: flex-end; }
 .game-layout .composer-footer > span { font-size: .6rem; }
 .game-layout .composer-footer > div { flex-wrap: wrap; }
 .game-layout .story-error { font-size: .75rem; margin: .4rem 0; padding: .35rem .6rem; }
@@ -1711,6 +1706,11 @@ summary {
   .game-layout .composer-footer button { padding: .4rem .55rem; }
   .game-layout .world-sidebar h2 { margin-bottom: .7rem; }
 }
+@media (max-width: 600px) {
+  .workflow-stages { grid-template-columns: 1fr; }
+  .workflow-stages > li { grid-template-columns: auto 1fr auto; }
+  .workflow-stages > li > small { grid-column: 3; }
+}
 @media (max-height: 520px) {
   .game-layout .composer { gap: .25rem; padding-block: .35rem; max-height: min(calc(100% - 24px), max(80%, 160px)); }
   .workflow-disclosure > summary { padding-block: .3rem; min-height: 36px; }
@@ -1719,8 +1719,6 @@ summary {
   .game-layout .composer-footer button { padding-block: .3rem; }
 }
 
-/* M7-P2: one start/recovery action, or cancel; completed candidates leave room for reading. */
-.workflow:not(:has(.workflow-primary)) > .workflow-disclosure > summary { padding-right: .7rem; }
 .game-layout .workflow .story-error > button { margin-left: .4rem; font-size: .72rem; }
 
 /* 记忆为只读阅读页；维护工具仅在设置内。长文跟随现有弹窗滚动。 */

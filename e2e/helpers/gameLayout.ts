@@ -12,3 +12,18 @@ export async function openGameTools(page: Page, entering = false) {
     if (await summary.isVisible() && !(await details.evaluate((element) => element.hasAttribute('open')))) await summary.click();
   }
 }
+
+// 操作高级控件前显式展开；不调用生成/恢复，也不修改业务状态。
+export async function openWorkflow(page: Page) {
+  const disclosure = page.locator('.workflow-disclosure');
+  await expect(disclosure).toBeAttached();
+  if (!(await disclosure.evaluate(element => element.hasAttribute('open'))))
+    await disclosure.locator(':scope > summary').click();
+}
+
+export async function openWorkflowDiagnostics(page: Page) {
+  await openWorkflow(page);
+  const details = page.locator('.workflow-diagnostics');
+  if (!(await details.evaluate(element => element.hasAttribute('open'))))
+    await details.locator(':scope > summary').click();
+}

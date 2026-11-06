@@ -110,9 +110,7 @@ async function stored(page: Page, saveId = 'variable-e2e') {
   }, saveId);
 }
 async function ready(page: Page) {
-  await expect(page.getByRole('region', { name: '三阶段工作流' })).toContainText(
-    '变量已完成 · 候选未正式结算',
-  );
+  await expect(page.getByRole('region', { name: '三阶段工作流' }).locator('.workflow-stages > li').nth(1)).toContainText('已完成');
 }
 
 test('变量正常生成、真实独立路由/模块/usage，完整候选主动查看，刷新仍保留候选且正式资金不变', async ({

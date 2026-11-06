@@ -90,7 +90,8 @@ for (const interrupt of [false, true]) test(`长睡眠interrupt=${interrupt}：�
 test('变量失败与刷新恢复保留正文，Roll清除旧候选但不推进正式时间', async ({ page }) => {
   const api = await mock(page, true); api.control.failVariables = true; await seed(page, true); const before = (await load(page)).state;
   await page.getByRole('button', { name: '自动生成本回合', exact: true }).click();
-  await expect(page.getByText(/已保存的合法上游候选仍保留/)).toBeVisible();
+  await expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toHaveText('变量生成失败 · 查看详情');
+  expect((await load(page)).draft.story).toBeTruthy();
   expect((await load(page)).state).toEqual(before); await page.reload(); await openGameTools(page); api.control.failVariables = false;
   // 高级单阶段补算保留未结算候选，以验证Roll的原失效边界；正常自动恢复另有覆盖。
   await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
@@ -106,7 +107,7 @@ test('取消和迟到不推进时间；关闭阶段只保留正文草稿', async
   await page.getByRole('button', { name: '取消自动执行', exact: true }).click(); release(); api.control.hold = undefined;
   await expect(page.getByRole('button', { name: /自动生成本回合|继续未完成阶段/, exact: true })).toBeEnabled();
   await page.getByRole('button', { name: /自动生成本回合|继续未完成阶段/, exact: true }).click();
-  await expect(page.getByText(/已按开关跳过关闭阶段/)).toBeVisible(); const saved = await load(page);
+  await expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toContainText('阶段已关闭'); const saved = await load(page);
   expect(saved.state).toEqual(before); expect(saved.draft.variables).toBeUndefined(); expect(saved.draft.world).toBeUndefined();
   expect(api.calls).toEqual(['story', 'story']); await page.getByLabel('你的行动', { exact: true }).fill('继续观察'); await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
 });

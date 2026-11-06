@@ -106,9 +106,7 @@ async function stored(page: Page) {
   });
 }
 async function ready(page: Page) {
-  await expect(page.getByRole('region', { name: '三阶段工作流' })).toContainText(
-    '世界已完成 · 候选未正式结算',
-  );
+  await expect(page.getByRole('region', { name: '三阶段工作流' }).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
 }
 
 test('真实迎检准备文本：无效行动者安全失败，明确恢复后任务及合成事件入候选，正式状态不变', async ({ page }) => {
@@ -222,9 +220,7 @@ test('双开关关闭后只补算世界，无变量时明确预览；不 Roll �
     route.fulfill({ contentType: 'application/json', body: response(planned) }),
   );
   await page.getByRole('button', { name: '启用并补算世界', exact: true }).click();
-  await expect(page.getByRole('region', { name: '三阶段工作流' })).toContainText(
-    '世界预览 · 变量依赖未完成',
-  );
+  await expect(page.getByRole('region', { name: '三阶段工作流' }).locator('.workflow-stages > li').nth(2)).toContainText('仅预览');
   const saved = await stored(page);
   expect(saved.formal).toBe(before);
   expect(saved.draft.world.validation).toBe('preview');
