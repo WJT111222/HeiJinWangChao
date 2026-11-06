@@ -242,7 +242,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1208,
+      "characters": 1913,
       "version": "0.5.6",
       "messageRole": "system",
       "activation": "always",
@@ -252,7 +252,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "5aa1285ab4fda4f5bf5603fd0d1921f6b536ec3580e0c854860c6e2363ac0967",
+      "contentSha256": "0fa69504d38a7e2f05e36f02b5ea7adb5ca3f0ef1bb2c8dfa5266046e9a246b3",
       "placeholders": [
         "minNarrativeChars"
       ]
@@ -299,7 +299,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 13885,
+      "characters": 15050,
       "version": "0.1.6-world-diagnostics-contract",
       "messageRole": "system",
       "activation": "always",
@@ -309,7 +309,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "6c0876b3aedd450842734b18a3258cca2c095b1bedc173e27f148eacaa232f4d",
+      "contentSha256": "f33e55d41866e2df1b835297d75e85e893b79534b3aa5f04452d275271b1c70c",
       "placeholders": []
     },
     {
@@ -380,7 +380,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1215,
+      "characters": 1354,
       "version": "1.5.0",
       "messageRole": "system",
       "activation": "always",
@@ -390,7 +390,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "6fdfbdedbfeca4bda412004247acbbc5a1638cf1f137c1cccb643c2e225d6f7b",
+      "contentSha256": "95d79cf833ded7690ff9aea391f1c71af9cddc1f29b6581cbe289a6a2f796a2f",
       "placeholders": []
     },
     {
@@ -462,7 +462,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1300,
+      "characters": 1439,
       "version": "1.5.0",
       "messageRole": "system",
       "activation": "always",
@@ -472,7 +472,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "f909782d4774f10234535eccae6da94be193b8499fa0cd3ab4a4ac083b646e75",
+      "contentSha256": "a239b8f9958a81ae34419a31d35c06b0f3b2e1c042913f59b468d46d51e34161",
       "placeholders": []
     },
     {
@@ -2154,7 +2154,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 3843,
+      "characters": 4019,
       "version": "1.2.0-variable-source-port",
       "messageRole": "system",
       "activation": "always",
@@ -2164,7 +2164,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "3b0364a9f4b1db19b30d2b4d826fb76760608334416374424cab79aebab00c06",
+      "contentSha256": "0ac6cb0ff75fabb71c63feb1b49cd1b8465fa6d36c59ed5e679f7fa895e00b26",
       "placeholders": [],
       "variableProtocol": "text"
     },

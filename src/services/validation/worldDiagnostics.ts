@@ -17,13 +17,14 @@ export const worldRuleNames = {
   completion_evidence: '缺少合法的实际结案依据', cancellation_evidence: '缺少合法的取消或终止依据',
   player_knowledge: '缺少向角色传播信息的合法渠道', future_event_mirror: '未来事件不是合法新事件的相同镜像',
   timeline_fact: '历史归档缺少重大结案或可信成果', due_event_unhandled: '到期事件未结案或未重新安排预计时间',
+  event_entry: '事件入场安排或正文处理回执不合法', event_continuation: '事件承接计划或调整依据不合法',
   task_occupancy: '人物后台任务存在占用冲突', domain_state: '世界投影的数据引用或状态不合法',
   request_basis: '世界响应依赖的版本已失效', domain_modules: '世界命令缺少对应领域模块',
   secret_in_output: '输出含系统凭证，已阻止保存',
 } as const;
 export type WorldRule = keyof typeof worldRuleNames;
 export const isWorldRule = (value: unknown): value is WorldRule => typeof value === 'string' && Object.hasOwn(worldRuleNames, value);
-const fields = new Set(('worldCommands taskCommands eventCommands futureEvents visibleHooks timelineCandidates unresolved event task type commandId evidence version kind at sources fact rationale outcome decision targetId status reason result conditionsSatisfied continues failure resultKnowledge facts reported suspected id title startAt estimatedEndAt resolvedAt resolutionText backgroundText goalText actorRefs linkedTaskIds prerequisites blockers visibility impact sourceTurnIds predecessorEventIds protagonistKnowledge worldUpdateTurnId npcId expectedRevision changes healthText locationId onScene activeGoals memory text knowledgeKind knowledgeSource createdAtGameTime affectedEntityRefs ownerRef saveId revision npc identityKey name memories knownInformation goals resolution handoff dueAt completionCondition layer addToKnownInformation organization organizationId relationText').split(' '));
+const fields = new Set(('worldCommands taskCommands eventCommands futureEvents visibleHooks timelineCandidates unresolved event task type commandId evidence version kind at sources fact rationale outcome decision targetId status reason result conditionsSatisfied continues failure resultKnowledge facts reported suspected id title startAt estimatedEndAt resolvedAt resolutionText backgroundText goalText actorRefs linkedTaskIds prerequisites blockers visibility impact sourceTurnIds predecessorEventIds protagonistKnowledge worldUpdateTurnId continuation direction reason entry channel cue followup protagonistEntry queuedAt handledTurnId notice textEvidence npcId expectedRevision changes healthText locationId onScene activeGoals memory text knowledgeKind knowledgeSource createdAtGameTime affectedEntityRefs ownerRef saveId revision npc identityKey name memories knownInformation goals resolution handoff dueAt completionCondition layer addToKnownInformation organization organizationId relationText').split(' '));
 export const safeWorldPath = (path: readonly PropertyKey[]) => path.map(part => typeof part === 'number' ? part : fields.has(String(part)) ? String(part) : 'field').join('.');
 interface Scope { fieldPath?: string; commandIndex?: number; commandType?: string; worldRule?: WorldRule }
 export function worldValidationError(error: unknown, scope: Scope = {}, raw?: unknown): AiError {

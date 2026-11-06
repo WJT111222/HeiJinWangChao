@@ -67,3 +67,13 @@ describe('World scene record and learned future arrangements', () => {
     expect(() => parseWorld(JSON.stringify(response),state,draft)).toThrow();
   });
 });
+
+describe('scene identity references',()=>{
+  it('canonical protagonist reference and an existing NPC alias still resolve stable actor IDs',()=>{
+    const a=groundedContext(),c=a.response.eventCommands[0];if(c.type!=='SaveEvent')throw Error('fixture');
+    a.state.protagonist.name='林舟';a.state.npc.npc_liu_san.aliases=['刘三'];
+    const fact='刘三和王桂芬在办公室向主角提出勒索要求。';
+    c.evidence=JSON.stringify({...JSON.parse(c.evidence),fact});a.draft.story!.narrative+='\n'+fact;
+    expect(()=>parseWorld(JSON.stringify(a.response),a.state,a.draft)).not.toThrow();
+  });
+});

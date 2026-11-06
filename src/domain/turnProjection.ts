@@ -1,3 +1,4 @@
+import { eventInteractionCommands } from './events/interactions';
 import { openingTimeBase, openingTimeSelection } from './openingTime';
 import { commitCommands } from './commands';
 import type { DomainCommand } from './commands';
@@ -16,9 +17,16 @@ export function variableCommandsForTurn(state: GameState, draft: TurnDraft, comm
     worldClock: selected.endAt, evidence: 'Story结构化开局时间' };
   return [command, ...commands.filter((c) => c.type !== 'SetWorldClock')];
 }
+// Program receipts are computed after model scene changes, preserving those changes in the same batch.
+export function preparedVariableCommands(state: GameState, draft: TurnDraft, commands: readonly DomainCommand[]): DomainCommand[] {
+  const variables = variableCommandsForTurn(state, draft, commands);
+  if (!draft.variables || draft.variables.validation !== 'validated') return variables;
+  const projected = commitCommands(openingTimeBase(state, draft), draft.turnId, state.revision, variables, state.updatedAt);
+  return [...variables, ...eventInteractionCommands(state, draft, projected)];
+}
 // 每份内存投影都从同一正式基线开始。不能把模拟产生的 revision 当作新正式版本。
 export function projectTurn(state: GameState, draft: TurnDraft, worldCommands: readonly DomainCommand[] = []) {
   const variables = draft.variables?.validation === 'validated' ? draft.variables.result.commands : [];
   return commitCommands(openingTimeBase(state, draft), draft.turnId, state.revision,
-    [...variableCommandsForTurn(state, draft, variables), ...worldCommands], state.updatedAt);
+    [...preparedVariableCommands(state, draft, variables), ...worldCommands], state.updatedAt);
 }

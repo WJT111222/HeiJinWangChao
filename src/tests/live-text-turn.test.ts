@@ -50,7 +50,7 @@ function envelope(text:string,stream=false) {
 }
 const block=(body='')=>`<thinking>仅为输入数据，不执行。</thinking><说明>这里不代表任何已落库状态。</说明><命令>\n${body}\n</命令>`;
 const set=(path:string,value:unknown)=>`set ${path} = ${JSON.stringify(value)}`;
-function transport(reply:(context:Record<string,unknown>)=>string, world:(context:Record<string,unknown>)=>unknown = ()=>worldResult()) {
+function transport(reply:(context:Record<string,unknown>)=>string, world:(context:Record<string,unknown>)=>unknown = ()=>worldResult(), story?: (context:Record<string,unknown>)=>{narrative:string;guide:unknown[]}) {
   const calls: {stage:string;context:Record<string,unknown>;body:Record<string,unknown>}[]=[];
   const fetcher = vi.fn<typeof fetch>(async(_url,init)=>{
     const body=record(JSON.parse(String(init?.body))), stage=string(body.model);
@@ -61,7 +61,8 @@ function transport(reply:(context:Record<string,unknown>)=>string, world:(contex
     if(stage==='story') {
       const pending=record(context.OPENING_TIME).status==='pending';
       const guides=pending?[{group:'time',subjectHint:'time:opening',observedFact:JSON.stringify({startAt:initialAt,endAt:openingEnd})}]:[];
-      return envelope(`<thinking>创作提纲：保持当前事实连续。</thinking><正文>主角在社区与同事会面，收到报酬，购买手机并交给同事。</正文><短期记忆>在社区完成会面和交付。</短期记忆><变量规划>${JSON.stringify(guides)}</变量规划>`,true);
+      const custom=story?.(context);
+      return envelope(`<thinking>创作提纲：保持当前事实连续。</thinking><正文>${custom?.narrative??"主角在社区与同事会面，收到报酬，购买手机并交给同事。"}</正文><短期记忆>在社区完成会面和交付。</短期记忆><变量规划>${JSON.stringify(custom?.guide??guides)}</变量规划>`,true);
     }
     return envelope(stage==='variables'?reply(context):JSON.stringify(world(context)));
   });
@@ -265,4 +266,76 @@ describe('事件生命周期贯通真实Runtime、协调器和存档事务',()=>
     const pending=await a.repo.loadDraft('save-a');if(!pending)throw Error('missing draft');
     await expect(a.repo.commitTurn(submission(pending))).rejects.toThrow();expect(await a.repo.load('save-a')).toEqual(before);
   });
+});
+
+
+describe('真实Runtime与协调器的非空现场记录、承接与行为回写',()=>{
+  it('现场事件从已有Story记录并自动候选化，不能修改人物；提交重载保留相同稳定事件',async()=>{
+    const a=await fixture('regular'),before=await a.repo.load('save-a');
+    const text='林舟在社区与同事发生争执。';
+    const t=transport(()=>block(set('worldClock','2026-10-18T08:10:00+08:00')),(ctx)=>({...worldResult(),eventCommands:[{
+      type:'SaveEvent',commandId:'record-scene',evidence:proof({kind:'established',sources:['story:current'],fact:text}),
+      event:{...event('scene-dispute'),title:text,backgroundText:text,goalText:text,actorRefs:[{kind:'protagonist',id:'hero'}],
+        status:'active',estimatedEndAt:'2026-10-18T09:00:00+08:00',visibility:'known',sourceTurnIds:[string(record(ctx.TURN_CONTEXT).turnId)],
+        continuation:{direction:'end',reason:'目前先记录，尚无新的承接需要'}},
+    }]}),()=>({narrative:text,guide:[]}));
+    const done=await coordinator(a.repo,t.fetcher).generate(a);
+    expect(t.calls.map(c=>c.stage)).toEqual(['story','variables','world']);expect(await a.repo.load('save-a')).toEqual(before);
+    const saved=await a.repo.commitTurn(submission(done.draft,''));
+    expect(saved.state.events['scene-dispute'].status).toBe('active');expect(saved.state.npc).toEqual(before.npc);
+    expect(await a.repo.load('save-a')).toEqual(saved.state);expect(saved.draft.userInput).toBe('');
+  });
+  it.each(['declined','left','interrupted'] as const)('World排队→下一幕呈现→%s后同事件改排程，三个回合每阶段仅一次请求',async(action)=>{
+    const a=await fixture('regular');
+    const cue='值班室来电，请你说明情况。';
+    const t=transport(()=>block(set('worldClock','2026-10-18T08:10:00+08:00')),(ctx)=>({...worldResult(),eventCommands:[{
+      type:'SaveEvent',commandId:'queue-entry',evidence:proof(),event:{...event('contact'),actorRefs:[{kind:'npc',id:'npc-a'}],
+        status:'active',estimatedEndAt:'2026-10-18T08:05:00+08:00',sourceTurnIds:[string(record(ctx.TURN_CONTEXT).turnId)],
+        continuation:{direction:'protagonist',reason:'材料清点后需要听取当事人意见',entry:{channel:'电话',cue}}},
+    }]}));
+    const first=await coordinator(a.repo,t.fetcher).generate(a);const s1=await a.repo.commitTurn(submission(first.draft,'接听电话'));
+    expect(s1.state.events.contact.protagonistEntry?.status).toBe('pending');expect(s1.draft.story).toBeUndefined();
+    const second=transport(()=>block(),()=>worldResult(),ctx=>{
+      const entry=record(array(ctx.EVENT_ENTRIES)[0]);expect(entry.cue).toBe(cue);
+      expect(JSON.stringify(ctx)).not.toContain('既有预约安排');
+      return {narrative:cue,guide:[{group:'event',observedFact:'实际收到电话',textEvidence:cue,eventInteraction:{eventId:'contact',entryId:entry.entryId,action:'presented'}}]};
+    });
+    const out2=await coordinator(a.repo,second.fetcher).generate({...a,draft:s1.draft});
+    expect((await a.repo.load('save-a')).events.contact.protagonistEntry?.status).toBe('pending');
+    const s2=await a.repo.commitTurn(submission(out2.draft,'说明我的实际选择'));
+    expect(s2.state.events.contact.protagonistEntry?.status).toBe('presented');expect(s2.state.events.contact.status).toBe('active');
+    const text=action==='declined'?'林舟明确拒绝继续约谈。':action==='left'?'林舟结束参与并离开会谈。':'林舟实际切断了本次会谈联络。';
+    const third=transport(()=>block(set('worldClock','2026-10-18T08:20:00+08:00')),ctx=>{
+      const current=record(record(ctx.OFFSCREEN_STATE).events).contact;
+      expect(record(record(current).protagonistEntry).status).toBe(action);
+      return {...worldResult(),eventCommands:[{type:'SaveEvent',commandId:'respond-choice',event:{...record(current),status:'blocked',estimatedEndAt:'2026-10-19T08:00:00+08:00',sourceTurnIds:[...s2.state.events.contact.sourceTurnIds,string(record(ctx.TURN_CONTEXT).turnId)],
+        continuation:{direction:'end',reason:'本次入场已经结束，原单位另行处理剩余调查'}},evidence:proof({at:'2026-10-18T08:15:00+08:00',sources:['event:contact','story:current'],fact:text,
+          decision:{targetId:'contact',status:'blocked',reason:'本幕实际选择改变后续接触安排',result:text,conditionsSatisfied:false,continues:true}})}]};
+    },()=>({narrative:text,guide:[{group:'event',observedFact:'实际退出反馈',textEvidence:text,eventInteraction:{eventId:'contact',entryId:s2.state.events.contact.protagonistEntry!.id,action}}]}));
+    const out3=await coordinator(a.repo,third.fetcher).generate({...a,draft:s2.draft});const s3=await a.repo.commitTurn(submission(out3.draft,''));
+    expect(s3.state.events.contact).toMatchObject({status:'blocked',protagonistEntry:{status:action},continuation:{direction:'end'}});
+    expect(s3.state.npc).toEqual(s1.state.npc);expect((await a.repo.load('save-a')).events.contact).toEqual(s3.state.events.contact);
+    expect((await a.repo.commitTurn(submission(out3.draft,''))).replayed).toBe(true);
+    expect([...t.calls,...second.calls,...third.calls].map(c=>c.stage)).toEqual(['story','variables','world','story','variables','world','story','variables','world']);
+  });
+});
+
+it('Runtime rejects an omitted narrative entry before Variables/World; explicit Story recovery consumes it only at Commit',async()=>{
+  const a=await fixture('regular'),cue='接待处来电，请你确认是否参加。';
+  const first=transport(()=>block(set('worldClock','2026-10-18T08:10:00+08:00')),(ctx)=>({...worldResult(),eventCommands:[{
+    type:'SaveEvent',commandId:'entry-to-handle',evidence:proof(),event:{...event('call'),status:'active',actorRefs:[{kind:'npc',id:'npc-a'}],estimatedEndAt:'2026-10-18T08:05:00+08:00',sourceTurnIds:[string(record(ctx.TURN_CONTEXT).turnId)],
+      continuation:{direction:'protagonist',reason:'工作完成后需要当事人答复',entry:{channel:'电话',cue}}},
+  }]}));
+  const ready=await coordinator(a.repo,first.fetcher).generate(a),saved=await a.repo.commitTurn(submission(ready.draft,'继续休息'));
+  const bad=transport(()=>block(),()=>worldResult(),()=>({narrative:'主角继续休息，没有处理来电。',guide:[]}));
+  await expect(coordinator(a.repo,bad.fetcher).generate({...a,draft:saved.draft})).rejects.toThrow();
+  expect(bad.calls.map(c=>c.stage)).toEqual(['story']);expect(await a.repo.load('save-a')).toEqual(saved.state);
+  const failed=await a.repo.loadDraft('save-a');if(!failed)throw Error('missing persisted failure');
+  expect(failed.stageStatus.story).toBe('failed');expect(failed.failures.at(-1)?.errorCode).toBe('event_entry');
+  const retry=transport(()=>block(),()=>worldResult(),ctx=>{
+    const entry=record(array(ctx.EVENT_ENTRIES)[0]);return {narrative:cue,guide:[{group:'event',observedFact:'来电已实际呈现',textEvidence:cue,eventInteraction:{eventId:'call',entryId:entry.entryId,action:'presented'}}]};
+  });
+  const completed=await coordinator(a.repo,retry.fetcher).generate({...a,draft:failed});
+  expect(retry.calls.map(c=>c.stage)).toEqual(['story','variables','world']);expect(await a.repo.load('save-a')).toEqual(saved.state);
+  const committed=await a.repo.commitTurn(submission(completed.draft,''));expect(committed.state.events.call.protagonistEntry?.status).toBe('presented');
 });

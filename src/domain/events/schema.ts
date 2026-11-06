@@ -8,11 +8,27 @@ export const TaskResultKnowledgeSchema = z.strictObject({
   suspected: z.array(TextSchema.max(4000)).max(12),
 });
 const EventStatusSchema = z.enum(['scheduled', 'active', 'resolved', 'blocked', 'cancelled']);
+export const EventContinuationSchema = z.discriminatedUnion('direction', [
+  z.strictObject({direction:z.literal('protagonist'),reason:TextSchema.max(2000),
+    entry:z.strictObject({channel:TextSchema.max(200),cue:TextSchema.max(2000),locationId:IdSchema.optional()})}),
+  z.strictObject({direction:z.literal('world'),reason:TextSchema.max(2000),followup:TextSchema.max(2000)}),
+  z.strictObject({direction:z.literal('end'),reason:TextSchema.max(2000)}),
+]);
+export const EventInteractionSchema = z.strictObject({
+  eventId:IdSchema,entryId:IdSchema,
+  action:z.enum(['presented','declined','left','interrupted','invalidated']),
+});
+export const ProtagonistEventEntrySchema = z.strictObject({
+  id:IdSchema,sourceTurnId:IdSchema,queuedAt:GameTimeSchema,
+  channel:TextSchema.max(200),cue:TextSchema.max(2000),locationId:IdSchema.optional(),
+  status:z.enum(['pending','presented','declined','left','interrupted','invalidated']),
+  handledTurnId:IdSchema.optional(),textEvidence:TextSchema.max(8000).optional(),
+}).meta({readOnly:true,description:'程序维护；排队来自本次World验证，处理来自下一幕Story结构化回执，正式提交前不生效。'});
 // 程序保存主角此前已知的事件投影；世界更新不能借旧known标记传播新进展。
 export const ProtagonistEventKnowledgeSchema = z.strictObject({
   worldUpdateTurnId: IdSchema, title: TextSchema, startAt: GameTimeSchema.optional(),
   notice: TextSchema.max(8000).optional(), knowledgeKind: z.enum(['observed', 'reported']).optional(),
-  status: EventStatusSchema, resolutionText: z.string().optional(),
+  status: EventStatusSchema.optional(), resolutionText: z.string().optional(),
 }).meta({ readOnly: true, description: '程序维护的主角已知快照，模型不得编造或修改。' });
 export const StoredWorldEventSchema = z.strictObject({
   id: IdSchema, title: TextSchema,
@@ -28,6 +44,8 @@ export const StoredWorldEventSchema = z.strictObject({
   outcome: z.enum(['success', 'failure', 'changed', 'cancelled']).optional(),
   predecessorEventIds: IdsSchema.optional(),
   protagonistKnowledge: ProtagonistEventKnowledgeSchema.optional(),
+  continuation: EventContinuationSchema.optional(),
+  protagonistEntry: ProtagonistEventEntrySchema.optional(),
 });
 // 新规划的权威写入契约；旧档/旧候选只用StoredWorldEventSchema读取，不伪造缺失规划。
 export const WorldEventSchema = StoredWorldEventSchema.extend({

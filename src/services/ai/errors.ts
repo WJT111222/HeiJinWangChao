@@ -38,6 +38,7 @@ export type AiErrorCode =
   | 'placeholder'
   | 'permission'
   | 'npc_task_conflict'
+  | 'event_entry'
   | 'time_preflight'
   | 'money_unit'
   | 'model_list_format'
@@ -74,6 +75,7 @@ const messages: Record<AiErrorCode, string> = {
   placeholder: '提示词缺少必需参数或仍有未解析占位符，已阻止发送。',
   permission: '候选超出本阶段允许的命令或对象范围。',
   npc_task_conflict: 'NPC 已有未终结后台任务，候选存在任务占用冲突；未改写或删除已有任务。',
+  event_entry: '正文遗漏或未正确处理待入场事件，候选未接受。请检查正文并明确重试；已保存的入场安排仍保留。',
   time_preflight: '时间预检与正文或变量停止时间不一致，候选未保存。请检查行动或重新生成正文。',
   money_unit: '候选金额与证据中的人民币元/分不一致。',
 };
@@ -91,6 +93,8 @@ export class AiError extends Error {
 export function safeAiError(error: unknown) {
   return error instanceof AiError
     ? { code: error.code, message: error.message, status: error.status, ...(error.details ? { details: error.details } : {}) }
+    : error instanceof DataError && error.code==='EVENT_ENTRY'
+      ? {code:'event_entry',message:messages.event_entry,status:undefined}
     : error instanceof DataError && ['STORY_BUSY', 'REVISION_CONFLICT', 'DRAFT_CONFLICT', 'ENTITY_CONFLICT', 'COMMAND_CONFLICT', 'DUPLICATE_COMMAND'].includes(error.code)
       ? { code: 'candidate_conflict', message: messages.candidate_conflict, status: undefined }
     : { code: 'unknown', message: '操作失败，请检查配置或浏览器存储权限后重试。' };

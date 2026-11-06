@@ -1,6 +1,6 @@
 import { historicalEvent, isHistoricalEntry } from './events/lifecycle';
 import { z } from 'zod';
-import { projectTurn, variableCommandsForTurn } from './turnProjection';
+import { projectTurn, preparedVariableCommands } from './turnProjection';
 import { requireData } from './common';
 import type { DomainCommand } from './commands';
 import { TurnDraftSchema } from './drafts';
@@ -38,7 +38,7 @@ export function completeTurnDraft(draft: TurnDraft) {
 }
 export function turnCommands(draft: TurnDraft, state: GameState): DomainCommand[] {
   return [
-    ...variableCommandsForTurn(state, draft, draft.variables?.result.commands ?? []),
+    ...preparedVariableCommands(state, draft, draft.variables?.result.commands ?? []),
     ...(draft.world?.result.worldCommands ?? []),
     ...(draft.world?.result.taskCommands ?? []),
     ...(draft.world?.result.eventCommands ?? []),
