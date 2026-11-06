@@ -1,7 +1,14 @@
 import { Dialog } from '../Dialog';
 import { announcement } from './announcement';
 import { disclaimer } from './disclaimer';
+import type { DisclaimerParagraph } from './disclaimer';
 import type { NoticeKind } from './useNotices';
+
+function Paragraphs({ paragraphs }: { paragraphs: readonly DisclaimerParagraph[] }) {
+  return paragraphs.map(paragraph => <p key={paragraph.text}>
+    {paragraph.emphasis ? <strong>{paragraph.text}</strong> : paragraph.text}
+  </p>);
+}
 
 export function NoticeLinks({ onOpen }: { onOpen: (kind: NoticeKind) => void }) {
   return (
@@ -23,13 +30,16 @@ export function NoticeDialog({ kind, muted, onMutedChange, onClose }: {
       className="notice-modal" closeLabel={kind === 'disclaimer' ? '关闭免责声明' : '关闭王朝公告'} onClose={onClose}>
       <div className="notice-content" tabIndex={0} aria-label={kind === 'disclaimer' ? '免责声明内容' : '公告内容'}>
         {kind === 'disclaimer' ? <>
-          <span className="notice-age" aria-label="仅限 18 岁及以上">18+</span>
-          {disclaimer.sections.map((section, index) => (
+          <p><strong><span className="notice-age" aria-label="仅限 18 岁及以上">18+</span>{disclaimer.ageNotice}</strong></p>
+          <Paragraphs paragraphs={disclaimer.intro} />
+          {disclaimer.sections.map(section => (
             <section key={section.title}>
-              <h3>{index + 1}. {section.title}</h3>
-              <p>{section.text}</p>
+              <h3>{section.title}</h3>
+              <Paragraphs paragraphs={section.paragraphs} />
             </section>
           ))}
+          <hr />
+          <Paragraphs paragraphs={disclaimer.closing} />
         </> : <>
           <h3 className="notice-theme">{announcement.theme}</h3>
           <ul>{announcement.updates.map(update => <li key={update}>{update}</li>)}</ul>
