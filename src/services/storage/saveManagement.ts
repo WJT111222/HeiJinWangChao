@@ -29,7 +29,7 @@ export function saveKeyText(key: IDBValidKey): string {
   if (typeof key === 'string') return key;
   if (typeof key === 'number') return String(key);
   if (key instanceof Date) return `Date(${key.toISOString()})`;
-  if (Array.isArray(key)) return `[${key.map(part => `${typeof part}:${saveKeyText(part)}`).join(', ')}]`;
+  if (Array.isArray(key)) return JSON.stringify(key.map(part => [typeof part, saveKeyText(part)]));
   const bytes = ArrayBuffer.isView(key) ? new Uint8Array(key.buffer, key.byteOffset, key.byteLength) : new Uint8Array(key);
   return `Binary(${Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')})`;
 }

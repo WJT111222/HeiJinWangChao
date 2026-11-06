@@ -2,7 +2,7 @@ import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { game } from './fixtures/game';
-import { serializeRawSave } from '../services/storage/saveManagement';
+import { saveKeyText, serializeRawSave } from '../services/storage/saveManagement';
 import * as migrations from '../services/storage/migrations';
 
 let factory: IDBFactory, repository: SaveRepository, database: IDBDatabase;
@@ -32,6 +32,11 @@ async function all() {
 }
 
 describe('unreadable saves stay individually manageable', () => {
+  it('distinct compound keys cannot share a display/React identity through punctuation in strings', () => {
+    expect(saveKeyText(['a', 'b'])).not.toBe(saveKeyText(['a, string:b']));
+    expect(saveKeyText([42])).not.toBe(saveKeyText(['42']));
+    expect(saveKeyText([['nested', 'key']])).not.toBe(saveKeyText(['nested', 'key']));
+  });
   it('lists two readable records and one unsupported record without mutating any data', async () => {
     await repository.create(game('save-a')); await repository.create(game('save-b'));
     await put('saves', { saveId: 'broken', title: '未支持版本', schemaVersion: 99, privateData: '原样保留' });
