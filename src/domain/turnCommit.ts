@@ -1,6 +1,6 @@
 import { historicalEvent, isHistoricalEntry } from './events/lifecycle';
 import { z } from 'zod';
-import { projectTurn, variableCommandsForTurn } from './turnProjection';
+import { projectTurn, preparedVariableCommands } from './turnProjection';
 import { requireData } from './common';
 import type { DomainCommand } from './commands';
 import { TurnDraftSchema } from './drafts';
@@ -38,7 +38,7 @@ export function completeTurnDraft(draft: TurnDraft) {
 }
 export function turnCommands(draft: TurnDraft, state: GameState): DomainCommand[] {
   return [
-    ...variableCommandsForTurn(state, draft, draft.variables?.result.commands ?? []),
+    ...preparedVariableCommands(state, draft, draft.variables?.result.commands ?? []),
     ...(draft.world?.result.worldCommands ?? []),
     ...(draft.world?.result.taskCommands ?? []),
     ...(draft.world?.result.eventCommands ?? []),
@@ -109,7 +109,6 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
       event && ['resolved','cancelled'].includes(event.status) &&
         event.impact === 'major' &&
         event.resolvedAt &&
-        event.resultKnowledge?.facts.length &&
         Date.parse(event.resolvedAt) <= Date.parse(next.worldClock) &&
         event.sourceTurnIds.every((turnId) => knownTurns.has(turnId)),
       'TIMELINE_NOT_PUBLIC',
@@ -120,9 +119,9 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
       next.timeline.push({
         eventId: id,
         occurredAt: event.resolvedAt,
-        title: event.resultKnowledge!.facts[0],
-        summary: event.resultKnowledge!.facts.join('\n'),
-        outcome: event.resultKnowledge!.facts.join('\n'),
+        title: event.resultKnowledge?.facts[0] ?? event.title,
+        summary: event.resultKnowledge?.facts.length ? event.resultKnowledge.facts.join('\n') : event.resolutionText!,
+        outcome: event.resultKnowledge?.facts.length ? event.resultKnowledge.facts.join('\n') : event.resolutionText!,
         longTermImpact: '',
         actorRefs: [],
         sourceTurnIds: event.sourceTurnIds,

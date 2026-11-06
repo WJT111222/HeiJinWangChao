@@ -1,0 +1,147 @@
+{
+  "worldCommands": [],
+  "taskCommands": [
+    {
+      "commandId": "task-cmd-20261020-01",
+      "evidence": "{\"version\":1,\"kind\":\"derived\",\"at\":\"2026-10-20T06:48:23.480Z\",\"sources\":[\"story:current\",\"org:org_school_38th\"],\"fact\":\"三十八中管理层在校内排查教学秩序与食堂账目，力保早自习后督导暗访迎检准备落实到位。\",\"rationale\":\"正文中周琴与张主任均提及督导组即将暗访食堂与收费账目，管理层正在采取措施维护迎检秩序。\"}",
+      "type": "SaveTask",
+      "task": {
+        "id": "task_school_prep_supervision",
+        "actorRef": {
+          "kind": "organization",
+          "id": "org_school_38th"
+        },
+        "goal": "全面排查校园秩序与食堂账目，做好市督导组暗访迎检准备",
+        "startAt": "2026-10-20T06:48:23.480Z",
+        "dueAt": "2026-10-20T08:00:00.000Z",
+        "completionCondition": "完成校内主要教学区域秩序整理与食堂财务备检",
+        "status": "active",
+        "locationId": "school_38th",
+        "linkedEventId": "event_supervision_inspection_38th",
+        "prerequisites": [],
+        "blockers": []
+      }
+    }
+  ],
+  "eventCommands": [
+    {
+      "commandId": "event-cmd-20261020-01",
+      "evidence": "{\"version\":1,\"kind\":\"established\",\"at\":\"2026-10-20T06:48:23.480Z\",\"sources\":[\"story:current\",\"org:org_dingsheng\",\"org:org_school_38th\"],\"fact\":\"催收人员刘成福与家长王桂芬在办公室对教师1进行虚假借贷构陷与限期勒索，年级主任张有德强令1停职交出钥匙证件。\",\"rationale\":\"正文现场已明确发生的敲诈与行政停职危机，构成开局核心未结事件。\"}",
+      "type": "SaveEvent",
+      "event": {
+        "id": "event_extortion_at_school_38th",
+        "title": "鼎盛商务刘三到校敲诈勒索与逼迫停职事件",
+        "status": "active",
+        "startAt": "2026-10-20T06:48:23.480Z",
+        "estimatedEndAt": "2026-10-20T10:00:00.000Z",
+        "locationId": "office_38th",
+        "actorRefs": [
+          {
+            "kind": "organization",
+            "id": "org_dingsheng"
+          },
+          {
+            "kind": "npc",
+            "id": "npc_liu_san"
+          },
+          {
+            "kind": "npc",
+            "id": "npc_wang_guifen"
+          },
+          {
+            "kind": "protagonist",
+            "id": "protagonist"
+          }
+        ],
+        "linkedTaskIds": [],
+        "prerequisites": [],
+        "blockers": [],
+        "visibility": "known",
+        "impact": "major",
+        "sourceTurnIds": [
+          "opening-4f9e545c-7405-4d6e-b9a0-b59f5b594772"
+        ],
+        "backgroundText": "学生陈浩因网吧高利贷纠纷失联被派出所查获，其母王桂芬与鼎盛商务催收人员刘成福持虚假江北借记卡流水到校闹事，逼迫教师1承担36800元债务并威胁向全校家长及教委信访举报；年级主任张有德为迎检强令1停职交出钥匙。",
+        "goalText": "查明转账账户真实归属与学生借款真相，化解敲诈勒索与职业停职危机。",
+        "completionCondition": "查明虚假流水源头并解除对教师1的诬告，恢复正常职业权利或通过司法程序处置违法催收"
+      }
+    },
+    {
+      "commandId": "event-cmd-20261020-02",
+      "evidence": "{\"version\":1,\"kind\":\"planned\",\"at\":\"2026-10-20T06:48:23.480Z\",\"sources\":[\"story:current\",\"org:org_school_38th\"],\"fact\":\"市纪检与督导组按计划将于上午进校暗访食堂与收费账目，学校已启动迎检与维稳安排。\",\"rationale\":\"正文中周琴与张有德多次明确指出督导组暗访行程，构成学校当天的重要排程事件。\"}",
+      "type": "SaveEvent",
+      "event": {
+        "id": "event_supervision_inspection_38th",
+        "title": "市纪检与督导组对第三十八中学进行暗访督导",
+        "status": "scheduled",
+        "startAt": "2026-10-20T08:00:00.000Z",
+        "estimatedEndAt": "2026-10-20T11:00:00.000Z",
+        "locationId": "school_38th",
+        "actorRefs": [
+          {
+            "kind": "organization",
+            "id": "org_school_38th"
+          }
+        ],
+        "linkedTaskIds": [
+          "task_school_prep_supervision"
+        ],
+        "prerequisites": [],
+        "blockers": [],
+        "visibility": "partially_known",
+        "impact": "significant",
+        "sourceTurnIds": [
+          "opening-4f9e545c-7405-4d6e-b9a0-b59f5b594772"
+        ],
+        "backgroundText": "上级纪检与督导组安排暗访第三十八中学食堂与收费账目，校方管理层对任何违规补课和群体性纠纷极度敏感。",
+        "goalText": "完成对学校食堂、财务收费及办学规范性的实地检查并出具反馈。",
+        "completionCondition": "督导组完成在校检查并形成正式考核结论"
+      }
+    }
+  ],
+  "futureEvents": [
+    {
+      "id": "event_supervision_inspection_38th",
+      "title": "市纪检与督导组对第三十八中学进行暗访督导",
+      "status": "scheduled",
+      "startAt": "2026-10-20T08:00:00.000Z",
+      "estimatedEndAt": "2026-10-20T11:00:00.000Z",
+      "locationId": "school_38th",
+      "actorRefs": [
+        {
+          "kind": "organization",
+          "id": "org_school_38th"
+        }
+      ],
+      "linkedTaskIds": [
+        "task_school_prep_supervision"
+      ],
+      "prerequisites": [],
+      "blockers": [],
+      "visibility": "partially_known",
+      "impact": "significant",
+      "sourceTurnIds": [
+        "opening-4f9e545c-7405-4d6e-b9a0-b59f5b594772"
+      ],
+      "backgroundText": "上级纪检与督导组安排暗访第三十八中学食堂与收费账目，校方管理层对任何违规补课和群体性纠纷极度敏感。",
+      "goalText": "完成对学校食堂、财务收费及办学规范性的实地检查并出具反馈。",
+      "completionCondition": "督导组完成在校检查并形成正式考核结论"
+    }
+  ],
+  "visibleHooks": [
+    {
+      "text": "鼎盛商务刘三留下的烫金名片印有座机与刘经理电话，限期下午六点前平息36800元借款纠纷，否则将在全校家长群及教委信访信箱散布举报。",
+      "revealAfter": "2026-10-20T06:48:23.480Z"
+    },
+    {
+      "text": "王桂芬抛出的银行转账流水显示收款账户开户行在江北，转账人为陌生网名，与主角本人的账户及陈浩实名均不相符。",
+      "revealAfter": "2026-10-20T06:48:23.480Z"
+    },
+    {
+      "text": "市纪检与督导组将于上午进校暗访食堂与收费账目，年级主任张有德为防问责执意压制事态并收缴主角办公室抽屉钥匙与工作证。",
+      "revealAfter": "2026-10-20T06:48:23.480Z"
+    }
+  ],
+  "timelineCandidates": [],
+  "unresolved": []
+}

@@ -17,7 +17,24 @@ const positive = MoneySchema.refine(n=>n>0);
 const npcChanges = variableCommandSchemas[1].shape.changes.shape;
 const heroChanges = variableCommandSchemas[0].shape.changes.shape;
 interface Entry { operation:VariableOperation; path:string; commandType:DomainCommand['type']; value:z.ZodType }
+const slotFields = ['topItemId','bottomItemId','shoesItemId','primaryWeaponItemId','secondaryWeaponItemId','currentVehicleAssetId'];
 const entries:Entry[] = [
+  {operation:'set',path:'protagonist',commandType:'UpdateProtagonist',value:variableCommandSchemas[0].shape.changes},
+  {operation:'push',path:'protagonist.skills',commandType:'UpdateProtagonist',value:TextSchema},
+  {operation:'set',path:'protagonist.skills[index]',commandType:'UpdateProtagonist',value:TextSchema},
+  {operation:'delete',path:'protagonist.skills[index]',commandType:'UpdateProtagonist',value:z.null()},
+  {operation:'push',path:'npc[id].activeGoals',commandType:'UpdateNpc',value:TextSchema},
+  {operation:'set',path:'npc[id].activeGoals[index]',commandType:'UpdateNpc',value:TextSchema},
+  {operation:'delete',path:'npc[id].activeGoals[index]',commandType:'UpdateNpc',value:z.null()},
+  {operation:'set',path:'npc[id].affinity',commandType:'UpdateNpc',value:z.number().min(-100).max(100)},
+  {operation:'add',path:'npc[id].affinity',commandType:'UpdateNpc',value:z.number()},
+  {operation:'set',path:'items[id].quantity',commandType:'UpdateItem',value:z.number().int().nonnegative()},
+  {operation:'delete',path:'items[id]',commandType:'UpdateItem',value:z.null()},
+  ...slotFields.flatMap((slot):Entry[]=>[
+    {operation:'set',path:`protagonist.currentWear.${slot}`,commandType:'SetEquipment',value:ActorRefSchema.shape.id},
+    {operation:'delete',path:`protagonist.currentWear.${slot}`,commandType:'SetEquipment',value:z.null()}]),
+  {operation:'push',path:'protagonist.currentWear.accessoryItemIds',commandType:'SetEquipment',value:ActorRefSchema.shape.id},
+  {operation:'delete',path:'protagonist.currentWear.accessoryItemIds[index]',commandType:'SetEquipment',value:z.null()},
   {operation:'set',path:'events[id].sceneState',commandType:'SaveEvent',value:SceneEventStateSchema},
   {operation:'set',path:'tasks[id]',commandType:'SaveTask',value:WorldTaskSchema.omit({id:true})},
   ...Object.entries(heroChanges).map(([field,value]):Entry=>({operation:'set',path:`protagonist.${field}`,commandType:'UpdateProtagonist',
@@ -51,12 +68,13 @@ const entries:Entry[] = [
 /** 正式及离线文本组装共用的值结构目录；不执行、审批或写入状态。 */
 export function textVariableCatalog() {
   return { protocol:'VARIABLE_TEXT_V1', currencyUnit:'CNY_FEN_INTEGER', limits:variableTextLimits,
-    entries:entries.map(({value,...entry})=>({...entry,valueSchema:{...z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'}),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
+    entries:entries.map(({value,...entry})=>({...entry,...(entry.operation==='delete'?{valueRequired:false}:{}),valueSchema:{...z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'}),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
     rules:[
-      '只输出一个<命令>块；set/add/push 操作 路径 = JSON值，以换行分隔；值可多行。不输出DomainCommand JSON、commandId、evidence、expectedRevision。',
-      '[id]替换为真实稳定ID；创建对象省略id，由路径注入。条目是有限操作入口，不是任意深层赋值。',
+      '同一次响应依次输出完整<thinking>、<说明>、<命令>。只执行命令块；set/add/push 路径 = JSON值；delete 路径，无操作数。以换行分隔，值可多行。不输出DomainCommand JSON、commandId、evidence、expectedRevision。',
+      '可选gameState.前缀与源仓库一致，根和字段仍以本目录为准；[index]仅用于列明的普通数组，NPC/实体表必须用稳定ID。[id]替换为真实稳定ID；创建对象省略id，由路径注入。条目是有限操作入口，不是任意深层赋值。',
       '内联NPC初始记忆保持空；用push记忆路径新增，由程序填充当前回合、人物引用和游戏时间。knownInformation同时记录一条个人记忆。',
       '只能更新目录内字段。没有原生命令的余额初始化、旧资产无交易登记、房产购买写入<说明>，不伪造路径。events[id].sceneState仅更新已存在现场事件的实际状态和结果，程序保留旧规划并填写来源；新事件、预计终止时间、延期、承接及清理由World处理。tasks仍须截止时间或非空完成条件，不套用事件新规。',
+      '数组set替换、push追加一个元素、delete按当前索引删除；同一数组多个delete按索引从大到小输出，程序按文本顺序执行，不静默重排。NPC整体/原始记忆、账目记录、地点和组织整体删除没有安全领域命令，明确拒绝；不采用任意深合并。',
       '开局程序统一注入Story时间，不重复计时。普通回合set worldClock为合法ISO时间且不倒退。',
     ] };
 }

@@ -1,3 +1,4 @@
+import { variableStepNames } from '../../services/ai/errors';
 import { useEffect, useRef, useState } from 'react';
 import type { RuntimeLogEntry } from './runtimeLog';
 import { runtimeStageNames } from './runtimeLog';
@@ -77,6 +78,7 @@ export function RuntimeLogPanel({
                 {entry.validationRule && <small>校验规则：{ruleNames[entry.validationRule]}</small>}
                 {entry.domainRule && <small>整批校验原因：{domainRuleNames[entry.domainRule]}{entry.relatedNpcId ? `（NPC：${entry.relatedNpcId}）` : ''}</small>}
                 {entry.relatedNpcId && !entry.domainRule && <small>相关 NPC：{entry.relatedNpcId}</small>}
+                {entry.variableStep && <small>处理步骤：{variableStepNames[entry.variableStep]}</small>}
                 {entry.worldRule && <small>世界校验：{entry.worldRule} · {worldRuleNames[entry.worldRule]}</small>}
                 {entry.relatedCommandIndices?.length ? <small>相关命令：{entry.relatedCommandIndices.map((index) => `第${index}条`).join('、')}（整批失败，无法确定唯一出错命令）</small> : null}
               </li>

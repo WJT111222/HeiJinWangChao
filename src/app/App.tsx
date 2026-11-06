@@ -11,6 +11,7 @@ import { CreationWizard } from '../ui/creation/CreationWizard';
 import { CreationSchema, creationKey, newCreation, createProfileSave } from '../ui/creation/model';
 import type { Creation } from '../ui/creation/model';
 import { SettingsPanel } from '../ui/settings/SettingsPanel';
+import { UnsavedAiChanges } from '../ui/settings/UnsavedAiChanges';
 import { SettingsSchema, defaultSettings, settingsKey } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { dateTime } from '../ui/panels/playerView';
@@ -76,6 +77,8 @@ export function App() {
   const openingStart = useRef<OpeningStart | undefined>(undefined);
   const navigationRevision = useRef(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [aiSettingsDirty, setAiSettingsDirty] = useState(false);
+  const [confirmSettingsClose, setConfirmSettingsClose] = useState(false);
   const [deleting, setDeleting] = useState<SaveSummary>();
   useEffect(() => {
     let disposed = false;
@@ -250,9 +253,13 @@ export function App() {
   const active = saves.find((save) => save.saveId === selected) ?? saves[0];
   // 游戏中由原GameScreen提供唯一维护控制器；设置只是展示，不拥有任务生命周期。
   const renderSettings = (memoryMaintenance?: ReactNode) => (
-    <Dialog title="设置" onClose={() => setSettingsOpen(false)}>
+    <Dialog title="设置" onClose={() => {
+      if (aiSettingsDirty) setConfirmSettingsClose(true);
+      else setSettingsOpen(false);
+    }}>
       <SettingsPanel settings={settings} onSave={saveSettings} repository={repository}
-        activeSaveId={loaded?.state.saveId ?? active?.saveId} memoryMaintenance={memoryMaintenance} />
+        activeSaveId={loaded?.state.saveId ?? active?.saveId} memoryMaintenance={memoryMaintenance}
+        onAiDirtyChange={setAiSettingsDirty} />
     </Dialog>
   );
   return (
@@ -460,6 +467,11 @@ export function App() {
         </main>
       )}
       {settingsOpen && !(gameRoute && loaded) && renderSettings()}
+      {settingsOpen && confirmSettingsClose && <UnsavedAiChanges onContinue={() => setConfirmSettingsClose(false)} onDiscard={() => {
+        setConfirmSettingsClose(false);
+        setAiSettingsDirty(false);
+        setSettingsOpen(false);
+      }} />}
       {deleting && (
         <Dialog
           title="删除这份存档？"

@@ -1,3 +1,4 @@
+import { pendingEventEntries } from '../domain/events/interactions';
 import { worldEventSchedule } from '../domain/events/schedule';
 import { protagonistKnownEvent } from '../domain/events/knowledge';
 import { chinaCalendar, openingTimeBase, openingTimeContext, openingTimeSelection } from '../domain/openingTime';
@@ -6,7 +7,6 @@ import type { GameState } from '../domain/state';
 import { TurnDraftSchema } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
 import { projectTurn } from '../domain/turnProjection';
-import { worldSources } from '../services/validation/worldEvidence';
 import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { initialCompanionProfile, matchesCompanion } from '../services/local/companionProfile';
@@ -117,7 +117,14 @@ function withoutPrivateMemories(state: GameState): GameState {
   }])), memories: { ...state.memories, npcSummaries: {},
     long: state.memories.long.filter((entry) => !entry.retiredNpcSource || entry.visibility === 'player_known') } };
 }
-const npcKnowledgePolicy = '内部角色认知按ownerNpcId隔离，只属于该人物。亲历/转述/推测/来源未分类不能混同世界真值；总结是历史认知，较新原始记忆中的纠正优先。不能自动传播给其他人物或写入公开线索、正文、日志。总结只能为所属NPC的计划提供参考，不能直接证明完成、到账、关系变化或新增世界事实。worldEventOnly事件及其参与者列表不授予NPC知情；人物行动和记忆须引用自己独立合法的观察或转述来源，事件记录仅作后台因果资料。';
+/** 适配源variableModelWorkflow的活动变量快照：不把永久正文/幂等指纹重复发给模型。
+ * 正式状态不变；NPC私人知识仍走既有owner隔离上下文，不改可见性。 */
+function variableStateSnapshot(state: GameState) {
+  const { journal, appliedCommands, memories, timeline, ...snapshot } = withoutPrivateMemories(state);
+  void journal; void appliedCommands; void memories; void timeline;
+  return snapshot;
+}
+const npcKnowledgePolicy = '内部角色认知按ownerNpcId分组，只属于该人物。亲历、转述、推测由模型按剧情判断；总结是历史认知，较新原始记忆中的纠正优先。不能自动传播给其他人物或写入公开正文。世界客观事件、参与者列表不表示每个人已经知晓；结合各自经历决定行动和记忆，不输出额外来源凭据。';
 export function contextFor(input: ComposeInput): Record<string, unknown> {
   const { stage, settings, draft } = input;
   const original = input.state;
@@ -188,6 +195,9 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         .map((npc) => publicNpc(state, npc.id, archive)),
       MEMORY_CONTEXT: storyMemoryContext(state, settings.memory.immediateWindowSize, input.userInput, input.mode === 'regular'),
       KNOWN_EVENTS: events,
+      EVENT_ENTRIES: pendingEventEntries(state),
+      EVENT_PARTICIPATION: Object.values(state.events).flatMap(event=>event.protagonistEntry?.status==='presented' && !['resolved','cancelled'].includes(event.status)
+        ? [{eventId:event.id,entryId:event.protagonistEntry.id,status:'presented'}] : []),
       PLAYER_ACTION: input.userInput,
       OPENING_TIME: opening,
       TURN_TIME_POLICY: turnTimePolicy,
@@ -219,7 +229,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       HISTORICAL_PERSPECTIVE: historicalPerspective(state, draft!),
       PLAYER_ACTION: draft!.userInput,
       SELECTED_VARIABLE_DOMAINS: input.domains ?? [],
-      SAVE_STATE: withoutPrivateMemories(opening?.status === 'candidate' ? { ...state, worldClock: openingTimeSelection(original, draft!)!.endAt } : state),
+      SAVE_STATE: variableStateSnapshot(opening?.status === 'candidate' ? { ...state, worldClock: openingTimeSelection(original, draft!)!.endAt } : state),
       NPC_KNOWLEDGE_POLICY: npcKnowledgePolicy,
       NPC_KNOWLEDGE: Object.values(state.npc).filter((npc) => npc.onScene).map((npc) => npcKnowledgeContext(state, npc.id)),
       STORY_RESULT: draft!.story,
@@ -254,9 +264,8 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       TIME_WINDOW: { from: state.worldClock, to: temporary.worldClock },
       EVENT_SCHEDULE: historicalPerspective(state,draft!) ? {readOnly:true,policy:'纯过去视角只读，不处理当前世界到期事件；原排程保留到正常世界回合。'} : worldEventSchedule(state, temporary),
       variablePending,
-      STORY_RESULT: { narrative: draft!.story!.narrative, summary: draft!.story!.summary },
+      STORY_RESULT: { narrative: draft!.story!.narrative, summary: draft!.story!.summary, eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction) },
       VARIABLE_RESULT: variablePending ? undefined : draft!.variables,
-      WORLD_SOURCES: worldSources(temporary, draft!, state),
       NPC_KNOWLEDGE_POLICY: npcKnowledgePolicy,
       NPC_KNOWLEDGE: Object.values(temporary.npc).filter((npc) => !npc.onScene && !state.npc[npc.id]?.onScene).map((npc) => npcKnowledgeContext(temporary, npc.id)),
       PROTECTED_SCENE: {
@@ -280,7 +289,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         organizations: temporary.organizations,
         tasks: Object.values(temporary.tasks).filter(
           (task) =>
-            !['completed', 'cancelled'].includes(task.status) && (task.actorRef.kind === 'organization' ||
+            (task.actorRef.kind === 'organization' ||
             (task.actorRef.kind === 'npc' &&
               !temporary.npc[task.actorRef.id]?.onScene &&
               !state.npc[task.actorRef.id]?.onScene)),

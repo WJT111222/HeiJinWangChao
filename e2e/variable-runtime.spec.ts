@@ -122,7 +122,7 @@ test('变量正常生成、真实独立路由/模块/usage，完整候选主动�
     bodies: Record<string, unknown>[] = [];
   await page.route('https://variables.mock.invalid/**', async (route) => {
     bodies.push(route.request().postDataJSON());
-    await route.fulfill({ contentType: 'application/json', body: response('<说明>内部候选事项不可默认公开</说明>' + variableReply(result)) });
+    await route.fulfill({ contentType: 'application/json', body: response(variableReply(result).replace('<说明></说明>', '<说明>内部候选事项不可默认公开</说明>')) });
   });
   await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
   await ready(page);

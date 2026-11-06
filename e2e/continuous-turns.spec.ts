@@ -1,3 +1,4 @@
+import { VariableStateProjectionSchema } from '../src/tests/fixtures/variableState';
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from '@playwright/test';
@@ -90,7 +91,7 @@ async function mock(page: Page) {
       return;
     }
     if (stage === 'variables') {
-      const state = GameStateSchema.parse(ctx.SAVE_STATE),
+      const state = VariableStateProjectionSchema.parse(ctx.SAVE_STATE),
         story = StorySchema.parse(ctx.STORY_RESULT);
       const commands: DomainCommand[] = [
         {
