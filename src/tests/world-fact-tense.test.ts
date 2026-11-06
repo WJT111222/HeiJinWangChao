@@ -98,6 +98,55 @@ describe('World 中文事实性质：真实 evidence 与合成合法上下文', 
     expect(() => parse(fact)).toThrow(expect.objectContaining({ details: expect.objectContaining({ worldRule: 'fact_plan' }) }));
   });
 
+  const futureActions = [
+    '学校将进行迎检准备。',
+    '学校会开展迎检准备工作。',
+    '管理层将启动财务排查。',
+    '公司会执行整改计划。',
+    '学校会进行迎检准备。',
+    '工会会开展迎检准备工作。',
+    '学校将不再开展迎检准备工作。',
+  ];
+  it.each(futureActions)('未来助动词不能支持active任务：%s', fact => {
+    expect(() => parse(fact)).toThrow(expect.objectContaining({ details: expect.objectContaining({
+      worldRule: 'fact_plan', commandType: 'SaveTask', fieldPath: 'taskCommands.0.evidence.fact',
+    }) }));
+  });
+  it.each(futureActions)('未来助动词不能支持active事件：%s', fact => {
+    const { state, draft } = schoolContext(), before = structuredClone(state), batch = syntheticSchoolBatch();
+    batch.eventCommands[0].evidence = JSON.stringify({ ...schoolEvidence, fact });
+    expect(() => parseWorld(JSON.stringify(batch), state, draft)).toThrow(expect.objectContaining({ details: expect.objectContaining({
+      worldRule: 'fact_plan', commandType: 'SaveEvent', fieldPath: 'eventCommands.0.evidence.fact',
+    }) }));
+    expect(state).toEqual(before);
+  });
+  it.each(futureActions)('未来动作不能成为completed的outcome：%s', outcome => {
+    const { state, draft } = schoolContext(), command = schoolTask('管理层完成了资料核查。');
+    command.task.status = 'completed';
+    command.evidence = JSON.stringify({ ...schoolEvidence, fact: '管理层完成了资料核查。', outcome });
+    expect(() => parseWorld(JSON.stringify(schoolResult(command)), state, draft)).toThrow(expect.objectContaining({ details: expect.objectContaining({
+      worldRule: 'fact_plan', fieldPath: 'taskCommands.0.evidence.outcome',
+    }) }));
+    expect(state.tasks).toEqual({});
+  });
+  it.each([
+    '学校将继续进行迎检准备。',
+    '学校会逐步开展迎检准备工作。',
+    '学校将在校内进行迎检准备。',
+    '学校已经启动检查，管理层会开展迎检准备工作。',
+  ])('有界助动词修饰或其他已发生事实不能将未来动作变成事实：%s', fact => {
+    expect(() => parse(fact)).toThrow(expect.objectContaining({ details: expect.objectContaining({ worldRule: 'fact_plan' }) }));
+  });
+  it.each([
+    '会议已经开始。',
+    '会计部门正在排查账目。',
+    '管理层已将材料提交。',
+    '管理层已将启动方案提交。',
+    '工会开展了迎检准备工作。',
+    '协会执行了既定整改计划。',
+    '工作人员已经学会开展检查。',
+  ])('会的名词/词汇及将的已完成处置结构不是未来动作：%s', fact => expect(() => parse(fact)).not.toThrow());
+
   it('future/planned 仍可保存为未执行任务，不能伪装 active', () => {
     const { state, draft } = schoolContext(), command = schoolTask('学校准备明天检查食堂。');
     command.evidence = JSON.stringify({ ...schoolEvidence, kind: 'planned', fact: '学校准备明天检查食堂。' });
