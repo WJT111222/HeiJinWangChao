@@ -336,7 +336,7 @@ test('阶段未完成或主动关闭时，即使填写行动也不能部分结�
   const server = await mock(page);
   await createCharacter(page);
   await expect(page.getByLabel('动态世界', { exact: true })).not.toBeChecked();
-  await expect(workflow(page).getByRole('status')).toContainText('按开关跳过');
+  await expect(workflow(page).getByRole('status')).toContainText('阶段已关闭');
   await page.getByLabel('你的行动', { exact: true }).fill('等待');
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
   expect((await stored(page)).state.turnNumber).toBe(0);

@@ -1,7 +1,7 @@
 import { variableTextEnvelope } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools, openWorkflowDiagnostics } from './helpers/gameLayout';
 
 async function seed(page: Page, remoteLocation = false) {
   await page.goto('/');
@@ -41,7 +41,7 @@ async function mock(page: Page) {
   return { calls, control, responses };
 }
 const settled = (page: Page) => expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toContainText('本回合已结算');
-async function rawPanel(page: Page) { await page.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click(); }
+async function rawPanel(page: Page) { await openWorkflowDiagnostics(page); await page.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click(); }
 
 test('完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型', async ({ page }, info) => {
   await seed(page); const server = await mock(page);

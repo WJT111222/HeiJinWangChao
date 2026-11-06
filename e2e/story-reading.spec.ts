@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools, openWorkflowDiagnostics } from './helpers/gameLayout';
 
 const narrative = '【旁白】十月中旬的重庆，连着下了两天秋雨。\n【吴杰涛】“你还没走啊？”\n【吴杰】“等雨小一点，我就走。”\n【旁白】门帘被风掀起，路灯在积水里晃了晃。\n【陈宁】\n“伞在门边。\n别忘了带。”\n【吴杰】“好，明天见。”';
 const current = '【旁白】雨渐渐停了。\n【吴杰涛】“那我们明天见。”\n【吴杰】“明天见。”';
@@ -132,7 +132,7 @@ test('真实流式预览完成后切换气泡，Variables/World收到原标签�
       const context = JSON.parse(message.content.replace(/^<GAME_CONTEXT>\n/, '').replace(/\n<\/GAME_CONTEXT>$/, ''));
       expect(context.STORY_RESULT.narrative).toBe(narrative);
     }
-    await page.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click();
+    await openWorkflowDiagnostics(page); await page.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click();
     await page.getByText('正文模型原文', { exact: true }).click();
     expect(await page.getByLabel('正文模型完整原文').textContent()).toBe(prefix + narrative + suffix);
     const before = await stored(page); expect(before.state.journal[0].story.narrative).toBe(narrative);
