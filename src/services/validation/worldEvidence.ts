@@ -11,6 +11,7 @@ import { isNegatedFact } from '../../domain/factPolarity';
 import { AiError } from '../ai/errors';
 import type { WorldRule } from './worldDiagnostics';
 import { TaskResultKnowledgeSchema } from '../../domain/events/schema';
+import { derivedFactRule } from './worldFactNature';
 
 // 来源凭据仍编码在原有evidence字符串中；可选成果分类从同次决策确定性写入resolution。
 export const WorldEvidenceSchema = z.strictObject({
@@ -270,7 +271,8 @@ export function readWorldEvidence(
         const cancellation = (command.type === 'SaveTask' && command.task.status === 'cancelled')
           || (command.type === 'SaveEvent' && command.event.status === 'cancelled');
         const affirmedTermination = cancellation && hasAffirmedTermination(proof.fact);
-        requireWorld(!speculative.test(proof.fact) && (!isNegatedFact(proof.fact) || affirmedTermination));
+        const rule = derivedFactRule(proof.fact, Boolean(affirmedTermination));
+        if (rule) throw new AiError('invalid_output', undefined, { worldRule: rule, fieldPath: 'evidence.fact' });
       }
     }
   }
