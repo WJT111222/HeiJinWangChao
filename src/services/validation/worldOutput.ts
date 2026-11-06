@@ -20,6 +20,7 @@ import {
   worldSources,
   hasAffirmedTermination,
   hasPlayerKnownFact,
+  hasPlayerKnownArrangement,
 } from './worldEvidence';
 import { AiError } from '../ai/errors';
 import type { WorldEvidence, WorldSource } from './worldEvidence';
@@ -105,6 +106,8 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   requireWorld(draft.story, 'invalid_output', 'command_structure');
   const result = checked.data,
     base = projectTurn(original, draft);
+  const rawEventMirrors = new Map(result.eventCommands.flatMap(command => command.type === 'SaveEvent'
+    ? [[command.event.id, fingerprint(command.event)] as const] : []));
   const sources = worldSources(base, draft, state);
   const commands = [...result.worldCommands, ...result.taskCommands, ...result.eventCommands];
 
@@ -451,6 +454,21 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
       case 'SaveEvent': {
         const event = command.event,
           old = base.events[event.id];
+        // Referencing a protected participant in a sourced scene record is not authority to act for them.
+        const protectedActors = event.actorRefs.filter(ref => ref.kind === 'protagonist' ||
+          (ref.kind === 'npc' && !actorAllowed(ref) && Boolean(base.npc[ref.id])));
+        const sceneRecord = protectedActors.length > 0;
+        if (sceneRecord) {
+          const narrative = origins.find(source => source.id === 'story:current' && source.knowledge === 'fact')?.text;
+          requireWorld(proof.kind === 'established' && narrative, 'permission', 'actor_permission');
+          requireWorld(protectedActors.every(ref => tiedTo(ref)), 'permission', 'actor_permission');
+          // Source-ground every changed descriptive field; no invented scene decisions hidden in prose.
+          for (const field of ['title', 'backgroundText', 'goalText', 'resolutionText'] as const) {
+            const text = event[field];
+            if (text !== undefined && text !== old?.[field])
+              requireWorld(narrative.includes(text), 'permission', 'actor_permission');
+          }
+        }
         // 旧缺规划记录可真实终结，不为清理补造过去的预计日期；继续排程必须补齐规划。
         if(!old || !terminalEvent(event)) {
           const planned = WorldEventSchema.safeParse(event);
@@ -486,6 +504,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         requireWorld(
           event.actorRefs.every((ref) =>
             ref.kind === 'protagonist' ? ref.id === base.protagonist.id : actorAllowed(ref)
+              || (sceneRecord && protectedActors.some(actor => sameActor(actor, ref)))
               || (ref.kind === 'npc' && base.retiredNpcs[ref.id] && old?.actorRefs.some((prior) => sameActor(prior, ref))),
           ),
           'permission',
@@ -498,6 +517,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         if (old) {
           requireWorld(
             old.actorRefs.every((ref) => ref.kind === 'protagonist' || actorAllowed(ref)
+              || (sceneRecord && protectedActors.some(actor => sameActor(actor, ref)))
               || (ref.kind === 'npc' && base.retiredNpcs[ref.id])),
             'permission',
           );
@@ -565,14 +585,19 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
           } else requireWorld(event.resultKnowledge === undefined || (old && fingerprint(old) === fingerprint(event)));
         }
         // 只把显式提升知情标记作为知识传播；客观进展不要求主角先收到消息。
+        const learnedArrangement = event.status === 'scheduled' && hasPlayerKnownArrangement(proof, origins);
         if (event.visibility !== 'hidden' && event.visibility !== old?.visibility)
-          requireWorld(hasPlayerKnownFact(command, proof, origins), 'permission', 'player_knowledge');
+          requireWorld(hasPlayerKnownFact(command, proof, origins) || learnedArrangement, 'permission', 'player_knowledge');
         if (!old || !terminalEvent(old)) {
           const priorKnowledge = old && protagonistKnownEvent(old);
           const informed = event.visibility === 'known' && hasPlayerKnownFact(command, proof, origins);
-          const snapshot = priorKnowledge && !informed ? {
+          const snapshot = learnedArrangement && event.visibility !== 'hidden' ? {
+            worldUpdateTurnId: draft.turnId, title: proof.fact, status: 'scheduled' as const,
+            notice: proof.fact, knowledgeKind: 'reported' as const,
+          } : priorKnowledge && !informed ? {
             worldUpdateTurnId: draft.turnId, title: priorKnowledge.title, startAt: priorKnowledge.startAt,
             status: priorKnowledge.status, ...(priorKnowledge.resolutionText === undefined ? {} : { resolutionText: priorKnowledge.resolutionText }),
+            ...('notice' in priorKnowledge ? { notice: priorKnowledge.notice, knowledgeKind: priorKnowledge.knowledgeKind } : {}),
           } : undefined;
           // 模型只可沿用旧元数据或重放程序规范化结果，不能借快照伪造角色知识。
           requireWorld(!event.protagonistKnowledge || fingerprint(event.protagonistKnowledge) === fingerprint(old?.protagonistKnowledge)
@@ -630,8 +655,9 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         event.status === 'scheduled' &&
         Date.parse(event.startAt) >= Date.parse(base.worldClock) &&
         command?.type === 'SaveEvent' &&
-        fingerprint(command.event) === fingerprint(event),
+        (rawEventMirrors.get(event.id) === fingerprint(event) || fingerprint(command.event) === fingerprint(event)),
     );
+    if (command?.type === 'SaveEvent') Object.assign(event, structuredClone(command.event));
   }
   let projected: GameState;
   try { projected = projectTurn(original, draft, commands); }

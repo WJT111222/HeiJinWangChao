@@ -137,3 +137,10 @@ SaveEvent的新规划始终包含startAt、estimatedEndAt、backgroundText、goa
 既有known/partially_known场外事件的状态、延期及结案可按合法derived独立发展，不要求主角预先收到消息；保持原visibility，不借此公开人物记忆。protagonistKnowledge只由程序维护，不要编造或改写。来源、时间、行动者和结案条件仍须满足。
 
 没有实际变更时合法输出为：{"worldCommands":[],"taskCommands":[],"eventCommands":[],"futureEvents":[],"visibleHooks":[],"timelineCandidates":[],"unresolved":[]}。所有顶层数组都需保留。新事件的estimatedEndAt、backgroundText、goalText必填；仅既有旧事件真实终结可沿用缺项。
+
+
+### 现场记录例外与已获知的未来安排
+
+World可用SaveEvent记录本幕已发生的现场事件，参与者可以引用主角或PROTECTED_SCENE人物，但这不是让人物行动的授权。此类命令用established及story:current，fact须为实际发生的正文事实并明确对应每个现场参与者；新增/改写的title、backgroundText、goalText、resolutionText逐项沿用正文中的原文片段，避免在描述字段夹带尚未发生的决定。不要凭记录权限更新现场人物、地点、资金、关系或记忆；这类事实仍由Variables处理。稳定事件ID继续使用，已有身份/起点不能改写。
+
+scheduled可以保持known/partially_known：当planned.fact确实来自主角本幕已收到的通知、所见公告或合法已知来源时，程序仅保存这条安排消息，认知性质为reported，不视为安排已执行。不把内部背景、完整日程、目标或未来结果自动授予主角；缺少实际知晓来源不能提升visibility。protagonistKnowledge由程序写入，模型省略；futureEvents仍为相同原始SaveEvent镜像，规范化后由程序同步认知元数据。

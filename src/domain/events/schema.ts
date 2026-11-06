@@ -10,7 +10,8 @@ export const TaskResultKnowledgeSchema = z.strictObject({
 const EventStatusSchema = z.enum(['scheduled', 'active', 'resolved', 'blocked', 'cancelled']);
 // 程序保存主角此前已知的事件投影；世界更新不能借旧known标记传播新进展。
 export const ProtagonistEventKnowledgeSchema = z.strictObject({
-  worldUpdateTurnId: IdSchema, title: TextSchema, startAt: GameTimeSchema,
+  worldUpdateTurnId: IdSchema, title: TextSchema, startAt: GameTimeSchema.optional(),
+  notice: TextSchema.max(8000).optional(), knowledgeKind: z.enum(['observed', 'reported']).optional(),
   status: EventStatusSchema, resolutionText: z.string().optional(),
 }).meta({ readOnly: true, description: '程序维护的主角已知快照，模型不得编造或修改。' });
 export const StoredWorldEventSchema = z.strictObject({
