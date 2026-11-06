@@ -1,7 +1,7 @@
 import { openGameTools } from './helpers/gameLayout';
 import { createServer } from 'node:http';
 import type { Server } from 'node:http';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 
 type Plan = { chunks?: string[]; status?: number; gap?: number; delay?: number; reasoning?: string; finishReason?: string };

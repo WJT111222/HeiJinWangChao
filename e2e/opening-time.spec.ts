@@ -1,5 +1,5 @@
 import { variableReply } from '../src/tests/fixtures/variableReply';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { record, array, string } from '../src/services/ai/protocols';
 import { chinaCalendar, pendingOpeningClock } from '../src/domain/openingTime';

@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { openGameTools } from './helpers/gameLayout';
 
