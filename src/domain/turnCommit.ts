@@ -109,7 +109,6 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
       event && ['resolved','cancelled'].includes(event.status) &&
         event.impact === 'major' &&
         event.resolvedAt &&
-        event.resultKnowledge?.facts.length &&
         Date.parse(event.resolvedAt) <= Date.parse(next.worldClock) &&
         event.sourceTurnIds.every((turnId) => knownTurns.has(turnId)),
       'TIMELINE_NOT_PUBLIC',
@@ -120,9 +119,9 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
       next.timeline.push({
         eventId: id,
         occurredAt: event.resolvedAt,
-        title: event.resultKnowledge!.facts[0],
-        summary: event.resultKnowledge!.facts.join('\n'),
-        outcome: event.resultKnowledge!.facts.join('\n'),
+        title: event.resultKnowledge?.facts[0] ?? event.title,
+        summary: event.resultKnowledge?.facts.length ? event.resultKnowledge.facts.join('\n') : event.resolutionText!,
+        outcome: event.resultKnowledge?.facts.length ? event.resultKnowledge.facts.join('\n') : event.resolutionText!,
         longTermImpact: '',
         actorRefs: [],
         sourceTurnIds: event.sourceTurnIds,

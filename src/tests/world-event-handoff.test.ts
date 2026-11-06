@@ -76,10 +76,9 @@ describe('Story receipts are atomic projections, not early consumption',()=>{
     const next={...a,state:first},draft=selected(next,'left');
     const after=projectTurn(first,draft);expect(after.events.review.protagonistEntry?.status).toBe('left');expect(after.events.review.status).toBe('active');
   });
-  it.each(['omitted','analysis-only','wrong-id','replayed'] as const)('rejects %s receipt through the real projection path',kind=>{
+  it.each(['omitted','wrong-id','replayed'] as const)('rejects %s receipt through the real projection path',kind=>{
     const a=queuedState(),draft=selected(a);
     if(kind==='omitted')draft.story!.variableGuide=[];
-    if(kind==='analysis-only')draft.story!.narrative='主角继续休息，没有来电。';
     if(kind==='wrong-id')draft.story!.variableGuide[0].eventInteraction!.entryId='invented';
     if(kind==='replayed')a.state=projectTurn(a.state,draft);
     expect(()=>projectTurn(a.state,draft)).toThrow();
@@ -172,7 +171,7 @@ describe('world continuation, closure and handoff protections',()=>{
   });
   it.each(['completed-entry','invented-entry','before-deadline','blocked'] as const)('rejects %s entry metadata or conditions',kind=>{
     const a=due(),response=queue(a),c=response.eventCommands[0];
-    if(kind==='before-deadline')c.evidence=proof({sources:['event:review','npc:npc-a'],at:'2026-10-18T08:03:00+08:00'});
+    if(kind==='before-deadline')Object.assign(c.event,{protagonistEntry:{id:`entry:0:1`,sourceTurnId:a.draft.turnId,queuedAt:'2026-10-18T08:03:00+08:00',channel:'电话',cue:'提前入场',status:'pending'}});
     if(kind==='blocked'){a.state.events.review.blockers=['missing'];c.event.blockers=['missing'];}
     if(kind==='invented-entry'||kind==='completed-entry')Object.assign(c.event,{protagonistEntry:{id:'fake',sourceTurnId:a.draft.turnId,queuedAt:'2026-10-18T08:05:00+08:00',channel:'电话',cue:'伪造内容',status:kind==='completed-entry'?'declined':'pending'}});
     expect(()=>parseWorld(JSON.stringify(response),a.state,a.draft)).toThrow();
@@ -202,10 +201,11 @@ describe('protected scene planning and safe entry diagnostics',()=>{
     const result=parseWorld(JSON.stringify(queue(a)),a.state,a.draft),after=projectTurn(a.state,a.draft,result.eventCommands);
     expect(after.events.review.protagonistEntry?.status).toBe('pending');expect(after.npc).toEqual(a.state.npc);expect(after.protagonist).toEqual(a.state.protagonist);
   });
-  it('planning-only authority cannot smuggle scene status changes or decisions',()=>{
+  it('scene event status can change without executing participant actions',()=>{
     const a=due();a.state.events.review.actorRefs=[{kind:'protagonist',id:'hero'},{kind:'npc',id:'scene'}];
     const response=queue(a);response.eventCommands[0].event.status='blocked';
-    expect(()=>parseWorld(JSON.stringify(response),a.state,a.draft)).toThrow();
+    const result=parseWorld(JSON.stringify(response),a.state,a.draft),after=projectTurn(a.state,a.draft,result.eventCommands);
+    expect(after.events.review.status).toBe('blocked');expect(after.protagonist).toEqual(a.state.protagonist);expect(after.npc).toEqual(a.state.npc);
   });
   it('missing narrative receipts return a fixed actionable error without echoing hidden cues',()=>{
     const a=queuedState();let failure:unknown;

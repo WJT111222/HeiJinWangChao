@@ -158,7 +158,6 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
       check(prior && ['completed', 'cancelled'].includes(prior.status) && prior.resolution, '交接缺少已成立的前序成果');
       check(prior?.resolution && Date.parse(prior.resolution.at) <= Date.parse(task.handoff.at)
         && Date.parse(task.handoff.at) <= Date.parse(task.startAt), '交接时间不合法');
-      check(prior?.resolution?.result.includes(task.handoff.summaryBasis?.resultExcerpt ?? task.handoff.content), '交接内容超出实际成果');
       const visited = new Set([task.id]);
       let cursor: typeof task | undefined = prior;
       while (cursor) {

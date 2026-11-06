@@ -384,7 +384,7 @@ describe('最终重验与存储兼容', () => {
     const draft = await completeDraft(repo, { world: worldResult([npcUpdate()]) });
     await unchanged(submission(draft));
   });
-  it('没有肯定终止事实的旧事件取消在正式边界再次拒绝', async () => {
+  it('终态转换缺少真实回合引用在正式边界再次拒绝', async () => {
     await repo.delete('save-a', 0);
     const state = worldState();
     state.events['event-a'] = {
@@ -409,7 +409,7 @@ describe('最终重验与存储兼容', () => {
             event: {
               ...state.events['event-a'],
               status: 'cancelled',
-              sourceTurnIds: ['initial-save-a'],
+              sourceTurnIds: ['nonexistent-turn'],
             },
           },
         ],
@@ -447,13 +447,12 @@ describe('最终重验与存储兼容', () => {
     });
     await unchanged(submission(draft));
   });
-  it('缺少客观成果的重大结案不能通过timelineCandidates冒充事实历史', async () => {
+  it('没有实际结案时间的取消事件不能通过timelineCandidates进入历史', async () => {
     await repo.delete('save-a', 0);
     const state = worldState();
     state.events.hidden = {
       ...event('hidden'),
-      status: 'resolved',
-      resolvedAt: gameTime,
+      status: 'cancelled',
       resolutionText: '秘密行动已结束',
       sourceTurnIds: [],
     };

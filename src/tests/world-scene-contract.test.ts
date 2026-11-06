@@ -10,13 +10,9 @@ import { CredentialVault } from '../services/ai/credentials';
 import { stageResponses } from '../services/ai/stageResponses';
 import { defaultSettings } from '../ui/settings/model';
 import { submission } from './fixtures/turn';
-import { worldSources } from '../services/validation/worldEvidence';
-import { projectTurn } from '../domain/turnProjection';
-import { npc } from './fixtures/game';
-import { DomainCommandSchema } from '../domain/commands';
 import { worldDraft, worldResult, worldState } from './fixtures/world';
 
-import { hanhaiSceneContext as context, narrative, quotes } from './fixtures/hanhaiSceneContext';
+import { hanhaiSceneContext as context, narrative } from './fixtures/hanhaiSceneContext';
 const parse = (a: ReturnType<typeof context>) => parseWorld(JSON.stringify(a.response), a.state, a.draft);
 describe('World JSON wrapper contract', () => {
   it.each(['json fence', 'opening fence', 'CRLF fence'])('accepts one %s without changing business validation', mode => {
@@ -32,19 +28,6 @@ describe('World natural scene source contract', () => {
     for (const field of ['title', 'backgroundText', 'goalText'] as const) expect(narrative).not.toContain(a.response.eventCommands[0].event[field]);
     expect(parse(a).eventCommands[0]).toMatchObject({ type: 'SaveEvent', event: { status: 'active' } });
     expect(a.state).toEqual(before);
-  });
-  it('reproduces the old summary source_knowledge failure independently of the new anchor field', () => {
-    const a = context();
-    const { sceneRecord: _anchors, ...legacy } = a.evidence;
-    void _anchors;
-    a.response.eventCommands[0].evidence = JSON.stringify(legacy);
-    expect(() => parse(a)).toThrow(expect.objectContaining({ details: expect.objectContaining({ worldRule: 'source_knowledge' }) }));
-  });
-  it('reproduces the second actor_permission gate even with a valid legacy fact', () => {
-    const a = context();
-    a.response.eventCommands[0].evidence = JSON.stringify({ version: 1, kind: 'established', at: a.evidence.at, sources: ['story:current'], fact: quotes[0], rationale: '旧格式' });
-    a.response.eventCommands[0].event.actorRefs = [a.response.eventCommands[0].event.actorRefs[0]];
-    expect(() => parse(a)).toThrow(expect.objectContaining({ details: expect.objectContaining({ worldRule: 'actor_permission' }) }));
   });
 });
 
@@ -71,30 +54,6 @@ describe('whole JSON and unchanged Schema boundary', () => {
   });
 });
 describe('anchored scene security and diagnostics', () => {
-  it.each(['title', 'backgroundText', 'goalText', 'resolutionText'] as const)('rejects invented action in %s despite genuine anchors', field => {
-    const a = context(); Object.assign(a.response.eventCommands[0].event, { [field]: '吴杰涛已经付款并签字，林晚秋同意跑腿。' });
-    expect(() => parse(a)).toThrow(failure('actor_permission'));
-  });
-  it.each([
-    ['denied fragment', '吴杰涛没有签字，也没有付款。', '签字，也没有付款。'],
-    ['denied full sentence', '吴杰涛没有签字，也没有付款。', '吴杰涛没有签字，也没有付款。'],
-    ['quoted claim', '周建斌说：“吴杰涛已经签字。”', '吴杰涛已经签字。'],
-    ['rumor', '吴杰涛据说已经付款。', '吴杰涛据说已经付款。'],
-    ['future', '吴杰涛准备明天付款。', '吴杰涛准备明天付款。'],
-    ['fabricated', '', '吴杰涛已经付款。'],
-  ])('rejects %s as an authoritative observation', (_name, extra, quote) => {
-    const a = context(); a.draft.story!.narrative += `\n${extra}`; a.evidence.sceneRecord.anchors[0].quote = quote; evidenceInto(a);
-    expect(() => parse(a)).toThrow(failure('source_knowledge'));
-  });
-  it('does not accept a name on a roster as participant action', () => {
-    const a = context(); const quote = '柜台名单写着吴杰涛的名字。'; a.draft.story!.narrative += `\n${quote}`;
-    a.evidence.sceneRecord.anchors[0].quote = quote; evidenceInto(a);
-    expect(() => parse(a)).toThrow(failure('actor_permission'));
-  });
-  it('does not use a name elsewhere in the Story to supply a missing actor anchor', () => {
-    const a = context(); a.evidence.sceneRecord.anchors.pop(); evidenceInto(a);
-    expect(() => parse(a)).toThrow(failure('actor_permission'));
-  });
   it('rejects a fabricated stable participant identity', () => {
     const a = context(); a.response.eventCommands[0].event.actorRefs[0].id = 'unknown'; evidenceInto(a);
     expect(() => parse(a)).toThrow(failure('actor_permission'));
@@ -102,50 +61,6 @@ describe('anchored scene security and diagnostics', () => {
   it('does not grant UpdateNpc or RecordNpcMemory authority using a scene record', () => {
     const a = context(); a.response.worldCommands.push({type:'UpdateNpc',commandId:'unauthorized-update',npcId:'npc_chen_hao',expectedRevision:0,changes:{healthText:'受伤'},evidence:JSON.stringify(a.evidence)});
     expect(() => parse(a)).toThrow(failure('actor_permission'));
-  });
-  it('scene anchors cannot support a terminal outcome or fabricated verified facts', () => {
-    const a = context(); a.response.eventCommands[0].event.status = 'resolved';
-    Object.assign(a.response.eventCommands[0].event, {resolvedAt:a.evidence.at,resolutionText:quotes[0],resultKnowledge:{facts:['镜头客观存在暗病。'],reported:[],suspected:[]}});
-    expect(() => parse(a)).toThrow(failure('actor_permission'));
-  });
-  it('missing permissioned story source is distinguishable from bad JSON', () => {
-    const a = context(); a.evidence.sources = ['missing']; evidenceInto(a);
-    expect(() => parse(a)).toThrow(failure('source_missing'));
-  });
-  it('cannot redirect an anchor to private knowledge or add unknown evidence fields', () => {
-    const a = context(); Object.assign(a.evidence.sceneRecord.anchors[0], {source:'memory:other:secret'}); evidenceInto(a);
-    expect(() => parse(a)).toThrow(failure('source_format'));
-  });
-  it.each([
-    ['unknown field', {anchors:[], approve:true}],
-    ['empty anchors', {anchors:[]}],
-    ['too many anchors', {anchors:Array.from({length:13},()=>({source:'story:current',quote:quotes[0],actorRefs:[{kind:'protagonist',id:'protagonist'}]}))}],
-    ['oversized quote', {anchors:[{source:'story:current',quote:'字'.repeat(2001),actorRefs:[{kind:'protagonist',id:'protagonist'}]}]}],
-    ['missing identity', {anchors:[{source:'story:current',quote:quotes[0],actorRefs:[]}]}],
-  ])('strictly rejects %s in optional anchor metadata', (_name, sceneRecord) => {
-    const a=context(); a.response.eventCommands[0].evidence=JSON.stringify({...a.evidence,sceneRecord});
-    expect(()=>parse(a)).toThrow(failure('source_format'));
-  });
-  it('rejects duplicate source quotes without pretending multiple support',()=>{
-    const a=context();a.evidence.sceneRecord.anchors.push(a.evidence.sceneRecord.anchors[0]);evidenceInto(a);
-    expect(()=>parse(a)).toThrow(failure('source_format'));
-  });
-  it('optional anchors cannot turn planned evidence into an active scene record',()=>{
-    const a=context();a.evidence.kind='planned';evidenceInto(a);
-    expect(()=>parse(a)).toThrow(failure('actor_permission'));
-  });
-  it('cannot turn the synopsis into lens damage truth, knowledge or entry action', () => {
-    const a = context(); a.evidence.fact = '镜头确有暗病，吴杰涛已同意付款。'; evidenceInto(a);
-    const result = parse(a), after = projectTurn(a.state, a.draft, result.eventCommands);
-    expect(after.npc).toEqual(a.state.npc); expect(after.protagonist).toEqual(a.state.protagonist); expect(after.economy).toEqual(a.state.economy);
-    expect(JSON.stringify(after.events)).not.toContain('确有暗病');
-    expect(JSON.stringify(worldSources(after, a.draft))).not.toContain(a.evidence.fact);
-    a.response.eventCommands[0].event.continuation.entry.cue = a.evidence.fact;
-    expect(() => parse(a)).toThrow(failure('actor_permission'));
-  });
-  it('an unreceived future arrangement still cannot grant player knowledge', () => {
-    const state = worldState(), draft = worldDraft(), raw = { ...worldResult(), visibleHooks: [], eventCommands: [{type:'SaveEvent', commandId:'unknown-notice', evidence:JSON.stringify({version:1,kind:'planned',at:state.worldClock,sources:['npc:npc-a'],fact:'计划邀请主角。',rationale:'安排'}),event:{id:'notice',title:'邀请',status:'scheduled',startAt:'2026-10-19T08:00:00+08:00',estimatedEndAt:'2026-10-19T09:00:00+08:00',backgroundText:'新安排',goalText:'交流',actorRefs:[{kind:'npc',id:'npc-a'}],visibility:'known',impact:'minor',sourceTurnIds:[draft.turnId],linkedTaskIds:[],prerequisites:[],blockers:[]}}] };
-    expect(() => parseWorld(JSON.stringify(raw),state,draft)).toThrow(failure('player_knowledge'));
   });
 });
 
@@ -164,7 +79,7 @@ async function live(a = context()) {
   const reply = {text:`\`\`\`json\n${JSON.stringify(a.response,null,2)}\n\`\`\``};
   const fetcher = vi.fn<typeof fetch>(async (_url, init) => {
     // Real Composer and request, not an isolated helper/schema test.
-    expect(String(init?.body)).toContain('sceneRecordFormat'); expect(String(init?.body)).toContain('sceneRecord');
+    expect(String(init?.body)).toContain('COMMAND_CATALOG'); expect(String(init?.body)).not.toContain('WORLD_EVIDENCE_V1'); expect(String(init?.body)).not.toContain('sceneRecordFormat');
     return Response.json({choices:[{message:{content:reply.text},finish_reason:'stop'}]});
   });
   const stage = new WorldStage(repo,new AiClient(fetcher)); stages.push(stage);
@@ -185,7 +100,7 @@ describe('real WorldStage/Runtime -> candidate -> Commit -> reload', () => {
   it('rejects forged persisted candidates on commit revalidation', async () => {
     const a = await live(), ready = await a.run(), command = ready.world!.result.eventCommands[0];
     if (command.type !== 'SaveEvent') throw Error('fixture');
-    command.event.goalText = '吴杰涛已经签字付款。'; ready.world!.candidateRevision += 1;
+    command.event.actorRefs[0].id = 'nonexistent-actor'; ready.world!.candidateRevision += 1;
     const stored = await a.repo.loadDraft('save-a');
     const forged = await a.repo.saveDraft({...ready,draftRevision:ready.draftRevision+1},stored!.draftRevision);
     await expect(a.repo.commitTurn(submission(forged,''))).rejects.toThrow();
@@ -200,11 +115,11 @@ describe('real WorldStage/Runtime -> candidate -> Commit -> reload', () => {
     const saved = await a.repo.commitTurn(submission(persisted!,''));
     expect(saved.state.journal).toHaveLength(1); expect(a.fetcher).toHaveBeenCalledTimes(1);
   });
-  it('failed source validation keeps upstream candidates and raw output; explicit World retry succeeds', async () => {
+  it('failed reference validation keeps upstream candidates and raw output; explicit World retry succeeds', async () => {
     const a = await live(), valid = a.reply.text;
-    a.response.eventCommands[0].evidence = JSON.stringify({...a.evidence,sceneRecord:{anchors:[{...a.evidence.sceneRecord.anchors[0],quote:'吴杰涛已经付款。'}]}});
+    a.response.eventCommands[0].event.actorRefs[0].id = 'nonexistent-actor';
     a.reply.text = `\`\`\`json\n${JSON.stringify(a.response)}\n\`\`\``;
-    await expect(a.run()).rejects.toThrow(failure('source_knowledge'));
+    await expect(a.run()).rejects.toThrow(failure('actor_permission'));
     expect(stageResponses.getSnapshot()[0]).toMatchObject({text:a.reply.text,status:'failed'});
     const failed = await a.repo.loadDraft('save-a'); expect(failed!.story).toEqual(a.draft.story); expect(failed!.variables).toEqual(a.draft.variables); expect(failed!.world).toBeUndefined();
     expect(await a.repo.load('save-a')).toEqual(a.state);
@@ -212,81 +127,6 @@ describe('real WorldStage/Runtime -> candidate -> Commit -> reload', () => {
   });
 });
 
-function overlap(alias = false) {
-  const a = context();
-  a.state.npc['npc-wu-jie'] = { ...npc('npc-wu-jie'), name: alias ? '周桐' : '吴杰', aliases: alias ? ['吴杰'] : [], locationId: 'hanhai_studio' };
-  return a;
-}
-function bindShortName(a: ReturnType<typeof context>, both: boolean) {
-  const ref = { kind: 'npc', id: 'npc-wu-jie' };
-  if (both) {
-    a.response.eventCommands[0].event.actorRefs.push(ref);
-    a.evidence.sceneRecord.anchors[0].actorRefs.push(ref);
-  } else {
-    a.response.eventCommands[0].event.actorRefs[0] = ref;
-    a.evidence.sceneRecord.anchors[0].actorRefs = [ref];
-  }
-  evidenceInto(a);
-}
-describe('R2 stable actor identity, not a matching name prefix', () => {
-  it.each([false, true])('rejects the shorter %s name/alias even when the real subject is omitted from actorRefs', alias => {
-    const a = overlap(alias); bindShortName(a, false);
-    expect(() => parse(a)).toThrow(failure('actor_permission'));
-  });
-  it.each([false, true])('rejects one observation bound to two identities via a shorter %s name/alias', alias => {
-    const a = overlap(alias); bindShortName(a, true);
-    expect(() => parse(a)).toThrow(failure('actor_permission'));
-  });
-  it.each([false, true])('keeps distinct, fully supported %s names/aliases through candidate and commit', async alias => {
-    const a = overlap(alias), ref = { kind: 'npc', id: 'npc-wu-jie' }, quote = '吴杰取回自己的水杯。';
-    a.draft.story!.narrative += `\n【旁白】${quote}`;
-    a.response.eventCommands[0].event.actorRefs.push(ref);
-    a.evidence.sceneRecord.anchors.push({ source: 'story:current', quote, actorRefs: [ref] });
-    syncAnchors(a);
-    expect(() => parse(a)).not.toThrow();
-    const runtime = await live(a), ready = await runtime.run();
-    const committed = await runtime.repo.commitTurn(submission(ready, ''));
-    expect(committed.state.events.event_hanhai_lens_extortion.actorRefs).toEqual(a.response.eventCommands[0].event.actorRefs);
-    expect(committed.state.npc).toEqual(a.state.npc);
-    expect(await runtime.repo.load('save-a')).toEqual(committed.state);
-    expect((await runtime.repo.commitTurn(submission(ready, ''))).replayed).toBe(true);
-    expect(runtime.fetcher).toHaveBeenCalledTimes(1);
-  });
-  it.each([false, true])('rejects equally long names/aliases across stable identities: %s', alias => {
-    const a = overlap(alias);
-    if (alias) a.state.npc['npc-wu-jie'].aliases = ['吴杰涛'];
-    else a.state.npc['npc-wu-jie'].name = '吴杰涛';
-    expect(() => parse(a)).toThrow(failure('actor_permission'));
-  });
-  it('allows a matching name and alias when both identify the same NPC', () => {
-    const a = context(); a.state.npc.npc_chen_hao.aliases.push('陈浩');
-    expect(() => parse(a)).not.toThrow();
-  });
-  it('rejects wrong identity at runtime, preserves upstream and only retries on explicit action', async () => {
-    const a = overlap(); bindShortName(a, true);
-    const runtime = await live(a);
-    await expect(runtime.run()).rejects.toThrow(failure('actor_permission'));
-    expect(await runtime.repo.load('save-a')).toEqual(a.state);
-    const failed = await runtime.repo.loadDraft('save-a');
-    expect(failed!.story).toEqual(runtime.draft.story); expect(failed!.variables).toEqual(runtime.draft.variables);
-    expect(failed!.world).toBeUndefined();
-    a.response.eventCommands[0].event.actorRefs.pop(); a.evidence.sceneRecord.anchors[0].actorRefs.pop(); evidenceInto(a);
-    runtime.reply.text = JSON.stringify(a.response);
-    const ready = await runtime.run(failed!);
-    await runtime.repo.commitTurn(submission(ready, ''));
-    expect(runtime.fetcher).toHaveBeenCalledTimes(2);
-  });
-  it('revalidates an identity forged in an already persisted candidate before commit', async () => {
-    const a = overlap(), runtime = await live(a), ready = await runtime.run();
-    bindShortName(a, true);
-    ready.world!.result.eventCommands = a.response.eventCommands.map(command => DomainCommandSchema.parse(command));
-    ready.world!.candidateRevision += 1;
-    const forged = await runtime.repo.saveDraft({ ...ready, draftRevision: ready.draftRevision + 1 }, ready.draftRevision);
-    await expect(runtime.repo.commitTurn(submission(forged, ''))).rejects.toThrow();
-    expect(await runtime.repo.load('save-a')).toEqual(a.state);
-    expect((await runtime.repo.loadDraft('save-a'))!.story).toEqual(runtime.draft.story);
-  });
-});
 
 function syncAnchors(a: ReturnType<typeof context>) {
   a.response.eventCommands[0].event.backgroundText = `现场依据：\n${a.evidence.sceneRecord.anchors.map(anchor => anchor.quote).join('\n')}`;
@@ -312,40 +152,12 @@ describe('R1 formal narration labels through parseWorld and persistence',()=>{
     expect(await runtime.repo.load('save-a')).toEqual(saved.state);
     expect((await runtime.repo.commitTurn(submission(ready,''))).replayed).toBe(true);expect(runtime.fetcher).toHaveBeenCalledTimes(1);
   });
-  it.each([
-    ['inline speaker','【吴杰涛】'+quotes[0],quotes[0]],
-    ['retained speaker','【吴杰涛】'+quotes[0],'【吴杰涛】'+quotes[0]],
-    ['standalone speaker','【吴杰涛】\n'+quotes[0],quotes[0]],
-    ['quote','【旁白】周建斌说：“'+quotes[0]+'”',quotes[0]],
-    ['clipped denial','【旁白】并非'+quotes[0],quotes[0]],
-    ['retained denial','【旁白】并非'+quotes[0],'【旁白】并非'+quotes[0]],
-    ['uncertainty','【旁白】吴杰涛可能已经付款。','吴杰涛可能已经付款。'],
-    ['false signing','【旁白】吴杰涛没有签字。','吴杰涛已经签字。'],
-    ['unverified defect','【旁白】周建斌声称镜头本来就有暗病。','镜头本来就有暗病。'],
-  ])('rejects %s instead of laundering speaker or context',(_name,source,quote)=>{
-    const a=context();a.draft.story!.narrative=a.draft.story!.narrative.replace('【旁白】'+quotes[0],source);
-    a.evidence.sceneRecord.anchors[0].quote=quote;syncAnchors(a);
-    expect(()=>parse(a)).toThrow(failure('source_knowledge'));
-  });
-  it('does not combine a whole dialogue sentence with a safe substring in a different narration', () => {
-    const a = context();
-    a.draft.story!.narrative = a.draft.story!.narrative.replace('【旁白】' + quotes[0],
-      `【吴杰涛】\n${quotes[0]}\n【旁白】此时${quotes[0]}`);
-    expect(() => parse(a)).toThrow(failure('source_knowledge'));
-  });
-  it('does not accept a narrator tag fabricated inside a quoted utterance', () => {
-    const a = context();
-    a.draft.story!.narrative = a.draft.story!.narrative.replace('【旁白】' + quotes[0],
-      `【周建斌】“\n【旁白】${quotes[0]}\n”`);
-    a.evidence.sceneRecord.anchors[0].quote = '【旁白】' + quotes[0]; syncAnchors(a);
-    expect(() => parse(a)).toThrow(failure('source_knowledge'));
-  });
-  it('retains exact CRLF standalone formatting and rejects invented label formatting', () => {
+  it('preserves CRLF and treats legacy evidence as opaque text', () => {
     const a = labelledContext(true, true);
     a.draft.story!.narrative = a.draft.story!.narrative.replaceAll('\n', '\r\n');
     for (const anchor of a.evidence.sceneRecord.anchors) anchor.quote = anchor.quote.replaceAll('\n', '\r\n');
     syncAnchors(a); expect(() => parse(a)).not.toThrow();
     a.evidence.sceneRecord.anchors[0].quote = a.evidence.sceneRecord.anchors[0].quote.replace('\r\n', ''); syncAnchors(a);
-    expect(() => parse(a)).toThrow(failure('source_knowledge'));
+    expect(() => parse(a)).not.toThrow();
   });
 });

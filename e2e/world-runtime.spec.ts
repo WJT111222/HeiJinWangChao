@@ -111,19 +111,19 @@ async function ready(page: Page) {
   );
 }
 
-test('真实迎检准备证据片段：计划安全失败，明确恢复后任务及合成事件入候选，正式状态不变', async ({ page }) => {
+test('真实迎检准备文本：无效行动者安全失败，明确恢复后任务及合成事件入候选，正式状态不变', async ({ page }) => {
   const before = await seed(page, true, false, true), initial = await stored(page);
   let valid = false, calls = 0;
   await page.route('https://world.mock.invalid/**', async route => {
     calls++;
     await route.fulfill({ contentType: 'application/json', body: response(valid ? syntheticSchoolBatch()
-      : schoolResult(schoolTask('学校准备明天检查食堂。'))) });
+      : schoolResult({...schoolTask(),task:{...schoolTask().task,actorRef:{kind:'organization',id:'missing-org'}}})) });
   });
   await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
   const log = page.getByTestId('runtime-log');
-  await expect(log).toContainText('fact_plan');
-  await expect(log).toContainText('尚未执行的计划');
-  await expect(log).toContainText('taskCommands.0.evidence.fact');
+  await expect(log).toContainText('actor_permission');
+  await expect(log).toContainText('行动者或字段超出场外权限');
+  await expect(log).toContainText('taskCommands.0');
   const failed = await stored(page);
   expect(failed.formal).toBe(before);
   expect(failed.draft.world).toBeUndefined();
@@ -160,7 +160,7 @@ test('世界生成、补算、只读查看与刷新恢复，真实路由和快�
   expect(first.draft.world.basedOnVariableRevision).toBe(1);
   expect(first.draft.useVariableStage).toBe(false);
   expect(bodies[0].model).toBe('world-browser-model');
-  expect(JSON.stringify(bodies[0])).toContain('WORLD_SOURCES');
+  expect(JSON.stringify(bodies[0])).toContain('NPC_KNOWLEDGE');expect(JSON.stringify(bodies[0])).not.toContain('WORLD_SOURCES');
   await expect(page.locator('main')).not.toContainText('尚未发布的诊室线索');
   await page.getByRole('button', { name: '查看世界候选（未结算）', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '世界候选 · 未正式结算', exact: true });
@@ -268,12 +268,12 @@ test('错误输出可重试；取消后新请求不受旧回包影响；世界�
   expect(count).toBe(3);
 });
 
-test('二轮约束：计划地点、事件预结案和 NPC 双任务拒绝，合法预计时间可重试保存', async ({
+test('二轮约束：非法地点引用、事件预结案和 NPC 双任务拒绝，合法预计时间可重试保存', async ({
   page,
 }) => {
   const before = await seed(page);
-  let mode: 'planned-location' | 'premature-event' | 'npc-quota' | 'valid-event' =
-    'planned-location';
+  let mode: 'invalid-location' | 'premature-event' | 'npc-quota' | 'valid-event' =
+    'invalid-location';
   await page.route('https://world.mock.invalid/**', async (route) => {
     const e = {
       id: 'event-a',
@@ -306,13 +306,13 @@ test('二轮约束：计划地点、事件预结案和 NPC 双任务拒绝，合
       eventCommands: [] as unknown[],
       futureEvents: [] as unknown[],
     };
-    if (mode === 'planned-location')
+    if (mode === 'invalid-location')
       value.worldCommands = [
         {
           type: 'CreateLocation',
           commandId: 'loc',
           evidence,
-          location: { id: 'warehouse', name: '计划中的仓库', parentId: 'chongqing' },
+          location: { id: 'warehouse', name: '计划中的仓库', parentId: 'missing-parent' },
         },
       ];
     else if (mode === 'npc-quota')
@@ -338,7 +338,7 @@ test('二轮约束：计划地点、事件预结案和 NPC 双任务拒绝，合
     }
     await route.fulfill({ contentType: 'application/json', body: response(value) });
   });
-  for (const attempt of ['planned-location', 'premature-event', 'npc-quota'] as const) {
+  for (const attempt of ['invalid-location', 'premature-event', 'npc-quota'] as const) {
     mode = attempt;
     await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
     await expect(page.getByRole('alert')).toBeVisible();
