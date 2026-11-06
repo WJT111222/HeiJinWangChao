@@ -22,6 +22,19 @@ export const domainRuleNames = {
   premature_result: '未完成任务或事件不能预填成果',
   illegal_transition: '任务或事件状态变更不合法',
   invalid_time: '游戏时间或事实发生时间不合法',
+  clock_reversed: '时钟早于该命令执行时的游戏时间',
+  npc_interaction_time: 'NPC 互动时间晚于执行时的游戏时钟，或早于该人物上次互动',
+  income_received_future: '实际到账时间晚于该命令执行时的游戏时钟',
+  opening_income_past: '开局预期收入日期早于候选游戏时间',
+  opening_clock_conflict: '文本时钟与 Story 已确定的开局结束时间不同',
+  opening_time_unavailable: '开局结构化时间尚未合法确立',
+  event_time_order: '事件预计终止时间早于开始时间',
+  event_result_before_end: '未结束事件提前填写了结案结果',
+  event_predecessor_time: '后续事件开始时间早于已成立的前序终止时间，或前序缺少终止时间',
+  task_result_future: '整批状态的任务成果时间晚于游戏时钟',
+  event_result_future: '整批状态的事件实际终止时间晚于游戏时钟',
+  state_time_range: '整批状态存在结束时间早于开始时间的记录',
+  task_handoff_time: '整批状态的任务交接时间不在前序结束至后继开始之间',
   invalid_balance: '资金余额或交易金额不合法',
   invalid_ownership: '资产或物品归属不合法',
   duplicate_memory: '记忆来源或身份发生冲突',
@@ -40,7 +53,7 @@ export function isDomainRule(value: unknown): value is DomainRule {
 const dataErrors: Record<string, DomainRule> = {
   OPENING_INITIALIZATION: 'opening_initialization',
   INITIAL_VALUE_CONFLICT: 'initial_value_conflict',
-  INCOME_TIME: 'invalid_time',
+  INCOME_TIME: 'opening_income_past',
   DUPLICATE_ID: 'duplicate_entity_id',
   DUPLICATE_NPC: 'duplicate_npc_identity',
   NPC_IDENTITY: 'duplicate_npc_identity',
@@ -53,10 +66,10 @@ const dataErrors: Record<string, DomainRule> = {
   INSUFFICIENT_FUNDS: 'invalid_balance',
   DEBT_AMOUNT: 'invalid_balance',
   SAME_ACCOUNT: 'invalid_balance',
-  FUTURE_INCOME: 'invalid_time',
-  TIME_REVERSED: 'invalid_time',
-  NPC_TIME: 'invalid_time',
-  OPENING_TIME: 'invalid_time',
+  FUTURE_INCOME: 'income_received_future',
+  TIME_REVERSED: 'clock_reversed',
+  NPC_TIME: 'npc_interaction_time',
+  OPENING_TIME: 'opening_time_unavailable',
   MEMORY_SOURCE: 'invalid_memory_origin',
   KNOWLEDGE_KIND: 'invalid_memory_origin',
   DUPLICATE_MEMORY: 'duplicate_memory',
@@ -89,7 +102,8 @@ const stateIssues: Record<string, DomainRule> = {
   '事件缺少预计结束时间或完成条件': 'missing_completion_condition',
   '未结案事件不能预存成果分类': 'premature_result',
   '未终结任务不能预存成果': 'premature_result',
-  '任务成果时间在未来': 'invalid_time',
+  '任务成果时间在未来': 'task_result_future',
+  '事件实际终止时间在未来': 'event_result_future',
   '已完成事件缺少合法结案时间或结局': 'invalid_time',
   '初始同伴必须是特殊 NPC': 'npc_kind',
   '组织成员不存在': 'missing_actor',
@@ -101,17 +115,31 @@ const stateIssues: Record<string, DomainRule> = {
   '抵押资产不存在': 'missing_reference',
   '同一物品不能重复装备': 'equipment_ownership',
   '退场时间在未来': 'invalid_time',
-  '结束时间早于开始时间': 'invalid_time',
+  '结束时间早于开始时间': 'state_time_range',
   '任务交接存在环': 'task_event_links',
-  '任务交接时间不合法': 'invalid_time',
+  '任务交接时间不合法': 'task_handoff_time',
+  '交接时间不合法': 'task_handoff_time',
   '交接缺少已成立的前序成果': 'premature_result',
 };
+
+const timeRules = new Set<DomainRule>(['invalid_time', 'clock_reversed', 'npc_interaction_time',
+  'income_received_future', 'opening_income_past', 'opening_clock_conflict', 'opening_time_unavailable',
+  'event_time_order', 'event_result_before_end', 'event_predecessor_time', 'task_result_future',
+  'event_result_future', 'state_time_range', 'task_handoff_time']);
+export const isTimeDomainRule = (rule: unknown): rule is DomainRule => isDomainRule(rule) && timeRules.has(rule);
 
 export function aggregateDomainDiagnostic(error: z.ZodError | DataError): ExecutionDiagnostic {
   let rule: DomainRule = 'invalid_domain_state';
   let relatedNpcId: string | undefined;
   if (error instanceof DataError) {
     rule = dataErrors[error.code] ?? rule;
+    if (error.code === 'OPENING_TIME' && error.message === '变量时钟与Story开局候选冲突') rule = 'opening_clock_conflict';
+    if (error.code === 'EVENT_TIME') {
+      // 固定领域分支的消息只用于映射，不输出原异常或任何模型文本。
+      if (error.message === '预计终止早于开始') rule = 'event_time_order';
+      if (error.message === '未结束事件不能预填结果') rule = 'event_result_before_end';
+      if (error.message === '后续事件必须晚于已成立的前序终止') rule = 'event_predecessor_time';
+    }
     // 只从 SCENE_* 的固定模板中提取 NPC ID，并用 IdSchema 二次校验后才允许带出。
     if (error.code === 'SCENE_TRANSITION' || error.code === 'SCENE_LOCATION') {
       const match = error.message.match(/NPC（([^）]+)）/);

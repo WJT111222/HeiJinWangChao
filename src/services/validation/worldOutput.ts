@@ -86,7 +86,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         }
         case 'CreateOrganization': {
           const org = command.organization;
-          requireWorld(!org.relationHistory.length, 'permission');
+          requireWorld(!org.relationHistory.length, 'permission', 'organization_initialization');
           requireWorld(!Object.values(base.organizations).some(known => known.kind === org.kind && known.name === org.name));
           requireWorld((org.kind !== 'gang' || org.funds === undefined)
             && (org.kind !== 'business' || (org.assetsEstimate === undefined && org.liquidityEstimate === undefined)), 'permission');

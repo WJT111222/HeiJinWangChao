@@ -7,6 +7,7 @@ export type DiagnosticType = 'string' | 'number' | 'integer' | 'boolean' | 'obje
 export type DiagnosticRule = 'invalid_type' | 'required_field' | 'schema_constraint'
   | 'value_constraint' | 'reserved_field' | 'path_identity' | 'domain_schema';
 export interface ExecutionDiagnostic {
+  commandType?: string;
   valuePath?: string;
   expectedType?: DiagnosticType;
   actualType?: DiagnosticType;

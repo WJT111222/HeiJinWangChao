@@ -38,3 +38,14 @@ AI根据选定Story理解已发生变化，不替World推演后台任务、事�
 Story变量规划中的eventInteraction为程序维护的承接回执，不生成对应文本字段更新，不写protagonistEntry、continuation或protagonistKnowledge路径。Variables仅处理本幕实际人物/时间/位置和已有现场sceneState；World读取合并后的回执调整同一事件，不能代主角作决定。
 
 仅新开局例外：SAVE_STATE.openingInitializationPending=true时，Variables根据玩家设定与Story主动推定缺失的基础生活数据，不要求正文写出每个金额或天气。用一条set opening.initialState填写weatherText、environmentText、cash、onlineBalance、expectedIncomes；已明确字段可省略，不能覆盖。expectedIncomes复用收入结构，需稳定id、source、整数分amount、status=expected、account、scheduleText，可选expectedAt不早于候选游戏时间；无receivedAt/sourceTurnId，不增加余额。先初始化，再处理实际交易；不得用虚构收入/借款代替原有资金。普通回合与无标记旧档不允许此命令。
+
+## NPC 认知输入与只读存档的区别
+push npc[id].memories、push npc[id].longTermMemories、push npc[id].knownInformation统一使用四字段JSON对象：text字符串、knowledgeKind（observed/reported/suspected）、knowledgeSource字符串、visibility（npc_private/internal/player_known）。四项都必须提供，由AI选择认知性质；程序不猜测补齐。
+SAVE_STATE/NPC_KNOWLEDGE内knownInformation的source/learnedAt是只读存档字段，不可复制为命令值；不要带id、source、learnedAt、createdAtGameTime、sourceTurnIds或affectedEntityRefs。程序根据指定NPC和本回合生成这些元数据。新增knownInformation时会同时记录个人记忆，不要把同一条再push到memories。
+例如（lin须替换为实际稳定NPC ID）：
+<命令>
+push npc[lin].knownInformation = {"text":"得知值班安排","knowledgeKind":"reported","knowledgeSource":"当面告知","visibility":"npc_private"}
+</命令>
+
+## 时间与文本执行顺序
+普通回合需要推进时间时，为清晰起见先输出 set worldClock = 合法ISO游戏时间，再输出该时刻的互动、个人记忆和实际到账。程序已经将本批时钟优先规范化，其他命令保持文本顺序；不要遗漏所需时钟而填写未来的互动或到账。lastInteractionAt不能晚于执行时的worldClock，也不能早于NPC此前互动；实际receivedAt不能晚于执行时钟。开局不重复设时钟，使用OPENING_TIME中Story确定的endAt；初始预期工资的expectedAt如提供，不能早于这一候选时间。任务dueAt/事件estimatedEndAt不得早于各自startAt。不要用设备日期填补游戏时间。

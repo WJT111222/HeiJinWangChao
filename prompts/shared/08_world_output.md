@@ -31,3 +31,10 @@ ArchiveEvent和timelineCandidates只归档重大且实际结束的事件。历�
 RetireNpc只能清理无当前职责、资产引用的离场非联系人。联系人和初始同伴永久保护。旧档contactReviewNpcIds仍保守保护历史联系；没有独立玩家确认入口时player_confirmed不能授权删除。retainMemoryIds只引用真实原始记忆，不把保留材料传播给其他人。
 
 本阶段只生成候选。Variables缺失时为预览，不冒充完整回合；失败保持上游成果。全部验证后沿现有原子Commit生效，不额外调用逐事件AI或自动付费修复。
+
+## 顶层数组和创建格式
+七个顶层数组都必须存在。无变化时的完整合法形状：
+{"worldCommands":[],"taskCommands":[],"eventCommands":[],"futureEvents":[],"visibleHooks":[],"timelineCandidates":[],"unresolved":[]}
+timelineCandidates是事件ID字符串数组，例如["event_major_closed"]，不是时间线对象数组；不要填写{eventId,title,at,...}。每个ID须引用当前投影中impact="major"、status为resolved/cancelled且有实际resolvedAt的已结束事件。significant/minor事件和任何未结束事件都不满足归档条件；没有符合事件时必须输出[]，不为了归档改变真实重要性。
+futureEvents是本批新scheduled SaveEvent的event对象完整镜像，不是ID数组，也不额外创建事件。visibleHooks是{text,revealAfter?}对象数组；unresolved是说明字符串数组。遵照COMMAND_CATALOG.outputFields，不把存档timeline条目复制为输出。
+新建组织的relationHistory=[]，不提前填写历史条目。需要保存关系变化时，在worldCommands另发RecordOrgRelation，包含organizationId、relation、reason及通用commandId/type/evidence；可引用本批创建组织。gang创建不提供funds；business创建不提供assetsEstimate/liquidityEstimate，也不要填null。已有组织应复用ID，不能重复CreateOrganization。
