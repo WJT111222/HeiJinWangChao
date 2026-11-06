@@ -93,11 +93,13 @@ World 没有符合归档条件的事件时使用 `"timelineCandidates":[]`；有
 | 初次定向：协议 + 文本 Prompt | 70/70 通过 |
 | 定向：协议、真实回合、执行器、源码移植、自动结算诊断 | 195/195 通过（补充三个边界测试之前） |
 | 最终协议专项 | 16/16 通过 |
-| `npm run check`（Lint、全部 Vitest、TypeScript、生产构建） | 最终批次待记录 |
+| 最终请求契约专项（协议 + 文本 Prompt） | 73/73 通过 |
+| `npm run check`（Lint、全部 Vitest、TypeScript、生产构建） | Lint / TypeScript / 构建通过；77 文件，2344/2344 项通过（原有 2324 + 新增 20） |
 | `npm run prompts:check` | 3 文件，82/82 通过 |
 | Chromium `automatic-settlement.spec.ts` | desktop 8/8，mobile 8/8；共 16 通过，0 失败/跳过 |
-| Chromium Variables / World / 协调器 / 连续回合 / 开局生活 | 执行中，完成后记录 |
-| `git diff --check` | 通过；提交前复查 |
+| Chromium Variables / World / 协调器 / 连续回合 / 开局生活 | desktop 36/36，mobile 36/36；共 72 通过，0 失败/跳过 |
+| 两个不重叠浏览器批次合计 | desktop 44 + mobile 44 = 88 项通过，0 失败/跳过；不是全仓库 E2E |
+| `git diff --check` | 通过 |
 
 浏览器命令：
 
@@ -106,7 +108,7 @@ CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/automatic-settlement.spe
 CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/variable-runtime.spec.ts e2e/world-runtime.spec.ts e2e/turn-coordinator.spec.ts e2e/continuous-turns.spec.ts e2e/opening-life.spec.ts --project=desktop --project=mobile
 ```
 
-这些是受影响范围的浏览器回归，不冒称完整仓库浏览器套件已运行。构建现有主包大小警告如出现不等同于构建失败，不在本轮改造分包。
+这些是受影响范围的浏览器回归，不冒称完整仓库浏览器套件已运行。两个批次分别耗时约 1.3 / 5.2 分钟，均未重试或跳过用例。构建有现有主包超过 500 kB 的警告，构建成功，不在本轮改造分包。代码提交 `ad1c1d5f35e53708961ae2afc4e35cb8b7bb9b25` 之后仅补充本报告的最终结果，没有再修改产品或测试代码。
 
 ## 修改文件
 
@@ -119,7 +121,7 @@ CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/variable-runtime.spec.ts
 
 - 没有新增/放宽 GameState、DomainCommand、TurnDraft、World 输出 Schema；旧存档和候选格式不变，无迁移。没有删除原有引用、归属、资金、角色知识隔离、事件生命周期、CAS、幂等、回滚或正式 Commit 校验。
 - 没有加入语义审查、关键词事实判断、额外凭据审批或 JSON/Text 猜测修复。模型原始非法输出仍整批失败；正确的示例经真实解析、模拟及事务链成功。
-- 不改模型路由、重试策略、调用数量或付费授权。共享说明增加少量输入文本，按供应商规则可能略增单次输入 Token；没有新增付费请求。
+- 不改模型路由、重试策略、调用数量或付费授权。Variables / World 共享说明分别增加 965 / 824 个字符，目录另增加必要字段说明；按供应商规则可能增加单次输入 Token 费用，没有新增付费请求。
 - **原始 `invalid_time` 两条日志仍需各自对应的正式存档、草稿与完整响应才能精确复现**。不得混配不同尝试。本次不能宣称用户那一次开局已成功结算。
 - 未测试真实模型遵循新说明的成功率。实际中转站输出/截断/上下文限制仍需用户后续授权验证；本轮只验证本地 Mock 与正式业务链。
 - 不修改真实玩家存档，不主动部署生产环境，不自动合并。新建 Draft PR 等待审查。
