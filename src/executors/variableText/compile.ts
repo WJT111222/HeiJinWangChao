@@ -3,7 +3,8 @@ import { SceneEventStateSchema } from '../../domain/events/schema';
 import { OpeningInitialStateSchema } from '../../domain/openingInitialization';
 import { DomainCommandSchema, fingerprint } from '../../domain/commands';
 import type { DomainCommand } from '../../domain/commands';
-import { GameTimeSchema, IdSchema } from '../../domain/common';
+import { DataError, GameTimeSchema, IdSchema } from '../../domain/common';
+import { aggregateDomainDiagnostic } from './aggregateDiagnostics';
 import { variableCommandSchemas } from '../../domain/variableCommands';
 import { GameStateSchema, LocationSchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
@@ -97,7 +98,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       if (replay.length !== 1 || fingerprint(replay[0]) !== fingerprint(priorClock)) return failed('duplicate_or_conflicting_command');
       systemCommands = replay;
     }
-  } catch { return failed('domain_validation_failed'); }
+  } catch (error) { return failed('domain_validation_failed', null, [], error instanceof DataError ? aggregateDomainDiagnostic(error) : undefined); }
   const openingClock = systemCommands.find((command) => command.type === 'SetWorldClock');
   for (let i = 0; i < ast.length; i++) {
     const entry = normalizeSourcePath(ast[i]);
@@ -107,7 +108,9 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
     const time = GameTimeSchema.safeParse(entry.value);
     if (!time.success) return failed('type_mismatch', origin, [], diagnosticForSchema(entry, time.error));
     // Story开局时间仍是唯一开局基线；等值文本不产生第二条时钟命令。
-    if (openingClock && Date.parse(time.data) !== Date.parse(openingClock.worldClock)) return failed('domain_validation_failed', origin);
+    if (openingClock && Date.parse(time.data) !== Date.parse(openingClock.worldClock)) return failed('domain_validation_failed', origin, [], {
+      validationRule: 'domain_schema', domainRule: 'opening_clock_conflict', valuePath: 'worldClock', commandType: 'SetWorldClock',
+    });
     clock = openingClock?.worldClock ?? time.data;
   }
   const commands: DomainCommand[] = [...systemCommands];

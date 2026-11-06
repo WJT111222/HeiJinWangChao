@@ -3,6 +3,7 @@ import type { StoryDiagnostic } from '../../domain/storyDiagnostics';
 import { DataError } from '../../domain/common';
 import type { ExecutionDiagnostic } from '../../executors/variableText/diagnostics';
 import type { WorldRule } from '../validation/worldDiagnostics';
+import { domainRuleNames, isTimeDomainRule } from '../../executors/variableText/aggregateDiagnostics';
 export const variableStepNames = {
   context: '构造变量上下文', load: '读取正式存档与草稿', draft_start: '保存变量请求版本',
   request: '请求变量模型', response: '读取完整模型响应', envelope: '解析三个标签区块',
@@ -87,7 +88,9 @@ export class AiError extends Error {
     public readonly status?: number,
     public readonly details?: { fieldPath?: string; commandType?: string; commandIndex?: number; relatedCommandIndices?: number[]; worldRule?: WorldRule; variableStep?: VariableStep } & Partial<ExecutionDiagnostic> & Partial<StoryDiagnostic>,
   ) {
-    super(details?.storyRule ? storyDiagnosticMessage(safeStoryDiagnostic(details)) : messages[code] + (details?.fieldPath ? ` 字段：${details.fieldPath}${details.commandType ? `（${details.commandType}，第${(details.commandIndex ?? 0) + 1}条）` : ''}。` : ''));
+    super(details?.storyRule ? storyDiagnosticMessage(safeStoryDiagnostic(details)) : messages[code]
+      + (isTimeDomainRule(details?.domainRule) ? ` ${details?.commandIndex === undefined ? '整批约束' : `第${details.commandIndex + 1}条命令`}：${domainRuleNames[details!.domainRule!]}。` : '')
+      + (details?.fieldPath ? ` 字段：${details.fieldPath}${details.commandType ? `（${details.commandType}${details.commandIndex === undefined ? '' : `，第${details.commandIndex + 1}条`}）` : ''}。` : ''));
     if (details?.storyRule) this.details = safeStoryDiagnostic(details);
     this.name = 'AiError';
   }

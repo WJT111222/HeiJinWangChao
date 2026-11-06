@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { DataError, IdSchema } from '../../domain/common';
+import { CommandDataError, DataError, IdSchema } from '../../domain/common';
+import { aggregateDomainDiagnostic, isTimeDomainRule } from '../../executors/variableText/aggregateDiagnostics';
 import { DomainCommandSchema } from '../../domain/commands';
 import { AiError } from '../ai/errors';
 import type { VariableStep } from '../ai/errors';
@@ -15,6 +16,8 @@ const conflictCodes = new Set(['STORY_BUSY', 'REVISION_CONFLICT', 'ENTITY_CONFLI
 export function variableValidationError(error: unknown, input?: unknown): AiError {
   if (error instanceof AiError) return error;
   if (error instanceof z.ZodError) {
+    const diagnostic = aggregateDomainDiagnostic(error);
+    if (input === undefined && isTimeDomainRule(diagnostic.domainRule)) return new AiError('time_data', undefined, diagnostic);
     const issue = error.issues[0], path = issue?.path ?? [];
     const commandIndex = path[0] === 'commands' && typeof path[1] === 'number' ? path[1] : undefined;
     const raw = commandIndex !== undefined && input && typeof input === 'object' && 'commands' in input && Array.isArray(input.commands) ? input.commands[commandIndex] : undefined;
@@ -28,6 +31,9 @@ export function variableValidationError(error: unknown, input?: unknown): AiErro
     });
   }
   if (error instanceof DataError) {
+    const diagnostic = aggregateDomainDiagnostic(error);
+    if (isTimeDomainRule(diagnostic.domainRule)) return new AiError('time_data', undefined, { ...diagnostic,
+      ...(error instanceof CommandDataError ? { commandIndex: error.commandIndex, commandType: error.commandType } : {}) });
     const code = moneyCodes.has(error.code) ? 'amount_balance' : timeCodes.has(error.code) ? 'time_data' : conflictCodes.has(error.code) ? 'candidate_conflict' : 'data_integrity';
     if (error.code === 'SCENE_TRANSITION' || error.code === 'SCENE_LOCATION') {
       const match = error.message.match(/NPC（([^）]+)）/);

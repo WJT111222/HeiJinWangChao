@@ -23,13 +23,13 @@ async function seed(page: Page, remoteLocation = false) {
 async function stored(page: Page) { return page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try { return await repo.loadGame('save-a'); } finally { repo.close(); } }); }
 async function mock(page: Page) {
   const calls: string[] = [], responses: { variables: string; world: string } = { variables: '', world: '' };
-  const control: { bad?: boolean; hold?: Promise<void>; variables?: string } = {};
+  const control: { bad?: boolean; hold?: Promise<void>; variables?: string; world?: string } = {};
   await page.route('https://auto-settlement.mock.invalid/**', async route => {
     const stage = String(route.request().postDataJSON().model); calls.push(stage);
     const turn = calls.filter(stage => stage === 'story').length;
     const variables = variableTextEnvelope(control.variables ?? `<说明>原始说明：第${turn}轮消费，保留换行。🟡</说明>\n<命令>\nset worldClock = "2026-10-18T08:${turn === 1 ? '10' : '20'}:00+08:00"\nadd economy.cash = -3000\n</命令>`);
-    const world = control.bad ? '{\n "worldCommands": [], "taskCommands": [], "eventCommands": [ {"type":"SaveEvent","commandId":"missing-end","evidence":"{}","event":{"id":"review","title":"清点","status":"scheduled","startAt":"2026-10-19T08:00:00+08:00","actorRefs":[{"kind":"npc","id":"npc-a"}],"linkedTaskIds":[],"prerequisites":[],"blockers":[],"visibility":"hidden","impact":"minor","sourceTurnIds":["auto-opening"],"backgroundText":"值班清点","goalText":"完成清点"}} ], "futureEvents": [], "visibleHooks": [], "timelineCandidates": [], "unresolved": []\n}'
-      : '{\n "worldCommands": [], "taskCommands": [], "eventCommands": [], "futureEvents": [], "visibleHooks": [], "timelineCandidates": [], "unresolved": []\n}';
+    const world = control.world ?? (control.bad ? '{\n "worldCommands": [], "taskCommands": [], "eventCommands": [ {"type":"SaveEvent","commandId":"missing-end","evidence":"{}","event":{"id":"review","title":"清点","status":"scheduled","startAt":"2026-10-19T08:00:00+08:00","actorRefs":[{"kind":"npc","id":"npc-a"}],"linkedTaskIds":[],"prerequisites":[],"blockers":[],"visibility":"hidden","impact":"minor","sourceTurnIds":["auto-opening"],"backgroundText":"值班清点","goalText":"完成清点"}} ], "futureEvents": [], "visibleHooks": [], "timelineCandidates": [], "unresolved": []\n}'
+      : '{\n "worldCommands": [], "taskCommands": [], "eventCommands": [], "futureEvents": [], "visibleHooks": [], "timelineCandidates": [], "unresolved": []\n}');
     const worldText = world.replace('"evidence":"{}"', `"evidence":${JSON.stringify(JSON.stringify({ version: 1, kind: 'planned', at: '2026-10-18T08:05:00+08:00', sources: ['npc:npc-a'], fact: '计划进行内部清点。', rationale: '根据日常工作安排准备清点。' }))}`);
     const text = stage === 'story' ? `<thinking>保持当前行动连续。</thinking>\n<正文>第${turn}幕：主角在街边用餐，观察来往行人。</正文>\n<短期记忆>在街边用餐。</短期记忆>\n<变量规划>[]</变量规划>` : stage === 'variables' ? variables : worldText;
     if (stage === 'variables') responses.variables = text;
@@ -167,4 +167,50 @@ test('候选写库配额失败显示具体步骤而非unknown，保留正文后�
   await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
   const committed = await stored(page); expect(committed.state.turnNumber).toBe(1); expect(committed.state.economy.cash).toBe(7000);
   expect(server.calls).toEqual(['story','variables','variables','world']);
+});
+
+test('时间诊断保留重排前文本编号；失败原文可读，恢复自动结算且刷新不重发', async ({ page }) => {
+  await seed(page); const server = await mock(page), before = await stored(page);
+  server.control.variables = '<命令>\nset protagonist.emotionText = "从容"\nset npc[scene].lastInteractionAt = "2026-10-18T09:00:00+08:00"\nset worldClock = "2026-10-18T08:10:00+08:00"\n</命令>';
+  await page.getByRole('button', { name: '自动生成开局', exact: true }).click();
+  await openWorkflowDiagnostics(page);
+  const log = page.getByTestId('runtime-log');
+  await expect(log).toContainText('错误码：time_data'); await expect(log).toContainText('命令序号：第 2 条');
+  await expect(log).toContainText('命令类型：UpdateNpc'); await expect(log).toContainText('NPC 互动时间晚于执行时的游戏时钟');
+  await expect(log).not.toContainText('相关命令：'); await expect(log).not.toContainText('mock-auto-settlement-key');
+  const failed = await stored(page); expect(failed.state).toEqual(before.state); expect(failed.draft.story).toBeDefined(); expect(failed.draft.variables).toBeUndefined();
+  expect(server.calls).toEqual(['story', 'variables']);
+  await rawPanel(page); await page.getByText('变量模型原文 · 未通过验收', { exact: true }).click();
+  await expect(page.locator('.stage-responses')).toContainText('第2条命令：NPC 互动时间');
+  expect(await page.getByLabel('变量模型完整原文').textContent()).toBe(server.responses.variables);
+  server.control.variables = server.control.variables.replace('09:00:00', '08:10:00');
+  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
+  const committed = await stored(page); expect(committed.state.turnNumber).toBe(1); expect(committed.state.npc.scene.lastInteractionAt).toBe('2026-10-18T08:10:00+08:00');
+  expect(server.calls).toEqual(['story', 'variables', 'variables', 'world']);
+  await page.reload(); await openGameTools(page); await settled(page); expect(await stored(page)).toEqual(committed); expect(server.calls).toHaveLength(4);
+});
+
+test('认知格式、时间线对象和组织历史逐项拒绝，明确修正后保留Story并一次结算', async ({ page }) => {
+  await seed(page); const server = await mock(page), before = await stored(page);
+  server.control.variables = '<命令>\npush npc[scene].knownInformation = {"text":"收到安排","source":"当面通知","learnedAt":"2026-10-18T08:00:00+08:00"}\n</命令>';
+  const world = { worldCommands: [{ type: 'CreateOrganization', commandId: 'create-community', evidence: '登记社区团队', organization: {
+    id: 'org-community', name: '社区团队', kind: 'civil', description: '日常协调', protagonistRelation: '暂无往来', relationHistory: ['不应预填的历史'], keyNpcIds: [], currentTaskIds: [], activities: [],
+  } }], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [{ eventId: 'invented' }], unresolved: [] };
+  server.control.world = JSON.stringify(world);
+  await page.getByRole('button', { name: '自动生成开局', exact: true }).click(); await openWorkflowDiagnostics(page);
+  const log = page.getByTestId('runtime-log'); await expect(log).toContainText('npc[id].knownInformation.knowledgeKind');
+  const story = (await stored(page)).draft.story; expect(story).toBeDefined(); expect((await stored(page)).state).toEqual(before.state);
+  server.control.variables = '<命令>\npush npc[scene].knownInformation = {"text":"收到安排","knowledgeKind":"reported","knowledgeSource":"当面通知","visibility":"npc_private"}\n</命令>';
+  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await expect(log).toContainText('timelineCandidates.0');
+  expect((await stored(page)).state).toEqual(before.state); expect((await stored(page)).draft.variables.validation).toBe('validated');
+  world.timelineCandidates = []; server.control.world = JSON.stringify(world);
+  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await expect(log).toContainText('organization_initialization');
+  expect((await stored(page)).state).toEqual(before.state);
+  world.worldCommands[0].organization.relationHistory = []; server.control.world = JSON.stringify(world);
+  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
+  const committed = await stored(page); expect(committed.state.turnNumber).toBe(1); expect(committed.state.journal[0].story).toEqual(story);
+  expect(committed.state.npc.scene.knownInformation).toEqual([{ text: '[转述]收到安排', source: '当面通知', learnedAt: '2026-10-18T08:00:00+08:00' }]);
+  expect(committed.state.npc['npc-a'].memories).toEqual(before.state.npc['npc-a'].memories); expect(committed.state.timeline).toEqual([]);
+  expect(server.calls).toEqual(['story', 'variables', 'variables', 'world', 'world', 'world']);
+  await page.reload(); await openGameTools(page); await settled(page); expect(await stored(page)).toEqual(committed); expect(server.calls).toHaveLength(6);
 });

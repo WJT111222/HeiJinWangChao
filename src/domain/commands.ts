@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AccountSchema, DebtRecordSchema, IncomeRecordSchema, VehicleAssetSchema } from './economy/schema';
-import { ActorRefSchema, CountSchema, IdSchema, IdsSchema, MoneySchema, TextSchema, GameTimeSchema, requireData } from './common';
+import { ActorRefSchema, CommandDataError, DataError, CountSchema, IdSchema, IdsSchema, MoneySchema, TextSchema, GameTimeSchema, requireData } from './common';
 import { EquipmentSchema } from './protagonist/schema';
 import { ImportantItemSchema } from './items/schema';
 import { NpcSchema } from './npc/schema';
@@ -183,7 +183,11 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
   const cleanup = (c: DomainCommand) => c.type==='DeleteEvent'||c.type==='ArchiveEvent';
   const ordered = [...fresh.filter((c) => c.type !== 'RetireNpc'&&!cleanup(c)), ...fresh.filter(cleanup), ...fresh.filter((c) => c.type === 'RetireNpc')];
   for (const command of ordered) {
-    apply(current, command, turnId);
+    try { apply(current, command, turnId); }
+    catch (error) {
+      if (error instanceof DataError) throw new CommandDataError(error, parsed.indexOf(command), command.type);
+      throw error;
+    }
     current.appliedCommands.push({ turnId, commandId: command.commandId, fingerprint: fingerprint(command) });
   }
   validateTaskTransitions(state, current, fresh.flatMap((c) => c.type === 'SaveTask' ? [c.task] : []));

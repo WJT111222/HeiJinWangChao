@@ -1,6 +1,7 @@
 import { StoredWorldEventSchema, WorldEventSchema } from '../../domain/events/schema';
 import { z } from 'zod';
 import { DomainCommandSchema } from '../../domain/commands';
+import { WorldResultSchema } from '../../domain/drafts';
 import type { AiStage } from '../ai/configuration';
 export const worldTypes = [
   'CreateNpc',
@@ -28,6 +29,19 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
           const task=schema.properties?.task;
           if(task && typeof task==='object')task.anyOf=[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}];
         }
+        if (stage === 'world' && option.shape.type.value === 'CreateOrganization') {
+          const organization = schema.properties?.organization;
+          if (organization && typeof organization === 'object') {
+            for (const variant of organization.oneOf ?? organization.anyOf ?? [organization]) {
+              if (typeof variant !== 'object' || !variant.properties) continue;
+              const history = variant.properties.relationHistory;
+              if (history && typeof history === 'object') history.maxItems = 0;
+              // 仅描述既有 World 创建权限，不改变正式 OrganizationSchema。
+              for (const field of ['funds', 'assetsEstimate', 'liquidityEstimate'])
+                if (field in variant.properties) variant.properties[field] = false;
+            }
+          }
+        }
         return schema;
       }),
     },
@@ -51,7 +65,18 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
     ],
     ...(stage === 'world'
       ? {
+          // 顶层输出不是存档投影：从真实 Schema 生成易混淆的数组值形状。
+          outputFields: {
+            worldCommands: { type: 'array', commandTypes: worldTypes },
+            taskCommands: { type: 'array', commandTypes: ['SaveTask'] },
+            eventCommands: { type: 'array', commandTypes: ['SaveEvent', 'DeleteEvent', 'ArchiveEvent'] },
+            futureEvents: { type: 'array', description: '同批新 scheduled SaveEvent.event 的完整相同对象；无符合项则 []' },
+            ...Object.fromEntries((['visibleHooks', 'timelineCandidates', 'unresolved'] as const).map(field =>
+              [field, z.toJSONSchema(WorldResultSchema.shape[field], { target: 'draft-7', unrepresentable: 'any' })])),
+          },
           worldStateRules: [
+            'timelineCandidates是事件ID字符串数组，例如["event_major_closed"]；ID须引用投影中impact=major、已resolved/cancelled且有实际resolvedAt的事件。significant/minor或未结案不符合；无符合项输出[]。不输出时间线对象、标题、日期或新编历史。',
+            'World创建组织时relationHistory=[]，不要复制存档中的历史数组。确需记录关系变化时另用RecordOrgRelation。gang不填funds；business不填assetsEstimate/liquidityEstimate（也不填null）。创建命令不是资产入账或历史追加。',
             '新事件必须提供startAt、estimatedEndAt、backgroundText、goalText及actorRefs。completionCondition不能代替预计日期。EVENT_SCHEDULE按预计时间和依赖处理；到期需要推演，不自动成功。受阻/延期更新晚于窗口结束的预计时间；旧缺规划事件终结可保持缺失，不编造历史日期。',
             'scheduled/active/blocked不得预填resolvedAt、resolutionText、resultKnowledge；resolved需实际resolvedAt与resolutionText，可outcome=success/failure/changed。成功需结构化前置条件已满足；失败不要求成功条件。取消未来安排不要求已经开始。',
             'SaveTask直接提供resolution={at,outcome,result,reason,sourceTurnId,resultKnowledge?}。completed对应success；cancelled对应failure或cancelled；blocked继续占用且不填写resolution。AI根据因果自行决定结果，不输出decision审批字段。',
