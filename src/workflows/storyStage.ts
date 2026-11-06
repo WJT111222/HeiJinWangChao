@@ -1,3 +1,5 @@
+import { stageResponses } from '../services/ai/stageResponses';
+import { storyFailure, storySchemaError } from '../services/validation/storyDiagnostics';
 import { DataError } from '../domain/common';
 import { fingerprint } from '../domain/commands';
 import { rerollStory, TurnDraftSchema } from '../domain/drafts';
@@ -72,6 +74,7 @@ export class StoryStage {
       const inspectionId = storyInspections.begin({ saveId: draft.saveId, turnId: draft.turnId,
         baseSaveRevision: draft.baseSaveRevision, basedOnStoryRevision: draft.storyRevision });
       let reasoning = '';
+      let responseInspectionId: string | undefined;
       try {
         input.onProgress?.({ phase: 'generating', narrative: '' });
         const response = await runStageRequest(
@@ -105,6 +108,7 @@ export class StoryStage {
           },
           this.client,
         );
+        responseInspectionId = response.responseInspectionId;
         current();
         const basis = response.requestBasis;
         if (
@@ -115,8 +119,10 @@ export class StoryStage {
           basis.storyRevision !== draft.storyRevision ||
           basis.executionRevision !== draft.executionRevision
         )
-          throw new AiError('invalid_output');
-        const story = StorySchema.parse(response.result);
+          throw new AiError('invalid_output', undefined, { storyRule: 'request_basis' });
+        const checkedStory = StorySchema.safeParse(response.result);
+        if (!checkedStory.success) throw storySchemaError(checkedStory.error);
+        const story = checkedStory.data;
         storyInspections.update(inspectionId, redactInspection({ planning: response.storyInspection?.planning ?? '',
           nativeReasoning: response.storyInspection?.nativeReasoning ?? '' }, secrets));
         // 凭证从来不属于游戏内容；即使服务异常回显，也不能写入草稿。
@@ -128,7 +134,7 @@ export class StoryStage {
             ),
           )
         )
-          throw new AiError('invalid_output');
+          throw new AiError('invalid_output', undefined, { storyRule: 'credential_output' });
         const next = rerollStory(draft, story);
         current();
         attempt.saving();
@@ -140,6 +146,7 @@ export class StoryStage {
         return saved;
       } catch (error) {
         storyInspections.update(inspectionId, { status: 'failed' });
+        if (responseInspectionId) stageResponses.update(responseInspectionId, { status: 'failed', normalized: undefined, error: safeAiError(storyFailure(error)) }, secrets);
         throw error;
       }
     });
@@ -153,6 +160,6 @@ export function storyError(error: unknown): string {
   )
     return error.code === 'STORY_BUSY'
       ? '此存档已有阶段请求，请等待或取消。'
-      : '存档或草稿已被其他操作更新，本次结果未保存。请重新读取存档。';
-  return safeAiError(error).message;
+      : safeAiError(storyFailure(error)).message;
+  return safeAiError(storyFailure(error)).message;
 }

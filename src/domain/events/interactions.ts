@@ -1,3 +1,4 @@
+import { requireStoryData } from '../storyDiagnostics';
 import { fingerprint } from '../commands';
 import { requireData } from '../common';
 import { terminalEvent } from './lifecycle';
@@ -18,15 +19,18 @@ export function validateStoryEventInteractions(state: GameState, story: Story) {
   const interactions = story.variableGuide.filter(guide=>guide.eventInteraction !== undefined);
   const seen = new Set<string>();
   for(const guide of interactions) {
+    const guideIndex = story.variableGuide.indexOf(guide);
+    const fieldPath = `variableGuide.${guideIndex}.eventInteraction`;
     const receipt=guide.eventInteraction!,event=state.events[receipt.eventId],entry=event?.protagonistEntry;
-    requireData(guide.group==='event' && !seen.has(receipt.eventId) && entry && entry.id===receipt.entryId,
-      'EVENT_ENTRY','事件承接回执不存在、重复或已过期');
-    requireData(!terminalEvent(event) && (entry.status==='pending' || entry.status==='presented'),'EVENT_ENTRY','已关闭的入场不能再次处理');
-    requireData(!(entry.status==='presented' && receipt.action==='presented'),'EVENT_ENTRY','已呈现入场不能重播');
-    requireData(guide.textEvidence?.trim(),'EVENT_ENTRY','承接回执说明不能为空');
+    requireStoryData(guide.group==='event' && !seen.has(receipt.eventId) && entry && entry.id===receipt.entryId,
+      'EVENT_ENTRY','事件承接回执不存在、重复或已过期', {
+        storyRule: guide.group !== 'event' ? 'receipt_group' : seen.has(receipt.eventId) ? 'receipt_duplicate' : 'receipt_reference', guideIndex, fieldPath });
+    requireStoryData(!terminalEvent(event) && (entry.status==='pending' || entry.status==='presented'),'EVENT_ENTRY','已关闭的入场不能再次处理', { storyRule: 'receipt_closed', guideIndex, fieldPath });
+    requireStoryData(!(entry.status==='presented' && receipt.action==='presented'),'EVENT_ENTRY','已呈现入场不能重播', { storyRule: 'receipt_repeated', guideIndex, fieldPath });
+    requireStoryData(guide.textEvidence?.trim(),'EVENT_ENTRY','承接回执说明不能为空', { storyRule: 'receipt_evidence_empty', guideIndex, fieldPath: `variableGuide.${guideIndex}.textEvidence` });
     seen.add(receipt.eventId);
   }
-  requireData(pendingEventEntries(state).every(entry=>seen.has(entry.eventId)), 'EVENT_ENTRY','本幕遗漏待处理入场，请重试正文');
+  requireStoryData(pendingEventEntries(state).every(entry=>seen.has(entry.eventId)), 'EVENT_ENTRY','本幕遗漏待处理入场，请重试正文', { storyRule: 'receipt_missing', fieldPath: 'variableGuide' });
   return interactions;
 }
 /** Computed from the formal baseline and selected Story, never writes storage. */

@@ -1,3 +1,4 @@
+import { storyRuleNames } from '../../domain/storyDiagnostics';
 import { useState, useSyncExternalStore } from 'react';
 import { stageResponses } from '../../services/ai/stageResponses';
 import { worldRuleNames } from '../../services/validation/worldDiagnostics';
@@ -26,6 +27,7 @@ export function StageResponsesPanel({ saveId, turnId }: { saveId: string; turnId
         {!record?.text ? <p>{record?.status === 'pending' ? '请求尚未返回完整内容。' : '本页面没有可恢复的模型原文；已保存的候选不是模型原文，刷新后请查看规范化记录。'}</p>
           : <pre className="candidate-json" tabIndex={0} aria-label={`${label}模型完整原文`}>{record.text}</pre>}
         {record?.error && <p role="note">{record.error.message}{'details' in record.error && record.error.details?.worldRule ? ` · ${worldRuleNames[record.error.details.worldRule]}` : ''}</p>}
+        {record?.error && 'details' in record.error && record.error.details?.storyRule && <small>正文失败类型：{record.error.details.storyRule} · {storyRuleNames[record.error.details.storyRule]}</small>}
         {record?.normalized && <details><summary>{label}程序校验后的结果</summary><pre className="candidate-json" tabIndex={0} aria-label={`${label}规范化结果`}>{record.normalized}</pre></details>}
       </details>;
     })}

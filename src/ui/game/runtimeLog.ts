@@ -1,3 +1,6 @@
+import { isStoryRule, safeStoryDiagnostic, storyDiagnosticMessage } from '../../domain/storyDiagnostics';
+import type { StoryDiagnostic } from '../../domain/storyDiagnostics';
+import { storyFailure } from '../../services/validation/storyDiagnostics';
 import { DataError, IdSchema } from '../../domain/common';
 import { variableFailure } from '../../services/validation/variableDiagnostics';
 import { isVariableStep } from '../../services/ai/errors';
@@ -15,7 +18,7 @@ export type RuntimeLogStage = AiStage | 'workflow' | 'commit';
 export type RuntimeLogKind = 'started' | 'completed' | 'failed' | 'cancelled';
 export type RuntimeLogReporter = (stage: RuntimeLogStage, kind: RuntimeLogKind, failure?: unknown) => void;
 
-export interface RuntimeLogEntry {
+export interface RuntimeLogEntry extends Partial<StoryDiagnostic> {
   id: number;
   timestamp: string;
   stage: RuntimeLogStage;
@@ -79,15 +82,20 @@ export function runtimeLogEvent(
   };
   if (kind !== 'failed') return entry;
   if (failure instanceof DataError && safeCommitCodes[failure.code]) {
+    if (stage === 'story' && ['DRAFT_CONFLICT', 'REVISION_CONFLICT'].includes(failure.code)) {
+      const diagnostic = { storyRule: 'draft_conflict' as const };
+      return { ...entry, code: failure.code, ...diagnostic, message: storyDiagnosticMessage(diagnostic) };
+    }
     return { ...entry, code: failure.code, message: safeCommitCodes[failure.code] };
   }
-  const safe = safeAiError(stage === 'commit' ? variableFailure(failure, 'commit') : stage === 'variables' ? variableFailure(failure, 'context') : failure);
+  const safe = safeAiError(stage === 'commit' ? variableFailure(failure, 'commit') : stage === 'variables' ? variableFailure(failure, 'context') : stage === 'story' ? storyFailure(failure) : failure);
   const details = 'details' in safe ? safe.details : undefined;
   const status = 'status' in safe ? safe.status : undefined;
   const path = details?.fieldPath;
   const type = details?.commandType;
   return {
-    ...entry, code: safe.code, message: safe.message.split(' 字段：')[0],
+    ...entry, code: safe.code, message: isStoryRule(details?.storyRule) ? safe.message : safe.message.split(' 字段：')[0],
+    ...(isStoryRule(details?.storyRule) ? safeStoryDiagnostic(details) : {}),
     ...(typeof status === 'number' && status >= 100 && status < 600
       ? { httpStatus: status } : {}),
     ...(path && /^[A-Za-z0-9_.]+$/.test(path) ? { fieldPath: path } : {}),

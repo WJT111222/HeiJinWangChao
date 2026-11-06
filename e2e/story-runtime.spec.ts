@@ -390,3 +390,81 @@ test('P6：截断Roll不覆盖旧正文，明确预算诊断；无原生输出�
   const inspection = page.locator('.story-inspection'); await inspection.locator(':scope > summary').click();
   await inspection.getByText('供应商公开返回的原生内容', { exact: true }).click(); await expect(inspection).toContainText('供应商未提供');
 });
+
+test('Story精确诊断：1268/1500字符直接可见，可复制单条，原文仍可查看且不自动重试', async ({ page }) => {
+  await seed(page);
+  await page.evaluate(async () => {
+    const path = '/src/ui/settings/model.ts', { settingsKey } = await import(path);
+    const value = JSON.parse(localStorage.getItem(settingsKey)!); value.prompts.minNarrativeChars = 1500;
+    localStorage.setItem(settingsKey, JSON.stringify(value));
+  });
+  // Reload settings; clipboard is installed after reload so it remains a deterministic browser Mock.
+  await page.reload(); await openGameTools(page);
+  await page.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (value: string) => { Reflect.set(window, 'copiedStoryDiagnostic', value); } } }); });
+  const before = await stored(page), raw = result('字'.repeat(1268)); plans.push({ chunks: [raw] });
+  await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
+  const alert = page.getByRole('alert'); await expect(alert).toContainText('正文长度不足');
+  await expect(alert).toContainText('1268 字符'); await expect(alert).toContainText('1500 字符'); await expect(alert).toContainText('本次正文未保存');
+  const log = page.getByTestId('runtime-log'); await expect(log).toContainText('narrative_short');
+  await log.getByRole('button', { name: '复制此条' }).click(); await expect(log).toContainText('已复制此条错误日志');
+  const copied = JSON.parse(await page.evaluate(() => Reflect.get(window, 'copiedStoryDiagnostic')));
+  expect(copied).toMatchObject({ stage: 'story', code: 'invalid_output', storyRule: 'narrative_short', actualCount: 1268, minimumCount: 1500 });
+  expect(JSON.stringify(copied)).not.toContain('字'.repeat(20)); expect(JSON.stringify(copied)).not.toContain('mock-browser-key');
+  await page.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click();
+  await page.getByText('正文模型原文 · 未通过验收', { exact: true }).click();
+  await expect(page.locator('.stage-responses')).toContainText('正文长度不足');
+  expect(await page.getByLabel('正文模型完整原文').textContent()).toBe(raw);
+  expect(await stored(page)).toEqual(before); expect(requests).toHaveLength(1);
+  await page.reload(); await openGameTools(page); expect(await stored(page)).toEqual(before); expect(requests).toHaveLength(1);
+});
+
+test('Story标签与变量规划诊断分别定位；只有玩家明确重试才再次请求，合法原协议仍成功', async ({ page }) => {
+  await seed(page); const before = await stored(page);
+  const cases = [
+    [result().replace(/<正文>.*?<\/正文>/s, ''), 'tag_missing', '标签：<正文>'],
+    [result().replace('</正文>', ''), 'tag_unclosed', '未闭合'],
+    [result().replace('本轮创作提纲：保持人物与场景连续，按行动呈现事实。', ' '), 'planning_empty', '正文规划区块为空'],
+    [result().replace('等车</短期记忆>', ' </短期记忆>'), 'summary_empty', '<短期记忆> 内容为空'],
+    [result().replace(/<变量规划>.*?<\/变量规划>/s, '<变量规划>[private-game-detail</变量规划>'), 'guide_json', '不是合法 JSON'],
+    [result().replace(/<变量规划>.*?<\/变量规划>/s, '<变量规划>[{"group":"npc","observedFact":42}]</变量规划>'), 'story_schema', 'variableGuide.0.observedFact'],
+    [result().replace('看看站台\n留在原地\n询问路线', '等候\n离开'), 'actions_count', '实际：2 条'],
+  ];
+  for (const [index, [raw, rule, message]] of cases.entries()) {
+    plans.push({ chunks: [raw] }); await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText(message);
+    const latest = page.getByTestId('runtime-log').locator('li').first(); await expect(latest).toContainText(rule);
+    await expect(latest).not.toContainText('private-game-detail'); await expect(latest).not.toContainText('mock-browser-key');
+    expect(await stored(page)).toEqual(before); expect(requests).toHaveLength(index + 1);
+  }
+  plans.push({}); await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
+  expect((await stored(page)).draft.story.narrative).toBe(story); expect((await stored(page)).state).toBe(before.state); expect(requests).toHaveLength(cases.length + 1);
+});
+
+test('Story后置凭证拒绝同步到原文面板，诊断与原文均不泄露密钥', async ({ page }) => {
+  await seed(page); const before = await stored(page);
+  plans.push({ chunks: [result(story + 'mock-browser-key')] }); await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('模型输出包含凭证内容');
+  const log = page.getByTestId('runtime-log'); await expect(log).toContainText('credential_output'); await expect(log).not.toContainText('mock-browser-key');
+  await page.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click();
+  await page.getByText('正文模型原文 · 未通过验收', { exact: true }).click();
+  const panel = page.locator('.stage-responses'); await expect(panel).toContainText('credential_output'); await expect(panel).not.toContainText('mock-browser-key');
+  await expect(panel.getByText('正文程序校验后的结果', { exact: true })).toHaveCount(0);
+  expect(await stored(page)).toEqual(before); expect(requests).toHaveLength(1);
+});
+
+test('Story保存版本冲突保留原DataError处理，原文面板显示具体失败而非校验成功', async ({ page }) => {
+  await seed(page); const before = await stored(page);
+  await page.evaluate(async () => {
+    const repoPath = '/src/services/storage/saveRepository.ts', errorPath = '/src/domain/common.ts';
+    const [{ SaveRepository }, { DataError }] = await Promise.all([import(repoPath), import(errorPath)]);
+    SaveRepository.prototype.saveDraft = async () => { throw new DataError('DRAFT_CONFLICT', 'private-storage-detail'); };
+  });
+  await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('存档或草稿版本已变化');
+  await expect(page.getByTestId('runtime-log')).toContainText('draft_conflict');
+  await expect(page.getByTestId('runtime-log')).not.toContainText('private-storage-detail');
+  await page.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click();
+  await page.getByText('正文模型原文 · 未通过验收', { exact: true }).click();
+  await expect(page.locator('.stage-responses')).toContainText('draft_conflict');
+  expect(await stored(page)).toEqual(before); expect(requests).toHaveLength(1);
+});
