@@ -14,7 +14,8 @@ import { SettingsPanel } from '../ui/settings/SettingsPanel';
 import { UnsavedAiChanges } from '../ui/settings/UnsavedAiChanges';
 import { SettingsSchema, defaultSettings, settingsKey } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
-import { dateTime } from '../ui/panels/playerView';
+import { SaveCard } from '../ui/SaveCard';
+import { saveKeyText } from '../services/storage/saveManagement';
 import { Dialog, Empty } from '../ui/Dialog';
 import { PRODUCT_VERSION } from './product';
 import { useGameViewport } from './useGameViewport';
@@ -27,6 +28,12 @@ const GameScreen = lazy(() =>
 
 type SaveSummary = Awaited<ReturnType<SaveRepository['list']>>[number];
 const selectedKey = 'heijin.selected.v1';
+const listFailure = '存档列表暂时无法访问，请检查浏览器存储权限后重试。原始数据未修改。';
+const openFailure = '本地存档无法打开，请检查浏览器存储权限后刷新重试。';
+const loadFailure = '无法读取此存档。存档可能已删除、版本较新或数据损坏，原始数据未被修改。';
+function orderedSaves(items: SaveSummary[]) {
+  return [...items].sort((a, b) => (Date.parse(b.updatedAt ?? '') || 0) - (Date.parse(a.updatedAt ?? '') || 0));
+}
 function bootstrap() {
   const warnings: string[] = [];
   let settings = defaultSettings();
@@ -71,6 +78,9 @@ export function App() {
     companionProfile?: CompanionProfile;
   }>();
   const [error, setError] = useState(initial.warning);
+  const [listError, setListError] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [saveNotice, setSaveNotice] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
@@ -91,7 +101,8 @@ export function App() {
       })
       .catch(() => {
         if (!disposed) {
-          setError('本地存档无法打开，请检查浏览器存储权限后刷新重试。');
+          setError(openFailure);
+          setListError(openFailure);
           setLoading(false);
         }
       });
@@ -136,7 +147,7 @@ export function App() {
         .catch(() => {
           if (!disposed) {
             setLoaded(undefined);
-            setError('无法读取此存档。存档可能已删除、版本较新或数据损坏，原始数据未被修改。');
+            setError(loadFailure);
             setLoading(false);
           }
         });
@@ -145,13 +156,13 @@ export function App() {
         .list()
         .then((items) => {
           if (!disposed) {
-            setSaves([...items].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt)));
+            acceptList(items);
             setLoading(false);
           }
         })
         .catch(() => {
           if (!disposed) {
-            setError('存档列表读取失败，可能存在不支持或损坏的记录。原始数据已保留。');
+            setError(listFailure); setListError(listFailure);
             setLoading(false);
           }
         });
@@ -160,6 +171,10 @@ export function App() {
       disposed = true;
     };
   }, [repository, route]);
+  function acceptList(items: SaveSummary[]) {
+    setSaves(orderedSaves(items)); setListError('');
+    setError(current => [listFailure, openFailure, loadFailure].includes(current) ? '' : current);
+  }
   function navigate(hash = '') {
     navigationRevision.current++;
     if (hash !== `game/${openingStart.current?.saveId}`) {
@@ -226,15 +241,19 @@ export function App() {
     if (!repository || !deleting || lock.current) return;
     lock.current = true;
     setBusy(true);
+    setDeleteError('');
     try {
-      await repository.delete(deleting.saveId, deleting.revision);
+      if (deleting.status === 'readable') await repository.delete(deleting.saveId, deleting.revision);
+      else await repository.deleteUnreadable(deleting.storageKey);
       try {
-        localStorage.removeItem(companionProfileKey(deleting.saveId));
+        if (typeof deleting.storageKey === 'string') localStorage.removeItem(companionProfileKey(deleting.storageKey));
       } catch {
         // 已删除的正式存档不再读取此 UI 档案。
       }
-      setSaves(await repository.list());
-      if (selected === deleting.saveId) {
+      setSaves(current => current.filter(item => item !== deleting));
+      setDeleting(undefined); setSaveNotice('存档及关联草稿、提交回执已删除。');
+      setError(current => [listFailure, openFailure, loadFailure].includes(current) ? '' : current);
+      if (selected === deleting.storageKey) {
         setSelected('');
         try {
           localStorage.removeItem(selectedKey);
@@ -242,15 +261,18 @@ export function App() {
           /* 无效选择在列表中不会继续使用。 */
         }
       }
-      setDeleting(undefined);
+      // Deletion has committed. A later refresh failure must not claim it rolled back.
+      try { acceptList(await repository.list()); }
+      catch { setListError(listFailure); setError(listFailure); }
     } catch {
-      setError('删除失败，存档可能已更新。请刷新列表后重试；原数据已保留。');
+      setDeleteError('删除失败，存档可能已更新或存储不可用。请刷新列表后重试；本次未删除数据。');
     } finally {
       lock.current = false;
       setBusy(false);
     }
   }
-  const active = saves.find((save) => save.saveId === selected) ?? saves[0];
+  const readableSaves = saves.filter(save => save.status === 'readable');
+  const active = readableSaves.find((save) => save.saveId === selected) ?? readableSaves[0];
   // 游戏中由原GameScreen提供唯一维护控制器；设置只是展示，不拥有任务生命周期。
   const renderSettings = (memoryMaintenance?: ReactNode) => (
     <Dialog title="设置" onClose={() => {
@@ -404,8 +426,8 @@ export function App() {
                     setLoading(true);
                     repository
                       .list()
-                      .then(setSaves)
-                      .catch(() => setError('列表读取失败，请重试。'))
+                      .then(acceptList)
+                      .catch(() => { setError(listFailure); setListError(listFailure); })
                       .finally(() => setLoading(false));
                   }
                 }}
@@ -414,8 +436,11 @@ export function App() {
               </button>
             </div>
             <p className="muted">每份存档都是一段独立的人生，保存在当前浏览器。</p>
+            {saveNotice && <p role="status">{saveNotice}</p>}
             {loading ? (
               <Empty>正在读取本地存档…</Empty>
+            ) : listError ? (
+              <Empty>{listError}</Empty>
             ) : !saves.length ? (
               <Empty>
                 还没有开始的人生。
@@ -425,37 +450,16 @@ export function App() {
             ) : (
               <div className="save-list">
                 {saves.map((save, i) => (
-                  <article
-                    className={`save-card ${active?.saveId === save.saveId ? 'selected' : ''}`}
-                    key={save.saveId}
-                  >
-                    <div className="save-card-top">
-                      <span className="eyebrow">ARCHIVE {String(i + 1).padStart(2, '0')}</span>
-                      <span className="tag">
-                        {active?.saveId === save.saveId ? '已选择' : '本地存档'}
-                      </span>
-                    </div>
-                    <h3>{save.title}</h3>
-                    <p className="muted">保存于 {dateTime(save.updatedAt)}</p>
-                    <div className="save-card-actions">
-                      <button onClick={() => openSave(save.saveId)}>读取存档 ↗</button>
-                      <button
-                        onClick={() => {
-                          setSelected(save.saveId);
+                  <SaveCard key={`${typeof save.storageKey}:${saveKeyText(save.storageKey)}`} save={save} index={i}
+                    selected={save.status === 'readable' && active?.saveId === save.saveId} repository={repository}
+                    onOpen={openSave} onSelect={id => {
+                          setSelected(id);
                           try {
-                            writeDocument(localStorage, selectedKey, IdSchema, save.saveId);
+                            writeDocument(localStorage, selectedKey, IdSchema, id);
                           } catch {
                             setError('未能保存最近选择');
                           }
-                        }}
-                      >
-                        选择
-                      </button>
-                      <button className="danger-text" onClick={() => setDeleting(save)}>
-                        删除
-                      </button>
-                    </div>
-                  </article>
+                    }} onDelete={() => { setDeleteError(''); setSaveNotice(''); setDeleting(save); }} />
                 ))}
               </div>
             )}
@@ -480,7 +484,10 @@ export function App() {
             if (!busy) setDeleting(undefined);
           }}
         >
-          <p>将永久删除「{deleting.title}」及其正文草稿。此操作无法撤销。</p>
+          <p>将永久删除「{deleting.title}」及其关联草稿、回合提交回执。此操作无法撤销。</p>
+          <p className="save-record-key">存档记录 ID：{saveKeyText(deleting.storageKey)}</p>
+          {deleting.status === 'unreadable' && <p>此存档无法读取，建议取消并先导出原始数据。</p>}
+          {deleteError && <p role="alert">{deleteError}</p>}
           <div className="dialog-actions">
             <button disabled={busy} onClick={() => setDeleting(undefined)}>
               取消
