@@ -14,7 +14,7 @@ TIME_WINDOW.from 为正式基线 worldClock，to 为合法变量候选的时间�
 
 每条命令的 evidence 是 JSON 字符串：JSON.stringify({version:1,kind,at,sources,fact,rationale,outcome?})，字段定义以 COMMAND_CATALOG.worldEvidenceSchema 为准。at 必须在窗口内。sources 只使用 WORLD_SOURCES 中的真实 id，不发明 ID 或依赖本批次自证来源；本批 task:/event:/handoff: 必须先按依赖顺序验证，无环才可引用。rationale 简述可核查的因果依据与耗时，不要求内部思维链。
 
-- established：已有客观事实，fact 必须出现在提供的 fact 来源中，通过正文反证与对白边界检查。
+- established：已有客观事实，默认fact必须出现在提供的fact来源中，通过正文反证与对白边界检查。仅下述现场记录可提供sceneRecord原文锚点：该模式的fact是非执行概括，程序以锚点原文作为实际依据，不把概括升级为事实。
 - derived：依据已有动机、已成立事实、合法时间和条件生成的新场外行动候选。fact 描述已发生结果，可以不逐字存在于旧正文；来源不能只有计划，也不能包含传闻/猜测。不是“时间到了所以成功”。
 - planned：未来计划、目标或排程，不表示执行成功。可基于传闻计划调查，但不得将传闻变成客观结果。
 - reported / suspected：仅用于 RecordNpcMemory，保持 [转述] / [推测] 前缀与知识性质，必须对应原有 statement 来源。不能据此修改客观状态或结案。
@@ -141,7 +141,18 @@ SaveEvent的新规划始终包含startAt、estimatedEndAt、backgroundText、goa
 
 ### 现场记录例外与已获知的未来安排
 
-World可用SaveEvent记录本幕已发生的现场事件，参与者可以引用主角或PROTECTED_SCENE人物，但这不是让人物行动的授权。此类命令用established及story:current，fact须为实际发生的正文事实并明确对应每个现场参与者；新增/改写的title、backgroundText、goalText、resolutionText逐项沿用正文中的原文片段，避免在描述字段夹带尚未发生的决定。不要凭记录权限更新现场人物、地点、资金、关系或记忆；这类事实仍由Variables处理。稳定事件ID继续使用，已有身份/起点不能改写。
+World可用SaveEvent记录本幕已发生的现场事件，参与者可以引用主角或PROTECTED_SCENE人物，但这不是让人物行动的授权。不要凭记录权限更新现场人物、地点、资金、关系或记忆；这类变化仍由Variables处理。稳定事件ID、已有身份/起点、时间与终态边界保持原规则。
+
+对于自然正文里的正在进行的现场事项，优先使用可验证的现场记录形式（不是自由摘要事实）：
+- evidence.kind="established"、sources包含"story:current"；仅active/blocked SaveEvent可带可选sceneRecord={anchors:[{source:"story:current",quote,actorRefs}]}。每条quote是本幕正文完整的肯定叙述句，包含标点；不能剪掉否定、引语或转述语境。1～12条、每条最多2000字符、总共最多8000字符，不重复引用。
+- 每个actorRef必须是事件参与者的稳定ID，并有以其真实姓名、已知别名或“主角”开头的完整参与叙述句。各人在不同段落可分别给锚点，不要求聚集在同一句；仅在名册/回忆名单提及名字不算参与。无法明确绑定的代词不自行猜身份。
+- 旁白“某人递出索赔单”能支持索赔行动；对白声称器材损坏不证明损坏原因，不能摘取为客观事实。无肯定依据的事项放unresolved，不为满足格式杜撰原文。
+- fact可写概括、rationale可解释记录目的，但在该模式下二者不成为已成立的事实；程序只使用已校验quote，不把概括当结案依据、NPC知识或主角行动。
+- 描述字段采用COMMAND_CATALOG.sceneRecordFormat的确定性记录格式：title="<真实地点name> · 现场记录"；backgroundText="现场依据：\n"+全部quote按顺序用换行连接；goalText="待处理：等待现场当事人下一步行动，不代表已经作出决定。"。任一描述字段也可使用一条完整已校验quote。标题、组合背景及待处理目标不必逐字存在于正文；不将多个词语片段重新拼成新断言。
+- 若continuation.direction="protagonist"，entry.cue使用一条完整已校验quote或"现场事项仍待回应，请决定下一步行动。"，计划不代表玩家已经同意。非终态仍不能提供resolutionText、resolvedAt、resultKnowledge；锚点不授予完成、取消、历史归档或其它命令权限。
+- 示例：正文中甲、乙各有独立行动句时分别绑定对应actorRefs，不把标题、背景、目标或概括倒填到Story。正常领域字段如startAt、estimatedEndAt、locationId、visibility等仍需完整合法。
+
+不带sceneRecord的旧established响应仍按原fact及新增描述原文依据验证。自由概括可以展示于模型原文，但没有锚点不能自证；本协议不声称能通过字符串规则证明任意中文摘要的语义真实性。
 
 scheduled可以保持known/partially_known：当planned.fact确实来自主角本幕已收到的通知、所见公告或合法已知来源时，程序仅保存这条安排消息，认知性质为reported，不视为安排已执行。不把内部背景、完整日程、目标或未来结果自动授予主角；缺少实际知晓来源不能提升visibility。protagonistKnowledge由程序写入，模型省略；futureEvents仍为相同原始SaveEvent镜像，规范化后由程序同步认知元数据。
 

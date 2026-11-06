@@ -1,12 +1,12 @@
 import { historicalEvent, terminalEvent } from '../../domain/events/lifecycle';
 import { npcKnowledgeContext } from '../../domain/memories/npcMemory';
 import { z } from 'zod';
-import { GameTimeSchema, TextSchema, IdSchema } from '../../domain/common';
+import { GameTimeSchema, TextSchema, IdSchema, ActorRefSchema } from '../../domain/common';
 import type { ActorRef } from '../../domain/common';
 import type { GameState } from '../../domain/state';
 import type { TurnDraft } from '../../domain/drafts';
 import type { DomainCommand } from '../../domain/commands';
-import { worldFactEvidence } from './evidence';
+import { affirmativeWorldSceneQuote, worldFactEvidence } from './evidence';
 import { isNegatedFact } from '../../domain/factPolarity';
 import { AiError } from '../ai/errors';
 import type { WorldRule } from './worldDiagnostics';
@@ -25,6 +25,11 @@ export const WorldEvidenceSchema = z.strictObject({
     .refine((ids) => new Set(ids).size === ids.length),
   fact: TextSchema.max(8000),
   rationale: TextSchema.max(4000),
+  // Optional current-scene record only. Quotes are authoritative; fact remains a non-executing synopsis.
+  sceneRecord: z.strictObject({ anchors: z.array(z.strictObject({
+    source: z.literal('story:current'), quote: TextSchema.max(2000),
+    actorRefs: z.array(ActorRefSchema).min(1).max(12),
+  })).min(1).max(12).refine(anchors => anchors.reduce((n, anchor) => n + anchor.quote.length, 0) <= 8000) }).optional(),
   outcome: TextSchema.max(4000).optional(),
   decision: z.strictObject({ targetId: IdSchema, status: z.enum(['completed', 'resolved', 'cancelled', 'blocked', 'retired']),
     reason: TextSchema.max(4000), result: TextSchema.max(4000), conditionsSatisfied: z.boolean(), continues: z.boolean(),
@@ -197,6 +202,9 @@ export function requireWorld(
 ): asserts ok {
   if (!ok) throw new AiError(code, undefined, worldRule ? { worldRule } : undefined);
 }
+function affirmativeSceneQuote(command: DomainCommand, narrative: string, quote: string) {
+  return affirmativeWorldSceneQuote(command, narrative, quote);
+}
 export function readWorldEvidence(
   command: DomainCommand,
   sources: readonly WorldSource[],
@@ -219,6 +227,22 @@ export function readWorldEvidence(
     requireWorld(!source.at || Date.parse(source.at) <= Date.parse(proof.at), 'invalid_output', 'source_time');
     return source;
   });
+  if (proof.sceneRecord) {
+    requireWorld(command.type === 'SaveEvent' && proof.kind === 'established'
+      && ['active', 'blocked'].includes(command.event.status) && !proof.decision && !proof.outcome,
+    'permission', 'actor_permission');
+    const story = resolved.find(source => source.id === 'story:current' && source.knowledge === 'fact');
+    requireWorld(story, 'invalid_output', 'source_missing');
+    const quotes = proof.sceneRecord.anchors.map(anchor => anchor.quote);
+    requireWorld(new Set(quotes).size === quotes.length, 'invalid_output', 'source_format');
+    for (const [index, quote] of quotes.entries())
+      if (!affirmativeSceneQuote(command, story.text, quote)) throw new AiError('invalid_output', undefined, {
+        worldRule: 'source_knowledge', fieldPath: `evidence.sceneRecord.anchors.${index}.quote`,
+      });
+    // Never let the model's paraphrase turn into a fact/knowledge source or a completion proof.
+    // No mutation of raw response/evidence: candidates are revalidated from the same source anchors.
+    proof.fact = quotes.join('\n');
+  }
   // 非公开事件供世界因果/生命周期推演，不直接授予任何NPC知识。
   // 人物行动或新认知应引用其独立观察/转述等自身来源，不能借事件ID洗掉所属关系。
   const npcCommand = command.type === 'UpdateNpc' || command.type === 'RecordNpcMemory' || command.type === 'RetireNpc' ||
@@ -243,7 +267,7 @@ export function readWorldEvidence(
   } else {
     if (proof.kind !== 'planned')
       requireWorld(!resolved.some((source) => source.knowledge === 'statement'), 'invalid_output', 'source_knowledge');
-    if (proof.kind === 'established') {
+    if (proof.kind === 'established' && !proof.sceneRecord) {
       requireWorld(
         resolved.some((source) => {
           if (source.knowledge !== 'fact' || !source.text.includes(proof.fact)) return false;
@@ -281,6 +305,11 @@ export function readWorldEvidence(
 
 // “客观已发生”与“玩家已获知”是两条独立约束；仅承认可公开投影中的肯定事实。
 export function hasPlayerKnownFact(command: DomainCommand, proof: WorldEvidence, sources: readonly WorldSource[]) {
+  const anchors = proof.sceneRecord?.anchors;
+  if (anchors) return command.type === 'SaveEvent' && proof.kind === 'established'
+    && ['active', 'blocked'].includes(command.event.status) && anchors.length > 0
+    && sources.some(source => source.id === 'story:current' && source.knowledge === 'fact' && source.playerKnownText === source.text
+      && anchors.every(anchor => affirmativeSceneQuote(command, source.text, anchor.quote)));
   return proof.kind === 'established' && sources.some((source) => {
     if (source.knowledge !== 'fact' || !source.playerKnownText?.includes(proof.fact)) return false;
     try { worldFactEvidence({ ...command, evidence: proof.fact }, source.playerKnownText); return true; } catch { return false; }
