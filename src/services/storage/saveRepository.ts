@@ -16,6 +16,8 @@ import type { CompressionBatch } from '../../domain/memories/compression';
 import { applyNpcSummary, NpcMemoryBatchSchema } from '../../domain/memories/npcMemory';
 import type { NpcMemoryBatch } from '../../domain/memories/npcMemory';
 import { NpcSummarySchema, MemoryEntrySchema } from '../../domain/memories/schema';
+import { unreadableSaveSummary } from './saveManagement';
+import type { RawSaveExport, RawSaveRecord, SaveSummary } from './saveManagement';
 
 const ReceiptSchema = z.strictObject({
   saveId: IdSchema,
@@ -68,6 +70,32 @@ function readState(raw: unknown, saveId: string): GameState {
   const state = migrateSave(raw);
   requireData(state.saveId === saveId, 'CORRUPT_SAVE', '存档主键与内容不一致');
   return state;
+}
+
+function listRecord(key: IDBValidKey, raw: unknown): SaveSummary {
+  try {
+    requireData(typeof key === 'string', 'CORRUPT_SAVE', '存档主键不是有效 ID');
+    const { saveId, title, revision, schemaVersion, updatedAt } = readState(raw, key as string);
+    return { status: 'readable', storageKey: key, saveId, title, revision, schemaVersion, updatedAt };
+  } catch {
+    // Only classify per-record parsing failures. IDB requests/transactions stay outside
+    // this catch, so a storage failure can never masquerade as a broken save or empty list.
+    return unreadableSaveSummary(key, raw);
+  }
+}
+
+async function rawRecords(store: IDBObjectStore | IDBIndex, key?: IDBValidKey): Promise<RawSaveRecord[]> {
+  const keys = await request(store.getAllKeys(key));
+  const values = await request<unknown[]>(store.getAll(key));
+  return keys.map((key, index) => ({ key, value: values[index] }));
+}
+
+async function deleteRecords(tx: IDBTransaction, key: IDBValidKey): Promise<void> {
+  await request(tx.objectStore('drafts').delete(key));
+  const receipts = tx.objectStore('turnReceipts');
+  const keys = await request(receipts.index('saveId').getAllKeys(key));
+  for (const receiptKey of keys) await request(receipts.delete(receiptKey));
+  await request(tx.objectStore('saves').delete(key));
 }
 
 export class SaveRepository {
@@ -161,13 +189,35 @@ export class SaveRepository {
     }, signal);
   }
 
-  async list(): Promise<Array<Pick<GameState, 'saveId' | 'title' | 'revision' | 'schemaVersion' | 'updatedAt'>>> {
+  async list(): Promise<SaveSummary[]> {
     return transaction(this.database, ['saves'], 'readonly', async (tx) => {
-      const raw: unknown[] = await request(tx.objectStore('saves').getAll());
-      return raw.map((record) => {
-        const { saveId, title, revision, schemaVersion, updatedAt } = migrateSave(record);
-        return { saveId, title, revision, schemaVersion, updatedAt };
-      });
+      const records = await rawRecords(tx.objectStore('saves'));
+      return records.map(({ key, value }) => listRecord(key, value));
+    });
+  }
+
+  // Recovery export reads a consistent, raw snapshot, irrespective of save/schema version.
+  // Association uses the actual save key, never a saveId recovered from untrusted contents.
+  async exportRaw(storageKey: IDBValidKey): Promise<RawSaveExport> {
+    requireData(storageKey !== undefined && storageKey !== null, 'INVALID_KEY', '未选择存档记录');
+    return transaction(this.database, ['saves', 'drafts', 'turnReceipts'], 'readonly', async tx => {
+      const saves = await rawRecords(tx.objectStore('saves'), storageKey);
+      requireData(saves.length === 1, 'NOT_FOUND', '此存档已不存在，请刷新列表。');
+      const drafts = await rawRecords(tx.objectStore('drafts'), storageKey);
+      const turnReceipts = await rawRecords(tx.objectStore('turnReceipts').index('saveId'), storageKey);
+      return { format: 'heijin-raw-save', version: 1, records: { saves, drafts, turnReceipts } };
+    });
+  }
+
+  // Explicit recovery action, separate from the revision-checked normal delete path.
+  // Recheck within the write transaction: never delete a record that has become readable.
+  async deleteUnreadable(storageKey: IDBValidKey): Promise<void> {
+    requireData(storageKey !== undefined && storageKey !== null, 'INVALID_KEY', '未选择存档记录');
+    return transaction(this.database, ['saves', 'drafts', 'turnReceipts'], 'readwrite', async tx => {
+      const records = await rawRecords(tx.objectStore('saves'), storageKey);
+      requireData(records.length === 1, 'NOT_FOUND', '此存档已不存在，请刷新列表。');
+      requireData(listRecord(storageKey, records[0].value).status === 'unreadable', 'SAVE_READABLE', '此存档现在可以读取，请刷新列表后重新选择。');
+      await deleteRecords(tx, storageKey);
     });
   }
 
@@ -281,11 +331,7 @@ export class SaveRepository {
       const store = tx.objectStore('saves');
       const current = readState(await request(store.get(saveId)), saveId);
       requireData(current.revision === expectedRevision, 'REVISION_CONFLICT', '删除时存档版本已变化');
-      await request(tx.objectStore('drafts').delete(saveId));
-      const receipts = tx.objectStore('turnReceipts');
-      const keys = await request(receipts.index('saveId').getAllKeys(saveId));
-      for (const key of keys) await request(receipts.delete(key));
-      await request(store.delete(saveId));
+      await deleteRecords(tx, saveId);
     });
   }
 

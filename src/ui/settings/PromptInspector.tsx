@@ -126,8 +126,9 @@ export function PromptInspector({
         .list()
         .then((list) => {
           if (!disposed) {
-            setSaves(list);
-            setSaveId((current) => current || list[0]?.saveId || '');
+            const readable = list.filter(save => save.status === 'readable');
+            setSaves(readable);
+            setSaveId((current) => current || readable[0]?.saveId || '');
           }
         })
         .catch(() => {
