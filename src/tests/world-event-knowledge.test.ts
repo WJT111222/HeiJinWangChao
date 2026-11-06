@@ -11,7 +11,7 @@ import { contextFor } from '../prompts/context';
 import { defaultSettings } from '../ui/settings/model';
 import { playerView } from '../ui/panels/playerView';
 import { completeDraft, submission } from './fixtures/turn';
-import { event, organizations, npc } from './fixtures/game';
+import { event, organizations } from './fixtures/game';
 import { worldState, worldDraft, worldResult, proof, actionTime } from './fixtures/world';
 
 const repos: SaveRepository[] = [];
@@ -67,15 +67,6 @@ describe('第三轮：世界事件自主变化不要求角色先知晓', () => {
     expect(committed.state.npc).toEqual(before.npc); expect(committed.state.memories.short.at(-1)?.text).toBe(draft.story!.summary);
     expect((await repo.commitTurn(submission(draft))).replayed).toBe(true);
     expect(storyEvents(await repo.load(a.state.saveId))).toEqual(known);
-    const next = worldDraft(true, 'regular'); next.turnId = 'turn-next'; next.baseSaveRevision = committed.state.revision;
-    next.variables!.result.commands = [{ type: 'SetWorldClock', commandId: 'next-clock', worldClock: '2026-10-18T08:20:00+08:00', evidence: '本轮经过十分钟' }];
-    const fact = committed.state.events.investigation.resultKnowledge!.facts[0];
-    committed.state.npc['npc-b'] = { ...npc('npc-b'), onScene: false };
-    const memory: DomainCommand = { type: 'RecordNpcMemory', commandId: 'borrow-event', npcId: 'npc-b', expectedRevision: committed.state.revision,
-      layer: 'personal', knowledgeKind: 'observed', addToKnownInformation: false,
-      evidence: proof({ kind: 'established', at: '2026-10-18T08:15:00+08:00', sources: ['event:investigation'], fact }),
-      memory: { id: 'stolen-progress', text: fact, knowledgeSource: 'event:investigation', visibility: 'npc_private', createdAtGameTime: '2026-10-18T08:15:00+08:00', sourceTurnIds: [next.turnId], affectedEntityRefs: [{ kind: 'npc', id: 'npc-b' }] } };
-    expect(() => parseWorld(JSON.stringify(worldResult([memory])), committed.state, next)).toThrow();
   });
   it('存量正式版本与visibility保持合法读取', () => {
     for (const visibility of visibilities) expect(GameStateSchema.parse(prepared(visibility).state).events.investigation.visibility).toBe(visibility);

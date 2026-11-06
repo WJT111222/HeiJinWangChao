@@ -5,7 +5,7 @@ import type { GameState } from '../domain/state';
 import type { DomainCommand } from '../domain/commands';
 import { commitCommands } from '../domain/commands';
 import { NpcSummarySchema, NpcMemorySchema, npcKnowledgeKind } from '../domain/memories/schema';
-import { planNpcSummary, parseNpcSummary, applyNpcSummary, npcSummaryCandidates, rawNpcMemories, npcKnowledgeContext } from '../domain/memories/npcMemory';
+import { planNpcSummary, parseNpcSummary, applyNpcSummary, npcSummaryCandidates, rawNpcMemories, npcKnowledgeContext, npcSummaryInput } from '../domain/memories/npcMemory';
 import { MemoryMaintenance } from '../workflows/memoryMaintenance';
 import type { MemoryLock } from '../workflows/memoryMaintenance';
 import { SaveRepository } from '../services/storage/saveRepository';
@@ -273,4 +273,8 @@ it('内部世界记录即使放在NPC容器且带亲历类型，也不能作为N
   internal.visibility = 'internal'; internal.text = '后台知道但角色尚不知情的秘密';
   expect(planNpcSummary(state)).toBeUndefined(); // 只剩20条合法知识，不能用内部资料凑阈值。
   expect(JSON.stringify(npcKnowledgeContext(state, 'npc-a'))).not.toContain(internal.text);
+});
+
+it('NPC总结请求不接收其他人物或额外历史总结', () => {
+  expect(npcSummaryInput(planNpcSummary(npcMemoryState())!)).not.toHaveProperty('priorSummaries');
 });

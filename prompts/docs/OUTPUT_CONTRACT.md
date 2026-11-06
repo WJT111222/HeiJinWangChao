@@ -139,7 +139,7 @@ M8-P0A取代此前“所有回合必须正向耗时”的规则：普通回合�
 
 同批实体依赖按结构化ID排序且无环；允许按真实时间释放占用和按需承接，取代上文M4-P3同批禁止接力的旧限制。新任务不改变原执行者，只有实际传递的内容可以成为接收者知识，隐藏事件参与者不等于知情者。无后续必要时直接结束，不造接班任务。正文标签、六套主提示词、NPC私有认知权限和正式回合原子提交保持原有架构。Save schema为V4，包含contactNpcIds/retiredNpcs/contactReviewNpcIds；旧档联系人身份待确认与永久联系人分开保护，保留revision、journal和回执。已终结任务新增的可选成果与交接字段兼容旧对象，无来源的旧终态不补造实际成果或时间。
 
-退场保留的必要材料使用现有memories.long；可选retiredNpcSource记录npcId/sourceMemoryId/knowledgeKind/knowledgeSource，只标记局部历史来源，不作为整回合压缩覆盖。未公开材料保持internal，不进入普通正文、玩家记忆、变量认知输入或其他人物WORLD_SOURCES。新生成的终态任务（含旧凭据兼容路径）均先补齐来源可验证的resolution并保存候选；正式提交保持完整候选指纹一致性，缺少该元数据的旧待提交候选明确补算，不在提交事务内静默改候选。
+退场保留的必要材料使用现有memories.long；可选retiredNpcSource记录npcId/sourceMemoryId/knowledgeKind/knowledgeSource，只标记局部历史来源，不作为整回合压缩覆盖。未公开材料保持internal，不进入普通正文、玩家记忆、变量认知输入或其他人物认知资料。新生成的终态任务由模型直接填写结构合法的resolution并保存候选；正式提交保持完整候选指纹一致性，缺少该元数据的旧待提交候选明确补算，不在提交事务内静默改候选。
 
 
 ### PR #22 第二轮：修复首轮审查三项问题

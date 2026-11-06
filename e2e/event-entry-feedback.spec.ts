@@ -51,7 +51,7 @@ async function mock(page:Page) {
         ];
       } else if(control.failWorld) {
         control.failWorld=false;
-        blank.eventCommands=[{type:'SaveEvent',commandId:'bad-source',event:ctx.OFFSCREEN_STATE.events.contact,evidence:evidence('无效来源',['missing:source'])}];
+        blank.eventCommands=[{type:'SaveEvent',commandId:'bad-actor',event:{...ctx.OFFSCREEN_STATE.events.contact,sourceTurnIds:[turnId],actorRefs:[{kind:'npc',id:'missing-npc'}]},evidence:'模型提出了一项事件更新。'}];
       } else if(turn===3) {
         const current=ctx.OFFSCREEN_STATE.events.contact;
         expect(current.protagonistEntry.status).toBe('declined');

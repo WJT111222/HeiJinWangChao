@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { handoffState, handoffResult, retireCommand, resultText, finishTask } from '../src/tests/fixtures/handoff';
 import { event } from '../src/tests/fixtures/game';
-import { worldResult, proof } from '../src/tests/fixtures/world';
+import { worldResult, proof, worldResultForTurn } from '../src/tests/fixtures/world';
 
 async function seed(page: Page, variant?: 'mixed-result' | 'unindexed-history' | 'event-report' | 'refused-confirmation') {
   await page.goto('/');
@@ -60,8 +60,9 @@ test('真实浏览器：世界成果/交接/退场只是候选，主动查看、
   receiver.task.handoff = { ...receiver.task.handoff!, content: '登记号318的三份材料均已核对齐全。',
     summaryBasis: { mode: 'faithful_summary', resultExcerpt: resultText } };
   const transferProof = JSON.parse(receiver.evidence); transferProof.fact = '核对人通过电话传达清单要点。'; receiver.evidence = JSON.stringify(transferProof);
+  const currentTurn=(await stored(page)).draft.turnId;
   let calls = 0;
-  await page.route('https://handoff.mock.invalid/**', async (route) => { calls++; await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ choices: [{ message: { content: JSON.stringify(raw) }, finish_reason: 'stop' }] }) }); });
+  await page.route('https://handoff.mock.invalid/**', async (route) => { calls++; await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ choices: [{ message: { content: JSON.stringify(worldResultForTurn(raw,currentTurn)) }, finish_reason: 'stop' }] }) }); });
   await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click();
   await expect(page.getByRole('region', { name: '三阶段工作流' })).toContainText('世界已完成 · 候选未正式结算');
   let saved = await stored(page); expect(saved.state).toEqual(before); expect(saved.state.npc['npc-a']).toBeDefined();
@@ -89,14 +90,15 @@ test('真实浏览器：世界成果/交接/退场只是候选，主动查看、
   await page.screenshot({ path: info.outputPath('world-handoff-committed.png'), fullPage: true });
 });
 
-for (const variant of ['event-report', 'refused-confirmation'] as const) test(`第三轮审查${variant}：拒绝信息洗白或否定授权，合法重试及正式提交保持隔离`, async ({ page }) => {
+for (const variant of ['event-report', 'refused-confirmation'] as const) test(`第三轮审查${variant}：拒绝无效人物引用或否定授权，合法重试及正式提交保持隔离`, async ({ page }) => {
   const before = await seed(page, variant), initial = await stored(page), bad = worldResult(), good = worldResult();
   if (variant === 'event-report') {
     const makeEvent = (text: string) => ({ type: 'SaveEvent' as const, commandId: 'next-event',
       event: { ...event('next-event'), title: '后续归档', actorRefs: [{ kind: 'npc' as const, id: 'npc-b' }], status: 'resolved' as const,
         startAt: before.worldClock, estimatedEndAt: '2026-10-18T08:10:00+08:00', resolvedAt: '2026-10-18T08:05:00+08:00', resolutionText: text, sourceTurnIds: [initial.draft.turnId] },
       evidence: proof({ kind: 'established', sources: ['event:report', 'npc:npc-b'], fact: text }) });
-    bad.eventCommands = [makeEvent('蓝仓暗格藏着违禁货物。')]; good.eventCommands = [makeEvent('同事归档了一份举报。')];
+    const invalid=makeEvent('蓝仓暗格藏着违禁货物。');invalid.event.actorRefs[0].id='missing-npc';
+    bad.eventCommands = [invalid]; good.eventCommands = [makeEvent('同事归档了一份举报。')];
   } else {
     const retirement = retireCommand(before), evidence = JSON.parse(retirement.evidence);
     retirement.contactReview = { conclusion: 'non_contact', basis: 'player_confirmed', reason: '截取玩家确认片段。', playerConfirmation: '同事属于非联系人临时人员' };
@@ -104,9 +106,10 @@ for (const variant of ['event-report', 'refused-confirmation'] as const) test(`�
     bad.worldCommands = [retirement]; bad.taskCommands = [finishTask(before)]; good.taskCommands = [finishTask(before)];
     expect(initial.draft.userInput).toContain('我不确认');
   }
+  const currentTurn=(await stored(page)).draft.turnId;
   let calls = 0;
   await page.route('https://handoff.mock.invalid/**', async (route) => { calls++; await route.fulfill({ contentType: 'application/json',
-    body: JSON.stringify({ choices: [{ message: { content: JSON.stringify(calls === 1 ? bad : good) }, finish_reason: 'stop' }] }) }); });
+    body: JSON.stringify({ choices: [{ message: { content: JSON.stringify(worldResultForTurn(calls === 1 ? bad : good,currentTurn)) }, finish_reason: 'stop' }] }) }); });
   await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click(); await expect(page.getByRole('alert')).toBeVisible();
   await expect.poll(() => calls).toBe(1);
   expect((await stored(page)).state).toEqual(before); await page.reload(); await openGameTools(page); expect((await stored(page)).state).toEqual(before);
@@ -131,14 +134,16 @@ for (const variant of ['mixed-result', 'unindexed-history'] as const) test(`第�
       event: { ...event('world-event'), title: '场外事实', actorRefs: [{ kind: 'npc' as const, id: 'npc-a' }], status: 'resolved' as const,
         startAt: before.worldClock, estimatedEndAt: '2026-10-18T08:10:00+08:00', resolvedAt: '2026-10-18T08:05:00+08:00', resolutionText: text, sourceTurnIds: [draft.turnId] },
       evidence: proof({ kind: 'established', sources: ['task:work'], fact: text }) });
-    bad.eventCommands = [makeEvent('蓝仓暗格藏着违禁货物。')]; good.eventCommands = [makeEvent('同事归档了一份举报。')];
+    const invalid=makeEvent('蓝仓暗格藏着违禁货物。');invalid.event.actorRefs[0].id='missing-npc';
+    bad.eventCommands = [invalid]; good.eventCommands = [makeEvent('同事归档了一份举报。')];
   } else {
     bad.worldCommands = [{ ...retireCommand(before), contactReview: { conclusion: 'non_contact', basis: 'no_known_connection', reason: '结构化索引未发现联系。' } }];
     bad.taskCommands = [finishTask(before)]; good.taskCommands = [finishTask(before)];
   }
+  const currentTurn=(await stored(page)).draft.turnId;
   let calls = 0;
   await page.route('https://handoff.mock.invalid/**', async (route) => { calls++; await route.fulfill({ contentType: 'application/json',
-    body: JSON.stringify({ choices: [{ message: { content: JSON.stringify(calls === 1 ? bad : good) }, finish_reason: 'stop' }] }) }); });
+    body: JSON.stringify({ choices: [{ message: { content: JSON.stringify(worldResultForTurn(calls === 1 ? bad : good,currentTurn)) }, finish_reason: 'stop' }] }) }); });
   await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click(); await expect(page.getByRole('alert')).toBeVisible();
   expect((await stored(page)).state).toEqual(before); await expect(page.locator('main')).not.toContainText('蓝仓暗格');
   await page.reload(); await openGameTools(page); expect((await stored(page)).state).toEqual(before);

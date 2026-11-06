@@ -22,8 +22,8 @@ function offscreen(state: GameState, ref: ActorRef) {
   return ref.kind === 'npc' ? Boolean(state.npc[ref.id] && !state.npc[ref.id].onScene)
     : ref.kind === 'organization' && Boolean(state.organizations[ref.id]);
 }
-function readyConditions(state: GameState, conditions: readonly string[]) {
-  return conditions.every(ref => conditionEnded(state, ref));
+function readyConditions(state: GameState, conditions: readonly string[], at: string) {
+  return conditions.every(ref => conditionEnded(state, ref, at));
 }
 export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnDraft) {
   try { return validateWorldOutputChecked(raw, state, draft); }
@@ -126,7 +126,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
             && known.goal === task.goal && known.startAt === task.startAt));
           if (['active','blocked','completed'].includes(task.status)) requireWorld(Date.parse(task.startAt) <= now, 'invalid_output','task_state');
           if (task.status === 'active' || task.status === 'completed') requireWorld(readyConditions(causal,
-            [...(old?.prerequisites ?? []), ...(old?.blockers ?? []), ...task.prerequisites, ...task.blockers]), 'invalid_output','completion_conditions');
+            [...(old?.prerequisites ?? []), ...(old?.blockers ?? []), ...task.prerequisites, ...task.blockers],task.resolution?.at ?? base.worldClock), 'invalid_output','completion_conditions');
           if (task.status === 'completed' || task.status === 'cancelled') {
             if (!old || !['completed','cancelled'].includes(old.status)) {
               requireWorld(task.resolution && task.resolution.sourceTurnId === draft.turnId, 'invalid_output','task_state');
@@ -166,7 +166,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
             && (old?.sourceTurnIds ?? []).every(id => event.sourceTurnIds.includes(id)));
           if (['active','blocked','resolved'].includes(event.status)) requireWorld(Date.parse(event.startAt) <= now, 'invalid_output','event_time');
           if (event.status === 'active' || (event.status === 'resolved' && event.outcome !== 'failure'))
-            requireWorld(readyConditions(causal,[...(old?.prerequisites ?? []),...(old?.blockers ?? []),...event.prerequisites,...event.blockers]), 'invalid_output','completion_conditions');
+            requireWorld(readyConditions(causal,[...(old?.prerequisites ?? []),...(old?.blockers ?? []),...event.prerequisites,...event.blockers],event.resolvedAt ?? base.worldClock), 'invalid_output','completion_conditions');
           if (event.status === 'resolved') requireWorld(event.resolvedAt && event.resolutionText?.trim(), 'invalid_output','event_transition');
           // Objective progress never implicitly refreshes an already held character snapshot.
           if (!old || !terminalEvent(old)) {

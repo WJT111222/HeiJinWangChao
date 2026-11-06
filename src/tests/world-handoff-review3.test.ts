@@ -82,6 +82,21 @@ describe('事件事实、结果叙述和计划的独立来源', () => {
 });
 
 describe('没有独立可信授权信号时保守保护旧人', () => {
+  it.each([
+    '我不确认同事属于非联系人临时人员，先不要删除。',
+    '如果查明同事属于非联系人临时人员，再考虑是否让他退出。',
+    '经理说“同事属于非联系人临时人员”，这不是我的确认。',
+    '不要把“同事属于非联系人临时人员”当成删除授权，我明确拒绝。',
+  ])('真实输入“%s”中的肯定片段不构成删除授权，错误AI正文也不能代替授权', async (input) => {
+    const state = handoffState(); state.contactReviewNpcIds = ['npc-a'];
+    state.npc['npc-a'].relationshipText = '尚未与主角接触'; state.npc['npc-a'].affinity = 0;
+    const repo = await repository(state);
+    const first = await commit(repo, () => worldResult(), '主角与同事交换联系方式，以后保持联系。', input);
+    expect((await repo.loadDraft('save-a'))?.userInput).toBe(input);
+    await expect(commit(repo, confirmedRetirement, affirmative)).rejects.toThrow();
+    const preserved = await repo.load('save-a'); expect(preserved).toEqual(first.state);
+    expect(preserved.npc['npc-a']).toBeDefined(); expect(preserved.retiredNpcs['npc-a']).toBeUndefined();
+  });
   it('即使玩家自由文本肯定确认，当前也不声称存在可靠删除确认交互', async () => {
     const state = handoffState(); state.contactReviewNpcIds = ['npc-a']; const repo = await repository(state);
     await commit(repo, () => worldResult(), '主角与同事交换联系方式。', '我确认同事属于非联系人临时人员。');

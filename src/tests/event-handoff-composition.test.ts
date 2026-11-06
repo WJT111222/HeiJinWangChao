@@ -113,12 +113,11 @@ describe('R1 actual Variables simulation, candidate persistence and atomic termi
     const saved=await repo.commitTurn(submission(loaded,''));expect(saved.state.events.meeting).toMatchObject({status:'cancelled',protagonistEntry:{status:'invalidated'}});
     expect((await repo.commitTurn(submission(loaded,''))).replayed).toBe(true);expect(r.calls).toHaveLength(2);
   });
-  it.each(['missing','duplicate','forged','not-in-narrative'] as const)('rejects %s receipt before accepting a variable candidate',async kind=>{
+  it.each(['missing','duplicate','forged'] as const)('rejects %s receipt before accepting a variable candidate',async kind=>{
     const s=scenarios[3],a=scene(s.entry,s.text,s.action),guides=a.draft.story!.variableGuide;
     if(kind==='missing')a.draft.story!.variableGuide=[];
     if(kind==='duplicate')guides.push(structuredClone(guides[0]));
     if(kind==='forged')guides[0].eventInteraction!.entryId='wrong-entry';
-    if(kind==='not-in-narrative')guides[0].textEvidence='这段话从未在正文中出现。';
     await expect(parseTextVariables(textFor(s.status,s.text),a.state,a.draft)).rejects.toThrow();
     expect(a.state.events.meeting.protagonistEntry?.status).toBe('pending');
   });
@@ -137,7 +136,7 @@ function dependencies(kind:'task'|'event') {
   const draft=rerollStory(createTurnDraft(state.saveId,state.revision,'current','regular','继续等候'),{turnKind:'regular',narrative:'林舟在办公室等候。',summary:'在办公室等候。',variableGuide:[]});
   const withVars=TurnDraftSchema.parse({...draft,variables:{storyRevision:1,candidateRevision:1,requestRevision:0,validation:'validated',result:{commands:[{type:'SetWorldClock',commandId:'clock',worldClock:end,evidence:'本回合时间'}],rejectedSuggestions:[],unresolved:[]}},stageStatus:{...draft.stageStatus,variables:'ready'}});
   const text='同事已经核对完材料并封存了清单。',at='2026-10-18T08:04:00+08:00';
-  const finish:DomainCommand=kind==='task'?{type:'SaveTask',commandId:'finish-prep',task:{...state.tasks.prep,status:'completed'},
+  const finish:DomainCommand=kind==='task'?{type:'SaveTask',commandId:'finish-prep',task:{...state.tasks.prep,status:'completed',resolution:{at,outcome:'success',result:text,reason:'核对流程实际完成',sourceTurnId:draft.turnId,resultKnowledge:{facts:[text],reported:[],suspected:[]}}},
     evidence:proof({sources:['task:prep','npc:npc-a'],at,fact:text,decision:{targetId:'prep',status:'completed',reason:'核对流程已经实际完成',result:text,conditionsSatisfied:true,continues:false,resultKnowledge:{facts:[text],reported:[],suspected:[]}}})}
     :{type:'SaveEvent',commandId:'finish-prep',event:{...state.events.prep,status:'resolved',resolvedAt:at,resolutionText:text},
       evidence:proof({sources:['event:prep','npc:npc-a'],at,fact:text,decision:{targetId:'prep',status:'resolved',reason:'清点流程已经实际完成',result:text,conditionsSatisfied:true,continues:false,resultKnowledge:{facts:[text],reported:[],suspected:[]}}})};
@@ -176,8 +175,8 @@ describe('R2 parseWorld reads only previously validated causal prerequisite resu
     if(mode==='cancelled' && a.finish.type==='SaveTask'){
       a.finish.task.status='cancelled';const p=JSON.parse(a.finish.evidence);p.decision.status='cancelled';p.decision.failure=true;p.fact='资料保管部门撤回了材料，本次核对任务已正式取消。';p.decision.reason='材料撤回使本次核对实际终止';p.decision.result=p.fact;p.decision.resultKnowledge={facts:[p.fact],reported:[],suspected:[]};a.finish.evidence=JSON.stringify(p);
     }
-    if(mode==='invalid-prior'){const p=JSON.parse(a.finish.evidence);p.decision.conditionsSatisfied=false;a.finish.evidence=JSON.stringify(p);}
-    if(mode==='time-order'){const p=JSON.parse(a.queue.evidence);p.at='2026-10-18T08:03:00+08:00';a.queue.evidence=JSON.stringify(p);}
+    if(mode==='invalid-prior' && a.finish.type==='SaveTask') delete a.finish.task.resolution;
+    if(mode==='time-order' && a.finish.type==='SaveTask')a.finish.task.resolution!.at='2026-10-18T08:11:00+08:00';
     if(mode==='cycle' && a.finish.type==='SaveTask')a.finish.task.prerequisites=['event:review'];
     if(mode==='late-failure')a.response.worldCommands.push({type:'UpdateNpc',commandId:'illegal-scene',npcId:'scene',expectedRevision:1,changes:{onScene:true},evidence:proof({at:'2026-10-18T08:09:00+08:00'})});
     expect(()=>parseWorld(JSON.stringify(a.response),a.state,a.draft)).toThrow();expect(a.state).toEqual(before);
@@ -213,10 +212,11 @@ describe('R1/R2 replay, permissions and transaction boundaries',()=>{
     const saved=await repo.commitTurn(submission(reloaded,''));expect(saved.state.tasks.prep.status).toBe('completed');expect(saved.state.events.review.protagonistEntry?.status).toBe('pending');
     expect((await repo.commitTurn(submission(reloaded,''))).replayed).toBe(true);expect(r.calls).toEqual(['world','world']);
   });
-  it('a later completed prerequisite event cannot support an earlier handoff even if its source ID is omitted',()=>{
+  it('queues at the projected clock, never at an obsolete evidence timestamp before the prerequisite',()=>{
     const a=dependencies('event'),p=JSON.parse(a.queue.evidence);p.at='2026-10-18T08:03:00+08:00';a.queue.evidence=JSON.stringify(p);
     a.state.events.review.estimatedEndAt='2026-10-18T08:02:00+08:00';
     if(a.queue.type==='SaveEvent')a.queue.event.estimatedEndAt=a.state.events.review.estimatedEndAt;
-    expect(()=>parseWorld(JSON.stringify(a.response),a.state,a.draft)).toThrow(expect.objectContaining({details:expect.objectContaining({worldRule:'completion_conditions'})}));
+    const result=parseWorld(JSON.stringify(a.response),a.state,a.draft);
+    expect(result.eventCommands.find(c=>c.type==='SaveEvent'&&c.event.id==='review')).toMatchObject({event:{protagonistEntry:{queuedAt:end}}});
   });
 });

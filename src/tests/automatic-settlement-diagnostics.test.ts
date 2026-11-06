@@ -21,10 +21,12 @@ describe('World诊断先复现', () => {
     const c = plannedEvent(); const { estimatedEndAt: omitted, ...missing } = c.event; void omitted;
     expect(failure(() => parse({ ...worldResult(), eventCommands: [{ ...c, event: missing }] }))).toMatchObject({ code: 'schema_fields', details: { commandType: 'SaveEvent', commandIndex: 0, fieldPath: 'eventCommands.0.event.estimatedEndAt' } });
   });
-  it('来源引用不存在与时间越界分别定位', () => {
-    const c = plannedEvent();
-    for (const [evidence, worldRule] of [[proof({ sources: ['not-a-source'] }), 'source_missing'], [proof({ at: '2026-10-20T08:00:00+08:00' }), 'source_time']] as const)
-      expect(failure(() => parse({ ...worldResult(), eventCommands: [{ ...c, evidence }] }))).toMatchObject({ details: { worldRule, commandType: 'SaveEvent', commandIndex: 0 } });
+  it('实体引用不存在与时间越界分别定位', () => {
+    const c=plannedEvent();
+    expect(failure(()=>parse({...worldResult(),eventCommands:[{...c,event:{...c.event,actorRefs:[{kind:'npc',id:'missing'}]}}]})))
+      .toMatchObject({details:{worldRule:'actor_permission',commandType:'SaveEvent',commandIndex:0}});
+    expect(failure(()=>parse({...worldResult(),eventCommands:[{...c,event:{...c.event,estimatedEndAt:actionTime}}]})))
+      .toMatchObject({code:'time_data',details:{commandType:'SaveEvent',commandIndex:0}});
   });
   it('现场NPC越权定位到命令和actor规则', () => {
     expect(failure(() => parse(worldResult([{ type: 'UpdateNpc', commandId: 'illegal', npcId: 'scene', expectedRevision: 0, changes: { healthText: '疲惫' }, evidence: proof() }])))).toMatchObject({ code: 'permission', details: { commandType: 'UpdateNpc', commandIndex: 0, worldRule: 'actor_permission' } });
