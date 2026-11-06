@@ -1,18 +1,16 @@
 变量组：economy / init
-初始化：只在开局所选现场建立必要记录，保留创角已有数据和同伴，Story时钟由程序注入，不重复计时。
+建立与玩家人生背景相符的经济起点，并区分原有资金、预期收入和本幕实际交易。
 
-经济仍分cash/onlineBalance/incomes/debts/properties/vehicles/otherAssets。所有金额为整数人民币分，账户只cash或onlineBalance。已持有资产估值不等于余额，未知余额不能当0。没有SetBalance、旧资产无交易登记或房产购买命令，不虚构收入/借款替代初始化；缺口写说明，保留旧数据。
-负add economy.cash/onlineBalance是消费；set economy.incomes[id]必须为完整received记录（source、amount正整数、status、account、receivedAt合法已发生时间）；正add余额不是收入。push economy.transfers={from,to,amount}内部转账不生成收入。
-set economy.debts[id]={account,debt:{creditor,principal,outstanding,status,repaymentTerms,collateralAssetIds,autoPaymentAuthorized,source,...}}，新借款active且本金等于未偿本金。push economy.debts[id].repayments={account,amount}，原引擎扣余额减本金，还清变repaid。
-set economy.vehicles[id].purchase={account,price,vehicle:完整VehicleAsset去掉id}，购买扣款登记资产，不再创建普通物品。车辆值含kind=vehicle、name、ownerRef、estimatedValue可null、source、statusText、model及可选合法acquiredAt/locationId。
-顺序必须符合本回合交易实际：先到账再消费，不能提前透支后面的收入。时钟用当前SAVE_STATE.worldClock或本批合法普通时间，不照抄示例日期。
-示例（hero为主角ID，金额是分，receivedAt须换成本轮合法游戏时间）：
+经济沿用cash/onlineBalance/incomes/debts/properties/vehicles/otherAssets，金额均为整数人民币分，账户仅cash或onlineBalance。SAVE_STATE.openingInitializationPending=true的新开局允许一条set opening.initialState，填写未知余额与初始预期收入，已有明确值包括0不得覆盖。根据年龄、职业、工龄、家庭与城市合理补足，不要求小说逐字报数；资产估值不能当余额。
+expectedIncomes是既有IncomeRecord数组，每条带稳定id、source、amount、status="expected"、account和scheduleText支付安排；可选expectedAt必须不早于开局候选endAt。不填receivedAt/sourceTurnId，不产生到账、借款或交易，不把预期工资再加进存款。稳定职业可以设工资；学生可设家庭生活费/奖学金/兼职，失业者不凭空设工资，可只有存款或已有支持；富裕家庭不必强行从零起步。暂无预期收入用空数组，不编造零薪雇佣关系。
+将天气、环境和经济初始化合在同一条命令，先初始化再实际交易。示例仅展示结构，数字、周期、ID和天气需按当前人物重算：
 <命令>
-set economy.incomes[pay] = {"source":"已到账报酬","amount":5000,"status":"received","account":"cash","receivedAt":"2026-10-18T08:00:00+08:00"}
-add economy.cash = -3000
-push economy.transfers = {"from":"cash","to":"onlineBalance","amount":500}
-set economy.debts[loan] = {"account":"cash","debt":{"creditor":"朋友","principal":1000,"outstanding":1000,"status":"active","repaymentTerms":"协商还款","collateralAssetIds":[],"autoPaymentAuthorized":false,"source":"本轮借款"}}
-push economy.debts[loan].repayments = {"account":"cash","amount":500}
+set opening.initialState = {"weatherText":"夏日多云","environmentText":"住宅楼下早餐铺刚开门，楼道传来邻居的脚步声。","cash":30000,"onlineBalance":3200000,"expectedIncomes":[{"id":"salary_teaching","source":"教师工资","amount":580000,"status":"expected","account":"onlineBalance","scheduleText":"每月15日发薪"}]}
 </命令>
+初始化不是任意经济对象覆盖；仅新开局一次，普通回合或无标记旧档不能调用。历史债务无到账登记、旧资产无交易登记、房产购买仍未支持，写明缺口，不虚构收入/借款/购买。
 
-只用TEXT_COMMAND_CATALOG列明的set/add/push/delete路径；前三者值为JSON，delete不带值；不输出DomainCommand对象。未支持的变化写<说明>，不创造自由字段、来源审批或覆盖许可。AI理解已选定Story，程序执行原领域约束；本阶段不推演World任务/事件。
+本幕实际交易继续按现有规则：负add economy.cash/onlineBalance为消费；set economy.incomes[id]只接受完整received记录，含source、正整数分amount、status、account、合法receivedAt。它与initialState.expectedIncomes不同，必须确有实际到账，正add余额不是收入。
+push economy.transfers={from,to,amount}只在账户间转账。set economy.debts[id]={account,debt:{creditor,principal,outstanding,status,repaymentTerms,collateralAssetIds,autoPaymentAuthorized,source,...}}为本幕新借款，active且本金等于未偿本金。push economy.debts[id].repayments={account,amount}扣余额、减本金，还清变repaid。
+set economy.vehicles[id].purchase={account,price,vehicle:完整VehicleAsset去掉id}购买扣款登记，不再创建普通物品；不能借此补录早已持有的车。
+按交易原顺序执行，不提前透支尚未到账的未来收入。时钟使用开局Story候选，不照抄示例日期。
+只用TEXT_COMMAND_CATALOG列明的set/add/push/delete路径，不输出DomainCommand对象；未支持事项写说明，不伪造成功或另建审批。后台任务与事件交给World。
