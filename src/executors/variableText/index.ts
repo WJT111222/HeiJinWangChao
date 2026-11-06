@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { commitCommands, fingerprint } from '../../domain/commands';
 import { DataError } from '../../domain/common';
 import { validateSceneEventUpdate } from '../../domain/events/scenePermission';
+import { preparedVariableCommands } from '../../domain/turnProjection';
 import { openingTimeBase } from '../../domain/openingTime';
 import { GameStateSchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
@@ -36,7 +37,7 @@ async function simulateChecked(plan: VariableExecutionPlan, state: GameState,
   try {
     // 整份批次只调用一次；不以逐条commit产生中间revision，不使用设备当前时间。
     const projected = commitCommands(openingTimeBase(state, context.draft), context.draft.turnId,
-      context.expectedRevision, checked.value.commands, state.updatedAt);
+      context.expectedRevision, preparedVariableCommands(state,context.draft,checked.value.commands), state.updatedAt);
     for (const command of checked.value.commands)
       if (command.type === 'SaveEvent') validateSceneEventUpdate(state, projected, command.event, context.draft.turnId);
     return { ok: true, value: projected };

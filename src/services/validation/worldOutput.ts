@@ -1,3 +1,4 @@
+import { eventPlanningOnly, normalizeEventContinuation } from './worldEventContinuation';
 import { historicalEvent, terminalEvent, isHistoricalEntry } from '../../domain/events/lifecycle';
 import { conditionEnded, worldEventSchedule } from '../../domain/events/schedule';
 import { WorldEventSchema } from '../../domain/events/schema';
@@ -20,6 +21,7 @@ import {
   worldSources,
   hasAffirmedTermination,
   hasPlayerKnownFact,
+  hasPlayerKnownArrangement,
 } from './worldEvidence';
 import { AiError } from '../ai/errors';
 import type { WorldEvidence, WorldSource } from './worldEvidence';
@@ -105,6 +107,8 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   requireWorld(draft.story, 'invalid_output', 'command_structure');
   const result = checked.data,
     base = projectTurn(original, draft);
+  const rawEventMirrors = new Map(result.eventCommands.flatMap(command => command.type === 'SaveEvent'
+    ? [[command.event.id, fingerprint(command.event)] as const] : []));
   const sources = worldSources(base, draft, state);
   const commands = [...result.worldCommands, ...result.taskCommands, ...result.eventCommands];
 
@@ -114,10 +118,8 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     requireWorld(command.type === 'SaveTask', 'permission');
   for (const command of result.eventCommands)
     requireWorld(['SaveEvent','DeleteEvent','ArchiveEvent'].includes(command.type), 'permission');
-  const variableIds =
-    draft.variables?.validation === 'validated'
-      ? draft.variables.result.commands.map((c) => c.commandId)
-      : [];
+  // Includes program-generated entry receipts, not only model Variables commands.
+  const variableIds = base.appliedCommands.filter(entry => entry.turnId === draft.turnId).map(entry => entry.commandId);
   const ids = [...variableIds, ...commands.map((command) => command.commandId)];
   requireWorld(new Set(ids).size === ids.length);
   const facts = commands.map((command) => fingerprint({ ...command, commandId: '' }));
@@ -182,6 +184,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
                 : ref.kind === 'organization'
                   ? (base.organizations[ref.id] ?? createdOrgs.get(ref.id))?.name
                   : base.protagonist.name,
+              ...(ref.kind==='npc' ? (base.npc[ref.id]??createdNpcs.get(ref.id))?.aliases??[] : ref.kind==='protagonist' ? ['主角'] : []),
             ].some((name) => name && proof.fact.includes(name))),
       );
     if (proof.kind === 'derived') {
@@ -451,6 +454,22 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
       case 'SaveEvent': {
         const event = command.event,
           old = base.events[event.id];
+        // Referencing a protected participant in a sourced scene record is not authority to act for them.
+        const protectedActors = event.actorRefs.filter(ref => ref.kind === 'protagonist' ||
+          (ref.kind === 'npc' && !actorAllowed(ref) && Boolean(base.npc[ref.id])));
+        const sceneRecord = protectedActors.length > 0;
+        const planningOnly = eventPlanningOnly(old, event) && proof.sources.includes(`event:${event.id}`);
+        if (sceneRecord && !planningOnly) {
+          const narrative = origins.find(source => source.id === 'story:current' && source.knowledge === 'fact')?.text;
+          requireWorld(proof.kind === 'established' && narrative, 'permission', 'actor_permission');
+          requireWorld(protectedActors.every(ref => tiedTo(ref)), 'permission', 'actor_permission');
+          // Source-ground every changed descriptive field; no invented scene decisions hidden in prose.
+          for (const field of ['title', 'backgroundText', 'goalText', 'resolutionText'] as const) {
+            const text = event[field];
+            if (text !== undefined && text !== old?.[field])
+              requireWorld(narrative.includes(text), 'permission', 'actor_permission');
+          }
+        }
         // 旧缺规划记录可真实终结，不为清理补造过去的预计日期；继续排程必须补齐规划。
         if(!old || !terminalEvent(event)) {
           const planned = WorldEventSchema.safeParse(event);
@@ -486,18 +505,20 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         requireWorld(
           event.actorRefs.every((ref) =>
             ref.kind === 'protagonist' ? ref.id === base.protagonist.id : actorAllowed(ref)
+              || (sceneRecord && protectedActors.some(actor => sameActor(actor, ref)))
               || (ref.kind === 'npc' && base.retiredNpcs[ref.id] && old?.actorRefs.some((prior) => sameActor(prior, ref))),
           ),
           'permission',
         );
         if (
-          event.actorRefs.some((ref) => ref.kind === 'protagonist') &&
+          !planningOnly && event.actorRefs.some((ref) => ref.kind === 'protagonist') &&
           ['active', 'resolved'].includes(event.status)
         )
           requireWorld(proof.kind === 'established', 'permission');
         if (old) {
           requireWorld(
             old.actorRefs.every((ref) => ref.kind === 'protagonist' || actorAllowed(ref)
+              || (sceneRecord && protectedActors.some(actor => sameActor(actor, ref)))
               || (ref.kind === 'npc' && base.retiredNpcs[ref.id])),
             'permission',
           );
@@ -565,14 +586,19 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
           } else requireWorld(event.resultKnowledge === undefined || (old && fingerprint(old) === fingerprint(event)));
         }
         // 只把显式提升知情标记作为知识传播；客观进展不要求主角先收到消息。
+        const learnedArrangement = event.status === 'scheduled' && hasPlayerKnownArrangement(proof, origins);
         if (event.visibility !== 'hidden' && event.visibility !== old?.visibility)
-          requireWorld(hasPlayerKnownFact(command, proof, origins), 'permission', 'player_knowledge');
+          requireWorld(hasPlayerKnownFact(command, proof, origins) || learnedArrangement, 'permission', 'player_knowledge');
         if (!old || !terminalEvent(old)) {
           const priorKnowledge = old && protagonistKnownEvent(old);
           const informed = event.visibility === 'known' && hasPlayerKnownFact(command, proof, origins);
-          const snapshot = priorKnowledge && !informed ? {
+          const snapshot = learnedArrangement && event.visibility !== 'hidden' ? {
+            worldUpdateTurnId: draft.turnId, title: proof.fact, status: 'scheduled' as const,
+            notice: proof.fact, knowledgeKind: 'reported' as const,
+          } : priorKnowledge && !informed ? {
             worldUpdateTurnId: draft.turnId, title: priorKnowledge.title, startAt: priorKnowledge.startAt,
             status: priorKnowledge.status, ...(priorKnowledge.resolutionText === undefined ? {} : { resolutionText: priorKnowledge.resolutionText }),
+            ...('notice' in priorKnowledge ? { notice: priorKnowledge.notice, knowledgeKind: priorKnowledge.knowledgeKind } : {}),
           } : undefined;
           // 模型只可沿用旧元数据或重放程序规范化结果，不能借快照伪造角色知识。
           requireWorld(!event.protagonistKnowledge || fingerprint(event.protagonistKnowledge) === fingerprint(old?.protagonistKnowledge)
@@ -582,6 +608,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
             event.sourceTurnIds = [...event.sourceTurnIds.filter(id => id !== draft.turnId), draft.turnId];
           } else delete event.protagonistKnowledge;
         }
+        normalizeEventContinuation(event, old, proof, origins, base, causal, draft);
         break;
       }
       case 'DeleteEvent':
@@ -621,7 +648,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   requireWorld(
     new Set(result.futureEvents.map((event) => event.id)).size === result.futureEvents.length,
   );
-  for (const event of result.futureEvents) {
+  for (const [index, event] of result.futureEvents.entries()) {
     const command = result.eventCommands.find(
       (c) => c.type === 'SaveEvent' && c.event.id === event.id,
     );
@@ -630,8 +657,9 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         event.status === 'scheduled' &&
         Date.parse(event.startAt) >= Date.parse(base.worldClock) &&
         command?.type === 'SaveEvent' &&
-        fingerprint(command.event) === fingerprint(event),
+        (rawEventMirrors.get(event.id) === fingerprint(event) || fingerprint(command.event) === fingerprint(event)),
     );
+    if (command?.type === 'SaveEvent') result.futureEvents[index] = structuredClone(command.event);
   }
   let projected: GameState;
   try { projected = projectTurn(original, draft, commands); }
@@ -647,10 +675,15 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   );
   if (draft.variables?.validation === 'validated' && !historicalPerspective(state,draft)) for (const due of worldEventSchedule(state,base).due) {
     const after=projected.events[due.eventId] ?? projected.retiredEvents[due.eventId];
-    requireWorld(after && (terminalEvent(after) || ('estimatedEndAt' in after && after.estimatedEndAt && Date.parse(after.estimatedEndAt)>Date.parse(base.worldClock))), 'invalid_output', 'due_event_unhandled');
+    requireWorld(after && (terminalEvent(after) || ('estimatedEndAt' in after && after.estimatedEndAt && Date.parse(after.estimatedEndAt)>Date.parse(base.worldClock)) || ('protagonistEntry' in after && ['pending','presented'].includes(after.protagonistEntry?.status??''))), 'invalid_output', 'due_event_unhandled');
   }
   for(const command of result.eventCommands) if(command.type==='SaveEvent' && !terminalEvent(command.event))
-    requireWorld(command.event.estimatedEndAt && Date.parse(command.event.estimatedEndAt)>Date.parse(base.worldClock));
+    requireWorld(['pending','presented'].includes(command.event.protagonistEntry?.status??'') || (command.event.estimatedEndAt && Date.parse(command.event.estimatedEndAt)>Date.parse(base.worldClock)));
+  // A world continuation is a necessary live successor, never an instant chain of finished events.
+  for(const command of result.eventCommands) if(command.type==='SaveEvent' && terminalEvent(command.event) && command.event.continuation?.direction==='world') {
+    const successors=result.eventCommands.filter(c=>c.type==='SaveEvent' && c.event.predecessorEventIds?.includes(command.event.id));
+    requireWorld(successors.length>0 && successors.every(c=>c.type==='SaveEvent' && !terminalEvent(c.event)), 'invalid_output','event_continuation');
+  }
   const conflicts = Object.values(base.npc).flatMap((npc) => {
     const tasks = Object.values(base.tasks).filter((task) => task.actorRef.kind === 'npc' && task.actorRef.id === npc.id && !['completed', 'cancelled'].includes(task.status));
     return tasks.length > 1 ? [`已有 NPC ${npc.id} 的未终结任务冲突：${tasks.map((task) => task.id).sort().join('、')}。未自动删除或改派任务；本轮不得新增占用。`] : [];

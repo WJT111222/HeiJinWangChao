@@ -45,21 +45,21 @@ describe('完整原始World响应：不修改输出、不假称已恢复原始�
     expect(state).toEqual(before);
   });
 
-  it('单独隔离后续事件：planned 不能凭 partially_known 自动授予角色知识', () => {
+  it('单独隔离后续事件：本幕实际获知的planned只授予安排消息，不授予未来结果', () => {
     const { state, draft, response } = originalSchoolContext();
     // Only isolate a subset for diagnosis; the canonical fixture above remains byte-identical.
     const isolated = { ...response, eventCommands: [response.eventCommands[1]] };
-    expect(() => parseWorld(JSON.stringify(isolated), state, draft)).toThrow(expect.objectContaining({ details: expect.objectContaining({
-      fieldPath: 'eventCommands.0', commandType: 'SaveEvent', worldRule: 'player_knowledge',
-    }) }));
+    const learned = parseWorld(JSON.stringify(isolated), state, draft);
+    expect(learned.eventCommands[0]).toMatchObject({event:{status:'scheduled',protagonistKnowledge:{knowledgeKind:'reported',notice:JSON.parse(response.eventCommands[1].evidence).fact}}});
+    expect(learned.eventCommands[0]).not.toHaveProperty('event.protagonistKnowledge.startAt');
     const sources = worldSources(projectTurn(state, draft), draft, state);
     expect(readWorldEvidence(response.eventCommands[1], sources, state.worldClock, schoolEvidence.at).proof.kind).toBe('planned');
   });
 
-  it('即使合成假设NPC已经离场，完整原文仍停在第二条事件的独立知情权限问题', () => {
+  it('缺少现场描述来源时，即使NPC离场，也不能仅凭主角参与者引用取得记录权限', () => {
     const { state, draft } = originalSchoolContext(false), before = structuredClone(state);
     expect(() => parseWorld(JSON.stringify(original), state, draft)).toThrow(expect.objectContaining({ details: expect.objectContaining({
-      fieldPath: 'eventCommands.1', commandType: 'SaveEvent', worldRule: 'player_knowledge',
+      fieldPath: 'eventCommands.0', commandType: 'SaveEvent', worldRule: 'actor_permission',
     }) }));
     expect(state).toEqual(before);
   });

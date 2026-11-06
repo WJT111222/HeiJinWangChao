@@ -113,7 +113,7 @@ event:<id>对已结案事件仅投影确定性状态、时间、地点/参与者
 
 ### 动态世界事件生命周期（现行权威契约）
 
-EVENT_SCHEDULE来自唯一worldClock到变量投影时间窗口，due按estimatedEndAt排序并含积压；按时间和来源依赖在这一次请求处理所有可处理事件。到期不是自动完成：综合背景、目标、NPC能力、资源、工作量和干预作自主推演。缺成功条件可失败结束或blocked延期；继续事件必须把estimatedEndAt合理改到本窗口结束之后，说明原因，不设固定回合数、固定时长或自动成功。scenePending只表示现场需真实反馈，不能代主角行动；unplannedLegacy为旧缺排程，不编造过去日期，合理重新规划未来时间或保留待处理。
+EVENT_SCHEDULE来自唯一worldClock到变量投影时间窗口，due按estimatedEndAt排序并含积压；按时间和来源依赖在这一次请求处理所有可处理事件。到期不是自动完成：综合背景、目标、NPC能力、资源、工作量和干预作自主推演。缺成功条件可失败结束或blocked延期；未交接而继续的事件必须把estimatedEndAt合理改到本窗口结束之后，说明原因；已排队或呈现的主角入场按下述承接规则等待实际反馈，不设固定回合数、固定时长或自动成功。scenePending只表示现场需真实反馈，不能代主角行动；unplannedLegacy为旧缺排程，不编造过去日期，合理重新规划未来时间或保留待处理。
 
 SaveEvent的新规划始终包含startAt、estimatedEndAt、backgroundText、goalText、非空actorRefs和既有Schema字段。时钟、排程与实际结案不同；不重写既有起点、参与者、附加条件，不将未来标已完成。resolved可有outcome=success/failure/changed；failure决策仅表示失败结束，不得改写为成功。cancelled可不填resolvedAt，未来安排仍可提前取消；若要进入真实历史时间线则必须保有实际终止时刻。
 
@@ -137,3 +137,25 @@ SaveEvent的新规划始终包含startAt、estimatedEndAt、backgroundText、goa
 既有known/partially_known场外事件的状态、延期及结案可按合法derived独立发展，不要求主角预先收到消息；保持原visibility，不借此公开人物记忆。protagonistKnowledge只由程序维护，不要编造或改写。来源、时间、行动者和结案条件仍须满足。
 
 没有实际变更时合法输出为：{"worldCommands":[],"taskCommands":[],"eventCommands":[],"futureEvents":[],"visibleHooks":[],"timelineCandidates":[],"unresolved":[]}。所有顶层数组都需保留。新事件的estimatedEndAt、backgroundText、goalText必填；仅既有旧事件真实终结可沿用缺项。
+
+
+### 现场记录例外与已获知的未来安排
+
+World可用SaveEvent记录本幕已发生的现场事件，参与者可以引用主角或PROTECTED_SCENE人物，但这不是让人物行动的授权。此类命令用established及story:current，fact须为实际发生的正文事实并明确对应每个现场参与者；新增/改写的title、backgroundText、goalText、resolutionText逐项沿用正文中的原文片段，避免在描述字段夹带尚未发生的决定。不要凭记录权限更新现场人物、地点、资金、关系或记忆；这类事实仍由Variables处理。稳定事件ID继续使用，已有身份/起点不能改写。
+
+scheduled可以保持known/partially_known：当planned.fact确实来自主角本幕已收到的通知、所见公告或合法已知来源时，程序仅保存这条安排消息，认知性质为reported，不视为安排已执行。不把内部背景、完整日程、目标或未来结果自动授予主角；缺少实际知晓来源不能提升visibility。protagonistKnowledge由程序写入，模型省略；futureEvents仍为相同原始SaveEvent镜像，规范化后由程序同步认知元数据。
+
+
+### 到期承接与主角行为反馈
+
+事件建立/启动时，在同一次World请求中给continuation计划：
+- {direction:"protagonist",reason,entry:{channel,cue,locationId?}}：当前阶段到期后确需主角参与。cue只包含合理入场消息或感知情境，不把隐藏背景全部公开，不预写玩家答应、付款或其他重大选择。
+- {direction:"world",reason,followup}：届时后台有因果必要的后续工作。
+- {direction:"end",reason}：不强制承接，无合理后续就正常结束。
+计划是阶段方向，不是已发生结果；旧事件缺字段仍可读，不回填虚构历史。调整旧方向须引用event:<id>及本次实际发展/合法行动者来源，在reason和rationale说明新依据，不能无理由每回合改写。
+
+当protagonist方向已到期且前置条件成立，SaveEvent保留active/blocked及稳定ID，引用原事件及实际行动来源，proof.at不得早于交接截止时间。程序写入protagonistEntry的pending身份、队列时间和cue；模型省略该字段（或原样保留程序已有元数据），不得自造或标记已呈现/拒绝。排队或presented等待玩家实际参与时，不强迫把整个事件结案或编造新的截止日期。EVENT_SCHEDULE.pendingEntries只表示已排队，不重复调用或生成邀请；实际入场在下一次玩家行动的Story中发生，不在本回合偷偷公开。成功结算前不生效。
+
+world方向在到期评估真实结果后的同一次响应内更新原事件，并按predecessorEventIds及event:<id>来源建立确有必要的非终态后续事件，保留真实耗时和新预计时间。不连造一串已完成事件，不强制每个事件有后继。end方向正常结束即可，无需新事件。到期不是成功证据；原有时间、因果、来源、行动者、结案条件继续验证。
+
+STORY_RESULT.eventInteractions是本幕实际反馈，VARIABLE_RESULT合并后的投影已经由程序更新同一个入场状态。主角拒绝/退出只关闭本次入场，World依实际结果重新安排原事件，可继续调查、合理延期、受阻、取消或改变方向；不自动惩罚或直接取消整个事件。closed入场不得凭原计划重新排队；再次邀请须有不同cue及本幕已成立的新邀请来源，不能借刷新或重试复活。只有意图不能当实际停止。未呈现的pending及尚在参与的presented入场不得被清理；重要和必要引用仍按原规则保留。World关闭或失败时不发新请求、不消费入场。

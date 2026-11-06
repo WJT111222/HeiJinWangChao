@@ -34,3 +34,5 @@ AI根据选定Story理解已发生变化，不替World推演后台任务、事�
 主角skills允许push单项、set skills[index]及delete skills[index]。特殊NPC的activeGoals同理；普通NPC不能写特殊目标。好感可set/add npc[id].affinity，程序根据当前前值生成原affinityChange；原显式affinityChange路径继续可用。需要新关系描述时先set relationshipText，不把数值当成恋爱或主角已知事实。set protagonist只接受已有UpdateProtagonist白名单字段的局部对象，不覆盖身份/ID或整个存档。
 
 未确认初始同伴的affinity占位不是已知数值，不能直接add。由模型决定最终绝对好感后用set（原显式affinityChange.from=null也仍可用），再做后续相对增减。
+
+Story变量规划中的eventInteraction为程序维护的承接回执，不生成对应文本字段更新，不写protagonistEntry、continuation或protagonistKnowledge路径。Variables仅处理本幕实际人物/时间/位置和已有现场sceneState；World读取合并后的回执调整同一事件，不能代主角作决定。
