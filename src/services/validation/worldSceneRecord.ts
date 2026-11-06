@@ -3,6 +3,7 @@ import type { WorldEvent } from '../../domain/events/schema';
 import type { GameState } from '../../domain/state';
 import { requireWorld } from './worldEvidence';
 import type { WorldEvidence } from './worldEvidence';
+import { narrationQuoteBody } from './evidence';
 
 /** Bounded, extractive record format; these labels never assert an actor's next choice. */
 export const sceneRecordGoal = '待处理：等待现场当事人下一步行动，不代表已经作出决定。';
@@ -21,13 +22,26 @@ export function validateAnchoredScene(event: WorldEvent, old: WorldEvent | undef
     ? ref.id === state.protagonist.id ? [state.protagonist.name, '主角'] : []
     : ref.kind === 'npc' ? state.npc[ref.id] ? [state.npc[ref.id].name, ...state.npc[ref.id].aliases] : []
       : state.organizations[ref.id] ? [state.organizations[ref.id].name] : [];
+  // Compare all existing identities, including actors omitted from the proposed event.
+  // The longest known name wins; equally long aliases belonging to different identities
+  // remain ambiguous. Never use a shorter name prefix as another person's action.
+  const identities: ActorRef[] = [
+    { kind: 'protagonist', id: state.protagonist.id },
+    ...Object.keys(state.npc).map(id => ({ kind: 'npc' as const, id })),
+    ...Object.keys(state.organizations).map(id => ({ kind: 'organization' as const, id })),
+  ];
+  const names = identities.flatMap(ref => namesFor(ref).filter(Boolean).map(name => ({ ref, name })));
   for (const anchor of record.anchors) for (const actor of anchor.actorRefs) {
     requireWorld(event.actorRefs.some(ref => sameActor(ref, actor)), 'permission', 'actor_permission');
     // A name elsewhere in the Story is insufficient. It must be the subject of this entire
     // affirmative source clause. Do not interpret a name in a roster/possessive as participation.
-    const subject = namesFor(actor).some(name => anchor.quote.startsWith(name)
-      && !/^[的、，,。！？：:]/u.test(anchor.quote.slice(name.length))
-      && anchor.quote.slice(name.length).replace(/[。！？\s]/gu, '').length >= 2);
+    const body = narrationQuoteBody(anchor.quote);
+    const matches = names.filter(({ name }) => body.startsWith(name));
+    const length = Math.max(0, ...matches.map(({ name }) => name.length));
+    const subjects = matches.filter(({ name }) => name.length === length);
+    const subject = subjects.length > 0 && subjects.every(({ ref }) => sameActor(ref, actor))
+      && !/^[的、，,。！？：:]/u.test(body.slice(length))
+      && body.slice(length).replace(/[。！？\s]/gu, '').length >= 2;
     requireWorld(subject, 'permission', 'actor_permission');
   }
   requireWorld(event.actorRefs.every(ref => record.anchors.some(anchor => anchor.actorRefs.some(actor => sameActor(actor, ref)))), 'permission', 'actor_permission');
