@@ -1,3 +1,5 @@
+import { DataError } from '../../domain/common';
+import { validateStoryEventInteractions } from '../../domain/events/interactions';
 import { AiError } from './errors';
 import { browserPromptOrder } from '../../prompts/order';
 import { composePrompt, composeTextVariablesPrompt } from '../../prompts/composer';
@@ -65,6 +67,11 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   const envelope = captured.stage === 'story' ? parseStoryEnvelope(response.text, captured.mode, captured.settings) : undefined;
   const story = envelope?.story;
   if (story) {
+    try { validateStoryEventInteractions(captured.state, story); }
+    catch (error) {
+      if (error instanceof DataError && error.code==='EVENT_ENTRY') throw new AiError('event_entry');
+      throw error;
+    }
     try { timeOutcome(captured.state, { userInput: captured.userInput, turnKind: captured.mode, story }, true); }
     catch (error) { throw variableValidationError(error); }
   }

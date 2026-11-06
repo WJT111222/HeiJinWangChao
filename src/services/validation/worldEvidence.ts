@@ -289,6 +289,6 @@ export function hasPlayerKnownFact(command: DomainCommand, proof: WorldEvidence,
 
 /** Learning that a future arrangement exists does not establish its execution or hidden details. */
 export function hasPlayerKnownArrangement(proof: WorldEvidence, sources: readonly WorldSource[]) {
-  return proof.kind === 'planned' && sources.some(source => source.knowledge === 'fact'
+  return proof.kind === 'planned' && sources.some(source => (source.knowledge === 'fact' || source.knowledge === 'statement')
     && source.playerKnownText?.includes(proof.fact));
 }

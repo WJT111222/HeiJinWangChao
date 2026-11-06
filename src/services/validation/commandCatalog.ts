@@ -39,7 +39,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
             worldCommands: worldTypes,
             taskCommands: ['SaveTask'],
             eventCommands: ['SaveEvent','DeleteEvent','ArchiveEvent'],
-            actorBoundary: '只推进场外 NPC/组织；禁止主角交易、现场重复行动、独立推进时钟。',
+            actorBoundary: '只自主推进场外NPC/组织；现场SaveEvent可据story:current记录已发生事实，受保护人物的描述字段须有正文对应。引用参与者不是后台行动授权。禁止主角交易、现场重复行动、独立推进时钟。',
           },
     rules: [
       '严格使用各 type 的同级字段，不接受 group/entityId/payload 包装或旧别名。',
@@ -61,6 +61,8 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
             'DeleteEvent(eventId,expectedStatus,reason)仅清理minor、无主角参与、无必要任务/因果/知识引用的独立终态事件，保留轻量身份。重要或主线相关事件保留完整对象。ArchiveEvent(eventId,title,summary)凭可信fact来源归档重大实际结束结果，无需主角知晓且不清理重要对象；timelineCandidates仅用resultKnowledge.facts写入客观历史，不能将转述/推测冒充事实。两个命令不得用于未终结事件。',
             'worldEventOnly标记的事件是后台世界事实，不是NPC或组织的知情来源；行动/任务/记忆须引用自身独立观察或转述来源，不能引用非公开事件ID代替知晓依据。事件本身仍可正常创建和演化，参与者列表不等同于已知者列表。',
             'npc-summary 来源仅能支持所属人物的计划任务或个人目标，不是客观事实、完成证据或其他人物的知识。',
+            '事件continuation规划protagonist/world/end方向与理由；protagonist提供最小channel/cue，world提供followup。到期后程序排队而非结案，下一幕Story在eventInteraction回执中实际呈现或反馈。protagonistEntry为程序字段，不得伪造或提前消费。world终态需要同批真实非终态后继；end不强制续篇。',
+            'scheduled可以已知：planned.fact确实出现在主角已知来源时只保留reported安排消息，不视为计划执行或授予内部排程；futureEvents与原SaveEvent镜像一致，程序统一规范化认知元数据。',
             'player_known记忆和事件知情标记的提升仍需playerKnownText中的肯定事实依据。既有事件的客观进展不要求主角先知晓，保持旧visibility即可；程序保留主角此前已知快照，protagonistKnowledge仅供程序维护，不得编造。客观进展不能自动成为角色知识或公开线索。',
             'CreateLocation 只接受实际存在或合法 derived 事实，planned 建设只可记录任务/未来事件。',
             'scheduled/active/blocked 事件不得包含 resolvedAt、resolutionText或resultKnowledge；estimatedEndAt/dueAt 是估计，到期只应重新评估，不自动完成。',
