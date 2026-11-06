@@ -216,6 +216,7 @@ export function buildCreationState(form: Creation, settings: Settings) {
   });
   return GameStateSchema.parse({
     ...state,
+    openingInitializationPending: true,
     ...(form.openingTimePending ? { openingTimePending: true } : {}),
     memories: { ...state.memories, immediateWindowSize: settings.memory.immediateWindowSize },
   });

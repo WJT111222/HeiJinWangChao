@@ -20,6 +20,8 @@ export function variableCommandsForTurn(state: GameState, draft: TurnDraft, comm
 // Compose before simulation: a scene transition and its Story receipt are one SaveEvent,
 // so no terminal/pending intermediate state is ever executed. Model candidates remain unchanged.
 export function preparedVariableCommands(state: GameState, draft: TurnDraft, commands: readonly DomainCommand[]): DomainCommand[] {
+  requireData(draft.turnKind === 'opening' || commands.every(c => c.type !== 'InitializeOpeningState'),
+    'OPENING_INITIALIZATION', '普通回合不能初始化原有生活状态');
   const variables = variableCommandsForTurn(state, draft, commands);
   const events = { ...state.events };
   const lastWrite = new Map<string, number>();

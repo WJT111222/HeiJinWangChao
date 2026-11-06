@@ -83,10 +83,10 @@ describe('P6 原创资源与兼容历史', () => {
       memoryTask: 'memory.npc_summarize', cotAllowed: true });
     expect(modules.some((item) => item.id.startsWith('planning.') || item.id === 'compatibility.cot_format_ack')).toBe(false);
   });
-  it('开局四原型仅作启发，旧强制灾难取消，七项写作设置不扩张', async () => {
+  it('开局生活基础取代四原型导向，保留选择自由与七项写作设置', async () => {
     const text = await readPromptResource('stages.opening.story');
-    expect(text).not.toContain('开局灾难必须'); expect(text).toContain('不强制四选一'); expect(text).toContain('不强制灾难');
-    for (const item of ['命运崩塌', '人生牢笼', '壮志受阻', '异才觉醒']) expect(text).toContain(item);
+    expect(text).not.toContain('开局灾难必须'); expect(text).toContain('不默认悲惨童年');
+    for (const item of ['普通家庭', '富裕家庭', '幸福成长', '稳定工作', '玩家可以自主选择', '不是必须逐项填写的设定表']) expect(text).toContain(item);
     expect(Object.keys(SettingsSchema.parse(defaultSettings()).prompts)).toHaveLength(7);
   });
   it.each(protocols)('%s通用历史无模型白名单，以user收尾，无未经确认的原生参数/Prefix', async (protocol) => {

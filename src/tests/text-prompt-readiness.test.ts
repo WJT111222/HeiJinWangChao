@@ -26,11 +26,11 @@ function input(mode:'opening'|'regular'='regular') {
 const textModules=promptManifest.modules.filter(m=>m.variableProtocol==='text');
 const sha=(content:string)=>createHash('sha256').update(content).digest('hex');
 describe('文本协议真实资源与离线组装',()=>{
-  it('67条路径目录类型齐备，现场任务事件复用旧命令',()=>{
+  it('68条路径目录类型齐备，含一条开局专用初始化，现场任务事件复用旧命令',()=>{
     const catalog=textVariableCatalog();
-    expect(catalog.entries).toHaveLength(67);
-    expect(new Set(catalog.entries.map(e=>`${e.operation}:${e.path}`)).size).toBe(67);
-    expect(new Set(catalog.entries.map(e=>e.commandType)).size).toBe(23);
+    expect(catalog.entries).toHaveLength(68);
+    expect(new Set(catalog.entries.map(e=>`${e.operation}:${e.path}`)).size).toBe(68);
+    expect(new Set(catalog.entries.map(e=>e.commandType)).size).toBe(24);
     for(const e of catalog.entries)expect(e.valueSchema).toHaveProperty('$schema');
     expect(catalog.entries.some(e=>['RetireNpc'].includes(e.commandType))).toBe(false);
     expect(catalog.entries.some(e=>e.path==='economy.cash'&&e.operation==='set')).toBe(false);
@@ -104,7 +104,10 @@ describe('真实模块示例经解析器/编译器/领域执行',()=>{
     const content=readFileSync(resolve('prompts',path),'utf8'),blocks=content.match(/<命令>[\s\S]*?<\/命令>/g)??[];
     expect(blocks.length).toBeGreaterThan(0);
     for(const block of blocks){
-      const a=input();a.state.turnNumber=1;a.state.journal=[{turnId:'past',revision:0,story,relatedActorRefs:[]}];
+      const opening = _id.endsWith('.init.text'), a=input(opening ? 'opening' : 'regular');
+      if (opening) a.state.openingInitializationPending = true;
+      else { a.state.turnNumber=1; a.state.journal=[{turnId:'past',revision:0,story,relatedActorRefs:[]}]; }
+      if (_id === 'variableGroups.economy.init.text') { a.state.economy.cash=null; a.state.economy.onlineBalance=null; }
       a.state.npc.lin={...npc('lin'),affinity:0,kind:'special',onScene:false,detailedBackground:'社区工作者',activeGoals:[],habits:[],longTermMemories:[],offscreenTaskIds:[]};
       const parsed=parseVariableText(block);if(!parsed.ok)throw new Error(parsed.error.code);
       const context={draft:a.draft,expectedRevision:0},before=structuredClone(a.state);
