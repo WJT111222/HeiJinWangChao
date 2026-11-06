@@ -3,9 +3,9 @@ import { IdSchema, IdsSchema, TextSchema, StringsSchema, GameTimeSchema } from '
 import { NpcMemorySchema } from '../memories/schema';
 
 const PrivateProfileSchema = z.strictObject({
+  bodyDescription: z.string().optional(),
   chestDescription: z.string().optional(),
-  buttocksDescription: z.string().optional(),
-  privatePartDescription: z.string().optional(),
+  pussyDescription: z.string().optional(),
   isVirgin: z.boolean().optional(),
   firstExperienceTarget: z.string().optional(),
   firstExperienceTime: z.string().optional(),

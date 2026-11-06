@@ -25,8 +25,14 @@ push npc[lin].longTermMemories = {"text":"记住共同作出的约定","knowledg
 
 
 重要成年女性特殊NPC（gender=female 且年龄未知或>=18）应在创建或更新时维护基础 privateProfile。
-set npc[id].privateProfile 为对象，可含 chestDescription / buttocksDescription / privatePartDescription（文字描述）、isVirgin（布尔）、firstExperienceTarget / firstExperienceTime / firstExperienceText。
-已有初次经历字段不可覆盖，未填写的允许后续补齐。普通NPC、男性或未成年不可写入该档案。
+set npc[id].privateProfile 为对象，可含：
+- bodyDescription：整体身材与体态描述，写清身高体型、腰腹曲线、腿部与整体比例，避免只写“身材好”。
+- chestDescription：胸部具体描述，写清大小、形状、软硬、乳晕与乳头状态等可观察特征。
+- pussyDescription：小穴具体描述，写清外形、颜色、湿润度、敏感点或内部触感等。
+- isVirgin：布尔，是否处女。
+- firstExperienceTarget / firstExperienceTime / firstExperienceText：初次性经历的对象、时间和文字记录。
+
+身体描述应具体、有画面感，每项至少两三句，不要只写单词或空泛形容词。已有初次经历字段不可覆盖，未填写的允许后续补齐。普通NPC、男性或未成年不可写入该档案。
 
 只用TEXT_COMMAND_CATALOG列明的set/add/push/delete路径；前三者值为JSON，delete不带值；不输出DomainCommand对象。未支持的变化写<说明>，不创造自由字段、来源审批或覆盖许可。AI理解已选定Story，程序执行原领域约束；本阶段不推演World任务/事件。
 

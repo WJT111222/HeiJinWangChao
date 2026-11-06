@@ -116,9 +116,9 @@ export function Panels({ name, view }: { name: PanelName; view: PlayerView }) {
                     {selected.privateProfile ? (
                       <>
                         <dl>
+                          <Detail label="身材描述">{selected.privateProfile.bodyDescription || '未记录'}</Detail>
                           <Detail label="胸部描述">{selected.privateProfile.chestDescription || '未记录'}</Detail>
-                          <Detail label="臀部描述">{selected.privateProfile.buttocksDescription || '未记录'}</Detail>
-                          <Detail label="私密部位描述">{selected.privateProfile.privatePartDescription || '未记录'}</Detail>
+                          <Detail label="小穴描述">{selected.privateProfile.pussyDescription || '未记录'}</Detail>
                           <Detail label="是否处女">{selected.privateProfile.isVirgin === true ? '是' : selected.privateProfile.isVirgin === false ? '否' : '未记录'}</Detail>
                         </dl>
                         <div style={{ marginTop: '0.5rem' }}>
