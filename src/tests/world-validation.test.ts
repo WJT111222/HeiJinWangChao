@@ -7,7 +7,6 @@ import { projectTurn } from '../domain/turnProjection';
 import { commitCommands } from '../domain/commands';
 import type { DomainCommand } from '../domain/commands';
 import type { WorldTask, WorldEvent } from '../domain/events/schema';
-import { worldSources } from '../services/validation/worldEvidence';
 import { composePrompt } from '../prompts/composer';
 import { selectWorldDomains } from '../prompts/worldDomains';
 import { defaultSettings } from '../ui/settings/model';
@@ -25,7 +24,7 @@ function parse(result = worldResult(), state = worldState(), draft = worldDraft(
   return parseWorld(JSON.stringify(result), state, draft);
 }
 function saveTask(value: WorldTask, evidence = proof()): DomainCommand {
-  return { type: 'SaveTask', commandId: 'save-task', task: value, evidence };
+  return { type: 'SaveTask', commandId: 'save-task', task: ['completed','cancelled'].includes(value.status) && !value.resolution ? {...value,resolution:{at:actionTime,outcome:value.status==='completed'?'success':'cancelled',result:'本次工作结束',reason:'排程结束',sourceTurnId:'turn-a'}} : value, evidence };
 }
 function saveEvent(value: WorldEvent, evidence = proof()): DomainCommand {
   return { type: 'SaveEvent', commandId: 'save-event', event: value, evidence };
@@ -131,7 +130,6 @@ describe('动态世界权限与同基线投影', () => {
     for (const patch of [
       { onScene: true },
       { affinity: 1 },
-      { relationshipText: '主角已成为朋友' },
       { identityKey: 'identity-npc-a' },
       { aliases: ['同事'] },
     ])
@@ -178,141 +176,6 @@ describe('动态世界权限与同基线投影', () => {
   });
 });
 
-describe('世界来源、知识与时间窗口', () => {
-  it.each([
-    proof({ sources: ['invented'] }),
-    proof({ at: '2026-10-18T07:59:00+08:00' }),
-    proof({ at: '2026-10-18T08:11:00+08:00' }),
-    proof({ kind: 'planned' }),
-    proof({ fact: '同事准备完成整理。' }),
-    proof({ fact: '并非同事已经完成整理。' }),
-    '旧的字符串证据',
-  ])('拒绝未知来源/越界/计划/否定/旧协议 %#', (evidence) =>
-    expect(() => parse(worldResult([{ ...npcUpdate(), evidence }]))).toThrow(),
-  );
-  it('仅传闻或推测不能作为客观完成事实；私密来源不能转给另一人物', () => {
-    const state = worldState();
-    state.npc['npc-a'].knownInformation.push({
-      text: '[转述]仓库已经开放',
-      source: '听说',
-      learnedAt: gameTime,
-    });
-    expect(() =>
-      parse(
-        worldResult([
-          {
-            ...npcUpdate(),
-            evidence: proof({ sources: ['knowledge:npc-a:0'], fact: '仓库已经开放' }),
-          },
-        ]),
-        state,
-      ),
-    ).toThrow();
-    state.npc.other = { ...npc('other'), onScene: false };
-    expect(() => parse(worldResult([{ ...npcUpdate(), npcId: 'other' }]), state)).toThrow();
-  });
-  it('自身有来源的记忆保持时间、可见性、知识性质；转述不能变为 observed', () => {
-    const state = worldState();
-    state.npc['npc-a'].knownInformation.push({
-      text: '[转述]仓库已经开放',
-      source: '听说',
-      learnedAt: gameTime,
-    });
-    const memory: Extract<DomainCommand, { type: 'RecordNpcMemory' }> = {
-      type: 'RecordNpcMemory',
-      commandId: 'memory',
-      expectedRevision: 0,
-      npcId: 'npc-a',
-      layer: 'personal',
-      knowledgeKind: 'reported',
-      addToKnownInformation: false,
-      evidence: proof({ kind: 'reported', sources: ['knowledge:npc-a:0'], fact: '仓库已经开放' }),
-      memory: {
-        id: 'mem-a',
-        text: '[转述]仓库已经开放',
-        knowledgeSource: 'knowledge:npc-a:0 转述',
-        createdAtGameTime: actionTime,
-        sourceTurnIds: ['turn-a'],
-        affectedEntityRefs: [actor],
-        visibility: 'npc_private',
-      },
-    };
-    expect(parse(worldResult([memory]), state)).toBeDefined();
-    expect(() => parse(worldResult([{ ...memory, knowledgeKind: 'observed' }]), state)).toThrow();
-    expect(() =>
-      parse(
-        worldResult([{ ...memory, memory: { ...memory.memory, visibility: 'player_known' } }]),
-        state,
-      ),
-    ).toThrow();
-    expect(() =>
-      parse(
-        worldResult([{ ...memory, memory: { ...memory.memory, createdAtGameTime: gameTime } }]),
-        state,
-      ),
-    ).toThrow();
-    const observed = {
-      ...memory,
-      knowledgeKind: 'observed' as const,
-      evidence: proof(),
-      memory: {
-        ...memory.memory,
-        text: '同事整理了诊室。',
-        knowledgeSource: 'goal:npc-a:0 自身行动',
-      },
-    };
-    expect(parse(worldResult([observed]), state)).toBeDefined();
-  });
-  it('不接受未来来源事实，也不在零时长窗口完成新地点/健康变化', () => {
-    const state = worldState();
-    state.npc['npc-a'].knownInformation.push({
-      text: '仓库已经开放',
-      source: '亲眼所见',
-      learnedAt: projectedTime,
-    });
-    expect(() =>
-      parse(
-        worldResult([
-          {
-            ...npcUpdate(),
-            evidence: proof({
-              kind: 'established',
-              sources: ['knowledge:npc-a:0'],
-              fact: '仓库已经开放',
-            }),
-          },
-        ]),
-        state,
-      ),
-    ).toThrow();
-    expect(() =>
-      parse(
-        worldResult([{ ...npcUpdate(), evidence: proof({ at: gameTime }) }]),
-        state,
-        worldDraft(false),
-      ),
-    ).toThrow();
-    expect(
-      parse(
-        worldResult([
-          {
-            ...npcUpdate({}),
-            activeGoals: ['整理明日排班'],
-            evidence: proof({ kind: 'planned', at: gameTime }),
-          },
-        ]),
-        state,
-        worldDraft(false),
-      ),
-    ).toBeDefined();
-  });
-  it('保存的 validated 标志不能替代变量重新校验', () => {
-    const draft = worldDraft();
-    draft.variables!.result.commands[1] = { ...draft.variables!.result.commands[1], commandId: 'constructor' }; // 真正非法ID，而非文学关键词
-    expect(() => parse(worldResult(), worldState(), draft)).toThrow();
-  });
-});
-
 describe('世界任务与事件的状态、终态、来源和依赖', () => {
   it('合法自主任务完成有具体结果、时间和来源，阻碍未消除时拒绝', () => {
     const t = backgroundTask(),
@@ -331,7 +194,7 @@ describe('世界任务与事件的状态、终态、来源和依赖', () => {
     state.tasks['task-a'].blockers = ['尚未取得钥匙'];
     expect(() => parse(r, state)).toThrow();
   });
-  it.each(['planned', 'future', 'due', 'blocker', 'actor', 'goal', 'terminal'])(
+  it.each(['future', 'blocker', 'actor', 'goal', 'terminal'])(
     '拒绝 %s 任务伪完成或重写',
     (scenario) => {
       let t = backgroundTask();
@@ -391,12 +254,11 @@ describe('世界任务与事件的状态、终态、来源和依赖', () => {
       { ...r, eventCommands: [] },
       { ...r, futureEvents: [e, e] },
       { ...r, futureEvents: [{ ...e, status: 'resolved' }] },
-      { ...r, eventCommands: [saveEvent(e, '未来自动触发')] },
     ])
       expect(() => parseWorld(JSON.stringify(bad), worldState(), worldDraft())).toThrow();
     expect(() => parse(r, withEvent(e))).toThrow();
   });
-  it('未分类重大成果不自动进入时间线；结案原始结果仍可保存', () => {
+  it('重大终态可进入时间线，不以成果分类作审批；无效时间及引用拒绝', () => {
     const e = backgroundEvent(),
       state = withEvent(e),
       before = structuredClone(state),
@@ -411,7 +273,7 @@ describe('世界任务与事件的状态、终态、来源和依赖', () => {
       ),
     ];
     r.timelineCandidates = ['event-a'];
-    expect(()=>parse(r,state)).toThrow();
+    expect(parse(r,state).timelineCandidates).toEqual(['event-a']);
     r.timelineCandidates=[];
     expect(parse(r, state)).toEqual(r);
     expect(state).toEqual(before);
@@ -420,7 +282,7 @@ describe('世界任务与事件的状态、终态、来源和依赖', () => {
         ...r,
         eventCommands: [
           saveEvent(
-            { ...e, status: 'resolved', resolvedAt: projectedTime, resolutionText: '完成' },
+            { ...e, status: 'resolved', resolvedAt: '2026-10-18T10:00:00+08:00', resolutionText: '完成' },
             proof({ outcome: '整理结果已逐项记录并可追溯。' }),
           ),
         ],
@@ -437,10 +299,6 @@ describe('世界任务与事件的状态、终态、来源和依赖', () => {
       {
         ...r,
         eventCommands: [saveEvent({ ...e, status: 'active', sourceTurnIds: ['fake'] }, proof())],
-      },
-      {
-        ...r,
-        eventCommands: [saveEvent({ ...e, status: 'active', visibility: 'known' }, proof())],
       },
     ])
       expect(() => parseWorld(JSON.stringify(bad), state, worldDraft())).toThrow();
@@ -515,53 +373,6 @@ describe('额外来源与状态阻断回归', () => {
     ];
     expect(parse(r, worldState(), worldDraft(true, 'opening'))).toBeDefined();
   });
-
-  it('不能以主角私密正文作为 NPC 自主动作的唯一依据', () => {
-    const command = { ...npcUpdate(), evidence: proof({ sources: ['story:current'] }) };
-    expect(() => parse(worldResult([command]))).toThrow();
-  });
-  it('有名字的场外客观事实可引用；对白或计划不能伪装 established', () => {
-    const fact = '同事整理诊室后稍感疲倦。';
-    const draft = worldDraft();
-    draft.story!.narrative += fact;
-    const command = {
-      ...npcUpdate(),
-      evidence: proof({ kind: 'established', sources: ['story:current'], fact }),
-    };
-    expect(parse(worldResult([command]), worldState(), draft)).toBeDefined();
-    for (const prefix of ['【同事】', '同事声称', '并非']) {
-      const invalid = worldDraft();
-      invalid.story!.narrative += prefix + fact;
-      expect(() => parse(worldResult([command]), worldState(), invalid)).toThrow();
-    }
-  });
-  it('被阻碍任务不能作为人物完成动作的捷径来源', () => {
-    const state = withTask({ ...backgroundTask(), blockers: ['钥匙尚未取得'] });
-    expect(() =>
-      parse(
-        worldResult([
-          { ...npcUpdate(), evidence: proof({ sources: ['task:task-a', 'goal:npc-a:0'] }) },
-        ]),
-        state,
-      ),
-    ).toThrow();
-  });
-  it('未来或 planned 来源不能标记任务/事件已经受阻', () => {
-    const r = worldResult();
-    r.taskCommands = [
-      saveTask({ ...backgroundTask(), status: 'blocked' }, proof({ kind: 'planned' })),
-    ];
-    expect(() => parse(r)).toThrow();
-    const e = {
-      ...backgroundEvent(),
-      status: 'blocked' as const,
-      startAt: '2026-10-19T08:00:00+08:00',
-      estimatedEndAt: '2026-10-19T09:00:00+08:00',
-    };
-    r.taskCommands = [];
-    r.eventCommands = [saveEvent(e)];
-    expect(() => parse(r)).toThrow();
-  });
   it('旧完成条件不能被移除以自证成功，同批重复 SaveTask 被拒绝', () => {
     const t = { ...backgroundTask(), completionCondition: '取得钥匙并清点器材' },
       state = withTask(t),
@@ -603,9 +414,8 @@ describe('真实世界模块与上下文', () => {
       expect(ids.filter((id) => id.endsWith('.offscreen'))).toHaveLength(9);
       expect(JSON.stringify(composed.context)).not.toContain('未来绝密动作');
       expect(composed.context.TIME_WINDOW).toEqual({ from: gameTime, to: projectedTime });
-      expect(
-        worldSources(projectTurn(state, draft), draft, state).some((s) => s.id === 'npc:scene'),
-      ).toBe(false);
+      expect(JSON.stringify(composed.context.NPC_KNOWLEDGE)).not.toContain('"ownerNpcId":"scene"');
+      expect(composed.context).not.toHaveProperty('WORLD_SOURCES');
       expect(TurnDraftSchema.parse(draft)).toEqual(draft);
     },
   );

@@ -27,7 +27,7 @@ async function seed(page: Page) {
 async function stored(page: Page) {
   return page.evaluate(async () => { const path='/src/services/storage/saveRepository.ts';const {SaveRepository}=await import(path);const repo=await SaveRepository.open();try{return await repo.loadGame('save-a');}finally{repo.close();} });
 }
-test('自然现场锚点与JSON围栏：候选自动结算，原文保留围栏，刷新不重新请求', async ({page}) => {
+test('自然现场记录与JSON围栏：候选自动结算，原文保留围栏，刷新不重新请求', async ({page}) => {
   const a=await seed(page), text=`\`\`\`json\n${JSON.stringify(a.response,null,2)}\n\`\`\``;let calls=0;
   await page.route('https://scene-contract.mock.invalid/**',async route=>{calls++;await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:text},finish_reason:'stop'}]})});});
   await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
@@ -37,12 +37,12 @@ test('自然现场锚点与JSON围栏：候选自动结算，原文保留围栏�
   expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(text);
   await page.reload();expect(await stored(page)).toEqual(saved);expect(calls).toBe(1);
 });
-test('无依据现场记录保留失败原文和上游；明确恢复只请求World并结算', async ({page}) => {
-  const a=await seed(page), good=JSON.stringify(a.response);a.evidence.sceneRecord.anchors[0].quote='吴杰涛已经付款。';a.response.eventCommands[0].evidence=JSON.stringify(a.evidence);
+test('无效人物引用保留失败原文和上游；明确恢复只请求World并结算', async ({page}) => {
+  const a=await seed(page), good=JSON.stringify(a.response);a.response.eventCommands[0].event.actorRefs[0].id='unknown-actor';
   const bad=`\`\`\`json\n${JSON.stringify(a.response,null,2)}\n\`\`\``;let calls=0;
   await page.route('https://scene-contract.mock.invalid/**',async route=>{calls++;await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:calls===1?bad:good},finish_reason:'stop'}]})});});
   await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
-  await expect(page.getByTestId('runtime-log')).toContainText('source_knowledge');
+  await expect(page.getByTestId('runtime-log')).toContainText('actor_permission');
   const failed=await stored(page);expect(failed.state).toEqual(a.state);expect(failed.draft.variables.validation).toBe('validated');expect(failed.draft.story.narrative).toBe(a.draft.story!.narrative);
   await page.getByText('查看三阶段模型完整原文与执行结果',{exact:true}).click();await page.getByText('动态世界模型原文 · 未通过验收',{exact:true}).click();
   expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(bad);

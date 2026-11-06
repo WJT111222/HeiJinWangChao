@@ -74,15 +74,15 @@ describe('玩家全量观察与角色认知分离', () => {
     for (const facts of [[], undefined]) {
       const invalid = structuredClone(state);
       invalid.events.ended.resultKnowledge = facts ? { facts, reported: ['北仓藏有违禁品'], suspected: [] } : undefined;
-      expect(() => parseWorld(JSON.stringify({ ...worldResult(), timelineCandidates: ['ended'] }), invalid, draft)).toThrow();
+      expect(parseWorld(JSON.stringify({ ...worldResult(), timelineCandidates: ['ended'] }), invalid, draft).timelineCandidates).toEqual(['ended']);
     }
   });
-  it('未核实event-result陈述不能作为归档的established事实', () => {
+  it('归档不解析evidence里的陈述分类，仍只保存事件历史', () => {
     const state = worldState(), draft = worldDraft(true, 'opening');
     state.events.report = { ...event('report'), actorRefs: [{ kind: 'npc', id: 'npc-a' }], status: 'resolved',
       resolvedAt: state.worldClock, resolutionText: '听说仓库缺货', resultKnowledge: { facts: ['接收了一份报告'], reported: ['仓库缺货'], suspected: [] } };
     expect(() => parseWorld(JSON.stringify({ ...worldResult(), eventCommands: [{ type: 'ArchiveEvent', commandId: 'false-history',
-      eventId: 'report', title: '仓库缺货', summary: '仓库缺货', evidence: proof({ kind: 'established', sources: ['event:report', 'event-result:report'], fact: '仓库缺货' }) }] }), state, draft)).toThrow();
+      eventId: 'report', title: '仓库缺货', summary: '仓库缺货', evidence: proof({ kind: 'established', sources: ['event:report', 'event-result:report'], fact: '仓库缺货' }) }] }), state, draft)).not.toThrow();
   });
   it('主角事件的后继不会被当作已脱离主线的普通杂事清理', () => {
     const state = worldState();

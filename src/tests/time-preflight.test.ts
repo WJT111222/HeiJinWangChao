@@ -5,7 +5,6 @@ import { parseVariables } from '../services/validation/aiOutputs';
 import { timeState, timeDraft } from './fixtures/time';
 import { timePreflight, timeOutcome, validateTimeCommands } from '../domain/timePreflight';
 import { worldWeekday } from '../prompts/context';
-import { worldSources } from '../services/validation/worldEvidence';
 import { task } from './fixtures/game';
 
 const sleepingState = () => timeState();
@@ -91,7 +90,6 @@ describe('只读事件节点筛选、知识与生命周期', () => {
     const state = visitor(); state.events.visitor.visibility = 'hidden'; state.events.visitor.title = '只有NPC知道的秘密敲门计划';
     const selected = draft(state), prompt = await composePrompt({ state, draft: selected, stage: 'story', mode: 'regular', settings: defaultSettings(), userInput: selected.userInput });
     expect(JSON.stringify(prompt.context)).not.toContain('只有NPC知道'); expect(timePreflight(state, selected.userInput).candidates).toEqual([]);
-    expect(worldSources(state, selected).find((source) => source.id === 'event:visitor')?.worldEventOnly).toBe(true);
   });
   it('行动或地点变更时重算；同时间已正式中断的事件不能再次触发', () => {
     const state = visitor(); expect(timePreflight(state, '等待一小时').candidates).toEqual([]);

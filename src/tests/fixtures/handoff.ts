@@ -15,7 +15,7 @@ export function handoffState() {
   return GameStateSchema.parse(state);
 }
 export function finishTask(state: GameState, id = 'work', at = actionTime, status: 'completed' | 'cancelled' = 'completed'): Extract<DomainCommand, { type: 'SaveTask' }> {
-  return { type: 'SaveTask', commandId: `finish-${id}`, task: { ...state.tasks[id], status },
+  return { type: 'SaveTask', commandId: `finish-${id}`, task: { ...state.tasks[id], status, resolution: {at,outcome:status === 'completed' ? 'success' : 'failure',result:resultText,reason:'实际工作结束，保留成果',sourceTurnId:'turn-a',resultKnowledge:{facts:[resultText],reported:[],suspected:[]}} },
     evidence: proof({ at, sources: [`task:${id}`, state.tasks[id].actorRef.kind === 'npc' ? `npc:${state.tasks[id].actorRef.id}` : `org:${state.tasks[id].actorRef.id}`],
       fact: status === 'completed' ? '清单与三份材料逐一吻合。' : '材料封存，核对人员离开工作岗位。',
       decision: { targetId: id, status, result: resultText, reason: status === 'completed' ? '逐份比对登记记录，无缺失。' : '场地被封，原排程不再执行，留下登记清单。',

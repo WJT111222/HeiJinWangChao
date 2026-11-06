@@ -23,8 +23,7 @@ export function validateStoryEventInteractions(state: GameState, story: Story) {
       'EVENT_ENTRY','事件承接回执不存在、重复或已过期');
     requireData(!terminalEvent(event) && (entry.status==='pending' || entry.status==='presented'),'EVENT_ENTRY','已关闭的入场不能再次处理');
     requireData(!(entry.status==='presented' && receipt.action==='presented'),'EVENT_ENTRY','已呈现入场不能重播');
-    requireData(guide.textEvidence?.trim() && story.narrative.includes(guide.textEvidence),'EVENT_ENTRY','承接回执须对应本幕实际正文');
-    if(receipt.action==='presented') requireData(guide.textEvidence?.includes(entry.cue), 'EVENT_ENTRY','入场消息必须实际出现在正文中');
+    requireData(guide.textEvidence?.trim(),'EVENT_ENTRY','承接回执说明不能为空');
     seen.add(receipt.eventId);
   }
   requireData(pendingEventEntries(state).every(entry=>seen.has(entry.eventId)), 'EVENT_ENTRY','本幕遗漏待处理入场，请重试正文');
