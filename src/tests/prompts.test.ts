@@ -294,12 +294,12 @@ describe('正式文本来源与旧架构保留', () => {
       sources.resources['reference/cot_legacy.txt'].fragmentSha256,
     );
   });
-  it('六主模板仍完整：两篇正文按P6批准更新契机/规划协议，其他四篇字节保留', () => {
+  it('六主模板来源仍保留：开局按人生初始化任务更新，普通正文保持P6版本', () => {
     expect(promptManifest.modules.filter((m) => m.category === 'stage' && m.variableProtocol !== 'text')).toHaveLength(6);
     for (const mode of ['opening', 'regular'] as const) {
       const path = `stages/${mode}/story.md` as const;
       const record = sources.resources[path];
-      expect(sha(text(path))).toBe(record.m5P6.sha256);
+      expect(sha(text(path))).toBe(mode === 'opening' ? sources.resources['stages/opening/story.md'].openingLifeInitialization.sha256 : record.m5P6.sha256);
     }
     expect(text('stages/opening/story.md')).toContain('不得死亡、背叛主角');
     expect(text('stages/regular/story.md')).toContain('不是开局');
@@ -439,7 +439,7 @@ describe('M3-P1 审阅修订与 P2 协议差异记录', () => {
     ).toBe(false);
     const todo = text('docs/OUTPUT_CONTRACT.md');
     expect(todo).toContain('M3-P2 待办');
-    expect(DomainCommandSchema.options).toHaveLength(26);
+    expect(DomainCommandSchema.options).toHaveLength(27);
     for (const option of DomainCommandSchema.options)
       expect(todo).toContain(option.shape.type.value);
     for (const required of [

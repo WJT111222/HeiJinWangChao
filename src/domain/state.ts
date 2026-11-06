@@ -27,6 +27,7 @@ export const SaveShape = {
   schemaVersion: z.literal(5), saveId: IdSchema, title: TextSchema,
   createdAt: GameTimeSchema, updatedAt: GameTimeSchema, revision: CountSchema, turnNumber: CountSchema,
   worldClock: GameTimeSchema, openingTimePending: z.literal(true).optional(), weatherText: z.string(), environmentText: z.string(),
+  openingInitializationPending: z.literal(true).optional(),
   protagonist: ProtagonistSchema, initialCompanionId: IdSchema.optional(),
   contactNpcIds: IdsSchema, contactReviewNpcIds: IdsSchema, retiredNpcs: entityTable(RetiredNpcSchema),
   npc: entityTable(NpcSchema), items: entityTable(ImportantItemSchema), economy: EconomySchema,
@@ -45,6 +46,9 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
   function check(ok: unknown, message: string) {
     if (!ok) ctx.addIssue({ code: 'custom', message });
   }
+  // Absence means unavailable, including all older saves. Never infer this right from turnNumber.
+  if (s.openingInitializationPending) check(s.revision === 0 && s.turnNumber === 0
+    && s.journal.length === 0 && s.appliedCommands.length === 0, '开局初始化标记仅限尚未执行命令的新存档');
   if (s.openingTimePending) check(s.worldClock === pendingOpeningClock && s.revision === 0 && s.turnNumber === 0
     && s.journal.length === 0 && s.appliedCommands.length === 0 && Object.keys(s.events).length === 0
     && Object.keys(s.retiredEvents).length === 0 && Object.keys(s.tasks).length === 0 && s.timeline.length === 0

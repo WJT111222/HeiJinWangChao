@@ -4,6 +4,8 @@ import type { ExecutionDiagnostic } from './diagnostics';
 
 // 固定代码词典不带出异常原文；仅下方两个场景错误允许带出经 IdSchema 校验的 NPC ID。
 export const domainRuleNames = {
+  opening_initialization: '此存档已不允许开局初始化',
+  initial_value_conflict: '初始化不能覆盖已有明确数据',
   npc_scene_location: '在场 NPC 与主角的地点不一致',
   missing_location: '所引用地点不存在',
   missing_actor: '人物或组织引用不存在',
@@ -36,6 +38,9 @@ export function isDomainRule(value: unknown): value is DomainRule {
 }
 
 const dataErrors: Record<string, DomainRule> = {
+  OPENING_INITIALIZATION: 'opening_initialization',
+  INITIAL_VALUE_CONFLICT: 'initial_value_conflict',
+  INCOME_TIME: 'invalid_time',
   DUPLICATE_ID: 'duplicate_entity_id',
   DUPLICATE_NPC: 'duplicate_npc_identity',
   NPC_IDENTITY: 'duplicate_npc_identity',

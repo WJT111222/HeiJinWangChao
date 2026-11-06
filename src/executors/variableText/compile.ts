@@ -1,5 +1,6 @@
 import { compileSourceOperation, normalizeSourcePath, sourceValues, trackSourceValues } from './sourceSemantics';
 import { SceneEventStateSchema } from '../../domain/events/schema';
+import { OpeningInitialStateSchema } from '../../domain/openingInitialization';
 import { DomainCommandSchema, fingerprint } from '../../domain/commands';
 import type { DomainCommand } from '../../domain/commands';
 import { GameTimeSchema, IdSchema } from '../../domain/common';
@@ -127,7 +128,13 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
     const transaction = await compileSourceOperation(command, values, base, quantities, prior, common, context.expectedRevision)
       ?? compileTransaction(command, common, context.expectedRevision)
       ?? compileEntity(command, common, context.expectedRevision);
-    if (sceneEvent && node.kind==='id') {
+    if (command.path.nodes.length === 2 && root.name === 'opening' && node?.kind === 'field' && node.name === 'initialState') {
+      if (command.operation !== 'set') return failed('unsupported_operation', origin);
+      if (draft.turnKind !== 'opening') return failed('permission_denied', origin);
+      const changes = OpeningInitialStateSchema.safeParse(command.value);
+      if (!changes.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, changes.error));
+      mapped = { ...common, type: 'InitializeOpeningState', changes: changes.data };
+    } else if (sceneEvent && node.kind==='id') {
       if(command.operation!=='set')return failed('unsupported_operation',origin);
       const old=sceneEvents.get(node.id),delta=SceneEventStateSchema.safeParse(command.value);
       if(!old)return failed('entity_not_found',origin);
