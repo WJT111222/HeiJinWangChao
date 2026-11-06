@@ -79,7 +79,6 @@ describe('Story receipts are atomic projections, not early consumption',()=>{
   it.each(['omitted','wrong-id','replayed'] as const)('rejects %s receipt through the real projection path',kind=>{
     const a=queuedState(),draft=selected(a);
     if(kind==='omitted')draft.story!.variableGuide=[];
-    if(kind==='analysis-only')draft.story!.narrative='主角继续休息，没有来电。';
     if(kind==='wrong-id')draft.story!.variableGuide[0].eventInteraction!.entryId='invented';
     if(kind==='replayed')a.state=projectTurn(a.state,draft);
     expect(()=>projectTurn(a.state,draft)).toThrow();

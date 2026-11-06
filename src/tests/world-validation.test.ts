@@ -258,7 +258,7 @@ describe('世界任务与事件的状态、终态、来源和依赖', () => {
       expect(() => parseWorld(JSON.stringify(bad), worldState(), worldDraft())).toThrow();
     expect(() => parse(r, withEvent(e))).toThrow();
   });
-  it('未分类重大成果不自动进入时间线；结案原始结果仍可保存', () => {
+  it('重大终态可进入时间线，不以成果分类作审批；无效时间及引用拒绝', () => {
     const e = backgroundEvent(),
       state = withEvent(e),
       before = structuredClone(state),
@@ -282,7 +282,7 @@ describe('世界任务与事件的状态、终态、来源和依赖', () => {
         ...r,
         eventCommands: [
           saveEvent(
-            { ...e, status: 'resolved', resolvedAt: projectedTime, resolutionText: '完成' },
+            { ...e, status: 'resolved', resolvedAt: '2026-10-18T10:00:00+08:00', resolutionText: '完成' },
             proof({ outcome: '整理结果已逐项记录并可追溯。' }),
           ),
         ],
@@ -414,7 +414,7 @@ describe('真实世界模块与上下文', () => {
       expect(ids.filter((id) => id.endsWith('.offscreen'))).toHaveLength(9);
       expect(JSON.stringify(composed.context)).not.toContain('未来绝密动作');
       expect(composed.context.TIME_WINDOW).toEqual({ from: gameTime, to: projectedTime });
-      expect(JSON.stringify(composed.context.NPC_KNOWLEDGE)).not.toContain('\"ownerNpcId\":\"scene\"');
+      expect(JSON.stringify(composed.context.NPC_KNOWLEDGE)).not.toContain('"ownerNpcId":"scene"');
       expect(composed.context).not.toHaveProperty('WORLD_SOURCES');
       expect(TurnDraftSchema.parse(draft)).toEqual(draft);
     },

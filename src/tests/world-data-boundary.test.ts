@@ -86,6 +86,17 @@ describe('保留权限、引用、时间和正式事务',()=>{
     const story=contextFor({stage:'story',mode:'regular',state:after,settings:defaultSettings(),userInput:'继续'});
     expect(JSON.stringify(story)).not.toContain('另一份清单');expect(after.npc['npc-a'].memories).toHaveLength(1);
   });
+  it('不能用后来才结束的前置条件倒填较早的实际结案',()=>{
+    const a=context();a.state.events.prior={...event('prior'),status:'active',estimatedEndAt:later,actorRefs:[actor],sourceTurnIds:[]};
+    const prior=incident('prior');prior.event={...a.state.events.prior,status:'resolved',resolvedAt:projectedTime,resolutionText:'前置结束',sourceTurnIds:[a.draft.turnId]};
+    const dependent=incident('dependent');dependent.event={...dependent.event,status:'resolved',resolvedAt:actionTime,resolutionText:'后继结束',prerequisites:['event:prior']};
+    expect(()=>parse(a,[dependent,prior])).toThrow(expect.objectContaining({details:expect.objectContaining({worldRule:'completion_conditions'})}));
+    dependent.event.resolvedAt=projectedTime;expect(parse(a,[dependent,prior]).eventCommands).toHaveLength(2);
+  });
+  it('validated标记不能绕过变量Schema和引用重验',()=>{
+    const a=context();a.draft.variables!.result.commands[1].commandId='constructor';
+    expect(()=>parse(a,[])).toThrow();
+  });
   it('候选、Commit重验、重载和回执重放保持原子性',async()=>{
     const a=context(),before=structuredClone(a.state),repo=await SaveRepository.open('world-no-semantic',new IDBFactory());repos.push(repo);await repo.create(a.state);
     const initial=await completeDraft(repo);const command=incident();command.event.sourceTurnIds=[initial.turnId];

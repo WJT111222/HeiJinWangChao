@@ -45,7 +45,7 @@ async function hiddenEvent(participantB = false) {
   } finally { repo.close(); }
 }
 
-// 真正经过事件验证、正式事务与下回合WORLD_SOURCES，不以helper的返回值冒充完整路径。
+// 真正经过事件验证、正式事务与下回合世界事件，不以helper的返回值冒充完整路径。
 describe('隐藏事件不是NPC知情授权', () => {
   it('后台事件可以继续产生隐藏后续事件；参与者B仍不会自动得到新知识', async () => {
     const { state, draft, at } = await hiddenEvent();

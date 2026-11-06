@@ -1,3 +1,4 @@
+import { actionTime } from './fixtures/world';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { WorldStage } from '../workflows/worldStage';

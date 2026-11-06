@@ -56,6 +56,7 @@ describe('混合任务成果的认知分层与旧档保留', () => {
     if (fault === 'unknown-field') evidence.decision.resultKnowledge.permissions = 'public';
     if (fault === 'oversized') evidence.decision.resultKnowledge.facts = Array.from({ length: 13 }, () => '事实');
     if (fault === 'non-text') evidence.decision.resultKnowledge.reported = [123];
+    if (command.type !== 'SaveTask') throw Error('fixture');
     command.task.resolution!.resultKnowledge = evidence.decision.resultKnowledge;
     expect(() => parseWorld(JSON.stringify(raw), state, worldDraft())).toThrow(); expect(state.tasks.work.resolution).toBeUndefined();
   });
