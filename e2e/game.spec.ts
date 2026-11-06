@@ -1,5 +1,5 @@
 import { openGameTools } from './helpers/gameLayout';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 
 async function seed(page: Page) {
@@ -144,8 +144,9 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
         const request = store.getAll();
         request.onsuccess = () => {
           const saved = request.result[0];
-          // 此处人为建立已提交历史，必须同步建立正式时钟，不能保留新档待定标记。
+          // 此处人为建立已提交历史，必须同步建立正式时钟，清除两个仅限新档的初始化标记。
           delete saved.openingTimePending;
+          delete saved.openingInitializationPending;
           saved.worldClock = '2015-07-08T14:02:00+08:00';
           saved.turnNumber = 2;
           saved.revision = 2;

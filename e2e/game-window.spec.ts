@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 
 async function seed(page: Page, mode: 'long' | 'complete' | 'history' = 'long') {

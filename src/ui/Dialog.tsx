@@ -6,11 +6,15 @@ export function Dialog({
   onClose,
   children,
   small = false,
+  className = '',
+  closeLabel = '关闭资料界面',
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   small?: boolean;
+  className?: string;
+  closeLabel?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -33,7 +37,7 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className={small ? 'modal modal-small' : 'modal'}
+      className={`${small ? 'modal modal-small' : 'modal'} ${className}`.trim()}
       aria-labelledby={titleId}
       onKeyDown={(event) => {
         if (event.key !== 'Tab') return;
@@ -62,7 +66,7 @@ export function Dialog({
           <p className="eyebrow">HEIJIN / ARCHIVE</p>
           <h2 id={titleId}>{title}</h2>
         </div>
-        <button type="button" onClick={onClose} aria-label="关闭资料界面">
+        <button type="button" onClick={onClose} aria-label={closeLabel}>
           关闭 <span aria-hidden="true">×</span>
         </button>
       </header>
