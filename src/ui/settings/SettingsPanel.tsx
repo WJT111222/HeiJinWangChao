@@ -1,7 +1,8 @@
 import type { SaveRepository } from '../../services/storage/saveRepository';
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useCallback, useState } from 'react';
 import type { ReactNode } from 'react';
 import { AiConnections } from './AiConnections';
+import { UnsavedAiChanges } from './UnsavedAiChanges';
 import { SettingsSchema } from './model';
 import type { Settings } from './model';
 
@@ -16,16 +17,24 @@ export function SettingsPanel({
   repository,
   activeSaveId,
   memoryMaintenance,
+  onAiDirtyChange,
 }: {
   settings: Settings;
   repository?: SaveRepository;
   activeSaveId?: string;
   memoryMaintenance?: ReactNode;
+  onAiDirtyChange?: (dirty: boolean) => void;
   onSave: (settings: Settings) => void;
 }) {
   const [tab, setTab] = useState<(typeof tabs)[number]>('AI 连接');
   const [editing, setEditing] = useState(settings);
   const [notice, setNotice] = useState('');
+  const [aiDirty, setAiDirty] = useState(false);
+  const [pendingTab, setPendingTab] = useState<(typeof tabs)[number]>();
+  const aiDirtyChanged = useCallback((dirty: boolean) => {
+    setAiDirty(dirty);
+    onAiDirtyChange?.(dirty);
+  }, [onAiDirtyChange]);
   const prompt = <K extends keyof Settings['prompts']>(key: K, value: Settings['prompts'][K]) =>
     setEditing({ ...editing, prompts: { ...editing.prompts, [key]: value } });
   function save() {
@@ -51,6 +60,7 @@ export function SettingsPanel({
             key={name}
             aria-pressed={tab === name}
             onClick={() => {
+              if (name !== tab && tab === 'AI 连接' && aiDirty) { setPendingTab(name); return; }
               setTab(name);
               setNotice('');
             }}
@@ -70,7 +80,7 @@ export function SettingsPanel({
             />
           </Suspense>
         )}
-        {tab === 'AI 连接' && <AiConnections timeoutSeconds={settings.runtime.timeoutSeconds} />}
+        {tab === 'AI 连接' && <AiConnections timeoutSeconds={settings.runtime.timeoutSeconds} onDirtyChange={aiDirtyChanged} />}
         {tab === '提示词' && (
           <>
             <p className="muted">七项叙事偏好用于下一次正文请求的提示词与输出校验。</p>
@@ -235,6 +245,12 @@ export function SettingsPanel({
           </button>
         )}
       </div>
+      {pendingTab && <UnsavedAiChanges onContinue={() => setPendingTab(undefined)} onDiscard={() => {
+        aiDirtyChanged(false);
+        setTab(pendingTab);
+        setPendingTab(undefined);
+        setNotice('');
+      }} />}
     </div>
   );
 }

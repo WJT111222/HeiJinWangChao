@@ -54,7 +54,8 @@ const direct = z.strictObject({
   modelId: z.union([modelIdSchema, z.literal('')]),
 });
 const optionalRoute = z.discriminatedUnion('mode', [
-  z.strictObject({ mode: z.literal('follow-story') }),
+  // Keep a stage's own selection while it temporarily inherits Story. IDs only, no credentials.
+  z.strictObject({ mode: z.literal('follow-story'), independent: direct.optional() }),
   direct.extend({ mode: z.literal('independent') }),
 ]);
 export const AiConfigSchema = z
@@ -68,12 +69,15 @@ export const AiConfigSchema = z
     if (new Set(config.channels.map((c) => c.id)).size !== config.channels.length)
       ctx.addIssue({ code: 'custom', message: '渠道 ID 重复' });
     for (const route of Object.values(config.routes)) {
+      const saved = 'independent' in route ? route.independent : undefined;
       if (
         'channelId' in route &&
         route.channelId &&
         !config.channels.some((c) => c.id === route.channelId)
       )
         ctx.addIssue({ code: 'custom', message: '路由引用的渠道不存在' });
+      if (saved?.channelId && !config.channels.some((c) => c.id === saved.channelId))
+        ctx.addIssue({ code: 'custom', message: '独立模型选择引用的渠道不存在' });
     }
   });
 export type AiConfig = z.infer<typeof AiConfigSchema>;
@@ -117,25 +121,29 @@ export function readAiConfig(storage: Pick<Storage, 'getItem'>) {
 export function saveAiConfig(storage: Pick<Storage, 'setItem'>, config: AiConfig) {
   return writeDocument(storage, aiConfigKey, AiConfigSchema, config);
 }
+export function setModelRouteFollow(config: AiConfig, stage: Exclude<AiTask, 'story'>, follow: boolean): AiConfig {
+  const route = config.routes[stage];
+  if ((route.mode === 'follow-story') === follow) return config;
+  const next = route.mode === 'independent'
+    ? { mode: 'follow-story' as const, independent: { channelId: route.channelId, modelId: route.modelId } }
+    : { mode: 'independent' as const, ...(route.independent ?? { channelId: '', modelId: '' }) };
+  return { ...config, routes: { ...config.routes, [stage]: next } };
+}
 export function removeChannel(config: AiConfig, id: string): AiConfig {
+  const remainingRoute = (route: AiConfig['routes']['variables']): AiConfig['routes']['variables'] => {
+    if (route.mode === 'independent')
+      return route.channelId === id ? { mode: 'independent', channelId: '', modelId: '' } : route;
+    return route.independent?.channelId === id ? { mode: 'follow-story' } : route;
+  };
   return AiConfigSchema.parse({
     ...config,
     channels: config.channels.filter((c) => c.id !== id),
     routes: {
       story:
         config.routes.story.channelId === id ? { channelId: '', modelId: '' } : config.routes.story,
-      variables:
-        'channelId' in config.routes.variables && config.routes.variables.channelId === id
-          ? { mode: 'follow-story' }
-          : config.routes.variables,
-      world:
-        'channelId' in config.routes.world && config.routes.world.channelId === id
-          ? { mode: 'follow-story' }
-          : config.routes.world,
-      memory:
-        config.routes.memory?.mode === 'independent' && config.routes.memory.channelId === id
-          ? { mode: 'follow-story' }
-          : config.routes.memory,
+      variables: remainingRoute(config.routes.variables),
+      world: remainingRoute(config.routes.world),
+      memory: remainingRoute(config.routes.memory),
     },
   });
 }
