@@ -107,7 +107,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     audience: 'internal' as const,
   };
   } catch (error) {
-    const failure = captured.stage === 'variables' ? variableFailure(error, step) : error;
+    const failure = captured.stage === 'variables' ? variableFailure(error, step) : captured.stage === 'story' ? storyFailure(error, true) : error;
     stageResponses.update(responseId, { status: 'failed', ...(received ? { text: received } : {}), error: safeAiError(failure) }, secrets);
     throw failure;
   }

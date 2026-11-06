@@ -50,9 +50,9 @@ const timeFailureRules: Record<string, StoryRule> = {
   '未知时间结果类型': 'time_kind',
 };
 /** Presentation adapter only; callers may retain the original DataError for existing control flow. */
-export function storyFailure(error: unknown): unknown {
+export function storyFailure(error: unknown, knownStoryResponse = false): unknown {
   if (error instanceof AiError) {
-    if (error.code === 'invalid_output' && !error.details?.storyRule)
+    if (knownStoryResponse && error.code === 'invalid_output' && !error.details?.storyRule)
       return new AiError(error.code, error.status, { storyRule: 'structure_unrecognized' });
     return error;
   }
