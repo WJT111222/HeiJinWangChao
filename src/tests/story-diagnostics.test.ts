@@ -73,7 +73,7 @@ describe('Story diagnostic privacy and compatibility', () => {
     expect(error.details).toEqual({ storyRule: 'narrative_short' });
   });
   it('unclassified invalid_output explicitly says unrecognized structure and points to temporary raw response', () => {
-    const value = safeAiError(storyFailure(new AiError('invalid_output')));
+    const value = safeAiError(storyFailure(new AiError('invalid_output'), true));
     expect(value).toMatchObject({ code: 'invalid_output', details: { storyRule: 'structure_unrecognized' } });
     expect(value.message).toContain('正文输出结构无法识别'); expect(value.message).toContain('临时模型原文');
   });
@@ -82,6 +82,16 @@ describe('Story diagnostic privacy and compatibility', () => {
     for (const count of [3, 5]) {
       const raw = body.replace('等候\n离开\n询问', Array.from({ length: count }, () => '等候').join('\n'));
       expect(parseStoryEnvelope(raw, 'regular', settings()).story.actionOptions).toHaveLength(count);
+    }
+  });
+});
+
+describe('shared error presentation keeps other stages intact', () => {
+  it('World invalid_output must never be relabelled as unrecognized Story structure', async () => {
+    const { storyError } = await import('../workflows/storyStage');
+    for (const error of [new AiError('invalid_output'), new AiError('invalid_output', undefined, { worldRule: 'actor_permission' })]) {
+      expect(storyError(error)).toBe(safeAiError(error).message);
+      expect(runtimeLogEvent(1, 'world', 'failed', error)).not.toHaveProperty('storyRule');
     }
   });
 });

@@ -160,6 +160,6 @@ export function storyError(error: unknown): string {
   )
     return error.code === 'STORY_BUSY'
       ? '此存档已有阶段请求，请等待或取消。'
-      : safeAiError(storyFailure(error)).message;
-  return safeAiError(storyFailure(error)).message;
+      : '存档或草稿版本已变化，本次结果未保存。请重新读取存档。';
+  return safeAiError(error).message;
 }

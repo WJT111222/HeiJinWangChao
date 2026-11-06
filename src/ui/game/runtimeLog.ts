@@ -88,7 +88,7 @@ export function runtimeLogEvent(
     }
     return { ...entry, code: failure.code, message: safeCommitCodes[failure.code] };
   }
-  const safe = safeAiError(stage === 'commit' ? variableFailure(failure, 'commit') : stage === 'variables' ? variableFailure(failure, 'context') : stage === 'story' ? storyFailure(failure) : failure);
+  const safe = safeAiError(stage === 'commit' ? variableFailure(failure, 'commit') : stage === 'variables' ? variableFailure(failure, 'context') : stage === 'story' ? storyFailure(failure, true) : failure);
   const details = 'details' in safe ? safe.details : undefined;
   const status = 'status' in safe ? safe.status : undefined;
   const path = details?.fieldPath;
