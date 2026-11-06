@@ -6,6 +6,7 @@ import type { Page } from '@playwright/test';
 
 type Plan = { chunks?: string[]; status?: number; gap?: number; delay?: number; reasoning?: string; finishReason?: string };
 const story = '【旁白】公交车在街边缓缓停下。\n\n行人沿着站台散开，你仍站在原地。';
+const displayedStory = '公交车在街边缓缓停下。\n\n行人沿着站台散开，你仍站在原地。';
 const result = (narrative = story) =>
   `<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>${narrative}</正文><短期记忆>等车</短期记忆><变量规划>[{"group":"time","observedFact":"内部指导绝不进入阅读区"}]</变量规划><行动选项>看看站台\n留在原地\n询问路线</行动选项>`;
 let server: Server;
@@ -192,7 +193,8 @@ test('真实开局流式分片、资料面板不打断、只展示正文，草�
   await page.keyboard.press('Escape');
   await generated(page);
   const reader = page.getByTestId('story-reader');
-  await expect(reader).toContainText(story);
+  await expect(reader).toContainText(displayedStory);
+  await expect(reader).not.toContainText('【旁白】');
   await expect(reader).not.toContainText('内部指导');
   await expect(reader).not.toContainText('<正文>');
   expect(requests).toHaveLength(1);
@@ -204,6 +206,7 @@ test('真实开局流式分片、资料面板不打断、只展示正文，草�
   expect(saved.state).toBe(before);
   expect(saved.draft.userInput).toBe('');
   expect(saved.draft.story.summary).toBe('等车');
+  expect(saved.draft.story.narrative).toBe(story);
   expect(saved.draft.storyRevision).toBe(1);
   await page.getByRole('button', { name: '看看站台', exact: true }).click();
   await expect(page.getByLabel('你的行动')).toHaveValue('看看站台');
@@ -227,7 +230,7 @@ test('真实开局流式分片、资料面板不打断、只展示正文，草�
   await page.keyboard.press('Escape');
   await page.reload(); await openGameTools(page);
   await generated(page);
-  await expect(page.getByTestId('story-reader')).toContainText(story);
+  await expect(page.getByTestId('story-reader')).toContainText(displayedStory);
   expect((await stored(page)).state).toBe(before);
   await page.screenshot({ path: info.outputPath('story-runtime.png'), fullPage: true });
 });
@@ -246,18 +249,19 @@ test('重新 Roll 授权失败、短正文及非法格式保留旧草稿，成�
     await expect(page.getByRole('alert')).toBeVisible();
     await expect(page.getByRole('alert')).not.toContainText('mock-browser-key');
     await expect(page.getByRole('alert')).not.toContainText('供应商私有错误');
-    await expect(page.getByTestId('story-reader')).toContainText(story);
+    await expect(page.getByTestId('story-reader')).toContainText(displayedStory);
     expect((await stored(page)).draft).toEqual(old);
   }
   const replacement = '【旁白】新的公交车已经到站。\n\n路边的人们安静地等候着。';
   plans.push({ chunks: [result(replacement)] });
   await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
-  await expect(page.getByTestId('story-reader')).toContainText(replacement);
+  await expect(page.getByTestId('story-reader')).toContainText('新的公交车已经到站。\n\n路边的人们安静地等候着。');
   await generated(page);
   const after = await stored(page);
   expect(after.draft.turnId).toBe(old.turnId);
   expect(after.draft.userInput).toBe(old.userInput);
   expect(after.draft.storyRevision).toBe(2);
+  expect(after.draft.story.narrative).toBe(replacement);
   expect(after.state).toBe(before);
 });
 test('快速重复点击、取消重试、迟到请求与切档隔离、刷新保留旧正文', async ({ page }) => {
@@ -357,7 +361,7 @@ test('P6：原生公开内容与项目规划只主动查看，正文/存档隔�
   const before = await seed(page);
   plans.push({ reasoning: '公开原生标记 mock-browser-key', chunks: [result().replace('本轮创作提纲：保持人物与场景连续，按行动呈现事实。', '私人规划标记，不是正文事实。')] });
   await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
-  const reader = page.getByTestId('story-reader'); await expect(reader).toContainText(story);
+  const reader = page.getByTestId('story-reader'); await expect(reader).toContainText(displayedStory);
   await expect(reader).not.toContainText('私人规划标记'); await expect(reader).not.toContainText('公开原生标记');
   const inspection = page.locator('.story-inspection'); await expect(inspection.locator('pre')).toHaveCount(0);
   const saved = await stored(page); expect(saved.state).toBe(before); expect(JSON.stringify(saved.draft)).not.toContain('私人规划标记');
@@ -369,7 +373,7 @@ test('P6：原生公开内容与项目规划只主动查看，正文/存档隔�
   expect(messages.slice(-3).map((message) => message.role)).toEqual(['user', 'assistant', 'user']);
   expect(messages.filter((message) => message.content.includes('### Step 0｜'))).toHaveLength(1);
   await page.reload(); await openGameTools(page); await inspection.getByText('本次生成的叙事规划与原生输出（临时调试）', { exact: true }).click();
-  await expect(inspection).toContainText('没有对应请求的临时内容'); await expect(reader).toContainText(story);
+  await expect(inspection).toContainText('没有对应请求的临时内容'); await expect(reader).toContainText(displayedStory);
   expect(await stored(page)).toEqual(saved); expect(requests).toHaveLength(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
@@ -380,7 +384,7 @@ test('P6：截断Roll不覆盖旧正文，明确预算诊断；无原生输出�
   plans.push({ reasoning: '只有临时原生内容', finishReason: 'length', chunks: ['<thinking>长规划尚未结束'] });
   await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('达到输出上限'); expect(await stored(page)).toEqual(saved); expect(requests).toHaveLength(2);
-  await expect(page.getByTestId('story-reader')).toContainText(story);
+  await expect(page.getByTestId('story-reader')).toContainText(displayedStory);
   plans.push({}); await page.getByRole('button', { name: '重新 Roll', exact: true }).click(); await generated(page);
   expect((await stored(page)).draft.storyRevision).toBe(saved.draft.storyRevision + 1); expect(requests).toHaveLength(3);
   const inspection = page.locator('.story-inspection'); await inspection.locator(':scope > summary').click();
