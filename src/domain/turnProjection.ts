@@ -17,16 +17,29 @@ export function variableCommandsForTurn(state: GameState, draft: TurnDraft, comm
     worldClock: selected.endAt, evidence: 'Story结构化开局时间' };
   return [command, ...commands.filter((c) => c.type !== 'SetWorldClock')];
 }
-// Program receipts are computed after model scene changes, preserving those changes in the same batch.
+// Compose before simulation: a scene transition and its Story receipt are one SaveEvent,
+// so no terminal/pending intermediate state is ever executed. Model candidates remain unchanged.
 export function preparedVariableCommands(state: GameState, draft: TurnDraft, commands: readonly DomainCommand[]): DomainCommand[] {
   const variables = variableCommandsForTurn(state, draft, commands);
-  if (!draft.variables || draft.variables.validation !== 'validated') return variables;
-  const projected = commitCommands(openingTimeBase(state, draft), draft.turnId, state.revision, variables, state.updatedAt);
-  return [...variables, ...eventInteractionCommands(state, draft, projected)];
+  const events = { ...state.events };
+  const lastWrite = new Map<string, number>();
+  variables.forEach((command,index)=>{
+    if(command.type==='SaveEvent') { events[command.event.id]=command.event; lastWrite.set(command.event.id,index); }
+  });
+  const receipts=eventInteractionCommands(state,draft,events);
+  const receiptEvents=new Map(receipts.flatMap(command=>command.type==='SaveEvent'?[[command.event.id,command.event] as const]:[]));
+  const merged=variables.map((command,index)=>{
+    if(command.type!=='SaveEvent' || lastWrite.get(command.event.id)!==index)return command;
+    const event=receiptEvents.get(command.event.id);
+    return event ? {...command,event} : command;
+  });
+  return [...merged,
+    ...receipts.filter(command=>command.type==='SaveEvent' && !lastWrite.has(command.event.id))];
 }
 // 每份内存投影都从同一正式基线开始。不能把模拟产生的 revision 当作新正式版本。
 export function projectTurn(state: GameState, draft: TurnDraft, worldCommands: readonly DomainCommand[] = []) {
+  const validated = draft.variables?.validation === 'validated';
   const variables = draft.variables?.validation === 'validated' ? draft.variables.result.commands : [];
   return commitCommands(openingTimeBase(state, draft), draft.turnId, state.revision,
-    [...preparedVariableCommands(state, draft, variables), ...worldCommands], state.updatedAt);
+    [...(validated ? preparedVariableCommands(state, draft, variables) : variableCommandsForTurn(state,draft,variables)), ...worldCommands], state.updatedAt);
 }
