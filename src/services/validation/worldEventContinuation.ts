@@ -15,7 +15,7 @@ export function eventPlanningOnly(old: WorldEvent | undefined, event: WorldEvent
   return fingerprint(actual(old))===fingerprint(actual(event));
 }
 export function normalizeEventContinuation(event: WorldEvent, old: WorldEvent | undefined,
-  proof: WorldEvidence, origins: readonly WorldSource[], base: GameState, draft: TurnDraft) {
+  proof: WorldEvidence, origins: readonly WorldSource[], base: GameState, causal: GameState, draft: TurnDraft) {
   const plan=event.continuation;
   if(plan?.direction==='protagonist' && plan.entry.locationId)
     requireWorld(base.locations[plan.entry.locationId], 'invalid_output','event_continuation');
@@ -33,7 +33,7 @@ export function normalizeEventContinuation(event: WorldEvent, old: WorldEvent | 
       && origins.some(source=>source.id==='story:current' && source.text.includes(plan.entry.cue));
     if(!expected || renewed) {
       requireWorld(Date.parse(proof.at)>=Date.parse(event.estimatedEndAt!), 'invalid_output','event_time');
-      requireWorld(proof.kind!=='planned' && [...event.prerequisites,...event.blockers].every(ref=>conditionEnded(base,ref)), 'invalid_output','completion_conditions');
+      requireWorld(proof.kind!=='planned' && [...event.prerequisites,...event.blockers].every(ref=>conditionEnded(causal,ref,proof.at)), 'invalid_output','completion_conditions');
       expected={id:`entry:${draft.baseSaveRevision}:${draft.storyRevision}`,sourceTurnId:draft.turnId,queuedAt:proof.at,
         ...plan.entry,status:'pending'};
     }

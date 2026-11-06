@@ -16,8 +16,12 @@ export function worldEventSchedule(before:GameState,projected:GameState) {
     unplannedLegacy:Object.values(projected.events).filter(e=>!terminalEvent(e)&&!e.estimatedEndAt).map(e=>e.id),
     policy:'到期只要求评估，不代表完成。按预计时间和来源依赖在同一次World请求处理；终结或给出理由延期到窗口之后。场内缺少实际事实时不代主角行动；旧缺规划记录不补造历史日期。无后续必要就结束清理，不强制承接。'};
 }
-export function conditionEnded(state:GameState,ref:string) {
+export function conditionEnded(state:GameState,ref:string,at?:string) {
   const task=state.tasks[ref]??state.tasks[ref.replace(/^task:/,'')];
-  const event=eventById(state,ref.replace(/^event:/,''));
-  return task?.status==='completed'||event?.status==='resolved';
+  const eventId=ref.replace(/^event:/,'');
+  const event=eventById(state,eventId),retired=state.retiredEvents[eventId];
+  const ended = task?.status==='completed'||event?.status==='resolved';
+  const endedAt = task?.resolution?.at ?? state.events[eventId]?.resolvedAt ?? retired?.detail?.resolvedAt ?? retired?.retiredAt;
+  // Old completed records may lack result timestamps; do not invent one. Known later results cannot support an earlier handoff.
+  return ended && (!at || !endedAt || Date.parse(endedAt)<=Date.parse(at));
 }

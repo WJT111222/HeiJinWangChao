@@ -608,7 +608,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
             event.sourceTurnIds = [...event.sourceTurnIds.filter(id => id !== draft.turnId), draft.turnId];
           } else delete event.protagonistKnowledge;
         }
-        normalizeEventContinuation(event, old, proof, origins, base, draft);
+        normalizeEventContinuation(event, old, proof, origins, base, causal, draft);
         break;
       }
       case 'DeleteEvent':

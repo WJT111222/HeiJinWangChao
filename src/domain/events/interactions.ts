@@ -1,3 +1,4 @@
+import { fingerprint } from '../commands';
 import { requireData } from '../common';
 import { terminalEvent } from './lifecycle';
 import type { GameState } from '../state';
@@ -30,12 +31,15 @@ export function validateStoryEventInteractions(state: GameState, story: Story) {
   return interactions;
 }
 /** Computed from the formal baseline and selected Story, never writes storage. */
-export function eventInteractionCommands(state: GameState, draft: TurnDraft, projected: GameState): DomainCommand[] {
+export function eventInteractionCommands(state: GameState, draft: TurnDraft, events: Readonly<GameState['events']>): DomainCommand[] {
   if(!draft.story) return [];
   const guides=validateStoryEventInteractions(state,draft.story);
   return guides.map((guide,index)=>{
-    const receipt=guide.eventInteraction!,event=projected.events[receipt.eventId];
+    const receipt=guide.eventInteraction!,event=events[receipt.eventId],original=state.events[receipt.eventId];
     requireData(event?.protagonistEntry?.id===receipt.entryId,'EVENT_ENTRY','候选不能删除或替换待处理入场');
+    requireData(fingerprint(event.protagonistEntry)===fingerprint(original.protagonistEntry)
+      && fingerprint(event.protagonistKnowledge)===fingerprint(original.protagonistKnowledge),
+      'SCENE_PERMISSION','模型不能改写程序维护的入场或知情快照');
     return {type:'SaveEvent',commandId:`story-entry:${draft.storyRevision}:${index}`,evidence:'所选正文的事件处理回执',
       event:{...event,sourceTurnIds:[...new Set([...event.sourceTurnIds,draft.turnId])],
         protagonistKnowledge:{worldUpdateTurnId:draft.turnId,title:guide.textEvidence!,notice:guide.textEvidence,knowledgeKind:'reported'},
