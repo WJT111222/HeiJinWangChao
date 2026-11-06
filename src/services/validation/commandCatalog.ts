@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { DomainCommandSchema } from '../../domain/commands';
 import type { AiStage } from '../ai/configuration';
 import { WorldEvidenceSchema } from './worldEvidence';
+import { sceneRecordCue, sceneRecordGoal } from './worldSceneRecord';
 export const worldTypes = [
   'CreateNpc',
   'UpdateNpc',
@@ -55,6 +56,14 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
           evidenceEncoding:
             'evidence = JSON.stringify(WORLD_EVIDENCE_V1)。sources 引用 WORLD_SOURCES 的 id 或经过依赖校验的本批 task:/event:/handoff: 来源；derived 可描述新推演结果，不要求逐字存在于来源。',
           worldEvidenceSchema: z.toJSONSchema(WorldEvidenceSchema, { target: 'draft-7' }),
+          sceneRecordFormat: {
+            scope: '仅established的active/blocked SaveEvent；anchors来自story:current完整肯定叙述句，actorRefs逐人绑定以其名称开头的实际参与叙述。fact是非执行概括，程序只用锚点核验事实。',
+            title: '<event.locationId对应的地点name> · 现场记录',
+            backgroundText: '现场依据：\n<anchors的quote按数组顺序用换行连接>',
+            goalText: sceneRecordGoal,
+            protagonistEntryCue: sceneRecordCue,
+            alternative: '描述也可使用一条完整已校验quote；不接受任意改写、词语拼接或未锚定的行动。旧无sceneRecord响应仍走原来源及描述验证。',
+          },
           worldStateRules: [
             '事件创建必须提供estimatedEndAt、backgroundText、goalText及actorRefs。completionCondition不能替代日期。EVENT_SCHEDULE.due按预计时间和依赖处理，保留积压；一次World请求处理本轮全部可处理节点，到期不是成功。受阻/延期需合理下一预计时间且晚于窗口结束；原始缺规划事件列unplannedLegacy，不编造过去日期。',
             'resolved表示已经结束，可outcome=success/failure/changed；失败结束不要求成功条件已满足，不能把受阻伪装成功。cancelled仍按原终止来源约束。无需强制后继；只有合理发展才创建新事件，以predecessorEventIds及event:来源承接真实结果。',

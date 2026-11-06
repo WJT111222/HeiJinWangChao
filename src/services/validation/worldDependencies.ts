@@ -1,5 +1,6 @@
 import type { DomainCommand } from '../../domain/commands';
 import { WorldEvidenceSchema, requireWorld } from './worldEvidence';
+import { AiError } from '../ai/errors';
 
 // 仅排序具体来源依赖，不从自然语言猜测职责，也不把尚未验证的输出加入事实池。
 export function orderWorldCommands(commands: readonly DomainCommand[]) {
@@ -13,10 +14,12 @@ export function orderWorldCommands(commands: readonly DomainCommand[]) {
     if (visited.has(command)) return;
     requireWorld(!visiting.has(command));
     visiting.add(command);
+    const sourceError = () => new AiError('invalid_output', undefined, { worldRule: 'source_format',
+      commandIndex: commands.indexOf(command), commandType: command.type, fieldPath: 'evidence' });
     let raw: unknown;
-    try { raw = JSON.parse(command.evidence); } catch { requireWorld(false); }
+    try { raw = JSON.parse(command.evidence); } catch { throw sourceError(); }
     const checked = WorldEvidenceSchema.safeParse(raw);
-    requireWorld(checked.success);
+    if (!checked.success) throw sourceError();
     const dependencies = [...checked.data.sources];
     if (cleanup(command) && 'eventId' in command) dependencies.push(`event:${command.eventId}`);
     if (command.type === 'SaveEvent') dependencies.push(...(command.event.predecessorEventIds??[]).map(id=>`event:${id}`));
