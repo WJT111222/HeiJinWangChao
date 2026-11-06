@@ -360,7 +360,9 @@ a {
 }
 .save-card p {
   font-size: 0.75rem;
+  overflow-wrap: anywhere;
 }
+.save-record-key { overflow-wrap: anywhere; }
 .save-card-actions {
   display: flex;
   gap: 0.5rem;
