@@ -7,7 +7,7 @@
 
 此前首页直接进入游戏或设置，没有游玩须知和更新公告。现在每次整页加载先显示「黑金王朝 · 游玩须知与免责声明」，关闭后显示「王朝公告」，再次关闭即可使用原界面。
 
-- 免责声明包含醒目的 18+ 标识和六段说明；公告包含 Demo 主题、五项更新及指定开发者寄语。
+- 免责声明包含醒目的 18+ 标识、完整开头、六章正文和开发者结语；公告包含 Demo 主题、五项更新及指定开发者寄语。
 - 两张弹窗均复用原生 Dialog 的关闭、Escape、焦点约束和焦点归还；长内容在弹窗内部滚动。
 - 底部仅显示同一行复选框与「今日不再弹出」，不附额外小字。
 - 首页和设置分类栏提供两项手动入口。手动查看只打开所选内容，不串联另一个弹窗；关闭后回到原位置，设置编辑内容保留。
@@ -30,7 +30,7 @@
 | 文件 | 修改 |
 | --- | --- |
 | `src/ui/notices/announcement.ts` | 独立维护更新公告 |
-| `src/ui/notices/disclaimer.ts` | 六部分正式说明 |
+| `src/ui/notices/disclaimer.ts` | 完整免责声明 V1.0 定稿 |
 | `src/ui/notices/preferences.ts` | 本地日历日与容错读写 |
 | `src/ui/notices/useNotices.ts` | 本次页面的顺序、共享勾选和手动入口 |
 | `src/ui/notices/Notices.tsx` | 两张弹窗及共用查看按钮 |
@@ -47,7 +47,7 @@
 
 未改动正式存档、Schema、迁移、领域命令、三个生成阶段、Prompt、模型路由、自动结算或产品版本。没有新增依赖、API 请求或收费场景。
 
-## 验证记录
+## 初版验证记录（返修前，非本轮成绩）
 
 | 检查 | 本次结果 |
 | --- | --- |
@@ -57,7 +57,7 @@
 | Chromium 相关桌面／移动回归 | 最终单批 94 / 94 通过：desktop 47、mobile 47；0 失败、0 跳过，5.3 分钟 |
 | `git diff --check` | 通过 |
 
-相对 main 新增 13 项工程测试、12 个浏览器场景（桌面与移动各执行一次）。没有调用真实模型。构建保留已有的大包体积提示，未为本任务修改分包配置。
+初版相对 main 新增 13 项工程测试、12 个浏览器场景（桌面与移动各执行一次）。没有调用真实模型。构建保留已有的大包体积提示，未为本任务修改分包配置。
 
 浏览器命令：
 
@@ -75,7 +75,35 @@ CHROMIUM_PATH=/usr/bin/chromium npx playwright test \
 
 首轮相关浏览器回归 92 通过、2 失败、0 跳过。既有「五步完整创建、返回修改及刷新恢复」用例在桌面和移动端均出现读取失败：它直接写 IndexedDB 模拟第 2 回合，清除了 `openingTimePending`，但保留 main 新增的 `openingInitializationPending`。真实 `GameStateSchema` 复现返回「开局初始化标记仅限尚未执行命令的新存档」，清除该标记后同一状态通过。只补齐夹具在模拟正式提交时的标记清除；原有断言及生产保存逻辑未放宽。初次失败的 Trace 与日志保留在本次工作环境的 `/tmp/startup-notices-first-failure/`。
 
-修正后重新运行上述完整相关集合，94 项全部通过，两个创角用例均恢复通过。最终工程、提示词和浏览器日志分别为 `/tmp/startup-notices-final-check.log`、`/tmp/startup-notices-prompts.log`、`/tmp/startup-notices-final-e2e.log`。实现代码提交为 `f388091e9fe318c451bc95246201aae3877b451a`；此后仅补充本报告，无生产代码或测试逻辑变动。
+初版修正后重新运行上述完整相关集合，94 项全部通过，两个创角用例均恢复通过。初版工程、提示词和浏览器日志分别为 `/tmp/startup-notices-final-check.log`、`/tmp/startup-notices-prompts.log`、`/tmp/startup-notices-final-e2e.log`。初版实现代码提交为 `f388091e9fe318c451bc95246201aae3877b451a`，初版报告提交为 `2c0bb3dde7424c6e96ff2ad1c3cccd692c95159f`。
+
+## PR #66 返修：逐字恢复完整免责声明
+
+依据[六代目完整定稿](https://github.com/WJT111222/HeiJinWangChao/pull/66#issuecomment-6694107863)，替换初版六段摘要，恢复开头介绍、全部六章、完整架空社会声明、结语与开发者落款。文案不删减、不概括；原文强调保留为加粗，18+ 标识保留。
+
+本轮修改文件：
+
+- `src/ui/notices/disclaimer.ts`：增加 intro、分段 paragraphs 和 closing，全部文字取自定稿。
+- `src/ui/notices/Notices.tsx`：仅补齐段落和加粗展示；保留已验收的弹窗标题、18+、关闭与勾选回调。
+- `src/app/styles.css`：仅增加相邻正文段落间距，避免长文挤在一起。
+- `src/tests/fixtures/disclaimer-v1.md`：审查定稿原文作为独立只读测试夹具，含完整开头与落款。
+- `src/tests/disclaimer-content.test.ts`：重新拼接全部段落，与独立原文逐字核对（包括章节、标点、加粗及段落边界）。
+- `e2e/startup-notices.spec.ts`：真实页面逐段核对完整渲染、核心架空声明与强调；验证滚动至结语，更新原末章标题断言。
+- 本报告及桌面截图更新为完整文案。
+
+`useNotices.ts`、`preferences.ts`、`announcement.ts` 均未改动；没有改动顺序、共享复选框、日期、手动入口、设置状态或模型调用。没有添加解释小字、年龄认证、过滤或语义审查。
+
+本轮验证：
+
+| 检查 | 本轮实测 |
+| --- | --- |
+| `npx vitest run src/tests/disclaimer-content.test.ts src/tests/notice-preferences.test.ts` | 2 文件、14 / 14 通过 |
+| `npm run build`（包含 `npm run typecheck`） | 类型检查及生产构建通过；保留原有包体积警告 |
+| 修改 TS/TSX 文件的定向 ESLint | 通过 |
+| `git diff --check` | 通过 |
+| `CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/startup-notices.spec.ts --project=desktop --project=mobile` | 最终单批 26 / 26 通过（desktop 13、mobile 13），0 失败、0 跳过，1.1 分钟 |
+
+定向校验发现开发时初次原文提取将分隔线误当成正文终点，遗漏落款；已修正提取边界并恢复原文结语。完整渲染断言在补齐前失败，避免将不完整副本交付。最终结果以本节记录为准，不将初版 2310/82/94 的历史成绩当作本轮实测。按本次范围不重跑全工程及全库浏览器回归，不调用真实付费 API。
 
 ## 边界
 

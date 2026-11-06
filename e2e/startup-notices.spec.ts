@@ -1,12 +1,15 @@
 // 此文件故意不用 helpers/test：从未阅读公告的真实首次访问开始。
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 const key = 'heijin.notices.hidden-on.v1';
 const disclaimerTitle = '黑金王朝 · 游玩须知与免责声明';
 const disclaimer = (page: Page) => page.getByRole('dialog', { name: disclaimerTitle, exact: true });
 const announcement = (page: Page) => page.getByRole('dialog', { name: '王朝公告', exact: true });
 const day = new Date('2026-11-07T04:00:00Z');
+const approvedDisclaimer = readFileSync(new URL('../src/tests/fixtures/disclaimer-v1.md', import.meta.url), 'utf8')
+  .trim().split('\n\n');
 
 test.use({ timezoneId: 'Asia/Shanghai' });
 test.beforeEach(async ({ page }) => {
@@ -21,6 +24,32 @@ async function finishNotices(page: Page) {
   await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 }
+
+test('完整定稿实际分段渲染：开头、架空社会声明与开发者落款', async ({ page }) => {
+  await page.goto('/');
+  const modal = disclaimer(page);
+  await expect(modal).toBeVisible();
+  const content = modal.getByLabel('免责声明内容');
+  const expected = approvedDisclaimer.filter(block => !/^#{1,2} /.test(block) && block !== '---')
+    .map(block => block.replace(/^### /, '').replaceAll('**', ''));
+  expect(await content.locator('p, h3').allTextContents()).toEqual(expected);
+  expect(await content.locator('strong').allTextContents()).toEqual(
+    approvedDisclaimer.filter(block => block.startsWith('**')).map(block => block.replaceAll('**', '')),
+  );
+  await expect(content.getByText('欢迎来到《黑金王朝》。', { exact: true })).toBeInViewport();
+  const worldStatement = content.getByText('《黑金王朝》采用「真实地理，架空社会」的世界观设定。', { exact: true });
+  await worldStatement.scrollIntoViewIfNeeded();
+  await expect(worldStatement).toBeInViewport();
+  const noImputation = content.getByText('本作品无意影射、评价或指控任何现实中的特定人物、政治组织、政府机构、企业或社会团体。', { exact: true });
+  await noImputation.scrollIntoViewIfNeeded();
+  await expect(noImputation).toBeInViewport();
+  await content.evaluate(node => { node.scrollTop = node.scrollHeight; });
+  await expect(content.getByText('感谢你阅读以上说明。', { exact: true })).toBeInViewport();
+  await expect(content.getByText('愿你在这个架空世界中，书写一段真正属于自己的人生。', { exact: true })).toBeInViewport();
+  await expect(content.getByText('《黑金王朝》开发者', { exact: true })).toBeInViewport();
+  await expect(modal.locator('.notice-footer')).toHaveText('今日不再弹出');
+  await finishNotices(page);
+});
 
 test('首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复', async ({ page }) => {
   const externalRequests: string[] = [];
@@ -212,8 +241,11 @@ test('长内容内部滚动，窄屏关闭和复选框可触达；截图', async
   await page.setViewportSize({ width: 320, height: 568 });
   const content = disclaimer(page).getByLabel('免责声明内容');
   expect(await content.evaluate(node => node.scrollHeight > node.clientHeight)).toBe(true);
+  const finalSection = disclaimer(page).getByRole('heading', { name: '六、虚构与现实的边界' });
+  await finalSection.scrollIntoViewIfNeeded();
+  await expect(finalSection).toBeInViewport();
   await content.evaluate(node => { node.scrollTop = node.scrollHeight; });
-  await expect(disclaimer(page).getByRole('heading', { name: '6. 玩家自主选择' })).toBeInViewport();
+  await expect(disclaimer(page).getByText('《黑金王朝》开发者', { exact: true })).toBeInViewport();
   await expect(disclaimer(page).getByRole('checkbox')).toBeInViewport();
   await expect(disclaimer(page).getByRole('button', { name: '关闭免责声明' })).toBeInViewport();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

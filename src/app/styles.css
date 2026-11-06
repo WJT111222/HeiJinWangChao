@@ -695,6 +695,7 @@ fieldset label {
 }
 .notice-content h3 { margin: 1.2rem 0 .4rem; font-size: 1rem; color: var(--gold); }
 .notice-content p { margin: 0; }
+.notice-content p + p { margin-top: .8rem; }
 .notice-age {
   display: inline-block;
   border: 1px solid var(--gold);
