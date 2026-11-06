@@ -7,7 +7,6 @@ import { createTurnDraft, TurnDraftSchema } from '../domain/drafts';
 import { npcMaintenanceAvailable, planNpcSummary } from '../domain/memories/npcMemory';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { parseWorld } from '../services/validation/aiOutputs';
-import { worldSources } from '../services/validation/worldEvidence';
 import { MemoryMaintenance } from '../workflows/memoryMaintenance';
 import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
@@ -48,19 +47,6 @@ async function hiddenEvent(participantB = false) {
 
 // 真正经过事件验证、正式事务与下回合WORLD_SOURCES，不以helper的返回值冒充完整路径。
 describe('隐藏事件不是NPC知情授权', () => {
-  it.each(['UpdateNpc', 'SaveTask', 'RecordNpcMemory'] as const)('A的独占秘密经隐藏事件不能授权B的%s', async (type) => {
-    const { state, draft, at } = await hiddenEvent(type === 'RecordNpcMemory');
-    const snapshot = structuredClone(state), evidence = proof({ at, sources: type === 'RecordNpcMemory' ? ['event:private-incident'] : ['event:private-incident', 'npc:npc-b'],
-      kind: type === 'RecordNpcMemory' ? 'established' : type === 'SaveTask' ? 'planned' : 'derived', fact: type === 'RecordNpcMemory' ? secret : 'B核查了暗格中的红色钥匙。' });
-    const command: DomainCommand = type === 'UpdateNpc' ? { type, commandId: 'borrow', expectedRevision: state.revision, npcId: 'npc-b', changes: { healthText: '核查暗格后稍感疲惫' }, evidence }
-      : type === 'SaveTask' ? { type, commandId: 'borrow', task: { ...task('b-secret-plan'), actorRef: { kind: 'npc', id: 'npc-b' }, goal: '取出A暗格内的钥匙', dueAt: at, startAt: state.worldClock }, evidence }
-      : { type, commandId: 'borrow', expectedRevision: state.revision, npcId: 'npc-b', layer: 'personal', knowledgeKind: 'observed', addToKnownInformation: false, evidence,
-        memory: { id: 'b-stolen-knowledge', text: secret, sourceTurnIds: [draft.turnId], affectedEntityRefs: [{ kind: 'npc', id: 'npc-b' }], visibility: 'npc_private', createdAtGameTime: at, knowledgeSource: 'event:private-incident' } };
-    const result = type === 'SaveTask' ? { ...worldResult(), taskCommands: [command] } : worldResult([command]);
-    expect(worldSources(state, draft).some((source) => source.id === 'event:private-incident')).toBe(true);
-    expect(() => parseWorld(JSON.stringify(result), state, draft)).toThrow();
-    expect(state).toEqual(snapshot);
-  });
   it('后台事件可以继续产生隐藏后续事件；参与者B仍不会自动得到新知识', async () => {
     const { state, draft, at } = await hiddenEvent();
     const before = structuredClone(state);
@@ -70,7 +56,6 @@ describe('隐藏事件不是NPC知情授权', () => {
         sourceTurnIds: [draft.turnId], actorRefs: [{ kind: 'npc', id: 'npc-a' }, { kind: 'npc', id: 'npc-b' }] } };
     expect(() => parseWorld(JSON.stringify({ ...worldResult(), eventCommands: [next] }), state, draft)).not.toThrow();
     expect(state).toEqual(before); expect(state.npc['npc-b'].memories).toHaveLength(1);
-    expect(worldSources(state, draft).find((source) => source.id === 'event:private-incident')?.worldEventOnly).toBe(true);
   });
   it('已公开事件的正常来源保持可用；旧事件无新增持久化字段', async () => {
     const { state, draft, at } = await hiddenEvent();
@@ -80,7 +65,6 @@ describe('隐藏事件不是NPC知情授权', () => {
     const plan: DomainCommand = { type: 'SaveTask', commandId: 'public-plan', evidence: proof({ at, kind: 'planned', sources: ['event:private-incident', 'npc:npc-b'], fact: 'B准备前往已开放诊所。' }),
       task: { ...task('public-visit'), actorRef: { kind: 'npc', id: 'npc-b' }, startAt: state.worldClock, dueAt: at } };
     expect(() => parseWorld(JSON.stringify({ ...worldResult(), taskCommands: [plan] }), state, draft)).not.toThrow();
-    expect(worldSources(state, draft).find((source) => source.id === 'event:private-incident')?.worldEventOnly).toBeUndefined();
   });
   it('合法隐藏事件仍可正常演化；A可依据本人原始知识行动，事件并不永久只属于A', async () => {
     const { state, draft, at } = await hiddenEvent();

@@ -205,9 +205,9 @@ describe('safe runtime log diagnostics', () => {
 
   it('drops NPC ID without a scene rule while retaining a World rule', () => {
     const entry = runtimeLogEvent(33, 'world', 'failed', new AiError('data_integrity', undefined, {
-      relatedNpcId: 'npc_unrelated_secret', worldRule: 'source_missing',
+      relatedNpcId: 'npc_unrelated_secret', worldRule: 'domain_state',
     }));
-    expect(entry.worldRule).toBe('source_missing');
+    expect(entry.worldRule).toBe('domain_state');
     expect(entry).not.toHaveProperty('relatedNpcId');
   });
 

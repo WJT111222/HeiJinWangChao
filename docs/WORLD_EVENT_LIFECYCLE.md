@@ -10,11 +10,11 @@
 
 visibility及记忆权限字段为旧档兼容和角色认知继续保存；不把hidden改known，也不把npc_private/internal改player_known。它们不限制玩家面板或事实历史归档。Story仍独立使用主角已知投影；不得使用playerView作为模型上下文。WORLD_SOURCES中worldEventOnly保留事件事实与人物知情的隔离，不因玩家阅读而失效。
 
-已有known/partially_known事件的客观状态、标题或结果变化不要求主角先获知；World仍须通过原有来源、行动者、时间和生命周期校验。显式提升visibility知情标记、player_known人物记忆仍须独立合法公开事实依据，derived不能自行充当主角知晓证明。
+已有known/partially_known事件的客观变化不要求主角先获知。程序保留主角原知情快照；World不通过正文、来源标签或证据关键词审批事件结果。模型根据上下文自行决定新记录的认知性质，按人物档案和可见性写入，不能自动传播私人资料。
 
 当World更新此前known事件而无新的主角知情依据时，程序在可选`protagonistKnowledge`中保存此前Story投影（title/startAt/status/resolutionText）及本次worldUpdateTurnId；不修改主角或NPC记忆，不把visibility统一改known。Story继续读取旧投影，WORLD_SOURCES仍提供最新客观结果供世界推演，但标记worldEventOnly，不能借旧known把新进展传入人物行动/认知。TIME_PREFLIGHT沿用既有规则，仅排除尚未告知的新进展。玩家观察仍读取完整最新事件。
 
-快照仅由程序重建，模型只能沿用原元数据或重放相同规范化结果。World将当前来源回合放在sourceTurnIds末尾；后续合法Variables现场更新按已有契约追加新的回合，Story可使用该次现场状态和结果，仍保留原已知标题。现场观察不解锁World另行修改的完整背景和排程；快照存在期间，整条事件来源仍为worldEventOnly，时间预检不读取其未告知的新安排。显式已知事实可解除旧快照。缺少可选字段的V1–V5旧档沿用原known语义，不重算历史、不增加Schema版本或读取时迁移。
+快照仅由程序维护，模型只能沿用原元数据或重放相同规范化结果。World追加当前来源回合，后续Variables现场更新和Story结构化入场回执沿原机制记录角色新知。取消了World按正文引用解除旧快照的途径。缺少可选字段的V1–V5旧档沿用原known语义，不重算历史或新增Schema版本。
 
 ## 数据、时钟与职责
 
@@ -22,7 +22,7 @@ visibility及记忆权限字段为旧档兼容和角色认知继续保存；不�
 
 Story呈现场内经历。Variables仅通过`set events[id].sceneState`改变已有现场事件的status/resolvedAt/resolutionText/outcome/resultKnowledge。sourceTurnIds只能保留原顺序去重后追加当前回合。其余规划、影响、地点、背景、目标、参与者、引用等不可由Variables改写；文本模拟、规范化候选复核、World前置检查和正式Commit共用同一字段边界。现场由正式快照与整批合法投影的在场并集确定，必须正向关联主角或现场NPC，且全部NPC参与者在本幕现场。纯组织事件和空参与者不因地点相同获得权限。
 
-World负责新事件、场外发展、到期推演、延期、自然承接及清理。EVENT_SCHEDULE来自同一正式状态到变量投影时钟，due包含窗口内和积压的可处理场外事件，按预计时间排序；scenePending保护现场及开局同伴；unplannedLegacy不补造旧日期。按依赖拓扑顺序验证，未来不能提前完成，条件/时间/来源与状态转换继续校验。
+World负责新事件、场外发展、到期推演、延期、自然承接及清理。EVENT_SCHEDULE来自同一正式状态到变量投影时钟，due包含窗口内和积压的可处理场外事件，按预计时间排序；scenePending保护现场及开局同伴；unplannedLegacy不补造旧日期。按依赖拓扑顺序验证，未来不能提前完成，条件/时间/引用与状态转换继续校验。
 
 到期意味着推演，不意味着自动成功。可成功/失败/改变/取消，或因阻碍重新安排estimatedEndAt到窗口之后。不强制造冲突或后继，也不增加逐事件AI调用。World关闭则不请求、不收费、不处理；积压保留至恢复。无合法变量时仍只有preview，纯过去视角不结算当前世界。TIME_PREFLIGHT只给Story可被主角合理感知的条件，不从玩家观察面板取得秘密。
 
@@ -31,9 +31,9 @@ World负责新事件、场外发展、到期推演、延期、自然承接及清
 - 所有scheduled/active/blocked完整事件保留，玩家可查全部字段。
 - significant/major终态保留完整对象。主角参与或关联主线的终态、具有必要任务/因果/知识/组织/历史引用的终态也保留。没有独立主线字段，因此主角参与及其前序承接链采用保守保护；不能靠自由文字判定“已脱离主线”。
 - DeleteEvent(eventId,expectedStatus,reason)仅允许minor、终态、无主线/重要性及必要引用的独立杂事。保留最小retiredEvents身份以防重复重建，删除完整活跃表对象，不自动进入时间线。无需继续就结束，不强制后继。
-- 有新发展才通过predecessorEventIds与event:来源自然承接。被后继、任务、人物知识等引用的原事件不清理，避免丢失必要背景与成果。
-- ArchiveEvent(eventId,title,summary)只归档重大、已实际结束且时间合法的可信fact内容。来源可以是该事件本身的已分类facts；无需主角知晓、无独立披露流程。不清理重要完整对象。现有retiredEvents.detail也可用同一事实规则归档，保留旧publication兼容字段但不作为玩家可见资格。
-- timelineCandidates只接受重大实际结束且有resultKnowledge.facts的事件，程序将facts写入历史标题/摘要/结果，不将自由resolutionText的举报或推测升级为真相。旧历史时间线原样可读；缺少分类的旧终态不补造facts，可在有独立可信事实来源时通过ArchiveEvent归档。时间到期、转述或计划不构成结案证明。
+- 有新发展才通过predecessorEventIds自然承接。被后继、任务、人物知识等引用的原事件不清理，避免丢失必要背景与成果。
+- ArchiveEvent只归档重大、已结束且时间合法的事件；标题和摘要由模型提供，不要求从正文或结果逐字摘抄。无需主角知晓，不清理重要完整对象，保留旧publication兼容字段。
+- timelineCandidates只接受重大、实际结束且时间合法的事件；有resultKnowledge.facts时保留其展示，否则使用标题与resolutionText，不要求分类作为审批许可。模型负责事实判断，程序不扫描传闻或计划词。旧时间线仍原样可读。
 
 ## 兼容、事务与限制
 
@@ -41,4 +41,4 @@ World负责新事件、场外发展、到期推演、延期、自然承接及清
 
 旧规范化Variables候选如果改写sceneState外字段，读取仍兼容但正式重验拒绝，须重新生成；不让“兼容”绕过权限。候选只在TurnDraft保存。沿用StageGuard、CAS、版本快照、projectTurn和SaveRepository.commitTurn；事件、journal、短期记忆、命令和下一草稿仍原子提交，失败全回滚，回执重放不重复结算。记忆压缩、来源覆盖、检索和维护费用授权均不改。
 
-程序验证结构、引用、时间、权限及来源类别，不声称证明AI所有自然语言事实。主线保护和引用检查有保守误保留风险；没有删除所有有引用事件的高级引用重构。Mock验证不代表真实模型因果推演已经实测。后台资产、经营等不支持变化继续unresolved，不用事件文字冒充财务更新。
+程序验证结构、引用、时间与命令权限，不声称证明AI所有自然语言事实。主线保护和引用检查有保守误保留风险；没有删除所有有引用事件的高级引用重构。Mock验证不代表真实模型因果推演已经实测。后台资产、经营等不支持变化继续unresolved，不用事件文字冒充财务更新。
