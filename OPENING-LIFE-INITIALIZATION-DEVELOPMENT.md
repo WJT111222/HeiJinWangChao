@@ -80,7 +80,17 @@ set opening.initialState = {"weatherText":"夏日多云","environmentText":"住�
 - 新增定向：38项通过（30项数据/执行边界，8项真实协调器、持久化与Prompt），无付费调用。
 - 新增Chromium：桌面2、移动2，共4项通过；真实五步创角自动请求、自动结算、重载、下一步行动与World失败后只恢复World。
 - 首轮全工程：2297项中2288通过、9失败，均为需随新契约更新的旧夹具/断言：命令/路径数量、开局旧哈希与四原型文案；两个历史同伴夹具未清理新标记；开局经济示例被当成普通回合执行。已分别修正，未削弱数据安全断言。相关分组已复测通过。
-- 最终完整工程、提示词及相关浏览器回归：待代码冻结后填写实际结果。
+- 冻结实现提交：`b834d90cd1c6ecf86c20b832805c7d8da5eb87b9`。
+- `npm run check`：74个文件、2297项Vitest全通过（原有2259项保留，本轮新增38项）；Lint、TypeScript、生产构建均通过。构建保留既有大于500 kB分块警告，本轮不扩展打包优化。
+- `npm run prompts:check`：3文件、82项通过（已包含于上述2297项，不重复相加）。
+- `git diff --check`：通过。
+- 相关Chromium desktop/mobile最终批次：84/84通过，desktop 42/42、mobile 42/42，失败0、跳过0，用时7.6分钟。包括本轮新增4项，不与此前定向成绩相加。实际命令：
+
+```bash
+CHROMIUM_PATH=/usr/bin/chromium PLAYWRIGHT_JSON_OUTPUT_FILE=/tmp/opening-browser-final.json npx playwright test e2e/opening-life.spec.ts e2e/opening-time.spec.ts e2e/automatic-settlement.spec.ts e2e/continuous-turns.spec.ts e2e/action-workflow.spec.ts --project=desktop --project=mobile --reporter=line,json
+```
+
+覆盖五步创角、完整原文、十回合连续游玩、自动结算、双击/跨标签CAS、旧候选恢复、刷新、取消、超时与World失败恢复。本轮未运行其余不相关浏览器文件，未声称全部E2E套件通过。最终追加提交只更新本报告，已验证的实现、Prompt与测试文件保持冻结。
 
 ## 剩余限制与费用边界
 
@@ -89,3 +99,35 @@ set opening.initialState = {"weatherText":"夏日多云","environmentText":"住�
 - 旧档缺失余额不回填；模型若省略初始化也可保留null，程序不会偷偷猜值。用户请求是主动生成能力，不新增文学或完成度审批。
 - 每回合仍为既有Story、Variables、World各一次请求；取消、失败恢复、自动记忆设置和重试规则不改。Prompt输入内容增长会影响供应商按Token计费，未增加输出预算或请求次数。
 - 不修改用户真实存档，不调用真实模型，不主动部署生产环境；PR预览若由既有Cloudflare流程自动创建，不属于主动生产发布。
+
+## 实际修改文件
+
+- `OPENING-LIFE-INITIALIZATION-DEVELOPMENT.md`
+- `e2e/opening-life.spec.ts`
+- `prompts/docs/OUTPUT_CONTRACT.md`
+- `prompts/manifest.json`
+- `prompts/shared/07_command_output.md`
+- `prompts/sources.lock.json`
+- `prompts/stages/opening/story.md`
+- `prompts/stages/opening/variables.md`
+- `prompts/variableGroups/economy/init.md`
+- `prompts/variableGroups/protagonist/init.md`
+- `src/domain/commands.ts`
+- `src/domain/openingInitialization.ts`
+- `src/domain/state.ts`
+- `src/domain/turnCommit.ts`
+- `src/domain/turnProjection.ts`
+- `src/executors/variableText/aggregateDiagnostics.ts`
+- `src/executors/variableText/catalog.ts`
+- `src/executors/variableText/compile.ts`
+- `src/executors/variableText/diagnostics.ts`
+- `src/tests/fixtures/openingLives.ts`
+- `src/tests/m2.test.ts`
+- `src/tests/opening-initialization.test.ts`
+- `src/tests/opening-life-workflow.test.ts`
+- `src/tests/prompt-runtime.test.ts`
+- `src/tests/prompts.test.ts`
+- `src/tests/text-prompt-readiness.test.ts`
+- `src/tests/thinking.test.ts`
+- `src/tests/variable-commands.test.ts`
+- `src/ui/creation/model.ts`
