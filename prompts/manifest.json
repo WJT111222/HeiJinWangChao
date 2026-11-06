@@ -299,7 +299,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 13347,
+      "characters": 13885,
       "version": "0.1.6-world-diagnostics-contract",
       "messageRole": "system",
       "activation": "always",
@@ -309,7 +309,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "8b161079ac69a99f7d32c4d785cc2547aa2d1a3feb09c7003a109a622c4e5fdb",
+      "contentSha256": "6c0876b3aedd450842734b18a3258cca2c095b1bedc173e27f148eacaa232f4d",
       "placeholders": []
     },
     {
@@ -380,7 +380,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1143,
+      "characters": 1215,
       "version": "1.5.0",
       "messageRole": "system",
       "activation": "always",
@@ -390,7 +390,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "f2d9986b72dae21be5ae867c25ce4ae1ab96450e39c9a884def1566faaef9b8c",
+      "contentSha256": "6fdfbdedbfeca4bda412004247acbbc5a1638cf1f137c1cccb643c2e225d6f7b",
       "placeholders": []
     },
     {
@@ -462,7 +462,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1228,
+      "characters": 1300,
       "version": "1.5.0",
       "messageRole": "system",
       "activation": "always",
@@ -472,7 +472,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "be9a62a21e0306092800bb01779d3cd983cc5518a0023da42a3d8479c17c0077",
+      "contentSha256": "f909782d4774f10234535eccae6da94be193b8499fa0cd3ab4a4ac083b646e75",
       "placeholders": []
     },
     {

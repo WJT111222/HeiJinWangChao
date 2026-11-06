@@ -11,6 +11,7 @@ export function protagonistKnownEvent(event: EventKnowledgeInput) {
   if (snapshot && hasUnobservedEventProgress(event)) return {
     id: event.id, title: snapshot.title, startAt: snapshot.startAt,
     status: snapshot.status, resolutionText: snapshot.resolutionText,
+    ...(snapshot.notice ? { notice: snapshot.notice, knowledgeKind: snapshot.knowledgeKind } : {}),
   };
   if (event.visibility !== 'known') return undefined;
   // 后续Variables现场更新会追加新turnId，表示本幕Story已经实际呈现的状态。
