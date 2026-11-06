@@ -7,6 +7,7 @@ import {
   readAiConfig,
   removeChannel,
   saveAiConfig,
+  setModelRouteFollow,
 } from '../../services/ai/configuration';
 import type { AiConfig, AiTask, Channel } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
@@ -39,7 +40,7 @@ function initial() {
     };
   }
 }
-export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
+export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSeconds: number; onDirtyChange?: (dirty: boolean) => void }) {
   const [start] = useState(initial);
   const [config, setConfig] = useState(start.config);
   const [selectedId, setSelectedId] = useState(start.config.channels[0]?.id ?? '');
@@ -65,6 +66,20 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const active = useRef<AbortController | undefined>(undefined);
+  useEffect(() => {
+    onDirtyChange?.(false);
+    return () => onDirtyChange?.(false);
+  }, [onDirtyChange]);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
+  function markDirty(value: boolean) {
+    setDirty(value);
+    onDirtyChange?.(value);
+  }
   useEffect(
     () => () => {
       active.current?.abort();
@@ -76,7 +91,7 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
   const channel = config.channels.find((c) => c.id === selectedId);
   function update(next: AiConfig) {
     setConfig(next);
-    setDirty(true);
+    markDirty(true);
     setNotice('有尚未保存的 AI 配置。');
   }
   function patch(values: Partial<Channel>) {
@@ -114,7 +129,7 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
       if (channel) start.vault.set(channel.id, key, remember);
       saveAiConfig(localStorage, checked.data);
       setConfig(checked.data);
-      setDirty(false);
+      markDirty(false);
       saved.current = checked.data;
       setNotice('AI 配置已保存；模型列表会自动获取，尚未发起生成请求。');
       const ids = new Set([selectedId, ...Object.values(checked.data.routes).flatMap((route) => 'channelId' in route ? [route.channelId] : [])]);
@@ -174,12 +189,12 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
       saved.current = next;
       catalog.remove(selectedId);
       setConfig(next);
-      setDirty(false);
+      markDirty(false);
       setSelectedId(next.channels[0]?.id ?? '');
       setKey(start.vault?.get(next.channels[0]?.id ?? '') ?? '');
       setRemember(start.vault?.remembered(next.channels[0]?.id ?? '') ?? false);
       setDeleting(false);
-      setNotice('渠道及凭证已删除，引用该渠道的路由已重置。');
+      setNotice('渠道及凭证已删除；受影响的独立阶段需重新选择渠道，不会自动改为跟随正文。');
     } catch {
       setNotice('删除未完成，请检查浏览器存储权限后重试。');
     }
@@ -190,6 +205,7 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
         浏览器会直接连接你填写的服务地址，不使用第三方 CORS
         代理。服务及同源脚本可能接触密钥；浏览器存储不是安全密钥库。默认仅本次会话保留，密钥不进入游戏存档、提示词或诊断详情。
       </p>
+      <p className="field-hint">正文、变量、动态世界和记忆维护可分别选择渠道与模型。修改后需点击「保存 AI 配置」；勾选跟随正文时使用正文路由，原独立选择会保留。</p>
       <div className="ai-toolbar">
         <ThemedSelect label="当前渠道" value={selectedId} disabled={busy}
           options={config.channels.length ? config.channels.map((item) => ({ value: item.id, label: item.name || '未命名渠道' })) : [{ value: '', label: '尚无渠道' }]}
@@ -248,7 +264,8 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
               value={key}
               onChange={(e) => {
                 setKey(e.target.value);
-                setDirty(true);
+                markDirty(true);
+                setNotice('有尚未保存的 AI 配置。');
               }}
             />
           </label>
@@ -262,7 +279,8 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
             checked={remember}
             onChange={(e) => {
               setRemember(e.target.checked);
-              setDirty(true);
+              markDirty(true);
+              setNotice('有尚未保存的 AI 配置。');
             }}
           />
           在本机长期记住密钥（非默认，同源脚本可读取）
@@ -320,9 +338,6 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
           </p>
         </details>
       </fieldset>
-      <button className="primary" disabled={busy || !start.vault} onClick={save}>
-        保存 AI 配置
-      </button>
       <p className="field-hint">保存有效渠道后自动获取模型列表；列表请求不会生成内容。测试连接会调用模型，可能产生费用。</p>
       <div className="ai-actions">
         <button
@@ -376,25 +391,14 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
                     type="checkbox"
                     checked={follows}
                     onChange={(e) =>
-                      update({
-                        ...config,
-                        routes: {
-                          ...config.routes,
-                          [stage]: e.target.checked
-                            ? { mode: 'follow-story' }
-                            : {
-                                mode: 'independent',
-                                channelId: config.routes.story.channelId,
-                                modelId: '',
-                              },
-                        },
-                      })
+                      update(setModelRouteFollow(config, stage, e.target.checked))
                     }
                   />
                   {label}跟随正文模型
                 </label>
               )}
               {follows && <p className="field-hint">继承正文：{routeChannel?.name || '尚未选择渠道'} / {current.modelId || routeChannel?.defaultModel || '尚未选择默认模型'}</p>}
+              {!follows && stage !== 'story' && !routeChannel && <p className="field-hint">尚未选择独立渠道，请选择渠道和模型后保存。</p>}
               <ThemedSelect label={`${label}渠道`} disabled={follows} value={current.channelId}
                 options={[{ value: '', label: '请选择渠道' }, ...config.channels.map((item) => ({ value: item.id, label: item.name }))]}
                 onChange={(channelId) => { changeRoute({ channelId, modelId: '' }); if (canLoad(channelId)) loadModels(channelId); }} />
@@ -409,8 +413,9 @@ export function AiConnections({ timeoutSeconds }: { timeoutSeconds: number }) {
           请求开始时冻结渠道、模型、参数及凭证。更改配置不影响正在执行的请求，也不改写游戏存档。
         </p>
       </fieldset>
-      <div role="status" className="field-hint">
-        {notice}
+      <div className="ai-save-bar">
+        <button className="primary" disabled={busy || !start.vault} onClick={save}>保存 AI 配置</button>
+        <div role="status" className="field-hint">{notice || '各阶段路由独立保存，设置本身不会发起生成请求。'}</div>
       </div>
     </>
   );

@@ -1466,6 +1466,9 @@ summary {
 /* AI 渠道沿用现有设置布局；避免长模型 ID 撑出移动视口。 */
 .ai-toolbar, .ai-actions { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; margin-block: 1rem; }
 .ai-toolbar label { flex: 1 1 14rem; min-width: 0; }
+.ai-save-bar { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; padding: .75rem; background: #182119; border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 -4px 12px #0004; }
+.ai-save-bar > button { flex: 0 0 auto; }
+.settings-content .ai-save-bar .field-hint { flex: 1 1 15rem; margin: 0; overflow-wrap: anywhere; }
 .settings-content fieldset { min-width: 0; }
 .settings-content details { margin-block: 1rem; }
 .settings-content summary { cursor: pointer; padding-block: .65rem; }
