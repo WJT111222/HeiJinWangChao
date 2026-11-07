@@ -76,9 +76,7 @@ export function uiFixture() {
       occurredAt: date,
       title,
       summary: '公开记录',
-      outcome: '结案',
-      longTermImpact: '已知后果',
-      sourceTurnIds: ['turn-a'],
+      id: `history-${id}`, knowledgeKind: 'established', recordedAt: date, sourceTurnId: 'turn-a', relatedEntryIds: [],
       actorRefs: [],
     });
   }

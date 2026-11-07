@@ -1,3 +1,4 @@
+import { history } from './fixtures/historyRecord';
 import { describe, expect, it } from 'vitest';
 import { playerView } from '../ui/panels/playerView';
 import { contextFor } from '../prompts/context';
@@ -30,14 +31,15 @@ describe('玩家全量观察与角色认知分离', () => {
     expect(contextFor(input)).toEqual(story); expect(JSON.stringify(story)).not.toContain('仓库可能缺货');
     expect(state).toEqual(before);
   });
-  it.each(['major', 'significant'] as const)('%s已结束事件不能作为普通杂事删除', impact => {
-    const state = worldState(); state.events.ended = { ...event('ended'), impact, status: 'resolved', resolvedAt: state.worldClock, resolutionText: '检查完成' };
-    expect(() => commitCommands(state, 'cleanup', 0, [{ type: 'DeleteEvent', commandId: 'delete', eventId: 'ended', expectedStatus: 'resolved', reason: '杂事', evidence: '结束' }])).toThrow();
-  });
-  it('主角相关的普通终态仍保留，不因为minor清除', () => {
-    const state = worldState(); state.events.ended = { ...event('ended'), impact: 'minor', status: 'cancelled' };
-    expect(() => commitCommands(state, 'cleanup', 0, [{ type: 'DeleteEvent', commandId: 'delete', eventId: 'ended', expectedStatus: 'cancelled', reason: '杂事', evidence: '结束' }])).toThrow();
-  });
+  it.each(['major','significant'] as const)('%s无引用终态可清理，不按重要性限制',impact=>{
+ const state=worldState();state.events.ended={...event('ended'),impact,status:'resolved',resolvedAt:state.worldClock,resolutionText:'检查完成'};
+ const next=commitCommands(state,'cleanup',0,[{type:'DeleteEvent',commandId:'delete',eventId:'ended',expectedStatus:'resolved',reason:'自然结束',evidence:'结束'}]);
+ expect(next.events.ended).toBeUndefined();expect(next.retiredEvents.ended).toBeDefined();
+});
+  it('主角相关但无未处理入场或引用的终态可清理',()=>{
+ const state=worldState();state.events.ended={...event('ended'),impact:'minor',status:'cancelled'};
+ expect(commitCommands(state,'cleanup',0,[{type:'DeleteEvent',commandId:'delete',eventId:'ended',expectedStatus:'cancelled',reason:'自然结束',evidence:'结束'}]).events.ended).toBeUndefined();
+});
   it('存在任务引用的普通终态不清理必要因果记录', () => {
     const state = worldState();
     state.events.ended = { ...event('ended'), impact: 'minor', status: 'cancelled', actorRefs: [{ kind: 'npc', id: 'npc-a' }], linkedTaskIds: ['job'] };
@@ -48,73 +50,40 @@ describe('玩家全量观察与角色认知分离', () => {
     const state = worldState(), draft = worldDraft(true, 'opening');
     state.events.ended = { ...event('ended'), actorRefs: [{ kind: 'npc', id: 'npc-a' }], status: 'resolved',
       resolvedAt: state.worldClock, resolutionText: '收到未经核实的举报。', resultKnowledge: { facts: ['收到并登记了一份举报。'], reported: ['仓库可能缺货'], suspected: [] } };
-    const result = parseWorld(JSON.stringify({ ...worldResult(), eventCommands: [{ type: 'ArchiveEvent', commandId: 'archive', eventId: 'ended',
-      title: '收到并登记了一份举报', summary: '收到并登记了一份举报',
-      evidence: proof({ kind: 'established', sources: ['event:ended'], fact: '收到并登记了一份举报。', at: actionTime }) }] }), state, draft);
-    const after = projectTurn(state, draft, result.eventCommands);
+    const result = parseWorld(JSON.stringify({ ...worldResult(), worldCommands: [{type:'RecordHistory',commandId:'archive',evidence:proof({ kind: 'established', sources: ['event:ended'], fact: '收到并登记了一份举报。', at: actionTime }),entry:{id:'archive',eventId:'ended',title:'收到并登记了一份举报',summary:'收到并登记了一份举报',knowledgeKind:'established',actorRefs:[],relatedEntryIds:[]}}] }), state, draft);
+    const after = projectTurn(state, draft, result.worldCommands);
     expect(after.events.ended).toEqual(state.events.ended);
     expect(playerView(after).timeline).toHaveLength(1);
     expect(JSON.stringify(after.timeline)).not.toContain('仓库可能缺货');
   });
-  it('timelineCandidates归档只采用客观facts，不复制结果中的未核实举报；正式记忆仍来自Story', () => {
-    const state = worldState(), draft = worldDraft(true, 'opening');
-    state.events.ended = { ...event('ended'), actorRefs: [{ kind: 'npc', id: 'npc-a' }], status: 'resolved', sourceTurnIds: [],
-      resolvedAt: state.worldClock, resolutionText: '收到举报：北仓藏有违禁品（尚未核实）',
-      resultKnowledge: { facts: ['接收并归档了一份举报。'], reported: ['北仓藏有违禁品'], suspected: [] } };
-    const result = parseWorld(JSON.stringify({ ...worldResult(), timelineCandidates: ['ended'] }), state, draft);
-    const complete = TurnDraftSchema.parse({ ...draft, stageStatus: { ...draft.stageStatus, world: 'ready' }, world: {
-      storyRevision: draft.storyRevision, candidateRevision: 1, requestRevision: 0, basedOnVariableRevision: 1, validation: 'validated', result,
-    } });
-    const before = structuredClone(state), after = settleTurn(state, complete, state.updatedAt);
-    expect(after.events.ended.visibility).toBe('hidden');
-    expect(after.timeline[0].outcome).toBe('接收并归档了一份举报。');
-    expect(JSON.stringify(after.timeline)).not.toContain('违禁品');
-    expect(after.memories.short.at(-1)?.text).toBe(draft.story!.summary);
-    expect(after.npc).toEqual(before.npc); expect(state).toEqual(before);
-    for (const facts of [[], undefined]) {
-      const invalid = structuredClone(state);
-      invalid.events.ended.resultKnowledge = facts ? { facts, reported: ['北仓藏有违禁品'], suspected: [] } : undefined;
-      expect(parseWorld(JSON.stringify({ ...worldResult(), timelineCandidates: ['ended'] }), invalid, draft).timelineCandidates).toEqual(['ended']);
-    }
-  });
+  it('独立历史保留reported性质；正式记忆仍来自Story且不传播NPC知识',()=>{
+ const state=worldState(),draft=worldDraft(true,'opening'),before=structuredClone(state);
+ const result=parseWorld(JSON.stringify(worldResult([history('report',{eventId:undefined,summary:'有人声称北仓缺货',knowledgeKind:'reported',sourceText:'来访者',occurredTimeText:'去年'})])),state,draft);
+ const complete=TurnDraftSchema.parse({...draft,stageStatus:{...draft.stageStatus,world:'ready'},world:{storyRevision:1,candidateRevision:1,requestRevision:0,basedOnVariableRevision:1,validation:'validated',result}});
+ const after=settleTurn(state,complete,state.updatedAt);
+ expect(after.timeline[0]).toMatchObject({summary:'有人声称北仓缺货',knowledgeKind:'reported',occurredTimeText:'去年'});
+ expect(after.memories.short.at(-1)?.text).toBe(draft.story!.summary);expect(after.npc).toEqual(before.npc);expect(state).toEqual(before);
+});
   it('归档不解析evidence里的陈述分类，仍只保存事件历史', () => {
     const state = worldState(), draft = worldDraft(true, 'opening');
     state.events.report = { ...event('report'), actorRefs: [{ kind: 'npc', id: 'npc-a' }], status: 'resolved',
       resolvedAt: state.worldClock, resolutionText: '听说仓库缺货', resultKnowledge: { facts: ['接收了一份报告'], reported: ['仓库缺货'], suspected: [] } };
-    expect(() => parseWorld(JSON.stringify({ ...worldResult(), eventCommands: [{ type: 'ArchiveEvent', commandId: 'false-history',
-      eventId: 'report', title: '仓库缺货', summary: '仓库缺货', evidence: proof({ kind: 'established', sources: ['event:report', 'event-result:report'], fact: '仓库缺货' }) }] }), state, draft)).not.toThrow();
+    expect(() => parseWorld(JSON.stringify({ ...worldResult(), worldCommands: [{type:'RecordHistory',commandId:'false-history',evidence:proof({ kind: 'established', sources: ['event:report', 'event-result:report'], fact: '仓库缺货' }),entry:{id:'false-history',eventId:'report',title:'仓库缺货',summary:'仓库缺货',knowledgeKind:'established',actorRefs:[],relatedEntryIds:[]}}] }), state, draft)).not.toThrow();
   });
-  it('主角事件的后继不会被当作已脱离主线的普通杂事清理', () => {
-    const state = worldState();
-    state.events.prior = { ...event('prior'), status: 'cancelled' };
-    state.events.followup = { ...event('followup'), impact: 'minor', status: 'cancelled', actorRefs: [{ kind: 'npc', id: 'npc-a' }], predecessorEventIds: ['prior'] };
-    expect(() => commitCommands(state, 'cleanup', 0, [{ type: 'DeleteEvent', commandId: 'delete', eventId: 'followup', expectedStatus: 'cancelled', reason: '杂事', evidence: '结束' }])).toThrow();
-  });
-  it.each([1, 2, 3, 4, 5])('V%s旧档不改认知标记、世界时间、来源与历史，可从只读面板查看', version => {
-    const original = worldState(); original.events.old = { ...event('old'), status: 'resolved', resolvedAt: original.worldClock, resolutionText: '旧结案原文' };
-    original.timeline = [{ eventId: 'old', title: '旧历史', occurredAt: original.worldClock, summary: '旧摘要', outcome: '旧结果', longTermImpact: '', actorRefs: [], sourceTurnIds: [] }];
-    const raw: Record<string, unknown> = { ...original, schemaVersion: version };
-    if (version < 5) delete raw.retiredEvents;
-    if (version < 4) delete raw.contactReviewNpcIds;
-    if (version < 3) { delete raw.contactNpcIds; delete raw.retiredNpcs; }
-    if (version === 1) { delete raw.weatherText; delete raw.environmentText; }
-    const migrated = migrateSave(raw), before = structuredClone(migrated), view = playerView(migrated);
-    expect(GameStateSchema.safeParse(migrated).success).toBe(true);
-    expect(view.timeline).toEqual(original.timeline); expect(view.events[0].visibility).toBe('hidden');
-    expect(migrated).toEqual(before); expect(migrated.worldClock).toBe(original.worldClock); expect(migrated.revision).toBe(original.revision);
-    expect(migrated.events).toEqual(original.events);
-  });
-  it('V5已清理的重要事件成果、原publication和时间线继续可读，后续归档不污染角色知识', () => {
-    const state = worldState(), draft = worldDraft(true, 'opening');
-    state.retiredEvents.legacy = { id: 'legacy', status: 'resolved', retiredAt: state.worldClock, sourceTurnIds: [], linkedTaskIds: [], predecessorEventIds: [],
-      detail: { title: '旧场外记录', startAt: state.worldClock, resolvedAt: state.worldClock, actorRefs: [{ kind: 'npc', id: 'npc-a' }],
-        visibility: 'hidden', impact: 'major', resolutionText: '完成了档案核对。', resultKnowledge: { facts: ['完成了档案核对。'], reported: [], suspected: [] } } };
-    expect(GameStateSchema.safeParse(state).success).toBe(true);
-    const result = parseWorld(JSON.stringify({ ...worldResult(), eventCommands: [{ type: 'ArchiveEvent', commandId: 'legacy-archive', eventId: 'legacy',
-      title: '完成了档案核对', summary: '完成了档案核对', evidence: proof({ kind: 'established', sources: ['event:legacy'], fact: '完成了档案核对。' }) }] }), state, draft);
-    const after = projectTurn(state, draft, result.eventCommands), loaded = GameStateSchema.parse(after);
-    expect(playerView(loaded).retiredEvents[0].detail).toEqual(state.retiredEvents.legacy.detail);
-    expect(playerView(loaded).timeline).toHaveLength(1); expect(loaded.retiredEvents.legacy.publication?.summary).toBe('完成了档案核对');
-    expect(loaded.npc).toEqual(state.npc); expect(loaded.events).toEqual({});
-  });
+  it('清理后继可保留轻量前序引用，不因主角相关建立永久门槛',()=>{
+ const state=worldState();state.events.prior={...event('prior'),status:'cancelled',resolvedAt:state.worldClock};
+ state.events.followup={...event('followup'),impact:'minor',status:'cancelled',actorRefs:[{kind:'npc',id:'npc-a'}],predecessorEventIds:['prior']};
+ const after=commitCommands(state,'cleanup',0,[{type:'DeleteEvent',commandId:'delete',eventId:'followup',expectedStatus:'cancelled',reason:'自然结束',evidence:'结束'}]);
+ expect(after.retiredEvents.followup.predecessorEventIds).toEqual(['prior']);expect(after.events.prior).toBeDefined();
+});
+  it.each([1,2,3,4,5])('V%s旧档不迁移且原始数据保持不变',version=>{
+ const raw={...worldState(),schemaVersion:version},before=structuredClone(raw);
+ expect(()=>migrateSave(raw)).toThrow(expect.objectContaining({code:'UNSUPPORTED_VERSION'}));expect(raw).toEqual(before);
+});
+  it('新历史可引用已清理的事件身份，不重建完整事件也不污染认知',()=>{
+ const state=worldState(),draft=worldDraft(true,'opening');
+ state.retiredEvents.retired={id:'retired',status:'resolved',retiredAt:state.worldClock,sourceTurnIds:[],linkedTaskIds:[],predecessorEventIds:[]};
+ const result=parseWorld(JSON.stringify(worldResult([history('retired')])),state,draft),after=projectTurn(state,draft,result.worldCommands),loaded=GameStateSchema.parse(after);
+ expect(playerView(loaded).timeline).toHaveLength(1);expect(loaded.npc).toEqual(state.npc);expect(loaded.events).toEqual({});
+});
 });

@@ -147,7 +147,7 @@ export function historicalPerspective(state: GameState, draft: Pick<TurnDraft, '
 }
 export const turnTimePolicy = {
   normal: '世界时钟采用合法结构化候选。待定开局以Story的OPENING_TIME为唯一时钟候选，由程序统一应用，变量无需重复SetWorldClock。普通回合由变量AI根据实际行动合理估时，允许零耗时，无固定步长，不要求正文写出时间或逐字证据。只能前进或保持，不能倒退。明确中断不能越过实际停止点；预计时间不证明事件已经发生。',
-  retrospective: '纯历史视角属于只读当前世界的特殊语义，并非零耗时的必要条件：玩家明确要求其他已有NPC视角，且只回顾此前发生的事。正文在变量规划用group=time、subjectHint=time:retrospective，observedFact为JSON：{npcId,perspectiveRequest,pastRequest,temporalScope:"past_only",currentPlotAdvances:false}。两段Request分别完整引用玩家要求切换人物和回顾过去的不同原文，不能引用AI自插回忆；textEvidence可概括回顾内容，无需逐字引用。当前人物视角、NPC讲往事、现在的其他人物视角、过去与现在混合均不适用；不明确时按普通时间规则处理，可零耗时但不可倒退。纯回顾不更新任何当前事实或推演世界，仍遵守既有事实和NPC认知边界，不授予私有知识。',
+  retrospective: '纯历史视角属于只读当前世界的特殊语义，并非零耗时的必要条件：玩家明确要求其他已有NPC视角，且只回顾此前发生的事。正文在变量规划用group=time、subjectHint=time:retrospective，observedFact为JSON：{npcId,perspectiveRequest,pastRequest,temporalScope:"past_only",currentPlotAdvances:false}。两段Request分别完整引用玩家要求切换人物和回顾过去的不同原文，不能引用AI自插回忆；textEvidence可概括回顾内容，无需逐字引用。当前人物视角、NPC讲往事、现在的其他人物视角、过去与现在混合均不适用；不明确时按普通时间规则处理，可零耗时但不可倒退。纯回顾不更新任何当前事实或推演当前世界，World可以RecordHistory记录历史披露而不改变当前时钟；仍遵守既有事实和NPC认知边界，不授予私有知识。',
 };
 export function timeOutcome(state: GameState, draft: Pick<TurnDraft, 'userInput' | 'turnKind' | 'story'>, _required = false) {
   void _required;
@@ -193,8 +193,8 @@ export function validateTimeCommands(state: GameState, draft: TurnDraft, command
 
 export function validateHistoricalWorld(state: GameState, draft: TurnDraft, result: NonNullable<TurnDraft['world']>['result']) {
   if (!historicalPerspective(state, draft)) return;
-  requireData([result.worldCommands, result.taskCommands, result.eventCommands, result.futureEvents,
-    result.visibleHooks, result.timelineCandidates].every((entries) => entries.length === 0),
+  requireData(result.worldCommands.every(command => command.type === 'RecordHistory')
+    && [result.taskCommands, result.eventCommands, result.visibleHooks].every(entries => entries.length === 0),
     'TIME_PREFLIGHT', '纯历史视角不能执行当前动态世界结算');
 }
 export function validateCommittedTime(state: GameState, draft: TurnDraft) {

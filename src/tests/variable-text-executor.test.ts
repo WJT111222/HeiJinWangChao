@@ -364,34 +364,18 @@ describe('内存事务、开局基线及旧系统隔离', () => {
     }
     expect(data.state).toEqual(before);
   });
-  it('主角移动未处理在场NPC时区分场景迁移规则并携带安全NPC ID', async () => {
-    const data = setup('set protagonist.locationId = "remote"');
-    data.state.locations.remote = { id: 'remote', name: '远处' };
-    const before = structuredClone(data.state);
-    const result = await run(data);
-    expectCode(result, 'domain_validation_failed');
-    if (!result.ok) expect(result.error.diagnostic).toMatchObject({
-      validationRule: 'domain_schema', domainRule: 'scene_transition', relatedNpcId: 'npc_001',
-    });
-    expect(data.state).toEqual(before);
-  });
-  it('多个在场NPC时只报告未被显式更新的那个NPC', async () => {
-    const data = setup('set protagonist.locationId = "remote"\nset npc[npc_001].locationId = "remote"');
-    data.state.locations.remote = { id: 'remote', name: '远处' };
-    data.state.npc.npc_002 = npc('npc_002');
-    const before = structuredClone(data.state);
-    const result = await run(data);
-    expectCode(result, 'domain_validation_failed');
-    if (!result.ok) expect(result.error.diagnostic).toMatchObject({
-      validationRule: 'domain_schema', domainRule: 'scene_transition', relatedNpcId: 'npc_002',
-    });
-    expect(data.state).toEqual(before);
-  });
-  it('原有场景切换校验仍要求显式处理在场NPC', async () => {
-    const { commitCommands } = await import('../domain/commands');
-    const data = setup(''); data.state.locations.remote = { id: 'remote', name: '远处' };
-    expect(() => commitCommands(data.state, 'independent', 0, [{ type: 'UpdateProtagonist', protagonistId: 'hero', commandId: 'move', evidence: '移动', expectedRevision: 0, changes: { locationId: 'remote' } }])).toThrowError(expect.objectContaining({ code: 'SCENE_TRANSITION' }));
-  });
+  it('主角移动自动退出原现场，不改变原存档',async()=>{
+ const data=setup('set protagonist.locationId = "remote"');data.state.locations.remote={id:'remote',name:'远处'};const before=structuredClone(data.state);
+ const result=unwrap(await run(data));expect(result.npc.npc_001).toEqual({...data.state.npc.npc_001,onScene:false});expect(data.state).toEqual(before);
+});
+  it('同行者到新地点，留守者只退出现场，彼此不串地点',async()=>{
+ const data=setup('set protagonist.locationId = "remote"\nset npc[npc_001].locationId = "remote"');data.state.locations.remote={id:'remote',name:'远处'};data.state.npc.npc_002=npc('npc_002');const before=structuredClone(data.state);
+ const result=unwrap(await run(data));expect(result.npc.npc_001).toMatchObject({locationId:'remote',onScene:true});expect(result.npc.npc_002).toEqual({...before.npc.npc_002,onScene:false});expect(data.state).toEqual(before);
+});
+  it('直接领域批次也使用相同自动离场规则',async()=>{
+ const {commitCommands}=await import('../domain/commands');const data=setup('');data.state.locations.remote={id:'remote',name:'远处'};
+ expect(commitCommands(data.state,'independent',0,[{type:'UpdateProtagonist',protagonistId:'hero',commandId:'move',evidence:'移动',expectedRevision:0,changes:{locationId:'remote'}}]).npc.npc_001.onScene).toBe(false);
+});
   it('开局待定但没有合法Story时间时，不使用占位时钟', async () => {
     const { pendingOpeningClock } = await import('../domain/openingTime');
     const data = memorySetup(); data.state.worldClock = pendingOpeningClock; data.state.openingTimePending = true;

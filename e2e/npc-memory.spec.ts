@@ -149,7 +149,7 @@ test('公开自动维护开关不授权NPC额外收费；新正式回合和下�
       await route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n` }); return;
     }
     const text = model === 'variables' ? variableReply({ commands: [], rejectedSuggestions: [], unresolved: [] })
-      : JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] });
+      : JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
     await route.fulfill({ contentType: 'application/json', body: wire(text) });
   });
   await seed(page, true); await page.reload(); await openGameTools(page); expect(tasks).toEqual([]);

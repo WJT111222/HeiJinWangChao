@@ -2,13 +2,24 @@ import type { DomainCommand } from './commands';
 import type { GameState } from './state';
 import { requireData } from './common';
 
-// 只检查显式场景状态处理。是否同行/留守由变量AI理解剧情，不用中文正则判案。
-export function validateSceneTransition(
+// 只维护“主角现场”的成员关系，不推断人物移动、行动或认知。
+export function maintainSceneTransition(
   before: GameState,
   after: GameState,
   commands: readonly DomainCommand[],
 ) {
-  // 入场和显式清除地点按整批最终状态检查，避免合法分步更新被指令顺序阻断。
+  if (after.protagonist.locationId !== before.protagonist.locationId) {
+    for (const old of Object.values(before.npc).filter(person => person.onScene)) {
+      const person = after.npc[old.id];
+      if (!person) continue;
+      const updates = commands.filter((command): command is Extract<DomainCommand, {type: 'UpdateNpc'}> => command.type === 'UpdateNpc' && command.npcId === old.id);
+      const explicitlyPresent = updates.some(command => command.changes.onScene === true);
+      const movedAlong = person.locationId === after.protagonist.locationId
+        && updates.some(command => command.changes.locationId === after.protagonist.locationId);
+      if (!explicitlyPresent && !movedAlong) person.onScene = false;
+    }
+  }
+  // 明确入场仍须具有最终合法地点；同批先后顺序不影响结果。
   for (const command of commands) if (command.type === 'UpdateNpc'
     && (command.changes.onScene === true || command.changes.locationId === null)) {
     const person = after.npc[command.npcId];
@@ -18,17 +29,5 @@ export function validateSceneTransition(
       'SCENE_LOCATION',
       `在场 NPC（${command.npcId}）必须有明确地点`,
     );
-  }
-  if (after.protagonist.locationId === before.protagonist.locationId) return;
-  for (const npc of Object.values(before.npc).filter((person) => person.onScene)) {
-    const updates = commands
-      .filter((command) => command.type === 'UpdateNpc')
-      .filter((command) => command.npcId === npc.id);
-    requireData(
-      updates.some((command) => command.changes.onScene !== undefined || command.changes.locationId !== undefined),
-      'SCENE_TRANSITION',
-      `主角移动时须显式更新原在场 NPC（${npc.id}）的地点或在场状态，不自动跟随`,
-    );
-    // 归属、合法地点和onScene与主角位置一致性由GameStateSchema统一校验。
   }
 }

@@ -50,3 +50,5 @@ push npc[lin].knownInformation = {"text":"得知值班安排","knowledgeKind":"r
 
 ## 时间与文本执行顺序
 普通回合需要推进时间时，为清晰起见先输出 set worldClock = 合法ISO游戏时间，再输出该时刻的互动、个人记忆和实际到账。程序已经将本批时钟优先规范化，其他命令保持文本顺序；不要遗漏所需时钟而填写未来的互动或到账。lastInteractionAt不能晚于执行时的worldClock，也不能早于NPC此前互动；实际receivedAt不能晚于执行时钟。开局不重复设时钟，使用OPENING_TIME中Story确定的endAt；初始预期工资的expectedAt如提供，不能早于这一候选时间。任务dueAt/事件estimatedEndAt不得早于各自startAt。不要用设备日期填补游戏时间。
+
+主角改变地点时，原在场且未明确同行的NPC由程序自动onScene=false，保留原地点、关系、记忆和任务，不必逐人输出离场命令。同行者明确更新locationId至新地点及必要onScene状态；同批按最终状态校验，不能把不同地点的人标为在场。

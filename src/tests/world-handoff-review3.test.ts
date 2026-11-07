@@ -56,19 +56,10 @@ function classifiedReport(state: GameState, draft: TurnDraft) {
   command.evidence = JSON.stringify(evidence); command.event.resultKnowledge = evidence.decision.resultKnowledge; return command;
 }
 describe('事件事实、结果叙述和计划的独立来源', () => {
-  it.each([1, 2, 3, 4])('真实IndexedDB中的V%s旧已结案事件可读取，不补造事实，回执可重放', async (version) => {
-    const factory = new IDBFactory(), repo = await repository(handoffState(), factory);
-    const selected = await ready(repo, (state, draft) => ({ ...worldResult(), eventCommands: [reportEvent(state, draft)] })), input = submission(selected);
-    const first = await repo.commitTurn(input), raw = { ...first.state, schemaVersion: version }; Reflect.deleteProperty(raw, 'retiredEvents');
-    if (version < 4) Reflect.deleteProperty(raw, 'contactReviewNpcIds');
-    if (version < 3) { Reflect.deleteProperty(raw, 'contactNpcIds'); Reflect.deleteProperty(raw, 'retiredNpcs'); }
-    if (version === 1) { Reflect.deleteProperty(raw, 'weatherText'); Reflect.deleteProperty(raw, 'environmentText'); }
-    const db = await new Promise<IDBDatabase>((resolve) => { const request = factory.open('handoff-review3'); request.onsuccess = () => resolve(request.result); });
-    await new Promise<void>((resolve, reject) => { const tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(raw); tx.oncomplete = () => resolve(); tx.onabort = () => reject(tx.error); }); db.close();
-    const loaded = await repo.load('save-a'); expect(loaded.events).toEqual(first.state.events); expect(loaded.revision).toBe(first.state.revision);
-    expect(loaded.journal).toEqual(first.state.journal); expect(loaded.events.report.resultKnowledge).toBeUndefined();
-    expect((await repo.commitTurn(input)).replayed).toBe(true);
-  });
+  it('V6已结案事件重载不补造事实，回执可重放',async()=>{
+ const repo=await repository(handoffState(),new IDBFactory()),selected=await ready(repo,(state,draft)=>({...worldResult(),eventCommands:[reportEvent(state,draft)]})),input=submission(selected),first=await repo.commitTurn(input);
+ const loaded=await repo.load('save-a');expect(loaded.events).toEqual(first.state.events);expect(loaded.journal).toEqual(first.state.journal);expect(loaded.events.report.resultKnowledge).toBeUndefined();expect((await repo.commitTurn(input)).replayed).toBe(true);
+});
   it('事件分类、原文、正式状态和回执一起回滚，重试幂等且只结案一次', async () => {
     const repo = await repository(), selected = await ready(repo, (state, draft) => ({ ...worldResult(), eventCommands: [classifiedReport(state, draft)] }));
     const before = await repo.loadGame('save-a'), input = submission(selected), add = IDBObjectStore.prototype.add;

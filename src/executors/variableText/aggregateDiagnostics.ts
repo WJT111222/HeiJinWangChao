@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { DataError, IdSchema } from '../../domain/common';
 import type { ExecutionDiagnostic } from './diagnostics';
 
-// 固定代码词典不带出异常原文；仅下方两个场景错误允许带出经 IdSchema 校验的 NPC ID。
+// 固定代码词典不带出异常原文；仅下方场景错误允许带出经 IdSchema 校验的 NPC ID。
 export const domainRuleNames = {
   opening_initialization: '此存档已不允许开局初始化',
   initial_value_conflict: '初始化不能覆盖已有明确数据',
@@ -14,7 +14,6 @@ export const domainRuleNames = {
   duplicate_npc_identity: 'NPC 身份重复或与历史身份冲突',
   npc_kind: 'NPC 类型不允许该操作',
   npc_task_ownership: '任务归属不一致',
-  scene_transition: '主角移动时缺少原在场 NPC 的状态更新',
   scene_location: '在场 NPC 缺少明确地点',
   equipment_ownership: '装备类别或归属不符合要求',
   task_event_links: '任务与事件的关联不一致',
@@ -59,7 +58,6 @@ const dataErrors: Record<string, DomainRule> = {
   NPC_IDENTITY: 'duplicate_npc_identity',
   AMBIGUOUS_NPC: 'duplicate_npc_identity',
   NPC_KIND: 'npc_kind',
-  SCENE_TRANSITION: 'scene_transition',
   SCENE_LOCATION: 'scene_location',
   OWNERSHIP: 'invalid_ownership',
   UNKNOWN_BALANCE: 'invalid_balance',
@@ -141,7 +139,7 @@ export function aggregateDomainDiagnostic(error: z.ZodError | DataError): Execut
       if (error.message === '后续事件必须晚于已成立的前序终止') rule = 'event_predecessor_time';
     }
     // 只从 SCENE_* 的固定模板中提取 NPC ID，并用 IdSchema 二次校验后才允许带出。
-    if (error.code === 'SCENE_TRANSITION' || error.code === 'SCENE_LOCATION') {
+    if (error.code === 'SCENE_LOCATION') {
       const match = error.message.match(/NPC（([^）]+)）/);
       const parsed = match ? IdSchema.safeParse(match[1]) : null;
       if (parsed?.success) relatedNpcId = parsed.data;

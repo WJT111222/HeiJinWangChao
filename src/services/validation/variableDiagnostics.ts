@@ -35,11 +35,11 @@ export function variableValidationError(error: unknown, input?: unknown): AiErro
     if (isTimeDomainRule(diagnostic.domainRule)) return new AiError('time_data', undefined, { ...diagnostic,
       ...(error instanceof CommandDataError ? { commandIndex: error.commandIndex, commandType: error.commandType } : {}) });
     const code = moneyCodes.has(error.code) ? 'amount_balance' : timeCodes.has(error.code) ? 'time_data' : conflictCodes.has(error.code) ? 'candidate_conflict' : 'data_integrity';
-    if (error.code === 'SCENE_TRANSITION' || error.code === 'SCENE_LOCATION') {
+    if (error.code === 'SCENE_LOCATION') {
       const match = error.message.match(/NPC（([^）]+)）/);
       const parsed = match ? IdSchema.safeParse(match[1]) : null;
       const relatedNpcId = parsed?.success ? parsed.data : undefined;
-      const domainRule = error.code === 'SCENE_TRANSITION' ? 'scene_transition' as const : 'scene_location' as const;
+      const domainRule = 'scene_location' as const;
       return new AiError(code, undefined, { domainRule, ...(relatedNpcId ? { relatedNpcId } : {}) });
     }
     return new AiError(code);

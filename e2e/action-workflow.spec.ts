@@ -69,7 +69,7 @@ async function mock(page: Page) {
     const text = plan.failure === stage && !plan.status ? '{invalid-json' : stage === 'story'
       ? `<thinking>本轮创作提纲：保持连续，按当前行动呈现事实。</thinking><正文>${anchor}第${number}幕。主角在街边观察周围，街道上人来人往。</正文><短期记忆>${plan.badSummary ? '' : `主角第${number}次在街边观察环境。`}</短期记忆><变量规划>${JSON.stringify(openingGuide)}</变量规划>`
       : (stage === 'variables' ? variableReply : JSON.stringify)(stage === 'variables' ? { commands: [{ type: 'SetWorldClock', commandId: 'clock', worldClock: ctx.OPENING_TIME ? string(record(ctx.OPENING_TIME).endAt) : new Date(Date.parse(string(state.worldClock)) + 60000).toISOString(), evidence: '主角在街边观察周围，街道上人来人往。' }], rejectedSuggestions: [], unresolved: [] }
-        : { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [{ text: '尚未公开的内部线索' }], timelineCandidates: [], unresolved: [] });
+        : { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [{ text: '尚未公开的内部线索' }], unresolved: [] });
     await route.fulfill({ status: plan.failure === stage ? plan.status ?? 200 : 200,
       contentType: stage === 'story' ? 'text/event-stream' : 'application/json',
       body: stage === 'story' ? `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`

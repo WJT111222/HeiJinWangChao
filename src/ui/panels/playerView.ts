@@ -1,4 +1,3 @@
-import { isHistoricalEntry } from '../../domain/events/lifecycle';
 import type { GameState } from '../../domain/state';
 import { initialCompanionProfile, matchesCompanion } from '../../services/local/companionProfile';
 import type { CompanionProfile } from '../../services/local/companionProfile';
@@ -63,7 +62,7 @@ export function playerView(state: GameState, authoredCompanion?: CompanionProfil
     retiredEvents: Object.values(state.retiredEvents), retiredNpcs: Object.values(state.retiredNpcs),
     tasks: Object.values(state.tasks), economy: state.economy,
     protagonist: state.protagonist,
-    timeline: state.timeline.filter(entry => isHistoricalEntry(state, entry)).sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt)),
+    timeline: [...state.timeline].sort((a, b) => Date.parse(a.recordedAt) - Date.parse(b.recordedAt)),
     memories,
     immediateMemories: journal.slice(-effectiveWindowSize).map(entry => ({ ...entry, createdAtGameTime: turnTimes.get(entry.turnId) })),
     immediateWindowSize: effectiveWindowSize,

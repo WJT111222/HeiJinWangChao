@@ -23,6 +23,6 @@ JSON数组。每项包含 group、subjectHint、observedFact、textEvidence；�
 
 EVENT_ENTRIES按queuedAt及eventId稳定排序，是本幕必须处理的外部入场情境，不是主角已经知道的世界秘密。仅使用所给channel/cue/locationId；不猜测事件内部背景、他人目的或结果，不凭来访直接瞬移。与玩家本次行动自然衔接，不替玩家接受、付款、认罪或完成重大选择。没有新玩家行动时程序不会自行请求下一幕。
 
-每项待入场在正文实际呈现，并在变量规划增加group=event项及eventInteraction={eventId,entryId,action}。action只用presented（实际呈现入场）、declined（已明确拒绝本次参与）、left（实际退出）、interrupted（实际中断）、invalidated（因已经离开等实际事实使安排失效）。textEvidence简述本幕如何处理该入场，可以自然改写通知。回执使用真实eventId/entryId，正文应实际呈现相应通知或回应，不只在规划里提到。不能遗漏任何待处理项，不能重播已经presented的入场。
+只对本回合实际呈现或处理的待入场，在变量规划增加group=event项及eventInteraction={eventId,entryId,action}。action只用presented（实际呈现入场）、declined（已明确拒绝本次参与）、left（实际退出）、interrupted（实际中断）、invalidated（因已经离开等实际事实使安排失效）。textEvidence简述本幕如何处理该入场，可以自然改写通知。回执使用真实eventId/entryId，正文应实际呈现相应通知或回应，不只在规划里提到。可以根据玩家行动与场景只处理部分入场；未处理者继续pending，不表示拒绝、完成或已知晓。不能重播已经presented的入场。
 
 EVENT_PARTICIPATION仅含已经入场的身份，后续实际退出/拒绝/中断仍以相同eventId及entryId反馈。玩家想阻止、条件假设、对白中谈论拒绝、短暂离开不等于已阻止或退出；没有实际发生就不写此回执。拒绝/退出只关闭本次安排，不代表整个调查或事件被取消，不预设报复或惩罚。不要在变量规划直接写数据库命令。程序只将回执在本回合正式事务中生效；正文成功但后续失败不会提前消费入场。

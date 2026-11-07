@@ -21,24 +21,7 @@ export function validateTaskTransitions(before: GameState, after: GameState, cha
         && sameActor(other, task) && other.goal === task.goal);
       requireData(repeated.length === 1, 'DUPLICATE_HANDOFF', '不能重复交接同一成果与职责');
     }
-    if (task.actorRef.kind !== 'npc' || old) continue;
-    for (const other of Object.values(after.tasks)) {
-      if (other.id === task.id || !sameActor(other, task)) continue;
-      const end = task.resolution?.at, otherEnd = other.resolution?.at;
-      // 两项未终结任务即便计划开始时间不同也争用同一个名额。
-      const disjoint = (terminalTask(other) && (otherEnd
-        ? Date.parse(otherEnd) <= Date.parse(task.startAt)
-        : Boolean(before.tasks[other.id] && terminalTask(before.tasks[other.id]))))
-        || (terminalTask(task) && end && Date.parse(end) <= Date.parse(other.startAt));
-      requireData(disjoint, 'NPC_TASK_CONFLICT', 'NPC 后台职责重叠，须先有真实终结及合法开始时间');
-      // 本批新终结的旧任务必须有确切结束时间；不能用 legacy 终态逃逸。
-      if (before.tasks[other.id] && !terminalTask(before.tasks[other.id]) && terminalTask(other))
-        requireData(otherEnd && Date.parse(otherEnd) <= Date.parse(task.startAt), 'NPC_TASK_CONFLICT', '同批释放缺少实际终结时间');
-    }
   }
-  const touched = new Set(changed.filter((t) => t.actorRef.kind === 'npc').map((t) => t.actorRef.id));
-  for (const id of touched) requireData(Object.values(after.tasks).filter((t) => t.actorRef.kind === 'npc'
-    && t.actorRef.id === id && !terminalTask(t)).length <= 1, 'NPC_TASK_CONFLICT', 'NPC 最多一项未终结后台任务');
 }
 
 export function retireNpc(state: GameState, npcId: string, expectedIdentityKey: string,

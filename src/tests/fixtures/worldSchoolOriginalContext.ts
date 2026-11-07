@@ -33,5 +33,5 @@ export function originalSchoolContext(actorsOnScene = true) {
     variables: { ...draftBase.variables, result: { commands: [{ type: 'SetWorldClock', commandId: 'clock',
       worldClock: at, evidence: '测试回合时间' }], rejectedSuggestions: [], unresolved: [] } },
   });
-  return { state, draft, response: WorldResultSchema.parse(structuredClone(original)) };
+  return { state, draft, response: WorldResultSchema.parse({worldCommands:structuredClone(original.worldCommands),taskCommands:structuredClone(original.taskCommands),eventCommands:structuredClone(original.eventCommands),visibleHooks:structuredClone(original.visibleHooks),unresolved:structuredClone(original.unresolved)}) };
 }

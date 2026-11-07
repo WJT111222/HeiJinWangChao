@@ -22,9 +22,7 @@ const result = {
   ],
   taskCommands: [],
   eventCommands: [],
-  futureEvents: [],
   visibleHooks: [{ text: '尚未发布的诊室线索', revealAfter: '2026-10-18T08:00:00+08:00' }],
-  timelineCandidates: [],
   unresolved: ['内部经营变化不结算'],
 };
 const response = (value: unknown = result) =>
@@ -300,7 +298,6 @@ test('二轮约束：非法地点引用、事件预结案和 NPC 双任务拒绝
       worldCommands: [] as unknown[],
       taskCommands: [] as unknown[],
       eventCommands: [] as unknown[],
-      futureEvents: [] as unknown[],
     };
     if (mode === 'invalid-location')
       value.worldCommands = [
@@ -330,7 +327,6 @@ test('二轮约束：非法地点引用、事件预结案和 NPC 双任务拒绝
     else {
       const event = mode === 'premature-event' ? { ...e, resolutionText: '已取得成功' } : e;
       value.eventCommands = [{ type: 'SaveEvent', commandId: 'event', evidence, event }];
-      value.futureEvents = [event];
     }
     await route.fulfill({ contentType: 'application/json', body: response(value) });
   });
@@ -349,10 +345,10 @@ test('二轮约束：非法地点引用、事件预结案和 NPC 双任务拒绝
   await ready(page);
   const saved = await stored(page);
   expect(saved.formal).toBe(before);
-  expect(saved.draft.world.result.futureEvents[0]).toMatchObject({
+  expect(saved.draft.world.result.eventCommands[0].event).toMatchObject({
     status: 'scheduled',
     estimatedEndAt: '2026-10-18T10:30:00+08:00',
   });
-  expect(saved.draft.world.result.futureEvents[0].resolvedAt).toBeUndefined();
-  expect(saved.draft.world.result.futureEvents[0].resolutionText).toBeUndefined();
+  expect(saved.draft.world.result.eventCommands[0].event.resolvedAt).toBeUndefined();
+  expect(saved.draft.world.result.eventCommands[0].event.resolutionText).toBeUndefined();
 });
