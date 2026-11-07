@@ -37,7 +37,7 @@ async function begin(page: Page, name: string) {
   await page.getByRole('button', { name: /开始新游戏/ }).click();
   await page.getByLabel('姓名', { exact: true }).fill(name);
   await page.getByLabel('年龄', { exact: true }).fill('30');
-  await page.getByLabel('性别', { exact: true }).fill('女');
+  await page.getByRole('radio', { name: '女性', exact: true }).check();
   await page.getByLabel('外貌', { exact: true }).fill('短发');
   await page.getByLabel('性格', { exact: true }).fill('沉稳');
   await page.getByRole('button', { name: /下一步/ }).click();
@@ -62,13 +62,15 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await begin(page, '林舟');
-  await expect(page.getByRole('radio')).toHaveCount(17);
+  await expect(page.getByRole('radio')).toHaveCount(7);
+  await page.getByRole('button', { name: '专业与公共服务', exact: true }).click();
   await page.getByRole('radio', { name: /^教师/ }).check();
   const teacherSkills = await page.getByLabel('个人技能与专长').inputValue();
   await page.getByRole('radio', { name: /^律师/ }).check();
   const lawyerSkills = await page.getByLabel('个人技能与专长').inputValue();
   expect(lawyerSkills).not.toBe(teacherSkills);
   await page.reload(); await openGameTools(page);
+  await page.getByRole('button', { name: '专业与公共服务', exact: true }).click();
   await page.getByRole('radio', { name: /^教师/ }).check();
   await expect(page.getByLabel('个人技能与专长')).toHaveValue(teacherSkills);
   await page.getByLabel('个人技能与专长').fill('我填写的技能\n沟通');
@@ -206,8 +208,8 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
 test('自定义职业、跳过同伴，多存档选择切换与确认删除', async ({ page }) => {
   await seed(page);
   await begin(page, '自定义角色');
-  await page.getByRole('radio', { name: /^自定义职业/ }).check();
-  await page.getByLabel('自定义职业名称').fill('独立策展人');
+  await page.getByRole('radio', { name: '自由选择', exact: true }).check();
+  await page.getByLabel('职业名称', { exact: true }).fill('独立策展人');
   await page.getByRole('button', { name: /下一步/ }).click();
   await page.getByRole('button', { name: '跳过背景，继续' }).click();
   await page.getByRole('button', { name: '跳过同伴，继续' }).click();

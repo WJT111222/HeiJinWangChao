@@ -26,10 +26,10 @@ function input(mode:'opening'|'regular'='regular') {
 const textModules=promptManifest.modules.filter(m=>m.variableProtocol==='text');
 const sha=(content:string)=>createHash('sha256').update(content).digest('hex');
 describe('文本协议真实资源与离线组装',()=>{
-  it('73条路径目录类型齐备，含一条开局专用初始化，现场任务事件复用旧命令',()=>{
+  it('75条路径目录类型齐备，含一条开局专用初始化，现场任务事件复用旧命令',()=>{
     const catalog=textVariableCatalog();
-    expect(catalog.entries).toHaveLength(73);
-    expect(new Set(catalog.entries.map(e=>`${e.operation}:${e.path}`)).size).toBe(73);
+    expect(catalog.entries).toHaveLength(75);
+    expect(new Set(catalog.entries.map(e=>`${e.operation}:${e.path}`)).size).toBe(75);
     expect(new Set(catalog.entries.map(e=>e.commandType)).size).toBe(24);
     for(const e of catalog.entries)expect(e.valueSchema).toHaveProperty('$schema');
     expect(catalog.entries.some(e=>['RetireNpc'].includes(e.commandType))).toBe(false);

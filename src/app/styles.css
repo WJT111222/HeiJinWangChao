@@ -1802,3 +1802,30 @@ summary {
   .inventory-tile { min-height: 132px; }
   .inventory-detail { padding: .85rem; }
 }
+
+/* 创角：仅展开当前方向的六个职业，模板正文始终可编辑。 */
+.creation-gender, .profession-picker { margin: 0; padding: 0; border: 0; min-width: 0; }
+.creation-options, .profession-categories { display: flex; flex-wrap: wrap; gap: .6rem; }
+.creation-gender legend { margin-bottom: .6rem; }
+.creation-choice { display: flex; flex-direction: row; align-items: center; gap: .6rem; padding: .75rem 1rem; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
+.creation-choice:has(input:checked), .profession-categories button[aria-pressed="true"] { color: var(--gold); border-color: var(--gold); background: #2b3024; }
+.creation-choice:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
+.creation-choice input { width: auto; margin: 0; accent-color: var(--gold); }
+.creation-templates { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.3rem; }
+.creation-templates > div, .custom-profession { display: grid; gap: .8rem; min-width: 0; }
+.creation-templates textarea { min-height: 11rem; }
+.profession-categories { margin: 1rem 0; }
+.profession-categories button { flex: 1 1 9rem; padding: .65rem; }
+.profession-buttons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; }
+.profession-profile { margin: 1.3rem 0; overflow-wrap: anywhere; }
+.profession-profile dd { white-space: pre-wrap; line-height: 1.8; }
+.skill-tags { display: flex; flex-wrap: wrap; gap: .4rem; padding: 0; margin: 0; list-style: none; }
+.skill-tags li { border: 1px solid var(--line); padding: .15rem .6rem; border-radius: 3px; }
+.custom-profession { margin-top: 1.3rem; }
+@media (max-width: 700px) {
+  .creation-templates { grid-template-columns: minmax(0, 1fr); }
+  .profession-buttons { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .profession-categories button { flex-basis: 7rem; font-size: .85rem; }
+  .creation-choice { padding: .7rem; }
+  .profession-profile .detail { grid-template-columns: minmax(0, 1fr); gap: .3rem; }
+}

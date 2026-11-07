@@ -11,6 +11,7 @@ import professions from './professions.json';
 import { loadCompanionProfile } from '../../services/local/companionProfile';
 
 export { professions };
+export const professionCategories = [...new Set(professions.map((job) => job.category))];
 export const cities = [
   {
     id: 'chongqing',
@@ -59,6 +60,14 @@ export const CreationSchema = z.strictObject({
   customProfession: z.string(),
   skills: z.string(),
   skillsSource: z.enum(['automatic', 'manual']).optional(),
+  appearanceTemplate: z.string().optional(),
+  personalityTemplate: z.string().optional(),
+  professionCategory: z.string().optional(),
+  professionDescription: z.string().optional(),
+  professionLongTermImpact: z.string().optional(),
+  customProfile: z.strictObject({
+    name: z.string(), description: z.string(), skills: z.string(), longTermImpact: z.string(),
+  }).optional(),
   city: z.enum(['chongqing', 'shanghai', 'harbin', 'guangzhou']),
   background: z.string(),
   hasCompanion: z.boolean(),
@@ -84,7 +93,11 @@ export function newCreation(): Creation {
     openingTimePending: true,
     step: 1,
     person: { name: '', age: '', gender: '', appearance: '', personality: '' },
-    profession: '',
+    profession: 'custom',
+    appearanceTemplate: 'custom',
+    personalityTemplate: 'custom',
+    professionDescription: '',
+    professionLongTermImpact: '',
     customProfession: '',
     skills: '',
     skillsSource: 'automatic',
@@ -112,20 +125,35 @@ const lines = (text: string) =>
 export function professionName(form: Creation) {
   return form.profession === 'custom' ? form.customProfession.trim() : form.profession;
 }
-// 兼容旧 UI 草稿：仅空值或与原职业默认文案完全一致时视作自动填写。
-export function selectProfession(form: Creation, profession: string): Creation {
-  const previous = professions.find((job) => job.name === form.profession)?.abilities ?? '';
-  const automatic =
-    form.skillsSource === 'automatic'
-      ? form.skills === previous
-      : form.skillsSource !== 'manual' && (form.skills === '' || form.skills === previous);
+export function professionProfile(form: Creation) {
+  const preset = professions.find((job) => job.name === form.profession);
   return {
-    ...form,
-    profession,
-    skills: automatic
-      ? (professions.find((job) => job.name === profession)?.abilities ?? '')
-      : form.skills,
-    skillsSource: automatic ? 'automatic' : 'manual',
+    name: professionName(form),
+    description: preset?.description ?? form.professionDescription ?? '',
+    skills: lines(form.skills),
+    longTermImpact: preset?.longTermImpact ?? form.professionLongTermImpact ?? '',
+  };
+}
+export function selectProfession(form: Creation, profession: string): Creation {
+  if (form.profession === profession) return form;
+  const previous = professions.find((job) => job.name === form.profession);
+  const job = professions.find((job) => job.name === profession);
+  const customProfile = form.profession === 'custom'
+    ? { name: form.customProfession, description: form.professionDescription ?? '',
+        skills: form.skills, longTermImpact: form.professionLongTermImpact ?? '' }
+    : form.customProfile;
+  if (profession === 'custom') return {
+    ...form, profession, customProfile, customProfession: customProfile?.name ?? '',
+    professionDescription: customProfile?.description ?? '',
+    professionLongTermImpact: customProfile?.longTermImpact ?? '',
+    skills: customProfile?.skills ?? '', skillsSource: 'manual',
+  };
+  const manual = form.skillsSource === 'manual' ||
+    (form.skillsSource === undefined && form.skills !== '' && form.skills !== previous?.skills.join('\n'));
+  return { ...form, profession, customProfile, professionCategory: job?.category,
+    // 自由选择与预设各保留自己的技能；预设间保留玩家手工修改。
+    skills: form.profession !== 'custom' && manual ? form.skills : job?.skills.join('\n') ?? '',
+    skillsSource: form.profession !== 'custom' && manual ? 'manual' : 'automatic',
   };
 }
 function age(value: string) {
@@ -139,9 +167,9 @@ function age(value: string) {
 export function validateStep(form: Creation, step = form.step) {
   if (step === 1) {
     requireData(
-      form.person.name.trim() && form.person.gender.trim(),
+      form.person.name.trim() && ['男性', '女性'].includes(form.person.gender),
       'PROFILE',
-      '请填写姓名和性别',
+      '请填写姓名并选择男性或女性',
     );
     age(form.person.age);
   }
@@ -201,7 +229,9 @@ export function buildCreationState(form: Creation, settings: Settings) {
       appearance: form.person.appearance,
       personality: form.person.personality,
       profession: professionName(form),
-      skills: lines(form.skills),
+      professionDescription: professionProfile(form).description,
+      professionLongTermImpact: professionProfile(form).longTermImpact,
+      skills: professionProfile(form).skills,
       background: form.background,
       healthText: '',
       emotionText: '',
