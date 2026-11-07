@@ -25,9 +25,13 @@ export function InventoryPanel({ view }: { view: PlayerView }) {
   const lastSelected = useRef<string | undefined>(undefined);
   const buttons = useRef(new Map<string, HTMLButtonElement>());
   const detailTitle = useRef<HTMLHeadingElement>(null);
+  const listScroll = useRef(0);
   useEffect(() => {
-    if (selected) { detailTitle.current?.focus(); lastSelected.current = selected.id; }
-    else if (lastSelected.current) buttons.current.get(lastSelected.current)?.focus();
+    const target = selected ? detailTitle.current : buttons.current.get(lastSelected.current ?? '');
+    const body = target?.closest<HTMLElement>('.modal-body');
+    if (body) body.scrollTop = selected ? 0 : listScroll.current;
+    target?.focus({ preventScroll: true });
+    if (selected) lastSelected.current = selected.id;
   }, [selected]);
   if (selected) {
     const attributes = itemAttributes(selected);
@@ -60,7 +64,10 @@ export function InventoryPanel({ view }: { view: PlayerView }) {
       <div className="inventory-summary" role="status">{inventoryGroups.find(group => group.id === filter)?.label}<span>{visible.length} 种物品</span></div>
       {visible.length ? <ul className="inventory-grid">
         {visible.map(item => <li key={item.id}>
-          <button className="inventory-tile" onClick={() => setSelectedId(item.id)}
+          <button className="inventory-tile" onClick={event => {
+            listScroll.current = event.currentTarget.closest('.modal-body')?.scrollTop ?? 0;
+            setSelectedId(item.id);
+          }}
             ref={node => { if (node) buttons.current.set(item.id, node); else buttons.current.delete(item.id); }}>
             <ItemIcon group={itemCategoryGroup[item.category]} />
             <strong>{item.name}</strong><span className="inventory-quantity">×{item.quantity}</span>

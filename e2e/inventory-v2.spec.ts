@@ -61,6 +61,7 @@ test('六筛选、种数、只看主角物品，详情键盘可达且原存档/�
   await expect(dialog).toContainText('袖口轻微磨损，拉链完好'); await expect(dialog).toContainText('材质');
   await expect(dialog).not.toContainText('不适用字段不展示'); await expect(dialog).not.toContainText('位置：未记录');
   await page.screenshot({ path: info.outputPath('inventory-detail.png') });
+  await expect(dialog.getByRole('button', { name: '关闭资料界面' })).toBeInViewport({ ratio: 1 });
   await dialog.getByRole('button', { name: '返回背包' }).click(); await expect(coat).toBeFocused();
   await nav.getByRole('button', { name: '工具与武器，1种物品', exact: true }).click(); await expect(dialog.locator('.inventory-tile')).toContainText('×2'); await expect(dialog.locator('.inventory-tile')).toContainText('任务');
   await nav.getByRole('button', { name: '证件文件，1种物品', exact: true }).click(); await dialog.getByRole('button', { name: /居民身份证/ }).click();
