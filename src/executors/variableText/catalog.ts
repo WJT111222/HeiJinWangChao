@@ -5,6 +5,7 @@ import { OrdinaryNpcSchema, SpecialNpcSchema } from '../../domain/npc/schema';
 import { GangOrgSchema, GovernmentOrgSchema, CivilOrgSchema, BusinessOrgSchema } from '../../domain/organizations/schema';
 import { AccountSchema, IncomeRecordSchema, DebtRecordSchema, VehicleAssetSchema } from '../../domain/economy/schema';
 import { ImportantItemSchema } from '../../domain/items/schema';
+import { itemDetailFields, itemCategoryGroup } from '../../domain/items/details';
 import { EquipmentSchema } from '../../domain/protagonist/schema';
 import { LocationSchema } from '../../domain/state';
 import { variableCommandSchemas } from '../../domain/variableCommands';
@@ -63,15 +64,17 @@ const entries:Entry[] = [
   {operation:'set',path:'items[id].transfer',commandType:'TransferItem',value:z.strictObject({from:ActorRefSchema.nullable(),to:ActorRefSchema})},
   {operation:'set',path:'items[id].loss',commandType:'LoseItem',value:variableCommandSchemas[7].omit({type:true,commandId:true,evidence:true,expectedRevision:true,itemId:true})},
   {operation:'add',path:'items[id].quantity',commandType:'UpdateItem',value:z.number().int().refine(n=>n!==0)},
-  ...(['conditionText','locationId'] as const).map((field):Entry=>({operation:'set',path:`items[id].${field}`,commandType:'UpdateItem',value:variableCommandSchemas[6].shape.changes.shape[field].unwrap()})),
+  ...(['conditionText','locationId','description','referenceValue','itemDetails','category','questItem'] as const).map((field):Entry=>({operation:'set',path:`items[id].${field}`,commandType:'UpdateItem',value:variableCommandSchemas[6].shape.changes.shape[field].unwrap()})),
   {operation:'set',path:'protagonist.currentWear',commandType:'SetEquipment',value:EquipmentSchema},
   {operation:'set',path:'economy.vehicles[id].purchase',commandType:'PurchaseVehicle',value:z.strictObject({account:AccountSchema,price:positive,vehicle:VehicleAssetSchema.omit({id:true})})},
 ];
 /** 正式及离线文本组装共用的值结构目录；不执行、审批或写入状态。 */
 export function textVariableCatalog() {
   return { protocol:'VARIABLE_TEXT_V1', currencyUnit:'CNY_FEN_INTEGER', limits:variableTextLimits,
+    itemDetailsGuide: { categoryGroups: itemCategoryGroup, suggestedStringFields: itemDetailFields },
     entries:entries.map(({value,...entry})=>({...entry,...(entry.operation==='delete'?{valueRequired:false}:{}),valueSchema:{...z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'}),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
     rules:[
+      '物品description是稳定外观/功能/背景，conditionText是当前状态；referenceValue为单件参考价值（人民币非负整数分），未知省略或null，不用0代替未知，不代表购买price，不生成交易。不可交易证件不编造市价。itemDetails复用字符串附加资料，按itemDetailsGuide选适用字段，未知省略；set items[id].itemDetails替换该记录，保留仍有效的旧属性，不支持任意深层赋值。tool为工具类，weapon仍为武器；旧other不按名称猜类。questItem仅在确有任务用途时标true。',
       '同一次响应依次输出完整<thinking>、<说明>、<命令>。只执行命令块；set/add/push 路径 = JSON值；delete 路径，无操作数。以换行分隔，值可多行。不输出DomainCommand JSON、commandId、evidence、expectedRevision。',
       '可选gameState.前缀与源仓库一致，根和字段仍以本目录为准；[index]仅用于列明的普通数组，NPC/实体表必须用稳定ID。[id]替换为真实稳定ID；创建对象省略id，由路径注入。条目是有限操作入口，不是任意深层赋值。',
       '内联NPC初始记忆保持空；用push记忆路径新增，由程序填充当前回合、人物引用和游戏时间。knownInformation同时记录一条个人记忆。',

@@ -1761,3 +1761,44 @@ summary {
 .runtime-log li time, .runtime-log li strong, .runtime-log li span { display: inline-block; margin-right: .55rem; }
 .runtime-log li p { margin: .25rem 0; }
 .runtime-log li small { display: inline-block; margin-right: .7rem; color: var(--muted); }
+
+/* 主角背包：分类常驻，长列表/详情在现有资料弹窗内滚动。 */
+.inventory-dialog { width: min(960px, calc(100vw - 2rem)); }
+.inventory-dialog .modal-body { padding: 0; }
+.inventory-layout { display: grid; grid-template-columns: 174px minmax(0, 1fr); align-items: start; }
+.inventory-filters { position: sticky; top: 0; display: flex; flex-direction: column; gap: .35rem; padding: 1rem .65rem; }
+.inventory-filters button { display: flex; align-items: center; gap: .45rem; min-height: 44px; padding: .65rem .5rem; background: transparent; border: 1px solid transparent; text-align: left; font-size: .8rem; color: var(--muted); }
+.inventory-filters button[aria-pressed="true"] { color: var(--gold); border-color: #77633b; background: #ad8a3c18; }
+.inventory-icon { width: 30px; height: 30px; flex: 0 0 auto; color: var(--gold); }
+.inventory-filters .inventory-icon { width: 19px; height: 19px; }
+.inventory-count { margin-left: auto; font-variant-numeric: tabular-nums; }
+.inventory-results { min-width: 0; border-left: 1px solid var(--line); padding: 1.1rem; min-height: 340px; }
+.inventory-summary { display: flex; justify-content: space-between; gap: .75rem; margin-bottom: 1rem; color: var(--gold); font-size: .85rem; }
+.inventory-summary > span { color: var(--muted); font-size: .75rem; }
+.inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: .7rem; list-style: none; margin: 0; padding: 0; }
+.inventory-grid li { min-width: 0; }
+.inventory-tile { position: relative; width: 100%; height: 100%; min-height: 144px; display: flex; align-items: flex-start; flex-direction: column; gap: .7rem; padding: .85rem; text-align: left; border: 1px solid var(--line); border-radius: 5px; background: #151b15; color: #e6e3dc; }
+.inventory-tile:hover { border-color: #a18b51; background: #252a1d; }
+.inventory-tile:focus-visible, .inventory-filters button:focus-visible, .inventory-back:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.inventory-tile strong { font-size: .85rem; font-weight: 500; overflow-wrap: anywhere; }
+.inventory-quantity { position: absolute; top: .7rem; right: .7rem; font-size: .75rem; color: var(--muted); }
+.inventory-badges { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: auto; }
+.inventory-badges > span { font-size: .65rem; color: #dcc58a; border: 1px solid #685e3d; border-radius: 3px; padding: .1rem .3rem; }
+.inventory-detail { padding: 1.25rem 1.5rem; overflow-wrap: anywhere; }
+.inventory-back { margin-bottom: 1.5rem; background: transparent; color: var(--gold); border: 0; min-height: 44px; }
+.inventory-detail-heading { display: flex; gap: 1rem; align-items: center; }
+.inventory-detail-heading > .inventory-icon { width: 48px; height: 48px; }
+.inventory-detail-heading h3 { margin: .5rem 0; }
+.inventory-detail .inventory-description, .inventory-detail dd { white-space: pre-wrap; line-height: 1.9; }
+.inventory-detail .inventory-description { padding: 1rem 0; border-bottom: 1px solid var(--line); }
+@media (max-width: 600px) {
+  .inventory-dialog { width: calc(100vw - 1rem); }
+  .inventory-layout { display: block; }
+  .inventory-filters { z-index: 1; flex-direction: row; overflow-x: auto; overscroll-behavior-inline: contain; padding: .6rem; background: #171e16; border-bottom: 1px solid var(--line); }
+  .inventory-filters button { flex: 0 0 auto; white-space: nowrap; gap: .4rem; }
+  .inventory-filters .inventory-icon { display: none; }
+  .inventory-results { border-left: 0; padding: .85rem; min-height: 260px; }
+  .inventory-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+  .inventory-tile { min-height: 132px; }
+  .inventory-detail { padding: .85rem; }
+}
