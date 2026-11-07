@@ -29,7 +29,7 @@ const allowedPatterns = [
   /^protagonist\.currentWear\.(?:topItemId|bottomItemId|shoesItemId|primaryWeaponItemId|secondaryWeaponItemId|currentVehicleAssetId|accessoryItemIds)(?:\[index\])?$/,
   /^npc\[id\]\.(?:activeGoals(?:\[index\])?|affinity)$/,
   /^npc\[id\](?:\.(?:relationshipText|healthText|locationId|onScene|lastInteractionAt|memories|longTermMemories|knownInformation|affinityChange|activeGoals|contact))?$/,
-  /^items\[id\](?:\.(?:conditionText|locationId|quantity|purchase|transfer|loss))?$/,
+  /^items\[id\](?:\.(?:conditionText|locationId|quantity|purchase|transfer|loss|description|referenceValue|itemDetails|category|questItem))?$/,
   /^locations\[id\]$/,
   /^organizations\[id\](?:\.protagonistRelation)?$/,
   /^events\[id\]\.sceneState$/,

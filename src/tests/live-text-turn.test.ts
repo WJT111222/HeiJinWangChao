@@ -389,3 +389,39 @@ it.each(['knowledge-shape', 'timeline-object', 'organization-history', 'interact
     expect(await a.repo.load('save-a')).toEqual(receipt.state); expect(t.calls).toHaveLength(4);
   },
 );
+
+it.each(['opening', 'regular'] as const)('背包V2 %s：真实请求创建/更新资料，候选→Commit→重载，下一回合赠送', async mode => {
+  const a = await fixture(mode), before = await a.repo.load('save-a');
+  const owner = { kind: 'protagonist', id: 'hero' };
+  const t = transport(() => block([
+    set('items[coat].purchase', { account: 'cash', price: 2500, item: { name: '防寒外套', category: 'top', quantity: 1, ownerRef: owner,
+      description: '黑色加厚外套', referenceValue: 18000, conditionText: '袖口略旧', itemDetails: { material: '棉布', size: 'L' } } }),
+    set('items[coat].referenceValue', 16000), set('items[coat].questItem', true),
+    set('protagonist.currentWear', { topItemId: 'coat', accessoryItemIds: [] }),
+    set('items[torch]', { name: '手电', category: 'tool', quantity: 2, conditionText: '可用', ownerRef: owner, referenceValue: null, itemDetails: { purpose: '照明' } }),
+  ].join('\n')));
+  const completed = await coordinator(a.repo, t.fetcher).generate(a);
+  expect(t.calls.map(c => c.stage)).toEqual(['story', 'variables', 'world']);
+  expect(JSON.stringify(t.calls[1].context.TEXT_COMMAND_CATALOG)).toContain('items[id].referenceValue');
+  expect(JSON.stringify(t.calls[2].context.VARIABLE_RESULT)).toContain('黑色加厚外套');
+  expect(await a.repo.load('save-a')).toEqual(before);
+  const projected = projectTurn(before, completed.draft);
+  const committed = await a.repo.commitTurn(submission(completed.draft, '把外套送给同事'));
+  expect(committed.state.items).toEqual(projected.items); expect(committed.state.economy.cash).toBe(before.economy.cash! - 2500);
+  expect(committed.state.items.coat).toMatchObject({ description: '黑色加厚外套', referenceValue: 16000, questItem: true, itemDetails: { material: '棉布', size: 'L' } });
+  expect((await a.repo.commitTurn(submission(completed.draft, '把外套送给同事'))).replayed).toBe(true);
+  expect(await a.repo.load('save-a')).toEqual(committed.state);
+  const next = transport(() => block([
+    set('items[coat].conditionText', '已经洗净'),
+    set('items[coat].itemDetails', { material: '棉布', size: 'L', warmth: '适合冬季' }),
+    set('items[coat].transfer', { from: owner, to: { kind: 'npc', id: 'npc-a' } }),
+    'add items[torch].quantity = -1',
+  ].join('\n')));
+  const updated = await coordinator(a.repo, next.fetcher).generate({ ...a, draft: committed.draft });
+  const saved = await a.repo.commitTurn(submission(updated.draft, '继续行动'));
+  expect(saved.state.items.coat.ownerRef).toEqual({ kind: 'npc', id: 'npc-a' });
+  expect(saved.state.items.coat.itemDetails).toEqual({ material: '棉布', size: 'L', warmth: '适合冬季' });
+  expect(saved.state.items.coat.referenceValue).toBe(16000); expect(saved.state.items.torch.quantity).toBe(1);
+  expect(saved.state.protagonist.currentWear.topItemId).toBeUndefined(); expect(saved.state.economy).toEqual(committed.state.economy);
+  expect(await a.repo.load('save-a')).toEqual(saved.state); expect(next.calls.map(c => c.stage)).toEqual(['story', 'variables', 'world']);
+});

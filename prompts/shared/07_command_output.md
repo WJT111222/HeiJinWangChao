@@ -26,6 +26,7 @@ AI根据选定Story理解已发生变化，不替World推演后台任务、事�
 更新好感用 `set npc[npc_lin].affinityChange = {"from":0,"to":5,"reason":"一起解决问题","relationshipText":"愿意协作"}`，关系不等于恋爱。未确认同伴from=null，不把占位0当确认结果。登记联系人用 `set npc[npc_lin].contact = {"reason":"互换联系方式"}`，不撤销永久保护。
 记忆用 `push npc[npc_lin].memories = {"text":"共同处理了现场问题","knowledgeKind":"observed","knowledgeSource":"当面经历","visibility":"npc_private"}`。亲历、转述reported、推测suspected由AI区分，后两类由程序保留标记；记忆只属于指定人物，不自动公开或传播。特殊人物另有longTermMemories与activeGoals路径，知晓信息用knownInformation路径，值结构同个人记忆。
 实际到账收入必须set economy.incomes[id]完整received记录，借款必须set economy.debts[id]完整债务；转账用push economy.transfers，还款用push economy.debts[id].repayments。均为整数人民币分；未知余额不能当0，不能透支，不能提前使用后面的收入。完整示例见经济组及目录。
+物品新增可选description（描述）、referenceValue（单件非负整数分，未知null/省略）、questItem（任务布尔标记）及itemDetails字符串资料；创建和购买使用同一ImportantItem结构。已有物品用set items[id].description/referenceValue/itemDetails/category/questItem更新对应字段，itemDetails整记录替换且保留有效旧属性，不是自由深层补丁。referenceValue不代表成交、不自动改余额；证件等不可交易物品不虚构市价。类别与适用资料见TEXT_COMMAND_CATALOG.itemDetailsGuide。
 物品获得set items[id]；购买set items[id].purchase一次扣款入库；转交set items[id].transfer；遗失set items[id].loss；数量用add items[id].quantity。装备用set protagonist.currentWear完整装备对象。车辆购买set economy.vehicles[id].purchase，车辆房产不重复进重要物品表。
 组织用set organizations[id]创建四类之一的完整对象；关系用set organizations[id].protagonistRelation={relation,reason}开放文字。已有经营/资产等未支持字段放说明，不覆盖组织表。
 
