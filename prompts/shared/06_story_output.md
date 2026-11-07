@@ -21,7 +21,7 @@ JSON数组。每项包含 group、subjectHint、observedFact、textEvidence；�
 
 ### 待入场事件与实际行为回执
 
-EVENT_ENTRIES按queuedAt及eventId稳定排序，是本幕必须处理的外部入场情境，不是主角已经知道的世界秘密。仅使用所给channel/cue/locationId；不猜测事件内部背景、他人目的或结果，不凭来访直接瞬移。与玩家本次行动自然衔接，不替玩家接受、付款、认罪或完成重大选择。没有新玩家行动时程序不会自行请求下一幕。
+EVENT_ENTRIES按queuedAt及eventId稳定排序，是可按本幕剧情选择呈现的待入场情境，不是主角已经知道的世界秘密。仅使用所给channel/cue/locationId；不猜测事件内部背景、他人目的或结果，不凭来访直接瞬移。与玩家本次行动自然衔接，不替玩家接受、付款、认罪或完成重大选择。没有新玩家行动时程序不会自行请求下一幕。
 
 只对本回合实际呈现或处理的待入场，在变量规划增加group=event项及eventInteraction={eventId,entryId,action}。action只用presented（实际呈现入场）、declined（已明确拒绝本次参与）、left（实际退出）、interrupted（实际中断）、invalidated（因已经离开等实际事实使安排失效）。textEvidence简述本幕如何处理该入场，可以自然改写通知。回执使用真实eventId/entryId，正文应实际呈现相应通知或回应，不只在规划里提到。可以根据玩家行动与场景只处理部分入场；未处理者继续pending，不表示拒绝、完成或已知晓。不能重播已经presented的入场。
 
