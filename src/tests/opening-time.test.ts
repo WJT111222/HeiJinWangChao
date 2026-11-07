@@ -6,7 +6,7 @@ import { defaultSettings } from '../ui/settings/model';
 import { composePrompt } from '../prompts/composer';
 
 function form() {
-  return { ...newCreation(), person: { name: '林舟', age: '30', gender: '女', appearance: '', personality: '' }, profession: '教师' };
+  return { ...newCreation(), person: { name: '林舟', age: '30', gender: '女性', appearance: '', personality: '' }, profession: '教师' };
 }
 afterEach(() => vi.useRealTimers());
 describe('开局时间不取设备日期', () => {

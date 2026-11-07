@@ -28,9 +28,11 @@ async function prepare(page: Page, configured = true, stages = { variables: true
 }
 async function creation(page: Page) {
   await page.getByRole('button', { name: /开始新游戏/ }).click();
-  for (const [label, value] of Object.entries({ 姓名: '林舟', 年龄: '30', 性别: '女', 外貌: '短发', 性格: '沉稳' }))
+  for (const [label, value] of Object.entries({ 姓名: '林舟', 年龄: '30', 外貌: '短发', 性格: '沉稳' }))
     await page.getByLabel(label, { exact: true }).fill(value);
+  await page.getByRole('radio', { name: '女性', exact: true }).check();
   await page.getByRole('button', { name: /下一步/ }).click();
+  await page.getByRole('button', { name: '专业与公共服务', exact: true }).click();
   await page.getByRole('radio', { name: /^教师/ }).check();
   await page.getByRole('button', { name: /下一步/ }).click();
   await page.getByRole('button', { name: '跳过背景，继续' }).click();

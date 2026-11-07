@@ -20,7 +20,7 @@ const initial = { weatherText: '夏日多云', environmentText: '住宅楼下早
 const block = (value: unknown, suffix = '') => variableTextEnvelope(`<命令>\nset opening.initialState = ${JSON.stringify(value)}\n${suffix}\n</命令>`);
 function setup() {
   const form = newCreation(); form.saveId = 'save-a';
-  form.person = { name: '林舟', age: '30', gender: '男', appearance: '', personality: '沉稳' };
+  form.person = { name: '林舟', age: '30', gender: '男性', appearance: '', personality: '沉稳' };
   form.profession = 'custom'; form.customProfession = '教师'; form.background = '普通家庭长大，在重庆工作。';
   const state = buildCreationState(form, defaultSettings());
   const draft = rerollStory(createTurnDraft(state.saveId, 0, 'opening', 'opening', ''), {

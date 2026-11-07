@@ -8,7 +8,7 @@ import { StorySchema } from '../domain/state';
 const expressions = ['希望设定在2015年。', '日期定为2015年。', '以2015年为起点。', '设定于2015年。', '希望从2015年起。', '让主角在2015年登场。'];
 function selected(background: string, preference: string, year = 2016) {
   const form = { ...newCreation(), background, openingPreference: preference,
-    person: { name: '林舟', age: '30', gender: '女', appearance: '', personality: '' }, profession: '教师' };
+    person: { name: '林舟', age: '30', gender: '女性', appearance: '', personality: '' }, profession: '教师' };
   const state = buildCreationState(form, defaultSettings());
   const anchor = `${year}年7月8日14:00，重庆街头。`;
   const story = StorySchema.parse({ turnKind: 'opening', narrative: `${anchor}主角在街边喝水。`, summary: '主角喝水。',

@@ -1,3 +1,4 @@
+import { ProfessionProfile } from '../components/ProfessionProfile';
 import { StoryReading } from './StoryReading';
 import { openingTimeSelection } from '../../domain/openingTime';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
@@ -674,16 +675,15 @@ export function GameScreen({
       {panel && (
         <Dialog title={panel} className={panel === '物品栏' ? 'inventory-dialog' : ''} onClose={() => setPanel(undefined)}>
           {panel === '人物档案' ? (
+            <>
             <dl className="profile-details">
               {Object.entries({
                 姓名: hero.name,
                 年龄: hero.age,
                 性别: hero.gender,
-                职业: hero.profession,
                 外貌: hero.appearance,
                 性格: hero.personality,
                 背景: hero.background,
-                技能: hero.skills.join('、'),
                 社会状态: hero.publicStatus || '未确认',
                 法律状态: hero.legalStatus || '未确认',
               }).map(([label, value]) => (
@@ -692,6 +692,8 @@ export function GameScreen({
                 </Detail>
               ))}
             </dl>
+            <ProfessionProfile hero={hero} />
+            </>
           ) : panel === '经济与资产' ? (
             <>
               <div className="metric-row">

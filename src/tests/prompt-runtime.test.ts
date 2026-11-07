@@ -359,7 +359,7 @@ describe('真实资源加载与消息组装', () => {
   });
   it('同伴创角关系跨回合保留并标记来源，占位好感不冒充已确认结果，公开新关系优先', async () => {
     const form = newCreation();
-    form.person = { name: '林舟', age: '30', gender: '男', appearance: '', personality: '' };
+    form.person = { name: '林舟', age: '30', gender: '男性', appearance: '', personality: '' };
     form.profession = '教师';
     form.hasCompanion = true;
     form.companion = {
