@@ -344,7 +344,7 @@
       },
       "worldFreedomV6": {
         "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
-        "sha256": "a424856a66b686704dbf1da54eb69bfa58b1c150ee27906d384b30b1460320bf"
+        "sha256": "a2f7ccbf596e90399dd0a6b751205071cb7d8d2775e9f984661234dc2328370d"
       }
     },
     "shared/07_command_output.md": {

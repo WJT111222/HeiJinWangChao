@@ -147,7 +147,7 @@ test('两轮自动结算：选择性入场、留守离场、并行任务与独�
   expect(calls).toEqual(['story','variables','world','story','variables','world']);
   await page.reload();await openGameTools(page);
   expect((await stored(page)).state).toEqual(data.state);expect(calls).toHaveLength(6);
-  await page.getByRole('button',{name:'历史时间轴',exact:true}).click();
+  await page.getByRole('button',{name:'06 历史时间轴',exact:true}).click();
   const dialog=page.getByRole('dialog');await expect(dialog.getByText('大学时期的合作',{exact:true})).toBeVisible();
   await expect(dialog.getByText('人物陈述',{exact:true})).toBeVisible();await expect(dialog.getByText('大学时期',{exact:true})).toBeVisible();
   expect(calls).toHaveLength(6);
