@@ -9,7 +9,7 @@ import { completeDraft, elapsedVariables, submission } from './fixtures/turn';
 import { handoffState, handoffResult, finishTask, resultText } from './fixtures/handoff';
 import { worldDraft, worldResult, proof } from './fixtures/world';
 import type { DomainCommand } from '../domain/commands';
-import { fingerprint, commitCommands } from '../domain/commands';
+import { commitCommands } from '../domain/commands';
 import { GameStateSchema } from '../domain/state';
 import { retireCommand } from './fixtures/handoff';
 import { defaultSettings } from '../ui/settings/model';
@@ -26,10 +26,7 @@ async function commit(repo: SaveRepository, raw: ReturnType<typeof worldResult>)
 }
 
 describe('PR22审查：先复现三条真实路径', () => {
-  it('V2非联系人不能永久误标成联系人，尚未确认身份应独立暂缓清理', () => {
-    const v2 = { ...handoffState(), schemaVersion: 2 }; Reflect.deleteProperty(v2, 'retiredEvents'); Reflect.deleteProperty(v2, 'contactNpcIds'); Reflect.deleteProperty(v2, 'retiredNpcs'); Reflect.deleteProperty(v2, 'contactReviewNpcIds');
-    const state = migrateSave(v2); expect(state.contactNpcIds).toEqual([]);
-  });
+  it('当前待复核身份与正式联系人保持分离',()=>{const state=reviewState();expect(state.contactNpcIds).toEqual([]);expect(state.contactReviewNpcIds).toContain('npc-a');});
   it('有原文依据的忠实概括可交接，叙述事实不必等于报告正文', () => {
     const state = handoffState(), r = handoffResult(state), receiver = r.taskCommands[0];
     if (receiver.type !== 'SaveTask') throw Error();
@@ -41,33 +38,19 @@ describe('PR22审查：先复现三条真实路径', () => {
 });
 
 
-function legacy(state = handoffState(), version: 1 | 2 | 3 = 2) {
-  const raw = { ...state, schemaVersion: version }; Reflect.deleteProperty(raw, 'retiredEvents'); Reflect.deleteProperty(raw, 'contactReviewNpcIds');
-  if (version < 3) { Reflect.deleteProperty(raw, 'contactNpcIds'); Reflect.deleteProperty(raw, 'retiredNpcs'); }
-  if (version === 1) { Reflect.deleteProperty(raw, 'weatherText'); Reflect.deleteProperty(raw, 'environmentText'); }
-  return raw;
-}
+function reviewState() { const state=handoffState();state.contactReviewNpcIds=Object.keys(state.npc);return state; }
 function reviewRetirement(state: ReturnType<typeof handoffState>, basis: 'no_known_connection' | 'player_confirmed' = 'no_known_connection') {
   return { ...retireCommand(state), contactReview: { conclusion: 'non_contact' as const, basis, reason: '核验稳定身份及现有公开记录，确认只是场外临时工作人员。' } };
 }
 
 describe('旧档联系人暂缓保护与合法退场', () => {
-  it.each([1, 2] as const)('V%s迁移不改revision、原文或NPC实体；非联系人须明确复核才可退场', async (version) => {
-    const original = handoffState(); original.npc['npc-a'].relationshipText = '尚未与主角接触'; original.npc['npc-a'].affinity = 0;
-    const raw = legacy(original, version), factory = new IDBFactory(), repo = await SaveRepository.open(`legacy-contact-${version}`, factory); repositories.push(repo);
-    const db = await new Promise<IDBDatabase>((resolve) => { const request = factory.open(`legacy-contact-${version}`); request.onsuccess = () => resolve(request.result); });
-    await new Promise<void>((resolve, reject) => { const tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(raw); tx.oncomplete = () => resolve(); tx.onabort = () => reject(tx.error); }); db.close();
-    const state = await repo.load('save-a'); expect(state.contactNpcIds).toEqual([]); expect(state.contactReviewNpcIds).toContain('npc-a');
-    expect(state.npc).toEqual(original.npc); expect(state.revision).toBe(0); expect(state.journal).toEqual(original.journal);
-    const result = { ...worldResult([retireCommand(state)]), taskCommands: [finishTask(state)] };
-    expect(() => parseWorld(JSON.stringify(result), state, worldDraft())).toThrow();
-    result.worldCommands = [reviewRetirement(state)];
-    const committed = await commit(repo, result); expect(committed.state.npc['npc-a']).toBeUndefined(); expect(committed.state.contactReviewNpcIds).not.toContain('npc-a');
-    expect(committed.state.retiredNpcs['npc-a']).toBeDefined(); expect(committed.state.tasks.work.resolution).toBeDefined();
-    expect((await repo.load('save-a')).schemaVersion).toBe(5);
-  });
+  it('V6非联系人须明确复核才可退场，保留事务与任务结果',async()=>{
+ const original=reviewState();original.npc['npc-a'].relationshipText='尚未与主角接触';original.npc['npc-a'].affinity=0;const repo=await repository(original),state=await repo.load('save-a');
+ const result={...worldResult([retireCommand(state)]),taskCommands:[finishTask(state)]};expect(()=>parseWorld(JSON.stringify(result),state,worldDraft())).toThrow();result.worldCommands=[reviewRetirement(state)];
+ const committed=await commit(repo,result);expect(committed.state.npc['npc-a']).toBeUndefined();expect(committed.state.contactReviewNpcIds).not.toContain('npc-a');expect(committed.state.tasks.work.resolution).toBeDefined();expect((await repo.load('save-a')).schemaVersion).toBe(6);
+});
   it('有既往联系的旧NPC保持待确认；自称无联系或自由文本确认均不能绕过保护', () => {
-    const state = migrateSave(legacy()), d = worldDraft(), retirement = reviewRetirement(state);
+    const state = reviewState(), d = worldDraft(), retirement = reviewRetirement(state);
     let r = { ...worldResult([retirement]), taskCommands: [finishTask(state)] };
     expect(() => parseWorld(JSON.stringify(r), state, d)).toThrow();
     retirement.contactReview.basis = 'player_confirmed'; expect(() => parseWorld(JSON.stringify(r), state, d)).toThrow();
@@ -80,23 +63,18 @@ describe('旧档联系人暂缓保护与合法退场', () => {
     expect(() => parseWorld(JSON.stringify(r), state, d)).toThrow();
   });
   it('待确认人物可登记为正式联系人，登记会解除待确认状态且不能再清理', () => {
-    const state = migrateSave(legacy());
+    const state = reviewState();
     const command: DomainCommand = { type: 'RegisterContact', commandId: 'register', evidence: '主角与同事交换联系方式。', npcId: 'npc-a', reason: '交换联系方式' };
     const next = commitCommands(state, 'confirm', state.revision, [command]);
     expect(next.contactNpcIds).toContain('npc-a'); expect(next.contactReviewNpcIds).not.toContain('npc-a');
     expect(next.npc['npc-a']).toEqual(state.npc['npc-a']);
   });
-  it('V3预览误标可修复；真实登记回执、初始同伴保留永久身份，新非联系人不被无故加入待确认', () => {
-    const state = handoffState(); state.npc['npc-a'] = { ...state.npc['npc-a'], kind: 'special', detailedBackground: '同伴', activeGoals: [], habits: [], longTermMemories: [], offscreenTaskIds: [] }; state.initialCompanionId = 'npc-a';
-    const command: DomainCommand = { type: 'RegisterContact', commandId: 'register-b', evidence: '交换联系方式', reason: '联络', npcId: 'npc-b' };
-    state.appliedCommands.push({ turnId: 'old-contact', commandId: command.commandId, fingerprint: fingerprint(command) });
-    state.contactNpcIds = Object.keys(state.npc); const migrated = migrateSave(legacy(state, 3));
-    expect(migrated.contactNpcIds.sort()).toEqual(['npc-a', 'npc-b']); expect(migrated.contactReviewNpcIds).toEqual(['scene']); expect(migrated.npc).toEqual(state.npc);
-    const fresh = handoffState(); fresh.contactNpcIds = []; const preview = migrateSave(legacy(fresh, 3));
-    expect(preview.contactReviewNpcIds).toEqual([]); expect(migrateSave(migrated)).toEqual(migrated);
-  });
+  it('当前已登记联系人和初始同伴读写不变，不自动扩展待复核名单',()=>{
+ const state=handoffState();state.npc['npc-a']={...state.npc['npc-a'],kind:'special',detailedBackground:'同伴',activeGoals:[],habits:[],longTermMemories:[],offscreenTaskIds:[]};state.initialCompanionId='npc-a';state.contactNpcIds=['npc-a','npc-b'];
+ const before=structuredClone(state),loaded=migrateSave(state);expect(loaded).toEqual(before);expect(loaded.contactReviewNpcIds).toEqual([]);
+});
   it('待确认状态独立显示，不冒充永久联系人，也不向世界输入伪造确认结果', () => {
-    const state = migrateSave(legacy()), scene = playerView(state).npc.find((person) => person.id === 'scene');
+    const state = reviewState(), scene = playerView(state).npc.find((person) => person.id === 'scene');
     expect(scene).toMatchObject({ isContact: false, contactReviewPending: true });
     const context = contextFor({ stage: 'world', mode: 'regular', state, draft: worldDraft(), settings: defaultSettings(), userInput: '' });
     expect(context.NPC_LIFECYCLE).toMatchObject({ contactNpcIds: [], contactReviewNpcIds: state.contactReviewNpcIds });
@@ -107,7 +85,7 @@ describe('旧档联系人暂缓保护与合法退场', () => {
 describe('修复不削弱真实成果与事务', () => {
   it('待确认身份复核后的删除仍与成果和回执原子提交；写入失败不会提前解除保护', async () => {
     const original = handoffState(); original.npc['npc-a'].relationshipText = '尚未与主角接触'; original.npc['npc-a'].affinity = 0;
-    const state = migrateSave(legacy(original)), repo = await repository(state), before = await repo.load('save-a');
+    const state = { ...original, contactReviewNpcIds: Object.keys(original.npc) }, repo = await repository(state), before = await repo.load('save-a');
     const raw = { ...worldResult([reviewRetirement(state)]), taskCommands: [finishTask(state)] };
     const add = IDBObjectStore.prototype.add;
     vi.spyOn(IDBObjectStore.prototype, 'add').mockImplementation(function (this: IDBObjectStore, value, key) {

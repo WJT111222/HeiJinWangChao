@@ -76,9 +76,8 @@ describe('Story receipts are atomic projections, not early consumption',()=>{
     const next={...a,state:first},draft=selected(next,'left');
     const after=projectTurn(first,draft);expect(after.events.review.protagonistEntry?.status).toBe('left');expect(after.events.review.status).toBe('active');
   });
-  it.each(['omitted','wrong-id','replayed'] as const)('rejects %s receipt through the real projection path',kind=>{
+  it.each(['wrong-id','replayed'] as const)('rejects %s receipt through the real projection path',kind=>{
     const a=queuedState(),draft=selected(a);
-    if(kind==='omitted')draft.story!.variableGuide=[];
     if(kind==='wrong-id')draft.story!.variableGuide[0].eventInteraction!.entryId='invented';
     if(kind==='replayed')a.state=projectTurn(a.state,draft);
     expect(()=>projectTurn(a.state,draft)).toThrow();
@@ -89,13 +88,12 @@ describe('Story receipts are atomic projections, not early consumption',()=>{
     const rolled=rerollStory(draft,{...draft.story!,narrative:'改写正文',variableGuide:[]});
     expect(rolled.variables).toBeUndefined();expect(rolled.world).toBeUndefined();
     expect(a.state).toEqual(before);expect(pendingEventEntries(a.state)).toHaveLength(1);
-    expect(()=>validateStoryEventInteractions(a.state,rolled.story!)).toThrow();
+    expect(()=>validateStoryEventInteractions(a.state,rolled.story!)).not.toThrow();
   });
-  it('order is deterministic and every pending entry must receive an actual narrative receipt',()=>{
-    const a=queuedState();a.state.events.second={...a.state.events.review,id:'second'};
-    expect(pendingEventEntries(a.state).map(e=>e.eventId)).toEqual(['review','second']);
-    expect(()=>projectTurn(a.state,selected(a))).toThrow();
-  });
+  it('多个pending顺序稳定，只处理其中一项，其余继续等待',()=>{
+ const a=queuedState();a.state.events.second={...a.state.events.review,id:'second'};expect(pendingEventEntries(a.state).map(e=>e.eventId)).toEqual(['review','second']);
+ const next=projectTurn(a.state,selected(a));expect(next.events.review.protagonistEntry?.status).toBe('presented');expect(next.events.second.protagonistEntry?.status).toBe('pending');
+});
   it('legacy events with no continuation/entry remain unchanged and acquire no invented knowledge',()=>{
     const state=worldState();state.events.legacy=event('legacy');
     const parsed=GameStateSchema.parse(state);expect(parsed.events.legacy.continuation).toBeUndefined();
@@ -207,11 +205,11 @@ describe('protected scene planning and safe entry diagnostics',()=>{
     const result=parseWorld(JSON.stringify(response),a.state,a.draft),after=projectTurn(a.state,a.draft,result.eventCommands);
     expect(after.events.review.status).toBe('blocked');expect(after.protagonist).toEqual(a.state.protagonist);expect(after.npc).toEqual(a.state.npc);
   });
-  it('missing narrative receipts return a fixed actionable error without echoing hidden cues',()=>{
-    const a=queuedState();let failure:unknown;
-    try{validateStoryEventInteractions(a.state,{turnKind:'regular',narrative:'继续休息',summary:'休息',variableGuide:[]});}catch(error){failure=error;}
-    const safe=safeAiError(failure);expect(safe.code).toBe('event_entry');expect(JSON.stringify(safe)).not.toContain(a.state.events.review.protagonistEntry!.cue);
-  });
+  it('过期回执仍提供安全诊断，不输出通知原文',()=>{
+ const a=queuedState(),draft=selected(a);draft.story!.variableGuide[0].eventInteraction!.entryId='stale';let failure:unknown;
+ try{validateStoryEventInteractions(a.state,draft.story!)}catch(error){failure=error;}
+ const safe=safeAiError(failure);expect(safe.code).toBe('event_entry');expect(JSON.stringify(safe)).not.toContain(a.state.events.review.protagonistEntry!.cue);
+});
 });
 
 it('a completed event does not keep requesting player exit feedback for a historically presented entry',()=>{

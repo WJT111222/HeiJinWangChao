@@ -64,10 +64,10 @@ describe('unreadable saves stay individually manageable', () => {
     await expect(repository.delete('broken', 0)).rejects.toThrow();
     expect((await all()).saves).toEqual([raw]);
   });
-  it('listing existing supported legacy data does not write a migration or new defaults', async () => {
+  it('listing unsupported test data marks its card unreadable without migration', async () => {
     const legacy = { ...game(), schemaVersion: 4 }; Reflect.deleteProperty(legacy, 'retiredEvents');
     await put('saves', legacy);
-    expect(await repository.list()).toEqual([expect.objectContaining({ status: 'readable', saveId: 'save-a' })]);
+    expect(await repository.list()).toEqual([expect.objectContaining({ status: 'unreadable', saveId: 'save-a' })]);
     expect((await all()).saves).toEqual([legacy]);
   });
   it('unavailable database rejects instead of returning an empty list', async () => {

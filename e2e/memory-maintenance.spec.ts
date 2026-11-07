@@ -186,7 +186,7 @@ test('自动维护仅由新正式提交触发，不阻断下一轮；设置保�
       await route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\ndata: [DONE]\n\n` }); return;
     }
     const content = model === 'variables' ? variableReply({ commands: [], rejectedSuggestions: [], unresolved: [] })
-      : JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] });
+      : JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
     await route.fulfill({ contentType: 'application/json', body: wire(content) });
   });
   await seed(page, 30, false, true);

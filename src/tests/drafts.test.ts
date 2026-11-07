@@ -9,7 +9,7 @@ function withCandidates() {
   return TurnDraftSchema.parse({ ...draft,
     variables: { storyRevision: 1, candidateRevision: 1, validation: 'validated', result: { commands: [purchase()], rejectedSuggestions: [], unresolved: [] } },
     world: { storyRevision: 1, candidateRevision: 1, basedOnVariableRevision: 1, validation: 'validated',
-      result: { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] } },
+      result: { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] } },
     stageStatus: { story: 'ready', variables: 'ready', world: 'ready' },
   });
 }

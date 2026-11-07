@@ -65,7 +65,7 @@ async function mock(page: Page, startAt: string, endAt: string) {
       text = (stage === 'variables' ? variableReply : JSON.stringify)(stage === 'variables' ? {
         commands: plan.minimal ? minimalCommands : [{ type: 'SetWorldClock', commandId: 'clock', evidence: '主角在街边喝了一口水。',
           worldClock: opening ? string(record(context.OPENING_TIME).endAt) : new Date(Date.parse(string(record(context.SAVE_STATE).worldClock)) + 15000).toISOString() }], rejectedSuggestions: [], unresolved: [],
-      } : { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] });
+      } : { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
     }
     await route.fulfill(stage === 'story' ? { contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n` }
       : { json: { choices: [{ message: { content: text } }] } });

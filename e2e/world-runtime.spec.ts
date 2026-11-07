@@ -22,9 +22,7 @@ const result = {
   ],
   taskCommands: [],
   eventCommands: [],
-  futureEvents: [],
   visibleHooks: [{ text: '尚未发布的诊室线索', revealAfter: '2026-10-18T08:00:00+08:00' }],
-  timelineCandidates: [],
   unresolved: ['内部经营变化不结算'],
 };
 const response = (value: unknown = result) =>
@@ -264,11 +262,11 @@ test('错误输出可重试；取消后新请求不受旧回包影响；世界�
   expect(count).toBe(3);
 });
 
-test('二轮约束：非法地点引用、事件预结案和 NPC 双任务拒绝，合法预计时间可重试保存', async ({
+test('非法地点与事件预结案拒绝；NPC双任务和合法预计时间可重试保存', async ({
   page,
 }) => {
   const before = await seed(page);
-  let mode: 'invalid-location' | 'premature-event' | 'npc-quota' | 'valid-event' =
+  let mode: 'invalid-location' | 'premature-event' | 'parallel-tasks' | 'valid-event' =
     'invalid-location';
   await page.route('https://world.mock.invalid/**', async (route) => {
     const e = {
@@ -300,7 +298,6 @@ test('二轮约束：非法地点引用、事件预结案和 NPC 双任务拒绝
       worldCommands: [] as unknown[],
       taskCommands: [] as unknown[],
       eventCommands: [] as unknown[],
-      futureEvents: [] as unknown[],
     };
     if (mode === 'invalid-location')
       value.worldCommands = [
@@ -311,7 +308,7 @@ test('二轮约束：非法地点引用、事件预结案和 NPC 双任务拒绝
           location: { id: 'warehouse', name: '计划中的仓库', parentId: 'missing-parent' },
         },
       ];
-    else if (mode === 'npc-quota')
+    else if (mode === 'parallel-tasks')
       value.taskCommands = ['a', 'b'].map((id) => ({
         type: 'SaveTask',
         commandId: `job-${id}`,
@@ -330,29 +327,32 @@ test('二轮约束：非法地点引用、事件预结案和 NPC 双任务拒绝
     else {
       const event = mode === 'premature-event' ? { ...e, resolutionText: '已取得成功' } : e;
       value.eventCommands = [{ type: 'SaveEvent', commandId: 'event', evidence, event }];
-      value.futureEvents = [event];
     }
     await route.fulfill({ contentType: 'application/json', body: response(value) });
   });
-  for (const attempt of ['invalid-location', 'premature-event', 'npc-quota'] as const) {
+  for (const attempt of ['invalid-location', 'premature-event'] as const) {
     mode = attempt;
     await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
     await expect(page.getByRole('alert')).toBeVisible();
-    if (attempt === 'npc-quota')
-      await expect(page.getByRole('alert')).toContainText('NPC 已有未终结后台任务');
     const rejected = await stored(page);
     expect(rejected.draft.world).toBeUndefined();
     expect(rejected.formal).toBe(before);
   }
-  mode = 'valid-event';
+  mode = 'parallel-tasks';
   await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
+  await ready(page);
+  const parallel = await stored(page);
+  expect(parallel.formal).toBe(before);
+  expect(parallel.draft.world.result.taskCommands.map((command: {task: {id: string}}) => command.task.id)).toEqual(['a', 'b']);
+  mode = 'valid-event';
+  await page.getByRole('button', { name: '重新生成世界候选', exact: true }).click();
   await ready(page);
   const saved = await stored(page);
   expect(saved.formal).toBe(before);
-  expect(saved.draft.world.result.futureEvents[0]).toMatchObject({
+  expect(saved.draft.world.result.eventCommands[0].event).toMatchObject({
     status: 'scheduled',
     estimatedEndAt: '2026-10-18T10:30:00+08:00',
   });
-  expect(saved.draft.world.result.futureEvents[0].resolvedAt).toBeUndefined();
-  expect(saved.draft.world.result.futureEvents[0].resolutionText).toBeUndefined();
+  expect(saved.draft.world.result.eventCommands[0].event.resolvedAt).toBeUndefined();
+  expect(saved.draft.world.result.eventCommands[0].event.resolutionText).toBeUndefined();
 });

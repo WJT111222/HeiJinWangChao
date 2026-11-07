@@ -37,10 +37,10 @@ export function WorldCandidates({ draft }: { draft: TurnDraft }) {
           </p>
           <p>
             场外命令 {result.worldCommands.length} 条；任务 {result.taskCommands.length} 条；事件{' '}
-            {result.eventCommands.length} 条；未来计划 {result.futureEvents.length} 条。
+            {result.eventCommands.length} 条；未来计划 {result.eventCommands.filter(command => command.type === 'SaveEvent' && command.event.status === 'scheduled').length} 条。
           </p>
           <p>
-            线索候选 {result.visibleHooks.length} 条；时间轴候选 {result.timelineCandidates.length}{' '}
+            线索候选 {result.visibleHooks.length} 条；时间轴候选 {result.worldCommands.filter(command => command.type === 'RecordHistory').length}{' '}
             条；未解决事项 {result.unresolved.length} 条。
           </p>
           <p className="notice">

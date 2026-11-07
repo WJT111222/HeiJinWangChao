@@ -16,17 +16,10 @@ const repositories: SaveRepository[] = [];
 afterEach(() => repositories.splice(0).forEach((repo) => repo.close()));
 
 describe('PR22第二轮先复现：混合成果和未索引旧正文', () => {
-  it('旧journal明确交换联系方式但引用为空，不能推定从未联系并批准退场', () => {
-    const raw = { ...handoffState(), schemaVersion: 2 }; Reflect.deleteProperty(raw, 'retiredEvents');
-    raw.npc['npc-a'].relationshipText = '尚未与主角接触'; raw.npc['npc-a'].affinity = 0;
-    raw.journal = [{ turnId: 'past', revision: 1, relatedActorRefs: [],
-      story: { ...story, narrative: '主角与同事交换联系方式，约好以后经常联系。', summary: '与同事建立长期联系。' } }];
-    raw.turnNumber = 1; raw.revision = 1;
-    Reflect.deleteProperty(raw, 'contactNpcIds'); Reflect.deleteProperty(raw, 'retiredNpcs'); Reflect.deleteProperty(raw, 'contactReviewNpcIds');
-    const state = migrateSave(raw), draft = worldDraft(); draft.baseSaveRevision = state.revision;
-    const retirement: Extract<DomainCommand, { type: 'RetireNpc' }> = { ...retireCommand(state), contactReview: { conclusion: 'non_contact', basis: 'no_known_connection', reason: '结构化引用为空。' } };
-    expect(() => parseWorld(JSON.stringify({ ...worldResult([retirement]), taskCommands: [finishTask(state)] }), state, draft)).toThrow();
-  });
+  it('待复核人物的历史无索引时仍不批准退场',()=>{
+ const state=pendingState();state.journal=[{turnId:'past',revision:1,relatedActorRefs:[],story:{...story,narrative:'过去保持联系',summary:'建立联系'}}];state.turnNumber=1;state.revision=1;const draft=worldDraft();draft.baseSaveRevision=1;
+ expect(()=>parseWorld(JSON.stringify({...worldResult([reviewed(state)]),taskCommands:[finishTask(state)]}),state,draft)).toThrow();
+});
 });
 
 function mixedOutcome(classified = true) {
@@ -40,17 +33,10 @@ function mixedOutcome(classified = true) {
   return { state, raw, action, secret };
 }
 describe('混合任务成果的认知分层与旧档保留', () => {
-  it.each([1, 2, 3, 4])('V%s旧成果原文与终态保留，迁移不伪造认知分类或推进正式版本', (version) => {
-    const state = handoffState(); state.tasks.work.status = 'completed';
-    state.tasks.work.resolution = { at: state.worldClock, outcome: 'success', result: '收到一份未经核实的举报，声称蓝仓藏有违禁品。', reason: '完成举报登记', sourceTurnId: 'past' };
-    const raw = { ...state, schemaVersion: version }; Reflect.deleteProperty(raw, 'retiredEvents');
-    if (version < 4) Reflect.deleteProperty(raw, 'contactReviewNpcIds');
-    if (version < 3) { Reflect.deleteProperty(raw, 'contactNpcIds'); Reflect.deleteProperty(raw, 'retiredNpcs'); }
-    if (version === 1) { Reflect.deleteProperty(raw, 'weatherText'); Reflect.deleteProperty(raw, 'environmentText'); }
-    const migrated = migrateSave(raw); expect(migrated.tasks).toEqual(state.tasks);
-    expect(migrated.revision).toBe(state.revision); expect(migrated.worldClock).toBe(state.worldClock);
-    expect(migrated.tasks.work.resolution?.resultKnowledge).toBeUndefined();
-  });
+  it('V6未分类成果原文和终态读取不补造认知分类',()=>{
+ const state=handoffState();state.tasks.work.status='completed';state.tasks.work.resolution={at:state.worldClock,outcome:'success',result:'收到一份未经核实的举报',reason:'登记',sourceTurnId:'past'};
+ expect(migrateSave(state)).toEqual(state);expect(migrateSave(state).tasks.work.resolution?.resultKnowledge).toBeUndefined();
+});
   it.each(['unknown-field', 'oversized', 'non-text'])('%s认知分类不符合严格Schema，拒绝整个结果', (fault) => {
     const { state, raw } = mixedOutcome(), command = raw.taskCommands[0], evidence = JSON.parse(command.evidence);
     if (fault === 'unknown-field') evidence.decision.resultKnowledge.permissions = 'public';

@@ -63,7 +63,6 @@ export const RetiredEventSchema = z.strictObject({
   sourceTurnIds: IdsSchema, linkedTaskIds: IdsSchema, predecessorEventIds: IdsSchema,
   // 普通无引用事件只留轻量身份，必要因果/重大结果留紧凑成果，不保存背景/目标/阻碍全文。
   detail: RetiredEventDetailSchema.optional(),
-  publication: z.strictObject({title: TextSchema, summary: TextSchema, at: GameTimeSchema, sourceTurnId: IdSchema}).optional(),
 });
 export type RetiredEvent = z.infer<typeof RetiredEventSchema>;
 export type TimelineEntry = z.infer<typeof TimelineEntrySchema>;
@@ -88,10 +87,17 @@ export const WorldTaskSchema = z.strictObject({
   prerequisites: StringsSchema, blockers: StringsSchema,
   resolution: TaskResolutionSchema.optional(), handoff: TaskHandoffSchema.optional(),
 });
-export const TimelineEntrySchema = z.strictObject({
-  eventId: IdSchema, occurredAt: GameTimeSchema, title: TextSchema, locationId: IdSchema.optional(),
-  summary: TextSchema, outcome: TextSchema, longTermImpact: z.string(),
-  actorRefs: z.array(ActorRefSchema), sourceTurnIds: IdsSchema,
+// 历史是独立记录。信息性质由模型声明，程序不做可信度/重大程度审批。
+export const HistoryRecordSchema = z.strictObject({
+  id: IdSchema, title: TextSchema, summary: TextSchema,
+  occurredAt: GameTimeSchema.optional(), occurredTimeText: TextSchema.optional(),
+  knowledgeKind: z.enum(['established', 'reported', 'suspected']),
+  sourceRef: ActorRefSchema.optional(), sourceText: TextSchema.optional(),
+  actorRefs: z.array(ActorRefSchema).default([]), locationId: IdSchema.optional(),
+  eventId: IdSchema.optional(), relatedEntryIds: IdsSchema.default([]),
+});
+export const TimelineEntrySchema = HistoryRecordSchema.extend({
+  recordedAt: GameTimeSchema, sourceTurnId: IdSchema,
 });
 export type WorldEvent = z.infer<typeof StoredWorldEventSchema>;
 export type WorldTask = z.infer<typeof WorldTaskSchema>;

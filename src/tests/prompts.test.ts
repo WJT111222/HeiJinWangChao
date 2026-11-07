@@ -305,13 +305,14 @@ describe('正式文本来源与旧架构保留', () => {
     expect(text('stages/regular/story.md')).toContain('不是开局');
     expect(text('shared/06_story_output.md')).toContain('<变量规划>');
   });
-  it('NPC 补丁完整保留旧前缀，按对应任务追加审核文本，不臆造记忆命令', () => {
+  it('历史JSON文本前缀保留；当前场外规则支持多任务且不臆造命令', () => {
     for (const group of ['npc_ordinary', 'npc_special'] as const) {
       for (const mode of ['init', 'update', 'offscreen'] as const) {
         const path = `variableGroups/${group}/${mode}.md` as const;
+        if(mode === 'offscreen'){const current=text(path);expect(current).toContain('多个');expect(current).toContain('<COMMAND_CATALOG>');expect(current).toContain('unresolved');continue;}
         const record = sources.resources[path];
         // 原审核前缀在正式JSON冻结资源中继续逐字验证；文本适配另有端到端测试。
-        const preserved = mode === 'offscreen' ? path : `legacy/variables_json/${path}`;
+        const preserved = `legacy/variables_json/${path}`;
         const bytes = readFileSync(resolve(root, preserved));
         expect(sha(bytes.subarray(0, record.baselineBytes))).toBe(record.baselineSha256);
         const suffix = bytes.subarray(record.baselineBytes).toString('utf8');
@@ -485,14 +486,13 @@ describe('M3-P1 审阅修订与 P2 协议差异记录', () => {
     const world = {
       worldCommands: [],
       taskCommands: [],
-      eventCommands: [],
-      futureEvents: [complete],
+      eventCommands: [{type:'SaveEvent',commandId:'event',evidence:'安排',event:complete}],
+
       visibleHooks: [{ text: '已公开的办理信息' }],
-      timelineCandidates: [],
       unresolved: [],
     };
     expect(WorldResultSchema.safeParse(world).success).toBe(true);
-    expect(WorldResultSchema.safeParse({ ...world, futureEvents: [event] }).success).toBe(false);
+    expect(WorldResultSchema.safeParse({ ...world, eventCommands: [{type:'SaveEvent',commandId:'event',evidence:'安排',event:{id:'incomplete'}}] }).success).toBe(false);
   });
 });
 

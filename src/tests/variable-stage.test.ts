@@ -183,9 +183,7 @@ describe('变量阶段真实请求到草稿保存', () => {
           worldCommands: [],
           taskCommands: [],
           eventCommands: [],
-          futureEvents: [],
           visibleHooks: [],
-          timelineCandidates: [],
           unresolved: [],
         },
       },
@@ -232,7 +230,7 @@ describe('变量阶段真实请求到草稿保存', () => {
     async (mode) => {
       await repo.deleteDraft('save-a', draft.draftRevision);
       if (mode === 'regular') {
-        const completed = await completeDraft(repo, { variables: { commands: [], rejectedSuggestions: [], unresolved: [] }, world: { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] } });
+        const completed = await completeDraft(repo, { variables: { commands: [], rejectedSuggestions: [], unresolved: [] }, world: { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] } });
         const committed = await repo.commitTurn(submission(completed));
         await repo.deleteDraft('save-a', committed.draft.draftRevision);
       }

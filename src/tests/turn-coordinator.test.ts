@@ -110,7 +110,7 @@ describe('真实三阶段顺序协调及恢复，正式 GameState 不变', () =>
     async (mode) => {
       await repo.deleteDraft('save-a', 0);
       if (mode === 'regular') {
-        const completed = await completeDraft(repo, { variables: { commands: [], rejectedSuggestions: [], unresolved: [] }, world: { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] } });
+        const completed = await completeDraft(repo, { variables: { commands: [], rejectedSuggestions: [], unresolved: [] }, world: { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] } });
         const committed = await repo.commitTurn(submission(completed));
         await repo.deleteDraft('save-a', committed.draft.draftRevision);
       }

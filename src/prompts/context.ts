@@ -295,6 +295,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
               !state.npc[task.actorRef.id]?.onScene)),
         ),
         events: temporary.events,
+        history: temporary.timeline,
         retiredEvents: Object.fromEntries(Object.entries(temporary.retiredEvents).filter(([,record])=>record.detail)),
         locations: temporary.locations,
       },

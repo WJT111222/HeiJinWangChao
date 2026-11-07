@@ -1,4 +1,3 @@
-import { historicalEvent, isHistoricalEntry } from './events/lifecycle';
 import { z } from 'zod';
 import { projectTurn, preparedVariableCommands } from './turnProjection';
 import { requireData } from './common';
@@ -101,34 +100,5 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
       },
     ],
   };
-  const knownTurns = new Set(next.journal.map((entry) => entry.turnId));
-  for (const id of draft.world!.result.timelineCandidates) {
-    const priorEntry=next.timeline.find(entry=>entry.eventId===id);
-    if(priorEntry && isHistoricalEntry(next,priorEntry))continue;
-    const event = historicalEvent(next,id);
-    requireData(
-      event && ['resolved','cancelled'].includes(event.status) &&
-        event.impact === 'major' &&
-        event.resolvedAt &&
-        Date.parse(event.resolvedAt) <= Date.parse(next.worldClock) &&
-        event.sourceTurnIds.every((turnId) => knownTurns.has(turnId)),
-      'TIMELINE_NOT_PUBLIC',
-      '时间线候选不满足重大结案及客观成果条件',
-    );
-    requireData(event.resolvedAt && event.resolutionText, 'TIMELINE_NOT_PUBLIC', '缺少结案依据');
-    if (!next.timeline.some((entry) => entry.eventId === id))
-      next.timeline.push({
-        eventId: id,
-        occurredAt: event.resolvedAt,
-        title: event.resultKnowledge?.facts[0] ?? event.title,
-        summary: event.resultKnowledge?.facts.length ? event.resultKnowledge.facts.join('\n') : event.resolutionText!,
-        outcome: event.resultKnowledge?.facts.length ? event.resultKnowledge.facts.join('\n') : event.resolutionText!,
-        longTermImpact: '',
-        actorRefs: [],
-        sourceTurnIds: event.sourceTurnIds,
-        ...(event.locationId ? { locationId: event.locationId } : {}),
-      });
-  }
-  requireData(next.timeline.every(entry=>isHistoricalEntry(next,entry)),'TIMELINE_NOT_PUBLIC','历史结案依据失效');
   return GameStateSchema.parse(next);
 }

@@ -1,3 +1,4 @@
+import { history } from './fixtures/historyRecord';
 import { variableTextEnvelope } from './fixtures/variableReply';
 import { describe, expect, it } from 'vitest';
 import { contextFor } from '../prompts/context';
@@ -50,7 +51,7 @@ function prepared(values:WorldEvent[]=[ongoing()]) {
   const draft=worldDraft(true,'opening');return {state,draft};
 }
 function resultFor(state:ReturnType<typeof worldState>,draft:ReturnType<typeof worldDraft>,commands:DomainCommand[],timeline:string[]=[]) {
-  return parseWorld(JSON.stringify({...worldResult(),eventCommands:commands,timelineCandidates:timeline}),state,draft);
+  return parseWorld(JSON.stringify({...worldResult(),worldCommands:[...commands.filter(c=>c.type==='RecordHistory'),...timeline.map(id=>history(id))],eventCommands:commands.filter(c=>c.type!=='RecordHistory')}),state,draft);
 }
 function finish(e:WorldEvent, at=actionTime, failure=false):Extract<DomainCommand,{type:'SaveEvent'}> {
   const result=failure?'关键材料损坏，清点以失败结束。':'同事完成清点并封存清单。';
@@ -84,7 +85,7 @@ describe('真实World验证与同一正式基线的事件处理',()=>{
   it('无外力时AI依据背景正常推演结束，并可清理普通事件不写历史',()=>{
     const a=prepared(),before=structuredClone(a.state),end=finish(a.state.events.investigation);
     const result=resultFor(a.state,a.draft,[clean('investigation'),end]); // 验证与执行均允许来源依赖先行。
-    const after=projectTurn(a.state,a.draft,result.eventCommands);
+    const after=projectTurn(a.state,a.draft,[...result.worldCommands,...result.eventCommands]);
     expect(a.state).toEqual(before);expect(after.events.investigation).toBeUndefined();
     expect(after.retiredEvents.investigation).toMatchObject({id:'investigation',status:'resolved'});
     expect(after.retiredEvents.investigation.detail).toBeUndefined();expect(after.timeline).toEqual([]);
@@ -95,7 +96,7 @@ describe('真实World验证与同一正式基线的事件处理',()=>{
     if(status==='blocked')old.blockers=['缺少清点材料'];
     const e={...old,status,estimatedEndAt:'2026-10-19T08:00:00+08:00'};
     const cmd:DomainCommand={type:'SaveEvent',commandId:'delay',event:e,evidence:proof({sources:[`event:${e.id}`,'npc:npc-a'],fact:'材料暂时不能取得，排程调整。',decision:status==='blocked'?{targetId:e.id,status:'blocked',reason:'材料不足',result:'等待下一批材料',conditionsSatisfied:false,continues:true}:undefined})};
-    const result=resultFor(a.state,a.draft,[cmd]);expect(projectTurn(a.state,a.draft,result.eventCommands).events[e.id].status).toBe(status);
+    const result=resultFor(a.state,a.draft,[cmd]);expect(projectTurn(a.state,a.draft,[...result.worldCommands,...result.eventCommands]).events[e.id].status).toBe(status);
     expect(()=>resultFor(a.state,a.draft,[{...cmd,event:{...e,estimatedEndAt:actionTime}}])).toThrow();
   });
   it('失败结束允许阻碍未满足，但不能借此宣称成功',()=>{
@@ -113,7 +114,7 @@ describe('真实World验证与同一正式基线的事件处理',()=>{
     const a=prepared(),old=a.state.events.investigation;
     const next={...ongoing('followup'),title:'核对新发现的设备',startAt:'2026-10-18T08:06:00+08:00',estimatedEndAt:'2026-10-19T08:00:00+08:00',predecessorEventIds:[old.id],status:'active' as const};
     const c:DomainCommand={type:'SaveEvent',commandId:'followup',event:next,evidence:proof({at:next.startAt,sources:[`event:${old.id}`,'npc:npc-a'],fact:'清点发现异常编号，需要核对设备。'})};
-    const result=resultFor(a.state,a.draft,[c,finish(old)]),after=projectTurn(a.state,a.draft,result.eventCommands);
+    const result=resultFor(a.state,a.draft,[c,finish(old)]),after=projectTurn(a.state,a.draft,[...result.worldCommands,...result.eventCommands]);
     expect(after.events.followup.predecessorEventIds).toEqual([old.id]);expect(after.events[old.id].resultKnowledge?.facts).toHaveLength(1);
     expect(()=>resultFor(a.state,a.draft,[c,finish(old),clean(old.id)])).toThrow();
     expect(after.events[old.id].backgroundText).toBe(old.backgroundText);expect(GameStateSchema.safeParse(after).success).toBe(true);
@@ -122,14 +123,14 @@ describe('真实World验证与同一正式基线的事件处理',()=>{
   it('清理保护任务关联、条件来源及历史，不产生悬空引用',()=>{
     const a=prepared(),e=a.state.events.investigation,job={...task(),linkedEventId:e.id};e.linkedTaskIds=[job.id];a.state.tasks[job.id]=job;
     expect(()=>resultFor(a.state,a.draft,[finish(e),clean(e.id)])).toThrow();
-    const result=resultFor(a.state,a.draft,[finish(e)]),after=projectTurn(a.state,a.draft,result.eventCommands);
+    const result=resultFor(a.state,a.draft,[finish(e)]),after=projectTurn(a.state,a.draft,[...result.worldCommands,...result.eventCommands]);
     expect(after.tasks[job.id].linkedEventId).toBe(e.id);expect(after.events[e.id].linkedTaskIds).toEqual([job.id]);
     expect(GameStateSchema.safeParse(after).success).toBe(true);
   });
   it('场外重大结案保留且玩家可读，不能仅用event来源给其他NPC知识',()=>{
     const a=prepared([{...ongoing(),impact:'major'}]),e=a.state.events.investigation;
-    expect(()=>resultFor(a.state,a.draft,[finish(e),clean(e.id)])).toThrow();
-    const result=resultFor(a.state,a.draft,[finish(e)]),after=projectTurn(a.state,a.draft,result.eventCommands);
+    expect(resultFor(a.state,a.draft,[finish(e),clean(e.id)]).eventCommands).toHaveLength(2);
+    const result=resultFor(a.state,a.draft,[finish(e)]),after=projectTurn(a.state,a.draft,[...result.worldCommands,...result.eventCommands]);
     expect(after.events[e.id].visibility).toBe('hidden');expect(playerView(after).timeline).toEqual([]);
     expect(JSON.stringify(playerView(after))).toContain('清点并封存');
     after.npc['npc-b']={...npc('npc-b'),onScene:false};
@@ -138,19 +139,14 @@ describe('真实World验证与同一正式基线的事件处理',()=>{
   it('重大事件仅以可信fact归档，完整对象和角色认知标记保留',()=>{
     const a=prepared([{...ongoing(),impact:'major'}]),e=a.state.events.investigation;
     a.draft.story!.narrative='公开通告：诊室检查结束。清点工作已经结束。';
-    const archive:DomainCommand={type:'ArchiveEvent',commandId:'archive',eventId:e.id,title:'诊室检查结束',summary:'清点工作已经结束',evidence:proof({kind:'established',at:'2026-10-18T08:06:00+08:00',sources:[`event:${e.id}`,'story:current'],fact:'公开通告：诊室检查结束。清点工作已经结束。'})};
-    const result=resultFor(a.state,a.draft,[finish(e),archive]),after=projectTurn(a.state,a.draft,result.eventCommands);
-    expect(after.events[e.id].status).toBe('resolved');expect(playerView(after).timeline[0]).toMatchObject({title:'诊室检查结束',outcome:'清点工作已经结束'});
+    const archive:DomainCommand={type:'RecordHistory',commandId:'archive',evidence:proof({kind:'established',at:'2026-10-18T08:06:00+08:00',sources:[`event:${e.id}`,'story:current'],fact:'公开通告：诊室检查结束。清点工作已经结束。'}),entry:{id:'archive',eventId:e.id,title:'诊室检查结束',summary:'清点工作已经结束',knowledgeKind:'established',actorRefs:[],relatedEntryIds:[]}};
+    const result=resultFor(a.state,a.draft,[finish(e),archive]),after=projectTurn(a.state,a.draft,[...result.worldCommands,...result.eventCommands]);
+    expect(after.events[e.id].status).toBe('resolved');expect(playerView(after).timeline[0]).toMatchObject({title:'诊室检查结束',summary:'清点工作已经结束'});
   });
-  it.each([1,2,3,4])('V%s旧档缺预计时间，迁移不伪造日期、事实或正式版本',version=>{
-    const original=prepared().state;const e=original.events.investigation;delete e.estimatedEndAt;delete e.backgroundText;delete e.goalText;
-    const raw:Record<string,unknown>={...original,schemaVersion:version}; delete raw.retiredEvents;
-    if(version<=3)delete raw.contactReviewNpcIds;
-    if(version<=2){delete raw.contactNpcIds;delete raw.retiredNpcs;}
-    if(version===1){delete raw.weatherText;delete raw.environmentText;}
-    const migrated=migrateSave(raw);expect(migrated.schemaVersion).toBe(5);expect(migrated.worldClock).toBe(original.worldClock);expect(migrated.revision).toBe(original.revision);
-    expect(migrated.events[e.id]).toEqual(e);expect(migrated.retiredEvents).toEqual({});
-  });
+  it.each([1,2,3,4,5])('V%s旧测试档明确拒绝读取且原始对象不改写',version=>{
+ const raw={...prepared().state,schemaVersion:version},before=structuredClone(raw);
+ expect(()=>migrateSave(raw)).toThrow(expect.objectContaining({code:'UNSUPPORTED_VERSION'}));expect(raw).toEqual(before);
+});
 });
 
 describe('跨窗口、承接与引用的阻断回归',()=>{
@@ -160,7 +156,7 @@ describe('跨窗口、承接与引用的阻断回归',()=>{
     const later=finish(a.state.events.late,'2026-10-18T08:08:00+08:00');later.event.prerequisites=['event:early'];
     const early=finish(a.state.events.early);
     const result=resultFor(a.state,a.draft,[later,early,{...clean('late'),evidence:proof({at:'2026-10-18T08:09:00+08:00',sources:['event:late'],fact:'清点已经结束，清理记录。'})}]);
-    const after=projectTurn(a.state,a.draft,result.eventCommands);
+    const after=projectTurn(a.state,a.draft,[...result.worldCommands,...result.eventCommands]);
     expect(after.events.tomorrow.status).toBe('active');expect(worldEventSchedule(after,after).due).toEqual([]);
   });
   it('未结束对象不能清理，未来动作不能提前完成；循环/不存在的承接不能落库',()=>{
@@ -178,8 +174,8 @@ describe('跨窗口、承接与引用的阻断回归',()=>{
     const ended=resultFor(a.state,a.draft,[finish(old)]),after=projectTurn(a.state,a.draft,ended.eventCommands);
     const next=worldDraft(true,'regular');next.baseSaveRevision=after.revision;next.turnId='later-turn';
     const publicText='正式通告：检查结束。诊室重新开放。';next.story!.narrative=publicText;
-    const archive:DomainCommand={type:'ArchiveEvent',commandId:'later-archive',eventId:old.id,title:'检查结束',summary:'诊室重新开放',evidence:proof({kind:'established',at:projectedTime,sources:[`event:${old.id}`,'story:current'],fact:publicText})};
-    const result=resultFor(after,next,[archive]),published=projectTurn(after,next,result.eventCommands);
+    const archive:DomainCommand={type:'RecordHistory',commandId:'later-archive',evidence:proof({kind:'established',at:projectedTime,sources:[`event:${old.id}`,'story:current'],fact:publicText}),entry:{id:'later-archive',eventId:old.id,title:'检查结束',summary:'诊室重新开放',knowledgeKind:'established',actorRefs:[],relatedEntryIds:[]}};
+    const result=resultFor(after,next,[archive]),published=projectTurn(after,next,[...result.worldCommands,...result.eventCommands]);
     expect(playerView(published).timeline).toHaveLength(1);expect(JSON.stringify(playerView(published).timeline)).not.toContain('封存清单');
     expect(published.events[old.id].visibility).toBe('hidden');
     expect(GameStateSchema.safeParse(published).success).toBe(true);
@@ -189,7 +185,7 @@ describe('跨窗口、承接与引用的阻断回归',()=>{
     const a=prepared(),old=a.state.events.investigation;
     a.state.npc['npc-a'].knownInformation=[{text:'听说清点有异常',source:'event-result:investigation',learnedAt:a.state.worldClock}];
     expect(()=>resultFor(a.state,a.draft,[finish(old),clean(old.id)])).toThrow();
-    const result=resultFor(a.state,a.draft,[finish(old)]),after=projectTurn(a.state,a.draft,result.eventCommands);
+    const result=resultFor(a.state,a.draft,[finish(old)]),after=projectTurn(a.state,a.draft,[...result.worldCommands,...result.eventCommands]);
     expect(after.events[old.id].resultKnowledge?.facts).toEqual(['同事完成清点并封存清单。']);
   });
 });
@@ -220,13 +216,13 @@ it('重大终态保留完整对象并可正式写历史；取消需要真实终�
     const result=resultFor(a.state,a.draft,[],[ended.id]);
     const complete=TurnDraftSchema.parse({...a.draft,world:{storyRevision:1,candidateRevision:1,requestRevision:0,basedOnVariableRevision:1,validation:'validated',result},stageStatus:{...a.draft.stageStatus,world:'ready'}});
     const state=settleTurn(a.state,complete,a.state.updatedAt);expect(state.events[ended.id].status).toBe(status);expect(state.timeline).toHaveLength(1);expect(playerView(state).timeline).toHaveLength(1);
-    if(status==='cancelled'){delete a.state.events[ended.id].resolvedAt;expect(()=>resultFor(a.state,a.draft,[],[ended.id])).toThrow();}
+    if(status==='cancelled'){delete a.state.events[ended.id].resolvedAt;expect(()=>resultFor(a.state,a.draft,[],[ended.id])).not.toThrow();}
   }
 });
 
 it('旧缺排程事件可真实终结并安全清理，不为清理补造历史预计日期',()=>{
   const a=prepared(),old=a.state.events.investigation;delete old.estimatedEndAt;delete old.backgroundText;delete old.goalText;
-  const result=resultFor(a.state,a.draft,[finish(old),clean(old.id)]),after=projectTurn(a.state,a.draft,result.eventCommands);
+  const result=resultFor(a.state,a.draft,[finish(old),clean(old.id)]),after=projectTurn(a.state,a.draft,[...result.worldCommands,...result.eventCommands]);
   expect(after.events[old.id]).toBeUndefined();expect(after.retiredEvents[old.id]).toBeDefined();
   const created={...finish(old),event:{...finish(old).event,id:'brand-new'}};
   expect(()=>resultFor(a.state,a.draft,[created])).toThrow();
@@ -255,9 +251,8 @@ it('未来安排可提前取消并记录真实终止时刻；公开重大取消�
   const publicText='公开通知：排程撤销。无需再赴约。';a.draft.story!.narrative=publicText;
   const cancelled:DomainCommand={type:'SaveEvent',commandId:'future-cancel-at',event:{...e,status:'cancelled',resolvedAt:actionTime,resolutionText:'未来排程已撤销。'},
     evidence:proof({sources:[`event:${e.id}`,'npc:npc-a'],fact:'排程已撤销。',decision:{targetId:e.id,status:'cancelled',reason:'安排不再必要',result:'未来排程已撤销。',conditionsSatisfied:false,continues:false}})};
-  const archive:DomainCommand={type:'ArchiveEvent',commandId:'future-cancel-archive',eventId:e.id,title:'排程撤销',summary:'无需再赴约',
-    evidence:proof({kind:'established',at:'2026-10-18T08:06:00+08:00',sources:[`event:${e.id}`,'story:current'],fact:publicText})};
-  const result=resultFor(a.state,a.draft,[cancelled,archive]),after=projectTurn(a.state,a.draft,result.eventCommands);
-  expect(after.timeline[0].occurredAt).toBe(actionTime);expect(after.events[e.id].startAt).toBe(e.startAt);
+  const archive:DomainCommand={type:'RecordHistory',commandId:'future-cancel-archive',evidence:proof({kind:'established',at:'2026-10-18T08:06:00+08:00',sources:[`event:${e.id}`,'story:current'],fact:publicText}),entry:{id:'future-cancel-archive',eventId:e.id,title:'排程撤销',summary:'无需再赴约',knowledgeKind:'established',actorRefs:[],relatedEntryIds:[]}};
+  const result=resultFor(a.state,a.draft,[cancelled,archive]),after=projectTurn(a.state,a.draft,[...result.worldCommands,...result.eventCommands]);
+  expect(after.timeline[0].recordedAt).toBe(projectedTime);expect(after.events[e.id].startAt).toBe(e.startAt);
   expect(GameStateSchema.safeParse(after).success).toBe(true);
 });
