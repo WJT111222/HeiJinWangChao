@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Detail, Empty } from '../Dialog';
-import { categoryLabels, dateTime, orgLabels } from './playerView';
+import { dateTime, orgLabels } from './playerView';
 import type { PlayerView } from './playerView';
+import { InventoryPanel } from './InventoryPanel';
 import { MemoryPanel } from './MemoryPanel';
 import { WorldRecord, RecordList } from './WorldRecord';
 import { MemoryRecord } from './MemoryRecord';
@@ -188,32 +189,7 @@ export function Panels({ name, view }: { name: PanelName; view: PlayerView }) {
       </>
     );
   }
-  if (name === '物品栏')
-    return (
-      <>
-        {view.items.length ? (
-          <div className="two-grid">
-            {view.items.map((item) => (
-              <article className="card" key={item.id}>
-                <span className="tag">{categoryLabels[item.category]}</span>
-                <h3>{item.name}</h3>
-                <WorldRecord title="物品完整资料与持有人" value={item} />
-                <dl>
-                  <Detail label="数量">{item.quantity}</Detail>
-                  <Detail label="位置">
-                    {view.locations.find((p) => p.id === item.locationId)?.name || '未记录'}
-                  </Detail>
-                  <Detail label="状态">{item.conditionText || '未记录'}</Detail>
-                </dl>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <Empty>暂无已登记的重要物品。开局确认后，拥有的物品会显示在这里。</Empty>
-        )}
-        <WorldRecord title="全部正式经济与资产记录（金额单位：人民币分）" value={view.economy} />
-      </>
-    );
+  if (name === '物品栏') return <InventoryPanel view={view} />;
   if (name === '世界事件')
     return <>
       <p className="muted">全部正式事件与排程可供玩家观察。计划不等于完成；人物陈述不等于客观事实，查看不会改变角色认知。</p>

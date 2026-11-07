@@ -97,6 +97,7 @@ export const categoryLabels = {
   shoes: '鞋子',
   accessory: '饰品',
   weapon: '武器',
+  tool: '工具',
   document: '文件',
   device: '设备',
   other: '其他',

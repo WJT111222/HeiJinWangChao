@@ -34,6 +34,8 @@ const fields = new Map<string, Mapping>([
   ['npc.knownInformation', { operation: 'push', kind: 'memory', field: 'knownInformation' }],
   ['items.conditionText', { operation: 'set', kind: 'itemState', field: 'conditionText' }],
   ['items.locationId', { operation: 'set', kind: 'itemState', field: 'locationId' }],
+  ...['description', 'referenceValue', 'itemDetails', 'category', 'questItem'].map((field): [string, Mapping] =>
+    [`items.${field}`, { operation: 'set', kind: 'itemState', field }]),
   ['items.quantity', { operation: 'add', kind: 'item', field: 'quantity' }],
   ['economy.cash', { operation: 'add', kind: 'expense', field: 'cash' }],
   ['economy.onlineBalance', { operation: 'add', kind: 'expense', field: 'onlineBalance' }],
