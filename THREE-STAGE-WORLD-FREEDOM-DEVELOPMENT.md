@@ -10,7 +10,7 @@
 
 最小六例首先在旧实现上运行。五项直接证明：Story 强制所有 pending 回执、单 NPC 多任务被拒、活动事件参与者被锁定、五数组 World 缺少旧镜像字段、独立历史命令不存在。场景移动首个夹具遗漏了 UpdateProtagonist 的必要字段，不能算有效产品复现；补齐字段后单独使用基线场景函数重跑，确认真实抛出 `SCENE_TRANSITION`。修复后六例全部通过，并扩充为 34 项正反例。
 
-新浏览器用例首次 4 通过、2 失败（同一新增场景桌面/手机）：Mock 地点创建错误使用 `push locations`。按实际协议修成 `set locations[office-gate] = {"name":"办公楼门口"}`，未修改或放宽执行器。后续结果见验证记录。
+新浏览器用例首次 4 通过、2 失败（同一新增场景桌面/手机）：Mock 地点创建错误使用 `push locations`。按实际协议修成 `set locations[office-gate] = {"name":"办公楼门口"}`，未修改或放宽执行器。第二次该场景已完成结算与数据断言，但时间轴按钮定位器遗漏现有“06”序号，两端在最终导航处失败。修正定位器后定向 6/6 通过。未修改页面操作或业务校验。
 
 ## 已删除的硬限制
 
@@ -81,7 +81,7 @@
 
 V6 新建、保存和重载使用独立历史格式。V1–V5 被明确识别为不支持版本，不转换、不覆盖；已有无法读取卡片可原始导出与确认删除。旧 World 候选含已删除字段明确失败，不能绕过 Commit。旧版本迁移测试按此次授权改为不改写旧数据/当前 V6 读取与联系人保护测试；没有把旧数据静默伪装为新协议。
 
-## 验证记录（最终结果待本次执行完成后填写）
+## 验证记录
 
 - 新增 `world-freedom.test.ts` 34 项：选择性回执、留守/同行顺序、并行任务、参与者、独立/模糊/关联历史、不同影响等级、精确重放与非法日期/引用/权限。
 - `live-text-turn.test.ts` 新增开局/普通 2 项：真实 Runtime + Coordinator + 文本 Variables + World + IDB 原子 Commit、回执写入故障回滚、重放重载与下一轮；既有遗漏回执失败用例改为三轮延后处理。
@@ -89,8 +89,130 @@ V6 新建、保存和重载使用独立历史格式。V1–V5 被明确识别为
 - 已完成定向：313/313（8 文件）；新增与 live-text 集成 67/67；最后调整的三个文件 39/39；新规则与 Prompt 61/61。批次有重叠，不相加作为总数。
 - 早期全量失败主要来自未刷新 Prompt hash 及旧协议/迁移/单任务断言，已同步契约与夹具；不删除 CAS、原子性、知情隔离等安全断言。
 
-最终工程、提示词、浏览器与 diff 结果将在收尾记录。
+冻结提交 `768916182465f3fe588a96fad370e86f63635ca9` 开始最终批次。此前完整工程 2401/2403，两项为共享 Story 模块的旧版本号断言，按本轮版本同步后 2403/2403 通过；保留了摘要和实际组装内容断言，并新增“未处理者继续 pending、不得强制本幕处理”的组装契约断言。
+
+`npm run check`：79 个测试文件、2403 项全部通过；Lint、TypeScript 和生产构建通过。构建仍有现有主包大于 500 kB 的体积提醒，无构建失败。`npm run prompts:check`：3 文件、82 项通过。`git diff --check` 通过。
+
+完整 Chromium 批次命令：
+
+```sh
+CI=1 CHROMIUM_PATH=/usr/bin/chromium PLAYWRIGHT_JSON_OUTPUT_FILE=/tmp/wf-final-e2e.json npx playwright test --project=desktop --project=mobile --reporter=line,json
+```
+
+实际 428 项，耗时 24.8 分钟：desktop 213 通过/1 失败，mobile 213 通过/1 失败；总计 426 通过、2 失败、0 跳过。唯一失败用例为 world-runtime.spec.ts 原“NPC 双任务拒绝”预期：程序按本次新规则接受两项任务，因此没有 alert。该用例前面的非法地点/预结案检查均通过。对应失败日志与 Trace 保留于 `/tmp/wf-full-before-repair`，JSON 报告 `/tmp/wf-final-e2e.json`。
+
+随后只修改这条测试：保留两个非法数据拒绝、候选不能写入正式状态、合法预计时间的原断言；将双任务改为明确验证两项任务均进入候选且正式状态不变。没有再次改生产代码或放宽 Schema。
+
+修订后按受影响范围完整重跑 `world-runtime.spec.ts` 和 `event-entry-feedback.spec.ts` 的 desktop/mobile，不使用 grep/skip：**desktop 8/8、mobile 8/8，总计 16/16 通过，0 失败、0 跳过**，耗时 1.5 分钟。JSON 报告 `/tmp/wf-repaired-e2e.json`。未重新执行最终完整 428 项批次，不把分批结果相加冒充一次完整全绿。生产代码与全量批次保持相同，之后只有旧断言更新及本文验收记录。
+
+```sh
+CI=1 CHROMIUM_PATH=/usr/bin/chromium PLAYWRIGHT_JSON_OUTPUT_FILE=/tmp/wf-repaired-e2e.json npx playwright test e2e/world-runtime.spec.ts e2e/event-entry-feedback.spec.ts --project=desktop --project=mobile --reporter=line,json
+```
+
+最终断言修订后再次运行 `npm run check`：79 文件、2403 项通过；Lint、TypeScript、生产构建通过。`npm run prompts:check`：82/82；`git diff --check` 通过。没有未解决的定向失败；最终完整 428 项批次未重跑是本次验证范围的明确限制。
 
 ## 剩余限制
 
 只做离线 Mock 与确定性验证，没有验证真实模型会如何选择并行任务或历史记录。程序不证明陈述真实性、模糊时间的语义或任务能否现实并行，也不自动纠正模型选错 knowledgeKind。已删除的旧协议与 V1–V5 存档不可继续游玩，需要新开局。必要引用仍可能保守保留已结束事件；本轮没有设计因果引用迁移或无限历史的分页/压缩系统。
+
+## 完整修改文件清单
+
+以下 95 个文件包含代码、Prompt、文档及随新协议同步的 Mock/测试（未改变模型原始学校夹具）。
+
+```text
+THREE-STAGE-WORLD-FREEDOM-DEVELOPMENT.md
+docs/WORLD_EVENT_LIFECYCLE.md
+e2e/action-workflow.spec.ts
+e2e/ai-route-persistence.spec.ts
+e2e/automatic-settlement.spec.ts
+e2e/continuous-turns.spec.ts
+e2e/event-entry-feedback.spec.ts
+e2e/memory-maintenance.spec.ts
+e2e/npc-memory.spec.ts
+e2e/opening-time.spec.ts
+e2e/prompt-inspector.spec.ts
+e2e/story-reading.spec.ts
+e2e/time-preflight.spec.ts
+e2e/turn-coordinator.spec.ts
+e2e/world-handoff.spec.ts
+e2e/world-runtime.spec.ts
+prompts/docs/ASSEMBLY.md
+prompts/docs/OUTPUT_CONTRACT.md
+prompts/examples/world_sample.json
+prompts/manifest.json
+prompts/shared/03_time_events.md
+prompts/shared/06_story_output.md
+prompts/shared/07_command_output.md
+prompts/shared/08_world_output.md
+prompts/sources.lock.json
+prompts/stages/opening/world.md
+prompts/stages/regular/world.md
+prompts/variableGroups/npc_ordinary/offscreen.md
+prompts/variableGroups/npc_special/offscreen.md
+src/domain/commands.ts
+src/domain/drafts.ts
+src/domain/events/interactions.ts
+src/domain/events/lifecycle.ts
+src/domain/events/schema.ts
+src/domain/npc/lifecycle.ts
+src/domain/sceneTransitions.ts
+src/domain/state.ts
+src/domain/storyDiagnostics.ts
+src/domain/timePreflight.ts
+src/domain/turnCommit.ts
+src/executors/variableText/aggregateDiagnostics.ts
+src/prompts/context.ts
+src/services/ai/errors.ts
+src/services/storage/migrations.ts
+src/services/validation/aiOutputs.ts
+src/services/validation/commandCatalog.ts
+src/services/validation/turnCommit.ts
+src/services/validation/variableDiagnostics.ts
+src/services/validation/worldDependencies.ts
+src/services/validation/worldDiagnostics.ts
+src/services/validation/worldOutput.ts
+src/tests/domain.test.ts
+src/tests/drafts.test.ts
+src/tests/event-handoff-composition.test.ts
+src/tests/event-lifecycle-runtime.test.ts
+src/tests/fixtures/historyRecord.ts
+src/tests/fixtures/ui.ts
+src/tests/fixtures/world.ts
+src/tests/fixtures/worldSchoolOriginalContext.ts
+src/tests/inventory-v2.test.tsx
+src/tests/live-text-turn.test.ts
+src/tests/minimal-validation.test.ts
+src/tests/opening-time.test.ts
+src/tests/prompt-inspector.test.ts
+src/tests/prompt-runtime.test.ts
+src/tests/prompts.test.ts
+src/tests/protocol-reliability.test.ts
+src/tests/runtime-log.test.ts
+src/tests/saveRepository.test.ts
+src/tests/story-diagnostics-runtime.test.ts
+src/tests/story-stage.test.ts
+src/tests/summary.test.ts
+src/tests/turn-commit.test.ts
+src/tests/turn-coordinator.test.ts
+src/tests/unreadable-saves.test.ts
+src/tests/variable-commands.test.ts
+src/tests/variable-stage.test.ts
+src/tests/variable-text-executor.test.ts
+src/tests/world-event-handoff.test.ts
+src/tests/world-fact-runtime.test.ts
+src/tests/world-freedom.test.ts
+src/tests/world-handoff-review.test.ts
+src/tests/world-handoff-review2.test.ts
+src/tests/world-handoff-review3.test.ts
+src/tests/world-handoff.test.ts
+src/tests/world-lifecycle.test.ts
+src/tests/world-observer.test.ts
+src/tests/world-scene-record.test.ts
+src/tests/world-school-original.test.ts
+src/tests/world-stage.test.ts
+src/tests/world-validation.test.ts
+src/ui/game/WorldCandidates.tsx
+src/ui/game/runtimeLog.ts
+src/ui/panels/Panels.tsx
+src/ui/panels/playerView.ts
+```
