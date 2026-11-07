@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { z } from 'zod';
 import { composePrompt } from '../prompts/composer';
 import { parseTextVariables, parseWorld } from '../services/validation/aiOutputs';
 import { runtimeLogEvent } from '../ui/game/runtimeLog';
 import { defaultSettings } from '../ui/settings/model';
-import { WorldResultSchema, createTurnDraft, rerollStory } from '../domain/drafts';
+import { createTurnDraft, rerollStory } from '../domain/drafts';
 import { projectTurn } from '../domain/turnProjection';
 import { gameTime, event, story, task, organizations } from './fixtures/game';
 import { worldState, worldDraft, worldResult, projectedTime } from './fixtures/world';
@@ -32,27 +31,13 @@ describe('已知协议混用的同类复现', () => {
     expect(projected.npc.scene.memories).toHaveLength(1); expect(projected.npc['npc-a']).toEqual(state.npc['npc-a']);
     expect(state).toEqual(before);
   });
-  it('时间线对象被结构拒绝；significant 的真实终态也不能假装 major，空数组可继续', () => {
-    const state = worldState(), draft = worldDraft();
-    const raw = { ...worldResult(), timelineCandidates: [{ eventId: 'finished', title: '普通结案' }] };
-    expect(() => parseWorld(JSON.stringify(raw), state, draft)).toThrow();
-    try { parseWorld(JSON.stringify(raw), state, draft); } catch (error) {
-      expect(error).toMatchObject({ code: 'schema_fields', details: { fieldPath: 'timelineCandidates.0', worldRule: 'schema' } });
-      expect(runtimeLogEvent(1, 'world', 'failed', error).commandIndex).toBeUndefined();
-    }
-    const result = worldResult();
-    result.eventCommands = [{ type: 'SaveEvent', commandId: 'finish', evidence: '事务已结束', event: {
-      ...event('finished'), impact: 'significant', status: 'resolved', resolvedAt: projectedTime,
-      resolutionText: '完成日常协调', outcome: 'success', continuation: { direction: 'end', reason: '自然结束' },
-    } }];
-    result.timelineCandidates = ['finished'];
-    expect(() => parseWorld(JSON.stringify(result), state, draft)).toThrow(expect.objectContaining({ details: expect.objectContaining({ worldRule: 'timeline_state' }) }));
-    result.timelineCandidates = [];
-    expect(parseWorld(JSON.stringify(result), state, draft).timelineCandidates).toEqual([]);
-    if (result.eventCommands[0].type === 'SaveEvent') result.eventCommands[0].event.impact = 'major';
-    result.timelineCandidates = ['finished'];
-    expect(parseWorld(JSON.stringify(result), state, draft).timelineCandidates).toEqual(['finished']);
-  });
+  it.each(['minor','significant','major'] as const)('新历史不按%s等级审批，旧顶层协议明确拒绝', impact => {
+ const state=worldState(),draft=worldDraft(),result=worldResult();
+ expect(()=>parseWorld(JSON.stringify({...result,timelineCandidates:[{eventId:'finished'}]}),state,draft)).toThrow();
+ result.eventCommands=[{type:'SaveEvent',commandId:'finish',evidence:'事务结束',event:{...event('finished'),impact,status:'resolved',resolvedAt:projectedTime,resolutionText:'完成日常协调',outcome:'success',continuation:{direction:'end',reason:'自然结束'}}}];
+ result.worldCommands=[{type:'RecordHistory',commandId:'history',evidence:'记录',entry:{id:'history',title:'普通协调',summary:'完成日常协调',eventId:'finished',knowledgeKind:'established',actorRefs:[],relatedEntryIds:[]}}];
+ expect(parseWorld(JSON.stringify(result),state,draft).worldCommands).toHaveLength(1);
+});
   it('World 新组织历史非空被拒绝；空历史加独立关系命令可通过', () => {
     const state = worldState(), draft = worldDraft(), result = worldResult([
       { type: 'CreateOrganization', commandId: 'org-create', evidence: '记录社区服务组织', organization: organizations[2] },
@@ -79,9 +64,9 @@ describe('实际 Composer 输出契约', () => {
     const state = worldState(), draft = worldDraft(true, mode);
     const prompt = await composePrompt({ stage: 'world', mode, state, draft, settings: defaultSettings(), userInput: '' });
     const context = prompt.context.COMMAND_CATALOG as Record<string, unknown>;
-    expect(context).toHaveProperty('outputFields.timelineCandidates', z.toJSONSchema(WorldResultSchema.shape.timelineCandidates, { target: 'draft-7', unrepresentable: 'any' }));
+    expect(context).not.toHaveProperty('outputFields.timelineCandidates'); expect(context).toHaveProperty('outputFields.worldCommands.commandTypes', expect.arrayContaining(['RecordHistory']));
     const systems = prompt.messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
-    expect(systems).toContain('事件ID字符串数组'); expect(systems).toContain('significant');
+    expect(systems).toContain('RecordHistory'); expect(systems).toContain('无需先建事件');
     expect(systems).toContain('relationHistory=[]');
     expect(JSON.stringify(prompt.context)).toContain('"maxItems":0');
   });

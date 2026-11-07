@@ -31,7 +31,7 @@ async function mock(page:Page) {
     const ctx=JSON.parse(match[1]),turnId=ctx.TURN_CONTEXT?.turnId;
     const at=`2026-10-18T08:${turn===1?'05':turn===2?'15':'25'}:00+08:00`;
     const evidence=(fact:string,sources:string[],kind='derived',decision?:unknown)=>JSON.stringify({version:1,kind,at,sources,fact,rationale:'根据已发生的事实和原有工作安排处理。',...(decision?{decision}: {})});
-    const blank={worldCommands:[],taskCommands:[],eventCommands:[] as unknown[],futureEvents:[],visibleHooks:[],timelineCandidates:[],unresolved:[]};
+    const blank={worldCommands:[],taskCommands:[],eventCommands:[] as unknown[],visibleHooks:[],unresolved:[]};
     let text:string;
     if(stage==='story') {
       const entry=ctx.EVENT_ENTRIES?.[0],participation=ctx.EVENT_PARTICIPATION?.[0];
@@ -95,4 +95,60 @@ test('World失败与刷新不消费入场，恢复只请求World并原子确认�
   await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
   await expect.poll(async()=>(await stored(page)).state.turnNumber).toBe(2);await settled(page);data=await stored(page);
   expect(data.state.events.contact.protagonistEntry.status).toBe('presented');expect(server.calls).toEqual(['story','variables','world','story','variables','world','world']);
+});
+
+test('两轮自动结算：选择性入场、留守离场、并行任务与独立模糊历史保存后刷新可读',async({page})=>{
+  await seed(page);
+  const baseline=(await stored(page)).state,calls:string[]=[];
+  await page.route('https://entry-feedback.mock.invalid/**',async route=>{
+    const body=route.request().postDataJSON(),stage=String(body.model);calls.push(stage);
+    const turn=calls.filter(s=>s==='story').length;
+    const messages=body.messages.map((m:{content:string})=>m.content).join('\n');
+    const match=messages.match(/<GAME_CONTEXT>\n([\s\S]*?)\n<\/GAME_CONTEXT>/);
+    if(!match)throw Error('missing runtime context');
+    const ctx=JSON.parse(match[1]);let text:string;
+    if(stage==='story'){
+      const entry=ctx.EVENT_ENTRIES?.find((e:{eventId:string})=>e.eventId==='call-one');
+      if(turn===2)expect(ctx.EVENT_ENTRIES).toHaveLength(2);
+      const guide=turn===1?[]:[{group:'event',observedFact:'只接听第一通来电',textEvidence:'林舟接听一通电话，随后出门。',eventInteraction:{eventId:entry.eventId,entryId:entry.entryId,action:'presented'}}];
+      text=`<thinking>按本次行动叙事，其他来电等待。</thinking><正文>【旁白】${turn===1?'林舟在办公室整理材料。':'林舟接听一通电话，随后出门。'}</正文><短期记忆>整理材料并继续行动。</短期记忆><变量规划>${JSON.stringify(guide)}</变量规划>`;
+    }else if(stage==='variables'){
+      text=`<thinking>只更新已经发生的现场变化。</thinking><说明>其他人物留在原地。</说明><命令>set worldClock = "2026-10-18T08:${turn===1?'10':'20'}:00+08:00"${turn===1?'':'\nset locations[office-gate] = {"name":"办公楼门口"}\nset protagonist.locationId = "office-gate"'}</命令>`;
+    }else{
+      const result={worldCommands:[] as unknown[],taskCommands:[] as unknown[],eventCommands:[] as unknown[],visibleHooks:[],unresolved:[]};
+      if(turn===1)result.eventCommands=['one','two'].map(id=>({type:'SaveEvent',commandId:`queue-${id}`,evidence:'日常联系',event:{
+        id:`call-${id}`,title:`来电${id}`,backgroundText:'同事整理材料后联系',goalText:'交换工作信息',status:'active',
+        startAt:'2026-10-18T08:00:00+08:00',estimatedEndAt:'2026-10-18T08:05:00+08:00',
+        actorRefs:[{kind:'npc',id:'npc-a'}],linkedTaskIds:[],prerequisites:[],blockers:[],visibility:'hidden',impact:'minor',sourceTurnIds:[ctx.TURN_CONTEXT.turnId],
+        continuation:{direction:'protagonist',reason:'电话联系',entry:{channel:'电话',cue:`第${id}通来电`}},
+      }}));
+      else{
+        result.worldCommands=[{type:'RecordHistory',commandId:'remember',evidence:'本幕人物披露',entry:{id:'university-disclosure',title:'大学时期的合作',summary:'同事声称大学时期与朋友合作过。',occurredTimeText:'大学时期',knowledgeKind:'reported',sourceRef:{kind:'npc',id:'npc-a'}}}];
+        result.taskCommands=['active','planned'].map((status,i)=>({type:'SaveTask',commandId:`parallel-${i}`,evidence:'不同职责并行',task:{id:`duty-${i}`,actorRef:{kind:'npc',id:'npc-a'},goal:`独立职责${i}`,startAt:'2026-10-18T08:00:00+08:00',dueAt:'2026-10-19T08:00:00+08:00',status,prerequisites:[],blockers:[]}}));
+      }
+      text=JSON.stringify(result);
+    }
+    await route.fulfill({contentType:stage==='story'?'text/event-stream':'application/json',body:stage==='story'
+      ?`data: ${JSON.stringify({choices:[{delta:{content:text}}]})}\n\ndata: [DONE]\n\n`
+      :JSON.stringify({choices:[{message:{content:text},finish_reason:'stop'}]})});
+  });
+  await page.getByRole('button',{name:'自动生成开局',exact:true}).click();await settled(page);
+  await page.getByLabel('你的行动',{exact:true}).fill('先接一通电话，然后独自出门。');
+  await page.getByRole('button',{name:'发送',exact:true}).click();
+  await expect.poll(async()=>(await stored(page)).state.turnNumber).toBe(2);await settled(page);
+  const data=await stored(page);
+  expect(data.state.events['call-one'].protagonistEntry.status).toBe('presented');
+  expect(data.state.events['call-two'].protagonistEntry.status).toBe('pending');
+  expect(data.state.npc.scene).toEqual({...baseline.npc.scene,onScene:false});
+  expect(data.state.npc['npc-a'].memories).toEqual(baseline.npc['npc-a'].memories);
+  expect(Object.keys(data.state.tasks)).toHaveLength(2);
+  expect(data.state.timeline[0]).toMatchObject({knowledgeKind:'reported',occurredTimeText:'大学时期',recordedAt:data.state.worldClock});
+  expect(data.state.timeline[0].eventId).toBeUndefined();expect(data.state.timeline[0].occurredAt).toBeUndefined();
+  expect(calls).toEqual(['story','variables','world','story','variables','world']);
+  await page.reload();await openGameTools(page);
+  expect((await stored(page)).state).toEqual(data.state);expect(calls).toHaveLength(6);
+  await page.getByRole('button',{name:'06 历史时间轴',exact:true}).click();
+  const dialog=page.getByRole('dialog');await expect(dialog.getByText('大学时期的合作',{exact:true})).toBeVisible();
+  await expect(dialog.getByText('人物陈述',{exact:true})).toBeVisible();await expect(dialog.getByText('大学时期',{exact:true})).toBeVisible();
+  expect(calls).toHaveLength(6);
 });

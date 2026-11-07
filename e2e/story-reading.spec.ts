@@ -112,7 +112,7 @@ test('真实流式预览完成后切换气泡，Variables/World收到原标签�
       finishStory = () => response.end(frame(narrative.slice(32) + suffix) + 'data: [DONE]\n\n');
     } else {
       const text = input.model === 'variables' ? '<thinking>没有状态变化。</thinking><说明>人物交谈。</说明><命令></命令>'
-        : JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] });
+        : JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
       response.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ choices: [{ message: { content: text }, finish_reason: 'stop' }] }));
     }
   });

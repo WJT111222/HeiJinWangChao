@@ -87,7 +87,7 @@ describe('Story diagnostics through real Composer / client / validation', () => 
   }
   const receipt = { group: 'event', observedFact: '收到来访', textEvidence: '收到来访', eventInteraction: { eventId: 'event-a', entryId: 'entry-a', action: 'presented' } };
   it.each([
-    ['missing', []], ['duplicate', [receipt, receipt]],
+    ['duplicate', [receipt, receipt]],
     ['group', [{ ...receipt, group: 'npc' }]],
     ['reference', [{ ...receipt, eventInteraction: { ...receipt.eventInteraction, entryId: 'private-invalid-id' } }]],
     ['evidence_empty', [{ ...receipt, textEvidence: ' \n ' }]],

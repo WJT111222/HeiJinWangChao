@@ -11,7 +11,7 @@ import type { TurnDraft } from '../domain/drafts';
 import { defaultSettings } from '../ui/settings/model';
 import { runtimeLogEvent } from '../ui/game/runtimeLog';
 import { schoolContext, schoolResult, schoolTask, syntheticSchoolBatch } from './fixtures/worldChineseFact';
-import { original, originalSchoolContext } from './fixtures/worldSchoolOriginalContext';
+import { originalSchoolContext } from './fixtures/worldSchoolOriginalContext';
 
 let repo: SaveRepository, draft: TurnDraft;
 const stages: WorldStage[] = [];
@@ -84,9 +84,9 @@ it('不存在的行动者失败且只显示静态诊断；明确重试只补Worl
   expect(fetcher).toHaveBeenCalledTimes(2);
 });
 
-it('完整原始响应在合成合法状态通过Runtime，保留上游与正式存档边界',async()=>{
+it('原始响应命令在新协议容器中通过Runtime（原文件不变），保留上游与正式存档边界',async()=>{
   repo.close();await seed(originalSchoolContext());
-  const before=await repo.load('save-a'),fetcher=vi.fn<typeof fetch>(async()=>wire(original));
+  const before=await repo.load('save-a'),fetcher=vi.fn<typeof fetch>(async()=>wire(originalSchoolContext().response));
   const ready=await runner(fetcher).generate({...options(),draft});
   expect(ready.world?.result.eventCommands).toHaveLength(2);expect(ready.stageStatus.world).toBe('ready');
   expect(await repo.load('save-a')).toEqual(before);expect(fetcher).toHaveBeenCalledTimes(1);

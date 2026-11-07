@@ -7,7 +7,7 @@ import { ImportantItemSchema } from './items/schema';
 import { EconomySchema } from './economy/schema';
 import { OrganizationSchema } from './organizations/schema';
 import { TimelineEntrySchema, StoredWorldEventSchema, WorldTaskSchema, RetiredEventSchema, EventInteractionSchema } from './events/schema';
-import { isHistoricalEntry, eventById, validateEventLinks } from './events/lifecycle';
+import { eventById, validateEventLinks } from './events/lifecycle';
 import { MemoryStateSchema, npcKnowledgeKind } from './memories/schema';
 
 export const LocationSchema = z.strictObject({ id: IdSchema, name: TextSchema, parentId: IdSchema.optional() });
@@ -24,7 +24,7 @@ export const RetiredNpcSchema = z.strictObject({
   retiredAt: GameTimeSchema, sourceTurnIds: IdsSchema,
 });
 export const SaveShape = {
-  schemaVersion: z.literal(5), saveId: IdSchema, title: TextSchema,
+  schemaVersion: z.literal(6), saveId: IdSchema, title: TextSchema,
   createdAt: GameTimeSchema, updatedAt: GameTimeSchema, revision: CountSchema, turnNumber: CountSchema,
   worldClock: GameTimeSchema, openingTimePending: z.literal(true).optional(), weatherText: z.string(), environmentText: z.string(),
   openingInitializationPending: z.literal(true).optional(),
@@ -56,7 +56,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
       ...Object.values(s.npc).flatMap((npc) => [...npc.memories, ...(npc.kind === 'special' ? npc.longTermMemories : [])])].length === 0
     && Object.values(s.npc).every((npc) => !npc.lastInteractionAt) && Object.keys(s.retiredNpcs).length === 0
     && Object.keys(s.economy.incomes).length === 0, '待定开局只能保留无已发生时间事实的初始存档');
-  const allIds = [s.protagonist.id];
+  const allIds = [s.protagonist.id, ...s.timeline.map(entry => entry.id)];
   const tables = [s.npc, s.retiredNpcs, s.items, s.organizations, s.locations, s.events, s.retiredEvents, s.tasks,
     s.economy.incomes, s.economy.debts, s.economy.properties, s.economy.vehicles, s.economy.otherAssets];
   for (const table of tables) allIds.push(...Object.keys(table));
@@ -171,9 +171,12 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     }
     if (task.linkedEventId) check(eventById(s, task.linkedEventId)?.linkedTaskIds.includes(task.id), '任务关联事件错误');
   }
-  check(new Set(s.timeline.map((entry) => entry.eventId)).size === s.timeline.length, '历史事件重复归档');
   for (const entry of s.timeline) {
-    check(isHistoricalEntry(s, entry), '历史条目必须引用重大实际结案事件');
+    check(Date.parse(entry.recordedAt) <= Date.parse(s.worldClock), '历史记录时间在未来');
+    if (entry.occurredAt) check(Date.parse(entry.occurredAt) <= Date.parse(entry.recordedAt), '历史发生时间晚于记录时间');
+    if (entry.eventId) check(Boolean(eventById(s, entry.eventId)), '历史关联事件不存在');
+    for (const id of entry.relatedEntryIds) check(id !== entry.id && s.timeline.some(other => other.id === id), '关联历史记录不存在或自引用');
+    if (entry.sourceRef) actor(entry.sourceRef, true);
     location(entry.locationId); entry.actorRefs.forEach((ref) => actor(ref, true));
   }
   for (const event of Object.values(s.retiredEvents)) {
@@ -184,7 +187,6 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
       if(event.status!=='cancelled')timeRange(event.detail.startAt,event.detail.resolvedAt);
       if (event.detail.resolvedAt) check(Date.parse(event.detail.resolvedAt) <= Date.parse(s.worldClock), '事件结案时间在未来');
     }
-    check(!event.publication || Boolean(event.detail?.resolvedAt && event.detail.impact === 'major' && Date.parse(event.publication.at)<=Date.parse(s.worldClock) && Date.parse(event.publication.at)>=Date.parse(event.detail.resolvedAt)), '事件公开归档缺少重大实际结案');
     for (const id of event.linkedTaskIds) check(s.tasks[id]?.linkedEventId === event.id, '事件关联任务错误');
   }
   for (const event of [...Object.values(s.events), ...Object.values(s.retiredEvents)]) {
@@ -231,7 +233,7 @@ export function createGameState(input: {
   companion?: z.infer<typeof SpecialNpcSchema>;
 }, now = new Date().toISOString()): GameState {
   return GameStateSchema.parse({
-    schemaVersion: 5, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
+    schemaVersion: 6, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
     createdAt: now, updatedAt: now, revision: 0, turnNumber: 0,
     weatherText: '', environmentText: '', protagonist: input.protagonist,
     initialCompanionId: input.companion?.id,

@@ -46,7 +46,7 @@ async function seed(page: Page, mode: 'opening' | 'regular' = 'opening') {
     if (mode === 'regular') {
       const turnFixturePath = '/src/tests/fixtures/turn.ts';
       const { completeDraft, submission } = await import(turnFixturePath);
-      const completed = await completeDraft(repo, { variables: { commands: [], rejectedSuggestions: [], unresolved: [] }, world: { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] } });
+      const completed = await completeDraft(repo, { variables: { commands: [], rejectedSuggestions: [], unresolved: [] }, world: { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] } });
       const committed = await repo.commitTurn(submission(completed));
       state = committed.state;
       await repo.deleteDraft(state.saveId, committed.draft.draftRevision);
@@ -107,9 +107,7 @@ function payload(stage: Stage, bad = false) {
                 worldCommands: [],
                 taskCommands: [],
                 eventCommands: [],
-                futureEvents: [],
                 visibleHooks: [{ text: '未发布的后台线索' }],
-                timelineCandidates: [],
                 unresolved: [],
               },
         );

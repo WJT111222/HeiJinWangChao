@@ -5,7 +5,6 @@ import { WorldEventSchema } from '../../domain/events/schema';
 import { historicalPerspective } from '../../domain/timePreflight';
 import { openingTimeBase } from '../../domain/openingTime';
 import { hasKnownPlayerConnection } from '../../domain/npc/contactReview';
-import { DataError } from '../../domain/common';
 import { orderWorldCommands } from './worldDependencies';
 import { fingerprint } from '../../domain/commands';
 import type { ActorRef } from '../../domain/common';
@@ -35,13 +34,11 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   const result = WorldResultSchema.parse(raw);
   requireWorld(draft.story, 'invalid_output', 'command_structure');
   const base = projectTurn(original, draft), now = Date.parse(base.worldClock);
-  const rawEventMirrors = new Map(result.eventCommands.flatMap(command => command.type === 'SaveEvent'
-    ? [[command.event.id, fingerprint(command.event)] as const] : []));
   const commands = [...result.worldCommands, ...result.taskCommands, ...result.eventCommands];
   const allowed = new Set<string>(worldTypes);
   for (const command of result.worldCommands) requireWorld(allowed.has(command.type), 'permission');
   for (const command of result.taskCommands) requireWorld(command.type === 'SaveTask', 'permission');
-  for (const command of result.eventCommands) requireWorld(['SaveEvent','DeleteEvent','ArchiveEvent'].includes(command.type), 'permission');
+  for (const command of result.eventCommands) requireWorld(['SaveEvent','DeleteEvent'].includes(command.type), 'permission');
   const variableIds = base.appliedCommands.filter(entry => entry.turnId === draft.turnId).map(entry => entry.commandId);
   const ids = [...variableIds, ...commands.map(command => command.commandId)];
   requireWorld(new Set(ids).size === ids.length);
@@ -49,7 +46,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   requireWorld(new Set(effects).size === effects.length);
   const entityKeys = commands.flatMap(c => c.type === 'SaveTask' ? [`task:${c.task.id}`]
     : c.type === 'SaveEvent' ? [`event:${c.event.id}`]
-      : c.type === 'DeleteEvent' || c.type === 'ArchiveEvent' ? [`cleanup:${c.eventId}`] : []);
+      : c.type === 'DeleteEvent' ? [`cleanup:${c.eventId}`] : []);
   requireWorld(new Set(entityKeys).size === entityKeys.length);
   const createdNpcs = new Map(result.worldCommands.flatMap(c => c.type === 'CreateNpc' ? [[c.npc.id, c.npc] as const] : []));
   const createdOrgs = new Map(result.worldCommands.flatMap(c => c.type === 'CreateOrganization' ? [[c.organization.id, c.organization] as const] : []));
@@ -150,7 +147,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
             : ref.kind === 'organization' ? Boolean(causal.organizations[ref.id])
               : Boolean(causal.npc[ref.id] || (base.retiredNpcs[ref.id] && old?.actorRefs.some(prior => sameActor(prior,ref))))), 'permission');
           if (old) {
-            requireWorld(fingerprint(old.actorRefs) === fingerprint(event.actorRefs) && old.startAt === event.startAt
+            requireWorld(old.startAt === event.startAt
               && old.completionCondition === event.completionCondition);
             if (terminalEvent(old)) requireWorld(fingerprint(old) === fingerprint(event), 'invalid_output','event_transition');
             if (['active','blocked'].includes(old.status)) requireWorld(event.status !== 'scheduled', 'invalid_output','event_transition');
@@ -184,12 +181,11 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
           normalizeEventContinuation(event,old,base,causal,draft);
           break;
         }
-        case 'DeleteEvent':
-        case 'ArchiveEvent': {
+        case 'RecordHistory': break; // 只记录，不广播知识；引用/日期/ID由同一领域投影验证。
+        case 'DeleteEvent': {
           const event = historicalEvent(causal,command.eventId);
           requireWorld(event && terminalEvent(event), 'invalid_output','event_transition');
-          if (command.type === 'DeleteEvent') requireWorld(causal.events[command.eventId]?.status === command.expectedStatus);
-          else requireWorld(event.impact === 'major' && event.resolvedAt, 'permission');
+          requireWorld(causal.events[command.eventId]?.status === command.expectedStatus);
           break;
         }
         default: requireWorld(false,'permission');
@@ -201,35 +197,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
       if (command.type === 'SaveEvent') causal.events[command.event.id] = command.event;
     } catch (error) { throw worldValidationError(error,{fieldPath,commandIndex:commands.indexOf(command),commandType:command.type}); }
   }
-  // futureEvents 是未来 SaveEvent 的镜像，不是第二条写入路径。
-  requireWorld(
-    new Set(result.futureEvents.map((event) => event.id)).size === result.futureEvents.length,
-  );
-  for (const [index, event] of result.futureEvents.entries()) {
-    const command = result.eventCommands.find(
-      (c) => c.type === 'SaveEvent' && c.event.id === event.id,
-    );
-    requireWorld(
-      !base.events[event.id] &&
-        event.status === 'scheduled' &&
-        Date.parse(event.startAt) >= Date.parse(base.worldClock) &&
-        command?.type === 'SaveEvent' &&
-        (rawEventMirrors.get(event.id) === fingerprint(event) || fingerprint(command.event) === fingerprint(event)),
-    );
-    if (command?.type === 'SaveEvent') result.futureEvents[index] = structuredClone(command.event);
-  }
-  let projected: GameState;
-  try { projected = projectTurn(original, draft, commands); }
-  catch (error) { if (error instanceof DataError && error.code === 'NPC_TASK_CONFLICT') requireWorld(false, 'npc_task_conflict'); throw error; }
-  requireWorld(new Set(result.timelineCandidates).size === result.timelineCandidates.length);
-  requireWorld(
-    result.timelineCandidates.every((id) => {
-      const event=historicalEvent(projected,id);
-      return Boolean(event && terminalEvent(event) && event.resolvedAt && event.impact==='major'
-        );
-    }),
-    'invalid_output', 'timeline_state',
-  );
+  const projected = projectTurn(original, draft, commands);
   if (draft.variables?.validation === 'validated' && !historicalPerspective(state,draft)) for (const due of worldEventSchedule(state,base).due) {
     const after=projected.events[due.eventId] ?? projected.retiredEvents[due.eventId];
     requireWorld(after && (terminalEvent(after) || ('estimatedEndAt' in after && after.estimatedEndAt && Date.parse(after.estimatedEndAt)>Date.parse(base.worldClock)) || ('protagonistEntry' in after && ['pending','presented'].includes(after.protagonistEntry?.status??''))), 'invalid_output', 'due_event_unhandled');
@@ -241,10 +209,5 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     const successors=result.eventCommands.filter(c=>c.type==='SaveEvent' && c.event.predecessorEventIds?.includes(command.event.id));
     requireWorld(successors.length>0 && successors.every(c=>c.type==='SaveEvent' && !terminalEvent(c.event)), 'invalid_output','event_continuation');
   }
-  const conflicts = Object.values(base.npc).flatMap((npc) => {
-    const tasks = Object.values(base.tasks).filter((task) => task.actorRef.kind === 'npc' && task.actorRef.id === npc.id && !['completed', 'cancelled'].includes(task.status));
-    return tasks.length > 1 ? [`已有 NPC ${npc.id} 的未终结任务冲突：${tasks.map((task) => task.id).sort().join('、')}。未自动删除或改派任务；本轮不得新增占用。`] : [];
-  });
-  result.unresolved = [...new Set([...result.unresolved, ...conflicts])];
   return result;
 }

@@ -17,14 +17,14 @@ function groundedContext() {
 describe('World scene record and learned future arrangements', () => {
   it('records the complete original response in a grounded synthetic scene without modifying actors', () => {
     const {state, draft} = groundedContext(), before = structuredClone(state);
-    const result = parseWorld(JSON.stringify(original), state, draft);
+    const result = parseWorld(JSON.stringify(groundedContext().response), state, draft);
     const after = projectTurn(state, draft, [...result.worldCommands, ...result.taskCommands, ...result.eventCommands]);
     expect(after.events.event_extortion_at_school_38th.status).toBe('active');
     expect(after.npc).toEqual(state.npc); expect(after.protagonist).toEqual(state.protagonist);
     expect(after.events.event_supervision_inspection_38th.status).toBe('scheduled');
     const known = protagonistKnownEvent(after.events.event_supervision_inspection_38th);
     expect(known).toBeUndefined(); // partially_known is not automatically promoted from evidence text.
-    expect(result.futureEvents[0]).toEqual(after.events.event_supervision_inspection_38th);
+    expect(result.eventCommands[1]).toMatchObject({event:{id:'event_supervision_inspection_38th',status:'scheduled'}});
     expect(state).toEqual(before);
   });
   it('saves nonempty candidates then commits and reloads the same scene event exactly once', async () => {
@@ -33,7 +33,7 @@ describe('World scene record and learned future arrangements', () => {
     try {
       await repo.create(state);
       await repo.saveDraft(createTurnDraft(state.saveId, state.revision, draft.turnId, draft.turnKind, ''), null);
-      const result = parseWorld(JSON.stringify(original), state, draft);
+      const result = parseWorld(JSON.stringify(groundedContext().response), state, draft);
       const ready = await completeDraft(repo, {narrative: draft.story!.narrative, variables: draft.variables!.result, world: result});
       expect((await repo.loadGame(state.saveId)).state).toEqual(state);
       const saved = await repo.commitTurn(submission(ready, '继续处理纠纷'));

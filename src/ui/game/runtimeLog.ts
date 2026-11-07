@@ -35,7 +35,7 @@ export interface RuntimeLogEntry extends Partial<StoryDiagnostic> {
   actualType?: DiagnosticType;
   validationRule?: DiagnosticRule;
   domainRule?: DomainRule;
-  /** 仅 scene_transition / scene_location 可携带经 IdSchema 校验的 NPC ID。 */
+  /** 仅 scene_location 可携带经 IdSchema 校验的 NPC ID。 */
   relatedNpcId?: string;
   worldRule?: WorldRule;
   variableStep?: VariableStep;
@@ -108,7 +108,7 @@ export function runtimeLogEvent(
     ...(details?.validationRule && diagnosticRules.has(details.validationRule) ? { validationRule: details.validationRule } : {}),
     ...(isDomainRule(details?.domainRule) ? { domainRule: details.domainRule } : {}),
     ...(details?.relatedNpcId &&
-      (details.domainRule === 'scene_transition' || details.domainRule === 'scene_location') &&
+      details.domainRule === 'scene_location' &&
       IdSchema.safeParse(details.relatedNpcId).success
       ? { relatedNpcId: details.relatedNpcId } : {}),
     ...(isWorldRule(details?.worldRule) ? { worldRule: details.worldRule } : {}),

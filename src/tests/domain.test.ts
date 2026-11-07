@@ -136,7 +136,7 @@ describe('运行时 Schema', () => {
   it('历史引用允许场外重大结案，重复归档被拒绝', () => {
     const state = game(); const e = { ...event(), status: 'resolved' as const, resolvedAt: gameTime, resolutionText: '结束', visibility: 'known' as const };
     state.events[e.id] = e;
-    const entry = { eventId: e.id, occurredAt: gameTime, title: e.title, summary: '摘要', outcome: '结束', longTermImpact: '', actorRefs: [], sourceTurnIds: [] };
+    const entry = { eventId: e.id, occurredAt: gameTime, title: e.title, summary: '摘要', id:'history', knowledgeKind:'established' as const, recordedAt:gameTime, sourceTurnId:'turn-a', actorRefs: [], relatedEntryIds: [] };
     state.timeline.push(entry); expect(GameStateSchema.safeParse(state).success).toBe(true);
     state.events[e.id].visibility = 'hidden'; expect(GameStateSchema.safeParse(state).success).toBe(true);
     state.events[e.id].visibility = 'known'; state.timeline.push(entry); expect(GameStateSchema.safeParse(state).success).toBe(false);

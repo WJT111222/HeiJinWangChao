@@ -209,18 +209,21 @@ export function Panels({ name, view }: { name: PanelName; view: PlayerView }) {
         {view.timeline.length ? (
           <ol className="timeline">
             {view.timeline.map((entry) => (
-              <li key={entry.eventId}>
-                <time>{dateTime(entry.occurredAt)}</time>
+              <li key={entry.id}>
+                <time>{entry.occurredAt ? dateTime(entry.occurredAt) : entry.occurredTimeText ?? '发生时间未知'}</time>
                 <h3>{entry.title}</h3>
                 <p>{entry.summary}</p>
-                <p>结局：{entry.outcome}</p>
-                {entry.longTermImpact && <p>影响：{entry.longTermImpact}</p>}
-                <small>来源回合：{entry.sourceTurnIds.join('、') || '未记录'}</small>
+                <span className="tag">{{ established: '剧情事实', reported: '人物陈述', suspected: '推测 / 传闻' }[entry.knowledgeKind]}</span>
+                {entry.sourceRef && <p>记录来源：{entry.sourceRef.kind === 'protagonist' ? view.protagonist.name
+                  : entry.sourceRef.kind === 'organization' ? view.organizations.find(org => org.id === entry.sourceRef!.id)?.name
+                    : view.npc.find(person => person.id === entry.sourceRef!.id)?.name ?? view.retiredNpcs.find(person => person.id === entry.sourceRef!.id)?.name}</p>}
+                {entry.sourceText && <p>来源说明：{entry.sourceText}</p>}
+                <small>记录于 {dateTime(entry.recordedAt)}</small>
               </li>
             ))}
           </ol>
         ) : (
-          <Empty>重大事件实际结束并具有可信成果后进入历史；无需主角先获知。</Empty>
+          <Empty>尚无历史记录。</Empty>
         )}
       </>
     );

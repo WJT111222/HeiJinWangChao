@@ -28,8 +28,8 @@ async function mock(page: Page) {
     const stage = String(route.request().postDataJSON().model); calls.push(stage);
     const turn = calls.filter(stage => stage === 'story').length;
     const variables = variableTextEnvelope(control.variables ?? `<说明>原始说明：第${turn}轮消费，保留换行。🟡</说明>\n<命令>\nset worldClock = "2026-10-18T08:${turn === 1 ? '10' : '20'}:00+08:00"\nadd economy.cash = -3000\n</命令>`);
-    const world = control.world ?? (control.bad ? '{\n "worldCommands": [], "taskCommands": [], "eventCommands": [ {"type":"SaveEvent","commandId":"missing-end","evidence":"{}","event":{"id":"review","title":"清点","status":"scheduled","startAt":"2026-10-19T08:00:00+08:00","actorRefs":[{"kind":"npc","id":"npc-a"}],"linkedTaskIds":[],"prerequisites":[],"blockers":[],"visibility":"hidden","impact":"minor","sourceTurnIds":["auto-opening"],"backgroundText":"值班清点","goalText":"完成清点"}} ], "futureEvents": [], "visibleHooks": [], "timelineCandidates": [], "unresolved": []\n}'
-      : '{\n "worldCommands": [], "taskCommands": [], "eventCommands": [], "futureEvents": [], "visibleHooks": [], "timelineCandidates": [], "unresolved": []\n}');
+    const world = control.world ?? (control.bad ? '{\n "worldCommands": [], "taskCommands": [], "eventCommands": [ {"type":"SaveEvent","commandId":"missing-end","evidence":"{}","event":{"id":"review","title":"清点","status":"scheduled","startAt":"2026-10-19T08:00:00+08:00","actorRefs":[{"kind":"npc","id":"npc-a"}],"linkedTaskIds":[],"prerequisites":[],"blockers":[],"visibility":"hidden","impact":"minor","sourceTurnIds":["auto-opening"],"backgroundText":"值班清点","goalText":"完成清点"}} ], "visibleHooks": [], "unresolved": []\n}'
+      : '{\n "worldCommands": [], "taskCommands": [], "eventCommands": [], "visibleHooks": [], "unresolved": []\n}');
     const worldText = world.replace('"evidence":"{}"', `"evidence":${JSON.stringify(JSON.stringify({ version: 1, kind: 'planned', at: '2026-10-18T08:05:00+08:00', sources: ['npc:npc-a'], fact: '计划进行内部清点。', rationale: '根据日常工作安排准备清点。' }))}`);
     const text = stage === 'story' ? `<thinking>保持当前行动连续。</thinking>\n<正文>第${turn}幕：主角在街边用餐，观察来往行人。</正文>\n<短期记忆>在街边用餐。</短期记忆>\n<变量规划>[]</变量规划>` : stage === 'variables' ? variables : worldText;
     if (stage === 'variables') responses.variables = text;
@@ -100,11 +100,11 @@ test('发送下一条行动仅绑定草稿，commit日志必须等到三阶段�
 
 test('NPC场景ID诊断与World规则同时保留，逐阶段恢复后只结算一次', async ({ page }, info) => {
   await seed(page, true); const server = await mock(page);
-  server.control.variables = '<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset protagonist.locationId = "remote"\n</命令>';
+  server.control.variables = '<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset npc[scene].locationId = null\n</命令>';
   server.control.bad = true;
   await page.getByRole('button', { name: '自动生成开局', exact: true }).click();
   const log = page.getByTestId('runtime-log');
-  await expect(log).toContainText('主角移动时缺少原在场 NPC 的状态更新（NPC：scene）');
+  await expect(log).toContainText('在场 NPC 缺少明确地点（NPC：scene）');
   expect(server.calls).toEqual(['story', 'variables']);
   const initial = await stored(page); expect(initial.state.revision).toBe(0);
   expect(initial.draft.stageStatus.variables).toBe('failed'); expect(initial.draft.world).toBeUndefined();
@@ -195,15 +195,15 @@ test('认知格式、时间线对象和组织历史逐项拒绝，明确修正�
   server.control.variables = '<命令>\npush npc[scene].knownInformation = {"text":"收到安排","source":"当面通知","learnedAt":"2026-10-18T08:00:00+08:00"}\n</命令>';
   const world = { worldCommands: [{ type: 'CreateOrganization', commandId: 'create-community', evidence: '登记社区团队', organization: {
     id: 'org-community', name: '社区团队', kind: 'civil', description: '日常协调', protagonistRelation: '暂无往来', relationHistory: ['不应预填的历史'], keyNpcIds: [], currentTaskIds: [], activities: [],
-  } }], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [{ eventId: 'invented' }], unresolved: [] };
+  } }], taskCommands: [], eventCommands: [], visibleHooks: [], timelineCandidates: [{ eventId: 'invented' }], unresolved: [] };
   server.control.world = JSON.stringify(world);
   await page.getByRole('button', { name: '自动生成开局', exact: true }).click(); await openWorkflowDiagnostics(page);
   const log = page.getByTestId('runtime-log'); await expect(log).toContainText('npc[id].knownInformation.knowledgeKind');
   const story = (await stored(page)).draft.story; expect(story).toBeDefined(); expect((await stored(page)).state).toEqual(before.state);
   server.control.variables = '<命令>\npush npc[scene].knownInformation = {"text":"收到安排","knowledgeKind":"reported","knowledgeSource":"当面通知","visibility":"npc_private"}\n</命令>';
-  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await expect(log).toContainText('timelineCandidates.0');
+  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await expect(log).toContainText('schema_fields');
   expect((await stored(page)).state).toEqual(before.state); expect((await stored(page)).draft.variables.validation).toBe('validated');
-  world.timelineCandidates = []; server.control.world = JSON.stringify(world);
+  Reflect.deleteProperty(world, 'timelineCandidates'); server.control.world = JSON.stringify(world);
   await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await expect(log).toContainText('organization_initialization');
   expect((await stored(page)).state).toEqual(before.state);
   world.worldCommands[0].organization.relationHistory = []; server.control.world = JSON.stringify(world);

@@ -4,7 +4,6 @@ import type { WorldEvent, WorldTask } from '../domain/events/schema';
 import { GameStateSchema } from '../domain/state';
 import { projectTurn } from '../domain/turnProjection';
 import { parseWorld } from '../services/validation/aiOutputs';
-import { AiError } from '../services/ai/errors';
 import type { LegacyWorldEvidence as WorldEvidence } from './fixtures/world';
 import { npc, task, event, organizations } from './fixtures/game';
 import { worldState, worldDraft, worldResult, proof, actionTime } from './fixtures/world';
@@ -58,8 +57,8 @@ function parse(result = worldResult(), state = worldState(), draft = worldDraft(
 function withTasks(commands: DomainCommand[]) {
   return { ...worldResult(), taskCommands: commands };
 }
-function withEvents(commands: DomainCommand[], futureEvents: WorldEvent[] = []) {
-  return { ...worldResult(), eventCommands: commands, futureEvents };
+function withEvents(commands: DomainCommand[]) {
+  return { ...worldResult(), eventCommands: commands };
 }
 const completion = { outcome: '诊疗器材逐件核对归位，清点结果已记录并可追溯。' };
 
@@ -109,7 +108,7 @@ describe('二轮 A1 地点建档只接受存在事实', () => {
 describe('二轮 A2 预计时间与实际结案相互独立', () => {
   it('新未来事件允许自主估计 estimatedEndAt，futureEvents 保留同一镜像', () => {
     const e = { ...incident(), startAt: future, estimatedEndAt: '2026-10-18T10:30:00+08:00' };
-    expect(parse(withEvents([eventCommand(e)], [e])).futureEvents[0].estimatedEndAt).toBe(
+    expect(parse(withEvents([eventCommand(e)])).eventCommands.map(c=>c.type==='SaveEvent'?c.event.estimatedEndAt:undefined)[0]).toBe(
       e.estimatedEndAt,
     );
   });
@@ -134,9 +133,9 @@ describe('二轮 A2 预计时间与实际结案相互独立', () => {
       estimatedEndAt: '2026-10-18T10:00:00+08:00',
       resolutionText: '行动成功',
     };
-    expect(() => parse(withEvents([eventCommand(e)], [e]))).toThrow();
+    expect(() => parse(withEvents([eventCommand(e)]))).toThrow();
     const closed = { ...e, resolvedAt: future };
-    expect(() => parse(withEvents([eventCommand(closed)], [closed]))).toThrow();
+    expect(() => parse(withEvents([eventCommand(closed)]))).toThrow();
   });
   it('超过预计时间仍可继续 active、更新估计；到期不等于 resolved', () => {
     const old = { ...incident(), status: 'active' as const },
@@ -238,22 +237,11 @@ describe('二轮 A2 预计时间与实际结案相互独立', () => {
   });
 });
 
-describe('二轮 A3 一名 NPC 一项未终结任务', () => {
-  it.each(['planned', 'active', 'blocked'] as const)(
-    '已有 %s 占用时，另一 ID/目标/未来时间的新任务也拒绝',
-    (status) => {
-      const state = stateWith([job('old', status)]),
-        before = structuredClone(state);
-      const newJob = { ...job('new'), startAt: future, dueAt: '2026-10-18T10:00:00+08:00' };
-      expect(() => parse(withTasks([taskCommand(newJob)]), state)).toThrow(AiError);
-      try {
-        parse(withTasks([taskCommand(newJob)]), state);
-      } catch (error) {
-        expect(error).toMatchObject({ code: 'npc_task_conflict' });
-      }
-      expect(state).toEqual(before);
-    },
-  );
+describe('多任务并行、终态和归属边界', () => {
+  it.each(['planned','active','blocked'] as const)('已有%s时可增加独立未来职责',status=>{
+ const state=stateWith([job('old',status)]),before=structuredClone(state),next={...job('new'),startAt:future,dueAt:'2026-10-18T10:00:00+08:00'};
+ expect(parse(withTasks([taskCommand(next)]),state).taskCommands).toHaveLength(1);expect(state).toEqual(before);
+});
   it.each(['completed', 'cancelled'] as const)(
     '历史 %s 不占用名额，可在后续世界推演新增任务',
     (status) => {
@@ -261,14 +249,14 @@ describe('二轮 A3 一名 NPC 一项未终结任务', () => {
       expect(parse(withTasks([taskCommand(job('new'))]), state).taskCommands).toHaveLength(1);
     },
   );
-  it('同批两个新任务不能绕过：换 ID、顺序、当前/未来时间均拒绝', () => {
+  it('同批两个新任务可共存：不同 ID、顺序、当前/未来时间均合法', () => {
     const a = taskCommand(job('a')),
       b = taskCommand({ ...job('b'), startAt: future, dueAt: '2026-10-18T10:00:00+08:00' });
     for (const commands of [
       [a, b],
       [b, a],
     ])
-      expect(() => parse(withTasks(commands))).toThrow('NPC 已有未终结后台任务');
+      expect(() => parse(withTasks(commands))).not.toThrow();
   });
   it('不同 NPC 各自一项任务允许', () => {
     const state = worldState();
@@ -304,7 +292,7 @@ describe('二轮 A3 一名 NPC 一项未终结任务', () => {
     }
   });
   it.each(['completed', 'cancelled'] as const)(
-    '同批先 %s 旧任务再新增任务，两种顺序均拒绝',
+    '同批先 %s 旧任务再新增任务，两种顺序均允许',
     (status) => {
       const old = job(),
         state = stateWith([old]);
@@ -325,15 +313,15 @@ describe('二轮 A3 一名 NPC 一项未终结任务', () => {
         [end, next],
         [next, end],
       ])
-        expect(() => parse(withTasks(commands), state)).toThrow('NPC 已有未终结后台任务');
+        expect(() => parse(withTasks(commands), state)).not.toThrow();
     },
   );
-  it('本批新建并完成 A 也不能接力新增 B', () => {
+  it('本批新建并完成 A 也可接力新增 B', () => {
     const end = taskCommand({ ...job('temporary'), status: 'completed' }, completion),
       next = taskCommand(job('next'));
-    expect(() => parse(withTasks([end, next]))).toThrow('NPC 已有未终结后台任务');
+    expect(() => parse(withTasks([end, next]))).not.toThrow();
   });
-  it('变量候选已终结但尚未正式提交时，正式旧任务仍保守占用', () => {
+  it('变量候选已终结但尚未正式提交时，投影与正式复核使用相同多任务规则', () => {
     const old = job(),
       state = stateWith([old]),
       draft = worldDraft();
@@ -346,11 +334,9 @@ describe('二轮 A3 一名 NPC 一项未终结任务', () => {
       task: { ...old, status: 'completed' },
       evidence: fact,
     });
-    expect(() => parse(withTasks([taskCommand(job('next'))]), state, draft)).toThrow(
-      'NPC 已有未终结后台任务',
-    );
+    expect(() => parse(withTasks([taskCommand(job('next'))]), state, draft)).not.toThrow();
   });
-  it('变量投影新增的未终结任务也占用名额', () => {
+  it('变量投影新增的未终结任务不阻止其他独立任务', () => {
     const state = worldState(),
       draft = worldDraft(),
       fact = '主角在电话中确认同事已经接下清点任务。';
@@ -361,31 +347,13 @@ describe('二轮 A3 一名 NPC 一项未终结任务', () => {
       task: job('var-task'),
       evidence: fact,
     });
-    expect(() => parse(withTasks([taskCommand(job('next'))]), state, draft)).toThrow(
-      'NPC 已有未终结后台任务',
-    );
+    expect(() => parse(withTasks([taskCommand(job('next'))]), state, draft)).not.toThrow();
   });
-  it('旧档冲突不静默清理：空候选报告 unresolved，冲突性新候选拒绝；合法终止可以保留', () => {
-    const state = stateWith([job('a'), job('b', 'blocked')]),
-      before = structuredClone(state);
-    const empty = parse(worldResult(), state);
-    expect(empty.unresolved.join(' ')).toContain('已有 NPC npc-a 的未终结任务冲突：a、b');
-    expect(state).toEqual(before);
-    expect(() => parse(withTasks([taskCommand(job('new'))]), state)).toThrow(
-      'NPC 已有未终结后台任务',
-    );
-    const cancel = taskCommand(
-      { ...state.tasks.a, status: 'cancelled' },
-      {
-        sources: ['task:a', 'goal:npc-a:0'],
-        fact: '同事因任务重叠取消了器材清点安排。',
-        outcome: '工作排程冲突，负责人撤销重复安排并保留另一项任务。',
-      },
-    );
-    const reduced = parse(withTasks([cancel]), state);
-    expect(reduced.unresolved.join(' ')).toContain('未自动删除或改派');
-    expect(state).toEqual(before);
-  });
+  it('并行任务不生成冲突告警、不自动清理，正常继续追加',()=>{
+ const state=stateWith([job('a'),job('b','blocked')]),before=structuredClone(state);
+ expect(parse(worldResult(),state).unresolved).toEqual(worldResult().unresolved);
+ expect(parse(withTasks([taskCommand(job('new'))]),state).taskCommands).toHaveLength(1);expect(state).toEqual(before);
+});
 });
 
 describe('二轮 A4/A5 完成来源与失败终止语义', () => {
@@ -471,7 +439,7 @@ describe('二轮 A4/A5 完成来源与失败终止语义', () => {
         ),
       ).toThrow();
   });
-  it('失败且终止用 cancelled 保存真实原因与结果；blocked 不是成功且仍占位', () => {
+  it('失败且终止用 cancelled 保存真实原因与结果；blocked 不是成功但不占唯一名额', () => {
     const old = job(),
       state = stateWith([old]);
     const failed = taskCommand(
@@ -492,9 +460,7 @@ describe('二轮 A4/A5 完成来源与失败终止语义', () => {
     expect(parse(withTasks([blocked]), state).taskCommands[0]).toMatchObject({
       task: { status: 'blocked' },
     });
-    expect(() => parse(withTasks([blocked, taskCommand(job('next'))]), state)).toThrow(
-      'NPC 已有未终结后台任务',
-    );
+    expect(() => parse(withTasks([blocked, taskCommand(job('next'))]), state)).not.toThrow();
     const projected = projectTurn(state, worldDraft(), accepted.taskCommands);
     expect(projected.tasks['task-a'].status).toBe('cancelled');
     expect(state.tasks['task-a'].status).toBe('planned');

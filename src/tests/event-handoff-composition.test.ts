@@ -162,7 +162,7 @@ describe('R2 parseWorld reads only previously validated causal prerequisite resu
   });
   it.each(['task','event'] as const)('same %s batch produces the same candidates regardless of raw command order',kind=>{
     const a=dependencies(kind),reverse={eventCommands:[...a.response.eventCommands].reverse(),taskCommands:[...a.response.taskCommands].reverse(),
-      worldCommands:a.response.worldCommands,futureEvents:a.response.futureEvents,visibleHooks:a.response.visibleHooks,timelineCandidates:a.response.timelineCandidates,unresolved:a.response.unresolved};
+      worldCommands:a.response.worldCommands,visibleHooks:a.response.visibleHooks,unresolved:a.response.unresolved};
     expect(JSON.stringify(reverse)).not.toBe(JSON.stringify(a.response));
     const one=parseWorld(JSON.stringify(a.response),a.state,a.draft),two=parseWorld(JSON.stringify(reverse),a.state,a.draft);
     const first=projectTurn(a.state,a.draft,[...one.taskCommands,...one.eventCommands]),second=projectTurn(a.state,a.draft,[...two.taskCommands,...two.eventCommands]);

@@ -18,7 +18,7 @@ function worldCandidate(draft: TurnDraft) {
   return { storyRevision: draft.storyRevision, candidateRevision: 1,
     requestRevision: draft.stageRequestRevisions.world, basedOnVariableRevision: draft.variables?.candidateRevision,
     validation: 'validated' as const,
-    result: { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] } };
+    result: { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] } };
 }
 async function storedCandidates(): Promise<TurnDraft> {
   const initial = createTurnDraft('save-a', 0, 'turn-a', 'regular', '输入');
@@ -258,7 +258,7 @@ describe('草稿、候选与失败恢复数据', () => {
     await repository.saveDraft(initial, null);
     const first = rerollStory(initial, story); await repository.saveDraft(first, 0);
     const preview = { ...first, draftRevision: 2, world: { storyRevision: 1, candidateRevision: 1, requestRevision: 0, validation: 'preview' as const,
-      result: { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] } },
+      result: { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] } },
       stageStatus: { ...first.stageStatus, world: 'preview' as const } };
     await repository.saveDraft(preview, 1);
     await expect(repository.saveDraft({ ...preview, draftRevision: 3, world: { ...preview.world, validation: 'validated' }, stageStatus: { ...preview.stageStatus, world: 'ready' } }, 2)).rejects.toThrow();
@@ -273,20 +273,11 @@ describe('草稿、候选与失败恢复数据', () => {
 });
 
 describe('版本迁移与损坏处理', () => {
-  it('V1 整体迁移到 V3，保留余额、revision、原文、命令凭据且迁移幂等', async () => {
-    await repository.create(game());
-    const current = await repository.save('save-a', 0, 'turn-a', [purchase()]);
-    current.journal = [{ turnId: 'turn-a', revision: 1, story, relatedActorRefs: [] }];
-    current.turnNumber = 1;
-    const legacy = { ...current, schemaVersion: 1 }; Reflect.deleteProperty(legacy, 'retiredEvents');
-    Reflect.deleteProperty(legacy, 'contactNpcIds'); Reflect.deleteProperty(legacy, 'retiredNpcs'); Reflect.deleteProperty(legacy, 'contactReviewNpcIds');
-    Reflect.deleteProperty(legacy, 'weatherText'); Reflect.deleteProperty(legacy, 'environmentText');
-    await rawStore((store) => { store.put(legacy); });
-    const migrated = await repository.load('save-a');
-    expect(migrated).toEqual(current); expect(await rawRead()).toEqual(current);
-    expect(await repository.load('save-a')).toEqual(migrated);
-    expect((await repository.save('save-a', 0, 'turn-a', [purchase()])).economy.cash).toBe(7500);
-  });
+  it('旧测试版本明确拒绝读取与写入，原始资金、正文和凭据保留',async()=>{
+ const raw={...game(),schemaVersion:1};await rawStore(store=>{store.put(raw)});
+ await expect(repository.load('save-a')).rejects.toMatchObject({code:'UNSUPPORTED_VERSION'});
+ await expect(repository.save('save-a',0,'turn-a',[purchase()])).rejects.toThrow();expect(await rawRead()).toEqual(raw);
+});
   it.each([
     { schemaVersion: 2, saveId: 'save-a' },
     { ...game(), economy: { ...game().economy, cash: -1 } },
@@ -304,7 +295,7 @@ describe('版本迁移与损坏处理', () => {
     const raw = { ...game(), schemaVersion: 1, initialCompanionId: 'missing' }; Reflect.deleteProperty(raw, 'retiredEvents');
     Reflect.deleteProperty(raw, 'weatherText'); Reflect.deleteProperty(raw, 'environmentText');
     await rawStore((store) => { store.put(raw); });
-    await expect(repository.load('save-a')).rejects.toMatchObject({ code: 'CORRUPT_SAVE' });
+    await expect(repository.load('save-a')).rejects.toMatchObject({ code: 'UNSUPPORTED_VERSION' });
     expect(await rawRead()).toEqual(raw);
   });
 });
