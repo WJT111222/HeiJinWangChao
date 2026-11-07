@@ -50,7 +50,7 @@ const npcChanges = OrdinaryNpcSchema.pick({
       firstExperienceText: z.string().optional(),
     }).optional(),
   });
-const itemChanges = z.strictObject({
+const itemChanges = ImportantItemSchema.pick({ description: true, referenceValue: true, itemDetails: true, category: true, questItem: true }).partial().extend({
   quantity: CountSchema.optional(),
   conditionText: z.string().optional(),
   locationId: IdSchema.nullable().optional(),
@@ -311,6 +311,8 @@ export function applyVariableCommand(
       if (command.changes.locationId === null) delete item.locationId;
       else if (command.changes.locationId !== undefined)
         item.locationId = command.changes.locationId;
+      for (const field of ['description', 'referenceValue', 'itemDetails', 'category', 'questItem'] as const)
+        if (command.changes[field] !== undefined) Object.assign(item, { [field]: command.changes[field] });
       break;
     }
     case 'LoseItem': {
