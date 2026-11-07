@@ -1,3 +1,4 @@
+import { history } from './fixtures/historyRecord';
 import { describe, expect, it } from 'vitest';
 import { parseWorld } from '../services/validation/aiOutputs';
 import { commandCatalog } from '../services/validation/commandCatalog';
@@ -233,31 +234,13 @@ describe('世界任务与事件的状态、终态、来源和依赖', () => {
     r.taskCommands = [saveTask({ ...t, id: 'new' }, proof({ kind: 'planned' }))];
     expect(() => parse(r, state)).toThrow();
   });
-  it('futureEvents 必须是有来源、未存在、scheduled SaveEvent 的完全镜像', () => {
-    const e = {
-      ...backgroundEvent(),
-      startAt: '2026-10-18T09:00:00+08:00',
-      estimatedEndAt: '2026-10-18T10:00:00+08:00',
-    };
-    const r = WorldResultSchema.parse({
-      ...worldResult(),
-      eventCommands: [saveEvent(e, proof({ kind: 'planned' }))],
-      futureEvents: [e],
-    });
-    expect(parse(r)).toBeDefined();
-    expect(
-      projectTurn(worldState(), worldDraft(), parse(r).eventCommands).appliedCommands.filter(
-        (c) => c.commandId === 'save-event',
-      ),
-    ).toHaveLength(1);
-    for (const bad of [
-      { ...r, eventCommands: [] },
-      { ...r, futureEvents: [e, e] },
-      { ...r, futureEvents: [{ ...e, status: 'resolved' }] },
-    ])
-      expect(() => parseWorld(JSON.stringify(bad), worldState(), worldDraft())).toThrow();
-    expect(() => parse(r, withEvent(e))).toThrow();
-  });
+  it('未来安排仅一次SaveEvent写入，旧镜像字段不再接受',()=>{
+ const e={...backgroundEvent(),startAt:'2026-10-18T09:00:00+08:00',estimatedEndAt:'2026-10-18T10:00:00+08:00'};
+ const r=WorldResultSchema.parse({...worldResult(),eventCommands:[saveEvent(e,proof({kind:'planned'}))]});
+ expect(parse(r)).toBeDefined();const state=projectTurn(worldState(),worldDraft(),parse(r).eventCommands);
+ expect(state.events[e.id]).toMatchObject(e);expect(state.appliedCommands.filter(c=>c.commandId==='save-event')).toHaveLength(1);
+ for(const futureEvents of [[e],[e,e]])expect(()=>parseWorld(JSON.stringify({...r,futureEvents}),worldState(),worldDraft())).toThrow();
+});
   it('重大终态可进入时间线，不以成果分类作审批；无效时间及引用拒绝', () => {
     const e = backgroundEvent(),
       state = withEvent(e),
@@ -272,9 +255,9 @@ describe('世界任务与事件的状态、终态、来源和依赖', () => {
         }),
       ),
     ];
-    r.timelineCandidates = ['event-a'];
-    expect(parse(r,state).timelineCandidates).toEqual(['event-a']);
-    r.timelineCandidates=[];
+    r.worldCommands = [history('event-a')];
+    expect(parse(r,state).worldCommands).toHaveLength(1);
+    r.worldCommands=[];
     expect(parse(r, state)).toEqual(r);
     expect(state).toEqual(before);
     for (const bad of [

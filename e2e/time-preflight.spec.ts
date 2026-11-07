@@ -70,7 +70,7 @@ async function mock(page: Page, interrupt = false, kind: 'default' | 'drink' | '
           worldClock: new Date(Date.parse(state.worldClock) + (kind === 'chat' ? 15 : 120) * 1000).toISOString() });
       }
       text = variableReply({ commands, rejectedSuggestions: [], unresolved: [] });
-    } else text = JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] });
+    } else text = JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ choices: [{ message: { content: text } }], usage: { prompt_tokens: 50, completion_tokens: 20, total_tokens: 70 } }) });
   }); return { calls, preflights, control };
 }

@@ -1,3 +1,4 @@
+import { history } from './fixtures/historyRecord';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { SaveRepository } from '../services/storage/saveRepository';
@@ -117,7 +118,6 @@ describe('真实 Repository → 候选重验 → 单事务正式结算', () => {
       ...worldResult(),
       taskCommands: [{ type: 'SaveTask' as const, commandId: 'job', evidence, task: job }],
       eventCommands: [{ type: 'SaveEvent' as const, commandId: 'future', evidence, event: future }],
-      futureEvents: [future],
     };
     const draft = await completeDraft(repo, { world });
     // 事件来源使用本回合真实 ID。
@@ -447,21 +447,11 @@ describe('最终重验与存储兼容', () => {
     });
     await unchanged(submission(draft));
   });
-  it('没有实际结案时间的取消事件不能通过timelineCandidates进入历史', async () => {
-    await repo.delete('save-a', 0);
-    const state = worldState();
-    state.events.hidden = {
-      ...event('hidden'),
-      status: 'cancelled',
-      resolutionText: '秘密行动已结束',
-      sourceTurnIds: [],
-    };
-    await repo.create(state);
-    const draft = await completeDraft(repo, {
-      world: { ...worldResult(), timelineCandidates: ['hidden'] },
-    });
-    await unchanged(submission(draft));
-  });
+  it('无精确结案时间的历史披露仍可原子记录，不编造日期',async()=>{
+ await repo.delete('save-a',0);const state=worldState();state.events.hidden={...event('hidden'),status:'cancelled',resolutionText:'安排已撤销',sourceTurnIds:[]};await repo.create(state);
+ const draft=await completeDraft(repo,{world:worldResult([history('hidden',{occurredTimeText:'先前'})])});
+ const result=await repo.commitTurn(submission(draft));expect(result.state.timeline[0]).toMatchObject({eventId:'hidden',occurredTimeText:'先前'});expect(result.state.timeline[0].occurredAt).toBeUndefined();
+});
   it('已知重大结案事件按现有事实归档，futureEvents 不生成第二份实体', async () => {
     await repo.delete('save-a', 0);
     const state = worldState();
@@ -477,7 +467,7 @@ describe('最终重验与存储兼容', () => {
     await repo.create(state);
     const draft = await completeDraft(repo, {
       variables: await elapsedVariables(repo, '经过十分钟，主角完成用餐。', 600),
-      world: { ...worldResult(), timelineCandidates: ['public'] },
+      world: { ...worldResult(), worldCommands: [history('public',{occurredAt:gameTime})] },
     });
     const result = await repo.commitTurn(submission(draft));
     expect(result.state.timeline).toEqual([
@@ -486,14 +476,12 @@ describe('最终重验与存储兼容', () => {
         occurredAt: gameTime,
         title: '预约已完成',
         summary: '预约已完成',
-        outcome: '预约已完成',
-        longTermImpact: '',
+        id:'history-public', knowledgeKind:'established', relatedEntryIds:[], recordedAt:result.state.worldClock, sourceTurnId:draft.turnId,
         actorRefs: [],
-        sourceTurnIds: [],
       },
     ]);
   });
-  it('变量产生两个 NPC 任务、世界仅报告旧冲突时，最终仍必须拒绝', async () => {
+  it('变量产生两个独立NPC任务，正式提交允许并行', async () => {
     const evidence = '现场人物已接下甲任务及乙任务。';
     const commands = ['first', 'second'].map((id) => ({
       type: 'SaveTask' as const,
@@ -511,7 +499,7 @@ describe('最终重验与存储兼容', () => {
       narrative: evidence,
       variables: { ...emptyVariables(), commands },
     });
-    await unchanged(submission(draft));
+    const saved = await repo.commitTurn(submission(draft)); expect(saved.state.tasks.first).toBeDefined(); expect(saved.state.tasks.second).toBeDefined();
   });
   it('正文声称未来任务已完成，不能绕过正式时间窗口', async () => {
     const evidence = '主角已完成预约。';
@@ -615,7 +603,7 @@ describe('最终重验与存储兼容', () => {
     legacy.close();
     repo = await SaveRepository.open('legacy', legacyFactory);
     expect(await repo.loadGame('save-a')).toEqual({ state, draft });
-    expect((await repo.load('save-a')).schemaVersion).toBe(5);
+    expect((await repo.load('save-a')).schemaVersion).toBe(6);
   });
   it('删除存档时回执一并删除，不污染同 ID 的新游戏', async () => {
     const draft = await completeDraft(repo);

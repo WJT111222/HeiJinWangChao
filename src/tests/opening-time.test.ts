@@ -145,17 +145,9 @@ describe('开局时间确定性边界', () => {
     expect(() => parseVariables(JSON.stringify(variables()), state, draft)).toThrow();
     expect(() => commitCommands(state, 'regular', 0, variables().commands)).toThrow('不可倒退');
   });
-  it.each([1, 2, 3, 4])('旧V%s开局及已提交存档读取不添加标记、不改世界时间', (version) => {
-    for (const original of [game(), historyState(2)]) {
-      const raw: Record<string, unknown> = { ...original, schemaVersion: version }; Reflect.deleteProperty(raw, 'retiredEvents');
-      if (version < 4) delete raw.contactReviewNpcIds;
-      if (version < 3) { delete raw.contactNpcIds; delete raw.retiredNpcs; }
-      if (version < 2) { delete raw.weatherText; delete raw.environmentText; }
-      const restored = migrateSave(raw);
-      expect(restored.worldClock).toBe(original.worldClock); expect(restored.openingTimePending).toBeUndefined();
-      expect(restored.revision).toBe(original.revision); expect(restored.journal).toEqual(original.journal);
-    }
-  });
+  it.each([1,2,3,4,5])('V%s旧测试档不迁移也不重选世界时间',version=>{
+ for(const original of [game(),historyState(2)]){const raw={...original,schemaVersion:version},before=structuredClone(raw);expect(()=>migrateSave(raw)).toThrow();expect(raw).toEqual(before);}
+});
   it('待定标记不能附加在已有历史/命令/事件或任意占位日期上', () => {
     const { state } = chosen();
     expect(GameStateSchema.safeParse({ ...state, worldClock: start }).success).toBe(false);
@@ -200,7 +192,7 @@ async function runtime(preference = '') {
     }
     const value = model === 'variables' ? variables(context.OPENING_TIME ? string(record(context.OPENING_TIME).endAt)
       : new Date(Date.parse(string(record(context.SAVE_STATE).worldClock)) + 15000).toISOString())
-      : { worldCommands: [], taskCommands: [], eventCommands: [], futureEvents: [], visibleHooks: [], timelineCandidates: [], unresolved: [] };
+      : { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] };
     return Response.json({ choices: [{ message: { content: model==='variables'?variableReply(value):JSON.stringify(value) } }] });
   });
   const runner = new TurnCoordinator(repo, client); cleanup.push(() => runner.dispose());

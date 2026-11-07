@@ -3,8 +3,8 @@ import { requireWorld } from './worldDiagnostics';
 
 // 只排序结构化实体依赖；保留无依赖命令的原始顺序。
 export function orderWorldCommands(commands: readonly DomainCommand[]) {
-  const cleanup = (c: DomainCommand) => c.type === 'DeleteEvent' || c.type === 'ArchiveEvent';
-  const key = (c: DomainCommand) => cleanup(c) && 'eventId' in c ? `cleanup:${c.eventId}` : c.type === 'SaveTask' ? `task:${c.task.id}`
+  const cleanup = (c: DomainCommand) => c.type === 'DeleteEvent';
+  const key = (c: DomainCommand) => c.type === 'RecordHistory' ? `history:${c.entry.id}` : cleanup(c) && 'eventId' in c ? `cleanup:${c.eventId}` : c.type === 'SaveTask' ? `task:${c.task.id}`
     : c.type === 'SaveEvent' ? `event:${c.event.id}` : c.type === 'CreateNpc' ? `npc:${c.npc.id}`
       : c.type === 'CreateOrganization' ? `org:${c.organization.id}` : undefined;
   const keyed = new Map(commands.flatMap((c) => key(c) ? [[key(c), c] as const] : []));
@@ -22,6 +22,9 @@ export function orderWorldCommands(commands: readonly DomainCommand[]) {
         const normalized = keyed.has(ref) ? ref : keyed.has(`task:${ref}`) ? `task:${ref}` : `event:${ref}`;
         dependencies.push(normalized);
       }
+    }
+    if (command.type === 'RecordHistory') {
+      if (command.entry.eventId) dependencies.push(`event:${command.entry.eventId}`);
     }
     if (command.type === 'SaveTask' && command.task.handoff) dependencies.push(`task:${command.task.handoff.fromTaskId}`);
     if (command.type === 'SaveTask') dependencies.push(`${command.task.actorRef.kind === 'organization' ? 'org' : 'npc'}:${command.task.actorRef.id}`);

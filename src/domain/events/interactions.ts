@@ -30,7 +30,6 @@ export function validateStoryEventInteractions(state: GameState, story: Story) {
     requireStoryData(guide.textEvidence?.trim(),'EVENT_ENTRY','承接回执说明不能为空', { storyRule: 'receipt_evidence_empty', guideIndex, fieldPath: `variableGuide.${guideIndex}.textEvidence` });
     seen.add(receipt.eventId);
   }
-  requireStoryData(pendingEventEntries(state).every(entry=>seen.has(entry.eventId)), 'EVENT_ENTRY','本幕遗漏待处理入场，请重试正文', { storyRule: 'receipt_missing', fieldPath: 'variableGuide' });
   return interactions;
 }
 /** Computed from the formal baseline and selected Story, never writes storage. */

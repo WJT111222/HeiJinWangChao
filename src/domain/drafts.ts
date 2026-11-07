@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { CountSchema, IdSchema, TextSchema, requireData } from './common';
 import { DomainCommandSchema, fingerprint } from './commands';
 import { StorySchema } from './state';
-import { StoredWorldEventSchema } from './events/schema';
 
 export const VariableResultSchema = z.strictObject({
   commands: z.array(DomainCommandSchema),
@@ -11,9 +10,9 @@ export const VariableResultSchema = z.strictObject({
 });
 export const WorldResultSchema = z.strictObject({
   worldCommands: z.array(DomainCommandSchema), taskCommands: z.array(DomainCommandSchema),
-  eventCommands: z.array(DomainCommandSchema), futureEvents: z.array(StoredWorldEventSchema),
+  eventCommands: z.array(DomainCommandSchema),
   visibleHooks: z.array(z.strictObject({ text: TextSchema, revealAfter: z.string().optional() })),
-  timelineCandidates: z.array(IdSchema), unresolved: z.array(TextSchema),
+  unresolved: z.array(TextSchema),
 });
 const candidateBase = {
   storyRevision: CountSchema, candidateRevision: CountSchema.refine((n) => n > 0),

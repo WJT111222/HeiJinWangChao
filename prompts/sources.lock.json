@@ -71,6 +71,10 @@
       "eventLifecycle": {
         "notes": "依本轮产品确认适配：事件必须有预计终止时间，World单请求到期推演/清理/公开归档，Task规则独立；保留原来源和历史适配。",
         "sha256": "3b4f9c83e44576966d83af31d398d9f70e9f7e8a8ee23f8031ea7bca6d8d94aa"
+      },
+      "worldFreedomV6": {
+        "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
+        "sha256": "2b6d230d0d3fe8231c21f5ff8e334d26ca7764b3d7539ba4a751c0fc47b79133"
       }
     },
     "writing/natural_prose.md": {
@@ -192,7 +196,11 @@
       "section": "offscreen",
       "sectionSha256": "46abe6d6e38ee8b7433ca313ed4e92c0f9f9474cddd9868a6af4f8bf05f8e80f",
       "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
-      "baselineBytes": 935
+      "baselineBytes": 935,
+      "worldFreedomV6": {
+        "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
+        "sha256": "dfcda73645ae29e6046effbad2d095d43f29c252628854cd70e65899ce5abb88"
+      }
     },
     "variableGroups/npc_special/init.md": {
       "origin": "m3-review",
@@ -247,7 +255,11 @@
       "section": "offscreen",
       "sectionSha256": "46abe6d6e38ee8b7433ca313ed4e92c0f9f9474cddd9868a6af4f8bf05f8e80f",
       "notes": "逐字追加对应段落；补充当前命令目录限制，不新增存档字段。",
-      "baselineBytes": 993
+      "baselineBytes": 993,
+      "worldFreedomV6": {
+        "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
+        "sha256": "40ec4cd1257ef696ee8f57f2035b85acc937fa95dfe9f4e8c85849ce9d8850cf"
+      }
     },
     "writing/nsfw.md": {
       "origin": "user",
@@ -329,6 +341,10 @@
       "m5P6": {
         "notes": "用户明确批准thinking结构/开局契机与兼容消息调整，原始来源及历史适配记录保留。",
         "sha256": "5aa1285ab4fda4f5bf5603fd0d1921f6b536ec3580e0c854860c6e2363ac0967"
+      },
+      "worldFreedomV6": {
+        "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
+        "sha256": "a424856a66b686704dbf1da54eb69bfa58b1c150ee27906d384b30b1460320bf"
       }
     },
     "shared/07_command_output.md": {
@@ -363,6 +379,10 @@
       "openingLifeInitialization": {
         "notes": "六代目任务明确批准：开局完整人生叙事与一次性生活初始化；保留此前来源和适配哈希，普通回合与输出协议不变。",
         "sha256": "911a5a9b0bc1516a334cad92d7d6b085084cce28788cf1fe6a4dccd698010c19"
+      },
+      "worldFreedomV6": {
+        "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
+        "sha256": "46cd7fe57c26fe13de221afacd9ea7e9d4064ef4e30a3db158c8a32fccd10cc5"
       }
     },
     "shared/08_world_output.md": {
@@ -413,6 +433,10 @@
       "worldSceneAnchors": {
         "notes": "World现场记录采用可选完整肯定正文锚点、逐参与者绑定和确定性非执行描述；不把自由概括/对白主张当作事实。旧来源协议保持兼容，不增加模型调用。",
         "sha256": "468b8226c0ed03a7859328923cf63cc555b5e8da37517ecf1b29417dc63809f6"
+      },
+      "worldFreedomV6": {
+        "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
+        "sha256": "dfb6746f6ceab8200e46653e6b1370bfcfd1903a365f1bd5ba99639c1b42a071"
       }
     },
     "stages/opening/variables.md": {
@@ -454,6 +478,10 @@
       "worldSceneAnchors": {
         "notes": "World现场记录采用可选完整肯定正文锚点、逐参与者绑定和确定性非执行描述；不把自由概括/对白主张当作事实。旧来源协议保持兼容，不增加模型调用。",
         "sha256": "9b295a63fff9a9b3a2c4034ee7b4135869b1f97bef21b84748add052f9a9ec87"
+      },
+      "worldFreedomV6": {
+        "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
+        "sha256": "cf742c2774ccb5412c887a622f536e669355bd5b5c00d068ebe30ed8fa7d9690"
       }
     },
     "stages/regular/variables.md": {
@@ -487,6 +515,10 @@
       "playerObservation": {
         "notes": "依PR #50确认产品边界适配：玩家全量只读、角色独立认知；重要/主线/必要引用事件保留；可信重大成果归档无需主角知晓。沿用原模型请求，不改世界书或NSFW。",
         "sha256": "be9a62a21e0306092800bb01779d3cd983cc5518a0023da42a3d8479c17c0077"
+      },
+      "worldFreedomV6": {
+        "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
+        "sha256": "41509a44dee98e9e6e26ff098c545c9ffb25f6b0f0f8b72aad56a90fac102388"
       }
     },
     "variableGroups/protagonist/init.md": {

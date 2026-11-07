@@ -21,7 +21,7 @@ export const storyRuleNames = {
   receipt_group: '事件回执必须属于 event 变量组', receipt_duplicate: '同一事件的回执重复',
   receipt_reference: '事件回执引用不存在或入场版本已过期', receipt_closed: '事件或入场已关闭，不能再次处理',
   receipt_repeated: '已呈现的事件入场不能再次呈现', receipt_evidence_empty: '事件回执说明为空',
-  receipt_missing: '缺少待处理事件的入场回执', receipt_status: '事件回执 action 状态不合法',
+  receipt_status: '事件回执 action 状态不合法',
   request_basis: '当前响应与草稿版本不一致', draft_conflict: '存档或草稿版本已变化，请重新读取后继续',
   credential_output: '模型输出包含凭证内容，已阻止保存；凭证不会显示',
 } as const;

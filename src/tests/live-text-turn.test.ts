@@ -320,24 +320,16 @@ describe('真实Runtime与协调器的非空现场记录、承接与行为回写
   });
 });
 
-it('Runtime rejects an omitted narrative entry before Variables/World; explicit Story recovery consumes it only at Commit',async()=>{
-  const a=await fixture('regular'),cue='接待处来电，请你确认是否参加。';
-  const first=transport(()=>block(set('worldClock','2026-10-18T08:10:00+08:00')),(ctx)=>({...worldResult(),eventCommands:[{
-    type:'SaveEvent',commandId:'entry-to-handle',evidence:proof(),event:{...event('call'),status:'active',actorRefs:[{kind:'npc',id:'npc-a'}],estimatedEndAt:'2026-10-18T08:05:00+08:00',sourceTurnIds:[string(record(ctx.TURN_CONTEXT).turnId)],
-      continuation:{direction:'protagonist',reason:'工作完成后需要当事人答复',entry:{channel:'电话',cue}}},
-  }]}));
-  const ready=await coordinator(a.repo,first.fetcher).generate(a),saved=await a.repo.commitTurn(submission(ready.draft,'继续休息'));
-  const bad=transport(()=>block(),()=>worldResult(),()=>({narrative:'主角继续休息，没有处理来电。',guide:[]}));
-  await expect(coordinator(a.repo,bad.fetcher).generate({...a,draft:saved.draft})).rejects.toThrow();
-  expect(bad.calls.map(c=>c.stage)).toEqual(['story']);expect(await a.repo.load('save-a')).toEqual(saved.state);
-  const failed=await a.repo.loadDraft('save-a');if(!failed)throw Error('missing persisted failure');
-  expect(failed.stageStatus.story).toBe('failed');expect(failed.failures.at(-1)?.errorCode).toBe('event_entry');
-  const retry=transport(()=>block(),()=>worldResult(),ctx=>{
-    const entry=record(array(ctx.EVENT_ENTRIES)[0]);return {narrative:cue,guide:[{group:'event',observedFact:'来电已实际呈现',textEvidence:cue,eventInteraction:{eventId:'call',entryId:entry.entryId,action:'presented'}}]};
-  });
-  const completed=await coordinator(a.repo,retry.fetcher).generate({...a,draft:failed});
-  expect(retry.calls.map(c=>c.stage)).toEqual(['story','variables','world']);expect(await a.repo.load('save-a')).toEqual(saved.state);
-  const committed=await a.repo.commitTurn(submission(completed.draft,''));expect(committed.state.events.call.protagonistEntry?.status).toBe('presented');
+it('真实Runtime允许入场延后到下一幕，未处理回执在提交和重载后仍pending',async()=>{
+ const a=await fixture('regular'),cue='接待处来电，请你确认是否参加。';
+ const first=transport(()=>block(set('worldClock','2026-10-18T08:10:00+08:00')),ctx=>({...worldResult(),eventCommands:[{type:'SaveEvent',commandId:'entry-to-handle',evidence:'来电',event:{...event('call'),status:'active',actorRefs:[{kind:'npc',id:'npc-a'}],estimatedEndAt:'2026-10-18T08:05:00+08:00',sourceTurnIds:[string(record(ctx.TURN_CONTEXT).turnId)],continuation:{direction:'protagonist',reason:'需要当事人答复',entry:{channel:'电话',cue}}}}]}));
+ const ready=await coordinator(a.repo,first.fetcher).generate(a),saved=await a.repo.commitTurn(submission(ready.draft,'继续休息'));
+ const quiet=transport(()=>block(),()=>worldResult(),()=>({narrative:'主角继续休息，没有处理来电。',guide:[]}));
+ const quietReady=await coordinator(a.repo,quiet.fetcher).generate({...a,draft:saved.draft}),waiting=await a.repo.commitTurn(submission(quietReady.draft,'接听来电'));
+ expect((await a.repo.load('save-a')).events.call.protagonistEntry?.status).toBe('pending');expect(quiet.calls.map(c=>c.stage)).toEqual(['story','variables','world']);
+ const next=transport(()=>block(),()=>worldResult(),ctx=>{const entry=record(array(ctx.EVENT_ENTRIES)[0]);return {narrative:cue,guide:[{group:'event',observedFact:'实际接听',textEvidence:cue,eventInteraction:{eventId:'call',entryId:entry.entryId,action:'presented'}}]}});
+ const completed=await coordinator(a.repo,next.fetcher).generate({...a,draft:waiting.draft});expect((await a.repo.load('save-a')).events.call.protagonistEntry?.status).toBe('pending');
+ const committed=await a.repo.commitTurn(submission(completed.draft,''));expect(committed.state.events.call.protagonistEntry?.status).toBe('presented');expect((await a.repo.commitTurn(submission(completed.draft,''))).replayed).toBe(true);
 });
 
 // 本轮只依据已确认的错误形态构造中性 Mock，不冒充尚未取得的实机原文/存档。
@@ -363,7 +355,7 @@ it.each(['knowledge-shape', 'timeline-object', 'organization-history', 'interact
         actorRefs: [{ kind: 'organization', id: 'org-community' }], sourceTurnIds: [record(context.TURN_CONTEXT).turnId],
         continuation: { direction: 'end', reason: '无后续追踪需要' },
       } }],
-      timelineCandidates: !corrected && failure === 'timeline-object' ? [{ eventId: 'routine-finished', title: '日常协调' }] : [],
+      ...(!corrected && failure === 'timeline-object' ? { timelineCandidates: [{eventId:'routine-finished'}] } : {}),
     }));
     const runner = coordinator(a.repo, t.fetcher);
     await expect(runner.generate(a)).rejects.toMatchObject({ code: failure === 'organization-history' ? 'permission' : failure === 'interaction-time' ? 'time_data' : 'schema_fields' });
@@ -378,7 +370,7 @@ it.each(['knowledge-shape', 'timeline-object', 'organization-history', 'interact
     expect(outcome.status).toBe('complete'); expect(outcome.draft.story).toEqual(failed!.story);
     expect(t.calls.map(call => call.stage)).toEqual(variableFailure ? ['story', 'variables', 'variables', 'world'] : ['story', 'variables', 'world', 'world']);
     const request = t.calls.find(call => call.stage === 'world')!.context;
-    expect(record(record(request.COMMAND_CATALOG).outputFields).timelineCandidates).toMatchObject({ type: 'array', items: { type: 'string' } });
+    expect(record(record(request.COMMAND_CATALOG).outputFields).timelineCandidates).toBeUndefined();
     const receipt = await a.repo.commitTurn(submission(outcome.draft, '继续工作'));
     expect(receipt.state.npc.scene.knownInformation).toEqual([{ text: '[转述]收到值班安排', source: '同事通知', learnedAt: openingEnd }]);
     expect(receipt.state.npc['npc-a'].memories).toEqual(before.npc['npc-a'].memories);
@@ -424,4 +416,23 @@ it.each(['opening', 'regular'] as const)('背包V2 %s：真实请求创建/更�
   expect(saved.state.items.coat.referenceValue).toBe(16000); expect(saved.state.items.torch.quantity).toBe(1);
   expect(saved.state.protagonist.currentWear.topItemId).toBeUndefined(); expect(saved.state.economy).toEqual(committed.state.economy);
   expect(await a.repo.load('save-a')).toEqual(saved.state); expect(next.calls.map(c => c.stage)).toEqual(['story', 'variables', 'world']);
+});
+
+it.each(['opening','regular'] as const)('新历史协议%s：真实三阶段生成独立历史、并行任务、参与者变化，原子保存后继续',async mode=>{
+ const a=await fixture(mode),before=await a.repo.load('save-a');
+ const t=transport(()=>block([set('locations[new-office]',{name:'办公室'}),set('protagonist.locationId','new-office')].join('\n')),ctx=>{
+  const clock=mode==='opening'?openingEnd:before.worldClock;
+  return {...worldResult(),worldCommands:[{type:'RecordHistory',commandId:'past',evidence:'人物透露大学经历',entry:{id:'past',title:'大学时期的合作',summary:'同事声称当时发生合作分歧',occurredTimeText:'大学时期',knowledgeKind:'reported',sourceRef:{kind:'npc',id:'npc-a'}}}],
+    taskCommands:['planned','active','blocked'].map((status,i)=>({type:'SaveTask',commandId:'parallel-'+i,evidence:'独立职责',task:{...task('parallel-'+i),goal:'职责'+i,actorRef:{kind:'npc',id:'npc-a'},startAt:clock,dueAt:undefined,completionCondition:'相应事项处理完毕',status}})),
+    eventCommands:[{type:'SaveEvent',commandId:'plan',evidence:'安排后续',event:{...event('plan'),startAt:clock,estimatedEndAt:'2030-01-01T00:00:00+08:00',impact:'minor',actorRefs:[{kind:'npc',id:'npc-a'}],sourceTurnIds:[string(record(ctx.TURN_CONTEXT).turnId)]}}]};
+ });
+ const generated=await coordinator(a.repo,t.fetcher).generate(a);expect(t.calls.map(c=>c.stage)).toEqual(['story','variables','world']);expect(await a.repo.load('save-a')).toEqual(before);
+ const projection=projectTurn(before,generated.draft,[...generated.draft.world!.result.worldCommands,...generated.draft.world!.result.taskCommands,...generated.draft.world!.result.eventCommands]);
+ const input=submission(generated.draft,'继续交谈'),put=IDBObjectStore.prototype.add;
+ vi.spyOn(IDBObjectStore.prototype,'add').mockImplementation(function(this:IDBObjectStore,value,key){if(this.name==='turnReceipts')throw new DOMException('Mock rollback','QuotaExceededError');return put.call(this,value,key)});
+ await expect(a.repo.commitTurn(input)).rejects.toThrow();expect(await a.repo.load('save-a')).toEqual(before);vi.restoreAllMocks();
+ const saved=await a.repo.commitTurn(input);expect(saved.state.timeline).toEqual(projection.timeline);expect(saved.state.tasks).toEqual(projection.tasks);expect(saved.state.events).toEqual(projection.events);expect(saved.state.npc).toEqual(before.npc);
+ expect((await a.repo.commitTurn(input)).replayed).toBe(true);expect(await a.repo.load('save-a')).toEqual(saved.state);expect(t.calls).toHaveLength(3);
+ const later=transport(()=>block(),ctx=>{expect(record(ctx.OFFSCREEN_STATE).history).toEqual(saved.state.timeline);return worldResult();});
+ const next=await coordinator(a.repo,later.fetcher).generate({...a,draft:saved.draft});const committed=await a.repo.commitTurn(submission(next.draft,''));expect(committed.state.turnNumber).toBe(saved.state.turnNumber+1);expect(committed.state.timeline).toEqual(saved.state.timeline);expect(later.calls).toHaveLength(3);
 });

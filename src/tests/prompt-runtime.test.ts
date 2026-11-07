@@ -49,9 +49,7 @@ const emptyWorld = {
   worldCommands: [],
   taskCommands: [],
   eventCommands: [],
-  futureEvents: [],
   visibleHooks: [],
-  timelineCandidates: [],
   unresolved: [],
 };
 const emptyVariables = { commands: [], rejectedSuggestions: [], unresolved: [] };
@@ -532,7 +530,7 @@ describe('只读世界星期派生', () => {
 describe('真实命令目录、解析与安全候选验证', () => {
   it('扩展命令直接来自实际 Schema，支持类型专属字段而非旧包装', () => {
     expect(commandCatalog('variables').commandTypes).toEqual(
-      DomainCommandSchema.options.map((option) => option.shape.type.value).filter((type) => !['RetireNpc','DeleteEvent','ArchiveEvent'].includes(type)),
+      DomainCommandSchema.options.map((option) => option.shape.type.value).filter((type) => !['RetireNpc','DeleteEvent','RecordHistory'].includes(type)),
     );
     expect(commandCatalog('variables').commandTypes).toHaveLength(24);
     expect(commandCatalog('world').commandTypes).not.toContain('InitializeOpeningState');

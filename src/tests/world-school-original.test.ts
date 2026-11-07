@@ -17,7 +17,7 @@ describe('完整原始World响应：不修改输出、不假称已恢复原始�
     expect(JSON.parse(original.taskCommands[0].evidence)).toEqual(schoolEvidence);
   });
 
-  it('完整原始响应按结构化数据验证，语义凭据只是兼容字符串', () => {
+  it('原始响应仅换五字段容器后验证，原文件字节不改', () => {
     const {state,draft,response}=originalSchoolContext(),before=structuredClone(state);
     const result=parseWorld(JSON.stringify(response),state,draft);
     expect(result.taskCommands).toHaveLength(1);expect(result.eventCommands).toHaveLength(2);

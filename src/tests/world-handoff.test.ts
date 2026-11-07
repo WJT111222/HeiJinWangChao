@@ -1,3 +1,4 @@
+import { history } from './fixtures/historyRecord';
 import { worldResultForTurn } from './fixtures/world';
 import { describe, expect, it } from 'vitest';
 import { DomainCommandSchema, commitCommands } from '../domain/commands';
@@ -189,13 +190,9 @@ describe('联系人与最小身份历史，严格引用边界', () => {
     if (command.type !== 'CreateNpc') throw Error(); command.npc.id = 'new-id';
     expect(() => commitCommands(retired, 'later', retired.revision, [command])).toThrow();
   });
-  it('V2迁移将既有NPC独立标记为待复核，V1链式升级，保持revision/journal和幂等；损坏档不洗白', () => {
-    const state = handoffState(), v2 = { ...state, schemaVersion: 2 }; Reflect.deleteProperty(v2, 'retiredEvents'); Reflect.deleteProperty(v2, 'contactNpcIds'); Reflect.deleteProperty(v2, 'retiredNpcs'); Reflect.deleteProperty(v2, 'contactReviewNpcIds');
-    const migrated = migrateSave(v2); expect(migrated.contactNpcIds).toEqual([]); expect([...migrated.contactReviewNpcIds].sort()).toEqual(Object.keys(state.npc).sort()); expect(migrated.revision).toBe(state.revision); expect(migrated.journal).toEqual(state.journal);
-    expect(migrateSave(migrated)).toEqual(migrated);
-    const v1 = { ...v2, schemaVersion: 1 }; Reflect.deleteProperty(v1, 'retiredEvents'); Reflect.deleteProperty(v1, 'weatherText'); Reflect.deleteProperty(v1, 'environmentText'); expect(migrateSave(v1).contactNpcIds).toEqual([]);
-    expect(() => migrateSave({ ...v2, npc: { bad: npc() } })).toThrow();
-  });
+  it('V6读取不新增联系人，旧格式不自动转换',()=>{
+ const state=handoffState();expect(migrateSave(state)).toEqual(state);for(const version of [1,2,3,4,5])expect(()=>migrateSave({...state,schemaVersion:version})).toThrow();
+});
 });
 
 
@@ -301,11 +298,11 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
     const draft = await completeDraft(repo, { narrative: fact, variables: await elapsedVariables(repo, fact, 600) });
     const disclosed = { ...secret, visibility: 'known' as const, sourceTurnIds: [d.turnId, draft.turnId] };
     const result = { ...worldResult(), eventCommands: [{ type: 'SaveEvent' as const, commandId: 'disclosure', event: disclosed,
-      evidence: proof({ at: '2026-10-18T08:15:00+08:00', kind: 'established', sources: ['story:current', 'npc:npc-a'], fact: resultText }) }], timelineCandidates: ['investigation'] };
+      evidence: proof({ at: '2026-10-18T08:15:00+08:00', kind: 'established', sources: ['story:current', 'npc:npc-a'], fact: resultText }) }], worldCommands:[history('investigation')] };
     // 已结案事件不可重写：改公开状态属于未来正式揭示协议，本轮必须拒绝而非绕过终态。
     expect(() => parseWorld(JSON.stringify(worldResultForTurn(result, draft.turnId)), first.state, draft)).toThrow();
     const publicEvent = { ...disclosed, resultKnowledge: { facts: [resultText], reported: [], suspected: [] }, id: 'public-report', startAt: '2026-10-18T08:14:00+08:00', resolvedAt: '2026-10-18T08:15:00+08:00', estimatedEndAt: '2026-10-18T08:20:00+08:00' };
-    const publicResult = { ...worldResult(), eventCommands: [{ ...result.eventCommands[0], event: publicEvent, evidence: proof({at:'2026-10-18T08:15:00+08:00',kind:'established',sources:['story:current','npc:npc-a'],fact:resultText,decision:{targetId:'public-report',status:'resolved',reason:'核验结果已传达',result:resultText,conditionsSatisfied:true,continues:false,resultKnowledge:{facts:[resultText],reported:[],suspected:[]}}}) }], timelineCandidates: [publicEvent.id] };
+    const publicResult = { ...worldResult(), eventCommands: [{ ...result.eventCommands[0], event: publicEvent, evidence: proof({at:'2026-10-18T08:15:00+08:00',kind:'established',sources:['story:current','npc:npc-a'],fact:resultText,decision:{targetId:'public-report',status:'resolved',reason:'核验结果已传达',result:resultText,conditionsSatisfied:true,continues:false,resultKnowledge:{facts:[resultText],reported:[],suspected:[]}}}) }], worldCommands:[history(publicEvent.id)] };
     publicEvent.sourceTurnIds = [draft.turnId];
     const checked = parseWorld(JSON.stringify(publicResult), first.state, draft);
     const accepted = await repo.saveDraft({ ...draft, draftRevision: draft.draftRevision + 1, world: { ...draft.world!, candidateRevision: 2, result: checked } }, draft.draftRevision);
@@ -419,18 +416,11 @@ describe('历史只读回合的生命周期边界', () => {
 });
 
 describe('真实IndexedDB旧档升级与回执', () => {
-  it('V2档与已有回执升级后可读取、重放并继续；正式revision和原文不变', async () => {
-    const factory = new IDBFactory(), repo = await SaveRepository.open('old-v2', factory); resources.push(repo); await repo.create(handoffState());
-    const draft = await completeDraft(repo), first = await repo.commitTurn(submission(draft));
-    const v2 = { ...first.state, schemaVersion: 2 }; Reflect.deleteProperty(v2, 'retiredEvents'); Reflect.deleteProperty(v2, 'contactNpcIds'); Reflect.deleteProperty(v2, 'retiredNpcs'); Reflect.deleteProperty(v2, 'contactReviewNpcIds');
-    const db = await new Promise<IDBDatabase>((resolve) => { const request = factory.open('old-v2'); request.onsuccess = () => resolve(request.result); });
-    await new Promise<void>((resolve, reject) => { const tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(v2); tx.oncomplete = () => resolve(); tx.onabort = () => reject(tx.error); }); db.close();
-    const upgraded = await repo.load('save-a'); expect(upgraded.schemaVersion).toBe(5); expect(upgraded.revision).toBe(first.state.revision); expect(upgraded.journal).toEqual(first.state.journal);
-    expect(upgraded.contactNpcIds).toEqual([]); expect([...upgraded.contactReviewNpcIds].sort()).toEqual(Object.keys(upgraded.npc).sort());
-    const replay = await repo.commitTurn(submission(draft)); expect(replay.replayed).toBe(true); expect(replay.state).toEqual(upgraded);
-    const next = await completeDraft(repo, { variables: await elapsedVariables(repo, worldDraft().story!.narrative, 600) });
-    expect((await repo.commitTurn(submission(next))).state.turnNumber).toBe(2);
-  });
+  it('V6存档和回执重载后可重放并继续，正式revision和原文不变',async()=>{
+ const repo=await SaveRepository.open('new-v6',new IDBFactory());resources.push(repo);await repo.create(handoffState());
+ const draft=await completeDraft(repo),first=await repo.commitTurn(submission(draft));expect(await repo.load('save-a')).toEqual(first.state);expect(first.state.schemaVersion).toBe(6);
+ expect((await repo.commitTurn(submission(draft))).replayed).toBe(true);const next=await completeDraft(repo,{variables:await elapsedVariables(repo,worldDraft().story!.narrative,600)});expect((await repo.commitTurn(submission(next))).state.turnNumber).toBe(2);
+});
 });
 
 describe('退场后的交接来源', () => {

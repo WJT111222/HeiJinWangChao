@@ -101,17 +101,17 @@ describe('safe runtime log diagnostics', () => {
     });
     let caught: unknown;
     try {
-      await parseTextVariables(variableTextEnvelope('<命令>\nset protagonist.locationId = "remote"\n</命令>'), state, draft);
+      await parseTextVariables(variableTextEnvelope('<命令>\nset npc[npc_001].locationId = null\n</命令>'), state, draft);
     } catch (failure) { caught = failure; }
     expect(caught).toBeInstanceOf(AiError);
     const event = runtimeLogEvent(13, 'variables', 'failed', caught);
     expect(event).toMatchObject({
       code: 'data_integrity', fieldPath: 'text.domain_validation_failed',
-      domainRule: 'scene_transition', relatedCommandIndices: [1], relatedNpcId: 'npc_001',
+      domainRule: 'scene_location', relatedCommandIndices: [1], relatedNpcId: 'npc_001',
     });
     expect(JSON.stringify(event)).toContain('npc_001');
-    expect(`${domainRuleNames.scene_transition}（NPC：${event.relatedNpcId}）`)
-      .toBe('主角移动时缺少原在场 NPC 的状态更新（NPC：npc_001）');
+    expect(`${domainRuleNames.scene_location}（NPC：${event.relatedNpcId}）`)
+      .toBe('在场 NPC 缺少明确地点（NPC：npc_001）');
     expect(state).toEqual(before);
   });
 
@@ -126,13 +126,13 @@ describe('safe runtime log diagnostics', () => {
     });
     let caught: unknown;
     try {
-      await parseTextVariables(variableTextEnvelope('<命令>\nset protagonist.locationId = "remote"\nset npc[npc_001].locationId = "remote"\n</命令>'), state, draft);
+      await parseTextVariables(variableTextEnvelope('<命令>\nset npc[npc_001].healthText = "健康"\nset npc[npc_002].locationId = null\n</命令>'), state, draft);
     } catch (failure) { caught = failure; }
     const event = runtimeLogEvent(14, 'variables', 'failed', caught);
     expect(event.relatedNpcId).toBe('npc_002');
-    expect(event.domainRule).toBe('scene_transition');
+    expect(event.domainRule).toBe('scene_location');
     expect(`${domainRuleNames[event.domainRule!]}（NPC：${event.relatedNpcId}）`)
-      .toBe('主角移动时缺少原在场 NPC 的状态更新（NPC：npc_002）');
+      .toBe('在场 NPC 缺少明确地点（NPC：npc_002）');
     expect(state).toEqual(before);
   });
 
@@ -162,10 +162,10 @@ describe('safe runtime log diagnostics', () => {
   it('variableValidationError carries safe NPC ID for SCENE errors', async () => {
     const { variableValidationError } = await import('../services/validation/variableDiagnostics');
     const { DataError } = await import('../domain/common');
-    const error = variableValidationError(new DataError('SCENE_TRANSITION', '主角移动时须显式更新原在场 NPC（npc_abc）的地点或在场状态，不自动跟随'));
+    const error = variableValidationError(new DataError('SCENE_LOCATION', '主角移动时须显式更新原在场 NPC（npc_abc）的地点或在场状态，不自动跟随'));
     expect(error).toBeInstanceOf(AiError);
     expect(error.details?.relatedNpcId).toBe('npc_abc');
-    expect(error.details?.domainRule).toBe('scene_transition');
+    expect(error.details?.domainRule).toBe('scene_location');
     const bad = variableValidationError(new DataError('SCENE_LOCATION', '在场 NPC（__proto__）必须有明确地点'));
     expect(bad.details?.relatedNpcId).toBeUndefined();
     expect(bad.details?.domainRule).toBe('scene_location');
@@ -173,17 +173,17 @@ describe('safe runtime log diagnostics', () => {
 
   it('rejects forged or invalid relatedNpcId in runtime log', () => {
     const forged = runtimeLogEvent(20, 'variables', 'failed', new AiError('data_integrity', undefined, {
-      domainRule: 'scene_transition', relatedNpcId: '__proto__',
+      domainRule: 'scene_location', relatedNpcId: '__proto__',
     }));
     expect(forged).not.toHaveProperty('relatedNpcId');
     const valid = runtimeLogEvent(21, 'variables', 'failed', new AiError('data_integrity', undefined, {
-      domainRule: 'scene_transition', relatedNpcId: 'npc_safe_001',
+      domainRule: 'scene_location', relatedNpcId: 'npc_safe_001',
     }));
     expect(valid.relatedNpcId).toBe('npc_safe_001');
   });
 
   it.each(Object.keys(domainRuleNames).filter(isDomainRule).filter(rule =>
-    rule !== 'scene_transition' && rule !== 'scene_location'))('does not expose NPC ID for non-scene rule %s', (domainRule) => {
+    rule !== 'scene_location'))('does not expose NPC ID for non-scene rule %s', (domainRule) => {
     const entry = runtimeLogEvent(30, 'variables', 'failed', new AiError('data_integrity', undefined, {
       domainRule, relatedNpcId: 'npc_unrelated_secret',
     }));
@@ -192,7 +192,7 @@ describe('safe runtime log diagnostics', () => {
     expect(JSON.stringify(entry)).not.toContain('npc_unrelated_secret');
   });
 
-  it.each(['scene_transition', 'scene_location'] as const)('allows only a valid NPC ID for %s without dropping World diagnostics', (domainRule) => {
+  it.each(['scene_location'] as const)('allows only a valid NPC ID for %s without dropping World diagnostics', (domainRule) => {
     const entry = runtimeLogEvent(31, 'world', 'failed', new AiError('data_integrity', undefined, {
       domainRule, relatedNpcId: 'npc_valid', worldRule: 'actor_permission',
     }));

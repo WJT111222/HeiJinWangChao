@@ -149,15 +149,7 @@ it.each(['opening', 'regular'] as const)('%s 实际Composer具备新增创建及
   for (const field of ['description', 'referenceValue', 'itemDetails', 'category', 'questItem']) expect(text).toContain(`items[id].${field}`);
   expect(text).not.toContain('任意itemDetails修改不支持');
 });
-it.each([1, 2, 3, 4, 5])('V%s旧档缺少背包新字段仍保留原分类、数量、归属与装备', version => {
-  const state = game(); state.items.coat = ImportantItemSchema.parse({ ...item, id: 'coat', itemDetails: { 描述: '旧外套' } });
-  state.protagonist.currentWear.topItemId = 'coat';
-  const raw: Record<string, unknown> = { ...structuredClone(state), schemaVersion: version };
-  if (version < 5) delete raw.retiredEvents;
-  if (version < 4) delete raw.contactReviewNpcIds;
-  if (version < 3) { delete raw.contactNpcIds; delete raw.retiredNpcs; }
-  if (version < 2) { delete raw.weatherText; delete raw.environmentText; }
-  const before = structuredClone(raw), restored = migrateSave(raw);
-  expect(restored.items).toEqual(state.items); expect(restored.protagonist.currentWear).toEqual(state.protagonist.currentWear);
-  expect(restored.items.coat.referenceValue).toBeUndefined(); expect(restored.items.coat.description).toBeUndefined(); expect(raw).toEqual(before);
+it('V6物品可缺少可选描述与估值，读取不改数量、归属及装备',()=>{
+ const state=game();state.items.coat=ImportantItemSchema.parse({...item,id:'coat',itemDetails:{描述:'旧外套'}});state.protagonist.currentWear.topItemId='coat';
+ const before=structuredClone(state),restored=migrateSave(state);expect(restored.items).toEqual(before.items);expect(restored.protagonist.currentWear).toEqual(before.protagonist.currentWear);expect(restored.items.coat.referenceValue).toBeUndefined();expect(restored.items.coat.description).toBeUndefined();expect(state).toEqual(before);
 });

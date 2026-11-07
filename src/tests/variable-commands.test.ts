@@ -141,7 +141,7 @@ describe('M4-P2 八类严格领域命令', () => {
       false,
     );
   });
-  it('新地点与主角位置支持增量层级，原 NPC 必须有明确离场或跟随事实', () => {
+  it('新地点与主角位置支持增量层级，未同行 NPC 自动离场且保留原地点', () => {
     const state = scene();
     const location: DomainCommand = {
       type: 'CreateLocation',
@@ -157,7 +157,7 @@ describe('M4-P2 八类严格领域命令', () => {
       evidence: '主角到了诊所',
       changes: { locationId: 'clinic' },
     };
-    expect(() => apply([location, move], state)).toThrow();
+    expect(apply([location,move],state).npc['npc-a']).toEqual({...state.npc['npc-a'],onScene:false});
     const after = apply(
       [location, move, { ...update({ onScene: false }), evidence: '同事留在重庆。' }],
       state,

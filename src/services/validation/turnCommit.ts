@@ -48,12 +48,6 @@ export function validateTurnCandidates(state: GameState, draft: TurnDraft) {
           'TASK_ACTOR',
           '任务不能改派',
         );
-      if ('actorRefs' in old && event)
-        requireData(
-          fingerprint(old.actorRefs) === fingerprint(event.actorRefs),
-          'EVENT_ACTORS',
-          '事件参与者不能改写',
-        );
       if (['active', 'blocked'].includes(old.status))
         requireData(
           !['planned', 'scheduled'].includes(work.status),

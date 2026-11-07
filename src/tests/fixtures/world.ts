@@ -98,9 +98,7 @@ export function worldResult(
     worldCommands,
     taskCommands: [] as DomainCommand[],
     eventCommands: [] as DomainCommand[],
-    futureEvents: [],
     visibleHooks: [{ text: '内部候选线索：诊室整理完毕', revealAfter: gameTime }],
-    timelineCandidates: [] as string[],
     unresolved: ['财务与物品经营变化尚无场外授权命令，不结算。'],
   };
 }

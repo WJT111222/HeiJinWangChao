@@ -139,9 +139,7 @@ async function mock(page: Page) {
         worldCommands: [],
         taskCommands: [],
         eventCommands: [],
-        futureEvents: [],
         visibleHooks: [{ text: '绝不自动发布的后台线索', revealAfter: string(ctx.worldClock) }],
-        timelineCandidates: [],
         unresolved: ['内部未解决事项不可变成正文日志'],
       });
     }

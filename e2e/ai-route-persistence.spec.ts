@@ -19,7 +19,7 @@ async function seed(page: Page, independent = true) {
     if(request.method()==='GET') {await route.fulfill({json:{data:[]}});return;}
     const model=request.postDataJSON().model;posts.push({host:url.hostname,model});
     const text=model==='variables-model'?'<thinking>没有新增变化。</thinking><说明>无变化。</说明><命令></命令>'
-      :model==='world-model'?JSON.stringify({worldCommands:[],taskCommands:[],eventCommands:[],futureEvents:[],visibleHooks:[],timelineCandidates:[],unresolved:[]})
+      :model==='world-model'?JSON.stringify({worldCommands:[],taskCommands:[],eventCommands:[],visibleHooks:[],unresolved:[]})
       :'<thinking>保持场景连续。</thinking><正文>【旁白】主角观察街边的行人。</正文><短期记忆>观察街边行人。</短期记忆><变量规划>[]</变量规划>';
     await route.fulfill({json:{choices:[{message:{content:text},finish_reason:'stop'}]}});
   });
