@@ -94,3 +94,44 @@ NPC默认20→覆盖最早15，5条活跃剩余；再增15→活跃20→再处�
 ### NPC失败后的目标切换保护
 
 新增失败回归复现：A失败→手动B成功→原NPC失败记录被按类别清掉→后续自动再次请求A。修复为同类未处理失败必须先处理原任务；切换立即总结目标不会发出请求或清除保护，也不偷偷改为另一个NPC。提示明确说明当前选择未请求模型，可处理原失败，或暂停本项后重新启用。这个保护只管理未处理的付费任务，不评判记忆内容。新增回归先红后绿；原始记忆、其他两类任务及NPC选择机制不变。
+
+## 实际修改文件
+
+- `e2e/event-entry-feedback.spec.ts`
+- `e2e/game.spec.ts`
+- `e2e/helpers/memorySummary.ts`
+- `e2e/memory-maintenance.spec.ts`
+- `e2e/memory-summary-v2.spec.ts`
+- `e2e/memory.spec.ts`
+- `e2e/npc-memory.spec.ts`
+- `e2e/player-memory.spec.ts`
+- `prompts/manifest.json`
+- `prompts/memory/medium_to_long.md`
+- `prompts/memory/npc_summarize.md`
+- `prompts/memory/short_to_medium.md`
+- `prompts/sources.lock.json`
+- `src/app/App.tsx`
+- `src/app/styles.css`
+- `src/domain/memories/compression.ts`
+- `src/domain/memories/configuration.ts`
+- `src/domain/memories/defaultPrompts.ts`
+- `src/domain/memories/npcMemory.ts`
+- `src/domain/memories/schema.ts`
+- `src/prompts/context.ts`
+- `src/tests/memory-compression.test.ts`
+- `src/tests/memory-summary-v2.test.ts`
+- `src/tests/npc-memory-review.test.ts`
+- `src/tests/npc-memory.test.ts`
+- `src/tests/prompts.test.ts`
+- `src/ui/game/GameScreen.tsx`
+- `src/ui/game/useMemoryMaintenance.ts`
+- `src/ui/panels/MemoryMaintenanceControls.tsx`
+- `src/ui/settings/MemorySummarySettings.tsx`
+- `src/ui/settings/SettingsPanel.tsx`
+- `src/ui/settings/UnsavedAiChanges.tsx`
+- `src/ui/settings/model.ts`
+- `src/workflows/memoryMaintenance.ts`
+- `src/workflows/memorySummaryQueue.ts`
+
+开发报告及四张实际界面截图另见本文件与上述截图链接。没有修改saveRepository、正式三阶段工作流、recall或sharedContext。
+- 开局与时间预检中的精确状态文字断言遗漏PR76已有的「三阶段 · 」前缀。`git show 508697d:src/ui/game/GameScreen.tsx`可见相同前缀，本轮未修改该状态栏。仅补全精确期望字符串，保留非法日期拒绝、World失败不提前初始化、正式状态/草稿/请求次数及恢复断言。
