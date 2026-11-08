@@ -1,6 +1,6 @@
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
-import { openWorkflow } from './helpers/gameLayout';
+import { goHome, openWorkflow } from './helpers/gameLayout';
 import type { Page } from '@playwright/test';
 import { GameStateSchema } from '../src/domain/state';
 import { TurnDraftSchema } from '../src/domain/drafts';
@@ -97,7 +97,7 @@ test('一次创角确认自动执行开局三阶段，StrictMode和重复点击�
   await expect(page.getByRole('button', { name: '继续推演', exact: true })).toHaveCount(0);
   await expect(page.locator('main')).not.toContainText('尚未公开的内部线索');
   await page.reload(); await ready(page); expect(await stored(page)).toEqual(result); expect(server.calls).toHaveLength(3);
-  await page.getByRole('button', { name: '游戏首页', exact: true }).click();
+  await goHome(page);
   await page.getByRole('button', { name: /读取存档/ }).click(); await ready(page); expect(server.calls).toHaveLength(3);
 });
 
@@ -186,7 +186,7 @@ test('取消中的迟到响应不启动下游，刷新保留待生成草稿且�
 test('快速离开并重读同一存档或新标签不能延续开局收费授权', async ({ page, context }) => {
   await prepare(page); const server = await mock(page), held = gate(); server.plan.hold = 'variables'; server.plan.gate = held.pending;
   await creation(page); await confirm(page); await expect.poll(() => server.calls.length).toBe(2);
-  const url = page.url(); await page.getByRole('button', { name: '游戏首页', exact: true }).click();
+  const url = page.url(); await goHome(page);
   await page.getByRole('button', { name: /读取存档/ }).click();
   await openWorkflow(page); await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeVisible();
   const other = await context.newPage(); let otherRequests = 0;

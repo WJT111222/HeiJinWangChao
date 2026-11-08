@@ -1,6 +1,6 @@
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools, openWorldArchive } from './helpers/gameLayout';
 
 async function seed(page: Page, empty = false) {
   await page.goto('/');
@@ -35,7 +35,7 @@ async function saved(page: Page) { return page.evaluate(async () => {
   const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open();
   try { return await repo.loadGame('save-a'); } finally { repo.close(); }
 }); }
-async function open(page: Page) { await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /物品栏/ }).click(); return page.getByRole('dialog', { name: '物品栏', exact: true }); }
+async function open(page: Page) { await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /物品栏/ }).click(); return page.getByRole('dialog', { name: '物品栏', exact: true }); }
 const categoryCounts = [['全部', 8], ['衣物穿戴', 2], ['电子设备', 1], ['证件文件', 1], ['工具与武器', 1], ['生活用品与杂物', 3]] as const;
 
 test('六筛选、种数、只看主角物品，详情键盘可达且原存档/草稿不变', async ({ page }, info) => {

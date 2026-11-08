@@ -89,6 +89,7 @@ export function App() {
   const lock = useRef(false);
   const openingStart = useRef<OpeningStart | undefined>(undefined);
   const navigationRevision = useRef(0);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [aiSettingsDirty, setAiSettingsDirty] = useState(false);
   const [confirmSettingsClose, setConfirmSettingsClose] = useState(false);
@@ -296,12 +297,22 @@ export function App() {
             黑金王朝<small>HEIJINWANGCHAO</small>
           </span>
         </a>
-        <nav>
+        <nav className="header-navigation" aria-label="主导航">
           <button onClick={() => navigate()}>游戏首页</button>
           <button onClick={() => setSettingsOpen(true)}>设置</button>
+          {gameRoute && <button onClick={() => navigate()}>切换存档</button>}
           <span className="version">{PRODUCT_VERSION}</span>
         </nav>
+        {gameRoute && <button className="mobile-menu-toggle" aria-label="打开游戏菜单" onClick={() => setMenuOpen(true)}>☰</button>}
       </header>
+      {gameRoute && menuOpen && <Dialog title="游戏菜单" small onClose={() => setMenuOpen(false)}>
+        <nav className="game-menu" aria-label="游戏菜单">
+          <button onClick={() => { setMenuOpen(false); navigate(); }}>游戏首页</button>
+          <button onClick={() => { setMenuOpen(false); navigate(); }}>切换存档</button>
+          <button onClick={() => { setMenuOpen(false); setSettingsOpen(true); }}>设置</button>
+          <span className="version">{PRODUCT_VERSION}</span>
+        </nav>
+      </Dialog>}
       {error && (
         <div className="app-error" role="alert">
           <span>{error}</span>

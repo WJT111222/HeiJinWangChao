@@ -1,5 +1,5 @@
 import { expect, test } from './helpers/test';
-import { openWorkflow, openWorkflowDiagnostics } from './helpers/gameLayout';
+import { openWorkflow, openWorkflowDiagnostics, openWorldArchive, openProfile, goHome } from './helpers/gameLayout';
 import type { Page } from '@playwright/test';
 
 async function seed(page: Page, mode: 'long' | 'complete' | 'history' = 'long') {
@@ -61,14 +61,9 @@ async function fit(page: Page, height?: number) {
     const r = el.getBoundingClientRect(); return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) === el;
   })).toBe(true);
 }
-async function openSidebar(page: Page, selector: string) {
-  const details = page.locator(`${selector} > details`);
-  if (!(await details.evaluate((el) => el.hasAttribute('open')))) await details.locator(':scope > summary').click();
-}
-
 test('全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入', async ({ page }, info) => {
   const before = await seed(page);
-  const sizes = info.project.name === 'desktop' ? [{ width: 1440, height: 900 }, { width: 1024, height: 600 }, { width: 820, height: 540 }] : [{ width: 392, height: 780 }, { width: 360, height: 640 }];
+  const sizes = info.project.name === 'desktop' ? [{ width: 1440, height: 900 }, { width: 1280, height: 800 }, { width: 900, height: 700 }, { width: 820, height: 540 }] : [{ width: 390, height: 844 }, { width: 375, height: 667 }, { width: 320, height: 568 }, { width: 667, height: 375 }];
   for (const size of sizes) {
     await page.setViewportSize(size); await fit(page);
     expect((await page.getByTestId('story-reader').boundingBox())!.height).toBeGreaterThan(50);
@@ -77,46 +72,43 @@ test('全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸�
   expect(await stored(page)).toEqual(before); await page.screenshot({ path: info.outputPath('small-window.png') });
 });
 
-test('三栏独立滚动；移动端侧栏默认收起且可独立展开', async ({ page }, info) => {
-  await seed(page);
-  if (info.project.name === 'mobile') {
-    await expect(page.locator('.hero-sidebar > details')).not.toHaveAttribute('open');
-    await expect(page.locator('.world-sidebar > details')).not.toHaveAttribute('open');
-  }
+test('顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置', async ({ page }, info) => {
+  const before = await seed(page);
   await page.setViewportSize({ width: info.project.name === 'desktop' ? 1100 : 392, height: 480 });
-  await openSidebar(page, '.hero-sidebar'); await openSidebar(page, '.world-sidebar');
-  const reader = page.getByTestId('story-reader'), left = page.locator(info.project.name === 'desktop' ? '.hero-sidebar' : '.hero-sidebar .sidebar-body'), right = page.locator(info.project.name === 'desktop' ? '.world-sidebar' : '.world-sidebar .sidebar-body');
-  await reader.evaluate((el) => { el.scrollTop = 300; });
-  for (const area of [left, right]) {
-    expect(await area.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
-    await area.evaluate((el) => { el.scrollTop = 120; }); expect(await area.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
-    expect(await reader.evaluate((el) => el.scrollTop)).toBe(300);
-  }
-  expect(await page.evaluate(() => scrollY)).toBe(0); await fit(page);
+  const reader = page.getByTestId('story-reader');
+  await reader.evaluate(el => { el.scrollTop = 300; });
+  expect((await page.locator('.player-status').boundingBox())!.height).toBeLessThan(130);
+  await openProfile(page);
+  const modal = page.getByRole('dialog', { name: '人物档案', exact: true });
+  const area = modal.locator('.modal-body');
+  expect(await area.evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true);
+  await area.evaluate(el => { el.scrollTop = 120; });
+  expect(await area.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
+  expect(await reader.evaluate(el => el.scrollTop)).toBe(300);
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate(() => document.activeElement?.textContent)).toMatch(/人物档案|⌄/);
+  await fit(page); expect(await stored(page)).toEqual(before);
 });
 
-test('鼠标滚轮进入左右资料栏时滚动该栏，不带动正文或整页', async ({ page }, info) => {
+test('滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回', async ({ page }, info) => {
   await seed(page);
-  const mobile = info.project.name === 'mobile';
-  await page.setViewportSize({ width: mobile ? 392 : 1100, height: 480 });
-  await openSidebar(page, '.hero-sidebar'); await openSidebar(page, '.world-sidebar');
+  await page.setViewportSize({ width: info.project.name === 'desktop' ? 1100 : 392, height: 480 });
   const reader = page.getByTestId('story-reader');
-  await reader.evaluate((el) => { el.scrollTop = 260; });
-  for (const side of ['hero', 'world'] as const) {
-    const selector = `.${side}-sidebar`;
-    const scroller = page.locator(mobile ? `${selector} .sidebar-body` : selector);
-    const body = page.locator(`${selector} .sidebar-body`);
-    await scroller.evaluate((el) => { el.scrollTop = 0; });
-    expect(await scroller.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
-    const rect = await body.boundingBox();
-    expect(rect).not.toBeNull();
-    await page.mouse.move(rect!.x + rect!.width / 2, rect!.y + Math.min(40, rect!.height / 2));
-    await page.mouse.wheel(0, 600);
-    await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
-    expect(await reader.evaluate((el) => el.scrollTop)).toBe(260);
+  await reader.evaluate(el => { el.scrollTop = 260; });
+  await openProfile(page);
+  const scroller = page.getByRole('dialog', { name: '人物档案', exact: true }).locator('.modal-body');
+  const rect = (await scroller.boundingBox())!;
+  await page.mouse.move(rect.x + rect.width / 2, rect.y + 40); await page.mouse.wheel(0, 600);
+  await expect.poll(() => scroller.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
+  expect(await reader.evaluate(el => el.scrollTop)).toBe(260);
+  await page.keyboard.press('Escape');
+  await openWorldArchive(page);
+  await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(7);
+  if (info.project.name === 'mobile') {
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('navigation', { name: '底部导航' }).getByRole('button', { name: '世界资料', exact: true })).toBeFocused();
   }
-  expect(await page.evaluate(() => scrollY)).toBe(0);
-  await fit(page);
+  expect(await page.evaluate(() => scrollY)).toBe(0); await fit(page);
 });
 
 test('默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态', async ({ page }, info) => {
@@ -211,11 +203,8 @@ test('生成中折叠不打断；取消和错误不被隐藏，Roll成功保留�
 
 test('缩短视口及模拟软键盘VisualViewport不遮住输入和发送', async ({ page }) => {
   await seed(page); await page.setViewportSize({ width: 392, height: 640 });
-  await expect(page.locator('.hero-sidebar > details')).not.toHaveAttribute('open');
-  await openSidebar(page, '.hero-sidebar'); await openSidebar(page, '.world-sidebar');
   await page.getByLabel('你的行动', { exact: true }).focus();
-  await expect(page.locator('.hero-sidebar > details')).not.toHaveAttribute('open');
-  await expect(page.locator('.world-sidebar > details')).not.toHaveAttribute('open');
+  await expect(page.locator('.status-condition')).toBeHidden();
   await page.evaluate(() => {
     const viewport = window.visualViewport!;
     Object.defineProperty(viewport, 'height', { configurable: true, value: 320 });
@@ -240,12 +229,12 @@ test('设置、历史检索及创角长页仍可滚动，关闭资料保留阅�
   await settings.getByRole('button', { name: '提示词', exact: true }).click(); await settings.getByRole('button', { name: '保存本地设置', exact: true }).click();
   expect(await settings.locator('.modal-body').evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
   await page.keyboard.press('Escape'); expect(await reader.evaluate((el) => el.scrollTop)).toBe(220);
-  await openSidebar(page, '.world-sidebar'); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
+  await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
   const memory = page.getByRole('dialog', { name: '记忆', exact: true });
   await memory.getByLabel('搜索历史回合').fill('蓝色钥匙');
   await memory.getByRole('button', { name: '查看第 3 回合原文', exact: true }).click(); await expect(memory).toContainText('约定下周三');
   await page.keyboard.press('Escape'); expect(await reader.evaluate((el) => el.scrollTop)).toBe(220);
-  await page.getByRole('button', { name: '游戏首页', exact: true }).click(); await page.getByRole('button', { name: /开始新游戏/ }).click();
+  await goHome(page); await page.getByRole('button', { name: /开始新游戏/ }).click();
   await page.getByLabel('姓名', { exact: true }).fill('布局测试'); await page.getByLabel('年龄', { exact: true }).fill('28'); await page.getByRole('radio', { name: '女性', exact: true }).check();
   await page.getByRole('button', { name: /下一步/ }).click(); await expect(page.getByRole('radio', { name: '自由选择', exact: true })).toBeChecked(); await expect(page.getByLabel('内置职业技能', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollHeight > innerHeight)).toBe(true);
