@@ -89,7 +89,8 @@ describe('只读事件节点筛选、知识与生命周期', () => {
   it('隐藏事件和私有任务从预检中完全消失，worldEventOnly边界不变', async () => {
     const state = visitor(); state.events.visitor.visibility = 'hidden'; state.events.visitor.title = '只有NPC知道的秘密敲门计划';
     const selected = draft(state), prompt = await composePrompt({ state, draft: selected, stage: 'story', mode: 'regular', settings: defaultSettings(), userInput: selected.userInput });
-    expect(JSON.stringify(prompt.context)).not.toContain('只有NPC知道'); expect(timePreflight(state, selected.userInput).candidates).toEqual([]);
+    expect(JSON.stringify(prompt.context.TIME_PREFLIGHT)).not.toContain('只有NPC知道');
+    expect(JSON.stringify(prompt.context.SAVE_STATE)).toContain('只有NPC知道'); expect(timePreflight(state, selected.userInput).candidates).toEqual([]);
   });
   it('行动或地点变更时重算；同时间已正式中断的事件不能再次触发', () => {
     const state = visitor(); expect(timePreflight(state, '等待一小时').candidates).toEqual([]);

@@ -297,7 +297,8 @@ describe('真实Runtime与协调器的非空现场记录、承接与行为回写
     expect(s1.state.events.contact.protagonistEntry?.status).toBe('pending');expect(s1.draft.story).toBeUndefined();
     const second=transport(()=>block(),()=>worldResult(),ctx=>{
       const entry=record(array(ctx.EVENT_ENTRIES)[0]);expect(entry.cue).toBe(cue);
-      expect(JSON.stringify(ctx)).not.toContain('既有预约安排');
+      expect(JSON.stringify(ctx.EVENT_ENTRIES)).not.toContain('既有预约安排');
+      expect(JSON.stringify(ctx.SAVE_STATE)).toContain('既有预约安排');
       return {narrative:cue,guide:[{group:'event',observedFact:'实际收到电话',textEvidence:cue,eventInteraction:{eventId:'contact',entryId:entry.entryId,action:'presented'}}]};
     });
     const out2=await coordinator(a.repo,second.fetcher).generate({...a,draft:s1.draft});
