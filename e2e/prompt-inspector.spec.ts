@@ -335,3 +335,81 @@ test('无正文草稿的阶段预览诚实失败，七项写作偏好不因管�
   await expect(page.locator('.settings-fields > label')).toHaveCount(7);
   await expect(page.getByLabel('叙事人称')).toHaveValue('third');
 });
+
+for (const count of [300, 1000]) test(`${count} NPC 真实快照按需 Worker 分析、动画帧继续、结果与原算法一致且复用缓存`, async ({ page }, testInfo) => {
+  await seed(page);
+  await page.reload(); await openGameTools(page);
+  let workers = 0;
+  page.on('worker', () => workers++);
+  const capture = await page.evaluate(async count => {
+    const fixturePath = '/src/tests/fixtures/contextScale.ts';
+    const composerPath = '/src/prompts/composer.ts';
+    const configPath = '/src/services/ai/configuration.ts';
+    const credentialsPath = '/src/services/ai/credentials.ts';
+    const snapshotPath = '/src/services/ai/snapshot.ts';
+    const clientPath = '/src/services/ai/client.ts';
+    const { contextScaleFixture } = await import(fixturePath);
+    const { composePrompt } = await import(composerPath);
+    const { newChannel, defaultAiConfig } = await import(configPath);
+    const { CredentialVault } = await import(credentialsPath);
+    const { requestSnapshot } = await import(snapshotPath);
+    const { AiClient } = await import(clientPath);
+    const source = contextScaleFixture(count);
+    source.state.saveId = 'ui-test';
+    const prompt = await composePrompt({ ...source, stage: 'story', mode: 'regular', userInput: source.draft.userInput });
+    const channel = { ...newChannel(), defaultModel: 'worker-scale-mock' };
+    const config = defaultAiConfig(); config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: '' };
+    const vault = new CredentialVault(sessionStorage, localStorage); vault.set(channel.id, 'worker-scale-secret');
+    let calls = 0;
+    const before = performance.now();
+    await new AiClient(async () => {
+      calls++;
+      return Response.json({ choices: [{ message: { content: 'OK' }, finish_reason: 'stop' }], usage: { prompt_tokens: 42, completion_tokens: 2 } });
+    }).generate(requestSnapshot(config, 'story', vault), prompt.messages, { inspection: { kind: 'stage', mode: 'regular', saveId: 'ui-test', revision: source.state.revision, modules: prompt.modules } });
+    return { calls, captureAndMockResponseMs: performance.now() - before };
+  }, count);
+  expect(workers).toBe(0);
+  expect(capture.calls).toBe(1);
+  await inspector(page);
+  await page.getByRole('combobox', { name: '回合模式', exact: true }).selectOption('regular');
+  await page.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');
+  const context = page.getByRole('region', { name: '上下文与统计' });
+  expect(workers).toBe(0);
+  await page.getByText('展开数据分类、召回预算与重复诊断', { exact: true }).click();
+  await expect(context).toContainText('正在分析…');
+  const progress = await page.evaluate(async () => {
+    const storePath = '/src/services/ai/inspection.ts', analysisPath = '/src/prompts/budgetAnalysis.ts';
+    const { requestInspections } = await import(storePath);
+    const { budgetAnalysis } = await import(analysisPath);
+    const analysis = budgetAnalysis(requestInspections.getSnapshot()[0].messages);
+    let frames = 0;
+    const start = performance.now();
+    await new Promise<void>(resolve => {
+      function frame() { frames++; if (analysis.getSnapshot().status === 'running') requestAnimationFrame(frame); else resolve(); }
+      requestAnimationFrame(frame);
+    });
+    return { frames, analysisMs: performance.now() - start };
+  });
+  expect(progress.frames).toBeGreaterThan(1);
+  await expect(context).toContainText('分析完成（本会话内存缓存）。');
+  await expect(context).toContainText('字符差额 0，字节差额 0');
+  expect(workers).toBe(1);
+  const equality = await page.evaluate(async () => {
+    const storePath = '/src/services/ai/inspection.ts', analysisPath = '/src/prompts/budgetAnalysis.ts', purePath = '/src/prompts/budgetInspection.ts';
+    const { requestInspections } = await import(storePath);
+    const { budgetAnalysis } = await import(analysisPath);
+    const { inspectBudget } = await import(purePath);
+    const snapshot = requestInspections.getSnapshot()[0];
+    const state = budgetAnalysis(snapshot.messages).getSnapshot();
+    // Test-only oracle runs after the real Worker completes; production has no main-thread fallback.
+    return state.status === 'complete' && JSON.stringify(state.result) === JSON.stringify(inspectBudget(snapshot.messages));
+  });
+  expect(equality).toBe(true);
+  await page.getByText('展开数据分类、召回预算与重复诊断', { exact: true }).click();
+  await page.getByText('展开数据分类、召回预算与重复诊断', { exact: true }).click();
+  await expect(context).toContainText('分析完成（本会话内存缓存）。');
+  expect(workers).toBe(1);
+  await writeFile(testInfo.outputPath('worker-measurement.json'), JSON.stringify({ count, ...capture, ...progress, workers, equality }, null, 2));
+  await page.getByRole('button', { name: '清空内存请求记录' }).click();
+  await expect(page.getByText(/此阶段\/模式没有实际请求快照/)).toBeVisible();
+});

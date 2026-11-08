@@ -6,9 +6,21 @@
 
 检查了 `composer.ts`、`context.ts`、`sharedContext.ts`、`statistics.ts`、`recall.ts`、`preview.ts`，以及 AI runtime/client/protocols/inspection/configuration/snapshot、现有 PromptInspector/ContextInspection、单元与浏览器检查器测试，并对照 [PR #73 报告](THREE_STAGE_CONTEXT_V2.md)、[PR #74 报告](SHARED_MEMORY_RECALL_V2.md)。
 
-沿用设置中的提示词检查器：选择真实存档，点击“生成三阶段组装预览（不联网）”。第一层 Story/Variables/World 概览展示准确字符、启发式估算、最大的两类来源及窗口未知；第二层展开分类、正式 NPC/记忆数量、近期/召回数量、原始预算诊断和重复；第三层仍使用“主动查看完整内部上下文”，核对最终 messages、GAME_CONTEXT，或实际原生请求体。预览缺合法正文草稿时沿用原失败原因，不伪造 Variables/World。
+沿用设置中的提示词检查器：选择真实存档，点击“生成三阶段组装预览（不联网）”。第一层 Story/Variables/World 概览展示准确字符、启发式估算及窗口未知，详细来源尚未分析；第二层主动展开后由专用 Worker 分析分类、正式 NPC/记忆数量、近期/召回数量、原始预算诊断和重复；第三层仍使用“主动查看完整内部上下文”，核对最终 messages、GAME_CONTEXT，或实际原生请求体。预览缺合法正文草稿时沿用原失败原因，不伪造 Variables/World。
 
-离线预览经真实 `composePrompt` 取得最终 messages。实际记录从客户端已序列化的同一个原生 payload 经 `payloadMessages` 解码，先测量原始内容再脱敏保留数字和路径；不以脱敏后长度冒充传输长度，不额外组装或请求模型。只有实际 API 返回的 usage 才显示供应商用量。请求记录继续仅保留会话内存最近 12 条；NPC 私人维护继续遵守原有隐藏规则。
+离线预览经真实 `composePrompt` 取得最终 messages。实际记录从客户端已序列化的同一个原生 payload 经 `payloadMessages` 解码，只在发送边界计量原始轻量总量，然后保留脱敏副本；详细分析按需从副本执行，不额外组装或请求模型。未发生内容脱敏时，副本等于实际最终消息，可精确对账；发生脱敏时，分类、重复及召回诊断明确标为副本口径，显示原始/副本总量及差额，不能精确还原原始分类。不会保留原始密钥或未脱敏请求的额外长寿命缓存。只有实际 API 返回的 usage 才显示供应商用量。请求记录继续仅保留会话内存最近 12 条；NPC 私人维护继续遵守原有隐藏规则。
+
+## Review 修订：请求优先与后台按需分析
+
+评审基线 `c8059ee227fa37018e754b312aac58dcd85ea9f4` 的调用链是 `AiClient.generate → operation（已开始超时计时）→ requestInspections.start → inspectBudget → response/HTTP`。上表的 1000 NPC 合成样本中，三个阶段原完整诊断分别占约 4.1/3.7/6.7 秒；即使没有打开检查器，也会阻塞发送和主线程。这是本次修订处理的问题，表中的原始同步诊断耗时保留为历史证据，不代表修订后的发送延迟。
+
+现在 `start` 只捕获原生请求的安全副本、轻量字符/UTF-8/估算总量及模块/路由元数据，随后立即进入原 HTTP 路径；不会调用或等待详细分类、重复扫描或 Worker。观察器 start/finish 抛异常也不会改变请求成功、原始错误或使用量。原 timeout、stream、请求体和模型路由均沿用。`buildStagePreviews` 同样先生成合法的三阶段最终消息与基础统计，不再同步调用三次详细诊断。Composer 的合法草稿检查不变。
+
+选中实际请求或预览并展开“数据分类、召回预算与重复诊断”才创建专用 module Web Worker（`budgetInspection.worker.ts`），只发送已脱敏的最终 messages；Worker 执行原 `inspectBudget` 算法，返回结构化测量。没有 `Promise.then`、定时器主线程重算或 Worker 失败后的重型回退。60 秒定时器仅用于结束失联的诊断 Worker，不参与游戏超时或重算。无 Worker、启动/传递受阻、运行异常均显示不可用/失败，可重试，基础快照与实际 usage 保留。
+
+界面区分尚未分析、正在分析、完成（缓存）、失败/不可用；未计算值不会展示成零。按稳定 messages 引用用 WeakMap 保存会话内结果，finish 更新实际 usage 不更换该引用；重复展开、切换后返回已完成请求均复用结果。关闭详情、切换请求/阶段/来源、离开组件或清空记录会终止正在运行的 Worker；旧 Worker 回复以实例身份检查丢弃，不能覆盖新选择。清空记录不会被迟到响应重新插入。没有新增 localStorage、IndexedDB 或其他持久化。
+
+边界：轻量统计、JSON 解码、既有脱敏与冻结仍在主线程，随请求体大小增长；Worker 的 structured clone、结果传回和 UI 渲染也有成本。修订只移走完整诊断阻塞，不承诺零发送开销、硬性帧率、内存上限或性能 SLA。1000 NPC 完整分析仍需数秒，用户可取消。完整内容主动揭示仍是独立的用户操作。
 
 ## 统计口径与最终消息映射
 
