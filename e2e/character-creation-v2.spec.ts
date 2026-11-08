@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 import { appearanceTemplates, personalityTemplates } from '../src/ui/creation/personTemplates';
 import professions from '../src/ui/creation/professions.json' with { type: 'json' };
 const professionCategories = [...new Set(professions.map(job => job.category))];
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools, openProfile } from './helpers/gameLayout';
 
 async function begin(page: Page) {
   await page.goto('/'); await page.getByRole('button', { name: /开始新游戏/ }).click();
@@ -99,7 +99,7 @@ test('自定义四项跨预设保存、确认、正式档案与重载；纯UI无
   await page.getByRole('button', { name: '确认并创建存档', exact: true }).click();
   await expect(page.locator('.game-layout')).toBeVisible();
   await page.reload(); await openGameTools(page);
-  await page.getByRole('button', { name: /人物档案/ }).click();
+  await openProfile(page);
   const dialog = page.getByRole('dialog', { name: '人物档案', exact: true });
   await expect(dialog).toContainText(custom.name); await expect(dialog).toContainText(custom.description);
   await expect(dialog).toContainText(custom.impact); await expect(dialog.locator('.skill-tags li')).toHaveText(custom.skills.split('\n'));

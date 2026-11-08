@@ -1,3 +1,4 @@
+import { PlayerStatus } from './PlayerStatus';
 import { ProfessionProfile } from '../components/ProfessionProfile';
 import { StoryReading } from './StoryReading';
 import { openingTimeSelection } from '../../domain/openingTime';
@@ -74,6 +75,7 @@ export function GameScreen({
   }, [state, draft]);
   const [panel, setPanel] = useState<PanelName | '人物档案' | '经济与资产'>();
   const compactSidebars = useSyncExternalStore(subscribeSidebarSize, () => window.matchMedia(sidebarMedia).matches, () => false);
+  const [worldDirectoryOpen, setWorldDirectoryOpen] = useState(false);
   const [input, setInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -273,64 +275,18 @@ export function GameScreen({
     : canCommit ? '候选已完成 · 等待结算'
     : workflowGuidance ? draft?.stageStatus.world === 'preview' ? '世界仅为预览 · 查看详情' : disabledGuidance ? '阶段已关闭 · 查看详情' : '候选未就绪 · 查看详情'
     : draft?.story ? '等待继续 · 部分已完成' : '等待开始';
+  const worldNavigation = <aside className="world-sidebar" aria-label="世界资料">
+    <h2>世界资料</h2>
+    <nav aria-label="世界资料分类">
+      {panelNames.map((name, index) => <button key={name} onClick={() => setPanel(name)}>
+        <span className="dock-seal" aria-hidden="true">{['人', '势', '图', '物', '事', '史', '忆'][index]}</span>
+        <span>{name}</span>
+      </button>)}
+    </nav>
+  </aside>;
   return (
     <main className="game-layout">
-      <aside className="hero-sidebar" aria-label="主角信息">
-        <details className="sidebar-disclosure" open={!compactSidebars}>
-          <summary>主角信息 <span>{hero.name}</span></summary>
-          <div className="sidebar-body" tabIndex={0} aria-label="主角信息滚动区域">
-            <div className="sidebar-heading">
-              <p className="eyebrow">YOUR LIFE</p>
-              <span className="tag">第 {state.turnNumber} 回合</span>
-            </div>
-            <p className="game-clock">{state.openingTimePending ? '开局时间待确认' : dateTime(state.worldClock)}</p>
-            {openingTime && <p className="field-hint">候选时间：{dateTime(openingTime.endAt)}（未正式结算）</p>}
-            <p className="location">⌖ {state.locations[hero.locationId]?.name || '地点未确认'}</p>
-            <div className="weather">
-              <span>{state.weatherText || '天气待确认'}</span>
-              <p>{state.environmentText || '环境将由开局正文确立。'}</p>
-            </div>
-            <section>
-              <div className="hero-identity">
-                <span className="avatar large">{hero.name.slice(0, 1)}</span>
-                <div>
-                  <h2>{hero.name}</h2>
-                  <p>
-                    {hero.age} 岁 · {hero.gender}
-                  </p>
-                  <p>{hero.profession}</p>
-                </div>
-              </div>
-              <dl>
-                <Detail label="身体">{hero.healthText || '待开局确认'}</Detail>
-                <Detail label="情绪">{hero.emotionText || '待开局确认'}</Detail>
-              </dl>
-            </section>
-            <section>
-              <h3>流动资金</h3>
-              <dl>
-                <Detail label="现金">{money(state.economy.cash)}</Detail>
-                <Detail label="线上资金">{money(state.economy.onlineBalance)}</Detail>
-              </dl>
-            </section>
-            <section>
-              <h3>当前穿戴与装备</h3>
-              <dl>
-                {equipment.map(([label, value]) => (
-                  <Detail key={label} label={label}>
-                    {value}
-                  </Detail>
-                ))}
-              </dl>
-            </section>
-            <div className="sidebar-actions">
-              <button onClick={() => setPanel('人物档案')}>查看人物档案 ↗</button>
-              <button onClick={() => setPanel('经济与资产')}>经济与资产 ↗</button>
-              <button onClick={onSaves}>切换存档</button>
-            </div>
-          </div>
-        </details>
-      </aside>
+      <PlayerStatus state={state} onProfile={() => setPanel('人物档案')} onEconomy={() => setPanel('经济与资产')} />
       <section className="story-column" aria-label="剧情与行动">
         <div
           className={`reader ${!view.journal.length && !draft?.story && !progress ? 'reader-empty' : ''}`}
@@ -358,17 +314,19 @@ export function GameScreen({
           </div>
           {view.journal.map((entry, index) => (
             <article className="story-entry" key={entry.turnId}>
-              <p className="eyebrow">第 {index + 1} 回合</p>
+              <h2 className="chapter-heading">第 {index + 1} 回合</h2>
               <StoryReading narrative={entry.narrative} protagonistName={hero.name} />
             </article>
           ))}
           {progress ? (
             <article className="story-entry" aria-label="流式正文预览" aria-busy="true">
+              <h2 className="chapter-heading">第 {state.turnNumber + 1} 回合</h2>
               <span className="tag">临时预览 · 完整校验前不保存</span>
               <p className="prose">{progress.narrative || '正在等待正文…'}</p>
             </article>
           ) : draft?.story ? (
             <article className="story-entry">
+              <h2 className="chapter-heading">第 {state.turnNumber + 1} 回合</h2>
               <span className="tag">正文草稿 · 世界状态尚未确认</span>
               <StoryReading narrative={draft.story.narrative} protagonistName={hero.name} />
             </article>
@@ -390,10 +348,11 @@ export function GameScreen({
           )}
           {settings.prompts.actionOptions &&
             (!progress && options && options.length >= 3 && options.length <= 5 ? (
-              <div className="action-options">
-                {options.map((option) => (
+              <div className="action-options" aria-label="行动建议">
+                <p>接下来你想做什么</p>
+                {options.map((option, index) => (
                   <button key={option} onClick={() => setInput(option)}>
-                    {option}
+                    <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span>{option}</span><span aria-hidden="true">→</span>
                   </button>
                 ))}
               </div>
@@ -417,7 +376,7 @@ export function GameScreen({
             <section className="workflow" aria-label="三阶段工作流">
               <details className="workflow-disclosure" ref={workflowDetails}>
                 <summary>
-                  <strong role="status" aria-live="polite">{workflowLabel}</strong>
+                  <strong role="status" aria-live="polite"><span className="workflow-prefix">三阶段 · </span>{workflowLabel}</strong>
                   <span className="workflow-toggle">详情</span>
                 </summary>
                 <div className="workflow-details">
@@ -486,17 +445,7 @@ export function GameScreen({
                               : status === 'ready' ? '已完成' : '待生成'}
                           </small>
                           {stage === 'story' ? (
-                            <div className="variable-actions">
-                              {manualProgress ? (
-                                <button disabled={manualProgress.phase === 'saving'} onClick={cancel}>
-                                  {manualProgress.phase === 'saving' ? '正在保存…' : '取消生成'}
-                                </button>
-                              ) : (
-                                <button disabled={!validDraft || awaitingAction || busy} onClick={() => void generate()}>
-                                  {draft?.story ? '重新 Roll' : draft?.turnKind === 'regular' ? '生成本回合正文' : '生成开局正文'}
-                                </button>
-                              )}
-                            </div>
+                            <p className="stage-action-hint">正文生成与重新 Roll 位于行动输入旁。</p>
                           ) : stage === 'variables' ? (
                             <div className="variable-actions">
                               {variables.phase ? (
@@ -616,62 +565,41 @@ export function GameScreen({
               </details>
             </section>
           </div>
-          <label className="sr-only" htmlFor="player-input">
-            你的行动
-          </label>
-          <textarea
-            id="player-input"
-            disabled={submitting}
-            value={input}
-            onFocus={(event) => {
-              if (!compactSidebars) return;
-              event.currentTarget.closest('main')?.querySelectorAll<HTMLDetailsElement>('.sidebar-disclosure')
-                .forEach((details) => { details.open = false; });
-            }}
-            onChange={(e) => setInput(e.target.value)}
-            rows={2}
-            placeholder="填写你的行动；发送后生成三阶段并自动结算"
-          />
-          <div className="composer-footer">
-            <div>
-              <button
-                className="primary"
-                disabled={(!canCommit && !awaitingAction) || busy || !input.trim()}
-                onClick={() => void send()}
-              >
-                {submitting ? '正在原子结算…' : '发送'}
-              </button>
+          <div className="composer-action-row">
+                            <div className="composer-roll">
+                              {manualProgress ? (
+                                <button disabled={manualProgress.phase === 'saving'} onClick={cancel}>
+                                  {manualProgress.phase === 'saving' ? '正在保存…' : '取消生成'}
+                                </button>
+                              ) : (
+                                <button disabled={!validDraft || awaitingAction || busy} onClick={() => void generate()}>
+                                  {draft?.story ? '重新 Roll' : draft?.turnKind === 'regular' ? '生成本回合正文' : '生成开局正文'}
+                                </button>
+                              )}
+                            </div>
+            <label className="sr-only" htmlFor="player-input">你的行动</label>
+            <textarea id="player-input" disabled={submitting} value={input}
+              onChange={(e) => setInput(e.target.value)} rows={2}
+              placeholder={compactSidebars ? '填写你的行动' : '填写你的行动；发送后生成三阶段并自动结算'} />
+            <div className="composer-footer">
+              <button className="primary" disabled={(!canCommit && !awaitingAction) || busy || !input.trim()}
+                onClick={() => void send()}>{submitting ? '正在结算…' : '发送'}</button>
             </div>
           </div>
         </div>
       </section>
-      <aside className="world-sidebar" aria-label="世界资料">
-        <details className="sidebar-disclosure" open={!compactSidebars}>
-          <summary>世界资料 <span>七项资料</span></summary>
-          <div className="sidebar-body" tabIndex={0} aria-label="世界资料滚动区域">
-            <p className="eyebrow">WORLD ARCHIVE</p>
-            <h2>世界资料</h2>
-            <nav>
-              {panelNames.map((name, index) => (
-                <button key={name} onClick={() => setPanel(name)}>
-                  <span className="nav-number">0{index + 1}</span>
-                  <span>{name}</span>
-                  <span aria-hidden="true">↗</span>
-                </button>
-              ))}
-            </nav>
-            <div className="world-note">
-              <span className="tiny-dot" />
-              当前浏览器本地存档
-              <p>
-                从身边的人，到更远的城市。
-                <br />
-                已知的世界会在此留下记录。
-              </p>
-            </div>
-          </div>
-        </details>
-      </aside>
+      {!compactSidebars && worldNavigation}
+      <nav className="mobile-game-nav" aria-label="底部导航">
+        <button aria-current={!panel && !worldDirectoryOpen && !renderSettings ? 'page' : undefined}
+          onClick={() => { reader.current?.focus({ preventScroll: true }); }}>故事</button>
+        <button onClick={() => setPanel('人物档案')}>人物</button>
+        <button onClick={() => setWorldDirectoryOpen(true)}>世界资料</button>
+        <button onClick={onOpenSettings}>设置</button>
+      </nav>
+      {compactSidebars && worldDirectoryOpen && <Dialog title="世界资料" className="world-directory" onClose={() => setWorldDirectoryOpen(false)}>
+        <p className="muted">从身边的人，到更远的城市。</p>
+        {worldNavigation}
+      </Dialog>}
       {panel && (
         <Dialog title={panel} className={panel === '物品栏' ? 'inventory-dialog' : ''} onClose={() => setPanel(undefined)}>
           {panel === '人物档案' ? (
@@ -684,6 +612,14 @@ export function GameScreen({
                 外貌: hero.appearance,
                 性格: hero.personality,
                 背景: hero.background,
+                职业: hero.profession,
+                当前时间: state.openingTimePending ? '开局时间待确认' : dateTime(state.worldClock),
+                候选时间: openingTime ? `${dateTime(openingTime.endAt)}（未正式结算）` : undefined,
+                地点: state.locations[hero.locationId]?.name || '地点未确认',
+                天气: state.weatherText || '天气待确认',
+                环境: state.environmentText || '环境将由开局正文确立。',
+                身体: hero.healthText || '待开局确认',
+                情绪: hero.emotionText || '待开局确认',
                 社会状态: hero.publicStatus || '未确认',
                 法律状态: hero.legalStatus || '未确认',
               }).map(([label, value]) => (
@@ -693,6 +629,13 @@ export function GameScreen({
               ))}
             </dl>
             <ProfessionProfile hero={hero} />
+            <h3>当前穿戴与装备</h3>
+            <dl>{equipment.map(([label, value]) => <Detail key={label} label={label}>{value}</Detail>)}</dl>
+            <div className="profile-entrypoints">
+              <button onClick={() => setPanel('经济与资产')}>经济与资产</button>
+              <button onClick={() => setPanel('NPC')}>NPC 人物资料</button>
+              <button onClick={onSaves}>切换存档</button>
+            </div>
             </>
           ) : panel === '经济与资产' ? (
             <>
