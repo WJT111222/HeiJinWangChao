@@ -94,6 +94,9 @@ test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, 
       expect(await reader.evaluate(el => el.scrollTop)).toBe(position);
       await page.locator('.workflow-disclosure > summary').click();
       await expect(page.getByRole('button', { name: '发送', exact: true })).toBeInViewport({ ratio: 1 });
+      const details = (await page.locator('.workflow-details').boundingBox())!;
+      expect(Math.abs(details.x - row.x)).toBeLessThan(2);
+      expect(Math.abs(details.width - row.width)).toBeLessThan(2);
       await page.screenshot({ path: `${destination}/after-workflow-${size.width}x${size.height}.png` });
       await page.locator('.workflow-disclosure > summary').click();
     } else {
@@ -123,9 +126,10 @@ test('PC 长状态限高、完整资料、九入口短屏可访问', async ({ pa
   await seedNightSeal(page, true);
   await page.getByRole('button', { name: /读取存档/ }).click();
   const before = await nightSealStored(page);
-  for (const size of sizes.filter(size => size.width > 900)) {
+  for (const size of [...sizes.filter(size => size.width > 900), { width: 901, height: 600 }, { width: 2560, height: 1080 }]) {
     await page.setViewportSize(size);
     expect((await page.locator('.player-status').boundingBox())!.height).toBeLessThan(100);
+    expect((await page.locator('.reader-heading').boundingBox())!.width).toBeLessThanOrEqual(1180);
     await expect(page.locator('.status-identity h2')).toHaveAttribute('title', '沈砚与城市旧事档案的长期记录者'.repeat(5));
     await expect(page.locator('.status-condition')).toBeVisible();
     await expect(page.locator('.status-online')).toBeVisible();
@@ -139,6 +143,11 @@ test('PC 长状态限高、完整资料、九入口短屏可访问', async ({ pa
     await expect(page.getByRole('dialog', { name: '人物档案', exact: true })).toContainText('身体状态保持稳定，需要适时休息。'.repeat(50));
     await page.keyboard.press('Escape');
   }
+  await page.setViewportSize({ width: 1024, height: 520 });
   await page.screenshot({ path: `${destination}/after-long-status.png` });
+  await page.setViewportSize({ width: 900, height: 700 });
+  await expect(page.locator('.app-header')).toBeVisible();
+  await expect(page.locator('.game-corner-brand')).toBeHidden();
+  await expect(page.getByRole('navigation', { name: '系统操作' })).toHaveCount(0);
   expect(await nightSealStored(page)).toEqual(before);
 });
