@@ -12,7 +12,7 @@ export interface RecallCues {
 }
 type Ref = { kind: string; id: string };
 type Node = { ref: Ref; labels: string[]; text: string; links: Ref[]; turns: string[]; active?: boolean; due?: string; importance?: number };
-type Source = { path: string; refs: Ref[]; turns: string[]; text: string; at?: string; links?: string[] };
+type Source = { path: string; refs: Ref[]; turns: string[]; text: string; at?: string };
 const key = (ref: Ref) => `${ref.kind}:${ref.id}`;
 const norm = (text: string) => text.normalize('NFKC').toLowerCase();
 const segmenter = new Intl.Segmenter('zh-CN', { granularity: 'word' });
@@ -22,7 +22,8 @@ export const recallBudget = { serializedCharacters: 24000, narrativeCharacters: 
   auxiliaryCharacters: 600, summaryCharacters: 400, metadataReferences: 8, maximumRecords: 32, queryCharacters: 12000, terms: 96 } as const;
 const encodedSize = (value: unknown) => JSON.stringify(value).replace(/[<>&]/g, ch => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`).length;
 function termsFor(text: string) {
-  return [...new Set([...segmenter.segment(norm(text))].filter(part => part.isWordLike && part.segment.length >= 2 && !stop.has(part.segment)).map(part => part.segment))];
+  return [...new Set([...segmenter.segment(norm(text))].filter(part => part.isWordLike && part.segment.length >= 2 &&
+    !/^\p{Number}+$/u.test(part.segment) && !stop.has(part.segment)).map(part => part.segment))];
 }
 function cut(text: string, limit: number, terms: string[]) {
   // Offsets refer to original UTF-16 string, so locate using non-normalized text.
@@ -57,11 +58,13 @@ export function recallJournal(state: GameState, windowSize: number, cues: Recall
   for (const org of Object.values(state.organizations)) add('organization', org.id, [org.name], [org.description, org.protagonistRelation, ...org.relationHistory].join('\n'),
     [...org.keyNpcIds.map(id => ref('npc', id)), ...org.currentTaskIds.map(id => ref('task', id))]);
   for (const item of Object.values(state.items)) add('item', item.id, [item.name], item.conditionText ?? '', item.ownerRef ? [actor(item.ownerRef)] : []);
-  for (const task of Object.values(state.tasks)) add('task', task.id, [task.goal], JSON.stringify(task),
+  for (const task of Object.values(state.tasks)) add('task', task.id, [task.goal], [task.goal, task.completionCondition,
+    ...task.prerequisites, ...task.blockers, task.handoff?.content, task.resolution?.result].join('\n'),
     [actor(task.actorRef), ...(task.locationId ? [ref('location', task.locationId)] : []), ...(task.linkedEventId ? [ref('event', task.linkedEventId)] : []),
       ...(task.handoff ? [ref('task', task.handoff.fromTaskId)] : [])], task.resolution ? [task.resolution.sourceTurnId] : [],
     !['completed', 'cancelled'].includes(task.status), task.dueAt);
-  for (const event of Object.values(state.events)) add('event', event.id, [event.title], JSON.stringify(event),
+  for (const event of Object.values(state.events)) add('event', event.id, [event.title], [event.title, event.backgroundText,
+    event.goalText, event.completionCondition, ...event.prerequisites, ...event.blockers, event.resolutionText].join('\n'),
     [...event.actorRefs, ...event.linkedTaskIds.map(id => ref('task', id)), ...(event.locationId ? [ref('location', event.locationId)] : []),
       ...(event.predecessorEventIds ?? []).map(id => ref('event', id))], event.sourceTurnIds,
     !['resolved', 'cancelled'].includes(event.status), event.estimatedEndAt, event.impact === 'major' ? 10 : event.impact === 'significant' ? 5 : 0);
@@ -72,16 +75,12 @@ export function recallJournal(state: GameState, windowSize: number, cues: Recall
       ...(entry.eventId ? [ref('event', entry.eventId)] : []), ...(entry.locationId ? [ref('location', entry.locationId)] : []),
       ...entry.relatedEntryIds.map(id => ref('timeline', id))], [entry.sourceTurnId]);
     sources.push({ path: `timeline.${entry.id}`, refs: [ref('timeline', entry.id), ...entry.actorRefs, ...(entry.sourceRef ? [entry.sourceRef] : [])],
-      turns: [entry.sourceTurnId], text: `${entry.title}\n${entry.summary}`, at: entry.recordedAt, links: entry.relatedEntryIds });
+      turns: [entry.sourceTurnId], text: `${entry.title}\n${entry.summary}`, at: entry.recordedAt });
   }
   const rawTexts = [cues.playerInput, cues.storyText ?? '', cues.variableGuide ? JSON.stringify(cues.variableGuide) : '',
     cues.validatedVariables ? JSON.stringify(cues.validatedVariables) : ''];
   const texts = rawTexts.map(text => norm(text.slice(0, recallBudget.queryCharacters)));
-  const queryTerms = termsFor(texts.join('\n'));
   const journalText = state.journal.map(entry => norm(`${entry.story.summary}\n${entry.story.narrative}`));
-  // Frequent background words cannot make nearly every turn relevant. Entity/source signals remain independent.
-  const terms = queryTerms.slice(0, recallBudget.terms).filter(term => state.journal.length < 10 ||
-    journalText.filter(text => text.includes(term)).length <= state.journal.length * 0.4);
   // IDs are case sensitive in V6; text normalization must not merge distinct identities.
   const ids = new Set(rawTexts.map(text => text.slice(0, recallBudget.queryCharacters)).join('\n').match(/[a-zA-Z0-9][a-zA-Z0-9_.:-]*/g) ?? []);
   const labels = new Map<string, Set<string>>();
@@ -95,9 +94,26 @@ export function recallJournal(state: GameState, windowSize: number, cues: Recall
     // The protagonist occurs everywhere: never use that hub as a retrieval signal.
     if (reference.kind !== 'protagonist') selected.set(key(reference), Math.max(selected.get(key(reference)) ?? 0, weight));
   };
+  // Longest overlapping label wins, including ambiguous labels which must not elevate a shorter name to identity.
+  const named = new Set<string>();
+  const orderedLabels = [...labels.entries()].sort((a, b) => b[0].length - a[0].length || a[0].localeCompare(b[0]));
+  for (const text of texts) {
+    const occupied = new Uint8Array(text.length);
+    for (const [label, owners] of orderedLabels) {
+      let start = text.indexOf(label);
+      while (start >= 0) {
+        const end = start + label.length;
+        if (!occupied.subarray(start, end).some(Boolean)) {
+          occupied.fill(1, start, end);
+          if (owners.size === 1) owners.forEach(owner => named.add(owner));
+        }
+        start = text.indexOf(label, end);
+      }
+    }
+  }
   for (const node of nodes) {
     if (ids.has(node.ref.id) || ids.has(key(node.ref))) select(node.ref, 100);
-    if (node.labels.some(label => label.length >= 2 && labels.get(norm(label))?.size === 1 && texts.some(text => text.includes(norm(label))))) select(node.ref, 90);
+    if (named.has(key(node.ref))) select(node.ref, 90);
   }
   if (enabled) {
     Object.values(state.npc).filter(npc => npc.onScene).forEach(npc => select(ref('npc', npc.id), 80));
@@ -123,14 +139,34 @@ export function recallJournal(state: GameState, windowSize: number, cues: Recall
       }
     }
   }
+  // Existing task goals/blockers and focused profiles supply lexical cues when old journals lack references.
+  // This does not infer new graph edges or invent a source turn for tasks (V6 has no creation sourceTurnId).
+  let derivedRemaining = 8000;
+  let omittedDerivedCueCharacters = 0;
+  const derivedTexts = nodes.filter(node => (selected.get(key(node.ref)) ?? 0) >= (['task', 'event'].includes(node.ref.kind) ? 65 : 80))
+    .sort((a, b) => (selected.get(key(b.ref)) ?? 0) - (selected.get(key(a.ref)) ?? 0) || key(a.ref).localeCompare(key(b.ref)))
+    .map(node => {
+      const original = [...node.labels, node.text].join('\n');
+      const text = original.slice(0, Math.min(2000, derivedRemaining));
+      derivedRemaining -= text.length; omittedDerivedCueCharacters += original.length - text.length;
+      return text;
+    });
+  const queryTerms = termsFor([...texts, ...derivedTexts].join('\n'));
+  // Frequent background words cannot make nearly every turn relevant. Entity/source signals remain independent.
+  const terms = queryTerms.slice(0, recallBudget.terms).filter(term => state.journal.length < 10 ||
+    journalText.filter(text => text.includes(term)).length <= state.journal.length * 0.4);
+  const locationTurns = new Set(nodes.filter(node => node.links.some(link => link.kind === 'location' && link.id === state.protagonist.locationId)).flatMap(node => node.turns));
   const tokenMatches = (text: string) => { const lower = norm(text); return terms.filter(term => lower.includes(term)); };
-  const turnSources = new Map<string, { score: number; sources: { path: string; sourceRecordedAt?: string }[]; refs: Ref[]; importance: number }>();
+  const turnSources = new Map<string, { score: number; sources: { path: string; sourceRecordedAt?: string }[]; sourceKeys: Set<string>; refs: Map<string, Ref>; importance: number }>();
   function cite(turnIds: string[], path: string, refs: Ref[], score: number, at?: string, importance = 0) {
     for (const turnId of turnIds) {
-      const current = turnSources.get(turnId) ?? { score: 0, sources: [], refs: [], importance: 0 };
+      const current = turnSources.get(turnId) ?? { score: 0, sources: [], sourceKeys: new Set<string>(), refs: new Map<string, Ref>(), importance: 0 };
       current.score = Math.max(current.score, score); current.importance = Math.max(current.importance, importance);
-      if (!current.sources.some(source => source.path === path)) current.sources.push({ path, ...(at ? { sourceRecordedAt: at } : {}) });
-      for (const reference of refs) if (!current.refs.some(other => key(other) === key(reference))) current.refs.push(reference);
+      if (!current.sourceKeys.has(path)) {
+        current.sourceKeys.add(path);
+        if (current.sources.length < recallBudget.metadataReferences) current.sources.push({ path, ...(at ? { sourceRecordedAt: at } : {}) });
+      }
+      for (const reference of refs) current.refs.set(key(reference), reference);
       turnSources.set(turnId, current);
     }
   }
@@ -141,7 +177,9 @@ export function recallJournal(state: GameState, windowSize: number, cues: Recall
   for (const source of sources) {
     const related = source.refs.filter(reference => (selected.get(key(reference)) ?? 0) >= 50);
     const hits = tokenMatches(source.text);
-    if (related.length || hits.length) cite(source.turns, source.path, related, related.length ? 80 : Math.min(65, 35 + hits.length * 6), source.at);
+    const relationshipWeight = related.reduce((weight, reference) => Math.max(weight, selected.get(key(reference)) ?? 0), 0);
+    if (related.length || hits.length) cite(source.turns, source.path, related,
+      related.length ? Math.min(85, relationshipWeight) : Math.min(65, 35 + hits.length * 6), source.at);
   }
   const excluded = new Set(state.journal.slice(-windowSize).map(entry => entry.turnId));
   const ranked = enabled ? state.journal.flatMap((entry, index) => {
@@ -153,7 +191,7 @@ export function recallJournal(state: GameState, windowSize: number, cues: Recall
     const textScore = Math.min(40, summaryTerms.length * 6 + matchedTerms.length * 3);
     // Require evidence; recency and importance can only break/reinforce a real match.
     if (!linked && !matchedEntityRefs.length && !matchedTerms.length) return [];
-    const score = (matchedEntityRefs.length ? 90 : 0) + (linked?.score ?? 0) + textScore + (linked?.importance ?? 0)
+    const score = (matchedEntityRefs.length ? 90 : 0) + (linked?.score ?? 0) + textScore + (linked?.importance ?? 0) + (locationTurns.has(entry.turnId) ? 4 : 0)
       + Math.floor(4 * (index + 1) / Math.max(1, state.journal.length));
     return [{ entry, index, score, matchedEntityRefs, matchedTerms, linked }];
   }).sort((a, b) => b.score - a.score || b.index - a.index || a.entry.turnId.localeCompare(b.entry.turnId)) : [];
@@ -178,9 +216,9 @@ export function recallJournal(state: GameState, windowSize: number, cues: Recall
       matchedTerms: matchedTerms.slice(0, 12), matchedEntityRefs: matchedEntityRefs.slice(0, recallBudget.metadataReferences),
       relatedActorRefs: entry.relatedActorRefs.slice(0, recallBudget.metadataReferences),
       omittedRelatedActorRefs: Math.max(0, entry.relatedActorRefs.length - recallBudget.metadataReferences),
-      sourceReferences: citations.slice(0, recallBudget.metadataReferences), omittedSourceReferences: Math.max(0, citations.length - recallBudget.metadataReferences),
-      linkedEntityRefs: (linked?.refs ?? []).slice(0, recallBudget.metadataReferences),
-      omittedLinkedEntityRefs: Math.max(0, (linked?.refs.length ?? 0) - recallBudget.metadataReferences),
+      sourceReferences: citations, omittedSourceReferences: Math.max(0, (linked?.sourceKeys.size ?? 0) - recallBudget.metadataReferences),
+      linkedEntityRefs: [...(linked?.refs.values() ?? [])].slice(0, recallBudget.metadataReferences),
+      omittedLinkedEntityRefs: Math.max(0, (linked?.refs.size ?? 0) - recallBudget.metadataReferences),
     };
     let size = encodedSize(result) + 1;
     if (size > sizeRemaining) {
@@ -196,6 +234,7 @@ export function recallJournal(state: GameState, windowSize: number, cues: Recall
   return { recalledTurns, recallPolicy: '召回只提供已提交journal原始经过；sourceReferences指向SAVE_STATE既有记忆/世界资料，不是额外事件或身份断言。总结覆盖多个回合不证明每个角色参与每回合。当前STORY_RESULT及Variables投影仍是未提交候选。历史与较新正式状态冲突时以正式状态为准，不据历史重复记账。无可验证时间时不补造时间；原文截取范围以UTF-16半开区间标明。',
     recallDiagnostics: { algorithm: 'shared-journal-v2', stage: cues.stage, eligibleTurns: ranked.length, selectedTurns: recalledTurns.length,
       truncatedCueCharacters: rawTexts.map(text => Math.max(0, text.length - recallBudget.queryCharacters)),
+      derivedCueCharacters: 8000 - derivedRemaining, omittedDerivedCueCharacters,
       omittedQueryTerms: Math.max(0, queryTerms.length - recallBudget.terms), suppressedFrequentTerms: Math.min(queryTerms.length, recallBudget.terms) - terms.length,
       omittedTurns: ranked.length - recalledTurns.length, serializedCharacters: recallBudget.serializedCharacters - sizeRemaining,
       narrativeCharacters: recallBudget.narrativeCharacters - textRemaining, budget: recallBudget, timeWindow: cues.stage === 'world' ? { from: cues.from, to: state.worldClock } : undefined } };

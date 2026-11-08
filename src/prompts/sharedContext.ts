@@ -18,6 +18,7 @@ export function sharedContext(state: GameState, windowSize: number, query: strin
       // 分层与NPC记忆已经完整位于SAVE_STATE；召回只补journal经过，不重抄摘要。
       summaries: [],
       summarySource: 'SAVE_STATE.memories',
+      summaryPolicy: '全部正式分层/NPC记忆保留在SAVE_STATE；同一sourceTurnId在近期正文、旧史原文与多层总结中表示同一来源，不是多次独立事件，不重新记账。',
       // 完整已提交 Story，包括变量指导和行动选项；当前候选只在 STORY_RESULT 中。
       recentTurns: recent.map((entry, index) => ({
         turnId: entry.turnId,
