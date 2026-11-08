@@ -1,6 +1,6 @@
 # UI-1.1 · PC 阅读布局与导航精修
 
-本次仅精修 **大于 900px 的正式游戏页**，延续 PR #76 夜幕金印的配色和字体。开发模型按任务指定为 GPT-6.1 Sol High；基线为开工时 fetch 后核对的 `main@11115a1f15732f0df27a7544156e22ca577ea330`。独立分支 `ui/pc-reading-layout`，保持 Draft，交六代目审查，不合并、不部署。
+本次仅精修 **大于 900px 的正式游戏页**，延续 PR #76 夜幕金印的配色和字体。开发模型按任务指定为 GPT-6.1 Sol High；基线为开工时 fetch 后核对的 `main@11115a1f15732f0df27a7544156e22ca577ea330`。独立分支 `ui/pc-reading-layout`，[Draft PR #77](https://github.com/WJT111222/HeiJinWangChao/pull/77)，交六代目审查，不合并、不部署。
 
 ## 阅读宽度与顶部空间
 
@@ -15,7 +15,7 @@
 | 1024×520 | 680 | 734 | 328.97 | 349.81 | 78 |
 | 390×844（手机，保持） | 358 | 358 | 537.81 | 537.81 | 97 |
 
-PC 的 `.app-shell-game > .app-header` 隐藏，释放普通窗口原有 60px 顶栏；短窗口原 container query 顶栏为 44px。外壳原本为 flex，隐藏后状态条自然从 y=0 开始；全局错误提示仍占原独立 flex 行。新状态条固定为常规 78px，较旧条的高度差使实际阅读空间增量略有不同。行动区高度、textarea 与 Roll/发送按钮的高度没有因品牌而增加。
+PC 的 `.app-shell-game > .app-header` 隐藏，释放普通窗口原有 60px 顶栏；短窗口原 container query 顶栏为 44px。外壳原本为 flex，隐藏后状态条自然从 y=0 开始；全局错误提示仍占原独立 flex 行。新状态条常规实测为 78px，较旧条的高度差使实际阅读空间增量略有不同。行动区高度、textarea 与 Roll/发送按钮的高度没有因品牌而增加。
 
 THE STORY、章节标题、旁白、对话容器、行动建议、工作流状态与展开内容、输入操作行共用一列。气泡保留原来的主角右置/NPC 左置和按内容伸缩，最大范围约束在该阅读列内；Roll/发送保持正常按钮宽度，输入框占余下空间。正文解析与 1.05rem/2 的中文排版规则未变。
 
@@ -34,7 +34,7 @@ THE STORY、章节标题、旁白、对话容器、行动建议、工作流状�
 
 ## 顶部真实状态
 
-顶部继续读取真实 GameState 的姓名、年龄、性别、职业、时间、地点、天气、现金、线上资金、身体、情绪，以及人物档案/经济入口。环境从同一 `state.environmentText` 补入桌面状态栏。长姓名、职业、日期地点、天气环境、金额使用单行省略并提供完整 title；身体/情绪保留原 title。1024px 也保留身体和线上资金。长值测试验证状态条低于 100px，正式资料对话框保留全部长姓名和完整身体描述；未裁剪正式数据。
+顶部继续读取真实 GameState 的姓名、年龄、性别、职业、时间、地点、天气、现金、线上资金、身体、情绪，以及人物档案/经济入口。环境从同一 `state.environmentText` 补入桌面状态栏。长姓名、职业、日期地点、天气环境、金额使用单行省略并提供完整 title；身体/情绪保留原 title。1024px 也保留身体和线上资金。长值测试验证状态条低于 100px，正式资料对话框保留全部长姓名和完整身体描述；未裁剪正式数据。额外覆盖 900/901px 边界与 2560px 宽屏。
 
 ## 同场景截图
 
@@ -53,14 +53,36 @@ before 使用独立冻结 `main@11115a1` worktree/5181 端口，after 使用本�
 
 额外证据：[矮屏九入口滚到底](screenshots/after-short-dock.png)、[长姓名/金额/身体](screenshots/after-long-status.png)、[Mock 运行中取消](screenshots/after-running-short-pc.png)。具体几何：[before](before-measurements.json)、[after](after-measurements.json)。
 
-手机 390×844 before/after PNG 经 Pillow ImageChops 比较，差异 bbox 为 None，即逐像素相同；header=52px、状态=97px、正文=358px、输入行=44px，各几何值也完全相同。手机四栏导航和七项世界目录断言通过。新增品牌在手机隐藏，系统两入口不进入手机 DOM；手机 header/hamburger、底部导航、输入框、键盘适配的规则与 `useGameViewport` 均未改。
+手机 390×844 before/after PNG 经 Pillow ImageChops 比较，差异 bbox 为 None，即逐像素相同；PNG 文件 SHA256 也相同，[机器证据](mobile-preservation.json)。header=52px、状态=97px、正文=358px、输入行=44px，各几何值也完全相同。手机四栏导航和七项世界目录断言通过。新增品牌在手机隐藏，系统两入口不进入手机 DOM；手机 header/hamburger、底部导航、输入框、键盘适配的规则与 `useGameViewport` 均未改。
 
 ## 验证与范围
 
-- 新 PC 布局/长值 Playwright：2/2 通过；全部六种视口无页面横溢、输入/发送可见、各列对齐、设置关闭焦点/阅读位置保持，资料前后正式 state/draft 不变。
-- 定向既有 Playwright：运行中，最终结果在冻结验收后补录。只覆盖受影响的 game-window、story-reading、action-workflow；不声称全库 E2E 通过。
-- `npm run typecheck`、`npm run lint`、`npm run build` 首轮通过；构建保留既有超过 500kB 主包提示，无新依赖。
+**最终冻结验收 68/68 通过，0 失败、0 跳过、0 flaky、0 重试。** [机器可读验收摘要](validation.json)。生产源码冻结于 `b4c9955`，后续提交只补测试边界、截图和报告。
+
+| Playwright 文件 | 桌面 | 手机 |
+| --- | ---: | ---: |
+| `action-workflow.spec.ts` | 20 | 20 |
+| `game-window.spec.ts` | 9 | 9 |
+| `story-reading.spec.ts` | 4 | 4 |
+| `pc-reading-layout.spec.ts` | 2 | —（桌面用例含 390px 对照） |
+
+既有三组 66 条共 242.11 秒；PC 专项 2 条共 13.85 秒，按批次先后运行，没有同时启动两组浏览器测试或边跑修改生产源码。手机 33 条使用真实 Playwright Pixel 7 上下文，包括 VisualViewport 收缩/恢复、原手机设置/资料关闭回焦、历史/气泡和 Mock 生成/发送/取消。普通截图专项中的 390px 使用桌面 Chromium 同尺寸上下文，用于严格同场景像素对比，不将它冒称实机。
+
+- PC 专项覆盖六个截图视口及 900/901px 边界、2560px 宽屏；无页面横溢、输入/发送可见、旁白/对话范围/建议/工作流状态及展开内容/输入各列对齐、设置关闭焦点与阅读位置保持，资料前后正式 state/draft 不变。短屏逐个滚入九入口，长状态真实原文可读。
+- 既有三组覆盖自动三阶段、发送、重新 Roll、取消、错误、重试、状态保存、迟到响应、独立正文/资料滚动与手机键盘。专门增强原取消用例，在 1024×520 展开时断言取消与发送完整可见并截图。
+- `npm run typecheck`、`npm run lint`、`npm run build`：全部通过；构建保留既有超过 500kB 主包提示，无新依赖。
 - 没有付费 AI、合并、部署。Mock 测试验证真实工作流回调，不改执行逻辑。
+
+可在对应 worktree、确认本地 server 来自该分支后复现：
+
+```bash
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test \
+  e2e/game-window.spec.ts e2e/story-reading.spec.ts e2e/action-workflow.spec.ts
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test \
+  e2e/pc-reading-layout.spec.ts --project=desktop
+```
+
+本次实际执行通过 `/tmp/pc-reading-playwright.config.ts` 覆盖 `webServer.cwd`、`baseURL` 和 server URL 为当前 worktree 的 5180，并设置 `reuseExistingServer: false`，结果分别输出 `/tmp/pc-reading-targeted`、`/tmp/pc-reading-layout-final`；before 使用 5181。避免与其他任务的旧 5174 server 混用。测试生成的原 compact-workflow 截图在验收后恢复，没有带入本 PR。没有整套跑全库 E2E。
 
 生产变更仅 App 品牌 JSX、GameScreen 系统导航 JSX、PlayerStatus 只读字段/title 和桌面 scoped CSS。首页/存档/创角布局、复杂面板内部、StoryReading/解析、历史逻辑、工作流生成/自动结算/手动 Roll/取消/发送、引擎、schema、IndexedDB、CAS/Commit、记忆/NPC、提示词、上下文和 AI 路由均未修改。
 
