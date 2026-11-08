@@ -1,0 +1,88 @@
+{
+  "implementationCommit": "9023446",
+  "baseline": "8cc44e64ca214bfb62c65d1bc1c73bf01246f98d",
+  "e2e": {
+    "stats": {
+      "startTime": "2026-11-08T12:41:41.036Z",
+      "duration": 479859.25,
+      "expected": 142,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "projects": {
+      "desktop": 71,
+      "mobile": 71
+    },
+    "specs": {
+      "action-workflow.spec.ts": {
+        "desktop": 20,
+        "mobile": 20
+      },
+      "automatic-settlement.spec.ts": {
+        "desktop": 8,
+        "mobile": 8
+      },
+      "character-creation-v2.spec.ts": {
+        "desktop": 3,
+        "mobile": 3
+      },
+      "continuous-turns.spec.ts": {
+        "desktop": 6,
+        "mobile": 6
+      },
+      "game-window.spec.ts": {
+        "desktop": 9,
+        "mobile": 9
+      },
+      "game.spec.ts": {
+        "desktop": 4,
+        "mobile": 4
+      },
+      "inventory-v2.spec.ts": {
+        "desktop": 2,
+        "mobile": 2
+      },
+      "night-seal.spec.ts": {
+        "desktop": 2,
+        "mobile": 2
+      },
+      "prompt-inspector.spec.ts": {
+        "desktop": 6,
+        "mobile": 6
+      },
+      "story-reading.spec.ts": {
+        "desktop": 4,
+        "mobile": 4
+      },
+      "unreadable-saves.spec.ts": {
+        "desktop": 7,
+        "mobile": 7
+      }
+    },
+    "retryCount": 0,
+    "outputDirectory": "/tmp/night-final-results",
+    "ai": "Mock only; no paid AI calls"
+  },
+  "unit": {
+    "files": 5,
+    "tests": 140,
+    "status": "passed"
+  },
+  "typecheck": "passed",
+  "lint": "passed",
+  "build": {
+    "status": "passed",
+    "warning": "Existing main chunk exceeds the 500 kB warning threshold"
+  },
+  "viewportCssPixels": [
+    "1440x900",
+    "1280x800",
+    "900x700",
+    "390x844",
+    "375x667",
+    "320x568",
+    "667x375"
+  ],
+  "keyboard": "VisualViewport simulation, not a physical device keyboard"
+}

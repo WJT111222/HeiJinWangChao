@@ -1,4 +1,4 @@
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools, goHome, openWorldArchive, openProfile } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 
@@ -129,7 +129,9 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
   const sidebar = page.getByRole('complementary', { name: '主角信息' });
   await expect(sidebar).toContainText('未确认');
   await expect(sidebar).not.toContainText('0.00 元');
-  await expect(sidebar.locator('.detail').filter({ hasText: '主武器' })).toContainText('无');
+  await openProfile(page);
+  await expect(page.getByRole('dialog', { name: '人物档案', exact: true }).locator('.detail').filter({ hasText: '主武器' })).toContainText('无');
+  await page.keyboard.press('Escape');
   const workflow = await page.getByRole('region', { name: '三阶段工作流' }).boundingBox();
   const input = await page.getByLabel('你的行动').boundingBox();
   expect(workflow!.y).toBeLessThan(input!.y);
@@ -181,6 +183,7 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
     });
   });
   await page.reload(); await openGameTools(page);
+  await openWorldArchive(page);
   await page
     .getByRole('complementary', { name: '世界资料' })
     .getByRole('button', { name: /NPC/ })
@@ -215,13 +218,13 @@ test('自定义职业、跳过同伴，多存档选择切换与确认删除', as
   await page.getByRole('button', { name: '跳过同伴，继续' }).click();
   await page.getByRole('button', { name: '确认并创建存档' }).click(); await openGameTools(page, true);
   await expect(page.getByRole('heading', { name: '自定义角色' })).toBeVisible();
-  await page.getByRole('button', { name: '游戏首页', exact: true }).click();
+  await goHome(page);
   await expect(page.locator('.save-card')).toHaveCount(2);
   const first = page.locator('.save-card').filter({ hasText: '界面测试存档（隔离）' });
   await first.getByRole('button', { name: '选择', exact: true }).click();
   await page.getByRole('button', { name: /继续游戏/ }).click();
   await expect(page.getByText('这是隔离测试用正文。').first()).toBeVisible();
-  await page.getByRole('button', { name: '游戏首页', exact: true }).click();
+  await goHome(page);
   await page
     .locator('.save-card')
     .filter({ hasText: '自定义角色' })
@@ -247,6 +250,7 @@ test('七面板一键打开、键盘关闭、全量资料只读且保留阅读�
     el.scrollTop = 500;
   });
   const position = await reader.evaluate((el) => el.scrollTop);
+  await openWorldArchive(page);
   for (const title of ['NPC', '势力组织', '地图', '物品栏', '世界事件', '历史时间轴', '记忆']) {
     const opener = page
       .getByRole('complementary', { name: '世界资料' })

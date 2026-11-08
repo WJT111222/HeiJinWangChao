@@ -1,3 +1,4 @@
+import { goHome } from './helpers/gameLayout';
 // 此文件故意不用 helpers/test：从未阅读公告的真实首次访问开始。
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -67,7 +68,7 @@ test('首次访问按序展示完整内容；关闭后导航不重播，未勾�
   await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
   await page.getByRole('button', { name: /开始新游戏/ }).click();
   await expect(page.getByLabel('姓名', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '游戏首页', exact: true }).click();
+  await goHome(page);
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(externalRequests).toEqual([]);
   await page.reload();
