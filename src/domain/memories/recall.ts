@@ -81,6 +81,22 @@ export function recallJournal(state: GameState, windowSize: number, cues: Recall
     cues.validatedVariables ? JSON.stringify(cues.validatedVariables) : ''];
   const texts = rawTexts.map(text => norm(text.slice(0, recallBudget.queryCharacters)));
   const journalText = state.journal.map(entry => norm(`${entry.story.summary}\n${entry.story.narrative}`));
+  // One identity may cover almost the whole save. Count the UNION across both journal actors
+  // and all memory owners/affected references, including hundreds of individually narrow memories.
+  const knownTurns = new Set(state.journal.map(entry => entry.turnId));
+  const npcCoverage = new Map<string, Set<string>>();
+  const cover = (references: Ref[], turnIds: string[]) => {
+    for (const reference of references) if (reference.kind === 'npc') {
+      const turns = npcCoverage.get(reference.id) ?? new Set<string>();
+      turnIds.forEach(turnId => { if (knownTurns.has(turnId)) turns.add(turnId); });
+      npcCoverage.set(reference.id, turns);
+    }
+  };
+  state.journal.forEach(entry => cover(entry.relatedActorRefs, [entry.turnId]));
+  sources.forEach(source => cover(source.refs, source.turns));
+  const commonNpc = (reference: Ref) => reference.kind === 'npc' && (npcCoverage.get(reference.id)?.size ?? 0) > Math.max(3, state.journal.length * 0.2);
+  const rarity = (reference: Ref) => reference.kind === 'npc'
+    ? (1 - (npcCoverage.get(reference.id)?.size ?? 0) / Math.max(1, state.journal.length)) ** 3 : 1;
   // IDs are case sensitive in V6; text normalization must not merge distinct identities.
   const ids = new Set(rawTexts.map(text => text.slice(0, recallBudget.queryCharacters)).join('\n').match(/[a-zA-Z0-9][a-zA-Z0-9_.:-]*/g) ?? []);
   const labels = new Map<string, Set<string>>();
@@ -143,25 +159,32 @@ export function recallJournal(state: GameState, windowSize: number, cues: Recall
   // This does not infer new graph edges or invent a source turn for tasks (V6 has no creation sourceTurnId).
   let derivedRemaining = 8000;
   let omittedDerivedCueCharacters = 0;
+  const topicalDerivedTexts: string[] = [];
   const derivedTexts = nodes.filter(node => (selected.get(key(node.ref)) ?? 0) >= (['task', 'event'].includes(node.ref.kind) ? 65 : 80))
     .sort((a, b) => (selected.get(key(b.ref)) ?? 0) - (selected.get(key(a.ref)) ?? 0) || key(a.ref).localeCompare(key(b.ref)))
     .map(node => {
       const original = [...node.labels, node.text].join('\n');
       const text = original.slice(0, Math.min(2000, derivedRemaining));
       derivedRemaining -= text.length; omittedDerivedCueCharacters += original.length - text.length;
+      // A lifelong companion's static biography is not the player's current topic.
+      if (!commonNpc(node.ref)) topicalDerivedTexts.push(text);
       return text;
     });
   const queryTerms = termsFor([...texts, ...derivedTexts].join('\n'));
   // Frequent background words cannot make nearly every turn relevant. Entity/source signals remain independent.
   const terms = queryTerms.slice(0, recallBudget.terms).filter(term => state.journal.length < 10 ||
     journalText.filter(text => text.includes(term)).length <= state.journal.length * 0.4);
+  const identityTerms = new Set(nodes.filter(node => commonNpc(node.ref)).flatMap(node => termsFor(node.labels.join('\n'))));
+  const topicalTerms = new Set(termsFor([...texts, ...topicalDerivedTexts].join('\n')).filter(term => terms.includes(term) && !identityTerms.has(term) &&
+    journalText.filter(text => text.includes(term)).length <= Math.max(3, state.journal.length * 0.1)));
   const locationTurns = new Set(nodes.filter(node => node.links.some(link => link.kind === 'location' && link.id === state.protagonist.locationId)).flatMap(node => node.turns));
   const tokenMatches = (text: string) => { const lower = norm(text); return terms.filter(term => lower.includes(term)); };
-  const turnSources = new Map<string, { score: number; sources: { path: string; sourceRecordedAt?: string }[]; sourceKeys: Set<string>; refs: Map<string, Ref>; importance: number }>();
-  function cite(turnIds: string[], path: string, refs: Ref[], score: number, at?: string, importance = 0) {
+  const turnSources = new Map<string, { score: number; substantive: boolean; sources: { path: string; sourceRecordedAt?: string }[]; sourceKeys: Set<string>; refs: Map<string, Ref>; importance: number }>();
+  function cite(turnIds: string[], path: string, refs: Ref[], score: number, at?: string, importance = 0, substantive = false) {
     for (const turnId of turnIds) {
-      const current = turnSources.get(turnId) ?? { score: 0, sources: [], sourceKeys: new Set<string>(), refs: new Map<string, Ref>(), importance: 0 };
+      const current = turnSources.get(turnId) ?? { score: 0, substantive: false, sources: [], sourceKeys: new Set<string>(), refs: new Map<string, Ref>(), importance: 0 };
       current.score = Math.max(current.score, score); current.importance = Math.max(current.importance, importance);
+      current.substantive ||= substantive;
       if (!current.sourceKeys.has(path)) {
         current.sourceKeys.add(path);
         if (current.sources.length < recallBudget.metadataReferences) current.sources.push({ path, ...(at ? { sourceRecordedAt: at } : {}) });
@@ -172,14 +195,19 @@ export function recallJournal(state: GameState, windowSize: number, cues: Recall
   }
   for (const node of nodes) {
     const weight = selected.get(key(node.ref)) ?? 0;
-    if (weight >= 50) cite(node.turns, `${node.ref.kind}.${node.ref.id}`, [node.ref], weight, undefined, node.importance);
+    if (weight >= 50) cite(node.turns, `${node.ref.kind}.${node.ref.id}`, [node.ref], weight * rarity(node.ref), undefined, node.importance,
+      node.ref.kind !== 'npc');
   }
   for (const source of sources) {
     const related = source.refs.filter(reference => (selected.get(key(reference)) ?? 0) >= 50);
     const hits = tokenMatches(source.text);
-    const relationshipWeight = related.reduce((weight, reference) => Math.max(weight, selected.get(key(reference)) ?? 0), 0);
+    const topicHits = hits.filter(term => topicalTerms.has(term));
+    const relationshipWeight = related.reduce((weight, reference) => Math.max(weight, (selected.get(key(reference)) ?? 0) * rarity(reference)), 0);
+    const breadth = Math.sqrt(Math.max(1, new Set(source.turns.filter(turnId => knownTurns.has(turnId))).size));
+    const topicScore = topicHits.length ? Math.min(85, 55 + topicHits.length * 8) / breadth : 0;
+    const lexicalScore = hits.length && !related.some(commonNpc) ? Math.min(65, 35 + hits.length * 6) / breadth : 0;
     if (related.length || hits.length) cite(source.turns, source.path, related,
-      related.length ? Math.min(85, relationshipWeight) : Math.min(65, 35 + hits.length * 6), source.at);
+      Math.max(Math.min(85, relationshipWeight) / breadth, topicScore, lexicalScore), source.at, 0, topicScore >= 30);
   }
   const excluded = new Set(state.journal.slice(-windowSize).map(entry => entry.turnId));
   const ranked = enabled ? state.journal.flatMap((entry, index) => {
@@ -187,20 +215,26 @@ export function recallJournal(state: GameState, windowSize: number, cues: Recall
     const linked = turnSources.get(entry.turnId);
     const matchedEntityRefs = entry.relatedActorRefs.filter(reference => (selected.get(key(reference)) ?? 0) >= 50);
     const matchedTerms = tokenMatches(`${entry.story.summary}\n${entry.story.narrative}`);
+    const matchedTopicTerms = matchedTerms.filter(term => topicalTerms.has(term));
     const summaryTerms = tokenMatches(entry.story.summary);
     const textScore = Math.min(40, summaryTerms.length * 6 + matchedTerms.length * 3);
-    // Require evidence; recency and importance can only break/reinforce a real match.
-    if (!linked && !matchedEntityRefs.length && !matchedTerms.length) return [];
-    const score = (matchedEntityRefs.length ? 90 : 0) + (linked?.score ?? 0) + textScore + (linked?.importance ?? 0) + (locationTurns.has(entry.turnId) ? 4 : 0)
-      + Math.floor(4 * (index + 1) / Math.max(1, state.journal.length));
-    return [{ entry, index, score, matchedEntityRefs, matchedTerms, linked }];
+    const rareIdentity = matchedEntityRefs.some(reference => !commonNpc(reference)) ||
+      Boolean(linked && linked.score >= 30 && [...linked.refs.values()].some(reference => !commonNpc(reference)));
+    // Identity alone is insufficient for pervasive companions, including owner-only source links.
+    // Explicit event/task/timeline evidence is independent of character prevalence and always survives.
+    if (!linked?.substantive && !rareIdentity && !matchedTopicTerms.length && !(linked && !linked.refs.size && linked.score >= 30)) return [];
+    const actorScore = matchedEntityRefs.reduce((weight, reference) => Math.max(weight,
+      reference.kind === 'npc' ? Math.min(60, 90 * rarity(reference)) : 90), 0);
+    const score = Math.round(actorScore + (linked?.score ?? 0) + textScore + (matchedTopicTerms.length ? 30 : 0) + (linked?.importance ?? 0) + (locationTurns.has(entry.turnId) ? 4 : 0)
+      + Math.floor(4 * (index + 1) / Math.max(1, state.journal.length)));
+    return [{ entry, index, score, matchedEntityRefs, matchedTerms, matchedTopicTerms, linked }];
   }).sort((a, b) => b.score - a.score || b.index - a.index || a.entry.turnId.localeCompare(b.entry.turnId)) : [];
   const recalledTurns = [];
   let textRemaining: number = recallBudget.narrativeCharacters;
   let sizeRemaining: number = recallBudget.serializedCharacters - 2;
   for (const candidate of ranked) {
     if (recalledTurns.length >= recallBudget.maximumRecords || textRemaining < 100) break;
-    const { entry, index, score, matchedTerms, matchedEntityRefs, linked } = candidate;
+    const { entry, index, score, matchedTerms, matchedTopicTerms, matchedEntityRefs, linked } = candidate;
     const strong = score >= 70;
     const share = Math.floor(textRemaining / Math.min(4, ranked.length - recalledTurns.length));
     const limit = Math.min(textRemaining, strong ? Math.min(recallBudget.fullTurnCharacters, Math.max(600, share)) : recallBudget.auxiliaryCharacters);
@@ -214,6 +248,7 @@ export function recallJournal(state: GameState, windowSize: number, cues: Recall
       narrativeExcerpt: narrative.text, narrativeRange: narrative.range, narrativeTruncated: narrative.truncated,
       excerptMarker: narrative.truncated ? '[原文截取；范围见narrativeRange]' : '[完整原始正文]',
       matchedTerms: matchedTerms.slice(0, 12), matchedEntityRefs: matchedEntityRefs.slice(0, recallBudget.metadataReferences),
+      matchedTopicTerms: matchedTopicTerms.slice(0, 12),
       relatedActorRefs: entry.relatedActorRefs.slice(0, recallBudget.metadataReferences),
       omittedRelatedActorRefs: Math.max(0, entry.relatedActorRefs.length - recallBudget.metadataReferences),
       sourceReferences: citations, omittedSourceReferences: Math.max(0, (linked?.sourceKeys.size ?? 0) - recallBudget.metadataReferences),
