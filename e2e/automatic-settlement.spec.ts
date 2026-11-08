@@ -202,6 +202,9 @@ test('认知格式、时间线对象和组织历史逐项拒绝，明确修正�
   const story = (await stored(page)).draft.story; expect(story).toBeDefined(); expect((await stored(page)).state).toEqual(before.state);
   server.control.variables = '<命令>\npush npc[scene].knownInformation = {"text":"收到安排","knowledgeKind":"reported","knowledgeSource":"当面通知","visibility":"npc_private"}\n</命令>';
   await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await expect(log).toContainText('schema_fields');
+  // 旧 Variables 错误也含 schema_fields；等待本次 World 错误，才更换下一次响应。
+  await expect(log.getByRole('listitem').filter({ hasText: '动态世界' })).toContainText('错误码：schema_fields');
+  expect(server.calls).toEqual(['story', 'variables', 'variables', 'world']);
   expect((await stored(page)).state).toEqual(before.state); expect((await stored(page)).draft.variables.validation).toBe('validated');
   Reflect.deleteProperty(world, 'timelineCandidates'); server.control.world = JSON.stringify(world);
   await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await expect(log).toContainText('organization_initialization');
