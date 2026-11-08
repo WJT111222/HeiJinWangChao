@@ -1,6 +1,7 @@
 import { composePrompt } from './composer';
 import type { ComposeInput } from './context';
 import { contextStatistics } from './statistics';
+import { windowRisk } from './budgetInspection';
 import type { AiConfig, AiStage } from '../services/ai/configuration';
 import { cotSupported, resolveModelRoute } from '../services/ai/snapshot';
 import { safeAiError } from '../services/ai/errors';
@@ -16,6 +17,7 @@ export function previewRoute(config: AiConfig, stage: AiStage) {
       protocol: channel.protocol,
       model,
       cotAllowed: cotSupported(channel, model, stage),
+      window: windowRisk(0),
     };
   } catch {
     return {
@@ -25,6 +27,7 @@ export function previewRoute(config: AiConfig, stage: AiStage) {
       protocol: '',
       model: '未知',
       cotAllowed: false,
+      window: windowRisk(0),
     };
   }
 }
@@ -34,6 +37,7 @@ export type StagePreview =
       prompt: Awaited<ReturnType<typeof composePrompt>>;
       route: ReturnType<typeof previewRoute>;
       statistics: ReturnType<typeof contextStatistics>;
+      contentRedacted?: boolean;
     }
   | { ok: false; reason: string };
 export function previewRequirement(

@@ -18,6 +18,10 @@ export function contextStatistics(messages: readonly AiMessage[], usage?: Usage)
   const text = messages.map((message) => message.content).join('\n');
   return {
     characters: messages.reduce((sum, message) => sum + characterCount(message.content), 0),
+    contentBytes: messages.reduce((sum, message) => sum + new TextEncoder().encode(message.content).length, 0),
+    serializedMessagesBytes: new TextEncoder().encode(JSON.stringify(messages)).length,
+    messageCount: messages.length,
+    estimateSeparatorCharacters: Math.max(0, messages.length - 1),
     ...estimateTokens(text),
     actual: {
       inputTokens: usage?.inputTokens,

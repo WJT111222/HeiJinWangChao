@@ -5,6 +5,7 @@ import type { RequestSnapshot } from './snapshot';
 import { freeze, secretFor } from './snapshot';
 import { browserCredentials } from './credentials';
 import { contextStatistics } from '../../prompts/statistics';
+import { cancelBudgetAnalyses } from '../../prompts/budgetAnalysis';
 
 export interface InspectionScope {
   kind: 'stage' | 'memory';
@@ -33,6 +34,7 @@ export interface RequestInspection {
   messages: AiMessage[];
   outputTokenLimit?: number;
   statistics: ReturnType<typeof contextStatistics>;
+  contentRedacted: boolean;
 }
 export function redactInspection<T>(value: T, secrets: readonly string[] = []): T {
   const candidates = [
@@ -122,10 +124,12 @@ export class RequestInspectionStore {
     this.records = records;
     for (const listener of this.listeners) listener();
   }
-  clear = () => this.publish([]);
+  clear = () => { cancelBudgetAnalyses(); this.publish([]); };
   start(snapshot: RequestSnapshot, serializedBody: string, scope?: InspectionScope) {
     const original = JSON.parse(serializedBody) as Record<string, unknown>;
     const messages = payloadMessages(original, snapshot.channel.protocol);
+    // Measure the actual sent messages before redaction; retain no raw credentials.
+    const statistics = contextStatistics(messages);
     const value = redactInspection(
       {
         id: crypto.randomUUID(),
@@ -145,11 +149,12 @@ export class RequestInspectionStore {
           : typeof original.max_completion_tokens === 'number' ? original.max_completion_tokens
             : typeof record(original.generationConfig).maxOutputTokens === 'number'
               ? Number(record(original.generationConfig).maxOutputTokens) : undefined,
-        statistics: contextStatistics(messages),
+        statistics,
       },
       [secretFor(snapshot), ...browserCredentials()],
     );
-    this.publish([freeze(value), ...this.records].slice(0, 12));
+    const contentRedacted = value.messages.some((message, index) => message.content !== messages[index].content);
+    this.publish([freeze({ ...value, contentRedacted }), ...this.records].slice(0, 12));
     return value.id;
   }
   finish(id: string, usage?: Usage, errorCode?: string) {

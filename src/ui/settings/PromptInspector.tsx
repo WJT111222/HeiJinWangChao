@@ -194,7 +194,12 @@ export function PromptInspector({
         captured.config,
       );
       if (ticket !== generation.current) return;
-      setPreviews(redactInspection(result, secrets));
+      const safeResult = redactInspection(result, secrets);
+      for (const value of inspectionStages) {
+        const original = result[value], safePreview = safeResult[value];
+        if (original.ok && safePreview.ok) safePreview.contentRedacted = safePreview.prompt.messages.some((message, index) => message.content !== original.prompt.messages[index].content);
+      }
+      setPreviews(safeResult);
       setNotice('预览已组装；未发送 API 请求、未执行回合、未写入正式存档。');
     } catch {
       if (ticket === generation.current) setNotice('预览无法读取合法存档或设置；原数据未被修改。');
@@ -354,7 +359,7 @@ export function PromptInspector({
               <strong>{stages[value]}</strong>
               <p>
                 {result?.ok
-                  ? `${result.statistics.characters} 字符 · 估算 ≈ ${result.statistics.estimatedTokens} Token`
+                  ? `离线预览：${result.statistics.characters} 字符 · 估算 ≈ ${result.statistics.estimatedTokens} Token；主要来源待按需详细分析；窗口未知`
                   : result
                     ? result.reason
                     : '尚未组装；统计未知'}
@@ -553,7 +558,8 @@ export function PromptInspector({
                   key={`preview-${generation.current}-${stage}`}
                   messages={preview.prompt.messages}
                   modules={preview.prompt.modules}
-                  secrets={secrets}
+                  statistics={preview.statistics}
+                  contentRedacted={preview.contentRedacted}
                 />
               ) : (
                 <p className="notice">
@@ -633,7 +639,8 @@ export function PromptInspector({
                     messages={actual.messages}
                     body={actual.body}
                     modules={actual.scope?.modules ?? []}
-                    secrets={secrets}
+                    statistics={actual.statistics}
+                    contentRedacted={actual.contentRedacted}
                   />}
                 </div>
               )}
