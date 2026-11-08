@@ -48,10 +48,10 @@ async function stored(page: Page) {
 async function fit(page: Page, height?: number) {
   await expect.poll(() => page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) <= innerWidth)).toBe(true);
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
-  const input = await page.getByLabel('你的行动', { exact: true }).boundingBox(), header = await page.locator('.app-header').boundingBox(), footer = await page.getByRole('button', { name: '发送', exact: true }).boundingBox();
-  expect(input).not.toBeNull(); expect(footer).not.toBeNull(); expect(header).not.toBeNull();
+  const input = await page.getByLabel('你的行动', { exact: true }).boundingBox(), status = await page.locator('.player-status').boundingBox(), footer = await page.getByRole('button', { name: '发送', exact: true }).boundingBox();
+  expect(input).not.toBeNull(); expect(footer).not.toBeNull(); expect(status).not.toBeNull();
   const limit = height ?? (await page.evaluate(() => innerHeight));
-  expect(input!.y).toBeGreaterThanOrEqual(header!.height); expect(input!.y + input!.height).toBeLessThanOrEqual(limit + 1);
+  expect(input!.y).toBeGreaterThanOrEqual(status!.y + status!.height); expect(input!.y + input!.height).toBeLessThanOrEqual(limit + 1);
   const geometry = await page.locator('.app-shell-game, .app-header, .game-layout, .story-column, .composer, .composer-tools, #player-input, .composer-footer').evaluateAll((elements) => elements.map((el) => {
     const rect = el.getBoundingClientRect(), css = getComputedStyle(el);
     return { element: el.className || el.id, y: rect.y, height: rect.height, min: css.minHeight, max: css.maxHeight, flex: css.flex };
