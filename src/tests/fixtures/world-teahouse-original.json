@@ -1,0 +1,45 @@
+{
+  "worldCommands": [
+    {
+      "commandId": "cmd-loc-campus", "type": "CreateLocation",
+      "evidence": "陈志远因教工卡落在学院办公室而离开茶楼赶回老校区取件",
+      "location": { "id": "loc_university_campus", "name": "大学老校区公共管理学院办公楼", "parentId": "shapingba_street" }
+    },
+    {
+      "commandId": "cmd-hist-project-dispute", "type": "RecordHistory",
+      "evidence": "周富华与陈志远在聚茗轩包厢当面争执披露出的往期投资与欠款背景",
+      "entry": {
+        "id": "hist_chen_zhou_dispute_origin", "title": "文创基地投资纠纷与平账前因",
+        "summary": "周富华声称此前向陈志远挂靠高校的文创基地实际投入三十万元，因项目未按约定推进且迟迟未挂牌，逼迫陈志远立即通过十二万八千元的课题结转款平账还款，否则威胁向纪委举报。",
+        "occurredTimeText": "大半年前至九月中旬", "knowledgeKind": "reported", "sourceText": "周富华在聚茗轩雅竹轩内的当面言词与质问",
+        "actorRefs": [{ "kind": "npc", "id": "npc_zhou_fuhua" }, { "kind": "npc", "id": "npc_chen_zhiyuan" }, { "kind": "protagonist", "id": "protagonist" }],
+        "locationId": "jumingxuan", "relatedEntryIds": []
+      }
+    }
+  ],
+  "taskCommands": [{
+    "commandId": "cmd-task-chen-fetch-card", "type": "SaveTask", "evidence": "陈志远抓起车钥匙赶回老校区办公室取教工卡与身份证原件",
+    "task": {
+      "id": "task_chen_fetch_credentials", "actorRef": { "kind": "npc", "id": "npc_chen_zhiyuan" },
+      "goal": "返回老校区学院办公室取回教工卡与身份证，并于下班前赶回处理附注签字",
+      "startAt": "2023-09-15T15:35:00+08:00", "dueAt": "2023-09-15T16:15:00+08:00", "status": "active",
+      "locationId": "loc_university_campus", "prerequisites": [], "blockers": []
+    }
+  }],
+  "eventCommands": [{
+    "commandId": "cmd-event-reconciliation-standoff", "type": "SaveEvent",
+    "evidence": "陈志远离场取证件，吴杰涛携关键凭证与周富华及两名随从在聚茗轩包厢对坐周旋",
+    "event": {
+      "id": "event_jumingxuan_standoff", "title": "聚茗轩茶楼包厢对峙与资金平账周旋", "status": "active",
+      "startAt": "2023-09-15T15:30:00+08:00", "estimatedEndAt": "2023-09-15T16:30:00+08:00", "locationId": "jumingxuan",
+      "actorRefs": [{ "kind": "protagonist", "id": "protagonist" }, { "kind": "npc", "id": "npc_zhou_fuhua" }, { "kind": "npc", "id": "npc_chen_zhiyuan" }, { "kind": "organization", "id": "org_zhou_trade" }, { "kind": "organization", "id": "org_chen_company" }],
+      "linkedTaskIds": ["task_chen_fetch_credentials"], "prerequisites": [], "blockers": [], "visibility": "partially_known", "impact": "significant",
+      "sourceTurnIds": ["opening-04bac146-f0c7-4c39-8baf-f2b77742442f"],
+      "backgroundText": "陈志远因三十万投资欠款遭周富华上门逼债，企图利用虚报专家劳务与场地费的十二万八千元公款单据抵充平账，并将大四学生吴杰涛推为经办人。吴杰涛敏锐察觉法律与财务风险，以财务科需项目负责人附注及教工卡为由阻滞了当场交接。",
+      "goalText": "周富华试图查清吴杰涛底细并确保资金到位；吴杰涛需在陈志远返回前的独处时间内稳住局面、规避法律连带责任并探查脱身路径。",
+      "continuation": { "direction": "protagonist", "reason": "吴杰涛目前正独自面对周富华的试探与包厢内的打手，面临是否交出文件或进一步周旋的选择。", "entry": { "channel": "当面交谈与对峙", "cue": "周富华推过茶杯并带着审视微笑询问吴杰涛是否现编规矩，两名打手在侧虎视眈眈。", "locationId": "jumingxuan" } }
+    }
+  }],
+  "visibleHooks": [{ "text": "沙坪坝老街聚茗轩二楼雅竹轩内，陈志远借故离开取教工卡，周富华正目光灼灼地试探你的真实意图。" }],
+  "unresolved": []
+}

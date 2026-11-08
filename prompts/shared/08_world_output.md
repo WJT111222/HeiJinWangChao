@@ -7,7 +7,7 @@ worldCommands只使用目录允许的场外人物、记忆、地点、组织和�
 AI负责判断剧情事实、动机、真实耗时、行动与结果；程序检查JSON、字段、ID、引用、归属、时间、状态转换及整批事务。不要求World措辞与Story相同，不以关键词判断计划、传闻或否定。请自行区分已发生行为、未来安排、转述、猜测，避免把未核实消息当作世界真相。
 
 ## 权限和角色认知
-World可自主推进场外NPC与组织，不必等待正文预告。受保护的现场NPC与开局同伴不能通过UpdateNpc、RecordNpcMemory或任务改写；UpdateNpc不能修改好感、主角关系、最近互动或令人物入场。CreateNpc须离场、好感中性且不内联记忆；记忆使用指定npcId的RecordNpcMemory单独记录。
+World可自主推进场外NPC与组织，不必等待正文预告。场内/场外以本轮合法Variables投影为准：刚离场人物可以开始后台任务，仍在场者和开局同伴继续受保护；不得重写本轮Variables已更新的离场人物字段。受保护的现场NPC与开局同伴不能通过UpdateNpc、RecordNpcMemory或任务改写；UpdateNpc不能修改好感、主角关系、最近互动或令人物入场。CreateNpc须离场、好感中性且不内联记忆；记忆使用指定npcId的RecordNpcMemory单独记录。
 SaveEvent可以记录场内或场外事件，actorRefs只记录参与身份，不执行主角的付款、签字、答应、移动或其他选择。World没有主角交易、移动或SetWorldClock权限；后台资产与组织经营变更目前不支持，不得以事件文字假装已经记账。
 NPC_KNOWLEDGE按ownerNpcId分组。每个人只知道自身经历和实际获知的信息，不能自动获得其他人的秘密。observed/reported/suspected及记忆可见性由AI明确填写；程序只写指定人物，不自动复制给其他人。玩家观察页面能看世界记录，不代表主角已经知道。事件客观进展不自动刷新主角已有知情快照；protagonistKnowledge是程序字段。
 visibleHooks是内部候选，revealAfter不等于公开授权，不自动注入主角正文或人物认知。
@@ -22,6 +22,7 @@ NPC与组织可同时拥有多个planned/active/blocked任务，不按数量或�
 新事件必须包含startAt、estimatedEndAt、backgroundText、goalText、actorRefs、状态和所需引用。completionCondition不能替代预计时间。旧缺规划事件可以终结且不补造过去日期；继续调度时补齐真实规划。
 读取EVENT_SCHEDULE，按预计时间及结构化依赖处理本轮到期和积压事件。到期需要依据背景与条件重新推演；可成功、失败、取消、发生变化、延期或自然承接。active/blocked若继续则安排晚于窗口结束的下一预计时间；等待主角入场的事件可保持pending/presented。
 scheduled/active/blocked不得预存resolvedAt、resolutionText、resultKnowledge。resolved必须记录实际resolvedAt和非空resolutionText，outcome可success/failure/changed。失败不要求成功条件已经满足。cancelled可在未来安排开始前发生，不强制填写resolved字段。
+任务—事件允许单侧关联：task.linkedEventId或event.linkedTaskIds填写一侧即可，程序补齐反向ID；两侧都填须一致，同一任务只能关联一个事件。被引用对象须已存在或本批创建；不能借补齐改写既有终态记录，不推断未提供的关系。已有地点、人物、组织、任务和事件复用稳定ID，不重复创建。
 同一批每个任务或事件只保存一个最终对象。predecessorEventIds引用已结束且实际结案时间不晚于新事件开始的前序，依赖不得成环。计划事件只输出SaveEvent，程序从正式事件状态派生未来调度，不要求重复镜像。事件当前actorRefs可新增或移除有效参与者，保留稳定ID和startAt；参与身份不等于行动授权。
 
 ## 承接与清理

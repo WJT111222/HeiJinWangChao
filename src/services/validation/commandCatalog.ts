@@ -53,7 +53,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
             worldCommands: worldTypes,
             taskCommands: ['SaveTask'],
             eventCommands: ['SaveEvent','DeleteEvent'],
-            actorBoundary: '只自主推进场外NPC/组织；SaveEvent以稳定ID记录事件参与者，不执行参与者动作。引用参与者不是后台行动授权。禁止主角交易、现场重复行动、独立推进时钟。',
+            actorBoundary: '以合法Variables投影判断现场：新离场NPC可承担后台任务，仍在场者和开局同伴受保护；只自主推进场外NPC/组织；SaveEvent以稳定ID记录事件参与者，不执行参与者动作。引用参与者不是后台行动授权。禁止主角交易、现场重复行动、独立推进时钟。',
           },
     rules: [
       '严格使用各 type 的同级字段，不接受 group/entityId/payload 包装或旧别名。',
@@ -75,6 +75,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
               [field, z.toJSONSchema(WorldResultSchema.shape[field], { target: 'draft-7', unrepresentable: 'any' })])),
           },
           worldStateRules: [
+            '任务—事件允许单侧关联：task.linkedEventId或event.linkedTaskIds填一侧即可，程序补齐反向ID；两侧都填须一致，一个任务只能关联一个事件。引用须已存在或本批创建，不能通过补齐改写既有终态。复用已有实体ID，不重复创建或无声丢弃冲突关联。',
             'worldCommands用RecordHistory独立记录历史：entry={id,title,summary,knowledgeKind,occurredAt?,occurredTimeText?,sourceRef?,sourceText?,actorRefs?,locationId?,eventId?,relatedEntryIds?}。knowledgeKind为established/reported/suspected。不要求正式事件、重要等级或结案；可记录传述、猜测和模糊过去，不编造精确日期，不自动授予角色知识。recordedAt/sourceTurnId由程序生成，不由AI输出。新披露用新ID并关联旧条目，无需每轮新增历史。',
             '事件参与者可随发展变化，保持ID与原startAt；引用本批合法创建或已有实体，参与记录不授权主角行动。未来安排只输出SaveEvent，程序从事件状态派生调度，不重复填写镜像。',
             'World创建组织时relationHistory=[]，不要复制存档中的历史数组。确需记录关系变化时另用RecordOrgRelation。gang不填funds；business不填assetsEstimate/liquidityEstimate（也不填null）。创建命令不是资产入账或历史追加。',
@@ -91,7 +92,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
           ],
           npcFieldPermissions: {
             UpdateNpc:
-              '仅离场已有 NPC：locationId/healthText/activeGoals 与 onScene=false；禁止 affinityChange、relationshipText、lastInteractionAt、onScene=true。开局同伴不得更新。',
+              '以本轮Variables投影判定离场；不得重写本轮Variables已修改的离场人物字段。仅离场已有 NPC：locationId/healthText/activeGoals 与 onScene=false；禁止 affinityChange、relationshipText、lastInteractionAt、onScene=true。开局同伴不得更新。',
             CreateNpc: '离场、好感中性0且未确认、无互动时间、不得内联记忆/知晓信息。',
             RecordNpcMemory:
               '仅写指定离场NPC的个人档案；knowledgeKind由模型判断，memory时间与引用必须合法。不得自动复制给其他NPC。visibility明确区分player_known/npc_private/internal；模型不能把私人经历无条件公开。',

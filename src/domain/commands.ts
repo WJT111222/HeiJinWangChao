@@ -13,6 +13,7 @@ import { ContactReviewSchema } from './npc/contactReview';
 import { retireNpc, validateTaskTransitions } from './npc/lifecycle';
 import { deleteEvent, validateEventLinks, validateEventWrite } from './events/lifecycle';
 import { maintainSceneTransition } from './sceneTransitions';
+import { completeTaskEventLinks } from './events/taskLinks';
 import { OpeningInitialStateSchema, initializeOpeningState } from './openingInitialization';
 
 const base = { commandId: IdSchema, evidence: TextSchema };
@@ -193,6 +194,7 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
     current.appliedCommands.push({ turnId, commandId: command.commandId, fingerprint: fingerprint(command) });
   }
   validateTaskTransitions(state, current, fresh.flatMap((c) => c.type === 'SaveTask' ? [c.task] : []));
+  completeTaskEventLinks(state, current);
   maintainSceneTransition(state, current, fresh);
   validateEventLinks(current);
   // A first committed batch consumes the opening-only right even if the model omitted initialization.

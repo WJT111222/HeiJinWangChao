@@ -65,7 +65,7 @@ const messages: Record<AiErrorCode, string> = {
   output_limit: '模型达到输出上限，规划、原生思考与正文可能共享预算；本次结果不完整且未保存。请检查最大输出 Token，程序不会自动提高付费上限或重发。',
   stream_interrupted: '流式响应未完整结束，不能作为有效结果。',
   schema_fields: '候选字段或类型不符合命令Schema，候选未保存。',
-  data_integrity: '变量候选的实体引用、归属、数量或状态不合法，候选未保存。',
+  data_integrity: '候选的实体引用、归属、数量或状态不合法，候选未保存。',
   amount_balance: '变量候选的金额、账户余额或债务数据不合法，候选未保存。',
   time_data: '候选日期无效、时间倒退或结构化时钟发生冲突，候选未保存。',
   candidate_conflict: '存档版本、命令或候选存在冲突，请重新读取后继续。',
