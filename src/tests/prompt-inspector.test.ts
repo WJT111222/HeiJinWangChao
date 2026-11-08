@@ -267,12 +267,13 @@ describe('内存请求快照、安全边界和 Token 统计', () => {
     expect(store.getSnapshot()[0].messages).toBe(saved.messages);
     expect(budgetAnalysis(store.getSnapshot()[0].messages)).toBe(analysis);
   });
-  it.each([300, 1000])('%i NPC：真实客户端在详细分析之前发 HTTP，Worker 缺失或诊断失败不影响发送', async (count) => {
+  it.each([300, 1000].flatMap(count => (['story', 'variables', 'world'] as const).map(stage => [count, stage] as const)))('%i NPC / %s：真实客户端在详细分析之前发 HTTP，Worker 缺失或诊断失败不影响发送', async (count, stage) => {
     const a = setup();
-    const snap = requestSnapshot(a.config, 'story', a.vault);
+    const snap = requestSnapshot(a.config, stage, a.vault);
     const messages = [{ role: 'user' as const, content: `<GAME_CONTEXT>${JSON.stringify({ SAVE_STATE: { npc: Array.from({ length: count }, (_, i) => ({ id: `npc-${i}`, name: '人物', onScene: true, memories: [{ id: `memory-${i}`, text: '完整经历'.repeat(30), sourceTurnIds: ['turn-1'] }] })) } })}</GAME_CONTEXT>` }];
     const heavy = vi.spyOn(budgetInspection, 'inspectBudget').mockImplementation(() => { throw new Error('diagnostics must not run'); });
     vi.stubGlobal('Worker', undefined);
+    const timer = vi.spyOn(globalThis, 'setTimeout');
     const wire = wireRequest(snap, messages, false);
     const transport = vi.fn<typeof fetch>().mockImplementation(async (url, init) => {
       expect(heavy).not.toHaveBeenCalled();
@@ -284,9 +285,10 @@ describe('内存请求快照、安全边界和 Token 统计', () => {
     try {
       await expect(new AiClient(transport).generate(snap, messages, { timeoutSeconds: 17 })).resolves.toMatchObject({ text: 'OK', model: snap.model });
       expect(transport).toHaveBeenCalledTimes(1);
+      expect(timer).toHaveBeenCalledWith(expect.any(Function), 17_000);
       expect(requestInspections.getSnapshot()[0].statistics.actual.inputTokens).toBe(11);
       expect(heavy).not.toHaveBeenCalled();
-    } finally { heavy.mockRestore(); }
+    } finally { heavy.mockRestore(); timer.mockRestore(); }
   });
   it('Mock API缺省usage时实际请求仍未知，不以估算补真实用量，也不增加请求字段', async () => {
     const a = setup();

@@ -28,7 +28,8 @@ export class BudgetAnalysis {
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   private publish(state: AnalysisState) { this.state = state; for (const listener of this.listeners) listener(); }
   private stop() {
-    this.worker?.terminate(); this.worker = undefined;
+    try { this.worker?.terminate(); } catch { /* Ignore late replies even if browser cleanup fails. */ }
+    this.worker = undefined;
     clearTimeout(this.timer); this.timer = undefined; active.delete(this);
   }
   cancel = () => { if (this.state.status === 'running') { this.stop(); this.publish({ status: 'idle' }); } };

@@ -356,6 +356,7 @@ for (const count of [300, 1000]) test(`${count} NPC 真实快照按需 Worker �
     const { AiClient } = await import(clientPath);
     const source = contextScaleFixture(count);
     source.state.saveId = 'ui-test';
+    source.draft.saveId = 'ui-test';
     const prompt = await composePrompt({ ...source, stage: 'story', mode: 'regular', userInput: source.draft.userInput });
     const channel = { ...newChannel(), defaultModel: 'worker-scale-mock' };
     const config = defaultAiConfig(); config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: '' };
@@ -377,6 +378,8 @@ for (const count of [300, 1000]) test(`${count} NPC 真实快照按需 Worker �
   expect(workers).toBe(0);
   await page.getByText('展开数据分类、召回预算与重复诊断', { exact: true }).click();
   await expect(context).toContainText('正在分析…');
+  await page.getByLabel('搜索模块', { exact: true }).fill('writing');
+  await expect(page.getByLabel('搜索模块', { exact: true })).toHaveValue('writing');
   const progress = await page.evaluate(async () => {
     const storePath = '/src/services/ai/inspection.ts', analysisPath = '/src/prompts/budgetAnalysis.ts';
     const { requestInspections } = await import(storePath);
