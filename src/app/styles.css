@@ -2047,3 +2047,59 @@ input, textarea, select, .prompt-inspector pre { background-color: var(--bg); co
 .workflow[data-state='busy'] > details > summary strong::before { background: var(--gold); }
 .workflow[data-state='error'] > details > summary strong { color: var(--warning-text); }
 .workflow[data-state='error'] > details > summary strong::before { background: var(--warning); }
+
+/* UI-1.1: only the PC game uses this wider reading column and shell furniture. */
+.app-shell-game .game-corner-brand, .app-shell-game .status-environment { display: none; }
+@media (min-width: 901px) {
+  .app-shell-game > .app-header { display: none; }
+  .app-shell-game .game-layout { --pc-reading-width: min(calc(100vw - 280px), 1180px); }
+  .app-shell-game .reader {
+    padding-inline: max(88px, calc((100% - var(--pc-reading-width)) / 2));
+    scrollbar-gutter: stable;
+  }
+  .app-shell-game .composer {
+    padding-inline: max(88px, calc((100% - var(--pc-reading-width)) / 2));
+    /* Reserve the same native gutter as the scrolling reader, on every platform. */
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+  }
+  .app-shell-game .game-corner-brand {
+    position: absolute;
+    left: 12px;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 64px;
+    color: var(--gold);
+    pointer-events: none;
+  }
+  .app-shell-game .game-corner-brand .brand-mark { width: 26px; height: 26px; font-size: 1rem; }
+  .app-shell-game .game-corner-name { font-family: var(--font-title); font-size: .8rem; letter-spacing: .08em; white-space: nowrap; }
+  .app-shell-game .game-corner-name small { display: block; text-align: center; font-family: var(--font-mono); font-size: .55rem; color: var(--muted); letter-spacing: .05em; margin-top: 3px; }
+  .app-shell-game .player-status {
+    display: grid;
+    grid-template-columns: minmax(110px, 1fr) minmax(160px, 1.2fr) minmax(150px, 1fr) minmax(90px, .9fr) auto;
+    gap: 16px;
+    padding: 10px 24px;
+  }
+  .app-shell-game .status-place { padding-left: 16px; }
+  .app-shell-game .status-place time, .app-shell-game .status-place p,
+  .app-shell-game .status-demographics, .app-shell-game .status-funds strong {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .app-shell-game .status-environment { display: block; }
+  .app-shell-game .status-condition { display: flex; flex-direction: column; flex-wrap: nowrap; gap: 4px; }
+  .app-shell-game .status-condition > span { padding: 3px 9px; }
+  .app-shell-game .status-funds { gap: 12px; }
+  .app-shell-game .status-actions { gap: 6px; }
+  .app-shell-game .status-actions button { padding-inline: .6rem; }
+  .app-shell-game .world-sidebar { scrollbar-width: thin; overscroll-behavior: contain; }
+  .app-shell-game .world-sidebar .dock-system { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; }
+  .app-shell-game .dock-system button { color: var(--gold); }
+}

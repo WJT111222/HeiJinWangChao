@@ -12,15 +12,17 @@ export function PlayerStatus({ state, onProfile, onEconomy }: {
     <div className="status-identity">
       <span className="status-seal" aria-hidden="true">{Array.from(hero.name)[0] || '人'}</span>
       <div>
-        <h2>{hero.name}</h2>
-        <p className="status-demographics">{hero.age} 岁 · {hero.gender} · {hero.profession || '职业未确认'}</p>
+        <h2 title={hero.name}>{hero.name}</h2>
+        <p className="status-demographics" title={`${hero.age} 岁 · ${hero.gender} · ${hero.profession || '职业未确认'}`}>{hero.age} 岁 · {hero.gender} · {hero.profession || '职业未确认'}</p>
         <p className="status-mobile-location">{clock} · {place}</p>
       </div>
     </div>
-    <div className="status-place"><time>{clock}</time><p>{place} · {state.weatherText || '天气待确认'}</p></div>
+    <div className="status-place"><time title={clock}>{clock}</time><p title={`${place} · ${state.weatherText || '天气待确认'}`}>{place} · {state.weatherText || '天气待确认'}</p>
+      <p className="status-environment" title={state.environmentText || '环境待确认'}>{state.environmentText || '环境待确认'}</p>
+    </div>
     <div className="status-funds">
-      <span><small>现金</small><strong>{money(state.economy.cash)}</strong></span>
-      <span className="status-online"><small>线上资金</small><strong>{money(state.economy.onlineBalance)}</strong></span>
+      <span><small>现金</small><strong title={money(state.economy.cash)}>{money(state.economy.cash)}</strong></span>
+      <span className="status-online"><small>线上资金</small><strong title={money(state.economy.onlineBalance)}>{money(state.economy.onlineBalance)}</strong></span>
     </div>
     <div className="status-condition">
       <span title={hero.healthText || '待开局确认'}><small>身体</small>{hero.healthText || '待开局确认'}</span>

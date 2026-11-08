@@ -305,6 +305,10 @@ export function App() {
         </nav>
         {gameRoute && <button className="mobile-menu-toggle" aria-label="打开游戏菜单" onClick={() => setMenuOpen(true)}>☰</button>}
       </header>
+      {gameRoute && <div className="game-corner-brand" aria-label={`黑金王朝 ${PRODUCT_VERSION}`}>
+        <span className="brand-mark" aria-hidden="true">黑</span>
+        <span className="game-corner-name">黑金王朝<small>{PRODUCT_VERSION}</small></span>
+      </div>}
       {gameRoute && menuOpen && <Dialog title="游戏菜单" small onClose={() => setMenuOpen(false)}>
         <nav className="game-menu" aria-label="游戏菜单">
           <button onClick={() => { setMenuOpen(false); navigate(); }}>游戏首页</button>

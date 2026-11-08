@@ -38,6 +38,8 @@ export async function openProfile(page: Page) {
 export async function goHome(page: Page) {
   const directory = page.getByRole('dialog', { name: '世界资料', exact: true });
   if (await directory.isVisible()) await page.keyboard.press('Escape');
+  const desktopHome = page.getByRole('navigation', { name: '系统操作' }).getByRole('button', { name: '返回首页', exact: true });
+  if (await desktopHome.isVisible()) { await desktopHome.click(); return; }
   const menu = page.getByRole('button', { name: '打开游戏菜单', exact: true });
   if (await menu.isVisible()) await menu.click();
   await page.getByRole('button', { name: '游戏首页', exact: true }).click();

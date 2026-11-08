@@ -283,6 +283,10 @@ export function GameScreen({
         <span>{name}</span>
       </button>)}
     </nav>
+    {!compactSidebars && <nav className="dock-system" aria-label="系统操作">
+      <button onClick={onOpenSettings}><span className="dock-seal" aria-hidden="true">设</span><span>设置</span></button>
+      <button onClick={onSaves}><span className="dock-seal" aria-hidden="true">归</span><span>返回首页</span></button>
+    </nav>}
   </aside>;
   return (
     <main className="game-layout">
