@@ -116,7 +116,7 @@ test('非法AI日期拒绝保存、不调用下游；刷新无隐式重发，主
   await openWorkflow(page); await expect(workflow(page).getByRole('alert')).toBeVisible();
   const before = await stored(page); expect(before.draft.story).toBeUndefined(); expect(before.state.openingTimePending).toBe(true);
   expect(server.calls.map((call) => call.stage)).toEqual(['story']);
-  await page.reload(); await expect(workflow(page).getByRole('status')).toHaveText('正文生成失败 · 查看详情');
+  await page.reload(); await expect(workflow(page).getByRole('status')).toHaveText('三阶段 · 正文生成失败 · 查看详情');
   expect((await stored(page)).draft.failures).toEqual(before.draft.failures); expect(server.calls).toHaveLength(1);
   server.plan.badDate = false; await openWorkflow(page); await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await ready(page);
   expect(server.calls.map((call) => call.stage)).toEqual(['story', 'story', 'variables', 'world']);

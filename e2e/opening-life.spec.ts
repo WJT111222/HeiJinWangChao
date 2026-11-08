@@ -72,10 +72,10 @@ test('创角自动三阶段初始化生活基础，刷新不重复，下一回�
 test('World失败不提前初始化，刷新后明确恢复只请求World', async ({ page }) => {
   await prepare(page); const server = await mock(page); server.control.badWorld = true; await create(page);
   const workflow = page.getByRole('region', { name: '三阶段工作流' });
-  await expect(workflow.getByRole('status')).toHaveText('动态世界生成失败 · 查看详情');
+  await expect(workflow.getByRole('status')).toHaveText('三阶段 · 动态世界生成失败 · 查看详情');
   const before = await stored(page); expect(before.state.economy.cash).toBeNull(); expect(before.state.openingInitializationPending).toBe(true);
   expect(before.draft.variables.validation).toBe('validated'); expect(server.calls).toEqual(['story', 'variables', 'world']);
-  await page.reload(); await expect(workflow.getByRole('status')).toHaveText('动态世界生成失败 · 查看详情'); expect(await stored(page)).toEqual(before); expect(server.calls).toHaveLength(3);
+  await page.reload(); await expect(workflow.getByRole('status')).toHaveText('三阶段 · 动态世界生成失败 · 查看详情'); expect(await stored(page)).toEqual(before); expect(server.calls).toHaveLength(3);
   server.control.badWorld = false; await openWorkflow(page); await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
   expect((await stored(page)).state.economy.cash).toBe(30000); expect(server.calls).toEqual(['story', 'variables', 'world', 'world']);
 });
