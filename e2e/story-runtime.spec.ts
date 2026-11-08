@@ -119,7 +119,7 @@ async function seed(page: Page, mode: 'opening' | 'regular' | 'none' = 'opening'
       form.person = {
         name: '正文测试角色',
         age: '30',
-        gender: '女',
+        gender: '女性',
         appearance: '短发',
         personality: '冷静',
       };
