@@ -26,7 +26,7 @@ async function seed(page: Page, empty = false) {
         tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); }; };
     });
     const settings = defaultSettings(); settings.memory.immediateWindowSize = 2;
-    for (const config of Object.values(settings.memory.summaries)) config.automatic = false;
+    for (const config of Object.values(settings.memory.summaries) as { automatic: boolean }[]) config.automatic = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel(); channel.baseUrl = 'https://reader-memory.mock.invalid/v1';
     config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'reader-model' };
