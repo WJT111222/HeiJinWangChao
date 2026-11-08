@@ -15,11 +15,11 @@ import { z } from 'zod';
 function failure(fn:()=>unknown) { try {fn();} catch(e) {expect(e).toBeInstanceOf(AiError);return e as AiError;}throw Error('expected rejection'); }
 const parse = (a:ReturnType<typeof teahouse>)=>parseWorld(JSON.stringify(a.response),a.state,a.draft);
 describe('World结构稳定性失败复现',()=>{
- it('原始茶楼World在明确合成的合法离场上下文中通过',()=>{const a=teahouse();expect(()=>parse(a)).not.toThrow();});
+ it('合成展览筹备World在合法离场上下文中通过',()=>{const a=teahouse();expect(()=>parse(a)).not.toThrow();});
  it('隔离关联问题：本轮开始已离场，单侧关联应确定性补全',()=>{
-  const a=teahouse();a.state.npc.npc_chen_zhiyuan.onScene=false;
+  const a=teahouse();a.state.npc.npc_fixture_lin.onScene=false;
   const r=parse(a),p=projectTurn(a.state,a.draft,[...r.worldCommands,...r.taskCommands,...r.eventCommands]);
-  expect(p.tasks.task_chen_fetch_credentials.linkedEventId).toBe('event_jumingxuan_standoff');
+  expect(p.tasks.task_fixture_fetch_materials.linkedEventId).toBe('event_fixture_exhibition');
  });
  it('隔离离场问题：没有关联事件的合法后台任务也能启动',()=>{
   const a=teahouse();a.response.eventCommands=[];expect(()=>parse(a)).not.toThrow();
@@ -31,13 +31,23 @@ describe('World结构稳定性失败复现',()=>{
   expect(JSON.stringify(e.details)).not.toContain('missing-private-name');
  });
  it('重复实体ID定位实际创建命令',()=>{
-  const a=teahouse();a.response.taskCommands=[];a.response.eventCommands=[];a.response.worldCommands[0].location!.id='jumingxuan';
+  const a=teahouse();a.response.taskCommands=[];a.response.eventCommands=[];a.response.worldCommands[0].location!.id='loc_fixture_teahouse';
   expect(failure(()=>parse(a)).details).toMatchObject({worldRule:'entity_id',commandType:'CreateLocation',commandIndex:0});
  });
 });
 
-const taskId='task_chen_fetch_credentials', eventId='event_jumingxuan_standoff';
+const taskId='task_fixture_fetch_materials', eventId='event_fixture_exhibition';
 const commands=(r:ReturnType<typeof WorldResultSchema.parse>)=>[...r.worldCommands,...r.taskCommands,...r.eventCommands];
+it('合成夹具明确保留修复所需的离场、后台任务和单侧关联结构',()=>{
+ const a=teahouse(), task=a.response.taskCommands[0].task, event=a.response.eventCommands[0].event;
+ expect([...a.response.worldCommands,...a.response.taskCommands,...a.response.eventCommands].map(c=>c.type))
+  .toEqual(['CreateLocation','RecordHistory','SaveTask','SaveEvent']);
+ expect(a.state.npc[task.actorRef.id].onScene).toBe(true);
+ expect(a.draft.variables!.result.commands).toContainEqual(expect.objectContaining({type:'UpdateNpc',npcId:task.actorRef.id,changes:{onScene:false}}));
+ expect(projectTurn(a.state,a.draft).npc[task.actorRef.id].onScene).toBe(false);
+ expect(task).not.toHaveProperty('linkedEventId');expect(event.linkedTaskIds).toEqual([task.id]);
+ expect(event.sourceTurnIds).toEqual([a.draft.turnId]);
+});
 function apply(a:ReturnType<typeof teahouse>, raw:unknown=a.response) {
  const result=parseWorld(JSON.stringify(raw),a.state,a.draft);
  return projectTurn(a.state,a.draft,commands(result));
@@ -54,13 +64,13 @@ describe('单一关系输入在真实领域事务中补齐反向字段',()=>{
   const a=teahouse(), raw={...a.response,taskCommands:[{...a.response.taskCommands[0],task:{...a.response.taskCommands[0].task,linkedEventId:eventId}}]};
   const r=parseWorld(JSON.stringify(raw),a.state,a.draft), p=projectTurn(a.state,a.draft,commands(r));
   expect(p.events[eventId].linkedTaskIds).toEqual([taskId]);
-  expect(commands(r).map(c=>c.commandId)).toEqual(['cmd-loc-campus','cmd-hist-project-dispute','cmd-task-chen-fetch-card','cmd-event-reconciliation-standoff']);
+  expect(commands(r).map(c=>c.commandId)).toEqual(['cmd-fixture-workshop','cmd-fixture-history','cmd-fixture-fetch-materials','cmd-fixture-exhibition']);
  });
  it.each(['task','event'] as const)('可以只更新既有活动%s的另一侧，不要求模型重复整个对象',side=>{
   const a=teahouse();
   if(side==='task') {
-   a.state.npc.npc_chen_zhiyuan.onScene=false;
-   a.state.tasks[taskId]={...a.response.taskCommands[0].task,actorRef:{kind:'npc',id:'npc_chen_zhiyuan'},startAt:a.state.worldClock,locationId:'jumingxuan',status:'active'};
+   a.state.npc.npc_fixture_lin.onScene=false;
+   a.state.tasks[taskId]={...a.response.taskCommands[0].task,actorRef:{kind:'npc',id:'npc_fixture_lin'},startAt:a.state.worldClock,locationId:'loc_fixture_teahouse',status:'active'};
    a.response.taskCommands=[];
   } else {
    a.state.events[eventId]={...a.response.eventCommands[0].event,status:'active',visibility:'hidden',impact:'significant',actorRefs:[],linkedTaskIds:[],continuation:undefined};
@@ -88,7 +98,7 @@ describe('单一关系输入在真实领域事务中补齐反向字段',()=>{
  it.each(['task','event'] as const)('不会暗中修改既有终态%s的关联',side=>{
   const a=teahouse();
   if(side==='task') {
-   a.state.tasks[taskId]={id:taskId,actorRef:{kind:'npc',id:'npc_chen_zhiyuan'},goal:'旧任务',startAt:a.state.worldClock,status:'cancelled',prerequisites:[],blockers:[]};
+   a.state.tasks[taskId]={id:taskId,actorRef:{kind:'npc',id:'npc_fixture_lin'},goal:'旧任务',startAt:a.state.worldClock,status:'cancelled',prerequisites:[],blockers:[]};
    a.response.taskCommands=[];
   } else {
    a.state.events[eventId]={...a.response.eventCommands[0].event,actorRefs:[],linkedTaskIds:[],status:'cancelled',visibility:'hidden',impact:'minor',continuation:undefined};
@@ -109,29 +119,29 @@ describe('离场权限与正式World请求上下文一致',()=>{
   if(kind==='仍在现场')a.draft.variables!.result.commands=a.draft.variables!.result.commands.filter(c=>c.type!=='UpdateNpc');
   if(kind==='未验证离场')a.draft.variables=undefined;
   if(kind==='开局同伴') {
-   a.state.npc.npc_chen_zhiyuan={...a.state.npc.npc_chen_zhiyuan,kind:'special',detailedBackground:'同伴',activeGoals:[],habits:[],longTermMemories:[],offscreenTaskIds:[]};
-   a.state.initialCompanionId='npc_chen_zhiyuan';
+   a.state.npc.npc_fixture_lin={...a.state.npc.npc_fixture_lin,kind:'special',detailedBackground:'同伴',activeGoals:[],habits:[],longTermMemories:[],offscreenTaskIds:[]};
+   a.state.initialCompanionId='npc_fixture_lin';
   }
   expect(failure(()=>parse(a)).details?.worldRule).toBe('actor_permission');
  });
  it('正式上下文纳入本轮合法离场NPC并保留仍在场保护，协议说明一致',async()=>{
   const a=teahouse(), input={stage:'world' as const,mode:'opening' as const,state:a.state,draft:a.draft,settings:defaultSettings(),userInput:'',domains:['npc_ordinary','npc_special']};
   const context=contextFor(input), offscreen=context.OFFSCREEN_STATE as {npc:{id:string}[]};
-  expect(offscreen.npc.map(n=>n.id)).toContain('npc_chen_zhiyuan');expect(offscreen.npc.map(n=>n.id)).not.toContain('npc_zhou_fuhua');
-  expect(context.PROTECTED_SCENE).toMatchObject({sceneNpcIds:['npc_zhou_fuhua']});
+  expect(offscreen.npc.map(n=>n.id)).toContain('npc_fixture_lin');expect(offscreen.npc.map(n=>n.id)).not.toContain('npc_fixture_xu');
+  expect(context.PROTECTED_SCENE).toMatchObject({sceneNpcIds:['npc_fixture_xu']});
   const prompt=await composePrompt(input), text=JSON.stringify(prompt.messages);
   expect(text).toContain('单侧关联');expect(text).toContain('Variables投影');
  });
  it('World不能覆盖本轮已写入的离场字段或操控主角',()=>{
   const a=teahouse();
-  const update={type:'UpdateNpc',commandId:'repeat-leave',npcId:'npc_chen_zhiyuan',expectedRevision:0,changes:{onScene:false},evidence:'离场'};
+  const update={type:'UpdateNpc',commandId:'repeat-leave',npcId:'npc_fixture_lin',expectedRevision:0,changes:{onScene:false},evidence:'离场'};
   expect(failure(()=>apply(a,{...a.response,worldCommands:[...a.response.worldCommands,update]})).details?.worldRule).toBe('scene_write_conflict');
-  expect(()=>apply(a,{...a.response,worldCommands:[{type:'UpdateProtagonist',commandId:'move',changes:{locationId:'chongqing'},evidence:'移动'}]})).toThrow();
+  expect(()=>apply(a,{...a.response,worldCommands:[{type:'UpdateProtagonist',commandId:'move',changes:{locationId:'loc_fixture_city'},evidence:'移动'}]})).toThrow();
  });
 });
 describe('安全结构诊断按原输出位置归因',()=>{
  it('任务截止早于开始定位第三条命令的dueAt',()=>{
-  const a=teahouse();a.response.taskCommands[0].task.dueAt='2023-09-15T15:00:00+08:00';
+  const a=teahouse();a.response.taskCommands[0].task.dueAt='2040-04-18T08:30:00+08:00';
   const e=failure(()=>parse(a));expect(e).toMatchObject({code:'time_data',details:{worldRule:'event_time',fieldPath:'taskCommands.0.task.dueAt',commandIndex:2,commandType:'SaveTask'}});
   expect(runtimeLogEvent(1,'world','failed',e)).toMatchObject({commandIndex:3,worldRule:'event_time',fieldPath:'taskCommands.0.task.dueAt'});
  });
@@ -141,11 +151,11 @@ describe('安全结构诊断按原输出位置归因',()=>{
  });
  it.each(['地点父级循环','历史地点不存在','非法实体ID','事件时间倒置','任务未来启动','任务非法终态'] as const)('%s定位实际字段或规则',kind=>{
   const a=teahouse();let raw:unknown=a.response;let fieldPath='',worldRule='';
-  if(kind==='地点父级循环'){a.response.worldCommands[0].location!.parentId='loc_university_campus';fieldPath='worldCommands.0.location.parentId';worldRule='location_cycle';}
+  if(kind==='地点父级循环'){a.response.worldCommands[0].location!.parentId='loc_fixture_workshop';fieldPath='worldCommands.0.location.parentId';worldRule='location_cycle';}
   if(kind==='历史地点不存在'){a.response.worldCommands[1].entry!.locationId='missing';fieldPath='worldCommands.1.entry.locationId';worldRule='location_reference';}
   if(kind==='非法实体ID'){a.response.worldCommands[0].location!.id='bad id';fieldPath='worldCommands.0.location.id';worldRule='schema';}
-  if(kind==='事件时间倒置'){a.response.eventCommands[0].event.estimatedEndAt='2023-09-15T15:00:00+08:00';fieldPath='eventCommands.0.event.estimatedEndAt';worldRule='event_time';}
-  if(kind==='任务未来启动'){a.response.taskCommands[0].task.startAt='2023-09-15T16:00:00+08:00';fieldPath='taskCommands.0.task.startAt';worldRule='task_state';}
+  if(kind==='事件时间倒置'){a.response.eventCommands[0].event.estimatedEndAt='2040-04-18T08:30:00+08:00';fieldPath='eventCommands.0.event.estimatedEndAt';worldRule='event_time';}
+  if(kind==='任务未来启动'){a.response.taskCommands[0].task.startAt='2040-04-18T09:30:00+08:00';fieldPath='taskCommands.0.task.startAt';worldRule='task_state';}
   if(kind==='任务非法终态'){raw={...a.response,taskCommands:[{...a.response.taskCommands[0],task:{...a.response.taskCommands[0].task,status:'completed'}}]};fieldPath='taskCommands.0.task.resolution';worldRule='task_state';}
   expect(failure(()=>apply(a,raw)).details).toMatchObject({fieldPath,worldRule});
  });

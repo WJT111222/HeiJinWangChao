@@ -30,7 +30,7 @@ async function setup() {
  const stage=new WorldStage(repo,new AiClient(transport));resources.push(stage);
  return {...a,factory,name,repo,draft,stage,transport,options:{config,vault,settings:defaultSettings()}};
 }
-describe('用户茶楼样例经真实Runtime、候选、Commit与重载',()=>{
+describe('合成展览筹备样例经真实Runtime、候选、Commit与重载',()=>{
  it('单次Mock请求保存候选；关联补齐、离场任务和历史一并原子提交；刷新及双库重放不重复',async()=>{
   const a=await setup(), before=await a.repo.load(a.state.saveId);
   const candidate=await a.stage.generate({...a.options,draft:a.draft});
@@ -39,12 +39,12 @@ describe('用户茶楼样例经真实Runtime、候选、Commit与重载',()=>{
   // 不要求模型重复填写；原始文本和命令ID保留，反向关系在同一领域事务中形成。
   const task=candidate.world!.result.taskCommands[0];expect(task.type==='SaveTask'&&task.task.linkedEventId).toBeUndefined();
   const input=submission(candidate,''),committed=await a.repo.commitTurn(input);
-  expect(committed.state.tasks.task_chen_fetch_credentials.linkedEventId).toBe('event_jumingxuan_standoff');
-  expect(committed.state.events.event_jumingxuan_standoff.linkedTaskIds).toEqual(['task_chen_fetch_credentials']);
-  expect(committed.state.npc.npc_chen_zhiyuan.onScene).toBe(false);expect(committed.state.npc.npc_zhou_fuhua.onScene).toBe(true);
+  expect(committed.state.tasks.task_fixture_fetch_materials.linkedEventId).toBe('event_fixture_exhibition');
+  expect(committed.state.events.event_fixture_exhibition.linkedTaskIds).toEqual(['task_fixture_fetch_materials']);
+  expect(committed.state.npc.npc_fixture_lin.onScene).toBe(false);expect(committed.state.npc.npc_fixture_xu.onScene).toBe(true);
   expect(committed.state.timeline).toHaveLength(1);expect(committed.state.journal).toHaveLength(1);
   expect(committed.state.protagonist).toEqual(before.protagonist);expect(committed.state.economy).toEqual(before.economy);
-  expect(committed.state.npc.npc_zhou_fuhua.memories).toEqual(before.npc.npc_zhou_fuhua.memories);
+  expect(committed.state.npc.npc_fixture_xu.memories).toEqual(before.npc.npc_fixture_xu.memories);
   expect(committed.draft.story).toBeUndefined();expect(committed.draft.userInput).toBe('');
   const other=await SaveRepository.open(a.name,a.factory);resources.push({dispose:()=>other.close()});
   const replay=await other.commitTurn(input);expect(replay.replayed).toBe(true);expect(replay.state).toEqual(committed.state);
@@ -90,7 +90,7 @@ describe('用户茶楼样例经真实Runtime、候选、Commit与重载',()=>{
   expect((await a.repo.loadDraft(a.state.saveId))?.world).toBeUndefined();expect(await a.repo.load(a.state.saveId)).toEqual(a.state);
  });
  it('旧式双方已填写的合法候选继续通过，不需迁移存档或增加请求',async()=>{
-  const a=await setup(),raw={...a.response,taskCommands:[{...a.response.taskCommands[0],task:{...a.response.taskCommands[0].task,linkedEventId:'event_jumingxuan_standoff'}}]};
+  const a=await setup(),raw={...a.response,taskCommands:[{...a.response.taskCommands[0],task:{...a.response.taskCommands[0].task,linkedEventId:'event_fixture_exhibition'}}]};
   const result=parseWorld(JSON.stringify(raw),a.state,a.draft);
   const candidate=await a.repo.saveDraft({...a.draft,draftRevision:a.draft.draftRevision+1,world:{storyRevision:1,candidateRevision:1,requestRevision:0,basedOnVariableRevision:1,validation:'validated',result},stageStatus:{...a.draft.stageStatus,world:'ready'}},a.draft.draftRevision);
   await a.repo.commitTurn(submission(candidate,''));expect(a.transport).not.toHaveBeenCalled();
