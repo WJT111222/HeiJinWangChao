@@ -214,25 +214,25 @@ describe('真实运行、维护事务和异常', () => {
 });
 
 describe('NPC独立认知与玩家只读观察', () => {
-  it('玩家可读私人总结；主角正文和永久历史搜索不接收私有内容', async () => {
+  it('作者可读私人总结；永久历史搜索仍只检索已提交正文', async () => {
     const { state } = summarize(); state.npc['npc-a'].onScene = true;
     const prompt = await composePrompt({ state, stage: 'story', mode: 'regular', settings: defaultSettings(), userInput: '看看四周' });
-    expect(JSON.stringify(prompt.context)).not.toMatch(/本组经历|A的私人经历|B的独占秘密/);
+    expect(JSON.stringify(prompt.context)).toMatch(/本组经历|A的私人经历|B的独占秘密/);
     expect(JSON.stringify(prompt.context.MEMORY_CONTEXT)).toContain('"history-1"'); // NPC来源不抑制玩家公开历史。
     expect(JSON.stringify(playerView(state))).toMatch(/本组经历|A的私人经历|B的独占秘密/);
     expect(searchHistory(playerView(state).journal, '本组经历')).toEqual([]);
   });
-  it('变量/世界使用所属NPC知识分区，已总结原文不重复注入；只向场景适用人物提供资料', async () => {
+  it('变量/世界读取全部NPC知识分区，保留已总结原文和全部私有资料', async () => {
     const { state } = summarize(npcMemoryState(21, true));
     const draft = { ...worldDraft(), baseSaveRevision: state.revision };
     const world = await composePrompt({ state, draft, stage: 'world', mode: 'regular', settings: defaultSettings(), userInput: '' });
-    expect(JSON.stringify(world.context)).toContain('本组经历'); expect(JSON.stringify(world.context)).not.toContain('A的私人经历1，');
+    expect(JSON.stringify(world.context)).toContain('本组经历'); expect(JSON.stringify(world.context)).toContain('A的私人经历1，');
     expect(world.context.NPC_KNOWLEDGE).toEqual(expect.arrayContaining([expect.objectContaining({ ownerNpcId: 'npc-a', summaries: expect.any(Array) })]));
     state.npc['npc-a'].onScene = true;
     const variables = await composePrompt({ state, draft, stage: 'variables', mode: 'regular', settings: defaultSettings(), userInput: '' });
-    expect(JSON.stringify(variables.context.SAVE_STATE)).not.toMatch(/A的私人经历|B的独占秘密|本组经历/);
+    expect(JSON.stringify(variables.context.SAVE_STATE)).toMatch(/A的私人经历|B的独占秘密|本组经历/);
     expect(JSON.stringify(variables.context.NPC_KNOWLEDGE)).toContain('本组经历');
-    expect(JSON.stringify(variables.context.NPC_KNOWLEDGE)).not.toContain('B的独占秘密');
+    expect(JSON.stringify(variables.context.NPC_KNOWLEDGE)).toContain('B的独占秘密');
   });
 });
 it('新增来源记录禁止认知前缀冲突，持久总结禁止重复覆盖和权限篡改', () => {

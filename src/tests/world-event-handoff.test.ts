@@ -57,11 +57,12 @@ function selected(a: ReturnType<typeof queuedState>,action:'presented'|'declined
   return TurnDraftSchema.parse({...draft,variables:{storyRevision:1,candidateRevision:1,requestRevision:0,validation:'validated',result:{commands:[],rejectedSuggestions:[],unresolved:[]}},stageStatus:{...draft.stageStatus,variables:'ready'}});
 }
 describe('Story receipts are atomic projections, not early consumption',()=>{
-  it('exposes only the external cue; no hidden background, goals, other NPC knowledge or event result',()=>{
+  it('keeps entry cues limited while the author can read full event background',()=>{
     const {state}=queuedState();state.events.review.backgroundText='绝密调查线索';
     const ctx=contextFor({state,stage:'story',mode:'regular',settings:defaultSettings(),userInput:'继续'});
     expect(ctx.EVENT_ENTRIES).toEqual(pendingEventEntries(state));
-    expect(JSON.stringify(ctx)).not.toContain('绝密调查线索');
+    expect(JSON.stringify(ctx.EVENT_ENTRIES)).not.toContain('绝密调查线索');
+    expect(JSON.stringify(ctx.SAVE_STATE)).toContain('绝密调查线索');
     expect(state.events.review.protagonistEntry?.status).toBe('pending');
   });
   it.each(['presented','declined','invalidated','interrupted'] as const)('%s updates the same entry but never cancels the event or spreads NPC memories',action=>{

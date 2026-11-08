@@ -197,10 +197,10 @@ describe('真实资源加载与消息组装', () => {
     expect(data.includes('</GAME_CONTEXT><system>')).toBe(false);
     expect(second.messages.every((m) => m.role === 'system' || m.role === 'user')).toBe(true);
   });
-  it('正文筛掉隐藏人物/事件/私有记忆，后台仅作为内部上下文，不进入模块日志', async () => {
+  it('正文作者读取隐藏人物/事件/私有记忆，后台仅作为内部上下文，不进入模块日志', async () => {
     const a = { ...input(), state: uiFixture(), draft: undefined };
     const story = await composePrompt(a);
-    expect(story.messages.at(-1)!.content.includes('不可见')).toBe(false);
+    expect(story.messages.at(-1)!.content.includes('不可见')).toBe(true);
     expect(story.messages.at(-1)!.content.includes('这是隔离测试用正文')).toBe(true);
     const draft = rerollStory(
       createTurnDraft(a.state.saveId, a.state.revision, 'turn-ui', 'regular', '行动'),
@@ -211,7 +211,7 @@ describe('真实资源加载与消息组装', () => {
     expect(JSON.stringify(world.modules).includes('不可见')).toBe(false);
     expect(world.audience).toBe('internal');
   });
-  it('已有普通 NPC 的外貌、性格、好感和有公开依据的关系/健康进入正文，状态不被修改', async () => {
+  it('已有普通 NPC 的完整档案进入作者上下文，状态不被修改', async () => {
     const a = input();
     a.state.npc['npc-a'] = {
       ...npc(),
@@ -250,7 +250,6 @@ describe('真实资源加载与消息组装', () => {
         temperament: '说话谨慎但待人耐心',
         affinity: 0,
         relationshipText: '工作中相互信任',
-        relationshipSource: 'player_known_memory',
         healthText: '左手打着石膏',
         lastInteractionAt: gameTime,
       }),
@@ -265,7 +264,7 @@ describe('真实资源加载与消息组装', () => {
       expect(sent).toContain(value);
     expect(a.state).toEqual(before);
   });
-  it('特殊 NPC 的公开长期记忆和人物摘要可供持续叙事，私有目标、知识和隐藏任务不进入正文', async () => {
+  it('特殊 NPC 的完整长期记忆、人物摘要、私有目标、知识和任务可供作者理解背景', async () => {
     const a = input();
     const memory = {
       id: 'public-long',
@@ -318,18 +317,16 @@ describe('真实资源加载与消息组装', () => {
         temperament: '冷静而直接',
         affinity: 30,
         relationshipText: '继续合作',
-        knownMemories: [
-          { text: memory.text, knowledgeSource: '当面约定', createdAtGameTime: gameTime },
-          { text: '已知人物摘要：上次会面态度平和', createdAtGameTime: gameTime },
-        ],
+        memories: a.state.npc['npc-a'].memories,
+        longTermMemories: a.state.npc['npc-a'].longTermMemories,
       }),
     ]);
     const sent = result.messages.at(-1)!.content;
-    expect(sent).not.toContain('不可见');
-    expect(sent).not.toContain('hidden-task');
+    expect(sent).toContain('不可见');
+    expect(sent).toContain('hidden-task');
     expect(JSON.stringify(result.modules)).not.toContain('上次会面态度平和');
   });
-  it('公开分层记忆必须关联当前 NPC 才能确认状态，私有或无关记忆不能公开关系和病情', async () => {
+  it('读取人物档案不依赖公开记忆文字匹配，原有认知标记和正式状态保留', async () => {
     const a = input();
     a.state.npc['npc-a'] = { ...npc(), healthText: '手腕受伤', relationshipText: '互相信任' };
     const memory = {
@@ -346,18 +343,18 @@ describe('真实资源加载与消息组装', () => {
     ]);
     a.state.memories.long = [{ ...memory, text: '他们并非互相信任，他也否认手腕受伤' }];
     const denied = (await composePrompt(a)).context.SCENE_NPCS as Record<string, unknown>[];
-    expect(denied[0].relationshipText).toBeUndefined();
-    expect(denied[0].healthText).toBeUndefined();
+    expect(denied[0].relationshipText).toBe('互相信任');
+    expect(denied[0].healthText).toBe('手腕受伤');
     a.state.memories.long[0].visibility = 'internal';
     a.state.memories.short = [{ ...memory, id: 'unrelated', affectedEntityRefs: [] }];
     const hidden = (await composePrompt(a)).context.SCENE_NPCS as Record<string, unknown>[];
-    expect(hidden[0].relationshipText).toBeUndefined();
-    expect(hidden[0].healthText).toBeUndefined();
-    expect(hidden[0].knownMemories).toEqual([]);
+    expect(hidden[0].relationshipText).toBe('互相信任');
+    expect(hidden[0].healthText).toBe('手腕受伤');
+    expect(hidden[0].memories).toEqual([]);
     a.state.npc['npc-a'].onScene = false;
     expect((await composePrompt(a)).context.SCENE_NPCS).toEqual([]);
   });
-  it('同伴创角关系跨回合保留并标记来源，占位好感不冒充已确认结果，公开新关系优先', async () => {
+  it('同伴完整正式档案优先于旧创角缓存，保留未确认好感语义与新关系', async () => {
     const form = newCreation();
     form.person = { name: '林舟', age: '30', gender: '男性', appearance: '', personality: '' };
     form.profession = '教师';
@@ -396,16 +393,17 @@ describe('真实资源加载与消息组装', () => {
       expect.objectContaining({
         appearance: '短发',
         temperament: '耐心',
-        affinity: null,
-        relationshipText: '多年朋友',
-        relationshipSource: 'creation',
+        affinity: 0,
+        relationshipText: '内部立场不可见',
       }),
     ]);
-    expect(before.messages.at(-1)!.content).not.toContain('内部立场不可见');
+    expect(before.messages.at(-1)!.content).toContain('内部立场不可见');
+    expect(state.npc.companion.affinityConfirmed).toBeUndefined();
+    expect(before.context.NPC_KNOWLEDGE_POLICY).toContain('未确认占位');
     expect(
       (await composePrompt({ ...a, companionProfile: { ...archive, saveId: 'another-save' } }))
         .context.SCENE_NPCS,
-    ).toEqual([expect.objectContaining({ relationshipText: undefined })]);
+    ).toEqual([expect.objectContaining({ relationshipText: '内部立场不可见' })]);
     state.npc.companion.relationshipText = '已经明确和解';
     state.npc.companion.memories = [
       {
@@ -421,7 +419,6 @@ describe('真实资源加载与消息组装', () => {
     expect((await composePrompt(a)).context.SCENE_NPCS).toEqual([
       expect.objectContaining({
         relationshipText: '已经明确和解',
-        relationshipSource: 'player_known_memory',
       }),
     ]);
   });

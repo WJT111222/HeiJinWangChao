@@ -123,7 +123,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 849,
+      "characters": 900,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "always",
@@ -133,7 +133,7 @@
       "orderGroup": "shared",
       "reorderable": false,
       "category": "shared",
-      "contentSha256": "05cddffcee504689d1f7dba0cfc77c169913114db6a85de3c6fe247d1c39047a",
+      "contentSha256": "e5e7b5aac3c332497fe99aec4481485707db10eb70c160ded35c2632e76b280c",
       "placeholders": []
     },
     {
@@ -214,7 +214,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 712,
+      "characters": 1139,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "always",
@@ -224,7 +224,7 @@
       "orderGroup": "shared",
       "reorderable": false,
       "category": "shared",
-      "contentSha256": "be733d3966385c9cef20010f2e69c60917870e92c94eca86c539a040641f770c",
+      "contentSha256": "07be0a10bc543f7bf4cdda7d505dfc200fb356ed6f505ebbc081ee164b0c56a4",
       "placeholders": [],
       "variableProtocol": "json"
     },
@@ -299,7 +299,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 4569,
+      "characters": 4640,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -309,7 +309,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "104a2539aeaf08b8ba94bf56b73842188a0151588de3392bcc48177815d65c14",
+      "contentSha256": "3a6016d5946f3f804a1dd0102b63c90c5060353ac67406745b6608b4adb64dc9",
       "placeholders": []
     },
     {
@@ -406,7 +406,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 717,
+      "characters": 727,
       "version": "0.5.6",
       "messageRole": "system",
       "activation": "always",
@@ -416,7 +416,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "7c31d0a140b0a3ee5c7937f6a0650a0dc54f78307a98ed87f36c325f18a5af27",
+      "contentSha256": "69a85e6d5b977e06693bfa4ce67e72819323e04156eb89620ecf7eaa31be1c6a",
       "placeholders": [
         "immediateMemoryTurns",
         "minNarrativeChars"
@@ -2750,7 +2750,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 813,
+      "characters": 1240,
       "version": "1.0.0-text-v1",
       "messageRole": "system",
       "activation": "always",
@@ -2760,7 +2760,7 @@
       "orderGroup": "shared",
       "reorderable": false,
       "category": "shared",
-      "contentSha256": "b24da73fc93ed7e6b42aff6dfb0a1aab7cddd03c042c1362f296eb05cd0fcb9a",
+      "contentSha256": "b7c17abbb85ddbb91cc728e820f3ae41001e978640736ab83728707ce24c95ff",
       "placeholders": [],
       "variableProtocol": "text"
     }

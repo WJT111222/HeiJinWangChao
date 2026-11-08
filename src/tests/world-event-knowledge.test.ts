@@ -105,6 +105,8 @@ describe('第三轮：世界事件自主变化不要求角色先知晓', () => {
     command.evidence = proof({ sources: ['event:investigation', 'npc:npc-a'], fact: '同事按安排继续调查。' });
     const after = projectTurn(a.state, a.draft, parse(a, command).eventCommands);
     const context = contextFor({ state: after, stage: 'story', mode: 'regular', settings: defaultSettings(), userInput: '在家等待两小时' });
-    expect(JSON.stringify(context)).not.toContain('事故封路');
+    expect(JSON.stringify(context.TIME_PREFLIGHT)).not.toContain('事故封路');
+    expect(JSON.stringify(context.KNOWN_EVENTS)).not.toContain('事故封路');
+    expect(JSON.stringify(context.SAVE_STATE)).toContain('事故封路');
   });
 });
