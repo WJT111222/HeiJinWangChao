@@ -48,7 +48,11 @@
       "origin": "m3-review",
       "sourcePath": "prompts/shared/02_knowledge.md",
       "sourceSha256": "05cddffcee504689d1f7dba0cfc77c169913114db6a85de3c6fe247d1c39047a",
-      "treatment": "verbatim"
+      "treatment": "context-read-v2",
+      "contextV2": {
+        "notes": "三阶段上下文V2：仅适配完整模型读取、角色知情与原写入权限的说明；保留原始及历史适配哈希，不改输出协议。",
+        "sha256": "e5e7b5aac3c332497fe99aec4481485707db10eb70c160ded35c2632e76b280c"
+      }
     },
     "shared/03_time_events.md": {
       "origin": "m3-review",
@@ -141,6 +145,10 @@
       "m5P6": {
         "notes": "用户明确批准thinking结构/开局契机与兼容消息调整，原始来源及历史适配记录保留。",
         "sha256": "7c31d0a140b0a3ee5c7937f6a0650a0dc54f78307a98ed87f36c325f18a5af27"
+      },
+      "contextV2": {
+        "notes": "三阶段上下文V2：仅适配完整模型读取、角色知情与原写入权限的说明；保留原始及历史适配哈希，不改输出协议。",
+        "sha256": "69a85e6d5b977e06693bfa4ce67e72819323e04156eb89620ecf7eaa31be1c6a"
       }
     },
     "variableGroups/npc_ordinary/init.md": {
@@ -331,6 +339,10 @@
         "legacyPath": "legacy/variables_json/shared/05_context_protocol.md",
         "note": "3D-1依据现有解析器/领域映射适配；3D-2正式Variables请求使用本资源，旧JSON快照保留为历史参考，不用于新模型请求。",
         "sha256": "b24da73fc93ed7e6b42aff6dfb0a1aab7cddd03c042c1362f296eb05cd0fcb9a"
+      },
+      "contextV2": {
+        "notes": "三阶段上下文V2：仅适配完整模型读取、角色知情与原写入权限的说明；保留原始及历史适配哈希，不改输出协议。",
+        "sha256": "b7c17abbb85ddbb91cc728e820f3ae41001e978640736ab83728707ce24c95ff"
       }
     },
     "shared/06_story_output.md": {
@@ -437,6 +449,10 @@
       "worldFreedomV6": {
         "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
         "sha256": "dfb6746f6ceab8200e46653e6b1370bfcfd1903a365f1bd5ba99639c1b42a071"
+      },
+      "contextV2": {
+        "notes": "三阶段上下文V2：仅适配完整模型读取、角色知情与原写入权限的说明；保留原始及历史适配哈希，不改输出协议。",
+        "sha256": "3a6016d5946f3f804a1dd0102b63c90c5060353ac67406745b6608b4adb64dc9"
       }
     },
     "stages/opening/variables.md": {
@@ -1218,12 +1234,16 @@
     "legacy/variables_json/shared/05_context_protocol.md": {
       "origin": "baseline",
       "sourceSha256": "be733d3966385c9cef20010f2e69c60917870e92c94eca86c539a040641f770c",
-      "treatment": "verbatim",
+      "treatment": "context-read-v2",
       "snapshot": {
         "commit": "93f6b2febebf09568f5008f16d2406c5cd3345b9",
         "path": "shared/05_context_protocol.md",
         "sha256": "be733d3966385c9cef20010f2e69c60917870e92c94eca86c539a040641f770c",
         "note": "正式JSON及Story/World共享规则逐字快照。"
+      },
+      "contextV2": {
+        "notes": "三阶段上下文V2：仅适配完整模型读取、角色知情与原写入权限的说明；保留原始及历史适配哈希，不改输出协议。",
+        "sha256": "07be0a10bc543f7bf4cdda7d505dfc200fb356ed6f505ebbc081ee164b0c56a4"
       }
     }
   },
