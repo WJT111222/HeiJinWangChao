@@ -110,11 +110,11 @@ it.each([false,true])('主角与同行者更新顺序reverse=%s不影响最终�
  const commands:DomainCommand[]=[{type:'UpdateProtagonist',protagonistId:'hero',commandId:'hero',expectedRevision:0,evidence:'移动',changes:{locationId:'office'}},{type:'UpdateNpc',npcId:'a',commandId:'follow',expectedRevision:0,evidence:'同行',changes:{locationId:'office',onScene:true}}];
  const after=commitCommands(state,'move',0,reverse?commands.reverse():commands);expect(after.npc.a).toMatchObject({onScene:true,locationId:'office'});expect(after.npc.b).toEqual({...state.npc.b,onScene:false});
 });
-it('纯历史视角可记录旧事而不消费当前世界或泄漏给下一幕角色',()=>{
+it('纯历史视角可记录旧事供作者理解而不消费当前世界或授予角色知识',()=>{
  const {state,draft}=setup();draft.userInput='切换到同事的视角，回顾他大学时期的生活。';
  draft.story!.variableGuide=[{group:'time',subjectHint:'time:retrospective',observedFact:JSON.stringify({npcId:'a',perspectiveRequest:'切换到同事的视角',pastRequest:'回顾他大学时期的生活',temporalScope:'past_only',currentPlotAdvances:false})}];
  const result=parseWorld(JSON.stringify(output({worldCommands:[history('private-past',{eventId:undefined,summary:'仅此视角记载的旧秘密',sourceRef:{kind:'npc',id:'a'},knowledgeKind:'reported'})]})),state,draft);
  const after=projectTurn(state,draft,result.worldCommands);expect(after.npc).toEqual(state.npc);expect(after.worldClock).toBe(state.worldClock);
- const ctx=contextFor({stage:'story',mode:'regular',state:after,settings:defaultSettings(),userInput:''});expect(JSON.stringify(ctx)).not.toContain('仅此视角记载的旧秘密');
+ const ctx=contextFor({stage:'story',mode:'regular',state:after,settings:defaultSettings(),userInput:''});expect(JSON.stringify(ctx)).toContain('仅此视角记载的旧秘密');
  expect(contextFor({stage:'world',mode:'regular',state:after,draft:{...draft,baseSaveRevision:after.revision},settings:defaultSettings(),userInput:''}).OFFSCREEN_STATE).toHaveProperty('history',after.timeline);
 });
