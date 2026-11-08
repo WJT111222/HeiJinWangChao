@@ -17,7 +17,7 @@ describe('共享召回V2：200回合最终messages', () => {
     const a = recallV2Fixture(), before = structuredClone(a);
     const prompt = await composePrompt({ ...a, stage, mode: 'regular', userInput: a.draft.userInput });
     const context = sentContext(prompt.messages), results = array(record(context.MEMORY_CONTEXT).recalledTurns).map(record);
-    const expected = [8, 10, 25, 60, 70, 130, 140, 150].map(number => `history-${number}`);
+    const expected = [8, 10, 25, 60, 70, 130, 140, 150, 190].map(number => `history-${number}`);
     expect(ids(context)).toEqual(expect.arrayContaining(expected));
     expect(results.length).toBeGreaterThan(3);
     expect(ids(context)).not.toContain('history-199');
@@ -55,8 +55,7 @@ describe('共享召回V2：200回合最终messages', () => {
     const a = recallV2Fixture(); a.draft.userInput = '吃饭。';
     a.draft.story!.narrative = '经过十分钟，主角完成用餐。主角已经用现金支付30元吃饭。'; a.draft.story!.variableGuide = [];
     const context = sentContext((await composePrompt({ ...a, stage: 'world', mode: 'regular', userInput: '' })).messages);
-    expect(ids(context)).toEqual(expect.arrayContaining(['history-30', 'history-90', 'history-160']));
-    expect(ids(context)).not.toContain('history-8');
+    expect(ids(context).sort()).toEqual(['history-30', 'history-90', 'history-160'].sort());
     expect(record(context.MEMORY_CONTEXT).recallDiagnostics).toMatchObject({ stage: 'world', timeWindow: { from: a.state.worldClock, to: '2026-10-18T08:10:00+08:00' } });
   });
 
@@ -69,6 +68,19 @@ describe('共享召回V2：200回合最终messages', () => {
     const context = sentContext((await composePrompt({ ...a, stage: 'world', mode: 'regular', userInput: '' })).messages);
     expect(ids(context).includes('history-8')).toBe(validation === 'validated');
     expect(record(record(record(context.SAVE_STATE).npc).zhang).healthText).toBe(validation === 'validated' ? '休息良好' : undefined);
+  });
+
+  it('World未关联事件的活动任务可用目标和阻碍找回缺少ActorRef的原文，不编造任务创建来源', async () => {
+    const a = recallV2Fixture();
+    a.state.events = {}; a.state.tasks['escort-task'].linkedEventId = undefined;
+    a.state.tasks['escort-task'].goal = '取回紫铜信箱'; a.state.tasks['escort-task'].blockers = ['等待螺纹扳手'];
+    a.state.journal[29].story.narrative = '大家曾把契约放入紫铜信箱，箱锁损坏，需要螺纹扳手才能打开。';
+    a.draft.userInput = '吃饭。'; a.draft.story!.narrative = '经过十分钟，主角完成用餐。'; a.draft.story!.variableGuide = [];
+    a.draft.variables!.result.commands = [];
+    const context = sentContext((await composePrompt({ ...a, stage: 'world', mode: 'regular', userInput: '' })).messages);
+    const result = array(record(context.MEMORY_CONTEXT).recalledTurns).map(record).find(entry => entry.turnId === 'history-30')!;
+    expect(result).toBeDefined(); expect(result.sourceReferences).toEqual([]); expect(result.matchedEntityRefs).toEqual([]);
+    expect(result.matchedTerms).toEqual(expect.arrayContaining(['信箱', '扳手']));
   });
 
   it('稳定ID与原始来源召回改名前旧史；同名字符串不会被冒认为稳定身份', async () => {
@@ -91,6 +103,21 @@ describe('共享召回V2：200回合最终messages', () => {
     a.state.events.escort.resolvedAt = a.state.worldClock; a.state.events.escort.resolutionText = '往事已结束';
     a.draft.variables!.result.commands = [];
     expect(ids(sentContext((await composePrompt({ ...a, stage, mode: 'regular', userInput: a.draft.userInput })).messages))).toEqual([]);
+  });
+
+  it('较长姓名与别名不把其前缀提升为另一个NPC的身份；显式ID保持大小写', async () => {
+    const a = recallV2Fixture();
+    a.state.npc.longName = { ...npc('longName'), name: '张三丰', aliases: ['阿山客'], onScene: false };
+    a.state.journal[39].relatedActorRefs = [{ kind: 'npc', id: 'longName' }];
+    const context = sentContext((await composePrompt({ ...a, stage: 'story', mode: 'regular', userInput: '去找张三丰，或者阿山客聊聊。' })).messages);
+    const results = array(record(context.MEMORY_CONTEXT).recalledTurns).map(record);
+    expect(ids(context)).toContain('history-40');
+    // Prefixes may remain literal text hits, but cannot provide stable identity or structured-source evidence.
+    for (const result of results.filter(result => result.turnId !== 'history-40')) {
+      expect(result.matchedEntityRefs).toEqual([]); expect(result.sourceReferences).toEqual([]);
+    }
+    expect(recallJournal(a.state, 3, { stage: 'story', playerInput: 'LONGNAME' }).recalledTurns).toEqual([]);
+    expect(recallJournal(a.state, 3, { stage: 'story', playerInput: 'longName' }).recalledTurns.map(result => result.turnId)).toContain('history-40');
   });
 
   it('超长原文、恶意标签及来源元数据都受独立转义JSON预算限制，原文范围可追溯', async () => {
