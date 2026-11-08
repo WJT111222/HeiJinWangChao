@@ -23,6 +23,8 @@ const protagonistChanges = ProtagonistSchema.pick({
   healthText: true,
   emotionText: true,
   profession: true,
+  professionDescription: true,
+  professionLongTermImpact: true,
   publicStatus: true,
   legalStatus: true,
   skills: true,
@@ -164,6 +166,11 @@ export function applyVariableCommand(
     case 'UpdateProtagonist': {
       requireData(state.protagonist.id === command.protagonistId, 'NOT_FOUND', '主角 ID 不符');
       // 只合并严格白名单的同级字段，无自由路径或深合并。
+      if (command.changes.profession !== undefined && command.changes.profession !== state.protagonist.profession) {
+        // 名称变更不沿用旧职业说明，也不删除既有技能。新资料可在同一命令或随后命令中补入。
+        state.protagonist.professionDescription = '';
+        state.protagonist.professionLongTermImpact = '';
+      }
       Object.assign(state.protagonist, command.changes);
       break;
     }

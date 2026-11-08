@@ -13,7 +13,7 @@ export const EquipmentSchema = z.strictObject({
 export const ProtagonistSchema = z.strictObject({
   id: IdSchema, name: TextSchema, age: z.number().int().nonnegative(),
   gender: TextSchema, appearance: z.string(), personality: z.string(),
-  profession: TextSchema, background: z.string().optional(), skills: StringsSchema,
+  profession: TextSchema, professionDescription: z.string().optional(), professionLongTermImpact: z.string().optional(), background: z.string().optional(), skills: StringsSchema,
   healthText: z.string(), emotionText: z.string(),
   publicStatus: z.string().optional(), legalStatus: z.string().optional(),
   locationId: IdSchema, currentWear: EquipmentSchema,

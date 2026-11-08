@@ -19,8 +19,9 @@ import { submission } from './fixtures/turn';
 const repos: SaveRepository[] = [], runners: TurnCoordinator[] = [];
 afterEach(() => { runners.splice(0).forEach(r => r.dispose()); repos.splice(0).forEach(r => r.close()); vi.restoreAllMocks(); });
 async function setup(life: OpeningLife = openingLives[0]) {
-  const form = newCreation(); form.saveId = 'save-a'; form.person = { name: '林舟', age: life.age, gender: '男', appearance: '', personality: '' };
+  const form = newCreation(); form.saveId = 'save-a'; form.person = { name: '林舟', age: life.age, gender: '男性', appearance: '', personality: '' };
   form.profession = 'custom'; form.customProfession = life.profession; form.background = life.background;
+  form.professionDescription = '自定义工作介绍：' + life.profession; form.professionLongTermImpact = '长期联系与生活经验。'; form.skills = '工作安排\n沟通';
   form.city = life.key === 'comfortable' ? 'shanghai' : 'chongqing';
   const settings = defaultSettings(); settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
   const state = buildCreationState(form, settings), config = defaultAiConfig(), channel = newChannel();
@@ -74,6 +75,11 @@ describe('开局人生 → 正式文本Variables → World投影 → 原子提�
     expect(saved.state.appliedCommands.filter(c => c.commandId === 'opening-clock:1')).toHaveLength(1);
     expect((await a.repo.commitTurn(input)).replayed).toBe(true); expect(await a.repo.load('save-a')).toEqual(saved.state);
     expect(saved.draft.userInput).toBe(''); expect(t.calls).toHaveLength(3);
+    expect(saved.state.protagonist).toMatchObject({ profession: a.state.protagonist.profession, professionDescription: a.state.protagonist.professionDescription, professionLongTermImpact: a.state.protagonist.professionLongTermImpact, skills: a.state.protagonist.skills });
+    for (const call of t.calls) {
+      expect(call.prompt).toContain(a.state.protagonist.professionDescription);
+      expect(call.prompt).toContain(a.state.protagonist.professionLongTermImpact);
+    }
     // Bind a deliberate next action through the repository's existing input boundary.
     const next = await a.repo.bindTurnAction(saved.draft, '去买早餐', true, true);
     const normal = await r.generate({ ...a, draft: next });
@@ -83,6 +89,8 @@ describe('开局人生 → 正式文本Variables → World投影 → 原子提�
     expect(second.state.economy.incomes.paid.status).toBe('received');
     expect(second.state.worldClock).toBe('2015-07-08T08:15:00+08:00'); expect(second.state.journal).toHaveLength(2);
     expect(await a.repo.load('save-a')).toEqual(second.state);
+    expect(second.state.protagonist).toEqual(saved.state.protagonist);
+    for (const call of t.calls.slice(3)) expect(call.prompt).toContain(a.state.protagonist.professionDescription);
   });
   it('World失败保留初始化候选而不改正式状态，恢复仅补World', async () => {
     const a = await setup(), options = { failWorld: true }, t = transport(openingLives[0], options), r = runner(a.repo, t.fetcher);

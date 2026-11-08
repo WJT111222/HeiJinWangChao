@@ -268,6 +268,13 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       VARIABLE_RESULT: variablePending ? undefined : draft!.variables,
       NPC_KNOWLEDGE_POLICY: npcKnowledgePolicy,
       NPC_KNOWLEDGE: Object.values(temporary.npc).filter((npc) => !npc.onScene && !state.npc[npc.id]?.onScene).map((npc) => npcKnowledgeContext(temporary, npc.id)),
+      PROTAGONIST_PROFILE: {
+        id: temporary.protagonist.id, name: temporary.protagonist.name,
+        profession: temporary.protagonist.profession,
+        professionDescription: temporary.protagonist.professionDescription,
+        professionLongTermImpact: temporary.protagonist.professionLongTermImpact,
+        skills: temporary.protagonist.skills,
+      },
       PROTECTED_SCENE: {
         protagonistId: state.protagonist.id,
         initialCompanionId: state.initialCompanionId,
