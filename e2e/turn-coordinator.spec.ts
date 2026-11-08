@@ -1,5 +1,5 @@
 import { variableReply } from '../src/tests/fixtures/variableReply';
-import { openGameTools, openWorkflowDiagnostics } from './helpers/gameLayout';
+import { openGameTools, openWorkflowDiagnostics, goHome } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import type { StageResponse } from '../src/services/ai/stageResponses';
@@ -278,7 +278,7 @@ test('离开页面取消当前请求，不自动启动下游；再次打开可�
     plan = await mock(page, { slow: 'variables', hold: waiting.hold });
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
   await expect.poll(() => plan.calls.length).toBe(2);
-  await page.getByRole('button', { name: '切换存档', exact: true }).click();
+  await goHome(page);
   plan.options.slow = undefined;
   await page.goto('/#game/save-a'); await openGameTools(page);
   await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();

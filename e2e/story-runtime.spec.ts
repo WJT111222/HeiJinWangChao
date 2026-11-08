@@ -1,4 +1,4 @@
-import { openWorldArchive, openSettings } from './helpers/gameLayout';
+import { openWorldArchive, openSettings, goHome } from './helpers/gameLayout';
 import { openGameTools, openWorkflowDiagnostics } from './helpers/gameLayout';
 import { createServer } from 'node:http';
 import type { Server } from 'node:http';
@@ -282,7 +282,7 @@ test('快速重复点击、取消重试、迟到请求与切档隔离、刷新�
   plans.push({ delay: 1500 });
   await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
   await expect.poll(() => requests.length).toBe(3);
-  await page.getByRole('button', { name: '切换存档', exact: true }).click();
+  await goHome(page);
   await page
     .locator('.save-card')
     .filter({ hasText: '另一个存档角色' })
