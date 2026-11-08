@@ -31,6 +31,9 @@ import { createTurnDraft, rerollStory } from '../domain/drafts';
 import { game } from './fixtures/game';
 import { uiFixture } from './fixtures/ui';
 import { playerView } from '../ui/panels/playerView';
+import * as budgetInspection from '../prompts/budgetInspection';
+import { wireRequest } from '../services/ai/protocols';
+import { budgetAnalysis } from '../prompts/budgetAnalysis';
 
 function storage() {
   const data = new Map<string, string>();
@@ -138,7 +141,10 @@ describe('真实资源库、选择器与独立排序', () => {
     async (mode) => {
       const fetcher = vi.fn();
       vi.stubGlobal('fetch', fetcher);
+      const heavy = vi.spyOn(budgetInspection, 'inspectBudget');
       const result = await buildStagePreviews(input(mode), defaultAiConfig());
+      expect(heavy).not.toHaveBeenCalled();
+      heavy.mockRestore();
       for (const stage of ['story', 'variables', 'world'] as const) {
         const preview = result[stage];
         expect(preview.ok).toBe(true);
@@ -238,6 +244,50 @@ describe('真实资源库、选择器与独立排序', () => {
   });
 });
 describe('内存请求快照、安全边界和 Token 统计', () => {
+  it('快照观察器抛异常也不阻断真实 HTTP 或成功响应', async () => {
+    const a = setup(), transport = vi.fn<typeof fetch>().mockResolvedValue(response('openai'));
+    const start = vi.spyOn(requestInspections, 'start').mockImplementation(() => { throw Error('observer'); });
+    try {
+      await expect(new AiClient(transport).generate(requestSnapshot(a.config, 'story', a.vault), [{ role: 'user', content: '行动' }])).resolves.toMatchObject({ text: 'OK' });
+      expect(transport).toHaveBeenCalledTimes(1);
+    } finally { start.mockRestore(); }
+  });
+  it('原始轻量总量在脱敏前准确计量，详细分析仅能取得安全副本', () => {
+    const a = setup(), store = new RequestInspectionStore();
+    const source = [{ role: 'user' as const, content: 'inspector-test-credential🙂' }];
+    store.start(requestSnapshot(a.config, 'story', a.vault), JSON.stringify({ messages: source }));
+    const saved = store.getSnapshot()[0];
+    expect(saved.statistics).toEqual(contextStatistics(source));
+    expect(saved.contentRedacted).toBe(true);
+    expect(saved.statistics.characters).not.toBe(contextStatistics(saved.messages).characters);
+    expect(JSON.stringify(saved)).not.toContain('inspector-test-credential');
+    expect(saved).not.toHaveProperty('budget');
+    const analysis = budgetAnalysis(saved.messages);
+    store.finish(saved.id, { inputTokens: 7 });
+    expect(store.getSnapshot()[0].messages).toBe(saved.messages);
+    expect(budgetAnalysis(store.getSnapshot()[0].messages)).toBe(analysis);
+  });
+  it.each([300, 1000])('%i NPC：真实客户端在详细分析之前发 HTTP，Worker 缺失或诊断失败不影响发送', async (count) => {
+    const a = setup();
+    const snap = requestSnapshot(a.config, 'story', a.vault);
+    const messages = [{ role: 'user' as const, content: `<GAME_CONTEXT>${JSON.stringify({ SAVE_STATE: { npc: Array.from({ length: count }, (_, i) => ({ id: `npc-${i}`, name: '人物', onScene: true, memories: [{ id: `memory-${i}`, text: '完整经历'.repeat(30), sourceTurnIds: ['turn-1'] }] })) } })}</GAME_CONTEXT>` }];
+    const heavy = vi.spyOn(budgetInspection, 'inspectBudget').mockImplementation(() => { throw new Error('diagnostics must not run'); });
+    vi.stubGlobal('Worker', undefined);
+    const wire = wireRequest(snap, messages, false);
+    const transport = vi.fn<typeof fetch>().mockImplementation(async (url, init) => {
+      expect(heavy).not.toHaveBeenCalled();
+      expect(url).toBe(wire.url);
+      expect(init?.body).toBe(wire.init.body);
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
+      return response('openai');
+    });
+    try {
+      await expect(new AiClient(transport).generate(snap, messages, { timeoutSeconds: 17 })).resolves.toMatchObject({ text: 'OK', model: snap.model });
+      expect(transport).toHaveBeenCalledTimes(1);
+      expect(requestInspections.getSnapshot()[0].statistics.actual.inputTokens).toBe(11);
+      expect(heavy).not.toHaveBeenCalled();
+    } finally { heavy.mockRestore(); }
+  });
   it('Mock API缺省usage时实际请求仍未知，不以估算补真实用量，也不增加请求字段', async () => {
     const a = setup();
     const transport = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ choices: [{ message: { content: 'OK' }, finish_reason: 'stop' }] }));

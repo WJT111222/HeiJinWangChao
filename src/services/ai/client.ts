@@ -127,7 +127,8 @@ export class AiClient {
     try {
       return await operation(options, async (signal) => {
         if (signal.aborted) throw new AiError('cancelled');
-        inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection);
+        try { inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection); }
+        catch { /* 只读诊断失败不能阻断真实发送。 */ }
         const response = await this.response(wire.url, wire.init, signal, snapshot);
         const protocol = snapshot.channel.protocol;
         let text = '', reasoning = '',
@@ -208,11 +209,13 @@ export class AiClient {
         }
         if (text.length > 8_000_000 || reasoning.length > 2_000_000) throw new AiError('invalid_output');
         if (!text.trim()) throw new AiError('empty');
-        requestInspections.finish(inspectionId!, usage);
+        try { if (inspectionId) requestInspections.finish(inspectionId, usage); }
+        catch { /* 诊断观察器失败不改变响应。 */ }
         return { text, ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics: wire.diagnostics, protocol, model: snapshot.model };
       });
     } catch (error) {
-      if (inspectionId) requestInspections.finish(inspectionId, observedUsage, safeAiError(error).code);
+      try { if (inspectionId) requestInspections.finish(inspectionId, observedUsage, safeAiError(error).code); }
+      catch { /* 保留原始失败语义。 */ }
       throw error;
     }
   }

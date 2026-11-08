@@ -1,7 +1,7 @@
 import { composePrompt } from './composer';
 import type { ComposeInput } from './context';
 import { contextStatistics } from './statistics';
-import { inspectBudget, windowRisk } from './budgetInspection';
+import { windowRisk } from './budgetInspection';
 import type { AiConfig, AiStage } from '../services/ai/configuration';
 import { cotSupported, resolveModelRoute } from '../services/ai/snapshot';
 import { safeAiError } from '../services/ai/errors';
@@ -37,7 +37,7 @@ export type StagePreview =
       prompt: Awaited<ReturnType<typeof composePrompt>>;
       route: ReturnType<typeof previewRoute>;
       statistics: ReturnType<typeof contextStatistics>;
-      budget: ReturnType<typeof inspectBudget>;
+      contentRedacted?: boolean;
     }
   | { ok: false; reason: string };
 export function previewRequirement(
@@ -70,7 +70,7 @@ export async function buildStagePreviews(input: Omit<ComposeInput, 'stage'>, con
             stage === 'story' && input.draft?.turnKind !== input.mode ? undefined : input.draft,
           cotAllowed: route.cotAllowed,
         });
-        return [stage, { ok: true, prompt, route, statistics: contextStatistics(prompt.messages), budget: inspectBudget(prompt.messages) }];
+        return [stage, { ok: true, prompt, route, statistics: contextStatistics(prompt.messages) }];
       } catch (error) {
         return [stage, { ok: false, reason: safeAiError(error).message }];
       }
