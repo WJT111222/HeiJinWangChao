@@ -204,3 +204,14 @@ it('切档或暂停发生在异步读档期间，旧队列不得启动新请求'
     release(compressionState()); await pending; expect(execute).not.toHaveBeenCalled();
   }
 });
+it('切换立即总结目标不能清除另一NPC的未处理失败或重新授权自动收费', async () => {
+  const state = npcMemoryState(20), settings = defaultSettings(), calls: string[] = [], storage = store();
+  settings.memory.summaries.short.automatic = false; settings.memory.summaries.medium.automatic = false;
+  state.npc['npc-b'].memories = state.npc['npc-a'].memories.map(entry => ({ ...entry, id: `b-${entry.id}`, affectedEntityRefs: [{ kind: 'npc' as const, id: 'npc-b' }] }));
+  const options = { saveId: 'save-a', storage, settings: () => settings, load: async () => state,
+    execute: async (_kind: string, _immediate: boolean, npcId?: string) => { calls.push(npcId!); if (npcId === 'npc-a') throw new Error('mock failure'); }, changed: vi.fn() };
+  const queue = new MemorySummaryQueue(options); await queue.wake(); await queue.immediate('npc', 'npc-b');
+  await queue.wake(); await new MemorySummaryQueue(options).wake();
+  expect(calls).toEqual(['npc-a']);
+  expect(options.changed).toHaveBeenLastCalledWith(expect.arrayContaining([expect.objectContaining({ kind: 'npc', npcId: 'npc-a' })]));
+});

@@ -82,6 +82,11 @@ export class MemorySummaryQueue {
       this.initialize();
       if (!this.options.settings().memory.summaries[kind].enabled) return;
       if (kind === 'npc' && !npcId) { this.remember({ kind, code: 'NPC_MEMORY_CONFLICT', message: '请明确选择需要总结的人物。' }); return; }
+      const pending = this.failures.find(failure => failure.kind === kind);
+      if (kind === 'npc' && pending && pending.npcId !== npcId) {
+        pending.message = '此前的人物总结失败尚未处理，当前选择未请求模型。请先处理原失败任务，或暂停本项后再重新启用。';
+        this.publish(); return;
+      }
       await this.attempt(kind, true, npcId);
     });
   }
