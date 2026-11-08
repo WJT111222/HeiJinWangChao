@@ -18,7 +18,7 @@ import { composePrompt } from '../prompts/composer';
 import { record, array } from '../services/ai/protocols';
 import type { GameState } from '../domain/state';
 
-const output = { entries: [{ text: '已经发生的事实、承诺和修正过程已按先后保留。' }], unresolved: [], contradictions: [] };
+const output = { summary: '已经发生的事实、承诺和修正过程已按先后保留。', importantEvents: ['一次有来源的约定与后续。'] };
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); requestInspections.clear(); });
 function setup(protocol: Protocol = 'openai') {
   const store = () => {
@@ -78,11 +78,11 @@ describe('记忆模型路由及旧配置兼容', () => {
     expect(snapshot.channel.parameters.temperature).toBeUndefined();
     expect(snapshot.stage).toBe('memory'); expect(snapshot.useCot).toBe(false);
   });
-  it('旧设置无自动维护字段默认关闭，不改即时窗口或七项写作设置', () => {
+  it('旧设置未配置新功能使用默认开启，不改即时窗口或七项写作设置', () => {
     const settings = defaultSettings();
     const legacy = { ...settings, memory: { immediateWindowSize: 20 } };
     const read = SettingsSchema.parse(legacy);
-    expect(read.memory).toEqual({ immediateWindowSize: 20, automaticMaintenance: false });
+    expect(read.memory.immediateWindowSize).toBe(20); expect(read.memory.summaries.short.automatic).toBe(true);
     expect(read.prompts).toEqual(settings.prompts);
   });
 });
@@ -98,12 +98,10 @@ describe('批次、预算和输出确定性', () => {
     expect(result.affectedEntityRefs).toEqual([{ kind: 'npc', id: 'npc-a' }]);
     expect(result.visibility).toBe('player_known');
   });
-  it('预算只减少批次，不截断条目/来源；首条太长则拒绝且不计入旧档只读摘要', () => {
+  it('预算拒绝完整批次，不缩小、不截断条目/来源；首条太长则拒绝且不计入旧档只读摘要', () => {
     const state = compressionState();
     state.memories.short.forEach((entry) => { entry.text = '事实'.repeat(1500); });
-    const batch = planCompression(state)!;
-    expect(batch.entries.length).toBeGreaterThanOrEqual(2); expect(batch.entries.length).toBeLessThan(10);
-    expect(batch.entries[0].text).toBe(state.memories.short[0].text);
+    expect(() => planCompression(state)).toThrow(expect.objectContaining({ code: 'MEMORY_BUDGET' }));
     state.memories.short[0].text = '事实'.repeat(20000);
     expect(() => planCompression(state)).toThrow();
     state.memories.short = [];
@@ -228,7 +226,7 @@ describe('真实AI Client + 公开批次请求 + 原子记忆维护', () => {
       release(); await Promise.resolve(); expect(await repo.load(state.saveId)).toEqual(state);
     } finally { release(); repo.close(); }
   });
-  it.each(['{broken', JSON.stringify({ ...output, unresolved: ['承诺结果无法确认'] }), JSON.stringify({ ...output, entries: [{ text: 'test-memory-secret' }] }), JSON.stringify({ ...output, entries: [{ text: 'test-memory-secret' }] }).replace('test-memory-secret', '\\u0074est-memory-secret')])('非法响应不污染存档：%s', async (text) => {
+  it.each(['{broken', JSON.stringify({ ...output, unresolved: ['承诺结果无法确认'] }), JSON.stringify({ ...output, summary: 'test-memory-secret' }), JSON.stringify({ ...output, summary: 'test-memory-secret' }).replace('test-memory-secret', '\\u0074est-memory-secret')])('非法响应不污染存档：%s', async (text) => {
     const state = compressionState(), repo = await seeded(state), { config, vault } = setup();
     try {
       await expect(new MemoryMaintenance(repo, new AiClient(async () => wire('openai', text)), lock).run({ saveId: state.saveId, config, vault, timeoutSeconds: 10 })).rejects.toThrow();

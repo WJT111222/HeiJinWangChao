@@ -284,6 +284,7 @@ describe('正式文本来源与旧架构保留', () => {
       const record = sources.resources[module.path as keyof typeof sources.resources];
       expect(record, module.path).toBeDefined();
       if ('contextV2' in record) expect(sha(text(module.path)), module.path).toBe(record.contextV2.sha256);
+      if ('memorySummaryV2' in record) expect(sha(text(module.path)), module.path).toBe(record.memorySummaryV2.sha256);
       if (record.treatment === 'verbatim')
         expect(sha(readFileSync(resolve(root, module.path))), module.path).toBe(
           record.sourceSha256,

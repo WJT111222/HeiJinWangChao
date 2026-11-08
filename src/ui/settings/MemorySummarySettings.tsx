@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import type { Settings } from './model';
 import { SettingsSchema } from './model';
 import { summaryKinds, summaryNames, defaultSummaryConfig } from '../../domain/memories/configuration';
 import type { SummaryKind } from '../../domain/memories/configuration';
 import type { GameState } from '../../domain/state';
 import { compressionCandidates } from '../../domain/memories/compression';
-import { npcSummaryCandidates } from '../../domain/memories/npcMemory';
+import { npcSummaryCandidates, npcMemoryIdCounts } from '../../domain/memories/npcMemory';
 import { readAiConfig } from '../../services/ai/configuration';
 import { resolveModelRoute } from '../../services/ai/snapshot';
 import { redactInspection } from '../../services/ai/inspection';
@@ -19,32 +19,44 @@ export function MemorySummarySettings({ settings, onSave, state, phase, activeKi
 }) {
   const [editing, setEditing] = useState(settings.memory.summaries);
   const [dirty, setDirty] = useState(false), [message, setMessage] = useState('');
+  const touched = useRef(new Set<string>());
   const [npcId, setNpcId] = useState('');
-  useEffect(() => { if (!dirty) setEditing(settings.memory.summaries); }, [settings, dirty]);
+  useEffect(() => { setEditing(previous => {
+    const next = structuredClone(settings.memory.summaries);
+    for (const kind of summaryKinds) for (const key of Object.keys(previous[kind]) as (keyof typeof previous[SummaryKind])[])
+      if (touched.current.has(`${kind}.${key}`)) Object.assign(next[kind], { [key]: previous[kind][key] });
+    return next;
+  }); }, [settings]);
   useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
   const change = (kind: SummaryKind, patch: Partial<typeof editing[SummaryKind]>) => {
+    Object.keys(patch).forEach(key => touched.current.add(`${kind}.${key}`));
     setEditing(value => ({ ...value, [kind]: { ...value[kind], ...patch } })); setDirty(true); onDirtyChange?.(true);
   };
   let model = '尚未配置总结模型';
   try { const route = resolveModelRoute(readAiConfig(localStorage), 'memory'); model = redactInspection(`${route.channel.name} / ${route.model}`, browserCredentials()); } catch { /* safe empty state */ }
-  const npcIds = state ? Object.keys(state.npc).filter(id => npcSummaryCandidates(state, id).length >= settings.memory.summaries.npc.batchSize) : [];
+  const npcCounts = useMemo(() => state ? npcMemoryIdCounts(state) : undefined, [state]);
+  const npcIds = useMemo(() => state ? Object.keys(state.npc).filter(id => npcSummaryCandidates(state, id, npcCounts).length >= settings.memory.summaries.npc.batchSize) : [], [state, npcCounts, settings.memory.summaries.npc.batchSize]);
   const selectedNpc = npcId || (npcIds.length === 1 ? npcIds[0] : '');
   function save() {
-    const parsed = SettingsSchema.safeParse({ ...settings, memory: { ...settings.memory, summaries: editing } });
+    const summaries = structuredClone(settings.memory.summaries);
+    for (const kind of summaryKinds) for (const key of Object.keys(editing[kind]) as (keyof typeof editing[SummaryKind])[])
+      if (touched.current.has(`${kind}.${key}`)) Object.assign(summaries[kind], { [key]: editing[kind][key] });
+    const parsed = SettingsSchema.safeParse({ ...settings, memory: { ...settings.memory, summaries } });
     if (!parsed.success) { setMessage('阈值须为1～10000，每批1～100且不超过阈值；内容提示词不能为空或超过30000字符。'); return; }
     try {
       onSave(parsed.data);
-      if (state) for (const kind of summaryKinds) if (!settings.memory.summaries[kind].enabled && editing[kind].enabled)
+      if (state) for (const kind of summaryKinds) if (!settings.memory.summaries[kind].enabled && parsed.data.memory.summaries[kind].enabled)
         localStorage.setItem(`heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`, '');
-      setDirty(false); onDirtyChange?.(false); setMessage('三类总结设置已保存，下一次任务使用新配置；历史总结不变。');
-    } catch { setMessage('设置保存失败，原配置未覆盖。'); }
+      touched.current.clear(); setDirty(false); onDirtyChange?.(false); setMessage('三类总结设置已保存，下一次任务使用新配置；历史总结不变。');
+    } catch { setMessage('设置保存未能完整确认，请重新打开核对；未发起新的总结请求。'); }
   }
   return <section className="memory-summary-settings" aria-label="记忆总结设置">
     <p>记忆总结模型：{model}</p><p>自动及立即总结均可能产生第三方 API 费用；后台最多每分钟3次、每小时12次，失败不自动重试。</p>
     {!state && <p>未进入有效存档：可编辑设置，立即总结不可用。</p>}
+    {state && <p>当前人生：{state.title}</p>}
     {summaryKinds.map(kind => {
       const config = editing[kind], saved = settings.memory.summaries[kind];
-      const count = !state ? 0 : kind === 'npc' ? selectedNpc ? npcSummaryCandidates(state, selectedNpc).length : 0 : compressionCandidates(state, kind).length;
+      const count = !state ? 0 : kind === 'npc' ? selectedNpc ? npcSummaryCandidates(state, selectedNpc, npcCounts).length : 0 : compressionCandidates(state, kind).length;
       return <section className="card" key={kind} aria-label={summaryNames[kind]}>
         <header className="summary-module-heading"><h4>{summaryNames[kind]}</h4>
           <button disabled={!state || !onRun || !saved.enabled || dirty || Boolean(phase) || count < saved.batchSize || (kind === 'npc' && !selectedNpc)}
