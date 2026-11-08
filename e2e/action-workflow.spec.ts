@@ -329,13 +329,13 @@ test('单行状态跟随三个实际请求，展开收起不重发且自动结�
 test('最新阶段失败覆盖旧手动错误，状态栏准确指出World失败', async ({ page }) => {
   await prepare(page); const server = await mock(page); server.plan.failure = 'variables';
   await creation(page); await confirm(page); await openWorkflow(page);
-  await expect(workflow(page).getByRole('status')).toHaveText('变量生成失败 · 查看详情');
+  await expect(workflow(page).getByRole('status')).toHaveText('三阶段 · 变量生成失败 · 查看详情');
   server.plan.failure = 'story'; server.plan.status = 401;
   await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
-  await expect(workflow(page).getByRole('status')).toHaveText('正文生成失败 · 查看详情');
+  await expect(workflow(page).getByRole('status')).toHaveText('三阶段 · 正文生成失败 · 查看详情');
   server.plan.failure = 'world'; server.plan.status = undefined;
   await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
-  await expect(workflow(page).getByRole('status')).toHaveText('动态世界生成失败 · 查看详情');
+  await expect(workflow(page).getByRole('status')).toHaveText('三阶段 · 动态世界生成失败 · 查看详情');
   const result = await stored(page); expect(result.state.revision).toBe(0);
   expect(result.draft.story).toBeTruthy(); expect(result.draft.variables?.validation).toBe('validated');
   expect(server.calls.slice(-2).map(call => call.stage)).toEqual(['variables', 'world']);
@@ -352,7 +352,7 @@ test('下一条行动绑定冲突显示发送失败，不误报等待行动且�
   const before = await stored(page);
   await page.getByLabel('你的行动', { exact: true }).fill('当前页面的行动');
   await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect(workflow(page).getByRole('status')).toHaveText('行动发送失败 · 查看详情');
+  await expect(workflow(page).getByRole('status')).toHaveText('三阶段 · 行动发送失败 · 查看详情');
   await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');
   await openWorkflow(page); await expect(workflow(page).getByRole('alert')).toContainText('行动未发送');
   await expect(page.getByLabel('你的行动', { exact: true })).toHaveValue('当前页面的行动');

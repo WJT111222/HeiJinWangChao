@@ -42,8 +42,6 @@ async function stored(page: Page) {
   return { state: GameStateSchema.parse(value.state), draft: TurnDraftSchema.parse(value.draft) };
 }
 async function showClock(page: Page) {
-  const details = page.locator('.hero-sidebar > details');
-  if (await details.locator('summary').isVisible() && !await details.evaluate((element) => element.hasAttribute('open'))) await details.locator('summary').click();
   return page.getByRole('complementary', { name: '主角信息' });
 }
 async function mock(page: Page, startAt: string, endAt: string) {
@@ -93,7 +91,7 @@ for (const scenario of [
   await page.getByRole('button', { name: '确认并创建存档', exact: true }).click(); await ready(page);
   const initial = await stored(page), sidebar = await showClock(page);
   expect(initial.state.openingTimePending).toBeUndefined(); expect(initial.state.worldClock).toBe(scenario.endAt);
-  expect(initial.state.turnNumber).toBe(1); await expect(sidebar.locator('.game-clock')).not.toHaveText('开局时间待确认');
+  expect(initial.state.turnNumber).toBe(1); await expect(sidebar.locator('time')).not.toHaveText('开局时间待确认');
   expect(server.calls.map((call) => call.stage)).toEqual(['story', 'variables', 'world']);
   expect(server.calls[0].context.SAVE_STATE).toHaveProperty('worldClock', null);
   expect(server.calls[2].context.TIME_WINDOW).toEqual({ from: scenario.startAt, to: scenario.endAt });
@@ -106,7 +104,7 @@ for (const scenario of [
   const committed = await stored(page);
   expect(committed.state.openingTimePending).toBeUndefined(); expect(Date.parse(committed.state.worldClock)).toBe(Date.parse(scenario.endAt) + 15000);
   expect(committed.state.journal).toHaveLength(2); expect(committed.draft.turnKind).toBe('regular');
-  await expect((await showClock(page)).locator('.game-clock')).not.toHaveText('开局时间待确认');
+  await expect((await showClock(page)).locator('time')).not.toHaveText('开局时间待确认');
   expect(server.calls.map((call) => call.stage)).toEqual(['story', 'variables', 'world', 'story', 'variables', 'world']);
   await page.reload(); await ready(page); expect(await stored(page)).toEqual(committed); expect(server.calls).toHaveLength(6);
 });

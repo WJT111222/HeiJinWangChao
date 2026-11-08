@@ -204,7 +204,7 @@ test('生成中折叠不打断；取消和错误不被隐藏，Roll成功保留�
 test('缩短视口及模拟软键盘VisualViewport不遮住输入和发送', async ({ page }) => {
   await seed(page); await page.setViewportSize({ width: 392, height: 640 });
   await page.getByLabel('你的行动', { exact: true }).focus();
-  await expect(page.locator('.status-condition')).toBeHidden();
+  await expect(page.locator('.status-condition')).toBeVisible();
   await page.evaluate(() => {
     const viewport = window.visualViewport!;
     Object.defineProperty(viewport, 'height', { configurable: true, value: 320 });

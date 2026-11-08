@@ -373,7 +373,7 @@ export function GameScreen({
                 跟随最新正文 ↓
               </button>
             )}
-            <section className="workflow" aria-label="三阶段工作流">
+            <section className="workflow" aria-label="三阶段工作流" data-state={hasWorkflowError ? 'error' : busy ? 'busy' : awaitingAction ? 'settled' : 'pending'}>
               <details className="workflow-disclosure" ref={workflowDetails}>
                 <summary>
                   <strong role="status" aria-live="polite"><span className="workflow-prefix">三阶段 · </span>{workflowLabel}</strong>
@@ -566,17 +566,19 @@ export function GameScreen({
             </section>
           </div>
           <div className="composer-action-row">
-                            <div className="composer-roll">
-                              {manualProgress ? (
-                                <button disabled={manualProgress.phase === 'saving'} onClick={cancel}>
-                                  {manualProgress.phase === 'saving' ? '正在保存…' : '取消生成'}
-                                </button>
-                              ) : (
-                                <button disabled={!validDraft || awaitingAction || busy} onClick={() => void generate()}>
-                                  {draft?.story ? '重新 Roll' : draft?.turnKind === 'regular' ? '生成本回合正文' : '生成开局正文'}
-                                </button>
-                              )}
-                            </div>
+            <div className="composer-roll">
+              {manualProgress ? (
+                <button disabled={manualProgress.phase === 'saving'} onClick={cancel}>
+                  {manualProgress.phase === 'saving' ? '正在保存…' : '取消生成'}
+                </button>
+              ) : (
+                <button disabled={!validDraft || awaitingAction || busy}
+                  title={awaitingAction ? '本回合已结算；发送新行动后继续' : undefined}
+                  onClick={() => void generate()}>
+                  {awaitingAction || draft?.story ? '重新 Roll' : draft?.turnKind === 'regular' ? '生成本回合正文' : '生成开局正文'}
+                </button>
+              )}
+            </div>
             <label className="sr-only" htmlFor="player-input">你的行动</label>
             <textarea id="player-input" disabled={submitting} value={input}
               onChange={(e) => setInput(e.target.value)} rows={2}

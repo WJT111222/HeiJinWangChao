@@ -6,6 +6,7 @@ export async function openGameTools(page: Page, entering = false) {
   if (entering) await expect.poll(() => new URL(page.url()).hash.startsWith('#game/')).toBe(true);
   if (!new URL(page.url()).hash.startsWith('#game/')) return;
   await expect(page.locator('.game-layout')).toBeVisible();
+  await closeWorldArchive(page);
   await openWorkflow(page);
 }
 
@@ -40,4 +41,13 @@ export async function goHome(page: Page) {
   const menu = page.getByRole('button', { name: '打开游戏菜单', exact: true });
   if (await menu.isVisible()) await menu.click();
   await page.getByRole('button', { name: '游戏首页', exact: true }).click();
+}
+
+async function closeWorldArchive(page: Page) {
+  const directory = page.getByRole('dialog', { name: '世界资料', exact: true });
+  if (await directory.isVisible()) await directory.getByRole('button', { name: '关闭资料界面', exact: true }).click();
+}
+export async function openSettings(page: Page) {
+  await closeWorldArchive(page);
+  await page.getByRole('button', { name: '设置', exact: true }).click();
 }

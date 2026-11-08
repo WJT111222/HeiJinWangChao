@@ -10,6 +10,7 @@ export async function completeDraft(
     world?: NonNullable<TurnDraft['world']>['result'];
     narrative?: string;
     summary?: string;
+    actionOptions?: string[];
     variableGuide?: NonNullable<TurnDraft['story']>['variableGuide'];
   } = {},
 ) {
@@ -31,6 +32,7 @@ export async function completeDraft(
       narrative: options.narrative ?? worldNarrative,
       summary: options.summary ?? '已完成用餐',
       variableGuide: options.variableGuide ?? [],
+      ...(options.actionOptions ? { actionOptions: options.actionOptions } : {}),
     }),
     initial.draftRevision,
   );

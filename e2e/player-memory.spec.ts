@@ -1,3 +1,4 @@
+import { openWorldArchive, openSettings, goHome } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { openGameTools } from './helpers/gameLayout';
@@ -31,7 +32,7 @@ async function seed(page: Page, empty = false) {
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-reader-key');
   }, empty);
   await page.reload(); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
-  await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
+  await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
   return page.getByRole('dialog', { name: '记忆', exact: true });
 }
 
@@ -81,7 +82,7 @@ async function saved(page: Page) {
 
 test('没有游玩的有效存档时，设置高级维护安全不可操作且不开模型请求', async ({ page }) => {
   let api = 0; await page.route('https://**/v1/**', async (route) => { api++; await route.abort(); });
-  await page.goto('/'); await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.goto('/'); await openSettings(page);
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
   await settings.getByRole('button', { name: '记忆', exact: true }).click();
   await settings.getByText('记忆维护（高级操作）', { exact: true }).click();
@@ -99,8 +100,8 @@ test('空记忆与新存档四层均可读；已选存档不等于正在游玩�
   }
   expect(await saved(page)).toEqual(before); expect(requests).toBe(0);
   await panel.getByRole('button', { name: '关闭资料界面' }).click();
-  await page.getByRole('button', { name: '游戏首页', exact: true }).click();
-  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await goHome(page);
+  await openSettings(page);
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
   await settings.getByRole('button', { name: '记忆', exact: true }).click();
   await settings.getByText('记忆维护（高级操作）', { exact: true }).click();

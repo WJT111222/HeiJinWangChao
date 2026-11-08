@@ -1924,7 +1924,7 @@ button { border-radius: 6px; }
 .world-sidebar nav button { display: flex; flex-direction: column; justify-content: center; gap: 6px; border: 0; padding: .4rem .2rem; min-height: 70px; color: var(--muted); font-size: .7rem; text-align: center; }
 .world-sidebar nav button span:nth-child(2) { flex: none; }
 .dock-seal { width: 36px; height: 36px; font-size: 1.25rem; border-color: var(--line-selected); }
-.game-layout .composer { padding: .6rem max(var(--space-6), calc((100% - var(--reading-width)) / 2)) 1rem; gap: var(--space-2); background: var(--status-bg); border-color: var(--line-soft); flex: 0 1 auto; max-height: min(calc(100% - 64px), 70%); }
+.game-layout .composer { padding: .6rem max(var(--space-6), calc((100% - var(--reading-width)) / 2)) max(1rem, env(safe-area-inset-bottom)); gap: var(--space-2); background: var(--status-bg); border-color: var(--line-soft); flex: 0 1 auto; max-height: min(calc(100% - 64px), 70%); }
 .game-layout .workflow { background: transparent; border: 0; }
 .workflow-disclosure > summary { padding: .3rem 0; min-height: 36px; }
 .workflow-disclosure > summary strong { color: var(--text); font-size: .75rem; }
@@ -1966,7 +1966,7 @@ input, textarea, select, .prompt-inspector pre { background-color: var(--bg); co
   .app-shell-game .brand small { display: none; }
   .mobile-menu-toggle { display: block; font-size: 1.25rem; border: 0; width: 44px; height: 44px; padding: 0; }
   .app-shell-game .game-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; }
-  .player-status { grid-row: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(70px, auto) 32px; gap: var(--space-2); padding: 10px var(--space-4); }
+  .player-status { grid-row: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(70px, auto) 44px; gap: var(--space-2); padding: 10px var(--space-4); }
   .status-identity { gap: var(--space-3); }
   .status-seal { width: 36px; height: 36px; font-size: 1.1rem; }
   .status-identity h2 { font-size: 1rem; }
@@ -1975,7 +1975,7 @@ input, textarea, select, .prompt-inspector pre { background-color: var(--bg); co
   .status-funds { max-width: 130px; text-align: right; }
   .status-funds strong { font-size: .78rem; }
   .status-funds small { font-size: .65rem; }
-  .status-expand { display: block; border: 0; padding: 0; width: 32px; height: 44px; color: var(--gold); font-size: 1.2rem; }
+  .status-expand { display: block; border: 0; padding: 0; width: 44px; height: 44px; color: var(--gold); font-size: 1.2rem; }
   .status-condition { grid-column: 1 / -1; flex-wrap: nowrap; }
   .status-condition > span { min-width: 0; max-width: 60%; font-size: .68rem; padding: 3px 10px; }
   .game-layout > .story-column { grid-column: 1; grid-row: 2; order: 0; }
@@ -1996,7 +1996,6 @@ input, textarea, select, .prompt-inspector pre { background-color: var(--bg); co
   .mobile-game-nav { grid-column: 1; grid-row: 3; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line-soft); padding-bottom: env(safe-area-inset-bottom); background: var(--bg); }
   .mobile-game-nav button { min-height: 52px; border: 0; border-radius: 0; font-size: .8rem; color: var(--muted); padding: .5rem .2rem; }
   .mobile-game-nav button[aria-current='page'] { color: var(--gold-hover); box-shadow: inset 0 2px 0 var(--gold); }
-  .player-status:has(+ .story-column textarea:focus) .status-condition { display: none; }
   .home-page { grid-template-columns: minmax(0, 1fr); }
   .home-hero { border-right: 0; padding: 2.5rem var(--space-6) var(--space-8); }
   .home-hero h1 { font-size: clamp(2.5rem, 10vw, 5rem); }
@@ -2043,3 +2042,8 @@ input, textarea, select, .prompt-inspector pre { background-color: var(--bg); co
   .game-layout .composer textarea { height: 44px; }
   .game-layout .reader { padding-block: var(--space-3); }
 }
+
+.workflow[data-state='pending'] > details > summary strong::before { background: var(--muted); }
+.workflow[data-state='busy'] > details > summary strong::before { background: var(--gold); }
+.workflow[data-state='error'] > details > summary strong { color: var(--warning-text); }
+.workflow[data-state='error'] > details > summary strong::before { background: var(--warning); }
