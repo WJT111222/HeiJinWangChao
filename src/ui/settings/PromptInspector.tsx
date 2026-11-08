@@ -354,7 +354,7 @@ export function PromptInspector({
               <strong>{stages[value]}</strong>
               <p>
                 {result?.ok
-                  ? `${result.statistics.characters} 字符 · 估算 ≈ ${result.statistics.estimatedTokens} Token`
+                  ? `离线预览：${result.statistics.characters} 字符 · 估算 ≈ ${result.statistics.estimatedTokens} Token；主要来源：${[...result.budget.categories].sort((a, b) => b.characters - a.characters).slice(0, 2).map(row => row.label).join('、')}；窗口未知`
                   : result
                     ? result.reason
                     : '尚未组装；统计未知'}
@@ -554,6 +554,7 @@ export function PromptInspector({
                   messages={preview.prompt.messages}
                   modules={preview.prompt.modules}
                   secrets={secrets}
+                  budget={preview.budget}
                 />
               ) : (
                 <p className="notice">
@@ -634,6 +635,7 @@ export function PromptInspector({
                     body={actual.body}
                     modules={actual.scope?.modules ?? []}
                     secrets={secrets}
+                    budget={actual.budget}
                   />}
                 </div>
               )}

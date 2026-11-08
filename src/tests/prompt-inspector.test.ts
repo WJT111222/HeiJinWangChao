@@ -238,6 +238,18 @@ describe('真实资源库、选择器与独立排序', () => {
   });
 });
 describe('内存请求快照、安全边界和 Token 统计', () => {
+  it('Mock API缺省usage时实际请求仍未知，不以估算补真实用量，也不增加请求字段', async () => {
+    const a = setup();
+    const transport = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ choices: [{ message: { content: 'OK' }, finish_reason: 'stop' }] }));
+    await new AiClient(transport).generate(requestSnapshot(a.config, 'story', a.vault), [{ role: 'user', content: '规模测量' }]);
+    const [captured] = requestInspections.getSnapshot();
+    expect(captured.status).toBe('received');
+    expect(captured.statistics.estimatedTokens).toBeGreaterThan(0);
+    expect(captured.statistics.actual).toEqual({ inputTokens: undefined, outputTokens: undefined, totalTokens: undefined });
+    expect(captured.body).not.toHaveProperty('budget');
+    expect(captured.body).not.toHaveProperty('statistics');
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
   it('字符数按 Unicode，启发式估算与供应商用量分开，缺失总量不求和', () => {
     expect(characterCount('a中🙂')).toBe(3);
     const stats = contextStatistics([{ role: 'user', content: 'a中🙂' }], {

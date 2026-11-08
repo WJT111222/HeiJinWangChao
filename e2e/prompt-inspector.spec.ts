@@ -139,6 +139,11 @@ test('真实存档六种模式预览、内部内容主动揭示、合法排序�
   await expect(
     page.getByText('预览已组装；未发送 API 请求、未执行回合、未写入正式存档。'),
   ).toBeVisible();
+  await expect(page.locator('.stage-stat-cards')).toContainText('离线预览');
+  await expect(page.getByRole('region', { name: '上下文与统计' })).toContainText('当前模型上下文窗口未知，无法确认请求是否超限。');
+  await page.getByText('展开数据分类、召回预算与重复诊断', { exact: true }).click();
+  await expect(page.getByRole('region', { name: '上下文与统计' })).toContainText('召回预算只影响旧journal原文，不影响完整正式世界状态。');
+  await expect(page.getByRole('region', { name: '上下文与统计' })).toContainText('字符差额 0，字节差额 0');
   for (const stage of ['story', 'variables', 'world']) {
     await page.getByRole('combobox', { name: '检查阶段', exact: true }).selectOption(stage);
     await expect(
@@ -157,7 +162,7 @@ test('真实存档六种模式预览、内部内容主动揭示、合法排序�
   await page.getByRole('combobox', { name: '检查阶段', exact: true }).selectOption('story');
   await expect(page.getByLabel('完整内部上下文', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '主动查看完整内部上下文' }).click();
-  await expect(page.getByLabel('完整内部上下文', { exact: true })).not.toContainText('不可见');
+  await expect(page.getByLabel('完整内部上下文', { exact: true })).toContainText('秘密计划不可见');
   await page.getByRole('combobox', { name: '回合模式', exact: true }).selectOption('opening');
   await page.getByRole('button', { name: '生成三阶段组装预览（不联网）' }).click();
   await expect(

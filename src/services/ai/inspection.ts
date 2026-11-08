@@ -5,6 +5,7 @@ import type { RequestSnapshot } from './snapshot';
 import { freeze, secretFor } from './snapshot';
 import { browserCredentials } from './credentials';
 import { contextStatistics } from '../../prompts/statistics';
+import { inspectBudget } from '../../prompts/budgetInspection';
 
 export interface InspectionScope {
   kind: 'stage' | 'memory';
@@ -33,6 +34,7 @@ export interface RequestInspection {
   messages: AiMessage[];
   outputTokenLimit?: number;
   statistics: ReturnType<typeof contextStatistics>;
+  budget: ReturnType<typeof inspectBudget>;
 }
 export function redactInspection<T>(value: T, secrets: readonly string[] = []): T {
   const candidates = [
@@ -146,6 +148,7 @@ export class RequestInspectionStore {
             : typeof record(original.generationConfig).maxOutputTokens === 'number'
               ? Number(record(original.generationConfig).maxOutputTokens) : undefined,
         statistics: contextStatistics(messages),
+        budget: inspectBudget(messages),
       },
       [secretFor(snapshot), ...browserCredentials()],
     );
