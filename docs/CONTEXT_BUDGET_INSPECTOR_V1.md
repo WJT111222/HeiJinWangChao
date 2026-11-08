@@ -22,11 +22,32 @@
 
 边界：轻量统计、JSON 解码、既有脱敏与冻结仍在主线程，随请求体大小增长；Worker 的 structured clone、结果传回和 UI 渲染也有成本。修订只移走完整诊断阻塞，不承诺零发送开销、硬性帧率、内存上限或性能 SLA。1000 NPC 完整分析仍需数秒，用户可取消。完整内容主动揭示仍是独立的用户操作。
 
+### 本次修订验证
+
+先在评审基线添加真实 `AiClient.generate` 的可控顺序回归：300/1000 NPC 时将完整 `inspectBudget` spy 配置成抛异常，断言 transport 先执行且未调用完整诊断。旧代码两个测试均失败（HTTP 前诊断异常变成 network 失败）；修复后通过，再覆盖 Story/Variables/World 共六种组合，验证单次请求、原生 body/URL/model 不变、原 17 秒 timeout 注册不变、Worker 缺失不影响真实 usage。另测 start 观察器抛异常仍成功发送。
+
+最终定向 Vitest **14 文件 / 340 个唯一用例通过**：`context-budget`、`budget-analysis`、`prompt-inspector`、`ai-client`、`prompt-runtime`、`prompts`、`turn-commit`、`variable-stage`、`world-stage`、`drafts`、`story-stage`、`recall-v2-runtime`、`context-v2-runtime`、`model-list-hardening`。包括合法预览无完整诊断、原始统计/安全副本差额、usage 更新复用相同 messages 缓存键、Worker 不可用/启动/传递/运行失败、关闭/切换/清空取消及迟到回复隔离。原三阶段完整数据、重复并集、302 条同伴记忆、召回预算、CAS/回滚/幂等及 PR #74 降噪回归通过。
+
+`npm run lint`、`npm run build`（含 typecheck）、`git diff --check` 通过；构建生成独立 7.11 kB Worker 文件，仅保留既有主包 500 kB 提醒。没有改提示词原文/manifest，无需刷新资源元数据。
+
+最终只运行 `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e -- e2e/prompt-inspector.spec.ts`，**desktop/mobile 共 12 用例通过**：原有 8 个检查器回归，加 300/1000 NPC 各两端的 4 个 Worker 用例。新增用例从真实最终 Composer 消息经真实 AiClient 的 Mock transport 保存实际快照；展开前 Worker 数为零，按需创建一个 Worker，分析期间仍可输入模块搜索且动画帧继续；结果逐项等于原纯函数、字符/字节差额为零、重复展开不再次启动 Worker，清空后不显示旧结果。测试对照纯函数只在 Worker 完成后显式执行，不是产品主线程回退。没有运行无关浏览器全量或真实付费请求。
+
+以下为最终并发测试机器上的合成 Story 快照观察。捕获+Mock 响应计时包括 wire 序列化、轻量总量、安全快照和本地 Mock 响应；不含此前 Composer，也不是网络延迟。后台观察计时从展开后 UI 搜索及检查开始到结果返回，只覆盖当时尚未结束的后台区间，不等于纯 Worker CPU 时间。测试断言执行顺序、结果、可继续输入及帧推进，不断言毫秒阈值。
+
+| NPC | Chromium 配置 | 捕获+Mock 响应 ms | 后台观察区间 ms | 期间动画帧 | Worker / API 次数 | 结果对照 |
+| --- | --- | ---: | ---: | ---: | --- | --- |
+| 300 | desktop | 112.7 | 830.1 | 21 | 1 / 1 | 完全相等 |
+| 1000 | desktop | 251.5 | 3767.3 | 117 | 1 / 1 | 完全相等 |
+| 300 | mobile viewport | 372.6 | 1758.8 | 61 | 1 / 1 | 完全相等 |
+| 1000 | mobile viewport | 277.2 | 2380.7 | 116 | 1 / 1 | 完全相等 |
+
+原始浏览器观测在各 Playwright `test-results/*/worker-measurement.json`，原请求摘要和检查器截图沿用相邻产物。mobile 是桌面 Chromium 的 Pixel 7 视口配置，不是真机。初轮新增用例因测试夹具只改 state.saveId 未同步 draft.saveId 而被原合法性检查拒绝；仅修正夹具后通过。最终同一源码的一次 12 用例全绿；沙箱不能绑定 localhost，按环境规则使用获准的同命令外部沙箱运行。没有未解决的功能失败。
+
 ## 统计口径与最终消息映射
 
 字符为 Unicode code point，UTF-8 字节逐条消息计算。`contentBytes` 是消息内容字节之和；`serializedMessagesBytes` 是 JSON 消息数组字节，不是 HTTP/供应商完整请求体。人工消息间换行仅沿用旧 Token 估算方法，不加入字符和字节实总。启发式 `unicode-heuristic-v1` 为 ASCII/4、其他字符×1.5 后取整；无外部 tokenizer、计费推算或费用预测。
 
-新 `budgetInspection.ts` 对最终 GAME_CONTEXT 原始 JSON 文本解析位置，保留实际转义、引号和空白；只读遍历，不重新 stringify 值以假设传输大小。标量值按下表分类，JSON 键名、标点、容器和空白单列，所以各类字符与字节可以精确加回实总。模块级来源和 system 的固定/世界书/阶段/领域细项沿用现有 composer 模块 ID/版本/角色/顺序/字符记录；Gemini/Anthropic 可能合并 system，不能把记录中每个模块当作仍独立发送的 message。
+`budgetInspection.ts` 对最终 GAME_CONTEXT JSON 文本解析位置，保留转义、引号和空白；只读遍历，不重新 stringify 值以假设传输大小。标量值按下表分类，JSON 键名、标点、容器和空白单列；未发生内容脱敏时各类字符与字节可以精确加回发送实总，发生脱敏时只对副本自身精确对账。模块级来源和 system 的固定/世界书/阶段/领域细项沿用现有 composer 模块 ID/版本/角色/顺序/字符记录；Gemini/Anthropic 可能合并 system，不能把记录中每个模块当作仍独立发送的 message。
 
 | 分类 | 实际路径/消息 |
 | --- | --- |
@@ -87,7 +108,7 @@ UI 另外展示实际已发召回原文的 Unicode 字符数、strong/auxiliary/
 
 本夹具中增长最快的是完整 NPC 档案/记忆和同步世界资料，加上 World 的专项表示重复；system 基础模块相对固定，近期 N 固定，旧史召回仍独立受 PR #74 预算限制。可供后续单独设计的优化包括：核实专项表示是否可改成来源引用、共享档案引用协议、稳定缓存测量/延迟展开、明确可靠的模型窗口元数据、经过验证的本地 tokenizer。任何删减、摘要替换或新预算需单独评审；本次均未实施。
 
-## 验证与交付限制
+## 原 V1 交付验证（历史记录）
 
 - 定向单元/运行时/资源回归：9 文件、141 个唯一用例通过，已包含 prompts.test / prompt-runtime / prompt-inspector，不能把后续 prompts:check 重跑再累计。覆盖最终三阶段字符/字节对账、转义 Unicode、重复只读与 owner/含点 ID、损坏容器降级、300 回合同行噪音、长原文截取/预算、可靠/未知窗口、Mock usage 有无、正式 revision 与读写权限和 12 行规模测量。
 - `npm run typecheck`、`npm run lint`、`npm run build` 通过。构建仅有既有 500kB chunk 提醒；未针对无关分包改动。
