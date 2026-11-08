@@ -1,3 +1,4 @@
+import { worldNpcAllowed } from '../domain/npc/worldAccess';
 import { pendingEventEntries } from '../domain/events/interactions';
 import { worldEventSchedule } from '../domain/events/schedule';
 import { protagonistKnownEvent } from '../domain/events/knowledge';
@@ -267,7 +268,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       STORY_RESULT: { narrative: draft!.story!.narrative, summary: draft!.story!.summary, eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction) },
       VARIABLE_RESULT: variablePending ? undefined : draft!.variables,
       NPC_KNOWLEDGE_POLICY: npcKnowledgePolicy,
-      NPC_KNOWLEDGE: Object.values(temporary.npc).filter((npc) => !npc.onScene && !state.npc[npc.id]?.onScene).map((npc) => npcKnowledgeContext(temporary, npc.id)),
+      NPC_KNOWLEDGE: Object.values(temporary.npc).filter((npc) => worldNpcAllowed(temporary, draft!, npc.id)).map((npc) => npcKnowledgeContext(temporary, npc.id)),
       PROTAGONIST_PROFILE: {
         id: temporary.protagonist.id, name: temporary.protagonist.name,
         profession: temporary.protagonist.profession,
@@ -280,8 +281,8 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         initialCompanionId: state.initialCompanionId,
         sceneNpcIds: [
           ...new Set(
-            [...Object.values(state.npc), ...Object.values(temporary.npc)]
-              .filter((npc) => npc.onScene)
+            Object.values(temporary.npc)
+              .filter((npc) => !worldNpcAllowed(temporary, draft!, npc.id))
               .map((npc) => npc.id),
           ),
         ],
@@ -291,15 +292,16 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         retiredIdentities: temporary.retiredNpcs, policy: '联系人永久保留完整档案；旧档待复核人物存在历史时继续保护。当前没有独立可信删除确认入口，player_confirmed不可用于退场；玩家原输入、子串及AI正文都不替代该授权。无历史、无联系迹象的临时人物仍可按no_known_connection复核，其他非联系人仅在无后续职责且必要成果留存时可提议RetireNpc。历史身份不授予知识或恢复旧关系。' },
       OFFSCREEN_STATE: {
         npc: Object.values(withoutPrivateMemories(temporary).npc).filter(
-          (npc) => !npc.onScene && !state.npc[npc.id]?.onScene,
+          (npc) => worldNpcAllowed(temporary, draft!, npc.id),
         ),
         organizations: temporary.organizations,
         tasks: Object.values(temporary.tasks).filter(
           (task) =>
             (task.actorRef.kind === 'organization' ||
             (task.actorRef.kind === 'npc' &&
-              !temporary.npc[task.actorRef.id]?.onScene &&
-              !state.npc[task.actorRef.id]?.onScene)),
+              (worldNpcAllowed(temporary, draft!, task.actorRef.id)
+                // Retired actors cannot act again, but their terminal results remain available for handoffs.
+                || (temporary.retiredNpcs[task.actorRef.id] && ['completed','cancelled'].includes(task.status))))),
         ),
         events: temporary.events,
         history: temporary.timeline,

@@ -85,7 +85,7 @@ describe('动态世界权限与同基线投影', () => {
     expect(() => parse(worldResult([npcUpdate()]), state, worldDraft(true, 'opening'))).toThrow();
     expect(parse(worldResult([npcUpdate()]), state)).toBeDefined();
   });
-  it('本轮刚离场人物仍受现场保护，不二次执行', () => {
+  it('本轮合法离场人物可更新独立后台字段，但不能重写Variables现场字段', () => {
     const state = worldState(),
       draft = worldDraft();
     draft.story!.narrative += '现场人物离开了现场。';
@@ -97,7 +97,9 @@ describe('动态世界权限与同基线投影', () => {
       changes: { onScene: false },
       evidence: '现场人物离开了现场。',
     });
-    expect(() => parse(worldResult([{ ...npcUpdate(), npcId: 'scene' }]), state, draft)).toThrow();
+    expect(() => parse(worldResult([{ ...npcUpdate(), npcId: 'scene' }]), state, draft)).not.toThrow();
+    expect(() => parse(worldResult([{ ...npcUpdate({ onScene: false }), npcId: 'scene' }]), state, draft))
+      .toThrow(expect.objectContaining({ details: expect.objectContaining({ worldRule: 'scene_write_conflict' }) }));
   });
   it('地点增量创建支持合法父级；循环/不存在的父级和地点引用拒绝', () => {
     const create: DomainCommand = {

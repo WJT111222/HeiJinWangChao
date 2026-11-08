@@ -15,6 +15,8 @@ import { projectTurn } from '../../domain/turnProjection';
 import { protagonistKnownEvent } from '../../domain/events/knowledge';
 import { worldTypes } from './commandCatalog';
 import { requireWorld, worldValidationError } from './worldDiagnostics';
+import { worldProjectionError } from './worldProjectionDiagnostics';
+import { worldNpcAllowed } from '../../domain/npc/worldAccess';
 
 function sameActor(a: ActorRef, b: ActorRef) { return a.kind === b.kind && a.id === b.id; }
 function offscreen(state: GameState, ref: ActorRef) {
@@ -51,8 +53,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   const createdNpcs = new Map(result.worldCommands.flatMap(c => c.type === 'CreateNpc' ? [[c.npc.id, c.npc] as const] : []));
   const createdOrgs = new Map(result.worldCommands.flatMap(c => c.type === 'CreateOrganization' ? [[c.organization.id, c.organization] as const] : []));
   const actorAllowed = (ref: ActorRef) =>
-    (offscreen(base, ref) && !(ref.kind === 'npc' && (state.npc[ref.id]?.onScene
-      || (draft.turnKind === 'opening' && ref.id === base.initialCompanionId))))
+    (ref.kind === 'npc' ? worldNpcAllowed(base, draft, ref.id) : offscreen(base, ref))
     || (ref.kind === 'npc' && createdNpcs.has(ref.id) && !createdNpcs.get(ref.id)?.onScene)
     || (ref.kind === 'organization' && createdOrgs.has(ref.id));
   const causal = structuredClone(base);
@@ -66,6 +67,12 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
           requireWorld(causal.npc[command.npcId] && actorAllowed({kind:'npc', id:command.npcId}), 'permission');
           requireWorld(!command.affinityChange && command.changes.relationshipText === undefined
             && command.changes.lastInteractionAt === undefined && command.changes.onScene !== true, 'permission');
+          // A departing actor can take a new background task, not overwrite the same scene fields twice.
+          if (state.npc[command.npcId]?.onScene) {
+            const prior = draft.variables?.validation === 'validated' ? draft.variables.result.commands : [];
+            requireWorld(!prior.some(c => c.type === 'UpdateNpc' && c.npcId === command.npcId
+              && Object.keys(c.changes).some(key => Object.hasOwn(command.changes, key))), 'permission', 'scene_write_conflict');
+          }
           break;
         }
         case 'RecordNpcMemory': {
@@ -106,7 +113,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         case 'SaveTask': {
           const task = command.task, old = base.tasks[task.id], formal = state.tasks[task.id];
           requireWorld(!formal || sameActor(formal.actorRef, task.actorRef), 'permission');
-          requireWorld(actorAllowed(task.actorRef) && (!old || sameActor(old.actorRef, task.actorRef)), 'permission');
+          requireWorld(actorAllowed(task.actorRef) && (!old || sameActor(old.actorRef, task.actorRef)), 'permission', 'actor_permission', 'task.actorRef');
           if (task.handoff && !old) {
             const transfer = task.handoff, prior = causal.tasks[transfer.fromTaskId];
             requireWorld(prior?.resolution && ['completed','cancelled'].includes(prior.status), 'invalid_output', 'task_state');
@@ -118,19 +125,19 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
           if (old) {
             requireWorld(old.goal === task.goal && old.startAt === task.startAt && old.completionCondition === task.completionCondition);
             if (['completed','cancelled'].includes(old.status)) requireWorld(fingerprint(old) === fingerprint(task), 'invalid_output', 'task_state');
-            if (['active','blocked'].includes(old.status)) requireWorld(task.status !== 'planned', 'invalid_output', 'task_state');
+            if (['active','blocked'].includes(old.status)) requireWorld(task.status !== 'planned', 'invalid_output', 'task_state', 'task.status');
           } else requireWorld(!Object.values(base.tasks).some(known => sameActor(known.actorRef,task.actorRef)
             && known.goal === task.goal && known.startAt === task.startAt));
-          if (['active','blocked','completed'].includes(task.status)) requireWorld(Date.parse(task.startAt) <= now, 'invalid_output','task_state');
+          if (['active','blocked','completed'].includes(task.status)) requireWorld(Date.parse(task.startAt) <= now, 'invalid_output','task_state', 'task.startAt');
           if (task.status === 'active' || task.status === 'completed') requireWorld(readyConditions(causal,
             [...(old?.prerequisites ?? []), ...(old?.blockers ?? []), ...task.prerequisites, ...task.blockers],task.resolution?.at ?? base.worldClock), 'invalid_output','completion_conditions');
           if (task.status === 'completed' || task.status === 'cancelled') {
             if (!old || !['completed','cancelled'].includes(old.status)) {
-              requireWorld(task.resolution && task.resolution.sourceTurnId === draft.turnId, 'invalid_output','task_state');
+              requireWorld(task.resolution && task.resolution.sourceTurnId === draft.turnId, 'invalid_output','task_state', 'task.resolution');
               requireWorld(Date.parse(task.resolution.at) >= Date.parse(state.worldClock)
-                && Date.parse(task.resolution.at) <= now, 'invalid_output','event_time');
+                && Date.parse(task.resolution.at) <= now, 'invalid_output','event_time', 'task.resolution.at');
             }
-          } else requireWorld(task.resolution === undefined, 'invalid_output','task_state');
+          } else requireWorld(task.resolution === undefined, 'invalid_output','task_state', 'task.resolution');
           break;
         }
         case 'SaveEvent': {
@@ -139,18 +146,18 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
             const checked = WorldEventSchema.safeParse(event);
             if (!checked.success) throw worldValidationError(checked.error,{fieldPath:'event',worldRule:'event_plan'});
           }
-          requireWorld(!event.estimatedEndAt || Date.parse(event.estimatedEndAt) >= Date.parse(event.startAt), 'invalid_output','event_time');
+          requireWorld(!event.estimatedEndAt || Date.parse(event.estimatedEndAt) >= Date.parse(event.startAt), 'invalid_output','event_time', 'event.estimatedEndAt');
           if (!terminalEvent(event)) requireWorld(event.resolvedAt === undefined && event.resolutionText === undefined && event.resultKnowledge === undefined);
-          if (event.resolvedAt) requireWorld(Date.parse(event.resolvedAt) <= now, 'invalid_output','event_time');
+          if (event.resolvedAt) requireWorld(Date.parse(event.resolvedAt) <= now, 'invalid_output','event_time', 'event.resolvedAt');
           // Event participants record identities; they do not execute movements, payments or player decisions.
-          requireWorld(event.actorRefs.every(ref => ref.kind === 'protagonist' ? ref.id === base.protagonist.id
+          event.actorRefs.forEach((ref, index) => requireWorld(ref.kind === 'protagonist' ? ref.id === base.protagonist.id
             : ref.kind === 'organization' ? Boolean(causal.organizations[ref.id])
-              : Boolean(causal.npc[ref.id] || (base.retiredNpcs[ref.id] && old?.actorRefs.some(prior => sameActor(prior,ref))))), 'permission');
+              : Boolean(causal.npc[ref.id] || (base.retiredNpcs[ref.id] && old?.actorRefs.some(prior => sameActor(prior,ref)))), 'permission', 'actor_permission', `event.actorRefs.${index}`));
           if (old) {
             requireWorld(old.startAt === event.startAt
               && old.completionCondition === event.completionCondition);
             if (terminalEvent(old)) requireWorld(fingerprint(old) === fingerprint(event), 'invalid_output','event_transition');
-            if (['active','blocked'].includes(old.status)) requireWorld(event.status !== 'scheduled', 'invalid_output','event_transition');
+            if (['active','blocked'].includes(old.status)) requireWorld(event.status !== 'scheduled', 'invalid_output','event_transition', 'event.status');
           } else requireWorld(!Object.values(base.events).some(known => known.title === event.title
             && known.startAt === event.startAt && fingerprint(known.actorRefs) === fingerprint(event.actorRefs)));
           for (const id of event.predecessorEventIds ?? []) {
@@ -197,7 +204,9 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
       if (command.type === 'SaveEvent') causal.events[command.event.id] = command.event;
     } catch (error) { throw worldValidationError(error,{fieldPath,commandIndex:commands.indexOf(command),commandType:command.type}); }
   }
-  const projected = projectTurn(original, draft, commands);
+  let projected: GameState;
+  try { projected = projectTurn(original, draft, commands); }
+  catch (error) { throw worldProjectionError(error, result, original, draft); }
   if (draft.variables?.validation === 'validated' && !historicalPerspective(state,draft)) for (const due of worldEventSchedule(state,base).due) {
     const after=projected.events[due.eventId] ?? projected.retiredEvents[due.eventId];
     requireWorld(after && (terminalEvent(after) || ('estimatedEndAt' in after && after.estimatedEndAt && Date.parse(after.estimatedEndAt)>Date.parse(base.worldClock)) || ('protagonistEntry' in after && ['pending','presented'].includes(after.protagonistEntry?.status??''))), 'invalid_output', 'due_event_unhandled');

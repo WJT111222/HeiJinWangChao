@@ -299,7 +299,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 4334,
+      "characters": 4569,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -309,7 +309,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "dfb6746f6ceab8200e46653e6b1370bfcfd1903a365f1bd5ba99639c1b42a071",
+      "contentSha256": "104a2539aeaf08b8ba94bf56b73842188a0151588de3392bcc48177815d65c14",
       "placeholders": []
     },
     {
@@ -624,7 +624,7 @@
       ],
       "toggle": null,
       "domain": "npc_ordinary",
-      "characters": 556,
+      "characters": 630,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "relevant-domain",
@@ -634,7 +634,7 @@
       "orderGroup": "variable_group",
       "reorderable": false,
       "category": "variable_group",
-      "contentSha256": "dfcda73645ae29e6046effbad2d095d43f29c252628854cd70e65899ce5abb88",
+      "contentSha256": "8dd78fdc64379f61f60c345ba3eb556f2ceb591b54c6533db3a4947e954fd228",
       "placeholders": []
     },
     {
@@ -705,7 +705,7 @@
       ],
       "toggle": null,
       "domain": "npc_special",
-      "characters": 562,
+      "characters": 636,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "relevant-domain",
@@ -715,7 +715,7 @@
       "orderGroup": "variable_group",
       "reorderable": false,
       "category": "variable_group",
-      "contentSha256": "40ec4cd1257ef696ee8f57f2035b85acc937fa95dfe9f4e8c85849ce9d8850cf",
+      "contentSha256": "1432588d157e8637fa8c67099b6cad7e7bbe7861055ac12c278afbd7e351ffdb",
       "placeholders": []
     },
     {
