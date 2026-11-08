@@ -1,3 +1,4 @@
+import { openWorldArchive, openSettings } from './helpers/gameLayout';
 import { openGameTools, openWorkflowDiagnostics } from './helpers/gameLayout';
 import { createServer } from 'node:http';
 import type { Server } from 'node:http';
@@ -183,7 +184,7 @@ test('真实开局流式分片、资料面板不打断、只展示正文，草�
   await expect(page.getByRole('article', { name: '流式正文预览' })).toContainText('公交车');
   expect((await stored(page)).draft.story).toBeUndefined();
   await openGameTools(page);
-  await page
+  await openWorldArchive(page); await page
     .getByRole('complementary', { name: '世界资料' })
     .getByRole('button', { name: /NPC/ })
     .click();
@@ -210,7 +211,7 @@ test('真实开局流式分片、资料面板不打断、只展示正文，草�
   await expect(page.getByLabel('你的行动')).toHaveValue('看看站台');
   expect(requests).toHaveLength(1);
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
-  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await openSettings(page);
   await page.getByRole('button', { name: '提示词管理', exact: true }).click();
   await page.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');
   const internal = page.getByRole('region', { name: '上下文与统计' });

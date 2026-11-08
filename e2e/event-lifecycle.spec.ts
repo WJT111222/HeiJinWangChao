@@ -1,3 +1,4 @@
+import { openWorldArchive } from './helpers/gameLayout';
 import { variableTextEnvelope } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
@@ -84,7 +85,7 @@ for (const visibility of ['known','partially_known','hidden'] as const) test(`${
   expect(committed.first.state.npc).toEqual(data.state.npc);expect(committed.first.state.protagonist).toEqual(data.state.protagonist);
   expect(committed.replay.replayed).toBe(true);expect(await knownEvents()).toEqual(known);
   await page.reload();await openGameTools(page);
-  await page.getByRole('complementary',{name:'世界资料'}).getByRole('button',{name:/世界事件/}).click();
+  await openWorldArchive(page); await page.getByRole('complementary',{name:'世界资料'}).getByRole('button',{name:/世界事件/}).click();
   const panel=page.getByRole('dialog',{name:'世界事件',exact:true});
   await expect(panel).toContainText('内部清点');await expect(panel).toContainText('受阻');
   await expect(panel).toContainText('2026');

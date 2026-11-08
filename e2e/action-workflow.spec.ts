@@ -1,6 +1,6 @@
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
-import { openWorkflow } from './helpers/gameLayout';
+import { goHome, openWorkflow } from './helpers/gameLayout';
 import type { Page } from '@playwright/test';
 import { GameStateSchema } from '../src/domain/state';
 import { TurnDraftSchema } from '../src/domain/drafts';
@@ -97,7 +97,7 @@ test('一次创角确认自动执行开局三阶段，StrictMode和重复点击�
   await expect(page.getByRole('button', { name: '继续推演', exact: true })).toHaveCount(0);
   await expect(page.locator('main')).not.toContainText('尚未公开的内部线索');
   await page.reload(); await ready(page); expect(await stored(page)).toEqual(result); expect(server.calls).toHaveLength(3);
-  await page.getByRole('button', { name: '游戏首页', exact: true }).click();
+  await goHome(page);
   await page.getByRole('button', { name: /读取存档/ }).click(); await ready(page); expect(server.calls).toHaveLength(3);
 });
 
@@ -186,7 +186,7 @@ test('取消中的迟到响应不启动下游，刷新保留待生成草稿且�
 test('快速离开并重读同一存档或新标签不能延续开局收费授权', async ({ page, context }) => {
   await prepare(page); const server = await mock(page), held = gate(); server.plan.hold = 'variables'; server.plan.gate = held.pending;
   await creation(page); await confirm(page); await expect.poll(() => server.calls.length).toBe(2);
-  const url = page.url(); await page.getByRole('button', { name: '游戏首页', exact: true }).click();
+  const url = page.url(); await goHome(page);
   await page.getByRole('button', { name: /读取存档/ }).click();
   await openWorkflow(page); await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeVisible();
   const other = await context.newPage(); let otherRequests = 0;
@@ -329,13 +329,13 @@ test('单行状态跟随三个实际请求，展开收起不重发且自动结�
 test('最新阶段失败覆盖旧手动错误，状态栏准确指出World失败', async ({ page }) => {
   await prepare(page); const server = await mock(page); server.plan.failure = 'variables';
   await creation(page); await confirm(page); await openWorkflow(page);
-  await expect(workflow(page).getByRole('status')).toHaveText('变量生成失败 · 查看详情');
+  await expect(workflow(page).getByRole('status')).toHaveText('三阶段 · 变量生成失败 · 查看详情');
   server.plan.failure = 'story'; server.plan.status = 401;
   await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
-  await expect(workflow(page).getByRole('status')).toHaveText('正文生成失败 · 查看详情');
+  await expect(workflow(page).getByRole('status')).toHaveText('三阶段 · 正文生成失败 · 查看详情');
   server.plan.failure = 'world'; server.plan.status = undefined;
   await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
-  await expect(workflow(page).getByRole('status')).toHaveText('动态世界生成失败 · 查看详情');
+  await expect(workflow(page).getByRole('status')).toHaveText('三阶段 · 动态世界生成失败 · 查看详情');
   const result = await stored(page); expect(result.state.revision).toBe(0);
   expect(result.draft.story).toBeTruthy(); expect(result.draft.variables?.validation).toBe('validated');
   expect(server.calls.slice(-2).map(call => call.stage)).toEqual(['variables', 'world']);
@@ -352,7 +352,7 @@ test('下一条行动绑定冲突显示发送失败，不误报等待行动且�
   const before = await stored(page);
   await page.getByLabel('你的行动', { exact: true }).fill('当前页面的行动');
   await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect(workflow(page).getByRole('status')).toHaveText('行动发送失败 · 查看详情');
+  await expect(workflow(page).getByRole('status')).toHaveText('三阶段 · 行动发送失败 · 查看详情');
   await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');
   await openWorkflow(page); await expect(workflow(page).getByRole('alert')).toContainText('行动未发送');
   await expect(page.getByLabel('你的行动', { exact: true })).toHaveValue('当前页面的行动');

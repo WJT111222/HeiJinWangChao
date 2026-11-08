@@ -1,3 +1,4 @@
+import { goHome } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
@@ -65,7 +66,7 @@ test('混合存档列表独立展示，坏记录不触发全局错误，正常�
     await page.locator('.save-card').filter({ hasText: `正常存档 ${id}` }).getByRole('button', { name: /读取存档/ }).click();
     await openGameTools(page, true);
     await expect(page.getByRole('heading', { name: '林舟', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: '游戏首页', exact: true }).click();
+    await goHome(page);
     await expect(page.locator('.save-card')).toHaveCount(3);
   }
   await page.reload(); await expect(page.locator('.save-card')).toHaveCount(3); expect(await snapshot(page)).toEqual(before);

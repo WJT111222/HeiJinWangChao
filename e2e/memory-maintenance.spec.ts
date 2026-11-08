@@ -1,3 +1,4 @@
+import { openWorldArchive, openSettings, goHome } from './helpers/gameLayout';
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
@@ -56,7 +57,7 @@ async function load(page: Page) {
 }
 async function panel(page: Page) {
   await openGameTools(page);
-  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await openSettings(page);
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
   await settings.getByRole('button', { name: '记忆', exact: true }).click();
   await settings.getByText('记忆维护（高级操作）', { exact: true }).click();
@@ -81,7 +82,7 @@ test('选择并恢复独立模型；手动整理、原文来源及真实memory�
   });
   await seed(page);
   const before = await load(page);
-  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await openSettings(page);
   const settings = page.getByRole('dialog');
   await expect(settings.getByLabel('记忆维护跟随正文模型')).not.toBeChecked();
   await settings.getByLabel('记忆维护跟随正文模型').check();
@@ -110,14 +111,14 @@ test('选择并恢复独立模型；手动整理、原文来源及真实memory�
   expect(requests).toBe(1);
   await memory.getByRole('button', { name: '关闭资料界面' }).click();
   await openGameTools(page);
-  await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
+  await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
   const reading = page.getByRole('dialog', { name: '记忆', exact: true });
   await reading.getByRole('button', { name: '中期记忆', exact: true }).click();
   await reading.getByRole('button', { name: '查看来源回合', exact: true }).click();
   await reading.getByRole('button', { name: '查看第 3 回合原文', exact: true }).click();
   await expect(reading.getByRole('region', { name: '摘要来源原文' })).toContainText('蓝色钥匙');
   await reading.getByRole('button', { name: '关闭资料界面' }).click();
-  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await openSettings(page);
   await settings.getByRole('button', { name: '提示词管理', exact: true }).click();
   await settings.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');
   await settings.getByRole('combobox', { name: '选择请求', exact: true }).selectOption({ label: await settings.getByRole('combobox', { name: '选择请求', exact: true }).locator('option').filter({ hasText: '记忆维护 memory.short_to_medium' }).innerText() });
@@ -190,7 +191,7 @@ test('自动维护仅由新正式提交触发，不阻断下一轮；设置保�
     await route.fulfill({ contentType: 'application/json', body: wire(content) });
   });
   await seed(page, 30, false, true);
-  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await openSettings(page);
   const settings = page.getByRole('dialog');
   await settings.getByRole('button', { name: '记忆', exact: true }).click();
   await settings.getByLabel('自动记忆维护（额外API费用，默认关闭）').check();
@@ -233,7 +234,7 @@ test('设置关闭重开仍是同一维护任务；阅读零请求，取消迟�
   await expect.poll(() => requests).toBe(1);
   await maintenance.getByRole('button', { name: '关闭资料界面' }).click();
   await openGameTools(page);
-  await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
+  await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
   const reading = page.getByRole('dialog', { name: '记忆', exact: true });
   for (const name of ['即时记忆', '短期记忆', '中期记忆', '长期记忆']) await reading.getByRole('button', { name, exact: true }).click();
   await reading.getByLabel('搜索历史回合').fill('蓝色钥匙');
@@ -276,7 +277,7 @@ test('维护期间切档隔离旧任务，迟到结果不修改新档或原档�
   await maintenance.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true }).click();
   await expect.poll(() => requests).toBe(1);
   await maintenance.getByRole('button', { name: '关闭资料界面' }).click();
-  await page.getByRole('button', { name: '游戏首页', exact: true }).click();
+  await goHome(page);
   await page.locator('.save-card').filter({ hasText: '第二人生' }).getByRole('button', { name: /读取存档/ }).click();
   const other = await panel(page);
   await expect(other).toContainText('当前人生：第二人生');

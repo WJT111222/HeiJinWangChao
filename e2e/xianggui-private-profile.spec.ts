@@ -1,3 +1,4 @@
+import { openWorldArchive } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { openGameTools } from './helpers/gameLayout';
@@ -45,7 +46,7 @@ test.describe('香闺秘档 UI', () => {
 
     await seedSave(page, [withProfile, emptyFemale, ordinary, male, minor]);
 
-    await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
+    await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
     const dialog = page.getByRole('dialog', { name: 'NPC', exact: true });
 
     // 有档案
@@ -79,7 +80,7 @@ test.describe('香闺秘档 UI', () => {
     // 关闭后重新打开
     await dialog.getByRole('button', { name: '关闭资料界面' }).click();
     await expect(dialog).toBeHidden();
-    await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
+    await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
     const reopened = page.getByRole('dialog', { name: 'NPC', exact: true });
     await reopened.getByRole('button', { name: /有档案女/ }).click();
     await expect(reopened.getByRole('heading', { name: '香闺秘档' })).toBeVisible();
@@ -89,7 +90,7 @@ test.describe('香闺秘档 UI', () => {
     // 刷新后仍与正式存档一致
     await page.reload();
     await openGameTools(page);
-    await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
+    await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
     const afterRefresh = page.getByRole('dialog', { name: 'NPC', exact: true });
     await afterRefresh.getByRole('button', { name: /有档案女/ }).click();
     await expect(afterRefresh.getByRole('heading', { name: '香闺秘档' })).toBeVisible();
