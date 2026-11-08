@@ -127,7 +127,9 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       PLAYER_ACTION: draft!.userInput,
       SELECTED_VARIABLE_DOMAINS: input.domains ?? [],
       ...sharedContext(opening?.status === 'candidate' ? { ...state, worldClock: openingTimeSelection(original, draft!)!.endAt } : state,
-        settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular'),
+        settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {
+          stage: 'variables', playerInput: draft!.userInput, storyText: draft!.story!.narrative, variableGuide: draft!.story!.variableGuide,
+        }),
       STORY_RESULT: draft!.story,
       VARIABLE_GUIDE: draft!.story!.variableGuide,
       TEXT_COMMAND_CATALOG: textVariableCatalog(),
@@ -164,7 +166,10 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       STORY_RESULT: { ...draft!.story!, eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction) },
       VARIABLE_RESULT: variablePending ? undefined : draft!.variables,
       // 投影提供候选内容，不产生新的正式版本；模型的expectedRevision仍须使用正式基线。
-      ...sharedContext({ ...temporary, revision: original.revision }, settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular'),
+      ...sharedContext({ ...temporary, revision: original.revision }, settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {
+        stage: 'world', playerInput: draft!.userInput, storyText: draft!.story!.narrative, variableGuide: draft!.story!.variableGuide,
+        validatedVariables: variablePending ? undefined : draft!.variables!.result, from: state.worldClock,
+      }),
       PROTAGONIST_PROFILE: temporary.protagonist,
       PROTECTED_SCENE: {
         protagonistId: state.protagonist.id,

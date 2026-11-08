@@ -287,12 +287,15 @@ describe('真实Composer保留部分重叠的整条上层摘要', () => {
     state.memories.medium = [{ ...parseCompression(JSON.stringify(output), batch, 'mid-1-30'), sourceTurnIds: source, text: '第1至30回合的重要承诺与因果，不可遗失。' }];
     const settings = defaultSettings(); settings.memory.immediateWindowSize = size;
     const { context } = await composePrompt({ stage: 'story', mode: 'regular', state, settings, userInput: '' });
-    const memory = record(context.MEMORY_CONTEXT), summaries = array(memory.summaries).map(record);
-    const mid = summaries.filter((entry) => entry.id === 'mid-1-30');
+    const memory = record(context.MEMORY_CONTEXT);
+    // PR B导航不重复拷贝正式摘要；整条语义与全部来源在SAVE_STATE保留。
+    const mid = array(record(record(context.SAVE_STATE).memories).medium).map(record).filter(entry => entry.id === 'mid-1-30');
     expect(mid).toHaveLength(1); expect(mid[0].text).toBe(state.memories.medium[0].text);
     expect(mid[0].sourceTurnIds).toEqual(source);
-    expect(array(mid[0].overlappingSourceTurnIds)).toHaveLength(Math.max(0, size - 5));
-    expect(array(mid[0].uncoveredSourceTurnIds)).toHaveLength(30 - Math.max(0, size - 5));
+    const recentIds = array(memory.recentTurns).map(entry => record(entry).turnId);
+    expect(source.filter(id => recentIds.includes(id))).toHaveLength(Math.max(0, size - 5));
+    expect(memory.summaries).toEqual([]); expect(memory.summarySource).toBe('SAVE_STATE.memories');
+    expect(memory.summaryPolicy).toContain('同一来源');
     expect(array(memory.recentTurns)).toHaveLength(size);
     expect(storyMemoryContext(state, size, '', true).summaries.reduce((sum, entry) => sum + entry.text.length, 0)).toBeLessThanOrEqual(6000);
   });
