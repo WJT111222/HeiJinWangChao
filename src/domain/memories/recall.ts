@@ -268,6 +268,11 @@ export function recallJournal(state: GameState, windowSize: number, cues: Recall
   }
   return { recalledTurns, recallPolicy: '召回只提供已提交journal原始经过；sourceReferences指向SAVE_STATE既有记忆/世界资料，不是额外事件或身份断言。总结覆盖多个回合不证明每个角色参与每回合。当前STORY_RESULT及Variables投影仍是未提交候选。历史与较新正式状态冲突时以正式状态为准，不据历史重复记账。无可验证时间时不补造时间；原文截取范围以UTF-16半开区间标明。',
     recallDiagnostics: { algorithm: 'shared-journal-v2', stage: cues.stage, eligibleTurns: ranked.length, selectedTurns: recalledTurns.length,
+      cueCharacters: rawTexts.map(text => text.length), queryTerms: queryTerms.length, usedQueryTerms: terms.length,
+      strongTurns: recalledTurns.filter(turn => turn.relevance === 'strong').length,
+      auxiliaryTurns: recalledTurns.filter(turn => turn.relevance === 'auxiliary').length,
+      truncatedTurns: recalledTurns.filter(turn => turn.narrativeTruncated || turn.summaryTruncated).length,
+      metadataSerializedCharacters: encodedSize(recalledTurns.map(turn => ({ ...turn, narrativeExcerpt: undefined }))),
       truncatedCueCharacters: rawTexts.map(text => Math.max(0, text.length - recallBudget.queryCharacters)),
       derivedCueCharacters: 8000 - derivedRemaining, omittedDerivedCueCharacters,
       omittedQueryTerms: Math.max(0, queryTerms.length - recallBudget.terms), suppressedFrequentTerms: Math.min(queryTerms.length, recallBudget.terms) - terms.length,

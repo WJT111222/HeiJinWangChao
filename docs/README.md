@@ -11,6 +11,7 @@
 - [项目变更记录](../CHANGELOG.md)
 - [三阶段上下文 V2：字段对照、回归与输入体量](THREE_STAGE_CONTEXT_V2.md)
 - [三阶段共享记忆召回 V2：算法、来源、预算与200回合验证](SHARED_MEMORY_RECALL_V2.md)
+- [三阶段上下文预算与检查器 V1：最终消息、重复体量与规模测量](CONTEXT_BUDGET_INSPECTOR_V1.md)
 - [运行中的提示词结构](../src/prompts/README.md)、[Prompt 资源库与历史说明](../prompts/docs/README.md)
 - [工作流模块与阶段说明](../src/workflows/README.md)
 

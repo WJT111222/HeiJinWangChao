@@ -18,3 +18,5 @@
 实际模块顺序、Mock 验收结果及 API 边界见根目录 `M3-P2-DEVELOPMENT.md`。M3-P3 管理界面见 `M3-P3-DEVELOPMENT.md`：共享 `selection.ts`，独立 `order.ts` 保存受限排序，`preview.ts` 只调用真实 Composer，不发送请求。浏览器独立阶段请求默认读取已保存的排序；显式 orderOverrides 继续遵守原 P2 校验，不能与 orderPreferences 混用。
 
 `services/ai/inspection.ts` 在真实客户端发送边界捕获脱敏原生 payload，只在内存保留最近 12 条；查看器默认仅显示结构，完整内部内容须主动查看。`statistics.ts` 将 Unicode 启发式 Token 估算与供应商 usage 分开，不补算未提供的真实总量。没有改动正式存档或七项写作设置 Schema。
+
+`budgetInspection.ts` 基于最终消息的原始 JSON 范围统计分类、UTF-8 字节与可验证重复，结构开销单列且对账；重复表示照实计量，不删数据。离线预览与实际捕获使用同一测量器，实际测量在脱敏前完成。现有路由未提供可靠上下文窗口，显示未知且不阻断；详见[上下文预算与检查器 V1](../../docs/CONTEXT_BUDGET_INSPECTOR_V1.md)。
