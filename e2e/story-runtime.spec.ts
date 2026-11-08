@@ -190,6 +190,7 @@ test('真实开局流式分片、资料面板不打断、只展示正文，草�
     .click();
   await expect(page.getByRole('dialog', { name: 'NPC', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
+  await openGameTools(page);
   await generated(page);
   const reader = page.getByTestId('story-reader');
   await expect(reader).toContainText(displayedStory);
