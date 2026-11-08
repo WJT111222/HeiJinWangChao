@@ -171,11 +171,18 @@ for (const status of [401, 403, 429]) {
   });
 }
 
-test('取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复', async ({ page }) => {
+test('取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复', async ({ page }, info) => {
   await prepare(page); const server = await mock(page), held = gate(); server.plan.hold = 'story'; server.plan.gate = held.pending;
   await creation(page); await confirm(page); await expect.poll(() => server.calls.length).toBe(1);
   const summary = page.locator('.workflow-disclosure > summary'); await summary.click(); await summary.click();
-  expect(server.calls).toHaveLength(1); await openWorkflow(page); await page.getByRole('button', { name: '取消自动执行', exact: true }).click();
+  expect(server.calls).toHaveLength(1); await openWorkflow(page);
+  if (info.project.name === 'desktop') {
+    await page.setViewportSize({ width: 1024, height: 520 });
+    await expect(page.getByRole('button', { name: '取消自动执行', exact: true })).toBeInViewport({ ratio: 1 });
+    await expect(page.getByRole('button', { name: '发送', exact: true })).toBeInViewport({ ratio: 1 });
+    await page.screenshot({ path: 'docs/ui-pc-reading/screenshots/after-running-short-pc.png' });
+  }
+  await page.getByRole('button', { name: '取消自动执行', exact: true }).click();
   await expect(workflow(page).getByRole('status')).toContainText('取消'); held.release();
   const cancelled = await stored(page); expect(cancelled.draft.story).toBeUndefined(); expect(cancelled.state.revision).toBe(0);
   await page.reload(); await openWorkflow(page); await expect(page.getByRole('button', { name: '自动生成开局', exact: true })).toBeEnabled();
