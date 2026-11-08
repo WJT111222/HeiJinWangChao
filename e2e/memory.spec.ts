@@ -140,6 +140,7 @@ test('真实正文请求使用设置N=1/10/20，并独立召回第3回合；查�
     await panel.getByLabel('搜索历史回合').fill('社区诊所');
     await expect(panel.locator('details')).toHaveCount(1);
     await panel.getByRole('button', { name: '关闭资料界面' }).click();
+    await openGameTools(page);
     release?.();
     await expect(page.getByTestId('story-reader')).toContainText('主角阅读先前留下的约定');
     await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toBeEnabled();
