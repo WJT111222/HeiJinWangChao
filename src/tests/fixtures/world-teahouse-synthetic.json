@@ -1,0 +1,128 @@
+{
+  "worldCommands": [
+    {
+      "commandId": "cmd-fixture-workshop",
+      "type": "CreateLocation",
+      "evidence": "林岚离开青岚茶室，前往新开放的纸艺工坊取展览材料。",
+      "location": {
+        "id": "loc_fixture_workshop",
+        "name": "青禾市纸艺工坊",
+        "parentId": "loc_fixture_lane"
+      }
+    },
+    {
+      "commandId": "cmd-fixture-history",
+      "type": "RecordHistory",
+      "evidence": "许松在茶室介绍了两家虚构机构先前合作筹备展览的经过。",
+      "entry": {
+        "id": "hist_fixture_exhibition_background",
+        "title": "社区纸艺展的合作缘起",
+        "summary": "许松介绍，青禾工作室与青岚物资社上月约定联合举办社区纸艺展，分别负责作品整理和材料运输。双方今天在茶室讨论布置安排。",
+        "occurredTimeText": "上月",
+        "knowledgeKind": "reported",
+        "sourceText": "许松在青岚茶室的介绍",
+        "actorRefs": [
+          {
+            "kind": "npc",
+            "id": "npc_fixture_xu"
+          },
+          {
+            "kind": "npc",
+            "id": "npc_fixture_lin"
+          },
+          {
+            "kind": "protagonist",
+            "id": "hero_fixture"
+          }
+        ],
+        "locationId": "loc_fixture_teahouse",
+        "relatedEntryIds": []
+      }
+    }
+  ],
+  "taskCommands": [
+    {
+      "commandId": "cmd-fixture-fetch-materials",
+      "type": "SaveTask",
+      "evidence": "林岚带着材料清单离开茶室，前往纸艺工坊取回展台标识。",
+      "task": {
+        "id": "task_fixture_fetch_materials",
+        "actorRef": {
+          "kind": "npc",
+          "id": "npc_fixture_lin"
+        },
+        "goal": "前往纸艺工坊取回展台标识，随后返回茶室继续讨论展览布置。",
+        "startAt": "2040-04-18T09:05:00+08:00",
+        "dueAt": "2040-04-18T09:45:00+08:00",
+        "status": "active",
+        "locationId": "loc_fixture_workshop",
+        "prerequisites": [],
+        "blockers": []
+      }
+    }
+  ],
+  "eventCommands": [
+    {
+      "commandId": "cmd-fixture-exhibition",
+      "type": "SaveEvent",
+      "evidence": "林岚离场取材料，顾宁与许松留在青岚茶室继续讨论展览布置。",
+      "event": {
+        "id": "event_fixture_exhibition",
+        "title": "社区纸艺展布置讨论",
+        "status": "active",
+        "startAt": "2040-04-18T09:00:00+08:00",
+        "estimatedEndAt": "2040-04-18T10:00:00+08:00",
+        "locationId": "loc_fixture_teahouse",
+        "actorRefs": [
+          {
+            "kind": "protagonist",
+            "id": "hero_fixture"
+          },
+          {
+            "kind": "npc",
+            "id": "npc_fixture_xu"
+          },
+          {
+            "kind": "npc",
+            "id": "npc_fixture_lin"
+          },
+          {
+            "kind": "organization",
+            "id": "org_fixture_supplies"
+          },
+          {
+            "kind": "organization",
+            "id": "org_fixture_studio"
+          }
+        ],
+        "linkedTaskIds": [
+          "task_fixture_fetch_materials"
+        ],
+        "prerequisites": [],
+        "blockers": [],
+        "visibility": "partially_known",
+        "impact": "significant",
+        "sourceTurnIds": [
+          "opening-fixture-scene-001"
+        ],
+        "backgroundText": "青禾工作室与青岚物资社共同筹备社区纸艺展。三人在青岚茶室核对展台布置时发现标识仍在工坊，林岚主动前往取回，其余两人继续讨论。",
+        "goalText": "协调展台标识与材料摆放，等待林岚带回标识后确定布置方案。",
+        "continuation": {
+          "direction": "protagonist",
+          "reason": "顾宁仍在茶室参与讨论，需要选择展台布置方案。",
+          "entry": {
+            "channel": "当面讨论",
+            "cue": "许松摊开两张展台草图，请顾宁选择先布置哪个区域。",
+            "locationId": "loc_fixture_teahouse"
+          }
+        }
+      }
+    }
+  ],
+  "visibleHooks": [
+    {
+      "text": "青岚茶室里，许松正等待你对展台草图提出意见，林岚已前往工坊取材料。"
+    }
+  ],
+  "unresolved": []
+}

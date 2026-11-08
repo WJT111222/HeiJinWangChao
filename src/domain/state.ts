@@ -43,8 +43,8 @@ export const SaveShape = {
 };
 
 export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) => {
-  function check(ok: unknown, message: string) {
-    if (!ok) ctx.addIssue({ code: 'custom', message });
+  function check(ok: unknown, message: string, path: (string | number)[] = [], integrityRule = 'domain_state') {
+    if (!ok) ctx.addIssue({ code: 'custom', message, path, params: { integrityRule } });
   }
   // Absence means unavailable, including all older saves. Never infer this right from turnNumber.
   if (s.openingInitializationPending) check(s.revision === 0 && s.turnNumber === 0
@@ -60,14 +60,14 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
   const tables = [s.npc, s.retiredNpcs, s.items, s.organizations, s.locations, s.events, s.retiredEvents, s.tasks,
     s.economy.incomes, s.economy.debts, s.economy.properties, s.economy.vehicles, s.economy.otherAssets];
   for (const table of tables) allIds.push(...Object.keys(table));
-  check(new Set(allIds).size === allIds.length, '实体 ID 必须在存档内全局唯一');
-  function actor(ref: z.infer<typeof ActorRefSchema>, historical = false) {
+  check(new Set(allIds).size === allIds.length, '实体 ID 必须在存档内全局唯一', ['entities'], 'entity_id');
+  function actor(ref: z.infer<typeof ActorRefSchema>, historical = false, path: (string | number)[] = []) {
     check(ref.kind === 'protagonist' ? ref.id === s.protagonist.id
-      : ref.kind === 'npc' ? (Object.hasOwn(s.npc, ref.id) || (historical && Object.hasOwn(s.retiredNpcs, ref.id))) : Object.hasOwn(s.organizations, ref.id), '参与者引用不存在');
+      : ref.kind === 'npc' ? (Object.hasOwn(s.npc, ref.id) || (historical && Object.hasOwn(s.retiredNpcs, ref.id))) : Object.hasOwn(s.organizations, ref.id), '参与者引用不存在', path, 'actor_reference');
   }
-  function location(id?: string) { if (id) check(Object.hasOwn(s.locations, id), '地点引用不存在'); }
-  function timeRange(start: string, end?: string) {
-    if (end) check(Date.parse(end) >= Date.parse(start), '结束时间早于开始时间');
+  function location(id?: string, path: (string | number)[] = []) { if (id) check(Object.hasOwn(s.locations, id), '地点引用不存在', path, 'location_reference'); }
+  function timeRange(start: string, end?: string, path: (string | number)[] = []) {
+    if (end) check(Date.parse(end) >= Date.parse(start), '结束时间早于开始时间', path, 'event_time');
   }
   timeRange(s.createdAt, s.updatedAt);
   location(s.protagonist.locationId);
@@ -76,18 +76,18 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
   for (const id of s.contactReviewNpcIds) check(Object.hasOwn(s.npc, id) && !s.contactNpcIds.includes(id), '旧档待复核人物须存在且不是正式联系人');
   for (const retired of Object.values(s.retiredNpcs)) check(Date.parse(retired.retiredAt) <= Date.parse(s.worldClock), '退场时间在未来');
   const identities = [...Object.values(s.npc), ...Object.values(s.retiredNpcs)].map((npc) => npc.identityKey);
-  check(new Set(identities).size === identities.length, 'NPC 稳定身份重复');
+  check(new Set(identities).size === identities.length, 'NPC 稳定身份重复', ['npc'], 'entity_id');
   for (const node of Object.values(s.locations)) {
-    location(node.parentId);
+    location(node.parentId, ['locations', node.id, 'parentId']);
     const visited = new Set([node.id]);
     let parent = node.parentId;
     while (parent && s.locations[parent]) {
-      if (visited.has(parent)) { check(false, '地点层级存在环'); break; }
+      if (visited.has(parent)) { check(false, '地点层级存在环', ['locations', node.id, 'parentId'], 'location_cycle'); break; }
       visited.add(parent); parent = s.locations[parent].parentId;
     }
   }
   for (const npc of Object.values(s.npc)) {
-    location(npc.locationId);
+    location(npc.locationId, ['npc', npc.id, 'locationId']);
     if (npc.onScene && npc.locationId) check(npc.locationId === s.protagonist.locationId, '在场 NPC 与主角地点不一致');
     if (npc.kind === 'special') for (const id of npc.offscreenTaskIds) {
       check(s.tasks[id]?.actorRef.kind === 'npc' && s.tasks[id]?.actorRef.id === npc.id, 'NPC 任务归属错误');
@@ -133,51 +133,54 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
       && s.tasks[id]?.actorRef.id === org.id, '组织任务归属错误');
   }
   for (const event of Object.values(s.events)) {
-    if(event.continuation?.direction==='protagonist') location(event.continuation.entry.locationId);
+    const path = (field: string) => ['events', event.id, field];
+    if(event.continuation?.direction==='protagonist') location(event.continuation.entry.locationId, [...path('continuation'), 'entry', 'locationId']);
     const entry=event.protagonistEntry;
     if(entry) {
-      location(entry.locationId);
+      location(entry.locationId, [...path('protagonistEntry'), 'locationId']);
       check(Date.parse(entry.queuedAt)<=Date.parse(s.worldClock) && event.sourceTurnIds.includes(entry.sourceTurnId), '入场安排时间或来源不合法');
       check(entry.status==='pending' ? !entry.handledTurnId && !entry.textEvidence && !['resolved','cancelled'].includes(event.status)
         : Boolean(entry.handledTurnId && entry.textEvidence && event.sourceTurnIds.includes(entry.handledTurnId)), '入场处理缺少合法回执');
     }
-    if (event.resultKnowledge) check(['resolved', 'cancelled'].includes(event.status), '未结案事件不能预存成果分类');
-    location(event.locationId); event.actorRefs.forEach((ref) => actor(ref, true)); timeRange(event.startAt, event.estimatedEndAt);
-    if(event.status!=='cancelled')timeRange(event.startAt, event.resolvedAt);
-    if(event.resolvedAt)check(Date.parse(event.resolvedAt)<=Date.parse(s.worldClock),'事件实际终止时间在未来');
+    if (event.resultKnowledge) check(['resolved', 'cancelled'].includes(event.status), '未结案事件不能预存成果分类', path('resultKnowledge'), 'event_transition');
+    location(event.locationId, path('locationId')); event.actorRefs.forEach((ref, index) => actor(ref, true, [...path('actorRefs'), index])); timeRange(event.startAt, event.estimatedEndAt, path('estimatedEndAt'));
+    if(event.status!=='cancelled')timeRange(event.startAt, event.resolvedAt, path('resolvedAt'));
+    if(event.resolvedAt)check(Date.parse(event.resolvedAt)<=Date.parse(s.worldClock),'事件实际终止时间在未来', path('resolvedAt'), 'event_time');
     if (event.status === 'resolved') check(event.resolvedAt && event.resolutionText
-      && Date.parse(event.resolvedAt) <= Date.parse(s.worldClock), '已完成事件缺少合法结案时间或结局');
-    for (const id of event.linkedTaskIds) check(s.tasks[id]?.linkedEventId === event.id, '事件关联任务错误');
+      && Date.parse(event.resolvedAt) <= Date.parse(s.worldClock), '已完成事件缺少合法结案时间或结局', path('status'), 'event_transition');
+    event.linkedTaskIds.forEach((id, index) => check(s.tasks[id]?.linkedEventId === event.id, '事件关联任务错误', [s.events[event.id] ? 'events' : 'retiredEvents', event.id, 'linkedTaskIds', index], 'task_event_link'));
   }
   for (const task of Object.values(s.tasks)) {
-    actor(task.actorRef, ['completed', 'cancelled'].includes(task.status)); location(task.locationId); timeRange(task.startAt, task.dueAt);
+    const path = (field: string) => ['tasks', task.id, field];
+    actor(task.actorRef, ['completed', 'cancelled'].includes(task.status), path('actorRef')); location(task.locationId, path('locationId')); timeRange(task.startAt, task.dueAt, path('dueAt'));
     if (task.resolution) {
-      check(['completed', 'cancelled'].includes(task.status), '未终结任务不能预存成果');
-      check((task.status === 'completed') === (task.resolution.outcome === 'success'), '成果与任务终态不符');
-      check(Date.parse(task.resolution.at) <= Date.parse(s.worldClock), '任务成果时间在未来');
-      if (task.status === 'completed') timeRange(task.startAt, task.resolution.at);
+      check(['completed', 'cancelled'].includes(task.status), '未终结任务不能预存成果', path('resolution'), 'task_state');
+      check((task.status === 'completed') === (task.resolution.outcome === 'success'), '成果与任务终态不符', [...path('resolution'), 'outcome'], 'task_state');
+      check(Date.parse(task.resolution.at) <= Date.parse(s.worldClock), '任务成果时间在未来', [...path('resolution'), 'at'], 'event_time');
+      if (task.status === 'completed') timeRange(task.startAt, task.resolution.at, [...path('resolution'), 'at']);
     }
     if (task.handoff) {
       const prior = s.tasks[task.handoff.fromTaskId];
-      check(prior && ['completed', 'cancelled'].includes(prior.status) && prior.resolution, '交接缺少已成立的前序成果');
+      check(prior && ['completed', 'cancelled'].includes(prior.status) && prior.resolution, '交接缺少已成立的前序成果', [...path('handoff'), 'fromTaskId'], 'task_state');
       check(prior?.resolution && Date.parse(prior.resolution.at) <= Date.parse(task.handoff.at)
-        && Date.parse(task.handoff.at) <= Date.parse(task.startAt), '交接时间不合法');
+        && Date.parse(task.handoff.at) <= Date.parse(task.startAt), '交接时间不合法', [...path('handoff'), 'at'], 'event_time');
       const visited = new Set([task.id]);
       let cursor: typeof task | undefined = prior;
       while (cursor) {
-        if (visited.has(cursor.id)) { check(false, '任务交接存在环'); break; }
+        if (visited.has(cursor.id)) { check(false, '任务交接存在环', [...path('handoff'), 'fromTaskId'], 'task_state'); break; }
         visited.add(cursor.id); cursor = cursor.handoff ? s.tasks[cursor.handoff.fromTaskId] : undefined;
       }
     }
-    if (task.linkedEventId) check(eventById(s, task.linkedEventId)?.linkedTaskIds.includes(task.id), '任务关联事件错误');
+    if (task.linkedEventId) check(eventById(s, task.linkedEventId)?.linkedTaskIds.includes(task.id), '任务关联事件错误', path('linkedEventId'), 'task_event_link');
   }
-  for (const entry of s.timeline) {
-    check(Date.parse(entry.recordedAt) <= Date.parse(s.worldClock), '历史记录时间在未来');
-    if (entry.occurredAt) check(Date.parse(entry.occurredAt) <= Date.parse(entry.recordedAt), '历史发生时间晚于记录时间');
-    if (entry.eventId) check(Boolean(eventById(s, entry.eventId)), '历史关联事件不存在');
-    for (const id of entry.relatedEntryIds) check(id !== entry.id && s.timeline.some(other => other.id === id), '关联历史记录不存在或自引用');
-    if (entry.sourceRef) actor(entry.sourceRef, true);
-    location(entry.locationId); entry.actorRefs.forEach((ref) => actor(ref, true));
+  for (const [index, entry] of s.timeline.entries()) {
+    const path = (field: string) => ['timeline', index, field];
+    check(Date.parse(entry.recordedAt) <= Date.parse(s.worldClock), '历史记录时间在未来', path('recordedAt'), 'event_time');
+    if (entry.occurredAt) check(Date.parse(entry.occurredAt) <= Date.parse(entry.recordedAt), '历史发生时间晚于记录时间', path('occurredAt'), 'event_time');
+    if (entry.eventId) check(Boolean(eventById(s, entry.eventId)), '历史关联事件不存在', path('eventId'), 'event_reference');
+    for (const id of entry.relatedEntryIds) check(id !== entry.id && s.timeline.some(other => other.id === id), '关联历史记录不存在或自引用', path('relatedEntryIds'), 'history_reference');
+    if (entry.sourceRef) actor(entry.sourceRef, true, path('sourceRef'));
+    location(entry.locationId, path('locationId')); entry.actorRefs.forEach((ref, i) => actor(ref, true, [...path('actorRefs'), i]));
   }
   for (const event of Object.values(s.retiredEvents)) {
     check(Date.parse(event.retiredAt) <= Date.parse(s.worldClock), '事件清理时间在未来');
@@ -187,7 +190,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
       if(event.status!=='cancelled')timeRange(event.detail.startAt,event.detail.resolvedAt);
       if (event.detail.resolvedAt) check(Date.parse(event.detail.resolvedAt) <= Date.parse(s.worldClock), '事件结案时间在未来');
     }
-    for (const id of event.linkedTaskIds) check(s.tasks[id]?.linkedEventId === event.id, '事件关联任务错误');
+    event.linkedTaskIds.forEach((id, index) => check(s.tasks[id]?.linkedEventId === event.id, '事件关联任务错误', [s.events[event.id] ? 'events' : 'retiredEvents', event.id, 'linkedTaskIds', index], 'task_event_link'));
   }
   for (const event of [...Object.values(s.events), ...Object.values(s.retiredEvents)]) {
     for (const id of event.predecessorEventIds ?? []) check(Boolean(eventById(s, id)), '事件前序来源不存在');

@@ -69,7 +69,7 @@ it('不存在的行动者失败且只显示静态诊断；明确重试只补Worl
   let caught: unknown;
   try { await stage.generate({ ...input, draft }); } catch (error) { caught = error; }
   const log = runtimeLogEvent(1, 'world', 'failed', caught);
-  expect(log).toMatchObject({ worldRule: 'actor_permission', commandType: 'SaveTask', commandIndex: 1, fieldPath: 'taskCommands.0' });
+  expect(log).toMatchObject({ worldRule: 'actor_permission', commandType: 'SaveTask', commandIndex: 1, fieldPath: 'taskCommands.0.task.actorRef' });
   expect(JSON.stringify(log)).not.toContain('学校');
   expect(JSON.stringify(log)).not.toContain('mock-school-key');
   const failed = await repo.loadDraft('save-a');
