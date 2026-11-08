@@ -92,6 +92,7 @@ export function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [aiSettingsDirty, setAiSettingsDirty] = useState(false);
+  const [summarySettingsDirty, setSummarySettingsDirty] = useState(false);
   const [confirmSettingsClose, setConfirmSettingsClose] = useState(false);
   const [deleting, setDeleting] = useState<SaveSummary>();
   useEffect(() => {
@@ -280,12 +281,12 @@ export function App() {
   // 游戏中由原GameScreen提供唯一维护控制器；设置只是展示，不拥有任务生命周期。
   const renderSettings = (memoryMaintenance?: ReactNode) => (
     <Dialog title="设置" onClose={() => {
-      if (aiSettingsDirty) setConfirmSettingsClose(true);
+      if (aiSettingsDirty || summarySettingsDirty) setConfirmSettingsClose(true);
       else setSettingsOpen(false);
     }}>
       <SettingsPanel settings={settings} onSave={saveSettings} repository={repository}
         activeSaveId={loaded?.state.saveId ?? active?.saveId} memoryMaintenance={memoryMaintenance}
-        onAiDirtyChange={setAiSettingsDirty} onOpenNotice={notices.open} />
+        onAiDirtyChange={setAiSettingsDirty} onSummaryDirtyChange={setSummarySettingsDirty} onOpenNotice={notices.open} />
     </Dialog>
   );
   return (
@@ -492,9 +493,9 @@ export function App() {
       {notices.kind && <NoticeDialog key={notices.kind} kind={notices.kind} muted={notices.muted}
         onMutedChange={notices.setMuted} onClose={notices.close} />}
       {settingsOpen && !(gameRoute && loaded) && renderSettings()}
-      {settingsOpen && confirmSettingsClose && <UnsavedAiChanges onContinue={() => setConfirmSettingsClose(false)} onDiscard={() => {
+      {settingsOpen && confirmSettingsClose && <UnsavedAiChanges subject={summarySettingsDirty ? '记忆总结设置' : undefined} onContinue={() => setConfirmSettingsClose(false)} onDiscard={() => {
         setConfirmSettingsClose(false);
-        setAiSettingsDirty(false);
+        setAiSettingsDirty(false); setSummarySettingsDirty(false);
         setSettingsOpen(false);
       }} />}
       {deleting && (

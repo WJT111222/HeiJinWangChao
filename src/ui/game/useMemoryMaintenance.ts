@@ -1,45 +1,64 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameState } from '../../domain/state';
 import type { Settings } from '../settings/model';
+import { SettingsSchema, settingsKey } from '../settings/model';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import { readAiConfig } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
-import { safeAiError } from '../../services/ai/errors';
-import { DataError } from '../../domain/common';
 import { MemoryMaintenance } from '../../workflows/memoryMaintenance';
+import { MemorySummaryQueue } from '../../workflows/memorySummaryQueue';
+import type { SummaryFailure } from '../../workflows/memorySummaryQueue';
+import type { SummaryKind } from '../../domain/memories/configuration';
 
-export function useMemoryMaintenance(repository: SaveRepository, saveId: string, settings: Settings, onSaved: (state: GameState) => void) {
+export function useMemoryMaintenance(repository: SaveRepository, saveId: string, settings: Settings, onSaved: (state: GameState) => void,
+  onSettings?: (settings: Settings) => void) {
   const runner = useMemo(() => new MemoryMaintenance(repository), [repository, saveId]);
   const [phase, setPhase] = useState<'generating' | 'saving'>();
-  const [notice, setNotice] = useState('尚未运行整理；手动或自动整理可能产生额外API费用。');
-  const mounted = useRef(true), callback = useRef(onSaved);
-  const running = useRef(false), autoBlocked = useRef(false);
-  callback.current = onSaved;
+  const [activeKind, setActiveKind] = useState<SummaryKind>();
+  const [failures, setFailures] = useState<SummaryFailure[]>([]);
+  const [notice, setNotice] = useState('后台总结就绪；模型请求可能产生第三方 API 费用。');
+  const current = useRef({ settings, onSaved, onSettings }); current.current = { settings, onSaved, onSettings };
+  const queue = useRef<MemorySummaryQueue | undefined>(undefined);
   useEffect(() => {
-    mounted.current = true;
-    return () => { mounted.current = false; runner.cancel(); };
-  }, [runner]);
-  async function run(automatic = false, task: 'public' | 'npc' = 'public') {
-    if (automatic && task === 'npc') return; // 公开自动维护偏好不授权额外NPC收费。
-    if (automatic && !settings.memory.automaticMaintenance) return;
-    if (running.current || (automatic && autoBlocked.current)) return;
-    running.current = true;
-    try {
-      setPhase('generating');
-      setNotice('正在核对批次并整理记忆，不阻断游戏生成。');
-      const state = await runner.run({ saveId, task, config: readAiConfig(localStorage),
-        vault: new CredentialVault(sessionStorage, localStorage), timeoutSeconds: settings.runtime.timeoutSeconds,
-        onPhase: (next) => { if (mounted.current) setPhase(next); } });
-      if (mounted.current) {
-        if (state) callback.current(state);
-        if (task === 'public') autoBlocked.current = false;
-        setNotice(state ? task === 'npc' ? '一批私人记忆已整理并原子保存，原始记忆完整保留。' : '一批记忆已整理并原子保存，原始正文完整保留。' : '当前没有可安全整理的任务，无模型请求。');
-      }
-    } catch (error) {
-      if (automatic) autoBlocked.current = true;
-      if (mounted.current) setNotice((task === 'npc' ? '私人记忆整理未完成，原始记录保留；可能是来源冲突、取消、服务或存储失败。' : error instanceof DataError ? error.message : safeAiError(error).message) +
-        (automatic ? ' 本页面已暂停后续自动维护，请检查后手动重试（可能收费）。' : ''));
-    } finally { running.current = false; if (mounted.current) setPhase(undefined); }
+    let mounted = true;
+    const tasks = new MemorySummaryQueue({ saveId, storage: localStorage,
+      settings: () => current.current.settings, load: () => repository.load(saveId),
+      changed: next => { if (mounted) setFailures(next); },
+      execute: async (kind, immediate, npcId) => {
+        if (!current.current.settings.memory.summaries[kind].enabled) return;
+        const frozen = structuredClone(current.current.settings);
+        try {
+          const state = await runner.run({ saveId, kind, npcId, immediate, automatic: !immediate,
+            summaryConfig: frozen.memory.summaries[kind], attempts: localStorage,
+            config: readAiConfig(localStorage), vault: new CredentialVault(sessionStorage, localStorage),
+            timeoutSeconds: frozen.runtime.timeoutSeconds,
+            onPhase: next => { if (mounted) { setPhase(next); setActiveKind(kind); } } });
+          if (mounted) {
+            if (state) current.current.onSaved(state);
+            setNotice(state ? '总结已保存，原始历史与来源完整保留。' : '合格记忆不足所设批次数量，未请求模型。');
+          }
+        } finally { if (mounted) { setPhase(undefined); setActiveKind(undefined); } }
+      },
+    });
+    queue.current = tasks;
+    void tasks.wake();
+    const timer = setInterval(() => { void tasks.wake(); }, 60000);
+    return () => { mounted = false; clearInterval(timer); tasks.stop(); runner.cancel(); if (queue.current === tasks) queue.current = undefined; };
+  }, [repository, runner, saveId]);
+  useEffect(() => { void queue.current?.wake(); }, [settings]);
+  async function run(automatic = false, kind: SummaryKind = 'short', npcId?: string) {
+    if (automatic) await queue.current?.wake();
+    else await queue.current?.immediate(kind, npcId);
   }
-  return { phase, notice, run, cancel: () => runner.cancel() };
+  function pause(kind: SummaryKind) {
+    try {
+      const next = structuredClone(current.current.settings);
+      next.memory.summaries[kind].enabled = false; next.memory.summaries[kind].automatic = false;
+      current.current.onSettings?.(next);
+      const saved = SettingsSchema.parse(JSON.parse(localStorage.getItem(settingsKey) || 'null'));
+      if (saved.memory.summaries[kind].enabled || saved.memory.summaries[kind].automatic) throw new Error();
+      queue.current?.dismiss(kind);
+    } catch { setNotice('暂停设置保存失败，未清除失败记录，请检查本地存储。'); }
+  }
+  return { phase, activeKind, notice, failures, run, pause, cancel: () => runner.cancel() };
 }

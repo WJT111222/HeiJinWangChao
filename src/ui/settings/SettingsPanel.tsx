@@ -1,5 +1,6 @@
+import { MemorySummarySettings } from './MemorySummarySettings';
 import type { SaveRepository } from '../../services/storage/saveRepository';
-import { lazy, Suspense, useCallback, useState } from 'react';
+import { lazy, Suspense, useCallback, useState, cloneElement, isValidElement } from 'react';
 import type { ReactNode } from 'react';
 import { AiConnections } from './AiConnections';
 import { UnsavedAiChanges } from './UnsavedAiChanges';
@@ -12,7 +13,7 @@ const PromptInspector = lazy(() =>
   import('./PromptInspector').then((module) => ({ default: module.PromptInspector })),
 );
 
-const tabs = ['AI 连接', '提示词', '记忆', '运行', '提示词管理'] as const;
+const tabs = ['AI 连接', '提示词', '记忆', '记忆总结', '运行', '提示词管理'] as const;
 export function SettingsPanel({
   settings,
   onSave,
@@ -20,6 +21,7 @@ export function SettingsPanel({
   activeSaveId,
   memoryMaintenance,
   onAiDirtyChange,
+  onSummaryDirtyChange,
   onOpenNotice,
 }: {
   settings: Settings;
@@ -27,6 +29,7 @@ export function SettingsPanel({
   activeSaveId?: string;
   memoryMaintenance?: ReactNode;
   onAiDirtyChange?: (dirty: boolean) => void;
+  onSummaryDirtyChange?: (dirty: boolean) => void;
   onOpenNotice?: (kind: NoticeKind) => void;
   onSave: (settings: Settings) => void;
 }) {
@@ -34,6 +37,8 @@ export function SettingsPanel({
   const [editing, setEditing] = useState(settings);
   const [notice, setNotice] = useState('');
   const [aiDirty, setAiDirty] = useState(false);
+  const [summaryDirty, setSummaryDirty] = useState(false);
+  const summaryDirtyChanged = useCallback((dirty: boolean) => { setSummaryDirty(dirty); onSummaryDirtyChange?.(dirty); }, [onSummaryDirtyChange]);
   const [pendingTab, setPendingTab] = useState<(typeof tabs)[number]>();
   const aiDirtyChanged = useCallback((dirty: boolean) => {
     setAiDirty(dirty);
@@ -42,7 +47,7 @@ export function SettingsPanel({
   const prompt = <K extends keyof Settings['prompts']>(key: K, value: Settings['prompts'][K]) =>
     setEditing({ ...editing, prompts: { ...editing.prompts, [key]: value } });
   function save() {
-    const checked = SettingsSchema.safeParse(editing);
+    const checked = SettingsSchema.safeParse({ ...editing, memory: { ...editing.memory, summaries: settings.memory.summaries } });
     if (!checked.success) {
       setNotice(
         '请输入有效的正整数：正文最多 100000 字、即时记忆最多 10000 回合、超时最多 3600 秒。',
@@ -64,7 +69,7 @@ export function SettingsPanel({
             key={name}
             aria-pressed={tab === name}
             onClick={() => {
-              if (name !== tab && tab === 'AI 连接' && aiDirty) { setPendingTab(name); return; }
+              if (name !== tab && ((tab === 'AI 连接' && aiDirty) || (tab === '记忆总结' && summaryDirty))) { setPendingTab(name); return; }
               setTab(name);
               setNotice('');
             }}
@@ -169,18 +174,11 @@ export function SettingsPanel({
               回合。这里保存的数字决定下一次正文请求的完整回合窗口，不改变正式存档版本或删除原文。
               更早的相关历史可通过独立的有界本地检索重新引用。整理记忆会使用记忆总结模型，可能产生额外API费用。
             </p>
-            <label className="toggle">
-              <input type="checkbox" checked={editing.memory.automaticMaintenance}
-                onChange={(e) => setEditing({ ...editing, memory: { ...editing.memory, automaticMaintenance: e.target.checked } })} />
-              自动记忆维护（额外API费用，默认关闭）
-            </label>
-            <p className="muted">开启后仅在新的正式回合提交成功、达到阈值时尝试整理一批；刷新不触发，失败不自动付费重试。</p>
-            <details className="memory-maintenance-settings">
-              <summary>记忆维护（高级操作）</summary>
-              {memoryMaintenance ?? <p className="empty">请先进入有效的游戏存档，再手动整理记忆。当前不会发起维护请求。</p>}
-            </details>
           </>
         )}
+        {tab === '记忆总结' && (isValidElement<{ onDirtyChange?: (dirty: boolean) => void }>(memoryMaintenance)
+          ? cloneElement(memoryMaintenance, { onDirtyChange: summaryDirtyChanged })
+          : <MemorySummarySettings settings={settings} onSave={onSave} onDirtyChange={summaryDirtyChanged} />)}
         {tab === '运行' && (
           <>
             <div className="settings-fields">
@@ -244,13 +242,13 @@ export function SettingsPanel({
         <div role="status" className="field-hint">
           {notice}
         </div>
-        {tab !== 'AI 连接' && tab !== '提示词管理' && (
+        {tab !== 'AI 连接' && tab !== '提示词管理' && tab !== '记忆总结' && (
           <button className="primary" onClick={save}>
             保存本地设置
           </button>
         )}
       </div>
-      {pendingTab && <UnsavedAiChanges onContinue={() => setPendingTab(undefined)} onDiscard={() => {
+      {pendingTab && <UnsavedAiChanges subject={tab === '记忆总结' ? '记忆总结设置' : undefined} onContinue={() => setPendingTab(undefined)} onDiscard={() => {
         aiDirtyChanged(false);
         setTab(pendingTab);
         setPendingTab(undefined);
