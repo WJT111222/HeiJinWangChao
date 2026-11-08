@@ -13,7 +13,7 @@ const start = '2015-07-08T14:00:00+08:00', end = '2015-07-08T14:02:00+08:00';
 const empty = { commands: [], rejectedSuggestions: [], unresolved: [] };
 const world = { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] };
 function opening() {
-  const state = buildCreationState({ ...newCreation(), person: { name: '林舟', age: '30', gender: '女', appearance: '', personality: '' }, profession: '教师' }, defaultSettings());
+  const state = buildCreationState({ ...newCreation(), person: { name: '林舟', age: '30', gender: '女性', appearance: '', personality: '' }, profession: '教师' }, defaultSettings());
   state.economy.cash = 10000;
   const draft = rerollStory(createTurnDraft(state.saveId, 0, 'opening', 'opening', ''), {
     turnKind: 'opening', narrative: '夜色渐浓，你端起水杯。', summary: '你端起水杯。',

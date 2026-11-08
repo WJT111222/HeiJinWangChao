@@ -25,7 +25,8 @@ async function prepare(page: Page) {
 async function creation(page: Page, preference: string, background = '') {
   await page.getByRole('button', { name: /开始新游戏/ }).click();
   await page.getByLabel('姓名', { exact: true }).fill('林舟'); await page.getByLabel('年龄', { exact: true }).fill('30');
-  await page.getByLabel('性别', { exact: true }).fill('女'); await page.getByRole('button', { name: /下一步/ }).click();
+  await page.getByRole('radio', { name: '女性', exact: true }).check(); await page.getByRole('button', { name: /下一步/ }).click();
+  await page.getByRole('button', { name: '专业与公共服务', exact: true }).click();
   await page.getByRole('radio', { name: /^教师/ }).check(); await page.getByRole('button', { name: /下一步/ }).click();
   if (background) await page.getByLabel('人物背景（可选）').fill(background);
   await page.getByRole('button', { name: '跳过背景，继续' }).click(); await page.getByRole('button', { name: '跳过同伴，继续' }).click();

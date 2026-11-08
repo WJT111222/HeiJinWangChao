@@ -24,7 +24,7 @@ function filled() {
     person: {
       name: '林舟',
       age: '30',
-      gender: '自由填写',
+      gender: '女性',
       appearance: '短发',
       personality: '沉稳',
     },
@@ -62,26 +62,26 @@ function withCompanion() {
 describe('职业技能来源', () => {
   it.each(professions)('自动填写的技能随职业更新为 $name 默认值', (job) => {
     const teacher = selectProfession(newCreation(), '教师');
-    expect(selectProfession(teacher, job.name).skills).toBe(job.abilities);
+    expect(selectProfession(teacher, job.name).skills).toBe(job.skills.join('\n'));
     expect(selectProfession(teacher, job.name).skillsSource).toBe('automatic');
   });
-  it('手动补充、清空或改回默认文案均保留，跨自定义职业及刷新不丢来源', () => {
+  it('预设间切换保留手动补充、清空或改回默认文案，刷新不丢来源', () => {
     const teacher = selectProfession(newCreation(), '教师');
     for (const skills of ['手动填写', '', teacher.skills]) {
       const manual = CreationSchema.parse(
         JSON.parse(JSON.stringify({ ...teacher, skills, skillsSource: 'manual' })),
       );
-      expect(selectProfession(selectProfession(manual, 'custom'), '律师').skills).toBe(skills);
+      expect(selectProfession(manual, '律师').skills).toBe(skills);
     }
     const automatic = selectProfession(selectProfession(teacher, 'custom'), '律师');
-    expect(automatic.skills).toBe(professions.find((job) => job.name === '律师')!.abilities);
+    expect(automatic.skills).toBe(professions.find((job) => job.name === '律师')!.skills.join('\n'));
   });
   it('旧创角草稿仅对未改动的默认技能更新，保留不同的玩家输入', () => {
     const legacy = { ...selectProfession(newCreation(), '教师') };
     delete legacy.skillsSource;
     const restored = CreationSchema.parse(legacy);
     expect(selectProfession(restored, '律师').skills).toBe(
-      professions.find((job) => job.name === '律师')!.abilities,
+      professions.find((job) => job.name === '律师')!.skills.join('\n'),
     );
     expect(selectProfession({ ...restored, skills: '玩家旧输入' }, '律师').skills).toBe(
       '玩家旧输入',
@@ -89,10 +89,10 @@ describe('职业技能来源', () => {
   });
 });
 describe('M2 创角资料与真实存档', () => {
-  it('16 个职业均有两段正式介绍，且没有新增职业', () => {
-    expect(professions).toHaveLength(16);
-    expect(new Set(professions.map((p) => p.name)).size).toBe(16);
-    expect(professions.every((p) => p.description.length > 10 && p.abilities.length > 10)).toBe(
+  it('30 个职业均有正式介绍、技能和长期影响', () => {
+    expect(professions).toHaveLength(30);
+    expect(new Set(professions.map((p) => p.name)).size).toBe(30);
+    expect(professions.every((p) => p.description.length > 10 && p.skills.join('\n').length > 10)).toBe(
       true,
     );
   });

@@ -1,8 +1,12 @@
 import { useState } from 'react';
-import { cities, professions, professionName, validateStep, selectProfession } from './model';
+import { cities, professions, professionCategories, professionProfile, validateStep, selectProfession } from './model';
 import type { Creation } from './model';
 import { Detail } from '../Dialog';
 import { dateTime } from '../panels/playerView';
+
+import { appearanceTemplates, personalityTemplates } from './personTemplates';
+import { ThemedSelect } from '../components/ThemedSelect';
+import { ProfessionProfile } from '../components/ProfessionProfile';
 
 const steps = ['基本信息', '职业与能力', '城市与背景', '初始同伴', '确认与开局'];
 export function CreationWizard({
@@ -29,17 +33,21 @@ export function CreationWizard({
       setError(e instanceof Error ? e.message : '请检查填写内容');
     }
   }
+  const profile = professionProfile(form);
+  const category = form.professionCategory ?? professionCategories[0];
   const person = (key: keyof Creation['person'], label: string, multiline = false) => (
     <label key={key}>
       {label}
       {multiline ? (
         <textarea
+          aria-label={label}
           value={form.person[key]}
           onChange={(e) => change({ person: { ...form.person, [key]: e.target.value } })}
           rows={4}
         />
       ) : (
         <input
+          aria-label={label}
           value={form.person[key]}
           onChange={(e) => change({ person: { ...form.person, [key]: e.target.value } })}
           type={key === 'age' ? 'number' : 'text'}
@@ -130,71 +138,66 @@ export function CreationWizard({
             <div className="form-grid">
               {person('name', '姓名')}
               {person('age', '年龄')}
-              {person('gender', '性别')}
-              <p className="field-hint">性别、外貌与性格都可以自由填写。家庭与经历留到第三步。</p>
-              {person('appearance', '外貌', true)}
-              {person('personality', '性格', true)}
+              <fieldset className="creation-gender">
+                <legend>性别</legend>
+                <div className="creation-options">
+                  {['男性', '女性'].map((gender) => <label key={gender} className="creation-choice">
+                    <input type="radio" name="gender" value={gender} required checked={form.person.gender === gender}
+                      onChange={() => change({ person: { ...form.person, gender } })} />{gender}
+                  </label>)}
+                </div>
+              </fieldset>
+              <div className="creation-templates">
+                {(['appearance', 'personality'] as const).map((field) => {
+                  const label = field === 'appearance' ? '外貌' : '性格';
+                  const templates = field === 'appearance' ? appearanceTemplates : personalityTemplates;
+                  const key = field === 'appearance' ? 'appearanceTemplate' : 'personalityTemplate';
+                  return <div key={field}>
+                    <ThemedSelect label={`${label}模板`} value={form[key] ?? 'custom'}
+                      options={[{ value: 'custom', label: '自由选择' }, ...templates.map((item) => ({ value: item.name, label: item.name }))]}
+                      onChange={(value) => change({ [key]: value, person: { ...form.person,
+                        [field]: templates.find((item) => item.name === value)?.description ?? form.person[field] } })} />
+                    {person(field, label, true)}
+                  </div>;
+                })}
+              </div>
             </div>
           )}
           {form.step === 2 && (
             <>
-              <p className="muted">职业意味着经历与专长，不决定你接下来要走的路。</p>
-              <fieldset className="profession-list">
+              <fieldset className="profession-picker">
                 <legend className="sr-only">选择职业</legend>
-                {professions.map((job) => (
-                  <label
-                    className={`choice-card ${form.profession === job.name ? 'selected' : ''}`}
-                    key={job.name}
-                  >
-                    <input
-                      type="radio"
-                      name="profession"
-                      value={job.name}
-                      checked={form.profession === job.name}
-                      onChange={() => onChange(selectProfession(form, job.name))}
-                    />
-                    <strong>{job.name}</strong>
-                    <p>
-                      <b>职业介绍</b>
-                      {job.description}
-                    </p>
-                    <p>
-                      <b>能力与特长</b>
-                      {job.abilities}
-                    </p>
-                  </label>
-                ))}
-                <label className={`choice-card ${form.profession === 'custom' ? 'selected' : ''}`}>
-                  <input
-                    type="radio"
-                    name="profession"
-                    checked={form.profession === 'custom'}
-                    onChange={() => onChange(selectProfession(form, 'custom'))}
-                  />
-                  <strong>自定义职业</strong>
-                  <p>以你自己的文字描述职业与专业经历。</p>
+                <label className="creation-choice">
+                  <input type="radio" name="profession" checked={form.profession === 'custom'}
+                    onChange={() => onChange(selectProfession(form, 'custom'))} />自由选择
                 </label>
+                <nav className="profession-categories" aria-label="职业方向">
+                  {professionCategories.map((name) => <button type="button" key={name}
+                    aria-pressed={category === name} onClick={() => change({ professionCategory: name })}>{name}</button>)}
+                </nav>
+                <div className="profession-buttons">
+                  {professions.filter((job) => job.category === category).map((job) => <label
+                    className="creation-choice" key={job.name}>
+                    <input type="radio" name="profession" checked={form.profession === job.name}
+                      onChange={() => onChange(selectProfession(form, job.name))} />{job.name}
+                  </label>)}
+                </div>
               </fieldset>
-              {form.profession === 'custom' && (
-                <label>
-                  自定义职业名称
-                  <input
-                    value={form.customProfession}
-                    onChange={(e) => change({ customProfession: e.target.value })}
-                    required
-                  />
-                </label>
-              )}
-              <label>
-                个人技能与专长
-                <textarea
-                  rows={4}
-                  value={form.skills}
-                  onChange={(e) => change({ skills: e.target.value, skillsSource: 'manual' })}
-                  placeholder="可编辑或补充，一行一项"
-                />
-              </label>
-              <p className="field-hint">切换职业会更新自动填入的技能；你手动编辑的内容将会保留。</p>
+              {form.profession === 'custom' ? <div className="custom-profession">
+                <label>职业名称<input value={form.customProfession} required
+                  onChange={(e) => change({ customProfession: e.target.value })} /></label>
+                <label>职业介绍<textarea aria-label="职业介绍" rows={5} value={form.professionDescription ?? ''}
+                  onChange={(e) => change({ professionDescription: e.target.value })} /></label>
+                <label>内置职业技能<textarea aria-label="内置职业技能" rows={4} value={form.skills} placeholder="每行一项"
+                  onChange={(e) => change({ skills: e.target.value, skillsSource: 'manual' })} /></label>
+                <label>长期影响<textarea aria-label="长期影响" rows={5} value={form.professionLongTermImpact ?? ''}
+                  onChange={(e) => change({ professionLongTermImpact: e.target.value })} /></label>
+              </div> : <>
+                <ProfessionProfile hero={{ profession: profile.name, professionDescription: profile.description,
+                  professionLongTermImpact: profile.longTermImpact, skills: profile.skills }} />
+                <label>个人技能与专长<textarea aria-label="个人技能与专长" rows={3} value={form.skills} placeholder="每行一项"
+                  onChange={(e) => change({ skills: e.target.value, skillsSource: 'manual' })} /></label>
+              </>}
             </>
           )}
           {form.step === 3 && (
@@ -299,9 +302,9 @@ export function CreationWizard({
                       修改职业
                     </button>
                   </div>
+                  <ProfessionProfile hero={{ profession: profile.name, professionDescription: profile.description,
+                    professionLongTermImpact: profile.longTermImpact, skills: profile.skills }} />
                   <dl>
-                    <Detail label="职业">{professionName(form)}</Detail>
-                    <Detail label="技能">{form.skills}</Detail>
                     <Detail label="城市">{cities.find((c) => c.id === form.city)?.name}</Detail>
                     <Detail label="人物背景">{form.background}</Detail>
                   </dl>

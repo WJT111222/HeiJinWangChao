@@ -246,8 +246,8 @@ test('设置、历史检索及创角长页仍可滚动，关闭资料保留阅�
   await memory.getByRole('button', { name: '查看第 3 回合原文', exact: true }).click(); await expect(memory).toContainText('约定下周三');
   await page.keyboard.press('Escape'); expect(await reader.evaluate((el) => el.scrollTop)).toBe(220);
   await page.getByRole('button', { name: '游戏首页', exact: true }).click(); await page.getByRole('button', { name: /开始新游戏/ }).click();
-  await page.getByLabel('姓名', { exact: true }).fill('布局测试'); await page.getByLabel('年龄', { exact: true }).fill('28'); await page.getByLabel('性别', { exact: true }).fill('女');
-  await page.getByRole('button', { name: /下一步/ }).click(); await expect(page.getByLabel('个人技能与专长')).toBeVisible();
+  await page.getByLabel('姓名', { exact: true }).fill('布局测试'); await page.getByLabel('年龄', { exact: true }).fill('28'); await page.getByRole('radio', { name: '女性', exact: true }).check();
+  await page.getByRole('button', { name: /下一步/ }).click(); await expect(page.getByRole('radio', { name: '自由选择', exact: true })).toBeChecked(); await expect(page.getByLabel('内置职业技能', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollHeight > innerHeight)).toBe(true);
 });
 

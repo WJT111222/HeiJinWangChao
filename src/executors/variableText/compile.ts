@@ -21,7 +21,7 @@ import type { CommandOrigin, ExecutionResult, VariableExecutionContext, Variable
 const fields = new Map<string, Mapping>([
   ['protagonist.healthText', { operation: 'set', kind: 'protagonist', field: 'healthText' }],
   ['protagonist.emotionText', { operation: 'set', kind: 'protagonist', field: 'emotionText' }],
-  ...['locationId', 'profession', 'publicStatus', 'legalStatus', 'skills'].map((field): [string, Mapping] =>
+  ...['locationId', 'profession', 'professionDescription', 'professionLongTermImpact', 'publicStatus', 'legalStatus', 'skills'].map((field): [string, Mapping] =>
     [`protagonist.${field}`, { operation: 'set', kind: 'protagonist', field }]),
   ['worldClock', { operation: 'set', kind: 'clock', field: 'worldClock' }],
   ['locations', { operation: 'set', kind: 'location', field: 'location' }],
