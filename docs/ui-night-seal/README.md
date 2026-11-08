@@ -54,6 +54,7 @@
 
 - 桌面：品牌栏 → 人物状态条 → 正文与窄资料坞；高级工作流按需展开，并有自己的滚动容器。
 - 900px 及以下：紧凑状态 → 正文/行动 → 四栏导航。正文保存全部历史，不按屏幕尺寸裁减记录。
+- 手机高级设置的焦点回归暴露了按 textarea focus/blur 隐藏状态条引发的点击位移；已删除该规则。只在实际可视高度不足时收紧布局，输入与按钮之间切换焦点不再改变顶部高度。
 - `useGameViewport` 原实现未改：继续响应 VisualViewport 的 height、offsetTop、resize、scroll 和缩放。新增基于游戏外壳实际高度的 container query，使软键盘缩小可视区但不触发 CSS 屏幕高度查询时也能收紧顶部。
 - 手机导航保留 `safe-area-inset-bottom`，外壳保留顶部和左右安全区。未用固定 `100vh` 替代既有视口变量。
 - 长姓名/状态在紧凑条内收敛；原文在人物档案完整可读。大金额换行，不撑破布局。无数据时仍显示原有「未确认」「待开局确认」等空状态。
@@ -85,7 +86,7 @@
 
 截图为本地真实 React 页面，由 Chromium/Playwright 生成。主存档由测试夹具通过真实 `create → completeDraft → commitTurn` 完成两回合，保留合法的下一回合等待行动草稿。截图中姓名与金额只是隔离测试数据，没有写入生产 UI。主图点击真实建议后输入框有值，发送处于可用状态。
 
-前后截图使用同一数据、同一视口：before 来自未改 UI 的 main@8cc44e6；after 来自本分支。before 环境只复用新增测试夹具的可选 actionOptions 参数，未修改正式源码。
+前后截图使用同一测试场景与数据生成流程、同一视口（保存时间由真实写库产生）：before 来自未改 UI 的 main@8cc44e6；after 来自本分支。before 环境只复用新增测试夹具的可选 actionOptions 参数，未修改正式源码。
 
 | 场景 | 改造前 | 改造后 |
 | --- | --- | --- |
@@ -105,11 +106,39 @@
 
 ## 8. 检查结果
 
-最终结果在完成定向回归后补齐。执行范围为用户指定九组 E2E、实际受影响的存档/导航测试和新增夜幕金印验收；所有 AI 使用 Mock，无真实付费调用。
+最终冻结批次在 2026-11-08 完成：**142/142 通过，8.0 分钟，0 失败、0 跳过、0 flaky、0 重试**。桌面 71、手机 71；指定九组共 124，新增视觉/响应式 4，坏存档回归 14。所有 AI 使用 Mock，无真实付费调用。[机器可读验收摘要](validation.json)。
 
-- 已完成：TypeScript、Lint、生产构建；构建仍报告现有主包超过 500kB 的体积提示，本 PR 未增加依赖。
+| E2E 文件 | 桌面 | 手机 |
+| --- | ---: | ---: |
+| `action-workflow.spec.ts` | 20 | 20 |
+| `automatic-settlement.spec.ts` | 8 | 8 |
+| `character-creation-v2.spec.ts` | 3 | 3 |
+| `continuous-turns.spec.ts` | 6 | 6 |
+| `game-window.spec.ts` | 9 | 9 |
+| `game.spec.ts` | 4 | 4 |
+| `inventory-v2.spec.ts` | 2 | 2 |
+| `night-seal.spec.ts` | 2 | 2 |
+| `prompt-inspector.spec.ts` | 6 | 6 |
+| `story-reading.spec.ts` | 4 | 4 |
+| `unreadable-saves.spec.ts` | 7 | 7 |
+
+最终批次独立写入 `/tmp/night-final-results`，未同时启动其他浏览器测试，也未边跑修改源码。前期诊断中发现并修复手机 focus/blur 点击位移；同时更新旧侧栏和状态文本定位。前期并跑导致的 trace 目录冲突及 HMR 干扰不计入最终结果，上述用例已在冻结批次全部通过。
+
+复现命令（本机 Chromium 路径可按环境调整）：
+
+```bash
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test \
+  e2e/game-window.spec.ts e2e/story-reading.spec.ts e2e/game.spec.ts \
+  e2e/continuous-turns.spec.ts e2e/action-workflow.spec.ts e2e/automatic-settlement.spec.ts \
+  e2e/character-creation-v2.spec.ts e2e/inventory-v2.spec.ts e2e/prompt-inspector.spec.ts \
+  e2e/night-seal.spec.ts e2e/unreadable-saves.spec.ts \
+  --output=/tmp/night-final-results
+```
+
+- `npm run typecheck`、`npm run lint`、`npm run build`：全部通过；构建仍报告现有主包超过 500kB 的体积提示，本 PR 未增加依赖。
 - 定向单元：`story-reading`、`player-memory`、`inventory-v2`、`character-creation-v2`、`unreadable-saves` 共 140 条通过。
 - 必查尺寸：1440×900、1280×800、900×700、390×844、375×667、320×568、667×375。
+- 另外对使用旧侧栏/首页定位的历史 E2E 做了共享导航 helper 迁移；除上述最终批次外，未整套重跑这些历史 specs，不代表全库 E2E 通过。
 - 新增断言：全部历史、建议填入与发送可用、四栏真实导航、七面板关闭返回、长姓名和巨大金额、正文最小阅读空间、无页面横溢、视觉视口收缩/恢复、资料浏览前后正式 state/draft 完全相同且零外部请求。
 
 ## 9. 后续精修范围
