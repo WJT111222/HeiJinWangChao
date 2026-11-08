@@ -17,4 +17,3 @@ export function expectFullState(context: Record<string, unknown>, state: GameSta
     ownerNpcId: npc.id, raw: rawNpcMemories(npc), summaries: state.memories.npcSummaries[npc.id] ?? [], knownInformation: npc.knownInformation,
   })));
 }
-
