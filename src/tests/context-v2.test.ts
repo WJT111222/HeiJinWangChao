@@ -6,7 +6,7 @@ import { buildStagePreviews } from '../prompts/preview';
 import { defaultAiConfig } from '../services/ai/configuration';
 import { array, record, string } from '../services/ai/protocols';
 import { projectTurn } from '../domain/turnProjection';
-import { storyMemoryContext } from '../domain/memories/publicMemory';
+import { recallJournal } from '../domain/memories/recall';
 import { parseTextVariables, parseWorld } from '../services/validation/aiOutputs';
 import { contextV2Fixture } from './fixtures/contextV2';
 import { sentContext, expectFullState } from './fixtures/contextAssertions';
@@ -30,7 +30,7 @@ describe('三阶段上下文 V2：最终发送 messages 的完整读取与原权
         turnId: entry.turnId, turnNumber: 6 + index, revision: entry.revision, relatedActorRefs: entry.relatedActorRefs, ...entry.story,
       })));
       expect(JSON.stringify(recent)).not.toContain('本回合候选');
-      expect(JSON.stringify(context)).not.toContain('已提交正文1');
+      if (mode === 'opening') expect(JSON.stringify(context)).not.toContain('已提交正文1');
       expect(JSON.stringify(context)).not.toContain('不可注入的幂等指纹');
       expect(record(context.SAVE_STATE)).not.toHaveProperty('journal');
       expect(prompt.messages.filter(m => m.role === 'system').map(m => m.content).join('\n')).toContain('模型读到资料而自动知情');
@@ -60,12 +60,16 @@ describe('三阶段上下文 V2：最终发送 messages 的完整读取与原权
     }
   });
 
-  it('保留既有永久journal有限检索，不混入NPC资料或升级召回算法', async () => {
+  it('PR B使用共享journal召回，已有正式资料仍完整保留', async () => {
     const a = contextV2Fixture(); a.draft.userInput = '已提交正文1';
-    const prior = storyMemoryContext(a.state, 3, a.draft.userInput, true);
     for (const stage of ['story', 'variables', 'world'] as const) {
       const context = sentContext((await composePrompt({ ...a, stage, mode: 'regular', userInput: a.draft.userInput })).messages);
-      expect(record(context.MEMORY_CONTEXT).recalledTurns).toEqual(prior.recalledTurns);
+      const projected = stage === 'world' ? { ...projectTurn(a.state, a.draft), revision: a.state.revision } : a.state;
+      const recall = recallJournal(projected, 3, { stage, playerInput: a.draft.userInput,
+        storyText: stage === 'story' ? undefined : a.draft.story!.narrative,
+        variableGuide: stage === 'story' ? undefined : a.draft.story!.variableGuide,
+        validatedVariables: stage === 'world' ? a.draft.variables!.result : undefined });
+      expect(record(context.MEMORY_CONTEXT).recalledTurns).toEqual(recall.recalledTurns);
     }
   });
 

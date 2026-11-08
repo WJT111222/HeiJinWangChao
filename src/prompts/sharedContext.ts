@@ -1,18 +1,23 @@
 import type { GameState } from '../domain/state';
 import { rawNpcMemories } from '../domain/memories/npcMemory';
-import { storyMemoryContext } from '../domain/memories/publicMemory';
+import { recallJournal } from '../domain/memories/recall';
+import type { RecallCues } from '../domain/memories/recall';
 
 /** 三阶段共用的模型只读背景。调用方决定正式基线或合法 Variables 投影；
  * 阅读范围不参与任何命令授权。永久 journal 保持现有窗口/检索，幂等凭据不注入。 */
-export function sharedContext(state: GameState, windowSize: number, query: string, recall: boolean) {
+export function sharedContext(state: GameState, windowSize: number, query: string, recall: boolean, cues: RecallCues = { stage: 'story', playerInput: query }) {
   const { journal, appliedCommands, ...snapshot } = state;
   void appliedCommands;
-  const memory = storyMemoryContext(state, windowSize, query, recall);
+  const memory = recallJournal(state, windowSize, cues, recall);
   const recent = journal.slice(-windowSize);
   return {
     SAVE_STATE: { ...snapshot, worldClock: state.openingTimePending ? null : state.worldClock },
     MEMORY_CONTEXT: {
       ...memory,
+      immediateWindowSize: windowSize,
+      // 分层与NPC记忆已经完整位于SAVE_STATE；召回只补journal经过，不重抄摘要。
+      summaries: [],
+      summarySource: 'SAVE_STATE.memories',
       // 完整已提交 Story，包括变量指导和行动选项；当前候选只在 STORY_RESULT 中。
       recentTurns: recent.map((entry, index) => ({
         turnId: entry.turnId,
