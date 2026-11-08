@@ -33,7 +33,7 @@ async function seed(page: Page, count = 31, automatic = false, ready = false) {
       finally { storage.close(); }
     }
     const settings = defaultSettings(); settings.memory.automaticMaintenance = automatic;
-    for (const config of Object.values(settings.memory.summaries)) config.automatic = automatic;
+    for (const config of Object.values(settings.memory.summaries) as { automatic: boolean }[]) config.automatic = automatic;
     settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel();
