@@ -23,7 +23,7 @@
 | 玩家行动 | World仅在生命周期辅助字段内间接出现 | World新增独立`PLAYER_ACTION=draft.userInput`，Variables保持草稿输入，Story使用当前输入；不读取下一轮未选行动 |
 | 合法变量候选 | World已有VARIABLE_RESULT和variablePending | 原样保留；未验证候选不进入完整快照，缺变量仍为preview |
 
-`SAVE_STATE`保留V6现有字段，而非复制一份会遗漏后续字段的手写白名单。只排除存储幂等凭据`appliedCommands`和永久`journal`全文；所有正式世界资料均可读。待确认开局Story的worldClock仍为null，Variables/World仍使用原有开局候选时间。
+`SAVE_STATE`保留V6现有字段，而非复制一份会遗漏后续字段的手写白名单。只排除存储幂等凭据`appliedCommands`和永久`journal`全文；所有正式世界资料均可读。World内容来自合法Variables投影，但`SAVE_STATE.revision`使用正式`original.revision`，与`BASE_SAVE_REVISION`和`TURN_CONTEXT.baseSaveRevision`一致。待确认开局Story的worldClock仍为null，Variables/World仍使用原有开局候选时间。
 
 ## 读取与角色知情、写入权限分离
 
@@ -87,3 +87,21 @@ CONTEXT_METRICS=1 npx vitest run src/tests/context-volume.test.ts --reporter=ver
 测试证明字段到达最终请求、候选边界和事务行为；Mock不证明真实模型能正确利用全部背景、稳定区分角色知情，或提高文学/世界推演质量。未用真实付费模型验证，也未重做已经压缩丢失的历史细节：恢复的是正式V6里仍然保存、此前在装配层被裁剪的数据。
 
 本分支只创建独立Draft PR，未合并、未部署。
+
+## PR #73 最终返修：World投影内容与正式revision
+
+审查基线为`d7ded2a8eb25994d493ed342c56ee94ba5b3a99d`。开始返修前fetch原分支确认远端HEAD与此一致，无其他修复需要合入。
+
+根因：`projectTurn`复用`commitCommands`模拟合法Variables，非空命令使内存投影的revision递增。V2最初把该投影完整传入共享上下文，因此正式revision=8时`SAVE_STATE.revision=9`，而`BASE_SAVE_REVISION`与`TURN_CONTEXT.baseSaveRevision`仍为8。模型若从完整快照填写`UpdateNpc.expectedRevision=9`，现有校验会正确拒绝。原测试直接比较整个模拟状态，也错误接受了模拟revision；正式事务和权限校验本身没有问题。
+
+修复仅在`context.ts`的World共享上下文入口使用`{ ...temporary, revision: original.revision }`：NPC离场、时钟、经济和其他内容仍来自合法投影，只读请求中的revision说明正式写入基线。`projectTurn`、`commitCommands`、Schema、expectedRevision校验及命令权限均未修改；`expectFullState`现在单独验证正式revision，再深比较其余完整投影内容。
+
+先补回归再修代码，实际得到两条预期失败：正式revision8测试中Mock按请求revision生成的UpdateNpc被Runtime拒绝；开局测试中World快照实际revision1而期望0。修复后的实测如下：
+
+| 场景 | 最终请求与结果 |
+| --- | --- |
+| 正式revision8，Variables合法离场+时钟+资金变化 | 领域模拟revision仍为9；World快照显示人物已离场、时钟08:10，但三个基线revision均为8。Mock直接读取快照生成expectedRevision8，候选保存为validated；Commit成功后正式revision才变为9，人物后台健康更新生效 |
+| Variables缺失或仅preview（含未验证离场/时钟候选） | World完整读取正式revision8、原NPC/时钟/资金；variablePending=true，World仅preview且Commit拒绝，正式状态不变 |
+| 待确认2015开局 | 三阶段SAVE_STATE.revision均为0；World时钟为2015-07-08 14:02 +08:00，窗口14:00→14:02；Variables仅一条SetWorldClock，三个阶段各请求一次；Commit后正式revision1，重放不重复推进 |
+
+本次仅运行8个定向文件、210用例，全部通过：`context-v2`、`context-v2-runtime`、`opening-time`、`world-stage`、`world-validation`、`turn-commit`、`world-structural-workflow`、`world-structural-reliability`。另通过typecheck、lint以及审查基线/原main基线到HEAD的diff --check。未重跑前述1173用例或浏览器，全部网络响应为Mock，未调用付费模型。

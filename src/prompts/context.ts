@@ -163,7 +163,8 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       PLAYER_ACTION: draft!.userInput,
       STORY_RESULT: { ...draft!.story!, eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction) },
       VARIABLE_RESULT: variablePending ? undefined : draft!.variables,
-      ...sharedContext(temporary, settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular'),
+      // 投影提供候选内容，不产生新的正式版本；模型的expectedRevision仍须使用正式基线。
+      ...sharedContext({ ...temporary, revision: original.revision }, settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular'),
       PROTAGONIST_PROFILE: temporary.protagonist,
       PROTECTED_SCENE: {
         protagonistId: state.protagonist.id,
