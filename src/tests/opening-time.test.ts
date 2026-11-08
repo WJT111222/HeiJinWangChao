@@ -207,6 +207,11 @@ describe('开局时间真实Runtime、投影与原子事务', () => {
     expect(record(run.contexts[0].SAVE_STATE).worldClock).toBeNull();
     expect(run.contexts[1].SAVE_STATE).toHaveProperty('worldClock', end);
     expect(run.contexts[2].TIME_WINDOW).toEqual({ from: start, to: end });
+    for (const context of run.contexts) expect(record(context.SAVE_STATE).revision).toBe(run.state.revision);
+    expect(run.contexts[2].BASE_SAVE_REVISION).toBe(run.state.revision);
+    expect(record(run.contexts[2].TURN_CONTEXT).baseSaveRevision).toBe(run.state.revision);
+    expect(record(run.contexts[2].SAVE_STATE).worldClock).toBe(end);
+    expect(result.draft.variables!.result.commands.filter(command => command.type === 'SetWorldClock')).toHaveLength(1);
     expect(JSON.stringify(run.contexts)).not.toContain(pendingOpeningClock);
     const committed = await run.repo.commitTurn(submission(result.draft));
     expect(committed.state.worldClock).toBe(end); expect(committed.state.openingTimePending).toBeUndefined();

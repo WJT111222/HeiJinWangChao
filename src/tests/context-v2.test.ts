@@ -22,7 +22,7 @@ describe('三阶段上下文 V2：最终发送 messages 的完整读取与原权
         : stage === 'world' ? selectWorldDomains(a.state, a.draft).domains : undefined;
       const prompt = await composePrompt({ ...a, stage, mode, domains, userInput: stage === 'story' ? a.draft.userInput : '下一轮未选行动不可进入' });
       const context = sentContext(prompt.messages), projected = stage === 'world' ? projectTurn(a.state, a.draft) : a.state;
-      expectFullState(context, projected);
+      expectFullState(context, projected, a.state.revision);
       expect(context.PLAYER_ACTION).toBe(a.draft.userInput);
       expect(JSON.stringify(context)).not.toContain('下一轮未选行动不可进入');
       const recent = array(record(context.MEMORY_CONTEXT).recentTurns);
@@ -86,7 +86,7 @@ describe('三阶段上下文 V2：最终发送 messages 的完整读取与原权
     const a = contextV2Fixture();
     a.draft.variables!.result.commands.push({ type: 'UpdateNpc', commandId: 'leave', npcId: 'scene-ordinary', expectedRevision: a.state.revision, changes: { onScene: false }, evidence: '人物离开' });
     const context = sentContext((await composePrompt({ ...a, stage: 'world', mode: 'regular', userInput: a.draft.userInput })).messages);
-    expectFullState(context, projectTurn(a.state, a.draft));
+    expectFullState(context, projectTurn(a.state, a.draft), a.state.revision);
     expect(record(context.PROTECTED_SCENE).sceneNpcIds).toEqual(['scene-special']);
     const update = (npcId: string) => ({ type: 'UpdateNpc' as const, commandId: 'world-health', npcId, expectedRevision: a.state.revision, changes: { healthText: '稍感疲倦' }, evidence: '工作后休息' });
     expect(() => parseWorld(JSON.stringify(worldResult([update('scene-ordinary')])), a.state, a.draft)).not.toThrow();
