@@ -134,10 +134,12 @@ it('文本目录保留既有状态文本长度约束，不把无效空值宣称�
   }
 });
 
-// 源活动变量输入不等于正式存档，不能让Mock错误要求永久档案再次注入模型。
-it.each(['opening','regular'] as const)('%s变量输入只投影活动状态，真实存档仍完整且可读', async mode => {
+// V2完整世界读取保留记忆与历史，永久journal仍按窗口/检索单独提供。
+it.each(['opening','regular'] as const)('%s变量输入保留完整记忆和历史，真实存档不变', async mode => {
   const a = input(mode), before = structuredClone(a.state), prompt = await composeTextVariablesPrompt(a);
   expect(VariableStateProjectionSchema.safeParse(prompt.context.SAVE_STATE).success).toBe(true);
-  for (const field of ['journal','appliedCommands','memories','timeline']) expect(prompt.context.SAVE_STATE).not.toHaveProperty(field);
+  for (const field of ['journal','appliedCommands']) expect(prompt.context.SAVE_STATE).not.toHaveProperty(field);
+  expect(prompt.context.SAVE_STATE).toHaveProperty('memories', a.state.memories);
+  expect(prompt.context.SAVE_STATE).toHaveProperty('timeline', a.state.timeline);
   expect(a.state).toEqual(before); expect(GameStateSchema.safeParse(a.state).success).toBe(true);
 });

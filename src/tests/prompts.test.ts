@@ -283,6 +283,7 @@ describe('正式文本来源与旧架构保留', () => {
     for (const module of promptManifest.modules.filter((m) => m.kind === 'prompt')) {
       const record = sources.resources[module.path as keyof typeof sources.resources];
       expect(record, module.path).toBeDefined();
+      if ('contextV2' in record) expect(sha(text(module.path)), module.path).toBe(record.contextV2.sha256);
       if (record.treatment === 'verbatim')
         expect(sha(readFileSync(resolve(root, module.path))), module.path).toBe(
           record.sourceSha256,
@@ -294,12 +295,11 @@ describe('正式文本来源与旧架构保留', () => {
       sources.resources['reference/cot_legacy.txt'].fragmentSha256,
     );
   });
-  it('六主模板来源仍保留：开局按人生初始化任务更新，普通正文保持P6版本', () => {
+  it('六主模板来源仍保留：开局按人生初始化任务更新，普通正文仅适配V2读取范围', () => {
     expect(promptManifest.modules.filter((m) => m.category === 'stage' && m.variableProtocol !== 'text')).toHaveLength(6);
     for (const mode of ['opening', 'regular'] as const) {
       const path = `stages/${mode}/story.md` as const;
-      const record = sources.resources[path];
-      expect(sha(text(path))).toBe(mode === 'opening' ? sources.resources['stages/opening/story.md'].openingLifeInitialization.sha256 : record.m5P6.sha256);
+      expect(sha(text(path))).toBe(mode === 'opening' ? sources.resources['stages/opening/story.md'].openingLifeInitialization.sha256 : sources.resources['stages/regular/story.md'].contextV2.sha256);
     }
     expect(text('stages/opening/story.md')).toContain('不得死亡、背叛主角');
     expect(text('stages/regular/story.md')).toContain('不是开局');

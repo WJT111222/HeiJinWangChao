@@ -249,7 +249,7 @@ describe('真实 Composer 的即时窗口、召回与信息隔离', () => {
     const prompt = await composePrompt({ stage: 'story', mode: 'opening', state, settings: defaultSettings(), userInput: '陈宁' });
     expect(record(prompt.context.MEMORY_CONTEXT).recalledTurns).toEqual([]);
   });
-  it('记忆全量可读，私有信息不经永久搜索或面板操作进入主角正文', async () => {
+  it('作者全量读取私有资料，永久搜索仍只检索journal，面板不修改状态', async () => {
     const state = historyState();
     const secret = MemoryEntrySchema.parse({ id: 'secret', text: '隐秘调查口令', sourceTurnIds: ['history-3'], affectedEntityRefs: [], visibility: 'internal', createdAtGameTime: gameTime });
     state.memories.short = [secret];
@@ -261,7 +261,7 @@ describe('真实 Composer 的即时窗口、召回与信息隔离', () => {
     expect(JSON.stringify(view)).toContain('隐秘调查口令');
     expect(searchHistory(view.journal, '隐秘调查口令')).toEqual([]);
     const { context } = await composePrompt({ stage: 'story', mode: 'regular', state, settings: defaultSettings(), userInput: '陈宁约定' });
-    expect(JSON.stringify(context)).not.toContain('隐秘调查口令');
+    expect(JSON.stringify(context)).toContain('隐秘调查口令');
     expect(state).toEqual(before);
   });
   it('旧原文内伪指令作为 user JSON 数据转义，不创建消息/系统指令或改变状态', async () => {

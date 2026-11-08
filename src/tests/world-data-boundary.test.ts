@@ -77,14 +77,14 @@ describe('保留权限、引用、时间和正式事务',()=>{
         :{type:'UpdateProtagonist',commandId:'move-player',expectedRevision:0,changes:{locationId:'clinic'},evidence:'自由说明'};
     expect(()=>parseWorld(JSON.stringify(worldResult([command as DomainCommand])),a.state,a.draft)).toThrow();
   });
-  it('NPC私人记忆只写指定人物，不传播给其他NPC或主角正文',()=>{
+  it('NPC私人记忆只写指定人物，作者可读但不传播给其他NPC',()=>{
     const a=context();a.state.npc['npc-b']={...npc('npc-b'),onScene:false};
     const memory:DomainCommand={type:'RecordNpcMemory',commandId:'remember',npcId:'npc-a',expectedRevision:0,layer:'personal',knowledgeKind:'suspected',addToKnownInformation:true,evidence:'自己的疑问，无需来源令牌',
       memory:{id:'private-a',text:'[推测]仓库里也许有另一份清单',knowledgeSource:'自己回想',visibility:'npc_private',createdAtGameTime:actionTime,sourceTurnIds:[a.draft.turnId],affectedEntityRefs:[actor]}};
     const result=parseWorld(JSON.stringify(worldResult([memory])),a.state,a.draft),after=projectTurn(a.state,a.draft,result.worldCommands);
     expect(after.npc['npc-b']).toEqual(a.state.npc['npc-b']);
     const story=contextFor({stage:'story',mode:'regular',state:after,settings:defaultSettings(),userInput:'继续'});
-    expect(JSON.stringify(story)).not.toContain('另一份清单');expect(after.npc['npc-a'].memories).toHaveLength(1);
+    expect(JSON.stringify(story)).toContain('另一份清单');expect(after.npc['npc-a'].memories).toHaveLength(1);
   });
   it('不能用后来才结束的前置条件倒填较早的实际结案',()=>{
     const a=context();a.state.events.prior={...event('prior'),status:'active',estimatedEndAt:later,actorRefs:[actor],sourceTurnIds:[]};
