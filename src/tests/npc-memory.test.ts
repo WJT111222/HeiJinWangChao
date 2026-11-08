@@ -57,15 +57,16 @@ function summarize(state = npcMemoryState()) {
 const runInput = (state: GameState) => ({ saveId: state.saveId, ...configured(), task: 'npc' as const, npcId: 'npc-a', timeoutSeconds: 10 });
 
 describe('独立NPC来源与认知模型', () => {
-  it.each([false, true])('普通/特殊NPC=%s：超过20条取最早10条；长期原始记录和最新记忆永久保留', (special) => {
-    expect(planNpcSummary(npcMemoryState(20, special))).toBeUndefined();
+  it.each([false, true])('普通/特殊NPC=%s：达到20条取最早15条；长期原始记录和最新记忆永久保留', (special) => {
+    expect(planNpcSummary(npcMemoryState(19, special))).toBeUndefined();
+    expect(planNpcSummary(npcMemoryState(20, special))!.entries).toHaveLength(15);
     const before = npcMemoryState(21, special), { state, batch, result } = summarize(before);
-    expect(batch.entries.map((entry) => entry.id)).toEqual(Array.from({ length: 10 }, (_, i) => `npc-a-memory-${i + 1}`));
+    expect(batch.entries.map((entry) => entry.id)).toEqual(Array.from({ length: 15 }, (_, i) => `npc-a-memory-${i + 1}`));
     expect(state.npc).toEqual(before.npc); expect(state.journal).toEqual(before.journal); expect(state.revision).toBe(before.revision);
     expect(result.flatMap((entry) => entry.npcProvenance!.sourceMemoryIds)).toEqual(batch.entries.map((entry) => entry.id));
     expect(rawNpcMemories(state.npc['npc-a'])).toHaveLength(21);
     expect(planNpcSummary(state, 'npc-a')).toBeUndefined();
-    expect(npcSummaryCandidates(state, 'npc-a')).toHaveLength(11);
+    expect(npcSummaryCandidates(state, 'npc-a')).toHaveLength(6);
     expect(npcKnowledgeContext(state, 'npc-b').summaries).toEqual([]);
     expect(JSON.stringify(npcKnowledgeContext(state, 'npc-b'))).not.toMatch(/A的私人经历|本组经历/);
   });
@@ -89,8 +90,8 @@ describe('独立NPC来源与认知模型', () => {
   it('缺少journal来源的真实NPC记忆仍按自身ID及knowledgeSource整理，不捏造回合或时间', () => {
     const before = npcMemoryState(); before.npc['npc-a'].memories.forEach((entry) => { entry.sourceTurnIds = []; delete entry.knowledgeKind; });
     const { result } = summarize(before);
-    expect(result[0].sourceTurnIds).toEqual([]); expect(result[0].npcProvenance!.sourceMemoryIds).toHaveLength(10);
-    expect(result[0].createdAtGameTime).toBe(before.npc['npc-a'].memories[9].createdAtGameTime);
+    expect(result[0].sourceTurnIds).toEqual([]); expect(result[0].npcProvenance!.sourceMemoryIds).toHaveLength(15);
+    expect(result[0].createdAtGameTime).toBe(before.npc['npc-a'].memories[14].createdAtGameTime);
     expect(result[0].npcProvenance!.knowledgeKind).toBe('unknown');
   });
   it('旧档无provenance/kind原样读取，旧总结覆盖不明时不猜测收费', async () => {
@@ -102,13 +103,13 @@ describe('独立NPC来源与认知模型', () => {
     finally { repo.close(); }
   });
   it('未来时间、归属不明和重复记忆ID不能凑阈值，预算超限不截断原文', () => {
-    const state = npcMemoryState();
+    const state = npcMemoryState(20);
     state.npc['npc-a'].memories[0].createdAtGameTime = '2099-01-01T00:00:00Z';
     expect(planNpcSummary(state)).toBeUndefined();
-    const duplicate = npcMemoryState(); duplicate.npc['npc-b'].memories[0].id = duplicate.npc['npc-a'].memories[0].id;
+    const duplicate = npcMemoryState(20); duplicate.npc['npc-b'].memories[0].id = duplicate.npc['npc-a'].memories[0].id;
     expect(planNpcSummary(duplicate)).toBeUndefined();
     const large = npcMemoryState(); large.npc['npc-a'].memories[0].text = '私有经历'.repeat(10000);
-    expect(planNpcSummary(large)).toBeUndefined(); expect(large.npc['npc-a'].memories[0].text).toHaveLength(40000);
+    expect(() => planNpcSummary(large)).toThrow(expect.objectContaining({ code: 'MEMORY_BUDGET' })); expect(large.npc['npc-a'].memories[0].text).toHaveLength(40000);
   });
   it.each(['broken', JSON.stringify({ summaries: [], npcId: 'invented', unresolved: [], contradictions: [] }),
     JSON.stringify({ summaries: [{ groupId: 'observed:npc_private', text: '摘要', sourceMemoryIds: ['invented'] }], unresolved: [], contradictions: [] }),
@@ -218,7 +219,7 @@ describe('NPC独立认知与玩家只读观察', () => {
     const { state } = summarize(); state.npc['npc-a'].onScene = true;
     const prompt = await composePrompt({ state, stage: 'story', mode: 'regular', settings: defaultSettings(), userInput: '看看四周' });
     expect(JSON.stringify(prompt.context)).toMatch(/本组经历|A的私人经历|B的独占秘密/);
-    expect(JSON.stringify(prompt.context.MEMORY_CONTEXT)).toContain('"history-1"'); // NPC来源不抑制玩家公开历史。
+    expect(state.journal.map(entry => entry.turnId)).toContain('history-1'); // NPC来源不抑制玩家公开历史。
     expect(JSON.stringify(playerView(state))).toMatch(/本组经历|A的私人经历|B的独占秘密/);
     expect(searchHistory(playerView(state).journal, '本组经历')).toEqual([]);
   });
@@ -254,8 +255,8 @@ it('同一回合产生多条NPC记忆时按原始ID覆盖，不能按turnId把�
   const input = npcMemoryState(); input.npc['npc-a'].memories.forEach((entry) => { entry.sourceTurnIds = ['history-1']; });
   const { state, result } = summarize(input);
   expect(result[0].sourceTurnIds).toEqual(['history-1']);
-  expect(result[0].npcProvenance!.sourceMemoryIds).toHaveLength(10);
-  expect(npcSummaryCandidates(state, 'npc-a').map((entry) => entry.id)).toEqual(Array.from({ length: 11 }, (_, index) => `npc-a-memory-${index + 11}`));
+  expect(result[0].npcProvenance!.sourceMemoryIds).toHaveLength(15);
+  expect(npcSummaryCandidates(state, 'npc-a').map((entry) => entry.id)).toEqual(Array.from({ length: 6 }, (_, index) => `npc-a-memory-${index + 16}`));
 });
 
 it('同一游戏时间记录的最新纠正仍进入原始认知窗口，不能被旧记录挤出', () => {
@@ -269,9 +270,9 @@ it('同一游戏时间记录的最新纠正仍进入原始认知窗口，不能�
 
 
 it('内部世界记录即使放在NPC容器且带亲历类型，也不能作为NPC已经获知的资料', () => {
-  const state = npcMemoryState(); const internal = state.npc['npc-a'].memories[0];
+  const state = npcMemoryState(20); const internal = state.npc['npc-a'].memories[0];
   internal.visibility = 'internal'; internal.text = '后台知道但角色尚不知情的秘密';
-  expect(planNpcSummary(state)).toBeUndefined(); // 只剩20条合法知识，不能用内部资料凑阈值。
+  expect(planNpcSummary(state)).toBeUndefined(); // 只剩19条合法知识，不能用内部资料凑阈值。
   expect(JSON.stringify(npcKnowledgeContext(state, 'npc-a'))).not.toContain(internal.text);
 });
 

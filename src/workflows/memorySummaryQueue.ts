@@ -4,7 +4,8 @@ import { DataError } from '../domain/common';
 import { summaryKinds, summaryNames } from '../domain/memories/configuration';
 import type { SummaryKind } from '../domain/memories/configuration';
 import { compressionCandidates } from '../domain/memories/compression';
-import { npcSummaryCandidates } from '../domain/memories/npcMemory';
+import { npcSummaryCandidates, npcMemoryIdCounts } from '../domain/memories/npcMemory';
+import { recoverCompletedSummary } from './memoryMaintenance';
 import { safeAiError } from '../services/ai/errors';
 
 export interface SummaryFailure { kind: SummaryKind; code: string; message: string; npcId?: string }
@@ -17,6 +18,7 @@ export interface SummaryQueueOptions {
   changed: (failures: SummaryFailure[]) => void;
 }
 const safeReasons: Record<string, string> = {
+  MEMORY_LOCK_UNAVAILABLE: '浏览器不支持安全跨标签互斥，未发起记忆请求。',
   MEMORY_OUTPUT: '模型没有返回完整、合法的总结结构，原始记忆保留。', MEMORY_BUDGET: '完整批次超出安全预算，未缩减来源。',
   MEMORY_CONFLICT: '公共来源已改变或已被整理，请重新核对。', NPC_MEMORY_CONFLICT: '人物身份或来源已改变，请重新核对。',
   MEMORY_PREVIOUS: '上次总结中断或未保存，请明确重新生成或暂停本项。',
@@ -39,6 +41,9 @@ export class MemorySummaryQueue {
     if (Array.isArray(raw)) this.failures = raw.filter((entry): entry is SummaryFailure => Boolean(entry && typeof entry === 'object' &&
       summaryKinds.includes((entry as SummaryFailure).kind) && typeof (entry as SummaryFailure).code === 'string'))
       .map(entry => ({ kind: entry.kind, code: 'MEMORY_PREVIOUS', message: safeReasons.MEMORY_PREVIOUS, ...(typeof entry.npcId === 'string' ? { npcId: entry.npcId } : {}) }));
+    const schedule = JSON.parse(this.options.storage.getItem(`heijin.summary.schedule:${this.options.saveId}`) || '{}') as { cursor?: number; npcCursor?: string };
+    this.cursor = Number.isInteger(schedule.cursor) ? Math.abs(schedule.cursor!) % 3 : 0;
+    this.npcCursor = typeof schedule.npcCursor === 'string' ? schedule.npcCursor : '';
     this.initialized = true; this.publish();
   }
   private remember(failure: SummaryFailure) {
@@ -86,18 +91,26 @@ export class MemorySummaryQueue {
       // At most one job of each kind per wake; the next wake rotates first priority.
       const order = summaryKinds.map((_, index) => summaryKinds[(this.cursor + index) % summaryKinds.length]);
       this.cursor = (this.cursor + 1) % summaryKinds.length;
+      this.options.storage.setItem(`heijin.summary.schedule:${this.options.saveId}`, JSON.stringify({ cursor: this.cursor, npcCursor: this.npcCursor }));
       for (const kind of order) {
         if (this.stopped) break;
-        const config = this.options.settings().memory.summaries[kind];
-        if (!config.enabled || !config.automatic || this.failures.some(failure => failure.kind === kind)) continue;
+        let config = this.options.settings().memory.summaries[kind];
+        if (!config.enabled || !config.automatic) continue;
         let state: GameState;
         try { state = await this.options.load(); } catch { this.remember({ kind, code: 'MEMORY_STORAGE', message: '无法读取有效存档，未发起总结请求。' }); continue; }
+        if (this.stopped) break;
+        config = this.options.settings().memory.summaries[kind];
+        if (!config.enabled || !config.automatic) continue;
+        if (recoverCompletedSummary(state, kind, this.options.storage)) this.remove(kind);
+        if (this.failures.some(failure => failure.kind === kind)) continue;
         let npcId: string | undefined;
         if (kind === 'npc') {
-          const ids = Object.keys(state.npc).sort().filter(id => npcSummaryCandidates(state, id).length >= Math.max(config.threshold, config.batchSize));
+          const counts = npcMemoryIdCounts(state);
+          const ids = Object.keys(state.npc).sort().filter(id => npcSummaryCandidates(state, id, counts).length >= Math.max(config.threshold, config.batchSize));
           npcId = ids.find(id => id > this.npcCursor) ?? ids[0];
           if (!npcId) continue;
           this.npcCursor = npcId;
+          this.options.storage.setItem(`heijin.summary.schedule:${this.options.saveId}`, JSON.stringify({ cursor: this.cursor, npcCursor: this.npcCursor }));
         } else if (compressionCandidates(state, kind).length <= config.threshold) continue;
         await this.attempt(kind, false, npcId);
       }

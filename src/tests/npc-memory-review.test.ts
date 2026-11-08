@@ -99,13 +99,14 @@ function configured() {
   const storage = () => { const values = new Map<string, string>(); return { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); }, removeItem: (key: string) => { values.delete(key); } }; };
   const vault = new CredentialVault(storage(), storage()); vault.set(channel.id, 'mock-review-key'); return { config, vault };
 }
-describe('超预算人物不阻塞其他合法批次', () => {
-  it('A超长、B正常：选B且不截断A；原始与已有总结保持完整，重复维护不重复请求', async () => {
-    const state = twoNpcs(), batch = planNpcSummary(state)!;
+describe('超预算必须明确失败；明确选择其他合法人物仍可维护', () => {
+  it('A超长、B正常：明确选择B且不截断A；原始与已有总结保持完整，重复维护不重复请求', async () => {
+    const state = twoNpcs(), batch = planNpcSummary(state, 'npc-b')!;
+    expect(() => planNpcSummary(state, 'npc-a')).toThrow(expect.objectContaining({ code: 'MEMORY_BUDGET' }));
     expect(batch.npcId).toBe('npc-b'); expect(npcMaintenanceAvailable(state)).toBe(true);
     const repo = await seed(state), transport = vi.fn(async () => Response.json({ choices: [{ message: { content: JSON.stringify(npcSummaryOutput(batch)) } }] }));
     const runner = new MemoryMaintenance(repo, new AiClient(transport), async (_id, work) => work());
-    const input = { saveId: state.saveId, task: 'npc' as const, timeoutSeconds: 10, ...configured() };
+    const input = { saveId: state.saveId, task: 'npc' as const, npcId: 'npc-b', timeoutSeconds: 10, ...configured() };
     try {
       const after = await runner.run(input); expect(after!.npc).toEqual(state.npc);
       expect(after!.memories.npcSummaries['npc-b']).toHaveLength(1);
@@ -116,16 +117,16 @@ describe('超预算人物不阻塞其他合法批次', () => {
   });
   it('A、B都超长：无可执行任务，不发API请求，也不更改原始数据', async () => {
     const state = twoNpcs(true, true);
-    expect(planNpcSummary(state)).toBeUndefined(); expect(npcMaintenanceAvailable(state)).toBe(false);
+    expect(() => planNpcSummary(state)).toThrow(expect.objectContaining({ code: 'MEMORY_BUDGET' })); expect(npcMaintenanceAvailable(state)).toBe(false);
     const repo = await seed(state), transport = vi.fn();
     try {
-      expect(await new MemoryMaintenance(repo, new AiClient(transport), async (_id, work) => work()).run({ saveId: state.saveId, task: 'npc', timeoutSeconds: 10, ...configured() })).toBeUndefined();
+      await expect(new MemoryMaintenance(repo, new AiClient(transport), async (_id, work) => work()).run({ saveId: state.saveId, task: 'npc', timeoutSeconds: 10, ...configured() })).rejects.toMatchObject({ code: 'MEMORY_BUDGET' });
       expect(transport).not.toHaveBeenCalled(); expect(await repo.load(state.saveId)).toEqual(state);
     } finally { repo.close(); }
   });
   it('两人正常仍优先A；显式指定不可执行的A不擅自改为B', () => {
     expect(planNpcSummary(twoNpcs(false))!.npcId).toBe('npc-a');
-    expect(planNpcSummary(twoNpcs(), 'npc-a')).toBeUndefined();
+    expect(() => planNpcSummary(twoNpcs(), 'npc-a')).toThrow(expect.objectContaining({ code: 'MEMORY_BUDGET' }));
     expect(planNpcSummary(twoNpcs(), 'npc-b')!.npcId).toBe('npc-b');
   });
 });

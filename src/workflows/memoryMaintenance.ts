@@ -37,6 +37,7 @@ export class MemoryMaintenance {
   async run(input: { saveId: string; config: AiConfig; vault: CredentialVault; timeoutSeconds: number; task?: 'public' | 'npc'; npcId?: string;
     kind?: SummaryKind; summaryConfig?: SummaryConfig; immediate?: boolean; attempts?: Pick<Storage, 'getItem' | 'setItem'>; automatic?: boolean;
     onPhase?: (phase: 'generating' | 'saving') => void }): Promise<GameState | undefined> {
+    const frozenConfig = input.summaryConfig ? SummaryConfigSchema.parse(structuredClone(input.summaryConfig)) : undefined;
     if (this.active) throw new DataError('MEMORY_BUSY', '记忆维护已在运行');
     const attempt = { controller: new AbortController(), saving: false };
     this.active = attempt;
@@ -46,8 +47,10 @@ export class MemoryMaintenance {
         check();
         const state = await this.repository.load(input.saveId);
         const kind = input.kind ?? (input.task === 'npc' ? 'npc' : undefined);
-        const config = SummaryConfigSchema.parse(structuredClone(input.summaryConfig ?? defaultSummaryConfig(kind ?? 'short')));
+        const config = SummaryConfigSchema.parse(frozenConfig ?? defaultSummaryConfig(kind ?? 'short'));
         if (!config.enabled) return undefined;
+        if (input.immediate && kind === 'npc') requireData(Boolean(input.npcId), 'NPC_MEMORY_CONFLICT', '立即总结必须明确选择人物');
+        if (input.attempts && kind) recoverCompletedSummary(state, kind, input.attempts);
         const batch = kind === 'npc' ? planNpcSummary(state, input.npcId, { config, immediate: input.immediate })
           : planCompression(state, kind ? { layer: kind, config, immediate: input.immediate } : undefined);
         if (!batch) return undefined;
@@ -61,7 +64,8 @@ export class MemoryMaintenance {
           key === 'npcId' && 'npcId' in batch ? batch.npcId : String(config.threshold)) })));
         const modules = resources.map(({ module, text }) => ({ id: module.id, version: module.version, contentSha256: module.contentSha256,
           role: 'system' as const, order: module.defaultOrder, characters: Array.from(text).length, estimatedTokens: estimateTokens(text).estimatedTokens }));
-        const messages = [...(input.summaryConfig ? [{ role: 'system' as const, content: config.prompt }] : []), ...resources.map(({ text }) => ({ role: 'system' as const, content: text })),
+        const contentPrompt = frozenConfig?.prompt ?? defaultSummaryConfig('npcId' in batch ? 'npc' : batch.layer).prompt;
+        const messages = [{ role: 'system' as const, content: contentPrompt }, ...resources.map(({ text }) => ({ role: 'system' as const, content: text })),
           { role: 'user' as const, content: contextMessage({ MEMORY_TASK: 'npcId' in batch ? npcSummaryInput(batch) : compressionInput(batch) }) }];
         const size = contextStatistics(messages);
         requireData(size.characters <= compressionPolicy.requestCharacters && size.estimatedTokens <= compressionPolicy.requestEstimatedTokens, 'MEMORY_BUDGET', '完整请求超出预算，未调用模型');
@@ -102,4 +106,15 @@ export class MemoryMaintenance {
       });
     } finally { if (this.active === attempt) this.active = undefined; }
   }
+}
+
+// IndexedDB save and local settings are separate stores: acknowledge a committed result after a crash,
+// rather than charging for its already-covered sources again or permanently blocking later work.
+export function recoverCompletedSummary(state: GameState, kind: SummaryKind, storage: Pick<Storage, 'getItem' | 'setItem'>) {
+  const key = `heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`, id = storage.getItem(key);
+  if (!id) return false;
+  const saved = kind === 'npc' ? Object.values(state.memories.npcSummaries).flat().some(entry => entry.id.startsWith(id + '-'))
+    : [...state.memories.medium, ...state.memories.long].some(entry => entry.id === id);
+  if (saved) storage.setItem(key, '');
+  return saved;
 }

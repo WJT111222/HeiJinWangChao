@@ -5,6 +5,7 @@ import { SettingsSchema, settingsKey } from '../settings/model';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import { readAiConfig } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
+import { DataError } from '../../domain/common';
 import { MemoryMaintenance } from '../../workflows/memoryMaintenance';
 import { MemorySummaryQueue } from '../../workflows/memorySummaryQueue';
 import type { SummaryFailure } from '../../workflows/memorySummaryQueue';
@@ -16,16 +17,17 @@ export function useMemoryMaintenance(repository: SaveRepository, saveId: string,
   const [phase, setPhase] = useState<'generating' | 'saving'>();
   const [activeKind, setActiveKind] = useState<SummaryKind>();
   const [failures, setFailures] = useState<SummaryFailure[]>([]);
+  const [dismissed, setDismissed] = useState<SummaryKind[]>([]);
   const [notice, setNotice] = useState('后台总结就绪；模型请求可能产生第三方 API 费用。');
   const current = useRef({ settings, onSaved, onSettings }); current.current = { settings, onSaved, onSettings };
   const queue = useRef<MemorySummaryQueue | undefined>(undefined);
   useEffect(() => {
     let mounted = true;
-    const tasks = new MemorySummaryQueue({ saveId, storage: localStorage,
+    const tasks = new MemorySummaryQueue({ saveId, storage: { getItem: key => localStorage.getItem(key), setItem: (key, value) => localStorage.setItem(key, value) },
       settings: () => current.current.settings, load: () => repository.load(saveId),
-      changed: next => { if (mounted) setFailures(next); },
+      changed: next => { if (mounted) { setFailures(next); if (next.length) setNotice(next.map(item => `${item.code}：${item.message}`).join(' ')); } },
       execute: async (kind, immediate, npcId) => {
-        if (!current.current.settings.memory.summaries[kind].enabled) return;
+        if (!mounted || !current.current.settings.memory.summaries[kind].enabled) return;
         const frozen = structuredClone(current.current.settings);
         try {
           const state = await runner.run({ saveId, kind, npcId, immediate, automatic: !immediate,
@@ -37,6 +39,10 @@ export function useMemoryMaintenance(repository: SaveRepository, saveId: string,
             if (state) current.current.onSaved(state);
             setNotice(state ? '总结已保存，原始历史与来源完整保留。' : '合格记忆不足所设批次数量，未请求模型。');
           }
+        } catch (error) {
+          if (mounted && error instanceof DataError && ['MEMORY_BUSY', 'MEMORY_THROTTLED'].includes(error.code))
+            setNotice(error.code === 'MEMORY_BUSY' ? '另一个标签或任务正在总结此存档，未重复请求。' : '后台请求达到节流限额，稍后检查；不会自动加量。');
+          throw error;
         } finally { if (mounted) { setPhase(undefined); setActiveKind(undefined); } }
       },
     });
@@ -48,7 +54,7 @@ export function useMemoryMaintenance(repository: SaveRepository, saveId: string,
   useEffect(() => { void queue.current?.wake(); }, [settings]);
   async function run(automatic = false, kind: SummaryKind = 'short', npcId?: string) {
     if (automatic) await queue.current?.wake();
-    else await queue.current?.immediate(kind, npcId);
+    else { setDismissed(value => value.filter(item => item !== kind)); await queue.current?.immediate(kind, npcId); }
   }
   function pause(kind: SummaryKind) {
     try {
@@ -60,5 +66,6 @@ export function useMemoryMaintenance(repository: SaveRepository, saveId: string,
       queue.current?.dismiss(kind);
     } catch { setNotice('暂停设置保存失败，未清除失败记录，请检查本地存储。'); }
   }
-  return { phase, activeKind, notice, failures, run, pause, cancel: () => runner.cancel() };
+  return { phase, activeKind, notice, failures: failures.filter(item => !dismissed.includes(item.kind)), run, pause,
+    closeFailure: (kind: SummaryKind) => setDismissed(value => [...value, kind]), cancel: () => runner.cancel() };
 }
