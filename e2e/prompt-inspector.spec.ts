@@ -72,10 +72,10 @@ async function readFormal(page: Page) {
   });
 }
 
-test('无存档浏览真实模块、过滤与全文，缺少阶段请求时不伪造使用量', async ({ page }) => {
+test('无存档浏览真实模块、过滤与全文，缺少阶段请求时不伪造使用量', async ({ page, baseURL }) => {
   const external: string[] = [];
   page.on('request', (request) => {
-    if (!request.url().startsWith('http://127.0.0.1:5174')) external.push(request.url());
+    if (new URL(request.url()).origin !== new URL(baseURL!).origin) external.push(request.url());
   });
   await page.goto('/');
   await inspector(page);
