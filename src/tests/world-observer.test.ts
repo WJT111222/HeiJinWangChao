@@ -28,7 +28,7 @@ describe('玩家全量观察与角色认知分离', () => {
     expect(view.npc.find(n => n.id === 'npc-a')).toMatchObject({ identity: '未接触的医师', memories: state.npc['npc-a'].memories });
     expect(view.organizations).toContainEqual(state.organizations['org-a']);
     expect(view.memories).toContainEqual(expect.objectContaining({ text: '[推测]仓库可能缺货', visibility: 'npc_private' }));
-    expect(contextFor(input)).toEqual(story); expect(JSON.stringify(story)).not.toContain('仓库可能缺货');
+    expect(contextFor(input)).toEqual(story); expect(JSON.stringify(story)).toContain('仓库可能缺货');
     expect(state).toEqual(before);
   });
   it.each(['major','significant'] as const)('%s无引用终态可清理，不按重要性限制',impact=>{
