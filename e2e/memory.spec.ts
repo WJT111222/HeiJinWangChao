@@ -1,3 +1,4 @@
+import { openWorldArchive, openSettings } from './helpers/gameLayout';
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
@@ -53,11 +54,11 @@ async function load(page: Page) {
 }
 async function memoryPanel(page: Page) {
   await openGameTools(page);
-  await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
+  await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
   return page.getByRole('dialog', { name: '记忆', exact: true });
 }
 async function windowSize(page: Page, size: number) {
-  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await openSettings(page);
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: '记忆', exact: true }).click();
   await dialog.getByLabel('即时记忆完整回合数').fill(String(size));

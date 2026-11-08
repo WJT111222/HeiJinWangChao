@@ -1,3 +1,4 @@
+import { openWorldArchive, openSettings } from './helpers/gameLayout';
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
@@ -43,7 +44,7 @@ async function load(page: Page) {
 }
 async function memory(page: Page) {
   await openGameTools(page);
-  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await openSettings(page);
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
   await settings.getByRole('button', { name: '记忆', exact: true }).click();
   await settings.getByText('记忆维护（高级操作）', { exact: true }).click();
@@ -81,7 +82,7 @@ test('手动仅一人一批；普通界面不暴露身份、原文、总结和�
   expect(after.memories.npcSummaries['npc-b']).toBeUndefined();
   await panel.getByRole('button', { name: '关闭资料界面' }).click();
   await openGameTools(page);
-  await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
+  await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
   const reading = page.getByRole('dialog', { name: '记忆', exact: true });
   await reading.getByRole('button', {name:'人物记忆',exact:true}).click();
   await reading.getByLabel('搜索当前记忆层级').fill('私人总结A');
@@ -89,13 +90,13 @@ test('手动仅一人一批；普通界面不暴露身份、原文、总结和�
   await reading.getByLabel('搜索历史回合').fill('私人总结A'); await expect(reading).toContainText('未找到相关的已提交历史');
   await reading.getByRole('button', { name: '关闭资料界面' }).click();
   await openGameTools(page);
-  await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
+  await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
   await expect(page.getByRole('dialog')).toContainText('未公开人物A');
   await page.getByRole('dialog').getByRole('button',{name:/未公开人物A/}).click();
   await page.getByRole('dialog').getByLabel('搜索人物记忆与总结').fill('私人总结A');
   await expect(page.getByRole('dialog')).toContainText('私人总结A');
   await page.getByRole('dialog').getByRole('button', { name: '关闭资料界面' }).click();
-  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await openSettings(page);
   const settings = page.getByRole('dialog');
   await settings.getByRole('button', { name: '提示词管理', exact: true }).click();
   await settings.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');

@@ -214,7 +214,7 @@ test('真实创角后连续正式游玩十回合；输入、资料、正文历�
     expect(result.state.items.notice.ownerRef?.id).toBe(result.state.protagonist.id);
     expect(result.state.initialCompanionId).toBe(initial.state.initialCompanionId);
     expect(result.state.npc.companion).toEqual(initial.state.npc.companion);
-    await expect(page.getByRole('complementary', { name: '主角信息' })).toContainText(
+    await expect(page.getByTestId('story-reader').locator('.chapter-heading').last()).toHaveText(
       `第 ${index + 1} 回合`,
     );
     expect(server.stories.find((s) => s.number === index + 1)?.action).toBe(action);

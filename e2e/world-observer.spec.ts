@@ -1,3 +1,4 @@
+import { openWorldArchive } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { openGameTools } from './helpers/gameLayout';
@@ -48,7 +49,7 @@ test('全量世界观察：场外人物认知、总结、排程、任务与组�
   let requests = 0;
   await page.route('https://**', async route => { requests++; await route.abort(); });
   await seed(page); const before = await snapshot(page);
-  const open = async (name: string) => { await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: new RegExp(name) }).click(); return page.getByRole('dialog', { name, exact: true }); };
+  const open = async (name: string) => { await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: new RegExp(name) }).click(); return page.getByRole('dialog', { name, exact: true }); };
   let panel = await open('NPC');
   await panel.getByLabel('搜索人物', { exact: true }).fill('未公开人物A');
   await panel.getByRole('button', { name: /未公开人物A/ }).click();
