@@ -5,13 +5,16 @@ import type { GameState } from '../state';
 import { fingerprint } from '../commands';
 import { KnowledgeNatureSchema, NpcMemorySchema, NpcSummarySchema, npcKnowledgeKind } from './schema';
 import { compressionPolicy, sourceUnion } from './compression';
+import { defaultSummaryConfig, SummaryConfigSchema, maximumSummaryBatch } from './configuration';
+import type { SummaryConfig } from './configuration';
 import { estimateTokens } from '../../prompts/statistics';
 
-export const npcMemoryPolicy = { threshold: 20, batchSize: 10, contextRawLimit: 20, contextSummaryLimit: 10, contextCharacters: 16000 } as const;
+export const npcMemoryPolicy = { threshold: 20, batchSize: 15, contextRawLimit: 20, contextSummaryLimit: 10, contextCharacters: 16000 } as const;
 export const NpcMemoryBatchSchema = z.strictObject({
   saveId: IdSchema, saveCreatedAt: GameTimeSchema, npcId: IdSchema, identityKey: TextSchema,
-  entries: z.array(NpcMemorySchema.refine((entry) => entry.visibility !== 'internal', '内部世界资料不是NPC已知记忆')).min(2).max(npcMemoryPolicy.batchSize),
-});
+  expectedCount: z.number().int().min(1).max(maximumSummaryBatch).optional(),
+  entries: z.array(NpcMemorySchema.refine((entry) => entry.visibility !== 'internal', '内部世界资料不是NPC已知记忆')).min(1).max(maximumSummaryBatch),
+}).refine(batch => batch.expectedCount === undefined || batch.entries.length === batch.expectedCount, '来源数量与冻结批次不一致');
 export type NpcMemoryBatch = z.infer<typeof NpcMemoryBatchSchema>;
 export const rawNpcMemories = (npc: GameState['npc'][string]) => [...npc.memories, ...(npc.kind === 'special' ? npc.longTermMemories : [])];
 const summaryVisibility = (visibility: z.infer<typeof NpcMemorySchema>['visibility']) => visibility === 'internal' ? 'internal' as const : 'npc_private' as const;
@@ -50,20 +53,17 @@ export function npcSummaryInput(batch: NpcMemoryBatch) {
   }
   return { task: 'memory.npc_summarize', npcId: batch.npcId, groups: [...groups.values()] };
 }
-export function planNpcSummary(state: GameState, npcId?: string): NpcMemoryBatch | undefined {
+export function planNpcSummary(state: GameState, npcId?: string, options?: { config?: SummaryConfig; immediate?: boolean }): NpcMemoryBatch | undefined {
   if (npcId) { IdSchema.parse(npcId); requireData(Object.hasOwn(state.npc, npcId), 'NPC_MEMORY_CONFLICT', '人物来源已变化，未发起维护'); }
   for (const npc of Object.values(state.npc).filter((person) => !npcId || person.id === npcId).sort((a, b) => a.id.localeCompare(b.id))) {
     const candidates = npcSummaryCandidates(state, npc.id);
-    if (candidates.length <= npcMemoryPolicy.threshold) continue;
-    const batch: NpcMemoryBatch = { saveId: state.saveId, saveCreatedAt: state.createdAt, npcId: npc.id, identityKey: npc.identityKey, entries: [] };
-    for (const entry of candidates.slice(0, npcMemoryPolicy.batchSize)) {
-      const next = { ...batch, entries: [...batch.entries, entry] };
-      const text = JSON.stringify(npcSummaryInput(next)).replace(/[<>&]/g, (ch) => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`);
-      if (text.length > compressionPolicy.inputCharacters || estimateTokens(text).estimatedTokens > compressionPolicy.inputEstimatedTokens) break;
-      batch.entries.push(entry);
-    }
-    // 不跳过/截断此人的最早来源；仅跳过无法安全组批的人，继续寻找其他人物。
-    if (batch.entries.length < 2) continue;
+    const config = SummaryConfigSchema.parse(options?.config ?? defaultSummaryConfig('npc'));
+    if (!config.enabled || candidates.length < config.batchSize || (!options?.immediate && candidates.length < config.threshold)) continue;
+    const batch: NpcMemoryBatch = { saveId: state.saveId, saveCreatedAt: state.createdAt, npcId: npc.id, identityKey: npc.identityKey,
+      expectedCount: config.batchSize, entries: candidates.slice(0, config.batchSize) };
+    const text = JSON.stringify(npcSummaryInput(batch)).replace(/[<>&]/g, ch => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`);
+    requireData(text.length <= compressionPolicy.inputCharacters && estimateTokens(text).estimatedTokens <= compressionPolicy.inputEstimatedTokens,
+      'MEMORY_BUDGET', '完整NPC批次超出预算，原始记录保留，未缩小批次');
     return NpcMemoryBatchSchema.parse(batch);
   }
 }

@@ -4,6 +4,8 @@ import { GameStateSchema } from '../state';
 import type { GameState } from '../state';
 import { MemoryEntrySchema } from './schema';
 import { fingerprint } from '../commands';
+import { defaultSummaryConfig, SummaryConfigSchema, maximumSummaryBatch } from './configuration';
+import type { SummaryConfig } from './configuration';
 import { estimateTokens } from '../../prompts/statistics';
 
 export const compressionPolicy = {
@@ -14,9 +16,11 @@ export const compressionPolicy = {
 export const CompressionBatchSchema = z.strictObject({
   saveId: IdSchema, saveCreatedAt: z.string(),
   layer: z.enum(['short', 'medium']),
-  entries: z.array(MemoryEntrySchema).min(2).max(compressionPolicy.batchSize),
+  entries: z.array(MemoryEntrySchema).min(1).max(maximumSummaryBatch),
+  expectedCount: z.number().int().min(1).max(maximumSummaryBatch).optional(),
+  format: z.literal(2).optional(),
   journalProofs: z.array(z.strictObject({ turnId: IdSchema, fingerprint: z.string() })),
-});
+}).refine(batch => batch.expectedCount === undefined || batch.entries.length === batch.expectedCount, '来源数量与冻结批次不一致');
 export type CompressionBatch = z.infer<typeof CompressionBatchSchema>;
 export const targetLayer = (layer: CompressionBatch['layer']) => layer === 'short' ? 'medium' as const : 'long' as const;
 export const memoryTask = (layer: CompressionBatch['layer']) => layer === 'short' ? 'memory.short_to_medium' as const : 'memory.medium_to_long' as const;
@@ -35,28 +39,23 @@ export function compressionCandidates(state: GameState, layer: CompressionBatch[
 export function compressionInput(batch: CompressionBatch) {
   return { task: memoryTask(batch.layer), entries: batch.entries };
 }
-export function planCompression(state: GameState): CompressionBatch | undefined {
-  for (const layer of ['short', 'medium'] as const) {
+export function planCompression(state: GameState, options?: { layer?: 'short' | 'medium'; config?: SummaryConfig; immediate?: boolean }): CompressionBatch | undefined {
+  for (const layer of options?.layer ? [options.layer] : ['short', 'medium'] as const) {
+    const config = SummaryConfigSchema.parse(options?.config ?? defaultSummaryConfig(layer));
+    if (!config.enabled) continue;
     const candidates = compressionCandidates(state, layer);
-    if (candidates.length <= (layer === 'short' ? compressionPolicy.shortThreshold : compressionPolicy.mediumThreshold)) continue;
-    const entries: CompressionBatch['entries'] = [];
-    for (const entry of candidates.slice(0, compressionPolicy.batchSize)) {
-      const text = JSON.stringify({ task: memoryTask(layer), entries: [...entries, entry] })
-        .replace(/[<>&]/g, (ch) => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`);
-      if (text.length > compressionPolicy.inputCharacters || estimateTokens(text).estimatedTokens > compressionPolicy.inputEstimatedTokens) break;
-      entries.push(entry);
-    }
-    requireData(entries.length >= 2, 'MEMORY_BUDGET', '最早记忆超出安全批次预算，原条目已保留，未请求模型');
-    const ids = entries.map((entry) => entry.id);
-    requireData(new Set(ids).size === ids.length, 'MEMORY_SOURCE', '记忆 ID 重复，不能安全整理');
-    const sources = sourceUnion(entries);
-    return CompressionBatchSchema.parse({
-      saveId: state.saveId, saveCreatedAt: state.createdAt, layer, entries,
-      journalProofs: sources.map((id) => ({ turnId: id, fingerprint: fingerprint(state.journal.find((entry) => entry.turnId === id)) })),
-    });
+    if (candidates.length < config.batchSize || (!options?.immediate && candidates.length <= config.threshold)) continue;
+    const entries = candidates.slice(0, config.batchSize);
+    const text = JSON.stringify(compressionInput({ layer, entries } as CompressionBatch)).replace(/[<>&]/g, ch => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`);
+    requireData(text.length <= compressionPolicy.inputCharacters && estimateTokens(text).estimatedTokens <= compressionPolicy.inputEstimatedTokens,
+      'MEMORY_BUDGET', '完整批次超出输入预算，未缩小批次或调用模型');
+    requireData(new Set(entries.map(entry => entry.id)).size === entries.length, 'MEMORY_SOURCE', '记忆 ID 重复，不能安全整理');
+    return CompressionBatchSchema.parse({ saveId: state.saveId, saveCreatedAt: state.createdAt, layer, entries,
+      expectedCount: config.batchSize, format: options?.config ? 2 : undefined,
+      journalProofs: sourceUnion(entries).map(id => ({ turnId: id, fingerprint: fingerprint(state.journal.find(entry => entry.turnId === id)) })) });
   }
 }
-
+export const PublicSummaryOutputSchema = z.strictObject({ summary: z.string().trim().min(1), importantEvents: z.array(z.string().trim().min(1)).min(1) });
 // AI 只归纳文本；来源、引用、可见性和时间均由程序重建，不能由模型伪造。
 export const CompressionOutputSchema = z.strictObject({
   entries: z.array(z.strictObject({ text: z.string().trim().min(1).max(4000) })).length(1),
@@ -65,6 +64,11 @@ export const CompressionOutputSchema = z.strictObject({
 export function parseCompression(text: string, batch: CompressionBatch, id: string) {
   let raw: unknown;
   try { raw = JSON.parse(text); } catch { throw new DataError('MEMORY_OUTPUT', '整理结果不是完整JSON，原记忆已保留'); }
+  if (batch.format === 2) {
+    const checked = PublicSummaryOutputSchema.safeParse(raw);
+    requireData(checked.success, 'MEMORY_OUTPUT', '总结缺少阶段概括或重要事件清单，原记录保留');
+    raw = { entries: [{ text: `阶段概括\n${checked.data.summary}\n\n重要事件\n${checked.data.importantEvents.map(event => `- ${event}`).join('\n')}` }], unresolved: [], contradictions: [] };
+  }
   const parsed = CompressionOutputSchema.safeParse(raw);
   requireData(parsed.success && !parsed.data.unresolved.length && !parsed.data.contradictions.length,
     'MEMORY_OUTPUT', '整理结果含未解决事项、矛盾或非法字段，原记忆已保留');
@@ -93,7 +97,7 @@ export function applyCompression(state: GameState, input: CompressionBatch, resu
   'MEMORY_CONFLICT', '原始回合已改变');
   const eligible = compressionCandidates(state, batch.layer);
   requireData(batch.entries.every((entry) => eligible.some((item) => item.id === entry.id)), 'MEMORY_CONFLICT', '来源已被整理或权限已变化');
-  const expected = parseCompression(JSON.stringify({ entries: [{ text: result.text }], unresolved: [], contradictions: [] }), batch, result.id);
+  const expected = parseCompression(JSON.stringify({ entries: [{ text: result.text }], unresolved: [], contradictions: [] }), { ...batch, format: undefined }, result.id);
   requireData(fingerprint(expected) === fingerprint(MemoryEntrySchema.parse(result)), 'MEMORY_OUTPUT', '来源、时间或可见性不符');
   requireData(![...state.memories.short, ...state.memories.medium, ...state.memories.long].some((entry) => entry.id === result.id), 'MEMORY_CONFLICT', '结果已存在');
   const ids = new Set(batch.entries.map((entry) => entry.id));

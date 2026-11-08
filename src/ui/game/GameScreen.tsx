@@ -27,7 +27,10 @@ import { assessSummary } from '../../domain/memories/summary';
 import { useMemoryMaintenance } from './useMemoryMaintenance';
 import { RequestUsage } from './RequestUsage';
 import { StoryInspectionPanel } from './StoryInspectionPanel';
-import { MemoryMaintenanceControls } from '../panels/MemoryMaintenanceControls';
+import { MemorySummarySettings } from '../settings/MemorySummarySettings';
+import { fingerprint } from '../../domain/commands';
+import { SettingsSchema, settingsKey } from '../settings/model';
+import { summaryFailureTitle } from '../../workflows/memorySummaryQueue';
 import type { OpeningStart } from './openingStart';
 import { RuntimeLogPanel } from './RuntimeLogPanel';
 import { runtimeLogEvent } from './runtimeLog';
@@ -114,7 +117,7 @@ export function GameScreen({
     });
     return () => { disposed = true; };
   }, [openingStart, state, draft, automatic.generate]);
-  const memory = useMemoryMaintenance(repository, state.saveId, settings, onMemorySaved);
+  const memory = useMemoryMaintenance(repository, state.saveId, settings, onMemorySaved, onSettings);
   function handleSettled(result: TurnCommitResult) {
     onCommitted(result);
     if (!result.replayed) void memory.run(true);
@@ -701,8 +704,17 @@ export function GameScreen({
           )}
         </Dialog>
       )}
-      {renderSettings?.(<MemoryMaintenanceControls state={state} phase={memory.phase} notice={memory.notice}
-        onRun={() => void memory.run()} onNpcRun={() => void memory.run(false, 'npc')} onCancel={memory.cancel} />)}
+      {renderSettings?.(<MemorySummarySettings state={state} settings={settings} onSave={next => {
+        onSettings(next);
+        const saved = SettingsSchema.parse(JSON.parse(localStorage.getItem(settingsKey) || 'null'));
+        if (fingerprint(saved.memory.summaries) !== fingerprint(next.memory.summaries)) throw new Error('summary settings not saved');
+      }} phase={memory.phase} activeKind={memory.activeKind} notice={memory.notice}
+        onRun={(kind, npcId) => void memory.run(false, kind, npcId)} onCancel={memory.cancel} />)}
+      {memory.failures[0] && <Dialog title={summaryFailureTitle(memory.failures[0])} small onClose={() => memory.pause(memory.failures[0].kind)}>
+        <p>{memory.failures[0].message}</p><p>原始记忆仍保留；重新生成可能产生 API 费用。</p>
+        <button disabled={Boolean(memory.phase)} onClick={() => void memory.run(false, memory.failures[0].kind, memory.failures[0].npcId)}>重新生成</button>
+        <button disabled={Boolean(memory.phase)} onClick={() => memory.pause(memory.failures[0].kind)}>暂停本项总结</button>
+      </Dialog>}
     </main>
   );
 }
