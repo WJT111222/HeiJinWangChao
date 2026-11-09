@@ -18,6 +18,7 @@ export const StorySchema = z.strictObject({
     group: z.enum(['protagonist', 'npc', 'items', 'economy', 'organization', 'time', 'event']),
     subjectHint: z.string().optional(), observedFact: TextSchema, textEvidence: z.string().optional(),
     eventInteraction: EventInteractionSchema.optional(),
+    eventNarration: z.strictObject({eventId:IdSchema,mode:z.enum(['enter','mention']),at:GameTimeSchema}).optional(),
   })), actionOptions: z.array(TextSchema).optional(),
 });
 export const RetiredNpcSchema = z.strictObject({

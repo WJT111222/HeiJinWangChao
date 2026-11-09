@@ -21,6 +21,8 @@ export const storyRuleNames = {
   receipt_group: '事件回执必须属于 event 变量组', receipt_duplicate: '同一事件的回执重复',
   receipt_reference: '事件回执引用不存在或入场版本已过期', receipt_closed: '事件或入场已关闭，不能再次处理',
   receipt_repeated: '已呈现的事件入场不能再次呈现', receipt_evidence_empty: '事件回执说明为空',
+  narration_reference: '事件叙事裁定须引用真实事件且不能重复或混用入场回执',
+  narration_time: '事件叙事裁定时间或入场状态无效',
   receipt_status: '事件回执 action 状态不合法',
   request_basis: '当前响应与草稿版本不一致', draft_conflict: '存档或草稿版本已变化，请重新读取后继续',
   credential_output: '模型输出包含凭证内容，已阻止保存；凭证不会显示',
@@ -36,7 +38,7 @@ export interface StoryDiagnostic {
 }
 export const isStoryRule = (value: unknown): value is StoryRule => typeof value === 'string' && Object.hasOwn(storyRuleNames, value);
 const fields = new Set(['narrative', 'summary', 'turnKind', 'variableGuide', 'group', 'subjectHint', 'observedFact',
-  'textEvidence', 'eventInteraction', 'eventId', 'entryId', 'action', 'actionOptions', 'openingTime', 'startAt', 'endAt', 'field']);
+  'textEvidence', 'eventNarration', 'mode', 'at', 'eventInteraction', 'eventId', 'entryId', 'action', 'actionOptions', 'openingTime', 'startAt', 'endAt', 'field']);
 export function storyFieldPath(path: readonly PropertyKey[]) {
   return path.map(part => typeof part === 'number' && Number.isSafeInteger(part) && part >= 0 ? part : fields.has(String(part)) ? part : 'field').join('.');
 }

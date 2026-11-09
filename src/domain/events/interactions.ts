@@ -1,3 +1,4 @@
+import { storyEventNarrations } from './narration';
 import { requireStoryData } from '../storyDiagnostics';
 import { fingerprint } from '../commands';
 import { requireData } from '../common';
@@ -16,6 +17,7 @@ export function pendingEventEntries(state: GameState) {
   }).sort((a,b)=>Date.parse(a.queuedAt)-Date.parse(b.queuedAt)||a.eventId.localeCompare(b.eventId));
 }
 export function validateStoryEventInteractions(state: GameState, story: Story) {
+  storyEventNarrations(state,story);
   const interactions = story.variableGuide.filter(guide=>guide.eventInteraction !== undefined);
   const seen = new Set<string>();
   for(const guide of interactions) {

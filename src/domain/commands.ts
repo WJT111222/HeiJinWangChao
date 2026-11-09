@@ -1,3 +1,4 @@
+import type { SceneIntervention } from './events/narration';
 import { validateStageWrite } from './events/stages';
 import { z } from 'zod';
 import { AccountSchema, DebtRecordSchema, IncomeRecordSchema, VehicleAssetSchema } from './economy/schema';
@@ -167,7 +168,8 @@ function apply(s: GameState, c: DomainCommand, turnId: string) {
 }
 
 export function commitCommands(state: GameState, turnId: string, expectedRevision: number,
-  commands: readonly DomainCommand[], now = new Date().toISOString()): GameState {
+  commands: readonly DomainCommand[], now = new Date().toISOString(),
+  sceneAuthority: ReadonlyMap<string,SceneIntervention> = new Map()): GameState {
   const current = GameStateSchema.parse(state);
   requireData(!current.openingTimePending, 'OPENING_TIME', '开局时间待确认，不能将内部占位时钟用于命令执行');
   IdSchema.parse(turnId);
@@ -198,7 +200,7 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
   completeTaskEventLinks(state, current);
   maintainSceneTransition(state, current, fresh);
   for(const command of fresh) if(command.type==='SaveEvent')
-    validateStageWrite(state.events[command.event.id],command.event,current.worldClock,turnId);
+    validateStageWrite(state.events[command.event.id],command.event,current.worldClock,turnId,sceneAuthority.get(command.commandId));
   validateEventLinks(current);
   // A first committed batch consumes the opening-only right even if the model omitted initialization.
   // Projections mutate only this parsed copy; failed/cancelled drafts keep the formal marker.
