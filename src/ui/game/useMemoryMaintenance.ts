@@ -37,7 +37,7 @@ export function useMemoryMaintenance(repository: SaveRepository, saveId: string,
             onPhase: next => { if (mounted) { setPhase(next); setActiveKind(kind); } } });
           if (mounted) {
             if (state) current.current.onSaved(state);
-            setNotice(state ? '总结已保存，原始历史与来源完整保留。' : '合格记忆不足所设批次数量，未请求模型。');
+            if (state || immediate) setNotice(state ? '总结已保存，原始历史与来源完整保留。' : '合格记忆不足所设批次数量，未请求模型。');
           }
         } catch (error) {
           if (mounted && error instanceof DataError && ['MEMORY_BUSY', 'MEMORY_THROTTLED'].includes(error.code))

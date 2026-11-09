@@ -18,6 +18,11 @@ import type { SummaryConfig, SummaryKind } from '../domain/memories/configuratio
 import { AiError } from '../services/ai/errors';
 
 export type MemoryLock = <T>(saveId: string, work: () => Promise<T>) => Promise<T>;
+// The legacy ledger stores a result ID, not an epoch or a reliable request outcome.
+// Never infer from an undo that a possibly paid attempt may be retried automatically.
+export const unconfirmedSummaryMessage = '此类总结有尚未确认保存的请求，可能已计费。撤回、刷新或发送行动不会自动重试；请手动重新生成或暂停本项自动总结。';
+export const summaryAttemptKey = (state: GameState, kind: SummaryKind | undefined) =>
+  `heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`;
 export const browserMemoryLock: MemoryLock = async (saveId, work) => {
   if (typeof navigator === 'undefined' || !navigator.locks)
     throw new DataError('MEMORY_LOCK_UNAVAILABLE', '浏览器不支持安全跨标签互斥，未发起记忆请求');
@@ -28,7 +33,7 @@ export const browserMemoryLock: MemoryLock = async (saveId, work) => {
 };
 export class MemoryMaintenance {
   private active?: { controller: AbortController; saving: boolean };
-  constructor(private repository: Pick<SaveRepository, 'load' | 'saveMemoryCompression' | 'saveNpcSummary'>,
+  constructor(private repository: Pick<SaveRepository, 'loadMemoryContext' | 'checkMemoryLineage' | 'saveMemoryCompression' | 'saveNpcSummary'>,
     private client = new AiClient(), private lock: MemoryLock = browserMemoryLock) {}
   cancel() {
     if (this.active?.saving) return false;
@@ -45,7 +50,10 @@ export class MemoryMaintenance {
     try {
       return await this.lock(input.saveId, async () => {
         check();
-        const state = await this.repository.load(input.saveId);
+        const { state, lineage, paused } = await this.repository.loadMemoryContext(input.saveId);
+        // Reload/timer wakes after undo never authorize a new paid request.
+        // Send lifts this pause, but unresolved paid attempts still need manual handling.
+        if (paused && input.automatic) return undefined;
         const kind = input.kind ?? (input.task === 'npc' ? 'npc' : undefined);
         const config = SummaryConfigSchema.parse(frozenConfig ?? defaultSummaryConfig(kind ?? 'short'));
         if (input.immediate && kind === 'npc') requireData(Boolean(input.npcId), 'NPC_MEMORY_CONFLICT', '立即总结必须明确选择人物');
@@ -71,9 +79,11 @@ export class MemoryMaintenance {
         requireData(!keys.some((key) => [key, encodeURIComponent(key), JSON.stringify(key).slice(1, -1)].some((value) => JSON.stringify(messages).includes(value))),
           'MEMORY_PERMISSION', '输入包含凭证内容，未发送；原条目已保留');
         check();
-        const attemptKey = `heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`;
+        await this.repository.checkMemoryLineage(lineage);
+        check();
+        const attemptKey = summaryAttemptKey(state, kind);
         if (input.attempts) requireData(!input.automatic || !input.attempts.getItem(attemptKey),
-          'MEMORY_PREVIOUS', '上次总结失败或中断，请明确重新生成或暂停本项');
+          'MEMORY_PREVIOUS', unconfirmedSummaryMessage);
         if (input.automatic && input.attempts) {
           const key = `heijin.summary.rate:${state.saveId}:${state.createdAt}`;
           const recent = (JSON.parse(input.attempts.getItem(key) || '[]') as number[]).filter(time => Number.isFinite(time) && time > Date.now() - 3600000);
@@ -92,15 +102,15 @@ export class MemoryMaintenance {
           const results = parseNpcSummary(response.text, batch, id);
           if ([secretFor(snapshot), ...keys].some((key) => results.some((result) => result.text.includes(key)))) throw new AiError('invalid_output');
           check(); attempt.saving = true; input.onPhase?.('saving');
-          const saved = await this.repository.saveNpcSummary(batch, results, attempt.controller.signal);
-          if (input.attempts) input.attempts.setItem(`heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`, '');
+          const saved = await this.repository.saveNpcSummary(batch, results, lineage, attempt.controller.signal);
+          if (input.attempts) input.attempts.setItem(attemptKey, '');
           return saved;
         }
         const result = parseCompression(response.text, batch, id);
         if ([secretFor(snapshot), ...keys].some((key) => result.text.includes(key))) throw new AiError('invalid_output');
         check(); attempt.saving = true; input.onPhase?.('saving');
-        const saved = await this.repository.saveMemoryCompression(batch, result, attempt.controller.signal);
-        if (input.attempts) input.attempts.setItem(`heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`, '');
+        const saved = await this.repository.saveMemoryCompression(batch, result, lineage, attempt.controller.signal);
+        if (input.attempts) input.attempts.setItem(attemptKey, '');
         return saved;
       });
     } finally { if (this.active === attempt) this.active = undefined; }
@@ -110,7 +120,7 @@ export class MemoryMaintenance {
 // IndexedDB save and local settings are separate stores: acknowledge a committed result after a crash,
 // rather than charging for its already-covered sources again or permanently blocking later work.
 export function recoverCompletedSummary(state: GameState, kind: SummaryKind, storage: Pick<Storage, 'getItem' | 'setItem'>) {
-  const key = `heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`, id = storage.getItem(key);
+  const key = summaryAttemptKey(state, kind), id = storage.getItem(key);
   if (!id) return false;
   const saved = kind === 'npc' ? Object.values(state.memories.npcSummaries).flat().some(entry => entry.id.startsWith(id + '-'))
     : [...state.memories.medium, ...state.memories.long].some(entry => entry.id === id);

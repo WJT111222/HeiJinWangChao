@@ -82,6 +82,7 @@ test('下载 JSON 完整保留坏记录、草稿和回执，读取下载不改�
   expect(data).toEqual({ format: 'heijin-raw-save', version: 1, records: {
     saves: [{ key: 'broken', value: broken }], drafts: [{ key: 'broken', value: draft }],
     turnReceipts: receipts.map(value => ({ key: ['broken', value.turnId], value })),
+    turnUndo: [], saveControls: [],
   } });
   expect(await snapshot(page)).toEqual(before); await expect(badCard(page).getByRole('status')).toContainText('数据库未修改');
 });
