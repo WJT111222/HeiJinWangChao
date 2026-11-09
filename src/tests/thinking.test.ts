@@ -69,8 +69,8 @@ afterEach(() => { runners.splice(0).forEach((runner) => runner.dispose()); repos
 describe('P6 原创资源与兼容历史', () => {
   it.each(['opening', 'regular'] as const)('%s规划只按当前模式注册一次，审定全文/步骤完整', async (mode) => {
     const text = await readPromptResource(`planning.${mode}`), module = promptManifest.modules.find((item) => item.id === `planning.${mode}`)!;
-    expect((text.match(/^### Step \d+｜/gm) ?? [])).toHaveLength(mode === 'opening' ? 9 : 15);
-    expect((text.match(/^[123]\. /gm) ?? [])).toHaveLength(mode === 'opening' ? 27 : 45);
+    expect((text.match(/^### Step \d+｜/gm) ?? [])).toHaveLength(mode === 'opening' ? 9 : 16);
+    expect((text.match(/^[123]\. /gm) ?? [])).toHaveLength(mode === 'opening' ? 27 : 48);
     expect(createHash('sha256').update(readFileSync(`prompts/planning/${mode}.md`)).digest('hex')).toBe(module.contentSha256);
     const prompt = await composePrompt({ stage: 'story', mode, state: game(), settings: defaultSettings(), userInput: '' });
     expect(prompt.modules.filter((item) => item.id.startsWith('planning.')).map((item) => item.id)).toEqual([`planning.${mode}`]);
