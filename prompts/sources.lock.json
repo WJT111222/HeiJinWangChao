@@ -842,20 +842,32 @@
     "memory/short_to_medium.md": {
       "origin": "baseline",
       "sourceSha256": "a8392d995585266fe7c92463af02328392e760671776ed85d5700d7557e8c27a",
-      "treatment": "memory-output-contract-alignment",
-      "notes": "M5-P2 对齐公开批次纯文本输出；确定性来源、ActorRef、时间、权限由程序重建。保留原来源hash用于溯源，当前资源hash见Manifest。"
+      "treatment": "memory-summary-v2",
+      "notes": "M5-P2 对齐公开批次纯文本输出；确定性来源、ActorRef、时间、权限由程序重建。保留原来源hash用于溯源，当前资源hash见Manifest。",
+      "memorySummaryV2": {
+        "sha256": "4a8bd498df0a4c5ad019ddec47afe0b1da9984c253818148ec0e9683b261e389",
+        "notes": "玩家内容提示词与固定结构协议分离；原始来源哈希保留。"
+      }
     },
     "memory/medium_to_long.md": {
       "origin": "baseline",
       "sourceSha256": "24d209bf74984a1898a30d8f9dcce32eede6884afbcc8cad3832b8ff0eaf68d2",
-      "treatment": "memory-output-contract-alignment",
-      "notes": "M5-P2 对齐公开批次纯文本输出；确定性来源、ActorRef、时间、权限由程序重建。保留原来源hash用于溯源，当前资源hash见Manifest。"
+      "treatment": "memory-summary-v2",
+      "notes": "M5-P2 对齐公开批次纯文本输出；确定性来源、ActorRef、时间、权限由程序重建。保留原来源hash用于溯源，当前资源hash见Manifest。",
+      "memorySummaryV2": {
+        "sha256": "4a8bd498df0a4c5ad019ddec47afe0b1da9984c253818148ec0e9683b261e389",
+        "notes": "玩家内容提示词与固定结构协议分离；原始来源哈希保留。"
+      }
     },
     "memory/npc_summarize.md": {
       "origin": "baseline",
       "sourceSha256": "acbbbddc2a6c1cd857ffb14f9582684e1b91d12d8eef6be91578f627db12b787",
-      "treatment": "npc-memory-contract-alignment",
-      "notes": "M5-P3 按单一所属NPC、认知/可见性分组归纳；来源、权限、时间由程序重建，保留原来源hash。"
+      "treatment": "memory-summary-v2",
+      "notes": "M5-P3 按单一所属NPC、认知/可见性分组归纳；来源、权限、时间由程序重建，保留原来源hash。",
+      "memorySummaryV2": {
+        "sha256": "2fa29d6d31a8e1240aaa1a7cff5d68aadde0e78d3fb8095fb501aaaa3f3cd577",
+        "notes": "玩家内容提示词与固定结构协议分离；原始来源哈希保留。"
+      }
     },
     "memory/recall_select.md": {
       "origin": "baseline",

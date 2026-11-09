@@ -5,13 +5,16 @@ import type { GameState } from '../state';
 import { fingerprint } from '../commands';
 import { KnowledgeNatureSchema, NpcMemorySchema, NpcSummarySchema, npcKnowledgeKind } from './schema';
 import { compressionPolicy, sourceUnion } from './compression';
+import { defaultSummaryConfig, SummaryConfigSchema, maximumSummaryBatch } from './configuration';
+import type { SummaryConfig } from './configuration';
 import { estimateTokens } from '../../prompts/statistics';
 
-export const npcMemoryPolicy = { threshold: 20, batchSize: 10, contextRawLimit: 20, contextSummaryLimit: 10, contextCharacters: 16000 } as const;
+export const npcMemoryPolicy = { threshold: 20, batchSize: 15, contextRawLimit: 20, contextSummaryLimit: 10, contextCharacters: 16000 } as const;
 export const NpcMemoryBatchSchema = z.strictObject({
   saveId: IdSchema, saveCreatedAt: GameTimeSchema, npcId: IdSchema, identityKey: TextSchema,
-  entries: z.array(NpcMemorySchema.refine((entry) => entry.visibility !== 'internal', '内部世界资料不是NPC已知记忆')).min(2).max(npcMemoryPolicy.batchSize),
-});
+  expectedCount: z.number().int().min(1).max(maximumSummaryBatch).optional(),
+  entries: z.array(NpcMemorySchema.refine((entry) => entry.visibility !== 'internal', '内部世界资料不是NPC已知记忆')).min(1).max(maximumSummaryBatch),
+}).refine(batch => batch.expectedCount === undefined || batch.entries.length === batch.expectedCount, '来源数量与冻结批次不一致');
 export type NpcMemoryBatch = z.infer<typeof NpcMemoryBatchSchema>;
 export const rawNpcMemories = (npc: GameState['npc'][string]) => [...npc.memories, ...(npc.kind === 'special' ? npc.longTermMemories : [])];
 const summaryVisibility = (visibility: z.infer<typeof NpcMemorySchema>['visibility']) => visibility === 'internal' ? 'internal' as const : 'npc_private' as const;
@@ -26,21 +29,27 @@ export function validNpcSummary(state: GameState, npcId: string, summary: z.infe
     return entries.length === 1 && entries[0].visibility === provenance.sourceVisibility && npcKnowledgeKind(entries[0]) === provenance.knowledgeKind;
   });
 }
-export function npcSummaryCandidates(state: GameState, npcId: string) {
+export function npcMemoryIdCounts(state: GameState) {
+  const ids = new Map<string, number>();
+  for (const npc of Object.values(state.npc)) for (const memory of rawNpcMemories(npc)) ids.set(memory.id, (ids.get(memory.id) ?? 0) + 1);
+  return ids;
+}
+export function npcSummaryCandidates(state: GameState, npcId: string, sharedIds?: ReadonlyMap<string, number>) {
   const npc = state.npc[npcId];
   if (!npc) return [];
   const summaries = state.memories.npcSummaries[npcId] ?? [];
   // 无来源的旧总结不能可靠判定覆盖范围，保守保留且暂停对该人物的付费重复归纳。
   if (summaries.some((entry) => !validNpcSummary(state, npcId, entry))) return [];
   const covered = new Set(summaries.flatMap((entry) => entry.npcProvenance?.sourceMemoryIds ?? []));
-  const ids = new Map<string, number>();
-  for (const memory of Object.values(state.npc).flatMap(rawNpcMemories)) ids.set(memory.id, (ids.get(memory.id) ?? 0) + 1);
+  const ids = sharedIds ?? npcMemoryIdCounts(state);
   return rawNpcMemories(npc).filter((entry) => entry.visibility !== 'internal' && !covered.has(entry.id) && ids.get(entry.id) === 1 &&
     entry.affectedEntityRefs.some((ref) => ref.kind === 'npc' && ref.id === npcId) &&
     Date.parse(entry.createdAtGameTime) <= Date.parse(state.worldClock))
     .sort((a, b) => Date.parse(a.createdAtGameTime) - Date.parse(b.createdAtGameTime));
 }
-export const npcMaintenanceAvailable = (state: GameState) => Boolean(planNpcSummary(state));
+export const npcMaintenanceAvailable = (state: GameState) => Object.keys(state.npc).some(id => {
+  try { return Boolean(planNpcSummary(state, id)); } catch (error) { if (error instanceof DataError && error.code === 'MEMORY_BUDGET') return false; throw error; }
+});
 export function npcSummaryInput(batch: NpcMemoryBatch) {
   const groups = new Map<string, { groupId: string; knowledgeKind: z.infer<typeof KnowledgeNatureSchema>; visibility: z.infer<typeof NpcMemorySchema>['visibility']; entries: NpcMemoryBatch['entries'] }>();
   for (const entry of batch.entries) {
@@ -50,25 +59,23 @@ export function npcSummaryInput(batch: NpcMemoryBatch) {
   }
   return { task: 'memory.npc_summarize', npcId: batch.npcId, groups: [...groups.values()] };
 }
-export function planNpcSummary(state: GameState, npcId?: string): NpcMemoryBatch | undefined {
+export function planNpcSummary(state: GameState, npcId?: string, options?: { config?: SummaryConfig; immediate?: boolean }): NpcMemoryBatch | undefined {
   if (npcId) { IdSchema.parse(npcId); requireData(Object.hasOwn(state.npc, npcId), 'NPC_MEMORY_CONFLICT', '人物来源已变化，未发起维护'); }
+  const sharedIds = npcMemoryIdCounts(state);
   for (const npc of Object.values(state.npc).filter((person) => !npcId || person.id === npcId).sort((a, b) => a.id.localeCompare(b.id))) {
-    const candidates = npcSummaryCandidates(state, npc.id);
-    if (candidates.length <= npcMemoryPolicy.threshold) continue;
-    const batch: NpcMemoryBatch = { saveId: state.saveId, saveCreatedAt: state.createdAt, npcId: npc.id, identityKey: npc.identityKey, entries: [] };
-    for (const entry of candidates.slice(0, npcMemoryPolicy.batchSize)) {
-      const next = { ...batch, entries: [...batch.entries, entry] };
-      const text = JSON.stringify(npcSummaryInput(next)).replace(/[<>&]/g, (ch) => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`);
-      if (text.length > compressionPolicy.inputCharacters || estimateTokens(text).estimatedTokens > compressionPolicy.inputEstimatedTokens) break;
-      batch.entries.push(entry);
-    }
-    // 不跳过/截断此人的最早来源；仅跳过无法安全组批的人，继续寻找其他人物。
-    if (batch.entries.length < 2) continue;
+    const candidates = npcSummaryCandidates(state, npc.id, sharedIds);
+    const config = SummaryConfigSchema.parse(options?.config ?? defaultSummaryConfig('npc'));
+    if (!config.enabled || candidates.length < config.batchSize || (!options?.immediate && candidates.length < config.threshold)) continue;
+    const batch: NpcMemoryBatch = { saveId: state.saveId, saveCreatedAt: state.createdAt, npcId: npc.id, identityKey: npc.identityKey,
+      expectedCount: config.batchSize, entries: candidates.slice(0, config.batchSize) };
+    const text = JSON.stringify(npcSummaryInput(batch)).replace(/[<>&]/g, ch => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`);
+    requireData(text.length <= compressionPolicy.inputCharacters && estimateTokens(text).estimatedTokens <= compressionPolicy.inputEstimatedTokens,
+      'MEMORY_BUDGET', '完整NPC批次超出预算，原始记录保留，未缩小批次');
     return NpcMemoryBatchSchema.parse(batch);
   }
 }
 export const NpcSummaryOutputSchema = z.strictObject({
-  summaries: z.array(z.strictObject({ groupId: z.string(), text: TextSchema.max(4000) })).min(1).max(10),
+  summaries: z.array(z.strictObject({ groupId: z.string(), text: TextSchema.max(64000) })).min(1).max(10),
   unresolved: z.array(z.string()), contradictions: z.array(z.string()),
 });
 const labels = { observed: '[亲历]', reported: '[转述]', suspected: '[推测]', unknown: '[来源未分类]' };
@@ -81,7 +88,7 @@ export function parseNpcSummary(text: string, batch: NpcMemoryBatch, id: string)
   requireData(parsed.data.summaries.length === groups.length &&
     new Set(parsed.data.summaries.map((entry) => entry.groupId)).size === groups.length &&
     parsed.data.summaries.every((entry) => groups.some((group) => group.groupId === entry.groupId)) &&
-    parsed.data.summaries.reduce((sum, entry) => sum + entry.text.length, 0) <= 4000, 'MEMORY_OUTPUT', '认知分组不完整或超预算');
+    parsed.data.summaries.reduce((sum, entry) => sum + entry.text.length, 0) <= 64000, 'MEMORY_OUTPUT', '认知分组不完整或超预算');
   return groups.map((group, index) => NpcSummarySchema.parse({
     id: `${id}-${index}`, text: labels[group.knowledgeKind] + parsed.data.summaries.find((entry) => entry.groupId === group.groupId)!.text,
     sourceTurnIds: sourceUnion(group.entries),

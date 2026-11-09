@@ -20,7 +20,7 @@ export function npcKnowledgeKind(memory: z.infer<typeof NpcMemorySchema>): z.inf
 export const NpcSummarySchema = MemoryEntrySchema.extend({
   npcProvenance: z.strictObject({
     npcId: IdSchema, identityKey: TextSchema,
-    sourceMemoryIds: IdsSchema.refine((ids) => ids.length > 0 && ids.length <= 10),
+    sourceMemoryIds: IdsSchema.refine((ids) => ids.length > 0 && ids.length <= 100),
     knowledgeKind: KnowledgeNatureSchema,
     sourceVisibility: MemoryEntrySchema.shape.visibility,
   }).optional(), // 既有总结可原样读取；没有可靠来源时不伪造覆盖凭据。

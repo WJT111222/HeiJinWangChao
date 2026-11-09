@@ -2103,3 +2103,10 @@ input, textarea, select, .prompt-inspector pre { background-color: var(--bg); co
   .app-shell-game .world-sidebar .dock-system { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; }
   .app-shell-game .dock-system button { color: var(--gold); }
 }
+
+/* Memory summary V2 uses the existing settings dialog; no game reading layout changes. */
+.memory-summary-settings { min-width: 0; display: grid; gap: 1rem; }
+.memory-summary-settings textarea { width: 100%; min-height: 14rem; resize: vertical; line-height: 1.7; }
+.summary-module-heading { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: space-between; align-items: center; }
+.memory-summary-settings .card { min-width: 0; padding: 1rem; }
+.memory-summary-settings input[type=number], .memory-summary-settings select { max-width: 100%; }

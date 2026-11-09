@@ -1,4 +1,4 @@
-import { openWorldArchive, openSettings } from './helpers/gameLayout';
+import { openWorldArchive, openSettings, goHome } from './helpers/gameLayout';
 import { openGameTools, openWorkflowDiagnostics } from './helpers/gameLayout';
 import { createServer } from 'node:http';
 import type { Server } from 'node:http';
@@ -119,7 +119,7 @@ async function seed(page: Page, mode: 'opening' | 'regular' | 'none' = 'opening'
       form.person = {
         name: '正文测试角色',
         age: '30',
-        gender: '女',
+        gender: '女性',
         appearance: '短发',
         personality: '冷静',
       };
@@ -190,6 +190,7 @@ test('真实开局流式分片、资料面板不打断、只展示正文，草�
     .click();
   await expect(page.getByRole('dialog', { name: 'NPC', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
+  await openGameTools(page);
   await generated(page);
   const reader = page.getByTestId('story-reader');
   await expect(reader).toContainText(displayedStory);
@@ -282,7 +283,7 @@ test('快速重复点击、取消重试、迟到请求与切档隔离、刷新�
   plans.push({ delay: 1500 });
   await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
   await expect.poll(() => requests.length).toBe(3);
-  await page.getByRole('button', { name: '切换存档', exact: true }).click();
+  await goHome(page);
   await page
     .locator('.save-card')
     .filter({ hasText: '另一个存档角色' })

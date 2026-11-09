@@ -1,7 +1,7 @@
 import { DataError, requireData } from '../domain/common';
 import type { GameState } from '../domain/state';
 import { fingerprint } from '../domain/commands';
-import { planNpcSummary, npcSummaryInput, parseNpcSummary, npcMemoryPolicy } from '../domain/memories/npcMemory';
+import { planNpcSummary, npcSummaryInput, parseNpcSummary } from '../domain/memories/npcMemory';
 import { planCompression, compressionInput, parseCompression, memoryTask, compressionPolicy } from '../domain/memories/compression';
 import { selectPromptModules } from '../prompts/selection';
 import { readPromptResource } from '../prompts/loader';
@@ -13,6 +13,8 @@ import type { AiConfig } from '../services/ai/configuration';
 import type { CredentialVault } from '../services/ai/credentials';
 import { requestSnapshot, secretFor } from '../services/ai/snapshot';
 import type { SaveRepository } from '../services/storage/saveRepository';
+import { defaultSummaryConfig, SummaryConfigSchema } from '../domain/memories/configuration';
+import type { SummaryConfig, SummaryKind } from '../domain/memories/configuration';
 import { AiError } from '../services/ai/errors';
 
 export type MemoryLock = <T>(saveId: string, work: () => Promise<T>) => Promise<T>;
@@ -33,7 +35,9 @@ export class MemoryMaintenance {
     this.active?.controller.abort(); return true;
   }
   async run(input: { saveId: string; config: AiConfig; vault: CredentialVault; timeoutSeconds: number; task?: 'public' | 'npc'; npcId?: string;
+    kind?: SummaryKind; summaryConfig?: SummaryConfig; immediate?: boolean; attempts?: Pick<Storage, 'getItem' | 'setItem'>; automatic?: boolean;
     onPhase?: (phase: 'generating' | 'saving') => void }): Promise<GameState | undefined> {
+    const frozenConfig = input.summaryConfig ? SummaryConfigSchema.parse(structuredClone(input.summaryConfig)) : undefined;
     if (this.active) throw new DataError('MEMORY_BUSY', '记忆维护已在运行');
     const attempt = { controller: new AbortController(), saving: false };
     this.active = attempt;
@@ -42,7 +46,13 @@ export class MemoryMaintenance {
       return await this.lock(input.saveId, async () => {
         check();
         const state = await this.repository.load(input.saveId);
-        const batch = input.task === 'npc' ? planNpcSummary(state, input.npcId) : planCompression(state);
+        const kind = input.kind ?? (input.task === 'npc' ? 'npc' : undefined);
+        const config = SummaryConfigSchema.parse(frozenConfig ?? defaultSummaryConfig(kind ?? 'short'));
+        if (!config.enabled) return undefined;
+        if (input.immediate && kind === 'npc') requireData(Boolean(input.npcId), 'NPC_MEMORY_CONFLICT', '立即总结必须明确选择人物');
+        if (input.attempts && kind) recoverCompletedSummary(state, kind, input.attempts);
+        const batch = kind === 'npc' ? planNpcSummary(state, input.npcId, { config, immediate: input.immediate })
+          : planCompression(state, kind ? { layer: kind, config, immediate: input.immediate } : undefined);
         if (!batch) return undefined;
         const task = 'npcId' in batch ? 'memory.npc_summarize' : memoryTask(batch.layer);
         const snapshot = requestSnapshot(input.config, 'memory', input.vault);
@@ -51,16 +61,29 @@ export class MemoryMaintenance {
         const id = 'memory-' + Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
         const selected = selectPromptModules({ stage: 'memory', mode: 'regular', settings: defaultSettings(), memoryTask: task });
         const resources = await Promise.all(selected.map(async (module) => ({ module, text: (await readPromptResource(module.id)).replace(/\{\{(npcId|npcSummaryThreshold)\}\}/g, (_, key: string) =>
-          key === 'npcId' && 'npcId' in batch ? batch.npcId : String(npcMemoryPolicy.threshold)) })));
+          key === 'npcId' && 'npcId' in batch ? batch.npcId : String(config.threshold)) })));
         const modules = resources.map(({ module, text }) => ({ id: module.id, version: module.version, contentSha256: module.contentSha256,
           role: 'system' as const, order: module.defaultOrder, characters: Array.from(text).length, estimatedTokens: estimateTokens(text).estimatedTokens }));
-        const messages = [...resources.map(({ text }) => ({ role: 'system' as const, content: text })),
+        const contentPrompt = frozenConfig?.prompt ?? defaultSummaryConfig('npcId' in batch ? 'npc' : batch.layer).prompt;
+        const messages = [{ role: 'system' as const, content: contentPrompt }, ...resources.map(({ text }) => ({ role: 'system' as const, content: text })),
           { role: 'user' as const, content: contextMessage({ MEMORY_TASK: 'npcId' in batch ? npcSummaryInput(batch) : compressionInput(batch) }) }];
         const size = contextStatistics(messages);
         requireData(size.characters <= compressionPolicy.requestCharacters && size.estimatedTokens <= compressionPolicy.requestEstimatedTokens, 'MEMORY_BUDGET', '完整请求超出预算，未调用模型');
         requireData(!keys.some((key) => [key, encodeURIComponent(key), JSON.stringify(key).slice(1, -1)].some((value) => JSON.stringify(messages).includes(value))),
           'MEMORY_PERMISSION', '输入包含凭证内容，未发送；原条目已保留');
-        check(); input.onPhase?.('generating');
+        check();
+        const attemptKey = `heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`;
+        if (input.attempts) requireData(!input.automatic || !input.attempts.getItem(attemptKey),
+          'MEMORY_PREVIOUS', '上次总结失败或中断，请明确重新生成或暂停本项');
+        if (input.automatic && input.attempts) {
+          const key = `heijin.summary.rate:${state.saveId}:${state.createdAt}`;
+          const recent = (JSON.parse(input.attempts.getItem(key) || '[]') as number[]).filter(time => Number.isFinite(time) && time > Date.now() - 3600000);
+          requireData(recent.length < 12 && recent.filter(time => time > Date.now() - 60000).length < 3,
+            'MEMORY_THROTTLED', '后台总结已达到本小时或本分钟的请求限额，待下一调度窗口检查');
+          input.attempts.setItem(key, JSON.stringify([...recent, Date.now()]));
+        }
+        if (input.attempts) input.attempts.setItem(attemptKey, id);
+        input.onPhase?.('generating');
         const response = await this.client.generate(snapshot, messages, { timeoutSeconds: input.timeoutSeconds, signal: attempt.controller.signal,
           inspection: { kind: 'memory', memoryTask: task, mode: 'regular', saveId: state.saveId, revision: state.revision, modules } });
         check();
@@ -70,13 +93,28 @@ export class MemoryMaintenance {
           const results = parseNpcSummary(response.text, batch, id);
           if ([secretFor(snapshot), ...keys].some((key) => results.some((result) => result.text.includes(key)))) throw new AiError('invalid_output');
           check(); attempt.saving = true; input.onPhase?.('saving');
-          return await this.repository.saveNpcSummary(batch, results, attempt.controller.signal);
+          const saved = await this.repository.saveNpcSummary(batch, results, attempt.controller.signal);
+          if (input.attempts) input.attempts.setItem(`heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`, '');
+          return saved;
         }
         const result = parseCompression(response.text, batch, id);
         if ([secretFor(snapshot), ...keys].some((key) => result.text.includes(key))) throw new AiError('invalid_output');
         check(); attempt.saving = true; input.onPhase?.('saving');
-        return await this.repository.saveMemoryCompression(batch, result, attempt.controller.signal);
+        const saved = await this.repository.saveMemoryCompression(batch, result, attempt.controller.signal);
+        if (input.attempts) input.attempts.setItem(`heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`, '');
+        return saved;
       });
     } finally { if (this.active === attempt) this.active = undefined; }
   }
+}
+
+// IndexedDB save and local settings are separate stores: acknowledge a committed result after a crash,
+// rather than charging for its already-covered sources again or permanently blocking later work.
+export function recoverCompletedSummary(state: GameState, kind: SummaryKind, storage: Pick<Storage, 'getItem' | 'setItem'>) {
+  const key = `heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`, id = storage.getItem(key);
+  if (!id) return false;
+  const saved = kind === 'npc' ? Object.values(state.memories.npcSummaries).flat().some(entry => entry.id.startsWith(id + '-'))
+    : [...state.memories.medium, ...state.memories.long].some(entry => entry.id === id);
+  if (saved) storage.setItem(key, '');
+  return saved;
 }

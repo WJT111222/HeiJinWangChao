@@ -16,7 +16,7 @@ import { commandCatalog } from '../services/validation/commandCatalog';
 import { textVariableCatalog } from '../executors/variableText/catalog';
 import { AiError } from '../services/ai/errors';
 import type { AiStage } from '../services/ai/configuration';
-import { npcMemoryPolicy, planNpcSummary, npcSummaryInput } from '../domain/memories/npcMemory';
+import { planNpcSummary, npcSummaryInput } from '../domain/memories/npcMemory';
 import { sharedContext } from './sharedContext';
 import { timePreflight, turnTimePolicy, historicalPerspective } from '../domain/timePreflight';
 
@@ -208,9 +208,9 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
   }
   if (input.memoryTask === 'memory.npc_summarize') {
     const npc = input.npcId ? state.npc[input.npcId] : undefined;
-    if (!npc || input.npcSummaryThreshold !== npcMemoryPolicy.threshold)
+    if (!npc || input.npcSummaryThreshold !== settings.memory.summaries.npc.threshold)
       throw new AiError('placeholder');
-    const batch = planNpcSummary(state, npc.id);
+    const batch = planNpcSummary(state, npc.id, { config: settings.memory.summaries.npc });
     return { MEMORY_TASK: batch ? npcSummaryInput(batch) : { task: 'memory.npc_summarize', npcId: npc.id, groups: [] } };
   }
   return {

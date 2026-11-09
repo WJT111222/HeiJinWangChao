@@ -1469,7 +1469,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 808,
+      "characters": 249,
       "version": "0.1.0-m5-p2",
       "messageRole": "system",
       "activation": "memory-task",
@@ -1479,7 +1479,7 @@
       "orderGroup": "memory",
       "reorderable": false,
       "category": "memory",
-      "contentSha256": "940a685a3ed39c905428c34d80969e0b37ef833aa099b4aca92a85585c2f5656",
+      "contentSha256": "4a8bd498df0a4c5ad019ddec47afe0b1da9984c253818148ec0e9683b261e389",
       "placeholders": []
     },
     {
@@ -1496,7 +1496,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 793,
+      "characters": 249,
       "version": "0.1.0-m5-p2",
       "messageRole": "system",
       "activation": "memory-task",
@@ -1506,7 +1506,7 @@
       "orderGroup": "memory",
       "reorderable": false,
       "category": "memory",
-      "contentSha256": "f7afa12b76af757610ce02df17500f451a317fa504bf33ba3c542e4f856c0a80",
+      "contentSha256": "4a8bd498df0a4c5ad019ddec47afe0b1da9984c253818148ec0e9683b261e389",
       "placeholders": []
     },
     {
@@ -1523,7 +1523,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 841,
+      "characters": 436,
       "version": "0.1.0-m5-p3",
       "messageRole": "system",
       "activation": "memory-task",
@@ -1533,7 +1533,7 @@
       "orderGroup": "memory",
       "reorderable": false,
       "category": "memory",
-      "contentSha256": "d3e2ff53a8d85ae7d2dc158e0d5f214035dea133c5b40e0a0ac8c01ca1d4c680",
+      "contentSha256": "2fa29d6d31a8e1240aaa1a7cff5d68aadde0e78d3fb8095fb501aaaa3f3cd577",
       "placeholders": [
         "npcId",
         "npcSummaryThreshold"

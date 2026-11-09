@@ -1,4 +1,4 @@
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools, openWorldArchive } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { handoffState, handoffResult, retireCommand, resultText, finishTask } from '../src/tests/fixtures/handoff';
@@ -159,8 +159,8 @@ test('联系人标签来自真实持久数据，刷新后档案仍保留', async
   await page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try {
     await repo.save('save-a', 0, 'contact-fixture', [{ type: 'RegisterContact', commandId: 'contact', npcId: 'scene', reason: '隔离UI测试的明确联络设定', evidence: '主角与现场人物交换了联络方式。' }]);
   } finally { repo.close(); } });
-  await page.reload(); await openGameTools(page); await page.getByRole('button', { name: /NPC/ }).click();
-  const panel = page.getByRole('dialog'); await panel.getByRole('button', { name: /现场人物/ }).click();
+  await page.reload(); await openGameTools(page); await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
+  const panel = page.getByRole('dialog', { name: 'NPC', exact: true }); await panel.getByRole('button', { name: /现场人物/ }).click();
   await expect(panel).toContainText('联系人 · 永久保留档案');
   await page.keyboard.press('Escape'); await page.reload(); await openGameTools(page);
   expect((await stored(page)).state.contactNpcIds).toContain('scene');
@@ -178,8 +178,8 @@ test('V6待复核NPC显示待确认身份，不冒充联系人且不自动删除
       tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); };
     }; request.onerror = () => reject(request.error); });
   });
-  await page.reload(); await openGameTools(page); await page.getByRole('button', { name: /NPC/ }).click();
-  const panel = page.getByRole('dialog'); await panel.getByRole('button', { name: /现场人物/ }).click();
+  await page.reload(); await openGameTools(page); await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
+  const panel = page.getByRole('dialog', { name: 'NPC', exact: true }); await panel.getByRole('button', { name: /现场人物/ }).click();
   await expect(panel).toContainText('旧档联系人身份待确认 · 暂缓清理');
   await expect(panel).not.toContainText('联系人 · 永久保留档案');
   const migrated = (await stored(page)).state; expect(migrated.schemaVersion).toBe(6); expect(migrated.contactNpcIds).toEqual([]);

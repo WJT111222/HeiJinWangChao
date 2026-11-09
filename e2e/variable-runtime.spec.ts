@@ -1,5 +1,5 @@
 import { variableReply } from '../src/tests/fixtures/variableReply';
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools, goHome } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 const narrative = '主角已经用现金支付30元吃饭。';
@@ -239,7 +239,7 @@ test('错误 JSON 安全失败可重试；取消、重复点击和切档迟到�
   mode = 'slow';
   await page.getByRole('button', { name: '重新生成变量候选', exact: true }).click();
   await expect.poll(() => count).toBe(4);
-  await page.getByRole('button', { name: '切换存档', exact: true }).click();
+  await goHome(page);
   await page
     .locator('.save-card')
     .filter({ hasText: '另一份变量存档' })
