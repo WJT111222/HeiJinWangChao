@@ -98,11 +98,13 @@ test('三类同时失败只顺序显示一个弹窗，各自暂停且刷新不�
   expect(requests).toBe(3);
 });
 
-test('旧默认关闭安全延续并提示，分别开启后保存刷新；全新设置不误报迁移', async ({ page }) => {
+test('旧默认关闭安全延续、逐项开启与刷新持久化，设置页不再显示冗余说明', async ({ page }) => {
   let calls = 0; await page.route('https://summary.mock.invalid/**', async route => { calls++; await route.abort(); });
   await seedSummary(page, { count: 0 });
   let settings = await summaryPage(page);
-  await expect(settings.getByText(/旧版自动维护的关闭状态已延续/)).toHaveCount(0);
+  await expect(settings).not.toContainText('旧版自动维护');
+  await expect(settings).not.toContainText('记忆总结模型：');
+  await expect(settings).not.toContainText('自动及立即总结均可能产生第三方 API 费用');
   await settings.getByRole('button', { name: '关闭资料界面' }).click();
   await page.evaluate(() => {
     const value = JSON.parse(localStorage.getItem('heijin.settings.v1')!);
@@ -110,15 +112,14 @@ test('旧默认关闭安全延续并提示，分别开启后保存刷新；全�
     localStorage.setItem('heijin.settings.v1', JSON.stringify(value));
   });
   await page.reload(); settings = await summaryPage(page);
-  await expect(settings).toContainText('旧版自动维护的关闭状态已延续');
-  await expect(settings).toContainText('旧版默认也是关闭，无法据此判断你是否曾主动关闭');
+  await expect(settings).not.toContainText('旧版自动维护');
   for (const name of ['短期 → 中期', '中期 → 长期', 'NPC 短期 → 中期'])
     await expect(settings.getByLabel(`自动总结 ${name}`, { exact: true })).not.toBeChecked();
   await settings.getByLabel('自动总结 NPC 短期 → 中期', { exact: true }).check();
   await settings.getByRole('button', { name: '保存记忆设置', exact: true }).click();
   await expect(settings).toContainText('记忆设置已保存');
   await page.reload(); settings = await summaryPage(page);
-  await expect(settings).toContainText('旧版自动维护的关闭状态已延续');
+  await expect(settings).not.toContainText('旧版自动维护');
   await expect(settings.getByLabel('自动总结 NPC 短期 → 中期', { exact: true })).toBeChecked();
   for (const name of ['短期 → 中期', '中期 → 长期'])
     await expect(settings.getByLabel(`自动总结 ${name}`, { exact: true })).not.toBeChecked();
