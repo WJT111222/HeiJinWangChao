@@ -1,3 +1,6 @@
+import { timelineStores, newSaveControl, readControl, writeControl, clearUndoRecords, recordUndo, inspectUndo, restoreSnapshot, assertMemoryLineage } from './turnUndo';
+import type { MemoryLineage, UndoStatus } from './turnUndo';
+import { request, transaction } from './idb';
 import { CountSchema, DataError, IdSchema, requireData } from '../../domain/common';
 import { commitCommands, fingerprint } from '../../domain/commands';
 import { z } from 'zod';
@@ -31,39 +34,9 @@ export interface TurnCommitResult {
   draft: TurnDraft;
   replayed: boolean;
 }
+export interface TurnUndoResult extends TurnCommitResult { input: string }
+export interface TurnUndoRequest { saveId: string; expectedRevision: number; expectedDraft?: TurnDraft; operationId: string }
 
-function request<T>(operation: IDBRequest<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    operation.onsuccess = () => resolve(operation.result);
-    operation.onerror = () => reject(operation.error);
-  });
-}
-
-async function transaction<T>(database: IDBDatabase, stores: string[], mode: IDBTransactionMode,
-  work: (tx: IDBTransaction) => Promise<T>, signal?: AbortSignal): Promise<T> {
-  const tx = database.transaction(stores, mode);
-  const abort = () => { try { tx.abort(); } catch { /* 已提交或中止。 */ } };
-  const done = new Promise<void>((resolve, reject) => {
-    tx.oncomplete = () => resolve();
-    tx.onabort = () => reject(tx.error ?? new DataError('TRANSACTION_ABORTED', '事务已回滚'));
-    tx.onerror = () => { /* onabort 统一报告，禁止提前把 request 成功当作提交成功。 */ };
-  });
-  // 及时安装拒绝处理；work 中仅等待同一事务的 IDB 请求，不能等待网络或定时器。
-  void done.catch(() => undefined);
-  signal?.addEventListener('abort', abort, { once: true });
-  if (signal?.aborted) abort();
-  try {
-    const result = await work(tx);
-    await done;
-    return result;
-  } catch (error) {
-    try { tx.abort(); } catch { /* 已经完成或中止。 */ }
-    await done.catch(() => undefined);
-    throw error;
-  } finally {
-    signal?.removeEventListener('abort', abort);
-  }
-}
 
 function readState(raw: unknown, saveId: string): GameState {
   requireData(raw !== undefined, 'NOT_FOUND', '存档不存在');
@@ -95,6 +68,8 @@ async function deleteRecords(tx: IDBTransaction, key: IDBValidKey): Promise<void
   const receipts = tx.objectStore('turnReceipts');
   const keys = await request(receipts.index('saveId').getAllKeys(key));
   for (const receiptKey of keys) await request(receipts.delete(receiptKey));
+  await clearUndoRecords(tx, key);
+  await request(tx.objectStore('saveControls').delete(key));
   await request(tx.objectStore('saves').delete(key));
 }
 
@@ -105,11 +80,14 @@ export class SaveRepository {
     if (!factory) return Promise.reject(new DataError('STORAGE_UNAVAILABLE', '当前环境不支持 IndexedDB'));
     return new Promise((resolve, reject) => {
       // IndexedDB 结构版本独立于每个存档的 schemaVersion。
-      const operation = factory.open(name, 2);
+      const operation = factory.open(name, 3);
       operation.onupgradeneeded = () => {
         const db = operation.result;
         if (!db.objectStoreNames.contains('saves')) db.createObjectStore('saves', { keyPath: 'saveId' });
         if (!db.objectStoreNames.contains('drafts')) db.createObjectStore('drafts', { keyPath: 'saveId' });
+        if (!db.objectStoreNames.contains('turnUndo'))
+          db.createObjectStore('turnUndo', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
+        if (!db.objectStoreNames.contains('saveControls')) db.createObjectStore('saveControls', { keyPath: 'saveId' });
         if (!db.objectStoreNames.contains('turnReceipts'))
           db.createObjectStore('turnReceipts', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
       };
@@ -126,6 +104,77 @@ export class SaveRepository {
   }
 
   close(): void { this.database.close(); }
+
+  async undoStatus(saveId: string): Promise<UndoStatus> {
+    IdSchema.parse(saveId);
+    return transaction(this.database, ['saves', 'saveControls', 'turnUndo'], 'readonly', async tx =>
+      inspectUndo(tx, readState(await request(tx.objectStore('saves').get(saveId)), saveId)));
+  }
+
+  /** Persist the editable recalled action separately from the immutable bound draft. */
+  async saveUndoInput(expected: TurnDraft, input: string): Promise<void> {
+    const value = z.string().max(100000).parse(input);
+    return transaction(this.database, ['saves', 'drafts', 'saveControls'], 'readwrite', async tx => {
+      const state = readState(await request(tx.objectStore('saves').get(expected.saveId)), expected.saveId);
+      const draft = TurnDraftSchema.parse(await request(tx.objectStore('drafts').get(expected.saveId)));
+      requireData(fingerprint(draft) === fingerprint(expected) && awaitingPlayerAction(state, draft), 'DRAFT_CONFLICT', '输入草稿已经变化');
+      const control = await readControl(tx, state.saveId);
+      requireData(control?.memoryPaused, 'DRAFT_CONFLICT', '不是撤回后的待输入状态');
+      control!.input = value; await writeControl(tx, control!);
+    });
+  }
+
+  async undoTurn(input: TurnUndoRequest): Promise<TurnUndoResult> {
+    const { saveId, expectedRevision, operationId } = input;
+    IdSchema.parse(saveId); CountSchema.parse(expectedRevision); IdSchema.parse(operationId);
+    const session = reserveStageSession(saveId);
+    try {
+      return await withBrowserLock(saveId, () => transaction(this.database, timelineStores, 'readwrite', async tx => {
+        session.check();
+        const state = readState(await request(tx.objectStore('saves').get(saveId)), saveId);
+        const raw: unknown = await request(tx.objectStore('drafts').get(saveId));
+        const draft = raw === undefined ? undefined : TurnDraftSchema.parse(raw);
+        const control = await readControl(tx, saveId);
+        if (control?.lastUndo?.operationId === operationId) {
+          requireData(state.revision === control.lastUndo.revision && draft?.turnId === control.lastUndo.draftTurnId,
+            'REVISION_CONFLICT', '撤回结果之后已有新操作');
+          return { state, draft: draft!, input: control.input, replayed: true };
+        }
+        requireData(state.revision === expectedRevision, 'REVISION_CONFLICT', '存档已在另一页面改变，请重新读取');
+        requireData(fingerprint(draft) === fingerprint(input.expectedDraft), 'DRAFT_CONFLICT', '草稿已改变，请重新确认撤回');
+        requireData(Boolean(control), 'UNDO_UNAVAILABLE', '此存档没有可靠恢复点');
+        const restored = await restoreSnapshot(tx, state, control!);
+        const next = createTurnDraft(saveId, restored.state.revision, `turn-${crypto.randomUUID()}`, 'regular', '',
+          draft?.useVariableStage ?? true, draft?.useWorldStage ?? true);
+        // All old receipts reference the abandoned branch's revisions or next-draft IDs.
+        // Keep appliedCommands in the restored state, but never replay these receipts.
+        const receipts = tx.objectStore('turnReceipts');
+        for (const key of await request(receipts.index('saveId').getAllKeys(saveId))) await request(receipts.delete(key));
+        control!.lastUndo = { operationId, revision: restored.state.revision, draftTurnId: next.turnId };
+        await writeControl(tx, control!);
+        await request(tx.objectStore('saves').put(restored.state));
+        await request(tx.objectStore('drafts').put(next));
+        return { ...restored, draft: next, replayed: false };
+      }));
+    } finally { session.release(); }
+  }
+
+  /** Capture state and the timeline token together BEFORE starting a summary request. */
+  async loadMemoryContext(saveId: string): Promise<{ state: GameState; lineage: MemoryLineage; paused: boolean }> {
+    return transaction(this.database, ['saves', 'saveControls'], 'readwrite', async tx => {
+      const state = readState(await request(tx.objectStore('saves').get(saveId)), saveId);
+      let control = await readControl(tx, saveId);
+      if (!control) { control = newSaveControl(saveId); await writeControl(tx, control); }
+      return { state, lineage: { saveId, epoch: control.epoch }, paused: control.memoryPaused };
+    });
+  }
+
+  async checkMemoryLineage(lineage: MemoryLineage): Promise<void> {
+    return transaction(this.database, ['saves', 'saveControls'], 'readonly', async tx => {
+      readState(await request(tx.objectStore('saves').get(lineage.saveId)), lineage.saveId);
+      await assertMemoryLineage(tx, lineage.saveId, lineage);
+    });
+  }
 
   async create(state: GameState): Promise<GameState> {
     const parsed = GameStateSchema.parse(state);
@@ -166,9 +215,10 @@ export class SaveRepository {
     });
   }
 
-  async saveMemoryCompression(batch: CompressionBatch, output: z.infer<typeof MemoryEntrySchema>, signal?: AbortSignal): Promise<GameState> {
+  async saveMemoryCompression(batch: CompressionBatch, output: z.infer<typeof MemoryEntrySchema>, lineage: MemoryLineage, signal?: AbortSignal): Promise<GameState> {
     const parsed = CompressionBatchSchema.parse(batch), result = MemoryEntrySchema.parse(output);
-    return transaction(this.database, ['saves'], 'readwrite', async (tx) => {
+    return transaction(this.database, ['saves', 'saveControls'], 'readwrite', async (tx) => {
+      await assertMemoryLineage(tx, parsed.saveId, lineage);
       const store = tx.objectStore('saves');
       const current = readState(await request(store.get(parsed.saveId)), parsed.saveId);
       // 从最新整份状态仅替换已核对的记忆批次，不提升世界版本、不写草稿。
@@ -178,9 +228,10 @@ export class SaveRepository {
     }, signal);
   }
 
-  async saveNpcSummary(batch: NpcMemoryBatch, output: z.infer<typeof NpcSummarySchema>[], signal?: AbortSignal): Promise<GameState> {
+  async saveNpcSummary(batch: NpcMemoryBatch, output: z.infer<typeof NpcSummarySchema>[], lineage: MemoryLineage, signal?: AbortSignal): Promise<GameState> {
     const parsed = NpcMemoryBatchSchema.parse(batch), result = z.array(NpcSummarySchema).parse(output);
-    return transaction(this.database, ['saves'], 'readwrite', async (tx) => {
+    return transaction(this.database, ['saves', 'saveControls'], 'readwrite', async (tx) => {
+      await assertMemoryLineage(tx, parsed.saveId, lineage);
       const store = tx.objectStore('saves');
       const current = readState(await request(store.get(parsed.saveId)), parsed.saveId);
       const next = GameStateSchema.parse(applyNpcSummary(current, parsed, result));
@@ -200,12 +251,14 @@ export class SaveRepository {
   // Association uses the actual save key, never a saveId recovered from untrusted contents.
   async exportRaw(storageKey: IDBValidKey): Promise<RawSaveExport> {
     requireData(storageKey !== undefined && storageKey !== null, 'INVALID_KEY', '未选择存档记录');
-    return transaction(this.database, ['saves', 'drafts', 'turnReceipts'], 'readonly', async tx => {
+    return transaction(this.database, timelineStores, 'readonly', async tx => {
       const saves = await rawRecords(tx.objectStore('saves'), storageKey);
       requireData(saves.length === 1, 'NOT_FOUND', '此存档已不存在，请刷新列表。');
       const drafts = await rawRecords(tx.objectStore('drafts'), storageKey);
       const turnReceipts = await rawRecords(tx.objectStore('turnReceipts').index('saveId'), storageKey);
-      return { format: 'heijin-raw-save', version: 1, records: { saves, drafts, turnReceipts } };
+      return { format: 'heijin-raw-save', version: 1, records: { saves, drafts, turnReceipts,
+        turnUndo: await rawRecords(tx.objectStore('turnUndo').index('saveId'), storageKey),
+        saveControls: await rawRecords(tx.objectStore('saveControls'), storageKey) } };
     });
   }
 
@@ -213,7 +266,7 @@ export class SaveRepository {
   // Recheck within the write transaction: never delete a record that has become readable.
   async deleteUnreadable(storageKey: IDBValidKey): Promise<void> {
     requireData(storageKey !== undefined && storageKey !== null, 'INVALID_KEY', '未选择存档记录');
-    return transaction(this.database, ['saves', 'drafts', 'turnReceipts'], 'readwrite', async tx => {
+    return transaction(this.database, timelineStores, 'readwrite', async tx => {
       const records = await rawRecords(tx.objectStore('saves'), storageKey);
       requireData(records.length === 1, 'NOT_FOUND', '此存档已不存在，请刷新列表。');
       requireData(listRecord(storageKey, records[0].value).status === 'unreadable', 'SAVE_READABLE', '此存档现在可以读取，请刷新列表后重新选择。');
@@ -225,11 +278,16 @@ export class SaveRepository {
   async save(saveId: string, expectedRevision: number, turnId: string,
     commands: readonly DomainCommand[]): Promise<GameState> {
     IdSchema.parse(saveId); CountSchema.parse(expectedRevision);
-    return transaction(this.database, ['saves'], 'readwrite', async (tx) => {
+    return transaction(this.database, timelineStores, 'readwrite', async (tx) => {
       const store = tx.objectStore('saves');
       const current = readState(await request(store.get(saveId)), saveId);
       const next = commitCommands(current, turnId, expectedRevision, commands);
-      if (next.revision !== current.revision) await request(store.put(next));
+      if (next.revision !== current.revision) {
+        const control = await readControl(tx, saveId) ?? newSaveControl(saveId);
+        await clearUndoRecords(tx, saveId); control.records = []; control.notice = 'legacy_write';
+        control.epoch = `epoch-${crypto.randomUUID()}`; delete control.lastUndo; control.input = '';
+        await writeControl(tx, control); await request(store.put(next));
+      }
       return next;
     });
   }
@@ -248,9 +306,9 @@ export class SaveRepository {
           byte.toString(16).padStart(2, '0'),
         ).join('');
         const nextTurnId = `turn-${crypto.randomUUID()}`;
-        return transaction(
+        const commit = (quotaFallback: boolean) => transaction(
           this.database,
-          ['saves', 'drafts', 'turnReceipts'],
+          timelineStores,
           'readwrite',
           async (tx) => {
             session.check();
@@ -313,12 +371,19 @@ export class SaveRepository {
               revision: next.revision,
               nextTurnId,
             });
+            await recordUndo(tx, state, current, quotaFallback);
             await request(saves.put(next));
             await request(drafts.put(draft));
             await request(receipts.add(receipt));
             return { state: next, draft, replayed: false };
           },
         );
+        try { return await commit(false); } catch (error) {
+          if (!(error instanceof DOMException) || error.name !== 'QuotaExceededError') throw error;
+          // The entire first transaction aborted. Revalidate everything, keep the formal
+          // save first, and explicitly record that this turn has no undo point. No AI retry.
+          return commit(true);
+        }
       });
     } finally {
       session.release();
@@ -327,7 +392,7 @@ export class SaveRepository {
 
   async delete(saveId: string, expectedRevision: number): Promise<void> {
     IdSchema.parse(saveId); CountSchema.parse(expectedRevision);
-    return transaction(this.database, ['saves', 'drafts', 'turnReceipts'], 'readwrite', async (tx) => {
+    return transaction(this.database, timelineStores, 'readwrite', async (tx) => {
       const store = tx.objectStore('saves');
       const current = readState(await request(store.get(saveId)), saveId);
       requireData(current.revision === expectedRevision, 'REVISION_CONFLICT', '删除时存档版本已变化');
@@ -340,13 +405,16 @@ export class SaveRepository {
     const snapshot = TurnDraftSchema.parse(expected), userInput = z.string().trim().min(1).max(100000).parse(action);
     const session = reserveStageSession(snapshot.saveId);
     try {
-      return await withBrowserLock(snapshot.saveId, () => transaction(this.database, ['saves', 'drafts'], 'readwrite', async tx => {
+      return await withBrowserLock(snapshot.saveId, () => transaction(this.database, ['saves', 'drafts', 'saveControls'], 'readwrite', async tx => {
         session.check();
         const state = readState(await request(tx.objectStore('saves').get(snapshot.saveId)), snapshot.saveId);
         const store = tx.objectStore('drafts'), current = TurnDraftSchema.parse(await request(store.get(snapshot.saveId)));
         requireData(fingerprint(current) === fingerprint(snapshot), 'DRAFT_CONFLICT', '行动草稿已被其他操作更新');
         requireData(awaitingPlayerAction(state, current), 'DRAFT_CONFLICT', '只能为未生成的待输入回合绑定行动');
         const next = TurnDraftSchema.parse({ ...createTurnDraft(current.saveId, state.revision, current.turnId, 'regular', userInput, useVariableStage, useWorldStage), draftRevision: current.draftRevision + 1 });
+        const control = await readControl(tx, state.saveId) ?? newSaveControl(state.saveId);
+        control.input = ''; control.memoryPaused = false; delete control.lastUndo;
+        await writeControl(tx, control);
         await request(store.put(next)); return next;
       }));
     } finally { session.release(); }

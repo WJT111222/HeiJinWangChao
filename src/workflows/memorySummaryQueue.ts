@@ -22,6 +22,7 @@ const safeReasons: Record<string, string> = {
   MEMORY_OUTPUT: '模型没有返回完整、合法的总结结构，原始记忆保留。', MEMORY_BUDGET: '完整批次超出安全预算，未缩减来源。',
   MEMORY_CONFLICT: '公共来源已改变或已被整理，请重新核对。', NPC_MEMORY_CONFLICT: '人物身份或来源已改变，请重新核对。',
   MEMORY_PREVIOUS: '上次总结中断或未保存，请明确重新生成或暂停本项。',
+  MEMORY_TIMELINE_CHANGED: '时间线已撤回，旧总结未保存。需要总结时请主动重新生成。',
 };
 /** Serial, bounded and fair across the three independent kinds. No autonomous retry after failure. */
 export class MemorySummaryQueue {

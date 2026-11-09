@@ -106,6 +106,7 @@ describe('raw export never validates or rewrites game data', () => {
     expect(json).toEqual({ format: 'heijin-raw-save', version: 1, records: {
       saves: [{ key: 'broken', value: broken }], drafts: [{ key: 'broken', value: rawDraft }],
       turnReceipts: rawReceipts.map(value => ({ key: ['broken', value.turnId], value })),
+      turnUndo: [], saveControls: [],
     } });
     expect(await all()).toEqual(before);
     raw.records.saves[0].value = null; expect(await all()).toEqual(before);
@@ -186,10 +187,12 @@ describe('targeted unreadable deletion stays atomic', () => {
     // Damaged/foreign DB layout with out-of-line saves, using the same version: key identity
     // must remain authoritative even when an unreadable payload names a different save.
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const open = factory.open('out-of-line', 2);
+      const open = factory.open('out-of-line', 3);
       open.onupgradeneeded = () => {
         open.result.createObjectStore('saves'); open.result.createObjectStore('drafts', { keyPath: 'saveId' });
         open.result.createObjectStore('turnReceipts', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
+        open.result.createObjectStore('turnUndo', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
+        open.result.createObjectStore('saveControls', { keyPath: 'saveId' });
       };
       open.onsuccess = () => resolve(open.result); open.onerror = () => reject(open.error);
     });

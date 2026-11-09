@@ -79,6 +79,7 @@ export function App() {
     state: GameState;
     draft?: TurnDraft;
     companionProfile?: CompanionProfile;
+    undoGeneration?: number;
   }>();
   const [error, setError] = useState(initial.warning);
   const [listError, setListError] = useState('');
@@ -344,7 +345,7 @@ export function App() {
             }
           >
             <GameScreen
-              key={loaded.state.saveId}
+              key={`${loaded.state.saveId}:${loaded.undoGeneration ?? 0}`}
               openingStart={openingStart.current}
               onOpenSettings={() => setSettingsOpen(true)}
               state={loaded.state}
@@ -352,7 +353,8 @@ export function App() {
               repository={repository!}
               onDraftSaved={(draft) =>
                 setLoaded((current) =>
-                  current?.state.saveId === draft.saveId ? { ...current, draft } : current,
+                  current?.state.saveId === draft.saveId && current.state.revision === draft.baseSaveRevision
+                    ? { ...current, draft } : current,
                 )
               }
               onCommitted={({ state, draft }) =>
@@ -365,6 +367,9 @@ export function App() {
               onMemorySaved={(state) => setLoaded((current) =>
                 current?.state.saveId === state.saveId && current.state.revision === state.revision
                   ? { ...current, state } : current)}
+              onUndone={({ state, draft }) => setLoaded(current =>
+                current?.state.saveId === state.saveId && current.state.revision < state.revision
+                  ? { ...current, state, draft, undoGeneration: (current.undoGeneration ?? 0) + 1 } : current)}
               renderSettings={settingsOpen ? renderSettings : undefined}
               companionProfile={loaded.companionProfile}
               settings={settings}

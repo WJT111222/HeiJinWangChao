@@ -1,4 +1,6 @@
 import { PlayerStatus } from './PlayerStatus';
+import { TurnUndoControl } from './TurnUndoControl';
+import type { TurnUndoResult } from '../../services/storage/saveRepository';
 import { ProfessionProfile } from '../components/ProfessionProfile';
 import { StoryReading } from './StoryReading';
 import { openingTimeSelection } from '../../domain/openingTime';
@@ -56,6 +58,7 @@ export function GameScreen({
   repository,
   onDraftSaved,
   onCommitted,
+  onUndone,
   onMemorySaved,
   renderSettings,
 }: {
@@ -70,6 +73,7 @@ export function GameScreen({
   repository: SaveRepository;
   onDraftSaved: (draft: TurnDraft) => void;
   onCommitted: (result: TurnCommitResult) => void;
+  onUndone: (result: TurnUndoResult) => void;
   onMemorySaved: (state: GameState) => void;
   renderSettings?: (maintenance: ReactNode) => ReactNode;
 }) {
@@ -82,6 +86,7 @@ export function GameScreen({
   const [input, setInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [undoNotice, setUndoNotice] = useState('');
   const submitLock = useRef(false),
     submitToken = useRef(0);
   const [runtimeLogs, setRuntimeLogs] = useState<RuntimeLogEntry[]>([]);
@@ -572,8 +577,11 @@ export function GameScreen({
               </details>
             </section>
           </div>
+          {undoNotice && <p role="status" className="undo-feedback">{undoNotice}</p>}
           <div className="composer-action-row">
             <div className="composer-roll">
+              <TurnUndoControl repository={repository} state={state} draft={draft} busy={busy}
+                input={input} onInput={setInput} onUndone={onUndone} cancelMemory={memory.cancel} onNotice={setUndoNotice} />
               {manualProgress ? (
                 <button disabled={manualProgress.phase === 'saving'} onClick={cancel}>
                   {manualProgress.phase === 'saving' ? '正在保存…' : '取消生成'}
