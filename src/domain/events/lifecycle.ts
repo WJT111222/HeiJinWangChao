@@ -1,6 +1,6 @@
 import { requireData } from '../common';
 import type { GameState } from '../state';
-import { WorldEventSchema } from './schema';
+import { plannedEventSchema } from './schema';
 import type { WorldEvent, RetiredEvent } from './schema';
 
 type EventState = { events: Record<string,WorldEvent>; retiredEvents: Record<string,RetiredEvent> };
@@ -10,13 +10,16 @@ export function historicalEvent(state: EventState, id: string) {
   const event=state.events[id],record=state.retiredEvents[id];
   if(event)return event;
   if(!record?.detail)return undefined;
-  return {...record.detail,id:record.id,status:record.status,sourceTurnIds:record.sourceTurnIds,linkedTaskIds:record.linkedTaskIds};
+  return {...record.detail,id:record.id,status:record.status,sourceTurnIds:record.sourceTurnIds,linkedTaskIds:record.linkedTaskIds,
+    ...(record.eventKind ? {eventKind:record.eventKind,parentEventId:record.parentEventId,fixedEndAt:record.fixedEndAt} : {})};
 }
 const same = (a: unknown,b: unknown)=>JSON.stringify(a)===JSON.stringify(b);
 /** 新规划必须完整；历史旧记录只读容忍缺规划，不把条件当调度时间。 */
 export function validateEventWrite(old: WorldEvent | undefined, event: WorldEvent) {
-  if(!old) WorldEventSchema.parse(event);
+  if(!old) plannedEventSchema(event).parse(event);
   else {
+    requireData(old.eventKind===event.eventKind && old.parentEventId===event.parentEventId
+      && old.fixedEndAt===event.fixedEndAt, 'EVENT_CONTEXT','事件类型、父事件与固定终止时间不可改写');
     requireData(old.startAt===event.startAt
       && old.completionCondition===event.completionCondition, 'EVENT_CONTEXT','既有事件身份、起点和条件不可改写');
     requireData(!terminalEvent(old) || same(old,event),'TERMINAL_EVENT','终态事件不能再次改写');
@@ -28,6 +31,18 @@ export function validateEventWrite(old: WorldEvent | undefined, event: WorldEven
   if(event.estimatedEndAt)requireData(Date.parse(event.estimatedEndAt)>=Date.parse(event.startAt),'EVENT_TIME','预计终止早于开始');
 }
 export function validateEventLinks(state: EventState) {
+  for (const event of Object.values(state.events)) {
+    if (event.eventKind) plannedEventSchema(event).parse(event);
+    else requireData(!event.parentEventId && !event.fixedEndAt,'EVENT_CONTEXT','旧事件不能单独填写主子事件字段');
+  }
+  for (const event of [...Object.values(state.events), ...Object.values(state.retiredEvents)]) {
+    if (event.eventKind==='sub') {
+      const parent=event.parentEventId && state.events[event.parentEventId];
+      requireData(parent && parent.eventKind==='main' && parent.id!==event.id,'EVENT_PARENT','小事件必须关联现存主事件');
+      requireData(event.startAt && event.fixedEndAt && Date.parse(event.fixedEndAt)>=Date.parse(event.startAt)
+        && Date.parse(event.startAt)>=Date.parse(parent.startAt),'EVENT_TIME','小事件时间范围不合法');
+    } else requireData(!event.parentEventId && !event.fixedEndAt,'EVENT_CONTEXT','非小事件不能填写父事件或固定终止时间');
+  }
   const visiting=new Set<string>(),visited=new Set<string>();
   function visit(id:string) {
     requireData(!visiting.has(id),'EVENT_CYCLE','事件承接存在环'); if(visited.has(id))return;
@@ -41,6 +56,7 @@ export function validateEventLinks(state: EventState) {
       }
       visit(priorId);
     }
+    if(event.parentEventId) visit(event.parentEventId);
     visiting.delete(id);visited.add(id);
   }
   Object.keys(state.events).forEach(visit);Object.keys(state.retiredEvents).forEach(visit);
@@ -54,6 +70,7 @@ function hasReferences(state: GameState,event:WorldEvent) {
     || refs.some(r=>('linkedEventId' in r && r.linkedEventId===event.id)||[...r.prerequisites,...r.blockers].some(condition)
       || ('predecessorEventIds' in r && r.predecessorEventIds?.includes(event.id)))
     || Object.values(state.retiredEvents).some(r=>r.predecessorEventIds.includes(event.id))
+    || [...Object.values(state.events),...Object.values(state.retiredEvents)].some(e=>e.parentEventId===event.id)
     || [...memories,...Object.values(state.organizations)].some(m=>JSON.stringify(m).includes(`event:${event.id}`)||JSON.stringify(m).includes(`event-result:${event.id}`)||JSON.stringify(m).includes(`event-plan:${event.id}`)||JSON.stringify(m).includes(JSON.stringify(event.id)));
 }
 
@@ -68,5 +85,7 @@ export function deleteEvent(state: GameState,eventId:string,expectedStatus:'reso
   state.retiredEvents[eventId]={id:event.id,status:expectedStatus,retiredAt:state.worldClock,
     sourceTurnIds:[...new Set([...event.sourceTurnIds,turnId])],linkedTaskIds:event.linkedTaskIds,
     predecessorEventIds:event.predecessorEventIds??[]};
+  if(event.eventKind) Object.assign(state.retiredEvents[eventId],{eventKind:event.eventKind,startAt:event.startAt,
+    ...(event.parentEventId ? {parentEventId:event.parentEventId,fixedEndAt:event.fixedEndAt} : {})});
   delete state.events[eventId];
 }

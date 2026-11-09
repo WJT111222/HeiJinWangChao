@@ -1,7 +1,7 @@
 import { normalizeEventContinuation } from './worldEventContinuation';
 import { historicalEvent, terminalEvent } from '../../domain/events/lifecycle';
 import { worldEventSchedule } from '../../domain/events/schedule';
-import { WorldEventSchema } from '../../domain/events/schema';
+import { plannedEventSchema } from '../../domain/events/schema';
 import { historicalPerspective } from '../../domain/timePreflight';
 import { openingTimeBase } from '../../domain/openingTime';
 import { hasKnownPlayerConnection } from '../../domain/npc/contactReview';
@@ -138,7 +138,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         case 'SaveEvent': {
           const event = command.event, old = base.events[event.id];
           if (!old || !terminalEvent(event)) {
-            const checked = WorldEventSchema.safeParse(event);
+            const checked = plannedEventSchema(event).safeParse(event);
             if (!checked.success) throw worldValidationError(checked.error,{fieldPath:'event',worldRule:'event_plan'});
           }
           requireWorld(!event.estimatedEndAt || Date.parse(event.estimatedEndAt) >= Date.parse(event.startAt), 'invalid_output','event_time', 'event.estimatedEndAt');
@@ -204,8 +204,12 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     const after=projected.events[due.eventId] ?? projected.retiredEvents[due.eventId];
     requireWorld(after && (terminalEvent(after) || ('estimatedEndAt' in after && after.estimatedEndAt && Date.parse(after.estimatedEndAt)>Date.parse(base.worldClock)) || ('protagonistEntry' in after && ['pending','presented'].includes(after.protagonistEntry?.status??''))), 'invalid_output', 'due_event_unhandled');
   }
-  for(const command of result.eventCommands) if(command.type==='SaveEvent' && !terminalEvent(command.event))
-    requireWorld(['pending','presented'].includes(command.event.protagonistEntry?.status??'') || (command.event.estimatedEndAt && Date.parse(command.event.estimatedEndAt)>Date.parse(base.worldClock)));
+  for(const command of result.eventCommands) if(command.type==='SaveEvent' && !terminalEvent(command.event)) {
+    // V2 sub-events carry a fixed bound, never an estimated scheduling alias.
+    // Automatic dispatch remains the existing estimatedEndAt scheduler until batch two.
+    const end=command.event.eventKind==='sub' ? command.event.fixedEndAt : command.event.estimatedEndAt;
+    requireWorld(['pending','presented'].includes(command.event.protagonistEntry?.status??'') || (end && Date.parse(end)>Date.parse(base.worldClock)));
+  }
   // A world continuation is a necessary live successor, never an instant chain of finished events.
   for(const command of result.eventCommands) if(command.type==='SaveEvent' && terminalEvent(command.event) && command.event.continuation?.direction==='world') {
     const successors=result.eventCommands.filter(c=>c.type==='SaveEvent' && c.event.predecessorEventIds?.includes(command.event.id));
