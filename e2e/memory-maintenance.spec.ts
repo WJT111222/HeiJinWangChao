@@ -96,7 +96,7 @@ test('选择并恢复独立模型；手动整理、原文来源及真实memory�
   await settings.getByRole('button', { name: '关闭资料界面' }).click();
   await page.reload(); await openGameTools(page);
   const memory = await panel(page);
-  await expect(memory).toContainText('memory-summary');
+  await expect(memory).not.toContainText('记忆总结模型：');
   await expect(memory.getByRole('region', { name: '短期 → 中期', exact: true })).toContainText('当前合格未覆盖：31 条');
   await memory.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
   await expect(memory).toContainText('总结已保存，原始历史与来源完整保留。');
@@ -286,7 +286,7 @@ test('维护期间切档隔离旧任务，迟到结果不修改新档或原档�
   await goHome(page);
   await page.locator('.save-card').filter({ hasText: '第二人生' }).getByRole('button', { name: /读取存档/ }).click();
   const other = await panel(page);
-  await expect(other).toContainText('当前人生：第二人生');
+  await expect(other.getByRole('region', { name: '短期 → 中期', exact: true })).toContainText('当前合格未覆盖：31 条');
   await expect(other.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeEnabled();
   release?.(); hold = false;
   expect(requests).toBe(1); expect(await load(page)).toEqual(before);
