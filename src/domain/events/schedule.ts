@@ -13,6 +13,6 @@ export function worldEventSchedule(before:GameState,projected:GameState) {
       status:e.status,mode:e.continuation?.direction==='protagonist'?'protagonist_handoff':'offscreen_evolution',predecessorEventIds:e.predecessorEventIds??[],prerequisites:e.prerequisites,blockers:e.blockers})),
     pendingEntries:pendingEventEntries(projected),
     scenePending:due.filter(e=>!actionable(e)).map(e=>e.id),
-    unplannedLegacy:Object.values(projected.events).filter(e=>!terminalEvent(e)&&!e.estimatedEndAt).map(e=>e.id),
+    unplannedLegacy:Object.values(projected.events).filter(e=>!e.eventKind&&!terminalEvent(e)&&!e.estimatedEndAt).map(e=>e.id),
     policy:'到期只要求评估，不代表完成。按预计时间和来源依赖在同一次World请求处理；终结或给出理由延期到窗口之后。场内缺少实际事实时不代主角行动；旧缺规划记录不补造历史日期。无后续必要就结束清理，不强制承接。'};
 }

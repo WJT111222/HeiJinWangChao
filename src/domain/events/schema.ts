@@ -44,15 +44,30 @@ export const StoredWorldEventSchema = z.strictObject({
   backgroundText: TextSchema.optional(), goalText: TextSchema.optional(),
   outcome: z.enum(['success', 'failure', 'changed', 'cancelled']).optional(),
   predecessorEventIds: IdsSchema.optional(),
+  // Absent means an unchanged legacy V6 event, never an inferred main/sub event.
+  eventKind: z.enum(['main', 'sub']).optional(),
+  parentEventId: IdSchema.optional(), fixedEndAt: GameTimeSchema.optional(),
   protagonistKnowledge: ProtagonistEventKnowledgeSchema.optional(),
   continuation: EventContinuationSchema.optional(),
   protagonistEntry: ProtagonistEventEntrySchema.optional(),
 });
 // 新规划的权威写入契约；旧档/旧候选只用StoredWorldEventSchema读取，不伪造缺失规划。
-export const WorldEventSchema = StoredWorldEventSchema.extend({
-  estimatedEndAt: GameTimeSchema, backgroundText: TextSchema, goalText: TextSchema,
+const PlannedEventSchema = StoredWorldEventSchema.extend({
+  backgroundText: TextSchema, goalText: TextSchema,
   actorRefs: z.array(ActorRefSchema).min(1),
 });
+export const WorldEventSchema = z.union([
+  PlannedEventSchema.extend({ eventKind: z.undefined().optional(), parentEventId: z.never().optional(),
+    fixedEndAt: z.never().optional(), estimatedEndAt: GameTimeSchema }),
+  PlannedEventSchema.extend({ eventKind: z.literal('main'), parentEventId: z.never().optional(),
+    fixedEndAt: z.never().optional(), estimatedEndAt: GameTimeSchema }),
+  PlannedEventSchema.extend({ eventKind: z.literal('sub'), parentEventId: IdSchema,
+    fixedEndAt: GameTimeSchema, estimatedEndAt: z.never().optional() }),
+]);
+// Select the declared shape for precise field diagnostics; the union remains the public JSON contract.
+export function plannedEventSchema(event: Pick<WorldEvent,'eventKind'>) {
+  return WorldEventSchema.options[event.eventKind==='main' ? 1 : event.eventKind==='sub' ? 2 : 0];
+}
 export const SceneEventStateSchema = StoredWorldEventSchema.pick({status:true,resolvedAt:true,resolutionText:true,outcome:true,resultKnowledge:true}).extend({status:z.enum(['active','blocked','resolved','cancelled'])});
 const RetiredEventDetailSchema = StoredWorldEventSchema.pick({
   title: true, startAt: true, estimatedEndAt: true, resolvedAt: true, actorRefs: true,
@@ -62,6 +77,9 @@ const RetiredEventDetailSchema = StoredWorldEventSchema.pick({
 export const RetiredEventSchema = z.strictObject({
   id: IdSchema, status: z.enum(['resolved', 'cancelled']), retiredAt: GameTimeSchema,
   sourceTurnIds: IdsSchema, linkedTaskIds: IdsSchema, predecessorEventIds: IdsSchema,
+  // Keep explicit identity/ownership even when the full terminal record is cleaned up.
+  eventKind: z.enum(['main', 'sub']).optional(), parentEventId: IdSchema.optional(),
+  startAt: GameTimeSchema.optional(), fixedEndAt: GameTimeSchema.optional(),
   // 普通无引用事件只留轻量身份，必要因果/重大结果留紧凑成果，不保存背景/目标/阻碍全文。
   detail: RetiredEventDetailSchema.optional(),
 });
