@@ -299,7 +299,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 8546,
+      "characters": 8647,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -309,7 +309,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "6d63e3b79fecad6212648caa13bb8430ceef205d72e02a205d1060d171ad5ffb",
+      "contentSha256": "04f50276bd9a9d9cf9e722221be93895d8f6ae6eef80d9187eb871ee1a16327f",
       "placeholders": []
     },
     {
@@ -380,7 +380,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1535,
+      "characters": 1619,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -390,7 +390,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "b14b95418d3765b53c3ba8afa759522e91f3bc876336b917e59a0375e7cbff7e",
+      "contentSha256": "18bee2e9b702f2b38b722daa1b0c2c7913c27a16e3142dcaa12f73d69ffcd883",
       "placeholders": []
     },
     {
@@ -462,7 +462,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1640,
+      "characters": 1724,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -472,7 +472,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "78e240a044e7ee1d907596bfea19b02c36131c8b29c45c8b5a7326cce75c4243",
+      "contentSha256": "1ecb17f12ae4dd1b463cf64bceabc60f779149747a5d11452db1b9206073d98d",
       "placeholders": []
     },
     {
