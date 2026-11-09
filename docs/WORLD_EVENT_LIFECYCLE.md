@@ -8,7 +8,7 @@
 
 玩家可以只读浏览全部正式世界资料：NPC（含未联系/不在场人物）、组织、物品/资产、任务、事件/排程、各层记忆与人物总结。打开、搜索、翻页不调用模型、不修改GameState，也不将资料写入主角或其他NPC的知识。internal表示世界内部记录，不表示所属NPC知道。凭证、API Key、请求认证和系统内部数据不属于游戏变量。
 
-visibility及记忆权限字段为旧档兼容和角色认知继续保存；不把hidden改known，也不把npc_private/internal改player_known。它们不限制玩家面板或独立历史记录。Story仍独立使用主角已知投影；不得使用playerView作为模型上下文。World不再构造内容审批来源池，NPC认知按人物分组，Story仅使用主角已知投影。
+visibility及记忆权限字段为旧档兼容和角色认知继续保存；不把hidden改known，也不把npc_private/internal改player_known。它们不限制玩家面板或独立历史记录。三阶段读取完整正式世界上下文；可读不代表角色知晓或命令可写。不得使用playerView作为模型上下文。World不构造内容审批来源池，NPC认知按人物分组。
 
 已有known/partially_known事件的客观变化不要求主角先获知。程序保留主角原知情快照；World不通过正文、来源标签或证据关键词审批事件结果。模型根据上下文自行决定新记录的认知性质，按人物档案和可见性写入，不能自动传播私人资料。
 
@@ -56,7 +56,7 @@ Story 只对本幕实际处理的事件提交回执；未处理者保留 pending
 
 HistoryRecord 可含 occurredAt（准确发生时间）、occurredTimeText（年份/模糊时期/原始相对描述），均未知时均可省略。不以设备时间或记录时间替代未知发生日期。程序注入 recordedAt=当前游戏时钟与 sourceTurnId，不接受 AI 改写这两个字段。准确发生时间不能晚于记录时间；新的披露不倒退 worldClock。
 
-knowledgeKind 为 established/reported/suspected，由模型声明；程序不判定可信度。sourceRef 可记录正式人物/组织，sourceText 可记录未建档来源。可选 eventId 与 relatedEntryIds 只作引用，不要求事件重大或结案。按记录顺序展示，保留不同时间的新说法；只检查 ID 与明确重放，不做文字相似度去重。记录不会广播角色认知，World 上下文可查看历史，Story/Variables 不自动得到整个历史表。
+knowledgeKind 为 established/reported/suspected，由模型声明；程序不判定可信度。sourceRef 可记录正式人物/组织，sourceText 可记录未建档来源。可选 eventId 与 relatedEntryIds 只作引用，不要求事件重大或结案。普通史料按记录顺序展示，保留不同时间的新说法；只检查 ID 与明确重放，不做文字相似度去重。记录不会广播角色认知，World 上下文可查看历史，Story/Variables 通过完整上下文读取历史，不代表角色自动获得知识。
 
 ## 单一排程与事务
 
@@ -67,3 +67,7 @@ V6 新开局、候选、存档和重载采用同一结构。V1–V5 明确拒绝
 沿用 StageGuard、CAS、版本快照、projectTurn 和 SaveRepository.commitTurn；事件、独立历史、journal、短期记忆、命令和下一草稿原子提交，失败全回滚，回执重放不重复结算。模型请求数量、记忆维护及费用授权不改。正式 Commit 重新使用同一领域投影验证，不信任前端完成状态。
 
 程序验证结构、引用、时间与命令权限，不证明 AI 自然语言事实。必要引用检查可能保守保留记录；没有实现高级因果引用重写。Mock 不代表真实模型的因果推演已实测。后台资产等尚无合法命令的变化继续 unresolved，不用事件文字冒充财务更新。
+
+## 历史时间轴 V2
+
+普通 RecordHistory 行为不变。可选 `entry.chronicle` 将World认定的重大事实加入统一时间轴：世界类需声明影响范围、实际结束时间；关联正式事件时在整批最终投影检查终态，以实际开始时间定位。取消未开始计划只能记录真实撤销决定。主角类于重大事实发生时记录。旧史料不自动升级；同轮结案与历史命令的数组顺序不改变校验结果。详情与排序、V6兼容风险见 [HISTORY_TIMELINE_V2.md](HISTORY_TIMELINE_V2.md)。

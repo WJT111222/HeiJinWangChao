@@ -618,7 +618,7 @@ export function GameScreen({
         {worldNavigation}
       </Dialog>}
       {panel && (
-        <Dialog title={panel} className={panel === '物品栏' ? 'inventory-dialog' : ''} onClose={() => setPanel(undefined)}>
+        <Dialog title={panel} className={panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : ''} onClose={() => setPanel(undefined)}>
           {panel === '人物档案' ? (
             <>
             <dl className="profile-details">

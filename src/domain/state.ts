@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { validateChronicles } from './history/validation';
 import { pendingOpeningClock } from './openingTime';
 import { ActorRefSchema, IdsSchema, CountSchema, GameTimeSchema, IdSchema, TextSchema, entityTable } from './common';
 import { ProtagonistSchema } from './protagonist/schema';
@@ -173,15 +174,17 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     }
     if (task.linkedEventId) check(eventById(s, task.linkedEventId)?.linkedTaskIds.includes(task.id), '任务关联事件错误', path('linkedEventId'), 'task_event_link');
   }
+  const historyIds = new Set(s.timeline.map(entry => entry.id));
   for (const [index, entry] of s.timeline.entries()) {
     const path = (field: string) => ['timeline', index, field];
     check(Date.parse(entry.recordedAt) <= Date.parse(s.worldClock), '历史记录时间在未来', path('recordedAt'), 'event_time');
     if (entry.occurredAt) check(Date.parse(entry.occurredAt) <= Date.parse(entry.recordedAt), '历史发生时间晚于记录时间', path('occurredAt'), 'event_time');
     if (entry.eventId) check(Boolean(eventById(s, entry.eventId)), '历史关联事件不存在', path('eventId'), 'event_reference');
-    for (const id of entry.relatedEntryIds) check(id !== entry.id && s.timeline.some(other => other.id === id), '关联历史记录不存在或自引用', path('relatedEntryIds'), 'history_reference');
+    for (const id of entry.relatedEntryIds) check(id !== entry.id && historyIds.has(id), '关联历史记录不存在或自引用', path('relatedEntryIds'), 'history_reference');
     if (entry.sourceRef) actor(entry.sourceRef, true, path('sourceRef'));
     location(entry.locationId, path('locationId')); entry.actorRefs.forEach((ref, i) => actor(ref, true, [...path('actorRefs'), i]));
   }
+  validateChronicles(s, check);
   for (const event of Object.values(s.retiredEvents)) {
     check(Date.parse(event.retiredAt) <= Date.parse(s.worldClock), '事件清理时间在未来');
     if (event.detail) {
