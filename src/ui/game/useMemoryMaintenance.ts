@@ -18,7 +18,7 @@ export function useMemoryMaintenance(repository: SaveRepository, saveId: string,
   const [activeKind, setActiveKind] = useState<SummaryKind>();
   const [failures, setFailures] = useState<SummaryFailure[]>([]);
   const [dismissed, setDismissed] = useState<SummaryKind[]>([]);
-  const [notice, setNotice] = useState('后台总结就绪；模型请求可能产生第三方 API 费用。');
+  const [notice, setNotice] = useState('');
   const current = useRef({ settings, onSaved, onSettings }); current.current = { settings, onSaved, onSettings };
   const queue = useRef<MemorySummaryQueue | undefined>(undefined);
   useEffect(() => {
