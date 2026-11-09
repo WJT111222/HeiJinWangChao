@@ -71,3 +71,9 @@ V6 新开局、候选、存档和重载采用同一结构。V1–V5 明确拒绝
 ## 历史时间轴 V2
 
 普通 RecordHistory 行为不变。可选 `entry.chronicle` 将World认定的重大事实加入统一时间轴：世界类需声明影响范围、实际结束时间；关联正式事件时在整批最终投影检查终态，以实际开始时间定位。取消未开始计划只能记录真实撤销决定。主角类于重大事实发生时记录。旧史料不自动升级；同轮结案与历史命令的数组顺序不改变校验结果。详情与排序、V6兼容风险见 [HISTORY_TIMELINE_V2.md](HISTORY_TIMELINE_V2.md)。
+
+## 世界事件 V2 第一批数据增量
+
+可选 eventKind=main/sub、parentEventId、fixedEndAt 的正式协议、旧 V6 与撤回兼容策略见 [WORLD_EVENT_HIERARCHY_V2_BATCH1.md](WORLD_EVENT_HIERARCHY_V2_BATCH1.md)。未标记旧事件保留原身份；主事件使用预计结束时间，小事件使用独立固定结束时间，不能互作别名。本批只建立数据与引用约束，fixedEndAt 的自动到期结算留待第二批，不改现有 estimatedEndAt 调度。
+
+V2 临时成果保护：正式阶段摘要稳定持久化前，eventKind=sub 的终态事件不得通过 DeleteEvent 清理，唯一权威结案成果保留在完整事件内。旧事件清理行为不变。第二批须打通安全阶段摘要与主事件最终归档后的整个家族清理路径，保留必要引用，不能永久锁死事件家族。
