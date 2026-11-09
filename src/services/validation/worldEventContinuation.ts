@@ -11,7 +11,8 @@ export function normalizeEventContinuation(event: WorldEvent, old: WorldEvent | 
   if(plan?.direction==='protagonist' && plan.entry.locationId)
     requireWorld(base.locations[plan.entry.locationId], 'invalid_output','event_continuation');
   let expected=old?.protagonistEntry;
-  const due=!event.eventKind && event.estimatedEndAt && Date.parse(event.estimatedEndAt)<=Date.parse(base.worldClock);
+  const due=event.eventKind==='sub' ? !old && Date.parse(event.startAt)<=Date.parse(base.worldClock)
+    : !event.eventKind && event.estimatedEndAt && Date.parse(event.estimatedEndAt)<=Date.parse(base.worldClock);
   if(plan?.direction==='protagonist' && due && !terminalEvent(event)) {
     const renewed=expected && expected.status!=='pending' && expected.status!=='presented'
       && plan.entry.cue!==expected.cue;

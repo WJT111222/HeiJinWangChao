@@ -171,3 +171,32 @@ it('到期取消尚未呈现的入场可自然结束，不强造后继，不代�
   const next=apply(a);expect(next.events[old.id]).toBeUndefined();expect(next.retiredEvents[old.id].detail?.outcome).toBe('cancelled');
   expect(Object.values(next.events).some(e=>e.protagonistEntry)).toBe(false);expect(next.protagonist).toEqual(a.state.protagonist);
 });
+
+it('真实新建阶段排队入场→下一轮Story回执→文本Variables提前结案；纯场外无回执仍拒绝',async()=>{
+  const {createTurnDraft,rerollStory,TurnDraftSchema}=await import('../domain/drafts');
+  const {parseTextVariables}=await import('../services/validation/aiOutputs');
+  const {variableTextEnvelope}=await import('./fixtures/variableReply');
+  const a=stageContext('2027-01-02T00:00:00+08:00');
+  const invited={...subStage('early-invited'),sourceTurnIds:['stage-current'],continuation:{direction:'protagonist' as const,reason:'现在可以电话参与',entry:{channel:'电话',cue:'请核对本阶段材料'}}};
+  a.response.eventCommands=[stageCommand(invited)];const normalized=parse(a);
+  const ready=TurnDraftSchema.parse({...a.draft,world:{storyRevision:1,candidateRevision:1,requestRevision:0,basedOnVariableRevision:1,validation:'validated',result:normalized},stageStatus:{...a.draft.stageStatus,world:'ready'}});
+  const formal=settleTurn(a.state,ready,a.state.updatedAt),entry=formal.events[invited.id].protagonistEntry;
+  expect(entry?.status).toBe('pending');
+  const next=rerollStory(createTurnDraft('save-a',formal.revision,'early-next','regular','接听并结束本阶段'),{turnKind:'regular',narrative:'主角在通话中完成核对，结束本阶段。',summary:'阶段已由现场实际改变。',variableGuide:[{group:'event',observedFact:'阶段结束',textEvidence:'主角实际完成处理',eventInteraction:{eventId:invited.id,entryId:entry!.id,action:'left'}}]});
+  const time='2027-01-02T01:00:00+08:00';
+  const text=variableTextEnvelope(`<命令>set worldClock = ${JSON.stringify(time)}\nset events[${invited.id}].sceneState = {"status":"resolved","resolvedAt":"${time}","outcome":"changed","resolutionText":"主角在通话中实际结束了本阶段。"}</命令>`);
+  const vars=await parseTextVariables(text,formal,next);
+  const selected=TurnDraftSchema.parse({...next,variables:{storyRevision:1,candidateRevision:1,requestRevision:0,validation:'validated',result:vars},stageStatus:{...next.stageStatus,variables:'ready'}});
+  expect(projectTurn(formal,selected).events[invited.id].resolvedAt).toBe(time);
+  expect(()=>parseWorld(JSON.stringify({...a.response,eventCommands:[]}),formal,selected)).not.toThrow();
+  const noReceipt={...next,story:{...next.story!,variableGuide:[]}};
+  const illicit=variableTextEnvelope(`<命令>set worldClock = ${JSON.stringify(time)}\nset events[stage-one].sceneState = {"status":"resolved","resolvedAt":"${time}","outcome":"changed","resolutionText":"没有实际入场，试图修改场外阶段。"}</命令>`);
+  await expect(parseTextVariables(illicit,formal,noReceipt)).rejects.toThrow();
+});
+
+it('阶段已结束仍声明protagonist承接时，必须落地为新的待入场互动，不能丢失计划',()=>{
+  const a=stageContext(),source={...endStage(a.state.events['stage-one']),continuation:{direction:'protagonist' as const,reason:'后续需要玩家处理',entry:{channel:'来电',cue:'请讨论后续安排'}}};
+  a.response.eventCommands=[stageCommand(source)];expect(()=>parse(a)).toThrow();
+  const target={...event('new-interaction'),startAt:source.fixedEndAt!,estimatedEndAt:stageNow,sourceTurnIds:['stage-current'],predecessorEventIds:[source.id],continuation:source.continuation};
+  a.response.eventCommands.push(stageCommand(target));expect(apply(a).events[target.id].protagonistEntry?.status).toBe('pending');
+});

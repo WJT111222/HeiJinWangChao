@@ -219,6 +219,10 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     const end=command.event.eventKind==='sub' ? command.event.fixedEndAt : command.event.estimatedEndAt;
     requireWorld(['pending','presented'].includes(command.event.protagonistEntry?.status??'') || (end && Date.parse(end)>Date.parse(base.worldClock)));
   }
+  for(const command of result.eventCommands) if(command.type==='SaveEvent' && command.event.eventKind==='sub'
+    && terminalEvent(command.event) && command.event.continuation?.direction==='protagonist')
+    requireWorld(result.eventCommands.some(c=>c.type==='SaveEvent' && !c.event.eventKind && !terminalEvent(c.event)
+      && c.event.predecessorEventIds?.includes(command.event.id) && c.event.continuation?.direction==='protagonist'), 'invalid_output','event_continuation');
   // A world continuation is a necessary live successor, never an instant chain of finished events.
   for(const command of result.eventCommands) if(command.type==='SaveEvent' && terminalEvent(command.event) && command.event.continuation?.direction==='world') {
     const successors=result.eventCommands.filter(c=>c.type==='SaveEvent' && c.event.predecessorEventIds?.includes(command.event.id));
