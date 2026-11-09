@@ -84,6 +84,11 @@
         "baseCommit": "b06eccbd6e23e2b332d422a472d04fe5e04c3523",
         "notes": "PR85复审：澄清时间候选不以叙事阻碍或关联任务状态审批；对齐普通史料与可选重大纪事的归档、认知隔离规则。保留全部历史来源。",
         "sha256": "a5b718ec3f1d895ab77b2fdbb7a9cd07f51b075175fea80606112841adc46f36"
+      },
+      "worldEventStagesV2": {
+        "baseCommit": "ba661d7eb59a87cd353d686edb48ddd7a9444f9d",
+        "notes": "V2分类时间调度、固定阶段结算与唯一退役成果、长窗口自然承接及独立后续入场；保留旧事件语义和所有历史来源。",
+        "sha256": "937ffc5c490379f04d7fe591856cc348e46a92551516707679a9d988cb254535"
       }
     },
     "writing/natural_prose.md": {
@@ -467,6 +472,11 @@
         "baseCommit": "80c44e79e675c1648c5247197fa2b088fa01db7f",
         "note": "移除自然语言前提与阻碍的完成ID门槛，保留显式引用、时间和权限。",
         "sha256": "a70f28454ed89e19453b7510ebd8a76f37e272d4551e486d6c8a7b88e9132fa6"
+      },
+      "worldEventStagesV2": {
+        "baseCommit": "ba661d7eb59a87cd353d686edb48ddd7a9444f9d",
+        "notes": "V2分类时间调度、固定阶段结算与唯一退役成果、长窗口自然承接及独立后续入场；保留旧事件语义和所有历史来源。",
+        "sha256": "6d63e3b79fecad6212648caa13bb8430ceef205d72e02a205d1060d171ad5ffb"
       }
     },
     "stages/opening/variables.md": {
@@ -516,6 +526,11 @@
       "historyTimelineV2": {
         "notes": "历史时间轴V2：保留普通RecordHistory，新增可选chronicle、世界结案归档/主角事实归档、时间精度与同年冬季排序；玩家观察与角色认知分离，无新增请求。保留之前所有来源哈希。",
         "sha256": "2fb9a235f2ed37a15ab7ca62aa5a1db7918bc7da70efa740ea647625fe475d5a"
+      },
+      "worldEventStagesV2": {
+        "baseCommit": "ba661d7eb59a87cd353d686edb48ddd7a9444f9d",
+        "notes": "V2分类时间调度、固定阶段结算与唯一退役成果、长窗口自然承接及独立后续入场；保留旧事件语义和所有历史来源。",
+        "sha256": "b14b95418d3765b53c3ba8afa759522e91f3bc876336b917e59a0375e7cbff7e"
       }
     },
     "stages/regular/variables.md": {
@@ -557,6 +572,11 @@
       "historyTimelineV2": {
         "notes": "历史时间轴V2：保留普通RecordHistory，新增可选chronicle、世界结案归档/主角事实归档、时间精度与同年冬季排序；玩家观察与角色认知分离，无新增请求。保留之前所有来源哈希。",
         "sha256": "e5d40e80c9113fcbdf853763b12e1e2710aaa3a00d372c3fb47412c199e1d4df"
+      },
+      "worldEventStagesV2": {
+        "baseCommit": "ba661d7eb59a87cd353d686edb48ddd7a9444f9d",
+        "notes": "V2分类时间调度、固定阶段结算与唯一退役成果、长窗口自然承接及独立后续入场；保留旧事件语义和所有历史来源。",
+        "sha256": "78e240a044e7ee1d907596bfea19b02c36131c8b29c45c8b5a7326cce75c4243"
       }
     },
     "variableGroups/protagonist/init.md": {

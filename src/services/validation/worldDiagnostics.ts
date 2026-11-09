@@ -10,6 +10,7 @@ export const worldRuleNames = {
   actor_permission: '行动者或字段超出场外权限', event_plan: '事件规划字段不完整', event_time: '事件开始、预计或结案时间冲突',
   organization_initialization: 'World 新建组织的 relationHistory 必须为空，关系变化请使用独立关系命令',
   event_transition: '事件状态转换不合法', completion_conditions: '完成所需前置条件尚未满足',
+  stage_due:'固定到期阶段尚未结案',stage_result:'阶段结案成果不完整',stage_early_write:'未到期阶段不能例行改写',stage_entry:'阶段入场承接记录不合法',
   due_event_unhandled: '到期事件未结案或未重新安排预计时间',
   event_entry: '事件入场安排或正文处理回执不合法', event_continuation: '事件承接计划或调整依据不合法',
   domain_state: '世界投影的数据引用或状态不合法',
@@ -46,7 +47,7 @@ export function worldValidationError(error: unknown, scope: Scope = {}, raw?: un
   }
   const original = error instanceof AiError ? error : undefined;
   const rule: WorldRule = original?.details?.worldRule ?? (error instanceof DataError
-    ? /TIME|REVERSED/.test(error.code) ? 'event_time'
+    ? error.code==='STAGE_DUE'?'stage_due':error.code==='STAGE_RESULT'?'stage_result':error.code==='STAGE_EARLY_WRITE'?'stage_early_write':error.code==='STAGE_ENTRY'?'stage_entry':/TIME|REVERSED/.test(error.code) ? 'event_time'
       : ['DUPLICATE_ID','DUPLICATE_NPC','NPC_IDENTITY','AMBIGUOUS_NPC'].includes(error.code) ? 'entity_id'
       : ['TASK_PLAN','TASK_ACTOR','TERMINAL_TASK','DUPLICATE_HANDOFF','HANDOFF_IMMUTABLE'].includes(error.code) ? 'task_state'
       : ['TERMINAL_EVENT','EVENT_STATUS','EVENT_CONTEXT','EVENT_NOT_TERMINAL'].includes(error.code) ? 'event_transition' : 'domain_state'

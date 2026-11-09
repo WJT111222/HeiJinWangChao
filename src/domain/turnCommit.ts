@@ -1,3 +1,5 @@
+import { validateStageSettlement } from './events/stages';
+import { historicalPerspective } from './timePreflight';
 import { z } from 'zod';
 import { projectTurn, preparedVariableCommands } from './turnProjection';
 import { requireData } from './common';
@@ -71,6 +73,7 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
     '回合已有独立命令记录',
   );
   const projected = projectTurn(current, draft, [...draft.world!.result.worldCommands, ...draft.world!.result.taskCommands, ...draft.world!.result.eventCommands]);
+  if(!historicalPerspective(current,draft)) validateStageSettlement(projectTurn(current,draft),projected,draft.turnId);
   projected.updatedAt = now;
   delete projected.openingInitializationPending;
   requireData(draft.story!.summary.trim(), 'MISSING_SUMMARY', '正文缺少有效摘要，请重新生成正文后重试');
