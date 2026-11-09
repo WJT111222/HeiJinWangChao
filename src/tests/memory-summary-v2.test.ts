@@ -37,6 +37,8 @@ function setupRuntime(state = compressionState('short', 100), response = () => R
   const session = { ...storage, removeItem: (key: string) => storage.setItem(key, '') }, vault = new CredentialVault(session, session); vault.set(channel.id, 'mock-secret-v2');
   const transport = vi.fn<typeof fetch>(async () => response());
   const repository = { load: async () => structuredClone(current),
+    loadMemoryContext: async () => ({ state: structuredClone(current), lineage: { saveId: current.saveId, epoch: 'mock-epoch' }, paused: false }),
+    checkMemoryLineage: async () => {},
     saveMemoryCompression: async (batch: Parameters<typeof applyCompression>[1], result: Parameters<typeof applyCompression>[2]) => { current = applyCompression(current, batch, result); return current; },
     saveNpcSummary: async (batch: Parameters<typeof applyNpcSummary>[1], result: Parameters<typeof applyNpcSummary>[2]) => { current = applyNpcSummary(current, batch, result); return current; } };
   const runner = new MemoryMaintenance(repository, new AiClient(transport), async (_id, work) => work());
@@ -149,7 +151,7 @@ it('三类自动全部关闭时后台静默跳过，但仍可各自立即总结�
   state.npc['npc-a'] = npcMemoryState(20).npc['npc-a'];
   const settings = defaultSettings(), storage = store();
   for (const config of Object.values(settings.memory.summaries)) config.automatic = false;
-  const execute = vi.fn(async (_kind: string, _immediate: boolean, _npcId?: string) => {});
+  const execute = vi.fn<(kind: string, immediate: boolean, npcId?: string) => Promise<void>>(async () => {});
   const queue = new MemorySummaryQueue({ saveId: 'save-a', storage, settings: () => settings,
     load: async () => state, execute, changed: vi.fn() });
   await queue.wake();

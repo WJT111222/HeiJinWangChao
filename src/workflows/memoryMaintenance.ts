@@ -28,7 +28,7 @@ export const browserMemoryLock: MemoryLock = async (saveId, work) => {
 };
 export class MemoryMaintenance {
   private active?: { controller: AbortController; saving: boolean };
-  constructor(private repository: Pick<SaveRepository, 'load' | 'saveMemoryCompression' | 'saveNpcSummary'>,
+  constructor(private repository: Pick<SaveRepository, 'loadMemoryContext' | 'checkMemoryLineage' | 'saveMemoryCompression' | 'saveNpcSummary'>,
     private client = new AiClient(), private lock: MemoryLock = browserMemoryLock) {}
   cancel() {
     if (this.active?.saving) return false;
@@ -45,7 +45,10 @@ export class MemoryMaintenance {
     try {
       return await this.lock(input.saveId, async () => {
         check();
-        const state = await this.repository.load(input.saveId);
+        const { state, lineage, paused } = await this.repository.loadMemoryContext(input.saveId);
+        // Reload/timer wakes after undo never authorize a new paid request.
+        // Explicit manual summary is still allowed; Send resumes automatic scheduling.
+        if (paused && input.automatic) return undefined;
         const kind = input.kind ?? (input.task === 'npc' ? 'npc' : undefined);
         const config = SummaryConfigSchema.parse(frozenConfig ?? defaultSummaryConfig(kind ?? 'short'));
         if (input.immediate && kind === 'npc') requireData(Boolean(input.npcId), 'NPC_MEMORY_CONFLICT', '立即总结必须明确选择人物');
@@ -71,6 +74,8 @@ export class MemoryMaintenance {
         requireData(!keys.some((key) => [key, encodeURIComponent(key), JSON.stringify(key).slice(1, -1)].some((value) => JSON.stringify(messages).includes(value))),
           'MEMORY_PERMISSION', '输入包含凭证内容，未发送；原条目已保留');
         check();
+        await this.repository.checkMemoryLineage(lineage);
+        check();
         const attemptKey = `heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`;
         if (input.attempts) requireData(!input.automatic || !input.attempts.getItem(attemptKey),
           'MEMORY_PREVIOUS', '上次总结失败或中断，请明确重新生成或暂停本项');
@@ -92,14 +97,14 @@ export class MemoryMaintenance {
           const results = parseNpcSummary(response.text, batch, id);
           if ([secretFor(snapshot), ...keys].some((key) => results.some((result) => result.text.includes(key)))) throw new AiError('invalid_output');
           check(); attempt.saving = true; input.onPhase?.('saving');
-          const saved = await this.repository.saveNpcSummary(batch, results, attempt.controller.signal);
+          const saved = await this.repository.saveNpcSummary(batch, results, lineage, attempt.controller.signal);
           if (input.attempts) input.attempts.setItem(`heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`, '');
           return saved;
         }
         const result = parseCompression(response.text, batch, id);
         if ([secretFor(snapshot), ...keys].some((key) => result.text.includes(key))) throw new AiError('invalid_output');
         check(); attempt.saving = true; input.onPhase?.('saving');
-        const saved = await this.repository.saveMemoryCompression(batch, result, attempt.controller.signal);
+        const saved = await this.repository.saveMemoryCompression(batch, result, lineage, attempt.controller.signal);
         if (input.attempts) input.attempts.setItem(`heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`, '');
         return saved;
       });
