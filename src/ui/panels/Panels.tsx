@@ -4,6 +4,7 @@ import { Detail, Empty } from '../Dialog';
 import { dateTime, orgLabels } from './playerView';
 import type { PlayerView } from './playerView';
 import { InventoryPanel } from './InventoryPanel';
+import { HistoryPanel } from './HistoryPanel';
 import { MemoryPanel } from './MemoryPanel';
 import { WorldRecord, RecordList } from './WorldRecord';
 import { MemoryRecord } from './MemoryRecord';
@@ -203,29 +204,6 @@ export function Panels({ name, view }: { name: PanelName; view: PlayerView }) {
       <details><summary>任务进展</summary><RecordList label="世界任务" entries={view.tasks} render={task => <article className="card entry"><h3>{task.goal}</h3><p>{task.status}</p><WorldRecord value={task} /></article>} /></details>
       <details><summary>已清理事件的保留记录</summary><RecordList label="事件保留记录" entries={view.retiredEvents} render={event => <article className="card entry"><h3>{event.detail?.title ?? event.id}</h3><WorldRecord value={event} /></article>} /></details>
     </>;
-  if (name === '历史时间轴')
-    return (
-      <>
-        {view.timeline.length ? (
-          <ol className="timeline">
-            {view.timeline.map((entry) => (
-              <li key={entry.id}>
-                <time>{entry.occurredAt ? dateTime(entry.occurredAt) : entry.occurredTimeText ?? '发生时间未知'}</time>
-                <h3>{entry.title}</h3>
-                <p>{entry.summary}</p>
-                <span className="tag">{{ established: '剧情事实', reported: '人物陈述', suspected: '推测 / 传闻' }[entry.knowledgeKind]}</span>
-                {entry.sourceRef && <p>记录来源：{entry.sourceRef.kind === 'protagonist' ? view.protagonist.name
-                  : entry.sourceRef.kind === 'organization' ? view.organizations.find(org => org.id === entry.sourceRef!.id)?.name
-                    : view.npc.find(person => person.id === entry.sourceRef!.id)?.name ?? view.retiredNpcs.find(person => person.id === entry.sourceRef!.id)?.name}</p>}
-                {entry.sourceText && <p>来源说明：{entry.sourceText}</p>}
-                <small>记录于 {dateTime(entry.recordedAt)}</small>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <Empty>尚无历史记录。</Empty>
-        )}
-      </>
-    );
+  if (name === '历史时间轴') return <HistoryPanel view={view} />;
   return <MemoryPanel view={view} />;
 }

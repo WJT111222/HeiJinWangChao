@@ -299,7 +299,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 4640,
+      "characters": 7288,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -309,7 +309,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "3a6016d5946f3f804a1dd0102b63c90c5060353ac67406745b6608b4adb64dc9",
+      "contentSha256": "205ea8e895c735bf8e9e05eb76963f9f7537d419db4a4d7594db78e795fb7b8f",
       "placeholders": []
     },
     {
@@ -380,7 +380,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1131,
+      "characters": 1304,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -390,7 +390,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "cf742c2774ccb5412c887a622f536e669355bd5b5c00d068ebe30ed8fa7d9690",
+      "contentSha256": "2fb9a235f2ed37a15ab7ca62aa5a1db7918bc7da70efa740ea647625fe475d5a",
       "placeholders": []
     },
     {
@@ -462,7 +462,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1236,
+      "characters": 1409,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -472,7 +472,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "41509a44dee98e9e6e26ff098c545c9ffb25f6b0f0f8b72aad56a90fac102388",
+      "contentSha256": "e5d40e80c9113fcbdf853763b12e1e2710aaa3a00d372c3fb47412c199e1d4df",
       "placeholders": []
     },
     {
@@ -1031,7 +1031,7 @@
       ],
       "toggle": null,
       "domain": "org_government",
-      "characters": 350,
+      "characters": 448,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "relevant-domain",
@@ -1041,7 +1041,7 @@
       "orderGroup": "variable_group",
       "reorderable": false,
       "category": "variable_group",
-      "contentSha256": "5aaf1ec5718f359074d24a2036e046a0ce9fc68de4a10388e062c7cf1079be8a",
+      "contentSha256": "415a155ea13178a8229b51052bb104bcd277a6cf399c5301db886b5499f30cb2",
       "placeholders": []
     },
     {
@@ -1195,7 +1195,7 @@
       ],
       "toggle": null,
       "domain": "org_business",
-      "characters": 328,
+      "characters": 429,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "relevant-domain",
@@ -1205,7 +1205,7 @@
       "orderGroup": "variable_group",
       "reorderable": false,
       "category": "variable_group",
-      "contentSha256": "329a7dd071af7aad7c87e9ad523cf8cf80eb45e41351ff1bc025a347e8001244",
+      "contentSha256": "9b83cae2c5ccbaa2295c98c84efd510f57f22a3c60c826cf8fc59d560c603571",
       "placeholders": []
     },
     {
