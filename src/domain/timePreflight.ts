@@ -1,4 +1,3 @@
-import { conditionEnded } from './events/schedule';
 import { z } from 'zod';
 import { openingTimeSelection } from './openingTime';
 import { GameTimeSchema, requireData } from './common';
@@ -85,7 +84,6 @@ function timeIntent(clock: string, action: string): Intent {
   return unknown;
 }
 export interface TimeCandidate { id: string; at: string; title: string; channel: 'door' | 'communication' | 'obstruction' | 'appointment'; conditional: true }
-const completed = conditionEnded;
 export function timePreflight(state: GameState, action: string) {
   requireData(!state.openingTimePending, 'OPENING_TIME', '尚未确定开局时间，不能执行普通时间预检');
   const intent = timeIntent(state.worldClock, action), end = intent.targetAt ?? intent.endWindow?.to;
@@ -93,10 +91,9 @@ export function timePreflight(state: GameState, action: string) {
   if (end) for (const event of Object.values(state.events)) {
     // sceneState被观察不代表World的其他新规划已告知；不把旧known当作新排程的公开依据。
     if (event.visibility !== 'known' || event.protagonistKnowledge || !['scheduled', 'active'].includes(event.status) ||
-      Date.parse(event.startAt) > Date.parse(end) ||
-      ![...event.prerequisites, ...event.blockers].every((ref) => completed(state, ref))) continue;
-    if (event.linkedTaskIds.some((id) => { const task = state.tasks[id]; return !task || ['blocked', 'cancelled'].includes(task.status) ||
-      Date.parse(task.startAt) > Date.parse(event.startAt) || ![...task.prerequisites, ...task.blockers].every((ref) => completed(state, ref)); })) continue;
+      Date.parse(event.startAt) > Date.parse(end)) continue;
+    // A linked task is an association, not permission for an event to happen.
+    // Narrative obstacles remain available to the model and never decide this candidate list.
     const triggerAt = Date.parse(event.startAt) >= Date.parse(state.worldClock) ? event.startAt
       : event.estimatedEndAt && Date.parse(event.estimatedEndAt) >= Date.parse(state.worldClock) && Date.parse(event.estimatedEndAt) <= Date.parse(end) ? event.estimatedEndAt : undefined;
     if (!triggerAt) continue;

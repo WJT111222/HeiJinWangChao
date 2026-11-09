@@ -79,16 +79,20 @@ describe('自主终结与有依据的同窗口交接', () => {
     result.taskCommands.push(receiveTask({ kind: 'npc', id: 'npc-a' }));
     expect(() => parse(state, result)).toThrow();
   });
-  it('到期、没有实际结果和存在未满足条件都不能冒充成功', () => {
-    for (const fault of ['no-result', 'unmet', 'future', 'plan'] as const) {
+  it('没有实际结果、未来时间和计划状态不能冒充完成', () => {
+    for (const fault of ['no-result', 'future', 'plan'] as const) {
       const state = handoffState(), result = worldResult();
       const c = finishTask(state);
       if (fault === 'no-result') delete c.task.resolution;
-      if (fault === 'unmet') state.tasks.work.blockers = ['未获许可'];
       if (fault === 'future') { state.tasks.work.startAt = '2026-10-18T08:20:00+08:00'; c.task.startAt = state.tasks.work.startAt; }
       if (fault === 'plan') c.task.status = 'planned';
       result.taskCommands = [c]; expect(() => parse(state, result)).toThrow();
     }
+  });
+  it('已有文字阻碍可保留并由World决定结束，不要求先解除', () => {
+    const state = handoffState(); state.tasks.work.blockers = ['未获许可'];
+    const result = worldResult(); result.taskCommands = [finishTask(state)];
+    expect(project(state, result).tasks.work).toMatchObject({status:'completed',blockers:['未获许可']});
   });
   it('实际失败终止保留原因和结果，不依赖指定完成/终止关键词', () => {
     const state = handoffState(), result = worldResult(); result.taskCommands = [finishTask(state, 'work', actionTime, 'cancelled')];

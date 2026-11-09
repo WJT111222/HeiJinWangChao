@@ -13,7 +13,7 @@ SaveEvent可以记录场内或场外事件，actorRefs只记录参与身份，�
 visibleHooks是内部候选，revealAfter不等于公开授权，不自动注入主角正文或人物认知。
 
 ## 时间、任务与成果
-使用TIME_WINDOW和唯一worldClock，不读取现实日期、不独立推进时钟。计划安排可以超出当前时间；实际行动与结案不可晚于候选世界时钟。dueAt和estimatedEndAt只是估计，不能凭到期自动成功。前置条件与阻碍的ID必须真实，成功推进需其结构化状态已解除。
+使用TIME_WINDOW和唯一worldClock，不读取现实日期、不独立推进时钟。计划安排可以超出当前时间；实际行动与结案不可晚于候选世界时钟。dueAt和estimatedEndAt只是估计，不能凭到期自动成功。prerequisites和blockers是剧情说明字符串数组，不是必须完成的实体ID或程序许可。World可保留未解除的阻碍，同时推进事件、决定成功或失败、取消或延期；不必清空数组或强制改为blocked。显式关联使用linkedTaskIds/linkedEventId、predecessorEventIds、handoff.fromTaskId，仍须真实引用及合法时间。
 NPC与组织可同时拥有多个planned/active/blocked任务，不按数量或时间区间重叠拒绝；真实交接的后继开始时间不早于前序resolution.at。任务actorRef、goal、startAt及completionCondition不可改写，终态不能再次执行。
 任务直接提供resolution={at,outcome,result,reason,sourceTurnId,resultKnowledge?}。completed对应success；失败终止或取消使用cancelled，outcome为failure或cancelled；暂时受阻使用blocked，不填写终态成果。result保留自然结果说明，resultKnowledge可区分facts/reported/suspected，但不是程序审批许可。
 需要交接才提供handoff={fromTaskId,at,channel,content,necessity,knowledgeKind}。fromTaskId须指向已结束且有resolution的任务；resolution.at<=handoff.at<=新任务startAt，handoff.at在当前窗口内。content允许合理概括，不要求摘抄或summaryBasis。仅有真实后续职责才创建新任务，不强制接班或循环交接。
@@ -21,7 +21,7 @@ NPC与组织可同时拥有多个planned/active/blocked任务，不按数量或�
 ## 事件生命周期
 新事件必须包含startAt、estimatedEndAt、backgroundText、goalText、actorRefs、状态和所需引用。completionCondition不能替代预计时间。旧缺规划事件可以终结且不补造过去日期；继续调度时补齐真实规划。
 读取EVENT_SCHEDULE，按预计时间及结构化依赖处理本轮到期和积压事件。到期需要依据背景与条件重新推演；可成功、失败、取消、发生变化、延期或自然承接。active/blocked若继续则安排晚于窗口结束的下一预计时间；等待主角入场的事件可保持pending/presented。
-scheduled/active/blocked不得预存resolvedAt、resolutionText、resultKnowledge。resolved必须记录实际resolvedAt和非空resolutionText，outcome可success/failure/changed。失败不要求成功条件已经满足。cancelled可在未来安排开始前发生，不强制填写resolved字段。
+scheduled/active/blocked不得预存resolvedAt、resolutionText、resultKnowledge。resolved必须记录实际resolvedAt和非空resolutionText，outcome可success/failure/changed。cancelled可在未来安排开始前发生，不强制填写resolved字段。
 任务—事件允许单侧关联：task.linkedEventId或event.linkedTaskIds填写一侧即可，程序补齐反向ID；两侧都填须一致，同一任务只能关联一个事件。被引用对象须已存在或本批创建；不能借补齐改写既有终态记录，不推断未提供的关系。已有地点、人物、组织、任务和事件复用稳定ID，不重复创建。
 同一批每个任务或事件只保存一个最终对象。predecessorEventIds引用已结束且实际结案时间不晚于新事件开始的前序，依赖不得成环。计划事件只输出SaveEvent，程序从正式事件状态派生未来调度，不要求重复镜像。事件当前actorRefs可新增或移除有效参与者，保留稳定ID和startAt；参与身份不等于行动授权。
 

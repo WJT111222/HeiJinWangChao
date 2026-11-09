@@ -457,6 +457,11 @@
       "historyTimelineV2": {
         "notes": "历史时间轴V2：保留普通RecordHistory，新增可选chronicle、世界结案归档/主角事实归档、时间精度与同年冬季排序；玩家观察与角色认知分离，无新增请求。保留之前所有来源哈希。",
         "sha256": "205ea8e895c735bf8e9e05eb76963f9f7537d419db4a4d7594db78e795fb7b8f"
+      },
+      "worldNarrativeConditions": {
+        "baseCommit": "80c44e79e675c1648c5247197fa2b088fa01db7f",
+        "note": "移除自然语言前提与阻碍的完成ID门槛，保留显式引用、时间和权限。",
+        "sha256": "a70f28454ed89e19453b7510ebd8a76f37e272d4551e486d6c8a7b88e9132fa6"
       }
     },
     "stages/opening/variables.md": {

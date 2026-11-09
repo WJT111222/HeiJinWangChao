@@ -3,11 +3,10 @@ import type { GameState } from '../../domain/state';
 import type { TurnDraft } from '../../domain/drafts';
 import { fingerprint } from '../../domain/commands';
 import { terminalEvent } from '../../domain/events/lifecycle';
-import { conditionEnded } from '../../domain/events/schedule';
 import { requireWorld } from './worldDiagnostics';
 
 export function normalizeEventContinuation(event: WorldEvent, old: WorldEvent | undefined,
-  base: GameState, causal: GameState, draft: TurnDraft) {
+  base: GameState, draft: TurnDraft) {
   const plan=event.continuation;
   if(plan?.direction==='protagonist' && plan.entry.locationId)
     requireWorld(base.locations[plan.entry.locationId], 'invalid_output','event_continuation');
@@ -17,7 +16,6 @@ export function normalizeEventContinuation(event: WorldEvent, old: WorldEvent | 
     const renewed=expected && expected.status!=='pending' && expected.status!=='presented'
       && plan.entry.cue!==expected.cue;
     if(!expected || renewed) {
-      requireWorld([...event.prerequisites,...event.blockers].every(ref=>conditionEnded(causal,ref,base.worldClock)), 'invalid_output','completion_conditions');
       expected={id:`entry:${draft.baseSaveRevision}:${draft.storyRevision}`,sourceTurnId:draft.turnId,queuedAt:base.worldClock,
         ...plan.entry,status:'pending'};
     }

@@ -180,7 +180,7 @@ describe('动态世界权限与同基线投影', () => {
 });
 
 describe('世界任务与事件的状态、终态、来源和依赖', () => {
-  it('合法自主任务完成有具体结果、时间和来源，阻碍未消除时拒绝', () => {
+  it('合法自主任务完成有具体结果、时间和来源，不因旧阻碍拒绝', () => {
     const t = backgroundTask(),
       state = withTask(t),
       r = worldResult();
@@ -195,9 +195,9 @@ describe('世界任务与事件的状态、终态、来源和依赖', () => {
     ];
     expect(parse(r, state)).toBeDefined();
     state.tasks['task-a'].blockers = ['尚未取得钥匙'];
-    expect(() => parse(r, state)).toThrow();
+    expect(parse(r, state)).toBeDefined();
   });
-  it.each(['future', 'blocker', 'actor', 'goal', 'terminal'])(
+  it.each(['future', 'actor', 'goal', 'terminal'])(
     '拒绝 %s 任务伪完成或重写',
     (scenario) => {
       let t = backgroundTask();
@@ -205,7 +205,6 @@ describe('世界任务与事件的状态、终态、来源和依赖', () => {
       let p = proof({ outcome: '器材逐件核对归位并记录核对清单。' });
       if (scenario === 'future')
         t = { ...t, startAt: '2026-10-19T08:00:00+08:00', dueAt: '2026-10-19T09:00:00+08:00' };
-      if (scenario === 'blocker') t = { ...t, blockers: ['门锁未打开'] };
       if (scenario === 'actor') t = { ...t, actorRef: { kind: 'protagonist', id: 'hero' } };
       if (scenario === 'terminal') t = { ...t, status: 'cancelled' };
       const state = withTask(t);
@@ -226,7 +225,12 @@ describe('世界任务与事件的状态、终态、来源和依赖', () => {
       expect(() => parse(r, state)).toThrow();
     },
   );
-  it('已解决依赖可以推进，未知/文本阻碍不能自证消除；相同任务不能重复建档', () => {
+  it('原任务和结案均保留文本阻碍，不阻断完成', () => {
+    const t = {...backgroundTask(), blockers:['门锁未打开']}, state=withTask(t), r=worldResult();
+    r.taskCommands=[saveTask({...t,status:'completed'},proof({outcome:'本次工作结束，困难记录保留。'}))];
+    expect(parse(r,state).taskCommands[0]).toMatchObject({task:{status:'completed',blockers:t.blockers}});
+  });
+  it('ID样式的文本条件不阻断推进；相同任务仍不能重复建档', () => {
     const t = backgroundTask(),
       state = withTask({ ...t, blockers: ['task:done'] });
     state.tasks.done = { ...t, id: 'done', goal: '领取钥匙', status: 'completed' };

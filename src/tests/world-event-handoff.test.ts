@@ -168,10 +168,15 @@ describe('world continuation, closure and handoff protections',()=>{
   it('world continuation cannot silently omit its planned successor',()=>{
     const a=finishing('world');expect(()=>parseWorld(JSON.stringify(a.response),a.state,a.draft)).toThrow(expect.objectContaining({details:expect.objectContaining({worldRule:'event_continuation'})}));
   });
-  it.each(['completed-entry','invented-entry','before-deadline','blocked'] as const)('rejects %s entry metadata or conditions',kind=>{
+  it('unresolved narrative obstacles do not prevent pending entry',()=>{
+    const a=due(),response=queue(a),c=response.eventCommands[0];
+    a.state.events.review.blockers=['答复尚未到达'];c.event.blockers=['答复尚未到达'];
+    const result=parseWorld(JSON.stringify(response),a.state,a.draft);
+    expect(result.eventCommands[0]).toMatchObject({event:{blockers:['答复尚未到达'],protagonistEntry:{status:'pending'}}});
+  });
+  it.each(['completed-entry','invented-entry','before-deadline'] as const)('rejects %s entry metadata',kind=>{
     const a=due(),response=queue(a),c=response.eventCommands[0];
     if(kind==='before-deadline')Object.assign(c.event,{protagonistEntry:{id:`entry:0:1`,sourceTurnId:a.draft.turnId,queuedAt:'2026-10-18T08:03:00+08:00',channel:'电话',cue:'提前入场',status:'pending'}});
-    if(kind==='blocked'){a.state.events.review.blockers=['missing'];c.event.blockers=['missing'];}
     if(kind==='invented-entry'||kind==='completed-entry')Object.assign(c.event,{protagonistEntry:{id:'fake',sourceTurnId:a.draft.turnId,queuedAt:'2026-10-18T08:05:00+08:00',channel:'电话',cue:'伪造内容',status:kind==='completed-entry'?'declined':'pending'}});
     expect(()=>parseWorld(JSON.stringify(response),a.state,a.draft)).toThrow();
   });
