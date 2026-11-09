@@ -62,9 +62,11 @@ test('首次访问按序展示完整内容；关闭后导航不重播，未勾�
   await expect(disclaimer(page).locator('label')).toHaveText('今日不再弹出');
   await expect(announcement(page)).toHaveCount(0);
   await disclaimer(page).getByRole('button', { name: '关闭免责声明' }).click();
-  await expect(announcement(page).getByRole('heading', { name: '《黑金王朝》正式进入 Demo 试玩阶段' })).toBeVisible();
+  await expect(announcement(page).getByRole('heading', { name: '《黑金王朝》0.8 开发试玩进展 · 记忆系统更新' })).toBeVisible();
   await expect(announcement(page).getByRole('listitem')).toHaveCount(5);
-  await expect(announcement(page).getByText('王朝尚在建设，命运已经开始。感谢你成为这片世界最早的探索者。')).toBeVisible();
+  await expect(announcement(page).getByText('记忆总结 V2 已支持短期转中期、中期转长期和 NPC 个人经历总结；已提交的历史原文及来源仍然保留。')).toBeVisible();
+  await expect(announcement(page).getByText('「设置 → 记忆」已整合即时记忆窗口与三类总结配置，支持独立调整自动开关、触发阈值、批次数量和提示词。')).toBeVisible();
+  await expect(announcement(page).getByText('王朝还在建设，城市已经有了自己的生活。感谢你在这里留下每一段经历。')).toBeVisible();
   await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
   await page.getByRole('button', { name: /开始新游戏/ }).click();
   await expect(page.getByLabel('姓名', { exact: true })).toBeVisible();
