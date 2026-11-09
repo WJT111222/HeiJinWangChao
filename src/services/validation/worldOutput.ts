@@ -215,7 +215,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   if(draft.variables?.validation==='validated' && !historicalPerspective(state,draft)) validateStageSettlement(base,projected,draft.turnId);
   for(const command of result.eventCommands) if(command.type==='SaveEvent' && !terminalEvent(command.event) && command.event.eventKind!=='main') {
     // V2 sub-events carry a fixed bound, never an estimated scheduling alias.
-    // Automatic dispatch remains the existing estimatedEndAt scheduler until batch two.
+    // Sub-event dispatch uses fixedEndAt; untyped legacy events retain estimatedEndAt.
     const end=command.event.eventKind==='sub' ? command.event.fixedEndAt : command.event.estimatedEndAt;
     requireWorld(['pending','presented'].includes(command.event.protagonistEntry?.status??'') || (end && Date.parse(end)>Date.parse(base.worldClock)));
   }
@@ -223,10 +223,10 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     && terminalEvent(command.event) && command.event.continuation?.direction==='protagonist')
     requireWorld(result.eventCommands.some(c=>c.type==='SaveEvent' && !c.event.eventKind && !terminalEvent(c.event)
       && c.event.predecessorEventIds?.includes(command.event.id) && c.event.continuation?.direction==='protagonist'), 'invalid_output','event_continuation');
-  // A world continuation is a necessary live successor, never an instant chain of finished events.
+  // Legacy continuations need a live successor; fixed stages can finish a chain in one window.
   for(const command of result.eventCommands) if(command.type==='SaveEvent' && terminalEvent(command.event) && command.event.continuation?.direction==='world') {
     const successors=result.eventCommands.filter(c=>c.type==='SaveEvent' && c.event.predecessorEventIds?.includes(command.event.id));
-    requireWorld(successors.length>0 && successors.every(c=>c.type==='SaveEvent' && (command.event.eventKind==='sub' ? c.event.eventKind==='sub' && c.event.parentEventId===command.event.parentEventId : !terminalEvent(c.event))), 'invalid_output','event_continuation');
+    requireWorld(successors.length>0 && (command.event.eventKind==='sub' || successors.every(c=>c.type==='SaveEvent' && !terminalEvent(c.event))), 'invalid_output','event_continuation');
   }
   return result;
 }

@@ -88,7 +88,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
             '任务可通过handoff={fromTaskId,at,channel,content,necessity,knowledgeKind}承接终态任务成果。content可以概括；引用真实前序ID且时间有序，不要求摘抄结果或额外来源令牌。无人需要承接则不创建新任务。',
             'NPC和组织均可有多个planned/active/blocked任务，不按数量或区间重叠拒绝。任务行动者、目标、开始时间和完成条件不可改写；终态不可重新执行；交接仍须前序成果和时间合法。',
             '事件predecessorEventIds引用实际已结束且时间不晚于新事件开始的前序。DeleteEvent清理无未处理入场、无必要任务/因果/知识/历史引用的终态，V2终态安全退役保留detail中的阶段经过、实际结果、参与者、时间和认知分类；父子与前序可引用退役身份。旧事件保留轻量身份；不按impact判断清理或历史资格。',
-            'continuation指定protagonist/world/end及reason。protagonist提供entry的channel/cue；旧事件到期、新sub开始后程序排队；Story通过结构化eventInteraction回执回应，合法现场结果可以提前结束sub。sub的world终态需要同父真实后继（可同窗已结案）；旧world终态需要同批非终态后继；end不强制续篇。protagonistEntry与protagonistKnowledge为程序元数据，不得伪造。',
+            'continuation指定protagonist/world/end及reason。protagonist提供entry的channel/cue；旧事件到期、新sub开始后程序排队；Story通过结构化eventInteraction回执回应，合法现场结果可以提前结束sub。sub的world终态需要真实显式后继（可同窗已结案、可并行或跨父关联）；旧world终态需要同批非终态后继；end不强制续篇。protagonistEntry与protagonistKnowledge为程序元数据，不得伪造。',
             '事件客观进展不自动刷新主角旧知情快照。NPC_KNOWLEDGE每项仅属于ownerNpcId；亲历、转述、推测由AI区分，不能把其他人物秘密当作本人已知或把猜测当作已确认。visibleHooks仅内部候选，不公开角色知识。',
             'RetireNpc只适用无当前职责或资产引用的离场非联系人；联系人、同伴永久保护。旧档contactReviewNpcIds在存在历史联系时继续保护，当前没有可信player_confirmed入口，不能从玩家输入子串或AI正文取得删除授权。retainMemoryIds引用真实原始记忆ID。',
             '不支持资金、物品或组织经营字段的后台变更；写入unresolved，不以事件说明假装正式资产已经改变。',

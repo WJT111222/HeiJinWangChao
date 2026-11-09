@@ -1,5 +1,7 @@
 # 世界事件 V2 第一批：主子事件数据基础
 
+> 本文保留第一批实施及验收记录。第二批已接入固定阶段调度及唯一退役成果，替代下文的临时禁止清理和“尚未接入”边界；现行行为见 [WORLD_EVENT_STAGES_V2_BATCH2.md](WORLD_EVENT_STAGES_V2_BATCH2.md)。
+
 基线：远端 main `4e5057653e6b7c2d12205e155b85c3a2823ae38e`（已合并 PR #85）。工作分支 `feat/world-event-hierarchy-v2`。本批只建立数据身份、时间语义与正式引用；不增加模型请求、语义审批、UI 或到期结算策略。
 
 ## 协议

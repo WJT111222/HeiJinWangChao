@@ -476,7 +476,7 @@
       "worldEventStagesV2": {
         "baseCommit": "ba661d7eb59a87cd353d686edb48ddd7a9444f9d",
         "notes": "V2分类时间调度、固定阶段结算与唯一退役成果、长窗口自然承接及独立后续入场；保留旧事件语义和所有历史来源。",
-        "sha256": "04f50276bd9a9d9cf9e722221be93895d8f6ae6eef80d9187eb871ee1a16327f"
+        "sha256": "b511b105accacb249410796293ae5488156673b9eefd30de2eddce90cce387ad"
       }
     },
     "stages/opening/variables.md": {

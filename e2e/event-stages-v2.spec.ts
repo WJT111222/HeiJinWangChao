@@ -1,9 +1,9 @@
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { openGameTools } from './helpers/gameLayout';
-async function seed(page:Page,clock?:string) {
+async function seed(page:Page,clock?:string,unseen=false) {
   await page.goto('/');
-  const response=await page.evaluate(async(clock)=>{
+  const response=await page.evaluate(async({clock,unseen})=>{
     const paths=['/src/services/storage/saveRepository.ts','/src/tests/fixtures/eventStages.ts','/src/domain/drafts.ts','/src/services/ai/configuration.ts','/src/services/ai/credentials.ts','/src/ui/settings/model.ts'];
     const [{SaveRepository},{stageContext,endStage,stageCommand},{createTurnDraft,rerollStory},{defaultAiConfig,newChannel,saveAiConfig},{CredentialVault},{defaultSettings,settingsKey}]=await Promise.all(paths.map(path=>import(path)));
     const settings=defaultSettings();settings.prompts.minNarrativeChars=1;settings.prompts.actionOptions=false;
@@ -13,9 +13,10 @@ async function seed(page:Page,clock?:string) {
     config.channels=[channel];config.routes.story={channelId:channel.id,modelId:'story'};config.routes.variables={mode:'independent',channelId:channel.id,modelId:'variables'};config.routes.world={mode:'independent',channelId:channel.id,modelId:'world'};saveAiConfig(localStorage,config);
     new CredentialVault(sessionStorage,localStorage).set(channel.id,'stage-browser-test-only');
     const a=stageContext(clock),repo=await SaveRepository.open();
+    if(unseen){const stage=a.state.events['stage-one'];stage.sourceTurnIds=[a.draft.turnId];stage.protagonistEntry={id:'unseen-stage-entry',sourceTurnId:a.draft.turnId,queuedAt:a.state.worldClock,channel:'电话',cue:'尚未呈现的旧安排',status:'pending'};}
     try {await repo.create(a.state);const initial=createTurnDraft('save-a',0,a.draft.turnId,'opening','');await repo.saveDraft(initial,null);await repo.saveDraft(rerollStory(initial,a.draft.story),0);await repo.saveDraft({...a.draft,draftRevision:2},1);}finally{repo.close();}
     return {...a.response,eventCommands:[stageCommand(endStage(a.state.events['stage-one'])),{type:'DeleteEvent',commandId:'cleanup-stage',eventId:'stage-one',expectedStatus:'resolved',reason:'阶段成果保留后清理',evidence:'合成测试'}]};
-  },clock);
+  },{clock,unseen});
   await page.goto('/#game/save-a');await page.reload();await openGameTools(page);return response;
 }
 const stored=(page:Page)=>page.evaluate(async()=>{const path='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(path),repo=await SaveRepository.open();try{return await repo.loadGame('save-a');}finally{repo.close();}});
@@ -67,4 +68,14 @@ test('真实新阶段入场→下一轮Story回执→Variables提前结案，Wor
   await expect.poll(async()=>(await stored(page)).state.turnNumber).toBe(2);
   const data=await stored(page);expect(data.state.events['early-invited']).toMatchObject({resolvedAt:'2027-01-02T01:00:00+08:00',fixedEndAt:'2027-01-03T00:00:00+08:00',outcome:'changed',protagonistEntry:{status:'left'}});
   expect(calls).toEqual(['world','story','variables','world']);await page.reload();expect(calls).toHaveLength(4);
+});
+
+test('阶段成功自然结束且不需后继时，未呈现邀请可原子失效，不强造取消结果或玩家回应',async({page})=>{
+  const response=await seed(page,undefined,true),before=await stored(page);let calls=0;
+  await page.route('https://event-stages.mock.invalid/**',async route=>{calls++;await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:JSON.stringify(response)},finish_reason:'stop'}]})});});
+  await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
+  await expect.poll(async()=>(await stored(page)).state.turnNumber).toBe(1);
+  const saved=await stored(page);expect(saved.state.events['stage-one']).toBeUndefined();expect(saved.state.retiredEvents['stage-one'].detail.outcome).toBe('success');
+  expect(Object.values(saved.state.events).some((e:unknown)=>Boolean((e as {protagonistEntry?:unknown}).protagonistEntry))).toBe(false);
+  expect(saved.state.protagonist).toEqual(before.state.protagonist);expect(calls).toBe(1);await page.reload();expect((await stored(page)).state).toEqual(saved.state);expect(calls).toBe(1);
 });
