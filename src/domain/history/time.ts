@@ -22,8 +22,10 @@ const china = 8 * 3600000;
 function midnight(y: number, m: number, d: number) {
   const at = new Date(0); at.setUTCFullYear(y, m - 1, d); at.setUTCHours(0, 0, 0, 0); return at.getTime() - china;
 }
-/** Bounds are comparison metadata ONLY. Never persisted as invented occurrence dates.
- * Winter is the named year's December display group, not a cross-year season.
+/** Possible-time intervals for validation ONLY; never persisted as occurrence dates.
+ * Seasons follow the same calendar convention as display (winter stays in December).
+ * Intersecting intervals cannot prove reversal: compare start.earliest to end.latest,
+ * NOT the display tail from historyOrder. Month/year uncertainty remains intact.
  */
 export function historyBounds(time: HistoryTime): { earliest: number; latest: number } | undefined {
   if (time.precision === 'unknown') return undefined;
@@ -33,9 +35,8 @@ export function historyBounds(time: HistoryTime): { earliest: number; latest: nu
     const [y, m, d] = time.date.split('-').map(Number);
     return { earliest: midnight(y, m, d), latest: midnight(y, m, d + 1) - 1 };
   }
-  // A display season is not a fabricated factual interval, especially winter.
-  // Calendar-year bounds only: the explicit seasonal ordering below never changes world time.
-  const [from, to] = time.precision === 'month' ? [time.month, time.month] : [1, 12];
+  const [from, to] = time.precision === 'month' ? [time.month, time.month]
+    : time.precision === 'season' ? seasons[time.season] : [1, 12];
   return { earliest: midnight(time.year, from, 1), latest: midnight(time.year, to + 1, 1) - 1 };
 }
 function parts(at: number) {

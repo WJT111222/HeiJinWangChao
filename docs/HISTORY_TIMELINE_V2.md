@@ -16,7 +16,7 @@
 
 世界 event_result 关联实际终态，按事件 startAt 定位、resolvedAt 展示实际结束。未开始即取消不能当事件结果；cancellation_decision 可按实际取消时刻形成独立事实。没有正式事件实体的已结束往事用 historical_event，保留模糊时间。主角纪事于实际重大事实发生时追加。新发展、更正通过新 ID 和 follows/corrects/parallel 关联，不能修改旧纪事。milestoneId标识本次重大事实；更正发现和后续发展使用新的milestoneId，原事件ID仍可作关联，只有同一事实的两种视角共享milestoneId。
 
-显示排序采用北京时间：精确时刻 → 同日仅日期 → 同月仅月份 → 季节末组 → 全年模糊。春/夏/秋的显示尾月为 5/8/11；冬季明确只属于所标年份，位于该年 12 月精确/月份记录后、全年模糊记录前，绝不延至下一年。季节显示键不成为事实日期，领域比较仅保留已知年份边界；不会把当前年冬季标签偷偷变成12月1日。
+显示排序采用北京时间：精确时刻 → 同日仅日期 → 同月仅月份 → 季节末组 → 全年模糊。春/夏/秋的显示尾月为 5/8/11；冬季明确只属于所标年份，位于该年 12 月精确/月份记录后、全年模糊记录前，绝不延至下一年。季节显示键不成为事实日期。复审返修后，合法性比较采用春3–5月、夏6–8月、秋9–11月、冬当年12月的可能区间；这些边界仅在内存中比较，绝不写为 occurredAt、世界时钟或事件实际日期。区间相交时不强判真实先后，详见末尾返修记录。
 
 范围是发生时段不详的区间，放在终点精度组之后，并完整显示两端精度。事件已知实际开始/结束则分别提供 time/endTime，不把事件持续区间当范围来改变开始定位。范围重叠仅为确定性展示次序，不声称真实先后。未知年份列于时间待考，不同重大事实各自保留位置；同一milestoneId的双视角仍共用位置。相同时刻按真实时刻（不同ISO时区可同刻）共组；同日/月/季/年共组只代表相同已知精度，不声称同时发生。组内以记录时间、ID稳定排序，不互相覆盖。
 
@@ -122,7 +122,7 @@ flowchart LR
 
 大规模覆盖口径：10,000节点确定性排序；0/100/1,000/5,000节点结构引用校验与实际上下文测量；浏览器包含80条同刻长纪事的有界分页及32条额外节点的跨页搜索、后补插入。未宣称完成真实玩家5,000节点的浏览器性能测试。
 
-## 最终验收结果
+## 首轮最终验收结果（审查基线 2ff555e）
 
 实现冻结提交：`50ab9748e8e0e3d224ffff3e11da55d145723138`。后续提交仅更新本报告和本批测量结果；运行代码与测试不再改动。模型网络全部为 Mock，没有真实付费请求。
 
@@ -165,3 +165,88 @@ git diff origin/main --check
 TypeScript、Lint、构建、差异检查全部通过。构建仍提示部分chunk超过500 kB；本轮没有扩展为打包架构优化。截图取自最后78项批次。开发环境完整日志、JSON报告和失败Trace保留于 `/workspace/history-timeline-v2-results/`；关键数据与截图已随PR提交，未提交大体积临时Trace。
 
 本轮没有尚未解决的确定性测试失败。需要后续授权真实模型评估的内容为重大性判断、时间精度选择和纪事写作品质；长期容量/上下文增长及旧客户端前向兼容限制仍须在发布决策中明确考虑。保持Draft，不合并、不部署、不修改真实玩家存档。
+
+
+## PR #84 七代目复审定向返修（2026-11-09）
+
+开工重新读取 PR、[完整 Review](https://github.com/WJT111222/HeiJinWangChao/pull/84#pullrequestreview-5825795205) 和两条行内批注；远端与本地均为 `2ff555eac66bafa47a169ee5be6d3abc03295ee3`，main 仍为 `01f68ba0aa43f8c852b44a87318cdf01d10f4a3c`。继续原 `feat/history-timeline-v2` 分支，保留原实现。
+
+### 根因与最小修复
+
+1. 原 `historyBounds` 将所有 season 的校验区间当作整年，因此 `start.earliest <= end.latest` 无法拒绝冬→春等确定倒置。现在复用既有季节月份定义，返回完整季节的可能区间：春3–5月、夏6–8月、秋9–11月、冬**所标年份12月**。不使用 `historyOrder` 的季末显示位置来校验真实先后，也不把区间边界写入存档。原 `validateChronicles` 的起止、range、记录时间检查自然共用新边界，无需改写校验调用链。
+2. `SlotSide` 原来只用 category 渲染“世界重大纪事”。现在严格使用正式 scope 的四项枚举显示“地区重大事件 / 国家重大事件 / 世界重大事件 / 重大组织事件”；主角卡片显示“主角重大事件”。category 仍只决定上下/左右位置；排序、分组、详情影响范围、史料入口、搜索分页和关联跳转不变。
+
+**时间规则说明：** 只有开始的最早可能时刻晚于结束的最晚可能时刻时，才能确定倒置。冬2021→春2021、秋2021→春2021及相应range拒绝；春2021→冬2021、冬2021→春2022允许。冬季与当年12月/全年，春季与3月，以及彼此重叠的区间不强判倒置。冬季仍在12月精确/月模糊记录之后、全年模糊之前显示。未确定日期继续保留精度、原始文字与“未详”标签，不补造日期。
+
+原有“当前10月仍接受当年冬季”测试源自全年区间错误。本轮将该正例改为当前秋季（最晚可能时刻在11月，但不是未来精确日），并补当年冬季尚未开始时的拒绝断言；不会为了保留错误正例绕过现有“历史不得发生在记录之后”规则。当前月、当前年及当前季节的重叠不被误拒。
+
+### 数据契约与范围自查
+
+未增删任何 Schema 字段、版本、迁移或提示词。正式数据契约的形状不变，季节合法性收紧到已有排序约定；普通旧V6史料无 chronicle，不新增约束。没有修改正式Commit、CAS、撤回、NPC记忆、总结、World权限、事件生命周期、模型请求或重试。生产代码仅修改 `src/domain/history/time.ts` 和 `src/ui/panels/HistoryPanel.tsx`。
+
+新增33项Vitest（8项历法边界、24项季节/区间业务链、1项Repository集成），更新2项含错误全年假设的旧测试；新增1个浏览器场景分别在桌面、手机执行。四季16种组合同时检查世界/主角、time+endTime/range，走真实 `parseWorld`、最终投影与GameState校验，并检查失败字段路径。Repository使用fake-indexeddb验证：伪造validated倒置候选在Commit拒绝、原存档与Story保留；合法跨年冬春纪事原精度保存、幂等、重载、撤回以及迟到旧候选拒绝。世界时钟和occurredAt不被补写。
+
+浏览器用独立合成夹具，通过正式Commit存入四范围与主角节点，故意打乱输入顺序，验证统一时间索引、同日双视角、每种卡片标签与详情、长标题无溢出、普通史料独立读取、UI操作前后正式存档完全一致且零模型请求。旧有分页、搜索、后补历史、长纪事、撤回与重载断言均保留。
+
+### 本轮独立批次记录
+
+以下是返修实测，**不与上方首轮数字合并**。原始JSON、控制台日志与修复前失败Trace保存在 `/workspace/history-timeline-v2-review-results/`。
+
+|批次|通过|失败|跳过|结果说明|
+|---|---:|---:|---:|---|
+|修复前时间专项|57|12|0|新增测试证明同年六种季节逆序、边界比较及未来校验缺陷|
+|修复前标签Chromium|0|2|0|桌面/手机实际标签为“世界重大纪事”，预期“地区重大事件”|
+|首次修复定向回归|202|0|0|历史/World/生命周期/Commit/撤回|
+|补充Repository后定向回归|203|0|0|含正式季节字段保存、拒绝、重载与撤回|
+|完整Vitest|2743|0|0|33项新增回归包含于此；70.25秒，不与定向批次相加|
+|提示词检查|91|0|0|独立执行 `npm run prompts:check`|
+|最终Chromium受影响整批|80|0|0|桌面40、手机40；无重试；346.47秒|
+
+TypeScript、Lint、生产构建均通过。构建仍有现有的 >500 kB chunk 提示；未扩大为打包优化。本轮修复后的完整工程及浏览器批次均无失败。`git diff --check` 通过；已逐项自查本轮完整Diff，除报告、截图和测试外只有两处生产文件变更。
+
+本轮最终执行命令：
+
+```sh
+npx vitest run src/tests/history-time.test.ts src/tests/history-chronicle.test.ts \
+  src/tests/history-runtime.test.ts src/tests/world-freedom.test.ts \
+  src/tests/event-lifecycle-runtime.test.ts src/tests/turn-commit.test.ts \
+  src/tests/turn-undo.test.ts --reporter=json \
+  --outputFile=/workspace/history-timeline-v2-review-results/targeted-final.json
+npx vitest run --reporter=json \
+  --outputFile=/workspace/history-timeline-v2-review-results/full-vitest.json
+npm run prompts:check
+npm run typecheck
+npm run lint
+npm run build
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test \
+  e2e/history-timeline-v2.spec.ts e2e/world-observer.spec.ts \
+  e2e/event-entry-feedback.spec.ts e2e/event-lifecycle.spec.ts \
+  e2e/world-runtime.spec.ts e2e/world-handoff.spec.ts \
+  e2e/turn-undo.spec.ts e2e/undo-summary-recovery.spec.ts \
+  --project=desktop --project=mobile --reporter=json
+git diff --check
+```
+
+测试冻结后仅填写报告、提取截图，不再修改运行代码、测试、提示词或配置。实际执行结果均对应本次最终提交的相同代码和测试内容；不把此前2710/78的历史结果当成本轮实测。
+
+### 本轮真实 Chromium 截图与文件清单
+
+桌面1440×1000、手机仓库Pixel 7配置，均为正式React界面与合成IndexedDB存档。未使用设计图或图片生成。卡片四类世界范围及主角标签已人工查看；既有主轴/详情截图也重新从本轮批次提取。
+
+![桌面四类世界事件及主角同日节点](assets/history-timeline-v2/review-desktop-scopes.png)
+
+![手机地区/国家与主角节点](assets/history-timeline-v2/review-mobile-scopes.png)
+
+[手机世界/重大组织节点及长标题](assets/history-timeline-v2/review-mobile-scopes-later.png)。
+
+修改文件：
+
+- 生产代码：`src/domain/history/time.ts`、`src/ui/panels/HistoryPanel.tsx`。
+- 测试与合成夹具：`src/tests/history-time.test.ts`、`src/tests/history-chronicle.test.ts`、`src/tests/fixtures/historyV2.ts`、`e2e/history-timeline-v2.spec.ts`。
+- 本报告与 `docs/assets/history-timeline-v2/` 实拍截图；其余正式实现不变。
+
+### 限制与风险
+
+- 区间只能排除确定矛盾，重叠不等于证明真实先后；保留模糊时间，不进行文学语义判断。
+- 如有人在旧PR预览版已写入错误放行的倒置或未来季节纪事，新校验会拒绝这些非法记录；不自动修改、迁移或清除任何玩家数据。普通旧V6历史不受影响。旧严格客户端不能读取chronicle的原有限制仍存在。
+- 长篇上下文、完整快照容量和真实模型历史判断质量风险仍见原报告；本次没有改变内容长度或请求数量。全部网络模型调用为Mock，未验证真实模型质量。
