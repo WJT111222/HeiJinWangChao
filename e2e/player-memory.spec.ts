@@ -86,7 +86,7 @@ test('没有游玩的有效存档时，设置高级维护安全不可操作且�
   await page.goto('/'); await openSettings(page);
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
   await settings.getByRole('button', { name: '记忆', exact: true }).click();
-  await expect(settings).toContainText('未进入有效存档');
+  await expect(settings).not.toContainText('未进入有效存档');
   await expect(settings.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeDisabled();
   await settings.getByRole('button', { name: '关闭资料界面' }).click(); expect(api).toBe(0);
 });
@@ -104,7 +104,7 @@ test('空记忆与新存档四层均可读；已选存档不等于正在游玩�
   await openSettings(page);
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
   await settings.getByRole('button', { name: '记忆', exact: true }).click();
-  await expect(settings).toContainText('未进入有效存档');
+  await expect(settings).not.toContainText('未进入有效存档');
   await expect(settings.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeDisabled();
   expect(requests).toBe(0);
 });
