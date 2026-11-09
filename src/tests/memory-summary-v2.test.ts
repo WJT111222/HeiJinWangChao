@@ -43,7 +43,7 @@ function setupRuntime(state = compressionState('short', 100), response = () => R
   return { transport, config, vault, storage, runner, repository, current: () => current };
 }
 describe('独立配置与冻结动态批次', () => {
-  it('默认三类开启，旧明确关闭付费维护保持关闭，其余新字段独立默认', () => {
+  it('默认三类开启，旧默认关闭付费维护安全延续，其余新字段独立默认', () => {
     const settings = defaultSettings();
     expect(Object.values(settings.memory.summaries).every(value => value.enabled && value.automatic)).toBe(true);
     const old = SettingsSchema.parse({ ...settings, memory: { immediateWindowSize: 7, automaticMaintenance: false } });
@@ -214,4 +214,32 @@ it('切换立即总结目标不能清除另一NPC的未处理失败或重新授�
   await queue.wake(); await new MemorySummaryQueue(options).wake();
   expect(calls).toEqual(['npc-a']);
   expect(options.changed).toHaveBeenLastCalledWith(expect.arrayContaining([expect.objectContaining({ kind: 'npc', npcId: 'npc-a' })]));
+});
+it('NPC25/18未编辑默认提示词：真实完整请求包含精确18条来源且没有固定十五条要求', async () => {
+  const state = npcMemoryState(25);
+  const a = setupRuntime(state, () => Response.json({ choices: [{ message: { content: JSON.stringify({ summaries: [{ groupId: 'observed:npc_private', text: '他回顾这些经历及其对心态的影响。' }], unresolved: [], contradictions: [] }) } }] }));
+  const config = { ...defaultSummaryConfig('npc'), threshold: 25, batchSize: 18 };
+  await a.runner.run({ ...a, saveId: 'save-a', kind: 'npc', npcId: 'npc-a', summaryConfig: config, timeoutSeconds: 10 });
+  const body = JSON.parse(String(a.transport.mock.calls[0][1]?.body)) as { messages: { content: string }[] };
+  const full = body.messages.map(message => message.content).join('\n');
+  expect(full).not.toMatch(/十五条|15\s*条/);
+  expect(full).toContain(config.prompt); expect(full).toContain('第三人称'); expect(full).toContain('心理');
+  const context = JSON.parse(full.match(/<GAME_CONTEXT>\n([\s\S]*?)\n<\/GAME_CONTEXT>/)![1]);
+  const entries = context.MEMORY_TASK.groups.flatMap((group: { entries: { id: string }[] }) => group.entries);
+  expect(entries.map((entry: { id: string }) => entry.id)).toEqual(state.npc['npc-a'].memories.slice(0, 18).map(entry => entry.id));
+  expect(a.current().memories.npcSummaries['npc-a'][0].npcProvenance!.sourceMemoryIds).toHaveLength(18);
+});
+it('旧默认false迁移及序列化后不自动收费，手动逐项开启不会影响另外两类', () => {
+  const old = { ...defaultSettings(), memory: { immediateWindowSize: 7, automaticMaintenance: false } };
+  const migrated = SettingsSchema.parse(old);
+  expect(migrated.memory.automaticMaintenance).toBe(false);
+  expect(Object.values(migrated.memory.summaries).every(config => config.enabled && !config.automatic)).toBe(true);
+  migrated.memory.summaries.npc.automatic = true;
+  const refreshed = SettingsSchema.parse(JSON.parse(JSON.stringify(migrated)));
+  expect(refreshed.memory.automaticMaintenance).toBe(false);
+  expect(refreshed.memory.immediateWindowSize).toBe(7);
+  expect(refreshed.memory.summaries.npc.automatic).toBe(true);
+  expect(refreshed.memory.summaries.short.automatic).toBe(false);
+  expect(refreshed.memory.summaries.medium.automatic).toBe(false);
+  expect(Object.values(defaultSettings().memory.summaries).every(config => config.automatic)).toBe(true);
 });

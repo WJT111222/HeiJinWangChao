@@ -51,6 +51,7 @@ export function MemorySummarySettings({ settings, onSave, state, phase, activeKi
     } catch { setMessage('设置保存未能完整确认，请重新打开核对；未发起新的总结请求。'); }
   }
   return <section className="memory-summary-settings" aria-label="记忆总结设置">
+    {settings.memory.automaticMaintenance === false && <p>旧版自动维护的关闭状态已延续。旧版默认也是关闭，无法据此判断你是否曾主动关闭；升级时未自动开启收费请求。你可分别开启三种自动总结，已保存的各项选择会继续保留。</p>}
     <p>记忆总结模型：{model}</p><p>自动及立即总结均可能产生第三方 API 费用；后台最多每分钟3次、每小时12次，失败不自动重试。</p>
     {!state && <p>未进入有效存档：可编辑设置，立即总结不可用。</p>}
     {state && <p>当前人生：{state.title}</p>}
