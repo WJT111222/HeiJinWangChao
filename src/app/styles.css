@@ -2131,7 +2131,8 @@ input, textarea, select, .prompt-inspector pre { background-color: var(--bg); co
 .history-node h3 { font-size: 16px; margin: 10px 0; line-height: 1.6; }
 .history-node p { font-size: 13px; line-height: 1.7; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .history-node:hover { border-color: var(--gold); }
-.history-group-toggle { font-size: 12px; white-space: normal; }
+.history-group-pages { display: flex; align-items: center; justify-content: space-between; gap: 4px; font-size: 12px; }
+.history-group-pages button { padding: 6px 10px; }
 .history-detail { max-width: 920px; margin: 24px auto; overflow-wrap: anywhere; }
 .history-detail h4 { color: var(--gold); margin-top: 24px; }
 .history-detail p, .history-detail li, .history-detail dd { line-height: 1.85; }

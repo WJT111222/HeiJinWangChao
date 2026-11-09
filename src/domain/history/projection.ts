@@ -11,8 +11,8 @@ export function historyProjection(timeline: readonly TimelineEntry[]) {
   const slots: HistorySlot[] = [], groups = new Map<string, HistorySlot>();
   for (const entry of ordered) {
     const time = entry.chronicle.time;
-    // Undated records have no known shared instant. Never claim all unknown facts were simultaneous.
-    const key = time.precision === 'unknown' ? `unknown:${entry.id}` : historyTimeKey(time);
+    // Unknown dates share a slot only for the same explicitly identified milestone, not all undated facts.
+    const key = time.precision === 'unknown' ? `unknown:${entry.chronicle.milestoneId}` : historyTimeKey(time);
     let slot = groups.get(key);
     if (!slot) {
       const point = time.precision === 'range' ? time.to : time;

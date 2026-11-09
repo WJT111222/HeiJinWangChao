@@ -14,17 +14,20 @@ const natures = { fact: '已确立事实', statement: '人物陈述', rumor: '�
 const knowledge = { established: '剧情事实', reported: '人物陈述', suspected: '推测 / 传闻' };
 const relations = { follows: '承接', corrects: '更正', parallel: '同事异观' };
 function SlotSide({ slot, category, onSelect }: { slot: HistorySlot; category: 'world' | 'protagonist'; onSelect: (id: string) => void }) {
-  const [expanded, setExpanded] = useState(false);
+  const [page, setPage] = useState(0);
   const entries = slot.entries.filter(entry => entry.chronicle.category === category);
-  // A same-time group can be large; retain all identities without rendering thousands of long cards.
+  const last = Math.max(0, Math.ceil(entries.length / 3) - 1), current = Math.min(page, last);
+  // Even one same-time group is paged, so large coincident sets cannot flood the DOM.
   return <div className={`history-side history-${category}`}>
-    {(expanded ? entries : entries.slice(0, 3)).map(entry => <button className="history-node" key={entry.id} data-history-id={entry.id}
+    {entries.slice(current * 3, (current + 1) * 3).map(entry => <button className="history-node" key={entry.id} data-history-id={entry.id}
       onClick={() => onSelect(entry.id)}>
       <span className="tag">{categories[category]}</span><h3>{entry.title}</h3><p>{entry.summary}</p>
     </button>)}
-    {entries.length > 3 && <button className="history-group-toggle" onClick={() => setExpanded(!expanded)}>
-      {expanded ? '收起同组纪事' : `展开同组 ${entries.length} 条纪事`}
-    </button>}
+    {entries.length > 3 && <div className="history-group-pages" aria-label={`${categories[category]}同组分页`}>
+      <button disabled={!current} aria-label="同组上一页" onClick={() => setPage(current - 1)}>‹</button>
+      <span>{current + 1}/{last + 1} · 共{entries.length}条</span>
+      <button disabled={current === last} aria-label="同组下一页" onClick={() => setPage(current + 1)}>›</button>
+    </div>}
   </div>;
 }
 function ChronicleDetail({ entry, view, onSelect }: { entry: ChronicleEntry; view: PlayerView; onSelect: (id: string) => void }) {

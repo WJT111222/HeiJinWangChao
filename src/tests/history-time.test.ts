@@ -65,3 +65,10 @@ it('万条混合类别仅按同一排序、相同输入顺序变化不影响结�
   expect(a.slots.map(s=>s.entries.map(e=>e.id))).toEqual(b.slots.map(s=>s.entries.map(e=>e.id)));
   expect(a.slots.flatMap(s=>s.entries)).toHaveLength(10000);
 });
+it('未知日期不混合不同事实，同一重大事实的双视角仍共享待考位置',()=>{
+ const a=entry('a',{precision:'unknown',text:'年代未详'}),b=entry('b',{precision:'unknown',text:'年代未详'});
+ b.chronicle={...a.chronicle!,category:'world',scope:'world',scopeText:'各地',basis:'historical_event',endTime:{precision:'unknown',text:'结束年份待考'}};
+ const unrelated=entry('c',{precision:'unknown',text:'年代未详'});
+ const slots=historyProjection([a,b,unrelated]).slots;
+ expect(slots).toHaveLength(2);expect(slots[0].entries.map(e=>e.id)).toEqual(['a','b']);
+});
