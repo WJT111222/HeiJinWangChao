@@ -32,4 +32,3 @@ export async function transaction<T>(database: IDBDatabase, stores: string[], mo
     signal?.removeEventListener('abort', abort);
   }
 }
-

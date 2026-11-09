@@ -8,7 +8,7 @@
 
 开局不支持退回创角，最早可回到已完成的第一回合。没有恢复点的旧存档显示禁用按钮，不伪造旧历史。生成/结算期间禁用撤回；取消生成后可明确丢弃部分草稿并撤回。跨标签页操作冲突要求重新读取。
 
-回填原输入在撤回事务内持久化；回填后的编辑在停笔 250ms 后保存到独立控制记录。极快关页可能来不及保存最后 250ms 的编辑，原输入与正式世界不受影响。绑定发送时原子清除回填、恢复自动总结调度。刷新或读档本身不会启动三阶段或总结。
+回填原输入在撤回事务内持久化；回填后的编辑在停笔 250ms 后保存到独立控制记录。极快关页可能来不及保存最后 250ms 的编辑，原输入与正式世界不受影响。绑定发送时原子清除回填、恢复自动总结调度。撤回后的刷新或读档本身不会启动三阶段或自动总结。
 
 ## 存储与事务分层
 
@@ -32,7 +32,7 @@ IndexedDB 结构版本从 2 升至 3，仅新增 `turnUndo`（复合键 saveId/t
 2. 严格解析快照并重新验证完整 GameState、存档身份、创建时间、回合数和历史前缀。
 3. 恢复全部世界业务数据；唯一例外是 `revision = 当前 revision + 1`、`updatedAt = 本次操作时间`，避免 ABA。历史 journal 原有 revision 保留。
 4. 创建全新 UUID 的空待输入草稿，保持阶段启用配置；原输入写入独立控制记录，不能自动绑定并发起模型请求。
-5. 删除已消费快照，保留更早连续后缀；清除该存档的旧提交回执。它们依赖旧分支 revision/nextTurnId，不能拿来重放。恢复后的 `appliedCommands` 保留有效历史；旧提交会被当前草稿/revision 拒绝。
+5. 删除已消费快照，保留更早连续后缀；统一清除该存档撤回前的提交回执，避免再重放旧分支；其中前驱回执的 nextTurnId 也已指向被丢弃的草稿。恢复后的 `appliedCommands` 保留有效历史；旧提交会被当前草稿/revision 拒绝。
 6. 旋转持久化 epoch，暂停此存档的自动总结，保存撤回操作 ID 回执。精确重试同一撤回操作只恢复结果，不继续退一层。
 
 任何步骤失败整笔事务回滚。快照损坏不报告成功，不部分替换世界。正常回合仍使用原 `projectTurn`、`settleTurn`、`commitCommands`，没有手写领域命令逆操作。
@@ -71,6 +71,17 @@ IndexedDB 结构版本从 2 升至 3，仅新增 `turnUndo`（复合键 saveId/t
 
 测量调试记录：最初将所有规模放进单个未主动 GC 的进程，最后压力组触发 Node 默认约 2 GiB 堆上限；该批只完成前四组，未当作完整通过。改为独立子进程、明确 GC 和 4 GiB 测量堆上限后五组完成。此限制调整仅属于测量脚本，不改变游戏运行参数。沙箱禁止 Vite 服务端监听/子进程的初始尝试亦未计为浏览器通过。
 
+## Chromium 中的真实 IndexedDB 测量
+
+用相同夹具，在真实 Chromium 中经 Repository 完成五次 Commit，再消费全部可用快照；没有 AI 请求。两种规模各一组，不能代表低端手机性能。测试源码：`e2e/turn-undo-capacity.spec.ts`；原始数组：[300 回合](turn-undo-v1/indexeddb-300.json)、[1000 回合](turn-undo-v1/indexeddb-1000.json)。
+
+| 历史回合 / NPC | 可撤回 | 快照逻辑 MiB | Commit 中位 / 最大 ms | 撤回中位 / 最大 ms | 最终回合 |
+|---|---:|---:|---:|---:|---:|
+| 300 / 150 | 5 | 47.301 | 215.3 / 232.3 | 80.5 / 84.1 | 300 |
+| 1000 / 500 | 2 | 62.567 | 839.7 / 1508.4 | 832.0 / 898.4 | 1003 |
+
+`navigator.storage.estimate()` 返回整个测试 origin 的估算值，300/1000 样本分别为 3,072,000 / 4,812,800 字节。合成文本高度重复、浏览器可能压缩及舍入，且该值不是单个对象仓库的物理大小；**预算始终采用未压缩记录的 UTF-8 长度**，不采用这些偏小的 origin 数字。没有测得真实手机的峰值 RAM，不能用 Node RSS 或此处磁盘估算替代。
+
 ## 验证记录（逐批记录，不累加当作一次验收）
 
 - 新接口实现前：6 项初始测试中 5 项因缺少接口失败，1 项只覆盖失败不写入；没有将其当作实现通过。
@@ -79,9 +90,42 @@ IndexedDB 结构版本从 2 升至 3，仅新增 `turnUndo`（复合键 saveId/t
 - 完整 Vitest 首轮：93 文件，**2651 通过、2 失败**。失败为旧导出结构断言和自建 v2 数据库夹具。显式断言新增导出表，更新夹具结构版本/表；不降低数据断言。
 - 补充升级、损坏、链缺失、独立写入、中止事务后：撤回与坏档管理 **52/52 通过**（其中撤回 25 项）。
 - 新撤回首轮 Chromium：**desktop 5 / mobile 5，合计 10 通过**。
-- 最终工程与扩展浏览器批次：待完成后填写，未运行项目不得写成通过。
+- 最终完整 Vitest：93 文件，**2658 通过、0 失败、0 跳过**，197.09 秒。
+- `npm run prompts:check`：3 文件 **91 通过、0 失败**；独立批次，不能与 Vitest 数字累加成独立用例总数。
+- 扩展 Chromium 首轮：6 文件 desktop/mobile，**82 通过、4 失败、0 跳过**（86 项）。两个坏档导出断言需要显式包含新表；两个 mobile 测试的原型注入被测试运行期间的 Vite 热更新分成了不同模块实例，Trace 中可见同一路径含时间参数和不含参数的两份模块。前者只更新导出结构断言；后者冻结源文件、关闭旧服务，冷启动复测，没有削弱业务约束。失败日志与 Trace 保留在本任务 `/workspace/undo-v1-validation/initial-failures/`。
+- 冻结后的 Chromium 冷启动复测：4 文件，**desktop 31 / mobile 31，共 62 通过、0 失败、0 跳过**，4.3 分钟；包括新增 18 项撤回浏览器测试、原自动结算、记忆维护、坏档管理。未重跑无关全量 Chromium。上批未失败且代码未再改动的记忆总结 V2（18 项）与 NPC 记忆（10 项）仍单列为该批结果，不相加冒称一批。
+- 真实 IndexedDB 容量测量：desktop 2 项 **2 通过**（12.8 秒）；为留存具体计量附件再用 JSON reporter 执行该两项，**2 通过、0 失败、0 跳过**（15.8 秒）。不是对全浏览器回归的重复计数。
+- TypeScript、Lint、生产构建、`git diff --check` 均通过。构建保留现有大 chunk 提醒。初次脚本 Lint 的 Node 全局引用已改为显式导入；既有测试的未用参数改为类型签名，测试行为不变。
+
+实际命令：
+
+```sh
+npx vitest run
+npm run prompts:check
+npm run typecheck
+npm run lint
+npm run build
+git diff --check
+# 扩展首轮（82/86，失败明细见上）
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/turn-undo.spec.ts e2e/automatic-settlement.spec.ts e2e/memory-summary-v2.spec.ts e2e/memory-maintenance.spec.ts e2e/npc-memory.spec.ts e2e/unreadable-saves.spec.ts --project=desktop --project=mobile
+# 冻结后冷启动（62/62）
+CI=1 CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/turn-undo.spec.ts e2e/unreadable-saves.spec.ts e2e/automatic-settlement.spec.ts e2e/memory-maintenance.spec.ts --project=desktop --project=mobile
+# 真实 IndexedDB 测量（2/2）
+CI=1 CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/turn-undo-capacity.spec.ts --project=desktop --workers=1 --reporter=json
+```
 
 新增场景覆盖：连续五次及窗口、原输入和编辑持久化、再次发送/旧提交拒绝、精确撤回重试、真实领域资金/物品/装备/NPC/任务/事件/记忆/历史恢复、迟到公共/NPC 总结、自动总结暂停、事务中止、容量淘汰、配额降级与正式写入失败、旧数据库升级和旧档无回退记录、损坏快照、跨标签页竞争、部分草稿丢弃与旧响应拒绝。浏览器使用真实 React、Repository 和 IndexedDB，模型网络全部 Mock。
+
+## 修改清单与界面
+
+- 存储：`src/services/storage/{saveRepository,turnUndo,idb,saveManagement}.ts`。
+- 总结隔离：`src/workflows/{memoryMaintenance,memorySummaryQueue}.ts`、`src/ui/game/useMemoryMaintenance.ts`。
+- 交互：`src/ui/game/{TurnUndoControl,GameScreen}.tsx`、`src/app/{App.tsx,styles.css}`。
+- Repository 回归：`src/tests/turn-undo.test.ts`、`memory-summary-v2.test.ts`、`unreadable-saves.test.ts`。
+- 浏览器：`e2e/turn-undo.spec.ts`、`turn-undo-capacity.spec.ts`、`unreadable-saves.spec.ts`。
+- 可复现容量材料：`src/tests/fixtures/undoCapacity.ts`、`scripts/measure-turn-undo.mjs`、本报告及 `docs/turn-undo-v1/`。
+
+真实 React 截图：连续五次撤回后停在输入状态，[桌面](turn-undo-v1/undo-desktop.png)、[移动端](turn-undo-v1/undo-mobile.png)。两个截图均来自无模型请求的测试，未以静态设计图替代。
 
 ## 剩余边界
 
