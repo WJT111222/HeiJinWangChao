@@ -288,10 +288,10 @@ test('七面板一键打开、键盘关闭、全量资料只读且保留阅读�
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
-test('四类设置可键盘操作、保存恢复，七项提示词与两个运行开关独立', async ({ page }) => {
+test('四类设置可键盘操作、保存恢复，七项提示词与两个运行开关独立', async ({ page, baseURL }) => {
   const external: string[] = [];
   page.on('request', (request) => {
-    if (!request.url().startsWith('http://127.0.0.1:5174')) external.push(request.url());
+    if (new URL(request.url()).origin !== new URL(baseURL!).origin) external.push(request.url());
   });
   await page.goto('/');
   await page.getByRole('button', { name: '设置', exact: true }).click();

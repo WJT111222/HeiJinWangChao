@@ -33,6 +33,7 @@ async function seed(page: Page, count = 31, automatic = false, ready = false) {
       finally { storage.close(); }
     }
     const settings = defaultSettings(); settings.memory.automaticMaintenance = automatic;
+    for (const config of Object.values(settings.memory.summaries) as { automatic: boolean }[]) config.automatic = automatic;
     settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel();
@@ -59,11 +60,10 @@ async function panel(page: Page) {
   await openGameTools(page);
   await openSettings(page);
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
-  await settings.getByRole('button', { name: '记忆', exact: true }).click();
-  await settings.getByText('记忆维护（高级操作）', { exact: true }).click();
+  await settings.getByRole('button', { name: '记忆总结', exact: true }).click();
   return settings;
 }
-const text = JSON.stringify({ entries: [{ text: '保留与陈宁在社区诊所下周三见面的约定和蓝色钥匙，以及此前散步的经历。' }], unresolved: [], contradictions: [] });
+const text = JSON.stringify({ summary: '保留与陈宁在社区诊所下周三见面的约定和蓝色钥匙，以及此前散步的经历。', importantEvents: ['与陈宁约定下周三见面，保留蓝色钥匙。'] });
 function wire(content = text) {
   return JSON.stringify({ choices: [{ message: { content }, finish_reason: 'stop' }], usage: { prompt_tokens: 40, completion_tokens: 10, total_tokens: 50 } });
 }
@@ -91,19 +91,19 @@ test('选择并恢复独立模型；手动整理、原文来源及真实memory�
   await settings.getByRole('button', { name: '手动填写记忆维护模型 ID', exact: true }).click();
   await settings.getByLabel('记忆维护模型 ID', { exact: true }).fill('memory-summary');
   await settings.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
-  await settings.getByRole('button', { name: '记忆', exact: true }).click();
-  await expect(settings.getByLabel('自动记忆维护（额外API费用，默认关闭）')).not.toBeChecked();
+  await settings.getByRole('button', { name: '记忆总结', exact: true }).click();
+  await expect(settings.getByLabel('自动总结 短期 → 中期', { exact: true })).not.toBeChecked();
   await settings.getByRole('button', { name: '关闭资料界面' }).click();
   await page.reload(); await openGameTools(page);
   const memory = await panel(page);
   await expect(memory).toContainText('memory-summary');
-  await expect(memory).toContainText('可信活跃短期 31');
-  await memory.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true }).click();
-  await expect(memory).toContainText('一批记忆已整理并原子保存');
+  await expect(memory.getByRole('region', { name: '短期 → 中期', exact: true })).toContainText('当前合格未覆盖：31 条');
+  await memory.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
+  await expect(memory).toContainText('总结已保存，原始历史与来源完整保留。');
   const usage = memory.getByRole('region', { name: '记忆请求 Token 用量', exact: true });
   await expect(usage).toContainText('估算输入 Token'); await expect(usage).toContainText('实际输入：40');
   await expect(usage).toContainText('实际输出：10'); await expect(usage).toContainText('实际总量：50');
-  await expect(memory).toContainText('短期 21'); await expect(memory).toContainText('中期 1');
+  await expect(memory.getByRole('region', { name: '短期 → 中期', exact: true })).toContainText('当前合格未覆盖：21 条'); await expect(memory.getByRole('region', { name: '中期 → 长期', exact: true })).toContainText('当前合格未覆盖：1 条');
 
   const after = await load(page);
   expect({ ...after, memories: before.memories }).toEqual(before);
@@ -123,9 +123,9 @@ test('选择并恢复独立模型；手动整理、原文来源及真实memory�
   await settings.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');
   await settings.getByRole('combobox', { name: '选择请求', exact: true }).selectOption({ label: await settings.getByRole('combobox', { name: '选择请求', exact: true }).locator('option').filter({ hasText: '记忆维护 memory.short_to_medium' }).innerText() });
   await expect(settings).toContainText('memory-summary');
-  await expect(settings.locator('.inspection-statistics dd').nth(2)).toHaveText('40');
-  await expect(settings.locator('.inspection-statistics dd').nth(3)).toHaveText('10');
-  await expect(settings.locator('.inspection-statistics dd').nth(4)).toHaveText('50');
+  await expect(settings.locator('.inspection-statistics')).toContainText('40');
+  await expect(settings.locator('.inspection-statistics')).toContainText('10');
+  await expect(settings.locator('.inspection-statistics')).toContainText('50');
   await expect(settings.getByLabel('完整内部上下文', { exact: true })).toHaveCount(0);
   await settings.getByRole('button', { name: '主动查看完整内部上下文' }).click();
   await expect(settings.getByLabel('完整内部上下文', { exact: true })).toContainText('MEMORY_TASK');
@@ -143,23 +143,28 @@ test('跨标签真实Web Lock阻止第二次付费；取消/迟到和服务失�
   });
   await seed(page); const before = await load(page);
   const memory = await panel(page);
-  await memory.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true }).click();
+  await memory.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
   await expect.poll(() => requests).toBe(1);
   const other = await context.newPage(); await other.goto('/');
   await other.getByRole('button', { name: /读取存档/ }).click();
   const otherPanel = await panel(other);
-  await otherPanel.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true }).click();
-  await expect(otherPanel).toContainText('另一个标签正在整理此存档');
+  await otherPanel.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
+  await expect(otherPanel).toContainText('另一个标签或任务正在总结此存档');
   expect(requests).toBe(1);
-  await memory.getByRole('button', { name: '取消记忆整理' }).click();
-  await expect(memory.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true })).toBeEnabled();
+  await memory.getByRole('button', { name: '取消当前总结' }).click();
+  await expect(memory.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeEnabled();
+  await page.getByRole('dialog', { name: '短期 → 中期总结失败', exact: true }).getByRole('button', { name: '关闭资料界面' }).click();
   release?.(); expect(await load(page)).toEqual(before);
   status = 429;
-  await memory.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true }).click();
+  await memory.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
   await expect.poll(() => requests).toBe(2);
-  await expect(memory.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true })).toBeEnabled();
+  await expect(memory.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeEnabled();
   expect(await load(page)).toEqual(before);
-  await other.close(); await page.reload(); await openGameTools(page); expect(requests).toBe(2);
+  await other.close(); await page.reload();
+  const previous = page.getByRole('dialog', { name: '短期 → 中期总结失败', exact: true });
+  await expect(previous).toContainText('上次总结中断或未保存');
+  await previous.getByRole('button', { name: '关闭资料界面' }).click();
+  await openGameTools(page); expect(requests).toBe(2);
 });
 
 test('无跨标签互斥时手动整理明确拒绝，刷新不触发付费', async ({ page }) => {
@@ -168,12 +173,12 @@ test('无跨标签互斥时手动整理明确拒绝，刷新不触发付费', as
   await seed(page);
   await page.evaluate(() => Object.defineProperty(navigator, 'locks', { value: undefined, configurable: true }));
   const memory = await panel(page);
-  await memory.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true }).click();
-  await expect(memory).toContainText('不支持安全跨标签互斥');
+  await memory.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: '短期 → 中期总结失败', exact: true })).toContainText('不支持安全跨标签互斥');
   expect(requests).toBe(0);
 });
 
-test('自动维护仅由新正式提交触发，不阻断下一轮；设置保存和刷新不请求', async ({ page }) => {
+test('阈值以下设置保存和刷新不请求，正式提交触发后不阻断下一轮', async ({ page }) => {
   test.setTimeout(60000);
   const calls: string[] = []; let release: (() => void) | undefined;
   await page.route('https://maintenance.mock.invalid/**', async (route) => {
@@ -193,9 +198,9 @@ test('自动维护仅由新正式提交触发，不阻断下一轮；设置保�
   await seed(page, 30, false, true);
   await openSettings(page);
   const settings = page.getByRole('dialog');
-  await settings.getByRole('button', { name: '记忆', exact: true }).click();
-  await settings.getByLabel('自动记忆维护（额外API费用，默认关闭）').check();
-  await settings.getByRole('button', { name: '保存本地设置', exact: true }).click();
+  await settings.getByRole('button', { name: '记忆总结', exact: true }).click();
+  await settings.getByLabel('自动总结 短期 → 中期', { exact: true }).check();
+  await settings.getByRole('button', { name: '保存记忆总结设置', exact: true }).click();
   await settings.getByRole('button', { name: '关闭资料界面' }).click();
   await page.reload(); await openGameTools(page); expect(calls).toHaveLength(0);
   await page.getByLabel('你的行动', { exact: true }).fill('继续观察窗外');
@@ -214,7 +219,7 @@ test('自动维护仅由新正式提交触发，不阻断下一轮；设置保�
   await expect.poll(async () => (await load(page)).memories.medium.length).toBe(1);
   const after = await load(page); expect(after.revision).toBe(32); expect(after.journal).toEqual(during.journal);
   const memory = await panel(page);
-  await expect(memory).toContainText('一批记忆已整理并原子保存');
+  await expect(memory).toContainText('总结已保存，原始历史与来源完整保留。');
   await memory.getByRole('button', { name: '关闭资料界面' }).click();
   await page.reload(); await openGameTools(page); expect(calls.filter((call) => call === 'memory')).toHaveLength(1);
 });
@@ -229,7 +234,7 @@ test('设置关闭重开仍是同一维护任务；阅读零请求，取消迟�
   });
   await seed(page); const before = await load(page);
   let maintenance = await panel(page);
-  const start = maintenance.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true });
+  const start = maintenance.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true });
   await start.evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
   await expect.poll(() => requests).toBe(1);
   await maintenance.getByRole('button', { name: '关闭资料界面' }).click();
@@ -241,17 +246,18 @@ test('设置关闭重开仍是同一维护任务；阅读零请求，取消迟�
   await expect(reading).not.toContainText('记忆总结模型'); expect(requests).toBe(1);
   await reading.getByRole('button', { name: '关闭资料界面' }).click();
   maintenance = await panel(page);
-  await expect(maintenance.getByRole('button', { name: '正在整理…', exact: true })).toBeDisabled();
+  await expect(maintenance.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeDisabled();
   expect(requests).toBe(1);
-  await maintenance.getByRole('button', { name: '取消记忆整理', exact: true }).click();
-  await expect(maintenance.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true })).toBeEnabled();
+  await maintenance.getByRole('button', { name: '取消当前总结', exact: true }).click();
+  await expect(maintenance.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeEnabled();
+  await page.getByRole('dialog', { name: '短期 → 中期总结失败', exact: true }).getByRole('button', { name: '关闭资料界面' }).click();
   release?.(); hold = false; expect(await load(page)).toEqual(before);
-  await maintenance.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true }).click();
-  await expect(maintenance).toContainText('一批记忆已整理并原子保存'); expect(requests).toBe(2);
+  await maintenance.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
+  await expect(maintenance).toContainText('总结已保存，原始历史与来源完整保留。'); expect(requests).toBe(2);
   await maintenance.getByRole('button', { name: '关闭资料界面' }).click();
   maintenance = await panel(page);
-  await expect(maintenance).toContainText('一批记忆已整理并原子保存');
-  await expect(maintenance.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true })).toBeDisabled();
+  await expect(maintenance).toContainText('总结已保存，原始历史与来源完整保留。');
+  await expect(maintenance.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeEnabled();
   expect(requests).toBe(2);
 });
 
@@ -274,18 +280,18 @@ test('维护期间切档隔离旧任务，迟到结果不修改新档或原档�
     });
   });
   const maintenance = await panel(page);
-  await maintenance.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true }).click();
+  await maintenance.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
   await expect.poll(() => requests).toBe(1);
   await maintenance.getByRole('button', { name: '关闭资料界面' }).click();
   await goHome(page);
   await page.locator('.save-card').filter({ hasText: '第二人生' }).getByRole('button', { name: /读取存档/ }).click();
   const other = await panel(page);
   await expect(other).toContainText('当前人生：第二人生');
-  await expect(other.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true })).toBeEnabled();
+  await expect(other.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeEnabled();
   release?.(); hold = false;
   expect(requests).toBe(1); expect(await load(page)).toEqual(before);
-  await other.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true }).click();
-  await expect(other).toContainText('一批记忆已整理并原子保存'); expect(requests).toBe(2);
+  await other.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
+  await expect(other).toContainText('总结已保存，原始历史与来源完整保留。'); expect(requests).toBe(2);
   expect(await load(page)).toEqual(before);
   const second = await page.evaluate(async () => {
     const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open();
@@ -310,16 +316,16 @@ test('正在原子保存时设置重开保持保存状态，不虚报可取消�
     };
   });
   let maintenance = await panel(page);
-  await maintenance.getByRole('button', { name: '整理记忆（可能产生费用）', exact: true }).click();
-  await expect(maintenance.getByRole('button', { name: '正在原子保存…', exact: true })).toBeDisabled();
-  await expect(maintenance.getByRole('button', { name: '取消记忆整理', exact: true })).toBeDisabled();
+  await maintenance.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
+  await expect(maintenance.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeDisabled();
+  await expect(maintenance.getByRole('button', { name: '取消当前总结', exact: true })).toBeDisabled();
   await maintenance.getByRole('button', { name: '关闭资料界面' }).click();
   maintenance = await panel(page);
-  await expect(maintenance.getByRole('button', { name: '正在原子保存…', exact: true })).toBeDisabled();
-  await expect(maintenance.getByRole('button', { name: '取消记忆整理', exact: true })).toBeDisabled();
+  await expect(maintenance.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeDisabled();
+  await expect(maintenance.getByRole('button', { name: '取消当前总结', exact: true })).toBeDisabled();
   expect(requests).toBe(1); expect(await load(page)).toEqual(before);
   await page.evaluate(() => { const release: unknown = Reflect.get(window, 'releaseMemorySave'); if (typeof release !== 'function') throw new Error('保存屏障未建立'); release(); });
-  await expect(maintenance).toContainText('一批记忆已整理并原子保存');
+  await expect(maintenance).toContainText('总结已保存，原始历史与来源完整保留。');
   const after = await load(page); expect(after.memories.medium).toHaveLength(1);
   expect({ ...after, memories: before.memories }).toEqual(before); expect(requests).toBe(1);
 });

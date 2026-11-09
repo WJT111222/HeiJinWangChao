@@ -85,7 +85,8 @@ test('全量世界观察：场外人物认知、总结、排程、任务与组�
   await panel.getByText('完整记录', { exact: true }).click(); await expect(panel).toContainText('正常营业');
   await panel.getByRole('button', { name: '关闭资料界面' }).click();
   expect(await snapshot(page)).toEqual(before);
-  expect(JSON.stringify(before.story)).not.toMatch(/北仓可能缺货|B的独占秘密|仅内部保存的仓库背景|检查排程/);
+  for (const content of ['北仓可能缺货', 'B的独占秘密', '仅内部保存的仓库背景', '检查排程'])
+    expect(JSON.stringify(before.story)).toContain(content); // PR73全量作者读取；上方正式状态完全不变。
   expect(requests).toBe(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

@@ -27,6 +27,7 @@ async function seed(page: Page, automatic = false) {
     });
     if (automatic) { const storage = await SaveRepository.open(); try { await completeDraft(storage, { variables: await elapsedVariables(storage, '经过十分钟，主角完成用餐。', 600) }); } finally { storage.close(); } }
     const settings = defaultSettings(); settings.memory.automaticMaintenance = automatic;
+    settings.memory.summaries.short.automatic = automatic; settings.memory.summaries.medium.automatic = automatic; settings.memory.summaries.npc.automatic = false;
     settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel(); channel.baseUrl = 'https://npc-memory.mock.invalid/v1';
@@ -46,8 +47,7 @@ async function memory(page: Page) {
   await openGameTools(page);
   await openSettings(page);
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
-  await settings.getByRole('button', { name: '记忆', exact: true }).click();
-  await settings.getByText('记忆维护（高级操作）', { exact: true }).click();
+  await settings.getByRole('button', { name: '记忆总结', exact: true }).click();
   return settings;
 }
 function context(body: unknown) {
@@ -70,15 +70,15 @@ test('手动仅一人一批；普通界面不暴露身份、原文、总结和�
     await route.fulfill({ contentType: 'application/json', body: wire(reply(body)) });
   });
   await seed(page); const before = await load(page), panel = await memory(page);
-  await expect(panel).toContainText('存在可维护任务');
-  await expect(panel).not.toContainText('未公开人物A'); await expect(panel).not.toContainText('A的私人经历');
-  await panel.getByRole('button', { name: '整理NPC私人记忆（可能产生费用）', exact: true }).click();
-  await expect(panel).toContainText('一批私人记忆已整理并原子保存');
+  await expect(panel.getByLabel('总结目标 NPC')).toHaveValue('npc-a');
+  await expect(panel.getByLabel('总结目标 NPC').locator('option:checked')).toHaveText('未公开人物A'); await expect(panel).not.toContainText('A的私人经历');
+  await panel.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true }).click();
+  await expect(panel).toContainText('总结已保存，原始历史与来源完整保留。');
   await expect(panel).not.toContainText('私人总结A'); await expect(panel).not.toContainText('npc-a-memory');
-  await expect(panel).toContainText('暂无可安全维护任务');
+  await expect(panel.getByRole('region', { name: 'NPC 短期 → 中期', exact: true })).toContainText('不足15条，不调用模型。');
   const after = await load(page);
   expect(after.npc).toEqual(before.npc); expect(after.journal).toEqual(before.journal); expect(after.revision).toBe(before.revision);
-  expect(after.memories.npcSummaries['npc-a'][0].npcProvenance!.sourceMemoryIds).toHaveLength(10);
+  expect(after.memories.npcSummaries['npc-a'][0].npcProvenance!.sourceMemoryIds).toHaveLength(15);
   expect(after.memories.npcSummaries['npc-b']).toBeUndefined();
   await panel.getByRole('button', { name: '关闭资料界面' }).click();
   await openGameTools(page);
@@ -91,11 +91,12 @@ test('手动仅一人一批；普通界面不暴露身份、原文、总结和�
   await reading.getByRole('button', { name: '关闭资料界面' }).click();
   await openGameTools(page);
   await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
-  await expect(page.getByRole('dialog')).toContainText('未公开人物A');
-  await page.getByRole('dialog').getByRole('button',{name:/未公开人物A/}).click();
-  await page.getByRole('dialog').getByLabel('搜索人物记忆与总结').fill('私人总结A');
-  await expect(page.getByRole('dialog')).toContainText('私人总结A');
-  await page.getByRole('dialog').getByRole('button', { name: '关闭资料界面' }).click();
+  const npcPanel = page.getByRole('dialog', { name: 'NPC', exact: true });
+  await expect(npcPanel).toContainText('未公开人物A');
+  await npcPanel.getByRole('button',{name:/未公开人物A/}).click();
+  await npcPanel.getByLabel('搜索人物记忆与总结').fill('私人总结A');
+  await expect(npcPanel).toContainText('私人总结A');
+  await npcPanel.getByRole('button', { name: '关闭资料界面' }).click();
   await openSettings(page);
   const settings = page.getByRole('dialog');
   await settings.getByRole('button', { name: '提示词管理', exact: true }).click();
@@ -104,8 +105,8 @@ test('手动仅一人一批；普通界面不暴露身份、原文、总结和�
   await requestsList.selectOption({ label: await requestsList.locator('option').filter({ hasText: 'memory.npc_summarize' }).innerText() });
   await expect(settings).toContainText('私人维护仅展示模块结构与用量');
   await expect(settings.getByRole('button', { name: '主动查看完整内部上下文' })).toHaveCount(0);
-  await expect(settings.locator('.inspection-statistics dd').nth(2)).toHaveText('50');
-  await expect(settings.locator('.inspection-statistics dd').nth(3)).toHaveText('20');
+  await expect(settings.locator('.inspection-statistics')).toContainText('50');
+  await expect(settings.locator('.inspection-statistics')).toContainText('20');
   await expect(settings).not.toContainText('未公开人物A'); await expect(settings).not.toContainText('A的私人经历');
   await page.reload(); await openGameTools(page); expect(requests).toBe(1); expect(await load(page)).toEqual(after);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -118,21 +119,22 @@ test('跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手
     await route.fulfill({ status, contentType: 'application/json', body: status === 200 ? wire(reply(route.request().postDataJSON())) : '{}' }).catch(() => undefined);
   });
   await seed(page); const before = await load(page), panel = await memory(page);
-  await panel.getByRole('button', { name: '整理NPC私人记忆（可能产生费用）', exact: true }).click();
+  await panel.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true }).click();
   await expect.poll(() => requests).toBe(1);
   const other = await browser.newPage(); await other.goto('/'); await other.getByRole('button', { name: /读取存档/ }).click();
   const second = await memory(other);
-  await second.getByRole('button', { name: '整理NPC私人记忆（可能产生费用）', exact: true }).click();
-  await expect(second).toContainText('私人记忆整理未完成'); expect(requests).toBe(1);
-  await panel.getByRole('button', { name: '取消记忆整理', exact: true }).click();
-  await expect(panel).toContainText('私人记忆整理未完成'); release?.(); hold = false;
+  await second.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true }).click();
+  await expect(second).toContainText('另一个标签或任务正在总结此存档'); expect(requests).toBe(1);
+  await panel.getByRole('button', { name: '取消当前总结', exact: true }).click();
+  await page.getByRole('dialog', { name: 'NPC 短期 → 中期总结失败', exact: true }).getByRole('button', { name: '关闭资料界面' }).click(); release?.(); hold = false;
   expect(await load(page)).toEqual(before); status = 429;
-  await panel.getByRole('button', { name: '整理NPC私人记忆（可能产生费用）', exact: true }).click();
+  await panel.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true }).click();
   await expect.poll(() => requests).toBe(2);
-  await expect(panel.getByRole('button', { name: '整理NPC私人记忆（可能产生费用）', exact: true })).toBeEnabled();
+  await expect(panel.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true })).toBeEnabled();
   expect(await load(page)).toEqual(before); status = 200;
-  await panel.getByRole('button', { name: '整理NPC私人记忆（可能产生费用）', exact: true }).click();
-  await expect(panel).toContainText('一批私人记忆已整理并原子保存'); expect(requests).toBe(3);
+  await page.getByRole('dialog', { name: 'NPC 短期 → 中期总结失败', exact: true }).getByRole('button', { name: '关闭资料界面' }).click();
+  await panel.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true }).click();
+  await expect(panel).toContainText('总结已保存，原始历史与来源完整保留。'); expect(requests).toBe(3);
   await other.close();
 });
 
@@ -143,7 +145,7 @@ test('公开自动维护开关不授权NPC额外收费；新正式回合和下�
     const body: unknown = route.request().postDataJSON(), model = string(record(body).model); stages.push(model);
     if (model === 'memory') {
       const task = string(record(context(body).MEMORY_TASK).task); tasks.push(task);
-      await route.fulfill({ contentType: 'application/json', body: wire(JSON.stringify({ entries: [{ text: '公开经历的整理' }], unresolved: [], contradictions: [] })) }); return;
+      await route.fulfill({ contentType: 'application/json', body: wire(JSON.stringify({ summary: '公开经历的整理', importantEvents: ['在原地观察'] })) }); return;
     }
     if (model === 'story') {
       const text = '<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>主角安静观察周围。</正文><短期记忆>在原地观察</短期记忆><变量规划>[]</变量规划>';
@@ -160,12 +162,12 @@ test('公开自动维护开关不授权NPC额外收费；新正式回合和下�
   await page.getByLabel('你的行动', { exact: true }).fill('继续等待'); await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
   expect(tasks).toEqual(['memory.short_to_medium']);
   const after = await load(page); expect(after.memories.npcSummaries).toEqual({}); expect(after.npc['npc-a'].memories).toHaveLength(30);
-  const panel = await memory(page); await expect(panel.getByRole('button', { name: '整理NPC私人记忆（可能产生费用）', exact: true })).toBeEnabled();
-  await expect(panel).not.toContainText('未公开人物A'); await expect(panel).not.toContainText('A的私人经历');
+  const panel = await memory(page); await expect(panel.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true })).toBeEnabled();
+  await expect(panel.getByLabel('总结目标 NPC').locator('option:checked')).toHaveText('未公开人物A'); await expect(panel).not.toContainText('A的私人经历');
 });
 
 for (const blockedB of [false, true]) {
-  test(`预算跳过与可维护状态一致：A超长、B${blockedB ? '也超长不请求' : '正常只整理B'}`, async ({ page }) => {
+  test(`完整批次不缩减且必须选定NPC：A超长、B${blockedB ? '也超长不请求' : '正常只整理B'}`, async ({ page }) => {
     let requests = 0;
     await page.route('https://npc-memory.mock.invalid/**', async (route) => {
       requests++; const body: unknown = route.request().postDataJSON();
@@ -189,17 +191,19 @@ for (const blockedB of [false, true]) {
       });
     }, blockedB);
     await page.reload(); await openGameTools(page); await expect(page.getByRole('complementary', { name: '主角信息' })).toBeVisible();
-    const before = await load(page), panel = await memory(page), button = panel.getByRole('button', { name: '整理NPC私人记忆（可能产生费用）', exact: true });
+    const before = await load(page), panel = await memory(page), button = panel.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true });
     if (blockedB) {
-      await expect(panel).toContainText('暂无可安全维护任务'); await expect(button).toBeDisabled();
+      await panel.getByLabel('总结目标 NPC').selectOption('npc-a'); await button.click();
+      await expect(page.getByRole('dialog', { name: 'NPC 短期 → 中期总结失败', exact: true })).toContainText('完整批次超出安全预算');
       expect(requests).toBe(0); expect(await load(page)).toEqual(before);
     } else {
+      await panel.getByLabel('总结目标 NPC').selectOption('npc-b');
       await expect(button).toBeEnabled(); await button.click();
-      await expect(panel).toContainText('一批私人记忆已整理并原子保存');
-      await expect(panel).toContainText('暂无可安全维护任务'); await expect(button).toBeDisabled();
+      await expect(panel).toContainText('总结已保存，原始历史与来源完整保留。');
+      await expect(button).toBeDisabled();
       const after = await load(page); expect(after.npc).toEqual(before.npc);
       expect(after.memories.npcSummaries['npc-a']).toBeUndefined();
-      expect(after.memories.npcSummaries['npc-b'][0].npcProvenance!.sourceMemoryIds).toHaveLength(10);
+      expect(after.memories.npcSummaries['npc-b'][0].npcProvenance!.sourceMemoryIds).toHaveLength(15);
       await page.reload(); await openGameTools(page); expect(requests).toBe(1); expect(await load(page)).toEqual(after);
     }
   });

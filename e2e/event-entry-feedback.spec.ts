@@ -1,6 +1,6 @@
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools, openWorldArchive } from './helpers/gameLayout';
 
 async function seed(page:Page) {
   await page.goto('/');
@@ -37,7 +37,11 @@ async function mock(page:Page) {
       const entry=ctx.EVENT_ENTRIES?.[0],participation=ctx.EVENT_PARTICIPATION?.[0];
       const narrative=turn===1?scene:turn===2?cue:refusal;
       const guide=turn===1?[]:[{group:'event',observedFact:'本幕实际行为',textEvidence:narrative,eventInteraction:{eventId:'contact',entryId:entry?.entryId??participation?.entryId,action:turn===2?'presented':'declined'}}];
-      if(turn===2){expect(entry.cue).toBe(cue);expect(JSON.stringify(ctx)).not.toContain('内部调查秘密');}
+      if(turn===2){
+        expect(entry.cue).toBe(cue);
+        expect(ctx.SAVE_STATE.events.contact.backgroundText).toBe('内部调查秘密'); // PR73：作者读取完整世界。
+        expect(JSON.stringify(entry)).not.toContain('内部调查秘密'); // 入场提示不自动授予角色后台知识。
+      }
       if(turn===3)expect(ctx.EVENT_ENTRIES).toEqual([]);
       text=`<thinking>衔接当前行动，不代玩家作选择。</thinking><正文>${narrative}</正文><短期记忆>${narrative}</短期记忆><变量规划>${JSON.stringify(guide)}</变量规划>`;
     } else if(stage==='variables') {
@@ -147,8 +151,9 @@ test('两轮自动结算：选择性入场、留守离场、并行任务与独�
   expect(calls).toEqual(['story','variables','world','story','variables','world']);
   await page.reload();await openGameTools(page);
   expect((await stored(page)).state).toEqual(data.state);expect(calls).toHaveLength(6);
-  await page.getByRole('button',{name:'06 历史时间轴',exact:true}).click();
-  const dialog=page.getByRole('dialog');await expect(dialog.getByText('大学时期的合作',{exact:true})).toBeVisible();
+  await openWorldArchive(page);
+  await page.getByRole('complementary',{name:'世界资料'}).getByRole('button',{name:/历史时间轴/}).click();
+  const dialog=page.getByRole('dialog',{name:'历史时间轴',exact:true});await expect(dialog.getByText('大学时期的合作',{exact:true})).toBeVisible();
   await expect(dialog.getByText('人物陈述',{exact:true})).toBeVisible();await expect(dialog.getByText('大学时期',{exact:true})).toBeVisible();
   expect(calls).toHaveLength(6);
 });

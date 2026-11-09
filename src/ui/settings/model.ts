@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SummarySettingsSchema, defaultSummarySettings } from '../../domain/memories/configuration';
 export const settingsKey = 'heijin.settings.v1';
 export const SettingsSchema = z.strictObject({
   version: z.literal(1),
@@ -12,7 +13,13 @@ export const SettingsSchema = z.strictObject({
     realWorld: z.boolean(),
   }),
   memory: z.strictObject({ immediateWindowSize: z.number().int().positive().max(10000),
-    automaticMaintenance: z.boolean().default(false) }),
+    automaticMaintenance: z.boolean().optional(), summaries: SummarySettingsSchema.optional() }).transform(memory => {
+      const summaries = memory.summaries ?? defaultSummarySettings();
+      if (!memory.summaries && memory.automaticMaintenance === false) {
+        for (const config of Object.values(summaries)) config.automatic = false;
+      }
+      return { ...memory, automaticMaintenance: memory.automaticMaintenance ?? true, summaries };
+    }),
   runtime: z.strictObject({
     useVariableStage: z.boolean(),
     useWorldStage: z.boolean(),
@@ -32,7 +39,7 @@ export function defaultSettings(): Settings {
       actionOptions: true,
       realWorld: true,
     },
-    memory: { immediateWindowSize: 10, automaticMaintenance: false },
+    memory: { immediateWindowSize: 10, automaticMaintenance: true, summaries: defaultSummarySettings() },
     runtime: { useVariableStage: true, useWorldStage: true, timeoutSeconds: 120 },
   };
 }
