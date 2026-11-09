@@ -65,7 +65,7 @@ export function planNpcSummary(state: GameState, npcId?: string, options?: { con
   for (const npc of Object.values(state.npc).filter((person) => !npcId || person.id === npcId).sort((a, b) => a.id.localeCompare(b.id))) {
     const candidates = npcSummaryCandidates(state, npc.id, sharedIds);
     const config = SummaryConfigSchema.parse(options?.config ?? defaultSummaryConfig('npc'));
-    if (!config.enabled || candidates.length < config.batchSize || (!options?.immediate && candidates.length < config.threshold)) continue;
+    if (candidates.length < config.batchSize || (!options?.immediate && candidates.length < config.threshold)) continue;
     const batch: NpcMemoryBatch = { saveId: state.saveId, saveCreatedAt: state.createdAt, npcId: npc.id, identityKey: npc.identityKey,
       expectedCount: config.batchSize, entries: candidates.slice(0, config.batchSize) };
     const text = JSON.stringify(npcSummaryInput(batch)).replace(/[<>&]/g, ch => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`);

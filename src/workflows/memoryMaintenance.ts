@@ -48,7 +48,6 @@ export class MemoryMaintenance {
         const state = await this.repository.load(input.saveId);
         const kind = input.kind ?? (input.task === 'npc' ? 'npc' : undefined);
         const config = SummaryConfigSchema.parse(frozenConfig ?? defaultSummaryConfig(kind ?? 'short'));
-        if (!config.enabled) return undefined;
         if (input.immediate && kind === 'npc') requireData(Boolean(input.npcId), 'NPC_MEMORY_CONFLICT', '立即总结必须明确选择人物');
         if (input.attempts && kind) recoverCompletedSummary(state, kind, input.attempts);
         const batch = kind === 'npc' ? planNpcSummary(state, input.npcId, { config, immediate: input.immediate })

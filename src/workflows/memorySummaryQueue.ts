@@ -80,11 +80,10 @@ export class MemorySummaryQueue {
   immediate(kind: SummaryKind, npcId?: string) {
     return this.enqueue(`manual:${kind}:${npcId ?? ''}`, async () => {
       this.initialize();
-      if (!this.options.settings().memory.summaries[kind].enabled) return;
       if (kind === 'npc' && !npcId) { this.remember({ kind, code: 'NPC_MEMORY_CONFLICT', message: '请明确选择需要总结的人物。' }); return; }
       const pending = this.failures.find(failure => failure.kind === kind);
       if (kind === 'npc' && pending && pending.npcId !== npcId) {
-        pending.message = '此前的人物总结失败尚未处理，当前选择未请求模型。请先处理原失败任务，或暂停本项后再重新启用。';
+        pending.message = '此前的人物总结失败尚未处理，当前选择未请求模型。请先处理原失败任务，或暂停本项自动总结后再手动选择其他人物。';
         this.publish(); return;
       }
       await this.attempt(kind, true, npcId);
@@ -100,12 +99,12 @@ export class MemorySummaryQueue {
       for (const kind of order) {
         if (this.stopped) break;
         let config = this.options.settings().memory.summaries[kind];
-        if (!config.enabled || !config.automatic) continue;
+        if (!config.automatic) continue;
         let state: GameState;
         try { state = await this.options.load(); } catch { this.remember({ kind, code: 'MEMORY_STORAGE', message: '无法读取有效存档，未发起总结请求。' }); continue; }
         if (this.stopped) break;
         config = this.options.settings().memory.summaries[kind];
-        if (!config.enabled || !config.automatic) continue;
+        if (!config.automatic) continue;
         if (recoverCompletedSummary(state, kind, this.options.storage)) this.remove(kind);
         if (this.failures.some(failure => failure.kind === kind)) continue;
         let npcId: string | undefined;
