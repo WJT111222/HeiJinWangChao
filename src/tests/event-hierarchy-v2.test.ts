@@ -81,15 +81,23 @@ it('旧V6缺规划事件读取不变；小事件时间不伪装成旧调度估�
   expect(schedule.due.some(e=>e.eventId==='sub-one')).toBe(false);
   expect(schedule.unplannedLegacy).not.toContain('sub-one');
 });
-it('主事件不能在仍有小事件归属引用时删除，小事件清理保留身份与父ID',()=>{
-  const m={...main(),status:'resolved' as const,resolvedAt:start,resolutionText:'结束'},s={...sub(),status:'resolved' as const,resolvedAt:start,resolutionText:'阶段结束'};
-  const state=apply([m,s]);
-  const clean=(id:string):DomainCommand=>({type:'DeleteEvent',commandId:`delete:${id}`,eventId:id,expectedStatus:'resolved',reason:'无后续',evidence:'测试'});
+const clean=(id:string,status:'resolved'|'cancelled'='resolved'):DomainCommand=>({type:'DeleteEvent',commandId:`delete:${id}`,eventId:id,expectedStatus:status,reason:'无后续',evidence:'测试'});
+it.each(['resolved','cancelled'] as const)('%s子事件必须保留唯一结案记录，主事件引用仍受保护',status=>{
+  const m={...main(),status:'resolved' as const,resolvedAt:start,resolutionText:'结束'};
+  const child={...sub(),status,resolvedAt:start,outcome:status==='resolved'?'success' as const:'cancelled' as const,
+    resolutionText:'材料整理已经结束，部分问题需要主事件承接。',resultKnowledge:{facts:['本阶段材料已经整理'],reported:['负责人转述了后续安排'],suspected:[]}};
+  const state=apply([m,child]),before=structuredClone(state);
   expect(()=>commitCommands(state,'remove-parent',1,[clean(m.id)])).toThrow();
-  const next=commitCommands(state,'remove-child',1,[clean(s.id)]);
-  expect(next.retiredEvents[s.id]).toMatchObject({eventKind:'sub',parentEventId:m.id,startAt:start,fixedEndAt:end});
-  expect(()=>commitCommands(next,'remove-parent',2,[clean(m.id)])).toThrow();
-  expect(GameStateSchema.parse(next)).toEqual(next);
+  expect(()=>commitCommands(state,'remove-child',1,[clean(child.id,status)])).toThrow(expect.objectContaining({code:'EVENT_RETAINED'}));
+  expect(state).toEqual(before);expect(state.events[child.id]).toEqual(child);expect(state.retiredEvents[child.id]).toBeUndefined();
+});
+it('无必要引用的旧V6终态事件仍可清理，主事件无引用时沿用原行为',()=>{
+  for(const value of [event('legacy-cleanup'),main()]) {
+    const ended={...value,status:'resolved' as const,resolvedAt:start,resolutionText:'原有清理场景'},state=apply([ended]);
+    const next=commitCommands(state,'legacy-cleanup',1,[clean(ended.id)]);
+    expect(next.events[ended.id]).toBeUndefined();expect(next.retiredEvents[ended.id]).toMatchObject({id:ended.id,status:'resolved'});
+    expect(GameStateSchema.parse(next)).toEqual(next);
+  }
 });
 const repos:SaveRepository[]=[];
 afterEach(()=>{vi.restoreAllMocks();repos.splice(0).forEach(repo=>repo.close());});
@@ -126,4 +134,16 @@ it('合法旧World候选保留原结构，无分类默认值或自动转型',()=
   const accepted=parseWorld(JSON.stringify(r),state,draft);
   expect(accepted.eventCommands[0]).toEqual(save(old));
   expect(Object.hasOwn((accepted.eventCommands[0] as Extract<DomainCommand,{type:'SaveEvent'}>).event,'eventKind')).toBe(false);
+});
+
+it('Repository中同批先改时钟再清理子事件失败，正式数据与草稿均不改变',async()=>{
+  const repo=await SaveRepository.open('hierarchy-cleanup',new IDBFactory());repos.push(repo);
+  const state=worldState();
+  state.events={parent:{...main(),id:'parent'},child:{...sub(),id:'child',parentEventId:'parent',status:'resolved',resolvedAt:start,outcome:'success',resolutionText:'阶段成果完整保留'}};
+  await repo.create(state);const before=await repo.loadGame('save-a');
+  await expect(repo.save('save-a',0,'bad-cleanup',[
+    {type:'SetWorldClock',commandId:'advance-before-cleanup',worldClock:end,evidence:'合成测试'},clean('child'),
+  ])).rejects.toMatchObject({code:'EVENT_RETAINED'});
+  expect(await repo.loadGame('save-a')).toEqual(before);
+  expect((await repo.exportRaw('save-a')).records.turnReceipts).toHaveLength(0);
 });

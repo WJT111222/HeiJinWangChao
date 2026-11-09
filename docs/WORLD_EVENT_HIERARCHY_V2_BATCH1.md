@@ -26,7 +26,7 @@ status/resolvedAt/outcome/resolutionText/resultKnowledge 及原终态、角色�
 
 - `events/schema.ts` 增加三个可选字段；新规划 WorldEventSchema 区分旧协议、main、sub 三种合法形状。StoredWorldEventSchema 保持可扩展严格对象，完整 GameState 和领域写入通过 validateEventLinks 再校验类别/字段组合、引用和时间。
 - `events/lifecycle.ts` 维护不可变身份、最终批次父引用、父/前序联合无环验证。父事件仍被存续或已清理子事件引用时不得删除；没有新增自动清理政策。
-- 通过原 DeleteEvent 清理无其他必要引用的子事件时，retiredEvents 轻量身份保留 eventKind、parentEventId、startAt、fixedEndAt，不能丢失归属或重用 ID。既有详细历史投影可读取这些身份信息。父事件因该必要引用继续保留；未来如何归档整个事件族留待另行讨论。
+- 在正式阶段摘要持久化机制完成前，DeleteEvent 禁止清理任何 eventKind=sub 的终态记录，返回现有 EVENT_RETAINED。完整子事件是唯一权威阶段成果，包含 resolvedAt/outcome/resolutionText/resultKnowledge；不能仅保留轻量身份而丢失结果。旧 V6 事件的原清理行为及主事件的引用保护不变。RetiredEventSchema 中已有身份字段保留用于读取，不借此允许新的有损清理。
 - `state.ts` 补充父 ID、固定时间的字段定位；`worldDiagnostics.ts` 仅增加安全路径白名单字段名，避免诊断输出不受控实体键。
 - `worldOutput.ts` 的非终态候选准入原先只接受未来 estimatedEndAt。最小适配为 sub 检查其 fixedEndAt，其他事件仍按原预计时间规则；不改正式 due 队列、主角行动授权或结果判定。未结束且固定时间已过的子事件不能伪装成未来候选，本批未实现如何自动召回它们结案。
 - `schedule.ts` 仅令 unplannedLegacy 辅助诊断排除有明确类别的新记录。due 筛选、顺序、处理和正式时间窗口不变，仍不扫描 fixedEndAt。新小事件不会通过复制预计时间来偷偷接入旧调度。
@@ -70,3 +70,21 @@ status/resolvedAt/outcome/resolutionText/resultKnowledge 及原终态、角色�
 第二批仍需设计 fixedEndAt 的到期读取、结果结案/摘要、延期如何承接、主事件估期的聚合与事件族清理策略；当前不应宣称 V2 自动调度已实现。World 命令目录由真实 Schema 生成，三种形状会增加目录体量；未新增模型调用，也未做真实模型输出质量验收。
 
 本批没有改写 World 创作 Prompt 来要求 AI 自动组织主子结构。正式提示词仍指导默认旧事件规划；新字段由命令目录的真实 Schema 暴露，本地构造的合法候选可执行，但不能据此宣称真实模型已能稳定生成 V2 主子事件（尤其不应同时生成两个结束时间）。下一批正式启用 V2 生成时，必须同步 World Prompt、固定时间调度及其调用方，而不是只依赖数据字段。
+
+
+## PR #86 合并前返修：子事件结案成果保留
+
+复核实际远端 HEAD 为 `5b3c3751809aeb8fe062935cc817417837094f99`。审查确认旧 DeleteEvent 路径只保存轻量身份而丢失实际成果。本轮选择临时禁止 sub 清理：在 `deleteEvent()` 的终态检查后、任何状态修改前，以现有 `EVENT_RETAINED` 拒绝。没有建立新的摘要表、复制结果或新增 AI 调用，也不检查剧情措辞。主事件的必要引用保护保持原样，旧 V6 无引用终态和无子引用主事件仍可按原规则清理。
+
+测试覆盖 resolved/cancelled 子事件完整成果不丢失、父事件仍受保护、正式输入状态不变、旧事件及无引用主事件正常清理。另通过真实 Repository + fake-indexeddb 同批先推进时钟再尝试 DeleteEvent，验证失败后正式状态、草稿和回执均不改变。
+
+第二批必须完成两个交付目标：
+
+1. 子事件结案的实际时间、经过、结果、已确认认知分类及来源，必须在唯一权威的阶段摘要机制中稳定持久化，并能由主事件读取。只有在验证摘要完整且无必要引用丢失后，才可以原子保存摘要并清理完整子事件；不能把两个可独立修改的对象当作互相冲突的结果真值。
+2. 主事件最终归档后，整个事件家族必须有合法清理路径，明确转移/保留必要父子、前序、历史、任务和知识来源引用，避免永久引用锁；清理、Commit、撤回与重载必须保持一致。本轮仅保护成果，不提前设计或实现这套完整归档摘要系统。
+
+已被旧实现清理且没有备份的成果不能由本补丁恢复，不从退役时间或轻量身份编造结案信息。本次没有操作真实玩家存档。
+
+本轮独立验证记录：补丁前新增测试为 23 通过、3 失败（26 项），确认已结案、取消及 Repository 同批清理风险。补丁后相关回归 5 文件共 133/133 通过，0 失败、0 跳过（本文件 26 项）；TypeScript、Lint、生产构建及 git diff --check 均通过。构建仅有已有 chunk 大于 500 kB 提醒。不复用上一轮成绩，也未重复运行无关完整 Vitest 或 Chromium。
+
+本轮命令：`npx vitest run src/tests/event-hierarchy-v2.test.ts src/tests/event-lifecycle-runtime.test.ts src/tests/world-event-handoff.test.ts src/tests/turn-undo.test.ts src/tests/world-data-boundary.test.ts`；`npm run typecheck`；`npm run lint`；`npm run build`；`git diff --check`。
