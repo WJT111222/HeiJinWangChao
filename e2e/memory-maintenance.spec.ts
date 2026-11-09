@@ -60,7 +60,7 @@ async function panel(page: Page) {
   await openGameTools(page);
   await openSettings(page);
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
-  await settings.getByRole('button', { name: '记忆总结', exact: true }).click();
+  await settings.getByRole('button', { name: '记忆', exact: true }).click();
   return settings;
 }
 const text = JSON.stringify({ summary: '保留与陈宁在社区诊所下周三见面的约定和蓝色钥匙，以及此前散步的经历。', importantEvents: ['与陈宁约定下周三见面，保留蓝色钥匙。'] });
@@ -91,7 +91,7 @@ test('选择并恢复独立模型；手动整理、原文来源及真实memory�
   await settings.getByRole('button', { name: '手动填写记忆维护模型 ID', exact: true }).click();
   await settings.getByLabel('记忆维护模型 ID', { exact: true }).fill('memory-summary');
   await settings.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
-  await settings.getByRole('button', { name: '记忆总结', exact: true }).click();
+  await settings.getByRole('button', { name: '记忆', exact: true }).click();
   await expect(settings.getByLabel('自动总结 短期 → 中期', { exact: true })).not.toBeChecked();
   await settings.getByRole('button', { name: '关闭资料界面' }).click();
   await page.reload(); await openGameTools(page);
@@ -198,9 +198,9 @@ test('阈值以下设置保存和刷新不请求，正式提交触发后不阻�
   await seed(page, 30, false, true);
   await openSettings(page);
   const settings = page.getByRole('dialog');
-  await settings.getByRole('button', { name: '记忆总结', exact: true }).click();
+  await settings.getByRole('button', { name: '记忆', exact: true }).click();
   await settings.getByLabel('自动总结 短期 → 中期', { exact: true }).check();
-  await settings.getByRole('button', { name: '保存记忆总结设置', exact: true }).click();
+  await settings.getByRole('button', { name: '保存记忆设置', exact: true }).click();
   await settings.getByRole('button', { name: '关闭资料界面' }).click();
   await page.reload(); await openGameTools(page); expect(calls).toHaveLength(0);
   await page.getByLabel('你的行动', { exact: true }).fill('继续观察窗外');

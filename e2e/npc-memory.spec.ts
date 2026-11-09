@@ -47,7 +47,7 @@ async function memory(page: Page) {
   await openGameTools(page);
   await openSettings(page);
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
-  await settings.getByRole('button', { name: '记忆总结', exact: true }).click();
+  await settings.getByRole('button', { name: '记忆', exact: true }).click();
   return settings;
 }
 function context(body: unknown) {

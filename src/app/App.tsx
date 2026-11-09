@@ -493,7 +493,7 @@ export function App() {
       {notices.kind && <NoticeDialog key={notices.kind} kind={notices.kind} muted={notices.muted}
         onMutedChange={notices.setMuted} onClose={notices.close} />}
       {settingsOpen && !(gameRoute && loaded) && renderSettings()}
-      {settingsOpen && confirmSettingsClose && <UnsavedAiChanges subject={summarySettingsDirty ? '记忆总结设置' : undefined} onContinue={() => setConfirmSettingsClose(false)} onDiscard={() => {
+      {settingsOpen && confirmSettingsClose && <UnsavedAiChanges subject={summarySettingsDirty ? '记忆设置' : undefined} onContinue={() => setConfirmSettingsClose(false)} onDiscard={() => {
         setConfirmSettingsClose(false);
         setAiSettingsDirty(false); setSummarySettingsDirty(false);
         setSettingsOpen(false);

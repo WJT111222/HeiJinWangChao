@@ -5,23 +5,26 @@ import { mkdir } from 'node:fs/promises';
 test('独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入', async ({ page }, info) => {
   let requests = 0; await page.route('https://summary.mock.invalid/**', async route => { requests++; await route.fulfill({ json: summaryWire(requestTask(route.request().postDataJSON())) }); });
   await seedSummary(page, { count: 0 }); let settings = await summaryPage(page);
+  await expect(settings.getByLabel('即时记忆完整回合数')).toHaveValue('10');
+  await settings.getByLabel('即时记忆完整回合数').fill('14');
   for (const name of ['短期 → 中期', '中期 → 长期', 'NPC 短期 → 中期']) {
     await expect(settings.getByLabel(`启用 ${name}`, { exact: true })).toHaveCount(0); await expect(settings.getByLabel(`自动总结 ${name}`, { exact: true })).toBeChecked();
   }
   await settings.getByLabel('完整内容提示词 · 短期 → 中期').fill('独立短期内容：至少123个事件，语言与篇幅由我决定。');
   await settings.getByRole('button', { name: '关闭资料界面' }).click();
-  const unsaved = page.getByRole('dialog', { name: '记忆总结设置尚未保存', exact: true }); await expect(unsaved).toBeVisible(); await unsaved.getByRole('button', { name: '继续编辑' }).click();
+  const unsaved = page.getByRole('dialog', { name: '记忆设置尚未保存', exact: true }); await expect(unsaved).toBeVisible(); await unsaved.getByRole('button', { name: '继续编辑' }).click();
   for (const [name, threshold, batch] of [['短期 → 中期', 32, 11], ['中期 → 长期', 52, 12], ['NPC 短期 → 中期', 25, 18]] as const) {
     await settings.getByLabel(`触发阈值 · ${name}`).fill(String(threshold)); await settings.getByLabel(`每次总结条数 · ${name}`).fill(String(batch));
   }
   await settings.getByLabel('完整内容提示词 · 中期 → 长期').fill('独立长期提示词标记。'); await settings.getByLabel('完整内容提示词 · NPC 短期 → 中期').fill('独立人物第三人称提示词标记。');
-  await settings.getByRole('button', { name: '保存记忆总结设置', exact: true }).click(); await expect(settings).toContainText('三类总结设置已保存');
+  await settings.getByRole('button', { name: '保存记忆设置', exact: true }).click(); await expect(settings).toContainText('记忆设置已保存');
   await settings.getByRole('button', { name: '关闭资料界面' }).click(); await page.reload(); settings = await summaryPage(page);
+  await expect(settings.getByLabel('即时记忆完整回合数')).toHaveValue('14');
   await expect(settings.getByLabel('每次总结条数 · NPC 短期 → 中期')).toHaveValue('18');
   await expect(settings.getByLabel('完整内容提示词 · 短期 → 中期')).toHaveValue(/独立短期内容/);
   await expect(settings.getByLabel('完整内容提示词 · 中期 → 长期')).toHaveValue('独立长期提示词标记。');
   await settings.getByRole('button', { name: '恢复默认提示词 · NPC 短期 → 中期' }).click(); await expect(settings.getByLabel('完整内容提示词 · NPC 短期 → 中期')).toHaveValue(/心理/);
-  await settings.getByRole('button', { name: '保存记忆总结设置', exact: true }).click();
+  await settings.getByRole('button', { name: '保存记忆设置', exact: true }).click();
   await settings.getByLabel('完整内容提示词 · 中期 → 长期').focus();
   await page.evaluate(() => { const viewport = window.visualViewport!; Object.defineProperty(viewport, 'height', { configurable: true, value: 360 }); viewport.dispatchEvent(new Event('resize')); });
   await settings.getByLabel('完整内容提示词 · 中期 → 长期').scrollIntoViewIfNeeded(); await expect(settings.getByLabel('完整内容提示词 · 中期 → 长期')).toBeVisible();
@@ -112,8 +115,8 @@ test('旧默认关闭安全延续并提示，分别开启后保存刷新；全�
   for (const name of ['短期 → 中期', '中期 → 长期', 'NPC 短期 → 中期'])
     await expect(settings.getByLabel(`自动总结 ${name}`, { exact: true })).not.toBeChecked();
   await settings.getByLabel('自动总结 NPC 短期 → 中期', { exact: true }).check();
-  await settings.getByRole('button', { name: '保存记忆总结设置', exact: true }).click();
-  await expect(settings).toContainText('三类总结设置已保存');
+  await settings.getByRole('button', { name: '保存记忆设置', exact: true }).click();
+  await expect(settings).toContainText('记忆设置已保存');
   await page.reload(); settings = await summaryPage(page);
   await expect(settings).toContainText('旧版自动维护的关闭状态已延续');
   await expect(settings.getByLabel('自动总结 NPC 短期 → 中期', { exact: true })).toBeChecked();
