@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ChronicleSchema } from '../history/schema';
 import { IdSchema, IdsSchema, TextSchema, StringsSchema, GameTimeSchema, ActorRefSchema, VisibilitySchema } from '../common';
 
 // 任务与事件共用认知分类；保留既有导出名称和任务协议。
@@ -95,6 +96,7 @@ export const HistoryRecordSchema = z.strictObject({
   sourceRef: ActorRefSchema.optional(), sourceText: TextSchema.optional(),
   actorRefs: z.array(ActorRefSchema).default([]), locationId: IdSchema.optional(),
   eventId: IdSchema.optional(), relatedEntryIds: IdsSchema.default([]),
+  chronicle: ChronicleSchema.optional(),
 });
 export const TimelineEntrySchema = HistoryRecordSchema.extend({
   recordedAt: GameTimeSchema, sourceTurnId: IdSchema,
