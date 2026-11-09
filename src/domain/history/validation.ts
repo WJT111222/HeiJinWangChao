@@ -27,7 +27,7 @@ export function validateChronicles(state: GameState, check: Check) {
     };
     const start = time(c.time, 'time'), end = c.endTime && time(c.endTime, 'endTime');
     check(!start || !end || start.earliest <= end.latest, '历史开始晚于结束', path('endTime'), 'event_time');
-    if (entry.occurredAt) check(start && Date.parse(entry.occurredAt) >= start.earliest && Date.parse(entry.occurredAt) <= start.latest,
+    if (entry.occurredAt) check(c.time.precision === 'instant' && Date.parse(entry.occurredAt) === Date.parse(c.time.at),
       '历史发生时间与结构化时间冲突', path('time'), 'event_time');
     const prior = milestones.get(c.milestoneId), key = historyTimeKey(c.time);
     check(!prior?.categories.has(c.category), '同一重大事实与类别重复记录', path('milestoneId'), 'history_duplicate');

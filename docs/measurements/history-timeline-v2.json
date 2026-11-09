@@ -1,0 +1,143 @@
+{
+  "node": "v24.19.0",
+  "kind": "synthetic",
+  "storageUnit": "JSON UTF-8 bytes; not physical IndexedDB allocation",
+  "rows": [
+    {
+      "count": 0,
+      "narrativeCharacters": 0,
+      "stateBytes": 1602,
+      "timelineBytes": 2,
+      "snapshotBytes": 1950,
+      "fiveSnapshotBytes": 9750,
+      "maxEquivalentSnapshots": 5,
+      "validateMs": 3.6451730000001135,
+      "sortMs": 0.23266100000000733,
+      "stages": [
+        {
+          "stage": "story",
+          "characters": 34421,
+          "contentBytes": 82159,
+          "estimatedTokens": 38449,
+          "composeMs": 105.24472700000001
+        },
+        {
+          "stage": "variables",
+          "characters": 71979,
+          "contentBytes": 103779,
+          "estimatedTokens": 37872,
+          "composeMs": 72.6730379999999
+        },
+        {
+          "stage": "world",
+          "characters": 102766,
+          "contentBytes": 139426,
+          "estimatedTokens": 48607,
+          "composeMs": 109.7981890000001
+        }
+      ]
+    },
+    {
+      "count": 100,
+      "narrativeCharacters": 400,
+      "stateBytes": 181915,
+      "timelineBytes": 180315,
+      "snapshotBytes": 191253,
+      "fiveSnapshotBytes": 956265,
+      "maxEquivalentSnapshots": 5,
+      "validateMs": 19.585506000000123,
+      "sortMs": 35.053245999999945,
+      "stages": [
+        {
+          "stage": "story",
+          "characters": 125934,
+          "contentBytes": 262472,
+          "estimatedTokens": 116827,
+          "composeMs": 24.233503000000155
+        },
+        {
+          "stage": "variables",
+          "characters": 163492,
+          "contentBytes": 284092,
+          "estimatedTokens": 116251,
+          "composeMs": 198.34912599999984
+        },
+        {
+          "stage": "world",
+          "characters": 285792,
+          "contentBytes": 500052,
+          "estimatedTokens": 205363,
+          "composeMs": 88.10359100000005
+        }
+      ]
+    },
+    {
+      "count": 1000,
+      "narrativeCharacters": 400,
+      "stateBytes": 1808214,
+      "timelineBytes": 1806614,
+      "snapshotBytes": 1898552,
+      "fiveSnapshotBytes": 9492760,
+      "maxEquivalentSnapshots": 5,
+      "validateMs": 80.49225000000001,
+      "sortMs": 4.1158929999999145,
+      "stages": [
+        {
+          "stage": "story",
+          "characters": 953033,
+          "contentBytes": 1888771,
+          "estimatedTokens": 823102,
+          "composeMs": 95.314165
+        },
+        {
+          "stage": "variables",
+          "characters": 990591,
+          "contentBytes": 1910391,
+          "estimatedTokens": 822525,
+          "composeMs": 134.91414899999995
+        },
+        {
+          "stage": "world",
+          "characters": 1939990,
+          "contentBytes": 3752650,
+          "estimatedTokens": 1617913,
+          "composeMs": 331.4210499999999
+        }
+      ]
+    },
+    {
+      "count": 5000,
+      "narrativeCharacters": 400,
+      "stateBytes": 9048213,
+      "timelineBytes": 9046613,
+      "snapshotBytes": 9498551,
+      "fiveSnapshotBytes": 47492755,
+      "maxEquivalentSnapshots": 5,
+      "validateMs": 214.29847599999994,
+      "sortMs": 22.319662999999764,
+      "stages": [
+        {
+          "stage": "story",
+          "characters": 4641032,
+          "contentBytes": 9128770,
+          "estimatedTokens": 3965102,
+          "composeMs": 574.5341640000001
+        },
+        {
+          "stage": "variables",
+          "characters": 4678590,
+          "contentBytes": 9150390,
+          "estimatedTokens": 3964525,
+          "composeMs": 557.1490279999998
+        },
+        {
+          "stage": "world",
+          "characters": 9315988,
+          "contentBytes": 18232648,
+          "estimatedTokens": 7901912,
+          "composeMs": 1220.9050619999998
+        }
+      ]
+    }
+  ]
+}
