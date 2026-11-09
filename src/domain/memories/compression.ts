@@ -41,7 +41,6 @@ export function compressionInput(batch: CompressionBatch) {
 export function planCompression(state: GameState, options?: { layer?: 'short' | 'medium'; config?: SummaryConfig; immediate?: boolean }): CompressionBatch | undefined {
   for (const layer of options?.layer ? [options.layer] : ['short', 'medium'] as const) {
     const config = SummaryConfigSchema.parse(options?.config ?? defaultSummaryConfig(layer));
-    if (!config.enabled) continue;
     const candidates = compressionCandidates(state, layer);
     if (candidates.length < config.batchSize || (!options?.immediate && candidates.length <= config.threshold)) continue;
     const entries = candidates.slice(0, config.batchSize);
