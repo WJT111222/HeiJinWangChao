@@ -161,8 +161,8 @@ test('跨标签真实Web Lock阻止第二次付费；取消/迟到和服务失�
   await expect(memory.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeEnabled();
   expect(await load(page)).toEqual(before);
   await other.close(); await page.reload();
-  const previous = page.getByRole('dialog', { name: '短期 → 中期总结失败', exact: true });
-  await expect(previous).toContainText('上次总结中断或未保存');
+  const previous = page.getByRole('dialog', { name: '短期 → 中期总结待确认', exact: true });
+  await expect(previous).toContainText('发送行动不会自动重试');
   await previous.getByRole('button', { name: '关闭资料界面' }).click();
   await openGameTools(page); expect(requests).toBe(2);
 });

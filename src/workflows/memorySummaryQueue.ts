@@ -5,7 +5,7 @@ import { summaryKinds, summaryNames } from '../domain/memories/configuration';
 import type { SummaryKind } from '../domain/memories/configuration';
 import { compressionCandidates } from '../domain/memories/compression';
 import { npcSummaryCandidates, npcMemoryIdCounts } from '../domain/memories/npcMemory';
-import { recoverCompletedSummary } from './memoryMaintenance';
+import { recoverCompletedSummary, summaryAttemptKey, unconfirmedSummaryMessage } from './memoryMaintenance';
 import { safeAiError } from '../services/ai/errors';
 
 export interface SummaryFailure { kind: SummaryKind; code: string; message: string; npcId?: string }
@@ -21,7 +21,7 @@ const safeReasons: Record<string, string> = {
   MEMORY_LOCK_UNAVAILABLE: '浏览器不支持安全跨标签互斥，未发起记忆请求。',
   MEMORY_OUTPUT: '模型没有返回完整、合法的总结结构，原始记忆保留。', MEMORY_BUDGET: '完整批次超出安全预算，未缩减来源。',
   MEMORY_CONFLICT: '公共来源已改变或已被整理，请重新核对。', NPC_MEMORY_CONFLICT: '人物身份或来源已改变，请重新核对。',
-  MEMORY_PREVIOUS: '上次总结中断或未保存，请明确重新生成或暂停本项。',
+  MEMORY_PREVIOUS: unconfirmedSummaryMessage,
   MEMORY_TIMELINE_CHANGED: '时间线已撤回，旧总结未保存。需要总结时请主动重新生成。',
 };
 /** Serial, bounded and fair across the three independent kinds. No autonomous retry after failure. */
@@ -83,7 +83,7 @@ export class MemorySummaryQueue {
       this.initialize();
       if (kind === 'npc' && !npcId) { this.remember({ kind, code: 'NPC_MEMORY_CONFLICT', message: '请明确选择需要总结的人物。' }); return; }
       const pending = this.failures.find(failure => failure.kind === kind);
-      if (kind === 'npc' && pending && pending.npcId !== npcId) {
+      if (kind === 'npc' && pending?.npcId && pending.npcId !== npcId) {
         pending.message = '此前的人物总结失败尚未处理，当前选择未请求模型。请先处理原失败任务，或暂停本项自动总结后再手动选择其他人物。';
         this.publish(); return;
       }
@@ -108,6 +108,12 @@ export class MemorySummaryQueue {
         if (!config.automatic) continue;
         if (recoverCompletedSummary(state, kind, this.options.storage)) this.remove(kind);
         if (this.failures.some(failure => failure.kind === kind)) continue;
+        // Report the unresolved paid attempt even while undo has paused scheduling.
+        // Do not assign the next eligible NPC to an old attempt with an unknown target.
+        if (this.options.storage.getItem(summaryAttemptKey(state, kind))) {
+          this.remember({ kind, code: 'MEMORY_PREVIOUS', message: unconfirmedSummaryMessage });
+          continue;
+        }
         let npcId: string | undefined;
         if (kind === 'npc') {
           const counts = npcMemoryIdCounts(state);
@@ -122,4 +128,5 @@ export class MemorySummaryQueue {
     });
   }
 }
-export const summaryFailureTitle = (failure: SummaryFailure) => `${summaryNames[failure.kind]}总结失败`;
+export const summaryFailureTitle = (failure: SummaryFailure) =>
+  `${summaryNames[failure.kind]}总结${failure.code === 'MEMORY_PREVIOUS' ? '待确认' : '失败'}`;

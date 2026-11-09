@@ -720,7 +720,9 @@ export function GameScreen({
         onRun={(kind, npcId) => void memory.run(false, kind, npcId)} onCancel={memory.cancel} />)}
       {memory.failures[0] && <Dialog title={summaryFailureTitle(memory.failures[0])} small onClose={() => memory.closeFailure(memory.failures[0].kind)}>
         <p>{memory.failures[0].message}</p><p>原始记忆仍保留；重新生成可能产生 API 费用。</p>
-        <button disabled={Boolean(memory.phase)} onClick={() => void memory.run(false, memory.failures[0].kind, memory.failures[0].npcId)}>重新生成</button>
+        {memory.failures[0].kind === 'npc' && !memory.failures[0].npcId
+          ? <button disabled={Boolean(memory.phase)} onClick={() => { memory.closeFailure('npc'); onOpenSettings(); }}>前往设置选择人物</button>
+          : <button disabled={Boolean(memory.phase)} onClick={() => void memory.run(false, memory.failures[0].kind, memory.failures[0].npcId)}>重新生成</button>}
         <button disabled={Boolean(memory.phase)} onClick={() => memory.pause(memory.failures[0].kind)}>暂停自动总结</button>
       </Dialog>}
     </main>
