@@ -78,6 +78,8 @@ function hasReferences(state: GameState,event:WorldEvent) {
 export function deleteEvent(state: GameState,eventId:string,expectedStatus:'resolved'|'cancelled',turnId:string) {
   const event=state.events[eventId];
   requireData(event && event.status===expectedStatus && terminalEvent(event),'EVENT_NOT_TERMINAL','只能清理已结束事件');
+  // Until authoritative stage summaries exist, the full sub-event is the only result record.
+  requireData(event.eventKind!=='sub','EVENT_RETAINED','阶段摘要尚未持久化，子事件结案成果必须保留');
   requireData(!state.retiredEvents[eventId],'DUPLICATE_ID','事件已清理');
   // 未处理入场和必要引用继续保护；不按事件影响等级判断保留资格。
   requireData(!['pending','presented'].includes(event.protagonistEntry?.status??'') && !hasReferences(state,event),

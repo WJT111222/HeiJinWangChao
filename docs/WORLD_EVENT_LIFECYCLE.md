@@ -75,3 +75,5 @@ V6 新开局、候选、存档和重载采用同一结构。V1–V5 明确拒绝
 ## 世界事件 V2 第一批数据增量
 
 可选 eventKind=main/sub、parentEventId、fixedEndAt 的正式协议、旧 V6 与撤回兼容策略见 [WORLD_EVENT_HIERARCHY_V2_BATCH1.md](WORLD_EVENT_HIERARCHY_V2_BATCH1.md)。未标记旧事件保留原身份；主事件使用预计结束时间，小事件使用独立固定结束时间，不能互作别名。本批只建立数据与引用约束，fixedEndAt 的自动到期结算留待第二批，不改现有 estimatedEndAt 调度。
+
+V2 临时成果保护：正式阶段摘要稳定持久化前，eventKind=sub 的终态事件不得通过 DeleteEvent 清理，唯一权威结案成果保留在完整事件内。旧事件清理行为不变。第二批须打通安全阶段摘要与主事件最终归档后的整个家族清理路径，保留必要引用，不能永久锁死事件家族。
