@@ -16,13 +16,7 @@ export function orderWorldCommands(commands: readonly DomainCommand[]) {
     const dependencies: string[] = [];
     if (cleanup(command) && 'eventId' in command) dependencies.push(`event:${command.eventId}`);
     if (command.type === 'SaveEvent') dependencies.push(...(command.event.predecessorEventIds??[]).map(id=>`event:${id}`));
-    if (command.type === 'SaveTask' || command.type === 'SaveEvent') {
-      const work = command.type === 'SaveTask' ? command.task : command.event;
-      for (const ref of [...work.prerequisites, ...work.blockers]) {
-        const normalized = keyed.has(ref) ? ref : keyed.has(`task:${ref}`) ? `task:${ref}` : `event:${ref}`;
-        dependencies.push(normalized);
-      }
-    }
+    // prerequisites/blockers are narrative text, even when a string resembles an ID.
     if (command.type === 'RecordHistory') {
       if (command.entry.eventId) dependencies.push(`event:${command.entry.eventId}`);
     }

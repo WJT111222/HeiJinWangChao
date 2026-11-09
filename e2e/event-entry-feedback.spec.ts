@@ -48,7 +48,7 @@ async function mock(page:Page) {
       text=`<thinking>只记录本幕变化。</thinking><说明>时间经过，无其他变化。</说明><命令>set worldClock = "2026-10-18T08:${turn===1?'10':turn===2?'20':'30'}:00+08:00"</命令>`;
     } else {
       if(turn===1) {
-        const common={startAt:'2026-10-18T08:00:00+08:00',linkedTaskIds:[],prerequisites:[],blockers:[],visibility:'hidden',impact:'significant',sourceTurnIds:[turnId]};
+        const common={startAt:'2026-10-18T08:00:00+08:00',linkedTaskIds:[],prerequisites:['沟通材料事项'],blockers:['部分意见尚未一致'],visibility:'hidden',impact:'significant',sourceTurnIds:[turnId]};
         blank.eventCommands=[
           {type:'SaveEvent',commandId:'record-scene',evidence:evidence(scene,['story:current'],'established'),event:{...common,id:'scene-dispute',title:scene,backgroundText:scene,goalText:scene,status:'active',estimatedEndAt:'2026-10-18T09:00:00+08:00',actorRefs:[{kind:'protagonist',id:'hero'},{kind:'npc',id:'scene'}],visibility:'known',continuation:{direction:'end',reason:'先记录争执，没有后续约定'}}},
           {type:'SaveEvent',commandId:'queue-contact',evidence:evidence('同事整理了材料。',['npc:npc-a','goal:npc-a:0']),event:{...common,id:'contact',title:'内部约谈',backgroundText:'内部调查秘密',goalText:'听取当事人意见',status:'active',estimatedEndAt:'2026-10-18T08:05:00+08:00',actorRefs:[{kind:'npc',id:'npc-a'}],continuation:{direction:'protagonist',reason:'材料清点完毕后电话联系',entry:{channel:'电话',cue}}}},
@@ -75,7 +75,7 @@ test('现场事件结算→刷新后下一幕真实入场→拒绝回写同一�
   await seed(page);const baseline=(await stored(page)).state;const server=await mock(page);
   await page.getByRole('button',{name:'自动生成开局',exact:true}).click();await settled(page);
   let data=await stored(page);expect(data.state.events['scene-dispute'].status).toBe('active');expect(data.state.events.contact.protagonistEntry.status).toBe('pending');
-  expect(data.state.npc).toEqual(baseline.npc);expect(data.draft.userInput).toBe('');expect(server.calls).toEqual(['story','variables','world']);
+  expect(data.state.events.contact.blockers).toEqual(['部分意见尚未一致']);expect(data.state.npc).toEqual(baseline.npc);expect(data.draft.userInput).toBe('');expect(server.calls).toEqual(['story','variables','world']);
   await page.reload();await openGameTools(page);expect(server.calls).toHaveLength(3);expect((await stored(page)).state).toEqual(data.state);
   await page.getByLabel('你的行动',{exact:true}).fill('接听电话');await page.getByRole('button',{name:'发送',exact:true}).click();
   await expect.poll(async()=>(await stored(page)).state.turnNumber).toBe(2);await settled(page);

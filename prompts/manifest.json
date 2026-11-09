@@ -152,7 +152,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 2997,
+      "characters": 3408,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -162,7 +162,7 @@
       "orderGroup": "shared",
       "reorderable": false,
       "category": "shared",
-      "contentSha256": "2b6d230d0d3fe8231c21f5ff8e334d26ca7764b3d7539ba4a751c0fc47b79133",
+      "contentSha256": "a5b718ec3f1d895ab77b2fdbb7a9cd07f51b075175fea80606112841adc46f36",
       "placeholders": [
         "worldClock",
         "worldWeekday"
@@ -299,7 +299,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 7288,
+      "characters": 7434,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -309,7 +309,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "205ea8e895c735bf8e9e05eb76963f9f7537d419db4a4d7594db78e795fb7b8f",
+      "contentSha256": "a70f28454ed89e19453b7510ebd8a76f37e272d4551e486d6c8a7b88e9132fa6",
       "placeholders": []
     },
     {

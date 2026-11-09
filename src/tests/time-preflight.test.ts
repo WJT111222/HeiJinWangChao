@@ -64,13 +64,13 @@ describe('只读事件节点筛选、知识与生命周期', () => {
     const state = visitor(); state.events.visitor.status = status;
     expect(timePreflight(state, '睡到明早8点').candidates).toEqual([]);
   });
-  it('未满足条件、未知阻碍、任务只有预计到期均不自动完成', () => {
+  it('文本条件不阻断候选；任务只有预计到期仍不自动完成', () => {
     const state = visitor(), before = structuredClone(state);
     state.events.visitor.prerequisites = ['event:unknown'];
     state.tasks['overdue'] = { ...task('overdue'), actorRef: { kind: 'protagonist', id: state.protagonist.id }, status: 'planned', dueAt: state.events.visitor.startAt };
-    expect(timePreflight(state, '睡到明早8点').candidates).toEqual([]); expect(state.tasks.overdue.status).toBe('planned');
-    state.events.visitor.prerequisites = []; state.events.visitor.blockers = ['task:overdue'];
-    expect(timePreflight(state, '睡到明早8点').candidates).toEqual([]); expect(before.events.visitor.status).toBe(state.events.visitor.status);
+    expect(timePreflight(state, '睡到明早8点').candidates).toHaveLength(1); expect(state.tasks.overdue.status).toBe('planned');
+    state.events.visitor.blockers = ['task:overdue'];
+    expect(timePreflight(state, '睡到明早8点').candidates).toHaveLength(1); expect(before.events.visitor.status).toBe(state.events.visitor.status);
   });
   it('预计结束时间不是触发节点；事件必须在目标范围内且能触及当前场景', () => {
     const state = visitor(); state.events.visitor.startAt = '2027-01-01T09:00:00+08:00'; state.events.visitor.estimatedEndAt = '2027-01-01T03:00:00+08:00';
