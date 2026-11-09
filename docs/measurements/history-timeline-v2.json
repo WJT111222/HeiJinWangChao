@@ -11,29 +11,29 @@
       "snapshotBytes": 1950,
       "fiveSnapshotBytes": 9750,
       "maxEquivalentSnapshots": 5,
-      "validateMs": 3.6451730000001135,
-      "sortMs": 0.23266100000000733,
+      "validateMs": 0.4589830000000177,
+      "sortMs": 0.11235999999999535,
       "stages": [
         {
           "stage": "story",
           "characters": 34421,
           "contentBytes": 82159,
           "estimatedTokens": 38449,
-          "composeMs": 105.24472700000001
+          "composeMs": 27.186879000000005
         },
         {
           "stage": "variables",
           "characters": 71979,
           "contentBytes": 103779,
           "estimatedTokens": 37872,
-          "composeMs": 72.6730379999999
+          "composeMs": 19.80647700000003
         },
         {
           "stage": "world",
-          "characters": 102766,
-          "contentBytes": 139426,
-          "estimatedTokens": 48607,
-          "composeMs": 109.7981890000001
+          "characters": 102872,
+          "contentBytes": 139622,
+          "estimatedTokens": 48689,
+          "composeMs": 14.207916000000012
         }
       ]
     },
@@ -45,29 +45,29 @@
       "snapshotBytes": 191253,
       "fiveSnapshotBytes": 956265,
       "maxEquivalentSnapshots": 5,
-      "validateMs": 19.585506000000123,
-      "sortMs": 35.053245999999945,
+      "validateMs": 8.731620999999961,
+      "sortMs": 0.6464059999999563,
       "stages": [
         {
           "stage": "story",
           "characters": 125934,
           "contentBytes": 262472,
           "estimatedTokens": 116827,
-          "composeMs": 24.233503000000155
+          "composeMs": 11.88472900000005
         },
         {
           "stage": "variables",
           "characters": 163492,
           "contentBytes": 284092,
           "estimatedTokens": 116251,
-          "composeMs": 198.34912599999984
+          "composeMs": 15.275758999999994
         },
         {
           "stage": "world",
-          "characters": 285792,
-          "contentBytes": 500052,
-          "estimatedTokens": 205363,
-          "composeMs": 88.10359100000005
+          "characters": 285898,
+          "contentBytes": 500248,
+          "estimatedTokens": 205446,
+          "composeMs": 17.978567999999996
         }
       ]
     },
@@ -79,29 +79,29 @@
       "snapshotBytes": 1898552,
       "fiveSnapshotBytes": 9492760,
       "maxEquivalentSnapshots": 5,
-      "validateMs": 80.49225000000001,
-      "sortMs": 4.1158929999999145,
+      "validateMs": 22.99533100000002,
+      "sortMs": 2.057534999999973,
       "stages": [
         {
           "stage": "story",
           "characters": 953033,
           "contentBytes": 1888771,
           "estimatedTokens": 823102,
-          "composeMs": 95.314165
+          "composeMs": 36.877035000000035
         },
         {
           "stage": "variables",
           "characters": 990591,
           "contentBytes": 1910391,
           "estimatedTokens": 822525,
-          "composeMs": 134.91414899999995
+          "composeMs": 43.83178300000003
         },
         {
           "stage": "world",
-          "characters": 1939990,
-          "contentBytes": 3752650,
-          "estimatedTokens": 1617913,
-          "composeMs": 331.4210499999999
+          "characters": 1940096,
+          "contentBytes": 3752846,
+          "estimatedTokens": 1617995,
+          "composeMs": 98.02534700000001
         }
       ]
     },
@@ -113,29 +113,29 @@
       "snapshotBytes": 9498551,
       "fiveSnapshotBytes": 47492755,
       "maxEquivalentSnapshots": 5,
-      "validateMs": 214.29847599999994,
-      "sortMs": 22.319662999999764,
+      "validateMs": 93.172733,
+      "sortMs": 5.587885000000028,
       "stages": [
         {
           "stage": "story",
           "characters": 4641032,
           "contentBytes": 9128770,
           "estimatedTokens": 3965102,
-          "composeMs": 574.5341640000001
+          "composeMs": 144.0024689999999
         },
         {
           "stage": "variables",
           "characters": 4678590,
           "contentBytes": 9150390,
           "estimatedTokens": 3964525,
-          "composeMs": 557.1490279999998
+          "composeMs": 181.89333899999997
         },
         {
           "stage": "world",
-          "characters": 9315988,
-          "contentBytes": 18232648,
-          "estimatedTokens": 7901912,
-          "composeMs": 1220.9050619999998
+          "characters": 9316094,
+          "contentBytes": 18232844,
+          "estimatedTokens": 7901995,
+          "composeMs": 348.92320300000006
         }
       ]
     }

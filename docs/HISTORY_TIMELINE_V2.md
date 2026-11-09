@@ -1,6 +1,6 @@
 # 历史时间轴 V2 开发报告
 
-基线 main `01f68ba0aa43f8c852b44a87318cdf01d10f4a3c`。采用已审查研究方案 B。独立分支 `feat/history-timeline-v2`；仅 Mock 与合成存档，不修改玩家存档、不增加模型请求。正式验证与截图结果在代码冻结后补入本报告。
+基线 main `01f68ba0aa43f8c852b44a87318cdf01d10f4a3c`。采用已审查研究方案 B。独立分支 `feat/history-timeline-v2`；仅 Mock 与合成存档，不修改玩家存档、不增加模型请求。实现与验证结果如下。
 
 ## 实施边界
 
@@ -14,7 +14,7 @@
 
 ## 时间与归档
 
-世界 event_result 关联实际终态，按事件 startAt 定位、resolvedAt 展示实际结束。未开始即取消不能当事件结果；cancellation_decision 可按实际取消时刻形成独立事实。没有正式事件实体的已结束往事用 historical_event，保留模糊时间。主角纪事于实际重大事实发生时追加。新发展、更正通过新 ID 和 follows/corrects/parallel 关联，不能修改旧纪事。
+世界 event_result 关联实际终态，按事件 startAt 定位、resolvedAt 展示实际结束。未开始即取消不能当事件结果；cancellation_decision 可按实际取消时刻形成独立事实。没有正式事件实体的已结束往事用 historical_event，保留模糊时间。主角纪事于实际重大事实发生时追加。新发展、更正通过新 ID 和 follows/corrects/parallel 关联，不能修改旧纪事。milestoneId标识本次重大事实；更正发现和后续发展使用新的milestoneId，原事件ID仍可作关联，只有同一事实的两种视角共享milestoneId。
 
 显示排序采用北京时间：精确时刻 → 同日仅日期 → 同月仅月份 → 季节末组 → 全年模糊。春/夏/秋的显示尾月为 5/8/11；冬季明确只属于所标年份，位于该年 12 月精确/月份记录后、全年模糊记录前，绝不延至下一年。季节显示键不成为事实日期，领域比较仅保留已知年份边界；不会把当前年冬季标签偷偷变成12月1日。
 
@@ -34,7 +34,7 @@ PR #83 的完整回合前快照包含整个 timeline，新字段自然进入同�
 
 长度上限：标题120、摘要600、纪事3000字符；经过至多8×300，结果/影响各至多6×400；来源至多40，关系至多32。无最低篇幅或事件数量要求。长文不因UI分页而免于存档、快照或上下文成本。
 
-## 验证记录（进行中）
+## 分批验证记录
 
 - 首轮新领域测试：30通过/1失败；旧 JSON 兼容夹具错误地携带 undefined 字段，修正为真实 JSON 序列化读取后通过。
 - 领域与 World/生命周期/Commit/撤回定向批次：160通过/0失败/0跳过。
@@ -75,28 +75,93 @@ flowchart LR
 
 |重大节点|正式状态字节|一份完整快照字节|五份同规模快照字节|结构校验ms|统一排序ms|
 |---:|---:|---:|---:|---:|---:|
-|0|1,602|1,950|9,750|3.65|0.23|
-|100|181,915|191,253|956,265|19.59|35.05|
-|1000|1,808,214|1,898,552|9,492,760|80.49|4.12|
-|5000|9,048,213|9,498,551|47,492,755|214.30|22.32|
+|0|1,602|1,950|9,750|0.46|0.11|
+|100|181,915|191,253|956,265|8.73|0.65|
+|1000|1,808,214|1,898,552|9,492,760|23.00|2.06|
+|5000|9,048,213|9,498,551|47,492,755|93.17|5.59|
 
 快照计量复用正式 `turnUndo.ts` 的JSON包裹形状（包含转义后的stateJSON），五份同规模乘积用于容量对照，不冒充已经在真实浏览器写入了五份大型快照。实际双端浏览器有正式Commit、撤回与重载用例；64 MiB和5回合策略不变。
 
 |节点|阶段|最终消息字符|消息内容字节|启发式Token估算|组装ms|
 |---:|---|---:|---:|---:|---:|
-|0|story|34,421|82,159|38,449|105.24|
-|0|variables|71,979|103,779|37,872|72.67|
-|0|world|102,766|139,426|48,607|109.80|
-|100|story|125,934|262,472|116,827|24.23|
-|100|variables|163,492|284,092|116,251|198.35|
-|100|world|285,792|500,052|205,363|88.10|
-|1000|story|953,033|1,888,771|823,102|95.31|
-|1000|variables|990,591|1,910,391|822,525|134.91|
-|1000|world|1,939,990|3,752,650|1,617,913|331.42|
-|5000|story|4,641,032|9,128,770|3,965,102|574.53|
-|5000|variables|4,678,590|9,150,390|3,964,525|557.15|
-|5000|world|9,315,988|18,232,648|7,901,912|1220.91|
+|0|story|34,421|82,159|38,449|27.19|
+|0|variables|71,979|103,779|37,872|19.81|
+|0|world|102,872|139,622|48,689|14.21|
+|100|story|125,934|262,472|116,827|11.88|
+|100|variables|163,492|284,092|116,251|15.28|
+|100|world|285,898|500,248|205,446|17.98|
+|1000|story|953,033|1,888,771|823,102|36.88|
+|1000|variables|990,591|1,910,391|822,525|43.83|
+|1000|world|1,940,096|3,752,846|1,617,995|98.03|
+|5000|story|4,641,032|9,128,770|3,965,102|144.00|
+|5000|variables|4,678,590|9,150,390|3,964,525|181.89|
+|5000|world|9,316,094|18,232,844|7,901,995|348.92|
 
 这些是实际 `composePrompt()` messages 测量；Token为现有启发式估算，不是供应商计费，未发出模型请求。World既有SAVE_STATE和专项历史容器重复传输，故增长约为另两阶段的两倍。大规模历史的请求体增长显著，可能超出供应商窗口；本轮不擅自修改完整世界读取、做隐式截断或自动换模型。
 
 5,000条400字样本已有约9.05 MB正式状态、47.49 MB五份快照，尚未计入长期NPC记忆、大量永久正文等其他世界增长。更长纪事会更早触及64 MiB撤回预算，导致可撤回数量小于5；既有预算策略会明确报告可用记录数，不删除正式历史、不放松验证。后续如要精简上下文，应单独审查专项重复容器或有据检索，不能把本次UI分页当成Token优化。
+
+## 截图与修改清单
+
+以下均由实际React界面、Chromium和合成正式存档拍摄，未使用静态设计图。桌面1440×1000；手机使用仓库Pixel 7配置。
+
+![PC横向统一时间轴](assets/history-timeline-v2/desktop-timeline.png)
+
+![手机纵向同日双视角](assets/history-timeline-v2/mobile-paired.png)
+
+完整截图：[桌面详情](assets/history-timeline-v2/desktop-detail.png)、[手机起始视图](assets/history-timeline-v2/mobile-timeline.png)、[手机详情](assets/history-timeline-v2/mobile-detail.png)。
+
+|范围|实际文件|
+|---|---|
+|协议与领域|`src/domain/history/{schema,time,validation,projection}.ts`、`src/domain/events/schema.ts`、`src/domain/state.ts`|
+|World目录与诊断|`src/services/validation/{commandCatalog,worldDiagnostics}.ts`|
+|展示|`src/ui/panels/HistoryPanel.tsx`、`Panels.tsx`、`src/ui/game/GameScreen.tsx`（仅弹窗样式类）、`src/app/styles.css`|
+|实际提示词|`prompts/shared/08_world_output.md`、`stages/{opening,regular}/world.md`、`variableGroups/{org_business,org_government}/offscreen.md`、`manifest.json`、`sources.lock.json`|
+|测试|`src/tests/history-{time,chronicle,runtime,capacity}.test.ts`、`src/tests/fixtures/historyV2.ts`、`src/tests/prompts.test.ts`（新溯源哈希）、`e2e/history-timeline-v2.spec.ts`|
+|报告与证据|本报告、`docs/WORLD_EVENT_LIFECYCLE.md`、`docs/measurements/history-timeline-v2.json`、`docs/assets/history-timeline-v2/`|
+
+大规模覆盖口径：10,000节点确定性排序；0/100/1,000/5,000节点结构引用校验与实际上下文测量；浏览器包含80条同刻长纪事的有界分页及32条额外节点的跨页搜索、后补插入。未宣称完成真实玩家5,000节点的浏览器性能测试。
+
+## 最终验收结果
+
+实现冻结提交：`50ab9748e8e0e3d224ffff3e11da55d145723138`。后续提交仅更新本报告和本批测量结果；运行代码与测试不再改动。模型网络全部为 Mock，没有真实付费请求。
+
+|验证批次|通过|失败|跳过|说明|
+|---|---:|---:|---:|---|
+|首次新领域测试|30|1|0|旧JSON夹具的undefined字段问题，已纠正|
+|领域/World/Commit/撤回定向批次|160|0|0|UI开发前验证最终投影及原事务|
+|新增Runtime集成首次批次|32|3|0|Composer返回值测试名和合成来源ID问题，均修正测试夹具|
+|Runtime修正复测|4|0|0|真实WorldStage→Runtime→Mock→候选→Commit→重载|
+|新UI首轮（桌面+手机）|2|2|0|手机双弹窗定位、刷新未等待页面就绪；修正测试操作|
+|新UI增加长文场景后|4|2|0|同组排序是ID字典序，测试却期望数字序；夹具ID改零填充，不改产品排序|
+|提示词审计首次|90|1|0|新增提示词未登记当前来源哈希；补historyTimelineV2并保留旧来源记录|
+|完整Vitest第一批|2709|0|0|含首次历史专项与其余工程回归|
+|历史专项最终|42|0|0|含精确occurredAt不能被模糊time降级的新回归|
+|**完整Vitest最终**|**2710**|**0**|**0**|冻结实现，全部工程测试|
+|**提示词最终**|**91**|**0**|**0**|Manifest、来源锁及真实Composer一致|
+|受影响浏览器第一整批|77|1|0|桌面38/39、手机39/39；旧总结用例总时限耗尽|
+|旧总结文件原样单独复跑|8|0|0|桌面4、手机4，不修改断言或超时|
+|**受影响浏览器最终整批**|**78**|**0**|**0**|**桌面39、手机39；无重试；326秒**|
+
+浏览器第一整批唯一失败是旧 `undo-summary-recovery.spec.ts` 的公共总结恢复用例。Trace中最后一次poll仅剩约380ms，整例达到30秒上限，未观察到非法写入或历史破坏。原文件独立复跑通过；最终整批在工程测试结束后单独运行，78/78通过。未修改总结代码、限流或测试断言。首轮沙箱无法启动Vite，0项执行；获得本地服务/浏览器运行权限后才开始上述实际批次。各批数字单独保留，不拼接冒充完整成功。
+
+运行命令：
+
+```sh
+npx vitest run --reporter=json --outputFile=/workspace/history-timeline-v2-results/vitest-final.json
+npm run prompts:check
+npm run lint
+npm run build # 内含 tsc --noEmit
+# TypeScript亦已独立执行 npm run typecheck
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test \
+  e2e/history-timeline-v2.spec.ts e2e/world-observer.spec.ts \
+  e2e/event-entry-feedback.spec.ts e2e/event-lifecycle.spec.ts \
+  e2e/world-runtime.spec.ts e2e/world-handoff.spec.ts \
+  e2e/turn-undo.spec.ts e2e/undo-summary-recovery.spec.ts \
+  --project=desktop --project=mobile --reporter=json
+git diff origin/main --check
+```
+
+TypeScript、Lint、构建、差异检查全部通过。构建仍提示部分chunk超过500 kB；本轮没有扩展为打包架构优化。截图取自最后78项批次。开发环境完整日志、JSON报告和失败Trace保留于 `/workspace/history-timeline-v2-results/`；关键数据与截图已随PR提交，未提交大体积临时Trace。
+
+本轮没有尚未解决的确定性测试失败。需要后续授权真实模型评估的内容为重大性判断、时间精度选择和纪事写作品质；长期容量/上下文增长及旧客户端前向兼容限制仍须在发布决策中明确考虑。保持Draft，不合并、不部署、不修改真实玩家存档。
