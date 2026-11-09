@@ -1,3 +1,4 @@
+import type { SceneIntervention } from './narration';
 import { requireData } from '../common';
 import type { GameState } from '../state';
 import type { WorldEvent, RetiredEvent } from './schema';
@@ -14,7 +15,7 @@ export function validateStageResult(event: WorldEvent | RetiredEvent) {
     'STAGE_RESULT','子事件终态与结果不一致');
 }
 /** Validate writes after the entire batch, not against the order of clock commands. */
-export function validateStageWrite(old:WorldEvent|undefined,event:WorldEvent,clock:string,turnId:string) {
+export function validateStageWrite(old:WorldEvent|undefined,event:WorldEvent,clock:string,turnId:string,intervention?:SceneIntervention) {
   if(event.eventKind!=='sub' || (old && ended(old)))return;
   const receipt=event.protagonistEntry;
   const scene=Boolean(old?.protagonistEntry && receipt?.id===old.protagonistEntry.id
@@ -22,9 +23,10 @@ export function validateStageWrite(old:WorldEvent|undefined,event:WorldEvent,clo
   if(ended(event)) {
     validateStageResult(event);
     requireData(Date.parse(event.resolvedAt!)===Date.parse(event.fixedEndAt!)
-      || (scene && Date.parse(event.resolvedAt!)<Date.parse(event.fixedEndAt!)),
+      || ((scene || (intervention?.eventId===event.id && Date.parse(event.resolvedAt!)===Date.parse(intervention.at)))
+        && Date.parse(event.resolvedAt!)<Date.parse(event.fixedEndAt!)),
     'STAGE_TIME','场外子事件实际结案时间必须为固定终止时间；提前结案仅限本轮现场回执');
-  } else if(old && !scene) {
+  } else if(old && !scene && intervention?.eventId!==event.id) {
     requireData(same(old,event),'STAGE_EARLY_WRITE','场外小事件不可例行改写，须到固定时间结案');
   } else if(!old) requireData(Date.parse(clock)<Date.parse(event.fixedEndAt!),'STAGE_DUE','本窗口已到期的新阶段须保存最终结案对象');
 }

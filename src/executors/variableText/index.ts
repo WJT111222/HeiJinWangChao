@@ -1,3 +1,4 @@
+import { storySceneAuthority, validateNarrationClock } from '../../domain/events/narration';
 import { z } from 'zod';
 import { commitCommands, fingerprint } from '../../domain/commands';
 import { CommandDataError, DataError } from '../../domain/common';
@@ -39,9 +40,10 @@ async function simulateChecked(plan: VariableExecutionPlan, state: GameState,
     commands = preparedVariableCommands(state, context.draft, checked.value.commands);
     // 整份批次只调用一次；不以逐条commit产生中间revision，不使用设备当前时间。
     const projected = commitCommands(openingTimeBase(state, context.draft), context.draft.turnId,
-      context.expectedRevision, commands, state.updatedAt);
+      context.expectedRevision, commands, state.updatedAt,storySceneAuthority(state,context.draft,checked.value.commands));
+    validateNarrationClock(state,context.draft,projected.worldClock);
     for (const command of checked.value.commands)
-      if (command.type === 'SaveEvent') validateSceneEventUpdate(state, projected, command.event, context.draft.turnId);
+      if (command.type === 'SaveEvent') validateSceneEventUpdate(state, projected, command.event, context.draft.turnId,context.draft.story);
     return { ok: true, value: projected };
   } catch (error) {
     const related = checked.value.origins.filter((origin) => origin !== null);

@@ -152,7 +152,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 3613,
+      "characters": 4042,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -162,7 +162,7 @@
       "orderGroup": "shared",
       "reorderable": false,
       "category": "shared",
-      "contentSha256": "937ffc5c490379f04d7fe591856cc348e46a92551516707679a9d988cb254535",
+      "contentSha256": "ff4cfc0db487199eec51e42c02cc90e8ed1279f185a9f520b3f52504c49330c7",
       "placeholders": [
         "worldClock",
         "worldWeekday"
@@ -242,7 +242,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1959,
+      "characters": 2751,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -252,7 +252,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "a2f7ccbf596e90399dd0a6b751205071cb7d8d2775e9f984661234dc2328370d",
+      "contentSha256": "05d86fd4c56fcc143022590a8ea7471673591dc22399bf07248005c5c0aab347",
       "placeholders": [
         "minNarrativeChars"
       ]
@@ -299,7 +299,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 8709,
+      "characters": 9005,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -309,7 +309,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "b511b105accacb249410796293ae5488156673b9eefd30de2eddce90cce387ad",
+      "contentSha256": "42c438f7620991b3e86e5e88e32291a40ad630acbf1501d4b88a42f5d403847f",
       "placeholders": []
     },
     {
@@ -406,7 +406,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 727,
+      "characters": 849,
       "version": "0.5.6",
       "messageRole": "system",
       "activation": "always",
@@ -416,7 +416,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "69a85e6d5b977e06693bfa4ce67e72819323e04156eb89620ecf7eaa31be1c6a",
+      "contentSha256": "5e0b435068d0a64caf0b38261b36164a638da171debd2c002ef8890b1c2c05a6",
       "placeholders": [
         "immediateMemoryTurns",
         "minNarrativeChars"
@@ -2127,7 +2127,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 4832,
+      "characters": 5645,
       "version": "0.5.6",
       "messageRole": "system",
       "activation": "always",
@@ -2137,7 +2137,7 @@
       "orderGroup": "planning",
       "reorderable": false,
       "category": "planning",
-      "contentSha256": "bfb22bff472fbe8916b58915a7cead540f10763ded99d5b187a2999fe9905097",
+      "contentSha256": "afd5d5cc88c83077801f47ac4f7184ab0206b5a284b2afeac2f02fb79469b242",
       "placeholders": []
     },
     {

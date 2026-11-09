@@ -23,7 +23,7 @@ export function validateTurnCandidates(state: GameState, draft: TurnDraft) {
     const event = command.type === 'SaveEvent' ? command.event : undefined;
     const work = task ?? event!;
     const old = task ? state.tasks[work.id] : state.events[work.id];
-    if (event) validateSceneEventUpdate(state, projected, event, draft.turnId);
+    if (event) validateSceneEventUpdate(state, projected, event, draft.turnId,draft.story);
     if (task) requireData(
       task.actorRef.kind !== 'npc' || Boolean(projected.npc[task.actorRef.id]?.onScene),
       'SCENE_PERMISSION',
