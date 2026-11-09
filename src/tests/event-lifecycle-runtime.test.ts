@@ -99,10 +99,10 @@ describe('真实World验证与同一正式基线的事件处理',()=>{
     const result=resultFor(a.state,a.draft,[cmd]);expect(projectTurn(a.state,a.draft,[...result.worldCommands,...result.eventCommands]).events[e.id].status).toBe(status);
     expect(()=>resultFor(a.state,a.draft,[{...cmd,event:{...e,estimatedEndAt:actionTime}}])).toThrow();
   });
-  it('失败结束允许阻碍未满足，但不能借此宣称成功',()=>{
+  it('World可保留未解决阻碍并独立决定失败或成功结案',()=>{
     const a=prepared();a.state.events.investigation.blockers=['未取得材料'];
     expect(resultFor(a.state,a.draft,[finish(a.state.events.investigation,actionTime,true)]).eventCommands[0]).toMatchObject({event:{outcome:'failure',status:'resolved'}});
-    expect(()=>resultFor(a.state,a.draft,[finish(a.state.events.investigation)])).toThrow();
+    expect(resultFor(a.state,a.draft,[finish(a.state.events.investigation)]).eventCommands[0]).toMatchObject({event:{status:'resolved',blockers:['未取得材料']}});
   });
   it('取消未来安排仍可提前成立，不强迫开始时间或成功条件到达',()=>{
     const e={...ongoing(),startAt:'2026-10-20T08:00:00+08:00',estimatedEndAt:'2026-10-20T10:00:00+08:00',status:'scheduled' as const,blockers:['尚未准备好']};
@@ -202,8 +202,8 @@ describe('长跨度行动中的公开时间提示',()=>{
     const state=worldState();state.events.call={...event('call'),title:'主角收到预约来电通知',startAt:'2026-10-18T07:00:00+08:00',estimatedEndAt:actionTime,visibility:'known'};
     state.journal=[{turnId:'past-interrupt',revision:0,relatedActorRefs:[],story:{turnKind:'opening',narrative:'电话响起',summary:'电话响起',variableGuide:[{group:'time',subjectHint:'time:interrupt:call',observedFact:actionTime}]}}];state.turnNumber=1;
     expect(timePreflight(state,'等待两小时').candidates).toEqual([]);
-    state.journal=[];state.turnNumber=0;state.events.call.blockers=['没有通信信号'];expect(timePreflight(state,'等待两小时').candidates).toEqual([]);
-    state.events.call.blockers=[];state.events.call.status='cancelled';expect(timePreflight(state,'等待两小时').candidates).toEqual([]);
+    state.journal=[];state.turnNumber=0;state.events.call.blockers=['没有通信信号'];expect(timePreflight(state,'等待两小时').candidates).toEqual([expect.objectContaining({id:'call',conditional:true})]);
+    state.events.call.status='cancelled';expect(timePreflight(state,'等待两小时').candidates).toEqual([]);
   });
 });
 
