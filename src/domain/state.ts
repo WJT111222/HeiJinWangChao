@@ -136,7 +136,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
   for (const event of Object.values(s.events)) {
     const path = (field: string) => ['events', event.id, field];
     if(event.eventKind==='sub') {
-      check(Boolean(event.parentEventId && s.events[event.parentEventId]?.eventKind==='main' && event.parentEventId!==event.id),
+      check(Boolean(event.parentEventId && eventById(s,event.parentEventId)?.eventKind==='main' && event.parentEventId!==event.id),
         '小事件父事件不存在或不是主事件', path('parentEventId'), 'event_reference');
       timeRange(event.startAt,event.fixedEndAt,path('fixedEndAt'));
     }

@@ -283,10 +283,9 @@ describe('正式文本来源与旧架构保留', () => {
     for (const module of promptManifest.modules.filter((m) => m.kind === 'prompt')) {
       const record = sources.resources[module.path as keyof typeof sources.resources];
       expect(record, module.path).toBeDefined();
-      if ('worldNarrativeConditions' in record) expect(sha(text(module.path)), module.path).toBe(record.worldNarrativeConditions.sha256);
-      else if ('historyTimelineV2' in record) expect(sha(text(module.path)), module.path).toBe(record.historyTimelineV2.sha256);
-      else if ('contextV2' in record) expect(sha(text(module.path)), module.path).toBe(record.contextV2.sha256);
-      if ('memorySummaryV2' in record) expect(sha(text(module.path)), module.path).toBe(record.memorySummaryV2.sha256);
+      const latest = ['worldEventStagesV2','worldNarrativeConditions','historyTimelineV2','contextV2','memorySummaryV2']
+        .map(key=>Reflect.get(record,key)).find(value=>value && typeof value==='object' && 'sha256' in value);
+      if(latest) expect(sha(text(module.path)),module.path).toBe(Reflect.get(latest,'sha256'));
       if (record.treatment === 'verbatim')
         expect(sha(readFileSync(resolve(root, module.path))), module.path).toBe(
           record.sourceSha256,

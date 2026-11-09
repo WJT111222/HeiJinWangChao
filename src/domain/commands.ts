@@ -1,3 +1,4 @@
+import { validateStageWrite } from './events/stages';
 import { z } from 'zod';
 import { AccountSchema, DebtRecordSchema, IncomeRecordSchema, VehicleAssetSchema } from './economy/schema';
 import { ActorRefSchema, CommandDataError, DataError, CountSchema, IdSchema, IdsSchema, MoneySchema, TextSchema, GameTimeSchema, requireData } from './common';
@@ -196,6 +197,8 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
   validateTaskTransitions(state, current, fresh.flatMap((c) => c.type === 'SaveTask' ? [c.task] : []));
   completeTaskEventLinks(state, current);
   maintainSceneTransition(state, current, fresh);
+  for(const command of fresh) if(command.type==='SaveEvent')
+    validateStageWrite(state.events[command.event.id],command.event,current.worldClock,turnId);
   validateEventLinks(current);
   // A first committed batch consumes the opening-only right even if the model omitted initialization.
   // Projections mutate only this parsed copy; failed/cancelled drafts keep the formal marker.
