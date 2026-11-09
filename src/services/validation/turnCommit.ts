@@ -1,5 +1,4 @@
 import { validateSceneEventUpdate } from '../../domain/events/scenePermission';
-import { eventById } from '../../domain/events/lifecycle';
 import { requireData } from '../../domain/common';
 import { fingerprint } from '../../domain/commands';
 import { completeTurnDraft, turnCommands } from '../../domain/turnCommit';
@@ -18,12 +17,6 @@ export function validateTurnCandidates(state: GameState, draft: TurnDraft) {
   validateCommittedTime(state, draft);
   // 现场 SaveTask/SaveEvent 原来只有字符串事实与结构检查；正式落库前补足时间/终态边界。
   const projected = projectTurn(state, draft);
-  const ready = (conditions: string[]) =>
-    conditions.every((id) => {
-      const task = state.tasks[id.replace(/^task:/, '')];
-      const event = eventById(state,id.replace(/^event:/, ''));
-      return task?.status === 'completed' || event?.status === 'resolved';
-    });
   for (const command of draft.variables!.result.commands) {
     if (command.type !== 'SaveTask' && command.type !== 'SaveEvent') continue;
     const task = command.type === 'SaveTask' ? command.task : undefined;
@@ -55,25 +48,12 @@ export function validateTurnCandidates(state: GameState, draft: TurnDraft) {
           '活动不能退回计划',
         );
     }
-    const terminal = ['completed', 'resolved'].includes(work.status);
     if (['active', 'blocked', 'completed', 'resolved'].includes(work.status))
       requireData(
         Date.parse(work.startAt) <= Date.parse(projected.worldClock),
         'WORK_TIME',
         '未来行动尚未发生',
       );
-    if (terminal) {
-      requireData(
-        ready([
-          ...(old?.prerequisites ?? []),
-          ...(old?.blockers ?? []),
-          ...work.prerequisites,
-          ...work.blockers,
-        ]),
-        'WORK_BLOCKED',
-        '完成条件未满足',
-      );
-    }
     if (work.status === 'cancelled')
       requireData(old, 'WORK_CONTEXT', '取消必须关联已有任务或事件');
     if (event) {

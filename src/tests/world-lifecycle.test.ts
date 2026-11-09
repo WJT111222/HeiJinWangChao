@@ -419,11 +419,13 @@ describe('二轮 A4/A5 完成来源与失败终止语义', () => {
     expect(accepted.taskCommands[0]).toMatchObject({ task: { resolution: { result: completion.outcome, sourceTurnId: 'turn-a' } } });
     expect(state).toEqual(before);
   });
-  it('自身来源不允许跳过旧阻碍、删除条件、换目标或伪造截止成功', () => {
+  it('旧阻碍不决定结局，但既有完成条件与目标仍不可改写', () => {
     const old = { ...job(), completionCondition: '全部核对签名', blockers: ['缺少钥匙'] },
       state = stateWith([old]);
+    const accepted = parse(withTasks([taskCommand({ ...old, status: 'completed' },
+      { sources: ['task:task-a', 'goal:npc-a:0'], ...completion })]), state);
+    expect(accepted.taskCommands[0]).toMatchObject({task:{status:'completed',blockers:['缺少钥匙']}});
     for (const patch of [
-      { blockers: [] },
       { completionCondition: undefined },
       { goal: '已完成的另一个目标' },
     ])

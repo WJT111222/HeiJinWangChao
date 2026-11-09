@@ -146,10 +146,10 @@ function dependencies(kind:'task'|'event') {
   const response={...worldResult(),taskCommands:kind==='task'?[finish]:[],eventCommands:kind==='task'?[queue]:[queue,finish]};
   return {state:GameStateSchema.parse(state),draft:withVars,finish,queue,response};
 }
-describe('R2 parseWorld reads only previously validated causal prerequisite results',()=>{
+describe('R2 narrative prerequisites remain context; actual handoff and time constraints remain validated',()=>{
   it.each(['task','event'] as const)('completes a %s prerequisite and queues the dependent event, persists/reloads/replays',async kind=>{
     const a=dependencies(kind),repo=await repoFor(a),before=structuredClone(a.state);
-    expect(orderWorldCommands([...a.response.taskCommands,...a.response.eventCommands]).map(c=>c.commandId)).toEqual(['finish-prep','queue-review']);
+    expect(orderWorldCommands([...a.response.taskCommands,...a.response.eventCommands]).map(c=>c.commandId)).toEqual(kind==='task'?['finish-prep','queue-review']:['queue-review','finish-prep']);
     let normalized:ReturnType<typeof parseWorld>;
     try {normalized=parseWorld(JSON.stringify(a.response),a.state,a.draft);}catch(error){
       if(error instanceof AiError)throw new Error(`R2 parseWorld rejected: ${error.code}/${error.details?.worldRule}`,{cause:error});throw error;
@@ -168,16 +168,23 @@ describe('R2 parseWorld reads only previously validated causal prerequisite resu
     const first=projectTurn(a.state,a.draft,[...one.taskCommands,...one.eventCommands]),second=projectTurn(a.state,a.draft,[...two.taskCommands,...two.eventCommands]);
     expect(first.events).toEqual(second.events);expect(first.tasks).toEqual(second.tasks);
   });
-  it.each(['unfinished','cancelled','missing','invalid-prior','time-order','cycle','late-failure'] as const)('rejects %s without mutating the formal state',mode=>{
+  it.each(['unfinished','cancelled','missing','cycle'] as const)('allows %s narrative prerequisite without treating it as permission',mode=>{
     const a=dependencies('task'),before=structuredClone(a.state);
     if(mode==='unfinished')a.response.taskCommands=[];
     if(mode==='missing' && a.queue.type==='SaveEvent')a.queue.event.prerequisites=['task:missing'];
+    if(mode==='cycle' && a.finish.type==='SaveTask')a.finish.task.prerequisites=['event:review'];
+    if(mode==='cancelled' && a.finish.type==='SaveTask'){a.finish.task.status='cancelled';a.finish.task.resolution!.outcome='cancelled';}
+    const result=parseWorld(JSON.stringify(a.response),a.state,a.draft);
+    expect(result.eventCommands[0]).toMatchObject({event:{protagonistEntry:{status:'pending'}}});
+    expect(a.state).toEqual(before);
+  });
+  it.each(['cancelled','invalid-prior','time-order','late-failure'] as const)('rejects %s without mutating the formal state',mode=>{
+    const a=dependencies('task'),before=structuredClone(a.state);
     if(mode==='cancelled' && a.finish.type==='SaveTask'){
       a.finish.task.status='cancelled';const p=JSON.parse(a.finish.evidence);p.decision.status='cancelled';p.decision.failure=true;p.fact='资料保管部门撤回了材料，本次核对任务已正式取消。';p.decision.reason='材料撤回使本次核对实际终止';p.decision.result=p.fact;p.decision.resultKnowledge={facts:[p.fact],reported:[],suspected:[]};a.finish.evidence=JSON.stringify(p);
     }
     if(mode==='invalid-prior' && a.finish.type==='SaveTask') delete a.finish.task.resolution;
     if(mode==='time-order' && a.finish.type==='SaveTask')a.finish.task.resolution!.at='2026-10-18T08:11:00+08:00';
-    if(mode==='cycle' && a.finish.type==='SaveTask')a.finish.task.prerequisites=['event:review'];
     if(mode==='late-failure')a.response.worldCommands.push({type:'UpdateNpc',commandId:'illegal-scene',npcId:'scene',expectedRevision:1,changes:{onScene:true},evidence:proof({at:'2026-10-18T08:09:00+08:00'})});
     expect(()=>parseWorld(JSON.stringify(a.response),a.state,a.draft)).toThrow();expect(a.state).toEqual(before);
   });
