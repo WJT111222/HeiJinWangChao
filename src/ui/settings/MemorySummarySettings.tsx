@@ -6,10 +6,6 @@ import type { SummaryKind } from '../../domain/memories/configuration';
 import type { GameState } from '../../domain/state';
 import { compressionCandidates } from '../../domain/memories/compression';
 import { npcSummaryCandidates, npcMemoryIdCounts } from '../../domain/memories/npcMemory';
-import { readAiConfig } from '../../services/ai/configuration';
-import { resolveModelRoute } from '../../services/ai/snapshot';
-import { redactInspection } from '../../services/ai/inspection';
-import { browserCredentials } from '../../services/ai/credentials';
 import { RequestUsage } from '../game/RequestUsage';
 
 export function MemorySummarySettings({ settings, onSave, state, phase, activeKind, notice, onRun, onCancel, onDirtyChange }: {
@@ -41,8 +37,6 @@ export function MemorySummarySettings({ settings, onSave, state, phase, activeKi
     Object.keys(patch).forEach(key => touched.current.add(`${kind}.${key}`));
     setEditing(value => ({ ...value, [kind]: { ...value[kind], ...patch } })); setDirty(true); onDirtyChange?.(true);
   };
-  let model = '尚未配置总结模型';
-  try { const route = resolveModelRoute(readAiConfig(localStorage), 'memory'); model = redactInspection(`${route.channel.name} / ${route.model}`, browserCredentials()); } catch { /* safe empty state */ }
   const npcCounts = useMemo(() => state ? npcMemoryIdCounts(state) : undefined, [state]);
   const npcIds = useMemo(() => state ? Object.keys(state.npc).filter(id => npcSummaryCandidates(state, id, npcCounts).length >= settings.memory.summaries.npc.batchSize) : [], [state, npcCounts, settings.memory.summaries.npc.batchSize]);
   const selectedNpc = npcId || (npcIds.length === 1 ? npcIds[0] : '');
@@ -72,13 +66,8 @@ export function MemorySummarySettings({ settings, onSave, state, phase, activeKi
             onChange={e => changeImmediate(e.target.valueAsNumber)} />
         </label>
       </div>
-      <p className="muted">默认10回合。这里保存的数字决定下一次正文请求的完整回合窗口，不改变正式存档版本或删除原文。更早的相关历史仍可通过有界本地检索重新引用。</p>
     </section>
     <h4>记忆总结</h4>
-    {settings.memory.automaticMaintenance === false && <p>旧版自动维护的关闭状态已延续。旧版默认也是关闭，无法据此判断你是否曾主动关闭；升级时未自动开启收费请求。你可分别开启三种自动总结，已保存的各项选择会继续保留。</p>}
-    <p>记忆总结模型：{model}</p><p>自动及立即总结均可能产生第三方 API 费用；后台最多每分钟3次、每小时12次，失败不自动重试。关闭「自动总结」只会停止后台自动请求，不影响「立即总结」的手动操作。</p>
-    {!state && <p>未进入有效存档：可编辑设置，立即总结不可用。</p>}
-    {state && <p>当前人生：{state.title}</p>}
     {summaryKinds.map(kind => {
       const config = editing[kind], saved = settings.memory.summaries[kind];
       const count = !state ? 0 : kind === 'npc' ? selectedNpc ? npcSummaryCandidates(state, selectedNpc, npcCounts).length : 0 : compressionCandidates(state, kind).length;
