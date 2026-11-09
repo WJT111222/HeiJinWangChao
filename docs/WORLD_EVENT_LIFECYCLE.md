@@ -39,7 +39,7 @@ Story 只对本幕实际处理的事件提交回执；未处理者保留 pending
 - scheduled/active/blocked 记录继续支持调度。影响等级是描述属性，不决定历史写入、保留或展示权限。
 - DeleteEvent(eventId,expectedStatus,reason) 只清理终态且无未处理入场/必要引用的事件。重要性与主角参与不再成为独立拒绝理由。保留最小 retiredEvents 身份防止重建同一 ID，不自动创建历史或后继。
 - 有新发展才通过 predecessorEventIds 自然承接；有任务、人物知识或其他事件的必要引用时保守保留完整对象，避免悬空引用。
-- ArchiveEvent 与 timelineCandidates 已删除，没有兼容分支。World 通过 worldCommands 中的 RecordHistory 创建独立历史。无需创建 WorldEvent、结案或获得 major 等级；可关联现有活动事件。
+- ArchiveEvent 与 timelineCandidates 已删除，没有兼容分支。World 通过 worldCommands 中的 RecordHistory 创建独立历史。普通史料无需创建 WorldEvent、结案或获得 major 等级，可关联现有活动事件；可选重大纪事遵循文末 V2 规则。
 
 ```json
 {
@@ -56,7 +56,7 @@ Story 只对本幕实际处理的事件提交回执；未处理者保留 pending
 
 HistoryRecord 可含 occurredAt（准确发生时间）、occurredTimeText（年份/模糊时期/原始相对描述），均未知时均可省略。不以设备时间或记录时间替代未知发生日期。程序注入 recordedAt=当前游戏时钟与 sourceTurnId，不接受 AI 改写这两个字段。准确发生时间不能晚于记录时间；新的披露不倒退 worldClock。
 
-knowledgeKind 为 established/reported/suspected，由模型声明；程序不判定可信度。sourceRef 可记录正式人物/组织，sourceText 可记录未建档来源。可选 eventId 与 relatedEntryIds 只作引用，不要求事件重大或结案。普通史料按记录顺序展示，保留不同时间的新说法；只检查 ID 与明确重放，不做文字相似度去重。记录不会广播角色认知，World 上下文可查看历史，Story/Variables 通过完整上下文读取历史，不代表角色自动获得知识。
+knowledgeKind 为 established/reported/suspected，由模型声明；程序不判定可信度。sourceRef 可记录正式人物/组织，sourceText 可记录未建档来源。普通史料的可选 eventId 与 relatedEntryIds 只作引用，不要求事件重大或结案。普通史料按记录顺序展示，保留不同时间的新说法；只检查 ID 与明确重放，不做文字相似度去重。记录不会广播角色认知，World 上下文可查看历史，Story/Variables 通过完整上下文读取历史，不代表角色自动获得知识。
 
 ## 单一排程与事务
 

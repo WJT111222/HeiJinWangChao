@@ -453,6 +453,10 @@
       "contextV2": {
         "notes": "三阶段上下文V2：仅适配完整模型读取、角色知情与原写入权限的说明；保留原始及历史适配哈希，不改输出协议。",
         "sha256": "3a6016d5946f3f804a1dd0102b63c90c5060353ac67406745b6608b4adb64dc9"
+      },
+      "historyTimelineV2": {
+        "notes": "历史时间轴V2：保留普通RecordHistory，新增可选chronicle、世界结案归档/主角事实归档、时间精度与同年冬季排序；玩家观察与角色认知分离，无新增请求。保留之前所有来源哈希。",
+        "sha256": "49199d8a1f7407fa4621811cdb8b3da246018e5744a399ef3ac37c2d014deac3"
       }
     },
     "stages/opening/variables.md": {
@@ -498,6 +502,10 @@
       "worldFreedomV6": {
         "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
         "sha256": "cf742c2774ccb5412c887a622f536e669355bd5b5c00d068ebe30ed8fa7d9690"
+      },
+      "historyTimelineV2": {
+        "notes": "历史时间轴V2：保留普通RecordHistory，新增可选chronicle、世界结案归档/主角事实归档、时间精度与同年冬季排序；玩家观察与角色认知分离，无新增请求。保留之前所有来源哈希。",
+        "sha256": "2fb9a235f2ed37a15ab7ca62aa5a1db7918bc7da70efa740ea647625fe475d5a"
       }
     },
     "stages/regular/variables.md": {
@@ -535,6 +543,10 @@
       "worldFreedomV6": {
         "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
         "sha256": "41509a44dee98e9e6e26ff098c545c9ffb25f6b0f0f8b72aad56a90fac102388"
+      },
+      "historyTimelineV2": {
+        "notes": "历史时间轴V2：保留普通RecordHistory，新增可选chronicle、世界结案归档/主角事实归档、时间精度与同年冬季排序；玩家观察与角色认知分离，无新增请求。保留之前所有来源哈希。",
+        "sha256": "e5d40e80c9113fcbdf853763b12e1e2710aaa3a00d372c3fb47412c199e1d4df"
       }
     },
     "variableGroups/protagonist/init.md": {
@@ -728,7 +740,11 @@
     "variableGroups/org_government/offscreen.md": {
       "origin": "baseline",
       "sourceSha256": "5aaf1ec5718f359074d24a2036e046a0ce9fc68de4a10388e062c7cf1079be8a",
-      "treatment": "verbatim"
+      "treatment": "runtime-contract-update",
+      "historyTimelineV2": {
+        "notes": "历史时间轴V2：保留普通RecordHistory，新增可选chronicle、世界结案归档/主角事实归档、时间精度与同年冬季排序；玩家观察与角色认知分离，无新增请求。保留之前所有来源哈希。",
+        "sha256": "415a155ea13178a8229b51052bb104bcd277a6cf399c5301db886b5499f30cb2"
+      }
     },
     "variableGroups/org_civil/init.md": {
       "origin": "baseline",
@@ -802,7 +818,11 @@
     "variableGroups/org_business/offscreen.md": {
       "origin": "baseline",
       "sourceSha256": "329a7dd071af7aad7c87e9ad523cf8cf80eb45e41351ff1bc025a347e8001244",
-      "treatment": "verbatim"
+      "treatment": "runtime-contract-update",
+      "historyTimelineV2": {
+        "notes": "历史时间轴V2：保留普通RecordHistory，新增可选chronicle、世界结案归档/主角事实归档、时间精度与同年冬季排序；玩家观察与角色认知分离，无新增请求。保留之前所有来源哈希。",
+        "sha256": "9b83cae2c5ccbaa2295c98c84efd510f57f22a3c60c826cf8fc59d560c603571"
+      }
     },
     "writing/perspective_first.md": {
       "origin": "baseline",
