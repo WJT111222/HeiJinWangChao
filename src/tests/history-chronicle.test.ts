@@ -161,3 +161,11 @@ it.each([['fact','established'],['statement','reported'],['rumor','suspected'],[
  cmd.entry.knowledgeKind=knowledgeKind==='established'?'reported':'established';
  expect(()=>parseWorld(JSON.stringify(result([cmd])),worldState(),worldDraft())).toThrow();
 });
+it('已知精确occurredAt不能被新纪事模糊time降级或重新定位，相同时刻的时区表示仍兼容',()=>{
+ const cmd=historyCommand();cmd.entry.occurredAt=gameTime;cmd.entry.chronicle!.time={precision:'instant',at:'2026-10-18T00:00:00Z'};
+ expect(()=>parseWorld(JSON.stringify(result([cmd])),worldState(),worldDraft())).not.toThrow();
+ cmd.entry.chronicle!.time={precision:'month',year:2026,month:10};
+ expect(()=>parseWorld(JSON.stringify(result([cmd])),worldState(),worldDraft())).toThrow();
+ delete cmd.entry.chronicle;
+ expect(()=>parseWorld(JSON.stringify(result([cmd])),worldState(),worldDraft())).not.toThrow();
+});
