@@ -28,11 +28,28 @@ scheduled/active/blocked不得预存resolvedAt、resolutionText、resultKnowledg
 ## 承接与清理
 continuation选择protagonist/world/end并说明reason。protagonist提供最小entry={channel,cue,locationId?}，不暴露不必要的后台秘密；到期由程序排队，下一次玩家行动的Story通过eventInteraction回执呈现、拒绝、退出或中断。World不能伪造protagonistEntry或消费回执，也不能直接将pending事件结案。world方向终态需要同批真实非终态后继；end不强制续篇。不为了活跃度无限制造事件。
 DeleteEvent仅清理无未处理入场、无必要任务、因果、知识或历史引用的终态；不按impact或是否涉及主角限制清理。保留轻量身份，清理与其他命令同一原子事务。
-## 独立历史记录
+## 史料记录与重大纪事
 World自行判断哪些过去或当前的经历、关系转折、秘密披露、个人声明值得记录，不要求每回合新增。worldCommands使用RecordHistory；无需先建事件、结案或评为major。impact只是事件描述，不决定历史资格。
 entry包含id、title、summary、knowledgeKind（established已确立事实/reported人物陈述/suspected推测传闻）。可选occurredAt为已知精确ISO日期，occurredTimeText为年份、大学时期、三年前等自然描述；未知可均省略，不能编造精确时间。recordedAt与sourceTurnId由程序以本回合游戏时钟/回合ID写入，不由模型填写，也不倒退当前时钟。
 可选sourceRef记录有效披露者ID，sourceText保留没有实体的来源描述；actorRefs、locationId、eventId、relatedEntryIds可关联真实实体及其他历史。eventId不必提供，也不要求关联事件终结。传述保持reported，记录本身不升级为事实、不广播NPC或主角认知。后续新说法可用新ID关联旧历史，不改写旧记录。
 例：{"commandId":"history-1","type":"RecordHistory","evidence":"本幕披露往事","entry":{"id":"past-cooperation","title":"合作往事","summary":"来访者声称大学时曾经历一次合作破裂。","occurredTimeText":"大学时期","knowledgeKind":"reported","sourceText":"来访者自述","actorRefs":[],"relatedEntryIds":[]}}
+
+重大纪事由World自行判断，普通日常留在永久正文，无重大事实可不写。上述不带chronicle的普通史料继续保留，不能把旧史料自动升级。重大性不以impact、金额、人物数量或关键词为门槛。
+重大节点仍使用RecordHistory，在entry中增加可选chronicle，字段遵循COMMAND_CATALOG，不增加请求或顶层数组：
+- category为world或protagonist。world还需scope（region/country/world/organization）与scopeText，明确地区、国家、世界或重大组织的影响范围。
+- nature区分整篇纪事的fact/statement/rumor/inference；对应原entry.knowledgeKind分别为established/reported/suspected/suspected，不能矛盾。结果和影响也分别保留自己的nature。
+- milestoneId标识同一重大事实；双视角使用不同entry.id、同一milestoneId和相同time，可用parallel关系相互关联。同类不得重复记录。新发展、更正、调查成果另写新ID，用relations的follows/corrects/parallel及entryId关联旧历史，不改写既有记录。
+- time是实际发生/开始时间，endTime为实际结束时间。world必须提供endTime，不能拿estimatedEndAt代替。world的basis：event_result关联已结束正式事件的entry.eventId，time精确对应startAt、endTime对应resolvedAt；historical_event用于没有正式事件实体的已结束往事，不造事件，保持已知时间精度；cancellation_decision记录真实的重大撤销决定，关联cancelled事件，time/endTime均为实际resolvedAt。未开始即取消的计划不能作为已发生的事件结果归档。
+- 世界重大事件实际结束后才归档。同轮SaveEvent结案与RecordHistory可一起提出，程序依据最终合法投影验证。Variables已合法结案的现场事件只引用其结果，不再修改终态。归档不停止后续调查、人物反应或新事件；时间轴不承担调度。
+- 主角重大事实发生时归档：决定创业是决定，成立公司是另一项成果，不把未来愿望写成已完成结果。历史纪事和玩家观察不自动传播角色知识。
+- narrative为简洁史书纪事（上限3000字符），process为主要经过（至多8段、每段300字符）；results和impacts分别为已发生结果、已确认影响（各至多6项，每项text至多400字符、nature为fact/statement/rumor/inference、可选sourceText至多200字符）。不填预测性影响来冒充已确认结果。title至多120字符，summary至多600字符，不以最低字数填充。
+- locationId/actorRefs/eventId沿用entry真实引用；chronicle.locationText补充地点表述。supportingTurnIds可引用正式journal或当前回合，至多40条；relations至多32条，前序与更正关系不可自引用或成环。recordedAt/sourceTurnId仍由程序生成。
+
+时间对象用真实精度，不从模糊描述捏造日期：
+instant={precision:"instant",at:"2026-10-18T08:00:00+08:00"}；day={precision:"day",date:"2021-06-09"}；month={precision:"month",year:2021,month:6}；season={precision:"season",year:2021,season:"summer"}；year={precision:"year",year:2021}；unknown={precision:"unknown",text:"青年时期，年份待考"}。可选text保留原始时间表述；entry.occurredTimeText仍可保留。range={precision:"range",from:已知精度时间对象,to:已知精度时间对象,text?:原始表述}，from/to不能再是range或unknown。
+展示先统一排序再分两侧：同月精确日期在前、月份模糊记录在后；春/夏/秋/冬分别收在同年5/8/11/12月份日期和月份记录之后；全年模糊记录最后。冬季不跨年，不虚构具体日期。范围收在终点精度之后；未知年份进入时间待考。此为展示约定，不改写真实时间。相同精度时间共组，不声称日期或模糊分组里的记录发生于同一精确时刻。
+主角纪事例：{"commandId":"history-decision","type":"RecordHistory","evidence":"本幕正式决定创业","entry":{"id":"history-reading-room","title":"决定创办阅览室","summary":"主角决定与伙伴共同筹备社区阅览室。","knowledgeKind":"established","occurredTimeText":"2021年夏季","chronicle":{"category":"protagonist","nature":"fact","milestoneId":"reading-room-decision","time":{"precision":"season","year":2021,"season":"summer"},"narrative":"夏，主角与伙伴议定筹建阅览室，约定先行走访社区。","process":["双方明确了筹备分工。"],"results":[{"text":"创业决定已经作出，机构尚未成立。","nature":"fact"}],"impacts":[]}}}
+
 RetireNpc只能清理无当前职责、资产引用的离场非联系人。联系人和初始同伴永久保护。旧档contactReviewNpcIds仍保守保护历史联系；没有独立玩家确认入口时player_confirmed不能授权删除。retainMemoryIds只引用真实原始记忆，不把保留材料传播给其他人。
 
 本阶段只生成候选。Variables缺失时为预览，不冒充完整回合；失败保持上游成果。全部验证后沿现有原子Commit生效，不额外调用逐事件AI或自动付费修复。
