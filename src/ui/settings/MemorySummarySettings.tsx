@@ -82,7 +82,6 @@ export function MemorySummarySettings({ settings, onSave, state, phase, activeKi
         </div>
         {kind === 'npc' && <>
           <label>总结目标 NPC<select value={selectedNpc} onChange={e => setNpcId(e.target.value)}><option value="">请选择人物</option>{npcIds.map(id => <option key={id} value={id}>{state!.npc[id].name}</option>)}</select></label>
-          <p>默认20条触发、整理15条，保留最近5条活跃未覆盖记忆；当前配置预留约 {Math.max(0, config.threshold - config.batchSize)} 条。NPC总结不再转长期。</p>
         </>}
         {state && <p>当前合格未覆盖：{count} 条；一次必须完整处理 {saved.batchSize} 条。{count < saved.batchSize ? `不足${saved.batchSize}条，不调用模型。` : ''}</p>}
         <label>完整内容提示词 · {summaryNames[kind]}<textarea rows={12} value={config.prompt} onChange={e => change(kind, { prompt: e.target.value })} /></label>
