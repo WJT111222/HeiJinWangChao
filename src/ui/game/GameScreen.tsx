@@ -707,7 +707,7 @@ export function GameScreen({
       {renderSettings?.(<MemorySummarySettings state={state} settings={settings} onSave={next => {
         onSettings(next);
         const saved = SettingsSchema.parse(JSON.parse(localStorage.getItem(settingsKey) || 'null'));
-        if (fingerprint(saved.memory.summaries) !== fingerprint(next.memory.summaries)) throw new Error('summary settings not saved');
+        if (fingerprint(saved.memory) !== fingerprint(next.memory)) throw new Error('memory settings not saved');
       }} phase={memory.phase} activeKind={memory.activeKind} notice={memory.notice}
         onRun={(kind, npcId) => void memory.run(false, kind, npcId)} onCancel={memory.cancel} />)}
       {memory.failures[0] && <Dialog title={summaryFailureTitle(memory.failures[0])} small onClose={() => memory.closeFailure(memory.failures[0].kind)}>
