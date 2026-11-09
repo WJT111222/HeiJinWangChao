@@ -62,8 +62,8 @@ async function windowSize(page: Page, size: number) {
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: '记忆', exact: true }).click();
   await dialog.getByLabel('即时记忆完整回合数').fill(String(size));
-  await dialog.getByRole('button', { name: '保存本地设置' }).click();
-  await expect(dialog).toContainText('本地偏好已保存');
+  await dialog.getByRole('button', { name: '保存记忆设置', exact: true }).click();
+  await expect(dialog).toContainText('记忆设置已保存');
   await dialog.getByRole('button', { name: '关闭资料界面' }).click();
 }
 

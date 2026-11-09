@@ -304,11 +304,13 @@ test('四类设置可键盘操作、保存恢复，七项提示词与两个运�
   await page.getByLabel('NoControl（防抢话）').uncheck();
   await page.getByRole('button', { name: '保存本地设置' }).click();
   await page.getByRole('button', { name: '记忆', exact: true }).click();
+  await expect(page.getByRole('button', { name: '记忆总结', exact: true })).toHaveCount(0);
   await page.getByLabel('即时记忆完整回合数').fill('0');
-  await page.getByRole('button', { name: '保存本地设置' }).click();
-  await expect(page.getByRole('status')).toContainText('正整数');
+  await page.getByRole('button', { name: '保存记忆设置', exact: true }).click();
+  await expect(page.getByText(/即时记忆完整回合数须为1～10000的正整数/)).toBeVisible();
   await page.getByLabel('即时记忆完整回合数').fill('12');
-  await page.getByRole('button', { name: '保存本地设置' }).click();
+  await page.getByRole('button', { name: '保存记忆设置', exact: true }).click();
+  await expect(page.getByText(/记忆设置已保存/)).toBeVisible();
   await page.getByRole('button', { name: '运行', exact: true }).click();
   await page.getByLabel('变量管理', { exact: true }).uncheck();
   await expect(page.getByLabel('动态世界', { exact: true })).toBeChecked();
