@@ -45,10 +45,10 @@ export function validateStageSettlement(before:GameState,after:GameState,turnId:
       const source=after.events[event.id];
       const next=Object.values(after.events).filter(e=>!e.eventKind && !ended(e) && e.predecessorEventIds?.includes(event.id)
         && e.protagonistEntry?.id===`stage-entry:${before.revision}`);
-      const cancelled=result.status==='cancelled' && entry.status==='pending' && next.length===0;
+      const closed=entry.status==='pending' && next.length===0 && (!source || source.continuation?.direction!=='protagonist');
       requireData(!source || same(source.protagonistEntry,{...entry,status:'invalidated',handledTurnId:turnId,
-        textEvidence:cancelled?'阶段到期，原入场安排已取消':'阶段固定到期，入场职责转交后续事件'}),'STAGE_ENTRY','阶段不能伪造玩家处理回执');
-      if(cancelled)continue;
+        textEvidence:closed?'阶段到期，未呈现的原入场安排已结束':'阶段固定到期，入场职责转交后续事件'}),'STAGE_ENTRY','阶段不能伪造玩家处理回执');
+      if(closed)continue;
       requireData(next.length===1 && same(next[0].protagonistEntry,{...entry,id:`stage-entry:${before.revision}`}),
         'STAGE_ENTRY','到期入场必须由唯一后继互动事件承接，不能伪造接受或丢失参与');
     }

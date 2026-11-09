@@ -77,7 +77,7 @@ it.each(['pending','presented'] as const)('%s到期入场移交新互动，阶�
   const a=stageContext(),old=a.state.events['stage-one'];
   old.protagonistEntry={id:'entry-old',sourceTurnId:'stage-current',queuedAt:stageStart,channel:'电话',cue:'请说明材料情况',status,
     ...(status==='presented'?{handledTurnId:'stage-current',textEvidence:'已接听'}:{})};old.sourceTurnIds=['stage-current'];
-  const terminal=endStage(old),next={...event('interaction-next'),startAt:old.fixedEndAt!,estimatedEndAt:old.fixedEndAt,sourceTurnIds:['stage-current'],predecessorEventIds:[old.id],continuation:{direction:'protagonist' as const,reason:'下一幕由玩家回应',entry:{channel:'电话',cue:'请说明材料情况'}}};
+  const terminal={...endStage(old),continuation:{direction:'protagonist' as const,reason:'原邀请仍需处理',entry:{channel:old.protagonistEntry!.channel,cue:old.protagonistEntry!.cue}}},next={...event('interaction-next'),startAt:old.fixedEndAt!,estimatedEndAt:old.fixedEndAt,sourceTurnIds:['stage-current'],predecessorEventIds:[old.id],continuation:{direction:'protagonist' as const,reason:'下一幕由玩家回应',entry:{channel:'电话',cue:'请说明材料情况'}}};
   a.response.eventCommands=[stageCommand(next),stageCommand(terminal),clean(old.id)];const r=parse(a);const again=parseWorld(JSON.stringify(r),a.state,a.draft);expect(again).toEqual(r);
   const result=projectTurn(a.state,a.draft,r.eventCommands);expect(result.events[old.id]).toBeUndefined();
   expect(result.retiredEvents[old.id].status).toBe('resolved');expect(result.events[next.id].protagonistEntry?.status).toBe(status);
@@ -164,11 +164,11 @@ it('同轮主事件实际结案、阶段紧凑化和重大纪事按主事件开�
   record.entry.chronicle!.time={precision:'instant',at:stageNow};expect(()=>parse(a)).toThrow();
 });
 
-it('到期取消尚未呈现的入场可自然结束，不强造后继，不代表玩家拒绝',()=>{
+it.each(['success','failure','changed','cancelled'] as const)('%s阶段结束后未呈现旧入场可自然结束，不迫使更换剧情结局',outcome=>{
   const a=stageContext(),old=a.state.events['stage-one'];old.sourceTurnIds=['stage-current'];
   old.protagonistEntry={id:'cancel-entry',sourceTurnId:'stage-current',queuedAt:stageStart,channel:'电话',cue:'待讨论事项',status:'pending'};
-  a.response.eventCommands=[stageCommand(endStage(old,'cancelled')), {...clean(old.id),expectedStatus:'cancelled'}];
-  const next=apply(a);expect(next.events[old.id]).toBeUndefined();expect(next.retiredEvents[old.id].detail?.outcome).toBe('cancelled');
+  a.response.eventCommands=[stageCommand(endStage(old,outcome)), {...clean(old.id),expectedStatus:outcome==='cancelled'?'cancelled':'resolved'}];
+  const next=apply(a);expect(next.events[old.id]).toBeUndefined();expect(next.retiredEvents[old.id].detail?.outcome).toBe(outcome);
   expect(Object.values(next.events).some(e=>e.protagonistEntry)).toBe(false);expect(next.protagonist).toEqual(a.state.protagonist);
 });
 
@@ -199,4 +199,15 @@ it('阶段已结束仍声明protagonist承接时，必须落地为新的待入�
   a.response.eventCommands=[stageCommand(source)];expect(()=>parse(a)).toThrow();
   const target={...event('new-interaction'),startAt:source.fixedEndAt!,estimatedEndAt:stageNow,sourceTurnIds:['stage-current'],predecessorEventIds:[source.id],continuation:source.continuation};
   a.response.eventCommands.push(stageCommand(target));expect(apply(a).events[target.id].protagonistEntry?.status).toBe('pending');
+});
+
+it('后台后继与待入场后继可以并存，明确前序不强迫跨组织阶段同父',()=>{
+  const a=stageContext(),old=a.state.events['stage-one'];old.sourceTurnIds=['stage-current'];
+  old.protagonistEntry={id:'parallel-entry',sourceTurnId:'stage-current',queuedAt:stageStart,channel:'电话',cue:'保留这次邀请',status:'pending'};
+  const source={...endStage(old),continuation:{direction:'world' as const,reason:'另有后台职责',followup:'根据阶段结果继续处理'}};
+  const other={...a.state.events['main-stage'],id:'other-main',title:'另一组织的独立事务',actorRefs:[{kind:'organization' as const,id:'org-stage-b'}],sourceTurnIds:['stage-current']};
+  const background={...subStage('other-followup',old.fixedEndAt,'2027-05-01T00:00:00+08:00'),parentEventId:other.id,actorRefs:other.actorRefs,predecessorEventIds:[old.id],sourceTurnIds:['stage-current']};
+  const interaction={...event('parallel-interaction'),startAt:old.fixedEndAt!,estimatedEndAt:stageNow,predecessorEventIds:[old.id],sourceTurnIds:['stage-current'],continuation:{direction:'protagonist' as const,reason:'原邀请由玩家继续决定',entry:{channel:'电话',cue:'保留这次邀请'}}};
+  a.response.eventCommands=[source,other,background,interaction].map(stageCommand);
+  const next=apply(a);expect(next.events[background.id].parentEventId).toBe(other.id);expect(next.events[interaction.id].protagonistEntry?.status).toBe('pending');
 });

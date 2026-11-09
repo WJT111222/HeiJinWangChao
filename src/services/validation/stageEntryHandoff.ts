@@ -15,8 +15,8 @@ export function normalizeStageEntryHandoffs(result:z.infer<typeof WorldResultSch
     requireWorld(Date.parse(source.event.resolvedAt!)===Date.parse(source.event.fixedEndAt!), 'invalid_output','event_time');
     const targets=result.eventCommands.filter(c=>c.type==='SaveEvent'&&!c.event.eventKind&&!terminalEvent(c.event)
       && c.event.predecessorEventIds?.includes(source.event.id)&&c.event.continuation?.direction==='protagonist');
-    if(source.event.status==='cancelled' && entry.status==='pending' && targets.length===0) {
-      const closed={...entry,status:'invalidated' as const,handledTurnId:draft.turnId,textEvidence:'阶段到期，原入场安排已取消'};
+    if(entry.status==='pending' && targets.length===0 && source.event.continuation?.direction!=='protagonist') {
+      const closed={...entry,status:'invalidated' as const,handledTurnId:draft.turnId,textEvidence:'阶段到期，未呈现的原入场安排已结束'};
       requireWorld(!source.event.protagonistEntry || fingerprint(source.event.protagonistEntry)===fingerprint(entry)
         || fingerprint(source.event.protagonistEntry)===fingerprint(closed),'permission','event_entry');
       source.event.protagonistEntry=closed; normalized.add(source.event.id); continue;
