@@ -1,3 +1,5 @@
+import { normalizeStageEntryHandoffs } from './stageEntryHandoff';
+import { validateStageSettlement } from '../../domain/events/stages';
 import { normalizeEventContinuation } from './worldEventContinuation';
 import { historicalEvent, terminalEvent } from '../../domain/events/lifecycle';
 import { worldEventSchedule } from '../../domain/events/schedule';
@@ -33,6 +35,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   const result = WorldResultSchema.parse(raw);
   requireWorld(draft.story, 'invalid_output', 'command_structure');
   const base = projectTurn(original, draft), now = Date.parse(base.worldClock);
+  const stageHandoffs=normalizeStageEntryHandoffs(result,base,draft);
   const commands = [...result.worldCommands, ...result.taskCommands, ...result.eventCommands];
   const allowed = new Set<string>(worldTypes);
   for (const command of result.worldCommands) requireWorld(allowed.has(command.type), 'permission');
@@ -137,6 +140,11 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         }
         case 'SaveEvent': {
           const event = command.event, old = base.events[event.id];
+          if(event.eventKind==='sub') requireWorld(!old || !terminalEvent(old),'invalid_output','event_transition');
+          if(event.eventKind==='sub' && (!old || !terminalEvent(old))) {
+            if(old && !terminalEvent(event)) requireWorld(fingerprint(old)===fingerprint(event),'permission','event_transition');
+            if(terminalEvent(event)) requireWorld(Date.parse(event.resolvedAt!)===Date.parse(event.fixedEndAt!), 'invalid_output','event_time');
+          }
           if (!old || !terminalEvent(event)) {
             const checked = plannedEventSchema(event).safeParse(event);
             if (!checked.success) throw worldValidationError(checked.error,{fieldPath:'event',worldRule:'event_plan'});
@@ -178,7 +186,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
               event.sourceTurnIds = [...event.sourceTurnIds.filter(id => id !== draft.turnId),draft.turnId];
             } else delete event.protagonistKnowledge;
           }
-          normalizeEventContinuation(event,old,base,draft);
+          if(!stageHandoffs.has(event.id)) normalizeEventContinuation(event,old,base,draft);
           break;
         }
         case 'RecordHistory': break; // 只记录，不广播知识；引用/日期/ID由同一领域投影验证。
@@ -200,20 +208,25 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   let projected: GameState;
   try { projected = projectTurn(original, draft, commands); }
   catch (error) { throw worldProjectionError(error, result, original, draft); }
-  if (draft.variables?.validation === 'validated' && !historicalPerspective(state,draft)) for (const due of worldEventSchedule(state,base).due) {
+  if (draft.variables?.validation === 'validated' && !historicalPerspective(state,draft)) for (const due of worldEventSchedule(state,base).due.filter(e=>e.eventKind!=='sub')) {
     const after=projected.events[due.eventId] ?? projected.retiredEvents[due.eventId];
     requireWorld(after && (terminalEvent(after) || ('estimatedEndAt' in after && after.estimatedEndAt && Date.parse(after.estimatedEndAt)>Date.parse(base.worldClock)) || ('protagonistEntry' in after && ['pending','presented'].includes(after.protagonistEntry?.status??''))), 'invalid_output', 'due_event_unhandled');
   }
-  for(const command of result.eventCommands) if(command.type==='SaveEvent' && !terminalEvent(command.event)) {
+  if(draft.variables?.validation==='validated' && !historicalPerspective(state,draft)) validateStageSettlement(base,projected,draft.turnId);
+  for(const command of result.eventCommands) if(command.type==='SaveEvent' && !terminalEvent(command.event) && command.event.eventKind!=='main') {
     // V2 sub-events carry a fixed bound, never an estimated scheduling alias.
-    // Automatic dispatch remains the existing estimatedEndAt scheduler until batch two.
+    // Sub-event dispatch uses fixedEndAt; untyped legacy events retain estimatedEndAt.
     const end=command.event.eventKind==='sub' ? command.event.fixedEndAt : command.event.estimatedEndAt;
     requireWorld(['pending','presented'].includes(command.event.protagonistEntry?.status??'') || (end && Date.parse(end)>Date.parse(base.worldClock)));
   }
-  // A world continuation is a necessary live successor, never an instant chain of finished events.
+  for(const command of result.eventCommands) if(command.type==='SaveEvent' && command.event.eventKind==='sub'
+    && terminalEvent(command.event) && command.event.continuation?.direction==='protagonist')
+    requireWorld(result.eventCommands.some(c=>c.type==='SaveEvent' && !c.event.eventKind && !terminalEvent(c.event)
+      && c.event.predecessorEventIds?.includes(command.event.id) && c.event.continuation?.direction==='protagonist'), 'invalid_output','event_continuation');
+  // Legacy continuations need a live successor; fixed stages can finish a chain in one window.
   for(const command of result.eventCommands) if(command.type==='SaveEvent' && terminalEvent(command.event) && command.event.continuation?.direction==='world') {
     const successors=result.eventCommands.filter(c=>c.type==='SaveEvent' && c.event.predecessorEventIds?.includes(command.event.id));
-    requireWorld(successors.length>0 && successors.every(c=>c.type==='SaveEvent' && !terminalEvent(c.event)), 'invalid_output','event_continuation');
+    requireWorld(successors.length>0 && (command.event.eventKind==='sub' || successors.every(c=>c.type==='SaveEvent' && !terminalEvent(c.event))), 'invalid_output','event_continuation');
   }
   return result;
 }
