@@ -6,7 +6,7 @@ test('独立默认开关、参数和完整提示词保存、恢复、未保存�
   let requests = 0; await page.route('https://summary.mock.invalid/**', async route => { requests++; await route.fulfill({ json: summaryWire(requestTask(route.request().postDataJSON())) }); });
   await seedSummary(page, { count: 0 }); let settings = await summaryPage(page);
   for (const name of ['短期 → 中期', '中期 → 长期', 'NPC 短期 → 中期']) {
-    await expect(settings.getByLabel(`启用 ${name}`, { exact: true })).toBeChecked(); await expect(settings.getByLabel(`自动总结 ${name}`, { exact: true })).toBeChecked();
+    await expect(settings.getByLabel(`启用 ${name}`, { exact: true })).toHaveCount(0); await expect(settings.getByLabel(`自动总结 ${name}`, { exact: true })).toBeChecked();
   }
   await settings.getByLabel('完整内容提示词 · 短期 → 中期').fill('独立短期内容：至少123个事件，语言与篇幅由我决定。');
   await settings.getByRole('button', { name: '关闭资料界面' }).click();
@@ -64,18 +64,18 @@ test('NPC先失败也不阻断公共两类，失败重试仅一次；暂停只�
     for (let index = 0; index < 15; index++) state.npc['npc-a'].memories.push({ ...state.npc['npc-a'].memories.at(-1), id: `later-${index}`, createdAtGameTime: state.worldClock });
     await new Promise<void>((resolve, reject) => { const r = indexedDB.open('heijinwangchao'); r.onsuccess = () => { const db = r.result, tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(state); tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => reject(tx.error); }; });
   });
-  await page.reload(); await expect(failure).toBeVisible(); await failure.getByRole('button', { name: '暂停本项总结', exact: true }).click(); await expect(failure).toHaveCount(0);
-  await page.reload(); const settings = await summaryPage(page); await expect(settings.getByLabel('启用 NPC 短期 → 中期', { exact: true })).not.toBeChecked(); await expect(settings.getByLabel('自动总结 NPC 短期 → 中期', { exact: true })).not.toBeChecked();
-  await expect(settings.getByLabel('启用 短期 → 中期', { exact: true })).toBeChecked(); await expect(settings.getByLabel('启用 中期 → 长期', { exact: true })).toBeChecked();
+  await page.reload(); await expect(failure).toBeVisible(); await failure.getByRole('button', { name: '暂停自动总结', exact: true }).click(); await expect(failure).toHaveCount(0);
+  await page.reload(); const settings = await summaryPage(page); await expect(settings.getByLabel('自动总结 NPC 短期 → 中期', { exact: true })).not.toBeChecked();
+  await expect(settings.getByLabel('自动总结 短期 → 中期', { exact: true })).toBeChecked(); await expect(settings.getByLabel('自动总结 中期 → 长期', { exact: true })).toBeChecked();
 });
 
 for (const [kind, name, count] of [['short', '短期 → 中期', 31], ['medium', '中期 → 长期', 51]] as const) test(`${name}失败暂停独立持久化，不关闭另外两类`, async ({ page }) => {
   let calls = 0; await page.route('https://summary.mock.invalid/**', async route => { calls++; await route.fulfill({ status: 429, json: {} }); });
   await seedSummary(page, { count, publicLayer: kind }); const original = await summaryState(page);
   const failed = page.getByRole('dialog', { name: `${name}总结失败`, exact: true }); await expect(failed).toBeVisible();
-  await failed.getByRole('button', { name: '暂停本项总结', exact: true }).click(); await page.reload();
-  const settings = await summaryPage(page); await expect(settings.getByLabel(`启用 ${name}`, { exact: true })).not.toBeChecked();
-  for (const other of ['短期 → 中期', '中期 → 长期', 'NPC 短期 → 中期']) if (other !== name) await expect(settings.getByLabel(`启用 ${other}`, { exact: true })).toBeChecked();
+  await failed.getByRole('button', { name: '暂停自动总结', exact: true }).click(); await page.reload();
+  const settings = await summaryPage(page); await expect(settings.getByLabel(`自动总结 ${name}`, { exact: true })).not.toBeChecked();
+  for (const other of ['短期 → 中期', '中期 → 长期', 'NPC 短期 → 中期']) if (other !== name) await expect(settings.getByLabel(`自动总结 ${other}`, { exact: true })).toBeChecked();
   expect(await summaryState(page)).toEqual(original); expect(calls).toBe(1);
 });
 
@@ -87,11 +87,11 @@ test('三类同时失败只顺序显示一个弹窗，各自暂停且刷新不�
   for (const name of ['短期 → 中期', '中期 → 长期', 'NPC 短期 → 中期']) {
     await expect(page.getByRole('dialog')).toHaveCount(1);
     const failure = page.getByRole('dialog', { name: `${name}总结失败`, exact: true });
-    await expect(failure).toBeVisible(); await failure.getByRole('button', { name: '暂停本项总结', exact: true }).click();
+    await expect(failure).toBeVisible(); await failure.getByRole('button', { name: '暂停自动总结', exact: true }).click();
   }
   await expect(page.getByRole('dialog')).toHaveCount(0); await page.reload();
   const settings = await summaryPage(page);
-  for (const name of ['短期 → 中期', '中期 → 长期', 'NPC 短期 → 中期']) await expect(settings.getByLabel(`启用 ${name}`, { exact: true })).not.toBeChecked();
+  for (const name of ['短期 → 中期', '中期 → 长期', 'NPC 短期 → 中期']) await expect(settings.getByLabel(`自动总结 ${name}`, { exact: true })).not.toBeChecked();
   expect(requests).toBe(3);
 });
 
@@ -120,4 +120,49 @@ test('旧默认关闭安全延续并提示，分别开启后保存刷新；全�
   for (const name of ['短期 → 中期', '中期 → 长期'])
     await expect(settings.getByLabel(`自动总结 ${name}`, { exact: true })).not.toBeChecked();
   expect(calls).toBe(0);
+});
+
+test('自动总结关闭时仍可手动总结，刷新后自动保持关闭且没有额外自动调用', async ({ page }) => {
+  let requests = 0;
+  await page.route('https://summary.mock.invalid/**', async route => {
+    requests++;
+    const task = requestTask(route.request().postDataJSON());
+    await route.fulfill({ json: summaryWire(task) });
+  });
+  await seedSummary(page, { count: 31, automatic: false });
+  const settings = await summaryPage(page);
+  await expect(settings.getByLabel('自动总结 短期 → 中期', { exact: true })).not.toBeChecked();
+  const button = settings.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true });
+  await expect(button).toBeEnabled();
+  expect(requests).toBe(0);
+  await button.click();
+  await expect.poll(async () => (await summaryState(page)).memories.medium.length).toBe(1);
+  expect(requests).toBe(1);
+  await page.reload();
+  const again = await summaryPage(page);
+  await expect(again.getByLabel('自动总结 短期 → 中期', { exact: true })).not.toBeChecked();
+  expect(requests).toBe(1);
+});
+
+test('旧版 enabled=false 即使 automatic=true 也只关闭自动，不禁用手动操作', async ({ page }) => {
+  let requests = 0;
+  await page.route('https://summary.mock.invalid/**', async route => {
+    requests++;
+    await route.fulfill({ json: summaryWire(requestTask(route.request().postDataJSON())) });
+  });
+  await seedSummary(page, { count: 31, automatic: false });
+  await page.evaluate(() => {
+    const settings = JSON.parse(localStorage.getItem('heijin.settings.v1')!);
+    settings.memory.summaries.short.enabled = false;
+    settings.memory.summaries.short.automatic = true;
+    localStorage.setItem('heijin.settings.v1', JSON.stringify(settings));
+  });
+  await page.reload();
+  const settings = await summaryPage(page);
+  await expect(settings.getByLabel('启用 短期 → 中期', { exact: true })).toHaveCount(0);
+  await expect(settings.getByLabel('自动总结 短期 → 中期', { exact: true })).not.toBeChecked();
+  expect(requests).toBe(0);
+  await settings.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
+  await expect.poll(async () => (await summaryState(page)).memories.medium.length).toBe(1);
+  expect(requests).toBe(1);
 });
