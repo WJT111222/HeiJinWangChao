@@ -53,11 +53,25 @@ it.each([
   { precision: 'year', year: 0 }, { precision: 'season', year: 2021, season: 'rainy' },
   { precision: 'unknown' }, { precision: 'instant', at: '2021-01-01' },
 ])('非法历法或结构拒绝：%j', raw => expect(HistoryTimeSchema.safeParse(raw).success).toBe(false));
-it('冬季定位规则不改变事实时间范围、不隐含真实日期', () => {
+it('冬季比较区间仅在当年12月，标签和原始数据不隐含真实日期', () => {
   const time: HistoryTime = { precision: 'season', year: 2021, season: 'winter' };
+  const before = structuredClone(time);
   expect(historyTimeKey(time)).toBe('season:2021:winter');
-  expect(historyBounds(time)?.earliest).toBe(Date.parse('2021-01-01T00:00:00+08:00'));
+  expect(historyBounds(time)).toEqual({ earliest: Date.parse('2021-12-01T00:00:00+08:00'), latest: Date.parse('2021-12-31T23:59:59.999+08:00') });
   expect(historyTimeLabel(time)).toBe('2021年冬季（日期未详）');
+  expect(time).toEqual(before);
+});
+it.each([
+  ['spring', '2021-03-01', '2021-05-31'], ['summer', '2021-06-01', '2021-08-31'],
+  ['autumn', '2021-09-01', '2021-11-30'], ['winter', '2021-12-01', '2021-12-31'],
+] as const)('%s的比较区间包含整季，而不是显示尾部或全年', (season, first, last) => {
+  const time: HistoryTime = { precision: 'season', year: 2021, season };
+  expect(historyBounds(time)).toEqual({ earliest: Date.parse(`${first}T00:00:00+08:00`), latest: Date.parse(`${last}T23:59:59.999+08:00`) });
+});
+it.each([[2020, 29], [2021, 28], [2000, 29], [1900, 28]] as const)('%i年二月比较区间遵守闰年规则', (year, last) => {
+  expect(historyBounds({ precision: 'month', year, month: 2 })).toEqual({
+    earliest: Date.parse(`${year}-02-01T00:00:00+08:00`), latest: Date.parse(`${year}-02-${last}T23:59:59.999+08:00`),
+  });
 });
 it('万条混合类别仅按同一排序、相同输入顺序变化不影响结果', () => {
   const rows = Array.from({length:10000},(_,i)=>entry(`h-${i}`,{precision:'day',date:`2021-${String(i%12+1).padStart(2,'0')}-${String(i%28+1).padStart(2,'0')}`}));

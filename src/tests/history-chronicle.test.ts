@@ -4,6 +4,7 @@ import { commitCommands, DomainCommandSchema } from '../domain/commands';
 import type { DomainCommand } from '../domain/commands';
 import { GameStateSchema } from '../domain/state';
 import { TimelineEntrySchema } from '../domain/events/schema';
+import type { HistoryPoint, HistoryTime } from '../domain/history/time';
 import { projectTurn } from '../domain/turnProjection';
 import { parseWorld, parseVariables } from '../services/validation/aiOutputs';
 import { SaveRepository } from '../services/storage/saveRepository';
@@ -68,10 +69,70 @@ it('未知时间保留待考，时间范围与已知发生时间不能冲突或�
   const conflict=historyCommand('conflict',chronicle('conflict',{precision:'year',year:2021}));conflict.entry.occurredAt=gameTime;
   expect(()=>parseWorld(JSON.stringify(result([conflict])),state,draft)).toThrow();
 });
-it('仅年/月份与冬季的展示位置不会把已发生记录判成未来精确日期',()=>{
+it('仅年/月份与当前季节的显示尾部不会被当成未来发生日期',()=>{
   const state=worldState(),draft=worldDraft();
-  for(const time of [{precision:'month' as const,year:2026,month:10},{precision:'year' as const,year:2026},{precision:'season' as const,year:2026,season:'winter' as const}])
+  for(const time of [{precision:'month' as const,year:2026,month:10},{precision:'year' as const,year:2026},{precision:'season' as const,year:2026,season:'autumn' as const}])
     expect(()=>parseWorld(JSON.stringify(result([historyCommand('partial',chronicle('partial',time))])),state,draft)).not.toThrow();
+});
+
+const seasonNames = ['spring', 'summer', 'autumn', 'winter'] as const;
+const seasonPoint = (season: typeof seasonNames[number], year = 2021): HistoryPoint => ({ precision: 'season', year, season });
+it.each(seasonNames.flatMap((from, i) => seasonNames.map((to, j) => ({ from, to, valid: i <= j }))))(
+  '同年季节方向 $from → $to：起止和range均按可确定的先后校验', ({ from, to, valid }) => {
+    const state = worldState(), draft = worldDraft(), before = structuredClone(state);
+    for (const category of ['world', 'protagonist'] as const) for (const range of [false, true]) {
+      const time: HistoryTime = range ? { precision: 'range', from: seasonPoint(from), to: seasonPoint(to) } : seasonPoint(from);
+      const base = { ...chronicle('season-check', time), endTime: seasonPoint(to) };
+      const command = historyCommand('season-check', category === 'world'
+        ? { ...base, category, scope: 'region', scopeText: '合成地区', basis: 'historical_event' } : base);
+      const parse = () => parseWorld(JSON.stringify(result([command])), state, draft);
+      if (valid) {
+        const parsed = parse(), next = projectTurn(state, draft, parsed.worldCommands);
+        expect(next.timeline[0].chronicle).toEqual(command.entry.chronicle);
+        expect(next.timeline[0].occurredAt).toBeUndefined();
+        expect(GameStateSchema.parse(next).timeline).toEqual(next.timeline);
+      } else {
+        expect(parse).toThrow();
+        const checked = GameStateSchema.safeParse({ ...state, timeline: [historyEntry(command.entry.id, command.entry.chronicle!)] });
+        expect(checked.success).toBe(false);
+        if (!checked.success) expect(checked.error.issues).toEqual(expect.arrayContaining([
+          expect.objectContaining({ path: ['timeline', 0, 'chronicle', range ? 'time' : 'endTime'], message: range ? '历史时间范围倒置' : '历史开始晚于结束' }),
+        ]));
+      }
+    }
+    expect(state).toEqual(before);
+  },
+);
+it.each([
+  ['跨年冬到春', seasonPoint('winter'), seasonPoint('spring', 2022)],
+  ['跨年精确时刻', { precision: 'instant', at: '2021-12-31T23:59:59+08:00' }, { precision: 'day', date: '2022-01-01' }],
+  ['冬季与十二月重叠', seasonPoint('winter'), { precision: 'month', year: 2021, month: 12 }],
+  ['冬季与全年重叠', seasonPoint('winter'), { precision: 'year', year: 2021 }],
+  ['全年与春季重叠', { precision: 'year', year: 2021 }, seasonPoint('spring')],
+  ['春季与三月重叠', seasonPoint('spring'), { precision: 'month', year: 2021, month: 3 }],
+  ['春季与边界时刻重叠', seasonPoint('spring'), { precision: 'instant', at: '2021-03-01T00:00:00+08:00' }],
+] satisfies [string, HistoryPoint, HistoryPoint][])('%s不根据显示排序强判倒置', (_, from, to) => {
+  for (const time of [from, { precision: 'range', from, to } satisfies HistoryTime]) {
+    const command = historyCommand('overlap', { ...chronicle('overlap', time), endTime: to });
+    expect(() => parseWorld(JSON.stringify(result([command])), worldState(), worldDraft())).not.toThrow();
+  }
+});
+it('范围重叠保守接受；精确到毫秒的确定倒置、未来季节与跨年倒置拒绝', () => {
+  const springToWinter: HistoryTime = { precision: 'range', from: seasonPoint('spring'), to: seasonPoint('winter') };
+  const ending: HistoryTime = { precision: 'range', from: { precision: 'year', year: 2020 }, to: seasonPoint('summer') };
+  const command = historyCommand('overlap', { ...chronicle('overlap', springToWinter), endTime: ending });
+  expect(() => parseWorld(JSON.stringify(result([command])), worldState(), worldDraft())).not.toThrow();
+  for (const [from, to] of [
+    [seasonPoint('spring'), { precision: 'instant', at: '2021-02-28T23:59:59.999+08:00' }],
+    [seasonPoint('winter'), { precision: 'month', year: 2021, month: 11 }],
+    [seasonPoint('spring', 2022), seasonPoint('winter')],
+  ] satisfies [HistoryPoint, HistoryPoint][]) {
+    const bad = historyCommand('bad', { ...chronicle('bad', from), endTime: to });
+    expect(() => parseWorld(JSON.stringify(result([bad])), worldState(), worldDraft())).toThrow();
+  }
+  // 当前世界为2026年10月：全年/秋季有重叠可能；冬季尚未进入其最早可能月份。
+  const future = historyCommand('future', chronicle('future', seasonPoint('winter', 2026)));
+  expect(() => parseWorld(JSON.stringify(result([future])), worldState(), worldDraft())).toThrow();
 });
 it('未开始即取消不可假称已发生；撤销决定可独立记录，时间使用撤销时刻',()=>{
   const a=scenario();a.live.startAt='2026-10-20T08:00:00+08:00';a.live.estimatedEndAt='2026-10-20T09:00:00+08:00';a.live.status='active';
@@ -130,6 +191,34 @@ it('旧V6/普通历史及旧候选继续合法；旧strict客户端会拒绝新�
 });
 
 const repositories:SaveRepository[]=[];afterEach(()=>repositories.splice(0).forEach(repo=>repo.close()));
+it('季节纪事正式Commit重验：倒置整批拒绝，合法模糊精度保存重载及撤回不造日期', async () => {
+  const factory = new IDBFactory(), repo = await SaveRepository.open('history-seasons', factory); repositories.push(repo);
+  await repo.create(worldState());
+  const variables = { commands: [], rejectedSuggestions: [], unresolved: [] };
+  await repo.commitTurn(submission(await completeDraft(repo, { variables, world: worldResult() }), ''));
+  const before = await repo.load('save-a');
+  const invalid = historyCommand('invalid-season', { ...chronicle('invalid-season', seasonPoint('winter')), endTime: seasonPoint('spring') });
+  const bad = await completeDraft(repo, { variables, world: worldResult([invalid]) });
+  await expect(repo.commitTurn(submission(bad, ''))).rejects.toThrow();
+  expect(await repo.load('save-a')).toEqual(before);
+  expect((await repo.loadDraft('save-a'))?.story).toEqual(bad.story);
+  const valid = historyCommand('season-span', { ...chronicle('season-span', seasonPoint('winter')),
+    category: 'world', scope: 'country', scopeText: '合成国家', basis: 'historical_event', endTime: seasonPoint('spring', 2022) });
+  const parsed = parseWorld(JSON.stringify(worldResult([valid])), before, bad);
+  const ready = await completeDraft(repo, { variables, world: parsed });
+  const committed = await repo.commitTurn(submission(ready, ''));
+  expect(committed.state.worldClock).toBe(before.worldClock);
+  expect(committed.state.timeline[0].chronicle).toEqual(valid.entry.chronicle);
+  expect(committed.state.timeline[0].occurredAt).toBeUndefined();
+  expect((await repo.commitTurn(submission(ready, ''))).replayed).toBe(true);
+  const reopened = await SaveRepository.open('history-seasons', factory); repositories.push(reopened);
+  expect((await reopened.load('save-a')).timeline).toEqual(committed.state.timeline);
+  const restored = await reopened.undoTurn({ saveId: 'save-a', expectedRevision: committed.state.revision,
+    expectedDraft: await reopened.loadDraft('save-a'), operationId: 'undo-season' });
+  expect(restored.state).toEqual({ ...before, revision: committed.state.revision + 1, updatedAt: restored.state.updatedAt });
+  await expect(repo.commitTurn(submission(ready, ''))).rejects.toThrow();
+  expect((await repo.load('save-a')).timeline).toEqual(before.timeline);
+});
 it('真实Repository：开局→普通历史→双节点原子Commit→重载→撤回→重载，无旧历史复活',async()=>{
   const factory=new IDBFactory(),repo=await SaveRepository.open('history-v2',factory);repositories.push(repo);await repo.create(worldState());
   await repo.commitTurn(submission(await completeDraft(repo,{variables:{commands:[],rejectedSuggestions:[],unresolved:[]},world:worldResult()}),''));

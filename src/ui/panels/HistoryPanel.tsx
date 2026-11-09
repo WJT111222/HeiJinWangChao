@@ -10,6 +10,7 @@ import { RecordList } from './WorldRecord';
 
 const categories = { world: '世界重大纪事', protagonist: '主角重大纪事' };
 const scopes = { region: '地区', country: '国家', world: '世界', organization: '重大组织' };
+const scopeLabels = { region: '地区重大事件', country: '国家重大事件', world: '世界重大事件', organization: '重大组织事件' };
 const natures = { fact: '已确立事实', statement: '人物陈述', rumor: '传闻', inference: '推测' };
 const knowledge = { established: '剧情事实', reported: '人物陈述', suspected: '推测 / 传闻' };
 const relations = { follows: '承接', corrects: '更正', parallel: '同事异观' };
@@ -21,7 +22,7 @@ function SlotSide({ slot, category, onSelect }: { slot: HistorySlot; category: '
   return <div className={`history-side history-${category}`}>
     {entries.slice(current * 3, (current + 1) * 3).map(entry => <button className="history-node" key={entry.id} data-history-id={entry.id}
       onClick={() => onSelect(entry.id)}>
-      <span className="tag">{categories[category]}</span><h3>{entry.title}</h3><p>{entry.summary}</p>
+      <span className="tag">{entry.chronicle.category === 'world' ? scopeLabels[entry.chronicle.scope] : '主角重大事件'}</span><h3>{entry.title}</h3><p>{entry.summary}</p>
     </button>)}
     {entries.length > 3 && <div className="history-group-pages" aria-label={`${categories[category]}同组分页`}>
       <button disabled={!current} aria-label="同组上一页" onClick={() => setPage(current - 1)}>‹</button>

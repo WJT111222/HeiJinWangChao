@@ -1,19 +1,19 @@
 import type { Page } from '@playwright/test';
 import { test, expect } from './helpers/test';
 import { openWorldArchive } from './helpers/gameLayout';
-async function seed(page: Page, extra = 0) {
+async function seed(page: Page, extra = 0, scopes = false) {
   await page.goto('/');
-  await page.evaluate(async extra => {
+  await page.evaluate(async ({ extra, scopes }) => {
     const paths = ['/src/services/storage/saveRepository.ts','/src/tests/fixtures/world.ts','/src/tests/fixtures/turn.ts','/src/tests/fixtures/historyV2.ts','/src/ui/settings/model.ts'];
-    const [{SaveRepository},{worldState,worldResult},{completeDraft,submission},{historyDisplayCommands},{defaultSettings,settingsKey}] = await Promise.all(paths.map(p=>import(p)));
+    const [{SaveRepository},{worldState,worldResult},{completeDraft,submission},{historyDisplayCommands,historyScopeDisplayCommands},{defaultSettings,settingsKey}] = await Promise.all(paths.map(p=>import(p)));
     const repo=await SaveRepository.open();try {
       await repo.create(worldState());
       const opening=await completeDraft(repo,{variables:{commands:[],rejectedSuggestions:[],unresolved:[]}});await repo.commitTurn(submission(opening,''));
-      const draft=await completeDraft(repo,{variables:{commands:[],rejectedSuggestions:[],unresolved:[]},world:worldResult(historyDisplayCommands(extra))});await repo.commitTurn(submission(draft,''));
+      const draft=await completeDraft(repo,{variables:{commands:[],rejectedSuggestions:[],unresolved:[]},world:worldResult(scopes ? historyScopeDisplayCommands() : historyDisplayCommands(extra))});await repo.commitTurn(submission(draft,''));
     } finally {repo.close();}
     const settings=defaultSettings();for (const config of Object.values(settings.memory.summaries) as {automatic:boolean}[]) config.automatic=false;
     localStorage.setItem(settingsKey,JSON.stringify(settings));
-  },extra);
+  },{ extra, scopes });
   await page.goto('/#game/save-a');await page.reload();await expect(page.locator('.game-layout')).toBeVisible();
 }
 async function open(page: Page) {
@@ -26,6 +26,42 @@ async function close(page: Page) {
  const directory=page.getByRole('dialog',{name:'世界资料',exact:true});if(await directory.isVisible())await directory.getByRole('button',{name:'关闭资料界面',exact:true}).click();
 }
 async function saved(page:Page) { return page.evaluate(async()=> {const path='/src/services/storage/saveRepository.ts';const {SaveRepository}=await import(path);const repo=await SaveRepository.open();try{return (await repo.loadGame('save-a')).state;}finally{repo.close();}}); }
+
+test('正式scope显示四类世界事件与主角标签，双端仍共用时间槽位且只读', async ({ page }, info) => {
+  let calls = 0; await page.route('**/chat/completions', route => { calls++; return route.abort(); });
+  await seed(page, 0, true); const before = await saved(page); await open(page);
+  const slots = page.locator('.history-axis > li');
+  expect(await slots.evaluateAll(nodes => nodes.map(n => n.getAttribute('data-time-key')))).toEqual([
+    'day:2021-12-10', 'day:2021-12-11', 'day:2021-12-12', 'day:2021-12-13',
+  ]);
+  for (const [id, label] of [
+    ['region', '地区重大事件'], ['country', '国家重大事件'], ['world', '世界重大事件'],
+    ['organization', '重大组织事件'], ['hero', '主角重大事件'],
+  ]) {
+    const card = page.locator(`[data-history-id="scope-${id}"]`);
+    await expect(card.locator('.tag')).toHaveText(label);
+    await card.scrollIntoViewIfNeeded();
+    expect(await card.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await card.click();
+    const detail = page.getByRole('article', { name: '纪事详情' });
+    await expect(detail).toContainText(id === 'hero' ? '正式担任阅览室负责人' : '影响范围');
+    await page.getByRole('button', { name: '返回时间轴' }).click();
+  }
+  const pair = slots.first(); await pair.scrollIntoViewIfNeeded();
+  const world = await pair.locator('.history-world').boundingBox(), hero = await pair.locator('.history-protagonist').boundingBox();
+  if (info.project.name === 'mobile') {
+    expect(world!.x + world!.width).toBeLessThan(hero!.x); expect(Math.abs(world!.y - hero!.y)).toBeLessThan(2);
+  } else { expect(world!.y + world!.height).toBeLessThan(hero!.y); expect(world!.x).toBe(hero!.x); }
+  await page.screenshot({ path: info.outputPath('history-scope-labels.png') });
+  if (info.project.name === 'mobile') {
+    await slots.last().scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath('history-scope-labels-later.png') });
+  }
+  await page.getByRole('button', { name: '史料记录 · 1' }).click();
+  await expect(page.getByRole('dialog', { name: '历史时间轴', exact: true })).toContainText('大学时期');
+  expect(await saved(page)).toEqual(before); expect(calls).toBe(0);
+});
 
 test('单轴顺序、同日双视角、冬季、详情与史料；桌面横轴和手机竖轴真实截图',async({page},info)=>{
   await seed(page);const before=await saved(page);await open(page);

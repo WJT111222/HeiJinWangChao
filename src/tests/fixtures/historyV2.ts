@@ -44,3 +44,21 @@ export function historyDisplayCommands(extra = 0) {
   ordinary.entry.title = '来访者谈及大学往事'; ordinary.entry.occurredTimeText = '大学时期'; ordinary.entry.knowledgeKind = 'reported';
   return [...rows, ordinary];
 }
+
+/** All declared world scopes, one paired protagonist node and an ordinary source. */
+export function historyScopeDisplayCommands() {
+  const scopes = ['region', 'country', 'world', 'organization'] as const;
+  const titles = ['临江文化设施建成', '全国公共馆藏协作完成', '跨国典籍修复工程告成', '学社联合馆藏工程完成并正式向各地读者开放'];
+  const rows = scopes.map((scope, index) => {
+    const time: HistoryTime = { precision: 'day', date: `2021-12-${10 + index}` };
+    const command = historyCommand(`scope-${scope}`, { ...chronicle(`scope-${scope}`, time), category: 'world', scope,
+      scopeText: '合成纪事所载范围', basis: 'historical_event', endTime: time });
+    command.entry.title = titles[index]; command.entry.summary = '工程实际完成，后续文化事业继续发展。';
+    return command;
+  });
+  const hero = historyCommand('scope-hero', chronicle('scope-region', { precision: 'day', date: '2021-12-10' }));
+  hero.entry.title = '正式担任阅览室负责人'; hero.entry.chronicle!.relations = [{ kind: 'parallel', entryId: 'scope-region' }];
+  const ordinary = historyDisplayCommands().find(row => row.entry.id === 'old-report')!;
+  // Deliberately unordered input: scope and category must not determine the axis index.
+  return [rows[3], hero, rows[1], ordinary, rows[0], rows[2]];
+}
