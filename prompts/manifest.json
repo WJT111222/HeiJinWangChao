@@ -152,7 +152,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 2997,
+      "characters": 3408,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -162,7 +162,7 @@
       "orderGroup": "shared",
       "reorderable": false,
       "category": "shared",
-      "contentSha256": "2b6d230d0d3fe8231c21f5ff8e334d26ca7764b3d7539ba4a751c0fc47b79133",
+      "contentSha256": "a5b718ec3f1d895ab77b2fdbb7a9cd07f51b075175fea80606112841adc46f36",
       "placeholders": [
         "worldClock",
         "worldWeekday"

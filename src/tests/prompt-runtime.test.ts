@@ -817,3 +817,32 @@ describe('真实命令目录、解析与安全候选验证', () => {
     },
   );
 });
+
+
+describe('PR85常驻时间事件契约与三阶段实际请求一致', () => {
+  it.each(['opening', 'regular'] as const)('%s的Story/Variables/World均不注入旧候选许可或历史审批', async mode => {
+    for (const stage of ['story', 'variables', 'world'] as const) {
+      const request = input(stage, mode), before = structuredClone(request.state);
+      const result = await composePrompt(request);
+      const sent = result.messages.map(message => message.content).join('\n');
+      for (const text of [
+        'TIME_PREFLIGHT是供Story AI判断的条件候选，不是已发生事件',
+        '合法时间范围、事件状态、主角已有知晓范围和实际触达关系',
+        'prerequisites、blockers是叙事背景说明，不是候选资格许可',
+        '关联任务处于blocked或cancelled',
+        '是否实际发生、是否打断玩家当前行动，由Story AI根据剧情决定',
+        '程序不替玩家接受入场邀请，不自动结案或推进事件',
+        '普通RecordHistory可独立记录有意义的往事、人物陈述、历史披露与世界变化',
+        '不要求正式事件结案、重大等级或主角事先知晓',
+        'reported、suspected不自动升级为已确认事实',
+        '可选chronicle由World AI决定重大性',
+        '世界重大事件按现行协议在实际结束后归档，主角重大事实在实际发生时记录',
+        '历史记录不自动传播到主角或NPC的私人知识',
+      ]) expect(sent, `${mode}/${stage}`).toContain(text);
+      for (const obsolete of ['已知、条件可用且有现实触达途径', '以及已有事件 ID 是否完成',
+        '只有重大且合理获知的结果进入历史', '成功需结构化前置条件已满足', '成功推进需其结构化状态已解除'])
+        expect(sent, `${mode}/${stage}`).not.toContain(obsolete);
+      expect(request.state).toEqual(before);
+    }
+  });
+});

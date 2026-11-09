@@ -106,3 +106,25 @@ CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/world-narrative-conditio
 自然语言条件不再是程序许可；旧数据若曾用这些字符串充当隐式调度依赖，也会采用本轮语义。需要强结构关系时应使用已有的关联、前序事件和任务交接字段，而非重新引入条件审批。World 对叙事因果与结局的判断质量未做真实模型验收。
 
 无新模型调用、无自动收费重试、无存档迁移；不修改真实玩家数据，不合并或部署。
+
+## PR #85 复审返修：常驻时间事件提示词
+
+复核远端 PR 与七代目 Review `5826795311`，审核及实际分支 HEAD 均为 `b06eccbd6e23e2b332d422a472d04fe5e04c3523`。本轮仅修改常驻提示词、对应元数据、Prompt 测试和本报告，没有改动 `worldOutput.ts`、`turnCommit.ts`、`timePreflight.ts` 或其他生产执行逻辑。
+
+`shared/03_time_events.md` 的旧“条件可用”改为：程序按合法时间范围、事件状态、主角已有知晓范围、实际触达关系筛选 TIME_PREFLIGHT 条件候选；不是已发生事件。prerequisites、blockers 仅是叙事背景，不因文字阻碍或关联任务 blocked/cancelled 取消其他条件合法的候选。Story AI 判断实际发生和中断；程序不代玩家接受邀请、不自动结案或推进。第五节与该句同源的“已有事件 ID 是否完成”也就地改为“不把关联任务完成与否当作事件发生的许可”，避免同一模块内部矛盾。
+
+旧“只有重大且合理获知的结果进入历史”改为：普通 RecordHistory 可独立记录有意义往事、人物陈述、历史披露和世界变化，无需事件结案、重大等级或主角预先知晓。reported/suspected 不自动升级为已确认事实；可选 chronicle 重大性由 World AI 决定，世界重大事件实际结束后归档，主角重大事实实际发生时记录；历史不自动传播人物知识，不恢复 ArchiveEvent、阈值或历史审批。
+
+Manifest 仅更新该模块字符数（2997 → 3408）与 SHA-256（`a5b718ec3f1d895ab77b2fdbb7a9cd07f51b075175fea80606112841adc46f36`）；sources.lock 追加 `worldNarrativeConditions`，原来源哈希及历次记录全部保留。原有来源测试已覆盖该记录类型，无需修改其校验逻辑。
+
+`src/tests/prompt-runtime.test.ts` 新增 2 项参数化测试，实际调用 composePrompt 共 6 次，覆盖 opening/regular × story/variables/world 的最终 messages，检查新边界存在、旧条件许可和旧历史审批不存在，并检查正式输入状态未被修改。这也对照最终加载的共享 World 输出模块与 COMMAND_CATALOG，未发现本轮目标规则互相矛盾。
+
+本轮验证（与上轮批次独立记录）：
+
+- 初次单文件测试在 Manifest 尚未刷新时：13 通过、23 失败、0 跳过，均为资源 SHA 不匹配导致加载被拒绝。完成要求的元数据同步后重新验证，未放宽加载器校验。
+- `npm run prompts:check`：93 通过、0 失败、0 跳过。
+- `npm test -- --reporter=json --outputFile=/workspace/world-narrative-conditions-results/review-full-vitest.json`：2772 通过、0 失败、0 跳过，99 文件；含本轮新增 2 项，不与上一轮成绩相加。
+- `npm run typecheck`、`npm run lint`、`npm run build`、`git diff --check`：均通过；构建仅保留现有 chunk 大于 500 kB 提醒。
+- 自查最终 Diff：5 文件，无生产逻辑变更。
+
+本轮不运行 Chromium，未修改 UI 或执行逻辑；遵守本次指定的工程检查范围。全部网络模型测试使用 Mock，无真实付费请求。模型对提示词的真实理解仍待独立授权验收；此前失败响应的免费重用入口属于 Review 标明的独立事项，本轮没有开发或宣称解决。保持原 Draft PR，不合并、不部署、不修改玩家存档。

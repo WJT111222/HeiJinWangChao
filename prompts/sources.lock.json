@@ -79,6 +79,11 @@
       "worldFreedomV6": {
         "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
         "sha256": "2b6d230d0d3fe8231c21f5ff8e334d26ca7764b3d7539ba4a751c0fc47b79133"
+      },
+      "worldNarrativeConditions": {
+        "baseCommit": "b06eccbd6e23e2b332d422a472d04fe5e04c3523",
+        "notes": "PR85复审：澄清时间候选不以叙事阻碍或关联任务状态审批；对齐普通史料与可选重大纪事的归档、认知隔离规则。保留全部历史来源。",
+        "sha256": "a5b718ec3f1d895ab77b2fdbb7a9cd07f51b075175fea80606112841adc46f36"
       }
     },
     "writing/natural_prose.md": {
