@@ -27,7 +27,7 @@ export function useMemoryMaintenance(repository: SaveRepository, saveId: string,
       settings: () => current.current.settings, load: () => repository.load(saveId),
       changed: next => { if (mounted) { setFailures(next); if (next.length) setNotice(next.map(item => `${item.code}：${item.message}`).join(' ')); } },
       execute: async (kind, immediate, npcId) => {
-        if (!mounted || !current.current.settings.memory.summaries[kind].enabled) return;
+        if (!mounted) return;
         const frozen = structuredClone(current.current.settings);
         try {
           const state = await runner.run({ saveId, kind, npcId, immediate, automatic: !immediate,
@@ -59,10 +59,10 @@ export function useMemoryMaintenance(repository: SaveRepository, saveId: string,
   function pause(kind: SummaryKind) {
     try {
       const next = structuredClone(current.current.settings);
-      next.memory.summaries[kind].enabled = false; next.memory.summaries[kind].automatic = false;
+      next.memory.summaries[kind].automatic = false;
       current.current.onSettings?.(next);
       const saved = SettingsSchema.parse(JSON.parse(localStorage.getItem(settingsKey) || 'null'));
-      if (saved.memory.summaries[kind].enabled || saved.memory.summaries[kind].automatic) throw new Error();
+      if (saved.memory.summaries[kind].automatic) throw new Error();
       queue.current?.dismiss(kind);
     } catch { setNotice('暂停设置保存失败，未清除失败记录，请检查本地存储。'); }
   }

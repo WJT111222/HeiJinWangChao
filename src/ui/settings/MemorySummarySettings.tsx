@@ -45,7 +45,7 @@ export function MemorySummarySettings({ settings, onSave, state, phase, activeKi
     if (!parsed.success) { setMessage('阈值须为1～10000，每批1～100且不超过阈值；内容提示词不能为空或超过30000字符。'); return; }
     try {
       onSave(parsed.data);
-      if (state) for (const kind of summaryKinds) if (!settings.memory.summaries[kind].enabled && parsed.data.memory.summaries[kind].enabled)
+      if (state) for (const kind of summaryKinds) if (!settings.memory.summaries[kind].automatic && parsed.data.memory.summaries[kind].automatic)
         localStorage.setItem(`heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`, '');
       touched.current.clear(); setDirty(false); onDirtyChange?.(false); setMessage('三类总结设置已保存，下一次任务使用新配置；历史总结不变。');
     } catch { setMessage('设置保存未能完整确认，请重新打开核对；未发起新的总结请求。'); }
@@ -60,9 +60,8 @@ export function MemorySummarySettings({ settings, onSave, state, phase, activeKi
       const count = !state ? 0 : kind === 'npc' ? selectedNpc ? npcSummaryCandidates(state, selectedNpc, npcCounts).length : 0 : compressionCandidates(state, kind).length;
       return <section className="card" key={kind} aria-label={summaryNames[kind]}>
         <header className="summary-module-heading"><h4>{summaryNames[kind]}</h4>
-          <button disabled={!state || !onRun || !saved.enabled || dirty || Boolean(phase) || count < saved.batchSize || (kind === 'npc' && !selectedNpc)}
+          <button disabled={!state || !onRun || dirty || Boolean(phase) || count < saved.batchSize || (kind === 'npc' && !selectedNpc)}
             onClick={() => onRun?.(kind, kind === 'npc' ? selectedNpc : undefined)}>立即总结 · {summaryNames[kind]}</button></header>
-        <label className="toggle"><input type="checkbox" checked={config.enabled} onChange={e => change(kind, { enabled: e.target.checked })} />启用 {summaryNames[kind]}</label>
         <label className="toggle"><input type="checkbox" checked={config.automatic} onChange={e => change(kind, { automatic: e.target.checked })} />自动总结 {summaryNames[kind]}</label>
         <div className="settings-fields">
           <label>触发阈值 · {summaryNames[kind]}<input type="number" min="1" max="10000" value={Number.isNaN(config.threshold) ? '' : config.threshold} onChange={e => change(kind, { threshold: e.target.valueAsNumber })} /></label>

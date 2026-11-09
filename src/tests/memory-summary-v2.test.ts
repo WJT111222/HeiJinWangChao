@@ -43,17 +43,25 @@ function setupRuntime(state = compressionState('short', 100), response = () => R
   return { transport, config, vault, storage, runner, repository, current: () => current };
 }
 describe('独立配置与冻结动态批次', () => {
-  it('默认三类开启，旧默认关闭付费维护安全延续，其余新字段独立默认', () => {
+  it('默认三类自动开启、旧自动关闭安全延续、旧总开关关闭迁移且不再保存 enabled', () => {
     const settings = defaultSettings();
-    expect(Object.values(settings.memory.summaries).every(value => value.enabled && value.automatic)).toBe(true);
+    expect(Object.values(settings.memory.summaries).every(value => value.automatic)).toBe(true);
     const old = SettingsSchema.parse({ ...settings, memory: { immediateWindowSize: 7, automaticMaintenance: false } });
-    expect(Object.values(old.memory.summaries).every(value => value.enabled && !value.automatic)).toBe(true);
+    expect(Object.values(old.memory.summaries).every(value => !value.automatic)).toBe(true);
     expect(old.memory.immediateWindowSize).toBe(7);
     const untouched = SettingsSchema.parse({ ...settings, memory: { immediateWindowSize: 7 } });
     expect(untouched.memory.summaries.npc).toEqual(defaultSummaryConfig('npc'));
-    settings.memory.summaries.npc.enabled = false;
-    const restored = SettingsSchema.parse(JSON.parse(JSON.stringify(settings)));
-    expect(restored.memory.summaries.short.enabled).toBe(true); expect(restored.memory.summaries.npc.enabled).toBe(false);
+    const oldSwitch = SettingsSchema.parse({ ...settings, memory: { ...settings.memory, summaries: {
+      ...settings.memory.summaries,
+      npc: { ...settings.memory.summaries.npc, enabled: false, automatic: true },
+      medium: { ...settings.memory.summaries.medium, enabled: true, automatic: false },
+    } } });
+    expect(oldSwitch.memory.summaries.short.automatic).toBe(true);
+    expect(oldSwitch.memory.summaries.npc.automatic).toBe(false);
+    expect(oldSwitch.memory.summaries.medium.automatic).toBe(false);
+    expect(Object.hasOwn(oldSwitch.memory.summaries.npc, 'enabled')).toBe(false);
+    const restored = SettingsSchema.parse(JSON.parse(JSON.stringify(oldSwitch)));
+    expect(restored.memory.summaries.npc.automatic).toBe(false);
     expect(SummaryConfigSchema.safeParse({ ...defaultSummaryConfig('short'), minimumEvents: 5 }).success).toBe(false);
   });
   it('NPC25/18及下一轮20/15，配置变更不使旧总结非法', () => {
@@ -80,12 +88,13 @@ describe('独立配置与冻结动态批次', () => {
       expect(() => parseCompression(text, batch, 'bad')).toThrow();
     expect(applyCompression(state, batch, result).revision).toBe(state.revision);
   });
-  it('立即模式只绕过阈值，不绕过批次数量或功能启用', () => {
+  it('立即模式只绕过阈值，自动关闭仍能完整手动总结', () => {
     expect(planCompression(compressionState('short', 18), { layer: 'short', config: defaultSummaryConfig('short'), immediate: true })!.entries).toHaveLength(10);
     expect(planCompression(compressionState('short', 7), { layer: 'short', config: defaultSummaryConfig('short'), immediate: true })).toBeUndefined();
     expect(planNpcSummary(npcMemoryState(18), 'npc-a', { immediate: true })!.entries).toHaveLength(15);
     expect(planNpcSummary(npcMemoryState(12), 'npc-a', { immediate: true })).toBeUndefined();
-    expect(planNpcSummary(npcMemoryState(40), 'npc-a', { config: { ...defaultSummaryConfig('npc'), enabled: false }, immediate: true })).toBeUndefined();
+    expect(planNpcSummary(npcMemoryState(18), 'npc-a', { config: { ...defaultSummaryConfig('npc'), automatic: false }, immediate: true })!.entries).toHaveLength(15);
+    expect(planCompression(compressionState('short', 18), { layer: 'short', config: { ...defaultSummaryConfig('short'), automatic: false }, immediate: true })!.entries).toHaveLength(10);
   });
 });
 describe('真实Memory请求与节流、失败持久化', () => {
@@ -128,10 +137,28 @@ it('三类队列独立失败、串行公平调度、刷新阻止失败类；明�
   const queue = new MemorySummaryQueue(options);
   await Promise.all([queue.wake(), queue.wake()]); expect(calls).toEqual(['short', 'medium', 'npc']); expect(maximum).toBe(1);
   const again = new MemorySummaryQueue(options); await again.wake(); expect(calls.filter(kind => kind === 'short')).toHaveLength(1);
-  settings.memory.summaries.npc.enabled = false; settings.memory.summaries.npc.automatic = false;
+  settings.memory.summaries.npc.automatic = false;
   await again.wake(); expect(calls.filter(kind => kind === 'medium')).toHaveLength(3);
-  settings.memory.summaries.npc.enabled = true;
   await queue.immediate('npc'); expect(options.changed).toHaveBeenLastCalledWith(expect.arrayContaining([expect.objectContaining({ kind: 'npc', code: 'NPC_MEMORY_CONFLICT' })]));
+});
+
+it('三类自动全部关闭时后台静默跳过，但仍可各自立即总结一次', async () => {
+  const state = compressionState('short', 90);
+  state.memories.medium = state.memories.short.slice(31, 82).map(entry => ({ ...entry, id: `medium-${entry.id}` }));
+  state.memories.short = state.memories.short.slice(0, 31);
+  state.npc['npc-a'] = npcMemoryState(20).npc['npc-a'];
+  const settings = defaultSettings(), storage = store();
+  for (const config of Object.values(settings.memory.summaries)) config.automatic = false;
+  const execute = vi.fn(async (_kind: string, _immediate: boolean, _npcId?: string) => {});
+  const queue = new MemorySummaryQueue({ saveId: 'save-a', storage, settings: () => settings,
+    load: async () => state, execute, changed: vi.fn() });
+  await queue.wake();
+  expect(execute).not.toHaveBeenCalled();
+  await queue.immediate('short');
+  await queue.immediate('medium');
+  await queue.immediate('npc', 'npc-a');
+  expect(execute.mock.calls.map(args => args[0])).toEqual(['short', 'medium', 'npc']);
+  expect(execute.mock.calls.every(args => args[1] === true)).toBe(true);
 });
 
 it('请求开始前冻结配置；任务期间修改设置不改变已经选择的批次和提示词', async () => {
@@ -200,7 +227,7 @@ it('切档或暂停发生在异步读档期间，旧队列不得启动新请求'
     const queue = new MemorySummaryQueue({ saveId: 'save-a', storage: store(), settings: () => settings,
       load: () => new Promise(resolve => { release = resolve; }), execute, changed: vi.fn() });
     const pending = queue.wake(); await vi.waitFor(() => expect(release).toBeTypeOf('function'));
-    if (stop) queue.stop(); else for (const value of Object.values(settings.memory.summaries)) value.enabled = false;
+    if (stop) queue.stop(); else for (const value of Object.values(settings.memory.summaries)) value.automatic = false;
     release(compressionState()); await pending; expect(execute).not.toHaveBeenCalled();
   }
 });
@@ -233,7 +260,7 @@ it('旧默认false迁移及序列化后不自动收费，手动逐项开启不�
   const old = { ...defaultSettings(), memory: { immediateWindowSize: 7, automaticMaintenance: false } };
   const migrated = SettingsSchema.parse(old);
   expect(migrated.memory.automaticMaintenance).toBe(false);
-  expect(Object.values(migrated.memory.summaries).every(config => config.enabled && !config.automatic)).toBe(true);
+  expect(Object.values(migrated.memory.summaries).every(config => !config.automatic)).toBe(true);
   migrated.memory.summaries.npc.automatic = true;
   const refreshed = SettingsSchema.parse(JSON.parse(JSON.stringify(migrated)));
   expect(refreshed.memory.automaticMaintenance).toBe(false);
