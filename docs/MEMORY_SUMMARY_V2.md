@@ -166,3 +166,18 @@ R2：旧automaticMaintenance=false也是旧默认，不能证明曾主动关闭�
 - 修复后记忆定向Vitest：4文件105通过、0失败、0跳过。
 - 修复后迁移提示桌面/移动Chromium：2通过、0失败、0跳过（13.6秒），同时验证逐项开启后保存、刷新及零AI请求。
 - 冻结提交后由低成本测试模型执行完整工程检查和受影响记忆浏览器回归，结果单独追加；不再重复无关458项完整浏览器套件。
+
+### 本轮冻结提交验收（低成本测试模型 GPT-6 Luna）
+
+执行代码提交：`93c87e1d64f98bf27f7f3755d534e06c17d9fa6d`。以下为本轮新执行的独立批次，前次454/2/2完整浏览器记录仍保留，不与本轮数量累计：
+
+| 命令/范围 | 本轮结果 |
+|---|---|
+| `npm run check`（Lint、完整Vitest、TypeScript、生产构建） | exit 0；92文件2632项通过，0失败、0跳过 |
+| `npm run prompts:check` | exit 0；3文件91项通过；是工程测试子集，不另加 |
+| 记忆总结、维护、NPC记忆、玩家记忆四个Playwright文件，desktop/mobile | exit 0；44通过（桌面22、移动22），0失败、0跳过 |
+| `git diff --check` | exit 0 |
+
+浏览器命令：`CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/memory-summary-v2.spec.ts e2e/memory-maintenance.spec.ts e2e/npc-memory.spec.ts e2e/player-memory.spec.ts --config=playwright.review.config.ts --project=desktop --project=mobile --workers=2`。临时配置仅将原配置的本地端口改为5194并禁止复用其他服务。未执行无关458项完整浏览器回归，也不宣称最后一次全量458项全绿。
+
+日志：`/tmp/pr78-final-check.log`、`/tmp/pr78-final-prompts.log`、`/tmp/pr78-final-browser.log`，失败复现批次另保留于`/tmp/pr78-review-red.log`和`/tmp/pr78-review-red-ui.log`。所有游戏AI调用为Mock，未调用真实收费模型。验收后仅追加本报告，执行代码与上述冻结提交相同。
