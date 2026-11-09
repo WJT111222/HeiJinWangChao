@@ -146,8 +146,8 @@ export class SaveRepository {
         const restored = await restoreSnapshot(tx, state, control!);
         const next = createTurnDraft(saveId, restored.state.revision, `turn-${crypto.randomUUID()}`, 'regular', '',
           draft?.useVariableStage ?? true, draft?.useWorldStage ?? true);
-        // All old receipts reference the abandoned branch's revisions or next-draft IDs.
-        // Keep appliedCommands in the restored state, but never replay these receipts.
+        // Retire receipts from the previous branch, including a predecessor receipt
+        // whose next-draft ID is now obsolete. Keep the restored appliedCommands.
         const receipts = tx.objectStore('turnReceipts');
         for (const key of await request(receipts.index('saveId').getAllKeys(saveId))) await request(receipts.delete(key));
         control!.lastUndo = { operationId, revision: restored.state.revision, draftTurnId: next.turnId };

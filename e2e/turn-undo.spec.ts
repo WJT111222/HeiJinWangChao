@@ -161,3 +161,32 @@ test('快照写满时正式回合可保存，明确提示不可撤回，刷新�
   const before = await read(page); expect(before.undo.available).toBe(0);
   await page.reload(); expect((await read(page)).state).toEqual(before.state); expect(server.calls).toEqual(['story', 'variables', 'world']);
 });
+test('另一个标签仍在生成时撤回明确拒绝，取消后重新读取才可撤回', async ({ page, context }) => {
+  await seed(page, 3); const server = await mock(page), second = await context.newPage();
+  await second.goto('/#game/save-a'); await expect(second.getByRole('button', { name: '撤回（2）' })).toBeEnabled();
+  let release!: () => void; server.control.hold = new Promise(resolve => { release = resolve; });
+  await page.getByLabel('你的行动', { exact: true }).fill('持有工作流锁');
+  await page.getByRole('button', { name: '发送', exact: true }).click();
+  await expect.poll(() => server.calls).toEqual(['story']);
+  await second.getByRole('button', { name: '撤回（2）' }).click();
+  await second.getByRole('button', { name: '确认撤回', exact: true }).click();
+  await expect(second.getByRole('dialog')).toContainText('正在另一处操作');
+  expect((await read(page)).state.turnNumber).toBe(3);
+  await openWorkflow(page); await page.getByRole('button', { name: '取消自动执行', exact: true }).click(); release();
+  await second.reload(); await undo(second, 2); expect((await read(page)).state.turnNumber).toBe(2);
+  expect(server.calls).toEqual(['story']); await second.close();
+});
+test('无 Web Locks 时双标签同时撤回仍由 IndexedDB CAS 保证仅一次成功', async ({ page, context }) => {
+  await seed(page, 4); const second = await context.newPage(); await second.goto('/');
+  for (const target of [page, second]) await target.evaluate(() => Object.defineProperty(navigator, 'locks', { value: undefined, configurable: true }));
+  const before = await read(page);
+  const invoke = (target: Page, operationId: string) => target.evaluate(async ({ expectedRevision, expectedDraft, operationId }) => {
+    const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open();
+    try { await repo.undoTurn({ saveId: 'save-a', expectedRevision, expectedDraft, operationId }); return 'success'; }
+    catch (error) { return error && typeof error === 'object' && 'code' in error ? String(error.code) : 'unexpected'; }
+    finally { repo.close(); }
+  }, { expectedRevision: before.state.revision, expectedDraft: before.draft, operationId });
+  expect((await Promise.all([invoke(page, 'tab-one'), invoke(second, 'tab-two')])).sort()).toEqual(['REVISION_CONFLICT', 'success']);
+  expect((await read(page)).state.turnNumber).toBe(3); expect((await read(page)).undo.available).toBe(2);
+  await second.close();
+});

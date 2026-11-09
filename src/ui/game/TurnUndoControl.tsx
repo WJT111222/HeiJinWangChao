@@ -28,6 +28,7 @@ export function TurnUndoControl({ repository, state, draft, busy, input, onInput
     void repository.undoStatus(state.saveId).then(next => {
       if (disposed) return;
       setStatus(next);
+      setError('');
       if (!initialized.current && !current.current.input) current.current.onInput(next.input);
       initialized.current = true;
     }).catch(() => { if (!disposed) { setStatus(undefined); setError('无法读取撤回记录，请重新读取存档。'); } });
@@ -53,7 +54,10 @@ export function TurnUndoControl({ repository, state, draft, busy, input, onInput
       current.current.onUndone(result);
       setConfirm(false);
     } catch (failure) {
-      setError(failure instanceof DataError && ['REVISION_CONFLICT', 'DRAFT_CONFLICT', 'STAGE_BUSY', 'TURN_BUSY'].includes(failure.code)
+      // A rejected/stale confirmation is not proof that the previously displayed
+      // checkpoint is still available. Reload before authorizing another undo.
+      setStatus(undefined);
+      setError(failure instanceof DataError && ['REVISION_CONFLICT', 'DRAFT_CONFLICT', 'STORY_BUSY'].includes(failure.code)
         ? '存档或草稿正在另一处操作，请重新读取后再撤回。'
         : '撤回未完成，存档未部分修改。请重新读取存档后检查恢复点。');
     } finally { active.current = false; setSaving(false); }

@@ -1,0 +1,26 @@
+{
+  "turns": 1000,
+  "npcCount": 500,
+  "snapshotBytes": 65605947,
+  "retained": 2,
+  "maxBytes": 67108864,
+  "commitMs": [
+    869.4000000059605,
+    759,
+    839.7000000029802,
+    715.6000000089407,
+    1508.3999999910593
+  ],
+  "undoMs": [
+    765.5,
+    898.3999999910593
+  ],
+  "originStorageEstimate": {
+    "quota": 10742231040,
+    "usage": 4812800,
+    "usageDetails": {
+      "indexedDB": 4812800
+    }
+  },
+  "restoredTurns": 1003
+}
