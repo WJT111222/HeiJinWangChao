@@ -1935,7 +1935,8 @@ button { border-radius: 6px; }
 .workflow-stages small, .stage-number { color: var(--muted); }
 .stage-action-hint { grid-column: 1 / -1; color: var(--muted); margin: 0; font-size: .7rem; }
 .composer-action-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: stretch; gap: var(--space-2); flex-shrink: 0; }
-.composer-roll { display: flex; align-items: stretch; }
+.composer-roll { display: flex; align-items: stretch; gap: 4px; }
+.game-layout .undo-feedback { margin: 0 0 6px; font-size: .8rem; overflow-wrap: anywhere; }
 .composer-roll button, .game-layout .composer-footer button { font-size: .8rem; min-height: 44px; padding: .6rem 1rem; }
 .game-layout .composer textarea { height: 68px; min-height: 44px; max-height: 100px; font-size: .9rem; resize: vertical; background: var(--bg); padding: .75rem; }
 .game-layout .composer-footer { display: flex; align-items: stretch; }

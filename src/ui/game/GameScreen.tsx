@@ -1,4 +1,6 @@
 import { PlayerStatus } from './PlayerStatus';
+import { TurnUndoControl } from './TurnUndoControl';
+import type { TurnUndoResult } from '../../services/storage/saveRepository';
 import { ProfessionProfile } from '../components/ProfessionProfile';
 import { StoryReading } from './StoryReading';
 import { openingTimeSelection } from '../../domain/openingTime';
@@ -56,6 +58,7 @@ export function GameScreen({
   repository,
   onDraftSaved,
   onCommitted,
+  onUndone,
   onMemorySaved,
   renderSettings,
 }: {
@@ -70,6 +73,7 @@ export function GameScreen({
   repository: SaveRepository;
   onDraftSaved: (draft: TurnDraft) => void;
   onCommitted: (result: TurnCommitResult) => void;
+  onUndone: (result: TurnUndoResult) => void;
   onMemorySaved: (state: GameState) => void;
   renderSettings?: (maintenance: ReactNode) => ReactNode;
 }) {
@@ -82,6 +86,7 @@ export function GameScreen({
   const [input, setInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [undoNotice, setUndoNotice] = useState('');
   const submitLock = useRef(false),
     submitToken = useRef(0);
   const [runtimeLogs, setRuntimeLogs] = useState<RuntimeLogEntry[]>([]);
@@ -572,8 +577,11 @@ export function GameScreen({
               </details>
             </section>
           </div>
+          {undoNotice && <p role="status" className="undo-feedback">{undoNotice}</p>}
           <div className="composer-action-row">
             <div className="composer-roll">
+              <TurnUndoControl repository={repository} state={state} draft={draft} busy={busy}
+                input={input} onInput={setInput} onUndone={onUndone} cancelMemory={memory.cancel} onNotice={setUndoNotice} />
               {manualProgress ? (
                 <button disabled={manualProgress.phase === 'saving'} onClick={cancel}>
                   {manualProgress.phase === 'saving' ? '正在保存…' : '取消生成'}
@@ -712,7 +720,9 @@ export function GameScreen({
         onRun={(kind, npcId) => void memory.run(false, kind, npcId)} onCancel={memory.cancel} />)}
       {memory.failures[0] && <Dialog title={summaryFailureTitle(memory.failures[0])} small onClose={() => memory.closeFailure(memory.failures[0].kind)}>
         <p>{memory.failures[0].message}</p><p>原始记忆仍保留；重新生成可能产生 API 费用。</p>
-        <button disabled={Boolean(memory.phase)} onClick={() => void memory.run(false, memory.failures[0].kind, memory.failures[0].npcId)}>重新生成</button>
+        {memory.failures[0].kind === 'npc' && !memory.failures[0].npcId
+          ? <button disabled={Boolean(memory.phase)} onClick={() => { memory.closeFailure('npc'); onOpenSettings(); }}>前往设置选择人物</button>
+          : <button disabled={Boolean(memory.phase)} onClick={() => void memory.run(false, memory.failures[0].kind, memory.failures[0].npcId)}>重新生成</button>}
         <button disabled={Boolean(memory.phase)} onClick={() => memory.pause(memory.failures[0].kind)}>暂停自动总结</button>
       </Dialog>}
     </main>

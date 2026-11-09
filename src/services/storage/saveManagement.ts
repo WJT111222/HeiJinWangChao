@@ -11,7 +11,7 @@ export type SaveSummary = ReadableSaveSummary | UnreadableSaveSummary;
 export interface RawSaveRecord { key: IDBValidKey; value: unknown }
 export interface RawSaveExport {
   format: 'heijin-raw-save'; version: 1;
-  records: { saves: RawSaveRecord[]; drafts: RawSaveRecord[]; turnReceipts: RawSaveRecord[] };
+  records: { saves: RawSaveRecord[]; drafts: RawSaveRecord[]; turnReceipts: RawSaveRecord[]; turnUndo?: RawSaveRecord[]; saveControls?: RawSaveRecord[] };
 }
 
 export function unreadableSaveSummary(storageKey: IDBValidKey, raw: unknown): UnreadableSaveSummary {
