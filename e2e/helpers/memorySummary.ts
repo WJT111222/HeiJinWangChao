@@ -36,7 +36,7 @@ export async function seedSummary(page: Page, options: { count?: number; publicL
 }
 export async function summaryPage(page: Page) {
   await openSettings(page); const dialog = page.getByRole('dialog', { name: '设置', exact: true });
-  await dialog.getByRole('button', { name: '记忆总结', exact: true }).click(); return dialog;
+  await dialog.getByRole('button', { name: '记忆', exact: true }).click(); return dialog;
 }
 export async function summaryState(page: Page, id = 'save-a') {
   return page.evaluate(async id => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open();
