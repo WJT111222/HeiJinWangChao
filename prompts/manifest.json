@@ -152,7 +152,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 3408,
+      "characters": 3613,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -162,7 +162,7 @@
       "orderGroup": "shared",
       "reorderable": false,
       "category": "shared",
-      "contentSha256": "a5b718ec3f1d895ab77b2fdbb7a9cd07f51b075175fea80606112841adc46f36",
+      "contentSha256": "937ffc5c490379f04d7fe591856cc348e46a92551516707679a9d988cb254535",
       "placeholders": [
         "worldClock",
         "worldWeekday"
@@ -299,7 +299,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 7434,
+      "characters": 8546,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -309,7 +309,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "a70f28454ed89e19453b7510ebd8a76f37e272d4551e486d6c8a7b88e9132fa6",
+      "contentSha256": "6d63e3b79fecad6212648caa13bb8430ceef205d72e02a205d1060d171ad5ffb",
       "placeholders": []
     },
     {
@@ -380,7 +380,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1304,
+      "characters": 1535,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -390,7 +390,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "2fb9a235f2ed37a15ab7ca62aa5a1db7918bc7da70efa740ea647625fe475d5a",
+      "contentSha256": "b14b95418d3765b53c3ba8afa759522e91f3bc876336b917e59a0375e7cbff7e",
       "placeholders": []
     },
     {
@@ -462,7 +462,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1409,
+      "characters": 1640,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -472,7 +472,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "e5d40e80c9113fcbdf853763b12e1e2710aaa3a00d372c3fb47412c199e1d4df",
+      "contentSha256": "78e240a044e7ee1d907596bfea19b02c36131c8b29c45c8b5a7326cce75c4243",
       "placeholders": []
     },
     {

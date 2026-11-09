@@ -1,3 +1,4 @@
+import { validateStageResult } from './stages';
 import { requireData } from '../common';
 import type { GameState } from '../state';
 import { plannedEventSchema } from './schema';
@@ -37,10 +38,10 @@ export function validateEventLinks(state: EventState) {
   }
   for (const event of [...Object.values(state.events), ...Object.values(state.retiredEvents)]) {
     if (event.eventKind==='sub') {
-      const parent=event.parentEventId && state.events[event.parentEventId];
+      const parent=event.parentEventId && eventById(state,event.parentEventId);
       requireData(parent && parent.eventKind==='main' && parent.id!==event.id,'EVENT_PARENT','小事件必须关联现存主事件');
       requireData(event.startAt && event.fixedEndAt && Date.parse(event.fixedEndAt)>=Date.parse(event.startAt)
-        && Date.parse(event.startAt)>=Date.parse(parent.startAt),'EVENT_TIME','小事件时间范围不合法');
+        && Date.parse(event.startAt)>=Date.parse(parent.startAt!),'EVENT_TIME','小事件时间范围不合法');
     } else requireData(!event.parentEventId && !event.fixedEndAt,'EVENT_CONTEXT','非小事件不能填写父事件或固定终止时间');
   }
   const visiting=new Set<string>(),visited=new Set<string>();
@@ -74,20 +75,37 @@ function hasReferences(state: GameState,event:WorldEvent) {
     || [...memories,...Object.values(state.organizations)].some(m=>JSON.stringify(m).includes(`event:${event.id}`)||JSON.stringify(m).includes(`event-result:${event.id}`)||JSON.stringify(m).includes(`event-plan:${event.id}`)||JSON.stringify(m).includes(JSON.stringify(event.id)));
 }
 
+
+// Structured references resolve through eventById/historicalEvent after retirement.
+// Opaque knowledge/planning references still retain full context conservatively.
+function hasOpaqueReferences(state:GameState,event:WorldEvent) {
+  if(Object.values(state.npc).some(n=>n.kind==='special' && JSON.stringify(n.activeGoals).includes(`event-plan:${event.id}`)))return true;
+  if(event.eventKind==='main' && Object.values(state.events).some(e=>e.parentEventId===event.id&&!terminalEvent(e)))return true;
+  const copy={...state,tasks:{},events:Object.fromEntries(Object.entries(state.events).map(([id,e])=>[id,{...e,linkedTaskIds:[],predecessorEventIds:[],parentEventId:undefined}])),
+    retiredEvents:{},timeline:[]};
+  const value={...event,linkedTaskIds:[]};
+  // Keep task narrative references, but not their explicit linkedEventId.
+  copy.tasks=Object.fromEntries(Object.entries(state.tasks).map(([id,t])=>[id,{...t,linkedEventId:undefined}]));
+  return hasReferences(copy,value);
+}
+
 /** 清理无必要引用的终态，不按重要性准入；轻量身份阻止ID重用。 */
 export function deleteEvent(state: GameState,eventId:string,expectedStatus:'resolved'|'cancelled',turnId:string) {
   const event=state.events[eventId];
   requireData(event && event.status===expectedStatus && terminalEvent(event),'EVENT_NOT_TERMINAL','只能清理已结束事件');
-  // Until authoritative stage summaries exist, the full sub-event is the only result record.
-  requireData(event.eventKind!=='sub','EVENT_RETAINED','阶段摘要尚未持久化，子事件结案成果必须保留');
+  if(event.eventKind==='sub') validateStageResult(event);
   requireData(!state.retiredEvents[eventId],'DUPLICATE_ID','事件已清理');
   // 未处理入场和必要引用继续保护；不按事件影响等级判断保留资格。
-  requireData(!['pending','presented'].includes(event.protagonistEntry?.status??'') && !hasReferences(state,event),
+  requireData(!['pending','presented'].includes(event.protagonistEntry?.status??'') && !(event.eventKind ? hasOpaqueReferences(state,event) : hasReferences(state,event)),
     'EVENT_RETAINED','存在未处理入场或必要引用的事件不能直接清理');
   state.retiredEvents[eventId]={id:event.id,status:expectedStatus,retiredAt:state.worldClock,
     sourceTurnIds:[...new Set([...event.sourceTurnIds,turnId])],linkedTaskIds:event.linkedTaskIds,
     predecessorEventIds:event.predecessorEventIds??[]};
   if(event.eventKind) Object.assign(state.retiredEvents[eventId],{eventKind:event.eventKind,startAt:event.startAt,
     ...(event.parentEventId ? {parentEventId:event.parentEventId,fixedEndAt:event.fixedEndAt} : {})});
+  if(event.eventKind) {
+    const keys=['title','startAt','estimatedEndAt','resolvedAt','actorRefs','locationId','visibility','impact','resolutionText','resultKnowledge','outcome','protagonistKnowledge'] as const;
+    state.retiredEvents[eventId].detail=Object.fromEntries(keys.filter(key=>event[key]!==undefined).map(key=>[key,event[key]])) as NonNullable<RetiredEvent['detail']>;
+  }
   delete state.events[eventId];
 }
