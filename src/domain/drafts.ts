@@ -25,6 +25,8 @@ export type DraftStage = z.infer<typeof StageSchema>;
 export const TurnDraftSchema = z.strictObject({
   saveId: IdSchema, turnId: IdSchema, baseSaveRevision: CountSchema, draftRevision: CountSchema,
   storyRevision: CountSchema, turnKind: z.enum(['opening', 'regular']), userInput: z.string(),
+  // UI-only prefill after explicit rollback; never a bound AI action or a world fact.
+  restoredInput: z.string().max(100000).optional(),
   useVariableStage: z.boolean(), useWorldStage: z.boolean(), story: StorySchema.optional(),
   // 执行尝试与正文版本独立。默认 0 兼容本 PR 先前保存的草稿，不改变已有正文/候选。
   executionRevision: CountSchema.default(0),
