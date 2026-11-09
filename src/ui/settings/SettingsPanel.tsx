@@ -13,7 +13,7 @@ const PromptInspector = lazy(() =>
   import('./PromptInspector').then((module) => ({ default: module.PromptInspector })),
 );
 
-const tabs = ['AI 连接', '提示词', '记忆', '记忆总结', '运行', '提示词管理'] as const;
+const tabs = ['AI 连接', '提示词', '记忆', '运行', '提示词管理'] as const;
 export function SettingsPanel({
   settings,
   onSave,
@@ -47,7 +47,7 @@ export function SettingsPanel({
   const prompt = <K extends keyof Settings['prompts']>(key: K, value: Settings['prompts'][K]) =>
     setEditing({ ...editing, prompts: { ...editing.prompts, [key]: value } });
   function save() {
-    const checked = SettingsSchema.safeParse({ ...editing, memory: { ...editing.memory, summaries: settings.memory.summaries } });
+    const checked = SettingsSchema.safeParse({ ...editing, memory: settings.memory });
     if (!checked.success) {
       setNotice(
         '请输入有效的正整数：正文最多 100000 字、即时记忆最多 10000 回合、超时最多 3600 秒。',
@@ -69,7 +69,7 @@ export function SettingsPanel({
             key={name}
             aria-pressed={tab === name}
             onClick={() => {
-              if (name !== tab && ((tab === 'AI 连接' && aiDirty) || (tab === '记忆总结' && summaryDirty))) { setPendingTab(name); return; }
+              if (name !== tab && ((tab === 'AI 连接' && aiDirty) || (tab === '记忆' && summaryDirty))) { setPendingTab(name); return; }
               setTab(name);
               setNotice('');
             }}
@@ -148,35 +148,7 @@ export function SettingsPanel({
             </div>
           </>
         )}
-        {tab === '记忆' && (
-          <>
-            <label>
-              即时记忆完整回合数
-              <input
-                type="number"
-                min="1"
-                max="10000"
-                value={
-                  Number.isNaN(editing.memory.immediateWindowSize)
-                    ? ''
-                    : editing.memory.immediateWindowSize
-                }
-                onChange={(e) =>
-                  setEditing({
-                    ...editing,
-                    memory: { ...editing.memory, immediateWindowSize: e.target.valueAsNumber },
-                  })
-                }
-              />
-            </label>
-            <p className="muted">
-              默认 10
-              回合。这里保存的数字决定下一次正文请求的完整回合窗口，不改变正式存档版本或删除原文。
-              更早的相关历史可通过独立的有界本地检索重新引用。整理记忆会使用记忆总结模型，可能产生额外API费用。
-            </p>
-          </>
-        )}
-        {tab === '记忆总结' && (isValidElement<{ onDirtyChange?: (dirty: boolean) => void }>(memoryMaintenance)
+        {tab === '记忆' && (isValidElement<{ onDirtyChange?: (dirty: boolean) => void }>(memoryMaintenance)
           ? cloneElement(memoryMaintenance, { onDirtyChange: summaryDirtyChanged })
           : <MemorySummarySettings settings={settings} onSave={onSave} onDirtyChange={summaryDirtyChanged} />)}
         {tab === '运行' && (
@@ -242,13 +214,13 @@ export function SettingsPanel({
         <div role="status" className="field-hint">
           {notice}
         </div>
-        {tab !== 'AI 连接' && tab !== '提示词管理' && tab !== '记忆总结' && (
+        {tab !== 'AI 连接' && tab !== '提示词管理' && tab !== '记忆' && (
           <button className="primary" onClick={save}>
             保存本地设置
           </button>
         )}
       </div>
-      {pendingTab && <UnsavedAiChanges subject={tab === '记忆总结' ? '记忆总结设置' : undefined} onContinue={() => setPendingTab(undefined)} onDiscard={() => {
+      {pendingTab && <UnsavedAiChanges subject={tab === '记忆' ? '记忆设置' : undefined} onContinue={() => setPendingTab(undefined)} onDiscard={() => {
         aiDirtyChanged(false);
         setTab(pendingTab);
         setPendingTab(undefined);
