@@ -1,3 +1,4 @@
+import { openNpcRoster, closeNpcRoster, selectNpc, rosterGame } from './helpers/npcRoster';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { seedSummary, summaryState } from './helpers/memorySummary';
@@ -13,10 +14,12 @@ async function seedPlayable(page:Page){
  await page.reload();await expect(page.locator('.game-layout')).toBeVisible();
 }
 async function manage(page:Page,choice:'ordinary'|'special'){
- return page.evaluate(async choice=>{
-  const path='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(path),repo=await SaveRepository.open();
-  try{const {state,draft}=await repo.loadGame('save-a');return await repo.setNpcImportance({saveId:state.saveId,expectedRevision:state.revision,expectedManagementRevision:state.npcManagementRevision??0,expectedDraftRevision:draft?.draftRevision,expectedTurnId:draft?.turnId,npcId:'npc-a',identityKey:state.npc['npc-a'].identityKey,choice,operationId:crypto.randomUUID()});}finally{repo.close();}
- },choice);
+ const before = await rosterGame(page), name = before.state.npc['npc-a'].name;
+ await openNpcRoster(page); const detail = await selectNpc(page, name);
+ await detail.getByRole('button', { name: `${choice === 'special' ? '设为特殊人物' : '取消特殊身份'}：${name}`, exact:true }).click();
+ await expect.poll(async () => (await rosterGame(page)).state.npc['npc-a'].kind).toBe(choice);
+ await closeNpcRoster(page);
+ return rosterGame(page);
 }
 async function mock(page:Page){
  const calls:string[]=[],contexts:Record<string,unknown>[]=[];

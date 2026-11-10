@@ -1,14 +1,14 @@
 import { WorldEventsPanel } from './WorldEventsPanel';
-import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Detail, Empty } from '../Dialog';
-import { dateTime, orgLabels } from './playerView';
+import { Empty } from '../Dialog';
+import { orgLabels } from './playerView';
 import type { PlayerView } from './playerView';
 import { InventoryPanel } from './InventoryPanel';
 import { HistoryPanel } from './HistoryPanel';
 import { MemoryPanel } from './MemoryPanel';
-import { WorldRecord, RecordList } from './WorldRecord';
-import { MemoryRecord } from './MemoryRecord';
+import { WorldRecord } from './WorldRecord';
+import { NpcPanel } from './NpcPanel';
+import type { NpcManagement } from './NpcPanel';
 
 export const panelNames = [
   'NPC',
@@ -20,127 +20,8 @@ export const panelNames = [
   '记忆',
 ] as const;
 export type PanelName = (typeof panelNames)[number];
-export function Panels({ name, view, onOpenHistory }: { name: PanelName; view: PlayerView; onOpenHistory?:()=>void }) {
-  const [query, setQuery] = useState('');
-  const [personId, setPersonId] = useState<string>();
-  const [personPage, setPersonPage] = useState(0);
-  if (name === 'NPC') {
-    const selected = view.npc.find((p) => p.id === personId);
-    const matches = view.npc.filter(person => [person.name, person.identity, person.relationshipText].some(text => text?.includes(query)));
-    const page = Math.min(personPage, Math.max(0, Math.ceil(matches.length / 20) - 1));
-    const people = matches.slice(page * 20, (page + 1) * 20);
-    return (
-      <>
-        <p className="muted">玩家可只读查看全部人物。查看不会让主角或其他人物获得新知识；好感倾向不代表恋爱关系。</p>
-        <label className="search">
-          搜索人物
-          <input value={query} maxLength={4000} onChange={(e) => { setQuery(e.target.value); setPersonPage(0); }} placeholder="输入姓名、身份或关系" />
-        </label>
-        {matches.length > 20 && <div className="memory-pagination"><button disabled={!page} onClick={() => setPersonPage(page - 1)}>上一页人物</button><span>第 {page + 1} 页</span><button disabled={(page + 1) * 20 >= matches.length} onClick={() => setPersonPage(page + 1)}>下一页人物</button></div>}
-        <div className="archive-split">
-          <div>
-            {(['special', 'ordinary'] as const).map((kind) => (
-              <section key={kind}>
-                <h3>{kind === 'special' ? '特殊 NPC' : '普通 NPC'}</h3>
-                {people
-                  .filter((p) => p.kind === kind)
-                  .map((person) => (
-                    <button
-                      className="person-row"
-                      aria-pressed={personId === person.id}
-                      key={person.id}
-                      onClick={() => setPersonId(person.id)}
-                    >
-                      <span className="avatar">{person.name.slice(0, 1)}</span>
-                      <span>
-                        <strong>{person.name}</strong>
-                        <small>{person.onScene ? '本幕在场' : '场外人物'}</small>
-                      </span>
-                      <span aria-hidden="true">↗</span>
-                    </button>
-                  ))}
-                {!people.some((p) => p.kind === kind) && (
-                  <Empty>暂无符合条件的人物</Empty>
-                )}
-              </section>
-            ))}
-          </div>
-          <section className="card">
-            {selected ? (
-              <>
-                <span className="tag">
-                  {selected.profile ? '人物档案与创角设定 · 分别记录' : '人物档案'}
-                </span>
-                <h3>{selected.name}</h3>
-                <p className="muted">{selected.isContact ? '联系人 · 永久保留档案' : selected.contactReviewPending ? '旧档联系人身份待确认 · 暂缓清理' : '人物档案 · 尚未登记为联系人'}</p>
-                <dl>
-                  <Detail label="身份">{selected.identity || selected.authoredProfile?.identity || '未记录'}</Detail>
-                  <Detail label="与主角关系">
-                    {selected.relationshipText || selected.authoredProfile?.relationshipText || '未记录'}
-                  </Detail>
-                  <Detail label="关系倾向">
-                    {selected.affinity === null ? '尚未确认' : selected.affinity}
-                  </Detail>
-                  <Detail label="当前位置">
-                    {view.locations.find((p) => p.id === selected.locationId)?.name || selected.locationId || '未记录'}
-                  </Detail>
-                  <Detail label="年龄">{selected.age ?? '未记录'}</Detail>
-                  <Detail label="外貌">{selected.appearance || '未记录'}</Detail>
-                  <Detail label="性格">{selected.temperament || '未记录'}</Detail>
-                  <Detail label="能力">{selected.skills.join('、') || '未记录'}</Detail>
-                  <Detail label="身体状态">{selected.healthText || '未记录'}</Detail>
-                  <Detail label="个人背景">{selected.background || '未记录'}</Detail>
-                  {selected.kind === 'special' && <>
-                    <Detail label="详细经历">{selected.detailedBackground || '未记录'}</Detail>
-                    <Detail label="个人目标">{selected.activeGoals.join('；') || '无'}</Detail>
-                    <Detail label="习惯">{selected.habits.join('；') || '未记录'}</Detail>
-                  </>}
-                  {selected.profile && (
-                    <>
-                      <Detail label="年龄">{selected.profile.age ?? '未填写'}</Detail>
-                      <Detail label="外貌">{selected.profile.appearance}</Detail>
-                      <Detail label="性格">{selected.profile.temperament}</Detail>
-                      <Detail label="能力">{selected.profile.skills.join('、')}</Detail>
-                      <Detail label="个人经历">{selected.profile.background}</Detail>
-                    </>
-                  )}
-                </dl>
-                {selected.kind === 'special' && selected.gender === 'female' && (selected.age === undefined || selected.age >= 18) && (
-                  <section className="card" style={{ marginTop: '1rem', borderTop: '1px solid #ddd', paddingTop: '1rem' }}>
-                    <h4>香闺秘档</h4>
-                    {selected.privateProfile ? (
-                      <>
-                        <dl>
-                          <Detail label="身材描述">{selected.privateProfile.bodyDescription || '未记录'}</Detail>
-                          <Detail label="胸部描述">{selected.privateProfile.chestDescription || '未记录'}</Detail>
-                          <Detail label="小穴描述">{selected.privateProfile.pussyDescription || '未记录'}</Detail>
-                          <Detail label="是否处女">{selected.privateProfile.isVirgin === true ? '是' : selected.privateProfile.isVirgin === false ? '否' : '未记录'}</Detail>
-                        </dl>
-                        <div style={{ marginTop: '0.5rem' }}>
-                          <strong>初次性经历</strong>
-                          {selected.privateProfile.firstExperienceText ? (
-                            <p>{selected.privateProfile.firstExperienceText}<br />
-                            <small>对象：{selected.privateProfile.firstExperienceTarget || '未记录'} · 时间：{selected.privateProfile.firstExperienceTime || '未记录'}</small></p>
-                          ) : <Empty>尚未记录初次经历</Empty>}
-                        </div>
-                      </>
-                    ) : <Empty>私密档案尚未建立</Empty>}
-                  </section>
-                )}
-                {selected.authoredProfile && <WorldRecord title="创角原始设定（不替代当前状态）" value={selected.authoredProfile} />}
-                <WorldRecord title="完整人物资料" value={{ ...selected, memories: undefined, longTermMemories: undefined, knownInformation: undefined, summaries: undefined }} />
-                <RecordList key={`${selected.id}:knowledge`} label="人物已知信息" entries={selected.knownInformation} render={info => <article className="entry"><p>{info.text}</p><p>来源：{info.source}</p><time>{dateTime(info.learnedAt)}</time></article>} />
-                <RecordList key={selected.id} label="人物记忆与总结" entries={view.memories.filter(memory => memory.ownerNpcId === selected.id)} render={memory => <article className="card entry"><MemoryRecord memory={memory} view={view} /></article>} />
-              </>
-            ) : (
-              <Empty>选择人物，查看完整资料与独立认知。</Empty>
-            )}
-          </section>
-        </div>
-        <details><summary>退场人物保留资料</summary><RecordList label="退场人物" entries={view.retiredNpcs} render={person => <article className="card entry"><h3>{person.name}</h3><WorldRecord value={person} /></article>} /></details>
-      </>
-    );
-  }
+export function Panels({ name, view, onOpenHistory, npcManagement }: { name: PanelName; view: PlayerView; onOpenHistory?:()=>void; npcManagement?: NpcManagement }) {
+  if (name === 'NPC') return <NpcPanel view={view} management={npcManagement} />;
   if (name === '势力组织')
     return (
       <>

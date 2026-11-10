@@ -2314,3 +2314,50 @@ input, textarea, select, .prompt-inspector pre { background-color: var(--bg); co
   .app-shell-home .save-list { flex: initial; overflow-y: visible; }
 }
 
+
+/* NPC V2: one roster; this dialog alone owns the two reading panes. */
+.npc-dialog { width: min(1240px, 96vw); height: min(88dvh, 980px); }
+.npc-dialog .modal-body { display: flex; flex-direction: column; overflow: hidden; padding: 1rem 1.5rem; }
+.npc-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; }
+.npc-layout { display: grid; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); gap: 1.5rem; flex: 1; min-height: 0; }
+.npc-directory, .npc-detail { overflow-y: auto; overscroll-behavior: contain; min-width: 0; }
+.npc-directory { padding-right: .5rem; }
+.npc-directory-tools { position: sticky; top: 0; z-index: 1; background: var(--panel); padding-bottom: .8rem; }
+.npc-directory-tools h3 { margin: .2rem 0 .75rem; font-size: 1rem; }
+.npc-directory-tools h3 small { color: var(--muted); margin-left: .5rem; }
+.npc-directory-tools label { font-size: .8rem; }
+.npc-directory-tools input, .npc-directory-tools select { width: 100%; min-width: 0; }
+.npc-people { margin: 0; padding: 0; list-style: none; }
+.npc-directory-row { display: flex; align-items: center; border-bottom: 1px solid var(--line); gap: .25rem; padding: .5rem 0; }
+.npc-directory-row .person-row { margin: 0; border: 1px solid transparent; padding: .55rem .3rem; gap: .6rem; flex: 1; min-width: 0; background: transparent; }
+.npc-directory-row .person-row[aria-pressed='true'] { border-color: var(--gold); }
+.npc-directory-row .person-row > span:last-child { margin-left: 0; min-width: 0; }
+.npc-directory-row .person-row .avatar { flex-shrink: 0; }
+.npc-directory-row .person-row small { color: var(--muted); font-size: .7rem; line-height: 1.55; }
+.npc-directory-row .person-row small:nth-of-type(-n+2) { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.npc-star { flex-shrink: 0; width: 44px; height: 44px; padding: 0; font-size: 1.7rem; color: var(--muted); background: transparent; border-color: transparent; }
+.npc-star.is-special { color: var(--gold); }
+.npc-star:hover { border-color: var(--gold); }
+.npc-detail { padding: 0 .75rem 1.5rem; }
+.npc-detail-heading { position: sticky; top: 0; z-index: 1; background: var(--panel); padding: .3rem 0 .8rem; border-bottom: 1px solid var(--line); }
+.npc-detail-title { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.npc-detail-title h3 { font-size: 1.45rem; margin: .45rem 0 0; }
+.npc-back { display: none; }
+.npc-section { padding: 1rem 0; border-bottom: 1px solid var(--line); }
+.npc-section h4 { color: var(--gold); margin: .5rem 0 1rem; font-size: .95rem; }
+.npc-detail .detail { grid-template-columns: 6.5rem minmax(0,1fr); }
+.npc-detail .detail dd { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.85; }
+.npc-detail .prose { white-space: pre-wrap; font-size: .92rem; }
+.npc-feedback, .npc-pending { color: var(--gold); font-size: .85rem; margin: .3rem 0 .8rem; }
+.npc-relation-link { max-width: 100%; white-space: normal; overflow-wrap: anywhere; color: var(--gold); background: transparent; padding: .3rem .6rem; }
+.npc-memory { border-bottom: 1px solid var(--line); padding-bottom: 1rem; }
+.npc-memory > span { font-size: .75rem; }
+@media (max-width: 900px) {
+  .npc-dialog .modal-body { padding: .65rem .8rem; }
+  .npc-layout { display: block; }
+  .npc-directory, .npc-detail { height: 100%; padding: 0 .15rem .8rem; }
+  .npc-panel[data-detail='true'] .npc-directory, .npc-panel[data-detail='false'] .npc-detail { display: none; }
+  .npc-back { display: inline-flex; font-size: .85rem; margin-bottom: .65rem; }
+  .npc-detail .detail { grid-template-columns: 5rem minmax(0,1fr); font-size: .85rem; gap: .6rem; }
+  .npc-detail-title h3 { font-size: 1.25rem; }
+}
