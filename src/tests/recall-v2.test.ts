@@ -6,7 +6,7 @@ import { contextStatistics } from '../prompts/statistics';
 import { array, record } from '../services/ai/protocols';
 import { rerollStory } from '../domain/drafts';
 import { recallV2Fixture } from './fixtures/recallV2';
-import { sentContext, expectFullState } from './fixtures/contextAssertions';
+import { sentContext, expectWorldWithNpcProjection } from './fixtures/contextAssertions';
 import { npc } from './fixtures/game';
 import { projectTurn } from '../domain/turnProjection';
 
@@ -28,7 +28,7 @@ describe('共享召回V2：200回合最终messages', () => {
       expect(result.narrativeExcerpt).toBe(original.story.narrative.slice(Number(range.start), Number(range.end)));
       expect(result).toMatchObject({ source: 'journal', status: 'committed', revision: original.revision });
     }
-    expectFullState(context, stage === 'world' ? projectTurn(a.state, a.draft) : a.state, a.state.revision);
+    expectWorldWithNpcProjection(context, stage === 'world' ? projectTurn(a.state, a.draft) : a.state, a.state.revision);
     expect(record(record(context.SAVE_STATE).economy).debts).toEqual(a.state.economy.debts);
     expect(record(context.MEMORY_CONTEXT).recallPolicy).toContain('以正式状态为准');
     expect(record(context.MEMORY_CONTEXT).summaries).toEqual([]);

@@ -20,7 +20,7 @@ it.each(['story', 'variables', 'world'] as const)('%s final compose reconciles e
     expect(report.counts.npc).toBe(Object.keys(a.state.npc).length);
     expect(report.counts.npcMemories).toBeGreaterThan(100);
     expect(report.categories.find(row => row.id === 'system')!.characters).toBeGreaterThan(0);
-    expect(report.duplicates.some(row => row.identity.startsWith('memory:'))).toBe(true);
+    expect(report.duplicates.some(row => row.identity.startsWith('memory:'))).toBe(false);
     expect(fetcher).not.toHaveBeenCalled(); expect(a).toEqual(before);
   } finally { vi.unstubAllGlobals(); }
 });

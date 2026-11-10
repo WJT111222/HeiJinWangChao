@@ -156,7 +156,7 @@ test('世界生成、补算、只读查看与刷新恢复，真实路由和快�
   expect(first.draft.world.basedOnVariableRevision).toBe(1);
   expect(first.draft.useVariableStage).toBe(false);
   expect(bodies[0].model).toBe('world-browser-model');
-  expect(JSON.stringify(bodies[0])).toContain('NPC_KNOWLEDGE');expect(JSON.stringify(bodies[0])).not.toContain('WORLD_SOURCES');
+  expect(JSON.stringify(bodies[0])).toContain('NPC_CONTEXT');expect(JSON.stringify(bodies[0])).not.toContain('WORLD_SOURCES');
   await expect(page.locator('main')).not.toContainText('尚未发布的诊室线索');
   await page.getByRole('button', { name: '查看世界候选（未结算）', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '世界候选 · 未正式结算', exact: true });

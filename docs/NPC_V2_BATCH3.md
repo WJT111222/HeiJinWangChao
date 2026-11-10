@@ -163,3 +163,7 @@ src/tests/variable-commands.test.ts
 src/tests/world-handoff-review.test.ts
 src/tests/world-handoff.test.ts
 ```
+
+## NPC V2 第四批输入表示衔接
+
+上述记录保留各批历史设计与验收结果。当前NPC只读表示以 [NPC_V2_BATCH4.md](NPC_V2_BATCH4.md) 为准：人物表唯一位于 `SAVE_STATE.npc`，四级ID索引位于 `NPC_CONTEXT.groups`，现场/场外列表仅传ID；离场普通可通过可靠已有总结和近期/相关原文形成可观测的紧凑视图。正式人物/记忆存储、历史召回评分和命令权限不变，休眠档案仍完全隔离。

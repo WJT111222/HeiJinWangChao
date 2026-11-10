@@ -42,7 +42,7 @@ Story变量规划中的eventInteraction为程序维护的承接回执，不生�
 
 ## NPC 认知输入与只读存档的区别
 push npc[id].memories与push npc[id].knownInformation统一使用四字段JSON对象：text字符串、knowledgeKind（observed/reported/suspected）、knowledgeSource字符串、visibility（npc_private/internal/player_known）。四项都必须提供，由AI选择认知性质；程序不猜测补齐。
-SAVE_STATE/NPC_KNOWLEDGE内knownInformation的source/learnedAt是只读存档字段，不可复制为命令值；不要带id、source、learnedAt、createdAtGameTime、sourceTurnIds或affectedEntityRefs。程序根据指定NPC和本回合生成这些元数据。新增knownInformation时会同时记录个人记忆，不要把同一条再push到memories。
+SAVE_STATE.npc[id]内knownInformation的source/learnedAt是只读存档字段，不可复制为命令值；不要带id、source、learnedAt、createdAtGameTime、sourceTurnIds或affectedEntityRefs。程序根据指定NPC和本回合生成这些元数据。新增knownInformation时会同时记录个人记忆，不要把同一条再push到memories。
 例如（lin须替换为实际稳定NPC ID）：
 <命令>
 push npc[lin].knownInformation = {"text":"得知值班安排","knowledgeKind":"reported","knowledgeSource":"当面告知","visibility":"npc_private"}

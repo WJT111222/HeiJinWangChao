@@ -18,7 +18,9 @@ async function seed(page: Page) {
     state.memories.immediateWindowSize = 20;
     const secret = { id: 'private', text: '保密调查口令', sourceTurnIds: [], affectedEntityRefs: [], createdAtGameTime: state.worldClock, visibility: 'npc_private' };
     state.memories.short = [secret];
-    state.npc['npc-a'].memories = [{ ...secret, knowledgeSource: '未公开调查' }];
+    state.npc['npc-a'].memories = [{ ...secret, id: 'npc-private', knowledgeSource: '未公开调查' }];
+    const statePath = '/src/domain/state.ts', { GameStateSchema } = await import(statePath);
+    GameStateSchema.parse(state); // Fail at the fixture source if its IDs or references are invalid.
     const repo = await SaveRepository.open(); repo.close();
     await new Promise<void>((resolve, reject) => {
       const operation = indexedDB.open('heijinwangchao');
@@ -132,8 +134,8 @@ test('真实正文请求使用设置N=1/10/20，并独立召回第3回合；查�
     const context = contexts.at(-1)!;
     const state = record(context.SAVE_STATE), npc = record(record(state.npc)['npc-a']);
     expect(array(npc.memories).map(entry => record(entry).text)).toContain('保密调查口令');
-    const knowledge = array(context.NPC_KNOWLEDGE).map(record).find(entry => entry.ownerNpcId === 'npc-a')!;
-    expect(array(knowledge.raw).map(entry => record(entry).text)).toContain('保密调查口令');
+    expect(context).not.toHaveProperty('NPC_KNOWLEDGE');
+    expect(array(npc.memories).filter(entry => record(entry).id === 'npc-private')).toHaveLength(1);
     expect(array(memory.recentTurns).map(entry => record(entry).narrative).join('')).not.toContain('保密调查口令');
     const panel = await memoryPanel(page);
     await expect(panel).toContainText(`即时窗口：最近 ${size} 回合`);
