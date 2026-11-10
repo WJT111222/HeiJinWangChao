@@ -4,6 +4,7 @@ import { Empty } from '../Dialog';
 
 const labels: Record<string, string> = {
   id: '记录 ID', identityKey: '稳定身份', name: '名称', title: '标题', kind: '类型', status: '状态',
+  eventKind: '事件类别', parentEventId: '所属主事件 ID', fixedEndAt: '固定终止时间',
   startAt: '开始时间', estimatedEndAt: '预计结束时间', resolvedAt: '实际结束时间', dueAt: '截止时间',
   actorRef: '行动者', actorRefs: '参与者', backgroundText: '背景', goalText: '目标', goal: '目标',
   prerequisites: '前置条件', blockers: '阻碍', linkedTaskIds: '关联任务', linkedEventId: '关联事件',
