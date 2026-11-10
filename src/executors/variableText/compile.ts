@@ -27,7 +27,7 @@ const fields = new Map<string, Mapping>([
   ['locations', { operation: 'set', kind: 'location', field: 'location' }],
   ['npc.relationshipText', { operation: 'set', kind: 'npc', field: 'relationshipText' }],
   ['npc.healthText', { operation: 'set', kind: 'npc', field: 'healthText' }],
-  ...['locationId', 'onScene', 'lastInteractionAt', 'gender', 'privateProfile'].map((field): [string, Mapping] =>
+  ...['locationId', 'onScene', 'lastInteractionAt', 'gender', 'privateProfile', 'phoneContact', 'usualLocations', 'detailedBackground', 'habits', 'relationshipNetwork'].map((field): [string, Mapping] =>
     [`npc.${field}`, { operation: 'set', kind: 'npc', field }]),
   ['npc.memories', { operation: 'push', kind: 'memory', field: 'memories' }],
   ['npc.longTermMemories', { operation: 'push', kind: 'memory', field: 'longTermMemories' }],
@@ -121,6 +121,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
   const values = sourceValues(base);
   const createdIds = new Set<string>();
   const npcIds = new Set(Object.keys(base.npc));
+  const npcIdentities = new Map(Object.values(base.npc).map(npc=>[npc.id,npc.identityKey]));
   const sceneEvents = new Map(Object.entries(base.events));
   for (let i = 0; i < ast.length; i++) {
     const command = normalizeSourcePath(ast[i]), origin = { commandIndex: i + 1, source: command.source };
@@ -132,7 +133,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
     const sceneEvent=command.path.nodes.length===3 && root.name==='events' && node?.kind==='id' && field?.kind==='field'&&field.name==='sceneState';
     const transaction = await compileSourceOperation(command, values, base, quantities, prior, common, context.expectedRevision)
       ?? compileTransaction(command, common, context.expectedRevision)
-      ?? compileEntity(command, common, context.expectedRevision);
+      ?? compileEntity(command, common, context.expectedRevision, node?.kind === 'id' ? npcIdentities.get(node.id) : undefined);
     if (command.path.nodes.length === 2 && root.name === 'opening' && node?.kind === 'field' && node.name === 'initialState') {
       if (command.operation !== 'set') return failed('unsupported_operation', origin);
       if (draft.turnKind !== 'opening') return failed('permission_denied', origin);
@@ -221,7 +222,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       if (createdIds.has(created)) return failed('duplicate_or_conflicting_command', origin);
       createdIds.add(created);
     }
-    if (c.type === 'CreateNpc') npcIds.add(c.npc.id);
+    if (c.type === 'CreateNpc') { npcIds.add(c.npc.id); npcIdentities.set(c.npc.id,c.npc.identityKey); }
     trackSourceValues(values, c);
     // 这里只计算UpdateItem所需的前值，不执行余额、归属或资产修改。
     if (c.type === 'AcquireItem' || c.type === 'PurchaseItem') quantities.set(c.item.id,c.item.quantity);

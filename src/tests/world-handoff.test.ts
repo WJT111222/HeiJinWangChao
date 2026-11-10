@@ -434,7 +434,7 @@ describe('历史只读回合的生命周期边界', () => {
 describe('真实IndexedDB旧档升级与回执', () => {
   it('V6存档和回执重载后可重放并继续，正式revision和原文不变',async()=>{
  const repo=await SaveRepository.open('new-v6',new IDBFactory());resources.push(repo);await repo.create(handoffState());
- const draft=await completeDraft(repo),first=await repo.commitTurn(submission(draft));expect(await repo.load('save-a')).toEqual(first.state);expect(first.state.schemaVersion).toBe(8);
+ const draft=await completeDraft(repo),first=await repo.commitTurn(submission(draft));expect(await repo.load('save-a')).toEqual(first.state);expect(first.state.schemaVersion).toBe(9);
  expect((await repo.commitTurn(submission(draft))).replayed).toBe(true);const next=await completeDraft(repo,{variables:await elapsedVariables(repo,worldDraft().story!.narrative,600)});expect((await repo.commitTurn(submission(next))).state.turnNumber).toBe(2);
 });
 });

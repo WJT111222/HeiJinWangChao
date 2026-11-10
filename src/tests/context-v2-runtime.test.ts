@@ -127,7 +127,7 @@ describe('上下文 V2经真实Coordinator、Runtime、Mock传输与原子提交
     expect(await a.repo.load(a.state.saveId)).toEqual(a.state);
     expect(result.draft.world!.validation).toBe('validated');
     const committed = await a.repo.commitTurn(submission(result.draft, '下一步'));
-    expect(committed.state.schemaVersion).toBe(8);
+    expect(committed.state.schemaVersion).toBe(9);
     expect(committed.state.revision).toBe(a.state.revision + 1);
     expect(committed.state.journal).toHaveLength(9);
     expect(committed.state.journal.at(-1)!.story).toEqual(result.draft.story);

@@ -52,3 +52,10 @@ push npc[lin].knownInformation = {"text":"得知值班安排","knowledgeKind":"r
 普通回合需要推进时间时，为清晰起见先输出 set worldClock = 合法ISO游戏时间，再输出该时刻的互动、个人记忆和实际到账。程序已经将本批时钟优先规范化，其他命令保持文本顺序；不要遗漏所需时钟而填写未来的互动或到账。lastInteractionAt不能晚于执行时的worldClock，也不能早于NPC此前互动；实际receivedAt不能晚于执行时钟。开局不重复设时钟，使用OPENING_TIME中Story确定的endAt；初始预期工资的expectedAt如提供，不能早于这一候选时间。任务dueAt/事件estimatedEndAt不得早于各自startAt。不要用设备日期填补游戏时间。
 
 主角改变地点时，原在场且未明确同行的NPC由程序自动onScene=false，保留原地点、关系、记忆和任务，不必逐人输出离场命令。同行者明确更新locationId至新地点及必要onScene状态；同批按最终状态校验，不能把不同地点的人标为在场。
+
+## NPC V2 建档与重要性
+正式NPC只有ordinary/special。仅当Story或正式设定已经明确姓名，且有合理后续接触、持续关系或事件追踪价值时才建档；不能为一个小混混、茶楼服务员、黑衣保镖、黄毛青年或某个路人编造姓名来建档，也不用角色称呼冒充姓名。一次性服务和无名群众可留在正文，损失、受伤、情报和事件照常记录，不为保存剧情强制建NPC。人物后来获得姓名和持续关系才建档，不猜合先前不同路人。先检索稳定ID、identityKey、姓名/别名、初始同伴与正式引用，改名/职业或重要性变化均复用原身份。
+AI判断持续价值，不设次数、好感、职位阈值；新人物可直接ordinary/special，已有ordinary可升级，AI不得降级special。NPC_IMPORTANCE中的playerPreference=ordinary表示玩家取消，禁止AI再升级；special为玩家指定；automatic不代表玩家拒绝。
+升级/补齐用set npc[id].specialProfile={detailedBackground,activeGoals,habits,offscreenTaskIds,relationshipNetwork?}，沿用原人并编译为PromoteNpc；任务ID必须真实归属。profilePending=true是待完善，不是空白经历事实，应在本次正常Variables补齐，不单独请求AI。canRestoreProfile=true时先用set npc[id].specialProfile={}恢复原档案，不重新生成已有内容；待完善时只补缺失资料。香闺秘档继续使用原privateProfile路径及原保护，不混入specialProfile。
+set npc[id].phoneContact={status:"unknown"|"known"|"invalid",note?}，仅实际交换可用电话才能known，不从认识/好感或旧RegisterContact推断号码。set npc[id].usualLocations=[{locationId,role:"home"|"work"|"frequent",knownToProtagonist}]，区分常驻与当前位置、世界记录与主角知晓，不虚构地点，不必人人都有。
+已有special可set npc[id].detailedBackground、habits、relationshipNetwork；关系数组条目{name,relationship,description,affinity?,npcId?}，好感单向[-100,100]，未知缺省/null；未建档只记姓名不自动建NPC，不猜ID或传播关系。任务另由原正式任务命令处理，不伪造offscreenTaskIds。记忆/总结、基础关系及认知不因身份升级而重置，休眠专属资料不能从其他人物或文本中复造。

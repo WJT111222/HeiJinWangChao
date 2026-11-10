@@ -26,10 +26,11 @@ export const RetiredNpcSchema = z.strictObject({
   retiredAt: GameTimeSchema, sourceTurnIds: IdsSchema,
 });
 export const SaveShape = {
-  schemaVersion: z.literal(8), saveId: IdSchema, title: TextSchema,
+  schemaVersion: z.literal(9), saveId: IdSchema, title: TextSchema,
   createdAt: GameTimeSchema, updatedAt: GameTimeSchema, revision: CountSchema, turnNumber: CountSchema,
   worldClock: GameTimeSchema, openingTimePending: z.literal(true).optional(), weatherText: z.string(), environmentText: z.string(),
   openingInitializationPending: z.literal(true).optional(),
+  npcManagementRevision: CountSchema.optional(),
   protagonist: ProtagonistSchema, initialCompanionId: IdSchema.optional(),
   contactNpcIds: IdsSchema, contactReviewNpcIds: IdsSchema, retiredNpcs: entityTable(RetiredNpcSchema),
   npc: entityTable(NpcSchema), items: entityTable(ImportantItemSchema), economy: EconomySchema,
@@ -74,7 +75,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
   }
   timeRange(s.createdAt, s.updatedAt);
   location(s.protagonist.locationId);
-  if (s.initialCompanionId) check(s.npc[s.initialCompanionId]?.kind === 'special', '初始同伴必须是特殊 NPC');
+  if (s.initialCompanionId) check(Boolean(s.npc[s.initialCompanionId]), '初始同伴必须保留正式身份');
   for (const id of s.contactNpcIds) check(Object.hasOwn(s.npc, id), '联系人必须保留完整 NPC');
   for (const id of s.contactReviewNpcIds) check(Object.hasOwn(s.npc, id) && !s.contactNpcIds.includes(id), '旧档待复核人物须存在且不是正式联系人');
   for (const retired of Object.values(s.retiredNpcs)) check(Date.parse(retired.retiredAt) <= Date.parse(s.worldClock), '退场时间在未来');
@@ -90,6 +91,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     }
   }
   for (const npc of Object.values(s.npc)) {
+    check(!npc.importancePreference || npc.importancePreference === npc.kind, '玩家重要性意图与人物身份不一致', ['npc',npc.id,'importancePreference']);
     location(npc.locationId, ['npc', npc.id, 'locationId']);
     for (const [index, place] of (npc.usualLocations ?? []).entries())
       location(place.locationId, ['npc', npc.id, 'usualLocations', index, 'locationId']);
@@ -263,7 +265,7 @@ export function createGameState(input: {
   companion?: z.infer<typeof SpecialNpcSchema>;
 }, now = new Date().toISOString()): GameState {
   return GameStateSchema.parse({
-    schemaVersion: 8, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
+    schemaVersion: 9, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
     createdAt: now, updatedAt: now, revision: 0, turnNumber: 0,
     weatherText: '', environmentText: '', protagonist: input.protagonist,
     initialCompanionId: input.companion?.id,

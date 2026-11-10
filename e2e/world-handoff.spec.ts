@@ -182,7 +182,7 @@ test('V6待复核NPC显示待确认身份，不冒充联系人且不自动删除
   const panel = page.getByRole('dialog', { name: 'NPC', exact: true }); await panel.getByRole('button', { name: /现场人物/ }).click();
   await expect(panel).toContainText('旧档联系人身份待确认 · 暂缓清理');
   await expect(panel).not.toContainText('联系人 · 永久保留档案');
-  const migrated = (await stored(page)).state; expect(migrated.schemaVersion).toBe(8); expect(migrated.contactNpcIds).toEqual([]);
+  const migrated = (await stored(page)).state; expect(migrated.schemaVersion).toBe(9); expect(migrated.contactNpcIds).toEqual([]);
   expect(migrated.contactReviewNpcIds).toContain('scene'); expect(migrated.npc).toEqual(before.npc); expect(migrated.revision).toBe(before.revision);
   await page.reload(); await openGameTools(page); expect((await stored(page)).state).toEqual(migrated);
 });
