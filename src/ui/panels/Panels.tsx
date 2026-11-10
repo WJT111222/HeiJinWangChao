@@ -1,3 +1,4 @@
+import { WorldEventsPanel } from './WorldEventsPanel';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Detail, Empty } from '../Dialog';
@@ -19,15 +20,7 @@ export const panelNames = [
   '记忆',
 ] as const;
 export type PanelName = (typeof panelNames)[number];
-const eventStatuses = {
-  scheduled: '计划中',
-  active: '进行中',
-  resolved: '已完成',
-  blocked: '受阻',
-  cancelled: '已取消',
-};
-
-export function Panels({ name, view }: { name: PanelName; view: PlayerView }) {
+export function Panels({ name, view, onOpenHistory }: { name: PanelName; view: PlayerView; onOpenHistory?:()=>void }) {
   const [query, setQuery] = useState('');
   const [personId, setPersonId] = useState<string>();
   const [personPage, setPersonPage] = useState(0);
@@ -191,19 +184,7 @@ export function Panels({ name, view }: { name: PanelName; view: PlayerView }) {
     );
   }
   if (name === '物品栏') return <InventoryPanel view={view} />;
-  if (name === '世界事件')
-    return <>
-      <p className="muted">全部正式事件与排程可供玩家观察。计划不等于完成；人物陈述不等于客观事实，查看不会改变角色认知。</p>
-      <RecordList label="世界事件" entries={view.events} render={event => <article className="card entry">
-        <span className="tag">{eventStatuses[event.status]}</span><h3>{event.title}</h3>
-        <p>开始：{dateTime(event.startAt)}</p><p>预计结束：{event.estimatedEndAt ? dateTime(event.estimatedEndAt) : '旧记录未规划'}</p>
-        <p>背景：{event.backgroundText || '未记录'}</p><p>目标：{event.goalText || '未记录'}</p>
-        {event.resolutionText && <p>结果叙述（含人物陈述）：{event.resolutionText}</p>}
-        <WorldRecord title="全部事件字段与引用" value={event} />
-      </article>} />
-      <details><summary>任务进展</summary><RecordList label="世界任务" entries={view.tasks} render={task => <article className="card entry"><h3>{task.goal}</h3><p>{task.status}</p><WorldRecord value={task} /></article>} /></details>
-      <details><summary>已清理事件的保留记录</summary><RecordList label="事件保留记录" entries={view.retiredEvents} render={event => <article className="card entry"><h3>{event.detail?.title ?? event.id}</h3><WorldRecord value={event} /></article>} /></details>
-    </>;
+  if (name === '世界事件') return <WorldEventsPanel view={view} onOpenHistory={onOpenHistory}/>;
   if (name === '历史时间轴') return <HistoryPanel view={view} />;
   return <MemoryPanel view={view} />;
 }
