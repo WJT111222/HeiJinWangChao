@@ -291,7 +291,7 @@ export function App() {
     </Dialog>
   );
   return (
-    <div ref={shell} className={gameRoute ? 'app-shell app-shell-game' : 'app-shell'}>
+    <div ref={shell} className={gameRoute ? 'app-shell app-shell-game' : route === '#create' ? 'app-shell' : 'app-shell app-shell-home'}>
       <header className="app-header">
         <a className="brand" href="#" aria-label="黑金王朝首页">
           <span className="brand-mark">黑</span>
