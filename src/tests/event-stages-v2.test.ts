@@ -18,6 +18,30 @@ import { defaultSettings } from '../ui/settings/model';
 const parse=(a:ReturnType<typeof stageContext>)=>parseWorld(JSON.stringify(a.response),a.state,a.draft);
 const apply=(a:ReturnType<typeof stageContext>)=>{const r=parse(a);return projectTurn(a.state,a.draft,[...r.worldCommands,...r.taskCommands,...r.eventCommands]);};
 const clean=(id:string):Extract<DomainCommand,{type:'DeleteEvent'}>=>({type:'DeleteEvent',commandId:`clean:${id}`,eventId:id,expectedStatus:'resolved',reason:'保留成果后清理',evidence:'合成测试'});
+it('同一World先建地点再建主子事件：入场可用新地点，未创建地点仍拒绝',()=>{
+  const now='2027-01-02T00:00:00+08:00',a=stageContext(now);
+  const before=structuredClone(a.state);
+  const main={...a.state.events['main-stage'],id:'new-parent',title:'新的会面主事件',
+    status:'active' as const,startAt:now,estimatedEndAt:'2027-01-10T00:00:00+08:00',
+    sourceTurnIds:[a.draft.turnId]};
+  const sub={...subStage('new-meeting',now,'2027-01-02T02:00:00+08:00'),
+    parentEventId:main.id,locationId:'new-teahouse',sourceTurnIds:[a.draft.turnId],
+    continuation:{direction:'protagonist' as const,reason:'玩家可以自主决定是否见面',
+      entry:{channel:'当面约定',cue:'受邀前往新茶楼见面',locationId:'new-teahouse'}}};
+  a.response.worldCommands=[{type:'CreateLocation',commandId:'new-teahouse-location',
+    evidence:'会面地点在本次正文中首次出现',
+    location:{id:'new-teahouse',name:'新茶楼',parentId:'chongqing'}}];
+  a.response.eventCommands=[stageCommand(main),stageCommand(sub)];
+  const result=parse(a);
+  expect(result.eventCommands[1]).toMatchObject({event:{protagonistEntry:{status:'pending',locationId:'new-teahouse'}}});
+  const after=projectTurn(a.state,a.draft,[...result.worldCommands,...result.eventCommands]);
+  expect(after.locations['new-teahouse']?.name).toBe('新茶楼');
+  expect(after.events['new-meeting'].protagonistEntry).toMatchObject({status:'pending',locationId:'new-teahouse'});
+  expect(a.state).toEqual(before);
+  a.response.worldCommands=[];
+  expect(()=>parse(a)).toThrow(expect.objectContaining({details:expect.objectContaining({
+    worldRule:'event_continuation',fieldPath:'eventCommands.1'})}));
+});
 it('main估期不是截止，sub恰好到期/积压才进队列，未到期不例行改写',()=>{
   const a=stageContext('2027-01-02T00:00:00+08:00');expect(worldEventSchedule(a.state,projectTurn(a.state,a.draft)).due).toEqual([]);
   expect(parse(a).eventCommands).toEqual([]);
