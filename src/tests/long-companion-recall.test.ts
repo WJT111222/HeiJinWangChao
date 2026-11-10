@@ -4,7 +4,7 @@ import { contextStatistics } from '../prompts/statistics';
 import { array, record } from '../services/ai/protocols';
 import { recallBudget } from '../domain/memories/recall';
 import { longCompanionRecallFixture, addCompanionBackgroundEvent } from './fixtures/longCompanionRecall';
-import { sentContext, expectFullState } from './fixtures/contextAssertions';
+import { sentContext, expectWorldWithNpcProjection } from './fixtures/contextAssertions';
 import type { AiStage } from '../services/ai/configuration';
 
 const results = (context: Record<string, unknown>) => array(record(context.MEMORY_CONTEXT).recalledTurns).map(record);
@@ -14,7 +14,7 @@ async function compose(a: ReturnType<typeof longCompanionRecallFixture>, stage: 
   const before = structuredClone(a);
   const prompt = await composePrompt({ ...a, stage, mode: 'regular', userInput: action });
   const context = sentContext(prompt.messages), turns = results(context);
-  expect(a).toEqual(before); expectFullState(context, a.state);
+  expect(a).toEqual(before); expectWorldWithNpcProjection(context, a.state);
   expect(array(record(context.MEMORY_CONTEXT).recentTurns).map(entry => record(entry).turnId)).toEqual(['companion-298', 'companion-299', 'companion-300']);
   expect(new Set(turns.map(entry => entry.turnId)).size).toBe(turns.length);
   expect(turns.some(entry => ['companion-298', 'companion-299', 'companion-300'].includes(String(entry.turnId)))).toBe(false);

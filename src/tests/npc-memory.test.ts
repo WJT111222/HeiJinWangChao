@@ -228,12 +228,12 @@ describe('NPC独立认知与玩家只读观察', () => {
     const draft = { ...worldDraft(), baseSaveRevision: state.revision };
     const world = await composePrompt({ state, draft, stage: 'world', mode: 'regular', settings: defaultSettings(), userInput: '' });
     expect(JSON.stringify(world.context)).toContain('本组经历'); expect(JSON.stringify(world.context)).toContain('A的私人经历1，');
-    expect(world.context.NPC_KNOWLEDGE).toEqual(expect.arrayContaining([expect.objectContaining({ ownerNpcId: 'npc-a', summaries: expect.any(Array) })]));
+    expect(world.context).not.toHaveProperty('NPC_KNOWLEDGE');
     state.npc['npc-a'].onScene = true;
     const variables = await composePrompt({ state, draft, stage: 'variables', mode: 'regular', settings: defaultSettings(), userInput: '' });
     expect(JSON.stringify(variables.context.SAVE_STATE)).toMatch(/A的私人经历|B的独占秘密|本组经历/);
-    expect(JSON.stringify(variables.context.NPC_KNOWLEDGE)).toContain('本组经历');
-    expect(JSON.stringify(variables.context.NPC_KNOWLEDGE)).toContain('B的独占秘密');
+    expect(JSON.stringify(variables.context.SAVE_STATE)).toContain('本组经历');
+    expect(JSON.stringify(variables.context.SAVE_STATE)).toContain('B的独占秘密');
   });
 });
 it('新增来源记录禁止认知前缀冲突，持久总结禁止重复覆盖和权限篡改', () => {

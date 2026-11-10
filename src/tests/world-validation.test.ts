@@ -403,7 +403,7 @@ describe('真实世界模块与上下文', () => {
       expect(ids.filter((id) => id.endsWith('.offscreen'))).toHaveLength(9);
       expect(JSON.stringify(composed.context)).not.toContain('未来绝密动作');
       expect(composed.context.TIME_WINDOW).toEqual({ from: gameTime, to: projectedTime });
-      expect(JSON.stringify(composed.context.NPC_KNOWLEDGE)).toContain('"ownerNpcId":"scene"');
+      expect(JSON.stringify(composed.context.SAVE_STATE)).toContain('"id":"scene"');
       expect(composed.context).not.toHaveProperty('WORLD_SOURCES');
       expect(TurnDraftSchema.parse(draft)).toEqual(draft);
     },
