@@ -86,29 +86,17 @@ describe('NPC V2第一批：人物基础与内部休眠', () => {
     sleeping.dormantNpcProfiles!.special.identityKey = 'wrong';
     expect(GameStateSchema.safeParse(sleeping).success).toBe(false);
   });
-  it('初始同伴不开放降级；含长期记忆或总结的切换保守拒绝且不改原数据', () => {
+  it('初始同伴仍不开放降级，已有记忆与总结的非同伴可安全休眠', () => {
     const state = npcV2State(); state.initialCompanionId = 'special';
     expect(() => hibernateNpcProfile(state, 'special', state.npc.special.identityKey)).toThrow();
     const memorized = npcMemoryState(21, true), before = structuredClone(memorized);
-    expect(() => hibernateNpcProfile(memorized, 'npc-a', memorized.npc['npc-a'].identityKey)).toThrow(/本批保留/);
-    expect(memorized).toEqual(before);
-    const personal = npcMemoryState(21, false); personal.npc['npc-a'] = { ...personal.npc['npc-a'], kind: 'special', detailedBackground: '旧经历', activeGoals: [], habits: [], longTermMemories: [], offscreenTaskIds: [] };
-    const batch = planNpcSummary(personal, 'npc-a')!;
-    const summarized = applyNpcSummary(personal, batch, parseNpcSummary(JSON.stringify(npcSummaryOutput(batch)), batch, 'summary'));
-    const original = structuredClone(summarized);
-    expect(() => hibernateNpcProfile(summarized, 'npc-a', summarized.npc['npc-a'].identityKey)).toThrow(/本批保留/);
-    expect(summarized).toEqual(original);
+    const sleeping = hibernateNpcProfile(memorized, 'npc-a', memorized.npc['npc-a'].identityKey);
+    expect(sleeping.npc['npc-a'].memories).toEqual(memorized.npc['npc-a'].memories); expect(memorized).toEqual(before);
   });
-  it('休眠存储保留旧长期记忆结构，验证其引用而不将其合并进普通记忆', () => {
+  it('V8拒绝把新的原始记忆写回休眠专属层，原记录不会部分变化', () => {
     const state = npcV2State(), sleeping = hibernateNpcProfile(state, 'special', state.npc.special.identityKey);
-    const source = npcMemoryState(21, true).npc['npc-a'];
-    if (source.kind !== 'special') throw Error();
-    const memory = { ...source.longTermMemories[0], affectedEntityRefs: [{ kind: 'npc' as const, id: 'special' }] };
-    sleeping.dormantNpcProfiles!.special.profile.longTermMemories = [memory];
-    const valid = GameStateSchema.parse(sleeping);
-    expect(valid.npc.special.memories).toEqual([]);
-    expect(restoreNpcProfile(valid, 'special', valid.npc.special.identityKey).npc.special).toMatchObject({ longTermMemories: [memory] });
-    memory.affectedEntityRefs[0].id = 'absent';
+    const source = npcMemoryState(21, true).npc['npc-a'].memories[0];
+    sleeping.dormantNpcProfiles!.special.profile.longTermMemories = [{ ...source, affectedEntityRefs:[{kind:'npc',id:'special'}] }];
     expect(GameStateSchema.safeParse(sleeping).success).toBe(false);
   });
   it('安全休眠后基础记忆与带来源的正常总结仍可维护，恢复不改原始来源', () => {
@@ -122,23 +110,24 @@ describe('NPC V2第一批：人物基础与内部休眠', () => {
     expect(restored.npc['npc-a'].memories).toEqual(state.npc['npc-a'].memories);
     expect(restored.memories).toEqual(summarized.memories);
     summarized.memories.npcSummaries['npc-a'][0].npcProvenance = undefined;
-    expect(GameStateSchema.safeParse(summarized).success).toBe(false);
+    expect(GameStateSchema.safeParse(summarized).success).toBe(true);
+    expect(planNpcSummary(summarized,'npc-a')).toBeUndefined();
   });
   it.each(['opening', 'regular'] as const)('%s实际Composer三阶段均排除休眠原文，保留完整普通资料/统一记忆和公共任务历史', async mode => {
     const state = npcV2State(), sleeping = hibernateNpcProfile(state, 'special', state.npc.special.identityKey);
-    sleeping.dormantNpcProfiles!.special.profile.longTermMemories = [{ id: 'archived-long', text: '休眠长期来源封存标记-E1',
+    sleeping.npc.special.memories = [{ id: 'archived-long', text: '统一记忆仍可读取-E1',
       sourceTurnIds: [], affectedEntityRefs: [{kind:'npc',id:'special'}], visibility:'npc_private', knowledgeSource:'旧档原始来源', createdAtGameTime:state.worldClock }];
     const draft = worldDraft(true, mode);
     const profileText = JSON.stringify(sleeping.dormantNpcProfiles);
     for (const stage of ['story', 'variables', 'world'] as const) {
       const request = await composePrompt({ state: sleeping, draft, mode, stage, userInput: '继续日常', settings: defaultSettings() });
       const all = request.messages.map(m => m.content).join('\n');
-      for (const secret of ['专属经历封存标记-A7', '专属目标封存标记-B8', '专属习惯封存标记-C9', '专属私密封存标记-D0', '休眠长期来源封存标记-E1']) expect(all).not.toContain(secret);
-      expect(all).not.toContain('dormantNpcProfiles'); expect(all).toContain('许岸'); expect(all).toContain('工作室电话转接');
+      for (const secret of ['专属经历封存标记-A7', '专属目标封存标记-B8', '专属习惯封存标记-C9', '专属私密封存标记-D0']) expect(all).not.toContain(secret);
+      expect(all).toContain('统一记忆仍可读取-E1'); expect(all).not.toContain('dormantNpcProfiles'); expect(all).toContain('许岸'); expect(all).toContain('工作室电话转接');
       expect(request.context.SAVE_STATE).toMatchObject({ npc: { special: { kind: 'ordinary' } } });
     }
     expect(JSON.stringify(sleeping.dormantNpcProfiles)).toBe(profileText);
-    expect(JSON.stringify(npcKnowledgeContext(sleeping, 'special'))).not.toContain('封存');
+    expect(JSON.stringify(npcKnowledgeContext(sleeping, 'special'))).toContain('统一记忆仍可读取-E1');
   });
 });
 
@@ -149,7 +138,7 @@ describe('V6 → V7与永久人物保留', () => {
     state = applyNpcSummary(state, batch, parseNpcSummary(JSON.stringify(npcSummaryOutput(batch)), batch, 'legacy-summary'));
     state.initialCompanionId = 'npc-a'; state.contactNpcIds = ['npc-a']; state.contactReviewNpcIds = ['npc-b'];
     const raw = { ...state, schemaVersion: 6 }, before = structuredClone(raw), next = migrateSave(raw);
-    expect(next).toEqual({ ...raw, schemaVersion: 7 }); expect(raw).toEqual(before);
+    expect(next).toEqual({ ...raw, schemaVersion: 8 }); expect(raw).toEqual(before);
     expect(next.memories.npcSummaries['npc-a'][0].npcProvenance?.sourceMemoryIds).toHaveLength(15);
     for (const person of Object.values(next.npc)) { expect(person.phoneContact).toBeUndefined(); expect(person.usualLocations).toBeUndefined(); }
   });
@@ -174,7 +163,7 @@ describe('V6 → V7与永久人物保留', () => {
     expect(DomainCommandSchema.safeParse({ type: 'ChangeNpcKind', npcId: 'person', kind: 'special' }).success).toBe(false);
   });
   it('未来版本与损坏V6拒绝迁移，不修改原文', () => {
-    for (const raw of [{ ...npcV2State(), schemaVersion: 8 }, { ...worldState(), schemaVersion: 6, unknown: true }, { ...worldState(), schemaVersion: 6, npc: { bad: npc() } }]) {
+    for (const raw of [{ ...npcV2State(), schemaVersion: 9 }, { ...worldState(), schemaVersion: 6, unknown: true }, { ...worldState(), schemaVersion: 6, npc: { bad: npc() } }]) {
       const before = structuredClone(raw); expect(() => migrateSave(raw)).toThrow(); expect(raw).toEqual(before);
     }
   });
@@ -213,7 +202,7 @@ describe('V6 → V7与永久人物保留', () => {
       expect(await rawAccess(factory, name, 'saveControls', 'readonly', s => s.get('save-a'))).toEqual(control);
       const current = await repo.loadGame('save-a');
       const restored = await repo.undoTurn({ saveId: 'save-a', expectedRevision: second.state.revision, expectedDraft: current.draft, operationId: 'legacy-undo' });
-      expect(restored.state.schemaVersion).toBe(7); expect(restored.state.npc).toEqual(first.state.npc);
+      expect(restored.state.schemaVersion).toBe(8); expect(restored.state.npc).toEqual(first.state.npc);
       expect(restored.state.journal).toEqual(first.state.journal); expect(restored.state.worldClock).toBe(first.state.worldClock);
     } finally { repo.close(); }
   });
@@ -222,9 +211,9 @@ describe('V6 → V7与永久人物保留', () => {
     try {
       const raw = { ...worldState(), schemaVersion: 6 };
       await rawAccess(factory, name, 'saves', 'readwrite', s => s.put(raw));
-      expect((await repo.load('save-a')).schemaVersion).toBe(7);
-      expect(await rawAccess(factory, name, 'saves', 'readonly', s => s.get('save-a'))).toEqual({ ...raw, schemaVersion: 7 });
-      for (const broken of [{ ...raw, schemaVersion: 8 }, { ...raw, npc: { bad: npc() } }]) {
+      expect((await repo.load('save-a')).schemaVersion).toBe(8);
+      expect(await rawAccess(factory, name, 'saves', 'readonly', s => s.get('save-a'))).toEqual({ ...raw, schemaVersion: 8 });
+      for (const broken of [{ ...raw, schemaVersion: 9 }, { ...raw, npc: { bad: npc() } }]) {
         await rawAccess(factory, name, 'saves', 'readwrite', s => s.put(broken));
         await expect(repo.load('save-a')).rejects.toThrow();
         await expect(repo.save('save-a', 0, 'overwrite', [])).rejects.toThrow();

@@ -5,7 +5,7 @@ import { AccountSchema, DebtRecordSchema, IncomeRecordSchema, VehicleAssetSchema
 import { ActorRefSchema, CommandDataError, DataError, CountSchema, IdSchema, IdsSchema, MoneySchema, TextSchema, GameTimeSchema, requireData } from './common';
 import { EquipmentSchema } from './protagonist/schema';
 import { ImportantItemSchema } from './items/schema';
-import { NpcCreationSchema } from './npc/schema';
+import { NpcCreationSchema, NpcSchema } from './npc/schema';
 import { OrganizationSchema } from './organizations/schema';
 import { StoredWorldEventSchema, WorldTaskSchema, HistoryRecordSchema } from './events/schema';
 import { GameStateSchema } from './state';
@@ -118,7 +118,8 @@ function apply(s: GameState, c: DomainCommand, turnId: string) {
         || c.npc.aliases.includes(npc.name) || npc.aliases.some((alias) => c.npc.aliases.includes(alias))
         || (npc.id === s.initialCompanionId && npc.name === c.npc.name)),
         'AMBIGUOUS_NPC', '别名或初始同伴身份重叠，需先确认已有稳定 ID');
-      s.npc[c.npc.id] = c.npc; break;
+      s.npc[c.npc.id] = NpcSchema.parse(c.npc.kind === 'special'
+        ? { ...c.npc, memories: [...c.npc.memories, ...(c.npc.longTermMemories ?? [])], longTermMemories: [] } : c.npc); break;
     case 'RegisterContact':
       requireData(s.npc[c.npcId], 'NOT_FOUND', '联系人不存在');
       if (!s.contactNpcIds.includes(c.npcId)) s.contactNpcIds.push(c.npcId);

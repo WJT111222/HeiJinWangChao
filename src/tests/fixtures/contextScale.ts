@@ -12,7 +12,7 @@ export function contextScaleFixture(count: number) {
     const memory = { ...baseMemory, id: `${id}-memory`,
       text: `合成记忆${i}：${'已确认经历与后续约定。'.repeat(12)}`, affectedEntityRefs: [{ kind: 'npc' as const, id }] };
     a.state.npc[id] = { ...npc(id), kind: 'special', detailedBackground: '合成完整档案', activeGoals: [], habits: [], offscreenTaskIds: [], onScene: i % 3 === 0, background: `合成档案${i}：${'完整背景。'.repeat(24)}`,
-      memories: [memory], longTermMemories: [{ ...memory, id: `${id}-long` }] };
+      memories: [memory, { ...memory, id: `${id}-long` }], longTermMemories: [] };
     a.state.memories.npcSummaries[id] = [{ id: `${id}-summary`, text: memory.text, sourceTurnIds: memory.sourceTurnIds,
       affectedEntityRefs: memory.affectedEntityRefs, visibility: memory.visibility, createdAtGameTime: memory.createdAtGameTime }];
     a.state.tasks[`scale-task-${i}`] = { ...task(`scale-task-${i}`), actorRef: { kind: 'npc', id }, goal: `合成任务${i}：${'调查与交接。'.repeat(24)}` };

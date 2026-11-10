@@ -1,5 +1,7 @@
 # 记忆总结系统 V2
 
+> NPC V2 第二批：普通与特殊人物现共用 `npc.memories` 原始来源，旧特殊长期记忆由 V6/V7→V8 迁移整合；`npcSummaries`、总结门槛/配置、队列、费用与来源规则不变。旧总结不重做，详见 [NPC_V2_BATCH2.md](NPC_V2_BATCH2.md)。
+
 基线：远端 main `508697da9b6309b2fa014511ee6e6a932c1b0a3e`（开工时核实）；分支 `feat/memory-summary-v2`。
 
 ## 调查与实现边界

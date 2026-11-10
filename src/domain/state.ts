@@ -26,7 +26,7 @@ export const RetiredNpcSchema = z.strictObject({
   retiredAt: GameTimeSchema, sourceTurnIds: IdsSchema,
 });
 export const SaveShape = {
-  schemaVersion: z.literal(7), saveId: IdSchema, title: TextSchema,
+  schemaVersion: z.literal(8), saveId: IdSchema, title: TextSchema,
   createdAt: GameTimeSchema, updatedAt: GameTimeSchema, revision: CountSchema, turnNumber: CountSchema,
   worldClock: GameTimeSchema, openingTimePending: z.literal(true).optional(), weatherText: z.string(), environmentText: z.string(),
   openingInitializationPending: z.literal(true).optional(),
@@ -56,7 +56,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     && s.journal.length === 0 && s.appliedCommands.length === 0 && Object.keys(s.events).length === 0
     && Object.keys(s.retiredEvents).length === 0 && Object.keys(s.tasks).length === 0 && s.timeline.length === 0
     && [...s.memories.short, ...s.memories.medium, ...s.memories.long, ...Object.values(s.memories.npcSummaries).flat(),
-      ...Object.values(s.npc).flatMap((npc) => [...npc.memories, ...(npc.kind === 'special' ? npc.longTermMemories : [])])].length === 0
+      ...Object.values(s.npc).flatMap((npc) => npc.memories)].length === 0
     && Object.values(s.npc).every((npc) => !npc.lastInteractionAt) && Object.keys(s.retiredNpcs).length === 0
     && Object.keys(s.economy.incomes).length === 0, '待定开局只能保留无已发生时间事实的初始存档');
   const allIds = [s.protagonist.id, ...s.timeline.map(entry => entry.id)];
@@ -95,7 +95,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
       location(place.locationId, ['npc', npc.id, 'usualLocations', index, 'locationId']);
     if (npc.onScene && npc.locationId) check(npc.locationId === s.protagonist.locationId, '在场 NPC 与主角地点不一致');
     if (npc.kind === 'special') validateSpecialProfile(npc, npc.id, ['npc', npc.id]);
-    for (const memory of [...npc.memories, ...(npc.kind === 'special' ? npc.longTermMemories : [])]) {
+    for (const memory of npc.memories) {
       for (const ref of memory.affectedEntityRefs) actor(ref, true);
     }
   }
@@ -111,8 +111,6 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     const npc = s.npc[id], path = ['dormantNpcProfiles', id];
     check(npc?.kind === 'ordinary' && npc.identityKey === archived.identityKey,
       '休眠专属档案必须属于同一稳定身份的普通人物', path, 'npc_profile_owner');
-    check((s.memories.npcSummaries[id] ?? []).every(summary => Boolean(summary.npcProvenance)),
-      '休眠人物的可读总结必须有可验证的当前记忆来源', path, 'npc_profile_memory');
     validateSpecialProfile(archived.profile, id, [...path, 'profile']);
     for (const memory of archived.profile.longTermMemories) memory.affectedEntityRefs.forEach(ref => actor(ref, true, path));
   }
@@ -223,6 +221,8 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     for (const id of event.predecessorEventIds ?? []) check(Boolean(eventById(s, id)), '事件前序来源不存在');
   }
   try { validateEventLinks(s); } catch { check(false,'事件承接来源无效或成环'); }
+  const memoryIds = [...Object.values(s.npc).flatMap(npc => npc.memories), ...s.memories.short, ...s.memories.medium, ...s.memories.long, ...Object.values(s.memories.npcSummaries).flat()].map(entry => entry.id);
+  check(new Set(memoryIds).size === memoryIds.length, '记忆ID冲突，无法确定唯一原始来源', ['memories'], 'memory_id');
   for (const id of Object.keys(s.memories.npcSummaries)) check(Object.hasOwn(s.npc, id), '记忆所属 NPC 不存在');
   for (const [id, summaries] of Object.entries(s.memories.npcSummaries)) {
     const covered = summaries.flatMap((entry) => entry.npcProvenance?.sourceMemoryIds ?? []);
@@ -233,7 +233,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
       const npc = s.npc[id];
       check(npc && source.npcId === id && source.identityKey === npc.identityKey, '私人总结所属身份不符');
       check(summary.visibility === (source.sourceVisibility === 'internal' ? 'internal' : 'npc_private'), '私人总结权限升级');
-      const raw = npc ? [...npc.memories, ...(npc.kind === 'special' ? npc.longTermMemories : [])] : [];
+      const raw = npc ? npc.memories : [];
       const selected = raw.filter((entry) => source.sourceMemoryIds.includes(entry.id));
       for (const memoryId of source.sourceMemoryIds) {
         const entries = raw.filter((memory) => memory.id === memoryId);
@@ -263,7 +263,7 @@ export function createGameState(input: {
   companion?: z.infer<typeof SpecialNpcSchema>;
 }, now = new Date().toISOString()): GameState {
   return GameStateSchema.parse({
-    schemaVersion: 7, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
+    schemaVersion: 8, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
     createdAt: now, updatedAt: now, revision: 0, turnNumber: 0,
     weatherText: '', environmentText: '', protagonist: input.protagonist,
     initialCompanionId: input.companion?.id,

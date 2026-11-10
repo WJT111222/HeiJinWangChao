@@ -422,13 +422,13 @@ describe('运行边界与旧流程回归', () => {
   it('特殊NPC可使用自己的长期原始记忆，不提升其他人物知识', async () => {
     const data = memorySetup();
     data.state.npc.npc_001 = { ...npc('npc_001'), kind: 'special', detailedBackground: '', activeGoals: [], habits: [], offscreenTaskIds: [],
-      longTermMemories: [{ id: 'long-source', text: '曾抵达车站', knowledgeKind: 'observed', knowledgeSource: '亲历', sourceTurnIds: ['old'],
+      longTermMemories: [], memories: [{ id: 'long-source', text: '曾抵达车站', knowledgeKind: 'observed', knowledgeSource: '亲历', sourceTurnIds: ['old'],
         createdAtGameTime: data.state.worldClock, visibility: 'npc_private', affectedEntityRefs: [{ kind: 'npc', id: 'npc_001' }] }] };
     const context = data.context;
     const result = unwrap(await simulateVariablePlan(unwrap(await compileVariableCommands(data.ast, data.state, context)), data.state, context));
-    expect(result.npc.npc_001.memories).toHaveLength(1);
-    expect(result.npc.npc_001.kind === 'special' && result.npc.npc_001.longTermMemories).toHaveLength(1);
-    expect(data.state.npc.npc_001.memories).toHaveLength(0);
+    expect(result.npc.npc_001.memories).toHaveLength(2);
+    expect(result.npc.npc_001.kind === 'special' && result.npc.npc_001.longTermMemories).toHaveLength(0);
+    expect(data.state.npc.npc_001.memories).toHaveLength(1);
   });
   it('长期回合ID不会截断或溢出记忆ID，同序号不同回合/人物保持不同身份', async () => {
     const data = memorySetup(); data.context.draft.turnId = 't'.repeat(128);

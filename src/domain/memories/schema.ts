@@ -9,15 +9,19 @@ export const MemoryEntrySchema = z.strictObject({
 });
 export const KnowledgeKindSchema = z.enum(['observed', 'reported', 'suspected']);
 export const KnowledgeNatureSchema = z.enum(['observed', 'reported', 'suspected', 'unknown']);
+// Same non-blank requirement, without trimming the historical original.
+const npcText = z.string().refine(value => value.trim().length > 0, '内容不能为空');
 export const NpcMemorySchema = MemoryEntrySchema.extend({
-  knowledgeSource: TextSchema,
+  text: npcText,
+  knowledgeSource: npcText,
   knowledgeKind: KnowledgeKindSchema.optional(), // 旧档缺省保持未知，不补造亲历事实。
 }).refine((memory) => !memory.knowledgeKind || (memory.knowledgeKind === 'observed'
-  ? !/^\[(?:转述|推测)\]/.test(memory.text) : memory.text.startsWith(memory.knowledgeKind === 'reported' ? '[转述]' : '[推测]')), '认知类型与原始记忆标记冲突');
+  ? !/^\[(?:转述|推测)\]/.test(memory.text.trimStart()) : memory.text.trimStart().startsWith(memory.knowledgeKind === 'reported' ? '[转述]' : '[推测]')), '认知类型与原始记忆标记冲突');
 export function npcKnowledgeKind(memory: z.infer<typeof NpcMemorySchema>): z.infer<typeof KnowledgeNatureSchema> {
-  return memory.knowledgeKind ?? (memory.text.startsWith('[转述]') ? 'reported' : memory.text.startsWith('[推测]') ? 'suspected' : 'unknown');
+  return memory.knowledgeKind ?? (memory.text.trimStart().startsWith('[转述]') ? 'reported' : memory.text.trimStart().startsWith('[推测]') ? 'suspected' : 'unknown');
 }
 export const NpcSummarySchema = MemoryEntrySchema.extend({
+  text: npcText,
   npcProvenance: z.strictObject({
     npcId: IdSchema, identityKey: TextSchema,
     sourceMemoryIds: IdsSchema.refine((ids) => ids.length > 0 && ids.length <= 100),

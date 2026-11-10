@@ -1,6 +1,6 @@
 # 动态世界事件生命周期（当前权威契约）
 
-本文件的事件契约延续 V6；NPC V2 第一批的正式存档使用 V7，V6 严格无损迁移与旧撤回快照按需恢复见 [NPC_V2_BATCH1.md](NPC_V2_BATCH1.md)。覆盖历史设计稿中历史必须重大且结案、单 NPC 单任务、每幕清空入场队列等旧规则。Task仍使用dueAt或completionCondition，不套用Event的新规划要求。
+本文件的事件契约延续 V6；NPC V2 第二批的正式存档使用 V8，V6/V7 原始人物记忆整合与旧撤回快照按需恢复见 [NPC_V2_BATCH2.md](NPC_V2_BATCH2.md)。覆盖历史设计稿中历史必须重大且结案、单 NPC 单任务、每幕清空入场队列等旧规则。Task仍使用dueAt或completionCondition，不套用Event的新规划要求。
 
 ## 世界事实、角色认知、玩家观察
 
@@ -14,7 +14,7 @@ visibility及记忆权限字段为旧档兼容和角色认知继续保存；不�
 
 当World更新此前known事件而无新的主角知情依据时，程序在可选`protagonistKnowledge`中保存此前Story投影（title/startAt/status/resolutionText）及本次worldUpdateTurnId；不修改主角或NPC记忆，不把visibility统一改known。Story继续读取旧投影，OFFSCREEN_STATE提供最新客观记录供世界推演，不自动更新任何人物的记忆或认知。TIME_PREFLIGHT沿用既有规则，仅排除尚未告知的新进展。玩家观察仍读取完整最新事件。
 
-快照仅由程序维护，模型只能沿用原元数据或重放相同规范化结果。World追加当前来源回合，后续Variables现场更新和Story结构化入场回执沿原机制记录角色新知。取消了World按正文引用解除旧快照的途径。本次不迁移 V1–V5 测试存档，也不转换旧时间线；新存档使用 V7，V6 的时间与历史数据只迁移版本号。
+快照仅由程序维护，模型只能沿用原元数据或重放相同规范化结果。World追加当前来源回合，后续Variables现场更新和Story结构化入场回执沿原机制记录角色新知。取消了World按正文引用解除旧快照的途径。本次不迁移 V1–V5 测试存档，也不转换旧时间线；新存档使用 V8；V6/V7 仅整合原始人物记忆并升级版本，不改变时间与历史。
 
 ## 数据、时钟与职责
 
@@ -62,7 +62,7 @@ knowledgeKind 为 established/reported/suspected，由模型声明；程序不�
 
 World 输出仅有 worldCommands、taskCommands、eventCommands、visibleHooks、unresolved 五个数组。futureEvents 已删除；未来计划从实际 SaveEvent/正式 events 的 scheduled 状态读取、显示和调度，没有第二条事件写入渠道。
 
-V7 新开局、候选、存档和重载采用同一结构；合法 V6 人物与事件原样读取，仅升级存档版本。V1–V5 明确拒绝读取，不自动迁移/补造历史；已有无法读取卡片的原始导出及确认删除功能仍可使用。本次不修改真实玩家存档。旧 World 输出或候选包含已删除字段时明确失败，不自动猜测或兼容旧协议。
+V8 新开局、候选、存档和重载采用同一结构；合法 V6/V7 事件保持原样，旧个人/长期人物记忆严格整合到唯一原始存储，来源与正文保留。V1–V5 明确拒绝读取，不自动迁移/补造历史；已有无法读取卡片的原始导出及确认删除功能仍可使用。本次不修改真实玩家存档。旧 World 输出或候选包含已删除字段时明确失败，不自动猜测或兼容旧协议。
 
 沿用 StageGuard、CAS、版本快照、projectTurn 和 SaveRepository.commitTurn；事件、独立历史、journal、短期记忆、命令和下一草稿原子提交，失败全回滚，回执重放不重复结算。模型请求数量、记忆维护及费用授权不改。正式 Commit 重新使用同一领域投影验证，不信任前端完成状态。
 
