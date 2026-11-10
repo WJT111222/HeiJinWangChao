@@ -672,6 +672,16 @@ fieldset label {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+.opening-packs { margin-block: 1rem; }
+.opening-pack-list { border: 0; padding: 0; margin-block: 1rem; display: grid; gap: .6rem; }
+.opening-pack-choice { display: flex; flex-direction: row; align-items: center; gap: .8rem; padding: .8rem; border: 1px solid var(--line); border-radius: 6px; text-align: left; }
+.opening-pack-choice > span { min-width: 0; overflow-wrap: anywhere; }
+.opening-pack-choice strong, .opening-pack-choice span span { display: block; }
+.opening-pack-choice input { width: auto; flex: 0 0 auto; }
+.opening-packs .button-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+.opening-packs .modal-body form { display: grid; gap: 1rem; }
+.creation-review > .card { min-width: 0; }
+.creation-review dd { max-height: 20rem; overflow: auto; }
 .profile-details .detail {
   grid-template-columns: 8rem 1fr;
 }
