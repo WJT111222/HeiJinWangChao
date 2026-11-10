@@ -186,7 +186,8 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
               event.sourceTurnIds = [...event.sourceTurnIds.filter(id => id !== draft.turnId),draft.turnId];
             } else delete event.protagonistKnowledge;
           }
-          if(!stageHandoffs.has(event.id)) normalizeEventContinuation(event,old,base,draft);
+          // Continuation entry may refer to a location created earlier in this World batch.
+          if(!stageHandoffs.has(event.id)) normalizeEventContinuation(event,old,causal,draft);
           break;
         }
         case 'RecordHistory': break; // 只记录，不广播知识；引用/日期/ID由同一领域投影验证。
