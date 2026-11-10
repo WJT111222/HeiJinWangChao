@@ -155,3 +155,41 @@ it('普通回合规划0–15完整顺延，开局规划仍独立，旧Story可�
   const text=regular.messages.map(m=>m.content).join('\n');expect([...text.matchAll(/### Step (\d+)｜/g)].map(m=>Number(m[1]))).toEqual(Array.from({length:16},(_,i)=>i));
   expect(StorySchema.parse({turnKind:'regular',narrative:'没有新字段的旧正文',summary:'旧摘要',variableGuide:[]})).toMatchObject({variableGuide:[]});
 });
+
+it.each([
+  ['2027-03-01T00:00:00.001+08:00',false],
+  ['2027-02-28T16:00:00.001Z',false],
+  ['2027-03-01T00:00:00+08:00',true],
+  ['2027-02-28T16:00:00Z',true],
+  ['2027-02-28T11:00:00-05:00',true],
+  ['2027-02-28T23:59:59.999+08:00',true],
+] as const)('sub实际enter时间%s与原fixedEndAt按时间戳比较，允许=%s',(at,allowed)=>{
+  const a=scenario(),before=structuredClone(a.state);a.draft.story!.variableGuide[1].eventNarration!.at=at;
+  const story=StorySchema.parse(a.draft.story);
+  if(allowed)expect(()=>validateStoryEventInteractions(a.state,story)).not.toThrow();
+  else expect(()=>validateStoryEventInteractions(a.state,story)).toThrow(expect.objectContaining({code:'EVENT_ENTRY',diagnostic:expect.objectContaining({storyRule:'narration_time'})}));
+  expect(a.state).toEqual(before);expect(story.variableGuide[1].eventNarration!.at).toBe(at);
+});
+it.each(['sub-mention','main-enter','legacy-enter'] as const)('%s不套用小事件固定入场上界',kind=>{
+  const a=scenario(),guide=a.draft.story!.variableGuide[1];guide.eventNarration!.at=target;
+  if(kind==='sub-mention')guide.eventNarration!.mode='mention';
+  if(kind==='main-enter')guide.eventNarration!.eventId='main-stage';
+  if(kind==='legacy-enter'){
+    const {eventKind:_kind,parentEventId:_parent,fixedEndAt:_fixed,...legacy}=a.state.events['stage-one'];void _kind;void _parent;void _fixed;
+    a.state.events['stage-one']={...legacy,estimatedEndAt:'2027-03-01T00:00:00+08:00'};
+  }
+  const state=GameStateSchema.parse(a.state);expect(()=>validateStoryEventInteractions(state,StorySchema.parse(a.draft.story))).not.toThrow();
+});
+it('结束后入场不能从文本模拟或伪造validated候选获得权限，截止时刻仍可正常落账',async()=>{
+  const a=scenario(),before=structuredClone(a.state),deadline=a.state.events['stage-one'].fixedEndAt!;
+  const late='2027-03-01T00:00:00.001+08:00';
+  a.draft.story!.variableGuide[0].observedFact=late;a.draft.story!.variableGuide[1].eventNarration!.at=late;
+  const lateText=a.variables.replaceAll(stop,late);
+  await expect(parseTextVariables(lateText,a.state,a.draft)).rejects.toThrow();
+  expect(()=>projectTurn(a.state,withVariables(a.draft,{commands:[],rejectedSuggestions:[],unresolved:[]}))).toThrow();
+  expect(a.state).toEqual(before);
+  a.draft.story!.variableGuide[0].observedFact=deadline;a.draft.story!.variableGuide[1].eventNarration!.at='2027-02-28T16:00:00Z';
+  const result=await parseTextVariables(a.variables.replaceAll(stop,deadline),a.state,a.draft),selected=withVariables(a.draft,result);
+  expect(projectTurn(a.state,selected).events['stage-one']).toMatchObject({resolvedAt:deadline,fixedEndAt:deadline});
+  expect(parseWorld(JSON.stringify({worldCommands:[],taskCommands:[],eventCommands:[],visibleHooks:[],unresolved:[]}),a.state,selected)).toMatchObject({eventCommands:[]});
+});
