@@ -144,9 +144,13 @@ describe('NPC V2第一批：人物基础与内部休眠', () => {
 
 describe('V6 → V7与永久人物保留', () => {
   it('旧V6、联系人、初始同伴、原记忆与总结仅升版本，不猜造电话或住所', () => {
-    const state = npcMemoryState(21, true); state.initialCompanionId = 'npc-a'; state.contactNpcIds = ['npc-a']; state.contactReviewNpcIds = ['npc-b'];
+    let state = npcMemoryState(21, true);
+    const batch = planNpcSummary(state, 'npc-a')!;
+    state = applyNpcSummary(state, batch, parseNpcSummary(JSON.stringify(npcSummaryOutput(batch)), batch, 'legacy-summary'));
+    state.initialCompanionId = 'npc-a'; state.contactNpcIds = ['npc-a']; state.contactReviewNpcIds = ['npc-b'];
     const raw = { ...state, schemaVersion: 6 }, before = structuredClone(raw), next = migrateSave(raw);
     expect(next).toEqual({ ...raw, schemaVersion: 7 }); expect(raw).toEqual(before);
+    expect(next.memories.npcSummaries['npc-a'][0].npcProvenance?.sourceMemoryIds).toHaveLength(15);
     for (const person of Object.values(next.npc)) { expect(person.phoneContact).toBeUndefined(); expect(person.usualLocations).toBeUndefined(); }
   });
   it('新回合RetireNpc不能删除任何正式人物，包括无职责离场非联系人', () => {
