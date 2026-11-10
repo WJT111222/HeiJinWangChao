@@ -30,6 +30,9 @@ const protagonistChanges = ProtagonistSchema.pick({
   skills: true,
 }).partial();
 const npcChanges = OrdinaryNpcSchema.pick({
+  name: true,
+  aliases: true,
+  identity: true,
   locationId: true,
   onScene: true,
   relationshipText: true,
