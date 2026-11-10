@@ -38,7 +38,7 @@ export function assertWorldCoverage(
     const domain =
       command.type === 'CreateNpc'
         ? `npc_${command.npc.kind}`
-        : command.type === 'UpdateNpc' || command.type === 'RecordNpcMemory' || command.type === 'RetireNpc'
+        : command.type === 'UpdateNpc' || command.type === 'RecordNpcMemory'
           ? `npc_${state.npc[command.npcId]?.kind}`
           : command.type === 'CreateOrganization'
             ? organizationDomains[command.organization.kind]

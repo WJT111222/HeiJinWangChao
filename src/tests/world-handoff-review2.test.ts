@@ -75,11 +75,12 @@ describe('旧档历史索引不完整不能推断无联系', () => {
     expect(() => parseWorld(JSON.stringify(worldResultForTurn(raw, draft.turnId)), state, draft)).toThrow();
     expect(state.npc['npc-a']).toBeDefined();
   });
-  it('没有历史与联系迹象的待确认临时NPC仍能安全退出', () => {
+  it('没有历史与联系迹象的正式NPC也永久保留', () => {
     const state = pendingState(), draft = worldDraft(), raw = { ...worldResult([reviewed(state)]), taskCommands: [finishTask(state)] };
-    const result = parseWorld(JSON.stringify(worldResultForTurn(raw, draft.turnId)), state, draft);
-    const projected = projectTurn(state, draft, [...result.taskCommands, ...result.worldCommands]);
-    expect(projected.npc['npc-a']).toBeUndefined(); expect(state.npc['npc-a']).toBeDefined();
+    expect(() => parseWorld(JSON.stringify(worldResultForTurn(raw, draft.turnId)), state, draft)).toThrow();
+    const result = parseWorld(JSON.stringify({...raw,worldCommands:[]}), state, draft);
+    const projected = projectTurn(state, draft, result.taskCommands);
+    expect(projected.npc['npc-a']).toEqual(state.npc['npc-a']);
   });
   it('AI写入确认及真实玩家自由文本都不是独立可靠删除授权，旧人继续保护', () => {
     const state = pendingState(), draft = worldDraft();

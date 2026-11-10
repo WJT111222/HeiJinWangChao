@@ -299,7 +299,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 9005,
+      "characters": 9008,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -309,7 +309,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "42c438f7620991b3e86e5e88e32291a40ad630acbf1501d4b88a42f5d403847f",
+      "contentSha256": "334aa3ef02e203b5d868c8b48d00dad39fbce43032fe06fff71646a37b4efe27",
       "placeholders": []
     },
     {

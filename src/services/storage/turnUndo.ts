@@ -3,6 +3,7 @@ import { CountSchema, IdSchema, requireData } from '../../domain/common';
 import { GameStateSchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
 import type { TurnDraft } from '../../domain/drafts';
+import { migrateSave } from './migrations';
 import { request } from './idb';
 
 /** Storage policy, independent of V6 GameState and the snapshot encoding. UTF-8 bytes,
@@ -100,7 +101,7 @@ export async function restoreSnapshot(tx: IDBTransaction, state: GameState, cont
   const status = await inspectUndo(tx, state), head = control.records.at(-1);
   requireData(status.available > 0 && head, 'UNDO_UNAVAILABLE', '没有可靠的已提交回合恢复点');
   const record = SnapshotSchema.parse(await request(tx.objectStore('turnUndo').get([state.saveId, head!.turnId])));
-  const before = GameStateSchema.parse(JSON.parse(record.stateJSON));
+  const before = migrateSave(JSON.parse(record.stateJSON));
   requireData(record.saveId === state.saveId && record.turnId === head!.turnId && record.beforeTurnId === head!.beforeTurnId
     && before.saveId === state.saveId && before.createdAt === state.createdAt && before.turnNumber >= 1
     && before.turnNumber === state.turnNumber - 1 && before.revision < state.revision

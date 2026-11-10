@@ -3,7 +3,7 @@ import { validateChronicles } from './history/validation';
 import { pendingOpeningClock } from './openingTime';
 import { ActorRefSchema, IdsSchema, CountSchema, GameTimeSchema, IdSchema, TextSchema, entityTable } from './common';
 import { ProtagonistSchema } from './protagonist/schema';
-import { NpcSchema, SpecialNpcSchema } from './npc/schema';
+import { NpcSchema, SpecialNpcSchema, DormantNpcProfileSchema, SpecialProfileSchema } from './npc/schema';
 import { ImportantItemSchema } from './items/schema';
 import { EconomySchema } from './economy/schema';
 import { OrganizationSchema } from './organizations/schema';
@@ -26,13 +26,14 @@ export const RetiredNpcSchema = z.strictObject({
   retiredAt: GameTimeSchema, sourceTurnIds: IdsSchema,
 });
 export const SaveShape = {
-  schemaVersion: z.literal(6), saveId: IdSchema, title: TextSchema,
+  schemaVersion: z.literal(7), saveId: IdSchema, title: TextSchema,
   createdAt: GameTimeSchema, updatedAt: GameTimeSchema, revision: CountSchema, turnNumber: CountSchema,
   worldClock: GameTimeSchema, openingTimePending: z.literal(true).optional(), weatherText: z.string(), environmentText: z.string(),
   openingInitializationPending: z.literal(true).optional(),
   protagonist: ProtagonistSchema, initialCompanionId: IdSchema.optional(),
   contactNpcIds: IdsSchema, contactReviewNpcIds: IdsSchema, retiredNpcs: entityTable(RetiredNpcSchema),
   npc: entityTable(NpcSchema), items: entityTable(ImportantItemSchema), economy: EconomySchema,
+  dormantNpcProfiles: entityTable(DormantNpcProfileSchema).optional(),
   organizations: entityTable(OrganizationSchema), locations: entityTable(LocationSchema),
   events: entityTable(StoredWorldEventSchema), retiredEvents: entityTable(RetiredEventSchema), tasks: entityTable(WorldTaskSchema), memories: MemoryStateSchema,
   timeline: z.array(TimelineEntrySchema),
@@ -90,13 +91,30 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
   }
   for (const npc of Object.values(s.npc)) {
     location(npc.locationId, ['npc', npc.id, 'locationId']);
+    for (const [index, place] of (npc.usualLocations ?? []).entries())
+      location(place.locationId, ['npc', npc.id, 'usualLocations', index, 'locationId']);
     if (npc.onScene && npc.locationId) check(npc.locationId === s.protagonist.locationId, '在场 NPC 与主角地点不一致');
-    if (npc.kind === 'special') for (const id of npc.offscreenTaskIds) {
-      check(s.tasks[id]?.actorRef.kind === 'npc' && s.tasks[id]?.actorRef.id === npc.id, 'NPC 任务归属错误');
-    }
+    if (npc.kind === 'special') validateSpecialProfile(npc, npc.id, ['npc', npc.id]);
     for (const memory of [...npc.memories, ...(npc.kind === 'special' ? npc.longTermMemories : [])]) {
       for (const ref of memory.affectedEntityRefs) actor(ref, true);
     }
+  }
+  function validateSpecialProfile(profile: z.infer<typeof SpecialProfileSchema>, npcId: string, path: (string | number)[]) {
+    for (const [index, id] of profile.offscreenTaskIds.entries())
+      check(s.tasks[id]?.actorRef.kind === 'npc' && s.tasks[id]?.actorRef.id === npcId,
+        'NPC 任务归属错误', [...path, 'offscreenTaskIds', index], 'actor_reference');
+    for (const [index, relation] of (profile.relationshipNetwork ?? []).entries()) if (relation.npcId)
+      check(relation.npcId !== npcId && (Object.hasOwn(s.npc, relation.npcId) || Object.hasOwn(s.retiredNpcs, relation.npcId)),
+        '人物关系引用不存在或指向自身', [...path, 'relationshipNetwork', index, 'npcId'], 'actor_reference');
+  }
+  for (const [id, archived] of Object.entries(s.dormantNpcProfiles ?? {})) {
+    const npc = s.npc[id], path = ['dormantNpcProfiles', id];
+    check(npc?.kind === 'ordinary' && npc.identityKey === archived.identityKey,
+      '休眠专属档案必须属于同一稳定身份的普通人物', path, 'npc_profile_owner');
+    check((s.memories.npcSummaries[id] ?? []).every(summary => Boolean(summary.npcProvenance)),
+      '休眠人物的可读总结必须有可验证的当前记忆来源', path, 'npc_profile_memory');
+    validateSpecialProfile(archived.profile, id, [...path, 'profile']);
+    for (const memory of archived.profile.longTermMemories) memory.affectedEntityRefs.forEach(ref => actor(ref, true, path));
   }
   const wear = s.protagonist.currentWear;
   const equipped = [wear.topItemId, wear.bottomItemId, wear.shoesItemId,
@@ -245,7 +263,7 @@ export function createGameState(input: {
   companion?: z.infer<typeof SpecialNpcSchema>;
 }, now = new Date().toISOString()): GameState {
   return GameStateSchema.parse({
-    schemaVersion: 6, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
+    schemaVersion: 7, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
     createdAt: now, updatedAt: now, revision: 0, turnNumber: 0,
     weatherText: '', environmentText: '', protagonist: input.protagonist,
     initialCompanionId: input.companion?.id,

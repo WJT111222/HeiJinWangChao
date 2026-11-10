@@ -30,8 +30,7 @@ export function orderWorldCommands(commands: readonly DomainCommand[]) {
     }
     visiting.delete(command); visited.add(command); result.push(command);
   }
-  for (const command of commands.filter(c => c.type !== 'RetireNpc' && !cleanup(c))) visit(command);
+  for (const command of commands.filter(c => !cleanup(c))) visit(command);
   for (const command of commands.filter(cleanup)) visit(command);
-  for (const command of commands.filter((c) => c.type === 'RetireNpc')) visit(command);
   return result;
 }
