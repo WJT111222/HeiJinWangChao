@@ -5,14 +5,14 @@ import { AccountSchema, DebtRecordSchema, IncomeRecordSchema, VehicleAssetSchema
 import { ActorRefSchema, CommandDataError, DataError, CountSchema, IdSchema, IdsSchema, MoneySchema, TextSchema, GameTimeSchema, requireData } from './common';
 import { EquipmentSchema } from './protagonist/schema';
 import { ImportantItemSchema } from './items/schema';
-import { NpcSchema } from './npc/schema';
+import { NpcCreationSchema } from './npc/schema';
 import { OrganizationSchema } from './organizations/schema';
 import { StoredWorldEventSchema, WorldTaskSchema, HistoryRecordSchema } from './events/schema';
 import { GameStateSchema } from './state';
 import type { GameState } from './state';
 import { variableCommandSchemas, applyVariableCommand, assertImportantItem, unequipItem } from './variableCommands';
 import { ContactReviewSchema } from './npc/contactReview';
-import { retireNpc, validateTaskTransitions } from './npc/lifecycle';
+import { validateTaskTransitions } from './npc/lifecycle';
 import { deleteEvent, validateEventLinks, validateEventWrite } from './events/lifecycle';
 import { maintainSceneTransition } from './sceneTransitions';
 import { completeTaskEventLinks } from './events/taskLinks';
@@ -28,7 +28,7 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('ReceiveIncome'), income: IncomeRecordSchema.extend({ amount: positiveMoney, status: z.literal('received'), receivedAt: GameTimeSchema }) }),
   z.strictObject({ ...base, type: z.literal('Borrow'), account: AccountSchema, debt: DebtRecordSchema.extend({ principal: positiveMoney, outstanding: positiveMoney, status: z.literal('active') }) }),
   z.strictObject({ ...base, type: z.literal('RepayDebt'), account: AccountSchema, debtId: IdSchema, amount: positiveMoney }),
-  z.strictObject({ ...base, type: z.literal('CreateNpc'), npc: NpcSchema }),
+  z.strictObject({ ...base, type: z.literal('CreateNpc'), npc: NpcCreationSchema }),
   z.strictObject({ ...base, type: z.literal('SetEquipment'), equipment: EquipmentSchema }),
   z.strictObject({ ...base, type: z.literal('TransferItem'), itemId: IdSchema, from: ActorRefSchema.nullable(), to: ActorRefSchema }),
   z.strictObject({ ...base, type: z.literal('SetWorldClock'), worldClock: GameTimeSchema }),
@@ -39,6 +39,7 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('CreateOrganization'), organization: OrganizationSchema }),
   z.strictObject({ ...base, type: z.literal('RecordOrgRelation'), organizationId: IdSchema, relation: TextSchema, reason: TextSchema }),
   z.strictObject({ ...base, type: z.literal('RegisterContact'), npcId: IdSchema, reason: TextSchema }),
+  // Parse historical drafts/receipts, but never authorize a fresh deletion.
   z.strictObject({ ...base, type: z.literal('RetireNpc'), npcId: IdSchema, expectedIdentityKey: TextSchema, reason: TextSchema, retainMemoryIds: IdsSchema, contactReview: ContactReviewSchema.optional() }),
   ...variableCommandSchemas,
 ]);
@@ -123,7 +124,7 @@ function apply(s: GameState, c: DomainCommand, turnId: string) {
       if (!s.contactNpcIds.includes(c.npcId)) s.contactNpcIds.push(c.npcId);
       s.contactReviewNpcIds = s.contactReviewNpcIds.filter((id) => id !== c.npcId);
       break;
-    case 'RetireNpc': retireNpc(s, c.npcId, c.expectedIdentityKey, c.retainMemoryIds, turnId, c.contactReview); break;
+    case 'RetireNpc': throw new DataError('NPC_RETAINED', '正式NPC永久保留完整档案，旧退场命令不可再执行');
     case 'SetEquipment': s.protagonist.currentWear = c.equipment; break;
     case 'TransferItem': {
       const item = s.items[c.itemId];
@@ -185,9 +186,9 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
   if (parsed.length > 0 && fresh.length === 0) return current;
   requireData(current.revision === expectedRevision, 'REVISION_CONFLICT', '存档版本已变化，请重新读取');
   if (fresh.length === 0) return current;
-  // 退场最后执行，先让同批经过验证的成果、后续职责及记忆完整落到投影。
+  // 事件清理在引用写入后执行；旧RetireNpc仅可解析，任何新执行均整批拒绝。
   const cleanup = (c: DomainCommand) => c.type==='DeleteEvent';
-  const ordered = [...fresh.filter((c) => c.type !== 'RetireNpc'&&!cleanup(c)), ...fresh.filter(cleanup), ...fresh.filter((c) => c.type === 'RetireNpc')];
+  const ordered = [...fresh.filter((c) => !cleanup(c)), ...fresh.filter(cleanup)];
   for (const command of ordered) {
     try { apply(current, command, turnId); }
     catch (error) {

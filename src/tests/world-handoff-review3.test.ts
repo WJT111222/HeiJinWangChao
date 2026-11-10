@@ -98,7 +98,7 @@ describe('没有独立可信授权信号时保守保护旧人', () => {
     const state = handoffState(); state.tasks = {}; state.contactReviewNpcIds = ['npc-a'];
     const retirement = retireCommand(state); retirement.contactReview = { conclusion: 'non_contact', basis: 'player_confirmed', reason: '文本确认', playerConfirmation: affirmative };
     expect(GameStateSchema.safeParse(state).success).toBe(true);
-    expect(() => commitCommands(state, 'direct', state.revision, [retirement])).toThrow('旧档联系人身份尚未可靠复核');
+    expect(() => commitCommands(state, 'direct', state.revision, [retirement])).toThrow('正式NPC永久保留完整档案，旧退场命令不可再执行');
     expect(state.npc['npc-a']).toBeDefined();
   });
   it.each(['contact', 'companion'] as const)('%s的永久保护不被任何文本确认解除', (kind) => {
@@ -106,17 +106,18 @@ describe('没有独立可信授权信号时保守保护旧人', () => {
     if (kind === 'contact') state.contactNpcIds = ['npc-a'];
     else { state.npc['npc-a'] = { ...state.npc['npc-a'], kind: 'special', detailedBackground: '初始同伴', activeGoals: [], habits: [], longTermMemories: [], offscreenTaskIds: [] }; state.initialCompanionId = 'npc-a'; }
     const command = retireCommand(state); command.contactReview = { conclusion: 'non_contact', basis: 'player_confirmed', reason: '确认', playerConfirmation: affirmative };
-    expect(() => commitCommands(state, 'direct', state.revision, [command])).toThrow('联系人、初始同伴和现场人物保留完整档案');
+    expect(() => commitCommands(state, 'direct', state.revision, [command])).toThrow('正式NPC永久保留完整档案，旧退场命令不可再执行');
   });
-  it('无历史、无联系迹象的普通临时NPC仍先存候选，再原子退场并保留必要成果', async () => {
+  it('无历史的正式NPC也拒绝退场，移除旧删除命令后成果可原子提交', async () => {
     const state = handoffState(); state.contactReviewNpcIds = ['npc-a']; state.npc['npc-a'].relationshipText = '尚未与主角接触'; state.npc['npc-a'].affinity = 0;
-    const repo = await repository(state), selected = await ready(repo, (current) => {
+    const repo = await repository(state); await expect(ready(repo, (current) => {
       const at = new Date(Date.parse(current.worldClock) + 300000).toISOString(), command = retireCommand(current);
       command.contactReview = { conclusion: 'non_contact', basis: 'no_known_connection', reason: '没有历史或任何联系迹象。' };
       return { ...worldResult([command]), taskCommands: [finishTask(current, 'work', at)] };
-    });
+    })).rejects.toThrow();
+    const selected = await ready(repo, current => ({...worldResult(),taskCommands:[finishTask(current,'work',new Date(Date.parse(current.worldClock)+300000).toISOString())]}));
     expect(await repo.load('save-a')).toEqual(state);
-    const result = await repo.commitTurn(submission(selected)); expect(result.state.npc['npc-a']).toBeUndefined();
-    expect(result.state.retiredNpcs['npc-a']).toBeDefined(); expect(result.state.tasks.work.resolution).toBeDefined();
+    const result = await repo.commitTurn(submission(selected)); expect(result.state.npc['npc-a']).toEqual(state.npc['npc-a']);
+    expect(result.state.retiredNpcs['npc-a']).toBeUndefined(); expect(result.state.tasks.work.resolution).toBeDefined();
   });
 });

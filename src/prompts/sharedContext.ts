@@ -6,8 +6,9 @@ import type { RecallCues } from '../domain/memories/recall';
 /** 三阶段共用的模型只读背景。调用方决定正式基线或合法 Variables 投影；
  * 阅读范围不参与任何命令授权。永久 journal 保持现有窗口/检索，幂等凭据不注入。 */
 export function sharedContext(state: GameState, windowSize: number, query: string, recall: boolean, cues: RecallCues = { stage: 'story', playerInput: query }) {
-  const { journal, appliedCommands, ...snapshot } = state;
+  const { journal, appliedCommands, dormantNpcProfiles, ...snapshot } = state;
   void appliedCommands;
+  void dormantNpcProfiles; // Persistence-only: not author context, knowledge, retrieval or summary input.
   const memory = recallJournal(state, windowSize, cues, recall);
   const recent = journal.slice(-windowSize);
   return {

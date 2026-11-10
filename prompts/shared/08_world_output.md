@@ -50,7 +50,7 @@ instant={precision:"instant",at:"2026-10-18T08:00:00+08:00"}；day={precision:"d
 展示先统一排序再分两侧：同月精确日期在前、月份模糊记录在后；春/夏/秋/冬分别收在同年5/8/11/12月份日期和月份记录之后；全年模糊记录最后。冬季不跨年，不虚构具体日期。范围收在终点精度之后；未知年份进入时间待考。此为展示约定，不改写真实时间。相同精度时间共组，不声称日期或模糊分组里的记录发生于同一精确时刻。
 主角纪事例：{"commandId":"history-decision","type":"RecordHistory","evidence":"本幕正式决定创业","entry":{"id":"history-reading-room","title":"决定创办阅览室","summary":"主角决定与伙伴共同筹备社区阅览室。","knowledgeKind":"established","occurredTimeText":"2021年夏季","chronicle":{"category":"protagonist","nature":"fact","milestoneId":"reading-room-decision","time":{"precision":"season","year":2021,"season":"summer"},"narrative":"夏，主角与伙伴议定筹建阅览室，约定先行走访社区。","process":["双方明确了筹备分工。"],"results":[{"text":"创业决定已经作出，机构尚未成立。","nature":"fact"}],"impacts":[]}}}
 
-RetireNpc只能清理无当前职责、资产引用的离场非联系人。联系人和初始同伴永久保护。旧档contactReviewNpcIds仍保守保护历史联系；没有独立玩家确认入口时player_confirmed不能授权删除。retainMemoryIds只引用真实原始记忆，不把保留材料传播给其他人。
+所有正式建档NPC永久保留完整档案、记忆和关系，不再输出RetireNpc。死亡、失联、离开城市是人物状态变化，不等于删除。contactNpcIds与contactReviewNpcIds只为旧联系人记录兼容，不证明主角掌握可用电话；旧retiredNpcs保留历史身份，不猜补已不存在的详细资料。
 
 本阶段只生成候选。Variables缺失时为预览，不冒充完整回合；失败保持上游成果。全部验证后沿现有原子Commit生效，不额外调用逐事件AI或自动付费修复。
 

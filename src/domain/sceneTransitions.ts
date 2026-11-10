@@ -23,7 +23,7 @@ export function maintainSceneTransition(
   for (const command of commands) if (command.type === 'UpdateNpc'
     && (command.changes.onScene === true || command.changes.locationId === null)) {
     const person = after.npc[command.npcId];
-    if (!person) continue; // 同批合法退场已由RetireNpc的领域约束处理。
+    if (!person) continue; // 人物引用由正式状态校验保证。
     requireData(
       !person.onScene || person.locationId,
       'SCENE_LOCATION',

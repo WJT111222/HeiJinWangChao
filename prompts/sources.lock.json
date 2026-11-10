@@ -497,6 +497,11 @@
         "baseCommit": "d0285e2201f67103195a42de4312f8c23df1193f",
         "reason": "第三批Story结构化事件入场与实际暂停时间，保留旧回执与作者知识边界",
         "sha256": "42c438f7620991b3e86e5e88e32291a40ad630acbf1501d4b88a42f5d403847f"
+      },
+      "npcV2Foundation": {
+        "baseCommit": "05cd3f2b23ef338444ca1888674dc5e5d274b8b0",
+        "notes": "NPC V2第一批：所有正式NPC永久保留，停用新回合RetireNpc；旧联系人登记不推断电话，旧退役身份不猜补资料。保留此前来源及适配记录。",
+        "sha256": "334aa3ef02e203b5d868c8b48d00dad39fbce43032fe06fff71646a37b4efe27"
       }
     },
     "stages/opening/variables.md": {
