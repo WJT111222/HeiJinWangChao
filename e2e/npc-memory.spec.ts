@@ -93,7 +93,7 @@ test('手动仅一人一批；普通界面不暴露身份、原文、总结和�
   await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
   const npcPanel = page.getByRole('dialog', { name: 'NPC', exact: true });
   await expect(npcPanel).toContainText('未公开人物A');
-  await npcPanel.getByRole('button',{name:/未公开人物A/}).click();
+  await npcPanel.getByRole('button',{name:'查看人物：未公开人物A',exact:true}).click();
   await npcPanel.getByLabel('搜索人物记忆与总结').fill('私人总结A');
   await expect(npcPanel).toContainText('私人总结A');
   await npcPanel.getByRole('button', { name: '关闭资料界面' }).click();

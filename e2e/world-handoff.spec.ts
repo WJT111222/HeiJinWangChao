@@ -154,14 +154,14 @@ for (const variant of ['mixed-result', 'unindexed-history'] as const) test(`第�
   else expect(saved.draft.world.result.worldCommands).toEqual([]);
 });
 
-test('联系人标签来自真实持久数据，刷新后档案仍保留', async ({ page }) => {
+test('旧联系人登记保留但不冒充已知电话，刷新后档案仍保留', async ({ page }) => {
   await seed(page);
   await page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try {
     await repo.save('save-a', 0, 'contact-fixture', [{ type: 'RegisterContact', commandId: 'contact', npcId: 'scene', reason: '隔离UI测试的明确联络设定', evidence: '主角与现场人物交换了联络方式。' }]);
   } finally { repo.close(); } });
   await page.reload(); await openGameTools(page); await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
-  const panel = page.getByRole('dialog', { name: 'NPC', exact: true }); await panel.getByRole('button', { name: /现场人物/ }).click();
-  await expect(panel).toContainText('联系人 · 永久保留档案');
+  const panel = page.getByRole('dialog', { name: 'NPC', exact: true }); await panel.getByRole('button', { name: '查看人物：现场人物', exact: true }).click();
+  await expect(panel).toContainText('尚未掌握'); await expect(panel).not.toContainText('联系人 · 永久保留档案');
   await page.keyboard.press('Escape'); await page.reload(); await openGameTools(page);
   expect((await stored(page)).state.contactNpcIds).toContain('scene');
 });
@@ -179,8 +179,8 @@ test('V6待复核NPC显示待确认身份，不冒充联系人且不自动删除
     }; request.onerror = () => reject(request.error); });
   });
   await page.reload(); await openGameTools(page); await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
-  const panel = page.getByRole('dialog', { name: 'NPC', exact: true }); await panel.getByRole('button', { name: /现场人物/ }).click();
-  await expect(panel).toContainText('旧档联系人身份待确认 · 暂缓清理');
+  const panel = page.getByRole('dialog', { name: 'NPC', exact: true }); await panel.getByRole('button', { name: '查看人物：现场人物', exact: true }).click();
+  await expect(panel).toContainText('尚未掌握'); await expect(panel).not.toContainText('旧档联系人身份待确认 · 暂缓清理');
   await expect(panel).not.toContainText('联系人 · 永久保留档案');
   const migrated = (await stored(page)).state; expect(migrated.schemaVersion).toBe(9); expect(migrated.contactNpcIds).toEqual([]);
   expect(migrated.contactReviewNpcIds).toContain('scene'); expect(migrated.npc).toEqual(before.npc); expect(migrated.revision).toBe(before.revision);

@@ -1,3 +1,4 @@
+import { selectNpc } from './helpers/npcRoster';
 import { openWorldArchive } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
@@ -50,31 +51,31 @@ test.describe('香闺秘档 UI', () => {
     const dialog = page.getByRole('dialog', { name: 'NPC', exact: true });
 
     // 有档案
-    await dialog.getByRole('button', { name: /有档案女/ }).click();
+    await selectNpc(page, '有档案女');
     await expect(dialog.getByRole('heading', { name: '香闺秘档' })).toBeVisible();
     await expect(dialog.getByRole('definition').filter({ hasText: '测试胸部' }).first()).toBeVisible();
 
     // 空档案
-    await dialog.getByRole('button', { name: /空档案女/ }).click();
+    await selectNpc(page, '空档案女');
     await expect(dialog.getByRole('heading', { name: '香闺秘档' })).toBeVisible();
     await expect(dialog.getByText('私密档案尚未建立')).toBeVisible();
 
     // 普通
-    await dialog.getByRole('button', { name: /普通女/ }).click();
+    await selectNpc(page, '普通女');
     await expect(dialog.getByText('香闺秘档')).not.toBeVisible();
 
     // 男性
-    await dialog.getByRole('button', { name: /特殊男/ }).click();
+    await selectNpc(page, '特殊男');
     await expect(dialog.getByText('香闺秘档')).not.toBeVisible();
 
     // 未成年
-    await dialog.getByRole('button', { name: /未成年女/ }).click();
+    await selectNpc(page, '未成年女');
     await expect(dialog.getByText('香闺秘档')).not.toBeVisible();
 
     // 切换后不残留
-    await dialog.getByRole('button', { name: /有档案女/ }).click();
+    await selectNpc(page, '有档案女');
     await expect(dialog.getByRole('definition').filter({ hasText: '测试胸部' }).first()).toBeVisible();
-    await dialog.getByRole('button', { name: /普通女/ }).click();
+    await selectNpc(page, '普通女');
     await expect(dialog.getByText('测试胸部')).not.toBeVisible();
 
     // 关闭后重新打开
@@ -82,7 +83,7 @@ test.describe('香闺秘档 UI', () => {
     await expect(dialog).toBeHidden();
     await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
     const reopened = page.getByRole('dialog', { name: 'NPC', exact: true });
-    await reopened.getByRole('button', { name: /有档案女/ }).click();
+    await selectNpc(page, '有档案女');
     await expect(reopened.getByRole('heading', { name: '香闺秘档' })).toBeVisible();
     await expect(reopened.getByRole('definition').filter({ hasText: '测试胸部' }).first()).toBeVisible();
     await reopened.getByRole('button', { name: '关闭资料界面' }).click();
@@ -92,14 +93,14 @@ test.describe('香闺秘档 UI', () => {
     await openGameTools(page);
     await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
     const afterRefresh = page.getByRole('dialog', { name: 'NPC', exact: true });
-    await afterRefresh.getByRole('button', { name: /有档案女/ }).click();
+    await selectNpc(page, '有档案女');
     await expect(afterRefresh.getByRole('heading', { name: '香闺秘档' })).toBeVisible();
     await expect(afterRefresh.getByRole('definition').filter({ hasText: '测试胸部' }).first()).toBeVisible();
 
     // 布局：无整体水平溢出，按钮可点，弹窗可关
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
     expect(overflow).toBe(true);
-    await expect(afterRefresh.getByRole('button', { name: /有档案女/ })).toBeEnabled();
+    await expect(afterRefresh.getByRole('region', { name: '人物详情', exact: true }).getByRole('button', { name: '取消特殊身份：有档案女', exact: true })).toBeEnabled();
     await afterRefresh.getByRole('button', { name: '关闭资料界面' }).click();
     await expect(afterRefresh).toBeHidden();
   });

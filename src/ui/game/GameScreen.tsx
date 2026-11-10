@@ -1,3 +1,5 @@
+import { useNpcManagement } from './useNpcManagement';
+import type { NpcManagementResult } from './npcManagement';
 import { PlayerStatus } from './PlayerStatus';
 import { TurnUndoControl } from './TurnUndoControl';
 import type { TurnUndoResult } from '../../services/storage/saveRepository';
@@ -60,6 +62,7 @@ export function GameScreen({
   onCommitted,
   onUndone,
   onMemorySaved,
+  onNpcManaged,
   renderSettings,
 }: {
   openingStart?: OpeningStart;
@@ -75,6 +78,7 @@ export function GameScreen({
   onCommitted: (result: TurnCommitResult) => void;
   onUndone: (result: TurnUndoResult) => void;
   onMemorySaved: (state: GameState) => void;
+  onNpcManaged: (result: NpcManagementResult) => void;
   renderSettings?: (maintenance: ReactNode) => ReactNode;
 }) {
   const openingTime = useMemo(() => {
@@ -131,9 +135,11 @@ export function GameScreen({
     automatic.progress?.stage === 'story' && automatic.progress.phase !== 'retrying'
       ? { phase: automatic.progress.phase, narrative: automatic.progress.narrative ?? '' }
       : manualProgress;
-  const busy = Boolean(
+  const workflowBusy = Boolean(
     submitting || automatic.running || progress || variables.phase || world.phase,
   );
+  const npcManagement = useNpcManagement(repository, state, draft, workflowBusy, onNpcManaged);
+  const busy = workflowBusy || Boolean(npcManagement.pendingId);
   const reader = useRef<HTMLDivElement>(null);
   const workflowDetails = useRef<HTMLDetailsElement>(null);
   const runtimeSwitches = useRef<HTMLDivElement>(null);
@@ -618,7 +624,7 @@ export function GameScreen({
         {worldNavigation}
       </Dialog>}
       {panel && (
-        <Dialog title={panel} className={panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : ''} onClose={() => setPanel(undefined)}>
+        <Dialog title={panel} className={panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : ''} onClose={() => setPanel(undefined)}>
           {panel === '人物档案' ? (
             <>
             <dl className="profile-details">
@@ -707,7 +713,7 @@ export function GameScreen({
             </>
           ) : (
             <>
-              <Panels name={panel} view={view} onOpenHistory={()=>setPanel('历史时间轴')} />
+              <Panels name={panel} view={view} npcManagement={npcManagement} onOpenHistory={()=>setPanel('历史时间轴')} />
             </>
           )}
         </Dialog>

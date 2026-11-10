@@ -1,3 +1,4 @@
+import { canAcceptNpcView } from '../ui/game/npcManagement';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { IdSchema } from '../domain/common';
@@ -353,7 +354,7 @@ export function App() {
               repository={repository!}
               onDraftSaved={(draft) =>
                 setLoaded((current) =>
-                  current?.state.saveId === draft.saveId && current.state.revision === draft.baseSaveRevision
+                  current?.state.saveId === draft.saveId && current.state.revision === draft.baseSaveRevision && (!current.draft || current.draft.turnId !== draft.turnId || current.draft.baseSaveRevision !== draft.baseSaveRevision || current.draft.draftRevision <= draft.draftRevision)
                     ? { ...current, draft } : current,
                 )
               }
@@ -364,8 +365,9 @@ export function App() {
                     : current,
                 )
               }
+              onNpcManaged={result => setLoaded(current => current && canAcceptNpcView(current, result) ? { ...current, state: result.state, draft: result.draft } : current)}
               onMemorySaved={(state) => setLoaded((current) =>
-                current?.state.saveId === state.saveId && current.state.revision === state.revision
+                current?.state.saveId === state.saveId && current.state.revision === state.revision && (current.state.npcManagementRevision ?? 0) === (state.npcManagementRevision ?? 0)
                   ? { ...current, state } : current)}
               onUndone={({ state, draft }) => setLoaded(current =>
                 current?.state.saveId === state.saveId && current.state.revision < state.revision
