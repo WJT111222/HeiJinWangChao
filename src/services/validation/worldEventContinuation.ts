@@ -6,10 +6,10 @@ import { terminalEvent } from '../../domain/events/lifecycle';
 import { requireWorld } from './worldDiagnostics';
 
 export function normalizeEventContinuation(event: WorldEvent, old: WorldEvent | undefined,
-  base: GameState, draft: TurnDraft) {
+  base: GameState, draft: TurnDraft, locations: Readonly<GameState['locations']> = base.locations) {
   const plan=event.continuation;
   if(plan?.direction==='protagonist' && plan.entry.locationId)
-    requireWorld(base.locations[plan.entry.locationId], 'invalid_output','event_continuation');
+    requireWorld(locations[plan.entry.locationId], 'invalid_output','event_continuation');
   let expected=old?.protagonistEntry;
   const due=event.eventKind==='sub' ? !old && Date.parse(event.startAt)<=Date.parse(base.worldClock)
     : !event.eventKind && event.estimatedEndAt && Date.parse(event.estimatedEndAt)<=Date.parse(base.worldClock);
