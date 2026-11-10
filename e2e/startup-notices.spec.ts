@@ -62,10 +62,13 @@ test('首次访问按序展示完整内容；关闭后导航不重播，未勾�
   await expect(disclaimer(page).locator('label')).toHaveText('今日不再弹出');
   await expect(announcement(page)).toHaveCount(0);
   await disclaimer(page).getByRole('button', { name: '关闭免责声明' }).click();
-  await expect(announcement(page).getByRole('heading', { name: '《黑金王朝》0.8 开发试玩进展 · 记忆系统更新' })).toBeVisible();
+  await expect(announcement(page).getByRole('heading', { name: '《黑金王朝》0.9 开发里程碑 · 世界事件与历史更新' })).toBeVisible();
   await expect(announcement(page).getByRole('listitem')).toHaveCount(5);
-  await expect(announcement(page).getByText('记忆总结 V2 已支持短期转中期、中期转长期和 NPC 个人经历总结；已提交的历史原文及来源仍然保留。')).toBeVisible();
-  await expect(announcement(page).getByText('「设置 → 记忆」已整合即时记忆窗口与三类总结配置，支持独立调整自动开关、触发阈值、批次数量和提示词。')).toBeVisible();
+  await expect(announcement(page).getByText('记忆总结 V2 已支持短期转中期、中期转长期和 NPC 个人经历总结；自动维护可关闭，手动「立即总结」仍可用，已提交的历史原文保留可追溯。')).toBeVisible();
+  await expect(announcement(page).getByText('新增多回合撤回：可按完整快照恢复最近已结算的回合，每份存档最多保留 5 个恢复点；没有重做功能，也不能撤销已产生的第三方 AI 调用费用。')).toBeVisible();
+  await expect(announcement(page).getByText('重大纪事时间轴已区分世界与主角的人生历史；传闻仍是传闻，日期不明确的往事不会被伪装成精确时间。')).toBeVisible();
+  await expect(announcement(page).getByText('世界事件 V2 已支持主事件、多个并行子事件、固定时刻结算和后续阶段；Story 可根据剧情决定主角介入、获知或不参与，事件档案保留已结束阶段的结果。')).toBeVisible();
+  await expect(announcement(page).getByText('「夜幕金印」已更新桌面和手机阅读布局、角色对白气泡及只读世界事件档案；目前仍为 0.9 开发阶段，真实模型长篇试玩、手机真机体验和正式 V1.0 发行尚待验收。')).toBeVisible();
   await expect(announcement(page).getByText('王朝还在建设，城市已经有了自己的生活。感谢你在这里留下每一段经历。')).toBeVisible();
   await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
   await page.getByRole('button', { name: /开始新游戏/ }).click();
