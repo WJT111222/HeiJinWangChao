@@ -289,11 +289,9 @@ describe('真实资源加载与消息组装', () => {
       knownInformation: [{ text: '秘密情报不可见', source: '私下渠道不可见', learnedAt: gameTime }],
       memories: [
         { ...memory, id: 'private-short', text: '私人记忆不可见', visibility: 'npc_private' },
-      ],
-      longTermMemories: [
         memory,
         { ...memory, id: 'private-long', text: '私有长期记忆不可见', visibility: 'npc_private' },
-      ],
+      ], longTermMemories: [],
       offscreenTaskIds: ['hidden-task'],
     };
     a.state.tasks['hidden-task'] = {

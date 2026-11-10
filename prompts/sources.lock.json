@@ -191,6 +191,11 @@
         "reference": "variableProtocolReference",
         "sha256": "bd147d206dbd86609c6d50a3bffab38757b7af73d3a883b96d860d4c163c8b5b",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
+      },
+      "npcUnifiedMemoryV2": {
+        "baseCommit": "0fa1ab269280924fab627eda21a3e11f1661d3ff",
+        "notes": "NPC V2第二批：统一人物原始记忆，不要求特殊长期层；保留香闺秘档原文、旧来源及历次适配记录。",
+        "sha256": "39a3b1da7865089c474147b084b3c9c297f25edf7fde677d7c6224eb4adf8584"
       }
     },
     "variableGroups/npc_ordinary/update.md": {
@@ -213,6 +218,11 @@
         "reference": "variableProtocolReference",
         "sha256": "705a1104a2129dd82b0673bef8b3f9135df9c2569bb506326f257e390f63577b",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
+      },
+      "npcUnifiedMemoryV2": {
+        "baseCommit": "0fa1ab269280924fab627eda21a3e11f1661d3ff",
+        "notes": "NPC V2第二批：统一人物原始记忆，不要求特殊长期层；保留香闺秘档原文、旧来源及历次适配记录。",
+        "sha256": "e40355b0c42b0dc26fb7855ab1c9bd2a23b8186774b7cdf9d36d4f52d4763c9c"
       }
     },
     "variableGroups/npc_ordinary/offscreen.md": {
@@ -228,6 +238,11 @@
       "worldFreedomV6": {
         "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
         "sha256": "dfcda73645ae29e6046effbad2d095d43f29c252628854cd70e65899ce5abb88"
+      },
+      "npcUnifiedMemoryV2": {
+        "baseCommit": "0fa1ab269280924fab627eda21a3e11f1661d3ff",
+        "notes": "NPC V2第二批：统一人物原始记忆，不要求特殊长期层；保留香闺秘档原文、旧来源及历次适配记录。",
+        "sha256": "8dd78fdc64379f61f60c345ba3eb556f2ceb591b54c6533db3a4947e954fd228"
       }
     },
     "variableGroups/npc_special/init.md": {
@@ -250,6 +265,11 @@
         "reference": "variableProtocolReference",
         "sha256": "855ab2a843b0100e83055312dba20fafb3ce7c47c7086de4aa01662c511409c3",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
+      },
+      "npcUnifiedMemoryV2": {
+        "baseCommit": "0fa1ab269280924fab627eda21a3e11f1661d3ff",
+        "notes": "NPC V2第二批：统一人物原始记忆，不要求特殊长期层；保留香闺秘档原文、旧来源及历次适配记录。",
+        "sha256": "d23c474e0efabd634c09982cb43ff561f1963b9e688f8a05a0515c7a1b1d8ba8"
       }
     },
     "variableGroups/npc_special/update.md": {
@@ -272,6 +292,11 @@
         "reference": "variableProtocolReference",
         "sha256": "6faf4a5d52587ca3fb98bd2819c5e6f974aeba24985d98e309801851a81f51a7",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
+      },
+      "npcUnifiedMemoryV2": {
+        "baseCommit": "0fa1ab269280924fab627eda21a3e11f1661d3ff",
+        "notes": "NPC V2第二批：统一人物原始记忆，不要求特殊长期层；保留香闺秘档原文、旧来源及历次适配记录。",
+        "sha256": "2bf679be969491a7cd163f81f1ca30249b4ac089e8ae7967553a3af05eb8c3ae"
       }
     },
     "variableGroups/npc_special/offscreen.md": {
@@ -287,6 +312,11 @@
       "worldFreedomV6": {
         "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
         "sha256": "40ec4cd1257ef696ee8f57f2035b85acc937fa95dfe9f4e8c85849ce9d8850cf"
+      },
+      "npcUnifiedMemoryV2": {
+        "baseCommit": "0fa1ab269280924fab627eda21a3e11f1661d3ff",
+        "notes": "NPC V2第二批：统一人物原始记忆，不要求特殊长期层；保留香闺秘档原文、旧来源及历次适配记录。",
+        "sha256": "1432588d157e8637fa8c67099b6cad7e7bbe7861055ac12c278afbd7e351ffdb"
       }
     },
     "writing/nsfw.md": {
@@ -420,6 +450,11 @@
       "worldFreedomV6": {
         "notes": "选择性入场回执、现场成员维护、并行任务、可变参与者与独立历史；取消历史重要性准入和重复 futureEvents/timelineCandidates 输出。只调整本模块相关规则。",
         "sha256": "46cd7fe57c26fe13de221afacd9ea7e9d4064ef4e30a3db158c8a32fccd10cc5"
+      },
+      "npcUnifiedMemoryV2": {
+        "baseCommit": "0fa1ab269280924fab627eda21a3e11f1661d3ff",
+        "notes": "NPC V2第二批：普通/特殊人物统一memories，不再要求独立长期层；知晓索引及原三标签四操作协议不变。保留此前来源记录。",
+        "sha256": "012e1f3077257460940f6da6a65b2242517bc62f807424784c192974864a7029"
       }
     },
     "shared/08_world_output.md": {
@@ -502,6 +537,11 @@
         "baseCommit": "05cd3f2b23ef338444ca1888674dc5e5d274b8b0",
         "notes": "NPC V2第一批：所有正式NPC永久保留，停用新回合RetireNpc；旧联系人登记不推断电话，旧退役身份不猜补资料。保留此前来源及适配记录。",
         "sha256": "334aa3ef02e203b5d868c8b48d00dad39fbce43032fe06fff71646a37b4efe27"
+      },
+      "npcUnifiedMemoryV2": {
+        "baseCommit": "0fa1ab269280924fab627eda21a3e11f1661d3ff",
+        "notes": "NPC V2第二批：统一人物原始记忆，不要求特殊长期层；保留香闺秘档原文、旧来源及历次适配记录。",
+        "sha256": "291e8e4fb3ef2fe6a06fc7e09afe7c49cc046d73c765a012eddcee4098aa7551"
       }
     },
     "stages/opening/variables.md": {

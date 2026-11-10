@@ -68,7 +68,7 @@ describe('玩家四层记忆只读投影', () => {
     const secret = { id: 'private-source', text: '私有经历不可展示', sourceTurnIds: [], affectedEntityRefs: [], visibility: 'npc_private' as const, createdAtGameTime: state.worldClock };
     state.npc.hidden = { ...npc('hidden'), kind: 'special', name: '未公开人物身份', onScene: false,
       detailedBackground: '', activeGoals: [], habits: [], offscreenTaskIds: [],
-      memories: [{ ...secret, knowledgeSource: '私人观察' }], longTermMemories: [{ ...secret, id: 'private-long', knowledgeSource: '私人经历' }] };
+      memories: [{ ...secret, knowledgeSource: '私人观察' }, { ...secret, id: 'private-long', knowledgeSource: '私人经历' }], longTermMemories: [] };
     state.memories.npcSummaries.hidden = [{ ...secret, id: 'private-summary' }];
     expect(playerView(state).memories.filter(m => m.ownerNpcId === 'hidden')).toHaveLength(3);
     state.contactNpcIds = ['hidden']; state.initialCompanionId = 'hidden'; state.npc.hidden.onScene = true;

@@ -29,7 +29,7 @@ describe('正式文本能力缺口复现',()=>{
   });
   it('同批建立特殊NPC并维护目标、长期记忆和知晓信息',async()=>{
     const r=await execute([set('npc[new-person]',special()),set('npc[new-person].activeGoals',['参加资格考试']),push('npc[new-person].longTermMemories',memory),push('npc[new-person].knownInformation',{...memory,text:'听说周末下雨',knowledgeKind:'reported'})].join('\n'));
-    expect(r.after.npc['new-person']).toMatchObject({kind:'special',activeGoals:['参加资格考试'],longTermMemories:[expect.objectContaining({text:memory.text})],knownInformation:[expect.objectContaining({text:'[转述]听说周末下雨'})]});
+    expect(r.after.npc['new-person']).toMatchObject({kind:'special',activeGoals:['参加资格考试'],longTermMemories:[],memories:expect.arrayContaining([expect.objectContaining({text:memory.text})]),knownInformation:[expect.objectContaining({text:'[转述]听说周末下雨'})]});
   });
   it('结构化好感和联系人可在同批建档后记录',async()=>{
     const r=await execute([set('npc[new-person]',ordinary()),set('npc[new-person].affinityChange',{from:30,to:35,reason:'互相帮助',relationshipText:'愿意互相帮助'}),set('npc[new-person].contact',{reason:'交换联系方式'})].join('\n'));
@@ -62,7 +62,7 @@ describe('实体映射的执行与安全回归',()=>{
     const r=await execute([set('npc[new-person]',special()),set('npc[second]',second),push('npc[new-person].longTermMemories',{...memory,knowledgeKind:'suspected'})].join('\n'));
     expect(r.after.npc.second.memories).toEqual([]);
     expect(r.after.memories.short).toEqual([]);
-    expect(r.after.npc['new-person']).toMatchObject({longTermMemories:[expect.objectContaining({text:'[推测]'+memory.text,visibility:'npc_private',sourceTurnIds:['text-turn']})]});
+    expect(r.after.npc['new-person']).toMatchObject({longTermMemories:[],memories:[expect.objectContaining({text:'[推测]'+memory.text,visibility:'npc_private',sourceTurnIds:['text-turn']})]});
   });
   const bad=[
     set('npc[new-person]',{...ordinary(),id:'override'}),set('npc[new-person]',{...ordinary(),unknown:1}),
@@ -70,7 +70,7 @@ describe('实体映射的执行与安全回归',()=>{
     set('npc[new-person]',{...ordinary(),kind:'special'}),set('npc[new-person]',ordinary())+'\n'+set('npc[new-person]',ordinary()),
     set('npc[new-person]',ordinary())+'\n'+set('npc[duplicate]',ordinary()),
     set('npc[new-person]',ordinary())+'\n'+set('npc[new-person].activeGoals',['不适用于普通人物']),
-    set('npc[new-person]',ordinary())+'\n'+push('npc[new-person].longTermMemories',memory),
+    set('npc[new-person]',ordinary())+'\n'+push('npc[new-person].longTermMemories',{...memory,knowledgeKind:'invalid'}),
     set('npc[new-person]',ordinary())+'\n'+set('npc[new-person].affinityChange',{from:0,to:35,reason:'协作',relationshipText:'愿意协作'}),
     set('npc[new-person]',ordinary())+'\n'+set('npc[new-person].affinityChange',{from:30,to:101,reason:'协作',relationshipText:'愿意协作'}),
     set('npc[new-person]',ordinary())+'\n'+set('npc[new-person].affinityChange',{from:30,to:35,reason:'协作'}),

@@ -4,7 +4,7 @@
 新人物可在开局或普通回合首次出现时建档，先检索已有稳定ID、identityKey、别名及初始同伴；不重复建同一个人。set npc[id]使用完整原NpcSchema去掉id，普通人物必需kind=ordinary、identityKey、name、aliases/skills数组、onScene布尔、affinity[-100,100]、relationshipText、空memories/knownInformation；locationId若提供须真实存在。初始记忆先留空，再用push记录。
 已有字段：set npc[id].healthText/relationshipText为字符串，locationId为地点ID或null，onScene为布尔，lastInteractionAt为合法ISO游戏时间。没有在场审批；离场人物也可记录Story已经发生的变化，不能替World编造后台新行动。
 结构化好感：set npc[id].affinityChange={from,to,reason,relationshipText}。from须匹配当前值，同批连续更新使用上一笔结果；未确认同伴from=null。关系不是恋爱等级，寒暄不自动涨分。联系人：set npc[id].contact={reason}。
-个人记忆：push npc[id].memories={text,knowledgeKind,knowledgeSource,visibility}；knowledgeKind为observed/reported/suspected，visibility为npc_private/internal/player_known。只写本人的认知，转述和推测不变成世界真相或其他人的知识。push npc[id].knownInformation使用同一结构，程序同时保留个人原始记忆；不填程序memoryId/回合/时间元数据。
+统一人物记忆：普通和特殊NPC都只用push npc[id].memories={text,knowledgeKind,knowledgeSource,visibility}；knowledgeKind为observed/reported/suspected，visibility为npc_private/internal/player_known。只写本人的认知，转述和推测不变成世界真相或其他人的知识。push npc[id].knownInformation使用同一结构，程序同时保留同一条原始记忆，勿再为同一事实重复push memories；不填程序memoryId/回合/时间元数据。依据已选定Story，仅记录值得保留的实际经历、获知或判断；无相关变化可不写，不因特殊身份强制增加记忆。
 示例：
 <命令>
 set npc[lin].healthText = "擦伤已包扎"

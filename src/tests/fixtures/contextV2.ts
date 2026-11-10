@@ -31,7 +31,7 @@ export function contextV2Fixture() {
     };
     state.npc[id] = special ? { ...base, kind: 'special', detailedBackground: `${id}完整详细背景`,
       activeGoals: [`${id}长期目标`], habits: [`${id}习惯`], offscreenTaskIds: [],
-      longTermMemories: [{ ...base.memories[0], id: `${id}-long`, text: `${id}长期私有记忆` }],
+      memories: [...base.memories, { ...base.memories[0], id: `${id}-long`, text: `${id}长期私有记忆` }], longTermMemories: [],
       privateProfile: { bodyDescription: `${id}私人档案标记`, isVirgin: false, firstExperienceText: '私人经历标记' },
     } : base;
     state.memories.npcSummaries[id] = [{ ...base.memories[0],
