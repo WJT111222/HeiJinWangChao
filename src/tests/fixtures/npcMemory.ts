@@ -17,7 +17,7 @@ export function npcMemoryState(count = 21, special = false) {
   }));
   const person = { ...npc(), name: '未公开人物A', onScene: false, memories };
   state.npc['npc-a'] = special ? { ...person, kind: 'special', detailedBackground: '不应发给维护模型的背景秘密',
-    activeGoals: ['整理诊室'], habits: [], memories: memories.filter((_, index) => index % 2 === 0), longTermMemories: memories.filter((_, index) => index % 2 === 1), offscreenTaskIds: [] } : person;
+    activeGoals: ['整理诊室'], habits: [], memories, longTermMemories: [], offscreenTaskIds: [] } : person;
   state.npc['npc-b'] = { ...npc('npc-b'), name: '未公开人物B', onScene: false, memories: [{ ...memories[0], id: 'b-memory',
     text: 'B的独占秘密不可进入A的总结', sourceTurnIds: [], affectedEntityRefs: [{ kind: 'npc', id: 'npc-b' }] }] };
   return GameStateSchema.parse(state);

@@ -36,7 +36,8 @@ const publicVariables = {
 export const SpecialProfileSchema = z.strictObject({
   detailedBackground: z.string(),
   activeGoals: StringsSchema, habits: StringsSchema,
-  longTermMemories: z.array(NpcMemorySchema), offscreenTaskIds: IdsSchema,
+  // Compatibility marker only; V8 raw memories live exclusively in npc.memories.
+  longTermMemories: z.array(NpcMemorySchema).max(0), offscreenTaskIds: IdsSchema,
   privateProfile: PrivateProfileSchema,
   relationshipNetwork: z.array(z.strictObject({
     name: TextSchema, relationship: TextSchema, description: z.string(),
@@ -51,5 +52,6 @@ export const DormantNpcProfileSchema = z.strictObject({ id: IdSchema, identityKe
 
 // Batch 1 adds persistence only. Existing AI creation/update protocols remain unchanged.
 export const OrdinaryNpcCreationSchema = OrdinaryNpcSchema.omit({ phoneContact: true, usualLocations: true });
-export const SpecialNpcCreationSchema = SpecialNpcSchema.omit({ phoneContact: true, usualLocations: true, relationshipNetwork: true });
+export const SpecialNpcCreationSchema = SpecialNpcSchema.omit({ phoneContact: true, usualLocations: true, relationshipNetwork: true })
+  .extend({ longTermMemories: z.array(NpcMemorySchema).optional() }); // old commands retain their original fingerprint
 export const NpcCreationSchema = z.discriminatedUnion('kind', [OrdinaryNpcCreationSchema, SpecialNpcCreationSchema]);

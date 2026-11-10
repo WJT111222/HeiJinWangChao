@@ -4,7 +4,7 @@
 新人物可在开局或普通回合首次出现时建档，先检索已有稳定ID、identityKey、别名及初始同伴；不重复建同一个人。set npc[id]使用完整原NpcSchema去掉id，普通人物必需kind=ordinary、identityKey、name、aliases/skills数组、onScene布尔、affinity[-100,100]、relationshipText、空memories/knownInformation；locationId若提供须真实存在。初始记忆先留空，再用push记录。
 已有字段：set npc[id].healthText/relationshipText为字符串，locationId为地点ID或null，onScene为布尔，lastInteractionAt为合法ISO游戏时间。没有在场审批；离场人物也可记录Story已经发生的变化，不能替World编造后台新行动。
 结构化好感：set npc[id].affinityChange={from,to,reason,relationshipText}。from须匹配当前值，同批连续更新使用上一笔结果；未确认同伴from=null。关系不是恋爱等级，寒暄不自动涨分。联系人：set npc[id].contact={reason}。
-个人记忆：push npc[id].memories={text,knowledgeKind,knowledgeSource,visibility}；knowledgeKind为observed/reported/suspected，visibility为npc_private/internal/player_known。只写本人的认知，转述和推测不变成世界真相或其他人的知识。push npc[id].knownInformation使用同一结构，程序同时保留个人原始记忆；不填程序memoryId/回合/时间元数据。
+统一人物记忆：普通和特殊NPC都只用push npc[id].memories={text,knowledgeKind,knowledgeSource,visibility}；knowledgeKind为observed/reported/suspected，visibility为npc_private/internal/player_known。只写本人的认知，转述和推测不变成世界真相或其他人的知识。push npc[id].knownInformation使用同一结构，程序同时保留同一条原始记忆，勿再为同一事实重复push memories；不填程序memoryId/回合/时间元数据。依据已选定Story，仅记录值得保留的实际经历、获知或判断；无相关变化可不写，不因特殊身份强制增加记忆。
 示例：
 <命令>
 set npc[lin].healthText = "擦伤已包扎"
@@ -14,13 +14,13 @@ push npc[lin].memories = {"text":"共同处理现场问题","knowledgeKind":"obs
 </命令>
 
 特殊NPC沿用普通NPC的现场字段、好感、联系人和个人认知路径。初始同伴已经建档，承接玩家设定，不创建副本。
-创建set npc[id]时kind=special，并在普通完整字段上增加detailedBackground字符串、activeGoals/habits字符串数组、longTermMemories/offscreenTaskIds数组；初始记忆为空，未建立的后台任务不虚构引用。
-已有特殊NPC可set npc[id].activeGoals为字符串数组，push npc[id].longTermMemories使用与个人记忆相同的{text,knowledgeKind,knowledgeSource,visibility}。这是指定人物的新增长期原始记忆，不是压缩，不向别人传播。
+创建set npc[id]时kind=special，并在普通完整字段上增加detailedBackground字符串、activeGoals/habits字符串数组、offscreenTaskIds数组；初始记忆为空，未建立的后台任务不虚构引用。
+已有特殊NPC可set npc[id].activeGoals为字符串数组；新原始记忆与普通NPC一样写入memories，不选择个人层/长期层。人物专属资料不改变记忆保存或总结规则。
 当前没有习惯、详细背景、身份或任务引用的现场更新命令；不能set整个已有npc对象冒充更新。重大承诺可先记入本人记忆，任务后续交给World。
 示例：
 <命令>
 set npc[lin].activeGoals = ["完成资格考试"]
-push npc[lin].longTermMemories = {"text":"记住共同作出的约定","knowledgeKind":"observed","knowledgeSource":"当面约定","visibility":"npc_private"}
+push npc[lin].memories = {"text":"记住共同作出的约定","knowledgeKind":"observed","knowledgeSource":"当面约定","visibility":"npc_private"}
 </命令>
 
 
