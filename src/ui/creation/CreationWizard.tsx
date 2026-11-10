@@ -7,6 +7,7 @@ import { dateTime } from '../panels/playerView';
 import { appearanceTemplates, personalityTemplates } from './personTemplates';
 import { ThemedSelect } from '../components/ThemedSelect';
 import { ProfessionProfile } from '../components/ProfessionProfile';
+import { OpeningPacks } from './OpeningPacks';
 
 const steps = ['基本信息', '职业与能力', '城市与背景', '初始同伴', '确认与开局'];
 export function CreationWizard({
@@ -102,6 +103,7 @@ export function CreationWizard({
           </button>
         ))}
       </nav>
+      <OpeningPacks form={form} onApply={onChange} busy={busy} />
       <form
         inert={busy}
         onSubmit={(e) => {
@@ -279,7 +281,7 @@ export function CreationWizard({
           )}
           {form.step === 5 && (
             <>
-              <div className="two-grid">
+              <div className="two-grid creation-review">
                 <section className="card">
                   <div className="section-heading">
                     <h3>人物资料</h3>
@@ -293,6 +295,8 @@ export function CreationWizard({
                     <Detail label="性别">{form.person.gender}</Detail>
                     <Detail label="外貌">{form.person.appearance}</Detail>
                     <Detail label="性格">{form.person.personality}</Detail>
+                    <Detail label="外貌模板">{form.appearanceTemplate === 'custom' ? '自由选择' : form.appearanceTemplate}</Detail>
+                    <Detail label="性格模板">{form.personalityTemplate === 'custom' ? '自由选择' : form.personalityTemplate}</Detail>
                   </dl>
                 </section>
                 <section className="card">
@@ -304,6 +308,23 @@ export function CreationWizard({
                   </div>
                   <ProfessionProfile hero={{ profession: profile.name, professionDescription: profile.description,
                     professionLongTermImpact: profile.longTermImpact, skills: profile.skills }} />
+                  <details>
+                    <summary>完整职业表单</summary>
+                    <dl>
+                      <Detail label="职业分类">{form.professionCategory}</Detail>
+                      <Detail label="技能模式">{form.skillsSource === 'manual' ? '手动技能' : form.skillsSource === 'automatic' ? '自动技能' : '未设置'}</Detail>
+                      <Detail label="技能原文">{form.skills}</Detail>
+                      <Detail label="自定义职业">{form.customProfession}</Detail>
+                      <Detail label="自定义介绍">{form.professionDescription}</Detail>
+                      <Detail label="自定义长期影响">{form.professionLongTermImpact}</Detail>
+                    </dl>
+                    {form.customProfile && <section aria-label="保留的自定义职业">
+                      <h4>保留的自定义职业</h4>
+                      <dl>{Object.entries({ 名称: form.customProfile.name, 介绍: form.customProfile.description,
+                        技能: form.customProfile.skills, 长期影响: form.customProfile.longTermImpact }).map(([label, value]) =>
+                        <Detail label={label} key={label}>{value}</Detail>)}</dl>
+                    </section>}
+                  </details>
                   <dl>
                     <Detail label="城市">{cities.find((c) => c.id === form.city)?.name}</Detail>
                     <Detail label="人物背景">{form.background}</Detail>
