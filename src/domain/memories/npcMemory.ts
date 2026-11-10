@@ -16,7 +16,7 @@ export const NpcMemoryBatchSchema = z.strictObject({
   entries: z.array(NpcMemorySchema.refine((entry) => entry.visibility !== 'internal', '内部世界资料不是NPC已知记忆')).min(1).max(maximumSummaryBatch),
 }).refine(batch => batch.expectedCount === undefined || batch.entries.length === batch.expectedCount, '来源数量与冻结批次不一致');
 export type NpcMemoryBatch = z.infer<typeof NpcMemoryBatchSchema>;
-export const rawNpcMemories = (npc: GameState['npc'][string]) => [...npc.memories, ...(npc.kind === 'special' ? npc.longTermMemories : [])];
+export const rawNpcMemories = (npc: GameState['npc'][string]) => [...npc.memories];
 const summaryVisibility = (visibility: z.infer<typeof NpcMemorySchema>['visibility']) => visibility === 'internal' ? 'internal' as const : 'npc_private' as const;
 
 export function validNpcSummary(state: GameState, npcId: string, summary: z.infer<typeof NpcSummarySchema>) {

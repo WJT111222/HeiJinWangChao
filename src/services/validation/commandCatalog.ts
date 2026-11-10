@@ -1,6 +1,7 @@
 import { StoredWorldEventSchema, WorldEventSchema } from '../../domain/events/schema';
 import { z } from 'zod';
 import { DomainCommandSchema } from '../../domain/commands';
+import { OrdinaryNpcCreationSchema, SpecialNpcCreationSchema } from '../../domain/npc/schema';
 import { WorldResultSchema } from '../../domain/drafts';
 import type { AiStage } from '../ai/configuration';
 export const worldTypes = [
@@ -24,7 +25,14 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
     schema: {
       $schema: 'http://json-schema.org/draft-07/schema#',
       oneOf: options.map((option) => {
-        const schema=z.toJSONSchema(option.shape.type.value==='SaveEvent' ? option.extend({event:z.union([WorldEventSchema,StoredWorldEventSchema.extend({status:z.enum(['resolved','cancelled'])})])}) : option, { target: 'draft-7', unrepresentable: 'any' });
+        const modelOption = option.shape.type.value === 'CreateNpc'
+          ? option.extend({ npc: z.discriminatedUnion('kind', [OrdinaryNpcCreationSchema, SpecialNpcCreationSchema.omit({longTermMemories:true})]) })
+          : option.shape.type.value==='SaveEvent' ? option.extend({event:z.union([WorldEventSchema,StoredWorldEventSchema.extend({status:z.enum(['resolved','cancelled'])})])}) : option;
+        const schema=z.toJSONSchema(modelOption, { target: 'draft-7', unrepresentable: 'any' });
+        if (option.shape.type.value === 'RecordNpcMemory') {
+          if (schema.properties) delete schema.properties.layer;
+          if (schema.required) schema.required = schema.required.filter(field => field !== 'layer');
+        }
         if(option.shape.type.value==='SaveTask') {
           const task=schema.properties?.task;
           if(task && typeof task==='object')task.anyOf=[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}];

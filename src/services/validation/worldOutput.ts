@@ -18,6 +18,7 @@ import { worldTypes } from './commandCatalog';
 import { requireWorld, worldValidationError } from './worldDiagnostics';
 import { worldProjectionError } from './worldProjectionDiagnostics';
 import { worldNpcAllowed } from '../../domain/npc/worldAccess';
+import { NpcSchema } from '../../domain/npc/schema';
 
 function sameActor(a: ActorRef, b: ActorRef) { return a.kind === b.kind && a.id === b.id; }
 function offscreen(state: GameState, ref: ActorRef) {
@@ -84,7 +85,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
           const npc = command.npc;
           requireWorld(!npc.onScene && !npc.lastInteractionAt && npc.affinity === 0 && !npc.affinityConfirmed
             && !npc.memories.length && !npc.knownInformation.length
-            && (npc.kind !== 'special' || !npc.longTermMemories.length), 'permission');
+            && (npc.kind !== 'special' || !npc.longTermMemories?.length), 'permission');
           break;
         }
         case 'CreateOrganization': {
@@ -187,7 +188,8 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         }
         default: requireWorld(false,'permission');
       }
-      if (command.type === 'CreateNpc') causal.npc[command.npc.id] = command.npc;
+      if (command.type === 'CreateNpc') causal.npc[command.npc.id] = NpcSchema.parse(command.npc.kind === 'special'
+        ? { ...command.npc, longTermMemories: command.npc.longTermMemories ?? [] } : command.npc);
       if (command.type === 'CreateOrganization') causal.organizations[command.organization.id] = command.organization;
       if (command.type === 'CreateLocation') causal.locations[command.location.id] = command.location;
       if (command.type === 'SaveTask') causal.tasks[command.task.id] = command.task;

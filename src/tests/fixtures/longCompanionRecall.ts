@@ -31,8 +31,8 @@ export function longCompanionRecallFixture() {
   state.npc.partner = { ...npc('partner'), name: '林晚', aliases: ['小晚'], kind: 'special', onScene: true,
     relationshipText: '长期同行，最近已调整承诺的履行计划。', background: '曾经历初识、关系转折、争吵与和解。',
     detailedBackground: '完整私人经历与最新档案，不能因召回降噪而裁剪。', activeGoals: [], habits: ['早餐后整理桌面'],
-    memories: Array.from({ length: 293 }, (_, index) => memory(index + 8)),
-    longTermMemories: companionMilestones.map(number => ({ ...memory(number), id: `long-${number}` })), offscreenTaskIds: [],
+    memories: [...Array.from({ length: 293 }, (_, index) => memory(index + 8)), ...companionMilestones.map(number => ({ ...memory(number), id: `long-${number}` }))],
+    longTermMemories: [], offscreenTaskIds: [],
     privateProfile: { firstExperienceText: '正式私人资料标记，三个阶段都可完整读取。' } };
   state.memories.npcSummaries.partner = [0, 100, 200].map((start, index) => ({
     id: `broad-${index}`, text: '共同生活包含初识、争吵、和解、旧屋承诺及其变化，也包含早餐、散步、聊天和工作。',

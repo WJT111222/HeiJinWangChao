@@ -88,7 +88,7 @@ export const variableCommandSchemas = [
     npcId: IdSchema,
     memory: NpcMemorySchema,
     knowledgeKind: z.enum(['observed', 'reported', 'suspected']),
-    layer: z.enum(['personal', 'longTerm']),
+    layer: z.enum(['personal', 'longTerm']).optional(), // legacy input only; both write npc.memories
     addToKnownInformation: z.boolean(),
   }),
   z.strictObject({ ...base, type: z.literal('CreateLocation'), location: LocationSchema }),
@@ -232,10 +232,7 @@ export function applyVariableCommand(
         memory = command.memory;
       requireData(npc, 'NOT_FOUND', 'NPC 不存在');
       const memoryIds = [
-        ...Object.values(state.npc).flatMap((person) => [
-          ...person.memories,
-          ...(person.kind === 'special' ? person.longTermMemories : []),
-        ]),
+        ...Object.values(state.npc).flatMap(person => person.memories),
         ...state.memories.short,
         ...state.memories.medium,
         ...state.memories.long,
@@ -252,18 +249,15 @@ export function applyVariableCommand(
       );
       requireData(
         command.knowledgeKind === 'observed'
-          ? !/^\[(?:转述|推测)\]/.test(memory.text)
-          : memory.text.startsWith(command.knowledgeKind === 'reported' ? '[转述]' : '[推测]'),
+          ? !/^\[(?:转述|推测)\]/.test(memory.text.trimStart())
+          : memory.text.trimStart().startsWith(command.knowledgeKind === 'reported' ? '[转述]' : '[推测]'),
         'KNOWLEDGE_KIND',
         '转述或猜测必须保持其知识性质',
       );
       requireData(memory.knowledgeKind === undefined || memory.knowledgeKind === command.knowledgeKind,
         'KNOWLEDGE_KIND', '记忆认知类型与命令不符');
       const recorded = { ...memory, knowledgeKind: command.knowledgeKind };
-      if (command.layer === 'longTerm') {
-        requireData(npc.kind === 'special', 'NPC_KIND', '普通 NPC 无长期记忆字段');
-        npc.longTermMemories.push(recorded);
-      } else npc.memories.push(recorded);
+      npc.memories.push(recorded);
       if (command.addToKnownInformation) {
         requireData(
           !npc.knownInformation.some(

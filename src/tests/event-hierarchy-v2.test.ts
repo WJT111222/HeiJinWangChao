@@ -26,7 +26,7 @@ it('主事件、并行小事件、旧事件共存：不按预计日期限制子�
   const a=sub(), b={...sub('sub-two'),fixedEndAt:'2026-10-19T10:00:00+08:00',actorRefs:[{kind:'protagonist' as const,id:'hero'}]};
   const result=apply([a,main(),b,event('legacy')]);
   expect(result.events[a.id]).toEqual(a); expect(result.events[b.id]).toEqual(b);
-  expect(result.events.legacy.eventKind).toBeUndefined(); expect(result.schemaVersion).toBe(7);
+  expect(result.events.legacy.eventKind).toBeUndefined(); expect(result.schemaVersion).toBe(8);
   expect(result.events[a.id].predecessorEventIds).toBeUndefined();
 });
 it('不同组织各自参与不同并行小事件，真实组织ID独立验证',()=>{
@@ -120,7 +120,7 @@ it('World规范化候选→原子Commit→重载→下一回合快照→撤回�
   const draft2=await completeDraft(repo,{variables:await elapsedVariables(repo,'继续整理',60)});
   const second=await repo.commitTurn(submission(draft2,''));
   const restored=await repo.undoTurn({saveId:'save-a',expectedRevision:second.state.revision,expectedDraft:second.draft,operationId:'undo-hierarchy'});
-  expect(restored.state.events).toEqual(first.state.events);expect(restored.state.schemaVersion).toBe(7);
+  expect(restored.state.events).toEqual(first.state.events);expect(restored.state.schemaVersion).toBe(8);
 });
 
 it('主事件预计时间可独立调整，不覆盖子事件固定时间',()=>{
