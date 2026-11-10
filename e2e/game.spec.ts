@@ -189,9 +189,9 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
     .getByRole('button', { name: /NPC/ })
     .click();
   const companionPanel = page.getByRole('dialog', { name: 'NPC', exact: true });
-  await companionPanel.getByRole('button', { name: /陈宁/ }).click();
+  await companionPanel.getByRole('button', { name: '查看人物：陈宁', exact: true }).click();
   for (const fact of [
-    '创角设定',
+    '创角原始设定',
     '记者',
     '多年朋友',
     '戴眼镜',
@@ -260,14 +260,21 @@ test('七面板一键打开、键盘关闭、全量资料只读且保留阅读�
     await expect(modal).toBeVisible();
     if (title === 'NPC') {
       await page.getByLabel('搜索人物').fill('同事');
-      await page.getByRole('button', { name: /同事/ }).click();
+      await page.getByRole('button', { name: '查看人物：同事', exact: true }).click();
       await expect(modal).toContainText('内部关系判断不可见');
       await expect(modal).toContainText('在场人物内部身份不可见');
       await expect(modal.locator('.detail').filter({ hasText: '关系倾向' })).toContainText('30');
     }
-    if (title === '世界事件') {await expect(modal).toContainText('2099');await expect(modal).toContainText('秘密计划不可见');}
+    if (title === '世界事件') {
+      await modal.getByText('旧版独立事件资料', { exact: false }).first().click();
+      await modal.getByRole('button', { name: /公开会面/ }).first().click();
+      await expect(modal).toContainText('2099');
+      const back = modal.getByRole('button', { name: '返回事件列表', exact: true });
+      if (await back.isVisible()) await back.click();
+      await expect(modal).toContainText('秘密计划不可见');
+    }
     if (title === '历史时间轴')
-      expect(await modal.locator('li h3').allTextContents()).toEqual([
+      expect(await modal.getByRole('region', { name: '史料记录', exact: true }).getByRole('heading', { level: 3 }).allTextContents()).toEqual([
         '更早的公开事件',
         '公开会面',
       ]);
