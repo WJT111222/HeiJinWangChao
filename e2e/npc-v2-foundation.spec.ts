@@ -26,7 +26,7 @@ test('NPC新字段与休眠档案真实持久化、刷新及原子撤回；零�
   });
   await page.goto('/#game/save-a'); await page.reload(); await expect(page.locator('.game-layout')).toBeVisible();
   const before = await stored(page);
-  expect(before.state.schemaVersion).toBe(8); expect(before.undo.available).toBe(1);
+  expect(before.state.schemaVersion).toBe(9); expect(before.undo.available).toBe(1);
   expect(before.state.npc.person.usualLocations[0]).toMatchObject({ locationId: 'home', knownToProtagonist: false });
   expect(before.state.npc.special.kind).toBe('ordinary'); expect(before.state.dormantNpcProfiles.special.profile).toHaveProperty('privateProfile');
   await page.getByRole('button', { name: '撤回（1）', exact: true }).click();
@@ -59,7 +59,7 @@ test('V6联系人/初始同伴无损升级，旧RetireNpc拒绝且刷新不删�
   });
   await page.goto('/#game/save-a'); await page.reload(); await expect(page.locator('.game-layout')).toBeVisible();
   const migrated = (await stored(page)).state;
-  expect(migrated).toEqual(original); expect(migrated.schemaVersion).toBe(8);
+  expect(migrated).toEqual(original); expect(migrated.schemaVersion).toBe(9);
   expect(migrated.npc['npc-a'].phoneContact).toBeUndefined(); expect(migrated.npc['npc-a'].usualLocations).toBeUndefined();
   const failed = await page.evaluate(async () => {
     const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open();

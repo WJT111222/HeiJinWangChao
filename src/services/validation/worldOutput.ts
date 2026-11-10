@@ -64,6 +64,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     try {
       switch (command.type) {
         case 'UpdateNpc': {
+          requireWorld(!['phoneContact','usualLocations','detailedBackground','habits','relationshipNetwork'].some(key => Object.hasOwn(command.changes,key)), 'permission');
           requireWorld(causal.npc[command.npcId] && actorAllowed({kind:'npc', id:command.npcId}), 'permission');
           requireWorld(!command.affinityChange && command.changes.relationshipText === undefined
             && command.changes.lastInteractionAt === undefined && command.changes.onScene !== true, 'permission');

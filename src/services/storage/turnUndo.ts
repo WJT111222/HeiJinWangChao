@@ -1,3 +1,4 @@
+import { retainNpcChoices } from '../../domain/npc/profiles';
 import { z } from 'zod';
 import { CountSchema, IdSchema, requireData } from '../../domain/common';
 import { GameStateSchema } from '../../domain/state';
@@ -16,6 +17,7 @@ const ControlSchema = z.strictObject({
   records: z.array(DescriptorSchema).max(undoPolicy.maxTurns),
   input: z.string().max(100000), memoryPaused: z.boolean(),
   notice: z.enum(['budget', 'quota', 'legacy_write']).optional(),
+  lastNpcManagement: z.strictObject({operationId:IdSchema,request:z.string(),managementRevision:CountSchema}).optional(),
   lastUndo: z.strictObject({ operationId: IdSchema, revision: CountSchema, draftTurnId: IdSchema }).optional(),
 });
 export type SaveControl = z.infer<typeof ControlSchema>;
@@ -109,7 +111,7 @@ export async function restoreSnapshot(tx: IDBTransaction, state: GameState, cont
     && before.journal.every((entry, index) => entry.turnId === state.journal[index]?.turnId && entry.revision === state.journal[index]?.revision),
   'UNDO_CORRUPT', '恢复点与当前时间线不一致，未修改存档');
   // Business time can go back; concurrency revision must never do so (ABA protection).
-  const restored = GameStateSchema.parse({ ...before, revision: state.revision + 1, updatedAt: new Date().toISOString() });
+  const restored = GameStateSchema.parse({ ...retainNpcChoices(before,state), revision: state.revision + 1, updatedAt: new Date().toISOString() });
   await request(tx.objectStore('turnUndo').delete([state.saveId, head!.turnId]));
   control.records.pop();
   control.epoch = `epoch-${crypto.randomUUID()}`;

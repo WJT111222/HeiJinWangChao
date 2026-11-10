@@ -1,3 +1,4 @@
+import { setNpcImportance } from '../../domain/npc/profiles';
 import { timelineStores, newSaveControl, readControl, writeControl, clearUndoRecords, recordUndo, inspectUndo, restoreSnapshot, assertMemoryLineage } from './turnUndo';
 import type { MemoryLineage, UndoStatus } from './turnUndo';
 import { request, transaction } from './idb';
@@ -104,6 +105,42 @@ export class SaveRepository {
   }
 
   close(): void { this.database.close(); }
+
+  /** Management CAS is separate from narrative revision: retain the entire draft,
+   * increment its CAS revision, and invalidate pre-management summary/phase responses. */
+  async setNpcImportance(input: {saveId:string;expectedRevision:number;expectedManagementRevision:number;
+    expectedDraftRevision?:number;expectedTurnId?:string;npcId:string;identityKey:string;choice:'ordinary'|'special';operationId:string}) {
+    const checked = z.strictObject({saveId:IdSchema,expectedRevision:CountSchema,expectedManagementRevision:CountSchema,
+      expectedDraftRevision:CountSchema.optional(),expectedTurnId:IdSchema.optional(),npcId:IdSchema,identityKey:z.string().min(1),
+      choice:z.enum(['ordinary','special']),operationId:IdSchema}).parse(input);
+    const session = reserveStageSession(checked.saveId);
+    try { return await withBrowserLock(checked.saveId,()=>transaction(this.database,timelineStores,'readwrite',async tx=>{
+      session.check();
+      const state=readState(await request(tx.objectStore('saves').get(checked.saveId)),checked.saveId);
+      const raw=await request(tx.objectStore('drafts').get(checked.saveId));
+      const draft=raw===undefined?undefined:TurnDraftSchema.parse(raw);
+      const control=await readControl(tx,state.saveId)??newSaveControl(state.saveId), signature=fingerprint(checked);
+      if(control.lastNpcManagement?.operationId===checked.operationId) {
+        requireData(control.lastNpcManagement.request===signature && control.lastNpcManagement.managementRevision===(state.npcManagementRevision??0)
+          && state.npc[checked.npcId]?.identityKey===checked.identityKey && state.npc[checked.npcId]?.importancePreference===checked.choice,
+          'NPC_MANAGEMENT_CONFLICT','人物管理回执已被后续操作取代');
+        return {state,draft,replayed:true};
+      }
+      requireData(state.revision===checked.expectedRevision && (state.npcManagementRevision??0)===checked.expectedManagementRevision,
+        'REVISION_CONFLICT','存档或人物管理版本已改变');
+      requireData(draft?.draftRevision===checked.expectedDraftRevision && draft?.turnId===checked.expectedTurnId,
+        'DRAFT_CONFLICT','草稿已改变，请重新读取后管理人物');
+      const next=setNpcImportance(state,checked.npcId,checked.identityKey,checked.choice);
+      next.npcManagementRevision=(state.npcManagementRevision??0)+1;
+      const nextDraft=draft?TurnDraftSchema.parse({...draft,draftRevision:draft.draftRevision+1}):undefined;
+      control.epoch=`epoch-${crypto.randomUUID()}`;delete control.lastUndo;
+      control.lastNpcManagement={operationId:checked.operationId,request:signature,managementRevision:next.npcManagementRevision};
+      await request(tx.objectStore('saves').put(GameStateSchema.parse(next)));
+      if(nextDraft)await request(tx.objectStore('drafts').put(nextDraft));
+      await writeControl(tx,control);
+      return {state:next,draft:nextDraft,replayed:false};
+    })); } finally {session.release();}
+  }
 
   async undoStatus(saveId: string): Promise<UndoStatus> {
     IdSchema.parse(saveId);
