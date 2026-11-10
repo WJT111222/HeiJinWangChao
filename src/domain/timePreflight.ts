@@ -28,7 +28,22 @@ interface Intent {
   targetAt?: string;
   endWindow?: { from: string; to: string };
 }
+// Calendar spans are advisory date windows, never fixed 30-day months or invented stop instants.
+function calendarIntent(clock:string,action:string):Intent|undefined {
+  const match=action.trim().match(new RegExp(`^(?:直接)?(?:跳过|过|等待|等|休息|工作)?\\s*(${digits}|半)\\s*(?:个)?(月|年)(?:后)?(?:再回来|再说|再继续)?[。！!]?\\s*$`));
+  if(!match)return undefined;
+  const amount=match[1]==='半'?0.5:number(match[1]),months=amount===undefined?NaN:amount*(match[2]==='年'?12:1);
+  const unknown:Intent={actionKind:'wait',resolution:'unknown'};
+  if(!Number.isSafeInteger(months)||months<=0)return unknown;
+  const local=new Date(Date.parse(clock)+china),year=local.getUTCFullYear(),month=local.getUTCMonth()+months;
+  const targetYear=year+Math.floor(month/12),targetMonth=month%12;
+  if(targetYear>9999)return unknown;
+  const last=new Date(Date.UTC(targetYear,targetMonth+1,0)).getUTCDate();
+  const start=Date.UTC(targetYear,targetMonth,Math.min(local.getUTCDate(),last))-china;
+  return {actionKind:'wait',resolution:'estimated',endWindow:{from:stamp(start),to:stamp(start+day-1)}};
+}
 function timeIntent(clock: string, action: string): Intent {
+  const calendar=calendarIntent(clock,action);if(calendar)return calendar;
   const now = Date.parse(clock), local = new Date(now + china);
   const matches = [...action.matchAll(/睡觉|睡眠|睡|休息|休养|等候|等待|等|旅行|乘车|坐车|开车|行驶|坐火车|乘火车|步行|赶路|飞行|工作|上班/g)];
   const live = matches.filter((m) => !isNegatedFact(action, m.index, m.index + m[0].length) &&
@@ -112,8 +127,8 @@ export function timePreflight(state: GameState, action: string) {
   }
   candidates.sort((a, b) => Date.parse(a.at) - Date.parse(b.at) || a.id.localeCompare(b.id));
   return { ...intent, from: state.worldClock, locationId: state.protagonist.locationId, candidates,
-    policy: '这是条件候选，预计终止节点不表示完成、通知或必然中断。需有实际敲门/声音/可及时获知通讯/直接阻碍的正文事实；不能因到期自动完成，不代替玩家接受或回应。没有实际中断可继续原行动。时间只由后续变量候选及正式事务提交。',
-    guideContract: '明确/有界长行动须在变量规划给出一条group=time，subjectHint=time:end（完成）、time:pause（其他真实原因提前停下）或time:interrupt:<候选id>；observedFact填写本轮实际停止时间ISO（+08:00），textEvidence简述实际行动或停止原因，可概括而无需逐字引用。中断只能停在候选时间，不能先到终点再回写。估计不是保证抵达，可在窗口内交还控制权；早晨6至12点仅为估计语义范围，不是固定唤醒时间。' };
+    policy: '这是旧辅助候选，不是Story入场许可清单；完整事件身份与时间另见EVENT_NARRATION_INDEX。预计终止节点不表示完成、通知或必然中断。需有实际敲门/声音/可及时获知通讯/直接阻碍的正文事实；不能因到期自动完成，不代替玩家接受或回应。没有实际中断可继续原行动。时间只由后续变量候选及正式事务提交。',
+    guideContract: '明确/有界长行动须在变量规划给出一条group=time，subjectHint=time:end（完成）、time:pause（其他真实原因提前停下）或time:interrupt:<候选id>；observedFact填写本轮实际停止时间ISO（+08:00），textEvidence简述实际行动或停止原因，可概括而无需逐字引用。旧interrupt只能停在候选时间；Story自主入场可用time:pause声明实际停止点，不需要预检候选。暂停时程序采用该停止时间，变量不得越过或另写时间。不能先到终点再回写。估计不是保证抵达，可在窗口内交还控制权；早晨6至12点仅为估计语义范围，不是固定唤醒时间。' };
 }
 // 语义分类由同一次正文请求完成；程序验证人物和两段玩家原请求来源，不解析小说文风。
 const HistoricalPerspectiveSchema = z.strictObject({
@@ -181,6 +196,11 @@ export function validateTimeCommands(state: GameState, draft: TurnDraft, command
     return;
   }
   // 只保护明确结构化中断上界，不从小说关键词推算必须经过多少秒。
+  if (draft.story?.variableGuide.some((g) => g.group==='time' && g.subjectHint==='time:pause')) {
+    const outcome=timeOutcome(state,draft)!;
+    requireData(commands.filter(c=>c.type==='SetWorldClock').every(c=>Date.parse(c.worldClock)===Date.parse(outcome.at)),
+      'TIME_PREFLIGHT','变量时钟与Story实际暂停时间冲突');
+  }
   if (draft.story?.variableGuide.some((g) => g.subjectHint?.startsWith('time:interrupt:'))) {
     const outcome = timeOutcome(state, draft);
     requireData(!outcome || commands.filter((c) => c.type === 'SetWorldClock').every((c) => Date.parse(c.worldClock) <= Date.parse(outcome.at)),

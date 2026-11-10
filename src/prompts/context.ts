@@ -1,3 +1,4 @@
+import { storyEventIndex } from '../domain/events/narration';
 import { stageResults } from '../domain/events/stages';
 import { worldNpcAllowed } from '../domain/npc/worldAccess';
 import { pendingEventEntries } from '../domain/events/interactions';
@@ -93,6 +94,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
           : undefined,
       SCENE_NPCS: Object.values(state.npc).filter((npc) => npc.onScene),
       KNOWN_EVENTS: events,
+      EVENT_NARRATION_INDEX:storyEventIndex(state),
       EVENT_ENTRIES: pendingEventEntries(state),
       EVENT_PARTICIPATION: Object.values(state.events).flatMap(event=>event.protagonistEntry?.status==='presented' && !['resolved','cancelled'].includes(event.status)
         ? [{eventId:event.id,entryId:event.protagonistEntry.id,status:'presented'}] : []),
@@ -164,7 +166,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       EVENT_SCHEDULE: historicalPerspective(state,draft!) ? {readOnly:true,policy:'纯过去视角只读，不处理当前世界到期事件；原排程保留到正常世界回合。'} : worldEventSchedule(state, temporary),
       variablePending,
       PLAYER_ACTION: draft!.userInput,
-      STORY_RESULT: { ...draft!.story!, eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction) },
+      STORY_RESULT: { ...draft!.story!, eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction), eventNarrations: draft!.story!.variableGuide.filter(guide=>guide.eventNarration) },
       VARIABLE_RESULT: variablePending ? undefined : draft!.variables,
       // 投影提供候选内容，不产生新的正式版本；模型的expectedRevision仍须使用正式基线。
       ...sharedContext({ ...temporary, revision: original.revision }, settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {

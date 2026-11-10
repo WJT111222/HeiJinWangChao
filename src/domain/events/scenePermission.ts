@@ -1,13 +1,15 @@
+import { storyEventNarrations } from './narration';
+import type { TurnDraft } from '../drafts';
 import { requireData } from '../common';
 import type { GameState } from '../state';
 import type { WorldEvent } from './schema';
 import { SceneEventStateSchema } from './schema';
 import { fingerprint } from '../commands';
 
-type SceneState = Pick<GameState, 'protagonist' | 'npc' | 'events'>;
+type SceneState = GameState;
 
 /** Variables现场权限：只读正式现场与整批合法投影，不从正文或组织归属推断在场。 */
-export function validateSceneEventUpdate(before: SceneState, after: SceneState, event: WorldEvent, turnId: string) {
+export function validateSceneEventUpdate(before: SceneState, after: SceneState, event: WorldEvent, turnId: string, story?:TurnDraft['story']) {
   const original = before.events[event.id];
   requireData(original, 'SCENE_PERMISSION', '变量只能更新已有现场事件');
   const presentNpc = (id: string) => before.npc[id]?.onScene === true || after.npc[id]?.onScene === true;
@@ -19,7 +21,8 @@ export function validateSceneEventUpdate(before: SceneState, after: SceneState, 
   const entry=original.protagonistEntry, actual=after.events[event.id]?.protagonistEntry;
   const intervention=original.eventKind==='sub' && entry && actual?.id===entry.id && actual.handledTurnId===turnId
     && !['pending','invalidated'].includes(actual.status);
-  requireData((sceneRelated && allNpcsPresent) || intervention, 'SCENE_PERMISSION', '变量只能更新与主角或本幕在场人物相关的现场事件');
+  const authored=story && storyEventNarrations(before,story).some(g=>g.eventNarration?.mode==='enter' && g.eventNarration.eventId===event.id);
+  requireData((sceneRelated && allNpcsPresent) || intervention || authored, 'SCENE_PERMISSION', '变量只能更新与主角或本幕在场人物相关的现场事件');
   const mutable = new Set<string>([...SceneEventStateSchema.keyof().options, 'sourceTurnIds']);
   const fixed = (value: WorldEvent) => Object.fromEntries(Object.entries(value).filter(([key]) => !mutable.has(key)));
   requireData(fingerprint(fixed(original)) === fingerprint(fixed(event)), 'SCENE_PERMISSION', '变量不能修改事件规划、影响或关联字段');
