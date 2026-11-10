@@ -17,6 +17,7 @@ import { record } from '../services/ai/protocols';
 import { parseTextVariables, parseWorld } from '../services/validation/aiOutputs';
 import { npc } from './fixtures/game';
 import { npcAcceptanceState } from './fixtures/npcAcceptance';
+import { VariableStateProjectionSchema } from './fixtures/variableState';
 import { legacyNpcMemories, fullPrivateProfile } from './fixtures/npcUnified';
 import { npcSummaryOutput } from './fixtures/npcMemory';
 import { expectWorldWithNpcProjection, sentContext } from './fixtures/contextAssertions';
@@ -226,4 +227,20 @@ it('真实总结HTTP进行中取消星标：迟到结果拒绝，已发请求账
   expect(manual!.memories.npcSummaries.special).toHaveLength(3); expect(manual!.npc.special.kind).toBe('ordinary');
   expect(manual!.dormantNpcProfiles!.special.profile.privateProfile).toEqual(fullPrivateProfile);
   expect(attempts.getItem(summaryAttemptKey(state, 'npc'))).toBe(''); expect(JSON.parse(attempts.getItem(rateKey)!)).toHaveLength(1);
+});
+
+it('旧Mock只读解析器匹配第四批实际请求，省略兼容空标记但不补造或接受休眠/额外字段', async () => {
+  const a = await setup(npcAcceptanceState(), 'npc-final-read-shape');
+  const draft = rerollStory(a.initial, { turnKind: 'regular', narrative: '【旁白】人物继续交流。', summary: '继续交流', variableGuide: [] });
+  for (const stage of ['story', 'variables', 'world'] as const) {
+    const prompt = await composePrompt({ state: a.state, settings: a.settings, draft, stage, mode: 'regular', userInput: draft.userInput });
+    const view = VariableStateProjectionSchema.parse(prompt.context.SAVE_STATE);
+    expect(view.npc.special).not.toHaveProperty('longTermMemories');
+    expect(view.npc.special.memories).toEqual(a.state.npc.special.memories);
+    expect(view.memories.npcSummaries).toEqual(a.state.memories.npcSummaries);
+    expect(VariableStateProjectionSchema.safeParse({ ...view, dormantNpcProfiles: {} }).success).toBe(false);
+    expect(VariableStateProjectionSchema.safeParse({ ...view, npc: { ...view.npc, special: { ...view.npc.special, longTermMemories: [] } } }).success).toBe(false);
+    expect(VariableStateProjectionSchema.safeParse({ ...view, npc: { ...view.npc, special: { ...view.npc.special, unregisteredField: 'bad' } } }).success).toBe(false);
+  }
+  expect(await a.repo.load('save-a')).toEqual(a.state);
 });

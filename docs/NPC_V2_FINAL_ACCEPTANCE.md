@@ -31,6 +31,14 @@
 
 不允许通过上述入口更新 id/identityKey。空姓名、错误类型与非法别名数组仍拒绝。字段本身已存在于V9，因此没有存档结构或迁移变化。没有修改 Prompt Markdown、Manifest、sources.lock：本轮修复的是动态生成的命令Schema/目录，源提示词内容未变，prompts:check另行验证。
 
+## 扩展验收发现的旧 Mock 契约修正
+
+第一次冻结HEAD `7621053` 的完整Vitest 2991/2991及工程检查通过，但扩展浏览器开跑后，`continuous-turns` 的Mock抛出Zod错误：`npc.companion.longTermMemories` 缺失。Trace中Variables HTTP未被Mock正常完成，界面仍等待响应。这不是正式存档丢记忆，而是 `src/tests/fixtures/variableState.ts` 仍使用正式NPC结构解析第四批只读投影；后者按既定协议不再传空的旧长期标记。
+
+仅修测试辅助Schema：复用OrdinaryNpcSchema和去掉兼容空标记的SpecialNpcSchema，保持strict对象与entityTable身份校验；同时拒绝休眠档案、旧标记和未注册字段，不向投影补造完整存档。新增真实Composer三阶段回归核对原始记忆/总结未丢失、辅助解析器不改正式状态。GameStateSchema、npcContext、Runtime/Commit没有因此放宽或修改。
+
+另一个使用该辅助Schema的浏览器文件是time-preflight，因此定向复测及最终扩展集合也纳入它，最终计划24文件、232项。首次扩展批次主动SIGINT保存JSON/Trace后修正：实际15通过、6失败、2中断、191未执行（Playwright stats.skipped=193）；这是未完成批次，不当成完整验收，也未加入skip/fixme。
+
 ## 实际联调链路与覆盖分工
 
 新增 `npc-final-runtime.test.ts` 使用真实 AiClient 的Mock transport、TurnCoordinator、正式文本解析与World校验、fake-indexeddb Repository；`npc-final-acceptance.spec.ts` 补真实React点击、HTTP拦截、IndexedDB、刷新与双端阅读。既有五批专项继续完整执行，不复制所有相同断言。
@@ -160,12 +168,16 @@ NPC_FINAL_METRICS=/workspace/npc6-scale-metrics.json npx vitest run src/tests/np
 | 第六批首次完整Vitest | 2990 | 1 | 0 | 旧负例将identity视为不可写，与本轮明确补齐的职业更新冲突；保留负例为不可修改的稳定identityKey，新反例亦核验id/identityKey不可写 |
 | 冻结前直接受影响四文件 | 178 | 0 | 0 | 含新增Runtime/压力、旧文本执行器、实际目录，补大型V8迁移测量 |
 | 冻结前提示词检查 | 93 | 0 | 0 | 原资源/Manifest未变 |
+| 第一次冻结HEAD完整Vitest | 2991 | 0 | 0 | 7621053，新增只读辅助解析器测试前 |
+| 扩展浏览器中止批次 | 15 | 6 | 193 | stats.skipped含2中断+191未执行；6项为同一个旧Mock契约错误，非完整批次 |
+| 只读Mock修正后定向单元 | 66 | 0 | 0 | 实际Composer、原始记忆/总结、strict拒绝未知字段与休眠泄漏 |
+| 连续回合＋时间预检双端定向 | 30 | 0 | 0 | desktop15/mobile15，含真实创角后连续十回合；未改原超时和业务断言 |
 
 TypeScript、ESLint、生产构建、差异检查通过。保留既有>500kB chunk提醒，不扩展拆包。路径计数测试从80同步为83，新增三条精确路径断言；没有减少命令类别、ID/权限/事务安全断言。
 
-**冻结提交的最终复验单独记录在本PR最终验收评论**：在已提交HEAD依序运行完整Vitest、提示词检查、TypeScript、ESLint、构建、差异检查，再单独运行23文件、214项相关desktop/mobile Chromium。不能把上表120与4相加当作这个扩展批次。若最终失败必须先解决，不以本表宣布最终全绿。保留冻结提交不为更新测试报告再次改动代码，最终SHA与实际通过/失败/跳过以PR评论及交付回复为准。
+**冻结提交的最终复验单独记录在本PR最终验收评论**：在已提交HEAD依序运行完整Vitest、提示词检查、TypeScript、ESLint、构建、差异检查，再单独运行24文件、232项相关desktop/mobile Chromium。不能把上表120与4相加当作这个扩展批次。若最终失败必须先解决，不以本表宣布最终全绿。保留冻结提交不为更新测试报告再次改动代码，最终SHA与实际通过/失败/跳过以PR评论及交付回复为准。
 
-冻结验证命令：
+冻结验证命令（浏览器可同时使用line,json记录进度，JSON通过PLAYWRIGHT_JSON_OUTPUT_FILE单独保存）：
 
 ```sh
 npm test -- --reporter=json --outputFile=/workspace/npc6-full-head.json
@@ -174,7 +186,7 @@ npm run typecheck
 npm run lint
 npm run build
 git diff --check
-CI=1 CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/npc-final-acceptance.spec.ts e2e/npc-directory.spec.ts e2e/npc-directory-persistence.spec.ts e2e/npc-importance.spec.ts e2e/npc-context-tiers.spec.ts e2e/npc-unified-memory.spec.ts e2e/npc-v2-foundation.spec.ts e2e/npc-memory.spec.ts e2e/xianggui-private-profile.spec.ts e2e/turn-undo.spec.ts e2e/undo-summary-recovery.spec.ts e2e/world-handoff.spec.ts e2e/game.spec.ts e2e/game-window.spec.ts e2e/memory.spec.ts e2e/world-observer.spec.ts e2e/continuous-turns.spec.ts e2e/turn-coordinator.spec.ts e2e/memory-maintenance.spec.ts e2e/memory-summary-v2.spec.ts e2e/world-runtime.spec.ts e2e/player-memory.spec.ts e2e/turn-undo-capacity.spec.ts --project=desktop --project=mobile --reporter=json
+CI=1 CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/npc-final-acceptance.spec.ts e2e/npc-directory.spec.ts e2e/npc-directory-persistence.spec.ts e2e/npc-importance.spec.ts e2e/npc-context-tiers.spec.ts e2e/npc-unified-memory.spec.ts e2e/npc-v2-foundation.spec.ts e2e/npc-memory.spec.ts e2e/xianggui-private-profile.spec.ts e2e/turn-undo.spec.ts e2e/undo-summary-recovery.spec.ts e2e/world-handoff.spec.ts e2e/game.spec.ts e2e/game-window.spec.ts e2e/memory.spec.ts e2e/world-observer.spec.ts e2e/continuous-turns.spec.ts e2e/turn-coordinator.spec.ts e2e/memory-maintenance.spec.ts e2e/memory-summary-v2.spec.ts e2e/world-runtime.spec.ts e2e/player-memory.spec.ts e2e/turn-undo-capacity.spec.ts e2e/time-preflight.spec.ts --project=desktop --project=mobile --reporter=json
 ```
 
 
