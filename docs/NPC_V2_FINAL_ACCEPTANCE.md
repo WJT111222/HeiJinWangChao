@@ -39,6 +39,10 @@
 
 另一个使用该辅助Schema的浏览器文件是time-preflight，因此定向复测及最终扩展集合也纳入它，最终计划24文件、232项。首次扩展批次主动SIGINT保存JSON/Trace后修正：实际15通过、6失败、2中断、191未执行（Playwright stats.skipped=193）；这是未完成批次，不当成完整验收，也未加入skip/fixme。
 
+另外，第二次冻结HEAD `dfafea9` 的完整Vitest 2992/2992及工程检查通过。扩展浏览器运行到player-memory时，旧夹具将同一个`hidden-id`用于短、中、长期及NPC总结，正式全局记忆ID约束正确拒绝，首页显示无法读取卡片。仅为这些独立表示分配不同ID，并在测试写库前执行GameStateSchema.parse；原文本、来源、可见性、全部阅读/费用/不写存档断言保持。未修改任何正式校验。
+
+第二次扩展中止保存：97通过、1失败、2中断、132未执行（stats.skipped=134）。单个失败就是该坏夹具，不是把未执行项目计作通过；Trace已保留。修正后另行定向执行player-memory、world-runtime、turn-undo-capacity双端20/20通过。所有中止批次与最终完整批次独立记录。
+
 ## 实际联调链路与覆盖分工
 
 新增 `npc-final-runtime.test.ts` 使用真实 AiClient 的Mock transport、TurnCoordinator、正式文本解析与World校验、fake-indexeddb Repository；`npc-final-acceptance.spec.ts` 补真实React点击、HTTP拦截、IndexedDB、刷新与双端阅读。既有五批专项继续完整执行，不复制所有相同断言。
@@ -172,6 +176,9 @@ NPC_FINAL_METRICS=/workspace/npc6-scale-metrics.json npx vitest run src/tests/np
 | 扩展浏览器中止批次 | 15 | 6 | 193 | stats.skipped含2中断+191未执行；6项为同一个旧Mock契约错误，非完整批次 |
 | 只读Mock修正后定向单元 | 66 | 0 | 0 | 实际Composer、原始记忆/总结、strict拒绝未知字段与休眠泄漏 |
 | 连续回合＋时间预检双端定向 | 30 | 0 | 0 | desktop15/mobile15，含真实创角后连续十回合；未改原超时和业务断言 |
+| 第二次冻结HEAD完整Vitest | 2992 | 0 | 0 | dfafea9，包含新的只读投影回归 |
+| 第二次扩展中止批次 | 97 | 1 | 134 | stats.skipped含2中断+132未执行，坏夹具ID重复；非完整批次 |
+| 记忆阅读/World/撤回容量双端定向 | 20 | 0 | 0 | desktop10/mobile10，保留原全部断言 |
 
 TypeScript、ESLint、生产构建、差异检查通过。保留既有>500kB chunk提醒，不扩展拆包。路径计数测试从80同步为83，新增三条精确路径断言；没有减少命令类别、ID/权限/事务安全断言。
 

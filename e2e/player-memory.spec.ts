@@ -6,8 +6,8 @@ import { openGameTools } from './helpers/gameLayout';
 async function seed(page: Page, empty = false) {
   await page.goto('/');
   await page.evaluate(async (empty) => {
-    const fixture = '/src/tests/fixtures/compression.ts', game = '/src/tests/fixtures/game.ts', storage = '/src/services/storage/saveRepository.ts', settingsPath = '/src/ui/settings/model.ts', draftPath = '/src/domain/drafts.ts', configPath = '/src/services/ai/configuration.ts', credentialsPath = '/src/services/ai/credentials.ts';
-    const { compressionState } = await import(fixture), { game: newGame } = await import(game), { SaveRepository } = await import(storage), { defaultSettings, settingsKey } = await import(settingsPath), { createTurnDraft, rerollStory } = await import(draftPath), { defaultAiConfig, newChannel, saveAiConfig } = await import(configPath), { CredentialVault } = await import(credentialsPath);
+    const fixture = '/src/tests/fixtures/compression.ts', game = '/src/tests/fixtures/game.ts', storage = '/src/services/storage/saveRepository.ts', settingsPath = '/src/ui/settings/model.ts', draftPath = '/src/domain/drafts.ts', configPath = '/src/services/ai/configuration.ts', credentialsPath = '/src/services/ai/credentials.ts', statePath = '/src/domain/state.ts';
+    const { compressionState } = await import(fixture), { game: newGame } = await import(game), { SaveRepository } = await import(storage), { defaultSettings, settingsKey } = await import(settingsPath), { createTurnDraft, rerollStory } = await import(draftPath), { defaultAiConfig, newChannel, saveAiConfig } = await import(configPath), { CredentialVault } = await import(credentialsPath), { GameStateSchema } = await import(statePath);
     const state = empty ? newGame() : compressionState('short', 70);
     if (!empty) {
       const base = state.memories.short[0];
@@ -15,9 +15,12 @@ async function seed(page: Page, empty = false) {
       state.memories.long = [{ ...base, id: 'long-internal-id', text: '长期已知经历。'.repeat(1000) + '完整末尾不能截断', sourceTurnIds: state.journal.slice(10, 20).map((entry: { turnId: string }) => entry.turnId) }];
       state.memories.short = state.memories.short.filter((_: unknown, i: number) => i !== 29);
       const secret = { ...base, id: 'hidden-id', text: '后台秘密不得出现', visibility: 'npc_private' };
-      state.memories.short.push(secret); state.memories.medium.push(secret); state.memories.long.push(secret);
-      state.memories.npcSummaries['npc-a'] = [secret];
+      state.memories.short.push(secret);
+      state.memories.medium.push({ ...secret, id: 'hidden-medium-id' });
+      state.memories.long.push({ ...secret, id: 'hidden-long-id' });
+      state.memories.npcSummaries['npc-a'] = [{ ...secret, id: 'hidden-npc-summary-id' }];
     }
+    GameStateSchema.parse(state); // Install only a lawful fixture; production uniqueness is unchanged.
     const repo = await SaveRepository.open(); repo.close();
     await new Promise<void>((resolve, reject) => {
       const request = indexedDB.open('heijinwangchao'); request.onerror = () => reject(request.error);
