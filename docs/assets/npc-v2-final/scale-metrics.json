@@ -1,0 +1,512 @@
+{
+  "environment": {
+    "node": "v24.19.0",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logicalCpus": 3,
+    "totalMemoryBytes": 10452459520
+  },
+  "sampleCount": 3,
+  "note": "Synthetic, warm cache after first sample; elapsed times include GC and shared-host load. SSR is not browser rendering. Heap delta is not peak RAM. No network or usage.",
+  "rows": [
+    {
+      "count": 30,
+      "turns": 100,
+      "rawMemories": 126,
+      "tasks": 3,
+      "events": 2,
+      "organizations": 2,
+      "encodedSnapshotBytes": 162430,
+      "stateBytes": 151645,
+      "heapDeltaBytes": 8951344,
+      "playerView": {
+        "samples": [
+          1.408,
+          0.388,
+          0.805
+        ],
+        "medianMs": 0.805,
+        "maxMs": 1.408
+      },
+      "initialRosterSsr": {
+        "samples": [
+          15.928,
+          5.412,
+          9.504
+        ],
+        "medianMs": 9.504,
+        "maxMs": 15.928
+      },
+      "npcProjection": {
+        "samples": [
+          2.742,
+          0.176,
+          0.107
+        ],
+        "medianMs": 0.176,
+        "maxMs": 2.742
+      },
+      "v8Migration": {
+        "samples": [
+          11.479,
+          6.399,
+          3.996
+        ],
+        "medianMs": 6.399,
+        "maxMs": 11.479
+      },
+      "repositoryLoad": {
+        "samples": [
+          3.206,
+          4.318,
+          2.35
+        ],
+        "medianMs": 3.206,
+        "maxMs": 4.318
+      },
+      "requests": [
+        {
+          "stage": "story",
+          "characters": 124486,
+          "contentBytes": 205290,
+          "serializedMessagesBytes": 217900,
+          "messageCount": 25,
+          "estimateSeparatorCharacters": 24,
+          "estimatedTokens": 81632,
+          "method": "unicode-heuristic-v1",
+          "actual": {},
+          "compose": {
+            "samples": [
+              57.867,
+              13.175,
+              12.225
+            ],
+            "medianMs": 13.175,
+            "maxMs": 57.867
+          }
+        },
+        {
+          "stage": "variables",
+          "characters": 168111,
+          "contentBytes": 233107,
+          "serializedMessagesBytes": 252672,
+          "messageCount": 10,
+          "estimateSeparatorCharacters": 9,
+          "estimatedTokens": 82653,
+          "method": "unicode-heuristic-v1",
+          "actual": {},
+          "compose": {
+            "samples": [
+              27.531,
+              13.456,
+              17.308
+            ],
+            "medianMs": 17.308,
+            "maxMs": 27.531
+          }
+        },
+        {
+          "stage": "world",
+          "characters": 206442,
+          "contentBytes": 276112,
+          "serializedMessagesBytes": 301832,
+          "messageCount": 10,
+          "estimateSeparatorCharacters": 9,
+          "estimatedTokens": 95157,
+          "method": "unicode-heuristic-v1",
+          "actual": {},
+          "compose": {
+            "samples": [
+              25.67,
+              18.565,
+              15.754
+            ],
+            "medianMs": 18.565,
+            "maxMs": 25.67
+          }
+        }
+      ]
+    },
+    {
+      "count": 100,
+      "turns": 100,
+      "rawMemories": 350,
+      "tasks": 10,
+      "events": 9,
+      "organizations": 9,
+      "encodedSnapshotBytes": 305490,
+      "stateBytes": 281139,
+      "heapDeltaBytes": 6319544,
+      "playerView": {
+        "samples": [
+          0.533,
+          0.292,
+          0.426
+        ],
+        "medianMs": 0.426,
+        "maxMs": 0.533
+      },
+      "initialRosterSsr": {
+        "samples": [
+          3.474,
+          3.229,
+          3.047
+        ],
+        "medianMs": 3.229,
+        "maxMs": 3.474
+      },
+      "npcProjection": {
+        "samples": [
+          0.53,
+          0.418,
+          0.472
+        ],
+        "medianMs": 0.472,
+        "maxMs": 0.53
+      },
+      "v8Migration": {
+        "samples": [
+          6.831,
+          6.126,
+          9.539
+        ],
+        "medianMs": 6.831,
+        "maxMs": 9.539
+      },
+      "repositoryLoad": {
+        "samples": [
+          4.292,
+          4.251,
+          7.669
+        ],
+        "medianMs": 4.292,
+        "maxMs": 7.669
+      },
+      "requests": [
+        {
+          "stage": "story",
+          "characters": 239354,
+          "contentBytes": 344574,
+          "serializedMessagesBytes": 372736,
+          "messageCount": 25,
+          "estimateSeparatorCharacters": 24,
+          "estimatedTokens": 125609,
+          "method": "unicode-heuristic-v1",
+          "actual": {},
+          "compose": {
+            "samples": [
+              16.538,
+              15.687,
+              15.153
+            ],
+            "medianMs": 15.687,
+            "maxMs": 16.538
+          }
+        },
+        {
+          "stage": "variables",
+          "characters": 292113,
+          "contentBytes": 381525,
+          "serializedMessagesBytes": 417764,
+          "messageCount": 10,
+          "estimateSeparatorCharacters": 9,
+          "estimatedTokens": 128913,
+          "method": "unicode-heuristic-v1",
+          "actual": {},
+          "compose": {
+            "samples": [
+              19.476,
+              21.357,
+              18.582
+            ],
+            "medianMs": 19.476,
+            "maxMs": 21.357
+          }
+        },
+        {
+          "stage": "world",
+          "characters": 325623,
+          "contentBytes": 420413,
+          "serializedMessagesBytes": 462341,
+          "messageCount": 10,
+          "estimateSeparatorCharacters": 9,
+          "estimatedTokens": 140652,
+          "method": "unicode-heuristic-v1",
+          "actual": {},
+          "compose": {
+            "samples": [
+              23.831,
+              21.627,
+              23.314
+            ],
+            "medianMs": 23.314,
+            "maxMs": 23.831
+          }
+        }
+      ]
+    },
+    {
+      "count": 300,
+      "turns": 300,
+      "rawMemories": 990,
+      "tasks": 30,
+      "events": 29,
+      "organizations": 29,
+      "encodedSnapshotBytes": 885571,
+      "stateBytes": 816059,
+      "heapDeltaBytes": 7188688,
+      "playerView": {
+        "samples": [
+          1.295,
+          0.857,
+          0.715
+        ],
+        "medianMs": 0.857,
+        "maxMs": 1.295
+      },
+      "initialRosterSsr": {
+        "samples": [
+          4.012,
+          3.365,
+          3.171
+        ],
+        "medianMs": 3.365,
+        "maxMs": 4.012
+      },
+      "npcProjection": {
+        "samples": [
+          4.657,
+          7.397,
+          3.732
+        ],
+        "medianMs": 4.657,
+        "maxMs": 7.397
+      },
+      "v8Migration": {
+        "samples": [
+          14.123,
+          16.75,
+          11.896
+        ],
+        "medianMs": 14.123,
+        "maxMs": 16.75
+      },
+      "repositoryLoad": {
+        "samples": [
+          14.25,
+          10.41,
+          14.236
+        ],
+        "medianMs": 14.236,
+        "maxMs": 14.25
+      },
+      "requests": [
+        {
+          "stage": "story",
+          "characters": 571343,
+          "contentBytes": 746323,
+          "serializedMessagesBytes": 818925,
+          "messageCount": 25,
+          "estimateSeparatorCharacters": 24,
+          "estimatedTokens": 252206,
+          "method": "unicode-heuristic-v1",
+          "actual": {},
+          "compose": {
+            "samples": [
+              49.302,
+              42.491,
+              38.488
+            ],
+            "medianMs": 42.491,
+            "maxMs": 49.302
+          }
+        },
+        {
+          "stage": "variables",
+          "characters": 650422,
+          "contentBytes": 809594,
+          "serializedMessagesBytes": 893473,
+          "messageCount": 10,
+          "estimateSeparatorCharacters": 9,
+          "estimatedTokens": 262091,
+          "method": "unicode-heuristic-v1",
+          "actual": {},
+          "compose": {
+            "samples": [
+              44.49,
+              40.247,
+              46.164
+            ],
+            "medianMs": 44.49,
+            "maxMs": 46.164
+          }
+        },
+        {
+          "stage": "world",
+          "characters": 669841,
+          "contentBytes": 836391,
+          "serializedMessagesBytes": 924579,
+          "messageCount": 10,
+          "estimateSeparatorCharacters": 9,
+          "estimatedTokens": 271557,
+          "method": "unicode-heuristic-v1",
+          "actual": {},
+          "compose": {
+            "samples": [
+              52.832,
+              55.437,
+              39.958
+            ],
+            "medianMs": 52.832,
+            "maxMs": 55.437
+          }
+        }
+      ]
+    },
+    {
+      "count": 1000,
+      "turns": 300,
+      "rawMemories": 3230,
+      "tasks": 100,
+      "events": 99,
+      "organizations": 99,
+      "encodedSnapshotBytes": 2327151,
+      "stateBytes": 2121979,
+      "heapDeltaBytes": 97780584,
+      "playerView": {
+        "samples": [
+          4.909,
+          3.878,
+          2.965
+        ],
+        "medianMs": 3.878,
+        "maxMs": 4.909
+      },
+      "initialRosterSsr": {
+        "samples": [
+          5.744,
+          3.833,
+          3.509
+        ],
+        "medianMs": 3.833,
+        "maxMs": 5.744
+      },
+      "npcProjection": {
+        "samples": [
+          43.037,
+          40.754,
+          36.641
+        ],
+        "medianMs": 40.754,
+        "maxMs": 43.037
+      },
+      "v8Migration": {
+        "samples": [
+          38.299,
+          40.924,
+          42.599
+        ],
+        "medianMs": 40.924,
+        "maxMs": 42.599
+      },
+      "repositoryLoad": {
+        "samples": [
+          32.663,
+          39.637,
+          37.937
+        ],
+        "medianMs": 37.937,
+        "maxMs": 39.637
+      },
+      "requests": [
+        {
+          "stage": "story",
+          "characters": 1733134,
+          "contentBytes": 2152274,
+          "serializedMessagesBytes": 2380416,
+          "messageCount": 25,
+          "estimateSeparatorCharacters": 24,
+          "estimatedTokens": 695254,
+          "method": "unicode-heuristic-v1",
+          "actual": {},
+          "compose": {
+            "samples": [
+              117.558,
+              90.009,
+              91.9
+            ],
+            "medianMs": 91.9,
+            "maxMs": 117.558
+          }
+        },
+        {
+          "stage": "variables",
+          "characters": 1904333,
+          "contentBytes": 2307665,
+          "serializedMessagesBytes": 2558284,
+          "messageCount": 10,
+          "estimateSeparatorCharacters": 9,
+          "estimatedTokens": 728168,
+          "method": "unicode-heuristic-v1",
+          "actual": {},
+          "compose": {
+            "samples": [
+              92.494,
+              104.803,
+              88.493
+            ],
+            "medianMs": 92.494,
+            "maxMs": 104.803
+          }
+        },
+        {
+          "stage": "world",
+          "characters": 1874437,
+          "contentBytes": 2292147,
+          "serializedMessagesBytes": 2542245,
+          "messageCount": 10,
+          "estimateSeparatorCharacters": 9,
+          "estimatedTokens": 729681,
+          "method": "unicode-heuristic-v1",
+          "actual": {},
+          "compose": {
+            "samples": [
+              112.939,
+              109.94,
+              104.1
+            ],
+            "medianMs": 109.94,
+            "maxMs": 112.939
+          }
+        }
+      ]
+    }
+  ],
+  "legacy": [
+    {
+      "version": 6,
+      "memories": 21,
+      "migrate": {
+        "samples": [
+          4.838,
+          0.985,
+          0.536
+        ],
+        "medianMs": 0.985,
+        "maxMs": 4.838
+      }
+    },
+    {
+      "version": 7,
+      "memories": 21,
+      "migrate": {
+        "samples": [
+          3.68,
+          1.141,
+          0.585
+        ],
+        "medianMs": 1.141,
+        "maxMs": 3.68
+      }
+    }
+  ]
+}
