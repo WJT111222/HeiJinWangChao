@@ -140,3 +140,28 @@ Story 实际请求新增 `EVENT_NARRATION_INDEX`，包含正式 eventId、eventK
 ## 剩余限制
 
 结构化 at 是实际接触时刻，不是程序从正文推测的时间；模型必须正确填写。Story 在后台上下文中知道秘密，并不代表模型一定始终写对角色知情，Mock 不能证明真实模型文学质量。复杂长跨度自然语言不穷举解析，旧预检仍有自己的辅助筛选；它们不再是主动入场许可。没有实现第三种自动触发请求或让 World 回退当前 Story 的机制。
+
+## PR #88 合并前返修：sub 主动入场的固定时间上界
+
+审查基线和开工时远端 HEAD 均为 `04e200c5a68ff1d6b2c3ca393c05aa27f52a3465`，继续原 `feat/story-event-arbitration-v2` 分支。本轮只修改领域边界、对应回归与本节报告。
+
+原 `storyEventNarrations()` 检查正式时钟、事件起点和非终态，却没有限制 sub 的 enter.at 晚于原 fixedEndAt，可能让作者在已经过期的阶段入场。现在同一个 `narration_time` 校验增加：仅当 `mode=enter && eventKind=sub` 时，要求 `Date.parse(at) <= Date.parse(fixedEndAt)`。比较真实时间戳，不比较日期字符串；精度到毫秒，截止时刻本身允许，+08:00、Z 和其他合法偏移的同一瞬间一致处理。
+
+mention 不加此上界，仍可在阶段结束后获得历史消息。main 的 estimatedEndAt 不参与这个检查；旧未分类 V6 事件保持原语义。没有改 fixedEndAt、Story 时间、规划、回执、后继生成、状态或命令协议。没有增加关键词/语义审批、AI 请求或自动重试。提示词、Manifest、sources.lock 均未改动。
+
+新增10项回归：截止后1毫秒拒绝（两种时区）、截止时刻及之前允许、时区等值、sub mention/main enter/旧事件 enter 无固定上界、文本模拟和伪造 validated 投影不能绕过边界、等值截止时刻的文本Variables→World候选可正常验收。原完整Coordinator→Runtime→Variables→World→Commit→重载/撤回用例继续验证合法提前入场及失败恢复，不删除或放宽原断言。
+
+本轮批次分别记录：
+
+- 修复前筛选新增用例：3失败、7通过、26项因 `-t` 未运行；成功复现过期 enter 被接受及伪造 validated 投影未拒绝的缺口。没有将该筛选批次称为全绿。
+- 修复后6文件定向：198/198通过，无失败、无跳过。
+- 本轮完整 Vitest：2860/2860，102文件，0失败、0跳过；裁定文件36项（原26项加本轮10项）。不是沿用此前2850项成绩。
+- TypeScript、Lint、生产构建通过，构建仅保留既有大chunk提示。完整Diff自查及差异检查通过。
+- 本轮实际运行Chromium：4/4，desktop 2、mobile 2，38.0秒，0失败/跳过/flaky；真实React界面覆盖主动enter及mention的完整三阶段自动提交和刷新。不运行无关全量Chromium。
+- 提示词未改，不单独重复执行prompts:check；本轮完整Vitest包含既有提示词测试。
+
+命令：`npx vitest run src/tests/story-event-arbitration.test.ts -t '原fixedEndAt|不套用小事件|结束后入场'`（修复前）；`npx vitest run src/tests/story-event-arbitration.test.ts src/tests/event-stages-v2.test.ts src/tests/event-hierarchy-v2.test.ts src/tests/scene-event-permission.test.ts src/tests/time-preflight.test.ts src/tests/turn-commit.test.ts`；`npm test -- --reporter=json --outputFile=/workspace/pr88-entry-bound-full.json`；`npm run typecheck`；`npm run lint`；`npm run build`；`git diff --check`。
+
+浏览器：`CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/story-event-arbitration.spec.ts --project=desktop --project=mobile --reporter=json`。日志与结果保留在 `/workspace/pr88-entry-bound-*.log`、`/workspace/pr88-entry-bound-full.json`、`/workspace/pr88-entry-bound-browser.json`。
+
+本次已发现的时间上界缺口无剩余阻断；原报告所述真实模型叙事质量、复杂时间意图及旧严格客户端兼容边界仍然存在。没有调用付费模型、修改真实玩家存档、合并或部署。

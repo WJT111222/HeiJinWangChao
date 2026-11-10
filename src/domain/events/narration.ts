@@ -17,7 +17,9 @@ export function storyEventNarrations(state:GameState,story:Story) {
     requireStoryData(guide.group==='event' && e && !seen.has(n.eventId) && !guide.eventInteraction && (n.mode!=='enter'||!activeEntry),
       'EVENT_ENTRY','事件叙事裁定引用不存在、重复或混用旧回执',{storyRule:'narration_reference',guideIndex,fieldPath});
     requireStoryData(at>=Date.parse(state.worldClock) && at>=Date.parse(e.startAt)
-      && (n.mode!=='enter'||!terminalEvent(e)), 'EVENT_ENTRY','事件叙事裁定时间或入场状态无效',
+      && (n.mode!=='enter'||!terminalEvent(e))
+      && (n.mode!=='enter'||e.eventKind!=='sub'||at<=Date.parse(e.fixedEndAt!)),
+      'EVENT_ENTRY','事件叙事裁定时间或入场状态无效',
       {storyRule:'narration_time',guideIndex,fieldPath});
     requireStoryData(!story.variableGuide.some(g=>g.group==='time'&&g.subjectHint==='time:retrospective'),
       'EVENT_ENTRY','纯历史视角不能声明当前事件接触',{storyRule:'narration_time',guideIndex,fieldPath});
