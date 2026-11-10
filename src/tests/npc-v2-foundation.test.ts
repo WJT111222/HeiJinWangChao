@@ -86,9 +86,9 @@ describe('NPC V2第一批：人物基础与内部休眠', () => {
     sleeping.dormantNpcProfiles!.special.identityKey = 'wrong';
     expect(GameStateSchema.safeParse(sleeping).success).toBe(false);
   });
-  it('初始同伴仍不开放降级，已有记忆与总结的非同伴可安全休眠', () => {
+  it('初始同伴与非同伴均可安全休眠，已有记忆与总结不丢失', () => {
     const state = npcV2State(); state.initialCompanionId = 'special';
-    expect(() => hibernateNpcProfile(state, 'special', state.npc.special.identityKey)).toThrow();
+    expect(hibernateNpcProfile(state, 'special', state.npc.special.identityKey).npc.special.kind).toBe('ordinary');
     const memorized = npcMemoryState(21, true), before = structuredClone(memorized);
     const sleeping = hibernateNpcProfile(memorized, 'npc-a', memorized.npc['npc-a'].identityKey);
     expect(sleeping.npc['npc-a'].memories).toEqual(memorized.npc['npc-a'].memories); expect(memorized).toEqual(before);
@@ -138,7 +138,7 @@ describe('V6 → V7与永久人物保留', () => {
     state = applyNpcSummary(state, batch, parseNpcSummary(JSON.stringify(npcSummaryOutput(batch)), batch, 'legacy-summary'));
     state.initialCompanionId = 'npc-a'; state.contactNpcIds = ['npc-a']; state.contactReviewNpcIds = ['npc-b'];
     const raw = { ...state, schemaVersion: 6 }, before = structuredClone(raw), next = migrateSave(raw);
-    expect(next).toEqual({ ...raw, schemaVersion: 8 }); expect(raw).toEqual(before);
+    expect(next).toEqual({ ...raw, schemaVersion: 9 }); expect(raw).toEqual(before);
     expect(next.memories.npcSummaries['npc-a'][0].npcProvenance?.sourceMemoryIds).toHaveLength(15);
     for (const person of Object.values(next.npc)) { expect(person.phoneContact).toBeUndefined(); expect(person.usualLocations).toBeUndefined(); }
   });
@@ -163,7 +163,7 @@ describe('V6 → V7与永久人物保留', () => {
     expect(DomainCommandSchema.safeParse({ type: 'ChangeNpcKind', npcId: 'person', kind: 'special' }).success).toBe(false);
   });
   it('未来版本与损坏V6拒绝迁移，不修改原文', () => {
-    for (const raw of [{ ...npcV2State(), schemaVersion: 9 }, { ...worldState(), schemaVersion: 6, unknown: true }, { ...worldState(), schemaVersion: 6, npc: { bad: npc() } }]) {
+    for (const raw of [{ ...npcV2State(), schemaVersion: 10 }, { ...worldState(), schemaVersion: 6, unknown: true }, { ...worldState(), schemaVersion: 6, npc: { bad: npc() } }]) {
       const before = structuredClone(raw); expect(() => migrateSave(raw)).toThrow(); expect(raw).toEqual(before);
     }
   });
@@ -202,7 +202,7 @@ describe('V6 → V7与永久人物保留', () => {
       expect(await rawAccess(factory, name, 'saveControls', 'readonly', s => s.get('save-a'))).toEqual(control);
       const current = await repo.loadGame('save-a');
       const restored = await repo.undoTurn({ saveId: 'save-a', expectedRevision: second.state.revision, expectedDraft: current.draft, operationId: 'legacy-undo' });
-      expect(restored.state.schemaVersion).toBe(8); expect(restored.state.npc).toEqual(first.state.npc);
+      expect(restored.state.schemaVersion).toBe(9); expect(restored.state.npc).toEqual(first.state.npc);
       expect(restored.state.journal).toEqual(first.state.journal); expect(restored.state.worldClock).toBe(first.state.worldClock);
     } finally { repo.close(); }
   });
@@ -211,9 +211,9 @@ describe('V6 → V7与永久人物保留', () => {
     try {
       const raw = { ...worldState(), schemaVersion: 6 };
       await rawAccess(factory, name, 'saves', 'readwrite', s => s.put(raw));
-      expect((await repo.load('save-a')).schemaVersion).toBe(8);
-      expect(await rawAccess(factory, name, 'saves', 'readonly', s => s.get('save-a'))).toEqual({ ...raw, schemaVersion: 8 });
-      for (const broken of [{ ...raw, schemaVersion: 9 }, { ...raw, npc: { bad: npc() } }]) {
+      expect((await repo.load('save-a')).schemaVersion).toBe(9);
+      expect(await rawAccess(factory, name, 'saves', 'readonly', s => s.get('save-a'))).toEqual({ ...raw, schemaVersion: 9 });
+      for (const broken of [{ ...raw, schemaVersion: 10 }, { ...raw, npc: { bad: npc() } }]) {
         await rawAccess(factory, name, 'saves', 'readwrite', s => s.put(broken));
         await expect(repo.load('save-a')).rejects.toThrow();
         await expect(repo.save('save-a', 0, 'overwrite', [])).rejects.toThrow();

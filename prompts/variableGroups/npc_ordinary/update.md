@@ -18,3 +18,5 @@ push npc[lin].memories = {"text":"共同处理现场问题","knowledgeKind":"obs
 可set/add npc[id].affinity，程序读取真实前值生成原关系命令，不需要AI填写版本或前值；需更改关系描述时先set relationshipText。整个人物与原始记忆不允许delete。
 
 未确认初始同伴的affinity占位不是已知数值，不能直接add。由模型决定最终绝对好感后用set（原显式affinityChange.from=null也仍可用），再做后续相对增减。
+
+建档前遵守共享NPC V2规则：明确姓名与持续追踪价值同时成立才创建；无名或一次性路人不强制建档。已有ID/identityKey/别名与初始同伴优先复用。AI只可升级，不降级，不覆盖玩家取消意图；新电话、常驻地点和关系网使用共享正式路径，不从旧联系人推断。

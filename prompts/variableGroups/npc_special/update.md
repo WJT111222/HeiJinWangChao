@@ -16,7 +16,7 @@ push npc[lin].memories = {"text":"共同处理现场问题","knowledgeKind":"obs
 特殊NPC沿用普通NPC的现场字段、好感、联系人和个人认知路径。初始同伴已经建档，承接玩家设定，不创建副本。
 创建set npc[id]时kind=special，并在普通完整字段上增加detailedBackground字符串、activeGoals/habits字符串数组、offscreenTaskIds数组；初始记忆为空，未建立的后台任务不虚构引用。
 已有特殊NPC可set npc[id].activeGoals为字符串数组；新原始记忆与普通NPC一样写入memories，不选择个人层/长期层。人物专属资料不改变记忆保存或总结规则。
-当前没有习惯、详细背景、身份或任务引用的现场更新命令；不能set整个已有npc对象冒充更新。重大承诺可先记入本人记忆，任务后续交给World。
+已有特殊人物可更新detailedBackground、habits、relationshipNetwork；普通人物升级或profilePending补齐使用specialProfile，服从NPC_IMPORTANCE的玩家选择。不能set整个已有npc对象冒充更新，不重新生成休眠档案；任务仍需真实来源。
 示例：
 <命令>
 set npc[lin].activeGoals = ["完成资格考试"]
@@ -40,3 +40,5 @@ set npc[id].privateProfile 为对象，可含：
 activeGoals支持push单项、set已有索引、delete已有索引（多个索引倒序）；原整体set数组仍可用。
 
 未确认初始同伴的affinity占位不是已知数值，不能直接add。由模型决定最终绝对好感后用set（原显式affinityChange.from=null也仍可用），再做后续相对增减。
+
+建档前遵守共享NPC V2规则：明确姓名与持续追踪价值同时成立才创建；无名或一次性路人不强制建档。已有ID/identityKey/别名与初始同伴优先复用。AI只可升级，不降级，不覆盖玩家取消意图；新电话、常驻地点和关系网使用共享正式路径，不从旧联系人推断。

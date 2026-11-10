@@ -1,3 +1,4 @@
+import { variableCommandSchemas } from '../../domain/variableCommands';
 import { StoredWorldEventSchema, WorldEventSchema } from '../../domain/events/schema';
 import { z } from 'zod';
 import { DomainCommandSchema } from '../../domain/commands';
@@ -25,7 +26,9 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
     schema: {
       $schema: 'http://json-schema.org/draft-07/schema#',
       oneOf: options.map((option) => {
-        const modelOption = option.shape.type.value === 'CreateNpc'
+        const modelOption = stage === 'world' && option.shape.type.value === 'UpdateNpc'
+          ? variableCommandSchemas[1].safeExtend({changes:variableCommandSchemas[1].shape.changes.omit({phoneContact:true,usualLocations:true,detailedBackground:true,habits:true,relationshipNetwork:true})})
+          : option.shape.type.value === 'CreateNpc'
           ? option.extend({ npc: z.discriminatedUnion('kind', [OrdinaryNpcCreationSchema, SpecialNpcCreationSchema.omit({longTermMemories:true})]) })
           : option.shape.type.value==='SaveEvent' ? option.extend({event:z.union([WorldEventSchema,StoredWorldEventSchema.extend({status:z.enum(['resolved','cancelled'])})])}) : option;
         const schema=z.toJSONSchema(modelOption, { target: 'draft-7', unrepresentable: 'any' });
@@ -64,7 +67,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
           },
     rules: [
       '严格使用各 type 的同级字段，不接受 group/entityId/payload 包装或旧别名。',
-      'NPC V2第一批仅建立持久数据；phoneContact/usualLocations/relationshipNetwork暂作只读背景。仍用现有创建及更新字段，不生成身份切换或休眠写入命令。',
+      'NPC V2：正式人物由AI依据姓名与持续追踪价值建档，不为临时路人编造姓名。Variables可PromoteNpc升级或补齐待完善资料，不能降级或违背玩家ordinary选择；World不修改重要性及新增人物管理字段。休眠档案不可读取。',
       stage === 'world'
         ? 'evidence为非执行的简洁说明，可自然概括；程序不解析证据JSON或审批叙述事实。'
         : 'evidence为简洁来源说明，可概括而不必逐字引用或包含关键词；金额为整数人民币分，price/amount等正值限制以Schema为准。',

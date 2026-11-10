@@ -1,5 +1,7 @@
 # NPC V2 第二批：统一人物记忆
 
+> 第三批现已扩展为V9人物重要性管理，初始同伴可由玩家取消/恢复特殊身份，原记忆与总结不变。本文保留第二批历史验收，当前契约见 [NPC_V2_BATCH3.md](NPC_V2_BATCH3.md)。
+
 ## 基线与范围
 
 开发分支 `feat/npc-v2-unified-memory`，基于并再次核对远端 `main@0fa1ab269280924fab627eda21a3e11f1661d3ff`（第一批 PR #96）。本批不开放身份切换 UI/AI 命令，不开发人物建档判断、联系方式/常驻地点写入和四级上下文；不修改 Story→Variables→World→Commit、费用授权、队列、epoch、CAS、撤回和 IndexedDB 结构。
