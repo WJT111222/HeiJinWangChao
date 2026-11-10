@@ -45,7 +45,7 @@ async function switchFixture(page:Page,mode:'sleep'|'restore') {
 for(const version of [6,7] as const) test(`V${version}实际浏览器迁移与身份往返：记忆和总结可读，香闺七字段完整，零模型请求`,async({page})=>{
   const calls:string[]=[];await page.route('https://**/*',route=>{calls.push(route.request().url());return route.abort();});
   await page.goto('/');const old=await seed(page,version);await page.goto('/#game/save-a');await page.reload();await expect(page.locator('.game-layout')).toBeVisible();
-  const baseline=(await read(page)).state;expect(baseline.schemaVersion).toBe(8);
+  const baseline=(await read(page)).state;expect(baseline.schemaVersion).toBe(9);
   expect(baseline.npc['npc-a'].memories).toEqual(old.memories);expect(baseline.memories.npcSummaries['npc-a']).toEqual(old.summary);
   const sleeping=await switchFixture(page,'sleep');await page.reload();await expect(page.locator('.game-layout')).toBeVisible();
   expect((await read(page)).state).toEqual(sleeping);

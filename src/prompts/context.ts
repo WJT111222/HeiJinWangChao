@@ -136,6 +136,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       STORY_RESULT: draft!.story,
       VARIABLE_GUIDE: draft!.story!.variableGuide,
       TEXT_COMMAND_CATALOG: textVariableCatalog(),
+      NPC_IMPORTANCE: Object.values(state.npc).map(npc=>({npcId:npc.id,identityKey:npc.identityKey,kind:npc.kind,playerPreference:npc.importancePreference??'automatic',profilePending:npc.kind==='special'&&Boolean(npc.profilePending),canRestoreProfile:Boolean(state.dormantNpcProfiles?.[npc.id])})),
     };
   if (stage === 'world') {
     const variablePending = !draft?.variables || draft.variables.validation !== 'validated';

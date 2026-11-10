@@ -191,3 +191,7 @@ RecordHistory通用字段为commandId/type/evidence，entry={id,title,summary,kn
 Story可只回执本幕实际处理的部分pending，余项继续pending。Variables中主角移动自动将未明确同行的原在场NPC设为离场并保持原地点；明确同行者更新地点。NPC可以有多个planned/active/blocked任务；任务归属、终态与交接顺序不变。World可调整事件当前actorRefs，不得改写原startAt或代替主角执行操作。
 
 本协议只读写V6，不迁移旧测试存档，不保留旧时间线或旧World顶层字段双轨兼容。无法读取的旧记录可原样导出或由玩家主动删除。
+
+## NPC V2 第三批增量
+正式GameState V9，人物仍仅ordinary/special；V6/V7/V8经严格迁移兼容。原始记忆统一npc.memories，私人资料休眠不进入AI输入。新增Variables领域命令PromoteNpc（npcId/identityKey/expectedRevision/profile?）只升级或完善待补资料，不提供降级；文本入口为set npc[id].specialProfile，空对象仅恢复既有休眠资料。玩家ordinary选择禁止AI重升，special保留玩家意图；profilePending明确表示缺资料，不代表已发生经历。
+UpdateNpc新增phoneContact/usualLocations、特殊人物detailedBackground/habits/relationshipNetwork字段；只写明确引用与指定对象，不自动传播电话、住址或关系。privateProfile七字段仍走原路径和不可覆盖初次经历约束。玩家管理使用独立CAS及草稿版本/epoch，不写剧情、不推进时钟、不请求AI；World不取得上述新增写权限。

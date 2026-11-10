@@ -111,6 +111,8 @@ describe('运行时 Schema', () => {
     const state = game(); state.npc[special.id] = special; state.initialCompanionId = special.id;
     expect(GameStateSchema.safeParse(state).success).toBe(true);
     state.npc[special.id] = npc();
+    expect(GameStateSchema.safeParse(state).success).toBe(true);
+    delete state.npc[special.id];
     expect(GameStateSchema.safeParse(state).success).toBe(false);
   });
   it.each([-101, 101, NaN, Infinity])('拒绝非法好感度 %s', (affinity) => {

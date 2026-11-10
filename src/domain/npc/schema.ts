@@ -28,12 +28,14 @@ const base = {
 };
 // Absence in legacy saves means unknown, never inferred from the contact registry.
 const publicVariables = {
+  importancePreference: z.enum(['ordinary', 'special']).optional(),
   phoneContact: z.strictObject({ status: z.enum(['unknown', 'known', 'invalid']), note: z.string().optional() }).optional(),
   usualLocations: z.array(z.strictObject({
     locationId: IdSchema, role: z.enum(['home', 'work', 'frequent']), knownToProtagonist: z.boolean(),
   })).optional(),
 };
 export const SpecialProfileSchema = z.strictObject({
+  profilePending: z.literal(true).optional(),
   detailedBackground: z.string(),
   activeGoals: StringsSchema, habits: StringsSchema,
   // Compatibility marker only; V8 raw memories live exclusively in npc.memories.
@@ -51,7 +53,10 @@ export type NPC = z.infer<typeof NpcSchema>;
 export const DormantNpcProfileSchema = z.strictObject({ id: IdSchema, identityKey: TextSchema, profile: SpecialProfileSchema });
 
 // Batch 1 adds persistence only. Existing AI creation/update protocols remain unchanged.
-export const OrdinaryNpcCreationSchema = OrdinaryNpcSchema.omit({ phoneContact: true, usualLocations: true });
-export const SpecialNpcCreationSchema = SpecialNpcSchema.omit({ phoneContact: true, usualLocations: true, relationshipNetwork: true })
+export const OrdinaryNpcCreationSchema = OrdinaryNpcSchema.omit({ importancePreference: true, phoneContact:true, usualLocations:true });
+export const SpecialNpcCreationSchema = SpecialNpcSchema.omit({ importancePreference: true, profilePending: true, phoneContact:true, usualLocations:true, relationshipNetwork:true })
   .extend({ longTermMemories: z.array(NpcMemorySchema).optional() }); // old commands retain their original fingerprint
 export const NpcCreationSchema = z.discriminatedUnion('kind', [OrdinaryNpcCreationSchema, SpecialNpcCreationSchema]);
+
+// Promotion completes the core profile; privateProfile retains its existing protected UpdateNpc path.
+export const PromotionProfileSchema = SpecialProfileSchema.omit({longTermMemories:true,privateProfile:true,profilePending:true});

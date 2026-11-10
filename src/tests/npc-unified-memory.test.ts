@@ -30,7 +30,7 @@ it.each([6, 7] as const)('V%s两层原文、来源与总结无损整合，不猜
   expect(result.memories).toEqual(raw.memories); expect(result.journal).toEqual(raw.journal);
   expect(result.worldClock).toBe(raw.worldClock); expect(result.turnNumber).toBe(raw.turnNumber); expect(raw).toEqual(before);
   expect(npcSummaryCandidates(result, 'npc-a')).toHaveLength(6);
-  expect(migrateSave(result)).toEqual(result); expect(result.schemaVersion).toBe(8);
+  expect(migrateSave(result)).toEqual(result); expect(result.schemaVersion).toBe(9);
 });
 
 it('含真实来源的总结和全部原文随特殊身份降级/恢复保留；香闺七字段逐字往返', () => {

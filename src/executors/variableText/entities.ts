@@ -13,17 +13,24 @@ export const memoryInputSchema = z.strictObject({ text: textInputSchema, knowled
   knowledgeSource: textInputSchema, visibility: z.enum(['npc_private', 'internal', 'player_known']) });
 /** 有限实体操作；创建值使用原领域Schema，路径只绑定稳定ID，不是任意字段补丁。 */
 export function compileEntity(command: ParsedVariableCommand, common: { commandId: string; evidence: string },
-  expectedRevision: number): ExecutionResult<DomainCommand> | undefined {
+  expectedRevision: number, identityKey?: string): ExecutionResult<DomainCommand> | undefined {
   const [root, id, field] = command.path.nodes;
   if (id?.kind !== 'id' || !IdSchema.safeParse(id.id).success) return;
   const creation = command.path.nodes.length === 2 && ['npc', 'organizations', 'tasks'].includes(root.name);
   const relation = command.path.nodes.length === 3 && root.name === 'organizations' && field?.kind === 'field' && field.name === 'protagonistRelation';
   const npc = command.path.nodes.length === 3 && root.name === 'npc' && field?.kind === 'field'
-    && ['affinityChange', 'activeGoals', 'contact'].includes(field.name);
+    && ['affinityChange', 'activeGoals', 'contact', 'specialProfile'].includes(field.name);
   if (!creation && !relation && !npc) return;
   if (command.operation !== 'set') return failed('unsupported_operation');
   let raw: unknown;
-  if (npc && field?.kind === 'field' && field.name === 'activeGoals') {
+  if (npc && field?.kind === 'field' && field.name === 'specialProfile') {
+    const value = object.safeParse(command.value);
+    if (!value.success) return failed('type_mismatch');
+    const owner = command.path.nodes[1];
+    // identityKey is resolved from the formal owner by the compiler below.
+    raw = { ...common,type:'PromoteNpc',expectedRevision,npcId:owner.kind==='id'?owner.id:'',identityKey: identityKey ?? id.id,
+      ...(Object.keys(value.data).length ? {profile:value.data} : {}) };
+  } else if (npc && field?.kind === 'field' && field.name === 'activeGoals') {
     raw = { ...common, type: 'UpdateNpc', expectedRevision, npcId: id.id, changes: {}, activeGoals: command.value };
   } else {
     const value = object.safeParse(command.value);

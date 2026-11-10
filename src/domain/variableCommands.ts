@@ -9,7 +9,7 @@ import {
 } from './common';
 import { AccountSchema } from './economy/schema';
 import { ProtagonistSchema } from './protagonist/schema';
-import { OrdinaryNpcSchema } from './npc/schema';
+import { OrdinaryNpcSchema, SpecialProfileSchema, PromotionProfileSchema } from './npc/schema';
 import { NpcMemorySchema } from './memories/schema';
 import { ImportantItemSchema } from './items/schema';
 import { LocationSchema } from './state';
@@ -36,12 +36,16 @@ const npcChanges = OrdinaryNpcSchema.pick({
   healthText: true,
   lastInteractionAt: true,
   gender: true,
+  phoneContact: true, usualLocations: true,
 })
   .partial()
   .extend({
     locationId: IdSchema.nullable()
       .optional()
       .describe('合法地点 ID；null 显式清除未知去向的地点，须同时离场；省略保持原值'),
+    detailedBackground: z.string().optional(),
+    habits: SpecialProfileSchema.shape.habits.optional(),
+    relationshipNetwork: SpecialProfileSchema.shape.relationshipNetwork,
     privateProfile: z.strictObject({
       bodyDescription: z.string().optional(),
       chestDescription: z.string().optional(),
@@ -123,6 +127,7 @@ export const variableCommandSchemas = [
     locationId: IdSchema.optional(),
     conditionText: TextSchema,
   }),
+  z.strictObject({...base,...version,type:z.literal('PromoteNpc'),npcId:IdSchema,identityKey:TextSchema,profile:PromotionProfileSchema.optional()}),
 ] as const;
 export const VariableCommandSchema = z.discriminatedUnion('type', variableCommandSchemas);
 export type VariableCommand = z.infer<typeof VariableCommandSchema>;
@@ -174,6 +179,28 @@ export function applyVariableCommand(
       Object.assign(state.protagonist, command.changes);
       break;
     }
+    case 'PromoteNpc': {
+      const npc = state.npc[command.npcId];
+      requireData(npc?.identityKey === command.identityKey, 'NPC_IDENTITY', '人物身份已改变');
+      requireData(npc.importancePreference !== 'ordinary', 'NPC_PLAYER_CHOICE', '玩家已取消特殊身份，AI不能重新升级');
+      const archived = state.dormantNpcProfiles?.[npc.id];
+      if (npc.kind === 'ordinary' && archived) {
+        requireData(!archived.profile.privateProfile || npc.gender === 'female' && (npc.age === undefined || npc.age >= 18), 'NPC_KIND', '私密档案恢复资格不符');
+        requireData(!command.profile, 'NPC_PROFILE_EXISTS', '已有专属档案，恢复时不得重新生成');
+        state.npc[npc.id] = {...npc,...archived.profile,kind:'special'};
+        delete state.dormantNpcProfiles![npc.id];
+      } else {
+        requireData(command.profile && (npc.kind === 'ordinary' || npc.profilePending), 'NPC_KIND', '仅升级普通人物或完善待补资料');
+        if (npc.kind === 'special') for (const [field,value] of Object.entries(command.profile!)) {
+          const old = npc[field as keyof typeof npc];
+          requireData(!old || Array.isArray(old) && !old.length || old === '' || JSON.stringify(old) === JSON.stringify(value),
+            'NPC_PROFILE_EXISTS', '补齐不能覆盖已有专属资料');
+        }
+        state.npc[npc.id] = {...npc,...command.profile!,kind:'special',longTermMemories:[]};
+        delete (state.npc[npc.id] as {profilePending?:true}).profilePending;
+      }
+      break;
+    }
     case 'UpdateNpc': {
       const npc = state.npc[command.npcId];
       requireData(npc, 'NOT_FOUND', 'NPC 不存在');
@@ -201,7 +228,13 @@ export function applyVariableCommand(
           'NPC_TIME',
           '互动时间未发生或倒退',
         );
-      const { locationId, privateProfile, gender, ...changes } = command.changes;
+      const { locationId, privateProfile, gender, detailedBackground, habits, relationshipNetwork, ...changes } = command.changes;
+      if (detailedBackground !== undefined || habits !== undefined || relationshipNetwork !== undefined) {
+        requireData(npc.kind === 'special', 'NPC_KIND', '普通人物不能写入休眠专属资料');
+        if (detailedBackground !== undefined) npc.detailedBackground = detailedBackground;
+        if (habits !== undefined) npc.habits = habits;
+        if (relationshipNetwork !== undefined) npc.relationshipNetwork = relationshipNetwork;
+      }
       // 资格：仅 special + female + (年龄未知或 >=18) 可持有私密档案
       const effectiveGender = gender ?? npc.gender;
       const isEligible = npc.kind === 'special' && effectiveGender === 'female' && (npc.age === undefined || npc.age >= 18);

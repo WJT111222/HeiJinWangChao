@@ -47,7 +47,7 @@ describe('旧档联系人暂缓保护与合法退场', () => {
   it('旧非联系人复核也不能授权删除；移除退场提案后任务成果正常保存',async()=>{
  const original=reviewState();original.npc['npc-a'].relationshipText='尚未与主角接触';original.npc['npc-a'].affinity=0;const repo=await repository(original),state=await repo.load('save-a');
  const result={...worldResult([retireCommand(state)]),taskCommands:[finishTask(state)]};expect(()=>parseWorld(JSON.stringify(result),state,worldDraft())).toThrow();result.worldCommands=[reviewRetirement(state)];
- await expect(commit(repo,result)).rejects.toThrow();result.worldCommands=[];const committed=await commit(repo,result);expect(committed.state.npc['npc-a']).toEqual(original.npc['npc-a']);expect(committed.state.contactReviewNpcIds).toContain('npc-a');expect(committed.state.tasks.work.resolution).toBeDefined();expect((await repo.load('save-a')).schemaVersion).toBe(8);
+ await expect(commit(repo,result)).rejects.toThrow();result.worldCommands=[];const committed=await commit(repo,result);expect(committed.state.npc['npc-a']).toEqual(original.npc['npc-a']);expect(committed.state.contactReviewNpcIds).toContain('npc-a');expect(committed.state.tasks.work.resolution).toBeDefined();expect((await repo.load('save-a')).schemaVersion).toBe(9);
 });
   it('有既往联系的旧NPC保持待确认；自称无联系或自由文本确认均不能绕过保护', () => {
     const state = reviewState(), d = worldDraft(), retirement = reviewRetirement(state);
