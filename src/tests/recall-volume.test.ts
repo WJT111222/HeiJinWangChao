@@ -11,7 +11,7 @@ it.each(['story', 'variables', 'world'] as const)('200回合%s最终请求体积
   const prompt = await composePrompt({ ...a, stage, mode: 'regular', userInput: a.draft.userInput });
   const elapsed = performance.now() - start;
   const context = sentContext(prompt.messages), memory = record(context.MEMORY_CONTEXT);
-  expect(record(context.SAVE_STATE).schemaVersion).toBe(6);
+  expect(record(context.SAVE_STATE).schemaVersion).toBe(7);
   if (process.env.RECALL_METRICS === '1') console.info('recall-volume', JSON.stringify({ stage,
     recalledIds: array(memory.recalledTurns).map(entry => record(entry).turnId),
     recallCharacters: JSON.stringify(memory.recalledTurns).replace(/[<>&]/g, ch => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`).length,

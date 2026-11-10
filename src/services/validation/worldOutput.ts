@@ -6,7 +6,6 @@ import { worldEventSchedule } from '../../domain/events/schedule';
 import { plannedEventSchema } from '../../domain/events/schema';
 import { historicalPerspective } from '../../domain/timePreflight';
 import { openingTimeBase } from '../../domain/openingTime';
-import { hasKnownPlayerConnection } from '../../domain/npc/contactReview';
 import { orderWorldCommands } from './worldDependencies';
 import { fingerprint } from '../../domain/commands';
 import type { ActorRef } from '../../domain/common';
@@ -100,16 +99,6 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
           requireWorld(causal.organizations[command.organizationId], 'permission');
           break;
         case 'CreateLocation': break; // Domain validation enforces hierarchy and references.
-        case 'RetireNpc': {
-          const npc = base.npc[command.npcId];
-          requireWorld(npc && actorAllowed({kind:'npc',id:npc.id}) && base.initialCompanionId !== npc.id, 'permission');
-          if (base.contactReviewNpcIds.includes(npc.id)) {
-            const review = command.contactReview;
-            requireWorld(review?.conclusion === 'non_contact' && review.basis === 'no_known_connection'
-              && !hasKnownPlayerConnection(base, npc.id), 'permission');
-          }
-          break;
-        }
         case 'SaveTask': {
           const task = command.task, old = base.tasks[task.id], formal = state.tasks[task.id];
           requireWorld(!formal || sameActor(formal.actorRef, task.actorRef), 'permission');

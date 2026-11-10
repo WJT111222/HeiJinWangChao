@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { OpeningInitialStateSchema } from '../../domain/openingInitialization';
 import { ActorRefSchema, GameTimeSchema, MoneySchema, TextSchema } from '../../domain/common';
-import { OrdinaryNpcSchema, SpecialNpcSchema } from '../../domain/npc/schema';
+import { OrdinaryNpcCreationSchema, SpecialNpcCreationSchema } from '../../domain/npc/schema';
 import { GangOrgSchema, GovernmentOrgSchema, CivilOrgSchema, BusinessOrgSchema } from '../../domain/organizations/schema';
 import { AccountSchema, IncomeRecordSchema, DebtRecordSchema, VehicleAssetSchema } from '../../domain/economy/schema';
 import { ImportantItemSchema } from '../../domain/items/schema';
@@ -47,7 +47,7 @@ const entries:Entry[] = [
   ...Object.entries(npcChanges).map(([field,value]):Entry=>({operation:'set',path:`npc[id].${field}`,commandType:'UpdateNpc',
     value:['healthText','relationshipText'].includes(field)?textInputSchema:value.unwrap()})),
   ...(['memories','longTermMemories','knownInformation'] as const).map((field):Entry=>({operation:'push',path:`npc[id].${field}`,commandType:'RecordNpcMemory',value:memoryInputSchema})),
-  {operation:'set',path:'npc[id]',commandType:'CreateNpc',value:z.union([OrdinaryNpcSchema.omit({id:true}),SpecialNpcSchema.omit({id:true})])},
+  {operation:'set',path:'npc[id]',commandType:'CreateNpc',value:z.union([OrdinaryNpcCreationSchema.omit({id:true}),SpecialNpcCreationSchema.omit({id:true})])},
   {operation:'set',path:'npc[id].affinityChange',commandType:'UpdateNpc',value:variableCommandSchemas[1].shape.affinityChange.unwrap().extend({relationshipText:TextSchema})},
   {operation:'set',path:'npc[id].activeGoals',commandType:'UpdateNpc',value:variableCommandSchemas[1].shape.activeGoals.unwrap()},
   {operation:'set',path:'npc[id].contact',commandType:'RegisterContact',value:z.strictObject({reason:TextSchema})},

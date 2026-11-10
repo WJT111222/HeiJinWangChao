@@ -44,10 +44,10 @@ function reviewRetirement(state: ReturnType<typeof handoffState>, basis: 'no_kno
 }
 
 describe('旧档联系人暂缓保护与合法退场', () => {
-  it('V6非联系人须明确复核才可退场，保留事务与任务结果',async()=>{
+  it('旧非联系人复核也不能授权删除；移除退场提案后任务成果正常保存',async()=>{
  const original=reviewState();original.npc['npc-a'].relationshipText='尚未与主角接触';original.npc['npc-a'].affinity=0;const repo=await repository(original),state=await repo.load('save-a');
  const result={...worldResult([retireCommand(state)]),taskCommands:[finishTask(state)]};expect(()=>parseWorld(JSON.stringify(result),state,worldDraft())).toThrow();result.worldCommands=[reviewRetirement(state)];
- const committed=await commit(repo,result);expect(committed.state.npc['npc-a']).toBeUndefined();expect(committed.state.contactReviewNpcIds).not.toContain('npc-a');expect(committed.state.tasks.work.resolution).toBeDefined();expect((await repo.load('save-a')).schemaVersion).toBe(6);
+ await expect(commit(repo,result)).rejects.toThrow();result.worldCommands=[];const committed=await commit(repo,result);expect(committed.state.npc['npc-a']).toEqual(original.npc['npc-a']);expect(committed.state.contactReviewNpcIds).toContain('npc-a');expect(committed.state.tasks.work.resolution).toBeDefined();expect((await repo.load('save-a')).schemaVersion).toBe(7);
 });
   it('有既往联系的旧NPC保持待确认；自称无联系或自由文本确认均不能绕过保护', () => {
     const state = reviewState(), d = worldDraft(), retirement = reviewRetirement(state);
@@ -83,17 +83,17 @@ describe('旧档联系人暂缓保护与合法退场', () => {
 });
 
 describe('修复不削弱真实成果与事务', () => {
-  it('待确认身份复核后的删除仍与成果和回执原子提交；写入失败不会提前解除保护', async () => {
+  it('任务成果与回执原子提交，待确认人物完整保留；写入失败不改变人物', async () => {
     const original = handoffState(); original.npc['npc-a'].relationshipText = '尚未与主角接触'; original.npc['npc-a'].affinity = 0;
     const state = { ...original, contactReviewNpcIds: Object.keys(original.npc) }, repo = await repository(state), before = await repo.load('save-a');
-    const raw = { ...worldResult([reviewRetirement(state)]), taskCommands: [finishTask(state)] };
+    const raw = { ...worldResult(), taskCommands: [finishTask(state)] };
     const add = IDBObjectStore.prototype.add;
     vi.spyOn(IDBObjectStore.prototype, 'add').mockImplementation(function (this: IDBObjectStore, value, key) {
       if (this.name === 'turnReceipts') throw new DOMException('Mock quota', 'QuotaExceededError'); return add.call(this, value, key);
     });
     await expect(commit(repo, raw)).rejects.toThrow(); vi.restoreAllMocks(); expect(await repo.load('save-a')).toEqual(before);
     const ready = (await repo.loadDraft('save-a'))!, committed = await repo.commitTurn(submission(ready));
-    expect(committed.state.contactReviewNpcIds).not.toContain('npc-a'); expect(committed.state.npc['npc-a']).toBeUndefined();
+    expect(committed.state.contactReviewNpcIds).toContain('npc-a'); expect(committed.state.npc['npc-a']).toEqual(before.npc['npc-a']);
     expect(committed.state.tasks.work.resolution).toBeDefined(); expect((await repo.commitTurn(submission(ready))).replayed).toBe(true);
   });
 });
