@@ -98,7 +98,7 @@ describe('200回合共享召回：真实Coordinator、Runtime与Mock网络', () 
     const committed = await a.repo.commitTurn(submission(outcome.draft, '下一步'));
     expect(committed.state.revision).toBe(201); expect(committed.state.journal).toHaveLength(201);
     expect(committed.state.journal.slice(0, 200)).toEqual(a.state.journal);
-    expect(committed.state.schemaVersion).toBe(6); expect(committed.state.economy.cash).toBe(7000);
+    expect(committed.state.schemaVersion).toBe(7); expect(committed.state.economy.cash).toBe(7000);
     expect(committed.state.economy.debts).toEqual(a.state.economy.debts);
     expect(committed.state.npc).toEqual(a.state.npc);
     const second = await SaveRepository.open('recall-v2-runtime', a.factory); resources.push({ dispose: () => second.close() });

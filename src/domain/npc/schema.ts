@@ -26,12 +26,30 @@ const base = {
   knownInformation: z.array(z.strictObject({ text: TextSchema, source: TextSchema, learnedAt: GameTimeSchema })),
   lastInteractionAt: GameTimeSchema.optional(),
 };
-export const OrdinaryNpcSchema = z.strictObject({ ...base, kind: z.literal('ordinary') });
-export const SpecialNpcSchema = z.strictObject({
-  ...base, kind: z.literal('special'), detailedBackground: z.string(),
+// Absence in legacy saves means unknown, never inferred from the contact registry.
+const publicVariables = {
+  phoneContact: z.strictObject({ status: z.enum(['unknown', 'known', 'invalid']), note: z.string().optional() }).optional(),
+  usualLocations: z.array(z.strictObject({
+    locationId: IdSchema, role: z.enum(['home', 'work', 'frequent']), knownToProtagonist: z.boolean(),
+  })).optional(),
+};
+export const SpecialProfileSchema = z.strictObject({
+  detailedBackground: z.string(),
   activeGoals: StringsSchema, habits: StringsSchema,
   longTermMemories: z.array(NpcMemorySchema), offscreenTaskIds: IdsSchema,
   privateProfile: PrivateProfileSchema,
+  relationshipNetwork: z.array(z.strictObject({
+    name: TextSchema, relationship: TextSchema, description: z.string(),
+    affinity: z.number().min(-100).max(100).nullable().optional(), npcId: IdSchema.optional(),
+  })).optional(),
 });
+export const OrdinaryNpcSchema = z.strictObject({ ...base, ...publicVariables, kind: z.literal('ordinary') });
+export const SpecialNpcSchema = z.strictObject({ ...base, ...publicVariables, kind: z.literal('special'), ...SpecialProfileSchema.shape });
 export const NpcSchema = z.discriminatedUnion('kind', [OrdinaryNpcSchema, SpecialNpcSchema]);
 export type NPC = z.infer<typeof NpcSchema>;
+export const DormantNpcProfileSchema = z.strictObject({ id: IdSchema, identityKey: TextSchema, profile: SpecialProfileSchema });
+
+// Batch 1 adds persistence only. Existing AI creation/update protocols remain unchanged.
+export const OrdinaryNpcCreationSchema = OrdinaryNpcSchema.omit({ phoneContact: true, usualLocations: true });
+export const SpecialNpcCreationSchema = SpecialNpcSchema.omit({ phoneContact: true, usualLocations: true, relationshipNetwork: true });
+export const NpcCreationSchema = z.discriminatedUnion('kind', [OrdinaryNpcCreationSchema, SpecialNpcCreationSchema]);

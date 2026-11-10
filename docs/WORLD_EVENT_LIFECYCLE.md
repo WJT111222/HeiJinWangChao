@@ -1,6 +1,6 @@
 # 动态世界事件生命周期（当前权威契约）
 
-本文件为当前 V6 契约，覆盖历史设计稿中历史必须重大且结案、单 NPC 单任务、每幕清空入场队列等旧规则。Task仍使用dueAt或completionCondition，不套用Event的新规划要求。
+本文件的事件契约延续 V6；NPC V2 第一批的正式存档使用 V7，V6 严格无损迁移与旧撤回快照按需恢复见 [NPC_V2_BATCH1.md](NPC_V2_BATCH1.md)。覆盖历史设计稿中历史必须重大且结案、单 NPC 单任务、每幕清空入场队列等旧规则。Task仍使用dueAt或completionCondition，不套用Event的新规划要求。
 
 ## 世界事实、角色认知、玩家观察
 
@@ -14,7 +14,7 @@ visibility及记忆权限字段为旧档兼容和角色认知继续保存；不�
 
 当World更新此前known事件而无新的主角知情依据时，程序在可选`protagonistKnowledge`中保存此前Story投影（title/startAt/status/resolutionText）及本次worldUpdateTurnId；不修改主角或NPC记忆，不把visibility统一改known。Story继续读取旧投影，OFFSCREEN_STATE提供最新客观记录供世界推演，不自动更新任何人物的记忆或认知。TIME_PREFLIGHT沿用既有规则，仅排除尚未告知的新进展。玩家观察仍读取完整最新事件。
 
-快照仅由程序维护，模型只能沿用原元数据或重放相同规范化结果。World追加当前来源回合，后续Variables现场更新和Story结构化入场回执沿原机制记录角色新知。取消了World按正文引用解除旧快照的途径。本次不迁移 V1–V5 测试存档，也不转换旧时间线；新存档使用 V6。
+快照仅由程序维护，模型只能沿用原元数据或重放相同规范化结果。World追加当前来源回合，后续Variables现场更新和Story结构化入场回执沿原机制记录角色新知。取消了World按正文引用解除旧快照的途径。本次不迁移 V1–V5 测试存档，也不转换旧时间线；新存档使用 V7，V6 的时间与历史数据只迁移版本号。
 
 ## 数据、时钟与职责
 
@@ -62,7 +62,7 @@ knowledgeKind 为 established/reported/suspected，由模型声明；程序不�
 
 World 输出仅有 worldCommands、taskCommands、eventCommands、visibleHooks、unresolved 五个数组。futureEvents 已删除；未来计划从实际 SaveEvent/正式 events 的 scheduled 状态读取、显示和调度，没有第二条事件写入渠道。
 
-V6 新开局、候选、存档和重载采用同一结构。V1–V5 明确拒绝读取，不自动迁移/补造历史；已有无法读取卡片的原始导出及确认删除功能仍可使用。本次不修改真实玩家存档。旧 World 输出或候选包含已删除字段时明确失败，不自动猜测或兼容旧协议。
+V7 新开局、候选、存档和重载采用同一结构；合法 V6 人物与事件原样读取，仅升级存档版本。V1–V5 明确拒绝读取，不自动迁移/补造历史；已有无法读取卡片的原始导出及确认删除功能仍可使用。本次不修改真实玩家存档。旧 World 输出或候选包含已删除字段时明确失败，不自动猜测或兼容旧协议。
 
 沿用 StageGuard、CAS、版本快照、projectTurn 和 SaveRepository.commitTurn；事件、独立历史、journal、短期记忆、命令和下一草稿原子提交，失败全回滚，回执重放不重复结算。模型请求数量、记忆维护及费用授权不改。正式 Commit 重新使用同一领域投影验证，不信任前端完成状态。
 
@@ -77,3 +77,7 @@ V6 新开局、候选、存档和重载采用同一结构。V1–V5 明确拒绝
 可选 eventKind=main/sub、parentEventId、fixedEndAt 的正式协议、旧 V6 与撤回兼容策略见 [WORLD_EVENT_HIERARCHY_V2_BATCH1.md](WORLD_EVENT_HIERARCHY_V2_BATCH1.md)。未标记旧事件保留原身份；主事件使用预计结束时间，小事件使用独立固定结束时间，不能互作别名。本批只建立数据与引用约束，fixedEndAt 的自动到期结算留待第二批，不改现有 estimatedEndAt 调度。
 
 V2 第二批已用 retiredEvents.detail 保存唯一权威的阶段经过及结果，允许成果完整、引用安全的终态小事件原子紧凑化；父事件可在不再需要完整上下文时退休，子记录仍引用其稳定身份。旧事件清理不变。main 估期不强制处理，sub 按 fixedEndAt 到期结案，不改固定时间延期；长窗口可在同一请求结算连续阶段。pending/presented 的后续互动与固定阶段分开承接，不代玩家行动。完整契约与边界见 [WORLD_EVENT_STAGES_V2_BATCH2.md](WORLD_EVENT_STAGES_V2_BATCH2.md)。
+
+## NPC V2 第一批保留规则
+
+所有正式 NPC 永久保留完整档案、记忆与关系，World 不再生成或执行 RetireNpc。离场、失联或死亡不是删除人物；旧 retiredNpcs 历史身份不凭空恢复细节。撤回整个回合仍恢复该回合前唯一有效世界，不属于人物自动清理。休眠专属资料仅为存储基础，不进入正常 AI 输入，既有公共历史、任务与事件不因休眠删除。

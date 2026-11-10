@@ -52,6 +52,15 @@ const parse = (state: GameState, result: ReturnType<typeof worldResult> = handof
 const commands = (result: ReturnType<typeof worldResult>) => [...result.worldCommands, ...result.taskCommands, ...result.eventCommands];
 const project = (state: GameState, result: ReturnType<typeof worldResult>) => projectTurn(state, worldDraft(), commands(parse(state, result)));
 
+// 已存在的旧V6退役身份样本，仅验证兼容，不模拟当前回合删除授权。
+function legacyRetired(state: GameState) {
+  const raw = structuredClone(state), person = raw.npc['npc-a'];
+  raw.retiredNpcs['npc-a'] = { id: person.id, identityKey: person.identityKey, name: person.name,
+    aliases: person.aliases, retiredAt: raw.worldClock, sourceTurnIds: ['legacy-turn'] };
+  delete raw.npc['npc-a'];
+  return migrateSave({ ...raw, schemaVersion: 6 });
+}
+
 describe('自主终结与有依据的同窗口交接', () => {
   it.each(['npc', 'organization'] as const)('%s 接班：前序先校验，传递明确成果，允许逆序返回', (kind) => {
     const state = handoffState(), before = structuredClone(state);
@@ -144,14 +153,15 @@ describe('自主终结与有依据的同窗口交接', () => {
 
 describe('联系人与最小身份历史，严格引用边界', () => {
   function retireCandidate(state: GameState) { return { ...worldResult([retireCommand(state)]), taskCommands: [finishTask(state)] }; }
-  it('非联系人退场清理完整档案，终结任务与历史引用仍可读，绝不存整份NPC备份', () => {
+  it('非联系人正式档案永久保留，终结任务与历史引用仍可读', () => {
     const state = handoffState();
     state.events.old = { ...event('old'), actorRefs: [{ kind: 'npc', id: 'npc-a' }], status: 'resolved', resolvedAt: state.worldClock, resolutionText: '核对登记已留档' };
     state.journal = [{ turnId: 'past', revision: 0, story: worldDraft().story!, relatedActorRefs: [{ kind: 'npc', id: 'npc-a' }] }]; state.turnNumber = 1;
     state.npc['npc-b'].memories = [{ id: 'remember-a', text: '曾见过核对人', knowledgeKind: 'observed', knowledgeSource: '亲历', sourceTurnIds: ['past'], affectedEntityRefs: [{ kind: 'npc', id: 'npc-a' }], createdAtGameTime: state.worldClock, visibility: 'npc_private' }];
-    const projected = project(state, retireCandidate(state));
-    expect(projected.npc['npc-a']).toBeUndefined();
-    expect(Object.keys(projected.retiredNpcs['npc-a']).sort()).toEqual(['aliases', 'id', 'identityKey', 'name', 'retiredAt', 'sourceTurnIds']);
+    expect(() => project(state, retireCandidate(state))).toThrow();
+    const projected = project(state, { ...worldResult(), taskCommands: [finishTask(state)] });
+    expect(projected.npc['npc-a']).toEqual(state.npc['npc-a']);
+    expect(projected.retiredNpcs).toEqual(state.retiredNpcs);
     expect(projected.tasks.work.actorRef.id).toBe('npc-a');
     expect(projected.events.old.actorRefs[0].id).toBe('npc-a');
     expect(projected.journal).toEqual(state.journal); expect(projected.npc['npc-b'].memories).toEqual(state.npc['npc-b'].memories);
@@ -171,24 +181,26 @@ describe('联系人与最小身份历史，严格引用边界', () => {
     const r = retireCandidate(state); if (reason === 'duty') r.taskCommands = [];
     const before = structuredClone(state); expect(() => project(state, r)).toThrow(); expect(state).toEqual(before);
   });
-  it('公开记忆必留存；选中的必要私有材料保留为internal，不进入公开正文/历史搜索', () => {
+  it('旧清理提案不能搬迁或删除任何公开/私人记忆', () => {
     const state = handoffState();
     state.npc['npc-a'].memories = ['player_known', 'npc_private'].map((visibility, i) => ({ id: `m${i}`, text: i ? '私有账册藏在楼梯下' : '主角见过核对人', knowledgeSource: '亲眼见到', sourceTurnIds: [], affectedEntityRefs: [{ kind: 'npc' as const, id: 'npc-a' }], visibility: visibility === 'player_known' ? 'player_known' as const : 'npc_private' as const, createdAtGameTime: state.worldClock, knowledgeKind: 'observed' as const }));
     const r = retireCandidate(state); const retire = r.worldCommands[0]; if (retire.type !== 'RetireNpc') throw Error(); retire.retainMemoryIds = ['m1'];
-    const projected = project(state, r);
-    expect(projected.memories.long.map((m) => m.visibility)).toEqual(['player_known', 'internal']);
+    expect(() => project(state, r)).toThrow();
+    const projected = project(state, {...r, worldCommands:[]});
+    expect(projected.memories.long).toEqual(state.memories.long);
+    expect(projected.npc['npc-a'].memories).toEqual(state.npc['npc-a'].memories);
     expect(JSON.stringify(playerView(projected))).toContain('私有账册');
     expect(projected.memories.npcSummaries['npc-a']).toBeUndefined();
   });
   it('事件仍在推进但已有真实继任职责可退出，不改写历史参与者', () => {
     const state = handoffState(); state.events.case = { ...event('case'), estimatedEndAt:'2026-10-19T08:00:00+08:00', actorRefs: [{ kind: 'npc', id: 'npc-a' }], linkedTaskIds: ['work'] }; state.tasks.work.linkedEventId = 'case';
     const r = handoffResult(state), next = r.taskCommands[0]; if (next.type !== 'SaveTask') throw Error(); next.task.linkedEventId = 'case';
-    r.worldCommands = [retireCommand(state)];
+    r.worldCommands = [];
     r.eventCommands = [{ type: 'SaveEvent', commandId: 'case-link', event: { ...state.events.case, linkedTaskIds: ['work', 'next'] }, evidence: proof({ kind: 'planned', sources: ['event:case', 'npc:npc-a'], fact: '保留核验安排。' }) }];
-    const projected = project(state, r); expect(projected.npc['npc-a']).toBeUndefined(); expect(projected.events.case.actorRefs).toEqual(state.events.case.actorRefs);
+    const projected = project(state, r); expect(projected.npc['npc-a']).toEqual(state.npc['npc-a']); expect(projected.events.case.actorRefs).toEqual(state.events.case.actorRefs);
   });
   it('再出现必须复用稳定身份，不恢复不存在的旧关系；换ID或伪造身份拒绝', () => {
-    const state = handoffState(), retired = project(state, retireCandidate(state));
+    const state = handoffState(), retired = legacyRetired(project(state, { ...worldResult(), taskCommands:[finishTask(state)] }));
     const command = DomainCommandSchema.parse({ type: 'CreateNpc', commandId: 'return', evidence: '该人物再次出现', npc: { ...npc(), onScene: false, affinity: 0, relationshipText: '尚未与主角接触', memories: [], knownInformation: [] } });
     const back = commitCommands(retired, 'later', retired.revision, [command]); expect(back.npc['npc-a'].identityKey).toBe(state.npc['npc-a'].identityKey);
     if (command.type !== 'CreateNpc') throw Error(); command.npc.id = 'new-id';
@@ -219,28 +231,28 @@ async function prepared(repo: SaveRepository, raw?: ReturnType<typeof worldResul
 }
 
 describe('真实WorldStage、候选保存和原子正式结算', () => {
-  it('连续多回合：世界因果→完成交接→临时人物退场→接班人继续→自然终结；刷新和回执不重复', async () => {
+  it('连续多回合：世界因果→完成交接→人物保留→接班人继续→自然终结；刷新和回执不重复', async () => {
     const repo = await repository(), state = await repo.load('save-a'), initial = await prepared(repo);
-    const raw = handoffResult(state); raw.worldCommands = [retireCommand(state)];
+    const raw = handoffResult(state);
     const transport = vi.fn<typeof fetch>(async () => wire(worldResultForTurn(raw, (await repo.loadDraft('save-a'))!.turnId)));
     const saved = await stage(repo, transport).generate({ ...config(), draft: initial });
     expect(transport).toHaveBeenCalledTimes(1); expect(await repo.load('save-a')).toEqual(state);
     expect(saved.world?.result.taskCommands.find((c) => c.type === 'SaveTask' && c.task.id === 'work')).toMatchObject({ task: { resolution: { sourceTurnId: initial.turnId } } });
     const committed = await repo.commitTurn(submission(saved));
-    expect(committed.state.npc['npc-a']).toBeUndefined(); expect(committed.state.tasks.next.status).toBe('active');
+    expect(committed.state.npc['npc-a']).toEqual(state.npc['npc-a']); expect(committed.state.tasks.next.status).toBe('active');
     expect(committed.state.tasks.work.actorRef.id).toBe('npc-a');
     const replay = await repo.commitTurn(submission(saved)); expect(replay.replayed).toBe(true); expect(replay.state).toEqual(committed.state);
     expect((await repo.loadGame('save-a')).state).toEqual(committed.state);
     const ctx = contextFor({ stage: 'world', mode: 'regular', state: committed.state, draft: { ...worldDraft(), turnId: committed.draft.turnId, baseSaveRevision: committed.state.revision,
       variables: { ...worldDraft().variables!, result: await elapsedVariables(repo, worldDraft().story!.narrative, 600) } }, settings: defaultSettings(), userInput: '' });
     expect(JSON.stringify(ctx.OFFSCREEN_STATE)).toContain('"id":"work"');
-    expect(JSON.stringify(ctx.NPC_LIFECYCLE)).toContain('identity-npc-a');
+    expect(JSON.stringify(ctx.OFFSCREEN_STATE)).toContain('identity-npc-a');
     const nextDraft = await completeDraft(repo, { variables: await elapsedVariables(repo, worldDraft().story!.narrative, 600) });
     const ending = worldResult(); ending.taskCommands = [finishTask(committed.state, 'next', '2026-10-18T08:15:00+08:00')];
     const finished = await stage(repo, async () => wire(worldResultForTurn(ending,(await repo.loadDraft('save-a'))!.turnId))).generate({ ...config(), draft: nextDraft });
     const next = await repo.commitTurn(submission(finished));
     expect(next.state.tasks.next.status).toBe('completed'); expect(Object.keys(next.state.tasks).sort()).toEqual(['next', 'work']);
-    expect(next.state.journal).toHaveLength(2); expect(next.state.npc['npc-a']).toBeUndefined(); expect(next.state.npc['npc-b']).toBeDefined();
+    expect(next.state.journal).toHaveLength(2); expect(next.state.npc['npc-a']).toBeDefined(); expect(next.state.npc['npc-b']).toBeDefined();
     expect(next.state.economy.cash).toBe(7000); // 只有首回合正文中的一次真实消费，交接没有发放任何资金。
     expect(JSON.stringify(playerView(next.state))).toContain(resultText);
   });
@@ -255,16 +267,16 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
     expect(() => parse(before, world)).toThrow();
   });
   it.each(['drafts', 'turnReceipts', 'abort'] as const)('%s 写失败全部回滚任务、人物、成果、journal及下一草稿，重试恰好一次', async (point) => {
-    const repo = await repository(), raw = handoffResult(await repo.load('save-a')); raw.worldCommands = [retireCommand(await repo.load('save-a'))];
+    const repo = await repository(), raw = handoffResult(await repo.load('save-a')); raw.worldCommands = [];
     const d = await prepared(repo, raw), before = await repo.loadGame('save-a');
     const put = IDBObjectStore.prototype.put, add = IDBObjectStore.prototype.add;
     if (point === 'drafts') vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(function (this: IDBObjectStore, value, key) { if (this.name === point) throw new DOMException('mock quota', 'QuotaExceededError'); return put.call(this, value, key); });
     else vi.spyOn(IDBObjectStore.prototype, 'add').mockImplementation(function (this: IDBObjectStore, value, key) { if (this.name === 'turnReceipts' && point === 'turnReceipts') throw new DOMException('mock quota', 'QuotaExceededError'); const request = add.call(this, value, key); if (this.name === 'turnReceipts') request.addEventListener('success', () => this.transaction.abort()); return request; });
     await expect(repo.commitTurn(submission(d))).rejects.toThrow(); vi.restoreAllMocks(); expect(await repo.loadGame('save-a')).toEqual(before);
-    const result = await repo.commitTurn(submission(d)); expect(result.state.npc['npc-a']).toBeUndefined(); expect(result.state.journal).toHaveLength(1);
+    const result = await repo.commitTurn(submission(d)); expect(result.state.npc['npc-a']).toBeDefined(); expect(result.state.journal).toHaveLength(1);
   });
   it('Roll及重放不能删除正式NPC；过期候选CAS提交拒绝', async () => {
-    const repo = await repository(), raw = handoffResult(await repo.load('save-a')); raw.worldCommands = [retireCommand(await repo.load('save-a'))];
+    const repo = await repository(), raw = handoffResult(await repo.load('save-a')); raw.worldCommands = [];
     const d = await prepared(repo, raw), before = await repo.load('save-a');
     await repo.saveDraft(rerollStory(d, { ...d.story!, narrative: '主角改为在家阅读。' }), d.draftRevision);
     await expect(repo.commitTurn(submission(d))).rejects.toThrow(); expect(await repo.load('save-a')).toEqual(before);
@@ -317,7 +329,7 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
 
 // 针对生命周期增量本身的回归；没有删除原安全边界测试。
 describe('连续因果、旧候选和历史参与者', () => {
-  it('三回合真实运行：主角递交材料后介入→处理交接退场→接班人自然结束，不产生第三项接班任务', async () => {
+  it('三回合真实运行：主角递交材料后介入→处理交接并保留人物→接班人自然结束，不产生第三项接班任务', async () => {
     const repo = await SaveRepository.open('causal-chain', new IDBFactory()); resources.push(repo);
     const initial = handoffState(); initial.tasks = {}; await repo.create(initial);
     const fact = '主角将材料交到值班窗口，随后在外等候。';
@@ -330,10 +342,9 @@ describe('连续因果、旧候选和历史参与者', () => {
     const done = finishTask(round1.state, 'work', '2026-10-18T08:15:00+08:00'), receive = receiveTask();
     receive.task.startAt = '2026-10-18T08:16:00+08:00'; receive.task.handoff!.at = receive.task.startAt;
     receive.evidence = proof({ at: receive.task.startAt, sources: ['task:work', 'npc:npc-b'], fact: resultText });
-    const retiring = retireCommand(round1.state), retirementProof = JSON.parse(retiring.evidence); retirementProof.at = '2026-10-18T08:18:00+08:00'; retiring.evidence = JSON.stringify(retirementProof);
-    const middle = { ...worldResult([retiring]), taskCommands: [receive, done] };
+    const middle = { ...worldResult(), taskCommands: [receive, done] };
     const middleReady = await stage(repo, async () => wire(worldResultForTurn(middle,(await repo.loadDraft('save-a'))!.turnId))).generate({ ...config(), draft: second });
-    const round2 = await repo.commitTurn(submission(middleReady)); expect(round2.state.npc['npc-a']).toBeUndefined(); expect(round2.state.tasks.work.resolution?.at).toBe('2026-10-18T08:15:00+08:00');
+    const round2 = await repo.commitTurn(submission(middleReady)); expect(round2.state.npc['npc-a']).toEqual(round1.state.npc['npc-a']); expect(round2.state.tasks.work.resolution?.at).toBe('2026-10-18T08:15:00+08:00');
     const third = await completeDraft(repo, { narrative: '主角整理自己的笔记。', variables: await elapsedVariables(repo, '主角整理自己的笔记。', 600) });
     const ending = { ...worldResult(), taskCommands: [finishTask(round2.state, 'next', '2026-10-18T08:25:00+08:00')] };
     const final = await stage(repo, async () => wire(worldResultForTurn(ending,(await repo.loadDraft('save-a'))!.turnId))).generate({ ...config(), draft: third });
@@ -343,10 +354,10 @@ describe('连续因果、旧候选和历史参与者', () => {
   });
   it('退场原参与者保留在未完事件因果中，后续组织仍可合法结案；不重新执行已退场NPC行动', () => {
     const state = handoffState(); state.tasks.work.linkedEventId = 'case'; state.events.case = { ...event('case'), actorRefs: [{ kind: 'npc', id: 'npc-a' }], linkedTaskIds: ['work'], estimatedEndAt: '2026-10-18T09:00:00+08:00' };
-    const r = handoffResult(state, { kind: 'organization', id: 'org-a' }); r.worldCommands = [retireCommand(state)];
+    const r = handoffResult(state, { kind: 'organization', id: 'org-a' });
     const next = r.taskCommands[0]; if (next.type !== 'SaveTask') throw Error(); next.task.linkedEventId = 'case';
     r.eventCommands = [{ type: 'SaveEvent', commandId: 'link', event: { ...state.events.case, linkedTaskIds: ['work', 'next'] }, evidence: proof({ kind: 'planned', sources: ['event:case', 'npc:npc-a'], fact: '机构接下后续核验安排。' }) }];
-    const retired = project(state, r), draft = worldDraft(); draft.baseSaveRevision = retired.revision;
+    const retired = legacyRetired(project(state, r)), draft = worldDraft(); draft.baseSaveRevision = retired.revision;
     draft.variables!.result.commands = [{ type: 'SetWorldClock', commandId: 'later', worldClock: '2026-10-18T08:20:00+08:00', evidence: draft.story!.narrative }];
     const ended = finishTask(retired, 'next', '2026-10-18T08:15:00+08:00');
     const finishEvent: DomainCommand = { type: 'SaveEvent', commandId: 'close-case', event: { ...retired.events.case, status: 'resolved', resolvedAt: '2026-10-18T08:16:00+08:00', resolutionText: resultText },
@@ -379,8 +390,9 @@ describe('退场资料与公开记忆压缩兼容', () => {
     state.journal = [{ turnId: 'past', revision: 0, story: { ...worldDraft().story!, summary: '主角提交材料并在街边遇到另一位熟人。' }, relatedActorRefs: [] }]; state.turnNumber = 1;
     state.memories.short = [{ id: 'short-past', text: state.journal[0].story.summary, sourceTurnIds: ['past'], affectedEntityRefs: [], visibility: 'player_known', createdAtGameTime: state.worldClock }];
     state.npc['npc-a'].memories = [{ id: 'one-observation', text: '主角提交了材料。', knowledgeSource: '亲眼看到', sourceTurnIds: ['past'], affectedEntityRefs: [], visibility: 'player_known', createdAtGameTime: state.worldClock }];
-    const r = { ...worldResult([retireCommand(state)]), taskCommands: [finishTask(state)] };
-    const projected = project(state, r);
+    const r = { ...worldResult(), taskCommands: [finishTask(state)] };
+    const projected = legacyRetired(project(state, r));
+    projected.memories.long.push({id:'legacy-observation',text:'主角提交了材料。',sourceTurnIds:['past'],affectedEntityRefs:[],visibility:'player_known',createdAtGameTime:state.worldClock,retiredNpcSource:{npcId:'npc-a',sourceMemoryId:'one-observation',knowledgeKind:'unknown',knowledgeSource:'亲眼看到'}});
     expect(publicShortMemories(projected)).toMatchObject([{ id: 'short-past' }]);
     expect(compressionCandidates(projected, 'short')).toHaveLength(1);
     projected.journal.push({ turnId: 'recent', revision: 0, story: { ...worldDraft().story!, summary: '最近的街边休息' }, relatedActorRefs: [] }); projected.turnNumber++;
@@ -422,15 +434,15 @@ describe('历史只读回合的生命周期边界', () => {
 describe('真实IndexedDB旧档升级与回执', () => {
   it('V6存档和回执重载后可重放并继续，正式revision和原文不变',async()=>{
  const repo=await SaveRepository.open('new-v6',new IDBFactory());resources.push(repo);await repo.create(handoffState());
- const draft=await completeDraft(repo),first=await repo.commitTurn(submission(draft));expect(await repo.load('save-a')).toEqual(first.state);expect(first.state.schemaVersion).toBe(6);
+ const draft=await completeDraft(repo),first=await repo.commitTurn(submission(draft));expect(await repo.load('save-a')).toEqual(first.state);expect(first.state.schemaVersion).toBe(7);
  expect((await repo.commitTurn(submission(draft))).replayed).toBe(true);const next=await completeDraft(repo,{variables:await elapsedVariables(repo,worldDraft().story!.narrative,600)});expect((await repo.commitTurn(submission(next))).state.turnNumber).toBe(2);
 });
 });
 
-describe('退场后的交接来源', () => {
+describe('旧档退役身份的交接来源', () => {
   it('原人物已退场后不能凭旧任务成果伪造现在由其传出的私人报告', () => {
-    const state = handoffState(), initial = handoffResult(state); initial.worldCommands = [retireCommand(state)];
-    const retired = project(state, initial), draft = worldDraft(); draft.baseSaveRevision = retired.revision;
+    const state = handoffState(), initial = handoffResult(state);
+    const retired = legacyRetired(project(state, initial)), draft = worldDraft(); draft.baseSaveRevision = retired.revision;
     draft.variables!.result.commands = [{ type: 'SetWorldClock', commandId: 'later', worldClock: '2026-10-18T08:20:00+08:00', evidence: draft.story!.narrative }];
     const receiver = receiveTask({ kind: 'organization', id: 'org-a' }, 'late-report'); receiver.task.startAt = '2026-10-18T08:16:00+08:00'; receiver.task.handoff!.at = '2026-10-18T08:15:00+08:00';
     receiver.evidence = proof({ at: '2026-10-18T08:15:00+08:00', sources: ['task:work', 'org:org-a'], fact: resultText });
@@ -439,16 +451,16 @@ describe('退场后的交接来源', () => {
 });
 
 describe('联系人及特殊NPC正向正式结算', () => {
-  it.each(['contact', 'special'] as const)('%s 完成职责：联系人完整保留，非联系人特殊NPC无剩余职责可正式退场', async (kind) => {
+  it.each(['contact', 'special'] as const)('%s 完成职责：联系人完整保留，非联系人特殊NPC也完整保留', async (kind) => {
     const state = handoffState();
     if (kind === 'contact') state.contactNpcIds = ['npc-a'];
     else state.npc['npc-a'] = { ...worldState().npc['npc-a'], kind: 'special', detailedBackground: '临时核验岗位', activeGoals: [], habits: [], longTermMemories: [], offscreenTaskIds: ['work'] };
     const repo = await SaveRepository.open(`positive-${kind}`, new IDBFactory()); resources.push(repo); await repo.create(state);
     const d = await prepared(repo), raw = { ...worldResult(), taskCommands: [finishTask(state)] };
-    if (kind === 'special') raw.worldCommands = [retireCommand(state)];
+    if (kind === 'special') expect(() => parse(state, { ...raw, worldCommands:[retireCommand(state)] })).toThrow();
     const ready = await stage(repo, async () => wire(worldResultForTurn(raw, (await repo.loadDraft('save-a'))!.turnId))).generate({ ...config(), draft: d });
     const committed = await repo.commitTurn(submission(ready)); expect(committed.state.tasks.work.status).toBe('completed');
     if (kind === 'contact') { expect(committed.state.npc['npc-a']).toEqual(state.npc['npc-a']); expect(committed.state.contactNpcIds).toEqual(['npc-a']); }
-    else { expect(committed.state.npc['npc-a']).toBeUndefined(); expect(committed.state.retiredNpcs['npc-a'].identityKey).toBe(state.npc['npc-a'].identityKey); }
+    else { expect(committed.state.npc['npc-a']).toEqual(state.npc['npc-a']); expect(committed.state.retiredNpcs['npc-a']).toBeUndefined(); }
   });
 });

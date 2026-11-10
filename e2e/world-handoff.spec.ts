@@ -54,8 +54,8 @@ async function seed(page: Page, variant?: 'mixed-result' | 'unindexed-history' |
 }
 async function stored(page: Page) { return page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try { return await repo.loadGame('save-a'); } finally { repo.close(); } }); }
 
-test('真实浏览器：世界成果/交接/退场只是候选，主动查看、刷新、正式原子提交后才生效', async ({ page }, info) => {
-  const before = await seed(page), state = handoffState(), raw = handoffResult(state); raw.worldCommands = [retireCommand(state)];
+test('真实浏览器：世界成果/交接只是候选，正式原子提交后生效且完整人物永久保留', async ({ page }, info) => {
+  const before = await seed(page), state = handoffState(), raw = handoffResult(state);
   const receiver = raw.taskCommands[0];
   receiver.task.handoff = { ...receiver.task.handoff!, content: '登记号318的三份材料均已核对齐全。',
     summaryBasis: { mode: 'faithful_summary', resultExcerpt: resultText } };
@@ -73,14 +73,14 @@ test('真实浏览器：世界成果/交接/退场只是候选，主动查看、
   await expect(page.getByTestId('story-reader')).not.toContainText(resultText);
   expect((await stored(page)).state).toEqual(before);
   await dialog.getByRole('button', { name: '主动查看完整世界候选', exact: true }).click();
-  await expect(dialog.getByLabel('完整世界候选')).toContainText('RetireNpc'); await expect(dialog.getByLabel('完整世界候选')).toContainText(resultText);
+  await expect(dialog.getByLabel('完整世界候选')).toContainText('SaveTask'); await expect(dialog.getByLabel('完整世界候选')).toContainText(resultText);
   await page.keyboard.press('Escape'); await page.reload(); await openGameTools(page); saved = await stored(page); expect(saved.state).toEqual(before); expect(calls).toBe(1);
   // 用真实存储提交接口隔离本轮新增生命周期的验证，不发送下一轮付费请求。
   const final = await page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try {
     const draft = await repo.loadDraft('save-a'); const input = { draft, nextAction: '在街边休息', useVariableStage: true, useWorldStage: true };
     const first = await repo.commitTurn(input), replay = await repo.commitTurn(input); return { first, replay };
   } finally { repo.close(); } });
-  expect(final.first.state.npc['npc-a']).toBeUndefined(); expect(final.first.state.retiredNpcs['npc-a'].identityKey).toBe('identity-npc-a');
+  expect(final.first.state.npc['npc-a']).toEqual(before.npc['npc-a']); expect(final.first.state.retiredNpcs).toEqual(before.retiredNpcs);
   expect(final.first.state.tasks.work.resolution.result).toBe(resultText); expect(final.first.state.tasks.next.actorRef.id).toBe('npc-b');
   expect(final.first.state.tasks.next.handoff).toMatchObject({ content: '登记号318的三份材料均已核对齐全。', knowledgeKind: 'reported' });
   expect(final.first.state.journal).toHaveLength(1); expect(final.replay.replayed).toBe(true); expect(final.replay.state).toEqual(final.first.state);
@@ -172,7 +172,7 @@ test('V6待复核NPC显示待确认身份，不冒充联系人且不自动删除
   await page.evaluate(async () => {
     const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open();
     const state = await repo.load('save-a'); repo.close();
-    const raw = { ...state, contactNpcIds: [], contactReviewNpcIds: Object.keys(state.npc) };
+    const raw = { ...state, schemaVersion: 6, contactNpcIds: [], contactReviewNpcIds: Object.keys(state.npc) };
     await new Promise<void>((resolve, reject) => { const request = indexedDB.open('heijinwangchao'); request.onsuccess = () => {
       const db = request.result, tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(raw);
       tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); };
@@ -182,7 +182,7 @@ test('V6待复核NPC显示待确认身份，不冒充联系人且不自动删除
   const panel = page.getByRole('dialog', { name: 'NPC', exact: true }); await panel.getByRole('button', { name: /现场人物/ }).click();
   await expect(panel).toContainText('旧档联系人身份待确认 · 暂缓清理');
   await expect(panel).not.toContainText('联系人 · 永久保留档案');
-  const migrated = (await stored(page)).state; expect(migrated.schemaVersion).toBe(6); expect(migrated.contactNpcIds).toEqual([]);
+  const migrated = (await stored(page)).state; expect(migrated.schemaVersion).toBe(7); expect(migrated.contactNpcIds).toEqual([]);
   expect(migrated.contactReviewNpcIds).toContain('scene'); expect(migrated.npc).toEqual(before.npc); expect(migrated.revision).toBe(before.revision);
   await page.reload(); await openGameTools(page); expect((await stored(page)).state).toEqual(migrated);
 });

@@ -218,13 +218,15 @@ describe('重放、版本、正式链路隔离', () => {
     const result = parseVariables(JSON.stringify({ commands: r.plan.commands, rejectedSuggestions: [], unresolved: [] }), r.state, r.context.draft);
     expect(result.commands).toEqual(r.plan.commands); expect(r.state).toEqual(before);
   });
-  it('完整场景数据校验允许合法的清地点再退场，不影响原NPC生命周期', async () => {
+  it('合法清地点后仍保留正式NPC，旧RetireNpc使整批失败', async () => {
     const { commitCommands } = await import('../domain/commands'); const d = setup('');
-    const after = commitCommands(d.state, 'independent-lifecycle', 0, [
+    expect(() => commitCommands(d.state, 'independent-lifecycle', 0, [
       { type:'UpdateNpc', commandId:'clear', evidence:'NPC离开', npcId:'remote', expectedRevision:0, changes:{locationId:null} },
       { type:'RetireNpc', commandId:'retire', evidence:'NPC退场', npcId:'remote', expectedIdentityKey:d.state.npc.remote.identityKey, reason:'无后续职责', retainMemoryIds:[] },
-    ], d.state.updatedAt);
-    expect(after.npc.remote).toBeUndefined(); expect(after.retiredNpcs.remote).toBeDefined(); expect(d.state.npc.remote).toBeDefined();
+    ], d.state.updatedAt)).toThrow(/永久保留/);
+    expect(d.state.npc.remote).toBeDefined();
+    const after = commitCommands(d.state, 'clear-only', 0, [{type:'UpdateNpc',commandId:'clear',evidence:'NPC离开',npcId:'remote',expectedRevision:0,changes:{locationId:null}}],d.state.updatedAt);
+    expect(after.npc.remote.locationId).toBeUndefined(); expect(after.retiredNpcs.remote).toBeUndefined();
   });
   it('执行器不导入World/AI/数据库/新审查模块，正式工作流不接入文本执行器', async () => {
     const { readFileSync, readdirSync } = await import('node:fs');
