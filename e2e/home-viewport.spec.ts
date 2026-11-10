@@ -45,8 +45,10 @@ test('桌面首页常见窗口一屏可见：导航、行动、剪影与存档�
 test('存档较多时只滚动桌面右侧列表，底栏和开始按钮仍可用', async ({ page }, info) => {
   await page.goto('/');
   await page.evaluate(async () => {
-    const { SaveRepository } = await import('/src/services/storage/saveRepository.ts');
-    const { worldState } = await import('/src/tests/fixtures/world.ts');
+    const repoPath = '/src/services/storage/saveRepository.ts';
+    const fixturePath = '/src/tests/fixtures/world.ts';
+    const { SaveRepository } = await import(repoPath);
+    const { worldState } = await import(fixturePath);
     const repo = await SaveRepository.open();
     try {
       for (let i = 1; i <= 8; i++) {
@@ -75,7 +77,7 @@ test('存档较多时只滚动桌面右侧列表，底栏和开始按钮仍可�
 });
 
 test('极矮桌面窗口保留正常滚动，操作入口不会被裁剪', async ({ page }, info) => {
-  if (info.project.name !== 'desktop') return;
+  test.skip(info.project.name !== 'desktop', '短窗口滚动保底只适用于桌面双栏');
   await page.setViewportSize({ width: 1200, height: 560 });
   await page.goto('/');
   await expect(page.getByRole('button', { name: /开始新游戏/ })).toBeVisible();
