@@ -76,9 +76,12 @@ test('全量世界观察：场外人物认知、总结、排程、任务与组�
   await expect(panel).toContainText('内部世界记录 · 不代表任何角色已知');
   await panel.getByRole('button', { name: '关闭资料界面' }).click();
   panel = await open('世界事件');
+  await panel.getByText('旧版独立事件资料', {exact:false}).first().click();
   await expect(panel).toContainText('hidden检查排程'); await expect(panel).toContainText('partially_known检查排程');
-  await panel.getByText('全部事件字段与引用', { exact: true }).first().click();
+  await panel.getByRole('button', { name: /hidden检查排程/ }).first().click();
+  await panel.getByText('完整技术记录', { exact: true }).click();
   await expect(panel).toContainText('org-a'); await expect(panel).toContainText('完成预约事项');
+  if (await panel.getByRole('button', { name:'返回事件列表',exact:true }).isVisible()) await panel.getByRole('button', { name:'返回事件列表',exact:true }).click();
   await panel.getByText('任务进展', { exact: true }).click(); await expect(panel).toContainText('诊所场外盘点任务');
   await panel.getByRole('button', { name: '关闭资料界面' }).click();
   panel = await open('势力组织'); await expect(panel).toContainText('独立经营诊所');

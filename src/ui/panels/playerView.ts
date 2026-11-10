@@ -57,6 +57,7 @@ export function playerView(state: GameState, authoredCompanion?: CompanionProfil
     summaries: state.memories.npcSummaries[person.id] ?? [],
   }));
   return {
+    worldClock:state.worldClock,
     npc, organizations: Object.values(state.organizations), items: Object.values(state.items),
     locations: Object.values(state.locations), events: Object.values(state.events),
     retiredEvents: Object.values(state.retiredEvents), retiredNpcs: Object.values(state.retiredNpcs),
