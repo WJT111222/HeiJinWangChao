@@ -79,7 +79,7 @@ export function textVariableCatalog() {
       '可选gameState.前缀与源仓库一致，根和字段仍以本目录为准；[index]仅用于列明的普通数组，NPC/实体表必须用稳定ID。[id]替换为真实稳定ID；创建对象省略id，由路径注入。条目是有限操作入口，不是任意深层赋值。',
       '内联NPC初始记忆保持空；用push记忆路径新增，由程序填充当前回合、人物引用和游戏时间。knownInformation同时记录一条个人记忆。',
       'npc[id].memories、longTermMemories、knownInformation的push值统一为{text,knowledgeKind,knowledgeSource,visibility}，四项必填。SAVE_STATE中的knownInformation使用source/learnedAt是只读存档投影，不是输入格式；命令不得带source/learnedAt/id/sourceTurnIds/createdAtGameTime/affectedEntityRefs。knowledgeKind必须由模型选择observed/reported/suspected，不由程序猜测补全。',
-      '只能更新目录内字段。旧资产无交易登记、历史债务无到账登记、房产购买尚无原生命令，写入<说明>，不伪造交易。events[id].sceneState仅更新已存在现场事件的实际状态和结果，程序保留旧规划并填写来源；新事件、预计终止时间、延期、承接及清理由World处理。tasks仍须截止时间或非空完成条件，不套用事件新规。',
+      '只能更新目录内字段。旧资产无交易登记、历史债务无到账登记、房产购买尚无原生命令，写入<说明>，不伪造交易。events[id].sceneState仅更新已存在现场事件的实际状态和结果；所选Story的eventNarration.enter可明确授权该事件实际介入，mention无此权限，提前结案用实际at且保留fixedEndAt，程序保留旧规划并填写来源；新事件、预计终止时间、延期、承接及清理由World处理。tasks仍须截止时间或非空完成条件，不套用事件新规。',
       'opening.initialState仅供带openingInitializationPending=true的新游戏开局，一批最多一条set。填写缺失weatherText/environmentText、原有cash/onlineBalance及expectedIncomes，不覆盖明确数据。expectedIncomes内每条需稳定id、source、整数分amount、status=expected、account、scheduleText，可选expectedAt不早于当前候选游戏时间；不是到账，不填receivedAt/sourceTurnId，不增加余额。普通回合及无标记旧档禁用。先初始化再处理真实交易。',
       '数组set替换、push追加一个元素、delete按当前索引删除；同一数组多个delete按索引从大到小输出，程序按文本顺序执行，不静默重排。NPC整体/原始记忆、账目记录、地点和组织整体删除没有安全领域命令，明确拒绝；不采用任意深合并。',
       '开局程序统一注入Story时间，不重复计时。普通回合set worldClock为合法ISO时间且不倒退；需要推进时明确输出set worldClock，程序会将时钟优先应用，互动、记忆和实际到账使用本批最终时钟；其他命令保持文本顺序。lastInteractionAt不晚于执行时钟且不早于本人已有互动时间；receivedAt不晚于执行时钟。',

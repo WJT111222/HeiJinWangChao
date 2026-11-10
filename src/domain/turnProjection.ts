@@ -1,3 +1,5 @@
+import { storySceneAuthority, validateNarrationClock } from './events/narration';
+import { timeOutcome, validateTimeCommands } from './timePreflight';
 import { eventInteractionCommands } from './events/interactions';
 import { openingTimeBase, openingTimeSelection } from './openingTime';
 import { commitCommands } from './commands';
@@ -22,7 +24,13 @@ export function variableCommandsForTurn(state: GameState, draft: TurnDraft, comm
 export function preparedVariableCommands(state: GameState, draft: TurnDraft, commands: readonly DomainCommand[]): DomainCommand[] {
   requireData(draft.turnKind === 'opening' || commands.every(c => c.type !== 'InitializeOpeningState'),
     'OPENING_INITIALIZATION', '普通回合不能初始化原有生活状态');
-  const variables = variableCommandsForTurn(state, draft, commands);
+  validateTimeCommands(state,draft,commands);
+  let variables = variableCommandsForTurn(state, draft, commands);
+  if(draft.turnKind==='regular' && draft.story?.variableGuide.some(g=>g.group==='time'&&g.subjectHint==='time:pause')) {
+    const stop=timeOutcome(state,draft)!;
+    variables=[{type:'SetWorldClock',commandId:`story-pause-clock:${draft.storyRevision}`,worldClock:stop.at,evidence:'所选Story结构化实际停止时间'},
+      ...variables.filter(c=>c.type!=='SetWorldClock')];
+  }
   const events = { ...state.events };
   const lastWrite = new Map<string, number>();
   variables.forEach((command,index)=>{
@@ -42,6 +50,8 @@ export function preparedVariableCommands(state: GameState, draft: TurnDraft, com
 export function projectTurn(state: GameState, draft: TurnDraft, worldCommands: readonly DomainCommand[] = []) {
   const validated = draft.variables?.validation === 'validated';
   const variables = draft.variables?.validation === 'validated' ? draft.variables.result.commands : [];
-  return commitCommands(openingTimeBase(state, draft), draft.turnId, state.revision,
-    [...(validated ? preparedVariableCommands(state, draft, variables) : variableCommandsForTurn(state,draft,variables)), ...worldCommands], state.updatedAt);
+  const projected = commitCommands(openingTimeBase(state, draft), draft.turnId, state.revision,
+    [...(validated ? preparedVariableCommands(state, draft, variables) : variableCommandsForTurn(state,draft,variables)), ...worldCommands], state.updatedAt,validated?storySceneAuthority(state,draft,variables):undefined);
+  if(validated) validateNarrationClock(state,draft,projected.worldClock);
+  return projected;
 }
