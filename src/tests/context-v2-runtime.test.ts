@@ -12,7 +12,7 @@ import { createTurnDraft, rerollStory } from '../domain/drafts';
 import { projectTurn } from '../domain/turnProjection';
 import { composePrompt } from '../prompts/composer';
 import { contextV2Fixture } from './fixtures/contextV2';
-import { expectFullState, sentContext } from './fixtures/contextAssertions';
+import { expectWorldWithNpcProjection, sentContext } from './fixtures/contextAssertions';
 import { variableReply } from './fixtures/variableReply';
 import { submission } from './fixtures/turn';
 import { worldResult } from './fixtures/world';
@@ -83,7 +83,7 @@ describe('上下文 V2经真实Coordinator、Runtime、Mock传输与原子提交
     const candidate = await stage.generate({ ...a, draft: variables });
     const context = calls[0].context, projection = projectTurn(a.state, variables);
     expect(projection.revision).toBe(9); // 领域模拟机制保持原样，模型输入单独标明正式写入基线。
-    expectFullState(context, projection, 8);
+    expectWorldWithNpcProjection(context, projection, 8);
     expect(context.BASE_SAVE_REVISION).toBe(8); expect(record(context.TURN_CONTEXT).baseSaveRevision).toBe(8);
     expect(record(context.SAVE_STATE).worldClock).toBe('2026-10-18T08:10:00+08:00');
     expect(record(record(record(context.SAVE_STATE).npc)['scene-ordinary']).onScene).toBe(false);
@@ -102,7 +102,7 @@ describe('上下文 V2经真实Coordinator、Runtime、Mock传输与原子提交
     const fetcher = vi.fn<typeof fetch>(async (_url, init) => {
       const call = request(init); calls.push(call);
       const draft = (await a.repo.loadDraft(a.state.saveId))!;
-      expectFullState(call.context, call.stage === 'world' ? projectTurn(a.state, draft) : a.state, a.state.revision);
+      expectWorldWithNpcProjection(call.context, call.stage === 'world' ? projectTurn(a.state, draft) : a.state, a.state.revision);
       expect(call.context.PLAYER_ACTION).toBe(a.draft.userInput);
       expect(array(record(call.context.MEMORY_CONTEXT).recentTurns)).toHaveLength(3);
       expect(await a.repo.load(a.state.saveId)).toEqual(a.state);
@@ -139,7 +139,7 @@ describe('上下文 V2经真实Coordinator、Runtime、Mock传输与原子提交
     expect((await second.commitTurn(submission(result.draft, '下一步'))).replayed).toBe(true);
     const next = sentContext((await composePrompt({ state: committed.state, settings: a.settings, stage: 'story', mode: 'regular', userInput: '下一步' })).messages);
     expect(array(record(next.MEMORY_CONTEXT).recentTurns).at(-1)).toMatchObject(result.draft.story!);
-    expectFullState(next, committed.state);
+    expectWorldWithNpcProjection(next, committed.state);
     expect(fetcher).toHaveBeenCalledTimes(3);
   });
 
@@ -156,7 +156,7 @@ describe('上下文 V2经真实Coordinator、Runtime、Mock传输与原子提交
     }, ready.draftRevision);
     const fetcher = vi.fn<typeof fetch>(async (_url, init) => {
       const call = request(init);
-      expect(call.stage).toBe('world'); expectFullState(call.context, a.state);
+      expect(call.stage).toBe('world'); expectWorldWithNpcProjection(call.context, a.state);
       expect(call.context.BASE_SAVE_REVISION).toBe(a.state.revision);
       expect(record(call.context.TURN_CONTEXT).baseSaveRevision).toBe(a.state.revision);
       expect(call.context.variablePending).toBe(true); expect(call.context.VARIABLE_RESULT).toBeUndefined();

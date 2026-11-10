@@ -105,3 +105,7 @@ CONTEXT_METRICS=1 npx vitest run src/tests/context-volume.test.ts --reporter=ver
 | 待确认2015开局 | 三阶段SAVE_STATE.revision均为0；World时钟为2015-07-08 14:02 +08:00，窗口14:00→14:02；Variables仅一条SetWorldClock，三个阶段各请求一次；Commit后正式revision1，重放不重复推进 |
 
 本次仅运行8个定向文件、210用例，全部通过：`context-v2`、`context-v2-runtime`、`opening-time`、`world-stage`、`world-validation`、`turn-commit`、`world-structural-workflow`、`world-structural-reliability`。另通过typecheck、lint以及审查基线/原main基线到HEAD的diff --check。未重跑前述1173用例或浏览器，全部网络响应为Mock，未调用付费模型。
+
+## NPC V2 第四批输入表示衔接
+
+上述记录保留各批历史设计与验收结果。当前NPC只读表示以 [NPC_V2_BATCH4.md](NPC_V2_BATCH4.md) 为准：人物表唯一位于 `SAVE_STATE.npc`，四级ID索引位于 `NPC_CONTEXT.groups`，现场/场外列表仅传ID；离场普通可通过可靠已有总结和近期/相关原文形成可观测的紧凑视图。正式人物/记忆存储、历史召回评分和命令权限不变，休眠档案仍完全隔离。

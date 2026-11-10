@@ -413,6 +413,11 @@
       "contextV2": {
         "notes": "三阶段上下文V2：仅适配完整模型读取、角色知情与原写入权限的说明；保留原始及历史适配哈希，不改输出协议。",
         "sha256": "b7c17abbb85ddbb91cc728e820f3ae41001e978640736ab83728707ce24c95ff"
+      },
+      "npcContextTiersV2": {
+        "baseCommit": "9f7861f2a1492b9b6118d741946677351671b8a3",
+        "notes": "NPC V2第四批：唯一人物投影与四级ID索引，移除重复人物/记忆载荷；保留作者背景、独立认知、全部任务与旧来源记录。",
+        "sha256": "0585d577fef7f2b28f47de6b648676a47bc1259a281e3a551b7184c0171f4203"
       }
     },
     "shared/06_story_output.md": {
@@ -480,6 +485,11 @@
         "baseCommit": "e4faf4bb07d5ba519cf2a801cb9e20558b8bf4b1",
         "notes": "NPC V2第三批：建档与升级由AI判断，玩家优先，新增合法资料写入；原记忆及香闺秘档提示不变。保留历史来源。",
         "sha256": "8a5a045236ff97127579968dd7da61d2e7190621bdfa7f9f045341439c0fad81"
+      },
+      "npcContextTiersV2": {
+        "baseCommit": "9f7861f2a1492b9b6118d741946677351671b8a3",
+        "notes": "NPC V2第四批：唯一人物投影与四级ID索引，移除重复人物/记忆载荷；保留作者背景、独立认知、全部任务与旧来源记录。",
+        "sha256": "630cb8b375268c0efeabd1e412c741fbbea32908e3e9ab4b3459772c06f61fea"
       }
     },
     "shared/08_world_output.md": {
@@ -567,6 +577,11 @@
         "baseCommit": "0fa1ab269280924fab627eda21a3e11f1661d3ff",
         "notes": "NPC V2第二批：统一人物原始记忆，不要求特殊长期层；保留香闺秘档原文、旧来源及历次适配记录。",
         "sha256": "291e8e4fb3ef2fe6a06fc7e09afe7c49cc046d73c765a012eddcee4098aa7551"
+      },
+      "npcContextTiersV2": {
+        "baseCommit": "9f7861f2a1492b9b6118d741946677351671b8a3",
+        "notes": "NPC V2第四批：唯一人物投影与四级ID索引，移除重复人物/记忆载荷；保留作者背景、独立认知、全部任务与旧来源记录。",
+        "sha256": "afe9360eacf02c93d3a91cefed36e0778b292cbb41836cc7547d208f6bd15c87"
       }
     },
     "stages/opening/variables.md": {

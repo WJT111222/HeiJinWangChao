@@ -92,7 +92,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
               companion: archive && matchesCompanion(state, archive) ? archive : undefined,
             }
           : undefined,
-      SCENE_NPCS: Object.values(state.npc).filter((npc) => npc.onScene),
+      SCENE_NPC_IDS: Object.values(state.npc).filter((npc) => npc.onScene).map(npc=>npc.id),
       KNOWN_EVENTS: events,
       EVENT_NARRATION_INDEX:storyEventIndex(state),
       EVENT_ENTRIES: pendingEventEntries(state),
@@ -192,9 +192,9 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       EVENT_STAGE_RESULTS:Object.fromEntries([...Object.values(temporary.events),...Object.values(temporary.retiredEvents)]
         .filter(e=>e.eventKind==='main').map(e=>[e.id,stageResults(temporary,e.id)])),
       OFFSCREEN_STATE: {
-        npc: Object.values(temporary.npc).filter(
+        npcIds: Object.values(temporary.npc).filter(
           (npc) => worldNpcAllowed(temporary, draft!, npc.id),
-        ),
+        ).map(npc=>npc.id),
         organizations: temporary.organizations,
         tasks: Object.values(temporary.tasks).filter(
           (task) =>

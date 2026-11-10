@@ -56,8 +56,9 @@ for(const version of [6,7] as const) test(`V${version}实际浏览器迁移与�
     const [{SaveRepository},{composePrompt},{defaultSettings},{rerollStory}]=await Promise.all(paths.map(path=>import(path))),repo=await SaveRepository.open();
     try {
       const {state,draft}=await repo.loadGame('save-a'),selected=rerollStory(draft,{turnKind:'regular',narrative:'【旁白】继续日常。',summary:'继续日常',variableGuide:[]});
+      selected.userInput='找npc-a核对原始经历';
       const outputs=[];
-      for(const stage of ['story','variables','world'])outputs.push((await composePrompt({stage,mode:'regular',state,draft:selected,settings:defaultSettings(),userInput:'继续'})).messages);
+      for(const stage of ['story','variables','world'])outputs.push((await composePrompt({stage,mode:'regular',state,draft:selected,settings:defaultSettings(),userInput:selected.userInput})).messages);
       return JSON.stringify(outputs);
     } finally {repo.close();}
   });

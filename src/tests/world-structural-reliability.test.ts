@@ -126,8 +126,8 @@ describe('离场权限与正式World请求上下文一致',()=>{
  });
  it('正式上下文纳入本轮合法离场NPC并保留仍在场保护，协议说明一致',async()=>{
   const a=teahouse(), input={stage:'world' as const,mode:'opening' as const,state:a.state,draft:a.draft,settings:defaultSettings(),userInput:'',domains:['npc_ordinary','npc_special']};
-  const context=contextFor(input), offscreen=context.OFFSCREEN_STATE as {npc:{id:string}[]};
-  expect(offscreen.npc.map(n=>n.id)).toContain('npc_fixture_lin');expect(offscreen.npc.map(n=>n.id)).not.toContain('npc_fixture_xu');
+  const context=contextFor(input), offscreen=context.OFFSCREEN_STATE as {npcIds:string[]};
+  expect(offscreen.npcIds).toContain('npc_fixture_lin');expect(offscreen.npcIds).not.toContain('npc_fixture_xu');
   expect(context.PROTECTED_SCENE).toMatchObject({sceneNpcIds:['npc_fixture_xu']});
   const prompt=await composePrompt(input), text=JSON.stringify(prompt.messages);
   expect(text).toContain('单侧关联');expect(text).toContain('Variables投影');

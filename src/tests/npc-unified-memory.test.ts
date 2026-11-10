@@ -116,8 +116,8 @@ it.each(['ordinary','special'] as const)('%s旧layer命令和已应用回执保�
 it('最终请求目录不要求长期层；原始记忆仍读全，休眠香闺资料不泄漏', async () => {
   const state = migrateSave(legacyNpcMemories()), sleeping = hibernateNpcProfile(state,'npc-a',state.npc['npc-a'].identityKey);
   for (const stage of ['story','variables','world'] as const) {
-    const draft = worldDraft(); draft.baseSaveRevision = sleeping.revision;
-    const request = await composePrompt({stage,mode:'regular',state:sleeping,draft,settings:defaultSettings(),userInput:'继续'});
+    const draft = worldDraft(); draft.baseSaveRevision = sleeping.revision; draft.userInput='找npc-a核对原始经历';
+    const request = await composePrompt({stage,mode:'regular',state:sleeping,draft,settings:defaultSettings(),userInput:draft.userInput});
     const text = JSON.stringify(request.messages);
     expect(text).not.toContain(fullPrivateProfile.firstExperienceText.trim());
     expect(text).toContain('原始文本'); expect(text).not.toContain('push npc[lin].longTermMemories');

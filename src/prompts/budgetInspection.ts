@@ -3,7 +3,7 @@ import { characterCount, estimateTokens } from './statistics';
 
 export const dataCategories = {
   system: '系统提示词（固定/世界书/阶段/领域）', protagonist: '主角档案、装备与经济资产',
-  npc: 'NPC完整档案', npcMemory: 'NPC原始、长期与个人总结记忆', world: '世界组织、地点、任务、事件与时间线',
+  npc: 'NPC分层档案', npcMemory: 'NPC原始、长期与个人总结记忆', world: '世界组织、地点、任务、事件与时间线',
   layeredMemory: '短中长期分层记忆', recent: '近期完整正文', recall: '历史召回原文与元数据',
   candidate: '当前输入与阶段候选', catalog: '命令协议与目录', other: '其他资料', structure: 'JSON键名、标点、容器与空白',
 } as const;
@@ -48,6 +48,7 @@ function category(path: string[]): Category {
   if (['PLAYER_ACTION', 'STORY_RESULT', 'VARIABLE_RESULT', 'VARIABLE_GUIDE'].includes(top)) return 'candidate';
   if (top === 'MEMORY_CONTEXT' && field === 'recentTurns') return 'recent';
   if (top === 'MEMORY_CONTEXT' && ['recalledTurns', 'recallDiagnostics', 'recallPolicy'].includes(field)) return 'recall';
+  if (top === 'NPC_CONTEXT' || top === 'SCENE_NPC_IDS' || top === 'OFFSCREEN_STATE' && field === 'npcIds') return 'npc';
   if (top === 'NPC_KNOWLEDGE' || top === 'SAVE_STATE' && field === 'memories' && third === 'npcSummaries') return 'npcMemory';
   const npcField = top === 'SCENE_NPCS' ? third : fourth;
   const npcContainer = top === 'SAVE_STATE' && field === 'npc' || top === 'SCENE_NPCS' || top === 'OFFSCREEN_STATE' && field === 'npc';

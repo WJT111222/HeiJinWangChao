@@ -13,7 +13,7 @@ import { createTurnDraft, rerollStory } from '../domain/drafts';
 import { projectTurn } from '../domain/turnProjection';
 import { composePrompt } from '../prompts/composer';
 import { recallV2Fixture } from './fixtures/recallV2';
-import { expectFullState, sentContext } from './fixtures/contextAssertions';
+import { expectWorldWithNpcProjection, sentContext } from './fixtures/contextAssertions';
 import { variableReply } from './fixtures/variableReply';
 import { submission } from './fixtures/turn';
 import { worldResult } from './fixtures/world';
@@ -66,7 +66,7 @@ describe('200回合共享召回：真实Coordinator、Runtime与Mock网络', () 
       const recalled = array(record(call.context.MEMORY_CONTEXT).recalledTurns).map(record);
       expect(recalled.map(entry => entry.turnId)).toEqual(expect.arrayContaining(['history-8', 'history-25', 'history-60', 'history-130', 'history-140']));
       expect(recalled.every(entry => entry.source === 'journal' && entry.status === 'committed')).toBe(true);
-      expectFullState(call.context, call.stage === 'world' ? projectTurn(a.state, draft) : a.state, 200);
+      expectWorldWithNpcProjection(call.context, call.stage === 'world' ? projectTurn(a.state, draft) : a.state, 200);
       expect(await a.repo.load(a.state.saveId)).toEqual(a.state);
       if (call.stage === 'story') {
         const story = a.draft.story!;
@@ -121,7 +121,7 @@ describe('200回合共享召回：真实Coordinator、Runtime与Mock网络', () 
     }, ready.draftRevision);
     const fetcher = vi.fn<typeof fetch>(async (_url, init) => {
       const call = request(init);
-      expectFullState(call.context, a.state);
+      expectWorldWithNpcProjection(call.context, a.state);
       expect(call.context.variablePending).toBe(true); expect(call.context.VARIABLE_RESULT).toBeUndefined();
       const recalled = array(record(call.context.MEMORY_CONTEXT).recalledTurns).map(entry => record(entry).turnId);
       expect(recalled).not.toContain('history-8');
