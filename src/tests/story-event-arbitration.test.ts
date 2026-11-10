@@ -1,3 +1,4 @@
+import { expectWorldWithNpcProjection } from './fixtures/contextAssertions';
 import { expect, it } from 'vitest';
 import { StorySchema } from '../domain/state';
 import { parseVariables } from '../services/validation/aiOutputs';
@@ -105,8 +106,7 @@ it('完整Story请求提供隐藏正式事件身份但不将索引升级为角�
   const a=scenario(),before=structuredClone(a.state),p=await composePrompt({stage:'story',mode:'regular',state:a.state,draft:a.base,userInput:a.base.userInput,settings:defaultSettings()});
   expect(p.context.EVENT_NARRATION_INDEX).toEqual(expect.arrayContaining([expect.objectContaining({eventId:'stage-one',eventKind:'sub',fixedEndAt:a.state.events['stage-one'].fixedEndAt,visibility:'hidden'})]));
   expect(p.context.KNOWN_EVENTS).not.toEqual(expect.arrayContaining([expect.objectContaining({id:'stage-one'})]));
-  const expected={...a.state};Reflect.deleteProperty(expected,'journal');Reflect.deleteProperty(expected,'appliedCommands');
-  expect(p.context.SAVE_STATE).toEqual(expected);expect(a.state).toEqual(before);
+  expectWorldWithNpcProjection(p.context,a.state);expect(a.state).toEqual(before);
 });
 const repos:SaveRepository[]=[];afterEach(()=>repos.splice(0).forEach(r=>r.close()));
 it.each(['enter','mention','none','enter-retry'] as const)('真实Coordinator→Story Runtime→文本Variables→World→Commit→重载/撤回：%s',async selectedMode=>{

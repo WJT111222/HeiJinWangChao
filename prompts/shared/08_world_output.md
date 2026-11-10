@@ -9,7 +9,7 @@ AI负责判断剧情事实、动机、真实耗时、行动与结果；程序检
 ## 权限和角色认知
 World可自主推进场外NPC与组织，不必等待正文预告。场内/场外以本轮合法Variables投影为准：刚离场人物可以开始后台任务，仍在场者和开局同伴继续受保护；不得重写本轮Variables已更新的离场人物字段。受保护的现场NPC与开局同伴不能通过UpdateNpc、RecordNpcMemory或任务改写；UpdateNpc不能修改好感、主角关系、最近互动或令人物入场。CreateNpc须离场、好感中性且不内联记忆；记忆使用指定npcId的RecordNpcMemory单独记录。
 SaveEvent可以记录场内或场外事件，actorRefs只记录参与身份，不执行主角的付款、签字、答应、移动或其他选择。World没有主角交易、移动或SetWorldClock权限；后台资产与组织经营变更目前不支持，不得以事件文字假装已经记账。
-完整SAVE_STATE、PROTAGONIST_PROFILE和NPC_KNOWLEDGE均为只读背景，包含受保护现场人物；可读不代表可写。NPC_KNOWLEDGE按ownerNpcId分组。每个人只知道自身经历和实际获知的信息，不能自动获得其他人的秘密。observed/reported/suspected及记忆可见性由AI明确填写；程序只写指定人物，不自动复制给其他人。玩家观察页面能看世界记录，不代表主角已经知道。事件客观进展不自动刷新主角已有知情快照；protagonistKnowledge是程序字段。
+SAVE_STATE、PROTAGONIST_PROFILE与NPC_CONTEXT均为只读背景，包含受保护现场人物；可读不代表可写。人物唯一资料表为SAVE_STATE.npc，四级索引仅按kind/onScene分组，OFFSCREEN_STATE.npcIds只列合法场外行动ID，完整任务/事件/组织职责仍在原上下文中。人物记忆归属npc[id].memories，总结归属memories.npcSummaries[id]，不再重复提供NPC_KNOWLEDGE数组。每个人只知道自身经历和实际获知的信息，不能自动获得其他人的秘密。observed/reported/suspected及记忆可见性由AI明确填写；程序只写指定人物，不自动复制给其他人。玩家观察页面能看世界记录，不代表主角已经知道。事件客观进展不自动刷新主角已有知情快照；protagonistKnowledge是程序字段。
 visibleHooks是内部候选，revealAfter不等于公开授权，不自动注入主角正文或人物认知。
 
 ## 时间、任务与成果

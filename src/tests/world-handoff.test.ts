@@ -246,7 +246,7 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
     const ctx = contextFor({ stage: 'world', mode: 'regular', state: committed.state, draft: { ...worldDraft(), turnId: committed.draft.turnId, baseSaveRevision: committed.state.revision,
       variables: { ...worldDraft().variables!, result: await elapsedVariables(repo, worldDraft().story!.narrative, 600) } }, settings: defaultSettings(), userInput: '' });
     expect(JSON.stringify(ctx.OFFSCREEN_STATE)).toContain('"id":"work"');
-    expect(JSON.stringify(ctx.OFFSCREEN_STATE)).toContain('identity-npc-a');
+    expect(JSON.stringify(ctx.SAVE_STATE)).toContain('identity-npc-a');
     const nextDraft = await completeDraft(repo, { variables: await elapsedVariables(repo, worldDraft().story!.narrative, 600) });
     const ending = worldResult(); ending.taskCommands = [finishTask(committed.state, 'next', '2026-10-18T08:15:00+08:00')];
     const finished = await stage(repo, async () => wire(worldResultForTurn(ending,(await repo.loadDraft('save-a'))!.turnId))).generate({ ...config(), draft: nextDraft });

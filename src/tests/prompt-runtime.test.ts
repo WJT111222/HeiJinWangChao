@@ -243,7 +243,7 @@ describe('真实资源加载与消息组装', () => {
     };
     const before = structuredClone(a.state);
     const result = await composePrompt(a);
-    expect(result.context.SCENE_NPCS).toEqual([
+    expect(Object.values((result.context.SAVE_STATE as {npc:Record<string,unknown>}).npc).filter(n=>(n as {onScene:boolean}).onScene)).toEqual([
       expect.objectContaining({
         id: 'npc-a',
         appearance: '灰色夹克，戴细框眼镜',
@@ -310,13 +310,12 @@ describe('真实资源加载与消息组装', () => {
       { ...summary, id: 'internal-summary', text: '内部人物摘要不可见', visibility: 'internal' },
     ];
     const result = await composePrompt(a);
-    expect(result.context.SCENE_NPCS).toEqual([
+    expect(Object.values((result.context.SAVE_STATE as {npc:Record<string,unknown>}).npc).filter(n=>(n as {onScene:boolean}).onScene)).toEqual([
       expect.objectContaining({
         temperament: '冷静而直接',
         affinity: 30,
         relationshipText: '继续合作',
         memories: a.state.npc['npc-a'].memories,
-        longTermMemories: a.state.npc['npc-a'].longTermMemories,
       }),
     ]);
     const sent = result.messages.at(-1)!.content;
@@ -336,21 +335,21 @@ describe('真实资源加载与消息组装', () => {
       createdAtGameTime: gameTime,
     };
     a.state.memories.long = [memory, { ...memory, id: 'public-health', text: '手腕受伤' }];
-    expect((await composePrompt(a)).context.SCENE_NPCS).toEqual([
+    expect(Object.values(((await composePrompt(a)).context.SAVE_STATE as {npc:Record<string,unknown>}).npc).filter(n=>(n as {onScene:boolean}).onScene)).toEqual([
       expect.objectContaining({ relationshipText: '互相信任', healthText: '手腕受伤' }),
     ]);
     a.state.memories.long = [{ ...memory, text: '他们并非互相信任，他也否认手腕受伤' }];
-    const denied = (await composePrompt(a)).context.SCENE_NPCS as Record<string, unknown>[];
+    const denied = Object.values(((await composePrompt(a)).context.SAVE_STATE as {npc:Record<string,unknown>}).npc).filter(n=>(n as {onScene:boolean}).onScene) as Record<string, unknown>[];
     expect(denied[0].relationshipText).toBe('互相信任');
     expect(denied[0].healthText).toBe('手腕受伤');
     a.state.memories.long[0].visibility = 'internal';
     a.state.memories.short = [{ ...memory, id: 'unrelated', affectedEntityRefs: [] }];
-    const hidden = (await composePrompt(a)).context.SCENE_NPCS as Record<string, unknown>[];
+    const hidden = Object.values(((await composePrompt(a)).context.SAVE_STATE as {npc:Record<string,unknown>}).npc).filter(n=>(n as {onScene:boolean}).onScene) as Record<string, unknown>[];
     expect(hidden[0].relationshipText).toBe('互相信任');
     expect(hidden[0].healthText).toBe('手腕受伤');
     expect(hidden[0].memories).toEqual([]);
     a.state.npc['npc-a'].onScene = false;
-    expect((await composePrompt(a)).context.SCENE_NPCS).toEqual([]);
+    expect(Object.values(((await composePrompt(a)).context.SAVE_STATE as {npc:Record<string,unknown>}).npc).filter(n=>(n as {onScene:boolean}).onScene)).toEqual([]);
   });
   it('同伴完整正式档案优先于旧创角缓存，保留未确认好感语义与新关系', async () => {
     const form = newCreation();
@@ -387,7 +386,7 @@ describe('真实资源加载与消息组装', () => {
     state.npc.companion.onScene = true;
     const a = { ...input(), state, draft: undefined, companionProfile: archive };
     const before = await composePrompt(a);
-    expect(before.context.SCENE_NPCS).toEqual([
+    expect(Object.values((before.context.SAVE_STATE as {npc:Record<string,unknown>}).npc).filter(n=>(n as {onScene:boolean}).onScene)).toEqual([
       expect.objectContaining({
         appearance: '短发',
         temperament: '耐心',
@@ -398,10 +397,7 @@ describe('真实资源加载与消息组装', () => {
     expect(before.messages.at(-1)!.content).toContain('内部立场不可见');
     expect(state.npc.companion.affinityConfirmed).toBeUndefined();
     expect(before.context.NPC_KNOWLEDGE_POLICY).toContain('未确认占位');
-    expect(
-      (await composePrompt({ ...a, companionProfile: { ...archive, saveId: 'another-save' } }))
-        .context.SCENE_NPCS,
-    ).toEqual([expect.objectContaining({ relationshipText: '内部立场不可见' })]);
+    expect(((await composePrompt({ ...a, companionProfile: { ...archive, saveId: 'another-save' } })).context.SAVE_STATE as {npc:Record<string,unknown>}).npc.companion).toMatchObject({relationshipText:'内部立场不可见'});
     state.npc.companion.relationshipText = '已经明确和解';
     state.npc.companion.memories = [
       {
@@ -414,7 +410,7 @@ describe('真实资源加载与消息组装', () => {
         knowledgeSource: '当面交谈',
       },
     ];
-    expect((await composePrompt(a)).context.SCENE_NPCS).toEqual([
+    expect(Object.values(((await composePrompt(a)).context.SAVE_STATE as {npc:Record<string,unknown>}).npc).filter(n=>(n as {onScene:boolean}).onScene)).toEqual([
       expect.objectContaining({
         relationshipText: '已经明确和解',
       }),
