@@ -124,9 +124,9 @@ test('默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式�
 });
 
 test('已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义', async ({ page }) => {
-  await page.goto('/'); await expect(page.locator('.version')).toHaveText('V1.0');
+  await page.goto('/'); await expect(page.locator('.version, .home-experience .ver')).toHaveText('V1.0');
   const before = await seed(page, 'complete');
-  await expect(page.locator('.version')).toHaveText('V1.0'); await expect(page.locator('.app-header')).not.toContainText('M5-P3');
+  await expect(page.locator('.version, .home-experience .ver')).toHaveText('V1.0'); await expect(page.locator('.app-header')).not.toContainText('M5-P3');
   await expect(page.locator('.workflow summary').first()).toContainText('候选已完成');
   await page.reload(); await expect(page.getByTestId('story-reader')).toBeVisible(); expect(await stored(page)).toEqual(before);
   await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');

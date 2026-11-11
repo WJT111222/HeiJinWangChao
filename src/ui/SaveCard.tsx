@@ -1,3 +1,4 @@
+import { CITY, saveCity, skyline } from './home/skyline';
 import { useRef, useState } from 'react';
 import type { SaveRepository } from '../services/storage/saveRepository';
 import { saveKeyText, serializeRawSave } from '../services/storage/saveManagement';
@@ -29,25 +30,31 @@ export function SaveCard({ save, index, selected, repository, onOpen, onSelect, 
         ? error.message : '导出失败，未生成文件，原始数据未修改。请检查浏览器存储权限后重试。');
     } finally { exportLock.current = false; setExporting(false); }
   }
-  return <article className={`save-card ${selected ? 'selected' : ''}`}>
-    <div className="save-card-top">
-      <span className="eyebrow">ARCHIVE {String(index + 1).padStart(2, '0')}</span>
+  const city = saveCity(save.title);
+  return <article className={`save-card dossier ${selected ? 'selected sel' : ''} ${save.status === 'unreadable' ? 'bad' : ''}`} data-city={city}>
+    <div className="tabline"><span className="tab">ARCHIVE {String(index + 1).padStart(2,'0')}</span><span className="clip" aria-hidden="true" /></div>
+    <div className="body"><div className={`thumb ${!city ? 'neutral' : ''}`}>
+      {save.status === 'unreadable' ? <span className="city">未知</span> : <>
+        {city && <span className="city">{CITY[city][0]}</span>}
+        <div aria-hidden="true" dangerouslySetInnerHTML={{__html:skyline(city ?? 'cq','aria-hidden="true"')}} />
+      </>}
       <span className="tag">{save.status === 'unreadable' ? '无法读取' : selected ? '已选择' : '本地存档'}</span>
-    </div>
+    </div><div className="info">
     <h3>{save.title}</h3>
-    <p className="muted">{save.updatedAt ? `保存于 ${dateTime(save.updatedAt)}` : '保存时间无法读取'}</p>
+    <p className="saved">{save.updatedAt ? `保存于 ${dateTime(save.updatedAt)}` : '保存时间无法读取'}</p>
     {save.status === 'unreadable' && <>
-      <p className="save-record-key">存档记录 ID：{saveKeyText(save.storageKey)}</p>
-      {save.saveId && save.saveId !== save.storageKey && <p className="save-record-key">内容中的存档 ID：{save.saveId}</p>}
-      <p>当前版本无法读取这条记录。其他存档不受影响；可先导出原始数据，再决定是否删除。</p>
+      <p className="save-record-key keyline">存档记录 ID：{saveKeyText(save.storageKey)}</p>
+      {save.saveId && save.saveId !== save.storageKey && <p className="save-record-key keyline">内容中的存档 ID：{save.saveId}</p>}
+      <p className="bad-note">当前版本无法读取这条记录。其他存档不受影响；可先导出原始数据，再决定是否删除。</p>
     </>}
-    <div className="save-card-actions">
+    <div className="save-card-actions card-actions">
       {save.status === 'readable' ? <>
-        <button onClick={() => onOpen(save.saveId)}>读取存档 ↗</button>
-        <button onClick={() => onSelect(save.saveId)}>选择</button>
+        <button className="open" onClick={() => onOpen(save.saveId)}>读取存档 ↗</button>
+        {!selected && <button onClick={() => onSelect(save.saveId)}>选择</button>}
       </> : <button disabled={exporting || !repository} onClick={() => void exportRaw()}>{exporting ? '正在导出…' : '导出原始数据'}</button>}
-      <button className="danger-text" onClick={onDelete}>{save.status === 'unreadable' ? '删除存档' : '删除'}</button>
+      <button className="danger-text del" onClick={onDelete}>{save.status === 'unreadable' ? '删除存档' : '删除'}</button>
     </div>
-    {notice && <p role="status">{notice}</p>}
+    {notice && <p className="card-note" role="status">{notice}</p>}
+    </div></div>
   </article>;
 }

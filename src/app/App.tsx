@@ -15,6 +15,8 @@ import { SettingsPanel } from '../ui/settings/SettingsPanel';
 import { UnsavedAiChanges } from '../ui/settings/UnsavedAiChanges';
 import { SettingsSchema, defaultSettings, settingsKey } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
+import { HomeScreen } from '../ui/home/HomeScreen';
+import { dateTime } from '../ui/panels/playerView';
 import { SaveCard } from '../ui/SaveCard';
 import { saveKeyText } from '../services/storage/saveManagement';
 import { Dialog, Empty } from '../ui/Dialog';
@@ -293,7 +295,7 @@ export function App() {
   );
   return (
     <div ref={shell} className={gameRoute ? 'app-shell app-shell-game' : route === '#create' ? 'app-shell' : 'app-shell app-shell-home'}>
-      <header className="app-header">
+      {(gameRoute || route === '#create') && <header className="app-header">
         <a className="brand" href="#" aria-label="黑金王朝首页">
           <span className="brand-mark">黑</span>
           <span>
@@ -307,7 +309,7 @@ export function App() {
           <span className="version">{PRODUCT_VERSION}</span>
         </nav>
         {gameRoute && <button className="mobile-menu-toggle" aria-label="打开游戏菜单" onClick={() => setMenuOpen(true)}>☰</button>}
-      </header>
+      </header>}
       {gameRoute && <div className="game-corner-brand" aria-label={`黑金王朝 ${PRODUCT_VERSION}`}>
         <span className="brand-mark" aria-hidden="true">黑</span>
         <span className="game-corner-name">黑金王朝<small>{PRODUCT_VERSION}</small></span>
@@ -392,90 +394,16 @@ export function App() {
           </main>
         )
       ) : (
-        <main className="home-page">
-          <section className="home-hero">
-            <p className="eyebrow">MODERN CITY / OPEN WORLD</p>
-            <h1>
-              黑金王朝
-              <span>
-                起点有冲突，
-                <br />
-                人生不预设结局。
-              </span>
-            </h1>
-            <p className="home-description">
-              一款 AI 驱动的现代都市开放世界文字角色扮演游戏。
-              <br />
-              在熟悉的城市里，写下属于你的人生。
-            </p>
-            <div className="home-actions">
-              <button
-                className="primary"
-                disabled={!repository}
-                onClick={() => {
-                  changeForm(form);
-                  navigate('create');
-                }}
-              >
-                开始新游戏 <span aria-hidden="true">↗</span>
-              </button>
-              <button
-                disabled={!active || loading}
-                onClick={() => active && openSave(active.saveId)}
-              >
-                继续游戏 →
-              </button>
-            </div>
-            <NoticeLinks onOpen={notices.open} />
-            {hasDraft && <p className="field-hint">有尚未完成的创角资料，开始新游戏可继续填写。</p>}
-            <div className="skyline" aria-hidden="true">
-              {[38, 62, 42, 84, 55, 100, 68, 48, 74, 40, 58].map((height, i) => (
-                <i key={i} style={{ height: `${height}%` }} />
-              ))}
-            </div>
-            <div className="home-footnote">
-              <span>四座城市 · 自由职业 · 开放人生</span>
-              <span>三阶段生成 · 原子结算 · 连续回合</span>
-            </div>
-          </section>
-          <section className="save-library" aria-label="已有存档">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">YOUR STORIES</p>
-                <h2>
-                  已有存档 <span className="count">{saves.length.toString().padStart(2, '0')}</span>
-                </h2>
-              </div>
-              <button
-                disabled={!repository || loading}
-                onClick={() => {
-                  if (repository) {
-                    setLoading(true);
-                    repository
-                      .list()
-                      .then(acceptList)
-                      .catch(() => { setError(listFailure); setListError(listFailure); })
-                      .finally(() => setLoading(false));
-                  }
-                }}
-              >
-                刷新列表
-              </button>
-            </div>
-            <p className="muted">每份存档都是一段独立的人生，保存在当前浏览器。</p>
-            {saveNotice && <p role="status">{saveNotice}</p>}
-            {loading ? (
-              <Empty>正在读取本地存档…</Empty>
-            ) : listError ? (
-              <Empty>{listError}</Empty>
-            ) : !saves.length ? (
-              <Empty>
-                还没有开始的人生。
-                <br />
-                创建角色，留下第一份存档。
-              </Empty>
-            ) : (
-              <div className="save-list">
+        <HomeScreen count={saves.length} loading={loading} canCreate={!!repository}
+          active={active ? `${active.title} · 保存于 ${dateTime(active.updatedAt)}` : undefined}
+          hasDraft={hasDraft} notice={saveNotice} notices={<NoticeLinks onOpen={notices.open} />}
+          onCreate={() => { changeForm(form); navigate('create'); }} onContinue={() => active && openSave(active.saveId)}
+          onSettings={() => setSettingsOpen(true)} onRefresh={() => {
+            if (repository) { setLoading(true); repository.list().then(acceptList)
+              .catch(() => { setError(listFailure); setListError(listFailure); }).finally(() => setLoading(false)); }
+          }}>
+          {loading ? <Empty>正在读取本地存档…</Empty> : listError ? <p className="empty err">{listError}</p> : !saves.length ?
+            <Empty>还没有开始的人生。<br />创建角色，留下第一份存档。</Empty> : <>
                 {saves.map((save, i) => (
                   <SaveCard key={`${typeof save.storageKey}:${saveKeyText(save.storageKey)}`} save={save} index={i}
                     selected={save.status === 'readable' && active?.saveId === save.saveId} repository={repository}
@@ -488,14 +416,9 @@ export function App() {
                           }
                     }} onDelete={() => { setDeleteError(''); setSaveNotice(''); setDeleting(save); }} />
                 ))}
-              </div>
-            )}
-            <footer className="library-footer">
-              <span className="tiny-dot" />
-              本地保存 · 无需账号 <button onClick={() => setSettingsOpen(true)}>打开设置 ↗</button>
-            </footer>
-          </section>
-        </main>
+
+          </>}
+        </HomeScreen>
       )}
       {notices.kind && <NoticeDialog key={notices.kind} kind={notices.kind} muted={notices.muted}
         onMutedChange={notices.setMuted} onClose={notices.close} />}

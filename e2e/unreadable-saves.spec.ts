@@ -1,3 +1,4 @@
+import { openLibrary } from './helpers/home';
 import { goHome } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
@@ -39,7 +40,7 @@ async function seed(page: Page, onlyBroken = false) {
     });
     localStorage.setItem('heijin.selected.v1', JSON.stringify('broken'));
   }, { broken, draft, receipts, onlyBroken });
-  await page.reload(); await expect(page.locator('.save-card')).toHaveCount(onlyBroken ? 1 : 3);
+  await page.reload(); await openLibrary(page); await expect(page.locator('.save-card')).toHaveCount(onlyBroken ? 1 : 3);
 }
 async function snapshot(page: Page) {
   return page.evaluate(async () => {
@@ -57,20 +58,22 @@ async function snapshot(page: Page) {
 }
 const badCard = (page: Page) => page.locator('.save-card').filter({ hasText: broken.title });
 
-test('混合存档列表独立展示，坏记录不触发全局错误，正常存档都能进入且刷新保持', async ({ page }) => {
+test('混合存档列表独立展示，坏记录不触发全局错误，正常存档都能进入且刷新保持', async ({ page }, info) => {
   await seed(page); const before = await snapshot(page);
   await expect(badCard(page)).toContainText('无法读取'); await expect(badCard(page)).toContainText('存档记录 ID：broken');
   await expect(badCard(page).getByRole('button', { name: /读取存档|选择/ })).toHaveCount(0);
   await expect(page.getByRole('alert')).toHaveCount(0); await expect(page.getByText('还没有开始的人生。')).toHaveCount(0);
+  await badCard(page).scrollIntoViewIfNeeded();
+  await page.screenshot({path:info.outputPath('library-unreadable.png')});
   for (const id of ['save-a', 'save-b']) {
     await page.locator('.save-card').filter({ hasText: `正常存档 ${id}` }).getByRole('button', { name: /读取存档/ }).click();
     await openGameTools(page, true);
     await expect(page.getByRole('heading', { name: '林舟', exact: true })).toBeVisible();
-    await goHome(page);
+    await goHome(page); await openLibrary(page);
     await expect(page.locator('.save-card')).toHaveCount(3);
   }
-  await page.reload(); await expect(page.locator('.save-card')).toHaveCount(3); expect(await snapshot(page)).toEqual(before);
-  await page.getByRole('button', { name: /开始新游戏/ }).click(); await expect(page.getByLabel('姓名', { exact: true })).toBeVisible();
+  await page.reload(); await openLibrary(page); await expect(page.locator('.save-card')).toHaveCount(3); expect(await snapshot(page)).toEqual(before);
+  await page.getByRole('button', { name: /开启新的人生/ }).click(); await expect(page.getByLabel('姓名', { exact: true })).toBeVisible();
 });
 
 test('下载 JSON 完整保留坏记录、草稿和回执，读取下载不改库', async ({ page }) => {
@@ -98,12 +101,12 @@ test('二次确认取消不删数据，确认后只删选中的三类记录，�
   await expect(page.getByRole('status')).toContainText('提交回执已删除'); await expect(page.getByRole('alert')).toHaveCount(0);
   const after = await snapshot(page);
   for (const store of Object.keys(before)) expect(after[store]).toEqual(before[store].filter(value => (value as { saveId: string }).saveId !== 'broken'));
-  await page.reload(); await expect(page.locator('.save-card')).toHaveCount(2); await expect(page.getByText('无法读取', { exact: true })).toHaveCount(0);
+  await page.reload(); await openLibrary(page); await expect(page.locator('.save-card')).toHaveCount(2); await expect(page.getByText('无法读取', { exact: true })).toHaveCount(0);
   expect(await snapshot(page)).toEqual(after);
 });
 
 test('只有坏记录时不显示空档状态、不能继续游戏，正常删除流程仍可用', async ({ page }) => {
-  await seed(page, true); await expect(page.getByRole('button', { name: '继续游戏 →' })).toBeDisabled();
+  await seed(page, true); await expect(page.locator('.btn-continue')).toBeDisabled();
   await expect(page.getByText('还没有开始的人生。')).toHaveCount(0);
   await badCard(page).getByRole('button', { name: '删除存档' }).click(); await page.getByRole('button', { name: '确认删除' }).click();
   await expect(page.getByText('还没有开始的人生。')).toBeVisible();
@@ -121,10 +124,10 @@ test('存储整体不可用明确报错，关闭提示不会重复弹回或伪�
   await page.addInitScript(() => { IDBFactory.prototype.open = () => { throw new DOMException('denied', 'SecurityError'); }; });
   await page.goto('/'); await expect(page.getByRole('alert')).toContainText('本地存档无法打开');
   await page.getByRole('button', { name: '关闭提示' }).click(); await expect(page.getByRole('alert')).toHaveCount(0);
-  await expect(page.getByRole('region', { name: '已有存档' })).toContainText('本地存档无法打开');
+  await openLibrary(page); await expect(page.getByRole('region', { name: '已有存档' })).toContainText('本地存档无法打开');
   await expect(page.getByText('还没有开始的人生。')).toHaveCount(0);
-  await page.getByRole('button', { name: '设置', exact: true }).click(); await page.getByRole('button', { name: '关闭资料界面' }).click();
-  await expect(page.getByRole('alert')).toHaveCount(0); await expect(page.getByRole('button', { name: /开始新游戏/ })).toBeDisabled();
+  await page.getByRole('button', { name: '打开设置 ↗', exact: true }).click(); await page.getByRole('button', { name: '关闭资料界面' }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0); await page.keyboard.press('Escape'); await expect(page.getByRole('button', { name: /开始新游戏/ })).toBeDisabled();
 });
 
 test('列表请求失败明确提示，手动刷新恢复而不是把数据库错误当作坏记录', async ({ page }) => {

@@ -1,0 +1,88 @@
+{
+  "stats": {
+    "startTime": "2026-11-11T22:42:04.387Z",
+    "duration": 21452.868000000002,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "suites": [
+    {
+      "title": "unreadable-saves.spec.ts",
+      "file": "unreadable-saves.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "混合存档列表独立展示，坏记录不触发全局错误，正常存档都能进入且刷新保持",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 19332,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-11T22:42:05.576Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "948b4df805a3af213eca-e164fb8dd9a7f89ed40f",
+          "file": "unreadable-saves.spec.ts",
+          "line": 61,
+          "column": 1
+        },
+        {
+          "title": "混合存档列表独立展示，坏记录不触发全局错误，正常存档都能进入且刷新保持",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 19661,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-11T22:42:05.667Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "948b4df805a3af213eca-e30b8eb9ef3061ca65ba",
+          "file": "unreadable-saves.spec.ts",
+          "line": 61,
+          "column": 1
+        }
+      ]
+    }
+  ]
+}
