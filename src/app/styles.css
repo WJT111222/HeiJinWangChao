@@ -2479,7 +2479,11 @@ input, textarea, select, .prompt-inspector pre { background-color: var(--bg); co
 .status-wear { display: none; }
 @media (min-width: 901px) and (max-width: 1199px) {
   /* 与 UI-1 相同的三行：时间 / 地点 · 天气 / 环境 */
-  .app-shell-game .status-place .status-location, .app-shell-game .status-place .status-weather { display: inline; }
+  .app-shell-game .status-place { display: flex; flex-wrap: wrap; align-content: center; }
+  .app-shell-game .status-place time, .app-shell-game .status-place .status-environment { flex: 1 0 100%; }
+  /* 地点与天气同一行，各自截断，长文本不撑出状态条（Review #105-1）。 */
+  .app-shell-game .status-place .status-location { flex: 0 1 auto; min-width: 0; }
+  .app-shell-game .status-place .status-weather { flex: 0 3 auto; min-width: 2.5em; }
   .app-shell-game .status-place .status-weather::before { content: ' · '; }
 }
 
@@ -2567,9 +2571,9 @@ input, textarea, select, .prompt-inspector pre { background-color: var(--bg); co
   .app-shell-game .story-column::before { content: ''; position: absolute; inset: var(--ui2-bar) 0 auto 0; height: 45%; pointer-events: none;
     background: radial-gradient(80% 90% at 50% -20%, #2c2534, transparent 72%); opacity: .7; }
   .app-shell-game .story-column > .reader, .app-shell-game .story-column > .composer { position: relative; }
-  .app-shell-game .story-entry-latest::after { right: -4.6rem; top: .1rem; width: 3.6rem; height: 3.6rem; font-size: .8rem; }
-  .app-shell-game .game-layout .reader { padding-inline: max(88px, calc((100% - var(--pc-reading-width)) / 2)); }
-  .app-shell-game .game-layout .composer { padding-inline: max(88px, calc((100% - var(--pc-reading-width)) / 2)); background: linear-gradient(180deg, #141814, #111411); border-top: 1px solid #262d26; box-shadow: 0 -22px 44px -30px #000; }
+  /* 1200px 时中栏约 756px：最小内边距 40px，保证正文仍接近 42rem（Review #105-1）。 */
+  .app-shell-game .game-layout .reader { padding-inline: max(40px, calc((100% - var(--pc-reading-width)) / 2)); }
+  .app-shell-game .game-layout .composer { padding-inline: max(40px, calc((100% - var(--pc-reading-width)) / 2)); background: linear-gradient(180deg, #141814, #111411); border-top: 1px solid #262d26; box-shadow: 0 -22px 44px -30px #000; }
   .app-shell-game .composer textarea { background: #0b0e0c; border-radius: 8px; }
   .app-shell-game .composer textarea:focus-visible { outline: 2px solid transparent; border-color: var(--gold); box-shadow: 0 0 0 3px #c9a9611a; }
 
@@ -2594,6 +2598,10 @@ input, textarea, select, .prompt-inspector pre { background-color: var(--bg); co
   }
   .app-shell-game .modal:not(.modal-small):not(.notice-modal)::backdrop { left: clamp(248px, 18vw, 288px); background: #050605a6; backdrop-filter: none; }
   .app-shell-game .modal:not(.modal-small):not(.notice-modal) .modal-heading { min-height: var(--ui2-bar); padding-block: .6rem; background: linear-gradient(180deg, #c9a96108, transparent), var(--status-bg); }
+}
+/* 印章只在两侧留白足够（≥1280px，内边距≥80px）时移到正文外侧，避免撑出横向滚动。 */
+@media (min-width: 1280px) {
+  .app-shell-game .story-entry-latest::after { right: -4.6rem; top: .1rem; width: 3.6rem; height: 3.6rem; font-size: .8rem; }
 }
 @keyframes ui2-drawer { from { transform: translateX(48px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
