@@ -80,6 +80,7 @@ export function textVariableCatalog() {
       '同一次响应依次输出完整<thinking>、<说明>、<命令>。只执行命令块；set/add/push 路径 = JSON值；delete 路径，无操作数。以换行分隔，值可多行。不输出DomainCommand JSON、commandId、evidence、expectedRevision。',
       '可选gameState.前缀与源仓库一致，根和字段仍以本目录为准；[index]仅用于列明的普通数组，NPC/实体表必须用稳定ID。[id]替换为真实稳定ID；创建对象省略id，由路径注入。条目是有限操作入口，不是任意深层赋值。',
       '建档须有Story/正式设定明确姓名及持续关系/事件追踪价值，由AI判断；不编造无名路人姓名，不以角色称呼建档，不按次数或职业地位机械升级。specialProfile为PromoteNpc入口：升级或完善profilePending，已有休眠档案用空对象恢复；AI不得降级或覆盖玩家ordinary选择。电话/常驻地点/专属关系字段仅Variables更新，私密档案仍按原privateProfile路径和初次经历保护。',
+      '记忆内容遵守共享协议的人物原始记忆内容质量：以本人认知保留背景、经过、自身行动、结果与持续影响，不写成事件标题，不补造事实；长度仅为弹性参考，普通/特殊同标，不强迫每回合写入。',
       '内联NPC初始记忆保持空；用push记忆路径新增，由程序填充当前回合、人物引用和游戏时间。knownInformation同时记录一条个人记忆。',
       '所有普通/特殊NPC统一push npc[id].memories；不选择记忆层，不因special强制增加条目，无值得保存的新经历时可不写。knownInformation仍是知晓状态入口，push会同时建立唯一原始记忆，同一事实不要再重复push memories。两入口使用{text,knowledgeKind,knowledgeSource,visibility}四项。存档中的source/learnedAt只读，不是命令格式；不填id/sourceTurnIds/createdAtGameTime/affectedEntityRefs。亲历、转述和推测由模型区分，不由程序猜测补全。',
       '只能更新目录内字段。旧资产无交易登记、历史债务无到账登记、房产购买尚无原生命令，写入<说明>，不伪造交易。events[id].sceneState仅更新已存在现场事件的实际状态和结果；所选Story的eventNarration.enter可明确授权该事件实际介入，mention无此权限，提前结案用实际at且保留fixedEndAt，程序保留旧规划并填写来源；新事件、预计终止时间、延期、承接及清理由World处理。tasks仍须截止时间或非空完成条件，不套用事件新规。',
