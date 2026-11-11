@@ -18,9 +18,10 @@ export function compileEntity(command: ParsedVariableCommand, common: { commandI
   if (id?.kind !== 'id' || !IdSchema.safeParse(id.id).success) return;
   const creation = command.path.nodes.length === 2 && ['npc', 'organizations', 'tasks'].includes(root.name);
   const relation = command.path.nodes.length === 3 && root.name === 'organizations' && field?.kind === 'field' && field.name === 'protagonistRelation';
+  const organizationState = command.path.nodes.length === 3 && root.name === 'organizations' && field?.kind === 'field' && field.name === 'state';
   const npc = command.path.nodes.length === 3 && root.name === 'npc' && field?.kind === 'field'
     && ['affinityChange', 'activeGoals', 'contact', 'specialProfile'].includes(field.name);
-  if (!creation && !relation && !npc) return;
+  if (!creation && !relation && !npc && !organizationState) return;
   if (command.operation !== 'set') return failed('unsupported_operation');
   let raw: unknown;
   if (npc && field?.kind === 'field' && field.name === 'specialProfile') {
@@ -41,6 +42,9 @@ export function compileEntity(command: ParsedVariableCommand, common: { commandI
       if (root.name === 'npc') raw = { ...common, type: 'CreateNpc', npc: { ...data, id: id.id } };
       else if (root.name === 'tasks') raw = { ...common, type: 'SaveTask', task: { ...data, id: id.id } };
       else raw = { ...common, type: 'CreateOrganization', organization: { ...data, id: id.id } };
+    } else if (organizationState) {
+      const { financialBasis, ...changes } = data;
+      raw = { ...common, type: 'UpdateOrganization', organizationId: id.id, expectedRevision, changes, ...(financialBasis === undefined ? {} : {financialBasis}) };
     } else if (relation) {
       if (Object.keys(data).some((key) => !['relation', 'reason'].includes(key))) return failed('type_mismatch', null, [], diagnosticForRule(command, 'schema_constraint'));
       raw = { ...common, type: 'RecordOrgRelation', organizationId: id.id, ...data };

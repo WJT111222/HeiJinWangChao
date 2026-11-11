@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Detail, Empty } from '../Dialog';
 import { dateTime } from './playerView';
 import type { ObservedMemory, PlayerView } from './playerView';
+import { organizationNpcIds } from './organizationView';
 import { RecordList } from './WorldRecord';
 
 export type NpcManagement = { change: (id: string) => void; pendingId?: string; message: string };
@@ -55,9 +56,9 @@ export function PrivateProfile({ person }: { person: Person }) {
   </section>;
 }
 
-export function NpcPanel({ view, management }: { view: PlayerView; management?: NpcManagement }) {
+export function NpcPanel({ view, management, initialId, onOpenOrganization }: { view: PlayerView; management?: NpcManagement; initialId?: string; onOpenOrganization?: (id: string) => void }) {
   const [query, setQuery] = useState(''), [filter, setFilter] = useState('all');
-  const [personId, setPersonId] = useState<string>(), [page, setPage] = useState(0);
+  const [personId, setPersonId] = useState<string | undefined>(initialId), [page, setPage] = useState(0);
   const directory = useRef<HTMLDivElement>(null), detail = useRef<HTMLElement>(null);
   const directoryScroll = useRef(0), backButton = useRef<HTMLButtonElement>(null), detailTitle = useRef<HTMLHeadingElement>(null);
   const selected = view.npc.find(p => p.id === personId);
@@ -66,6 +67,7 @@ export function NpcPanel({ view, management }: { view: PlayerView; management?: 
   const matches = view.npc.filter(p => (filter === 'all' || p.kind === filter) &&
     [p.name, ...p.aliases, p.identity].some(text => text?.toLocaleLowerCase().includes(needle)));
   const currentPage = Math.min(page, Math.max(0, Math.ceil(matches.length / 20) - 1));
+  useEffect(() => { if (initialId) setPersonId(initialId); }, [initialId]);
   useEffect(() => {
     if (personId && detail.current) {
       detail.current.scrollTop = 0;
@@ -134,6 +136,9 @@ export function NpcPanel({ view, management }: { view: PlayerView; management?: 
               </article>;
             }) : <Empty>尚无已记录关系</Empty>}
             <h4>关联任务</h4>{linkedTasks.length ? <ul>{linkedTasks.map(task => <li key={task.id}>{task.goal}</li>)}</ul> : <Empty>暂无专属任务</Empty>}
+          </section>}
+          {onOpenOrganization && <section className="npc-section"><h4>已确认关联组织</h4>
+            {view.organizations.filter(org => organizationNpcIds(org).includes(selected.id)).map(org => <p key={org.id}><button onClick={() => onOpenOrganization(org.id)}>{org.name}</button></p>)}
           </section>}
           <PrivateProfile person={selected} />
           {selected.profile && <details className="npc-section"><summary>创角原始设定（不替代当前状态）</summary><dl>

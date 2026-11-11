@@ -42,7 +42,7 @@ export function assertWorldCoverage(
           ? `npc_${state.npc[command.npcId]?.kind}`
           : command.type === 'CreateOrganization'
             ? organizationDomains[command.organization.kind]
-            : command.type === 'RecordOrgRelation'
+            : command.type === 'RecordOrgRelation' || command.type === 'UpdateOrganization'
               ? organizationDomains[state.organizations[command.organizationId]?.kind]
               : undefined;
     if (domain && !domains.includes(domain)) throw new AiError('permission');
