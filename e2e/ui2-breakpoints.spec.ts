@@ -34,7 +34,7 @@ type Box = { x: number; y: number; width: number; height: number };
 const right = (b: Box) => b.x + b.width;
 const overlaps = (a: Box, b: Box) => a.x < right(b) - 1 && b.x < right(a) - 1 && a.y < b.y + b.height - 1 && b.y < a.y + a.height - 1;
 
-test('UI-2 临界宽度 1199/1200/1201/1280：正文、行动区、横栏不变窄、不溢出、不遮挡', async ({ page }, info) => {
+test('UI-2 1199至1920宽度：正文、行动区、横栏不变窄、不溢出、不遮挡', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop');
   test.setTimeout(90000);
   const external: string[] = [];
@@ -42,11 +42,14 @@ test('UI-2 临界宽度 1199/1200/1201/1280：正文、行动区、横栏不变�
   await seed(page);
   const reader = page.getByTestId('story-reader');
   const widths: Record<number, number> = {};
-  for (const width of [1199, 1200, 1201, 1280]) {
+  for (const width of [1199, 1200, 1201, 1280, 1440, 1650, 1920]) {
     await page.setViewportSize({ width, height: 800 });
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
     await reader.evaluate(el => { el.scrollTop = el.scrollHeight; });
-    // 阅读区自身不出现横向滚动（含装饰印章）。
+    // 已结算正文没有结算装饰伪元素，章回标题仍正常显示。
+    await expect(page.locator('.chapter-heading')).toHaveText('第 1 回合');
+    expect(await page.locator('.story-entry').evaluateAll(elements => elements.map(el => getComputedStyle(el, '::after').content))).toEqual(['none']);
+    // 阅读区自身不出现横向滚动。
     expect(await reader.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
 
     const heading = (await page.locator('.reader-heading').boundingBox())!;

@@ -342,7 +342,7 @@ export function GameScreen({
             </span>
           </div>
           {view.journal.map((entry, index) => (
-            <article className={index === view.journal.length - 1 && !progress && !draft?.story ? 'story-entry story-entry-latest' : 'story-entry'} key={entry.turnId} data-turn={index + 1}>
+            <article className="story-entry" key={entry.turnId}>
               <h2 className="chapter-heading">第 {index + 1} 回合</h2>
               <StoryReading narrative={entry.narrative} protagonistName={hero.name} />
             </article>
