@@ -201,6 +201,19 @@
         "baseCommit": "e4faf4bb07d5ba519cf2a801cb9e20558b8bf4b1",
         "notes": "NPC V2第三批：建档与升级由AI判断，玩家优先，新增合法资料写入；原记忆及香闺秘档提示不变。保留历史来源。",
         "sha256": "bceaae2c746f30f46d453c5370ff424aac9e1ca7c105cbdb0b1a81ca92db90db"
+      },
+      "npcMemoryContentQuality": {
+        "baseCommit": "8debc189bfcbdfade737b2871aa13c19958ea10e",
+        "notes": "依据玩家本轮记忆质量要求适配：普通/特殊同标，以本人认知保留经历细节，弹性篇幅、无新增硬校验；保留旧来源与全部私密档案提示。参考源仅复用记忆归属及有依据的再登场刷新思路，不复制存储、建档阈值或总结删除。",
+        "reference": {
+          "repository": "WJT111222/MoRanJiangHu",
+          "commit": "74aa92722b1ea1304210393679328aed07476972",
+          "files": {
+            "prompts/core/memory.ts": "9ae2993bf481afd40c5bc79b2ba568e0481fb0904177ca1cab9e27d003d64fee",
+            "prompts/stats/npc.ts": "432ad70f8aabe809ac036117d7cf8df6dfc15f2678e8385866c5133592ed7ca4"
+          }
+        },
+        "sha256": "bb1440980c215f9216f09be35ea80006a16109689746dbb3ea682810ce5314c3"
       }
     },
     "variableGroups/npc_ordinary/update.md": {
@@ -233,6 +246,19 @@
         "baseCommit": "e4faf4bb07d5ba519cf2a801cb9e20558b8bf4b1",
         "notes": "NPC V2第三批：建档与升级由AI判断，玩家优先，新增合法资料写入；原记忆及香闺秘档提示不变。保留历史来源。",
         "sha256": "95cdb7398f797f2f098729f1fb639cbeeed97a02c50f8529875f21aed02f1e4a"
+      },
+      "npcMemoryContentQuality": {
+        "baseCommit": "8debc189bfcbdfade737b2871aa13c19958ea10e",
+        "notes": "依据玩家本轮记忆质量要求适配：普通/特殊同标，以本人认知保留经历细节，弹性篇幅、无新增硬校验；保留旧来源与全部私密档案提示。参考源仅复用记忆归属及有依据的再登场刷新思路，不复制存储、建档阈值或总结删除。",
+        "reference": {
+          "repository": "WJT111222/MoRanJiangHu",
+          "commit": "74aa92722b1ea1304210393679328aed07476972",
+          "files": {
+            "prompts/core/memory.ts": "9ae2993bf481afd40c5bc79b2ba568e0481fb0904177ca1cab9e27d003d64fee",
+            "prompts/stats/npc.ts": "432ad70f8aabe809ac036117d7cf8df6dfc15f2678e8385866c5133592ed7ca4"
+          }
+        },
+        "sha256": "098399fe40cdc268823c05d4c1ac80f80bd5e465bccab80ab8bf58a237810f38"
       }
     },
     "variableGroups/npc_ordinary/offscreen.md": {
@@ -285,6 +311,19 @@
         "baseCommit": "e4faf4bb07d5ba519cf2a801cb9e20558b8bf4b1",
         "notes": "NPC V2第三批：建档与升级由AI判断，玩家优先，新增合法资料写入；原记忆及香闺秘档提示不变。保留历史来源。",
         "sha256": "16354c636937b3b1c3e0e59dd6d5822a4589916eba6df080f494e81b2d91bc91"
+      },
+      "npcMemoryContentQuality": {
+        "baseCommit": "8debc189bfcbdfade737b2871aa13c19958ea10e",
+        "notes": "依据玩家本轮记忆质量要求适配：普通/特殊同标，以本人认知保留经历细节，弹性篇幅、无新增硬校验；保留旧来源与全部私密档案提示。参考源仅复用记忆归属及有依据的再登场刷新思路，不复制存储、建档阈值或总结删除。",
+        "reference": {
+          "repository": "WJT111222/MoRanJiangHu",
+          "commit": "74aa92722b1ea1304210393679328aed07476972",
+          "files": {
+            "prompts/core/memory.ts": "9ae2993bf481afd40c5bc79b2ba568e0481fb0904177ca1cab9e27d003d64fee",
+            "prompts/stats/npc.ts": "432ad70f8aabe809ac036117d7cf8df6dfc15f2678e8385866c5133592ed7ca4"
+          }
+        },
+        "sha256": "975cf76a09ae6425681b68510e237a7a4c9c02fd2cd0cdafd33902e19b4f6ff8"
       }
     },
     "variableGroups/npc_special/update.md": {
@@ -317,6 +356,19 @@
         "baseCommit": "e4faf4bb07d5ba519cf2a801cb9e20558b8bf4b1",
         "notes": "NPC V2第三批：建档与升级由AI判断，玩家优先，新增合法资料写入；原记忆及香闺秘档提示不变。保留历史来源。",
         "sha256": "8b7e491c3d33e8370e3e530d8ad2530b67579cb86132197aa32a2a107485290b"
+      },
+      "npcMemoryContentQuality": {
+        "baseCommit": "8debc189bfcbdfade737b2871aa13c19958ea10e",
+        "notes": "依据玩家本轮记忆质量要求适配：普通/特殊同标，以本人认知保留经历细节，弹性篇幅、无新增硬校验；保留旧来源与全部私密档案提示。参考源仅复用记忆归属及有依据的再登场刷新思路，不复制存储、建档阈值或总结删除。",
+        "reference": {
+          "repository": "WJT111222/MoRanJiangHu",
+          "commit": "74aa92722b1ea1304210393679328aed07476972",
+          "files": {
+            "prompts/core/memory.ts": "9ae2993bf481afd40c5bc79b2ba568e0481fb0904177ca1cab9e27d003d64fee",
+            "prompts/stats/npc.ts": "432ad70f8aabe809ac036117d7cf8df6dfc15f2678e8385866c5133592ed7ca4"
+          }
+        },
+        "sha256": "053930d0522f131969101bdfca8c7e37ad0c2304344ef48b2fe0944daa659abd"
       }
     },
     "variableGroups/npc_special/offscreen.md": {
@@ -490,6 +542,19 @@
         "baseCommit": "9f7861f2a1492b9b6118d741946677351671b8a3",
         "notes": "NPC V2第四批：唯一人物投影与四级ID索引，移除重复人物/记忆载荷；保留作者背景、独立认知、全部任务与旧来源记录。",
         "sha256": "630cb8b375268c0efeabd1e412c741fbbea32908e3e9ab4b3459772c06f61fea"
+      },
+      "npcMemoryContentQuality": {
+        "baseCommit": "8debc189bfcbdfade737b2871aa13c19958ea10e",
+        "notes": "依据玩家本轮记忆质量要求适配：普通/特殊同标，以本人认知保留经历细节，弹性篇幅、无新增硬校验；保留旧来源与全部私密档案提示。参考源仅复用记忆归属及有依据的再登场刷新思路，不复制存储、建档阈值或总结删除。",
+        "reference": {
+          "repository": "WJT111222/MoRanJiangHu",
+          "commit": "74aa92722b1ea1304210393679328aed07476972",
+          "files": {
+            "prompts/core/memory.ts": "9ae2993bf481afd40c5bc79b2ba568e0481fb0904177ca1cab9e27d003d64fee",
+            "prompts/stats/npc.ts": "432ad70f8aabe809ac036117d7cf8df6dfc15f2678e8385866c5133592ed7ca4"
+          }
+        },
+        "sha256": "585cfba145f1b42d8606187f908716d7a8a1069e886fc88f5fd95fad44ef3c61"
       }
     },
     "shared/08_world_output.md": {
@@ -582,6 +647,19 @@
         "baseCommit": "9f7861f2a1492b9b6118d741946677351671b8a3",
         "notes": "NPC V2第四批：唯一人物投影与四级ID索引，移除重复人物/记忆载荷；保留作者背景、独立认知、全部任务与旧来源记录。",
         "sha256": "afe9360eacf02c93d3a91cefed36e0778b292cbb41836cc7547d208f6bd15c87"
+      },
+      "npcMemoryContentQuality": {
+        "baseCommit": "8debc189bfcbdfade737b2871aa13c19958ea10e",
+        "notes": "依据玩家本轮记忆质量要求适配：普通/特殊同标，以本人认知保留经历细节，弹性篇幅、无新增硬校验；保留旧来源与全部私密档案提示。参考源仅复用记忆归属及有依据的再登场刷新思路，不复制存储、建档阈值或总结删除。",
+        "reference": {
+          "repository": "WJT111222/MoRanJiangHu",
+          "commit": "74aa92722b1ea1304210393679328aed07476972",
+          "files": {
+            "prompts/core/memory.ts": "9ae2993bf481afd40c5bc79b2ba568e0481fb0904177ca1cab9e27d003d64fee",
+            "prompts/stats/npc.ts": "432ad70f8aabe809ac036117d7cf8df6dfc15f2678e8385866c5133592ed7ca4"
+          }
+        },
+        "sha256": "8e987037e0f2984c7837ab343b95303b01a1ddd14699a2163409b9cfb572da34"
       }
     },
     "stages/opening/variables.md": {

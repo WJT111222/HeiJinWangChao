@@ -13,7 +13,7 @@ set protagonist.emotionText = "平静"
 
 - set：标量设置最终值，数组替换为给定数组，目录内对象只合并白名单字段；也可设置列明数组的已有索引。设置目录中的最终字段值，或用稳定路径创建完整记录。不是任意JSON补丁；实体路径的创建值省略id，由路径绑定；opening.initialState.expectedIncomes数组内各收入记录必须带稳定id。已有NPC与组织不能通过再次set整个实体冒充更新。
 - add：明确数值增减使用有限JSON数字，不以字符串/空值强转为0。用于cash/onlineBalance的负整数分消费、已有重要物品quantity的非零整数增减及npc[id].affinity好感增量。正数余额不是收入，不能直接set余额；新游戏原有余额仅走下述开局一次性初始化入口。
-- push：向目录内数组追加一个值，不把数组值悄悄展开。支持NPC个人/长期/知晓记忆、特殊NPC的activeGoals、主角skills、饰品装备ID、内部转账和债务还款。
+- push：向目录内数组追加一个值，不把数组值悄悄展开。支持NPC统一原始记忆/知晓信息、特殊NPC的activeGoals、主角skills、饰品装备ID、内部转账和债务还款。
 - delete：`delete 路径`，无操作数。仅删除目录中可删除的字段或数组元素，同一数组多个索引须从大到小输出；程序依文本顺序执行，不自动重排。支持skills/activeGoals数组元素、装备槽/饰品元素，以及items[id]的彻底消耗移除（原UpdateItem归零及卸装备）。遗失仍用items[id].loss保留遗失状态，不用delete冒充遗失。
 - 输出优先按先set/add、再push、最后delete组织，创建引用对象必须在使用之前。原有系统时钟应用顺序例外由程序处理。不得delete整个NPC、NPC原始记忆、组织、地点或经济账目；目标没有合法领域删除能力时明确写说明，不发明字段或跳过。可选gameState.前缀沿用源语法，根域仍使用本项目目录中的英文名称。
 
@@ -24,7 +24,7 @@ AI根据选定Story理解已发生变化，不替World推演后台任务、事�
 创建地点：`set locations[clinic] = {"name":"社区诊所","parentId":"chongqing"}`；人物地点引用需真实存在，主角移动时分别处理同行/留守NPC，不自动决定跟随。去向未知可set该NPC的onScene=false、locationId=null。
 创建NPC：`set npc[npc_lin] = {"kind":"ordinary","identityKey":"lin-community-worker","name":"林宁","aliases":[],"skills":[],"onScene":true,"locationId":"chongqing","affinity":0,"relationshipText":"初次见面","memories":[],"knownInformation":[]}`。开局和普通回合均可建档；先检索已有稳定ID、身份键、别名与同伴，避免重复。初始同伴已经存在，不能重建。
 更新好感用 `set npc[npc_lin].affinityChange = {"from":0,"to":5,"reason":"一起解决问题","relationshipText":"愿意协作"}`，关系不等于恋爱。未确认同伴from=null，不把占位0当确认结果。登记联系人用 `set npc[npc_lin].contact = {"reason":"互换联系方式"}`，不撤销永久保护。
-记忆用 `push npc[npc_lin].memories = {"text":"共同处理了现场问题","knowledgeKind":"observed","knowledgeSource":"当面经历","visibility":"npc_private"}`。亲历、转述reported、推测suspected由AI区分，后两类由程序保留标记；记忆只属于指定人物，不自动公开或传播。普通和特殊人物均使用memories，不选择长期层，不因重要程度强制增加记忆；特殊人物的activeGoals仍为专属目标。知晓信息用knownInformation路径，值结构同个人记忆。
+记忆用 `push npc[npc_lin].memories = {"text":"工作室交付旧相机时，委托方临时提出加急费用。自己核对清单并请主角保留凭据、暂不承诺；主角出示书面确认后，对方同意暂缓收费、次日核算。费用仍未确定，这次合作让自己愿意继续协助核实，但不会把暂缓当成免除。","knowledgeKind":"observed","knowledgeSource":"当面经历","visibility":"npc_private"}`。亲历、转述reported、推测suspected由AI区分，后两类由程序保留标记；记忆只属于指定人物，不自动公开或传播。普通和特殊人物均使用memories，不选择长期层，不因重要程度强制增加记忆；特殊人物的activeGoals仍为专属目标。知晓信息用knownInformation路径，值结构同个人记忆。
 实际到账收入必须set economy.incomes[id]完整received记录，借款必须set economy.debts[id]完整债务；转账用push economy.transfers，还款用push economy.debts[id].repayments。均为整数人民币分；未知余额不能当0，不能透支，不能提前使用后面的收入。完整示例见经济组及目录。
 物品新增可选description（描述）、referenceValue（单件非负整数分，未知null/省略）、questItem（任务布尔标记）及itemDetails字符串资料；创建和购买使用同一ImportantItem结构。已有物品用set items[id].description/referenceValue/itemDetails/category/questItem更新对应字段，itemDetails整记录替换且保留有效旧属性，不是自由深层补丁。referenceValue不代表成交、不自动改余额；证件等不可交易物品不虚构市价。类别与适用资料见TEXT_COMMAND_CATALOG.itemDetailsGuide。
 物品获得set items[id]；购买set items[id].purchase一次扣款入库；转交set items[id].transfer；遗失set items[id].loss；数量用add items[id].quantity。装备用set protagonist.currentWear完整装备对象。车辆购买set economy.vehicles[id].purchase，车辆房产不重复进重要物品表。
@@ -59,3 +59,12 @@ AI判断持续价值，不设次数、好感、职位阈值；新人物可直接
 升级/补齐用set npc[id].specialProfile={detailedBackground,activeGoals,habits,offscreenTaskIds,relationshipNetwork?}，沿用原人并编译为PromoteNpc；任务ID必须真实归属。profilePending=true是待完善，不是空白经历事实，应在本次正常Variables补齐，不单独请求AI。canRestoreProfile=true时先用set npc[id].specialProfile={}恢复原档案，不重新生成已有内容；待完善时只补缺失资料。香闺秘档继续使用原privateProfile路径及原保护，不混入specialProfile。
 set npc[id].phoneContact={status:"unknown"|"known"|"invalid",note?}，仅实际交换可用电话才能known，不从认识/好感或旧RegisterContact推断号码。set npc[id].usualLocations=[{locationId,role:"home"|"work"|"frequent",knownToProtagonist}]，区分常驻与当前位置、世界记录与主角知晓，不虚构地点，不必人人都有。
 已有special可set npc[id].detailedBackground、habits、relationshipNetwork；关系数组条目{name,relationship,description,affinity?,npcId?}，好感单向[-100,100]，未知缺省/null；未建档只记姓名不自动建NPC，不猜ID或传播关系。任务另由原正式任务命令处理，不伪造offscreenTaskIds。记忆/总结、基础关系及认知不因身份升级而重置，休眠专属资料不能从其他人物或文本中复造。
+
+
+### 人物原始记忆内容质量
+普通和特殊NPC使用相同标准。记忆是该人物自身经历和认知的记录，不是事件标题；对有长期意义的经历，依据已选定Story与正式背景，尽可能保留事件背景（为什么发生、当时处境）、具体经过（参与者及重要行动交流）、本人表现（自己做了什么、如何应对）、个人认知（亲见、被告知或形成的判断）、最终结果（已发生结果及未决问题）、持续影响（对关系、承诺或后续处境的理解）。按实际剧情取舍，不机械凑六项，不补造正文没有的行动、态度、日期或结果。
+信息完整性高于字数。普通且值得记录的互动约40～100字，重要人物互动约100～200字，重大人生或关系转折约150～300字、必要时更长；这只是弹性写作参考，不是硬性字数门槛。简单事实可以简短，复杂经历不要压缩成“共同处理现场问题”“记住双方约定”“关系有所改善”这样的标签，不为凑字补事实。
+以所属NPC的认知为中心，不复制全知视角给所有相关人物；分别保留自己观察、获知及判断的内容。亲历observed、转述reported、推测suspected以及knowledgeSource/visibility保持原语义；不在场者只有实际收到消息才记录转述，不把猜测或转述写成已证实的客观事实，也不自动传播给其他人。来源回合与人物引用继续使用各阶段原有协议，不为丰富内容伪造来源。
+同一连续事件可写一条内容充分的记忆；同回合相互独立的重要经历可分别记录，不机械拆成大量重复短句。不强迫每回合写记忆，不为寒暄或无意义动作建记录，不因特殊身份增加数量。核对已有记忆与知晓索引，已记录的同一经历不重复追加；knownInformation不是第二份原始记忆。只指导未来新记忆，不补写或改写旧原文，不改变既有总结与原始记忆永久保留机制。
+
+人物资料与经历配合：当NPC经历重大变化或长期离场后重新出现，同时核对姓名/别名/身份与职业、健康/位置/在场状态、与主角关系及好感，特殊人物再核对目标与必要专属资料；只有选定Story或正式背景提供变化依据时才使用目录内已有路径更新，否则保持原值。记忆记录过去经历，档案记录当前有效状态，二者不相互替代；不要借补记忆擅自改变好感、关系、身份，不重复建档，也不推演World后台新行动。
