@@ -42,6 +42,27 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
           const task=schema.properties?.task;
           if(task && typeof task==='object')task.anyOf=[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}];
         }
+        if (stage === 'world' && option.shape.type.value === 'CreateNpc') {
+          const npc = schema.properties?.npc;
+          if (npc && typeof npc === 'object') for (const variant of npc.oneOf ?? npc.anyOf ?? [npc]) {
+            if (typeof variant !== 'object' || !variant.properties) continue;
+            const properties = variant.properties;
+            // Describe existing World permissions to the model. Runtime/legacy schemas stay unchanged.
+            delete properties.affinityConfirmed;
+            delete properties.lastInteractionAt;
+            properties.onScene = { type: 'boolean', const: false };
+            properties.affinity = { type: 'number', const: 0 };
+            for (const field of ['memories', 'knownInformation']) {
+              const array = properties[field];
+              if (array && typeof array === 'object') array.maxItems = 0;
+            }
+            if (properties.privateProfile) variant.allOf = [{
+              if: { properties: { gender: { const: 'female' }, age: { minimum: 18 } }, required: ['gender'] },
+              // Missing age retains the existing compatibility rule; a known minor does not qualify.
+              else: { properties: { privateProfile: false } },
+            }];
+          }
+        }
         if (stage === 'world' && option.shape.type.value === 'CreateOrganization') {
           const organization = schema.properties?.organization;
           if (organization && typeof organization === 'object') {
@@ -90,6 +111,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
               [field, z.toJSONSchema(WorldResultSchema.shape[field], { target: 'draft-7', unrepresentable: 'any' })])),
           },
           worldStateRules: [
+            'CreateNpc按World专用Schema使用合法初值，亲属/认识关系不是affinityConfirmed；后续RecordNpcMemory分开输出，不能在创建对象内塞记忆。CreateLocation.parentId是实际地理从属，不是玩家所在国家或默认根；海外地点不硬挂china，未知父级可省略，不虚构ID。',
             '任务—事件允许单侧关联：task.linkedEventId或event.linkedTaskIds填一侧即可，程序补齐反向ID；两侧都填须一致，一个任务只能关联一个事件。引用须已存在或本批创建，不能通过补齐改写既有终态。复用已有实体ID，不重复创建或无声丢弃冲突关联。',
             'worldCommands用RecordHistory独立记录历史：entry={id,title,summary,knowledgeKind,occurredAt?,occurredTimeText?,sourceRef?,sourceText?,actorRefs?,locationId?,eventId?,relatedEntryIds?,chronicle?}。knowledgeKind为established/reported/suspected。不带chronicle的普通史料不要求正式事件、重要等级或结案；可记录传述、猜测和模糊过去，不编造精确日期，不自动授予角色知识。recordedAt/sourceTurnId由程序生成，不由AI输出。新披露用新ID并关联旧条目，无需每轮新增历史。',
             '重大纪事可选entry.chronicle：category=world/protagonist、nature=fact/statement/rumor/inference（与entry.knowledgeKind一致）、milestoneId、结构化time、narrative、process、results、impacts。world必填scope、scopeText、basis、endTime；event_result必须引用最终投影的终态eventId，以实际startAt定位、resolvedAt作endTime；historical_event保留已结束往事的真实精度且不关联事件；cancellation_decision以cancelled事件的resolvedAt记录实际撤销决定。未开始的计划不可当作已发生结果。主角重大事实发生时记录。重大性由World决定，不依据impact阈值。',
@@ -112,7 +134,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
           npcFieldPermissions: {
             UpdateNpc:
               '以本轮Variables投影判定离场；不得重写本轮Variables已修改的离场人物字段。仅离场已有 NPC：locationId/healthText/activeGoals 与 onScene=false；禁止 affinityChange、relationshipText、lastInteractionAt、onScene=true。开局同伴不得更新。',
-            CreateNpc: '离场、好感中性0且未确认、无互动时间、不得内联记忆/知晓信息。',
+            CreateNpc: 'World新建NPC初值：onScene=false、affinity=0仅为未确认占位；affinityConfirmed必须省略（不填true、false或null），不得填写lastInteractionAt，不得内联记忆/知晓信息。亲属关系或多年相识只描述于relationshipText/背景，不代表好感数值已确认。普通和特殊男性不得privateProfile（包括空对象）；私密档案资格仅special+female且年龄缺省或>=18，已知未成年/未知性别不允许，不能为资格伪造年龄；合资格女性原七字段保留。特殊人物补detailedBackground/activeGoals/habits/offscreenTaskIds，任务引用须真实且归属本人；不输出longTermMemories。',
             RecordNpcMemory:
               '仅写指定离场NPC的个人档案；knowledgeKind由模型判断，memory时间与引用必须合法。不得自动复制给其他NPC。visibility明确区分player_known/npc_private/internal；模型不能把私人经历无条件公开。',
           },

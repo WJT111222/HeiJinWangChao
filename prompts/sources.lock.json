@@ -279,6 +279,12 @@
         "baseCommit": "0fa1ab269280924fab627eda21a3e11f1661d3ff",
         "notes": "NPC V2第二批：统一人物原始记忆，不要求特殊长期层；保留香闺秘档原文、旧来源及历次适配记录。",
         "sha256": "8dd78fdc64379f61f60c345ba3eb556f2ceb591b54c6533db3a4947e954fd228"
+      },
+      "worldNpcCreationContract": {
+        "baseCommit": "3fe087fa6986649a415932db6c21abefd1a1ae68",
+        "previousTreatment": "incremental-npc-patch",
+        "notes": "依两次真实World失败做通用契约澄清：World创建初值、亲属/好感确认区别、原私密档案资格、同批引用与真实地理父级；不修改正式Schema、权限、记忆内容或地图实现，原文只本地回放不公开。",
+        "sha256": "b11567bfd36dcbccf484d865472b5b7f63c945e8bff525cf2230c75047e5d262"
       }
     },
     "variableGroups/npc_special/init.md": {
@@ -389,6 +395,12 @@
         "baseCommit": "0fa1ab269280924fab627eda21a3e11f1661d3ff",
         "notes": "NPC V2第二批：统一人物原始记忆，不要求特殊长期层；保留香闺秘档原文、旧来源及历次适配记录。",
         "sha256": "1432588d157e8637fa8c67099b6cad7e7bbe7861055ac12c278afbd7e351ffdb"
+      },
+      "worldNpcCreationContract": {
+        "baseCommit": "3fe087fa6986649a415932db6c21abefd1a1ae68",
+        "previousTreatment": "incremental-npc-patch",
+        "notes": "依两次真实World失败做通用契约澄清：World创建初值、亲属/好感确认区别、原私密档案资格、同批引用与真实地理父级；不修改正式Schema、权限、记忆内容或地图实现，原文只本地回放不公开。",
+        "sha256": "2e35ec5d320c4967717af155fdfa9276494646240d54190c2ea992d1591c0c88"
       }
     },
     "writing/nsfw.md": {
@@ -672,6 +684,12 @@
         "previousTreatment": "command-contract-alignment",
         "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
         "sha256": "cc1db3d89b29c00c0cb50c5f90ad6ef15252b650d79f9d697c3956f22b3c210f"
+      },
+      "worldNpcCreationContract": {
+        "baseCommit": "3fe087fa6986649a415932db6c21abefd1a1ae68",
+        "previousTreatment": "command-contract-alignment",
+        "notes": "依两次真实World失败做通用契约澄清：World创建初值、亲属/好感确认区别、原私密档案资格、同批引用与真实地理父级；不修改正式Schema、权限、记忆内容或地图实现，原文只本地回放不公开。",
+        "sha256": "41037a1539ffdabc2662113fa719025fa28840d2607945c8623c3d456385be51"
       }
     },
     "stages/opening/variables.md": {

@@ -34,12 +34,14 @@ export function assertWorldCoverage(
   state: GameState,
   commands: readonly DomainCommand[],
 ) {
+  // A valid World batch can create an offscreen NPC and then record its memory.
+  const createdKinds = new Map(commands.flatMap(command => command.type === 'CreateNpc' ? [[command.npc.id, command.npc.kind] as const] : []));
   for (const command of commands) {
     const domain =
       command.type === 'CreateNpc'
         ? `npc_${command.npc.kind}`
         : command.type === 'UpdateNpc' || command.type === 'RecordNpcMemory'
-          ? `npc_${state.npc[command.npcId]?.kind}`
+          ? `npc_${state.npc[command.npcId]?.kind ?? createdKinds.get(command.npcId)}`
           : command.type === 'CreateOrganization'
             ? organizationDomains[command.organization.kind]
             : command.type === 'RecordOrgRelation' || command.type === 'UpdateOrganization'
