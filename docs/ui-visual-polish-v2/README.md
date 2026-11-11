@@ -20,6 +20,16 @@
 
 截图：`breakpoint-1199x800.png`、`breakpoint-1200x800.png`、`breakpoint-1201x800.png`、`breakpoint-1280x800.png`。
 
+### 1.1 用户确认：正文放宽（第二次返修）
+
+用户试看后要求正文更宽。宽屏改为正文铺满中栏（两侧至少 40px），上限 1100px，接近 UI-1.1 的阅读宽度；装饰印章始终留在正文区内。实测正文 / 行动区 / 输入区宽度（px）：
+
+| 视口宽度 | 1199 | 1200 | 1201 | 1280 | 1440 | 1650 | 1920 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 宽度 | 909 | 666 | 667 | 746 | 895 | 1076 | 1090 |
+
+1200–1201 仍受三栏中栏宽度限制（约 666px）。`pc-reading-layout.spec` 的宽屏区间同步更新。布局相关用例日志：`e2e-ab/head-wide-layout-suites.log`（30 通过、3 跳过、3 失败：`night-seal:88` ×2 与 main 相同；`game-window:66` 手机一次失败，单独重跑两次均通过，本次改动只涉及 ≥1200px 样式，判断为负载下的偶发失败）。截图 `breakpoint-*.png` 已更新为放宽后版本。
+
 ## 2. 工程检查（Review #105-2）
 
 **未运行。** 开发会话环境为 Node 22.23.4（项目要求 Node 24），且无法访问 npm registry（`npm ci` / `npm view` 均因 DNS 失败），因此 `npm run check`（lint、vitest、typecheck、build）与 `npm run prompts:check` 均未执行，不能视为通过。需在具备 Node 24 并可 `npm ci` 的环境补跑。

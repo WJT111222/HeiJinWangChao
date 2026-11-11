@@ -2496,7 +2496,8 @@ input, textarea, select, .prompt-inspector pre { background-color: var(--bg); co
     position: relative;
     grid-template-columns: var(--ui2-left) minmax(0, 1fr) var(--ui2-right);
     grid-template-rows: minmax(0, 1fr);
-    --pc-reading-width: 42rem;
+    /* 正文尽量铺满中栏（两侧至少 40px），上限 1100px，接近 UI-1.1 的阅读宽度。 */
+    --pc-reading-width: 1100px;
   }
 
   /* 品牌：左栏顶端 */
@@ -2598,10 +2599,6 @@ input, textarea, select, .prompt-inspector pre { background-color: var(--bg); co
   }
   .app-shell-game .modal:not(.modal-small):not(.notice-modal)::backdrop { left: clamp(248px, 18vw, 288px); background: #050605a6; backdrop-filter: none; }
   .app-shell-game .modal:not(.modal-small):not(.notice-modal) .modal-heading { min-height: var(--ui2-bar); padding-block: .6rem; background: linear-gradient(180deg, #c9a96108, transparent), var(--status-bg); }
-}
-/* 印章只在两侧留白足够（≥1280px，内边距≥80px）时移到正文外侧，避免撑出横向滚动。 */
-@media (min-width: 1280px) {
-  .app-shell-game .story-entry-latest::after { right: -4.6rem; top: .1rem; width: 3.6rem; height: 3.6rem; font-size: .8rem; }
 }
 @keyframes ui2-drawer { from { transform: translateX(48px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {

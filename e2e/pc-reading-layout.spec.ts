@@ -57,10 +57,10 @@ test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, 
     if (size.width > 900) {
       await expect(page.locator('.app-header')).toBeHidden();
       expect(measurements.at(-1)!.status.y).toBe(0);
-      // UI-2：≥1200px 主角信息为左栏，正文为约 42rem 的书页宽度；901–1199px 仍为 UI-1.1 顶部状态条。
+      // UI-2：≥1200px 主角信息为左栏，正文铺满中栏（两侧 40px，上限 1100px）；901–1199px 仍为 UI-1.1 顶部状态条。
       const wide = size.width >= 1200;
       if (wide) { expect(measurements.at(-1)!.status.x).toBe(0); expect(measurements.at(-1)!.status.width).toBeLessThanOrEqual(290); }
-      const expected = wide ? [640, 680] : [700, 850];
+      const expected = size.width >= 1650 ? [1040, 1100] : size.width >= 1440 ? [880, 910] : wide ? [740, 760] : [700, 850];
       expect(measurements.at(-1)!.story.width).toBeGreaterThanOrEqual(expected[0]);
       expect(measurements.at(-1)!.story.width).toBeLessThanOrEqual(expected[1]);
       expect(Math.abs(measurements.at(-1)!.story.width - measurements.at(-1)!.composer.width)).toBeLessThan(2);
@@ -139,7 +139,7 @@ test('PC 长状态限高、完整资料、九入口短屏可访问', async ({ pa
       await expect.poll(async () => (await page.locator('.player-status').boundingBox())!.height).toBeLessThanOrEqual(size.height + 1);
     }
     else expect(status.height).toBeLessThan(100);
-    expect((await page.locator('.reader-heading').boundingBox())!.width).toBeLessThanOrEqual(size.width >= 1200 ? 680 : 1180);
+    expect((await page.locator('.reader-heading').boundingBox())!.width).toBeLessThanOrEqual(size.width >= 1200 ? 1100 : 1180);
     await expect(page.locator('.status-identity h2')).toHaveAttribute('title', '沈砚与城市旧事档案的长期记录者'.repeat(5));
     await expect(page.locator('.status-condition')).toBeVisible();
     await expect(page.locator('.status-online')).toBeVisible();
