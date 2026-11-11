@@ -148,7 +148,11 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     check(income.amount !== null && income.receivedAt && Date.parse(income.receivedAt) <= Date.parse(s.worldClock), '已入账收入缺少实际金额或合法到账时间');
   }
   for (const org of Object.values(s.organizations)) {
-    for (const id of org.keyNpcIds) check(Object.hasOwn(s.npc, id), '组织成员不存在');
+    for (const [index, id] of org.keyNpcIds.entries()) check(Object.hasOwn(s.npc, id), '组织成员不存在', ['organizations', org.id, 'keyNpcIds', index], 'actor_reference');
+    for (const [index, leader] of (org.leadership ?? []).entries()) if (leader.npcId)
+      check(Object.hasOwn(s.npc, leader.npcId), '组织管理者不存在', ['organizations', org.id, 'leadership', index, 'npcId'], 'actor_reference');
+    for (const [index, relation] of (org.relations ?? []).entries())
+      check(relation.organizationId !== org.id && Object.hasOwn(s.organizations, relation.organizationId), '组织关系目标不存在或为自身', ['organizations', org.id, 'relations', index, 'organizationId'], 'actor_reference');
     for (const id of org.currentTaskIds) check(s.tasks[id]?.actorRef.kind === 'organization'
       && s.tasks[id]?.actorRef.id === org.id, '组织任务归属错误');
   }

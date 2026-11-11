@@ -1,0 +1,83 @@
+[
+  {
+    "count": 10,
+    "stage": "story",
+    "stateBytes": 28376,
+    "characters": 52828,
+    "bytes": 117034,
+    "composeMs": 18.92,
+    "viewMs": 0.17
+  },
+  {
+    "count": 10,
+    "stage": "variables",
+    "stateBytes": 28376,
+    "characters": 113590,
+    "bytes": 174810,
+    "composeMs": 10.42,
+    "viewMs": 0.17
+  },
+  {
+    "count": 10,
+    "stage": "world",
+    "stateBytes": 28376,
+    "characters": 156693,
+    "bytes": 231439,
+    "composeMs": 10.46,
+    "viewMs": 0.17
+  },
+  {
+    "count": 100,
+    "stage": "story",
+    "stateBytes": 231768,
+    "characters": 137600,
+    "bytes": 320426,
+    "composeMs": 7,
+    "viewMs": 0.18
+  },
+  {
+    "count": 100,
+    "stage": "variables",
+    "stateBytes": 231768,
+    "characters": 198362,
+    "bytes": 378202,
+    "composeMs": 13.7,
+    "viewMs": 0.18
+  },
+  {
+    "count": 100,
+    "stage": "world",
+    "stateBytes": 231768,
+    "characters": 326237,
+    "bytes": 638223,
+    "composeMs": 15.44,
+    "viewMs": 0.18
+  },
+  {
+    "count": 1000,
+    "stage": "story",
+    "stateBytes": 2267560,
+    "characters": 987192,
+    "bytes": 2356218,
+    "composeMs": 32.45,
+    "viewMs": 0.37
+  },
+  {
+    "count": 1000,
+    "stage": "variables",
+    "stateBytes": 2267560,
+    "characters": 1047954,
+    "bytes": 2413994,
+    "composeMs": 39.66,
+    "viewMs": 0.37
+  },
+  {
+    "count": 1000,
+    "stage": "world",
+    "stateBytes": 2267560,
+    "characters": 2025421,
+    "bytes": 4709807,
+    "composeMs": 47.27,
+    "viewMs": 0.37
+  }
+]

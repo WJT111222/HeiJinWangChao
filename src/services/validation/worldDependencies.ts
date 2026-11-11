@@ -21,6 +21,7 @@ export function orderWorldCommands(commands: readonly DomainCommand[]) {
       if (command.entry.eventId) dependencies.push(`event:${command.entry.eventId}`);
     }
     if (command.type === 'SaveTask' && command.task.handoff) dependencies.push(`task:${command.task.handoff.fromTaskId}`);
+    if (command.type === 'UpdateOrganization' || command.type === 'RecordOrgRelation') dependencies.push(`org:${command.organizationId}`);
     if (command.type === 'SaveTask') dependencies.push(`${command.task.actorRef.kind === 'organization' ? 'org' : 'npc'}:${command.task.actorRef.id}`);
     if (command.type === 'SaveEvent') for (const ref of command.event.actorRefs) dependencies.push(`${ref.kind === 'organization' ? 'org' : 'npc'}:${ref.id}`);
     for (const source of dependencies) {
