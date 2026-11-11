@@ -2361,3 +2361,34 @@ input, textarea, select, .prompt-inspector pre { background-color: var(--bg); co
   .npc-detail .detail { grid-template-columns: 5rem minmax(0,1fr); font-size: .85rem; gap: .6rem; }
   .npc-detail-title h3 { font-size: 1.25rem; }
 }
+
+/* Organization archive only. Map and global navigation remain unchanged. */
+.organization-dialog { width: min(1320px, 96vw); height: min(90dvh, 1000px); }
+.organization-dialog .modal-body { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.organization-panel { display: flex; flex-direction: column; overflow: hidden; flex: 1; min-height: 0; min-width: 0; }
+.organization-layout { display: grid; grid-template-columns: minmax(240px, 310px) minmax(0, 1fr); gap: 1.5rem; flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr); }
+.organization-directory, .organization-detail { overflow-y: auto; min-width: 0; min-height: 0; overscroll-behavior: contain; padding: .35rem .7rem .8rem .15rem; scrollbar-gutter: stable; }
+.organization-directory-tools { position: sticky; top: 0; z-index: 1; padding-bottom: .2rem; background: var(--panel); }
+.organization-directory label { display: grid; gap: .35rem; margin-bottom: .8rem; }
+.organization-directory input, .organization-directory select { width: 100%; min-width: 0; }
+.organization-rows { display: grid; gap: .6rem; margin-top: .8rem; }
+.organization-rows > button { display: grid; gap: .4rem; text-align: left; width: 100%; min-height: 44px; white-space: normal; }
+.organization-rows > button[aria-pressed='true'] { border-color: var(--gold); }
+.organization-snippet { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: var(--muted); }
+.organization-detail section { margin-bottom: 1.4rem; }
+.organization-detail h3 { font-size: 1.5rem; }
+.organization-detail h4 { padding-bottom: .35rem; border-bottom: 1px solid var(--line); }
+.organization-detail ul { padding-left: 1.2rem; }
+.organization-detail p, .organization-detail dd, .organization-detail li, .organization-detail button, .organization-detail summary,
+.organization-rows > button { overflow-wrap: anywhere; word-break: break-word; }
+.organization-detail button { white-space: normal; min-height: 44px; max-width: 100%; }
+.organization-detail details { margin-block: .65rem; }
+.organization-back { display: none; }
+@media (max-width: 900px) {
+  .organization-dialog { width: 98vw; height: 94dvh; max-width: 98vw; }
+  .organization-dialog .modal-body { padding: .65rem .65rem; }
+  .organization-layout { display: block; }
+  .organization-directory, .organization-detail { height: 100%; padding-right: .25rem; }
+  .organization-panel[data-detail='true'] .organization-directory, .organization-panel[data-detail='false'] .organization-detail { display: none; }
+  .organization-back { display: inline-flex; position: sticky; top: 0; z-index: 1; background: var(--panel); margin-bottom: .6rem; }
+}

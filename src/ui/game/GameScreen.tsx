@@ -84,6 +84,8 @@ export function GameScreen({
   const openingTime = useMemo(() => {
     try { return draft && openingTimeSelection(state, draft); } catch { return undefined; }
   }, [state, draft]);
+  const [archiveTarget, setArchiveTarget] = useState<{panel: 'NPC' | '势力组织' | '世界事件'; id: string}>();
+  const openArchive = (panel: 'NPC' | '势力组织' | '世界事件', id: string) => { setArchiveTarget({panel,id}); setPanel(panel); };
   const [panel, setPanel] = useState<PanelName | '人物档案' | '经济与资产'>();
   const compactSidebars = useSyncExternalStore(subscribeSidebarSize, () => window.matchMedia(sidebarMedia).matches, () => false);
   const [worldDirectoryOpen, setWorldDirectoryOpen] = useState(false);
@@ -624,7 +626,7 @@ export function GameScreen({
         {worldNavigation}
       </Dialog>}
       {panel && (
-        <Dialog title={panel} className={panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : ''} onClose={() => setPanel(undefined)}>
+        <Dialog title={panel} className={panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : ''} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>
           {panel === '人物档案' ? (
             <>
             <dl className="profile-details">
@@ -713,7 +715,7 @@ export function GameScreen({
             </>
           ) : (
             <>
-              <Panels name={panel} view={view} npcManagement={npcManagement} onOpenHistory={()=>setPanel('历史时间轴')} />
+              <Panels name={panel} view={view} initialId={archiveTarget?.panel === panel ? archiveTarget.id : undefined} links={{npc:id=>openArchive('NPC',id), organization:id=>openArchive('势力组织',id), event:id=>openArchive('世界事件',id)}} npcManagement={npcManagement} onOpenHistory={()=>setPanel('历史时间轴')} />
             </>
           )}
         </Dialog>

@@ -28,7 +28,7 @@ AI根据选定Story理解已发生变化，不替World推演后台任务、事�
 实际到账收入必须set economy.incomes[id]完整received记录，借款必须set economy.debts[id]完整债务；转账用push economy.transfers，还款用push economy.debts[id].repayments。均为整数人民币分；未知余额不能当0，不能透支，不能提前使用后面的收入。完整示例见经济组及目录。
 物品新增可选description（描述）、referenceValue（单件非负整数分，未知null/省略）、questItem（任务布尔标记）及itemDetails字符串资料；创建和购买使用同一ImportantItem结构。已有物品用set items[id].description/referenceValue/itemDetails/category/questItem更新对应字段，itemDetails整记录替换且保留有效旧属性，不是自由深层补丁。referenceValue不代表成交、不自动改余额；证件等不可交易物品不虚构市价。类别与适用资料见TEXT_COMMAND_CATALOG.itemDetailsGuide。
 物品获得set items[id]；购买set items[id].purchase一次扣款入库；转交set items[id].transfer；遗失set items[id].loss；数量用add items[id].quantity。装备用set protagonist.currentWear完整装备对象。车辆购买set economy.vehicles[id].purchase，车辆房产不重复进重要物品表。
-组织用set organizations[id]创建四类之一的完整对象；关系用set organizations[id].protagonistRelation={relation,reason}开放文字。已有经营/资产等未支持字段放说明，不覆盖组织表。
+组织用set organizations[id]创建四类之一的完整对象；关系用set organizations[id].protagonistRelation={relation,reason}开放文字。已有组织使用set organizations[id].state白名单更新，不覆盖组织表。
 
 现场事件与任务：变量阶段不负责新建追踪事件或估计后台结束时间。仅对正式状态中已有、正文实际涉及的现场事件使用 set events[id].sceneState = {"status":"active"}；结案可给 status=resolved、resolvedAt、resolutionText、outcome(success/failure/changed)，取消为cancelled。程序保留原排程/参与者/关联并添加当前来源回合；不能改预计时间、背景、目标、前序或清理。新事件与延期、承接、归档交给World根据Story处理，不写不支持的旧 events[id] 路径。Task仍用set tasks[id]完整对象，其dueAt或非空completionCondition至少一项；Task不套用事件强制预计时间规则。已有缺规划旧记录可记录现场状态，不编造历史日期。未知操作写说明，不自由补丁。
 
@@ -68,3 +68,15 @@ set npc[id].phoneContact={status:"unknown"|"known"|"invalid",note?}，仅实际�
 同一连续事件可写一条内容充分的记忆；同回合相互独立的重要经历可分别记录，不机械拆成大量重复短句。不强迫每回合写记忆，不为寒暄或无意义动作建记录，不因特殊身份增加数量。核对已有记忆与知晓索引，已记录的同一经历不重复追加；knownInformation不是第二份原始记忆。只指导未来新记忆，不补写或改写旧原文，不改变既有总结与原始记忆永久保留机制。
 
 人物资料与经历配合：当NPC经历重大变化或长期离场后重新出现，同时核对姓名/别名/身份与职业、健康/位置/在场状态、与主角关系及好感，特殊人物再核对目标与必要专属资料；只有选定Story或正式背景提供变化依据时才使用目录内已有路径更新，否则保持原值。记忆记录过去经历，档案记录当前有效状态，二者不相互替代；不要借补记忆擅自改变好感、关系、身份，不重复建档，也不推演World后台新行动。
+
+
+## 势力组织当前状态
+世界事件记录发展过程，组织档案记录当前有效状态。组织可在主角未接触时独立发展；无实质变化不更新，不设每N回合或每天刷新周期，不机械增加资金、关系、任务或事件。四类组织保持自身性质，文字为主、数字为辅，不设综合战斗力。
+主角未听闻或联系组织时protagonistRelation可为“闻所未闻”，开放文字关系不是解锁条件；玩家可阅读组织资料，不代表角色获知秘密。
+leadership可省略或为空，每项为{position,publicName,description?,npcId?}。publicName仅填写普通渠道可知的真实姓名，隐秘或不知身份用null且不绑定npcId；不要把背景秘密身份自动公开，也不强制所有人未知。公开姓名不自动建NPC/记忆/联系人。已正式建档、明确属于组织的人物直接复用keyNpcIds或leadership.npcId；不能按重名或模糊职业猜归属。一个NPC可关联多个组织，关联不改变电话、好感、身份或私密档案。换任更新当前职位，不删除旧人物。
+relations可省略或为空，每项{organizationId,relation,description}，只用真实稳定组织ID，不指自身；同一目标仅保留一项当前关系，单向合法、不强制反向或全矩阵。变化时替换当前项，结束可移除；不要删除原事件/历史，旧businessRelations文字保留且不猜ID。
+已有组织通过UpdateOrganization白名单更新name/description、所属类型字段、leadership/keyNpcIds/currentTaskIds/relations；不得改id/kind/protagonistRelation/relationHistory，主角关系仍走RecordOrgRelation。更名沿用ID并避免同类重名。四类字段见实际目录，不自由覆盖实体。
+金额仅gang.funds、business.assetsEstimate/liquidityEstimate，人民币非负安全整数分；数字未知不填，不为完整性编造。金额更新须financialBasis={at:合法ISO游戏时间,note:依据说明}，at不晚于当前时钟；估值、组织资金与主角账户完全分开，不产生主角收入/扣款或自动交易。非金额变化不要求financialBasis。只核验结构、时间与权限，不要求逐字证据或关键词审批。
+重大收购、争端或权力变化通过现有世界事件承接，实际结果改变档案才更新；小规模既定状态或关系可直接记录，不强迫创建事件。未完成计划不写成已完成结果。组织不强制拥有NPC、事件、任务或势力关系，currentTaskIds只引用本组织合法任务。
+
+Variables只落实已选定Story中的实际组织变化。文本格式：set organizations[org_id].state = {"operatingStatus":"完成已确认的业务整合","relations":[]}；只包含需要变化的字段，程序注入版本。需要金额时financialBasis与这些字段同置于state值内，由程序拆为命令元数据，不写进组织档案；不推演后台经营结果。

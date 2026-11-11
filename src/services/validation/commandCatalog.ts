@@ -1,6 +1,7 @@
 import { variableCommandSchemas } from '../../domain/variableCommands';
 import { StoredWorldEventSchema, WorldEventSchema } from '../../domain/events/schema';
 import { z } from 'zod';
+import { organizationChangeFields } from '../../domain/organizations/schema';
 import { DomainCommandSchema } from '../../domain/commands';
 import { OrdinaryNpcCreationSchema, SpecialNpcCreationSchema } from '../../domain/npc/schema';
 import { WorldResultSchema } from '../../domain/drafts';
@@ -11,6 +12,7 @@ export const worldTypes = [
   'RecordNpcMemory',
   'CreateLocation',
   'CreateOrganization',
+  'UpdateOrganization',
   'RecordOrgRelation',
   'RecordHistory',
 ] as const;
@@ -65,12 +67,14 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
             eventCommands: ['SaveEvent','DeleteEvent'],
             actorBoundary: '以合法Variables投影判断现场：新离场NPC可承担后台任务，仍在场者和开局同伴受保护；只自主推进场外NPC/组织；SaveEvent以稳定ID记录事件参与者，不执行参与者动作。引用参与者不是后台行动授权。禁止主角交易、现场重复行动、独立推进时钟。',
           },
+    organizationUpdateFields: organizationChangeFields,
     rules: [
       '严格使用各 type 的同级字段，不接受 group/entityId/payload 包装或旧别名。',
       'NPC V2：正式人物由AI依据姓名与持续追踪价值建档，不为临时路人编造姓名。Variables可PromoteNpc升级或补齐待完善资料，不能降级或违背玩家ordinary选择；World不修改重要性及新增人物管理字段。休眠档案不可读取。',
       stage === 'world'
         ? 'evidence为非执行的简洁说明，可自然概括；程序不解析证据JSON或审批叙述事实。'
         : 'evidence为简洁来源说明，可概括而不必逐字引用或包含关键词；金额为整数人民币分，price/amount等正值限制以Schema为准。',
+      '组织UpdateOrganization按organizationUpdateFields白名单合并当前字段，id/kind/主角关系历史不可覆盖。金额更新需financialBasis={at,note}，只更新组织自己的人民币分整数估计，不是主角交易。无变化不更新，管理层公开姓名不自动建NPC，组织间关系稀疏可选且可单向。',
       '不存在的更新操作列入 unresolved；CreateNpc/CreateOrganization 不是更新命令。RegisterContact仅保留旧联系人登记协议，不代表已掌握电话号码。所有正式NPC永久保留档案；离场、死亡、失联不删除人物。',
       'Schema描述严格结构；程序校验权限、引用、归属、金额、时间、版本与幂等。剧情及世界演化由AI判断。角色知识按人物提供，命令仅写指定对象，不自动传播。',
       '遵守TURN_TIME_POLICY：待定开局由程序统一应用Story结构化时钟，变量无需重复SetWorldClock。普通回合按实际行动估时，可零耗时，不固定步长，不要求正文时间词；禁止日期非法或倒退。有效HISTORICAL_PERSPECTIVE不更新当前变量或推演当前世界，World可以RecordHistory记录回顾内容，保持当前时钟。',
@@ -102,7 +106,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
             'continuation指定protagonist/world/end及reason。protagonist提供entry的channel/cue；旧事件到期、新sub开始后程序排队；Story通过结构化eventInteraction回执回应，合法现场结果可以提前结束sub。sub的world终态需要真实显式后继（可同窗已结案、可并行或跨父关联）；旧world终态需要同批非终态后继；end不强制续篇。protagonistEntry与protagonistKnowledge为程序元数据，不得伪造。',
             '事件客观进展不自动刷新主角旧知情快照。NPC_KNOWLEDGE每项仅属于ownerNpcId；亲历、转述、推测由AI区分，不能把其他人物秘密当作本人已知或把猜测当作已确认。visibleHooks仅内部候选，不公开角色知识。',
             '所有正式NPC永久保留档案、记忆与关系，不再提供RetireNpc；旧retiredNpcs仅保留历史身份，不猜补已不存在的详细资料。',
-            '不支持资金、物品或组织经营字段的后台变更；写入unresolved，不以事件说明假装正式资产已经改变。',
+            '主角资金、物品和交易仍无后台变更权限。组织现状使用UpdateOrganization：仅本类白名单字段，金额仅funds/assetsEstimate/liquidityEstimate且须financialBasis与合法时间，不覆盖Variables本轮已确认字段或主角关系。不以事件说明假装已写入资产。',
           ],
           stageEntryPolicy:'V2到期不因pending/presented无限延期；保存结局，并创建唯一无eventKind后继互动，引用前序并原样保留channel/cue/locationId。程序移交未处理入场，不代玩家接受、拒绝或离开。合法Variables提前结案优先。',
           npcFieldPermissions: {

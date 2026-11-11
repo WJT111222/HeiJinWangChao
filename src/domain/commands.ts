@@ -6,7 +6,7 @@ import { ActorRefSchema, CommandDataError, DataError, CountSchema, IdSchema, Ids
 import { EquipmentSchema } from './protagonist/schema';
 import { ImportantItemSchema } from './items/schema';
 import { NpcCreationSchema, NpcSchema } from './npc/schema';
-import { OrganizationSchema } from './organizations/schema';
+import { FinancialBasisSchema, OrganizationChangesSchema, OrganizationSchema, organizationChangeFields } from './organizations/schema';
 import { StoredWorldEventSchema, WorldTaskSchema, HistoryRecordSchema } from './events/schema';
 import { GameStateSchema } from './state';
 import type { GameState } from './state';
@@ -37,6 +37,7 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('RecordHistory'), entry: HistoryRecordSchema }),
   z.strictObject({ ...base, type: z.literal('SaveTask'), task: WorldTaskSchema }),
   z.strictObject({ ...base, type: z.literal('CreateOrganization'), organization: OrganizationSchema }),
+  z.strictObject({ ...base, type: z.literal('UpdateOrganization'), organizationId: IdSchema, expectedRevision: CountSchema, changes: OrganizationChangesSchema, financialBasis: FinancialBasisSchema.optional() }),
   z.strictObject({ ...base, type: z.literal('RecordOrgRelation'), organizationId: IdSchema, relation: TextSchema, reason: TextSchema }),
   z.strictObject({ ...base, type: z.literal('RegisterContact'), npcId: IdSchema, reason: TextSchema }),
   // Parse historical drafts/receipts, but never authorize a fresh deletion.
@@ -159,7 +160,23 @@ function apply(s: GameState, c: DomainCommand, turnId: string) {
         'TERMINAL_TASK', '已完成或取消任务不能再次变更');
       s.tasks[c.task.id] = c.task; break;
     }
-    case 'CreateOrganization': newEntity(s, c.organization.id); s.organizations[c.organization.id] = c.organization; break;
+    case 'CreateOrganization':
+      newEntity(s, c.organization.id);
+      requireData(!Object.values(s.organizations).some(org => org.kind === c.organization.kind && org.name === c.organization.name), 'DUPLICATE_ORGANIZATION', '同类组织名称已存在，应复用稳定ID');
+      s.organizations[c.organization.id] = c.organization; break;
+    case 'UpdateOrganization': {
+      const old = s.organizations[c.organizationId];
+      requireData(old, 'NOT_FOUND', '组织不存在');
+      requireData(s.revision === c.expectedRevision, 'ENTITY_CONFLICT', '组织更新版本冲突');
+      requireData(Object.keys(c.changes).every(key => organizationChangeFields[old.kind].includes(key)), 'ORGANIZATION_FIELD', '字段不属于该类组织');
+      if (c.changes.name !== undefined) requireData(!Object.values(s.organizations).some(org => org.id !== old.id && org.kind === old.kind && org.name === c.changes.name), 'DUPLICATE_ORGANIZATION', '同类组织名称已存在');
+      const financial = ['funds', 'assetsEstimate', 'liquidityEstimate'].some(key => Object.hasOwn(c.changes, key));
+      requireData(!financial || c.financialBasis, 'ORGANIZATION_FINANCE', '组织金额更新需要结构化时间与依据说明');
+      if (c.financialBasis) requireData(Date.parse(c.financialBasis.at) <= Date.parse(s.worldClock), 'FUTURE_ORGANIZATION_FINANCE', '组织财务依据时间不能晚于当前游戏时间');
+      // These are organization-owned figures, never player transactions or income.
+      s.organizations[old.id] = OrganizationSchema.parse({ ...old, ...c.changes });
+      break;
+    }
     case 'RecordOrgRelation': {
       const org = s.organizations[c.organizationId];
       requireData(org, 'NOT_FOUND', '组织不存在');

@@ -555,6 +555,12 @@
           }
         },
         "sha256": "585cfba145f1b42d8606187f908716d7a8a1069e886fc88f5fd95fad44ef3c61"
+      },
+      "organizationFinalAcceptance": {
+        "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
+        "previousTreatment": "text-protocol-adaptation",
+        "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
+        "sha256": "a9c3f5eb349485af3cb4893ffc804cddcb65d1487499fb8f8688843cb166ac9e"
       }
     },
     "shared/08_world_output.md": {
@@ -660,6 +666,12 @@
           }
         },
         "sha256": "8e987037e0f2984c7837ab343b95303b01a1ddd14699a2163409b9cfb572da34"
+      },
+      "organizationFinalAcceptance": {
+        "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
+        "previousTreatment": "command-contract-alignment",
+        "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
+        "sha256": "cc1db3d89b29c00c0cb50c5f90ad6ef15252b650d79f9d697c3956f22b3c210f"
       }
     },
     "stages/opening/variables.md": {
@@ -895,6 +907,12 @@
         "reference": "variableProtocolReference",
         "sha256": "f40dae98698d440b39203b5da0e55313742f98041da2018eff3e1eceb9c4956b",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
+      },
+      "organizationFinalAcceptance": {
+        "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
+        "previousTreatment": "text-protocol-adaptation",
+        "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
+        "sha256": "d2c7f97cf13ebcbfeff2960f6528c887d2241fc2023299548ebbec47ae516af4"
       }
     },
     "variableGroups/org_gang/update.md": {
@@ -911,12 +929,24 @@
         "reference": "variableProtocolReference",
         "sha256": "5510630c3db75ab69be1c634f5ad2bb8456538377fbb988777bbce89dcdfd8ed",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
+      },
+      "organizationFinalAcceptance": {
+        "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
+        "previousTreatment": "text-protocol-adaptation",
+        "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
+        "sha256": "f04073536a6b71cfa2c916834ffe5fde4fcadf8a85bec21cf12de73b00d74f85"
       }
     },
     "variableGroups/org_gang/offscreen.md": {
       "origin": "baseline",
       "sourceSha256": "07de8c715b0e0bc9fa0a31c0ba22404bde05cb95b4704bdc97d78bcd008e2d02",
-      "treatment": "verbatim"
+      "treatment": "organization-final-adaptation",
+      "organizationFinalAcceptance": {
+        "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
+        "previousTreatment": "verbatim",
+        "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
+        "sha256": "63b28acd9e3020a0d9b028e82b820b907cb3a1ca3b04b91e716342fdd21693c7"
+      }
     },
     "variableGroups/org_government/init.md": {
       "origin": "baseline",
@@ -932,6 +962,12 @@
         "reference": "variableProtocolReference",
         "sha256": "7134a58faaea82e39ab762b4cead539a4f1f4b86848a150d698bc05e2e7a08eb",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
+      },
+      "organizationFinalAcceptance": {
+        "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
+        "previousTreatment": "text-protocol-adaptation",
+        "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
+        "sha256": "62891c378aec2d3e52085833c8848edb365e1786c50ccd706d7cffa2617720a6"
       }
     },
     "variableGroups/org_government/update.md": {
@@ -948,6 +984,12 @@
         "reference": "variableProtocolReference",
         "sha256": "cec0987402a0f298986a8e1c2035e01897377fca67b58846bc50c65f257274f0",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
+      },
+      "organizationFinalAcceptance": {
+        "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
+        "previousTreatment": "text-protocol-adaptation",
+        "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
+        "sha256": "5e04e3c1f458c0c08b491b4ce9bb1d06220082816bfd00a5c7b37fb8055bb235"
       }
     },
     "variableGroups/org_government/offscreen.md": {
@@ -957,6 +999,12 @@
       "historyTimelineV2": {
         "notes": "历史时间轴V2：保留普通RecordHistory，新增可选chronicle、世界结案归档/主角事实归档、时间精度与同年冬季排序；玩家观察与角色认知分离，无新增请求。保留之前所有来源哈希。",
         "sha256": "415a155ea13178a8229b51052bb104bcd277a6cf399c5301db886b5499f30cb2"
+      },
+      "organizationFinalAcceptance": {
+        "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
+        "previousTreatment": "runtime-contract-update",
+        "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
+        "sha256": "7910f23af505b68cab058048fd8c58a701f37d1ad54598f6f861488dbb788449"
       }
     },
     "variableGroups/org_civil/init.md": {
@@ -973,6 +1021,12 @@
         "reference": "variableProtocolReference",
         "sha256": "e84c4dd350b29d470f90d07fb2e0f14c41012a2a3db09c6fdb83c7e48aef37c6",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
+      },
+      "organizationFinalAcceptance": {
+        "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
+        "previousTreatment": "text-protocol-adaptation",
+        "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
+        "sha256": "4ee6ff68afb05a349fa0bbdd96b6488e8d550618b59c8f0bbff38a117f8f5877"
       }
     },
     "variableGroups/org_civil/update.md": {
@@ -989,12 +1043,24 @@
         "reference": "variableProtocolReference",
         "sha256": "538a069f5fc0048d3796683f54e8a43022de7fa38e6261f4fd31e1935a37ff00",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
+      },
+      "organizationFinalAcceptance": {
+        "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
+        "previousTreatment": "text-protocol-adaptation",
+        "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
+        "sha256": "c47f73547d1a34d2e9d77895dd51fb59376693fe9b70e7925b49804575947775"
       }
     },
     "variableGroups/org_civil/offscreen.md": {
       "origin": "baseline",
       "sourceSha256": "f59b95a561a10b6a0ff61e23b85298e4533b98937ff5f588e1cfb511e8aa233c",
-      "treatment": "verbatim"
+      "treatment": "organization-final-adaptation",
+      "organizationFinalAcceptance": {
+        "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
+        "previousTreatment": "verbatim",
+        "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
+        "sha256": "002794af88e896cc79377caa035ded554864076c93dbf8bfbadf761697a2a5d3"
+      }
     },
     "variableGroups/org_business/init.md": {
       "origin": "baseline",
@@ -1010,6 +1076,12 @@
         "reference": "variableProtocolReference",
         "sha256": "a0efde722e962d47e7766c1ff6479b5ff147a1860090c8bdae3edba50d6742cd",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
+      },
+      "organizationFinalAcceptance": {
+        "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
+        "previousTreatment": "text-protocol-adaptation",
+        "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
+        "sha256": "8b0da47361f471d9ce34281ee930222b8cbbfbfdb9e1c7c8f778d2b248e04195"
       }
     },
     "variableGroups/org_business/update.md": {
@@ -1026,6 +1098,12 @@
         "reference": "variableProtocolReference",
         "sha256": "2d3a9780f2070adfc28d1a2f74513003d341598f77a5e4a254dcb891f091ba05",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
+      },
+      "organizationFinalAcceptance": {
+        "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
+        "previousTreatment": "text-protocol-adaptation",
+        "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
+        "sha256": "f5aab17b9dacd2f67cd8badd2c5bd6fd766d8234587af73fda5ceeeba6ff9023"
       }
     },
     "variableGroups/org_business/offscreen.md": {
@@ -1035,6 +1113,12 @@
       "historyTimelineV2": {
         "notes": "历史时间轴V2：保留普通RecordHistory，新增可选chronicle、世界结案归档/主角事实归档、时间精度与同年冬季排序；玩家观察与角色认知分离，无新增请求。保留之前所有来源哈希。",
         "sha256": "9b83cae2c5ccbaa2295c98c84efd510f57f22a3c60c826cf8fc59d560c603571"
+      },
+      "organizationFinalAcceptance": {
+        "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
+        "previousTreatment": "runtime-contract-update",
+        "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
+        "sha256": "08bf33c698b44dedff4169aa4cc64750f33e874f2e0e6c9c6b9ef04701700e0b"
       }
     },
     "writing/perspective_first.md": {
@@ -1172,6 +1256,11 @@
         "baseCommit": "e4faf4bb07d5ba519cf2a801cb9e20558b8bf4b1",
         "notes": "追加NPC第三批正式命令与V9兼容契约，保留既有接口历史。",
         "sha256": "b81b709f18621bc3a6aafd8ed2ac256397b20bc01670aee91a4b6852eeae0c28"
+      },
+      "organizationFinalAcceptance": {
+        "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
+        "notes": "追加UpdateOrganization正式契约与权限说明，保留原历史内容及来源。",
+        "sha256": "ec527327dc2a01cb29a404fd797a0fc863960e6c6956d8ab3bbcf6cbd7a8c864"
       }
     },
     "docs/ASSEMBLY.md": {

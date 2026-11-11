@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { OpeningInitialStateSchema } from '../../domain/openingInitialization';
 import { ActorRefSchema, GameTimeSchema, MoneySchema, TextSchema } from '../../domain/common';
 import { OrdinaryNpcCreationSchema, SpecialNpcCreationSchema } from '../../domain/npc/schema';
-import { GangOrgSchema, GovernmentOrgSchema, CivilOrgSchema, BusinessOrgSchema } from '../../domain/organizations/schema';
+import { GangOrgSchema, GovernmentOrgSchema, CivilOrgSchema, BusinessOrgSchema, OrganizationChangesSchema, FinancialBasisSchema, organizationChangeFields } from '../../domain/organizations/schema';
 import { AccountSchema, IncomeRecordSchema, DebtRecordSchema, VehicleAssetSchema } from '../../domain/economy/schema';
 import { ImportantItemSchema } from '../../domain/items/schema';
 import { itemDetailFields, itemCategoryGroup } from '../../domain/items/details';
@@ -55,6 +55,7 @@ const entries:Entry[] = [
   {operation:'set',path:'npc[id].contact',commandType:'RegisterContact',value:z.strictObject({reason:TextSchema})},
   {operation:'set',path:'organizations[id]',commandType:'CreateOrganization',value:z.union([
     GangOrgSchema.omit({id:true}),GovernmentOrgSchema.omit({id:true}),CivilOrgSchema.omit({id:true}),BusinessOrgSchema.omit({id:true})])},
+  {operation:'set',path:'organizations[id].state',commandType:'UpdateOrganization',value:OrganizationChangesSchema.safeExtend({financialBasis:FinancialBasisSchema.optional()})},
   {operation:'set',path:'organizations[id].protagonistRelation',commandType:'RecordOrgRelation',value:z.strictObject({relation:TextSchema,reason:TextSchema})},
   ...(['cash','onlineBalance'] as const).map((field):Entry=>({operation:'add',path:`economy.${field}`,commandType:'SpendFunds',value:z.number().int().negative()})),
   {operation:'set',path:'economy.incomes[id]',commandType:'ReceiveIncome',value:IncomeRecordSchema.omit({id:true}).extend({amount:positive,status:z.literal('received'),receivedAt:GameTimeSchema})},
@@ -73,6 +74,7 @@ const entries:Entry[] = [
 /** 正式及离线文本组装共用的值结构目录；不执行、审批或写入状态。 */
 export function textVariableCatalog() {
   return { protocol:'VARIABLE_TEXT_V1', currencyUnit:'CNY_FEN_INTEGER', limits:variableTextLimits,
+    organizationUpdateFields: organizationChangeFields,
     itemDetailsGuide: { categoryGroups: itemCategoryGroup, suggestedStringFields: itemDetailFields },
     entries:entries.map(({value,...entry})=>({...entry,...(entry.operation==='delete'?{valueRequired:false}:{}),valueSchema:{...z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'}),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
     rules:[
@@ -83,6 +85,7 @@ export function textVariableCatalog() {
       '记忆内容遵守共享协议的人物原始记忆内容质量：以本人认知保留背景、经过、自身行动、结果与持续影响，不写成事件标题，不补造事实；长度仅为弹性参考，普通/特殊同标，不强迫每回合写入。',
       '内联NPC初始记忆保持空；用push记忆路径新增，由程序填充当前回合、人物引用和游戏时间。knownInformation同时记录一条个人记忆。',
       '所有普通/特殊NPC统一push npc[id].memories；不选择记忆层，不因special强制增加条目，无值得保存的新经历时可不写。knownInformation仍是知晓状态入口，push会同时建立唯一原始记忆，同一事实不要再重复push memories。两入口使用{text,knowledgeKind,knowledgeSource,visibility}四项。存档中的source/learnedAt只读，不是命令格式；不填id/sourceTurnIds/createdAtGameTime/affectedEntityRefs。亲历、转述和推测由模型区分，不由程序猜测补全。',
+      '组织state仅合并白名单当前字段，id/kind及关系历史只读；按组织类型使用organizationUpdateFields。金额仅gang.funds、business.assetsEstimate/liquidityEstimate，需同值内financialBasis={at,note}且不晚于当前时钟；不改变主角余额。leadership公开姓名或null，关联须稳定NPC ID；relations每目标唯一、可空、可单向。无变化不输出更新，不自动创建NPC。',
       '只能更新目录内字段。旧资产无交易登记、历史债务无到账登记、房产购买尚无原生命令，写入<说明>，不伪造交易。events[id].sceneState仅更新已存在现场事件的实际状态和结果；所选Story的eventNarration.enter可明确授权该事件实际介入，mention无此权限，提前结案用实际at且保留fixedEndAt，程序保留旧规划并填写来源；新事件、预计终止时间、延期、承接及清理由World处理。tasks仍须截止时间或非空完成条件，不套用事件新规。',
       'opening.initialState仅供带openingInitializationPending=true的新游戏开局，一批最多一条set。填写缺失weatherText/environmentText、原有cash/onlineBalance及expectedIncomes，不覆盖明确数据。expectedIncomes内每条需稳定id、source、整数分amount、status=expected、account、scheduleText，可选expectedAt不早于当前候选游戏时间；不是到账，不填receivedAt/sourceTurnId，不增加余额。普通回合及无标记旧档禁用。先初始化再处理真实交易。',
       '数组set替换、push追加一个元素、delete按当前索引删除；同一数组多个delete按索引从大到小输出，程序按文本顺序执行，不静默重排。NPC整体/原始记忆、账目记录、地点和组织整体删除没有安全领域命令，明确拒绝；不采用任意深合并。',
