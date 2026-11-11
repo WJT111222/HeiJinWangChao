@@ -28,6 +28,7 @@ export function worldProjectionError(error: unknown, result: WorldResult, state:
         case 'UpdateNpc': return Object.hasOwn(c.changes,String(rest[0])) ? ['npc',c.npcId,'changes'] : undefined;
         case 'SaveTask': return ['tasks',c.task.id,'task'];
         case 'SaveEvent': return ['events',c.event.id,'event'];
+        case 'UpdateOrganization': return ['organizations',c.organizationId,'changes'];
         case 'CreateOrganization': return ['organizations',c.organization.id,'organization'];
       }
     }

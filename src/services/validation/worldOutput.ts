@@ -97,8 +97,19 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
             && (org.kind !== 'business' || (org.assetsEstimate === undefined && org.liquidityEstimate === undefined)), 'permission');
           break;
         }
+        case 'UpdateOrganization': {
+          requireWorld(causal.organizations[command.organizationId], 'permission');
+          const prior = draft.variables?.validation === 'validated' ? draft.variables.result.commands : [];
+          requireWorld(!prior.some(c => c.type === 'UpdateOrganization' && c.organizationId === command.organizationId
+            && Object.keys(c.changes).some(key => Object.hasOwn(command.changes, key))
+            || c.type === 'CreateOrganization' && c.organization.id === command.organizationId
+              && Object.keys(command.changes).some(key => Object.hasOwn(c.organization, key))), 'permission', 'scene_write_conflict');
+          break;
+        }
         case 'RecordOrgRelation':
           requireWorld(causal.organizations[command.organizationId], 'permission');
+          requireWorld(!(draft.variables?.validation === 'validated' && draft.variables.result.commands.some(c =>
+            c.type === 'RecordOrgRelation' && c.organizationId === command.organizationId || c.type === 'CreateOrganization' && c.organization.id === command.organizationId)), 'permission', 'scene_write_conflict');
           break;
         case 'CreateLocation': break; // Domain validation enforces hierarchy and references.
         case 'SaveTask': {

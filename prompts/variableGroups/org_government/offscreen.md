@@ -5,4 +5,6 @@
 
 共通校验：字段变更必须有已成立事实或已安排且到期的世界任务作为证据；实体ID稳定，禁止同一对象重复建档；未知项目保持未定；所有变化仅生成候选，由程序检查权限、原始版本和幂等性后提交。即使没有变化也允许输出空结果，不为凑字段而造事。
 
-组织层面的重大纪事由World判断：世界类须事件实际结束后按共享chronicle协议归档并明确组织影响范围；归档不停止后续调查或经营推演，不增加后台字段写入权限。
+组织层面的重大纪事由World判断：世界类须事件实际结束后按共享chronicle协议归档并明确组织影响范围；归档不停止后续调查或经营推演，组织现状变化使用本轮白名单UpdateOrganization，不改变其他领域写入权限。
+
+遵守共享“势力组织当前状态”：仅有实质变化才UpdateOrganization；可更新本类jurisdictionText/lawfulPowers/cases/administrativeAffairs/enforcementCapacityText/publicTrustText/internalStatus及共通管理层/明确NPC/稀疏组织关系。文字为主，不强制综合实力数字、不按固定周期随机增长。公开管理层姓名不自动建档；关系不决定玩家能否阅读档案。金额更新必须financialBasis，不能影响主角账户。

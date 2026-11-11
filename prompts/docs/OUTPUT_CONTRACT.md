@@ -195,3 +195,11 @@ Story可只回执本幕实际处理的部分pending，余项继续pending。Vari
 ## NPC V2 第三批增量
 正式GameState V9，人物仍仅ordinary/special；V6/V7/V8经严格迁移兼容。原始记忆统一npc.memories，私人资料休眠不进入AI输入。新增Variables领域命令PromoteNpc（npcId/identityKey/expectedRevision/profile?）只升级或完善待补资料，不提供降级；文本入口为set npc[id].specialProfile，空对象仅恢复既有休眠资料。玩家ordinary选择禁止AI重升，special保留玩家意图；profilePending明确表示缺资料，不代表已发生经历。
 UpdateNpc新增phoneContact/usualLocations、特殊人物detailedBackground/habits/relationshipNetwork字段；只写明确引用与指定对象，不自动传播电话、住址或关系。privateProfile七字段仍走原路径和不可覆盖初次经历约束。玩家管理使用独立CAS及草稿版本/epoch，不写剧情、不推进时钟、不请求AI；World不取得上述新增写权限。
+
+### UpdateOrganization：组织当前状态更新
+
+`{commandId,evidence,type:'UpdateOrganization',organizationId,expectedRevision,changes,financialBasis?}` 按组织现有类型白名单局部更新。`id/kind/protagonistRelation/relationHistory`不可覆盖；主角关系仍用RecordOrgRelation。Variables文本为 `set organizations[id].state = {...changes,financialBasis?}`，程序拆分元数据并注入正式版本；World不能覆盖本轮Variables已写字段。
+
+共通字段为name/description/keyNpcIds/currentTaskIds/leadership/relations；类型专有字段见实际目录。leadership保存职位、普通渠道可知姓名（未知null）及可选说明/已有npcId，隐秘身份不绑定公开入口；relations每目标一个当前项、可空、可单向。旧businessRelations文字不猜ID。
+
+仅gang.funds和business.assetsEstimate/liquidityEstimate可更新组织金额，必须financialBasis={at,note}且at不晚于当前时钟，非负安全整数人民币分。不是主角交易，不增减玩家余额。World原创建金额限制不变。非法引用、类型和版本仍整批拒绝，没有关键词、逐字来源匹配或文学审批。

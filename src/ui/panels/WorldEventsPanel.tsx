@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Detail, Empty } from '../Dialog';
 import { RecordList, WorldRecord } from './WorldRecord';
 import { dateTime } from './playerView';
@@ -46,7 +46,7 @@ function EventFile({event,view,archive,onSelect,onOpenHistory,children}:{event:A
     <WorldRecord title="完整技术记录" value={raw}/>
   </article>;
 }
-export function WorldEventsPanel({view,onOpenHistory}:{view:PlayerView;onOpenHistory?:()=>void}) {
+export function WorldEventsPanel({view,onOpenHistory,initialId}:{view:PlayerView;onOpenHistory?:()=>void;initialId?:string}) {
   const archive=useMemo(()=>eventArchive(view),[view]),[query,setQuery]=useState(''),[page,setPage]=useState(0),[selection,setSelection]=useState<Selection>();
   const root=useRef<HTMLDivElement>(null),pane=useRef<HTMLDivElement>(null);
   const positions=useRef<{list?:{id:string;scroll:number;pane:number};family?:{id:string;scroll:number;pane:number}}>({});
@@ -62,6 +62,7 @@ export function WorldEventsPanel({view,onOpenHistory}:{view:PlayerView;onOpenHis
   function selectStage(id:string) {if(!main)return;positions.current.family=remember(id);setSelection({id:main.id,origin:valid?.origin??'active',stageId:id});focusFile();}
   function restore(kind:'list'|'family') {const pos=positions.current[kind];requestAnimationFrame(()=>{const body=root.current?.closest('.modal-body');if(body)body.scrollTop=pos?.scroll??0;if(pane.current)pane.current.scrollTop=pos?.pane??0;const button=[...(root.current?.querySelectorAll<HTMLButtonElement>('[data-event-id]')??[])].find(e=>e.dataset.eventId===pos?.id);(button??root.current?.querySelector<HTMLButtonElement>('button'))?.focus({preventScroll:true});});}
   function related(id:string) {const e=archive.records.get(id);if(!e)return;if(e.eventKind==='sub'&&e.parentEventId&&archive.records.has(e.parentEventId)){const parent=archive.records.get(e.parentEventId)!;setSelection({id:parent.id,origin:archive.active.some(x=>x.id===parent.id)?'active':'other',stageId:id});focusFile();}else select(id,e.eventKind==='main'?(archive.active.some(x=>x.id===id)?'active':'other'):'legacy');}
+  useEffect(()=>{if(initialId)related(initialId);},[initialId]);
   const stageRow=(e:ArchiveEvent)=><button className="event-stage-row" data-event-id={e.id} onClick={()=>selectStage(e.id)}><span><strong>{e.title}</strong><small>{e.startAt?dateTime(e.startAt):'开始未保留'} · 固定终止 {e.fixedEndAt?dateTime(e.fixedEndAt):'未保留'}</small></span><Outcome event={e}/></button>;
   const stages=(label:string,entries:ArchiveEvent[])=>entries.length>20
     ? <RecordList key={`${main?.id}:${label}`} label={label} entries={entries} render={stageRow}/>
