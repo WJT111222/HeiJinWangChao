@@ -7,7 +7,7 @@ worldCommands只使用目录允许的场外人物、记忆、地点、组织和�
 AI负责判断剧情事实、动机、真实耗时、行动与结果；程序检查JSON、字段、ID、引用、归属、时间、状态转换及整批事务。不要求World措辞与Story相同，不以关键词判断计划、传闻或否定。请自行区分已发生行为、未来安排、转述、猜测，避免把未核实消息当作世界真相。
 
 ## 权限和角色认知
-World可自主推进场外NPC与组织，不必等待正文预告。场内/场外以本轮合法Variables投影为准：刚离场人物可以开始后台任务，仍在场者和开局同伴继续受保护；不得重写本轮Variables已更新的离场人物字段。受保护的现场NPC与开局同伴不能通过UpdateNpc、RecordNpcMemory或任务改写；UpdateNpc不能修改好感、主角关系、最近互动或令人物入场。CreateNpc须离场、好感中性且不内联记忆；记忆使用指定npcId的RecordNpcMemory单独记录。
+World可自主推进场外NPC与组织，不必等待正文预告。场内/场外以本轮合法Variables投影为准：刚离场人物可以开始后台任务，仍在场者和开局同伴继续受保护；不得重写本轮Variables已更新的离场人物字段。受保护的现场NPC与开局同伴不能通过UpdateNpc、RecordNpcMemory或任务改写；UpdateNpc不能修改好感、主角关系、最近互动或令人物入场。CreateNpc须离场、好感为未确认占位0且不内联记忆；记忆使用指定npcId的RecordNpcMemory单独记录。
 SaveEvent可以记录场内或场外事件，actorRefs只记录参与身份，不执行主角的付款、签字、答应、移动或其他选择。World没有主角交易、移动或SetWorldClock权限；主角后台资产变更仍不支持；组织当前经营与限定金额可通过UpdateOrganization明确更新，不得以事件文字假装已经记账。
 SAVE_STATE、PROTAGONIST_PROFILE与NPC_CONTEXT均为只读背景，包含受保护现场人物；可读不代表可写。人物唯一资料表为SAVE_STATE.npc，四级索引仅按kind/onScene分组，OFFSCREEN_STATE.npcIds只列合法场外行动ID，完整任务/事件/组织职责仍在原上下文中。人物记忆归属npc[id].memories，总结归属memories.npcSummaries[id]，不再重复提供NPC_KNOWLEDGE数组。每个人只知道自身经历和实际获知的信息，不能自动获得其他人的秘密。observed/reported/suspected及记忆可见性由AI明确填写；程序只写指定人物，不自动复制给其他人。玩家观察页面能看世界记录，不代表主角已经知道。事件客观进展不自动刷新主角已有知情快照；protagonistKnowledge是程序字段。
 visibleHooks是内部候选，revealAfter不等于公开授权，不自动注入主角正文或人物认知。
@@ -89,3 +89,25 @@ relations可省略或为空，每项{organizationId,relation,description}，只�
 重大收购、争端或权力变化通过现有世界事件承接，实际结果改变档案才更新；小规模既定状态或关系可直接记录，不强迫创建事件。未完成计划不写成已完成结果。组织不强制拥有NPC、事件、任务或势力关系，currentTaskIds只引用本组织合法任务。
 
 World可自主更新合法场外组织现状。UpdateOrganization={commandId,type,organizationId,expectedRevision,changes,financialBasis?,evidence}；依赖正式BASE_SAVE_REVISION，changes仅白名单字段。不得重写本轮合法Variables已经确认的同一组织字段或主角关系；可更新不冲突的后台字段。World创建组织仍保持原创建权限，不内联金额；已有组织金额采用上述明确更新入口。
+
+## World新建NPC初值
+先按稳定ID、identityKey、姓名与别名检索现有档案，已有的人物复用ID，不重建。World可建立普通或特殊场外人物，特殊男性正常合法，不要求亲属降为普通人物。
+创建时onScene=false、affinity=0，memories=[]、knownInformation=[]。affinityConfirmed必须省略，不填true、false或null；lastInteractionAt也省略。0是技术占位，不表示没有亲情或真实感情。亲属关系、长期认识或已婚关系写入relationshipText/identity/background，不代表程序已经确认好感数值，也不能据此绕过World的创建初值。
+普通人物包含kind=ordinary、id、identityKey、name、aliases、skills、onScene、affinity、relationshipText、memories、knownInformation；age/gender/identity/appearance/temperament/background/healthText/locationId按已有依据填写。特殊人物另含kind=special、detailedBackground字符串、activeGoals/habits/offscreenTaskIds数组。没有任务时offscreenTaskIds=[]；若引用本批SaveTask，ID须一致且actorRef指向本人。不输出longTermMemories、玩家重要性或电话/常驻地点等未开放的创建字段。
+私密档案资格保持原规则：仅special且gender=female、age缺省或>=18时可包含privateProfile。男性特殊NPC不得携带privateProfile，空对象或空字符串占位也不行；男性的体态写appearance/healthText等普通字段。普通人物、已知未成年或未知性别也不写该字段。不得为取得资格伪造年龄。合资格女性的bodyDescription/chestDescription/pussyDescription/isVirgin/firstExperienceTarget/firstExperienceTime/firstExperienceText七个原字段及合法写入能力保持完整，不做全局删除或净化。
+记忆使用独立RecordNpcMemory，可引用本批合法创建的场外NPC，指定本人知识与来源；创建对象的两个内联数组仍为空。记忆时间位于TIME_WINDOW内，active任务startAt不晚于已确认停止时间。组织keyNpcIds、任务actorRef和事件actorRefs都复用真实或本批合法创建的稳定ID；不把场内NPC或主角行动交给后台执行。
+
+privateProfile示例只说明原有字段，未知资料可以省略相应字段或整个对象，不把“已有记录”占位句当作真实经历。
+以下仅为npc字段对象的最小示例；外层CreateNpc仍需commandId/type/evidence，示例ID与内容必须换成本次合法人物，不能凭示例生成重复亲属：
+```json
+{"id":"npc_remote_a","identityKey":"identity-remote-a","kind":"ordinary","name":"顾远","aliases":[],"skills":[],"onScene":false,"affinity":0,"relationshipText":"多年认识的家人","memories":[],"knownInformation":[]}
+```
+```json
+{"id":"npc_remote_b","identityKey":"identity-remote-b","kind":"special","name":"顾延","age":42,"gender":"male","aliases":[],"skills":[],"onScene":false,"affinity":0,"relationshipText":"主角的父亲，长期保持家庭联系","memories":[],"knownInformation":[],"detailedBackground":"长期在外工作，按正式背景沿用经历。","activeGoals":[],"habits":[],"offscreenTaskIds":[]}
+```
+```json
+{"id":"npc_remote_c","identityKey":"identity-remote-c","kind":"special","name":"周岚","age":35,"gender":"female","aliases":[],"skills":[],"onScene":false,"affinity":0,"relationshipText":"既有家庭关系","memories":[],"knownInformation":[],"detailedBackground":"沿用正式背景中的个人经历。","activeGoals":[],"habits":[],"offscreenTaskIds":[],"privateProfile":{"bodyDescription":"已有设定中的体态资料","chestDescription":"已有设定中的胸部资料","pussyDescription":"已有设定中的私密资料","isVirgin":false,"firstExperienceTarget":"已有记录对象","firstExperienceTime":"已有记录时间","firstExperienceText":"已有记录原文"}}
+```
+
+## 新地点的地理从属
+CreateLocation.parentId表示真实地理从属，不是存档默认根、角色国籍或主角所在国。瑞士苏黎世不能挂在china之下；应复用真实存在的瑞士地点ID，或先CreateLocation建立瑞士（根未确定时省略parentId），再以其ID作为苏黎世父级。若尚不能确定上级，可省略parentId，不编造父ID、不为挂树选错国家。复用已有地点，不改已有地图或地点层级来迁就新输出；程序仍只校验引用存在和无环，不替模型判断地理事实。

@@ -9,3 +9,5 @@
 - NPC 仅根据其已知事实、个人长期意向和实际资源推进场外行动；若现场与后台任务发生重叠，应停止重复结算。后台变化须有时间、地点、任务或事件依据，严禁靠摘要补写不存在的经历。
 
 记忆写入受实际 <COMMAND_CATALOG> 约束；当前不支持的字段更新仅列入 unresolved，不发明命令、任意对象路径或已写库结果。
+
+新建人物遵守共享“World新建NPC初值”及实际COMMAND_CATALOG：affinityConfirmed必须省略，亲属关系不是数值确认；onScene=false、affinity=0、空内联记忆，分开RecordNpcMemory。特殊男性不写privateProfile，合资格女性原七字段仍可用；本批任务/组织引用须真实一致。
