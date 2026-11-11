@@ -1,0 +1,65 @@
+{
+  "note": "Playwright end-to-end latency, includes automation waits and process communication; not JS execution time or real-device keyboard validation.",
+  "metrics": [
+    {
+      "width": 320,
+      "openedMs": 2716.9726769999997,
+      "searchMs": 289.5090049999999,
+      "switchMs": 206.7089640000013,
+      "geometry": {
+        "viewportWidth": 320,
+        "dialogWidth": 280,
+        "scrollWidth": 280,
+        "list": {
+          "x": 0,
+          "right": 0,
+          "width": 0
+        },
+        "detail": {
+          "x": 32.796875,
+          "width": 254.40625
+        }
+      }
+    },
+    {
+      "width": 360,
+      "openedMs": 735.5784080000012,
+      "searchMs": 121.5074280000008,
+      "switchMs": 244.69593000000168,
+      "geometry": {
+        "viewportWidth": 360,
+        "dialogWidth": 320,
+        "scrollWidth": 320,
+        "list": {
+          "x": 0,
+          "right": 0,
+          "width": 0
+        },
+        "detail": {
+          "x": 32.796875,
+          "width": 294.40625
+        }
+      }
+    },
+    {
+      "width": 390,
+      "openedMs": 719.693811000001,
+      "searchMs": 99.61848399999872,
+      "switchMs": 103.961510000001,
+      "geometry": {
+        "viewportWidth": 390,
+        "dialogWidth": 350,
+        "scrollWidth": 350,
+        "list": {
+          "x": 0,
+          "right": 0,
+          "width": 0
+        },
+        "detail": {
+          "x": 32.796875,
+          "width": 324.40625
+        }
+      }
+    }
+  ]
+}

@@ -27,7 +27,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
       $schema: 'http://json-schema.org/draft-07/schema#',
       oneOf: options.map((option) => {
         const modelOption = stage === 'world' && option.shape.type.value === 'UpdateNpc'
-          ? variableCommandSchemas[1].safeExtend({changes:variableCommandSchemas[1].shape.changes.omit({phoneContact:true,usualLocations:true,detailedBackground:true,habits:true,relationshipNetwork:true})})
+          ? variableCommandSchemas[1].safeExtend({changes:variableCommandSchemas[1].shape.changes.omit({name:true,aliases:true,identity:true,phoneContact:true,usualLocations:true,detailedBackground:true,habits:true,relationshipNetwork:true})})
           : option.shape.type.value === 'CreateNpc'
           ? option.extend({ npc: z.discriminatedUnion('kind', [OrdinaryNpcCreationSchema, SpecialNpcCreationSchema.omit({longTermMemories:true})]) })
           : option.shape.type.value==='SaveEvent' ? option.extend({event:z.union([WorldEventSchema,StoredWorldEventSchema.extend({status:z.enum(['resolved','cancelled'])})])}) : option;
