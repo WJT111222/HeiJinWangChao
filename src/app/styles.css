@@ -2392,3 +2392,210 @@ input, textarea, select, .prompt-inspector pre { background-color: var(--bg); co
   .organization-panel[data-detail='true'] .organization-directory, .organization-panel[data-detail='false'] .organization-detail { display: none; }
   .organization-back { display: inline-flex; position: sticky; top: 0; z-index: 1; background: var(--panel); margin-bottom: .6rem; }
 }
+
+/* ==========================================================================
+   UI-2「夜幕金印 2.0」纯视觉美化
+   只改外观与排版：不新增存档字段、不改 AI 输出格式、不删减现有字段。
+   - 所有宽度：书页式正文、剧本式对话、章回标题、行动建议、三阶段指示点、层级地图。
+   - 1200px 及以上：左栏主角信息、正文上方横栏（时间 / 地点 / 天气 / 环境）、右侧印章栏、资料抽屉。
+   - 901–1199px 与手机：沿用 UI-1 的顶部状态条与底部导航。
+   ========================================================================== */
+:root { --ui2-tint: #7FA7A0; --ui2-ink: #E6E1D2; --ui2-ease: cubic-bezier(.22, .7, .2, 1); }
+
+/* ---- 正文：章回标题 + 书页排版 ---- */
+.chapter-heading { justify-content: center; gap: 1rem; font-family: var(--font-title); font-size: 1.1rem; font-weight: 600; letter-spacing: .3em; color: var(--gold-hover); margin: var(--space-6) 0 var(--space-4); }
+.chapter-heading::before, .chapter-heading::after { content: ''; flex: 0 1 3.5rem; height: 1px; background: linear-gradient(90deg, transparent, var(--line-selected)); }
+.chapter-heading::after { transform: scaleX(-1); }
+.story-entry { position: relative; }
+.story-entry > .tag { display: table; margin: 0 auto var(--space-3); }
+.story-entry .prose { font-family: var(--font-title); color: var(--ui2-ink); line-height: 2.02; letter-spacing: .02em; }
+.story-narration, .story-entry > .prose { text-align: justify; text-indent: 2em; }
+.story-reading { gap: 1.1rem; }
+
+/* 已正式结算的最新回合：装饰印章，不承载信息。 */
+.story-entry-latest::after {
+  content: '已结\A第' attr(data-turn) '回';
+  white-space: pre;
+  position: absolute; top: .3rem; right: .2rem;
+  display: grid; place-items: center; width: 3.1rem; height: 3.1rem;
+  border: 2px solid #b8543f; color: #c8604a; font-family: var(--font-title); font-size: .7rem; line-height: 1.2; letter-spacing: .08em; text-align: center;
+  transform: rotate(-8deg); opacity: .8; pointer-events: none;
+  box-shadow: inset 0 0 0 3px var(--bg), inset 0 0 0 4px #b8543f99;
+}
+
+/* ---- 对话：剧本式（头像 + 名字 | 台词），主角用另一种颜色 ---- */
+.story-dialogue, .story-dialogue-hero { display: grid; grid-template-columns: auto minmax(0, 1fr); flex-direction: row; align-self: stretch; max-width: none; gap: .45rem; padding-left: .6em; }
+.story-dialogue .story-avatar { width: 24px; height: 24px; margin-top: .45rem; border-radius: 2px; font-family: var(--font-title); font-size: .72rem; border-color: var(--line-selected); box-shadow: inset 0 0 0 1px var(--bg), inset 0 0 0 2px #c9a96130; }
+.story-speech { display: grid; grid-template-columns: 3.6rem minmax(0, 1fr); gap: .8rem; align-items: start; }
+.story-speaker, .story-dialogue-hero .story-speaker { margin: 0; padding-top: .5rem; color: var(--gold); font-size: .76rem; letter-spacing: .1em; text-align: start; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.story-bubble, .story-dialogue-hero .story-bubble { margin: 0; padding: 0 0 0 .9rem; background: none; border: 0; border-left: 1px solid var(--line); border-radius: 0; color: #F0EBDD; text-align: left; }
+.story-dialogue-hero .story-speaker { color: #9cc4ad; }
+.story-dialogue-hero .story-avatar { border-color: #4f6b5c; color: #9cc4ad; background: #6fa58a14; box-shadow: none; }
+.story-dialogue-hero .story-bubble { border-left-color: #3f5a4c; }
+@media (max-width: 600px) {
+  .story-dialogue, .story-dialogue-hero { padding-left: 0; }
+  .story-dialogue .story-avatar { width: 22px; height: 22px; margin-top: .1rem; }
+  .story-speech { grid-template-columns: minmax(0, 1fr); gap: .2rem; }
+  .story-speaker, .story-dialogue-hero .story-speaker { padding-top: .15rem; }
+}
+
+/* ---- 行动建议 ---- */
+.action-options > p { text-align: center; font-family: var(--font-title); letter-spacing: .14em; }
+.action-options button { border-color: var(--line); border-radius: 7px; background: #ffffff04; transition: background .15s, border-color .15s; }
+.action-options button span:nth-child(2) { font-family: var(--font-title); font-size: .95rem; color: #EDE8D8; }
+.action-options button span:first-child { color: var(--gold-lo, #8A7642); }
+.action-options button:hover:not(:disabled) { background: #c9a9610f; border-color: var(--line-selected); }
+
+/* ---- 三阶段：摘要行的三个指示点（纯装饰，状态同详情列表） ---- */
+.workflow-disclosure > summary { justify-content: flex-start; }
+.workflow-disclosure > summary .workflow-toggle { margin-left: auto; }
+.workflow-rail { display: inline-flex; align-items: center; flex: none; }
+.workflow-rail i { position: relative; width: .55rem; height: .55rem; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); }
+.workflow-rail i + i { margin-left: 1.1rem; }
+.workflow-rail i + i::before { content: ''; position: absolute; right: calc(100% + 2px); top: 50%; width: calc(1.1rem - 4px); height: 1px; background: var(--line); }
+.workflow-rail i[data-state='done'] { background: var(--gold); border-color: var(--gold); }
+.workflow-rail i[data-state='done'] + i::before { background: var(--gold); }
+.workflow-rail i[data-state='run'] { border-color: var(--gold); box-shadow: 0 0 0 3px #c9a96122; animation: ui2-pulse 1.1s ease-in-out infinite; }
+.workflow-rail i[data-state='fail'] { background: var(--warning); border-color: var(--warning); }
+.workflow-rail i[data-state='off'] { opacity: .4; }
+@keyframes ui2-pulse { 50% { box-shadow: 0 0 0 6px #c9a96108; } }
+
+/* ---- 地图：层级区块（城市 → 区 → 地点），只用现有上级关系 ---- */
+.map-surface { min-height: 0; padding: 0; background: none; border: 0; }
+.map-surface > .map-tree { padding: 0; display: grid; gap: 1rem; }
+.map-surface > .map-tree > li { margin: 0; padding: 1rem 1.1rem 1.1rem; border: 1px solid var(--line); border-radius: 10px; background: radial-gradient(80% 60% at 0% 0%, #7fa7a01a, transparent 70%), #111411; }
+.map-surface > .map-tree > li > span { padding: 0; background: none; border: 0; font-family: var(--font-title); font-size: 1.35rem; letter-spacing: .3em; }
+.map-surface > .map-tree > li > .map-tree { padding: 0; margin-top: .9rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .8rem; align-items: start; }
+.map-surface > .map-tree > li > .map-tree > li { margin: 0; padding: .55rem .7rem .7rem; border: 1px solid var(--line-soft); border-radius: 8px; background: #0e110f; }
+.map-surface > .map-tree > li > .map-tree > li > span { padding: .15rem 0; background: none; border: 0; font-family: var(--font-title); font-size: 1rem; letter-spacing: .12em; }
+.map-surface .map-tree .map-tree .map-tree { margin: .3rem 0 0 .35rem; padding-left: .8rem; border-left: 1px solid var(--line-soft); }
+.map-surface .map-tree .map-tree .map-tree > li { margin: .3rem 0; }
+.map-surface .map-tree .map-tree .map-tree span { padding: .1rem .2rem; background: none; border: 0; font-size: .86rem; }
+.map-surface .world-record > summary { font-size: .7rem; color: var(--muted); }
+
+/* ---- 顶部横栏字段（新拆分的地点 / 天气 / 环境） ---- */
+.status-location-path { display: none; }
+.status-weather small, .status-environment small { display: none; }
+.status-wear { display: none; }
+@media (min-width: 901px) and (max-width: 1199px) {
+  /* 与 UI-1 相同的三行：时间 / 地点 · 天气 / 环境 */
+  .app-shell-game .status-place .status-location, .app-shell-game .status-place .status-weather { display: inline; }
+  .app-shell-game .status-place .status-weather::before { content: ' · '; }
+}
+
+/* ==========================================================================
+   1200px 及以上：三栏布局
+   ========================================================================== */
+@media (min-width: 1200px) {
+  .app-shell-game { --ui2-left: clamp(248px, 18vw, 288px); --ui2-right: 196px; --ui2-bar: 68px; }
+  .app-shell-game .game-layout {
+    position: relative;
+    grid-template-columns: var(--ui2-left) minmax(0, 1fr) var(--ui2-right);
+    grid-template-rows: minmax(0, 1fr);
+    --pc-reading-width: 42rem;
+  }
+
+  /* 品牌：左栏顶端 */
+  .app-shell-game .game-corner-brand {
+    top: 0; bottom: auto; left: 0; z-index: 3;
+    width: var(--ui2-left); height: var(--ui2-bar);
+    flex-direction: row; justify-content: flex-start; gap: 10px; padding: 0 18px;
+    border-bottom: 1px solid var(--line-soft); background: #121512;
+  }
+  .app-shell-game .game-corner-brand .brand-mark { width: 32px; height: 32px; font-size: 1.1rem; }
+  .app-shell-game .game-corner-name { font-size: 1rem; letter-spacing: .14em; color: var(--text); }
+  .app-shell-game .game-corner-name small { text-align: left; }
+
+  /* 左栏：只放主角信息 */
+  .app-shell-game .player-status {
+    grid-column: 1; grid-row: 1;
+    display: flex; flex-direction: column; align-items: stretch; gap: 14px;
+    min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+    padding: calc(var(--ui2-bar) + 16px) 18px 18px;
+    border-bottom: 0; border-right: 1px solid var(--line-soft);
+    background: linear-gradient(180deg, #121512, #0e110f);
+  }
+  .app-shell-game .player-status > * { flex: 0 0 auto; }
+  .app-shell-game .status-identity { order: 1; flex: 0 0 auto; position: relative; gap: 12px; padding: 16px 16px 10px; border: 1px solid #3a3727; border-bottom: 0; border-radius: 9px 9px 0 0;
+    background: repeating-radial-gradient(circle at 120% -30%, transparent 0 9px, #c9a96108 9px 10px), linear-gradient(150deg, #1b1f19, #161915); }
+  .app-shell-game .status-seal { width: 48px; height: 48px; font-size: 1.45rem; }
+  .app-shell-game .status-identity h2 { font-size: 1.22rem; letter-spacing: .14em; }
+  .app-shell-game .status-demographics { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .app-shell-game .status-condition { order: 2; margin-top: -14px; display: grid; gap: 6px; padding: 4px 16px 14px; border: 1px solid #3a3727; border-top: 0; border-radius: 0 0 9px 9px;
+    background: linear-gradient(150deg, #181c16, #141713); }
+  .app-shell-game .status-condition > span { display: grid; grid-template-columns: 2.4rem minmax(0, 1fr); gap: 6px; max-width: none; padding: 0; border: 0; border-radius: 0; font-size: .8rem; white-space: normal; overflow: hidden; text-overflow: clip;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; padding-left: 2.8rem; text-indent: -2.8rem; }
+  .app-shell-game .status-condition small { display: inline-block; width: 2.8rem; text-indent: 0; margin: 0; color: var(--muted); font-size: .76rem; }
+  .app-shell-game .status-funds { order: 3; display: grid; gap: 8px; max-width: none; }
+  .app-shell-game .status-funds > span { flex-direction: row; justify-content: space-between; align-items: baseline; gap: 10px; padding: 9px 12px; border: 1px solid var(--line-soft); border-radius: 7px; background: var(--panel); }
+  .app-shell-game .status-funds small { flex: none; }
+  .app-shell-game .status-funds strong { font-size: .95rem; text-align: right; white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+  .app-shell-game .status-wear { order: 4; display: block; }
+  .status-wear h3 { display: flex; align-items: center; gap: .5rem; margin: 0 0 .4rem; font-family: var(--font-body); font-size: .72rem; font-weight: 500; letter-spacing: .14em; color: var(--muted); }
+  .status-wear h3::after { content: ''; flex: 1; height: 1px; background: var(--line-soft); }
+  .status-wear dl { display: grid; gap: 3px; margin: 0; font-size: .8rem; }
+  .status-wear dl > div { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr); gap: 8px; }
+  .status-wear dt { color: var(--muted); }
+  .status-wear dd { margin: 0; overflow-wrap: anywhere; }
+  .status-wear [data-empty] dd { color: var(--muted); }
+  .app-shell-game .status-actions { order: 5; margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .app-shell-game .status-actions button { padding-inline: .4rem; }
+  .app-shell-game .status-mobile-location, .app-shell-game .status-expand { display: none; }
+
+  /* 正文上方横栏：时间 / 地点 / 天气 / 环境（仍在“主角信息”区域内，仅视觉上置顶） */
+  .app-shell-game .status-place {
+    position: absolute; z-index: 2; top: 0; left: var(--ui2-left); right: var(--ui2-right); height: var(--ui2-bar);
+    display: flex; align-items: center; gap: 18px; padding: 0 28px; border-left: 0;
+    border-bottom: 1px solid #ffffff0d; background: linear-gradient(180deg, #0e100f, #0b0d0cf2);
+  }
+  .app-shell-game .status-place > * { flex: none; min-width: 0; margin: 0; }
+  .app-shell-game .status-place > * + * { padding-left: 18px; border-left: 1px solid var(--line); }
+  .app-shell-game .status-place time { font-size: 1rem; color: var(--gold-hover); letter-spacing: .02em; }
+  .app-shell-game .status-place p { display: flex; flex-direction: column; justify-content: center; line-height: 1.35; color: var(--text); }
+  .app-shell-game .status-location-path { display: block; font-size: .66rem; color: var(--muted); letter-spacing: .06em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .app-shell-game .status-location-name { display: inline-flex; align-items: center; gap: .45rem; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .app-shell-game .status-location-name::before { content: ''; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--ui2-tint); box-shadow: 0 0 8px var(--ui2-tint); }
+  .app-shell-game .status-weather small, .app-shell-game .status-environment small { display: block; font-size: .62rem; letter-spacing: .14em; color: var(--muted); }
+  .app-shell-game .status-weather span, .app-shell-game .status-environment span { display: block; font-size: .84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .app-shell-game .status-location { max-width: 14rem; }
+  .app-shell-game .status-weather { max-width: 11rem; }
+  .app-shell-game .status-place .status-environment { flex: 1 1 0; }
+  .app-shell-game .status-environment span { color: #c6c2b4; }
+
+  /* 中栏：为横栏让位，顶部一层很淡的夜色 */
+  .app-shell-game .story-column { grid-column: 2; grid-row: 1; position: relative; padding-top: var(--ui2-bar); background: #0f120f; }
+  .app-shell-game .story-column::before { content: ''; position: absolute; inset: var(--ui2-bar) 0 auto 0; height: 45%; pointer-events: none;
+    background: radial-gradient(80% 90% at 50% -20%, #2c2534, transparent 72%); opacity: .7; }
+  .app-shell-game .story-column > .reader, .app-shell-game .story-column > .composer { position: relative; }
+  .app-shell-game .story-entry-latest::after { right: -4.6rem; top: .1rem; width: 3.6rem; height: 3.6rem; font-size: .8rem; }
+  .app-shell-game .game-layout .reader { padding-inline: max(88px, calc((100% - var(--pc-reading-width)) / 2)); }
+  .app-shell-game .game-layout .composer { padding-inline: max(88px, calc((100% - var(--pc-reading-width)) / 2)); background: linear-gradient(180deg, #141814, #111411); border-top: 1px solid #262d26; box-shadow: 0 -22px 44px -30px #000; }
+  .app-shell-game .composer textarea { background: #0b0e0c; border-radius: 8px; }
+  .app-shell-game .composer textarea:focus-visible { outline: 2px solid transparent; border-color: var(--gold); box-shadow: 0 0 0 3px #c9a9611a; }
+
+  /* 右栏：印章 + 名称横排 */
+  .app-shell-game .game-layout > .world-sidebar { grid-column: 3; grid-row: 1; display: flex; flex-direction: column; padding: 0 10px 12px; border-left: 1px solid var(--line-soft); background: linear-gradient(180deg, #121512, #0e110f); }
+  .app-shell-game .world-sidebar h2 { flex: none; display: flex; flex-direction: column; justify-content: center; height: var(--ui2-bar); margin: 0 -10px 10px; padding: 0 16px; border-bottom: 1px solid var(--line-soft);
+    text-align: left; font-family: var(--font-title); font-size: 1.05rem; letter-spacing: .12em; color: var(--text); }
+  .app-shell-game .world-sidebar h2::before { content: 'WORLD ARCHIVE'; font-family: var(--font-mono); font-size: .6rem; letter-spacing: .22em; color: var(--gold); margin-bottom: 2px; }
+  .app-shell-game .world-sidebar nav { gap: 4px; }
+  .app-shell-game .world-sidebar nav button { flex-direction: row; justify-content: flex-start; gap: 12px; min-height: 46px; padding: 6px 10px; border: 1px solid transparent; border-radius: 6px; color: var(--text); font-size: .9rem; text-align: left; }
+  .app-shell-game .world-sidebar nav button:hover:not(:disabled) { background: #c9a9610c; border-color: #c9a96133; }
+  .app-shell-game .world-sidebar .dock-seal { width: 32px; height: 32px; font-size: 1rem; }
+  .app-shell-game .world-sidebar .dock-system { margin-top: auto; }
+  .app-shell-game .dock-system button { color: var(--text); }
+
+  /* 资料面板：右侧抽屉，左栏主角信息保持可见 */
+  .app-shell-game .modal:not(.modal-small):not(.notice-modal) {
+    top: var(--game-viewport-top, 0px); bottom: auto; right: 0; left: auto;
+    width: min(1120px, calc(100vw - var(--ui2-left))); height: var(--game-viewport-height, 100dvh); max-height: none;
+    margin: 0; border-width: 0 0 0 1px; border-color: #39432f; border-radius: 0;
+    box-shadow: -40px 0 80px -30px #000; animation: ui2-drawer .3s var(--ui2-ease);
+  }
+  .app-shell-game .modal:not(.modal-small):not(.notice-modal)::backdrop { left: clamp(248px, 18vw, 288px); background: #050605a6; backdrop-filter: none; }
+  .app-shell-game .modal:not(.modal-small):not(.notice-modal) .modal-heading { min-height: var(--ui2-bar); padding-block: .6rem; background: linear-gradient(180deg, #c9a96108, transparent), var(--status-bg); }
+}
+@keyframes ui2-drawer { from { transform: translateX(48px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .workflow-rail i[data-state='run'] { animation: none; }
+}

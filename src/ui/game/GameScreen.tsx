@@ -291,6 +291,15 @@ export function GameScreen({
     : canCommit ? '候选已完成 · 等待结算'
     : workflowGuidance ? draft?.stageStatus.world === 'preview' ? '世界仅为预览 · 查看详情' : disabledGuidance ? '阶段已关闭 · 查看详情' : '候选未就绪 · 查看详情'
     : draft?.story ? '等待继续 · 部分已完成' : '等待开始';
+  // Decorative summary rail; mirrors the per-stage labels in the details list without adding new state.
+  const stageRail = (stage: 'story' | 'variables' | 'world') => {
+    const status = draft?.stageStatus[stage];
+    if (awaitingAction) return 'done';
+    if (activeStage === stage || automatic.progress?.stage === stage) return 'run';
+    if ((stage === 'variables' && !settings.runtime.useVariableStage) || (stage === 'world' && !settings.runtime.useWorldStage)) return 'off';
+    if (status === 'failed' || (errorStage === stage && hasWorkflowError)) return 'fail';
+    return status === 'ready' ? 'done' : 'idle';
+  };
   const worldNavigation = <aside className="world-sidebar" aria-label="世界资料">
     <h2>世界资料</h2>
     <nav aria-label="世界资料分类">
@@ -306,7 +315,7 @@ export function GameScreen({
   </aside>;
   return (
     <main className="game-layout">
-      <PlayerStatus state={state} onProfile={() => setPanel('人物档案')} onEconomy={() => setPanel('经济与资产')} />
+      <PlayerStatus state={state} equipment={equipment} onProfile={() => setPanel('人物档案')} onEconomy={() => setPanel('经济与资产')} />
       <section className="story-column" aria-label="剧情与行动">
         <div
           className={`reader ${!view.journal.length && !draft?.story && !progress ? 'reader-empty' : ''}`}
@@ -333,7 +342,7 @@ export function GameScreen({
             </span>
           </div>
           {view.journal.map((entry, index) => (
-            <article className="story-entry" key={entry.turnId}>
+            <article className={index === view.journal.length - 1 && !progress && !draft?.story ? 'story-entry story-entry-latest' : 'story-entry'} key={entry.turnId} data-turn={index + 1}>
               <h2 className="chapter-heading">第 {index + 1} 回合</h2>
               <StoryReading narrative={entry.narrative} protagonistName={hero.name} />
             </article>
@@ -396,6 +405,7 @@ export function GameScreen({
             <section className="workflow" aria-label="三阶段工作流" data-state={hasWorkflowError ? 'error' : busy ? 'busy' : awaitingAction ? 'settled' : 'pending'}>
               <details className="workflow-disclosure" ref={workflowDetails}>
                 <summary>
+                  <span className="workflow-rail" aria-hidden="true">{(['story', 'variables', 'world'] as const).map((stage) => <i key={stage} data-stage={stage} data-state={stageRail(stage)} />)}</span>
                   <strong role="status" aria-live="polite"><span className="workflow-prefix">三阶段 · </span>{workflowLabel}</strong>
                   <span className="workflow-toggle">详情</span>
                 </summary>

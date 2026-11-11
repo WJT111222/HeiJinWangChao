@@ -48,19 +48,22 @@ async function readingOrder(page: Page) {
     .toEqual(['旁白', '吴杰涛', '吴杰', '旁白', '陈宁', '吴杰']);
   await expect(first).not.toContainText('【');
   await expect(first.locator('.story-bubble').nth(2)).toHaveText('“伞在门边。\n别忘了带。”', { useInnerText: false });
+  // UI-2 剧本式对话：头像与说话人都在台词左侧，主角以独立颜色区分（不再左右分列）。
+  const colors = new Map<boolean, string>();
   for (const row of await first.locator('.story-dialogue').all()) {
     const hero = await row.evaluate(el => el.classList.contains('story-dialogue-hero'));
     const name = await row.locator('.story-speaker').textContent();
     expect(hero).toBe(name === '吴杰');
     const avatar = (await row.locator('.story-avatar').boundingBox())!, bubble = (await row.locator('.story-bubble').boundingBox())!;
-    if (hero) expect(avatar.x).toBeGreaterThan(bubble.x + bubble.width);
-    else expect(avatar.x + avatar.width).toBeLessThan(bubble.x);
+    expect(avatar.x + avatar.width).toBeLessThan(bubble.x);
     await expect(row.locator('.story-avatar')).toHaveAttribute('aria-hidden', 'true');
-    expect(await row.locator('.story-speaker').evaluate(el => getComputedStyle(el).textAlign)).toBe(hero ? 'right' : 'start');
+    expect(await row.locator('.story-speaker').evaluate(el => getComputedStyle(el).textAlign)).toBe('start');
+    colors.set(hero, await row.locator('.story-speaker').evaluate(el => getComputedStyle(el).color));
   }
+  expect(colors.get(true)).not.toBe(colors.get(false));
 }
 
-test('历史与草稿共享阅读布局：旁白隐藏、NPC左主角右、顺序和原文持久化不变', async ({ page }, info) => {
+test('历史与草稿共享阅读布局：旁白隐藏、剧本式对话主角另色、顺序和原文持久化不变', async ({ page }, info) => {
   let aiCalls = 0;
   page.on('request', request => { if (request.method() === 'POST') aiCalls++; });
   await seed(page, { history: narrative, draft: current });

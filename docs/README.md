@@ -29,5 +29,6 @@
 - [Issue #6：未来 15 项、三款永久免费 DLC](https://github.com/WJT111222/HeiJinWangChao/issues/6)
 - [Issue #24：「我的势力」模块](https://github.com/WJT111222/HeiJinWangChao/issues/24)
 - [Issue #8：M7 UI/UX 改版](https://github.com/WJT111222/HeiJinWangChao/issues/8)
+- [UI-2 纯视觉美化 · 后续更新计划](UI_VISUAL_FOLLOWUP_PLAN.md)（手机端单独设计；需前端逻辑、新增存档字段或改 AI 输出格式的暂缓项）
 
 **阅读原则**：当前源码 / 已合并 PR ＞ 历史设计文档。更改产品规则需要另立实施范围、测试与独立 PR；文档归档不授权自动开发。

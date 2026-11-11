@@ -51,7 +51,9 @@ async function fit(page: Page, height?: number) {
   const input = await page.getByLabel('你的行动', { exact: true }).boundingBox(), status = await page.locator('.player-status').boundingBox(), footer = await page.getByRole('button', { name: '发送', exact: true }).boundingBox();
   expect(input).not.toBeNull(); expect(footer).not.toBeNull(); expect(status).not.toBeNull();
   const limit = height ?? (await page.evaluate(() => innerHeight));
-  expect(input!.y).toBeGreaterThanOrEqual(status!.y + status!.height); expect(input!.y + input!.height).toBeLessThanOrEqual(limit + 1);
+  // 宽屏（≥1200px）主角信息在左栏，与输入框左右并排；其余宽度仍为顶部状态条。两种布局都不得互相遮挡。
+  if (status!.x + status!.width > input!.x + 1) expect(input!.y).toBeGreaterThanOrEqual(status!.y + status!.height);
+  expect(input!.y + input!.height).toBeLessThanOrEqual(limit + 1);
   const geometry = await page.locator('.app-shell-game, .app-header, .game-layout, .story-column, .composer, .composer-tools, #player-input, .composer-footer').evaluateAll((elements) => elements.map((el) => {
     const rect = el.getBoundingClientRect(), css = getComputedStyle(el);
     return { element: el.className || el.id, y: rect.y, height: rect.height, min: css.minHeight, max: css.maxHeight, flex: css.flex };
