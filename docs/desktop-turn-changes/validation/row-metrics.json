@@ -1,0 +1,80 @@
+[
+  {
+    "name": "BUTTON.chg-row",
+    "top": 523.53125,
+    "height": 60.484375,
+    "gridrow": "auto",
+    "display": "grid",
+    "padding": "6.72px 13.6px",
+    "margin": "0px",
+    "lineheight": "22.848px",
+    "minheight": "0px",
+    "gridrows": "25.2188px 19.4375px",
+    "gap": "2.4px 12.8px"
+  },
+  {
+    "name": "LI.",
+    "top": 523.53125,
+    "height": 60.484375,
+    "gridrow": "auto",
+    "display": "list-item",
+    "padding": "0px",
+    "margin": "0px",
+    "lineheight": "27.2px",
+    "minheight": "0px",
+    "gridrows": "none",
+    "gap": "normal"
+  },
+  {
+    "name": "SPAN.what",
+    "top": 530.25,
+    "height": 22.84375,
+    "gridrow": "auto",
+    "display": "block",
+    "padding": "0px",
+    "margin": "0px",
+    "lineheight": "22.848px",
+    "minheight": "auto",
+    "gridrows": "none",
+    "gap": "normal"
+  },
+  {
+    "name": "SPAN.val mod",
+    "top": 534.25,
+    "height": 21.21875,
+    "gridrow": "auto",
+    "display": "block",
+    "padding": "0px",
+    "margin": "0px",
+    "lineheight": "21.216px",
+    "minheight": "auto",
+    "gridrows": "none",
+    "gap": "normal"
+  },
+  {
+    "name": "SPAN.txt",
+    "top": 557.859375,
+    "height": 19.4375,
+    "gridrow": "2",
+    "display": "block",
+    "padding": "0px 104px 0px 0px",
+    "margin": "0px",
+    "lineheight": "19.456px",
+    "minheight": "auto",
+    "gridrows": "none",
+    "gap": "normal"
+  },
+  {
+    "name": "SPAN.go",
+    "top": 558.265625,
+    "height": 19.03125,
+    "gridrow": "2",
+    "display": "block",
+    "padding": "0px",
+    "margin": "0px",
+    "lineheight": "19.04px",
+    "minheight": "auto",
+    "gridrows": "none",
+    "gap": "normal"
+  }
+]

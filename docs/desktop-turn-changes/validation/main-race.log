@@ -1,0 +1,45 @@
+[WebServer] (node:239428) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:239456) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 6 tests using 2 workers
+
+(node:239647) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+(node:239648) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/6] [desktop] › e2e/continuous-turns.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿
+[2/6] [desktop] › e2e/continuous-turns.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿
+(node:240225) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[3/6] [desktop] › e2e/continuous-turns.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿
+(node:240235) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[4/6] [desktop] › e2e/continuous-turns.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿
+(node:240734) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[5/6] [desktop] › e2e/continuous-turns.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿
+(node:240745) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[6/6] [desktop] › e2e/continuous-turns.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿
+  6 passed (1.4m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

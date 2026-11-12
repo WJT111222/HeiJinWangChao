@@ -1,0 +1,87 @@
+[WebServer] (node:243041) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:243062) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 2 tests using 2 workers
+
+(node:243088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+(node:243089) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/2] [desktop] › e2e/continuous-race-control.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿
+[2/2] [desktop] › e2e/continuous-race-control.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿
+  1) [desktop] › e2e/continuous-race-control.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿 ──────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 1
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      319 |   await page.waitForTimeout(200);
+      320 |   await page.getByRole('button', {name:'发送',exact:true}).evaluate((button:HTMLButtonElement)=>{button.click();button.click();});
+    > 321 |   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);
+          |                                                                        ^
+      322 |   const result = await stored(page);
+      323 |   expect(result.state.journal).toHaveLength(2);
+      324 |   expect(result.draft.baseSaveRevision).toBe(2);
+        at /workspace/changes-main-baseline/e2e/continuous-race-control.spec.ts:321:72
+
+    Error Context: ../../tmp/changes-main-forced-race/continuous-race-control-快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿-desktop-repeat1/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/changes-main-forced-race/continuous-race-control-快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿-desktop-repeat1/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/changes-main-forced-race/continuous-race-control-快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿-desktop-repeat1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2) [desktop] › e2e/continuous-race-control.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿 ──────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 1
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      319 |   await page.waitForTimeout(200);
+      320 |   await page.getByRole('button', {name:'发送',exact:true}).evaluate((button:HTMLButtonElement)=>{button.click();button.click();});
+    > 321 |   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);
+          |                                                                        ^
+      322 |   const result = await stored(page);
+      323 |   expect(result.state.journal).toHaveLength(2);
+      324 |   expect(result.draft.baseSaveRevision).toBe(2);
+        at /workspace/changes-main-baseline/e2e/continuous-race-control.spec.ts:321:72
+
+    Error Context: ../../tmp/changes-main-forced-race/continuous-race-control-快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/changes-main-forced-race/continuous-race-control-快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/changes-main-forced-race/continuous-race-control-快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2 failed
+    [desktop] › e2e/continuous-race-control.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿 ───────
+    [desktop] › e2e/continuous-race-control.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿 ───────
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

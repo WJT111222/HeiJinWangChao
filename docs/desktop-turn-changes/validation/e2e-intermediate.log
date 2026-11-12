@@ -1,0 +1,166 @@
+[WebServer] (node:224922) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:224943) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 136 tests using 2 workers
+
+(node:224979) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/136] [desktop] › e2e/archive-final.spec.ts:21:1 › 地图正式层级、当前位置、四入口同步与五尺寸，NPC/事件关联、缓存和只读性
+(node:224980) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/136] [desktop] › e2e/archive-final.spec.ts:36:1 › 设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载
+[3/136] [desktop] › e2e/archive-final.spec.ts:46:1 › 地图大量地点与异常长名称分段可达；展开选择恢复与原文不丢失
+[4/136] [desktop] › e2e/archive-final.spec.ts:50:1 › 游戏设置与地图互切、记忆未保存确认、Esc和首页纸色模态
+[5/136] [desktop] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除
+(node:225785) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[6/136] [desktop] › e2e/archive-step3.spec.ts:20:1 › 物品分类、只读搜索、三栏和选中详情，901边界、原槽位与归属跳转
+(node:225960) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[7/136] [desktop] › e2e/archive-step3.spec.ts:39:1 › 经济资金、部分未知合计、全字段与原生手机，人物入口/旧Dialog/焦点闭环
+[8/136] [desktop] › e2e/archive-step3.spec.ts:56:1 › 大量物品收入资产债务分页、独立滚动，原集合顺序和正式状态不变
+[9/136] [desktop] › e2e/archive-step3.spec.ts:71:1 › 极端金额、超安全范围合计、未知/零债务以及长文本边界
+[10/136] [desktop] › e2e/archive-step4.spec.ts:20:1 › 第四批事件家族、并行与退役成果，合法组织目标、缓存、Esc和只读性
+[11/136] [desktop] › e2e/archive-step4.spec.ts:40:1 › 统一正式历史投影、双轨五尺寸、精度与详情全文，回焦与地图档案切换
+[12/136] [desktop] › e2e/archive-step4.spec.ts:52:1 › 六层记忆原文与归属、多来源分页和层级缓存；手机保持原生界面
+[13/136] [desktop] › e2e/archive-step4.spec.ts:64:1 › 大型并行家族、长标题与长记忆、历史分段有界；reduced motion和只读压力
+[14/136] [desktop] › e2e/automatic-settlement.spec.ts:46:1 › 完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型
+[15/136] [desktop] › e2e/automatic-settlement.spec.ts:62:1 › World字段错误可定位并查看完整失败原文，不提交；恢复仅请求World并自动结算
+[16/136] [desktop] › e2e/automatic-settlement.spec.ts:72:1 › 发送下一条行动仅绑定草稿，commit日志必须等到三阶段完成才开始
+[17/136] [desktop] › e2e/automatic-settlement.spec.ts:101:1 › NPC场景ID诊断与World规则同时保留，逐阶段恢复后只结算一次
+[18/136] [desktop] › e2e/automatic-settlement.spec.ts:132:1 › 源三标签截断保留正文；明确恢复后四操作自动结算并完整显示原文
+[19/136] [desktop] › e2e/automatic-settlement.spec.ts:149:1 › 候选写库配额失败显示具体步骤而非unknown，保留正文后只补失败阶段
+  1) [desktop] › e2e/automatic-settlement.spec.ts:149:1 › 候选写库配额失败显示具体步骤而非unknown，保留正文后只补失败阶段 ──────
+
+    Error: browserContext.close: ENOENT: no such file or directory, open '/workspace/desktop-turn-changes/test-results/.playwright-artifacts-2/traces/5d6db4273247bcc237b7-c38268b4109f03643483-recording12.trace'
+
+    Error: ENOENT: no such file or directory, open '/workspace/desktop-turn-changes/test-results/.playwright-artifacts-2/b9dc753332425b689b720c08cce70299.zip'
+
+    Error Context: test-results/automatic-settlement-候选写库配额失败显示具体步骤而非unknown，保留正文后只补失败阶段-desktop/error-context.md
+
+
+(node:227980) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[20/136] [desktop] › e2e/automatic-settlement.spec.ts:172:1 › 时间诊断保留重排前文本编号；失败原文可读，恢复自动结算且刷新不重发
+  2) [desktop] › e2e/automatic-settlement.spec.ts:132:1 › 源三标签截断保留正文；明确恢复后四操作自动结算并完整显示原文 ───────────
+
+    Error: browserContext.close: ENOENT: no such file or directory, open '/workspace/desktop-turn-changes/test-results/.playwright-artifacts-3/traces/5d6db4273247bcc237b7-c1adcc913304ee11a5f5-recording12.network'
+
+    Error: ENOENT: no such file or directory, open '/workspace/desktop-turn-changes/test-results/.playwright-artifacts-3/1eef8586dd859b474c11982fcb92cb53.zip'
+
+    Error Context: test-results/automatic-settlement-源三标签截断保留正文；明确恢复后四操作自动结算并完整显示原文-desktop/error-context.md
+
+
+(node:228236) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[21/136] [desktop] › e2e/automatic-settlement.spec.ts:193:1 › 认知格式、时间线对象和组织历史逐项拒绝，明确修正后保留Story并一次结算
+[22/136] [desktop] › e2e/continuous-turns.spec.ts:182:1 › 真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致
+[23/136] [desktop] › e2e/continuous-turns.spec.ts:243:1 › 下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合
+[24/136] [desktop] › e2e/continuous-turns.spec.ts:273:1 › 提交事务中途失败 UI 不虚报成功；重试后只结算一次
+[25/136] [desktop] › e2e/continuous-turns.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿
+[26/136] [desktop] › e2e/continuous-turns.spec.ts:333:1 › 阶段未完成或主动关闭时，即使填写行动也不能部分结算
+[27/136] [desktop] › e2e/continuous-turns.spec.ts:349:1 › 正式资金与时间显示新版本，结算后刷新不重复扣款
+[28/136] [desktop] › e2e/game-window.spec.ts:64:1 › 全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入
+[29/136] [desktop] › e2e/game-window.spec.ts:75:1 › 顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置
+[30/136] [desktop] › e2e/game-window.spec.ts:93:1 › 滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回
+[31/136] [desktop] › e2e/game-window.spec.ts:114:1 › 默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态
+[32/136] [desktop] › e2e/game-window.spec.ts:126:1 › 已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义
+[33/136] [desktop] › e2e/game-window.spec.ts:135:1 › 生成中折叠不打断；取消和错误不被隐藏，失败重试成功保留正式状态
+[34/136] [desktop] › e2e/game-window.spec.ts:204:1 › 缩短视口及模拟软键盘VisualViewport不遮住输入和发送
+[35/136] [desktop] › e2e/game-window.spec.ts:225:1 › 设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置
+[36/136] [desktop] › e2e/game-window.spec.ts:243:1 › 工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间
+[37/136] [desktop] › e2e/turn-changes.spec.ts:24:1 › 最新结算回合六组胶囊、收起展开、键盘及四尺寸，手机版保持原界面
+[38/136] [desktop] › e2e/turn-changes.spec.ts:39:1 › 变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变
+[39/136] [desktop] › e2e/turn-changes.spec.ts:46:1 › 无变化、无恢复点、错误恢复点安全降级，草稿不显示；双端不改原存档
+[40/136] [desktop] › e2e/turn-changes.spec.ts:50:1 › 长列表按8条展开、超长文本与极大金额完整可达，901边界及只读压力
+[41/136] [desktop] › e2e/turn-changes.spec.ts:57:1 › 真实Repository正式结算、撤回后最新变化及重新结算，恢复点与回合始终对应
+[42/136] [desktop] › e2e/turn-changes.spec.ts:67:1 › 已有恢复点时发送新行动，真实Mock生成预览及取消期间不展示变化
+[43/136] [desktop] › e2e/turn-undo-capacity.spec.ts:6:3 › 真实 IndexedDB 300 回合容量与恢复测量
+[44/136] [desktop] › e2e/turn-undo-capacity.spec.ts:6:3 › 真实 IndexedDB 1000 回合容量与恢复测量
+[45/136] [desktop] › e2e/turn-undo.spec.ts:62:1 › 连续五次撤回、刷新恢复、回填覆盖和无Redo，全程零模型请求
+[46/136] [desktop] › e2e/turn-undo.spec.ts:79:1 › 撤回后编辑发送才开始三阶段，失败可恢复且只保存新分支
+  3) [desktop] › e2e/turn-undo.spec.ts:79:1 › 撤回后编辑发送才开始三阶段，失败可恢复且只保存新分支 ───────────────────────────
+
+    Test was interrupted.
+
+    Error: page.goto: Test ended.
+    Call log:
+      - navigating to "http://127.0.0.1:5207/", waiting until "load"
+
+
+      4 |
+      5 | async function seed(page: Page, turns = 7, automaticMemory = false) {
+    > 6 |   await page.goto('/');
+        |              ^
+      7 |   await page.evaluate(async ({ turns, automaticMemory }) => {
+      8 |     const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/world.ts', '/src/tests/fixtures/turn.ts',
+      9 |       '/src/ui/settings/model.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts'];
+        at seed (/workspace/desktop-turn-changes/e2e/turn-undo.spec.ts:6:14)
+        at /workspace/desktop-turn-changes/e2e/turn-undo.spec.ts:80:9
+
+    Error Context: test-results/turn-undo-撤回后编辑发送才开始三阶段，失败可恢复且只保存新分支-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/turn-undo-撤回后编辑发送才开始三阶段，失败可恢复且只保存新分支-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/turn-undo-撤回后编辑发送才开始三阶段，失败可恢复且只保存新分支-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  4) [desktop] › e2e/turn-undo-capacity.spec.ts:6:3 › 真实 IndexedDB 1000 回合容量与恢复测量 ──────────────────
+
+    Test was interrupted.
+
+    Error: page.evaluate: Test ended.
+
+       7 |     test.setTimeout(120000);
+       8 |     await page.goto('/');
+    >  9 |     const result = await page.evaluate(async ({ turns, npcCount }) => {
+         |                               ^
+      10 |       const r = '/src/services/storage/saveRepository.ts', f = '/src/tests/fixtures/undoCapacity.ts', t = '/src/tests/fixtures/turn.ts';
+      11 |       const { SaveRepository } = await import(r), { undoCapacityState } = await import(f),
+      12 |         { completeDraft, elapsedVariables, submission } = await import(t);
+        at /workspace/desktop-turn-changes/e2e/turn-undo-capacity.spec.ts:9:31
+
+    Error Context: test-results/turn-undo-capacity-真实-IndexedDB-1000-回合容量与恢复测量-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/turn-undo-capacity-真实-IndexedDB-1000-回合容量与恢复测量-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/turn-undo-capacity-真实-IndexedDB-1000-回合容量与恢复测量-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2 failed
+    [desktop] › e2e/automatic-settlement.spec.ts:132:1 › 源三标签截断保留正文；明确恢复后四操作自动结算并完整显示原文 ────────────
+    [desktop] › e2e/automatic-settlement.spec.ts:149:1 › 候选写库配额失败显示具体步骤而非unknown，保留正文后只补失败阶段 ───────
+  2 interrupted
+    [desktop] › e2e/turn-undo-capacity.spec.ts:6:3 › 真实 IndexedDB 1000 回合容量与恢复测量 ───────────────────
+    [desktop] › e2e/turn-undo.spec.ts:79:1 › 撤回后编辑发送才开始三阶段，失败可恢复且只保存新分支 ────────────────────────────
+  90 did not run
+  42 passed (4.7m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

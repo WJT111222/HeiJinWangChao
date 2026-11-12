@@ -1,0 +1,107 @@
+{
+  "baseline": "a8334e8f9429b0423eab01690f3751dce96a227c",
+  "testedSourceCommit": "76b4ced78e47d97b71cd669c1f10ff7260868b84",
+  "npmCi": {
+    "exitCode": 0,
+    "packages": 143
+  },
+  "npmCheck": {
+    "exitCode": 0,
+    "files": 130,
+    "tests": 3274,
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed"
+  },
+  "promptsCheck": {
+    "exitCode": 0,
+    "files": 3,
+    "tests": 93
+  },
+  "newUnitTests": {
+    "diff": 17,
+    "repository": 23
+  },
+  "chromiumFinal": {
+    "startTime": "2026-11-12T19:41:15.293Z",
+    "duration": 496618.141,
+    "expected": 130,
+    "skipped": 6,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "models": "Mock only",
+  "browserRetries": 0,
+  "mobilePixelComparison": {
+    "baseline": "a8334e8f9429b0423eab01690f3751dce96a227c",
+    "viewport": [
+      390,
+      844
+    ],
+    "physicalPixels": [
+      1024,
+      2216
+    ],
+    "sameSyntheticState": true,
+    "pixelDifferenceBounds": null,
+    "equal": true
+  },
+  "historicalRuns": {
+    "changes-e2e-final": {
+      "startTime": "2026-11-12T19:26:00.849Z",
+      "duration": 467230.52999999997,
+      "expected": 129,
+      "skipped": 6,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "changes-main-race": {
+      "startTime": "2026-11-12T19:34:15.753Z",
+      "duration": 82196.52100000001,
+      "expected": 6,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "changes-main-forced-race": {
+      "startTime": "2026-11-12T19:36:45.855Z",
+      "duration": 16870.554,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "changes-main-mocked-race": {
+      "startTime": "2026-11-12T19:37:44.629Z",
+      "duration": 80165.968,
+      "expected": 6,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "changes-main-mobile-race": {
+      "startTime": "2026-11-12T19:41:11.968Z",
+      "duration": 74024.898,
+      "expected": 6,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "changes-final-targeted": {
+      "startTime": "2026-11-12T19:37:19.293Z",
+      "duration": 154389.59100000001,
+      "expected": 21,
+      "skipped": 2,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "changes-knowledge-e2e": {
+      "startTime": "2026-11-12T19:34:15.649Z",
+      "duration": 99820.597,
+      "expected": 10,
+      "skipped": 2,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  }
+}

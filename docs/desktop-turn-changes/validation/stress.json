@@ -1,0 +1,6 @@
+{
+  "npcCount": 44,
+  "initialRows": 8,
+  "expandedRows": 48,
+  "note": "All texts remain in the original structured state; expanding only changes React UI."
+}

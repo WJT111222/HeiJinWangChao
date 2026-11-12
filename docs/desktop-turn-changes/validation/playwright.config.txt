@@ -1,0 +1,3 @@
+import {defineConfig} from '/workspace/desktop-turn-changes/node_modules/@playwright/test/index.mjs';
+import base from '/workspace/desktop-turn-changes/playwright.config.ts';
+export default defineConfig({...base,outputDir:'/tmp/changes-e2e-results-final',testDir:'/workspace/desktop-turn-changes/e2e',timeout:60000,use:{...base.use,baseURL:'http://127.0.0.1:5207'},webServer:{command:'npm run dev -- --host 127.0.0.1 --port 5207 --strictPort',cwd:'/workspace/desktop-turn-changes',url:'http://127.0.0.1:5207',reuseExistingServer:false}});

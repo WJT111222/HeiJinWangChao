@@ -1,0 +1,23 @@
+{
+  "baseline": "a8334e8f9429b0423eab01690f3751dce96a227c",
+  "sourceCommit": "76b4ced78e47d97b71cd669c1f10ff7260868b84",
+  "forbiddenPathsUnchanged": [
+    "prompts/**",
+    "src/domain/**",
+    "src/workflows/**",
+    "src/services/validation/**",
+    "src/services/ai/**",
+    "package.json",
+    "package-lock.json"
+  ],
+  "runtimeFiles": [
+    "src/services/storage/saveRepository.ts",
+    "src/services/storage/turnUndo.ts",
+    "src/ui/game/GameScreen.tsx",
+    "src/ui/game/TurnChanges.tsx",
+    "src/ui/game/turn-changes.css",
+    "src/ui/game/turnChanges.ts",
+    "src/ui/panels/MapPanel.tsx"
+  ],
+  "existingTestChange": "Only context Mock and second-tab test credentials in continuous-turns; all assertions and timeouts preserved."
+}

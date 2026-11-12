@@ -1,0 +1,92 @@
+[WebServer] (node:243525) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:243538) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 24 tests using 2 workers
+
+(node:243568) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+(node:243567) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/24] [desktop] › e2e/continuous-turns.spec.ts:243:1 › 下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合
+[2/24] [desktop] › e2e/continuous-turns.spec.ts:182:1 › 真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致
+[3/24] [desktop] › e2e/continuous-turns.spec.ts:273:1 › 提交事务中途失败 UI 不虚报成功；重试后只结算一次
+[4/24] [desktop] › e2e/continuous-turns.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿
+[5/24] [desktop] › e2e/continuous-turns.spec.ts:342:1 › 阶段未完成或主动关闭时，即使填写行动也不能部分结算
+[6/24] [desktop] › e2e/continuous-turns.spec.ts:358:1 › 正式资金与时间显示新版本，结算后刷新不重复扣款
+[7/24] [desktop] › e2e/turn-changes.spec.ts:24:1 › 最新结算回合六组胶囊、收起展开、键盘及四尺寸，手机版保持原界面
+[8/24] [desktop] › e2e/turn-changes.spec.ts:39:1 › 变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变
+[9/24] [desktop] › e2e/turn-changes.spec.ts:46:1 › 无变化、无恢复点、错误恢复点安全降级，草稿不显示；双端不改原存档
+[10/24] [desktop] › e2e/turn-changes.spec.ts:50:1 › 长列表按8条展开、超长文本与极大金额完整可达，901边界及只读压力
+[11/24] [desktop] › e2e/turn-changes.spec.ts:57:1 › 真实Repository正式结算、撤回后最新变化及重新结算，恢复点与回合始终对应
+[12/24] [desktop] › e2e/turn-changes.spec.ts:67:1 › 已有恢复点时发送新行动，真实Mock生成预览及取消期间不展示变化
+(node:245359) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[13/24] [mobile] › e2e/continuous-turns.spec.ts:182:1 › 真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致
+(node:245512) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[14/24] [mobile] › e2e/continuous-turns.spec.ts:243:1 › 下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合
+[15/24] [mobile] › e2e/continuous-turns.spec.ts:273:1 › 提交事务中途失败 UI 不虚报成功；重试后只结算一次
+[16/24] [mobile] › e2e/continuous-turns.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿
+[17/24] [mobile] › e2e/continuous-turns.spec.ts:342:1 › 阶段未完成或主动关闭时，即使填写行动也不能部分结算
+[18/24] [mobile] › e2e/continuous-turns.spec.ts:358:1 › 正式资金与时间显示新版本，结算后刷新不重复扣款
+  1) [mobile] › e2e/continuous-turns.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿 ──────────────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 1
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      332 |     ),
+      333 |   );
+    > 334 |   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);
+          |                                                                        ^
+      335 |   const result = await stored(page);
+      336 |   expect(result.state.journal).toHaveLength(2);
+      337 |   expect(result.draft.baseSaveRevision).toBe(2);
+        at /workspace/desktop-turn-changes/e2e/continuous-turns.spec.ts:334:72
+
+    Error Context: ../../tmp/changes-final-targeted-results/continuous-turns-快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/changes-final-targeted-results/continuous-turns-快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/changes-final-targeted-results/continuous-turns-快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:245828) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[19/24] [mobile] › e2e/turn-changes.spec.ts:24:1 › 最新结算回合六组胶囊、收起展开、键盘及四尺寸，手机版保持原界面
+[20/24] [mobile] › e2e/turn-changes.spec.ts:39:1 › 变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变
+[21/24] [mobile] › e2e/turn-changes.spec.ts:46:1 › 无变化、无恢复点、错误恢复点安全降级，草稿不显示；双端不改原存档
+[22/24] [mobile] › e2e/turn-changes.spec.ts:50:1 › 长列表按8条展开、超长文本与极大金额完整可达，901边界及只读压力
+[23/24] [mobile] › e2e/turn-changes.spec.ts:57:1 › 真实Repository正式结算、撤回后最新变化及重新结算，恢复点与回合始终对应
+[24/24] [mobile] › e2e/turn-changes.spec.ts:67:1 › 已有恢复点时发送新行动，真实Mock生成预览及取消期间不展示变化
+  1 failed
+    [mobile] › e2e/continuous-turns.spec.ts:305:1 › 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿 ───────────────
+  2 skipped
+  21 passed (2.6m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
