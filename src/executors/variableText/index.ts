@@ -42,8 +42,16 @@ async function simulateChecked(plan: VariableExecutionPlan, state: GameState,
     const projected = commitCommands(openingTimeBase(state, context.draft), context.draft.turnId,
       context.expectedRevision, commands, state.updatedAt,storySceneAuthority(state,context.draft,checked.value.commands));
     validateNarrationClock(state,context.draft,projected.worldClock);
-    for (const command of checked.value.commands)
-      if (command.type === 'SaveEvent') validateSceneEventUpdate(state, projected, command.event, context.draft.turnId,context.draft.story);
+    for (const [index, command] of checked.value.commands.entries()) {
+      if (command.type !== 'SaveEvent') continue;
+      try { validateSceneEventUpdate(state, projected, command.event, context.draft.turnId,context.draft.story); }
+      catch (error) {
+        if (!(error instanceof DataError) || error.code !== 'SCENE_PERMISSION') throw error;
+        return failed('permission_denied', checked.value.origins[index], [], {
+          ...aggregateDomainDiagnostic(error), commandType: 'SaveEvent', valuePath: 'events[id].sceneState',
+        });
+      }
+    }
     return { ok: true, value: projected };
   } catch (error) {
     const related = checked.value.origins.filter((origin) => origin !== null);

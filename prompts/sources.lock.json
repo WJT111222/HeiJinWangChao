@@ -573,6 +573,11 @@
         "previousTreatment": "text-protocol-adaptation",
         "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
         "sha256": "a9c3f5eb349485af3cb4893ffc804cddcb65d1487499fb8f8688843cb166ac9e"
+      },
+      "variablesContractStability": {
+        "baseCommit": "a8334e8f9429b0423eab01690f3751dce96a227c",
+        "notes": "澄清现场事件变化、已有Story授权、好感与四字段记忆及时间顺序；不修改领域权限或World规则。",
+        "sha256": "f4a31911aedc766b0b2ced4852dc84db687718a46526bd5ae22a76f2ae2060d7"
       }
     },
     "shared/08_world_output.md": {

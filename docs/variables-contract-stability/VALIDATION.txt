@@ -1,0 +1,101 @@
+variables-target.log
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+AiError: 渠道、模型或路由配置无效，请检查设置。
+AiError: 提示词资源缺失或与注册校验值不符。
+DataError: 新存档必须从未提交状态创建
+ Test Files  1 failed (1)
+      Tests  3 failed | 7 passed (10)
+
+variables-target2.log
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+DataError: 变量候选变化后世界候选必须失效
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 112 passed (113)
+
+variables-target3.log
+
+ RUN  v5.0.5 /workspace/variables-contract-stability
+
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  19:20:04
+   Duration  907ms (import 36%, transform 32%, tests 31%, worker 1%)
+
+
+variables-check.log
+
+> heijinwangchao@0.1.0 check
+> npm run lint && npm run test && npm run build
+
+
+> heijinwangchao@0.1.0 lint
+> eslint . --max-warnings=0
+
+
+> heijinwangchao@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 /workspace/variables-contract-stability
+
+
+ Test Files  129 passed (129)
+      Tests  3246 passed (3246)
+   Start at  19:20:27
+   Duration  206.48s (tests 76%, import 20%, transform 3%)
+
+    Isolate  129 workers spawned · ~163ms startup each (spawn + environment, per file)
+             at least ~20.90s faster with isolate: false — reuses workers across files instead of one per file
+
+
+> heijinwangchao@0.1.0 build
+> npm run typecheck && vite build
+
+
+> heijinwangchao@0.1.0 typecheck
+> tsc --noEmit
+
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 415 modules transformed.
+rendering chunks...
+computing gzip size...
+
+✓ built in 568ms
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+variables-prompts.log
+
+> heijinwangchao@0.1.0 prompts:check
+> vitest run src/tests/prompts.test.ts src/tests/prompt-runtime.test.ts src/tests/prompt-inspector.test.ts
+
+
+ RUN  v5.0.5 /workspace/variables-contract-stability
+
+
+ Test Files  3 passed (3)
+      Tests  93 passed (93)
+   Start at  19:24:08
+   Duration  2.39s (tests 67%, import 24%, transform 9%)
+
+
+variables-browser.log
+[WebServer] (node:6356) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 24 tests using 2 workers
+(node:6382) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:6381) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+···········(node:7424) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+·(node:7586) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+············
+  24 passed (2.7m)

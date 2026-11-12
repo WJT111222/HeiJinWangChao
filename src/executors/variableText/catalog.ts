@@ -77,7 +77,13 @@ export function textVariableCatalog() {
     organizationUpdateFields: organizationChangeFields,
     itemDetailsGuide: { categoryGroups: itemCategoryGroup, suggestedStringFields: itemDetailFields },
     entries:entries.map(({value,...entry})=>({...entry,...(entry.operation==='delete'?{valueRequired:false}:{}),valueSchema:{...z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'}),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
+    usageExamples: {
+      affinityChange: 'set npc[example-npc].affinityChange = {"from":0,"to":5,"reason":"共同核对材料","relationshipText":"愿意继续协作"}',
+      memory: 'push npc[example-npc].memories = {"text":"自己与对方核对材料并约定继续合作，尚有问题待确认。","knowledgeKind":"observed","knowledgeSource":"本人参与本轮交谈","visibility":"npc_private"}',
+      caution: '示例只说明结构，替换人物ID、数值和剧情。affinityChange.from须等于正式前值（同批连续更新用上一笔结果，未确认用null），reason和relationshipText不可缺；可与healthText、lastInteractionAt及四字段记忆同批写入。记忆ID、来源回合、时间和人物引用由程序生成。',
+    },
     rules:[
+      'events[id].sceneState只写本轮Story实际成立且满足现场权限的变化；active仍为active不是变化，提及、讨论风险、等待发展均不授予介入权限。eventNarration.mode=enter与既有eventInteraction沿用正式语义，mention不授权，不得靠改状态绕过权限。没有合法事件变化省略此命令，其他合法人物、情绪、好感和记忆仍完整记录。合法现场更新和提前结案不禁用；后台推进属于World。无交易不生成经济命令。',
       '物品description是稳定外观/功能/背景，conditionText是当前状态；referenceValue为单件参考价值（人民币非负整数分），未知省略或null，不用0代替未知，不代表购买price，不生成交易。不可交易证件不编造市价。itemDetails复用字符串附加资料，按itemDetailsGuide选适用字段，未知省略；set items[id].itemDetails替换该记录，保留仍有效的旧属性，不支持任意深层赋值。tool为工具类，weapon仍为武器；旧other不按名称猜类。questItem仅在确有任务用途时标true。',
       '同一次响应依次输出完整<thinking>、<说明>、<命令>。只执行命令块；set/add/push 路径 = JSON值；delete 路径，无操作数。以换行分隔，值可多行。不输出DomainCommand JSON、commandId、evidence、expectedRevision。',
       '可选gameState.前缀与源仓库一致，根和字段仍以本目录为准；[index]仅用于列明的普通数组，NPC/实体表必须用稳定ID。[id]替换为真实稳定ID；创建对象省略id，由路径注入。条目是有限操作入口，不是任意深层赋值。',
