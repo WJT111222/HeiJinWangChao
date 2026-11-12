@@ -1,4 +1,5 @@
-import { useState, useSyncExternalStore } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
+import type { KeyboardEvent } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import type { TurnDraft } from '../../domain/drafts';
 import { storyRuleNames } from '../../domain/storyDiagnostics';
@@ -72,15 +73,17 @@ export function DesktopWorkflowPanel(props: {
               const state = stepState(step);
               return (
                 <li key={step.stage} data-s={state}>
-                  <button className="wf-ri" aria-current={view === step.stage ? 'true' : undefined} onClick={() => props.onView(step.stage)}>
+                  <button className="wf-ri" aria-current={view === step.stage ? 'true' : undefined} aria-controls="wf-detail" onClick={() => props.onView(step.stage)}>
                     <span className="wf-node" aria-hidden="true">{glyphs[state] ?? ''}</span>
                     <strong><span className="stage-number">0{i + 1}</span>{stageNames[step.stage]}</strong>
                     <small>{step.text}</small>
                   </button>
                   {step.stage !== 'story' && (
                     <label className="wf-sw" title={`${stageNames[step.stage]}阶段开关`}>
+                      {/* 开关与左侧导航按钮是兄弟元素：切换只改启用设置，不切换阶段视图。 */}
                       <input
                         type="checkbox"
+                        data-stage={step.stage}
                         aria-label={stageNames[step.stage]}
                         checked={props.switches[step.stage].checked}
                         onChange={(event) => props.switches[step.stage as 'variables' | 'world'].onChange(event.target.checked)}
@@ -94,7 +97,7 @@ export function DesktopWorkflowPanel(props: {
           <p className="wf-rail-h">本回合</p>
           <ul className="wf-aux">
             <li>
-              <button className="wf-ri" aria-current={view === 'diagnostics' ? 'true' : undefined} onClick={() => props.onView('diagnostics')}>
+              <button className="wf-ri" aria-current={view === 'diagnostics' ? 'true' : undefined} aria-controls="wf-detail" onClick={() => props.onView('diagnostics')}>
                 <span className="wf-node" aria-hidden="true">诊</span>
                 <strong>运行诊断</strong>
                 <small>错误与用量</small>
@@ -103,7 +106,7 @@ export function DesktopWorkflowPanel(props: {
             </li>
             {draft && (
               <li>
-                <button className="wf-ri" aria-current={view === 'input' ? 'true' : undefined} onClick={() => props.onView('input')}>
+                <button className="wf-ri" aria-current={view === 'input' ? 'true' : undefined} aria-controls="wf-detail" onClick={() => props.onView('input')}>
                   <span className="wf-node" aria-hidden="true">述</span>
                   <strong>已绑定输入</strong>
                   <small>只读</small>
@@ -112,7 +115,7 @@ export function DesktopWorkflowPanel(props: {
             )}
           </ul>
         </nav>
-        <div className="wf-detail">
+        <div className="wf-detail" id="wf-detail">
           {view === 'story' || view === 'variables' || view === 'world'
             ? <StageDetail {...props} stage={view} step={steps.find((step) => step.stage === view)!} />
             : view === 'input' && draft
@@ -156,6 +159,26 @@ function StageDetail(props: Parameters<typeof DesktopWorkflowPanel>[0] & { stage
     ? [['overview', '概览'], ['raw', '模型原文'], ['plan', '叙事规划'], ['normalized', '校验结果']]
     : [['overview', '概览'], ['candidates', '候选', count], ['raw', '模型原文'], ['normalized', '校验结果']];
   const tab = tabs.some(([key]) => key === props.tab) ? props.tab : 'overview';
+  // WAI-ARIA Tabs：只有选中的页签在 Tab 顺序中；←/→ 循环、Home/End 首尾，切换即激活并移动焦点。
+  const tabRefs = useRef<Partial<Record<WorkflowTab, HTMLButtonElement | null>>>({});
+  const tabId = (key: WorkflowTab) => `wf-tab-${stage}-${key}`;
+  const panelId = `wf-panel-${stage}`;
+  const selectTab = (key: WorkflowTab, focus = true) => {
+    props.onTab(key);
+    if (focus) tabRefs.current[key]?.focus();
+  };
+  const onTabKey = (event: KeyboardEvent<HTMLDivElement>) => {
+    const keys = tabs.map(([key]) => key);
+    const index = keys.indexOf(tab);
+    const next = event.key === 'ArrowRight' ? keys[(index + 1) % keys.length]
+      : event.key === 'ArrowLeft' ? keys[(index - 1 + keys.length) % keys.length]
+        : event.key === 'Home' ? keys[0]
+          : event.key === 'End' ? keys[keys.length - 1]
+            : undefined;
+    if (!next) return;
+    event.preventDefault();
+    selectTab(next);
+  };
   const action = stage === 'story' ? undefined : props.actions[stage];
   const badges = <>
     <span className="wf-pill" data-s={state}>{step.text}</span>
@@ -174,20 +197,31 @@ function StageDetail(props: Parameters<typeof DesktopWorkflowPanel>[0] & { stage
           ? <button className={action.cancel ? 'wf-cancel' : undefined} disabled={action.disabled} onClick={action.onClick}>{action.label}</button>
           : <span className="stage-action-hint">正文生成位于行动输入旁。</span>}
       />
-      <div className="wf-tabs" role="tablist" aria-label={`${stageNames[stage]}内容`}>
+      <div className="wf-tabs" role="tablist" aria-label={`${stageNames[stage]}内容`} aria-orientation="horizontal" onKeyDown={onTabKey}>
         {tabs.map(([key, label, n]) => (
-          <button key={key} role="tab" aria-selected={tab === key} className="wf-tab" onClick={() => props.onTab(key)}>
+          <button
+            key={key}
+            ref={(element) => { tabRefs.current[key] = element; }}
+            id={tabId(key)}
+            role="tab"
+            type="button"
+            aria-selected={tab === key}
+            aria-controls={panelId}
+            tabIndex={tab === key ? 0 : -1}
+            className="wf-tab"
+            onClick={() => selectTab(key, false)}
+          >
             {label}{n !== undefined && <sup>{n}</sup>}
           </button>
         ))}
       </div>
-      <div className="wf-dt-body" role="tabpanel">
+      <div className="wf-dt-body" role="tabpanel" id={panelId} aria-labelledby={tabId(tab)} tabIndex={0}>
         {tab === 'raw' ? <StageRaw saveId={props.saveId} turnId={props.rawTurnId} stage={stage} />
           : tab === 'normalized' ? <StageNormalized saveId={props.saveId} turnId={props.rawTurnId} stage={stage} />
             : tab === 'plan' ? (draft ? <StoryInspectionPanel key={`${draft.turnId}-${draft.storyRevision}`} draft={draft} inline /> : <Empty>没有可执行的回合草稿。</Empty>)
               : stage === 'story' ? <StoryOverview {...props} state={state} step={step} />
-                : stage === 'variables' ? (draft && variables ? (tab === 'candidates' ? <VariableList draft={draft} /> : <VariableOverview draft={draft} onAll={() => props.onTab('candidates')} saveId={props.saveId} />) : <StageEmpty step={step} state={state} />)
-                  : draft && world ? (tab === 'candidates' ? <WorldList draft={draft} /> : <WorldOverview draft={draft} onAll={() => props.onTab('candidates')} saveId={props.saveId} />)
+                : stage === 'variables' ? (draft && variables ? (tab === 'candidates' ? <VariableList draft={draft} /> : <VariableOverview draft={draft} onAll={() => selectTab('candidates')} saveId={props.saveId} />) : <StageEmpty step={step} state={state} />)
+                  : draft && world ? (tab === 'candidates' ? <WorldList draft={draft} /> : <WorldOverview draft={draft} onAll={() => selectTab('candidates')} saveId={props.saveId} />)
                     : <StageEmpty step={step} state={state} />}
       </div>
     </section>

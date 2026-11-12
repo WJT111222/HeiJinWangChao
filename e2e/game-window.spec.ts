@@ -245,7 +245,7 @@ test('工作流默认一行且无外置工具与冗余说明，展开保留入�
   const disclosure = page.locator('.workflow-disclosure'), summary = workflowSummary(page);
   await expect(disclosure).not.toHaveAttribute('open'); await expect(summary).toContainText('详情');
   expect((await workflow.boundingBox())!.height).toBeLessThanOrEqual(44);
-  // PC 收起条：三段进度（可点击直达阶段，不进入 Tab 顺序）+ 详情按钮。
+  // PC 收起条：三段进度（可点击、可 Tab 聚焦，直达对应阶段）+ 详情按钮。
   await expect(workflow.locator('button:visible')).toHaveCount(info.project.name === 'desktop' ? 4 : 0);
   await expect(page.locator('.composer-tools > .stage-responses, .composer-tools > .runtime-log')).toHaveCount(0);
   for (const text of ['三阶段校验完成后自动原子结算', '自动执行会保留已完成阶段', '高级手动操作：', '手动启动新尝试；', '保留正文及合法变量；', '仅保存后续尝试偏好'])

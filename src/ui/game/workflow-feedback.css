@@ -855,3 +855,29 @@
     margin: 0.2rem 0 0;
   }
 }
+/* 键盘焦点：收起条三段、左侧导航、页签与页签内容都有清晰焦点环（仅 :focus-visible，不影响鼠标点击外观）。 */
+@media (min-width: 901px) {
+  .app-shell-game .city-night .workflow-summary .rail > button:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  .app-shell-game .city-night .workflow-summary .rail > button:focus-visible .lbl,
+  .app-shell-game .city-night .workflow-summary .rail > button:focus-visible .lbl b {
+    color: var(--text);
+  }
+  .app-shell-game .city-night .wf-ri:focus-visible,
+  .app-shell-game .city-night .wf-tab:focus-visible,
+  .app-shell-game .city-night .wf-hd button:focus-visible,
+  .app-shell-game .city-night .wf-link:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .app-shell-game .city-night .wf-tab:focus-visible {
+    border-radius: 3px;
+  }
+  .app-shell-game .city-night .wf-dt-body:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: -2px;
+  }
+}

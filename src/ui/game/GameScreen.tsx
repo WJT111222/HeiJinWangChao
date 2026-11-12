@@ -327,9 +327,18 @@ export function GameScreen({
       : '')
     : '';
   function openRuntimeSettings() {
-    if (compactSidebars && workflowDetails.current)
-      workflowDetails.current.open = true;
-    else openWorkflowView(!settings.runtime.useVariableStage ? "variables" : "world");
+    if (!compactSidebars) {
+      // PC：选中提示所指的阶段，并聚焦该阶段自己的开关（而非列表中第一个未勾选项）。
+      const target = !settings.runtime.useVariableStage ? "variables" : "world";
+      openWorkflowView(target);
+      requestAnimationFrame(() => {
+        const toggle = runtimeSwitches.current?.querySelector<HTMLInputElement>(`input[data-stage="${target}"]`);
+        toggle?.scrollIntoView({ block: "nearest" });
+        toggle?.focus({ preventScroll: true });
+      });
+      return;
+    }
+    if (workflowDetails.current) workflowDetails.current.open = true;
     requestAnimationFrame(() => {
       runtimeSwitches.current?.scrollIntoView({ block: "nearest" });
       (
@@ -769,9 +778,10 @@ export function GameScreen({
                       {progressSteps.map((step, i) => (
                         <button
                           key={step.stage}
+                          type="button"
                           data-s={step.visual}
-                          tabIndex={-1}
                           title={`查看${step.name}阶段详情`}
+                          aria-controls="workflow-pop"
                           onClick={() => openWorkflowView(step.stage)}
                         >
                           <span className="bar-seg" aria-hidden="true" />
