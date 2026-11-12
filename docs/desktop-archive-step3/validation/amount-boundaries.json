@@ -1,0 +1,134 @@
+{
+  "unit": "人民币分",
+  "note": "BigInt fields below are serialized as exact decimal strings for this report only; no save fields are added.",
+  "sumCases": [
+    {
+      "input": [],
+      "result": {
+        "known": "0",
+        "knownCount": 0,
+        "count": 0,
+        "unknownCount": 0,
+        "amount": "0"
+      }
+    },
+    {
+      "input": [
+        null
+      ],
+      "result": {
+        "known": "0",
+        "knownCount": 0,
+        "count": 1,
+        "unknownCount": 1,
+        "amount": null
+      }
+    },
+    {
+      "input": [
+        null,
+        0
+      ],
+      "result": {
+        "known": "0",
+        "knownCount": 1,
+        "count": 2,
+        "unknownCount": 1,
+        "amount": "0"
+      }
+    },
+    {
+      "input": [
+        100,
+        null,
+        200
+      ],
+      "result": {
+        "known": "300",
+        "knownCount": 2,
+        "count": 3,
+        "unknownCount": 1,
+        "amount": "300"
+      }
+    },
+    {
+      "input": [
+        9007199254740991,
+        9007199254740991
+      ],
+      "result": {
+        "known": "18014398509481982",
+        "knownCount": 2,
+        "count": 2,
+        "unknownCount": 0,
+        "amount": "18014398509481982"
+      }
+    }
+  ],
+  "ratioCases": [
+    {
+      "principal": null,
+      "outstanding": 100,
+      "result": {
+        "note": "本金或未偿本金未确认，暂不显示比例。"
+      }
+    },
+    {
+      "principal": 100,
+      "outstanding": null,
+      "result": {
+        "note": "本金或未偿本金未确认，暂不显示比例。"
+      }
+    },
+    {
+      "principal": 0,
+      "outstanding": 0,
+      "result": {
+        "note": "本金为零，未计算比例。"
+      }
+    },
+    {
+      "principal": 0,
+      "outstanding": 1,
+      "result": {
+        "note": "本金为零，未计算比例。"
+      }
+    },
+    {
+      "principal": 100,
+      "outstanding": 0,
+      "result": {
+        "width": 0
+      }
+    },
+    {
+      "principal": 100,
+      "outstanding": 50,
+      "result": {
+        "width": 50
+      }
+    },
+    {
+      "principal": 100,
+      "outstanding": 100,
+      "result": {
+        "width": 100
+      }
+    },
+    {
+      "principal": 100,
+      "outstanding": 150,
+      "result": {
+        "width": 100,
+        "note": "未偿本金超过本金，比例按 100% 显示；金额保留原值。"
+      }
+    },
+    {
+      "principal": 9007199254740991,
+      "outstanding": 9007199254740991,
+      "result": {
+        "width": 100
+      }
+    }
+  ]
+}

@@ -77,10 +77,13 @@ export function playerView(state: GameState, authoredCompanion?: CompanionProfil
   };
 }
 export type PlayerView = ReturnType<typeof playerView>;
-export const money = (value: number | null) =>
-  value === null
-    ? '未确认'
-    : `${new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value / 100)} 元`;
+// Keep integer cents exact even at MAX_SAFE_INTEGER; derived UI sums may use BigInt.
+export const money = (value: number | bigint | null) => {
+  if (value === null) return '未确认';
+  const cents = BigInt(value), absolute = cents < 0n ? -cents : cents;
+  const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 }).format(absolute / 100n);
+  return `${cents < 0n ? '-' : ''}${integer}.${String(absolute % 100n).padStart(2,'0')} 元`;
+};
 export const dateTime = (time: string) =>
   new Intl.DateTimeFormat('zh-CN', {
     timeZone: 'Etc/GMT-8',

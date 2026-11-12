@@ -102,9 +102,8 @@ test('PC 长段落/异常长字符串完整换行，左栏独立滚动且资金�
 test('PC 普通/百万/亿级/极大金额随容器调整字号，下限后排版换行不省略',async({page},info)=>{
   test.skip(info.project.name!=='desktop');test.setTimeout(120000);await seed(page);
   const state=(await nightSealStored(page)).state,measurements=[];
-  for(const amount of [138600,123456789,12345678901,Number.MAX_SAFE_INTEGER]){
+  for(const [amount,expected] of [[138600,'1,386.00 元'],[123456789,'1,234,567.89 元'],[12345678901,'123,456,789.01 元'],[Number.MAX_SAFE_INTEGER,'90,071,992,547,409.91 元']] as const){
     await update(page,{economy:{...state.economy,cash:amount,onlineBalance:amount}});
-    const expected=new Intl.NumberFormat('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2}).format(amount/100)+' 元';
     const before=await nightSealStored(page);
     for(const width of [1920,1440,1280,1100,901]){
       await page.setViewportSize({width,height:900});

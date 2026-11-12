@@ -45,7 +45,7 @@ test('六筛选、种数、只看主角物品，详情键盘可达且原存档/�
   await expect(nav.getByRole('button', { name: '全部，8种物品', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(dialog.locator('.inventory-tile')).toHaveCount(8);
   await expect(dialog).not.toContainText('同事私人物品'); await expect(dialog).not.toContainText('组织文件'); await expect(dialog).not.toContainText('街边无主物品');
-  await expect(dialog).not.toContainText('袖口轻微磨损'); await expect(dialog).not.toContainText('参考价值'); await expect(dialog).not.toContainText('持有人');
+  if(info.project.name==='mobile')await expect(dialog).not.toContainText('袖口轻微磨损');else await expect(dialog.locator('.inventory-tile').filter({hasText:'防寒外套'})).toContainText('袖口轻微磨损'); await expect(dialog).not.toContainText('参考价值'); await expect(dialog).not.toContainText('持有人');
   await page.screenshot({ path: info.outputPath('inventory-grid.png') });
   for (const [label, count] of categoryCounts) {
     await nav.getByRole('button', { name: `${label}，${count}种物品`, exact: true }).click();
@@ -62,7 +62,7 @@ test('六筛选、种数、只看主角物品，详情键盘可达且原存档/�
   await expect(dialog).not.toContainText('不适用字段不展示'); await expect(dialog).not.toContainText('位置：未记录');
   await page.screenshot({ path: info.outputPath('inventory-detail.png') });
   await expect(dialog.getByRole('button', { name: '关闭资料界面' })).toBeInViewport({ ratio: 1 });
-  await dialog.getByRole('button', { name: '返回背包' }).click(); await expect(coat).toBeFocused();
+  if(info.project.name==='mobile'){await dialog.getByRole('button', { name: '返回背包' }).click();await expect(coat).toBeFocused();}else{await expect(dialog.getByRole('button',{name:'返回背包'})).toBeHidden();await expect(coat).toBeVisible();await expect(coat).toHaveAttribute('aria-pressed','true');}
   await nav.getByRole('button', { name: '工具与武器，1种物品', exact: true }).click(); await expect(dialog.locator('.inventory-tile')).toContainText('×2'); await expect(dialog.locator('.inventory-tile')).toContainText('任务');
   await nav.getByRole('button', { name: '证件文件，1种物品', exact: true }).click(); await dialog.getByRole('button', { name: /居民身份证/ }).click();
   await expect(dialog).toContainText('待估价'); await expect(dialog).toContainText('旧档保存的证件外观描述');
@@ -72,11 +72,11 @@ test('六筛选、种数、只看主角物品，详情键盘可达且原存档/�
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('长详情可滚动且关闭按钮可达，窄屏不横溢，空分类和空背包正常', async ({ page }) => {
+test('长详情可滚动且关闭按钮可达，窄屏不横溢，空分类和空背包正常', async ({ page }, info) => {
   await seed(page); const dialog = await open(page);
   await dialog.getByRole('button', { name: /纪念手册/ }).click();
   await expect(dialog.getByRole('button', { name: '关闭资料界面' })).toBeInViewport({ ratio: 1 });
-  const body = dialog.locator('.modal-body');
+  const body = dialog.locator(info.project.name==='desktop'?'.inv-detail':'.modal-body');
   expect(await body.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
   await body.evaluate(element => { element.scrollTop = element.scrollHeight; });
   await expect(dialog.getByRole('button', { name: '关闭资料界面' })).toBeInViewport();

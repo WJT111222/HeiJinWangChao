@@ -2,6 +2,7 @@ import { useEffect, useId, useRef } from 'react';
 import type { ReactNode } from 'react';
 import './archive.css';
 import './archive-records.css';
+import './archive-assets.css';
 
 /** Nonmodal desktop host. Content and navigation remain owned by the caller. */
 export function ArchivePanel({ title, seal, subtitle, children, onClose, returnFocus, index = 1, total = 7, eyebrow }: {

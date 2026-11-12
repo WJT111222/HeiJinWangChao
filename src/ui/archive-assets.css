@@ -1,0 +1,163 @@
+/* Confirmed step 3: desktop-only, read-only item and finance presentation. */
+@media (min-width:901px) {
+/* ---- 物品栏 ---- */
+.app-shell-game .city-night .archive .inv{flex:1;min-height:0;display:grid;grid-template-columns:11.5rem minmax(0,1fr) minmax(300px,32%);gap:0}
+.app-shell-game .city-night .archive .inv-rail{padding:1.2rem 1rem 1.2rem 0;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:.25rem}
+.app-shell-game .city-night .archive .inv-rail button{display:grid;grid-template-columns:1.3rem minmax(0,1fr) auto;align-items:center;gap:.6rem;text-align:left;border:0;border-radius:6px;padding:.6rem .7rem;font-size:.86rem;color:var(--muted);position:relative}
+.app-shell-game .city-night .archive .inv-rail button:hover:not(:disabled){background:#2a262209;color:var(--head)}
+.app-shell-game .city-night .archive .inv-rail button[aria-pressed=true]{background:#8E6C2514;color:var(--head)}
+.app-shell-game .city-night .archive .inv-rail button[aria-pressed=true]::before{content:'';position:absolute;left:0;top:.5rem;bottom:.5rem;width:2px;border-radius:2px;background:var(--gold)}
+.app-shell-game .city-night .archive .inv-rail .inventory-icon{width:1.3rem;height:1.3rem;color:var(--dim)}
+.app-shell-game .city-night .archive .inv-rail button[aria-pressed=true] .inventory-icon{color:var(--gold)}
+.app-shell-game .city-night .archive .inventory-count{font-family:var(--font-mono);font-size:.7rem;color:var(--dim);min-width:1.4rem;text-align:right}
+.app-shell-game .city-night .archive .inv-mid{min-height:0;padding:1.2rem 1.4rem 2rem}
+.app-shell-game .city-night .archive .inventory-summary{display:flex;align-items:baseline;gap:.8rem;margin-bottom:1rem;font-family:var(--font-title);font-size:1.05rem;letter-spacing:.18em;color:var(--head)}
+.app-shell-game .city-night .archive .inventory-summary span{font-family:var(--font-body);font-size:.76rem;letter-spacing:.06em;color:var(--dim)}
+.app-shell-game .city-night .archive .inventory-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(9.6rem,1fr));gap:.75rem}
+.app-shell-game .city-night .archive .inventory-tile{position:relative;width:100%;height:100%;min-height:9.6rem;display:flex;flex-direction:column;align-items:flex-start;gap:.4rem;text-align:left;padding:.85rem .9rem .8rem;border:1px solid var(--line-2);border-radius:8px;background:#F4EEE2;overflow:hidden}
+.app-shell-game .city-night .archive .inventory-tile::after{content:'';position:absolute;right:.7rem;top:.8rem;width:.55rem;height:.55rem;border-radius:50%;border:1px solid #2a262240;background:var(--sheet)}
+.app-shell-game .city-night .archive .inventory-tile:hover:not(:disabled){border-color:var(--gold-lo);background:#F7F2E8;transform:translateY(-2px);box-shadow:0 10px 18px -14px #0006}
+.app-shell-game .city-night .archive .inventory-tile[aria-pressed=true]{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 10px 18px -14px #0006}
+.app-shell-game .city-night .archive .inventory-tile .cat{font-size:.62rem;letter-spacing:.2em;color:var(--dim)}
+.app-shell-game .city-night .archive .inventory-tile .inventory-icon{width:2.4rem;height:2.4rem;color:#4b453c;margin:.35rem 0 .2rem;stroke-width:1.2}
+.app-shell-game .city-night .archive .inventory-tile strong{font-family:var(--font-title);font-size:.95rem;letter-spacing:.06em;color:var(--head);line-height:1.45;font-weight:600}
+.app-shell-game .city-night .archive .inventory-quantity{font-family:var(--font-mono);font-size:.72rem;color:var(--muted);margin-top:auto}
+.app-shell-game .city-night .archive .inventory-badges{display:flex;gap:.3rem;flex-wrap:wrap}
+.app-shell-game .city-night .archive .b-eq,.app-shell-game .city-night .archive .b-quest{font-size:.62rem;padding:.04rem .45rem;border-radius:3px;letter-spacing:.08em;white-space:nowrap}
+.app-shell-game .city-night .archive .b-eq{color:#F6F0E2;background:var(--gold)}
+.app-shell-game .city-night .archive .b-quest{color:#A3412E;border:1px solid #A3412E88}
+.app-shell-game .city-night .archive .inventory-tile.is-eq{background:linear-gradient(160deg,#8E6C2512,#F4EEE2 50%)}
+.app-shell-game .city-night .archive .inv-detail{min-height:0;border-left:1px solid var(--line);padding:1.4rem 0 2rem 1.4rem}
+.app-shell-game .city-night .archive .inventory-back{display:none}
+.app-shell-game .city-night .archive .inventory-detail-heading{display:grid;grid-template-columns:auto minmax(0,1fr);gap:1rem;align-items:center}
+.app-shell-game .city-night .archive .inv-frame{width:5.2rem;height:5.2rem;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:8px;background:repeating-linear-gradient(135deg,#2a262207 0 6px,transparent 6px 12px)}
+.app-shell-game .city-night .archive .inv-frame .inventory-icon{width:2.8rem;height:2.8rem;color:var(--head);stroke-width:1.2}
+.app-shell-game .city-night .archive .inventory-detail-heading h3{font-size:1.45rem;letter-spacing:.1em;color:var(--head);margin:.3rem 0 .35rem;outline:none}
+.app-shell-game .city-night .archive .inventory-description{margin:1.1rem 0 .4rem;padding:.9rem 1rem;border-left:2px solid var(--gold-lo);background:var(--card);font-family:var(--font-title);font-size:.95rem;line-height:1.9;color:var(--text)}
+.app-shell-game .city-night .archive .inv-detail .dl{grid-template-columns:1fr}
+.app-shell-game .city-night .archive .inv-detail .detail{grid-template-columns:6.4rem minmax(0,1fr)}
+.app-shell-game .city-night .archive .inv-none{height:100%;display:grid;place-items:center;text-align:center;color:var(--dim);font-size:.84rem}
+.app-shell-game .city-night .archive .inv-none .inventory-icon{width:2.6rem;height:2.6rem;margin:0 auto .7rem;color:#2a262240}
+
+/* ---- 经济与资产 ---- */
+.app-shell-game .city-night .archive .eco{flex:1;min-height:0;padding:1.4rem 0 2rem}
+.app-shell-game .city-night .archive .metric-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem}
+.app-shell-game .city-night .archive .metric{padding:1rem 1.1rem 1.05rem;border:1px solid var(--line-2);border-radius:10px;background:var(--card);position:relative;overflow:hidden}
+.app-shell-game .city-night .archive .metric small{display:flex;align-items:center;gap:.45rem;font-size:.72rem;letter-spacing:.18em;color:var(--dim)}
+.app-shell-game .city-night .archive .metric small i{width:1.35rem;height:1.35rem;display:grid;place-items:center;border-radius:4px;font-style:normal;font-family:var(--font-title);font-size:.7rem;letter-spacing:0;color:#F6F0E2;background:var(--c)}
+.app-shell-game .city-night .archive .metric b{display:block;margin-top:.55rem;font-family:var(--font-mono);font-size:1.45rem;font-weight:500;letter-spacing:.01em;color:var(--head)}
+.app-shell-game .city-night .archive .metric b em{font-style:normal;font-family:var(--font-body);font-size:.78rem;color:var(--muted);margin-left:.3rem}
+.app-shell-game .city-night .archive .metric p{margin-top:.3rem;font-size:.72rem;color:var(--dim)}
+.app-shell-game .city-night .archive .metric.m-cash{--c:var(--gold);border-color:var(--gold-lo);background:linear-gradient(160deg,#8E6C2516,var(--card) 60%)}
+.app-shell-game .city-night .archive .metric.m-online{--c:var(--info)}.app-shell-game .city-night .archive .metric.m-debt{--c:var(--neg)}.app-shell-game .city-night .archive .metric.m-asset{--c:var(--pos)}
+.app-shell-game .city-night .archive .metric.derived{background:transparent;border-style:dashed}
+.app-shell-game .city-night .archive .eco-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:0 1.4rem;align-items:start}
+.app-shell-game .city-night .archive .ledger{list-style:none;margin:0;padding:0}
+.app-shell-game .city-night .archive .ledger-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.15rem 1rem;padding:.75rem 0;border-bottom:1px dashed var(--hair)}
+.app-shell-game .city-night .archive .ledger-row:last-child{border-bottom:0}
+.app-shell-game .city-night .archive .ledger-row h4{margin:0;font-family:var(--font-title);font-size:.96rem;letter-spacing:.08em;color:var(--head);font-weight:600}
+.app-shell-game .city-night .archive .ledger-row .amt{font-family:var(--font-mono);font-size:1rem;text-align:right;white-space:nowrap}
+.app-shell-game .city-night .archive .ledger-row .sub{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;font-size:.76rem;color:var(--muted)}
+.app-shell-game .city-night .archive .ledger-row.received .amt{color:var(--pos)}
+.app-shell-game .city-night .archive .ledger-row.received .amt::before{content:'+ '}
+.app-shell-game .city-night .archive .ledger-row.expected .amt{color:var(--info)}
+.app-shell-game .city-night .archive .ledger-row.cancelled .amt{color:var(--dim);text-decoration:line-through}
+.app-shell-game .city-night .archive .ledger-row.cancelled h4{color:var(--dim)}
+.app-shell-game .city-night .archive .debt{padding:.9rem 1rem;border:1px solid var(--line);border-left:3px solid var(--neg);border-radius:0 7px 7px 0;background:#F6F1E6}
+.app-shell-game .city-night .archive .debt+.debt{margin-top:.6rem}
+.app-shell-game .city-night .archive .debt .hd{display:flex;justify-content:space-between;align-items:baseline;gap:1rem}
+.app-shell-game .city-night .archive .debt h4{margin:0;font-family:var(--font-title);font-size:.98rem;letter-spacing:.08em;color:var(--head)}
+.app-shell-game .city-night .archive .debt .nums{display:flex;gap:1.2rem;margin-top:.45rem;font-size:.76rem;color:var(--muted)}
+.app-shell-game .city-night .archive .debt .nums b{font-family:var(--font-mono);font-weight:500;color:var(--head);margin-left:.3rem}
+.app-shell-game .city-night .archive .debt .debt-bar{height:5px;border-radius:3px;background:#2a262214;margin-top:.55rem;overflow:hidden}
+.app-shell-game .city-night .archive .debt .debt-bar i{display:block;height:100%;background:var(--neg);border-radius:3px}
+.app-shell-game .city-night .archive .debt p{margin-top:.5rem;font-size:.82rem;color:var(--text);line-height:1.7}
+.app-shell-game .city-night .archive .asset{display:grid;grid-template-columns:2.6rem minmax(0,1fr) auto;gap:.2rem .9rem;align-items:start;padding:.85rem .95rem;border:1px solid var(--line);border-radius:8px;background:#F6F1E6}
+.app-shell-game .city-night .archive .asset+.asset{margin-top:.55rem}
+.app-shell-game .city-night .archive .asset .ic{grid-row:1/4;width:2.6rem;height:2.6rem;display:grid;place-items:center;border-radius:6px;background:#2F7A5814;color:var(--pos)}
+.app-shell-game .city-night .archive .asset .ic svg{width:1.4rem;height:1.4rem}
+.app-shell-game .city-night .archive .asset h4{margin:0;font-family:var(--font-title);font-size:.98rem;letter-spacing:.08em;color:var(--head)}
+.app-shell-game .city-night .archive .asset .val{font-family:var(--font-mono);font-size:.92rem;color:var(--head);text-align:right;white-space:nowrap}
+.app-shell-game .city-night .archive .asset .val.null{font-family:var(--font-body);font-size:.8rem;color:var(--dim)}
+.app-shell-game .city-night .archive .asset .st{grid-column:2/-1;justify-self:start;color:var(--muted);border-color:var(--line-2)}
+.app-shell-game .city-night .archive .asset .src{grid-column:2/-1;font-size:.76rem;color:var(--dim)}
+.app-shell-game .city-night .archive .asset-k{display:flex;align-items:center;gap:.6rem;margin:1.1rem 0 .55rem;font-size:.8rem;letter-spacing:.2em;color:var(--muted)}
+.app-shell-game .city-night .archive .asset-k:first-of-type{margin-top:0}
+.app-shell-game .city-night .archive .asset-k span{font-family:var(--font-mono);font-size:.68rem;color:var(--dim);letter-spacing:.05em}
+.app-shell-game .city-night .archive .asset-k::after{content:'';flex:1;height:1px;background:var(--hair)}
+
+.app-shell-game .city-night .archive .sec .ledger-row h4,.app-shell-game .city-night .archive .sec .debt h4,.app-shell-game .city-night .archive .sec .asset h4{display:block}
+.app-shell-game .city-night .archive .sec .ledger-row h4::before,.app-shell-game .city-night .archive .sec .ledger-row h4::after,.app-shell-game .city-night .archive .sec .debt h4::before,.app-shell-game .city-night .archive .sec .debt h4::after,.app-shell-game .city-night .archive .sec .asset h4::before,.app-shell-game .city-night .archive .sec .asset h4::after{display:none}
+
+}
+@media (min-width:901px) {
+ .app-shell-game .city-night .archive .inv {display:grid;grid-template-columns:11.5rem minmax(0,1fr) minmax(300px,32%);grid-template-rows:minmax(0,1fr);flex:1;min-width:0;min-height:0;align-items:stretch;}
+ .app-shell-game .city-night .archive .inv-rail {position:static;min-width:0;overflow:auto;overscroll-behavior:contain;}
+ .app-shell-game .city-night .archive .inv-rail button {display:grid;min-width:0;white-space:normal;}
+ .archive .inv-rail button > span:not(.inventory-count) {overflow-wrap:anywhere;}
+ .app-shell-game .city-night .archive .inv-mid {min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain;border-left:0;}
+ .archive .inventory-search {margin-bottom:.8rem;}
+ .app-shell-game .city-night .archive .inv-detail {min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain;padding-right:0;}
+ .app-shell-game .city-night .archive .inventory-back {display:none;}
+ .app-shell-game .city-night .archive .inventory-grid {margin:0;padding:0;}
+ .app-shell-game .city-night .archive .inventory-tile {overflow:visible;min-width:0;white-space:normal;}
+ .archive .inventory-tile strong,.archive .inventory-quantity,.archive .inventory-condition {max-width:100%;overflow-wrap:anywhere;white-space:normal;}
+ .archive .inventory-condition {font-size:.7rem;color:var(--muted);}
+ .archive .inventory-badges {flex-wrap:wrap;}
+ .archive .inventory-badges span {font-size:.62rem;padding:.04rem .45rem;border-radius:3px;white-space:normal;}
+ .archive .inventory-badges span:first-child {background:var(--gold);color:#F6F0E2;}
+ .archive .inventory-badges span:last-child:not(:first-child) {background:transparent;border:1px solid #A3412E88;color:#A3412E;}
+ .archive .inventory-detail-heading > div {min-width:0;}
+ .archive .inventory-detail-heading h3 {overflow-wrap:anywhere;}
+ .archive .inventory-description {white-space:pre-wrap;overflow-wrap:anywhere;}
+ .app-shell-game .city-night .archive .inv-detail .detail {border-bottom-color:var(--hair);grid-template-columns:6.4rem minmax(0,1fr);}
+ .archive .inventory-provenance {margin:1rem 0;}
+ .archive .inventory-provenance summary {color:var(--muted);font-size:.82rem;}
+ .app-shell-game .city-night .archive .eco {overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;min-width:0;}
+ .archive .eco-grid > div,.archive .eco .sec,.archive .eco article {min-width:0;}
+ .app-shell-game .city-night .archive .eco .sec > h3 {display:flex;align-items:center;gap:.8rem;margin:0 0 .9rem;font-size:.98rem;letter-spacing:.22em;color:var(--head);}
+ .archive .eco .sec > h3::before {content:'';flex:none;width:3px;height:.95em;border-radius:2px;background:var(--gold);}
+ .archive .eco .sec > h3::after {content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line-2),transparent);}
+ .archive .eco .metric {container-type:inline-size;min-width:0;overflow:visible;}
+ .app-shell-game .city-night .archive .eco .metric-amount {font-size:clamp(.75rem,calc((100cqw - 2px)/var(--amount-width)),1.45rem);white-space:normal;overflow-wrap:anywhere;}
+ .archive .eco .ledger-row {grid-template-columns:minmax(0,1fr) minmax(0,45%);min-width:0;}
+ .app-shell-game .city-night .archive .eco .amt,.app-shell-game .city-night .archive .eco .asset .val {min-width:0;white-space:normal;overflow-wrap:anywhere;}
+ .archive .eco .ledger-row .world-record {grid-column:1/-1;}
+ .archive .eco .debt .nums {flex-wrap:wrap;gap:.4rem 1.2rem;}
+ .archive .eco .debt .hd {flex-wrap:wrap;}
+ .archive .eco .debt .nums span {min-width:0;overflow-wrap:anywhere;}
+ .archive .eco .debt .nums b {white-space:normal;overflow-wrap:anywhere;}
+ .app-shell-game .city-night .archive .eco .asset {grid-template-columns:2.6rem minmax(0,1fr) minmax(0,40%);}
+ .archive .eco .asset .world-record {grid-column:2/-1;}
+ .archive .eco .asset-k h4 {font:inherit;letter-spacing:inherit;margin:0;}
+ .app-shell-game .city-night .archive .eco .asset-k h4::before,.app-shell-game .city-night .archive .eco .asset-k h4::after {display:none;}
+ .archive .eco .st {white-space:normal;}
+ .archive .eco .st.received,.archive .eco .st.repaid {color:var(--pos);}
+ .archive .eco .st.expected {color:var(--info);}
+ .archive .eco .st.active,.archive .eco .st.disputed {color:var(--neg);}
+ .archive .eco .st.cancelled {color:var(--dim);}
+ .archive .eco .world-record {font-size:.75rem;color:var(--muted);margin:.6rem 0 0;}
+ .archive .eco .world-record dd {overflow-wrap:anywhere;white-space:pre-wrap;}
+ .archive .eco .world-record-field {min-width:0;}
+ .archive .eco h4,.archive .eco .src,.archive .eco .sub {overflow-wrap:anywhere;}
+ .archive .eco .debt-progress-note {color:var(--muted);font-size:.74rem;}
+}
+@media (min-width:901px) and (max-width:1199px) {
+ .app-shell-game .city-night .archive .inv {grid-template-columns:10rem minmax(0,1fr);grid-template-rows:minmax(180px,44%) minmax(0,1fr);}
+ .app-shell-game .city-night .archive .inv-detail {grid-column:1/-1;border-left:0;border-top:1px solid var(--line);padding:1rem 0 1.5rem;}
+ .app-shell-game .city-night .archive .metric-row {grid-template-columns:repeat(2,minmax(0,1fr));}
+ .app-shell-game .city-night .archive .eco-grid {grid-template-columns:1fr;}
+}
+@media (prefers-reduced-motion:reduce) {.archive .inventory-tile {transition:none !important;transform:none !important;}}
+@media (min-width:901px) {
+ .app-shell-game .city-night .archive .inventory-quantity {position:static;top:auto;right:auto;order:5;margin-top:auto;}
+ .archive .inventory-tile .cat {order:0;}.archive .inventory-tile .inventory-icon {order:1;}.archive .inventory-tile strong {order:2;}.archive .inventory-condition {order:3;}
+ .app-shell-game .city-night .archive .inventory-tile .inventory-badges {order:4;margin-top:0;}
+ .app-shell-game .city-night .archive .inventory-badges .b-eq {background:var(--gold);color:#F6F0E2;}
+ .app-shell-game .city-night .archive .inventory-badges .b-quest {background:transparent;color:#A3412E;border:1px solid #A3412E88;}
+}
+@media (min-width:901px) {.app-shell-game .city-night .archive .ledger-row.received .amt:not([data-known=true])::before {content:none;}}
+@media (min-width:901px) {
+ .app-shell-game .city-night .archive .eco .metric-row {margin:0;}
+ .app-shell-game .city-night .archive .eco .asset-k h4 {display:block;color:var(--muted);font:inherit;letter-spacing:inherit;margin:0;gap:0;}
+}

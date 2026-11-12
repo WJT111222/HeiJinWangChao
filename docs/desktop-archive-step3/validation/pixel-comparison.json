@@ -1,0 +1,24 @@
+[
+  {
+    "panel": "inventory",
+    "mainCommit": "961bbbdf5103522a6814a08c351aef2fbcb24941",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "pixelEqual": true,
+    "mainSHA256": "94d026a0a92b5b2038366f9d15fa8af4a29c006dd6043a94c92efffe0e3ddaa8",
+    "reactSHA256": "94d026a0a92b5b2038366f9d15fa8af4a29c006dd6043a94c92efffe0e3ddaa8"
+  },
+  {
+    "panel": "economy",
+    "mainCommit": "961bbbdf5103522a6814a08c351aef2fbcb24941",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "pixelEqual": true,
+    "mainSHA256": "51c03a9343a51ba1dc5061d2a0fbc6bb3daf895e8dd56070690d8add68b8c4de",
+    "reactSHA256": "51c03a9343a51ba1dc5061d2a0fbc6bb3daf895e8dd56070690d8add68b8c4de"
+  }
+]
