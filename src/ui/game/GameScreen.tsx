@@ -23,7 +23,7 @@ import type { TurnUndoResult } from '../../services/storage/saveRepository';
 import { ProfessionProfile } from '../components/ProfessionProfile';
 import { StoryReading } from './StoryReading';
 import { openingTimeSelection } from '../../domain/openingTime';
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import type { GameState } from '../../domain/state';
 import type { CompanionProfile } from '../../services/local/companionProfile';
@@ -64,6 +64,10 @@ import { CityAtmosphere, CityBar, CityChapter } from './CityNight';
 import { deriveAtmosphere } from './atmosphere';
 import './city-night.css';
 import './workflow-feedback.css';
+import './mobile-game.css';
+import {MobileCityBar,MobileStatus,mobileCitySeal} from './MobileCity';
+import {MobileActions} from './MobileActions';
+import {ComposerTools} from './ComposerTools';
 import { Feedback } from '../Feedback';
 
 const sidebarMedia = '(max-width: 900px)';
@@ -145,6 +149,8 @@ export function GameScreen({
     setPanel(target.panel);
   }
   const [worldDirectoryOpen, setWorldDirectoryOpen] = useState(false);
+  const [mobileStatusOpen,setMobileStatusOpen]=useState(false),[mobileMini,setMobileMini]=useState(false);
+  const readerY=useRef(0),inputElement=useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -199,13 +205,22 @@ export function GameScreen({
   const npcManagement = useNpcManagement(repository, state, draft, workflowBusy, onNpcManaged);
   const busy = workflowBusy || Boolean(npcManagement.pendingId);
   const reader = useRef<HTMLDivElement>(null);
-  const workflowDetails = useRef<HTMLDetailsElement>(null);
   const runtimeSwitches = useRef<HTMLOListElement | HTMLDivElement>(null);
   const workflowToggle = useRef<HTMLButtonElement>(null);
   const [workflowOpen, setWorkflowOpen] = useState(false);
   // PC 面板当前视图：未手动选择时跟随运行中/失败/待生成的阶段；收起后恢复自动。
   const [workflowView, setWorkflowView] = useState<WorkflowView>();
   const [workflowTab, setWorkflowTab] = useState<WorkflowTab>("overview");
+  useLayoutEffect(()=>{
+    const element=inputElement.current;if(!element)return;
+    if(!compactSidebars){element.style.removeProperty('height');return;}
+    const grow=()=>{element.style.height='auto';element.style.height=`${Math.min(120,element.scrollHeight)}px`;};grow();
+    let width=element.clientWidth;const observer=new ResizeObserver(()=>{if(element.clientWidth!==width){width=element.clientWidth;grow();}});observer.observe(element);return()=>observer.disconnect();
+  },[input,compactSidebars]);
+  useEffect(()=>{if(!compactSidebars){setMobileStatusOpen(false);setWorldDirectoryOpen(false);}},[compactSidebars]);
+  const mobileReturnFocus=(tab:'hero'|'world')=>window.matchMedia(sidebarMedia).matches
+    ?document.querySelector<HTMLElement>(`[data-mobile-tab="${tab}"]`)
+    :document.querySelector<HTMLElement>(`[data-archive-panel="${tab==='hero'?'人物档案':'NPC'}"]`);
   const closeWorkflow = () => {
     setWorkflowOpen(false);
     setWorkflowView(undefined);
@@ -361,7 +376,7 @@ export function GameScreen({
       });
       return;
     }
-    if (workflowDetails.current) workflowDetails.current.open = true;
+    setWorkflowOpen(true);
     requestAnimationFrame(() => {
       runtimeSwitches.current?.scrollIntoView({ block: "nearest" });
       (
@@ -419,7 +434,7 @@ export function GameScreen({
   const worldNavigation = <aside className="world-sidebar" aria-label="世界资料">
     <h2>世界资料</h2>
     <nav aria-label="世界资料分类">
-      {panelNames.map((name, index) => <button key={name} data-archive-panel={name} aria-current={!compactSidebars && !desktopSettings && panel === name ? 'true' : undefined} onClick={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined); setPanel(!compactSidebars && panel === name ? undefined : name); })}>
+      {panelNames.map((name, index) => <button key={name} data-archive-panel={name} aria-current={!compactSidebars && !desktopSettings && panel === name ? 'true' : undefined} onClick={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);if(compactSidebars)setWorldDirectoryOpen(false); setPanel(!compactSidebars && panel === name ? undefined : name); })}>
         <span className="dock-seal" aria-hidden="true">{['人', '势', '图', '物', '事', '史', '忆'][index]}</span>
         <span>{name}</span>
       </button>)}
@@ -523,6 +538,7 @@ export function GameScreen({
           <Feedback className="field-hint" level="warn" mobileAs="p">{staleDraftMessage}</Feedback>
         )}
         <p className="workflow-fee">生成可能产生第三方 API 费用。</p>
+        <div className="runtime-switches mobile-stage-switches" id="workflow-runtime-switches" ref={runtimeSwitches as RefObject<HTMLDivElement>}>
         <ol className="workflow-stages">
           {progressSteps.map((step, i) => (
             <li key={step.stage} data-s={stepState(step) === "off" ? "off" : step.visual}>
@@ -533,6 +549,7 @@ export function GameScreen({
                 <p className="stage-action-hint">正文生成位于行动输入旁。</p>
               ) : (
                 <div className="variable-actions">
+                  <label className="toggle"><input type="checkbox" aria-label={step.stage==='variables'?'变量管理':'动态世界'} checked={settings.runtime[step.stage==='variables'?'useVariableStage':'useWorldStage']} onChange={e=>setStageEnabled(step.stage==='variables'?'useVariableStage':'useWorldStage',e.target.checked)}/>启用</label>
                   <button
                     disabled={stageActions[step.stage].disabled}
                     onClick={stageActions[step.stage].onClick}
@@ -550,6 +567,7 @@ export function GameScreen({
             </li>
           ))}
         </ol>
+        </div>
       </div>
       <div className="wf-more">
         <details className="workflow-diagnostics" id="workflow-diagnostics">
@@ -588,27 +606,7 @@ export function GameScreen({
             <p className="prose">{draft.userInput || "未填写开局偏好，按人物资料正常生成。"}</p>
           </details>
         )}
-        <div
-          className="runtime-switches"
-          id="workflow-runtime-switches"
-          ref={runtimeSwitches as RefObject<HTMLDivElement>}
-        >
-          {(
-            [
-              ["useVariableStage", "变量管理"],
-              ["useWorldStage", "动态世界"],
-            ] as const
-          ).map(([key, label]) => (
-            <label className="toggle" key={key}>
-              <input
-                type="checkbox"
-                checked={settings.runtime[key]}
-                onChange={(e) => setStageEnabled(key, e.target.checked)}
-              />
-              {label}
-            </label>
-          ))}
-        </div>
+
       </div>
     </div>
   );
@@ -669,14 +667,16 @@ export function GameScreen({
           if (option) { event.preventDefault(); setInput(option); document.getElementById('player-input')?.focus(); }
         }
       }}>
-      {!compactSidebars && <><CityAtmosphere state={state} /><CityBar state={state} /></>}
-      <PlayerStatus state={state} equipment={equipment} activePanel={compactSidebars || desktopSettings ? undefined : panel} onProfile={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined); setPanel(desktopArchive === '人物档案' ? undefined : '人物档案'); })} onEconomy={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);setPanel(desktopArchive === '经济与资产' ? undefined : '经济与资产'); })} />
+      <CityAtmosphere state={state} />
+      {compactSidebars?<MobileCityBar state={state} mini={mobileMini} onStatus={()=>setMobileStatusOpen(true)}/>:<CityBar state={state} />}
+      {!compactSidebars&&<PlayerStatus state={state} equipment={equipment} activePanel={compactSidebars || desktopSettings ? undefined : panel} onProfile={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined); setPanel(desktopArchive === '人物档案' ? undefined : '人物档案'); })} onEconomy={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);setPanel(desktopArchive === '经济与资产' ? undefined : '经济与资产'); })} />}
       <section inert={Boolean(desktopArchive||desktopSettings)} className="story-column" aria-label="剧情与行动">
         <div
           className={`reader ${!view.journal.length && !draft?.story && !progress ? 'reader-empty' : ''}`}
           ref={reader}
           onScroll={() => {
             const element = reader.current!;
+            if(compactSidebars){setMobileMini(element.scrollTop>60&&element.scrollTop>=readerY.current-2);readerY.current=element.scrollTop;}
             follow.current = element.scrollHeight - element.scrollTop - element.clientHeight < 64;
             setFollowing(follow.current);
           }}
@@ -733,7 +733,7 @@ export function GameScreen({
           )}
           {settings.prompts.actionOptions &&
             (!progress && options && options.length >= 3 && options.length <= 5 ? (
-              <div className="action-options" aria-label="行动建议">
+              compactSidebars?<MobileActions options={options} value={input} onChoose={setInput}/>:<div className="action-options" aria-label="行动建议">
                 <p>接下来你想做什么</p>
                 {options.map((option, index) => (
                   <button key={option} aria-pressed={input === option} onClick={() => setInput(option)}>
@@ -764,29 +764,13 @@ export function GameScreen({
               data-state={workflowState}
             >
               {compactSidebars ? (
-                <details className="workflow-disclosure" ref={workflowDetails}>
-                  <summary>
-                    <strong role="status" aria-live="polite">
-                      <span className="workflow-prefix">三阶段 · </span>
-                      {workflowLabel}
-                    </strong>
-                    {!compactSidebars && (
-                      <span className="rail" aria-hidden="true">
-                        {progressSteps.map((step, i) => (
-                          <span key={step.stage} data-s={step.visual}>
-                            <span className="bar-seg" />
-                            <span className="lbl">
-                              <b>0{i + 1}</b> {step.name}
-                              <em> · {step.text}</em>
-                            </span>
-                          </span>
-                        ))}
-                      </span>
-                    )}
-                    <span className="workflow-toggle">详情</span>
-                  </summary>
-                  {workflowBody}
-                </details>
+                <div className="workflow-disclosure mobile-workflow-line" data-open={workflowOpen} {...(workflowOpen?{open:true}:{})}>
+                  <div className="workflow-summary"><button type="button" className="workflow-toggle" ref={workflowToggle} aria-label="三阶段工作流详情" aria-expanded={workflowOpen} aria-controls="workflow-pop" onClick={()=>setWorkflowOpen(true)}>
+                    <span className="mobile-progress-segments" aria-hidden="true">{progressSteps.map(step=><i key={step.stage} data-s={step.visual}/>)}</span>
+                    <strong role="status" aria-live="polite"><span className="sr-only">三阶段 · </span>{workflowLabel}</strong><span className="more">详情 ›</span>
+                  </button></div>
+                  {workflowOpen&&<Dialog title="三阶段工作流" mobileVariant="sheet" sheetFull seal="阶" eyebrow="WORKFLOW" className="mobile-workflow-sheet" onClose={closeWorkflow}>{workflowBody}</Dialog>}
+                </div>
               ) : (
                 <div
                   className="workflow-disclosure"
@@ -863,8 +847,8 @@ export function GameScreen({
           </div>
           {undoNotice && <p role="status" className="undo-feedback">{undoNotice}</p>}
           <div className="composer-action-row">
-            <div className="composer-roll">
-              <TurnUndoControl
+            <ComposerTools compact={compactSidebars} menu={Boolean(automatic.running||manualProgress||((!draft||canStartStory)&&!awaitingAction))}>
+              <TurnUndoControl compact={compactSidebars&&!(automatic.running||manualProgress||((!draft||canStartStory)&&!awaitingAction))}
                 repository={repository}
                 state={state}
                 draft={draft}
@@ -908,10 +892,10 @@ export function GameScreen({
                     : "生成开局正文"}
                 </button>
               ) : null}
-            </div>
+            </ComposerTools>
             <label className="sr-only" htmlFor="player-input">你的行动</label>
-            <textarea id="player-input" disabled={submitting} value={input}
-              onChange={(e) => setInput(e.target.value)} rows={2}
+            <textarea id="player-input" ref={inputElement} disabled={submitting} value={input}
+              onChange={(e) => setInput(e.target.value)} rows={compactSidebars?1:2}
               placeholder={compactSidebars ? '填写你的行动' : '填写你的行动；发送后生成三阶段并自动结算'} />
             <div className="composer-footer">
               <button className="primary" disabled={(!canCommit && !awaitingAction) || busy || !input.trim()}
@@ -923,15 +907,18 @@ export function GameScreen({
       </section>
       {!compactSidebars && worldNavigation}
       <nav className="mobile-game-nav" aria-label="底部导航">
-        <button aria-current={!panel && !worldDirectoryOpen && !renderSettings ? 'page' : undefined}
-          onClick={() => { reader.current?.focus({ preventScroll: true }); }}>故事</button>
-        <button onClick={() => setPanel('人物档案')}>人物</button>
-        <button onClick={() => setWorldDirectoryOpen(true)}>世界资料</button>
-        <button onClick={onOpenSettings}>设置</button>
+        <button aria-current={!panel && !mobileStatusOpen && !worldDirectoryOpen && !renderSettings ? 'page' : undefined}
+          onClick={() => { reader.current?.focus({ preventScroll: true }); }}><span className="mobile-seal" aria-hidden="true">文</span>故事</button>
+        <button data-mobile-tab="hero" aria-current={mobileStatusOpen||panel==='人物档案'||panel==='经济与资产'?'page':undefined} onClick={() => setMobileStatusOpen(true)}><span className="mobile-seal" aria-hidden="true">我</span>人物</button>
+        <button data-mobile-tab="world" aria-current={worldDirectoryOpen||(panel&&panel!=='人物档案'&&panel!=='经济与资产')?'page':undefined} onClick={() => setWorldDirectoryOpen(true)}><span className="mobile-seal" aria-hidden="true">世</span>世界资料</button>
+        <button data-settings-open aria-current={renderSettings?'page':undefined} onClick={onOpenSettings}><span className="mobile-seal" aria-hidden="true">设</span>设置</button>
       </nav>
-      {compactSidebars && worldDirectoryOpen && <Dialog title="世界资料" className="world-directory" onClose={() => setWorldDirectoryOpen(false)}>
-        <p className="muted">从身边的人，到更远的城市。</p>
+      {compactSidebars && mobileStatusOpen && <Dialog title="此时此地" mobileVariant="sheet" seal={mobileCitySeal(state)} eyebrow="NOW · HERE" className="mobile-status-sheet" onClose={()=>setMobileStatusOpen(false)} returnFocus={()=>document.querySelector<HTMLElement>('[data-mobile-status]')??mobileReturnFocus('hero')}>
+        <MobileStatus state={state} equipment={equipment} onProfile={()=>{setMobileStatusOpen(false);setPanel('人物档案');}} onEconomy={()=>{setMobileStatusOpen(false);setPanel('经济与资产');}}/>
+      </Dialog>}
+      {compactSidebars && worldDirectoryOpen && <Dialog title="世界资料" mobileVariant="sheet" seal="世" eyebrow="WORLD ARCHIVE" className="world-directory" onClose={() => setWorldDirectoryOpen(false)} returnFocus={()=>mobileReturnFocus('world')}>
         {worldNavigation}
+        <p className="muted mobile-world-hint">从身边的人，到更远的城市。</p>
       </Dialog>}
       {desktopArchive && <ArchivePanel key={desktopArchive} title={desktopArchive} className={desktopArchive === '世界事件' ? 'world-events-dialog' : desktopArchive === '历史时间轴' ? 'history-dialog' : undefined} seal={desktopArchive === 'NPC' ? '人' : desktopArchive === '势力组织' ? '势' : desktopArchive === '物品栏' ? '物' : desktopArchive === '经济与资产' ? '财' : desktopArchive === '世界事件' ? '事' : desktopArchive === '历史时间轴' ? '史' : desktopArchive === '记忆' ? '忆' : desktopArchive === '地图' ? '图' : '档'} index={desktopArchive === '势力组织' ? 2 : desktopArchive === '物品栏' ? 4 : desktopArchive === '世界事件' ? 5 : desktopArchive === '历史时间轴' ? 6 : desktopArchive === '记忆' ? 7 : desktopArchive === '地图' ? 3 : 1}
         eyebrow={desktopArchive === '人物档案' || desktopArchive === '经济与资产' ? 'PROTAGONIST · 主角档案' : undefined}
@@ -948,7 +935,7 @@ export function GameScreen({
           : <OrganizationPanel view={view} initialId={archiveTarget?.panel === '势力组织' ? archiveTarget.id : archiveSelection.current['势力组织']} links={{npc:id=>openArchive('NPC',id), organization:id=>openArchive('势力组织',id), event:id=>openArchive('世界事件',id)}} onSelect={id => { archiveSelection.current['势力组织'] = id; }} desktop />}
       </ArchivePanel>}
       {panel && !desktopArchive && !desktopSettings && (
-        <Dialog title={panel} className={panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : ''} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>
+        <Dialog title={panel} mobileVariant="sheet" sheetFull returnFocus={()=>mobileReturnFocus(panel==='人物档案'||panel==='经济与资产'?'hero':'world')} className={panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : ''} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>
           {panel === '人物档案' ? (
             <>
             <dl className="profile-details">

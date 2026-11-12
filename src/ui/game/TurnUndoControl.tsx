@@ -8,10 +8,10 @@ import { DataError } from '../../domain/common';
 import { Feedback, useDesktopFeedback } from '../Feedback';
 import { Dialog } from '../Dialog';
 
-export function TurnUndoControl({ repository, state, draft, busy, input, onInput, onUndone, cancelMemory, onNotice }: {
+export function TurnUndoControl({ repository, state, draft, busy, input, onInput, onUndone, cancelMemory, onNotice, compact=false }: {
   repository: SaveRepository; state: GameState; draft?: TurnDraft; busy: boolean; input: string;
   onInput: (value: string) => void; onUndone: (result: TurnUndoResult) => void; cancelMemory: () => void;
-  onNotice: (message: string) => void;
+  onNotice: (message: string) => void; compact?:boolean;
 }) {
   const desktop = useDesktopFeedback();
   const [status, setStatus] = useState<UndoStatus>();
@@ -67,8 +67,8 @@ export function TurnUndoControl({ repository, state, draft, busy, input, onInput
   const reason = !status ? '正在检查恢复点' : status.unavailable === 'opening' ? '开局不可撤回'
     : status.unavailable === 'chain' ? '恢复点不连续，请重新读取存档' : '没有可靠的回合恢复点';
   return <>
-    <button disabled={busy || saving || !status?.available} title={status?.available ? `可连续撤回 ${status.available} 回合` : reason}
-      onClick={() => setConfirm(true)}>撤回{status?.available ? `（${status.available}）` : ''}</button>
+    <button aria-label={compact?`撤回${status?.available?`（${status.available}）`:""}`:undefined} disabled={busy || saving || !status?.available} title={status?.available ? `可连续撤回 ${status.available} 回合` : reason}
+      onClick={() => setConfirm(true)}>{compact?<span aria-hidden="true">撤</span>:<>撤回{status?.available ? `（${status.available}）` : ''}</>}</button>
     {confirm && <Dialog title="撤回上一回合" small feedback="warn" seal="撤" onClose={() => { if (!saving) setConfirm(false); }}>
       {desktop ? <><p>恢复到第 {state.turnNumber - 1} 回合结束，回填原行动。</p><ul className="dialog-consequences"><li>已撤回的剧情无法重做；此操作不调用 AI。</li>
         {draft && !awaitingPlayerAction(state, draft) && <li>当前未结算草稿会被丢弃。</li>}
