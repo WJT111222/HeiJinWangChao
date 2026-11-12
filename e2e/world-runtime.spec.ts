@@ -1,4 +1,4 @@
-import { openGameTools, openWorkflowStage, openCandidateRaw, openStageCandidates, closeStageCandidates } from './helpers/gameLayout';
+import { openGameTools, openWorkflowStage, openCandidateRaw, openStageCandidates, closeStageCandidates, openStageSwitches } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { schoolEvidence, schoolResult, schoolTask, syntheticSchoolBatch } from '../src/tests/fixtures/worldChineseFact';
@@ -195,7 +195,7 @@ test('双开关关闭后只补算世界，无变量时明确预览；不 Roll �
   const before = await seed(page, false, true),
     initial = await stored(page);
   await openWorkflowStage(page, 'world'); await expect(page.getByRole('button', { name: '启用并补算世界', exact: true })).toBeDisabled();
-  await page.getByLabel('动态世界', { exact: true }).check();
+  await openStageSwitches(page); await page.getByLabel('动态世界', { exact: true }).check();
   const planned = {
     ...result,
     worldCommands: [

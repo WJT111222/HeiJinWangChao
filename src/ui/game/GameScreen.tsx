@@ -23,8 +23,8 @@ import type { TurnUndoResult } from '../../services/storage/saveRepository';
 import { ProfessionProfile } from '../components/ProfessionProfile';
 import { StoryReading } from './StoryReading';
 import { openingTimeSelection } from '../../domain/openingTime';
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import type { ReactNode, RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { GameState } from '../../domain/state';
 import type { CompanionProfile } from '../../services/local/companionProfile';
 import type { TurnDraft } from '../../domain/drafts';
@@ -37,9 +37,7 @@ import type { SaveRepository } from '../../services/storage/saveRepository';
 import { mayStartStory } from './storyGenerationPolicy';
 import { useStoryGeneration } from './useStoryGeneration';
 import { useVariableGeneration } from './useVariableGeneration';
-import { VariableCandidates } from './VariableCandidates';
 import { useWorldGeneration } from './useWorldGeneration';
-import { WorldCandidates } from './WorldCandidates';
 import { useTurnGeneration } from './useTurnGeneration';
 import { completeTurnDraft, awaitingPlayerAction } from '../../domain/turnCommit';
 import type { TurnCommitResult } from '../../services/storage/saveRepository';
@@ -47,24 +45,19 @@ import { DataError } from '../../domain/common';
 import { storyError } from '../../workflows/storyStage';
 import { assessSummary } from '../../domain/memories/summary';
 import { useMemoryMaintenance } from './useMemoryMaintenance';
-import { RequestUsage } from './RequestUsage';
-import { StoryInspectionPanel } from './StoryInspectionPanel';
 import { MemorySummarySettings } from '../settings/MemorySummarySettings';
 import { fingerprint } from '../../domain/commands';
 import { SettingsSchema, settingsKey } from '../settings/model';
 import { summaryFailureTitle } from '../../workflows/memorySummaryQueue';
 import type { OpeningStart } from './openingStart';
-import { RuntimeLogPanel } from './RuntimeLogPanel';
 import { runtimeLogEvent } from './runtimeLog';
-import { StageResponsesPanel } from './StageResponsesPanel';
-import { DesktopWorkflowPanel, stepState } from './WorkflowPanel';
+import { WorkflowPanel, stepState } from './WorkflowPanel';
 import type { StageAction, WorkflowStage, WorkflowTab, WorkflowView } from './WorkflowPanel';
 import type { RuntimeLogEntry, RuntimeLogReporter } from './runtimeLog';
 import { CityAtmosphere, CityBar, CityChapter } from './CityNight';
 import { deriveAtmosphere } from './atmosphere';
 import './city-night.css';
 import './workflow-feedback.css';
-import { Feedback } from '../Feedback';
 
 const sidebarMedia = '(max-width: 900px)';
 function subscribeSidebarSize(changed: () => void) {
@@ -199,13 +192,38 @@ export function GameScreen({
   const npcManagement = useNpcManagement(repository, state, draft, workflowBusy, onNpcManaged);
   const busy = workflowBusy || Boolean(npcManagement.pendingId);
   const reader = useRef<HTMLDivElement>(null);
-  const workflowDetails = useRef<HTMLDetailsElement>(null);
-  const runtimeSwitches = useRef<HTMLOListElement | HTMLDivElement>(null);
+  const runtimeSwitches = useRef<HTMLOListElement>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
   const workflowToggle = useRef<HTMLButtonElement>(null);
   const [workflowOpen, setWorkflowOpen] = useState(false);
-  // PC 面板当前视图：未手动选择时跟随运行中/失败/待生成的阶段；收起后恢复自动。
+  // 面板当前视图：未手动选择时，PC 跟随运行中/失败/待生成的阶段，手机抽屉从第一层（阶段列表）开始；收起后恢复自动。
   const [workflowView, setWorkflowView] = useState<WorkflowView>();
   const [workflowTab, setWorkflowTab] = useState<WorkflowTab>("overview");
+  // 手机抽屉的位置：从输入区上沿向上展开，最高到顶栏下方，输入框与发送按钮保持可见可用。
+  const [sheetBox, setSheetBox] = useState<{ top: number; bottom: number }>();
+  useLayoutEffect(() => {
+    if (!compactSidebars || !workflowOpen) return;
+    const composer = composerRef.current;
+    const shell = composer?.closest<HTMLElement>(".app-shell-game");
+    if (!composer || !shell) return;
+    const update = () => {
+      const box = shell.getBoundingClientRect(), edge = composer.getBoundingClientRect();
+      const header = shell.querySelector(":scope > .app-header")?.getBoundingClientRect();
+      const floor = Math.round(edge.top - box.top);
+      const top = Math.round(Math.max(header ? header.bottom - box.top + 6 : 0, floor - box.height * 0.8));
+      const bottom = Math.round(box.bottom - edge.top);
+      setSheetBox((current) => current?.top === top && current.bottom === bottom ? current : { top, bottom });
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(composer);
+    observer.observe(shell);
+    window.visualViewport?.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.visualViewport?.removeEventListener("resize", update);
+    };
+  }, [compactSidebars, workflowOpen]);
   const closeWorkflow = () => {
     setWorkflowOpen(false);
     setWorkflowView(undefined);
@@ -217,8 +235,9 @@ export function GameScreen({
     setWorkflowTab("overview");
     setWorkflowOpen(true);
   };
+  const toggleWorkflow = () => (workflowOpen ? closeWorkflow() : setWorkflowOpen(true));
   useEffect(() => {
-    if (!workflowOpen || compactSidebars) return;
+    if (!workflowOpen) return;
     const escape = (event: KeyboardEvent) => {
       if (
         event.key !== "Escape" ||
@@ -234,7 +253,7 @@ export function GameScreen({
     };
     document.addEventListener("keydown", escape);
     return () => document.removeEventListener("keydown", escape);
-  }, [workflowOpen, compactSidebars]);
+  }, [workflowOpen]);
   const follow = useRef(true);
   const [following, setFollowing] = useState(true);
   const validDraft =
@@ -350,25 +369,13 @@ export function GameScreen({
       : '')
     : '';
   function openRuntimeSettings() {
-    if (!compactSidebars) {
-      // PC：选中提示所指的阶段，并聚焦该阶段自己的开关（而非列表中第一个未勾选项）。
-      const target = !settings.runtime.useVariableStage ? "variables" : "world";
-      openWorkflowView(target);
-      requestAnimationFrame(() => {
-        const toggle = runtimeSwitches.current?.querySelector<HTMLInputElement>(`input[data-stage="${target}"]`);
-        toggle?.scrollIntoView({ block: "nearest" });
-        toggle?.focus({ preventScroll: true });
-      });
-      return;
-    }
-    if (workflowDetails.current) workflowDetails.current.open = true;
+    // 选中提示所指的阶段并聚焦它自己的开关；手机抽屉的开关在第一层列表里。
+    const target = !settings.runtime.useVariableStage ? "variables" : "world";
+    openWorkflowView(compactSidebars ? "home" : target);
     requestAnimationFrame(() => {
-      runtimeSwitches.current?.scrollIntoView({ block: "nearest" });
-      (
-        runtimeSwitches.current?.querySelector<HTMLInputElement>(
-          "input:not(:checked)",
-        ) ?? runtimeSwitches.current?.querySelector<HTMLInputElement>("input")
-      )?.focus({ preventScroll: true });
+      const toggle = runtimeSwitches.current?.querySelector<HTMLInputElement>(`input[data-stage="${target}"]`);
+      toggle?.scrollIntoView({ block: "nearest" });
+      toggle?.focus({ preventScroll: true });
     });
   }
 
@@ -484,6 +491,9 @@ export function GameScreen({
             : "自动生成开局"}
     </button>
   );
+  const sheetStyle = sheetBox
+    ? ({ "--wf-sheet-top": `${sheetBox.top}px`, "--wf-sheet-bottom": `${sheetBox.bottom}px` } as CSSProperties)
+    : undefined;
   const workflowState = hasWorkflowError
     ? "error"
     : busy
@@ -495,124 +505,7 @@ export function GameScreen({
           : workflowGuidance
             ? "off"
             : "pending";
-  // 移动端沿用原有折叠布局；PC 使用 DesktopWorkflowPanel（左侧阶段、右侧分页详情）。
-  const workflowBody = (
-    <div className="workflow-details" id="workflow-pop">
-      <div className="wf-body">
-        {workflowGuidance && (
-          <div className="field-hint" role="note" aria-label="阶段设置提示">
-            <p>{workflowGuidance}</p>
-            <button onClick={openRuntimeSettings} aria-controls="workflow-runtime-switches">
-              展开高级设置
-            </button>
-          </div>
-        )}
-        {(automatic.running || (!busy && (canCommit || canGenerate))) && (
-          <div className="workflow-primary">{workflowPrimaryButton}</div>
-        )}
-        {automatic.error && (
-          <div className="story-error" role="alert">
-            {automatic.error}
-            <button onClick={onOpenSettings}>打开 AI 设置</button>
-          </div>
-        )}
-        {[error, submitError, variables.error, world.error].map((message, i) => message && (
-          <p className="story-error" role="alert" key={i}>{message}</p>
-        ))}
-        {!validDraft && (
-          <Feedback className="field-hint" level="warn" mobileAs="p">{staleDraftMessage}</Feedback>
-        )}
-        <p className="workflow-fee">生成可能产生第三方 API 费用。</p>
-        <ol className="workflow-stages">
-          {progressSteps.map((step, i) => (
-            <li key={step.stage} data-s={stepState(step) === "off" ? "off" : step.visual}>
-              <span className="stage-number">0{i + 1}</span>
-              <strong>{["正文生成", "变量管理", "动态世界"][i]}</strong>
-              <small>{step.text}</small>
-              {step.stage === "story" ? (
-                <p className="stage-action-hint">正文生成位于行动输入旁。</p>
-              ) : (
-                <div className="variable-actions">
-                  <button
-                    disabled={stageActions[step.stage].disabled}
-                    onClick={stageActions[step.stage].onClick}
-                  >
-                    {stageActions[step.stage].label}
-                  </button>
-                  {step.stage === "variables" && draft?.variables && (
-                    <VariableCandidates key={`${draft.turnId}-${draft.draftRevision}`} draft={draft} />
-                  )}
-                  {step.stage === "world" && draft?.world && (
-                    <WorldCandidates key={`${draft.turnId}-${draft.draftRevision}`} draft={draft} />
-                  )}
-                </div>
-              )}
-            </li>
-          ))}
-        </ol>
-      </div>
-      <div className="wf-more">
-        <details className="workflow-diagnostics" id="workflow-diagnostics">
-          <summary>重试与变更详情</summary>
-          {summaryQuality && (
-            <p className="muted" data-testid="summary-length">
-              本回合摘要：{summaryQuality.hanCharacters} 汉字。
-              {summaryQuality.status === "empty"
-                ? "缺少有效摘要，无法正式结算。"
-                : summaryQuality.status === "within_target"
-                  ? "符合目标范围。"
-                  : "可继续。"}
-            </p>
-          )}
-          {draft?.failures
-            .filter((failure) => failure.storyRevision === draft.storyRevision)
-            .slice(-6)
-            .map((failure, index) => (
-              <p className="muted" key={index}>
-                {{ story: "正文生成", variables: "变量管理", world: "动态世界" }[failure.stage]}{" "}
-                · 安全失败码：{failure.errorCode}
-              </p>
-            ))}
-          {runtimeLogs.some((entry) => entry.kind === "failed") && (
-            <RuntimeLogPanel entries={runtimeLogs} onClear={() => setRuntimeLogs([])} />
-          )}
-          <StageResponsesPanel saveId={state.saveId} turnId={rawTurnId} />
-          <RequestUsage saveId={state.saveId} />
-          {draft && (
-            <StoryInspectionPanel key={`${draft.turnId}-${draft.storyRevision}`} draft={draft} />
-          )}
-        </details>
-        {draft && (
-          <details className="bound-input" id="workflow-bound-input">
-            <summary>本回合已绑定输入（只读）</summary>
-            <p className="prose">{draft.userInput || "未填写开局偏好，按人物资料正常生成。"}</p>
-          </details>
-        )}
-        <div
-          className="runtime-switches"
-          id="workflow-runtime-switches"
-          ref={runtimeSwitches as RefObject<HTMLDivElement>}
-        >
-          {(
-            [
-              ["useVariableStage", "变量管理"],
-              ["useWorldStage", "动态世界"],
-            ] as const
-          ).map(([key, label]) => (
-            <label className="toggle" key={key}>
-              <input
-                type="checkbox"
-                checked={settings.runtime[key]}
-                onChange={(e) => setStageEnabled(key, e.target.checked)}
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-  const desktopNotices = (
+  const workflowNotices = (
     <>
       {workflowError && (
         <div className="wf-banner workflow-errors" data-level="err" role="alert">
@@ -641,7 +534,7 @@ export function GameScreen({
       )}
     </>
   );
-  const desktopPrimary = (automatic.running || (!busy && (canCommit || canGenerate))) ? (
+  const workflowPrimary = (automatic.running || (!busy && (canCommit || canGenerate))) ? (
     <div className="workflow-primary">
       {workflowPrimaryButton}
       <small>
@@ -745,9 +638,9 @@ export function GameScreen({
               <p className="field-hint">行动建议将在正文生成后显示。</p>
             ))}
         </div>
-        <div className="composer">
+        <div className="composer" ref={composerRef}>
           <div className="composer-tools">
-            {progress && !following && (compactSidebars || !workflowOpen) && (
+            {progress && !following && !workflowOpen && (
               <button className="follow"
                 onClick={() => {
                   follow.current = true;
@@ -763,41 +656,27 @@ export function GameScreen({
               aria-label="三阶段工作流"
               data-state={workflowState}
             >
-              {compactSidebars ? (
-                <details className="workflow-disclosure" ref={workflowDetails}>
-                  <summary>
-                    <strong role="status" aria-live="polite">
-                      <span className="workflow-prefix">三阶段 · </span>
-                      {workflowLabel}
-                    </strong>
-                    {!compactSidebars && (
-                      <span className="rail" aria-hidden="true">
-                        {progressSteps.map((step, i) => (
-                          <span key={step.stage} data-s={step.visual}>
-                            <span className="bar-seg" />
-                            <span className="lbl">
-                              <b>0{i + 1}</b> {step.name}
-                              <em> · {step.text}</em>
-                            </span>
-                          </span>
-                        ))}
-                      </span>
-                    )}
-                    <span className="workflow-toggle">详情</span>
-                  </summary>
-                  {workflowBody}
-                </details>
-              ) : (
                 <div
                   className="workflow-disclosure"
                   data-open={workflowOpen}
                   {...(workflowOpen ? { open: true } : {})}
                 >
-                  <div className="workflow-summary">
+                  <div
+                    className="workflow-summary"
+                    onClick={compactSidebars ? (event) => {
+                      // 手机“整条点开”：点状态条任意位置切换抽屉；键盘用“详情”按钮。
+                      if (!(event.target as HTMLElement).closest("button")) toggleWorkflow();
+                    } : undefined}
+                  >
                     <strong role="status" aria-live="polite">
                       <span className="workflow-prefix">三阶段 · </span>
                       {workflowLabel}
                     </strong>
+                    {compactSidebars ? (
+                      <span className="wf-minibar" aria-hidden="true">
+                        {progressSteps.map((step) => <i key={step.stage} data-s={stepState(step)} />)}
+                      </span>
+                    ) : (
                     <span className="rail">
                       {progressSteps.map((step, i) => (
                         <button
@@ -816,29 +695,34 @@ export function GameScreen({
                         </button>
                       ))}
                     </span>
+                    )}
                     <button
                       className="workflow-toggle"
                       ref={workflowToggle}
                       aria-expanded={workflowOpen}
                       aria-controls="workflow-pop"
-                      onClick={() =>
-                        workflowOpen ? closeWorkflow() : setWorkflowOpen(true)
-                      }
+                      onClick={toggleWorkflow}
                     >
                       详情
                     </button>
                   </div>
                   <div hidden={!workflowOpen} className="workflow-pop-host">
+                    {compactSidebars && workflowOpen && (
+                      // 抽屉上方的暗区：点按收起（不覆盖输入区与底部导航）。
+                      <div className="wf-scrim" aria-hidden="true" style={sheetStyle} onClick={closeWorkflow} />
+                    )}
                     {(
-                      <DesktopWorkflowPanel
+                      <WorkflowPanel
+                        layout={compactSidebars ? "sheet" : "desktop"}
+                        sheetStyle={sheetStyle}
                         label={workflowLabel}
                         state={workflowState}
                         onClose={closeWorkflow}
                         onFollow={progress && !following ? followLatest : undefined}
-                        notices={desktopNotices}
-                        primary={desktopPrimary}
+                        notices={workflowNotices}
+                        primary={workflowPrimary}
                         steps={progressSteps}
-                        view={workflowView ?? autoWorkflowView}
+                        view={compactSidebars ? workflowView ?? "home" : workflowView && workflowView !== "home" ? workflowView : autoWorkflowView}
                         onView={(view) => { setWorkflowView(view); setWorkflowTab("overview"); }}
                         tab={workflowTab}
                         onTab={setWorkflowTab}
@@ -846,7 +730,7 @@ export function GameScreen({
                           variables: { checked: settings.runtime.useVariableStage, onChange: (checked) => setStageEnabled("useVariableStage", checked) },
                           world: { checked: settings.runtime.useWorldStage, onChange: (checked) => setStageEnabled("useWorldStage", checked) },
                         }}
-                        switchesRef={runtimeSwitches as RefObject<HTMLOListElement>}
+                        switchesRef={runtimeSwitches}
                         actions={stageActions}
                         draft={draft}
                         saveId={state.saveId}
@@ -858,7 +742,6 @@ export function GameScreen({
                     )}
                   </div>
                 </div>
-              )}
             </section>
           </div>
           {undoNotice && <p role="status" className="undo-feedback">{undoNotice}</p>}
