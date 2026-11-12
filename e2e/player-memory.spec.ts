@@ -35,7 +35,7 @@ async function seed(page: Page, empty = false) {
     config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'reader-model' };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-reader-key');
   }, empty);
-  await page.reload(); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+  await page.goto('/#game/save-a');await page.reload();await openGameTools(page);
   await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
   return page.getByRole('dialog', { name: '记忆', exact: true });
 }
@@ -104,6 +104,7 @@ test('空记忆与新存档四层均可读；已选存档不等于正在游玩�
   expect(await saved(page)).toEqual(before); expect(requests).toBe(0);
   await panel.getByRole('button', { name: '关闭资料界面' }).click();
   await goHome(page);
+  await page.getByRole('button',{name:'封面',exact:true}).click();
   await openSettings(page);
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
   await settings.getByRole('button', { name: '记忆', exact: true }).click();

@@ -1,0 +1,11 @@
+{
+  "baseCommit": "332cac71ae9e4c68774d6372ff9affd14626fb8b",
+  "zipSHA256": "16ba1dd9e0f92f46e3863214d26c5c1a33c2643fa3f81d83b587bc22b048e8d2",
+  "sources": [
+    "../desktop-npc-cabinet/design/heijin-panels.html",
+    "../desktop-npc-cabinet/design/PANELS_HANDOFF.md"
+  ],
+  "sourceManifest": "../desktop-npc-cabinet/design/manifest.json",
+  "section": 4,
+  "scope": "Desktop >=901px, events/history/memory only; latest main and current user requirements override mock data and earlier handoff details."
+}

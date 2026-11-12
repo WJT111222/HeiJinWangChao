@@ -1,0 +1,426 @@
+/* Confirmed desktop design, step 4. All data and ordering remain in existing projections. */
+@media(min-width:901px){
+.app-shell-game .city-night .archive .ev-st{display:inline-flex;align-items:center;gap:.35rem;font-size:.68rem;padding:.06rem .55rem;border-radius:999px;border:1px solid currentColor;white-space:nowrap;line-height:1.6}
+.app-shell-game .city-night .archive .ev-st::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+.app-shell-game .city-night .archive .ev-st.active{color:var(--info)}
+.app-shell-game .city-night .archive .ev-st.blocked{color:var(--neg)}
+.app-shell-game .city-night .archive .ev-st.scheduled{color:var(--dim)}
+.app-shell-game .city-night .archive .ev-st.resolved,.app-shell-game .city-night .archive .ev-st.success{color:var(--pos)}
+.app-shell-game .city-night .archive .ev-st.cancelled{color:var(--dim)}
+.app-shell-game .city-night .archive .ev-st.failure{color:var(--neg)}
+.app-shell-game .city-night .archive .ev-st.changed{color:var(--gold)}
+.app-shell-game .city-night .archive .ev-st.active::before{box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 25%,transparent);animation:archive-reading-breathe 1.8s ease-in-out infinite}
+.app-shell-game .city-night .archive .impact{font-size:.68rem;padding:.06rem .55rem;border-radius:3px;white-space:nowrap}
+.app-shell-game .city-night .archive .impact.minor{color:var(--muted);background:#2a26220d}
+.app-shell-game .city-night .archive .impact.significant{color:#F6F0E2;background:var(--gold)}
+.app-shell-game .city-night .archive .impact.major{color:#F6F0E2;background:var(--neg)}
+.app-shell-game .city-night .archive .ev-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.3rem .6rem;width:100%;text-align:left;border:0;border-radius:6px;padding:.8rem .7rem;border-bottom:1px solid var(--hair);position:relative}
+.app-shell-game .city-night .archive .ev-row:hover:not(:disabled){background:#2a262208}
+.app-shell-game .city-night .archive .ev-row[aria-pressed=true]{background:linear-gradient(90deg,#8E6C2516,transparent 85%)}
+.app-shell-game .city-night .archive .ev-row[aria-pressed=true]::before{content:'';position:absolute;left:0;top:.7rem;bottom:.7rem;width:2px;border-radius:2px;background:var(--gold)}
+.app-shell-game .city-night .archive .ev-row strong{font-family:var(--font-title);font-size:.98rem;letter-spacing:.06em;color:var(--head);font-weight:600;line-height:1.5}
+.app-shell-game .city-night .archive .ev-row small{grid-column:1/-1;font-family:var(--font-mono);font-size:.66rem;color:var(--dim)}
+.app-shell-game .city-night .archive .aux{margin-top:1.4rem;padding-top:1rem;border-top:1px solid var(--line)}
+.app-shell-game .city-night .archive .aux p.lbl{font-size:.68rem;letter-spacing:.22em;color:var(--dim);margin-bottom:.4rem}
+.app-shell-game .city-night .archive .aux details.fold{margin:.35rem 0}
+.app-shell-game .city-night .archive .aux details.fold>summary{font-size:.82rem}
+.app-shell-game .city-night .archive .ev-file-hd{position:relative;padding:1.4rem 0 1rem}
+.app-shell-game .city-night .archive .ev-file-hd .row{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.app-shell-game .city-night .archive .ev-file-hd h3{font-size:1.75rem;letter-spacing:.1em;color:var(--head);margin:.55rem 0 0;outline:none;line-height:1.4}
+.app-shell-game .city-night .archive .ev-crumb{display:flex;gap:.5rem;margin-bottom:.2rem}
+.app-shell-game .city-night .archive .ev-crumb button{font-size:.76rem;padding:.25rem .65rem}
+.app-shell-game .city-night .archive .case-stamp{position:absolute;right:.4rem;top:1.2rem;width:5.2rem;height:5.2rem;border-radius:50%;display:grid;place-items:center;text-align:center;font-family:var(--font-title);font-size:.9rem;line-height:1.25;letter-spacing:.15em;transform:rotate(-12deg);pointer-events:none;color:var(--c);border:2px solid color-mix(in srgb,var(--c) 70%,transparent);box-shadow:inset 0 0 0 3px var(--sheet),inset 0 0 0 4px color-mix(in srgb,var(--c) 35%,transparent);opacity:.85}
+.app-shell-game .city-night .archive .case-stamp small{display:block;font-family:var(--font-mono);font-size:.5rem;letter-spacing:.15em}
+.app-shell-game .city-night .archive .facts-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;margin:0}
+.app-shell-game .city-night .archive .facts-grid>div{padding:.65rem .8rem;border:1px solid var(--line);border-radius:7px;background:#F6F1E6}
+.app-shell-game .city-night .archive .facts-grid>div.wide{grid-column:span 2}
+.app-shell-game .city-night .archive .facts-grid dt{font-size:.66rem;letter-spacing:.18em;color:var(--dim)}
+.app-shell-game .city-night .archive .facts-grid dd{margin:.25rem 0 0;font-size:.86rem;color:var(--text);line-height:1.65}
+.app-shell-game .city-night .archive .facts-grid dd.mono{font-family:var(--font-mono);font-size:.82rem}
+.app-shell-game .city-night .archive .actor{display:inline-flex;align-items:center;gap:.3rem;margin:.1rem .3rem .1rem 0;font-size:.78rem;padding:.05rem .5rem .05rem .15rem;border-radius:999px;background:#2a26220b;border:1px solid var(--line)}
+.app-shell-game .city-night .archive .actor i{width:1.1rem;height:1.1rem;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:.56rem;color:#F6F0E2;background:var(--muted)}
+.app-shell-game .city-night .archive .actor.a-org i{border-radius:3px;background:var(--k,var(--muted))}
+.app-shell-game .city-night .archive .actor.a-me i{background:var(--gold)}
+.app-shell-game .city-night .archive .event-prose{font-family:var(--font-title);font-size:.95rem;line-height:1.95;color:var(--text);margin:0}
+.app-shell-game .city-night .archive .bg-goal{display:grid;grid-template-columns:1fr 1fr;gap:0 1rem}
+.app-shell-game .city-night .archive .bg-goal .sec{margin-bottom:0}
+.app-shell-game .city-night .archive .stage-track{list-style:none;margin:.2rem 0 0;padding:0 0 0 1.1rem;border-left:2px solid var(--line-2)}
+.app-shell-game .city-night .archive .stage-track li{position:relative;margin-bottom:.45rem}
+.app-shell-game .city-night .archive .stage-track li::before{content:'';position:absolute;left:calc(-1.1rem - 6px);top:1.05rem;width:10px;height:10px;border-radius:50%;background:var(--sheet);border:2px solid var(--c,var(--dim))}
+.app-shell-game .city-night .archive .stage-track li.run{--c:var(--info)}
+.app-shell-game .city-night .archive .stage-track li.run::before{background:var(--info);box-shadow:0 0 0 4px color-mix(in srgb,var(--info) 22%,transparent)}
+.app-shell-game .city-night .archive .stage-track li.done{--c:var(--pos)}
+.app-shell-game .city-night .archive .stage-track li.done::before{background:var(--pos)}
+.app-shell-game .city-night .archive .stage-track li.fail{--c:var(--neg)}
+.app-shell-game .city-night .archive .stage-track li.fail::before{background:var(--neg)}
+.app-shell-game .city-night .archive .stage-track li.up::before{border-style:dashed}
+.app-shell-game .city-night .archive .event-stage-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.2rem .8rem;align-items:center;width:100%;text-align:left;padding:.65rem .85rem;border:1px solid var(--line);border-radius:7px;background:#F6F1E6}
+.app-shell-game .city-night .archive .event-stage-row:hover:not(:disabled){border-color:var(--gold-lo);background:#F8F3E9}
+.app-shell-game .city-night .archive .event-stage-row strong{font-family:var(--font-title);font-size:.92rem;color:var(--head);letter-spacing:.05em}
+.app-shell-game .city-night .archive .event-stage-row small{grid-column:1;font-family:var(--font-mono);font-size:.66rem;color:var(--dim)}
+.app-shell-game .city-night .archive .stage-h{display:flex;align-items:center;gap:.6rem;margin:1rem 0 .55rem;font-size:.78rem;letter-spacing:.18em;color:var(--muted)}
+.app-shell-game .city-night .archive .stage-h:first-of-type{margin-top:0}
+.app-shell-game .city-night .archive .stage-h b{font-family:var(--font-mono);font-weight:400;color:var(--dim)}
+.app-shell-game .city-night .archive .know{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem}
+.app-shell-game .city-night .archive .know>div{padding:.75rem .85rem;border-radius:7px;border:1px solid var(--line);border-top:3px solid var(--c);background:#F6F1E6}
+.app-shell-game .city-night .archive .know h5{margin:0 0 .45rem!important;font-size:.78rem!important;letter-spacing:.16em;color:var(--c)!important}
+.app-shell-game .city-night .archive .know ul{margin:0;padding-left:1rem;font-size:.84rem;line-height:1.8}
+.app-shell-game .city-night .archive .know .k-facts{--c:var(--pos)}
+.app-shell-game .city-night .archive .know .k-reported{--c:var(--info)}
+.app-shell-game .city-night .archive .know .k-suspected{--c:var(--dim)}
+.app-shell-game .city-night .archive .know .k-suspected li{font-style:italic;color:var(--muted)}
+.app-shell-game .city-night .archive .hist-ref{display:flex;align-items:center;gap:.6rem;padding:.45rem 0;border-bottom:1px dashed var(--hair);font-size:.86rem}
+.app-shell-game .city-night .archive .hist-ref .t{font-family:var(--font-mono);font-size:.7rem;color:var(--dim);margin-left:auto}
+.app-shell-game .city-night .archive .hp{flex:1;min-height:0;padding:1.2rem 0 2rem}
+.app-shell-game .city-night .archive .seg-tabs{display:inline-flex;padding:3px;border:1px solid var(--line-2);border-radius:8px;background:#F6F1E6}
+.app-shell-game .city-night .archive .seg-tabs button{border:0;border-radius:6px;padding:.4rem 1rem;font-size:.84rem;color:var(--muted)}
+.app-shell-game .city-night .archive .seg-tabs button[aria-pressed=true]{background:var(--head);color:#F4EDE0}
+.app-shell-game .city-night .archive .hp-bar{display:flex;align-items:end;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+.app-shell-game .city-night .archive .hp-bar .f-label{min-width:13rem}
+.app-shell-game .city-night .archive .history-legend{display:grid;grid-template-columns:1fr 7.5rem 1fr;align-items:center;margin:.4rem 0 .2rem;font-size:.74rem;letter-spacing:.22em}
+.app-shell-game .city-night .archive .history-legend span:first-child{text-align:right;color:var(--info)}
+.app-shell-game .city-night .archive .history-legend span:last-child{color:#A3412E}
+.app-shell-game .city-night .archive .history-legend i{justify-self:center;font-style:normal;font-family:var(--font-mono);font-size:.62rem;color:var(--dim);letter-spacing:.2em}
+.app-shell-game .city-night .archive .history-axis{list-style:none;margin:0;padding:.6rem 0;position:relative}
+.app-shell-game .city-night .archive .history-axis::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:linear-gradient(180deg,transparent,var(--line-2) 4%,var(--line-2) 96%,transparent)}
+.app-shell-game .city-night .archive .history-slot{display:grid;grid-template-columns:1fr 7.5rem 1fr;align-items:start;padding:.55rem 0}
+.app-shell-game .city-night .archive .history-time{position:relative;display:grid;justify-items:center;gap:.35rem;padding-top:.6rem}
+.app-shell-game .city-night .archive .history-pin{width:12px;height:12px;border-radius:50%;background:var(--sheet);border:2px solid var(--gold);box-shadow:0 0 0 4px var(--sheet)}
+.app-shell-game .city-night .archive .history-time time{font-family:var(--font-mono);font-size:.72rem;color:var(--head);background:var(--sheet);padding:0 .3rem;text-align:center;line-height:1.4}
+.app-shell-game .city-night .archive .history-side{display:grid;gap:.5rem}
+.app-shell-game .city-night .archive .history-world{justify-items:end}
+.app-shell-game .city-night .archive .history-node{position:relative;width:min(100%,24rem);text-align:left;padding:.75rem .9rem .8rem;border:1px solid var(--line);border-radius:8px;background:#F6F1E6}
+.app-shell-game .city-night .archive .history-world .history-node{border-right:3px solid var(--info)}
+.app-shell-game .city-night .archive .history-protagonist .history-node{border-left:3px solid #A3412E}
+.app-shell-game .city-night .archive .history-node:hover:not(:disabled){border-color:var(--gold-lo);transform:translateY(-1px);box-shadow:0 8px 16px -12px #0006}
+.app-shell-game .city-night .archive .history-node .tag{font-size:.62rem;border-radius:3px;padding:.02rem .45rem}
+.app-shell-game .city-night .archive .history-world .history-node .tag{color:var(--info);border-color:color-mix(in srgb,var(--info) 40%,transparent)}
+.app-shell-game .city-night .archive .history-protagonist .history-node .tag{color:#A3412E;border-color:#A3412E66}
+.app-shell-game .city-night .archive .history-node h3{font-size:1rem;letter-spacing:.06em;color:var(--head);margin:.4rem 0 .25rem}
+.app-shell-game .city-night .archive .history-node p{font-size:.8rem;color:var(--muted);line-height:1.7;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.app-shell-game .city-night .archive .history-group-pages{display:flex;align-items:center;gap:.5rem;font-size:.72rem;color:var(--dim)}
+.app-shell-game .city-night .archive .history-group-pages button{padding:0 .5rem;font-size:.9rem;line-height:1.6}
+.app-shell-game .city-night .archive .chron{max-width:56rem}
+.app-shell-game .city-night .archive .chron .tag-line{display:flex;gap:.5rem;align-items:center;margin-top:.8rem}
+.app-shell-game .city-night .archive .chron h3{font-size:1.85rem;letter-spacing:.12em;color:var(--head);margin:.5rem 0 .4rem}
+.app-shell-game .city-night .archive .chron .lead{font-family:var(--font-title);font-size:1.02rem;color:var(--muted);line-height:1.9}
+.app-shell-game .city-night .archive .chron .history-narrative{font-family:var(--font-title);font-size:1rem;line-height:2.05;color:var(--text);text-indent:2em;margin:0}
+.app-shell-game .city-night .archive .chron ol.proc{margin:0;padding:0;list-style:none;counter-reset:p}
+.app-shell-game .city-night .archive .chron ol.proc li{counter-increment:p;position:relative;padding:.35rem 0 .35rem 2.2rem;font-size:.9rem;line-height:1.8}
+.app-shell-game .city-night .archive .chron ol.proc li::before{content:counter(p);position:absolute;left:0;top:.45rem;width:1.5rem;height:1.5rem;border-radius:50%;display:grid;place-items:center;font-family:var(--font-mono);font-size:.68rem;color:var(--gold-hi);border:1px solid var(--gold-lo)}
+.app-shell-game .city-night .archive .nat{font-size:.62rem;padding:.02rem .45rem;border-radius:3px;margin-right:.35rem;border:1px solid currentColor}
+.app-shell-game .city-night .archive .nat.fact{color:var(--pos)}
+.app-shell-game .city-night .archive .nat.statement{color:var(--info)}
+.app-shell-game .city-night .archive .nat.rumor,.app-shell-game .city-night .archive .nat.inference{color:var(--dim)}
+.app-shell-game .city-night .archive .res-list{list-style:none;margin:0;padding:0;display:grid;gap:.4rem}
+.app-shell-game .city-night .archive .res-list li{font-size:.88rem;line-height:1.75;padding:.45rem .7rem;border-left:2px solid var(--line-2);background:#F6F1E6}
+.app-shell-game .city-night .archive .res-list li p{font-size:.74rem;color:var(--dim);margin-top:.15rem}
+.app-shell-game .city-night .archive .src-foot{margin-top:1.2rem;padding-top:.8rem;border-top:1px dashed var(--line-2);font-size:.76rem;color:var(--dim);display:grid;gap:.2rem}
+.app-shell-game .city-night .archive .src-foot b{font-weight:400;color:var(--muted)}
+.app-shell-game .city-night .archive .mem{flex:1;min-height:0;display:grid;grid-template-columns:13rem minmax(0,1fr)}
+.app-shell-game .city-night .archive .mem-rail{padding:1.2rem 1.1rem 1.2rem 0;border-right:1px solid var(--line)}
+.app-shell-game .city-night .archive .mem-rail .lbl{font-size:.66rem;letter-spacing:.22em;color:var(--dim);margin:0 0 .5rem .2rem}
+.app-shell-game .city-night .archive .depth{display:grid;gap:.3rem;position:relative}
+.app-shell-game .city-night .archive .depth button{display:grid;grid-template-columns:.7rem minmax(0,1fr) auto;gap:.65rem;align-items:center;text-align:left;border:0;border-radius:6px;padding:.6rem .7rem;font-size:.86rem;color:var(--muted);position:relative}
+.app-shell-game .city-night .archive .depth button i{width:.7rem;height:.7rem;border-radius:2px;background:var(--d)}
+.app-shell-game .city-night .archive .depth button span:last-child{font-family:var(--font-mono);font-size:.72rem;color:var(--dim)}
+.app-shell-game .city-night .archive .depth button:hover:not(:disabled){background:#2a262209;color:var(--head)}
+.app-shell-game .city-night .archive .depth button[aria-pressed=true]{background:#8E6C2514;color:var(--head)}
+.app-shell-game .city-night .archive .depth button[aria-pressed=true]::before{content:'';position:absolute;left:0;top:.5rem;bottom:.5rem;width:2px;border-radius:2px;background:var(--gold)}
+.app-shell-game .city-night .archive .depth .d1{--d:#C9D8E2}
+.app-shell-game .city-night .archive .depth .d2{--d:#8FB0C6}
+.app-shell-game .city-night .archive .depth .d3{--d:#4F7A96}
+.app-shell-game .city-night .archive .depth .d4{--d:#22435A}
+.app-shell-game .city-night .archive .depth .d5{--d:#A3412E}
+.app-shell-game .city-night .archive .depth .d6{--d:var(--gold)}
+.app-shell-game .city-night .archive .depth .sep{height:1px;background:var(--line);margin:.4rem .3rem}
+.app-shell-game .city-night .archive .depth-note{margin-top:1rem;font-size:.72rem;line-height:1.75;color:var(--dim)}
+.app-shell-game .city-night .archive .mem-main{min-height:0;padding:1.2rem 1.4rem 2rem}
+.app-shell-game .city-night .archive .mem-intro{font-size:.78rem;color:var(--dim);line-height:1.75;padding:.55rem .8rem;border:1px dashed var(--line-2);border-radius:6px;margin-bottom:1rem}
+.app-shell-game .city-night .archive .mem-search{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:1.1rem}
+.app-shell-game .city-night .archive .mem-head{display:flex;align-items:baseline;gap:.8rem;margin-bottom:.3rem}
+.app-shell-game .city-night .archive .mem-head h3{font-size:1.2rem;letter-spacing:.18em;color:var(--head)}
+.app-shell-game .city-night .archive .mem-head + .muted{font-size:.78rem;color:var(--dim);margin-bottom:.9rem}
+.app-shell-game .city-night .archive .turn-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.2rem 1rem;align-items:start;padding:.85rem 1rem;border:1px solid var(--line);border-radius:8px;background:#F6F1E6}
+.app-shell-game .city-night .archive .turn-card+.turn-card{margin-top:.55rem}
+.app-shell-game .city-night .archive .turn-card .no{grid-row:1/3;width:2.6rem;text-align:center;font-family:var(--font-mono);font-size:1.15rem;color:var(--gold-hi);line-height:1.1;padding-top:.15rem}
+.app-shell-game .city-night .archive .turn-card .no small{display:block;font-size:.52rem;letter-spacing:.2em;color:var(--dim)}
+.app-shell-game .city-night .archive .turn-card time,.app-shell-game .city-night .archive .turn-card .muted{font-family:var(--font-mono);font-size:.66rem;color:var(--dim)}
+.app-shell-game .city-night .archive .turn-card details>summary{list-style:none;cursor:pointer;font-family:var(--font-title);font-size:.95rem;color:var(--head);line-height:1.7}
+.app-shell-game .city-night .archive .turn-card details>summary::-webkit-details-marker{display:none}
+.app-shell-game .city-night .archive .turn-card details>summary::after{content:' 展开正文';font-family:var(--font-body);font-size:.7rem;color:var(--info)}
+.app-shell-game .city-night .archive .turn-card details[open]>summary::after{content:' 收起'}
+.app-shell-game .city-night .archive .turn-card details .prose{margin-top:.6rem;font-size:.92rem;line-height:2;text-align:left}
+.app-shell-game .city-night .archive .turn-card>button{grid-column:3;grid-row:1/3;align-self:center;font-size:.76rem;padding:.35rem .7rem;white-space:nowrap}
+.app-shell-game .city-night .archive .mem-card{padding:.9rem 1rem;border:1px solid var(--line);border-left:3px solid var(--d,var(--line-2));border-radius:0 8px 8px 0;background:#F6F1E6}
+.app-shell-game .city-night .archive .mem-card+.mem-card{margin-top:.55rem}
+.app-shell-game .city-night .archive .mem-card .top{display:flex;align-items:center;flex-wrap:wrap;gap:.45rem;font-size:.72rem;color:var(--dim)}
+.app-shell-game .city-night .archive .mem-card .top time{font-family:var(--font-mono)}
+.app-shell-game .city-night .archive .mem-card .prose{margin:.5rem 0 .3rem;font-size:.93rem;line-height:1.95;text-align:left}
+.app-shell-game .city-night .archive .mem-card .foot{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin-top:.4rem;font-size:.74rem;color:var(--dim)}
+.app-shell-game .city-night .archive .mem-card .foot button{font-size:.74rem;padding:.25rem .65rem;margin-left:auto}
+.app-shell-game .city-night .archive .origin{font-size:.62rem;padding:.02rem .45rem;border-radius:3px;border:1px solid var(--line-2);color:var(--muted)}
+.app-shell-game .city-night .archive .origin.ro{border-style:dashed}
+.app-shell-game .city-night .archive .source-drawer{margin-bottom:1.2rem;padding:1.1rem 1.3rem;border:1px solid var(--gold-lo);border-radius:8px;background:#FBF7EE;box-shadow:0 10px 24px -18px #0007;outline:none}
+.app-shell-game .city-night .archive .source-drawer h3{font-size:1.05rem;letter-spacing:.12em;color:var(--head)}
+.app-shell-game .city-night .archive .source-drawer .sum{margin:.4rem 0 .6rem;font-size:.82rem;color:var(--muted)}
+.app-shell-game .city-night .archive .source-drawer .prose{font-size:.95rem;line-height:2.05;text-align:left;max-height:16rem;overflow:auto}
+.app-shell-game .city-night .archive .source-drawer>button{margin-top:.6rem;font-size:.78rem}
+
+@media (max-width:1199px){.app-shell-game .city-night .archive .facts-grid,.app-shell-game .city-night .archive .know{grid-template-columns:1fr 1fr}
+.app-shell-game .city-night .archive .bg-goal{grid-template-columns:1fr}
+.app-shell-game .city-night .archive .history-legend,.app-shell-game .city-night .archive .history-slot{grid-template-columns:1fr 5.5rem 1fr}
+.app-shell-game .city-night .archive .mem{grid-template-columns:11rem minmax(0,1fr)}
+.app-shell-game .city-night .archive .mem-search{grid-template-columns:1fr}
+}
+.app-shell-game .city-night .archive .ev-row .ev-st{align-self:start;margin-top:.25rem}
+.app-shell-game .city-night .archive .actor{white-space:nowrap}
+.app-shell-game .city-night .archive .history-legend,.app-shell-game .city-night .archive .history-slot{grid-template-columns:1fr 9rem 1fr}
+.app-shell-game .city-night .archive .history-time time{white-space:nowrap;font-size:.68rem}
+
+@media (max-width:1199px){.app-shell-game .city-night .archive .history-legend,.app-shell-game .city-night .archive .history-slot{grid-template-columns:1fr 8rem 1fr}
+}
+
+
+
+}
+
+@media(min-width:901px){
+ .app-shell-game .city-night .archive.world-events-dialog,.app-shell-game .city-night .archive.history-dialog {width:auto;}
+
+ .app-shell-game .city-night .archive .world-events-panel {flex:1;min-height:0;display:flex;flex-direction:column;}
+
+ .app-shell-game .city-night .archive .event-archive-layout {flex:1;min-height:0;display:grid;grid-template-columns:clamp(250px,26%,330px) minmax(0,1fr);align-items:stretch;gap:0;}
+
+ .app-shell-game .city-night .archive .event-directory {min-height:0;max-height:none;overflow:auto;overscroll-behavior:contain;padding:1.1rem 1.2rem 1.4rem 0;border-right:1px solid var(--line);scrollbar-gutter:stable;}
+
+ .app-shell-game .city-night .archive .event-directory-tools {position:sticky;top:-1.1rem;z-index:2;margin-top:-1.1rem;padding:1.1rem 0 .9rem;background:#E4DCCA;display:grid;gap:.6rem;}
+
+ .app-shell-game .city-night .archive .event-directory-tools h3 {font-family:var(--font-title);font-size:1rem;letter-spacing:.12em;display:flex;gap:.5rem;align-items:baseline;margin:0;}
+
+ .app-shell-game .city-night .archive .event-directory-tools h3 small {font: .72rem var(--font-mono);color:var(--gold);}
+
+ .app-shell-game .city-night .archive .event-directory-tools label {display:grid;gap:.3rem;color:var(--dim);font-size:.72rem;}
+
+ .app-shell-game .city-night .archive .event-directory-tools input,.app-shell-game .city-night .archive .history-filters input,.app-shell-game .city-night .archive .history-filters select {width:100%;min-width:0;}
+
+ .app-shell-game .city-night .archive .event-directory-row {margin:0;align-items:start;}
+
+ .app-shell-game .city-night .archive .event-directory-row .ev-st {align-self:start;margin-top:.25rem;}
+
+ .app-shell-game .city-night .archive .event-detail-pane {min-height:0;max-height:none;overflow:auto;overscroll-behavior:contain;padding:0 0 2rem 1.8rem;scrollbar-gutter:stable;}
+
+ .app-shell-game .city-night .archive .event-back-links {padding-top:1.3rem;margin:0;}
+
+ .app-shell-game .city-night .archive .event-back-links button {font-size:.76rem;padding:.25rem .65rem;}
+
+ .app-shell-game .city-night .archive .event-back-list {display:inline-block;}
+
+ .app-shell-game .city-night .archive .ev-file-hd {padding:.4rem 0 1rem;}
+
+ .app-shell-game .city-night .archive .ev-file-hd h3 {font-size:1.75rem;line-height:1.4;letter-spacing:.1em;margin:.55rem 0 0;padding-right:6rem;outline:none;}
+
+ .app-shell-game .city-night .archive .ev-file-hd .row {padding-right:6rem;}
+
+ .app-shell-game .city-night .archive .case-stamp {--c:var(--info);overflow:hidden;overflow-wrap:anywhere;}
+
+ .app-shell-game .city-night .archive .case-stamp.blocked,.app-shell-game .city-night .archive .case-stamp.failure {--c:var(--neg);}
+
+ .app-shell-game .city-night .archive .case-stamp.success,.app-shell-game .city-night .archive .case-stamp.resolved {--c:var(--pos);}
+
+ .app-shell-game .city-night .archive .case-stamp.cancelled,.app-shell-game .city-night .archive .case-stamp.scheduled {--c:var(--dim);}
+
+ .app-shell-game .city-night .archive .case-stamp.changed {--c:var(--gold);}
+
+ .app-shell-game .city-night .archive .event-facts .detail {display:block;padding:.65rem .8rem;border:1px solid var(--line);border-radius:7px;background:#F6F1E6;min-width:0;}
+
+ .app-shell-game .city-night .archive .facts-grid dt {font-size:.66rem;letter-spacing:.18em;color:var(--dim);}
+
+ .app-shell-game .city-night .archive .facts-grid dd {font-size:.86rem;color:var(--text);line-height:1.65;margin:.25rem 0 0;white-space:pre-wrap;overflow-wrap:anywhere;}
+
+ .app-shell-game .city-night .archive .actor {white-space:normal;max-width:100%;overflow-wrap:anywhere;}
+
+ .app-shell-game .city-night .archive .actor i {flex-shrink:0;}
+
+ .app-shell-game .city-night .archive .actor.a-org[data-kind=gang] {--k:#A3412E;}
+.app-shell-game .city-night .archive .actor.a-org[data-kind=official] {--k:#2D5E7D;}
+.app-shell-game .city-night .archive .actor.a-org[data-kind=civil] {--k:#2F7A58;}
+.app-shell-game .city-night .archive .actor.a-org[data-kind=business] {--k:#8E6C25;}
+
+ .app-shell-game .city-night .archive .event-file h4 {color:var(--head);}
+
+ .app-shell-game .city-night .archive .event-file > .world-record {margin:1.3rem 0;padding:1.15rem 1.3rem;border:1px solid var(--line);border-radius:8px;background:#F1EADB;}
+
+ .app-shell-game .city-night .archive .event-file .world-record dd,.app-shell-game .city-night .archive .event-secondary .world-record dd {white-space:pre-wrap;overflow-wrap:anywhere;}
+
+ .app-shell-game .city-night .archive .event-file .world-record dl {min-width:0;}
+
+ .app-shell-game .city-night .archive .event-stage-row {display:grid;min-width:0;margin:.45rem 0;position:relative;}
+
+ .app-shell-game .city-night .archive .event-stage-row .ev-st {max-width:100%;white-space:normal;}
+
+ .app-shell-game .city-night .archive .event-stages > section,.app-shell-game .city-night .archive .event-stages details > section {padding-left:1.1rem;border-left:2px solid var(--line-2);}
+
+ .app-shell-game .city-night .archive .event-stages .event-stage-row::before {content:'';position:absolute;left:calc(-1.1rem - 7px);top:1rem;width:10px;height:10px;border:2px solid var(--dim);border-radius:50%;background:var(--sheet);}
+
+ .app-shell-game .city-night .archive .event-stages [data-status=active]::before {background:var(--info);border-color:var(--info);box-shadow:0 0 0 4px #2D5E7D25;}
+
+ .app-shell-game .city-night .archive .event-stages [data-status=blocked]::before,.app-shell-game .city-night .archive .event-stages [data-status=failure]::before {background:var(--neg);border-color:var(--neg);}
+
+ .app-shell-game .city-night .archive .event-stages [data-status=success]::before {background:var(--pos);border-color:var(--pos);}
+
+ .app-shell-game .city-night .archive .event-stages [data-status=changed]::before {background:var(--gold);border-color:var(--gold);}
+
+ .app-shell-game .city-night .archive .event-stages [data-status=scheduled]::before {border-style:dashed;}
+
+ .app-shell-game .city-night .archive .know .k-facts {--c:var(--pos);}
+.app-shell-game .city-night .archive .know .k-reported {--c:var(--info);}
+.app-shell-game .city-night .archive .know .k-suspected {--c:var(--dim);}
+
+ .app-shell-game .city-night .archive .know .k-suspected li {font-style:italic;}
+
+ .app-shell-game .city-night .archive .ev-st {white-space:normal;overflow-wrap:anywhere;min-width:0;}
+
+ .app-shell-game .city-night .archive .ev-st::before {flex:none;}
+
+ .app-shell-game .city-night .archive .event-secondary {padding:.2rem 0;min-width:0;}
+
+ .app-shell-game .city-night .archive .event-secondary .event-stage-row {grid-template-columns:minmax(0,1fr);}
+
+ .app-shell-game .city-night .archive .event-secondary summary {font-size:.82rem;}
+
+ .app-shell-game .city-night .archive .event-auxiliary .card {min-width:0;overflow-wrap:anywhere;}
+
+ .app-shell-game .city-night .archive .hp {overflow:auto;overscroll-behavior:contain;}
+
+ .app-shell-game .city-night .archive .history-tabs {display:inline-flex;gap:0;padding:3px;border:1px solid var(--line-2);border-radius:8px;background:#F6F1E6;margin-bottom:1rem;}
+
+ .app-shell-game .city-night .archive .history-tabs button {border:0;border-radius:6px;padding:.4rem 1rem;font-size:.84rem;color:var(--muted);}
+
+ .app-shell-game .city-night .archive .history-tabs button[aria-pressed=true] {background:var(--head);color:#F4EDE0;}
+
+ .app-shell-game .city-night .archive .history-filters {display:inline-flex;vertical-align:bottom;margin-left:1rem;gap:1rem;max-width:100%;}
+
+ .app-shell-game .city-night .archive .history-filters label {display:grid;font-size:.72rem;letter-spacing:.12em;color:var(--dim);gap:.3rem;min-width:0;}
+
+ .app-shell-game .city-night .archive .history-axis {display:block;overflow:visible;padding:.6rem 0;}
+
+ .app-shell-game .city-night .archive .history-slot {display:grid;grid-template-columns:minmax(0,1fr) 9rem minmax(0,1fr);grid-template-rows:auto;grid-row:auto;}
+
+ .app-shell-game .city-night .archive .history-legend {display:grid;grid-template-columns:minmax(0,1fr) 9rem minmax(0,1fr);}
+
+ .app-shell-game .city-night .archive .history-side {grid-row:1;padding:0;justify-content:start;display:grid;align-content:start;}
+
+ .app-shell-game .city-night .archive .history-world {grid-column:1;justify-items:end;}
+
+ .app-shell-game .city-night .archive .history-protagonist {grid-column:3;}
+
+ .app-shell-game .city-night .archive .history-time {grid-column:2;grid-row:1;border:0;padding:.6rem .3rem 0;}
+
+ .app-shell-game .city-night .archive .history-pin {position:static;}
+
+ .app-shell-game .city-night .archive .history-time time {white-space:normal;overflow-wrap:anywhere;font-size:.68rem;max-width:100%;}
+
+ .app-shell-game .city-night .archive .history-node p {-webkit-line-clamp:2;}
+
+ .app-shell-game .city-night .archive .history-group-pages {flex-wrap:wrap;}
+
+ .app-shell-game .city-night .archive .history-detail {max-width:56rem;margin:1rem 0;}
+
+ .app-shell-game .city-night .archive .history-detail h3 {font-size:1.85rem;outline:none;}
+
+ .app-shell-game .city-night .archive .history-detail .facts-grid {grid-template-columns:repeat(3,minmax(0,1fr));}
+
+ .app-shell-game .city-night .archive .history-detail [aria-label="关联历史"] button {display:inline-block;max-width:100%;overflow-wrap:anywhere;}
+
+ .app-shell-game .city-night .archive .memory-navigation {display:grid;gap:.3rem;}
+
+ .app-shell-game .city-night .archive .memory-navigation button {min-width:0;white-space:normal;}
+
+ .app-shell-game .city-night .archive .memory-navigation button:nth-child(5) {margin-top:.9rem;}
+
+ .app-shell-game .city-night .archive .memory-navigation button:nth-child(5)::after {content:'';position:absolute;top:-.6rem;left:.3rem;right:.3rem;border-top:1px solid var(--line);}
+
+ .app-shell-game .city-night .archive .d-immediate {--d:#C9D8E2;}
+.app-shell-game .city-night .archive .d-short {--d:#8FB0C6;}
+.app-shell-game .city-night .archive .d-medium {--d:#4F7A96;}
+.app-shell-game .city-night .archive .d-long {--d:#22435A;}
+.app-shell-game .city-night .archive .d-npc {--d:#A3412E;}
+.app-shell-game .city-night .archive .d-archive {--d:var(--gold);}
+
+ .app-shell-game .city-night .archive .mem-rail,.app-shell-game .city-night .archive .mem-main {min-width:0;overflow:auto;overscroll-behavior:contain;}
+
+ .app-shell-game .city-night .archive .mem-main .mem-card,.app-shell-game .city-night .archive .mem-main .turn-card {min-width:0;overflow-wrap:anywhere;}
+
+ .app-shell-game .city-night .archive .mem-card .top p {font-size:.72rem;margin:0;color:var(--dim);}
+
+ .app-shell-game .city-night .archive .mem-card .top time {margin:0;font-size:.72rem;}
+
+ .app-shell-game .city-night .archive .mem-card .prose {font-family:var(--font-title);white-space:pre-wrap;}
+
+ .app-shell-game .city-night .archive .mem-card > .muted {display:inline-block;font-size:.74rem;}
+
+ .app-shell-game .city-night .archive .mem-card .world-record {font-size:.74rem;margin:.3rem 0;}
+
+ .app-shell-game .city-night .archive .mem-card .world-record dd {overflow-wrap:anywhere;white-space:pre-wrap;}
+
+ .app-shell-game .city-night .archive .turn-card time {grid-column:2;grid-row:1;font-size:.66rem;}
+
+ .app-shell-game .city-night .archive .turn-card details {grid-column:2;grid-row:2;min-width:0;}
+
+ .app-shell-game .city-night .archive .turn-card .prose {white-space:pre-wrap;}
+
+ .app-shell-game .city-night .archive .source-drawer .prose {white-space:pre-wrap;max-height:16rem;overflow:auto;overscroll-behavior:contain;}
+
+ .app-shell-game .city-night .archive .mem-head {align-items:baseline;}
+.app-shell-game .city-night .archive .mem-head span {font:.72rem var(--font-mono);color:var(--dim);}
+
+ .app-shell-game .city-night .archive .source-drawer .prose:focus-visible {outline:2px solid var(--gold);}
+
+ .app-shell-game .city-night .archive .source-drawer {scroll-margin-top:1rem;}
+
+}
+
+@media(min-width:901px) and (max-width:1199px){
+ .app-shell-game .city-night .archive .event-archive-layout {grid-template-columns:220px minmax(0,1fr);}
+
+ .app-shell-game .city-night .archive .event-detail-pane {padding-left:1.1rem;}
+
+ .app-shell-game .city-night .archive .ev-file-hd h3 {padding-right:0;}
+
+ .app-shell-game .city-night .archive .ev-file-hd .row {padding-right:0;}
+.app-shell-game .city-night .archive .case-stamp {display:none;}
+
+ .app-shell-game .city-night .archive .history-slot,.app-shell-game .city-night .archive .history-legend {grid-template-columns:minmax(0,1fr) 8rem minmax(0,1fr);}
+
+ .app-shell-game .city-night .archive .history-detail .facts-grid {grid-template-columns:repeat(2,minmax(0,1fr));}
+
+ .app-shell-game .city-night .archive .event-stage-row {grid-template-columns:minmax(0,1fr);}
+
+ .app-shell-game .city-night .archive .facts-grid {grid-template-columns:repeat(2,minmax(0,1fr));}
+
+ .app-shell-game .city-night .archive .turn-card {grid-template-columns:auto minmax(0,1fr);}
+
+ .app-shell-game .city-night .archive .turn-card>button {grid-column:2;grid-row:3;justify-self:start;white-space:normal;}
+
+}
+
+@keyframes archive-reading-breathe {50%{opacity:.45}
+}
+
+@media(prefers-reduced-motion:reduce){.app-shell-game .city-night .archive .ev-st::before {animation:none!important;}
+.app-shell-game .city-night .archive .history-node {transition:none!important;transform:none!important;}
+}
+
+
+@media(min-width:901px){
+ .app-shell-game .city-night .archive .memory-navigation {background:transparent;padding:0;}
+ .app-shell-game .city-night .archive .memory-navigation button > span:first-of-type {color:inherit;font-size:.86rem;}
+ .app-shell-game .city-night .archive .source-drawer time {font:.7rem var(--font-mono);color:var(--dim);}
+ .app-shell-game .city-night .archive .mem-card .top time {color:var(--dim);}
+}
+@media(min-width:901px){
+ .app-shell-game .city-night .archive .history-side {grid-template-columns:minmax(0,1fr);width:100%;}
+ .app-shell-game .city-night .archive .event-facts .fact-actors {grid-column:span 2;}
+ .app-shell-game .city-night .archive .event-facts time {font:.82rem var(--font-mono);color:var(--text);}
+}

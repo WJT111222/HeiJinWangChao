@@ -1,0 +1,21 @@
+[WebServer] (node:151880) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:151894) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 3 tests using 2 workers
+
+(node:151923) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:151922) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  2 [mobile] › e2e/archive-step4.spec.ts:40:1 › 统一正式历史投影、双轨五尺寸、精度与详情全文，回焦与旧地图接管 (5.9s)
+  ✓  1 [mobile] › e2e/archive-step4.spec.ts:20:1 › 第四批事件家族、并行与退役成果，合法组织目标、缓存、Esc和只读性 (7.4s)
+  ✓  3 [mobile] › e2e/archive-step4.spec.ts:52:1 › 六层记忆原文与归属、多来源分页和层级缓存；手机保持原生界面 (5.8s)
+
+  3 passed (14.5s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

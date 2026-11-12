@@ -1,0 +1,81 @@
+[WebServer] (node:148211) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:148224) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 2 workers
+
+(node:148251) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:148252) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [desktop] › ../desktop-step4-baseline/e2e/player-memory.spec.ts:43:1 › 四层只读记忆默认阅读，维护归位；公开来源、长文本及档案不请求AI或改变存档 (1.0m)
+  ✘  2 [desktop] › ../desktop-step4-baseline/e2e/player-memory.spec.ts:98:1 › 空记忆与新存档四层均可读；已选存档不等于正在游玩，回首页后维护不可操作 (1.0m)
+
+
+  1) [desktop] › ../desktop-step4-baseline/e2e/player-memory.spec.ts:43:1 › 四层只读记忆默认阅读，维护归位；公开来源、长文本及档案不请求AI或改变存档 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: /读取存档/ })
+
+
+      36 |     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-reader-key');
+      37 |   }, empty);
+    > 38 |   await page.reload(); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+         |                                                                         ^
+      39 |   await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
+      40 |   return page.getByRole('dialog', { name: '记忆', exact: true });
+      41 | }
+        at seed (/workspace/desktop-step4-baseline/e2e/player-memory.spec.ts:38:73)
+        at /workspace/desktop-step4-baseline/e2e/player-memory.spec.ts:46:17
+
+    Error Context: ../../tmp/s4-main-control/player-memory-四层只读记忆默认阅读，维护归位；公开来源、长文本及档案不请求AI或改变存档-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/s4-main-control/player-memory-四层只读记忆默认阅读，维护归位；公开来源、长文本及档案不请求AI或改变存档-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/s4-main-control/player-memory-四层只读记忆默认阅读，维护归位；公开来源、长文本及档案不请求AI或改变存档-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [desktop] › ../desktop-step4-baseline/e2e/player-memory.spec.ts:98:1 › 空记忆与新存档四层均可读；已选存档不等于正在游玩，回首页后维护不可操作 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: /读取存档/ })
+
+
+      36 |     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-reader-key');
+      37 |   }, empty);
+    > 38 |   await page.reload(); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+         |                                                                         ^
+      39 |   await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
+      40 |   return page.getByRole('dialog', { name: '记忆', exact: true });
+      41 | }
+        at seed (/workspace/desktop-step4-baseline/e2e/player-memory.spec.ts:38:73)
+        at /workspace/desktop-step4-baseline/e2e/player-memory.spec.ts:100:17
+
+    Error Context: ../../tmp/s4-main-control/player-memory-空记忆与新存档四层均可读；已选存档不等于正在游玩，回首页后维护不可操作-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/s4-main-control/player-memory-空记忆与新存档四层均可读；已选存档不等于正在游玩，回首页后维护不可操作-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/s4-main-control/player-memory-空记忆与新存档四层均可读；已选存档不等于正在游玩，回首页后维护不可操作-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [desktop] › ../desktop-step4-baseline/e2e/player-memory.spec.ts:43:1 › 四层只读记忆默认阅读，维护归位；公开来源、长文本及档案不请求AI或改变存档 
+    [desktop] › ../desktop-step4-baseline/e2e/player-memory.spec.ts:98:1 › 空记忆与新存档四层均可读；已选存档不等于正在游玩，回首页后维护不可操作 
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

@@ -1,0 +1,241 @@
+[WebServer] (node:155358) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:155373) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 118 tests using 2 workers
+
+(node:155541) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:155540) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓    1 [desktop] › e2e/archive-step2.spec.ts:49:2 › 四种组织颜色、完整字段、折叠、双滚动、纸色吸顶及桌面矩阵 (12.0s)
+  ✓    2 [desktop] › e2e/archive-step2.spec.ts:29:2 › 人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料 (12.7s)
+  ✓    4 [desktop] › e2e/archive-step2.spec.ts:80:2 › 长组织名/概况/状态、49组织与大量任务事件历史：独立滚动和分页不丢字段 (10.1s)
+  ✓    5 [desktop] › e2e/archive-step2.spec.ts:95:2 › 正式待确认开局：16字段含真实候选时间，当前时间保持待确认 (5.1s)
+  ✘    3 [desktop] › e2e/archive-step2.spec.ts:68:2 › 人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离 (16.7s)
+(node:155984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓    6 [desktop] › e2e/archive-step2.spec.ts:108:2 › 正式空组织名录保持空态，浏览不创建组织或请求模型 (5.1s)
+  ✓    7 [desktop] › e2e/archive-step3.spec.ts:20:1 › 物品分类、只读搜索、三栏和选中详情，901边界、原槽位与归属跳转 (13.1s)
+  ✓    8 [desktop] › e2e/archive-step3.spec.ts:39:1 › 经济资金、部分未知合计、全字段与原生手机，人物入口/旧Dialog/焦点闭环 (13.0s)
+  ✓    9 [desktop] › e2e/archive-step3.spec.ts:56:1 › 大量物品收入资产债务分页、独立滚动，原集合顺序和正式状态不变 (10.2s)
+  ✓   10 [desktop] › e2e/archive-step3.spec.ts:71:1 › 极端金额、超安全范围合计、未知/零债务以及长文本边界 (11.8s)
+  ✓   11 [desktop] › e2e/archive-step4.spec.ts:20:1 › 第四批事件家族、并行与退役成果，合法组织目标、缓存、Esc和只读性 (11.5s)
+  ✓   12 [desktop] › e2e/archive-step4.spec.ts:40:1 › 统一正式历史投影、双轨五尺寸、精度与详情全文，回焦与旧地图接管 (8.4s)
+  ✓   14 [desktop] › e2e/archive-step4.spec.ts:64:1 › 大型并行家族、长标题与长记忆、历史分段有界；reduced motion和只读压力 (6.9s)
+  ✓   13 [desktop] › e2e/archive-step4.spec.ts:52:1 › 六层记忆原文与归属、多来源分页和层级缓存；手机保持原生界面 (11.6s)
+  ✓   16 [desktop] › e2e/desktop-cabinet.spec.ts:37:1 › 大量NPC长姓名长描述：独立滚动、筛选、分页与完整字段 (6.9s)
+  ✓   15 [desktop] › e2e/desktop-cabinet.spec.ts:4:1 › 纸柜非模态焦点、dock切换、关联旧容器、Esc和浏览不写状态 (10.6s)
+  ✓   17 [desktop] › e2e/desktop-cabinet.spec.ts:54:1 › NPC与关联组织往返保留目标定位，手机组织仍为原生模态 (7.0s)
+  ✓   18 [desktop] › e2e/event-entry-feedback.spec.ts:74:1 › 现场事件结算→刷新后下一幕真实入场→拒绝回写同一事件，无重复请求或入场 (9.0s)
+  ✓   19 [desktop] › e2e/event-entry-feedback.spec.ts:91:1 › World失败与刷新不消费入场，恢复只请求World并原子确认正文回执 (6.9s)
+  ✓   20 [desktop] › e2e/event-entry-feedback.spec.ts:104:1 › 两轮自动结算：选择性入场、留守离场、并行任务与独立模糊历史保存后刷新可读 (6.5s)
+  ✓   21 [desktop] › e2e/event-stages-v2.spec.ts:23:40 › 固定阶段积压结算保留原时刻并退役，直接自动提交后刷新不重复请求 (4.8s)
+  ✓   22 [desktop] › e2e/event-stages-v2.spec.ts:23:40 › 固定阶段积压结算保留原时刻并退役，失败仅重试World后刷新不重复请求 (6.7s)
+  ✓   23 [desktop] › e2e/event-stages-v2.spec.ts:45:1 › 真实新阶段入场→下一轮Story回执→Variables提前结案，World不覆盖，不增加阶段调用 (5.2s)
+  ✓   24 [desktop] › e2e/event-stages-v2.spec.ts:73:1 › 阶段成功自然结束且不需后继时，未呈现邀请可原子失效，不强造取消结果或玩家回应 (4.7s)
+  ✓   25 [desktop] › e2e/history-timeline-v2.spec.ts:30:1 › 正式scope显示四类世界事件与主角标签，双端仍共用时间槽位且只读 (5.2s)
+  ✓   26 [desktop] › e2e/history-timeline-v2.spec.ts:66:1 › 单轴顺序、同日双视角、冬季、详情与史料；桌面双轨和手机原轴真实截图 (4.6s)
+  ✓   28 [desktop] › e2e/history-timeline-v2.spec.ts:111:1 › 长纪事完整详情、同刻大组有界分页与键盘访问 (4.2s)
+  ✓   27 [desktop] › e2e/history-timeline-v2.spec.ts:89:1 › 后补历史统一插入、分页搜索和完整撤回重载，无额外AI请求 (9.2s)
+  ✓   29 [desktop] › e2e/memory-summary-v2.spec.ts:5:1 › 独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入 (7.3s)
+  ✓   30 [desktop] › e2e/memory-summary-v2.spec.ts:37:1 › 立即NPC总结明确选择目标，18条可按15条处理；原文与正式revision不变 (5.5s)
+  ✓   32 [desktop] › e2e/memory-summary-v2.spec.ts:75:99 › 短期 → 中期失败暂停独立持久化，不关闭另外两类 (6.4s)
+  ✓   31 [desktop] › e2e/memory-summary-v2.spec.ts:49:1 › NPC先失败也不阻断公共两类，失败重试仅一次；暂停只保存本类关闭 (10.8s)
+  ✓   33 [desktop] › e2e/memory-summary-v2.spec.ts:75:99 › 中期 → 长期失败暂停独立持久化，不关闭另外两类 (6.4s)
+  ✓   34 [desktop] › e2e/memory-summary-v2.spec.ts:85:1 › 三类同时失败只顺序显示一个弹窗，各自暂停且刷新不重试 (7.7s)
+  ✓   35 [desktop] › e2e/memory-summary-v2.spec.ts:101:1 › 旧默认关闭安全延续、逐项开启与刷新持久化，设置页不再显示冗余说明 (7.4s)
+  ✓   36 [desktop] › e2e/memory-summary-v2.spec.ts:129:1 › 自动总结关闭时仍可手动总结，刷新后自动保持关闭且没有额外自动调用 (6.6s)
+  ✓   37 [desktop] › e2e/memory-summary-v2.spec.ts:151:1 › 旧版 enabled=false 即使 automatic=true 也只关闭自动，不禁用手动操作 (5.8s)
+  ✓   38 [desktop] › e2e/memory.spec.ts:73:1 › 旧M4七十回合档案：搜索约定、读取来源原文、分页和窗口显示，不泄露或改写 (10.0s)
+  ✓   40 [desktop] › e2e/npc-unified-memory.spec.ts:45:38 › V6实际浏览器迁移与身份往返：记忆和总结可读，香闺七字段完整，零模型请求 (4.7s)
+  ✓   41 [desktop] › e2e/npc-unified-memory.spec.ts:45:38 › V7实际浏览器迁移与身份往返：记忆和总结可读，香闺七字段完整，零模型请求 (5.0s)
+  ✓   42 [desktop] › e2e/npc-unified-memory.spec.ts:72:1 › 关闭Chromium进程后重开：统一原文、旧总结来源与休眠七字段保持持久化 (5.0s)
+  ✓   39 [desktop] › e2e/memory.spec.ts:110:1 › 真实正文请求使用设置N=1/10/20，并独立召回第3回合；查看记忆不中断生成 (25.5s)
+  ✓   44 [desktop] › e2e/player-memory.spec.ts:87:1 › 没有游玩的有效存档时，设置高级维护安全不可操作且不开模型请求 (2.3s)
+  ✓   43 [desktop] › e2e/player-memory.spec.ts:43:1 › 四层只读记忆默认阅读，维护归位；公开来源、长文本及档案不请求AI或改变存档 (8.0s)
+  ✓   45 [desktop] › e2e/player-memory.spec.ts:98:1 › 空记忆与新存档四层均可读；已选存档不等于正在游玩，回首页后维护不可操作 (7.3s)
+  ✓   46 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：opening 布局、焦点、候选与原数据 (4.7s)
+  ✓   48 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：off 布局、焦点、候选与原数据 (5.0s)
+  ✓   47 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：ready 布局、焦点、候选与原数据 (7.9s)
+  ✓   49 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：error 布局、焦点、候选与原数据 (5.7s)
+  ✓   50 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：settled 布局、焦点、候选与原数据 (5.1s)
+  ✓   51 [desktop] › e2e/workflow-feedback.spec.ts:71:1 › 生成中：浮层关闭不取消请求，显式取消后仍可恢复；reduced motion (4.6s)
+  ✓   52 [desktop] › e2e/workflow-feedback.spec.ts:86:1 › 多个阶段错误完整保留；候选失败重试不重生成已有正文 (4.8s)
+  ✘   54 [desktop] › e2e/workflow-feedback.spec.ts:118:59 › 全局load真实错误路径保留文案和关闭操作 (2.9s)
+(node:158480) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   55 [desktop] › e2e/workflow-feedback.spec.ts:118:59 › 全局list真实错误路径保留文案和关闭操作 (4.3s)
+  ✓   56 [desktop] › e2e/workflow-feedback.spec.ts:118:59 › 全局selection真实错误路径保留文案和关闭操作 (5.0s)
+  ✓   57 [desktop] › e2e/world-events-archive-v2.spec.ts:19:1 › 事件档案：活动目录、并行成果、退役资料、搜索分页与兼容入口均只读 (11.4s)
+  ✓   58 [desktop] › e2e/world-events-archive-v2.spec.ts:49:1 › 双端事件档案尺寸与真实截图，关闭后恢复资料入口焦点 (16.4s)
+  ✓   59 [desktop] › e2e/world-events-archive-v2.spec.ts:66:1 › 正式资料更新使选中主事件失效时安全回到有效视图 (4.3s)
+(node:159013) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   60 [mobile] › e2e/archive-step2.spec.ts:29:2 › 人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料 (12.9s)
+  ✘   53 [desktop] › e2e/workflow-feedback.spec.ts:101:1 › 全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式 (1.0m)
+(node:159485) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   61 [mobile] › e2e/archive-step2.spec.ts:49:2 › 四种组织颜色、完整字段、折叠、双滚动、纸色吸顶及桌面矩阵 (12.7s)
+  -   63 [mobile] › e2e/archive-step2.spec.ts:80:2 › 长组织名/概况/状态、49组织与大量任务事件历史：独立滚动和分页不丢字段
+  ✓   62 [mobile] › e2e/archive-step2.spec.ts:68:2 › 人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离 (14.6s)
+  ✓   64 [mobile] › e2e/archive-step2.spec.ts:95:2 › 正式待确认开局：16字段含真实候选时间，当前时间保持待确认 (12.0s)
+  ✓   65 [mobile] › e2e/archive-step2.spec.ts:108:2 › 正式空组织名录保持空态，浏览不创建组织或请求模型 (9.7s)
+  ✓   66 [mobile] › e2e/archive-step3.spec.ts:20:1 › 物品分类、只读搜索、三栏和选中详情，901边界、原槽位与归属跳转 (10.8s)
+  -   68 [mobile] › e2e/archive-step3.spec.ts:56:1 › 大量物品收入资产债务分页、独立滚动，原集合顺序和正式状态不变
+  ✓   67 [mobile] › e2e/archive-step3.spec.ts:39:1 › 经济资金、部分未知合计、全字段与原生手机，人物入口/旧Dialog/焦点闭环 (8.7s)
+  -   69 [mobile] › e2e/archive-step3.spec.ts:71:1 › 极端金额、超安全范围合计、未知/零债务以及长文本边界
+  ✓   71 [mobile] › e2e/archive-step4.spec.ts:40:1 › 统一正式历史投影、双轨五尺寸、精度与详情全文，回焦与旧地图接管 (5.4s)
+  ✓   70 [mobile] › e2e/archive-step4.spec.ts:20:1 › 第四批事件家族、并行与退役成果，合法组织目标、缓存、Esc和只读性 (6.1s)
+  -   73 [mobile] › e2e/archive-step4.spec.ts:64:1 › 大型并行家族、长标题与长记忆、历史分段有界；reduced motion和只读压力
+  ✓   74 [mobile] › e2e/desktop-cabinet.spec.ts:4:1 › 纸柜非模态焦点、dock切换、关联旧容器、Esc和浏览不写状态 (6.4s)
+  -   75 [mobile] › e2e/desktop-cabinet.spec.ts:37:1 › 大量NPC长姓名长描述：独立滚动、筛选、分页与完整字段
+  ✓   72 [mobile] › e2e/archive-step4.spec.ts:52:1 › 六层记忆原文与归属、多来源分页和层级缓存；手机保持原生界面 (10.2s)
+  ✓   76 [mobile] › e2e/desktop-cabinet.spec.ts:54:1 › NPC与关联组织往返保留目标定位，手机组织仍为原生模态 (6.2s)
+  ✓   77 [mobile] › e2e/event-entry-feedback.spec.ts:74:1 › 现场事件结算→刷新后下一幕真实入场→拒绝回写同一事件，无重复请求或入场 (7.7s)
+  ✓   78 [mobile] › e2e/event-entry-feedback.spec.ts:91:1 › World失败与刷新不消费入场，恢复只请求World并原子确认正文回执 (6.4s)
+  ✓   79 [mobile] › e2e/event-entry-feedback.spec.ts:104:1 › 两轮自动结算：选择性入场、留守离场、并行任务与独立模糊历史保存后刷新可读 (5.8s)
+  ✓   80 [mobile] › e2e/event-stages-v2.spec.ts:23:40 › 固定阶段积压结算保留原时刻并退役，直接自动提交后刷新不重复请求 (4.7s)
+  ✓   81 [mobile] › e2e/event-stages-v2.spec.ts:23:40 › 固定阶段积压结算保留原时刻并退役，失败仅重试World后刷新不重复请求 (5.6s)
+  ✓   82 [mobile] › e2e/event-stages-v2.spec.ts:45:1 › 真实新阶段入场→下一轮Story回执→Variables提前结案，World不覆盖，不增加阶段调用 (4.9s)
+  ✓   83 [mobile] › e2e/event-stages-v2.spec.ts:73:1 › 阶段成功自然结束且不需后继时，未呈现邀请可原子失效，不强造取消结果或玩家回应 (3.5s)
+  ✓   84 [mobile] › e2e/history-timeline-v2.spec.ts:30:1 › 正式scope显示四类世界事件与主角标签，双端仍共用时间槽位且只读 (6.4s)
+  ✓   85 [mobile] › e2e/history-timeline-v2.spec.ts:66:1 › 单轴顺序、同日双视角、冬季、详情与史料；桌面双轨和手机原轴真实截图 (5.9s)
+  ✓   87 [mobile] › e2e/history-timeline-v2.spec.ts:111:1 › 长纪事完整详情、同刻大组有界分页与键盘访问 (4.6s)
+  ✓   86 [mobile] › e2e/history-timeline-v2.spec.ts:89:1 › 后补历史统一插入、分页搜索和完整撤回重载，无额外AI请求 (9.2s)
+  ✓   89 [mobile] › e2e/memory-summary-v2.spec.ts:37:1 › 立即NPC总结明确选择目标，18条可按15条处理；原文与正式revision不变 (5.0s)
+  ✓   88 [mobile] › e2e/memory-summary-v2.spec.ts:5:1 › 独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入 (7.5s)
+  ✓   91 [mobile] › e2e/memory-summary-v2.spec.ts:75:99 › 短期 → 中期失败暂停独立持久化，不关闭另外两类 (5.9s)
+  ✓   90 [mobile] › e2e/memory-summary-v2.spec.ts:49:1 › NPC先失败也不阻断公共两类，失败重试仅一次；暂停只保存本类关闭 (10.0s)
+  ✓   92 [mobile] › e2e/memory-summary-v2.spec.ts:75:99 › 中期 → 长期失败暂停独立持久化，不关闭另外两类 (5.4s)
+  ✓   93 [mobile] › e2e/memory-summary-v2.spec.ts:85:1 › 三类同时失败只顺序显示一个弹窗，各自暂停且刷新不重试 (6.3s)
+  ✓   94 [mobile] › e2e/memory-summary-v2.spec.ts:101:1 › 旧默认关闭安全延续、逐项开启与刷新持久化，设置页不再显示冗余说明 (7.3s)
+  ✓   95 [mobile] › e2e/memory-summary-v2.spec.ts:129:1 › 自动总结关闭时仍可手动总结，刷新后自动保持关闭且没有额外自动调用 (6.2s)
+  ✓   96 [mobile] › e2e/memory-summary-v2.spec.ts:151:1 › 旧版 enabled=false 即使 automatic=true 也只关闭自动，不禁用手动操作 (6.3s)
+  ✓   97 [mobile] › e2e/memory.spec.ts:73:1 › 旧M4七十回合档案：搜索约定、读取来源原文、分页和窗口显示，不泄露或改写 (7.5s)
+  ✓   99 [mobile] › e2e/npc-unified-memory.spec.ts:45:38 › V6实际浏览器迁移与身份往返：记忆和总结可读，香闺七字段完整，零模型请求 (4.6s)
+  ✓  100 [mobile] › e2e/npc-unified-memory.spec.ts:45:38 › V7实际浏览器迁移与身份往返：记忆和总结可读，香闺七字段完整，零模型请求 (4.8s)
+  ✓   98 [mobile] › e2e/memory.spec.ts:110:1 › 真实正文请求使用设置N=1/10/20，并独立召回第3回合；查看记忆不中断生成 (17.9s)
+  ✓  101 [mobile] › e2e/npc-unified-memory.spec.ts:72:1 › 关闭Chromium进程后重开：统一原文、旧总结来源与休眠七字段保持持久化 (4.7s)
+  ✓  103 [mobile] › e2e/player-memory.spec.ts:87:1 › 没有游玩的有效存档时，设置高级维护安全不可操作且不开模型请求 (2.1s)
+  ✓  102 [mobile] › e2e/player-memory.spec.ts:43:1 › 四层只读记忆默认阅读，维护归位；公开来源、长文本及档案不请求AI或改变存档 (6.2s)
+  ✓  105 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：opening 布局、焦点、候选与原数据 (2.5s)
+  ✓  104 [mobile] › e2e/player-memory.spec.ts:98:1 › 空记忆与新存档四层均可读；已选存档不等于正在游玩，回首页后维护不可操作 (7.2s)
+  ✓  107 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：off 布局、焦点、候选与原数据 (2.0s)
+  ✓  106 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：ready 布局、焦点、候选与原数据 (4.0s)
+  ✓  108 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：error 布局、焦点、候选与原数据 (2.5s)
+  ✓  109 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：settled 布局、焦点、候选与原数据 (2.4s)
+  ✓  110 [mobile] › e2e/workflow-feedback.spec.ts:71:1 › 生成中：浮层关闭不取消请求，显式取消后仍可恢复；reduced motion (2.8s)
+  ✓  111 [mobile] › e2e/workflow-feedback.spec.ts:86:1 › 多个阶段错误完整保留；候选失败重试不重生成已有正文 (3.7s)
+  ✓  113 [mobile] › e2e/workflow-feedback.spec.ts:118:59 › 全局load真实错误路径保留文案和关闭操作 (3.5s)
+  ✓  112 [mobile] › e2e/workflow-feedback.spec.ts:101:1 › 全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式 (5.9s)
+  ✓  114 [mobile] › e2e/workflow-feedback.spec.ts:118:59 › 全局list真实错误路径保留文案和关闭操作 (2.8s)
+  ✓  115 [mobile] › e2e/workflow-feedback.spec.ts:118:59 › 全局selection真实错误路径保留文案和关闭操作 (4.0s)
+  ✓  116 [mobile] › e2e/world-events-archive-v2.spec.ts:19:1 › 事件档案：活动目录、并行成果、退役资料、搜索分页与兼容入口均只读 (5.8s)
+  ✓  118 [mobile] › e2e/world-events-archive-v2.spec.ts:66:1 › 正式资料更新使选中主事件失效时安全回到有效视图 (1.9s)
+  ✓  117 [mobile] › e2e/world-events-archive-v2.spec.ts:49:1 › 双端事件档案尺寸与真实截图，关闭后恢复资料入口焦点 (11.5s)
+
+
+  1) [desktop] › e2e/archive-step2.spec.ts:68:2 › 人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离 ──────────────────
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  locator('[data-archive-panel="势力组织"]')
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeFocused" locator('[data-archive-panel="势力组织"]') with timeout 5000ms
+      - waiting for locator('[data-archive-panel="势力组织"]')
+        14 × locator resolved to <button data-archive-panel="势力组织">…</button>
+           - unexpected value "inactive"
+
+
+      74 |  dialog=await org(page);if(desktop)await expect(dialog.getByRole('heading',{name:'旧城互助会',exact:true})).toBeVisible();const back=dialog.getByRole('button',{name:'← 返回组织名录',exact:true});if(await back.isVisible())await back.click();await dialog.getByLabel('搜索组织',{exact:true}).fill('澄川');await dialog.getByRole('button',{name:'查看组织：澄川工贸',exact:true}).click();
+      75 |  await dialog.getByRole('button',{name:'业务整合与新车间交接',exact:true}).click();const event=page.getByRole('dialog',{name:'世界事件',exact:true});await expect(event).toHaveJSProperty('tagName',desktop?'SECTION':'DIALOG');await expect(event.getByRole('heading',{name:'业务整合与新车间交接',exact:true})).toBeVisible();if(desktop)await expect(event.locator('[data-file-heading]:visible').first()).toBeFocused();else{expect(await event.evaluate(e=>e.matches(':modal'))).toBe(true);await page.keyboard.press('Tab');await expect.poll(()=>event.evaluate(e=>e.contains(document.activeElement))).toBe(true);}await event.press('Control+Enter');await page.keyboard.press('Escape');
+    > 76 |  if(desktop)await expect(page.locator('[data-archive-panel="势力组织"]')).toBeFocused();dialog=await org(page);if(desktop)await expect(dialog.getByRole('heading',{name:'澄川工贸',exact:true})).toBeVisible();
+         |                                                                       ^
+      77 |  expect(await rosterGame(page)).toEqual(before);verify();
+      78 | });
+      79 |
+        at /workspace/desktop-events-history-memory/e2e/archive-step2.spec.ts:76:71
+
+    Error Context: ../../tmp/s4-final-e2e/archive-step2-人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/s4-final-e2e/archive-step2-人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/s4-final-e2e/archive-step2-人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [desktop] › e2e/workflow-feedback.spec.ts:101:1 › 全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式 ──────────────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('checkbox', { name: '变量管理', exact: true })
+        - locator resolved to <input checked type="checkbox" aria-label="变量管理"/>
+      - attempting click action
+        - waiting for element to be visible, enabled and stable
+      - element was detached from the DOM, retrying
+
+
+      104 |   await page.reload();await openWorkflow(page);const before=await stored(page);
+      105 |   await page.evaluate(async()=>{const p='/src/ui/settings/model.ts',{settingsKey}=await import(p),original=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key===settingsKey)throw new Error('mock-storage');return original.call(this,key,value);};});
+    > 106 |   const box=await page.getByLabel('你的行动',{exact:true}).boundingBox();await page.getByRole('checkbox',{name:'变量管理',exact:true}).click();await expect(page.getByRole('checkbox',{name:'变量管理',exact:true})).toBeChecked();
+          |                                                                                                                                ^
+      107 |   const notice=page.locator('.app-error');await expect(notice).toContainText('运行偏好保存失败，请检查浏览器存储权限。');
+      108 |   if(info.project.name==='desktop'){await expect(notice).toHaveCSS('position','fixed');expect(await page.getByLabel('你的行动',{exact:true}).boundingBox()).toEqual(box);}
+      109 |   await page.screenshot({path:`docs/workflow-feedback/screenshots/react-global-error-${info.project.name}.png`});await notice.getByRole('button',{name:'关闭提示'}).click();await expect(notice).toHaveCount(0);
+        at /workspace/desktop-events-history-memory/e2e/workflow-feedback.spec.ts:106:128
+
+    Error Context: ../../tmp/s4-final-e2e/workflow-feedback-全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/s4-final-e2e/workflow-feedback-全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/s4-final-e2e/workflow-feedback-全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [desktop] › e2e/workflow-feedback.spec.ts:118:59 › 全局load真实错误路径保留文案和关闭操作 ──────────────────────
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation
+
+      33 | }
+      34 | async function stored(page: Page) {
+    > 35 |   return page.evaluate(async()=>{const p='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(p),repo=await SaveRepository.open();try{return await repo.loadGame('save-a');}finally{repo.close();}});
+         |               ^
+      36 | }
+      37 | for (const mode of ['opening','ready','off','error','settled'] as const) test(`确认稿工作流：${mode} 布局、焦点、候选与原数据`,async({page},info)=>{
+      38 |   await seed(page,mode);const before=await stored(page),desktop=info.project.name==='desktop';
+        at stored (/workspace/desktop-events-history-memory/e2e/workflow-feedback.spec.ts:35:15)
+        at /workspace/desktop-events-history-memory/e2e/workflow-feedback.spec.ts:119:47
+
+    Error Context: ../../tmp/s4-final-e2e/workflow-feedback-全局load真实错误路径保留文案和关闭操作-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/s4-final-e2e/workflow-feedback-全局load真实错误路径保留文案和关闭操作-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/s4-final-e2e/workflow-feedback-全局load真实错误路径保留文案和关闭操作-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [desktop] › e2e/archive-step2.spec.ts:68:2 › 人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离 ───────────────────
+    [desktop] › e2e/workflow-feedback.spec.ts:101:1 › 全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式 ───────────────
+    [desktop] › e2e/workflow-feedback.spec.ts:118:59 › 全局load真实错误路径保留文案和关闭操作 ───────────────────────
+  5 skipped
+  110 passed (7.4m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

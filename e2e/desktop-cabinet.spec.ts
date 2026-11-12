@@ -29,7 +29,7 @@ test('纸柜非模态焦点、dock切换、关联旧容器、Esc和浏览不写�
  await openNpcRoster(page);await page.getByRole('button',{name:'NPC',exact:true}).click();await expect(dialog).toHaveCount(0);
  for(const name of ['势力组织','地图','物品栏','世界事件','历史时间轴','记忆']){
   await openNpcRoster(page);await page.getByRole('button',{name,exact:true}).click();
-  await expect(page.getByRole('dialog',{name,exact:true})).toHaveJSProperty('tagName',['势力组织','物品栏'].includes(name)?'SECTION':'DIALOG');await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog',{name,exact:true})).toHaveJSProperty('tagName',['势力组织','物品栏','世界事件','历史时间轴','记忆'].includes(name)?'SECTION':'DIALOG');await page.keyboard.press('Escape');
  }
  expect(await rosterGame(page)).toEqual(before);expect(requests).toBe(0);expect(errors).toEqual([]);
 });

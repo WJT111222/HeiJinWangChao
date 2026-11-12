@@ -1,0 +1,15 @@
+{
+  "node": "v24.19.0",
+  "npm": "11.9.0",
+  "chromium": "Chromium 154.0.8037.57 built on Debian GNU/Linux 13 (trixie)",
+  "baseCommit": "332cac71ae9e4c68774d6372ff9affd14626fb8b",
+  "e2eStats": {
+    "startTime": "2026-11-12T14:58:26.727Z",
+    "duration": 393201.507,
+    "expected": 113,
+    "skipped": 5,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "sourceFrozenThroughoutFinalRun": true
+}
