@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Detail, Empty } from '../Dialog';
 import { dateTime } from './playerView';
 import type { ObservedMemory, PlayerView } from './playerView';
@@ -56,12 +56,39 @@ export function PrivateProfile({ person }: { person: Person }) {
   </section>;
 }
 
-export function NpcPanel({ view, management, initialId, onOpenOrganization }: { view: PlayerView; management?: NpcManagement; initialId?: string; onOpenOrganization?: (id: string) => void }) {
+export function NpcPanel({ view, management, initialId, onOpenOrganization, desktop = false }: { view: PlayerView; management?: NpcManagement; initialId?: string; onOpenOrganization?: (id: string) => void; desktop?: boolean }) {
+  const anchorId = useId();
+  const [activeSection, setActiveSection] = useState('profile');
+  const heading = useRef<HTMLElement>(null);
   const [query, setQuery] = useState(''), [filter, setFilter] = useState('all');
   const [personId, setPersonId] = useState<string | undefined>(initialId), [page, setPage] = useState(0);
   const directory = useRef<HTMLDivElement>(null), detail = useRef<HTMLElement>(null);
   const directoryScroll = useRef(0), backButton = useRef<HTMLButtonElement>(null), detailTitle = useRef<HTMLHeadingElement>(null);
   const selected = view.npc.find(p => p.id === personId);
+  useEffect(() => {
+    if (!desktop || !selected) return;
+    const pane = detail.current, head = heading.current;
+    if (!pane || !head) return;
+    const update = () => {
+      const sections = [...pane.querySelectorAll<HTMLElement>('[data-npc-section]')];
+      if (!head.isConnected) return;
+      const boundary = (head.dataset.longHeading === 'true' ? pane.getBoundingClientRect().top : head.getBoundingClientRect().bottom) + 12;
+      let active = sections[0]?.dataset.npcSection ?? 'profile';
+      for (const section of sections) if (section.getBoundingClientRect().top <= boundary) active = section.dataset.npcSection!;
+      if (pane.scrollTop + pane.clientHeight >= pane.scrollHeight - 2) active = sections.at(-1)?.dataset.npcSection ?? active;
+      setActiveSection(active);
+    };
+    const size = () => {
+      // Exceptionally tall names remain complete without pinning over the dossier.
+      const long = head.scrollHeight > pane.clientHeight * .4;
+      head.dataset.longHeading = String(long);
+      pane.style.setProperty('--npc-head', `${long ? 0 : head.offsetHeight + 16}px`);
+      update();
+    };
+    const observer = new ResizeObserver(size); observer.observe(head); observer.observe(pane);
+    pane.addEventListener('scroll', update, {passive:true}); size();
+    return () => { observer.disconnect(); pane.removeEventListener('scroll',update); };
+  }, [desktop, selected]);
   const linkedTasks = selected?.kind === 'special' ? view.tasks.filter(t => t.actorRef.kind === 'npc' && t.actorRef.id === selected.id || selected.offscreenTaskIds.includes(t.id)) : [];
   const needle = query.trim().toLocaleLowerCase();
   const matches = view.npc.filter(p => (filter === 'all' || p.kind === filter) &&
@@ -85,17 +112,17 @@ export function NpcPanel({ view, management, initialId, onOpenOrganization }: { 
       <div className="npc-directory" ref={directory}>
         <div className="npc-directory-tools">
           <h3>人物名录 <small>{view.npc.length}</small></h3>
-          <label className="search">搜索人物<input value={query} maxLength={4000} placeholder="姓名、别名、身份或职业"
+          <label className="search">搜索人物<input className={desktop ? 'f-input search' : undefined} value={query} maxLength={4000} placeholder="姓名、别名、身份或职业"
             onChange={e => { setQuery(e.target.value); setPage(0); }} /></label>
-          <label>人物筛选<select aria-label="人物筛选" value={filter} onChange={e => { setFilter(e.target.value); setPage(0); }}>
+          <label>人物筛选<select className={desktop ? 'f-select' : undefined} aria-label="人物筛选" value={filter} onChange={e => { setFilter(e.target.value); setPage(0); }}>
             <option value="all">全部人物</option><option value="special">特殊人物</option><option value="ordinary">普通人物</option>
           </select></label>
         </div>
-        <ul className="npc-people" aria-label="人物名录">{matches.slice(currentPage * 20, (currentPage + 1) * 20).map(person => <li key={person.id} className="npc-directory-row">
+        <ul className="npc-people" aria-label="人物名录">{matches.slice(currentPage * 20, (currentPage + 1) * 20).map(person => <li key={person.id} className="npc-directory-row" data-kind={person.kind}>
           <button className="person-row" aria-label={`查看人物：${person.name}`} aria-pressed={person.id === personId} onClick={() => select(person.id)}>
             <span className="avatar" aria-hidden="true">{Array.from(person.name)[0]}</span>
-            <span><strong>{person.name}</strong><small>{person.identity || '身份未记录'}</small><small>{person.relationshipText}</small>
-              <small>{person.onScene ? '本幕在场' : '场外人物'}{person.lastInteractionAt ? ` · ${dateTime(person.lastInteractionAt)}` : ''}</small></span>
+            <span className={desktop ? 'txt' : undefined}><strong title={person.name}>{person.name}</strong><small>{person.identity || '身份未记录'}</small><small>{person.relationshipText}</small>
+              <small>{desktop ? <><span className={`pill ${person.onScene ? 'on' : ''}`}>{person.onScene ? '本幕在场' : '场外人物'}</span>{person.lastInteractionAt && <time>{dateTime(person.lastInteractionAt)}</time>}</> : <>{person.onScene ? '本幕在场' : '场外人物'}{person.lastInteractionAt ? ` · ${dateTime(person.lastInteractionAt)}` : ''}</>}</small></span>
           </button><Star person={person} management={management} />
         </li>)}</ul>
         {!matches.length && <Empty>{view.npc.length ? '暂无符合条件的人物' : '尚无正式人物档案'}</Empty>}
@@ -104,11 +131,17 @@ export function NpcPanel({ view, management, initialId, onOpenOrganization }: { 
       </div>
       <section className="npc-detail" ref={detail} aria-label="人物详情">
         {selected ? <div key={selected.id}>
-          <header className="npc-detail-heading">
+          {desktop ? <header className="npc-detail-heading" ref={heading}>
+            <div className="nd-hero"><div className="nd-portrait"><span className="seal" aria-hidden="true">{Array.from(selected.name)[0]}</span></div>
+            <div className="nd-name"><h3 ref={detailTitle} tabIndex={-1}>{selected.name}</h3><span className="pill gold">{selected.kind === 'special' ? '特殊人物' : '普通人物'}</span>
+            <div className="facts"><span>年龄 <b>{selected.age ?? '未记录'}</b></span><span>性别 <b>{gender[selected.gender ?? 'unknown']}</b></span><span>当前位置 <b>{location(selected.locationId)}</b></span><span>{selected.onScene ? '本幕在场' : '场外人物'}</span><span>最近互动 <b>{selected.lastInteractionAt ? dateTime(selected.lastInteractionAt) : '未记录'}</b></span></div></div>
+            <div className="nd-rel"><div className="top">关系倾向 <b className={selected.affinity === null ? 'null' : selected.affinity < 0 ? 'neg' : undefined}>{selected.affinity === null ? '尚未确认' : selected.affinity}</b></div><AffinityMeter value={selected.affinity} /><div className="scale" aria-hidden="true"><span>-100</span><span>0</span><span>+100</span></div><p>与主角关系：{selected.relationshipText}</p></div><Star person={selected} management={management} /></div>
+            <nav className="nd-tabs" aria-label="人物资料分节">{[['profile','人物档案'],['contact','联系与地点'],...(selected.kind === 'special' ? [['special','特殊人物资料']] : []),['known','已知信息'],['memory','记忆与总结']].map(([key,label]) => <button key={key} aria-current={activeSection === key ? 'true' : undefined} aria-controls={`${anchorId}-${key}`} onClick={() => { const pane=detail.current, target=document.getElementById(`${anchorId}-${key}`); if(pane && target) { pane.scrollTo({top:pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-(heading.current?.dataset.longHeading === 'true' ? 0 : heading.current?.offsetHeight ?? 0)-12,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'}); setActiveSection(key); } }}>{label}</button>)}</nav>
+          </header> : <header className="npc-detail-heading">
             <button className="npc-back" ref={backButton} onClick={() => setPersonId(undefined)}>← 返回人物名录</button>
             <div className="npc-detail-title"><div><span className="tag">{selected.kind === 'special' ? '特殊人物' : '普通人物'}</span><h3 ref={detailTitle} tabIndex={-1}>{selected.name}</h3></div><Star person={selected} management={management} /></div>
-          </header>
-          <section className="npc-section"><h4>人物档案</h4><dl>
+          </header>}
+          <section className="npc-section" data-npc-section="profile" id={`${anchorId}-profile`}><h4>人物档案</h4><dl>
             <Detail label="别名">{selected.aliases.join('、') || '未记录'}</Detail>
             <Detail label="年龄">{selected.age ?? '未记录'}</Detail><Detail label="性别">{gender[selected.gender ?? 'unknown']}</Detail>
             <Detail label="身份">{selected.identity || '未记录'}</Detail>
@@ -119,23 +152,23 @@ export function NpcPanel({ view, management, initialId, onOpenOrganization }: { 
             <Detail label="能力">{selected.skills.join('、') || '未记录'}</Detail><Detail label="身体状态">{selected.healthText || '未记录'}</Detail>
             <Detail label="个人背景">{selected.background || '未记录'}</Detail>
           </dl></section>
-          <section className="npc-section"><h4>联系与常驻地点</h4>
-            <p>电话：{phone[selected.phoneContact?.status ?? 'unknown']}</p>{selected.phoneContact?.note && <p className="prose">{selected.phoneContact.note}</p>}
+          <section className="npc-section" data-npc-section="contact" id={`${anchorId}-contact`}><h4>联系与常驻地点</h4>
+            <p>电话：<span className={desktop ? `pill ${selected.phoneContact?.status === 'known' ? 'on' : selected.phoneContact?.status === 'invalid' ? 'warn' : ''}` : undefined}>{phone[selected.phoneContact?.status ?? 'unknown']}</span></p>{selected.phoneContact?.note && <p className="prose">{selected.phoneContact.note}</p>}
             {selected.usualLocations?.length ? <ul>{selected.usualLocations.map((place, i) => <li key={i}>{placeRole[place.role]}：{location(place.locationId)} <span className="tag">{place.knownToProtagonist ? '主角已知' : '世界记录／主角未知'}</span></li>)}</ul> : <Empty>常驻地点未记录</Empty>}
           </section>
-          {selected.kind === 'special' && <section className="npc-section"><h4>特殊人物资料</h4>
+          {selected.kind === 'special' && <section className="npc-section" data-npc-section="special" id={`${anchorId}-special`}><h4>特殊人物资料</h4>
             {selected.profilePending && <p className="npc-pending" role="status">特殊人物资料待完善，将在后续正常剧情的 Variables 阶段尝试补充。</p>}
             <dl><Detail label="详细经历">{selected.detailedBackground || '未记录'}</Detail><Detail label="个人目标">{selected.activeGoals.join('；') || '未记录'}</Detail><Detail label="习惯">{selected.habits.join('；') || '未记录'}</Detail></dl>
             <h4>人物关系网</h4>
-            {selected.relationshipNetwork?.length ? selected.relationshipNetwork.map((relation, i) => {
+            {selected.relationshipNetwork?.length ? <div className={desktop ? 'npc-relations' : undefined}>{selected.relationshipNetwork.map((relation, i) => {
               const target = relation.npcId ? view.npc.find(n => n.id === relation.npcId) : undefined;
               const name = target?.name ?? relation.name;
               return <article className="entry" key={i}>
                 {target ? <button className="npc-relation-link" onClick={() => select(target.id)}>{name}</button> : <strong>{name}</strong>}
-                <p>{relation.relationship} · {selected.name}对{name}的好感：{relation.affinity ?? '未知'}</p><p className="prose">{relation.description || '未记录'}</p>
+                <p>{relation.relationship} · {selected.name}对{name}的好感：{relation.affinity ?? '未知'}</p>{desktop && <AffinityMeter value={relation.affinity ?? null} />}<p className="prose">{relation.description || '未记录'}</p>
               </article>;
-            }) : <Empty>尚无已记录关系</Empty>}
-            <h4>关联任务</h4>{linkedTasks.length ? <ul>{linkedTasks.map(task => <li key={task.id}>{task.goal}</li>)}</ul> : <Empty>暂无专属任务</Empty>}
+            })}</div> : <Empty>尚无已记录关系</Empty>}
+            <h4>关联任务</h4>{linkedTasks.length ? <ul className={desktop ? 'tasks' : undefined}>{linkedTasks.map(task => <li key={task.id}>{task.goal}</li>)}</ul> : <Empty>暂无专属任务</Empty>}
           </section>}
           {onOpenOrganization && <section className="npc-section"><h4>已确认关联组织</h4>
             {view.organizations.filter(org => organizationNpcIds(org).includes(selected.id)).map(org => <p key={org.id}><button onClick={() => onOpenOrganization(org.id)}>{org.name}</button></p>)}
@@ -146,10 +179,12 @@ export function NpcPanel({ view, management, initialId, onOpenOrganization }: { 
             <Detail label="原始关系">{selected.authoredProfile?.relationshipText || '未记录'}</Detail><Detail label="原始年龄">{selected.profile.age ?? '未记录'}</Detail>
             <Detail label="外貌">{selected.profile.appearance}</Detail><Detail label="性格">{selected.profile.temperament}</Detail><Detail label="能力">{selected.profile.skills.join('、')}</Detail><Detail label="个人经历">{selected.profile.background}</Detail>
           </dl></details>}
-          <RecordList key={`${selected.id}:knowledge`} label="人物已知信息" entries={selected.knownInformation} text={info => `${info.text} ${info.source}`} render={info => <article className="entry"><p className="prose">{info.text}</p><p className="prose">来源：{info.source}</p><time>{dateTime(info.learnedAt)}</time></article>} />
-          <RecordList key={`${selected.id}:memory`} label="人物记忆与总结" entries={view.memories.filter(m => m.ownerNpcId === selected.id)} text={m => `${m.text} ${m.knowledgeSource ?? ''}`} render={memory => <PersonMemory memory={memory} view={view} person={selected} />} />
+          <div className={desktop ? "npc-section" : undefined} data-npc-section="known" id={`${anchorId}-known`}>{desktop && <h4>人物已知信息</h4>}<RecordList key={`${selected.id}:knowledge`} label="人物已知信息" entries={selected.knownInformation} text={info => `${info.text} ${info.source}`} render={info => <article className="entry"><p className="prose">{info.text}</p><p className="prose">来源：{info.source}</p><time>{dateTime(info.learnedAt)}</time></article>} /></div>
+          <div className={desktop ? "npc-section" : undefined} data-npc-section="memory" id={`${anchorId}-memory`}>{desktop && <h4>人物记忆与总结</h4>}<RecordList key={`${selected.id}:memory`} label="人物记忆与总结" entries={view.memories.filter(m => m.ownerNpcId === selected.id)} text={m => `${m.text} ${m.knowledgeSource ?? ''}`} render={memory => <PersonMemory memory={memory} view={view} person={selected} />} /></div>
         </div> : <Empty>选择人物，查看完整资料与独立认知。</Empty>}
       </section>
     </div>
   </div>;
 }
+
+function AffinityMeter({value}: {value: number | null}) { const v = value === null ? null : Math.max(-100,Math.min(100,value)); return <div className={`meter ${v === null ? 'null' : v < 0 ? 'neg' : ''}`} aria-hidden="true">{v !== null && <i style={{left:`${v < 0 ? 50 + v / 2 : 50}%`,width:`${Math.abs(v)/2}%`}} />}</div>; }

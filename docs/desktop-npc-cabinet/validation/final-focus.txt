@@ -1,0 +1,33 @@
+[WebServer] (node:107459) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:107472) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 10 tests using 2 workers
+
+(node:107497) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:107496) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   2 [desktop] › e2e/desktop-cabinet.spec.ts:37:1 › 大量NPC长姓名长描述：独立滚动、筛选、分页与完整字段 (10.3s)
+  ✓   1 [desktop] › e2e/desktop-cabinet.spec.ts:4:1 › 纸柜非模态焦点、dock切换、关联旧容器、Esc和浏览不写状态 (14.2s)
+  ✓   3 [desktop] › e2e/desktop-cabinet.spec.ts:54:1 › NPC与关联组织往返保留目标定位，未迁移组织仍为原生模态 (7.4s)
+  ✓   5 [desktop] › e2e/npc-final-acceptance.spec.ts:75:1 › 真实React连续四轮：首次建档、改名升级、离场结案、重逢记忆、七字段休眠恢复，严格12次Mock (14.4s)
+(node:107899) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   6 [mobile] › e2e/desktop-cabinet.spec.ts:4:1 › 纸柜非模态焦点、dock切换、关联旧容器、Esc和浏览不写状态 (5.6s)
+  -   7 [mobile] › e2e/desktop-cabinet.spec.ts:37:1 › 大量NPC长姓名长描述：独立滚动、筛选、分页与完整字段
+  ✓   4 [desktop] › e2e/npc-final-acceptance.spec.ts:6:1 › 千人轻量名录与300回合：多视口实际布局、分页、关系跳转、焦点与长文滚动，只读零请求 (25.9s)
+(node:108107) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   8 [mobile] › e2e/desktop-cabinet.spec.ts:54:1 › NPC与关联组织往返保留目标定位，未迁移组织仍为原生模态 (5.7s)
+  ✓  10 [mobile] › e2e/npc-final-acceptance.spec.ts:75:1 › 真实React连续四轮：首次建档、改名升级、离场结案、重逢记忆、七字段休眠恢复，严格12次Mock (9.2s)
+  ✓   9 [mobile] › e2e/npc-final-acceptance.spec.ts:6:1 › 千人轻量名录与300回合：多视口实际布局、分页、关系跳转、焦点与长文滚动，只读零请求 (17.3s)
+
+  1 skipped
+  9 passed (1.0m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

@@ -1,0 +1,268 @@
+@media (min-width:901px) {
+.app-shell-game .city-night .archive{position:fixed;top:var(--bar);left:var(--left);right:var(--dock);bottom:0;z-index:12;display:flex;flex-direction:column;
+  background:rgba(9,11,11,.88);backdrop-filter:blur(22px) saturate(1.1);-webkit-backdrop-filter:blur(22px) saturate(1.1);
+  border-left:1px solid var(--line);box-shadow:-40px 0 80px -40px #000;
+  opacity:0;transform:translateX(28px);pointer-events:none;transition:opacity .28s var(--ease),transform .28s var(--ease)}
+.app-shell-game .city-night .archive.on{opacity:1;transform:none;pointer-events:auto}
+.app-shell-game .city-night .archive::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--tint) 65%,transparent) 40%,transparent)}
+.app-shell-game .city-night .archive .ar-head{flex:none;display:flex;align-items:center;gap:1rem;padding:1rem 1.6rem;border-bottom:1px solid var(--line)}
+.app-shell-game .city-night .archive .ar-head .seal{width:2.8rem;height:2.8rem;font-size:1.25rem}
+.app-shell-game .city-night .archive .ar-title .eyebrow{display:block;margin-bottom:.15rem}
+.app-shell-game .city-night .archive .ar-title h2{display:inline;font-size:1.45rem;letter-spacing:.14em}
+.app-shell-game .city-night .archive .ar-title .sub{margin-left:.8rem;font-size:.8rem;color:var(--muted);letter-spacing:.1em}
+.app-shell-game .city-night .archive .ar-head .esc{margin-left:auto;font-family:var(--font-mono);font-size:.62rem;color:var(--dim);border:1px solid var(--line-2);border-radius:3px;padding:.05rem .35rem}
+.app-shell-game .city-night .archive .ar-close{padding:.45rem .9rem;font-size:.84rem}
+.app-shell-game .city-night .archive .ar-body{flex:1;min-height:0;display:flex;flex-direction:column;padding:0 1.6rem}
+/* dock 当前项：印章填金 + 贴向面板的指示条 */
+
+/* ---- 通用部件 ---- */
+.app-shell-game .city-night .archive .f-label{display:grid;gap:.3rem;font-size:.72rem;color:var(--dim);letter-spacing:.12em}
+.app-shell-game .city-night .archive .f-input, .app-shell-game .city-night .archive .f-select{font:inherit;font-size:.86rem;letter-spacing:0;color:var(--text);width:100%;min-width:0;border:1px solid var(--line-2);border-radius:7px;background:#ffffff06;padding:.55rem .75rem;transition:border-color .2s,box-shadow .2s}
+.app-shell-game .city-night .archive .f-input:focus, .app-shell-game .city-night .archive .f-select:focus{outline:none;border-color:var(--gold-lo);box-shadow:0 0 0 3px #c9a96118}
+.app-shell-game .city-night .archive .f-input::placeholder{color:var(--dim)}
+.app-shell-game .city-night .archive .f-input.search{padding-left:2rem;background:#ffffff06 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%237c7f73' stroke-width='1.6'%3E%3Ccircle cx='6' cy='6' r='4.5'/%3E%3Cpath d='M9.5 9.5L13 13'/%3E%3C/svg%3E") no-repeat .7rem 50%}
+.app-shell-game .city-night .archive .f-select{appearance:none;padding-right:2rem;background:#ffffff06 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%23C9A961' stroke-width='1.5'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E") no-repeat right .8rem center}
+.app-shell-game .city-night .archive .f-select option{background:#151816}
+.app-shell-game .city-night .archive .pill{display:inline-flex;align-items:center;gap:.35rem;font-size:.68rem;padding:.08rem .5rem;border-radius:999px;border:1px solid var(--line-2);color:var(--muted);white-space:nowrap;line-height:1.6}
+.app-shell-game .city-night .archive .pill.on{color:color-mix(in srgb,var(--tint) 85%,#fff);border-color:color-mix(in srgb,var(--tint) 45%,transparent);background:color-mix(in srgb,var(--tint) 10%,transparent)}
+.app-shell-game .city-night .archive .pill.on::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--tint);box-shadow:0 0 6px var(--tint)}
+.app-shell-game .city-night .archive .pill.gold{color:var(--gold-hi);border-color:var(--gold-lo);background:#c9a96112}
+.app-shell-game .city-night .archive .pill.warn{color:var(--warn-text);border-color:#6e4a3d}
+.app-shell-game .city-night .archive .status-line{display:flex;align-items:center;gap:.5rem;margin:.8rem 0 0;font-size:.82rem;color:var(--gold)}
+.app-shell-game .city-night .archive .status-line::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--gold)}
+.app-shell-game .city-night .archive .empty{margin:1rem 0;padding:1.6rem 1rem;text-align:center;font-size:.84rem;color:var(--dim);border:1px dashed #ffffff1a;border-radius:8px}
+.app-shell-game .city-night .archive .pager{display:flex;align-items:center;justify-content:center;gap:.8rem;margin:1rem 0;font-size:.8rem;color:var(--muted)}
+.app-shell-game .city-night .archive .pager button{font-size:.78rem;padding:.3rem .8rem}
+.app-shell-game .city-night .archive .sec{margin:1.3rem 0;padding:1.15rem 1.3rem 1.25rem;border:1px solid var(--line);border-radius:8px;background:#ffffff04;scroll-margin-top:10rem}
+.app-shell-game .city-night .archive .sec h4{display:flex;align-items:center;gap:.8rem;margin:0 0 .9rem;font-size:.98rem;letter-spacing:.22em;color:var(--gold)}
+.app-shell-game .city-night .archive .sec h4::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line-2),transparent)}
+.app-shell-game .city-night .archive .sec h5{font-family:var(--font-title);font-size:.88rem;letter-spacing:.16em;color:var(--muted);margin:1.2rem 0 .6rem;font-weight:600}
+.app-shell-game .city-night .archive .dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:2.2rem;margin:0}
+.app-shell-game .city-night .archive .detail{display:grid;grid-template-columns:5.6rem minmax(0,1fr);gap:.8rem;padding:.55rem 0;border-bottom:1px dashed #ffffff0e}
+.app-shell-game .city-night .archive .detail.wide{grid-column:1/-1}
+.app-shell-game .city-night .archive .detail dt{font-size:.76rem;color:var(--dim);letter-spacing:.1em;padding-top:.1rem}
+.app-shell-game .city-night .archive .detail dd{margin:0;font-size:.9rem;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
+.app-shell-game .city-night .archive .detail dd.none{color:#ffffff38}
+.app-shell-game .city-night .archive .entry{padding:.9rem 1rem;border:1px solid var(--line);border-radius:7px;background:#ffffff05}
+.app-shell-game .city-night .archive .entry+.entry{margin-top:.6rem}
+.app-shell-game .city-night .archive .entry .prose{font-size:.92rem;line-height:1.9;margin:.3rem 0 0;text-align:left}
+.app-shell-game .city-night .archive .entry time, .app-shell-game .city-night .archive .entry .meta{display:block;margin-top:.4rem;font-family:var(--font-mono);font-size:.68rem;color:var(--dim)}
+.app-shell-game .city-night .archive details.fold{margin-top:.6rem}
+.app-shell-game .city-night .archive details.fold>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;font-size:.78rem;color:var(--muted)}
+.app-shell-game .city-night .archive details.fold>summary::-webkit-details-marker{display:none}
+.app-shell-game .city-night .archive details.fold>summary::before{content:'';width:0;height:0;border-left:5px solid var(--gold);border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .2s}
+.app-shell-game .city-night .archive details.fold[open]>summary::before{transform:rotate(90deg)}
+.app-shell-game .city-night .archive details.fold>summary:hover{color:var(--gold-hi)}
+.app-shell-game .city-night .archive details.fold>*:not(summary){margin-top:.6rem;font-size:.84rem;color:var(--muted);line-height:1.8}
+.app-shell-game .city-night .archive details.sec>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.8rem;font-family:var(--font-title);font-size:.98rem;letter-spacing:.22em;color:var(--muted);font-weight:600}
+.app-shell-game .city-night .archive details.sec>summary::-webkit-details-marker{display:none}
+.app-shell-game .city-night .archive details.sec>summary::after{content:'展开';margin-left:auto;font-family:var(--font-body);font-size:.72rem;letter-spacing:.1em;color:var(--dim);font-weight:400}
+.app-shell-game .city-night .archive details.sec[open]>summary::after{content:'收起'}
+.app-shell-game .city-night .archive details.sec[open]>summary{margin-bottom:.9rem;color:var(--gold)}
+.app-shell-game .city-night .archive .chip-btn{display:inline-flex;align-items:center;gap:.45rem;font-size:.82rem;padding:.35rem .8rem;border-radius:999px;border-color:var(--line-2)}
+.app-shell-game .city-night .archive .chip-btn .seal{width:1.3rem;height:1.3rem;font-size:.62rem;border-radius:50%;box-shadow:none}
+.app-shell-game .city-night .archive .chip-btn:hover:not(:disabled){border-color:var(--gold-lo);color:var(--gold-hi)}
+.app-shell-game .city-night .archive .link-btn{border:0;padding:0;background:none;color:var(--gold);font-size:inherit;text-decoration:underline;text-decoration-color:#c9a96155;text-underline-offset:.25em}
+.app-shell-game .city-night .archive .link-btn:hover:not(:disabled){background:none;color:var(--gold-hi)}
+.app-shell-game .city-night .archive .meter{position:relative;height:6px;border-radius:3px;background:#ffffff10;overflow:hidden}
+.app-shell-game .city-night .archive .meter::after{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#ffffff40}
+.app-shell-game .city-night .archive .meter i{position:absolute;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,var(--gold-lo),var(--gold-hi))}
+.app-shell-game .city-night .archive .meter.neg i{background:linear-gradient(90deg,#d77a5e,#8f3a2a)}
+.app-shell-game .city-night .archive .meter.null{background:repeating-linear-gradient(90deg,#ffffff10 0 6px,transparent 6px 10px)}
+.app-shell-game .city-night .archive .scroll{overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#ffffff22 transparent}
+
+/* =========================================================
+   NPC 面板（样板）
+   ========================================================= */
+.app-shell-game .city-night .archive .npc-panel{flex:1;min-height:0;display:flex;flex-direction:column}
+.app-shell-game .city-night .archive .npc-layout{flex:1;min-height:0;display:grid;grid-template-columns:clamp(270px,26%,330px) minmax(0,1fr);gap:0}
+.app-shell-game .city-night .archive .npc-directory{min-height:0;border-right:1px solid var(--line);padding:1.1rem 1.2rem 1.4rem 0}
+.app-shell-game .city-night .archive .npc-directory-tools{position:sticky;top:-1.1rem;z-index:2;margin-top:-1.1rem;padding:1.1rem 0 .9rem;background:linear-gradient(180deg,rgba(9,11,11,.97) 85%,transparent);display:grid;gap:.6rem}
+.app-shell-game .city-night .archive .npc-directory-tools h3{font-size:1rem;letter-spacing:.18em;display:flex;align-items:baseline;gap:.5rem}
+.app-shell-game .city-night .archive .npc-directory-tools h3 small{font-family:var(--font-mono);font-size:.72rem;color:var(--gold);letter-spacing:.05em}
+.app-shell-game .city-night .archive .npc-directory-tools .row2{display:grid;grid-template-columns:1fr;gap:.55rem}
+.app-shell-game .city-night .archive .npc-people{list-style:none;margin:0;padding:0}
+.app-shell-game .city-night .archive .npc-people li{display:flex;align-items:center;gap:.15rem;border-bottom:1px solid #ffffff0b}
+.app-shell-game .city-night .archive .person-row{flex:1;min-width:0;display:flex;align-items:flex-start;gap:.75rem;text-align:left;border:0;border-radius:6px;padding:.75rem .6rem;position:relative}
+.app-shell-game .city-night .archive .person-row:hover:not(:disabled){background:#ffffff07}
+.app-shell-game .city-night .archive .person-row[aria-pressed=true]{background:linear-gradient(90deg,#c9a96118,transparent 85%)}
+.app-shell-game .city-night .archive .person-row[aria-pressed=true]::before{content:'';position:absolute;left:0;top:.6rem;bottom:.6rem;width:2px;border-radius:2px;background:var(--gold)}
+.app-shell-game .city-night .archive .person-row .avatar{width:2.4rem;height:2.4rem;border-radius:50%;font-size:.95rem;color:var(--text);border-color:#ffffff2a;background:#ffffff08;box-shadow:none;margin-top:.1rem}
+.app-shell-game .city-night .archive .special .person-row .avatar{color:var(--gold-hi);border-color:var(--gold-lo);background:#c9a96114;box-shadow:0 0 0 2px #0b0d0c,0 0 0 3px #c9a96144}
+.app-shell-game .city-night .archive .person-row .txt{min-width:0;display:grid;gap:.05rem}
+.app-shell-game .city-night .archive .person-row strong{font-family:var(--font-title);font-size:1rem;letter-spacing:.1em;font-weight:600}
+.app-shell-game .city-night .archive .person-row small{font-size:.72rem;color:var(--muted);line-height:1.55;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.app-shell-game .city-night .archive .person-row .meta{white-space:nowrap;display:flex;align-items:center;gap:.5rem;margin-top:.3rem;font-family:var(--font-mono);font-size:.64rem;color:var(--dim)}
+.app-shell-game .city-night .archive .npc-star{flex:none;width:2.3rem;height:2.3rem;padding:0;border-color:transparent;font-size:1.05rem;color:#ffffff40;border-radius:50%}
+.app-shell-game .city-night .archive .npc-star:hover:not(:disabled){color:var(--gold);border-color:transparent;background:#c9a96112}
+.app-shell-game .city-night .archive .npc-star.is-special{color:var(--gold);text-shadow:0 0 10px #c9a96188}
+.app-shell-game .city-night .archive .npc-directory details.fold{margin-top:1rem}
+.app-shell-game .city-night .archive .npc-detail{min-height:0;padding:0 0 2rem 1.8rem}
+.app-shell-game .city-night .archive .npc-detail-heading{position:sticky;top:0;z-index:3;padding:1.3rem 0 0;background:linear-gradient(180deg,rgba(9,11,11,.98) 88%,rgba(9,11,11,.9))}
+.app-shell-game .city-night .archive .nd-hero{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:1.2rem;align-items:center}
+.app-shell-game .city-night .archive .nd-portrait{position:relative;width:4.4rem;height:4.4rem}
+.app-shell-game .city-night .archive .nd-portrait .seal{width:100%;height:100%;font-size:1.9rem;border-radius:50%}
+.app-shell-game .city-night .archive .nd-portrait::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:1px solid color-mix(in srgb,var(--tint) 45%,transparent)}
+.app-shell-game .city-night .archive .nd-name{min-width:0}
+.app-shell-game .city-night .archive .nd-name h3{font-size:1.85rem;letter-spacing:.16em;display:inline;outline:none}
+.app-shell-game .city-night .archive .nd-name .pill{margin-left:.7rem;vertical-align:.5em}
+.app-shell-game .city-night .archive .facts{display:flex;flex-wrap:wrap;gap:.3rem 1.3rem;margin-top:.45rem;font-size:.78rem;color:var(--dim)}
+.app-shell-game .city-night .archive .facts span b{font-weight:400;color:var(--text);margin-left:.35rem}
+.app-shell-game .city-night .archive .nd-rel{width:15rem;padding:.7rem .9rem;border:1px solid var(--line);border-radius:8px;background:#ffffff05}
+.app-shell-game .city-night .archive .nd-rel .top{display:flex;justify-content:space-between;align-items:baseline;font-size:.72rem;color:var(--dim);letter-spacing:.1em;margin-bottom:.45rem}
+.app-shell-game .city-night .archive .nd-rel .top b{font-family:var(--font-mono);font-size:1rem;font-weight:500;color:var(--gold-hi);letter-spacing:0}
+.app-shell-game .city-night .archive .nd-rel .top b.null{font-family:var(--font-body);font-size:.78rem;color:var(--muted)}
+.app-shell-game .city-night .archive .nd-rel p{margin-top:.5rem;font-size:.78rem;color:var(--muted);line-height:1.6}
+.app-shell-game .city-night .archive .nd-rel .scale{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:.56rem;color:#ffffff40;margin-top:.2rem}
+.app-shell-game .city-night .archive .nd-hero .npc-star{align-self:start;width:2.6rem;height:2.6rem;font-size:1.25rem;border:1px solid var(--line-2)}
+.app-shell-game .city-night .archive .nd-tabs{display:flex;gap:1.5rem;margin-top:1rem;border-bottom:1px solid var(--line)}
+.app-shell-game .city-night .archive .nd-tabs a{position:relative;padding:.55rem 0 .65rem;font-size:.8rem;color:var(--muted);text-decoration:none;letter-spacing:.12em;white-space:nowrap}
+.app-shell-game .city-night .archive .nd-tabs a:hover{color:var(--text)}
+.app-shell-game .city-night .archive .nd-tabs a[aria-current=true]{color:var(--gold-hi)}
+.app-shell-game .city-night .archive .nd-tabs a[aria-current=true]::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--gold)}
+.app-shell-game .city-night .archive .npc-back{display:none}
+.app-shell-game .city-night .archive .places{list-style:none;margin:.6rem 0 0;padding:0;display:grid;gap:.4rem}
+.app-shell-game .city-night .archive .places li{display:flex;align-items:center;gap:.7rem;font-size:.86rem}
+.app-shell-game .city-night .archive .places li .role{flex:none;width:4.2rem;font-size:.72rem;color:var(--dim);letter-spacing:.1em}
+.app-shell-game .city-night .archive .rel-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+.app-shell-game .city-night .archive .rel-grid .entry{margin:0}
+.app-shell-game .city-night .archive .rel-grid .entry .hd{display:flex;align-items:center;justify-content:space-between;gap:.6rem}
+.app-shell-game .city-night .archive .rel-grid .entry .hd strong, .app-shell-game .city-night .archive .rel-grid .entry .hd .link-btn{font-family:var(--font-title);font-size:.98rem;letter-spacing:.1em}
+.app-shell-game .city-night .archive .rel-grid .entry .sm{font-size:.74rem;color:var(--muted);margin-top:.3rem}
+.app-shell-game .city-night .archive .rel-grid .meter{margin-top:.5rem;height:4px}
+.app-shell-game .city-night .archive .tasks{margin:.4rem 0 0;padding-left:1.2rem;font-size:.88rem;line-height:1.9}
+.app-shell-game .city-night .archive .tasks li::marker{color:var(--gold)}
+.app-shell-game .city-night .archive .mem-hd{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem}
+.app-shell-game .city-night .archive .mem-hd .k{font-size:.74rem;color:var(--muted)}
+.app-shell-game .city-night .archive .rl-tools{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1rem;align-items:end;margin-bottom:.8rem}
+.app-shell-game .city-night .archive .rl-tools .count{font-size:.74rem;color:var(--dim);padding-bottom:.6rem;white-space:nowrap}
+.app-shell-game .city-night .archive .pending{margin:0 0 .8rem;padding:.55rem .8rem;border-left:2px solid var(--gold);background:#c9a96110;font-size:.82rem;color:var(--gold-hi)}
+.app-shell-game .city-night .archive .ph{flex:1;display:grid;place-items:center;text-align:center;color:var(--dim)}
+.app-shell-game .city-night .archive .ph .seal{width:4rem;height:4rem;font-size:1.7rem;margin:0 auto 1rem}
+.app-shell-game .city-night .archive[data-tone=paper]{--sheet:#E4DCCA;--sheet-solid:#E4DCCA;--card:#EFE8D9;--hair:#2a26221a;--line:#2a26221f;--line-2:#2a262233;--ink-3:#2a262245;
+  --head:#1F1B17;--text:#2B2723;--muted:#5F574C;--dim:#857B6C;--gold:#8E6C25;--gold-hi:#6F5216;--gold-lo:#B79755;--info:#2D5E7D;--pos:#2F7A58;--neg:#A3412E;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  backdrop-filter:none;box-shadow:-30px 0 60px -20px #000c;color-scheme:light}
+.app-shell-game .city-night .archive[data-tone=paper]::before{background:linear-gradient(90deg,transparent,#A3412E66 40%,transparent)}
+.app-shell-game .city-night .archive[data-tone=paper] .eyebrow{color:#A3412E}
+.app-shell-game .city-night .archive[data-tone=paper] .seal{color:#A3412E;border-color:#A3412E99;background:#A3412E0d;box-shadow:inset 0 0 0 2px var(--sheet),inset 0 0 0 3px #A3412E40}
+.app-shell-game .city-night .archive[data-tone=paper] .ar-head .seal{color:#F4EDE0;background:#A3412E;border-color:#A3412E;box-shadow:inset 0 0 0 2px #A3412E,inset 0 0 0 3px #F4EDE066}
+.app-shell-game .city-night .archive[data-tone=paper] .esc{color:var(--dim);border-color:var(--line-2)}
+.app-shell-game .city-night .archive[data-tone=paper] button{border-color:var(--line-2)}
+.app-shell-game .city-night .archive[data-tone=paper] button:hover:not(:disabled){background:#2a26220a;border-color:#2a262255}
+.app-shell-game .city-night .archive[data-tone=paper] .f-input, .app-shell-game .city-night .archive[data-tone=paper] .f-select{background-color:#F8F4EA;color:var(--text);border-color:var(--line-2)}
+.app-shell-game .city-night .archive[data-tone=paper] .f-input:focus, .app-shell-game .city-night .archive[data-tone=paper] .f-select:focus{border-color:var(--gold);box-shadow:0 0 0 3px #8E6C2522}
+.app-shell-game .city-night .archive[data-tone=paper] .f-select option{background:#F8F4EA;color:#2B2723}
+.app-shell-game .city-night .archive[data-tone=paper] .person-row:hover:not(:disabled){background:#2a262208}
+.app-shell-game .city-night .archive[data-tone=paper] .person-row[aria-pressed=true]{background:linear-gradient(90deg,#8E6C2519,transparent 85%)}
+.app-shell-game .city-night .archive[data-tone=paper] .person-row .avatar, .app-shell-game .city-night .archive[data-tone=paper] .nd-portrait .seal{box-shadow:none}
+.app-shell-game .city-night .archive[data-tone=paper] .special .person-row .avatar{box-shadow:0 0 0 2px var(--sheet),0 0 0 3px #A3412E55}
+.app-shell-game .city-night .archive[data-tone=paper] .npc-star.is-special{color:#B07F1E;text-shadow:none}
+.app-shell-game .city-night .archive[data-tone=paper] .pill{border-color:var(--line-2);color:var(--muted)}
+.app-shell-game .city-night .archive[data-tone=paper] .pill.on{color:color-mix(in srgb,var(--tint) 45%,#1a2a28);border-color:color-mix(in srgb,var(--tint) 70%,#000 10%);background:color-mix(in srgb,var(--tint) 18%,transparent)}
+.app-shell-game .city-night .archive[data-tone=paper] .pill.gold{color:#A3412E;border-color:#A3412E66;background:#A3412E0d}
+.app-shell-game .city-night .archive[data-tone=paper] .meter{background:#2a262214}
+.app-shell-game .city-night .archive[data-tone=paper] .meter::after{background:#2a262245}
+.app-shell-game .city-night .archive[data-tone=paper] .meter.null{background:repeating-linear-gradient(90deg,#2a262218 0 6px,transparent 6px 10px)}
+.app-shell-game .city-night .archive[data-tone=paper] .nd-rel{background:var(--card)}
+.app-shell-game .city-night .archive[data-tone=paper] .nd-portrait::after{border-color:#A3412E55}
+.app-shell-game .city-night .archive[data-tone=paper] .pending{background:#8E6C2512;color:var(--gold-hi)}
+.app-shell-game .city-night .archive[data-tone=paper] .scroll{scrollbar-color:#2a262233 transparent}
+.app-shell-game .city-night .archive[data-tone=paper] .chip-btn .seal{color:#A3412E}
+
+.app-shell-game .city-night .archive .prose{color:var(--text)}
+.app-shell-game .city-night .archive .entry .prose{color:var(--text)}
+.app-shell-game .city-night .archive .nd-rel .scale{color:var(--ink-3)}
+}
+@media (min-width:901px) {
+ .app-shell-game .city-night .archive { opacity:1;transform:none;pointer-events:auto;background-color:#E4DCCA;color:var(--text);--panel:#E4DCCA;--status-bg:#EFE8D9;overflow:hidden;animation:cabinet-in .28s var(--ease); }
+ .archive .ar-body { overflow:hidden; }
+ .app-shell-game .city-night .archive .npc-directory { padding-top:1.1rem; }
+ .app-shell-game .city-night .archive .npc-directory-tools { top:-1.1rem;padding-top:1.1rem;margin-top:-1.1rem;background:#E4DCCA;display:grid;gap:.6rem; }
+ .archive .npc-directory-tools label {display:grid;gap:.3rem;}
+ .app-shell-game .city-night .archive input,.app-shell-game .city-night .archive select {background:#F8F4EA;color:var(--text);width:100%;min-width:0;border:1px solid var(--line-2);border-radius:7px;padding:.55rem .75rem;font-size:.86rem;}
+ .archive .npc-layout {gap:0;}
+ .app-shell-game .city-night .archive .npc-detail-heading {background:#E4DCCA;box-shadow:0 10px 15px -15px #403526aa;}
+ .archive .nd-name h3 {overflow-wrap:anywhere;white-space:normal;}
+ .archive .nd-hero {min-width:0;}
+ .archive .nd-rel {min-width:0;overflow-wrap:anywhere;}
+ .archive .nd-tabs {overflow-x:auto;gap:1rem;}
+ .app-shell-game .city-night .archive .nd-tabs button {border:0;border-radius:0;background:transparent;padding:.55rem 0 .65rem;font-size:.8rem;white-space:nowrap;color:var(--muted);}
+ .app-shell-game .city-night .archive .nd-tabs button[aria-current=true] {color:var(--gold);box-shadow:inset 0 -2px var(--gold);}
+ .archive [data-npc-section] {scroll-margin-top:var(--npc-head,15rem);}
+ .app-shell-game .city-night .archive .npc-section {margin:1.3rem 0;padding:1.15rem 1.3rem;border:1px solid var(--line);border-radius:8px;background:var(--card);}
+ .archive .npc-section h4 {font-family:var(--font-title);letter-spacing:.22em;}
+ .archive .npc-section dl {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 1.6rem;margin:0;}
+ .archive .npc-section .detail {grid-template-columns:5.6rem minmax(0,1fr);border-bottom:1px dashed var(--line);}
+ .archive .npc-section .detail:nth-child(10),.archive .npc-section .detail:nth-child(11),.archive .npc-section .detail:nth-child(14),.archive [data-npc-section=special] .detail {grid-column:1/-1;}
+ .app-shell-game .city-night .archive .entry {background:var(--card);border:1px solid var(--line);border-radius:7px;padding:.9rem 1rem;}
+ .archive .npc-pending {border-left:2px solid var(--gold);padding:.55rem .8rem;background:#8E6C2512;color:#6F5216;}
+ .archive .npc-feedback {color:#6F5216;}
+ .archive .person-row strong {white-space:normal;overflow-wrap:anywhere;}
+ .archive .npc-directory-row small:nth-of-type(-n+2) { -webkit-line-clamp:1; }
+ .archive .npc-directory-row small:last-child {display:block;white-space:normal;overflow:visible;}
+ .app-shell-game .city-night .world-sidebar button[aria-current=true] {color:var(--gold-hi);box-shadow:inset 2px 0 var(--gold);}
+ .world-sidebar button[aria-current=true] .dock-seal {background:linear-gradient(#e9d196,#c5a45a);color:#1a1810;}
+ @keyframes cabinet-in {from {opacity:0;transform:translateX(28px);}}
+}
+@media (min-width:901px) and (max-width:1199px) {
+ .app-shell-game .city-night .archive .npc-layout {grid-template-columns:250px minmax(0,1fr);}
+ .archive .nd-hero {grid-template-columns:3rem minmax(0,1fr) !important;}
+ .archive .nd-rel {width:auto;grid-column:1/-1;}
+ .archive .nd-hero > .npc-star {position:absolute;right:0;top:0;}
+ .app-shell-game .city-night .archive .npc-section dl {grid-template-columns:1fr;}
+ .archive .ar-body {padding:0 1.1rem;}
+}
+@media (prefers-reduced-motion:reduce) {.archive {animation:none !important;transition:none !important}.archive * {scroll-behavior:auto !important;}}
+@media (min-width:1200px) { .app-shell-game .city-night .archive .nd-hero {grid-template-columns:4.4rem minmax(0,1fr) minmax(10rem,15rem) auto;} }
+@media (min-width:901px) { .app-shell-game .city-night .archive .npc-detail-heading {max-height:40vh;overflow:auto;} }
+@media (min-width:901px) {
+ .app-shell-game .city-night .archive label {color:var(--muted);}
+ .app-shell-game .city-night .archive .npc-star {color:#857B6C;}
+ .app-shell-game .city-night .archive .npc-star.is-special {color:#8E6C25;}
+ .app-shell-game .city-night .archive .npc-directory-row[data-kind=special] .avatar {box-shadow:0 0 0 2px var(--sheet),0 0 0 3px #A3412E55;}
+}
+@media (min-width:901px) and (max-width:1199px) {
+ .app-shell-game .city-night .archive .nd-hero {grid-template-columns:3rem minmax(0,1fr) auto !important;}
+ .app-shell-game .city-night .archive .nd-portrait {width:3rem;height:3rem;}
+ .app-shell-game .city-night .archive .nd-hero > .npc-star {position:static;grid-column:3;grid-row:1;}
+}
+@media (min-width:901px) { .app-shell-game .city-night .archive .npc-star {min-width:44px;min-height:44px;} }
+/* Final paper tone from the confirmed HTML: functional colors, ink headings. */
+@media (min-width:901px) {
+ .app-shell-game .city-night .archive .ar-title h2,
+ .app-shell-game .city-night .archive .nd-name h3,
+ .app-shell-game .city-night .archive .person-row strong,
+ .app-shell-game .city-night .archive .npc-directory-tools h3 {color:var(--head);}
+ .app-shell-game .city-night .archive .npc-section h4 {display:flex;align-items:center;gap:.8rem;margin:0 0 .9rem;font-size:.98rem;color:var(--head);}
+ .app-shell-game .city-night .archive .npc-section h4:not(:first-child) {margin-top:1.2rem;}
+ .archive .npc-section h4::before {content:'';flex:none;width:3px;height:.95em;border-radius:2px;background:var(--gold);}
+ .archive .npc-section h4::after {content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line-2),transparent);}
+ .app-shell-game .city-night .archive .npc-directory-row {border-bottom-color:var(--hair);}
+ .app-shell-game .city-night .archive .npc-section .detail {border-bottom-color:var(--hair);}
+ .app-shell-game .city-night .archive .empty {border-color:var(--hair);color:var(--dim);}
+ .app-shell-game .city-night .archive .meter i {background:var(--pos);}
+ .app-shell-game .city-night .archive .meter.neg i {background:var(--neg);}
+ .app-shell-game .city-night .archive .nd-rel .top b {color:var(--pos);}
+ .app-shell-game .city-night .archive .nd-rel .top b.neg {color:var(--neg);}
+ .app-shell-game .city-night .archive .nd-rel .top b.null {color:var(--muted);}
+ .app-shell-game .city-night .archive .person-row small:last-child {display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:.3rem;}
+ .archive .person-row time {font: .6rem var(--font-mono);color:var(--dim);}
+ .archive .npc-relations {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;}
+ .app-shell-game .city-night .archive .npc-relations .entry {margin:0;min-width:0;}
+ .app-shell-game .city-night .archive .npc-relation-link {border:0;padding:0;background:none;color:var(--info);text-decoration:underline;text-underline-offset:.25em;font-family:var(--font-title);}
+ .archive .npc-memory .tag {color:var(--info);border-color:var(--line-2);}
+ .archive .npc-memory .muted {color:var(--dim);font-family:var(--font-mono);font-size:.68rem;}
+ .archive .npc-feedback {display:flex;gap:.5rem;align-items:center;}
+ .archive .npc-feedback::before {content:'';width:6px;height:6px;flex:none;border-radius:50%;background:var(--gold);}
+}
+@media (min-width:901px) and (max-width:1199px) {.archive .npc-relations {grid-template-columns:1fr;}}
+@media (min-width:1200px) {
+ .archive .npc-section > section[aria-label] {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 1rem;align-items:end;}
+ .archive .npc-section > section[aria-label] > * {grid-column:1/-1;}
+ .archive .npc-section > section[aria-label] > label {grid-column:1;}
+ .archive .npc-section > section[aria-label] > p.muted {grid-column:2;font-size:.74rem;white-space:nowrap;}
+}
+@media (min-width:901px) {
+ .app-shell-game .city-night .archive .npc-detail-heading[data-long-heading=true] {position:static;max-height:none;overflow:visible;}
+}

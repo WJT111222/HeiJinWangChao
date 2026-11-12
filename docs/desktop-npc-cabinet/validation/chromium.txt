@@ -1,0 +1,71 @@
+[WebServer] (node:102614) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:102627) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 48 tests using 2 workers
+
+(node:102651) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:102652) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   2 [desktop] › e2e/desktop-cabinet.spec.ts:37:1 › 大量NPC长姓名长描述：独立滚动、筛选、分页与完整字段 (9.7s)
+  ✓   1 [desktop] › e2e/desktop-cabinet.spec.ts:4:1 › 纸柜非模态焦点、dock切换、关联旧容器、Esc和浏览不写状态 (14.4s)
+  ✓   3 [desktop] › e2e/desktop-cabinet.spec.ts:54:1 › NPC与关联组织往返保留目标定位，未迁移组织仍为原生模态 (7.8s)
+  ✓   4 [desktop] › e2e/game-window.spec.ts:64:1 › 全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入 (3.7s)
+  ✓   5 [desktop] › e2e/game-window.spec.ts:75:1 › 顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置 (3.2s)
+  ✓   6 [desktop] › e2e/game-window.spec.ts:93:1 › 滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回 (3.7s)
+  ✓   7 [desktop] › e2e/game-window.spec.ts:114:1 › 默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态 (3.5s)
+  ✓   8 [desktop] › e2e/game-window.spec.ts:126:1 › 已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义 (3.9s)
+  ✓  10 [desktop] › e2e/game-window.spec.ts:204:1 › 缩短视口及模拟软键盘VisualViewport不遮住输入和发送 (3.0s)
+  ✓   9 [desktop] › e2e/game-window.spec.ts:135:1 › 生成中折叠不打断；取消和错误不被隐藏，失败重试成功保留正式状态 (6.1s)
+  ✓  12 [desktop] › e2e/game-window.spec.ts:243:1 › 工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间 (3.3s)
+  ✓  11 [desktop] › e2e/game-window.spec.ts:225:1 › 设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置 (6.3s)
+  ✓  13 [desktop] › e2e/npc-directory.spec.ts:6:1 › 统一名录搜索筛选、详情、联系与单向关系、来源无技术ID；双端真实截图 (8.8s)
+  ✓  14 [desktop] › e2e/npc-directory.spec.ts:38:1 › 初始同伴取消及恢复金星，七字段完整、普通记忆不丢、刷新及回填输入保留，零请求 (9.4s)
+  ✓  15 [desktop] › e2e/npc-directory.spec.ts:61:1 › 首次加星只保存待完善；保存中重复点击无效，正式CAS只递增一次 (5.9s)
+  ✓  16 [desktop] › e2e/npc-directory.spec.ts:79:1 › 跨标签过期星标准确失败并同步正式状态，完整候选不丢，无自动重试 (7.9s)
+  ✓  18 [desktop] › e2e/npc-directory.spec.ts:105:1 › IndexedDB中途写入失败原子回滚，星标不假成功，候选完整保留 (6.3s)
+  ✓  17 [desktop] › e2e/npc-directory.spec.ts:92:1 › 真实Story请求中本页与其他标签管理均拒绝，不取消请求；随后正常三阶段结算 (11.4s)
+  ✓  19 [desktop] › e2e/npc-directory.spec.ts:119:1 › 名录只读空状态，以及正式人物消失后的安全返回 (5.7s)
+  ✓  21 [desktop] › e2e/npc-final-acceptance.spec.ts:75:1 › 真实React连续四轮：首次建档、改名升级、离场结案、重逢记忆、七字段休眠恢复，严格12次Mock (13.9s)
+  ✓  20 [desktop] › e2e/npc-final-acceptance.spec.ts:6:1 › 千人轻量名录与300回合：多视口实际布局、分页、关系跳转、焦点与长文滚动，只读零请求 (26.0s)
+  ✓  22 [desktop] › e2e/organization-archive.spec.ts:19:1 › PC三宽度/手机三宽度真实档案截图：未知身份、长概况、低频状态、只读查看不解锁 (11.2s)
+  ✓  23 [desktop] › e2e/organization-archive.spec.ts:45:1 › 搜索/过滤/分页和返回焦点；组织→NPC→组织、组织间与事件跳转，零请求零写档 (11.6s)
+(node:104040) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  24 [desktop] › e2e/organization-archive.spec.ts:73:1 › 真实三阶段Mock结案更新组织→刷新档案与已结束事件→撤回，主角财务和NPC无副作用 (11.7s)
+(node:104180) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  -  26 [mobile] › e2e/desktop-cabinet.spec.ts:37:1 › 大量NPC长姓名长描述：独立滚动、筛选、分页与完整字段
+  ✓  25 [mobile] › e2e/desktop-cabinet.spec.ts:4:1 › 纸柜非模态焦点、dock切换、关联旧容器、Esc和浏览不写状态 (5.8s)
+  ✓  28 [mobile] › e2e/game-window.spec.ts:64:1 › 全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入 (4.0s)
+  ✓  27 [mobile] › e2e/desktop-cabinet.spec.ts:54:1 › NPC与关联组织往返保留目标定位，未迁移组织仍为原生模态 (7.0s)
+  ✓  29 [mobile] › e2e/game-window.spec.ts:75:1 › 顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置 (3.8s)
+  ✓  30 [mobile] › e2e/game-window.spec.ts:93:1 › 滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回 (4.0s)
+  ✓  31 [mobile] › e2e/game-window.spec.ts:114:1 › 默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态 (3.7s)
+  ✓  32 [mobile] › e2e/game-window.spec.ts:126:1 › 已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义 (5.5s)
+  ✓  33 [mobile] › e2e/game-window.spec.ts:135:1 › 生成中折叠不打断；取消和错误不被隐藏，失败重试成功保留正式状态 (7.5s)
+  ✓  34 [mobile] › e2e/game-window.spec.ts:204:1 › 缩短视口及模拟软键盘VisualViewport不遮住输入和发送 (4.1s)
+  ✓  36 [mobile] › e2e/game-window.spec.ts:243:1 › 工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间 (5.6s)
+  ✓  35 [mobile] › e2e/game-window.spec.ts:225:1 › 设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置 (11.4s)
+  ✓  37 [mobile] › e2e/npc-directory.spec.ts:6:1 › 统一名录搜索筛选、详情、联系与单向关系、来源无技术ID；双端真实截图 (20.1s)
+  ✓  38 [mobile] › e2e/npc-directory.spec.ts:38:1 › 初始同伴取消及恢复金星，七字段完整、普通记忆不丢、刷新及回填输入保留，零请求 (20.2s)
+  ✓  39 [mobile] › e2e/npc-directory.spec.ts:61:1 › 首次加星只保存待完善；保存中重复点击无效，正式CAS只递增一次 (12.8s)
+  ✓  40 [mobile] › e2e/npc-directory.spec.ts:79:1 › 跨标签过期星标准确失败并同步正式状态，完整候选不丢，无自动重试 (17.8s)
+  ✓  42 [mobile] › e2e/npc-directory.spec.ts:105:1 › IndexedDB中途写入失败原子回滚，星标不假成功，候选完整保留 (10.3s)
+  ✓  41 [mobile] › e2e/npc-directory.spec.ts:92:1 › 真实Story请求中本页与其他标签管理均拒绝，不取消请求；随后正常三阶段结算 (23.7s)
+  ✓  43 [mobile] › e2e/npc-directory.spec.ts:119:1 › 名录只读空状态，以及正式人物消失后的安全返回 (10.7s)
+  ✓  45 [mobile] › e2e/npc-final-acceptance.spec.ts:75:1 › 真实React连续四轮：首次建档、改名升级、离场结案、重逢记忆、七字段休眠恢复，严格12次Mock (21.1s)
+  ✓  44 [mobile] › e2e/npc-final-acceptance.spec.ts:6:1 › 千人轻量名录与300回合：多视口实际布局、分页、关系跳转、焦点与长文滚动，只读零请求 (36.9s)
+  ✓  46 [mobile] › e2e/organization-archive.spec.ts:19:1 › PC三宽度/手机三宽度真实档案截图：未知身份、长概况、低频状态、只读查看不解锁 (12.2s)
+  ✓  47 [mobile] › e2e/organization-archive.spec.ts:45:1 › 搜索/过滤/分页和返回焦点；组织→NPC→组织、组织间与事件跳转，零请求零写档 (10.9s)
+  ✓  48 [mobile] › e2e/organization-archive.spec.ts:73:1 › 真实三阶段Mock结案更新组织→刷新档案与已结束事件→撤回，主角财务和NPC无副作用 (10.9s)
+
+  1 skipped
+  47 passed (4.0m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
