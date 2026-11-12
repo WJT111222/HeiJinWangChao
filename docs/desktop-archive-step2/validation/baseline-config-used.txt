@@ -1,0 +1,3 @@
+import {defineConfig} from '/workspace/desktop-profile-organizations/node_modules/@playwright/test/index.mjs';
+import base from '/workspace/desktop-step2-baseline/playwright.config.ts';
+export default defineConfig({...base,testDir:'/workspace/desktop-step2-baseline/e2e',timeout:60000,use:{...base.use,baseURL:'http://127.0.0.1:5186'},webServer:{command:'npm run dev -- --host 127.0.0.1 --port 5186 --strictPort',cwd:'/workspace/desktop-step2-baseline',url:'http://127.0.0.1:5186',reuseExistingServer:true}});

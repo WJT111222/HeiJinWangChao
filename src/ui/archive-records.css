@@ -1,0 +1,169 @@
+/* Confirmed desktop archive step 2. No styles apply to mobile dialogs. */
+@media (min-width:901px) {
+/* ---- 人物档案 ---- */
+.app-shell-game .city-night .archive .pf{flex:1;min-height:0;padding:1.4rem 0 2rem}
+.app-shell-game .city-night .archive .pf-id{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:1.4rem;align-items:center;padding:1.3rem 1.5rem;border:1px solid var(--line-2);border-radius:10px;background:var(--card);position:relative;overflow:hidden}
+.app-shell-game .city-night .archive .pf-stamp{position:absolute;right:13.5rem;top:50%;transform:translateY(-50%) rotate(-14deg);width:4.2rem;height:4.2rem;display:grid;place-items:center;border:2px solid #A3412E80;border-radius:50%;color:#A3412Ecc;font-family:var(--font-title);font-size:1rem;letter-spacing:.2em;box-shadow:inset 0 0 0 3px var(--card),inset 0 0 0 4px #A3412E40;pointer-events:none}
+.app-shell-game .city-night .archive .pf-photo{width:5.6rem;height:7rem;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:4px;background:repeating-linear-gradient(135deg,#2a262208 0 6px,transparent 6px 12px);font-family:var(--font-title);font-size:2.6rem;color:#A3412E;position:relative}
+.app-shell-game .city-night .archive .pf-photo::before{content:'';position:absolute;inset:5px;border:1px dashed #2a262230;border-radius:2px}
+.app-shell-game .city-night .archive .pf-id h3{font-size:2.1rem;letter-spacing:.2em;color:var(--head)}
+.app-shell-game .city-night .archive .pf-id .line{margin-top:.35rem;font-size:.86rem;color:var(--muted);letter-spacing:.08em}
+.app-shell-game .city-night .archive .pf-id .no{margin-top:.6rem;font-family:var(--font-mono);font-size:.66rem;letter-spacing:.2em;color:var(--dim)}
+.app-shell-game .city-night .archive .pf-entry{display:grid;gap:.45rem;min-width:11rem}
+.app-shell-game .city-night .archive .pf-entry button{font-size:.84rem;padding:.5rem .9rem;text-align:left;display:flex;justify-content:space-between;gap:.8rem}
+.app-shell-game .city-night .archive .pf-entry button span{color:var(--dim)}
+.app-shell-game .city-night .archive .pf-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,34%);gap:0 1.4rem;align-items:start}
+.app-shell-game .city-night .archive .pf-now{margin:1.3rem 0;border-radius:8px;overflow:hidden;border:1px solid var(--line-2);background:linear-gradient(160deg,color-mix(in srgb,var(--tint) 16%,var(--card)),var(--card) 65%)}
+.app-shell-game .city-night .archive .pf-now .hd{display:flex;justify-content:space-between;align-items:center;padding:.8rem 1.1rem;border-bottom:1px solid var(--line)}
+.app-shell-game .city-night .archive .pf-now .hd h4{margin:0;display:flex;align-items:center;gap:.6rem;font-size:.98rem;letter-spacing:.22em;color:var(--head)}
+.app-shell-game .city-night .archive .pf-now .hd h4::before{content:'';width:3px;height:.95em;border-radius:2px;background:var(--gold)}
+.app-shell-game .city-night .archive .pf-now .hd .city{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.24em;color:color-mix(in srgb,var(--tint) 45%,#1a2a28)}
+.app-shell-game .city-night .archive .pf-now .dl{grid-template-columns:1fr;padding:.3rem 1.1rem .6rem}
+.app-shell-game .city-night .archive .pf-now .detail{grid-template-columns:4.2rem minmax(0,1fr)}
+.app-shell-game .city-night .archive .pf-now .detail.time dd{font-family:var(--font-mono);font-size:.95rem;color:var(--head)}
+.app-shell-game .city-night .archive .pf-now .detail.cand dd{color:var(--gold-hi)}
+.app-shell-game .city-night .archive .conds{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin:0}
+.app-shell-game .city-night .archive .cond-card{padding:.7rem .85rem;border:1px solid var(--line);border-radius:7px;background:#F6F1E6}
+.app-shell-game .city-night .archive .cond-card dt{font-size:.7rem;letter-spacing:.2em;color:var(--dim)}
+.app-shell-game .city-night .archive .cond-card dd{margin:.25rem 0 0;font-size:.88rem;line-height:1.7;color:var(--text)}
+.app-shell-game .city-night .archive .cond-card.body{border-left:3px solid var(--pos)}
+.app-shell-game .city-night .archive .cond-card.mood{border-left:3px solid var(--info)}
+.app-shell-game .city-night .archive .cond-card.soc{border-left:3px solid var(--gold)}
+.app-shell-game .city-night .archive .cond-card.law{border-left:3px solid var(--neg)}
+.app-shell-game .city-night .archive .skill-tags{display:flex;flex-wrap:wrap;gap:.35rem;margin:0;padding:0;list-style:none}
+.app-shell-game .city-night .archive .skill-tags li{font-size:.78rem;padding:.12rem .6rem;border-radius:4px;border:1px solid color-mix(in srgb,var(--info) 35%,transparent);color:var(--info);background:color-mix(in srgb,var(--info) 7%,transparent)}
+.app-shell-game .city-night .archive .slots{display:grid;grid-template-columns:1fr;gap:.4rem;margin:0}
+.app-shell-game .city-night .archive .slot{display:grid;grid-template-columns:2rem minmax(0,1fr);gap:.6rem;align-items:center;padding:.55rem .7rem;border:1px solid var(--line);border-radius:7px;background:#F6F1E6}
+.app-shell-game .city-night .archive .slot .ic{width:2rem;height:2rem;display:grid;place-items:center;border-radius:5px;background:#2a26220d;font-family:var(--font-title);font-size:.8rem;color:var(--muted)}
+.app-shell-game .city-night .archive .slot dt{font-size:.66rem;letter-spacing:.18em;color:var(--dim)}
+.app-shell-game .city-night .archive .slot dd{margin:0;font-size:.84rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-shell-game .city-night .archive .slot.empty-slot{background:transparent;border-style:dashed}
+.app-shell-game .city-night .archive .slot.empty-slot dd{color:var(--ink-3)}
+.app-shell-game .city-night .archive .slot.wide{grid-column:1/-1}
+
+/* ---- 势力组织 ---- */
+.app-shell-game .city-night .archive{--k-gang:#A3412E;--k-government:#2D5E7D;--k-civil:#2F7A58;--k-business:#8E6C25}
+.app-shell-game .city-night .archive .org-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.15rem .6rem;width:100%;text-align:left;border:0;border-radius:6px;padding:.8rem .7rem .8rem .95rem;position:relative;border-bottom:1px solid var(--hair)}
+.app-shell-game .city-night .archive .org-row::before{content:'';position:absolute;left:0;top:.75rem;bottom:.75rem;width:3px;border-radius:2px;background:var(--k);opacity:.75}
+.app-shell-game .city-night .archive .org-row:hover:not(:disabled){background:#2a262208}
+.app-shell-game .city-night .archive .org-row[aria-pressed=true]{background:linear-gradient(90deg,color-mix(in srgb,var(--k) 12%,transparent),transparent 85%)}
+.app-shell-game .city-night .archive .org-row[aria-pressed=true]::before{opacity:1;box-shadow:0 0 0 1px var(--k)}
+.app-shell-game .city-night .archive .org-row strong{font-family:var(--font-title);font-size:1rem;letter-spacing:.08em;color:var(--head);font-weight:600}
+.app-shell-game .city-night .archive .org-row .snip{grid-column:1/-1;font-size:.74rem;color:var(--muted);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.app-shell-game .city-night .archive .org-row .rel{grid-column:1/-1;font-size:.7rem;color:var(--dim)}
+.app-shell-game .city-night .archive .kpill{display:inline-flex;align-items:center;font-size:.66rem;padding:.06rem .5rem;border-radius:3px;white-space:nowrap;color:var(--k);border:1px solid color-mix(in srgb,var(--k) 45%,transparent);background:color-mix(in srgb,var(--k) 8%,transparent);height:max-content}
+.app-shell-game .city-night .archive [data-kind=gang]{--k:var(--k-gang)}.app-shell-game .city-night .archive [data-kind=government]{--k:var(--k-government)}.app-shell-game .city-night .archive [data-kind=civil]{--k:var(--k-civil)}.app-shell-game .city-night .archive [data-kind=business]{--k:var(--k-business)}
+.app-shell-game .city-night .archive .og-emblem{width:4.4rem;height:4.4rem;display:grid;place-items:center;font-family:var(--font-title);font-size:1.9rem;color:#F4EDE0;background:var(--k);border-radius:6px;box-shadow:inset 0 0 0 3px var(--k),inset 0 0 0 4px #F4EDE066,0 6px 14px -8px #0008}
+.app-shell-game .city-night .archive .og-rel{width:15rem;padding:.7rem .9rem;border:1px solid var(--line);border-radius:8px;background:var(--card);font-size:.8rem;color:var(--text);line-height:1.65}
+.app-shell-game .city-night .archive .og-rel small{display:block;font-size:.7rem;color:var(--dim);letter-spacing:.12em;margin-bottom:.25rem}
+.app-shell-game .city-night .archive .roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(14rem,1fr));gap:.6rem;margin:0;padding:0;list-style:none}
+.app-shell-game .city-night .archive .roster li{padding:.75rem .9rem;border:1px solid var(--line);border-radius:7px;background:#F6F1E6}
+.app-shell-game .city-night .archive .roster .pos{font-size:.68rem;letter-spacing:.18em;color:var(--dim)}
+.app-shell-game .city-night .archive .roster .who{margin-top:.2rem;font-family:var(--font-title);font-size:1rem;letter-spacing:.1em;color:var(--head)}
+.app-shell-game .city-night .archive .roster .who.unknown{color:var(--ink-3);font-family:var(--font-body);font-size:.86rem;letter-spacing:.05em}
+.app-shell-game .city-night .archive .roster p{margin-top:.35rem;font-size:.8rem;color:var(--muted);line-height:1.7}
+.app-shell-game .city-night .archive .orel{display:grid;gap:.5rem}
+.app-shell-game .city-night .archive .orel .entry{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.2rem .8rem;align-items:center}
+.app-shell-game .city-night .archive .orel .entry .seal{grid-row:1/3;width:2.2rem;height:2.2rem;font-size:.85rem;border-radius:5px;color:#F4EDE0!important;background:var(--k)!important;border-color:var(--k)!important;box-shadow:none!important}
+.app-shell-game .city-night .archive .orel .entry .hd{display:flex;align-items:center;gap:.6rem}
+.app-shell-game .city-night .archive .orel .entry .prose{margin:0;font-size:.84rem}
+.app-shell-game .city-night .archive .dyn{list-style:none;margin:0;padding:0;display:grid;gap:.35rem}
+.app-shell-game .city-night .archive .dyn li{display:flex;align-items:center;gap:.7rem;padding:.5rem .75rem;border:1px solid var(--line);border-radius:6px;background:#F6F1E6;font-size:.86rem}
+.app-shell-game .city-night .archive .dyn li .st{margin-left:auto}
+.app-shell-game .city-night .archive .st{font-size:.66rem;padding:.06rem .5rem;border-radius:999px;white-space:nowrap;border:1px solid currentColor}
+.app-shell-game .city-night .archive .st.active{color:var(--info)}.app-shell-game .city-night .archive .st.blocked{color:var(--neg)}.app-shell-game .city-night .archive .st.scheduled,.app-shell-game .city-night .archive .st.planned,.app-shell-game .city-night .archive .st.cancelled{color:var(--dim)}.app-shell-game .city-night .archive .st.resolved,.app-shell-game .city-night .archive .st.completed{color:var(--pos)}
+.app-shell-game .city-night .archive .hist{list-style:none;margin:.4rem 0 0;padding:0 0 0 1rem;border-left:1px solid var(--line-2)}
+.app-shell-game .city-night .archive .hist li{position:relative;padding:.3rem 0 .5rem .2rem;font-size:.86rem;line-height:1.75;color:var(--text)}
+.app-shell-game .city-night .archive .hist li::before{content:'';position:absolute;left:-1.33rem;top:.75rem;width:7px;height:7px;border-radius:50%;background:var(--sheet);border:1.5px solid var(--gold)}
+.app-shell-game .city-night .archive .hist li:last-child::before{background:var(--gold)}
+.app-shell-game .city-night .archive .tech{font-family:var(--font-mono);font-size:.72rem;color:var(--muted)}
+.app-shell-game .city-night .archive .tech dl{margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:.2rem 1rem}
+.app-shell-game .city-night .archive .tech dt{color:var(--dim)}.app-shell-game .city-night .archive .tech dd{margin:0;overflow-wrap:anywhere}
+.app-shell-game .city-night .archive .money{font-family:var(--font-mono);letter-spacing:.02em}
+
+}
+@media (min-width:901px) {
+ .app-shell-game .city-night .status-actions button[aria-current=true] {border-color:var(--gold);color:var(--gold-hi);background:#c9a96114;box-shadow:inset 0 -2px var(--gold);}
+ .archive .ar-title {min-width:0;flex:1;}
+ .archive .ar-title .sub {display:inline-block;max-width:min(45vw,40rem);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;}
+ .archive .pf {overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;}
+ .archive .pf-name {min-width:0;padding-right:5rem;overflow-wrap:anywhere;}
+ .archive .pf .pf-entry {display:grid;}
+ .archive .pf .pf-id h3 {margin:0;}
+ .app-shell-game .city-night .archive .sec h4,.app-shell-game .city-night .archive .pf-profession h3 {display:flex;align-items:center;gap:.8rem;margin:0 0 .9rem;font-size:.98rem;letter-spacing:.22em;color:var(--head);}
+ .archive .sec h4::before,.archive .pf-profession h3::before {content:'';flex:none;width:3px;height:.95em;border-radius:2px;background:var(--gold);}
+ .archive .sec h4::after,.archive .pf-profession h3::after {content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line-2),transparent);}
+ .archive .pf-grid > div {min-width:0;}
+ .archive .pf .profession-profile {margin:0;}
+ .archive .pf .profession-profile dl {margin:0;}
+ .archive .pf .detail {border-bottom-color:var(--hair);min-width:0;}
+ .archive .pf .pf-basics .detail:nth-child(n+5) {grid-column:1/-1;}
+ .archive .pf .pf-now .detail:first-child dd {font-family:var(--font-mono);font-size:.95rem;color:var(--head);}
+ .archive .pf .pf-now dl[data-candidate-time=true] .detail:nth-child(2) dd {color:var(--gold-hi);}
+ .archive .pf .cond-card dd {white-space:pre-wrap;overflow-wrap:anywhere;display:block;overflow:visible;-webkit-line-clamp:unset;}
+ .archive .pf .slot {grid-template-rows:auto auto;gap:.1rem .6rem;}
+ .archive .pf .slot .ic {grid-row:1/3;}
+ .archive .pf .slot dt,.archive .pf .slot dd {grid-column:2;}
+ .app-shell-game .city-night .archive .pf .slot dd {white-space:normal;overflow-wrap:anywhere;overflow:visible;text-overflow:clip;}
+ .app-shell-game .city-night .archive .organization-layout {grid-template-columns:clamp(270px,26%,330px) minmax(0,1fr);gap:0;}
+ .app-shell-game .city-night .archive .organization-directory {border-right:1px solid var(--line);padding:1.1rem 1.2rem 1.4rem 0;}
+ .app-shell-game .city-night .archive .organization-directory-tools {top:-1.1rem;margin-top:-1.1rem;padding:1.1rem 0 .9rem;background:var(--sheet-solid);z-index:3;}
+ .archive .organization-directory-tools h3 {font-size:1rem;letter-spacing:.18em;color:var(--head);}
+ .archive .organization-directory-tools h3 small {font: .72rem var(--font-mono);color:var(--gold);margin-left:.5rem;}
+ .app-shell-game .city-night .archive .organization-directory label {font-size:.72rem;letter-spacing:.12em;color:var(--dim);}
+ .app-shell-game .city-night .archive .organization-rows {display:block;margin-top:0;}
+ .app-shell-game .city-night .archive .organization-rows > .org-row {gap:.15rem .6rem;}
+ .archive .org-row .organization-snippet {grid-column:1/-1;font-size:.74rem;line-height:1.6;}
+ .app-shell-game .city-night .archive .organization-detail {padding:0 0 2rem 1.8rem;}
+ .app-shell-game .city-night .archive .organization-detail-heading,.app-shell-game .city-night .archive .npc-detail-heading {background:var(--sheet-solid);background-image:none;opacity:1;}
+ .app-shell-game .city-night .archive .organization-detail-heading {position:sticky;top:0;z-index:3;padding:1.3rem 0 0;box-shadow:0 12px 14px -12px #0000002e;max-height:40vh;overflow:auto;}
+ .app-shell-game .city-night .archive .organization-detail-heading[data-long-heading=true] {position:static;max-height:none;overflow:visible;}
+ .app-shell-game .city-night .archive .organization-detail .nd-hero {grid-template-columns:4.4rem minmax(0,1fr) auto;}
+ .app-shell-game .city-night .archive .organization-detail .nd-name h3 {display:block;margin:.35rem 0 0;overflow-wrap:anywhere;color:var(--head);}
+ .archive .organization-detail .nd-name {min-width:0;}
+ .archive .organization-detail .og-rel {width:15rem;max-width:100%;min-width:0;overflow-wrap:anywhere;}
+ .archive .organization-detail .nd-tabs {overflow-x:auto;}
+ .archive [data-org-section] {scroll-margin-top:var(--org-head,15rem);}
+ .app-shell-game .city-night .archive .organization-detail .sec {margin:1.3rem 0;padding:1.15rem 1.3rem 1.25rem;}
+ .app-shell-game .city-night .archive .organization-detail h4 {padding:0;border:0;}
+ .app-shell-game .city-night .archive .organization-detail h5 {color:var(--muted);font-family:var(--font-title);font-size:.88rem;letter-spacing:.16em;margin:1.2rem 0 .6rem;}
+ .archive .org-state .detail:not(:has(.money)) {grid-column:1/-1;}
+ .archive .org-state .detail {border-bottom-color:var(--hair);}
+ .app-shell-game .city-night .archive .organization-detail .roster,.app-shell-game .city-night .archive .organization-detail .orel {list-style:none;padding:0;}
+ .app-shell-game .city-night .archive .roster .pos {display:block;font-weight:400;}
+ .app-shell-game .city-night .archive .roster .who {display:block;}
+ .app-shell-game .city-night .archive .roster .who.link-btn {display:inline-block;min-height:0;}
+ .app-shell-game .city-night .archive .organization-detail .orel .entry {grid-template-columns:2.2rem minmax(0,1fr) auto;}
+ .archive .organization-detail .orel .entry .prose {grid-column:2/-1;}
+ .app-shell-game .city-night .archive .link-btn {color:var(--info);border:0;background:transparent;padding:0;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--info) 40%,transparent);text-underline-offset:.25em;}
+ .app-shell-game .city-night .archive .link-btn:hover:not(:disabled) {color:var(--head);background:transparent;}
+ .archive .organization-detail .dyn-entry {display:flex;flex-wrap:wrap;align-items:center;gap:.7rem;padding:.5rem .75rem;border:1px solid var(--line);border-radius:6px;background:#F6F1E6;font-size:.86rem;}
+ .archive .organization-detail .dyn-entry > .st {margin-left:auto;}
+ .archive .organization-detail .dyn-entry .link-btn {min-height:0;text-align:left;}
+ .archive .organization-detail .history-entry {border-left:1px solid var(--line-2);padding:.3rem 0 .5rem 1rem;}
+ .app-shell-game .city-night .archive .organization-detail > .world-record {margin:1.3rem 0;padding:1.15rem 1.3rem;border:1px solid var(--line);border-radius:8px;background:var(--card);font-family:var(--font-mono);font-size:.72rem;}
+ .archive .organization-detail > .world-record > summary {font-family:var(--font-title);font-size:.98rem;letter-spacing:.22em;color:var(--muted);}
+ .archive .organization-detail .world-record-field {min-width:0;}
+ .archive .organization-detail .world-record dd {white-space:pre-wrap;overflow-wrap:anywhere;}
+}
+@media (min-width:901px) and (max-width:1199px) {
+ .app-shell-game .city-night .archive .pf-grid {grid-template-columns:1fr;}
+ .archive .pf-stamp {display:none;}
+ .archive .pf-name {padding-right:0;}
+ .app-shell-game .city-night .archive .organization-layout {grid-template-columns:250px minmax(0,1fr);}
+ .app-shell-game .city-night .archive .organization-detail .nd-hero {grid-template-columns:3rem minmax(0,1fr) !important;}
+ .archive .organization-detail .og-emblem {width:3rem;height:3rem;}
+ .archive .organization-detail .og-rel {width:auto;grid-column:1/-1;}
+ .archive .organization-detail .dl {grid-template-columns:1fr;}
+ .archive .organization-detail .roster {grid-template-columns:1fr;}
+}
+@media (min-width:901px) and (max-width:1199px) {
+ .app-shell-game .city-night .archive .pf-stamp {display:none;}
+ .app-shell-game .city-night .archive .organization-detail .og-rel {width:auto;grid-column:1/-1;}
+ .app-shell-game .city-night .archive .organization-detail .roster {grid-template-columns:1fr;}
+}
+@media (min-width:901px) {
+ .app-shell-game .city-night .archive .sec {background:var(--card);}
+ .app-shell-game .city-night .archive .pf-profession h3 {font-weight:600;}
+ .archive .organization-detail .orel .tag {max-width:8rem;white-space:normal;overflow-wrap:anywhere;}
+}

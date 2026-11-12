@@ -1,0 +1,20 @@
+[WebServer] (node:124521) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:124534) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 2 workers
+
+(node:124562) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:124561) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  2 [mobile] › e2e/step2-mobile-visual.spec.ts:29:2 › 人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料 (8.7s)
+  ✓  1 [mobile] › e2e/step2-mobile-visual.spec.ts:49:2 › 四种组织颜色、完整字段、折叠、双滚动、纸色吸顶及桌面矩阵 (9.0s)
+
+  2 passed (11.5s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

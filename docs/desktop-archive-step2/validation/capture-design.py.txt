@@ -1,0 +1,14 @@
+import asyncio
+from playwright.async_api import async_playwright
+async def main():
+ async with async_playwright() as p:
+  browser=await p.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+  page=await browser.new_page(viewport={'width':1440,'height':900})
+  for name,file in [('人物档案','design-profile-1440.png'),('势力组织','design-organization-1440.png')]:
+   await page.goto('about:blank')
+   await page.goto('http://127.0.0.1:5185/docs/desktop-npc-cabinet/design/heijin-panels.html#panel='+name)
+   await page.reload()
+   await page.locator('.archive.on .ar-title h2').filter(has_text=name).wait_for(state='visible')
+   await page.screenshot(path='/workspace/desktop-profile-organizations/docs/desktop-archive-step2/screenshots/'+file,animations='disabled')
+  await browser.close()
+asyncio.run(main())

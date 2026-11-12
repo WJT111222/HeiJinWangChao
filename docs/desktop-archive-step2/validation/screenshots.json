@@ -1,0 +1,122 @@
+{
+  "comparison.png": {
+    "width": 1920,
+    "height": 1455,
+    "sha256": "3fde5729230b7b1397c636d472cefa0624ab81db12121612efff8b0be4b44f70"
+  },
+  "design-organization-1440.png": {
+    "width": 1440,
+    "height": 900,
+    "sha256": "2916e407b66b03c3f2a863f32719eaf1746da9376f2f463320722e732e398995"
+  },
+  "design-profile-1440.png": {
+    "width": 1440,
+    "height": 900,
+    "sha256": "9d017ccd08766a9401239a1ac898026be8dc9c3ce3527a22fa632d19fb7c640f"
+  },
+  "main-organization-mobile.png": {
+    "width": 1024,
+    "height": 2216,
+    "sha256": "715a27506b1cc931117d93b7f099fd9b958e658c1239b61854c25b79f0148432"
+  },
+  "main-profile-mobile.png": {
+    "width": 1024,
+    "height": 2216,
+    "sha256": "3e4240d14f5ab467f1b686eb1116779cc442247bde615ab7ba5f519b1fc3aad8"
+  },
+  "npc-to-organization.png": {
+    "width": 1440,
+    "height": 1000,
+    "sha256": "9defe57815ae998f982c4b181bfc94366788e03af45ddf53536a20b400936af5"
+  },
+  "organization-1100.png": {
+    "width": 1100,
+    "height": 800,
+    "sha256": "f4f8c6449a41b95b674b96fbbb844cf4a4cb1adcee15cae1e644f4c683a0292b"
+  },
+  "organization-1280.png": {
+    "width": 1280,
+    "height": 800,
+    "sha256": "9d1a1e6b1bf2c59cd26359feb28c43b6609aa09598bcb7d43ce6ecc1145a3bb4"
+  },
+  "organization-1440.png": {
+    "width": 1440,
+    "height": 900,
+    "sha256": "13b5e8346b7bbac18a12019ff7d994f855a17e5c3fc915a11dbc05afb038e03c"
+  },
+  "organization-1920.png": {
+    "width": 1920,
+    "height": 1080,
+    "sha256": "796ad695baa253b745a6ab063f9b23c84c2b5f6cb207086afb414521c6727b10"
+  },
+  "organization-details-1440.png": {
+    "width": 1440,
+    "height": 900,
+    "sha256": "69571059f11bbbb15375dc0cc8dffc41b6a849646bec3751e3649cbf1712340e"
+  },
+  "organization-from-npc.png": {
+    "width": 1440,
+    "height": 1000,
+    "sha256": "8db89100baee298072a1655d5113285c9adc2b9358474989b2706a77768ee420"
+  },
+  "organization-mobile.png": {
+    "width": 1024,
+    "height": 2216,
+    "sha256": "715a27506b1cc931117d93b7f099fd9b958e658c1239b61854c25b79f0148432"
+  },
+  "organization-stress-1100.png": {
+    "width": 1100,
+    "height": 800,
+    "sha256": "e4b7da28e461d6c9feeac9fb105913ebb2a25992ebf96a913bbd475c5660ec04"
+  },
+  "organization-stress-1280.png": {
+    "width": 1280,
+    "height": 800,
+    "sha256": "ba1cf04d216e483ef637b5ff267fb65737581b2379ab2454cc554b24362d34a4"
+  },
+  "organization-stress-1440.png": {
+    "width": 1440,
+    "height": 800,
+    "sha256": "f7d6c9f9a1eb82fa2c26815d5e7b0a1f90a9e933fa1a1228fc83f864d09f46e5"
+  },
+  "profile-1100.png": {
+    "width": 1100,
+    "height": 800,
+    "sha256": "535b2696d535241268fd6ad5ffe62e07472d4d6f5d324bfbc81703fddf196833"
+  },
+  "profile-1280.png": {
+    "width": 1280,
+    "height": 800,
+    "sha256": "b90eceb8c789514893f0445dfebc02c2d1d9107eb4265e7acb13595bdf19df8e"
+  },
+  "profile-1440.png": {
+    "width": 1440,
+    "height": 900,
+    "sha256": "e185863e71f20bf26d447268caf9da6b7fca8985f5c65cf4167eb4203502d46d"
+  },
+  "profile-1920.png": {
+    "width": 1920,
+    "height": 1080,
+    "sha256": "f9a76bb941fb7de31cafa0c77027e8082bb3ef92f10a3ea637e5b0aed0f2613f"
+  },
+  "profile-candidate.png": {
+    "width": 1440,
+    "height": 1000,
+    "sha256": "d00a643dc2ac3134b627ea9deb6219d62986bf0c8a9956db6f242d3c394d5e60"
+  },
+  "profile-equipment-1440.png": {
+    "width": 1440,
+    "height": 900,
+    "sha256": "f11eb34c11ee8e70336587d56f48aa2f51c232788dad6338875f5f7486147bf6"
+  },
+  "profile-long-1100.png": {
+    "width": 1100,
+    "height": 800,
+    "sha256": "24f4f7daadb01ba46c68420eaf3452aac647acb346a0bc0390ee02b8dc30add4"
+  },
+  "profile-mobile.png": {
+    "width": 1024,
+    "height": 2216,
+    "sha256": "3e4240d14f5ab467f1b686eb1116779cc442247bde615ab7ba5f519b1fc3aad8"
+  }
+}

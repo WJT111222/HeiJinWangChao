@@ -2,6 +2,8 @@ import { useNpcManagement } from './useNpcManagement';
 import type { NpcManagementResult } from './npcManagement';
 import { ArchivePanel } from '../ArchivePanel';
 import { NpcPanel } from '../panels/NpcPanel';
+import { OrganizationPanel } from '../panels/OrganizationPanel';
+import { ProfilePanel } from '../panels/ProfilePanel';
 import { PlayerStatus } from './PlayerStatus';
 import { TurnUndoControl } from './TurnUndoControl';
 import type { TurnUndoResult } from '../../services/storage/saveRepository';
@@ -93,9 +95,14 @@ export function GameScreen({
     try { return draft && openingTimeSelection(state, draft); } catch { return undefined; }
   }, [state, draft]);
   const [archiveTarget, setArchiveTarget] = useState<{panel: 'NPC' | '势力组织' | '世界事件'; id: string}>();
-  const openArchive = (panel: 'NPC' | '势力组织' | '世界事件', id: string) => { setArchiveTarget({panel,id}); setPanel(panel); };
+  const archiveSelection = useRef<Partial<Record<'NPC' | '势力组织', string>>>({});
+  const openArchive = (panel: 'NPC' | '势力组织' | '世界事件', id: string) => {
+    if (panel !== '世界事件') archiveSelection.current[panel] = id;
+    setArchiveTarget({panel,id}); setPanel(panel);
+  };
   const [panel, setPanel] = useState<PanelName | '人物档案' | '经济与资产'>();
   const compactSidebars = useSyncExternalStore(subscribeSidebarSize, () => window.matchMedia(sidebarMedia).matches, () => false);
+  const desktopArchive = !compactSidebars && (panel === 'NPC' || panel === '势力组织' || panel === '人物档案') ? panel : undefined;
   const [worldDirectoryOpen, setWorldDirectoryOpen] = useState(false);
   const [input, setInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -803,7 +810,7 @@ export function GameScreen({
   return (
     <main className="game-layout city-night" data-city={atmosphere.city} data-time={atmosphere.time} data-wx={atmosphere.weather}
       onKeyDown={event => {
-        if (compactSidebars || panel === 'NPC' || event.nativeEvent.isComposing || event.repeat || (event.target as HTMLElement).closest('dialog, .archive')) return;
+        if (compactSidebars || desktopArchive || event.nativeEvent.isComposing || event.repeat || (event.target as HTMLElement).closest('dialog, .archive')) return;
         if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.altKey) {
           event.preventDefault(); void send(); return;
         }
@@ -815,8 +822,8 @@ export function GameScreen({
         }
       }}>
       {!compactSidebars && <><CityAtmosphere state={state} /><CityBar state={state} /></>}
-      <PlayerStatus state={state} equipment={equipment} onProfile={() => setPanel('人物档案')} onEconomy={() => setPanel('经济与资产')} />
-      <section inert={!compactSidebars && panel === 'NPC'} className="story-column" aria-label="剧情与行动">
+      <PlayerStatus state={state} equipment={equipment} activePanel={compactSidebars ? undefined : panel} onProfile={() => { setArchiveTarget(undefined); setPanel(desktopArchive === '人物档案' ? undefined : '人物档案'); }} onEconomy={() => setPanel('经济与资产')} />
+      <section inert={Boolean(desktopArchive)} className="story-column" aria-label="剧情与行动">
         <div
           className={`reader ${!view.journal.length && !draft?.story && !progress ? 'reader-empty' : ''}`}
           ref={reader}
@@ -1046,10 +1053,15 @@ export function GameScreen({
         <p className="muted">从身边的人，到更远的城市。</p>
         {worldNavigation}
       </Dialog>}
-      {!compactSidebars && panel === 'NPC' && <ArchivePanel title="NPC" seal="人" subtitle="人物名录" onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }} returnFocus={() => document.querySelector<HTMLButtonElement>('[data-archive-panel="NPC"]')}>
-        <NpcPanel view={view} management={npcManagement} initialId={archiveTarget?.panel === 'NPC' ? archiveTarget.id : undefined} onOpenOrganization={id => openArchive('势力组织', id)} desktop />
+      {desktopArchive && <ArchivePanel key={desktopArchive} title={desktopArchive} seal={desktopArchive === 'NPC' ? '人' : desktopArchive === '势力组织' ? '势' : '档'} index={desktopArchive === '势力组织' ? 2 : 1}
+        eyebrow={desktopArchive === '人物档案' ? 'PROTAGONIST · 主角档案' : undefined}
+        subtitle={desktopArchive === '人物档案' ? `主角 · ${hero.name}` : desktopArchive === 'NPC' ? '人物名录' : '势力与机构'}
+        onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }} returnFocus={() => document.querySelector<HTMLButtonElement>(`[data-archive-panel="${desktopArchive}"]`)}>
+        {desktopArchive === '人物档案' ? <ProfilePanel state={state} equipment={equipment} candidateTime={openingTime?.endAt} onEconomy={() => setPanel('经济与资产')} onNpc={() => { setArchiveTarget(undefined); setPanel('NPC'); }} onSaves={onSaves} />
+          : desktopArchive === 'NPC' ? <NpcPanel view={view} management={npcManagement} initialId={archiveTarget?.panel === 'NPC' ? archiveTarget.id : archiveSelection.current.NPC} onOpenOrganization={id => openArchive('势力组织', id)} onSelect={id => { archiveSelection.current.NPC = id; }} desktop />
+          : <OrganizationPanel view={view} initialId={archiveTarget?.panel === '势力组织' ? archiveTarget.id : archiveSelection.current['势力组织']} links={{npc:id=>openArchive('NPC',id), organization:id=>openArchive('势力组织',id), event:id=>openArchive('世界事件',id)}} onSelect={id => { archiveSelection.current['势力组织'] = id; }} desktop />}
       </ArchivePanel>}
-      {panel && (compactSidebars || panel !== 'NPC') && (
+      {panel && !desktopArchive && (
         <Dialog title={panel} className={panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : ''} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>
           {panel === '人物档案' ? (
             <>

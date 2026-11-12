@@ -1,0 +1,15 @@
+Baseline HEAD: 4fba364b91e0ac5c0d309f43c4c7506c705addd5
+Tracked src diff against HEAD: empty (exit 0).
+
+Baseline dependency versions: shared node_modules from npm ci; package.json/package-lock.json unchanged.
+
+Commands:
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test --config=/tmp/s2-baseline-playwright.config.ts --project=mobile e2e/step2-mobile-baseline.spec.ts --grep "人物档案真实字段|人物→NPC"
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test --config=/tmp/s2-baseline-playwright.config.ts --project=desktop e2e/city-night-followups.spec.ts --grep "天气环境详情"
+
+The copied probe file is untracked test code. No baseline product source changed.
+
+Mobile visual parity control (run from the baseline worktree):
+cp /workspace/desktop-profile-organizations/e2e/archive-step2.spec.ts e2e/step2-mobile-visual.spec.ts
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test --config=/tmp/s2-baseline-playwright.config.ts --project=mobile e2e/step2-mobile-visual.spec.ts --grep "人物档案真实字段|四种组织颜色"
+Both cases passed. The two mobile screenshots have identical PNG SHA-256 and identical RGBA pixels across baseline and branch.

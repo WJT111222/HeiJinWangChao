@@ -56,7 +56,7 @@ export function PrivateProfile({ person }: { person: Person }) {
   </section>;
 }
 
-export function NpcPanel({ view, management, initialId, onOpenOrganization, desktop = false }: { view: PlayerView; management?: NpcManagement; initialId?: string; onOpenOrganization?: (id: string) => void; desktop?: boolean }) {
+export function NpcPanel({ view, management, initialId, onOpenOrganization, desktop = false, onSelect }: { view: PlayerView; management?: NpcManagement; initialId?: string; onOpenOrganization?: (id: string) => void; desktop?: boolean; onSelect?: (id: string) => void }) {
   const anchorId = useId();
   const [activeSection, setActiveSection] = useState('profile');
   const heading = useRef<HTMLElement>(null);
@@ -103,7 +103,7 @@ export function NpcPanel({ view, management, initialId, onOpenOrganization, desk
     }
     else if (directory.current) directory.current.scrollTop = directoryScroll.current;
   }, [personId]);
-  function select(id: string) { if (directory.current?.getClientRects().length) directoryScroll.current = directory.current.scrollTop; setPersonId(id); }
+  function select(id: string) { if (directory.current?.getClientRects().length) directoryScroll.current = directory.current.scrollTop; setPersonId(id); onSelect?.(id); }
   const location = (id?: string) => view.locations.find(p => p.id === id)?.name ?? '未记录';
   return <div className="npc-panel" data-detail={Boolean(selected)}>
     {management?.message && <p className="npc-feedback" role="status">{management.message}</p>}
