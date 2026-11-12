@@ -82,3 +82,41 @@
 原因：环境无法安装依赖。正式验证由具备完整环境（Node 24、Vitest、Chromium）的 Codex 执行。
 
 已做的仅限辅助性静态检查：用 DefinitelyTyped 的 React 类型、Zod 源码和全局 Playwright 类型临时跑 `tsc --noEmit`。改动文件和全部 e2e 文件没有出现类型错误；剩余报错只来自缺少 vitest、Node 和 Vite 的类型。这项检查不等于项目的 typecheck。第一轮那张静态页面截图只用于核对样式，不代表真实页面。
+
+## Codex 最终工程验收（2026-11-13）
+
+验收基线为远端 `e3dd05436e0cb812d5ae0cdb9610faa079531e6b`，与用户指定一致；原分支 `claude/workflow-panel-v2`，base/main 为 `a8334e8f9429b0423eab01690f3751dce96a227c`，包含合并的 #115。Node v24.19.0，npm ci 实际安装 143 个锁定依赖。此前“未运行”的记录仅描述 Claude 开发环境，以下为本次独立真实执行记录。
+
+新增 `e2e/pr117-acceptance.spec.ts` 在真实 React 游戏、合成存档上检查 1440、1280、1100、901px 桌面及 390px 手机：长正文滚动、候选主动查看、输入框与面板位置、无横向溢出、视图操作零模型请求、正式状态不变、刷新恢复。四个桌面视口截图与重载共用一个测试，因此测试预算为 90 秒，未改原有测试超时或断言。
+
+### 测试编排失败记录
+
+初始全量浏览器批次原计划 700 条：2 通过、2 失败、2 中断、694 未运行。原因是并行截图运行共用默认 test-results，互相清理 trace 产物导致 ENOENT；不能视作游戏业务失败，也不能视作完整验收。该截图批次 2 失败（桌面还发生点击超时），同样不计为成功。已停止受污染批次，后续全量改用独立 `/tmp/pr117-e2e-final-results`，包含新增两条验收测试；不与中断批次拼接成绩。
+
+### 最终结果
+
+- `npm ci`：成功，安装 143 个依赖。
+- `npm run check`：退出码 0；Lint 通过，Vitest **128 文件、3234 通过、0 失败、0 跳过**；TypeScript 与生产构建通过。构建仅提示已有的大 chunk 体量警告。
+- `npm run prompts:check`：退出码 0，**3 文件、93 通过、0 失败、0 跳过**。
+- 完整 Chromium 批次按用户最新指令停止：**276 通过、25 失败、2 中断、1 跳过、398 未运行**，退出码 130，42.5 分钟。详见 `docs/pr117-acceptance/full-interrupted-results.json`；Playwright 汇总 JSON 将未运行项合入 skipped，本报告按终端真实结果明确拆分。不能声称全量通过。
+- 按新范围改跑 `workflow-feedback`、`action-workflow`、`automatic-settlement`、`pr117-acceptance` 四文件（桌面/手机，单 worker）。结果：**87 通过、0 失败、7 预期跳过**，退出码 0，8.3 分钟。桌面 46 通过/1 手机专用跳过；手机 41 通过/6 PC 专用跳过（其中 ready/settled 是两个独立用例）。明细见 `docs/pr117-acceptance/targeted-results.json`。所有网络场景使用 Mock，没有调用真实模型。
+
+### 中断批次的未解决项与范围
+
+25 项失败包含旧首页/档案定位（未进入存档馆、未选择事件详情、旧 `.modal-body` / `.detail`）、旧阅读对齐断言，以及 30 秒总时限或 5 秒异步等待超时。失败详情逐项保留在上面的清单。相关生产路径静态对照 main 未变化，但**没有完成独立 main 浏览器对照，不能据此宣称全部都是 main 已有失败**。用户随后明确取消全量、限定工作流相关回归，因此不继续扩张创角、NPC 总结、天气或档案改造，也不删除/跳过/放宽这些失败断言。
+
+本次提交前实际 `git var GIT_AUTHOR_IDENT` 与 `git var GIT_COMMITTER_IDENT` 均使用公开昵称 Wood 和指定 GitHub noreply 邮箱。
+
+### 定向验收结论与真实截图
+
+本轮定向回归全部成功，未发现需要修复的生产 UI 问题；没有修改生产代码、领域逻辑、Schema、Prompt、事务或既有测试断言。新增验收用例只操作合成存档，检查候选、长正文滚动、刷新、面板/输入位置、只读状态与零额外模型请求。此前全量的 25 个失败未因定向通过而被抹除，也没有宣称已全部确诊或修复。
+
+- [1440px](docs/pr117-acceptance/react-1440.png)
+- [1280px](docs/pr117-acceptance/react-1280.png)
+- [1100px](docs/pr117-acceptance/react-1100.png)
+- [901px](docs/pr117-acceptance/react-901.png)
+- [390px 手机](docs/pr117-acceptance/react-390.png)
+
+截图均为实际 Chromium React 游戏页面。PC 窄宽度标题/标签换行、详情内部滚动，结算按钮与输入不重叠；手机保留原卡片与候选弹窗。`docs/workflow-feedback/screenshots` 同步保存阶段状态、候选、错误、撤回/设置对话框等实际截图。
+
+最终新增测试后的 Lint 与 `git diff --check` 通过。此前完整工程检查与 Prompt 检查结果独立保留，不与浏览器中断或定向批次相加。构建仅有 chunk 体量提醒；Mock 结果不代表真实模型质量验收。PR 保持未合并，无部署、无真实收费调用。
