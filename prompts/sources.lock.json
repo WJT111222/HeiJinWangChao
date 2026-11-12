@@ -690,6 +690,11 @@
         "previousTreatment": "command-contract-alignment",
         "notes": "依两次真实World失败做通用契约澄清：World创建初值、亲属/好感确认区别、原私密档案资格、同批引用与真实地理父级；不修改正式Schema、权限、记忆内容或地图实现，原文只本地回放不公开。",
         "sha256": "41037a1539ffdabc2662113fa719025fa28840d2607945c8623c3d456385be51"
+      },
+      "worldCommandStability": {
+        "baseCommit": "ac5942f541ac0ef751357c5fb101f8bb8a65b02a",
+        "notes": "World命令层级、记忆记录窗口、任务结束依据、事件来源/不可变字段和输出自检；仅澄清既有契约，保留此前来源记录，不改变领域规则或增加模型请求。",
+        "sha256": "afb7f9847672b6e26988fabc6a21a51cc79d2d7d1fd7a9bb01adac95f47f7725"
       }
     },
     "stages/opening/variables.md": {
@@ -744,6 +749,11 @@
         "baseCommit": "ba661d7eb59a87cd353d686edb48ddd7a9444f9d",
         "notes": "V2分类时间调度、固定阶段结算与唯一退役成果、长窗口自然承接及独立后续入场；保留旧事件语义和所有历史来源。",
         "sha256": "18bee2e9b702f2b38b722daa1b0c2c7913c27a16e3142dcaa12f73d69ffcd883"
+      },
+      "worldCommandStability": {
+        "baseCommit": "ac5942f541ac0ef751357c5fb101f8bb8a65b02a",
+        "notes": "World命令层级、记忆记录窗口、任务结束依据、事件来源/不可变字段和输出自检；仅澄清既有契约，保留此前来源记录，不改变领域规则或增加模型请求。",
+        "sha256": "5c57506d35a29f3d6ea69086adc8a43320801f145121fed7af2f20c6dc72db9a"
       }
     },
     "stages/regular/variables.md": {
@@ -790,6 +800,11 @@
         "baseCommit": "ba661d7eb59a87cd353d686edb48ddd7a9444f9d",
         "notes": "V2分类时间调度、固定阶段结算与唯一退役成果、长窗口自然承接及独立后续入场；保留旧事件语义和所有历史来源。",
         "sha256": "1ecb17f12ae4dd1b463cf64bceabc60f779149747a5d11452db1b9206073d98d"
+      },
+      "worldCommandStability": {
+        "baseCommit": "ac5942f541ac0ef751357c5fb101f8bb8a65b02a",
+        "notes": "World命令层级、记忆记录窗口、任务结束依据、事件来源/不可变字段和输出自检；仅澄清既有契约，保留此前来源记录，不改变领域规则或增加模型请求。",
+        "sha256": "e44180488f476a5a66027b9c888a38a52374288a5dc43315a39c93f7d5a5cfab"
       }
     },
     "variableGroups/protagonist/init.md": {

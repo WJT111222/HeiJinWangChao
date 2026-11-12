@@ -79,7 +79,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         case 'RecordNpcMemory': {
           requireWorld(causal.npc[command.npcId] && actorAllowed({kind:'npc', id:command.npcId}), 'permission');
           requireWorld(Date.parse(command.memory.createdAtGameTime) >= Date.parse(state.worldClock)
-            && Date.parse(command.memory.createdAtGameTime) <= now, 'invalid_output', 'event_time');
+            && Date.parse(command.memory.createdAtGameTime) <= now, 'invalid_output', 'memory_time_window', 'memory.createdAtGameTime');
           break;
         }
         case 'CreateNpc': {
@@ -160,7 +160,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
               : Boolean(causal.npc[ref.id] || (base.retiredNpcs[ref.id] && old?.actorRefs.some(prior => sameActor(prior,ref)))), 'permission', 'actor_permission', `event.actorRefs.${index}`));
           if (old) {
             requireWorld(old.startAt === event.startAt
-              && old.completionCondition === event.completionCondition);
+              && old.completionCondition === event.completionCondition, 'invalid_output', 'event_immutable', old.startAt !== event.startAt ? 'event.startAt' : 'event.completionCondition');
             if (terminalEvent(old)) requireWorld(fingerprint(old) === fingerprint(event), 'invalid_output','event_transition');
             if (['active','blocked'].includes(old.status)) requireWorld(event.status !== 'scheduled', 'invalid_output','event_transition', 'event.status');
           } else requireWorld(!Object.values(base.events).some(known => known.title === event.title
@@ -172,7 +172,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
           }
           const knownTurns = new Set([draft.turnId, ...state.journal.map(entry => entry.turnId)]);
           requireWorld(event.sourceTurnIds.includes(draft.turnId) && event.sourceTurnIds.every(id => knownTurns.has(id))
-            && (old?.sourceTurnIds ?? []).every(id => event.sourceTurnIds.includes(id)));
+            && (old?.sourceTurnIds ?? []).every(id => event.sourceTurnIds.includes(id)), 'invalid_output', 'event_sources', 'event.sourceTurnIds');
           if (['active','blocked','resolved'].includes(event.status)) requireWorld(Date.parse(event.startAt) <= now, 'invalid_output','event_time');
           if (event.status === 'resolved') requireWorld(event.resolvedAt && event.resolutionText?.trim(), 'invalid_output','event_transition');
           // Objective progress never implicitly refreshes an already held character snapshot.
