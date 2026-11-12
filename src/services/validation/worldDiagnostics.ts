@@ -7,6 +7,10 @@ export const worldRuleNames = {
   json: '世界响应不是合法JSON', schema: '世界输出字段缺失或类型不符',
   constraint: '世界命令未满足执行约束', command_structure: '命令类型或分组不符合世界协议',
   task_state: '任务状态、成果或执行时间不合法',
+  task_plan: '任务必须提供 dueAt 或非空 completionCondition',
+  memory_time_window: 'NPC 记忆记录时间必须位于正式起始时间与本轮投影停止时间之间',
+  event_sources: '事件来源须包含当前回合、保留全部旧来源，且只能引用正式历史或当前回合',
+  event_immutable: '事件类型或父子字段组合不合法，或既有起点、固定结束时间、完成条件被改写',
   actor_permission: '行动者或字段超出场外权限', event_plan: '事件规划字段不完整', event_time: '事件开始、预计或结案时间冲突',
   organization_initialization: 'World 新建组织的 relationHistory 必须为空，关系变化请使用独立关系命令',
   event_transition: '事件状态转换不合法', completion_conditions: '完成所需前置条件尚未满足',
@@ -47,13 +51,15 @@ export function worldValidationError(error: unknown, scope: Scope = {}, raw?: un
   }
   const original = error instanceof AiError ? error : undefined;
   const rule: WorldRule = original?.details?.worldRule ?? (error instanceof DataError
-    ? error.code==='STAGE_DUE'?'stage_due':error.code==='STAGE_RESULT'?'stage_result':error.code==='STAGE_EARLY_WRITE'?'stage_early_write':error.code==='STAGE_ENTRY'?'stage_entry':/TIME|REVERSED/.test(error.code) ? 'event_time'
+    ? error.code==='TASK_PLAN'?'task_plan':error.code==='EVENT_CONTEXT'?'event_immutable':error.code==='STAGE_DUE'?'stage_due':error.code==='STAGE_RESULT'?'stage_result':error.code==='STAGE_EARLY_WRITE'?'stage_early_write':error.code==='STAGE_ENTRY'?'stage_entry':/TIME|REVERSED/.test(error.code) ? 'event_time'
       : ['DUPLICATE_ID','DUPLICATE_NPC','NPC_IDENTITY','AMBIGUOUS_NPC'].includes(error.code) ? 'entity_id'
-      : ['TASK_PLAN','TASK_ACTOR','TERMINAL_TASK','DUPLICATE_HANDOFF','HANDOFF_IMMUTABLE'].includes(error.code) ? 'task_state'
-      : ['TERMINAL_EVENT','EVENT_STATUS','EVENT_CONTEXT','EVENT_NOT_TERMINAL'].includes(error.code) ? 'event_transition' : 'domain_state'
+      : ['TASK_ACTOR','TERMINAL_TASK','DUPLICATE_HANDOFF','HANDOFF_IMMUTABLE'].includes(error.code) ? 'task_state'
+      : ['TERMINAL_EVENT','EVENT_STATUS','EVENT_NOT_TERMINAL'].includes(error.code) ? 'event_transition' : 'domain_state'
     : original?.code === 'invalid_json' ? 'json' : original?.code === 'permission' ? 'actor_permission' : scope.worldRule ?? 'constraint');
-  const field = original?.details?.fieldPath;
-  return new AiError(rule === 'event_time' ? 'time_data' : original?.code ?? 'data_integrity', original?.status, {
+  const field = original?.details?.fieldPath ?? (error instanceof DataError
+    ? error.code === 'TASK_PLAN' && scope.commandType === 'SaveTask' ? 'task'
+      : error.code === 'EVENT_CONTEXT' && scope.commandType === 'SaveEvent' ? 'event' : undefined : undefined);
+  return new AiError((rule === 'event_time' || rule === 'memory_time_window') ? 'time_data' : original?.code ?? 'data_integrity', original?.status, {
     ...scope, ...original?.details, worldRule: rule,
     fieldPath: field && scope.fieldPath && !field.startsWith(scope.fieldPath) ? `${scope.fieldPath}.${field}` : field ?? scope.fieldPath,
     commandIndex: scope.commandIndex ?? original?.details?.commandIndex,

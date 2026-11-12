@@ -1,0 +1,75 @@
+Node v24.19.0. All model requests use Mock. No paid API calls.
+
+Earlier failed engineering batch: lint passed; Vitest 128 files / 3234 passed; subsequent TypeScript failed TS2345 (test helper inferred never[]). Build and chained prompts:check did not run. Fixed by explicit ReturnType<typeof worldResult>; no assertion changes.
+
+Final npm run check (exit 0; asset listing omitted):
+
+> heijinwangchao@0.1.0 check
+> npm run lint && npm run test && npm run build
+
+
+> heijinwangchao@0.1.0 lint
+> eslint . --max-warnings=0
+
+
+> heijinwangchao@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 /workspace/world-contract-stability
+
+
+ Test Files  128 passed (128)
+      Tests  3234 passed (3234)
+   Start at  18:47:01
+   Duration  102.34s (tests 77%, import 21%, transform 1%, worker 1%)
+
+    Isolate  128 workers spawned · ~89ms startup each (spawn + environment, per file)
+             at least ~11.31s faster with isolate: false — reuses workers across files instead of one per file
+
+
+> heijinwangchao@0.1.0 build
+> npm run typecheck && vite build
+
+
+> heijinwangchao@0.1.0 typecheck
+> tsc --noEmit
+
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 415 modules transformed.
+rendering chunks...
+computing gzip size...
+
+✓ built in 551ms
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+Final npm run prompts:check (exit 0):
+
+> heijinwangchao@0.1.0 prompts:check
+> vitest run src/tests/prompts.test.ts src/tests/prompt-runtime.test.ts src/tests/prompt-inspector.test.ts
+
+
+ RUN  v5.0.5 /workspace/world-contract-stability
+
+
+ Test Files  3 passed (3)
+      Tests  93 passed (93)
+   Start at  18:48:59
+   Duration  2.54s (tests 65%, import 25%, transform 10%, worker 1%)
+
+
+Chromium: e2e/world-runtime.spec.ts e2e/world-npc-creation.spec.ts, desktop + mobile, /usr/bin/chromium. Exit 0.
+{
+  "startTime": "2026-11-12T18:41:22.941Z",
+  "duration": 110101.105,
+  "expected": 14,
+  "skipped": 0,
+  "unexpected": 0,
+  "flaky": 0
+}
+14 expected / 0 unexpected / 0 skipped / 0 flaky. 7 desktop, 7 mobile.

@@ -102,6 +102,29 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
     ],
     ...(stage === 'world'
       ? {
+          commandGuides: {
+            UpdateNpc: {
+              fields: 'activeGoals 是命令顶层字段，与 changes 同级，不允许放进 changes；仅 special 人物可写 activeGoals。changes 放 locationId/healthText/onScene 等目录允许的状态字段，仍遵守场外权限和本轮字段冲突保护。',
+              version: 'expectedRevision 使用 BASE_SAVE_REVISION（等于 TURN_CONTEXT.baseSaveRevision），不是模拟次数、人物版本或下一回合版本。示例 ID、版本和内容仅说明结构，必须换为本次合法值，不据此创建人物。',
+              example: { commandId: 'example-update-npc', type: 'UpdateNpc', evidence: '合法场外状态变化', expectedRevision: 1,
+                npcId: 'example-npc', changes: { healthText: '本轮发生的状态变化' }, activeGoals: ['当前行动目标'] },
+            },
+            RecordNpcMemory: {
+              time: 'TIME_WINDOW.from ≤ memory.createdAtGameTime ≤ TIME_WINDOW.to（按实际时间戳，含两端）；from 为正式起始时间，待定开局使用 Story 已确认开场时间；to 为合法 Variables 投影停止时间。variablePending 时没有已验证的新时间权限。',
+              meaning: '历史事件发生时间不等于本轮记忆记录时间。本轮确实收到旧事消息时可记录本轮获知经过并标明 reported/suspected 与实际来源；不能将旧事补写为本轮亲历，也不能伪造当前时间绕过窗口。已有记忆不重复新增。',
+              ownership: '复用 npcId、稳定记忆 ID 和真实 sourceTurnIds/affectedEntityRefs；可引用本批合法创建的场外 NPC，不能写受保护人物或传播其他人的私人知识。',
+            },
+            SaveTask: {
+              plan: '新写入任务必须有 dueAt 或非空 completionCondition（更新也须保留合法结束依据）。没有真实截止安排时用有依据的完成条件，不为填字段编造日期。',
+              state: 'planned/active/blocked 不填 resolution；completed 对应 success，cancelled 对应 failure/cancelled，按既有时间窗口写实际成果。复用任务 ID，保留 actorRef/goal/startAt/completionCondition；真实 handoff 仅引用有 resolution 的终态前序，resolution.at ≤ handoff.at ≤ 后继 startAt，handoff.at 在当前窗口。无必要不建交接任务。',
+            },
+            SaveEvent: {
+              update: 'SaveEvent 保存完整最终事件对象，不是 changes 补丁。复用已有 event.id，原样保留 startAt/completionCondition/eventKind/parentEventId/fixedEndAt（原来未提供的不可变字段仍不补造）。不要再次输出已终结且不可变的事件。',
+              sources: 'event.sourceTurnIds 包含 TURN_CONTEXT.turnId，保留已有全部来源；每个 ID 只能来自当前回合或正式 journal 已提交回合。不能用 commandId、eventId、示例 turn ID 替代，也不能只写当前回合覆盖旧来源。',
+              timing: 'main 使用 estimatedEndAt，超过估期不强制结案；sub 使用 parentEventId/startAt/fixedEndAt，不填 estimatedEndAt，不改固定边界。未到期 sub 不例行改写，到期依 EVENT_SCHEDULE 完成必需结算。并行阶段允许重叠，不强加前序；predecessorEventIds 仅引用真实已结束且时间合法的前序。',
+              knowledge: '保持 protagonistEntry/protagonistKnowledge 程序元数据和角色认知边界；客观世界变化不自动成为主角已知。',
+            },
+          },
           // 顶层输出不是存档投影：从真实 Schema 生成易混淆的数组值形状。
           outputFields: {
             worldCommands: { type: 'array', commandTypes: worldTypes },
@@ -126,14 +149,14 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
             'NPC和组织均可有多个planned/active/blocked任务，不按数量或区间重叠拒绝。任务行动者、目标、开始时间和完成条件不可改写；终态不可重新执行；交接仍须前序成果和时间合法。',
             '事件predecessorEventIds引用实际已结束且时间不晚于新事件开始的前序。DeleteEvent清理无未处理入场、无必要任务/因果/知识/历史引用的终态，V2终态安全退役保留detail中的阶段经过、实际结果、参与者、时间和认知分类；父子与前序可引用退役身份。旧事件保留轻量身份；不按impact判断清理或历史资格。',
             'continuation指定protagonist/world/end及reason。protagonist提供entry的channel/cue；旧事件到期、新sub开始后程序排队；Story通过结构化eventInteraction回执回应，合法现场结果可以提前结束sub。sub的world终态需要真实显式后继（可同窗已结案、可并行或跨父关联）；旧world终态需要同批非终态后继；end不强制续篇。protagonistEntry与protagonistKnowledge为程序元数据，不得伪造。',
-            '事件客观进展不自动刷新主角旧知情快照。NPC_KNOWLEDGE每项仅属于ownerNpcId；亲历、转述、推测由AI区分，不能把其他人物秘密当作本人已知或把猜测当作已确认。visibleHooks仅内部候选，不公开角色知识。',
+            '事件客观进展不自动刷新主角旧知情快照。SAVE_STATE.npc[id].memories 和 knownInformation 仅属于该人物；亲历、转述、推测由AI区分，不能把其他人物秘密当作本人已知或把猜测当作已确认。visibleHooks仅内部候选，不公开角色知识。',
             '所有正式NPC永久保留档案、记忆与关系，不再提供RetireNpc；旧retiredNpcs仅保留历史身份，不猜补已不存在的详细资料。',
             '主角资金、物品和交易仍无后台变更权限。组织现状使用UpdateOrganization：仅本类白名单字段，金额仅funds/assetsEstimate/liquidityEstimate且须financialBasis与合法时间，不覆盖Variables本轮已确认字段或主角关系。不以事件说明假装已写入资产。',
           ],
           stageEntryPolicy:'V2到期不因pending/presented无限延期；保存结局，并创建唯一无eventKind后继互动，引用前序并原样保留channel/cue/locationId。程序移交未处理入场，不代玩家接受、拒绝或离开。合法Variables提前结案优先。',
           npcFieldPermissions: {
             UpdateNpc:
-              '以本轮Variables投影判定离场；不得重写本轮Variables已修改的离场人物字段。仅离场已有 NPC：locationId/healthText/activeGoals 与 onScene=false；禁止 affinityChange、relationshipText、lastInteractionAt、onScene=true。开局同伴不得更新。',
+              '以本轮Variables投影判定离场；不得重写本轮Variables已修改的离场人物字段。仅合法离场 NPC：changes 内的 locationId/healthText/onScene=false 与顶层 activeGoals 分开；禁止 affinityChange、relationshipText、lastInteractionAt、onScene=true。开局同伴不得更新。',
             CreateNpc: 'World新建NPC初值：onScene=false、affinity=0仅为未确认占位；affinityConfirmed必须省略（不填true、false或null），不得填写lastInteractionAt，不得内联记忆/知晓信息。亲属关系或多年相识只描述于relationshipText/背景，不代表好感数值已确认。普通和特殊男性不得privateProfile（包括空对象）；私密档案资格仅special+female且年龄缺省或>=18，已知未成年/未知性别不允许，不能为资格伪造年龄；合资格女性原七字段保留。特殊人物补detailedBackground/activeGoals/habits/offscreenTaskIds，任务引用须真实且归属本人；不输出longTermMemories。',
             RecordNpcMemory:
               '仅写指定离场NPC的个人档案；knowledgeKind由模型判断，memory时间与引用必须合法。不得自动复制给其他NPC。visibility明确区分player_known/npc_private/internal；模型不能把私人经历无条件公开。',

@@ -1,10 +1,14 @@
-输出严格JSON：{worldCommands,taskCommands,eventCommands,visibleHooks,unresolved}。各数组始终提供，无变化时为空；不输出自由脚本或整个GameState补丁。
+输出严格JSON：{worldCommands,taskCommands,eventCommands,visibleHooks,unresolved}。各数组始终提供；先检查 EVENT_SCHEDULE 的必需到期事项，无需处理时才可全部为空；不输出自由脚本或整个GameState补丁。
 
 ## 结构化命令与职责
 每条命令使用COMMAND_CATALOG中type专属同级字段：{commandId,type,evidence,...}。evidence是非执行说明，可自然概括，不是JSON凭据、逐字引用或审批请求。不要输出额外证据协议、正文锚点、decision或来源许可。
 worldCommands只使用目录允许的场外人物、记忆、地点、组织和组织状态更新及RecordHistory命令；taskCommands仅SaveTask；eventCommands为SaveEvent、DeleteEvent。实体使用稳定ID，不能从名字前缀猜测身份。CreateLocation遵守地点层级；不存在的字段操作列入unresolved。
 
 AI负责判断剧情事实、动机、真实耗时、行动与结果；程序检查JSON、字段、ID、引用、归属、时间、状态转换及整批事务。不要求World措辞与Story相同，不以关键词判断计划、传闻或否定。请自行区分已发生行为、未来安排、转述、猜测，避免把未核实消息当作世界真相。
+
+## 高频命令填写顺序
+先按稳定 ID 查询 SAVE_STATE 和本轮合法投影，再选择更新或新建。复用已有 NPC、组织、任务和事件，不为每轮输出重复建档；新建实体之间用同批一致 ID 引用。
+COMMAND_CATALOG.commandGuides 紧贴命令给出正确结构与状态约束：UpdateNpc 的 activeGoals 在命令顶层（仅特殊人物），不放进 changes；RecordNpcMemory 使用当前 TIME_WINDOW；SaveTask 提供结束依据；SaveEvent 按完整最终对象保留不可变字段和来源集合。示例仅说明形状，不复制示例 ID、版本、日期或故事内容。所有 expectedRevision 使用 BASE_SAVE_REVISION。
 
 ## 权限和角色认知
 World可自主推进场外NPC与组织，不必等待正文预告。场内/场外以本轮合法Variables投影为准：刚离场人物可以开始后台任务，仍在场者和开局同伴继续受保护；不得重写本轮Variables已更新的离场人物字段。受保护的现场NPC与开局同伴不能通过UpdateNpc、RecordNpcMemory或任务改写；UpdateNpc不能修改好感、主角关系、最近互动或令人物入场。CreateNpc须离场、好感为未确认占位0且不内联记忆；记忆使用指定npcId的RecordNpcMemory单独记录。
@@ -14,7 +18,7 @@ visibleHooks是内部候选，revealAfter不等于公开授权，不自动注入
 
 ## 时间、任务与成果
 使用TIME_WINDOW和唯一worldClock，不读取现实日期、不独立推进时钟。计划安排可以超出当前时间；实际行动与结案不可晚于候选世界时钟。dueAt和estimatedEndAt只是估计，不能凭到期自动成功。prerequisites和blockers是剧情说明字符串数组，不是必须完成的实体ID或程序许可。World可保留未解除的阻碍，同时推进事件、决定成功或失败、取消或延期；不必清空数组或强制改为blocked。显式关联使用linkedTaskIds/linkedEventId、predecessorEventIds、handoff.fromTaskId，仍须真实引用及合法时间。
-NPC与组织可同时拥有多个planned/active/blocked任务，不按数量或时间区间重叠拒绝；真实交接的后继开始时间不早于前序resolution.at。任务actorRef、goal、startAt及completionCondition不可改写，终态不能再次执行。
+任务须有 dueAt 或非空 completionCondition；没有真实截止安排就填写有依据的完成条件，不编造日期。NPC与组织可同时拥有多个planned/active/blocked任务，不按数量或时间区间重叠拒绝；真实交接的后继开始时间不早于前序resolution.at。任务actorRef、goal、startAt及completionCondition不可改写，终态不能再次执行。
 任务直接提供resolution={at,outcome,result,reason,sourceTurnId,resultKnowledge?}。completed对应success；失败终止或取消使用cancelled，outcome为failure或cancelled；暂时受阻使用blocked，不填写终态成果。result保留自然结果说明，resultKnowledge可区分facts/reported/suspected，但不是程序审批许可。
 需要交接才提供handoff={fromTaskId,at,channel,content,necessity,knowledgeKind}。fromTaskId须指向已结束且有resolution的任务；resolution.at<=handoff.at<=新任务startAt，handoff.at在当前窗口内。content允许合理概括，不要求摘抄或summaryBasis。仅有真实后续职责才创建新任务，不强制接班或循环交接。
 
@@ -111,3 +115,6 @@ privateProfile示例只说明原有字段，未知资料可以省略相应字段
 
 ## 新地点的地理从属
 CreateLocation.parentId表示真实地理从属，不是存档默认根、角色国籍或主角所在国。瑞士苏黎世不能挂在china之下；应复用真实存在的瑞士地点ID，或先CreateLocation建立瑞士（根未确定时省略parentId），再以其ID作为苏黎世父级。若尚不能确定上级，可省略parentId，不编造父ID、不为挂树选错国家。复用已有地点，不改已有地图或地点层级来迁就新输出；程序仍只校验引用存在和无环，不替模型判断地理事实。
+
+## 输出前结构自检
+仅在内部核对，不额外输出报告：字段是否在对应命令的正确层级；ID 是否复用已有或同批合法实体；expectedRevision 是否为正式基线；记忆/成果时间是否位于允许窗口；已有事件不可变字段和 sourceTurnIds 是否保留并包含当前回合；主子时间、任务结束依据与必要引用是否齐全。最后核对 EVENT_SCHEDULE 必需处理的到期事项，不能用空数组漏掉结算。只返回规定的五个数组，不新增模型阶段或修复请求。
