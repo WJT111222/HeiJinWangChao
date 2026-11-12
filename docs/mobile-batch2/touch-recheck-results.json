@@ -1,0 +1,162 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/mobile-batch2/node_modules/.bin/playwright",
+      "test",
+      "--config=playwright.mobile-batch2.config.ts",
+      "--grep",
+      "真实触屏横滑"
+    ],
+    "configFile": "/workspace/mobile-batch2/playwright.mobile-batch2.config.ts",
+    "rootDir": "/workspace/mobile-batch2/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/mobile-batch2/test-results/mobile-batch2",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/workspace/mobile-batch2/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "mobile-batch2.spec.ts"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/mobile-batch2/test-results/mobile-batch2",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/workspace/mobile-batch2/e2e",
+        "snapshotDir": "/workspace/mobile-batch2/e2e",
+        "testIgnore": [],
+        "testMatch": "mobile-batch2.spec.ts",
+        "timeout": 45000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5241",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "isMobile": true,
+          "hasTouch": true,
+          "reducedMotion": "reduce",
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "docs/mobile-batch2/touch-recheck-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5241 --strictPort",
+      "url": "http://127.0.0.1:5241",
+      "reuseExistingServer": true
+    }
+  },
+  "suites": [
+    {
+      "title": "mobile-batch2.spec.ts",
+      "file": "mobile-batch2.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "真实触屏横滑：诊断标签与世界版本卡可滑动且不误关闭",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2879,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:24:27.919Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1215c71094e18255d5d0-85ae8fa2e45e95815305",
+          "file": "mobile-batch2.spec.ts",
+          "line": 109,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-12T23:24:26.326Z",
+    "duration": 4863.671,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

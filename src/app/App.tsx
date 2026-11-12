@@ -1,3 +1,4 @@
+import {GlobalFeedback} from '../ui/GlobalFeedback';
 import { canAcceptNpcView } from '../ui/game/npcManagement';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -334,12 +335,10 @@ export function App() {
         {!desktopUi&&<button className="mobile-menu-close" onClick={()=>setMenuOpen(false)}>关闭</button>}
       </Dialog>}
       {error && (
-        <div className={route === '#create' ? 'app-error' : 'app-error feedback l-err'} role="alert">
+        <GlobalFeedback disabled={route === '#create'} className={route === '#create' ? 'app-error' : 'app-error feedback l-err'}>
           {route !== '#create' && <span className="feedback-icon global-feedback-icon" aria-hidden="true">误</span>}<span className="feedback-text">{error}</span>
-          <button onClick={() => setError('')} aria-label="关闭提示">
-            ×
-          </button>
-        </div>
+          <button onClick={() => setError('')} aria-label="关闭提示">×</button>
+        </GlobalFeedback>
       )}
       {route === '#create' ? (
         <CreationWizard
@@ -443,7 +442,7 @@ export function App() {
       {deleting && (
         <Dialog
           title="删除这份存档？"
-          small feedback="err" seal="删"
+          small feedback="err" seal="删" mobileVariant="confirm" footer={<button disabled={busy} onClick={()=>setDeleting(undefined)}>取消</button>}
           onClose={() => {
             if (!busy) setDeleting(undefined);
           }}
@@ -453,9 +452,9 @@ export function App() {
           {deleting.status === 'unreadable' && <p>此存档无法读取，建议取消并先导出原始数据。</p>}
           {deleteError && <Feedback role="alert" level="err" mobileAs="p">{deleteError}</Feedback>}
           <div className="dialog-actions">
-            <button disabled={busy} onClick={() => setDeleting(undefined)}>
+            {desktopUi&&<button disabled={busy} onClick={() => setDeleting(undefined)}>
               取消
-            </button>
+            </button>}
             <button className="danger" disabled={busy} onClick={() => void deleteSave()}>
               {busy ? '正在删除…' : '确认删除'}
             </button>

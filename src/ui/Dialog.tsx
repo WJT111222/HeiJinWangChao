@@ -6,6 +6,7 @@ import './feedback.css';
 import { ArchiveHeader } from './ArchiveHeader';
 import { useSheetGesture } from './useSheetGesture';
 import './mobile-sheet.css';
+import './mobile-feedback.css';
 import type { ArchiveHeading } from './ArchiveHeader';
 
 // One body lock for all native modal instances, including viewport transitions.
@@ -25,7 +26,7 @@ export function Dialog({
   seal,
   eyebrow,
   badge,
-  nonmodal=false,archiveHeading,returnFocus,mobileVariant,sheetFull=false,
+  nonmodal=false,archiveHeading,returnFocus,mobileVariant,sheetFull=false,footer,
 }: {
   title: string;
   onClose: () => void;
@@ -38,7 +39,7 @@ export function Dialog({
   eyebrow?: string;
   badge?: ReactNode;
   nonmodal?:boolean;archiveHeading?:ArchiveHeading;returnFocus?:()=>HTMLElement|null;
-  mobileVariant?:'sheet'|'actions';sheetFull?:boolean;
+  mobileVariant?:'sheet'|'actions'|'confirm'|'select';sheetFull?:boolean;footer?:ReactNode;
 }) {
   const desktop = useDesktopFeedback();
   const sheet = !desktop && !nonmodal && Boolean(mobileVariant);
@@ -89,18 +90,18 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className={`${nonmodal?'archive':small ? 'modal modal-small' : 'modal'} ${className} ${feedback ? `feedback-dialog l-${feedback}` : ''} ${sheet?`mobile-sheet${sheetFull?' sheet-full':''}${mobileVariant==='actions'?' mobile-actions':''}`:''}`.trim()}
+      className={`${nonmodal?'archive':small ? 'modal modal-small' : 'modal'} ${className} ${feedback ? `feedback-dialog l-${feedback}` : ''} ${sheet?`mobile-sheet${sheetFull?' sheet-full':''}${mobileVariant==='actions'?' mobile-actions':''}${mobileVariant==='confirm'?' mobile-confirm':''}${mobileVariant==='select'?' mobile-select-sheet':''}`:''}`.trim()}
       aria-labelledby={titleId}
       aria-modal={nonmodal?false:sheet?true:undefined}
       tabIndex={nonmodal||sheet?-1:undefined}
       data-tone={nonmodal||archiveHeading?"paper":undefined}
       onKeyDown={(event) => {
-        if (nonmodal || event.key !== 'Tab' || (sheet && (event.target as Element).closest('dialog') !== event.currentTarget)) return;
+        if (nonmodal || event.key !== 'Tab' || (!desktop && (event.target as Element).closest('dialog') !== event.currentTarget)) return;
         const controls = [
           ...event.currentTarget.querySelectorAll<HTMLElement>(
             'button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],summary,[tabindex]:not([tabindex="-1"])',
           ),
-        ].filter((element) => element.getClientRects().length > 0);
+        ].filter((element) => element.getClientRects().length > 0 && (!sheet || element.tabIndex >= 0));
         const first = controls[0];
         const last = controls[controls.length - 1];
         if (sheet && document.activeElement === event.currentTarget) {
@@ -115,7 +116,7 @@ export function Dialog({
       }}
       onCancel={(event) => {
         // React bubbles cancel from a nested native candidate dialog. Only its owner closes.
-        if (sheet && event.target !== event.currentTarget) return;
+        if (!desktop && event.target !== event.currentTarget) return;
         event.preventDefault();
         close.current();
       }}
@@ -138,7 +139,9 @@ export function Dialog({
           关闭 <span aria-hidden="true">×</span>
         </button>
       </header>}
+      {sheet&&badge&&<div className="mobile-sheet-badge">{badge}</div>}
       <div className={nonmodal?"ar-body":"modal-body"}>{children}</div>
+      {sheet&&footer&&<footer className="mobile-sheet-footer">{footer}</footer>}
     </dialog>
   );
 }

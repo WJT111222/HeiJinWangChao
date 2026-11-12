@@ -1,0 +1,20 @@
+[WebServer] (node:274061) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:274074) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:274098) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [mobile] › e2e/memory-summary-v2.spec.ts:49:1 › NPC先失败也不阻断公共两类，失败重试仅一次；暂停只保存本类关闭 (6.8s)
+(node:274235) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  2 [desktop] › e2e/memory-summary-v2.spec.ts:49:1 › NPC先失败也不阻断公共两类，失败重试仅一次；暂停只保存本类关闭 (6.8s)
+
+  2 passed (16.1s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

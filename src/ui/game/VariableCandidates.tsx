@@ -9,7 +9,7 @@ import { StageResponseText } from './StageResponsesPanel';
 export function VariableCandidates({ draft }: { draft: TurnDraft }) {
   const desktop = useDesktopFeedback();
   const [opened, setOpened] = useState(false),
-    [revealed, setRevealed] = useState(false);
+    [revealed, setRevealed] = useState(false), [rawOpened,setRawOpened]=useState(false);
   const result = draft.variables?.result;
   if (!result) return null;
   return (
@@ -17,7 +17,7 @@ export function VariableCandidates({ draft }: { draft: TurnDraft }) {
       <button
         className="candidate-opener"
         onClick={() => {
-          setRevealed(false);
+          setRevealed(false);setRawOpened(false);
           setOpened(true);
         }}
       >
@@ -25,13 +25,13 @@ export function VariableCandidates({ draft }: { draft: TurnDraft }) {
       </button>
       {opened && (
         <Dialog
-          className="candidate-dialog"
+          className="candidate-dialog" mobileVariant="sheet" sheetFull seal="变" footer={<button onClick={()=>setOpened(false)}>关闭</button>}
           eyebrow="STAGE 02 · VARIABLES"
           badge={<span className="candidate-badge l-warn">未正式结算</span>}
           title="变量候选 · 未正式结算"
           onClose={() => setOpened(false)}
         >
-          {desktop ? (
+          {(
             <div className="candidate-grid">
               <aside className="candidate-side">
                 <dl className="candidate-versions">
@@ -91,41 +91,9 @@ export function VariableCandidates({ draft }: { draft: TurnDraft }) {
                   候选尚未改变任何正式资金、人物或时间。完整候选可能包含 NPC
                   内部资料；查看不会更新主角认知或普通历史。
                 </p>
-                <StageResponseText saveId={draft.saveId} turnId={draft.turnId} stage="variables" />
+                {desktop?<StageResponseText saveId={draft.saveId} turnId={draft.turnId} stage="variables" />:<details className="candidate-response" onToggle={e=>setRawOpened(e.currentTarget.open)}><summary>模型原文（临时响应）</summary>{rawOpened&&<StageResponseText saveId={draft.saveId} turnId={draft.turnId} stage="variables" />}</details>}
               </section>
             </div>
-          ) : (
-            <>
-              <StageResponseText saveId={draft.saveId} turnId={draft.turnId} stage="variables" />
-              <h3>程序编译和校验后的候选</h3>
-              <p>
-                正文版本 {draft.storyRevision} · 执行版本 {draft.executionRevision} · 候选版本{' '}
-                {draft.variables?.candidateRevision}
-              </p>
-              <p>
-                合法命令 {result.commands.length} 条；拒绝建议 {result.rejectedSuggestions.length}{' '}
-                条；未解决事项 {result.unresolved.length} 条。
-              </p>
-              <ul>
-                {result.commands.map((command) => (
-                  <li key={command.commandId}>
-                    {command.type} · {command.commandId}
-                  </li>
-                ))}
-              </ul>
-              <p className="notice">
-                候选尚未改变任何正式资金、人物或时间。完整候选可能包含 NPC
-                内部资料；查看不会更新主角认知或普通历史。
-              </p>
-              <button aria-expanded={revealed} onClick={() => setRevealed(!revealed)}>
-                {revealed ? '隐藏完整变量候选' : '主动查看完整变量候选'}
-              </button>
-              {revealed && (
-                <pre className="candidate-json" tabIndex={0} aria-label="完整变量候选">
-                  {JSON.stringify(redactInspection(result, browserCredentials()), null, 2)}
-                </pre>
-              )}
-            </>
           )}
         </Dialog>
       )}
