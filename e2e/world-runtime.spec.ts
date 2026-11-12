@@ -1,4 +1,4 @@
-import { openGameTools, openWorkflowStage, openCandidateRaw, openStageCandidates, closeStageCandidates, openStageSwitches } from './helpers/gameLayout';
+import { openGameTools, openWorkflowStage, openCandidateRaw, openStageCandidates, closeStageCandidates } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { schoolEvidence, schoolResult, schoolTask, syntheticSchoolBatch } from '../src/tests/fixtures/worldChineseFact';
@@ -195,7 +195,7 @@ test('双开关关闭后只补算世界，无变量时明确预览；不 Roll �
   const before = await seed(page, false, true),
     initial = await stored(page);
   await openWorkflowStage(page, 'world'); await expect(page.getByRole('button', { name: '启用并补算世界', exact: true })).toBeDisabled();
-  await openStageSwitches(page); await page.getByLabel('动态世界', { exact: true }).check();
+  await page.getByLabel('动态世界', { exact: true }).check();
   const planned = {
     ...result,
     worldCommands: [
@@ -230,16 +230,21 @@ test('错误输出可重试；取消后新请求不受旧回包影响；世界�
   const before = await seed(page);
   let mode: 'bad' | 'slow' | 'good' = 'bad',
     count = 0;
+  let releaseSlow!: () => void;
+  const slowResponse = new Promise<void>(resolve => { releaseSlow = resolve; });
+  let slowFinished!: () => void;
+  const slowResponseFinished = new Promise<void>(resolve => { slowFinished = resolve; });
   await page.route('https://world.mock.invalid/**', async (route) => {
     count++;
     const current = mode;
-    if (current === 'slow') await new Promise((resolve) => setTimeout(resolve, 1200));
+    if (current === 'slow') await slowResponse;
     await route
       .fulfill({
         contentType: 'application/json',
         body: response(current === 'bad' ? '{bad-json' : result),
       })
       .catch(() => undefined);
+    if (current === 'slow') slowFinished();
   });
   await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
@@ -258,6 +263,8 @@ test('错误输出可重试；取消后新请求不受旧回包影响；世界�
   mode = 'good';
   await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
   await ready(page);
+  releaseSlow();
+  await slowResponseFinished;
   expect((await stored(page)).formal).toBe(before);
   expect(count).toBe(3);
 });

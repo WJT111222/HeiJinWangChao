@@ -1,0 +1,35 @@
+/* #122 native Dialog owns positioning, gestures, modal focus and backdrop. */
+@media (max-width: 900px) {
+  .app-shell-game .mobile-workflow-sheet .modal-heading { flex:none; }
+  .app-shell-game .mobile-workflow-sheet .modal-body { display:flex; flex-direction:column; overflow:hidden; }
+  .mobile-workflow-sheet .wf-mobile-content { display:flex; flex:1; flex-direction:column; min-height:0; overflow:hidden; color:var(--text); }
+  .mobile-workflow-sheet .wf-mobile-content .wf-hd { flex:none; display:flex; align-items:center; gap:12px; padding:12px 0; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-hd-title { flex:1; min-width:0; }
+  .mobile-workflow-sheet .wf-mobile-content h3,.mobile-workflow-sheet .wf-mobile-content h4 { margin:0; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-eyebrow { font-size:10px; color:var(--dim); overflow-wrap:anywhere; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-close { display:none; } /* Native Dialog already owns close. */
+  .mobile-workflow-sheet .wf-mobile-content .wf-main { flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-main,.mobile-workflow-sheet .wf-mobile-content .wf-detail,.mobile-workflow-sheet .wf-mobile-content .wf-dt-body { min-width:0; }
+  .mobile-workflow-sheet .wf-mobile-content [hidden] { display:none!important; }
+  .mobile-workflow-sheet .wf-mobile-content .workflow-stages { list-style:none; padding:0; margin:0; }
+  .mobile-workflow-sheet .wf-mobile-content .workflow-stages>li { display:flex; align-items:center; gap:8px; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-ri { display:flex; align-items:center; gap:10px; flex:1; min-width:0; width:100%; text-align:left; margin:4px 0; padding:12px; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-ri small { margin-left:auto; font-size:11px; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-sw { flex:none; padding:12px; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-aux { list-style:none; padding:0; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-rail-note,.mobile-workflow-sheet .wf-mobile-content .wf-rail-h { font-size:11px; color:var(--dim); }
+  .mobile-workflow-sheet .wf-mobile-content .wf-tabs { display:flex; gap:6px; overflow-x:auto; padding:10px 0; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-tab { flex:none; font-size:12px; padding:8px 10px; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-tab[aria-selected=true] { color:var(--gold); border-color:var(--gold); }
+  .mobile-workflow-sheet .wf-mobile-content .wf-dt-hd,.mobile-workflow-sheet .wf-mobile-content .wf-badges { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-dt-act { margin-left:auto; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-pill { font-size:11px; color:var(--gold); }
+  .mobile-workflow-sheet .wf-mobile-content .wf-dt-body { overflow-wrap:anywhere; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-cmds { padding-left:20px; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-cmds li { margin:8px 0; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-cmds code { display:block; }
+  .mobile-workflow-sheet .wf-mobile-content .candidate-json { max-width:100%; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-ft { flex:none; padding:12px 0; border-top:1px solid #ffffff18; margin-top:12px; }
+  .mobile-workflow-sheet .wf-mobile-content .workflow-fee { display:block; font-size:11px; color:var(--dim); margin-top:8px; }
+  .mobile-workflow-sheet .wf-mobile-content .wf-banner { padding:10px 0; overflow-wrap:anywhere; }
+}

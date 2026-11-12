@@ -1,0 +1,178 @@
+{
+  "baseline": "d73b95db51a99142b58ba33e406836b0dd9f957d",
+  "node": "24.19.0",
+  "chromium": "154.0.8037.57",
+  "tests": [
+    {
+      "source": "chromium-results.json",
+      "name": "手机骨架 375×667：真实数据、建议、发送和抽屉",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "手机骨架 390×844：真实数据、建议、发送和抽屉",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "手机骨架 430×932：真实数据、建议、发送和抽屉",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "手机骨架 750×800：真实数据、建议、发送和抽屉",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "手机骨架 900×800：真实数据、建议、发送和抽屉",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "工作流 opening：保留全部操作、候选与正式状态",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "工作流 ready：保留全部操作、候选与正式状态",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "工作流 error：保留全部操作、候选与正式状态",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "抽屉：Tab 环、Esc、遮罩、短拉回弹、长拉关闭和取消手势",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "长正文、完整状态与金额：内部滚动、城市收窄、输入法可视区",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "生成中与失败恢复：关闭抽屉不取消，显式取消，不额外请求",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "正式结算与发送复用原回调，开局不可撤回",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "桌面 901px：与未修改 main 逐像素对照",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "桌面 1440px：与未修改 main 逐像素对照",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "撤回保留原确认、回填与恢复点；回填后仍可发送",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "真实触屏：长内容原生滚动不误关闭，顶部下拉才关闭；reduced motion",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "沉浸长正文与台词：全文可读，滚动位置保留，状态入口交接",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "菜单与设置交接：保留既有配置入口、Esc 与回焦，浏览不保存",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "正常动效：抽屉短拉回弹不重复入场动画，长拉关闭",
+      "project": "",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "workflow-smoke-results.json",
+      "name": "一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求",
+      "project": "mobile",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "workflow-smoke-results.json",
+      "name": "发送行动只结算一次并自动串联下一轮，刷新及再次读档不补发",
+      "project": "mobile",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "workflow-smoke-results.json",
+      "name": "一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求",
+      "project": "desktop",
+      "status": "passed",
+      "retries": 0
+    },
+    {
+      "source": "workflow-smoke-results.json",
+      "name": "发送行动只结算一次并自动串联下一轮，刷新及再次读档不补发",
+      "project": "desktop",
+      "status": "passed",
+      "retries": 0
+    }
+  ],
+  "total": 23,
+  "passed": 23,
+  "unitPassed": 19,
+  "fullBrowserSuiteRun": false,
+  "paidModelRequests": 0,
+  "repeatedFinalVerification": {
+    "source": "menu-polish-results.json",
+    "name": "手机骨架 390×844：真实数据、建议、发送和抽屉",
+    "passed": 1
+  }
+}

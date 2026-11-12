@@ -1,0 +1,35 @@
+[WebServer] (node:267420) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:267434) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 19 tests using 1 worker
+
+(node:267462) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 e2e/mobile-main-batch1.spec.ts:13:81 › 手机骨架 375×667：真实数据、建议、发送和抽屉 (4.0s)
+  ✓   2 e2e/mobile-main-batch1.spec.ts:13:81 › 手机骨架 390×844：真实数据、建议、发送和抽屉 (3.2s)
+  ✓   3 e2e/mobile-main-batch1.spec.ts:13:81 › 手机骨架 430×932：真实数据、建议、发送和抽屉 (3.5s)
+  ✓   4 e2e/mobile-main-batch1.spec.ts:13:81 › 手机骨架 750×800：真实数据、建议、发送和抽屉 (3.3s)
+  ✓   5 e2e/mobile-main-batch1.spec.ts:13:81 › 手机骨架 900×800：真实数据、建议、发送和抽屉 (3.4s)
+  ✓   6 e2e/mobile-main-batch1.spec.ts:39:56 › 工作流 opening：保留全部操作、候选与正式状态 (1.9s)
+  ✓   7 e2e/mobile-main-batch1.spec.ts:39:56 › 工作流 ready：保留全部操作、候选与正式状态 (2.1s)
+  ✓   8 e2e/mobile-main-batch1.spec.ts:39:56 › 工作流 error：保留全部操作、候选与正式状态 (1.8s)
+  ✓   9 e2e/mobile-main-batch1.spec.ts:51:1 › 抽屉：Tab 环、Esc、遮罩、短拉回弹、长拉关闭和取消手势 (2.7s)
+  ✓  10 e2e/mobile-main-batch1.spec.ts:60:1 › 长正文、完整状态与金额：内部滚动、城市收窄、输入法可视区 (2.5s)
+  ✓  11 e2e/mobile-main-batch1.spec.ts:70:1 › 生成中与失败恢复：关闭抽屉不取消，显式取消，不额外请求 (2.4s)
+  ✓  12 e2e/mobile-main-batch1.spec.ts:77:1 › 正式结算与发送复用原回调，开局不可撤回 (2.2s)
+  ✓  13 e2e/mobile-main-batch1.spec.ts:84:31 › 桌面 901px：与未修改 main 逐像素对照 (6.7s)
+  ✓  14 e2e/mobile-main-batch1.spec.ts:84:31 › 桌面 1440px：与未修改 main 逐像素对照 (6.7s)
+  ✓  15 e2e/mobile-main-batch1.spec.ts:103:1 › 撤回保留原确认、回填与恢复点；回填后仍可发送 (2.5s)
+  ✓  16 e2e/mobile-main-batch1.spec.ts:108:1 › 真实触屏：长内容原生滚动不误关闭，顶部下拉才关闭；reduced motion (3.0s)
+  ✓  17 e2e/mobile-main-batch1.spec.ts:116:1 › 沉浸长正文与台词：全文可读，滚动位置保留，状态入口交接 (2.0s)
+  ✓  18 e2e/mobile-main-batch1.spec.ts:123:1 › 菜单与设置交接：保留既有配置入口、Esc 与回焦，浏览不保存 (2.4s)
+  ✓  19 e2e/mobile-main-batch1.spec.ts:130:1 › 正常动效：抽屉短拉回弹不重复入场动画，长拉关闭 (4.8s)
+
+  19 passed (1.1m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

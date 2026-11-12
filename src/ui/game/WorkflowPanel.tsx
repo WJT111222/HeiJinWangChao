@@ -1,6 +1,7 @@
+import './mobile-workflow-content.css';
 import { useRef, useState, useSyncExternalStore } from 'react';
 import type { KeyboardEvent } from 'react';
-import type { CSSProperties, ReactNode, RefObject } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import type { TurnDraft } from '../../domain/drafts';
 import { storyRuleNames } from '../../domain/storyDiagnostics';
 import { stageResponses } from '../../services/ai/stageResponses';
@@ -34,10 +35,8 @@ const credentials = () => browserCredentials();
 /** 与旧卡片一致：关闭的阶段单独标为 off，其余沿用进度视觉。 */
 export const stepState = (step: WorkflowStep) => (step.visual === 'idle' && step.text === '已关闭' ? 'off' : step.text === '仅预览' ? 'preview' : step.visual);
 
-export function WorkflowPanel(props: {
-  layout: WorkflowLayout;
-  /** sheet 布局的定位变量（--wf-sheet-top / --wf-sheet-bottom），由 GameScreen 按输入区位置测量。 */
-  sheetStyle?: CSSProperties;
+export function DesktopWorkflowPanel(props: {
+  layout?: WorkflowLayout;
   label: string;
   state: string;
   onClose: () => void;
@@ -63,20 +62,23 @@ export function WorkflowPanel(props: {
   const sheet = props.layout === 'sheet';
   // 抽屉第二层：标题区显示当前视图，左侧“三阶段”返回第一层；状态文案仍在下方收起条。
   const inner = sheet && view !== 'home';
+  const returnHome = () => {
+    const index = Math.max(0, steps.findIndex(step => step.stage === view));
+    props.onView('home');
+    requestAnimationFrame(() => props.switchesRef.current?.querySelector<HTMLButtonElement>(`li:nth-child(${index + 1}) > button`)?.focus({ preventScroll: true }));
+  };
   const failedLogs = props.runtimeLogs.filter((entry) => entry.kind === 'failed').length;
   return (
     <div
-      className={`workflow-details wf-v2${sheet ? ' wf-sheet' : ''}`}
+      className={`workflow-details wf-v2${sheet ? ' wf-mobile-content' : ''}`}
       id="workflow-pop"
       role="region"
       aria-label="三阶段详情"
       data-level={sheet ? (inner ? 'detail' : 'home') : undefined}
-      style={sheet ? props.sheetStyle : undefined}
     >
-      {sheet && <div className="wf-grab" aria-hidden="true" onClick={props.onClose} />}
       <header className="wf-hd" data-state={props.state}>
         {inner
-          ? <button className="wf-back" onClick={() => props.onView('home')} aria-label="返回三阶段列表">三阶段</button>
+          ? <button className="wf-back" onClick={returnHome} aria-label="返回三阶段列表">三阶段</button>
           : <span className="dot" aria-hidden="true" />}
         <div className="wf-hd-title">
           <span className="wf-eyebrow">{inner ? viewEyebrows[view as Exclude<WorkflowView, 'home'>] : 'THREE STAGES · 三阶段'}</span>
@@ -89,7 +91,7 @@ export function WorkflowPanel(props: {
       <div className="wf-main">
         <nav className="wf-rail" aria-label="三阶段导航" hidden={inner}>
           <p className="wf-rail-h">STAGES</p>
-          <ol className="workflow-stages" id="workflow-runtime-switches" ref={props.switchesRef}>
+          <ol className={sheet ? 'workflow-stages mobile-stage-switches' : 'workflow-stages'} id="workflow-runtime-switches" ref={props.switchesRef}>
             {steps.map((step, i) => {
               const state = stepState(step);
               return (
@@ -135,7 +137,6 @@ export function WorkflowPanel(props: {
               </li>
             )}
           </ul>
-          {sheet && <p className="wf-rail-note">右侧开关控制变量 / 世界阶段是否参与本回合；关闭后需重新开启并补算，才能正式结算。</p>}
         </nav>
         <div className="wf-detail" id="wf-detail" hidden={sheet && !inner}>
           {view === 'story' || view === 'variables' || view === 'world'
@@ -170,7 +171,7 @@ function DetailHead({ eyebrow, title, badges, actions, compact = false }: { eyeb
   );
 }
 
-function StageDetail(props: Parameters<typeof WorkflowPanel>[0] & { stage: WorkflowStage; step: WorkflowStep; compact: boolean }) {
+function StageDetail(props: Parameters<typeof DesktopWorkflowPanel>[0] & { stage: WorkflowStage; step: WorkflowStep; compact: boolean }) {
   const { stage, step, draft } = props;
   const state = stepState(step);
   const variables = draft?.variables?.result;
@@ -482,7 +483,7 @@ function BoundInput({ draft, compact }: { draft: TurnDraft; compact: boolean }) 
   );
 }
 
-function Diagnostics(props: Parameters<typeof WorkflowPanel>[0] & { hidden: boolean; failedLogs: number; compact: boolean }) {
+function Diagnostics(props: Parameters<typeof DesktopWorkflowPanel>[0] & { hidden: boolean; failedLogs: number; compact: boolean }) {
   const { draft } = props;
   const failures = draft?.failures.filter((failure) => failure.storyRevision === draft.storyRevision).slice(-6) ?? [];
   return (

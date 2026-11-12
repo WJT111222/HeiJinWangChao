@@ -4,6 +4,8 @@ import { useDesktopFeedback } from './Feedback';
 import type { FeedbackLevel } from './Feedback';
 import './feedback.css';
 import { ArchiveHeader } from './ArchiveHeader';
+import { useSheetGesture } from './useSheetGesture';
+import './mobile-sheet.css';
 import type { ArchiveHeading } from './ArchiveHeader';
 
 // One body lock for all native modal instances, including viewport transitions.
@@ -23,7 +25,7 @@ export function Dialog({
   seal,
   eyebrow,
   badge,
-  nonmodal=false,archiveHeading,returnFocus,
+  nonmodal=false,archiveHeading,returnFocus,mobileVariant,sheetFull=false,
 }: {
   title: string;
   onClose: () => void;
@@ -36,13 +38,16 @@ export function Dialog({
   eyebrow?: string;
   badge?: ReactNode;
   nonmodal?:boolean;archiveHeading?:ArchiveHeading;returnFocus?:()=>HTMLElement|null;
+  mobileVariant?:'sheet'|'actions';sheetFull?:boolean;
 }) {
   const desktop = useDesktopFeedback();
+  const sheet = !desktop && !nonmodal && Boolean(mobileVariant);
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const close = useRef(onClose),restore=useRef<HTMLElement|null>(null);
   const initialOpener=useRef<HTMLElement|null>(null),previousMode=useRef<boolean|undefined>(undefined);
   const focusReturn=useRef(returnFocus);focusReturn.current=returnFocus;
+  useSheetGesture(ref,sheet,close);
   useEffect(() => {
     close.current = onClose;
   }, [onClose]);
@@ -59,7 +64,7 @@ export function Dialog({
     const body=dialog.querySelector<HTMLElement>('.modal-body,.ar-body'),scroll=body?.scrollTop??0;
     if(nonmodal)dialog.show();else{lockBody(dialog);dialog.showModal();}
     if(restore.current?.isConnected&&dialog.contains(restore.current))restore.current.focus({preventScroll:true});
-    else if(nonmodal)dialog.focus({preventScroll:true});
+    else if(nonmodal||sheet)dialog.focus({preventScroll:true});
     for(const modal of above){modal.close();modal.showModal();}
     if((transitioning||nonmodal)&&covering.some(modal=>modal.contains(focused)))focused?.focus({preventScroll:true});
     if(body)body.scrollTop=scroll;
@@ -77,20 +82,20 @@ export function Dialog({
       if(!nonmodal)unlockBody(dialog);
       if(keepOverlayFocus)active?.focus({preventScroll:true});
       else if(!nonmodal||document.activeElement===document.body||dialog.contains(document.activeElement))
-        (nonmodal?focusReturn.current?.()??opener:opener)?.focus({preventScroll:true});
+        (nonmodal||sheet?focusReturn.current?.()??opener:opener)?.focus({preventScroll:true});
       document.removeEventListener('keydown',escape);
     };
-  }, [nonmodal]);
+  }, [nonmodal,sheet]);
   return (
     <dialog
       ref={ref}
-      className={`${nonmodal?'archive':small ? 'modal modal-small' : 'modal'} ${className} ${feedback ? `feedback-dialog l-${feedback}` : ''}`.trim()}
+      className={`${nonmodal?'archive':small ? 'modal modal-small' : 'modal'} ${className} ${feedback ? `feedback-dialog l-${feedback}` : ''} ${sheet?`mobile-sheet${sheetFull?' sheet-full':''}${mobileVariant==='actions'?' mobile-actions':''}`:''}`.trim()}
       aria-labelledby={titleId}
-      aria-modal={nonmodal?false:undefined}
-      tabIndex={nonmodal?-1:undefined}
+      aria-modal={nonmodal?false:sheet?true:undefined}
+      tabIndex={nonmodal||sheet?-1:undefined}
       data-tone={nonmodal||archiveHeading?"paper":undefined}
       onKeyDown={(event) => {
-        if (nonmodal || event.key !== 'Tab') return;
+        if (nonmodal || event.key !== 'Tab' || (sheet && (event.target as Element).closest('dialog') !== event.currentTarget)) return;
         const controls = [
           ...event.currentTarget.querySelectorAll<HTMLElement>(
             'button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],summary,[tabindex]:not([tabindex="-1"])',
@@ -98,7 +103,9 @@ export function Dialog({
         ].filter((element) => element.getClientRects().length > 0);
         const first = controls[0];
         const last = controls[controls.length - 1];
-        if (event.shiftKey && document.activeElement === first) {
+        if (sheet && document.activeElement === event.currentTarget) {
+          event.preventDefault();(event.shiftKey?last:first)?.focus();
+        } else if (event.shiftKey && document.activeElement === first) {
           event.preventDefault();
           last?.focus();
         } else if (!event.shiftKey && document.activeElement === last) {
@@ -107,21 +114,24 @@ export function Dialog({
         }
       }}
       onCancel={(event) => {
+        // React bubbles cancel from a nested native candidate dialog. Only its owner closes.
+        if (sheet && event.target !== event.currentTarget) return;
         event.preventDefault();
         close.current();
       }}
     >
-      {archiveHeading ? <ArchiveHeader {...archiveHeading} titleId={titleId} onClose={onClose} closeLabel={closeLabel}/> : <header className="modal-heading">
-        {desktop && seal && (
+      {sheet && mobileVariant!=='actions' && <div className="mobile-sheet-grab" aria-hidden="true"><i/></div>}
+      {sheet && mobileVariant==='actions' ? <h2 id={titleId} className="sr-only">{title}</h2> : archiveHeading ? <ArchiveHeader {...archiveHeading} titleId={titleId} onClose={onClose} closeLabel={closeLabel}/> : <header className="modal-heading">
+        {(desktop||sheet) && seal && (
           <span className="dialog-seal" aria-hidden="true">
             {seal}
           </span>
         )}
         <div>
-          <p className="eyebrow" aria-hidden={desktop && eyebrow ? true : undefined}>
-            {desktop && eyebrow ? eyebrow : 'HEIJIN / ARCHIVE'}
+          <p className="eyebrow" aria-hidden={(desktop||sheet) && eyebrow ? true : undefined}>
+            {(desktop||sheet) && eyebrow ? eyebrow : 'HEIJIN / ARCHIVE'}
           </p>
-          <h2 id={titleId}>{title}</h2>
+          <h2 id={titleId} title={sheet?title:undefined}>{title}</h2>
         </div>
         {desktop && badge}
         <button type="button" onClick={onClose} aria-label={closeLabel}>

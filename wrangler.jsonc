@@ -1,8 +1,18 @@
 {
   "name": "heijinwangchao",
+  "main": "src/worker.ts",
+  // 管理员提供的 HEIJIN_ANNOUNCEMENTS；部署与验证步骤见 docs/REMOTE_ANNOUNCEMENTS.md。
+  "kv_namespaces": [
+    {
+      "binding": "ANNOUNCEMENTS",
+      "id": "0a998f91824b45dba8dfe52896a89b99"
+    }
+  ],
   "compatibility_date": "2026-10-20",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
   },
   "previews": {}
 }

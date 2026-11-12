@@ -1,0 +1,78 @@
+{
+  "chromium": {
+    "startTime": "2026-11-12T22:16:48.973Z",
+    "duration": 43397.692,
+    "expected": 10,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "project": "desktop",
+      "file": "remote-announcement.spec.ts",
+      "title": "远程公告迟到仍更新打开的弹窗，顺序/免打扰/手动查看不变，零AI请求",
+      "status": "passed"
+    },
+    {
+      "project": "desktop",
+      "file": "remote-announcement.spec.ts",
+      "title": "接口断网立即可用内置公告，首页照常加载",
+      "status": "passed"
+    },
+    {
+      "project": "mobile",
+      "file": "remote-announcement.spec.ts",
+      "title": "远程公告迟到仍更新打开的弹窗，顺序/免打扰/手动查看不变，零AI请求",
+      "status": "passed"
+    },
+    {
+      "project": "mobile",
+      "file": "remote-announcement.spec.ts",
+      "title": "接口断网立即可用内置公告，首页照常加载",
+      "status": "passed"
+    },
+    {
+      "project": "desktop",
+      "file": "startup-notices.spec.ts",
+      "title": "完整定稿实际分段渲染：开头、架空社会声明与开发者落款",
+      "status": "passed"
+    },
+    {
+      "project": "desktop",
+      "file": "startup-notices.spec.ts",
+      "title": "首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复",
+      "status": "passed"
+    },
+    {
+      "project": "desktop",
+      "file": "startup-notices.spec.ts",
+      "title": "首页与设置手动查看只开指定公告；返回保留设置内容和焦点",
+      "status": "passed"
+    },
+    {
+      "project": "mobile",
+      "file": "startup-notices.spec.ts",
+      "title": "完整定稿实际分段渲染：开头、架空社会声明与开发者落款",
+      "status": "passed"
+    },
+    {
+      "project": "mobile",
+      "file": "startup-notices.spec.ts",
+      "title": "首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复",
+      "status": "passed"
+    },
+    {
+      "project": "mobile",
+      "file": "startup-notices.spec.ts",
+      "title": "首页与设置手动查看只开指定公告；返回保留设置内容和焦点",
+      "status": "passed"
+    }
+  ],
+  "vitest": {
+    "files": 2,
+    "passed": 33,
+    "failed": 0,
+    "skipped": 0
+  }
+}

@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#08090a">
+<title>黑金王朝 · 手机端 · 游戏主界面</title>
+<style>
+:root{--font-title:'Noto Serif SC','Noto Serif CJK SC','Source Han Serif SC','Songti SC','STSong',serif;--font-body:'Noto Sans SC','Noto Sans CJK SC','PingFang SC','Microsoft YaHei',-apple-system,sans-serif;--font-mono:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;
+  --bg:#08090a;--text:#ECE7DA;--prose:#DCD6C8;--muted:#A3A396;--dim:#77796f;--gold:#C9A961;--gold-hi:#E8D196;--gold-lo:#7d6a3e;--line:#ffffff14;--line-2:#ffffff22;
+  --warn:#C26A4A;--warn-text:#E6A18A;--ok:#7DB49A;--info:#8EC1E0;--tint:#7FA7A0;--ease:cubic-bezier(.22,.7,.2,1);
+  --sky-1:#040506;--sky-2:#080b0c;--sky-3:#0c1111;--lights:.5;
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);color-scheme:dark}
+[data-city=cq]{--tint:#7FA7A0}[data-city=sh]{--tint:#8E9BD8}[data-city=hrb]{--tint:#A9C3D8}[data-city=gz]{--tint:#D08A6A}
+[data-time=dusk]{--sky-1:#0e0d16;--sky-2:#2c1e26;--sky-3:#6a3a26;--lights:.8}
+[data-time=day]{--sky-1:#18222a;--sky-2:#26323a;--sky-3:#3a4549;--lights:.12}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:#050606;color:var(--text);font-family:var(--font-body);line-height:1.7;-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer;background:transparent;border:1px solid var(--line-2);border-radius:8px;padding:.5rem .9rem;touch-action:manipulation}
+button:active{transform:scale(.97)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+h1,h2,h3,h4{font-family:var(--font-title);font-weight:600;margin:0;line-height:1.35}p{margin:0}
+.seal{display:inline-grid;place-items:center;flex:none;font-family:var(--font-title);color:var(--gold-hi);border:1px solid var(--gold-lo);background:linear-gradient(145deg,#c9a96126,#c9a96108);border-radius:3px;box-shadow:inset 0 0 0 2px #0009,inset 0 0 0 3px #c9a96130}
+
+/* ===== 桌面查看：手机外框 + 说明 ===== */
+.desk{height:100%;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:3rem;padding:2rem}
+.desk .notes{justify-self:end;max-width:22rem;font-size:.84rem;color:var(--muted);line-height:1.85}
+.desk .notes h1{font-size:1.5rem;letter-spacing:.2em;color:var(--text);margin:.3rem 0 .8rem}
+.desk .notes .eyebrow{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.28em;color:var(--gold)}
+.desk .notes ol{padding-left:1.1rem;margin:.6rem 0}
+.desk .notes li{margin-bottom:.35rem}
+.desk .notes b{color:var(--text);font-weight:500}
+.desk .ctrl{justify-self:start;display:grid;gap:.9rem;font-size:.76rem;color:var(--dim);max-width:16rem}
+.desk .ctrl p{margin-bottom:.3rem}
+.desk .ctrl .seg{display:flex;flex-wrap:wrap;gap:.25rem}
+.desk .ctrl button{font-size:.72rem;padding:.2rem .6rem;border-style:dashed;color:var(--muted)}
+.desk .ctrl button[aria-pressed=true]{color:var(--gold-hi);border-color:var(--gold-lo);border-style:solid}
+.frame{position:relative;width:390px;height:844px;border-radius:52px;padding:12px;background:linear-gradient(145deg,#2a2c2b,#111);box-shadow:0 40px 90px -30px #000,inset 0 0 0 2px #3a3c3b}
+.frame::before{content:'';position:absolute;left:50%;top:22px;transform:translateX(-50%);width:110px;height:30px;border-radius:20px;background:#000;z-index:50}
+.phone{position:relative;width:100%;height:100%;border-radius:40px;overflow:hidden;background:var(--bg);--safe-t:44px;--safe-b:22px;container-type:inline-size}
+@media (max-width:600px){
+  .desk{display:block;padding:0;height:100%}
+  .desk .notes,.desk .ctrl{display:none}
+  .frame{width:100%;height:100dvh;border-radius:0;padding:0;background:none;box-shadow:none}
+  .frame::before{display:none}
+  .phone{border-radius:0;--safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)}
+}
+@media (max-width:1100px) and (min-width:601px){.desk{grid-template-columns:auto;justify-content:center}.desk .notes,.desk .ctrl{display:none}}
+
+/* ===== 氛围层 ===== */
+.atmo{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  background:radial-gradient(90% 40% at 80% 100%,color-mix(in srgb,var(--tint) 26%,transparent),transparent 70%),linear-gradient(180deg,var(--sky-1),var(--sky-2) 60%,var(--sky-3));transition:background 1.5s}
+.atmo .sky{position:absolute;left:-30%;right:-30%;bottom:0;height:34%;opacity:.75}
+.atmo .sky svg{width:100%;height:100%}
+.atmo .sky .w{opacity:var(--lights)}
+.atmo .rain{position:absolute;inset:-200px 0 0 -200px;background-image:repeating-linear-gradient(104deg,transparent 0 22px,rgba(210,225,235,.12) 22px 23px,transparent 23px 61px);background-size:200px 200px;animation:rain .6s linear infinite}
+@keyframes rain{to{background-position:-60px 200px}}
+@keyframes train{from{transform:translateX(-120px)}to{transform:translateX(1320px)}}
+@keyframes snow{from{transform:translateY(-20px)}to{transform:translateY(180px)}}
+.atmo .shade{position:absolute;inset:0;background:linear-gradient(180deg,#08090acc 0%,#08090a99 30%,#08090a88 60%,#08090aee 100%)}
+
+/* ===== 顶部：城市胶囊 ===== */
+.top{position:absolute;left:0;right:0;top:0;z-index:20;padding:calc(var(--safe-t) + 6px) 12px 8px;background:linear-gradient(180deg,#08090af2 60%,#08090a00);transition:padding .25s var(--ease)}
+.pill{display:flex;align-items:center;gap:.6rem;width:100%;padding:.45rem .55rem .45rem .45rem;border:1px solid var(--line-2);border-radius:999px;background:#0e1110d9;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);text-align:left;position:relative;overflow:hidden}
+.pill::after{content:'';position:absolute;left:12%;right:12%;bottom:0;height:1px;background:linear-gradient(90deg,transparent,var(--tint),transparent);opacity:.7}
+.pill .seal{width:2rem;height:2rem;font-size:.85rem;border-radius:50%;box-shadow:none;color:var(--tint);border-color:color-mix(in srgb,var(--tint) 50%,transparent);background:color-mix(in srgb,var(--tint) 12%,transparent)}
+.pill .where{flex:1;min-width:0;display:grid;line-height:1.3}
+.pill .where small{font-size:.62rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:max-height .25s,opacity .25s;max-height:1rem}
+.pill .where b{font-family:var(--font-title);font-weight:600;font-size:.9rem;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill time{font-family:var(--font-mono);font-size:1.05rem;color:var(--gold-hi);line-height:1}
+.pill .wx{flex:none;display:grid;place-items:center;width:1.9rem;height:1.9rem;border-radius:50%;font-family:var(--font-title);font-size:.72rem;color:var(--info);background:#8ec1e014;border:1px solid #8ec1e033}
+.top.mini{padding-top:calc(var(--safe-t) + 2px)}
+.top.mini .pill .where small{max-height:0;opacity:0}
+.top.mini .pill{padding-block:.3rem}
+.top.mini .pill .seal{width:1.6rem;height:1.6rem;font-size:.7rem}
+
+/* ===== 正文 ===== */
+.reader{position:absolute;inset:0;z-index:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:calc(var(--safe-t) + 78px) 20px 16px;scrollbar-width:none}
+.reader::-webkit-scrollbar{display:none}
+.sheet-turn{position:relative;margin-bottom:2rem}
+.sheet-turn.past{opacity:.6}
+.prose{font-family:var(--font-title);font-size:1.04rem;line-height:1.98;color:var(--prose);margin:0 0 1em;letter-spacing:.02em;text-align:justify}
+/* 剧本台词 · 手机：头像+名字一行，台词换行缩进 */
+.dlg{margin:1.15em 0 1.2em}
+.dlg .hd{display:flex;align-items:center;gap:.45rem;margin-bottom:.25rem}
+.dlg .av{width:1.45rem;height:1.45rem;font-size:.66rem;border-radius:50%;color:var(--text);border-color:#ffffff30;background:#ffffff0a;box-shadow:none}
+.dlg .who{font-family:var(--font-title);font-size:.8rem;letter-spacing:.22em;color:var(--muted)}
+.dlg .say{margin-left:.7rem;padding:.1rem 0 .1rem .9rem;border-left:1px solid #ffffff26;font-family:var(--font-title);font-size:1.03rem;line-height:1.9;color:var(--text)}
+.dlg .say::before{content:'「';color:var(--dim)}.dlg .say::after{content:'」';color:var(--dim)}
+.dlg.me .av{color:var(--gold-hi);border-color:var(--gold-lo);background:#c9a9611a}
+.dlg.me .who{color:var(--gold)}
+.dlg.me .say{border-left:2px solid var(--gold);color:#f1e6c8;background:linear-gradient(90deg,#c9a96112,transparent 70%)}
+.dlg.me .say::before,.dlg.me .say::after{color:var(--gold-lo)}
+/* 回目（缩小版城市铭牌） */
+.chapter{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:.4rem 1.4rem;margin:.2rem 0 2rem}
+.chapter::before,.chapter::after{content:'';grid-row:1;height:1px;width:min(100%,11rem)}
+.chapter::before{grid-column:1;justify-self:end;background:linear-gradient(90deg,transparent,var(--gold-lo))}
+.chapter::after{grid-column:3;justify-self:start;background:linear-gradient(90deg,var(--gold-lo),transparent)}
+.chapter h2,.chapter .plate{grid-column:2;grid-row:1;justify-self:center}
+.chapter h2{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.c-sub{grid-column:1/-1;grid-row:2;text-align:center;font-size:.86rem;letter-spacing:.24em;color:var(--muted);margin-top:.55rem}
+.c-sub b{font-weight:400;color:color-mix(in srgb,var(--tint) 75%,#fff)}
+.chapter:is([data-state=draft],[data-state=preview]) .c-sub::after{content:' · ' attr(data-st);color:var(--gold)}
+.chapter[data-state=draft] .c-sub::after{color:var(--muted)}
+.past .chapter{margin-bottom:1.4rem}
+.past .c-sub{font-size:.76rem}
+.plate{display:inline-flex;align-items:center;gap:.8rem;position:relative}
+.p-num,.p-cn,.p-sub{display:block}
+.past .plate{transform:scale(.84)}
+.chapter[data-state=draft] .plate{filter:grayscale(.85) brightness(.8)}
+.chapter[data-state=preview] .plate{animation:breathe 1.6s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.6}}
+/* 城市推导不出时：素版 */
+[data-city=other] .chapter .plate{display:none}
+[data-city=other] .chapter h2{position:static;width:auto;height:auto;overflow:visible;clip:auto;font-size:0;color:var(--gold-hi)}
+[data-city=other] .chapter h2::before{content:attr(data-cn);font-size:1.75rem;letter-spacing:.5em;margin-right:-.5em}
+[data-city=other] .past .chapter h2::before{font-size:1.3rem}
+/* 重庆 · 轻轨站牌 */
+[data-city=cq] .plate{padding:.55rem 1.1rem .55rem .55rem;background:#0f1d1a;border:1px solid #2c4a43;border-radius:6px;box-shadow:inset 0 -3px 0 #3f8f80}
+[data-city=cq] .p-num{display:grid!important;place-items:center;width:2.6rem;height:2.6rem;border-radius:50%;background:#3f8f80;color:#fff;font-family:var(--font-mono);font-size:1.05rem;font-weight:600}
+[data-city=cq] .p-cn{font-family:var(--font-title);font-size:1.15rem;letter-spacing:.3em;color:#f1f4f2}
+[data-city=cq] .p-sub{font-family:var(--font-mono);font-size:.58rem;letter-spacing:.2em;color:#8fb8ae}
+[data-city=cq] .p-rail{display:flex!important;align-items:center;gap:0;margin-left:.6rem}
+[data-city=cq] .p-rail i{width:.5rem;height:.5rem;border-radius:50%;border:1.5px solid #3f8f80;background:#0f1d1a}
+[data-city=cq] .p-rail i.on{background:#9cd6c9;border-color:#9cd6c9;box-shadow:0 0 8px #9cd6c9}
+[data-city=cq] .p-rail b{width:1.1rem;height:2px;background:#3f8f80}
+
+/* 上海 · 搪瓷门牌 */
+[data-city=sh] .plate{padding:.5rem 1.2rem;background:linear-gradient(180deg,#2c55a0,#1f437f);border-radius:8px;box-shadow:inset 0 0 0 3px #1f437f,inset 0 0 0 4.5px #eef1f7,0 6px 18px -8px #000;gap:1rem}
+[data-city=sh] .plate::before,[data-city=sh] .plate::after{content:'';position:absolute;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:#c9d3e6;box-shadow:inset 0 1px 1px #0006}
+[data-city=sh] .plate::before{left:.45rem}[data-city=sh] .plate::after{right:.45rem}
+[data-city=sh] .p-num{font-family:var(--font-title);font-size:2rem;font-weight:700;line-height:1;color:#fff;padding-left:.4rem}
+[data-city=sh] .p-num::after{content:'号';font-size:.8rem;margin-left:.15rem;font-weight:600}
+[data-city=sh] .p-cn{font-family:var(--font-title);font-size:1rem;letter-spacing:.32em;color:#fff;font-weight:600;border-left:1px solid #ffffff66;padding-left:.9rem}
+[data-city=sh] .p-sub{font-family:var(--font-mono);font-size:.56rem;letter-spacing:.2em;color:#c9d6f0;padding-left:.9rem}
+
+/* 哈尔滨 · 冰刻拱牌 */
+[data-city=hrb] .plate{padding:.9rem 1.4rem .55rem;border-radius:46% 46% 6px 6px / 38% 38% 6px 6px;background:linear-gradient(180deg,#dcebf522,#a9c3d80d);border:1px solid #d7e8f466;box-shadow:inset 0 1px 0 #ffffff55,inset 0 0 18px #cfe3f022;backdrop-filter:blur(6px)}
+[data-city=hrb] .p-num{font-family:var(--font-title);font-size:1.7rem;line-height:1;color:transparent;-webkit-text-stroke:1px #e8f3fa;text-shadow:0 0 12px #bfe0f566}
+[data-city=hrb] .p-cn{font-family:var(--font-title);font-size:1.05rem;letter-spacing:.34em;color:#e6f1f8;text-shadow:0 1px 0 #0008,0 0 10px #bfe0f544}
+[data-city=hrb] .p-sub{font-family:var(--font-mono);font-size:.56rem;letter-spacing:.22em;color:#a9c3d8}
+[data-city=hrb] .p-frost{display:block!important;position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(3px 3px at 12% 30%,#fff9,transparent),radial-gradient(2px 2px at 88% 26%,#fff8,transparent),radial-gradient(2px 2px at 50% 8%,#fffa,transparent),radial-gradient(2px 2px at 76% 80%,#fff6,transparent)}
+
+/* 广州 · 霓虹招牌 */
+[data-city=gz] .plate{padding:.5rem 1.1rem;background:#140d0b;border:1px solid #3a221b;border-radius:4px;box-shadow:inset 0 0 0 4px #140d0b,inset 0 0 0 5px #ff6b4f88,0 0 22px -6px #ff6b4f66}
+[data-city=gz] .p-num{font-family:var(--font-title);font-size:1.15rem;letter-spacing:.24em;color:#ffd7c7;text-shadow:0 0 4px #ff6b4f,0 0 12px #ff6b4f,0 0 24px #ff3d1f88}
+[data-city=gz] .p-num::before{content:attr(data-dx)}
+[data-city=gz] .p-num{font-size:0}[data-city=gz] .p-num::before{font-size:1.25rem}
+[data-city=gz] .p-cn{display:none!important}
+[data-city=gz] .p-sub{font-family:var(--font-mono);font-size:.58rem;letter-spacing:.22em;color:#f6b27a;text-shadow:0 0 6px #f08a3c}
+[data-city=gz] .latest .p-num::before{animation:neon 6s steps(1) infinite}
+@keyframes neon{0%,7%,9%,100%{opacity:1}8%{opacity:.35}}
+[data-city=gz] .chapter[data-state=preview] .p-num::before{color:#5a3a32;text-shadow:none;animation:none}
+
+
+
+/* 城市化的两侧线 */
+/* 城市化的两侧线 */
+ .chapter::before, .chapter::after{width:min(100%,11rem)}
+[data-city=cq] .chapter::before,[data-city=cq] .chapter::after{height:12px;
+  background:radial-gradient(circle,#0c1110 2px,var(--tint) 2.5px 4px,transparent 4.5px) 0 50%/2.2rem 12px repeat-x,linear-gradient(var(--tint),var(--tint)) 0 50%/100% 2px no-repeat}
+[data-city=cq] .chapter::before{-webkit-mask:linear-gradient(90deg,transparent,#000 70%);mask:linear-gradient(90deg,transparent,#000 70%)}
+[data-city=cq] .chapter::after{-webkit-mask:linear-gradient(90deg,#000 30%,transparent);mask:linear-gradient(90deg,#000 30%,transparent);background-position:1.1rem 50%,0 50%}
+[data-city=sh] .chapter::before,[data-city=sh] .chapter::after{height:7px;
+  background:linear-gradient(#c9d6f0b0,#c9d6f0b0) 0 0/100% 1px no-repeat,linear-gradient(#c9d6f0b0,#c9d6f0b0) 0 100%/100% 1px no-repeat}
+[data-city=sh] .chapter::before{-webkit-mask:linear-gradient(90deg,transparent,#000 80%);mask:linear-gradient(90deg,transparent,#000 80%);}
+[data-city=sh] .chapter::after{-webkit-mask:linear-gradient(90deg,#000 20%,transparent);mask:linear-gradient(90deg,#000 20%,transparent);background-repeat:no-repeat}
+[data-city=hrb] .chapter::before,[data-city=hrb] .chapter::after{height:10px;
+  background:radial-gradient(1.5px 1.5px at 20% 20%,#fff,transparent),radial-gradient(1px 1px at 55% 85%,#e8f4fb,transparent),radial-gradient(1.5px 1.5px at 82% 30%,#fff,transparent),linear-gradient(#d7e8f4aa,#d7e8f4aa) 0 50%/100% 1px no-repeat;filter:drop-shadow(0 0 4px #a9c3d8)}
+[data-city=hrb] .chapter::before{-webkit-mask:linear-gradient(90deg,transparent,#000 70%);mask:linear-gradient(90deg,transparent,#000 70%)}
+[data-city=hrb] .chapter::after{-webkit-mask:linear-gradient(90deg,#000 30%,transparent);mask:linear-gradient(90deg,#000 30%,transparent)}
+[data-city=gz] .chapter::before,[data-city=gz] .chapter::after{height:2px;border-radius:2px;background:#ff8a6a;box-shadow:0 0 5px #ff5a3a,0 0 12px #ff3c1c99}
+[data-city=gz] .chapter::before{-webkit-mask:linear-gradient(90deg,transparent,#000 60%);mask:linear-gradient(90deg,transparent,#000 60%)}
+[data-city=gz] .chapter::after{-webkit-mask:linear-gradient(90deg,#000 40%,transparent);mask:linear-gradient(90deg,#000 40%,transparent)}
+
+
+.chapter{gap:.3rem .7rem;margin:.4rem 0 1.4rem}
+.chapter::before,.chapter::after{width:min(100%,4rem)!important}
+.plate{transform:scale(.78);transform-origin:center;margin:-.4rem -1rem}
+.past .plate{transform:scale(.66)}
+.c-sub{font-size:.7rem;letter-spacing:.14em;margin-top:.2rem;line-height:1.8}
+.c-sub .l2{display:block;color:var(--dim)}
+.past .c-sub{font-size:.66rem}
+/* 本回合变化 */
+.chg{margin:1.2rem 0 0;padding-top:1rem;border-top:1px dashed #ffffff1c}
+.chg-btn{display:flex;align-items:center;gap:.6rem;width:100%;padding:.6rem .8rem;border-radius:12px;background:#0e1110cc;font-size:.84rem;color:var(--muted)}
+.chg-btn b{font-weight:500;color:var(--text)}
+.chg-btn .n{font-family:var(--font-mono);font-size:.72rem;color:var(--gold-hi)}
+.chg-btn .dots{display:inline-flex;gap:3px;margin-left:auto}
+.chg-btn .dots i{width:6px;height:6px;border-radius:50%}
+.chg-btn .arr{color:var(--dim);font-size:.7rem}
+/* 行动建议：横滑卡片 */
+.acts{margin:1.6rem -20px 0;padding:0 0 .4rem}
+.acts>p{display:flex;align-items:center;gap:.6rem;padding:0 20px;font-family:var(--font-title);font-size:.84rem;letter-spacing:.3em;color:var(--muted);margin-bottom:.7rem}
+.acts>p span{margin-left:auto;font-family:var(--font-mono);font-size:.66rem;letter-spacing:.08em;color:var(--dim)}
+.rail-cards{display:flex;gap:.6rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 20px .3rem;scrollbar-width:none;scroll-padding:0 20px}
+.rail-cards::-webkit-scrollbar{display:none}
+.opt{flex:0 0 76%;scroll-snap-align:start;display:grid;grid-template-rows:auto 1fr auto;gap:.5rem;min-height:8.4rem;text-align:left;padding:.9rem .95rem .8rem;border-radius:14px;border:1px solid var(--line-2);background:linear-gradient(160deg,#151917f2,#0e1110f2);position:relative;overflow:hidden}
+.opt .n{font-family:var(--font-mono);font-size:.68rem;color:var(--gold)}
+.opt .t{font-family:var(--font-title);font-size:1rem;line-height:1.7;color:var(--text)}
+.opt .go{justify-self:end;font-size:.72rem;color:var(--dim)}
+.opt[aria-pressed=true]{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.opt[aria-pressed=true] .go{color:var(--gold-hi)}
+.dots-pg{display:flex;justify-content:center;gap:5px;margin-top:.6rem}
+.dots-pg i{width:5px;height:5px;border-radius:3px;background:#ffffff22;transition:width .2s,background .2s}
+.dots-pg i.on{width:14px;background:var(--gold)}
+.spacer{height:calc(170px + var(--safe-b))}
+
+/* ===== 底部：行动台 + 导航 ===== */
+.dock{position:absolute;left:0;right:0;bottom:0;z-index:20;padding:1.4rem 10px calc(var(--safe-b) + 4px);background:linear-gradient(180deg,#08090a00 0,#08090ae6 1.4rem,#08090a 2.6rem)}
+.wf-line{display:flex;align-items:center;gap:.5rem;width:100%;border:0;padding:.55rem .3rem .45rem;background:none;font-size:.7rem;color:var(--muted)}
+.wf-line .segs{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.wf-line .segs i{height:3px;border-radius:2px;background:#ffffff18}
+.wf-line .segs i.done{background:var(--gold)}
+.wf-line .segs i.run{background:linear-gradient(90deg,#c9a96133,var(--gold-hi),#c9a96133);background-size:200% 100%;animation:flow 1.2s linear infinite}
+.wf-line .segs i.fail{background:var(--warn)}
+@keyframes flow{to{background-position:-200% 0}}
+.wf-line b{font-weight:500;color:var(--text)}
+.wf-line .more{color:var(--dim)}
+.wf-line[data-state=error] b{color:var(--warn-text)}
+.composer{display:flex;align-items:flex-end;gap:.45rem;padding:.4rem;border:1px solid var(--line-2);border-radius:22px;background:#111513f2;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:border-color .2s}
+.composer:focus-within{border-color:var(--gold-lo)}
+.composer .tool{flex:none;width:2.4rem;height:2.4rem;padding:0;border-radius:50%;display:grid;place-items:center;font-family:var(--font-title);font-size:.8rem;color:var(--muted);border-color:transparent;background:#ffffff0a}
+.composer textarea{flex:1;min-width:0;border:0;background:none;color:var(--text);font:inherit;font-size:16px;line-height:1.5;padding:.55rem .2rem;resize:none;max-height:7.5rem;outline:none}
+.composer textarea::placeholder{color:var(--dim)}
+.send{flex:none;width:2.6rem;height:2.6rem;padding:0;border:0;border-radius:50%;display:grid;place-items:center;font-size:1.05rem;color:#171810;background:linear-gradient(180deg,#e9d196,#c5a45a);box-shadow:inset 0 1px 0 #fff6,0 6px 16px -6px #c9a961b0;transition:opacity .2s,transform .15s}
+.send:disabled{opacity:.35;box-shadow:none}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);margin-top:.45rem;padding-top:.35rem;border-top:1px solid var(--line)}
+.tabs button{display:grid;justify-items:center;gap:.15rem;border:0;padding:.3rem 0 .2rem;font-size:.64rem;letter-spacing:.12em;color:var(--dim);background:none}
+.tabs button .seal{width:1.75rem;height:1.75rem;font-size:.78rem;box-shadow:none;border-color:#ffffff22;background:none;color:var(--dim)}
+.tabs button[aria-current=page]{color:var(--gold-hi)}
+.tabs button[aria-current=page] .seal{background:linear-gradient(180deg,#e9d196,#c5a45a);color:#171810;border-color:transparent}
+
+/* ===== 底部抽屉 ===== */
+.scrim{position:absolute;inset:0;z-index:40;background:#000;opacity:0;pointer-events:none;transition:opacity .3s}
+.scrim.on{opacity:.55;pointer-events:auto}
+.bs{position:absolute;left:0;right:0;bottom:0;z-index:41;max-height:calc(100% - var(--safe-t) - 18px);display:flex;flex-direction:column;border-radius:22px 22px 0 0;background:#111513;border-top:1px solid var(--line-2);box-shadow:0 -20px 60px -20px #000;transform:translateY(105%);transition:transform .36s var(--ease);touch-action:none}
+.bs.on{transform:translateY(0)}
+.bs:focus{outline:none}
+.bs.full{height:calc(100% - var(--safe-t) - 18px)}
+.bs .grab{flex:none;display:grid;place-items:center;padding:.6rem 0 .3rem;cursor:grab}
+.bs .grab i{width:2.6rem;height:4px;border-radius:2px;background:#ffffff33}
+.bs-hd{flex:none;display:flex;align-items:center;gap:.7rem;padding:.2rem 16px .8rem}
+.bs-hd .seal{width:2.2rem;height:2.2rem;font-size:.95rem}
+.bs-hd h3{font-size:1.15rem;letter-spacing:.14em}
+.bs-hd small{display:block;font-family:var(--font-mono);font-size:.56rem;letter-spacing:.24em;color:var(--gold)}
+.bs-hd .x{margin-left:auto;width:2.2rem;height:2.2rem;padding:0;border-radius:50%;border:0;background:#ffffff0c;color:var(--muted)}
+.bs-bd{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 16px calc(var(--safe-b) + 18px);touch-action:pan-y}
+/* 状态抽屉 */
+.st-place{padding:.9rem 1rem;border-radius:14px;border:1px solid var(--line);background:linear-gradient(160deg,color-mix(in srgb,var(--tint) 14%,#121614),#121614 70%)}
+.st-place .path{font-size:.68rem;color:var(--dim)}
+.st-place h4{font-size:1.15rem;letter-spacing:.08em;margin:.15rem 0 .55rem}
+.st-place .clock{display:flex;align-items:baseline;gap:.6rem}
+.st-place .clock time{font-family:var(--font-mono);font-size:2rem;color:var(--gold-hi);line-height:1}
+.st-place .clock span{font-size:.72rem;color:var(--muted);line-height:1.5}
+.st-place dl{margin:.8rem 0 0;display:grid;gap:.4rem}
+.st-place dl div{display:grid;grid-template-columns:2.6rem minmax(0,1fr);gap:.6rem;font-size:.84rem}
+.st-place dt{font-size:.68rem;color:var(--dim);padding-top:.15rem}
+.st-place dd{margin:0;line-height:1.6}
+.st-hero{display:flex;align-items:center;gap:.8rem;margin:1.1rem 0 .7rem}
+.st-hero .seal{width:2.8rem;height:2.8rem;font-size:1.2rem}
+.st-hero h4{font-size:1.25rem;letter-spacing:.16em}
+.st-hero p{font-size:.72rem;color:var(--muted)}
+.money{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.money div{padding:.6rem .75rem;border:1px solid var(--line);border-radius:10px;background:#ffffff05}
+.money small{display:block;font-size:.66rem;color:var(--dim)}
+.money b{font-family:var(--font-mono);font-weight:500;font-size:1.02rem}
+.money .cash b{color:var(--gold-hi)}
+.conds{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem}
+.conds div{padding:.55rem .7rem;border-left:2px solid var(--tint);border-radius:0 8px 8px 0;background:linear-gradient(90deg,color-mix(in srgb,var(--tint) 10%,transparent),transparent);font-size:.8rem;line-height:1.55}
+.conds small{display:block;font-size:.62rem;color:var(--dim);letter-spacing:.16em}
+.wear{margin:.9rem 0 0;display:grid;gap:0}
+.wear div{display:grid;grid-template-columns:3.4rem minmax(0,1fr);gap:.6rem;padding:.42rem 0;border-bottom:1px dashed #ffffff10;font-size:.82rem}
+.wear dt{color:var(--dim);font-size:.72rem}.wear dd{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wear [data-empty] dd{color:#ffffff40}
+.st-acts{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:1rem}
+.st-acts button{padding:.75rem;border-radius:12px;font-size:.86rem}
+/* 世界资料抽屉 */
+.grid7{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem .2rem;padding:.2rem 0 .6rem}
+.grid7 button{display:grid;justify-items:center;gap:.35rem;border:0;padding:.7rem .2rem;border-radius:14px;font-size:.72rem;color:var(--muted);position:relative}
+.grid7 button:active{background:#ffffff0a}
+.grid7 .seal{width:3rem;height:3rem;font-size:1.25rem}
+.grid7 .badge{position:absolute;top:.45rem;right:calc(50% - 1.75rem);min-width:1.05rem;height:1.05rem;padding:0 .25rem;border-radius:999px;font-family:var(--font-mono);font-size:.56rem;line-height:1.05rem;color:#171810;background:var(--gold)}
+.grid7 + .hint{font-size:.7rem;color:var(--dim);text-align:center;padding-bottom:.4rem}
+/* 档案纸抽屉（世界资料面板） */
+.bs.paper{background:#E4DCCA url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");color:#2B2723;border-top:0;color-scheme:light}
+.paper .grab i{background:#2a262233}
+.paper .seal{color:#F4EDE0;background:#A3412E;border-color:#A3412E;box-shadow:inset 0 0 0 2px #A3412E,inset 0 0 0 3px #F4EDE066}
+.paper .bs-hd small{color:#A3412E}
+.paper .bs-hd h3{color:#1F1B17}
+.paper .bs-hd .x{background:#2a26220c;color:#5F574C}
+.paper .back{border:0;padding:.3rem .2rem;font-size:.8rem;color:#2D5E7D}
+.p-search{display:block;margin:0 0 .6rem}
+.p-search input{width:100%;font:inherit;font-size:16px;padding:.55rem .8rem .55rem 2.1rem;border:1px solid #2a262233;border-radius:10px;background:#F8F4EA url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%23857B6C' stroke-width='1.6'%3E%3Ccircle cx='6' cy='6' r='4.5'/%3E%3Cpath d='M9.5 9.5L13 13'/%3E%3C/svg%3E") no-repeat .75rem 50%;color:#2B2723}
+.chips{display:flex;gap:.35rem;overflow-x:auto;scrollbar-width:none;margin:0 -16px .6rem;padding:0 16px}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;font-size:.76rem;padding:.3rem .8rem;border-radius:999px;border-color:#2a262233;color:#5F574C}
+.chips button[aria-pressed=true]{background:#1F1B17;color:#F4EDE0;border-color:#1F1B17}
+.people{list-style:none;margin:0;padding:0}
+.people li{border-bottom:1px solid #2a26221a}
+.person{display:flex;align-items:center;gap:.75rem;width:100%;border:0;border-radius:0;padding:.75rem 0;text-align:left}
+.person .av{width:2.6rem;height:2.6rem;border-radius:50%;display:grid;place-items:center;flex:none;font-family:var(--font-title);border:1px solid #2a262233;background:#EFE8D9;color:#2B2723}
+.person.sp .av{color:#A3412E;border-color:#A3412E66;box-shadow:0 0 0 2px #E4DCCA,0 0 0 3px #A3412E44}
+.person .tx{flex:1;min-width:0}
+.person strong{display:block;font-family:var(--font-title);font-size:1rem;letter-spacing:.08em;color:#1F1B17}
+.person small{display:block;font-size:.72rem;color:#5F574C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.person .on{font-size:.62rem;padding:.02rem .45rem;border-radius:999px;white-space:nowrap;color:color-mix(in srgb,var(--tint) 45%,#1a2a28);border:1px solid color-mix(in srgb,var(--tint) 60%,#000 10%);background:color-mix(in srgb,var(--tint) 16%,transparent)}
+.person .chev{color:#857B6C}
+.pd-hero{display:flex;align-items:center;gap:.9rem;margin:.3rem 0 .9rem}
+.pd-av{width:3.6rem;height:3.6rem;flex:none;border-radius:50%;display:grid;place-items:center;font-family:var(--font-title);font-size:1.5rem;border:1px solid #2a262233;background:#EFE8D9;color:#2B2723}
+.pd-av.sp{color:#A3412E;border-color:#A3412E66;box-shadow:0 0 0 3px #E4DCCA,0 0 0 4px #A3412E44}
+.pd-hero h4{font-size:1.5rem;letter-spacing:.14em;color:#1F1B17}
+.pd-hero p{font-size:.72rem;color:#5F574C}
+.rel{padding:.75rem .85rem;border-radius:12px;background:#EFE8D9;border:1px solid #2a26221f;margin-bottom:.8rem}
+.rel .top2{display:flex;justify-content:space-between;font-size:.72rem;color:#857B6C}
+.rel .top2 b{font-family:var(--font-mono);font-size:1rem;color:#2F7A58;font-weight:500}
+.rel .meter{position:relative;height:6px;border-radius:3px;background:#2a262214;margin:.45rem 0 .4rem}
+.rel .meter::after{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#2a262255}
+.rel .meter i{position:absolute;left:50%;top:0;bottom:0;border-radius:3px;background:#2F7A58}
+.rel p{font-size:.78rem;color:#5F574C}
+.seg-tabs{position:sticky;top:0;z-index:2;display:flex;gap:1.1rem;margin:0 -16px .6rem;padding:.2rem 16px 0;background:#E4DCCA;border-bottom:1px solid #2a26221f;overflow-x:auto;scrollbar-width:none}
+.seg-tabs a{flex:none;padding:.45rem 0 .55rem;font-size:.8rem;color:#5F574C;text-decoration:none;position:relative}
+.seg-tabs a.on{color:#1F1B17}
+.seg-tabs a.on::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:#8E6C25}
+.pcard{padding:.85rem .95rem;border-radius:12px;background:#EFE8D9;border:1px solid #2a26221f;margin-bottom:.6rem}
+.pcard h5{font-family:var(--font-title);font-size:.9rem;letter-spacing:.18em;color:#1F1B17;margin:0 0 .5rem;display:flex;align-items:center;gap:.5rem}
+.pcard h5::before{content:'';width:3px;height:.9em;border-radius:2px;background:#8E6C25}
+.pcard dl{margin:0;display:grid;gap:.35rem}
+.pcard dl div{display:grid;grid-template-columns:3.4rem minmax(0,1fr);gap:.6rem;font-size:.84rem}
+.pcard dt{font-size:.7rem;color:#857B6C;padding-top:.15rem}
+.pcard dd{margin:0;line-height:1.7;color:#2B2723}
+.pd{animation:slidein .3s var(--ease)}
+@keyframes slidein{from{opacity:0;transform:translateX(24px)}}
+/* 工作流抽屉 */
+.wf-st{display:flex;align-items:center;gap:.6rem;padding:.7rem .85rem;border-radius:12px;border:1px solid #6e4a3d;background:#c26a4a14;font-size:.82rem;line-height:1.6;color:#ecc9bc;margin-bottom:.8rem}
+.wf-st i{flex:none;width:1.3rem;height:1.3rem;border-radius:50%;display:grid;place-items:center;font-style:normal;font-family:var(--font-title);font-size:.62rem;color:#0c0e0d;background:#D47C60}
+.wf-st small{display:block;color:var(--muted);font-size:.7rem}
+.big-btn{display:block;width:100%;padding:.85rem;border:0;border-radius:14px;font-weight:650;letter-spacing:.14em;color:#171810;background:linear-gradient(180deg,#e9d196,#c5a45a);margin-bottom:.9rem}
+.stg{list-style:none;margin:0;padding:0 0 0 .9rem;border-left:2px solid #ffffff1a}
+.stg li{position:relative;padding:.1rem 0 .9rem .5rem}
+.stg li::before{content:'';position:absolute;left:calc(-.9rem - 6px);top:.45rem;width:10px;height:10px;border-radius:50%;background:#111513;border:2px solid var(--c,#ffffff40)}
+.stg li.done{--c:var(--gold)}.stg li.done::before{background:var(--gold)}
+.stg li.fail{--c:var(--warn)}.stg li.fail::before{background:var(--warn)}
+.stg .h{display:flex;align-items:center;gap:.5rem}
+.stg .h b{font-weight:600;font-size:.92rem}
+.stg .h span{margin-left:auto;font-size:.64rem;padding:0 .5rem;border-radius:999px;border:1px solid currentColor}
+.stg .h span.done{color:var(--gold)}.stg .h span.fail{color:var(--warn-text)}.stg .h span.idle{color:var(--dim)}
+.stg .a{display:flex;align-items:center;gap:.6rem;margin-top:.45rem;flex-wrap:wrap}
+.stg .a button{font-size:.76rem;padding:.4rem .75rem;border-radius:10px}
+.stg .a .lk{border:0;padding:0;color:var(--info);font-size:.74rem}
+.sw{display:inline-flex;align-items:center;gap:.4rem;font-size:.72rem;color:var(--muted)}
+.sw input{appearance:none;width:2.2rem;height:1.25rem;border-radius:999px;background:#ffffff22;position:relative;margin:0}
+.sw input::after{content:'';position:absolute;left:2px;top:2px;width:calc(1.25rem - 4px);height:calc(1.25rem - 4px);border-radius:50%;background:#e8e4d8;transition:transform .2s}
+.sw input:checked{background:var(--ok)}.sw input:checked::after{transform:translateX(.95rem)}
+.wf-more{display:grid;gap:.4rem;margin-top:.3rem}
+.wf-more button{display:flex;justify-content:space-between;width:100%;padding:.75rem .9rem;border-radius:12px;font-size:.82rem;color:var(--muted);background:#ffffff05}
+.fee{margin-top:.8rem;font-size:.7rem;color:var(--dim);text-align:center}
+.toast{position:absolute;left:50%;top:calc(var(--safe-t) + 64px);z-index:60;transform:translate(-50%,-8px);padding:.45rem .9rem;border-radius:999px;background:#1a1f1c;border:1px solid var(--line-2);font-size:.78rem;opacity:0;pointer-events:none;transition:all .25s;white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="desk">
+ <aside class="notes"><p class="eyebrow">MOBILE · 掌中城市</p><h1>手机端 · 主界面</h1>
+  <p>用手机打开本文件会自动全屏。桌面上可以直接在机身里点按、滑动、下拉。</p>
+  <ol><li><b>沉浸阅读</b>：正文铺满全屏，城市夜景透出；往下读，顶部城市胶囊自动收窄。</li>
+   <li><b>拇指区</b>：行动建议、输入、发送、导航都在下半屏。</li>
+   <li><b>横滑行动卡</b>：左右滑选，点一下填入输入框。</li>
+   <li><b>底部抽屉</b>：状态、世界资料、各面板、三阶段都从下方滑出，抓住把手下拉即可关闭。</li>
+   <li><b>点顶部胶囊</b>：展开此时此地与主角状态。</li></ol></aside>
+ <div class="frame"><div class="phone" id="phone" data-city="cq" data-time="late">
+  <div class="atmo" aria-hidden="true"><div class="sky" id="sky"></div><div class="rain" id="rain"></div><div class="shade"></div></div>
+
+  <header class="top" id="top"><button class="pill" id="pill" aria-label="此时此地与主角状态" aria-haspopup="dialog">
+   <span class="seal" aria-hidden="true" id="cseal">渝</span>
+   <span class="where"><small id="cpath">重庆 › 渝中区 › 解放碑</small><b id="cplace">十八梯老街「旧时光」咖啡馆</b></span>
+   <time id="ctime">23:41</time><span class="wx" id="cwx" aria-label="天气：小雨">雨</span></button></header>
+
+  <main class="reader" id="reader" tabindex="0" aria-label="正文阅读区域">
+   <article class="sheet-turn past"><div class="ch" data-n="11" data-t="二十二时五分" data-pl="十八梯"></div>
+    <p class="prose">雨从傍晚开始下，十八梯的石阶被冲得发亮。沈砚把相机塞进夹克里，沿着台阶往下走。</p>
+    <div class="dlg"><div class="hd"><span class="seal av">周</span><span class="who">周叔</span></div><p class="say">东西我替你收着，但人我不认识。他只说，你看到表就会明白。</p></div>
+    <div class="dlg me"><div class="hd"><span class="seal av">沈</span><span class="who">沈砚</span></div><p class="say">我爸那块表，十年前就跟他一起沉进江里了。</p></div></article>
+   <article class="sheet-turn"><div class="ch" data-n="12" data-t="二十三时四十一分" data-pl="「旧时光」咖啡馆"></div>
+    <p class="prose">咖啡馆的门被风顶开一条缝，冷气夹着雨丝灌进来。沈砚低头看着掌心里的机械表——表盘裂了一道细纹，秒针却还在走，滴答声清楚得近乎刺耳。</p>
+    <p class="prose">表背刻着两个字母，是父亲名字的缩写。他翻过来，又翻回去，确认自己没有看错。</p>
+    <div class="dlg"><div class="hd"><span class="seal av">林</span><span class="who">林晚</span></div><p class="say">你脸色很难看。要不要我把门口那人的车牌拍下来？他在外面站了快二十分钟了。</p></div>
+    <div class="dlg me"><div class="hd"><span class="seal av">沈</span><span class="who">沈砚</span></div><p class="say">别拍。让他以为我还没发现。</p></div>
+    <p class="prose">玻璃窗外，一个穿黑色风衣的男人撑着伞，站在对街的路灯下。他没有看咖啡馆，只是在看表——和沈砚手里那块，一模一样的表。</p>
+    <div class="chg"><button class="chg-btn" data-toast="展开本回合变化（抽屉）"><b>本回合变化</b><span class="n">14 项</span><span class="dots" aria-hidden="true"><i style="background:#8EC1E0"></i><i style="background:var(--gold)"></i><i style="background:#D08A6A"></i><i style="background:#A9C3D8"></i><i style="background:#7DBB9C"></i></span><span class="arr">›</span></button></div>
+   </article>
+   <section class="acts" aria-label="行动建议"><p>接下来你想做什么<span id="pg">1 / 4</span></p>
+    <div class="rail-cards" id="cards"></div><div class="dots-pg" id="dots"></div></section>
+   <div class="spacer"></div>
+  </main>
+
+  <footer class="dock">
+   <button class="wf-line" id="wfLine" data-state="settled" aria-label="三阶段工作流详情"><span class="segs"><i class="done"></i><i class="done"></i><i class="done"></i></span><b id="wfText">本回合已结算</b><span class="more">详情 ›</span></button>
+   <div class="composer"><button class="tool" aria-label="撤回上一回合" data-toast="撤回确认（小弹窗）">撤</button>
+    <textarea id="input" rows="1" placeholder="填写你的行动" aria-label="你的行动"></textarea>
+    <button class="send" id="send" disabled aria-label="发送">↑</button></div>
+   <nav class="tabs" aria-label="底部导航">
+    <button aria-current="page" data-tab="story"><span class="seal" aria-hidden="true">文</span>故事</button>
+    <button data-tab="hero"><span class="seal" aria-hidden="true">我</span>人物</button>
+    <button data-tab="world"><span class="seal" aria-hidden="true">世</span>世界资料</button>
+    <button data-tab="set"><span class="seal" aria-hidden="true">设</span>设置</button></nav>
+  </footer>
+
+  <div class="scrim" id="scrim"></div>
+  <section class="bs" id="bs" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="bsT"><div class="grab" id="grab" aria-hidden="true"><i></i></div><div id="bsIn"></div></section>
+  <div class="toast" id="toast" role="status"></div>
+ </div></div>
+ <aside class="ctrl">
+  <div><p>城市</p><div class="seg" data-k="city"><button aria-pressed="true" data-v="cq">重庆</button><button aria-pressed="false" data-v="sh">上海</button><button aria-pressed="false" data-v="hrb">哈尔滨</button><button aria-pressed="false" data-v="gz">广州</button></div></div>
+  <div><p>时间</p><div class="seg" data-k="time"><button aria-pressed="false" data-v="day">午后</button><button aria-pressed="false" data-v="dusk">黄昏</button><button aria-pressed="true" data-v="late">深夜</button></div></div>
+  <div><p>回合状态</p><div class="seg" data-k="flow"><button aria-pressed="true" data-v="settled">已结算</button><button aria-pressed="false" data-v="busy">生成中</button><button aria-pressed="false" data-v="error">失败</button></div></div>
+  <div><p>快速打开</p><div class="seg"><button data-open="status">状态抽屉</button><button data-open="world">世界资料</button><button data-open="npc">NPC 面板</button><button data-open="wf">三阶段</button></div></div>
+  <p style="color:var(--dim);line-height:1.7">以上控制仅用于设计稿演示。</p>
+ </aside>
+</div>
+
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const rng = seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const W = 1200;
+function towers(r, x0, x1, base, hMin, hMax, wMin, wMax, fill) {
+  let s = '', x = x0;
+  while (x < x1) {
+    const w = wMin + r() * (wMax - wMin), h = hMin + r() * (hMax - hMin);
+    s += `<rect x="${x.toFixed(1)}" y="${(base - h).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${fill}"/>`;
+    if (h > 30) for (let k = 0; k < Math.floor(h / 14); k++) if (r() > .55)
+      s += `<rect class="w" x="${(x + 3 + r() * (w - 7)).toFixed(1)}" y="${(base - h + 7 + k * 13).toFixed(1)}" width="2" height="3" fill="#F2DDA0"/>`;
+    x += w + 2 + r() * 5;
+  }
+  return s;
+}
+const river = (r, n, y, c, o) => `<g fill="${c}" opacity="${o}">${Array.from({length:n},()=>`<rect x="${(r()*W).toFixed(0)}" y="${y+r()*12|0}" width="${8+r()*24|0}" height="1"/>`).join('')}</g>`;
+const clear = (svg, a, b) => svg.replace(/<rect (class="w" )?x="([\d.]+)"[^>]*\/>/g, (m, w, x) => (+x > a && +x < b) ? '' : m);
+const SKY = {
+  cq(r) { return `<path d="M0 118 C120 70 260 96 400 62 S660 40 800 72 S1020 58 1200 76 V160 H0Z" fill="#17211e"/>` + towers(r, 10, W, 112, 20, 70, 10, 22, '#1a2421')
+    + `<path d="M0 140 C160 110 320 128 480 100 S860 92 1200 110 V160 H0Z" fill="#111816"/>` + towers(r, 30, W - 10, 130, 30, 95, 12, 24, '#0c100f')
+    + `<line x1="0" y1="120" x2="${W}" y2="96" stroke="#2e3a36" stroke-width="2"/>` + `<g fill="#2e3a36">${Array.from({length:10},(_, i)=>{const x=60+i*120;return `<rect x="${x}" y="${120-x*0.02}" width="3" height="40"/>`}).join('')}</g>`
+    + `<g style="${reduce?'':'animation:train 11s linear infinite'}"><rect x="0" y="105" width="90" height="8" rx="2" fill="#9cc7be" opacity=".8" transform="rotate(-1.1)"/></g>`
+    + `<rect y="146" width="${W}" height="14" fill="#0b1211"/>` + river(r, 26, 148, '#7FA7A0', .25); },
+  sh(r) { const L = 560; return towers(r, 0, W, 140, 25, 75, 10, 20, '#1a1f2e') + clear(towers(r, 0, W, 140, 35, 95, 12, 26, '#0d1018'), L - 30, L + 260)
+    + `<g fill="#232a3e" stroke="#8E9BD8" stroke-opacity=".25"><rect x="${L}" y="16" width="4" height="124"/><circle cx="${L+2}" cy="60" r="11"/><circle cx="${L+2}" cy="98" r="15"/><rect x="${L-8}" y="98" width="20" height="42"/>`
+    + `<path d="M${L+120} 140 V26 L${L+142} 14 L${L+164} 26 V140Z"/><path d="M${L+200} 140 V40 Q${L+212} 22 ${L+224} 40 V140Z"/></g><rect x="${L+135}" y="22" width="14" height="10" fill="#141824"/>`
+    + `<rect y="140" width="${W}" height="20" fill="#0b0d14"/>` + river(r, 34, 143, '#8E9BD8', .3); },
+  hrb(r) { const L = 580; return towers(r, 0, W, 140, 18, 50, 18, 34, '#1b2128') + clear(towers(r, 0, W, 140, 25, 60, 20, 40, '#0e1216'), L - 50, L + 50)
+    + `<g fill="#242c35" stroke="#A9C3D8" stroke-opacity=".22"><path d="M${L-32} 140 V92 H${L+32} V140Z"/><path d="M${L-15} 92 C${L-15} 70 ${L} 64 ${L} 46 C${L} 64 ${L+15} 70 ${L+15} 92Z"/><rect x="${L-1}" y="34" width="2" height="14"/>`
+    + [-38, 24].map(d => `<path d="M${L+d} 140 V104 H${L+d+14} V140Z"/><path d="M${L+d+3} 104 C${L+d+3} 96 ${L+d+7} 94 ${L+d+7} 88 C${L+d+7} 94 ${L+d+11} 96 ${L+d+11} 104Z"/>`).join('') + `</g>`
+    + `<rect y="140" width="${W}" height="20" fill="#121820"/><rect y="140" width="${W}" height="1" fill="#A9C3D8" opacity=".25"/>`
+    + `<g fill="#dfe8ef" opacity=".55" ${reduce?'':'style="animation:snow 7s linear infinite"'}>${Array.from({length:80},()=>`<circle cx="${(r()*W).toFixed(0)}" cy="${(r()*150-10).toFixed(0)}" r="${(0.6+r()*1.1).toFixed(1)}"/>`).join('')}</g>`; },
+  gz(r) { const L = 640; return towers(r, 0, W, 140, 22, 70, 10, 22, '#221d19') + clear(towers(r, 0, W, 140, 35, 90, 12, 24, '#120f0d'), L - 30, L + 40)
+    + `<path d="M${L-8} 140 Q${L+10} 70 ${L-4} 8 L${L+22} 8 Q${L+8} 70 ${L+32} 140Z" fill="#2b231d" stroke="#D08A6A" stroke-opacity=".3"/><rect x="${L+8}" y="0" width="2" height="8" fill="#D08A6A"/>`
+    + `<g fill="#0f110d">${Array.from({length:18},(_, i)=>`<circle cx="${30+i*66+r()*20|0}" cy="${130+r()*6|0}" r="${10+r()*8|0}"/>`).join('')}</g>`
+    + `<rect y="140" width="${W}" height="20" fill="#110e0c"/>` + river(r, 30, 143, '#D08A6A', .3); },
+};
+const seeds = { cq: 7, sh: 31, hrb: 53, gz: 97 };
+
+const CN = '零一二三四五六七八九';
+function cn(n) { if (n < 10) return CN[n]; if (n < 20) return '十' + (n % 10 ? CN[n % 10] : ''); if (n < 100) return CN[n / 10 | 0] + '十' + (n % 10 ? CN[n % 10] : '');
+  const h = n / 100 | 0, r = n % 100; return CN[h] + '百' + (r === 0 ? '' : r < 10 ? '零' + CN[r] : (r < 20 ? '一' : '') + cn(r)); }
+const STATE_TXT = {settled:'已结算', draft:'草稿', preview:'预览'};
+const DX = '零壹贰叁肆伍陆柒捌玖';
+function dx(n) { return cn(n).replace(/[一二三四五六七八九十百零]/g, c => ({'一':'壹','二':'贰','三':'叁','四':'肆','五':'伍','六':'陆','七':'柒','八':'捌','九':'玖','十':'拾','百':'佰','零':'零'}[c])); }
+const plate = n => `<span class="plate" aria-hidden="true"><span class="p-frost" style="display:none"></span><span class="p-num" data-dx="第${dx(n)}回">${n}</span><span><span class="p-cn">第${cn(n)}回</span><span class="p-sub">TURN ${String(n).padStart(3,'0')}</span></span><span class="p-rail" style="display:none"><i></i><b></b><i class="on"></i><b></b><i></i></span></span>`;
+
+
+const CITY = {cq:['渝','重庆 › 渝中区 › 解放碑','十八梯老街「旧时光」咖啡馆','重庆','雨','小雨',['十八梯','「旧时光」咖啡馆']],sh:['沪','上海 › 黄浦区 › 外滩','北京东路一间通宵便利店','上海','阴','阴',['外滩','通宵便利店']],hrb:['冰','哈尔滨 › 道里区 › 中央大街','索菲亚教堂对面的旧书店','哈尔滨','雪','小雪',['中央大街','旧书店']],gz:['穗','广州 › 越秀区 › 北京路','骑楼下的老字号茶餐厅','广州','晴','晴',['北京路','老字号茶餐厅']]};
+const TIMES = {day:'14:05',dusk:'18:10',late:'23:41'};
+let S = {city:'cq', time:'late', flow:'settled'};
+const OPTS = ['跟上去，保持二十米距离，看他把车开去哪里','回店里调出门口监控，先确认那人的脸','给周叔打电话，问清楚这块表到底是谁托他转交的','把信封收好，今晚什么也不做，明早去银行查那笔汇款'];
+let toastT; const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 1700); };
+
+function applyCity() {
+  const ph = $('#phone'); ph.dataset.city = S.city; ph.dataset.time = S.time;
+  $('#sky').innerHTML = `<svg viewBox="0 0 ${W} 160" preserveAspectRatio="xMidYMax slice">${SKY[S.city](rng(seeds[S.city]))}</svg>`;
+  const c = CITY[S.city]; $('#cseal').textContent = c[0]; $('#cpath').textContent = c[1]; $('#cplace').textContent = c[2]; $('#ctime').textContent = TIMES[S.time];
+  $$('.c-sub .l2').forEach((b, i) => b.innerHTML = `<b>${c[3]}</b> · ${c[6][i]}`); $('#cwx').textContent = c[4]; $('#cwx').setAttribute('aria-label', '天气：' + c[5]);
+  $('#rain').hidden = c[4] !== '雨';
+}
+function applyFlow() {
+  const l = $('#wfLine'), segs = l.querySelectorAll('i'), m = {settled:[['done','done','done'],'本回合已结算'],busy:[['run','',''],'正文生成中 · 1/3'],error:[['done','fail',''],'变量生成失败']}[S.flow];
+  segs.forEach((s, i) => s.className = m[0][i]); $('#wfText').textContent = m[1]; l.dataset.state = S.flow === 'error' ? 'error' : S.flow;
+}
+/* 行动卡 */
+$('#cards').innerHTML = OPTS.map((o, i) => `<button class="opt" data-i="${i}" aria-pressed="false"><span class="n">0${i + 1}</span><span class="t">${o}</span><span class="go">点按填入 →</span></button>`).join('');
+$('#dots').innerHTML = OPTS.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('');
+$('#cards').addEventListener('scroll', () => { const c = $('#cards'), w = c.firstElementChild.offsetWidth + 10, i = Math.min(OPTS.length - 1, Math.round(c.scrollLeft / w));
+  $$('#dots i').forEach((d, k) => d.classList.toggle('on', k === i)); $('#pg').textContent = `${i + 1} / ${OPTS.length}`; }, {passive: true});
+$('#cards').addEventListener('click', e => { const b = e.target.closest('.opt'); if (!b) return; $$('.opt').forEach(x => x.setAttribute('aria-pressed', x === b));
+  const t = $('#input'); t.value = OPTS[+b.dataset.i]; grow(); t.focus({preventScroll: true}); navigator.vibrate?.(8); });
+/* 输入框自动增高 */
+const grow = () => { const t = $('#input'); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 120) + 'px'; $('#send').disabled = !t.value.trim(); };
+$('#input').addEventListener('input', grow);
+$('#send').onclick = () => { toast('发送行动'); navigator.vibrate?.(12); };
+/* 顶部胶囊随滚动收窄 */
+let lastY = 0; $('#reader').addEventListener('scroll', () => { const y = $('#reader').scrollTop; $('#top').classList.toggle('mini', y > 60 && y > lastY - 2); lastY = y; }, {passive: true});
+
+/* ===== 底部抽屉 ===== */
+const BS = $('#bs');
+function openSheet(kind) {
+  BS.className = 'bs' + (kind === 'npc' ? ' paper full' : '');
+  $('#bsIn').innerHTML = SHEETS[kind](); BS.offsetHeight; BS.classList.add('on'); $('#scrim').classList.add('on');
+  $$('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === {status:'hero',world:'world',npc:'world'}[kind] ? 'page' : 'false'));
+  setTimeout(() => BS.focus({preventScroll: true}), 50);
+}
+function closeSheet() { BS.classList.remove('on'); $('#scrim').classList.remove('on'); BS.style.transform = ''; $$('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === 'story' ? 'page' : 'false')); }
+const hd = (seal, title, sub) => `<div class="bs-hd"><span class="seal" aria-hidden="true">${seal}</span><div><small>${sub}</small><h3 id="bsT">${title}</h3></div><button class="x" data-close aria-label="关闭">×</button></div>`;
+const SHEETS = {
+ status: () => { const c = CITY[S.city]; return hd(c[0], '此时此地', 'NOW · HERE') + `<div class="bs-bd">
+  <div class="st-place"><p class="path">${c[1]}</p><h4>${c[2]}</h4><div class="clock"><time>${TIMES[S.time]}</time><span>2026/11/10 周二<br>深夜</span></div>
+   <dl><div><dt>天气</dt><dd>${c[5]}${S.city === 'cq' ? '，气温 9℃，江面起雾' : ''}</dd></div><div><dt>环境</dt><dd>店里只剩两桌客人，咖啡机的蒸汽声盖过了雨声</dd></div></dl></div>
+  <div class="st-hero"><span class="seal" aria-hidden="true">沈</span><div><h4>沈砚</h4><p>27 岁 · 男 · 自由摄影师</p></div></div>
+  <div class="money"><div class="cash"><small>现金</small><b>3,280.00 元</b></div><div><small>线上资金</small><b>46,915.20 元</b></div></div>
+  <div class="conds"><div><small>身体</small>右手腕轻微扭伤，不影响行动</div><div><small>情绪</small>警惕，压着火</div></div>
+  <dl class="wear"><div><dt>上衣</dt><dd>深灰色防水夹克</dd></div><div><dt>下装</dt><dd>黑色工装裤</dd></div><div><dt>鞋子</dt><dd>旧马丁靴</dd></div><div><dt>饰品</dt><dd>父亲留下的机械表、相机背带</dd></div><div><dt>主武器</dt><dd>折叠伞（加固伞骨）</dd></div><div data-empty><dt>副武器</dt><dd>无</dd></div><div data-empty><dt>载具</dt><dd>无</dd></div></dl>
+  <div class="st-acts"><button data-toast="打开人物档案（档案纸抽屉）">人物档案</button><button data-toast="打开经济与资产（档案纸抽屉）">经济与资产</button></div></div>`; },
+ world: () => hd('世', '世界资料', 'WORLD ARCHIVE') + `<div class="bs-bd"><div class="grid7">${[['人','NPC',2],['势','势力组织'],['图','地图'],['物','物品栏',2],['事','世界事件',1],['史','历史时间轴'],['忆','记忆']].map(([s, n, b]) => `<button data-panel="${n}"><span class="seal" aria-hidden="true">${s}</span>${n}${b ? `<span class="badge" aria-label="本回合有 ${b} 项变化">${b}</span>` : ''}</button>`).join('')}</div>
+  <p class="hint">从身边的人，到更远的城市。</p></div>`,
+ npc: () => hd('人', 'NPC', 'WORLD ARCHIVE · 01 / 07') + `<div class="bs-bd" id="npcBd">${npcList()}</div>`,
+ wf: () => hd('阶', '三阶段工作流', 'WORKFLOW') + `<div class="bs-bd">
+  ${S.flow === 'error' ? '<div class="wf-st" role="alert"><i>误</i><p>变量管理：模型返回的内容无法通过校验。<small>安全失败码：variables_schema · 已自动重试 2 次</small></p></div><button class="big-btn">继续未完成阶段</button>' : ''}
+  <ol class="stg"><li class="done"><div class="h"><b>01 正文生成</b><span class="done">已完成</span></div><p style="font-size:.72rem;color:var(--dim);margin-top:.2rem">正文生成与重新 Roll 位于行动输入旁。</p></li>
+   <li class="${S.flow === 'error' ? 'fail' : 'done'}"><div class="h"><b>02 变量管理</b><span class="${S.flow === 'error' ? 'fail' : 'done'}">${S.flow === 'error' ? '失败 · 可重试' : '已结算'}</span></div><div class="a"><label class="sw"><input type="checkbox" checked>启用</label><button>重新生成变量候选</button><button class="lk">查看变量候选（未结算）</button></div></li>
+   <li class="${S.flow === 'error' ? '' : 'done'}"><div class="h"><b>03 动态世界</b><span class="${S.flow === 'error' ? 'idle' : 'done'}">${S.flow === 'error' ? '待生成' : '已结算'}</span></div><div class="a"><label class="sw"><input type="checkbox" checked>启用</label><button ${S.flow === 'error' ? 'disabled' : ''}>生成世界候选</button></div></li></ol>
+  <div class="wf-more"><button>重试与变更详情<span>›</span></button><button>本回合已绑定输入（只读）<span>›</span></button></div><p class="fee">生成可能产生第三方 API 费用。</p></div>`,
+};
+const PEOPLE = [['林','林晚','「旧时光」咖啡馆店主',1,1],['黑','黑衣男人','身份未记录',0,1],['沈','沈怀山','沈砚的父亲（官方记录已故）',1,0],['周','周叔','十八梯修表铺师傅',0,0],['陈','陈默','《山城晚报》社会新闻记者',0,0],['何','何丽','解放碑某银行柜员',0,0],['阿','阿峰','外卖骑手',0,0]];
+function npcList() { return `<label class="p-search"><input placeholder="姓名、别名、身份或职业" aria-label="搜索人物"></label>
+  <div class="chips"><button aria-pressed="true">全部 7</button><button aria-pressed="false">特殊人物 2</button><button aria-pressed="false">本幕在场 2</button><button aria-pressed="false">普通人物 5</button></div>
+  <ul class="people">${PEOPLE.map(([s, n, id, sp, on], i) => `<li><button class="person ${sp ? 'sp' : ''}" data-p="${i}" aria-label="查看人物：${n}"><span class="av" aria-hidden="true">${s}</span><span class="tx"><strong>${n}</strong><small>${id}</small></span>${on ? '<span class="on">本幕在场</span>' : ''}<span class="chev" aria-hidden="true">›</span></button></li>`).join('')}</ul>`; }
+function npcDetail(i) { const [s, n, id, sp] = PEOPLE[i]; return `<div class="pd"><button class="back" data-back>‹ 人物名录</button>
+  <div class="pd-hero"><span class="pd-av${sp ? ' sp' : ''}" aria-hidden="true">${s}</span><div><h4>${n}</h4><p>26 岁 · 女 · 本幕在场 · ${id}</p></div></div>
+  <div class="rel"><div class="top2"><span>关系倾向</span><b>+34</b></div><div class="meter"><i style="width:17%"></i></div><p>与主角关系：大学同学，十年没见，最近重新联系上</p></div>
+  <nav class="seg-tabs"><a class="on">人物档案</a><a>联系与地点</a><a>特殊资料</a><a>已知信息</a><a>记忆</a></nav>
+  <div class="pcard"><h5>人物档案</h5><dl><div><dt>外貌</dt><dd>齐肩短发，常穿深色针织开衫，左手腕有一道很浅的旧疤。</dd></div><div><dt>性格</dt><dd>说话直，记性好，紧张时会反复擦同一个杯子。</dd></div><div><dt>能力</dt><dd>咖啡烘焙、记账、观察细节</dd></div></dl></div>
+  <div class="pcard"><h5>联系与常驻地点</h5><dl><div><dt>电话</dt><dd>已掌握联系途径</dd></div><div><dt>工作</dt><dd>十八梯老街「旧时光」咖啡馆</dd></div></dl></div></div>`; }
+BS.addEventListener('click', e => {
+  if (e.target.closest('[data-close]')) return closeSheet();
+  const p = e.target.closest('[data-panel]'); if (p) { if (p.dataset.panel === 'NPC') { closeSheet(); setTimeout(() => openSheet('npc'), 260); } else toast(`打开 ${p.dataset.panel}（档案纸抽屉）`); return; }
+  const pe = e.target.closest('[data-p]'); if (pe) { $('#npcBd').innerHTML = npcDetail(+pe.dataset.p); $('#npcBd').scrollTop = 0; return; }
+  if (e.target.closest('[data-back]')) { $('#npcBd').innerHTML = npcList(); return; }
+});
+$('#scrim').onclick = closeSheet;
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && BS.classList.contains('on')) closeSheet(); });
+/* 下拉关闭：抓住把手或在内容顶部下拉 */
+(() => { let y0 = null, dy = 0;
+  const start = e => { const bd = BS.querySelector('.bs-bd'); if (!e.target.closest('#grab') && !e.target.closest('.bs-hd') && !(bd && bd.scrollTop <= 0 && e.target.closest('.bs-bd'))) return; y0 = e.clientY; dy = 0; BS.style.transition = 'none'; };
+  const move = e => { if (y0 === null) return; dy = Math.max(0, e.clientY - y0); if (dy > 4) BS.style.transform = `translateY(${dy}px)`; };
+  const end = () => { if (y0 === null) return; BS.style.transition = ''; if (dy > 110) closeSheet(); else BS.style.transform = ''; y0 = null; };
+  BS.addEventListener('pointerdown', start); window.addEventListener('pointermove', move); window.addEventListener('pointerup', end); window.addEventListener('pointercancel', end); })();
+/* 导航与入口 */
+$('#pill').onclick = () => openSheet('status');
+$('#wfLine').onclick = () => openSheet('wf');
+$$('.tabs button').forEach(b => b.onclick = () => { const t = b.dataset.tab; if (t === 'story') { closeSheet(); $('#reader').focus({preventScroll: true}); } else if (t === 'hero') openSheet('status'); else if (t === 'world') openSheet('world'); else toast('打开设置（档案纸全屏抽屉）'); });
+document.addEventListener('click', e => { const t = e.target.closest('[data-toast]'); if (t) toast(t.dataset.toast); const o = e.target.closest('[data-open]'); if (o) openSheet(o.dataset.open); });
+$$('.ctrl .seg[data-k]').forEach(seg => seg.onclick = e => { const b = e.target.closest('button'); if (!b) return; [...seg.children].forEach(x => x.setAttribute('aria-pressed', x === b)); S[seg.dataset.k] = b.dataset.v; applyCity(); applyFlow(); });
+$$('.ch').forEach(d => { d.outerHTML = `<header class="chapter" data-state="settled">${plate(+d.dataset.n)}<h2>第 ${d.dataset.n} 回合</h2><span class="c-sub" aria-hidden="true">十一月十日 · 星期二 · ${d.dataset.t}<span class=\"l2\"><b>重庆</b> · ${d.dataset.pl}</span></span></header>`; });
+applyCity(); applyFlow();
+const r = $('#reader'); r.scrollTop = 520;
+const h = new URLSearchParams(location.hash.slice(1)); if (h.get('city')) { S.city = h.get('city'); applyCity(); } if (h.get('flow')) { S.flow = h.get('flow'); applyFlow(); } if (h.get('open')) openSheet(h.get('open')); if (h.get('p')) { $('#npcBd').innerHTML = npcDetail(+h.get('p')); } if (h.get('top')) r.scrollTop = 0; if (h.get('acts')) r.scrollTop = r.scrollHeight;
+</script>
+</body>
+</html>

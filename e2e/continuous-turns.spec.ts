@@ -1,6 +1,6 @@
 import { VariableStateProjectionSchema } from '../src/tests/fixtures/variableState';
 import { variableReply } from '../src/tests/fixtures/variableReply';
-import { openGameTools, openStageSwitches } from './helpers/gameLayout';
+import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { GameStateSchema, StorySchema } from '../src/domain/state';
@@ -348,7 +348,7 @@ test('阶段未完成或主动关闭时，即使填写行动也不能部分结�
   await page.getByLabel('你的行动', { exact: true }).fill('等待');
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
   expect((await stored(page)).state.turnNumber).toBe(0);
-  await openStageSwitches(page); await page.getByLabel('动态世界', { exact: true }).check();
+  await page.getByLabel('动态世界', { exact: true }).check();
   await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await ready(page);
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
