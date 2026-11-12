@@ -19,6 +19,7 @@ import { HomeScreen } from '../ui/home/HomeScreen';
 import { dateTime } from '../ui/panels/playerView';
 import { SaveCard } from '../ui/SaveCard';
 import { saveKeyText } from '../services/storage/saveManagement';
+import { Feedback } from '../ui/Feedback';
 import { Dialog, Empty } from '../ui/Dialog';
 import { PRODUCT_VERSION } from './product';
 import { useGameViewport } from './useGameViewport';
@@ -323,8 +324,8 @@ export function App() {
         </nav>
       </Dialog>}
       {error && (
-        <div className="app-error" role="alert">
-          <span>{error}</span>
+        <div className={route === '#create' ? 'app-error' : 'app-error feedback l-err'} role="alert">
+          {route !== '#create' && <span className="feedback-icon global-feedback-icon" aria-hidden="true">误</span>}<span className="feedback-text">{error}</span>
           <button onClick={() => setError('')} aria-label="关闭提示">
             ×
           </button>
@@ -431,7 +432,7 @@ export function App() {
       {deleting && (
         <Dialog
           title="删除这份存档？"
-          small
+          small feedback="err" seal="删"
           onClose={() => {
             if (!busy) setDeleting(undefined);
           }}
@@ -439,7 +440,7 @@ export function App() {
           <p>将永久删除「{deleting.title}」及其关联草稿、回合提交回执。此操作无法撤销。</p>
           <p className="save-record-key">存档记录 ID：{saveKeyText(deleting.storageKey)}</p>
           {deleting.status === 'unreadable' && <p>此存档无法读取，建议取消并先导出原始数据。</p>}
-          {deleteError && <p role="alert">{deleteError}</p>}
+          {deleteError && <Feedback role="alert" level="err" mobileAs="p">{deleteError}</Feedback>}
           <div className="dialog-actions">
             <button disabled={busy} onClick={() => setDeleting(undefined)}>
               取消

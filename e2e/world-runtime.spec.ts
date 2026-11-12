@@ -252,7 +252,7 @@ test('错误输出可重试；取消后新请求不受旧回包影响；世界�
       button.click();
     });
   await expect.poll(() => count).toBe(2);
-  await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '重新生成变量候选', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: '取消世界生成', exact: true }).click();
   mode = 'good';

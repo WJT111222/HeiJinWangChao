@@ -230,7 +230,7 @@ test('错误 JSON 安全失败可重试；取消、重复点击和切档迟到�
       el.click();
     });
   await expect.poll(() => count).toBe(2);
-  await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '取消变量生成', exact: true }).click();
   mode = 'good';
   await page.getByRole('button', { name: '生成变量候选', exact: true }).click();

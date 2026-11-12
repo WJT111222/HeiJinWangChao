@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>黑金王朝 · 提示与弹窗规范</title>
+<style>
+:root{
+  --font-title:'Noto Serif SC','Noto Serif CJK SC','Source Han Serif SC','Songti SC',serif;
+  --font-body:'Noto Sans SC','Noto Sans CJK SC','PingFang SC','Microsoft YaHei',sans-serif;
+  --font-mono:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;
+  --text:#ECE7DA;--muted:#A3A396;--dim:#77796f;--gold:#C9A961;--gold-hi:#E8D196;--gold-lo:#7d6a3e;
+  --line:#ffffff14;--line-2:#ffffff22;--ease:cubic-bezier(.22,.7,.2,1);
+  /* 四个级别 · 深色（主界面） */
+  --err:#D47C60;--err-bg:#c26a4a16;--err-bd:#6e4a3d;
+  --warn:#E0C27A;--warn-bg:#c9a96112;--warn-bd:#5a5034;
+  --info:#8EC1E0;--info-bg:#8ec1e012;--info-bd:#34505f;
+  --ok:#7DBB9C;--ok-bg:#7dbb9c12;--ok-bd:#35574a;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#08090a;color:var(--text);font-family:var(--font-body);line-height:1.7;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer;background:transparent;border:1px solid var(--line-2);border-radius:6px;padding:.5rem .95rem;transition:background .2s,border-color .2s}
+button:hover:not(:disabled){background:#ffffff0a;border-color:#ffffff38}
+button:disabled{opacity:.42;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+h1,h2,h3,h4{font-family:var(--font-title);font-weight:600;margin:0}
+p{margin:0}
+.page{max-width:1240px;margin:0 auto;padding:3rem 2rem 5rem}
+.page>header{margin-bottom:2.5rem}
+.page>header .eyebrow{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.28em;color:var(--gold)}
+.page>header h1{font-size:2rem;letter-spacing:.2em;margin:.4rem 0 .5rem}
+.page>header p{color:var(--muted);font-size:.9rem;max-width:52rem}
+.part{margin:3.2rem 0 1rem;display:flex;align-items:baseline;gap:1rem}
+.part b{font-family:var(--font-mono);font-weight:400;font-size:.8rem;color:var(--gold)}
+.part h2{font-size:1.3rem;letter-spacing:.2em}
+.part span{font-size:.8rem;color:var(--dim)}
+.note{font-size:.82rem;color:var(--muted);margin-bottom:1rem;max-width:56rem}
+.stage{position:relative;border:1px solid var(--line);border-radius:14px;padding:1.6rem;background:
+  radial-gradient(50% 60% at 85% 100%,#7fa7a022,transparent 70%),linear-gradient(180deg,#06080a,#0d1414 70%,#141c1b)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem}
+
+/* ---------- 级别表 ---------- */
+.lv{padding:1rem 1.1rem;border-radius:10px;border:1px solid var(--bd);background:var(--bg)}
+.lv .mk{display:inline-grid;place-items:center;width:1.9rem;height:1.9rem;border-radius:6px;font-family:var(--font-title);font-size:.9rem;color:#0c0e0d;background:var(--c)}
+.lv h4{display:inline;margin-left:.6rem;font-size:1.02rem;letter-spacing:.2em;color:var(--c)}
+.lv p{margin-top:.6rem;font-size:.78rem;color:var(--muted);line-height:1.75}
+.lv code{font-family:var(--font-mono);font-size:.7rem;color:var(--dim)}
+.l-err{--c:var(--err);--bg:var(--err-bg);--bd:var(--err-bd)}
+.l-warn{--c:var(--warn);--bg:var(--warn-bg);--bd:var(--warn-bd)}
+.l-info{--c:var(--info);--bg:var(--info-bg);--bd:var(--info-bd)}
+.l-ok{--c:var(--ok);--bg:var(--ok-bg);--bd:var(--ok-bd)}
+
+/* ---------- 嵌入式提示框 .alert ---------- */
+.alert{display:flex;align-items:flex-start;gap:.8rem;padding:.75rem .95rem;border-radius:9px;border:1px solid var(--bd);background:var(--bg);font-size:.86rem;line-height:1.7;color:var(--text)}
+.alert+.alert{margin-top:.6rem}
+.alert .ic{flex:none;width:1.35rem;height:1.35rem;margin-top:.12rem;display:grid;place-items:center;border-radius:50%;font-family:var(--font-title);font-size:.68rem;color:#0c0e0d;background:var(--c)}
+.alert .tx{flex:1;min-width:0}
+.alert .tx b{display:block;font-weight:600;color:var(--c)}
+.alert .tx small{display:block;margin-top:.15rem;font-size:.74rem;color:var(--muted)}
+.alert .tx small code{font-family:var(--font-mono);font-size:.7rem}
+.alert .acts{flex:none;display:flex;gap:.4rem;align-self:center}
+.alert .acts button{font-size:.78rem;padding:.3rem .75rem}
+.alert .x{border:0;padding:0 .2rem;color:var(--dim);font-size:1.05rem;line-height:1;align-self:flex-start}
+
+/* ---------- 全局提示条 .toast ---------- */
+.mini-bar{display:flex;align-items:center;gap:1.4rem;height:64px;padding:0 1.4rem;border:1px solid var(--line);border-radius:10px 10px 0 0;background:#0b0e0dcc}
+.mini-bar .seal{display:inline-grid;place-items:center;width:2.1rem;height:2.1rem;border:1px solid var(--gold-lo);color:var(--gold-hi);font-family:var(--font-title);border-radius:3px}
+.mini-bar h3{font-size:1.2rem;letter-spacing:.3em}
+.mini-bar .clock{margin-left:auto;font-family:var(--font-mono);font-size:1.4rem;color:var(--gold-hi)}
+.mini-body{position:relative;height:250px;border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;background:#0b0e0d99;overflow:hidden}
+.mini-body .ghost{position:absolute;inset:2rem 3rem;display:grid;gap:.9rem}
+.mini-body .ghost i{display:block;height:.7rem;border-radius:4px;background:#ffffff0c}
+.toast{position:absolute;left:50%;top:1rem;transform:translateX(-50%);width:min(40rem,calc(100% - 2rem));display:flex;align-items:flex-start;gap:.75rem;padding:.75rem .9rem .75rem 1rem;
+  border-radius:10px;border:1px solid var(--bd);background:#151917;box-shadow:0 18px 40px -18px #000,inset 3px 0 0 var(--c);animation:tin .3s var(--ease)}
+@keyframes tin{from{opacity:0;transform:translate(-50%,-8px)}}
+.toast .ic{flex:none;width:1.35rem;height:1.35rem;margin-top:.1rem;display:grid;place-items:center;border-radius:50%;font-family:var(--font-title);font-size:.68rem;color:#0c0e0d;background:var(--c)}
+.toast .tx{flex:1;font-size:.86rem;line-height:1.7}
+.toast .x{border:0;padding:0 .25rem;color:var(--dim);font-size:1.1rem;line-height:1.2}
+.toast .x:hover{color:var(--text);background:none}
+.toast.t2{top:5.4rem}
+
+/* ---------- 小确认弹窗 .dlg ---------- */
+.scrim{position:relative;display:grid;place-items:center;min-height:360px;padding:1.4rem;border-radius:12px;background:#02050499;backdrop-filter:blur(3px)}
+.dlg{width:min(28rem,100%);border:1px solid var(--line-2);border-radius:12px;background:#121614;box-shadow:0 30px 70px -30px #000;overflow:hidden;position:relative}
+.dlg::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--c,var(--gold))}
+.dlg-hd{display:flex;align-items:center;gap:.75rem;padding:1.15rem 1.3rem .4rem}
+.dlg-hd .mk{flex:none;width:2.1rem;height:2.1rem;display:grid;place-items:center;border-radius:6px;font-family:var(--font-title);font-size:.95rem;color:var(--c);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);background:color-mix(in srgb,var(--c) 10%,transparent)}
+.dlg-hd h3{font-size:1.12rem;letter-spacing:.12em}
+.dlg-hd .x{margin-left:auto;border:0;padding:.1rem .4rem;color:var(--dim);font-size:1.1rem}
+.dlg-bd{padding:.4rem 1.3rem 1rem 4.15rem;font-size:.88rem;color:var(--text);line-height:1.8}
+.dlg-bd p+p{margin-top:.35rem}
+.dlg-bd .sub{font-size:.8rem;color:var(--muted)}
+.dlg-bd ul{margin:.5rem 0 0;padding:0;list-style:none;display:grid;gap:.3rem}
+.dlg-bd ul li{font-size:.8rem;color:var(--muted);padding-left:.9rem;position:relative}
+.dlg-bd ul li::before{content:'';position:absolute;left:0;top:.65em;width:4px;height:4px;border-radius:50%;background:var(--c)}
+.dlg-bd .alert{margin-top:.8rem}
+.dlg-ft{display:flex;justify-content:flex-end;gap:.55rem;padding:.85rem 1.3rem 1.1rem;border-top:1px solid var(--line);background:#0e1110}
+.dlg-ft button{font-size:.84rem}
+.btn-gold{border:0;color:#171810;font-weight:650;letter-spacing:.1em;background:linear-gradient(180deg,#e9d196,#c5a45a);box-shadow:inset 0 1px 0 #fff6}
+.btn-gold:hover:not(:disabled){background:linear-gradient(180deg,#f2deaa,#d1b16a)}
+.btn-err{border:0;color:#fff;font-weight:600;background:#b4573b}
+.btn-err:hover:not(:disabled){background:#c9654a}
+.btn-ghost{border-color:transparent;color:var(--muted)}
+
+/* ---------- 候选查看弹窗 .cand ---------- */
+.cand{width:100%;max-width:56rem;border:1px solid var(--line-2);border-radius:12px;background:#121614;overflow:hidden;box-shadow:0 30px 70px -30px #000}
+.cand-hd{display:flex;align-items:center;gap:1rem;padding:1rem 1.3rem;border-bottom:1px solid var(--line);background:#0e1110}
+.cand-hd .eyebrow{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.26em;color:var(--gold)}
+.cand-hd h3{font-size:1.15rem;letter-spacing:.12em}
+.cand-hd .st{font-size:.7rem;padding:.08rem .6rem;border-radius:999px;border:1px solid currentColor}
+.cand-hd .x{margin-left:auto}
+.cand-bd{display:grid;grid-template-columns:15rem minmax(0,1fr);min-height:22rem}
+.cand-side{padding:1.1rem 1.2rem;border-right:1px solid var(--line);display:grid;align-content:start;gap:.9rem}
+.ver{display:grid;gap:.3rem;font-size:.76rem;color:var(--muted)}
+.ver div{display:flex;justify-content:space-between}
+.ver b{font-family:var(--font-mono);font-weight:400;color:var(--text)}
+.counts{display:grid;gap:.45rem}
+.count{display:flex;align-items:baseline;justify-content:space-between;padding:.55rem .7rem;border-radius:7px;border:1px solid var(--line);font-size:.78rem;color:var(--muted)}
+.count b{font-family:var(--font-mono);font-size:1.15rem;font-weight:500;color:var(--c,var(--text))}
+.count.c-ok{--c:var(--ok)}.count.c-err{--c:var(--err)}.count.c-warn{--c:var(--warn)}
+.raw-toggle{font-size:.76rem;color:var(--info);border:0;padding:0;text-align:left}
+.raw-toggle:hover:not(:disabled){background:none;text-decoration:underline}
+.cand-main{padding:1.1rem 1.3rem 1.3rem;min-width:0}
+.cand-main h4{font-size:.95rem;letter-spacing:.16em;color:var(--gold);margin-bottom:.6rem;display:flex;align-items:center;gap:.6rem}
+.cand-main h4::after{content:'';flex:1;height:1px;background:var(--line)}
+.cmds{list-style:none;margin:0 0 1.1rem;padding:0;display:grid;gap:.3rem}
+.cmds li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.7rem;align-items:center;padding:.45rem .7rem;border-radius:6px;background:#ffffff05;border:1px solid var(--line);font-size:.8rem}
+.cmds li .ty{font-family:var(--font-mono);font-size:.68rem;color:var(--info);padding:.02rem .4rem;border-radius:3px;background:var(--info-bg)}
+.cmds li .id{font-family:var(--font-mono);font-size:.68rem;color:var(--dim)}
+.cmds li.rej .ty{color:var(--err);background:var(--err-bg)}
+.cmds li.miss .ty{color:var(--warn);background:var(--warn-bg)}
+.rawbox{margin-top:.2rem;padding:.8rem .9rem;border-radius:8px;background:#00000055;border:1px solid var(--line);font-family:var(--font-mono);font-size:.72rem;color:var(--muted);line-height:1.8;max-height:9rem;overflow:auto;white-space:pre-wrap}
+
+/* ---------- 档案纸内（设置等） ---------- */
+.paper{border-radius:14px;padding:1.6rem;background:#E4DCCA;color:#2B2723;
+  --err:#A3412E;--err-bg:#A3412E10;--err-bd:#A3412E55;--warn:#8E6C25;--warn-bg:#8E6C2512;--warn-bd:#8E6C2555;--info:#2D5E7D;--info-bg:#2D5E7D10;--info-bd:#2D5E7D44;--ok:#2F7A58;--ok-bg:#2F7A5810;--ok-bd:#2F7A5855;--muted:#5F574C;--dim:#857B6C;--text:#2B2723}
+.paper .alert{background:var(--bg);color:#2B2723}
+.paper .alert .ic{color:#F6F0E2}
+.paper .alert button{border-color:#2a262233}
+.paper .alert button:hover:not(:disabled){background:#2a26220a}
+.paper h4.cap{font-family:var(--font-title);font-size:.95rem;letter-spacing:.2em;color:#1F1B17;margin-bottom:.8rem;display:flex;align-items:center;gap:.7rem}
+.paper h4.cap::before{content:'';width:3px;height:.95em;border-radius:2px;background:#8E6C25}
+.paper .dlg{background:#EFE8D9;border-color:#2a262233;box-shadow:0 30px 60px -30px #0008}
+.paper .dlg-hd h3{color:#1F1B17}
+.paper .dlg-bd{color:#2B2723}
+.paper .dlg-ft{background:#E8E0CF;border-top-color:#2a26221f}
+.paper .dlg-ft button{border-color:#2a262233}
+.paper .btn-ink{border:0;background:#1F1B17;color:#F4EDE0}
+.paper .btn-danger{color:#A3412E;border-color:#A3412E66}
+.cap-dim{font-size:.74rem;color:var(--dim);margin:.3rem 0 .9rem}
+</style>
+</head>
+<body>
+<div class="page">
+<header><p class="eyebrow">HEIJIN · FEEDBACK SYSTEM</p><h1>提示与弹窗规范</h1>
+ <p>覆盖：全局报错条、撤回上一回合、记忆总结失败、候选查看弹窗、设置内的连接与保存提示，以及三阶段工作流内的报错（已在工作流稿中）。创角与开局包的报错留到创角系统一起做；游戏菜单弹窗只在移动端出现，随移动端一起做。</p></header>
+
+<div class="part"><b>01</b><h2>四个级别</h2><span>颜色只表达级别，文字照旧</span></div>
+<div class="grid4">
+ <div class="lv l-err"><span class="mk">误</span><h4>错误</h4><p>操作失败、数据读取失败、生成失败。用户需要处理。<br><code>role="alert"</code></p></div>
+ <div class="lv l-warn"><span class="mk">注</span><h4>注意</h4><p>未保存、阶段已关闭、草稿过期等需要留意但不算失败的状态。<br><code>role="note"</code></p></div>
+ <div class="lv l-info"><span class="mk">示</span><h4>说明</h4><p>费用提醒、规则说明、正在进行中的状态。<br><code>role="status"</code></p></div>
+ <div class="lv l-ok"><span class="mk">成</span><h4>完成</h4><p>保存成功、连接测试成功、结算完成。<br><code>role="status"</code></p></div>
+</div>
+
+<div class="part"><b>02</b><h2>嵌入式提示框</h2><span>.alert · 放在出问题的位置旁边</span></div>
+<p class="note">结构：圆形级别标记 ｜ 第一行为结论（级别色加粗），第二行小字为原因、失败码或后果 ｜ 右侧放最多两个操作按钮 ｜ 可选的关闭 ×。原有文案若含句号或分号，可在第一个句号 / 分号处拆成「结论 + 补充」两行，不改字；只有一句时就只显示一行。操作按钮只放原来就有的按钮，不新增。</p>
+<div class="stage">
+ <div class="alert l-err" role="alert"><span class="ic" aria-hidden="true">误</span><div class="tx"><b>撤回未完成，存档未部分修改。</b><small>请重新读取存档后检查恢复点。</small></div></div>
+ <div class="alert l-warn" role="note"><span class="ic" aria-hidden="true">注</span><div class="tx"><b>当前草稿已过期，请重新读取存档。</b></div></div>
+ <div class="alert l-info" role="status"><span class="ic" aria-hidden="true">示</span><div class="tx"><b>原始记忆仍保留；重新生成可能产生 API 费用。</b></div></div>
+ <div class="alert l-ok" role="status"><span class="ic" aria-hidden="true">成</span><div class="tx"><b>本地偏好已保存，将用于下一次正文请求；</b><small>不会改写进行中的请求或已保存草稿。</small></div><button class="x" aria-label="关闭提示">×</button></div>
+</div>
+
+<div class="part"><b>03</b><h2>全局提示条</h2><span>原 .app-error · 顶栏下方居中浮出</span></div>
+<p class="note">固定在顶栏下方居中，宽度不超过 40rem，不推动布局；左侧 3px 级别色条加圆形标记，右侧 ×（`aria-label="关闭提示"` 不变）。目前只有错误一种，沿用原逻辑；同时最多一条。</p>
+<div class="stage" style="padding:1rem">
+ <div class="mini-bar"><span class="seal">黑</span><h3>重庆</h3><span style="font-size:.85rem;color:var(--muted)">十八梯老街「旧时光」咖啡馆</span><span class="clock">23:41</span></div>
+ <div class="mini-body"><div class="ghost"><i style="width:92%"></i><i style="width:80%"></i><i style="width:88%"></i><i style="width:60%"></i><i style="width:84%"></i><i style="width:72%"></i></div>
+  <div class="toast l-err" role="alert"><span class="ic" aria-hidden="true">误</span><p class="tx">无法读取此存档。存档可能已删除、版本较新或数据损坏，原始数据未被修改。</p><button class="x" aria-label="关闭提示">×</button></div>
+  <div class="toast t2 l-err" role="alert" style="opacity:.55"><span class="ic" aria-hidden="true">误</span><p class="tx">运行偏好保存失败，请检查浏览器存储权限。</p><button class="x" aria-label="关闭提示">×</button></div>
+ </div>
+ <p class="cap-dim" style="margin:.7rem 0 0">下方半透明的一条仅示意另一条文案的长度，实现时同一时间只显示一条。</p>
+</div>
+
+<div class="part"><b>04</b><h2>小确认弹窗</h2><span>Dialog small · 主界面深色版</span></div>
+<p class="note">顶部 3px 级别色条；标题左侧是带级别色的单字方印；正文与标题文字左对齐；后果说明用小圆点列表；底栏按钮右对齐，危险操作用赭红实心，主操作用金色，次要操作用描边或幽灵按钮。标题、正文、按钮文案全部沿用。</p>
+<div class="grid2">
+ <div class="scrim"><div class="dlg l-warn" role="dialog" aria-label="撤回上一回合">
+  <div class="dlg-hd"><span class="mk" aria-hidden="true">撤</span><h3>撤回上一回合</h3><button class="x" aria-label="关闭">×</button></div>
+  <div class="dlg-bd"><p>恢复到第 11 回合结束，回填原行动。</p><ul><li>已撤回的剧情无法重做；此操作不调用 AI。</li><li>当前未结算草稿会被丢弃。</li><li>输入框现有文字会被本次回填替换。</li></ul>
+   <div class="alert l-err" role="alert"><span class="ic" aria-hidden="true">误</span><div class="tx"><b>存档或草稿正在另一处操作，请重新读取后再撤回。</b></div></div></div>
+  <div class="dlg-ft"><button>保留当前回合</button><button class="btn-err">确认撤回</button></div></div></div>
+ <div class="scrim"><div class="dlg l-err" role="dialog" aria-label="人物记忆总结失败">
+  <div class="dlg-hd"><span class="mk" aria-hidden="true">忆</span><h3>人物记忆总结失败</h3><button class="x" aria-label="关闭">×</button></div>
+  <div class="dlg-bd"><p>总结请求超时，模型未在 120 秒内返回。</p><p class="sub">原始记忆仍保留；重新生成可能产生 API 费用。</p></div>
+  <div class="dlg-ft"><button class="btn-ghost">暂停自动总结</button><button class="btn-gold">重新生成</button></div></div></div>
+</div>
+<p class="cap-dim">「待确认」类标题（如「人物记忆总结待确认」）用注意级（金色）；缺少目标人物时，主按钮换成「前往设置选择人物」。撤回弹窗按其性质用注意级，执行中的按钮文案「正在撤回…」不变。</p>
+
+<div class="part"><b>05</b><h2>候选查看弹窗</h2><span>变量候选 / 世界候选 · 未正式结算</span></div>
+<p class="note">由工作流阶段卡里的「查看变量候选（未结算）」「查看世界候选（未结算）」打开。左栏放版本号、三类数量（合法命令为绿，拒绝建议为赭红，未解决事项为金）和原始响应开关；右栏是候选列表。世界候选的状态胶囊为「程序校验通过 · 仍未正式结算」（绿）或「预览 · 变量依赖未完成，不能正式结算」（金）；缺失项标为「缺失」。</p>
+<div class="stage" style="display:grid;place-items:center">
+ <div class="cand" role="dialog" aria-label="变量候选 · 未正式结算">
+  <div class="cand-hd"><div><p class="eyebrow">STAGE 02 · VARIABLES</p><h3>变量候选 · 未正式结算</h3></div><span class="st" style="color:var(--warn)">未正式结算</span><button class="x">关闭 ×</button></div>
+  <div class="cand-bd">
+   <aside class="cand-side"><div class="ver"><div>正文版本<b>4</b></div><div>执行版本<b>2</b></div><div>候选版本<b>3</b></div></div>
+    <div class="counts"><div class="count c-ok">合法命令<b>5</b></div><div class="count c-err">拒绝建议<b>1</b></div><div class="count c-warn">未解决事项<b>1</b></div></div>
+    <button class="raw-toggle">主动查看完整变量候选</button></aside>
+   <section class="cand-main"><h4>程序编译和校验后的候选</h4>
+    <ul class="cmds"><li><span class="ty">npc.update</span><span>林晚 · 关系倾向 30 → 34</span><span class="id">cmd-01</span></li><li><span class="ty">protagonist.update</span><span>情绪 → 警惕，压着火</span><span class="id">cmd-02</span></li>
+     <li><span class="ty">item.transfer</span><span>无名木盒 → 主角</span><span class="id">cmd-03</span></li><li><span class="ty">economy.cash</span><span>现金 −28.00 元</span><span class="id">cmd-04</span></li><li><span class="ty">time.advance</span><span>+ 18 分钟</span><span class="id">cmd-05</span></li>
+     <li class="rej"><span class="ty">拒绝</span><span>黑衣男人 · 新建人物（缺少稳定身份）</span><span class="id">sug-01</span></li><li class="miss"><span class="ty">未解决</span><span>木盒钥匙的来源</span><span class="id">un-01</span></li></ul>
+    <div class="rawbox">{"commands":[{"type":"npc.update","target":"n1","affinity":{"from":30,"to":34}} …</div></section></div></div>
+</div>
+
+<div class="part"><b>06</b><h2>档案纸版本</h2><span>设置、档案柜面板内</span></div>
+<p class="note">同一套结构，颜色换成档案纸：错误为朱砂 #A3412E，注意为金棕 #8E6C25，说明为藏蓝 #2D5E7D，完成为墨绿 #2F7A58。标记圆点为实心色底、白字。</p>
+<div class="paper">
+ <div class="grid2">
+  <div><h4 class="cap">设置 · AI 连接</h4>
+   <div class="alert l-ok" role="status"><span class="ic" aria-hidden="true">成</span><div class="tx"><b>连接测试成功，已收到模型文本响应；</b><small>游戏回合未运行。</small></div></div>
+   <div class="alert l-err" role="alert"><span class="ic" aria-hidden="true">误</span><div class="tx"><b>配置无效：请核对名称、HTTPS 地址、模型 ID、路由和生成参数；</b><small>地址不能含密钥或查询参数。</small></div></div>
+   <div class="alert l-err" role="alert"><span class="ic" aria-hidden="true">误</span><div class="tx"><b>凭证无法读取，请检查浏览器存储权限。</b></div></div>
+   <div class="alert l-warn" role="note"><span class="ic" aria-hidden="true">注</span><div class="tx"><b>渠道及凭证已删除；</b><small>受影响的独立阶段需重新选择渠道，不会自动改为跟随正文。</small></div></div>
+   <div class="alert l-info" role="status"><span class="ic" aria-hidden="true">示</span><div class="tx"><b>请求进行中…</b></div><div class="acts"><button>取消请求</button></div></div>
+  </div>
+  <div><h4 class="cap">设置 · 未保存切换</h4>
+   <div class="scrim" style="background:#2a262233;min-height:300px"><div class="dlg l-warn" role="dialog" aria-label="AI 配置尚未保存">
+    <div class="dlg-hd"><span class="mk" aria-hidden="true">存</span><h3>AI 配置尚未保存</h3></div>
+    <div class="dlg-bd"><p>渠道、模型或密钥的修改尚未保存。继续编辑后点击「保存 AI 配置」，或明确放弃本次修改。</p></div>
+    <div class="dlg-ft"><button class="btn-danger">放弃本次修改</button><button class="btn-ink">继续编辑</button></div></div></div>
+   <p class="cap-dim" style="margin-top:.8rem">档案纸内：主操作用墨色实心，危险操作用朱砂描边。</p>
+  </div>
+ </div>
+</div>
+</div>
+</body>
+</html>

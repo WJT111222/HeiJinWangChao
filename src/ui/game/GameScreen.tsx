@@ -7,7 +7,7 @@ import { ProfessionProfile } from '../components/ProfessionProfile';
 import { StoryReading } from './StoryReading';
 import { openingTimeSelection } from '../../domain/openingTime';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import type { GameState } from '../../domain/state';
 import type { CompanionProfile } from '../../services/local/companionProfile';
 import type { TurnDraft } from '../../domain/drafts';
@@ -17,6 +17,7 @@ import { Panels, panelNames } from '../panels/Panels';
 import type { PanelName } from '../panels/Panels';
 import { playerView, money, dateTime } from '../panels/playerView';
 import type { SaveRepository } from '../../services/storage/saveRepository';
+import { mayStartStory } from './storyGenerationPolicy';
 import { useStoryGeneration } from './useStoryGeneration';
 import { useVariableGeneration } from './useVariableGeneration';
 import { VariableCandidates } from './VariableCandidates';
@@ -43,6 +44,8 @@ import type { RuntimeLogEntry, RuntimeLogReporter } from './runtimeLog';
 import { CityAtmosphere, CityBar, CityChapter } from './CityNight';
 import { deriveAtmosphere } from './atmosphere';
 import './city-night.css';
+import './workflow-feedback.css';
+import { Feedback } from '../Feedback';
 
 const sidebarMedia = '(max-width: 900px)';
 function subscribeSidebarSize(changed: () => void) {
@@ -147,7 +150,30 @@ export function GameScreen({
   const busy = workflowBusy || Boolean(npcManagement.pendingId);
   const reader = useRef<HTMLDivElement>(null);
   const workflowDetails = useRef<HTMLDetailsElement>(null);
-  const runtimeSwitches = useRef<HTMLDivElement>(null);
+  const runtimeSwitches = useRef<HTMLOListElement | HTMLDivElement>(null);
+  const workflowToggle = useRef<HTMLButtonElement>(null);
+  const [workflowOpen, setWorkflowOpen] = useState(false);
+  const [workflowFoot, setWorkflowFoot] = useState<"diagnostics" | "input">();
+  const closeWorkflow = () => {
+    setWorkflowOpen(false);
+    workflowToggle.current?.focus({ preventScroll: true });
+  };
+  useEffect(() => {
+    if (!workflowOpen || compactSidebars) return;
+    const escape = (event: KeyboardEvent) => {
+      if (
+        event.key !== "Escape" ||
+        document.querySelector("dialog[open]") ||
+        event.defaultPrevented
+      )
+        return;
+      event.preventDefault();
+      setWorkflowOpen(false);
+      workflowToggle.current?.focus({ preventScroll: true });
+    };
+    document.addEventListener("keydown", escape);
+    return () => document.removeEventListener("keydown", escape);
+  }, [workflowOpen, compactSidebars]);
   const follow = useRef(true);
   const [following, setFollowing] = useState(true);
   const validDraft =
@@ -240,6 +266,7 @@ export function GameScreen({
   const failedStage = (['story', 'variables', 'world'] as const).some((stage) => draft?.stageStatus[stage] === 'failed');
   // 仅用于入口展示，与 TurnCoordinator 的 needed 条件保持一致；实际执行仍由协调器重验。
   const storyNeeded = !draft?.story || draft.stageStatus.story !== 'ready';
+  const canStartStory = mayStartStory(draft);
   const variablesNeeded = settings.runtime.useVariableStage &&
     (draft?.stageStatus.variables !== 'ready' || draft.variables?.validation !== 'validated' || storyNeeded);
   const worldNeeded = settings.runtime.useWorldStage &&
@@ -262,10 +289,17 @@ export function GameScreen({
       : '')
     : '';
   function openRuntimeSettings() {
-    if (workflowDetails.current) workflowDetails.current.open = true;
-    runtimeSwitches.current?.scrollIntoView({ block: 'nearest' });
-    (runtimeSwitches.current?.querySelector<HTMLInputElement>('input:not(:checked)') ??
-      runtimeSwitches.current?.querySelector<HTMLInputElement>('input'))?.focus({ preventScroll: true });
+    if (compactSidebars && workflowDetails.current)
+      workflowDetails.current.open = true;
+    else setWorkflowOpen(true);
+    requestAnimationFrame(() => {
+      runtimeSwitches.current?.scrollIntoView({ block: "nearest" });
+      (
+        runtimeSwitches.current?.querySelector<HTMLInputElement>(
+          "input:not(:checked)",
+        ) ?? runtimeSwitches.current?.querySelector<HTMLInputElement>("input")
+      )?.focus({ preventScroll: true });
+    });
   }
 
   const stageLabels = { story: '正文', variables: '变量', world: '动态世界' };
@@ -325,6 +359,445 @@ export function GameScreen({
       <button onClick={onSaves}><span className="dock-seal" aria-hidden="true">归</span><span>返回首页</span></button>
     </nav>}
   </aside>;
+  const workflowState = hasWorkflowError
+    ? "error"
+    : busy
+      ? "busy"
+      : awaitingAction
+        ? "settled"
+        : canCommit
+          ? "ready"
+          : workflowGuidance
+            ? "off"
+            : "pending";
+  const workflowBody = (
+    <div
+      className="workflow-details"
+      id="workflow-pop"
+      role={!compactSidebars ? "region" : undefined}
+      aria-label={!compactSidebars ? "三阶段详情" : undefined}
+    >
+      {!compactSidebars && (
+        <header className="wf-hd" data-state={workflowState}>
+          <span className="dot" aria-hidden="true" />
+          <h3>{workflowLabel}</h3>
+          {progress && !following && <button className="wf-follow" onClick={() => { follow.current = true; setFollowing(true); if (reader.current) reader.current.scrollTop = reader.current.scrollHeight; }}>跟随最新正文 ↓</button>}
+          <button onClick={closeWorkflow} aria-label="收起三阶段详情">
+            ×
+          </button>
+        </header>
+      )}
+      <div className="wf-body">
+        {workflowGuidance && (
+          <div
+            className={`field-hint ${!compactSidebars ? "feedback l-warn" : ""}`}
+            role="note"
+            aria-label="阶段设置提示"
+          >
+            {!compactSidebars && <span className="feedback-icon" aria-hidden="true">注</span>}
+            <p>{workflowGuidance}</p>
+            <button
+              onClick={openRuntimeSettings}
+              aria-controls="workflow-runtime-switches"
+            >
+              展开高级设置
+            </button>
+          </div>
+        )}
+        {(automatic.running || (!busy && (canCommit || canGenerate))) && (
+          <div className="workflow-primary">
+            {automatic.running ? (
+              <button
+                disabled={
+                  automatic.settling || automatic.progress?.phase === "saving"
+                }
+                onClick={automatic.cancel}
+              >
+                取消自动执行
+              </button>
+            ) : (
+              <button
+                className="primary"
+                disabled={!validDraft || busy}
+                onClick={() => void automatic.generate()}
+              >
+                {canCommit
+                  ? "完成本回合结算"
+                  : draft?.story || failedStage || workflowError
+                    ? "继续未完成阶段"
+                    : draft?.turnKind === "regular"
+                      ? "自动生成本回合"
+                      : "自动生成开局"}
+              </button>
+            )}
+            {!compactSidebars && (
+              <small>
+                {automatic.running
+                  ? "正在依次执行三个阶段"
+                  : canCommit
+                    ? "三个阶段的候选均已通过校验"
+                    : "从第一个未完成的阶段继续"}
+              </small>
+            )}
+          </div>
+        )}
+        {compactSidebars ? (
+          <>
+            {" "}
+            {automatic.error && (
+              <div className="story-error" role="alert">
+                {automatic.error}
+                <button onClick={onOpenSettings}>打开 AI 设置</button>
+              </div>
+            )}
+            {error && (
+              <p className="story-error" role="alert">
+                {error}
+              </p>
+            )}
+            {submitError && (
+              <p className="story-error" role="alert">
+                {submitError}
+              </p>
+            )}
+            {variables.error && (
+              <p className="story-error" role="alert">
+                {variables.error}
+              </p>
+            )}
+            {world.error && (
+              <p className="story-error" role="alert">
+                {world.error}
+              </p>
+            )}
+          </>
+        ) : (
+          workflowError && (
+            <div className="feedback l-err workflow-errors" role="alert">
+              <span className="feedback-icon" aria-hidden="true">
+                误
+              </span>
+              <div className="feedback-text">
+                {[
+                  automatic.error,
+                  error,
+                  submitError,
+                  variables.error,
+                  world.error,
+                ]
+                  .filter(Boolean)
+                  .map((message, i) => (
+                    <Feedback key={i} level="err" embedded>
+                      {message}
+                    </Feedback>
+                  ))}
+                {draft?.failures.filter(failure => failure.storyRevision === draft.storyRevision).slice(-6).map((failure, i) => <small key={`code-${i}`}>{stageLabels[failure.stage]} · 安全失败码：{failure.errorCode} · {failure.attempt} 次尝试</small>)}
+              </div>
+              {automatic.error && (
+                <button onClick={onOpenSettings}>打开 AI 设置</button>
+              )}
+            </div>
+          )
+        )}
+        {!validDraft && (
+          <Feedback className="field-hint" level="warn" mobileAs="p">{draft ? '当前草稿已过期，请重新读取存档。' : '没有可执行的回合草稿。请重新读取存档；暂时无法生成或结算。'}</Feedback>
+        )}
+        {compactSidebars && (
+          <p className="workflow-fee">生成可能产生第三方 API 费用。</p>
+        )}
+        <ol
+          className="workflow-stages"
+          id={!compactSidebars ? "workflow-runtime-switches" : undefined}
+          ref={
+            !compactSidebars
+              ? (runtimeSwitches as RefObject<HTMLOListElement>)
+              : undefined
+          }
+        >
+          {(["story", "variables", "world"] as const).map((stage, i) => {
+            const status = draft?.stageStatus[stage];
+            const auto =
+              automatic.progress?.stage === stage
+                ? automatic.progress
+                : undefined;
+            const skipped =
+              automatic.outcome?.draft.draftRevision === draft?.draftRevision &&
+              automatic.outcome?.skipped.includes(stage);
+            return (
+              <li
+                key={stage}
+                data-s={
+                  progressSteps[i].visual === "idle" &&
+                  progressSteps[i].text === "已关闭"
+                    ? "off"
+                    : progressSteps[i].visual
+                }
+              >
+                <span className="stage-number">0{i + 1}</span>
+                <strong>{["正文生成", "变量管理", "动态世界"][i]}</strong>
+                <small>
+                  {awaitingAction
+                    ? "已结算"
+                    : auto
+                      ? auto.phase === "saving"
+                        ? "保存中"
+                        : auto.phase === "retrying"
+                          ? "重试中"
+                          : "生成中"
+                      : activeStage === stage
+                        ? activePhase === "saving"
+                          ? "保存中"
+                          : "生成中"
+                        : (stage === "variables" &&
+                              !settings.runtime.useVariableStage) ||
+                            (stage === "world" &&
+                              !settings.runtime.useWorldStage)
+                          ? "已关闭"
+                          : skipped || status === "skipped"
+                            ? "已跳过"
+                            : status === "failed" ||
+                                (errorStage === stage && hasWorkflowError)
+                              ? "失败 · 可重试"
+                              : status === "preview"
+                                ? "仅预览"
+                                : status === "ready"
+                                  ? "已完成"
+                                  : "待生成"}
+                </small>
+                {!compactSidebars && stage !== "story" && (
+                  <label
+                    className="toggle wf-sw"
+                    title={`${stage === "variables" ? "变量管理" : "动态世界"}阶段开关`}
+                  >
+                    <input
+                      type="checkbox"
+                      aria-label={
+                        stage === "variables" ? "变量管理" : "动态世界"
+                      }
+                      checked={
+                        settings.runtime[
+                          stage === "variables"
+                            ? "useVariableStage"
+                            : "useWorldStage"
+                        ]
+                      }
+                      onChange={(e) =>
+                        onSettings({
+                          ...settings,
+                          runtime: {
+                            ...settings.runtime,
+                            [stage === "variables"
+                              ? "useVariableStage"
+                              : "useWorldStage"]: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    启用
+                  </label>
+                )}
+                {stage === "story" ? (
+                  <p className="stage-action-hint">正文生成位于行动输入旁。</p>
+                ) : stage === "variables" ? (
+                  <div className="variable-actions">
+                    {variables.phase ? (
+                      <button
+                        disabled={variables.phase === "saving"}
+                        onClick={variables.cancel}
+                      >
+                        取消变量生成
+                      </button>
+                    ) : (
+                      <button
+                        disabled={
+                          !validDraft ||
+                          !draft?.story ||
+                          draft.stageStatus.story !== "ready" ||
+                          !settings.runtime.useVariableStage ||
+                          busy
+                        }
+                        onClick={() => void variables.generate()}
+                      >
+                        {draft?.variables
+                          ? "重新生成变量候选"
+                          : draft?.useVariableStage === false
+                            ? "启用并补算变量"
+                            : "生成变量候选"}
+                      </button>
+                    )}
+                    {draft?.variables && (
+                      <VariableCandidates
+                        key={`${draft.turnId}-${draft.draftRevision}`}
+                        draft={draft}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <div className="variable-actions">
+                    {world.phase ? (
+                      <button
+                        disabled={world.phase === "saving"}
+                        onClick={world.cancel}
+                      >
+                        取消世界生成
+                      </button>
+                    ) : (
+                      <button
+                        disabled={
+                          !validDraft ||
+                          !draft?.story ||
+                          draft.stageStatus.story !== "ready" ||
+                          !settings.runtime.useWorldStage ||
+                          busy
+                        }
+                        onClick={() => void world.generate()}
+                      >
+                        {draft?.world
+                          ? "重新生成世界候选"
+                          : draft?.useWorldStage === false
+                            ? "启用并补算世界"
+                            : "生成世界候选"}
+                      </button>
+                    )}
+                    {draft?.world && (
+                      <WorldCandidates
+                        key={`${draft.turnId}-${draft.draftRevision}`}
+                        draft={draft}
+                      />
+                    )}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+      {!compactSidebars && (
+        <footer className="wf-ft">
+          <button
+            aria-expanded={workflowFoot === "diagnostics"}
+            aria-controls="workflow-diagnostics"
+            onClick={() =>
+              setWorkflowFoot(
+                workflowFoot === "diagnostics" ? undefined : "diagnostics",
+              )
+            }
+          >
+            重试与变更详情
+          </button>
+          {draft && (
+            <button
+              aria-expanded={workflowFoot === "input"}
+              aria-controls="workflow-bound-input"
+              onClick={() =>
+                setWorkflowFoot(workflowFoot === "input" ? undefined : "input")
+              }
+            >
+              本回合已绑定输入（只读）
+            </button>
+          )}
+          <span className="workflow-fee">生成可能产生第三方 API 费用。</span>
+        </footer>
+      )}
+      <div className="wf-more">
+        <details
+          className="workflow-diagnostics"
+          id="workflow-diagnostics"
+          open={!compactSidebars ? workflowFoot === "diagnostics" : undefined}
+        >
+          <summary hidden={!compactSidebars}>
+            {compactSidebars ? "重试与变更详情" : ""}
+          </summary>
+          {summaryQuality && (
+            <p className="muted" data-testid="summary-length">
+              本回合摘要：{summaryQuality.hanCharacters} 汉字。
+              {summaryQuality.status === "empty"
+                ? "缺少有效摘要，无法正式结算。"
+                : summaryQuality.status === "within_target"
+                  ? "符合目标范围。"
+                  : "可继续。"}
+            </p>
+          )}
+          {draft?.failures
+            .filter((failure) => failure.storyRevision === draft.storyRevision)
+            .slice(-6)
+            .map((failure, index) => (
+              <p className="muted" key={index}>
+                {
+                  {
+                    story: "正文生成",
+                    variables: "变量管理",
+                    world: "动态世界",
+                  }[failure.stage]
+                }{" "}
+                · 安全失败码：{failure.errorCode}
+              </p>
+            ))}
+          {runtimeLogs.some((entry) => entry.kind === "failed") && (
+            <RuntimeLogPanel
+              entries={runtimeLogs}
+              onClear={() => setRuntimeLogs([])}
+            />
+          )}
+          <StageResponsesPanel
+            saveId={state.saveId}
+            turnId={
+              awaitingAction ? state.journal.at(-1)?.turnId : draft?.turnId
+            }
+          />
+          <RequestUsage saveId={state.saveId} />
+          {draft && (
+            <StoryInspectionPanel
+              key={`${draft.turnId}-${draft.storyRevision}`}
+              draft={draft}
+            />
+          )}
+        </details>
+        {draft && (
+          <details
+            className="bound-input"
+            id="workflow-bound-input"
+            open={!compactSidebars ? workflowFoot === "input" : undefined}
+          >
+            <summary hidden={!compactSidebars}>
+              {compactSidebars ? "本回合已绑定输入（只读）" : ""}
+            </summary>
+            <p className="prose">
+              {draft.userInput || "未填写开局偏好，按人物资料正常生成。"}
+            </p>
+          </details>
+        )}
+        {compactSidebars && (
+          <div
+            className="runtime-switches"
+            id="workflow-runtime-switches"
+            ref={runtimeSwitches as RefObject<HTMLDivElement>}
+          >
+            {(
+              [
+                ["useVariableStage", "变量管理"],
+                ["useWorldStage", "动态世界"],
+              ] as const
+            ).map(([key, label]) => (
+              <label className="toggle" key={key}>
+                <input
+                  type="checkbox"
+                  checked={settings.runtime[key]}
+                  onChange={(e) =>
+                    onSettings({
+                      ...settings,
+                      runtime: { ...settings.runtime, [key]: e.target.checked },
+                    })
+                  }
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
   return (
     <main className="game-layout city-night" data-city={atmosphere.city} data-time={atmosphere.time} data-wx={atmosphere.weather}
       onKeyDown={event => {
@@ -416,7 +889,7 @@ export function GameScreen({
         </div>
         <div className="composer">
           <div className="composer-tools">
-            {progress && !following && (
+            {progress && !following && (compactSidebars || !workflowOpen) && (
               <button className="follow"
                 onClick={() => {
                   follow.current = true;
@@ -427,218 +900,125 @@ export function GameScreen({
                 跟随最新正文 ↓
               </button>
             )}
-            <section className="workflow" aria-label="三阶段工作流" data-state={hasWorkflowError ? 'error' : busy ? 'busy' : awaitingAction ? 'settled' : 'pending'}>
-              <details className="workflow-disclosure" ref={workflowDetails}>
-                <summary>
-                  <strong role="status" aria-live="polite"><span className="workflow-prefix">三阶段 · </span>{workflowLabel}</strong>
-                  {!compactSidebars && <span className="rail" aria-hidden="true">{progressSteps.map((step, i) =>
-                    <span key={step.stage} data-s={step.visual}><span className="bar-seg" /><span className="lbl"><b>0{i + 1}</b> {step.name}<em> · {step.text}</em></span></span>)}</span>}
-                  <span className="workflow-toggle">详情</span>
-                </summary>
-                <div className="workflow-details">
-                  {workflowGuidance && <div className="field-hint" role="note" aria-label="阶段设置提示">
-                    <p>{workflowGuidance}</p>
-                    <button onClick={openRuntimeSettings} aria-controls="workflow-runtime-switches">展开高级设置</button>
-                  </div>}
-                  {(automatic.running || (!busy && (canCommit || canGenerate))) && <div className="workflow-primary">
-                    {automatic.running ? (
-                      <button disabled={automatic.settling || automatic.progress?.phase === 'saving'} onClick={automatic.cancel}>
-                        取消自动执行
-                      </button>
-                    ) : (
-                      <button className="primary" disabled={!validDraft || busy} onClick={() => void automatic.generate()}>
-                        {canCommit ? '完成本回合结算' : draft?.story || failedStage || workflowError ? '继续未完成阶段' : draft?.turnKind === 'regular' ? '自动生成本回合' : '自动生成开局'}
-                      </button>
+            <section
+              className="workflow"
+              aria-label="三阶段工作流"
+              data-state={workflowState}
+            >
+              {compactSidebars ? (
+                <details className="workflow-disclosure" ref={workflowDetails}>
+                  <summary>
+                    <strong role="status" aria-live="polite">
+                      <span className="workflow-prefix">三阶段 · </span>
+                      {workflowLabel}
+                    </strong>
+                    {!compactSidebars && (
+                      <span className="rail" aria-hidden="true">
+                        {progressSteps.map((step, i) => (
+                          <span key={step.stage} data-s={step.visual}>
+                            <span className="bar-seg" />
+                            <span className="lbl">
+                              <b>0{i + 1}</b> {step.name}
+                              <em> · {step.text}</em>
+                            </span>
+                          </span>
+                        ))}
+                      </span>
                     )}
-                  </div>}
-                  {automatic.error && <div className="story-error" role="alert">
-                    {automatic.error}
-                    <button onClick={onOpenSettings}>打开 AI 设置</button>
-                  </div>}
-                  {error && (
-                    <p className="story-error" role="alert">
-                      {error}
-                    </p>
-                  )}
-                  {submitError && (
-                    <p className="story-error" role="alert">
-                      {submitError}
-                    </p>
-                  )}
-                  {variables.error && (
-                    <p className="story-error" role="alert">
-                      {variables.error}
-                    </p>
-                  )}
-                  {world.error && <p className="story-error" role="alert">{world.error}</p>}
-                  {!validDraft && (
-                    <p className="field-hint">
-                      {draft
-                        ? '当前草稿已过期，请重新读取存档。'
-                        : '没有可执行的回合草稿。请重新读取存档；暂时无法生成或结算。'}
-                    </p>
-                  )}
-                  <p className="workflow-fee">生成可能产生第三方 API 费用。</p>
-                  <ol className="workflow-stages">
-                    {(['story', 'variables', 'world'] as const).map((stage, i) => {
-                      const status = draft?.stageStatus[stage];
-                      const auto = automatic.progress?.stage === stage ? automatic.progress : undefined;
-                      const skipped =
-                        automatic.outcome?.draft.draftRevision === draft?.draftRevision &&
-                        automatic.outcome?.skipped.includes(stage);
-                      return (
-                        <li key={stage}>
-                          <span className="stage-number">0{i + 1}</span>
-                          <strong>{['正文生成', '变量管理', '动态世界'][i]}</strong>
-                          <small>
-                            {awaitingAction ? '已结算'
-                              : auto ? auto.phase === 'saving' ? '保存中' : auto.phase === 'retrying' ? '重试中' : '生成中'
-                              : activeStage === stage ? activePhase === 'saving' ? '保存中' : '生成中'
-                              : (stage === 'variables' && !settings.runtime.useVariableStage) || (stage === 'world' && !settings.runtime.useWorldStage) ? '已关闭'
-                              : skipped || status === 'skipped' ? '已跳过'
-                              : status === 'failed' || errorStage === stage && hasWorkflowError ? '失败 · 可重试'
-                              : status === 'preview' ? '仅预览'
-                              : status === 'ready' ? '已完成' : '待生成'}
-                          </small>
-                          {stage === 'story' ? (
-                            <p className="stage-action-hint">正文生成与重新 Roll 位于行动输入旁。</p>
-                          ) : stage === 'variables' ? (
-                            <div className="variable-actions">
-                              {variables.phase ? (
-                                <button disabled={variables.phase === 'saving'} onClick={variables.cancel}>
-                                  取消变量生成
-                                </button>
-                              ) : (
-                                <button
-                                  disabled={
-                                    !validDraft ||
-                                    !draft?.story ||
-                                    draft.stageStatus.story !== 'ready' ||
-                                    !settings.runtime.useVariableStage ||
-                                    busy
-                                  }
-                                  onClick={() => void variables.generate()}
-                                >
-                                  {draft?.variables
-                                    ? '重新生成变量候选'
-                                    : draft?.useVariableStage === false
-                                      ? '启用并补算变量'
-                                      : '生成变量候选'}
-                                </button>
-                              )}
-                              {draft?.variables && (
-                                <VariableCandidates key={`${draft.turnId}-${draft.draftRevision}`} draft={draft} />
-                              )}
-                            </div>
-                          ) : (
-                            <div className="variable-actions">
-                              {world.phase ? (
-                                <button disabled={world.phase === 'saving'} onClick={world.cancel}>
-                                  取消世界生成
-                                </button>
-                              ) : (
-                                <button
-                                  disabled={
-                                    !validDraft ||
-                                    !draft?.story ||
-                                    draft.stageStatus.story !== 'ready' ||
-                                    !settings.runtime.useWorldStage ||
-                                    busy
-                                  }
-                                  onClick={() => void world.generate()}
-                                >
-                                  {draft?.world
-                                    ? '重新生成世界候选'
-                                    : draft?.useWorldStage === false
-                                      ? '启用并补算世界'
-                                      : '生成世界候选'}
-                                </button>
-                              )}
-                              {draft?.world && (
-                                <WorldCandidates key={`${draft.turnId}-${draft.draftRevision}`} draft={draft} />
-                              )}
-                            </div>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ol>
-                  <details className="workflow-diagnostics">
-                    <summary>重试与变更详情</summary>
-                    {summaryQuality && <p className="muted" data-testid="summary-length">
-                      本回合摘要：{summaryQuality.hanCharacters} 汉字。
-                      {summaryQuality.status === 'empty'
-                        ? '缺少有效摘要，无法正式结算。'
-                        : summaryQuality.status === 'within_target'
-                          ? '符合目标范围。'
-                          : '可继续。'}
-                    </p>}
-                    {draft?.failures
-                      .filter((failure) => failure.storyRevision === draft.storyRevision)
-                      .slice(-6)
-                      .map((failure, index) => (
-                        <p className="muted" key={index}>
-                          {{ story: '正文生成', variables: '变量管理', world: '动态世界' }[failure.stage]}{' '}
-                          · 安全失败码：{failure.errorCode}
-                        </p>
-                      ))}
-                    {runtimeLogs.some((entry) => entry.kind === 'failed') && (
-                      <RuntimeLogPanel entries={runtimeLogs} onClear={() => setRuntimeLogs([])} />
+                    <span className="workflow-toggle">详情</span>
+                  </summary>
+                  {workflowBody}
+                </details>
+              ) : (
+                <div
+                  className="workflow-disclosure"
+                  data-open={workflowOpen}
+                  {...(workflowOpen ? { open: true } : {})}
+                >
+                  <div className="workflow-summary">
+                    <strong role="status" aria-live="polite">
+                      <span className="workflow-prefix">三阶段 · </span>
+                      {workflowLabel}
+                    </strong>
+                    {!compactSidebars && (
+                      <span className="rail" aria-hidden="true">
+                        {progressSteps.map((step, i) => (
+                          <span key={step.stage} data-s={step.visual}>
+                            <span className="bar-seg" />
+                            <span className="lbl">
+                              <b>0{i + 1}</b> {step.name}
+                              <em> · {step.text}</em>
+                            </span>
+                          </span>
+                        ))}
+                      </span>
                     )}
-                    <StageResponsesPanel saveId={state.saveId} turnId={awaitingAction ? state.journal.at(-1)?.turnId : draft?.turnId} />
-                    <RequestUsage saveId={state.saveId} />
-                    {draft && <StoryInspectionPanel key={`${draft.turnId}-${draft.storyRevision}`} draft={draft} />}
-                  </details>
-                  {draft && (
-                    <details className="bound-input">
-                      <summary>本回合已绑定输入（只读）</summary>
-                      <p className="prose">{draft.userInput || '未填写开局偏好，按人物资料正常生成。'}</p>
-                    </details>
-                  )}
-                  <div className="runtime-switches" id="workflow-runtime-switches" ref={runtimeSwitches}>
-                    {(
-                      [
-                        ['useVariableStage', '变量管理'],
-                        ['useWorldStage', '动态世界'],
-                      ] as const
-                    ).map(([key, label]) => (
-                      <label className="toggle" key={key}>
-                        <input
-                          type="checkbox"
-                          checked={settings.runtime[key]}
-                          onChange={(e) =>
-                            onSettings({
-                              ...settings,
-                              runtime: { ...settings.runtime, [key]: e.target.checked },
-                            })
-                          }
-                        />
-                        {label}
-                      </label>
-                    ))}
+                    <button
+                      className="workflow-toggle"
+                      ref={workflowToggle}
+                      aria-expanded={workflowOpen}
+                      aria-controls="workflow-pop"
+                      onClick={() =>
+                        workflowOpen ? closeWorkflow() : setWorkflowOpen(true)
+                      }
+                    >
+                      详情
+                    </button>
+                  </div>
+                  <div hidden={!workflowOpen} className="workflow-pop-host">
+                    {workflowBody}
                   </div>
                 </div>
-              </details>
+              )}
             </section>
           </div>
           {undoNotice && <p role="status" className="undo-feedback">{undoNotice}</p>}
           <div className="composer-action-row">
             <div className="composer-roll">
-              <TurnUndoControl repository={repository} state={state} draft={draft} busy={busy}
-                input={input} onInput={setInput} onUndone={onUndone} cancelMemory={memory.cancel} onNotice={setUndoNotice} />
+              <TurnUndoControl
+                repository={repository}
+                state={state}
+                draft={draft}
+                busy={busy}
+                input={input}
+                onInput={setInput}
+                onUndone={onUndone}
+                cancelMemory={memory.cancel}
+                onNotice={setUndoNotice}
+              />
               {automatic.running ? (
-                <button disabled={automatic.settling || automatic.progress?.phase === 'saving'} onClick={automatic.cancel}>取消生成</button>
+                <button
+                  disabled={
+                    automatic.settling || automatic.progress?.phase === "saving"
+                  }
+                  onClick={automatic.cancel}
+                >
+                  取消生成
+                </button>
               ) : manualProgress ? (
-                <button disabled={manualProgress.phase === 'saving'} onClick={cancel}>
-                  {manualProgress.phase === 'saving' ? '正在保存…' : '取消生成'}
+                <button
+                  disabled={manualProgress.phase === "saving"}
+                  onClick={cancel}
+                >
+                  {manualProgress.phase === "saving" ? "正在保存…" : "取消生成"}
                 </button>
-              ) : (
-                <button disabled={!validDraft || awaitingAction || busy}
-                  title={awaitingAction ? '本回合已结算；发送新行动后继续' : undefined}
-                  onClick={() => void generate()}>
-                  {awaitingAction || draft?.story ? '重新 Roll' : draft?.turnKind === 'regular' ? '生成本回合正文' : '生成开局正文'}
+              ) : (!draft || canStartStory) && !awaitingAction ? (
+                <button
+                  disabled={!validDraft || busy}
+                  title={
+                    awaitingAction
+                      ? "本回合已结算；发送新行动后继续"
+                      : undefined
+                  }
+                  onClick={() => {
+                    if (canStartStory) void generate();
+                  }}
+                >
+                  {draft?.turnKind === "regular"
+                    ? "生成本回合正文"
+                    : "生成开局正文"}
                 </button>
-              )}
+              ) : null}
             </div>
             <label className="sr-only" htmlFor="player-input">你的行动</label>
             <textarea id="player-input" disabled={submitting} value={input}
@@ -765,13 +1145,56 @@ export function GameScreen({
         if (fingerprint(saved.memory) !== fingerprint(next.memory)) throw new Error('memory settings not saved');
       }} phase={memory.phase} activeKind={memory.activeKind} notice={memory.notice}
         onRun={(kind, npcId) => void memory.run(false, kind, npcId)} onCancel={memory.cancel} />)}
-      {memory.failures[0] && <Dialog title={summaryFailureTitle(memory.failures[0])} small onClose={() => memory.closeFailure(memory.failures[0].kind)}>
-        <p>{memory.failures[0].message}</p><p>原始记忆仍保留；重新生成可能产生 API 费用。</p>
-        {memory.failures[0].kind === 'npc' && !memory.failures[0].npcId
-          ? <button disabled={Boolean(memory.phase)} onClick={() => { memory.closeFailure('npc'); onOpenSettings(); }}>前往设置选择人物</button>
-          : <button disabled={Boolean(memory.phase)} onClick={() => void memory.run(false, memory.failures[0].kind, memory.failures[0].npcId)}>重新生成</button>}
-        <button disabled={Boolean(memory.phase)} onClick={() => memory.pause(memory.failures[0].kind)}>暂停自动总结</button>
-      </Dialog>}
+      {memory.failures[0] && (
+        <Dialog
+          title={summaryFailureTitle(memory.failures[0])}
+          small
+          feedback={
+            summaryFailureTitle(memory.failures[0]).includes("待确认")
+              ? "warn"
+              : "err"
+          }
+          seal="忆"
+          onClose={() => memory.closeFailure(memory.failures[0].kind)}
+        >
+          <p>{memory.failures[0].message}</p>
+          <p>原始记忆仍保留；重新生成可能产生 API 费用。</p>
+          <div className="feedback-dialog-actions memory-feedback-actions">
+            {memory.failures[0].kind === "npc" && !memory.failures[0].npcId ? (
+              <button
+                className={!compactSidebars ? "primary" : undefined}
+                disabled={Boolean(memory.phase)}
+                onClick={() => {
+                  memory.closeFailure("npc");
+                  onOpenSettings();
+                }}
+              >
+                前往设置选择人物
+              </button>
+            ) : (
+              <button
+                className={!compactSidebars ? "primary" : undefined}
+                disabled={Boolean(memory.phase)}
+                onClick={() =>
+                  void memory.run(
+                    false,
+                    memory.failures[0].kind,
+                    memory.failures[0].npcId,
+                  )
+                }
+              >
+                重新生成
+              </button>
+            )}
+            <button
+              disabled={Boolean(memory.phase)}
+              onClick={() => memory.pause(memory.failures[0].kind)}
+            >
+              暂停自动总结
+            </button>
+          </div>
+        </Dialog>
+      )}
     </main>
   );
 }

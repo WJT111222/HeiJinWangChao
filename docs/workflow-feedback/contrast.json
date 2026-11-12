@@ -1,0 +1,72 @@
+[
+  {
+    "swatch": "#D47C60",
+    "effectiveText": "#D47C60",
+    "background": "#121614",
+    "ratio": 5.95,
+    "AA": true
+  },
+  {
+    "swatch": "#E0C27A",
+    "effectiveText": "#E0C27A",
+    "background": "#121614",
+    "ratio": 10.57,
+    "AA": true
+  },
+  {
+    "swatch": "#8EC1E0",
+    "effectiveText": "#8EC1E0",
+    "background": "#121614",
+    "ratio": 9.43,
+    "AA": true
+  },
+  {
+    "swatch": "#7DBB9C",
+    "effectiveText": "#7DBB9C",
+    "background": "#121614",
+    "ratio": 8.22,
+    "AA": true
+  },
+  {
+    "swatch": "#A3A396",
+    "effectiveText": "#A3A396",
+    "background": "#121614",
+    "ratio": 7.16,
+    "AA": true
+  },
+  {
+    "swatch": "#A3412E",
+    "effectiveText": "#953E2D",
+    "background": "#EFE8D9",
+    "ratio": 5.73,
+    "AA": true
+  },
+  {
+    "swatch": "#8E6C25",
+    "effectiveText": "#826425",
+    "background": "#EFE8D9",
+    "ratio": 4.53,
+    "AA": true
+  },
+  {
+    "swatch": "#2D5E7D",
+    "effectiveText": "#2D5772",
+    "background": "#EFE8D9",
+    "ratio": 6.33,
+    "AA": true
+  },
+  {
+    "swatch": "#2F7A58",
+    "effectiveText": "#2F7052",
+    "background": "#EFE8D9",
+    "ratio": 4.84,
+    "AA": true
+  },
+  {
+    "swatch": "#5F574C",
+    "effectiveText": "#5F574C",
+    "background": "#EFE8D9",
+    "ratio": 5.83,
+    "AA": true
+  }
+]

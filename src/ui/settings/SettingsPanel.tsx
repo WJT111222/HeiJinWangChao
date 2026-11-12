@@ -1,3 +1,5 @@
+import type { FeedbackLevel } from '../Feedback';
+import { Feedback } from '../Feedback';
 import { MemorySummarySettings } from './MemorySummarySettings';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import { lazy, Suspense, useCallback, useState, cloneElement, isValidElement } from 'react';
@@ -36,6 +38,7 @@ export function SettingsPanel({
   const [tab, setTab] = useState<(typeof tabs)[number]>('AI 连接');
   const [editing, setEditing] = useState(settings);
   const [notice, setNotice] = useState('');
+  const [noticeLevel, setNoticeLevel] = useState<FeedbackLevel>('info');
   const [aiDirty, setAiDirty] = useState(false);
   const [summaryDirty, setSummaryDirty] = useState(false);
   const summaryDirtyChanged = useCallback((dirty: boolean) => { setSummaryDirty(dirty); onSummaryDirtyChange?.(dirty); }, [onSummaryDirtyChange]);
@@ -49,6 +52,7 @@ export function SettingsPanel({
   function save() {
     const checked = SettingsSchema.safeParse({ ...editing, memory: settings.memory });
     if (!checked.success) {
+      setNoticeLevel('err');
       setNotice(
         '请输入有效的正整数：正文最多 100000 字、即时记忆最多 10000 回合、超时最多 3600 秒。',
       );
@@ -56,8 +60,10 @@ export function SettingsPanel({
     }
     try {
       onSave(checked.data);
+      setNoticeLevel('ok');
       setNotice('本地偏好已保存，将用于下一次正文请求；不会改写进行中的请求或已保存草稿。');
     } catch {
+      setNoticeLevel('err');
       setNotice('本地保存失败，请检查浏览器存储权限后重试。');
     }
   }
@@ -211,9 +217,7 @@ export function SettingsPanel({
             </fieldset>
           </>
         )}
-        <div role="status" className="field-hint">
-          {notice}
-        </div>
+        <Feedback role="status" level={noticeLevel} className="field-hint">{notice}</Feedback>
         {tab !== 'AI 连接' && tab !== '提示词管理' && tab !== '记忆' && (
           <button className="primary" onClick={save}>
             保存本地设置

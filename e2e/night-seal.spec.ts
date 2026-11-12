@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 import { expect, test } from './helpers/test';
 import { seedNightSeal, nightSealStored } from './helpers/nightSeal';
-import { openProfile, openWorldArchive } from './helpers/gameLayout';
+import { workflowTrigger, workflowSummary, openProfile, openWorldArchive } from './helpers/gameLayout';
 
 const screenshots = '/tmp/ui2-legacy-night-seal-screenshots';
 test('夜幕金印：真实已结算存档、四导航、阅读与视觉验收', async ({ page }, info) => {
@@ -22,7 +22,7 @@ test('夜幕金印：真实已结算存档、四导航、阅读与视觉验收',
   await expect(page.getByTestId('story-reader')).toBeVisible();
   const before = await nightSealStored(page);
   await expect(page.locator('.story-entry')).toHaveCount(2);
-  await expect(page.locator('.workflow-disclosure > summary')).toContainText('本回合已结算');
+  await expect(workflowSummary(page)).toContainText('本回合已结算');
   await expect(page.locator('.action-options button')).toHaveCount(3);
   await page.locator('.action-options button').first().click();
   await expect(page.getByLabel('你的行动', { exact: true })).toHaveValue('回复编辑，确认明天的会面');
@@ -82,8 +82,8 @@ test('夜幕金印：真实已结算存档、四导航、阅读与视觉验收',
     repo.close();
   });
   await page.reload();
-  await page.locator('.workflow-disclosure > summary').click();
-  await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toBeEnabled();
+  await workflowTrigger(page).click();
+  await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toHaveCount(0);
   await expect(page.locator('.workflow-stages > li')).toHaveCount(3);
   await page.screenshot({ path: `${screenshots}/after-workflow-${info.project.name}.png` });
 });

@@ -57,7 +57,7 @@ test('NPC先失败也不阻断公共两类，失败重试仅一次；暂停只�
   await page.reload(); const failure = page.getByRole('dialog', { name: 'NPC 短期 → 中期总结失败', exact: true }); await expect(failure).toBeVisible();
   await expect.poll(() => tasks.length).toBe(3); expect(tasks[0]).toBe('memory.npc_summarize');
   expect((await summaryState(page)).memories.long).toHaveLength(1); await expect(failure).not.toContainText('mock-summary-secret');
-  await mkdir('docs/memory-summary-v2/screenshots', { recursive: true }); await page.screenshot({ path: `docs/memory-summary-v2/screenshots/failure-${info.project.name}.png` });
+  await mkdir('docs/memory-summary-v2/screenshots', { recursive: true }); await page.screenshot({ path: `docs/memory-summary-v2/screenshots/failure-${info.project.name}.png` }); await page.screenshot({path:`docs/workflow-feedback/screenshots/react-memory-failure-${info.project.name}.png`});
   failNpc = false; await failure.getByRole('button', { name: '重新生成', exact: true }).click(); await expect(failure).toHaveCount(0); expect(tasks).toHaveLength(4);
   await expect.poll(async () => (await summaryState(page)).memories.npcSummaries['npc-a']?.[0]?.npcProvenance.sourceMemoryIds.length).toBe(15);
   // Create another NPC batch, fail it, then explicitly pause only the NPC function.

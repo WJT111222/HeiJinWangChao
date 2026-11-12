@@ -1,3 +1,4 @@
+import { openLibrary } from './helpers/home';
 import { VariableStateProjectionSchema } from '../src/tests/fixtures/variableState';
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
@@ -28,7 +29,7 @@ async function seed(page: Page, visitor = false, disabled = false, action = '睡
     config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' }; config.routes.world = { mode: 'independent', channelId: channel.id, modelId: 'world' };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'time-e2e-mock-secret');
   }, { visitor, disabled, action });
-  await page.reload(); await openGameTools(page); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+  await page.reload(); await openGameTools(page); await openLibrary(page); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
 }
 async function load(page: Page) {
   const value: unknown = await page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try { return await repo.loadGame('save-a'); } finally { repo.close(); } });
@@ -87,18 +88,17 @@ for (const interrupt of [false, true]) test(`长睡眠interrupt=${interrupt}：�
   await page.reload(); await openGameTools(page); expect((await load(page)).state).toEqual(committed);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
-test('变量失败与刷新恢复保留正文，Roll清除旧候选但不推进正式时间', async ({ page }) => {
+test('变量失败与刷新恢复保留正文和候选，不提供主动Roll也不推进正式时间', async ({ page }) => {
   const api = await mock(page, true); api.control.failVariables = true; await seed(page, true); const before = (await load(page)).state;
   await page.getByRole('button', { name: '自动生成本回合', exact: true }).click();
   await expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toHaveText('三阶段 · 变量生成失败 · 查看详情');
   expect((await load(page)).draft.story).toBeTruthy();
   expect((await load(page)).state).toEqual(before); await page.reload(); await openGameTools(page); api.control.failVariables = false;
-  // 高级单阶段补算保留未结算候选，以验证Roll的原失效边界；正常自动恢复另有覆盖。
+  // 高级单阶段补算保留未结算候选，以验证失败恢复和正式时间边界；正常自动恢复另有覆盖。
   await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
   await expect.poll(async () => (await load(page)).draft.stageStatus.variables).toBe('ready'); expect(api.calls.filter((call) => call === 'story')).toHaveLength(1);
-  const ready = (await load(page)).draft; await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
-  await expect.poll(async () => (await load(page)).draft.storyRevision).toBe(ready.storyRevision + 1);
-  const rolled = await load(page); expect(rolled.draft.variables).toBeUndefined(); expect(rolled.draft.world).toBeUndefined(); expect(rolled.state).toEqual(before);
+  const ready = await load(page); await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toHaveCount(0);
+  await page.reload(); await openGameTools(page); expect(await load(page)).toEqual(ready); expect(ready.state).toEqual(before);
 });
 test('取消和迟到不推进时间；关闭阶段只保留正文草稿', async ({ page }) => {
   const api = await mock(page); await seed(page, false, true); const before = (await load(page)).state;

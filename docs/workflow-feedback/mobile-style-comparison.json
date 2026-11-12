@@ -1,0 +1,182 @@
+{
+  "main": {
+    ".workflow": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "color": "rgb(232, 228, 216)",
+      "fontSize": "16px",
+      "padding": "0px",
+      "gap": "normal",
+      "gridTemplateColumns": "none",
+      "borderRadius": "4px",
+      "overflow": "visible",
+      "position": "relative"
+    },
+    ".workflow-details": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "color": "rgb(232, 228, 216)",
+      "fontSize": "16px",
+      "padding": "12px 0px",
+      "gap": "normal",
+      "gridTemplateColumns": "none",
+      "borderRadius": "0px",
+      "overflow": "visible",
+      "position": "static"
+    },
+    ".workflow-stages": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "color": "rgb(232, 228, 216)",
+      "fontSize": "16px",
+      "padding": "0px",
+      "gap": "16px",
+      "gridTemplateColumns": "358px",
+      "borderRadius": "0px",
+      "overflow": "visible",
+      "position": "static"
+    },
+    ".workflow-stages > li": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "color": "rgb(232, 228, 216)",
+      "fontSize": "11.2px",
+      "padding": "0px",
+      "gap": "4.8px 8px",
+      "gridTemplateColumns": "13.4375px 297.391px 31.1719px",
+      "borderRadius": "0px",
+      "overflow": "visible",
+      "position": "static"
+    },
+    ".bound-input": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "color": "rgb(163, 163, 150)",
+      "fontSize": "11.2px",
+      "padding": "11.2px 0px 0px",
+      "gap": "normal",
+      "gridTemplateColumns": "none",
+      "borderRadius": "0px",
+      "overflow": "auto",
+      "position": "static"
+    },
+    ".runtime-switches": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "color": "rgb(232, 228, 216)",
+      "fontSize": "16px",
+      "padding": "0px",
+      "gap": "12.8px",
+      "gridTemplateColumns": "none",
+      "borderRadius": "0px",
+      "overflow": "visible",
+      "position": "static"
+    },
+    ".composer textarea": {
+      "backgroundColor": "rgb(11, 13, 12)",
+      "color": "rgb(232, 228, 216)",
+      "fontSize": "16px",
+      "padding": "8px 9.6px",
+      "gap": "normal",
+      "gridTemplateColumns": "none",
+      "borderRadius": "4px",
+      "overflow": "auto",
+      "position": "static"
+    },
+    ".player-status": {
+      "backgroundColor": "rgb(14, 17, 15)",
+      "color": "rgb(232, 228, 216)",
+      "fontSize": "16px",
+      "padding": "10px 16px",
+      "gap": "8px",
+      "gridTemplateColumns": "228px 70px 44px",
+      "borderRadius": "0px",
+      "overflow": "visible",
+      "position": "static"
+    }
+  },
+  "current": {
+    ".workflow": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "color": "rgb(232, 228, 216)",
+      "fontSize": "16px",
+      "padding": "0px",
+      "gap": "normal",
+      "gridTemplateColumns": "none",
+      "borderRadius": "4px",
+      "overflow": "visible",
+      "position": "relative"
+    },
+    ".workflow-details": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "color": "rgb(232, 228, 216)",
+      "fontSize": "16px",
+      "padding": "12px 0px",
+      "gap": "normal",
+      "gridTemplateColumns": "none",
+      "borderRadius": "0px",
+      "overflow": "visible",
+      "position": "static"
+    },
+    ".workflow-stages": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "color": "rgb(232, 228, 216)",
+      "fontSize": "16px",
+      "padding": "0px",
+      "gap": "16px",
+      "gridTemplateColumns": "358px",
+      "borderRadius": "0px",
+      "overflow": "visible",
+      "position": "static"
+    },
+    ".workflow-stages > li": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "color": "rgb(232, 228, 216)",
+      "fontSize": "11.2px",
+      "padding": "0px",
+      "gap": "4.8px 8px",
+      "gridTemplateColumns": "13.4375px 297.391px 31.1719px",
+      "borderRadius": "0px",
+      "overflow": "visible",
+      "position": "static"
+    },
+    ".bound-input": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "color": "rgb(163, 163, 150)",
+      "fontSize": "11.2px",
+      "padding": "11.2px 0px 0px",
+      "gap": "normal",
+      "gridTemplateColumns": "none",
+      "borderRadius": "0px",
+      "overflow": "auto",
+      "position": "static"
+    },
+    ".runtime-switches": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "color": "rgb(232, 228, 216)",
+      "fontSize": "16px",
+      "padding": "0px",
+      "gap": "12.8px",
+      "gridTemplateColumns": "none",
+      "borderRadius": "0px",
+      "overflow": "visible",
+      "position": "static"
+    },
+    ".composer textarea": {
+      "backgroundColor": "rgb(11, 13, 12)",
+      "color": "rgb(232, 228, 216)",
+      "fontSize": "16px",
+      "padding": "8px 9.6px",
+      "gap": "normal",
+      "gridTemplateColumns": "none",
+      "borderRadius": "4px",
+      "overflow": "auto",
+      "position": "static"
+    },
+    ".player-status": {
+      "backgroundColor": "rgb(14, 17, 15)",
+      "color": "rgb(232, 228, 216)",
+      "fontSize": "16px",
+      "padding": "10px 16px",
+      "gap": "8px",
+      "gridTemplateColumns": "228px 70px 44px",
+      "borderRadius": "0px",
+      "overflow": "visible",
+      "position": "static"
+    }
+  }
+}

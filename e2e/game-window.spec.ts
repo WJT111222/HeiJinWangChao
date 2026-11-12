@@ -1,8 +1,8 @@
 import { expect, test } from './helpers/test';
-import { openWorkflow, openWorkflowDiagnostics, openWorldArchive, openProfile, goHome } from './helpers/gameLayout';
+import { workflowTrigger, workflowSummary, openWorkflow, openWorkflowDiagnostics, openWorldArchive, openProfile, goHome } from './helpers/gameLayout';
 import type { Page } from '@playwright/test';
 
-async function seed(page: Page, mode: 'long' | 'complete' | 'history' = 'long') {
+async function seed(page: Page, mode: 'long' | 'complete' | 'history' | 'empty' = 'long') {
   await page.goto('/');
   const before = await page.evaluate(async (mode) => {
     const storagePath = '/src/services/storage/saveRepository.ts', worldPath = '/src/tests/fixtures/world.ts',
@@ -31,7 +31,7 @@ async function seed(page: Page, mode: 'long' | 'complete' | 'history' = 'long') 
     else {
       const initial = createTurnDraft(state.saveId, state.revision, 'layout-turn', state.turnNumber ? 'regular' : 'opening', '观察周围');
       await repo.saveDraft(initial, null);
-      await repo.saveDraft(rerollStory(initial, { turnKind: initial.turnKind, narrative: '【旁白】城市的灯光依次亮起。你望向街道，行人从身边经过。\n\n'.repeat(160), summary: '主角观察街道。', variableGuide: [] }), 0);
+      if (mode !== 'empty') await repo.saveDraft(rerollStory(initial, { turnKind: initial.turnKind, narrative: '【旁白】城市的灯光依次亮起。你望向街道，行人从身边经过。\n\n'.repeat(160), summary: '主角观察街道。', variableGuide: [] }), 0);
     }
     const result = { state, draft: await repo.loadDraft(state.saveId) }; repo.close(); return result;
   }, mode);
@@ -112,13 +112,13 @@ test('滚轮在资料弹窗内滚动，不带动正文；七项世界入口可�
 });
 
 test('默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态', async ({ page }, info) => {
-  const before = await seed(page), disclosure = page.locator('.workflow-disclosure'), summary = disclosure.locator(':scope > summary');
+  const before = await seed(page), disclosure = page.locator('.workflow-disclosure'), summary = workflowSummary(page);
   await expect(disclosure).not.toHaveAttribute('open'); await expect(summary).toContainText('等待继续');
   await expect(page.getByRole('button', { name: '生成变量候选', exact: true })).toBeHidden();
   await page.getByLabel('你的行动', { exact: true }).fill('我准备阅读资料');
-  await summary.focus(); await page.keyboard.press('Enter'); await expect(disclosure).toHaveAttribute('open');
+  await workflowTrigger(page).focus(); await page.keyboard.press('Enter'); await expect(disclosure).toHaveAttribute('open');
   await expect(page.getByRole('button', { name: '生成变量候选', exact: true })).toBeVisible();
-  await summary.focus(); await page.keyboard.press('Enter'); await expect(disclosure).not.toHaveAttribute('open');
+  await workflowTrigger(page).focus(); await page.keyboard.press('Enter'); await expect(disclosure).not.toHaveAttribute('open');
   await expect(page.getByLabel('你的行动', { exact: true })).toHaveValue('我准备阅读资料');
   expect(await stored(page)).toEqual(before); await fit(page); await page.screenshot({ path: info.outputPath('reading.png') });
 });
@@ -127,13 +127,13 @@ test('已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema
   await page.goto('/'); await expect(page.locator('.version, .home-experience .ver')).toHaveText('V1.0');
   const before = await seed(page, 'complete');
   await expect(page.locator('.version, .home-experience .ver')).toHaveText('V1.0'); await expect(page.locator('.app-header')).not.toContainText('M5-P3');
-  await expect(page.locator('.workflow summary').first()).toContainText('候选已完成');
+  await expect(workflowSummary(page)).toContainText('候选已完成');
   await page.reload(); await expect(page.getByTestId('story-reader')).toBeVisible(); expect(await stored(page)).toEqual(before);
   await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');
 });
 
-test('生成中折叠不打断；取消和错误不被隐藏，Roll成功保留正式状态', async ({ page }) => {
-  const before = await seed(page); let mode: 'hold' | 'error' | 'success' = 'hold', release!: () => void, calls = 0;
+test('生成中折叠不打断；取消和错误不被隐藏，失败重试成功保留正式状态', async ({ page }) => {
+  const before = await seed(page, 'empty'); let mode: 'hold' | 'error' | 'success' = 'hold', release!: () => void, calls = 0;
   const runtimeLog = page.getByTestId('runtime-log');
   await expect(runtimeLog).toHaveCount(0);
   const hold = new Promise<void>((resolve) => { release = resolve; });
@@ -142,13 +142,13 @@ test('生成中折叠不打断；取消和错误不被隐藏，Roll成功保留�
     const text = '<thinking>本轮创作提纲：按现有地点保持人物连续。</thinking><正文>【旁白】你仍在街边，行人经过身旁。</正文><短期记忆>主角继续观察街道。</短期记忆><变量规划>[]</变量规划>';
     await route.fulfill(selected === 'error' ? { status: 401, body: 'private-provider-error' } : { contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n` }).catch(() => undefined);
   });
-  await openWorkflow(page); await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
-  const summary = page.locator('.workflow-disclosure > summary'); await expect(summary).toContainText('正文生成中 · 1/3');
-  await summary.click(); await summary.click(); await expect.poll(() => calls).toBe(1);
+  await openWorkflow(page); await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
+  const summary = workflowSummary(page); await expect(summary).toContainText('正文生成中 · 1/3');
+  await workflowTrigger(page).click(); await workflowTrigger(page).click(); await expect.poll(() => calls).toBe(1);
   await openWorkflow(page); await page.getByRole('button', { name: '取消生成', exact: true }).click(); await expect(summary).toContainText('已取消');
-  release(); expect((await stored(page)).draft.story).toEqual(before.draft.story);
+  release(); expect((await stored(page)).draft.story).toBeUndefined();
   await expect(runtimeLog).toHaveCount(0);
-  mode = 'error'; await page.getByRole('button', { name: '重新 Roll', exact: true }).click(); await summary.click();
+  mode = 'error'; await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await workflowTrigger(page).click();
   await expect(summary).toContainText('正文生成失败 · 查看详情'); await expect(page.getByRole('alert').first()).toBeHidden();
   await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open'); expect((await stored(page)).state).toEqual(before.state);
   await openWorkflow(page); await expect(page.getByRole('alert').first()).toBeVisible();
@@ -174,7 +174,7 @@ test('生成中折叠不打断；取消和错误不被隐藏，Roll成功保留�
   expect(firstCopied[0]).not.toContain('private-provider-error');
   expect(firstCopied[0]).not.toContain('started');
   // 第二次失败应生成第二个独立复制入口，不复制首条或非错误事件。
-  await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
+  await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
   await expect(summary).toContainText('正文生成失败 · 查看详情');
   await expect(runtimeLog).toContainText('错误 2 条');
   await expect(runtimeLog).toHaveAttribute('open', '');
@@ -191,7 +191,7 @@ test('生成中折叠不打断；取消和错误不被隐藏，Roll成功保留�
   await expect(runtimeLog).not.toContainText('private-provider-error');
   await runtimeLog.locator('summary').click();
   await expect(runtimeLog).not.toHaveAttribute('open');
-  mode = 'success'; await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
+  mode = 'success'; await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
   await expect(page.getByTestId('story-reader')).toContainText('你仍在街边');
   await expect(summary).toContainText('等待继续'); expect((await stored(page)).state).toEqual(before.state); expect(calls).toBe(4);
   // Existing diagnostic evidence stays available without forcing the panel open again.
@@ -242,22 +242,22 @@ test('设置、历史检索及创角长页仍可滚动，关闭资料保留阅�
 
 test('工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间', async ({ page }, info) => {
   const before = await seed(page), workflow = page.getByRole('region', { name: '三阶段工作流', exact: true });
-  const disclosure = page.locator('.workflow-disclosure'), summary = disclosure.locator(':scope > summary');
+  const disclosure = page.locator('.workflow-disclosure'), summary = workflowSummary(page);
   await expect(disclosure).not.toHaveAttribute('open'); await expect(summary).toContainText('详情');
   expect((await workflow.boundingBox())!.height).toBeLessThanOrEqual(44);
-  await expect(workflow.locator('button:visible')).toHaveCount(0);
+  await expect(workflow.locator('button:visible')).toHaveCount(info.project.name === 'desktop' ? 1 : 0);
   await expect(page.locator('.composer-tools > .stage-responses, .composer-tools > .runtime-log')).toHaveCount(0);
   for (const text of ['三阶段校验完成后自动原子结算', '自动执行会保留已完成阶段', '高级手动操作：', '手动启动新尝试；', '保留正文及合法变量；', '仅保存后续尝试偏好'])
     await expect(page.getByText(text, { exact: false })).toHaveCount(0);
   const collapsedHeight = (await page.getByTestId('story-reader').boundingBox())!.height;
   await page.getByTestId('story-reader').evaluate(el => { el.scrollTop = 0; });
   await fit(page); await page.screenshot({ path: `docs/screenshots/compact-workflow/after-${info.project.name}-collapsed.png` });
-  await summary.click();
+  await workflowTrigger(page).click();
   await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeVisible();
   await expect(page.locator('.workflow-stages > li')).toHaveCount(3);
   await expect(page.getByText('重试与变更详情', { exact: true })).toBeVisible();
   await fit(page); await page.screenshot({ path: `docs/screenshots/compact-workflow/after-${info.project.name}-expanded.png` });
-  await summary.click(); await fit(page);
+  await workflowTrigger(page).click(); await fit(page);
   expect((await page.getByTestId('story-reader').boundingBox())!.height).toBe(collapsedHeight);
   expect(await stored(page)).toEqual(before);
 });

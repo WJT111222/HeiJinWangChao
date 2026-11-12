@@ -7,6 +7,7 @@ import { CredentialVault } from '../../services/ai/credentials';
 import { StoryStage, storyError } from '../../workflows/storyStage';
 import type { StoryProgress } from '../../workflows/storyStage';
 import type { Settings } from '../settings/model';
+import { mayStartStory } from './storyGenerationPolicy';
 import type { RuntimeLogReporter } from './runtimeLog';
 
 export function useStoryGeneration(
@@ -33,7 +34,8 @@ export function useStoryGeneration(
     [runner],
   );
   async function generate() {
-    if (!draft || running.current) return;
+    // The UI may start an empty/failed story, but cannot replace a valid saved story.
+    if (!draft || running.current || !mayStartStory(draft)) return;
     running.current = true;
     const id = ++token.current;
     setError('');
