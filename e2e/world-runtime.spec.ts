@@ -1,4 +1,4 @@
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools, openWorkflowStage, openCandidateRaw, openStageCandidates, closeStageCandidates } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { schoolEvidence, schoolResult, schoolTask, syntheticSchoolBatch } from '../src/tests/fixtures/worldChineseFact';
@@ -115,7 +115,7 @@ test('真实迎检准备文本：无效行动者安全失败，明确恢复后�
     await route.fulfill({ contentType: 'application/json', body: response(valid ? syntheticSchoolBatch()
       : schoolResult({...schoolTask(),task:{...schoolTask().task,actorRef:{kind:'organization',id:'missing-org'}}})) });
   });
-  await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
   const log = page.getByTestId('runtime-log');
   await expect(log).toContainText('actor_permission');
   await expect(log).toContainText('行动者或字段超出场外权限');
@@ -127,7 +127,7 @@ test('真实迎检准备文本：无效行动者安全失败，明确恢复后�
   expect(failed.draft.variables).toEqual(initial.draft.variables);
   expect(calls).toBe(1);
   valid = true;
-  await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
   await ready(page);
   const saved = await stored(page);
   expect(saved.formal).toBe(before);
@@ -148,7 +148,7 @@ test('世界生成、补算、只读查看与刷新恢复，真实路由和快�
     await route.fulfill({ contentType: 'application/json', body: response() });
   });
   await page.getByLabel('变量管理', { exact: true }).uncheck();
-  await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
   await ready(page);
   const first = await stored(page);
   expect(first.formal).toBe(before);
@@ -158,17 +158,17 @@ test('世界生成、补算、只读查看与刷新恢复，真实路由和快�
   expect(bodies[0].model).toBe('world-browser-model');
   expect(JSON.stringify(bodies[0])).toContain('NPC_CONTEXT');expect(JSON.stringify(bodies[0])).not.toContain('WORLD_SOURCES');
   await expect(page.locator('main')).not.toContainText('尚未发布的诊室线索');
-  await page.getByRole('button', { name: '查看世界候选（未结算）', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: '世界候选 · 未正式结算', exact: true });
-  await expect(dialog.getByRole('region', { name: '模型原文', exact: true })).toContainText('尚未发布的诊室线索');
+  const raw = await openCandidateRaw(page, 'world');
+  await expect(raw).toContainText('尚未发布的诊室线索'); await expect(raw).not.toContainText('mock-world-browser-secret');
   await expect(page.getByTestId('story-reader')).not.toContainText('尚未发布的诊室线索');
   expect((await stored(page)).formal).toBe(before);
+  const dialog = await openStageCandidates(page, 'world');
   await dialog.getByRole('button', { name: '主动查看完整世界候选', exact: true }).click();
   await expect(dialog.getByLabel('完整世界候选')).toContainText('尚未发布的诊室线索');
   await expect(dialog).not.toContainText('mock-world-browser-secret');
   await page.screenshot({ path: info.outputPath('world-candidates.png'), fullPage: true });
-  await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: '重新生成世界候选', exact: true }).click();
+  await closeStageCandidates(page);
+  await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '重新生成世界候选', exact: true }).click();
   await ready(page);
   const second = await stored(page);
   expect(second.draft.world.candidateRevision).toBeGreaterThan(first.draft.world.candidateRevision);
@@ -194,7 +194,7 @@ test('世界生成、补算、只读查看与刷新恢复，真实路由和快�
 test('双开关关闭后只补算世界，无变量时明确预览；不 Roll 正文', async ({ page }) => {
   const before = await seed(page, false, true),
     initial = await stored(page);
-  await expect(page.getByRole('button', { name: '启用并补算世界', exact: true })).toBeDisabled();
+  await openWorkflowStage(page, 'world'); await expect(page.getByRole('button', { name: '启用并补算世界', exact: true })).toBeDisabled();
   await page.getByLabel('动态世界', { exact: true }).check();
   const planned = {
     ...result,
@@ -217,7 +217,7 @@ test('双开关关闭后只补算世界，无变量时明确预览；不 Roll �
   await page.route('https://world.mock.invalid/**', (route) =>
     route.fulfill({ contentType: 'application/json', body: response(planned) }),
   );
-  await page.getByRole('button', { name: '启用并补算世界', exact: true }).click();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '启用并补算世界', exact: true }).click();
   await expect(page.getByRole('region', { name: '三阶段工作流' }).locator('.workflow-stages > li').nth(2)).toContainText('仅预览');
   const saved = await stored(page);
   expect(saved.formal).toBe(before);
@@ -241,11 +241,11 @@ test('错误输出可重试；取消后新请求不受旧回包影响；世界�
       })
       .catch(() => undefined);
   });
-  await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
   expect((await stored(page)).draft.world).toBeUndefined();
   mode = 'slow';
-  await page
+  await openWorkflowStage(page, 'world'); await page
     .getByRole('button', { name: '生成世界候选', exact: true })
     .evaluate((button: HTMLButtonElement) => {
       button.click();
@@ -253,10 +253,10 @@ test('错误输出可重试；取消后新请求不受旧回包影响；世界�
     });
   await expect.poll(() => count).toBe(2);
   await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: '重新生成变量候选', exact: true })).toBeDisabled();
-  await page.getByRole('button', { name: '取消世界生成', exact: true }).click();
+  await openWorkflowStage(page, 'variables'); await expect(page.getByRole('button', { name: '重新生成变量候选', exact: true })).toBeDisabled();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '取消世界生成', exact: true }).click();
   mode = 'good';
-  await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
   await ready(page);
   expect((await stored(page)).formal).toBe(before);
   expect(count).toBe(3);
@@ -332,20 +332,20 @@ test('非法地点与事件预结案拒绝；NPC双任务和合法预计时间�
   });
   for (const attempt of ['invalid-location', 'premature-event'] as const) {
     mode = attempt;
-    await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
+    await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
     await expect(page.getByRole('alert')).toBeVisible();
     const rejected = await stored(page);
     expect(rejected.draft.world).toBeUndefined();
     expect(rejected.formal).toBe(before);
   }
   mode = 'parallel-tasks';
-  await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
   await ready(page);
   const parallel = await stored(page);
   expect(parallel.formal).toBe(before);
   expect(parallel.draft.world.result.taskCommands.map((command: {task: {id: string}}) => command.task.id)).toEqual(['a', 'b']);
   mode = 'valid-event';
-  await page.getByRole('button', { name: '重新生成世界候选', exact: true }).click();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '重新生成世界候选', exact: true }).click();
   await ready(page);
   const saved = await stored(page);
   expect(saved.formal).toBe(before);

@@ -1,6 +1,6 @@
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
-import { workflowTrigger, workflowSummary, goHome, openWorkflow } from './helpers/gameLayout';
+import { workflowTrigger, workflowSummary, goHome, openWorkflow, openBoundInput } from './helpers/gameLayout';
 import type { Page } from '@playwright/test';
 import { GameStateSchema } from '../src/domain/state';
 import { TurnDraftSchema } from '../src/domain/drafts';
@@ -275,7 +275,8 @@ for (const disabled of ['world', 'variables'] as const) {
     await page.getByLabel('你的行动', { exact: true }).fill('继续观察街道');
     await expect(workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true })).toHaveCount(0);
     expect(await stored(page)).toEqual(before); expect(server.calls.map((call) => call.stage)).toEqual(initial);
-    await guidance.getByRole('button', { name: '展开高级设置', exact: true }).click();
+    // PC 横幅按钮直达对应阶段开关；移动端仍展开高级设置。
+    await guidance.getByRole('button', { name: /^(?:展开高级设置|前往阶段开关)$/ }).click();
     await expect(page.locator('.workflow-disclosure')).toHaveAttribute('open');
     const toggle = page.getByLabel(disabled === 'world' ? '动态世界' : '变量管理', { exact: true });
     await expect(toggle).toBeFocused(); await expect(toggle).not.toBeChecked();
@@ -313,8 +314,7 @@ test('单行状态跟随三个实际请求，展开收起不重发且自动结�
     const before = await stored(page);
     await workflowTrigger(page).focus(); await page.keyboard.press('Enter');
     await expect(workflow(page).getByRole('button', { name: '取消自动执行' })).toBeEnabled();
-    if (!(await page.locator('.bound-input').evaluate(el => el.hasAttribute('open'))))
-      await page.getByText('本回合已绑定输入（只读）', { exact: true }).click();
+    await openBoundInput(page);
     await expect(page.locator('.bound-input .prose')).toBeVisible();
     await workflowTrigger(page).click();
     expect(server.calls.map(call => call.stage)).toEqual(['story', 'variables', 'world'].slice(0, index + 1));

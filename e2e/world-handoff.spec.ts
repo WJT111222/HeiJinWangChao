@@ -1,4 +1,4 @@
-import { openGameTools, openWorldArchive } from './helpers/gameLayout';
+import { openGameTools, openWorldArchive, openWorkflowStage, openCandidateRaw, openStageCandidates, closeStageCandidates } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { handoffState, handoffResult, retireCommand, resultText, finishTask } from '../src/tests/fixtures/handoff';
@@ -63,18 +63,17 @@ test('真实浏览器：世界成果/交接只是候选，正式原子提交后�
   const currentTurn=(await stored(page)).draft.turnId;
   let calls = 0;
   await page.route('https://handoff.mock.invalid/**', async (route) => { calls++; await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ choices: [{ message: { content: JSON.stringify(worldResultForTurn(raw,currentTurn)) }, finish_reason: 'stop' }] }) }); });
-  await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click();
   await expect(page.getByRole('region', { name: '三阶段工作流' }).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
   let saved = await stored(page); expect(saved.state).toEqual(before); expect(saved.state.npc['npc-a']).toBeDefined();
   await expect(page.locator('main')).not.toContainText(resultText);
-  await page.getByRole('button', { name: '查看世界候选（未结算）', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: '世界候选 · 未正式结算', exact: true });
-  await expect(dialog.getByRole('region', { name: '模型原文', exact: true })).toContainText(resultText);
+  await expect(await openCandidateRaw(page, 'world')).toContainText(resultText);
   await expect(page.getByTestId('story-reader')).not.toContainText(resultText);
   expect((await stored(page)).state).toEqual(before);
+  const dialog = await openStageCandidates(page, 'world');
   await dialog.getByRole('button', { name: '主动查看完整世界候选', exact: true }).click();
   await expect(dialog.getByLabel('完整世界候选')).toContainText('SaveTask'); await expect(dialog.getByLabel('完整世界候选')).toContainText(resultText);
-  await page.keyboard.press('Escape'); await page.reload(); await openGameTools(page); saved = await stored(page); expect(saved.state).toEqual(before); expect(calls).toBe(1);
+  await closeStageCandidates(page); await page.reload(); await openGameTools(page); saved = await stored(page); expect(saved.state).toEqual(before); expect(calls).toBe(1);
   // 用真实存储提交接口隔离本轮新增生命周期的验证，不发送下一轮付费请求。
   const final = await page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try {
     const draft = await repo.loadDraft('save-a'); const input = { draft, nextAction: '在街边休息', useVariableStage: true, useWorldStage: true };
@@ -110,10 +109,10 @@ for (const variant of ['event-report', 'refused-confirmation'] as const) test(`�
   let calls = 0;
   await page.route('https://handoff.mock.invalid/**', async (route) => { calls++; await route.fulfill({ contentType: 'application/json',
     body: JSON.stringify({ choices: [{ message: { content: JSON.stringify(worldResultForTurn(calls === 1 ? bad : good,currentTurn)) }, finish_reason: 'stop' }] }) }); });
-  await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click(); await expect(page.getByRole('alert')).toBeVisible();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click(); await expect(page.getByRole('alert')).toBeVisible();
   await expect.poll(() => calls).toBe(1);
   expect((await stored(page)).state).toEqual(before); await page.reload(); await openGameTools(page); expect((await stored(page)).state).toEqual(before);
-  await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click();
   await expect(page.getByRole('region', { name: '三阶段工作流' }).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
   expect((await stored(page)).state).toEqual(before);
   const committed = await page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try {
@@ -144,10 +143,10 @@ for (const variant of ['mixed-result', 'unindexed-history'] as const) test(`第�
   let calls = 0;
   await page.route('https://handoff.mock.invalid/**', async (route) => { calls++; await route.fulfill({ contentType: 'application/json',
     body: JSON.stringify({ choices: [{ message: { content: JSON.stringify(worldResultForTurn(calls === 1 ? bad : good,currentTurn)) }, finish_reason: 'stop' }] }) }); });
-  await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click(); await expect(page.getByRole('alert')).toBeVisible();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click(); await expect(page.getByRole('alert')).toBeVisible();
   expect((await stored(page)).state).toEqual(before); await expect(page.locator('main')).not.toContainText('蓝仓暗格');
   await page.reload(); await openGameTools(page); expect((await stored(page)).state).toEqual(before);
-  await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: /^(?:重新)?生成世界候选$/ }).click();
   await expect(page.getByRole('region', { name: '三阶段工作流' }).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
   const saved = await stored(page); expect(saved.state).toEqual(before); expect(saved.state.npc['npc-a']).toBeDefined(); expect(calls).toBe(2);
   if (variant === 'mixed-result') expect(saved.draft.world.result.eventCommands[0].event.resolutionText).toBe('同事归档了一份举报。');

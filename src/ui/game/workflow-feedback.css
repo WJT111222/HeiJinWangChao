@@ -15,6 +15,7 @@
   }
 }
 @media (min-width: 901px) {
+  /* ── 收起态：一行状态条；三段进度可点击，直接打开对应阶段 ── */
   .app-shell-game .city-night .workflow-summary {
     display: flex;
     align-items: center;
@@ -25,6 +26,23 @@
     font-size: 0.8rem;
     font-weight: 500;
     white-space: nowrap;
+  }
+  .app-shell-game .city-night .workflow-summary .rail > button {
+    display: block;
+    min-width: 0;
+    min-height: 0;
+    padding: 0.2rem 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    text-align: left;
+  }
+  .app-shell-game .city-night .workflow-summary .rail > button:hover:not(:disabled) {
+    background: none;
+  }
+  .app-shell-game .city-night .workflow-summary .rail > button:hover .lbl,
+  .app-shell-game .city-night .workflow-summary .rail > button:hover .lbl b {
+    color: var(--text);
   }
   .app-shell-game .city-night .workflow-summary .workflow-toggle {
     display: inline-flex;
@@ -50,6 +68,8 @@
     color: var(--feedback-err);
     border-color: #6e4a3d;
   }
+
+  /* ── 展开态：单一面板（标题 / 提示横幅 / 左轨+详情 / 底部操作） ── */
   .app-shell-game .city-night .workflow-details {
     position: absolute;
     inset-inline: max(28px, calc((100% - var(--read)) / 2));
@@ -58,7 +78,7 @@
     display: flex;
     flex-direction: column;
     padding: 0;
-    max-height: min(62vh, 560px, max(100px, calc(100dvh - 220px)));
+    height: min(62vh, 560px, max(100px, calc(100dvh - 220px)));
     overflow: hidden;
     background: #0f1211;
     border: 1px solid #ffffff22;
@@ -73,12 +93,23 @@
     display: flex;
     align-items: center;
     gap: 0.9rem;
-    padding: 0.9rem 1.1rem 0.8rem;
+    padding: 0.75rem 1rem 0.7rem 1.1rem;
     border-bottom: 1px solid #ffffff14;
+  }
+  .app-shell-game .city-night .wf-hd-title {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin-right: auto;
+  }
+  .app-shell-game .city-night .wf-eyebrow {
+    font: 0.6rem var(--font-mono);
+    letter-spacing: 0.2em;
+    color: var(--dim);
   }
   .app-shell-game .city-night .wf-hd h3 {
     font-family: var(--font-body);
-    font-size: 0.98rem;
+    font-size: 0.95rem;
     font-weight: 600;
     letter-spacing: 0.04em;
     margin: 0;
@@ -108,135 +139,258 @@
   .app-shell-game .city-night .wf-hd[data-state="off"] {
     --dot-color: var(--gold);
   }
-  .app-shell-game .city-night .wf-hd button {
-    margin-left: auto;
+  .app-shell-game .city-night .wf-hd .wf-close {
     border: 0;
-    padding: 0.2rem 0.5rem;
+    padding: 0.15rem 0.5rem;
     color: var(--muted);
-    font-size: 1rem;
+    font-size: 1.05rem;
+    line-height: 1;
   }
-  .app-shell-game .city-night .wf-body {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: auto;
-    padding: 1rem 1.1rem 1.1rem;
-    scrollbar-width: thin;
-    scrollbar-color: #ffffff22 transparent;
+  .app-shell-game .city-night .wf-hd .wf-follow {
+    border: 1px solid var(--line-2);
+    border-radius: 999px;
+    font-size: .72rem;
+    padding: .22rem .65rem;
+    color: var(--muted);
   }
-  .app-shell-game .city-night .wf-body > .feedback {
-    order: 0;
-    margin: 0 0 0.9rem;
-    flex-shrink: 0;
+
+  /* 横幅：错误 / 阶段设置提示 / 草稿过期，统一位置 */
+  .app-shell-game .city-night .wf-notices:empty {
+    display: none;
   }
-  .app-shell-game .city-night .wf-body > .field-hint {
-    text-align: left;
-    padding: 0.7rem 0.9rem;
-    color: var(--feedback-warn);
-  }
-  .app-shell-game .city-night .wf-body > .field-hint p {
-    margin: 0;
-    flex: 1;
-  }
-  .app-shell-game .city-night .wf-body > .field-hint button,
-  .app-shell-game .city-night .workflow-errors > button {
-    align-self: center;
+  .app-shell-game .city-night .wf-notices {
     flex: none;
-    font-size: 0.78rem;
+    max-height: 9.5rem;
+    overflow: auto;
+    border-bottom: 1px solid #ffffff14;
+  }
+  .app-shell-game .city-night .wf-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    padding: 0.6rem 1.1rem;
+    font-size: 0.8rem;
+    line-height: 1.65;
+    color: var(--banner-text);
+    background: var(--banner-bg);
+  }
+  .app-shell-game .city-night .wf-banner + .wf-banner {
+    border-top: 1px solid #ffffff0d;
+  }
+  .app-shell-game .city-night .wf-banner[data-level="err"] {
+    --banner-color: var(--feedback-err);
+    --banner-text: #e9b3a0;
+    --banner-bg: #c26a4a12;
+  }
+  .app-shell-game .city-night .wf-banner[data-level="warn"] {
+    --banner-color: var(--feedback-warn);
+    --banner-text: #e6cc96;
+    --banner-bg: #d9b36a0e;
+  }
+  .app-shell-game .city-night .wf-banner-tag {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    margin-top: 0.1rem;
+    border-radius: 5px;
+    font: 600 0.7rem var(--font-title);
+    color: var(--banner-color);
+    background: color-mix(in srgb, var(--banner-color) 18%, transparent);
+  }
+  .app-shell-game .city-night .wf-banner-msg {
+    flex: 1;
+    min-width: 0;
+  }
+  .app-shell-game .city-night .wf-banner-msg p {
+    margin: 0;
+  }
+  .app-shell-game .city-night .wf-banner-msg small {
+    display: block;
+    font: 0.68rem var(--font-mono);
+    color: var(--muted);
+  }
+  .app-shell-game .city-night .wf-banner > button {
+    flex: none;
+    align-self: center;
+    min-height: 0;
+    font-size: 0.76rem;
     padding: 0.3rem 0.75rem;
   }
-  .app-shell-game .city-night .workflow-primary {
-    order: 1;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin: 0 0 1rem;
-  }
-  .app-shell-game .city-night .workflow-primary .primary {
-    padding: 0.6rem 1.4rem;
-    font-size: 0.84rem;
-    letter-spacing: 0.12em;
-  }
-  .app-shell-game .city-night .workflow-primary > small {
-    font-size: 0.72rem;
-    color: var(--muted);
-  }
-  .app-shell-game .city-night .workflow-stages {
-    order: 2;
+
+  /* 主体：左侧阶段导航 + 右侧详情 */
+  .app-shell-game .city-night .wf-main {
+    flex: 1 1 auto;
+    min-height: 0;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.6rem;
+    grid-template-columns: 212px minmax(0, 1fr);
+  }
+  .app-shell-game .city-night .wf-rail {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: auto;
+    padding: 0.75rem 0.6rem;
+    border-right: 1px solid #ffffff14;
+    background: #ffffff03;
+    scrollbar-width: thin;
+  }
+  .app-shell-game .city-night .wf-rail-h {
+    margin: 0.15rem 0.55rem 0.35rem;
+    font: 500 0.6rem var(--font-mono);
+    letter-spacing: 0.22em;
+    color: var(--dim);
+  }
+  .app-shell-game .city-night .wf-rail-h:not(:first-child) {
+    margin-top: auto;
+    padding-top: 0.8rem;
+  }
+  .app-shell-game .city-night .wf-v2 .workflow-stages,
+  .app-shell-game .city-night .wf-aux {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     margin: 0;
     padding: 0;
+    list-style: none;
   }
-  .app-shell-game .city-night .workflow-stages > li {
+  .app-shell-game .city-night .wf-v2 .workflow-stages > li,
+  .app-shell-game .city-night .wf-aux > li {
     position: relative;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-content: start;
-    gap: 0.55rem 0.4rem;
-    padding: 0.8rem 0.85rem 0.85rem;
-    border: 1px solid #ffffff14;
-    border-radius: 9px;
-    background: #ffffff05;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: inherit;
   }
-  .app-shell-game .city-night .workflow-stages > li::before {
+  .app-shell-game .city-night .wf-v2 .workflow-stages > li + li::before {
     content: "";
     position: absolute;
-    inset: 0 0 auto;
-    height: 2px;
-    border-radius: 9px 9px 0 0;
-    background: var(--stage-color, transparent);
+    left: calc(0.55rem + 11px);
+    top: -5px;
+    width: 1px;
+    height: 8px;
+    background: #ffffff22;
   }
-  .app-shell-game .city-night .workflow-stages > li[data-s="done"] {
-    --stage-color: var(--gold);
+  .app-shell-game .city-night .wf-ri {
+    position: relative;
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.1rem 0.6rem;
+    width: 100%;
+    min-height: 0;
+    padding: 0.5rem 0.55rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: none;
+    text-align: left;
+    color: var(--text);
   }
-  .app-shell-game .city-night .workflow-stages > li[data-s="run"] {
-    --stage-color: var(--gold-hi);
+  .app-shell-game .city-night .wf-v2 .workflow-stages .wf-ri {
+    padding-right: 3rem;
   }
-  .app-shell-game .city-night .workflow-stages > li[data-s="fail"] {
-    --stage-color: var(--feedback-err);
-    border-color: #6e4a3d;
+  .app-shell-game .city-night .wf-ri:hover:not(:disabled) {
+    background: #ffffff08;
+    border-color: transparent;
   }
-  .app-shell-game .city-night .workflow-stages > li[data-s="off"] {
-    opacity: 0.62;
+  .app-shell-game .city-night .wf-ri[aria-current="true"] {
+    background: #c9a96110;
+    border-color: #c9a96133;
   }
-  .app-shell-game .city-night .workflow-stages > li > small {
-    grid-column: 3;
+  .app-shell-game .city-night .wf-ri[aria-current="true"]::before {
+    content: "";
+    position: absolute;
+    left: -0.6rem;
+    top: 0.55rem;
+    bottom: 0.55rem;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--gold);
+  }
+  .app-shell-game .city-night .wf-node {
+    grid-row: span 2;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--line-2);
+    border-radius: 50%;
     font-size: 0.66rem;
-    padding: 0.04rem 0.5rem;
-    border: 1px solid currentColor;
-    border-radius: 999px;
+    color: var(--dim);
+  }
+  .app-shell-game .city-night .wf-aux .wf-node {
+    border-radius: 6px;
+    font: 0.7rem var(--font-title);
+  }
+  .app-shell-game .city-night .wf-ri strong {
+    min-width: 0;
+    font-size: 0.86rem;
+    font-weight: 500;
+    line-height: 1.3;
     white-space: nowrap;
   }
-  .app-shell-game .city-night .workflow-stages > li[data-s="done"] > small {
-    color: var(--gold);
+  .app-shell-game .city-night .wf-ri .stage-number {
+    margin-right: 0.35rem;
+    font-size: 0.64rem;
+    color: var(--dim);
   }
-  .app-shell-game .city-night .workflow-stages > li[data-s="fail"] > small {
+  .app-shell-game .city-night .wf-ri small {
+    grid-column: 2;
+    overflow: hidden;
+    font-size: 0.68rem;
+    line-height: 1.3;
+    color: var(--muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .app-shell-game .city-night .workflow-stages > li[data-s="done"] .wf-node {
+    border-color: var(--gold);
+    background: var(--gold);
+    color: #17130a;
+  }
+  .app-shell-game .city-night .workflow-stages > li[data-s="run"] .wf-node {
+    border-color: var(--gold-hi);
+    box-shadow: 0 0 0 3px #e8d19622;
+    animation: workflow-pulse 1.4s ease-in-out infinite;
+  }
+  .app-shell-game .city-night .workflow-stages > li[data-s="run"] small {
+    color: var(--gold-hi);
+  }
+  .app-shell-game .city-night .workflow-stages > li[data-s="fail"] .wf-node {
+    border-color: var(--feedback-err);
+    background: #c26a4a1c;
     color: var(--feedback-err);
   }
-  .app-shell-game .city-night .workflow-stages .stage-number {
-    font: 0.66rem var(--font-mono);
-    align-self: center;
+  .app-shell-game .city-night .workflow-stages > li[data-s="fail"] small {
+    color: var(--feedback-err);
   }
-  .app-shell-game .city-night .workflow-stages > li > strong {
-    font-size: 0.9rem;
+  .app-shell-game .city-night .workflow-stages > li[data-s="preview"] .wf-node {
+    border-color: var(--feedback-warn);
+    color: var(--feedback-warn);
   }
-  .app-shell-game .city-night .workflow-stages > li > .stage-action-hint {
-    grid-column: 1/-1;
-    font-size: 0.74rem;
-    color: var(--muted);
-    line-height: 1.6;
-    margin: 0;
+  .app-shell-game .city-night .workflow-stages > li[data-s="off"] .wf-node {
+    border-style: dashed;
+  }
+  .app-shell-game .city-night .workflow-stages > li[data-s="off"] .wf-ri {
+    opacity: 0.6;
+  }
+  .app-shell-game .city-night .wf-count {
+    grid-row: 1 / span 2;
+    grid-column: 3;
+    padding: 0 0.45rem;
+    border: 1px solid #6e4a3d;
+    border-radius: 999px;
+    font: 0.62rem var(--font-mono);
+    color: var(--feedback-err);
   }
   .app-shell-game .city-night .wf-sw {
-    grid-column: 1/-1;
+    position: absolute;
+    right: 0.55rem;
+    top: 50%;
+    transform: translateY(-50%);
     display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.7rem;
-    color: var(--muted);
     margin: 0;
   }
   .app-shell-game .city-night .wf-sw input {
@@ -276,76 +430,372 @@
     outline-offset: 2px;
     box-shadow: 0 0 0 3px #c9a96188;
   }
-  .app-shell-game .city-night .workflow-stages .variable-actions {
+
+  /* 右侧详情 */
+  .app-shell-game .city-night .wf-detail {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-top: auto;
-  }
-  .app-shell-game .city-night .workflow-stages .variable-actions button {
-    font-size: 0.76rem;
-    padding: 0.32rem 0.7rem;
+    flex-direction: column;
+    min-width: 0;
     min-height: 0;
   }
+  .app-shell-game .city-night .wf-stage,
+  .app-shell-game .city-night .wf-bound,
+  .app-shell-game .city-night .wf-diag {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+  .app-shell-game .city-night .wf-diag[hidden] {
+    display: none;
+  }
+  .app-shell-game .city-night .wf-dt-hd {
+    flex: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    padding: 0.85rem 1.2rem 0.55rem;
+  }
+  .app-shell-game .city-night .wf-dt-title {
+    flex: 1;
+    min-width: 0;
+  }
+  .app-shell-game .city-night .wf-dt-hd h4 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.1rem 0 0;
+    font: 600 1.05rem var(--font-title);
+    letter-spacing: 0.12em;
+    color: var(--text);
+  }
+  .app-shell-game .city-night .wf-dt-act {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .app-shell-game .city-night .wf-dt-act button {
+    min-height: 0;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.76rem;
+  }
+  .app-shell-game .city-night .wf-dt-act .wf-cancel {
+    color: var(--feedback-err);
+    border-color: #6e4a3d;
+  }
+  .app-shell-game .city-night .wf-dt-act .stage-action-hint {
+    margin: 0;
+    font-size: 0.72rem;
+    color: var(--dim);
+  }
+  .app-shell-game .city-night .wf-pill {
+    padding: 0.02rem 0.55rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font: 500 0.64rem var(--font-body);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    color: var(--muted);
+  }
+  .app-shell-game .city-night .wf-pill[data-s="done"] { color: var(--gold); }
+  .app-shell-game .city-night .wf-pill[data-s="run"] { color: var(--gold-hi); }
+  .app-shell-game .city-night .wf-pill[data-s="fail"] { color: var(--feedback-err); }
+  .app-shell-game .city-night .wf-pill[data-s="preview"] { color: var(--feedback-warn); }
+  .app-shell-game .city-night .wf-pill[data-s="ok"] { color: var(--feedback-ok); }
+  .app-shell-game .city-night .wf-tabs {
+    flex: none;
+    display: flex;
+    gap: 1.3rem;
+    padding: 0 1.2rem;
+    border-bottom: 1px solid #ffffff14;
+  }
+  .app-shell-game .city-night .wf-tab {
+    position: relative;
+    min-height: 0;
+    padding: 0.4rem 0 0.55rem;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .app-shell-game .city-night .wf-tab:hover:not(:disabled) {
+    background: none;
+    color: var(--text);
+  }
+  .app-shell-game .city-night .wf-tab[aria-selected="true"] {
+    color: var(--gold-hi);
+  }
+  .app-shell-game .city-night .wf-tab[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: var(--gold);
+  }
+  .app-shell-game .city-night .wf-tab sup {
+    margin-left: 0.25rem;
+    font: 0.6rem var(--font-mono);
+    color: var(--dim);
+    vertical-align: baseline;
+  }
+  .app-shell-game .city-night .wf-dt-body {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 1rem 1.2rem 1.2rem;
+    font-size: 0.8rem;
+    line-height: 1.75;
+    color: var(--text);
+    scrollbar-width: thin;
+    scrollbar-color: #ffffff22 transparent;
+  }
+  .app-shell-game .city-night .wf-dt-body .candidate-json {
+    max-height: none;
+    margin: 0;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid #ffffff14;
+    border-radius: 8px;
+    background: #0a0c0c;
+    font: 0.72rem/1.7 var(--font-mono);
+    color: #cfcab9;
+  }
+  .app-shell-game .city-night .wf-sec {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 1rem 0 0.5rem;
+    font-size: 0.74rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: var(--gold);
+  }
+  .app-shell-game .city-night .wf-sec::after {
+    content: "";
+    order: 1;
+    flex: 1;
+    height: 1px;
+    background: #ffffff14;
+  }
+  .app-shell-game .city-night .wf-sec .wf-link,
+  .app-shell-game .city-night .wf-sec .wf-pill {
+    order: 2;
+    letter-spacing: 0;
+  }
+  .app-shell-game .city-night .wf-dt-body > :first-child,
+  .app-shell-game .city-night .wf-dt-body > section > :first-child {
+    margin-top: 0;
+  }
+  .app-shell-game .city-night .wf-link {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 0.72rem;
+    color: var(--feedback-info);
+  }
+  .app-shell-game .city-night .wf-link:hover:not(:disabled) {
+    background: none;
+    text-decoration: underline;
+  }
+  .app-shell-game .city-night .wf-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 0.5rem;
+    margin: 0 0 0.8rem;
+  }
+  .app-shell-game .city-night .wf-stats p {
+    margin: 0;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #ffffff14;
+    border-radius: 8px;
+    background: #ffffff04;
+  }
+  .app-shell-game .city-night .wf-stats b {
+    display: block;
+    font: 500 1.2rem/1.25 var(--font-mono);
+    color: var(--stat-color, var(--text));
+  }
+  .app-shell-game .city-night .wf-stats span {
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+  .app-shell-game .city-night .wf-stats .l-ok { --stat-color: var(--feedback-ok); }
+  .app-shell-game .city-night .wf-stats .l-err { --stat-color: var(--feedback-err); }
+  .app-shell-game .city-night .wf-stats .l-warn { --stat-color: var(--feedback-warn); }
+  .app-shell-game .city-night .wf-stats .l-info { --stat-color: var(--feedback-info); }
+  .app-shell-game .city-night .wf-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 1.2rem;
+    margin: 0 0 0.6rem;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .app-shell-game .city-night .wf-meta div {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+  }
+  .app-shell-game .city-night .wf-meta dt {
+    margin: 0;
+  }
+  .app-shell-game .city-night .wf-meta dd {
+    margin: 0;
+    font: 500 0.74rem var(--font-mono);
+    color: var(--text);
+  }
+  .app-shell-game .city-night .wf-cmds {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid #ffffff14;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .app-shell-game .city-night .wf-cmds li {
+    display: grid;
+    grid-template-columns: minmax(110px, 160px) minmax(0, 1fr) auto;
+    gap: 0.8rem;
+    align-items: baseline;
+    padding: 0.42rem 0.75rem;
+    background: #ffffff03;
+    font-size: 0.78rem;
+  }
+  .app-shell-game .city-night .wf-cmds li:nth-child(even) {
+    background: #ffffff06;
+  }
+  .app-shell-game .city-night .wf-cmds code {
+    overflow: hidden;
+    font: 0.7rem var(--font-mono);
+    color: var(--gold-hi);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .app-shell-game .city-night .wf-cmds span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .app-shell-game .city-night .wf-cmds small {
+    font: 0.64rem var(--font-mono);
+    color: var(--dim);
+  }
+  .app-shell-game .city-night .wf-cmds .l-err {
+    box-shadow: inset 2px 0 var(--feedback-err);
+  }
+  .app-shell-game .city-night .wf-cmds .l-err code {
+    color: var(--feedback-err);
+  }
+  .app-shell-game .city-night .wf-cmds .l-warn {
+    box-shadow: inset 2px 0 var(--feedback-warn);
+  }
+  .app-shell-game .city-night .wf-cmds .l-warn code {
+    color: var(--feedback-warn);
+  }
+  .app-shell-game .city-night .wf-dt-body .raw-toggle {
+    min-height: 0;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.76rem;
+  }
+  .app-shell-game .city-night .wf-dt-body .raw-toggle + .candidate-json {
+    margin-top: 0.6rem;
+  }
+  .app-shell-game .city-night .wf-note,
+  .app-shell-game .city-night .wf-dt-body .story-inspection > .muted {
+    margin: 0.8rem 0 0;
+    font-size: 0.72rem;
+    line-height: 1.7;
+    color: var(--dim);
+  }
+  .app-shell-game .city-night .wf-empty {
+    margin: 0;
+    padding: 1.3rem 1rem;
+    border: 1px dashed #ffffff22;
+    border-radius: 8px;
+    text-align: center;
+    color: var(--muted);
+  }
+  .app-shell-game .city-night .wf-codes {
+    margin: 0;
+    padding-left: 1.1rem;
+    font: 0.72rem var(--font-mono);
+    color: var(--muted);
+  }
+  .app-shell-game .city-night .wf-raw-error {
+    display: block;
+    margin: 0.6rem 0 0;
+    color: var(--feedback-err);
+  }
+  .app-shell-game .city-night .wf-dt-body .request-usage {
+    max-height: none;
+    margin-top: 1rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ffffff14;
+    border-radius: 8px;
+    font-size: 0.74rem;
+    color: var(--muted);
+  }
+  .app-shell-game .city-night .wf-dt-body .runtime-log {
+    margin: 0.6rem 0 0;
+    border-color: #ffffff14;
+    border-radius: 8px;
+  }
+  .app-shell-game .city-night .wf-dt-body .runtime-log-content {
+    max-height: none;
+  }
+  .app-shell-game .city-night .wf-dt-body .field-hint {
+    text-align: left;
+  }
+  .app-shell-game .city-night .wf-bound .prose {
+    margin: 0;
+    padding: 0.3rem 0 0.3rem 1rem;
+    border-left: 2px solid var(--gold-lo);
+    font: 1rem/2 var(--font-title);
+    color: var(--prose);
+    text-align: left;
+  }
+
+  /* 底部操作栏 */
   .app-shell-game .city-night .wf-ft {
     flex: none;
     display: flex;
     align-items: center;
-    gap: 1.2rem;
-    padding: 0.65rem 1.1rem;
+    gap: 1rem;
+    min-height: 3.2rem;
+    padding: 0.55rem 1.1rem;
     border-top: 1px solid #ffffff14;
-    font-size: 0.76rem;
+    background: #ffffff03;
   }
-  .app-shell-game .city-night .wf-ft button {
-    border: 0;
-    padding: 0;
-    background: none;
-    color: var(--muted);
-    font-size: 0.76rem;
-    display: inline-flex;
+  .app-shell-game .city-night .wf-ft .workflow-primary {
+    display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 1rem;
+    margin: 0;
   }
-  .app-shell-game .city-night .wf-ft button::before {
-    content: "";
-    width: 0;
-    height: 0;
-    border-left: 4px solid var(--muted);
-    border-top: 3px solid transparent;
-    border-bottom: 3px solid transparent;
-    transition: transform 0.2s;
+  .app-shell-game .city-night .wf-ft .workflow-primary button {
+    min-height: 0;
+    padding: 0.5rem 1.2rem;
+    font-size: 0.8rem;
   }
-  .app-shell-game .city-night .wf-ft button[aria-expanded="true"] {
-    color: var(--text);
+  .app-shell-game .city-night .wf-ft .workflow-primary .primary {
+    padding: 0.5rem 1.4rem;
+    letter-spacing: 0.12em;
   }
-  .app-shell-game .city-night .wf-ft button[aria-expanded="true"]::before {
-    transform: rotate(90deg);
+  .app-shell-game .city-night .wf-ft small {
+    font-size: 0.72rem;
+    color: var(--muted);
   }
   .app-shell-game .city-night .wf-ft .workflow-fee {
     margin: 0 0 0 auto;
-    font-size: 0.7rem;
-    color: var(--muted);
-  }
-  .app-shell-game .city-night .wf-more {
-    flex: 0 1 auto;
-    min-height: 0;
-    overflow: auto;
-    padding: 0 1.1rem;
-    font-size: 0.78rem;
-    color: var(--muted);
-    line-height: 1.8;
-  }
-  .app-shell-game .city-night .wf-more:has(details[open]) {
-    padding-bottom: 1rem;
-  }
-  .app-shell-game .city-night .wf-more > details > summary[hidden] {
-    display: none;
-  }
-  .app-shell-game .city-night .wf-more .prose {
-    font-size: 0.9rem;
-    text-align: left;
-    margin: 0;
+    font-size: 0.68rem;
+    color: var(--dim);
   }
   @keyframes workflow-in {
     from {
@@ -360,8 +810,14 @@
   }
 }
 @media (min-width: 901px) and (max-width: 1199px) {
-  .app-shell-game .city-night .workflow-stages {
-    grid-template-columns: 1fr;
+  .app-shell-game .city-night .wf-main {
+    grid-template-columns: 180px minmax(0, 1fr);
+  }
+  .app-shell-game .city-night .wf-cmds li {
+    grid-template-columns: minmax(90px, 120px) minmax(0, 1fr);
+  }
+  .app-shell-game .city-night .wf-cmds small {
+    display: none;
   }
   .app-shell-game .city-night .workflow-summary {
     gap: 0.5rem;
@@ -378,13 +834,13 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .city-night .workflow-details,
-  .wf-hd .dot {
+  .wf-hd .dot,
+  .wf-node {
     animation: none;
   }
   .workflow-toggle::after,
   .wf-sw input,
-  .wf-sw input::after,
-  .wf-ft button::before {
+  .wf-sw input::after {
     transition: none;
   }
 }
@@ -393,15 +849,9 @@
   .workflow-pop-host[hidden] {
     display: none;
   }
-  .app-shell-game .city-night .workflow-stages .candidate-opener {
-    border: 0;
-    padding: 0;
-    background: none;
-    color: var(--feedback-info);
-    font-size: 0.74rem;
-  }
 }
-@media (min-width:901px) {
-  .app-shell-game .city-night .wf-hd .wf-follow { margin-left:auto;border:1px solid var(--line-2);border-radius:999px;font-size:.74rem;padding:.25rem .65rem; }
-  .app-shell-game .city-night .wf-hd .wf-follow + button { margin-left:0; }
+@media (min-width: 901px) {
+  .app-shell-game .city-night .wf-candidate-link {
+    margin: 0.2rem 0 0;
+  }
 }

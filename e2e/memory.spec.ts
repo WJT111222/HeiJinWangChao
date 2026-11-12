@@ -1,5 +1,5 @@
 import { openLibrary } from './helpers/home';
-import { openWorldArchive, openSettings } from './helpers/gameLayout';
+import { openWorldArchive, openSettings, openWorkflowDiagnostics } from './helpers/gameLayout';
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
@@ -147,7 +147,7 @@ test('真实正文请求使用设置N=1/10/20，并独立召回第3回合；查�
     release?.();
     await expect(page.getByTestId('story-reader')).toContainText('主角阅读先前留下的约定');
     await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toHaveCount(0);
-    await page.getByText('重试与变更详情', { exact: true }).click();
+    await openWorkflowDiagnostics(page);
     await expect(page.getByTestId('summary-length')).toBeVisible();
     await expect(page.getByTestId('summary-length')).toContainText('4 汉字');
     await expect(page.getByTestId('summary-length')).toContainText('可继续');
