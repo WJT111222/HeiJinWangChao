@@ -32,3 +32,5 @@
 - [Issue #8：M7 UI/UX 改版](https://github.com/WJT111222/HeiJinWangChao/issues/8)
 
 **阅读原则**：当前源码 / 已合并 PR ＞ 历史设计文档。更改产品规则需要另立实施范围、测试与独立 PR；文档归档不授权自动开发。
+
+- [三阶段工作流与全局反馈：设计稿、实现比对及回归报告](workflow-feedback/README.md)

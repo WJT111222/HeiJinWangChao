@@ -5,6 +5,7 @@ import { awaitingPlayerAction } from '../../domain/turnCommit';
 import type { SaveRepository, TurnUndoResult } from '../../services/storage/saveRepository';
 import type { UndoStatus } from '../../services/storage/turnUndo';
 import { DataError } from '../../domain/common';
+import { Feedback, useDesktopFeedback } from '../Feedback';
 import { Dialog } from '../Dialog';
 
 export function TurnUndoControl({ repository, state, draft, busy, input, onInput, onUndone, cancelMemory, onNotice }: {
@@ -12,6 +13,7 @@ export function TurnUndoControl({ repository, state, draft, busy, input, onInput
   onInput: (value: string) => void; onUndone: (result: TurnUndoResult) => void; cancelMemory: () => void;
   onNotice: (message: string) => void;
 }) {
+  const desktop = useDesktopFeedback();
   const [status, setStatus] = useState<UndoStatus>();
   const [confirm, setConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -67,15 +69,19 @@ export function TurnUndoControl({ repository, state, draft, busy, input, onInput
   return <>
     <button disabled={busy || saving || !status?.available} title={status?.available ? `可连续撤回 ${status.available} 回合` : reason}
       onClick={() => setConfirm(true)}>撤回{status?.available ? `（${status.available}）` : ''}</button>
-    {confirm && <Dialog title="撤回上一回合" small onClose={() => { if (!saving) setConfirm(false); }}>
-      <p>恢复到第 {state.turnNumber - 1} 回合结束，回填原行动。已撤回的剧情无法重做；此操作不调用 AI。</p>
+    {confirm && <Dialog title="撤回上一回合" small feedback="warn" seal="撤" onClose={() => { if (!saving) setConfirm(false); }}>
+      {desktop ? <><p>恢复到第 {state.turnNumber - 1} 回合结束，回填原行动。</p><ul className="dialog-consequences"><li>已撤回的剧情无法重做；此操作不调用 AI。</li>
+        {draft && !awaitingPlayerAction(state, draft) && <li>当前未结算草稿会被丢弃。</li>}
+        {input && <li>输入框现有文字会被本次回填替换。</li>}</ul></> : <>      <p>恢复到第 {state.turnNumber - 1} 回合结束，回填原行动。已撤回的剧情无法重做；此操作不调用 AI。</p>
       {draft && !awaitingPlayerAction(state, draft) && <p>当前未结算草稿会被丢弃。</p>}
       {input && <p>输入框现有文字会被本次回填替换。</p>}
-      <div className="button-row">
+</>}
+      {desktop && error && <Feedback level="err" role="alert">{error}</Feedback>}
+      <div className="button-row feedback-dialog-actions">
         <button disabled={saving} onClick={() => setConfirm(false)}>保留当前回合</button>
-        <button disabled={busy || saving} onClick={() => void undo()}>{saving ? '正在撤回…' : '确认撤回'}</button>
+        <button className="feedback-danger" disabled={busy || saving} onClick={() => void undo()}>{saving ? '正在撤回…' : '确认撤回'}</button>
       </div>
-      {error && <p role="alert">{error}</p>}
+      {!desktop && error && <p role="alert">{error}</p>}
     </Dialog>}
   </>;
 }

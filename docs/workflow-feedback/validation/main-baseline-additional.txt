@@ -1,0 +1,84 @@
+
+Running 4 tests using 2 workers
+
+(node:67087) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:67088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [desktop] › ../workflow-main-baseline/e2e/action-workflow.spec.ts:88:1 › 一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求 (16.6s)
+(node:67488) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [desktop] › ../workflow-main-baseline/e2e/time-preflight.spec.ts:77:40 › 长睡眠interrupt=false：真实三阶段、候选时间、正式结算及刷新 (30.9s)
+  ✓  3 [mobile] › ../workflow-main-baseline/e2e/action-workflow.spec.ts:88:1 › 一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求 (14.8s)
+(node:68095) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  4 [mobile] › ../workflow-main-baseline/e2e/time-preflight.spec.ts:77:40 › 长睡眠interrupt=false：真实三阶段、候选时间、正式结算及刷新 (30.7s)
+
+
+  1) [desktop] › ../workflow-main-baseline/e2e/time-preflight.spec.ts:77:40 › 长睡眠interrupt=false：真实三阶段、候选时间、正式结算及刷新
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: /读取存档/ })
+
+
+      29 |     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'time-e2e-mock-secret');
+      30 |   }, { visitor, disabled, action });
+    > 31 |   await page.reload(); await openGameTools(page); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+         |                                                                                                    ^
+      32 | }
+      33 | async function load(page: Page) {
+      34 |   const value: unknown = await page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try { return await repo.loadGame('save-a'); } finally { repo.close(); } });
+        at seed (/workspace/workflow-main-baseline/e2e/time-preflight.spec.ts:31:100)
+        at /workspace/workflow-main-baseline/e2e/time-preflight.spec.ts:78:44
+
+    Error Context: ../../tmp/workflow-baseline-additional/time-preflight-长睡眠interrupt-false：真实三阶段、候选时间、正式结算及刷新-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/workflow-baseline-additional/time-preflight-长睡眠interrupt-false：真实三阶段、候选时间、正式结算及刷新-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/workflow-baseline-additional/time-preflight-长睡眠interrupt-false：真实三阶段、候选时间、正式结算及刷新-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [mobile] › ../workflow-main-baseline/e2e/time-preflight.spec.ts:77:40 › 长睡眠interrupt=false：真实三阶段、候选时间、正式结算及刷新
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: /读取存档/ })
+
+
+      29 |     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'time-e2e-mock-secret');
+      30 |   }, { visitor, disabled, action });
+    > 31 |   await page.reload(); await openGameTools(page); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+         |                                                                                                    ^
+      32 | }
+      33 | async function load(page: Page) {
+      34 |   const value: unknown = await page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try { return await repo.loadGame('save-a'); } finally { repo.close(); } });
+        at seed (/workspace/workflow-main-baseline/e2e/time-preflight.spec.ts:31:100)
+        at /workspace/workflow-main-baseline/e2e/time-preflight.spec.ts:78:44
+
+    Error Context: ../../tmp/workflow-baseline-additional/time-preflight-长睡眠interrupt-false：真实三阶段、候选时间、正式结算及刷新-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/workflow-baseline-additional/time-preflight-长睡眠interrupt-false：真实三阶段、候选时间、正式结算及刷新-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/workflow-baseline-additional/time-preflight-长睡眠interrupt-false：真实三阶段、候选时间、正式结算及刷新-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [desktop] › ../workflow-main-baseline/e2e/time-preflight.spec.ts:77:40 › 长睡眠interrupt=false：真实三阶段、候选时间、正式结算及刷新
+    [mobile] › ../workflow-main-baseline/e2e/time-preflight.spec.ts:77:40 › 长睡眠interrupt=false：真实三阶段、候选时间、正式结算及刷新
+  2 passed (1.1m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

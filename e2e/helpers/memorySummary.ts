@@ -1,3 +1,4 @@
+import { openLibrary } from './home';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openSettings } from './gameLayout';
@@ -31,7 +32,7 @@ export async function seedSummary(page: Page, options: { count?: number; publicL
     for (const stage of ['variables', 'world', 'memory']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-summary-secret');
   }, options);
-  await page.reload(); await page.locator('.save-card').getByRole('button', { name: /读取存档/ }).click();
+  await page.reload(); await openLibrary(page); await page.locator('.save-card').getByRole('button', { name: /读取存档/ }).click();
   await expect(page.locator('.game-layout')).toBeVisible();
 }
 export async function summaryPage(page: Page) {

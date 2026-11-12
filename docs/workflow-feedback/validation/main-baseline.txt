@@ -1,0 +1,151 @@
+[WebServer] (node:59050) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:59063) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 2 workers
+
+(node:59090) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59091) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [desktop] › ../workflow-main-baseline/e2e/memory-maintenance.spec.ts:71:1 › 选择并恢复独立模型；手动整理、原文来源及真实memory快照/Token统计 (31.9s)
+  ✘  2 [desktop] › ../workflow-main-baseline/e2e/memory-summary-v2.spec.ts:5:1 › 独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入 (31.4s)
+(node:59629) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59636) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  4 [mobile] › ../workflow-main-baseline/e2e/memory-summary-v2.spec.ts:5:1 › 独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入 (30.4s)
+  ✘  3 [mobile] › ../workflow-main-baseline/e2e/memory-maintenance.spec.ts:71:1 › 选择并恢复独立模型；手动整理、原文来源及真实memory快照/Token统计 (30.4s)
+
+
+  1) [desktop] › ../workflow-main-baseline/e2e/memory-maintenance.spec.ts:71:1 › 选择并恢复独立模型；手动整理、原文来源及真实memory快照/Token统计
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: /读取存档/ })
+
+
+      48 |   }, { count, automatic, ready });
+      49 |   await page.reload(); await openGameTools(page);
+    > 50 |   await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+         |                                                    ^
+      51 | }
+      52 | async function load(page: Page) {
+      53 |   const state: unknown = await page.evaluate(async () => {
+        at seed (/workspace/workflow-main-baseline/e2e/memory-maintenance.spec.ts:50:52)
+        at /workspace/workflow-main-baseline/e2e/memory-maintenance.spec.ts:83:3
+
+    Error Context: ../../tmp/workflow-baseline-results/memory-maintenance-选择并恢复独立模型；手动整理、原文来源及真实memory快照-Token统计-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/workflow-baseline-results/memory-maintenance-选择并恢复独立模型；手动整理、原文来源及真实memory快照-Token统计-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/workflow-baseline-results/memory-maintenance-选择并恢复独立模型；手动整理、原文来源及真实memory快照-Token统计-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [desktop] › ../workflow-main-baseline/e2e/memory-summary-v2.spec.ts:5:1 › 独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.save-card').getByRole('button', { name: /读取存档/ })
+
+
+       at helpers/memorySummary.ts:34
+
+      32 |     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-summary-secret');
+      33 |   }, options);
+    > 34 |   await page.reload(); await page.locator('.save-card').getByRole('button', { name: /读取存档/ }).click();
+         |                                                                                               ^
+      35 |   await expect(page.locator('.game-layout')).toBeVisible();
+      36 | }
+      37 | export async function summaryPage(page: Page) {
+        at seedSummary (/workspace/workflow-main-baseline/e2e/helpers/memorySummary.ts:34:95)
+        at /workspace/workflow-main-baseline/e2e/memory-summary-v2.spec.ts:7:3
+
+    Error Context: ../../tmp/workflow-baseline-results/memory-summary-v2-独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/workflow-baseline-results/memory-summary-v2-独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/workflow-baseline-results/memory-summary-v2-独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [mobile] › ../workflow-main-baseline/e2e/memory-maintenance.spec.ts:71:1 › 选择并恢复独立模型；手动整理、原文来源及真实memory快照/Token统计
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: /读取存档/ })
+
+
+      48 |   }, { count, automatic, ready });
+      49 |   await page.reload(); await openGameTools(page);
+    > 50 |   await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+         |                                                    ^
+      51 | }
+      52 | async function load(page: Page) {
+      53 |   const state: unknown = await page.evaluate(async () => {
+        at seed (/workspace/workflow-main-baseline/e2e/memory-maintenance.spec.ts:50:52)
+        at /workspace/workflow-main-baseline/e2e/memory-maintenance.spec.ts:83:3
+
+    Error Context: ../../tmp/workflow-baseline-results/memory-maintenance-选择并恢复独立模型；手动整理、原文来源及真实memory快照-Token统计-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/workflow-baseline-results/memory-maintenance-选择并恢复独立模型；手动整理、原文来源及真实memory快照-Token统计-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/workflow-baseline-results/memory-maintenance-选择并恢复独立模型；手动整理、原文来源及真实memory快照-Token统计-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [mobile] › ../workflow-main-baseline/e2e/memory-summary-v2.spec.ts:5:1 › 独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.save-card').getByRole('button', { name: /读取存档/ })
+
+
+       at helpers/memorySummary.ts:34
+
+      32 |     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-summary-secret');
+      33 |   }, options);
+    > 34 |   await page.reload(); await page.locator('.save-card').getByRole('button', { name: /读取存档/ }).click();
+         |                                                                                               ^
+      35 |   await expect(page.locator('.game-layout')).toBeVisible();
+      36 | }
+      37 | export async function summaryPage(page: Page) {
+        at seedSummary (/workspace/workflow-main-baseline/e2e/helpers/memorySummary.ts:34:95)
+        at /workspace/workflow-main-baseline/e2e/memory-summary-v2.spec.ts:7:3
+
+    Error Context: ../../tmp/workflow-baseline-results/memory-summary-v2-独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/workflow-baseline-results/memory-summary-v2-独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/workflow-baseline-results/memory-summary-v2-独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4 failed
+    [desktop] › ../workflow-main-baseline/e2e/memory-maintenance.spec.ts:71:1 › 选择并恢复独立模型；手动整理、原文来源及真实memory快照/Token统计
+    [desktop] › ../workflow-main-baseline/e2e/memory-summary-v2.spec.ts:5:1 › 独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入
+    [mobile] › ../workflow-main-baseline/e2e/memory-maintenance.spec.ts:71:1 › 选择并恢复独立模型；手动整理、原文来源及真实memory快照/Token统计
+    [mobile] › ../workflow-main-baseline/e2e/memory-summary-v2.spec.ts:5:1 › 独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

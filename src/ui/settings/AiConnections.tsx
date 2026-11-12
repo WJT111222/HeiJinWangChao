@@ -17,6 +17,8 @@ import { safeAiError } from '../../services/ai/errors';
 import { ThemedSelect } from '../components/ThemedSelect';
 import { ModelCatalog } from './modelCatalog';
 import { ModelPicker } from './ModelPicker';
+import { Feedback } from '../Feedback';
+import type { FeedbackLevel } from '../Feedback';
 import { OutputTokenLimit } from './OutputTokenLimit';
 
 const stages: [AiTask, string][] = [
@@ -62,7 +64,9 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
   const [catalog] = useState(() => new ModelCatalog());
   const lists = useSyncExternalStore(catalog.subscribe, catalog.getSnapshot);
   const saved = useRef(start.config);
-  const [notice, setNotice] = useState(start.notice);
+  const [notice, setNoticeText] = useState(start.notice);
+  const [noticeLevel, setNoticeLevel] = useState<FeedbackLevel>(start.notice ? 'err' : 'info');
+  function setNotice(message: string, level: FeedbackLevel = 'err') { setNoticeText(message); setNoticeLevel(level); }
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const active = useRef<AbortController | undefined>(undefined);
@@ -92,7 +96,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
   function update(next: AiConfig) {
     setConfig(next);
     markDirty(true);
-    setNotice('有尚未保存的 AI 配置。');
+    setNotice('有尚未保存的 AI 配置。', 'warn');
   }
   function patch(values: Partial<Channel>) {
     update({
@@ -102,7 +106,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
   }
   function select(id: string) {
     if (dirty) {
-      setNotice('请先保存当前配置，再切换渠道。');
+      setNotice('请先保存当前配置，再切换渠道。', 'warn');
       return;
     }
     try {
@@ -131,7 +135,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
       setConfig(checked.data);
       markDirty(false);
       saved.current = checked.data;
-      setNotice('AI 配置已保存；模型列表会自动获取，尚未发起生成请求。');
+      setNotice('AI 配置已保存；模型列表会自动获取，尚未发起生成请求。', 'ok');
       const ids = new Set([selectedId, ...Object.values(checked.data.routes).flatMap((route) => 'channelId' in route ? [route.channelId] : [])]);
       for (const target of checked.data.channels) if (ids.has(target.id))
         void catalog.load(target, start.vault, timeoutSeconds);
@@ -154,7 +158,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
     const controller = new AbortController();
     active.current = controller;
     setBusy(true);
-    setNotice('请求进行中…');
+    setNotice('请求进行中…', 'info');
     try {
       const client = new AiClient();
       const target = { ...channel, parameters: { ...channel.parameters,
@@ -170,7 +174,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
       );
       if (active.current !== controller) return;
       setNotice(
-        ['连接测试成功，已收到模型文本响应；游戏回合未运行。', ...result.diagnostics].join(' '),
+        ['连接测试成功，已收到模型文本响应；游戏回合未运行。', ...result.diagnostics].join(' '), 'ok',
       );
     } catch (error) {
       if (active.current === controller) setNotice(safeAiError(error).message);
@@ -194,17 +198,17 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
       setKey(start.vault?.get(next.channels[0]?.id ?? '') ?? '');
       setRemember(start.vault?.remembered(next.channels[0]?.id ?? '') ?? false);
       setDeleting(false);
-      setNotice('渠道及凭证已删除；受影响的独立阶段需重新选择渠道，不会自动改为跟随正文。');
+      setNotice('渠道及凭证已删除；受影响的独立阶段需重新选择渠道，不会自动改为跟随正文。', 'warn');
     } catch {
       setNotice('删除未完成，请检查浏览器存储权限后重试。');
     }
   }
   return (
     <>
-      <p className="notice">
+      <Feedback className="notice" level="info" mobileAs="p">
         浏览器会直接连接你填写的服务地址，不使用第三方 CORS
         代理。服务及同源脚本可能接触密钥；浏览器存储不是安全密钥库。默认仅本次会话保留，密钥不进入游戏存档、提示词或诊断详情。
-      </p>
+      </Feedback>
       <p className="field-hint">正文、变量、动态世界和记忆维护可分别选择渠道与模型。修改后需点击「保存 AI 配置」；勾选跟随正文时使用正文路由，原独立选择会保留。</p>
       <div className="ai-toolbar">
         <ThemedSelect label="当前渠道" value={selectedId} disabled={busy}
@@ -265,7 +269,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
               onChange={(e) => {
                 setKey(e.target.value);
                 markDirty(true);
-                setNotice('有尚未保存的 AI 配置。');
+                setNotice('有尚未保存的 AI 配置。', 'warn');
               }}
             />
           </label>
@@ -280,7 +284,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
             onChange={(e) => {
               setRemember(e.target.checked);
               markDirty(true);
-              setNotice('有尚未保存的 AI 配置。');
+              setNotice('有尚未保存的 AI 配置。', 'warn');
             }}
           />
           在本机长期记住密钥（非默认，同源脚本可读取）
@@ -358,11 +362,10 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
         </button>
       </div>
       {deleting && (
-        <div className="notice" role="alert">
-          <p>删除渠道会移除其凭证并重置关联路由。</p>
-          <button onClick={destroy}>确认删除渠道</button>
-          <button onClick={() => setDeleting(false)}>取消删除</button>
-        </div>
+        <Feedback className="notice" level="warn" role="alert" mobileChildren={<p>删除渠道会移除其凭证并重置关联路由。</p>}
+          actions={<><button onClick={destroy}>确认删除渠道</button><button onClick={() => setDeleting(false)}>取消删除</button></>}>
+          删除渠道会移除其凭证并重置关联路由。
+        </Feedback>
       )}
       <fieldset disabled={busy}>
         <legend>三阶段与记忆总结模型路由</legend>
@@ -415,7 +418,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
       </fieldset>
       <div className="ai-save-bar">
         <button className="primary" disabled={busy || !start.vault} onClick={save}>保存 AI 配置</button>
-        <div role="status" className="field-hint">{notice || '各阶段路由独立保存，设置本身不会发起生成请求。'}</div>
+        <Feedback role="status" level={notice ? noticeLevel : 'info'} className="field-hint">{notice || '各阶段路由独立保存，设置本身不会发起生成请求。'}</Feedback>
       </div>
     </>
   );

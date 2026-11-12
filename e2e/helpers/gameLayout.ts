@@ -16,14 +16,15 @@ export async function openWorkflow(page: Page) {
   const disclosure = page.locator('.workflow-disclosure');
   await expect(disclosure).toBeAttached();
   if (!(await disclosure.evaluate(element => element.hasAttribute('open'))))
-    await disclosure.locator(':scope > summary').click();
+    await workflowTrigger(page).click();
 }
 
 export async function openWorkflowDiagnostics(page: Page) {
   await openWorkflow(page);
   const details = page.locator('.workflow-diagnostics');
   if (!(await details.evaluate(element => element.hasAttribute('open'))))
-    await details.locator(':scope > summary').click();
+    if (await details.locator(':scope > summary').isVisible()) await details.locator(':scope > summary').click();
+    else await page.getByRole('button', { name: '重试与变更详情', exact: true }).click();
 }
 
 // Responsive navigation opens the existing directory/profile dialogs, without touching save state.
@@ -54,3 +55,6 @@ export async function openSettings(page: Page) {
   await closeWorldArchive(page);
   await page.getByRole('button', { name: '设置', exact: true }).click();
 }
+
+export const workflowTrigger = (page: Page) => page.locator('details.workflow-disclosure > summary, .workflow-summary > .workflow-toggle');
+export const workflowSummary = (page: Page) => page.locator('details.workflow-disclosure > summary, .workflow-summary');

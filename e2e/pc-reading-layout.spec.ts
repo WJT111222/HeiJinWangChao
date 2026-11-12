@@ -1,3 +1,4 @@
+import { workflowTrigger } from './helpers/gameLayout';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { expect, test } from './helpers/test';
 import { seedNightSeal, nightSealStored } from './helpers/nightSeal';
@@ -92,13 +93,13 @@ test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, 
       await page.keyboard.press('Escape');
       await expect(system.getByRole('button', { name: '设置', exact: true })).toBeFocused();
       expect(await reader.evaluate(el => el.scrollTop)).toBe(position);
-      await page.locator('.workflow-disclosure > summary').click();
+      await workflowTrigger(page).click();
       await expect(page.getByRole('button', { name: '发送', exact: true })).toBeInViewport({ ratio: 1 });
       const details = (await page.locator('.workflow-details').boundingBox())!;
       expect(Math.abs(details.x - row.x)).toBeLessThan(2);
       expect(Math.abs(details.width - row.width)).toBeLessThan(2);
       await page.screenshot({ path: `${destination}/after-workflow-${size.width}x${size.height}.png` });
-      await page.locator('.workflow-disclosure > summary').click();
+      await workflowTrigger(page).click();
     } else {
       await expect(page.locator('.app-header')).toBeVisible();
       await expect(page.locator('.bar-city')).toBeHidden();

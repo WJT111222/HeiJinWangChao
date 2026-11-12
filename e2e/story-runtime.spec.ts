@@ -1,3 +1,4 @@
+import { workflowTrigger } from './helpers/gameLayout';
 import { openWorldArchive, openSettings, goHome } from './helpers/gameLayout';
 import { openGameTools, openWorkflowDiagnostics } from './helpers/gameLayout';
 import { createServer } from 'node:http';
@@ -208,6 +209,7 @@ test('真实开局流式分片、资料面板不打断、只展示正文，草�
   expect(saved.draft.story.summary).toBe('等车');
   expect(saved.draft.story.narrative).toBe(story);
   expect(saved.draft.storyRevision).toBe(1);
+  if (await page.locator('.workflow-summary').isVisible()) await workflowTrigger(page).click();
   await page.getByRole('button', { name: '看看站台', exact: true }).click();
   await expect(page.getByLabel('你的行动')).toHaveValue('看看站台');
   expect(requests).toHaveLength(1);
@@ -234,75 +236,30 @@ test('真实开局流式分片、资料面板不打断、只展示正文，草�
   expect((await stored(page)).state).toBe(before);
   await page.screenshot({ path: info.outputPath('story-runtime.png'), fullPage: true });
 });
-test('重新 Roll 授权失败、短正文及非法格式保留旧草稿，成功后同回合替换', async ({ page }) => {
+test('有效正文草稿没有主动重生成入口，刷新后保持原稿且不请求模型', async ({ page }) => {
   const before = await seed(page);
-  await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
-  await generated(page);
-  const old = (await stored(page)).draft;
-  for (const plan of [
-    { status: 401 },
-    { chunks: [result('短')] },
-    { chunks: ['<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>缺少完整结构</正文>'] },
-  ]) {
-    plans.push(plan);
-    await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
-    await expect(page.getByRole('alert')).toBeVisible();
-    await expect(page.getByRole('alert')).not.toContainText('mock-browser-key');
-    await expect(page.getByRole('alert')).not.toContainText('供应商私有错误');
-    await expect(page.getByTestId('story-reader')).toContainText(displayedStory);
-    expect((await stored(page)).draft).toEqual(old);
-  }
-  const replacement = '【旁白】新的公交车已经到站。\n\n路边的人们安静地等候着。';
-  plans.push({ chunks: [result(replacement)] });
-  await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
-  await expect(page.getByTestId('story-reader')).toContainText('新的公交车已经到站。\n\n路边的人们安静地等候着。');
-  await generated(page);
-  const after = await stored(page);
-  expect(after.draft.turnId).toBe(old.turnId);
-  expect(after.draft.userInput).toBe(old.userInput);
-  expect(after.draft.storyRevision).toBe(2);
-  expect(after.draft.story.narrative).toBe(replacement);
-  expect(after.state).toBe(before);
+  await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
+  const saved = await stored(page);
+  await expect(page.getByRole('button', { name: /重新 Roll|重新生成正文/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '生成开局正文', exact: true })).toHaveCount(0);
+  await page.reload(); await openGameTools(page); await generated(page);
+  expect(await stored(page)).toEqual(saved); expect(saved.state).toBe(before); expect(requests).toHaveLength(1);
 });
-test('快速重复点击、取消重试、迟到请求与切档隔离、刷新保留旧正文', async ({ page }) => {
-  const before = await seed(page);
-  plans.push({ delay: 2000 });
-  await page
-    .getByRole('button', { name: '生成开局正文', exact: true })
-    .evaluate((button: HTMLButtonElement) => {
-      button.click();
-      button.click();
-    });
-  await expect(page.getByRole('button', { name: '取消生成', exact: true })).toBeVisible();
+test('快速重复点击、取消重试、迟到请求与切档隔离、刷新保留空草稿', async ({ page }) => {
+  const before = await seed(page); plans.push({ delay: 1500 });
+  await page.getByRole('button', { name: '生成开局正文', exact: true }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
   await expect.poll(() => requests.length).toBe(1);
   await page.getByRole('button', { name: '取消生成', exact: true }).click();
   expect((await stored(page)).draft.story).toBeUndefined();
-  await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
-  await generated(page);
-  const old = (await stored(page)).draft;
-  plans.push({ delay: 1500 });
-  await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
-  await expect.poll(() => requests.length).toBe(3);
-  await goHome(page);
-  await page
-    .locator('.save-card')
-    .filter({ hasText: '另一个存档角色' })
-    .getByRole('button', { name: /读取存档/ })
-    .click();
-  await openGameTools(page, true);
-  await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
-  await generated(page);
-  expect((await stored(page)).draft).toEqual(old);
-  expect((await stored(page, 'story-e2e-b')).draft.storyRevision).toBe(1);
-  expect((await stored(page)).state).toBe(before);
+  plans.push({ delay: 1500 }); await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
+  await expect.poll(() => requests.length).toBe(2); await goHome(page);
+  await page.locator('.save-card').filter({ hasText: '另一个存档角色' }).getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page, true);
+  await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
+  expect((await stored(page)).draft.story).toBeUndefined(); expect((await stored(page, 'story-e2e-b')).draft.storyRevision).toBe(1); expect((await stored(page)).state).toBe(before);
   await page.goto('/#game/story-e2e-a'); await openGameTools(page);
-  await generated(page);
-  plans.push({ delay: 1200 });
-  await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
-  await expect.poll(() => requests.length).toBe(5);
-  await page.reload(); await openGameTools(page);
-  await generated(page);
-  expect((await stored(page)).draft).toEqual(old);
+  plans.push({ delay: 1200 }); await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await expect.poll(() => requests.length).toBe(4);
+  await page.reload(); await openGameTools(page); expect((await stored(page)).draft.story).toBeUndefined();
+  await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
 });
 test('已有 regular 草稿生成正确模式，没有草稿时不自动创建下一回合', async ({ page }) => {
   const before = await seed(page, 'regular');
@@ -378,15 +335,13 @@ test('P6：原生公开内容与项目规划只主动查看，正文/存档隔�
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('P6：截断Roll不覆盖旧正文，明确预算诊断；无原生输出依然成功', async ({ page }) => {
-  await seed(page); plans.push({}); await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
-  const saved = await stored(page);
+test('P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功', async ({ page }) => {
+  await seed(page); const saved = await stored(page);
   plans.push({ reasoning: '只有临时原生内容', finishReason: 'length', chunks: ['<thinking>长规划尚未结束'] });
-  await page.getByRole('button', { name: '重新 Roll', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('达到输出上限'); expect(await stored(page)).toEqual(saved); expect(requests).toHaveLength(2);
-  await expect(page.getByTestId('story-reader')).toContainText(displayedStory);
-  plans.push({}); await page.getByRole('button', { name: '重新 Roll', exact: true }).click(); await generated(page);
-  expect((await stored(page)).draft.storyRevision).toBe(saved.draft.storyRevision + 1); expect(requests).toHaveLength(3);
+  await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('达到输出上限'); expect(await stored(page)).toEqual(saved); expect(requests).toHaveLength(1);
+  plans.push({}); await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
+  expect((await stored(page)).draft.storyRevision).toBe(1); expect(requests).toHaveLength(2);
   await openWorkflowDiagnostics(page);
   const inspection = page.locator('.story-inspection'); await inspection.locator(':scope > summary').click();
   await inspection.getByText('供应商公开返回的原生内容', { exact: true }).click(); await expect(inspection).toContainText('供应商未提供');

@@ -1,0 +1,28 @@
+
+Running 10 tests using 2 workers
+
+(node:76199) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:76197) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [desktop] › e2e/story-runtime.spec.ts:264:1 › 已有 regular 草稿生成正确模式，没有草稿时不自动创建下一回合 (10.3s)
+  ✓   2 [desktop] › e2e/story-runtime.spec.ts:239:1 › 有效正文草稿没有主动重生成入口，刷新后保持原稿且不请求模型 (10.3s)
+  ✓   4 [desktop] › e2e/workflow-feedback.spec.ts:86:1 › 多个阶段错误完整保留；候选失败重试不重生成已有正文 (8.5s)
+  ✓   3 [desktop] › e2e/story-runtime.spec.ts:287:1 › 长篇流式阅读自动跟随、手动上滚暂停、恢复跟随，移动端无横向溢出 (10.1s)
+(node:76853) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   6 [mobile] › e2e/story-runtime.spec.ts:239:1 › 有效正文草稿没有主动重生成入口，刷新后保持原稿且不请求模型 (7.7s)
+  ✓   5 [desktop] › e2e/workflow-feedback.spec.ts:101:1 › 全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式 (14.3s)
+(node:77083) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   7 [mobile] › e2e/story-runtime.spec.ts:264:1 › 已有 regular 草稿生成正确模式，没有草稿时不自动创建下一回合 (8.4s)
+  ✓   9 [mobile] › e2e/workflow-feedback.spec.ts:86:1 › 多个阶段错误完整保留；候选失败重试不重生成已有正文 (5.4s)
+  ✓   8 [mobile] › e2e/story-runtime.spec.ts:287:1 › 长篇流式阅读自动跟随、手动上滚暂停、恢复跟随，移动端无横向溢出 (9.7s)
+  ✓  10 [mobile] › e2e/workflow-feedback.spec.ts:101:1 › 全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式 (8.0s)
+
+  10 passed (53.7s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

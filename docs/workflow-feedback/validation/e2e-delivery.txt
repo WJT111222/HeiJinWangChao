@@ -1,0 +1,66 @@
+[WebServer] (node:84987) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:85000) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 44 tests using 2 workers
+
+(node:85027) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:85028) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   2 [desktop] › e2e/story-runtime.spec.ts:239:1 › 有效正文草稿没有主动重生成入口，刷新后保持原稿且不请求模型 (6.8s)
+  ✓   1 [desktop] › e2e/story-runtime.spec.ts:166:1 › 真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计 (11.0s)
+  ✓   4 [desktop] › e2e/story-runtime.spec.ts:264:1 › 已有 regular 草稿生成正确模式，没有草稿时不自动创建下一回合 (5.3s)
+  ✓   3 [desktop] › e2e/story-runtime.spec.ts:248:1 › 快速重复点击、取消重试、迟到请求与切档隔离、刷新保留空草稿 (10.2s)
+  ✓   6 [desktop] › e2e/story-runtime.spec.ts:317:1 › P6：原生公开内容与项目规划只主动查看，正文/存档隔离，刷新清除临时资料 (6.3s)
+  ✓   5 [desktop] › e2e/story-runtime.spec.ts:287:1 › 长篇流式阅读自动跟随、手动上滚暂停、恢复跟随，移动端无横向溢出 (7.2s)
+  ✓   7 [desktop] › e2e/story-runtime.spec.ts:338:1 › P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功 (4.6s)
+  ✓   8 [desktop] › e2e/story-runtime.spec.ts:350:1 › Story精确诊断：1268/1500字符直接可见，可复制单条，原文仍可查看且不自动重试 (7.2s)
+  ✓   9 [desktop] › e2e/story-runtime.spec.ts:377:1 › Story标签与变量规划诊断分别定位；只有玩家明确重试才再次请求，合法原协议仍成功 (7.0s)
+  ✓  10 [desktop] › e2e/story-runtime.spec.ts:399:1 › Story后置凭证拒绝同步到原文面板，诊断与原文均不泄露密钥 (4.8s)
+  ✓  11 [desktop] › e2e/story-runtime.spec.ts:411:1 › Story保存版本冲突保留原DataError处理，原文面板显示具体失败而非校验成功 (4.5s)
+  ✓  12 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：opening 布局、焦点、候选与原数据 (4.9s)
+  ✓  14 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：off 布局、焦点、候选与原数据 (5.3s)
+  ✓  13 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：ready 布局、焦点、候选与原数据 (7.0s)
+  ✓  15 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：error 布局、焦点、候选与原数据 (5.2s)
+  ✓  16 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：settled 布局、焦点、候选与原数据 (5.0s)
+  ✓  17 [desktop] › e2e/workflow-feedback.spec.ts:71:1 › 生成中：浮层关闭不取消请求，显式取消后仍可恢复；reduced motion (4.8s)
+  ✓  18 [desktop] › e2e/workflow-feedback.spec.ts:86:1 › 多个阶段错误完整保留；候选失败重试不重生成已有正文 (4.1s)
+  ✓  20 [desktop] › e2e/workflow-feedback.spec.ts:118:59 › 全局load真实错误路径保留文案和关闭操作 (4.2s)
+  ✓  21 [desktop] › e2e/workflow-feedback.spec.ts:118:59 › 全局list真实错误路径保留文案和关闭操作 (2.6s)
+  ✓  19 [desktop] › e2e/workflow-feedback.spec.ts:101:1 › 全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式 (7.2s)
+(node:86170) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  22 [desktop] › e2e/workflow-feedback.spec.ts:118:59 › 全局selection真实错误路径保留文案和关闭操作 (4.5s)
+(node:86304) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  23 [mobile] › e2e/story-runtime.spec.ts:166:1 › 真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计 (8.1s)
+  ✓  24 [mobile] › e2e/story-runtime.spec.ts:239:1 › 有效正文草稿没有主动重生成入口，刷新后保持原稿且不请求模型 (5.0s)
+  ✓  26 [mobile] › e2e/story-runtime.spec.ts:264:1 › 已有 regular 草稿生成正确模式，没有草稿时不自动创建下一回合 (3.9s)
+  ✓  25 [mobile] › e2e/story-runtime.spec.ts:248:1 › 快速重复点击、取消重试、迟到请求与切档隔离、刷新保留空草稿 (7.0s)
+  ✓  27 [mobile] › e2e/story-runtime.spec.ts:287:1 › 长篇流式阅读自动跟随、手动上滚暂停、恢复跟随，移动端无横向溢出 (5.8s)
+  ✓  28 [mobile] › e2e/story-runtime.spec.ts:317:1 › P6：原生公开内容与项目规划只主动查看，正文/存档隔离，刷新清除临时资料 (4.4s)
+  ✓  29 [mobile] › e2e/story-runtime.spec.ts:338:1 › P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功 (3.4s)
+  ✓  30 [mobile] › e2e/story-runtime.spec.ts:350:1 › Story精确诊断：1268/1500字符直接可见，可复制单条，原文仍可查看且不自动重试 (5.4s)
+  ✓  31 [mobile] › e2e/story-runtime.spec.ts:377:1 › Story标签与变量规划诊断分别定位；只有玩家明确重试才再次请求，合法原协议仍成功 (4.7s)
+  ✓  32 [mobile] › e2e/story-runtime.spec.ts:399:1 › Story后置凭证拒绝同步到原文面板，诊断与原文均不泄露密钥 (3.1s)
+  ✓  33 [mobile] › e2e/story-runtime.spec.ts:411:1 › Story保存版本冲突保留原DataError处理，原文面板显示具体失败而非校验成功 (3.6s)
+  ✓  34 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：opening 布局、焦点、候选与原数据 (2.2s)
+  ✓  36 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：off 布局、焦点、候选与原数据 (2.6s)
+  ✓  35 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：ready 布局、焦点、候选与原数据 (4.5s)
+  ✓  37 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：error 布局、焦点、候选与原数据 (2.2s)
+  ✓  38 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：settled 布局、焦点、候选与原数据 (2.4s)
+  ✓  39 [mobile] › e2e/workflow-feedback.spec.ts:71:1 › 生成中：浮层关闭不取消请求，显式取消后仍可恢复；reduced motion (3.2s)
+  ✓  40 [mobile] › e2e/workflow-feedback.spec.ts:86:1 › 多个阶段错误完整保留；候选失败重试不重生成已有正文 (2.7s)
+  ✓  42 [mobile] › e2e/workflow-feedback.spec.ts:118:59 › 全局load真实错误路径保留文案和关闭操作 (3.5s)
+  ✓  41 [mobile] › e2e/workflow-feedback.spec.ts:101:1 › 全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式 (6.3s)
+  ✓  43 [mobile] › e2e/workflow-feedback.spec.ts:118:59 › 全局list真实错误路径保留文案和关闭操作 (3.6s)
+  ✓  44 [mobile] › e2e/workflow-feedback.spec.ts:118:59 › 全局selection真实错误路径保留文案和关闭操作 (6.0s)
+
+  44 passed (2.0m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

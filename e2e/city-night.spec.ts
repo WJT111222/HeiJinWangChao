@@ -1,3 +1,4 @@
+import { workflowTrigger } from './helpers/gameLayout';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { expect, test } from './helpers/test';
 import { seedNightSeal, nightSealStored } from './helpers/nightSeal';
@@ -184,6 +185,6 @@ test('UI-2：剧本台词、草稿与详情的真实 React 截图',async({page},
     }
     await page.screenshot({path:`${directory}/react-dialogue-${width}x${height}.png`});
   }
-  await page.setViewportSize({width:1440,height:900});await page.locator('.workflow-disclosure > summary').click();
+  await page.setViewportSize({width:1440,height:900});await workflowTrigger(page).click();
   await expect(page.locator('.workflow-details')).toBeVisible();await page.screenshot({path:`${directory}/react-workflow-details.png`});
 });

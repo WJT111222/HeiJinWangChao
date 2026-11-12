@@ -1,0 +1,344 @@
+
+Running 244 tests using 2 workers
+
+(node:67837) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:67838) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓    1 [desktop] › e2e/action-workflow.spec.ts:88:1 › 一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求 (15.6s)
+  ✓    2 [desktop] › e2e/action-workflow.spec.ts:104:1 › 缺少AI配置零请求，设置后不自动补发，只在明确开始时运行 (21.3s)
+  ✓    3 [desktop] › e2e/action-workflow.spec.ts:132:1 › 发送行动只结算一次并自动串联下一轮，刷新及再次读档不补发 (19.1s)
+  ✓    4 [desktop] › e2e/action-workflow.spec.ts:147:3 › variables失败保留上游，仅明确恢复缺少阶段，折叠无额外请求 (17.6s)
+  ✓    6 [desktop] › e2e/action-workflow.spec.ts:164:3 › 自动开局HTTP 401停止、不无限重试，刷新不重新授权 (9.9s)
+  ✓    5 [desktop] › e2e/action-workflow.spec.ts:147:3 › world失败保留上游，仅明确恢复缺少阶段，折叠无额外请求 (15.7s)
+  ✓    7 [desktop] › e2e/action-workflow.spec.ts:164:3 › 自动开局HTTP 403停止、不无限重试，刷新不重新授权 (11.3s)
+  ✓    8 [desktop] › e2e/action-workflow.spec.ts:164:3 › 自动开局HTTP 429停止、不无限重试，刷新不重新授权 (10.1s)
+  ✓   10 [desktop] › e2e/action-workflow.spec.ts:193:1 › 快速离开并重读同一存档或新标签不能延续开局收费授权 (16.9s)
+  ✓    9 [desktop] › e2e/action-workflow.spec.ts:174:1 › 取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复 (18.3s)
+  ✓   12 [desktop] › e2e/action-workflow.spec.ts:215:1 › 正文摘要不合法时不保存、不运行下游、不结算 (7.7s)
+  ✓   11 [desktop] › e2e/action-workflow.spec.ts:207:1 › 关闭变量时世界只能预览，不因自动开局而强行启用或允许发送 (8.9s)
+  ✓   14 [desktop] › e2e/action-workflow.spec.ts:235:3 › 开局network不隐式重试，刷新不重发，草稿和正式状态安全 (11.4s)
+  ✓   13 [desktop] › e2e/action-workflow.spec.ts:222:1 › 开局组件加载前刷新销毁授权，未生成草稿保留且仅主动开始才请求 (13.0s)
+  ✓   15 [desktop] › e2e/action-workflow.spec.ts:235:3 › 开局timeout不隐式重试，刷新不重发，草稿和正式状态安全 (11.2s)
+  ✓   16 [desktop] › e2e/action-workflow.spec.ts:257:3 › 关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送 (16.2s)
+  ✓   17 [desktop] › e2e/action-workflow.spec.ts:257:3 › 关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送 (16.4s)
+  ✓   18 [desktop] › e2e/action-workflow.spec.ts:303:1 › 单行状态跟随三个实际请求，展开收起不重发且自动结算后等待行动 (15.0s)
+  ✓   19 [desktop] › e2e/action-workflow.spec.ts:336:1 › 最新阶段失败覆盖旧变量错误，状态栏准确指出World失败 (8.3s)
+  ✓   20 [desktop] › e2e/action-workflow.spec.ts:349:1 › 下一条行动绑定冲突显示发送失败，不误报等待行动且不请求模型 (7.7s)
+  ✓   22 [desktop] › e2e/ai-route-persistence.spec.ts:53:1 › 旧跟随配置没有独立选择时明确留空，不默默使用正文渠道默认模型 (4.3s)
+  ✓   21 [desktop] › e2e/ai-route-persistence.spec.ts:40:1 › 三阶段独立选择在启用跟随、保存和刷新后仍能恢复，不被正文模型覆盖 (10.4s)
+  ✓   23 [desktop] › e2e/ai-route-persistence.spec.ts:60:1 › 未保存关闭与分类切换需要明确放弃；继续编辑保留选择，保存后可直接关闭 (6.5s)
+  ✓   24 [desktop] › e2e/ai-route-persistence.spec.ts:73:1 › Escape、明确放弃和分类切换不会静默保存；密钥编辑同样提示且不出现在配置内 (8.0s)
+  ✓   25 [desktop] › e2e/ai-route-persistence.spec.ts:91:1 › 无效字段及存储失败不清除未保存保护；成功保存后才解除 (8.6s)
+  ✓   26 [desktop] › e2e/ai-route-persistence.spec.ts:106:1 › 恢复后四路真实Mock请求使用各自渠道模型，默认模型及旧配置不变 (8.0s)
+  ✓   27 [desktop] › e2e/ai-route-persistence.spec.ts:123:1 › 保存栏在长路由页面可触达且无横向溢出，窄屏也能保存并恢复选择 (5.8s)
+  ✓   29 [desktop] › e2e/ai-settings.spec.ts:9:1 › 真实浏览器加载原文、校验哈希并组装六种模式，记录模块顺序 (2.3s)
+  ✓   28 [desktop] › e2e/ai-route-persistence.spec.ts:132:1 › 删除独立渠道不会改为跟随，保存的其他渠道和选择不受影响 (7.0s)
+  ✓   31 [desktop] › e2e/ai-settings.spec.ts:191:1 › 连接授权错误不展示服务详情，网络错误不误报密钥，取消请求有效 (5.9s)
+  ✓   32 [desktop] › e2e/ai-settings.spec.ts:230:1 › P6完善：输出档位映射、旧渠道值与渠道隔离，新渠道默认8K (8.4s)
+  ✓   30 [desktop] › e2e/ai-settings.spec.ts:86:1 › AI 多渠道、原生模型列表与连接测试、路由和会话凭证恢复 (18.3s)
+  ✓   34 [desktop] › e2e/city-night-followups.spec.ts:46:1 › 四项修复：07:50 与完整状态/资金、双端真实 React 截图 (4.9s)
+  ✓   33 [desktop] › e2e/ai-settings.spec.ts:260:1 › P6完善：自定义合法范围与4K/8K/16K往返，只保存玩家明确设置 (9.6s)
+  ✓   35 [desktop] › e2e/city-night-followups.spec.ts:67:1 › PC 长段落/异常长字符串完整换行，左栏独立滚动且资金装备与底部按钮可达 (12.6s)
+  ✓   36 [desktop] › e2e/city-night-followups.spec.ts:102:1 › PC 普通/百万/亿级/极大金额随容器调整字号，下限后排版换行不省略 (10.3s)
+  -   38 [desktop] › e2e/city-night-followups.spec.ts:147:1 › 触控点击详情、再次点击/关闭/外部点击收起，窄屏与缩放视口不溢出
+  ✓   39 [desktop] › e2e/game-window.spec.ts:64:1 › 全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入 (4.3s)
+  ✓   37 [desktop] › e2e/city-night-followups.spec.ts:126:1 › 天气环境详情：悬停跨入可滚动、移出关闭，键盘焦点与 Esc，无数据修改 (7.0s)
+  ✓   40 [desktop] › e2e/game-window.spec.ts:75:1 › 顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置 (2.4s)
+  ✓   41 [desktop] › e2e/game-window.spec.ts:93:1 › 滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回 (2.9s)
+  ✓   42 [desktop] › e2e/game-window.spec.ts:114:1 › 默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态 (3.4s)
+  ✓   43 [desktop] › e2e/game-window.spec.ts:126:1 › 已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义 (4.7s)
+  ✓   44 [desktop] › e2e/game-window.spec.ts:135:1 › 生成中折叠不打断；取消和错误不被隐藏，失败重试成功保留正式状态 (7.7s)
+  ✓   45 [desktop] › e2e/game-window.spec.ts:204:1 › 缩短视口及模拟软键盘VisualViewport不遮住输入和发送 (4.2s)
+  ✓   47 [desktop] › e2e/game-window.spec.ts:243:1 › 工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间 (4.0s)
+  ✓   46 [desktop] › e2e/game-window.spec.ts:225:1 › 设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置 (7.2s)
+  ✓   48 [desktop] › e2e/memory-maintenance.spec.ts:72:1 › 选择并恢复独立模型；手动整理、原文来源及真实memory快照/Token统计 (14.3s)
+  ✓   49 [desktop] › e2e/memory-maintenance.spec.ts:138:1 › 跨标签真实Web Lock阻止第二次付费；取消/迟到和服务失败保留全部来源 (13.8s)
+  ✓   50 [desktop] › e2e/memory-maintenance.spec.ts:171:1 › 无跨标签互斥时手动整理明确拒绝，刷新不触发付费 (7.1s)
+  ✓   51 [desktop] › e2e/memory-maintenance.spec.ts:182:1 › 阈值以下设置保存和刷新不请求，正式提交触发后不阻断下一轮 (14.6s)
+  ✓   52 [desktop] › e2e/memory-maintenance.spec.ts:228:1 › 设置关闭重开仍是同一维护任务；阅读零请求，取消迟到不写回，手动重试仅一批 (11.6s)
+  ✓   54 [desktop] › e2e/memory-maintenance.spec.ts:304:1 › 正在原子保存时设置重开保持保存状态，不虚报可取消或重复发请求 (9.9s)
+  ✓   53 [desktop] › e2e/memory-maintenance.spec.ts:265:1 › 维护期间切档隔离旧任务，迟到结果不修改新档或原档，仅新授权可整理新档 (14.4s)
+  ✓   56 [desktop] › e2e/memory-summary-v2.spec.ts:37:1 › 立即NPC总结明确选择目标，18条可按15条处理；原文与正式revision不变 (6.8s)
+  ✓   55 [desktop] › e2e/memory-summary-v2.spec.ts:5:1 › 独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入 (10.8s)
+  ✓   58 [desktop] › e2e/memory-summary-v2.spec.ts:75:99 › 短期 → 中期失败暂停独立持久化，不关闭另外两类 (7.7s)
+  ✓   57 [desktop] › e2e/memory-summary-v2.spec.ts:49:1 › NPC先失败也不阻断公共两类，失败重试仅一次；暂停只保存本类关闭 (13.6s)
+  ✓   59 [desktop] › e2e/memory-summary-v2.spec.ts:75:99 › 中期 → 长期失败暂停独立持久化，不关闭另外两类 (8.1s)
+  ✓   60 [desktop] › e2e/memory-summary-v2.spec.ts:85:1 › 三类同时失败只顺序显示一个弹窗，各自暂停且刷新不重试 (7.9s)
+  ✓   61 [desktop] › e2e/memory-summary-v2.spec.ts:101:1 › 旧默认关闭安全延续、逐项开启与刷新持久化，设置页不再显示冗余说明 (8.1s)
+  ✓   62 [desktop] › e2e/memory-summary-v2.spec.ts:129:1 › 自动总结关闭时仍可手动总结，刷新后自动保持关闭且没有额外自动调用 (8.8s)
+  ✓   63 [desktop] › e2e/memory-summary-v2.spec.ts:151:1 › 旧版 enabled=false 即使 automatic=true 也只关闭自动，不禁用手动操作 (8.7s)
+  ✓   64 [desktop] › e2e/memory.spec.ts:73:1 › 旧M4七十回合档案：搜索约定、读取来源原文、分页和窗口显示，不泄露或改写 (11.2s)
+  ✓   66 [desktop] › e2e/night-seal.spec.ts:7:1 › 夜幕金印：真实已结算存档、四导航、阅读与视觉验收 (9.9s)
+  ✓   67 [desktop] › e2e/night-seal.spec.ts:91:1 › 长姓名、巨大金额及短横屏保持阅读与真实资料可访问 (6.7s)
+  ✓   65 [desktop] › e2e/memory.spec.ts:110:1 › 真实正文请求使用设置N=1/10/20，并独立召回第3回合；查看记忆不中断生成 (24.6s)
+  ✓   69 [desktop] › e2e/story-runtime.spec.ts:239:1 › 有效正文草稿没有主动重生成入口，刷新后保持原稿且不请求模型 (6.0s)
+  ✓   68 [desktop] › e2e/story-runtime.spec.ts:166:1 › 真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计 (9.8s)
+  ✓   70 [desktop] › e2e/story-runtime.spec.ts:248:1 › 快速重复点击、取消重试、迟到请求与切档隔离、刷新保留空草稿 (10.2s)
+  ✘   71 [desktop] › e2e/story-runtime.spec.ts:264:1 › 已有 regular 草稿生成正确模式，没有草稿时不自动创建下一回合 (10.3s)
+(node:73070) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   72 [desktop] › e2e/story-runtime.spec.ts:287:1 › 长篇流式阅读自动跟随、手动上滚暂停、恢复跟随，移动端无横向溢出 (6.7s)
+  ✓   73 [desktop] › e2e/story-runtime.spec.ts:317:1 › P6：原生公开内容与项目规划只主动查看，正文/存档隔离，刷新清除临时资料 (7.9s)
+  ✓   74 [desktop] › e2e/story-runtime.spec.ts:338:1 › P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功 (6.2s)
+  ✓   76 [desktop] › e2e/story-runtime.spec.ts:377:1 › Story标签与变量规划诊断分别定位；只有玩家明确重试才再次请求，合法原协议仍成功 (8.5s)
+  ✓   75 [desktop] › e2e/story-runtime.spec.ts:350:1 › Story精确诊断：1268/1500字符直接可见，可复制单条，原文仍可查看且不自动重试 (9.2s)
+  ✓   77 [desktop] › e2e/story-runtime.spec.ts:399:1 › Story后置凭证拒绝同步到原文面板，诊断与原文均不泄露密钥 (5.0s)
+  ✓   78 [desktop] › e2e/story-runtime.spec.ts:411:1 › Story保存版本冲突保留原DataError处理，原文面板显示具体失败而非校验成功 (5.1s)
+  ✓   79 [desktop] › e2e/time-preflight.spec.ts:78:40 › 长睡眠interrupt=false：真实三阶段、候选时间、正式结算及刷新 (8.1s)
+  ✓   80 [desktop] › e2e/time-preflight.spec.ts:78:40 › 长睡眠interrupt=true：真实三阶段、候选时间、正式结算及刷新 (8.0s)
+  ✓   82 [desktop] › e2e/time-preflight.spec.ts:103:1 › 取消和迟到不推进时间；关闭阶段只保留正文草稿 (6.5s)
+  ✓   81 [desktop] › e2e/time-preflight.spec.ts:91:1 › 变量失败与刷新恢复保留正文和候选，不提供主动Roll也不推进正式时间 (9.2s)
+  ✓   83 [desktop] › e2e/time-preflight.spec.ts:115:56 › 最新时间规则drink：无时间词估时或玩家明确的只读过去视角，真实正式提交 (8.3s)
+  ✓   84 [desktop] › e2e/time-preflight.spec.ts:115:56 › 最新时间规则chat：无时间词估时或玩家明确的只读过去视角，真实正式提交 (7.0s)
+  ✓   86 [desktop] › e2e/time-preflight.spec.ts:130:57 › 合法零耗时可正式提交，不制造固定步长：喝一口可乐 (5.8s)
+  ✓   85 [desktop] › e2e/time-preflight.spec.ts:115:56 › 最新时间规则past：无时间词估时或玩家明确的只读过去视角，真实正式提交 (7.8s)
+  ✓   87 [desktop] › e2e/time-preflight.spec.ts:130:57 › 合法零耗时可正式提交，不制造固定步长：切换到陈宁的视角，描述他现在正在做的事情 (7.2s)
+  ✓   88 [desktop] › e2e/turn-undo.spec.ts:62:1 › 连续五次撤回、刷新恢复、回填覆盖和无Redo，全程零模型请求 (7.0s)
+  ✓   90 [desktop] › e2e/turn-undo.spec.ts:96:1 › 取消撤回不修改任何数据；部分草稿需明确确认，旧候选退出 (3.9s)
+  ✓   89 [desktop] › e2e/turn-undo.spec.ts:79:1 › 撤回后编辑发送才开始三阶段，失败可恢复且只保存新分支 (7.9s)
+  ✓   91 [desktop] › e2e/turn-undo.spec.ts:111:1 › 跨标签页旧确认不能多退一层；刷新后重新核对剩余恢复点 (6.8s)
+  ✓   92 [desktop] › e2e/turn-undo.spec.ts:123:1 › 开局不撤回，生成期间按钮禁用；取消后可以撤回且没有额外请求 (5.0s)
+  ✓   93 [desktop] › e2e/turn-undo.spec.ts:136:1 › 后台总结在撤回时取消，刷新后不自动收费或复活旧总结 (6.5s)
+  ✓   94 [desktop] › e2e/turn-undo.spec.ts:147:1 › 快照写满时正式回合可保存，明确提示不可撤回，刷新不重复扣款 (6.4s)
+  ✓   96 [desktop] › e2e/turn-undo.spec.ts:179:1 › 无 Web Locks 时双标签同时撤回仍由 IndexedDB CAS 保证仅一次成功 (5.7s)
+  ✓   95 [desktop] › e2e/turn-undo.spec.ts:164:1 › 另一个标签仍在生成时撤回明确拒绝，取消后重新读取才可撤回 (10.3s)
+  ✓   97 [desktop] › e2e/variable-runtime.spec.ts:116:1 › 变量正常生成、真实独立路由/模块/usage，完整候选主动查看，刷新仍保留候选且正式资金不变 (7.9s)
+  ✓   98 [desktop] › e2e/variable-runtime.spec.ts:166:1 › 正文未完成不能运行；双阶段关闭后仅补算变量，正文不 Roll，世界不执行 (5.6s)
+  ✓  100 [desktop] › e2e/variable-runtime.spec.ts:259:1 › 角色对白后换行的客观消费可保存候选，不改变正式资金 (5.0s)
+  ✓   99 [desktop] › e2e/variable-runtime.spec.ts:206:1 › 错误 JSON 安全失败可重试；取消、重复点击和切档迟到不串档 (8.4s)
+  ✓  101 [desktop] › e2e/variable-runtime.spec.ts:276:1 › 场景引用不一致整批失败；合法离场可恢复为未结算候选 (5.6s)
+  ✓  102 [desktop] › e2e/variable-runtime.spec.ts:328:3 › 小说否定由模型判断；真正非法数据拒绝后可恢复：主角没用现金支付30元吃饭 (4.9s)
+  ✓  103 [desktop] › e2e/variable-runtime.spec.ts:328:3 › 小说否定由模型判断；真正非法数据拒绝后可恢复：不是主角已经用现金支付30元吃饭 (4.2s)
+  ✓  104 [desktop] › e2e/variable-runtime.spec.ts:328:3 › 小说否定由模型判断；真正非法数据拒绝后可恢复：不是同事和主角一起走进社区诊所 (4.4s)
+  ✓  105 [desktop] › e2e/variable-runtime.spec.ts:328:3 › 小说否定由模型判断；真正非法数据拒绝后可恢复：并非同事和主角一起走进社区诊所 (4.5s)
+  ✓  106 [desktop] › e2e/variable-runtime.spec.ts:389:1 › 正式文本命令映射NPC状态、私人记忆与消费；已启用JSON Mode仍为文本请求，候选不提前结算 (5.5s)
+  ✓  107 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：opening 布局、焦点、候选与原数据 (5.4s)
+  ✓  108 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：ready 布局、焦点、候选与原数据 (7.4s)
+  ✓  109 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：off 布局、焦点、候选与原数据 (5.5s)
+  ✓  110 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：error 布局、焦点、候选与原数据 (5.4s)
+  ✓  111 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：settled 布局、焦点、候选与原数据 (5.4s)
+  ✓  112 [desktop] › e2e/workflow-feedback.spec.ts:71:1 › 生成中：浮层关闭不取消请求，显式取消后仍可恢复；reduced motion (4.6s)
+  ✓  113 [desktop] › e2e/workflow-feedback.spec.ts:86:1 › 多个阶段错误完整保留；候选失败重试不重生成已有正文 (4.7s)
+  ✘  114 [desktop] › e2e/workflow-feedback.spec.ts:101:1 › 全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式 (3.7s)
+(node:75132) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  115 [desktop] › e2e/workflow-feedback.spec.ts:116:59 › 全局load真实错误路径保留文案和关闭操作 (4.5s)
+  ✓  116 [desktop] › e2e/workflow-feedback.spec.ts:116:59 › 全局list真实错误路径保留文案和关闭操作 (3.9s)
+  ✓  117 [desktop] › e2e/workflow-feedback.spec.ts:116:59 › 全局selection真实错误路径保留文案和关闭操作 (4.4s)
+  ✓  118 [desktop] › e2e/world-runtime.spec.ts:110:1 › 真实迎检准备文本：无效行动者安全失败，明确恢复后任务及合成事件入候选，正式状态不变 (6.2s)
+  ✓  120 [desktop] › e2e/world-runtime.spec.ts:194:1 › 双开关关闭后只补算世界，无变量时明确预览；不 Roll 正文 (3.9s)
+  ✓  119 [desktop] › e2e/world-runtime.spec.ts:143:1 › 世界生成、补算、只读查看与刷新恢复，真实路由和快照；正式世界不变 (8.8s)
+  ✓  121 [desktop] › e2e/world-runtime.spec.ts:229:1 › 错误输出可重试；取消后新请求不受旧回包影响；世界生成中其他阶段禁止执行 (4.8s)
+(node:75526) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  122 [desktop] › e2e/world-runtime.spec.ts:265:1 › 非法地点与事件预结案拒绝；NPC双任务和合法预计时间可重试保存 (6.4s)
+(node:75661) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  123 [mobile] › e2e/action-workflow.spec.ts:88:1 › 一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求 (8.3s)
+  ✓  124 [mobile] › e2e/action-workflow.spec.ts:104:1 › 缺少AI配置零请求，设置后不自动补发，只在明确开始时运行 (8.1s)
+  ✓  125 [mobile] › e2e/action-workflow.spec.ts:132:1 › 发送行动只结算一次并自动串联下一轮，刷新及再次读档不补发 (6.8s)
+  ✓  126 [mobile] › e2e/action-workflow.spec.ts:147:3 › variables失败保留上游，仅明确恢复缺少阶段，折叠无额外请求 (6.8s)
+  ✓  128 [mobile] › e2e/action-workflow.spec.ts:164:3 › 自动开局HTTP 401停止、不无限重试，刷新不重新授权 (5.3s)
+  ✓  127 [mobile] › e2e/action-workflow.spec.ts:147:3 › world失败保留上游，仅明确恢复缺少阶段，折叠无额外请求 (6.6s)
+  ✓  129 [mobile] › e2e/action-workflow.spec.ts:164:3 › 自动开局HTTP 403停止、不无限重试，刷新不重新授权 (4.5s)
+  ✓  130 [mobile] › e2e/action-workflow.spec.ts:164:3 › 自动开局HTTP 429停止、不无限重试，刷新不重新授权 (4.9s)
+  ✓  131 [mobile] › e2e/action-workflow.spec.ts:174:1 › 取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复 (6.1s)
+  ✓  132 [mobile] › e2e/action-workflow.spec.ts:193:1 › 快速离开并重读同一存档或新标签不能延续开局收费授权 (7.5s)
+  ✓  133 [mobile] › e2e/action-workflow.spec.ts:207:1 › 关闭变量时世界只能预览，不因自动开局而强行启用或允许发送 (8.2s)
+  ✓  134 [mobile] › e2e/action-workflow.spec.ts:215:1 › 正文摘要不合法时不保存、不运行下游、不结算 (8.2s)
+  ✓  136 [mobile] › e2e/action-workflow.spec.ts:235:3 › 开局network不隐式重试，刷新不重发，草稿和正式状态安全 (9.8s)
+  ✓  135 [mobile] › e2e/action-workflow.spec.ts:222:1 › 开局组件加载前刷新销毁授权，未生成草稿保留且仅主动开始才请求 (11.7s)
+  ✓  137 [mobile] › e2e/action-workflow.spec.ts:235:3 › 开局timeout不隐式重试，刷新不重发，草稿和正式状态安全 (13.6s)
+  ✓  138 [mobile] › e2e/action-workflow.spec.ts:257:3 › 关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送 (16.2s)
+  ✓  140 [mobile] › e2e/action-workflow.spec.ts:303:1 › 单行状态跟随三个实际请求，展开收起不重发且自动结算后等待行动 (11.2s)
+  ✓  139 [mobile] › e2e/action-workflow.spec.ts:257:3 › 关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送 (14.1s)
+  ✓  142 [mobile] › e2e/action-workflow.spec.ts:349:1 › 下一条行动绑定冲突显示发送失败，不误报等待行动且不请求模型 (5.8s)
+  ✓  141 [mobile] › e2e/action-workflow.spec.ts:336:1 › 最新阶段失败覆盖旧变量错误，状态栏准确指出World失败 (6.2s)
+  ✓  144 [mobile] › e2e/ai-route-persistence.spec.ts:53:1 › 旧跟随配置没有独立选择时明确留空，不默默使用正文渠道默认模型 (3.6s)
+  ✓  143 [mobile] › e2e/ai-route-persistence.spec.ts:40:1 › 三阶段独立选择在启用跟随、保存和刷新后仍能恢复，不被正文模型覆盖 (9.4s)
+  ✓  145 [mobile] › e2e/ai-route-persistence.spec.ts:60:1 › 未保存关闭与分类切换需要明确放弃；继续编辑保留选择，保存后可直接关闭 (7.3s)
+  ✓  146 [mobile] › e2e/ai-route-persistence.spec.ts:73:1 › Escape、明确放弃和分类切换不会静默保存；密钥编辑同样提示且不出现在配置内 (6.8s)
+  ✓  147 [mobile] › e2e/ai-route-persistence.spec.ts:91:1 › 无效字段及存储失败不清除未保存保护；成功保存后才解除 (7.5s)
+  ✓  148 [mobile] › e2e/ai-route-persistence.spec.ts:106:1 › 恢复后四路真实Mock请求使用各自渠道模型，默认模型及旧配置不变 (7.9s)
+  ✓  149 [mobile] › e2e/ai-route-persistence.spec.ts:123:1 › 保存栏在长路由页面可触达且无横向溢出，窄屏也能保存并恢复选择 (6.6s)
+  ✓  151 [mobile] › e2e/ai-settings.spec.ts:9:1 › 真实浏览器加载原文、校验哈希并组装六种模式，记录模块顺序 (2.9s)
+  ✓  150 [mobile] › e2e/ai-route-persistence.spec.ts:132:1 › 删除独立渠道不会改为跟随，保存的其他渠道和选择不受影响 (6.1s)
+  ✓  153 [mobile] › e2e/ai-settings.spec.ts:191:1 › 连接授权错误不展示服务详情，网络错误不误报密钥，取消请求有效 (5.3s)
+  ✓  154 [mobile] › e2e/ai-settings.spec.ts:230:1 › P6完善：输出档位映射、旧渠道值与渠道隔离，新渠道默认8K (7.9s)
+  ✓  152 [mobile] › e2e/ai-settings.spec.ts:86:1 › AI 多渠道、原生模型列表与连接测试、路由和会话凭证恢复 (16.9s)
+  ✓  156 [mobile] › e2e/city-night-followups.spec.ts:46:1 › 四项修复：07:50 与完整状态/资金、双端真实 React 截图 (4.4s)
+  -  157 [mobile] › e2e/city-night-followups.spec.ts:67:1 › PC 长段落/异常长字符串完整换行，左栏独立滚动且资金装备与底部按钮可达
+  -  158 [mobile] › e2e/city-night-followups.spec.ts:102:1 › PC 普通/百万/亿级/极大金额随容器调整字号，下限后排版换行不省略
+  -  159 [mobile] › e2e/city-night-followups.spec.ts:126:1 › 天气环境详情：悬停跨入可滚动、移出关闭，键盘焦点与 Esc，无数据修改
+  ✓  155 [mobile] › e2e/ai-settings.spec.ts:260:1 › P6完善：自定义合法范围与4K/8K/16K往返，只保存玩家明确设置 (8.8s)
+  ✓  161 [mobile] › e2e/game-window.spec.ts:64:1 › 全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入 (4.8s)
+  ✓  160 [mobile] › e2e/city-night-followups.spec.ts:147:1 › 触控点击详情、再次点击/关闭/外部点击收起，窄屏与缩放视口不溢出 (10.8s)
+  ✓  162 [mobile] › e2e/game-window.spec.ts:75:1 › 顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置 (5.5s)
+  ✓  163 [mobile] › e2e/game-window.spec.ts:93:1 › 滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回 (5.1s)
+  ✓  164 [mobile] › e2e/game-window.spec.ts:114:1 › 默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态 (4.7s)
+  ✓  165 [mobile] › e2e/game-window.spec.ts:126:1 › 已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义 (6.4s)
+  ✓  166 [mobile] › e2e/game-window.spec.ts:135:1 › 生成中折叠不打断；取消和错误不被隐藏，失败重试成功保留正式状态 (10.6s)
+  ✓  167 [mobile] › e2e/game-window.spec.ts:204:1 › 缩短视口及模拟软键盘VisualViewport不遮住输入和发送 (7.5s)
+  ✓  169 [mobile] › e2e/game-window.spec.ts:243:1 › 工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间 (5.8s)
+  ✓  168 [mobile] › e2e/game-window.spec.ts:225:1 › 设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置 (11.5s)
+  ✓  170 [mobile] › e2e/memory-maintenance.spec.ts:72:1 › 选择并恢复独立模型；手动整理、原文来源及真实memory快照/Token统计 (19.9s)
+  ✓  171 [mobile] › e2e/memory-maintenance.spec.ts:138:1 › 跨标签真实Web Lock阻止第二次付费；取消/迟到和服务失败保留全部来源 (19.0s)
+  ✓  172 [mobile] › e2e/memory-maintenance.spec.ts:171:1 › 无跨标签互斥时手动整理明确拒绝，刷新不触发付费 (9.4s)
+  ✓  173 [mobile] › e2e/memory-maintenance.spec.ts:182:1 › 阈值以下设置保存和刷新不请求，正式提交触发后不阻断下一轮 (18.5s)
+  ✓  174 [mobile] › e2e/memory-maintenance.spec.ts:228:1 › 设置关闭重开仍是同一维护任务；阅读零请求，取消迟到不写回，手动重试仅一批 (13.7s)
+  ✓  176 [mobile] › e2e/memory-maintenance.spec.ts:304:1 › 正在原子保存时设置重开保持保存状态，不虚报可取消或重复发请求 (10.5s)
+  ✓  175 [mobile] › e2e/memory-maintenance.spec.ts:265:1 › 维护期间切档隔离旧任务，迟到结果不修改新档或原档，仅新授权可整理新档 (13.6s)
+  ✓  178 [mobile] › e2e/memory-summary-v2.spec.ts:37:1 › 立即NPC总结明确选择目标，18条可按15条处理；原文与正式revision不变 (8.2s)
+  ✓  177 [mobile] › e2e/memory-summary-v2.spec.ts:5:1 › 独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入 (14.3s)
+  ✓  180 [mobile] › e2e/memory-summary-v2.spec.ts:75:99 › 短期 → 中期失败暂停独立持久化，不关闭另外两类 (7.1s)
+  ✓  179 [mobile] › e2e/memory-summary-v2.spec.ts:49:1 › NPC先失败也不阻断公共两类，失败重试仅一次；暂停只保存本类关闭 (14.5s)
+  ✓  181 [mobile] › e2e/memory-summary-v2.spec.ts:75:99 › 中期 → 长期失败暂停独立持久化，不关闭另外两类 (6.5s)
+  ✓  182 [mobile] › e2e/memory-summary-v2.spec.ts:85:1 › 三类同时失败只顺序显示一个弹窗，各自暂停且刷新不重试 (8.0s)
+  ✓  183 [mobile] › e2e/memory-summary-v2.spec.ts:101:1 › 旧默认关闭安全延续、逐项开启与刷新持久化，设置页不再显示冗余说明 (8.5s)
+  ✓  184 [mobile] › e2e/memory-summary-v2.spec.ts:129:1 › 自动总结关闭时仍可手动总结，刷新后自动保持关闭且没有额外自动调用 (7.3s)
+  ✓  185 [mobile] › e2e/memory-summary-v2.spec.ts:151:1 › 旧版 enabled=false 即使 automatic=true 也只关闭自动，不禁用手动操作 (6.0s)
+  ✓  186 [mobile] › e2e/memory.spec.ts:73:1 › 旧M4七十回合档案：搜索约定、读取来源原文、分页和窗口显示，不泄露或改写 (9.0s)
+  ✓  188 [mobile] › e2e/night-seal.spec.ts:7:1 › 夜幕金印：真实已结算存档、四导航、阅读与视觉验收 (11.5s)
+  ✓  187 [mobile] › e2e/memory.spec.ts:110:1 › 真实正文请求使用设置N=1/10/20，并独立召回第3回合；查看记忆不中断生成 (19.9s)
+  ✓  189 [mobile] › e2e/night-seal.spec.ts:91:1 › 长姓名、巨大金额及短横屏保持阅读与真实资料可访问 (7.4s)
+  ✓  190 [mobile] › e2e/story-runtime.spec.ts:166:1 › 真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计 (7.5s)
+  ✓  191 [mobile] › e2e/story-runtime.spec.ts:239:1 › 有效正文草稿没有主动重生成入口，刷新后保持原稿且不请求模型 (4.8s)
+  ✓  193 [mobile] › e2e/story-runtime.spec.ts:264:1 › 已有 regular 草稿生成正确模式，没有草稿时不自动创建下一回合 (3.7s)
+  ✓  192 [mobile] › e2e/story-runtime.spec.ts:248:1 › 快速重复点击、取消重试、迟到请求与切档隔离、刷新保留空草稿 (6.8s)
+  ✓  195 [mobile] › e2e/story-runtime.spec.ts:317:1 › P6：原生公开内容与项目规划只主动查看，正文/存档隔离，刷新清除临时资料 (4.2s)
+  ✓  194 [mobile] › e2e/story-runtime.spec.ts:287:1 › 长篇流式阅读自动跟随、手动上滚暂停、恢复跟随，移动端无横向溢出 (5.8s)
+  ✓  196 [mobile] › e2e/story-runtime.spec.ts:338:1 › P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功 (3.8s)
+  ✓  197 [mobile] › e2e/story-runtime.spec.ts:350:1 › Story精确诊断：1268/1500字符直接可见，可复制单条，原文仍可查看且不自动重试 (5.3s)
+  ✓  198 [mobile] › e2e/story-runtime.spec.ts:377:1 › Story标签与变量规划诊断分别定位；只有玩家明确重试才再次请求，合法原协议仍成功 (4.1s)
+  ✓  199 [mobile] › e2e/story-runtime.spec.ts:399:1 › Story后置凭证拒绝同步到原文面板，诊断与原文均不泄露密钥 (3.5s)
+  ✓  200 [mobile] › e2e/story-runtime.spec.ts:411:1 › Story保存版本冲突保留原DataError处理，原文面板显示具体失败而非校验成功 (3.6s)
+  ✓  201 [mobile] › e2e/time-preflight.spec.ts:78:40 › 长睡眠interrupt=false：真实三阶段、候选时间、正式结算及刷新 (6.5s)
+  ✓  202 [mobile] › e2e/time-preflight.spec.ts:78:40 › 长睡眠interrupt=true：真实三阶段、候选时间、正式结算及刷新 (6.0s)
+  ✓  204 [mobile] › e2e/time-preflight.spec.ts:103:1 › 取消和迟到不推进时间；关闭阶段只保留正文草稿 (5.2s)
+  ✓  203 [mobile] › e2e/time-preflight.spec.ts:91:1 › 变量失败与刷新恢复保留正文和候选，不提供主动Roll也不推进正式时间 (8.4s)
+  ✓  205 [mobile] › e2e/time-preflight.spec.ts:115:56 › 最新时间规则drink：无时间词估时或玩家明确的只读过去视角，真实正式提交 (6.5s)
+  ✓  206 [mobile] › e2e/time-preflight.spec.ts:115:56 › 最新时间规则chat：无时间词估时或玩家明确的只读过去视角，真实正式提交 (6.6s)
+  ✓  208 [mobile] › e2e/time-preflight.spec.ts:130:57 › 合法零耗时可正式提交，不制造固定步长：喝一口可乐 (5.6s)
+  ✓  207 [mobile] › e2e/time-preflight.spec.ts:115:56 › 最新时间规则past：无时间词估时或玩家明确的只读过去视角，真实正式提交 (8.3s)
+  ✓  209 [mobile] › e2e/time-preflight.spec.ts:130:57 › 合法零耗时可正式提交，不制造固定步长：切换到陈宁的视角，描述他现在正在做的事情 (6.3s)
+  ✓  210 [mobile] › e2e/turn-undo.spec.ts:62:1 › 连续五次撤回、刷新恢复、回填覆盖和无Redo，全程零模型请求 (6.4s)
+  ✓  212 [mobile] › e2e/turn-undo.spec.ts:96:1 › 取消撤回不修改任何数据；部分草稿需明确确认，旧候选退出 (3.5s)
+  ✓  211 [mobile] › e2e/turn-undo.spec.ts:79:1 › 撤回后编辑发送才开始三阶段，失败可恢复且只保存新分支 (6.2s)
+  ✓  213 [mobile] › e2e/turn-undo.spec.ts:111:1 › 跨标签页旧确认不能多退一层；刷新后重新核对剩余恢复点 (5.5s)
+  ✓  214 [mobile] › e2e/turn-undo.spec.ts:123:1 › 开局不撤回，生成期间按钮禁用；取消后可以撤回且没有额外请求 (3.9s)
+  ✓  216 [mobile] › e2e/turn-undo.spec.ts:147:1 › 快照写满时正式回合可保存，明确提示不可撤回，刷新不重复扣款 (4.5s)
+  ✓  215 [mobile] › e2e/turn-undo.spec.ts:136:1 › 后台总结在撤回时取消，刷新后不自动收费或复活旧总结 (6.0s)
+  ✓  218 [mobile] › e2e/turn-undo.spec.ts:179:1 › 无 Web Locks 时双标签同时撤回仍由 IndexedDB CAS 保证仅一次成功 (2.7s)
+  ✓  217 [mobile] › e2e/turn-undo.spec.ts:164:1 › 另一个标签仍在生成时撤回明确拒绝，取消后重新读取才可撤回 (5.7s)
+  ✓  219 [mobile] › e2e/variable-runtime.spec.ts:116:1 › 变量正常生成、真实独立路由/模块/usage，完整候选主动查看，刷新仍保留候选且正式资金不变 (4.7s)
+  ✓  220 [mobile] › e2e/variable-runtime.spec.ts:166:1 › 正文未完成不能运行；双阶段关闭后仅补算变量，正文不 Roll，世界不执行 (4.1s)
+  ✓  222 [mobile] › e2e/variable-runtime.spec.ts:259:1 › 角色对白后换行的客观消费可保存候选，不改变正式资金 (2.7s)
+  ✓  221 [mobile] › e2e/variable-runtime.spec.ts:206:1 › 错误 JSON 安全失败可重试；取消、重复点击和切档迟到不串档 (5.6s)
+  ✓  223 [mobile] › e2e/variable-runtime.spec.ts:276:1 › 场景引用不一致整批失败；合法离场可恢复为未结算候选 (2.9s)
+  ✓  224 [mobile] › e2e/variable-runtime.spec.ts:328:3 › 小说否定由模型判断；真正非法数据拒绝后可恢复：主角没用现金支付30元吃饭 (3.0s)
+  ✓  225 [mobile] › e2e/variable-runtime.spec.ts:328:3 › 小说否定由模型判断；真正非法数据拒绝后可恢复：不是主角已经用现金支付30元吃饭 (3.0s)
+  ✓  226 [mobile] › e2e/variable-runtime.spec.ts:328:3 › 小说否定由模型判断；真正非法数据拒绝后可恢复：不是同事和主角一起走进社区诊所 (2.9s)
+  ✓  227 [mobile] › e2e/variable-runtime.spec.ts:328:3 › 小说否定由模型判断；真正非法数据拒绝后可恢复：并非同事和主角一起走进社区诊所 (3.0s)
+  ✓  229 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：opening 布局、焦点、候选与原数据 (2.1s)
+  ✓  228 [mobile] › e2e/variable-runtime.spec.ts:389:1 › 正式文本命令映射NPC状态、私人记忆与消费；已启用JSON Mode仍为文本请求，候选不提前结算 (3.8s)
+  ✓  231 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：off 布局、焦点、候选与原数据 (2.2s)
+  ✓  230 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：ready 布局、焦点、候选与原数据 (3.8s)
+  ✓  232 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：error 布局、焦点、候选与原数据 (2.3s)
+  ✓  233 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：settled 布局、焦点、候选与原数据 (2.3s)
+  ✓  234 [mobile] › e2e/workflow-feedback.spec.ts:71:1 › 生成中：浮层关闭不取消请求，显式取消后仍可恢复；reduced motion (3.1s)
+  ✓  235 [mobile] › e2e/workflow-feedback.spec.ts:86:1 › 多个阶段错误完整保留；候选失败重试不重生成已有正文 (3.1s)
+  ✓  237 [mobile] › e2e/workflow-feedback.spec.ts:116:59 › 全局load真实错误路径保留文案和关闭操作 (3.5s)
+  ✓  236 [mobile] › e2e/workflow-feedback.spec.ts:101:1 › 全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式 (5.6s)
+  ✓  238 [mobile] › e2e/workflow-feedback.spec.ts:116:59 › 全局list真实错误路径保留文案和关闭操作 (2.5s)
+  ✓  239 [mobile] › e2e/workflow-feedback.spec.ts:116:59 › 全局selection真实错误路径保留文案和关闭操作 (3.9s)
+  ✓  240 [mobile] › e2e/world-runtime.spec.ts:110:1 › 真实迎检准备文本：无效行动者安全失败，明确恢复后任务及合成事件入候选，正式状态不变 (4.8s)
+  ✓  242 [mobile] › e2e/world-runtime.spec.ts:194:1 › 双开关关闭后只补算世界，无变量时明确预览；不 Roll 正文 (3.5s)
+  ✓  241 [mobile] › e2e/world-runtime.spec.ts:143:1 › 世界生成、补算、只读查看与刷新恢复，真实路由和快照；正式世界不变 (7.8s)
+  ✓  243 [mobile] › e2e/world-runtime.spec.ts:229:1 › 错误输出可重试；取消后新请求不受旧回包影响；世界生成中其他阶段禁止执行 (3.8s)
+  ✓  244 [mobile] › e2e/world-runtime.spec.ts:265:1 › 非法地点与事件预结案拒绝；NPC双任务和合法预计时间可重试保存 (3.5s)
+
+
+  1) [desktop] › e2e/story-runtime.spec.ts:264:1 › 已有 regular 草稿生成正确模式，没有草稿时不自动创建下一回合 ──────────────
+
+    Error: expect(locator).toBeDisabled() failed
+
+    Locator: getByRole('button', { name: '生成开局正文', exact: true })
+    Expected: disabled
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeDisabled" getByRole('button', { name: '生成开局正文', exact: true }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '生成开局正文', exact: true })
+
+
+      281 |   await page.reload(); await openGameTools(page);
+      282 |   await expect(page.getByText(/没有可执行的回合草稿/)).toBeVisible();
+    > 283 |   await expect(page.getByRole('button', { name: '生成开局正文', exact: true })).toBeDisabled();
+          |                                                                           ^
+      284 |   expect((await stored(page)).draft).toBeUndefined();
+      285 |   expect(requests).toHaveLength(1);
+      286 | });
+        at /workspace/workflow-feedback/e2e/story-runtime.spec.ts:283:75
+
+    Error Context: ../../tmp/workflow-verified-e2e/story-runtime-已有-regular-草稿生成正确模式，没有草稿时不自动创建下一回合-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/workflow-verified-e2e/story-runtime-已有-regular-草稿生成正确模式，没有草稿时不自动创建下一回合-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/workflow-verified-e2e/story-runtime-已有-regular-草稿生成正确模式，没有草稿时不自动创建下一回合-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [desktop] › e2e/workflow-feedback.spec.ts:101:1 › 全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式 ──────────────
+
+    Error: locator.uncheck: Clicking the checkbox did not change its state
+    Call log:
+      - waiting for getByRole('checkbox', { name: '变量管理', exact: true })
+        - locator resolved to <input checked type="checkbox" aria-label="变量管理"/>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is not stable
+        - retrying click action
+        - waiting 20ms
+        - waiting for element to be visible, enabled and stable
+        - element is visible, enabled and stable
+        - scrolling into view if needed
+        - done scrolling
+        - performing click action
+        - click action done
+        - waiting for scheduled navigations to finish
+        - navigations have finished
+
+
+      102 |   await seed(page,'settled');
+      103 |   await page.evaluate(async () => { const paths=['/src/services/storage/saveRepository.ts','/src/tests/fixtures/turn.ts']; const [{SaveRepository},{completeDraft,elapsedVariables}]=await Promise.all(paths.map(p=>import(p))); const repo=await SaveRepository.open(); try { const waiting=await repo.loadDraft('save-a'); await repo.bindTurnAction(waiting,'继续观察',true,true); const draft=await completeDraft(repo,{variables:await elapsedVariables(repo,'经过十分钟，主角完成用餐。',600)}); await repo.commitTurn({draft,nextAction:'',useVariableStage:true,useWorldStage:true}); } finally {repo.close();} });
+    > 104 |   await page.reload();await openWorkflow(page);const before=await stored(page);
+          |                                                                                ^
+      105 |   await page.evaluate(async()=>{const p='/src/ui/settings/model.ts',{settingsKey}=await import(p),original=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key===settingsKey)throw new Error('mock-storage');return original.call(this,key,value);};});
+      106 |   const box=await page.getByLabel('你的行动',{exact:true}).boundingBox();await page.getByRole('checkbox',{name:'变量管理',exact:true}).uncheck();
+      107 |   const notice=page.locator('.app-error');await expect(notice).toContainText('运行偏好保存失败，请检查浏览器存储权限。');
+        at /workspace/workflow-feedback/e2e/workflow-feedback.spec.ts:104:128
+
+    Error Context: ../../tmp/workflow-verified-e2e/workflow-feedback-全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/workflow-verified-e2e/workflow-feedback-全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/workflow-verified-e2e/workflow-feedback-全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [desktop] › e2e/story-runtime.spec.ts:264:1 › 已有 regular 草稿生成正确模式，没有草稿时不自动创建下一回合 ───────────────
+    [desktop] › e2e/workflow-feedback.spec.ts:101:1 › 全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式 ───────────────
+  4 skipped
+  238 passed (15.6m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

@@ -1,3 +1,4 @@
+import { openLibrary } from './helpers/home';
 import { openWorldArchive, openSettings } from './helpers/gameLayout';
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
@@ -45,7 +46,7 @@ async function seed(page: Page) {
     new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-memory-only');
   });
   await page.reload(); await openGameTools(page);
-  await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+  await openLibrary(page); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
 }
 async function load(page: Page) {
   const state: unknown = await page.evaluate(async () => {
@@ -121,11 +122,11 @@ test('真实正文请求使用设置N=1/10/20，并独立召回第3回合；查�
     await route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content: output } }] })}\n\ndata: [DONE]\n\n` });
   });
   await seed(page);
-  const before = await load(page);
+  let before = await load(page);
   for (const size of [1, 10, 20]) {
-    if (size !== 1) await windowSize(page, size);
+    if (size !== 1) { await seed(page); await windowSize(page, size); before = await load(page); }
     const count = contexts.length;
-    await page.getByRole('button', { name: size === 1 ? '生成本回合正文' : '重新 Roll', exact: true }).click();
+    await page.getByRole('button', { name: '生成本回合正文', exact: true }).click();
     await expect.poll(() => contexts.length).toBe(count + 1);
     const memory = record(contexts.at(-1)!.MEMORY_CONTEXT);
     expect(memory.immediateWindowSize).toBe(size);
@@ -145,8 +146,8 @@ test('真实正文请求使用设置N=1/10/20，并独立召回第3回合；查�
     await openGameTools(page);
     release?.();
     await expect(page.getByTestId('story-reader')).toContainText('主角阅读先前留下的约定');
-    await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toBeEnabled();
-    if (size === 1) await page.getByText('重试与变更详情', { exact: true }).click();
+    await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toHaveCount(0);
+    await page.getByText('重试与变更详情', { exact: true }).click();
     await expect(page.getByTestId('summary-length')).toBeVisible();
     await expect(page.getByTestId('summary-length')).toContainText('4 汉字');
     await expect(page.getByTestId('summary-length')).toContainText('可继续');
