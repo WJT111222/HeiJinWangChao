@@ -1,0 +1,350 @@
+{
+  "stats": {
+    "startTime": "2026-11-11T22:38:33.654Z",
+    "duration": 143718.096,
+    "expected": 25,
+    "skipped": 1,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "title": "四城轮换、手动重置与reduced-motion：无演示功能或外部调用",
+      "file": "home-cover.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7028,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "真实存档与封面/存档馆、键盘、继续和创角入口保持",
+      "file": "home-cover.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 17496,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "设计稿对应的双端真实页面截图、空态及全部真实信息入口",
+      "file": "home-cover.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 27218,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "四城轮换、手动重置与reduced-motion：无演示功能或外部调用",
+      "file": "home-cover.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 4451,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "真实存档与封面/存档馆、键盘、继续和创角入口保持",
+      "file": "home-cover.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 10934,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "设计稿对应的双端真实页面截图、空态及全部真实信息入口",
+      "file": "home-cover.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 10436,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "桌面首页常见窗口一屏可见：导航、行动、剪影与存档底栏",
+      "file": "home-viewport.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 20191,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "存档较多时只滚动桌面右侧列表，底栏和开始按钮仍可用",
+      "file": "home-viewport.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 10203,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "极矮桌面窗口保留正常滚动，操作入口不会被裁剪",
+      "file": "home-viewport.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6237,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "桌面首页常见窗口一屏可见：导航、行动、剪影与存档底栏",
+      "file": "home-viewport.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7926,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "存档较多时只滚动桌面右侧列表，底栏和开始按钮仍可用",
+      "file": "home-viewport.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 4973,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "极矮桌面窗口保留正常滚动，操作入口不会被裁剪",
+      "file": "home-viewport.spec.ts",
+      "project": "mobile",
+      "status": "skipped",
+      "results": [
+        {
+          "status": "skipped",
+          "duration": 364,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "混合存档列表独立展示，坏记录不触发全局错误，正常存档都能进入且刷新保持",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 21187,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "下载 JSON 完整保留坏记录、草稿和回执，读取下载不改库",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 8158,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "二次确认取消不删数据，确认后只删选中的三类记录，刷新不再出现",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 14329,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "只有坏记录时不显示空档状态、不能继续游戏，正常删除流程仍可用",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 10138,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "存储整体不可用明确报错，关闭提示不会重复弹回或伪装成没有存档",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6477,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "列表请求失败明确提示，手动刷新恢复而不是把数据库错误当作坏记录",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 8337,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "导出和删除失败分别可定位且保留全部记录；重试删除成功后清除错误",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 9020,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "混合存档列表独立展示，坏记录不触发全局错误，正常存档都能进入且刷新保持",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 18391,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "下载 JSON 完整保留坏记录、草稿和回执，读取下载不改库",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7216,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "二次确认取消不删数据，确认后只删选中的三类记录，刷新不再出现",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 13900,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "只有坏记录时不显示空档状态、不能继续游戏，正常删除流程仍可用",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 8788,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "存储整体不可用明确报错，关闭提示不会重复弹回或伪装成没有存档",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 5277,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "列表请求失败明确提示，手动刷新恢复而不是把数据库错误当作坏记录",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 9214,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "导出和删除失败分别可定位且保留全部记录；重试删除成功后清除错误",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 9096,
+          "errors": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "stats": {
+    "startTime": "2026-11-11T22:29:34.120Z",
+    "duration": 31902.804999999997,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "title": "四城正式React动画场景截图",
+      "file": "cities.spec.ts",
+      "project": "",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 26182,
+          "errors": []
+        }
+      ]
+    }
+  ]
+}

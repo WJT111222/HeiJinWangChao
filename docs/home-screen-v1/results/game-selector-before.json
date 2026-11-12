@@ -1,0 +1,588 @@
+{
+  "stats": {
+    "startTime": "2026-11-11T22:26:28.855Z",
+    "duration": 238220.04,
+    "expected": 41,
+    "skipped": 1,
+    "unexpected": 2,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "title": "全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入",
+      "file": "game-window.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 8013,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置",
+      "file": "game-window.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 8208,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回",
+      "file": "game-window.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6892,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态",
+      "file": "game-window.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6733,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义",
+      "file": "game-window.spec.ts",
+      "project": "desktop",
+      "status": "unexpected",
+      "results": [
+        {
+          "status": "failed",
+          "duration": 8328,
+          "errors": [
+            "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.version')\nExpected: \u001b[32m\"V1.0\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveText\" locator('.version') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.version')\u001b[22m\n\n\n  125 |\n  126 | test('已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义', async ({ page }) => {\n> 127 |   await page.goto('/'); await expect(page.locator('.version')).toHaveText('V1.0');\n      |                                                                ^\n  128 |   const before = await seed(page, 'complete');\n  129 |   await expect(page.locator('.version')).toHaveText('V1.0'); await expect(page.locator('.app-header')).not.toContainText('M5-P3');\n  130 |   await expect(page.locator('.workflow summary').first()).toContainText('候选已完成');\n    at /workspace/home-screen-v1/e2e/game-window.spec.ts:127:64"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "生成中折叠不打断；取消和错误不被隐藏，Roll成功保留正式状态",
+      "file": "game-window.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 11919,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "缩短视口及模拟软键盘VisualViewport不遮住输入和发送",
+      "file": "game-window.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7432,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置",
+      "file": "game-window.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 11092,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间",
+      "file": "game-window.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6795,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入",
+      "file": "game-window.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7827,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置",
+      "file": "game-window.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6847,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回",
+      "file": "game-window.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6691,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态",
+      "file": "game-window.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6559,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义",
+      "file": "game-window.spec.ts",
+      "project": "mobile",
+      "status": "unexpected",
+      "results": [
+        {
+          "status": "failed",
+          "duration": 8059,
+          "errors": [
+            "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.version')\nExpected: \u001b[32m\"V1.0\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveText\" locator('.version') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.version')\u001b[22m\n\n\n  125 |\n  126 | test('已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义', async ({ page }) => {\n> 127 |   await page.goto('/'); await expect(page.locator('.version, .home-experience .ver')).toHaveText('V1.0');\n      |                                                                ^\n  128 |   const before = await seed(page, 'complete');\n  129 |   await expect(page.locator('.version, .home-experience .ver')).toHaveText('V1.0'); await expect(page.locator('.app-header')).not.toContainText('M5-P3');\n  130 |   await expect(page.locator('.workflow summary').first()).toContainText('候选已完成');\n    at /workspace/home-screen-v1/e2e/game-window.spec.ts:127:64"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "生成中折叠不打断；取消和错误不被隐藏，Roll成功保留正式状态",
+      "file": "game-window.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 9263,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "缩短视口及模拟软键盘VisualViewport不遮住输入和发送",
+      "file": "game-window.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7392,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置",
+      "file": "game-window.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 11264,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间",
+      "file": "game-window.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7292,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "四城轮换、手动重置与reduced-motion：无演示功能或外部调用",
+      "file": "home-cover.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 5877,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "真实存档与封面/存档馆、键盘、继续和创角入口保持",
+      "file": "home-cover.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 14399,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "设计稿对应的双端真实页面截图、空态及全部真实信息入口",
+      "file": "home-cover.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 23072,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "四城轮换、手动重置与reduced-motion：无演示功能或外部调用",
+      "file": "home-cover.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 5073,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "真实存档与封面/存档馆、键盘、继续和创角入口保持",
+      "file": "home-cover.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 12037,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "设计稿对应的双端真实页面截图、空态及全部真实信息入口",
+      "file": "home-cover.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 13268,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "桌面首页常见窗口一屏可见：导航、行动、剪影与存档底栏",
+      "file": "home-viewport.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 11664,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "存档较多时只滚动桌面右侧列表，底栏和开始按钮仍可用",
+      "file": "home-viewport.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 9793,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "极矮桌面窗口保留正常滚动，操作入口不会被裁剪",
+      "file": "home-viewport.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 5067,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "桌面首页常见窗口一屏可见：导航、行动、剪影与存档底栏",
+      "file": "home-viewport.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6900,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "存档较多时只滚动桌面右侧列表，底栏和开始按钮仍可用",
+      "file": "home-viewport.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 8728,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "极矮桌面窗口保留正常滚动，操作入口不会被裁剪",
+      "file": "home-viewport.spec.ts",
+      "project": "mobile",
+      "status": "skipped",
+      "results": [
+        {
+          "status": "skipped",
+          "duration": 374,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "混合存档列表独立展示，坏记录不触发全局错误，正常存档都能进入且刷新保持",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 20859,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "下载 JSON 完整保留坏记录、草稿和回执，读取下载不改库",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 8480,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "二次确认取消不删数据，确认后只删选中的三类记录，刷新不再出现",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 16625,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "只有坏记录时不显示空档状态、不能继续游戏，正常删除流程仍可用",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 11994,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "存储整体不可用明确报错，关闭提示不会重复弹回或伪装成没有存档",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7513,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "列表请求失败明确提示，手动刷新恢复而不是把数据库错误当作坏记录",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 10296,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "导出和删除失败分别可定位且保留全部记录；重试删除成功后清除错误",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 10955,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "混合存档列表独立展示，坏记录不触发全局错误，正常存档都能进入且刷新保持",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 29391,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "下载 JSON 完整保留坏记录、草稿和回执，读取下载不改库",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 11100,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "二次确认取消不删数据，确认后只删选中的三类记录，刷新不再出现",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 22519,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "只有坏记录时不显示空档状态、不能继续游戏，正常删除流程仍可用",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 15096,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "存储整体不可用明确报错，关闭提示不会重复弹回或伪装成没有存档",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7851,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "列表请求失败明确提示，手动刷新恢复而不是把数据库错误当作坏记录",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 10264,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "导出和删除失败分别可定位且保留全部记录；重试删除成功后清除错误",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 10584,
+          "errors": []
+        }
+      ]
+    }
+  ]
+}

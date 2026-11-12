@@ -1,0 +1,25 @@
+{
+  "stats": {
+    "startTime": "2026-11-11T22:23:46.631Z",
+    "duration": 30338.805,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "title": "四视口HTML设计与真实React逐项几何对照",
+      "file": "compare.spec.ts",
+      "project": "",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 25785,
+          "errors": []
+        }
+      ]
+    }
+  ]
+}

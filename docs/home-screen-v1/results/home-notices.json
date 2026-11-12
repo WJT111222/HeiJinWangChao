@@ -1,0 +1,610 @@
+{
+  "stats": {
+    "startTime": "2026-11-11T22:21:17.870Z",
+    "duration": 226755.953,
+    "expected": 46,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "title": "四城轮换、手动重置与reduced-motion：无演示功能或外部调用",
+      "file": "home-cover.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 5578,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "真实存档与封面/存档馆、键盘、继续和创角入口保持",
+      "file": "home-cover.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 11435,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "设计稿对应的双端真实页面截图、空态及全部真实信息入口",
+      "file": "home-cover.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 16020,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "四城轮换、手动重置与reduced-motion：无演示功能或外部调用",
+      "file": "home-cover.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 4450,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "真实存档与封面/存档馆、键盘、继续和创角入口保持",
+      "file": "home-cover.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7447,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "设计稿对应的双端真实页面截图、空态及全部真实信息入口",
+      "file": "home-cover.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 9618,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "完整定稿实际分段渲染：开头、架空社会声明与开发者落款",
+      "file": "startup-notices.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6463,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复",
+      "file": "startup-notices.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 10275,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "第一步勾选仍显示第二步；共享勾选可撤销且保留其他本地配置",
+      "file": "startup-notices.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 9045,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "第二步勾选当天刷新和新页面均免打扰，次日本地日期恢复",
+      "file": "startup-notices.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 11414,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "首页与设置手动查看只开指定公告；返回保留设置内容和焦点",
+      "file": "startup-notices.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 14937,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "手动查看可以取消已保存免打扰，不自动串联另一个弹窗",
+      "file": "startup-notices.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 10022,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型",
+      "file": "startup-notices.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7201,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "键盘焦点局限于当前弹窗，Escape 按顺序关闭",
+      "file": "startup-notices.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 3672,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "localStorage 不可访问时仍能完成顺序并使用首页",
+      "file": "startup-notices.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6746,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "localStorage setItem 失败时当前复选框与关闭仍可操作",
+      "file": "startup-notices.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 5420,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "localStorage removeItem 失败时当前复选框与关闭仍可操作",
+      "file": "startup-notices.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 5554,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "长内容内部滚动，窄屏关闭和复选框可触达；截图",
+      "file": "startup-notices.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6583,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "完整定稿实际分段渲染：开头、架空社会声明与开发者落款",
+      "file": "startup-notices.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6916,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复",
+      "file": "startup-notices.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 8598,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "第一步勾选仍显示第二步；共享勾选可撤销且保留其他本地配置",
+      "file": "startup-notices.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7199,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "第二步勾选当天刷新和新页面均免打扰，次日本地日期恢复",
+      "file": "startup-notices.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 10437,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "首页与设置手动查看只开指定公告；返回保留设置内容和焦点",
+      "file": "startup-notices.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 12827,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "手动查看可以取消已保存免打扰，不自动串联另一个弹窗",
+      "file": "startup-notices.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 11085,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型",
+      "file": "startup-notices.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 9815,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "键盘焦点局限于当前弹窗，Escape 按顺序关闭",
+      "file": "startup-notices.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6968,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "localStorage 不可访问时仍能完成顺序并使用首页",
+      "file": "startup-notices.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 9199,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "localStorage setItem 失败时当前复选框与关闭仍可操作",
+      "file": "startup-notices.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7509,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "localStorage removeItem 失败时当前复选框与关闭仍可操作",
+      "file": "startup-notices.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7987,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "长内容内部滚动，窄屏关闭和复选框可触达；截图",
+      "file": "startup-notices.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 12983,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "按设备当日保存，跨 UTC 日但本地仍同一天时继续免打扰",
+      "file": "startup-notices.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 8859,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "按设备当日保存，跨 UTC 日但本地仍同一天时继续免打扰",
+      "file": "startup-notices.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 9970,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "混合存档列表独立展示，坏记录不触发全局错误，正常存档都能进入且刷新保持",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 17905,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "下载 JSON 完整保留坏记录、草稿和回执，读取下载不改库",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 8196,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "二次确认取消不删数据，确认后只删选中的三类记录，刷新不再出现",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 15855,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "只有坏记录时不显示空档状态、不能继续游戏，正常删除流程仍可用",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 10992,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "存储整体不可用明确报错，关闭提示不会重复弹回或伪装成没有存档",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6094,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "列表请求失败明确提示，手动刷新恢复而不是把数据库错误当作坏记录",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7564,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "导出和删除失败分别可定位且保留全部记录；重试删除成功后清除错误",
+      "file": "unreadable-saves.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 9234,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "混合存档列表独立展示，坏记录不触发全局错误，正常存档都能进入且刷新保持",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 16357,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "下载 JSON 完整保留坏记录、草稿和回执，读取下载不改库",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 5994,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "二次确认取消不删数据，确认后只删选中的三类记录，刷新不再出现",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 17783,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "只有坏记录时不显示空档状态、不能继续游戏，正常删除流程仍可用",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 15216,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "存储整体不可用明确报错，关闭提示不会重复弹回或伪装成没有存档",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 8715,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "列表请求失败明确提示，手动刷新恢复而不是把数据库错误当作坏记录",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 10244,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "导出和删除失败分别可定位且保留全部记录；重试删除成功后清除错误",
+      "file": "unreadable-saves.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 8242,
+          "errors": []
+        }
+      ]
+    }
+  ]
+}

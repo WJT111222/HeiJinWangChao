@@ -1,0 +1,99 @@
+{
+  "stats": {
+    "startTime": "2026-11-11T22:18:33.979Z",
+    "duration": 101758.702,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 3,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "title": "四城轮换、手动重置与reduced-motion：无演示功能或外部调用",
+      "file": "home-cover.spec.ts",
+      "project": "desktop",
+      "status": "unexpected",
+      "results": [
+        {
+          "status": "timedOut",
+          "duration": 31689,
+          "errors": [
+            "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+            "Error: locator.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '哈尔滨', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button aria-pressed=\"false\">哈尔滨</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <dialog open=\"\" aria-labelledby=\"_r_0_\" class=\"modal notice-modal\">…</dialog> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <dialog open=\"\" aria-labelledby=\"_r_0_\" class=\"modal notice-modal\">…</dialog> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    12 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <dialog open=\"\" aria-labelledby=\"_r_0_\" class=\"modal notice-modal\">…</dialog> intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\n\n   7 |   await expect(page.locator('.home-experience')).toHaveAttribute('data-city','cq');\n   8 |   await page.clock.fastForward(7000);await expect(page.locator('.home-experience')).toHaveAttribute('data-city','sh');\n>  9 |   await page.getByRole('button',{name:'哈尔滨',exact:true}).click();await expect(page.locator('.home-experience')).toHaveAttribute('data-city','hrb');\n     |                                                          ^\n  10 |   await page.clock.runFor(16);await page.clock.fastForward(6000);await expect(page.locator('.home-experience')).toHaveAttribute('data-city','hrb');\n  11 |   await page.clock.fastForward(1000);await expect(page.locator('.home-experience')).toHaveAttribute('data-city','gz');\n  12 |   await page.emulateMedia({reducedMotion:'reduce'});await page.clock.fastForward(28000);\n    at /workspace/home-screen-v1/e2e/home-cover.spec.ts:9:58"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "真实存档与封面/存档馆、键盘、继续和创角入口保持",
+      "file": "home-cover.spec.ts",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 22390,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "设计稿对应的双端真实页面截图、空态及全部真实信息入口",
+      "file": "home-cover.spec.ts",
+      "project": "desktop",
+      "status": "unexpected",
+      "results": [
+        {
+          "status": "timedOut",
+          "duration": 32522,
+          "errors": [
+            "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+            "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog')\nExpected: visible\nReceived: undefined\n\n\n  48 |  }\n  49 |  for(const name of ['王朝公告','游玩须知与免责声明']){\n> 50 |   await page.getByRole('button',{name,exact:true}).click();await expect(page.getByRole('dialog')).toBeVisible();await page.keyboard.press('Escape');\n     |                                                                                                   ^\n  51 |  }\n  52 |  await page.locator('.topbar').getByRole('button',{name:'设置',exact:true}).click();await expect(page.getByRole('dialog',{name:'设置',exact:true})).toBeVisible();\n  53 | });\n    at /workspace/home-screen-v1/e2e/home-cover.spec.ts:50:99"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "四城轮换、手动重置与reduced-motion：无演示功能或外部调用",
+      "file": "home-cover.spec.ts",
+      "project": "mobile",
+      "status": "unexpected",
+      "results": [
+        {
+          "status": "timedOut",
+          "duration": 32319,
+          "errors": [
+            "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+            "Error: locator.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '哈尔滨', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button aria-pressed=\"false\">哈尔滨</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <footer class=\"notice-footer\">…</footer> from <dialog open=\"\" aria-labelledby=\"_r_0_\" class=\"modal notice-modal\">…</dialog> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <footer class=\"notice-footer\">…</footer> from <dialog open=\"\" aria-labelledby=\"_r_0_\" class=\"modal notice-modal\">…</dialog> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    20 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <footer class=\"notice-footer\">…</footer> from <dialog open=\"\" aria-labelledby=\"_r_0_\" class=\"modal notice-modal\">…</dialog> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\n\n   7 |   await expect(page.locator('.home-experience')).toHaveAttribute('data-city','cq');\n   8 |   await page.clock.fastForward(7000);await expect(page.locator('.home-experience')).toHaveAttribute('data-city','sh');\n>  9 |   await page.getByRole('button',{name:'哈尔滨',exact:true}).click();await expect(page.locator('.home-experience')).toHaveAttribute('data-city','hrb');\n     |                                                          ^\n  10 |   await page.clock.runFor(16);await page.clock.fastForward(6000);await expect(page.locator('.home-experience')).toHaveAttribute('data-city','hrb');\n  11 |   await page.clock.fastForward(1000);await expect(page.locator('.home-experience')).toHaveAttribute('data-city','gz');\n  12 |   await page.emulateMedia({reducedMotion:'reduce'});await page.clock.fastForward(28000);\n    at /workspace/home-screen-v1/e2e/home-cover.spec.ts:9:58"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "真实存档与封面/存档馆、键盘、继续和创角入口保持",
+      "file": "home-cover.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 23589,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "设计稿对应的双端真实页面截图、空态及全部真实信息入口",
+      "file": "home-cover.spec.ts",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 21182,
+          "errors": []
+        }
+      ]
+    }
+  ]
+}
