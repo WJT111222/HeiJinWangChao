@@ -1,0 +1,3 @@
+import {defineConfig} from '/workspace/desktop-npc-cabinet/node_modules/@playwright/test/index.mjs';
+import base from '/workspace/desktop-npc-cabinet/playwright.config.ts';
+export default defineConfig({...base,testDir:'/workspace/desktop-npc-cabinet/e2e',timeout:60000,use:{...base.use,baseURL:'http://127.0.0.1:5183'},webServer:{command:'npm run dev -- --host 127.0.0.1 --port 5183 --strictPort',cwd:'/workspace/desktop-npc-cabinet',url:'http://127.0.0.1:5183',reuseExistingServer:true}});

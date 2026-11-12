@@ -1,0 +1,1887 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>黑金王朝 · 世界资料面板设计稿 · 全部 6 步</title>
+<style>
+:root{
+  --font-title:'Noto Serif SC','Noto Serif CJK SC','Source Han Serif SC','Songti SC','STSong',serif;
+  --font-body:'Noto Sans SC','Noto Sans CJK SC','PingFang SC','Microsoft YaHei',sans-serif;
+  --font-mono:'IBM Plex Mono','SFMono-Regular',Consolas,'Liberation Mono',monospace;
+  --bg:#08090a;--text:#ECE7DA;--prose:#DCD6C8;--muted:#A3A396;--dim:#77796f;
+  --gold:#C9A961;--gold-hi:#E8D196;--gold-lo:#7d6a3e;
+  --line:#ffffff14;--line-2:#ffffff22;--warn:#C26A4A;--warn-text:#E6A18A;--ok:#7DB49A;
+  --glass:rgba(11,13,13,.72);--glass-2:rgba(14,16,16,.86);
+  --tint:#7FA7A0;
+  /* time of day (set by data-time) */
+  --sky-1:#06080a;--sky-2:#0d1414;--sky-3:#141c1b;--lights:1;--haze:.0;
+  --ease:cubic-bezier(.22,.7,.2,1);
+  --left:clamp(232px,17vw,280px);--dock:76px;--read:1120px;--bar:76px;
+  color-scheme:dark;
+}
+/* ---- 城市底色：四城色相 ---- */
+[data-city=cq]{--tint:#7FA7A0}
+[data-city=sh]{--tint:#8E9BD8}
+[data-city=hrb]{--tint:#A9C3D8}
+[data-city=gz]{--tint:#D08A6A}
+[data-city=other]{--tint:#7FA7A0}
+/* ---- 时间光：由 worldClock 小时推导 ---- */
+[data-time=dawn]   {--sky-1:#0c1018;--sky-2:#2a2530;--sky-3:#5a3c34;--lights:.45;--haze:.10}
+[data-time=day]    {--sky-1:#18222a;--sky-2:#26323a;--sky-3:#3a4549;--lights:.12;--haze:.16}
+[data-time=dusk]   {--sky-1:#0e0d16;--sky-2:#2c1e26;--sky-3:#6a3a26;--lights:.8;--haze:.08}
+[data-time=night]  {--sky-1:#06080a;--sky-2:#0d1414;--sky-3:#141c1b;--lights:1;--haze:0}
+[data-time=late]   {--sky-1:#040506;--sky-2:#080b0c;--sky-3:#0c1111;--lights:.42;--haze:0}
+
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);line-height:1.7;-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer;background:transparent;border:1px solid var(--line-2);border-radius:6px;padding:.5rem .9rem;transition:background .2s,border-color .2s,color .2s,transform .15s}
+button:hover:not(:disabled){background:#ffffff0a;border-color:#ffffff38}
+button:active:not(:disabled){transform:translateY(1px)}
+button:disabled{opacity:.42;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+h1,h2,h3{font-family:var(--font-title);font-weight:600;margin:0;line-height:1.3}
+p{margin:0}
+.eyebrow{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.28em;color:var(--gold);text-transform:uppercase}
+.seal{display:inline-grid;place-items:center;flex:none;font-family:var(--font-title);color:var(--gold-hi);border:1px solid var(--gold-lo);background:linear-gradient(145deg,#c9a96126,#c9a96108);border-radius:3px;box-shadow:inset 0 0 0 2px #0009,inset 0 0 0 3px #c9a96130}
+.tag{display:inline-flex;align-items:center;gap:.35rem;font-size:.7rem;padding:.08rem .55rem;border:1px solid var(--line-2);border-radius:3px;color:var(--muted);white-space:nowrap}
+
+/* =========================================================
+   1. 氛围层（固定在最底层，所有面板为半透明玻璃，城市透出来）
+   ========================================================= */
+.atmo{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;
+  background:
+    radial-gradient(55% 45% at 82% 105%,color-mix(in srgb,var(--tint) 28%,transparent),transparent 70%),
+    radial-gradient(45% 40% at 18% 100%,color-mix(in srgb,var(--tint) 14%,transparent),transparent 70%),
+    linear-gradient(180deg,var(--sky-1) 0%,var(--sky-2) 58%,var(--sky-3) 100%);
+  transition:background 2s var(--ease)}
+.atmo::before{content:'';position:absolute;inset:0;background:#c9d4d8;opacity:var(--haze);mix-blend-mode:soft-light;transition:opacity 2s}
+.atmo .skyline{position:absolute;left:0;right:0;bottom:0;height:46vh;opacity:.9}
+.atmo .skyline svg{position:absolute;inset:0;width:100%;height:100%}
+.atmo .skyline .w{opacity:var(--lights);transition:opacity 2s}
+.atmo .skyline .w:nth-of-type(4n){animation:tw 7s ease-in-out infinite}
+@keyframes tw{50%{opacity:calc(var(--lights)*.2)}}
+.atmo .stars{position:absolute;inset:0 0 50% 0;opacity:calc(var(--lights) - .3);
+  background-image:radial-gradient(1px 1px at 12% 18%,#fff9,transparent),radial-gradient(1px 1px at 33% 9%,#fff7,transparent),radial-gradient(1px 1px at 57% 22%,#fff6,transparent),radial-gradient(1px 1px at 71% 12%,#fff8,transparent),radial-gradient(1px 1px at 88% 26%,#fff6,transparent),radial-gradient(1px 1px at 46% 31%,#fff5,transparent),radial-gradient(1px 1px at 22% 36%,#fff5,transparent),radial-gradient(1px 1px at 64% 4%,#fff7,transparent)}
+.atmo .vignette{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 40%,transparent 55%,#000a)}
+.atmo .grain{position:absolute;inset:0;opacity:.45;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+@keyframes train{from{transform:translateX(-120px)}to{transform:translateX(1320px)}}
+/* 天气层：由 weatherText 关键词推导 */
+.wx{position:absolute;inset:0;opacity:0;transition:opacity 1.5s}
+[data-wx=rain] .wx-rain,[data-wx=snow] .wx-snow,[data-wx=fog] .wx-fog,[data-wx=cloud] .wx-cloud{opacity:1}
+[data-wx=rain] .stars,[data-wx=snow] .stars,[data-wx=fog] .stars,[data-wx=cloud] .stars{opacity:0}
+.wx-rain::before,.wx-rain::after{content:'';position:absolute;inset:-200px 0 0 -200px;
+  background-image:repeating-linear-gradient(104deg,transparent 0 22px,rgba(210,225,235,.13) 22px 23px,transparent 23px 61px);
+  background-size:240px 240px;animation:rain .55s linear infinite}
+.wx-rain::after{opacity:.55;background-size:160px 160px;animation-duration:.8s;filter:blur(.6px)}
+@keyframes rain{to{background-position:-64px 240px}}
+.wx-rain i{position:absolute;left:0;right:0;bottom:0;height:22vh;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--tint) 10%,transparent))}
+.wx-snow::before,.wx-snow::after{content:'';position:absolute;inset:-300px 0 0 0;
+  background-image:radial-gradient(2px 2px at 20px 30px,#eef4f8cc,transparent),radial-gradient(1.5px 1.5px at 90px 120px,#eef4f8aa,transparent),radial-gradient(2.5px 2.5px at 160px 60px,#eef4f8bb,transparent),radial-gradient(1.5px 1.5px at 230px 190px,#eef4f899,transparent);
+  background-size:260px 260px;animation:snow 14s linear infinite}
+.wx-snow::after{background-size:180px 180px;opacity:.6;animation-duration:22s;filter:blur(1px)}
+@keyframes snow{to{background-position:60px 520px}}
+.wx-fog::before,.wx-fog::after{content:'';position:absolute;left:-30%;right:-30%;height:45vh;bottom:8vh;border-radius:50%;
+  background:radial-gradient(closest-side,#b8c4c455,transparent);filter:blur(30px);animation:fog 38s ease-in-out infinite alternate}
+.wx-fog::after{bottom:28vh;height:30vh;opacity:.7;animation-duration:52s;animation-direction:alternate-reverse}
+@keyframes fog{to{transform:translateX(18%)}}
+.wx-cloud{background:linear-gradient(180deg,#5d666a30,transparent 55%)}
+
+/* =========================================================
+   2. 布局
+   ========================================================= */
+.game{position:relative;z-index:1;height:100vh;display:grid;
+  grid-template-columns:var(--left) minmax(0,1fr) var(--dock);
+  grid-template-rows:var(--bar) minmax(0,1fr)}
+.glass{background:var(--glass);backdrop-filter:blur(18px) saturate(1.15);-webkit-backdrop-filter:blur(18px) saturate(1.15)}
+
+/* ---- 顶栏：城市 · 地点 · 时间 · 天气 · 环境 ---- */
+.bar{grid-column:1/3;display:grid;grid-template-columns:var(--left) minmax(0,1fr);align-items:stretch;border-bottom:1px solid var(--line);position:relative}
+.bar::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--tint) 60%,transparent) 30%,transparent 80%)}
+.bar-city{display:flex;align-items:center;gap:.8rem;padding:0 1.3rem;border-right:1px solid var(--line)}
+.bar-city .seal{width:2.3rem;height:2.3rem;font-size:1.05rem}
+.bar-city h1{font-size:1.45rem;letter-spacing:.3em;color:var(--text)}
+.bar-city small{display:block;font-family:var(--font-mono);font-size:.6rem;letter-spacing:.26em;color:var(--tint);margin-top:.1rem;transition:color 1.5s}
+.bar-main{display:flex;align-items:center;gap:1.4rem;padding:0 1.6rem;min-width:0}
+.where{min-width:0;flex:1 1 auto}
+.where .path{display:block;font-size:.72rem;color:var(--dim);letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.where .name{display:block;font-family:var(--font-title);font-size:1.2rem;letter-spacing:.12em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.clock{flex:none;display:flex;align-items:center;gap:.8rem;padding:0 1.3rem;border-left:1px solid var(--line);border-right:1px solid var(--line);height:52%}
+.clock time{font-family:var(--font-mono);font-size:1.75rem;letter-spacing:.04em;color:var(--gold-hi);line-height:1}
+.clock .date{display:grid;font-size:.72rem;color:var(--muted);line-height:1.45}
+.clock .tod{color:var(--tint);letter-spacing:.2em;transition:color 1.5s}
+.chips{flex:0 1 26rem;display:grid;gap:.3rem;min-width:0}
+.chip{display:flex;align-items:center;gap:.5rem;min-width:0}
+.chip .seal{width:1.35rem;height:1.35rem;font-size:.66rem;border-radius:50%;color:var(--tint);border-color:color-mix(in srgb,var(--tint) 45%,transparent);background:color-mix(in srgb,var(--tint) 10%,transparent);box-shadow:none;transition:color 1.5s,border-color 1.5s}
+.chip small{font-size:.66rem;color:var(--dim);flex:none}
+.chip span{font-size:.8rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---- 左栏：主角卷宗 ---- */
+.hero{grid-row:2;border-right:1px solid var(--line);overflow:auto;scrollbar-width:none;padding:1.4rem 1.2rem 1.6rem;display:flex;flex-direction:column;gap:1.25rem}
+.id{display:flex;gap:.95rem;align-items:center}
+.id .portrait{position:relative;width:4.2rem;height:4.2rem;flex:none}
+.id .portrait .seal{width:100%;height:100%;font-size:1.9rem}
+.id .portrait::after{content:'';position:absolute;inset:-5px;border:1px solid color-mix(in srgb,var(--tint) 40%,transparent);border-radius:5px;transition:border-color 1.5s}
+.id h2{font-size:1.55rem;letter-spacing:.14em}
+.id p{font-size:.78rem;color:var(--muted)}
+.sec-title{display:flex;align-items:center;gap:.6rem;font-family:var(--font-mono);font-size:.62rem;letter-spacing:.26em;color:var(--dim);margin-bottom:.55rem}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--line)}
+.funds{display:grid;gap:.5rem}
+.fund{display:flex;justify-content:space-between;align-items:baseline;padding:.6rem .8rem;border:1px solid var(--line);border-radius:6px;background:#ffffff05}
+.fund small{font-size:.72rem;color:var(--muted)}
+.fund strong{font-family:var(--font-mono);font-weight:500;font-size:1.12rem;letter-spacing:.02em}
+.fund.cash strong{color:var(--gold-hi)}
+.cond{display:grid;gap:.5rem}
+.cond div{padding:.55rem .8rem;border-left:2px solid var(--tint);background:linear-gradient(90deg,color-mix(in srgb,var(--tint) 9%,transparent),transparent);border-radius:0 6px 6px 0;transition:border-color 1.5s}
+.cond small{display:block;font-size:.66rem;color:var(--dim);letter-spacing:.2em}
+.cond span{font-size:.84rem;line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wear{display:grid;gap:0;margin:0}
+.wear div{display:grid;grid-template-columns:3.6rem 1fr;gap:.6rem;padding:.32rem 0;border-bottom:1px dashed #ffffff0f;font-size:.8rem}
+.wear dt{color:var(--dim)}
+.wear dd{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wear [data-empty] dd{color:#ffffff40}
+.hero-actions{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:auto}
+.hero-actions button{font-size:.82rem;padding:.55rem .4rem}
+
+/* ---- 中栏：剧情 ---- */
+.stage{grid-row:2;grid-column:2;display:flex;flex-direction:column;min-height:0;position:relative}
+.reader{flex:1;min-height:0;overflow:auto;-webkit-mask-image:linear-gradient(180deg,transparent,#000 1.2rem);mask-image:linear-gradient(180deg,transparent,#000 1.2rem);scrollbar-width:thin;scrollbar-color:#ffffff22 transparent;padding:0 max(28px,calc((100% - var(--read))/2)) 2.5rem;outline:none}
+.reader-head{display:flex;justify-content:space-between;align-items:center;padding:1.6rem 0 .9rem}
+.sheet{position:relative;padding:2.1rem clamp(1.4rem,2.6vw,2.6rem) 2.3rem;border:1px solid var(--line);border-radius:4px;margin-bottom:1.6rem}
+.sheet::before,.sheet::after{content:'';position:absolute;width:18px;height:18px;border:1px solid var(--gold-lo);pointer-events:none}
+.sheet::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
+.sheet::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
+.sheet.past{opacity:.62;transition:opacity .3s}
+.sheet.past:hover{opacity:1}
+
+.prose{font-family:var(--font-title);font-size:1.075rem;line-height:2.05;color:var(--prose);margin:0 0 1.05em;letter-spacing:.02em;text-align:justify}
+/* ---- 回目：居中城市铭牌 + 中文时间地点副标题 ---- */
+.chapter{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:.4rem 1.4rem;margin:.2rem 0 2rem}
+.chapter::before,.chapter::after{content:'';grid-row:1;height:1px;width:min(100%,11rem)}
+.chapter::before{grid-column:1;justify-self:end;background:linear-gradient(90deg,transparent,var(--gold-lo))}
+.chapter::after{grid-column:3;justify-self:start;background:linear-gradient(90deg,var(--gold-lo),transparent)}
+.chapter h2,.chapter .plate{grid-column:2;grid-row:1;justify-self:center}
+.chapter h2{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.c-sub{grid-column:1/-1;grid-row:2;text-align:center;font-size:.86rem;letter-spacing:.24em;color:var(--muted);margin-top:.55rem}
+.c-sub b{font-weight:400;color:color-mix(in srgb,var(--tint) 75%,#fff)}
+.chapter:is([data-state=draft],[data-state=preview]) .c-sub::after{content:' · ' attr(data-st);color:var(--gold)}
+.chapter[data-state=draft] .c-sub::after{color:var(--muted)}
+.past .chapter{margin-bottom:1.4rem}
+.past .c-sub{font-size:.76rem}
+.plate{display:inline-flex;align-items:center;gap:.8rem;position:relative}
+.p-num,.p-cn,.p-sub{display:block}
+.past .plate{transform:scale(.84)}
+.chapter[data-state=draft] .plate{filter:grayscale(.85) brightness(.8)}
+.chapter[data-state=preview] .plate{animation:breathe 1.6s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.6}}
+/* 城市推导不出时：素版 */
+[data-city=other] .chapter .plate{display:none}
+[data-city=other] .chapter h2{position:static;width:auto;height:auto;overflow:visible;clip:auto;font-size:0;color:var(--gold-hi)}
+[data-city=other] .chapter h2::before{content:attr(data-cn);font-size:1.75rem;letter-spacing:.5em;margin-right:-.5em}
+[data-city=other] .past .chapter h2::before{font-size:1.3rem}
+/* 重庆 · 轻轨站牌 */
+[data-city=cq] .plate{padding:.55rem 1.1rem .55rem .55rem;background:#0f1d1a;border:1px solid #2c4a43;border-radius:6px;box-shadow:inset 0 -3px 0 #3f8f80}
+[data-city=cq] .p-num{display:grid!important;place-items:center;width:2.6rem;height:2.6rem;border-radius:50%;background:#3f8f80;color:#fff;font-family:var(--font-mono);font-size:1.05rem;font-weight:600}
+[data-city=cq] .p-cn{font-family:var(--font-title);font-size:1.15rem;letter-spacing:.3em;color:#f1f4f2}
+[data-city=cq] .p-sub{font-family:var(--font-mono);font-size:.58rem;letter-spacing:.2em;color:#8fb8ae}
+[data-city=cq] .p-rail{display:flex!important;align-items:center;gap:0;margin-left:.6rem}
+[data-city=cq] .p-rail i{width:.5rem;height:.5rem;border-radius:50%;border:1.5px solid #3f8f80;background:#0f1d1a}
+[data-city=cq] .p-rail i.on{background:#9cd6c9;border-color:#9cd6c9;box-shadow:0 0 8px #9cd6c9}
+[data-city=cq] .p-rail b{width:1.1rem;height:2px;background:#3f8f80}
+
+/* 上海 · 搪瓷门牌 */
+[data-city=sh] .plate{padding:.5rem 1.2rem;background:linear-gradient(180deg,#2c55a0,#1f437f);border-radius:8px;box-shadow:inset 0 0 0 3px #1f437f,inset 0 0 0 4.5px #eef1f7,0 6px 18px -8px #000;gap:1rem}
+[data-city=sh] .plate::before,[data-city=sh] .plate::after{content:'';position:absolute;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:#c9d3e6;box-shadow:inset 0 1px 1px #0006}
+[data-city=sh] .plate::before{left:.45rem}[data-city=sh] .plate::after{right:.45rem}
+[data-city=sh] .p-num{font-family:var(--font-title);font-size:2rem;font-weight:700;line-height:1;color:#fff;padding-left:.4rem}
+[data-city=sh] .p-num::after{content:'号';font-size:.8rem;margin-left:.15rem;font-weight:600}
+[data-city=sh] .p-cn{font-family:var(--font-title);font-size:1rem;letter-spacing:.32em;color:#fff;font-weight:600;border-left:1px solid #ffffff66;padding-left:.9rem}
+[data-city=sh] .p-sub{font-family:var(--font-mono);font-size:.56rem;letter-spacing:.2em;color:#c9d6f0;padding-left:.9rem}
+
+/* 哈尔滨 · 冰刻拱牌 */
+[data-city=hrb] .plate{padding:.9rem 1.4rem .55rem;border-radius:46% 46% 6px 6px / 38% 38% 6px 6px;background:linear-gradient(180deg,#dcebf522,#a9c3d80d);border:1px solid #d7e8f466;box-shadow:inset 0 1px 0 #ffffff55,inset 0 0 18px #cfe3f022;backdrop-filter:blur(6px)}
+[data-city=hrb] .p-num{font-family:var(--font-title);font-size:1.7rem;line-height:1;color:transparent;-webkit-text-stroke:1px #e8f3fa;text-shadow:0 0 12px #bfe0f566}
+[data-city=hrb] .p-cn{font-family:var(--font-title);font-size:1.05rem;letter-spacing:.34em;color:#e6f1f8;text-shadow:0 1px 0 #0008,0 0 10px #bfe0f544}
+[data-city=hrb] .p-sub{font-family:var(--font-mono);font-size:.56rem;letter-spacing:.22em;color:#a9c3d8}
+[data-city=hrb] .p-frost{display:block!important;position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(3px 3px at 12% 30%,#fff9,transparent),radial-gradient(2px 2px at 88% 26%,#fff8,transparent),radial-gradient(2px 2px at 50% 8%,#fffa,transparent),radial-gradient(2px 2px at 76% 80%,#fff6,transparent)}
+
+/* 广州 · 霓虹招牌 */
+[data-city=gz] .plate{padding:.5rem 1.1rem;background:#140d0b;border:1px solid #3a221b;border-radius:4px;box-shadow:inset 0 0 0 4px #140d0b,inset 0 0 0 5px #ff6b4f88,0 0 22px -6px #ff6b4f66}
+[data-city=gz] .p-num{font-family:var(--font-title);font-size:1.15rem;letter-spacing:.24em;color:#ffd7c7;text-shadow:0 0 4px #ff6b4f,0 0 12px #ff6b4f,0 0 24px #ff3d1f88}
+[data-city=gz] .p-num::before{content:attr(data-dx)}
+[data-city=gz] .p-num{font-size:0}[data-city=gz] .p-num::before{font-size:1.25rem}
+[data-city=gz] .p-cn{display:none!important}
+[data-city=gz] .p-sub{font-family:var(--font-mono);font-size:.58rem;letter-spacing:.22em;color:#f6b27a;text-shadow:0 0 6px #f08a3c}
+[data-city=gz] .latest .p-num::before{animation:neon 6s steps(1) infinite}
+@keyframes neon{0%,7%,9%,100%{opacity:1}8%{opacity:.35}}
+[data-city=gz] .chapter[data-state=preview] .p-num::before{color:#5a3a32;text-shadow:none;animation:none}
+
+
+
+/* 城市化的两侧线 */
+/* 城市化的两侧线 */
+ .chapter::before, .chapter::after{width:min(100%,11rem)}
+[data-city=cq] .chapter::before,[data-city=cq] .chapter::after{height:12px;
+  background:radial-gradient(circle,#0c1110 2px,var(--tint) 2.5px 4px,transparent 4.5px) 0 50%/2.2rem 12px repeat-x,linear-gradient(var(--tint),var(--tint)) 0 50%/100% 2px no-repeat}
+[data-city=cq] .chapter::before{-webkit-mask:linear-gradient(90deg,transparent,#000 70%);mask:linear-gradient(90deg,transparent,#000 70%)}
+[data-city=cq] .chapter::after{-webkit-mask:linear-gradient(90deg,#000 30%,transparent);mask:linear-gradient(90deg,#000 30%,transparent);background-position:1.1rem 50%,0 50%}
+[data-city=sh] .chapter::before,[data-city=sh] .chapter::after{height:7px;
+  background:linear-gradient(#c9d6f0b0,#c9d6f0b0) 0 0/100% 1px no-repeat,linear-gradient(#c9d6f0b0,#c9d6f0b0) 0 100%/100% 1px no-repeat}
+[data-city=sh] .chapter::before{-webkit-mask:linear-gradient(90deg,transparent,#000 80%);mask:linear-gradient(90deg,transparent,#000 80%);}
+[data-city=sh] .chapter::after{-webkit-mask:linear-gradient(90deg,#000 20%,transparent);mask:linear-gradient(90deg,#000 20%,transparent);background-repeat:no-repeat}
+[data-city=hrb] .chapter::before,[data-city=hrb] .chapter::after{height:10px;
+  background:radial-gradient(1.5px 1.5px at 20% 20%,#fff,transparent),radial-gradient(1px 1px at 55% 85%,#e8f4fb,transparent),radial-gradient(1.5px 1.5px at 82% 30%,#fff,transparent),linear-gradient(#d7e8f4aa,#d7e8f4aa) 0 50%/100% 1px no-repeat;filter:drop-shadow(0 0 4px #a9c3d8)}
+[data-city=hrb] .chapter::before{-webkit-mask:linear-gradient(90deg,transparent,#000 70%);mask:linear-gradient(90deg,transparent,#000 70%)}
+[data-city=hrb] .chapter::after{-webkit-mask:linear-gradient(90deg,#000 30%,transparent);mask:linear-gradient(90deg,#000 30%,transparent)}
+[data-city=gz] .chapter::before,[data-city=gz] .chapter::after{height:2px;border-radius:2px;background:#ff8a6a;box-shadow:0 0 5px #ff5a3a,0 0 12px #ff3c1c99}
+[data-city=gz] .chapter::before{-webkit-mask:linear-gradient(90deg,transparent,#000 60%);mask:linear-gradient(90deg,transparent,#000 60%)}
+[data-city=gz] .chapter::after{-webkit-mask:linear-gradient(90deg,#000 40%,transparent);mask:linear-gradient(90deg,#000 40%,transparent)}
+
+
+/* ---- 剧本台词：头像 + 名字一栏，台词悬挂缩进（沿用 StoryReading 现有 DOM） ---- */
+.dlg{display:grid;grid-template-columns:1.6rem 4.4rem minmax(0,1fr);column-gap:.55rem;margin:1.15em 0 1.25em;align-items:start}
+.dlg>div{display:contents}
+.dlg .av{grid-column:1;width:1.6rem;height:1.6rem;margin-top:.32rem;font-size:.72rem;border-radius:50%;color:var(--text);border-color:#ffffff2e;background:#ffffff08;box-shadow:none}
+.dlg .who{grid-column:2;margin:0;padding-top:.36rem;font-family:var(--font-title);font-size:.86rem;letter-spacing:.2em;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dlg .say{grid-column:3;margin-left:.5rem;padding:.25rem 0 .25rem 1.1rem;border-left:1px solid #ffffff26;font-family:var(--font-title);font-size:1.08rem;line-height:1.95;color:var(--text)}
+.dlg .say::before{content:'「';color:var(--dim)}.dlg .say::after{content:'」';color:var(--dim)}
+.dlg.me .av{color:var(--gold-hi);border-color:var(--gold-lo);background:#c9a9611a}
+.dlg.me .who{color:var(--gold)}
+.dlg.me .say{border-left:2px solid var(--gold);color:#f1e6c8;background:linear-gradient(90deg,#c9a96112,transparent 60%)}
+.dlg.me .say::before,.dlg.me .say::after{color:var(--gold-lo)}
+
+.preview-tag{margin:-.8rem 0 1.2rem;display:flex;justify-content:center}
+.caret{display:inline-block;width:.55em;height:1.05em;margin-left:.15em;vertical-align:-.15em;background:var(--gold);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* 行动建议 */
+.options{margin-top:.4rem}
+.options>p{display:flex;align-items:center;gap:.8rem;font-family:var(--font-title);letter-spacing:.3em;color:var(--muted);font-size:.9rem;margin-bottom:.9rem}
+.options>p::after{content:'';flex:1;height:1px;background:var(--line)}
+.opt-grid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.opt{position:relative;display:grid;grid-template-columns:auto 1fr auto;gap:.85rem;align-items:center;text-align:left;padding:.95rem 1.05rem;border:1px solid var(--line-2);border-radius:8px;background:var(--glass-2);overflow:hidden}
+.opt:nth-child(odd):last-child{grid-column:1/-1}
+.opt::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--gold);transform:scaleY(0);transition:transform .25s var(--ease)}
+.opt:hover:not(:disabled){border-color:var(--gold-lo);background:linear-gradient(90deg,#c9a96114,var(--glass-2))}
+.opt:hover::before,.opt[aria-pressed=true]::before{transform:none}
+.opt[aria-pressed=true]{border-color:var(--gold-lo)}
+.opt .n{font-family:var(--font-mono);font-size:.72rem;color:var(--gold);border:1px solid var(--gold-lo);border-radius:3px;padding:.05rem .35rem}
+.opt .t{font-size:.92rem;line-height:1.6}
+.opt .a{color:var(--dim);transition:transform .2s,color .2s}
+.opt:hover .a{color:var(--gold);transform:translateX(3px)}
+.field-hint{font-size:.82rem;color:var(--dim);text-align:center;padding:1rem 0}
+
+/* 开局空白 */
+.opening{display:grid;place-items:center;text-align:center;min-height:62vh;padding:3rem 1rem}
+.opening .mark{width:5.2rem;height:5.2rem;font-size:2.3rem;margin-bottom:1.4rem}
+.opening h1{font-size:2.6rem;letter-spacing:.3em;margin:.6rem 0 1rem;background:linear-gradient(180deg,#f5e7bd,#b8994f);-webkit-background-clip:text;background-clip:text;color:transparent}
+.opening p{color:var(--muted);line-height:2}
+
+/* ---- 行动输入台 ---- */
+.composer{flex:none;padding:.8rem max(28px,calc((100% - var(--read))/2)) 1.1rem;border-top:1px solid var(--line);position:relative}
+.follow{position:absolute;left:50%;top:-2.6rem;transform:translateX(-50%);font-size:.78rem;padding:.3rem .9rem;border-radius:999px;background:var(--glass-2)}
+.wf{display:flex;align-items:center;gap:1rem;margin-bottom:.7rem}
+.wf strong{font-weight:500;font-size:.8rem;white-space:nowrap}
+.wf strong .p{color:var(--dim)}
+.rail{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem;min-width:0}
+.rail li{list-style:none;min-width:0}
+.rail .bar-seg{height:3px;border-radius:2px;background:#ffffff14;position:relative;overflow:hidden}
+.rail .lbl{display:flex;gap:.5rem;font-size:.66rem;color:var(--dim);margin-top:.3rem;white-space:nowrap}
+.rail .lbl b{font-weight:400;font-family:var(--font-mono);color:var(--muted)}
+.rail [data-s=done] .bar-seg{background:var(--gold)}
+.rail [data-s=done] .lbl em{color:var(--gold)}
+.rail [data-s=run] .bar-seg{background:#c9a96133}
+.rail [data-s=run] .bar-seg::after{content:'';position:absolute;inset:0;width:40%;background:linear-gradient(90deg,transparent,var(--gold-hi),transparent);animation:run 1.2s linear infinite}
+@keyframes run{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+.rail [data-s=run] .lbl em{color:var(--gold-hi)}
+.rail [data-s=fail] .bar-seg{background:var(--warn)}
+.rail [data-s=fail] .lbl em{color:var(--warn-text)}
+.rail em{font-style:normal}
+.wf .more{font-size:.74rem;padding:.2rem .6rem;color:var(--muted)}
+.wf[data-state=error] strong{color:var(--warn-text)}
+.row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.6rem;align-items:stretch}
+.roll{display:flex;flex-direction:column;gap:.4rem}
+.roll button{font-size:.8rem;padding:.4rem .75rem;white-space:nowrap}
+textarea{font:inherit;color:var(--text);resize:none;border:1px solid var(--line-2);border-radius:8px;padding:.75rem .95rem;background:var(--glass-2);line-height:1.65;font-size:.94rem;transition:border-color .2s,box-shadow .2s}
+textarea:focus{outline:none;border-color:var(--gold-lo);box-shadow:0 0 0 3px #c9a96118}
+textarea::placeholder{color:var(--dim)}
+.send{display:flex;flex-direction:column;justify-content:space-between;gap:.4rem;align-items:stretch}
+.primary{border:0;color:#171810;font-weight:650;letter-spacing:.2em;padding:.6rem 1.5rem;background:linear-gradient(180deg,#e9d196,#c5a45a);box-shadow:inset 0 1px 0 #fff6,0 10px 24px -12px #c9a961b0;flex:1}
+.primary:hover:not(:disabled){background:linear-gradient(180deg,#f2deaa,#d1b16a)}
+.kbd{font-family:var(--font-mono);font-size:.62rem;color:var(--dim);text-align:center;letter-spacing:.05em}
+
+/* ---- 右栏：世界资料 dock ---- */
+.dock{grid-row:1/3;grid-column:3;display:flex;flex-direction:column;align-items:stretch;border-left:1px solid var(--line);padding:.9rem .5rem}
+.dock h2{font-family:var(--font-mono);font-size:.56rem;letter-spacing:.2em;color:var(--dim);text-align:center;font-weight:400;margin:.2rem 0 .8rem;line-height:1.5}
+.dock nav{display:flex;flex-direction:column;gap:.15rem}
+.dock button{display:flex;flex-direction:column;align-items:center;gap:.3rem;border:0;padding:.55rem .2rem;border-radius:8px;font-size:.66rem;color:var(--muted)}
+.dock button .seal{width:2.2rem;height:2.2rem;font-size:.95rem;transition:all .2s}
+.dock button:hover:not(:disabled){color:var(--text);background:#ffffff08}
+.dock button:hover .seal{border-color:var(--gold);color:#fff3cf;box-shadow:inset 0 0 0 2px #0009,inset 0 0 0 3px #c9a96160,0 0 18px -4px #c9a96188}
+.dock .sys{margin-top:auto;padding-top:.6rem;border-top:1px solid var(--line)}
+.dock .sys .seal{color:var(--muted);border-color:#ffffff22;background:#ffffff06}
+
+
+/* ---- 中等宽度 ---- */
+@media (max-width:1199px){
+  :root{--left:220px;--dock:68px}
+  .clock .date{display:none}
+  .chips{flex-basis:15rem}
+  .chip small{display:none}
+  .bar-city h1{font-size:1.2rem;letter-spacing:.2em}
+  .sheet{padding:1.8rem 1.8rem 2rem}
+  .opt-grid{grid-template-columns:1fr}
+}
+@media (max-height:860px){.hero{gap:.85rem;padding-top:1.1rem}.wear div{padding:.2rem 0}.fund{padding:.45rem .8rem}.cond div{padding:.4rem .8rem}}
+@media (max-width:900px){.game::before{content:'移动端将单独设计';position:fixed;inset:auto 1rem 1rem auto;z-index:9;font-size:.75rem;color:var(--warn-text)}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+
+/* ---- 设计稿控制（非界面） ---- */
+.demo{position:fixed;left:calc(var(--left) + 1rem);top:calc(var(--bar) + 1.25rem);z-index:30;font-size:.74rem}
+.demo>button{border-style:dashed;border-radius:999px;padding:.25rem .8rem;font-size:.7rem;color:var(--muted);background:#0b0d0ccc}
+.demo-panel{display:none;position:absolute;left:0;top:calc(100% + .5rem);width:21rem;padding:.9rem;border:1px dashed #4a5047;border-radius:8px;background:#0e110ff5;gap:.6rem}
+.demo.open .demo-panel{display:grid}
+.demo-panel .seg{display:flex;flex-wrap:wrap;gap:.25rem}
+.demo-panel .seg button{padding:.12rem .5rem;font-size:.7rem}
+.demo-panel .seg button[aria-pressed=true]{color:var(--gold-hi);border-color:#6b5f3c}
+.demo-panel p{color:var(--muted);margin-bottom:.2rem}
+.toast{position:fixed;left:50%;top:5.5rem;transform:translate(-50%,-6px);padding:.45rem 1rem;border:1px solid var(--line-2);border-radius:6px;background:#181d18;font-size:.8rem;opacity:0;pointer-events:none;transition:all .25s;z-index:40}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* =========================================================
+   世界资料 · 档案柜框架（所有面板共用）
+   ========================================================= */
+.archive{position:fixed;top:var(--bar);left:var(--left);right:var(--dock);bottom:0;z-index:12;display:flex;flex-direction:column;
+  background:rgba(9,11,11,.88);backdrop-filter:blur(22px) saturate(1.1);-webkit-backdrop-filter:blur(22px) saturate(1.1);
+  border-left:1px solid var(--line);box-shadow:-40px 0 80px -40px #000;
+  opacity:0;transform:translateX(28px);pointer-events:none;transition:opacity .28s var(--ease),transform .28s var(--ease)}
+.archive.on{opacity:1;transform:none;pointer-events:auto}
+.archive::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--tint) 65%,transparent) 40%,transparent)}
+.ar-head{flex:none;display:flex;align-items:center;gap:1rem;padding:1rem 1.6rem;border-bottom:1px solid var(--line)}
+.ar-head .seal{width:2.8rem;height:2.8rem;font-size:1.25rem}
+.ar-title .eyebrow{display:block;margin-bottom:.15rem}
+.ar-title h2{display:inline;font-size:1.45rem;letter-spacing:.14em}
+.ar-title .sub{margin-left:.8rem;font-size:.8rem;color:var(--muted);letter-spacing:.1em}
+.ar-head .esc{margin-left:auto;font-family:var(--font-mono);font-size:.62rem;color:var(--dim);border:1px solid var(--line-2);border-radius:3px;padding:.05rem .35rem}
+.ar-close{padding:.45rem .9rem;font-size:.84rem}
+.ar-body{flex:1;min-height:0;display:flex;flex-direction:column;padding:0 1.6rem}
+/* dock 当前项：印章填金 + 贴向面板的指示条 */
+.dock button{position:relative}
+.dock button[aria-current=true]{color:var(--gold-hi)}
+.dock button[aria-current=true] .seal{background:linear-gradient(180deg,#e9d196,#c5a45a);color:#1a1810;border-color:#e9d196;box-shadow:0 0 18px -4px #c9a961aa}
+.dock button[aria-current=true]::before{content:'';position:absolute;left:-.5rem;top:18%;bottom:18%;width:2px;border-radius:2px;background:var(--gold);box-shadow:0 0 8px var(--gold)}
+
+/* ---- 通用部件 ---- */
+.f-label{display:grid;gap:.3rem;font-size:.72rem;color:var(--dim);letter-spacing:.12em}
+.f-input,.f-select{font:inherit;font-size:.86rem;letter-spacing:0;color:var(--text);width:100%;min-width:0;border:1px solid var(--line-2);border-radius:7px;background:#ffffff06;padding:.55rem .75rem;transition:border-color .2s,box-shadow .2s}
+.f-input:focus,.f-select:focus{outline:none;border-color:var(--gold-lo);box-shadow:0 0 0 3px #c9a96118}
+.f-input::placeholder{color:var(--dim)}
+.f-input.search{padding-left:2rem;background:#ffffff06 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%237c7f73' stroke-width='1.6'%3E%3Ccircle cx='6' cy='6' r='4.5'/%3E%3Cpath d='M9.5 9.5L13 13'/%3E%3C/svg%3E") no-repeat .7rem 50%}
+.f-select{appearance:none;padding-right:2rem;background:#ffffff06 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%23C9A961' stroke-width='1.5'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E") no-repeat right .8rem center}
+.f-select option{background:#151816}
+.pill{display:inline-flex;align-items:center;gap:.35rem;font-size:.68rem;padding:.08rem .5rem;border-radius:999px;border:1px solid var(--line-2);color:var(--muted);white-space:nowrap;line-height:1.6}
+.pill.on{color:color-mix(in srgb,var(--tint) 85%,#fff);border-color:color-mix(in srgb,var(--tint) 45%,transparent);background:color-mix(in srgb,var(--tint) 10%,transparent)}
+.pill.on::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--tint);box-shadow:0 0 6px var(--tint)}
+.pill.gold{color:var(--gold-hi);border-color:var(--gold-lo);background:#c9a96112}
+.pill.warn{color:var(--warn-text);border-color:#6e4a3d}
+.status-line{display:flex;align-items:center;gap:.5rem;margin:.8rem 0 0;font-size:.82rem;color:var(--gold)}
+.status-line::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--gold)}
+.empty{margin:1rem 0;padding:1.6rem 1rem;text-align:center;font-size:.84rem;color:var(--dim);border:1px dashed #ffffff1a;border-radius:8px}
+.pager{display:flex;align-items:center;justify-content:center;gap:.8rem;margin:1rem 0;font-size:.8rem;color:var(--muted)}
+.pager button{font-size:.78rem;padding:.3rem .8rem}
+.sec{margin:1.3rem 0;padding:1.15rem 1.3rem 1.25rem;border:1px solid var(--line);border-radius:8px;background:#ffffff04;scroll-margin-top:10rem}
+.sec h4{display:flex;align-items:center;gap:.8rem;margin:0 0 .9rem;font-size:.98rem;letter-spacing:.22em;color:var(--gold)}
+.sec h4::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line-2),transparent)}
+.sec h5{font-family:var(--font-title);font-size:.88rem;letter-spacing:.16em;color:var(--muted);margin:1.2rem 0 .6rem;font-weight:600}
+.dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:2.2rem;margin:0}
+.detail{display:grid;grid-template-columns:5.6rem minmax(0,1fr);gap:.8rem;padding:.55rem 0;border-bottom:1px dashed #ffffff0e}
+.detail.wide{grid-column:1/-1}
+.detail dt{font-size:.76rem;color:var(--dim);letter-spacing:.1em;padding-top:.1rem}
+.detail dd{margin:0;font-size:.9rem;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
+.detail dd.none{color:#ffffff38}
+.entry{padding:.9rem 1rem;border:1px solid var(--line);border-radius:7px;background:#ffffff05}
+.entry+.entry{margin-top:.6rem}
+.entry .prose{font-size:.92rem;line-height:1.9;margin:.3rem 0 0;text-align:left}
+.entry time,.entry .meta{display:block;margin-top:.4rem;font-family:var(--font-mono);font-size:.68rem;color:var(--dim)}
+details.fold{margin-top:.6rem}
+details.fold>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;font-size:.78rem;color:var(--muted)}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::before{content:'';width:0;height:0;border-left:5px solid var(--gold);border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .2s}
+details.fold[open]>summary::before{transform:rotate(90deg)}
+details.fold>summary:hover{color:var(--gold-hi)}
+details.fold>*:not(summary){margin-top:.6rem;font-size:.84rem;color:var(--muted);line-height:1.8}
+details.sec>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.8rem;font-family:var(--font-title);font-size:.98rem;letter-spacing:.22em;color:var(--muted);font-weight:600}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::after{content:'展开';margin-left:auto;font-family:var(--font-body);font-size:.72rem;letter-spacing:.1em;color:var(--dim);font-weight:400}
+details.sec[open]>summary::after{content:'收起'}
+details.sec[open]>summary{margin-bottom:.9rem;color:var(--gold)}
+.chip-btn{display:inline-flex;align-items:center;gap:.45rem;font-size:.82rem;padding:.35rem .8rem;border-radius:999px;border-color:var(--line-2)}
+.chip-btn .seal{width:1.3rem;height:1.3rem;font-size:.62rem;border-radius:50%;box-shadow:none}
+.chip-btn:hover:not(:disabled){border-color:var(--gold-lo);color:var(--gold-hi)}
+.link-btn{border:0;padding:0;background:none;color:var(--gold);font-size:inherit;text-decoration:underline;text-decoration-color:#c9a96155;text-underline-offset:.25em}
+.link-btn:hover:not(:disabled){background:none;color:var(--gold-hi)}
+.meter{position:relative;height:6px;border-radius:3px;background:#ffffff10;overflow:hidden}
+.meter::after{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#ffffff40}
+.meter i{position:absolute;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,var(--gold-lo),var(--gold-hi))}
+.meter.neg i{background:linear-gradient(90deg,#d77a5e,#8f3a2a)}
+.meter.null{background:repeating-linear-gradient(90deg,#ffffff10 0 6px,transparent 6px 10px)}
+.scroll{overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#ffffff22 transparent}
+
+/* =========================================================
+   NPC 面板（样板）
+   ========================================================= */
+.npc{flex:1;min-height:0;display:flex;flex-direction:column}
+.npc-layout{flex:1;min-height:0;display:grid;grid-template-columns:clamp(270px,26%,330px) minmax(0,1fr);gap:0}
+.npc-dir{min-height:0;border-right:1px solid var(--line);padding:1.1rem 1.2rem 1.4rem 0}
+.npc-tools{position:sticky;top:-1.1rem;z-index:2;margin-top:-1.1rem;padding:1.1rem 0 .9rem;background:linear-gradient(180deg,rgba(9,11,11,.97) 85%,transparent);display:grid;gap:.6rem}
+.npc-tools h3{font-size:1rem;letter-spacing:.18em;display:flex;align-items:baseline;gap:.5rem}
+.npc-tools h3 small{font-family:var(--font-mono);font-size:.72rem;color:var(--gold);letter-spacing:.05em}
+.npc-tools .row2{display:grid;grid-template-columns:1fr;gap:.55rem}
+.people{list-style:none;margin:0;padding:0}
+.people li{display:flex;align-items:center;gap:.15rem;border-bottom:1px solid #ffffff0b}
+.person-row{flex:1;min-width:0;display:flex;align-items:flex-start;gap:.75rem;text-align:left;border:0;border-radius:6px;padding:.75rem .6rem;position:relative}
+.person-row:hover:not(:disabled){background:#ffffff07}
+.person-row[aria-pressed=true]{background:linear-gradient(90deg,#c9a96118,transparent 85%)}
+.person-row[aria-pressed=true]::before{content:'';position:absolute;left:0;top:.6rem;bottom:.6rem;width:2px;border-radius:2px;background:var(--gold)}
+.person-row .avatar{width:2.4rem;height:2.4rem;border-radius:50%;font-size:.95rem;color:var(--text);border-color:#ffffff2a;background:#ffffff08;box-shadow:none;margin-top:.1rem}
+.special .person-row .avatar{color:var(--gold-hi);border-color:var(--gold-lo);background:#c9a96114;box-shadow:0 0 0 2px #0b0d0c,0 0 0 3px #c9a96144}
+.person-row .txt{min-width:0;display:grid;gap:.05rem}
+.person-row strong{font-family:var(--font-title);font-size:1rem;letter-spacing:.1em;font-weight:600}
+.person-row small{font-size:.72rem;color:var(--muted);line-height:1.55;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.person-row .meta{white-space:nowrap;display:flex;align-items:center;gap:.5rem;margin-top:.3rem;font-family:var(--font-mono);font-size:.64rem;color:var(--dim)}
+.npc-star{flex:none;width:2.3rem;height:2.3rem;padding:0;border-color:transparent;font-size:1.05rem;color:#ffffff40;border-radius:50%}
+.npc-star:hover:not(:disabled){color:var(--gold);border-color:transparent;background:#c9a96112}
+.npc-star.is-special{color:var(--gold);text-shadow:0 0 10px #c9a96188}
+.npc-dir details.fold{margin-top:1rem}
+.npc-detail{min-height:0;padding:0 0 2rem 1.8rem}
+.nd-head{position:sticky;top:0;z-index:3;padding:1.3rem 0 0;background:linear-gradient(180deg,rgba(9,11,11,.98) 88%,rgba(9,11,11,.9))}
+.nd-hero{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:1.2rem;align-items:center}
+.nd-portrait{position:relative;width:4.4rem;height:4.4rem}
+.nd-portrait .seal{width:100%;height:100%;font-size:1.9rem;border-radius:50%}
+.nd-portrait::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:1px solid color-mix(in srgb,var(--tint) 45%,transparent)}
+.nd-name{min-width:0}
+.nd-name h3{font-size:1.85rem;letter-spacing:.16em;display:inline;outline:none}
+.nd-name .pill{margin-left:.7rem;vertical-align:.5em}
+.facts{display:flex;flex-wrap:wrap;gap:.3rem 1.3rem;margin-top:.45rem;font-size:.78rem;color:var(--dim)}
+.facts span b{font-weight:400;color:var(--text);margin-left:.35rem}
+.nd-rel{width:15rem;padding:.7rem .9rem;border:1px solid var(--line);border-radius:8px;background:#ffffff05}
+.nd-rel .top{display:flex;justify-content:space-between;align-items:baseline;font-size:.72rem;color:var(--dim);letter-spacing:.1em;margin-bottom:.45rem}
+.nd-rel .top b{font-family:var(--font-mono);font-size:1rem;font-weight:500;color:var(--gold-hi);letter-spacing:0}
+.nd-rel .top b.null{font-family:var(--font-body);font-size:.78rem;color:var(--muted)}
+.nd-rel p{margin-top:.5rem;font-size:.78rem;color:var(--muted);line-height:1.6}
+.nd-rel .scale{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:.56rem;color:#ffffff40;margin-top:.2rem}
+.nd-hero .npc-star{align-self:start;width:2.6rem;height:2.6rem;font-size:1.25rem;border:1px solid var(--line-2)}
+.nd-tabs{display:flex;gap:1.5rem;margin-top:1rem;border-bottom:1px solid var(--line)}
+.nd-tabs a{position:relative;padding:.55rem 0 .65rem;font-size:.8rem;color:var(--muted);text-decoration:none;letter-spacing:.12em;white-space:nowrap}
+.nd-tabs a:hover{color:var(--text)}
+.nd-tabs a[aria-current=true]{color:var(--gold-hi)}
+.nd-tabs a[aria-current=true]::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--gold)}
+.npc-back{display:none}
+.places{list-style:none;margin:.6rem 0 0;padding:0;display:grid;gap:.4rem}
+.places li{display:flex;align-items:center;gap:.7rem;font-size:.86rem}
+.places li .role{flex:none;width:4.2rem;font-size:.72rem;color:var(--dim);letter-spacing:.1em}
+.rel-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+.rel-grid .entry{margin:0}
+.rel-grid .entry .hd{display:flex;align-items:center;justify-content:space-between;gap:.6rem}
+.rel-grid .entry .hd strong,.rel-grid .entry .hd .link-btn{font-family:var(--font-title);font-size:.98rem;letter-spacing:.1em}
+.rel-grid .entry .sm{font-size:.74rem;color:var(--muted);margin-top:.3rem}
+.rel-grid .meter{margin-top:.5rem;height:4px}
+.tasks{margin:.4rem 0 0;padding-left:1.2rem;font-size:.88rem;line-height:1.9}
+.tasks li::marker{color:var(--gold)}
+.mem-hd{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem}
+.mem-hd .k{font-size:.74rem;color:var(--muted)}
+.rl-tools{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1rem;align-items:end;margin-bottom:.8rem}
+.rl-tools .count{font-size:.74rem;color:var(--dim);padding-bottom:.6rem;white-space:nowrap}
+.pending{margin:0 0 .8rem;padding:.55rem .8rem;border-left:2px solid var(--gold);background:#c9a96110;font-size:.82rem;color:var(--gold-hi)}
+.ph{flex:1;display:grid;place-items:center;text-align:center;color:var(--dim)}
+.ph .seal{width:4rem;height:4rem;font-size:1.7rem;margin:0 auto 1rem}
+@media (max-width:1199px){.npc-layout{grid-template-columns:250px minmax(0,1fr)}.nd-rel{width:12rem}.dl,.rel-grid{grid-template-columns:1fr}.ar-body{padding:0 1.1rem}}
+
+/* 设计稿控制按钮挪到右上角，避免遮挡面板标题 */
+.demo{left:auto!important;right:.35rem;top:.35rem!important}
+.demo-panel{left:auto!important;right:0}
+
+/* =========================================================
+   面板色调：档案纸（定稿）+ 功能色分层
+   金色只留给「当前 / 选中 / 星标 / 主操作」，其余信息换用功能色
+   ========================================================= */
+.archive{--head:#ECE7DA;--info:#8FB6CF;--pos:#7DBB9C;--neg:#D47C60;--sheet:rgba(9,11,11,.88);--card:#ffffff05;--hair:#ffffff0e;--ink-3:#ffffff40;
+  background:var(--sheet);color:var(--text);transition:opacity .28s var(--ease),transform .28s var(--ease),background .4s}
+.ar-title h2,.nd-name h3,.person-row strong,.npc-tools h3{color:var(--head)}
+.sec{background:var(--card)}
+.sec h4{color:var(--head)}
+.sec h4::before{content:'';flex:none;width:3px;height:.95em;border-radius:2px;background:var(--gold)}
+.sec h5{color:var(--muted)}
+.detail{border-bottom-color:var(--hair)}
+.detail dd.none{color:var(--ink-3)}
+.people li{border-bottom-color:var(--hair)}
+.entry{background:var(--card)}
+.link-btn{color:var(--info);text-decoration-color:color-mix(in srgb,var(--info) 40%,transparent)}
+.link-btn:hover:not(:disabled){color:var(--head)}
+.tasks li::marker{color:var(--info)}
+.meter i{background:var(--pos)}
+.meter.neg i{background:var(--neg)}
+.nd-rel .top b{color:var(--pos)}
+.nd-rel .top b.neg{color:var(--neg)}
+.pill.layer{color:var(--info);border-color:color-mix(in srgb,var(--info) 40%,transparent);background:color-mix(in srgb,var(--info) 10%,transparent)}
+.pill.gold{color:var(--gold-hi);border-color:var(--gold-lo)}
+.npc-star{color:var(--ink-3)}
+.empty{border-color:var(--hair);color:var(--dim)}
+.nd-head{background:var(--sheet-solid,rgb(9,11,11));box-shadow:0 12px 14px -12px #0000002e}
+.npc-tools{background:linear-gradient(180deg,var(--sheet-solid,rgba(9,11,11,.97)) 85%,transparent)}
+
+/* 档案纸：暖白纸面、墨字、朱砂印 */
+.archive[data-tone=paper]{--sheet:#E4DCCA;--sheet-solid:#E4DCCA;--card:#EFE8D9;--hair:#2a26221a;--line:#2a26221f;--line-2:#2a262233;--ink-3:#2a262245;
+  --head:#1F1B17;--text:#2B2723;--muted:#5F574C;--dim:#857B6C;--gold:#8E6C25;--gold-hi:#6F5216;--gold-lo:#B79755;--info:#2D5E7D;--pos:#2F7A58;--neg:#A3412E;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  backdrop-filter:none;box-shadow:-30px 0 60px -20px #000c;color-scheme:light}
+.archive[data-tone=paper]::before{background:linear-gradient(90deg,transparent,#A3412E66 40%,transparent)}
+.archive[data-tone=paper] .eyebrow{color:#A3412E}
+.archive[data-tone=paper] .seal{color:#A3412E;border-color:#A3412E99;background:#A3412E0d;box-shadow:inset 0 0 0 2px var(--sheet),inset 0 0 0 3px #A3412E40}
+.archive[data-tone=paper] .ar-head .seal{color:#F4EDE0;background:#A3412E;border-color:#A3412E;box-shadow:inset 0 0 0 2px #A3412E,inset 0 0 0 3px #F4EDE066}
+.archive[data-tone=paper] .esc{color:var(--dim);border-color:var(--line-2)}
+.archive[data-tone=paper] button{border-color:var(--line-2)}
+.archive[data-tone=paper] button:hover:not(:disabled){background:#2a26220a;border-color:#2a262255}
+.archive[data-tone=paper] .f-input,.archive[data-tone=paper] .f-select{background-color:#F8F4EA;color:var(--text);border-color:var(--line-2)}
+.archive[data-tone=paper] .f-input:focus,.archive[data-tone=paper] .f-select:focus{border-color:var(--gold);box-shadow:0 0 0 3px #8E6C2522}
+.archive[data-tone=paper] .f-select option{background:#F8F4EA;color:#2B2723}
+.archive[data-tone=paper] .person-row:hover:not(:disabled){background:#2a262208}
+.archive[data-tone=paper] .person-row[aria-pressed=true]{background:linear-gradient(90deg,#8E6C2519,transparent 85%)}
+.archive[data-tone=paper] .person-row .avatar,.archive[data-tone=paper] .nd-portrait .seal{box-shadow:none}
+.archive[data-tone=paper] .special .person-row .avatar{box-shadow:0 0 0 2px var(--sheet),0 0 0 3px #A3412E55}
+.archive[data-tone=paper] .npc-star.is-special{color:#B07F1E;text-shadow:none}
+.archive[data-tone=paper] .pill{border-color:var(--line-2);color:var(--muted)}
+.archive[data-tone=paper] .pill.on{color:color-mix(in srgb,var(--tint) 45%,#1a2a28);border-color:color-mix(in srgb,var(--tint) 70%,#000 10%);background:color-mix(in srgb,var(--tint) 18%,transparent)}
+.archive[data-tone=paper] .pill.gold{color:#A3412E;border-color:#A3412E66;background:#A3412E0d}
+.archive[data-tone=paper] .meter{background:#2a262214}
+.archive[data-tone=paper] .meter::after{background:#2a262245}
+.archive[data-tone=paper] .meter.null{background:repeating-linear-gradient(90deg,#2a262218 0 6px,transparent 6px 10px)}
+.archive[data-tone=paper] .nd-rel{background:var(--card)}
+.archive[data-tone=paper] .nd-portrait::after{border-color:#A3412E55}
+.archive[data-tone=paper] .pending{background:#8E6C2512;color:var(--gold-hi)}
+.archive[data-tone=paper] .scroll{scrollbar-color:#2a262233 transparent}
+.archive[data-tone=paper] .chip-btn .seal{color:#A3412E}
+
+.archive .prose{color:var(--text)}
+.archive .entry .prose{color:var(--text)}
+.nd-rel .scale{color:var(--ink-3)}
+
+/* =========================================================
+   第 2 步：人物档案 · 势力组织
+   ========================================================= */
+/* 左栏「人物档案 / 经济与资产」打开时的当前态 */
+.hero-actions button[aria-current=true]{border-color:var(--gold);color:var(--gold-hi);background:#c9a96114;box-shadow:inset 0 -2px 0 var(--gold)}
+
+/* ---- 人物档案 ---- */
+.pf{flex:1;min-height:0;padding:1.4rem 0 2rem}
+.pf-id{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:1.4rem;align-items:center;padding:1.3rem 1.5rem;border:1px solid var(--line-2);border-radius:10px;background:var(--card);position:relative;overflow:hidden}
+.pf-id::after{content:'主角';position:absolute;right:13.5rem;top:50%;transform:translateY(-50%) rotate(-14deg);width:4.2rem;height:4.2rem;display:grid;place-items:center;border:2px solid #A3412E80;border-radius:50%;color:#A3412Ecc;font-family:var(--font-title);font-size:1rem;letter-spacing:.2em;box-shadow:inset 0 0 0 3px var(--card),inset 0 0 0 4px #A3412E40;pointer-events:none}
+.pf-photo{width:5.6rem;height:7rem;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:4px;background:repeating-linear-gradient(135deg,#2a262208 0 6px,transparent 6px 12px);font-family:var(--font-title);font-size:2.6rem;color:#A3412E;position:relative}
+.pf-photo::before{content:'';position:absolute;inset:5px;border:1px dashed #2a262230;border-radius:2px}
+.pf-id h3{font-size:2.1rem;letter-spacing:.2em;color:var(--head)}
+.pf-id .line{margin-top:.35rem;font-size:.86rem;color:var(--muted);letter-spacing:.08em}
+.pf-id .no{margin-top:.6rem;font-family:var(--font-mono);font-size:.66rem;letter-spacing:.2em;color:var(--dim)}
+.pf-entry{display:grid;gap:.45rem;min-width:11rem}
+.pf-entry button{font-size:.84rem;padding:.5rem .9rem;text-align:left;display:flex;justify-content:space-between;gap:.8rem}
+.pf-entry button span{color:var(--dim)}
+.pf-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,34%);gap:0 1.4rem;align-items:start}
+.pf-now{margin:1.3rem 0;border-radius:8px;overflow:hidden;border:1px solid var(--line-2);background:linear-gradient(160deg,color-mix(in srgb,var(--tint) 16%,var(--card)),var(--card) 65%)}
+.pf-now .hd{display:flex;justify-content:space-between;align-items:center;padding:.8rem 1.1rem;border-bottom:1px solid var(--line)}
+.pf-now .hd h4{margin:0;display:flex;align-items:center;gap:.6rem;font-size:.98rem;letter-spacing:.22em;color:var(--head)}
+.pf-now .hd h4::before{content:'';width:3px;height:.95em;border-radius:2px;background:var(--gold)}
+.pf-now .hd .city{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.24em;color:color-mix(in srgb,var(--tint) 45%,#1a2a28)}
+.pf-now .dl{grid-template-columns:1fr;padding:.3rem 1.1rem .6rem}
+.pf-now .detail{grid-template-columns:4.2rem minmax(0,1fr)}
+.pf-now .detail.time dd{font-family:var(--font-mono);font-size:.95rem;color:var(--head)}
+.pf-now .detail.cand dd{color:var(--gold-hi)}
+.conds{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin:0}
+.cond-card{padding:.7rem .85rem;border:1px solid var(--line);border-radius:7px;background:#F6F1E6}
+.cond-card dt{font-size:.7rem;letter-spacing:.2em;color:var(--dim)}
+.cond-card dd{margin:.25rem 0 0;font-size:.88rem;line-height:1.7;color:var(--text)}
+.cond-card.body{border-left:3px solid var(--pos)}
+.cond-card.mood{border-left:3px solid var(--info)}
+.cond-card.soc{border-left:3px solid var(--gold)}
+.cond-card.law{border-left:3px solid var(--neg)}
+.skill-tags{display:flex;flex-wrap:wrap;gap:.35rem;margin:0;padding:0;list-style:none}
+.skill-tags li{font-size:.78rem;padding:.12rem .6rem;border-radius:4px;border:1px solid color-mix(in srgb,var(--info) 35%,transparent);color:var(--info);background:color-mix(in srgb,var(--info) 7%,transparent)}
+.slots{display:grid;grid-template-columns:1fr;gap:.4rem;margin:0}
+.slot{display:grid;grid-template-columns:2rem minmax(0,1fr);gap:.6rem;align-items:center;padding:.55rem .7rem;border:1px solid var(--line);border-radius:7px;background:#F6F1E6}
+.slot .ic{width:2rem;height:2rem;display:grid;place-items:center;border-radius:5px;background:#2a26220d;font-family:var(--font-title);font-size:.8rem;color:var(--muted)}
+.slot dt{font-size:.66rem;letter-spacing:.18em;color:var(--dim)}
+.slot dd{margin:0;font-size:.84rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot.empty-slot{background:transparent;border-style:dashed}
+.slot.empty-slot dd{color:var(--ink-3)}
+.slot.wide{grid-column:1/-1}
+
+/* ---- 势力组织 ---- */
+.archive{--k-gang:#A3412E;--k-government:#2D5E7D;--k-civil:#2F7A58;--k-business:#8E6C25}
+.org-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.15rem .6rem;width:100%;text-align:left;border:0;border-radius:6px;padding:.8rem .7rem .8rem .95rem;position:relative;border-bottom:1px solid var(--hair)}
+.org-row::before{content:'';position:absolute;left:0;top:.75rem;bottom:.75rem;width:3px;border-radius:2px;background:var(--k);opacity:.75}
+.org-row:hover:not(:disabled){background:#2a262208}
+.org-row[aria-pressed=true]{background:linear-gradient(90deg,color-mix(in srgb,var(--k) 12%,transparent),transparent 85%)}
+.org-row[aria-pressed=true]::before{opacity:1;box-shadow:0 0 0 1px var(--k)}
+.org-row strong{font-family:var(--font-title);font-size:1rem;letter-spacing:.08em;color:var(--head);font-weight:600}
+.org-row .snip{grid-column:1/-1;font-size:.74rem;color:var(--muted);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.org-row .rel{grid-column:1/-1;font-size:.7rem;color:var(--dim)}
+.kpill{display:inline-flex;align-items:center;font-size:.66rem;padding:.06rem .5rem;border-radius:3px;white-space:nowrap;color:var(--k);border:1px solid color-mix(in srgb,var(--k) 45%,transparent);background:color-mix(in srgb,var(--k) 8%,transparent);height:max-content}
+[data-kind=gang]{--k:var(--k-gang)}[data-kind=government]{--k:var(--k-government)}[data-kind=civil]{--k:var(--k-civil)}[data-kind=business]{--k:var(--k-business)}
+.og-emblem{width:4.4rem;height:4.4rem;display:grid;place-items:center;font-family:var(--font-title);font-size:1.9rem;color:#F4EDE0;background:var(--k);border-radius:6px;box-shadow:inset 0 0 0 3px var(--k),inset 0 0 0 4px #F4EDE066,0 6px 14px -8px #0008}
+.og-rel{width:15rem;padding:.7rem .9rem;border:1px solid var(--line);border-radius:8px;background:var(--card);font-size:.8rem;color:var(--text);line-height:1.65}
+.og-rel small{display:block;font-size:.7rem;color:var(--dim);letter-spacing:.12em;margin-bottom:.25rem}
+.roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(14rem,1fr));gap:.6rem;margin:0;padding:0;list-style:none}
+.roster li{padding:.75rem .9rem;border:1px solid var(--line);border-radius:7px;background:#F6F1E6}
+.roster .pos{font-size:.68rem;letter-spacing:.18em;color:var(--dim)}
+.roster .who{margin-top:.2rem;font-family:var(--font-title);font-size:1rem;letter-spacing:.1em;color:var(--head)}
+.roster .who.unknown{color:var(--ink-3);font-family:var(--font-body);font-size:.86rem;letter-spacing:.05em}
+.roster p{margin-top:.35rem;font-size:.8rem;color:var(--muted);line-height:1.7}
+.orel{display:grid;gap:.5rem}
+.orel .entry{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.2rem .8rem;align-items:center}
+.orel .entry .seal{grid-row:1/3;width:2.2rem;height:2.2rem;font-size:.85rem;border-radius:5px;color:#F4EDE0!important;background:var(--k)!important;border-color:var(--k)!important;box-shadow:none!important}
+.orel .entry .hd{display:flex;align-items:center;gap:.6rem}
+.orel .entry .prose{margin:0;font-size:.84rem}
+.dyn{list-style:none;margin:0;padding:0;display:grid;gap:.35rem}
+.dyn li{display:flex;align-items:center;gap:.7rem;padding:.5rem .75rem;border:1px solid var(--line);border-radius:6px;background:#F6F1E6;font-size:.86rem}
+.dyn li .st{margin-left:auto}
+.st{font-size:.66rem;padding:.06rem .5rem;border-radius:999px;white-space:nowrap;border:1px solid currentColor}
+.st.active{color:var(--info)}.st.blocked{color:var(--neg)}.st.scheduled,.st.planned,.st.cancelled{color:var(--dim)}.st.resolved,.st.completed{color:var(--pos)}
+.hist{list-style:none;margin:.4rem 0 0;padding:0 0 0 1rem;border-left:1px solid var(--line-2)}
+.hist li{position:relative;padding:.3rem 0 .5rem .2rem;font-size:.86rem;line-height:1.75;color:var(--text)}
+.hist li::before{content:'';position:absolute;left:-1.33rem;top:.75rem;width:7px;height:7px;border-radius:50%;background:var(--sheet);border:1.5px solid var(--gold)}
+.hist li:last-child::before{background:var(--gold)}
+.tech{font-family:var(--font-mono);font-size:.72rem;color:var(--muted)}
+.tech dl{margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:.2rem 1rem}
+.tech dt{color:var(--dim)}.tech dd{margin:0;overflow-wrap:anywhere}
+.money{font-family:var(--font-mono);letter-spacing:.02em}
+@media (max-width:1199px){.pf-grid{grid-template-columns:1fr}.pf-id::after{display:none}.og-rel{width:12rem}}
+
+/* =========================================================
+   第 3 步：物品栏 · 经济与资产
+   ========================================================= */
+/* ---- 物品栏 ---- */
+.inv{flex:1;min-height:0;display:grid;grid-template-columns:11.5rem minmax(0,1fr) minmax(300px,32%);gap:0}
+.inv-rail{padding:1.2rem 1rem 1.2rem 0;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:.25rem}
+.inv-rail button{display:grid;grid-template-columns:1.3rem minmax(0,1fr) auto;align-items:center;gap:.6rem;text-align:left;border:0;border-radius:6px;padding:.6rem .7rem;font-size:.86rem;color:var(--muted);position:relative}
+.inv-rail button:hover:not(:disabled){background:#2a262209;color:var(--head)}
+.inv-rail button[aria-pressed=true]{background:#8E6C2514;color:var(--head)}
+.inv-rail button[aria-pressed=true]::before{content:'';position:absolute;left:0;top:.5rem;bottom:.5rem;width:2px;border-radius:2px;background:var(--gold)}
+.inv-rail .inventory-icon{width:1.3rem;height:1.3rem;color:var(--dim)}
+.inv-rail button[aria-pressed=true] .inventory-icon{color:var(--gold)}
+.inventory-count{font-family:var(--font-mono);font-size:.7rem;color:var(--dim);min-width:1.4rem;text-align:right}
+.inv-mid{min-height:0;padding:1.2rem 1.4rem 2rem}
+.inventory-summary{display:flex;align-items:baseline;gap:.8rem;margin-bottom:1rem;font-family:var(--font-title);font-size:1.05rem;letter-spacing:.18em;color:var(--head)}
+.inventory-summary span{font-family:var(--font-body);font-size:.76rem;letter-spacing:.06em;color:var(--dim)}
+.inventory-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(9.6rem,1fr));gap:.75rem}
+.inventory-tile{position:relative;width:100%;height:100%;min-height:9.6rem;display:flex;flex-direction:column;align-items:flex-start;gap:.4rem;text-align:left;padding:.85rem .9rem .8rem;border:1px solid var(--line-2);border-radius:8px;background:#F4EEE2;overflow:hidden}
+.inventory-tile::after{content:'';position:absolute;right:.7rem;top:.8rem;width:.55rem;height:.55rem;border-radius:50%;border:1px solid #2a262240;background:var(--sheet)}
+.inventory-tile:hover:not(:disabled){border-color:var(--gold-lo);background:#F7F2E8;transform:translateY(-2px);box-shadow:0 10px 18px -14px #0006}
+.inventory-tile[aria-pressed=true]{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 10px 18px -14px #0006}
+.inventory-tile .cat{font-size:.62rem;letter-spacing:.2em;color:var(--dim)}
+.inventory-tile .inventory-icon{width:2.4rem;height:2.4rem;color:#4b453c;margin:.35rem 0 .2rem;stroke-width:1.2}
+.inventory-tile strong{font-family:var(--font-title);font-size:.95rem;letter-spacing:.06em;color:var(--head);line-height:1.45;font-weight:600}
+.inventory-quantity{font-family:var(--font-mono);font-size:.72rem;color:var(--muted);margin-top:auto}
+.inventory-badges{display:flex;gap:.3rem;flex-wrap:wrap}
+.b-eq,.b-quest{font-size:.62rem;padding:.04rem .45rem;border-radius:3px;letter-spacing:.08em;white-space:nowrap}
+.b-eq{color:#F6F0E2;background:var(--gold)}
+.b-quest{color:#A3412E;border:1px solid #A3412E88}
+.inventory-tile.is-eq{background:linear-gradient(160deg,#8E6C2512,#F4EEE2 50%)}
+.inv-detail{min-height:0;border-left:1px solid var(--line);padding:1.4rem 0 2rem 1.4rem}
+.inventory-back{display:none}
+.inventory-detail-heading{display:grid;grid-template-columns:auto minmax(0,1fr);gap:1rem;align-items:center}
+.inv-frame{width:5.2rem;height:5.2rem;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:8px;background:repeating-linear-gradient(135deg,#2a262207 0 6px,transparent 6px 12px)}
+.inv-frame .inventory-icon{width:2.8rem;height:2.8rem;color:var(--head);stroke-width:1.2}
+.inventory-detail-heading h3{font-size:1.45rem;letter-spacing:.1em;color:var(--head);margin:.3rem 0 .35rem;outline:none}
+.inventory-description{margin:1.1rem 0 .4rem;padding:.9rem 1rem;border-left:2px solid var(--gold-lo);background:var(--card);font-family:var(--font-title);font-size:.95rem;line-height:1.9;color:var(--text)}
+.inv-detail .dl{grid-template-columns:1fr}
+.inv-detail .detail{grid-template-columns:6.4rem minmax(0,1fr)}
+.inv-none{height:100%;display:grid;place-items:center;text-align:center;color:var(--dim);font-size:.84rem}
+.inv-none .inventory-icon{width:2.6rem;height:2.6rem;margin:0 auto .7rem;color:#2a262240}
+
+/* ---- 经济与资产 ---- */
+.eco{flex:1;min-height:0;padding:1.4rem 0 2rem}
+.metric-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem}
+.metric{padding:1rem 1.1rem 1.05rem;border:1px solid var(--line-2);border-radius:10px;background:var(--card);position:relative;overflow:hidden}
+.metric small{display:flex;align-items:center;gap:.45rem;font-size:.72rem;letter-spacing:.18em;color:var(--dim)}
+.metric small i{width:1.35rem;height:1.35rem;display:grid;place-items:center;border-radius:4px;font-style:normal;font-family:var(--font-title);font-size:.7rem;letter-spacing:0;color:#F6F0E2;background:var(--c)}
+.metric b{display:block;margin-top:.55rem;font-family:var(--font-mono);font-size:1.45rem;font-weight:500;letter-spacing:.01em;color:var(--head)}
+.metric b em{font-style:normal;font-family:var(--font-body);font-size:.78rem;color:var(--muted);margin-left:.3rem}
+.metric p{margin-top:.3rem;font-size:.72rem;color:var(--dim)}
+.metric.m-cash{--c:var(--gold);border-color:var(--gold-lo);background:linear-gradient(160deg,#8E6C2516,var(--card) 60%)}
+.metric.m-online{--c:var(--info)}.metric.m-debt{--c:var(--neg)}.metric.m-asset{--c:var(--pos)}
+.metric.derived{background:transparent;border-style:dashed}
+.eco-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:0 1.4rem;align-items:start}
+.ledger{list-style:none;margin:0;padding:0}
+.ledger li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.15rem 1rem;padding:.75rem 0;border-bottom:1px dashed var(--hair)}
+.ledger li:last-child{border-bottom:0}
+.ledger h4{margin:0;font-family:var(--font-title);font-size:.96rem;letter-spacing:.08em;color:var(--head);font-weight:600}
+.ledger .amt{font-family:var(--font-mono);font-size:1rem;text-align:right;white-space:nowrap}
+.ledger .sub{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;font-size:.76rem;color:var(--muted)}
+.ledger .received .amt{color:var(--pos)}
+.ledger .received .amt::before{content:'+ '}
+.ledger .expected .amt{color:var(--info)}
+.ledger .cancelled .amt{color:var(--dim);text-decoration:line-through}
+.ledger .cancelled h4{color:var(--dim)}
+.debt{padding:.9rem 1rem;border:1px solid var(--line);border-left:3px solid var(--neg);border-radius:0 7px 7px 0;background:#F6F1E6}
+.debt+.debt{margin-top:.6rem}
+.debt .hd{display:flex;justify-content:space-between;align-items:baseline;gap:1rem}
+.debt h4{margin:0;font-family:var(--font-title);font-size:.98rem;letter-spacing:.08em;color:var(--head)}
+.debt .nums{display:flex;gap:1.2rem;margin-top:.45rem;font-size:.76rem;color:var(--muted)}
+.debt .nums b{font-family:var(--font-mono);font-weight:500;color:var(--head);margin-left:.3rem}
+.debt .bar{height:5px;border-radius:3px;background:#2a262214;margin-top:.55rem;overflow:hidden}
+.debt .bar i{display:block;height:100%;background:var(--neg);border-radius:3px}
+.debt p{margin-top:.5rem;font-size:.82rem;color:var(--text);line-height:1.7}
+.asset{display:grid;grid-template-columns:2.6rem minmax(0,1fr) auto;gap:.2rem .9rem;align-items:start;padding:.85rem .95rem;border:1px solid var(--line);border-radius:8px;background:#F6F1E6}
+.asset+.asset{margin-top:.55rem}
+.asset .ic{grid-row:1/4;width:2.6rem;height:2.6rem;display:grid;place-items:center;border-radius:6px;background:#2F7A5814;color:var(--pos)}
+.asset .ic svg{width:1.4rem;height:1.4rem}
+.asset h4{margin:0;font-family:var(--font-title);font-size:.98rem;letter-spacing:.08em;color:var(--head)}
+.asset .val{font-family:var(--font-mono);font-size:.92rem;color:var(--head);text-align:right;white-space:nowrap}
+.asset .val.null{font-family:var(--font-body);font-size:.8rem;color:var(--dim)}
+.asset .st{grid-column:2/-1;justify-self:start;color:var(--muted);border-color:var(--line-2)}
+.asset .src{grid-column:2/-1;font-size:.76rem;color:var(--dim)}
+.asset-k{display:flex;align-items:center;gap:.6rem;margin:1.1rem 0 .55rem;font-size:.8rem;letter-spacing:.2em;color:var(--muted)}
+.asset-k:first-of-type{margin-top:0}
+.asset-k span{font-family:var(--font-mono);font-size:.68rem;color:var(--dim);letter-spacing:.05em}
+.asset-k::after{content:'';flex:1;height:1px;background:var(--hair)}
+.new-field{border-bottom:1px dotted var(--info)}
+@media (max-width:1199px){.inv{grid-template-columns:10rem minmax(0,1fr)}.inv-detail{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);padding-left:0}.metric-row{grid-template-columns:repeat(2,minmax(0,1fr))}.eco-grid{grid-template-columns:1fr}}
+
+.sec .ledger h4,.sec .debt h4,.sec .asset h4{display:block}
+.sec .ledger h4::before,.sec .ledger h4::after,.sec .debt h4::before,.sec .debt h4::after,.sec .asset h4::before,.sec .asset h4::after{display:none}
+
+/* =========================================================
+   第 4 步：世界事件 · 历史时间轴 · 记忆
+   ========================================================= */
+/* ---- 通用：状态 / 结果印 ---- */
+.ev-st{display:inline-flex;align-items:center;gap:.35rem;font-size:.68rem;padding:.06rem .55rem;border-radius:999px;border:1px solid currentColor;white-space:nowrap;line-height:1.6}
+.ev-st::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+.ev-st.active{color:var(--info)}.ev-st.blocked{color:var(--neg)}.ev-st.scheduled{color:var(--dim)}.ev-st.resolved,.ev-st.success{color:var(--pos)}.ev-st.cancelled{color:var(--dim)}.ev-st.failure{color:var(--neg)}.ev-st.changed{color:var(--gold)}
+.ev-st.active::before{box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 25%,transparent);animation:breathe 1.8s ease-in-out infinite}
+.impact{font-size:.68rem;padding:.06rem .55rem;border-radius:3px;white-space:nowrap}
+.impact.minor{color:var(--muted);background:#2a26220d}.impact.significant{color:#F6F0E2;background:var(--gold)}.impact.major{color:#F6F0E2;background:var(--neg)}
+.ev-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.3rem .6rem;width:100%;text-align:left;border:0;border-radius:6px;padding:.8rem .7rem;border-bottom:1px solid var(--hair);position:relative}
+.ev-row:hover:not(:disabled){background:#2a262208}
+.ev-row[aria-pressed=true]{background:linear-gradient(90deg,#8E6C2516,transparent 85%)}
+.ev-row[aria-pressed=true]::before{content:'';position:absolute;left:0;top:.7rem;bottom:.7rem;width:2px;border-radius:2px;background:var(--gold)}
+.ev-row strong{font-family:var(--font-title);font-size:.98rem;letter-spacing:.06em;color:var(--head);font-weight:600;line-height:1.5}
+.ev-row small{grid-column:1/-1;font-family:var(--font-mono);font-size:.66rem;color:var(--dim)}
+.aux{margin-top:1.4rem;padding-top:1rem;border-top:1px solid var(--line)}
+.aux p.lbl{font-size:.68rem;letter-spacing:.22em;color:var(--dim);margin-bottom:.4rem}
+.aux details.fold{margin:.35rem 0}
+.aux details.fold>summary{font-size:.82rem}
+/* 卷宗 */
+.ev-file-hd{position:relative;padding:1.4rem 0 1rem}
+.ev-file-hd .row{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.ev-file-hd h3{font-size:1.75rem;letter-spacing:.1em;color:var(--head);margin:.55rem 0 0;outline:none;line-height:1.4}
+.ev-crumb{display:flex;gap:.5rem;margin-bottom:.2rem}
+.ev-crumb button{font-size:.76rem;padding:.25rem .65rem}
+.case-stamp{position:absolute;right:.4rem;top:1.2rem;width:5.2rem;height:5.2rem;border-radius:50%;display:grid;place-items:center;text-align:center;font-family:var(--font-title);font-size:.9rem;line-height:1.25;letter-spacing:.15em;transform:rotate(-12deg);pointer-events:none;color:var(--c);border:2px solid color-mix(in srgb,var(--c) 70%,transparent);box-shadow:inset 0 0 0 3px var(--sheet),inset 0 0 0 4px color-mix(in srgb,var(--c) 35%,transparent);opacity:.85}
+.case-stamp small{display:block;font-family:var(--font-mono);font-size:.5rem;letter-spacing:.15em}
+.facts-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;margin:0}
+.facts-grid>div{padding:.65rem .8rem;border:1px solid var(--line);border-radius:7px;background:#F6F1E6}
+.facts-grid>div.wide{grid-column:span 2}
+.facts-grid dt{font-size:.66rem;letter-spacing:.18em;color:var(--dim)}
+.facts-grid dd{margin:.25rem 0 0;font-size:.86rem;color:var(--text);line-height:1.65}
+.facts-grid dd.mono{font-family:var(--font-mono);font-size:.82rem}
+.actor{display:inline-flex;align-items:center;gap:.3rem;margin:.1rem .3rem .1rem 0;font-size:.78rem;padding:.05rem .5rem .05rem .15rem;border-radius:999px;background:#2a26220b;border:1px solid var(--line)}
+.actor i{width:1.1rem;height:1.1rem;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:.56rem;color:#F6F0E2;background:var(--muted)}
+.actor.a-org i{border-radius:3px;background:var(--k,var(--muted))}
+.actor.a-me i{background:var(--gold)}
+.event-prose{font-family:var(--font-title);font-size:.95rem;line-height:1.95;color:var(--text);margin:0}
+.bg-goal{display:grid;grid-template-columns:1fr 1fr;gap:0 1rem}
+.bg-goal .sec{margin-bottom:0}
+/* 阶段轨道 */
+.stage-track{list-style:none;margin:.2rem 0 0;padding:0 0 0 1.1rem;border-left:2px solid var(--line-2)}
+.stage-track li{position:relative;margin-bottom:.45rem}
+.stage-track li::before{content:'';position:absolute;left:calc(-1.1rem - 6px);top:1.05rem;width:10px;height:10px;border-radius:50%;background:var(--sheet);border:2px solid var(--c,var(--dim))}
+.stage-track li.run{--c:var(--info)}
+.stage-track li.run::before{background:var(--info);box-shadow:0 0 0 4px color-mix(in srgb,var(--info) 22%,transparent)}
+.stage-track li.done{--c:var(--pos)}.stage-track li.done::before{background:var(--pos)}
+.stage-track li.fail{--c:var(--neg)}.stage-track li.fail::before{background:var(--neg)}
+.stage-track li.up::before{border-style:dashed}
+.event-stage-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.2rem .8rem;align-items:center;width:100%;text-align:left;padding:.65rem .85rem;border:1px solid var(--line);border-radius:7px;background:#F6F1E6}
+.event-stage-row:hover:not(:disabled){border-color:var(--gold-lo);background:#F8F3E9}
+.event-stage-row strong{font-family:var(--font-title);font-size:.92rem;color:var(--head);letter-spacing:.05em}
+.event-stage-row small{grid-column:1;font-family:var(--font-mono);font-size:.66rem;color:var(--dim)}
+.stage-h{display:flex;align-items:center;gap:.6rem;margin:1rem 0 .55rem;font-size:.78rem;letter-spacing:.18em;color:var(--muted)}
+.stage-h:first-of-type{margin-top:0}
+.stage-h b{font-family:var(--font-mono);font-weight:400;color:var(--dim)}
+/* 成果分类 */
+.know{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem}
+.know>div{padding:.75rem .85rem;border-radius:7px;border:1px solid var(--line);border-top:3px solid var(--c);background:#F6F1E6}
+.know h5{margin:0 0 .45rem!important;font-size:.78rem!important;letter-spacing:.16em;color:var(--c)!important}
+.know ul{margin:0;padding-left:1rem;font-size:.84rem;line-height:1.8}
+.know .k-facts{--c:var(--pos)}.know .k-rep{--c:var(--info)}.know .k-sus{--c:var(--dim)}
+.know .k-sus li{font-style:italic;color:var(--muted)}
+.hist-ref{display:flex;align-items:center;gap:.6rem;padding:.45rem 0;border-bottom:1px dashed var(--hair);font-size:.86rem}
+.hist-ref .t{font-family:var(--font-mono);font-size:.7rem;color:var(--dim);margin-left:auto}
+
+/* ---- 历史时间轴 ---- */
+.hp{flex:1;min-height:0;padding:1.2rem 0 2rem}
+.seg-tabs{display:inline-flex;padding:3px;border:1px solid var(--line-2);border-radius:8px;background:#F6F1E6}
+.seg-tabs button{border:0;border-radius:6px;padding:.4rem 1rem;font-size:.84rem;color:var(--muted)}
+.seg-tabs button[aria-pressed=true]{background:var(--head);color:#F4EDE0}
+.hp-bar{display:flex;align-items:end;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+.hp-bar .f-label{min-width:13rem}
+.history-legend{display:grid;grid-template-columns:1fr 7.5rem 1fr;align-items:center;margin:.4rem 0 .2rem;font-size:.74rem;letter-spacing:.22em}
+.history-legend span:first-child{text-align:right;color:var(--info)}
+.history-legend span:last-child{color:#A3412E}
+.history-legend i{justify-self:center;font-style:normal;font-family:var(--font-mono);font-size:.62rem;color:var(--dim);letter-spacing:.2em}
+.history-axis{list-style:none;margin:0;padding:.6rem 0;position:relative}
+.history-axis::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:linear-gradient(180deg,transparent,var(--line-2) 4%,var(--line-2) 96%,transparent)}
+.history-slot{display:grid;grid-template-columns:1fr 7.5rem 1fr;align-items:start;padding:.55rem 0}
+.history-time{position:relative;display:grid;justify-items:center;gap:.35rem;padding-top:.6rem}
+.history-pin{width:12px;height:12px;border-radius:50%;background:var(--sheet);border:2px solid var(--gold);box-shadow:0 0 0 4px var(--sheet)}
+.history-time time{font-family:var(--font-mono);font-size:.72rem;color:var(--head);background:var(--sheet);padding:0 .3rem;text-align:center;line-height:1.4}
+.history-side{display:grid;gap:.5rem}
+.history-world{justify-items:end}
+.history-node{position:relative;width:min(100%,24rem);text-align:left;padding:.75rem .9rem .8rem;border:1px solid var(--line);border-radius:8px;background:#F6F1E6}
+.history-world .history-node{border-right:3px solid var(--info)}
+.history-protagonist .history-node{border-left:3px solid #A3412E}
+.history-node:hover:not(:disabled){border-color:var(--gold-lo);transform:translateY(-1px);box-shadow:0 8px 16px -12px #0006}
+.history-node .tag{font-size:.62rem;border-radius:3px;padding:.02rem .45rem}
+.history-world .history-node .tag{color:var(--info);border-color:color-mix(in srgb,var(--info) 40%,transparent)}
+.history-protagonist .history-node .tag{color:#A3412E;border-color:#A3412E66}
+.history-node h3{font-size:1rem;letter-spacing:.06em;color:var(--head);margin:.4rem 0 .25rem}
+.history-node p{font-size:.8rem;color:var(--muted);line-height:1.7;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.history-group-pages{display:flex;align-items:center;gap:.5rem;font-size:.72rem;color:var(--dim)}
+.history-group-pages button{padding:0 .5rem;font-size:.9rem;line-height:1.6}
+/* 纪事详情 */
+.chron{max-width:56rem}
+.chron .tag-line{display:flex;gap:.5rem;align-items:center;margin-top:.8rem}
+.chron h3{font-size:1.85rem;letter-spacing:.12em;color:var(--head);margin:.5rem 0 .4rem}
+.chron .lead{font-family:var(--font-title);font-size:1.02rem;color:var(--muted);line-height:1.9}
+.chron .history-narrative{font-family:var(--font-title);font-size:1rem;line-height:2.05;color:var(--text);text-indent:2em;margin:0}
+.chron ol.proc{margin:0;padding:0;list-style:none;counter-reset:p}
+.chron ol.proc li{counter-increment:p;position:relative;padding:.35rem 0 .35rem 2.2rem;font-size:.9rem;line-height:1.8}
+.chron ol.proc li::before{content:counter(p);position:absolute;left:0;top:.45rem;width:1.5rem;height:1.5rem;border-radius:50%;display:grid;place-items:center;font-family:var(--font-mono);font-size:.68rem;color:var(--gold-hi);border:1px solid var(--gold-lo)}
+.nat{font-size:.62rem;padding:.02rem .45rem;border-radius:3px;margin-right:.35rem;border:1px solid currentColor}
+.nat.fact{color:var(--pos)}.nat.statement{color:var(--info)}.nat.rumor,.nat.inference{color:var(--dim)}
+.res-list{list-style:none;margin:0;padding:0;display:grid;gap:.4rem}
+.res-list li{font-size:.88rem;line-height:1.75;padding:.45rem .7rem;border-left:2px solid var(--line-2);background:#F6F1E6}
+.res-list li p{font-size:.74rem;color:var(--dim);margin-top:.15rem}
+.src-foot{margin-top:1.2rem;padding-top:.8rem;border-top:1px dashed var(--line-2);font-size:.76rem;color:var(--dim);display:grid;gap:.2rem}
+.src-foot b{font-weight:400;color:var(--muted)}
+
+/* ---- 记忆 ---- */
+.mem{flex:1;min-height:0;display:grid;grid-template-columns:13rem minmax(0,1fr)}
+.mem-rail{padding:1.2rem 1.1rem 1.2rem 0;border-right:1px solid var(--line)}
+.mem-rail .lbl{font-size:.66rem;letter-spacing:.22em;color:var(--dim);margin:0 0 .5rem .2rem}
+.depth{display:grid;gap:.3rem;position:relative}
+.depth button{display:grid;grid-template-columns:.7rem minmax(0,1fr) auto;gap:.65rem;align-items:center;text-align:left;border:0;border-radius:6px;padding:.6rem .7rem;font-size:.86rem;color:var(--muted);position:relative}
+.depth button i{width:.7rem;height:.7rem;border-radius:2px;background:var(--d)}
+.depth button span:last-child{font-family:var(--font-mono);font-size:.72rem;color:var(--dim)}
+.depth button:hover:not(:disabled){background:#2a262209;color:var(--head)}
+.depth button[aria-pressed=true]{background:#8E6C2514;color:var(--head)}
+.depth button[aria-pressed=true]::before{content:'';position:absolute;left:0;top:.5rem;bottom:.5rem;width:2px;border-radius:2px;background:var(--gold)}
+.depth .d1{--d:#C9D8E2}.depth .d2{--d:#8FB0C6}.depth .d3{--d:#4F7A96}.depth .d4{--d:#22435A}.depth .d5{--d:#A3412E}.depth .d6{--d:var(--gold)}
+.depth .sep{height:1px;background:var(--line);margin:.4rem .3rem}
+.depth-note{margin-top:1rem;font-size:.72rem;line-height:1.75;color:var(--dim)}
+.mem-main{min-height:0;padding:1.2rem 1.4rem 2rem}
+.mem-intro{font-size:.78rem;color:var(--dim);line-height:1.75;padding:.55rem .8rem;border:1px dashed var(--line-2);border-radius:6px;margin-bottom:1rem}
+.mem-search{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:1.1rem}
+.mem-head{display:flex;align-items:baseline;gap:.8rem;margin-bottom:.3rem}
+.mem-head h3{font-size:1.2rem;letter-spacing:.18em;color:var(--head)}
+.mem-head + .muted{font-size:.78rem;color:var(--dim);margin-bottom:.9rem}
+.turn-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.2rem 1rem;align-items:start;padding:.85rem 1rem;border:1px solid var(--line);border-radius:8px;background:#F6F1E6}
+.turn-card+.turn-card{margin-top:.55rem}
+.turn-card .no{grid-row:1/3;width:2.6rem;text-align:center;font-family:var(--font-mono);font-size:1.15rem;color:var(--gold-hi);line-height:1.1;padding-top:.15rem}
+.turn-card .no small{display:block;font-size:.52rem;letter-spacing:.2em;color:var(--dim)}
+.turn-card time,.turn-card .muted{font-family:var(--font-mono);font-size:.66rem;color:var(--dim)}
+.turn-card details>summary{list-style:none;cursor:pointer;font-family:var(--font-title);font-size:.95rem;color:var(--head);line-height:1.7}
+.turn-card details>summary::-webkit-details-marker{display:none}
+.turn-card details>summary::after{content:' 展开正文';font-family:var(--font-body);font-size:.7rem;color:var(--info)}
+.turn-card details[open]>summary::after{content:' 收起'}
+.turn-card details .prose{margin-top:.6rem;font-size:.92rem;line-height:2;text-align:left}
+.turn-card>button{grid-column:3;grid-row:1/3;align-self:center;font-size:.76rem;padding:.35rem .7rem;white-space:nowrap}
+.mem-card{padding:.9rem 1rem;border:1px solid var(--line);border-left:3px solid var(--d,var(--line-2));border-radius:0 8px 8px 0;background:#F6F1E6}
+.mem-card+.mem-card{margin-top:.55rem}
+.mem-card .top{display:flex;align-items:center;flex-wrap:wrap;gap:.45rem;font-size:.72rem;color:var(--dim)}
+.mem-card .top time{font-family:var(--font-mono)}
+.mem-card .prose{margin:.5rem 0 .3rem;font-size:.93rem;line-height:1.95;text-align:left}
+.mem-card .foot{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin-top:.4rem;font-size:.74rem;color:var(--dim)}
+.mem-card .foot button{font-size:.74rem;padding:.25rem .65rem;margin-left:auto}
+.origin{font-size:.62rem;padding:.02rem .45rem;border-radius:3px;border:1px solid var(--line-2);color:var(--muted)}
+.origin.ro{border-style:dashed}
+.source-drawer{margin-bottom:1.2rem;padding:1.1rem 1.3rem;border:1px solid var(--gold-lo);border-radius:8px;background:#FBF7EE;box-shadow:0 10px 24px -18px #0007;outline:none}
+.source-drawer h3{font-size:1.05rem;letter-spacing:.12em;color:var(--head)}
+.source-drawer .sum{margin:.4rem 0 .6rem;font-size:.82rem;color:var(--muted)}
+.source-drawer .prose{font-size:.95rem;line-height:2.05;text-align:left;max-height:16rem;overflow:auto}
+.source-drawer>button{margin-top:.6rem;font-size:.78rem}
+@media (max-width:1199px){.facts-grid,.know{grid-template-columns:1fr 1fr}.bg-goal{grid-template-columns:1fr}.history-legend,.history-slot{grid-template-columns:1fr 5.5rem 1fr}.mem{grid-template-columns:11rem minmax(0,1fr)}.mem-search{grid-template-columns:1fr}}
+
+.ev-row .ev-st{align-self:start;margin-top:.25rem}
+.actor{white-space:nowrap}
+.history-legend,.history-slot{grid-template-columns:1fr 9rem 1fr}
+.history-time time{white-space:nowrap;font-size:.68rem}
+@media (max-width:1199px){.history-legend,.history-slot{grid-template-columns:1fr 8rem 1fr}}
+
+/* =========================================================
+   第 5 步：地图（地点层级 + 城区示意 + 地点卡）
+   ========================================================= */
+.mp{flex:1;min-height:0;display:grid;grid-template-columns:clamp(250px,24%,300px) minmax(0,1fr)}
+.mp-tree{min-height:0;padding:1.1rem 1.1rem 1.6rem 0;border-right:1px solid var(--line)}
+.mp-tree .muted{font-size:.74rem;color:var(--dim);line-height:1.7;margin:.6rem 0 .9rem}
+.map-tree{list-style:none;margin:0;padding:0}
+.map-tree .map-tree{padding-left:1rem;margin-left:.55rem;border-left:1px dashed var(--line-2)}
+.mt-row{display:flex;align-items:center;gap:.35rem;width:100%;text-align:left;border:0;border-radius:5px;padding:.38rem .45rem;font-size:.86rem;color:var(--text);position:relative}
+.mt-row:hover:not(:disabled){background:#2a262209}
+.mt-row[aria-pressed=true]{background:#8E6C2516;color:var(--head)}
+.mt-row[aria-pressed=true]::before{content:'';position:absolute;left:-.1rem;top:.35rem;bottom:.35rem;width:2px;border-radius:2px;background:var(--gold)}
+.mt-tog{flex:none;width:1rem;height:1rem;display:grid;place-items:center;font-size:.6rem;color:var(--dim);transition:transform .2s}
+.mt-tog.open{transform:rotate(90deg)}
+.mt-tog.leaf::before{content:'';width:4px;height:4px;border-radius:50%;background:#2a262240}
+.mt-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mt-lv0>.mt-row .mt-name{font-family:var(--font-title);font-size:1rem;letter-spacing:.2em;color:var(--head)}
+.mt-n{font-family:var(--font-mono);font-size:.62rem;color:var(--dim)}
+.here{flex:none;display:inline-grid;place-items:center;width:1.15rem;height:1.15rem;border-radius:50%;font-family:var(--font-title);font-size:.58rem;color:#F6F0E2;background:#A3412E;box-shadow:0 0 0 2px var(--sheet),0 0 0 3px #A3412E66}
+.mp-main{min-height:0;padding:1.2rem 0 2rem 1.4rem}
+/* 城区示意 */
+.city-map{position:relative;border:1px solid var(--line-2);border-radius:10px;overflow:hidden;
+  background:linear-gradient(#2a26220a 1px,transparent 1px) 0 0/28px 28px,linear-gradient(90deg,#2a26220a 1px,transparent 1px) 0 0/28px 28px,#EEE7D6}
+.city-map .cm-hd{position:relative;z-index:2;display:flex;align-items:center;gap:.8rem;padding:.75rem 1rem;border-bottom:1px solid var(--line)}
+.city-map .cm-hd h4{margin:0;font-family:var(--font-title);font-size:1.15rem;letter-spacing:.35em;color:var(--head)}
+.city-map .cm-hd .en{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.24em;color:color-mix(in srgb,var(--tint) 45%,#1a2a28)}
+.city-map .cm-hd .legend{margin-left:auto;display:flex;gap:.9rem;font-size:.68rem;color:var(--dim)}
+.city-map .cm-hd .legend span{display:inline-flex;align-items:center;gap:.3rem}
+.city-map .river{position:absolute;inset:3rem 0 0 0;z-index:0;pointer-events:none}
+.city-map .river path{fill:none;stroke:color-mix(in srgb,var(--tint) 55%,#9fb6c4);stroke-width:16;stroke-linecap:round;opacity:.5}
+.city-map .river path.thin{stroke-width:8;opacity:.28}
+.city-map .river text{font-family:var(--font-title);font-size:12px;letter-spacing:6px;fill:color-mix(in srgb,var(--tint) 40%,#3b5566);opacity:.7}
+.cm-body{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:.9rem;padding:1.1rem}
+.district{flex:1 1 15rem;min-width:13rem;padding:.7rem .8rem .8rem;border:1.5px dashed #2a262238;border-radius:8px;background:#F4EEE2b8;backdrop-filter:blur(1px);text-align:left;cursor:pointer;transition:border-color .2s,box-shadow .2s}
+.district:hover{border-color:var(--gold-lo)}
+.district.on{border:1.5px solid var(--gold);box-shadow:0 0 0 3px #8E6C2522}
+.district.has-me{border-color:#A3412E88}
+.district>.dn{display:flex;align-items:center;gap:.4rem;font-family:var(--font-title);font-size:.95rem;letter-spacing:.2em;color:var(--head)}
+.district>.dn small{margin-left:auto;font-family:var(--font-mono);font-size:.6rem;letter-spacing:0;color:var(--dim)}
+.blocks{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.6rem}
+.block{padding:.4rem .55rem .5rem;border:1px solid var(--line-2);border-radius:6px;background:#FBF8F1;min-width:7rem;flex:1 1 7rem;cursor:pointer}
+.block.on{border-color:var(--gold);background:#FFF9EC}
+.block .bn{font-size:.8rem;color:var(--head);display:flex;align-items:center;gap:.3rem}
+.pins{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.35rem}
+.pin{display:inline-flex;align-items:center;gap:.25rem;font-size:.66rem;color:var(--muted);padding:.02rem .4rem .02rem .25rem;border-radius:999px;background:#2a26220a;border:1px solid transparent;cursor:pointer;white-space:nowrap}
+.pin::before{content:'';width:6px;height:6px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--dim)}
+.pin:hover{border-color:var(--gold-lo)}
+.pin.on{color:var(--head);border-color:var(--gold);background:#8E6C2514}
+.pin.me{color:#A3412E;font-weight:600}
+.pin.me::before{background:#A3412E;box-shadow:0 0 0 3px #A3412E33;animation:breathe 1.8s ease-in-out infinite}
+.pin .ppl{font-family:var(--font-mono);font-size:.56rem;color:var(--dim)}
+/* 地点卡 */
+.place-card{margin-top:1.2rem}
+.pc-crumb{font-size:.76rem;color:var(--dim);letter-spacing:.05em;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center}
+.pc-crumb button{border:0;padding:0;font-size:.76rem;color:var(--info);background:none}
+.pc-crumb button:hover:not(:disabled){background:none;text-decoration:underline}
+.pc-title{display:flex;align-items:center;gap:.9rem;margin:.45rem 0 .2rem}
+.pc-title h3{font-size:1.75rem;letter-spacing:.12em;color:var(--head)}
+.pc-title .lv{font-size:.68rem;padding:.06rem .5rem;border-radius:3px;border:1px solid var(--line-2);color:var(--muted)}
+.pc-here{display:inline-flex;align-items:center;gap:.4rem;font-size:.74rem;color:#A3412E;padding:.1rem .6rem .1rem .2rem;border-radius:999px;background:#A3412E12;border:1px solid #A3412E44}
+.pc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 1rem}
+.pc-grid .sec{margin-bottom:0}
+.kids{display:flex;flex-wrap:wrap;gap:.45rem}
+.kids button{display:inline-flex;align-items:center;gap:.4rem;font-size:.84rem;padding:.4rem .75rem;border-radius:6px;background:#F6F1E6}
+.kids button small{font-family:var(--font-mono);font-size:.62rem;color:var(--dim)}
+.who-list{display:grid;gap:.35rem}
+.who-row{display:flex;align-items:center;gap:.6rem;font-size:.86rem}
+.who-row .seal{width:1.7rem;height:1.7rem;font-size:.7rem;border-radius:50%;box-shadow:none}
+.who-row .link-btn{font-family:var(--font-title);font-size:.92rem}
+.who-row .pill{margin-left:auto}
+.derived-note{font-size:.68rem;color:var(--dim);margin:-.4rem 0 .7rem;letter-spacing:.06em}
+@media (max-width:1199px){.mp{grid-template-columns:220px minmax(0,1fr)}.pc-grid{grid-template-columns:1fr}}
+
+/* =========================================================
+   第 6 步：设置
+   ========================================================= */
+.st-wrap{flex:1;min-height:0;display:grid;grid-template-columns:12.5rem minmax(0,1fr)}
+.settings-nav{padding:1.2rem 1rem 1.2rem 0;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:.25rem}
+.settings-nav>button{display:grid;grid-template-columns:1.6rem minmax(0,1fr) auto;align-items:center;gap:.55rem;text-align:left;border:0;border-radius:6px;padding:.6rem .7rem;font-size:.88rem;color:var(--muted);position:relative}
+.settings-nav>button i{width:1.6rem;height:1.6rem;display:grid;place-items:center;border-radius:5px;font-style:normal;font-family:var(--font-title);font-size:.72rem;background:#2a26220c;color:var(--muted)}
+.settings-nav>button:hover:not(:disabled){background:#2a262209;color:var(--head)}
+.settings-nav>button[aria-pressed=true]{background:#8E6C2514;color:var(--head)}
+.settings-nav>button[aria-pressed=true] i{background:var(--head);color:#F4EDE0}
+.settings-nav>button[aria-pressed=true]::before{content:'';position:absolute;left:0;top:.5rem;bottom:.5rem;width:2px;border-radius:2px;background:var(--gold)}
+.settings-nav .dirty{width:7px;height:7px;border-radius:50%;background:var(--neg);box-shadow:0 0 0 3px #A3412E22}
+.settings-nav .notices{margin-top:auto;padding-top:1rem;border-top:1px solid var(--line);display:grid;gap:.3rem}
+.settings-nav .notices button{border:0;padding:.2rem 0;background:none;font-size:.78rem;color:var(--info);text-align:left}
+.settings-nav .notices button:hover:not(:disabled){background:none;text-decoration:underline}
+.settings-content{min-height:0;display:flex;flex-direction:column}
+.st-scroll{flex:1;min-height:0;padding:1.3rem 1.5rem 1.5rem}
+.st-title{display:flex;align-items:baseline;gap:.8rem;margin-bottom:.3rem}
+.st-title h3{font-size:1.35rem;letter-spacing:.2em;color:var(--head)}
+.st-lead{font-size:.8rem;color:var(--dim);line-height:1.75;margin-bottom:1.1rem;max-width:46rem}
+/* 表单行 */
+.fields{display:grid;gap:0}
+.field{display:grid;grid-template-columns:minmax(10rem,15rem) minmax(0,1fr);gap:1.2rem;align-items:center;padding:.85rem 0;border-bottom:1px dashed var(--hair)}
+.field:last-child{border-bottom:0}
+.field>.lab b{display:block;font-weight:500;font-size:.9rem;color:var(--head)}
+.field>.lab small{display:block;font-size:.72rem;color:var(--dim);line-height:1.6;margin-top:.15rem}
+.field .ctl{display:flex;align-items:center;gap:.6rem;min-width:0}
+.field .ctl .f-input,.field .ctl .f-select{max-width:22rem}
+.unit{position:relative;display:inline-flex;align-items:center;max-width:12rem;width:100%}
+.unit .f-input{padding-right:2.6rem;font-family:var(--font-mono)}
+.unit span{position:absolute;right:.75rem;font-size:.74rem;color:var(--dim)}
+/* 开关 */
+.toggle{display:inline-flex;align-items:center;gap:.7rem;cursor:pointer;font-size:.88rem;color:var(--head)}
+.toggle input{appearance:none;flex:none;width:2.5rem;height:1.4rem;border-radius:999px;background:#2a26222a;position:relative;cursor:pointer;transition:background .2s;margin:0}
+.toggle input::after{content:'';position:absolute;left:3px;top:3px;width:calc(1.4rem - 6px);height:calc(1.4rem - 6px);border-radius:50%;background:#FBF8F1;box-shadow:0 1px 3px #0003;transition:transform .2s var(--ease)}
+.toggle input:checked{background:var(--pos)}
+.toggle input:checked::after{transform:translateX(1.1rem)}
+.toggle input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.toggle input:disabled{opacity:.5;cursor:not-allowed}
+.tg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+.tg-card{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:.85rem 1rem;border:1px solid var(--line);border-radius:8px;background:#F6F1E6}
+.tg-card b{display:block;font-weight:500;font-size:.9rem;color:var(--head)}
+.tg-card small{display:block;font-size:.72rem;color:var(--dim);line-height:1.6;margin-top:.2rem}
+fieldset.later{margin:1.2rem 0 0;padding:.9rem 1rem 1rem;border:1px dashed var(--line-2);border-radius:8px;opacity:.7}
+fieldset.later legend{padding:0 .4rem;font-size:.76rem;letter-spacing:.14em;color:var(--dim)}
+/* 渠道卡 */
+.ch-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:.65rem}
+.ch{position:relative;text-align:left;padding:.85rem 1rem .9rem;border:1px solid var(--line-2);border-radius:9px;background:#F6F1E6;display:grid;gap:.25rem}
+.ch[aria-pressed=true]{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+.ch .nm{display:flex;align-items:center;gap:.5rem;font-family:var(--font-title);font-size:1rem;color:var(--head);letter-spacing:.06em}
+.ch .proto{font-size:.64rem;padding:.03rem .45rem;border-radius:3px;color:#F6F0E2;background:var(--c)}
+.ch .url{font-family:var(--font-mono);font-size:.68rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch .mdl{font-size:.76rem;color:var(--muted)}
+.ch .def{position:absolute;right:.8rem;top:.8rem;font-size:.62rem;padding:.02rem .45rem;border-radius:999px;color:var(--gold-hi);border:1px solid var(--gold-lo)}
+.ch.add{place-items:center;border-style:dashed;color:var(--dim);font-size:.86rem;min-height:6.2rem;background:transparent}
+.ch.add:hover:not(:disabled){color:var(--gold-hi);border-color:var(--gold-lo)}
+.p-openai{--c:#2F7A58}.p-anthropic{--c:#A3412E}.p-gemini{--c:#2D5E7D}
+.secret{display:flex;gap:.4rem;max-width:22rem;width:100%}
+.secret .f-input{font-family:var(--font-mono);letter-spacing:.15em}
+/* 路由表 */
+.routes{width:100%;border-collapse:separate;border-spacing:0 .45rem;font-size:.86rem}
+.routes th{font-size:.7rem;letter-spacing:.16em;color:var(--dim);font-weight:400;text-align:left;padding:0 .6rem}
+.routes td{padding:.55rem .6rem;background:#F6F1E6;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.routes td:first-child{border-left:1px solid var(--line);border-radius:7px 0 0 7px;font-family:var(--font-title);color:var(--head);white-space:nowrap}
+.routes td:last-child{border-right:1px solid var(--line);border-radius:0 7px 7px 0}
+.routes td:first-child i{display:inline-grid;place-items:center;width:1.4rem;height:1.4rem;margin-right:.5rem;border-radius:50%;font-style:normal;font-family:var(--font-mono);font-size:.62rem;color:var(--gold-hi);border:1px solid var(--gold-lo)}
+.routes .f-select{max-width:none;padding-top:.4rem;padding-bottom:.4rem;font-size:.82rem}
+.routes tr.is-follow td:not(:first-child):not(:last-child){opacity:.45}
+/* 底部保存条 */
+.st-bar{flex:none;display:flex;align-items:center;gap:1rem;padding:.8rem 1.5rem;border-top:1px solid var(--line);background:var(--sheet-solid)}
+.st-bar .field-hint{flex:1;font-size:.8rem;color:var(--muted);text-align:left;padding:0;display:flex;align-items:center;gap:.5rem}
+.st-bar .field-hint.ok::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--pos)}
+.st-bar .field-hint.dirty{color:var(--neg)}
+.st-bar .field-hint.dirty::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--neg)}
+.btn-ink{border:0;padding:.6rem 1.4rem;border-radius:7px;background:var(--head);color:#F4EDE0;font-weight:500;letter-spacing:.12em}
+.btn-ink:hover:not(:disabled){background:#000;color:#fff;border:0}
+.btn-danger{color:var(--neg)!important;border-color:#A3412E55!important}
+/* 未保存确认 */
+.confirm{margin:1rem 0 0;padding:1rem 1.1rem;border:1px solid #A3412E66;border-left:3px solid var(--neg);border-radius:0 8px 8px 0;background:#FBF4EC;display:flex;align-items:center;gap:1rem}
+.confirm p{flex:1;font-size:.86rem;color:var(--head)}
+.confirm button{font-size:.8rem}
+.pi-note{padding:1rem 1.1rem;border:1px dashed var(--line-2);border-radius:8px;font-size:.84rem;color:var(--muted);line-height:1.8}
+@media (max-width:1199px){.st-wrap{grid-template-columns:10.5rem minmax(0,1fr)}.field{grid-template-columns:1fr;gap:.5rem}.tg-grid{grid-template-columns:1fr}}
+
+.archive[data-tone=paper] .btn-ink:hover:not(:disabled){background:#000;color:#fff;border:0}
+.archive[data-tone=paper] .btn-ink{border:0}
+
+</style>
+</head>
+<body>
+
+<div class="atmo" id="atmo" data-city="cq" data-time="night" data-wx="rain" aria-hidden="true">
+  <div class="stars"></div>
+  <div class="wx wx-cloud"></div>
+  <div class="skyline" id="skyline"></div>
+  <div class="wx wx-fog"></div>
+  <div class="wx wx-rain"><i></i></div>
+  <div class="wx wx-snow"></div>
+  <div class="vignette"></div>
+  <div class="grain"></div>
+</div>
+
+<main class="game" id="game" data-city="cq" data-time="night">
+  <!-- ========== 顶栏 ========== -->
+  <header class="bar glass">
+    <div class="bar-city"><span class="seal" aria-hidden="true">黑</span><div><h1 id="cityName">重庆</h1><small id="cityEn">CHONGQING · 山城</small></div></div>
+    <div class="bar-main">
+      <p class="where" title="重庆 › 渝中区 › 解放碑 › 十八梯老街「旧时光」咖啡馆"><span class="path">重庆 › 渝中区 › 解放碑</span><span class="name">十八梯老街「旧时光」咖啡馆</span></p>
+      <div class="clock"><time id="clockTime">23:41</time><span class="date"><span>2026/11/10 周二</span><span class="tod" id="tod">深夜</span></span></div>
+      <div class="chips">
+        <p class="chip" id="wxChip" title="小雨，气温 9℃，江面起雾"><span class="seal" id="wxSeal">雨</span><small>天气</small><span id="wxText">小雨，气温 9℃，江面起雾</span></p>
+        <p class="chip" title="店里只剩两桌客人，咖啡机的蒸汽声盖过了雨声"><span class="seal">境</span><small>环境</small><span>店里只剩两桌客人，咖啡机的蒸汽声盖过了雨声</span></p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== 左栏：主角 ========== -->
+  <aside class="hero glass" aria-label="主角信息">
+    <div class="id"><div class="portrait"><span class="seal" aria-hidden="true">沈</span></div>
+      <div><h2>沈砚</h2><p>27 岁 · 男 · 自由摄影师</p></div></div>
+    <section><p class="sec-title">资金</p><div class="funds">
+      <div class="fund cash"><small>现金</small><strong>¥3,280.00</strong></div>
+      <div class="fund"><small>线上资金</small><strong>¥46,915.20</strong></div></div></section>
+    <section><p class="sec-title">状态</p><div class="cond">
+      <div title="右手腕轻微扭伤，不影响行动"><small>身体</small><span>右手腕轻微扭伤，不影响行动</span></div>
+      <div title="警惕，压着火"><small>情绪</small><span>警惕，压着火</span></div></div></section>
+    <section><p class="sec-title">当前穿戴与装备</p><dl class="wear">
+      <div><dt>上衣</dt><dd title="深灰色防水夹克">深灰色防水夹克</dd></div>
+      <div><dt>下装</dt><dd>黑色工装裤</dd></div>
+      <div><dt>鞋子</dt><dd>旧马丁靴</dd></div>
+      <div><dt>饰品</dt><dd title="父亲留下的机械表、相机背带">父亲留下的机械表、相机背带</dd></div>
+      <div><dt>主武器</dt><dd>折叠伞（加固伞骨）</dd></div>
+      <div data-empty><dt>副武器</dt><dd>无</dd></div>
+      <div data-empty><dt>载具</dt><dd>无</dd></div></dl></section>
+    <div class="hero-actions"><button data-archive="人物档案" aria-current="false">人物档案</button><button data-archive="经济与资产" aria-current="false">经济与资产</button></div>
+  </aside>
+
+  <!-- ========== 中栏：正文 + 行动 ========== -->
+  <section class="stage" aria-label="剧情与行动">
+    <div class="reader" id="reader" tabindex="0" aria-label="正文阅读区域"></div>
+    <div class="composer glass" id="composer"></div>
+  </section>
+
+  <!-- ========== 右栏：世界资料 ========== -->
+  <aside class="dock glass" aria-label="世界资料">
+    <h2>世界<br>资料</h2>
+    <nav aria-label="世界资料分类" id="dockNav"></nav>
+    <nav class="sys" aria-label="系统操作"><button data-toast="打开设置"><span class="seal" aria-hidden="true">设</span>设置</button><button data-toast="返回首页"><span class="seal" aria-hidden="true">归</span>返回首页</button></nav>
+  </aside>
+</main>
+
+<div class="toast" id="toast" role="status"></div>
+<div class="demo" id="demo">
+  <div class="demo-panel">
+    <p class="dim" style="color:var(--dim)">设计稿控制（不属于界面）</p>
+    <div><p>城市（根地点）</p><div class="seg" data-k="city"><button aria-pressed="true" data-v="cq">重庆</button><button aria-pressed="false" data-v="sh">上海</button><button aria-pressed="false" data-v="hrb">哈尔滨</button><button aria-pressed="false" data-v="gz">广州</button><button aria-pressed="false" data-v="other">其他城市</button></div></div>
+    <div><p>时间（worldClock 小时）</p><div class="seg" data-k="time"><button aria-pressed="false" data-v="dawn">06:20</button><button aria-pressed="false" data-v="day">14:05</button><button aria-pressed="false" data-v="dusk">18:10</button><button aria-pressed="false" data-v="night">21:30</button><button aria-pressed="true" data-v="late">23:41</button></div></div>
+    <div><p>天气（weatherText 关键词）</p><div class="seg" data-k="wx"><button aria-pressed="false" data-v="clear">晴</button><button aria-pressed="false" data-v="cloud">阴</button><button aria-pressed="true" data-v="rain">雨</button><button aria-pressed="false" data-v="snow">雪</button><button aria-pressed="false" data-v="fog">雾</button></div></div>
+    <div><p>回合状态</p><div class="seg" data-k="flow"><button aria-pressed="true" data-v="settled">已结算·等待行动</button><button aria-pressed="false" data-v="busy">生成中</button><button aria-pressed="false" data-v="error">失败</button><button aria-pressed="false" data-v="opening">开局空白</button></div></div>
+  </div>
+  <button id="demoBtn">设计稿控制</button>
+</div>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let tt; const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 1800); };
+
+/* ---------- 天际线：与 src/ui/home/skyline.ts 同源 ---------- */
+const rng = seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const W = 1200;
+function towers(r, x0, x1, base, hMin, hMax, wMin, wMax, fill) {
+  let s = '', x = x0;
+  while (x < x1) {
+    const w = wMin + r() * (wMax - wMin), h = hMin + r() * (hMax - hMin);
+    s += `<rect x="${x.toFixed(1)}" y="${(base - h).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${fill}"/>`;
+    if (h > 30) for (let k = 0; k < Math.floor(h / 14); k++) if (r() > .55)
+      s += `<rect class="w" x="${(x + 3 + r() * (w - 7)).toFixed(1)}" y="${(base - h + 7 + k * 13).toFixed(1)}" width="2" height="3" fill="#F2DDA0"/>`;
+    x += w + 2 + r() * 5;
+  }
+  return s;
+}
+const river = (r, n, y, c, o) => `<g fill="${c}" opacity="${o}">${Array.from({length:n},()=>`<rect x="${(r()*W).toFixed(0)}" y="${y+r()*12|0}" width="${8+r()*24|0}" height="1"/>`).join('')}</g>`;
+const clear = (svg, a, b) => svg.replace(/<rect (class="w" )?x="([\d.]+)"[^>]*\/>/g, (m, w, x) => (+x > a && +x < b) ? '' : m);
+const SKY = {
+  cq(r) { return `<path d="M0 118 C120 70 260 96 400 62 S660 40 800 72 S1020 58 1200 76 V160 H0Z" fill="#17211e"/>` + towers(r, 10, W, 112, 20, 70, 10, 22, '#1a2421')
+    + `<path d="M0 140 C160 110 320 128 480 100 S860 92 1200 110 V160 H0Z" fill="#111816"/>` + towers(r, 30, W - 10, 130, 30, 95, 12, 24, '#0c100f')
+    + `<line x1="0" y1="120" x2="${W}" y2="96" stroke="#2e3a36" stroke-width="2"/>` + `<g fill="#2e3a36">${Array.from({length:10},(_, i)=>{const x=60+i*120;return `<rect x="${x}" y="${120-x*0.02}" width="3" height="40"/>`}).join('')}</g>`
+    + `<g style="${reduce?'':'animation:train 14s linear infinite'}"><rect x="0" y="105" width="90" height="8" rx="2" fill="#9cc7be" opacity=".8" transform="rotate(-1.1)"/></g>`
+    + `<rect y="146" width="${W}" height="14" fill="#0b1211"/>` + river(r, 26, 148, '#7FA7A0', .25); },
+  sh(r) { const L = 560; return towers(r, 0, W, 140, 25, 75, 10, 20, '#1a1f2e') + clear(towers(r, 0, W, 140, 35, 95, 12, 26, '#0d1018'), L - 30, L + 260)
+    + `<g fill="#232a3e" stroke="#8E9BD8" stroke-opacity=".25"><rect x="${L}" y="16" width="4" height="124"/><circle cx="${L+2}" cy="60" r="11"/><circle cx="${L+2}" cy="98" r="15"/><rect x="${L-8}" y="98" width="20" height="42"/>`
+    + `<path d="M${L+120} 140 V26 L${L+142} 14 L${L+164} 26 V140Z"/><path d="M${L+200} 140 V40 Q${L+212} 22 ${L+224} 40 V140Z"/></g><rect x="${L+135}" y="22" width="14" height="10" fill="#141824"/>`
+    + `<rect y="140" width="${W}" height="20" fill="#0b0d14"/>` + river(r, 34, 143, '#8E9BD8', .3); },
+  hrb(r) { const L = 580; return towers(r, 0, W, 140, 18, 50, 18, 34, '#1b2128') + clear(towers(r, 0, W, 140, 25, 60, 20, 40, '#0e1216'), L - 50, L + 50)
+    + `<g fill="#242c35" stroke="#A9C3D8" stroke-opacity=".22"><path d="M${L-32} 140 V92 H${L+32} V140Z"/><path d="M${L-15} 92 C${L-15} 70 ${L} 64 ${L} 46 C${L} 64 ${L+15} 70 ${L+15} 92Z"/><rect x="${L-1}" y="34" width="2" height="14"/>`
+    + [-38, 24].map(d => `<path d="M${L+d} 140 V104 H${L+d+14} V140Z"/><path d="M${L+d+3} 104 C${L+d+3} 96 ${L+d+7} 94 ${L+d+7} 88 C${L+d+7} 94 ${L+d+11} 96 ${L+d+11} 104Z"/>`).join('') + `</g>`
+    + `<rect y="140" width="${W}" height="20" fill="#121820"/><rect y="140" width="${W}" height="1" fill="#A9C3D8" opacity=".25"/>`; },
+  gz(r) { const L = 640; return towers(r, 0, W, 140, 22, 70, 10, 22, '#221d19') + clear(towers(r, 0, W, 140, 35, 90, 12, 24, '#120f0d'), L - 30, L + 40)
+    + `<path d="M${L-8} 140 Q${L+10} 70 ${L-4} 8 L${L+22} 8 Q${L+8} 70 ${L+32} 140Z" fill="#2b231d" stroke="#D08A6A" stroke-opacity=".3"/><rect x="${L+8}" y="0" width="2" height="8" fill="#D08A6A"/>`
+    + `<g fill="#0f110d">${Array.from({length:18},(_, i)=>`<circle cx="${30+i*66+r()*20|0}" cy="${130+r()*6|0}" r="${10+r()*8|0}"/>`).join('')}</g>`
+    + `<rect y="140" width="${W}" height="20" fill="#110e0c"/>` + river(r, 30, 143, '#D08A6A', .3); },
+};
+const seeds = { cq: 7, sh: 31, hrb: 53, gz: 97 };
+
+/* ---------- 示例数据（字段均来自现有 GameState） ---------- */
+const CITY = {
+  cq:{name:'重庆',en:'CHONGQING · 山城',path:'重庆 › 渝中区 › 解放碑',place:'十八梯老街「旧时光」咖啡馆'},
+  sh:{name:'上海',en:'SHANGHAI · 魔都',path:'上海 › 黄浦区 › 外滩',place:'北京东路一间通宵便利店'},
+  hrb:{name:'哈尔滨',en:'HARBIN · 冰城',path:'哈尔滨 › 道里区 › 中央大街',place:'索菲亚教堂对面的旧书店'},
+  other:{name:'杭州',en:'HANGZHOU',path:'杭州 › 西湖区 › 南山路',place:'湖边一家深夜面馆'},
+  gz:{name:'广州',en:'GUANGZHOU · 羊城',path:'广州 › 越秀区 › 北京路',place:'骑楼下的老字号茶餐厅'},
+};
+const TIME = {dawn:['06:20','黎明'],day:['14:05','午后'],dusk:['18:10','黄昏'],night:['21:30','入夜'],late:['23:41','深夜']};
+const WX = {clear:['晴','晴，气温 12℃，无风'],cloud:['阴','阴，云层压得很低'],rain:['雨','小雨，气温 9℃，江面起雾'],snow:['雪','中雪，气温 -14℃，路面结冰'],fog:['雾','大雾，能见度不足百米']};
+const PANELS = [['人','NPC'],['势','势力组织'],['图','地图'],['物','物品栏'],['事','世界事件'],['史','历史时间轴'],['忆','记忆']];
+$('#dockNav').innerHTML = PANELS.map(([s, n]) => `<button data-toast="打开 ${n}"><span class="seal" aria-hidden="true">${s}</span>${n}</button>`).join('');
+
+const OPTIONS = ['跟上去，保持二十米距离，看他把车开去哪里','回店里调出门口监控，先确认那人的脸','给周叔打电话，问清楚这块表到底是谁托他转交的','把信封收好，今晚什么也不做，明早去银行查那笔汇款'];
+const pastHTML = () => `<article class="sheet past glass">${chap(11,"settled")}
+  <p class="prose">雨从傍晚开始下，十八梯的石阶被冲得发亮。沈砚把相机塞进夹克里，沿着台阶往下走，鞋底踩过积水，溅起一圈一圈的光。</p>
+  <div class="dlg"><span class="seal av">周</span><div><p class="who">周叔</p><p class="say">东西我替你收着，但人我不认识。他只说，你看到表就会明白。</p></div></div>
+  <div class="dlg me"><span class="seal av">沈</span><div><p class="who">沈砚</p><p class="say">我爸那块表，十年前就跟他一起沉进江里了。</p></div></div>
+  <p class="prose">周叔没再说话，把柜台下的木盒推了过来。</p></article>`;
+const latestBody = `
+  <p class="prose">咖啡馆的门被风顶开一条缝，冷气夹着雨丝灌进来。沈砚低头看着掌心里的机械表——表盘裂了一道细纹，秒针却还在走，滴答声清楚得近乎刺耳。</p>
+  <p class="prose">表背刻着两个字母，是父亲名字的缩写。他翻过来，又翻回去，确认自己没有看错。</p>
+  <div class="dlg"><span class="seal av">林</span><div><p class="who">林晚</p><p class="say">你脸色很难看。要不要我把门口那人的车牌拍下来？他在外面站了快二十分钟了。</p></div></div>
+  <div class="dlg me"><span class="seal av">沈</span><div><p class="who">沈砚</p><p class="say">别拍。让他以为我还没发现。</p></div></div>
+  <p class="prose">玻璃窗外，一个穿黑色风衣的男人撑着伞，站在对街的路灯下。灯光被雨切成碎片，落在他肩上。他没有看咖啡馆，只是在看表——和沈砚手里那块，一模一样的表。</p>
+  <p class="prose">男人收起伞，坐进一辆没有开灯的黑色轿车。引擎发动的声音很轻，几乎被雨声吞掉。</p>`;
+
+
+const CN = '零一二三四五六七八九';
+function cn(n) { if (n < 10) return CN[n]; if (n < 20) return '十' + (n % 10 ? CN[n % 10] : ''); if (n < 100) return CN[n / 10 | 0] + '十' + (n % 10 ? CN[n % 10] : '');
+  const h = n / 100 | 0, r = n % 100; return CN[h] + '百' + (r === 0 ? '' : r < 10 ? '零' + CN[r] : (r < 20 ? '一' : '') + cn(r)); }
+const STATE_TXT = {settled:'已结算', draft:'草稿', preview:'预览'};
+const DX = '零壹贰叁肆伍陆柒捌玖';
+function dx(n) { return cn(n).replace(/[一二三四五六七八九十百零]/g, c => ({'一':'壹','二':'贰','三':'叁','四':'肆','五':'伍','六':'陆','七':'柒','八':'捌','九':'玖','十':'拾','百':'佰','零':'零'}[c])); }
+const plate = n => `<span class="plate" aria-hidden="true"><span class="p-frost" style="display:none"></span><span class="p-num" data-dx="第${dx(n)}回">${n}</span><span><span class="p-cn">第${cn(n)}回</span><span class="p-sub">TURN ${String(n).padStart(3,'0')}</span></span><span class="p-rail" style="display:none"><i></i><b></b><i class="on"></i><b></b><i></i></span></span>`;
+
+const WEEK = '日一二三四五六';
+// 星期由 worldClock 的日期按 GMT+8 推算；示例年份 2026
+function cnTime(m, d, h, mi, y = 2026) { const w = WEEK[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+  return `${cn(m)}月${cn(d)}日 · 星期${w} · ${cn(h)}时${mi ? cn(mi) + '分' : '整'}`; }
+const SUB = { 11:{t:[11,10,22,5],place:{cq:'十八梯',sh:'外滩',hrb:'中央大街',gz:'北京路',other:'南山路'}}, 12:{t:[11,10,23,41]}, 13:{t:[11,10,23,58],place:{cq:'较场口',sh:'南京东路',hrb:'防洪纪念塔',gz:'海珠桥',other:'断桥'}} };
+function subLine(n) { const x = SUB[n], c = CITY[S.city]; const place = x.place ? x.place[S.city] : c.place; return `<span class="c-sub" aria-hidden="true" data-st="${n===13?'预览':'草稿'}">${cnTime(...x.t)} · <b>${c.name}</b> · ${place}</span>`; }
+const chap = (n, st) => `<header class="chapter" data-state="${st}">${plate(n)}<h2 data-cn="第${cn(n)}回">第 ${n} 回合</h2>${subLine(n)}</header>`;
+let S = {city:'cq', time:'late', wx:'rain', flow:'settled'};
+
+function renderReader() {
+  const head = `<div class="reader-head"><span class="eyebrow">THE STORY</span><span class="tag">${S.flow==='busy'?'生成预览 · 尚未保存':S.flow==='opening'?'等待开局':S.flow==='error'?'已保存草稿':'已结算历史'}</span></div>`;
+  if (S.flow === 'opening') {
+    $('#reader').innerHTML = head + `<div class="opening"><div><span class="seal mark" aria-hidden="true">序</span><p class="eyebrow">A CITY. A TURNING POINT.</p><h1>故事，尚未落笔。</h1><p>你的资料已保存。<br>配置 AI 渠道后，即可生成这座城市中的第一幕。</p><p class="field-hint" style="margin-top:1.4rem">行动建议将在正文生成后显示。</p></div></div>`;
+    return;
+  }
+  let latest;
+  if (S.flow === 'busy') latest = `<article class="sheet latest glass" aria-busy="true">${chap(13,"preview")}<div class="preview-tag"><span class="tag">临时预览 · 完整校验前不保存</span></div>
+    <p class="prose">黑色轿车拐出老街的时候，沈砚已经发动了借来的电动车。雨刮器坏了一边，他只能偏着头看路，尾灯在雨幕里拖出两道暗红的线<span class="caret"></span></p></article>`;
+  else latest = `<article class="sheet latest glass">${chap(12, S.flow==='error'?'draft':'settled')}${S.flow==='error'?'<div class="preview-tag"><span class="tag">正文草稿 · 世界状态尚未确认</span></div>':''}${latestBody}</article>`;
+  const opts = S.flow === 'busy' ? '' : `<div class="options" aria-label="行动建议"><p>接下来你想做什么</p><div class="opt-grid">${OPTIONS.map((o, i) => `<button class="opt" data-opt="${i}"><span class="n">${String(i + 1).padStart(2, '0')}</span><span class="t">${o}</span><span class="a" aria-hidden="true">→</span></button>`).join('')}</div></div>`;
+  $('#reader').innerHTML = head + (S.flow === 'busy' ? pastHTML() + `<article class="sheet past glass">${chap(12,"settled")}${latestBody}</article>` : pastHTML()) + latest + opts;
+}
+function renderComposer() {
+  const st = {settled:['done','done','done'], busy:['run','idle','idle'], error:['done','fail','idle'], opening:['idle','idle','idle']}[S.flow];
+  const stateTxt = {done:'已结算', run:'生成中', fail:'失败 · 可重试', idle:'待生成'};
+  if (S.flow === 'settled') st.forEach((_, i) => st[i] = 'done');
+  const label = {settled:'本回合已结算 · 等待行动', busy:'正文生成中 · 1/3', error:'变量生成失败 · 查看详情', opening:'等待开始'}[S.flow];
+  const names = ['正文生成','变量管理','动态世界'];
+  $('#composer').innerHTML = `${S.flow==='busy'?'<button class="follow">跟随最新正文 ↓</button>':''}
+    <section class="wf" aria-label="三阶段工作流" data-state="${S.flow==='error'?'error':S.flow==='busy'?'busy':'settled'}">
+      <strong role="status"><span class="p">三阶段 · </span>${label}</strong>
+      <ol class="rail" style="margin:0;padding:0">${names.map((n, i) => `<li data-s="${st[i]}"><div class="bar-seg"></div><div class="lbl"><span><b>0${i+1}</b> ${n}</span><em>· ${S.flow==='settled'?'已结算':stateTxt[st[i]]}</em></div></li>`).join('')}</ol>
+      <button class="more" data-toast="展开三阶段详情（沿用现有 details 内容）">详情</button>
+    </section>
+    <div class="row">
+      <div class="roll"><button ${S.flow==='opening'?'disabled':''} title="可连续撤回 2 回合" data-toast="撤回确认（沿用现有对话框）">撤回（2）</button>
+        ${S.flow==='busy'?'<button>取消生成</button>':`<button ${S.flow==='settled'?'disabled title="本回合已结算；发送新行动后继续"':''}>${S.flow==='opening'?'生成开局正文':'重新 Roll'}</button>`}</div>
+      <textarea id="input" rows="2" placeholder="填写你的行动；发送后生成三阶段并自动结算" ${S.flow==='busy'?'':''}></textarea>
+      <div class="send"><button class="primary" id="send" disabled>发送</button><span class="kbd">Ctrl + Enter</span></div>
+    </div>`;
+  const inp = $('#input'), send = $('#send');
+  inp.oninput = () => send.disabled = !inp.value.trim() || S.flow === 'busy' || S.flow === 'opening';
+}
+function applyAtmo() {
+  [$('#atmo'), $('#game')].forEach(el => { el.dataset.city = S.city; el.dataset.time = S.time; });
+  $('#atmo').dataset.wx = S.wx;
+  $('#skyline').innerHTML = `<svg viewBox="0 0 ${W} 160" preserveAspectRatio="xMidYMax slice">${SKY[S.city] ? SKY[S.city](rng(seeds[S.city])) : ''}</svg>`;
+  const c = CITY[S.city];
+  $('#cityName').textContent = c.name; $('#cityEn').textContent = c.en;
+  $('.where .path').textContent = c.path; $('.where .name').textContent = c.place; $('.where').title = `${c.path} › ${c.place}`;
+  $('#clockTime').textContent = TIME[S.time][0]; $('#tod').textContent = TIME[S.time][1];
+  $('#wxSeal').textContent = WX[S.wx][0]; $('#wxText').textContent = WX[S.wx][1]; $('#wxChip').title = WX[S.wx][1];
+}
+function render() { applyAtmo(); renderReader(); renderComposer(); const r = $('#reader'); r.scrollTop = r.scrollHeight; }
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-toast]'); if (t) toast(t.dataset.toast);
+  const o = e.target.closest('[data-opt]'); if (o) { $$('.opt').forEach(b => b.setAttribute('aria-pressed', b === o)); const inp = $('#input'); inp.value = OPTIONS[+o.dataset.opt]; inp.oninput(); inp.focus(); }
+  const f = e.target.closest('.follow'); if (f) { const r = $('#reader'); r.scrollTop = r.scrollHeight; }
+});
+document.addEventListener('keydown', e => {
+  if (e.target.tagName !== 'TEXTAREA' && /^[1-5]$/.test(e.key)) { const b = $$('.opt')[+e.key - 1]; if (b) b.click(); }
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !$('#send').disabled) toast('发送行动');
+});
+$('#demoBtn').onclick = () => $('#demo').classList.toggle('open');
+$$('.demo .seg').forEach(seg => seg.onclick = e => { const b = e.target.closest('button'); if (!b) return; [...seg.children].forEach(x => x.setAttribute('aria-pressed', x === b)); S[seg.dataset.k] = b.dataset.v; render(); });
+const h = new URLSearchParams(location.hash.slice(1));
+for (const k of ['city','time','wx','flow']) if (h.get(k)) { S[k] = h.get(k); $$(`.seg[data-k=${k}] button`).forEach(b => b.setAttribute('aria-pressed', b.dataset.v === S[k])); }
+render();
+})();
+</script>
+<script>
+/* ---------- 世界资料 · 档案柜 ---------- */
+(() => {
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const SUBS = {设置:'本地偏好与 AI 渠道', 人物档案:'主角 · 沈砚', 经济与资产:'现金、收入与资产', NPC:'人物名录', 势力组织:'势力与机构', 地图:'地点层级', 物品栏:'随身与仓储', 世界事件:'进行中的事', 历史时间轴:'已发生的事', 记忆:'主角的记忆'};
+const SEALS = {设置:'设', 人物档案:'档', 经济与资产:'财', NPC:'人', 势力组织:'势', 地图:'图', 物品栏:'物', 世界事件:'事', 历史时间轴:'史', 记忆:'忆'};
+const ORDER = ['NPC','势力组织','地图','物品栏','世界事件','历史时间轴','记忆'];
+
+/* 示例数据：字段与 PlayerView['npc'] 一致 */
+const PEOPLE = [
+ {id:'n1',name:'林晚',kind:'special',gender:'female',age:26,aliases:['晚晚'],identity:'「旧时光」咖啡馆店主',relationshipText:'大学同学，十年没见，最近重新联系上',affinity:34,onScene:true,locationId:'十八梯老街「旧时光」咖啡馆',lastInteractionAt:'2026/11/10 23:38',
+  appearance:'齐肩短发，常穿深色针织开衫，左手腕有一道很浅的旧疤。',temperament:'说话直，记性好，紧张时会反复擦同一个杯子。',skills:['咖啡烘焙','记账','观察细节'],healthText:'健康，最近睡得不好',background:'大学读新闻，毕业后在报社干了三年，辞职后回重庆开店。',
+  phone:{status:'known',note:'店里座机和私人手机都有，私人手机晚上十一点后不接。'},usual:[['work','十八梯老街「旧时光」咖啡馆',true],['home','较场口某老小区',false]],
+  profilePending:true,detailedBackground:'',activeGoals:['查清父亲当年那笔借款的去向','把店撑过这个冬天'],habits:['打烊后一个人对账','雨天会把门口的伞桶挪进屋里'],
+  network:[{npcId:'n3',name:'周叔',relationship:'熟客',affinity:52,description:'每周三来喝一杯，从不点单，她照旧做美式。'},{name:'陈默',relationship:'前同事',affinity:-18,description:'报社时期的搭档，离职时闹得不愉快。'}],
+  tasks:['周五前把店里欠的豆钱结清'],orgs:['渝中区个体商户协会'],
+  known:[{text:'沈砚的父亲十年前在嘉陵江出事，遗物里有一块机械表。',source:'当年的社会新闻',learnedAt:'2026/11/08 15:20'},{text:'门口站着的黑衣男人连续三晚出现。',source:'本人观察',learnedAt:'2026/11/10 23:20'}],
+  memories:[{layer:'短期',kind:'observed',time:'2026/11/10 23:38',vis:'npc_private',text:'沈砚看到那块表时，手在抖。他让我别拍车牌，好像早就知道外面的人是谁。',turns:[12]},
+   {layer:'中期',kind:'reported',time:'2026/11/08 16:00',vis:'player_known',text:'周叔说，有人托他把一个木盒交给沈砚，对方没有留下名字。',turns:[9,10]}]},
+ {id:'n2',name:'沈怀山',kind:'special',gender:'male',age:58,aliases:[],identity:'沈砚的父亲（官方记录已故）',relationshipText:'父子',affinity:null,onScene:false,locationId:null,lastInteractionAt:null},
+ {id:'n3',name:'周叔',kind:'ordinary',gender:'male',age:63,aliases:['老周'],identity:'十八梯修表铺师傅',relationshipText:'父亲的旧识',affinity:41,onScene:false,locationId:'十八梯修表铺',lastInteractionAt:'2026/11/10 21:05'},
+ {id:'n4',name:'黑衣男人',kind:'ordinary',gender:'male',aliases:[],identity:'身份未记录',relationshipText:'陌生人，似乎在监视咖啡馆',affinity:null,onScene:true,locationId:'十八梯老街',lastInteractionAt:null},
+ {id:'n5',name:'陈默',kind:'ordinary',gender:'male',age:29,aliases:[],identity:'《山城晚报》社会新闻记者',relationshipText:'只闻其名',affinity:null,onScene:false,locationId:null,lastInteractionAt:null},
+ {id:'n6',name:'何丽',kind:'ordinary',gender:'female',age:35,aliases:['何姐'],identity:'解放碑某银行柜员',relationshipText:'办过两次业务',affinity:8,onScene:false,locationId:'解放碑',lastInteractionAt:'2026/11/06 10:12'},
+ {id:'n7',name:'阿峰',kind:'ordinary',gender:'male',age:22,aliases:[],identity:'外卖骑手',relationshipText:'楼下邻居',affinity:15,onScene:false,locationId:'较场口',lastInteractionAt:'2026/11/09 19:40'},
+];
+const NATURE = {observed:'亲历 / 观察', reported:'转述（未核实）', suspected:'推测（未确认）'};
+const VIS = {npc_private:'人物私有记录 · 不代表主角已知', player_known:'主角已知记录', internal:'内部世界记录 · 不代表任何角色已知'};
+const PHONE = {known:'已掌握联系途径', unknown:'尚未掌握', invalid:'已失效'};
+const ROLE = {home:'住处', work:'工作地点', frequent:'经常活动'};
+const GENDER = {female:'女', male:'男', unknown:'未记录'};
+let personId = 'n1', query = '', filter = 'all', feedback = '';
+
+const det = (label, v, wide) => `<div class="detail${wide ? ' wide' : ''}"><dt>${label}</dt><dd class="${v ? '' : 'none'}">${v ? esc(v) : '未记录'}</dd></div>`;
+const meter = (v, cls = '') => v === null || v === undefined ? `<div class="meter null ${cls}"></div>`
+  : `<div class="meter ${v < 0 ? 'neg' : ''} ${cls}"><i style="${v < 0 ? `left:${50 + v / 2}%;width:${-v / 2}%` : `left:50%;width:${v / 2}%`}"></i></div>`;
+const star = p => `<button class="npc-star ${p.kind === 'special' ? 'is-special' : ''}" aria-label="${p.kind === 'special' ? '取消特殊身份' : '设为特殊人物'}：${esc(p.name)}" aria-pressed="${p.kind === 'special'}" data-star="${p.id}"><span aria-hidden="true">${p.kind === 'special' ? '★' : '☆'}</span></button>`;
+
+function directory() {
+  const n = query.trim().toLowerCase();
+  const list = PEOPLE.filter(p => (filter === 'all' || p.kind === filter) && [p.name, ...(p.aliases || []), p.identity].some(t => (t || '').toLowerCase().includes(n)));
+  return `<div class="npc-tools"><h3>人物名录 <small>${PEOPLE.length}</small></h3>
+    <div class="row2"><label class="f-label">搜索人物<input class="f-input search" id="npcQ" value="${esc(query)}" maxlength="4000" placeholder="姓名、别名、身份或职业"></label>
+    <label class="f-label">人物筛选<select class="f-select" id="npcF" aria-label="人物筛选"><option value="all"${filter==='all'?' selected':''}>全部人物</option><option value="special"${filter==='special'?' selected':''}>特殊人物</option><option value="ordinary"${filter==='ordinary'?' selected':''}>普通人物</option></select></label></div></div>
+  <ul class="people" aria-label="人物名录">${list.map(p => `<li class="${p.kind}"><button class="person-row" aria-label="查看人物：${esc(p.name)}" aria-pressed="${p.id === personId}" data-person="${p.id}">
+    <span class="seal avatar" aria-hidden="true">${p.name[0]}</span><span class="txt"><strong>${esc(p.name)}</strong><small>${esc(p.identity || '身份未记录')}</small><small>${esc(p.relationshipText)}</small>
+    <span class="meta"><span class="pill ${p.onScene ? 'on' : ''}">${p.onScene ? '本幕在场' : '场外人物'}</span>${p.lastInteractionAt ? p.lastInteractionAt : ''}</span></span></button>${star(p)}</li>`).join('')}</ul>
+  ${list.length ? '' : `<p class="empty">${PEOPLE.length ? '暂无符合条件的人物' : '尚无正式人物档案'}</p>`}
+  <details class="fold"><summary>历史身份记录</summary><p>老钱 · 2026/10/30 09:00</p></details>`;
+}
+function recordList(label, items, render) {
+  return `<div class="rl-tools"><label class="f-label">搜索${label}<input class="f-input search" maxlength="4000"></label><span class="count">${items.length} 条记录 · 每页 20 条</span></div>
+    ${items.length ? items.map(render).join('') : '<p class="empty">暂无符合条件的记录</p>'}`;
+}
+function detail() {
+  const p = PEOPLE.find(x => x.id === personId);
+  if (!p) return `<p class="empty" style="margin-top:3rem">选择人物，查看完整资料与独立认知。</p>`;
+  const sp = p.kind === 'special';
+  const tabs = [['a-profile','人物档案'],['a-contact','联系与地点'],...(sp ? [['a-special','特殊人物资料']] : []),['a-known','已知信息'],['a-mem','记忆与总结']];
+  return `<div key="${p.id}"><header class="nd-head">
+    <button class="npc-back">← 返回人物名录</button>
+    <div class="nd-hero"><div class="nd-portrait"><span class="seal" aria-hidden="true">${p.name[0]}</span></div>
+      <div class="nd-name"><h3 tabindex="-1">${esc(p.name)}</h3><span class="pill ${sp ? 'gold' : ''}">${sp ? '特殊人物' : '普通人物'}</span>
+        <div class="facts"><span>年龄<b>${p.age ?? '未记录'}</b></span><span>性别<b>${GENDER[p.gender || 'unknown']}</b></span><span>当前位置<b>${esc(p.locationId || '未记录')}</b></span><span>场景状态<b>${p.onScene ? '本幕在场' : '场外人物'}</b></span><span>最近互动<b>${p.lastInteractionAt || '未记录'}</b></span></div></div>
+      <div style="display:flex;gap:.8rem;align-items:flex-start"><div class="nd-rel"><div class="top">关系倾向 ${p.affinity === null ? '<b class="null">尚未确认</b>' : `<b class="${p.affinity < 0 ? 'neg' : ''}">${p.affinity > 0 ? '+' : ''}${p.affinity}</b>`}</div>${meter(p.affinity)}<div class="scale"><span>-100</span><span>0</span><span>+100</span></div><p>与主角关系：${esc(p.relationshipText)}</p></div>${star(p)}</div></div>
+    <nav class="nd-tabs" aria-label="人物资料分节">${tabs.map(([id, t], i) => `<a href="#${id}" aria-current="${i === 0}">${t}</a>`).join('')}</nav></header>
+
+  <section class="sec" id="a-profile"><h4>人物档案</h4><dl class="dl">
+    ${det('别名', (p.aliases || []).join('、'))}${det('身份', p.identity)}${det('外貌', p.appearance, 1)}${det('性格', p.temperament, 1)}${det('能力', (p.skills || []).join('、'))}${det('身体状态', p.healthText)}${det('个人背景', p.background, 1)}</dl></section>
+
+  <section class="sec" id="a-contact"><h4>联系与常驻地点</h4>
+    <p style="font-size:.86rem">电话：<span class="pill ${p.phone?.status === 'known' ? 'on' : p.phone?.status === 'invalid' ? 'warn' : ''}">${PHONE[p.phone?.status || 'unknown']}</span></p>${p.phone?.note ? `<p class="prose" style="font-size:.88rem;margin-top:.5rem;text-align:left">${esc(p.phone.note)}</p>` : ''}
+    ${p.usual?.length ? `<ul class="places">${p.usual.map(([r, l, k]) => `<li><span class="role">${ROLE[r]}</span><span>${esc(l)}</span><span class="pill ${k ? 'on' : ''}">${k ? '主角已知' : '世界记录／主角未知'}</span></li>`).join('')}</ul>` : '<p class="empty">常驻地点未记录</p>'}</section>
+
+  ${sp ? `<section class="sec" id="a-special"><h4>特殊人物资料</h4>
+    ${p.profilePending ? '<p class="pending" role="status">特殊人物资料待完善，将在后续正常剧情的 Variables 阶段尝试补充。</p>' : ''}
+    <dl class="dl">${det('详细经历', p.detailedBackground, 1)}${det('个人目标', (p.activeGoals || []).join('；'), 1)}${det('习惯', (p.habits || []).join('；'), 1)}</dl>
+    <h5>人物关系网</h5>${p.network?.length ? `<div class="rel-grid">${p.network.map(r => `<article class="entry"><div class="hd">${r.npcId ? `<button class="link-btn" data-person="${r.npcId}">${esc(r.name)}</button>` : `<strong>${esc(r.name)}</strong>`}<span class="pill">${esc(r.relationship)}</span></div>
+      <p class="sm">${esc(p.name)}对${esc(r.name)}的好感：${r.affinity ?? '未知'}</p>${meter(r.affinity)}<p class="prose">${esc(r.description || '未记录')}</p></article>`).join('')}</div>` : '<p class="empty">尚无已记录关系</p>'}
+    <h5>关联任务</h5>${p.tasks?.length ? `<ul class="tasks">${p.tasks.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : '<p class="empty">暂无专属任务</p>'}</section>` : ''}
+
+  <section class="sec"><h4>已确认关联组织</h4>${p.orgs?.length ? p.orgs.map(o => `<button class="chip-btn" data-goto="势力组织"><span class="seal" aria-hidden="true">势</span>${esc(o)}</button>`).join(' ') : '<p class="empty" style="margin:0">暂无已确认的关联组织</p>'}</section>
+
+  ${sp && p.gender === 'female' && p.age >= 18 ? `<section class="sec" aria-label="香闺秘档"><h4>香闺秘档</h4><p class="empty" style="margin:0">私密档案尚未建立</p></section>` : ''}
+
+  <details class="sec"><summary>创角原始设定（不替代当前状态）</summary><dl class="dl">${det('原始姓名', p.name)}${det('原始身份', p.identity)}${det('原始关系', p.relationshipText)}${det('原始年龄', p.age)}</dl></details>
+
+  <section class="sec" id="a-known" aria-label="人物已知信息"><h4>人物已知信息</h4>${recordList('人物已知信息', p.known || [], k => `<article class="entry"><p class="prose">${esc(k.text)}</p><p class="prose" style="color:var(--muted);font-size:.84rem">来源：${esc(k.source)}</p><time>${k.learnedAt}</time></article>`)}</section>
+
+  <section class="sec" id="a-mem" aria-label="人物记忆与总结"><h4>人物记忆与总结</h4>${recordList('人物记忆与总结', p.memories || [], m => `<article class="entry"><div class="mem-hd"><span class="pill layer">${m.layer}</span><span class="k">${NATURE[m.kind]}</span></div>
+    <span class="meta">${m.time} · ${VIS[m.vis]}</span><p class="prose">${esc(m.text)}</p>
+    <details class="fold"><summary>来源与认知</summary><p>${m.turns.map(t => `第 ${t} 回合`).join('、')}</p><p>相关人物／组织：沈砚</p></details></article>`)}</section>
+  </div>`;
+}
+function npcPanel() {
+  return `<div class="npc" data-detail="${Boolean(personId)}">${feedback ? `<p class="status-line" role="status">${esc(feedback)}</p>` : ''}
+    <div class="npc-layout"><div class="npc-dir scroll" id="npcDir">${directory()}</div><section class="npc-detail scroll" id="npcDetail" aria-label="人物详情">${detail()}</section></div></div>`;
+}
+function placeholder(name) {
+  return `<div class="ph"><div><span class="seal" aria-hidden="true">${SEALS[name]}</span><p style="font-family:var(--font-title);font-size:1.1rem;letter-spacing:.2em;color:var(--muted)">${name}</p><p style="font-size:.82rem;margin-top:.4rem">该面板在后续步骤中单独设计<br>外框、工具栏、分节卡片、条目、空状态与分页沿用本稿</p></div></div>`;
+}
+
+/* ---------- 第 2 步：人物档案 + 势力组织 ---------- */
+const HERO = {name:'沈砚',age:27,gender:'男',appearance:'一米八出头，偏瘦，常年背相机，右眉尾有一道小疤。',personality:'话少，记仇也记恩；越紧张越显得平静。',
+  background:'重庆土生土长。十六岁那年父亲在嘉陵江出事，此后跟着母亲在较场口生活，大学没读完就开始接商业拍摄的活。',profession:'自由摄影师',
+  professionDescription:'接婚礼、商业和新闻外包拍摄，收入不稳定，但认识各行各业的人。',skills:['摄影','暗房冲洗','跟拍','讨价还价'],professionLongTermImpact:'人脉广但都不深；拍到不该拍的东西时，麻烦会自己找上门。',
+  time:'2026/11/10 23:41',cand:null,place:'十八梯老街「旧时光」咖啡馆',weather:'小雨，气温 9℃，江面起雾',env:'店里只剩两桌客人，咖啡机的蒸汽声盖过了雨声',
+  health:'右手腕轻微扭伤，不影响行动',emotion:'警惕，压着火',publicStatus:'普通市民，没有前科',legalStatus:'无在案纠纷'};
+const EQUIP = [['上衣','深灰色防水夹克','衣'],['下装','黑色工装裤','裤'],['鞋子','旧马丁靴','鞋'],['饰品','父亲留下的机械表、相机背带','饰'],['主武器','折叠伞（加固伞骨）','武'],['副武器','无','副'],['载具','无','车']];
+const ORG_LABELS = {gang:'黑帮势力',government:'官方机构',civil:'民间组织',business:'企业与资本'};
+const EV_ST = {scheduled:'尚未开始',active:'进行中',blocked:'受阻',resolved:'已结案',cancelled:'已取消'};
+const TK_ST = {planned:'计划中',active:'进行中',blocked:'受阻',completed:'已完成',cancelled:'已取消'};
+const ORGS = [
+ {id:'o1',name:'渝江实业集团',kind:'business',description:'以朝天门一带码头仓储起家，二十年间扩张到物流、餐饮和旧城改造。对外形象是本地良心企业，每年给十八梯街道捐款，但老码头工人私下另有说法。',
+  state:[['行业与业务','码头仓储；冷链物流；连锁火锅；旧城改造'],['股权与控制','江氏家族控股 62%，其余为两家地方投资公司'],['经营与内部现状','表面盈利，旧城改造项目资金链紧张，内部对是否继续收购老街铺面有分歧'],['资产估值','¥1,200,000,000.00',1],['流动资金估计','¥38,000,000.00',1]],
+  leadership:[{position:'董事长',publicName:'江永年',description:'六十出头，码头调度出身，极少公开露面。'},{position:'总经理',publicName:'江屿',description:'董事长长子，负责旧城改造项目。'},{position:'码头安保主管',publicName:null}],
+  keyNpcs:[['n2','沈怀山']],
+  relations:[{org:'o2',relation:'暗中合作',description:'码头帮负责码头一线的「秩序」，集团在账面上把这部分支出记成安保外包。'},{org:'o3',relation:'被调查',description:'市场监管局正在调查集团旗下火锅连锁的食品安全投诉。'}],
+  business:['与三家冷链公司签有长期协议'],
+  events:[{id:'e1',title:'朝天门三号仓库失火调查',status:'active'},{id:'e2',title:'十八梯老街铺面收购',status:'blocked'}],
+  tasks:[{goal:'在年底前拿下十八梯老街剩余三间铺面',status:'active'},{goal:'压下火锅连锁的投诉报道',status:'planned'}],
+  ended:[{id:'e3',title:'旧码头拆迁安置',status:'resolved'}],
+  protagonistRelation:'尚无直接往来；父亲沈怀山出事前在其下属码头做调度。',
+  history:['2016 年：沈怀山在集团码头任夜班调度','2016 年：沈怀山落水失踪，集团以「个人原因离岗」结案','2026 年 11 月：林晚的咖啡馆所在铺面出现在集团收购清单上']},
+ {id:'o2',name:'朝天门码头帮',kind:'gang',description:'盘踞朝天门、望龙门一带的老码头势力，做搬运、收保护费，也替人「处理」码头上的麻烦。',protagonistRelation:'没有直接冲突，但黑衣男人可能与他们有关。'},
+ {id:'o3',name:'渝中区市场监督管理局',kind:'government',description:'负责辖区内市场主体登记、食品安全与价格监管。',protagonistRelation:'无往来'},
+ {id:'o4',name:'渝中区个体商户协会',kind:'civil',description:'由老街个体户自发组织，近年主要在旧城改造中替商户争取补偿。',protagonistRelation:'林晚是会员，主角经她介绍认识会长'},
+ {id:'o5',name:'山城晚报社',kind:'business',description:'本地老牌都市报，社会新闻版在老重庆人里很有口碑，近年转型新媒体。',protagonistRelation:'接过几次外包拍摄'},
+];
+let orgId = 'o1', orgQuery = '', orgKind = 'all';
+const orgName = id => ORGS.find(o => o.id === id)?.name ?? '组织资料';
+
+function profilePanel() {
+  const h = HERO;
+  return `<div class="pf scroll">
+  <section class="pf-id"><div class="pf-photo" aria-hidden="true">${h.name[0]}</div>
+    <div><h3>${h.name}</h3><p class="line">${h.age} 岁 · ${h.gender} · ${h.profession}</p><p class="no">PROTAGONIST · 重庆 · 第 12 回合</p></div>
+    <div class="pf-entry"><button data-archive="经济与资产">经济与资产 <span>→</span></button><button data-goto="NPC">NPC 人物资料 <span>→</span></button><button data-toast="返回存档馆">切换存档 <span>↗</span></button></div></section>
+  <div class="pf-grid"><div>
+    <section class="sec"><h4>基本资料</h4><dl class="dl profile-details">
+      ${det('姓名', h.name)}${det('年龄', String(h.age))}${det('性别', h.gender)}${det('职业', h.profession)}${det('外貌', h.appearance, 1)}${det('性格', h.personality, 1)}${det('背景', h.background, 1)}</dl></section>
+    <section class="sec" aria-label="职业档案"><h4>职业档案</h4><dl class="dl">
+      ${det('职业', h.profession)}${det('职业介绍', h.professionDescription, 1)}<div class="detail wide"><dt>技能</dt><dd><ul class="skill-tags">${h.skills.map(s => `<li>${s}</li>`).join('')}</ul></dd></div>${det('长期影响', h.professionLongTermImpact, 1)}</dl></section>
+  </div><div>
+    <section class="pf-now"><div class="hd"><h4>此时此地</h4><span class="city">CHONGQING</span></div><dl class="dl">
+      <div class="detail time"><dt>当前时间</dt><dd>${h.time}</dd></div>${h.cand ? `<div class="detail cand"><dt>候选时间</dt><dd>${h.cand}（未正式结算）</dd></div>` : ''}
+      ${det('地点', h.place)}${det('天气', h.weather)}${det('环境', h.env)}</dl></section>
+    <section class="sec"><h4>状态</h4><dl class="conds">
+      <div class="cond-card body"><dt>身体</dt><dd>${h.health}</dd></div><div class="cond-card mood"><dt>情绪</dt><dd>${h.emotion}</dd></div>
+      <div class="cond-card soc"><dt>社会状态</dt><dd>${h.publicStatus}</dd></div><div class="cond-card law"><dt>法律状态</dt><dd>${h.legalStatus}</dd></div></dl></section>
+    <section class="sec"><h4>当前穿戴与装备</h4><dl class="slots">${EQUIP.map(([l, v, ic], i) => `<div class="slot ${v === '无' ? 'empty-slot' : ''} ${i === 3 ? 'wide' : ''}"><span class="ic" aria-hidden="true">${ic}</span><div><dt>${l}</dt><dd title="${esc(v)}">${esc(v)}</dd></div></div>`).join('')}</dl></section>
+  </div></div></div>`;
+}
+
+function orgPanel() {
+  const n = orgQuery.trim().toLowerCase();
+  const list = ORGS.filter(o => (orgKind === 'all' || o.kind === orgKind) && [o.name, ORG_LABELS[o.kind], o.description, o.protagonistRelation].some(t => (t || '').toLowerCase().includes(n)));
+  const sel = ORGS.find(o => o.id === orgId) ?? list[0];
+  const tabs = [['o-sum','组织概况'],['o-state','当前状况'],['o-lead','管理层'],['o-rel','势力关系'],['o-dyn','当前动态'],['o-hero','与主角关系']];
+  const detail = !sel ? '<p class="empty" style="margin-top:3rem">选择组织，阅读势力档案</p>' : `<div data-kind="${sel.kind}">
+   <header class="nd-head"><button class="npc-back">← 返回组织名录</button>
+    <div class="nd-hero"><span class="og-emblem" aria-hidden="true">${sel.name[0]}</span>
+      <div class="nd-name"><span class="kpill">${ORG_LABELS[sel.kind]}</span><br><h3 tabindex="-1" style="margin-top:.35rem;display:inline-block">${esc(sel.name)}</h3></div>
+      <div class="og-rel"><small>与主角</small>${esc(sel.protagonistRelation)}</div></div>
+    <nav class="nd-tabs" aria-label="组织资料分节">${tabs.map(([id, t], i) => `<a href="#${id}" aria-current="${i === 0}">${t}</a>`).join('')}</nav></header>
+   <section class="sec" id="o-sum"><h4>组织概况</h4><p class="prose" style="text-align:left;font-size:.95rem">${esc(sel.description || '未记录')}</p></section>
+   <section class="sec" id="o-state"><h4>当前状况</h4>${sel.state ? `<dl class="dl">${sel.state.map(([l, v, m]) => `<div class="detail ${m ? '' : 'wide'}"><dt>${l}</dt><dd class="${m ? 'money' : ''}">${esc(v)}</dd></div>`).join('')}</dl>` : '<p class="empty" style="margin:0">暂无补充的当前状况</p>'}</section>
+   <section class="sec" id="o-lead"><h4>管理层与关键人物</h4>${sel.leadership ? `<ul class="roster">${sel.leadership.map(r => `<li><p class="pos">${r.position}</p><p class="who ${r.publicName ? '' : 'unknown'}">${r.publicName ?? '未知'}</p>${r.description ? `<p>${esc(r.description)}</p>` : ''}</li>`).join('')}</ul>` : '<p class="empty" style="margin:0">管理层尚未记录</p>'}
+     ${(sel.keyNpcs || []).map(([id, nm]) => `<p style="margin-top:.7rem"><button class="chip-btn" data-goto-person="${id}"><span class="seal" aria-hidden="true">${nm[0]}</span>人物资料：${nm}</button></p>`).join('')}</section>
+   <section class="sec" id="o-rel"><h4>势力关系</h4>${sel.relations ? `<div class="orel">${sel.relations.map(r => { const o = ORGS.find(x => x.id === r.org); return `<article class="entry" data-kind="${o.kind}"><span class="seal" aria-hidden="true">${o.name[0]}</span><div class="hd"><button class="link-btn" data-org="${o.id}">${esc(o.name)}</button><span class="pill">${esc(r.relation)}</span></div><p class="prose">${esc(r.description)}</p></article>`; }).join('')}</div>` : '<p class="empty" style="margin:0">暂无已记录的组织关系</p>'}
+     ${sel.kind === 'business' && sel.business?.length ? `<details class="fold"><summary>既有文字业务关系</summary><ul>${sel.business.map(t => `<li>${esc(t)}</li>`).join('')}</ul></details>` : ''}</section>
+   <section class="sec" id="o-dyn"><h4>当前动态</h4>
+     <h5 style="margin-top:0">进行中事件</h5>${sel.events?.length ? `<ul class="dyn">${sel.events.map(e => `<li><button class="link-btn" data-toast="打开世界事件：${e.title}">${e.title}</button><span class="st ${e.status}">${EV_ST[e.status]}</span></li>`).join('')}</ul>` : '<p class="empty">暂无记录</p>'}
+     <h5>当前任务</h5>${sel.tasks?.length ? `<ul class="dyn">${sel.tasks.map(t => `<li>${esc(t.goal)}<span class="st ${t.status}">${TK_ST[t.status]}</span></li>`).join('')}</ul>` : '<p class="empty">暂无记录</p>'}
+     <details class="fold"><summary>已结束事件 · ${(sel.ended || []).length}</summary>${sel.ended?.length ? `<ul class="dyn">${sel.ended.map(e => `<li><button class="link-btn" data-toast="打开世界事件：${e.title}">${e.title}</button><span class="st ${e.status}">${EV_ST[e.status]}</span></li>`).join('')}</ul>` : '<p class="empty">暂无记录</p>'}</details></section>
+   <section class="sec" id="o-hero"><h4>与主角关系</h4><p style="font-size:.92rem">${esc(sel.protagonistRelation)}</p>
+     <details class="fold" open><summary>关系历史 · ${(sel.history || []).length}</summary>${sel.history?.length ? `<ul class="hist">${sel.history.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : '<p class="empty">暂无关系变更记录</p>'}</details></section>
+   <details class="sec tech"><summary>组织技术记录</summary><dl><dt>记录 ID</dt><dd>${sel.id}</dd><dt>类型</dt><dd>${sel.kind}</dd><dt>名称</dt><dd>${esc(sel.name)}</dd><dt>主要人物</dt><dd>${(sel.keyNpcs || []).map(k => k[0]).join('、') || '无'}</dd></dl></details>
+  </div>`;
+  return `<div class="npc"><div class="npc-layout"><section class="npc-dir scroll" id="npcDir" aria-label="组织名录"><div class="npc-tools"><h3>势力档案馆 <small>${ORGS.length}</small></h3>
+    <div class="row2"><label class="f-label">搜索组织<input class="f-input search" id="orgQ" value="${esc(orgQuery)}" maxlength="4000" placeholder="名称、类型或概况"></label>
+    <label class="f-label">组织类别<select class="f-select" id="orgK" aria-label="组织类别"><option value="all">全部组织 · ${ORGS.length}</option>${Object.entries(ORG_LABELS).map(([k, l]) => `<option value="${k}"${orgKind === k ? ' selected' : ''}>${l} · ${ORGS.filter(o => o.kind === k).length}</option>`).join('')}</select></label></div></div>
+    <div class="organization-rows">${list.map(o => `<button class="org-row" data-kind="${o.kind}" data-org="${o.id}" aria-label="查看组织：${esc(o.name)}" aria-pressed="${sel?.id === o.id}"><strong>${esc(o.name)}</strong><span class="kpill">${ORG_LABELS[o.kind]}</span><span class="snip">${esc(o.description || '概况未记录')}</span><span class="rel">与主角：${esc(o.protagonistRelation)}</span></button>`).join('')}</div>
+    ${list.length ? '' : '<p class="empty">暂无符合条件的组织</p>'}</section>
+    <section class="npc-detail scroll" id="npcDetail" aria-label="组织详情">${detail}</section></div></div>`;
+}
+
+/* ---------- 第 3 步：物品栏 + 经济与资产 ---------- */
+const ICON = {all:'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',clothing:'m8 3-5 3 2 5 3-1v11h8V10l3 1 2-5-5-3c0 4-8 4-8 0Z',devices:'M7 2h10v20H7z M10 5h4 M11 19h2',
+  documents:'M5 2h9l5 5v15H5z M14 2v6h5 M8 12h8 M8 16h8',tools:'M14 3a6 6 0 0 0-5 8l-6 6 4 4 6-6a6 6 0 0 0 8-6l-4 3-4-4 3-4Z',supplies:'m3 7 9-4 9 4-9 4Z M3 7v12l9 3 9-3V7 M12 11v11',
+  house:'M3 11 12 4l9 7 M5 10v10h14V10 M10 20v-6h4v6',car:'M3 15l2-6h14l2 6v4H3z M7 19v2 M17 19v2 M6 15h2 M16 15h2',box:'m3 7 9-4 9 4-9 4Z M3 7v12l9 3 9-3V7 M12 11v11'};
+const svgI = g => `<svg aria-hidden="true" class="inventory-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="${ICON[g]}"/></svg>`;
+const GROUPS = [['all','全部'],['clothing','衣物穿戴'],['devices','电子设备'],['documents','证件文件'],['tools','工具与武器'],['supplies','生活用品与杂物']];
+const CAT = {top:['上衣','clothing'],bottom:['下装','clothing'],shoes:['鞋子','clothing'],accessory:['饰品','clothing'],device:['设备','devices'],document:['文件','documents'],weapon:['武器','tools'],tool:['工具','tools'],other:['其他','supplies']};
+const ITEMS = [
+ {id:'i1',name:'机械表（父亲遗物）',category:'accessory',quantity:1,ref:null,cond:'表盘有裂纹，仍在走时',eq:1,quest:1,desc:'表背刻着 S.H.S 三个字母。十年前它应该和父亲一起沉在江里。',attrs:[['材质','不锈钢表壳、牛皮表带'],['穿着特点','比现在的表更厚重，走时声很响']]},
+ {id:'i2',name:'深灰色防水夹克',category:'top',quantity:1,ref:68000,cond:'袖口磨损',eq:1,desc:'穿了四年的旧夹克，内侧口袋能放下一台小相机。',attrs:[['材质','尼龙'],['保暖性','一般'],['防护性','防小雨']]},
+ {id:'i3',name:'黑色工装裤',category:'bottom',quantity:1,ref:32000,cond:'良好',eq:1,desc:'',attrs:[]},
+ {id:'i4',name:'旧马丁靴',category:'shoes',quantity:1,ref:45000,cond:'鞋底开胶',eq:1,desc:'',attrs:[]},
+ {id:'i5',name:'富士 X100V 相机',category:'device',quantity:1,ref:980000,cond:'电量 62%',desc:'吃饭的家伙。存储卡里有三晚前在码头拍的照片。',attrs:[['品牌型号','富士 X100V'],['设备功能','拍照、录像'],['电量','62%']]},
+ {id:'i6',name:'手机',category:'device',quantity:1,ref:320000,cond:'屏幕碎了一角',desc:'',attrs:[['电量','18%']]},
+ {id:'i7',name:'无名木盒',category:'other',quantity:1,ref:null,cond:'上了锁',quest:1,desc:'周叔转交的木盒，巴掌大，锁孔很小，像是要配特制的钥匙。',attrs:[['用途','未知']]},
+ {id:'i8',name:'身份证',category:'document',quantity:1,ref:null,cond:'有效',desc:'',attrs:[['签发方','重庆市公安局渝中区分局'],['有效期限','2034 年']]},
+ {id:'i9',name:'2016 年码头值班表（复印件）',category:'document',quantity:1,ref:null,cond:'字迹模糊',quest:1,desc:'林晚从旧报社资料室翻出来的复印件，父亲的名字被人用笔划掉了。',attrs:[['文件内容','朝天门三号仓库 2016 年 10 月夜班排班'],['用途','核对父亲出事当晚谁在场']]},
+ {id:'i10',name:'折叠伞（加固伞骨）',category:'weapon',quantity:1,ref:12000,cond:'完好',eq:1,desc:'伞骨换成了钢的，必要时可以当棍子用。',attrs:[['主要用途','挡雨，防身'],['耐用情况','结实']]},
+ {id:'i11',name:'胶卷',category:'other',quantity:6,ref:4500,cond:'',desc:'',attrs:[['保质期','2027 年 3 月'],['剩余用量','6 卷']]},
+];
+let invFilter = 'all', invSel = 'i1';
+const yuan = v => v === null ? '未确认' : `${(v / 100).toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} 元`;
+
+function invPanel() {
+  const grp = it => CAT[it.category][1];
+  const counts = Object.fromEntries(GROUPS.map(([g]) => [g, g === 'all' ? ITEMS.length : ITEMS.filter(i => grp(i) === g).length]));
+  const vis = ITEMS.filter(i => invFilter === 'all' || grp(i) === invFilter);
+  const s = ITEMS.find(i => i.id === invSel);
+  const label = GROUPS.find(g => g[0] === invFilter)[1];
+  return `<div class="inv">
+   <nav class="inv-rail inventory-filters" aria-label="物品分类">${GROUPS.map(([g, l]) => `<button data-inv-f="${g}" aria-label="${l}，${counts[g]}种物品" aria-pressed="${invFilter === g}">${svgI(g)}<span>${l}</span><span class="inventory-count">${counts[g]}</span></button>`).join('')}</nav>
+   <section class="inv-mid scroll inventory-results" aria-label="主角背包"><div class="inventory-summary" role="status">${label}<span>${vis.length} 种物品</span></div>
+    ${vis.length ? `<ul class="inventory-grid">${vis.map(i => `<li><button class="inventory-tile ${i.eq ? 'is-eq' : ''}" data-inv="${i.id}" aria-pressed="${i.id === invSel}"><span class="cat">${CAT[i.category][0]}</span>${svgI(grp(i))}<strong>${esc(i.name)}</strong>
+      <span class="inventory-badges">${i.eq ? '<span class="b-eq">已装备</span>' : ''}${i.quest ? '<span class="b-quest">任务</span>' : ''}</span><span class="inventory-quantity">×${i.quantity}</span></button></li>`).join('')}</ul>`
+      : `<p class="empty">${invFilter === 'all' ? '背包里暂时没有物品。' : '此分类暂无物品。'}</p>`}</section>
+   <section class="inv-detail scroll inventory-detail" aria-label="物品详情">${s ? `<button class="inventory-back">← 返回背包</button>
+    <div class="inventory-detail-heading"><span class="inv-frame">${svgI(grp(s))}</span><div><span class="pill">${CAT[s.category][0]}</span><h3 tabindex="-1">${esc(s.name)}</h3>
+     <div class="inventory-badges">${s.eq ? '<span class="b-eq">已装备</span>' : ''}${s.quest ? '<span class="b-quest">任务物品</span>' : ''}</div></div></div>
+    <p class="inventory-description">${esc(s.desc || '暂无描述')}</p>
+    <dl class="dl">${det('数量', String(s.quantity))}<div class="detail"><dt>单件参考价值</dt><dd class="money">${s.ref == null ? '待估价' : yuan(s.ref)}</dd></div>${det('当前状态', s.cond)}${s.attrs.map(([k, v]) => det(k, v)).join('')}</dl>`
+    : `<div class="inv-none"><div>${svgI('all')}选择物品，查看描述与属性</div></div>`}</section></div>`;
+}
+
+const ECO = {cash:328000, online:4691520,
+ incomes:[{source:'婚礼跟拍尾款（解放碑某酒店）',amount:280000,status:'expected',account:'onlineBalance',scheduleText:'对方承诺本周五前转账',expectedAt:'2026/11/13'},
+  {source:'《山城晚报》外包图片稿费',amount:120000,status:'received',account:'onlineBalance',scheduleText:'',receivedAt:'2026/11/05'},
+  {source:'商业产品拍摄定金',amount:null,status:'expected',account:'cash',scheduleText:'金额还没谈定'},
+  {source:'车展拍摄',amount:150000,status:'cancelled',account:'onlineBalance',scheduleText:'主办方临时取消'}],
+ debts:[{creditor:'招商银行信用卡',principal:1800000,outstanding:1260000,status:'active',repaymentTerms:'每月 22 日最低还款 1,260 元，已开启自动还款。',dueAt:'2026/11/22',auto:true},
+  {creditor:'林晚（私人借款）',principal:500000,outstanding:500000,status:'active',repaymentTerms:'口头约定，年底前还清，不计利息。',auto:false}],
+ assets:{property:[],vehicle:[{name:'二手雅马哈踏板摩托',val:650000,statusText:'停在较场口楼下，刹车有点软',source:'2023 年二手购入',model:'雅马哈 NMAX 155',plate:'渝A·3K7**'}],
+  other:[{name:'暗房器材一套',val:null,statusText:'放在母亲家阁楼',source:'父亲留下',category:'摄影器材'}]}};
+const ASSET_K = [['property','房产','house'],['vehicle','车辆','car'],['other','其他资产','box']];
+
+function econPanel() {
+  const e = ECO;
+  const debtSum = e.debts.filter(d => d.status === 'active').reduce((a, d) => a + (d.outstanding ?? 0), 0);
+  const assets = [...e.assets.property, ...e.assets.vehicle, ...e.assets.other];
+  const assetSum = assets.reduce((a, x) => a + (x.val ?? 0), 0), assetUnknown = assets.some(x => x.val === null);
+  const INC = {received:'已到账', expected:'待确认收入', cancelled:'已取消'}, ACC = {cash:'现金', onlineBalance:'线上资金'};
+  const DST = {active:['偿还中','blocked'], repaid:['已还清','resolved'], disputed:['有争议','blocked'], cancelled:['已取消','cancelled']};
+  return `<div class="eco scroll">
+   <div class="metric-row" role="group" aria-label="资金概览">
+    <div class="metric m-cash"><small><i>现</i>现金</small><b>${yuan(e.cash).replace(' 元', '')}<em>元</em></b></div>
+    <div class="metric m-online"><small><i>线</i>线上资金</small><b>${yuan(e.online).replace(' 元', '')}<em>元</em></b></div>
+    <div class="metric m-debt derived"><small><i>债</i>未偿本金合计</small><b>${yuan(debtSum).replace(' 元', '')}<em>元</em></b><p>${e.debts.filter(d => d.status === 'active').length} 笔偿还中</p></div>
+    <div class="metric m-asset derived"><small><i>资</i>资产估值合计</small><b>${yuan(assetSum).replace(' 元', '')}<em>元</em></b><p>${assetUnknown ? '另有资产估值未确认' : `${assets.length} 项资产`}</p></div>
+   </div>
+   <div class="eco-grid"><div>
+    <section class="sec"><h4>收入</h4>${e.incomes.length ? `<ul class="ledger">${e.incomes.map(i => `<li class="${i.status}"><h4>${esc(i.source)}</h4><span class="amt">${yuan(i.amount)}</span>
+      <div class="sub"><span class="st ${i.status === 'received' ? 'resolved' : i.status === 'expected' ? 'active' : 'cancelled'}">${INC[i.status]}</span><span class="new-field">${ACC[i.account]}</span>${i.expectedAt || i.receivedAt ? `<span class="new-field">${i.receivedAt ? '到账 ' + i.receivedAt : '预计 ' + i.expectedAt}</span>` : ''}${i.scheduleText ? `<span>${esc(i.scheduleText)}</span>` : ''}</div></li>`).join('')}</ul>` : '<p class="empty">暂无收入记录</p>'}</section>
+    <section class="sec"><h4>债务</h4>${e.debts.length ? e.debts.map(d => { const paid = d.principal ? Math.round((1 - (d.outstanding ?? 0) / d.principal) * 100) : null;
+      return `<article class="debt"><div class="hd"><h4>${esc(d.creditor)}</h4><span class="st ${DST[d.status][1]} new-field">${DST[d.status][0]}</span></div>
+      <div class="nums"><span>本金<b>${yuan(d.principal)}</b></span><span>未偿本金<b>${yuan(d.outstanding)}</b></span>${d.dueAt ? `<span class="new-field">到期<b>${d.dueAt}</b></span>` : ''}</div>
+      ${paid !== null ? `<div class="bar" title="已偿 ${paid}%"><i style="width:${100 - paid}%"></i></div>` : ''}<p>${esc(d.repaymentTerms)}</p></article>`; }).join('') : '<p class="empty">暂无债务记录</p>'}</section>
+   </div><div>
+    <section class="sec"><h4>资产</h4>${ASSET_K.map(([k, l, ic]) => `<section><h5 class="asset-k">${l}<span>${e.assets[k].length}</span></h5>${e.assets[k].length ? e.assets[k].map(a => `<article class="asset"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="${ICON[ic]}"/></svg></span>
+      <h4>${esc(a.name)}</h4><span class="val ${a.val === null ? 'null' : ''}">估值 ${yuan(a.val)}</span>${a.model ? `<span class="src new-field" style="grid-column:2/-1">${esc(a.model)}${a.plate ? ' · ' + esc(a.plate) : ''}</span>` : ''}
+      <span class="pill st">${esc(a.statusText)}</span><span class="src">来源：${esc(a.source)}</span></article>`).join('') : '<p class="empty" style="margin:.2rem 0">暂无记录</p>'}</section>`).join('')}</section>
+   </div></div></div>`;
+}
+
+/* ---------- 第 4 步：世界事件 + 历史时间轴 + 记忆 ---------- */
+const EVS = {
+ e1:{id:'e1',title:'朝天门三号仓库失火调查',status:'active',kind:'main',start:'2026/11/02 03:10',est:'2026/12/15',impact:'significant',
+   actors:[['me','沈砚'],['org','渝江实业集团','business'],['org','朝天门码头帮','gang'],['npc','林晚']],loc:'朝天门三号仓库',
+   bg:'11 月 2 日凌晨，渝江实业集团在朝天门的三号仓库起火，烧掉了半个仓区。消防认定为电路老化，但当晚值班的两名搬运工至今联系不上。',
+   goal:'查清失火当晚仓库里到底存放了什么、谁下令提前清走了一批货。',
+   know:{facts:['仓库起火时间为凌晨 3 点 10 分前后','三号仓库 2016 年也发生过一次「意外」'],reported:['周叔说失火前一晚有货车进出'],suspected:['码头帮在失火前收到了风声']},
+   pre:['e4'],tasks:['找到失联的两名搬运工'],hist:[['史料记录','朝天门仓库失火','2026/11/02']],
+   stages:{run:[{id:'s1',title:'走访码头工人',start:'2026/11/06',end:'2026/11/16'},{id:'s2',title:'调取仓库进出记录',start:'2026/11/09',end:'2026/11/20'}],
+     ended:[{id:'s0',title:'现场勘察',start:'2026/11/02',end:'2026/11/05',outcome:'success'}],up:[{id:'s3',title:'与渝江实业对质',start:'2026/11/25',end:'2026/12/05'}]}},
+ e2:{id:'e2',title:'十八梯老街铺面收购',status:'blocked',kind:'main',start:'2026/10/20 10:00',impact:'minor',actors:[['org','渝江实业集团','business'],['org','渝中区个体商户协会','civil'],['npc','林晚']],loc:'十八梯老街',
+   bg:'渝江实业想在年底前拿下老街剩余铺面，商户协会组织联名抵制。',goal:'商户希望拿到合理补偿，或者保住店面。',know:null,stages:null},
+ e5:{id:'e5',title:'山城晚报内部人事调整',status:'active',kind:'main',start:'2026/11/08 09:00',impact:'minor',actors:[['org','山城晚报社','business'],['npc','陈默']],loc:'解放碑',bg:'报社社会新闻部主任突然调岗。',goal:'',know:null,stages:null},
+};
+const OTHER_EV = [{id:'e4',title:'2016 年码头落水事件',status:'resolved',outcome:'changed'}], LEGACY_EV = [{id:'e9',title:'老街停电（旧档）',status:'resolved'}];
+const WTASKS = [{goal:'找到失联的两名搬运工',status:'active'},{goal:'收购十八梯老街剩余铺面',status:'blocked'}];
+let evId = 'e1', stageId = null;
+const STL = {scheduled:'尚未开始',active:'进行中',blocked:'受阻',resolved:'已结案',cancelled:'已取消'}, OCL = {success:'成功',failure:'失败',changed:'变化',cancelled:'取消'}, IML = {minor:'局部影响',significant:'显著影响',major:'重大影响'};
+const stBadge = (st, oc) => `<span class="ev-st ${oc || st}">${STL[st]}${oc ? ` · ${OCL[oc]}` : ''}</span>`;
+const actorChip = ([k, n, ok]) => `<span class="actor a-${k}" ${ok ? `data-kind="${ok}"` : ''}><i>${n[0]}</i>${n}</span>`;
+
+function eventsPanel() {
+  const list = Object.values(EVS).filter(e => e.status === 'active' || e.status === 'blocked');
+  const m = EVS[evId];
+  const allStages = m?.stages ? [...m.stages.run, ...m.stages.ended, ...m.stages.up] : [];
+  const st = stageId ? allStages.find(s => s.id === stageId) : null;
+  const stageRow = (s, cls) => `<li class="${cls}"><button class="event-stage-row" data-stage="${s.id}"><span><strong>${s.title}</strong></span>${cls === 'done' ? stBadge('resolved', s.outcome) : cls === 'up' ? stBadge('scheduled') : stBadge('active')}<small>${s.start} · 固定终止 ${s.end}</small></button></li>`;
+  const file = !m ? '<p class="empty" style="margin-top:3rem">选择主事件，阅读世界档案</p>' : st ? `
+    <div class="ev-file-hd"><div class="ev-crumb"><button data-stage-back>返回主事件</button><button class="event-back-list">返回事件列表</button></div>
+     <div class="row">${stBadge(st.outcome ? 'resolved' : st.id === 's3' ? 'scheduled' : 'active', st.outcome)}<span class="pill">阶段 · 所属：${m.title}</span></div><h3 tabindex="-1">${st.title}</h3></div>
+    <dl class="facts-grid"><div><dt>开始时间</dt><dd class="mono">${st.start}</dd></div><div><dt>固定终止时间</dt><dd class="mono">${st.end}</dd></div><div><dt>所属主事件</dt><dd>${m.title}</dd></div></dl>
+    <section class="sec"><h4>阶段经过与结果</h4><p class="event-prose">${st.outcome ? '在仓库外围找到了被烧毁的监控主机，硬盘被人提前取走。' : '<span style="color:var(--dim)">未记录</span>'}</p></section>` : `
+    <div class="ev-file-hd"><div class="ev-crumb"><button class="event-back-list">返回事件列表</button></div>
+     <div class="row">${stBadge(m.status)}${m.impact ? `<span class="impact ${m.impact}">${IML[m.impact]}</span>` : ''}<span class="pill">主事件</span></div>
+     <h3 tabindex="-1" data-file-heading>${m.title}</h3>
+     <span class="case-stamp" style="--c:${m.status === 'blocked' ? 'var(--neg)' : 'var(--info)'}">${STL[m.status]}<small>CASE · ${m.id.toUpperCase()}</small></span></div>
+    <dl class="facts-grid">
+     <div><dt>开始时间</dt><dd class="mono">${m.start}</dd></div>${m.est ? `<div><dt>预计整体结束</dt><dd class="mono">${m.est}（预计）</dd></div>` : ''}<div><dt>地点</dt><dd>${m.loc}</dd></div>
+     <div class="wide"><dt>参与人物与势力</dt><dd>${m.actors.map(actorChip).join('')}</dd></div>${m.impact ? `<div><dt>影响描述</dt><dd>${IML[m.impact]}</dd></div>` : ''}</dl>
+    <div class="bg-goal"><section class="sec"><h4>背景</h4><p class="event-prose">${m.bg}</p></section><section class="sec"><h4>目标</h4>${m.goal ? `<p class="event-prose">${m.goal}</p>` : '<p class="muted">未记录</p>'}</section></div>
+    ${m.stages ? `<section class="sec event-stages" aria-label="主事件阶段"><h4>并行阶段</h4>
+      <p class="stage-h">正在进行的阶段 <b>${m.stages.run.length}</b></p><ol class="stage-track">${m.stages.run.map(s => stageRow(s, 'run')).join('')}</ol>
+      <p class="stage-h">已结束的阶段经过 <b>${m.stages.ended.length}</b></p><ol class="stage-track">${m.stages.ended.map(s => stageRow(s, 'done')).join('')}</ol>
+      <details class="fold"><summary>尚未开始的阶段 · ${m.stages.up.length}</summary><ol class="stage-track">${m.stages.up.map(s => stageRow(s, 'up')).join('')}</ol></details></section>` : ''}
+    ${m.know ? `<section class="sec event-knowledge" aria-label="成果分类"><h4>成果分类</h4><div class="know">
+      <div class="k-facts"><h5>已核实事实</h5><ul>${m.know.facts.map(t => `<li>${t}</li>`).join('')}</ul></div>
+      <div class="k-rep"><h5>转述（未核实）</h5><ul>${m.know.reported.map(t => `<li>${t}</li>`).join('')}</ul></div>
+      <div class="k-sus"><h5>推测</h5><ul>${m.know.suspected.map(t => `<li>${t}</li>`).join('')}</ul></div></div></section>` : ''}
+    ${m.pre ? `<section class="sec" aria-label="前序关联"><h4>正式前序</h4>${m.pre.map(id => `<button class="chip-btn" data-toast="打开：2016 年码头落水事件"><span class="seal" aria-hidden="true">前</span>2016 年码头落水事件</button>`).join('')}</section>` : ''}
+    ${m.tasks ? `<section class="sec"><h4>关联任务</h4><ul class="tasks">${m.tasks.map(t => `<li>${t}</li>`).join('')}</ul></section>` : ''}
+    ${m.hist ? `<section class="sec" aria-label="相关历史"><h4>正式历史引用</h4>${m.hist.map(([tg, t, d]) => `<div class="hist-ref"><span class="pill">${tg}</span>${t}<span class="t">${d}</span></div>`).join('')}<p style="margin-top:.8rem"><button class="chip-btn" data-goto="历史时间轴"><span class="seal" aria-hidden="true">史</span>前往历史时间轴</button></p></section>` : ''}
+    <details class="sec"><summary>关联与来源</summary><p style="font-size:.84rem">叙事阻碍：码头工人普遍不愿开口</p><p style="font-size:.84rem">前置背景：集团正在推进旧城改造</p><p style="font-size:.84rem;color:var(--dim)">来源回合：t-008、t-010</p></details>
+    <details class="sec tech"><summary>完整技术记录</summary><dl><dt>记录 ID</dt><dd>${m.id}</dd><dt>事件类别</dt><dd>${m.kind}</dd><dt>状态</dt><dd>${m.status}</dd></dl></details>`;
+  return `<div class="npc"><div class="npc-layout"><section class="npc-dir scroll event-directory" id="npcDir" aria-label="活动主事件目录"><div class="npc-tools"><h3>正在发展的主事件 <small>${list.length}</small></h3>
+    <label class="f-label">搜索活动主事件<input class="f-input search" maxlength="400" placeholder="标题或背景"></label></div>
+    <div class="event-directory-rows">${list.map(e => `<button class="ev-row event-directory-row" data-ev="${e.id}" aria-label="查看主事件：${e.title}" aria-pressed="${e.id === evId}"><strong>${e.title}</strong>${stBadge(e.status)}<small>${e.start}</small></button>`).join('')}</div>
+    <div class="aux event-auxiliary"><p class="lbl">更多档案</p>
+     <details class="fold event-secondary"><summary>其他事件家族资料 · ${OTHER_EV.length}</summary>${OTHER_EV.map(e => `<button class="event-stage-row" style="margin-top:.4rem"><span><strong>${e.title}</strong></span>${stBadge(e.status, e.outcome)}</button>`).join('')}</details>
+     <details class="fold event-secondary"><summary>旧版独立事件资料 · ${LEGACY_EV.length}</summary>${LEGACY_EV.map(e => `<button class="event-stage-row" style="margin-top:.4rem"><span><strong>${e.title}</strong></span>${stBadge(e.status)}</button>`).join('')}</details>
+     <details class="fold event-secondary"><summary>任务进展</summary>${WTASKS.map(t => `<div class="dyn" style="margin-top:.4rem"><li style="list-style:none">${t.goal}<span class="st ${t.status}">${{active:'进行中',blocked:'受阻'}[t.status]}</span></li></div>`).join('')}</details></div></section>
+    <section class="npc-detail scroll event-detail-pane" id="npcDetail">${file}</section></div></div>`;
+}
+
+/* 历史时间轴 */
+const SLOTS = [
+ {label:'2016 年 10 月',world:[{id:'h1',scope:'地区重大事件',title:'朝天门码头改制',summary:'码头由区属企业整体转给渝江实业，三百多名老工人被分流。'}],me:[{id:'h2',title:'父亲沈怀山失踪',summary:'夜班调度沈怀山在三号仓库附近落水，官方以意外结案。'}]},
+ {label:'2021 年',world:[{id:'h3',scope:'国家重大事件',title:'旧城更新新政出台',summary:'老旧街区改造补偿标准统一上调，十八梯被列入试点。'}],me:[]},
+ {label:'2026 年 11 月 2 日',world:[{id:'h4',scope:'地区重大事件',title:'朝天门三号仓库失火',summary:'半个仓区被烧毁，两名搬运工失联。'}],me:[{id:'h5',title:'收到父亲的机械表',summary:'周叔转交来一只木盒和父亲的机械表，表还在走。'}]},
+];
+let hpTab = 'chronicles', hpSel = null;
+function historyPanel() {
+  if (hpSel) return `<div class="hp scroll history-panel"><button data-hp-back>返回时间轴</button><article class="chron history-detail" aria-label="纪事详情">
+    <div class="tag-line"><span class="pill" style="color:#A3412E;border-color:#A3412E66">主角重大纪事</span><span class="pill">已确立事实</span></div>
+    <h3>父亲沈怀山失踪</h3><p class="lead">夜班调度沈怀山在三号仓库附近落水，官方以意外结案。</p>
+    <dl class="facts-grid" style="margin:1rem 0"><div><dt>发生 / 开始</dt><dd class="mono">2016 年 10 月 17 日 深夜</dd></div><div><dt>地点</dt><dd>朝天门三号仓库</dd></div><div><dt>信息性质</dt><dd>已确立事实</dd></div>
+      <div class="wide"><dt>涉及人物与组织</dt><dd>${actorChip(['npc','沈怀山'])}${actorChip(['org','渝江实业集团','business'])}</dd></div><div><dt>原始时间表述</dt><dd>那年秋天的一个雨夜</dd></div></dl>
+    <section class="sec"><h4>历史纪事</h4><p class="history-narrative">那天夜里下着小雨。沈怀山在交班前给家里打过一个电话，说仓库里来了一批不在单子上的货，要晚点回。凌晨两点，同班的工人发现调度室没人，桌上的茶还是热的。三天后，下游的渔民在江边捞到了他的外套。</p></section>
+    <section class="sec"><h4>主要经过</h4><ol class="proc"><li>当晚 22 点，一批未登记的货车进入三号仓库</li><li>凌晨 2 点前后，沈怀山离开调度室，此后无人见过</li><li>三天后，下游发现其外套，警方以失足落水结案</li></ol></section>
+    <section class="sec"><h4>已发生结果</h4><ul class="res-list"><li><span class="nat fact">已确立事实</span>沈家获得一笔「慰问金」，金额不详<p>来源：区档案馆公开记录</p></li></ul>
+      <h5>已确认影响</h5><ul class="res-list"><li><span class="nat statement">人物陈述</span>母亲此后再没去过朝天门<p>来源：沈砚本人</p></li></ul></section>
+    <section class="sec" aria-label="关联历史"><h4>关联历史</h4><button class="chip-btn">同一重大事实 · 朝天门码头改制</button> <button class="chip-btn">后续承接 · 收到父亲的机械表</button></section>
+    <div class="src-foot"><span>记录来源：<b>沈砚</b></span><span>来源说明：<b>主角回忆与公开报道</b></span><span>来源回合：t-001、t-012</span><span>记录于 2026/11/10 23:41</span></div></article></div>`;
+  const node = (e, side) => `<button class="history-node" data-hp="${e.id}"><span class="tag">${side === 'world' ? e.scope : '主角重大事件'}</span><h3>${e.title}</h3><p>${e.summary}</p></button>`;
+  return `<div class="hp scroll history-panel">
+   <div class="hp-bar"><div class="seg-tabs history-tabs" role="group" aria-label="历史视图"><button data-hp-tab="chronicles" aria-pressed="${hpTab === 'chronicles'}">重大纪事</button><button data-hp-tab="records" aria-pressed="${hpTab === 'records'}">史料记录 · 3</button></div>
+    ${hpTab === 'chronicles' ? `<label class="f-label">搜索纪事<input class="f-input search" maxlength="400"></label><label class="f-label">年代<select class="f-select"><option>全部年代</option><option>2016年</option><option>2021年</option><option>2026年</option><option>时间待考</option></select></label>` : ''}</div>
+   ${hpTab === 'chronicles' ? `<div class="history-legend"><span>世界重大纪事</span><i>TIME</i><span>主角重大纪事</span></div>
+    <ol class="history-axis" aria-label="统一历史主轴" tabindex="0">${SLOTS.map(s => `<li class="history-slot"><div class="history-side history-world">${s.world.map(e => node(e, 'world')).join('')}</div>
+     <div class="history-time"><span class="history-pin"></span><time>${s.label}</time></div><div class="history-side history-protagonist">${s.me.map(e => node(e, 'me')).join('')}</div></li>`).join('')}</ol>
+    <div class="pager memory-pagination" aria-label="历史分页"><button disabled>上一页</button><span>第 1 / 1 页 · ${SLOTS.length} 个时间组</span><button disabled>下一页</button></div>`
+   : `<div class="rl-tools"><label class="f-label">搜索史料记录<input class="f-input search" maxlength="4000"></label><span class="count">3 条记录 · 每页 20 条</span></div>
+    ${[['2026/11/02 03:10','朝天门仓库失火','消防通报称电路老化引发火灾。','剧情事实','山城晚报'],['2026/11/08','木盒转交','周叔说，有人托他把木盒交给沈砚。','人物陈述','周叔'],['发生时间未知','码头帮的「规矩」','听说码头帮会替集团处理不听话的工人。','推测 / 传闻','阿峰']].map(([t, ti, su, k, s]) => `<article class="entry"><time style="margin:0">${t}</time><h4 style="font-family:var(--font-title);font-size:1rem;color:var(--head);margin:.3rem 0">${ti}</h4><p class="prose" style="margin:0">${su}</p><p style="margin-top:.5rem;display:flex;gap:.6rem;align-items:center;font-size:.74rem;color:var(--dim)"><span class="pill ${k === '剧情事实' ? 'on' : ''}">${k}</span>记录来源：${s}</p></article>`).join('')}`}
+  </div>`;
+}
+
+/* 记忆 */
+const LEVELS = [['immediate','即时记忆',3,'d1'],['short','短期记忆',8,'d2'],['medium','中期记忆',2,'d3'],['long','长期记忆',1,'d4'],['npc','人物记忆',5,'d5'],['archive','永久正文档案',12,'d6']];
+let memLv = 'medium', memSrc = null;
+const TURNS = [[12,'2026/11/10 23:41','咖啡馆里认出父亲的机械表，门外有人监视。'],[11,'2026/11/10 22:05','从周叔手里接过木盒和机械表。'],[10,'2026/11/09 20:30','在老街遇见十年没见的林晚。']];
+function memoryPanel() {
+  const L = LEVELS.find(l => l[0] === memLv);
+  const turnList = TURNS.map(([n, t, s]) => `<article class="turn-card"><span class="no">${n}<small>TURN</small></span><time>${t}</time>
+    <details><summary>第 ${n} 回合 · ${s}</summary><p class="prose">咖啡馆的门被风顶开一条缝，冷气夹着雨丝灌进来。沈砚低头看着掌心里的机械表……</p></details><button data-src="${n}">查看第 ${n} 回合原文</button></article>`).join('');
+  const mems = memLv === 'medium' ? [
+    ['已保存摘要','2026/11/10 23:50','中期','主角已知记录','亲历 / 观察','父亲的机械表重新出现。周叔说是有人托他转交的，对方没有留下名字。林晚愿意帮忙查当年的事。','',[11,12]],
+    ['历史摘要，只读','2026/11/05 18:00','中期','主角已知记录','转述（未核实）','渝江实业在收购老街铺面，林晚的咖啡馆在清单上。','山城晚报报道',[7]]] :
+    memLv === 'npc' ? [['已保存摘要','2026/11/10 23:38','人物','人物私有记录 · 不代表主角已知','亲历 / 观察','沈砚看到那块表时，手在抖。','',[12],'林晚']] : [];
+  return `<div class="mem memory-reader"><aside class="mem-rail"><p class="lbl">记忆层级 · 由浅到深</p><nav class="depth memory-navigation" aria-label="记忆层级">
+    ${LEVELS.map(([k, n, c, d], i) => `${i === 4 ? '<span class="sep"></span>' : ''}<button class="${d}" data-mem="${k}" aria-label="${n}" aria-pressed="${memLv === k}"><i></i><span>${k === 'short' ? '短期' : k === 'medium' ? '中期' : k === 'long' ? '长期' : n}</span><span aria-hidden="true">${c}</span></button>`).join('')}</nav>
+    <p class="depth-note">即时窗口：最近 3 回合。<br>颜色越深，记得越久。</p></aside>
+   <section class="mem-main scroll">
+    <p class="mem-intro muted">即时窗口：最近 3 回合。玩家可查看全部已保存记录；阅读不会让主角或其他人物自动知情。内部记录不代表人物记忆。</p>
+    <div class="mem-search"><label class="f-label">搜索历史回合<input class="f-input search" maxlength="4000" placeholder="搜索人物、约定、地点或经历"></label>
+     ${memLv !== 'immediate' && memLv !== 'archive' ? '<label class="f-label">搜索当前记忆层级<input class="f-input search" maxlength="4000" placeholder="人物、内容或知识来源"></label>' : ''}</div>
+    ${memSrc ? `<section class="source-drawer" tabindex="-1" aria-label="摘要来源原文"><h3>第 ${memSrc} 回合原文</h3><time style="font-family:var(--font-mono);font-size:.7rem;color:var(--dim)">2026/11/10 22:05</time>
+      <p class="sum">摘要：从周叔手里接过木盒和机械表。</p><p class="prose">雨从傍晚开始下，十八梯的石阶被冲得发亮。沈砚把相机塞进夹克里，沿着台阶往下走，鞋底踩过积水，溅起一圈一圈的光。周叔没再说话，把柜台下的木盒推了过来。</p><button data-src-close>关闭来源原文</button></section>` : ''}
+    <section aria-label="${L[1]}"><div class="mem-head"><h3>${L[1]}</h3><span style="font-family:var(--font-mono);font-size:.72rem;color:var(--dim)">${L[2]} 条</span></div>
+     <p class="muted">${memLv === 'immediate' ? '按回合顺序回顾已提交的经历，展开可读完整正文。' : memLv === 'short' ? '已保存摘要与旧档只读摘要分别标记，原文始终保留。' : memLv === 'archive' ? '共 12 个已提交回合，每页 20 条。' : ''}</p>
+     ${memLv === 'immediate' || memLv === 'archive' ? turnList : mems.length ? mems.map(([o, t, ly, vis, nat, text, ks, src, owner]) => `<article class="mem-card" style="--d:${{medium:'#4F7A96',npc:'#A3412E'}[memLv]}">
+       <div class="top"><span class="origin ${o.includes('只读') ? 'ro' : ''}">${o}</span><time>${t}</time><span>${ly}${owner ? ` · 所属人物：${owner}` : ''} · ${vis}</span><span class="pill layer">${nat}</span></div>
+       <p class="prose">${text}</p>${ks ? `<p style="font-size:.76rem;color:var(--muted)">知识来源：${ks}</p>` : ''}
+       <div class="foot"><span>对应 ${src.length} 个已提交回合</span><details class="fold" style="margin:0"><summary>记忆来源记录</summary><p>来源回合：${src.map(s => 't-0' + s).join('、')}</p></details><button data-src="${src[0]}">${src.length === 1 ? `查看第 ${src[0]} 回合原文` : '查看来源回合'}</button></div></article>`).join('')
+       : `<p class="empty">${{short:'暂时没有短期摘要；永久正文仍保留在档案中。',long:'尚无长期记忆。值得长久铭记的经历，会在这里保存。'}[memLv] || '暂无记录'}</p>`}
+    </section></section></div>`;
+}
+
+/* ---------- 第 5 步：地图 ---------- */
+const LOCS = [
+ ['cq','重庆',null],['yz','渝中区','cq'],['jfb','解放碑','yz'],['18t','十八梯老街','jfb'],['cafe','「旧时光」咖啡馆','18t'],['watch','十八梯修表铺','18t'],['bank','解放碑某银行','jfb'],
+ ['ctm','朝天门','yz'],['wh3','朝天门三号仓库','ctm'],['dock','朝天门码头','ctm'],['jcm','较场口','yz'],['home','较场口老小区','jcm'],
+ ['jb','江北区','cq'],['gyq','观音桥','jb'],['mall','观音桥商圈','gyq'],['na','南岸区','cq'],['nbl','南滨路','na'],['bar','南滨路江边酒吧','nbl'],
+ ['sh','上海',null],['hp','黄浦区','sh'],
+];
+const L = Object.fromEntries(LOCS.map(([id, name, parentId]) => [id, {id, name, parentId}]));
+const kidsOf = id => LOCS.filter(l => l[2] === id).map(l => L[l[0]]);
+const pathOf = id => { const p = []; let c = L[id], seen = new Set(); while (c && !seen.has(c.id)) { seen.add(c.id); p.unshift(c); c = L[c.parentId]; } return p; };
+const ME_AT = 'cafe';
+const AT = {cafe:[['林','林晚','n1','本幕在场'],['黑','黑衣男人','n4','本幕在场']],watch:[['周','周叔','n3','场外人物']],bank:[['何','何丽','n6','场外人物']],jcm:[['阿','阿峰','n7','场外人物']]};
+const USUAL = {cafe:[['林','林晚','n1','工作地点']],home:[['林','林晚','n1','住处'],['沈','沈砚',null,'住处']]};
+const EV_AT = {wh3:[['e1','朝天门三号仓库失火调查','active']],'18t':[['e2','十八梯老街铺面收购','blocked']]};
+const ASSET_AT = {home:[['车','二手雅马哈踏板摩托','车辆']]};
+let mpSel = 'cafe', mpOpen = new Set(pathOf('cafe').map(p => p.id));
+const desc = id => { let n = 0; const walk = x => kidsOf(x).forEach(k => { n++; walk(k.id); }); walk(id); return n; };
+const peopleIn = id => { let n = (AT[id] || []).length; kidsOf(id).forEach(k => n += peopleIn(k.id)); return n; };
+const RIVERS = {
+  cq:`<path d="M-20 60 C 160 40, 260 150, 420 120 S 700 40, 900 90"/><path class="thin" d="M380 260 C 420 200, 400 150, 430 118"/><text x="610" y="58">长江</text><text x="360" y="250">嘉陵江</text>`,
+  sh:`<path d="M120 -10 C 200 80, 140 170, 260 240 S 520 290, 700 320"/><text x="300" y="232">黄浦江</text>`,
+  hrb:`<path d="M-20 40 C 200 70, 420 20, 900 60"/><text x="520" y="34">松花江</text>`,
+  gz:`<path d="M-20 200 C 200 170, 380 230, 560 200 S 800 170, 900 190"/><text x="420" y="196">珠江</text>`,
+};
+function treeHTML(parent, lv) {
+  const ks = parent ? kidsOf(parent) : LOCS.filter(l => !l[2]).map(l => L[l[0]]);
+  if (!ks.length) return '';
+  return `<ul class="map-tree">${ks.map(k => { const has = kidsOf(k.id).length, open = mpOpen.has(k.id);
+    return `<li class="mt-lv${lv}"><button class="mt-row" data-loc="${k.id}" aria-pressed="${mpSel === k.id}" ${has ? `aria-expanded="${open}"` : ''}>
+      <span class="mt-tog ${has ? (open ? 'open' : '') : 'leaf'}" ${has ? `data-tog="${k.id}"` : ''} aria-hidden="true">${has ? '▶' : ''}</span>
+      <span class="mt-name" title="${k.name}">${k.name}</span>${k.id === ME_AT ? '<span class="here" title="主角当前位置">你</span>' : ''}${has ? `<span class="mt-n">${desc(k.id)}</span>` : ''}</button>
+      ${has && open ? treeHTML(k.id, lv + 1) : ''}</li>`; }).join('')}</ul>`;
+}
+function mapPanel() {
+  const sel = L[mpSel], path = pathOf(mpSel), root = path[0];
+  const city = {cq:['重庆','CHONGQING'],sh:['上海','SHANGHAI']}[root.id] || [root.name, ''];
+  const tintKey = {cq:'cq',sh:'sh'}[root.id] || 'cq';
+  const onPath = new Set(path.map(p => p.id)), mePath = new Set(pathOf(ME_AT).map(p => p.id));
+  const districts = kidsOf(root.id);
+  const pinsOf = id => { const out = []; const walk = x => kidsOf(x).forEach(k => { if (!kidsOf(k.id).length) out.push(k); else walk(k.id); }); walk(id); return out; };
+  const diagram = `<section class="city-map" data-city="${tintKey}" aria-label="城区示意">
+    <div class="cm-hd"><h4>${city[0]}</h4><span class="en">${city[1]} · 地点层级示意</span><span class="legend"><span><span class="here" style="width:.9rem;height:.9rem;font-size:.45rem">你</span>主角所在</span><span>虚线框 = 区域</span><span>◆ = 具体地点</span></span></div>
+    <svg class="river" viewBox="0 0 880 320" preserveAspectRatio="none" aria-hidden="true">${RIVERS[tintKey] || ''}</svg>
+    <div class="cm-body">${districts.length ? districts.map(d => `<div class="district ${onPath.has(d.id) ? 'on' : ''} ${mePath.has(d.id) ? 'has-me' : ''}" data-loc="${d.id}">
+      <span class="dn">${d.name}${mePath.has(d.id) ? '<span class="here">你</span>' : ''}<small>${peopleIn(d.id)} 人</small></span>
+      <div class="blocks">${kidsOf(d.id).map(b => `<div class="block ${onPath.has(b.id) ? 'on' : ''}" data-loc="${b.id}"><span class="bn">${b.name}</span>
+        <div class="pins">${(kidsOf(b.id).length ? pinsOf(b.id) : []).map(p => `<span class="pin ${p.id === ME_AT ? 'me' : ''} ${p.id === mpSel ? 'on' : ''}" data-loc="${p.id}">${p.name}${(AT[p.id] || []).length ? `<span class="ppl">${AT[p.id].length}</span>` : ''}</span>`).join('')}</div></div>`).join('')}</div></div>`).join('')
+      : '<p class="empty" style="flex:1">该城市尚无下级地点记录</p>'}</div></section>`;
+  const kids = kidsOf(mpSel);
+  const lvName = path.length === 1 ? '城市' : kids.length ? `区域 · 第 ${path.length} 级` : '具体地点';
+  const card = `<article class="place-card" aria-label="地点资料">
+    <div class="pc-crumb">${path.map((p, i) => i < path.length - 1 ? `<button data-loc="${p.id}">${p.name}</button><span>›</span>` : `<span style="color:var(--head)">${p.name}</span>`).join('')}</div>
+    <div class="pc-title"><h3>${sel.name}</h3><span class="lv">${lvName}</span>${sel.id === ME_AT ? '<span class="pc-here"><span class="here">你</span>主角当前所在</span>' : mePath.has(sel.id) ? '<span class="pc-here"><span class="here">你</span>主角在此区域内</span>' : ''}</div>
+    ${kids.length ? `<section class="sec"><h4>下级地点</h4><div class="kids">${kids.map(k => `<button data-loc="${k.id}">${k.name}${kidsOf(k.id).length ? `<small>${desc(k.id)}</small>` : ''}</button>`).join('')}</div></section>` : ''}
+    <div class="pc-grid">
+     <section class="sec"><h4>此地人物</h4><p class="derived-note">按人物当前位置汇总</p>${(AT[mpSel] || []).length ? `<div class="who-list">${AT[mpSel].map(([s, n, id, st]) => `<div class="who-row"><span class="seal" aria-hidden="true">${s}</span><button class="link-btn" data-goto-person="${id}">${n}</button><span class="pill ${st === '本幕在场' ? 'on' : ''}">${st}</span></div>`).join('')}</div>` : '<p class="empty" style="margin:0">此处暂无已记录人物</p>'}
+       ${(USUAL[mpSel] || []).length ? `<h5>常驻于此</h5><div class="who-list">${USUAL[mpSel].map(([s, n, id, r]) => `<div class="who-row"><span class="seal" aria-hidden="true">${s}</span>${id ? `<button class="link-btn" data-goto-person="${id}">${n}</button>` : `<span>${n}</span>`}<span class="pill">${r}</span></div>`).join('')}</div>` : ''}</section>
+     <section class="sec"><h4>此地动态</h4><p class="derived-note">按事件与资产的地点汇总</p>${(EV_AT[mpSel] || []).length ? `<ul class="dyn">${EV_AT[mpSel].map(([id, t, st]) => `<li><button class="link-btn" data-goto="世界事件">${t}</button><span class="st ${st}">${{active:'进行中',blocked:'受阻'}[st]}</span></li>`).join('')}</ul>` : '<p class="empty" style="margin:0">暂无发生在此的事件</p>'}
+       ${(ASSET_AT[mpSel] || []).length ? `<h5>位于此处的资产</h5><ul class="dyn">${ASSET_AT[mpSel].map(([s, n, k]) => `<li>${n}<span class="pill" style="margin-left:auto">${k}</span></li>`).join('')}</ul>` : ''}</section></div>
+    <details class="sec tech world-record"><summary>地点资料</summary><dl><dt>记录 ID</dt><dd>${sel.id}</dd><dt>名称</dt><dd>${sel.name}</dd><dt>上级地点</dt><dd>${sel.parentId || '无'}</dd></dl></details></article>`;
+  return `<div class="mp"><aside class="mp-tree scroll" aria-label="地点层级"><p class="muted">全部已记录地点 · 地理层级随世界发展扩展。</p>
+    <label class="f-label" style="margin-bottom:.8rem">搜索地点<input class="f-input search" maxlength="200" placeholder="地名"></label>
+    <section class="map-surface">${treeHTML(null, 0)}</section></aside>
+    <section class="mp-main scroll">${diagram}${card}</section></div>`;
+}
+
+/* ---------- 第 6 步：设置 ---------- */
+const ST_TABS = [['AI 连接','连'],['提示词','词'],['记忆','忆'],['运行','运'],['提示词管理','管']];
+let stTab = 'AI 连接', stDirty = false, stPending = null, stNotice = '';
+const CHS = [['OpenAI 兼容','p-openai','DeepSeek 官方','https://api.deepseek.com/v1','deepseek-chat',true],['原生 Anthropic','p-anthropic','Claude','https://api.anthropic.com','claude-sonnet-5-5',false],['原生 Gemini','p-gemini','Gemini','https://generativelanguage.googleapis.com/v1beta','gemini-2.5-pro',false]];
+const field = (b, small, ctl) => `<div class="field"><div class="lab"><b>${b}</b>${small ? `<small>${small}</small>` : ''}</div><div class="ctl">${ctl}</div></div>`;
+const tg = (label, on, dis) => `<label class="toggle"><input type="checkbox" ${on ? 'checked' : ''} ${dis ? 'disabled' : ''} data-dirty>${label}</label>`;
+function settingsPanel() {
+  let body = '';
+  if (stTab === 'AI 连接') body = `<p class="st-lead">保存有效渠道后自动获取模型列表；列表请求不会生成内容。测试连接会调用模型，可能产生费用。</p>
+    <section class="sec"><h4>API 渠道</h4><div class="ch-list">${CHS.map(([p, c, n, u, m, d], i) => `<button class="ch" aria-pressed="${i === 0}"><span class="nm">${n}<span class="proto ${c}">${p}</span></span><span class="url">${u}</span><span class="mdl">默认模型：${m}</span>${d ? '<span class="def">当前渠道</span>' : ''}</button>`).join('')}<button class="ch add">＋ 新增渠道</button></div>
+     <h5>编辑：DeepSeek 官方</h5><div class="fields">
+      ${field('渠道名称', '', '<input class="f-input" value="DeepSeek 官方" data-dirty>')}
+      ${field('协议', '', '<select class="f-select" data-dirty><option>OpenAI 兼容</option><option>原生 Anthropic</option><option>原生 Gemini</option></select>')}
+      ${field('服务地址', '填写含版本路径的服务根地址', '<input class="f-input" style="font-family:var(--font-mono);font-size:.8rem" value="https://api.deepseek.com/v1" data-dirty>')}
+      ${field('API 密钥', '仅保存在本机浏览器', '<span class="secret"><input class="f-input" type="password" value="sk-xxxxxxxxxxxx"><button style="font-size:.78rem">显示</button></span>')}
+      ${field('默认模型', '', '<select class="f-select"><option>deepseek-chat</option><option>deepseek-reasoner</option></select><button style="font-size:.78rem;white-space:nowrap">测试连接</button>')}
+     </div><details class="fold"><summary>生成参数与模型兼容</summary><div class="tg-grid" style="margin-top:.6rem">${tg('支持原生 JSON 模式', true)}${tg('COT 协议兼容', false)}</div></details>
+     <p style="margin-top:1rem;display:flex;align-items:center;gap:.8rem;font-size:.76rem;color:var(--dim)"><button class="btn-danger" style="font-size:.78rem">删除渠道</button>删除渠道会移除其凭证并重置关联路由。</p></section>
+    <section class="sec"><h4>三阶段与记忆总结模型路由</h4><p class="st-lead" style="margin:-.3rem 0 .4rem">正文、变量、动态世界和记忆维护可分别选择渠道与模型。修改后需点击「保存 AI 配置」；勾选跟随正文时使用正文路由，原独立选择会保留。</p>
+     <table class="routes"><thead><tr><th>阶段</th><th>渠道</th><th>模型</th><th>跟随正文</th></tr></thead><tbody>
+      ${[['01','正文生成',0,0],['02','变量管理',1,0],['03','动态世界',0,1],['04','记忆维护',2,0]].map(([n, s, ch, f]) => `<tr class="${f ? 'is-follow' : ''}"><td><i>${n}</i>${s}</td><td><select class="f-select" data-dirty>${CHS.map((c, i) => `<option ${i === ch ? 'selected' : ''}>${c[2]}</option>`).join('')}</select></td><td><select class="f-select" data-dirty><option>${CHS[ch][4]}</option></select></td><td>${n === '01' ? '<span style="font-size:.74rem;color:var(--dim)">—</span>' : tg('', f)}</td></tr>`).join('')}</tbody></table>
+     <p style="font-size:.74rem;color:var(--dim);margin-top:.3rem">各阶段路由独立保存，设置本身不会发起生成请求。</p></section>`;
+  if (stTab === '提示词') body = `<p class="st-lead">七项叙事偏好用于下一次正文请求的提示词与输出校验。</p><section class="sec"><h4>叙事</h4><div class="fields">
+      ${field('叙事人称', '', '<select class="f-select" data-dirty><option>第一人称</option><option>第二人称</option><option selected>第三人称</option></select>')}
+      ${field('剧情风格', '', '<select class="f-select"><option>一般</option></select>')}
+      ${field('正文最低字数', '1 ～ 100000', '<span class="unit"><input class="f-input" type="number" value="1200" min="1" max="100000" data-dirty><span>字</span></span>')}</div></section>
+    <section class="sec"><h4>开关</h4><div class="tg-grid">
+      ${[['NoControl（防抢话）',1],['自然文风修复',1],['行动选项',1],['真实世界模式',0]].map(([l, o]) => `<div class="tg-card"><div><b>${l}</b></div>${tg('', o)}</div>`).join('')}</div></section>`;
+  if (stTab === '记忆') body = `<section class="sec"><h4>即时记忆</h4><div class="fields">${field('即时记忆完整回合数', '1 ～ 10000', '<span class="unit"><input class="f-input" type="number" value="3" data-dirty><span>回合</span></span>')}</div></section>
+    <section class="sec"><h4>记忆总结</h4><div class="fields">${field('总结阈值', '1 ～ 10000', '<span class="unit"><input class="f-input" type="number" value="10" data-dirty><span>条</span></span>')}${field('每批数量', '1 ～ 100，且不能超过阈值', '<span class="unit"><input class="f-input" type="number" value="5" data-dirty><span>条</span></span>')}${field('总结目标 NPC', '', '<select class="f-select"><option>请选择人物</option><option>林晚</option></select>')}</div>
+     <p style="margin-top:.8rem;font-size:.76rem;color:var(--dim)">保存后，即时记忆窗口用于下一次正文请求，总结配置用于下一次维护，历史总结不变。</p></section>`;
+  if (stTab === '运行') body = `<p class="st-lead">两个阶段独立控制。切换只保存后续尝试的偏好，不修改进行中尝试或正式世界状态。</p>
+    <section class="sec"><h4>阶段开关</h4><div class="tg-grid"><div class="tg-card"><div><b>变量管理</b><small>第 2 阶段</small></div>${tg('', 1)}</div><div class="tg-card"><div><b>动态世界</b><small>第 3 阶段</small></div>${tg('', 1)}</div></div>
+     <div class="fields" style="margin-top:.6rem">${field('请求超时（秒）', '1 ～ 3600', '<span class="unit"><input class="f-input" type="number" value="120" data-dirty><span>秒</span></span>')}</div>
+     <fieldset class="later" disabled><legend>校验与失败恢复（后续接入）</legend><div class="fields">${field('输出协议校验', '', tg('', 1, 1))}${field('自动重试', '', '<input class="f-input" readonly value="首次 + 2 次，共 3 次">')}</div><button style="margin-top:.6rem;font-size:.78rem">失败阶段重新加载（后续开放）</button></fieldset></section>`;
+  if (stTab === '提示词管理') body = `<div class="pi-note">提示词管理中心（PromptInspector）内容较多，本稿只统一外观：<br>· 列表与分组用 <b>.sec</b> 分节卡；条目用 <b>.entry</b>；<br>· 输入框、下拉、开关、按钮沿用本页的 <b>.f-input / .f-select / .toggle / .btn-ink</b>；<br>· 长文本编辑区用等宽字、纸面浅底（#F8F4EA）、聚焦金边；<br>· 只读预览用 <b>details.fold</b> 折叠。<br>逻辑与文案不动。</div>`;
+  const savable = !['AI 连接','提示词管理','记忆'].includes(stTab);
+  const saveLabel = stTab === 'AI 连接' ? '保存 AI 配置' : stTab === '记忆' ? '保存记忆设置' : '保存本地设置';
+  return `<div class="st-wrap settings-layout"><nav class="settings-nav" aria-label="设置分类">${ST_TABS.map(([n, i]) => `<button data-st="${n}" aria-pressed="${stTab === n}"><i aria-hidden="true">${i}</i><span>${n}</span>${stDirty && stTab === n ? '<span class="dirty" title="有未保存的修改"></span>' : ''}</button>`).join('')}
+    <div class="notices"><button data-toast="打开游玩须知与免责声明">游玩须知与免责声明</button><button data-toast="打开王朝公告">王朝公告</button></div></nav>
+   <div class="settings-content"><div class="st-scroll scroll"><div class="st-title"><h3>${stTab}</h3></div>${body}
+</div>
+    ${stPending ? `<div class="confirm" role="alertdialog" style="margin:0 1.5rem .8rem"><p><b style="display:block;font-family:var(--font-title);letter-spacing:.1em">${stTab === '记忆' ? '记忆设置尚未保存' : 'AI 配置尚未保存'}</b><span style="font-size:.8rem;color:var(--muted)">${stTab === '记忆' ? '记忆设置的修改尚未保存，请继续编辑并保存，或明确放弃。' : '渠道、模型或密钥的修改尚未保存。继续编辑后点击「保存 AI 配置」，或明确放弃本次修改。'}</span></p><button class="btn-ink" data-st-stay>继续编辑</button><button class="btn-danger" data-st-discard>放弃本次修改</button></div>` : ''}
+    ${stTab !== '提示词管理' ? `<div class="st-bar"><div role="status" class="field-hint ${stNotice ? 'ok' : stDirty ? 'dirty' : ''}">${stNotice || (stDirty ? (stTab === '记忆' ? '记忆设置尚未保存。' : stTab === 'AI 连接' ? '有尚未保存的 AI 配置。' : '有尚未保存的修改。') : '')}</div><button class="btn-ink" data-st-save>${saveLabel}</button></div>` : ''}</div></div>`;
+}
+
+const el = document.createElement('section');
+el.className = 'archive'; el.id = 'archive'; el.dataset.tone = 'paper'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'false'); el.setAttribute('aria-labelledby', 'arTitle');
+document.querySelector('#game').after(el);
+let current = null;
+function open(name) {
+  current = name;
+  el.innerHTML = `<header class="ar-head"><span class="seal" aria-hidden="true">${SEALS[name]}</span><div class="ar-title"><span class="eyebrow">${ORDER.includes(name) ? `WORLD ARCHIVE · 0${ORDER.indexOf(name) + 1} / 07` : name === '设置' ? 'SYSTEM · 系统' : 'PROTAGONIST · 主角档案'}</span><h2 id="arTitle">${name}</h2><span class="sub">${SUBS[name]}</span></div>
+    <span class="esc">ESC</span><button class="ar-close" aria-label="关闭资料界面">关闭 <span aria-hidden="true">×</span></button></header>
+    <div class="ar-body">${body(name)}</div>`;
+  el.classList.add('on');
+  $$('#dockNav button, .dock .sys [data-panel]').forEach(b => b.setAttribute('aria-current', b.dataset.panel === name));
+  $$('.hero-actions [data-archive]').forEach(b => b.setAttribute('aria-current', b.dataset.archive === name));
+  bind();
+}
+function body(name) { return name === 'NPC' ? npcPanel() : name === '势力组织' ? orgPanel() : name === '人物档案' ? profilePanel() : name === '物品栏' ? invPanel() : name === '经济与资产' ? econPanel() : name === '世界事件' ? eventsPanel() : name === '历史时间轴' ? historyPanel() : name === '记忆' ? memoryPanel() : name === '地图' ? mapPanel() : name === '设置' ? settingsPanel() : placeholder(name); }
+function close() { el.classList.remove('on'); current = null; $$('#dockNav button, .hero-actions [data-archive], .dock .sys [data-panel]').forEach(b => b.setAttribute('aria-current', false)); }
+function rerender(keepDetailScroll) {
+  const d = $('#npcDir')?.scrollTop || 0, ds = $('#npcDetail')?.scrollTop || 0;
+  el.querySelector('.ar-body').innerHTML = body(current); bind();
+  if ($('#npcDir')) $('#npcDir').scrollTop = d; if (keepDetailScroll && $('#npcDetail')) $('#npcDetail').scrollTop = ds;
+}
+function bind() {
+  const q = $('#npcQ'); if (q) q.oninput = () => { query = q.value; const pos = q.selectionStart; rerender(true); const n = $('#npcQ'); n.focus(); n.setSelectionRange(pos, pos); };
+  const f = $('#npcF'); if (f) f.onchange = () => { filter = f.value; rerender(true); };
+  const oq = $('#orgQ'); if (oq) oq.oninput = () => { orgQuery = oq.value; orgId = undefined; const pos = oq.selectionStart; rerender(true); const n = $('#orgQ'); n.focus(); n.setSelectionRange(pos, pos); };
+  const ok = $('#orgK'); if (ok) ok.onchange = () => { orgKind = ok.value; orgId = undefined; rerender(true); };
+  const d = $('#npcDetail');
+  if (d) d.onscroll = () => { const secs = [...d.querySelectorAll('.sec[id]')]; let cur = secs[0]?.id;
+    for (const s of secs) if (s.getBoundingClientRect().top - d.getBoundingClientRect().top < 190) cur = s.id;
+    if (d.scrollTop + d.clientHeight >= d.scrollHeight - 4) cur = secs.at(-1)?.id;
+    d.querySelectorAll('.nd-tabs a').forEach(a => a.setAttribute('aria-current', a.getAttribute('href') === '#' + cur)); };
+}
+el.addEventListener('click', e => {
+  if (e.target.closest('.ar-close')) return close();
+  const stb = e.target.closest('[data-st]'); if (stb) { const n = stb.dataset.st; if (n !== stTab && stDirty && (stTab === 'AI 连接' || stTab === '记忆')) { stPending = n; return rerender(true); } stTab = n; stDirty = false; stNotice = ''; stPending = null; return rerender(false); }
+  if (e.target.closest('[data-st-stay]')) { stPending = null; return rerender(true); }
+  if (e.target.closest('[data-st-discard]')) { stTab = stPending; stPending = null; stDirty = false; stNotice = ''; return rerender(false); }
+  if (e.target.closest('[data-st-save]')) { stDirty = false; stNotice = stTab === 'AI 连接' ? 'AI 配置已保存；模型列表会自动获取，尚未发起生成请求。' : stTab === '记忆' ? '记忆设置已保存；即时记忆窗口用于下一次正文请求，总结配置用于下一次维护，历史总结不变。' : '本地偏好已保存，将用于下一次正文请求；不会改写进行中的请求或已保存草稿。'; return rerender(true); }
+  const tg = e.target.closest('[data-tog]'); if (tg) { e.stopPropagation(); const id = tg.dataset.tog; mpOpen.has(id) ? mpOpen.delete(id) : mpOpen.add(id); return rerender(true); }
+  const lc = e.target.closest('[data-loc]'); if (lc) { e.stopPropagation(); mpSel = lc.dataset.loc; pathOf(mpSel).forEach(p => mpOpen.add(p.id)); const t = el.querySelector('.mp-tree')?.scrollTop; rerender(false); if (el.querySelector('.mp-tree')) el.querySelector('.mp-tree').scrollTop = t; return; }
+  const evb = e.target.closest('[data-ev]'); if (evb) { evId = evb.dataset.ev; stageId = null; rerender(false); $('#npcDetail h3')?.focus({preventScroll:true}); return; }
+  const sgb = e.target.closest('[data-stage]'); if (sgb) { stageId = sgb.dataset.stage; rerender(false); $('#npcDetail').scrollTop = 0; return; }
+  if (e.target.closest('[data-stage-back]')) { stageId = null; return rerender(false); }
+  if (e.target.closest('.event-back-list')) { stageId = null; return rerender(false); }
+  const hpt = e.target.closest('[data-hp-tab]'); if (hpt) { hpTab = hpt.dataset.hpTab; return rerender(false); }
+  const hpn = e.target.closest('[data-hp]'); if (hpn) { hpSel = hpn.dataset.hp; return rerender(false); }
+  if (e.target.closest('[data-hp-back]')) { hpSel = null; return rerender(false); }
+  const mlv = e.target.closest('[data-mem]'); if (mlv) { memLv = mlv.dataset.mem; memSrc = null; return rerender(false); }
+  const msr = e.target.closest('[data-src]'); if (msr) { memSrc = msr.dataset.src; rerender(false); el.querySelector('.mem-main').scrollTop = 0; el.querySelector('.source-drawer')?.focus({preventScroll:true}); return; }
+  if (e.target.closest('[data-src-close]')) { memSrc = null; return rerender(false); }
+  const inf = e.target.closest('[data-inv-f]'); if (inf) { invFilter = inf.dataset.invF; return rerender(false); }
+  const inv = e.target.closest('[data-inv]'); if (inv) { invSel = inv.dataset.inv; const g = $('.inv-mid')?.scrollTop; rerender(false); if ($('.inv-mid')) $('.inv-mid').scrollTop = g; $('.inv-detail h3')?.focus({preventScroll:true}); return; }
+  const og = e.target.closest('[data-org]'); if (og) { orgId = og.dataset.org; rerender(false); $('#npcDetail h3')?.focus({preventScroll:true}); return; }
+  const gt = e.target.closest('[data-goto]'); if (gt) return open(gt.dataset.goto);
+  const gp = e.target.closest('[data-goto-person]'); if (gp) { personId = gp.dataset.gotoPerson; return open('NPC'); }
+  const ar = e.target.closest('[data-archive]'); if (ar) return open(ar.dataset.archive);
+  const pr = e.target.closest('[data-person]'); if (pr) { personId = pr.dataset.person; rerender(false); $('#npcDetail h3')?.focus({preventScroll:true}); return; }
+  const st = e.target.closest('[data-star]'); if (st) { const p = PEOPLE.find(x => x.id === st.dataset.star); p.kind = p.kind === 'special' ? 'ordinary' : 'special'; feedback = `已将「${p.name}」${p.kind === 'special' ? '设为特殊人物' : '取消特殊身份'}`; rerender(true); return; }
+  const a = e.target.closest('.nd-tabs a'); if (a) { e.preventDefault(); const t = el.querySelector(a.getAttribute('href')); $('#npcDetail').scrollTo({top: t.offsetTop - $('.nd-head').offsetHeight - 12, behavior: 'smooth'}); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && current) close(); });
+el.addEventListener('change', e => { if (current === '设置' && e.target.closest('[data-dirty]') && !stDirty) { stDirty = true; stNotice = ''; const bar = el.querySelector('.st-bar .field-hint'); if (bar) { bar.className = 'field-hint dirty'; bar.textContent = stTab === '记忆' ? '记忆设置尚未保存。' : stTab === 'AI 连接' ? '有尚未保存的 AI 配置。' : '有尚未保存的修改。'; } const nb = el.querySelector(`[data-st="${stTab}"]`); if (nb && !nb.querySelector('.dirty')) nb.insertAdjacentHTML('beforeend', '<span class="dirty"></span>'); } });
+$('#dockNav').innerHTML = ORDER.map(n => `<button data-panel="${n}" aria-current="false"><span class="seal" aria-hidden="true">${SEALS[n]}</span>${n}</button>`).join('');
+document.querySelector('.dock .sys button').setAttribute('data-panel','设置'); document.querySelector('.dock .sys button').removeAttribute('data-toast');
+document.querySelector('.dock .sys').addEventListener('click', e => { const b = e.target.closest('[data-panel]'); if (!b) return; current === '设置' ? close() : open('设置'); });
+$('#dockNav').addEventListener('click', e => { const b = e.target.closest('[data-panel]'); if (!b) return; current === b.dataset.panel ? close() : open(b.dataset.panel); });
+document.querySelector('.hero-actions').addEventListener('click', e => { const b = e.target.closest('[data-archive]'); if (!b) return; e.stopImmediatePropagation(); current === b.dataset.archive ? close() : open(b.dataset.archive); }, true);
+const h = new URLSearchParams(location.hash.slice(1)).get('panel'); if (h) open(h);
+const pp = new URLSearchParams(location.hash.slice(1)).get('person'); if (pp && h === 'NPC') { personId = pp; rerender(false); }
+})();
+
+
+</script>
+</body>
+</html>
