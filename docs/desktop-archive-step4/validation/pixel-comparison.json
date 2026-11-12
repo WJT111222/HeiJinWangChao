@@ -1,0 +1,35 @@
+[
+  {
+    "screenshot": "events-mobile.png",
+    "pixelEqual": true,
+    "baseCommit": "332cac71ae9e4c68774d6372ff9affd14626fb8b",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "mainSHA256": "dcb26a4cf8c57ab628dfdbdf34b4b490a5c5fd666b557364f94985802384fda0",
+    "reactSHA256": "dcb26a4cf8c57ab628dfdbdf34b4b490a5c5fd666b557364f94985802384fda0"
+  },
+  {
+    "screenshot": "history-mobile.png",
+    "pixelEqual": true,
+    "baseCommit": "332cac71ae9e4c68774d6372ff9affd14626fb8b",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "mainSHA256": "d1414c8d03ddbd3a2536fdd4fabe98bd874888572561652312acf696d1eb4feb",
+    "reactSHA256": "d1414c8d03ddbd3a2536fdd4fabe98bd874888572561652312acf696d1eb4feb"
+  },
+  {
+    "screenshot": "memory-source-mobile.png",
+    "pixelEqual": true,
+    "baseCommit": "332cac71ae9e4c68774d6372ff9affd14626fb8b",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "mainSHA256": "53065bbc3e2159c392a86d7d3cdabe043811a6d22a84adee8d59e87ef5094615",
+    "reactSHA256": "53065bbc3e2159c392a86d7d3cdabe043811a6d22a84adee8d59e87ef5094615"
+  }
+]

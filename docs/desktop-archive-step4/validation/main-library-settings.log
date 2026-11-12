@@ -1,0 +1,50 @@
+[WebServer] (node:152550) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:152564) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:152847) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [mobile] › e2e/player-memory-seed-control.spec.ts:98:1 › 空记忆与新存档四层均可读；已选存档不等于正在游玩，回首页后维护不可操作 (1.0m)
+
+
+  1) [mobile] › e2e/player-memory-seed-control.spec.ts:98:1 › 空记忆与新存档四层均可读；已选存档不等于正在游玩，回首页后维护不可操作 ──
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '设置', exact: true })
+
+
+       at helpers/gameLayout.ts:56
+
+      54 | export async function openSettings(page: Page) {
+      55 |   await closeWorldArchive(page);
+    > 56 |   await page.getByRole('button', { name: '设置', exact: true }).click();
+         |                                                               ^
+      57 | }
+      58 |
+      59 | export const workflowTrigger = (page: Page) => page.locator('details.workflow-disclosure > summary, .workflow-summary > .workflow-toggle');
+        at openSettings (/workspace/desktop-step4-baseline/e2e/helpers/gameLayout.ts:56:63)
+        at /workspace/desktop-step4-baseline/e2e/player-memory-seed-control.spec.ts:107:3
+
+    Error Context: ../../tmp/s4-main-control2/player-memory-seed-control-e6b2e-层均可读；已选存档不等于正在游玩，回首页后维护不可操作-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/s4-main-control2/player-memory-seed-control-e6b2e-层均可读；已选存档不等于正在游玩，回首页后维护不可操作-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/s4-main-control2/player-memory-seed-control-e6b2e-层均可读；已选存档不等于正在游玩，回首页后维护不可操作-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [mobile] › e2e/player-memory-seed-control.spec.ts:98:1 › 空记忆与新存档四层均可读；已选存档不等于正在游玩，回首页后维护不可操作 ───
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

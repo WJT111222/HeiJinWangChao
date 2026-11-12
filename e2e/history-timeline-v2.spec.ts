@@ -52,7 +52,7 @@ test('正式scope显示四类世界事件与主角标签，双端仍共用时间
   const world = await pair.locator('.history-world').boundingBox(), hero = await pair.locator('.history-protagonist').boundingBox();
   if (info.project.name === 'mobile') {
     expect(world!.x + world!.width).toBeLessThan(hero!.x); expect(Math.abs(world!.y - hero!.y)).toBeLessThan(2);
-  } else { expect(world!.y + world!.height).toBeLessThan(hero!.y); expect(world!.x).toBe(hero!.x); }
+  } else { expect(world!.x + world!.width).toBeLessThan(hero!.x); expect(Math.abs(world!.y - hero!.y)).toBeLessThan(2); }
   await page.screenshot({ path: info.outputPath('history-scope-labels.png') });
   if (info.project.name === 'mobile') {
     await slots.last().scrollIntoViewIfNeeded();
@@ -63,7 +63,7 @@ test('正式scope显示四类世界事件与主角标签，双端仍共用时间
   expect(await saved(page)).toEqual(before); expect(calls).toBe(0);
 });
 
-test('单轴顺序、同日双视角、冬季、详情与史料；桌面横轴和手机竖轴真实截图',async({page},info)=>{
+test('单轴顺序、同日双视角、冬季、详情与史料；桌面双轨和手机原轴真实截图',async({page},info)=>{
   await seed(page);const before=await saved(page);await open(page);
   const axis=page.getByRole('list',{name:'统一历史主轴'}), slots=axis.locator(':scope > li');
   expect(await slots.evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-time-key')))).toEqual([
@@ -72,7 +72,7 @@ test('单轴顺序、同日双视角、冬季、详情与史料；桌面横轴�
   const paired=slots.nth(2);await expect(paired.locator('[data-history-id]')).toHaveCount(2);
   const world=await paired.locator('.history-world').boundingBox(),hero=await paired.locator('.history-protagonist').boundingBox();
   if(info.project.name==='mobile') {expect(world!.x+world!.width).toBeLessThan(hero!.x);expect(Math.abs(world!.y-hero!.y)).toBeLessThan(2);}
-  else {expect(world!.y+world!.height).toBeLessThan(hero!.y);expect(world!.x).toBe(hero!.x);}
+  else {expect(world!.x+world!.width).toBeLessThan(hero!.x);expect(Math.abs(world!.y-hero!.y)).toBeLessThan(2);}
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.screenshot({path:info.outputPath('history-timeline.png')});
   if(info.project.name==='mobile'){await paired.scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath('history-paired.png')});}
@@ -108,7 +108,7 @@ test('后补历史统一插入、分页搜索和完整撤回重载，无额外AI
   await expect(page.getByRole('dialog',{name:'撤回上一回合'})).not.toBeVisible();await page.reload();await open(page);
   expect((await saved(page)).timeline).toEqual([]);expect(apiCalls).toBe(0);
 });
-test('长纪事完整详情、同刻大组有界分页与键盘访问',async({page})=>{
+test('长纪事完整详情、同刻大组有界分页与键盘访问',async({page},info)=>{
  await seed(page);
  await page.evaluate(async()=>{
   const paths=['/src/services/storage/saveRepository.ts','/src/tests/fixtures/turn.ts','/src/tests/fixtures/world.ts','/src/tests/fixtures/historyV2.ts'];
@@ -126,6 +126,6 @@ test('长纪事完整详情、同刻大组有界分页与键盘访问',async({pa
  const node=page.locator('[data-history-id="group-03"]');await node.focus();await page.keyboard.press('Enter');
  await expect(page.getByRole('article',{name:'纪事详情'})).toContainText('原文终章');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
- await page.getByRole('button',{name:'返回时间轴'}).click();await expect(page.locator('[data-history-id="group-00"]')).toBeAttached();
+ await page.getByRole('button',{name:'返回时间轴'}).click();await expect(page.locator(`[data-history-id="${info.project.name==='desktop'?'group-03':'group-00'}"]`)).toBeAttached();if(info.project.name==='desktop')await expect(page.locator('[data-history-id="group-03"]')).toBeFocused();
  expect((await saved(page)).timeline).toHaveLength(90);
 });

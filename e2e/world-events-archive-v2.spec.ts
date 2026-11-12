@@ -19,7 +19,7 @@ async function noOverflow(page:Page) {expect(await page.evaluate(()=>document.do
 test('事件档案：活动目录、并行成果、退役资料、搜索分页与兼容入口均只读',async({page},info)=>{
   let requests=0;await page.route('https://**',async r=>{requests++;await r.abort();});await seed(page);const before=await stored(page),panel=await open(page);
   const directory=panel.getByRole('region',{name:'活动主事件目录'});await expect(directory.getByRole('button',{name:/查看主事件/})).toHaveCount(20);
-  await expect(directory).not.toContainText('已取消的搬迁计划');await expect(directory).not.toContainText('馆藏计划');
+  await expect(directory.locator('.event-directory-rows')).not.toContainText('已取消的搬迁计划');await expect(directory.locator('.event-directory-rows')).not.toContainText('馆藏计划');
   await directory.getByRole('button',{name:'下一页主事件'}).click();await expect(directory).toContainText('2/2');
   await directory.getByLabel('搜索活动主事件').fill('临江旧城');await directory.getByRole('button',{name:'查看主事件：临江旧城档案修复工程'}).click();
   const file=panel.getByRole('article',{name:'事件档案'});await expect(file).toContainText('预计整体结束');await expect(file).toContainText('保存原始资料');await expect(file).toContainText('临江公共事务中心');

@@ -1,0 +1,8 @@
+{
+  "note": "Automation elapsed time includes navigation, assertions and screenshots; not a render benchmark.",
+  "elapsedMs": 7431,
+  "events": 216,
+  "memories": 102,
+  "journal": 70,
+  "history": 113
+}
