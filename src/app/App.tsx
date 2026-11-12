@@ -19,7 +19,7 @@ import { HomeScreen } from '../ui/home/HomeScreen';
 import { dateTime } from '../ui/panels/playerView';
 import { SaveCard } from '../ui/SaveCard';
 import { saveKeyText } from '../services/storage/saveManagement';
-import { Feedback } from '../ui/Feedback';
+import { Feedback, useDesktopFeedback } from '../ui/Feedback';
 import { ArchivePanel } from '../ui/ArchivePanel';
 import { Dialog, Empty } from '../ui/Dialog';
 import { PRODUCT_VERSION } from './product';
@@ -69,6 +69,7 @@ function bootstrap() {
   return { settings, form, hasDraft, selected, warning: warnings.join(' ') };
 }
 export function App() {
+  const desktopUi = useDesktopFeedback();
   const notices = useNotices();
   const [initial] = useState(bootstrap);
   const [repository, setRepository] = useState<SaveRepository>();
@@ -315,19 +316,22 @@ export function App() {
           {gameRoute && <button onClick={() => navigate()}>切换存档</button>}
           <span className="version">{PRODUCT_VERSION}</span>
         </nav>
-        {gameRoute && <button className="mobile-menu-toggle" aria-label="打开游戏菜单" onClick={() => setMenuOpen(true)}>☰</button>}
+        {gameRoute && <button className="mobile-menu-toggle" aria-label="打开游戏菜单" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>☰</button>}
       </header>}
       {gameRoute && <div className="game-corner-brand" aria-label={`黑金王朝 ${PRODUCT_VERSION}`}>
         <span className="brand-mark" aria-hidden="true">黑</span>
         <span className="game-corner-name">黑金王朝<small>{PRODUCT_VERSION}</small></span>
       </div>}
-      {gameRoute && menuOpen && <Dialog title="游戏菜单" small onClose={() => setMenuOpen(false)}>
+      {gameRoute && menuOpen && <Dialog title="游戏菜单" small mobileVariant="actions" className="mobile-game-menu" onClose={() => setMenuOpen(false)}>
+        <div className="mobile-menu-card">
         <nav className="game-menu" aria-label="游戏菜单">
-          <button onClick={() => { setMenuOpen(false); navigate(); }}>游戏首页</button>
-          <button onClick={() => { setMenuOpen(false); navigate(); }}>切换存档</button>
-          <button onClick={() => { setMenuOpen(false); setSettingsOpen(true); }}>设置</button>
-          <span className="version">{PRODUCT_VERSION}</span>
+          <button onClick={() => { setMenuOpen(false); navigate(); }}>{!desktopUi&&<span className="mobile-seal" aria-hidden="true">首</span>}游戏首页</button>
+          <button onClick={() => { setMenuOpen(false); navigate(); }}>{!desktopUi&&<span className="mobile-seal" aria-hidden="true">票</span>}切换存档</button>
+          <button onClick={() => { setMenuOpen(false); setSettingsOpen(true); }}>{!desktopUi&&<span className="mobile-seal" aria-hidden="true">设</span>}设置</button>
+          <span className="version">{!desktopUi&&'黑金王朝 · '}{PRODUCT_VERSION}</span>
         </nav>
+        </div>
+        {!desktopUi&&<button className="mobile-menu-close" onClick={()=>setMenuOpen(false)}>关闭</button>}
       </Dialog>}
       {error && (
         <div className={route === '#create' ? 'app-error' : 'app-error feedback l-err'} role="alert">

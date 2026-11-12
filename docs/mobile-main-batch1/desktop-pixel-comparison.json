@@ -1,0 +1,62 @@
+[
+  {
+    "width": 901,
+    "height": 900,
+    "scene": "main",
+    "baselineCommit": "d73b95db51a99142b58ba33e406836b0dd9f957d",
+    "baselineSha256": "169097d164243a09fdfa32c186685c3b01c9c556110f93deef2bc912c6c44baa",
+    "reactSha256": "169097d164243a09fdfa32c186685c3b01c9c556110f93deef2bc912c6c44baa",
+    "identicalPng": true,
+    "pixelDifferenceBounds": null
+  },
+  {
+    "width": 901,
+    "height": 900,
+    "scene": "workflow",
+    "baselineCommit": "d73b95db51a99142b58ba33e406836b0dd9f957d",
+    "baselineSha256": "1a8f33517b5ffe513e37579136115b88895d058ec48bf2ecdfaf87a7d96a58d0",
+    "reactSha256": "1a8f33517b5ffe513e37579136115b88895d058ec48bf2ecdfaf87a7d96a58d0",
+    "identicalPng": true,
+    "pixelDifferenceBounds": null
+  },
+  {
+    "width": 901,
+    "height": 900,
+    "scene": "npc",
+    "baselineCommit": "d73b95db51a99142b58ba33e406836b0dd9f957d",
+    "baselineSha256": "dabd9546b426581d5cc11012b4930d3617d269d38bb306efde0d72a6a177844c",
+    "reactSha256": "dabd9546b426581d5cc11012b4930d3617d269d38bb306efde0d72a6a177844c",
+    "identicalPng": true,
+    "pixelDifferenceBounds": null
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "scene": "main",
+    "baselineCommit": "d73b95db51a99142b58ba33e406836b0dd9f957d",
+    "baselineSha256": "f4a58cdd8590839c9c6a424a49da679d15253c2e0ed0055b054fe0edecd78746",
+    "reactSha256": "f4a58cdd8590839c9c6a424a49da679d15253c2e0ed0055b054fe0edecd78746",
+    "identicalPng": true,
+    "pixelDifferenceBounds": null
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "scene": "workflow",
+    "baselineCommit": "d73b95db51a99142b58ba33e406836b0dd9f957d",
+    "baselineSha256": "f69c383b96aff2ee7376fce6e2ca727b789af4a2380d38b4b66fb2c2abd3a2d4",
+    "reactSha256": "f69c383b96aff2ee7376fce6e2ca727b789af4a2380d38b4b66fb2c2abd3a2d4",
+    "identicalPng": true,
+    "pixelDifferenceBounds": null
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "scene": "npc",
+    "baselineCommit": "d73b95db51a99142b58ba33e406836b0dd9f957d",
+    "baselineSha256": "d5c8cd7b9c0ed67190328c66d307fc339c519b3ead3e8c088f27243fa523b5cc",
+    "reactSha256": "d5c8cd7b9c0ed67190328c66d307fc339c519b3ead3e8c088f27243fa523b5cc",
+    "identicalPng": true,
+    "pixelDifferenceBounds": null
+  }
+]
