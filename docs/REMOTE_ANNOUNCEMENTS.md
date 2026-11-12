@@ -2,15 +2,15 @@
 
 ## 首次配置（需管理员授权后执行）
 
-本 PR 未部署，也未创建/修改 Cloudflare 资源。仓库内没有真实 Namespace ID，不能直接假设已有绑定。未绑定时 API 和前端均使用当前内置公告。
+管理员已确认创建 `HEIJIN_ANNOUNCEMENTS` 并保存测试公告 `current`。本 PR 已按管理员提供的信息写入真实 Namespace ID `0a998f91824b45dba8dfe52896a89b99`，绑定名为 `ANNOUNCEMENTS`。本轮仅更新仓库配置，没有部署、访问或修改 Cloudflare 资源；线上绑定生效与公告内容仍须在授权部署后验证。异常或缺失绑定时 API 和前端均使用内置公告。
 
 1. 在 Cloudflare 控制台 **Workers & Pages → KV**（部分界面位于 Storage & databases）创建 Namespace，名称 `HEIJIN_ANNOUNCEMENTS`，复制实际 Namespace ID。
 2. 在现有 `heijinwangchao` Worker 的 Settings → Bindings 中添加 KV Namespace，变量名 **`ANNOUNCEMENTS`**，选择上面的 Namespace。绑定修改本身可能需要控制台保存/部署确认。
-3. 将真实 ID 同步进仓库 `wrangler.jsonc` 顶层，避免后续源码部署覆盖控制台绑定。格式如下，示意文字必须替换为真实 ID，不能直接照抄为 ID：
+3. 真实 ID 已同步进仓库 `wrangler.jsonc` 顶层，后续源码部署将使用以下绑定；如果将来更换 Namespace，需同步更新仓库配置：
 
 ```json
 "kv_namespaces": [
-  { "binding": "ANNOUNCEMENTS", "id": "替换为管理员实际创建的Namespace_ID" }
+  { "binding": "ANNOUNCEMENTS", "id": "0a998f91824b45dba8dfe52896a89b99" }
 ]
 ```
 
@@ -60,3 +60,7 @@ Vite 日常开发不模拟生产KV，未 Mock 的 `/api/announcement` 会因返�
 - 定向Chromium：新远程公告两例及既有完整免责声明/顺序/手动查看三例，桌面和手机共10通过，0失败/跳过（43.4秒）。验证StrictMode下单页单请求、刷新读取新快照、远程HTML以纯文本显示且不执行、免打扰和手动查看、离线不阻断首页。没有运行全量E2E。
 - Lint、TypeScript已通过；生产构建通过（退出码0），仅有现有的大于500kB chunk体量提醒；差异检查通过。原免责声明及preferences没有差异，CSS零改动。
 - API测试直接调用真实Worker入口及KV Mock；Chromium Mock同源API，不代表真实Cloudflare已绑定、已部署或跨地区同步已验收。未新增依赖，Node24复用与锁文件一致的本地已安装依赖。
+
+### 真实绑定配置补充（2026-11-13）
+
+仅更新 `wrangler.jsonc` 与本说明。使用 TypeScript JSONC 解析器检查语法，并核对新增绑定之外所有配置项与上一提交完全一致；`main`、Static Assets、`ASSETS`、`run_worker_first` 等均保留。未重复运行完整测试，未部署或修改 Cloudflare 资源。
