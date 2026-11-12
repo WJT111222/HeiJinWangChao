@@ -1,0 +1,784 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/mobile-redesign/node_modules/.bin/playwright",
+      "test",
+      "--config=playwright.mobile-batch1.config.ts"
+    ],
+    "configFile": "/workspace/mobile-redesign/playwright.mobile-batch1.config.ts",
+    "rootDir": "/workspace/mobile-redesign/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/mobile-redesign/test-results/mobile-main-batch1",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/workspace/mobile-redesign/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "mobile-main-batch1.spec.ts"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/mobile-redesign/test-results/mobile-main-batch1",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/workspace/mobile-redesign/e2e",
+        "snapshotDir": "/workspace/mobile-redesign/e2e",
+        "testIgnore": [],
+        "testMatch": "mobile-main-batch1.spec.ts",
+        "timeout": 45000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5231",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "isMobile": true,
+          "hasTouch": true,
+          "reducedMotion": "reduce",
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "docs/mobile-main-batch1/chromium-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5231 --strictPort",
+      "url": "http://127.0.0.1:5231",
+      "reuseExistingServer": true
+    }
+  },
+  "suites": [
+    {
+      "title": "mobile-main-batch1.spec.ts",
+      "file": "mobile-main-batch1.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "手机骨架 375×667：真实数据、建议、发送和抽屉",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4034,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:02.285Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-4a03ba5f47ae60f7cba4",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 13,
+          "column": 81
+        },
+        {
+          "title": "手机骨架 390×844：真实数据、建议、发送和抽屉",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3230,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:06.616Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-717e310faf2eaf210e94",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 13,
+          "column": 81
+        },
+        {
+          "title": "手机骨架 430×932：真实数据、建议、发送和抽屉",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3526,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:09.851Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-23d2eef20d997d1ba807",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 13,
+          "column": 81
+        },
+        {
+          "title": "手机骨架 750×800：真实数据、建议、发送和抽屉",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3286,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:13.383Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-31c8d9b39964e910462f",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 13,
+          "column": 81
+        },
+        {
+          "title": "手机骨架 900×800：真实数据、建议、发送和抽屉",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3441,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:16.676Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-627b1c584f8ecf373d3f",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 13,
+          "column": 81
+        },
+        {
+          "title": "工作流 opening：保留全部操作、候选与正式状态",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1905,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:20.125Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-01620fe3a23f28216885",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 39,
+          "column": 56
+        },
+        {
+          "title": "工作流 ready：保留全部操作、候选与正式状态",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2057,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:22.040Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-296ec06bb97a3d815584",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 39,
+          "column": 56
+        },
+        {
+          "title": "工作流 error：保留全部操作、候选与正式状态",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1794,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:24.107Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-76a814d453b0d78948d4",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 39,
+          "column": 56
+        },
+        {
+          "title": "抽屉：Tab 环、Esc、遮罩、短拉回弹、长拉关闭和取消手势",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2724,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:25.912Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-3c776516623d97a6326e",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 51,
+          "column": 1
+        },
+        {
+          "title": "长正文、完整状态与金额：内部滚动、城市收窄、输入法可视区",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2516,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:28.643Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-d9d99415dee192e4a2fe",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 60,
+          "column": 1
+        },
+        {
+          "title": "生成中与失败恢复：关闭抽屉不取消，显式取消，不额外请求",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2399,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:31.166Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-bdcaecdc300a87c1d6e7",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 70,
+          "column": 1
+        },
+        {
+          "title": "正式结算与发送复用原回调，开局不可撤回",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2175,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:33.573Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-c7287ec04363d841ad92",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 77,
+          "column": 1
+        },
+        {
+          "title": "桌面 901px：与未修改 main 逐像素对照",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6650,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:35.757Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "unchanged-desktop",
+                      "contentType": "text/plain",
+                      "body": "OTAxcHggbWFpbi93b3JrZmxvdy9OUEM6IGV4YWN0IFBORyBtYXRjaA=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-9877ebe84256314a40b0",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 84,
+          "column": 31
+        },
+        {
+          "title": "桌面 1440px：与未修改 main 逐像素对照",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6716,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:42.415Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "unchanged-desktop",
+                      "contentType": "text/plain",
+                      "body": "MTQ0MHB4IG1haW4vd29ya2Zsb3cvTlBDOiBleGFjdCBQTkcgbWF0Y2g="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-34a0c2556f9398a7b3c6",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 84,
+          "column": 31
+        },
+        {
+          "title": "撤回保留原确认、回填与恢复点；回填后仍可发送",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2464,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:49.139Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-79c96337c69ec9229828",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 103,
+          "column": 1
+        },
+        {
+          "title": "真实触屏：长内容原生滚动不误关闭，顶部下拉才关闭；reduced motion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2963,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:51.609Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-bc8d8020c2f44f4e06d9",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 108,
+          "column": 1
+        },
+        {
+          "title": "沉浸长正文与台词：全文可读，滚动位置保留，状态入口交接",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1967,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:54.582Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-73a65bcc5971f987f17e",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 116,
+          "column": 1
+        },
+        {
+          "title": "菜单与设置交接：保留既有配置入口、Esc 与回焦，浏览不保存",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2358,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:56.560Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-c93a367e452f3198a615",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 123,
+          "column": 1
+        },
+        {
+          "title": "正常动效：抽屉短拉回弹不重复入场动画，长拉关闭",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4796,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T22:23:58.924Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b5116eddab5ba5f36cbf-b14e0319d5a43a481d5e",
+          "file": "mobile-main-batch1.spec.ts",
+          "line": 130,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-12T22:23:00.685Z",
+    "duration": 63194.927,
+    "expected": 19,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

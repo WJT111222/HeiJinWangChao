@@ -37,8 +37,8 @@ export function CityChapter({ number, state, scene, status = 'settled', desktop 
   number: number; state: GameState; scene?: GameState['journal'][number]['scene'];
   status?: 'settled' | 'draft' | 'preview'; desktop: boolean;
 }) {
-  if (!desktop) return <h2 className="chapter-heading">第 {number} 回合</h2>;
   const place = scene && state.locations[scene.locationId] ? locationText(state.locations, scene.locationId) : undefined;
+  const calendar = !desktop && scene ? chinaCalendar(scene.worldClock) : undefined;
   return <header className="chapter" data-state={status}>
     <span className="plate" aria-hidden="true">
       <span className="p-frost" /><span className="p-num" data-dx={`第${dx(number)}回`}>{number}</span>
@@ -47,8 +47,11 @@ export function CityChapter({ number, state, scene, status = 'settled', desktop 
     </span>
     <h2 className="chapter-heading">第 {number} 回合</h2>
     {deriveAtmosphere(state).city === 'other' && <span className="plain-chapter" aria-hidden="true">第{cn(number)}回</span>}
-    <span className="c-sub" aria-hidden="true" data-st={status === 'preview' ? '预览' : '草稿'}>
-      {scene ? <>{sceneTime(scene.worldClock)}{place && <> · {place.city && place.city !== place.name && <><b>{place.city}</b> · </>}{place.city === place.name ? <b>{place.name}</b> : place.name}</>}</> : '时间地点未记录'}
+    <span className="c-sub" aria-hidden={desktop?true:undefined} data-st={status === 'preview' ? '预览' : '草稿'}>
+      {scene ? desktop ? <>{sceneTime(scene.worldClock)}{place && <> · {place.city && place.city !== place.name && <><b>{place.city}</b> · </>}{place.city === place.name ? <b>{place.name}</b> : place.name}</>}</> : <>
+        {calendar && `${calendar.year}/${calendar.month}/${calendar.day} · ${calendar.weekday} · ${String(calendar.hour).padStart(2,'0')}:${String(calendar.minute).padStart(2,'0')}`}
+        {place&&<span className="l2">{place.city&&place.city!==place.name&&<><b>{place.city}</b> · </>}{place.name}</span>}
+      </> : '时间地点未记录'}
     </span>
   </header>;
 }

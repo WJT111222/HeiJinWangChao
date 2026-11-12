@@ -4,7 +4,7 @@ import type { CSSProperties } from 'react';
 import { SceneDetails } from './SceneDetails';
 
 // Numbers use the existing tabular monospace face; the CJK unit occupies a full em.
-function fundStyle(text: string, labelCharacters: number): CSSProperties {
+export function fundStyle(text: string, labelCharacters: number): CSSProperties {
   const width = Array.from(text).reduce((sum, character) => sum + (character.charCodeAt(0) > 127 ? 1 : .62), 0);
   return { '--money-width': width, '--fund-label-space': `${labelCharacters * .68 + .4}rem` } as CSSProperties;
 }
