@@ -54,7 +54,7 @@ Story/Variables/World 协议、提示词、三阶段执行、经济/NPC/物品/�
 - Chromium E2E：完整批次 144 用例（134 通过、9 项按平台跳过、1 项短屏建议区检查失败）；去除继承自 UI-1 的额外 16px 下边距后，该项继续执行到首页，暴露旧 `.app-header` 选择器；改为现有首页 `.topbar` 后复测通过。最终按用例取最新结果为 **135 通过、9 跳过、0 未解决失败**，不是把重复复测累加成新用例。最终截图 3 项复测也全部通过。完整批次与各次复测日志、逐项成绩见 [结果 JSON](validation/e2e-results.json) 与 [验证目录](validation/)。覆盖桌面、手机、模拟键盘、工作流、开局时间、撤回、资料入口、100 组城市/时间/天气组合以及真实截图。
 - 四城白天+雾的明亮背景正文抽测：[对比度测量](contrast-measurements.json)。历史正文最低 5.346:1、最新正文最低 9.872:1，均达到 4.5:1；以截图中的实际字形及同位置背景计算，排除抗锯齿边缘，不将其声称为所有像素或所有视口的穷举。
 
-未修改 main 的对照：`npm run check` 为 118 文件/3064 项通过，`prompts:check` 为 93 项通过。旧 action-workflow「创角、回首页、再读档」测试在 main 同样失败，因为它返回新版首页封面后直接找隐藏的「读取存档」；同组取消测试在 main 通过。日志见 [main 对照](validation/main-e2e-control.log)。PC 阅读布局旧用例在未修改 main 也能复现返回首页后找不到 `.app-header`，见 [布局对照](validation/main-e2e-layout-control.log)。本 PR 显式打开既有存档馆/封面并精确定位 NPC 的「查看人物」按钮，保留原业务断言；PC 几何与台词布局断言按已确认 v5 更新为精确宽度和剧本排版，手机断言保留。ESLint 排除 Playwright 生成目录，避免将生成的 trace JS 当源码扫描。
+未修改 main 的对照：`npm run check` 为 118 文件/3064 项通过，`prompts:check` 为 93 项通过。旧 action-workflow「创角、回首页、再读档」测试在 main 同样失败，因为它返回新版首页封面后直接找隐藏的「读取存档」；同组取消测试在 main 通过。日志见 [main 对照](validation/main-e2e-control.txt)。PC 阅读布局旧用例在未修改 main 也能复现返回首页后找不到 `.app-header`，见 [布局对照](validation/main-e2e-layout-control.txt)。本 PR 显式打开既有存档馆/封面并精确定位 NPC 的「查看人物」按钮，保留原业务断言；PC 几何与台词布局断言按已确认 v5 更新为精确宽度和剧本排版，手机断言保留。ESLint 排除 Playwright 生成目录，避免将生成的 trace JS 当源码扫描。
 
 原有构建的大于 500 kB chunk 提示在 main 和分支均存在；没有为本轮 UI 引入打包或系统重构。
 

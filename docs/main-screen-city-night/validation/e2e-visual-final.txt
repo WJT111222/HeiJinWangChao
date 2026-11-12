@@ -1,0 +1,15 @@
+
+Running 3 tests using 1 worker
+
+(node:32379) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [desktop] › e2e/city-night.spec.ts:35:1 › UI-2：真实 React 双端截图、五视口对齐与 HTML 对照 (9.6s)
+  ✓  2 [desktop] › e2e/city-night.spec.ts:88:1 › UI-2：旧档身份一次恢复与未知身份的持久降级 (9.3s)
+  ✓  3 [desktop] › e2e/city-night.spec.ts:166:1 › UI-2：剧本台词、草稿与详情的真实 React 截图 (9.2s)
+
+  3 passed (29.3s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

@@ -1,0 +1,46 @@
+[WebServer] (node:9361) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:9374) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 2 workers
+
+(node:9454) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:9448) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [desktop] › e2e/action-workflow.spec.ts:174:1 › 取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复 (15.3s)
+  ✘  2 [desktop] › e2e/action-workflow.spec.ts:88:1 › 一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求 (31.7s)
+
+
+  1) [desktop] › e2e/action-workflow.spec.ts:88:1 › 一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求 ───────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: /读取存档/ })
+
+
+       99 |   await page.reload(); await ready(page); expect(await stored(page)).toEqual(result); expect(server.calls).toHaveLength(3);
+      100 |   await goHome(page);
+    > 101 |   await page.getByRole('button', { name: /读取存档/ }).click(); await ready(page); expect(server.calls).toHaveLength(3);
+          |                                                    ^
+      102 | });
+      103 |
+      104 | test('缺少AI配置零请求，设置后不自动补发，只在明确开始时运行', async ({ page }) => {
+        at /workspace/ui2-main-baseline/e2e/action-workflow.spec.ts:101:52
+
+    Error Context: ../../tmp/ui2-main-e2e-results/action-workflow-一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/ui2-main-e2e-results/action-workflow-一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/ui2-main-e2e-results/action-workflow-一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [desktop] › e2e/action-workflow.spec.ts:88:1 › 一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求 ────────────
+  1 passed (38.6s)
