@@ -1,3 +1,4 @@
+import {useDesktopFeedback} from '../Feedback';
 import { useSyncExternalStore } from 'react';
 import { requestInspections } from '../../services/ai/inspection';
 
@@ -5,6 +6,7 @@ const names = { story: '正文', variables: '变量', world: '动态世界', mem
 // 只读数字和已脱敏模型名；不展示输入正文、NPC身份或私有内容，也不合并多次请求。
 // stage：PC 三阶段面板在各阶段概览里只显示该阶段的请求；完整列表仍在运行诊断。
 export function RequestUsage({ saveId, memoryOnly = false, stage }: { saveId: string; memoryOnly?: boolean; stage?: 'story' | 'variables' | 'world' }) {
+  const desktop=useDesktopFeedback();
   const records = useSyncExternalStore(requestInspections.subscribe, requestInspections.getSnapshot);
   const selected = records.filter((item) => item.scope?.saveId === saveId && (stage ? item.stage === stage : memoryOnly ? item.stage === 'memory' : item.stage !== 'memory')).slice(0, 6);
   if (!selected.length) return null;
@@ -14,8 +16,8 @@ export function RequestUsage({ saveId, memoryOnly = false, stage }: { saveId: st
         <br />本次请求输入：≈ {item.statistics.estimatedTokens.toLocaleString('zh-CN')} Token（估算输入 Token）
         <br />最大输出设置：{item.outputTokenLimit?.toLocaleString('zh-CN') ?? '服务默认（未发送上限）'}
       </p>
-      <small>实际输入：{item.statistics.actual.inputTokens ?? '未提供'}；实际输出：{item.statistics.actual.outputTokens ?? '未提供'}；
-        实际总量：{item.statistics.actual.totalTokens ?? '未提供'}；思考 Token：{item.statistics.actual.reasoningTokens ?? '未提供'}</small>
+      {desktop?<small>实际输入：{item.statistics.actual.inputTokens ?? '未提供'}；实际输出：{item.statistics.actual.outputTokens ?? '未提供'}；
+        实际总量：{item.statistics.actual.totalTokens ?? '未提供'}；思考 Token：{item.statistics.actual.reasoningTokens ?? '未提供'}</small>:<small className="mobile-usage-metrics"><span>实际输入：<b>{item.statistics.actual.inputTokens??'未提供'}</b></span><span>实际输出：<b>{item.statistics.actual.outputTokens??'未提供'}</b></span><span>实际总量：<b>{item.statistics.actual.totalTokens??'未提供'}</b></span><span>思考 Token：<b>{item.statistics.actual.reasoningTokens??'未提供'}</b></span></small>}
     </div>)}
     <small>各次请求独立统计；Unicode启发式不含消息包装等协议开销，不是精确计费，不据此阻止请求。完整记录可在AI请求检查中查看。</small>
   </section>;

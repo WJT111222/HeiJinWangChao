@@ -39,11 +39,15 @@ export function Feedback({
   mobileAs?: 'p' | 'div';
 }) {
   const desktop = useDesktopFeedback();
-  if (!desktop || children === '') {
+  if (children === '') {
+    const Tag=mobileAs;return <Tag className={className||undefined} role={role}>{mobileChildren??children}{actions}</Tag>;
+  }
+  if (!desktop) {
     const Tag = mobileAs;
     return (
-      <Tag className={className || undefined} role={role}>
-        {mobileChildren ?? children}
+      <Tag className={`${embedded?"feedback-message":"feedback"} l-${level} ${className}`} role={role}>
+        {!embedded&&<span className="feedback-icon" aria-hidden="true">{{err:"误",warn:"注",info:"示",ok:"成"}[level]}</span>}
+        <span className="feedback-text">{mobileChildren ?? children}</span>
         {actions}
       </Tag>
     );

@@ -1,0 +1,31 @@
+{
+  "src/worker.ts": {
+    "matchesMain": true,
+    "sha256": "431bc1c815edd7a66f05b83572af904f532daa7aacabd73317c708ccabdf9358"
+  },
+  "wrangler.jsonc": {
+    "matchesMain": true,
+    "sha256": "a06b18c396064dfb64c7dfcc2e6bd6d3d22a8b3153c000d21ab7721a9acc8b33"
+  },
+  "src/services/notices/announcement.ts": {
+    "matchesMain": true,
+    "sha256": "c9a529bf81c760036aa8ba4e8063d010952dca5819091c0d64747db9bc9d04b4"
+  },
+  "src/services/notices/client.ts": {
+    "matchesMain": true,
+    "sha256": "528b25091d5281e92f4db63560a48771381c256d5626e3a381909f2a73ea4ab1"
+  },
+  "src/ui/notices/announcement.ts": {
+    "matchesMain": true,
+    "sha256": "3b3a8a8dd907b6e0a15c92e277a2da14b0c30a9975ca09ae656d075d47019325"
+  },
+  "src/ui/notices/Notices.tsx": {
+    "matchesMain": true,
+    "sha256": "72b6c3c17be28a6ee56950d175dbb6bed031935bd5dfd88f1b34e67153a32dee"
+  },
+  "src/ui/notices/useNotices.ts": {
+    "matchesMain": true,
+    "sha256": "28a6cd9d97661eb1a74c66b425103c1e00bb1529a73707f7e755b46a241ddd19"
+  },
+  "src/app/App.tsx announcement prop retained": true
+}

@@ -1,0 +1,172 @@
+{
+  "main": "ee1aac3d60485467e223549b83456eb0f073dbe4",
+  "node": "24.19.0",
+  "chromium": "154.0.8037.57",
+  "unitPassed": 71,
+  "browserPassed": 22,
+  "browserFailed": 0,
+  "browserSkipped": 0,
+  "fullBrowserSuiteRun": false,
+  "paidRequests": 0,
+  "tests": [
+    {
+      "source": "chromium-results.json",
+      "name": "手机 375×667：候选、选择器和操作表",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "手机 390×844：候选、选择器和操作表",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "手机 430×932：候选、选择器和操作表",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "手机 750×800：候选、选择器和操作表",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "手机 900×800：候选、选择器和操作表",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "全局提示：抽屉上方、不挤布局、完整文案、不自动消失和关闭",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "首页提示位于安全区，不改变公告或存档内容",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "撤回操作表：取消不写入、回焦，确认仍真正撤回并回填",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "删除操作表：取消与繁忙保护，确认后才删除真实存档",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "模型选择：搜索高亮、原键盘语义、缓存及显式刷新，Token 值不改语义",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "底部选择器：无匹配、Tab 环、Esc、遮罩与下拉仅关闭顶层",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "新错误自动进入诊断日志，复制单条、清空、原文与规划保持主动查看",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "诊断纯浏览：不请求模型、不写正式状态或草稿；刷新不持久化临时响应",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "记忆失败操作表：保留来源、重试授权与暂停条件",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "长响应、私有候选与规划：主动展开、凭证脱敏、全文可达和刷新清除",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "reduced-motion 与显式刷新禁用：不增加列表或生成请求",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "桌面 901px：原工作流、候选、选择器和确认保持像素一致",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "chromium-results.json",
+      "name": "桌面 1440px：原工作流、候选、选择器和确认保持像素一致",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "memory-business-results.json",
+      "name": "NPC先失败也不阻断公共两类，失败重试仅一次；暂停只保存本类关闭",
+      "project": "mobile",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "memory-business-results.json",
+      "name": "NPC先失败也不阻断公共两类，失败重试仅一次；暂停只保存本类关闭",
+      "project": "desktop",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "menu-compat-results.json",
+      "name": "第一批菜单与抽屉兼容：版本、四个导航操作、Esc、回焦和原状态",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    },
+    {
+      "source": "touch-recheck-results.json",
+      "name": "真实触屏横滑：诊断标签与世界版本卡可滑动且不误关闭",
+      "project": "",
+      "status": "passed",
+      "retry": 0
+    }
+  ],
+  "focusRecheck": {
+    "source": "focus-recheck-results.json",
+    "passed": 1,
+    "repeatedScenario": true
+  }
+}

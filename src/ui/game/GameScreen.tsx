@@ -1,3 +1,4 @@
+import {MobileDiagnostics} from './MobileDiagnostics';
 import { useNpcManagement } from './useNpcManagement';
 import type { NpcManagementResult } from './npcManagement';
 import { ArchivePanel } from '../ArchivePanel';
@@ -47,16 +48,12 @@ import { DataError } from '../../domain/common';
 import { storyError } from '../../workflows/storyStage';
 import { assessSummary } from '../../domain/memories/summary';
 import { useMemoryMaintenance } from './useMemoryMaintenance';
-import { RequestUsage } from './RequestUsage';
-import { StoryInspectionPanel } from './StoryInspectionPanel';
 import { MemorySummarySettings } from '../settings/MemorySummarySettings';
 import { fingerprint } from '../../domain/commands';
 import { SettingsSchema, settingsKey } from '../settings/model';
 import { summaryFailureTitle } from '../../workflows/memorySummaryQueue';
 import type { OpeningStart } from './openingStart';
-import { RuntimeLogPanel } from './RuntimeLogPanel';
 import { runtimeLogEvent } from './runtimeLog';
-import { StageResponsesPanel } from './StageResponsesPanel';
 import { DesktopWorkflowPanel, stepState } from './WorkflowPanel';
 import type { StageAction, WorkflowStage, WorkflowTab, WorkflowView } from './WorkflowPanel';
 import type { RuntimeLogEntry, RuntimeLogReporter } from './runtimeLog';
@@ -149,6 +146,7 @@ export function GameScreen({
     setPanel(target.panel);
   }
   const [worldDirectoryOpen, setWorldDirectoryOpen] = useState(false);
+  const [diagnosticsOpen,setDiagnosticsOpen]=useState(false);
   const [mobileStatusOpen,setMobileStatusOpen]=useState(false),[mobileMini,setMobileMini]=useState(false);
   const readerY=useRef(0),inputElement=useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState('');
@@ -570,36 +568,7 @@ export function GameScreen({
         </div>
       </div>
       <div className="wf-more">
-        <details className="workflow-diagnostics" id="workflow-diagnostics">
-          <summary>重试与变更详情</summary>
-          {summaryQuality && (
-            <p className="muted" data-testid="summary-length">
-              本回合摘要：{summaryQuality.hanCharacters} 汉字。
-              {summaryQuality.status === "empty"
-                ? "缺少有效摘要，无法正式结算。"
-                : summaryQuality.status === "within_target"
-                  ? "符合目标范围。"
-                  : "可继续。"}
-            </p>
-          )}
-          {draft?.failures
-            .filter((failure) => failure.storyRevision === draft.storyRevision)
-            .slice(-6)
-            .map((failure, index) => (
-              <p className="muted" key={index}>
-                {{ story: "正文生成", variables: "变量管理", world: "动态世界" }[failure.stage]}{" "}
-                · 安全失败码：{failure.errorCode}
-              </p>
-            ))}
-          {runtimeLogs.some((entry) => entry.kind === "failed") && (
-            <RuntimeLogPanel entries={runtimeLogs} onClear={() => setRuntimeLogs([])} />
-          )}
-          <StageResponsesPanel saveId={state.saveId} turnId={rawTurnId} />
-          <RequestUsage saveId={state.saveId} />
-          {draft && (
-            <StoryInspectionPanel key={`${draft.turnId}-${draft.storyRevision}`} draft={draft} />
-          )}
-        </details>
+        <button type="button" className="mobile-diagnostic-trigger" onClick={()=>setDiagnosticsOpen(true)} aria-haspopup="dialog">重试与变更详情{runtimeLogs.some(e=>e.kind==='failed')&&<span className="error-count">错误 {runtimeLogs.filter(e=>e.kind==='failed').length}</span>}</button>
         {draft && (
           <details className="bound-input" id="workflow-bound-input">
             <summary>本回合已绑定输入（只读）</summary>
@@ -913,6 +882,7 @@ export function GameScreen({
         <button data-mobile-tab="world" aria-current={worldDirectoryOpen||(panel&&panel!=='人物档案'&&panel!=='经济与资产')?'page':undefined} onClick={() => setWorldDirectoryOpen(true)}><span className="mobile-seal" aria-hidden="true">世</span>世界资料</button>
         <button data-settings-open aria-current={renderSettings?'page':undefined} onClick={onOpenSettings}><span className="mobile-seal" aria-hidden="true">设</span>设置</button>
       </nav>
+      {compactSidebars&&<MobileDiagnostics saveId={state.saveId} turnId={rawTurnId} draft={draft} entries={runtimeLogs} onClear={()=>setRuntimeLogs([])} open={diagnosticsOpen} onOpen={()=>setDiagnosticsOpen(true)} onClose={()=>setDiagnosticsOpen(false)}/>}
       {compactSidebars && mobileStatusOpen && <Dialog title="此时此地" mobileVariant="sheet" seal={mobileCitySeal(state)} eyebrow="NOW · HERE" className="mobile-status-sheet" onClose={()=>setMobileStatusOpen(false)} returnFocus={()=>document.querySelector<HTMLElement>('[data-mobile-status]')??mobileReturnFocus('hero')}>
         <MobileStatus state={state} equipment={equipment} onProfile={()=>{setMobileStatusOpen(false);setPanel('人物档案');}} onEconomy={()=>{setMobileStatusOpen(false);setPanel('经济与资产');}}/>
       </Dialog>}
@@ -1044,7 +1014,7 @@ export function GameScreen({
               ? "warn"
               : "err"
           }
-          seal="忆"
+          seal="忆" mobileVariant="confirm" footer={<button onClick={()=>memory.closeFailure(memory.failures[0].kind)}>关闭</button>}
           onClose={() => memory.closeFailure(memory.failures[0].kind)}
         >
           <p>{memory.failures[0].message}</p>
@@ -1052,7 +1022,7 @@ export function GameScreen({
           <div className="feedback-dialog-actions memory-feedback-actions">
             {memory.failures[0].kind === "npc" && !memory.failures[0].npcId ? (
               <button
-                className={!compactSidebars ? "primary" : undefined}
+                className="primary"
                 disabled={Boolean(memory.phase)}
                 onClick={() => {
                   memory.closeFailure("npc");
@@ -1063,7 +1033,7 @@ export function GameScreen({
               </button>
             ) : (
               <button
-                className={!compactSidebars ? "primary" : undefined}
+                className="primary"
                 disabled={Boolean(memory.phase)}
                 onClick={() =>
                   void memory.run(
