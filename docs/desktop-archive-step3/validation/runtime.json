@@ -1,0 +1,23 @@
+{
+  "node": "v24.19.0",
+  "npm": "11.9.0",
+  "chromium": "Chromium 154.0.8037.57 built on Debian GNU/Linux 13 (trixie)",
+  "baseCommit": "961bbbdf5103522a6814a08c351aef2fbcb24941",
+  "e2e": {
+    "startTime": "2026-11-12T14:11:26.373Z",
+    "duration": 349541.99,
+    "expected": 80,
+    "skipped": 8,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "workflow": {
+    "startTime": "2026-11-12T14:17:25.300Z",
+    "duration": 54662.388,
+    "expected": 22,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "productionScope": "Only src/ui; no domain/service/schema/prompt changes."
+}

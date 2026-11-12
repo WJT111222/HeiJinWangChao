@@ -1,0 +1,9 @@
+{
+  "note": "End-to-end browser automation latency, including waits; not a pure render benchmark.",
+  "inventoryOpenMs": 1063,
+  "economyOpenMs": 1137,
+  "ownedItemCount": 129,
+  "renderedItemsPerPage": 20,
+  "incomeCount": 123,
+  "debtCount": 124
+}

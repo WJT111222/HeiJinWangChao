@@ -1,0 +1,44 @@
+[WebServer] (node:143739) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:143760) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 22 tests using 2 workers
+
+(node:143785) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:143784) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   2 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：opening 布局、焦点、候选与原数据 (6.2s)
+  ✓   1 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：ready 布局、焦点、候选与原数据 (8.9s)
+  ✓   3 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：off 布局、焦点、候选与原数据 (6.1s)
+  ✓   4 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：error 布局、焦点、候选与原数据 (6.1s)
+  ✓   5 [desktop] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：settled 布局、焦点、候选与原数据 (5.2s)
+  ✓   6 [desktop] › e2e/workflow-feedback.spec.ts:71:1 › 生成中：浮层关闭不取消请求，显式取消后仍可恢复；reduced motion (4.7s)
+  ✓   7 [desktop] › e2e/workflow-feedback.spec.ts:86:1 › 多个阶段错误完整保留；候选失败重试不重生成已有正文 (5.8s)
+  ✓   8 [desktop] › e2e/workflow-feedback.spec.ts:101:1 › 全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式 (7.8s)
+  ✓   9 [desktop] › e2e/workflow-feedback.spec.ts:118:59 › 全局load真实错误路径保留文案和关闭操作 (4.6s)
+  ✓  10 [desktop] › e2e/workflow-feedback.spec.ts:118:59 › 全局list真实错误路径保留文案和关闭操作 (4.1s)
+(node:144433) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  11 [desktop] › e2e/workflow-feedback.spec.ts:118:59 › 全局selection真实错误路径保留文案和关闭操作 (5.8s)
+(node:144565) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  12 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：opening 布局、焦点、候选与原数据 (2.9s)
+  ✓  14 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：off 布局、焦点、候选与原数据 (2.7s)
+  ✓  13 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：ready 布局、焦点、候选与原数据 (4.2s)
+  ✓  15 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：error 布局、焦点、候选与原数据 (2.8s)
+  ✓  16 [mobile] › e2e/workflow-feedback.spec.ts:37:74 › 确认稿工作流：settled 布局、焦点、候选与原数据 (2.6s)
+  ✓  17 [mobile] › e2e/workflow-feedback.spec.ts:71:1 › 生成中：浮层关闭不取消请求，显式取消后仍可恢复；reduced motion (2.7s)
+  ✓  18 [mobile] › e2e/workflow-feedback.spec.ts:86:1 › 多个阶段错误完整保留；候选失败重试不重生成已有正文 (3.0s)
+  ✓  20 [mobile] › e2e/workflow-feedback.spec.ts:118:59 › 全局load真实错误路径保留文案和关闭操作 (3.4s)
+  ✓  19 [mobile] › e2e/workflow-feedback.spec.ts:101:1 › 全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式 (5.7s)
+  ✓  21 [mobile] › e2e/workflow-feedback.spec.ts:118:59 › 全局list真实错误路径保留文案和关闭操作 (2.7s)
+  ✓  22 [mobile] › e2e/workflow-feedback.spec.ts:118:59 › 全局selection真实错误路径保留文案和关闭操作 (3.2s)
+
+  22 passed (54.7s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

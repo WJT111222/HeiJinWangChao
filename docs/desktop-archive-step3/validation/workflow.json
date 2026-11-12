@@ -1,0 +1,934 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/desktop-inventory-economy/node_modules/.bin/playwright",
+      "test",
+      "--config=/tmp/s3-playwright.config.ts",
+      "e2e/workflow-feedback.spec.ts",
+      "--output=/tmp/s3-workflow",
+      "--reporter=list,json"
+    ],
+    "configFile": "/tmp/s3-playwright.config.ts",
+    "rootDir": "/workspace/desktop-inventory-economy/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 2
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/s3-workflow",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "/workspace/desktop-inventory-economy/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/tmp/s3-workflow",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/workspace/desktop-inventory-economy/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/tmp/s3-workflow",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "desktop",
+        "testDir": "/workspace/desktop-inventory-economy/e2e",
+        "snapshotDir": "/workspace/desktop-inventory-economy/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5189",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "desktop"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/tmp/s3-workflow",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "mobile",
+        "testDir": "/workspace/desktop-inventory-economy/e2e",
+        "snapshotDir": "/workspace/desktop-inventory-economy/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5189",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "userAgent": "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Mobile Safari/537.36",
+          "viewport": {
+            "width": 412,
+            "height": 839
+          },
+          "screen": {
+            "width": 412,
+            "height": 915
+          },
+          "deviceScaleFactor": 2.625,
+          "isMobile": true,
+          "hasTouch": true,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "mobile"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 2,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5189 --strictPort",
+      "cwd": "/workspace/desktop-inventory-economy",
+      "url": "http://127.0.0.1:5189",
+      "reuseExistingServer": true
+    }
+  },
+  "suites": [
+    {
+      "title": "workflow-feedback.spec.ts",
+      "file": "workflow-feedback.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "确认稿工作流：opening 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6156,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:17:26.718Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-18907ace5914ad248c08",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：ready 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 8866,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:17:26.718Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-b9aa880dd69a1ed0b562",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：off 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6060,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:17:33.516Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-9f1279175023bc0e842f",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：error 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 6057,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:17:36.168Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-00b344907487d357dc65",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：settled 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5248,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:17:39.590Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-a26554eecc54f14743fe",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "生成中：浮层关闭不取消请求，显式取消后仍可恢复；reduced motion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 4696,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:17:42.241Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-e6e237f3deec670d8f9b",
+          "file": "workflow-feedback.spec.ts",
+          "line": 71,
+          "column": 1
+        },
+        {
+          "title": "多个阶段错误完整保留；候选失败重试不重生成已有正文",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5793,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:17:44.870Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-09eda3a6d13fff39d468",
+          "file": "workflow-feedback.spec.ts",
+          "line": 86,
+          "column": 1
+        },
+        {
+          "title": "全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 7811,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:17:46.954Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-5507cb347c7a2bb97825",
+          "file": "workflow-feedback.spec.ts",
+          "line": 101,
+          "column": 1
+        },
+        {
+          "title": "全局load真实错误路径保留文案和关闭操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4639,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:17:50.700Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-62ed5962ee7335bf7c3f",
+          "file": "workflow-feedback.spec.ts",
+          "line": 118,
+          "column": 59
+        },
+        {
+          "title": "全局list真实错误路径保留文案和关闭操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 4125,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:17:54.792Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-300f931f0d6c8ebcc2d3",
+          "file": "workflow-feedback.spec.ts",
+          "line": 118,
+          "column": 59
+        },
+        {
+          "title": "全局selection真实错误路径保留文案和关闭操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5834,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:17:55.365Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-8b0740448132c37d36cc",
+          "file": "workflow-feedback.spec.ts",
+          "line": 118,
+          "column": 59
+        },
+        {
+          "title": "确认稿工作流：opening 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2934,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:17:59.454Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-8c523120496238558a77",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：ready 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4243,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:18:01.887Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-52a6e02cbadc5f018b5c",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：off 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2685,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:18:02.635Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-9421827a63d90dd93600",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：error 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2839,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:18:05.342Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-4401bba4ca46911a37f4",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：settled 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2614,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:18:06.380Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-43249f3d16b9d6751334",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "生成中：浮层关闭不取消请求，显式取消后仍可恢复；reduced motion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2737,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:18:08.197Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-d42ebeb22444ccb76839",
+          "file": "workflow-feedback.spec.ts",
+          "line": 71,
+          "column": 1
+        },
+        {
+          "title": "多个阶段错误完整保留；候选失败重试不重生成已有正文",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2956,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:18:09.027Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-fbcf68df6a35d35abe02",
+          "file": "workflow-feedback.spec.ts",
+          "line": 86,
+          "column": 1
+        },
+        {
+          "title": "全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 5665,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:18:10.944Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-557998b4a7981c6818ad",
+          "file": "workflow-feedback.spec.ts",
+          "line": 101,
+          "column": 1
+        },
+        {
+          "title": "全局load真实错误路径保留文案和关闭操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3379,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:18:12.000Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-8f08869409697bd749d2",
+          "file": "workflow-feedback.spec.ts",
+          "line": 118,
+          "column": 59
+        },
+        {
+          "title": "全局list真实错误路径保留文案和关闭操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2658,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:18:15.397Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-e92798eadc3e24013570",
+          "file": "workflow-feedback.spec.ts",
+          "line": 118,
+          "column": 59
+        },
+        {
+          "title": "全局selection真实错误路径保留文案和关闭操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 3202,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:18:16.625Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-32b0291e50d7a6398add",
+          "file": "workflow-feedback.spec.ts",
+          "line": 118,
+          "column": 59
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-12T14:17:25.300Z",
+    "duration": 54662.388,
+    "expected": 22,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

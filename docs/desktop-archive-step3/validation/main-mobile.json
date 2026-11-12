@@ -1,0 +1,219 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/desktop-step3-baseline/node_modules/.bin/playwright",
+      "test",
+      "--config=/tmp/s3-baseline-playwright.config.ts",
+      "--project=mobile",
+      "e2e/step3-mobile-visual.spec.ts",
+      "--grep",
+      "物品分类|经济资金",
+      "--workers=1",
+      "--output=/tmp/s3-baseline-mobile",
+      "--reporter=list,json"
+    ],
+    "configFile": "/tmp/s3-baseline-playwright.config.ts",
+    "rootDir": "/workspace/desktop-step3-baseline/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/s3-baseline-mobile",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "/workspace/desktop-step3-baseline/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/tmp/s3-baseline-mobile",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/workspace/desktop-step3-baseline/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/tmp/s3-baseline-mobile",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "mobile",
+        "testDir": "/workspace/desktop-step3-baseline/e2e",
+        "snapshotDir": "/workspace/desktop-step3-baseline/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5190",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "userAgent": "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Mobile Safari/537.36",
+          "viewport": {
+            "width": 412,
+            "height": 839
+          },
+          "screen": {
+            "width": 412,
+            "height": 915
+          },
+          "deviceScaleFactor": 2.625,
+          "isMobile": true,
+          "hasTouch": true,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "mobile"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5190 --strictPort",
+      "cwd": "/workspace/desktop-step3-baseline",
+      "url": "http://127.0.0.1:5190",
+      "reuseExistingServer": true
+    }
+  },
+  "suites": [
+    {
+      "title": "step3-mobile-visual.spec.ts",
+      "file": "step3-mobile-visual.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "物品分类、只读搜索、三栏和选中详情，901边界、原槽位与归属跳转",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13171,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:02:23.942Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c8ded8f7cf355fa30446-964af68829648f51e78e",
+          "file": "step3-mobile-visual.spec.ts",
+          "line": 19,
+          "column": 1
+        },
+        {
+          "title": "经济资金、部分未知合计、全字段与原生手机，人物入口/旧Dialog/焦点闭环",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7792,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T14:02:37.818Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c8ded8f7cf355fa30446-ea8c994a3bcc3a7f1ad6",
+          "file": "step3-mobile-visual.spec.ts",
+          "line": 38,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-12T14:02:20.465Z",
+    "duration": 25322.362,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

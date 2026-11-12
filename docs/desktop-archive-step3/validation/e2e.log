@@ -1,0 +1,111 @@
+[WebServer] (node:137630) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:137643) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 88 tests using 2 workers
+
+(node:137671) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:137670) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [desktop] › e2e/archive-step2.spec.ts:49:2 › 四种组织颜色、完整字段、折叠、双滚动、纸色吸顶及桌面矩阵 (11.8s)
+  ✓   2 [desktop] › e2e/archive-step2.spec.ts:29:2 › 人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料 (12.4s)
+  ✓   3 [desktop] › e2e/archive-step2.spec.ts:68:2 › 人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离 (14.7s)
+  ✓   4 [desktop] › e2e/archive-step2.spec.ts:80:2 › 长组织名/概况/状态、49组织与大量任务事件历史：独立滚动和分页不丢字段 (15.2s)
+  ✓   6 [desktop] › e2e/archive-step2.spec.ts:108:2 › 正式空组织名录保持空态，浏览不创建组织或请求模型 (8.9s)
+  ✓   5 [desktop] › e2e/archive-step2.spec.ts:95:2 › 正式待确认开局：16字段含真实候选时间，当前时间保持待确认 (11.4s)
+  ✓   7 [desktop] › e2e/archive-step3.spec.ts:19:1 › 物品分类、只读搜索、三栏和选中详情，901边界、原槽位与归属跳转 (25.0s)
+  ✓   8 [desktop] › e2e/archive-step3.spec.ts:38:1 › 经济资金、部分未知合计、全字段与原生手机，人物入口/旧Dialog/焦点闭环 (23.9s)
+  ✓   9 [desktop] › e2e/archive-step3.spec.ts:55:1 › 大量物品收入资产债务分页、独立滚动，原集合顺序和正式状态不变 (20.2s)
+  ✓  10 [desktop] › e2e/archive-step3.spec.ts:70:1 › 极端金额、超安全范围合计、未知/零债务以及长文本边界 (22.0s)
+  ✓  11 [desktop] › e2e/character-creation-v2.spec.ts:27:1 › 基本信息模板独立、可编辑、往返与刷新保留；键盘选择 (9.1s)
+  ✓  12 [desktop] › e2e/character-creation-v2.spec.ts:54:1 › 五类各六职业，点击呈现完整介绍、独立技能与长期影响 (11.1s)
+  ✓  13 [desktop] › e2e/character-creation-v2.spec.ts:77:1 › 自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用 (11.4s)
+  ✓  14 [desktop] › e2e/city-night-followups.spec.ts:46:1 › 四项修复：07:50 与完整状态/资金、双端真实 React 截图 (9.3s)
+  ✓  15 [desktop] › e2e/city-night-followups.spec.ts:67:1 › PC 长段落/异常长字符串完整换行，左栏独立滚动且资金装备与底部按钮可达 (18.2s)
+  ✓  16 [desktop] › e2e/city-night-followups.spec.ts:102:1 › PC 普通/百万/亿级/极大金额随容器调整字号，下限后排版换行不省略 (16.5s)
+  -  18 [desktop] › e2e/city-night-followups.spec.ts:146:1 › 触控点击详情、再次点击/关闭/外部点击收起，窄屏与缩放视口不溢出
+  ✓  17 [desktop] › e2e/city-night-followups.spec.ts:125:1 › 天气环境详情：悬停跨入可滚动、移出关闭，键盘焦点与 Esc，无数据修改 (8.5s)
+  ✓  19 [desktop] › e2e/desktop-cabinet.spec.ts:4:1 › 纸柜非模态焦点、dock切换、关联旧容器、Esc和浏览不写状态 (13.4s)
+  ✓  20 [desktop] › e2e/desktop-cabinet.spec.ts:37:1 › 大量NPC长姓名长描述：独立滚动、筛选、分页与完整字段 (8.5s)
+  ✓  22 [desktop] › e2e/game-window.spec.ts:64:1 › 全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入 (3.7s)
+  ✓  21 [desktop] › e2e/desktop-cabinet.spec.ts:54:1 › NPC与关联组织往返保留目标定位，手机组织仍为原生模态 (8.6s)
+  ✓  23 [desktop] › e2e/game-window.spec.ts:75:1 › 顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置 (3.3s)
+  ✓  24 [desktop] › e2e/game-window.spec.ts:93:1 › 滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回 (3.5s)
+  ✓  25 [desktop] › e2e/game-window.spec.ts:114:1 › 默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态 (3.8s)
+  ✓  26 [desktop] › e2e/game-window.spec.ts:126:1 › 已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义 (4.7s)
+  ✓  27 [desktop] › e2e/game-window.spec.ts:135:1 › 生成中折叠不打断；取消和错误不被隐藏，失败重试成功保留正式状态 (5.6s)
+  ✓  28 [desktop] › e2e/game-window.spec.ts:204:1 › 缩短视口及模拟软键盘VisualViewport不遮住输入和发送 (3.4s)
+  ✓  30 [desktop] › e2e/game-window.spec.ts:243:1 › 工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间 (3.7s)
+  ✓  29 [desktop] › e2e/game-window.spec.ts:225:1 › 设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置 (7.1s)
+  ✓  31 [desktop] › e2e/inventory-v2.spec.ts:41:1 › 六筛选、种数、只看主角物品，详情键盘可达且原存档/草稿不变 (6.6s)
+  ✓  32 [desktop] › e2e/inventory-v2.spec.ts:75:1 › 长详情可滚动且关闭按钮可达，窄屏不横溢，空分类和空背包正常 (5.8s)
+  ✓  33 [desktop] › e2e/npc-directory.spec.ts:6:1 › 统一名录搜索筛选、详情、联系与单向关系、来源无技术ID；双端真实截图 (8.1s)
+  ✓  34 [desktop] › e2e/npc-directory.spec.ts:38:1 › 初始同伴取消及恢复金星，七字段完整、普通记忆不丢、刷新及回填输入保留，零请求 (8.8s)
+  ✓  35 [desktop] › e2e/npc-directory.spec.ts:61:1 › 首次加星只保存待完善；保存中重复点击无效，正式CAS只递增一次 (5.8s)
+  ✓  36 [desktop] › e2e/npc-directory.spec.ts:79:1 › 跨标签过期星标准确失败并同步正式状态，完整候选不丢，无自动重试 (8.2s)
+  ✓  38 [desktop] › e2e/npc-directory.spec.ts:105:1 › IndexedDB中途写入失败原子回滚，星标不假成功，候选完整保留 (5.8s)
+  ✓  37 [desktop] › e2e/npc-directory.spec.ts:92:1 › 真实Story请求中本页与其他标签管理均拒绝，不取消请求；随后正常三阶段结算 (12.6s)
+  ✓  39 [desktop] › e2e/npc-directory.spec.ts:119:1 › 名录只读空状态，以及正式人物消失后的安全返回 (5.3s)
+  ✓  41 [desktop] › e2e/npc-final-acceptance.spec.ts:75:1 › 真实React连续四轮：首次建档、改名升级、离场结案、重逢记忆、七字段休眠恢复，严格12次Mock (12.0s)
+  ✓  40 [desktop] › e2e/npc-final-acceptance.spec.ts:6:1 › 千人轻量名录与300回合：多视口实际布局、分页、关系跳转、焦点与长文滚动，只读零请求 (26.2s)
+  ✓  42 [desktop] › e2e/organization-archive.spec.ts:19:1 › PC三宽度/手机三宽度真实档案截图：未知身份、长概况、低频状态、只读查看不解锁 (12.1s)
+  ✓  43 [desktop] › e2e/organization-archive.spec.ts:45:1 › 搜索/过滤/分页和返回焦点；组织→NPC→组织、组织间与事件跳转，零请求零写档 (11.4s)
+(node:141505) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  44 [desktop] › e2e/organization-archive.spec.ts:73:1 › 真实三阶段Mock结案更新组织→刷新档案与已结束事件→撤回，主角财务和NPC无副作用 (12.9s)
+(node:141634) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  45 [mobile] › e2e/archive-step2.spec.ts:29:2 › 人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料 (8.4s)
+  ✓  46 [mobile] › e2e/archive-step2.spec.ts:49:2 › 四种组织颜色、完整字段、折叠、双滚动、纸色吸顶及桌面矩阵 (8.5s)
+  -  48 [mobile] › e2e/archive-step2.spec.ts:80:2 › 长组织名/概况/状态、49组织与大量任务事件历史：独立滚动和分页不丢字段
+  ✓  47 [mobile] › e2e/archive-step2.spec.ts:68:2 › 人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离 (7.8s)
+  ✓  49 [mobile] › e2e/archive-step2.spec.ts:95:2 › 正式待确认开局：16字段含真实候选时间，当前时间保持待确认 (6.4s)
+  ✓  50 [mobile] › e2e/archive-step2.spec.ts:108:2 › 正式空组织名录保持空态，浏览不创建组织或请求模型 (5.2s)
+  ✓  51 [mobile] › e2e/archive-step3.spec.ts:19:1 › 物品分类、只读搜索、三栏和选中详情，901边界、原槽位与归属跳转 (6.9s)
+  -  53 [mobile] › e2e/archive-step3.spec.ts:55:1 › 大量物品收入资产债务分页、独立滚动，原集合顺序和正式状态不变
+  -  54 [mobile] › e2e/archive-step3.spec.ts:70:1 › 极端金额、超安全范围合计、未知/零债务以及长文本边界
+  ✓  52 [mobile] › e2e/archive-step3.spec.ts:38:1 › 经济资金、部分未知合计、全字段与原生手机，人物入口/旧Dialog/焦点闭环 (6.3s)
+  ✓  55 [mobile] › e2e/character-creation-v2.spec.ts:27:1 › 基本信息模板独立、可编辑、往返与刷新保留；键盘选择 (4.8s)
+  ✓  56 [mobile] › e2e/character-creation-v2.spec.ts:54:1 › 五类各六职业，点击呈现完整介绍、独立技能与长期影响 (5.9s)
+  ✓  57 [mobile] › e2e/character-creation-v2.spec.ts:77:1 › 自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用 (4.3s)
+  -  59 [mobile] › e2e/city-night-followups.spec.ts:67:1 › PC 长段落/异常长字符串完整换行，左栏独立滚动且资金装备与底部按钮可达
+  -  60 [mobile] › e2e/city-night-followups.spec.ts:102:1 › PC 普通/百万/亿级/极大金额随容器调整字号，下限后排版换行不省略
+  -  61 [mobile] › e2e/city-night-followups.spec.ts:125:1 › 天气环境详情：悬停跨入可滚动、移出关闭，键盘焦点与 Esc，无数据修改
+  ✓  58 [mobile] › e2e/city-night-followups.spec.ts:46:1 › 四项修复：07:50 与完整状态/资金、双端真实 React 截图 (4.0s)
+  ✓  62 [mobile] › e2e/city-night-followups.spec.ts:146:1 › 触控点击详情、再次点击/关闭/外部点击收起，窄屏与缩放视口不溢出 (6.6s)
+  -  64 [mobile] › e2e/desktop-cabinet.spec.ts:37:1 › 大量NPC长姓名长描述：独立滚动、筛选、分页与完整字段
+  ✓  63 [mobile] › e2e/desktop-cabinet.spec.ts:4:1 › 纸柜非模态焦点、dock切换、关联旧容器、Esc和浏览不写状态 (5.7s)
+  ✓  66 [mobile] › e2e/game-window.spec.ts:64:1 › 全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入 (2.6s)
+  ✓  65 [mobile] › e2e/desktop-cabinet.spec.ts:54:1 › NPC与关联组织往返保留目标定位，手机组织仍为原生模态 (6.2s)
+  ✓  67 [mobile] › e2e/game-window.spec.ts:75:1 › 顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置 (2.4s)
+  ✓  68 [mobile] › e2e/game-window.spec.ts:93:1 › 滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回 (2.7s)
+  ✓  69 [mobile] › e2e/game-window.spec.ts:114:1 › 默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态 (2.7s)
+  ✓  70 [mobile] › e2e/game-window.spec.ts:126:1 › 已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义 (3.5s)
+  ✓  71 [mobile] › e2e/game-window.spec.ts:135:1 › 生成中折叠不打断；取消和错误不被隐藏，失败重试成功保留正式状态 (4.5s)
+  ✓  72 [mobile] › e2e/game-window.spec.ts:204:1 › 缩短视口及模拟软键盘VisualViewport不遮住输入和发送 (2.6s)
+  ✓  74 [mobile] › e2e/game-window.spec.ts:243:1 › 工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间 (2.8s)
+  ✓  73 [mobile] › e2e/game-window.spec.ts:225:1 › 设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置 (6.3s)
+  ✓  76 [mobile] › e2e/inventory-v2.spec.ts:75:1 › 长详情可滚动且关闭按钮可达，窄屏不横溢，空分类和空背包正常 (4.0s)
+  ✓  75 [mobile] › e2e/inventory-v2.spec.ts:41:1 › 六筛选、种数、只看主角物品，详情键盘可达且原存档/草稿不变 (6.9s)
+  ✓  78 [mobile] › e2e/npc-directory.spec.ts:38:1 › 初始同伴取消及恢复金星，七字段完整、普通记忆不丢、刷新及回填输入保留，零请求 (7.1s)
+  ✓  77 [mobile] › e2e/npc-directory.spec.ts:6:1 › 统一名录搜索筛选、详情、联系与单向关系、来源无技术ID；双端真实截图 (7.8s)
+  ✓  79 [mobile] › e2e/npc-directory.spec.ts:61:1 › 首次加星只保存待完善；保存中重复点击无效，正式CAS只递增一次 (4.6s)
+  ✓  80 [mobile] › e2e/npc-directory.spec.ts:79:1 › 跨标签过期星标准确失败并同步正式状态，完整候选不丢，无自动重试 (6.5s)
+  ✓  82 [mobile] › e2e/npc-directory.spec.ts:105:1 › IndexedDB中途写入失败原子回滚，星标不假成功，候选完整保留 (4.7s)
+  ✓  81 [mobile] › e2e/npc-directory.spec.ts:92:1 › 真实Story请求中本页与其他标签管理均拒绝，不取消请求；随后正常三阶段结算 (8.3s)
+  ✓  83 [mobile] › e2e/npc-directory.spec.ts:119:1 › 名录只读空状态，以及正式人物消失后的安全返回 (4.8s)
+  ✓  85 [mobile] › e2e/npc-final-acceptance.spec.ts:75:1 › 真实React连续四轮：首次建档、改名升级、离场结案、重逢记忆、七字段休眠恢复，严格12次Mock (10.2s)
+  ✓  84 [mobile] › e2e/npc-final-acceptance.spec.ts:6:1 › 千人轻量名录与300回合：多视口实际布局、分页、关系跳转、焦点与长文滚动，只读零请求 (20.1s)
+  ✓  86 [mobile] › e2e/organization-archive.spec.ts:19:1 › PC三宽度/手机三宽度真实档案截图：未知身份、长概况、低频状态、只读查看不解锁 (8.5s)
+  ✓  87 [mobile] › e2e/organization-archive.spec.ts:45:1 › 搜索/过滤/分页和返回焦点；组织→NPC→组织、组织间与事件跳转，零请求零写档 (7.1s)
+  ✓  88 [mobile] › e2e/organization-archive.spec.ts:73:1 › 真实三阶段Mock结案更新组织→刷新档案与已结束事件→撤回，主角财务和NPC无副作用 (7.6s)
+
+  8 skipped
+  80 passed (5.8m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
