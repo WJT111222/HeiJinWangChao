@@ -1,4 +1,5 @@
 import { MobileWorkflowDrawer } from './MobileWorkflowDrawer';
+import {MobileDiagnostics} from './MobileDiagnostics';
 import { useNpcManagement } from './useNpcManagement';
 import type { NpcManagementResult } from './npcManagement';
 import { ArchivePanel } from '../ArchivePanel';
@@ -53,6 +54,7 @@ import { summaryFailureTitle } from '../../workflows/memorySummaryQueue';
 import type { OpeningStart } from './openingStart';
 import { runtimeLogEvent } from './runtimeLog';
 import { DesktopWorkflowPanel } from './WorkflowPanel';
+
 import type { StageAction, WorkflowStage, WorkflowTab, WorkflowView } from './WorkflowPanel';
 import type { RuntimeLogEntry, RuntimeLogReporter } from './runtimeLog';
 import { CityAtmosphere, CityBar, CityChapter } from './CityNight';
@@ -143,6 +145,7 @@ export function GameScreen({
     setPanel(target.panel);
   }
   const [worldDirectoryOpen, setWorldDirectoryOpen] = useState(false);
+  const [diagnosticsOpen,setDiagnosticsOpen]=useState(false);
   const [mobileStatusOpen,setMobileStatusOpen]=useState(false),[mobileMini,setMobileMini]=useState(false);
   const readerY=useRef(0),inputElement=useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState('');
@@ -505,6 +508,7 @@ export function GameScreen({
           : workflowGuidance
             ? "off"
             : "pending";
+
   const desktopNotices = (
     <>
       {workflowError && (
@@ -554,7 +558,7 @@ export function GameScreen({
                         state={workflowState}
                         onClose={closeWorkflow}
                         onFollow={progress && !following ? followLatest : undefined}
-                        notices={desktopNotices}
+                        notices={layout === 'sheet' && workflowView === 'diagnostics' ? <>{desktopNotices}<button type="button" onClick={() => setDiagnosticsOpen(true)}>重试与变更详情</button></> : desktopNotices}
                         primary={desktopPrimary}
                         steps={progressSteps}
                         view={layout === 'desktop' && workflowView === 'home' ? autoWorkflowView : workflowView ?? (layout === 'sheet' ? 'home' : autoWorkflowView)}
@@ -809,6 +813,7 @@ export function GameScreen({
         <button data-mobile-tab="world" aria-current={worldDirectoryOpen||(panel&&panel!=='人物档案'&&panel!=='经济与资产')?'page':undefined} onClick={() => setWorldDirectoryOpen(true)}><span className="mobile-seal" aria-hidden="true">世</span>世界资料</button>
         <button data-settings-open aria-current={renderSettings?'page':undefined} onClick={onOpenSettings}><span className="mobile-seal" aria-hidden="true">设</span>设置</button>
       </nav>
+      {compactSidebars&&<MobileDiagnostics saveId={state.saveId} turnId={rawTurnId} draft={draft} entries={runtimeLogs} onClear={()=>setRuntimeLogs([])} open={diagnosticsOpen} onOpen={()=>setDiagnosticsOpen(true)} onClose={()=>setDiagnosticsOpen(false)}/>}
       {compactSidebars && mobileStatusOpen && <Dialog title="此时此地" mobileVariant="sheet" seal={mobileCitySeal(state)} eyebrow="NOW · HERE" className="mobile-status-sheet" onClose={()=>setMobileStatusOpen(false)} returnFocus={()=>document.querySelector<HTMLElement>('[data-mobile-status]')??mobileReturnFocus('hero')}>
         <MobileStatus state={state} equipment={equipment} onProfile={()=>{setMobileStatusOpen(false);setPanel('人物档案');}} onEconomy={()=>{setMobileStatusOpen(false);setPanel('经济与资产');}}/>
       </Dialog>}
@@ -940,7 +945,7 @@ export function GameScreen({
               ? "warn"
               : "err"
           }
-          seal="忆"
+          seal="忆" mobileVariant="confirm" footer={<button onClick={()=>memory.closeFailure(memory.failures[0].kind)}>关闭</button>}
           onClose={() => memory.closeFailure(memory.failures[0].kind)}
         >
           <p>{memory.failures[0].message}</p>
@@ -948,7 +953,7 @@ export function GameScreen({
           <div className="feedback-dialog-actions memory-feedback-actions">
             {memory.failures[0].kind === "npc" && !memory.failures[0].npcId ? (
               <button
-                className={!compactSidebars ? "primary" : undefined}
+                className="primary"
                 disabled={Boolean(memory.phase)}
                 onClick={() => {
                   memory.closeFailure("npc");
@@ -959,7 +964,7 @@ export function GameScreen({
               </button>
             ) : (
               <button
-                className={!compactSidebars ? "primary" : undefined}
+                className="primary"
                 disabled={Boolean(memory.phase)}
                 onClick={() =>
                   void memory.run(

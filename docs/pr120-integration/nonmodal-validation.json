@@ -55,6 +55,29 @@
         "unexpected": 0,
         "flaky": 0
       }
+    },
+    {
+      "batch": "with-123",
+      "stats": {
+        "startTime": "2026-11-12T23:45:09.960Z",
+        "duration": 103648.54699999999,
+        "expected": 2,
+        "skipped": 1,
+        "unexpected": 1,
+        "flaky": 0
+      }
+    },
+    {
+      "batch": "with-123-recovery-final",
+      "stats": {
+        "startTime": "2026-11-12T23:47:16.400Z",
+        "duration": 22010.362,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
     }
-  ]
+  ],
+  "latestMain": "ae342d6008d298eac8b2efb3bb59daf94295040e"
 }

@@ -1,0 +1,34 @@
+[WebServer] (node:276125) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:276138) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 18 tests using 1 worker
+
+(node:276164) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 e2e/mobile-batch2.spec.ts:21:80 › 手机 375×667：候选、选择器和操作表 (3.1s)
+  ✓   2 e2e/mobile-batch2.spec.ts:21:80 › 手机 390×844：候选、选择器和操作表 (2.7s)
+  ✓   3 e2e/mobile-batch2.spec.ts:21:80 › 手机 430×932：候选、选择器和操作表 (2.3s)
+  ✓   4 e2e/mobile-batch2.spec.ts:21:80 › 手机 750×800：候选、选择器和操作表 (2.4s)
+  ✓   5 e2e/mobile-batch2.spec.ts:21:80 › 手机 900×800：候选、选择器和操作表 (2.3s)
+  ✓   6 e2e/mobile-batch2.spec.ts:27:1 › 全局提示：抽屉上方、不挤布局、完整文案、不自动消失和关闭 (4.6s)
+  ✓   7 e2e/mobile-batch2.spec.ts:34:1 › 首页提示位于安全区，不改变公告或存档内容 (2.5s)
+  ✓   8 e2e/mobile-batch2.spec.ts:38:1 › 撤回操作表：取消不写入、回焦，确认仍真正撤回并回填 (2.4s)
+  ✓   9 e2e/mobile-batch2.spec.ts:42:1 › 删除操作表：取消与繁忙保护，确认后才删除真实存档 (2.8s)
+  ✓  10 e2e/mobile-batch2.spec.ts:48:1 › 模型选择：搜索高亮、原键盘语义、缓存及显式刷新，Token 值不改语义 (2.6s)
+  ✓  11 e2e/mobile-batch2.spec.ts:56:1 › 底部选择器：无匹配、Tab 环、Esc、遮罩与下拉仅关闭顶层 (2.1s)
+  ✓  12 e2e/mobile-batch2.spec.ts:61:1 › 新错误自动进入诊断日志，复制单条、清空、原文与规划保持主动查看 (2.6s)
+  ✓  13 e2e/mobile-batch2.spec.ts:66:1 › 诊断纯浏览：不请求模型、不写正式状态或草稿；刷新不持久化临时响应 (2.6s)
+  ✓  14 e2e/mobile-batch2.spec.ts:70:1 › 记忆失败操作表：保留来源、重试授权与暂停条件 (2.1s)
+  ✓  15 e2e/mobile-batch2.spec.ts:74:1 › 长响应、私有候选与规划：主动展开、凭证脱敏、全文可达和刷新清除 (3.1s)
+  ✓  16 e2e/mobile-batch2.spec.ts:83:1 › reduced-motion 与显式刷新禁用：不增加列表或生成请求 (1.8s)
+  ✓  17 e2e/mobile-batch2.spec.ts:87:31 › 桌面 901px：原工作流、候选、选择器和确认保持像素一致 (10.0s)
+  ✓  18 e2e/mobile-batch2.spec.ts:87:31 › 桌面 1440px：原工作流、候选、选择器和确认保持像素一致 (10.5s)
+
+  18 passed (1.1m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
