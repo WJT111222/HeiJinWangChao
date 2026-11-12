@@ -65,7 +65,7 @@ async function mock(page: Page) {
   const plan = { badStoryNumber: 0, holdWorld: undefined as Promise<void> | undefined };
   const stories: { number: number; action: string; context: string }[] = [],
     calls: string[] = [];
-  await page.route('https://loop.mock.invalid/**', async (route) => {
+  await page.context().route('https://loop.mock.invalid/**', async (route) => {
     const body: unknown = route.request().postDataJSON(),
       stage = string(record(body).model),
       ctx = contextFrom(body);
@@ -312,6 +312,15 @@ test('快速双击与另一标签发送最多结算一次；成功后数据库�
   await ready(page);
   const other = await context.newPage();
   await other.goto(page.url());
+  // A new Playwright tab has independent sessionStorage. Both competing clients
+  // need the same test-only credentials and the context-wide Mock above.
+  await other.evaluate(async () => {
+    const configPath = '/src/services/ai/configuration.ts', vaultPath = '/src/services/ai/credentials.ts';
+    const { readAiConfig } = await import(configPath), { CredentialVault } = await import(vaultPath);
+    const vault = new CredentialVault(sessionStorage, localStorage);
+    for (const channel of readAiConfig(localStorage).channels) vault.set(channel.id, 'mock-loop-secret');
+  });
+  await other.reload();
   await page.getByLabel('你的行动', { exact: true }).fill('在街边等待');
   await other.getByLabel('你的行动', { exact: true }).fill('在街边等待');
   await Promise.all(

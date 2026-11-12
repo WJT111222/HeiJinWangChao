@@ -1,6 +1,6 @@
 import { setNpcImportance } from '../../domain/npc/profiles';
-import { timelineStores, newSaveControl, readControl, writeControl, clearUndoRecords, recordUndo, inspectUndo, restoreSnapshot, assertMemoryLineage } from './turnUndo';
-import type { MemoryLineage, UndoStatus } from './turnUndo';
+import { timelineStores, newSaveControl, readControl, writeControl, clearUndoRecords, recordUndo, inspectUndo, restoreSnapshot, assertMemoryLineage, readTurnComparison } from './turnUndo';
+import type { MemoryLineage, UndoStatus, TurnComparison } from './turnUndo';
 import { request, transaction } from './idb';
 import { CountSchema, DataError, IdSchema, requireData } from '../../domain/common';
 import { commitCommands, fingerprint } from '../../domain/commands';
@@ -158,6 +158,20 @@ export class SaveRepository {
     IdSchema.parse(saveId);
     return transaction(this.database, ['saves', 'saveControls', 'turnUndo'], 'readonly', async tx =>
       inspectUndo(tx, readState(await request(tx.objectStore('saves').get(saveId)), saveId)));
+  }
+
+  /** Consistent read only: use the existing migration projection, never normalize by writing.
+   * IDB serializes this transaction with commits/undo; no stage session is reserved. */
+  async turnComparison(expected:GameState):Promise<TurnComparison>{
+    IdSchema.parse(expected.saveId);
+    return transaction(this.database,['saves','drafts','saveControls','turnUndo'],'readonly',async tx=>{
+      const current=readState(await request(tx.objectStore('saves').get(expected.saveId)),expected.saveId);
+      if(fingerprint(current)!==fingerprint(expected))return {available:false,reason:'stale'};
+      try{return await readTurnComparison(tx,current);}catch(error){
+        if(error instanceof z.ZodError||error instanceof SyntaxError||error instanceof DataError)return {available:false,reason:'corrupt'};
+        throw error;
+      }
+    });
   }
 
   /** Persist the editable recalled action separately from the immutable bound draft. */

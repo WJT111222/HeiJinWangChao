@@ -1,0 +1,88 @@
+/* Confirmed changes design, desktop only. */
+@media(min-width:901px){
+.app-shell-game .city-night .turn-changes{margin-top:1.6rem;padding-top:1.1rem;border-top:1px dashed #ffffff1c}
+.app-shell-game .city-night .turn-changes .chg-btn{display:inline-flex;align-items:center;gap:.7rem;padding:.45rem .55rem .45rem .9rem;border-radius:999px;border:1px solid var(--line-2);background:#ffffff06;font-size:.84rem;color:var(--muted)}
+.app-shell-game .city-night .turn-changes .chg-btn:hover:not(:disabled){color:var(--text);border-color:var(--gold-lo);background:#c9a9610c}
+.app-shell-game .city-night .turn-changes .chg-btn b{font-weight:500;color:var(--text);letter-spacing:.06em}
+.app-shell-game .city-night .turn-changes .chg-btn .n{font-family:var(--font-mono);font-size:.72rem;color:var(--gold-hi)}
+.app-shell-game .city-night .turn-changes .chg-btn .dots{display:inline-flex;gap:3px}
+.app-shell-game .city-night .turn-changes .chg-btn .dots i{width:6px;height:6px;border-radius:50%;background:var(--c)}
+.app-shell-game .city-night .turn-changes .chg-btn .arr{display:inline-grid;place-items:center;width:1.4rem;height:1.4rem;border-radius:50%;background:#ffffff0c;font-size:.6rem;transition:transform .2s}
+.app-shell-game .city-night .turn-changes .chg-btn[aria-expanded=true]{color:var(--text);border-color:var(--gold-lo)}
+.app-shell-game .city-night .turn-changes .chg-btn[aria-expanded=true] .arr{transform:rotate(180deg)}
+.app-shell-game .city-night .turn-changes .chg-body{margin-top:.9rem;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;animation:wfin .22s var(--ease)}
+.app-shell-game .city-night .turn-changes .chg-body[hidden]{display:none}
+.app-shell-game .city-night .turn-changes .chg-grp{border:1px solid var(--line);border-radius:9px;background:#0d100fcc;overflow:hidden}
+.app-shell-game .city-night .turn-changes .chg-grp h4{display:flex;align-items:center;gap:.5rem;margin:0;padding:.55rem .85rem;font-family:var(--font-body);font-size:.76rem;font-weight:500;letter-spacing:.16em;color:var(--muted);border-bottom:1px solid var(--line)}
+.app-shell-game .city-night .turn-changes .chg-grp h4 i{width:7px;height:7px;border-radius:50%;background:var(--c)}
+.app-shell-game .city-night .turn-changes .chg-grp h4 span{margin-left:auto;font-family:var(--font-mono);letter-spacing:0;color:var(--dim)}
+.app-shell-game .city-night .turn-changes .chg-grp ul{list-style:none;margin:0;padding:.3rem 0}
+.app-shell-game .city-night .turn-changes .chg-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.15rem .8rem;align-items:baseline;width:100%;text-align:left;border:0;border-radius:0;padding:.42rem .85rem;font-size:.84rem;color:var(--text)}
+.app-shell-game .city-night .turn-changes .chg-row:hover:not(:disabled){background:#ffffff07}
+.app-shell-game .city-night .turn-changes .chg-row .what{min-width:0}
+.app-shell-game .city-night .turn-changes .chg-row .what em{font-style:normal;color:var(--muted);margin-right:.35rem}
+.app-shell-game .city-night .turn-changes .chg-row .val{font-family:var(--font-mono);font-size:.78rem;white-space:nowrap;text-align:right}
+.app-shell-game .city-night .turn-changes .chg-row .from{color:var(--dim);text-decoration:line-through;text-decoration-color:#ffffff30;margin-right:.25rem}
+.app-shell-game .city-night .turn-changes .chg-row .to{color:var(--text)}
+.app-shell-game .city-night .turn-changes .chg-row .up{color:#7DBB9C}
+.app-shell-game .city-night .turn-changes .chg-row .down{color:#D47C60}
+.app-shell-game .city-night .turn-changes .chg-row .change-tag{font-family:var(--font-body);font-size:.66rem;padding:.02rem .45rem;border-radius:3px;border:1px solid currentColor}
+.app-shell-game .city-night .turn-changes .chg-row .txt{grid-column:1/-1;font-size:.76rem;color:var(--muted);line-height:1.6}
+.app-shell-game .city-night .turn-changes .chg-row .go{font-family:var(--font-body);font-size:.7rem;color:var(--dim);opacity:0;transition:opacity .15s}
+.app-shell-game .city-night .turn-changes .chg-row:hover .go{opacity:1}
+.app-shell-game .city-night .turn-changes .chg-foot{grid-column:1/-1;display:flex;align-items:center;gap:.8rem;font-size:.72rem;color:var(--dim)}
+.app-shell-game .city-night .turn-changes .g-time{--c:#8EC1E0}
+.app-shell-game .city-night .turn-changes .g-me{--c:var(--gold)}
+.app-shell-game .city-night .turn-changes .g-npc{--c:#D08A6A}
+.app-shell-game .city-night .turn-changes .g-item{--c:#A9C3D8}
+.app-shell-game .city-night .turn-changes .g-world{--c:#7DBB9C}
+.app-shell-game .city-night .turn-changes .g-mem{--c:#9A8FC8}
+.app-shell-game .city-night .turn-changes .chg-note{font-size:.8rem;color:var(--dim);display:inline-flex;align-items:center;gap:.5rem}
+
+
+.app-shell-game .city-night .turn-changes .chg-btn {max-width:100%;flex-wrap:wrap;}
+
+.app-shell-game .city-night .turn-changes .chg-row {min-width:0;background:transparent;}
+
+.app-shell-game .city-night .turn-changes .chg-row .val {white-space:normal;overflow-wrap:anywhere;max-width:100%;}
+
+.app-shell-game .city-night .turn-changes .chg-row .what,.app-shell-game .city-night .turn-changes .chg-row .txt {overflow-wrap:anywhere;white-space:pre-wrap;}
+
+.app-shell-game .city-night .turn-changes .chg-row .go {grid-column:1/-1;text-align:right;font-size:.7rem;}
+
+.app-shell-game .city-night .turn-changes .chg-row:focus-visible .go {opacity:1;}
+
+.app-shell-game .city-night .turn-changes .chg-row .add,.app-shell-game .city-night .turn-changes .chg-row .up {color:#7DBB9C;}
+
+.app-shell-game .city-night .turn-changes .chg-row .del,.app-shell-game .city-night .turn-changes .chg-row .down {color:#D47C60;}
+
+.app-shell-game .city-night .turn-changes .chg-row .mod {color:var(--gold-hi);}
+
+.app-shell-game .city-night .turn-changes .chg-note {display:block;margin-top:.6rem;font-size:.8rem;}
+
+.app-shell-game .city-night .turn-changes .chg-more {display:block;width:100%;padding:.45rem .85rem;border:0;border-top:1px dashed var(--line);border-radius:0;text-align:left;font-size:.76rem;color:var(--gold-hi);}
+
+.app-shell-game .city-night .turn-changes .chg-grp {min-width:0;}
+
+.app-shell-game .city-night .turn-changes .chg-row {grid-template-columns:minmax(0,1fr) minmax(0,auto);}
+
+@keyframes turn-changes-in {from {opacity:0;transform:translateY(4px)}
+ to {opacity:1;transform:none}
+}
+
+.app-shell-game .city-night .turn-changes .chg-body {animation:turn-changes-in .22s var(--ease);}
+
+
+}
+
+@media(min-width:901px) and (max-width:1199px){.app-shell-game .city-night .turn-changes .chg-body {grid-template-columns:1fr;}
+}
+
+@media(prefers-reduced-motion:reduce){.app-shell-game .city-night .turn-changes * {animation:none!important;transition:none!important;}
+}
+
+
+@media(min-width:901px){
+ .app-shell-game .city-night .turn-changes .chg-row .go {grid-column:2;grid-row:2;align-self:end;}
+ .app-shell-game .city-night .turn-changes .chg-row .txt {grid-row:2;padding-right:6.5rem;}
+}
