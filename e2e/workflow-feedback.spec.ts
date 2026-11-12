@@ -53,7 +53,7 @@ for (const mode of ['opening','ready','off','error','settled'] as const) test(`�
     await openWorkflow(page);await workflowTrigger(page).click();await expect(pop).toBeHidden();
     for(const size of [{width:1280,height:800},{width:1100,height:800}]){await page.setViewportSize(size);await openWorkflow(page);const r=(await pop.boundingBox())!;expect(r.x).toBeGreaterThanOrEqual(0);expect(r.y).toBeGreaterThanOrEqual(0);expect(r.x+r.width).toBeLessThanOrEqual(size.width);expect(r.y+r.height).toBeLessThanOrEqual(box!.y+10);await workflowTrigger(page).click();}
   }else{
-    await expect(page.getByRole('dialog',{name:'三阶段工作流',exact:true})).toHaveAttribute('aria-modal','true');await expect(page.locator('.wf-hd')).toHaveCount(1);
+    await expect(page.getByRole('dialog',{name:'三阶段工作流',exact:true})).toHaveAttribute('aria-modal','false');await expect(page.locator('.wf-hd')).toHaveCount(1);
     await page.screenshot({path:`docs/workflow-feedback/screenshots/react-${mode}-mobile.png`});
   }
   if(mode==='ready'){
@@ -266,9 +266,9 @@ test('PC 失败状态：阶段标记、恢复入口、单阶段重试与诊断�
   expect(counter.calls).toBe(0); expect(await stored(page)).toEqual(before);
 });
 
-test('手机原生抽屉：两层导航、统一候选原文、诊断与只读输入',async({page},info)=>{
+test('手机非模态抽屉：两层导航、统一候选原文、诊断与只读绑定输入',async({page},info)=>{
  test.skip(info.project.name!=='mobile','手机专用');await seed(page,'ready');const before=await stored(page);
- await openWorkflow(page);const sheet=page.getByRole('dialog',{name:'三阶段工作流',exact:true});await expect(sheet).toHaveAttribute('aria-modal','true');
+ await openWorkflow(page);const sheet=page.getByRole('dialog',{name:'三阶段工作流',exact:true});await expect(sheet).toHaveAttribute('aria-modal','false');
  await expect(sheet.locator('.workflow-stages>li')).toHaveCount(3);await expect(sheet.getByRole('checkbox')).toHaveCount(2);
  const candidate=await openStageCandidates(page,'variables');await expect(candidate.getByLabel('完整变量候选')).toHaveCount(0);
  await candidate.getByRole('button',{name:'主动查看完整变量候选'}).click();await expect(candidate.getByLabel('完整变量候选')).toContainText('SetWorldClock');

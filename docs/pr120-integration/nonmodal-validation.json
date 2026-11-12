@@ -1,0 +1,60 @@
+{
+  "baseline": "bd0ddd72a4333a2d4a5f18a4f061ae0ad3401354",
+  "batches": [
+    {
+      "batch": "first-nonmodal",
+      "stats": {
+        "startTime": "2026-11-12T23:37:49.527Z",
+        "duration": 45688.278,
+        "expected": 3,
+        "skipped": 1,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "batch": "long-input-normal-send",
+      "stats": {
+        "startTime": "2026-11-12T23:39:00.931Z",
+        "duration": 50117.068,
+        "expected": 3,
+        "skipped": 1,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "batch": "compat",
+      "stats": {
+        "startTime": "2026-11-12T23:40:16.713Z",
+        "duration": 16296.041,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "batch": "drag-test-focus-order-failed",
+      "stats": {
+        "startTime": "2026-11-12T23:41:11.123Z",
+        "duration": 20347.493,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      }
+    },
+    {
+      "batch": "drag-final",
+      "stats": {
+        "startTime": "2026-11-12T23:42:08.840Z",
+        "duration": 27663.748,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    }
+  ]
+}

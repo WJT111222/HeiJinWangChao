@@ -1,50 +1,36 @@
 [
   {
-    "className": "modal mobile-workflow-sheet mobile-sheet sheet-full",
-    "y": 18,
-    "height": 622,
-    "scrollTop": 0,
-    "overflow": "hidden"
-  },
-  {
-    "className": "modal-heading",
-    "y": 38.984375,
-    "height": 55.984375,
-    "scrollTop": 0,
-    "overflow": "visible"
-  },
-  {
-    "className": "modal-body",
-    "y": 94.96875,
-    "height": 545.03125,
+    "className": "mobile-workflow-sheet workflow-floating-drawer",
+    "y": 64,
+    "height": 220.0625,
     "scrollTop": 0,
     "overflow": "hidden"
   },
   {
     "className": "workflow-details wf-v2 wf-mobile-content",
-    "y": 94.96875,
-    "height": 527.03125,
+    "y": 89,
+    "height": 194.0625,
     "scrollTop": 0,
     "overflow": "hidden"
   },
   {
     "className": "wf-hd",
-    "y": 94.96875,
-    "height": 70.671875,
+    "y": 89,
+    "height": 42,
     "scrollTop": 0,
     "overflow": "visible"
   },
   {
     "className": "wf-main",
-    "y": 165.640625,
-    "height": 344.96875,
+    "y": 131,
+    "height": 106.265625,
     "scrollTop": 0,
     "overflow": "auto"
   },
   {
     "className": "wf-ft",
-    "y": 522.609375,
-    "height": 99.390625,
+    "y": 239.265625,
+    "height": 43.796875,
     "scrollTop": 0,
     "overflow": "visible"
   }

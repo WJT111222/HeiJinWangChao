@@ -1,3 +1,4 @@
+import { MobileWorkflowDrawer } from './MobileWorkflowDrawer';
 import { useNpcManagement } from './useNpcManagement';
 import type { NpcManagementResult } from './npcManagement';
 import { ArchivePanel } from '../ArchivePanel';
@@ -690,7 +691,7 @@ export function GameScreen({
                     <span className="mobile-progress-segments" aria-hidden="true">{progressSteps.map(step=><i key={step.stage} data-s={step.visual}/>)}</span>
                     <strong role="status" aria-live="polite"><span className="sr-only">三阶段 · </span>{workflowLabel}</strong><span className="more">详情 ›</span>
                   </button></div>
-                  {workflowOpen&&<Dialog title="三阶段工作流" mobileVariant="sheet" sheetFull seal="阶" eyebrow="WORKFLOW" className="mobile-workflow-sheet" onClose={closeWorkflow}>{renderWorkflow('sheet')}</Dialog>}
+                  {workflowOpen&&<MobileWorkflowDrawer inputRef={inputElement} onClose={closeWorkflow}>{renderWorkflow('sheet')}</MobileWorkflowDrawer>}
                 </div>
               ) : (
                 <div
