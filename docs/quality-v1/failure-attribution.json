@@ -1,0 +1,416 @@
+{
+  "baseline": "d6ef539b8217b9dcf1e48e6161b26dbb7b42f53c",
+  "originalBatch": {
+    "passed": 297,
+    "failed": 19,
+    "skipped": 19
+  },
+  "mainBatches": [
+    {
+      "stats": {
+        "startTime": "2026-11-12T21:46:55.761Z",
+        "duration": 423150.037,
+        "expected": 4,
+        "skipped": 0,
+        "unexpected": 13,
+        "flaky": 0
+      },
+      "tests": [
+        {
+          "project": "desktop",
+          "file": "world-observer.spec.ts",
+          "title": "全量世界观察：场外人物认知、总结、排程、任务与组织只读可查，搜索分页不触发模型",
+          "status": "timedOut",
+          "durationMs": 30331
+        },
+        {
+          "project": "mobile",
+          "file": "world-observer.spec.ts",
+          "title": "全量世界观察：场外人物认知、总结、排程、任务与组织只读可查，搜索分页不触发模型",
+          "status": "timedOut",
+          "durationMs": 30188
+        },
+        {
+          "project": "desktop",
+          "file": "world-runtime.spec.ts",
+          "title": "错误输出可重试；取消后新请求不受旧回包影响；世界生成中其他阶段禁止执行",
+          "status": "passed",
+          "durationMs": 6385
+        },
+        {
+          "project": "mobile",
+          "file": "ai-settings.spec.ts",
+          "title": "AI 多渠道、原生模型列表与连接测试、路由和会话凭证恢复",
+          "status": "passed",
+          "durationMs": 13622
+        },
+        {
+          "project": "mobile",
+          "file": "event-lifecycle.spec.ts",
+          "title": "known场外事件自主延期：玩家可查、角色不自动知晓、刷新不重复请求",
+          "status": "failed",
+          "durationMs": 8953
+        },
+        {
+          "project": "mobile",
+          "file": "event-lifecycle.spec.ts",
+          "title": "partially_known场外事件自主延期：玩家可查、角色不自动知晓、刷新不重复请求",
+          "status": "failed",
+          "durationMs": 9508
+        },
+        {
+          "project": "mobile",
+          "file": "event-lifecycle.spec.ts",
+          "title": "hidden场外事件自主延期：玩家可查、角色不自动知晓、刷新不重复请求",
+          "status": "failed",
+          "durationMs": 9168
+        },
+        {
+          "project": "mobile",
+          "file": "game.spec.ts",
+          "title": "自定义职业、跳过同伴，多存档选择切换与确认删除",
+          "status": "timedOut",
+          "durationMs": 30530
+        },
+        {
+          "project": "mobile",
+          "file": "game.spec.ts",
+          "title": "七面板一键打开、键盘关闭、全量资料只读且保留阅读位置",
+          "status": "timedOut",
+          "durationMs": 30627
+        },
+        {
+          "project": "mobile",
+          "file": "npc-memory.spec.ts",
+          "title": "手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费",
+          "status": "timedOut",
+          "durationMs": 30545
+        },
+        {
+          "project": "mobile",
+          "file": "npc-memory.spec.ts",
+          "title": "跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功",
+          "status": "timedOut",
+          "durationMs": 30467
+        },
+        {
+          "project": "mobile",
+          "file": "npc-memory.spec.ts",
+          "title": "公开自动维护开关不授权NPC额外收费；新正式回合和下一轮三阶段不退化",
+          "status": "timedOut",
+          "durationMs": 60800
+        },
+        {
+          "project": "mobile",
+          "file": "npc-memory.spec.ts",
+          "title": "完整批次不缩减且必须选定NPC：A超长、B正常只整理B",
+          "status": "timedOut",
+          "durationMs": 30461
+        },
+        {
+          "project": "mobile",
+          "file": "npc-memory.spec.ts",
+          "title": "完整批次不缩减且必须选定NPC：A超长、B也超长不请求",
+          "status": "timedOut",
+          "durationMs": 30492
+        },
+        {
+          "project": "mobile",
+          "file": "opening-packs.spec.ts",
+          "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+          "status": "timedOut",
+          "durationMs": 30502
+        },
+        {
+          "project": "mobile",
+          "file": "prompt-inspector.spec.ts",
+          "title": "真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离",
+          "status": "passed",
+          "durationMs": 14814
+        },
+        {
+          "project": "mobile",
+          "file": "prompt-inspector.spec.ts",
+          "title": "300 NPC 真实快照按需 Worker 分析、动画帧继续、结果与原算法一致且复用缓存",
+          "status": "passed",
+          "durationMs": 7083
+        }
+      ]
+    },
+    {
+      "stats": {
+        "startTime": "2026-11-12T21:54:09.757Z",
+        "duration": 65281.098000000005,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      },
+      "tests": [
+        {
+          "project": "desktop",
+          "file": "xianggui-private-profile.spec.ts",
+          "title": "资格显示与切换不残留",
+          "status": "timedOut",
+          "durationMs": 30540
+        },
+        {
+          "project": "mobile",
+          "file": "xianggui-private-profile.spec.ts",
+          "title": "资格显示与切换不残留",
+          "status": "timedOut",
+          "durationMs": 30424
+        }
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "project": "desktop",
+      "file": "world-observer.spec.ts",
+      "line": 48,
+      "title": "全量世界观察：场外人物认知、总结、排程、任务与组织只读可查，搜索分页不触发模型",
+      "classification": "B",
+      "priority": "P2",
+      "originalAssertion": "查找“完整记录”超时；组织页面已使用组织技术记录，未选档案",
+      "observedState": "组织列表可见，停在档案操作；未触达最终只读/零请求断言",
+      "businessRelevance": "功能安全断言被旧入口阻挡",
+      "mainResult": "timedOut",
+      "recommendation": "随档案测试维护，选择正式对象后核对现有技术入口；本批不抢改共享双端布局"
+    },
+    {
+      "project": "mobile",
+      "file": "world-observer.spec.ts",
+      "line": 48,
+      "title": "全量世界观察：场外人物认知、总结、排程、任务与组织只读可查，搜索分页不触发模型",
+      "classification": "B",
+      "priority": "P2",
+      "originalAssertion": "查找“完整记录”超时；组织页面已使用组织技术记录，未选档案",
+      "observedState": "组织列表可见，停在档案操作；未触达最终只读/零请求断言",
+      "businessRelevance": "功能安全断言被旧入口阻挡",
+      "mainResult": "timedOut",
+      "recommendation": "随档案测试维护，选择正式对象后核对现有技术入口；本批不抢改共享双端布局"
+    },
+    {
+      "project": "desktop",
+      "file": "world-runtime.spec.ts",
+      "line": 229,
+      "title": "错误输出可重试；取消后新请求不受旧回包影响；世界生成中其他阶段禁止执行",
+      "classification": "C",
+      "priority": "P1测试可靠性",
+      "originalAssertion": "取消后查找生成世界候选超时",
+      "observedState": "固定1200ms响应可能先于取消完成，页面已呈现重新生成世界候选；main 单跑通过",
+      "businessRelevance": "测试调度/测量，不证明业务错误",
+      "mainResult": "passed",
+      "recommendation": "移植17f2476的可控响应Promise，并等待旧响应处理结束再检查正式状态"
+    },
+    {
+      "project": "desktop",
+      "file": "xianggui-private-profile.spec.ts",
+      "line": 40,
+      "title": "资格显示与切换不残留",
+      "classification": "B",
+      "priority": "P2（隐私路径待验）",
+      "originalAssertion": "查找“读取存档”超时",
+      "observedState": "停在新版封面，尚未进入 NPC 档案；不能据此判定隐私泄露或保护成功",
+      "businessRelevance": "功能安全断言被旧入口阻挡",
+      "mainResult": "timedOut",
+      "recommendation": "后续 UI 测试维护补齐存档馆入口；本批额外验证正式私密字段权限单测"
+    },
+    {
+      "project": "mobile",
+      "file": "xianggui-private-profile.spec.ts",
+      "line": 40,
+      "title": "资格显示与切换不残留",
+      "classification": "B",
+      "priority": "P2（隐私路径待验）",
+      "originalAssertion": "查找“读取存档”超时",
+      "observedState": "停在新版封面，尚未进入 NPC 档案；不能据此判定隐私泄露或保护成功",
+      "businessRelevance": "功能安全断言被旧入口阻挡",
+      "mainResult": "timedOut",
+      "recommendation": "后续 UI 测试维护补齐存档馆入口；本批额外验证正式私密字段权限单测"
+    },
+    {
+      "project": "mobile",
+      "file": "ai-settings.spec.ts",
+      "line": 86,
+      "title": "AI 多渠道、原生模型列表与连接测试、路由和会话凭证恢复",
+      "classification": "C",
+      "priority": "P2",
+      "originalAssertion": "30秒总时限耗尽",
+      "observedState": "原 trace 在可见的路由字段操作处超时；main 单 worker 原断言通过",
+      "businessRelevance": "测试调度/测量，不证明业务错误",
+      "mainResult": "passed",
+      "recommendation": "不调整超时、不加重试；记录并发/长流程耗时局限，必要时单独测量"
+    },
+    {
+      "project": "mobile",
+      "file": "event-lifecycle.spec.ts",
+      "line": 59,
+      "title": "known场外事件自主延期：玩家可查、角色不自动知晓、刷新不重复请求",
+      "classification": "B",
+      "priority": "P2",
+      "originalAssertion": "要求世界事件面板包含2026，但只有列表未选中详情",
+      "observedState": "事件已合法延期且提交、刷新；列表显示内部清点/受阻，详情未打开",
+      "businessRelevance": "功能安全断言被旧入口阻挡",
+      "mainResult": "failed",
+      "recommendation": "既有 main 问题，后续打开旧版事件详情后保留年份断言；本批不改手机流程"
+    },
+    {
+      "project": "mobile",
+      "file": "event-lifecycle.spec.ts",
+      "line": 59,
+      "title": "partially_known场外事件自主延期：玩家可查、角色不自动知晓、刷新不重复请求",
+      "classification": "B",
+      "priority": "P2",
+      "originalAssertion": "要求世界事件面板包含2026，但只有列表未选中详情",
+      "observedState": "事件已合法延期且提交、刷新；列表显示内部清点/受阻，详情未打开",
+      "businessRelevance": "功能安全断言被旧入口阻挡",
+      "mainResult": "failed",
+      "recommendation": "既有 main 问题，后续打开旧版事件详情后保留年份断言；本批不改手机流程"
+    },
+    {
+      "project": "mobile",
+      "file": "event-lifecycle.spec.ts",
+      "line": 59,
+      "title": "hidden场外事件自主延期：玩家可查、角色不自动知晓、刷新不重复请求",
+      "classification": "B",
+      "priority": "P2",
+      "originalAssertion": "要求世界事件面板包含2026，但只有列表未选中详情",
+      "observedState": "事件已合法延期且提交、刷新；列表显示内部清点/受阻，详情未打开",
+      "businessRelevance": "功能安全断言被旧入口阻挡",
+      "mainResult": "failed",
+      "recommendation": "既有 main 问题，后续打开旧版事件详情后保留年份断言；本批不改手机流程"
+    },
+    {
+      "project": "mobile",
+      "file": "game.spec.ts",
+      "line": 211,
+      "title": "自定义职业、跳过同伴，多存档选择切换与确认删除",
+      "classification": "B",
+      "priority": "P2",
+      "originalAssertion": "查找继续游戏/读取存档超时",
+      "observedState": "存档馆或封面未按新版选择并加载；未进入后续只读断言",
+      "businessRelevance": "功能安全断言被旧入口阻挡",
+      "mainResult": "timedOut",
+      "recommendation": "与手机 UI 测试维护协调，补齐真实导航，保留保存/删除/只读断言"
+    },
+    {
+      "project": "mobile",
+      "file": "game.spec.ts",
+      "line": 245,
+      "title": "七面板一键打开、键盘关闭、全量资料只读且保留阅读位置",
+      "classification": "B",
+      "priority": "P2",
+      "originalAssertion": "查找继续游戏/读取存档超时",
+      "observedState": "存档馆或封面未按新版选择并加载；未进入后续只读断言",
+      "businessRelevance": "功能安全断言被旧入口阻挡",
+      "mainResult": "timedOut",
+      "recommendation": "与手机 UI 测试维护协调，补齐真实导航，保留保存/删除/只读断言"
+    },
+    {
+      "project": "mobile",
+      "file": "npc-memory.spec.ts",
+      "line": 64,
+      "title": "手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费",
+      "classification": "B",
+      "priority": "P2（收费路径待验）",
+      "originalAssertion": "seed 中查找读取存档超时",
+      "observedState": "停在封面；未发起本用例总结，不能宣称费用断言已验收",
+      "businessRelevance": "功能安全断言被旧入口阻挡",
+      "mainResult": "timedOut",
+      "recommendation": "后续修复存档馆导航再验证收费/取消；不重写手机布局"
+    },
+    {
+      "project": "mobile",
+      "file": "npc-memory.spec.ts",
+      "line": 115,
+      "title": "跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功",
+      "classification": "B",
+      "priority": "P2（收费路径待验）",
+      "originalAssertion": "seed 中查找读取存档超时",
+      "observedState": "停在封面；未发起本用例总结，不能宣称费用断言已验收",
+      "businessRelevance": "功能安全断言被旧入口阻挡",
+      "mainResult": "timedOut",
+      "recommendation": "后续修复存档馆导航再验证收费/取消；不重写手机布局"
+    },
+    {
+      "project": "mobile",
+      "file": "npc-memory.spec.ts",
+      "line": 141,
+      "title": "公开自动维护开关不授权NPC额外收费；新正式回合和下一轮三阶段不退化",
+      "classification": "B",
+      "priority": "P2（收费路径待验）",
+      "originalAssertion": "seed 中查找读取存档超时",
+      "observedState": "停在封面；未发起本用例总结，不能宣称费用断言已验收",
+      "businessRelevance": "功能安全断言被旧入口阻挡",
+      "mainResult": "timedOut",
+      "recommendation": "后续修复存档馆导航再验证收费/取消；不重写手机布局"
+    },
+    {
+      "project": "mobile",
+      "file": "npc-memory.spec.ts",
+      "line": 170,
+      "title": "完整批次不缩减且必须选定NPC：A超长、B正常只整理B",
+      "classification": "B",
+      "priority": "P2（收费路径待验）",
+      "originalAssertion": "seed 中查找读取存档超时",
+      "observedState": "停在封面；未发起本用例总结，不能宣称费用断言已验收",
+      "businessRelevance": "功能安全断言被旧入口阻挡",
+      "mainResult": "timedOut",
+      "recommendation": "后续修复存档馆导航再验证收费/取消；不重写手机布局"
+    },
+    {
+      "project": "mobile",
+      "file": "npc-memory.spec.ts",
+      "line": 170,
+      "title": "完整批次不缩减且必须选定NPC：A超长、B也超长不请求",
+      "classification": "B",
+      "priority": "P2（收费路径待验）",
+      "originalAssertion": "seed 中查找读取存档超时",
+      "observedState": "停在封面；未发起本用例总结，不能宣称费用断言已验收",
+      "businessRelevance": "功能安全断言被旧入口阻挡",
+      "mainResult": "timedOut",
+      "recommendation": "后续修复存档馆导航再验证收费/取消；不重写手机布局"
+    },
+    {
+      "project": "mobile",
+      "file": "opening-packs.spec.ts",
+      "line": 31,
+      "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+      "classification": "B",
+      "priority": "P2",
+      "originalAssertion": "完成一次建档后查找开始新游戏超时",
+      "observedState": "返回存档馆，未回到含新游戏按钮的封面；前序包/建档检查已执行",
+      "businessRelevance": "功能安全断言被旧入口阻挡",
+      "mainResult": "timedOut",
+      "recommendation": "后续用现有封面切换入口，保留所有完整字段与存档隔离断言"
+    },
+    {
+      "project": "mobile",
+      "file": "prompt-inspector.spec.ts",
+      "line": 121,
+      "title": "真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离",
+      "classification": "C",
+      "priority": "P2",
+      "originalAssertion": "预览长流程总时限 / 帧数 >1 实际1",
+      "observedState": "预览原 trace 停在读取按钮稳定性；帧数从点击分析、输入搜索之后才测，分析可能已完成；main 两例均通过",
+      "businessRelevance": "测试调度/测量，不证明业务错误",
+      "mainResult": "passed",
+      "recommendation": "不降低断言或增加重试；如再次出现，独立设计从启动前监测的响应性测试"
+    },
+    {
+      "project": "mobile",
+      "file": "prompt-inspector.spec.ts",
+      "line": 341,
+      "title": "300 NPC 真实快照按需 Worker 分析、动画帧继续、结果与原算法一致且复用缓存",
+      "classification": "C",
+      "priority": "P2",
+      "originalAssertion": "预览长流程总时限 / 帧数 >1 实际1",
+      "observedState": "预览原 trace 停在读取按钮稳定性；帧数从点击分析、输入搜索之后才测，分析可能已完成；main 两例均通过",
+      "businessRelevance": "测试调度/测量，不证明业务错误",
+      "mainResult": "passed",
+      "recommendation": "不降低断言或增加重试；如再次出现，独立设计从启动前监测的响应性测试"
+    }
+  ]
+}
