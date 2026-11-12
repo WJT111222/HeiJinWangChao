@@ -1,5 +1,6 @@
+import type { Announcement } from '../../services/notices/announcement';
 import { Dialog } from '../Dialog';
-import { announcement } from './announcement';
+import { announcement as fallback } from './announcement';
 import { disclaimer } from './disclaimer';
 import type { DisclaimerParagraph } from './disclaimer';
 import type { NoticeKind } from './useNotices';
@@ -19,8 +20,9 @@ export function NoticeLinks({ onOpen }: { onOpen: (kind: NoticeKind) => void }) 
   );
 }
 
-export function NoticeDialog({ kind, muted, onMutedChange, onClose }: {
+export function NoticeDialog({ kind, muted, onMutedChange, onClose, announcement = fallback }: {
   kind: NoticeKind;
+  announcement?: Announcement;
   muted: boolean;
   onMutedChange: (muted: boolean) => void;
   onClose: () => void;
@@ -42,7 +44,7 @@ export function NoticeDialog({ kind, muted, onMutedChange, onClose }: {
           <Paragraphs paragraphs={disclaimer.closing} />
         </> : <>
           <h3 className="notice-theme">{announcement.theme}</h3>
-          <ul>{announcement.updates.map(update => <li key={update}>{update}</li>)}</ul>
+          <ul>{announcement.updates.map((update, index) => <li key={index}>{update}</li>)}</ul>
           <p className="notice-message">{announcement.message}</p>
         </>}
       </div>

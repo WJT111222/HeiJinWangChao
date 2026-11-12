@@ -1,8 +1,13 @@
 {
   "name": "heijinwangchao",
+  "main": "src/worker.ts",
+  // 管理员创建 HEIJIN_ANNOUNCEMENTS 后添加 kv_namespaces，binding 为 ANNOUNCEMENTS。
+  // 未绑定时 API 返回内置公告；具体步骤见 docs/REMOTE_ANNOUNCEMENTS.md。
   "compatibility_date": "2026-10-20",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
   },
   "previews": {}
 }
