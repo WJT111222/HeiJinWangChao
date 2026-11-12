@@ -1,5 +1,5 @@
 import type { FeedbackLevel } from '../Feedback';
-import { Feedback } from '../Feedback';
+import { Feedback,useDesktopFeedback } from '../Feedback';
 import { MemorySummarySettings } from './MemorySummarySettings';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import { lazy, Suspense, useCallback, useState, cloneElement, isValidElement } from 'react';
@@ -9,6 +9,7 @@ import { UnsavedAiChanges } from './UnsavedAiChanges';
 import { SettingsSchema } from './model';
 import type { Settings } from './model';
 import { NoticeLinks } from '../notices/Notices';
+import './settings-paper.css';
 import type { NoticeKind } from '../notices/useNotices';
 
 const PromptInspector = lazy(() =>
@@ -35,6 +36,7 @@ export function SettingsPanel({
   onOpenNotice?: (kind: NoticeKind) => void;
   onSave: (settings: Settings) => void;
 }) {
+  const desktop=useDesktopFeedback();
   const [tab, setTab] = useState<(typeof tabs)[number]>('AI 连接');
   const [editing, setEditing] = useState(settings);
   const [notice, setNotice] = useState('');
@@ -47,6 +49,7 @@ export function SettingsPanel({
     setAiDirty(dirty);
     onAiDirtyChange?.(dirty);
   }, [onAiDirtyChange]);
+  const localDirty=JSON.stringify(editing.prompts)!==JSON.stringify(settings.prompts)||JSON.stringify(editing.runtime)!==JSON.stringify(settings.runtime);
   const prompt = <K extends keyof Settings['prompts']>(key: K, value: Settings['prompts'][K]) =>
     setEditing({ ...editing, prompts: { ...editing.prompts, [key]: value } });
   function save() {
@@ -68,7 +71,7 @@ export function SettingsPanel({
     }
   }
   return (
-    <div className={`settings-layout ${tab === '提示词管理' ? 'prompt-settings-layout' : ''}`}>
+    <div className={`settings-layout st-wrap ${tab === '提示词管理' ? 'prompt-settings-layout' : ''}`}>
       <nav aria-label="设置分类" className="settings-nav">
         {tabs.map((name) => (
           <button
@@ -80,7 +83,7 @@ export function SettingsPanel({
               setNotice('');
             }}
           >
-            {name}
+            {desktop&&<i aria-hidden="true">{{'AI 连接':'连','提示词':'词','记忆':'忆','运行':'运','提示词管理':'管'}[name]}</i>}{desktop?<span>{name}</span>:name}{desktop&&((name==='AI 连接'&&aiDirty)||(name==='记忆'&&summaryDirty)||((name==='提示词'||name==='运行')&&localDirty))&&<span className="dirty" aria-hidden="true" title="有未保存的修改"/>}
           </button>
         ))}
         {onOpenNotice && <NoticeLinks onOpen={onOpenNotice} />}
@@ -217,12 +220,12 @@ export function SettingsPanel({
             </fieldset>
           </>
         )}
-        <Feedback role="status" level={noticeLevel} className="field-hint">{notice}</Feedback>
+        <div className="local-save-bar"><Feedback role="status" level={noticeLevel} className="field-hint">{notice||(desktop&&localDirty&&(tab==='提示词'||tab==='运行')?'本地设置尚未保存。':'')}</Feedback>
         {tab !== 'AI 连接' && tab !== '提示词管理' && tab !== '记忆' && (
           <button className="primary" onClick={save}>
             保存本地设置
           </button>
-        )}
+        )}</div>
       </div>
       {pendingTab && <UnsavedAiChanges subject={tab === '记忆' ? '记忆设置' : undefined} onContinue={() => setPendingTab(undefined)} onDiscard={() => {
         aiDirtyChanged(false);

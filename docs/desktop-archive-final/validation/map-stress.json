@@ -1,0 +1,5 @@
+{
+  "note": "Browser automation elapsed time including waits and screenshots, not an isolated render benchmark.",
+  "locations": 260,
+  "elapsedMs": 3515
+}

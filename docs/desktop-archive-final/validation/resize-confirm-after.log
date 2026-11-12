@@ -1,0 +1,2 @@
+Events [{'type': 'key', 'name': '关闭 ×'}, {'type': 'cancel', 'name': 'HEIJIN / ARCHIVEAI 配置尚未保存关闭 ×渠道、模型或密钥的修改尚未保存。继续编辑后点击「保存 AI 配置」，或明确放弃本次修改。继续编辑放弃本次修改'}]
+After resize+Escape [{'name': '设置', 'modal': False}]

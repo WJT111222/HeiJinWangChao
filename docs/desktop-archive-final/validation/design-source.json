@@ -1,0 +1,10 @@
+{
+  "heijin-panels.html": {
+    "zipExtractSha256": "ad7cb5d6908888a869e761cf2a7ac4afd11aff6247a74c079620c2973dd31298",
+    "repositorySha256": "ad7cb5d6908888a869e761cf2a7ac4afd11aff6247a74c079620c2973dd31298"
+  },
+  "PANELS_HANDOFF.md": {
+    "zipExtractSha256": "bdd171578cf79d2115f6ace37a2f054b6e6b02c59e5ad587f867b5c284bfb8e1",
+    "repositorySha256": "bdd171578cf79d2115f6ace37a2f054b6e6b02c59e5ad587f867b5c284bfb8e1"
+  }
+}

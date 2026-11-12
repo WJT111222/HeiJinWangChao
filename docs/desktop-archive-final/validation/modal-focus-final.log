@@ -1,0 +1,26 @@
+[WebServer] (node:198154) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:198167) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 2 workers
+
+(node:198191) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:198192) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  2 [desktop] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 (10.8s)
+(node:198463) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [desktop] › e2e/archive-final.spec.ts:36:1 › 设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载 (13.9s)
+(node:198600) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  3 [mobile] › e2e/archive-final.spec.ts:36:1 › 设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载 (6.9s)
+  ✓  4 [mobile] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 (5.1s)
+
+  4 passed (21.2s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

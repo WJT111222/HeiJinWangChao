@@ -31,13 +31,13 @@ test('第四批事件家族、并行与退役成果，合法组织目标、缓�
  if(desktop){
   const org=await open(page,'势力组织');await org.getByRole('button',{name:'查看组织：青禾修复学社',exact:true}).click();await org.getByRole('button',{name:'独立资料核查',exact:true}).click();panel=page.getByRole('dialog',{name:'世界事件',exact:true});await expect(panel.getByRole('heading',{name:'独立资料核查',exact:true})).toBeFocused();
   await page.getByRole('button',{name:'查看天气详情',exact:true}).click();await expect(page.getByRole('dialog',{name:'天气与环境详情',exact:true})).toBeVisible();await page.keyboard.press('Escape');await expect(panel).toBeVisible();await expect(page.getByRole('dialog',{name:'天气与环境详情',exact:true})).toBeHidden();
-  await openSettings(page);const settings=page.getByRole('dialog',{name:'设置',exact:true});await expect(settings).toHaveJSProperty('tagName','DIALOG');await page.keyboard.press('Escape');await expect(settings).toHaveCount(0);await expect(panel).toBeVisible();await panel.focus();
+  await openSettings(page);const settings=page.getByRole('dialog',{name:'设置',exact:true});await expect(settings).toHaveJSProperty('tagName','DIALOG');await page.keyboard.press('Escape');await expect(settings).toHaveCount(0);panel=await open(page,'世界事件');await expect(panel.getByRole('heading',{name:'独立资料核查',exact:true})).toBeVisible();await expect(panel).toBeFocused();
   await page.keyboard.press('Escape');await expect(panel).toHaveCount(0);await expect(page.locator('[data-archive-panel="世界事件"]')).toBeFocused();panel=await open(page,'世界事件');await page.locator('[data-archive-panel="世界事件"]').click();await expect(panel).toHaveCount(0);
  }else await page.keyboard.press('Escape');
  expect(await stored(page)).toEqual(before);verify();
 });
 
-test('统一正式历史投影、双轨五尺寸、精度与详情全文，回焦与旧地图接管',async({page},info)=>{
+test('统一正式历史投影、双轨五尺寸、精度与详情全文，回焦与地图档案切换',async({page},info)=>{
  const desktop=info.project.name==='desktop';await page.setViewportSize(desktop?{width:1440,height:900}:{width:390,height:844});await seed(page);const verify=await guards(page),before=await stored(page);let panel=await open(page,'历史时间轴');
  const keys=await page.evaluate(async()=>{const paths=['/src/domain/history/projection.ts','/src/ui/panels/playerView.ts','/src/services/storage/saveRepository.ts'],[{historyProjection},{playerView},{SaveRepository}]=await Promise.all(paths.map(p=>import(p))),r=await SaveRepository.open();try{return historyProjection(playerView(await r.load('save-a')).timeline).slots.slice(0,12).map((s:{key:string})=>s.key);}finally{r.close();}});
  expect(await panel.locator('.history-slot').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-time-key')))).toEqual(keys);await expect(panel).toContainText('时间待考');await expect(panel).toContainText('年内日期未详');await expect(panel).toContainText('08:09:10.123');
@@ -45,7 +45,7 @@ test('统一正式历史投影、双轨五尺寸、精度与详情全文，回�
  if(desktop){await expect(panel.locator('[data-history-heading]')).toBeFocused();await open(page,'记忆');panel=await open(page,'历史时间轴');await expect(panel.getByRole('article',{name:'纪事详情'})).toBeVisible();}
  await page.screenshot({animations:'disabled',path:`docs/desktop-archive-step4/screenshots/history-detail-${desktop?'901':'mobile'}.png`});await panel.getByRole('button',{name:'返回时间轴',exact:true}).click();
  await panel.getByRole('combobox').selectOption('2021');await panel.getByLabel('搜索纪事',{exact:true}).fill('馆长');await expect(panel.locator('[data-history-id]')).toHaveCount(1);await panel.getByRole('button',{name:'史料记录 · 1',exact:true}).click();await expect(panel).toContainText('大学时期');await expect(panel).toContainText('人物陈述');
- if(desktop){const map=await open(page,'地图');await expect(map).toHaveJSProperty('tagName','DIALOG');await expect.poll(()=>map.evaluate(e=>e.contains(document.activeElement))).toBe(true);await page.keyboard.press('Escape');panel=await open(page,'历史时间轴');}
+ if(desktop){const map=await open(page,'地图');await expect(map).toHaveJSProperty('tagName','SECTION');await expect.poll(()=>map.evaluate(e=>e.contains(document.activeElement))).toBe(true);await page.keyboard.press('Escape');panel=await open(page,'历史时间轴');}
  await panel.getByRole('button',{name:'关闭资料界面',exact:true}).click();if(desktop)await expect(page.locator('[data-archive-panel="历史时间轴"]')).toBeFocused();expect(await stored(page)).toEqual(before);verify();
 });
 

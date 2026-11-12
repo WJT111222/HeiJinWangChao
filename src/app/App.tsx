@@ -20,6 +20,7 @@ import { dateTime } from '../ui/panels/playerView';
 import { SaveCard } from '../ui/SaveCard';
 import { saveKeyText } from '../services/storage/saveManagement';
 import { Feedback } from '../ui/Feedback';
+import { ArchivePanel } from '../ui/ArchivePanel';
 import { Dialog, Empty } from '../ui/Dialog';
 import { PRODUCT_VERSION } from './product';
 import { useGameViewport } from './useGameViewport';
@@ -98,6 +99,7 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [aiSettingsDirty, setAiSettingsDirty] = useState(false);
   const [summarySettingsDirty, setSummarySettingsDirty] = useState(false);
+  const settingsDestination=useRef<(()=>void)|undefined>(undefined);
   const [confirmSettingsClose, setConfirmSettingsClose] = useState(false);
   const [deleting, setDeleting] = useState<SaveSummary>();
   useEffect(() => {
@@ -284,15 +286,19 @@ export function App() {
   const readableSaves = saves.filter(save => save.status === 'readable');
   const active = readableSaves.find((save) => save.saveId === selected) ?? readableSaves[0];
   // 游戏中由原GameScreen提供唯一维护控制器；设置只是展示，不拥有任务生命周期。
+  function requestSettingsClose(afterClose?:()=>void){
+    settingsDestination.current=afterClose;
+    if(aiSettingsDirty||summarySettingsDirty)setConfirmSettingsClose(true);
+    else{setSettingsOpen(false);settingsDestination.current=undefined;afterClose?.();}
+  }
   const renderSettings = (memoryMaintenance?: ReactNode) => (
-    <Dialog title="设置" onClose={() => {
-      if (aiSettingsDirty || summarySettingsDirty) setConfirmSettingsClose(true);
-      else setSettingsOpen(false);
-    }}>
+    <ArchivePanel title="设置" seal="设" eyebrow="SYSTEM · 系统" subtitle="本地偏好与 AI 渠道"
+      settingsHost={{inGame:Boolean(gameRoute&&loaded)}} onClose={()=>requestSettingsClose()}
+      returnFocus={()=>document.querySelector<HTMLElement>('[data-settings-open]')}>
       <SettingsPanel settings={settings} onSave={saveSettings} repository={repository}
         activeSaveId={loaded?.state.saveId ?? active?.saveId} memoryMaintenance={memoryMaintenance}
         onAiDirtyChange={setAiSettingsDirty} onSummaryDirtyChange={setSummarySettingsDirty} onOpenNotice={notices.open} />
-    </Dialog>
+    </ArchivePanel>
   );
   return (
     <div ref={shell} className={gameRoute ? 'app-shell app-shell-game' : route === '#create' ? 'app-shell' : 'app-shell app-shell-home'}>
@@ -351,7 +357,8 @@ export function App() {
             <GameScreen
               key={`${loaded.state.saveId}:${loaded.undoGeneration ?? 0}`}
               openingStart={openingStart.current}
-              onOpenSettings={() => setSettingsOpen(true)}
+              onOpenSettings={() => settingsOpen?requestSettingsClose():setSettingsOpen(true)}
+              onCloseSettings={requestSettingsClose}
               state={loaded.state}
               draft={loaded.draft}
               repository={repository!}
@@ -424,10 +431,10 @@ export function App() {
       {notices.kind && <NoticeDialog key={notices.kind} kind={notices.kind} muted={notices.muted}
         onMutedChange={notices.setMuted} onClose={notices.close} />}
       {settingsOpen && !(gameRoute && loaded) && renderSettings()}
-      {settingsOpen && confirmSettingsClose && <UnsavedAiChanges subject={summarySettingsDirty ? '记忆设置' : undefined} onContinue={() => setConfirmSettingsClose(false)} onDiscard={() => {
+      {settingsOpen && confirmSettingsClose && <UnsavedAiChanges subject={summarySettingsDirty ? '记忆设置' : undefined} onContinue={() => {setConfirmSettingsClose(false);settingsDestination.current=undefined;}} onDiscard={() => {
         setConfirmSettingsClose(false);
         setAiSettingsDirty(false); setSummarySettingsDirty(false);
-        setSettingsOpen(false);
+        setSettingsOpen(false);const destination=settingsDestination.current;settingsDestination.current=undefined;destination?.();
       }} />}
       {deleting && (
         <Dialog

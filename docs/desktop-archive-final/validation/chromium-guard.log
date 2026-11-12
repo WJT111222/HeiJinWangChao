@@ -1,0 +1,75 @@
+[WebServer] (node:210464) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:210477) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 44 tests using 2 workers
+
+(node:210505) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:210504) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [desktop] › e2e/ai-route-persistence.spec.ts:53:1 › 旧跟随配置没有独立选择时明确留空，不默默使用正文渠道默认模型 (8.1s)
+  ✓   2 [desktop] › e2e/ai-route-persistence.spec.ts:40:1 › 三阶段独立选择在启用跟随、保存和刷新后仍能恢复，不被正文模型覆盖 (20.5s)
+  ✓   3 [desktop] › e2e/ai-route-persistence.spec.ts:60:1 › 未保存关闭与分类切换需要明确放弃；继续编辑保留选择，保存后可直接关闭 (15.4s)
+  ✓   4 [desktop] › e2e/ai-route-persistence.spec.ts:73:1 › Escape、明确放弃和分类切换不会静默保存；密钥编辑同样提示且不出现在配置内 (12.3s)
+  ✓   5 [desktop] › e2e/ai-route-persistence.spec.ts:91:1 › 无效字段及存储失败不清除未保存保护；成功保存后才解除 (16.0s)
+  ✓   6 [desktop] › e2e/ai-route-persistence.spec.ts:106:1 › 恢复后四路真实Mock请求使用各自渠道模型，默认模型及旧配置不变 (16.3s)
+  ✓   7 [desktop] › e2e/ai-route-persistence.spec.ts:123:1 › 保存栏在长路由页面可触达且无横向溢出，窄屏也能保存并恢复选择 (10.0s)
+  ✓   8 [desktop] › e2e/ai-route-persistence.spec.ts:132:1 › 删除独立渠道不会改为跟随，保存的其他渠道和选择不受影响 (12.7s)
+  ✓   9 [desktop] › e2e/memory-summary-v2.spec.ts:5:1 › 独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入 (18.0s)
+  ✓  10 [desktop] › e2e/memory-summary-v2.spec.ts:37:1 › 立即NPC总结明确选择目标，18条可按15条处理；原文与正式revision不变 (10.9s)
+  ✓  12 [desktop] › e2e/memory-summary-v2.spec.ts:75:99 › 短期 → 中期失败暂停独立持久化，不关闭另外两类 (12.8s)
+  ✓  11 [desktop] › e2e/memory-summary-v2.spec.ts:49:1 › NPC先失败也不阻断公共两类，失败重试仅一次；暂停只保存本类关闭 (22.6s)
+  ✓  13 [desktop] › e2e/memory-summary-v2.spec.ts:75:99 › 中期 → 长期失败暂停独立持久化，不关闭另外两类 (11.7s)
+  ✓  14 [desktop] › e2e/memory-summary-v2.spec.ts:85:1 › 三类同时失败只顺序显示一个弹窗，各自暂停且刷新不重试 (12.0s)
+  ✓  15 [desktop] › e2e/memory-summary-v2.spec.ts:101:1 › 旧默认关闭安全延续、逐项开启与刷新持久化，设置页不再显示冗余说明 (12.0s)
+  ✓  16 [desktop] › e2e/memory-summary-v2.spec.ts:129:1 › 自动总结关闭时仍可手动总结，刷新后自动保持关闭且没有额外自动调用 (10.4s)
+(node:212787) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  17 [desktop] › e2e/memory-summary-v2.spec.ts:151:1 › 旧版 enabled=false 即使 automatic=true 也只关闭自动，不禁用手动操作 (9.6s)
+(node:213029) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  18 [desktop] › e2e/archive-final.spec.ts:21:1 › 地图正式层级、当前位置、四入口同步与五尺寸，NPC/事件关联、缓存和只读性 (12.2s)
+  ✓  20 [desktop] › e2e/archive-final.spec.ts:46:1 › 地图大量地点与异常长名称分段可达；展开选择恢复与原文不丢失 (5.8s)
+  ✓  19 [desktop] › e2e/archive-final.spec.ts:36:1 › 设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载 (16.2s)
+  ✓  21 [desktop] › e2e/archive-final.spec.ts:50:1 › 游戏设置与地图互切、记忆未保存确认、Esc和首页纸色模态 (8.6s)
+(node:213313) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  22 [desktop] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 (10.2s)
+(node:213455) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  23 [mobile] › e2e/ai-route-persistence.spec.ts:40:1 › 三阶段独立选择在启用跟随、保存和刷新后仍能恢复，不被正文模型覆盖 (8.7s)
+  ✓  24 [mobile] › e2e/ai-route-persistence.spec.ts:53:1 › 旧跟随配置没有独立选择时明确留空，不默默使用正文渠道默认模型 (4.3s)
+  ✓  25 [mobile] › e2e/ai-route-persistence.spec.ts:60:1 › 未保存关闭与分类切换需要明确放弃；继续编辑保留选择，保存后可直接关闭 (6.5s)
+  ✓  26 [mobile] › e2e/ai-route-persistence.spec.ts:73:1 › Escape、明确放弃和分类切换不会静默保存；密钥编辑同样提示且不出现在配置内 (6.6s)
+  ✓  27 [mobile] › e2e/ai-route-persistence.spec.ts:91:1 › 无效字段及存储失败不清除未保存保护；成功保存后才解除 (7.1s)
+  ✓  28 [mobile] › e2e/ai-route-persistence.spec.ts:106:1 › 恢复后四路真实Mock请求使用各自渠道模型，默认模型及旧配置不变 (7.6s)
+  ✓  29 [mobile] › e2e/ai-route-persistence.spec.ts:123:1 › 保存栏在长路由页面可触达且无横向溢出，窄屏也能保存并恢复选择 (5.2s)
+  ✓  30 [mobile] › e2e/ai-route-persistence.spec.ts:132:1 › 删除独立渠道不会改为跟随，保存的其他渠道和选择不受影响 (4.5s)
+  ✓  32 [mobile] › e2e/memory-summary-v2.spec.ts:37:1 › 立即NPC总结明确选择目标，18条可按15条处理；原文与正式revision不变 (4.2s)
+  ✓  31 [mobile] › e2e/memory-summary-v2.spec.ts:5:1 › 独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入 (6.7s)
+  ✓  34 [mobile] › e2e/memory-summary-v2.spec.ts:75:99 › 短期 → 中期失败暂停独立持久化，不关闭另外两类 (5.4s)
+  ✓  33 [mobile] › e2e/memory-summary-v2.spec.ts:49:1 › NPC先失败也不阻断公共两类，失败重试仅一次；暂停只保存本类关闭 (9.2s)
+  ✓  35 [mobile] › e2e/memory-summary-v2.spec.ts:75:99 › 中期 → 长期失败暂停独立持久化，不关闭另外两类 (6.1s)
+  ✓  36 [mobile] › e2e/memory-summary-v2.spec.ts:85:1 › 三类同时失败只顺序显示一个弹窗，各自暂停且刷新不重试 (6.3s)
+  ✓  37 [mobile] › e2e/memory-summary-v2.spec.ts:101:1 › 旧默认关闭安全延续、逐项开启与刷新持久化，设置页不再显示冗余说明 (6.7s)
+  ✓  38 [mobile] › e2e/memory-summary-v2.spec.ts:129:1 › 自动总结关闭时仍可手动总结，刷新后自动保持关闭且没有额外自动调用 (5.8s)
+(node:214267) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  39 [mobile] › e2e/memory-summary-v2.spec.ts:151:1 › 旧版 enabled=false 即使 automatic=true 也只关闭自动，不禁用手动操作 (5.8s)
+  ✓  40 [mobile] › e2e/archive-final.spec.ts:21:1 › 地图正式层级、当前位置、四入口同步与五尺寸，NPC/事件关联、缓存和只读性 (2.9s)
+  -  41 [mobile] › e2e/archive-final.spec.ts:46:1 › 地图大量地点与异常长名称分段可达；展开选择恢复与原文不丢失
+(node:214425) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  42 [mobile] › e2e/archive-final.spec.ts:50:1 › 游戏设置与地图互切、记忆未保存确认、Esc和首页纸色模态 (7.0s)
+  ✓  43 [mobile] › e2e/archive-final.spec.ts:36:1 › 设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载 (6.8s)
+  ✓  44 [mobile] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 (4.9s)
+
+  1 skipped
+  43 passed (3.6m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

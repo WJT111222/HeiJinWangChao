@@ -1,0 +1,79 @@
+[WebServer] (node:188455) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:188478) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 2 workers
+
+(node:188506) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:188507) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [desktop] › e2e/prompt-inspector.spec.ts:120:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 (1.0m)
+  ✘  2 [mobile] › e2e/prompt-inspector.spec.ts:120:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 (1.1m)
+
+
+  1) [desktop] › e2e/prompt-inspector.spec.ts:120:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 ────────────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: /读取存档/ })
+
+
+      191 |   );
+      192 |   await page.keyboard.press('Escape');
+    > 193 |   await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+          |                                                    ^
+      194 |   await openWorldArchive(page);
+      195 |   await page
+      196 |     .getByRole('complementary', { name: '世界资料' })
+        at /workspace/desktop-final-baseline/e2e/prompt-inspector.spec.ts:193:52
+
+    Error Context: ../../tmp/s56-main-inspector/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/s56-main-inspector/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/s56-main-inspector/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [mobile] › e2e/prompt-inspector.spec.ts:120:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 ─────────────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: /读取存档/ })
+
+
+      191 |   );
+      192 |   await page.keyboard.press('Escape');
+    > 193 |   await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+          |                                                    ^
+      194 |   await openWorldArchive(page);
+      195 |   await page
+      196 |     .getByRole('complementary', { name: '世界资料' })
+        at /workspace/desktop-final-baseline/e2e/prompt-inspector.spec.ts:193:52
+
+    Error Context: ../../tmp/s56-main-inspector/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/s56-main-inspector/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/s56-main-inspector/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [desktop] › e2e/prompt-inspector.spec.ts:120:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 ─────────────
+    [mobile] › e2e/prompt-inspector.spec.ts:120:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 ──────────────
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

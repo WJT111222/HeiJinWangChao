@@ -1,0 +1,56 @@
+[WebServer] (node:197227) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:197240) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 2 workers
+
+(node:197264) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:197270) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [desktop] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 (11.3s)
+(node:197546) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [desktop] › e2e/archive-final.spec.ts:36:1 › 设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载 (13.2s)
+(node:197681) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  4 [mobile] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 (4.5s)
+  ✓  3 [mobile] › e2e/archive-final.spec.ts:36:1 › 设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载 (6.6s)
+
+
+  1) [desktop] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 ─────
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog', { name: 'AI 配置尚未保存', exact: true })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog', { name: 'AI 配置尚未保存', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: 'AI 配置尚未保存', exact: true })
+        13 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      59 |   if(desktop)for(const width of [1100,901,900,390,1440]){await page.setViewportSize({width,height:900});expect(await key.evaluate((e,value)=>(e as HTMLInputElement).value===value,secret)).toBe(true);expect(await key.evaluate(e=>e===Reflect.get(window,'credentialNode'))).toBe(true);await expect(key).toHaveAttribute('type','password');}
+      60 |   if(desktop)await page.locator('[data-archive-panel="地图"]').click();else await settings.getByRole('button',{name:'关闭资料界面',exact:true}).click();const unsaved=page.getByRole('dialog',{name:'AI 配置尚未保存',exact:true});await expect(unsaved).toBeVisible();expect(await unsaved.evaluate(e=>e.matches(':modal'))).toBe(true);if(desktop)for(const width of [390,1440]){await page.setViewportSize({width,height:900});await expect.poll(()=>unsaved.evaluate(e=>e.contains(document.activeElement))).toBe(true);}
+    > 61 |   await page.keyboard.press('Escape');await expect(unsaved).toHaveCount(0);expect(await page.evaluate(()=>document.body.style.overflow)).toBe(desktop?'':'hidden');expect(await key.evaluate((e,value)=>(e as HTMLInputElement).value===value,secret)).toBe(true);await expect(key).toHaveAttribute('type','password');await fit(page);await page.screenshot({animations:'disabled',path:`docs/desktop-archive-final/screenshots/settings-credential-masked-${desktop?'desktop':'mobile'}.png`});
+         |                                                             ^
+      62 |   await settings.getByRole('button',{name:'保存 AI 配置',exact:true}).click();await expect(settings).toContainText('AI 配置已保存');expect(await page.evaluate(value=>JSON.stringify([...document.querySelectorAll('.channel-cards')].map(e=>e.textContent)).includes(value),secret)).toBe(false);expect(await page.evaluate(value=>Object.values(localStorage).some(v=>String(v).includes(value)),secret)).toBe(false);await settings.getByRole('button',{name:'测试连接（可能产生费用）',exact:true}).click();await expect(settings).toContainText('连接测试成功');expect(generationCalls).toBe(1);expect(authorized).toBe(true);
+      63 |   await settings.getByRole('button',{name:'关闭资料界面',exact:true}).click();await page.reload();await openSettings(page);settings=page.getByRole('dialog',{name:'设置',exact:true});expect(await settings.getByLabel('API 密钥',{exact:true}).evaluate((e,value)=>(e as HTMLInputElement).value===value,secret)).toBe(true);await settings.getByRole('button',{name:'删除渠道',exact:true}).click();await settings.getByRole('button',{name:'取消删除',exact:true}).click();await settings.getByRole('button',{name:'删除渠道',exact:true}).click();await settings.getByRole('button',{name:'确认删除渠道',exact:true}).click();await expect(settings).toContainText('渠道及凭证已删除');expect(await stored(page)).toEqual(before);
+      64 |  });
+        at /workspace/desktop-map-settings/e2e/archive-final.spec.ts:61:61
+
+    Error Context: ../../tmp/s56-focus2/archive-final-凭证安全-密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除-desktop/error-context.md
+
+  1 failed
+    [desktop] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 ──────
+  3 passed (20.9s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

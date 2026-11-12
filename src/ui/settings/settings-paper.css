@@ -1,0 +1,184 @@
+/* Settings presentation only. All operations remain in the original controllers. */
+.local-save-bar,.memory-save-bar {display:contents;}
+@media(min-width:901px){
+.app-shell .settings-paper[data-tone=paper]{--sheet:#E4DCCA;--sheet-solid:#E4DCCA;--card:#EFE8D9;--hair:#2a26221a;--line:#2a26221f;--line-2:#2a262233;--ink-3:#2a262245;
+  --head:#1F1B17;--text:#2B2723;--muted:#5F574C;--dim:#857B6C;--gold:#8E6C25;--gold-hi:#6F5216;--gold-lo:#B79755;--info:#2D5E7D;--pos:#2F7A58;--neg:#A3412E;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  backdrop-filter:none;box-shadow:-30px 0 60px -20px #000c;color-scheme:light}
+.app-shell .settings-paper[data-tone=paper] .st-wrap{flex:1;min-height:0;display:grid;grid-template-columns:12.5rem minmax(0,1fr)}
+.app-shell .settings-paper[data-tone=paper] .settings-nav{padding:1.2rem 1rem 1.2rem 0;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:.25rem}
+.app-shell .settings-paper[data-tone=paper] .settings-nav>button{display:grid;grid-template-columns:1.6rem minmax(0,1fr) auto;align-items:center;gap:.55rem;text-align:left;border:0;border-radius:6px;padding:.6rem .7rem;font-size:.88rem;color:var(--muted);position:relative}
+.app-shell .settings-paper[data-tone=paper] .settings-nav>button i{width:1.6rem;height:1.6rem;display:grid;place-items:center;border-radius:5px;font-style:normal;font-family:var(--font-title);font-size:.72rem;background:#2a26220c;color:var(--muted)}
+.app-shell .settings-paper[data-tone=paper] .settings-nav>button:hover:not(:disabled){background:#2a262209;color:var(--head)}
+.app-shell .settings-paper[data-tone=paper] .settings-nav>button[aria-pressed=true]{background:#8E6C2514;color:var(--head)}
+.app-shell .settings-paper[data-tone=paper] .settings-nav>button[aria-pressed=true] i{background:var(--head);color:#F4EDE0}
+.app-shell .settings-paper[data-tone=paper] .settings-nav>button[aria-pressed=true]::before{content:'';position:absolute;left:0;top:.5rem;bottom:.5rem;width:2px;border-radius:2px;background:var(--gold)}
+.app-shell .settings-paper[data-tone=paper] .settings-nav .dirty{width:7px;height:7px;border-radius:50%;background:var(--neg);box-shadow:0 0 0 3px #A3412E22}
+.app-shell .settings-paper[data-tone=paper] .settings-nav .notices{margin-top:auto;padding-top:1rem;border-top:1px solid var(--line);display:grid;gap:.3rem}
+.app-shell .settings-paper[data-tone=paper] .settings-nav .notices button{border:0;padding:.2rem 0;background:none;font-size:.78rem;color:var(--info);text-align:left}
+.app-shell .settings-paper[data-tone=paper] .settings-nav .notices button:hover:not(:disabled){background:none;text-decoration:underline}
+.app-shell .settings-paper[data-tone=paper] .settings-content{min-height:0;display:flex;flex-direction:column}
+.app-shell .settings-paper[data-tone=paper] .st-scroll{flex:1;min-height:0;padding:1.3rem 1.5rem 1.5rem}
+.app-shell .settings-paper[data-tone=paper] .st-title{display:flex;align-items:baseline;gap:.8rem;margin-bottom:.3rem}
+.app-shell .settings-paper[data-tone=paper] .st-title h3{font-size:1.35rem;letter-spacing:.2em;color:var(--head)}
+.app-shell .settings-paper[data-tone=paper] .st-lead{font-size:.8rem;color:var(--dim);line-height:1.75;margin-bottom:1.1rem;max-width:46rem}
+.app-shell .settings-paper[data-tone=paper] .fields{display:grid;gap:0}
+.app-shell .settings-paper[data-tone=paper] .field{display:grid;grid-template-columns:minmax(10rem,15rem) minmax(0,1fr);gap:1.2rem;align-items:center;padding:.85rem 0;border-bottom:1px dashed var(--hair)}
+.app-shell .settings-paper[data-tone=paper] .field:last-child{border-bottom:0}
+.app-shell .settings-paper[data-tone=paper] .field>.lab b{display:block;font-weight:500;font-size:.9rem;color:var(--head)}
+.app-shell .settings-paper[data-tone=paper] .field>.lab small{display:block;font-size:.72rem;color:var(--dim);line-height:1.6;margin-top:.15rem}
+.app-shell .settings-paper[data-tone=paper] .field .ctl{display:flex;align-items:center;gap:.6rem;min-width:0}
+.app-shell .settings-paper[data-tone=paper] .field .ctl .f-input,.app-shell .settings-paper[data-tone=paper] .field .ctl .f-select{max-width:22rem}
+.app-shell .settings-paper[data-tone=paper] .unit{position:relative;display:inline-flex;align-items:center;max-width:12rem;width:100%}
+.app-shell .settings-paper[data-tone=paper] .unit .f-input{padding-right:2.6rem;font-family:var(--font-mono)}
+.app-shell .settings-paper[data-tone=paper] .unit span{position:absolute;right:.75rem;font-size:.74rem;color:var(--dim)}
+.app-shell .settings-paper[data-tone=paper] .toggle{display:inline-flex;align-items:center;gap:.7rem;cursor:pointer;font-size:.88rem;color:var(--head)}
+.app-shell .settings-paper[data-tone=paper] .toggle input{appearance:none;flex:none;width:2.5rem;height:1.4rem;border-radius:999px;background:#2a26222a;position:relative;cursor:pointer;transition:background .2s;margin:0}
+.app-shell .settings-paper[data-tone=paper] .toggle input::after{content:'';position:absolute;left:3px;top:3px;width:calc(1.4rem - 6px);height:calc(1.4rem - 6px);border-radius:50%;background:#FBF8F1;box-shadow:0 1px 3px #0003;transition:transform .2s var(--ease)}
+.app-shell .settings-paper[data-tone=paper] .toggle input:checked{background:var(--pos)}
+.app-shell .settings-paper[data-tone=paper] .toggle input:checked::after{transform:translateX(1.1rem)}
+.app-shell .settings-paper[data-tone=paper] .toggle input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.app-shell .settings-paper[data-tone=paper] .toggle input:disabled{opacity:.5;cursor:not-allowed}
+.app-shell .settings-paper[data-tone=paper] .tg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+.app-shell .settings-paper[data-tone=paper] .tg-card{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:.85rem 1rem;border:1px solid var(--line);border-radius:8px;background:#F6F1E6}
+.app-shell .settings-paper[data-tone=paper] .tg-card b{display:block;font-weight:500;font-size:.9rem;color:var(--head)}
+.app-shell .settings-paper[data-tone=paper] .tg-card small{display:block;font-size:.72rem;color:var(--dim);line-height:1.6;margin-top:.2rem}
+.app-shell .settings-paper[data-tone=paper] fieldset.later{margin:1.2rem 0 0;padding:.9rem 1rem 1rem;border:1px dashed var(--line-2);border-radius:8px;opacity:.7}
+.app-shell .settings-paper[data-tone=paper] fieldset.later legend{padding:0 .4rem;font-size:.76rem;letter-spacing:.14em;color:var(--dim)}
+.app-shell .settings-paper[data-tone=paper] .ch-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:.65rem}
+.app-shell .settings-paper[data-tone=paper] .ch{position:relative;text-align:left;padding:.85rem 1rem .9rem;border:1px solid var(--line-2);border-radius:9px;background:#F6F1E6;display:grid;gap:.25rem}
+.app-shell .settings-paper[data-tone=paper] .ch[aria-pressed=true]{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+.app-shell .settings-paper[data-tone=paper] .ch .nm{display:flex;align-items:center;gap:.5rem;font-family:var(--font-title);font-size:1rem;color:var(--head);letter-spacing:.06em}
+.app-shell .settings-paper[data-tone=paper] .ch .proto{font-size:.64rem;padding:.03rem .45rem;border-radius:3px;color:#F6F0E2;background:var(--c)}
+.app-shell .settings-paper[data-tone=paper] .ch .url{font-family:var(--font-mono);font-size:.68rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-shell .settings-paper[data-tone=paper] .ch .mdl{font-size:.76rem;color:var(--muted)}
+.app-shell .settings-paper[data-tone=paper] .ch .def{position:absolute;right:.8rem;top:.8rem;font-size:.62rem;padding:.02rem .45rem;border-radius:999px;color:var(--gold-hi);border:1px solid var(--gold-lo)}
+.app-shell .settings-paper[data-tone=paper] .ch.add{place-items:center;border-style:dashed;color:var(--dim);font-size:.86rem;min-height:6.2rem;background:transparent}
+.app-shell .settings-paper[data-tone=paper] .ch.add:hover:not(:disabled){color:var(--gold-hi);border-color:var(--gold-lo)}
+.app-shell .settings-paper[data-tone=paper] .p-openai{--c:#2F7A58}
+.app-shell .settings-paper[data-tone=paper] .p-anthropic{--c:#A3412E}
+.app-shell .settings-paper[data-tone=paper] .p-gemini{--c:#2D5E7D}
+.app-shell .settings-paper[data-tone=paper] .secret{display:flex;gap:.4rem;max-width:22rem;width:100%}
+.app-shell .settings-paper[data-tone=paper] .secret .f-input{font-family:var(--font-mono);letter-spacing:.15em}
+.app-shell .settings-paper[data-tone=paper] .routes{width:100%;border-collapse:separate;border-spacing:0 .45rem;font-size:.86rem}
+.app-shell .settings-paper[data-tone=paper] .routes th{font-size:.7rem;letter-spacing:.16em;color:var(--dim);font-weight:400;text-align:left;padding:0 .6rem}
+.app-shell .settings-paper[data-tone=paper] .routes td{padding:.55rem .6rem;background:#F6F1E6;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.app-shell .settings-paper[data-tone=paper] .routes td:first-child{border-left:1px solid var(--line);border-radius:7px 0 0 7px;font-family:var(--font-title);color:var(--head);white-space:nowrap}
+.app-shell .settings-paper[data-tone=paper] .routes td:last-child{border-right:1px solid var(--line);border-radius:0 7px 7px 0}
+.app-shell .settings-paper[data-tone=paper] .routes td:first-child i{display:inline-grid;place-items:center;width:1.4rem;height:1.4rem;margin-right:.5rem;border-radius:50%;font-style:normal;font-family:var(--font-mono);font-size:.62rem;color:var(--gold-hi);border:1px solid var(--gold-lo)}
+.app-shell .settings-paper[data-tone=paper] .routes .f-select{max-width:none;padding-top:.4rem;padding-bottom:.4rem;font-size:.82rem}
+.app-shell .settings-paper[data-tone=paper] .routes tr.is-follow td:not(:first-child):not(:last-child){opacity:.45}
+.app-shell .settings-paper[data-tone=paper] .st-bar{flex:none;display:flex;align-items:center;gap:1rem;padding:.8rem 1.5rem;border-top:1px solid var(--line);background:var(--sheet-solid)}
+.app-shell .settings-paper[data-tone=paper] .st-bar .field-hint{flex:1;font-size:.8rem;color:var(--muted);text-align:left;padding:0;display:flex;align-items:center;gap:.5rem}
+.app-shell .settings-paper[data-tone=paper] .st-bar .field-hint.ok::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--pos)}
+.app-shell .settings-paper[data-tone=paper] .st-bar .field-hint.dirty{color:var(--neg)}
+.app-shell .settings-paper[data-tone=paper] .st-bar .field-hint.dirty::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--neg)}
+.app-shell .settings-paper[data-tone=paper] .btn-ink{border:0;padding:.6rem 1.4rem;border-radius:7px;background:var(--head);color:#F4EDE0;font-weight:500;letter-spacing:.12em}
+.app-shell .settings-paper[data-tone=paper] .btn-ink:hover:not(:disabled){background:#000;color:#fff;border:0}
+.app-shell .settings-paper[data-tone=paper] .btn-danger{color:var(--neg)!important;border-color:#A3412E55!important}
+.app-shell .settings-paper[data-tone=paper] .confirm{margin:1rem 0 0;padding:1rem 1.1rem;border:1px solid #A3412E66;border-left:3px solid var(--neg);border-radius:0 8px 8px 0;background:#FBF4EC;display:flex;align-items:center;gap:1rem}
+.app-shell .settings-paper[data-tone=paper] .confirm p{flex:1;font-size:.86rem;color:var(--head)}
+.app-shell .settings-paper[data-tone=paper] .confirm button{font-size:.8rem}
+.app-shell .settings-paper[data-tone=paper] .pi-note{padding:1rem 1.1rem;border:1px dashed var(--line-2);border-radius:8px;font-size:.84rem;color:var(--muted);line-height:1.8}
+
+@media (max-width:1199px){.app-shell .settings-paper[data-tone=paper] .st-wrap{grid-template-columns:10.5rem minmax(0,1fr)}
+.app-shell .settings-paper[data-tone=paper] .field{grid-template-columns:1fr;gap:.5rem}
+.app-shell .settings-paper[data-tone=paper] .tg-grid{grid-template-columns:1fr}
+}
+.app-shell .settings-paper[data-tone=paper] .archive[data-tone=paper] .btn-ink:hover:not(:disabled){background:#000;color:#fff;border:0}
+.app-shell .settings-paper[data-tone=paper] .archive[data-tone=paper] .btn-ink{border:0}
+
+
+
+}
+@media(min-width:901px){
+ .app-shell .settings-paper[data-tone=paper] {color:var(--text);color-scheme:light;background-color:var(--sheet);--font-title:'Noto Serif SC','Songti SC',serif;--font-body:'Noto Sans SC',system-ui,sans-serif;--font-mono:'JetBrains Mono',ui-monospace,monospace;}
+ .app-shell .settings-paper[data-tone=paper][open] {display:flex;flex-direction:column;}
+ .app-shell .settings-paper.settings-dialog.modal {width:min(1160px,96vw);height:min(90dvh,960px);max-height:calc(100dvh - 2rem);padding:0;}
+ .app-shell-game .city-night dialog.archive.settings-paper {padding:0;margin:0;width:auto;height:auto;max-width:none;max-height:none;animation:none;}
+ .app-shell .settings-paper[data-tone=paper] .ar-head {flex:none;display:flex;align-items:center;gap:1rem;padding:1rem 1.6rem;border-bottom:1px solid var(--line);}
+ .app-shell .settings-paper[data-tone=paper] .ar-head .seal {display:grid;place-items:center;flex:none;width:2.8rem;height:2.8rem;font:1.25rem var(--font-title);color:#F4EDE0;background:#A3412E;border:1px solid #A3412E;box-shadow:inset 0 0 0 2px #A3412E,inset 0 0 0 3px #F4EDE066;}
+ .app-shell .settings-paper[data-tone=paper] .ar-title {min-width:0;}
+ .app-shell .settings-paper[data-tone=paper] .ar-title .eyebrow {display:block;color:#A3412E;letter-spacing:.22em;font:.65rem var(--font-mono);}
+ .app-shell .settings-paper[data-tone=paper] .ar-title h2 {display:inline;font:1.45rem var(--font-title);letter-spacing:.14em;color:var(--head);}
+ .app-shell .settings-paper[data-tone=paper] .ar-title .sub {margin-left:.8rem;font-size:.8rem;letter-spacing:.1em;color:var(--muted);}
+ .app-shell .settings-paper[data-tone=paper] .ar-head .esc {margin-left:auto;font:.62rem var(--font-mono);border:1px solid var(--line-2);border-radius:3px;padding:.05rem .35rem;color:var(--dim);}
+ .app-shell .settings-paper[data-tone=paper] .ar-close {padding:.45rem .9rem;font-size:.84rem;white-space:nowrap;}
+ .app-shell .settings-paper[data-tone=paper] .modal-body,.app-shell .settings-paper[data-tone=paper] .ar-body {flex:1;min-height:0;display:flex;overflow:hidden;padding:0 1.6rem;}
+ .app-shell .settings-paper[data-tone=paper] .settings-layout {flex:1;min-height:0;min-width:0;display:grid;grid-template-columns:12.5rem minmax(0,1fr);gap:0;}
+ .app-shell .settings-paper[data-tone=paper] .settings-layout .settings-nav {overflow:auto;min-height:0;flex-direction:column;margin:0;}
+ .app-shell .settings-paper[data-tone=paper] .settings-layout .settings-nav>button {margin:0;white-space:normal;min-width:0;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content {min-height:0;overflow:auto;overscroll-behavior:contain;padding:1.3rem 1.5rem 0;display:block;scrollbar-gutter:stable;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content>h3 {font:1.35rem var(--font-title);letter-spacing:.2em;color:var(--head);margin:0 0 .7rem;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content input,.app-shell .settings-paper[data-tone=paper] .settings-content textarea,.app-shell .settings-paper[data-tone=paper] .settings-content select,.app-shell .settings-paper[data-tone=paper] .select-trigger {background:#F8F4EA;color:var(--text);border-color:var(--line-2);min-width:0;max-width:100%;font-size:.86rem;}
+ .app-shell .settings-paper[data-tone=paper] .select-popup {background:#F8F4EA;color:var(--text);border-color:var(--line-2);}
+ .app-shell .settings-paper[data-tone=paper] .select-popup [role=option] {color:var(--text);background:transparent;}
+ .app-shell .settings-paper[data-tone=paper] .select-popup [aria-selected=true],.app-shell .settings-paper[data-tone=paper] .select-popup .option-active {background:#8E6C251a;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content input[type=password] {font-family:var(--font-mono);letter-spacing:.15em;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content input:not([type=checkbox]):focus,.app-shell .settings-paper[data-tone=paper] textarea:focus {border-color:var(--gold);outline:2px solid #8E6C2540;outline-offset:0;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content .themed-select {color:var(--dim);min-width:0;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content label {min-width:0;overflow-wrap:anywhere;}
+ .app-shell .settings-paper[data-tone=paper] .settings-fields {max-width:none;gap:0;margin:1rem 0;}
+ .app-shell .settings-paper[data-tone=paper] .settings-fields>label:not(.toggle),.app-shell .settings-paper[data-tone=paper] .form-grid>label {display:grid;grid-template-columns:minmax(9rem,40%) minmax(0,1fr);gap:1.2rem;align-items:center;padding:.85rem 0;border-bottom:1px dashed var(--hair);}
+ .app-shell .settings-paper[data-tone=paper] .form-grid {display:grid;grid-template-columns:minmax(0,1fr);gap:.7rem;}
+ .app-shell .settings-paper[data-tone=paper] .wide-field {grid-column:auto;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content fieldset,.app-shell .settings-paper[data-tone=paper] .settings-content .card {min-width:0;border:1px solid var(--line);border-radius:8px;background:#EFE8D9;padding:1.15rem 1.3rem;margin:1.2rem 0;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content fieldset[disabled] {border-style:dashed;opacity:.7;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content legend {font-family:var(--font-title);letter-spacing:.16em;color:var(--head);font-size:1rem;padding:0 .4rem;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content .field-hint {margin:.5rem 0;font-size:.78rem;line-height:1.75;color:var(--muted);}
+ .app-shell .settings-paper[data-tone=paper] .settings-content .channel-cards h4 {font:1rem var(--font-title);letter-spacing:.2em;margin:1.2rem 0 .7rem;}
+ .app-shell .settings-paper[data-tone=paper] .ch-list {grid-template-columns:repeat(auto-fill,minmax(min(17rem,100%),1fr));}
+ .app-shell .settings-paper[data-tone=paper] button.ch {min-width:0;margin:0;}
+ .app-shell .settings-paper[data-tone=paper] .ch .nm {display:block;padding-right:3rem;overflow-wrap:anywhere;}
+ .app-shell .settings-paper[data-tone=paper] .ch .proto {display:inline-block;margin-left:.4rem;font-family:var(--font-body);letter-spacing:0;}
+ .app-shell .settings-paper[data-tone=paper] .ch .mdl {overflow-wrap:anywhere;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content button.primary {background:var(--head);color:#F4EDE0;border-color:var(--head);padding:.6rem 1.2rem;}
+ .app-shell .settings-paper[data-tone=paper] .ai-actions {display:flex;flex-wrap:wrap;gap:.5rem;}
+ .app-shell .settings-paper[data-tone=paper] .ai-save-bar,.app-shell .settings-paper[data-tone=paper] .local-save-bar,.app-shell .settings-paper[data-tone=paper] .memory-save-bar {display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1rem;position:sticky;bottom:0;z-index:5;padding:.8rem 1rem;margin:1rem -1rem 0;background:var(--sheet-solid);border:0;border-top:1px solid var(--line);border-radius:0;box-shadow:0 -8px 12px -12px #40352699;}
+ .app-shell .settings-paper[data-tone=paper] .local-save-bar:empty {display:none;}
+ .app-shell .settings-paper[data-tone=paper] .local-save-bar .feedback,.app-shell .settings-paper[data-tone=paper] .ai-save-bar .feedback {flex:1;min-width:0;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content .ai-route {display:grid;grid-template-columns:8rem minmax(0,1fr) minmax(0,1.2fr) 7rem;gap:.6rem .7rem;margin:.65rem 0;padding:.6rem;}
+ .app-shell .settings-paper[data-tone=paper] .ai-route>strong {grid-column:1;grid-row:1;font-family:var(--font-title);font-size:.88rem;color:var(--head);}
+ .app-shell .settings-paper[data-tone=paper] .ai-route>strong i {display:inline-grid;place-items:center;border:1px solid var(--gold-lo);border-radius:50%;width:1.4rem;height:1.4rem;margin-right:.4rem;font:.62rem var(--font-mono);color:var(--gold-hi);}
+ .app-shell .settings-paper[data-tone=paper] .ai-route>.themed-select {grid-column:2;grid-row:1;}
+ .app-shell .settings-paper[data-tone=paper] .ai-route>.model-picker {grid-column:3;grid-row:1;}
+ .app-shell .settings-paper[data-tone=paper] .ai-route>.toggle {grid-column:4;grid-row:1;align-self:start;flex-wrap:wrap;font-size:.72rem;}
+ .app-shell .settings-paper[data-tone=paper] .ai-route>.field-hint {grid-column:2/-1;grid-row:2;}
+ .app-shell .settings-paper[data-tone=paper] .ai-route.is-follow>.themed-select,.app-shell .settings-paper[data-tone=paper] .ai-route.is-follow>.model-picker {opacity:.5;}
+ .app-shell .settings-paper[data-tone=paper] .model-picker {min-width:0;}
+ .app-shell .settings-paper[data-tone=paper] .model-picker>button {white-space:normal;font-size:.72rem;}
+ .app-shell .settings-paper[data-tone=paper] .prompt-inspector pre {background:#F8F4EA;color:var(--text);border-color:var(--line-2);}
+ .app-shell .settings-paper[data-tone=paper] .prompt-inspector .inspector-columns {grid-template-columns:minmax(0,1fr);}
+ .app-shell .settings-paper[data-tone=paper] .settings-content .memory-summary-settings textarea {background:#F8F4EA;}
+}
+@media(min-width:901px) and (max-width:1199px){
+ .app-shell .settings-paper[data-tone=paper] .settings-layout {grid-template-columns:10.5rem minmax(0,1fr);}
+ .app-shell .settings-paper[data-tone=paper] .settings-content {padding:1.1rem .9rem 0;}
+ .app-shell .settings-paper[data-tone=paper] .settings-fields>label:not(.toggle),.app-shell .settings-paper[data-tone=paper] .form-grid>label {grid-template-columns:minmax(0,1fr);gap:.5rem;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content .ai-route {grid-template-columns:minmax(0,1fr);}
+ .app-shell .settings-paper[data-tone=paper] .ai-route>strong,.app-shell .settings-paper[data-tone=paper] .ai-route>.themed-select,.app-shell .settings-paper[data-tone=paper] .ai-route>.model-picker,.app-shell .settings-paper[data-tone=paper] .ai-route>.toggle,.app-shell .settings-paper[data-tone=paper] .ai-route>.field-hint {grid-column:1;grid-row:auto;}
+ .app-shell .settings-paper[data-tone=paper] .ar-title .sub {display:block;margin:0;}
+}
+@media(min-width:901px){
+ .app-shell .settings-paper[data-tone=paper] .settings-fields:has(>.toggle) {grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;}
+ .app-shell .settings-paper[data-tone=paper] .settings-fields:has(>.toggle)>label:not(.toggle) {grid-column:1/-1;}
+ .app-shell .settings-paper[data-tone=paper] .settings-fields>.toggle {padding:.85rem 1rem;border:1px solid var(--line);border-radius:8px;background:#F6F1E6;}
+}
+@media(min-width:901px) and (max-width:1199px){.app-shell .settings-paper[data-tone=paper] .settings-fields:has(>.toggle) {grid-template-columns:minmax(0,1fr);}}
+@media(min-width:901px){
+ .app-shell .settings-paper.settings-dialog {border:0;}
+ .app-shell .settings-paper[data-tone=paper] .settings-nav .notice-links {margin-top:auto;padding-top:1rem;border-top:1px solid var(--line);display:grid;gap:.3rem;}
+ .app-shell .settings-paper[data-tone=paper] .settings-nav .notice-links button {border:0;padding:.2rem 0;background:none;font-size:.78rem;color:var(--info);text-align:left;}
+ .app-shell .settings-paper[data-tone=paper] .local-save-bar:not(:has(>button)):has(>.field-hint:empty) {display:none;}
+ .app-shell .settings-paper[data-tone=paper] .ai-save-bar>button,.app-shell .settings-paper[data-tone=paper] .local-save-bar>button {order:1;margin-left:auto;}
+}
+
+@media(min-width:901px){
+ .app-shell .settings-paper[data-tone=paper] .ar-title h2,.app-shell .settings-paper[data-tone=paper] .settings-content>h3 {font-weight:600;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content .field-hint {padding:0;text-align:left;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content button.primary {flex:0 0 auto;}
+ .app-shell .settings-paper[data-tone=paper] .ai-route .model-picker {grid-template-columns:minmax(0,1fr) auto;gap:.25rem;}
+ .app-shell .settings-paper[data-tone=paper] .ai-route .model-picker>.themed-select,.app-shell .settings-paper[data-tone=paper] .ai-route .model-picker>.field-hint,.app-shell .settings-paper[data-tone=paper] .ai-route .model-picker>label {grid-column:1/-1;}
+ .app-shell .settings-paper[data-tone=paper] .ai-route .model-picker>.field-hint {grid-row:3;margin:.2rem 0;font-size:.7rem;line-height:1.5;}
+ .app-shell .settings-paper[data-tone=paper] .ai-route .model-picker>button {grid-row:2;margin:0;padding:.25rem .4rem;font-size:.68rem;}
+}

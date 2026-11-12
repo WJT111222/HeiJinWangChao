@@ -1,0 +1,274 @@
+{
+  "total": 44,
+  "counts": {
+    "passed": 43,
+    "skipped": 1
+  },
+  "durationMs": 215872.211,
+  "rows": [
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "三阶段独立选择在启用跟随、保存和刷新后仍能恢复，不被正文模型覆盖",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "旧跟随配置没有独立选择时明确留空，不默默使用正文渠道默认模型",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "未保存关闭与分类切换需要明确放弃；继续编辑保留选择，保存后可直接关闭",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "Escape、明确放弃和分类切换不会静默保存；密钥编辑同样提示且不出现在配置内",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "无效字段及存储失败不清除未保存保护；成功保存后才解除",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "恢复后四路真实Mock请求使用各自渠道模型，默认模型及旧配置不变",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "保存栏在长路由页面可触达且无横向溢出，窄屏也能保存并恢复选择",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "删除独立渠道不会改为跟随，保存的其他渠道和选择不受影响",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "三阶段独立选择在启用跟随、保存和刷新后仍能恢复，不被正文模型覆盖",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "旧跟随配置没有独立选择时明确留空，不默默使用正文渠道默认模型",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "未保存关闭与分类切换需要明确放弃；继续编辑保留选择，保存后可直接关闭",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "Escape、明确放弃和分类切换不会静默保存；密钥编辑同样提示且不出现在配置内",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "无效字段及存储失败不清除未保存保护；成功保存后才解除",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "恢复后四路真实Mock请求使用各自渠道模型，默认模型及旧配置不变",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "保存栏在长路由页面可触达且无横向溢出，窄屏也能保存并恢复选择",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "ai-route-persistence.spec.ts",
+      "title": "删除独立渠道不会改为跟随，保存的其他渠道和选择不受影响",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "archive-final.spec.ts",
+      "title": "地图正式层级、当前位置、四入口同步与五尺寸，NPC/事件关联、缓存和只读性",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "archive-final.spec.ts",
+      "title": "设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "archive-final.spec.ts",
+      "title": "地图大量地点与异常长名称分段可达；展开选择恢复与原文不丢失",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "archive-final.spec.ts",
+      "title": "游戏设置与地图互切、记忆未保存确认、Esc和首页纸色模态",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "archive-final.spec.ts",
+      "title": "地图正式层级、当前位置、四入口同步与五尺寸，NPC/事件关联、缓存和只读性",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "archive-final.spec.ts",
+      "title": "设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "archive-final.spec.ts",
+      "title": "地图大量地点与异常长名称分段可达；展开选择恢复与原文不丢失",
+      "project": "mobile",
+      "status": "skipped"
+    },
+    {
+      "file": "archive-final.spec.ts",
+      "title": "游戏设置与地图互切、记忆未保存确认、Esc和首页纸色模态",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "archive-final.spec.ts",
+      "title": "密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "archive-final.spec.ts",
+      "title": "密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "立即NPC总结明确选择目标，18条可按15条处理；原文与正式revision不变",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "NPC先失败也不阻断公共两类，失败重试仅一次；暂停只保存本类关闭",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "短期 → 中期失败暂停独立持久化，不关闭另外两类",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "中期 → 长期失败暂停独立持久化，不关闭另外两类",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "三类同时失败只顺序显示一个弹窗，各自暂停且刷新不重试",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "旧默认关闭安全延续、逐项开启与刷新持久化，设置页不再显示冗余说明",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "自动总结关闭时仍可手动总结，刷新后自动保持关闭且没有额外自动调用",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "旧版 enabled=false 即使 automatic=true 也只关闭自动，不禁用手动操作",
+      "project": "desktop",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "立即NPC总结明确选择目标，18条可按15条处理；原文与正式revision不变",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "NPC先失败也不阻断公共两类，失败重试仅一次；暂停只保存本类关闭",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "短期 → 中期失败暂停独立持久化，不关闭另外两类",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "中期 → 长期失败暂停独立持久化，不关闭另外两类",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "三类同时失败只顺序显示一个弹窗，各自暂停且刷新不重试",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "旧默认关闭安全延续、逐项开启与刷新持久化，设置页不再显示冗余说明",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "自动总结关闭时仍可手动总结，刷新后自动保持关闭且没有额外自动调用",
+      "project": "mobile",
+      "status": "passed"
+    },
+    {
+      "file": "memory-summary-v2.spec.ts",
+      "title": "旧版 enabled=false 即使 automatic=true 也只关闭自动，不禁用手动操作",
+      "project": "mobile",
+      "status": "passed"
+    }
+  ]
+}

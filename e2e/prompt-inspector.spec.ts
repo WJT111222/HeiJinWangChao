@@ -1,4 +1,5 @@
 import { openGameTools, openWorldArchive } from './helpers/gameLayout';
+import { openLibrary } from './helpers/home';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
@@ -190,7 +191,7 @@ test('真实存档六种模式预览、内部内容主动揭示、合法排序�
     reset.indexOf('writing.emotion_guard'),
   );
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+  await openLibrary(page);await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
   await openWorldArchive(page);
   await page
     .getByRole('complementary', { name: '世界资料' })

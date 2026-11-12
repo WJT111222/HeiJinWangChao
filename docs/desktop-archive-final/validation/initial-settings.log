@@ -1,0 +1,125 @@
+[WebServer] (node:170822) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:170836) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 86 tests using 2 workers
+
+(node:170863) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:170864) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   2 [desktop] › e2e/ai-route-persistence.spec.ts:53:1 › 旧跟随配置没有独立选择时明确留空，不默默使用正文渠道默认模型 (4.9s)
+  ✓   3 [desktop] › e2e/ai-route-persistence.spec.ts:60:1 › 未保存关闭与分类切换需要明确放弃；继续编辑保留选择，保存后可直接关闭 (6.2s)
+  ✓   1 [desktop] › e2e/ai-route-persistence.spec.ts:40:1 › 三阶段独立选择在启用跟随、保存和刷新后仍能恢复，不被正文模型覆盖 (12.0s)
+  ✓   4 [desktop] › e2e/ai-route-persistence.spec.ts:73:1 › Escape、明确放弃和分类切换不会静默保存；密钥编辑同样提示且不出现在配置内 (6.0s)
+  ✓   5 [desktop] › e2e/ai-route-persistence.spec.ts:91:1 › 无效字段及存储失败不清除未保存保护；成功保存后才解除 (6.7s)
+  ✓   7 [desktop] › e2e/ai-route-persistence.spec.ts:123:1 › 保存栏在长路由页面可触达且无横向溢出，窄屏也能保存并恢复选择 (5.0s)
+  ✓   6 [desktop] › e2e/ai-route-persistence.spec.ts:106:1 › 恢复后四路真实Mock请求使用各自渠道模型，默认模型及旧配置不变 (9.1s)
+  ✓   9 [desktop] › e2e/ai-settings.spec.ts:9:1 › 真实浏览器加载原文、校验哈希并组装六种模式，记录模块顺序 (2.0s)
+  ✓   8 [desktop] › e2e/ai-route-persistence.spec.ts:132:1 › 删除独立渠道不会改为跟随，保存的其他渠道和选择不受影响 (5.6s)
+  ✓  11 [desktop] › e2e/ai-settings.spec.ts:191:1 › 连接授权错误不展示服务详情，网络错误不误报密钥，取消请求有效 (4.3s)
+  ✓  12 [desktop] › e2e/ai-settings.spec.ts:230:1 › P6完善：输出档位映射、旧渠道值与渠道隔离，新渠道默认8K (7.0s)
+  ✓  10 [desktop] › e2e/ai-settings.spec.ts:86:1 › AI 多渠道、原生模型列表与连接测试、路由和会话凭证恢复 (16.1s)
+  ✓  13 [desktop] › e2e/ai-settings.spec.ts:260:1 › P6完善：自定义合法范围与4K/8K/16K往返，只保存玩家明确设置 (9.8s)
+  ✓  14 [desktop] › e2e/memory-summary-v2.spec.ts:5:1 › 独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入 (10.5s)
+  ✓  15 [desktop] › e2e/memory-summary-v2.spec.ts:37:1 › 立即NPC总结明确选择目标，18条可按15条处理；原文与正式revision不变 (6.0s)
+  ✓  17 [desktop] › e2e/memory-summary-v2.spec.ts:75:99 › 短期 → 中期失败暂停独立持久化，不关闭另外两类 (6.7s)
+  ✓  16 [desktop] › e2e/memory-summary-v2.spec.ts:49:1 › NPC先失败也不阻断公共两类，失败重试仅一次；暂停只保存本类关闭 (11.9s)
+  ✓  18 [desktop] › e2e/memory-summary-v2.spec.ts:75:99 › 中期 → 长期失败暂停独立持久化，不关闭另外两类 (6.6s)
+  ✓  19 [desktop] › e2e/memory-summary-v2.spec.ts:85:1 › 三类同时失败只顺序显示一个弹窗，各自暂停且刷新不重试 (7.2s)
+  ✓  20 [desktop] › e2e/memory-summary-v2.spec.ts:101:1 › 旧默认关闭安全延续、逐项开启与刷新持久化，设置页不再显示冗余说明 (8.0s)
+  ✓  21 [desktop] › e2e/memory-summary-v2.spec.ts:129:1 › 自动总结关闭时仍可手动总结，刷新后自动保持关闭且没有额外自动调用 (6.8s)
+  ✓  22 [desktop] › e2e/memory-summary-v2.spec.ts:151:1 › 旧版 enabled=false 即使 automatic=true 也只关闭自动，不禁用手动操作 (6.1s)
+  ✓  23 [desktop] › e2e/model-list-compat.spec.ts:18:1 › 同源候选与分页真实接入共享缓存；数量可核对，Unicode模型可保存 (4.8s)
+  ✓  24 [desktop] › e2e/model-list-compat.spec.ts:46:3 › 列表错误分类authorization：保留默认模型、路由、凭证与手填能力 (3.3s)
+  ✓  25 [desktop] › e2e/model-list-compat.spec.ts:46:3 › 列表错误分类missing：保留默认模型、路由、凭证与手填能力 (3.2s)
+  ✓  26 [desktop] › e2e/model-list-compat.spec.ts:46:3 › 列表错误分类network：保留默认模型、路由、凭证与手填能力 (3.3s)
+  ✓  27 [desktop] › e2e/model-list-compat.spec.ts:46:3 › 列表错误分类format：保留默认模型、路由、凭证与手填能力 (3.4s)
+  ✓  28 [desktop] › e2e/model-list-compat.spec.ts:46:3 › 列表错误分类json：保留默认模型、路由、凭证与手填能力 (3.6s)
+  ✓  29 [desktop] › e2e/model-list-compat.spec.ts:46:3 › 列表错误分类empty：保留默认模型、路由、凭证与手填能力 (3.9s)
+  ✓  30 [desktop] › e2e/model-list-compat.spec.ts:69:1 › 完整models地址只用于列表兼容，显示真实脱敏端点与HTTP状态，不伪称生成配置已修复 (3.5s)
+  ✓  31 [desktop] › e2e/startup-notices.spec.ts:29:1 › 完整定稿实际分段渲染：开头、架空社会声明与开发者落款 (3.3s)
+  ✓  33 [desktop] › e2e/startup-notices.spec.ts:83:1 › 第一步勾选仍显示第二步；共享勾选可撤销且保留其他本地配置 (3.8s)
+  ✓  32 [desktop] › e2e/startup-notices.spec.ts:55:1 › 首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复 (5.7s)
+  ✓  34 [desktop] › e2e/startup-notices.spec.ts:99:1 › 第二步勾选当天刷新和新页面均免打扰，次日本地日期恢复 (5.7s)
+  ✓  35 [desktop] › e2e/startup-notices.spec.ts:119:1 › 首页与设置手动查看只开指定公告；返回保留设置内容和焦点 (7.0s)
+  ✓  36 [desktop] › e2e/startup-notices.spec.ts:150:1 › 手动查看可以取消已保存免打扰，不自动串联另一个弹窗 (4.8s)
+  ✓  38 [desktop] › e2e/startup-notices.spec.ts:194:1 › 键盘焦点局限于当前弹窗，Escape 按顺序关闭 (1.3s)
+  ✓  39 [desktop] › e2e/startup-notices.spec.ts:207:1 › localStorage 不可访问时仍能完成顺序并使用首页 (2.1s)
+  ✓  40 [desktop] › e2e/startup-notices.spec.ts:223:3 › localStorage setItem 失败时当前复选框与关闭仍可操作 (1.7s)
+  ✓  41 [desktop] › e2e/startup-notices.spec.ts:223:3 › localStorage removeItem 失败时当前复选框与关闭仍可操作 (1.6s)
+  ✓  42 [desktop] › e2e/startup-notices.spec.ts:242:1 › 长内容内部滚动，窄屏关闭和复选框可触达；截图 (2.1s)
+  ✓  43 [desktop] › e2e/startup-notices.spec.ts:267:3 › 西半球本地日历与 UTC 不同 › 按设备当日保存，跨 UTC 日但本地仍同一天时继续免打扰 (2.8s)
+(node:172808) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  44 [mobile] › e2e/ai-route-persistence.spec.ts:40:1 › 三阶段独立选择在启用跟随、保存和刷新后仍能恢复，不被正文模型覆盖 (5.3s)
+  ✓  45 [mobile] › e2e/ai-route-persistence.spec.ts:53:1 › 旧跟随配置没有独立选择时明确留空，不默默使用正文渠道默认模型 (2.4s)
+  ✓  46 [mobile] › e2e/ai-route-persistence.spec.ts:60:1 › 未保存关闭与分类切换需要明确放弃；继续编辑保留选择，保存后可直接关闭 (3.7s)
+  ✓  47 [mobile] › e2e/ai-route-persistence.spec.ts:73:1 › Escape、明确放弃和分类切换不会静默保存；密钥编辑同样提示且不出现在配置内 (3.5s)
+  ✓  48 [mobile] › e2e/ai-route-persistence.spec.ts:91:1 › 无效字段及存储失败不清除未保存保护；成功保存后才解除 (3.2s)
+  ✓  49 [mobile] › e2e/ai-route-persistence.spec.ts:106:1 › 恢复后四路真实Mock请求使用各自渠道模型，默认模型及旧配置不变 (4.0s)
+  ✓  50 [mobile] › e2e/ai-route-persistence.spec.ts:123:1 › 保存栏在长路由页面可触达且无横向溢出，窄屏也能保存并恢复选择 (3.8s)
+  ✓  51 [mobile] › e2e/ai-route-persistence.spec.ts:132:1 › 删除独立渠道不会改为跟随，保存的其他渠道和选择不受影响 (3.1s)
+  ✓  52 [mobile] › e2e/ai-settings.spec.ts:9:1 › 真实浏览器加载原文、校验哈希并组装六种模式，记录模块顺序 (1.3s)
+  ✓  53 [mobile] › e2e/ai-settings.spec.ts:86:1 › AI 多渠道、原生模型列表与连接测试、路由和会话凭证恢复 (8.7s)
+  ✓  54 [mobile] › e2e/ai-settings.spec.ts:191:1 › 连接授权错误不展示服务详情，网络错误不误报密钥，取消请求有效 (2.6s)
+  ✘  37 [desktop] › e2e/startup-notices.spec.ts:164:1 › 直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型 (1.0m)
+(node:173386) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  55 [mobile] › e2e/ai-settings.spec.ts:230:1 › P6完善：输出档位映射、旧渠道值与渠道隔离，新渠道默认8K (5.4s)
+  ✓  56 [mobile] › e2e/ai-settings.spec.ts:260:1 › P6完善：自定义合法范围与4K/8K/16K往返，只保存玩家明确设置 (6.6s)
+  ✓  57 [mobile] › e2e/memory-summary-v2.spec.ts:5:1 › 独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入 (7.6s)
+  ✓  58 [mobile] › e2e/memory-summary-v2.spec.ts:37:1 › 立即NPC总结明确选择目标，18条可按15条处理；原文与正式revision不变 (4.5s)
+  ✓  60 [mobile] › e2e/memory-summary-v2.spec.ts:75:99 › 短期 → 中期失败暂停独立持久化，不关闭另外两类 (5.6s)
+  ✓  59 [mobile] › e2e/memory-summary-v2.spec.ts:49:1 › NPC先失败也不阻断公共两类，失败重试仅一次；暂停只保存本类关闭 (9.3s)
+  ✓  61 [mobile] › e2e/memory-summary-v2.spec.ts:75:99 › 中期 → 长期失败暂停独立持久化，不关闭另外两类 (5.7s)
+  ✓  62 [mobile] › e2e/memory-summary-v2.spec.ts:85:1 › 三类同时失败只顺序显示一个弹窗，各自暂停且刷新不重试 (6.4s)
+  ✓  63 [mobile] › e2e/memory-summary-v2.spec.ts:101:1 › 旧默认关闭安全延续、逐项开启与刷新持久化，设置页不再显示冗余说明 (6.6s)
+  ✓  64 [mobile] › e2e/memory-summary-v2.spec.ts:129:1 › 自动总结关闭时仍可手动总结，刷新后自动保持关闭且没有额外自动调用 (5.5s)
+  ✓  65 [mobile] › e2e/memory-summary-v2.spec.ts:151:1 › 旧版 enabled=false 即使 automatic=true 也只关闭自动，不禁用手动操作 (5.4s)
+  ✓  66 [mobile] › e2e/model-list-compat.spec.ts:18:1 › 同源候选与分页真实接入共享缓存；数量可核对，Unicode模型可保存 (4.2s)
+  ✓  67 [mobile] › e2e/model-list-compat.spec.ts:46:3 › 列表错误分类authorization：保留默认模型、路由、凭证与手填能力 (3.5s)
+  ✓  68 [mobile] › e2e/model-list-compat.spec.ts:46:3 › 列表错误分类missing：保留默认模型、路由、凭证与手填能力 (3.3s)
+  ✓  69 [mobile] › e2e/model-list-compat.spec.ts:46:3 › 列表错误分类network：保留默认模型、路由、凭证与手填能力 (3.4s)
+  ✓  70 [mobile] › e2e/model-list-compat.spec.ts:46:3 › 列表错误分类format：保留默认模型、路由、凭证与手填能力 (3.8s)
+  ✓  71 [mobile] › e2e/model-list-compat.spec.ts:46:3 › 列表错误分类json：保留默认模型、路由、凭证与手填能力 (3.1s)
+  ✓  72 [mobile] › e2e/model-list-compat.spec.ts:46:3 › 列表错误分类empty：保留默认模型、路由、凭证与手填能力 (3.2s)
+  ✓  73 [mobile] › e2e/model-list-compat.spec.ts:69:1 › 完整models地址只用于列表兼容，显示真实脱敏端点与HTTP状态，不伪称生成配置已修复 (3.4s)
+  ✓  74 [mobile] › e2e/startup-notices.spec.ts:29:1 › 完整定稿实际分段渲染：开头、架空社会声明与开发者落款 (3.6s)
+  ✓  76 [mobile] › e2e/startup-notices.spec.ts:83:1 › 第一步勾选仍显示第二步；共享勾选可撤销且保留其他本地配置 (3.3s)
+  ✓  75 [mobile] › e2e/startup-notices.spec.ts:55:1 › 首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复 (5.6s)
+  ✓  77 [mobile] › e2e/startup-notices.spec.ts:99:1 › 第二步勾选当天刷新和新页面均免打扰，次日本地日期恢复 (5.6s)
+  ✓  78 [mobile] › e2e/startup-notices.spec.ts:119:1 › 首页与设置手动查看只开指定公告；返回保留设置内容和焦点 (6.1s)
+  ✓  79 [mobile] › e2e/startup-notices.spec.ts:150:1 › 手动查看可以取消已保存免打扰，不自动串联另一个弹窗 (5.2s)
+  ✓  80 [mobile] › e2e/startup-notices.spec.ts:164:1 › 直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型 (3.6s)
+  ✓  81 [mobile] › e2e/startup-notices.spec.ts:194:1 › 键盘焦点局限于当前弹窗，Escape 按顺序关闭 (2.3s)
+  ✓  82 [mobile] › e2e/startup-notices.spec.ts:207:1 › localStorage 不可访问时仍能完成顺序并使用首页 (3.7s)
+  ✓  83 [mobile] › e2e/startup-notices.spec.ts:223:3 › localStorage setItem 失败时当前复选框与关闭仍可操作 (2.9s)
+  ✓  84 [mobile] › e2e/startup-notices.spec.ts:223:3 › localStorage removeItem 失败时当前复选框与关闭仍可操作 (3.0s)
+  ✓  85 [mobile] › e2e/startup-notices.spec.ts:242:1 › 长内容内部滚动，窄屏关闭和复选框可触达；截图 (4.2s)
+  ✓  86 [mobile] › e2e/startup-notices.spec.ts:267:3 › 西半球本地日历与 UTC 不同 › 按设备当日保存，跨 UTC 日但本地仍同一天时继续免打扰 (3.4s)
+
+
+  1) [desktop] › e2e/startup-notices.spec.ts:164:1 › 直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型 ────────────
+
+    Test timeout of 60000ms exceeded.
+
+    Error Context: ../../tmp/s56-smoke/startup-notices-直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/s56-smoke/startup-notices-直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/s56-smoke/startup-notices-直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [desktop] › e2e/startup-notices.spec.ts:164:1 › 直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型 ─────────────
+  85 passed (4.1m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
