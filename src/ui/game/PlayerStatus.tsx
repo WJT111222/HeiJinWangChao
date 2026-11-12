@@ -10,8 +10,9 @@ function fundStyle(text: string, labelCharacters: number): CSSProperties {
 }
 
 // A read-only projection of the same save shown in the profile/economy dialogs.
-export function PlayerStatus({ state, equipment, onProfile, onEconomy }: {
+export function PlayerStatus({ state, equipment, onProfile, onEconomy, activePanel }: {
   state: GameState; equipment: [string, string][]; onProfile: () => void; onEconomy: () => void;
+  activePanel?: string;
 }) {
   const hero = state.protagonist;
   const clock = state.openingTimePending ? '开局时间待确认' : dateTime(state.worldClock);
@@ -43,8 +44,8 @@ export function PlayerStatus({ state, equipment, onProfile, onEconomy }: {
       <dl>{equipment.map(([label, value]) => <div key={label} data-empty={value === '无' ? '' : undefined}><dt>{label}</dt><dd title={value}>{value}</dd></div>)}</dl>
     </section>
     <div className="status-actions">
-      <button onClick={onProfile}>人物档案</button>
-      <button onClick={onEconomy}>经济与资产</button>
+      <button data-archive-panel="人物档案" aria-current={activePanel === '人物档案' ? 'true' : undefined} onClick={onProfile}>人物档案</button>
+      <button data-archive-panel="经济与资产" aria-current={activePanel === '经济与资产' ? 'true' : undefined} onClick={onEconomy}>经济与资产</button>
     </div>
     <button className="status-expand" aria-label="展开人物状态" onClick={onProfile}>⌄</button>
   </aside>;

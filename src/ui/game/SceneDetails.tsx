@@ -54,13 +54,13 @@ export function SceneDetails({ weatherText, environmentText, weatherSeal = '天'
     };
     const escape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      // A subsequently opened archive/settings dialog owns its own Escape key.
-      if (document.activeElement?.closest('dialog[open]')) { close(); return; }
+      // A subsequently opened cabinet or modal owns its own Escape key.
+      if (document.activeElement?.closest('dialog[open], .archive')) { close(); return; }
       event.preventDefault(); event.stopPropagation(); close(true);
     };
     const blur = () => {
       if (!group.current?.contains(document.activeElement) && !element?.contains(document.activeElement)) {
-        if (document.activeElement?.closest('dialog[open]')) close();
+        if (document.activeElement?.closest('dialog[open], .archive')) close();
         else { pinned.current = false; scheduleClose(); }
       }
     };

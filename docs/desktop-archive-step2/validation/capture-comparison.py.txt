@@ -1,0 +1,12 @@
+# Serve this documentation before capture: python -m http.server 5188 --bind 127.0.0.1 --directory docs/desktop-archive-step2
+import asyncio
+from playwright.async_api import async_playwright
+async def main():
+ async with async_playwright() as p:
+  browser=await p.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+  page=await browser.new_page(viewport={'width':1920,'height':1080})
+  await page.goto('http://127.0.0.1:5188/comparison.html')
+  assert await page.locator('img').evaluate_all('(images)=>images.every(image=>image.complete&&image.naturalWidth>0)')
+  await page.screenshot(path='/workspace/desktop-profile-organizations/docs/desktop-archive-step2/screenshots/comparison.png',full_page=True)
+  await browser.close()
+asyncio.run(main())

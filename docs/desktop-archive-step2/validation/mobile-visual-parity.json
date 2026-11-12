@@ -1,0 +1,20 @@
+{
+  "profile": {
+    "pixelIdentical": true,
+    "size": [
+      1024,
+      2216
+    ],
+    "currentSha256": "3e4240d14f5ab467f1b686eb1116779cc442247bde615ab7ba5f519b1fc3aad8",
+    "mainSha256": "3e4240d14f5ab467f1b686eb1116779cc442247bde615ab7ba5f519b1fc3aad8"
+  },
+  "organization": {
+    "pixelIdentical": true,
+    "size": [
+      1024,
+      2216
+    ],
+    "currentSha256": "715a27506b1cc931117d93b7f099fd9b958e658c1239b61854c25b79f0148432",
+    "mainSha256": "715a27506b1cc931117d93b7f099fd9b958e658c1239b61854c25b79f0148432"
+  }
+}

@@ -1,0 +1,87 @@
+[WebServer] (node:112037) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:112050) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 2 workers
+
+(node:112078) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:112077) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [mobile] › ../desktop-step2-baseline/e2e/step2-mobile-baseline.spec.ts:29:2 › 人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料 (11.7s)
+  ✘  2 [mobile] › ../desktop-step2-baseline/e2e/step2-mobile-baseline.spec.ts:68:2 › 人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离 (12.3s)
+
+
+  1) [mobile] › ../desktop-step2-baseline/e2e/step2-mobile-baseline.spec.ts:29:2 › 人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      40 |  await dialog.getByRole('button',{name:'经济与资产',exact:true}).click();const economy=page.getByRole('dialog',{name:'经济与资产',exact:true});await expect(economy).toHaveJSProperty('tagName','DIALOG');
+      41 |  for(const name of ['收入','债务','房产','车辆','其他资产'])await expect(economy.getByRole('heading',{name,exact:true})).toBeVisible();
+    > 42 |  await expect.poll(()=>economy.evaluate(e=>e.contains(document.activeElement))).toBe(true);await page.keyboard.press('Escape');await expect(economy).toHaveCount(0);
+         |                                                                                 ^
+      43 |  await expect(page.getByLabel('你的行动',{exact:true})).toHaveValue('保持原行动输入');await openProfile(page);dialog=page.getByRole('dialog',{name:'人物档案',exact:true});await dialog.getByRole('button',{name:'NPC 人物资料',exact:true}).click();await expect(page.getByRole('dialog',{name:'NPC',exact:true})).toBeVisible();await page.keyboard.press('Escape');
+      44 |  await openProfile(page);dialog=page.getByRole('dialog',{name:'人物档案',exact:true});await dialog.getByRole('button',{name:'关闭资料界面',exact:true}).click();if(desktop)await expect(page.locator('[data-archive-panel="人物档案"]')).toBeFocused();
+      45 |  await openProfile(page);await page.getByRole('dialog',{name:'人物档案',exact:true}).getByRole('button',{name:'切换存档',exact:true}).click();await expect(page.locator('.game-layout')).toHaveCount(0);
+        at /workspace/desktop-step2-baseline/e2e/step2-mobile-baseline.spec.ts:42:81
+
+    Error Context: ../../tmp/s2-baseline-mobile/step2-mobile-baseline-人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/s2-baseline-mobile/step2-mobile-baseline-人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/s2-baseline-mobile/step2-mobile-baseline-人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [mobile] › ../desktop-step2-baseline/e2e/step2-mobile-baseline.spec.ts:68:2 › 人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  getByRole('dialog', { name: '世界事件', exact: true }).locator('[data-file-heading]:visible').first()
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeFocused" getByRole('dialog', { name: '世界事件', exact: true }).locator('[data-file-heading]:visible').first() with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '世界事件', exact: true }).locator('[data-file-heading]:visible').first()
+        14 × locator resolved to <h3 tabindex="-1" data-file-heading="true">业务整合与新车间交接</h3>
+           - unexpected value "inactive"
+
+
+      73 |  await npc.getByRole('button',{name:'澄川工贸',exact:true}).click();dialog=page.getByRole('dialog',{name:'势力组织',exact:true});detail=dialog.getByRole('region',{name:'组织详情',exact:true});await detail.getByRole('button',{name:'旧城互助会',exact:true}).click();await expect(detail.getByRole('heading',{name:'旧城互助会',exact:true})).toBeVisible();await page.keyboard.press('Escape');
+      74 |  dialog=await org(page);if(desktop)await expect(dialog.getByRole('heading',{name:'旧城互助会',exact:true})).toBeVisible();const back=dialog.getByRole('button',{name:'← 返回组织名录',exact:true});if(await back.isVisible())await back.click();await dialog.getByLabel('搜索组织',{exact:true}).fill('澄川');await dialog.getByRole('button',{name:'查看组织：澄川工贸',exact:true}).click();
+    > 75 |  await dialog.getByRole('button',{name:'业务整合与新车间交接',exact:true}).click();const event=page.getByRole('dialog',{name:'世界事件',exact:true});await expect(event).toHaveJSProperty('tagName','DIALOG');await expect(event.getByRole('heading',{name:'业务整合与新车间交接',exact:true})).toBeVisible();await expect(event.locator('[data-file-heading]:visible').first()).toBeFocused();await event.press('Control+Enter');await page.keyboard.press('Escape');
+         |                                                                                                                                                                                                                                                                                                                                                          ^
+      76 |  if(desktop)await expect(page.locator('[data-archive-panel="势力组织"]')).toBeFocused();dialog=await org(page);if(desktop)await expect(dialog.getByRole('heading',{name:'澄川工贸',exact:true})).toBeVisible();
+      77 |  expect(await rosterGame(page)).toEqual(before);verify();
+      78 | });
+        at /workspace/desktop-step2-baseline/e2e/step2-mobile-baseline.spec.ts:75:346
+
+    Error Context: ../../tmp/s2-baseline-mobile/step2-mobile-baseline-人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/s2-baseline-mobile/step2-mobile-baseline-人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/s2-baseline-mobile/step2-mobile-baseline-人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [mobile] › ../desktop-step2-baseline/e2e/step2-mobile-baseline.spec.ts:29:2 › 人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料
+    [mobile] › ../desktop-step2-baseline/e2e/step2-mobile-baseline.spec.ts:68:2 › 人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

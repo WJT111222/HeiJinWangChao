@@ -80,7 +80,7 @@ test('顶部状态不挤压正文；完整人物资料独立滚动并恢复焦�
   expect((await page.locator((page.viewportSize()?.width ?? 0) > 900 ? '.bar' : '.player-status').boundingBox())!.height).toBeLessThan(130);
   await openProfile(page);
   const modal = page.getByRole('dialog', { name: '人物档案', exact: true });
-  const area = modal.locator('.modal-body');
+  const area = modal.locator(info.project.name === 'desktop' ? '.pf' : '.modal-body');
   expect(await area.evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true);
   await area.evaluate(el => { el.scrollTop = 120; });
   expect(await area.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
@@ -96,7 +96,7 @@ test('滚轮在资料弹窗内滚动，不带动正文；七项世界入口可�
   const reader = page.getByTestId('story-reader');
   await reader.evaluate(el => { el.scrollTop = 260; });
   await openProfile(page);
-  const scroller = page.getByRole('dialog', { name: '人物档案', exact: true }).locator('.modal-body');
+  const scroller = page.getByRole('dialog', { name: '人物档案', exact: true }).locator(info.project.name === 'desktop' ? '.pf' : '.modal-body');
   const rect = (await scroller.boundingBox())!;
   await page.mouse.move(rect.x + rect.width / 2, rect.y + 40); await page.mouse.wheel(0, 600);
   await expect.poll(() => scroller.evaluate(el => el.scrollTop)).toBeGreaterThan(0);

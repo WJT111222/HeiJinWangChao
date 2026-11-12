@@ -1,0 +1,139 @@
+[WebServer] (node:114896) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:114909) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 76 tests using 2 workers
+
+(node:114934) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:114933) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [desktop] › e2e/archive-step2.spec.ts:49:2 › 四种组织颜色、完整字段、折叠、双滚动、纸色吸顶及桌面矩阵 (10.7s)
+  ✓   2 [desktop] › e2e/archive-step2.spec.ts:29:2 › 人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料 (11.8s)
+  ✓   3 [desktop] › e2e/archive-step2.spec.ts:68:2 › 人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离 (9.9s)
+  ✓   4 [desktop] › e2e/archive-step2.spec.ts:80:2 › 长组织名/概况/状态、49组织与大量任务事件历史：独立滚动和分页不丢字段 (10.0s)
+  ✓   6 [desktop] › e2e/archive-step2.spec.ts:108:2 › 正式空组织名录保持空态，浏览不创建组织或请求模型 (4.7s)
+  ✓   5 [desktop] › e2e/archive-step2.spec.ts:95:2 › 正式待确认开局：16字段含真实候选时间，当前时间保持待确认 (6.0s)
+  ✓   7 [desktop] › e2e/character-creation-v2.spec.ts:27:1 › 基本信息模板独立、可编辑、往返与刷新保留；键盘选择 (4.1s)
+  ✓   8 [desktop] › e2e/character-creation-v2.spec.ts:54:1 › 五类各六职业，点击呈现完整介绍、独立技能与长期影响 (5.2s)
+  ✓  10 [desktop] › e2e/city-night-followups.spec.ts:46:1 › 四项修复：07:50 与完整状态/资金、双端真实 React 截图 (4.1s)
+  ✓   9 [desktop] › e2e/character-creation-v2.spec.ts:77:1 › 自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用 (5.8s)
+  ✓  12 [desktop] › e2e/city-night-followups.spec.ts:102:1 › PC 普通/百万/亿级/极大金额随容器调整字号，下限后排版换行不省略 (11.7s)
+  ✓  11 [desktop] › e2e/city-night-followups.spec.ts:67:1 › PC 长段落/异常长字符串完整换行，左栏独立滚动且资金装备与底部按钮可达 (12.7s)
+  -  14 [desktop] › e2e/city-night-followups.spec.ts:147:1 › 触控点击详情、再次点击/关闭/外部点击收起，窄屏与缩放视口不溢出
+  ✓  15 [desktop] › e2e/desktop-cabinet.spec.ts:4:1 › 纸柜非模态焦点、dock切换、关联旧容器、Esc和浏览不写状态 (9.5s)
+  ✘  13 [desktop] › e2e/city-night-followups.spec.ts:126:1 › 天气环境详情：悬停跨入可滚动、移出关闭，键盘焦点与 Esc，无数据修改 (11.7s)
+(node:115768) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  16 [desktop] › e2e/desktop-cabinet.spec.ts:37:1 › 大量NPC长姓名长描述：独立滚动、筛选、分页与完整字段 (7.3s)
+  ✓  17 [desktop] › e2e/desktop-cabinet.spec.ts:54:1 › NPC与关联组织往返保留目标定位，手机组织仍为原生模态 (7.3s)
+  ✓  18 [desktop] › e2e/game-window.spec.ts:64:1 › 全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入 (3.0s)
+  ✓  19 [desktop] › e2e/game-window.spec.ts:75:1 › 顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置 (3.0s)
+  ✓  20 [desktop] › e2e/game-window.spec.ts:93:1 › 滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回 (2.9s)
+  ✓  21 [desktop] › e2e/game-window.spec.ts:114:1 › 默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态 (3.1s)
+  ✓  22 [desktop] › e2e/game-window.spec.ts:126:1 › 已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义 (3.9s)
+  ✓  24 [desktop] › e2e/game-window.spec.ts:204:1 › 缩短视口及模拟软键盘VisualViewport不遮住输入和发送 (2.8s)
+  ✓  23 [desktop] › e2e/game-window.spec.ts:135:1 › 生成中折叠不打断；取消和错误不被隐藏，失败重试成功保留正式状态 (5.5s)
+  ✓  26 [desktop] › e2e/game-window.spec.ts:243:1 › 工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间 (3.5s)
+  ✓  25 [desktop] › e2e/game-window.spec.ts:225:1 › 设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置 (6.8s)
+  ✓  27 [desktop] › e2e/npc-directory.spec.ts:6:1 › 统一名录搜索筛选、详情、联系与单向关系、来源无技术ID；双端真实截图 (8.2s)
+  ✓  28 [desktop] › e2e/npc-directory.spec.ts:38:1 › 初始同伴取消及恢复金星，七字段完整、普通记忆不丢、刷新及回填输入保留，零请求 (8.4s)
+  ✓  29 [desktop] › e2e/npc-directory.spec.ts:61:1 › 首次加星只保存待完善；保存中重复点击无效，正式CAS只递增一次 (5.3s)
+  ✓  30 [desktop] › e2e/npc-directory.spec.ts:79:1 › 跨标签过期星标准确失败并同步正式状态，完整候选不丢，无自动重试 (8.1s)
+  ✓  32 [desktop] › e2e/npc-directory.spec.ts:105:1 › IndexedDB中途写入失败原子回滚，星标不假成功，候选完整保留 (6.0s)
+  ✓  31 [desktop] › e2e/npc-directory.spec.ts:92:1 › 真实Story请求中本页与其他标签管理均拒绝，不取消请求；随后正常三阶段结算 (11.3s)
+  ✓  33 [desktop] › e2e/npc-directory.spec.ts:119:1 › 名录只读空状态，以及正式人物消失后的安全返回 (7.8s)
+  ✓  35 [desktop] › e2e/npc-final-acceptance.spec.ts:75:1 › 真实React连续四轮：首次建档、改名升级、离场结案、重逢记忆、七字段休眠恢复，严格12次Mock (15.2s)
+  ✓  34 [desktop] › e2e/npc-final-acceptance.spec.ts:6:1 › 千人轻量名录与300回合：多视口实际布局、分页、关系跳转、焦点与长文滚动，只读零请求 (34.9s)
+  ✓  36 [desktop] › e2e/organization-archive.spec.ts:19:1 › PC三宽度/手机三宽度真实档案截图：未知身份、长概况、低频状态、只读查看不解锁 (16.5s)
+  ✓  37 [desktop] › e2e/organization-archive.spec.ts:45:1 › 搜索/过滤/分页和返回焦点；组织→NPC→组织、组织间与事件跳转，零请求零写档 (18.2s)
+(node:117170) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  38 [desktop] › e2e/organization-archive.spec.ts:73:1 › 真实三阶段Mock结案更新组织→刷新档案与已结束事件→撤回，主角财务和NPC无副作用 (19.6s)
+(node:117341) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  39 [mobile] › e2e/archive-step2.spec.ts:29:2 › 人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料 (13.6s)
+  ✓  40 [mobile] › e2e/archive-step2.spec.ts:49:2 › 四种组织颜色、完整字段、折叠、双滚动、纸色吸顶及桌面矩阵 (14.4s)
+  -  42 [mobile] › e2e/archive-step2.spec.ts:80:2 › 长组织名/概况/状态、49组织与大量任务事件历史：独立滚动和分页不丢字段
+  ✓  41 [mobile] › e2e/archive-step2.spec.ts:68:2 › 人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离 (13.6s)
+  ✓  43 [mobile] › e2e/archive-step2.spec.ts:95:2 › 正式待确认开局：16字段含真实候选时间，当前时间保持待确认 (11.3s)
+  ✓  44 [mobile] › e2e/archive-step2.spec.ts:108:2 › 正式空组织名录保持空态，浏览不创建组织或请求模型 (8.4s)
+  ✓  45 [mobile] › e2e/character-creation-v2.spec.ts:27:1 › 基本信息模板独立、可编辑、往返与刷新保留；键盘选择 (8.4s)
+  ✓  46 [mobile] › e2e/character-creation-v2.spec.ts:54:1 › 五类各六职业，点击呈现完整介绍、独立技能与长期影响 (10.5s)
+  ✓  47 [mobile] › e2e/character-creation-v2.spec.ts:77:1 › 自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用 (8.3s)
+  -  49 [mobile] › e2e/city-night-followups.spec.ts:67:1 › PC 长段落/异常长字符串完整换行，左栏独立滚动且资金装备与底部按钮可达
+  -  50 [mobile] › e2e/city-night-followups.spec.ts:102:1 › PC 普通/百万/亿级/极大金额随容器调整字号，下限后排版换行不省略
+  -  51 [mobile] › e2e/city-night-followups.spec.ts:126:1 › 天气环境详情：悬停跨入可滚动、移出关闭，键盘焦点与 Esc，无数据修改
+  ✓  48 [mobile] › e2e/city-night-followups.spec.ts:46:1 › 四项修复：07:50 与完整状态/资金、双端真实 React 截图 (8.3s)
+  ✓  52 [mobile] › e2e/city-night-followups.spec.ts:147:1 › 触控点击详情、再次点击/关闭/外部点击收起，窄屏与缩放视口不溢出 (13.5s)
+  -  54 [mobile] › e2e/desktop-cabinet.spec.ts:37:1 › 大量NPC长姓名长描述：独立滚动、筛选、分页与完整字段
+  ✓  53 [mobile] › e2e/desktop-cabinet.spec.ts:4:1 › 纸柜非模态焦点、dock切换、关联旧容器、Esc和浏览不写状态 (9.6s)
+  ✓  56 [mobile] › e2e/game-window.spec.ts:64:1 › 全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入 (5.2s)
+  ✓  57 [mobile] › e2e/game-window.spec.ts:75:1 › 顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置 (3.9s)
+  ✓  55 [mobile] › e2e/desktop-cabinet.spec.ts:54:1 › NPC与关联组织往返保留目标定位，手机组织仍为原生模态 (9.6s)
+  ✓  58 [mobile] › e2e/game-window.spec.ts:93:1 › 滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回 (4.7s)
+  ✓  59 [mobile] › e2e/game-window.spec.ts:114:1 › 默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态 (4.5s)
+  ✓  60 [mobile] › e2e/game-window.spec.ts:126:1 › 已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义 (6.2s)
+  ✓  61 [mobile] › e2e/game-window.spec.ts:135:1 › 生成中折叠不打断；取消和错误不被隐藏，失败重试成功保留正式状态 (8.0s)
+  ✓  62 [mobile] › e2e/game-window.spec.ts:204:1 › 缩短视口及模拟软键盘VisualViewport不遮住输入和发送 (3.2s)
+  ✓  64 [mobile] › e2e/game-window.spec.ts:243:1 › 工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间 (3.1s)
+  ✓  63 [mobile] › e2e/game-window.spec.ts:225:1 › 设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置 (6.9s)
+  ✓  65 [mobile] › e2e/npc-directory.spec.ts:6:1 › 统一名录搜索筛选、详情、联系与单向关系、来源无技术ID；双端真实截图 (8.3s)
+  ✓  66 [mobile] › e2e/npc-directory.spec.ts:38:1 › 初始同伴取消及恢复金星，七字段完整、普通记忆不丢、刷新及回填输入保留，零请求 (8.5s)
+  ✓  67 [mobile] › e2e/npc-directory.spec.ts:61:1 › 首次加星只保存待完善；保存中重复点击无效，正式CAS只递增一次 (6.1s)
+  ✓  68 [mobile] › e2e/npc-directory.spec.ts:79:1 › 跨标签过期星标准确失败并同步正式状态，完整候选不丢，无自动重试 (7.4s)
+  ✓  69 [mobile] › e2e/npc-directory.spec.ts:92:1 › 真实Story请求中本页与其他标签管理均拒绝，不取消请求；随后正常三阶段结算 (9.1s)
+  ✓  70 [mobile] › e2e/npc-directory.spec.ts:105:1 › IndexedDB中途写入失败原子回滚，星标不假成功，候选完整保留 (5.2s)
+  ✓  71 [mobile] › e2e/npc-directory.spec.ts:119:1 › 名录只读空状态，以及正式人物消失后的安全返回 (5.4s)
+  ✓  73 [mobile] › e2e/npc-final-acceptance.spec.ts:75:1 › 真实React连续四轮：首次建档、改名升级、离场结案、重逢记忆、七字段休眠恢复，严格12次Mock (9.7s)
+  ✓  72 [mobile] › e2e/npc-final-acceptance.spec.ts:6:1 › 千人轻量名录与300回合：多视口实际布局、分页、关系跳转、焦点与长文滚动，只读零请求 (20.3s)
+  ✓  74 [mobile] › e2e/organization-archive.spec.ts:19:1 › PC三宽度/手机三宽度真实档案截图：未知身份、长概况、低频状态、只读查看不解锁 (10.4s)
+  ✓  75 [mobile] › e2e/organization-archive.spec.ts:45:1 › 搜索/过滤/分页和返回焦点；组织→NPC→组织、组织间与事件跳转，零请求零写档 (8.6s)
+  ✓  76 [mobile] › e2e/organization-archive.spec.ts:73:1 › 真实三阶段Mock结案更新组织→刷新档案与已结束事件→撤回，主角财务和NPC无副作用 (7.8s)
+
+
+  1) [desktop] › e2e/city-night-followups.spec.ts:126:1 › 天气环境详情：悬停跨入可滚动、移出关闭，键盘焦点与 Esc，无数据修改 ──────
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog', { name: '天气与环境详情', exact: true })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog', { name: '天气与环境详情', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '天气与环境详情', exact: true })
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      140 |   await page.getByTestId('story-reader').focus();await trigger.focus();await expect(details(page)).toBeVisible();await details(page).hover();
+      141 |   await page.getByRole('button',{name:'人物档案',exact:true}).focus();await page.keyboard.press('Enter');
+    > 142 |   await expect(page.getByRole('dialog',{name:'人物档案',exact:true})).toBeVisible();await expect(details(page)).toHaveCount(0);
+          |                                                                                                             ^
+      143 |   await page.keyboard.press('Escape');await expect(page.getByRole('dialog',{name:'人物档案',exact:true})).toHaveCount(0);
+      144 |   expect(await nightSealStored(page)).toEqual(before);
+      145 | });
+        at /workspace/desktop-profile-organizations/e2e/city-night-followups.spec.ts:142:109
+
+    Error Context: ../../tmp/s2-final-e2e/city-night-followups-天气环境详情：悬停跨入可滚动、移出关闭，键盘焦点与-Esc，无数据修改-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/s2-final-e2e/city-night-followups-天气环境详情：悬停跨入可滚动、移出关闭，键盘焦点与-Esc，无数据修改-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/s2-final-e2e/city-night-followups-天气环境详情：悬停跨入可滚动、移出关闭，键盘焦点与-Esc，无数据修改-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [desktop] › e2e/city-night-followups.spec.ts:126:1 › 天气环境详情：悬停跨入可滚动、移出关闭，键盘焦点与 Esc，无数据修改 ───────
+  6 skipped
+  69 passed (5.2m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
