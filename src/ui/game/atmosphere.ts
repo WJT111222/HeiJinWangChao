@@ -10,7 +10,14 @@ export function deriveAtmosphere(state: Pick<GameState, 'openingCityId' | 'openi
   return { city: openingCity(state.openingCityId)?.key ?? 'other', time, weather } as const;
 }
 
-export const timeNames = { dawn: '黎明', day: '午后', dusk: '黄昏', night: '入夜', late: '深夜' };
+// Display wording is finer-grained than the five decorative sky presets.
+export function timeOfDayLabel(state: Pick<GameState, 'worldClock' | 'openingTimePending'>) {
+  if (state.openingTimePending) return undefined;
+  const hour = chinaCalendar(state.worldClock).hour;
+  return hour < 5 || hour >= 23 ? '深夜' : hour < 7 ? '黎明' : hour < 9 ? '早晨'
+    : hour < 12 ? '上午' : hour < 13 ? '中午' : hour < 17 ? '下午'
+    : hour < 19 ? '黄昏' : '夜晚';
+}
 export const weatherSeals = { rain: '雨', snow: '雪', fog: '雾', cloud: '阴', clear: '晴' };
 
 // Text only: never used to derive visual identity. Stop before a national root.

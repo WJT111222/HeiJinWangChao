@@ -1,0 +1,33 @@
+
+Running 14 tests using 2 workers
+
+(node:39595) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:39596) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   2 [desktop] › e2e/action-workflow.spec.ts:132:1 › 发送行动只结算一次并自动串联下一轮，刷新及再次读档不补发 (19.5s)
+  ✓   1 [desktop] › e2e/action-workflow.spec.ts:88:1 › 一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求 (21.0s)
+  ✓   3 [desktop] › e2e/action-workflow.spec.ts:174:1 › 取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复 (20.8s)
+  ✓   4 [desktop] › e2e/action-workflow.spec.ts:193:1 › 快速离开并重读同一存档或新标签不能延续开局收费授权 (19.6s)
+  ✓   5 [desktop] › e2e/city-night.spec.ts:72:1 › UI-2：固定身份、跨城、历史副标题、日期与天气独立更新 (14.3s)
+  ✓   6 [desktop] › e2e/city-night.spec.ts:88:1 › UI-2：旧档身份一次恢复与未知身份的持久降级 (16.2s)
+(node:40688) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   7 [desktop] › e2e/city-night.spec.ts:144:1 › UI-2：待定开局不显示设备日期，旧回合缺 scene 时保持主题 (14.6s)
+(node:40961) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   8 [mobile] › e2e/action-workflow.spec.ts:88:1 › 一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求 (14.9s)
+  ✓   9 [mobile] › e2e/action-workflow.spec.ts:132:1 › 发送行动只结算一次并自动串联下一轮，刷新及再次读档不补发 (10.9s)
+  ✓  10 [mobile] › e2e/action-workflow.spec.ts:174:1 › 取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复 (11.6s)
+  -  12 [mobile] › e2e/city-night.spec.ts:72:1 › UI-2：固定身份、跨城、历史副标题、日期与天气独立更新
+  -  13 [mobile] › e2e/city-night.spec.ts:88:1 › UI-2：旧档身份一次恢复与未知身份的持久降级
+  -  14 [mobile] › e2e/city-night.spec.ts:144:1 › UI-2：待定开局不显示设备日期，旧回合缺 scene 时保持主题
+  ✓  11 [mobile] › e2e/action-workflow.spec.ts:193:1 › 快速离开并重读同一存档或新标签不能延续开局收费授权 (13.0s)
+
+  3 skipped
+  11 passed (1.7m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

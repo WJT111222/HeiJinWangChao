@@ -3,7 +3,8 @@ import type { GameState } from '../../domain/state';
 import { openingCity } from '../../domain/openingCity';
 import { chinaCalendar } from '../../domain/openingTime';
 import { skyline } from '../home/skyline';
-import { cn, dx, deriveAtmosphere, locationText, sceneTime, timeNames, weatherSeals } from './atmosphere';
+import { cn, dx, deriveAtmosphere, locationText, sceneTime, timeOfDayLabel, weatherSeals } from './atmosphere';
+import { SceneDetails } from './SceneDetails';
 
 export function CityAtmosphere({ state }: { state: GameState }) {
   const { city, time, weather } = deriveAtmosphere(state);
@@ -26,11 +27,8 @@ export function CityBar({ state }: { state: GameState }) {
     <div className="bar-city"><span className="seal" aria-hidden="true">黑</span><div><h1 title={city?.name ?? '城市长夜'}>{city?.name ?? '城市长夜'}</h1><small title={city?.english ?? 'A CITY. A TURNING POINT.'}>{city?.english ?? 'A CITY. A TURNING POINT.'}</small></div></div>
     <div className="bar-main">
       <div className="where" title={[place.path, place.name].filter(Boolean).join(' › ')}><span className="path">{place.path || '当前地点'}</span><span className="name">{place.name}</span></div>
-      <div className="clock" title={`${date} ${clock}`}><time dateTime={calendar ? state.worldClock : undefined}>{clock}</time><div className="date"><span>{date}</span><span className="tod">{timeNames[atmo.time]}</span></div></div>
-      <div className="chips">
-        <p className="chip" title={state.weatherText || '天气待确认'}><span className="seal" aria-hidden="true">{weatherSeals[atmo.weather]}</span><small>天气</small><span>{state.weatherText || '天气待确认'}</span></p>
-        <p className="chip" title={state.environmentText || '环境待确认'}><span className="seal" aria-hidden="true">境</span><small>环境</small><span>{state.environmentText || '环境待确认'}</span></p>
-      </div>
+      <div className="clock" title={`${date} ${clock}`}><time dateTime={calendar ? state.worldClock : undefined}>{clock}</time><div className="date"><span>{date}</span>{calendar && <span className="tod">{timeOfDayLabel(state)}</span>}</div></div>
+      <SceneDetails weatherText={state.weatherText} environmentText={state.environmentText} weatherSeal={weatherSeals[atmo.weather]} />
     </div>
   </header>;
 }

@@ -1,0 +1,490 @@
+{
+  "method": "按文件、标题、平台去重，记录每个用例的最新结果；最终定向复测不重复计数。",
+  "counts": {
+    "passed": 47,
+    "failed": 0,
+    "skipped": 7,
+    "timedOut": 0,
+    "interrupted": 0
+  },
+  "runs": [
+    {
+      "run": "regression",
+      "stats": {
+        "startTime": "2026-11-12T09:15:50.977Z",
+        "duration": 185482.561,
+        "expected": 36,
+        "skipped": 4,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "workflow",
+      "stats": {
+        "startTime": "2026-11-12T09:15:50.972Z",
+        "duration": 99130.736,
+        "expected": 11,
+        "skipped": 3,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "followups-final",
+      "stats": {
+        "startTime": "2026-11-12T09:24:43.343Z",
+        "duration": 46561.325000000004,
+        "expected": 6,
+        "skipped": 4,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "viewport-final",
+      "stats": {
+        "startTime": "2026-11-12T09:29:15.288Z",
+        "duration": 10043.57,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    }
+  ],
+  "tests": [
+    {
+      "file": "city-night-followups.spec.ts",
+      "title": "四项修复：07:50 与完整状态/资金、双端真实 React 截图",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 7954,
+      "run": "followups-final"
+    },
+    {
+      "file": "city-night-followups.spec.ts",
+      "title": "PC 长段落/异常长字符串完整换行，左栏独立滚动且资金装备与底部按钮可达",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 19155,
+      "run": "followups-final"
+    },
+    {
+      "file": "city-night-followups.spec.ts",
+      "title": "PC 普通/百万/亿级/极大金额随容器调整字号，下限后排版换行不省略",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 20199,
+      "run": "followups-final"
+    },
+    {
+      "file": "city-night-followups.spec.ts",
+      "title": "天气环境详情：悬停跨入可滚动、移出关闭，键盘焦点与 Esc，无数据修改",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 12642,
+      "run": "followups-final"
+    },
+    {
+      "file": "city-night-followups.spec.ts",
+      "title": "触控点击详情、再次点击/关闭/外部点击收起，窄屏与缩放视口不溢出",
+      "project": "desktop",
+      "status": "skipped",
+      "duration_ms": 386,
+      "run": "followups-final"
+    },
+    {
+      "file": "city-night-followups.spec.ts",
+      "title": "四项修复：07:50 与完整状态/资金、双端真实 React 截图",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 8481,
+      "run": "followups-final"
+    },
+    {
+      "file": "city-night-followups.spec.ts",
+      "title": "PC 长段落/异常长字符串完整换行，左栏独立滚动且资金装备与底部按钮可达",
+      "project": "mobile",
+      "status": "skipped",
+      "duration_ms": 428,
+      "run": "followups-final"
+    },
+    {
+      "file": "city-night-followups.spec.ts",
+      "title": "PC 普通/百万/亿级/极大金额随容器调整字号，下限后排版换行不省略",
+      "project": "mobile",
+      "status": "skipped",
+      "duration_ms": 201,
+      "run": "followups-final"
+    },
+    {
+      "file": "city-night-followups.spec.ts",
+      "title": "天气环境详情：悬停跨入可滚动、移出关闭，键盘焦点与 Esc，无数据修改",
+      "project": "mobile",
+      "status": "skipped",
+      "duration_ms": 374,
+      "run": "followups-final"
+    },
+    {
+      "file": "city-night-followups.spec.ts",
+      "title": "触控点击详情、再次点击/关闭/外部点击收起，窄屏与缩放视口不溢出",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 8244,
+      "run": "viewport-final"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 8057,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 6779,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 8170,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 7723,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 7495,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "生成中折叠不打断；取消和错误不被隐藏，Roll成功保留正式状态",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 11107,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "缩短视口及模拟软键盘VisualViewport不遮住输入和发送",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 5391,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 11958,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 6887,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 5953,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 5827,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 5368,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 4919,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 6589,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "生成中折叠不打断；取消和错误不被隐藏，Roll成功保留正式状态",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 9392,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "缩短视口及模拟软键盘VisualViewport不遮住输入和发送",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 4118,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 12433,
+      "run": "regression"
+    },
+    {
+      "file": "game-window.spec.ts",
+      "title": "工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 6077,
+      "run": "regression"
+    },
+    {
+      "file": "night-seal.spec.ts",
+      "title": "夜幕金印：真实已结算存档、四导航、阅读与视觉验收",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 16699,
+      "run": "regression"
+    },
+    {
+      "file": "night-seal.spec.ts",
+      "title": "长姓名、巨大金额及短横屏保持阅读与真实资料可访问",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 12838,
+      "run": "regression"
+    },
+    {
+      "file": "night-seal.spec.ts",
+      "title": "夜幕金印：真实已结算存档、四导航、阅读与视觉验收",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 17024,
+      "run": "regression"
+    },
+    {
+      "file": "night-seal.spec.ts",
+      "title": "长姓名、巨大金额及短横屏保持阅读与真实资料可访问",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 11028,
+      "run": "regression"
+    },
+    {
+      "file": "story-reading.spec.ts",
+      "title": "历史与草稿共享阅读布局：PC剧本、手机原气泡，顺序和原文持久化不变",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 7078,
+      "run": "regression"
+    },
+    {
+      "file": "story-reading.spec.ts",
+      "title": "旧无标签和损坏标签仍为普通小说文字，不执行HTML、不写入存档",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 4280,
+      "run": "regression"
+    },
+    {
+      "file": "story-reading.spec.ts",
+      "title": "窄屏长姓名、多行气泡与长文本可滚动，输入区仍可触达且不横向溢出",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 3564,
+      "run": "regression"
+    },
+    {
+      "file": "story-reading.spec.ts",
+      "title": "真实流式预览完成后切换气泡，Variables/World收到原标签，自动结算与原文查看不变",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 10612,
+      "run": "regression"
+    },
+    {
+      "file": "story-reading.spec.ts",
+      "title": "历史与草稿共享阅读布局：PC剧本、手机原气泡，顺序和原文持久化不变",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 8671,
+      "run": "regression"
+    },
+    {
+      "file": "story-reading.spec.ts",
+      "title": "旧无标签和损坏标签仍为普通小说文字，不执行HTML、不写入存档",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 5391,
+      "run": "regression"
+    },
+    {
+      "file": "story-reading.spec.ts",
+      "title": "窄屏长姓名、多行气泡与长文本可滚动，输入区仍可触达且不横向溢出",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 4972,
+      "run": "regression"
+    },
+    {
+      "file": "story-reading.spec.ts",
+      "title": "真实流式预览完成后切换气泡，Variables/World收到原标签，自动结算与原文查看不变",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 8439,
+      "run": "regression"
+    },
+    {
+      "file": "action-workflow.spec.ts",
+      "title": "一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 20969,
+      "run": "workflow"
+    },
+    {
+      "file": "action-workflow.spec.ts",
+      "title": "发送行动只结算一次并自动串联下一轮，刷新及再次读档不补发",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 19508,
+      "run": "workflow"
+    },
+    {
+      "file": "action-workflow.spec.ts",
+      "title": "取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 20849,
+      "run": "workflow"
+    },
+    {
+      "file": "action-workflow.spec.ts",
+      "title": "快速离开并重读同一存档或新标签不能延续开局收费授权",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 19621,
+      "run": "workflow"
+    },
+    {
+      "file": "action-workflow.spec.ts",
+      "title": "一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 14941,
+      "run": "workflow"
+    },
+    {
+      "file": "action-workflow.spec.ts",
+      "title": "发送行动只结算一次并自动串联下一轮，刷新及再次读档不补发",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 10945,
+      "run": "workflow"
+    },
+    {
+      "file": "action-workflow.spec.ts",
+      "title": "取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 11579,
+      "run": "workflow"
+    },
+    {
+      "file": "action-workflow.spec.ts",
+      "title": "快速离开并重读同一存档或新标签不能延续开局收费授权",
+      "project": "mobile",
+      "status": "passed",
+      "duration_ms": 13008,
+      "run": "workflow"
+    },
+    {
+      "file": "city-night.spec.ts",
+      "title": "UI-2：固定身份、跨城、历史副标题、日期与天气独立更新",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 14274,
+      "run": "workflow"
+    },
+    {
+      "file": "city-night.spec.ts",
+      "title": "UI-2：旧档身份一次恢复与未知身份的持久降级",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 16196,
+      "run": "workflow"
+    },
+    {
+      "file": "city-night.spec.ts",
+      "title": "UI-2：待定开局不显示设备日期，旧回合缺 scene 时保持主题",
+      "project": "desktop",
+      "status": "passed",
+      "duration_ms": 14560,
+      "run": "workflow"
+    },
+    {
+      "file": "city-night.spec.ts",
+      "title": "UI-2：固定身份、跨城、历史副标题、日期与天气独立更新",
+      "project": "mobile",
+      "status": "skipped",
+      "duration_ms": 285,
+      "run": "workflow"
+    },
+    {
+      "file": "city-night.spec.ts",
+      "title": "UI-2：旧档身份一次恢复与未知身份的持久降级",
+      "project": "mobile",
+      "status": "skipped",
+      "duration_ms": 458,
+      "run": "workflow"
+    },
+    {
+      "file": "city-night.spec.ts",
+      "title": "UI-2：待定开局不显示设备日期，旧回合缺 scene 时保持主题",
+      "project": "mobile",
+      "status": "skipped",
+      "duration_ms": 326,
+      "run": "workflow"
+    }
+  ]
+}

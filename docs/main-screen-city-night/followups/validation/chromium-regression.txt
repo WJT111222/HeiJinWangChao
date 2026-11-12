@@ -1,0 +1,59 @@
+
+Running 40 tests using 2 workers
+
+(node:39575) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:39574) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   2 [desktop] › e2e/city-night-followups.spec.ts:46:1 › 四项修复：07:50 与完整状态/资金、双端真实 React 截图 (13.4s)
+  ✓   1 [desktop] › e2e/city-night-followups.spec.ts:67:1 › PC 长段落/异常长字符串完整换行，左栏独立滚动且资金装备与底部按钮可达 (31.3s)
+  ✓   3 [desktop] › e2e/city-night-followups.spec.ts:102:1 › PC 普通/百万/亿级/极大金额随容器调整字号，下限后排版换行不省略 (29.8s)
+  -   5 [desktop] › e2e/city-night-followups.spec.ts:144:1 › 触控点击详情、再次点击/关闭/外部点击收起，窄屏与缩放视口不溢出
+  ✓   4 [desktop] › e2e/city-night-followups.spec.ts:126:1 › 天气环境详情：悬停跨入可滚动、移出关闭，键盘焦点与 Esc，无数据修改 (14.8s)
+  ✓   6 [desktop] › e2e/game-window.spec.ts:64:1 › 全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入 (8.1s)
+  ✓   7 [desktop] › e2e/game-window.spec.ts:75:1 › 顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置 (6.8s)
+  ✓   8 [desktop] › e2e/game-window.spec.ts:93:1 › 滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回 (8.2s)
+  ✓   9 [desktop] › e2e/game-window.spec.ts:114:1 › 默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态 (7.7s)
+  ✓  10 [desktop] › e2e/game-window.spec.ts:126:1 › 已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义 (7.5s)
+  ✓  11 [desktop] › e2e/game-window.spec.ts:135:1 › 生成中折叠不打断；取消和错误不被隐藏，Roll成功保留正式状态 (11.1s)
+  ✓  12 [desktop] › e2e/game-window.spec.ts:204:1 › 缩短视口及模拟软键盘VisualViewport不遮住输入和发送 (5.4s)
+  ✓  14 [desktop] › e2e/game-window.spec.ts:243:1 › 工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间 (6.9s)
+  ✓  13 [desktop] › e2e/game-window.spec.ts:225:1 › 设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置 (12.0s)
+  ✓  16 [desktop] › e2e/night-seal.spec.ts:91:1 › 长姓名、巨大金额及短横屏保持阅读与真实资料可访问 (12.8s)
+  ✓  15 [desktop] › e2e/night-seal.spec.ts:7:1 › 夜幕金印：真实已结算存档、四导航、阅读与视觉验收 (16.7s)
+  ✓  18 [desktop] › e2e/story-reading.spec.ts:77:1 › 旧无标签和损坏标签仍为普通小说文字，不执行HTML、不写入存档 (4.3s)
+  ✓  17 [desktop] › e2e/story-reading.spec.ts:64:1 › 历史与草稿共享阅读布局：PC剧本、手机原气泡，顺序和原文持久化不变 (7.1s)
+  ✓  19 [desktop] › e2e/story-reading.spec.ts:86:1 › 窄屏长姓名、多行气泡与长文本可滚动，输入区仍可触达且不横向溢出 (3.6s)
+(node:41739) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  21 [mobile] › e2e/city-night-followups.spec.ts:46:1 › 四项修复：07:50 与完整状态/资金、双端真实 React 截图 (8.7s)
+  ✓  20 [desktop] › e2e/story-reading.spec.ts:99:1 › 真实流式预览完成后切换气泡，Variables/World收到原标签，自动结算与原文查看不变 (10.6s)
+  -  22 [mobile] › e2e/city-night-followups.spec.ts:67:1 › PC 长段落/异常长字符串完整换行，左栏独立滚动且资金装备与底部按钮可达
+  -  23 [mobile] › e2e/city-night-followups.spec.ts:126:1 › 天气环境详情：悬停跨入可滚动、移出关闭，键盘焦点与 Esc，无数据修改
+(node:41983) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  -  25 [mobile] › e2e/city-night-followups.spec.ts:102:1 › PC 普通/百万/亿级/极大金额随容器调整字号，下限后排版换行不省略
+  ✓  26 [mobile] › e2e/game-window.spec.ts:64:1 › 全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入 (6.0s)
+  ✓  24 [mobile] › e2e/city-night-followups.spec.ts:144:1 › 触控点击详情、再次点击/关闭/外部点击收起，窄屏与缩放视口不溢出 (11.9s)
+  ✓  27 [mobile] › e2e/game-window.spec.ts:75:1 › 顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置 (5.8s)
+  ✓  28 [mobile] › e2e/game-window.spec.ts:93:1 › 滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回 (5.4s)
+  ✓  29 [mobile] › e2e/game-window.spec.ts:114:1 › 默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态 (4.9s)
+  ✓  30 [mobile] › e2e/game-window.spec.ts:126:1 › 已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义 (6.6s)
+  ✓  31 [mobile] › e2e/game-window.spec.ts:135:1 › 生成中折叠不打断；取消和错误不被隐藏，Roll成功保留正式状态 (9.4s)
+  ✓  32 [mobile] › e2e/game-window.spec.ts:204:1 › 缩短视口及模拟软键盘VisualViewport不遮住输入和发送 (4.1s)
+  ✓  34 [mobile] › e2e/game-window.spec.ts:243:1 › 工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间 (6.1s)
+  ✓  33 [mobile] › e2e/game-window.spec.ts:225:1 › 设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置 (12.4s)
+  ✓  36 [mobile] › e2e/night-seal.spec.ts:91:1 › 长姓名、巨大金额及短横屏保持阅读与真实资料可访问 (11.0s)
+  ✓  35 [mobile] › e2e/night-seal.spec.ts:7:1 › 夜幕金印：真实已结算存档、四导航、阅读与视觉验收 (17.0s)
+  ✓  38 [mobile] › e2e/story-reading.spec.ts:77:1 › 旧无标签和损坏标签仍为普通小说文字，不执行HTML、不写入存档 (5.4s)
+  ✓  37 [mobile] › e2e/story-reading.spec.ts:64:1 › 历史与草稿共享阅读布局：PC剧本、手机原气泡，顺序和原文持久化不变 (8.7s)
+  ✓  39 [mobile] › e2e/story-reading.spec.ts:86:1 › 窄屏长姓名、多行气泡与长文本可滚动，输入区仍可触达且不横向溢出 (5.0s)
+  ✓  40 [mobile] › e2e/story-reading.spec.ts:99:1 › 真实流式预览完成后切换气泡，Variables/World收到原标签，自动结算与原文查看不变 (8.4s)
+
+  4 skipped
+  36 passed (3.1m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
