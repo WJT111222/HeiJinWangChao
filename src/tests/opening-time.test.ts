@@ -214,6 +214,7 @@ describe('开局时间真实Runtime、投影与原子事务', () => {
     expect(result.draft.variables!.result.commands.filter(command => command.type === 'SetWorldClock')).toHaveLength(1);
     expect(JSON.stringify(run.contexts)).not.toContain(pendingOpeningClock);
     const committed = await run.repo.commitTurn(submission(result.draft));
+    expect(committed.state.journal[0].scene).toEqual({ worldClock: start, locationId: run.state.protagonist.locationId });
     expect(committed.state.worldClock).toBe(end); expect(committed.state.openingTimePending).toBeUndefined();
     expect(committed.state.revision).toBe(1); expect(committed.state.memories.short[0].createdAtGameTime).toBe(end);
     expect((await run.repo.commitTurn(submission(result.draft))).replayed).toBe(true);

@@ -3,7 +3,7 @@ import { expect, test } from './helpers/test';
 import { seedNightSeal, nightSealStored } from './helpers/nightSeal';
 import { openProfile, openWorldArchive } from './helpers/gameLayout';
 
-const screenshots = 'docs/ui-night-seal/screenshots';
+const screenshots = '/tmp/ui2-legacy-night-seal-screenshots';
 test('夜幕金印：真实已结算存档、四导航、阅读与视觉验收', async ({ page }, info) => {
   test.setTimeout(60000);
   const requests: string[] = [];
@@ -14,7 +14,10 @@ test('夜幕金印：真实已结算存档、四导航、阅读与视觉验收',
   await seedNightSeal(page);
   await expect(page.locator('.save-card')).toHaveCount(1);
   await page.screenshot({ path: `${screenshots}/after-home-${info.project.name}.png`, fullPage: true });
-  await page.getByRole('button', { name: '选择', exact: true }).click();
+  const choose = page.getByRole('button', { name: '选择', exact: true });
+  if (await choose.isVisible()) await choose.click();
+  else await expect(page.locator('.save-card')).toHaveClass(/selected/);
+  await page.locator('.lib-top .back').click();
   await page.getByRole('button', { name: /继续游戏/ }).click();
   await expect(page.getByTestId('story-reader')).toBeVisible();
   const before = await nightSealStored(page);
@@ -102,7 +105,7 @@ test('长姓名、巨大金额及短横屏保持阅读与真实资料可访问',
       await openWorldArchive(page);
       await page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button', { name: 'NPC', exact: true }).click();
       const npc = page.getByRole('dialog', { name: 'NPC', exact: true });
-      await npc.getByRole('button', { name: /来自很远地方/ }).click();
+      await npc.getByRole('button', { name: /^查看人物：来自很远地方/ }).click();
       expect(await npc.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
       await page.keyboard.press('Escape'); await page.keyboard.press('Escape');
     }

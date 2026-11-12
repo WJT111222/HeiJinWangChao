@@ -53,14 +53,15 @@ async function readingOrder(page: Page) {
     const name = await row.locator('.story-speaker').textContent();
     expect(hero).toBe(name === '吴杰');
     const avatar = (await row.locator('.story-avatar').boundingBox())!, bubble = (await row.locator('.story-bubble').boundingBox())!;
-    if (hero) expect(avatar.x).toBeGreaterThan(bubble.x + bubble.width);
+    const desktop = (page.viewportSize()?.width ?? 0) > 900;
+    if (hero && !desktop) expect(avatar.x).toBeGreaterThan(bubble.x + bubble.width);
     else expect(avatar.x + avatar.width).toBeLessThan(bubble.x);
     await expect(row.locator('.story-avatar')).toHaveAttribute('aria-hidden', 'true');
-    expect(await row.locator('.story-speaker').evaluate(el => getComputedStyle(el).textAlign)).toBe(hero ? 'right' : 'start');
+    expect(await row.locator('.story-speaker').evaluate(el => getComputedStyle(el).textAlign)).toBe(hero && !desktop ? 'right' : 'start');
   }
 }
 
-test('历史与草稿共享阅读布局：旁白隐藏、NPC左主角右、顺序和原文持久化不变', async ({ page }, info) => {
+test('历史与草稿共享阅读布局：PC剧本、手机原气泡，顺序和原文持久化不变', async ({ page }, info) => {
   let aiCalls = 0;
   page.on('request', request => { if (request.method() === 'POST') aiCalls++; });
   await seed(page, { history: narrative, draft: current });

@@ -220,6 +220,7 @@ export function buildCreationState(form: Creation, settings: Settings) {
   const state = createGameState({
     saveId: form.saveId,
     title: `${form.person.name.trim()} · ${city.name}`,
+    openingCityId: city.id,
     worldClock: form.worldClock,
     protagonist: {
       id: 'protagonist',

@@ -1,3 +1,4 @@
+import { openLibrary } from './home';
 import type { Page } from '@playwright/test';
 
 // Isolated visual-review save. Every displayed value is loaded through the real repository;
@@ -10,7 +11,7 @@ export async function seedNightSeal(page: Page, longValues = false) {
     const { SaveRepository } = await import(repoPath), { worldState } = await import(worldPath),
       { completeDraft } = await import(turnPath);
     const repo = await SaveRepository.open(), state = worldState();
-    state.title = '沈砚 · 重庆';
+    state.title = '沈砚 · 重庆'; state.openingCityId = 'chongqing';
     state.protagonist.name = longValues ? '沈砚与城市旧事档案的长期记录者'.repeat(5) : '沈砚';
     state.protagonist.profession = '记者';
     state.protagonist.healthText = longValues ? '身体状态保持稳定，需要适时休息。'.repeat(50) : '略感疲倦';
@@ -38,6 +39,7 @@ export async function seedNightSeal(page: Page, longValues = false) {
     repo.close();
   }, longValues);
   await page.reload();
+  await openLibrary(page);
 }
 export async function nightSealStored(page: Page) {
   return page.evaluate(async () => {

@@ -1,0 +1,43 @@
+
+Running 1 test using 1 worker
+
+(node:31938) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [desktop] › e2e/pc-reading-layout.spec.ts:12:1 › PC 阅读布局：同场景视口截图与尺寸记录 (16.9s)
+
+
+  1) [desktop] › e2e/pc-reading-layout.spec.ts:12:1 › PC 阅读布局：同场景视口截图与尺寸记录 ─────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.app-header')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('.app-header') with timeout 5000ms
+      - waiting for locator('.app-header')
+
+
+      118 |     await page.getByRole('navigation', { name: '系统操作' }).getByRole('button', { name: '返回首页', exact: true }).click();
+      119 |     await expect(page.locator('.home-page')).toBeVisible();
+    > 120 |     await expect(page.locator('.app-header')).toBeVisible();
+          |                                               ^
+      121 |   }
+      122 | });
+      123 |
+        at /workspace/ui2-main-baseline/e2e/pc-reading-layout.spec.ts:120:47
+
+    Error Context: ../../tmp/ui2-main-pc-results/pc-reading-layout-PC-阅读布局：同场景视口截图与尺寸记录-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/ui2-main-pc-results/pc-reading-layout-PC-阅读布局：同场景视口截图与尺寸记录-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/ui2-main-pc-results/pc-reading-layout-PC-阅读布局：同场景视口截图与尺寸记录-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [desktop] › e2e/pc-reading-layout.spec.ts:12:1 › PC 阅读布局：同场景视口截图与尺寸记录 ──────────────────────────

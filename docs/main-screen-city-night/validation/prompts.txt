@@ -1,0 +1,18 @@
+
+> heijinwangchao@0.1.0 prompts:check
+> vitest run src/tests/prompts.test.ts src/tests/prompt-runtime.test.ts src/tests/prompt-inspector.test.ts
+
+
+ RUN  v5.0.5 /workspace/ui2-city-night
+
+
+ Test Files  3 passed (3)
+      Tests  93 passed (93)
+   Start at  08:32:14
+   Duration  1.17s (tests 60%, import 22%, transform 18%, worker 1%)
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
