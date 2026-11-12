@@ -89,10 +89,10 @@ export function MemorySummarySettings({ settings, onSave, state, phase, activeKi
         {activeKind === kind && <p role="status">{phase === 'saving' ? '正在保存总结…' : '正在生成总结…'}</p>}
       </section>;
     })}
-    {dirty && <p role="status">记忆设置尚未保存。</p>}
+    <div className="memory-save-bar">{dirty && <p role="status">记忆设置尚未保存。</p>}
     <button className="primary" onClick={save}>保存记忆设置</button>
     {phase && <button disabled={phase === 'saving'} onClick={onCancel}>取消当前总结</button>}
     {(message || notice) && <p role="status">{message || notice}</p>}
-    {state && <RequestUsage saveId={state.saveId} memoryOnly />}
+    </div>{state && <RequestUsage saveId={state.saveId} memoryOnly />}
   </section>;
 }

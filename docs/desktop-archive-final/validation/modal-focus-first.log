@@ -1,0 +1,81 @@
+[WebServer] (node:195802) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:195815) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 8 tests using 2 workers
+
+(node:195843) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:195844) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [desktop] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 (12.1s)
+(node:196289) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [desktop] › e2e/archive-final.spec.ts:36:1 › 设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载 (15.7s)
+(node:196436) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  4 [desktop] › e2e/startup-notices.spec.ts:164:1 › 直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型 (4.7s)
+(node:196591) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  3 [desktop] › e2e/prompt-inspector.spec.ts:121:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 (15.3s)
+  ✓  5 [mobile] › e2e/archive-final.spec.ts:36:1 › 设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载 (6.9s)
+(node:196749) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:196758) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  6 [mobile] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 (3.6s)
+(node:197027) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  8 [mobile] › e2e/startup-notices.spec.ts:164:1 › 直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型 (3.7s)
+  ✓  7 [mobile] › e2e/prompt-inspector.spec.ts:121:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 (13.3s)
+
+
+  1) [desktop] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 ─────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      58 |   await openSettings(page);let settings=page.getByRole('dialog',{name:'设置',exact:true});await settings.getByRole('button',{name:'新增渠道',exact:true}).click();await settings.getByLabel('渠道名称',{exact:true}).fill('临时测试通道');await settings.getByLabel('API Base URL',{exact:true}).fill('https://credential-ui.mock.invalid/v1');const key=settings.getByLabel('API 密钥',{exact:true});await key.fill(secret);await key.evaluate(e=>Reflect.set(window,'credentialNode',e));await settings.getByRole('button',{name:'手动填写默认模型 ID',exact:true}).click();await settings.getByLabel('默认模型 ID',{exact:true}).fill('ui-mock-model');
+      59 |   if(desktop)for(const width of [1100,901,900,390,1440]){await page.setViewportSize({width,height:900});expect(await key.evaluate((e,value)=>(e as HTMLInputElement).value===value,secret)).toBe(true);expect(await key.evaluate(e=>e===Reflect.get(window,'credentialNode'))).toBe(true);await expect(key).toHaveAttribute('type','password');}
+    > 60 |   if(desktop)await page.locator('[data-archive-panel="地图"]').click();else await settings.getByRole('button',{name:'关闭资料界面',exact:true}).click();const unsaved=page.getByRole('dialog',{name:'AI 配置尚未保存',exact:true});await expect(unsaved).toBeVisible();expect(await unsaved.evaluate(e=>e.matches(':modal'))).toBe(true);if(desktop)for(const width of [390,1440]){await page.setViewportSize({width,height:900});await expect.poll(()=>unsaved.evaluate(e=>e.contains(document.activeElement))).toBe(true);}
+         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ^
+      61 |   await page.keyboard.press('Escape');await expect(unsaved).toHaveCount(0);expect(await page.evaluate(()=>document.body.style.overflow)).toBe(desktop?'':'hidden');expect(await key.evaluate((e,value)=>(e as HTMLInputElement).value===value,secret)).toBe(true);await expect(key).toHaveAttribute('type','password');await fit(page);await page.screenshot({animations:'disabled',path:`docs/desktop-archive-final/screenshots/settings-credential-masked-${desktop?'desktop':'mobile'}.png`});
+      62 |   await settings.getByRole('button',{name:'保存 AI 配置',exact:true}).click();await expect(settings).toContainText('AI 配置已保存');expect(await page.evaluate(value=>JSON.stringify([...document.querySelectorAll('.channel-cards')].map(e=>e.textContent)).includes(value),secret)).toBe(false);expect(await page.evaluate(value=>Object.values(localStorage).some(v=>String(v).includes(value)),secret)).toBe(false);await settings.getByRole('button',{name:'测试连接（可能产生费用）',exact:true}).click();await expect(settings).toContainText('连接测试成功');expect(generationCalls).toBe(1);expect(authorized).toBe(true);
+      63 |   await settings.getByRole('button',{name:'关闭资料界面',exact:true}).click();await page.reload();await openSettings(page);settings=page.getByRole('dialog',{name:'设置',exact:true});expect(await settings.getByLabel('API 密钥',{exact:true}).evaluate((e,value)=>(e as HTMLInputElement).value===value,secret)).toBe(true);await settings.getByRole('button',{name:'删除渠道',exact:true}).click();await settings.getByRole('button',{name:'取消删除',exact:true}).click();await settings.getByRole('button',{name:'删除渠道',exact:true}).click();await settings.getByRole('button',{name:'确认删除渠道',exact:true}).click();await expect(settings).toContainText('渠道及凭证已删除');expect(await stored(page)).toEqual(before);
+        at /workspace/desktop-map-settings/e2e/archive-final.spec.ts:60:484
+
+    Error Context: ../../tmp/s56-focus/archive-final-凭证安全-密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除-desktop/error-context.md
+
+  2) [mobile] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 ──────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: ""
+    Received: "hidden"
+
+      59 |   if(desktop)for(const width of [1100,901,900,390,1440]){await page.setViewportSize({width,height:900});expect(await key.evaluate((e,value)=>(e as HTMLInputElement).value===value,secret)).toBe(true);expect(await key.evaluate(e=>e===Reflect.get(window,'credentialNode'))).toBe(true);await expect(key).toHaveAttribute('type','password');}
+      60 |   if(desktop)await page.locator('[data-archive-panel="地图"]').click();else await settings.getByRole('button',{name:'关闭资料界面',exact:true}).click();const unsaved=page.getByRole('dialog',{name:'AI 配置尚未保存',exact:true});await expect(unsaved).toBeVisible();expect(await unsaved.evaluate(e=>e.matches(':modal'))).toBe(true);if(desktop)for(const width of [390,1440]){await page.setViewportSize({width,height:900});await expect.poll(()=>unsaved.evaluate(e=>e.contains(document.activeElement))).toBe(true);}
+    > 61 |   await page.keyboard.press('Escape');await expect(unsaved).toHaveCount(0);expect(await page.evaluate(()=>document.body.style.overflow)).toBe(desktop?'':'hidden');expect(await key.evaluate((e,value)=>(e as HTMLInputElement).value===value,secret)).toBe(true);await expect(key).toHaveAttribute('type','password');await fit(page);await page.screenshot({animations:'disabled',path:`docs/desktop-archive-final/screenshots/settings-credential-masked-${desktop?'desktop':'mobile'}.png`});
+         |                                                                                                                                          ^
+      62 |   await settings.getByRole('button',{name:'保存 AI 配置',exact:true}).click();await expect(settings).toContainText('AI 配置已保存');expect(await page.evaluate(value=>JSON.stringify([...document.querySelectorAll('.channel-cards')].map(e=>e.textContent)).includes(value),secret)).toBe(false);expect(await page.evaluate(value=>Object.values(localStorage).some(v=>String(v).includes(value)),secret)).toBe(false);await settings.getByRole('button',{name:'测试连接（可能产生费用）',exact:true}).click();await expect(settings).toContainText('连接测试成功');expect(generationCalls).toBe(1);expect(authorized).toBe(true);
+      63 |   await settings.getByRole('button',{name:'关闭资料界面',exact:true}).click();await page.reload();await openSettings(page);settings=page.getByRole('dialog',{name:'设置',exact:true});expect(await settings.getByLabel('API 密钥',{exact:true}).evaluate((e,value)=>(e as HTMLInputElement).value===value,secret)).toBe(true);await settings.getByRole('button',{name:'删除渠道',exact:true}).click();await settings.getByRole('button',{name:'取消删除',exact:true}).click();await settings.getByRole('button',{name:'删除渠道',exact:true}).click();await settings.getByRole('button',{name:'确认删除渠道',exact:true}).click();await expect(settings).toContainText('渠道及凭证已删除');expect(await stored(page)).toEqual(before);
+      64 |  });
+        at /workspace/desktop-map-settings/e2e/archive-final.spec.ts:61:138
+
+    Error Context: ../../tmp/s56-focus/archive-final-凭证安全-密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除-mobile/error-context.md
+
+  2 failed
+    [desktop] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 ──────
+    [mobile] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 ───────
+  6 passed (45.0s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

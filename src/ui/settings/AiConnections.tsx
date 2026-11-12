@@ -17,8 +17,9 @@ import { safeAiError } from '../../services/ai/errors';
 import { ThemedSelect } from '../components/ThemedSelect';
 import { ModelCatalog } from './modelCatalog';
 import { ModelPicker } from './ModelPicker';
-import { Feedback } from '../Feedback';
+import { Feedback,useDesktopFeedback } from '../Feedback';
 import type { FeedbackLevel } from '../Feedback';
+import { safeModelListEndpoint } from '../../services/ai/modelListing';
 import { OutputTokenLimit } from './OutputTokenLimit';
 
 const stages: [AiTask, string][] = [
@@ -43,6 +44,7 @@ function initial() {
   }
 }
 export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSeconds: number; onDirtyChange?: (dirty: boolean) => void }) {
+  const desktop=useDesktopFeedback();
   const [start] = useState(initial);
   const [config, setConfig] = useState(start.config);
   const [selectedId, setSelectedId] = useState(start.config.channels[0]?.id ?? '');
@@ -185,6 +187,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
       }
     }
   }
+  function cardUrl(value:string,secret:string){try{return safeModelListEndpoint(value,secret);}catch{return '地址待确认';}}
   function destroy() {
     try {
       const next = removeChannel(config, selectedId);
@@ -214,7 +217,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
         <ThemedSelect label="当前渠道" value={selectedId} disabled={busy}
           options={config.channels.length ? config.channels.map((item) => ({ value: item.id, label: item.name || '未命名渠道' })) : [{ value: '', label: '尚无渠道' }]}
           onChange={select} />
-        <button
+        {!desktop&&<button className={desktop?"ch add":undefined}
           disabled={busy || dirty}
           onClick={() => {
             const created = newChannel();
@@ -234,8 +237,32 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
           }}
         >
           新增渠道
-        </button>
+        </button>}
       </div>
+      {desktop&&<section className="channel-cards" aria-label="API 渠道列表"><h4>API 渠道</h4><div className="ch-list">{config.channels.map(item=><button key={item.id} className={`ch p-${item.protocol}`} disabled={busy} aria-label={`编辑渠道：${item.name||'未命名渠道'}`} aria-pressed={selectedId===item.id} onClick={()=>select(item.id)}>
+       <span className="nm">{item.name||'未命名渠道'}<span className="proto">{{openai:'OpenAI 兼容',anthropic:'原生 Anthropic',gemini:'原生 Gemini'}[item.protocol]}</span></span>
+       {selectedId===item.id&&<span className="def">当前渠道</span>}<span className="url" title={cardUrl(item.baseUrl,item.id===selectedId?key:'')}>{cardUrl(item.baseUrl,item.id===selectedId?key:'')}</span><span className="mdl">{item.defaultModel||'尚未选择默认模型'}</span>
+      </button>)}<button className={desktop?"ch add":undefined}
+          disabled={busy || dirty}
+          onClick={() => {
+            const created = newChannel();
+            update({
+              ...config,
+              channels: [...config.channels, created],
+              routes: {
+                ...config.routes,
+                story: config.routes.story.channelId
+                  ? config.routes.story
+                  : { channelId: created.id, modelId: '' },
+              },
+            });
+            setSelectedId(created.id);
+            setKey('');
+            setRemember(false);
+          }}
+        >
+          新增渠道
+        </button></div></section>}
       <fieldset disabled={!channel || busy}>
         <legend>API 渠道</legend>
         <div className="form-grid">
@@ -369,7 +396,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
       )}
       <fieldset disabled={busy}>
         <legend>三阶段与记忆总结模型路由</legend>
-        {stages.map(([stage, label]) => {
+        {stages.map(([stage, label],index) => {
           const route = config.routes[stage];
           const follows = 'mode' in route && route.mode === 'follow-story';
           const current = 'channelId' in route ? route : config.routes.story;
@@ -386,8 +413,8 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
               },
             });
           return (
-            <section className="card entry" key={stage}>
-              <strong>{label}</strong>
+            <section className={`card entry ai-route ${follows?'is-follow':''}`} key={stage}>
+              <strong>{desktop&&<i aria-hidden="true">{String(index+1).padStart(2,'0')}</i>}{label}</strong>
               {stage !== 'story' && (
                 <label className="toggle">
                   <input

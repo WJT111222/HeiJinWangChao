@@ -1,0 +1,141 @@
+[WebServer] (node:177584) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:177597) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 70 tests using 2 workers
+
+(node:177633) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:177632) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   2 [desktop] › e2e/archive-final.spec.ts:21:1 › 地图正式层级、当前位置、四入口同步与五尺寸，NPC/事件关联、缓存和只读性 (8.8s)
+  ✓   1 [desktop] › e2e/archive-final.spec.ts:36:1 › 设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载 (11.7s)
+  ✓   3 [desktop] › e2e/archive-final.spec.ts:45:1 › 地图大量地点与异常长名称分段可达；展开选择恢复与原文不丢失 (4.5s)
+  ✓   4 [desktop] › e2e/archive-final.spec.ts:49:1 › 游戏设置与地图互切、记忆未保存确认、Esc和首页纸色模态 (6.9s)
+(node:178123) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   5 [desktop] › e2e/archive-final.spec.ts:55:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 (9.2s)
+(node:178353) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   6 [desktop] › e2e/archive-step2.spec.ts:29:2 › 人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料 (17.4s)
+  ✓   7 [desktop] › e2e/archive-step2.spec.ts:49:2 › 四种组织颜色、完整字段、折叠、双滚动、纸色吸顶及桌面矩阵 (16.6s)
+  ✓   8 [desktop] › e2e/archive-step2.spec.ts:68:2 › 人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离 (10.7s)
+  ✓   9 [desktop] › e2e/archive-step2.spec.ts:80:2 › 长组织名/概况/状态、49组织与大量任务事件历史：独立滚动和分页不丢字段 (10.4s)
+  ✓  10 [desktop] › e2e/archive-step2.spec.ts:95:2 › 正式待确认开局：16字段含真实候选时间，当前时间保持待确认 (6.7s)
+  ✓  11 [desktop] › e2e/archive-step2.spec.ts:108:2 › 正式空组织名录保持空态，浏览不创建组织或请求模型 (5.7s)
+  ✓  12 [desktop] › e2e/archive-step3.spec.ts:20:1 › 物品分类、只读搜索、三栏和选中详情，901边界、原槽位与归属跳转 (17.7s)
+  ✓  13 [desktop] › e2e/archive-step3.spec.ts:39:1 › 经济资金、部分未知合计、全字段与原生手机，人物入口/旧Dialog/焦点闭环 (16.4s)
+  ✓  14 [desktop] › e2e/archive-step3.spec.ts:56:1 › 大量物品收入资产债务分页、独立滚动，原集合顺序和正式状态不变 (20.4s)
+  ✓  15 [desktop] › e2e/archive-step3.spec.ts:71:1 › 极端金额、超安全范围合计、未知/零债务以及长文本边界 (23.1s)
+  ✓  17 [desktop] › e2e/archive-step4.spec.ts:40:1 › 统一正式历史投影、双轨五尺寸、精度与详情全文，回焦与地图档案切换 (17.8s)
+  ✘  16 [desktop] › e2e/archive-step4.spec.ts:20:1 › 第四批事件家族、并行与退役成果，合法组织目标、缓存、Esc和只读性 (32.7s)
+(node:180528) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  18 [desktop] › e2e/archive-step4.spec.ts:52:1 › 六层记忆原文与归属、多来源分页和层级缓存；手机保持原生界面 (25.7s)
+  ✓  19 [desktop] › e2e/archive-step4.spec.ts:64:1 › 大型并行家族、长标题与长记忆、历史分段有界；reduced motion和只读压力 (19.0s)
+  ✓  20 [desktop] › e2e/desktop-cabinet.spec.ts:4:1 › 纸柜非模态焦点、dock切换、关联旧容器、Esc和浏览不写状态 (17.4s)
+  ✓  21 [desktop] › e2e/desktop-cabinet.spec.ts:37:1 › 大量NPC长姓名长描述：独立滚动、筛选、分页与完整字段 (12.6s)
+  ✓  23 [desktop] › e2e/startup-notices.spec.ts:29:1 › 完整定稿实际分段渲染：开头、架空社会声明与开发者落款 (4.8s)
+  ✓  22 [desktop] › e2e/desktop-cabinet.spec.ts:54:1 › NPC与关联组织往返保留目标定位，手机组织仍为原生模态 (10.3s)
+  ✓  24 [desktop] › e2e/startup-notices.spec.ts:55:1 › 首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复 (7.4s)
+  ✓  25 [desktop] › e2e/startup-notices.spec.ts:83:1 › 第一步勾选仍显示第二步；共享勾选可撤销且保留其他本地配置 (5.6s)
+  ✓  26 [desktop] › e2e/startup-notices.spec.ts:99:1 › 第二步勾选当天刷新和新页面均免打扰，次日本地日期恢复 (7.8s)
+  ✓  27 [desktop] › e2e/startup-notices.spec.ts:119:1 › 首页与设置手动查看只开指定公告；返回保留设置内容和焦点 (8.2s)
+  ✓  28 [desktop] › e2e/startup-notices.spec.ts:150:1 › 手动查看可以取消已保存免打扰，不自动串联另一个弹窗 (6.3s)
+  ✓  29 [desktop] › e2e/startup-notices.spec.ts:164:1 › 直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型 (4.9s)
+  ✓  30 [desktop] › e2e/startup-notices.spec.ts:195:1 › 键盘焦点局限于当前弹窗，Escape 按顺序关闭 (2.6s)
+  ✓  31 [desktop] › e2e/startup-notices.spec.ts:208:1 › localStorage 不可访问时仍能完成顺序并使用首页 (4.0s)
+  ✓  32 [desktop] › e2e/startup-notices.spec.ts:224:3 › localStorage setItem 失败时当前复选框与关闭仍可操作 (3.2s)
+  ✓  33 [desktop] › e2e/startup-notices.spec.ts:224:3 › localStorage removeItem 失败时当前复选框与关闭仍可操作 (3.1s)
+  ✓  34 [desktop] › e2e/startup-notices.spec.ts:243:1 › 长内容内部滚动，窄屏关闭和复选框可触达；截图 (3.3s)
+(node:181855) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  35 [desktop] › e2e/startup-notices.spec.ts:268:3 › 西半球本地日历与 UTC 不同 › 按设备当日保存，跨 UTC 日但本地仍同一天时继续免打扰 (5.1s)
+  ✓  36 [mobile] › e2e/archive-final.spec.ts:21:1 › 地图正式层级、当前位置、四入口同步与五尺寸，NPC/事件关联、缓存和只读性 (3.1s)
+(node:182000) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  -  37 [mobile] › e2e/archive-final.spec.ts:45:1 › 地图大量地点与异常长名称分段可达；展开选择恢复与原文不丢失
+  ✓  38 [mobile] › e2e/archive-final.spec.ts:49:1 › 游戏设置与地图互切、记忆未保存确认、Esc和首页纸色模态 (7.4s)
+  ✓  39 [mobile] › e2e/archive-final.spec.ts:36:1 › 设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载 (7.6s)
+(node:182251) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  40 [mobile] › e2e/archive-final.spec.ts:55:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除 (5.6s)
+(node:182386) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  41 [mobile] › e2e/archive-step2.spec.ts:29:2 › 人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料 (7.5s)
+  ✓  42 [mobile] › e2e/archive-step2.spec.ts:49:2 › 四种组织颜色、完整字段、折叠、双滚动、纸色吸顶及桌面矩阵 (7.4s)
+  -  44 [mobile] › e2e/archive-step2.spec.ts:80:2 › 长组织名/概况/状态、49组织与大量任务事件历史：独立滚动和分页不丢字段
+  ✓  43 [mobile] › e2e/archive-step2.spec.ts:68:2 › 人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离 (7.1s)
+  ✓  45 [mobile] › e2e/archive-step2.spec.ts:95:2 › 正式待确认开局：16字段含真实候选时间，当前时间保持待确认 (5.4s)
+  ✓  46 [mobile] › e2e/archive-step2.spec.ts:108:2 › 正式空组织名录保持空态，浏览不创建组织或请求模型 (4.6s)
+  ✓  47 [mobile] › e2e/archive-step3.spec.ts:20:1 › 物品分类、只读搜索、三栏和选中详情，901边界、原槽位与归属跳转 (6.9s)
+  -  49 [mobile] › e2e/archive-step3.spec.ts:56:1 › 大量物品收入资产债务分页、独立滚动，原集合顺序和正式状态不变
+  -  50 [mobile] › e2e/archive-step3.spec.ts:71:1 › 极端金额、超安全范围合计、未知/零债务以及长文本边界
+  ✓  48 [mobile] › e2e/archive-step3.spec.ts:39:1 › 经济资金、部分未知合计、全字段与原生手机，人物入口/旧Dialog/焦点闭环 (5.9s)
+  ✓  52 [mobile] › e2e/archive-step4.spec.ts:40:1 › 统一正式历史投影、双轨五尺寸、精度与详情全文，回焦与地图档案切换 (5.2s)
+  ✓  51 [mobile] › e2e/archive-step4.spec.ts:20:1 › 第四批事件家族、并行与退役成果，合法组织目标、缓存、Esc和只读性 (6.2s)
+  -  54 [mobile] › e2e/archive-step4.spec.ts:64:1 › 大型并行家族、长标题与长记忆、历史分段有界；reduced motion和只读压力
+  ✓  55 [mobile] › e2e/desktop-cabinet.spec.ts:4:1 › 纸柜非模态焦点、dock切换、关联旧容器、Esc和浏览不写状态 (5.1s)
+  -  56 [mobile] › e2e/desktop-cabinet.spec.ts:37:1 › 大量NPC长姓名长描述：独立滚动、筛选、分页与完整字段
+  ✓  53 [mobile] › e2e/archive-step4.spec.ts:52:1 › 六层记忆原文与归属、多来源分页和层级缓存；手机保持原生界面 (6.7s)
+  ✓  58 [mobile] › e2e/startup-notices.spec.ts:29:1 › 完整定稿实际分段渲染：开头、架空社会声明与开发者落款 (3.1s)
+  ✓  57 [mobile] › e2e/desktop-cabinet.spec.ts:54:1 › NPC与关联组织往返保留目标定位，手机组织仍为原生模态 (5.8s)
+  ✓  59 [mobile] › e2e/startup-notices.spec.ts:55:1 › 首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复 (4.9s)
+  ✓  60 [mobile] › e2e/startup-notices.spec.ts:83:1 › 第一步勾选仍显示第二步；共享勾选可撤销且保留其他本地配置 (3.1s)
+  ✓  61 [mobile] › e2e/startup-notices.spec.ts:99:1 › 第二步勾选当天刷新和新页面均免打扰，次日本地日期恢复 (5.8s)
+  ✓  62 [mobile] › e2e/startup-notices.spec.ts:119:1 › 首页与设置手动查看只开指定公告；返回保留设置内容和焦点 (6.3s)
+  ✓  64 [mobile] › e2e/startup-notices.spec.ts:164:1 › 直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型 (3.5s)
+  ✓  63 [mobile] › e2e/startup-notices.spec.ts:150:1 › 手动查看可以取消已保存免打扰，不自动串联另一个弹窗 (4.9s)
+  ✓  65 [mobile] › e2e/startup-notices.spec.ts:195:1 › 键盘焦点局限于当前弹窗，Escape 按顺序关闭 (2.4s)
+  ✓  66 [mobile] › e2e/startup-notices.spec.ts:208:1 › localStorage 不可访问时仍能完成顺序并使用首页 (3.7s)
+  ✓  67 [mobile] › e2e/startup-notices.spec.ts:224:3 › localStorage setItem 失败时当前复选框与关闭仍可操作 (3.1s)
+  ✓  68 [mobile] › e2e/startup-notices.spec.ts:224:3 › localStorage removeItem 失败时当前复选框与关闭仍可操作 (3.0s)
+  ✓  69 [mobile] › e2e/startup-notices.spec.ts:243:1 › 长内容内部滚动，窄屏关闭和复选框可触达；截图 (4.6s)
+  ✓  70 [mobile] › e2e/startup-notices.spec.ts:268:3 › 西半球本地日历与 UTC 不同 › 按设备当日保存，跨 UTC 日但本地仍同一天时继续免打扰 (4.6s)
+
+
+  1) [desktop] › e2e/archive-step4.spec.ts:20:1 › 第四批事件家族、并行与退役成果，合法组织目标、缓存、Esc和只读性 ────────────────
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  getByRole('dialog', { name: '世界事件', exact: true }).getByRole('heading', { name: '独立资料核查', exact: true })
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeFocused" getByRole('dialog', { name: '世界事件', exact: true }).getByRole('heading', { name: '独立资料核查', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '世界事件', exact: true }).getByRole('heading', { name: '独立资料核查', exact: true })
+        13 × locator resolved to <h3 tabindex="-1" data-file-heading="true">独立资料核查</h3>
+           - unexpected value "inactive"
+
+
+      32 |   const org=await open(page,'势力组织');await org.getByRole('button',{name:'查看组织：青禾修复学社',exact:true}).click();await org.getByRole('button',{name:'独立资料核查',exact:true}).click();panel=page.getByRole('dialog',{name:'世界事件',exact:true});await expect(panel.getByRole('heading',{name:'独立资料核查',exact:true})).toBeFocused();
+      33 |   await page.getByRole('button',{name:'查看天气详情',exact:true}).click();await expect(page.getByRole('dialog',{name:'天气与环境详情',exact:true})).toBeVisible();await page.keyboard.press('Escape');await expect(panel).toBeVisible();await expect(page.getByRole('dialog',{name:'天气与环境详情',exact:true})).toBeHidden();
+    > 34 |   await openSettings(page);const settings=page.getByRole('dialog',{name:'设置',exact:true});await expect(settings).toHaveJSProperty('tagName','DIALOG');await page.keyboard.press('Escape');await expect(settings).toHaveCount(0);panel=await open(page,'世界事件');await expect(panel.getByRole('heading',{name:'独立资料核查',exact:true})).toBeFocused();await panel.focus();
+         |                                                                                                                                                                                                                                                                                                                                   ^
+      35 |   await page.keyboard.press('Escape');await expect(panel).toHaveCount(0);await expect(page.locator('[data-archive-panel="世界事件"]')).toBeFocused();panel=await open(page,'世界事件');await page.locator('[data-archive-panel="世界事件"]').click();await expect(panel).toHaveCount(0);
+      36 |  }else await page.keyboard.press('Escape');
+      37 |  expect(await stored(page)).toEqual(before);verify();
+        at /workspace/desktop-map-settings/e2e/archive-step4.spec.ts:34:323
+
+    Error Context: ../../tmp/s56-regression1/archive-step4-第四批事件家族、并行与退役成果，合法组织目标、缓存、Esc和只读性-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/s56-regression1/archive-step4-第四批事件家族、并行与退役成果，合法组织目标、缓存、Esc和只读性-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/s56-regression1/archive-step4-第四批事件家族、并行与退役成果，合法组织目标、缓存、Esc和只读性-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [desktop] › e2e/archive-step4.spec.ts:20:1 › 第四批事件家族、并行与退役成果，合法组织目标、缓存、Esc和只读性 ─────────────────
+  6 skipped
+  63 passed (4.6m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

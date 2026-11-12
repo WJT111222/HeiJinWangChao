@@ -1,0 +1,106 @@
+{
+  "baselineMain": "73ad3262b6436c4802230951894e89d0256476c2",
+  "total": 216,
+  "counts": {
+    "passed": 210,
+    "skipped": 6
+  },
+  "durationMs": 656815.413,
+  "byFile": {
+    "ai-model-selection.spec.ts": {
+      "passed": 8
+    },
+    "ai-route-persistence.spec.ts": {
+      "passed": 16
+    },
+    "ai-settings.spec.ts": {
+      "passed": 10
+    },
+    "archive-final.spec.ts": {
+      "passed": 9,
+      "skipped": 1
+    },
+    "archive-step2.spec.ts": {
+      "passed": 11,
+      "skipped": 1
+    },
+    "archive-step3.spec.ts": {
+      "passed": 6,
+      "skipped": 2
+    },
+    "archive-step4.spec.ts": {
+      "passed": 7,
+      "skipped": 1
+    },
+    "desktop-cabinet.spec.ts": {
+      "passed": 5,
+      "skipped": 1
+    },
+    "game-window.spec.ts": {
+      "passed": 18
+    },
+    "memory-summary-v2.spec.ts": {
+      "passed": 18
+    },
+    "model-list-compat.spec.ts": {
+      "passed": 16
+    },
+    "model-list-hardening.spec.ts": {
+      "passed": 26
+    },
+    "prompt-inspector.spec.ts": {
+      "passed": 12
+    },
+    "startup-notices.spec.ts": {
+      "passed": 26
+    },
+    "workflow-feedback.spec.ts": {
+      "passed": 22
+    }
+  },
+  "skipped": [
+    {
+      "file": "archive-final.spec.ts",
+      "title": "地图大量地点与异常长名称分段可达；展开选择恢复与原文不丢失",
+      "project": "mobile",
+      "status": "skipped",
+      "durationMs": 130
+    },
+    {
+      "file": "archive-step2.spec.ts",
+      "title": "长组织名/概况/状态、49组织与大量任务事件历史：独立滚动和分页不丢字段",
+      "project": "mobile",
+      "status": "skipped",
+      "durationMs": 177
+    },
+    {
+      "file": "archive-step3.spec.ts",
+      "title": "大量物品收入资产债务分页、独立滚动，原集合顺序和正式状态不变",
+      "project": "mobile",
+      "status": "skipped",
+      "durationMs": 139
+    },
+    {
+      "file": "archive-step3.spec.ts",
+      "title": "极端金额、超安全范围合计、未知/零债务以及长文本边界",
+      "project": "mobile",
+      "status": "skipped",
+      "durationMs": 129
+    },
+    {
+      "file": "archive-step4.spec.ts",
+      "title": "大型并行家族、长标题与长记忆、历史分段有界；reduced motion和只读压力",
+      "project": "mobile",
+      "status": "skipped",
+      "durationMs": 281
+    },
+    {
+      "file": "desktop-cabinet.spec.ts",
+      "title": "大量NPC长姓名长描述：独立滚动、筛选、分页与完整字段",
+      "project": "mobile",
+      "status": "skipped",
+      "durationMs": 443
+    }
+  ],
+  "note": "Final related suite after the local preference status guard is recorded separately; do not sum repeated cases as distinct coverage."
+}

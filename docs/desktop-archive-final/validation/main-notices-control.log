@@ -1,0 +1,54 @@
+[WebServer] (node:175262) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:175275) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:175302) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [desktop] › ../desktop-final-baseline/e2e/startup-notices.spec.ts:164:1 › 直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型 (8.3s)
+
+
+  1) [desktop] › ../desktop-final-baseline/e2e/startup-notices.spec.ts:164:1 › 直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog')
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog') with timeout 5000ms
+      - waiting for getByRole('dialog')
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      182 |   await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
+      183 |   await settings.getByRole('button', { name: '关闭资料界面' }).click();
+    > 184 |   await expect(page.getByRole('dialog')).toHaveCount(0);
+          |                                          ^
+      185 |   const after = await page.evaluate(async (saveId) => {
+      186 |     const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path);
+      187 |     const repo = await SaveRepository.open();
+        at /workspace/desktop-final-baseline/e2e/startup-notices.spec.ts:184:42
+
+    Error Context: ../../tmp/s56-main-notices/startup-notices-直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/s56-main-notices/startup-notices-直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/s56-main-notices/startup-notices-直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [desktop] › ../desktop-final-baseline/e2e/startup-notices.spec.ts:164:1 › 直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型 
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

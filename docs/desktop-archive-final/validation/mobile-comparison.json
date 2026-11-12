@@ -1,0 +1,44 @@
+[
+  {
+    "file": "map-mobile.png",
+    "mainSha256": "687b8b9839c90b3fe22fe6dc677dbf7d29f21484ed3cbe635125638a879c09cc",
+    "reactSha256": "687b8b9839c90b3fe22fe6dc677dbf7d29f21484ed3cbe635125638a879c09cc",
+    "pixelIdentical": true
+  },
+  {
+    "file": "settings-AI 连接-mobile.png",
+    "mainSha256": "2754fe47e1f2a17bee0ee9987892a40a413d4f10740bf0abf2f09cbca71c5cb9",
+    "reactSha256": "2754fe47e1f2a17bee0ee9987892a40a413d4f10740bf0abf2f09cbca71c5cb9",
+    "pixelIdentical": true
+  },
+  {
+    "file": "settings-mobile.png",
+    "mainSha256": "2754fe47e1f2a17bee0ee9987892a40a413d4f10740bf0abf2f09cbca71c5cb9",
+    "reactSha256": "2754fe47e1f2a17bee0ee9987892a40a413d4f10740bf0abf2f09cbca71c5cb9",
+    "pixelIdentical": true
+  },
+  {
+    "file": "settings-提示词-mobile.png",
+    "mainSha256": "dbeba80ffc538c9eb3de9134b06d69ee30f8e3dc94e15ce1b0453b082becb2ae",
+    "reactSha256": "dbeba80ffc538c9eb3de9134b06d69ee30f8e3dc94e15ce1b0453b082becb2ae",
+    "pixelIdentical": true
+  },
+  {
+    "file": "settings-提示词管理-mobile.png",
+    "mainSha256": "cf461d11c087c30ab0a21ea356d2d55710c57bde313615e1beb89c884feeb387",
+    "reactSha256": "cf461d11c087c30ab0a21ea356d2d55710c57bde313615e1beb89c884feeb387",
+    "pixelIdentical": true
+  },
+  {
+    "file": "settings-记忆-mobile.png",
+    "mainSha256": "a4c03ce3d1bdc7b1389c45acaccfc70f8cee97437a219119c3b14898a0a02ba1",
+    "reactSha256": "a4c03ce3d1bdc7b1389c45acaccfc70f8cee97437a219119c3b14898a0a02ba1",
+    "pixelIdentical": true
+  },
+  {
+    "file": "settings-运行-mobile.png",
+    "mainSha256": "ff3049f148646e503ddeda20e4195cfe026731f7eb90b2abeaf817cd454cabca",
+    "reactSha256": "ff3049f148646e503ddeda20e4195cfe026731f7eb90b2abeaf817cd454cabca",
+    "pixelIdentical": true
+  }
+]

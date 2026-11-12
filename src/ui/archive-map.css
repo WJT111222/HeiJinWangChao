@@ -1,0 +1,112 @@
+/* Confirmed hierarchy diagram; no geographic layout or movement. */
+@media(min-width:901px){
+.app-shell-game .city-night .archive .mp{flex:1;min-height:0;display:grid;grid-template-columns:clamp(250px,24%,300px) minmax(0,1fr)}
+.app-shell-game .city-night .archive .mp-tree{min-height:0;padding:1.1rem 1.1rem 1.6rem 0;border-right:1px solid var(--line)}
+.app-shell-game .city-night .archive .mp-tree .muted{font-size:.74rem;color:var(--dim);line-height:1.7;margin:.6rem 0 .9rem}
+.app-shell-game .city-night .archive .map-tree{list-style:none;margin:0;padding:0}
+.app-shell-game .city-night .archive .map-tree .map-tree{padding-left:1rem;margin-left:.55rem;border-left:1px dashed var(--line-2)}
+.app-shell-game .city-night .archive .mt-row{display:flex;align-items:center;gap:.35rem;width:100%;text-align:left;border:0;border-radius:5px;padding:.38rem .45rem;font-size:.86rem;color:var(--text);position:relative}
+.app-shell-game .city-night .archive .mt-row:hover:not(:disabled){background:#2a262209}
+.app-shell-game .city-night .archive .mt-row[aria-pressed=true]{background:#8E6C2516;color:var(--head)}
+.app-shell-game .city-night .archive .mt-row[aria-pressed=true]::before{content:'';position:absolute;left:-.1rem;top:.35rem;bottom:.35rem;width:2px;border-radius:2px;background:var(--gold)}
+.app-shell-game .city-night .archive .mt-tog{flex:none;width:1rem;height:1rem;display:grid;place-items:center;font-size:.6rem;color:var(--dim);transition:transform .2s}
+.app-shell-game .city-night .archive .mt-tog.open{transform:rotate(90deg)}
+.app-shell-game .city-night .archive .mt-tog.leaf::before{content:'';width:4px;height:4px;border-radius:50%;background:#2a262240}
+.app-shell-game .city-night .archive .mt-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-shell-game .city-night .archive .mt-lv0>.mt-row .mt-name{font-family:var(--font-title);font-size:1rem;letter-spacing:.2em;color:var(--head)}
+.app-shell-game .city-night .archive .mt-n{font-family:var(--font-mono);font-size:.62rem;color:var(--dim)}
+.app-shell-game .city-night .archive .here{flex:none;display:inline-grid;place-items:center;width:1.15rem;height:1.15rem;border-radius:50%;font-family:var(--font-title);font-size:.58rem;color:#F6F0E2;background:#A3412E;box-shadow:0 0 0 2px var(--sheet),0 0 0 3px #A3412E66}
+.app-shell-game .city-night .archive .mp-main{min-height:0;padding:1.2rem 0 2rem 1.4rem}
+.app-shell-game .city-night .archive .city-map{position:relative;border:1px solid var(--line-2);border-radius:10px;overflow:hidden;
+  background:linear-gradient(#2a26220a 1px,transparent 1px) 0 0/28px 28px,linear-gradient(90deg,#2a26220a 1px,transparent 1px) 0 0/28px 28px,#EEE7D6}
+.app-shell-game .city-night .archive .city-map .cm-hd{position:relative;z-index:2;display:flex;align-items:center;gap:.8rem;padding:.75rem 1rem;border-bottom:1px solid var(--line)}
+.app-shell-game .city-night .archive .city-map .cm-hd h4{margin:0;font-family:var(--font-title);font-size:1.15rem;letter-spacing:.35em;color:var(--head)}
+.app-shell-game .city-night .archive .city-map .cm-hd .en{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.24em;color:color-mix(in srgb,var(--tint) 45%,#1a2a28)}
+.app-shell-game .city-night .archive .city-map .cm-hd .legend{margin-left:auto;display:flex;gap:.9rem;font-size:.68rem;color:var(--dim)}
+.app-shell-game .city-night .archive .city-map .cm-hd .legend span{display:inline-flex;align-items:center;gap:.3rem}
+.app-shell-game .city-night .archive .city-map .river{position:absolute;inset:3rem 0 0 0;z-index:0;pointer-events:none}
+.app-shell-game .city-night .archive .city-map .river path{fill:none;stroke:color-mix(in srgb,var(--tint) 55%,#9fb6c4);stroke-width:16;stroke-linecap:round;opacity:.5}
+.app-shell-game .city-night .archive .city-map .river path.thin{stroke-width:8;opacity:.28}
+.app-shell-game .city-night .archive .city-map .river text{font-family:var(--font-title);font-size:12px;letter-spacing:6px;fill:color-mix(in srgb,var(--tint) 40%,#3b5566);opacity:.7}
+.app-shell-game .city-night .archive .cm-body{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:.9rem;padding:1.1rem}
+.app-shell-game .city-night .archive .district{flex:1 1 15rem;min-width:13rem;padding:.7rem .8rem .8rem;border:1.5px dashed #2a262238;border-radius:8px;background:#F4EEE2b8;backdrop-filter:blur(1px);text-align:left;cursor:pointer;transition:border-color .2s,box-shadow .2s}
+.app-shell-game .city-night .archive .district:hover{border-color:var(--gold-lo)}
+.app-shell-game .city-night .archive .district.on{border:1.5px solid var(--gold);box-shadow:0 0 0 3px #8E6C2522}
+.app-shell-game .city-night .archive .district.has-me{border-color:#A3412E88}
+.app-shell-game .city-night .archive .district>.dn{display:flex;align-items:center;gap:.4rem;font-family:var(--font-title);font-size:.95rem;letter-spacing:.2em;color:var(--head)}
+.app-shell-game .city-night .archive .district>.dn small{margin-left:auto;font-family:var(--font-mono);font-size:.6rem;letter-spacing:0;color:var(--dim)}
+.app-shell-game .city-night .archive .blocks{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.6rem}
+.app-shell-game .city-night .archive .block{padding:.4rem .55rem .5rem;border:1px solid var(--line-2);border-radius:6px;background:#FBF8F1;min-width:7rem;flex:1 1 7rem;cursor:pointer}
+.app-shell-game .city-night .archive .block.on{border-color:var(--gold);background:#FFF9EC}
+.app-shell-game .city-night .archive .block .bn{font-size:.8rem;color:var(--head);display:flex;align-items:center;gap:.3rem}
+.app-shell-game .city-night .archive .pins{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.35rem}
+.app-shell-game .city-night .archive .pin{display:inline-flex;align-items:center;gap:.25rem;font-size:.66rem;color:var(--muted);padding:.02rem .4rem .02rem .25rem;border-radius:999px;background:#2a26220a;border:1px solid transparent;cursor:pointer;white-space:nowrap}
+.app-shell-game .city-night .archive .pin::before{content:'';width:6px;height:6px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--dim)}
+.app-shell-game .city-night .archive .pin:hover{border-color:var(--gold-lo)}
+.app-shell-game .city-night .archive .pin.on{color:var(--head);border-color:var(--gold);background:#8E6C2514}
+.app-shell-game .city-night .archive .pin.me{color:#A3412E;font-weight:600}
+.app-shell-game .city-night .archive .pin.me::before{background:#A3412E;box-shadow:0 0 0 3px #A3412E33;animation:map-pin-breathe 1.8s ease-in-out infinite}
+.app-shell-game .city-night .archive .pin .ppl{font-family:var(--font-mono);font-size:.56rem;color:var(--dim)}
+.app-shell-game .city-night .archive .place-card{margin-top:1.2rem}
+.app-shell-game .city-night .archive .pc-crumb{font-size:.76rem;color:var(--dim);letter-spacing:.05em;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center}
+.app-shell-game .city-night .archive .pc-crumb button{border:0;padding:0;font-size:.76rem;color:var(--info);background:none}
+.app-shell-game .city-night .archive .pc-crumb button:hover:not(:disabled){background:none;text-decoration:underline}
+.app-shell-game .city-night .archive .pc-title{display:flex;align-items:center;gap:.9rem;margin:.45rem 0 .2rem}
+.app-shell-game .city-night .archive .pc-title h3{font-size:1.75rem;letter-spacing:.12em;color:var(--head)}
+.app-shell-game .city-night .archive .pc-title .lv{font-size:.68rem;padding:.06rem .5rem;border-radius:3px;border:1px solid var(--line-2);color:var(--muted)}
+.app-shell-game .city-night .archive .pc-here{display:inline-flex;align-items:center;gap:.4rem;font-size:.74rem;color:#A3412E;padding:.1rem .6rem .1rem .2rem;border-radius:999px;background:#A3412E12;border:1px solid #A3412E44}
+.app-shell-game .city-night .archive .pc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 1rem}
+.app-shell-game .city-night .archive .pc-grid .sec{margin-bottom:0}
+.app-shell-game .city-night .archive .kids{display:flex;flex-wrap:wrap;gap:.45rem}
+.app-shell-game .city-night .archive .kids button{display:inline-flex;align-items:center;gap:.4rem;font-size:.84rem;padding:.4rem .75rem;border-radius:6px;background:#F6F1E6}
+.app-shell-game .city-night .archive .kids button small{font-family:var(--font-mono);font-size:.62rem;color:var(--dim)}
+.app-shell-game .city-night .archive .who-list{display:grid;gap:.35rem}
+.app-shell-game .city-night .archive .who-row{display:flex;align-items:center;gap:.6rem;font-size:.86rem}
+.app-shell-game .city-night .archive .who-row .seal{width:1.7rem;height:1.7rem;font-size:.7rem;border-radius:50%;box-shadow:none}
+.app-shell-game .city-night .archive .who-row .link-btn{font-family:var(--font-title);font-size:.92rem}
+.app-shell-game .city-night .archive .who-row .pill{margin-left:auto}
+.app-shell-game .city-night .archive .derived-note{font-size:.68rem;color:var(--dim);margin:-.4rem 0 .7rem;letter-spacing:.06em}
+
+@media (max-width:1199px){.app-shell-game .city-night .archive .mp{grid-template-columns:220px minmax(0,1fr)}
+.app-shell-game .city-night .archive .pc-grid{grid-template-columns:1fr}
+}
+
+
+
+}
+@media(min-width:901px){
+ .app-shell-game .city-night .archive .mp-tree,.app-shell-game .city-night .archive .mp-main {overflow:auto;overscroll-behavior:contain;min-width:0;}
+ .app-shell-game .city-night .archive .mp-tree .map-tree {margin:0;padding:0;list-style:none;}
+ .app-shell-game .city-night .archive .map-tree .map-tree {padding-left:.8rem;margin-left:.4rem;border-left:1px dashed var(--line-2);}
+ .app-shell-game .city-night .archive .map-tree li {margin:0;min-width:0;}
+ .app-shell-game .city-night .archive .mt-line {display:flex;align-items:center;min-width:0;}
+ .app-shell-game .city-night .archive button.mt-tog {padding:0;border:0;min-width:1rem;background:none;}
+ .app-shell-game .city-night .archive .mt-row {min-width:0;flex:1;}
+ .app-shell-game .city-night .archive .map-more {font-size:.74rem;margin:.4rem 0;white-space:normal;}
+ .app-shell-game .city-night .archive .city-map .cm-hd {flex-wrap:wrap;}
+ .app-shell-game .city-night .archive .city-map .legend {flex-wrap:wrap;margin-left:0;gap:.4rem;}
+ .app-shell-game .city-night .archive .district {min-width:0;cursor:default;}
+ .app-shell-game .city-night .archive .district>.dn,.app-shell-game .city-night .archive .block>.bn {width:100%;text-align:left;border:0;background:none;padding:0;white-space:normal;overflow-wrap:anywhere;}
+ .app-shell-game .city-night .archive .block {min-width:0;}
+ .app-shell-game .city-night .archive .pin {white-space:normal;max-width:100%;overflow-wrap:anywhere;}
+ .app-shell-game .city-night .archive .pin::before {flex:none;}
+ .app-shell-game .city-night .archive .pc-title {flex-wrap:wrap;}
+ .app-shell-game .city-night .archive .pc-title h3 {outline:none;overflow-wrap:anywhere;}
+ .app-shell-game .city-night .archive .pc-crumb span {min-width:0;overflow-wrap:anywhere;}
+ .app-shell-game .city-night .archive .who-row {flex-wrap:wrap;}
+ .app-shell-game .city-night .archive .kids button,.app-shell-game .city-night .archive .who-row button {white-space:normal;overflow-wrap:anywhere;min-width:0;}
+ .app-shell-game .city-night .archive .place-card .world-record {margin:1.3rem 0;padding:1.15rem 1.3rem;border:1px solid var(--line);background:var(--card);border-radius:8px;}
+ .app-shell-game .city-night .archive .place-card .world-record dd {overflow-wrap:anywhere;white-space:pre-wrap;}
+ .app-shell-game .city-night .archive .mp-main {background:none;border:0;box-shadow:none;border-radius:0;}
+ .app-shell-game .city-night .archive .city-map[data-city=other] {--tint:#958675;}
+ .app-shell-game .city-night .archive .map-issue {padding:.7rem;border-left:2px solid var(--neg);color:var(--muted);font-size:.8rem;}
+}
+@keyframes map-pin-breathe {50%{opacity:.45}}
+@media(prefers-reduced-motion:reduce){.archive .pin.me::before {animation:none!important;}.archive .mt-tog {transition:none!important;}}
+@media(min-width:901px){
+ .app-shell-game .city-night .archive .map-tree .mt-name,.app-shell-game .city-night .archive .map-tree .mt-n,.app-shell-game .city-night .archive .map-tree .mt-tog.leaf {padding:0;background:none;border:0;}
+ .app-shell-game .city-night .archive .map-tree .here {padding:0;border:0;}
+ .app-shell-game .city-night .archive .mt-row {background:transparent;}
+ .app-shell-game .city-night .archive .mt-row[aria-pressed=true] {background:#8E6C2516;}
+ .app-shell-game .city-night .archive .mt-lv0>.mt-line .mt-name {font-family:var(--font-title);font-size:1rem;letter-spacing:.2em;color:var(--head);}
+}

@@ -1,0 +1,20 @@
+import {test,expect} from './helpers/test';
+import type {Page} from '@playwright/test';
+import {openSettings} from './helpers/gameLayout';
+async function seed(page:Page,extra=0,channels=true){
+ await page.goto('/');await page.evaluate(async({extra,channels})=>{
+  const paths=['/src/tests/fixtures/mapArchive.ts','/src/services/storage/saveRepository.ts','/src/domain/drafts.ts','/src/ui/settings/model.ts','/src/services/ai/configuration.ts'];
+  const [{mapArchiveState},{SaveRepository},{createTurnDraft},{defaultSettings,settingsKey},{defaultAiConfig,newChannel,saveAiConfig}]=await Promise.all(paths.map(p=>import(p))),state=mapArchiveState(extra),settings=defaultSettings();for(const cfg of Object.values(settings.memory.summaries) as {automatic:boolean}[])cfg.automatic=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
+  const config=defaultAiConfig();if(channels){config.channels=['openai','anthropic','gemini'].map((protocol,index)=>({...newChannel(),protocol,name:`合成通道 ${index+1}`,baseUrl:`https://archive-settings.mock.invalid/${protocol}/v1`,defaultModel:`ui-${protocol}`}));config.routes.story={channelId:config.channels[0].id,modelId:''};}saveAiConfig(localStorage,config);
+  const r=await SaveRepository.open();r.close();await new Promise<void>((resolve,reject)=>{const q=indexedDB.open('heijinwangchao');q.onsuccess=()=>{const db=q.result,t=db.transaction(['saves','drafts'],'readwrite');t.objectStore('saves').put(state);t.objectStore('drafts').put(createTurnDraft(state.saveId,state.revision,'map-settings-draft','regular','保留行动草稿'));t.oncomplete=()=>{db.close();resolve();};t.onabort=()=>reject(t.error);};q.onerror=()=>reject(q.error);});
+ },{extra,channels});await page.goto('/#game/save-a');await page.reload();await expect(page.locator('.game-layout')).toBeVisible();
+}
+
+test('未修改main桌面原生地图与设置，同一正式夹具与三尺寸截图',async({page})=>{
+ await page.setViewportSize({width:1440,height:900});await seed(page);let calls=0;await page.route('https://**',async r=>{calls++;await r.abort();});
+ await page.locator('[data-archive-panel="地图"]').click();const map=page.getByRole('dialog',{name:'地图',exact:true});await expect(map).toHaveJSProperty('tagName','DIALOG');expect(await map.evaluate(e=>e.matches(':modal'))).toBe(true);
+ for(const width of [1440,1100,901]){await page.setViewportSize({width,height:900});await page.screenshot({animations:'disabled',path:`docs/desktop-archive-final/screenshots/main-map-${width}.png`});}
+ await page.keyboard.press('Escape');await openSettings(page);const settings=page.getByRole('dialog',{name:'设置',exact:true});expect(await settings.evaluate(e=>e.matches(':modal'))).toBe(true);
+ for(const width of [1440,1100,901]){await page.setViewportSize({width,height:900});await page.screenshot({animations:'disabled',path:`docs/desktop-archive-final/screenshots/main-settings-${width}.png`});}
+ expect(calls).toBe(0);
+});
