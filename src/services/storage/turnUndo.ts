@@ -111,7 +111,8 @@ export async function restoreSnapshot(tx: IDBTransaction, state: GameState, cont
     && before.journal.every((entry, index) => entry.turnId === state.journal[index]?.turnId && entry.revision === state.journal[index]?.revision),
   'UNDO_CORRUPT', '恢复点与当前时间线不一致，未修改存档');
   // Business time can go back; concurrency revision must never do so (ABA protection).
-  const restored = GameStateSchema.parse({ ...retainNpcChoices(before,state), revision: state.revision + 1, updatedAt: new Date().toISOString() });
+  const restored = GameStateSchema.parse({ ...retainNpcChoices(before,state), openingCityId: state.openingCityId,
+    revision: state.revision + 1, updatedAt: new Date().toISOString() });
   await request(tx.objectStore('turnUndo').delete([state.saveId, head!.turnId]));
   control.records.pop();
   control.epoch = `epoch-${crypto.randomUUID()}`;

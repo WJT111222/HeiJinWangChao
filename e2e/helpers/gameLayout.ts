@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import { openLibrary } from './home';
 import type { Page } from '@playwright/test';
 
 // 原有高级工作流/资料测试显式打开折叠区，继续验证原操作；默认折叠由独立布局测试覆盖。
@@ -39,10 +40,10 @@ export async function goHome(page: Page) {
   const directory = page.getByRole('dialog', { name: '世界资料', exact: true });
   if (await directory.isVisible()) await page.keyboard.press('Escape');
   const desktopHome = page.getByRole('navigation', { name: '系统操作' }).getByRole('button', { name: '返回首页', exact: true });
-  if (await desktopHome.isVisible()) { await desktopHome.click(); return; }
+  if (await desktopHome.isVisible()) { await desktopHome.click(); await openLibrary(page); return; }
   const menu = page.getByRole('button', { name: '打开游戏菜单', exact: true });
   if (await menu.isVisible()) await menu.click();
-  await page.getByRole('button', { name: '游戏首页', exact: true }).click();
+  await page.getByRole('button', { name: '游戏首页', exact: true }).click(); await openLibrary(page);
 }
 
 async function closeWorldArchive(page: Page) {

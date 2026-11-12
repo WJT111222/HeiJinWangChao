@@ -1,0 +1,17 @@
+{
+  "baseline": "9fd0cf1d6562bc0d41bd8e5f5f1ae397ec843efc",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "changed_pixels": 8,
+  "total_pixels": 329160,
+  "unchanged_percent": 99.99756957102929,
+  "changed_bounds": [
+    372,
+    170,
+    374,
+    195
+  ],
+  "note": "同一 Repository Mock 场景；差异仅在右上标签边缘。"
+}

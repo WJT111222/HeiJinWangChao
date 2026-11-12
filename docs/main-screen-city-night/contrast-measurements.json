@@ -1,0 +1,62 @@
+{
+  "scenario": "1440x900、四城、白天+雾（明亮背景）、历史/最新正文；reduced-motion",
+  "method": "截图比较透明/黑/白字色，筛选至少98%字形覆盖率的像素，以真实渲染文字与同位置背景计算WCAG对比度；排除抗锯齿边缘。",
+  "results": [
+    {
+      "city": "chongqing",
+      "paragraph": 0,
+      "historical": true,
+      "minimum_contrast": 5.346,
+      "sampled_ink_pixels": 339
+    },
+    {
+      "city": "chongqing",
+      "paragraph": 1,
+      "historical": false,
+      "minimum_contrast": 10.782,
+      "sampled_ink_pixels": 379
+    },
+    {
+      "city": "shanghai",
+      "paragraph": 0,
+      "historical": true,
+      "minimum_contrast": 5.346,
+      "sampled_ink_pixels": 339
+    },
+    {
+      "city": "shanghai",
+      "paragraph": 1,
+      "historical": false,
+      "minimum_contrast": 10.063,
+      "sampled_ink_pixels": 364
+    },
+    {
+      "city": "harbin",
+      "paragraph": 0,
+      "historical": true,
+      "minimum_contrast": 5.346,
+      "sampled_ink_pixels": 339
+    },
+    {
+      "city": "harbin",
+      "paragraph": 1,
+      "historical": false,
+      "minimum_contrast": 9.872,
+      "sampled_ink_pixels": 363
+    },
+    {
+      "city": "guangzhou",
+      "paragraph": 0,
+      "historical": true,
+      "minimum_contrast": 5.352,
+      "sampled_ink_pixels": 339
+    },
+    {
+      "city": "guangzhou",
+      "paragraph": 1,
+      "historical": false,
+      "minimum_contrast": 10.034,
+      "sampled_ink_pixels": 363
+    }
+  ]
+}

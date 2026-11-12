@@ -27,6 +27,7 @@ export const RetiredNpcSchema = z.strictObject({
 });
 export const SaveShape = {
   schemaVersion: z.literal(9), saveId: IdSchema, title: TextSchema,
+  openingCityId: IdSchema.nullable().optional(),
   createdAt: GameTimeSchema, updatedAt: GameTimeSchema, revision: CountSchema, turnNumber: CountSchema,
   worldClock: GameTimeSchema, openingTimePending: z.literal(true).optional(), weatherText: z.string(), environmentText: z.string(),
   openingInitializationPending: z.literal(true).optional(),
@@ -40,6 +41,7 @@ export const SaveShape = {
   timeline: z.array(TimelineEntrySchema),
   journal: z.array(z.strictObject({
     turnId: IdSchema, revision: CountSchema, story: StorySchema, relatedActorRefs: z.array(ActorRefSchema),
+    scene: z.strictObject({ worldClock: GameTimeSchema, locationId: IdSchema }).optional(),
   })),
   appliedCommands: z.array(z.strictObject({
     turnId: IdSchema, commandId: IdSchema, fingerprint: TextSchema,
@@ -262,7 +264,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
 export type GameState = z.infer<typeof GameStateSchema>;
 
 export function createGameState(input: {
-  saveId: string; title: string; worldClock: string;
+  saveId: string; title: string; worldClock: string; openingCityId?: string | null;
   protagonist: z.infer<typeof ProtagonistSchema>;
   locations: Record<string, z.infer<typeof LocationSchema>>;
   cash?: number | null; onlineBalance?: number | null;
@@ -270,6 +272,7 @@ export function createGameState(input: {
 }, now = new Date().toISOString()): GameState {
   return GameStateSchema.parse({
     schemaVersion: 9, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
+    openingCityId: input.openingCityId ?? null,
     createdAt: now, updatedAt: now, revision: 0, turnNumber: 0,
     weatherText: '', environmentText: '', protagonist: input.protagonist,
     initialCompanionId: input.companion?.id,

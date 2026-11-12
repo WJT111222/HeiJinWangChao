@@ -48,7 +48,7 @@ async function stored(page: Page) {
 async function fit(page: Page, height?: number) {
   await expect.poll(() => page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) <= innerWidth)).toBe(true);
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
-  const input = await page.getByLabel('你的行动', { exact: true }).boundingBox(), status = await page.locator('.player-status').boundingBox(), footer = await page.getByRole('button', { name: '发送', exact: true }).boundingBox();
+  const input = await page.getByLabel('你的行动', { exact: true }).boundingBox(), status = await page.locator((page.viewportSize()?.width ?? 0) > 900 ? '.bar' : '.player-status').boundingBox(), footer = await page.getByRole('button', { name: '发送', exact: true }).boundingBox();
   expect(input).not.toBeNull(); expect(footer).not.toBeNull(); expect(status).not.toBeNull();
   const limit = height ?? (await page.evaluate(() => innerHeight));
   expect(input!.y).toBeGreaterThanOrEqual(status!.y + status!.height); expect(input!.y + input!.height).toBeLessThanOrEqual(limit + 1);
@@ -77,7 +77,7 @@ test('顶部状态不挤压正文；完整人物资料独立滚动并恢复焦�
   await page.setViewportSize({ width: info.project.name === 'desktop' ? 1100 : 392, height: 480 });
   const reader = page.getByTestId('story-reader');
   await reader.evaluate(el => { el.scrollTop = 300; });
-  expect((await page.locator('.player-status').boundingBox())!.height).toBeLessThan(130);
+  expect((await page.locator((page.viewportSize()?.width ?? 0) > 900 ? '.bar' : '.player-status').boundingBox())!.height).toBeLessThan(130);
   await openProfile(page);
   const modal = page.getByRole('dialog', { name: '人物档案', exact: true });
   const area = modal.locator('.modal-body');
@@ -234,7 +234,7 @@ test('设置、历史检索及创角长页仍可滚动，关闭资料保留阅�
   await memory.getByLabel('搜索历史回合').fill('蓝色钥匙');
   await memory.getByRole('button', { name: '查看第 3 回合原文', exact: true }).click(); await expect(memory).toContainText('约定下周三');
   await page.keyboard.press('Escape'); expect(await reader.evaluate((el) => el.scrollTop)).toBe(220);
-  await goHome(page); await page.getByRole('button', { name: /开始新游戏/ }).click();
+  await goHome(page); await page.locator('.lib-top .back').click(); await page.getByRole('button', { name: /开始新游戏/ }).click();
   await page.getByLabel('姓名', { exact: true }).fill('布局测试'); await page.getByLabel('年龄', { exact: true }).fill('28'); await page.getByRole('radio', { name: '女性', exact: true }).check();
   await page.getByRole('button', { name: /下一步/ }).click(); await expect(page.getByRole('radio', { name: '自由选择', exact: true })).toBeChecked(); await expect(page.getByLabel('内置职业技能', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollHeight > innerHeight)).toBe(true);

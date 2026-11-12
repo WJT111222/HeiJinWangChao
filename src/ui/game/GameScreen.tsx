@@ -40,6 +40,9 @@ import { RuntimeLogPanel } from './RuntimeLogPanel';
 import { runtimeLogEvent } from './runtimeLog';
 import { StageResponsesPanel } from './StageResponsesPanel';
 import type { RuntimeLogEntry, RuntimeLogReporter } from './runtimeLog';
+import { CityAtmosphere, CityBar, CityChapter } from './CityNight';
+import { deriveAtmosphere } from './atmosphere';
+import './city-night.css';
 
 const sidebarMedia = '(max-width: 900px)';
 function subscribeSidebarSize(changed: () => void) {
@@ -291,6 +294,24 @@ export function GameScreen({
     : canCommit ? '候选已完成 · 等待结算'
     : workflowGuidance ? draft?.stageStatus.world === 'preview' ? '世界仅为预览 · 查看详情' : disabledGuidance ? '阶段已关闭 · 查看详情' : '候选未就绪 · 查看详情'
     : draft?.story ? '等待继续 · 部分已完成' : '等待开始';
+  const atmosphere = deriveAtmosphere(state);
+  const draftScene = state.openingTimePending
+    ? openingTime ? { worldClock: openingTime.startAt, locationId: state.protagonist.locationId } : undefined
+    : { worldClock: state.worldClock, locationId: state.protagonist.locationId };
+  const progressSteps = (['story', 'variables', 'world'] as const).map((stage, i) => {
+    const status = draft?.stageStatus[stage];
+    const auto = automatic.progress?.stage === stage ? automatic.progress : undefined;
+    const skipped = automatic.outcome?.draft.draftRevision === draft?.draftRevision && automatic.outcome?.skipped.includes(stage);
+    const text = awaitingAction ? '已结算'
+      : auto ? auto.phase === 'saving' ? '保存中' : auto.phase === 'retrying' ? '重试中' : '生成中'
+      : activeStage === stage ? activePhase === 'saving' ? '保存中' : '生成中'
+      : (stage === 'variables' && !settings.runtime.useVariableStage) || (stage === 'world' && !settings.runtime.useWorldStage) ? '已关闭'
+      : skipped || status === 'skipped' ? '已跳过'
+      : status === 'failed' || errorStage === stage && hasWorkflowError ? '失败 · 可重试'
+      : status === 'preview' ? '仅预览' : status === 'ready' ? '已完成' : '待生成';
+    return { stage, name: ['正文', '变量', '动态世界'][i], text,
+      visual: awaitingAction ? 'done' : auto || activeStage === stage ? 'run' : text === '失败 · 可重试' ? 'fail' : status === 'ready' ? 'done' : 'idle' };
+  });
   const worldNavigation = <aside className="world-sidebar" aria-label="世界资料">
     <h2>世界资料</h2>
     <nav aria-label="世界资料分类">
@@ -305,8 +326,21 @@ export function GameScreen({
     </nav>}
   </aside>;
   return (
-    <main className="game-layout">
-      <PlayerStatus state={state} onProfile={() => setPanel('人物档案')} onEconomy={() => setPanel('经济与资产')} />
+    <main className="game-layout city-night" data-city={atmosphere.city} data-time={atmosphere.time} data-wx={atmosphere.weather}
+      onKeyDown={event => {
+        if (compactSidebars || event.nativeEvent.isComposing || event.repeat || (event.target as HTMLElement).closest('dialog')) return;
+        if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.altKey) {
+          event.preventDefault(); void send(); return;
+        }
+        if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey ||
+          (event.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return;
+        if (/^[1-5]$/.test(event.key) && settings.prompts.actionOptions && !progress && options && options.length >= 3 && options.length <= 5) {
+          const option = options[Number(event.key) - 1];
+          if (option) { event.preventDefault(); setInput(option); document.getElementById('player-input')?.focus(); }
+        }
+      }}>
+      {!compactSidebars && <><CityAtmosphere state={state} /><CityBar state={state} /></>}
+      <PlayerStatus state={state} equipment={equipment} onProfile={() => setPanel('人物档案')} onEconomy={() => setPanel('经济与资产')} />
       <section className="story-column" aria-label="剧情与行动">
         <div
           className={`reader ${!view.journal.length && !draft?.story && !progress ? 'reader-empty' : ''}`}
@@ -333,21 +367,21 @@ export function GameScreen({
             </span>
           </div>
           {view.journal.map((entry, index) => (
-            <article className="story-entry" key={entry.turnId}>
-              <h2 className="chapter-heading">第 {index + 1} 回合</h2>
+            <article className={`story-entry glass ${index < view.journal.length - 1 || draft?.story || progress ? 'past' : 'latest'}`} key={entry.turnId}>
+              <CityChapter number={index + 1} state={state} scene={state.journal[index]?.scene} desktop={!compactSidebars} />
               <StoryReading narrative={entry.narrative} protagonistName={hero.name} />
             </article>
           ))}
           {progress ? (
-            <article className="story-entry" aria-label="流式正文预览" aria-busy="true">
-              <h2 className="chapter-heading">第 {state.turnNumber + 1} 回合</h2>
-              <span className="tag">临时预览 · 完整校验前不保存</span>
-              <p className="prose">{progress.narrative || '正在等待正文…'}</p>
+            <article className="story-entry glass latest" aria-label="流式正文预览" aria-busy="true">
+              <CityChapter number={state.turnNumber + 1} state={state} scene={draftScene} status="preview" desktop={!compactSidebars} />
+              <span className="tag preview-tag">临时预览 · 完整校验前不保存</span>
+              <p className="prose">{progress.narrative || '正在等待正文…'}{!compactSidebars && <span className="caret" aria-hidden="true" />}</p>
             </article>
           ) : draft?.story ? (
-            <article className="story-entry">
-              <h2 className="chapter-heading">第 {state.turnNumber + 1} 回合</h2>
-              <span className="tag">正文草稿 · 世界状态尚未确认</span>
+            <article className="story-entry glass latest">
+              <CityChapter number={state.turnNumber + 1} state={state} scene={draftScene} status="draft" desktop={!compactSidebars} />
+              <span className="tag preview-tag">正文草稿 · 世界状态尚未确认</span>
               <StoryReading narrative={draft.story.narrative} protagonistName={hero.name} />
             </article>
           ) : (
@@ -371,7 +405,7 @@ export function GameScreen({
               <div className="action-options" aria-label="行动建议">
                 <p>接下来你想做什么</p>
                 {options.map((option, index) => (
-                  <button key={option} onClick={() => setInput(option)}>
+                  <button key={option} aria-pressed={input === option} onClick={() => setInput(option)}>
                     <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span>{option}</span><span aria-hidden="true">→</span>
                   </button>
                 ))}
@@ -383,7 +417,7 @@ export function GameScreen({
         <div className="composer">
           <div className="composer-tools">
             {progress && !following && (
-              <button
+              <button className="follow"
                 onClick={() => {
                   follow.current = true;
                   setFollowing(true);
@@ -397,6 +431,8 @@ export function GameScreen({
               <details className="workflow-disclosure" ref={workflowDetails}>
                 <summary>
                   <strong role="status" aria-live="polite"><span className="workflow-prefix">三阶段 · </span>{workflowLabel}</strong>
+                  {!compactSidebars && <span className="rail" aria-hidden="true">{progressSteps.map((step, i) =>
+                    <span key={step.stage} data-s={step.visual}><span className="bar-seg" /><span className="lbl"><b>0{i + 1}</b> {step.name}<em> · {step.text}</em></span></span>)}</span>}
                   <span className="workflow-toggle">详情</span>
                 </summary>
                 <div className="workflow-details">
@@ -590,7 +626,9 @@ export function GameScreen({
             <div className="composer-roll">
               <TurnUndoControl repository={repository} state={state} draft={draft} busy={busy}
                 input={input} onInput={setInput} onUndone={onUndone} cancelMemory={memory.cancel} onNotice={setUndoNotice} />
-              {manualProgress ? (
+              {automatic.running ? (
+                <button disabled={automatic.settling || automatic.progress?.phase === 'saving'} onClick={automatic.cancel}>取消生成</button>
+              ) : manualProgress ? (
                 <button disabled={manualProgress.phase === 'saving'} onClick={cancel}>
                   {manualProgress.phase === 'saving' ? '正在保存…' : '取消生成'}
                 </button>
@@ -609,6 +647,7 @@ export function GameScreen({
             <div className="composer-footer">
               <button className="primary" disabled={(!canCommit && !awaitingAction) || busy || !input.trim()}
                 onClick={() => void send()}>{submitting ? '正在结算…' : '发送'}</button>
+              {!compactSidebars && <span className="kbd">Ctrl + Enter</span>}
             </div>
           </div>
         </div>

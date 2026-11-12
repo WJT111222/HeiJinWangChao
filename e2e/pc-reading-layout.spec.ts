@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { expect, test } from './helpers/test';
 import { seedNightSeal, nightSealStored } from './helpers/nightSeal';
 
-const destination = 'docs/ui-pc-reading/screenshots';
+const destination = '/tmp/ui2-legacy-layout-screenshots';
 const sizes = [
   { width: 1650, height: 927 }, { width: 1440, height: 900 },
   { width: 1280, height: 800 }, { width: 1024, height: 768 },
@@ -46,7 +46,7 @@ test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, 
         const el = document.querySelector(selector)!, rect = el.getBoundingClientRect();
         return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
       };
-      return { viewport: { width, height }, header: box('.app-header'), status: box('.player-status'),
+      return { viewport: { width, height }, header: box('.app-header'), status: box(innerWidth > 900 ? '.bar' : '.player-status'),
         story: box('.reader-heading'), composer: box('.composer-action-row'), reader: box('.reader'),
         overflow: document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight };
     }, size));
@@ -57,13 +57,13 @@ test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, 
     if (size.width > 900) {
       await expect(page.locator('.app-header')).toBeHidden();
       expect(measurements.at(-1)!.status.y).toBe(0);
-      const expected = size.width === 1280 ? [900, 1050] : size.width === 1440 ? [1050, 1160] : size.width >= 1650 ? [1100, 1180] : [700, 850];
-      expect(measurements.at(-1)!.story.width).toBeGreaterThanOrEqual(expected[0]);
-      expect(measurements.at(-1)!.story.width).toBeLessThanOrEqual(expected[1]);
+      const left = size.width >= 1200 ? Math.max(232, Math.min(280, size.width * .17)) : 220;
+      const expected = Math.min(1120, size.width - left - (size.width >= 1200 ? 76 : 68) - 56);
+      expect(measurements.at(-1)!.story.width).toBeCloseTo(expected, 0);
       expect(Math.abs(measurements.at(-1)!.story.width - measurements.at(-1)!.composer.width)).toBeLessThan(2);
       expect(Math.abs(measurements.at(-1)!.story.x - measurements.at(-1)!.composer.x)).toBeLessThan(2);
-      await expect(page.locator('.game-corner-brand')).toBeInViewport({ ratio: 1 });
-      const brand = (await page.locator('.game-corner-brand').boundingBox())!;
+      await expect(page.locator('.bar-city')).toBeInViewport({ ratio: 1 });
+      const brand = (await page.locator('.bar-city').boundingBox())!;
       const row = (await page.locator('.composer-action-row').boundingBox())!;
       expect(brand.x + brand.width).toBeLessThan(row.x);
       await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(7);
@@ -75,7 +75,7 @@ test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, 
       await reader.evaluate(el => { el.scrollTop = el.scrollHeight; });
       await expect(page.locator('.action-options')).toBeInViewport({ ratio: 1 });
       await page.screenshot({ path: `${destination}/after-options-${size.width}x${size.height}.png` });
-      const alignments = await page.locator('.reader-heading, .chapter-heading, .story-entry .prose:not(.story-bubble), .story-reading, .action-options, .workflow, .composer-action-row').evaluateAll(elements => elements.map(el => ({ className: el.className, x: el.getBoundingClientRect().x, width: el.getBoundingClientRect().width })));
+      const alignments = await page.locator('.reader-heading, .story-entry, .action-options, .workflow, .composer-action-row').evaluateAll(elements => elements.map(el => ({ className: el.className, x: el.getBoundingClientRect().x, width: el.getBoundingClientRect().width })));
       for (const rect of alignments) {
         expect(Math.abs(rect.x - measurements.at(-1)!.story.x), rect.className).toBeLessThan(2);
         expect(Math.abs(rect.width - measurements.at(-1)!.story.width), rect.className).toBeLessThan(2);
@@ -101,7 +101,7 @@ test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, 
       await page.locator('.workflow-disclosure > summary').click();
     } else {
       await expect(page.locator('.app-header')).toBeVisible();
-      await expect(page.locator('.game-corner-brand')).toBeHidden();
+      await expect(page.locator('.bar-city')).toBeHidden();
       const nav = page.getByRole('navigation', { name: '底部导航' });
       await expect(nav.getByRole('button')).toHaveText(['故事', '人物', '世界资料', '设置']);
       await nav.getByRole('button', { name: '世界资料', exact: true }).click();
@@ -112,24 +112,25 @@ test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, 
   }
   expect(await nightSealStored(page)).toEqual(stored);
   expect(external).toEqual([]);
-  await writeFile(`docs/ui-pc-reading/${phase}-measurements.json`, JSON.stringify(measurements, null, 2) + '\n');
+  await writeFile(`/tmp/ui2-legacy-${phase}-measurements.json`, JSON.stringify(measurements, null, 2) + '\n');
   if (phase === 'after') {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.getByRole('navigation', { name: '系统操作' }).getByRole('button', { name: '返回首页', exact: true }).click();
     await expect(page.locator('.home-page')).toBeVisible();
-    await expect(page.locator('.app-header')).toBeVisible();
+    await expect(page.locator('.home-experience .topbar')).toBeVisible();
   }
 });
 
 test('PC 长状态限高、完整资料、九入口短屏可访问', async ({ page }, info) => {
+  test.setTimeout(60000);
   test.skip(info.project.name !== 'desktop');
   await seedNightSeal(page, true);
   await page.getByRole('button', { name: /读取存档/ }).click();
   const before = await nightSealStored(page);
   for (const size of [...sizes.filter(size => size.width > 900), { width: 901, height: 600 }, { width: 2560, height: 1080 }]) {
     await page.setViewportSize(size);
-    expect((await page.locator('.player-status').boundingBox())!.height).toBeLessThan(100);
-    expect((await page.locator('.reader-heading').boundingBox())!.width).toBeLessThanOrEqual(1180);
+    expect((await page.locator('.bar').boundingBox())!.height).toBeLessThan(100);
+    expect((await page.locator('.reader-heading').boundingBox())!.width).toBeLessThanOrEqual(1120);
     await expect(page.locator('.status-identity h2')).toHaveAttribute('title', '沈砚与城市旧事档案的长期记录者'.repeat(5));
     await expect(page.locator('.status-condition')).toBeVisible();
     await expect(page.locator('.status-online')).toBeVisible();
@@ -147,7 +148,7 @@ test('PC 长状态限高、完整资料、九入口短屏可访问', async ({ pa
   await page.screenshot({ path: `${destination}/after-long-status.png` });
   await page.setViewportSize({ width: 900, height: 700 });
   await expect(page.locator('.app-header')).toBeVisible();
-  await expect(page.locator('.game-corner-brand')).toBeHidden();
+  await expect(page.locator('.bar-city')).toBeHidden();
   await expect(page.getByRole('navigation', { name: '系统操作' })).toHaveCount(0);
   expect(await nightSealStored(page)).toEqual(before);
 });

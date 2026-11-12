@@ -10,6 +10,7 @@ import { GameStateSchema } from './state';
 import type { GameState } from './state';
 import { MemoryEntrySchema } from './memories/schema';
 import { validateCommittedTime } from './timePreflight';
+import { openingTimeSelection } from './openingTime';
 
 export const TurnSubmissionSchema = z.strictObject({
   draft: TurnDraftSchema,
@@ -100,6 +101,11 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
         revision: current.revision + 1,
         story: draft.story!,
         relatedActorRefs: [],
+        scene: {
+          worldClock: openingTimeSelection(current, draft)?.startAt ?? current.worldClock,
+          // The formal opening origin precedes any movement in this turn, just as in regular turns.
+          locationId: current.protagonist.locationId,
+        },
       },
     ],
   };

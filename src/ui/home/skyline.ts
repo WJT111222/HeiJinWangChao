@@ -36,7 +36,11 @@ const SKY = {
     + `<rect y="140" width="${W}" height="20" fill="#110e0c"/>` + river(r, 30, 143, '#D08A6A', .3); },
 };
 const seeds = { cq: 7, sh: 31, hrb: 53, gz: 97 };
-export const skyline = (c: City, extra = '') => `<svg viewBox="0 0 ${W} 160" preserveAspectRatio="xMidYMax slice" ${extra}>${SKY[c](rng(seeds[c]))}</svg>`;
+export const skyline = (c: City, extra = '', ambientSnow = true) => {
+  const geometry = SKY[c](rng(seeds[c]));
+  // Home keeps its original snowfall. In-game weather is exclusively weatherText-driven.
+  return `<svg viewBox="0 0 ${W} 160" preserveAspectRatio="xMidYMax slice" ${extra}>${ambientSnow ? geometry : geometry.replace(/<g fill="#dfe8ef"[\s\S]*?<\/g>/, '')}</svg>`;
+};
 export const CITY = {
   cq:['重庆','CHONGQING · 29°33′N','山城 · 江雾 · 轻轨'], sh:['上海','SHANGHAI · 31°14′N','外滩 · 霓虹 · 江风'],
   hrb:['哈尔滨','HARBIN · 45°45′N','冰雪 · 圆顶 · 长街'], gz:['广州','GUANGZHOU · 23°07′N','早茶 · 榕荫 · 珠江'],

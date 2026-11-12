@@ -39,7 +39,7 @@ describe('真实 Repository → 候选重验 → 单事务正式结算', () => {
       npc: { 'npc-a': { healthText: '稍感疲倦' } },
     });
     expect(result.state.journal).toEqual([
-      { turnId: draft.turnId, revision: 1, story: draft.story, relatedActorRefs: [] },
+      { turnId: draft.turnId, revision: 1, story: draft.story, relatedActorRefs: [], scene: { worldClock: gameTime, locationId: 'chongqing' } },
     ]);
     expect(result.state.appliedCommands).toHaveLength(3);
     expect(result.draft).toMatchObject({
