@@ -100,6 +100,7 @@ test('手动仅一人一批；普通界面不暴露身份、原文、总结和�
   await openSettings(page);
   const settings = page.getByRole('dialog');
   await settings.getByRole('button', { name: '提示词管理', exact: true }).click();
+  await settings.getByRole('button', { name: '高级', exact: true }).click();
   await settings.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');
   const requestsList = settings.getByRole('combobox', { name: '选择请求', exact: true });
   await requestsList.selectOption({ label: await requestsList.locator('option').filter({ hasText: 'memory.npc_summarize' }).innerText() });

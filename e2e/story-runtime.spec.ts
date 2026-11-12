@@ -216,6 +216,7 @@ test('真实开局流式分片、资料面板不打断、只展示正文，草�
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
   await openSettings(page);
   await page.getByRole('button', { name: '提示词管理', exact: true }).click();
+  await page.getByRole('button', { name: '高级', exact: true }).click();
   await page.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');
   const internal = page.getByRole('region', { name: '上下文与统计' });
   await expect(internal).toContainText('browser-story-mock');

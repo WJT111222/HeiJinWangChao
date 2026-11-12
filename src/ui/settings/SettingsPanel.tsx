@@ -96,6 +96,7 @@ export function SettingsPanel({
               settings={editing}
               repository={repository}
               activeSaveId={activeSaveId}
+              onPromptChange={prompt}
             />
           </Suspense>
         )}

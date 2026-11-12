@@ -55,9 +55,18 @@ async function seed(page: Page, ready = true) {
     return JSON.stringify(state);
   }, ready);
 }
-async function inspector(page: Page) {
+async function inspector(page: Page, advanced = true) {
   await page.getByRole('button', { name: '设置', exact: true }).click();
   await page.getByRole('button', { name: '提示词管理', exact: true }).click();
+  await expect(page.getByRole('region', { name: '模块库' })).toBeVisible();
+  if (advanced) await openAdvanced(page);
+}
+async function openAdvanced(page: Page) {
+  await page.getByRole('button', { name: '高级', exact: true }).click();
+  await expect(page.getByRole('region', { name: '高级' })).toBeVisible();
+}
+async function backToList(page: Page) {
+  await page.getByRole('region', { name: '高级' }).getByRole('button', { name: /返回列表/ }).click();
   await expect(page.getByRole('region', { name: '模块库' })).toBeVisible();
 }
 async function readFormal(page: Page) {
@@ -79,10 +88,15 @@ test('无存档浏览真实模块、过滤与全文，缺少阶段请求时不�
     if (new URL(request.url()).origin !== new URL(baseURL!).origin) external.push(request.url());
   });
   await page.goto('/');
-  await inspector(page);
+  await inspector(page, false);
   const moduleCount = manifest.modules.length;
-  await expect(page.getByText(`模块库 · ${moduleCount}/${moduleCount}`, { exact: true })).toBeVisible();
-  await expect(page.locator('.module-library-list button')).toHaveCount(moduleCount);
+  const variableModules = manifest.modules.filter((item) => item.category === 'variable_group');
+  const variableDomains = new Set(variableModules.map((item) => item.domain)).size;
+  const groups = page.getByRole('group', { name: '提示词分类' });
+  await expect(groups.getByRole('button', { name: /^全部/ })).toContainText(String(moduleCount));
+  await expect(page.locator('.pm-list [data-prompt-id]')).toHaveCount(moduleCount - variableModules.length);
+  await expect(page.locator('.pm-list [data-domain]')).toHaveCount(variableDomains);
+  await openAdvanced(page);
   await page.getByText('开局与普通回合的模块差异', { exact: true }).click();
   await expect(page.getByRole('region', { name: '回合模式差异' })).toContainText(
     'stages.opening.story',
@@ -94,22 +108,31 @@ test('无存档浏览真实模块、过滤与全文，缺少阶段请求时不�
   await expect(
     page.getByText('没有已选存档，无法组装游戏上下文。模块资源仍可浏览。'),
   ).toBeVisible();
+  await backToList(page);
   await page.getByLabel('搜索模块', { exact: true }).fill('writing.nsfw');
-  await page.locator('.module-library-list button').click();
-  await expect(page.getByRole('region', { name: '模块原文与排序' })).toContainText(
-    'prompts/writing/nsfw.md',
-  );
-  await expect(page.getByRole('region', { name: '模块原文与排序' })).toContainText(
-    '所属阶段常驻 · 不可关闭',
-  );
+  await expect(page.locator('.pm-list [data-prompt-id]')).toHaveCount(1);
+  await page.locator('.pm-list [data-prompt-id="writing.nsfw"] .pm-open').click();
+  const source = page.getByRole('region', { name: '模块原文' });
+  await expect(source).toContainText('prompts/writing/nsfw.md');
+  await expect(source).toContainText('所属阶段常驻 · 不可关闭');
   await expect(page.getByLabel('模块完整原文')).not.toContainText('正在读取');
   await expect(page.getByLabel('模块完整原文')).not.toBeEmpty();
+  await source.getByRole('button', { name: /返回列表/ }).click();
   await page.getByLabel('搜索模块', { exact: true }).fill('');
-  await page.getByRole('combobox', { name: '模块类型', exact: true }).selectOption('worldbook');
-  await expect(page.locator('.module-library-list button')).toHaveCount(2);
-  await page.getByRole('combobox', { name: '模块类型', exact: true }).selectOption('');
-  await page.getByRole('combobox', { name: '适用阶段筛选', exact: true }).selectOption('memory');
-  await expect(page.locator('.module-library-list button')).toHaveCount(5);
+  await groups.getByRole('button', { name: /^参考资料/ }).click();
+  await expect(page.locator('.pm-list [data-prompt-id]')).toHaveCount(
+    manifest.modules.filter((item) => ['documentation', 'example', 'reference'].includes(item.category)).length,
+  );
+  await groups.getByRole('button', { name: /^记忆/ }).click();
+  await expect(page.locator('.pm-list [data-prompt-id]')).toHaveCount(5);
+  await groups.getByRole('button', { name: /^变量规则/ }).click();
+  await page.getByRole('button', { name: '查看主角常规更新规则', exact: true }).click();
+  await expect(source).toContainText('主角 · 变量规则');
+  await expect(source.getByRole('button', { name: '文本变量', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await source.getByRole('button', { name: 'JSON 变量', exact: true }).click();
+  await expect(source).toContainText('variableGroups.protagonist.update');
+  await expect(source).not.toContainText('variableGroups.protagonist.update.text');
+  await source.getByRole('button', { name: '高级', exact: true }).click();
   await page.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');
   await expect(page.getByText(/此阶段\/模式没有实际请求快照/)).toBeVisible();
   await expect(page.getByRole('button', { name: '主动查看完整内部上下文' })).toHaveCount(0);
@@ -380,8 +403,10 @@ for (const count of [300, 1000]) test(`${count} NPC 真实快照按需 Worker �
   expect(workers).toBe(0);
   await page.getByText('展开数据分类、召回预算与重复诊断', { exact: true }).click();
   await expect(context).toContainText('正在分析…');
+  await backToList(page);
   await page.getByLabel('搜索模块', { exact: true }).fill('writing');
   await expect(page.getByLabel('搜索模块', { exact: true })).toHaveValue('writing');
+  await openAdvanced(page);
   const progress = await page.evaluate(async () => {
     const storePath = '/src/services/ai/inspection.ts', analysisPath = '/src/prompts/budgetAnalysis.ts';
     const { requestInspections } = await import(storePath);
