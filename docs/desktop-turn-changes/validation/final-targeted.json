@@ -1,0 +1,1086 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/desktop-turn-changes/node_modules/.bin/playwright",
+      "test",
+      "--config=/tmp/changes-playwright.config.ts",
+      "e2e/turn-changes.spec.ts",
+      "e2e/continuous-turns.spec.ts",
+      "--output=/tmp/changes-final-targeted-results",
+      "--reporter=line,json"
+    ],
+    "configFile": "/tmp/changes-playwright.config.ts",
+    "rootDir": "/workspace/desktop-turn-changes/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 2
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/changes-final-targeted-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "/workspace/desktop-turn-changes/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/tmp/changes-final-targeted-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/workspace/desktop-turn-changes/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/tmp/changes-final-targeted-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "desktop",
+        "testDir": "/workspace/desktop-turn-changes/e2e",
+        "snapshotDir": "/workspace/desktop-turn-changes/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5207",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "desktop"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/tmp/changes-final-targeted-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "mobile",
+        "testDir": "/workspace/desktop-turn-changes/e2e",
+        "snapshotDir": "/workspace/desktop-turn-changes/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5207",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "userAgent": "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Mobile Safari/537.36",
+          "viewport": {
+            "width": 412,
+            "height": 839
+          },
+          "screen": {
+            "width": 412,
+            "height": 915
+          },
+          "deviceScaleFactor": 2.625,
+          "isMobile": true,
+          "hasTouch": true,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "mobile"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 2,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5207 --strictPort",
+      "cwd": "/workspace/desktop-turn-changes",
+      "url": "http://127.0.0.1:5207",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "continuous-turns.spec.ts",
+      "file": "continuous-turns.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 42201,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:37:21.702Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-1fc7f8afd10d8648a9df",
+          "file": "continuous-turns.spec.ts",
+          "line": 182,
+          "column": 1
+        },
+        {
+          "title": "下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 16970,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:37:21.541Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-fc5ff6cba4f59b17a396",
+          "file": "continuous-turns.spec.ts",
+          "line": 243,
+          "column": 1
+        },
+        {
+          "title": "提交事务中途失败 UI 不虚报成功；重试后只结算一次",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 14520,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:37:38.809Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-6e96dbaf13b88c5c4ef8",
+          "file": "continuous-turns.spec.ts",
+          "line": 273,
+          "column": 1
+        },
+        {
+          "title": "快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 20743,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:37:53.355Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-935ad12975d4dde00ea6",
+          "file": "continuous-turns.spec.ts",
+          "line": 305,
+          "column": 1
+        },
+        {
+          "title": "阶段未完成或主动关闭时，即使填写行动也不能部分结算",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 16496,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:38:04.215Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-aabd3a4ae3b8ac277acf",
+          "file": "continuous-turns.spec.ts",
+          "line": 342,
+          "column": 1
+        },
+        {
+          "title": "正式资金与时间显示新版本，结算后刷新不重复扣款",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 15224,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:38:14.149Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-809a01cd035c6da96f38",
+          "file": "continuous-turns.spec.ts",
+          "line": 358,
+          "column": 1
+        },
+        {
+          "title": "真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 17261,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:39:13.306Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-8e77617da642fc33db73",
+          "file": "continuous-turns.spec.ts",
+          "line": 182,
+          "column": 1
+        },
+        {
+          "title": "下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8840,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:39:20.593Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-8de78f96af9e62e6e2f6",
+          "file": "continuous-turns.spec.ts",
+          "line": 243,
+          "column": 1
+        },
+        {
+          "title": "提交事务中途失败 UI 不虚报成功；重试后只结算一次",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6806,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:39:29.654Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-81666dbe0ae1cd16da61",
+          "file": "continuous-turns.spec.ts",
+          "line": 273,
+          "column": 1
+        },
+        {
+          "title": "快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "failed",
+                  "duration": 10520,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n    at /workspace/desktop-turn-changes/e2e/continuous-turns.spec.ts:334:72",
+                    "location": {
+                      "file": "/workspace/desktop-turn-changes/e2e/continuous-turns.spec.ts",
+                      "column": 72,
+                      "line": 334
+                    },
+                    "snippet": "  332 |     ),\n  333 |   );\n> 334 |   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);\n      |                                                                        ^\n  335 |   const result = await stored(page);\n  336 |   expect(result.state.journal).toHaveLength(2);\n  337 |   expect(result.draft.baseSaveRevision).toBe(2);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-turn-changes/e2e/continuous-turns.spec.ts",
+                        "column": 72,
+                        "line": 334
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  332 |     ),\n  333 |   );\n> 334 |   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);\n      |                                                                        ^\n  335 |   const result = await stored(page);\n  336 |   expect(result.state.journal).toHaveLength(2);\n  337 |   expect(result.draft.baseSaveRevision).toBe(2);\n    at /workspace/desktop-turn-changes/e2e/continuous-turns.spec.ts:334:72"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:39:30.800Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/changes-final-targeted-results/continuous-turns-快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/tmp/changes-final-targeted-results/continuous-turns-快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿-mobile/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/desktop-turn-changes/e2e/continuous-turns.spec.ts",
+                    "column": 72,
+                    "line": 334
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-cbc0c17f867856211c2c",
+          "file": "continuous-turns.spec.ts",
+          "line": 305,
+          "column": 1
+        },
+        {
+          "title": "阶段未完成或主动关闭时，即使填写行动也不能部分结算",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3533,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:39:36.469Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-f0a35cc080b92a62c8df",
+          "file": "continuous-turns.spec.ts",
+          "line": 342,
+          "column": 1
+        },
+        {
+          "title": "正式资金与时间显示新版本，结算后刷新不重复扣款",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6293,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:39:40.016Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-7535a9ecae8b59198a57",
+          "file": "continuous-turns.spec.ts",
+          "line": 358,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "turn-changes.spec.ts",
+      "file": "turn-changes.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "最新结算回合六组胶囊、收起展开、键盘及四尺寸，手机版保持原界面",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 23202,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:38:20.764Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-83eb1b75d7c5486d5a1a",
+          "file": "turn-changes.spec.ts",
+          "line": 24,
+          "column": 1
+        },
+        {
+          "title": "变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 32419,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:38:29.483Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-34e0dac8460e18d073f2",
+          "file": "turn-changes.spec.ts",
+          "line": 39,
+          "column": 1
+        },
+        {
+          "title": "无变化、无恢复点、错误恢复点安全降级，草稿不显示；双端不改原存档",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 20805,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:38:43.995Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-ebdd5fa4a2a243a3462e",
+          "file": "turn-changes.spec.ts",
+          "line": 46,
+          "column": 1
+        },
+        {
+          "title": "长列表按8条展开、超长文本与极大金额完整可达，901边界及只读压力",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 10736,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:39:01.946Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-8192acd958634d612386",
+          "file": "turn-changes.spec.ts",
+          "line": 50,
+          "column": 1
+        },
+        {
+          "title": "真实Repository正式结算、撤回后最新变化及重新结算，恢复点与回合始终对应",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7500,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:39:04.818Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-d7de8fc7fec57055c319",
+          "file": "turn-changes.spec.ts",
+          "line": 57,
+          "column": 1
+        },
+        {
+          "title": "已有恢复点时发送新行动，真实Mock生成预览及取消期间不展示变化",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7773,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:39:12.340Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-b343db5f5ad89da6de70",
+          "file": "turn-changes.spec.ts",
+          "line": 67,
+          "column": 1
+        },
+        {
+          "title": "最新结算回合六组胶囊、收起展开、键盘及四尺寸，手机版保持原界面",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2337,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:39:41.908Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-7d77f2ec63fe3d2d1ecd",
+          "file": "turn-changes.spec.ts",
+          "line": 24,
+          "column": 1
+        },
+        {
+          "title": "变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "仅桌面新增的变化入口，手机原资料导航另测",
+                  "location": {
+                    "file": "/workspace/desktop-turn-changes/e2e/turn-changes.spec.ts",
+                    "line": 40,
+                    "column": 7
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 1,
+                  "status": "skipped",
+                  "duration": 339,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:39:44.582Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "仅桌面新增的变化入口，手机原资料导航另测",
+                      "location": {
+                        "file": "/workspace/desktop-turn-changes/e2e/turn-changes.spec.ts",
+                        "line": 40,
+                        "column": 7
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-dbfed4058fb5a75e3f24",
+          "file": "turn-changes.spec.ts",
+          "line": 39,
+          "column": 1
+        },
+        {
+          "title": "无变化、无恢复点、错误恢复点安全降级，草稿不显示；双端不改原存档",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 6945,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:39:44.963Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-57b8a1e6633ca5384af2",
+          "file": "turn-changes.spec.ts",
+          "line": 46,
+          "column": 1
+        },
+        {
+          "title": "长列表按8条展开、超长文本与极大金额完整可达，901边界及只读压力",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "桌面新增清单压力",
+                  "location": {
+                    "file": "/workspace/desktop-turn-changes/e2e/turn-changes.spec.ts",
+                    "line": 51,
+                    "column": 7
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 245,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:39:46.328Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "桌面新增清单压力",
+                      "location": {
+                        "file": "/workspace/desktop-turn-changes/e2e/turn-changes.spec.ts",
+                        "line": 51,
+                        "column": 7
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-d7dbce59e9aef8ac930d",
+          "file": "turn-changes.spec.ts",
+          "line": 50,
+          "column": 1
+        },
+        {
+          "title": "真实Repository正式结算、撤回后最新变化及重新结算，恢复点与回合始终对应",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3608,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:39:46.584Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-fe7877cd352c0199e760",
+          "file": "turn-changes.spec.ts",
+          "line": 57,
+          "column": 1
+        },
+        {
+          "title": "已有恢复点时发送新行动，真实Mock生成预览及取消期间不展示变化",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3306,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:39:50.203Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-8ce2493f9bf0b122a864",
+          "file": "turn-changes.spec.ts",
+          "line": 67,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-12T19:37:19.293Z",
+    "duration": 154389.59100000001,
+    "expected": 21,
+    "skipped": 2,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

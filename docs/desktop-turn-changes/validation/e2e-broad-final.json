@@ -1,0 +1,5054 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/desktop-turn-changes/node_modules/.bin/playwright",
+      "test",
+      "--config=/tmp/changes-playwright.config.ts",
+      "e2e/turn-changes.spec.ts",
+      "e2e/turn-undo.spec.ts",
+      "e2e/turn-undo-capacity.spec.ts",
+      "e2e/undo-summary-recovery.spec.ts",
+      "e2e/continuous-turns.spec.ts",
+      "e2e/automatic-settlement.spec.ts",
+      "e2e/game-window.spec.ts",
+      "e2e/workflow-feedback.spec.ts",
+      "e2e/archive-final.spec.ts",
+      "e2e/archive-step3.spec.ts",
+      "e2e/archive-step4.spec.ts",
+      "--output=/tmp/changes-broad-final-results",
+      "--reporter=line,json"
+    ],
+    "configFile": "/tmp/changes-playwright.config.ts",
+    "rootDir": "/workspace/desktop-turn-changes/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 2
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/changes-broad-final-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "/workspace/desktop-turn-changes/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/tmp/changes-broad-final-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/workspace/desktop-turn-changes/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/tmp/changes-broad-final-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "desktop",
+        "testDir": "/workspace/desktop-turn-changes/e2e",
+        "snapshotDir": "/workspace/desktop-turn-changes/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5207",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "desktop"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/tmp/changes-broad-final-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "mobile",
+        "testDir": "/workspace/desktop-turn-changes/e2e",
+        "snapshotDir": "/workspace/desktop-turn-changes/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5207",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "userAgent": "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Mobile Safari/537.36",
+          "viewport": {
+            "width": 412,
+            "height": 839
+          },
+          "screen": {
+            "width": 412,
+            "height": 915
+          },
+          "deviceScaleFactor": 2.625,
+          "isMobile": true,
+          "hasTouch": true,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "mobile"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 2,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5207 --strictPort",
+      "cwd": "/workspace/desktop-turn-changes",
+      "url": "http://127.0.0.1:5207",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "archive-final.spec.ts",
+      "file": "archive-final.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "地图正式层级、当前位置、四入口同步与五尺寸，NPC/事件关联、缓存和只读性",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 20682,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:41:19.649Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "58922790700a2dc6f2a5-27930b86b82ce79e2dfb",
+          "file": "archive-final.spec.ts",
+          "line": 21,
+          "column": 1
+        },
+        {
+          "title": "设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 34515,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:41:19.794Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "58922790700a2dc6f2a5-394b967b62bca776a1c0",
+          "file": "archive-final.spec.ts",
+          "line": 36,
+          "column": 1
+        },
+        {
+          "title": "地图大量地点与异常长名称分段可达；展开选择恢复与原文不丢失",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10322,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:41:41.245Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "58922790700a2dc6f2a5-e4e8aa6e13e0bd7ad8fc",
+          "file": "archive-final.spec.ts",
+          "line": 46,
+          "column": 1
+        },
+        {
+          "title": "游戏设置与地图互切、记忆未保存确认、Esc和首页纸色模态",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 20944,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:41:51.645Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "58922790700a2dc6f2a5-d9c9247debe4bb229834",
+          "file": "archive-final.spec.ts",
+          "line": 50,
+          "column": 1
+        },
+        {
+          "title": "地图正式层级、当前位置、四入口同步与五尺寸，NPC/事件关联、缓存和只读性",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2823,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:53.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "58922790700a2dc6f2a5-925b94ce4b7d4e151f01",
+          "file": "archive-final.spec.ts",
+          "line": 21,
+          "column": 1
+        },
+        {
+          "title": "设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 7752,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:54.739Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "58922790700a2dc6f2a5-1fa5f0baf2c76b89c663",
+          "file": "archive-final.spec.ts",
+          "line": 36,
+          "column": 1
+        },
+        {
+          "title": "地图大量地点与异常长名称分段可达；展开选择恢复与原文不丢失",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "桌面层级交互；手机保持原版",
+                  "location": {
+                    "file": "/workspace/desktop-turn-changes/e2e/archive-final.spec.ts",
+                    "line": 47,
+                    "column": 7
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 113,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:56.773Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "桌面层级交互；手机保持原版",
+                      "location": {
+                        "file": "/workspace/desktop-turn-changes/e2e/archive-final.spec.ts",
+                        "line": 47,
+                        "column": 7
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "58922790700a2dc6f2a5-a8c80b034f2f67453719",
+          "file": "archive-final.spec.ts",
+          "line": 46,
+          "column": 1
+        },
+        {
+          "title": "游戏设置与地图互切、记忆未保存确认、Esc和首页纸色模态",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5701,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:56.899Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "58922790700a2dc6f2a5-a2a617755846c07fa0e7",
+          "file": "archive-final.spec.ts",
+          "line": 50,
+          "column": 1
+        }
+      ],
+      "suites": [
+        {
+          "title": "凭证安全",
+          "file": "archive-final.spec.ts",
+          "line": 55,
+          "column": 6,
+          "specs": [
+            {
+              "title": "密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 28478,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-12T19:41:55.107Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58922790700a2dc6f2a5-ec89e5b4ff9d6a237412",
+              "file": "archive-final.spec.ts",
+              "line": 56,
+              "column": 2
+            },
+            {
+              "title": "密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5585,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-12T19:47:02.611Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58922790700a2dc6f2a5-30abf9915e8832568eaf",
+              "file": "archive-final.spec.ts",
+              "line": 56,
+              "column": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "archive-step3.spec.ts",
+      "file": "archive-step3.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "物品分类、只读搜索、三栏和选中详情，901边界、原槽位与归属跳转",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 27666,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:42:14.113Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ea719f9b7b64e98c263a-e4577390e658ecbe6293",
+          "file": "archive-step3.spec.ts",
+          "line": 20,
+          "column": 1
+        },
+        {
+          "title": "经济资金、部分未知合计、全字段与原生手机，人物入口/旧Dialog/焦点闭环",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 26814,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:42:24.553Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ea719f9b7b64e98c263a-184829698867eca013ab",
+          "file": "archive-step3.spec.ts",
+          "line": 39,
+          "column": 1
+        },
+        {
+          "title": "大量物品收入资产债务分页、独立滚动，原集合顺序和正式状态不变",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 20964,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:42:42.599Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ea719f9b7b64e98c263a-5b9bcfd387b8833431f4",
+          "file": "archive-step3.spec.ts",
+          "line": 56,
+          "column": 1
+        },
+        {
+          "title": "极端金额、超安全范围合计、未知/零债务以及长文本边界",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 21197,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:42:52.281Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ea719f9b7b64e98c263a-f17be7f62f12745f6a0a",
+          "file": "archive-step3.spec.ts",
+          "line": 71,
+          "column": 1
+        },
+        {
+          "title": "物品分类、只读搜索、三栏和选中详情，901边界、原槽位与归属跳转",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 7543,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:03.836Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ea719f9b7b64e98c263a-242dd577d68bc58030d9",
+          "file": "archive-step3.spec.ts",
+          "line": 20,
+          "column": 1
+        },
+        {
+          "title": "经济资金、部分未知合计、全字段与原生手机，人物入口/旧Dialog/焦点闭环",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6512,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:08.837Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ea719f9b7b64e98c263a-396a7770ba981dd937b1",
+          "file": "archive-step3.spec.ts",
+          "line": 39,
+          "column": 1
+        },
+        {
+          "title": "大量物品收入资产债务分页、独立滚动，原集合顺序和正式状态不变",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "桌面分页与分栏专属；手机原有界面另测",
+                  "location": {
+                    "file": "/workspace/desktop-turn-changes/e2e/archive-step3.spec.ts",
+                    "line": 57,
+                    "column": 7
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "skipped",
+                  "duration": 139,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:11.624Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "桌面分页与分栏专属；手机原有界面另测",
+                      "location": {
+                        "file": "/workspace/desktop-turn-changes/e2e/archive-step3.spec.ts",
+                        "line": 57,
+                        "column": 7
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "ea719f9b7b64e98c263a-a30a50d53535e8d93211",
+          "file": "archive-step3.spec.ts",
+          "line": 56,
+          "column": 1
+        },
+        {
+          "title": "极端金额、超安全范围合计、未知/零债务以及长文本边界",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "桌面金额排版；共用money精度由单元覆盖",
+                  "location": {
+                    "file": "/workspace/desktop-turn-changes/e2e/archive-step3.spec.ts",
+                    "line": 72,
+                    "column": 7
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "skipped",
+                  "duration": 121,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:11.791Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "桌面金额排版；共用money精度由单元覆盖",
+                      "location": {
+                        "file": "/workspace/desktop-turn-changes/e2e/archive-step3.spec.ts",
+                        "line": 72,
+                        "column": 7
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "ea719f9b7b64e98c263a-9a73375da989f2fe2384",
+          "file": "archive-step3.spec.ts",
+          "line": 71,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "archive-step4.spec.ts",
+      "file": "archive-step4.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "第四批事件家族、并行与退役成果，合法组织目标、缓存、Esc和只读性",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 20520,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:43:03.613Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7455aa7cd086f3e91f07-6984c72570b7fa590594",
+          "file": "archive-step4.spec.ts",
+          "line": 20,
+          "column": 1
+        },
+        {
+          "title": "统一正式历史投影、双轨五尺寸、精度与详情全文，回焦与地图档案切换",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 13452,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:43:13.533Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7455aa7cd086f3e91f07-2859dc08f8e5c122a82f",
+          "file": "archive-step4.spec.ts",
+          "line": 40,
+          "column": 1
+        },
+        {
+          "title": "六层记忆原文与归属、多来源分页和层级缓存；手机保持原生界面",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14498,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:43:24.148Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7455aa7cd086f3e91f07-23ccbcaf060b4fb17193",
+          "file": "archive-step4.spec.ts",
+          "line": 52,
+          "column": 1
+        },
+        {
+          "title": "大型并行家族、长标题与长记忆、历史分段有界；reduced motion和只读压力",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 10140,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:43:27.000Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7455aa7cd086f3e91f07-67fc8ce1a24498c0c355",
+          "file": "archive-step4.spec.ts",
+          "line": 64,
+          "column": 1
+        },
+        {
+          "title": "第四批事件家族、并行与退役成果，合法组织目标、缓存、Esc和只读性",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 5109,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:11.931Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7455aa7cd086f3e91f07-b3ce3352ea82d11e4da9",
+          "file": "archive-step4.spec.ts",
+          "line": 20,
+          "column": 1
+        },
+        {
+          "title": "统一正式历史投影、双轨五尺寸、精度与详情全文，回焦与地图档案切换",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3640,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:15.564Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7455aa7cd086f3e91f07-1ec374145800dfb1af71",
+          "file": "archive-step4.spec.ts",
+          "line": 40,
+          "column": 1
+        },
+        {
+          "title": "六层记忆原文与归属、多来源分页和层级缓存；手机保持原生界面",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 5870,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:17.049Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7455aa7cd086f3e91f07-c730541359723911fe7c",
+          "file": "archive-step4.spec.ts",
+          "line": 52,
+          "column": 1
+        },
+        {
+          "title": "大型并行家族、长标题与长记忆、历史分段有界；reduced motion和只读压力",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "桌面专用分栏压力，手机正式阅读另测",
+                  "location": {
+                    "file": "/workspace/desktop-turn-changes/e2e/archive-step4.spec.ts",
+                    "line": 65,
+                    "column": 7
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 153,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:19.218Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "桌面专用分栏压力，手机正式阅读另测",
+                      "location": {
+                        "file": "/workspace/desktop-turn-changes/e2e/archive-step4.spec.ts",
+                        "line": 65,
+                        "column": 7
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "7455aa7cd086f3e91f07-58455ff80b08a6b0299a",
+          "file": "archive-step4.spec.ts",
+          "line": 64,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "automatic-settlement.spec.ts",
+      "file": "automatic-settlement.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 9137,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:43:37.181Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-9c63ad6c2e17f561ba5a",
+          "file": "automatic-settlement.spec.ts",
+          "line": 46,
+          "column": 1
+        },
+        {
+          "title": "World字段错误可定位并查看完整失败原文，不提交；恢复仅请求World并自动结算",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4638,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:43:38.698Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-a2d9ec61f731198a4afa",
+          "file": "automatic-settlement.spec.ts",
+          "line": 62,
+          "column": 1
+        },
+        {
+          "title": "发送下一条行动仅绑定草稿，commit日志必须等到三阶段完成才开始",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7559,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:43:43.360Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-e82353e6627e7fdb27ec",
+          "file": "automatic-settlement.spec.ts",
+          "line": 72,
+          "column": 1
+        },
+        {
+          "title": "NPC场景ID诊断与World规则同时保留，逐阶段恢复后只结算一次",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 6722,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:43:46.337Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-a7b3df4ab4a372f5cb98",
+          "file": "automatic-settlement.spec.ts",
+          "line": 101,
+          "column": 1
+        },
+        {
+          "title": "源三标签截断保留正文；明确恢复后四操作自动结算并完整显示原文",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7508,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:43:50.937Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-c1adcc913304ee11a5f5",
+          "file": "automatic-settlement.spec.ts",
+          "line": 132,
+          "column": 1
+        },
+        {
+          "title": "候选写库配额失败显示具体步骤而非unknown，保留正文后只补失败阶段",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 4707,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:43:53.067Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-c38268b4109f03643483",
+          "file": "automatic-settlement.spec.ts",
+          "line": 149,
+          "column": 1
+        },
+        {
+          "title": "时间诊断保留重排前文本编号；失败原文可读，恢复自动结算且刷新不重发",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 7176,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:43:57.793Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-d4f450e12c8df1784176",
+          "file": "automatic-settlement.spec.ts",
+          "line": 172,
+          "column": 1
+        },
+        {
+          "title": "认知格式、时间线对象和组织历史逐项拒绝，明确修正后保留Story并一次结算",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6951,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:43:58.460Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-1731c6d5ae948c381649",
+          "file": "automatic-settlement.spec.ts",
+          "line": 193,
+          "column": 1
+        },
+        {
+          "title": "完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5146,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:19.414Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-1589645a27efb38bbf23",
+          "file": "automatic-settlement.spec.ts",
+          "line": 46,
+          "column": 1
+        },
+        {
+          "title": "World字段错误可定位并查看完整失败原文，不提交；恢复仅请求World并自动结算",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 3973,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:22.936Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-7bfba8aec034c2679aa6",
+          "file": "automatic-settlement.spec.ts",
+          "line": 62,
+          "column": 1
+        },
+        {
+          "title": "发送下一条行动仅绑定草稿，commit日志必须等到三阶段完成才开始",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5642,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:24.582Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-ce9933182e2d3b792c7f",
+          "file": "automatic-settlement.spec.ts",
+          "line": 72,
+          "column": 1
+        },
+        {
+          "title": "NPC场景ID诊断与World规则同时保留，逐阶段恢复后只结算一次",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 5698,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:26.925Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-468b093af1120561fd0c",
+          "file": "automatic-settlement.spec.ts",
+          "line": 101,
+          "column": 1
+        },
+        {
+          "title": "源三标签截断保留正文；明确恢复后四操作自动结算并完整显示原文",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5371,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:30.240Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-03f78c8dc22db1351665",
+          "file": "automatic-settlement.spec.ts",
+          "line": 132,
+          "column": 1
+        },
+        {
+          "title": "候选写库配额失败显示具体步骤而非unknown，保留正文后只补失败阶段",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 3961,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:32.639Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-b0b6ab3327ff4982212c",
+          "file": "automatic-settlement.spec.ts",
+          "line": 149,
+          "column": 1
+        },
+        {
+          "title": "时间诊断保留重排前文本编号；失败原文可读，恢复自动结算且刷新不重发",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5194,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:35.630Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-1d48236814aff2071bb1",
+          "file": "automatic-settlement.spec.ts",
+          "line": 172,
+          "column": 1
+        },
+        {
+          "title": "认知格式、时间线对象和组织历史逐项拒绝，明确修正后保留Story并一次结算",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 4792,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:36.617Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5d6db4273247bcc237b7-9dd160e23fa6956fd2f9",
+          "file": "automatic-settlement.spec.ts",
+          "line": 193,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "continuous-turns.spec.ts",
+      "file": "continuous-turns.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 24610,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:05.068Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-1fc7f8afd10d8648a9df",
+          "file": "continuous-turns.spec.ts",
+          "line": 182,
+          "column": 1
+        },
+        {
+          "title": "下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9870,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:05.549Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-fc5ff6cba4f59b17a396",
+          "file": "continuous-turns.spec.ts",
+          "line": 243,
+          "column": 1
+        },
+        {
+          "title": "提交事务中途失败 UI 不虚报成功；重试后只结算一次",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9104,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:15.437Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-6e96dbaf13b88c5c4ef8",
+          "file": "continuous-turns.spec.ts",
+          "line": 273,
+          "column": 1
+        },
+        {
+          "title": "快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9519,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:24.568Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-935ad12975d4dde00ea6",
+          "file": "continuous-turns.spec.ts",
+          "line": 305,
+          "column": 1
+        },
+        {
+          "title": "阶段未完成或主动关闭时，即使填写行动也不能部分结算",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 7376,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:29.698Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-aabd3a4ae3b8ac277acf",
+          "file": "continuous-turns.spec.ts",
+          "line": 342,
+          "column": 1
+        },
+        {
+          "title": "正式资金与时间显示新版本，结算后刷新不重复扣款",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7637,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:34.129Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-809a01cd035c6da96f38",
+          "file": "continuous-turns.spec.ts",
+          "line": 358,
+          "column": 1
+        },
+        {
+          "title": "真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13036,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:40.922Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-8e77617da642fc33db73",
+          "file": "continuous-turns.spec.ts",
+          "line": 182,
+          "column": 1
+        },
+        {
+          "title": "下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 7009,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:41.486Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-8de78f96af9e62e6e2f6",
+          "file": "continuous-turns.spec.ts",
+          "line": 243,
+          "column": 1
+        },
+        {
+          "title": "提交事务中途失败 UI 不虚报成功；重试后只结算一次",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 4800,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:48.513Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-81666dbe0ae1cd16da61",
+          "file": "continuous-turns.spec.ts",
+          "line": 273,
+          "column": 1
+        },
+        {
+          "title": "快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 7069,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:53.327Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-cbc0c17f867856211c2c",
+          "file": "continuous-turns.spec.ts",
+          "line": 305,
+          "column": 1
+        },
+        {
+          "title": "阶段未完成或主动关闭时，即使填写行动也不能部分结算",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4503,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:53.971Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-f0a35cc080b92a62c8df",
+          "file": "continuous-turns.spec.ts",
+          "line": 342,
+          "column": 1
+        },
+        {
+          "title": "正式资金与时间显示新版本，结算后刷新不重复扣款",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6375,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:47:58.486Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "65704bf7f96c9dcaf586-7535a9ecae8b59198a57",
+          "file": "continuous-turns.spec.ts",
+          "line": 358,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "game-window.spec.ts",
+      "file": "game-window.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2844,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:37.100Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-bbb5144c5752be9ddf3a",
+          "file": "game-window.spec.ts",
+          "line": 64,
+          "column": 1
+        },
+        {
+          "title": "顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 3465,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:39.959Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-251fcb5f583e2337050d",
+          "file": "game-window.spec.ts",
+          "line": 75,
+          "column": 1
+        },
+        {
+          "title": "滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3548,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:41.804Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-3fffa9113477ddb63efa",
+          "file": "game-window.spec.ts",
+          "line": 93,
+          "column": 1
+        },
+        {
+          "title": "默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2974,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:43.433Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-40f3071f59248a184bae",
+          "file": "game-window.spec.ts",
+          "line": 114,
+          "column": 1
+        },
+        {
+          "title": "已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3652,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:45.364Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-82782d486fe14b98b2e1",
+          "file": "game-window.spec.ts",
+          "line": 126,
+          "column": 1
+        },
+        {
+          "title": "生成中折叠不打断；取消和错误不被隐藏，失败重试成功保留正式状态",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 5242,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:46.417Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-a9f084d466010255f95e",
+          "file": "game-window.spec.ts",
+          "line": 135,
+          "column": 1
+        },
+        {
+          "title": "缩短视口及模拟软键盘VisualViewport不遮住输入和发送",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2555,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:49.028Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-6dd3c39ee5ba0b694b7b",
+          "file": "game-window.spec.ts",
+          "line": 204,
+          "column": 1
+        },
+        {
+          "title": "设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7342,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:51.595Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-13dc208de8a8917a124c",
+          "file": "game-window.spec.ts",
+          "line": 225,
+          "column": 1
+        },
+        {
+          "title": "工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 4029,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:51.677Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-c24dd32e8ced7f9a1b7a",
+          "file": "game-window.spec.ts",
+          "line": 243,
+          "column": 1
+        },
+        {
+          "title": "全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2834,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:00.423Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-4217cb50cd2552eb95dd",
+          "file": "game-window.spec.ts",
+          "line": 64,
+          "column": 1
+        },
+        {
+          "title": "顶部状态不挤压正文；完整人物资料独立滚动并恢复焦点和阅读位置",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2671,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:03.278Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-7d47ce71ff2052bcaed7",
+          "file": "game-window.spec.ts",
+          "line": 75,
+          "column": 1
+        },
+        {
+          "title": "滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2592,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:04.888Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-37e34d514b7bbe68372d",
+          "file": "game-window.spec.ts",
+          "line": 93,
+          "column": 1
+        },
+        {
+          "title": "默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2261,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:05.958Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-a0bf1c374a03a19c44a4",
+          "file": "game-window.spec.ts",
+          "line": 114,
+          "column": 1
+        },
+        {
+          "title": "已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3286,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:07.490Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-f5bbc498c44469a6dfcf",
+          "file": "game-window.spec.ts",
+          "line": 126,
+          "column": 1
+        },
+        {
+          "title": "生成中折叠不打断；取消和错误不被隐藏，失败重试成功保留正式状态",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 4101,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:08.239Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-99291868a65c5faf13e7",
+          "file": "game-window.spec.ts",
+          "line": 135,
+          "column": 1
+        },
+        {
+          "title": "缩短视口及模拟软键盘VisualViewport不遮住输入和发送",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2422,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:10.789Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-bc285ee4b537dd776c96",
+          "file": "game-window.spec.ts",
+          "line": 204,
+          "column": 1
+        },
+        {
+          "title": "设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 5989,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:12.357Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-87ccfe2ff69bfad76653",
+          "file": "game-window.spec.ts",
+          "line": 225,
+          "column": 1
+        },
+        {
+          "title": "工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2788,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:13.244Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2fcda59826c1338f4ab8-d09ef6c485525c0f387b",
+          "file": "game-window.spec.ts",
+          "line": 243,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "turn-changes.spec.ts",
+      "file": "turn-changes.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "最新结算回合六组胶囊、收起展开、键盘及四尺寸，手机版保持原界面",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 9274,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:55.738Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-83eb1b75d7c5486d5a1a",
+          "file": "turn-changes.spec.ts",
+          "line": 24,
+          "column": 1
+        },
+        {
+          "title": "变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12057,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:44:58.951Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-34e0dac8460e18d073f2",
+          "file": "turn-changes.spec.ts",
+          "line": 39,
+          "column": 1
+        },
+        {
+          "title": "无变化、无恢复点、错误恢复点安全降级，草稿不显示；双端不改原存档",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 9598,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:45:05.033Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-ebdd5fa4a2a243a3462e",
+          "file": "turn-changes.spec.ts",
+          "line": 46,
+          "column": 1
+        },
+        {
+          "title": "长列表按8条展开、超长文本与极大金额完整可达，901边界及只读压力",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8465,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:45:11.020Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-8192acd958634d612386",
+          "file": "turn-changes.spec.ts",
+          "line": 50,
+          "column": 1
+        },
+        {
+          "title": "真实Repository正式结算、撤回后最新变化及重新结算，恢复点与回合始终对应",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 6888,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:45:14.661Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-d7de8fc7fec57055c319",
+          "file": "turn-changes.spec.ts",
+          "line": 57,
+          "column": 1
+        },
+        {
+          "title": "已有恢复点时发送新行动，真实Mock生成预览及取消期间不展示变化",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6040,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:45:19.496Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-b343db5f5ad89da6de70",
+          "file": "turn-changes.spec.ts",
+          "line": 67,
+          "column": 1
+        },
+        {
+          "title": "最新结算回合六组胶囊、收起展开、键盘及四尺寸，手机版保持原界面",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2231,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:16.045Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-7d77f2ec63fe3d2d1ecd",
+          "file": "turn-changes.spec.ts",
+          "line": 24,
+          "column": 1
+        },
+        {
+          "title": "变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "仅桌面新增的变化入口，手机原资料导航另测",
+                  "location": {
+                    "file": "/workspace/desktop-turn-changes/e2e/turn-changes.spec.ts",
+                    "line": 40,
+                    "column": 7
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 302,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:18.284Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "仅桌面新增的变化入口，手机原资料导航另测",
+                      "location": {
+                        "file": "/workspace/desktop-turn-changes/e2e/turn-changes.spec.ts",
+                        "line": 40,
+                        "column": 7
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-dbfed4058fb5a75e3f24",
+          "file": "turn-changes.spec.ts",
+          "line": 39,
+          "column": 1
+        },
+        {
+          "title": "无变化、无恢复点、错误恢复点安全降级，草稿不显示；双端不改原存档",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 6604,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:18.373Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-57b8a1e6633ca5384af2",
+          "file": "turn-changes.spec.ts",
+          "line": 46,
+          "column": 1
+        },
+        {
+          "title": "长列表按8条展开、超长文本与极大金额完整可达，901边界及只读压力",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "桌面新增清单压力",
+                  "location": {
+                    "file": "/workspace/desktop-turn-changes/e2e/turn-changes.spec.ts",
+                    "line": 51,
+                    "column": 7
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 198,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:18.614Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "桌面新增清单压力",
+                      "location": {
+                        "file": "/workspace/desktop-turn-changes/e2e/turn-changes.spec.ts",
+                        "line": 51,
+                        "column": 7
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-d7dbce59e9aef8ac930d",
+          "file": "turn-changes.spec.ts",
+          "line": 50,
+          "column": 1
+        },
+        {
+          "title": "真实Repository正式结算、撤回后最新变化及重新结算，恢复点与回合始终对应",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3011,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:18.832Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-fe7877cd352c0199e760",
+          "file": "turn-changes.spec.ts",
+          "line": 57,
+          "column": 1
+        },
+        {
+          "title": "已有恢复点时发送新行动，真实Mock生成预览及取消期间不展示变化",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3917,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:21.858Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef888de1de4e1ab18f39-8ce2493f9bf0b122a864",
+          "file": "turn-changes.spec.ts",
+          "line": 67,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "turn-undo-capacity.spec.ts",
+      "file": "turn-undo-capacity.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "真实 IndexedDB 300 回合容量与恢复测量",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 5322,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:45:21.599Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "indexeddb-300.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJ0dXJucyI6IDMwMCwKICAibnBjQ291bnQiOiAxNTAsCiAgInNuYXBzaG90Qnl0ZXMiOiA0OTU5OTIyNCwKICAicmV0YWluZWQiOiA1LAogICJtYXhCeXRlcyI6IDY3MTA4ODY0LAogICJjb21taXRNcyI6IFsKICAgIDQ4My41LAogICAgMzI1LjYwMDAwMDAwMTQ5MDEsCiAgICAyNTAuODAwMDAwMDA0NDcwMzUsCiAgICAzMjAuMzk5OTk5OTk4NTA5OSwKICAgIDMyMC43MDAwMDAwMDI5ODAyMwogIF0sCiAgInVuZG9NcyI6IFsKICAgIDQ1NC4zMDAwMDAwMDQ0NzAzNSwKICAgIDIxNSwKICAgIDE0Mi4yMDAwMDAwMDI5ODAyMywKICAgIDk4LAogICAgMTE3LjYwMDAwMDAwMTQ5MDEyCiAgXSwKICAib3JpZ2luU3RvcmFnZUVzdGltYXRlIjogewogICAgInF1b3RhIjogMTA3NDA0Nzc5NTIsCiAgICAidXNhZ2UiOiAzMDU5NzEyLAogICAgInVzYWdlRGV0YWlscyI6IHsKICAgICAgImluZGV4ZWREQiI6IDMwNTk3MTIKICAgIH0KICB9LAogICJyZXN0b3JlZFR1cm5zIjogMzAwCn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2d185c9465eef1cb0d54-b2d12ec0f7a2a30e319d",
+          "file": "turn-undo-capacity.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "真实 IndexedDB 1000 回合容量与恢复测量",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11899,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:45:25.559Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "indexeddb-1000.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJ0dXJucyI6IDEwMDAsCiAgIm5wY0NvdW50IjogNTAwLAogICJzbmFwc2hvdEJ5dGVzIjogNjU2MDY1OTAsCiAgInJldGFpbmVkIjogMiwKICAibWF4Qnl0ZXMiOiA2NzEwODg2NCwKICAiY29tbWl0TXMiOiBbCiAgICAxMzc1LjUsCiAgICAxMjQxLjIwMDAwMDAwMjk4MDIsCiAgICA4NzksCiAgICA5NjMuNzk5OTk5OTk3MDE5OCwKICAgIDEwOTcuMjk5OTk5OTk3MDE5OAogIF0sCiAgInVuZG9NcyI6IFsKICAgIDQ4MC45MDAwMDAwMDU5NjA0NiwKICAgIDQyMS4zOTk5OTk5OTg1MDk5CiAgXSwKICAib3JpZ2luU3RvcmFnZUVzdGltYXRlIjogewogICAgInF1b3RhIjogMTA3NDEwNjc3NzYsCiAgICAidXNhZ2UiOiAzNjQ5NTM2LAogICAgInVzYWdlRGV0YWlscyI6IHsKICAgICAgImluZGV4ZWREQiI6IDM2NDk1MzYKICAgIH0KICB9LAogICJyZXN0b3JlZFR1cm5zIjogMTAwMwp9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2d185c9465eef1cb0d54-53a210a1e7dd745b4516",
+          "file": "turn-undo-capacity.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "真实 IndexedDB 300 回合容量与恢复测量",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 4648,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:25.009Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "indexeddb-300.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJ0dXJucyI6IDMwMCwKICAibnBjQ291bnQiOiAxNTAsCiAgInNuYXBzaG90Qnl0ZXMiOiA0OTU5OTIyNCwKICAicmV0YWluZWQiOiA1LAogICJtYXhCeXRlcyI6IDY3MTA4ODY0LAogICJjb21taXRNcyI6IFsKICAgIDMyMC41LAogICAgNDM3LAogICAgMzQ2LjUsCiAgICAyNzUuMzAwMDAwMDA0NDcwMzUsCiAgICAyNTMuMDk5OTk5OTk0MDM5NTQKICBdLAogICJ1bmRvTXMiOiBbCiAgICA5NC43MDAwMDAwMDI5ODAyMywKICAgIDEzMy45MDAwMDAwMDU5NjA0NiwKICAgIDIxNS44OTk5OTk5OTg1MDk4OCwKICAgIDgwLjI5OTk5OTk5NzAxOTc3LAogICAgMTk4LjcwMDAwMDAwMjk4MDIzCiAgXSwKICAib3JpZ2luU3RvcmFnZUVzdGltYXRlIjogewogICAgInF1b3RhIjogMTA3NDA0Nzc5NTIsCiAgICAidXNhZ2UiOiAzMDU5NzEyLAogICAgInVzYWdlRGV0YWlscyI6IHsKICAgICAgImluZGV4ZWREQiI6IDMwNTk3MTIKICAgIH0KICB9LAogICJyZXN0b3JlZFR1cm5zIjogMzAwCn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2d185c9465eef1cb0d54-62218ef8191ddc998b62",
+          "file": "turn-undo-capacity.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "真实 IndexedDB 1000 回合容量与恢复测量",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10294,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:25.793Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "indexeddb-1000.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJ0dXJucyI6IDEwMDAsCiAgIm5wY0NvdW50IjogNTAwLAogICJzbmFwc2hvdEJ5dGVzIjogNjU2MDY1OTAsCiAgInJldGFpbmVkIjogMiwKICAibWF4Qnl0ZXMiOiA2NzEwODg2NCwKICAiY29tbWl0TXMiOiBbCiAgICAxMjA2LjYwMDAwMDAwMTQ5MDEsCiAgICAxMjcyLjUsCiAgICA2NzMuNSwKICAgIDg2Ny4yMDAwMDAwMDI5ODAyLAogICAgNjg2LjI5OTk5OTk5NzAxOTgKICBdLAogICJ1bmRvTXMiOiBbCiAgICA0MjYuMjk5OTk5OTk3MDE5NzcsCiAgICA0MTUuMzk5OTk5OTk4NTA5OQogIF0sCiAgIm9yaWdpblN0b3JhZ2VFc3RpbWF0ZSI6IHsKICAgICJxdW90YSI6IDEwNzQxMDY3Nzc2LAogICAgInVzYWdlIjogMzY0OTUzNiwKICAgICJ1c2FnZURldGFpbHMiOiB7CiAgICAgICJpbmRleGVkREIiOiAzNjQ5NTM2CiAgICB9CiAgfSwKICAicmVzdG9yZWRUdXJucyI6IDEwMDMKfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2d185c9465eef1cb0d54-2dcb018ffcf5e85bbc04",
+          "file": "turn-undo-capacity.spec.ts",
+          "line": 6,
+          "column": 3
+        }
+      ]
+    },
+    {
+      "title": "turn-undo.spec.ts",
+      "file": "turn-undo.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "连续五次撤回、刷新恢复、回填覆盖和无Redo，全程零模型请求",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 7055,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:45:26.949Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-f45378ae426bc5bf404a",
+          "file": "turn-undo.spec.ts",
+          "line": 62,
+          "column": 1
+        },
+        {
+          "title": "撤回后编辑发送才开始三阶段，失败可恢复且只保存新分支",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 8265,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:45:34.017Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-08d29f3a2d4bba238d13",
+          "file": "turn-undo.spec.ts",
+          "line": 79,
+          "column": 1
+        },
+        {
+          "title": "取消撤回不修改任何数据；部分草稿需明确确认，旧候选退出",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4712,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:45:37.498Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-6d31273967ad4c280ed4",
+          "file": "turn-undo.spec.ts",
+          "line": 96,
+          "column": 1
+        },
+        {
+          "title": "跨标签页旧确认不能多退一层；刷新后重新核对剩余恢复点",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7093,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:45:42.236Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-0f031f97341859417f71",
+          "file": "turn-undo.spec.ts",
+          "line": 111,
+          "column": 1
+        },
+        {
+          "title": "开局不撤回，生成期间按钮禁用；取消后可以撤回且没有额外请求",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 7333,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:45:42.298Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-703b672250358cf4f99e",
+          "file": "turn-undo.spec.ts",
+          "line": 123,
+          "column": 1
+        },
+        {
+          "title": "后台总结在撤回时取消，刷新后不自动收费或复活旧总结",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7349,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:45:49.371Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-df40b8077553b14293f4",
+          "file": "turn-undo.spec.ts",
+          "line": 136,
+          "column": 1
+        },
+        {
+          "title": "快照写满时正式回合可保存，明确提示不可撤回，刷新不重复扣款",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 6496,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:45:49.656Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-31ade53d5a29524a78e2",
+          "file": "turn-undo.spec.ts",
+          "line": 147,
+          "column": 1
+        },
+        {
+          "title": "另一个标签仍在生成时撤回明确拒绝，取消后重新读取才可撤回",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 8378,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:45:56.187Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-450f118f9458a7277bfa",
+          "file": "turn-undo.spec.ts",
+          "line": 164,
+          "column": 1
+        },
+        {
+          "title": "无 Web Locks 时双标签同时撤回仍由 IndexedDB CAS 保证仅一次成功",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3549,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:45:56.735Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-15ba5412a87658b28b42",
+          "file": "turn-undo.spec.ts",
+          "line": 179,
+          "column": 1
+        },
+        {
+          "title": "连续五次撤回、刷新恢复、回填覆盖和无Redo，全程零模型请求",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 5403,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:29.680Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-bc80b6bc1749719f071d",
+          "file": "turn-undo.spec.ts",
+          "line": 62,
+          "column": 1
+        },
+        {
+          "title": "撤回后编辑发送才开始三阶段，失败可恢复且只保存新分支",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 5658,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:35.091Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-b6a0cf8f4e1652ec1d63",
+          "file": "turn-undo.spec.ts",
+          "line": 79,
+          "column": 1
+        },
+        {
+          "title": "取消撤回不修改任何数据；部分草稿需明确确认，旧候选退出",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3316,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:36.108Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-78627dfd9fb1951b05bd",
+          "file": "turn-undo.spec.ts",
+          "line": 96,
+          "column": 1
+        },
+        {
+          "title": "跨标签页旧确认不能多退一层；刷新后重新核对剩余恢复点",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6077,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:39.442Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-5c8befcd281ebb66bd24",
+          "file": "turn-undo.spec.ts",
+          "line": 111,
+          "column": 1
+        },
+        {
+          "title": "开局不撤回，生成期间按钮禁用；取消后可以撤回且没有额外请求",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 5318,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:40.766Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-8a75ad49063baa3734c2",
+          "file": "turn-undo.spec.ts",
+          "line": 123,
+          "column": 1
+        },
+        {
+          "title": "后台总结在撤回时取消，刷新后不自动收费或复活旧总结",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5367,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:45.536Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-1a8d26dd31751d131e29",
+          "file": "turn-undo.spec.ts",
+          "line": 136,
+          "column": 1
+        },
+        {
+          "title": "快照写满时正式回合可保存，明确提示不可撤回，刷新不重复扣款",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 4293,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:46.097Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-7e7b9ddf0157a9c05411",
+          "file": "turn-undo.spec.ts",
+          "line": 147,
+          "column": 1
+        },
+        {
+          "title": "另一个标签仍在生成时撤回明确拒绝，取消后重新读取才可撤回",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 6579,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:50.403Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-b81b8f43269a91567d57",
+          "file": "turn-undo.spec.ts",
+          "line": 164,
+          "column": 1
+        },
+        {
+          "title": "无 Web Locks 时双标签同时撤回仍由 IndexedDB CAS 保证仅一次成功",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4081,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:50.921Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e4188491225c780e618-846ceb9027f339e80c3e",
+          "file": "turn-undo.spec.ts",
+          "line": 179,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "undo-summary-recovery.spec.ts",
+      "file": "undo-summary-recovery.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "短期 → 中期 在飞行中撤回后明确待确认；发送不重试，手动成功后自动恢复",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 16879,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:00.312Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e767055a7908143fea99-0cb5797b0bd686b445e3",
+          "file": "undo-summary-recovery.spec.ts",
+          "line": 29,
+          "column": 3
+        },
+        {
+          "title": "NPC 短期 → 中期 在飞行中撤回后明确待确认；发送不重试，手动成功后自动恢复",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 16756,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:04.595Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e767055a7908143fea99-66556185346d80680cdb",
+          "file": "undo-summary-recovery.spec.ts",
+          "line": 29,
+          "column": 3
+        },
+        {
+          "title": "真实 HTTP 失败经撤回仍保留，暂停本类不会启用其他自动类型",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7507,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:17.203Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e767055a7908143fea99-a56fcf0320bc6a5b0228",
+          "file": "undo-summary-recovery.spec.ts",
+          "line": 80,
+          "column": 1
+        },
+        {
+          "title": "只有遗留 NPC 尝试 ID、没有目标回执时，必须明确选择人物才请求模型",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 7679,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:21.368Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e767055a7908143fea99-c306760868eb7a0e22b2",
+          "file": "undo-summary-recovery.spec.ts",
+          "line": 92,
+          "column": 1
+        },
+        {
+          "title": "短期 → 中期 在飞行中撤回后明确待确认；发送不重试，手动成功后自动恢复",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11686,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:55.024Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e767055a7908143fea99-1cb2e6774c4f2a7cd430",
+          "file": "undo-summary-recovery.spec.ts",
+          "line": 29,
+          "column": 3
+        },
+        {
+          "title": "NPC 短期 → 中期 在飞行中撤回后明确待确认；发送不重试，手动成功后自动恢复",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 12461,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:48:57.017Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e767055a7908143fea99-b7c91d7a95911dbfb3a1",
+          "file": "undo-summary-recovery.spec.ts",
+          "line": 29,
+          "column": 3
+        },
+        {
+          "title": "真实 HTTP 失败经撤回仍保留，暂停本类不会启用其他自动类型",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6632,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:49:06.717Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e767055a7908143fea99-ff5b5ee5c06c126c6e1c",
+          "file": "undo-summary-recovery.spec.ts",
+          "line": 80,
+          "column": 1
+        },
+        {
+          "title": "只有遗留 NPC 尝试 ID、没有目标回执时，必须明确选择人物才请求模型",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 5857,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:49:09.492Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e767055a7908143fea99-91a404ab941d35a1c9f6",
+          "file": "undo-summary-recovery.spec.ts",
+          "line": 92,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "workflow-feedback.spec.ts",
+      "file": "workflow-feedback.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "确认稿工作流：opening 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4768,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:24.734Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-18907ace5914ad248c08",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：ready 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 6687,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:29.070Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-b9aa880dd69a1ed0b562",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：off 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4721,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:29.519Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-9f1279175023bc0e842f",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：error 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5178,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:34.256Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-00b344907487d357dc65",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：settled 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 4927,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:35.772Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-a26554eecc54f14743fe",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "生成中：浮层关闭不取消请求，显式取消后仍可恢复；reduced motion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3831,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:39.452Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-e6e237f3deec670d8f9b",
+          "file": "workflow-feedback.spec.ts",
+          "line": 71,
+          "column": 1
+        },
+        {
+          "title": "多个阶段错误完整保留；候选失败重试不重生成已有正文",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 5080,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:40.734Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-09eda3a6d13fff39d468",
+          "file": "workflow-feedback.spec.ts",
+          "line": 86,
+          "column": 1
+        },
+        {
+          "title": "全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6733,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:43.302Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-5507cb347c7a2bb97825",
+          "file": "workflow-feedback.spec.ts",
+          "line": 101,
+          "column": 1
+        },
+        {
+          "title": "全局load真实错误路径保留文案和关闭操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 4287,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:45.829Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-62ed5962ee7335bf7c3f",
+          "file": "workflow-feedback.spec.ts",
+          "line": 118,
+          "column": 59
+        },
+        {
+          "title": "全局list真实错误路径保留文案和关闭操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3203,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:50.046Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-300f931f0d6c8ebcc2d3",
+          "file": "workflow-feedback.spec.ts",
+          "line": 118,
+          "column": 59
+        },
+        {
+          "title": "全局selection真实错误路径保留文案和关闭操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 4012,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:46:50.141Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-8b0740448132c37d36cc",
+          "file": "workflow-feedback.spec.ts",
+          "line": 118,
+          "column": 59
+        },
+        {
+          "title": "确认稿工作流：opening 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2284,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:49:13.380Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-8c523120496238558a77",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：ready 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 3568,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:49:15.361Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-52a6e02cbadc5f018b5c",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：off 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2376,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:49:15.692Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-9421827a63d90dd93600",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：error 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2410,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:49:18.096Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-4401bba4ca46911a37f4",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "确认稿工作流：settled 布局、焦点、候选与原数据",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2524,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:49:18.941Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-43249f3d16b9d6751334",
+          "file": "workflow-feedback.spec.ts",
+          "line": 37,
+          "column": 74
+        },
+        {
+          "title": "生成中：浮层关闭不取消请求，显式取消后仍可恢复；reduced motion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2658,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:49:20.515Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-d42ebeb22444ccb76839",
+          "file": "workflow-feedback.spec.ts",
+          "line": 71,
+          "column": 1
+        },
+        {
+          "title": "多个阶段错误完整保留；候选失败重试不重生成已有正文",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2712,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:49:21.480Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-fbcf68df6a35d35abe02",
+          "file": "workflow-feedback.spec.ts",
+          "line": 86,
+          "column": 1
+        },
+        {
+          "title": "全局运行偏好错误浮条、撤回确认和未保存设置：焦点与移动端样式",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5077,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:49:23.185Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-557998b4a7981c6818ad",
+          "file": "workflow-feedback.spec.ts",
+          "line": 101,
+          "column": 1
+        },
+        {
+          "title": "全局load真实错误路径保留文案和关闭操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 3219,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:49:24.217Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-8f08869409697bd749d2",
+          "file": "workflow-feedback.spec.ts",
+          "line": 118,
+          "column": 59
+        },
+        {
+          "title": "全局list真实错误路径保留文案和关闭操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2403,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:49:27.447Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-e92798eadc3e24013570",
+          "file": "workflow-feedback.spec.ts",
+          "line": 118,
+          "column": 59
+        },
+        {
+          "title": "全局selection真实错误路径保留文案和关闭操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3482,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:49:28.273Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1031c584013529deed21-32b0291e50d7a6398add",
+          "file": "workflow-feedback.spec.ts",
+          "line": 118,
+          "column": 59
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-12T19:41:15.293Z",
+    "duration": 496618.141,
+    "expected": 130,
+    "skipped": 6,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

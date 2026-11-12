@@ -1,3 +1,5 @@
+import { fingerprint } from '../../domain/commands';
+import { TurnDraftSchema } from '../../domain/drafts';
 import { retainNpcChoices } from '../../domain/npc/profiles';
 import { z } from 'zod';
 import { CountSchema, IdSchema, requireData } from '../../domain/common';
@@ -120,4 +122,30 @@ export async function restoreSnapshot(tx: IDBTransaction, state: GameState, cont
   control.input = record.input;
   delete control.notice;
   return { state: restored, input: record.input };
+}
+
+/** Read-only UI comparison; never consumes an undo point or repairs storage. */
+export type TurnComparison = { available:true;before:GameState } | { available:false;reason:'missing'|'chain'|'corrupt'|'stale' };
+export async function readTurnComparison(tx:IDBTransaction,state:GameState):Promise<TurnComparison>{
+  const control=await readControl(tx,state.saveId),records=control?.records??[],head=records.at(-1),latest=state.journal.at(-1);
+  if(!head||!latest)return {available:false,reason:'missing'};
+  const status=await inspectUndo(tx,state),offset=state.journal.length-records.length;
+  if(!status.available||offset<1||records.some((r,i)=>r.turnId!==state.journal[offset+i]?.turnId||r.beforeTurnId!==state.journal[offset+i-1]?.turnId))return {available:false,reason:'chain'};
+  const raw:unknown=await request(tx.objectStore('turnUndo').get([state.saveId,head.turnId]));
+  const record=SnapshotSchema.parse(raw),before=migrateSave(JSON.parse(record.stateJSON));
+  const scene=latest.scene;
+  if(record.saveId!==state.saveId||record.turnId!==latest.turnId||record.turnId!==head.turnId||record.beforeTurnId!==head.beforeTurnId
+    ||head.bytes!==new TextEncoder().encode(JSON.stringify(raw)).byteLength
+    ||before.saveId!==state.saveId||before.createdAt!==state.createdAt||before.turnNumber<1||before.turnNumber!==state.turnNumber-1
+    ||before.revision+1!==latest.revision||state.revision<latest.revision
+    ||before.journal.at(-1)?.turnId!==record.beforeTurnId
+    ||fingerprint(before.journal)!==fingerprint(state.journal.slice(0,-1))
+    ||(scene&&(scene.worldClock!==before.worldClock||scene.locationId!==before.protagonist.locationId)))return {available:false,reason:'corrupt'};
+  // Undo deliberately advances concurrency revision without rewriting old journal revisions.
+  if(state.revision!==latest.revision){
+    const draft=TurnDraftSchema.safeParse(await request(tx.objectStore('drafts').get(state.saveId)));
+    if(control?.lastUndo?.revision!==state.revision||!draft.success||draft.data.saveId!==state.saveId
+      ||draft.data.turnId!==control.lastUndo.draftTurnId||draft.data.baseSaveRevision!==state.revision)return {available:false,reason:'chain'};
+  }
+  return {available:true,before};
 }

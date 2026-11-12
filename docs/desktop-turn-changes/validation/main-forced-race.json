@@ -1,0 +1,289 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/changes-main-baseline/node_modules/.bin/playwright",
+      "test",
+      "--config=/tmp/changes-main.config.ts",
+      "e2e/continuous-race-control.spec.ts",
+      "--project=desktop",
+      "--grep",
+      "快速双击与另一标签",
+      "--repeat-each=2",
+      "--output=/tmp/changes-main-forced-race",
+      "--reporter=line,json"
+    ],
+    "configFile": "/tmp/changes-main.config.ts",
+    "rootDir": "/workspace/changes-main-baseline/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 2
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/changes-main-forced-race",
+        "repeatEach": 2,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "/workspace/changes-main-baseline/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/tmp/changes-main-forced-race",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/workspace/changes-main-baseline/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/tmp/changes-main-forced-race",
+        "repeatEach": 2,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "desktop",
+        "testDir": "/workspace/changes-main-baseline/e2e",
+        "snapshotDir": "/workspace/changes-main-baseline/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5208",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "desktop"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 2,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5208 --strictPort",
+      "cwd": "/workspace/changes-main-baseline",
+      "url": "http://127.0.0.1:5208",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "continuous-race-control.spec.ts",
+      "file": "continuous-race-control.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 14114,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n    at /workspace/changes-main-baseline/e2e/continuous-race-control.spec.ts:321:72",
+                    "location": {
+                      "file": "/workspace/changes-main-baseline/e2e/continuous-race-control.spec.ts",
+                      "column": 72,
+                      "line": 321
+                    },
+                    "snippet": "  319 |   await page.waitForTimeout(200);\n  320 |   await page.getByRole('button', {name:'发送',exact:true}).evaluate((button:HTMLButtonElement)=>{button.click();button.click();});\n> 321 |   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);\n      |                                                                        ^\n  322 |   const result = await stored(page);\n  323 |   expect(result.state.journal).toHaveLength(2);\n  324 |   expect(result.draft.baseSaveRevision).toBe(2);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/changes-main-baseline/e2e/continuous-race-control.spec.ts",
+                        "column": 72,
+                        "line": 321
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  319 |   await page.waitForTimeout(200);\n  320 |   await page.getByRole('button', {name:'发送',exact:true}).evaluate((button:HTMLButtonElement)=>{button.click();button.click();});\n> 321 |   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);\n      |                                                                        ^\n  322 |   const result = await stored(page);\n  323 |   expect(result.state.journal).toHaveLength(2);\n  324 |   expect(result.draft.baseSaveRevision).toBe(2);\n    at /workspace/changes-main-baseline/e2e/continuous-race-control.spec.ts:321:72"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:36:47.754Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/changes-main-forced-race/continuous-race-control-快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿-desktop/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/tmp/changes-main-forced-race/continuous-race-control-快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿-desktop/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/changes-main-baseline/e2e/continuous-race-control.spec.ts",
+                    "column": 72,
+                    "line": 321
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e0e92feb9f7bca8d6443-e6304b78a9746c3d2e30",
+          "file": "continuous-race-control.spec.ts",
+          "line": 305,
+          "column": 1
+        },
+        {
+          "title": "快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "failed",
+                  "duration": 13868,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n    at /workspace/changes-main-baseline/e2e/continuous-race-control.spec.ts:321:72",
+                    "location": {
+                      "file": "/workspace/changes-main-baseline/e2e/continuous-race-control.spec.ts",
+                      "column": 72,
+                      "line": 321
+                    },
+                    "snippet": "  319 |   await page.waitForTimeout(200);\n  320 |   await page.getByRole('button', {name:'发送',exact:true}).evaluate((button:HTMLButtonElement)=>{button.click();button.click();});\n> 321 |   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);\n      |                                                                        ^\n  322 |   const result = await stored(page);\n  323 |   expect(result.state.journal).toHaveLength(2);\n  324 |   expect(result.draft.baseSaveRevision).toBe(2);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/changes-main-baseline/e2e/continuous-race-control.spec.ts",
+                        "column": 72,
+                        "line": 321
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  319 |   await page.waitForTimeout(200);\n  320 |   await page.getByRole('button', {name:'发送',exact:true}).evaluate((button:HTMLButtonElement)=>{button.click();button.click();});\n> 321 |   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);\n      |                                                                        ^\n  322 |   const result = await stored(page);\n  323 |   expect(result.state.journal).toHaveLength(2);\n  324 |   expect(result.draft.baseSaveRevision).toBe(2);\n    at /workspace/changes-main-baseline/e2e/continuous-race-control.spec.ts:321:72"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T19:36:47.794Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/changes-main-forced-race/continuous-race-control-快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿-desktop-repeat1/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/tmp/changes-main-forced-race/continuous-race-control-快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿-desktop-repeat1/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/changes-main-baseline/e2e/continuous-race-control.spec.ts",
+                    "column": 72,
+                    "line": 321
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e0e92feb9f7bca8d6443-f3f76dba49645d9d84e1",
+          "file": "continuous-race-control.spec.ts",
+          "line": 305,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-12T19:36:45.855Z",
+    "duration": 16870.554,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

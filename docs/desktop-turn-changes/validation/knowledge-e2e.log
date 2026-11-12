@@ -1,0 +1,44 @@
+[WebServer] (node:239416) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:239446) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 12 tests using 2 workers
+
+(node:239502) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+(node:239503) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/12] [desktop] › e2e/turn-changes.spec.ts:24:1 › 最新结算回合六组胶囊、收起展开、键盘及四尺寸，手机版保持原界面
+[2/12] [desktop] › e2e/turn-changes.spec.ts:39:1 › 变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变
+[3/12] [desktop] › e2e/turn-changes.spec.ts:46:1 › 无变化、无恢复点、错误恢复点安全降级，草稿不显示；双端不改原存档
+[4/12] [desktop] › e2e/turn-changes.spec.ts:50:1 › 长列表按8条展开、超长文本与极大金额完整可达，901边界及只读压力
+[5/12] [desktop] › e2e/turn-changes.spec.ts:57:1 › 真实Repository正式结算、撤回后最新变化及重新结算，恢复点与回合始终对应
+[6/12] [desktop] › e2e/turn-changes.spec.ts:67:1 › 已有恢复点时发送新行动，真实Mock生成预览及取消期间不展示变化
+(node:241288) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[7/12] [mobile] › e2e/turn-changes.spec.ts:24:1 › 最新结算回合六组胶囊、收起展开、键盘及四尺寸，手机版保持原界面
+(node:241347) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[8/12] [mobile] › e2e/turn-changes.spec.ts:39:1 › 变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变
+[9/12] [mobile] › e2e/turn-changes.spec.ts:46:1 › 无变化、无恢复点、错误恢复点安全降级，草稿不显示；双端不改原存档
+[10/12] [mobile] › e2e/turn-changes.spec.ts:50:1 › 长列表按8条展开、超长文本与极大金额完整可达，901边界及只读压力
+[11/12] [mobile] › e2e/turn-changes.spec.ts:57:1 › 真实Repository正式结算、撤回后最新变化及重新结算，恢复点与回合始终对应
+[12/12] [mobile] › e2e/turn-changes.spec.ts:67:1 › 已有恢复点时发送新行动，真实Mock生成预览及取消期间不展示变化
+  2 skipped
+  10 passed (1.7m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

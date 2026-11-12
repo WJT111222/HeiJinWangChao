@@ -1,0 +1,21 @@
+--- main/e2e/continuous-turns.spec.ts
++++ diagnostic/e2e/continuous-race-control.spec.ts
+@@ -314,14 +314,10 @@
+   await other.goto(page.url());
+   await page.getByLabel('你的行动', { exact: true }).fill('在街边等待');
+   await other.getByLabel('你的行动', { exact: true }).fill('在街边等待');
+-  await Promise.all(
+-    [page, other].map((p) =>
+-      p.getByRole('button', { name: '发送', exact: true }).evaluate((button: HTMLButtonElement) => {
+-        button.click();
+-        button.click();
+-      }),
+-    ),
+-  );
++  // Diagnostic control only: let the second tab bind first with the original missing setup.
++  await other.getByRole('button', {name:'发送',exact:true}).evaluate((button:HTMLButtonElement)=>{button.click();button.click();});
++  await page.waitForTimeout(200);
++  await page.getByRole('button', {name:'发送',exact:true}).evaluate((button:HTMLButtonElement)=>{button.click();button.click();});
+   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);
+   const result = await stored(page);
+   expect(result.state.journal).toHaveLength(2);

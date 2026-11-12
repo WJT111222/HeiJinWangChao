@@ -1,0 +1,13 @@
+{
+  "node": "24.19.0",
+  "npm": "11.9.0",
+  "chromium": "154.0.8037.57",
+  "baseline": "a8334e8f9429b0423eab01690f3751dce96a227c",
+  "branch": "codex/desktop-turn-changes",
+  "workers": 2,
+  "retries": 0,
+  "models": "Mock only",
+  "sourceFrozenDuringFinalValidation": true,
+  "testedSourceCommit": "76b4ced78e47d97b71cd669c1f10ff7260868b84",
+  "newUnitTests": 40
+}

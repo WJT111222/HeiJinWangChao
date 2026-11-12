@@ -1,0 +1,12 @@
+{
+  "upload": "heijin-desktop-design.zip",
+  "zipSHA256": "9e919773cc7c843f18d2e9f290bcc170658fb48130ee243815a48330b4a44c63",
+  "sourceFiles": {
+    "heijin-desktop-design/CHANGES_HANDOFF.md": "5c3401ca535548c0b03d4836b9b11460bfd5ea85c901632c8e27314b0ee08040",
+    "heijin-desktop-design/heijin-changes.html": "fd5be9e709699ddbcc58c620a3e2431a5bf25a04086553231ddc914aa4f1e4d0"
+  },
+  "copiedFiles": {
+    "docs/desktop-turn-changes/design/CHANGES_HANDOFF.md": "5c3401ca535548c0b03d4836b9b11460bfd5ea85c901632c8e27314b0ee08040",
+    "docs/desktop-turn-changes/design/heijin-changes.html": "fd5be9e709699ddbcc58c620a3e2431a5bf25a04086553231ddc914aa4f1e4d0"
+  }
+}

@@ -1,0 +1,141 @@
+[WebServer] (node:221611) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:221624) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 136 tests using 2 workers
+
+(node:221661) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+(node:221660) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/136] [desktop] › e2e/archive-final.spec.ts:36:1 › 设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载
+[2/136] [desktop] › e2e/archive-final.spec.ts:21:1 › 地图正式层级、当前位置、四入口同步与五尺寸，NPC/事件关联、缓存和只读性
+[3/136] [desktop] › e2e/archive-final.spec.ts:46:1 › 地图大量地点与异常长名称分段可达；展开选择恢复与原文不丢失
+[4/136] [desktop] › e2e/archive-final.spec.ts:50:1 › 游戏设置与地图互切、记忆未保存确认、Esc和首页纸色模态
+[5/136] [desktop] › e2e/archive-final.spec.ts:56:2 › 凭证安全 › 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除
+(node:222483) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[6/136] [desktop] › e2e/archive-step3.spec.ts:20:1 › 物品分类、只读搜索、三栏和选中详情，901边界、原槽位与归属跳转
+(node:222661) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[7/136] [desktop] › e2e/archive-step3.spec.ts:39:1 › 经济资金、部分未知合计、全字段与原生手机，人物入口/旧Dialog/焦点闭环
+[8/136] [desktop] › e2e/archive-step3.spec.ts:56:1 › 大量物品收入资产债务分页、独立滚动，原集合顺序和正式状态不变
+[9/136] [desktop] › e2e/archive-step3.spec.ts:71:1 › 极端金额、超安全范围合计、未知/零债务以及长文本边界
+[10/136] [desktop] › e2e/archive-step4.spec.ts:20:1 › 第四批事件家族、并行与退役成果，合法组织目标、缓存、Esc和只读性
+[11/136] [desktop] › e2e/archive-step4.spec.ts:40:1 › 统一正式历史投影、双轨五尺寸、精度与详情全文，回焦与地图档案切换
+[12/136] [desktop] › e2e/archive-step4.spec.ts:52:1 › 六层记忆原文与归属、多来源分页和层级缓存；手机保持原生界面
+[13/136] [desktop] › e2e/archive-step4.spec.ts:64:1 › 大型并行家族、长标题与长记忆、历史分段有界；reduced motion和只读压力
+[14/136] [desktop] › e2e/automatic-settlement.spec.ts:46:1 › 完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型
+[15/136] [desktop] › e2e/automatic-settlement.spec.ts:62:1 › World字段错误可定位并查看完整失败原文，不提交；恢复仅请求World并自动结算
+[16/136] [desktop] › e2e/automatic-settlement.spec.ts:72:1 › 发送下一条行动仅绑定草稿，commit日志必须等到三阶段完成才开始
+[17/136] [desktop] › e2e/automatic-settlement.spec.ts:101:1 › NPC场景ID诊断与World规则同时保留，逐阶段恢复后只结算一次
+[18/136] [desktop] › e2e/automatic-settlement.spec.ts:132:1 › 源三标签截断保留正文；明确恢复后四操作自动结算并完整显示原文
+[19/136] [desktop] › e2e/automatic-settlement.spec.ts:149:1 › 候选写库配额失败显示具体步骤而非unknown，保留正文后只补失败阶段
+[20/136] [desktop] › e2e/automatic-settlement.spec.ts:172:1 › 时间诊断保留重排前文本编号；失败原文可读，恢复自动结算且刷新不重发
+[21/136] [desktop] › e2e/automatic-settlement.spec.ts:193:1 › 认知格式、时间线对象和组织历史逐项拒绝，明确修正后保留Story并一次结算
+[22/136] [desktop] › e2e/continuous-turns.spec.ts:182:1 › 真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致
+[23/136] [desktop] › e2e/continuous-turns.spec.ts:243:1 › 下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合
+[24/136] [desktop] › e2e/continuous-turns.spec.ts:273:1 › 提交事务中途失败 UI 不虚报成功；重试后只结算一次
+  1) [desktop] › e2e/continuous-turns.spec.ts:273:1 › 提交事务中途失败 UI 不虚报成功；重试后只结算一次 ───────────────────
+
+    Test was interrupted.
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByTestId('story-reader').locator('article').last()
+    Expected substring: "第2幕"
+    Received string:    "1第一回TURN 001第 1 回合七月八日 · 星期三 · 十四时整 · 重庆2015年7月8日14:00，重庆街头。第1幕。主角收到了公司寄出的解雇通知。经过一分钟，主角在街边休息。主角心情趋于平静。"
+
+    Call log:
+      - Expect "toContainText" getByTestId('story-reader').locator('article').last() with timeout 5000ms
+      - waiting for getByTestId('story-reader').locator('article').last()
+        3 × locator resolved to <article class="story-entry glass latest">…</article>
+          - unexpected value "1第一回TURN 001第 1 回合七月八日 · 星期三 · 十四时整 · 重庆2015年7月8日14:00，重庆街头。第1幕。主角收到了公司寄出的解雇通知。经过一分钟，主角在街边休息。主角心情趋于平静。"
+      - Test ended.
+
+
+      170 | const workflow = (page: Page) => page.getByRole('region', { name: '三阶段工作流' });
+      171 | async function ready(page: Page, number = 1) {
+    > 172 |   await expect(page.getByTestId('story-reader').locator('article').last()).toContainText(
+          |                                                                            ^
+      173 |     `第${number}幕`,
+      174 |   );
+      175 |   await expect(workflow(page)).toContainText('本回合已结算');
+        at ready (/workspace/desktop-turn-changes/e2e/continuous-turns.spec.ts:172:76)
+        at /workspace/desktop-turn-changes/e2e/continuous-turns.spec.ts:301:9
+
+    Error Context: test-results/continuous-turns-提交事务中途失败-UI-不虚报成功；重试后只结算一次-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/continuous-turns-提交事务中途失败-UI-不虚报成功；重试后只结算一次-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/continuous-turns-提交事务中途失败-UI-不虚报成功；重试后只结算一次-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2) [desktop] › e2e/continuous-turns.spec.ts:182:1 › 真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致 ───────────────
+
+    Test was interrupted.
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('region', { name: '三阶段工作流' })
+    Expected substring: "本回合已结算"
+    Received string:    "三阶段 · 变量生成中 · 2/301 正文 · 已完成02 变量 · 生成中03 动态世界 · 待生成详情变量生成中 · 2/3×取消自动执行正在依次执行三个阶段01正文生成已完成正文生成位于行动输入旁。02变量管理生成中启用生成变量候选03动态世界待生成启用生成世界候选重试与变更详情本回合已绑定输入（只读）生成可能产生第三方 API 费用。本回合摘要：7 汉字。可继续。查看三阶段模型完整原文与执行结果仅本页面临时保存，刷新或淘汰后无法恢复；模型原文不等于已执行结果。不会写入正式世界或剧情历史，不会发起请求。系统凭证会隐藏。变量 · variables · 请求中本次请求输入：≈ 59,444 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供正文 · story · 响应已接收本次请求输入：≈ 44,695 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供动态世界 · world · 响应已接收本次请求输入：≈ 71,362 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供变量 · variables · 响应已接收本次请求输入：≈ 59,192 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供正文 · story · 响应已接收本次请求输入：≈ 44,443 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供动态世界 · world · 响应已接收本次请求输入：≈ 71,110 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供各次请求独立统计；Unicode启发式不含消息包装等协议开销，不是精确计费，不据此阻止请求。完整记录可在AI请求检查中查看。本次生成的叙事规划与原生输出（临时调试）主动展开才查看内部资料；不是正文、世界事实或人物知识，不写入存档。刷新清除，不会额外调用模型。行动9：在街边等待一分钟"
+
+    Call log:
+      - Expect "toContainText" getByRole('region', { name: '三阶段工作流' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '三阶段工作流' })
+        - locator resolved to <section class="workflow" data-state="busy" aria-label="三阶段工作流">…</section>
+        - unexpected value "三阶段 · 正文保存中 · 1/301 正文 · 保存中02 变量 · 待生成03 动态世界 · 待生成详情正文保存中 · 1/3跟随最新正文 ↓×取消自动执行正在依次执行三个阶段01正文生成保存中正文生成位于行动输入旁。02变量管理待生成启用生成变量候选03动态世界待生成启用生成世界候选重试与变更详情本回合已绑定输入（只读）生成可能产生第三方 API 费用。本回合摘要：7 汉字。可继续。查看三阶段模型完整原文与执行结果仅本页面临时保存，刷新或淘汰后无法恢复；模型原文不等于已执行结果。不会写入正式世界或剧情历史，不会发起请求。系统凭证会隐藏。正文 · story · 响应已接收本次请求输入：≈ 44,695 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供动态世界 · world · 响应已接收本次请求输入：≈ 71,362 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供变量 · variables · 响应已接收本次请求输入：≈ 59,192 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供正文 · story · 响应已接收本次请求输入：≈ 44,443 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供动态世界 · world · 响应已接收本次请求输入：≈ 71,110 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供变量 · variables · 响应已接收本次请求输入：≈ 58,940 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供各次请求独立统计；Unicode启发式不含消息包装等协议开销，不是精确计费，不据此阻止请求。完整记录可在AI请求检查中查看。本次生成的叙事规划与原生输出（临时调试）主动展开才查看内部资料；不是正文、世界事实或人物知识，不写入存档。刷新清除，不会额外调用模型。行动9：在街边等待一分钟"
+        - locator resolved to <section class="workflow" data-state="busy" aria-label="三阶段工作流">…</section>
+        - unexpected value "三阶段 · 变量生成中 · 2/301 正文 · 已完成02 变量 · 生成中03 动态世界 · 待生成详情变量生成中 · 2/3×取消自动执行正在依次执行三个阶段01正文生成已完成正文生成位于行动输入旁。02变量管理生成中启用生成变量候选03动态世界待生成启用生成世界候选重试与变更详情本回合已绑定输入（只读）生成可能产生第三方 API 费用。本回合摘要：7 汉字。可继续。查看三阶段模型完整原文与执行结果仅本页面临时保存，刷新或淘汰后无法恢复；模型原文不等于已执行结果。不会写入正式世界或剧情历史，不会发起请求。系统凭证会隐藏。正文 · story · 响应已接收本次请求输入：≈ 44,695 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供动态世界 · world · 响应已接收本次请求输入：≈ 71,362 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供变量 · variables · 响应已接收本次请求输入：≈ 59,192 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供正文 · story · 响应已接收本次请求输入：≈ 44,443 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供动态世界 · world · 响应已接收本次请求输入：≈ 71,110 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供变量 · variables · 响应已接收本次请求输入：≈ 58,940 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供各次请求独立统计；Unicode启发式不含消息包装等协议开销，不是精确计费，不据此阻止请求。完整记录可在AI请求检查中查看。本次生成的叙事规划与原生输出（临时调试）主动展开才查看内部资料；不是正文、世界事实或人物知识，不写入存档。刷新清除，不会额外调用模型。行动9：在街边等待一分钟"
+        4 × locator resolved to <section class="workflow" data-state="busy" aria-label="三阶段工作流">…</section>
+          - unexpected value "三阶段 · 变量生成中 · 2/301 正文 · 已完成02 变量 · 生成中03 动态世界 · 待生成详情变量生成中 · 2/3×取消自动执行正在依次执行三个阶段01正文生成已完成正文生成位于行动输入旁。02变量管理生成中启用生成变量候选03动态世界待生成启用生成世界候选重试与变更详情本回合已绑定输入（只读）生成可能产生第三方 API 费用。本回合摘要：7 汉字。可继续。查看三阶段模型完整原文与执行结果仅本页面临时保存，刷新或淘汰后无法恢复；模型原文不等于已执行结果。不会写入正式世界或剧情历史，不会发起请求。系统凭证会隐藏。变量 · variables · 请求中本次请求输入：≈ 59,444 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供正文 · story · 响应已接收本次请求输入：≈ 44,695 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供动态世界 · world · 响应已接收本次请求输入：≈ 71,362 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供变量 · variables · 响应已接收本次请求输入：≈ 59,192 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供正文 · story · 响应已接收本次请求输入：≈ 44,443 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供动态世界 · world · 响应已接收本次请求输入：≈ 71,110 Token（估算输入 Token）最大输出设置：8,192实际输入：未提供；实际输出：未提供； 实际总量：未提供；思考 Token：未提供各次请求独立统计；Unicode启发式不含消息包装等协议开销，不是精确计费，不据此阻止请求。完整记录可在AI请求检查中查看。本次生成的叙事规划与原生输出（临时调试）主动展开才查看内部资料；不是正文、世界事实或人物知识，不写入存档。刷新清除，不会额外调用模型。行动9：在街边等待一分钟"
+      - Test ended.
+
+
+      173 |     `第${number}幕`,
+      174 |   );
+    > 175 |   await expect(workflow(page)).toContainText('本回合已结算');
+          |                                ^
+      176 | }
+      177 | async function opening(page: Page) {
+      178 |   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
+        at ready (/workspace/desktop-turn-changes/e2e/continuous-turns.spec.ts:175:32)
+        at /workspace/desktop-turn-changes/e2e/continuous-turns.spec.ts:198:5
+
+    Error Context: test-results/continuous-turns-真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/continuous-turns-真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/continuous-turns-真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2 interrupted
+    [desktop] › e2e/continuous-turns.spec.ts:182:1 › 真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致 ────────────────
+    [desktop] › e2e/continuous-turns.spec.ts:273:1 › 提交事务中途失败 UI 不虚报成功；重试后只结算一次 ────────────────────
+  112 did not run
+  22 passed (2.8m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
