@@ -1,7 +1,7 @@
 import { variableTextEnvelope } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
-import { openGameTools, openWorkflowDiagnostics } from './helpers/gameLayout';
+import { openGameTools, openWorkflowDiagnostics, openStageRaw } from './helpers/gameLayout';
 
 async function seed(page: Page, remoteLocation = false) {
   await page.goto('/');
@@ -41,21 +41,20 @@ async function mock(page: Page) {
   return { calls, control, responses };
 }
 const settled = (page: Page) => expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toContainText('本回合已结算');
-async function rawPanel(page: Page) { await openWorkflowDiagnostics(page); await page.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click(); }
 
 test('完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型', async ({ page }, info) => {
   await seed(page); const server = await mock(page);
   await page.getByRole('button', { name: '自动生成开局', exact: true }).click(); await settled(page);
   let data = await stored(page); expect(data.state.turnNumber).toBe(1); expect(data.state.economy.cash).toBe(7000); expect(data.draft.userInput).toBe(''); expect(server.calls).toEqual(['story','variables','world']);
-  await rawPanel(page); await page.getByText('变量模型原文', { exact: true }).click();
+  await openStageRaw(page, 'variables');
   await expect(page.getByLabel('变量模型完整原文')).toHaveText(server.responses.variables, { useInnerText: false });
   expect(await page.getByLabel('变量模型完整原文').textContent()).toBe(server.responses.variables);
-  await page.getByText('动态世界模型原文', { exact: true }).click(); expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
+  await openStageRaw(page, 'world'); expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
   await page.getByLabel('你的行动', { exact: true }).fill('继续在街边用餐'); await page.getByRole('button', { name: '发送', exact: true }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);
   await settled(page); data = await stored(page); expect(data.state.turnNumber).toBe(2); expect(data.state.economy.cash).toBe(4000); expect(data.state.journal).toHaveLength(2); expect(data.draft.userInput).toBe(''); expect(server.calls).toHaveLength(6);
   await page.reload(); await openGameTools(page); await settled(page); expect(await stored(page)).toEqual(data); expect(server.calls).toHaveLength(6);
-  await rawPanel(page); await page.getByText('变量模型原文', { exact: true }).click(); await expect(page.locator('.stage-responses')).toContainText('本页面没有可恢复的模型原文');
+  await openStageRaw(page, 'variables'); await expect(page.locator('.stage-responses')).toContainText('本页面没有可恢复的模型原文');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('auto-settlement-raw-output.png') });
 });
@@ -64,7 +63,7 @@ test('World字段错误可定位并查看完整失败原文，不提交；恢复
   await page.getByRole('button', { name: '自动生成开局', exact: true }).click();
   await expect(page.getByTestId('runtime-log')).toContainText('estimatedEndAt'); await expect(page.getByTestId('runtime-log')).toContainText('SaveEvent');
   const before = await stored(page); expect(before.state.revision).toBe(0); expect(before.draft.story).toBeDefined(); expect(before.draft.variables.validation).toBe('validated'); expect(before.draft.stageStatus.world).toBe('failed');
-  await rawPanel(page); await page.getByText('动态世界模型原文 · 未通过验收', { exact: true }).click(); expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
+  await openStageRaw(page, 'world'); expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
   server.control.bad = false; await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
   expect((await stored(page)).state.turnNumber).toBe(1); expect(server.calls).toEqual(['story','variables','world','world']);
 });
@@ -140,7 +139,7 @@ test('源三标签截断保留正文；明确恢复后四操作自动结算并�
   await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
   const data = await stored(page); expect(data.state.turnNumber).toBe(1); expect(data.state.economy.cash).toBe(7000); expect(data.state.protagonist.skills).toEqual(['急救','烹饪']);
   expect(server.calls).toEqual(['story','variables','variables','world']); expect(data.draft.userInput).toBe('');
-  await rawPanel(page); await page.getByText('变量模型原文', { exact: true }).click();
+  await openStageRaw(page, 'variables');
   expect(await page.getByLabel('变量模型完整原文').textContent()).toBe(server.control.variables);
   await page.screenshot({ path: info.outputPath('source-variable-protocol.png') });
   await page.reload(); await openGameTools(page); await settled(page); expect(await stored(page)).toEqual(data); expect(server.calls).toHaveLength(4);
@@ -180,7 +179,7 @@ test('时间诊断保留重排前文本编号；失败原文可读，恢复自�
   await expect(log).not.toContainText('相关命令：'); await expect(log).not.toContainText('mock-auto-settlement-key');
   const failed = await stored(page); expect(failed.state).toEqual(before.state); expect(failed.draft.story).toBeDefined(); expect(failed.draft.variables).toBeUndefined();
   expect(server.calls).toEqual(['story', 'variables']);
-  await rawPanel(page); await page.getByText('变量模型原文 · 未通过验收', { exact: true }).click();
+  await openStageRaw(page, 'variables');
   await expect(page.locator('.stage-responses')).toContainText('第2条命令：NPC 互动时间');
   expect(await page.getByLabel('变量模型完整原文').textContent()).toBe(server.responses.variables);
   server.control.variables = server.control.variables.replace('09:00:00', '08:10:00');

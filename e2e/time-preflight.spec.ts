@@ -1,7 +1,7 @@
 import { openLibrary } from './helpers/home';
 import { VariableStateProjectionSchema } from '../src/tests/fixtures/variableState';
 import { variableReply } from '../src/tests/fixtures/variableReply';
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools, openWorkflowStage } from './helpers/gameLayout';
 import { test, expect } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { array, record, string } from '../src/services/ai/protocols';
@@ -95,7 +95,7 @@ test('变量失败与刷新恢复保留正文和候选，不提供主动Roll也�
   expect((await load(page)).draft.story).toBeTruthy();
   expect((await load(page)).state).toEqual(before); await page.reload(); await openGameTools(page); api.control.failVariables = false;
   // 高级单阶段补算保留未结算候选，以验证失败恢复和正式时间边界；正常自动恢复另有覆盖。
-  await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
   await expect.poll(async () => (await load(page)).draft.stageStatus.variables).toBe('ready'); expect(api.calls.filter((call) => call === 'story')).toHaveLength(1);
   const ready = await load(page); await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toHaveCount(0);
   await page.reload(); await openGameTools(page); expect(await load(page)).toEqual(ready); expect(ready.state).toEqual(before);

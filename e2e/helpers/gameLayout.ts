@@ -19,12 +19,95 @@ export async function openWorkflow(page: Page) {
     await workflowTrigger(page).click();
 }
 
+// PC（>900px）三阶段详情为左侧阶段导航 + 右侧分页；移动端保留原折叠卡片。
+const desktopWorkflow = (page: Page) => (page.viewportSize()?.width ?? 0) > 900;
+const stageIndex = { story: 0, variables: 1, world: 2 } as const;
+const rawLabels = { story: '正文', variables: '变量', world: '动态世界' } as const;
+export type WorkflowStage = keyof typeof stageIndex;
+
+async function openRailView(page: Page, name: '运行诊断' | '已绑定输入') {
+  await openWorkflow(page);
+  await page.locator('.wf-aux .wf-ri').filter({ hasText: name }).click();
+}
+
 export async function openWorkflowDiagnostics(page: Page) {
+  if (desktopWorkflow(page)) return openRailView(page, '运行诊断');
   await openWorkflow(page);
   const details = page.locator('.workflow-diagnostics');
   if (!(await details.evaluate(element => element.hasAttribute('open'))))
-    if (await details.locator(':scope > summary').isVisible()) await details.locator(':scope > summary').click();
-    else await page.getByRole('button', { name: '重试与变更详情', exact: true }).click();
+    await details.locator(':scope > summary').click();
+}
+
+// 只读查看本回合已绑定输入；PC 为左侧“已绑定输入”视图，移动端展开原折叠块。
+export async function openBoundInput(page: Page) {
+  if (desktopWorkflow(page)) return openRailView(page, '已绑定输入');
+  await openWorkflow(page);
+  const details = page.locator('.bound-input');
+  if (!(await details.evaluate(element => element.hasAttribute('open'))))
+    await details.locator(':scope > summary').click();
+}
+
+// 操作某阶段按钮前选中该阶段；移动端三张卡片同时可见，只需展开工作流。
+export async function openWorkflowStage(page: Page, stage: WorkflowStage) {
+  await openWorkflow(page);
+  if (!desktopWorkflow(page)) return;
+  await page.locator('.wf-rail .workflow-stages > li').nth(stageIndex[stage]).locator('.wf-ri').click();
+}
+
+export async function openStageTab(page: Page, stage: WorkflowStage, tab: '概览' | '候选' | '模型原文' | '叙事规划' | '校验结果') {
+  await openWorkflowStage(page, stage);
+  await page.locator('.wf-stage').getByRole('tab', { name: new RegExp(`^${tab}`) }).click();
+}
+
+// 阶段模型原文：PC 为该阶段“模型原文”页；移动端为诊断区内的三阶段原文折叠块。返回含原文和错误说明的容器。
+export async function openStageRaw(page: Page, stage: WorkflowStage) {
+  if (desktopWorkflow(page)) {
+    await openStageTab(page, stage, '模型原文');
+    return page.locator('.stage-responses');
+  }
+  await openWorkflowDiagnostics(page);
+  const panel = page.locator('.stage-responses');
+  if (!(await panel.evaluate(element => element.hasAttribute('open')))) await panel.locator(':scope > summary').click();
+  const item = panel.locator(':scope > details').filter({ has: page.locator(':scope > summary', { hasText: `${rawLabels[stage]}模型原文` }) });
+  if (!(await item.evaluate(element => element.hasAttribute('open')))) await item.locator(':scope > summary').click();
+  return panel;
+}
+
+// 变量/世界候选：PC 为该阶段“候选”页，移动端为原只读弹窗。返回可查找“主动查看完整…候选”的容器。
+export async function openStageCandidates(page: Page, stage: 'variables' | 'world') {
+  const name = stage === 'variables' ? '变量' : '世界';
+  if (desktopWorkflow(page)) {
+    await openStageTab(page, stage, '候选');
+    return page.locator('.wf-stage');
+  }
+  const dialog = page.getByRole('dialog', { name: `${name}候选 · 未正式结算`, exact: true });
+  if (!(await dialog.isVisible())) await page.getByRole('button', { name: `查看${name}候选（未结算）`, exact: true }).click();
+  return dialog;
+}
+
+// 候选对应的模型原文区域（region“模型原文”）：PC 在“模型原文”页，移动端在候选弹窗内。
+export async function openCandidateRaw(page: Page, stage: 'variables' | 'world') {
+  if (desktopWorkflow(page)) {
+    await openStageTab(page, stage, '模型原文');
+    return page.getByRole('region', { name: '模型原文', exact: true });
+  }
+  return (await openStageCandidates(page, stage)).getByRole('region', { name: '模型原文', exact: true });
+}
+
+// 正文叙事规划与原生输出：PC 为正文阶段“叙事规划”页（直接展开），移动端在诊断区内主动展开。
+export async function openStoryInspection(page: Page) {
+  if (desktopWorkflow(page)) await openStageTab(page, 'story', '叙事规划');
+  else {
+    await openWorkflowDiagnostics(page);
+    const details = page.locator('.story-inspection');
+    if (!(await details.evaluate(element => element.hasAttribute('open')))) await details.locator(':scope > summary').click();
+  }
+  return page.locator('.story-inspection');
+}
+
+// 移动端关闭候选弹窗；PC 候选在面板内，无需关闭。
+export async function closeStageCandidates(page: Page) {
+  if (!desktopWorkflow(page)) await page.keyboard.press('Escape');
 }
 
 // Responsive navigation opens the existing directory/profile dialogs, without touching save state.

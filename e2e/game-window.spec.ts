@@ -1,5 +1,5 @@
 import { expect, test } from './helpers/test';
-import { workflowTrigger, workflowSummary, openWorkflow, openWorkflowDiagnostics, openWorldArchive, openProfile, goHome } from './helpers/gameLayout';
+import { workflowTrigger, workflowSummary, openWorkflow, openWorkflowDiagnostics, openWorldArchive, openProfile, goHome, openWorkflowStage } from './helpers/gameLayout';
 import type { Page } from '@playwright/test';
 
 async function seed(page: Page, mode: 'long' | 'complete' | 'history' | 'empty' = 'long') {
@@ -117,7 +117,7 @@ test('默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式�
   await expect(page.getByRole('button', { name: '生成变量候选', exact: true })).toBeHidden();
   await page.getByLabel('你的行动', { exact: true }).fill('我准备阅读资料');
   await workflowTrigger(page).focus(); await page.keyboard.press('Enter'); await expect(disclosure).toHaveAttribute('open');
-  await expect(page.getByRole('button', { name: '生成变量候选', exact: true })).toBeVisible();
+  await openWorkflowStage(page, 'variables'); await expect(page.getByRole('button', { name: '生成变量候选', exact: true })).toBeVisible();
   await workflowTrigger(page).focus(); await page.keyboard.press('Enter'); await expect(disclosure).not.toHaveAttribute('open');
   await expect(page.getByLabel('你的行动', { exact: true })).toHaveValue('我准备阅读资料');
   expect(await stored(page)).toEqual(before); await fit(page); await page.screenshot({ path: info.outputPath('reading.png') });
@@ -245,7 +245,8 @@ test('工作流默认一行且无外置工具与冗余说明，展开保留入�
   const disclosure = page.locator('.workflow-disclosure'), summary = workflowSummary(page);
   await expect(disclosure).not.toHaveAttribute('open'); await expect(summary).toContainText('详情');
   expect((await workflow.boundingBox())!.height).toBeLessThanOrEqual(44);
-  await expect(workflow.locator('button:visible')).toHaveCount(info.project.name === 'desktop' ? 1 : 0);
+  // PC 收起条：三段进度（可点击、可 Tab 聚焦，直达对应阶段）+ 详情按钮。
+  await expect(workflow.locator('button:visible')).toHaveCount(info.project.name === 'desktop' ? 4 : 0);
   await expect(page.locator('.composer-tools > .stage-responses, .composer-tools > .runtime-log')).toHaveCount(0);
   for (const text of ['三阶段校验完成后自动原子结算', '自动执行会保留已完成阶段', '高级手动操作：', '手动启动新尝试；', '保留正文及合法变量；', '仅保存后续尝试偏好'])
     await expect(page.getByText(text, { exact: false })).toHaveCount(0);
@@ -255,7 +256,8 @@ test('工作流默认一行且无外置工具与冗余说明，展开保留入�
   await workflowTrigger(page).click();
   await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeVisible();
   await expect(page.locator('.workflow-stages > li')).toHaveCount(3);
-  await expect(page.getByText('重试与变更详情', { exact: true })).toBeVisible();
+  if (info.project.name === 'desktop') await expect(page.locator('.wf-aux').getByText('运行诊断', { exact: true })).toBeVisible();
+  else await expect(page.getByText('重试与变更详情', { exact: true })).toBeVisible();
   await fit(page); await page.screenshot({ path: `docs/screenshots/compact-workflow/after-${info.project.name}-expanded.png` });
   await workflowTrigger(page).click(); await fit(page);
   expect((await page.getByTestId('story-reader').boundingBox())!.height).toBe(collapsedHeight);

@@ -1,4 +1,4 @@
-import { openWorldArchive } from './helpers/gameLayout';
+import { openWorldArchive, openWorkflowStage } from './helpers/gameLayout';
 import { variableTextEnvelope } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
@@ -35,7 +35,7 @@ for(const major of [false,true])test(`到期${major?'隐藏重大':'普通'}事�
   const data=await prepare(page,major);let calls=0;
   await page.route('https://events.mock.invalid/**',async route=>{calls++;const body=route.request().postData()??'';expect(body).toContain('EVENT_SCHEDULE');expect(body).toContain('estimatedEndAt');
     await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:JSON.stringify(endResult(data))},finish_reason:'stop'}]})});});
-  await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();
   await expect(page.getByRole('region',{name:'三阶段工作流'}).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
   expect((await stored(page)).state).toEqual(data.state);await expect(page.locator('main')).not.toContainText('封存清单');
   await page.reload();await openGameTools(page);expect(calls).toBe(1);expect((await stored(page)).state).toEqual(data.state);
@@ -51,8 +51,8 @@ for(const major of [false,true])test(`到期${major?'隐藏重大':'普通'}事�
 test('未处理到期事件不能伪装World成功，合法重试仍仅保存候选',async({page})=>{
   const data=await prepare(page);let calls=0;
   await page.route('https://events.mock.invalid/**',async route=>{calls++;await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:JSON.stringify(calls===1?worldResult():endResult(data))},finish_reason:'stop'}]})});});
-  await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();await expect(page.getByRole('alert')).toBeVisible();expect(calls).toBe(1);expect((await stored(page)).state).toEqual(data.state);
-  await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();await expect(page.getByRole('region',{name:'三阶段工作流'}).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
+  await openWorkflowStage(page, 'world'); await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();await expect(page.getByRole('alert')).toBeVisible();expect(calls).toBe(1);expect((await stored(page)).state).toEqual(data.state);
+  await openWorkflowStage(page, 'world'); await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();await expect(page.getByRole('region',{name:'三阶段工作流'}).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
   expect(calls).toBe(2);expect((await stored(page)).state).toEqual(data.state);
 });
 
@@ -72,7 +72,7 @@ for (const visibility of ['known','partially_known','hidden'] as const) test(`${
       evidence:proof({sources:['event:review','npc:npc-a'],fact,decision:{targetId:'review',status:'blocked',reason:'缺少原始单据',result:fact,conditionsSatisfied:false,continues:true}})}]};
     await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:JSON.stringify(result)},finish_reason:'stop'}]})});
   });
-  await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();
   await expect(page.getByRole('region',{name:'三阶段工作流'}).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
   expect((await stored(page)).state).toEqual(data.state);
   const committed=await page.evaluate(async()=>{
@@ -120,13 +120,13 @@ test('Variables拒绝纯组织事件，合法现场更新可恢复；组织事�
     }]}):safe?variableTextEnvelope('<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset events[local].sceneState = {"status":"blocked"}\n</命令>'):variableTextEnvelope('<命令>set events[background].sceneState = {"status":"blocked"}</命令>');
     await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content},finish_reason:'stop'}]})});
   });
-  await page.getByRole('button',{name:/^(?:重新)?生成变量候选$/}).click();await expect(page.getByRole('alert')).toBeVisible();
+  await openWorkflowStage(page, 'variables'); await page.getByRole('button',{name:/^(?:重新)?生成变量候选$/}).click();await expect(page.getByRole('alert')).toBeVisible();
   let saved=await stored(page);expect(calls).toEqual(['variables']);expect(saved.state).toEqual(seeded.state);
   expect(saved.draft.variables).toBeUndefined();expect(saved.draft.stageStatus.variables).toBe('failed');expect(saved.draft.story).toEqual(seeded.draft.story);
-  safe=true;await page.getByRole('button',{name:/^(?:重新)?生成变量候选$/}).click();
+  safe=true;await openWorkflowStage(page, 'variables');await page.getByRole('button',{name:/^(?:重新)?生成变量候选$/}).click();
   await expect(page.getByRole('region',{name:'三阶段工作流'}).locator('.workflow-stages > li').nth(1)).toContainText('已完成');
   saved=await stored(page);expect(saved.state).toEqual(seeded.state);expect(saved.draft.variables.result.commands).toContainEqual(expect.objectContaining({type:'SaveEvent',event:expect.objectContaining({id:'local',status:'blocked'})}));
-  await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();
+  await openWorkflowStage(page, 'world'); await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();
   await expect(page.getByRole('region',{name:'三阶段工作流'}).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
   expect(calls).toEqual(['variables','variables','world']);expect((await stored(page)).state).toEqual(seeded.state);
   const committed=await page.evaluate(async()=>{const path='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(path),repo=await SaveRepository.open();try{

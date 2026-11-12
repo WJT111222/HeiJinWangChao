@@ -1,5 +1,5 @@
 import { variableReply } from '../src/tests/fixtures/variableReply';
-import { openGameTools, goHome } from './helpers/gameLayout';
+import { openGameTools, goHome, openWorkflowStage, openCandidateRaw, openStageCandidates, closeStageCandidates } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 const narrative = '主角已经用现金支付30元吃饭。';
@@ -122,7 +122,7 @@ test('变量正常生成、真实独立路由/模块/usage，完整候选主动�
     bodies.push(route.request().postDataJSON());
     await route.fulfill({ contentType: 'application/json', body: response(variableReply(result).replace('<说明></说明>', '<说明>内部候选事项不可默认公开</说明>')) });
   });
-  await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
   await ready(page);
   const saved = await stored(page);
   expect(saved.formal).toBe(before);
@@ -135,17 +135,17 @@ test('变量正常生成、真实独立路由/模块/usage，完整候选主动�
   expect(JSON.stringify(bodies[0])).toContain('TURN_CONTEXT');
   expect(JSON.stringify(bodies[0])).toContain('SpendFunds');
   await expect(page.locator('main')).not.toContainText('内部候选事项不可默认公开');
-  await page.getByRole('button', { name: '查看变量候选（未结算）', exact: true }).click();
-  const modal = page.getByRole('dialog', { name: '变量候选 · 未正式结算', exact: true });
-  await expect(modal).toContainText('SpendFunds');
-  await expect(modal.getByRole('region', { name: '模型原文', exact: true })).toContainText('内部候选事项不可默认公开');
+  const raw = await openCandidateRaw(page, 'variables');
+  await expect(raw).toContainText('内部候选事项不可默认公开'); await expect(raw).not.toContainText('mock-var-browser-secret');
   await expect(page.getByTestId('story-reader')).not.toContainText('内部候选事项不可默认公开');
   expect((await stored(page)).formal).toBe(before);
+  const modal = await openStageCandidates(page, 'variables');
+  await expect(modal).toContainText('SpendFunds');
   await modal.getByRole('button', { name: '主动查看完整变量候选', exact: true }).click();
   await expect(modal.getByLabel('完整变量候选')).not.toContainText('内部候选事项不可默认公开');
   await expect(modal.getByLabel('完整变量候选')).toContainText('说明未转为命令或存档事实');
   await expect(modal).not.toContainText('mock-var-browser-secret');
-  await page.keyboard.press('Escape');
+  await closeStageCandidates(page);
   await page.getByRole('button', { name: '设置', exact: true }).click();
   await page.getByRole('button', { name: '提示词管理', exact: true }).click();
   await page.getByRole('combobox', { name: '检查阶段', exact: true }).selectOption('variables');
@@ -165,7 +165,7 @@ test('变量正常生成、真实独立路由/模块/usage，完整候选主动�
 });
 test('正文未完成不能运行；双阶段关闭后仅补算变量，正文不 Roll，世界不执行', async ({ page }) => {
   await seed(page, false, true);
-  await expect(page.getByRole('button', { name: '启用并补算变量', exact: true })).toBeDisabled();
+  await openWorkflowStage(page, 'variables'); await expect(page.getByRole('button', { name: '启用并补算变量', exact: true })).toBeDisabled();
   await page.evaluate(async () => {
     const repoPath = '/src/services/storage/saveRepository.ts',
       draftPath = '/src/domain/drafts.ts';
@@ -189,10 +189,10 @@ test('正文未完成不能运行；双阶段关闭后仅补算变量，正文�
   await page.route('https://variables.mock.invalid/**', (route) =>
     route.fulfill({ contentType: 'application/json', body: response() }),
   );
-  await page.getByRole('button', { name: '启用并补算变量', exact: true }).click();
+  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '启用并补算变量', exact: true }).click();
   await ready(page);
   const first = await stored(page);
-  await page.getByRole('button', { name: '重新生成变量候选', exact: true }).click();
+  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '重新生成变量候选', exact: true }).click();
   await ready(page);
   const second = await stored(page);
   expect(second.draft.story).toEqual(first.draft.story);
@@ -218,12 +218,12 @@ test('错误 JSON 安全失败可重试；取消、重复点击和切档迟到�
       })
       .catch(() => undefined);
   });
-  await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
   expect((await stored(page)).draft.stageStatus.variables).toBe('failed');
   await expect(page.getByTestId('story-reader')).toContainText(narrative);
   mode = 'slow';
-  await page
+  await openWorkflowStage(page, 'variables'); await page
     .getByRole('button', { name: '生成变量候选', exact: true })
     .evaluate((el: HTMLButtonElement) => {
       el.click();
@@ -231,13 +231,13 @@ test('错误 JSON 安全失败可重试；取消、重复点击和切档迟到�
     });
   await expect.poll(() => count).toBe(2);
   await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: '取消变量生成', exact: true }).click();
+  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '取消变量生成', exact: true }).click();
   mode = 'good';
-  await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
   await ready(page);
   const saved = await stored(page);
   mode = 'slow';
-  await page.getByRole('button', { name: '重新生成变量候选', exact: true }).click();
+  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '重新生成变量候选', exact: true }).click();
   await expect.poll(() => count).toBe(4);
   await goHome(page);
   await page
@@ -247,7 +247,7 @@ test('错误 JSON 安全失败可重试；取消、重复点击和切档迟到�
     .click();
   await openGameTools(page, true);
   mode = 'good';
-  await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
   await ready(page);
   expect((await stored(page, 'other-e2e')).draft.variables).toBeDefined();
   expect((await stored(page)).formal).toBe(before);
@@ -262,7 +262,7 @@ test('角色对白后换行的客观消费可保存候选，不改变正式资�
   await page.route('https://variables.mock.invalid/**', (route) =>
     route.fulfill({ contentType: 'application/json', body: response() }),
   );
-  await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
   await ready(page);
   const saved = await stored(page);
   expect(saved.formal).toBe(before);
@@ -304,7 +304,7 @@ test('场景引用不一致整批失败；合法离场可恢复为未结算候�
       }),
     }),
   );
-  await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
   const rejected = await stored(page);
   expect(rejected.draft.stageStatus.variables).toBe('failed');
@@ -312,7 +312,7 @@ test('场景引用不一致整批失败；合法离场可恢复为未结算候�
   expect(rejected.draft.story.narrative).toBe(text);
   expect(rejected.formal).toBe(before);
   follow = false;
-  await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
   await ready(page);
   const accepted = await stored(page);
   expect(accepted.draft.variables.result.commands[1].changes).toEqual({ onScene: false });
@@ -367,7 +367,7 @@ for (const scenario of [
         body: response({ commands, rejectedSuggestions: [], unresolved: [] }),
       });
     });
-    await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+    await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
     await expect(page.getByRole('alert')).toBeVisible();
     const rejected = await stored(page);
     expect(rejected.draft.stageStatus.variables).toBe('failed');
@@ -375,7 +375,7 @@ for (const scenario of [
     expect(rejected.draft.story.narrative).toBe(text);
     expect(rejected.formal).toBe(before);
     corrected = true;
-    await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+    await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
     await ready(page);
     const accepted = await stored(page);
     expect(accepted.formal).toBe(before);
@@ -397,7 +397,7 @@ push npc[npc-a].memories = {"text":"本轮一起吃过午饭","knowledgeKind":"o
 add economy.cash = -3000
 </命令>`)});
   });
-  await page.getByRole('button', {name:'生成变量候选',exact:true}).click(); await ready(page);
+  await openWorkflowStage(page, 'variables'); await page.getByRole('button', {name:'生成变量候选',exact:true}).click(); await ready(page);
   const saved = await stored(page); expect(saved.formal).toBe(before); expect(calls).toBe(1);
   expect(saved.draft.variables.result.commands.map((c:{type:string})=>c.type)).toEqual(['UpdateNpc','RecordNpcMemory','SpendFunds']);
   expect(saved.draft.variables.result.commands[1].memory.visibility).toBe('npc_private');

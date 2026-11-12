@@ -1,4 +1,4 @@
-import { workflowTrigger } from './helpers/gameLayout';
+import { workflowTrigger, openStoryInspection, openStageRaw } from './helpers/gameLayout';
 import { openWorldArchive, openSettings, goHome } from './helpers/gameLayout';
 import { openGameTools, openWorkflowDiagnostics } from './helpers/gameLayout';
 import { createServer } from 'node:http';
@@ -322,14 +322,14 @@ test('P6：原生公开内容与项目规划只主动查看，正文/存档隔�
   await expect(reader).not.toContainText('私人规划标记'); await expect(reader).not.toContainText('公开原生标记');
   const inspection = page.locator('.story-inspection'); await expect(inspection.locator('pre')).toHaveCount(0);
   const saved = await stored(page); expect(saved.state).toBe(before); expect(JSON.stringify(saved.draft)).not.toContain('私人规划标记');
-  await openWorkflowDiagnostics(page); await inspection.getByText('本次生成的叙事规划与原生输出（临时调试）', { exact: true }).click();
+  await openStoryInspection(page);
   await inspection.getByText('项目叙事规划 · thinking', { exact: true }).click(); await expect(inspection).toContainText('私人规划标记');
   await inspection.getByText('供应商公开返回的原生内容', { exact: true }).click(); await expect(inspection).toContainText('公开原生标记');
   await expect(inspection).not.toContainText('mock-browser-key'); expect(await stored(page)).toEqual(saved); expect(requests).toHaveLength(1);
   const messages = requests[0].messages as { role: string; content: string }[];
   expect(messages.slice(-3).map((message) => message.role)).toEqual(['user', 'assistant', 'user']);
   expect(messages.filter((message) => message.content.includes('### Step 0｜'))).toHaveLength(1);
-  await page.reload(); await openGameTools(page); await openWorkflowDiagnostics(page); await inspection.getByText('本次生成的叙事规划与原生输出（临时调试）', { exact: true }).click();
+  await page.reload(); await openGameTools(page); await openStoryInspection(page);
   await expect(inspection).toContainText('没有对应请求的临时内容'); await expect(reader).toContainText(displayedStory);
   expect(await stored(page)).toEqual(saved); expect(requests).toHaveLength(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -342,8 +342,7 @@ test('P6：截断请求不保存正文，明确预算诊断；失败重试无原
   await expect(page.getByRole('alert')).toContainText('达到输出上限'); expect(await stored(page)).toEqual(saved); expect(requests).toHaveLength(1);
   plans.push({}); await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
   expect((await stored(page)).draft.storyRevision).toBe(1); expect(requests).toHaveLength(2);
-  await openWorkflowDiagnostics(page);
-  const inspection = page.locator('.story-inspection'); await inspection.locator(':scope > summary').click();
+  const inspection = await openStoryInspection(page);
   await inspection.getByText('供应商公开返回的原生内容', { exact: true }).click(); await expect(inspection).toContainText('供应商未提供');
 });
 
@@ -366,8 +365,7 @@ test('Story精确诊断：1268/1500字符直接可见，可复制单条，原文
   const copied = JSON.parse(await page.evaluate(() => Reflect.get(window, 'copiedStoryDiagnostic')));
   expect(copied).toMatchObject({ stage: 'story', code: 'invalid_output', storyRule: 'narrative_short', actualCount: 1268, minimumCount: 1500 });
   expect(JSON.stringify(copied)).not.toContain('字'.repeat(20)); expect(JSON.stringify(copied)).not.toContain('mock-browser-key');
-  await openWorkflowDiagnostics(page); await page.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click();
-  await page.getByText('正文模型原文 · 未通过验收', { exact: true }).click();
+  await expect(await openStageRaw(page, 'story')).toContainText('未通过验收');
   await expect(page.locator('.stage-responses')).toContainText('正文长度不足');
   expect(await page.getByLabel('正文模型完整原文').textContent()).toBe(raw);
   expect(await stored(page)).toEqual(before); expect(requests).toHaveLength(1);
@@ -401,9 +399,7 @@ test('Story后置凭证拒绝同步到原文面板，诊断与原文均不泄露
   plans.push({ chunks: [result(story + 'mock-browser-key')] }); await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('模型输出包含凭证内容');
   const log = page.getByTestId('runtime-log'); await expect(log).toContainText('credential_output'); await expect(log).not.toContainText('mock-browser-key');
-  await openWorkflowDiagnostics(page); await page.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click();
-  await page.getByText('正文模型原文 · 未通过验收', { exact: true }).click();
-  const panel = page.locator('.stage-responses'); await expect(panel).toContainText('credential_output'); await expect(panel).not.toContainText('mock-browser-key');
+  const panel = await openStageRaw(page, 'story'); await expect(panel).toContainText('未通过验收'); await expect(panel).toContainText('credential_output'); await expect(panel).not.toContainText('mock-browser-key');
   await expect(panel.getByText('正文程序校验后的结果', { exact: true })).toHaveCount(0);
   expect(await stored(page)).toEqual(before); expect(requests).toHaveLength(1);
 });
@@ -419,8 +415,7 @@ test('Story保存版本冲突保留原DataError处理，原文面板显示具体
   await expect(page.getByRole('alert')).toContainText('存档或草稿版本已变化');
   await expect(page.getByTestId('runtime-log')).toContainText('draft_conflict');
   await expect(page.getByTestId('runtime-log')).not.toContainText('private-storage-detail');
-  await openWorkflowDiagnostics(page); await page.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click();
-  await page.getByText('正文模型原文 · 未通过验收', { exact: true }).click();
+  await expect(await openStageRaw(page, 'story')).toContainText('未通过验收');
   await expect(page.locator('.stage-responses')).toContainText('draft_conflict');
   expect(await stored(page)).toEqual(before); expect(requests).toHaveLength(1);
 });
