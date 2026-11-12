@@ -1,5 +1,6 @@
 // 王朝公告仅反映已经合并的功能与当前开发阶段，不把预览构建当作正式发行。
 export const announcement = {
+  version: 'builtin-0.9',
   title: '王朝公告',
   theme: '《黑金王朝》0.9 开发里程碑 · 世界事件与历史更新',
   updates: [
@@ -10,4 +11,4 @@ export const announcement = {
     '「夜幕金印」已更新桌面和手机阅读布局、角色对白气泡及只读世界事件档案；目前仍为 0.9 开发阶段，真实模型长篇试玩、手机真机体验和正式 V1.0 发行尚待验收。',
   ],
   message: '王朝还在建设，城市已经有了自己的生活。感谢你在这里留下每一段经历。',
-} as const;
+} satisfies import('../../services/notices/announcement').Announcement;

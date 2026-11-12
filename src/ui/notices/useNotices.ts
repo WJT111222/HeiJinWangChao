@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { announcement as fallback } from './announcement';
+import { currentAnnouncement } from '../../services/notices/client';
+import { useEffect, useState } from 'react';
 import { noticesMutedToday, saveNoticePreference } from './preferences';
 
 export type NoticeKind = 'disclaimer' | 'announcement';
@@ -10,6 +12,12 @@ export function useNotices() {
     const muted = noticesMutedToday();
     return { kind: muted ? undefined : 'disclaimer', automatic: !muted, muted };
   });
+  const [announcement, setAnnouncement] = useState(fallback);
+  useEffect(() => {
+    let active = true;
+    void currentAnnouncement().then(value => { if (active) setAnnouncement(value); });
+    return () => { active = false; };
+  }, []);
   function close() {
     setState(current => {
       // 旧弹窗的重复关闭回调不能连带关闭下一张弹窗。
@@ -26,5 +34,5 @@ export function useNotices() {
   function open(kind: NoticeKind) {
     setState({ kind, automatic: false, muted: noticesMutedToday() });
   }
-  return { ...state, close, setMuted, open };
+  return { ...state, announcement, close, setMuted, open };
 }
