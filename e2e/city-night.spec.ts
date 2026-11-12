@@ -120,7 +120,9 @@ test('UI-2：四城五时段五天气、长文本及 reduced-motion',async({page
   for(const width of [901,1100,1280,1440,1920]){
     await page.setViewportSize({width,height:800});
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-    await expect(page.locator('.chip').first()).toHaveAttribute('title',/阵雨/);
+    await page.getByRole('button',{name:'查看天气详情',exact:true}).hover();
+    await expect(page.getByRole('dialog',{name:'天气与环境详情',exact:true}).locator('dd').first()).toContainText('阵雨');
+    await page.keyboard.press('Escape');
   }
   const animations=await page.locator('.atmo *').evaluateAll(elements=>elements.flatMap(e=>[getComputedStyle(e).animationName,getComputedStyle(e,'::before').animationName,getComputedStyle(e,'::after').animationName]));
   expect(animations.every(a=>a==='none')).toBe(true);

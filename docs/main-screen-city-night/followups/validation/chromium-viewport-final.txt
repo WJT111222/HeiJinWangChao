@@ -1,0 +1,13 @@
+
+Running 1 test using 1 worker
+
+(node:47822) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [mobile] › e2e/city-night-followups.spec.ts:147:1 › 触控点击详情、再次点击/关闭/外部点击收起，窄屏与缩放视口不溢出 (8.2s)
+
+  1 passed (10.0s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

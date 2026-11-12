@@ -1,5 +1,13 @@
 import type { GameState } from '../../domain/state';
 import { dateTime, money } from '../panels/playerView';
+import type { CSSProperties } from 'react';
+import { SceneDetails } from './SceneDetails';
+
+// Numbers use the existing tabular monospace face; the CJK unit occupies a full em.
+function fundStyle(text: string, labelCharacters: number): CSSProperties {
+  const width = Array.from(text).reduce((sum, character) => sum + (character.charCodeAt(0) > 127 ? 1 : .62), 0);
+  return { '--money-width': width, '--fund-label-space': `${labelCharacters * .68 + .4}rem` } as CSSProperties;
+}
 
 // A read-only projection of the same save shown in the profile/economy dialogs.
 export function PlayerStatus({ state, equipment, onProfile, onEconomy }: {
@@ -14,7 +22,7 @@ export function PlayerStatus({ state, equipment, onProfile, onEconomy }: {
       <div>
         <h2 title={hero.name}>{hero.name}</h2>
         <p className="status-demographics" title={`${hero.age} 岁 · ${hero.gender} · ${hero.profession || '职业未确认'}`}>{hero.age} 岁 · {hero.gender} · {hero.profession || '职业未确认'}</p>
-        <p className="status-mobile-location">{clock} · {place}</p>
+        <SceneDetails weatherText={state.weatherText} environmentText={state.environmentText} compactLabel={`${clock} · ${place}`} />
       </div>
     </div>
     <div className="status-place"><time title={clock}>{clock}</time><p title={`${place} · ${state.weatherText || '天气待确认'}`}>{place} · {state.weatherText || '天气待确认'}</p>
@@ -22,8 +30,8 @@ export function PlayerStatus({ state, equipment, onProfile, onEconomy }: {
     </div>
     <p className="status-section-title">资金</p>
     <div className="status-funds">
-      <span><small>现金</small><strong title={money(state.economy.cash)}>{money(state.economy.cash)}</strong></span>
-      <span className="status-online"><small>线上资金</small><strong title={money(state.economy.onlineBalance)}>{money(state.economy.onlineBalance)}</strong></span>
+      <span style={fundStyle(money(state.economy.cash), 2)}><small>现金</small><strong>{money(state.economy.cash)}</strong></span>
+      <span className="status-online" style={fundStyle(money(state.economy.onlineBalance), 4)}><small>线上资金</small><strong>{money(state.economy.onlineBalance)}</strong></span>
     </div>
     <p className="status-section-title">状态</p>
     <div className="status-condition">
