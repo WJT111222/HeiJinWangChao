@@ -19,8 +19,9 @@ export function storyEnvelopeDiagnostic(text: string, actions: boolean): StoryDi
   let after = 0;
   if (hasThinking) {
     const open = text.indexOf('<thinking>'), close = text.indexOf('</thinking>');
-    if (open < 0 || close < open) return { storyRule: 'tag_order', storyTag: 'thinking' };
+    if (open < 0) return { storyRule: 'tag_order', storyTag: 'thinking' };
     if (close < 0) return { storyRule: 'tag_unclosed', storyTag: 'thinking' };
+    if (close < open) return { storyRule: 'tag_order', storyTag: 'thinking' };
     if (open > text.indexOf('<正文>')) return { storyRule: 'tag_order', storyTag: 'thinking' };
     if (text.indexOf('<thinking>', open + 1) >= 0 || text.indexOf('</thinking>', close + 1) >= 0)
       return { storyRule: 'tag_nested', storyTag: 'thinking' };
