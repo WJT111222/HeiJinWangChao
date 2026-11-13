@@ -104,4 +104,35 @@ describe('Story optional project planning, without relaxing mandatory payloads',
     expect(fails(narrative + '<短期记忆>已核对。</短期记忆><变量规划>[{"group":"npc","observedFact":42}]</变量规划>' + choices).details)
       .toMatchObject({ storyRule: 'story_schema' });
   });
+
+  it.each(['step 9｜仍在规划', '### Step 9｜仍在规划', '**Step 9｜仍在规划**', '- Step 9：仍在规划'])('恢复正文中的规划标题 %s 必须拒绝，不能混入小说', heading => {
+    const raw = preface + narrative + '\n' + heading + '\n- 内部创作预算。\n' + tail + choices;
+    expect(recoverStoryEnvelope(raw, true)).toBeUndefined();
+    expect(fails(raw).code).toBe('invalid_output');
+  });
+
+  it.each(['Step 16：额外步骤', '### Step 15｜重复步骤', '**Step 15｜重复步骤**'])('完整编号之外的 %s 不能因格式不同被悄然丢弃', heading => {
+    const raw = steps + '\n' + heading + '\n现在按照这些规划写正文，保证层次完整。\n' + narrative + tail + choices;
+    expect(recoverStoryEnvelope(raw, true)).toBeUndefined();
+    expect(fails(raw).code).toBe('invalid_output');
+  });
+
+  it.each(['<thinking private="x">', '<正文 invalid="x">', '<THINKING>'])('无标签规划前缀中的畸形结构 %s 不能被恢复静默抹去', brokenTag => {
+    const raw = preface.replace('Step 7｜', brokenTag + '\nStep 7｜') + narrative + tail + choices;
+    expect(recoverStoryEnvelope(raw, true)).toBeUndefined();
+    expect(fails(raw).code).toBe('invalid_output');
+  });
+
+  it.each(['。', '.', '：'])('完全相同的明确转正文句允许句末标点 %s', punctuation => {
+    const raw = steps + '\n现在按照这些规划写正文' + punctuation + '\n' + narrative + tail + choices;
+    expect(parseStoryEnvelope(raw, 'regular', settings(true)).story.narrative).toBe(narrative);
+  });
+
+  it.each(['### Step $n｜', '**Step $n：', 'Step $n:'])('完整0–15规划的明确标题格式 %s 不影响确定的正文边界', heading => {
+    const formatted = steps.replace(/Step (\d+)｜/g, (_whole, n: string) => heading.replace('$n', n));
+    const raw = formatted + '\n现在按照这些规划写正文。\n' + narrative + tail + choices;
+    const result = parseStoryEnvelope(raw, 'regular', settings(true));
+    expect(result.planning).toBe(''); expect(result.story.narrative).toBe(narrative);
+    expect(result.story.summary).toBe('两人一起核对本周生活费。');
+  });
 });
