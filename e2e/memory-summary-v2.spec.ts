@@ -104,7 +104,7 @@ test('旧默认关闭安全延续、逐项开启与刷新持久化，设置页�
   let settings = await summaryPage(page);
   await expect(settings).not.toContainText('旧版自动维护');
   await expect(settings).not.toContainText('记忆总结模型：');
-  await expect(settings).not.toContainText('自动及立即总结均可能产生第三方 API 费用');
+  await expect(settings).not.toContainText('自动及立即总结均可能产生费用');
   await settings.getByRole('button', { name: '关闭资料界面' }).click();
   await page.evaluate(() => {
     const value = JSON.parse(localStorage.getItem('heijin.settings.v1')!);

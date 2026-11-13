@@ -1,0 +1,399 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/beta-neutral-copy/node_modules/.bin/playwright",
+      "test",
+      "e2e/action-workflow.spec.ts",
+      "e2e/turn-coordinator.spec.ts",
+      "--config=/workspace/beta-copy-evidence/playwright-copy.config.ts",
+      "--grep",
+      "缺少AI配置零请求|瞬时服务失败重试一次后完成"
+    ],
+    "configFile": "/workspace/beta-copy-evidence/playwright-copy.config.ts",
+    "rootDir": "/workspace/beta-neutral-copy/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 2
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/beta-copy-evidence/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "/workspace/beta-neutral-copy/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/workspace/beta-copy-evidence/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/workspace/beta-neutral-copy/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/beta-copy-evidence/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "desktop",
+        "testDir": "/workspace/beta-neutral-copy/e2e",
+        "snapshotDir": "/workspace/beta-neutral-copy/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5301",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "reducedMotion": "reduce",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "desktop"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/beta-copy-evidence/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "mobile",
+        "testDir": "/workspace/beta-neutral-copy/e2e",
+        "snapshotDir": "/workspace/beta-neutral-copy/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5301",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "reducedMotion": "reduce",
+          "userAgent": "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Mobile Safari/537.36",
+          "viewport": {
+            "width": 412,
+            "height": 839
+          },
+          "screen": {
+            "width": 412,
+            "height": 915
+          },
+          "deviceScaleFactor": 2.625,
+          "isMobile": true,
+          "hasTouch": true,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "mobile"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/workspace/beta-copy-evidence/playwright-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 2,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5301 --strictPort",
+      "cwd": "/workspace/beta-neutral-copy",
+      "url": "http://127.0.0.1:5301",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "action-workflow.spec.ts",
+      "file": "action-workflow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "缺少AI配置零请求，设置后不自动补发，只在明确开始时运行",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9921,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:47:18.600Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "22433471cdea4777ba7f-f76357200897b67ec84a",
+          "file": "action-workflow.spec.ts",
+          "line": 104,
+          "column": 1
+        },
+        {
+          "title": "缺少AI配置零请求，设置后不自动补发，只在明确开始时运行",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "timedOut",
+                  "duration": 30119,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/beta-neutral-copy/e2e/helpers/gameLayout.ts",
+                        "column": 33,
+                        "line": 19
+                      },
+                      "message": "Error: locator.click: Test timeout of 30000ms exceeded.\nBrowser logs:\n\n<launching> /usr/bin/chromium --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,AvoidCorsURLLoaderRestartOnRedirect,Translate,AutoDeElevate,OptimizationHints,NetworkTimeServiceQuerying,AimEnabled,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-EwWF6R --remote-debugging-pipe --no-startup-window\n<launched> pid=320862\n[pid=320862][err] [320862:320862:1113/134727.027091:ERROR:third_party/crashpad/crashpad/util/file/filesystem_posix.cc:63] mkdir : No such file or directory (2)\n[pid=320862][err] chrome_crashpad_handler: --database is required\n[pid=320862][err] Try 'chrome_crashpad_handler --help' for more information.\n[pid=320862][err] [320862:320886:1113/134727.059750:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory\n[pid=320862][err] [320862:320886:1113/134727.059979:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are \"tcp\" and on UNIX \"unix\")\n[pid=320862][err] [320862:320886:1113/134727.062525:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory\n[pid=320862][err] [320862:320886:1113/134727.062542:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory\n[pid=320862][err] [320862:320886:1113/134727.062547:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are \"tcp\" and on UNIX \"unix\")\n[pid=320862][err] [320862:320897:1113/134727.067800:ERROR:content/browser/zygote_host/zygote_host_impl_linux.cc:300] Failed to adjust OOM score of renderer with pid 320900: Read-only file system (30)\n[pid=320862][err] Fontconfig error: No writable cache directories\n[pid=320862][err] [320862:320886:1113/134727.103091:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are \"tcp\" and on UNIX \"unix\")\n[pid=320862][err] [320862:320897:1113/134727.104262:ERROR:content/browser/zygote_host/zygote_host_impl_linux.cc:300] Failed to adjust OOM score of renderer with pid 320916: Read-only file system (30)\n[pid=320862][err] [320862:320862:1113/134727.114856:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: \n[pid=320862][err] [320862:320886:1113/134727.114927:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are \"tcp\" and on UNIX \"unix\")\n[pid=320862][err] [320862:320862:1113/134727.114970:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: \n[pid=320862][err] [320862:320886:1113/134727.114989:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are \"tcp\" and on UNIX \"unix\")\n[pid=320862][err] [320862:320862:1113/134727.117903:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: \n[pid=320862][err] [320862:320886:1113/134727.117971:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are \"tcp\" and on UNIX \"unix\")\n[pid=320862][err] [320862:320862:1113/134727.118984:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: \n[pid=320862][err] [320862:320862:1113/134727.118999:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: \n[pid=320862][err] [320862:320886:1113/134727.119007:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory\n[pid=320862][err] [320862:320886:1113/134727.119017:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory\n[pid=320862][err] [320862:320886:1113/134727.119022:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are \"tcp\" and on UNIX \"unix\")\n[pid=320862][err] [320862:320862:1113/134727.119489:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: \n[pid=320862][err] [320862:320862:1113/134727.119755:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: \n[pid=320862][err] [320862:320862:1113/134727.119760:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: \n[pid=320862][err] [320862:320886:1113/134727.119786:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are \"tcp\" and on UNIX \"unix\")\n[pid=320862][err] [320862:320862:1113/134727.121458:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: \n[pid=320862][err] [320862:320886:1113/134727.121633:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are \"tcp\" and on UNIX \"unix\")\n[pid=320862][err] [320862:320862:1113/134727.121961:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: \n[pid=320862][err] \n[pid=320862][err] (process:320862): dconf-CRITICAL **: 13:47:27.152: unable to create directory '/home/agent/.cache/dconf': Read-only file system.  dconf will not work properly.\n[pid=320862][err] \n[pid=320862][err] (process:320862): dconf-CRITICAL **: 13:47:27.152: unable to create directory '/home/agent/.cache/dconf': Read-only file system.  dconf will not work properly.\n[pid=320862][err] \n[pid=320862][err] (process:320862): dconf-CRITICAL **: 13:47:27.152: unable to create directory '/home/agent/.cache/dconf': Read-only file system.  dconf will not work properly.\n[pid=320862][err] [320862:320897:1113/134727.177111:ERROR:content/browser/zygote_host/zygote_host_impl_linux.cc:300] Failed to adjust OOM score of renderer with pid 320941: Read-only file system (30)\n[pid=320862][err] [320862:320897:1113/134727.200033:ERROR:content/browser/zygote_host/zygote_host_impl_linux.cc:300] Failed to adjust OOM score of renderer with pid 320950: Read-only file system (30)\n[pid=320862][err] [320862:320897:1113/134727.205035:ERROR:content/browser/zygote_host/zygote_host_impl_linux.cc:300] Failed to adjust OOM score of renderer with pid 320951: Read-only file system (30)\n[pid=320862] <gracefully close start>\nCall log:\n\u001b[2m  - waiting for locator('details.workflow-disclosure > summary, .workflow-summary > .workflow-toggle')\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" aria-label=\"三阶段工作流详情\" aria-expanded=\"false\" class=\"workflow-toggle\" aria-controls=\"workflow-pop\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"modal-body\">…</div> from <dialog open=\"\" tabindex=\"-1\" aria-modal=\"true\" aria-labelledby=\"_r_3_\" class=\"modal mobile-diagnostics-sheet mobile-sheet sheet-full\">…</dialog> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"modal-body\">…</div> from <dialog open=\"\" tabindex=\"-1\" aria-modal=\"true\" aria-labelledby=\"_r_3_\" class=\"modal mobile-diagnostics-sheet mobile-sheet sheet-full\">…</dialog> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    48 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <div class=\"modal-body\">…</div> from <dialog open=\"\" tabindex=\"-1\" aria-modal=\"true\" aria-labelledby=\"_r_3_\" class=\"modal mobile-diagnostics-sheet mobile-sheet sheet-full\">…</dialog> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\n\n   at helpers/gameLayout.ts:19\n\n  17 |   await expect(disclosure).toBeAttached();\n  18 |   if (!(await disclosure.evaluate(element => element.hasAttribute('open'))))\n> 19 |     await workflowTrigger(page).click();\n     |                                 ^\n  20 | }\n  21 |\n  22 | // 两端复用阶段页签；手机在 #122 原生模态 Dialog 中提供两层导航。\n    at openWorkflow (/workspace/beta-neutral-copy/e2e/helpers/gameLayout.ts:19:33)\n    at /workspace/beta-neutral-copy/e2e/action-workflow.spec.ts:107:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:47:26.957Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/action-workflow-缺少AI配置零请求，设置后不自动补发，只在明确开始时运行-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/action-workflow-缺少AI配置零请求，设置后不自动补发，只在明确开始时运行-mobile/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "22433471cdea4777ba7f-d31cd2486c8d3db8d8aa",
+          "file": "action-workflow.spec.ts",
+          "line": 104,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "turn-coordinator.spec.ts",
+      "file": "turn-coordinator.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "瞬时服务失败重试一次后完成，费用与次数可见",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 7712,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:47:18.197Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b04b804cabe182fb8de-f2c3cd430663449499f4",
+          "file": "turn-coordinator.spec.ts",
+          "line": 214,
+          "column": 1
+        },
+        {
+          "title": "瞬时服务失败重试一次后完成，费用与次数可见",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 7496,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '三阶段工作流' })\nExpected substring: \u001b[32m\"生成可能产生费用\"\u001b[39m\nReceived string:    \u001b[31m\"三阶段 · 等待开始详情 ›\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('region', { name: '三阶段工作流' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '三阶段工作流' })\u001b[22m\n\u001b[2m    13 × locator resolved to <section class=\"workflow\" aria-label=\"三阶段工作流\" data-state=\"pending\">…</section>\u001b[22m\n\u001b[2m       - unexpected value \"三阶段 · 等待开始详情 ›\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '三阶段工作流' })\nExpected substring: \u001b[32m\"生成可能产生费用\"\u001b[39m\nReceived string:    \u001b[31m\"三阶段 · 等待开始详情 ›\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('region', { name: '三阶段工作流' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '三阶段工作流' })\u001b[22m\n\u001b[2m    13 × locator resolved to <section class=\"workflow\" aria-label=\"三阶段工作流\" data-state=\"pending\">…</section>\u001b[22m\n\u001b[2m       - unexpected value \"三阶段 · 等待开始详情 ›\"\u001b[22m\n\n    at /workspace/beta-neutral-copy/e2e/turn-coordinator.spec.ts:217:32",
+                    "location": {
+                      "file": "/workspace/beta-neutral-copy/e2e/turn-coordinator.spec.ts",
+                      "column": 32,
+                      "line": 217
+                    },
+                    "snippet": "  215 |   await seed(page);\n  216 |   const plan = await mock(page, { serverOnce: 'variables' });\n> 217 |   await expect(workflow(page)).toContainText('生成可能产生费用');\n      |                                ^\n  218 |   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();\n  219 |   await complete(page);\n  220 |   expect(plan.calls).toEqual(['story', 'variables', 'variables', 'world']);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/beta-neutral-copy/e2e/turn-coordinator.spec.ts",
+                        "column": 32,
+                        "line": 217
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '三阶段工作流' })\nExpected substring: \u001b[32m\"生成可能产生费用\"\u001b[39m\nReceived string:    \u001b[31m\"三阶段 · 等待开始详情 ›\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('region', { name: '三阶段工作流' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '三阶段工作流' })\u001b[22m\n\u001b[2m    13 × locator resolved to <section class=\"workflow\" aria-label=\"三阶段工作流\" data-state=\"pending\">…</section>\u001b[22m\n\u001b[2m       - unexpected value \"三阶段 · 等待开始详情 ›\"\u001b[22m\n\n\n  215 |   await seed(page);\n  216 |   const plan = await mock(page, { serverOnce: 'variables' });\n> 217 |   await expect(workflow(page)).toContainText('生成可能产生费用');\n      |                                ^\n  218 |   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();\n  219 |   await complete(page);\n  220 |   expect(plan.calls).toEqual(['story', 'variables', 'variables', 'world']);\n    at /workspace/beta-neutral-copy/e2e/turn-coordinator.spec.ts:217:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:47:29.763Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/turn-coordinator-瞬时服务失败重试一次后完成，费用与次数可见-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/turn-coordinator-瞬时服务失败重试一次后完成，费用与次数可见-mobile/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/beta-neutral-copy/e2e/turn-coordinator.spec.ts",
+                    "column": 32,
+                    "line": 217
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "0b04b804cabe182fb8de-a513b550d6da6a40bc71",
+          "file": "turn-coordinator.spec.ts",
+          "line": 214,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-13T13:47:13.583Z",
+    "duration": 44197.238,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

@@ -65,7 +65,7 @@ test('首次访问按序展示完整内容；关闭后导航不重播，未勾�
   await expect(announcement(page).getByRole('heading', { name: '《黑金王朝》1.0 Beta · 世界事件与历史更新' })).toBeVisible();
   await expect(announcement(page).getByRole('listitem')).toHaveCount(5);
   await expect(announcement(page).getByText('记忆总结 V2 已支持短期转中期、中期转长期和 NPC 个人经历总结；自动维护可关闭，手动「立即总结」仍可用，已提交的历史原文保留可追溯。')).toBeVisible();
-  await expect(announcement(page).getByText('新增多回合撤回：可按完整快照恢复最近已结算的回合，每份存档最多保留 5 个恢复点；没有重做功能，也不能撤销已产生的第三方 AI 调用费用。')).toBeVisible();
+  await expect(announcement(page).getByText('新增多回合撤回：可按完整快照恢复最近已结算的回合，每份存档最多保留 5 个恢复点；没有重做功能，撤回不会撤销已发生的生成请求。')).toBeVisible();
   await expect(announcement(page).getByText('重大纪事时间轴已区分世界与主角的人生历史；传闻仍是传闻，日期不明确的往事不会被伪装成精确时间。')).toBeVisible();
   await expect(announcement(page).getByText('世界事件 V2 已支持主事件、多个并行子事件、固定时刻结算和后续阶段；Story 可根据剧情决定主角介入、获知或不参与，事件档案保留已结束阶段的结果。')).toBeVisible();
   await expect(announcement(page).getByText('「夜幕金印」已更新桌面和手机阅读布局、角色对白气泡及只读世界事件档案；目前为 1.0 Beta 测试阶段，真实模型长篇试玩、手机真机体验和 1.0 正式版发行尚待验收。')).toBeVisible();

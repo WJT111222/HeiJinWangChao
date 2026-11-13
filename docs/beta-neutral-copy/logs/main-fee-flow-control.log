@@ -1,0 +1,157 @@
+[WebServer] (node:322546) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:322567) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 2 workers
+
+(node:322595) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:322594) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [mobile] › e2e/turn-coordinator.spec.ts:214:1 › 瞬时服务失败重试一次后完成，费用与次数可见 (8.3s)
+  ✘  2 [mobile] › e2e/action-workflow.spec.ts:104:1 › 缺少AI配置零请求，设置后不自动补发，只在明确开始时运行 (30.1s)
+
+
+  1) [mobile] › e2e/action-workflow.spec.ts:104:1 › 缺少AI配置零请求，设置后不自动补发，只在明确开始时运行 ───────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Browser logs:
+
+    <launching> /usr/bin/chromium --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,AvoidCorsURLLoaderRestartOnRedirect,Translate,AutoDeElevate,OptimizationHints,NetworkTimeServiceQuerying,AimEnabled,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-FbOmcd --remote-debugging-pipe --no-startup-window
+    <launched> pid=322637
+    [pid=322637][err] [322637:322637:1113/134841.895844:ERROR:third_party/crashpad/crashpad/util/file/filesystem_posix.cc:63] mkdir : No such file or directory (2)
+    [pid=322637][err] chrome_crashpad_handler: --database is required
+    [pid=322637][err] Try 'chrome_crashpad_handler --help' for more information.
+    [pid=322637][err] [322637:322716:1113/134841.994493:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+    [pid=322637][err] [322637:322716:1113/134841.994530:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+    [pid=322637][err] [322637:322716:1113/134842.001550:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+    [pid=322637][err] [322637:322716:1113/134842.001617:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+    [pid=322637][err] [322637:322716:1113/134842.002085:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+    [pid=322637][err] [322637:322727:1113/134842.007098:ERROR:content/browser/zygote_host/zygote_host_impl_linux.cc:300] Failed to adjust OOM score of renderer with pid 322729: Read-only file system (30)
+    [pid=322637][err] Fontconfig error: No writable cache directories
+    [pid=322637][err] [322637:322716:1113/134842.073718:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+    [pid=322637][err] [322637:322727:1113/134842.077841:ERROR:content/browser/zygote_host/zygote_host_impl_linux.cc:300] Failed to adjust OOM score of renderer with pid 322758: Read-only file system (30)
+    [pid=322637][err] [322637:322637:1113/134842.098982:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+    [pid=322637][err] [322637:322716:1113/134842.099058:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+    [pid=322637][err] [322637:322637:1113/134842.099189:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+    [pid=322637][err] [322637:322716:1113/134842.099209:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+    [pid=322637][err] [322637:322637:1113/134842.105040:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+    [pid=322637][err] [322637:322716:1113/134842.105086:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+    [pid=322637][err] [322637:322716:1113/134842.107404:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+    [pid=322637][err] [322637:322637:1113/134842.107407:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+    [pid=322637][err] [322637:322716:1113/134842.107419:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+    [pid=322637][err] [322637:322637:1113/134842.107424:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+    [pid=322637][err] [322637:322716:1113/134842.107441:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+    [pid=322637][err] [322637:322637:1113/134842.107879:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+    [pid=322637][err] [322637:322637:1113/134842.108299:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type:
+    [pid=322637][err] [322637:322637:1113/134842.108304:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+    [pid=322637][err] [322637:322716:1113/134842.108349:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+    [pid=322637][err] [322637:322637:1113/134842.115599:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+    [pid=322637][err] [322637:322716:1113/134842.115818:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+    [pid=322637][err] [322637:322637:1113/134842.116205:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+    [pid=322637][err]
+    [pid=322637][err] (process:322637): dconf-CRITICAL **: 13:48:42.192: unable to create directory '/home/agent/.cache/dconf': Read-only file system.  dconf will not work properly.
+    [pid=322637][err]
+    [pid=322637][err] (process:322637): dconf-CRITICAL **: 13:48:42.192: unable to create directory '/home/agent/.cache/dconf': Read-only file system.  dconf will not work properly.
+    [pid=322637][err]
+    [pid=322637][err] (process:322637): dconf-CRITICAL **: 13:48:42.195: unable to create directory '/home/agent/.cache/dconf': Read-only file system.  dconf will not work properly.
+    [pid=322637][err] [322637:322727:1113/134842.252602:ERROR:content/browser/zygote_host/zygote_host_impl_linux.cc:300] Failed to adjust OOM score of renderer with pid 322813: Read-only file system (30)
+    [pid=322637][err] [322637:322727:1113/134842.317867:ERROR:content/browser/zygote_host/zygote_host_impl_linux.cc:300] Failed to adjust OOM score of renderer with pid 322821: Read-only file system (30)
+    [pid=322637][err] [322637:322727:1113/134842.336703:ERROR:content/browser/zygote_host/zygote_host_impl_linux.cc:300] Failed to adjust OOM score of renderer with pid 322829: Read-only file system (30)
+    [pid=322637] <gracefully close start>
+    Call log:
+      - waiting for locator('details.workflow-disclosure > summary, .workflow-summary > .workflow-toggle')
+        - locator resolved to <button type="button" aria-label="三阶段工作流详情" aria-expanded="false" class="workflow-toggle" aria-controls="workflow-pop">…</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div class="modal-body">…</div> from <dialog open="" tabindex="-1" aria-modal="true" aria-labelledby="_r_3_" class="modal mobile-diagnostics-sheet mobile-sheet sheet-full">…</dialog> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div class="modal-body">…</div> from <dialog open="" tabindex="-1" aria-modal="true" aria-labelledby="_r_3_" class="modal mobile-diagnostics-sheet mobile-sheet sheet-full">…</dialog> subtree intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        50 × waiting for element to be visible, enabled and stable
+           - element is visible, enabled and stable
+           - scrolling into view if needed
+           - done scrolling
+           - <div class="modal-body">…</div> from <dialog open="" tabindex="-1" aria-modal="true" aria-labelledby="_r_3_" class="modal mobile-diagnostics-sheet mobile-sheet sheet-full">…</dialog> subtree intercepts pointer events
+         - retrying click action
+           - waiting 500ms
+        - waiting for element to be visible, enabled and stable
+
+
+       at helpers/gameLayout.ts:19
+
+      17 |   await expect(disclosure).toBeAttached();
+      18 |   if (!(await disclosure.evaluate(element => element.hasAttribute('open'))))
+    > 19 |     await workflowTrigger(page).click();
+         |                                 ^
+      20 | }
+      21 |
+      22 | // 两端复用阶段页签；手机在 #122 原生模态 Dialog 中提供两层导航。
+        at openWorkflow (/workspace/beta-copy-baseline/e2e/helpers/gameLayout.ts:19:33)
+        at /workspace/beta-copy-baseline/e2e/action-workflow.spec.ts:107:3
+
+    Error Context: ../beta-copy-evidence/main-artifacts/action-workflow-缺少AI配置零请求，设置后不自动补发，只在明确开始时运行-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../beta-copy-evidence/main-artifacts/action-workflow-缺少AI配置零请求，设置后不自动补发，只在明确开始时运行-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../beta-copy-evidence/main-artifacts/action-workflow-缺少AI配置零请求，设置后不自动补发，只在明确开始时运行-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [mobile] › e2e/turn-coordinator.spec.ts:214:1 › 瞬时服务失败重试一次后完成，费用与次数可见 ─────────────────────────
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('region', { name: '三阶段工作流' })
+    Expected substring: "生成可能产生第三方 API 费用"
+    Received string:    "三阶段 · 等待开始详情 ›"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('region', { name: '三阶段工作流' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '三阶段工作流' })
+        14 × locator resolved to <section class="workflow" aria-label="三阶段工作流" data-state="pending">…</section>
+           - unexpected value "三阶段 · 等待开始详情 ›"
+
+
+      215 |   await seed(page);
+      216 |   const plan = await mock(page, { serverOnce: 'variables' });
+    > 217 |   await expect(workflow(page)).toContainText('生成可能产生第三方 API 费用');
+          |                                ^
+      218 |   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
+      219 |   await complete(page);
+      220 |   expect(plan.calls).toEqual(['story', 'variables', 'variables', 'world']);
+        at /workspace/beta-copy-baseline/e2e/turn-coordinator.spec.ts:217:32
+
+    Error Context: ../beta-copy-evidence/main-artifacts/turn-coordinator-瞬时服务失败重试一次后完成，费用与次数可见-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../beta-copy-evidence/main-artifacts/turn-coordinator-瞬时服务失败重试一次后完成，费用与次数可见-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../beta-copy-evidence/main-artifacts/turn-coordinator-瞬时服务失败重试一次后完成，费用与次数可见-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [mobile] › e2e/action-workflow.spec.ts:104:1 › 缺少AI配置零请求，设置后不自动补发，只在明确开始时运行 ────────────────────
+    [mobile] › e2e/turn-coordinator.spec.ts:214:1 › 瞬时服务失败重试一次后完成，费用与次数可见 ──────────────────────────
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

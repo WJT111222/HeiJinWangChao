@@ -1,0 +1,1882 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/beta-neutral-copy/node_modules/.bin/playwright",
+      "test",
+      "e2e/startup-notices.spec.ts",
+      "--config=/workspace/beta-copy-evidence/playwright-copy.config.ts"
+    ],
+    "configFile": "/workspace/beta-copy-evidence/playwright-copy.config.ts",
+    "rootDir": "/workspace/beta-neutral-copy/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 2
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/beta-copy-evidence/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "/workspace/beta-neutral-copy/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/workspace/beta-copy-evidence/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/workspace/beta-neutral-copy/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/beta-copy-evidence/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "desktop",
+        "testDir": "/workspace/beta-neutral-copy/e2e",
+        "snapshotDir": "/workspace/beta-neutral-copy/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5301",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "reducedMotion": "reduce",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "desktop"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/beta-copy-evidence/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "mobile",
+        "testDir": "/workspace/beta-neutral-copy/e2e",
+        "snapshotDir": "/workspace/beta-neutral-copy/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5301",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "reducedMotion": "reduce",
+          "userAgent": "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Mobile Safari/537.36",
+          "viewport": {
+            "width": 412,
+            "height": 839
+          },
+          "screen": {
+            "width": 412,
+            "height": 915
+          },
+          "deviceScaleFactor": 2.625,
+          "isMobile": true,
+          "hasTouch": true,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "mobile"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/workspace/beta-copy-evidence/playwright-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 2,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5301 --strictPort",
+      "cwd": "/workspace/beta-neutral-copy",
+      "url": "http://127.0.0.1:5301",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "startup-notices.spec.ts",
+      "file": "startup-notices.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "完整定稿实际分段渲染：开头、架空社会声明与开发者落款",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6203,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:42:41.397Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-aa73ea27f88cb29c54fb",
+          "file": "startup-notices.spec.ts",
+          "line": 29,
+          "column": 1
+        },
+        {
+          "title": "首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 8920,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:42:41.149Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-a6db4c75cde778ec2189",
+          "file": "startup-notices.spec.ts",
+          "line": 55,
+          "column": 1
+        },
+        {
+          "title": "第一步勾选仍显示第二步；共享勾选可撤销且保留其他本地配置",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7735,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:42:48.279Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-221fc1e580e10856c492",
+          "file": "startup-notices.spec.ts",
+          "line": 83,
+          "column": 1
+        },
+        {
+          "title": "第二步勾选当天刷新和新页面均免打扰，次日本地日期恢复",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 9190,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:42:50.725Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-a142c38faa299559626d",
+          "file": "startup-notices.spec.ts",
+          "line": 99,
+          "column": 1
+        },
+        {
+          "title": "首页与设置手动查看只开指定公告；返回保留设置内容和焦点",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6292,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:42:56.056Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-bbd87eeaeb0f07c9aaca",
+          "file": "startup-notices.spec.ts",
+          "line": 119,
+          "column": 1
+        },
+        {
+          "title": "手动查看可以取消已保存免打扰，不自动串联另一个弹窗",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 7128,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:42:59.944Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-28ee0fe71e09a49345c1",
+          "file": "startup-notices.spec.ts",
+          "line": 150,
+          "column": 1
+        },
+        {
+          "title": "直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 10048,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog')\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" getByRole('dialog') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog')\u001b[22m\n\u001b[2m    14 × locator resolved to 1 element\u001b[22m\n\u001b[2m       - unexpected value \"1\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog')\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" getByRole('dialog') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog')\u001b[22m\n\u001b[2m    14 × locator resolved to 1 element\u001b[22m\n\u001b[2m       - unexpected value \"1\"\u001b[22m\n\n    at finishNotices (/workspace/beta-neutral-copy/e2e/startup-notices.spec.ts:26:42)\n    at /workspace/beta-neutral-copy/e2e/startup-notices.spec.ts:177:3",
+                    "location": {
+                      "file": "/workspace/beta-neutral-copy/e2e/startup-notices.spec.ts",
+                      "column": 42,
+                      "line": 26
+                    },
+                    "snippet": "  24 |   await expect(announcement(page)).toBeVisible();\n  25 |   await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();\n> 26 |   await expect(page.getByRole('dialog')).toHaveCount(0);\n     |                                          ^\n  27 | }\n  28 |\n  29 | test('完整定稿实际分段渲染：开头、架空社会声明与开发者落款', async ({ page }) => {"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/beta-neutral-copy/e2e/startup-notices.spec.ts",
+                        "column": 42,
+                        "line": 26
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog')\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" getByRole('dialog') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog')\u001b[22m\n\u001b[2m    14 × locator resolved to 1 element\u001b[22m\n\u001b[2m       - unexpected value \"1\"\u001b[22m\n\n\n  24 |   await expect(announcement(page)).toBeVisible();\n  25 |   await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();\n> 26 |   await expect(page.getByRole('dialog')).toHaveCount(0);\n     |                                          ^\n  27 | }\n  28 |\n  29 | test('完整定稿实际分段渲染：开头、架空社会声明与开发者落款', async ({ page }) => {\n    at finishNotices (/workspace/beta-neutral-copy/e2e/startup-notices.spec.ts:26:42)\n    at /workspace/beta-neutral-copy/e2e/startup-notices.spec.ts:177:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:43:02.385Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/startup-notices-直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型-desktop/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/startup-notices-直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型-desktop/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/beta-neutral-copy/e2e/startup-notices.spec.ts",
+                    "column": 42,
+                    "line": 26
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-2709eef93329bce2e20e",
+          "file": "startup-notices.spec.ts",
+          "line": 164,
+          "column": 1
+        },
+        {
+          "title": "键盘焦点局限于当前弹窗，Escape 按顺序关闭",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2270,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:43:07.112Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-9847ccdfe77ce2f3f0fd",
+          "file": "startup-notices.spec.ts",
+          "line": 195,
+          "column": 1
+        },
+        {
+          "title": "localStorage 不可访问时仍能完成顺序并使用首页",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 3393,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:43:09.393Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-d91e662ce89f19b90a09",
+          "file": "startup-notices.spec.ts",
+          "line": 208,
+          "column": 1
+        },
+        {
+          "title": "localStorage setItem 失败时当前复选框与关闭仍可操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 3792,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:43:12.802Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-affab2ddb72127da9136",
+          "file": "startup-notices.spec.ts",
+          "line": 224,
+          "column": 3
+        },
+        {
+          "title": "localStorage removeItem 失败时当前复选框与关闭仍可操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3986,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:43:13.421Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-9096d1f3c6dcf0ee2bcc",
+          "file": "startup-notices.spec.ts",
+          "line": 224,
+          "column": 3
+        },
+        {
+          "title": "长内容内部滚动，窄屏关闭和复选框可触达；截图",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 5123,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:43:16.609Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-f88d89d156e8faacba77",
+          "file": "startup-notices.spec.ts",
+          "line": 243,
+          "column": 1
+        },
+        {
+          "title": "完整定稿实际分段渲染：开头、架空社会声明与开发者落款",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1841,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 0\u001b[39m\n\n\u001b[33m@@ -1,7 +1,6 @@\u001b[39m\n\u001b[2m  Array [\u001b[22m\n\u001b[32m-   \"18+｜本游戏仅面向年满18周岁的成年玩家。\",\u001b[39m\n\u001b[2m    \"欢迎来到《黑金王朝》。\",\u001b[22m\n\u001b[2m    \"本作品是一款以现代都市为背景、由人工智能驱动的开放世界互动文字角色扮演游戏。玩家可以自由选择人生道路，并通过自己的行动影响人物关系、社会势力与世界发展。\",\u001b[22m\n\u001b[2m    \"在开始游玩前，请了解以下内容。\",\u001b[22m\n\u001b[2m    \"一、成人内容声明\",\u001b[22m\n\u001b[2m    \"本游戏可能包含露骨的成人性描写、暴力、血腥、犯罪、黑社会活动、毒品、赌博、权力斗争、道德争议及其他可能令人不适的情节。\",\u001b[22m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 0\u001b[39m\n\n\u001b[33m@@ -1,7 +1,6 @@\u001b[39m\n\u001b[2m  Array [\u001b[22m\n\u001b[32m-   \"18+｜本游戏仅面向年满18周岁的成年玩家。\",\u001b[39m\n\u001b[2m    \"欢迎来到《黑金王朝》。\",\u001b[22m\n\u001b[2m    \"本作品是一款以现代都市为背景、由人工智能驱动的开放世界互动文字角色扮演游戏。玩家可以自由选择人生道路，并通过自己的行动影响人物关系、社会势力与世界发展。\",\u001b[22m\n\u001b[2m    \"在开始游玩前，请了解以下内容。\",\u001b[22m\n\u001b[2m    \"一、成人内容声明\",\u001b[22m\n\u001b[2m    \"本游戏可能包含露骨的成人性描写、暴力、血腥、犯罪、黑社会活动、毒品、赌博、权力斗争、道德争议及其他可能令人不适的情节。\",\u001b[22m\n    at /workspace/beta-neutral-copy/e2e/startup-notices.spec.ts:36:60",
+                    "location": {
+                      "file": "/workspace/beta-neutral-copy/e2e/startup-notices.spec.ts",
+                      "column": 60,
+                      "line": 36
+                    },
+                    "snippet": "  34 |   const expected = approvedDisclaimer.filter(block => !/^#{1,2} /.test(block) && block !== '---')\n  35 |     .map(block => block.replace(/^### /, '').replaceAll('**', ''));\n> 36 |   expect(await content.locator('p, h3').allTextContents()).toEqual(expected);\n     |                                                            ^\n  37 |   expect(await content.locator('strong').allTextContents()).toEqual(\n  38 |     approvedDisclaimer.filter(block => block.startsWith('**')).map(block => block.replaceAll('**', '')),\n  39 |   );"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/beta-neutral-copy/e2e/startup-notices.spec.ts",
+                        "column": 60,
+                        "line": 36
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 0\u001b[39m\n\n\u001b[33m@@ -1,7 +1,6 @@\u001b[39m\n\u001b[2m  Array [\u001b[22m\n\u001b[32m-   \"18+｜本游戏仅面向年满18周岁的成年玩家。\",\u001b[39m\n\u001b[2m    \"欢迎来到《黑金王朝》。\",\u001b[22m\n\u001b[2m    \"本作品是一款以现代都市为背景、由人工智能驱动的开放世界互动文字角色扮演游戏。玩家可以自由选择人生道路，并通过自己的行动影响人物关系、社会势力与世界发展。\",\u001b[22m\n\u001b[2m    \"在开始游玩前，请了解以下内容。\",\u001b[22m\n\u001b[2m    \"一、成人内容声明\",\u001b[22m\n\u001b[2m    \"本游戏可能包含露骨的成人性描写、暴力、血腥、犯罪、黑社会活动、毒品、赌博、权力斗争、道德争议及其他可能令人不适的情节。\",\u001b[22m\n\n  34 |   const expected = approvedDisclaimer.filter(block => !/^#{1,2} /.test(block) && block !== '---')\n  35 |     .map(block => block.replace(/^### /, '').replaceAll('**', ''));\n> 36 |   expect(await content.locator('p, h3').allTextContents()).toEqual(expected);\n     |                                                            ^\n  37 |   expect(await content.locator('strong').allTextContents()).toEqual(\n  38 |     approvedDisclaimer.filter(block => block.startsWith('**')).map(block => block.replaceAll('**', '')),\n  39 |   );\n    at /workspace/beta-neutral-copy/e2e/startup-notices.spec.ts:36:60"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:43:44.280Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/startup-notices-完整定稿实际分段渲染：开头、架空社会声明与开发者落款-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/startup-notices-完整定稿实际分段渲染：开头、架空社会声明与开发者落款-mobile/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/beta-neutral-copy/e2e/startup-notices.spec.ts",
+                    "column": 60,
+                    "line": 36
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-c81ed96522da2e3cada9",
+          "file": "startup-notices.spec.ts",
+          "line": 29,
+          "column": 1
+        },
+        {
+          "title": "首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 1,
+                  "status": "timedOut",
+                  "duration": 30389,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/beta-neutral-copy/e2e/helpers/gameLayout.ts",
+                        "column": 65,
+                        "line": 70
+                      },
+                      "message": "Error: locator.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '游戏首页', exact: true })\u001b[22m\n\n\n   at helpers/gameLayout.ts:70\n\n  68 |   const menu = page.getByRole('button', { name: '打开游戏菜单', exact: true });\n  69 |   if (await menu.isVisible()) await menu.click();\n> 70 |   await page.getByRole('button', { name: '游戏首页', exact: true }).click(); await openLibrary(page);\n     |                                                                 ^\n  71 | }\n  72 |\n  73 | async function closeWorldArchive(page: Page) {\n    at goHome (/workspace/beta-neutral-copy/e2e/helpers/gameLayout.ts:70:65)\n    at /workspace/beta-neutral-copy/e2e/startup-notices.spec.ts:76:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:43:45.846Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/startup-notices-首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/startup-notices-首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复-mobile/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-c59ef183bedf2d9c1121",
+          "file": "startup-notices.spec.ts",
+          "line": 55,
+          "column": 1
+        },
+        {
+          "title": "第一步勾选仍显示第二步；共享勾选可撤销且保留其他本地配置",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2414,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:43:47.118Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-5abd17d0d96f8b880f81",
+          "file": "startup-notices.spec.ts",
+          "line": 83,
+          "column": 1
+        },
+        {
+          "title": "第二步勾选当天刷新和新页面均免打扰，次日本地日期恢复",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3435,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:43:50.088Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-8e102080f57359fa7e25",
+          "file": "startup-notices.spec.ts",
+          "line": 99,
+          "column": 1
+        },
+        {
+          "title": "首页与设置手动查看只开指定公告；返回保留设置内容和焦点",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "timedOut",
+                  "duration": 30119,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/beta-neutral-copy/e2e/startup-notices.spec.ts",
+                        "column": 19,
+                        "line": 136
+                      },
+                      "message": "Error: locator.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog', { name: '设置', exact: true }).getByRole('button', { name: '游玩须知与免责声明', exact: true })\u001b[22m\n\n\n  134 |   for (const label of ['游玩须知与免责声明', '王朝公告']) {\n  135 |     const trigger = settings.getByRole('button', { name: label, exact: true });\n> 136 |     await trigger.click();\n      |                   ^\n  137 |     const modal = label === '王朝公告' ? announcement(page) : disclaimer(page);\n  138 |     await expect(modal).toBeVisible();\n  139 |     await modal.getByRole('button', { name: /^关闭/ }).click();\n    at /workspace/beta-neutral-copy/e2e/startup-notices.spec.ts:136:19"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:43:53.546Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/startup-notices-首页与设置手动查看只开指定公告；返回保留设置内容和焦点-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/startup-notices-首页与设置手动查看只开指定公告；返回保留设置内容和焦点-mobile/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-cb569faf5191bd74d135",
+          "file": "startup-notices.spec.ts",
+          "line": 119,
+          "column": 1
+        },
+        {
+          "title": "手动查看可以取消已保存免打扰，不自动串联另一个弹窗",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 3120,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:44:17.001Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-9b4f6a7a731db5b07818",
+          "file": "startup-notices.spec.ts",
+          "line": 150,
+          "column": 1
+        },
+        {
+          "title": "直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2311,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:44:20.313Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-2aafb88155cf12f9a81d",
+          "file": "startup-notices.spec.ts",
+          "line": 164,
+          "column": 1
+        },
+        {
+          "title": "键盘焦点局限于当前弹窗，Escape 按顺序关闭",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 1,
+                  "status": "failed",
+                  "duration": 5708,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeFocused\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }).getByRole('button', { name: '关闭免责声明' })\nExpected: focused\nReceived: inactive\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeFocused\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }).getByRole('button', { name: '关闭免责声明' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }).getByRole('button', { name: '关闭免责声明' })\u001b[22m\n\u001b[2m    14 × locator resolved to <button type=\"button\" aria-label=\"关闭免责声明\">…</button>\u001b[22m\n\u001b[2m       - unexpected value \"inactive\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeFocused\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }).getByRole('button', { name: '关闭免责声明' })\nExpected: focused\nReceived: inactive\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeFocused\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }).getByRole('button', { name: '关闭免责声明' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }).getByRole('button', { name: '关闭免责声明' })\u001b[22m\n\u001b[2m    14 × locator resolved to <button type=\"button\" aria-label=\"关闭免责声明\">…</button>\u001b[22m\n\u001b[2m       - unexpected value \"inactive\"\u001b[22m\n\n    at /workspace/beta-neutral-copy/e2e/startup-notices.spec.ts:197:74",
+                    "location": {
+                      "file": "/workspace/beta-neutral-copy/e2e/startup-notices.spec.ts",
+                      "column": 74,
+                      "line": 197
+                    },
+                    "snippet": "  195 | test('键盘焦点局限于当前弹窗，Escape 按顺序关闭', async ({ page }) => {\n  196 |   await page.goto('/');\n> 197 |   await expect(disclaimer(page).getByRole('button', { name: '关闭免责声明' })).toBeFocused();\n      |                                                                          ^\n  198 |   await page.keyboard.press('Shift+Tab');\n  199 |   await expect(disclaimer(page).getByRole('checkbox')).toBeFocused();\n  200 |   await page.keyboard.press('Tab');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/beta-neutral-copy/e2e/startup-notices.spec.ts",
+                        "column": 74,
+                        "line": 197
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeFocused\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }).getByRole('button', { name: '关闭免责声明' })\nExpected: focused\nReceived: inactive\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeFocused\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }).getByRole('button', { name: '关闭免责声明' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }).getByRole('button', { name: '关闭免责声明' })\u001b[22m\n\u001b[2m    14 × locator resolved to <button type=\"button\" aria-label=\"关闭免责声明\">…</button>\u001b[22m\n\u001b[2m       - unexpected value \"inactive\"\u001b[22m\n\n\n  195 | test('键盘焦点局限于当前弹窗，Escape 按顺序关闭', async ({ page }) => {\n  196 |   await page.goto('/');\n> 197 |   await expect(disclaimer(page).getByRole('button', { name: '关闭免责声明' })).toBeFocused();\n      |                                                                          ^\n  198 |   await page.keyboard.press('Shift+Tab');\n  199 |   await expect(disclaimer(page).getByRole('checkbox')).toBeFocused();\n  200 |   await page.keyboard.press('Tab');\n    at /workspace/beta-neutral-copy/e2e/startup-notices.spec.ts:197:74"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:44:22.635Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/startup-notices-键盘焦点局限于当前弹窗，Escape-按顺序关闭-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/startup-notices-键盘焦点局限于当前弹窗，Escape-按顺序关闭-mobile/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/beta-neutral-copy/e2e/startup-notices.spec.ts",
+                    "column": 74,
+                    "line": 197
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-9a172497ea79efe3f829",
+          "file": "startup-notices.spec.ts",
+          "line": 195,
+          "column": 1
+        },
+        {
+          "title": "localStorage 不可访问时仍能完成顺序并使用首页",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "timedOut",
+                  "duration": 30113,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:44:24.490Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/startup-notices-localStorage-不可访问时仍能完成顺序并使用首页-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/startup-notices-localStorage-不可访问时仍能完成顺序并使用首页-mobile/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-857d9a5c323d4afdf53e",
+          "file": "startup-notices.spec.ts",
+          "line": 208,
+          "column": 1
+        },
+        {
+          "title": "localStorage setItem 失败时当前复选框与关闭仍可操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1052,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:44:29.278Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-03d17f487f9e4b611a53",
+          "file": "startup-notices.spec.ts",
+          "line": 224,
+          "column": 3
+        },
+        {
+          "title": "localStorage removeItem 失败时当前复选框与关闭仍可操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1469,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:44:30.533Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-e36ec48b9e829a637abe",
+          "file": "startup-notices.spec.ts",
+          "line": 224,
+          "column": 3
+        },
+        {
+          "title": "长内容内部滚动，窄屏关闭和复选框可触达；截图",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1452,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:44:32.013Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7ef5b3fde1989e1eafbf-ab1262717501d91b532c",
+          "file": "startup-notices.spec.ts",
+          "line": 243,
+          "column": 1
+        }
+      ],
+      "suites": [
+        {
+          "title": "西半球本地日历与 UTC 不同",
+          "file": "startup-notices.spec.ts",
+          "line": 266,
+          "column": 6,
+          "specs": [
+            {
+              "title": "按设备当日保存，跨 UTC 日但本地仍同一天时继续免打扰",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8581,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:43:17.926Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-d686f31c50d1a516fed3",
+              "file": "startup-notices.spec.ts",
+              "line": 268,
+              "column": 3
+            },
+            {
+              "title": "按设备当日保存，跨 UTC 日但本地仍同一天时继续免打扰",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2713,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:44:33.476Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-4e40b57fb4350c93e50c",
+              "file": "startup-notices.spec.ts",
+              "line": 268,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "同一天发布新公告",
+          "file": "startup-notices.spec.ts",
+          "line": 283,
+          "column": 6,
+          "specs": [
+            {
+              "title": "KV 新版本：只弹新公告不弹须知；勾选后刷新不再弹；次日照常",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 13919,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:43:21.757Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-5d3e286ea7c66ab2d1ef",
+              "file": "startup-notices.spec.ts",
+              "line": 313,
+              "column": 3
+            },
+            {
+              "title": "线上 Worker 返回旧版内置公告（builtin-0.9，来源 builtin）：已对 builtin-1.0-beta 免打扰时不弹、不改记录",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3889,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:43:26.539Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-a2c6fec7ab97f99774bc",
+              "file": "startup-notices.spec.ts",
+              "line": 342,
+              "column": 5
+            },
+            {
+              "title": "线上 Worker 返回旧版内置公告（builtin-0.9，来源 builtin）：已对 甲 免打扰时不弹、不改记录",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3557,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:43:30.492Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-3babe74152a339e95616",
+              "file": "startup-notices.spec.ts",
+              "line": 342,
+              "column": 5
+            },
+            {
+              "title": "HTTP 503：已对旧版免打扰时不弹",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3254,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:43:34.084Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-2a381b278823b466f9a3",
+              "file": "startup-notices.spec.ts",
+              "line": 359,
+              "column": 5
+            },
+            {
+              "title": "非法 JSON（即使标为 kv）：已对旧版免打扰时不弹",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2931,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:43:35.717Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-6571586acc0b4abd75c0",
+              "file": "startup-notices.spec.ts",
+              "line": 359,
+              "column": 5
+            },
+            {
+              "title": "未标明来源：已对旧版免打扰时不弹",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2633,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:43:37.380Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-03f28d501fb41d73f206",
+              "file": "startup-notices.spec.ts",
+              "line": 359,
+              "column": 5
+            },
+            {
+              "title": "请求超时：已对旧版免打扰时不弹",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 6228,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:43:38.666Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-08007ee371e8518beab0",
+              "file": "startup-notices.spec.ts",
+              "line": 359,
+              "column": 5
+            },
+            {
+              "title": "只有日期的旧记录：当天对所有版本免打扰，KV 新版本也不弹",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2100,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:43:40.029Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-ca8f5fff04edd99bbcf1",
+              "file": "startup-notices.spec.ts",
+              "line": 369,
+              "column": 3
+            },
+            {
+              "title": "公告加载前在须知页勾选，免打扰绑定到随后加载出的 KV 版本",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1665,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:43:42.144Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-49352df59c6fd1db2bf5",
+              "file": "startup-notices.spec.ts",
+              "line": 376,
+              "column": 3
+            },
+            {
+              "title": "KV 新版本：只弹新公告不弹须知；勾选后刷新不再弹；次日照常",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 5082,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:44:36.204Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-96fa26a6ad4c51b3343c",
+              "file": "startup-notices.spec.ts",
+              "line": 313,
+              "column": 3
+            },
+            {
+              "title": "线上 Worker 返回旧版内置公告（builtin-0.9，来源 builtin）：已对 builtin-1.0-beta 免打扰时不弹、不改记录",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1528,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:44:41.302Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-29e2057b395394915a87",
+              "file": "startup-notices.spec.ts",
+              "line": 342,
+              "column": 5
+            },
+            {
+              "title": "线上 Worker 返回旧版内置公告（builtin-0.9，来源 builtin）：已对 甲 免打扰时不弹、不改记录",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1726,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:44:42.857Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-408d16672d436e6a7cda",
+              "file": "startup-notices.spec.ts",
+              "line": 342,
+              "column": 5
+            },
+            {
+              "title": "HTTP 503：已对旧版免打扰时不弹",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1763,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:44:44.597Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-60eab19ae2318e3ff454",
+              "file": "startup-notices.spec.ts",
+              "line": 359,
+              "column": 5
+            },
+            {
+              "title": "非法 JSON（即使标为 kv）：已对旧版免打扰时不弹",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1601,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:44:46.367Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-57090f689ef295a5b822",
+              "file": "startup-notices.spec.ts",
+              "line": 359,
+              "column": 5
+            },
+            {
+              "title": "未标明来源：已对旧版免打扰时不弹",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1563,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:44:47.982Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-2debd0202d2965a1a33c",
+              "file": "startup-notices.spec.ts",
+              "line": 359,
+              "column": 5
+            },
+            {
+              "title": "请求超时：已对旧版免打扰时不弹",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 5181,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:44:49.572Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-dc76bf549fa7ca69e94b",
+              "file": "startup-notices.spec.ts",
+              "line": 359,
+              "column": 5
+            },
+            {
+              "title": "只有日期的旧记录：当天对所有版本免打扰，KV 新版本也不弹",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1825,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:44:54.768Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-c02a41e6e6a64867d04a",
+              "file": "startup-notices.spec.ts",
+              "line": 369,
+              "column": 3
+            },
+            {
+              "title": "公告加载前在须知页勾选，免打扰绑定到随后加载出的 KV 版本",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1497,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T13:44:55.524Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ef5b3fde1989e1eafbf-fc323c14d300284692bc",
+              "file": "startup-notices.spec.ts",
+              "line": 376,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-13T13:42:39.315Z",
+    "duration": 138035.705,
+    "expected": 38,
+    "skipped": 0,
+    "unexpected": 6,
+    "flaky": 0
+  }
+}

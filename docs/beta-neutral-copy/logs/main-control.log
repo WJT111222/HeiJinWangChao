@@ -1,0 +1,217 @@
+[WebServer] (node:312996) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:313209) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 5 tests using 2 workers
+
+(node:313278) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:313279) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [mobile] › e2e/startup-notices.spec.ts:29:1 › 完整定稿实际分段渲染：开头、架空社会声明与开发者落款 (4.4s)
+(node:313706) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [mobile] › e2e/startup-notices.spec.ts:55:1 › 首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复 (30.3s)
+(node:315566) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 [mobile] › e2e/startup-notices.spec.ts:119:1 › 首页与设置手动查看只开指定公告；返回保留设置内容和焦点 (30.4s)
+(node:315843) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  4 [mobile] › e2e/startup-notices.spec.ts:195:1 › 键盘焦点局限于当前弹窗，Escape 按顺序关闭 (7.7s)
+  ✘  5 [mobile] › e2e/startup-notices.spec.ts:208:1 › localStorage 不可访问时仍能完成顺序并使用首页 (30.2s)
+
+
+  1) [mobile] › e2e/startup-notices.spec.ts:29:1 › 完整定稿实际分段渲染：开头、架空社会声明与开发者落款 ──────────────────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 0
+
+    @@ -1,7 +1,6 @@
+      Array [
+    -   "18+｜本游戏仅面向年满18周岁的成年玩家。",
+        "欢迎来到《黑金王朝》。",
+        "本作品是一款以现代都市为背景、由人工智能驱动的开放世界互动文字角色扮演游戏。玩家可以自由选择人生道路，并通过自己的行动影响人物关系、社会势力与世界发展。",
+        "在开始游玩前，请了解以下内容。",
+        "一、成人内容声明",
+        "本游戏可能包含露骨的成人性描写、暴力、血腥、犯罪、黑社会活动、毒品、赌博、权力斗争、道德争议及其他可能令人不适的情节。",
+
+      34 |   const expected = approvedDisclaimer.filter(block => !/^#{1,2} /.test(block) && block !== '---')
+      35 |     .map(block => block.replace(/^### /, '').replaceAll('**', ''));
+    > 36 |   expect(await content.locator('p, h3').allTextContents()).toEqual(expected);
+         |                                                            ^
+      37 |   expect(await content.locator('strong').allTextContents()).toEqual(
+      38 |     approvedDisclaimer.filter(block => block.startsWith('**')).map(block => block.replaceAll('**', '')),
+      39 |   );
+        at /workspace/beta-copy-baseline/e2e/startup-notices.spec.ts:36:60
+
+    Error Context: ../beta-copy-evidence/main-artifacts/startup-notices-完整定稿实际分段渲染：开头、架空社会声明与开发者落款-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../beta-copy-evidence/main-artifacts/startup-notices-完整定稿实际分段渲染：开头、架空社会声明与开发者落款-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../beta-copy-evidence/main-artifacts/startup-notices-完整定稿实际分段渲染：开头、架空社会声明与开发者落款-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [mobile] › e2e/startup-notices.spec.ts:55:1 › 首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复 ──────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '游戏首页', exact: true })
+
+
+       at helpers/gameLayout.ts:70
+
+      68 |   const menu = page.getByRole('button', { name: '打开游戏菜单', exact: true });
+      69 |   if (await menu.isVisible()) await menu.click();
+    > 70 |   await page.getByRole('button', { name: '游戏首页', exact: true }).click(); await openLibrary(page);
+         |                                                                 ^
+      71 | }
+      72 |
+      73 | async function closeWorldArchive(page: Page) {
+        at goHome (/workspace/beta-copy-baseline/e2e/helpers/gameLayout.ts:70:65)
+        at /workspace/beta-copy-baseline/e2e/startup-notices.spec.ts:76:3
+
+    Error Context: ../beta-copy-evidence/main-artifacts/startup-notices-首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../beta-copy-evidence/main-artifacts/startup-notices-首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../beta-copy-evidence/main-artifacts/startup-notices-首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [mobile] › e2e/startup-notices.spec.ts:119:1 › 首页与设置手动查看只开指定公告；返回保留设置内容和焦点 ────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('dialog', { name: '设置', exact: true }).getByRole('button', { name: '游玩须知与免责声明', exact: true })
+
+
+      134 |   for (const label of ['游玩须知与免责声明', '王朝公告']) {
+      135 |     const trigger = settings.getByRole('button', { name: label, exact: true });
+    > 136 |     await trigger.click();
+          |                   ^
+      137 |     const modal = label === '王朝公告' ? announcement(page) : disclaimer(page);
+      138 |     await expect(modal).toBeVisible();
+      139 |     await modal.getByRole('button', { name: /^关闭/ }).click();
+        at /workspace/beta-copy-baseline/e2e/startup-notices.spec.ts:136:19
+
+    Error Context: ../beta-copy-evidence/main-artifacts/startup-notices-首页与设置手动查看只开指定公告；返回保留设置内容和焦点-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../beta-copy-evidence/main-artifacts/startup-notices-首页与设置手动查看只开指定公告；返回保留设置内容和焦点-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../beta-copy-evidence/main-artifacts/startup-notices-首页与设置手动查看只开指定公告；返回保留设置内容和焦点-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [mobile] › e2e/startup-notices.spec.ts:195:1 › 键盘焦点局限于当前弹窗，Escape 按顺序关闭 ───────────────────────
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }).getByRole('button', { name: '关闭免责声明' })
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeFocused" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }).getByRole('button', { name: '关闭免责声明' }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }).getByRole('button', { name: '关闭免责声明' })
+        13 × locator resolved to <button type="button" aria-label="关闭免责声明">…</button>
+           - unexpected value "inactive"
+
+
+      195 | test('键盘焦点局限于当前弹窗，Escape 按顺序关闭', async ({ page }) => {
+      196 |   await page.goto('/');
+    > 197 |   await expect(disclaimer(page).getByRole('button', { name: '关闭免责声明' })).toBeFocused();
+          |                                                                          ^
+      198 |   await page.keyboard.press('Shift+Tab');
+      199 |   await expect(disclaimer(page).getByRole('checkbox')).toBeFocused();
+      200 |   await page.keyboard.press('Tab');
+        at /workspace/beta-copy-baseline/e2e/startup-notices.spec.ts:197:74
+
+    Error Context: ../beta-copy-evidence/main-artifacts/startup-notices-键盘焦点局限于当前弹窗，Escape-按顺序关闭-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../beta-copy-evidence/main-artifacts/startup-notices-键盘焦点局限于当前弹窗，Escape-按顺序关闭-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../beta-copy-evidence/main-artifacts/startup-notices-键盘焦点局限于当前弹窗，Escape-按顺序关闭-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [mobile] › e2e/startup-notices.spec.ts:208:1 › localStorage 不可访问时仍能完成顺序并使用首页 ──────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }).getByRole('button', { name: '关闭免责声明' })
+        - locator resolved to <button type="button" aria-label="关闭免责声明">…</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <button aria-label="关闭提示">×</button> from <div role="alert" popover="manual" class="app-error feedback l-err">…</div> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <button aria-label="关闭提示">×</button> from <div role="alert" popover="manual" class="app-error feedback l-err">…</div> subtree intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        47 × waiting for element to be visible, enabled and stable
+           - element is visible, enabled and stable
+           - scrolling into view if needed
+           - done scrolling
+           - <button aria-label="关闭提示">×</button> from <div role="alert" popover="manual" class="app-error feedback l-err">…</div> subtree intercepts pointer events
+         - retrying click action
+           - waiting 500ms
+        - waiting for element to be visible, enabled and stable
+
+
+      21 |
+      22 | async function finishNotices(page: Page) {
+    > 23 |   await disclaimer(page).getByRole('button', { name: '关闭免责声明' }).click();
+         |                                                                  ^
+      24 |   await expect(announcement(page)).toBeVisible();
+      25 |   await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
+      26 |   await expect(page.getByRole('dialog')).toHaveCount(0);
+        at finishNotices (/workspace/beta-copy-baseline/e2e/startup-notices.spec.ts:23:66)
+        at /workspace/beta-copy-baseline/e2e/startup-notices.spec.ts:216:9
+
+    Error Context: ../beta-copy-evidence/main-artifacts/startup-notices-localStorage-不可访问时仍能完成顺序并使用首页-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../beta-copy-evidence/main-artifacts/startup-notices-localStorage-不可访问时仍能完成顺序并使用首页-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../beta-copy-evidence/main-artifacts/startup-notices-localStorage-不可访问时仍能完成顺序并使用首页-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5 failed
+    [mobile] › e2e/startup-notices.spec.ts:29:1 › 完整定稿实际分段渲染：开头、架空社会声明与开发者落款 ───────────────────────
+    [mobile] › e2e/startup-notices.spec.ts:55:1 › 首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复 ───────────────────
+    [mobile] › e2e/startup-notices.spec.ts:119:1 › 首页与设置手动查看只开指定公告；返回保留设置内容和焦点 ─────────────────────
+    [mobile] › e2e/startup-notices.spec.ts:195:1 › 键盘焦点局限于当前弹窗，Escape 按顺序关闭 ────────────────────────
+    [mobile] › e2e/startup-notices.spec.ts:208:1 › localStorage 不可访问时仍能完成顺序并使用首页 ───────────────────
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

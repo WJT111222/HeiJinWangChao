@@ -103,7 +103,7 @@ test('一次创角确认自动执行开局三阶段，StrictMode和重复点击�
 
 test('缺少AI配置零请求，设置后不自动补发，只在明确开始时运行', async ({ page }) => {
   await prepare(page, false); const server = await mock(page); await creation(page);
-  await expect(page.locator('.notice')).toContainText('API 费用'); await confirm(page);
+  await expect(page.locator('.notice')).toContainText('生成可能产生费用'); await confirm(page);
   await openWorkflow(page); await expect(workflow(page).getByRole('alert')).toContainText('配置'); expect(server.calls).toHaveLength(0);
   const before = await stored(page); await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: '打开 AI 设置', exact: true }).click();

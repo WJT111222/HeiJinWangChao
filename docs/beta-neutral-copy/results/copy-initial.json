@@ -1,0 +1,456 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/beta-neutral-copy/node_modules/.bin/playwright",
+      "test",
+      "e2e/beta-neutral-copy.spec.ts",
+      "--config=/workspace/beta-copy-evidence/playwright-copy.config.ts"
+    ],
+    "configFile": "/workspace/beta-copy-evidence/playwright-copy.config.ts",
+    "rootDir": "/workspace/beta-neutral-copy/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 2
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/beta-copy-evidence/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "/workspace/beta-neutral-copy/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/workspace/beta-copy-evidence/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/workspace/beta-neutral-copy/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/beta-copy-evidence/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "desktop",
+        "testDir": "/workspace/beta-neutral-copy/e2e",
+        "snapshotDir": "/workspace/beta-neutral-copy/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5301",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "reducedMotion": "reduce",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "desktop"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/beta-copy-evidence/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "mobile",
+        "testDir": "/workspace/beta-neutral-copy/e2e",
+        "snapshotDir": "/workspace/beta-neutral-copy/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5301",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "reducedMotion": "reduce",
+          "userAgent": "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Mobile Safari/537.36",
+          "viewport": {
+            "width": 412,
+            "height": 839
+          },
+          "screen": {
+            "width": 412,
+            "height": 915
+          },
+          "deviceScaleFactor": 2.625,
+          "isMobile": true,
+          "hasTouch": true,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "mobile"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/workspace/beta-copy-evidence/playwright-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 2,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5301 --strictPort",
+      "cwd": "/workspace/beta-neutral-copy",
+      "url": "http://127.0.0.1:5301",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "beta-neutral-copy.spec.ts",
+      "file": "beta-neutral-copy.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "中性须知第四章与云端公告：保留六章、完整隐私提醒、11条更新及本地备份告知",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8130,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '王朝公告', exact: true }).locator('.notice-updates li')\nExpected: \u001b[32m11\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" getByRole('dialog', { name: '王朝公告', exact: true }).locator('.notice-updates li') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '王朝公告', exact: true }).locator('.notice-updates li')\u001b[22m\n\u001b[2m    14 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '王朝公告', exact: true }).locator('.notice-updates li')\nExpected: \u001b[32m11\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" getByRole('dialog', { name: '王朝公告', exact: true }).locator('.notice-updates li') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '王朝公告', exact: true }).locator('.notice-updates li')\u001b[22m\n\u001b[2m    14 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n\n    at /workspace/beta-neutral-copy/e2e/beta-neutral-copy.spec.ts:40:54",
+                    "location": {
+                      "file": "/workspace/beta-neutral-copy/e2e/beta-neutral-copy.spec.ts",
+                      "column": 54,
+                      "line": 40
+                    },
+                    "snippet": "  38 |   await dialog.getByRole('button', { name: '关闭免责声明' }).click();\n  39 |   const notice = page.getByRole('dialog', { name: '王朝公告', exact: true });\n> 40 |   await expect(notice.locator('.notice-updates li')).toHaveCount(11);\n     |                                                      ^\n  41 |   await expect(notice).toContainText('请妥善保管并备份重要游戏数据。');\n  42 |   await expect(notice).not.toContainText('服务商收取');\n  43 |   await expect(notice).not.toContainText('收费的第三方');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/beta-neutral-copy/e2e/beta-neutral-copy.spec.ts",
+                        "column": 54,
+                        "line": 40
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '王朝公告', exact: true }).locator('.notice-updates li')\nExpected: \u001b[32m11\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" getByRole('dialog', { name: '王朝公告', exact: true }).locator('.notice-updates li') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '王朝公告', exact: true }).locator('.notice-updates li')\u001b[22m\n\u001b[2m    14 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n\n\n  38 |   await dialog.getByRole('button', { name: '关闭免责声明' }).click();\n  39 |   const notice = page.getByRole('dialog', { name: '王朝公告', exact: true });\n> 40 |   await expect(notice.locator('.notice-updates li')).toHaveCount(11);\n     |                                                      ^\n  41 |   await expect(notice).toContainText('请妥善保管并备份重要游戏数据。');\n  42 |   await expect(notice).not.toContainText('服务商收取');\n  43 |   await expect(notice).not.toContainText('收费的第三方');\n    at /workspace/beta-neutral-copy/e2e/beta-neutral-copy.spec.ts:40:54"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:40:29.685Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/beta-neutral-copy-中性须知第四章与云端公告：保留六章、完整隐私提醒、11条更新及本地备份告知-desktop/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/beta-neutral-copy-中性须知第四章与云端公告：保留六章、完整隐私提醒、11条更新及本地备份告知-desktop/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/beta-neutral-copy/e2e/beta-neutral-copy.spec.ts",
+                    "column": 54,
+                    "line": 40
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "953f34b9f0cee92f39f2-9503bce465dcaade4e2d",
+          "file": "beta-neutral-copy.spec.ts",
+          "line": 25,
+          "column": 1
+        },
+        {
+          "title": "五站创角与模型设置：中性费用提示、技术字段及密钥安全仍完整",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "timedOut",
+                  "duration": 30096,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/beta-neutral-copy/e2e/beta-neutral-copy.spec.ts",
+                        "column": 113,
+                        "line": 61
+                      },
+                      "message": "Error: locator.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('navigation', { name: '角色创建步骤' }).getByRole('button', { name: '基本信息', exact: true })\u001b[22m\n\n\n  59 |   const steps = ['基本信息','职业与能力','城市与背景','初始同伴','确认与开局'];\n  60 |   for (let i=0;i<steps.length;i++) {\n> 61 |     await page.getByRole('navigation', { name: '角色创建步骤' }).getByRole('button', { name: steps[i], exact: true }).click();\n     |                                                                                                                 ^\n  62 |     await expect(page.locator('.creation-card')).toBeVisible();\n  63 |     await page.screenshot({ path: info.outputPath(`creation-step${i+1}.png`), animations: 'disabled' });\n  64 |   }\n    at /workspace/beta-neutral-copy/e2e/beta-neutral-copy.spec.ts:61:113"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:40:29.675Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/beta-neutral-copy-五站创角与模型设置：中性费用提示、技术字段及密钥安全仍完整-desktop/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/beta-copy-evidence/playwright-artifacts/beta-neutral-copy-五站创角与模型设置：中性费用提示、技术字段及密钥安全仍完整-desktop/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "953f34b9f0cee92f39f2-a2e34264fd280919338a",
+          "file": "beta-neutral-copy.spec.ts",
+          "line": 48,
+          "column": 1
+        },
+        {
+          "title": "游戏工作流保留中性费用提醒，纯浏览不写入正式状态或草稿",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1719,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:40:38.607Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "953f34b9f0cee92f39f2-7dd4c2b6536d3be68588",
+          "file": "beta-neutral-copy.spec.ts",
+          "line": 88,
+          "column": 1
+        },
+        {
+          "title": "中性须知第四章与云端公告：保留六章、完整隐私提醒、11条更新及本地备份告知",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1979,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:40:40.865Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "953f34b9f0cee92f39f2-4b3b415109bd231e8154",
+          "file": "beta-neutral-copy.spec.ts",
+          "line": 25,
+          "column": 1
+        },
+        {
+          "title": "五站创角与模型设置：中性费用提示、技术字段及密钥安全仍完整",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3445,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:40:43.035Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "953f34b9f0cee92f39f2-913a0c31d5ada3e34aec",
+          "file": "beta-neutral-copy.spec.ts",
+          "line": 48,
+          "column": 1
+        },
+        {
+          "title": "游戏工作流保留中性费用提醒，纯浏览不写入正式状态或草稿",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1461,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T13:40:46.491Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "953f34b9f0cee92f39f2-ec69e8cb0a8e7a0d5028",
+          "file": "beta-neutral-copy.spec.ts",
+          "line": 88,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-13T13:40:27.675Z",
+    "duration": 32663.874,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}
