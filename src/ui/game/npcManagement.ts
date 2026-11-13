@@ -3,10 +3,11 @@ import type { TurnDraft } from '../../domain/drafts';
 import { DataError } from '../../domain/common';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 
-export type NpcManagementResult = { state: GameState; draft?: TurnDraft };
+/** instance：存档实例身份（导入备份后才有）；与 state/draft 一起作为下一次人物管理的依据。 */
+export type NpcManagementResult = { state: GameState; draft?: TurnDraft; instance?: string };
 
 /** UI adapter only. All identity, CAS, locking and persistence remain in Repository. */
-export function changeNpcImportance(repository: SaveRepository, state: GameState, draft: TurnDraft | undefined, npcId: string) {
+export function changeNpcImportance(repository: SaveRepository, state: GameState, draft: TurnDraft | undefined, npcId: string, instance?: string) {
   const person = state.npc[npcId];
   if (!person) throw new DataError('NPC_MANAGEMENT_CONFLICT', '人物档案已改变');
   return repository.setNpcImportance({
@@ -15,7 +16,7 @@ export function changeNpcImportance(repository: SaveRepository, state: GameState
     expectedDraftRevision: draft?.draftRevision, expectedTurnId: draft?.turnId,
     npcId, identityKey: person.identityKey,
     choice: person.kind === 'special' ? 'ordinary' : 'special',
-    operationId: crypto.randomUUID(),
+    operationId: crypto.randomUUID(), expectedInstance: instance ?? null,
   });
 }
 
@@ -29,7 +30,10 @@ export function npcManagementError(error: unknown) {
 
 /** Do not let a late UI result overwrite a newer turn, preference or candidate. */
 export function canAcceptNpcView(current: NpcManagementResult, next: NpcManagementResult) {
-  if (current.state.saveId !== next.state.saveId || current.state.revision > next.state.revision ||
+  if (current.state.saveId !== next.state.saveId) return false;
+  // 同 ID 存档被导入替换后，新时间线的版本号可能更小；以新读取的实例为准。
+  if ((current.instance ?? null) !== (next.instance ?? null)) return true;
+  if (current.state.revision > next.state.revision ||
       (current.state.npcManagementRevision ?? 0) > (next.state.npcManagementRevision ?? 0)) return false;
   if (current.state.revision < next.state.revision) return true;
   if (!current.draft) return true;

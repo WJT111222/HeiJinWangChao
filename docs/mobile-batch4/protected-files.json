@@ -1,0 +1,151 @@
+{
+  "main": "967113fa8aba7b842621b3ddbdaf0e39e1f3b61f",
+  "files": [
+    {
+      "path": "src/ui/notices/disclaimer.ts",
+      "mainSHA256": "4b0e71a23339ad93c722db257f6cb88b9bae1141105a6e66a019f01c5884bd5e",
+      "workingSHA256": "4b0e71a23339ad93c722db257f6cb88b9bae1141105a6e66a019f01c5884bd5e",
+      "unchanged": true
+    },
+    {
+      "path": "src/tests/fixtures/disclaimer-v1.md",
+      "mainSHA256": "883b07a4c8d34fab3da13b8d5e9ef2071a27cad30ca66f2d70822810f1cee2ad",
+      "workingSHA256": "883b07a4c8d34fab3da13b8d5e9ef2071a27cad30ca66f2d70822810f1cee2ad",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/notices/useNotices.ts",
+      "mainSHA256": "28a6cd9d97661eb1a74c66b425103c1e00bb1529a73707f7e755b46a241ddd19",
+      "workingSHA256": "28a6cd9d97661eb1a74c66b425103c1e00bb1529a73707f7e755b46a241ddd19",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/notices/preferences.ts",
+      "mainSHA256": "fb543e8113ce1fe4249178d0dbb69775ed2a747f854da91e445b60a066c62339",
+      "workingSHA256": "fb543e8113ce1fe4249178d0dbb69775ed2a747f854da91e445b60a066c62339",
+      "unchanged": true
+    },
+    {
+      "path": "src/services/notices/client.ts",
+      "mainSHA256": "528b25091d5281e92f4db63560a48771381c256d5626e3a381909f2a73ea4ab1",
+      "workingSHA256": "528b25091d5281e92f4db63560a48771381c256d5626e3a381909f2a73ea4ab1",
+      "unchanged": true
+    },
+    {
+      "path": "src/services/notices/announcement.ts",
+      "mainSHA256": "c9a529bf81c760036aa8ba4e8063d010952dca5819091c0d64747db9bc9d04b4",
+      "workingSHA256": "c9a529bf81c760036aa8ba4e8063d010952dca5819091c0d64747db9bc9d04b4",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/notices/announcement.ts",
+      "mainSHA256": "3b3a8a8dd907b6e0a15c92e277a2da14b0c30a9975ca09ae656d075d47019325",
+      "workingSHA256": "3b3a8a8dd907b6e0a15c92e277a2da14b0c30a9975ca09ae656d075d47019325",
+      "unchanged": true
+    },
+    {
+      "path": "src/worker.ts",
+      "mainSHA256": "431bc1c815edd7a66f05b83572af904f532daa7aacabd73317c708ccabdf9358",
+      "workingSHA256": "431bc1c815edd7a66f05b83572af904f532daa7aacabd73317c708ccabdf9358",
+      "unchanged": true
+    },
+    {
+      "path": "wrangler.jsonc",
+      "mainSHA256": "a06b18c396064dfb64c7dfcc2e6bd6d3d22a8b3153c000d21ab7721a9acc8b33",
+      "workingSHA256": "a06b18c396064dfb64c7dfcc2e6bd6d3d22a8b3153c000d21ab7721a9acc8b33",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/creation/model.ts",
+      "mainSHA256": "2f0e33fe74289f43dec5655506e7117049d26a7f7eab24a5254f06fc6e540c79",
+      "workingSHA256": "2f0e33fe74289f43dec5655506e7117049d26a7f7eab24a5254f06fc6e540c79",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/creation/openingPacks.ts",
+      "mainSHA256": "a93d1e3fd5a5ba00d55a3f9800db9cc4eb485bc7e96859e3bcd39574a59e1095",
+      "workingSHA256": "a93d1e3fd5a5ba00d55a3f9800db9cc4eb485bc7e96859e3bcd39574a59e1095",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/creation/personTemplates.ts",
+      "mainSHA256": "a0c019b9f87b928e899231f977c6d3be00ca2ecca0dc5e871d9102fb5c8f1556",
+      "workingSHA256": "a0c019b9f87b928e899231f977c6d3be00ca2ecca0dc5e871d9102fb5c8f1556",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/creation/professions.json",
+      "mainSHA256": "40b161afc6be3b7fd48c8ca621600cb5b3fd5b70ea99e4a7c5c69ded87b40c8d",
+      "workingSHA256": "40b161afc6be3b7fd48c8ca621600cb5b3fd5b70ea99e4a7c5c69ded87b40c8d",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/settings/PromptInspector.tsx",
+      "mainSHA256": "d18e8e5edfb8a43c84565d08669204c2f4c3f5c51960844308f9027b8d9ab7bb",
+      "workingSHA256": "d18e8e5edfb8a43c84565d08669204c2f4c3f5c51960844308f9027b8d9ab7bb",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/settings/prompt-manager.css",
+      "mainSHA256": "4a1ee1b075f945adb5737e7b2ef1f4613159d0634ebcbebe3702205bd2d8efbb",
+      "workingSHA256": "4a1ee1b075f945adb5737e7b2ef1f4613159d0634ebcbebe3702205bd2d8efbb",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/home/MobileHomeScreen.tsx",
+      "mainSHA256": "c731ebb11fa0ff39735b23bd49793e0dab6e5ff6567bb454db1612c059ba9f4e",
+      "workingSHA256": "c731ebb11fa0ff39735b23bd49793e0dab6e5ff6567bb454db1612c059ba9f4e",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/home/ticketView.ts",
+      "mainSHA256": "144261b92118a0ee89d2cf01535dae2945e5aa1198b15a1190347b142d03837d",
+      "workingSHA256": "144261b92118a0ee89d2cf01535dae2945e5aa1198b15a1190347b142d03837d",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/home/useTicketTear.ts",
+      "mainSHA256": "e97eff82012d5c0cd31d69d7b336e9a1fc1e4d23f873b4eaab78016e16b20080",
+      "workingSHA256": "e97eff82012d5c0cd31d69d7b336e9a1fc1e4d23f873b4eaab78016e16b20080",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/game/GameScreen.tsx",
+      "mainSHA256": "ba8e5e9fb6a25d95d3b7b03bc476f78505777dce9d852c5e8da57231513f4e90",
+      "workingSHA256": "ba8e5e9fb6a25d95d3b7b03bc476f78505777dce9d852c5e8da57231513f4e90",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/game/MobileWorkflowDrawer.tsx",
+      "mainSHA256": "04fae682860226dca175c5d26ab23d8dac6b762267ba8aa323bbee3c6a93eacf",
+      "workingSHA256": "04fae682860226dca175c5d26ab23d8dac6b762267ba8aa323bbee3c6a93eacf",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/game/WorkflowPanel.tsx",
+      "mainSHA256": "393003e04983905e6f68d4b34861544178739640f6dae4926aa5a57f59301631",
+      "workingSHA256": "393003e04983905e6f68d4b34861544178739640f6dae4926aa5a57f59301631",
+      "unchanged": true
+    },
+    {
+      "path": "src/services/storage/saveRepository.ts",
+      "mainSHA256": "fbe541e05237cc40819c107821e642368019c8dba3ec5c5e95a42b4ab24c2580",
+      "workingSHA256": "fbe541e05237cc40819c107821e642368019c8dba3ec5c5e95a42b4ab24c2580",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/settings/SettingsPanel.tsx",
+      "mainSHA256": "9bd84fd8c88245633f881e7df1380092bb074003f6af5ed31f4981b31397c8c3",
+      "workingSHA256": "9bd84fd8c88245633f881e7df1380092bb074003f6af5ed31f4981b31397c8c3",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/settings/settings-paper.css",
+      "mainSHA256": "7e8a27dd01cde14e914c54ef66171036b5aa962403296a17f9be83e49aae29c4",
+      "workingSHA256": "7e8a27dd01cde14e914c54ef66171036b5aa962403296a17f9be83e49aae29c4",
+      "unchanged": true
+    }
+  ],
+  "appCreateAndOpeningAuthorizationUnchanged": true,
+  "openingPackControllerMethodsUnchanged": true
+}

@@ -1,0 +1,29 @@
+{
+  "typecheck": {
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "exitCode": 0
+  },
+  "eslint": {
+    "command": [
+      "npx",
+      "eslint",
+      "src/ui/creation/OpeningPacks.tsx",
+      "e2e/mobile-batch4-review.spec.ts",
+      "playwright.mobile-batch4-review.config.ts",
+      "--max-warnings=0"
+    ],
+    "exitCode": 0
+  },
+  "diff-check": {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exitCode": 0
+  }
+}

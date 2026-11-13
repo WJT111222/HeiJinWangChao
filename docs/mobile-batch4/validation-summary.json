@@ -1,0 +1,164 @@
+{
+  "distinctScenarios": 19,
+  "recordedSuccessfulExecutions": 24,
+  "finalFailed": 0,
+  "skipped": 0,
+  "automaticRetries": 0,
+  "scenarios": [
+    {
+      "title": "自动须知→公告、原文、焦点陷阱、章节与进度、手动打开仅一张",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "今日免打扰、隔日恢复；云端实际版本和长内容、滚动不重复请求",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "自动翻页动画防重复关闭，reduced-motion 与 Esc 顺序",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文",
+      "project": "",
+      "report": "visual-current-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "确认按钮同一校验路径、草稿保留、无效撕票返回错误步骤",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "撕票动画切换步骤可取消，不创建未确认存档",
+      "project": "",
+      "report": "gesture-final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "开局包六视图、手动技能完整恢复、取消不写、覆盖与删除隔离",
+      "project": "",
+      "report": "visual-final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "开局包损坏隔离、存储失败不清空原数据和创角草稿",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "短视口 375×667 仅正文滚动，底栏与输入可达",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "短视口 390×844 仅正文滚动，底栏与输入可达",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "短视口 430×932 仅正文滚动，底栏与输入可达",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "短视口 392×640 仅正文滚动，底栏与输入可达",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "短视口 392×420 仅正文滚动，底栏与输入可达",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "正式保存失败保留同一创角身份，解除 busy 后可重试一次建档",
+      "project": "",
+      "report": "visual-final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "#125 车票首页与第四批创角、公告手动入口及真实草稿恢复衔接",
+      "project": "",
+      "report": "additional-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "同名包独立管理：重命名、取消删除、明确覆盖及确认删除",
+      "project": "desktop",
+      "report": "legacy-desktop-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "损坏包隔离，存储拒绝不误报成功、不丢失有效包或当前草稿",
+      "project": "desktop",
+      "report": "legacy-desktop-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "#125 兼容：车票主按钮进入存档，#120 双层非模态工作流与行动输入共存",
+      "project": "",
+      "report": "pr125-cross-results.json",
+      "results": [
+        "passed"
+      ]
+    }
+  ],
+  "vitestPassed": 87,
+  "desktopPixelPairs": 16,
+  "initialFailureReport": "initial-failures/chromium-results.json"
+}

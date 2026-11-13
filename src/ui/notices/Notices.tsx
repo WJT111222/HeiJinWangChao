@@ -1,3 +1,5 @@
+import { useDesktopFeedback } from '../Feedback';
+import { MobileNoticeDialog } from './MobileNoticeDialog';
 import type { Announcement } from '../../services/notices/announcement';
 import { Dialog } from '../Dialog';
 import { announcement as fallback } from './announcement';
@@ -20,13 +22,16 @@ export function NoticeLinks({ onOpen }: { onOpen: (kind: NoticeKind) => void }) 
   );
 }
 
-export function NoticeDialog({ kind, muted, onMutedChange, onClose, announcement = fallback }: {
+export function NoticeDialog({ kind, muted, onMutedChange, onClose, announcement = fallback, automatic=false }: {
   kind: NoticeKind;
+  automatic?: boolean;
   announcement?: Announcement;
   muted: boolean;
   onMutedChange: (muted: boolean) => void;
   onClose: () => void;
 }) {
+  const desktop=useDesktopFeedback();
+  if(!desktop)return <MobileNoticeDialog kind={kind} muted={muted} onMutedChange={onMutedChange} onClose={onClose} announcement={announcement} automatic={automatic}/>;
   return (
     <Dialog title={kind === 'disclaimer' ? disclaimer.title : announcement.title}
       className="notice-modal" closeLabel={kind === 'disclaimer' ? '关闭免责声明' : '关闭王朝公告'} onClose={onClose}>

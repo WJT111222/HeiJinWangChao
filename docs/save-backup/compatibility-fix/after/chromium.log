@@ -1,0 +1,20 @@
+[WebServer] (node:298894) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:298907) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:298934) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"case":"v3-closed","deletion":"InvalidStateError","reopen":"VersionError","importedSaveIntact":true,"importedDraftIntact":true,"refreshedDelete":true,"posts":0}
+  ✓  1 e2e/save-backup-upgrade.spec.ts:59:1 › 真实双标签：V3 连接关闭，旧删除与重开拒绝；同 ID 同 revision 导入及草稿保留，新版刷新后正常操作 (1.1s)
+{"case":"v3-blocked","blocked":"STORAGE_BLOCKED","originalRecordsIntact":true,"retryImportSucceeded":true,"posts":0}
+  ✓  2 e2e/save-backup-upgrade.spec.ts:93:1 › 真实双标签：不释放的旧连接阻止升级与导入，原记录不变，关闭后重试成功 (793ms)
+
+  2 passed (4.1s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

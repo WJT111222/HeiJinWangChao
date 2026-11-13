@@ -43,8 +43,6 @@
 .app-shell .settings-paper[data-tone=paper] .tg-card{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:.85rem 1rem;border:1px solid var(--line);border-radius:8px;background:#F6F1E6}
 .app-shell .settings-paper[data-tone=paper] .tg-card b{display:block;font-weight:500;font-size:.9rem;color:var(--head)}
 .app-shell .settings-paper[data-tone=paper] .tg-card small{display:block;font-size:.72rem;color:var(--dim);line-height:1.6;margin-top:.2rem}
-.app-shell .settings-paper[data-tone=paper] fieldset.later{margin:1.2rem 0 0;padding:.9rem 1rem 1rem;border:1px dashed var(--line-2);border-radius:8px;opacity:.7}
-.app-shell .settings-paper[data-tone=paper] fieldset.later legend{padding:0 .4rem;font-size:.76rem;letter-spacing:.14em;color:var(--dim)}
 .app-shell .settings-paper[data-tone=paper] .ch-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:.65rem}
 .app-shell .settings-paper[data-tone=paper] .ch{position:relative;text-align:left;padding:.85rem 1rem .9rem;border:1px solid var(--line-2);border-radius:9px;background:#F6F1E6;display:grid;gap:.25rem}
 .app-shell .settings-paper[data-tone=paper] .ch[aria-pressed=true]{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}

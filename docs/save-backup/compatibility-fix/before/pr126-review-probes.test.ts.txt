@@ -1,0 +1,31 @@
+import { IDBFactory } from 'fake-indexeddb';
+import { describe, it, expect } from 'vitest';
+import { SaveRepository } from '../services/storage/saveRepository';
+import { SaveRepository as OldRepository } from '../../../pr126-main-control/src/services/storage/saveRepository';
+import { game } from './fixtures/game';
+import { createTurnDraft } from '../domain/drafts';
+
+describe('PR126 independent review: actual deployed-main code with imported timeline', () => {
+ it('pre-deployment page delete must not remove the imported same-ID same-revision save', async () => {
+  const factory=new IDBFactory();
+  const updated=await SaveRepository.open('old-page-delete',factory);
+  const old=await OldRepository.open('old-page-delete',factory);
+  try {
+   await updated.create(game('save-a'));
+   const [summary]=await old.list();
+   if(summary.status!=='readable')throw Error('readable fixture required');
+   const entry={state:{...game('save-a'),title:'New imported progress'},draft:createTurnDraft('save-a',0,'turn-imported','regular','Imported pending action')};
+   await updated.importBackup(entry,(await updated.compareBackup(entry)).confirmation,{overwrite:true});
+   const imported=await updated.loadGame('save-a');
+   expect(imported.instance).toMatch(/^instance-/);
+   expect(imported.state.revision).toBe(summary.revision);
+   // Positive control: the updated repository rejects the stale old summary.
+   await expect(updated.delete('save-a',summary.revision)).rejects.toMatchObject({code:'REVISION_CONFLICT'});
+   let deleteError:unknown;
+   try{await old.delete('save-a',summary.revision);}catch(e){deleteError=e;}
+   const remaining=await updated.list();
+   console.log(JSON.stringify({oldCodeCommit:'fbb1f13902eff11924b5dd74f42fa91a082106c5',newInstanceCreated:true,oldDeleteError:deleteError?String(deleteError):null,remainingSaveCount:remaining.length}));
+   expect(remaining,'Actual deployed-main delete must preserve the imported save').toHaveLength(1);
+  } finally {old.close();updated.close();}
+ });
+});

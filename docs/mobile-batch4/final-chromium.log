@@ -1,0 +1,26 @@
+
+Running 14 tests using 1 worker
+
+(node:292131) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 e2e/mobile-batch4.spec.ts:25:1 › 自动须知→公告、原文、焦点陷阱、章节与进度、手动打开仅一张 (2.2s)
+  ✓   2 e2e/mobile-batch4.spec.ts:35:1 › 今日免打扰、隔日恢复；云端实际版本和长内容、滚动不重复请求 (2.3s)
+  ✓   3 e2e/mobile-batch4.spec.ts:40:1 › 自动翻页动画防重复关闭，reduced-motion 与 Esc 顺序 (1.7s)
+  ✓   4 e2e/mobile-batch4.spec.ts:43:1 › 五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文 (3.0s)
+  ✓   5 e2e/mobile-batch4.spec.ts:50:1 › 顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复 (2.6s)
+  ✓   6 e2e/mobile-batch4.spec.ts:54:1 › 确认按钮同一校验路径、草稿保留、无效撕票返回错误步骤 (2.5s)
+  ✓   7 e2e/mobile-batch4.spec.ts:58:1 › 撕票动画切换步骤可取消，不创建未确认存档 (2.3s)
+  ✓   8 e2e/mobile-batch4.spec.ts:61:1 › 开局包六视图、手动技能完整恢复、取消不写、覆盖与删除隔离 (2.3s)
+  ✓   9 e2e/mobile-batch4.spec.ts:67:1 › 开局包损坏隔离、存储失败不清空原数据和创角草稿 (1.4s)
+  ✓  10 e2e/mobile-batch4.spec.ts:70:81 › 短视口 375×667 仅正文滚动，底栏与输入可达 (1.9s)
+  ✓  11 e2e/mobile-batch4.spec.ts:70:81 › 短视口 390×844 仅正文滚动，底栏与输入可达 (1.9s)
+  ✓  12 e2e/mobile-batch4.spec.ts:70:81 › 短视口 430×932 仅正文滚动，底栏与输入可达 (2.1s)
+  ✓  13 e2e/mobile-batch4.spec.ts:70:81 › 短视口 392×640 仅正文滚动，底栏与输入可达 (1.9s)
+  ✓  14 e2e/mobile-batch4.spec.ts:70:81 › 短视口 392×420 仅正文滚动，底栏与输入可达 (1.8s)
+
+  14 passed (30.9s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
