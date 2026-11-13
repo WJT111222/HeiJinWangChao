@@ -1,16 +1,10 @@
 import { announcement as fallback } from './announcement';
-import { currentAnnouncement } from '../../services/notices/client';
+import { currentAnnouncementWithSource } from '../../services/notices/client';
 import { useEffect, useRef, useState } from 'react';
-import type { Announcement } from '../../services/notices/announcement';
 import { noticeMuteToday, noticesMutedFor, saveNoticePreference } from './preferences';
 
 export type NoticeKind = 'disclaimer' | 'announcement';
 interface NoticeState { kind?: NoticeKind; automatic: boolean; muted: boolean }
-
-/** 远程取回的真实公告；请求失败或服务端回退到内置公告都不算「有新公告」。 */
-function remote(value: Announcement) {
-  return value !== fallback && value.version !== fallback.version;
-}
 
 export function useNotices() {
   // 只在 App 本次挂载时读取，不随导航或存档更新重启。初始化没有写入副作用。
@@ -23,10 +17,11 @@ export function useNotices() {
   const mutedHere = useRef(false);
   useEffect(() => {
     let active = true;
-    void currentAnnouncement().then(value => {
+    void currentAnnouncementWithSource().then(({ announcement: value, source }) => {
       if (!active) return;
       setAnnouncement(value);
-      if (!remote(value)) return;
+      // 只有服务端明确从 KV 返回的合法公告才算「新公告」；失败、内置回退、未标明来源都不算。
+      if (source !== 'kv') return;
       // 勾选发生在公告加载前：免打扰绑定到实际加载出的这一版。
       if (mutedHere.current) { saveNoticePreference(true, new Date(), undefined, value.version); return; }
       // 今天免打扰的是另一版公告：新公告照常弹出一次（须知当天已看过，只弹公告）。
