@@ -53,16 +53,16 @@ for (const mode of ['opening','ready','off','error','settled'] as const) test(`�
     await openWorkflow(page);await workflowTrigger(page).click();await expect(pop).toBeHidden();
     for(const size of [{width:1280,height:800},{width:1100,height:800}]){await page.setViewportSize(size);await openWorkflow(page);const r=(await pop.boundingBox())!;expect(r.x).toBeGreaterThanOrEqual(0);expect(r.y).toBeGreaterThanOrEqual(0);expect(r.x+r.width).toBeLessThanOrEqual(size.width);expect(r.y+r.height).toBeLessThanOrEqual(box!.y+10);await workflowTrigger(page).click();}
   }else{
-    await expect(page.locator('details.workflow-disclosure')).toHaveAttribute('open');await expect(page.locator('.wf-hd')).toHaveCount(0);
+    await expect(page.getByRole('dialog',{name:'三阶段工作流',exact:true})).toHaveAttribute('aria-modal','false');await expect(page.locator('.wf-hd')).toHaveCount(1);
     await page.screenshot({path:`docs/workflow-feedback/screenshots/react-${mode}-mobile.png`});
   }
   if(mode==='ready'){
     await openWorkflow(page);const modal=await openStageCandidates(page,'variables');await expect(modal).toBeVisible();
     await modal.getByRole('button',{name:'主动查看完整变量候选',exact:true}).click();await expect(modal.getByLabel('完整变量候选')).toContainText('SetWorldClock');
     // PC 候选在面板“候选”页；模型原文在同一阶段的“模型原文”页。移动端仍在只读弹窗内。
-    if(desktop)await expect(await openCandidateRaw(page,'variables')).toContainText('本页面没有可恢复的模型原文');else await expect(modal).toContainText('本页没有可恢复的模型原文');
+    await expect(await openCandidateRaw(page,'variables')).toContainText('本页面没有可恢复的模型原文');
     await page.screenshot({path:`docs/workflow-feedback/screenshots/react-variables-${info.project.name}.png`});
-    if(!desktop){await closeStageCandidates(page);await expect(page.getByRole('button',{name:'查看变量候选（未结算）',exact:true})).toBeFocused();}
+    if(!desktop){await closeStageCandidates(page);await expect(page.locator('.wf-rail .workflow-stages>li').nth(1).getByRole('button')).toBeFocused();}
     const world=await openStageCandidates(page,'world');
     await world.getByRole('button',{name:'主动查看完整世界候选',exact:true}).click();await expect(world.getByLabel('完整世界候选')).toContainText('worldCommands');
     await page.screenshot({path:`docs/workflow-feedback/screenshots/react-world-${info.project.name}.png`});await closeStageCandidates(page);
@@ -266,26 +266,13 @@ test('PC 失败状态：阶段标记、恢复入口、单阶段重试与诊断�
   expect(counter.calls).toBe(0); expect(await stored(page)).toEqual(before);
 });
 
-test('手机端保留原折叠卡片、候选弹窗与诊断折叠流程', async ({ page }, info) => {
-  test.skip(info.project.name !== 'mobile', '手机专用');
-  await seed(page, 'ready'); const before = await stored(page);
-  await openWorkflow(page);
-  await expect(page.locator('.wf-v2, .wf-rail')).toHaveCount(0); await expect(page.getByRole('tablist')).toHaveCount(0);
-  const cards = page.locator('.workflow-stages > li'); await expect(cards).toHaveCount(3);
-  await expect(cards.nth(0)).toContainText('正文生成位于行动输入旁。');
-  await expect(cards.nth(1).getByRole('button', { name: '重新生成变量候选', exact: true })).toBeVisible();
-  await expect(cards.nth(1).getByRole('button', { name: '查看变量候选（未结算）', exact: true })).toBeVisible();
-  await expect(cards.nth(2).getByRole('button', { name: '重新生成世界候选', exact: true })).toBeVisible();
-  await expect(cards.nth(2).getByRole('button', { name: '查看世界候选（未结算）', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: '完成本回合结算', exact: true })).toBeVisible();
-  await expect(page.locator('.runtime-switches').getByRole('checkbox')).toHaveCount(2);
-  await expect(page.locator('details.workflow-diagnostics > summary')).toHaveText('重试与变更详情');
-  await expect(page.locator('details.bound-input > summary')).toHaveText('本回合已绑定输入（只读）');
-  await page.locator('details.workflow-diagnostics > summary').click();
-  await page.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click();
-  await expect(page.locator('.stage-responses > details > summary')).toHaveText(['正文模型原文', '变量模型原文', '动态世界模型原文']);
-  await cards.nth(1).getByRole('button', { name: '查看变量候选（未结算）', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: '变量候选 · 未正式结算', exact: true }); await expect(dialog).toBeVisible();
-  await page.keyboard.press('Escape'); await expect(dialog).toBeHidden();
-  expect(await stored(page)).toEqual(before);
+test('手机非模态抽屉：两层导航、统一候选原文、诊断与只读绑定输入',async({page},info)=>{
+ test.skip(info.project.name!=='mobile','手机专用');await seed(page,'ready');const before=await stored(page);
+ await openWorkflow(page);const sheet=page.getByRole('dialog',{name:'三阶段工作流',exact:true});await expect(sheet).toHaveAttribute('aria-modal','false');
+ await expect(sheet.locator('.workflow-stages>li')).toHaveCount(3);await expect(sheet.getByRole('checkbox')).toHaveCount(2);
+ const candidate=await openStageCandidates(page,'variables');await expect(candidate.getByLabel('完整变量候选')).toHaveCount(0);
+ await candidate.getByRole('button',{name:'主动查看完整变量候选'}).click();await expect(candidate.getByLabel('完整变量候选')).toContainText('SetWorldClock');
+ await expect(await openCandidateRaw(page,'variables')).toContainText('没有可恢复');await openWorkflowDiagnostics(page);await expect(sheet.getByRole('region',{name:'运行诊断',exact:true})).toContainText('本次页面尚无错误');
+ await openBoundInput(page);await expect(sheet.locator('.bound-input')).toBeVisible();
+ await page.keyboard.press('Escape');await expect(sheet).toHaveCount(0);await expect(workflowTrigger(page)).toBeFocused();expect(await stored(page)).toEqual(before);
 });
