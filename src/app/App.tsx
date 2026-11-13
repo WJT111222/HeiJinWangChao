@@ -18,6 +18,10 @@ import { SettingsSchema, defaultSettings, settingsKey } from '../ui/settings/mod
 import type { Settings } from '../ui/settings/model';
 import { MobileHomeScreen } from '../ui/home/MobileHomeScreen';
 import { HomeScreen } from '../ui/home/HomeScreen';
+import { BackupImportDialog } from '../ui/home/BackupImportDialog';
+import type { ImportedBackup } from '../ui/home/BackupImportDialog';
+import { canShareFile, shareFile, useBackupExport } from '../ui/home/useBackupExport';
+import { backupReminderCount, backupStatus, forgetBackup, recordBackup, useBackupStatusVersion } from '../ui/home/backupStatus';
 import { dateTime } from '../ui/panels/playerView';
 import { SaveCard } from '../ui/SaveCard';
 import { saveKeyText } from '../services/storage/saveManagement';
@@ -108,6 +112,13 @@ export function App() {
   const [confirmSettingsClose, setConfirmSettingsClose] = useState(false);
   const [deleting, setDeleting] = useState<SaveSummary>();
   const [deletedTicket, setDeletedTicket] = useState<SaveSummary>();
+  // 存档备份：导入对话框（手机端先调起系统文件选择）、导出全部确认、手机分享。
+  const [importing, setImporting] = useState<{ file?: File }>();
+  const [exportAllOpen, setExportAllOpen] = useState(false);
+  const [shareable, setShareable] = useState<{ file: File; text: string }>();
+  const importInput = useRef<HTMLInputElement>(null);
+  const backupExport = useBackupExport(repository);
+  const backupVersion = useBackupStatusVersion();
   useEffect(() => {
     let disposed = false;
     let connection: SaveRepository | undefined;
@@ -261,7 +272,10 @@ export function App() {
     setBusy(true);
     setDeleteError('');
     try {
-      if (deleting.status === 'readable') await repository.delete(deleting.saveId, deleting.revision, deleting.instance ?? null);
+      if (deleting.status === 'readable') {
+        await repository.delete(deleting.saveId, deleting.revision, deleting.instance ?? null);
+        forgetBackup(deleting.saveId);
+      }
       else await repository.deleteUnreadable(deleting.storageKey);
       try {
         if (typeof deleting.storageKey === 'string') localStorage.removeItem(companionProfileKey(deleting.storageKey));
@@ -301,6 +315,36 @@ export function App() {
   }
   function requestDelete(save: SaveSummary) {setDeleteError(''); setSaveNotice(''); setDeleting(save);}
   const readableSaves = saves.filter(save => save.status === 'readable');
+  async function exportBackups(saveIds: string[]) {
+    setSaveNotice(''); setShareable(undefined);
+    try {
+      const result = await backupExport.exportSaves(saveIds);
+      setSaveNotice(result.text);
+      if (!desktopUi && canShareFile(result.file)) setShareable(result);
+      return true;
+    } catch {
+      setError('导出备份失败，未生成文件，存档没有改动。请刷新列表后重试。');
+      return false;
+    }
+  }
+  function openImport() {
+    setSaveNotice(''); setShareable(undefined);
+    // 手机端直接调起系统文件选择，选中后用底部抽屉预览；电脑端先显示可拖放的选择窗口。
+    if (desktopUi) setImporting({}); else importInput.current?.click();
+  }
+  function backupImported(imported: ImportedBackup[], exportedAt: string, complete: boolean) {
+    if (!imported.length) return;
+    const at = new Date(exportedAt);
+    recordBackup(imported, Number.isNaN(at.getTime()) ? new Date() : at);
+    setSaveNotice(imported.length === 1 ? `已导入「${imported[0].title}」，它已出现在存档馆里。` : `已导入 ${imported.length} 份存档，它们已出现在存档馆里。`);
+    refreshSaves();
+    if (complete) setImporting(undefined);
+  }
+  const backupOf = (save: SaveSummary) => save.status === 'readable' ? backupStatus(save) : undefined;
+  const reminderCount = backupVersion >= 0 ? backupReminderCount(readableSaves) : 0;
+  const backupReminder = reminderCount ? `有 ${reminderCount} 份存档从未备份。清除浏览器数据会丢失进度。` : undefined;
+  const shareAction = shareable && shareable.text === saveNotice
+    ? <button className="mh-share" onClick={() => void shareFile(shareable.file)}>分享到…</button> : undefined;
   const active = readableSaves.find((save) => save.saveId === selected) ?? readableSaves[0];
   // 游戏中由原GameScreen提供唯一维护控制器；设置只是展示，不拥有任务生命周期。
   function requestSettingsClose(afterClose?:()=>void){
@@ -422,7 +466,9 @@ export function App() {
         )
       ) : (
         !desktopUi ? <MobileHomeScreen saves={saves} active={active?.saveId} repository={repository}
-          loading={loading} busy={busy} blocked={settingsOpen || Boolean(deleting) || Boolean(notices.kind)}
+          loading={loading} busy={busy || backupExport.exporting} blocked={settingsOpen || Boolean(deleting) || Boolean(notices.kind) || Boolean(importing)}
+          onImport={openImport} onExport={save => save.status === 'readable' && void exportBackups([save.saveId])} backupExporting={backupExport.exporting}
+          backupOf={backupOf} noticeAction={shareAction} backupReminder={loading ? undefined : backupReminder}
           hasDraft={hasDraft} notice={saveNotice} listError={listError} notices={<NoticeLinks onOpen={notices.open}/>}
           deletion={deletedTicket} onVoidShown={()=>setDeletedTicket(undefined)}
           onCreate={()=>{changeForm(form);navigate('create');}} onOpen={openSave} onSelect={selectSave}
@@ -431,18 +477,40 @@ export function App() {
           active={active ? `${active.title} · 保存于 ${dateTime(active.updatedAt)}` : undefined}
           hasDraft={hasDraft} notice={saveNotice} notices={<NoticeLinks onOpen={notices.open} />}
           onCreate={() => { changeForm(form); navigate('create'); }} onContinue={() => active && openSave(active.saveId)}
-          onSettings={() => setSettingsOpen(true)} onRefresh={refreshSaves}>
+          onSettings={() => setSettingsOpen(true)} onRefresh={refreshSaves}
+          onImport={openImport} onExportAll={() => { setSaveNotice(''); setExportAllOpen(true); }}
+          exportAllDisabled={!readableSaves.length || backupExport.exporting} backupReminder={loading ? undefined : backupReminder}>
           {loading ? <Empty>正在读取本地存档…</Empty> : listError ? <p className="empty err">{listError}</p> : !saves.length ?
             <Empty>还没有开始的人生。<br />创建角色，留下第一份存档。</Empty> : <>
                 {saves.map((save, i) => (
                   <SaveCard key={`${typeof save.storageKey}:${saveKeyText(save.storageKey)}`} save={save} index={i}
                     selected={save.status === 'readable' && active?.saveId === save.saveId} repository={repository}
+                    backup={backupOf(save)} exporting={backupExport.exporting}
+                    onExport={save.status === 'readable' ? () => void exportBackups([save.saveId]) : undefined}
                     onOpen={openSave} onSelect={selectSave} onDelete={() => requestDelete(save)} />
                 ))}
 
           </>}
         </HomeScreen>
       )}
+      {!gameRoute && route !== '#create' && <input ref={importInput} type="file" accept=".json,application/json" hidden aria-label="选择备份文件"
+        onChange={event => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) setImporting({ file }); }} />}
+      {importing && repository && <BackupImportDialog repository={repository} file={importing.file}
+        onClose={() => setImporting(undefined)} onImported={backupImported} />}
+      {exportAllOpen && <Dialog title="导出全部存档" small feedback="info" seal="备"
+        closeDisabled={backupExport.exporting} onClose={() => { if (!backupExport.exporting) setExportAllOpen(false); }}>
+        <p>把 {readableSaves.length} 份可读取的存档打包成一个备份文件。{saves.length > readableSaves.length && '无法读取的存档不会打包，请用它卡片上的「导出原始数据」。'}</p>
+        <ul className="dialog-consequences">
+          <li>包含：游戏进度、未结算的草稿</li>
+          <li>不包含：AI 密钥、渠道与设置、撤回记录</li>
+        </ul>
+        <div className="dialog-actions feedback-dialog-actions">
+          <button disabled={backupExport.exporting} onClick={() => setExportAllOpen(false)}>取消</button>
+          <button className="primary" disabled={backupExport.exporting || !readableSaves.length}
+            onClick={() => void exportBackups(readableSaves.map(save => save.saveId)).then(done => { if (done) setExportAllOpen(false); })}>
+            {backupExport.exporting ? '正在导出…' : `导出 ${readableSaves.length} 份存档`}</button>
+        </div>
+      </Dialog>}
       {notices.kind && <NoticeDialog announcement={notices.announcement} key={desktopUi?notices.kind:'mobile-notice'} automatic={notices.automatic} kind={notices.kind} muted={notices.muted}
         onMutedChange={notices.setMuted} onClose={notices.close} />}
       {settingsOpen && !(gameRoute && loaded) && renderSettings()}

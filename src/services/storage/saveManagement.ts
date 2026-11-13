@@ -1,7 +1,7 @@
 import { DataError } from '../../domain/common';
 import type { GameState } from '../../domain/state';
 
-export type ReadableSaveSummary = Pick<GameState, 'saveId' | 'title' | 'revision' | 'schemaVersion' | 'updatedAt'> & {
+export type ReadableSaveSummary = Pick<GameState, 'saveId' | 'title' | 'revision' | 'turnNumber' | 'schemaVersion' | 'updatedAt'> & {
   status: 'readable'; storageKey: IDBValidKey;
   /** 导入备份后的实例身份；删除时原样传回，旧列表不能删除已被替换的同 ID 存档。原存档省略。 */
   instance?: string;
