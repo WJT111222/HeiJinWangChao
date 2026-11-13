@@ -1,6 +1,7 @@
 import {test,expect} from './helpers/test';
 import type {Page} from '@playwright/test';
 import {seedNightSeal,nightSealStored} from './helpers/nightSeal';
+import {openStageCandidates,openWorkflowDiagnostics,openWorkflowStage} from './helpers/gameLayout';
 
 const shots='docs/mobile-main-batch1/screenshots';
 test.beforeEach(async({page})=>{
@@ -42,9 +43,13 @@ for(const mode of ['opening','ready','error'] as const)test(`工作流 ${mode}�
  const sheet=await workflow(page);await expect(sheet.locator('.workflow-stages>li')).toHaveCount(3);await expect(sheet.getByRole('checkbox',{name:'变量管理',exact:true})).toBeChecked();await expect(sheet.getByRole('checkbox',{name:'动态世界',exact:true})).toBeChecked();
  if(mode==='ready'){
   await expect(sheet.getByRole('button',{name:'完成本回合结算',exact:true})).toBeEnabled();
-  for(const label of ['变量','世界']){const trigger=sheet.getByRole('button',{name:`查看${label}候选（未结算）`,exact:true});await trigger.click();const candidate=page.getByRole('dialog',{name:`${label}候选 · 未正式结算`,exact:true});await expect(candidate).toBeVisible();await candidate.getByRole('button',{name:`主动查看完整${label}候选`,exact:true}).click();await expect(candidate.getByLabel(`完整${label}候选`,{exact:true})).not.toBeEmpty();await page.keyboard.press('Escape');await expect(sheet).toBeVisible();await expect(trigger).toBeFocused();}
+  for(const [stage,label] of [['variables','变量'],['world','世界']] as const){
+   const candidate=await openStageCandidates(page,stage);await expect(candidate).toBeVisible();await expect(candidate.getByLabel(`完整${label}候选`,{exact:true})).toHaveCount(0);
+   await candidate.getByRole('button',{name:`主动查看完整${label}候选`,exact:true}).click();await expect(candidate.getByLabel(`完整${label}候选`,{exact:true})).not.toBeEmpty();
+   await sheet.getByRole('button',{name:'返回三阶段列表',exact:true}).click();await expect(sheet).toBeVisible();await expect(sheet.locator('.workflow-stages>li').nth(stage==='variables'?1:2).locator('.wf-ri')).toBeFocused();
+  }
  }
- if(mode==='error'){await expect(sheet.getByRole('button',{name:'继续未完成阶段',exact:true})).toBeEnabled();await sheet.locator('.workflow-diagnostics>summary').click();await expect(sheet.locator('.workflow-diagnostics')).toContainText('world_schema');}
+ if(mode==='error'){await expect(sheet.getByRole('button',{name:'继续未完成阶段',exact:true})).toBeEnabled();await openWorkflowDiagnostics(page);await expect(sheet.locator('.workflow-diagnostics')).toContainText('world_schema');}
  await page.screenshot({path:`${shots}/react-${mode}-390.png`});await expect(page.getByRole('button',{name:'重新 Roll',exact:true})).toHaveCount(0);await page.keyboard.press('Escape');expect(await nightSealStored(page)).toEqual(before);await noOverflow(page);
 });
 
@@ -70,8 +75,8 @@ test('长正文、完整状态与金额：内部滚动、城市收窄、输入�
 test('生成中与失败恢复：关闭抽屉不取消，显式取消，不额外请求',async({page})=>{
  await seedWorkflow(page,'opening');let calls=0,release!:()=>void;const hold=new Promise<void>(r=>{release=r;});await page.route('https://mobile.mock.invalid/**',async route=>{calls++;await hold;await route.fulfill({status:401,body:'mock-only'}).catch(()=>undefined);});
  let sheet=await workflow(page);await sheet.getByRole('button',{name:'自动生成开局',exact:true}).click();await expect.poll(()=>calls).toBe(1);await expect(page.locator('.workflow')).toHaveAttribute('data-state','busy');await page.screenshot({path:`${shots}/react-busy-390.png`});await page.keyboard.press('Escape');expect(calls).toBe(1);await expect(page.locator('.workflow')).toHaveAttribute('data-state','busy');
- sheet=await workflow(page);await sheet.getByRole('button',{name:'取消自动执行',exact:true}).click();release();await expect(sheet.getByRole('button',{name:'继续未完成阶段',exact:true})).toBeEnabled();expect((await nightSealStored(page)).state.turnNumber).toBe(0);expect(calls).toBe(1);
- await sheet.getByRole('button',{name:'继续未完成阶段',exact:true}).click();await expect.poll(()=>calls).toBe(2);await expect(sheet.getByRole('alert').first()).toBeVisible();await expect(sheet.getByRole('button',{name:'继续未完成阶段',exact:true})).toBeEnabled();await page.screenshot({path:`${shots}/react-failure-390.png`});
+ sheet=await workflow(page);await sheet.getByRole('button',{name:'取消自动执行',exact:true}).click();release();const diagnostics=page.getByRole('dialog',{name:'重试与变更详情',exact:true});await expect(diagnostics).toBeVisible();await page.keyboard.press('Escape');await expect(diagnostics).toHaveCount(0);await expect(sheet).toBeVisible();await expect(sheet.getByRole('button',{name:'继续未完成阶段',exact:true})).toBeEnabled();expect((await nightSealStored(page)).state.turnNumber).toBe(0);expect(calls).toBe(1);
+ await sheet.getByRole('button',{name:'继续未完成阶段',exact:true}).click();await expect.poll(()=>calls).toBe(2);await expect(diagnostics).toBeVisible();await page.keyboard.press('Escape');await expect(diagnostics).toHaveCount(0);await openWorkflowStage(page,'story');await expect(sheet.getByRole('alert').first()).toBeVisible();await expect(sheet.getByRole('button',{name:'继续未完成阶段',exact:true})).toBeEnabled();await page.screenshot({path:`${shots}/react-failure-390.png`});
 });
 
 test('正式结算与发送复用原回调，开局不可撤回',async({page})=>{
