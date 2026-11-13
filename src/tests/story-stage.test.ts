@@ -166,6 +166,32 @@ describe('真实正文入口与草稿原子替换', () => {
       expect(client).toHaveBeenCalledTimes(1);
     },
   );
+  it('真实 SSE 中无标签 Step 0–15 + 小说正文被安全恢复，只保存一次草稿且不改变正式状态', async () => {
+    const before = await repo.load(draft.saveId);
+    const steps = Array.from({ length: 16 }, (_, i) => `Step ${i}｜本轮创作判断\n- 维持真实人物关系与已有场景。`).join('\n');
+    const raw = steps + '\n现在按照这些规划写正文，保证层次完整。\n'
+      + narrative + '<短期记忆>等车</短期记忆><变量规划>[]</变量规划>'
+      + '<行动选项>留在原地\n看看周围\n询问站台</行动选项>';
+    const transport = vi.fn<typeof fetch>(async () => sse(raw));
+    const saved = await runner(transport).generate({ ...setup(), draft });
+    expect(saved.story?.narrative).toBe(narrative);
+    expect(saved.story?.variableGuide).toEqual([]);
+    expect(saved.story?.actionOptions).toHaveLength(3);
+    expect(await repo.loadDraft(draft.saveId)).toEqual(saved);
+    expect(await repo.load(draft.saveId)).toEqual(before);
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
+  it('不确定的无标签前缀不能保存草稿，且不会额外请求模型', async () => {
+    const before = await repo.loadDraft(draft.saveId);
+    const transport = vi.fn<typeof fetch>(async () => sse(
+      'Step 0｜没有完整规划\n现在按照这些规划写正文。\n'
+      + narrative + '<短期记忆>等车</短期记忆><变量规划>[]</变量规划>'
+      + '<行动选项>留在原地\n看看周围\n询问站台</行动选项>'
+    ));
+    await expect(runner(transport).generate({ ...setup(), draft })).rejects.toMatchObject({ code: 'invalid_output' });
+    expect(await repo.loadDraft(draft.saveId)).toEqual(before);
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
   it('既有合法 regular 草稿使用普通模板与绑定输入，不伪造已结算记录', async () => {
     await repo.deleteDraft(draft.saveId, 0);
     draft = createTurnDraft(draft.saveId, 0, 'existing-regular', 'regular', '等待公交车');
