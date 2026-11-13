@@ -15,13 +15,32 @@ function MapRecords<T>({label,entries,text,render}:{label:string;entries:readonl
 const rivers={cq:<><path d="M-20 60 C160 40 260 150 420 120 S700 40 900 90"/><path className="thin" d="M380 260 C420 200 400 150 430 118"/><text x="610" y="58">长江</text><text x="360" y="250">嘉陵江</text></>,sh:<><path d="M120 -10 C200 80 140 170 260 240 S520 290 700 320"/><text x="300" y="232">黄浦江</text></>,hrb:<><path d="M-20 40 C200 70 420 20 900 60"/><text x="520" y="34">松花江</text></>,gz:<><path d="M-20 200 C200 170 380 230 560 200 S800 170 900 190"/><text x="420" y="196">珠江</text></>};
 export function MapPanel({view,initialId,uiState,onUiStateChange,onNpc,onEvent,mobile=false}:{view:PlayerView;mobile?:boolean;initialId?:string;uiState?:MapUiState;onUiStateChange?:(state:MapUiState)=>void;onNpc:(id:string)=>void;onEvent:(id:string)=>void}){
  const map=useMemo(()=>mapProjection(view.locations,view.protagonist.locationId,view.npc),[view.locations,view.protagonist.locationId,view.npc]);
- const [selected,setSelected]=useState(initialId??uiState?.selected??view.protagonist.locationId),[expanded,setExpanded]=useState(()=>new Set(uiState?.expanded??map.currentPath.map(p=>p.id))),[query,setQuery]=useState(uiState?.query??''),[limits,setLimits]=useState<Record<string,number>>(uiState?.limits??{});
- const [layerId,setLayerId]=useState<string|undefined>(uiState?.layer??map.parent.get(initialId??selected??''));
+ // A phone cross-archive target is a navigation request, above saved reading state.
+ const target=mobile&&initialId&&map.nodes.has(initialId)?initialId:undefined;
+ const savedSelected=uiState?.selected&&map.nodes.has(uiState.selected)?uiState.selected:undefined;
+ const fallback=map.nodes.has(view.protagonist.locationId)?view.protagonist.locationId:map.roots[0]?.id;
+ const phoneSelected=target??savedSelected??fallback;
+ const savedLayer=uiState&&Object.hasOwn(uiState,'layer')&&savedSelected&&(!uiState.layer||map.nodes.has(uiState.layer));
+ function revealTarget(previous:Record<string,number>,id:string){
+  const parent=map.parent.get(id),siblings=parent?map.children.get(parent)??[]:map.roots,key=`mobile:${parent??'roots'}`;
+  return {...previous,[key]:Math.max(previous[key]??50,siblings.findIndex(p=>p.id===id)+1)};
+ }
+ const [selected,setSelected]=useState(mobile?phoneSelected:initialId??uiState?.selected??view.protagonist.locationId),[expanded,setExpanded]=useState(()=>new Set(uiState?.expanded??map.currentPath.map(p=>p.id))),[query,setQuery]=useState(target?'':uiState?.query??''),[limits,setLimits]=useState<Record<string,number>>(()=>target?revealTarget(uiState?.limits??{},target):uiState?.limits??{});
+ const [layerId,setLayerId]=useState<string|undefined>(mobile?(target?map.parent.get(target):savedLayer?uiState?.layer:map.parent.get(phoneSelected??'')):uiState?.layer??map.parent.get(initialId??selected??''));
+ const lastInitialId=useRef(initialId);
  const layerTitle=useRef<HTMLHeadingElement>(null);
  const main=useRef<HTMLElement>(null),treePane=useRef<HTMLElement>(null),heading=useRef<HTMLHeadingElement>(null),pendingFocus=useRef(Boolean(initialId));
  useEffect(()=>{onUiStateChange?.({selected,expanded:[...expanded],query,limits,...(mobile?{layer:layerId}: {})});},[selected,expanded,query,limits,layerId,mobile,onUiStateChange]);
  useEffect(()=>{if(pendingFocus.current){pendingFocus.current=false;if(mobile){layerTitle.current?.focus({preventScroll:true});return;}heading.current?.focus({preventScroll:true});const card=heading.current?.closest('.place-card');if(card&&main.current)main.current.scrollTop+=card.getBoundingClientRect().top-main.current.getBoundingClientRect().top-12;const node=[...(treePane.current?.querySelectorAll<HTMLElement>('[data-location-id]')??[])].find(n=>n.dataset.locationId===selected);if(node&&treePane.current){const box=node.getBoundingClientRect(),pane=treePane.current.getBoundingClientRect();if(box.top<pane.top||box.bottom>pane.bottom)treePane.current.scrollTop+=box.top-pane.top-20;}}},[selected,expanded,mobile]);
  const place=map.nodes.get(selected)??map.nodes.get(view.protagonist.locationId)??map.roots[0],path=place?map.path(place.id):[],root=path[0],chain=new Set(path.map(p=>p.id)),me=new Set(map.currentPath.map(p=>p.id));
+ // Consume only a changed target; rerenders must not undo manual drill/search/breadcrumbs.
+ useEffect(()=>{
+  if(!mobile)return;
+  const changed=lastInitialId.current!==initialId;lastInitialId.current=initialId;
+  const next=changed&&target?target:!map.nodes.has(selected??'')?fallback:undefined;
+  if(next){pendingFocus.current=true;setSelected(next);setLayerId(map.parent.get(next));setQuery('');setExpanded(previous=>new Set([...previous,...map.path(next).map(p=>p.id)]));setLimits(previous=>revealTarget(previous,next));}
+  else if(layerId&&!map.nodes.has(layerId))setLayerId(map.parent.get(selected??''));
+ },[mobile,initialId,map,selected,layerId,target,fallback]);
  const needle=query.trim().toLocaleLowerCase(),matches=needle?view.locations.filter(p=>p.name.toLocaleLowerCase().includes(needle)):view.locations,visible=mobile?new Set<string>():new Set(matches.flatMap(p=>map.path(p.id).map(n=>n.id)));
  function choose(id:string){if(!map.nodes.has(id))return;pendingFocus.current=true;setSelected(id);setExpanded(prev=>new Set([...prev,...map.path(id).map(p=>p.id)]));if(needle&&!visible.has(id))setQuery('');
   setLimits(prev=>{const next={...prev};for(const p of map.path(id)){const up=map.parent.get(p.id),siblings=up?map.children.get(up)??[]:map.roots;next[up??'__roots__']=Math.max(next[up??'__roots__']??50,siblings.findIndex(n=>n.id===p.id)+1);}return next;});

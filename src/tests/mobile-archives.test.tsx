@@ -43,3 +43,38 @@ test('物品仍仅属主角；旧物品估值、同组历史及史料不因手�
  expect(inventory).toContain('全部，9种物品');expect(inventory).not.toContain('他人物品不应显示');expect(inventory).not.toContain('无主物品不应显示');
  expect(history).toContain('统一历史主轴');expect(history).toContain('纪事范围');expect(history).toContain('时间待考');expect(history).toContain('史料记录');expect(state).toEqual(before);
 });
+
+test('手机跨档案目标优先于旧层级、搜索与分页：父层、区域块及详情一致',()=>{
+ const view=playerView(mobileArchivesState(80));
+ const uiState={selected:'map-cross-city',layer:'map-abroad',expanded:[],query:'旧宿舍',limits:{'mobile:map-region':2}};
+ const html=renderToStaticMarkup(<MapPanel view={view} mobile initialId="map-extra-0070" uiState={uiState} onNpc={()=>{}} onEvent={()=>{}}/>);
+ expect(html).toMatch(/aria-current="location">沿江资料区<\/button>/);
+ expect(html).toMatch(/data-location-id="map-extra-0070" aria-label="查看地点：地点档案70" aria-pressed="true"/);
+ expect(html).not.toContain('value="旧宿舍"');expect(html).toContain('地点档案70</h3>');
+ expect(uiState).toEqual({selected:'map-cross-city',layer:'map-abroad',expanded:[],query:'旧宿舍',limits:{'mobile:map-region':2}});
+});
+test('手机普通重开保留合法层级、选中、搜索及全部根地点视图',()=>{
+ const view=playerView(mobileArchivesState());
+ const props={view,mobile:true,onNpc:()=>{},onEvent:()=>{}};
+ const uiState={selected:'map-cross-city',layer:'map-abroad',expanded:[],query:'',limits:{}};
+ const saved=renderToStaticMarkup(<MapPanel {...props} uiState={uiState}/>);
+ expect(saved).toMatch(/aria-current="location">国外的工作地点<\/button>/);
+ expect(saved).toMatch(/data-location-id="map-cross-city"[^>]+aria-pressed="true"/);
+ const roots=renderToStaticMarkup(<MapPanel {...props} uiState={{...uiState,layer:undefined}}/>);
+ expect(roots).toMatch(/aria-current="location">全部地点<\/button>/);
+ const search=renderToStaticMarkup(<MapPanel {...props} uiState={{...uiState,query:'跨城关联'}}/>);
+ expect(search).toContain('value="跨城关联"');expect(search).toContain('地点搜索结果');
+});
+test('手机无效目标与失效阅读引用安全回退；异常父级按原森林定位',()=>{
+ const view=playerView(mobileArchivesState()),before=structuredClone(view);
+ const props={view,mobile:true,onNpc:()=>{},onEvent:()=>{}};
+ const html=renderToStaticMarkup(<MapPanel {...props} initialId="not-recorded" uiState={{selected:'removed',layer:'removed-parent',expanded:[],query:'',limits:{}}}/>);
+ expect(html).toMatch(/aria-current="location">旧厂房街区<\/button>/);
+ expect(html).toMatch(/data-location-id="map-cafe"[^>]+aria-pressed="true"/);
+ expect(html).not.toContain('not-recorded');expect(view).toEqual(before);
+ const broken={...view,locations:[{id:'orphan',name:'孤立地点',parentId:'missing'}]};
+ const orphan=renderToStaticMarkup(<MapPanel {...props} view={broken} initialId="orphan"/>);
+ expect(orphan).toMatch(/aria-current="location">全部地点<\/button>/);
+ expect(orphan).toMatch(/data-location-id="orphan"[^>]+aria-pressed="true"/);
+ expect(orphan).toContain('上级地点记录缺失');
+});

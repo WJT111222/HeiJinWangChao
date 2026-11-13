@@ -110,3 +110,55 @@ PC：901px与1440px，NPC/组织/地图/物品/经济/事件/历史/记忆/设�
 ## 修改文件
 
 具体源码、测试及配置见 [implementation-files.txt](validation/implementation-files.txt)。另新增本报告、按批测试证据、真实截图与五张设计并排图，不提交参考ZIP、私人数据或依赖目录。
+
+
+## 十代目定向返修：手机地图跨档案定位（2026-11-13）
+
+**返修前 HEAD**：`71af04a92c51bf083c701be4793d7d8dcd211dba`。开工通过 GitHub PR/完整 review `5889088083` 及 fetch 再核对；main 仍为 `bcc51dd97c13ed87a812accb5de471089527b3eb`，分支 `feat/mobile-redesign-batch5` 无后续提交，工作区干净。本轮继续原 Draft PR #131；返修后完整 SHA 见 PR HEAD/交付回复。
+
+### 根因与最小修复
+
+`selected` 初始化优先采用 `initialId`，但 `layerId` 优先恢复 `uiState.layer`，旧搜索也继续生效：新地点详情可能配上旧父层、旧区域块，甚至因旧查询完全看不到区域块。仅 useState 初始化还无法处理同一个 MapPanel 挂载期间目标变更。
+
+只调整 `MapPanel.tsx` 的手机初始化和目标同步，不改 mapProjection、GameScreen 或共享 Dialog：
+
+1. 通过原安全森林 `nodes/parent` 验证目标。**有效外部 initialId → 目标直接父层、目标选中**；清除遮挡它的旧查询，仅提高目标所属层的显示限额，保证第50项之后的目标也可见，其他阅读限额不清空。
+2. 没有新目标时保留有效选中、父层、查询和限额；明确保留 `layer: undefined` 的“全部地点”阅读状态，不将其误当作未初始化。
+3. 无效目标不创建、不猜测地点。初次挂载时使用合法旧阅读状态，否则回到主角有效地点/安全森林根；挂载期间收到无效新目标则保留当前合法阅读。正式地点集合变化导致选中地点消失时安全回退；失效父层使用原森林父层。
+4. ref 记录已消费的原始目标 ID；只在 ID 变化时同步，不因渲染、手动下钻、面包屑或搜索重复应用旧导航。原焦点、选择、定位、NPC/事件链接与滚动处理继续复用。
+5. 所有新导航分支仅在 `mobile=true` 执行，PC 构造条件与处理路径保留。没有清空整套阅读状态，没有修改正式数据、AI输入或权限。
+
+### 新增回归及分批执行结果
+
+- 三项 Vitest：旧父层/查询/分页与新目标冲突；普通重开（含全部根地点与查询）；无效/失效目标及异常父级安全回退。初轮 **7通过 / 3失败 / 0跳过**（原七项通过，新增三项复现）；修复后连同 `map-archive.test.tsx` **17通过 / 0失败 / 0跳过**，2文件，1.34秒。
+- 新 Chromium 真实 GameScreen 导航：主动下钻海外A→选中地点→关闭→普通重开保持A→留下搜索→世界事件以正式locationId跳转阅览室B。检查详情、空查询、直接父层面包屑、层标题、唯一目标区域块与 aria-pressed；再次普通打开、搜索、定位到我保持一致。state/draft 深比较不变，模型POST为零。
+- 新 Chromium 同挂载场景：真实 React MapPanel/Dialog 在测试专用 root 中更换 initialId、选中分页外目标、手动面包屑/搜索后同ID重渲染、无效目标、选中地点从投影移除、异常父级孤立节点。生产组件和 native Dialog 没有被 shim；测试通过 render 更新 props，不需要新的产品入口。
+
+| 独立批次 | 通过 / 失败 / 跳过 | 结果含义 |
+| --- | --- | --- |
+| 修复前新增Chromium两项 | 0 / 2 / 0 | 第一项复现旧查询遮住新目标；第二项测试root自动ID冲突，不能当作第二个产品缺陷的证据 |
+| 修复后定向Chromium六项 | 5 / 1 / 0 | 跨档案核心场景、既有地图搜索/定位/NPC跳转、世界家族导航与两个PC对照通过；同挂载测试仍因root的ID冲突失败 |
+| 仅修正测试root唯一前缀后单项复测 | 1 / 0 / 0 | 同挂载全场景通过，7.0秒；没有删除或弱化原断言，不是一次6/6整批重跑 |
+| TypeScript、Lint、生产Build | 均退出0 | Build有原有大chunk提醒；无新增正式数据契约 |
+
+测试root的独立 `createRoot` 曾与主React root生成相同useId，导致 `aria-labelledby` 指向主界面城市文本。页面实际已有地图内容，但按正确Dialog名称定位失败。仅在**测试**root设置 `identifierPrefix: 'map-navigation-'`，保持原可访问名称断言和完整导航/只读断言。未修改通用Dialog或产品ARIA规则。所有修复前/后日志和每项结果保存在 [本轮证据目录](validation/map-navigation-review/)，只去除日志行末空格及末尾空行，不改结果；完整trace原件留在本任务 `/tmp/pr131-map-*-chromium/`，不能将临时trace目录视为长期备份。
+
+复现/复测命令：
+
+```sh
+npx vitest run src/tests/mobile-archives.test.tsx src/tests/map-archive.test.tsx
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/mobile-archives.spec.ts --config=playwright.mobile-archives.config.ts --grep '地图跨档案新目标|地图同一挂载|地图逐层下钻|世界家族并行|PC 901px|PC 1440px'
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/mobile-archives.spec.ts --config=playwright.mobile-archives.config.ts --grep '地图同一挂载'
+npm run typecheck
+npm run lint
+npm run build
+git diff --check
+```
+
+### PC保护、实际改动及边界
+
+PC901px/1440px本轮再次执行既有九档案/设置与未修改 main 的真实截图对照，18组逐像素一致，结果文件仍为 `pc-901.json` / `pc-1440.json`；含地图在内的原图没有变化。新增 [手机跨档案定位图](screenshots/地图跨档案定位-390x844.png)。
+
+本轮仅修改 `src/ui/panels/MapPanel.tsx`、`src/tests/mobile-archives.test.tsx`、`e2e/mobile-archives.spec.ts`、本报告，另新增本轮日志/结构化结果与一张真实React截图。没有修改其他八类档案、CSS、GameScreen、mapView、V9 Schema、IndexedDB V4、Repository、备份、Commit、Undo、Prompt、AI、记忆维护或#120工作流。与返修前HEAD逐目录diff核对保护范围无变化。
+
+没有重复约700项全量E2E，没有付费AI请求、合并、部署或发布。真实iOS/Android软键盘、读屏、连续触摸及低端手机性能边界仍按上一轮标注，不能由本次Mock宣布通过。无本轮已知阻断项；等待十代目复审，不开始第六批。

@@ -135,3 +135,38 @@ test('封面打开设置的软键盘可视区：输入、保存与关闭可达',
  await page.setViewportSize({width:390,height:844});await page.goto('/');let posts=0;page.on('request',r=>{if(r.method()==='POST')posts++;});await page.getByRole('button',{name:'设置',exact:true}).click();const settings=page.getByRole('dialog',{name:'设置',exact:true});await settings.getByRole('button',{name:'运行',exact:true}).click();await page.evaluate(()=>{Object.defineProperty(window.visualViewport!,'height',{configurable:true,value:420});window.visualViewport!.dispatchEvent(new Event('resize'));});
  const input=settings.getByRole('spinbutton',{name:'请求超时（秒）',exact:true});await input.click();await input.fill('242');await expect(settings.getByRole('button',{name:'保存本地设置',exact:true})).toBeInViewport({ratio:1});const box=(await settings.boundingBox())!;expect(box.y+box.height).toBeLessThanOrEqual(421);await expect(settings.getByRole('button',{name:'关闭资料界面',exact:true})).toBeInViewport({ratio:1});await settings.getByRole('button',{name:'保存本地设置',exact:true}).click();await expect(settings).toContainText('本地偏好已保存');await shot(page,'封面设置键盘可视区-390x844');await settings.getByRole('button',{name:'关闭资料界面',exact:true}).click();await expect(settings).toHaveCount(0);expect(posts).toBe(0);
 });
+
+test('地图跨档案新目标覆盖旧层级：保留普通重开、搜索、定位与只读',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await seedMobileArchives(page);const before=await storedArchives(page),verify=await readonly(page);
+ let paper=await openArchive(page,'地图');
+ await paper.getByRole('navigation',{name:'地图层级',exact:true}).getByRole('button',{name:'全部地点',exact:true}).click();
+ await paper.locator('.map-zones [data-location-id="map-overseas"]').click();await paper.locator('.map-zones [data-location-id="map-abroad"]').click();await paper.locator('.map-zones [data-location-id="map-cross-city"]').click();
+ await expect(paper.locator('.mobile-map-box h4')).toHaveText('国外的工作地点');await page.keyboard.press('Escape');
+ paper=await openArchive(page,'地图');await expect(paper.locator('.mobile-map-box h4')).toHaveText('国外的工作地点');await expect(paper.locator('.map-zones [data-location-id="map-cross-city"]')).toHaveAttribute('aria-pressed','true');
+ await paper.getByLabel('搜索地点',{exact:true}).fill('旧宿舍');await page.keyboard.press('Escape');
+ paper=await openArchive(page,'世界事件');await paper.getByRole('button',{name:'查看主事件：临江旧城档案修复工程',exact:true}).click();await paper.getByRole('article',{name:'事件档案',exact:true}).getByRole('button',{name:'街角阅览室',exact:true}).click();
+ paper=page.getByRole('dialog',{name:'地图',exact:true});await expect(paper.locator('.place-card h3')).toHaveText('街角阅览室');await expect(paper.getByLabel('搜索地点',{exact:true})).toHaveValue('');
+ await expect(paper.locator('.map-breadcrumb [aria-current="location"]')).toHaveText('旧厂房街区');await expect(paper.locator('.mobile-map-box h4')).toHaveText('旧厂房街区');await expect(paper.locator('.map-zones [data-location-id]')).toHaveCount(1);await expect(paper.locator('.map-zones [data-location-id="map-cafe"]')).toHaveAttribute('aria-pressed','true');
+ await page.keyboard.press('Escape');paper=await openArchive(page,'地图');await expect(paper.locator('.mobile-map-box h4')).toHaveText('旧厂房街区');
+ await paper.getByLabel('搜索地点',{exact:true}).fill('跨城关联');await paper.getByRole('region',{name:'地点搜索结果'}).getByRole('button').click();await expect(paper.locator('.mobile-map-box h4')).toHaveText('国外的工作地点');await expect(paper.locator('.map-zones [data-location-id="map-cross-city"]')).toHaveAttribute('aria-pressed','true');
+ await paper.getByRole('button',{name:'定位到我',exact:true}).click();await expect(paper.locator('.mobile-map-box h4')).toHaveText('旧厂房街区');await expect(paper.locator('.map-zones [data-location-id="map-cafe"]')).toHaveAttribute('aria-pressed','true');await archiveFits(page);await shot(page,'地图跨档案定位-390x844');expect(await storedArchives(page)).toEqual(before);verify();
+});
+
+test('地图同一挂载目标变更仅消费一次：无效目标、失效节点及异常父级安全',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await seedMobileArchives(page);const before=await storedArchives(page),verify=await readonly(page);
+ await page.evaluate(async()=>{
+  const paths=['/node_modules/.vite/deps/react.js','/node_modules/.vite/deps/react-dom_client.js','/src/ui/Dialog.tsx','/src/ui/panels/MapPanel.tsx','/src/ui/panels/playerView.ts','/src/tests/fixtures/mobileArchives.ts'];
+  const [ReactModule,ClientModule,{Dialog},{MapPanel},{playerView},{mobileArchivesState}]=await Promise.all(paths.map(p=>import(p)));
+  const React=ReactModule.default??ReactModule,createRoot=ClientModule.createRoot??ClientModule.default.createRoot,view=playerView(mobileArchivesState(80));
+  const host=document.createElement('div');document.querySelector('.app-shell')!.append(host);const root=createRoot(host,{identifierPrefix:'map-navigation-'});
+  let initialId='map-cross-city';const render=()=>root.render(React.createElement(Dialog,{title:'地图同步回归',className:'mobile-archive',mobileVariant:'sheet',sheetFull:true,onClose:()=>root.unmount()},React.createElement(MapPanel,{view,mobile:true,initialId,onNpc:()=>{},onEvent:()=>{}})));
+  Object.assign(window,{mapNavigationTarget:(id:string)=>{initialId=id;render();},mapNavigationRefresh:()=>render(),mapNavigationRemove:()=>{view.locations=view.locations.filter((p:{id:string})=>p.id!=='map-extra-0070');render();},mapNavigationOrphan:()=>{view.locations=[...view.locations,{id:'orphan',name:'孤立地点',parentId:'missing'}];initialId='orphan';render();}});render();
+ });
+ const paper=page.getByRole('dialog',{name:'地图同步回归',exact:true});await expect(paper.locator('.mobile-map-box h4')).toHaveText('国外的工作地点');
+ await page.evaluate(()=>Reflect.get(window,'mapNavigationTarget')('map-extra-0070'));await expect(paper.locator('.mobile-map-box h4')).toHaveText('沿江资料区');await expect(paper.locator('.map-zones [data-location-id="map-extra-0070"]')).toHaveAttribute('aria-pressed','true');await expect(paper.locator('.place-card h3')).toHaveText('地点档案70');
+ await paper.getByRole('navigation',{name:'地图层级',exact:true}).getByRole('button',{name:'全部地点',exact:true}).click();await page.evaluate(()=>Reflect.get(window,'mapNavigationRefresh')());await expect(paper.locator('.mobile-map-box h4')).toHaveText('全部已记录地点');
+ await paper.getByLabel('搜索地点',{exact:true}).fill('旧宿舍');await page.evaluate(()=>Reflect.get(window,'mapNavigationRefresh')());await expect(paper.getByLabel('搜索地点',{exact:true})).toHaveValue('旧宿舍');await paper.getByRole('region',{name:'地点搜索结果'}).getByRole('button').click();await expect(paper.locator('.mobile-map-box h4')).toHaveText('阅览街');
+ await page.evaluate(()=>Reflect.get(window,'mapNavigationTarget')('not-recorded'));await expect(paper.locator('.place-card h3')).toHaveText('旧宿舍');await expect(paper.locator('.mobile-map-box h4')).toHaveText('阅览街');
+ await page.evaluate(()=>Reflect.get(window,'mapNavigationTarget')('map-extra-0070'));await expect(paper.locator('.map-zones [data-location-id="map-extra-0070"]')).toHaveAttribute('aria-pressed','true');await page.evaluate(()=>Reflect.get(window,'mapNavigationRemove')());await expect(paper.locator('.place-card h3')).toHaveText('街角阅览室');await expect(paper.locator('.mobile-map-box h4')).toHaveText('旧厂房街区');
+ await page.evaluate(()=>Reflect.get(window,'mapNavigationOrphan')());await expect(paper.locator('.mobile-map-box h4')).toHaveText('全部已记录地点');await expect(paper.locator('.map-zones [data-location-id="orphan"]')).toHaveAttribute('aria-pressed','true');await expect(paper).toContainText('上级地点记录缺失');await expect(paper.locator('.place-card h3')).toHaveText('孤立地点');await page.keyboard.press('Escape');expect(await storedArchives(page)).toEqual(before);verify();
+});
