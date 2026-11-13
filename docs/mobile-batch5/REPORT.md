@@ -57,7 +57,7 @@ CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/mobile-archives.spec.ts 
 CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/pr120-integration.spec.ts --config=playwright.mobile-archives.config.ts --grep '抽屉打开时真实输入发送'
 ```
 
-未执行全量 Vitest、约700项 Chromium 或真实收费模型测试，不将定向结果冒充全量验收。具体逐项结果、每批状态/耗时见 [chromium-batches.json](validation/chromium-batches.json)；工程原始输出保存在 validation/，没有将多个批次成绩相加伪装为一次全绿。
+未执行全量 Vitest、约700项 Chromium 或真实收费模型测试，不将定向结果冒充全量验收。具体逐项结果、每批状态/耗时见 [chromium-batches.json](validation/chromium-batches.json)；工程执行输出保存在 validation/（仅清理行末空格和末尾空行，未更改结果），没有将多个批次成绩相加伪装为一次全绿。
 
 ## 初轮失败和修复记录
 

@@ -39,4 +39,3 @@ Received: "<div class="eco" data-mobile="true"><div class="metric-row" aria-labe
       Tests  2 failed | 39 passed (41)
    Start at  09:13:18
    Duration  2.42s (tests 58%, import 29%, transform 13%, worker 1%)
-
