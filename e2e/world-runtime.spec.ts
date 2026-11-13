@@ -176,6 +176,7 @@ test('世界生成、补算、只读查看与刷新恢复，真实路由和快�
   expect(second.draft.variables).toEqual(first.draft.variables);
   await page.getByRole('button', { name: '设置', exact: true }).click();
   await page.getByRole('button', { name: '提示词管理', exact: true }).click();
+  await page.getByRole('button', { name: '高级', exact: true }).click();
   await page.getByRole('combobox', { name: '检查阶段', exact: true }).selectOption('world');
   await page.getByRole('combobox', { name: '回合模式', exact: true }).selectOption('regular');
   await page.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');

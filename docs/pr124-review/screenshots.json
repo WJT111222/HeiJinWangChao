@@ -1,0 +1,82 @@
+[
+  {
+    "file": "screenshots/1440-advanced.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "screenshots/1440-list.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "screenshots/1440-preview-invalidated.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "screenshots/1440-saved.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "screenshots/1440-source-json.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "screenshots/1440-source-text.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "screenshots/1440-source-unsaved.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "screenshots/1440-unsaved.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "screenshots/390-advanced.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "screenshots/390-list.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "screenshots/390-preview-invalidated.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "screenshots/390-saved.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "screenshots/390-source-json.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "screenshots/390-source-text.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "screenshots/390-source-unsaved.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "screenshots/390-unsaved.png",
+    "width": 390,
+    "height": 844
+  }
+]

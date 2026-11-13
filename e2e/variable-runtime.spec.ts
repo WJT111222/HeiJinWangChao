@@ -148,6 +148,7 @@ test('变量正常生成、真实独立路由/模块/usage，完整候选主动�
   await closeStageCandidates(page);
   await page.getByRole('button', { name: '设置', exact: true }).click();
   await page.getByRole('button', { name: '提示词管理', exact: true }).click();
+  await page.getByRole('button', { name: '高级', exact: true }).click();
   await page.getByRole('combobox', { name: '检查阶段', exact: true }).selectOption('variables');
   await page.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');
   const inspection = page.getByRole('region', { name: '上下文与统计' });
