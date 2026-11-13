@@ -1,0 +1,38 @@
+[
+  {
+    "viewport": "1100x420",
+    "actions": 9,
+    "before": {
+      "maxScrollY": 150,
+      "scrollHeight": 570,
+      "clientHeight": 420
+    },
+    "after": {
+      "maxScrollY": 0,
+      "scrollHeight": 420,
+      "clientHeight": 420,
+      "mainTop": 60,
+      "footerBottom": 420,
+      "cardAtBottom": 1115,
+      "dossierAtBottom": 433
+    }
+  },
+  {
+    "viewport": "901x500",
+    "actions": 9,
+    "before": {
+      "maxScrollY": 70,
+      "scrollHeight": 570,
+      "clientHeight": 500
+    },
+    "after": {
+      "maxScrollY": 0,
+      "scrollHeight": 500,
+      "clientHeight": 500,
+      "mainTop": 60,
+      "footerBottom": 500,
+      "cardAtBottom": 1057,
+      "dossierAtBottom": 353
+    }
+  }
+]

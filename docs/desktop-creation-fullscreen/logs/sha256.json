@@ -1,0 +1,26 @@
+{
+  "diff-check.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "before-browser.log": {
+    "sha256": "a2b8deebb3b13ddc6460847079b003f8a6f770bcf77bfee54b43845d1be13e04",
+    "bytes": 140551
+  },
+  "check.log": {
+    "sha256": "7d00f7b4994e7081f19e433119386ee87433b83e03bd348b2479837bcac0d80a",
+    "bytes": 12288
+  },
+  "npm-ci.log": {
+    "sha256": "026b251bd16027c8617956acb7465fc0f80647d4b9af024f8c57ba4313f8e4bd",
+    "bytes": 234
+  },
+  "after-browser.log": {
+    "sha256": "47c8905bea826c9659b7390fe1f1e7c5fe88bea496a62deacd8164c6ea3e521d",
+    "bytes": 1923
+  },
+  "environment.log": {
+    "sha256": "472fabbaf5584a5990ee23d7b73c154961194e082d7c99c18448f4ed5afdd53e",
+    "bytes": 209
+  }
+}

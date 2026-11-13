@@ -217,7 +217,8 @@
   .desktop-creation .creation-review .detail { grid-template-columns: 5.5rem minmax(0, 1fr); gap: 14px; padding: 3px 0; border: 0; font-size: 13px; }
   .desktop-creation .creation-review .detail dt { color: var(--cr-dim); white-space: nowrap; }
   .desktop-creation .creation-review dd { max-height: 8.5rem; color: var(--cr-prose); }
-  .desktop-creation .creation-review .profession-profile { margin: 0 0 4px; }
+  /* Contain the screen-reader heading within the review scroll area. */
+  .desktop-creation .creation-review .profession-profile { position: relative; margin: 0 0 4px; }
   .desktop-creation .creation-review .profession-profile h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .desktop-creation .creation-review details { margin: 8px 0 6px; font-size: 12px; }
   .desktop-creation .creation-review summary { cursor: pointer; color: var(--muted); }
@@ -229,18 +230,16 @@
   .desktop-creation .creation-card > .notice::before { content: "⚠"; flex: none; }
 }
 
-/* 视口够高时整页不滚动：左档案、右表单区各自滚动，底栏固定。 */
-@media (min-width: 901px) and (min-height: 620px) {
+/* 桌面创角填满品牌导航下方；两栏内部滚动，矮屏也保留可达的底栏。 */
+@media (min-width: 901px) {
   .app-shell:has(> .desktop-creation) { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
   .app-shell:has(> .desktop-creation) > .app-header { flex: none; }
   .app-shell:has(> .desktop-creation) > .app-error { flex: none; max-height: 20vh; overflow: auto; }
-  .app-shell > .desktop-creation { flex: 1; min-height: 0; }
-}
-/* 矮屏：回到整页滚动，底栏贴底。 */
-@media (min-width: 901px) and (max-height: 619px) {
-  .desktop-creation .creation-dossier-col { position: sticky; top: 0; align-self: start; height: 100vh; }
-  .desktop-creation .creation-card { overflow: visible; }
-  .desktop-creation .wizard-footer { position: sticky; bottom: 0; z-index: 3; }
+  /* Beat the later-loaded legacy .creation-page width, margin and padding. */
+  .app-shell > .creation-page.desktop-creation {
+    flex: 1; min-height: 0; min-width: 0;
+    width: 100%; max-width: none; margin: 0; padding: 0;
+  }
 }
 
 @media (min-width: 901px) and (max-width: 1240px) {
