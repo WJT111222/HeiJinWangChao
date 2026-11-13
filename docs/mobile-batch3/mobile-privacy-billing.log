@@ -1,0 +1,97 @@
+
+Running 2 tests using 1 worker
+
+(node:284376) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [mobile] › e2e/npc-memory.spec.ts:65:1 › 手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费 (35.2s)
+(node:284855) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [mobile] › e2e/npc-memory.spec.ts:116:1 › 跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功 (35.1s)
+
+
+  1) [mobile] › e2e/npc-memory.spec.ts:65:1 › 手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费 ────────────
+
+    Test timeout of 35000ms exceeded.
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mobile-batch3-business/npc-memory-手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费-mobile/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mobile-batch3-business/npc-memory-手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费-mobile/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mobile-batch3-business/npc-memory-手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mobile-batch3-business/npc-memory-手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [mobile] › e2e/npc-memory.spec.ts:116:1 › 跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功 ──────────────────
+
+    Test timeout of 35000ms exceeded.
+
+    Error: locator.click: Test timeout of 35000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '设置', exact: true })
+        - locator resolved to <button data-settings-open="true">…</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div class="modal-body">…</div> from <section aria-label="剧情与行动" class="story-column">…</section> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div class="modal-body">…</div> from <section aria-label="剧情与行动" class="story-column">…</section> subtree intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        63 × waiting for element to be visible, enabled and stable
+           - element is visible, enabled and stable
+           - scrolling into view if needed
+           - done scrolling
+           - <div class="modal-body">…</div> from <section aria-label="剧情与行动" class="story-column">…</section> subtree intercepts pointer events
+         - retrying click action
+           - waiting 500ms
+        - waiting for element to be visible, enabled and stable
+
+
+       at helpers/gameLayout.ts:139
+
+      137 | export async function openSettings(page: Page) {
+      138 |   await closeWorldArchive(page);
+    > 139 |   await page.getByRole('button', { name: '设置', exact: true }).click();
+          |                                                               ^
+      140 | }
+      141 |
+      142 | export const workflowTrigger = (page: Page) => page.locator('details.workflow-disclosure > summary, .workflow-summary > .workflow-toggle');
+        at openSettings (/workspace/mobile-batch3/e2e/helpers/gameLayout.ts:139:63)
+        at memory (/workspace/mobile-batch3/e2e/npc-memory.spec.ts:49:3)
+        at /workspace/mobile-batch3/e2e/npc-memory.spec.ts:122:62
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mobile-batch3-business/npc-memory-跨标签拒绝重复付费；取消-迟到-429不删除来源，明确手动重试可成功-mobile/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mobile-batch3-business/npc-memory-跨标签拒绝重复付费；取消-迟到-429不删除来源，明确手动重试可成功-mobile/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mobile-batch3-business/npc-memory-跨标签拒绝重复付费；取消-迟到-429不删除来源，明确手动重试可成功-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mobile-batch3-business/npc-memory-跨标签拒绝重复付费；取消-迟到-429不删除来源，明确手动重试可成功-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [mobile] › e2e/npc-memory.spec.ts:65:1 › 手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费 ─────────────
+    [mobile] › e2e/npc-memory.spec.ts:116:1 › 跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功 ───────────────────
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

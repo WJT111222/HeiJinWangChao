@@ -1,0 +1,98 @@
+[
+  {
+    "path": "src/ui/home/HomeScreen.tsx",
+    "mainSHA256": "b2e376b96a3b82e49ced519cab295d2db3e567253271b75ef0592d5bb69daa0c",
+    "workingSHA256": "b2e376b96a3b82e49ced519cab295d2db3e567253271b75ef0592d5bb69daa0c",
+    "identical": true
+  },
+  {
+    "path": "src/ui/home/home.css",
+    "mainSHA256": "d99f861f2b6805b8919fba94bf19741565c75b1a6b63ddaab636b2f9c8bfd8d7",
+    "workingSHA256": "d99f861f2b6805b8919fba94bf19741565c75b1a6b63ddaab636b2f9c8bfd8d7",
+    "identical": true
+  },
+  {
+    "path": "src/ui/game/GameScreen.tsx",
+    "mainSHA256": "9ede15a8be6a2eff48cf3c675739466f0a2216b67c421dac505ca87f368a6152",
+    "workingSHA256": "9ede15a8be6a2eff48cf3c675739466f0a2216b67c421dac505ca87f368a6152",
+    "identical": true
+  },
+  {
+    "path": "src/ui/game/MobileDiagnostics.tsx",
+    "mainSHA256": "09d2f0cc4eec211d6f70a3eddd825244f0f32a93b2e53abf2e406113f0ad6eb4",
+    "workingSHA256": "09d2f0cc4eec211d6f70a3eddd825244f0f32a93b2e53abf2e406113f0ad6eb4",
+    "identical": true
+  },
+  {
+    "path": "src/ui/Dialog.tsx",
+    "mainSHA256": "ff26803a6403448b865dd5f7e016f271451cd4346ba39a17d255f09328ea1063",
+    "workingSHA256": "ff26803a6403448b865dd5f7e016f271451cd4346ba39a17d255f09328ea1063",
+    "identical": true
+  },
+  {
+    "path": "src/ui/mobile-sheet.css",
+    "mainSHA256": "df6b5cd1b92d1f68aaf668e5b46d09def8076497d24742092f181bf338a550f4",
+    "workingSHA256": "df6b5cd1b92d1f68aaf668e5b46d09def8076497d24742092f181bf338a550f4",
+    "identical": true
+  },
+  {
+    "path": "src/ui/GlobalFeedback.tsx",
+    "mainSHA256": "68bdd8290d10df68caf38545cb9f0135c8407fbea039b9fe7661732fd1f58ee0",
+    "workingSHA256": "68bdd8290d10df68caf38545cb9f0135c8407fbea039b9fe7661732fd1f58ee0",
+    "identical": true
+  },
+  {
+    "path": "src/services/storage/saveRepository.ts",
+    "mainSHA256": "fbe541e05237cc40819c107821e642368019c8dba3ec5c5e95a42b4ab24c2580",
+    "workingSHA256": "fbe541e05237cc40819c107821e642368019c8dba3ec5c5e95a42b4ab24c2580",
+    "identical": true
+  },
+  {
+    "path": "src/services/storage/saveManagement.ts",
+    "mainSHA256": "04ac341557b53933e3a68b301fcb4a1446a5c5482c819bb7d21f250063ecfb47",
+    "workingSHA256": "04ac341557b53933e3a68b301fcb4a1446a5c5482c819bb7d21f250063ecfb47",
+    "identical": true
+  },
+  {
+    "path": "src/app/product.ts",
+    "mainSHA256": "07a856642dcf2349f70ec34a37e6223bde605acc5f84c46eff6b79b15735251b",
+    "workingSHA256": "07a856642dcf2349f70ec34a37e6223bde605acc5f84c46eff6b79b15735251b",
+    "identical": true
+  },
+  {
+    "path": "src/ui/notices/Notices.tsx",
+    "mainSHA256": "72b6c3c17be28a6ee56950d175dbb6bed031935bd5dfd88f1b34e67153a32dee",
+    "workingSHA256": "72b6c3c17be28a6ee56950d175dbb6bed031935bd5dfd88f1b34e67153a32dee",
+    "identical": true
+  },
+  {
+    "path": "src/ui/notices/useNotices.ts",
+    "mainSHA256": "28a6cd9d97661eb1a74c66b425103c1e00bb1529a73707f7e755b46a241ddd19",
+    "workingSHA256": "28a6cd9d97661eb1a74c66b425103c1e00bb1529a73707f7e755b46a241ddd19",
+    "identical": true
+  },
+  {
+    "path": "src/worker.ts",
+    "mainSHA256": "431bc1c815edd7a66f05b83572af904f532daa7aacabd73317c708ccabdf9358",
+    "workingSHA256": "431bc1c815edd7a66f05b83572af904f532daa7aacabd73317c708ccabdf9358",
+    "identical": true
+  },
+  {
+    "path": "wrangler.jsonc",
+    "mainSHA256": "a06b18c396064dfb64c7dfcc2e6bd6d3d22a8b3153c000d21ab7721a9acc8b33",
+    "workingSHA256": "a06b18c396064dfb64c7dfcc2e6bd6d3d22a8b3153c000d21ab7721a9acc8b33",
+    "identical": true
+  },
+  {
+    "path": "src/services/notices/client.ts",
+    "mainSHA256": "528b25091d5281e92f4db63560a48771381c256d5626e3a381909f2a73ea4ab1",
+    "workingSHA256": "528b25091d5281e92f4db63560a48771381c256d5626e3a381909f2a73ea4ab1",
+    "identical": true
+  },
+  {
+    "path": "src/services/notices/announcement.ts",
+    "mainSHA256": "c9a529bf81c760036aa8ba4e8063d010952dca5819091c0d64747db9bc9d04b4",
+    "workingSHA256": "c9a529bf81c760036aa8ba4e8063d010952dca5819091c0d64747db9bc9d04b4",
+    "identical": true
+  }
+]

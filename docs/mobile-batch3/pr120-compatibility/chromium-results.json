@@ -1,0 +1,399 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/mobile-batch3/node_modules/.bin/playwright",
+      "test",
+      "--config",
+      "playwright.pr125-compatibility.config.ts"
+    ],
+    "configFile": "/workspace/mobile-batch3/playwright.pr125-compatibility.config.ts",
+    "rootDir": "/workspace/mobile-batch3/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/mobile-batch3/test-results/pr125-compatibility",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/workspace/mobile-batch3/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "npc-memory.spec.ts",
+          "pr125-compatibility.spec.ts"
+        ],
+        "timeout": 35000
+      },
+      {
+        "outputDir": "/workspace/mobile-batch3/test-results/pr125-compatibility",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "/workspace/mobile-batch3/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "npc-memory.spec.ts"
+        ],
+        "timeout": 35000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/mobile-batch3/test-results/pr125-compatibility",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "mobile",
+        "testDir": "/workspace/mobile-batch3/e2e",
+        "snapshotDir": "/workspace/mobile-batch3/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "npc-memory.spec.ts",
+          "pr125-compatibility.spec.ts"
+        ],
+        "timeout": 35000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5261",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "isMobile": true,
+          "hasTouch": true,
+          "reducedMotion": "reduce",
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "mobile"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/mobile-batch3/test-results/pr125-compatibility",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "desktop",
+        "testDir": "/workspace/mobile-batch3/e2e",
+        "snapshotDir": "/workspace/mobile-batch3/e2e",
+        "testIgnore": [],
+        "testMatch": "npc-memory.spec.ts",
+        "timeout": 35000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5261",
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "isMobile": false,
+          "hasTouch": false,
+          "reducedMotion": "reduce",
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "desktop"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "docs/mobile-batch3/pr120-compatibility/chromium-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5261 --strictPort",
+      "url": "http://127.0.0.1:5261",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "npc-memory.spec.ts",
+      "file": "npc-memory.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 35000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5562,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:19:41.345Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "737108fe3267f234a302-a2119ba8e609e8022d91",
+          "file": "npc-memory.spec.ts",
+          "line": 72,
+          "column": 1
+        },
+        {
+          "title": "跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 35000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4512,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:19:47.075Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "737108fe3267f234a302-31026f32396764babb9e",
+          "file": "npc-memory.spec.ts",
+          "line": 123,
+          "column": 1
+        },
+        {
+          "title": "手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 35000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5169,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:19:58.767Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "737108fe3267f234a302-bafb72b8b17996b27afc",
+          "file": "npc-memory.spec.ts",
+          "line": 72,
+          "column": 1
+        },
+        {
+          "title": "跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 35000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5113,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:20:04.096Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "737108fe3267f234a302-2b33daecfeec9a860e0a",
+          "file": "npc-memory.spec.ts",
+          "line": 123,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "pr125-compatibility.spec.ts",
+      "file": "pr125-compatibility.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "#125 兼容：车票主按钮进入存档，#120 双层非模态工作流与行动输入共存",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 35000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 6733,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '三阶段工作流', exact: true }).getByRole('region', { name: '三阶段详情', exact: true }).getByRole('navigation', { name: '三阶段导航' }).getByRole('button')\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m5\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" getByRole('dialog', { name: '三阶段工作流', exact: true }).getByRole('region', { name: '三阶段详情', exact: true }).getByRole('navigation', { name: '三阶段导航' }).getByRole('button') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '三阶段工作流', exact: true }).getByRole('region', { name: '三阶段详情', exact: true }).getByRole('navigation', { name: '三阶段导航' }).getByRole('button')\u001b[22m\n\u001b[2m    14 × locator resolved to 5 elements\u001b[22m\n\u001b[2m       - unexpected value \"5\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '三阶段工作流', exact: true }).getByRole('region', { name: '三阶段详情', exact: true }).getByRole('navigation', { name: '三阶段导航' }).getByRole('button')\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m5\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" getByRole('dialog', { name: '三阶段工作流', exact: true }).getByRole('region', { name: '三阶段详情', exact: true }).getByRole('navigation', { name: '三阶段导航' }).getByRole('button') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '三阶段工作流', exact: true }).getByRole('region', { name: '三阶段详情', exact: true }).getByRole('navigation', { name: '三阶段导航' }).getByRole('button')\u001b[22m\n\u001b[2m    14 × locator resolved to 5 elements\u001b[22m\n\u001b[2m       - unexpected value \"5\"\u001b[22m\n\n    at /workspace/mobile-batch3/e2e/pr125-compatibility.spec.ts:33:82",
+                    "location": {
+                      "file": "/workspace/mobile-batch3/e2e/pr125-compatibility.spec.ts",
+                      "column": 82,
+                      "line": 33
+                    },
+                    "snippet": "  31 |   expect(await drawer.evaluate(element=>element.tagName==='DIALOG'||element.matches(':modal'))).toBe(false);\n  32 |   await expect(panel).toHaveAttribute('data-level','home');\n> 33 |   await expect(panel.getByRole('navigation',{name:'三阶段导航'}).getByRole('button')).toHaveCount(3);\n     |                                                                                  ^\n  34 |   await panel.getByRole('navigation',{name:'三阶段导航'}).getByRole('button',{name:/正文生成/}).click();\n  35 |   await expect(panel).toHaveAttribute('data-level','detail');\n  36 |   await panel.getByRole('button',{name:'返回三阶段列表',exact:true}).click();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/mobile-batch3/e2e/pr125-compatibility.spec.ts",
+                        "column": 82,
+                        "line": 33
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '三阶段工作流', exact: true }).getByRole('region', { name: '三阶段详情', exact: true }).getByRole('navigation', { name: '三阶段导航' }).getByRole('button')\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m5\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" getByRole('dialog', { name: '三阶段工作流', exact: true }).getByRole('region', { name: '三阶段详情', exact: true }).getByRole('navigation', { name: '三阶段导航' }).getByRole('button') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '三阶段工作流', exact: true }).getByRole('region', { name: '三阶段详情', exact: true }).getByRole('navigation', { name: '三阶段导航' }).getByRole('button')\u001b[22m\n\u001b[2m    14 × locator resolved to 5 elements\u001b[22m\n\u001b[2m       - unexpected value \"5\"\u001b[22m\n\n\n  31 |   expect(await drawer.evaluate(element=>element.tagName==='DIALOG'||element.matches(':modal'))).toBe(false);\n  32 |   await expect(panel).toHaveAttribute('data-level','home');\n> 33 |   await expect(panel.getByRole('navigation',{name:'三阶段导航'}).getByRole('button')).toHaveCount(3);\n     |                                                                                  ^\n  34 |   await panel.getByRole('navigation',{name:'三阶段导航'}).getByRole('button',{name:/正文生成/}).click();\n  35 |   await expect(panel).toHaveAttribute('data-level','detail');\n  36 |   await panel.getByRole('button',{name:'返回三阶段列表',exact:true}).click();\n    at /workspace/mobile-batch3/e2e/pr125-compatibility.spec.ts:33:82"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:19:51.600Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/mobile-batch3/test-results/pr125-compatibility/pr125-compatibility--125-兼容：车票主按钮进入存档，-120-双层非模态工作流与行动输入共存-mobile/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/mobile-batch3/test-results/pr125-compatibility/pr125-compatibility--125-兼容：车票主按钮进入存档，-120-双层非模态工作流与行动输入共存-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/mobile-batch3/test-results/pr125-compatibility/pr125-compatibility--125-兼容：车票主按钮进入存档，-120-双层非模态工作流与行动输入共存-mobile/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/mobile-batch3/e2e/pr125-compatibility.spec.ts",
+                    "column": 82,
+                    "line": 33
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "3354e0eb322afdfe37dd-51b4f6cd0283ef7393c2",
+          "file": "pr125-compatibility.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-13T00:19:40.042Z",
+    "duration": 29298.114999999998,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

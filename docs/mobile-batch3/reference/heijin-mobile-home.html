@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0b0b">
+<title>黑金王朝 · 手机端开场 · 车票</title>
+<style>
+:root{--font-title:'Noto Serif SC','Noto Serif CJK SC','Source Han Serif SC','Songti SC','STSong',serif;--font-body:'Noto Sans SC','Noto Sans CJK SC','PingFang SC','Microsoft YaHei',-apple-system,sans-serif;--font-mono:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;
+  --bg:#08090a;--text:#ECE7DA;--prose:#DCD6C8;--muted:#A3A396;--dim:#77796f;--gold:#C9A961;--gold-hi:#E8D196;--gold-lo:#7d6a3e;--line:#ffffff14;--line-2:#ffffff22;
+  --warn:#C26A4A;--warn-text:#E6A18A;--ok:#7DB49A;--info:#8EC1E0;--tint:#7FA7A0;--ease:cubic-bezier(.22,.7,.2,1);
+  --sky-1:#040506;--sky-2:#080b0c;--sky-3:#0c1111;--lights:.5;
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);color-scheme:dark}
+[data-city=cq]{--tint:#7FA7A0}[data-city=sh]{--tint:#8E9BD8}[data-city=hrb]{--tint:#A9C3D8}[data-city=gz]{--tint:#D08A6A}
+[data-time=dusk]{--sky-1:#0e0d16;--sky-2:#2c1e26;--sky-3:#6a3a26;--lights:.8}
+[data-time=day]{--sky-1:#18222a;--sky-2:#26323a;--sky-3:#3a4549;--lights:.12}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:#050606;color:var(--text);font-family:var(--font-body);line-height:1.7;-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer;background:transparent;border:1px solid var(--line-2);border-radius:8px;padding:.5rem .9rem;touch-action:manipulation}
+button:active{transform:scale(.97)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+h1,h2,h3,h4{font-family:var(--font-title);font-weight:600;margin:0;line-height:1.35}p{margin:0}
+.seal{display:inline-grid;place-items:center;flex:none;font-family:var(--font-title);color:var(--gold-hi);border:1px solid var(--gold-lo);background:linear-gradient(145deg,#c9a96126,#c9a96108);border-radius:3px;box-shadow:inset 0 0 0 2px #0009,inset 0 0 0 3px #c9a96130}
+
+/* ===== 桌面查看：手机外框 + 说明 ===== */
+.desk{height:100%;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:3rem;padding:2rem}
+.desk .notes{justify-self:end;max-width:22rem;font-size:.84rem;color:var(--muted);line-height:1.85}
+.desk .notes h1{font-size:1.5rem;letter-spacing:.2em;color:var(--text);margin:.3rem 0 .8rem}
+.desk .notes .eyebrow{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.28em;color:var(--gold)}
+.desk .notes ol{padding-left:1.1rem;margin:.6rem 0}
+.desk .notes li{margin-bottom:.35rem}
+.desk .notes b{color:var(--text);font-weight:500}
+.desk .ctrl{justify-self:start;display:grid;gap:.9rem;font-size:.76rem;color:var(--dim);max-width:16rem}
+.desk .ctrl p{margin-bottom:.3rem}
+.desk .ctrl .seg{display:flex;flex-wrap:wrap;gap:.25rem}
+.desk .ctrl button{font-size:.72rem;padding:.2rem .6rem;border-style:dashed;color:var(--muted)}
+.desk .ctrl button[aria-pressed=true]{color:var(--gold-hi);border-color:var(--gold-lo);border-style:solid}
+.frame{position:relative;width:390px;height:844px;border-radius:52px;padding:12px;background:linear-gradient(145deg,#2a2c2b,#111);box-shadow:0 40px 90px -30px #000,inset 0 0 0 2px #3a3c3b}
+.frame::before{content:'';position:absolute;left:50%;top:22px;transform:translateX(-50%);width:110px;height:30px;border-radius:20px;background:#000;z-index:50}
+.phone{position:relative;width:100%;height:100%;border-radius:40px;overflow:hidden;background:var(--bg);--safe-t:44px;--safe-b:22px;container-type:inline-size}
+@media (max-width:600px){
+  .desk{display:block;padding:0;height:100%}
+  .desk .notes,.desk .ctrl{display:none}
+  .frame{width:100%;height:100dvh;border-radius:0;padding:0;background:none;box-shadow:none}
+  .frame::before{display:none}
+  .phone{border-radius:0;--safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)}
+}
+@media (max-width:1100px) and (min-width:601px){.desk{grid-template-columns:auto;justify-content:center}.desk .notes,.desk .ctrl{display:none}}
+
+
+.phone{background:#0a0b0b}
+.home{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;display:flex;flex-direction:column;
+  background:radial-gradient(120% 40% at 50% 0%,color-mix(in srgb,var(--tint) 16%,#1a1710),#0a0b0b 62%);transition:background .6s}
+.home::-webkit-scrollbar{display:none}
+.home::after{content:'';position:fixed;inset:0;pointer-events:none;opacity:.3;mix-blend-mode:overlay;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E")}
+/* 顶栏 */
+.top{flex:none;display:flex;align-items:center;gap:.55rem;padding:calc(var(--safe-t) + 8px) 18px 0}
+.top .seal{width:1.9rem;height:1.9rem;font-size:.9rem}
+.top .bn{font-family:var(--font-title);font-size:.92rem;letter-spacing:.22em}
+.top .bn small{display:block;font-family:var(--font-mono);font-size:.48rem;letter-spacing:.3em;color:var(--dim)}
+.top .sp{flex:1}
+.pillbtn{border:0;padding:.38rem .75rem;border-radius:999px;font-size:.74rem;color:var(--muted);background:#ffffff0d}
+.ver{font-family:var(--font-mono);font-size:.58rem;color:var(--dim)}
+/* 标题 */
+.hero{flex:none;padding:1rem 22px 0}
+.eyebrow{font-family:var(--font-mono);font-size:.58rem;letter-spacing:.3em;color:var(--gold)}
+.hero h1{font-size:2.35rem;letter-spacing:.16em;margin:.35rem 0 .15rem;background:linear-gradient(180deg,#f5e3b0,#c9a961 70%,#8c7140);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.15}
+.hero p{font-size:.78rem;color:var(--muted);letter-spacing:.04em}
+/* 翻牌发车屏 */
+.board{flex:none;margin:.95rem 16px 0;padding:.55rem .65rem;border-radius:10px;background:#050605;border:1px solid #ffffff12;box-shadow:inset 0 2px 10px #000;display:grid;grid-template-columns:auto 1fr auto auto;gap:.6rem;align-items:center}
+.board .lb{font-size:.56rem;letter-spacing:.2em;color:#7d8077;line-height:1.3}
+.board .lb b{display:block;font-family:var(--font-mono);font-weight:500;font-size:.5rem;letter-spacing:.24em;color:#55584f}
+.flaps{display:flex;gap:2px}
+.flap{position:relative;width:1.35rem;height:1.75rem;border-radius:3px;background:linear-gradient(180deg,#1d1f1c 50%,#151714 50%);display:grid;place-items:center;font-family:var(--font-title);font-size:1rem;font-weight:600;color:#f1d48a;box-shadow:inset 0 1px 0 #ffffff10}
+.flap::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:#000}
+.flap.m{font-family:var(--font-mono);font-weight:500;font-size:.9rem;width:1rem}
+.flap.go{animation:flap .32s steps(3) 1}
+@keyframes flap{0%{transform:rotateX(0)}50%{transform:rotateX(90deg);color:#fff}100%{transform:rotateX(0)}}
+.board .st{font-size:.62rem;letter-spacing:.14em;padding:.2rem .5rem;border-radius:4px;color:#0a0b0b;background:#7DBB9C;font-weight:600;white-space:nowrap}
+.board .st.new{background:var(--gold)}
+.board .st.bad{background:#D47C60}
+.board .st.idle{background:#ffffff22;color:#cfcfc8}
+/* 车票栏 */
+.meta{flex:none;display:flex;align-items:center;gap:.6rem;padding:1rem 22px .55rem;font-size:.66rem;color:var(--dim);letter-spacing:.1em}
+.meta b{font-family:var(--font-mono);font-weight:500;color:var(--gold-hi);font-size:.8rem}
+.meta .sp{flex:1}
+.meta button{border:0;padding:.2rem .1rem;font-size:.68rem;color:var(--info)}
+.meta button:disabled{opacity:.4}
+.rail{flex:none;display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:14px 9% 70px;margin-bottom:-48px;scrollbar-width:none;perspective:900px}
+.rail::-webkit-scrollbar{display:none}
+/* 车票本体 */
+.tk{--band:#2f6f63;--ink:#fff;flex:0 0 82%;scroll-snap-align:center;position:relative;--paper:#EBE3D1;height:340px;border-radius:14px;background:linear-gradient(var(--paper),var(--paper)) top/100% 268px no-repeat;color:#2B2723;box-shadow:0 22px 40px -20px #000,0 2px 0 #fff6 inset;transition:transform .35s var(--ease),filter .35s;transform-origin:50% 100%;touch-action:pan-x}
+.tk.side{transform:scale(.9) rotate(var(--rot,0deg));filter:brightness(.55) saturate(.8)}
+.tk::before{content:'';position:absolute;left:0;right:0;top:0;height:268px;border-radius:14px 14px 0 0;pointer-events:none;opacity:.6;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.tk .band{height:42px;border-radius:14px 14px 0 0;display:flex;align-items:center;gap:.6rem;padding:0 .9rem;background:var(--band);color:var(--ink);position:relative;overflow:hidden}
+.tk .band b{font-family:var(--font-title);font-size:1rem;letter-spacing:.4em}
+.tk .band small{font-family:var(--font-mono);font-size:.5rem;letter-spacing:.24em;opacity:.8}
+.tk .band .no{margin-left:auto;font-family:var(--font-mono);font-size:.56rem;letter-spacing:.16em;opacity:.85}
+/* 四城票头：呼应游戏内回目铭牌 */
+.tk[data-city=cq]{--band:#2f6f63}
+.tk[data-city=cq] .band::after{content:'';position:absolute;left:0;right:0;bottom:5px;height:3px;background:repeating-linear-gradient(90deg,#ffffff55 0 14px,transparent 14px 20px)}
+.tk[data-city=sh]{--band:#34468e}
+.tk[data-city=sh] .band{box-shadow:inset 0 0 0 3px #34468e,inset 0 0 0 4px #ffffffaa}
+.tk[data-city=hrb]{--band:linear-gradient(180deg,#d9e7f0,#a9c3d8);--ink:#1d3344}
+.tk[data-city=hrb] .band::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 12% 30%,#fff 0 1px,transparent 1.5px),radial-gradient(circle at 70% 60%,#fff 0 1px,transparent 1.5px);background-size:22px 18px,30px 26px;opacity:.8}
+.tk[data-city=gz]{--band:#2a120c;--ink:#ffb48a}
+.tk[data-city=gz] .band b{text-shadow:0 0 6px #ff7a3d,0 0 14px #ff7a3daa}
+.tk[data-city=gz] .band{box-shadow:inset 0 0 0 1px #ff8a4d66}
+.tk .rt{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;padding:.85rem .95rem .25rem}
+.tk .rt small{display:block;font-family:var(--font-mono);font-size:.52rem;letter-spacing:.22em;color:#857B6C}
+.tk .rt .big{font-family:var(--font-title);font-size:1.75rem;font-weight:600;letter-spacing:.1em;color:#1F1B17;line-height:1.2;white-space:nowrap}
+.tk .rt .to{text-align:right}
+.tk .rt .ar{padding:0 .5rem .55rem;font-size:.58rem;letter-spacing:.3em;color:#857B6C;text-align:center}
+.tk .rt .ar::after{content:'';display:block;width:3rem;height:6px;margin-top:.15rem;background:linear-gradient(#857B6C,#857B6C) 0 50%/100% 1px no-repeat,linear-gradient(135deg,transparent 50%,#857B6C 50%) 100% 50%/6px 6px no-repeat}
+.tk dl{display:grid;grid-template-columns:1.3fr 1fr 1fr;margin:.35rem .95rem 0;padding:.5rem 0;border-top:1px dashed #2a262240}
+.tk dt{font-size:.52rem;color:#857B6C;letter-spacing:.16em}
+.tk dd{margin:0;font-family:var(--font-mono);font-size:.78rem;color:#2B2723}
+.tk .mid{position:absolute;left:0;right:0;top:186px;height:74px;overflow:hidden}
+/* A 防伪底纹 */
+.tk .gl{position:absolute;inset:0;width:100%;height:100%}
+.tk .gl path{fill:none;stroke:var(--tint);stroke-width:.7;opacity:.55}
+.tk .gl path.d{stroke:color-mix(in srgb,var(--tint) 55%,#2B2723);opacity:.35}
+.tk .mid .co{position:absolute;left:.95rem;top:.6rem;padding:.1rem .45rem;background:var(--paper);font-family:var(--font-mono);font-size:.56rem;letter-spacing:.2em;color:color-mix(in srgb,var(--tint) 45%,#2B2723)}
+.tk .mid .im{position:absolute;left:.95rem;bottom:.55rem;padding:.05rem .45rem;background:var(--paper);font-family:var(--font-title);font-size:.84rem;letter-spacing:.3em;color:#2B2723}
+.tk .mid .em{position:absolute;right:.95rem;top:50%;transform:translateY(-50%);width:3.4rem;height:3.4rem;border-radius:50%;display:grid;place-items:center;background:var(--paper);border:1.5px solid color-mix(in srgb,var(--tint) 70%,#2B2723);box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px color-mix(in srgb,var(--tint) 50%,transparent);font-family:var(--font-title);font-size:1.5rem;font-weight:700;color:color-mix(in srgb,var(--tint) 65%,#2B2723)}
+.tk.blank .mid,.tk.bad .mid{display:none}
+.tk .perf{position:absolute;left:12px;right:12px;top:265px;border-top:2px dashed #2a262250;z-index:2}
+.tk .perf::before,.tk .perf::after{content:'';position:absolute;top:-10px;width:18px;height:18px;border-radius:50%;background:#0b0c0b}
+.tk .perf::before{left:-21px}.tk .perf::after{right:-21px}
+.tk .stub{position:absolute;left:0;right:0;top:267px;bottom:0;display:flex;align-items:center;gap:.6rem;padding:0 .95rem;border-radius:0 0 14px 14px;background:var(--paper);z-index:1;cursor:grab;touch-action:none;transition:transform .5s var(--ease),opacity .5s}
+.tk .stub .go{font-family:var(--font-title);font-weight:700;font-size:.92rem;letter-spacing:.18em;color:#1F1B17}
+.tk .stub .go small{display:block;font-family:var(--font-body);font-weight:400;font-size:.58rem;letter-spacing:.14em;color:#857B6C}
+.tk .stub .bc{margin-left:auto;width:84px;height:26px;background:repeating-linear-gradient(90deg,#2B2723 0 2px,transparent 2px 4px,#2B2723 4px 5px,transparent 5px 8px,#2B2723 8px 11px,transparent 11px 13px)}
+.tk .stub.tear{transform:translateY(70px) rotate(-12deg);opacity:0}
+/* 已选择：朱砂检票章 */
+.tk .chop{position:absolute;right:14px;top:104px;width:64px;height:64px;z-index:2;border-radius:50%;border:2px solid #A3412Ecc;color:#A3412E;display:grid;place-items:center;text-align:center;font-family:var(--font-title);font-size:.78rem;letter-spacing:.1em;line-height:1.25;transform:rotate(-14deg);opacity:.85;mix-blend-mode:multiply;box-shadow:inset 0 0 0 3px #EBE3D1,inset 0 0 0 4px #A3412E88}
+.tk .chop small{display:block;font-family:var(--font-mono);font-size:.42rem;letter-spacing:.14em}
+.tk.void .chop{border-color:#A3412E;transform:rotate(-8deg) scale(1.2)}
+/* 空白车票 */
+.tk.blank{--paper:#E3DACA}
+.tk.blank .band{background:repeating-linear-gradient(135deg,#c9a961 0 10px,#d9bd7c 10px 20px);color:#2a2213}
+.tk.blank .big.q{color:#B8AD98;letter-spacing:.3em}
+.tk.blank .line{display:inline-block;width:5rem;border-bottom:1px solid #2a262255}
+.tk.blank .pitch{position:absolute;left:.6rem;right:.6rem;top:186px;font-family:var(--font-title);font-size:.8rem;letter-spacing:.08em;white-space:nowrap;color:#5F574C;text-align:center}
+.tk.blank .draft{position:absolute;left:.95rem;right:.95rem;top:218px;font-size:.66rem;color:#8E6C25;text-align:center;transform:rotate(-1.5deg)}
+.tk.blank .draft::before{content:'✎ '}
+/* 无法读取 */
+.tk.bad{--paper:#E2D6C8}
+.tk.bad .band{background:#5b5048;color:#efe5da}
+.tk.bad .rt .big{color:#857B6C}
+.tk.bad .keys{margin:.4rem .95rem 0;font-family:var(--font-mono);font-size:.56rem;color:#5F574C;line-height:1.7;word-break:break-all}
+.tk.bad .note{margin:.35rem .95rem 0;font-size:.66rem;line-height:1.65;color:#7a3a2c}
+.tk.bad .chop{top:auto;bottom:86px;border-color:#A3412E;color:#A3412E;width:74px;height:74px;font-size:.84rem}
+.tk.bad .stub{cursor:default}
+.tk.bad .stub .go{font-size:.78rem;letter-spacing:.1em}
+/* 读取中 */
+.tk.sk-l{background:#1a1d1b;-webkit-mask:none;mask:none;box-shadow:none}
+.tk.sk-l::before{display:none}
+.tk.sk-l::after{content:'';position:absolute;inset:0;border-radius:14px;background:linear-gradient(90deg,#1a1d1b,#262a27,#1a1d1b);background-size:200% 100%;animation:sk 1.3s linear infinite}
+@keyframes sk{to{background-position:-200% 0}}
+.printer{flex:none;text-align:center;font-size:.72rem;color:var(--muted);padding:.2rem 0 0}
+/* 指示 */
+.dots{flex:none;display:flex;justify-content:center;gap:5px;margin-top:-6px}
+.dots i{width:5px;height:5px;border-radius:3px;background:#ffffff22;transition:width .2s,background .2s}
+.dots i.on{width:16px;background:var(--gold)}
+.dots i.n{background:none;border:1px dashed var(--gold-lo)}
+.dots i.n.on{background:var(--gold);border:0}
+/* 操作 */
+.acts{flex:none;padding:1rem 16px 0;display:grid;gap:.5rem}
+.acts .main{display:flex;align-items:center;justify-content:center;gap:.6rem;height:3.3rem;border:0;border-radius:16px;font-family:var(--font-title);font-weight:700;font-size:1.06rem;letter-spacing:.26em;color:#171810;background:linear-gradient(180deg,#f0dba2,#c5a45a);box-shadow:inset 0 1px 0 #fff8,0 14px 30px -14px #c9a961aa}
+.acts .main:disabled{opacity:.4;box-shadow:none}
+.acts .sub{display:flex;gap:.5rem}
+.acts .sub button{flex:1;height:2.6rem;border-radius:12px;font-size:.8rem;color:var(--muted);background:#ffffff06}
+.acts .sub .del{color:var(--warn-text);border-color:#6e4a3d}
+.acts .tip{text-align:center;font-size:.64rem;color:var(--dim);letter-spacing:.14em}
+.status{margin:.6rem 16px 0;padding:.55rem .8rem;border-radius:10px;border:1px solid #7DBB9C55;background:#7dbb9c12;color:#cfe6da;font-size:.74rem;line-height:1.6}
+.err{margin:0 16px;padding:.8rem .9rem;border-radius:12px;border:1px solid #6e4a3d;background:#c26a4a14;color:#ecc9bc;font-size:.78rem;line-height:1.7;display:flex;gap:.6rem}
+.err i{flex:none;width:1.3rem;height:1.3rem;border-radius:50%;display:grid;place-items:center;font-style:normal;font-family:var(--font-title);font-size:.62rem;color:#0c0e0d;background:#D47C60;margin-top:.15rem}
+.empty-n{text-align:center;font-size:.76rem;color:var(--muted);line-height:1.8;margin:.7rem 0 0}
+.foot{flex:none;margin-top:auto;padding:1.1rem 16px calc(var(--safe-b) + 12px);display:grid;gap:.45rem;justify-items:center}
+.foot .lk{display:flex;gap:1.4rem}
+.foot .lk button{border:0;padding:.2rem 0;font-size:.72rem;color:var(--info)}
+.foot p{font-size:.56rem;letter-spacing:.16em;color:var(--dim);text-align:center}
+/* 操作表 */
+.scrim{position:absolute;inset:0;z-index:40;background:#000;opacity:0;pointer-events:none;transition:opacity .3s}
+.scrim.on{opacity:.6;pointer-events:auto}
+.as{position:absolute;left:8px;right:8px;bottom:calc(var(--safe-b) + 8px);z-index:41;display:grid;gap:.5rem;transform:translateY(120%);transition:transform .34s var(--ease)}
+.as.on{transform:none}.as:focus{outline:none}
+.as .card{border-radius:18px;background:#151a18;border:1px solid var(--line-2);overflow:hidden}
+.as .hdr{padding:1rem 1.1rem .9rem;text-align:center;border-bottom:1px solid var(--line)}
+.as .hdr .bar{height:3px;margin:-1rem -1.1rem .9rem;background:var(--warn)}
+.as .hdr h3{font-size:1.02rem;letter-spacing:.1em}
+.as .hdr p{font-size:.76rem;color:var(--muted);line-height:1.7;margin-top:.35rem}
+.as .hdr .key{font-family:var(--font-mono);font-size:.62rem;color:var(--dim);word-break:break-all}
+.as .card>button{display:block;width:100%;border:0;border-radius:0;padding:.95rem;font-size:.95rem}
+.as .danger{color:#F0A08A;font-weight:600}
+.as .cancel{font-weight:600}
+.toast{position:absolute;left:50%;top:calc(var(--safe-t) + 54px);z-index:60;transform:translate(-50%,-8px);padding:.45rem .9rem;border-radius:999px;background:#1a1f1c;border:1px solid var(--line-2);font-size:.76rem;opacity:0;pointer-events:none;transition:all .25s;white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="desk">
+ <aside class="notes"><p class="eyebrow">MOBILE · 车票</p><h1>手机端 · 开场</h1>
+  <p>封面和存档馆合成一屏：每份存档是一张开往某座城市的车票。</p>
+  <ol><li><b>左右滑动翻车票</b>：最后一张是「空白车票」，用来开启新的人生。</li>
+   <li><b>撕下票根进站</b>：按住票根往下拉，撕下来就读取这份存档。下方的金色按钮做的是同一件事。</li>
+   <li><b>发车屏</b>：顶部翻牌屏显示当前这张车票的终点、时刻和状态，翻到别的车票时会跟着翻动。</li>
+   <li><b>检票章</b>：已选择的存档盖着朱砂「已检票」章，封面上的「继续游戏」进的就是它。</li>
+   <li><b>四城票头</b>：分别呼应游戏内的回目铭牌，有轻轨条、搪瓷蓝、冰霜和霓虹。</li></ol></aside>
+ <div class="frame"><div class="phone" id="phone">
+  <main class="home" id="home" data-city="cq">
+   <header class="top"><span class="seal" aria-hidden="true">黑</span><span class="bn">黑金王朝<small>HEIJINWANGCHAO</small></span><span class="sp"></span><button class="pillbtn" data-toast="打开设置">设置</button><span class="ver">V1.0</span></header>
+   <div class="hero"><p class="eyebrow">MODERN CITY / OPEN WORLD</p><h1>黑金王朝</h1><p>起点有冲突，人生不预设结局。</p></div>
+   <div class="board" aria-live="polite" id="board"><span class="lb">终点<b>DEST</b></span><span class="flaps" id="fDest"></span><span class="flaps" id="fTime"></span><span class="st" id="fSt">已选择</span></div>
+   <div class="meta"><span>车票 <b id="cnt">03</b></span><span>本地保存 · 无需账号</span><span class="sp"></span><button id="refresh">刷新列表</button></div>
+   <div id="body"></div>
+   <p class="status" id="notice" role="status" hidden></p>
+   <div class="acts" id="acts"></div>
+   <footer class="foot"><div class="lk"><button data-toast="打开游玩须知与免责声明">游玩须知与免责声明</button><button data-toast="打开王朝公告">王朝公告</button></div>
+    <p>四座城市 · 自由职业 · 开放人生<br>三阶段生成 · 原子结算 · 连续回合</p></footer>
+  </main>
+  <div class="scrim" id="scrim"></div>
+  <div class="as" id="as" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="asT"></div>
+  <div class="toast" id="toast" role="status"></div>
+ </div></div>
+ <aside class="ctrl">
+  <div><p>存档列表状态</p><div class="seg" data-k="list"><button aria-pressed="true" data-v="normal">有存档</button><button aria-pressed="false" data-v="bad">含无法读取</button><button aria-pressed="false" data-v="empty">无存档</button><button aria-pressed="false" data-v="loading">读取中</button><button aria-pressed="false" data-v="error">读取失败</button></div></div>
+  <div><p>创角草稿</p><div class="seg" data-k="draft"><button aria-pressed="true" data-v="1">有</button><button aria-pressed="false" data-v="0">无</button></div></div>
+  <p style="color:var(--dim);line-height:1.7">以上控制仅用于设计稿演示。<br>按住票根往下拉可以撕票。</p>
+ </aside>
+</div>
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let tt; const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 1800); };
+const rng = seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const W = 1200;
+function towers(r, x0, x1, base, hMin, hMax, wMin, wMax, fill) {
+  let s = '', x = x0;
+  while (x < x1) {
+    const w = wMin + r() * (wMax - wMin), h = hMin + r() * (hMax - hMin);
+    s += `<rect x="${x.toFixed(1)}" y="${(base - h).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${fill}"/>`;
+    if (h > 30) for (let k = 0; k < Math.floor(h / 14); k++) if (r() > .55)
+      s += `<rect class="w" x="${(x + 3 + r() * (w - 7)).toFixed(1)}" y="${(base - h + 7 + k * 13).toFixed(1)}" width="2" height="3" fill="#F2DDA0"/>`;
+    x += w + 2 + r() * 5;
+  }
+  return s;
+}
+const river = (r, n, y, c, o) => `<g fill="${c}" opacity="${o}">${Array.from({length:n},()=>`<rect x="${(r()*W).toFixed(0)}" y="${y+r()*12|0}" width="${8+r()*24|0}" height="1"/>`).join('')}</g>`;
+const clear = (svg, a, b) => svg.replace(/<rect (class="w" )?x="([\d.]+)"[^>]*\/>/g, (m, w, x) => (+x > a && +x < b) ? '' : m);
+const SKY = {
+  cq(r) { return `<path d="M0 118 C120 70 260 96 400 62 S660 40 800 72 S1020 58 1200 76 V160 H0Z" fill="#17211e"/>` + towers(r, 10, W, 112, 20, 70, 10, 22, '#1a2421')
+    + `<path d="M0 140 C160 110 320 128 480 100 S860 92 1200 110 V160 H0Z" fill="#111816"/>` + towers(r, 30, W - 10, 130, 30, 95, 12, 24, '#0c100f')
+    + `<line x1="0" y1="120" x2="${W}" y2="96" stroke="#2e3a36" stroke-width="2"/>` + `<g fill="#2e3a36">${Array.from({length:10},(_, i)=>{const x=60+i*120;return `<rect x="${x}" y="${120-x*0.02}" width="3" height="40"/>`}).join('')}</g>`
+    + `<g style="${reduce?'':'animation:train 11s linear infinite'}"><rect x="0" y="105" width="90" height="8" rx="2" fill="#9cc7be" opacity=".8" transform="rotate(-1.1)"/></g>`
+    + `<rect y="146" width="${W}" height="14" fill="#0b1211"/>` + river(r, 26, 148, '#7FA7A0', .25); },
+  sh(r) { const L = 560; return towers(r, 0, W, 140, 25, 75, 10, 20, '#1a1f2e') + clear(towers(r, 0, W, 140, 35, 95, 12, 26, '#0d1018'), L - 30, L + 260)
+    + `<g fill="#232a3e" stroke="#8E9BD8" stroke-opacity=".25"><rect x="${L}" y="16" width="4" height="124"/><circle cx="${L+2}" cy="60" r="11"/><circle cx="${L+2}" cy="98" r="15"/><rect x="${L-8}" y="98" width="20" height="42"/>`
+    + `<path d="M${L+120} 140 V26 L${L+142} 14 L${L+164} 26 V140Z"/><path d="M${L+200} 140 V40 Q${L+212} 22 ${L+224} 40 V140Z"/></g><rect x="${L+135}" y="22" width="14" height="10" fill="#141824"/>`
+    + `<rect y="140" width="${W}" height="20" fill="#0b0d14"/>` + river(r, 34, 143, '#8E9BD8', .3); },
+  hrb(r) { const L = 580; return towers(r, 0, W, 140, 18, 50, 18, 34, '#1b2128') + clear(towers(r, 0, W, 140, 25, 60, 20, 40, '#0e1216'), L - 50, L + 50)
+    + `<g fill="#242c35" stroke="#A9C3D8" stroke-opacity=".22"><path d="M${L-32} 140 V92 H${L+32} V140Z"/><path d="M${L-15} 92 C${L-15} 70 ${L} 64 ${L} 46 C${L} 64 ${L+15} 70 ${L+15} 92Z"/><rect x="${L-1}" y="34" width="2" height="14"/>`
+    + [-38, 24].map(d => `<path d="M${L+d} 140 V104 H${L+d+14} V140Z"/><path d="M${L+d+3} 104 C${L+d+3} 96 ${L+d+7} 94 ${L+d+7} 88 C${L+d+7} 94 ${L+d+11} 96 ${L+d+11} 104Z"/>`).join('') + `</g>`
+    + `<rect y="140" width="${W}" height="20" fill="#121820"/><rect y="140" width="${W}" height="1" fill="#A9C3D8" opacity=".25"/>`
+    + `<g fill="#dfe8ef" opacity=".55" ${reduce?'':'style="animation:snow 7s linear infinite"'}>${Array.from({length:80},()=>`<circle cx="${(r()*W).toFixed(0)}" cy="${(r()*150-10).toFixed(0)}" r="${(0.6+r()*1.1).toFixed(1)}"/>`).join('')}</g>`; },
+  gz(r) { const L = 640; return towers(r, 0, W, 140, 22, 70, 10, 22, '#221d19') + clear(towers(r, 0, W, 140, 35, 90, 12, 24, '#120f0d'), L - 30, L + 40)
+    + `<path d="M${L-8} 140 Q${L+10} 70 ${L-4} 8 L${L+22} 8 Q${L+8} 70 ${L+32} 140Z" fill="#2b231d" stroke="#D08A6A" stroke-opacity=".3"/><rect x="${L+8}" y="0" width="2" height="8" fill="#D08A6A"/>`
+    + `<g fill="#0f110d">${Array.from({length:18},(_, i)=>`<circle cx="${30+i*66+r()*20|0}" cy="${130+r()*6|0}" r="${10+r()*8|0}"/>`).join('')}</g>`
+    + `<rect y="140" width="${W}" height="20" fill="#110e0c"/>` + river(r, 30, 143, '#D08A6A', .3); },
+};
+const seeds = { cq: 7, sh: 31, hrb: 53, gz: 97 };
+
+const svg = (c, vb) => `<svg viewBox="${vb}" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${SKY[c](rng(seeds[c]))}</svg>`;
+const CITY = {cq:['重庆','CHONGQING','#7FA7A0','260 30 640 130'],sh:['上海','SHANGHAI','#8E9BD8','360 0 600 160'],hrb:['哈尔滨','HARBIN','#A9C3D8','330 30 560 130'],gz:['广州','GUANGZHOU','#D08A6A','400 0 520 160']};
+
+/* ---------- 车票中段：防伪底纹 + 坐标 + 意象词 + 城市圆章 ---------- */
+const META = {cq:['29°33′N · 106°33′E','山城 · 江雾 · 轻轨','渝'],sh:['31°14′N · 121°29′E','外滩 · 霓虹 · 江风','沪'],hrb:['45°45′N · 126°38′E','冰雪 · 圆顶 · 长街','冰'],gz:['23°07′N · 113°15′E','早茶 · 榕荫 · 珠江','穗']};
+function guilloche(city) { const r = rng(seeds[city] * 7), a = 4 + r() * 4, f1 = 14 + r() * 8, f2 = 5 + r() * 3; let s = '';
+  for (let k = 0; k < 15; k++) { let d = ''; for (let x = 0; x <= 320; x += 4) { const y = 37 + a * Math.sin(x / f1 + k * .45) + (a * .6) * Math.sin(x / f2 + k * 1.1) + (k - 6.5) * 4.6; d += (x ? 'L' : 'M') + x + ' ' + y.toFixed(1); } s += `<path class="${k % 4 ? '' : 'd'}" d="${d}"/>`; }
+  return `<svg class="gl" viewBox="0 0 320 74" preserveAspectRatio="none" aria-hidden="true">${s}</svg>`; }
+function mid(city) { const m = META[city];
+  return `<div class="mid" aria-hidden="true">${guilloche(city)}<span class="co">${m[0]}</span><span class="im">${m[1]}</span><span class="em">${m[2]}</span></div>`; }
+const SAVES = [{status:'readable',saveId:'s1',title:'沈砚 · 重庆',name:'沈砚',city:'cq',date:'2026/11/10',time:'23:41'},{status:'readable',saveId:'s2',title:'周远 · 上海',name:'周远',city:'sh',date:'2026/11/08',time:'21:05'},{status:'readable',saveId:'s3',title:'林舟 · 广州',name:'林舟',city:'gz',date:'2026/10/30',time:'19:12'}];
+const BAD = {status:'unreadable',storageKey:'save-legacy-7f3a',saveId:'save-7f3a-content',title:'旧版存档'};
+let D = {list:'normal', draft:'1'}, selected = 's1', notice = '', idx = 0;
+const items = () => ['normal','bad'].includes(D.list) ? (D.list === 'bad' ? [...SAVES, BAD] : [...SAVES]) : [];
+/* 已选择的车票排第一张，打开就停在它上面 */
+const ordered = () => { const a = items(); a.sort((x, y) => (y.saveId === selected) - (x.saveId === selected)); return a; };
+const no = s => String(items().indexOf(s) + 1).padStart(2, '0');
+function ticket(s) {
+  if (s.status === 'unreadable') return `<article class="tk bad" aria-label="无法读取的存档：${esc(s.title)}"><div class="band"><b>未知</b><small>UNREADABLE</small><span class="no">ARCHIVE ${no(s)}</span></div>
+   <div class="rt"><div><small>FROM</small><span class="big">${esc(s.title)}</span></div></div>
+   <p class="keys">存档记录 ID：${esc(s.storageKey)}<br>内容中的存档 ID：${esc(s.saveId)}</p><p class="note">当前版本无法读取这条记录。其他存档不受影响；可先导出原始数据，再决定是否删除。</p>
+   <span class="chop" aria-hidden="true">无法<br>读取</span><div class="perf"></div><div class="stub"><span class="go">保存时间无法读取</span><span class="bc"></span></div></article>`;
+  const c = CITY[s.city], sel = s.saveId === selected;
+  return `<article class="tk" data-city="${s.city}" style="--tint:${c[2]}" aria-label="${esc(s.title)}，保存于 ${s.date} ${s.time}${sel ? '，已选择' : ''}">
+   <div class="band"><b>${c[0]}</b><small>${c[1]}</small><span class="no">ARCHIVE ${no(s)}</span></div>
+   <div class="rt"><div><small>FROM</small><span class="big">${esc(s.name)}</span></div><div class="ar">单程</div><div class="to"><small>TO</small><span class="big">${c[0]}</span></div></div>
+   <dl><div><dt>保存日期</dt><dd>${s.date}</dd></div><div><dt>时刻</dt><dd>${s.time}</dd></div>${sel ? '' : '<div><dt>存档</dt><dd>本地</dd></div>'}</dl>
+   ${mid(s.city)}
+   ${sel ? '<span class="chop" aria-hidden="true">已检票<small>SELECTED</small></span>' : ''}
+   <div class="perf"></div><div class="stub" data-tear><span class="go">${sel ? '继续游戏' : '读取存档'}<small>↓ 按住票根往下撕</small></span><span class="bc"></span></div></article>`;
+}
+const blank = () => `<article class="tk blank" aria-label="空白车票：开启新的人生"><div class="band"><b>空白车票</b><small>NEW LIFE</small><span class="no">NEW</span></div>
+  <div class="rt"><div><small>FROM</small><span class="big q">？</span></div><div class="ar">单程</div><div class="to"><small>TO</small><span class="big q">？</span></div></div>
+  <dl><div><dt>城市</dt><dd><span class="line"></span></dd></div><div><dt>职业</dt><dd><span class="line" style="width:3rem"></span></dd></div><div><dt>存档</dt><dd>—</dd></div></dl>
+  <p class="pitch">四座城市 · 自由职业 · 开放人生</p>${D.draft === '1' ? '<p class="draft">有尚未完成的创角资料，可继续填写</p>' : ''}
+  <div class="perf"></div><div class="stub" data-tear><span class="go">开启新的人生<small>↓ 按住票根往下撕</small></span><span class="bc"></span></div></article>`;
+function cards() { return [...ordered(), 'NEW']; }
+/* ---------- 翻牌屏 ---------- */
+const flaps = (el, str, cls = '') => { const old = [...el.children].map(c => c.textContent).join(''); el.innerHTML = [...str].map((ch, i) => `<span class="flap ${cls} ${old[i] !== ch && !reduce ? 'go' : ''}" style="animation-delay:${i * 60}ms">${ch}</span>`).join(''); };
+function updBoard() {
+  const L = D.list, list = cards(), cur = list[idx];
+  if (L === 'loading') { flaps($('#fDest'), '···'); flaps($('#fTime'), '--:--', 'm'); setSt('读取中', 'idle'); return; }
+  if (L === 'error') { flaps($('#fDest'), '———'); flaps($('#fTime'), '--:--', 'm'); setSt('暂停检票', 'bad'); return; }
+  if (cur === 'NEW') { flaps($('#fDest'), '新人生'); flaps($('#fTime'), '--:--', 'm'); setSt('可购票', 'new'); }
+  else if (cur.status === 'unreadable') { flaps($('#fDest'), '未知　'); flaps($('#fTime'), '--:--', 'm'); setSt('无法读取', 'bad'); }
+  else { flaps($('#fDest'), CITY[cur.city][0].padEnd(3, '　')); flaps($('#fTime'), cur.time, 'm'); setSt(cur.saveId === selected ? '已选择' : '本地存档', cur.saveId === selected ? '' : 'idle'); }
+  $('#home').style.setProperty('--tint', cur && cur !== 'NEW' && cur.city ? CITY[cur.city][2] : '#c9a961');
+}
+const setSt = (t, c) => { const s = $('#fSt'); s.textContent = t; s.className = 'st ' + c; };
+/* ---------- 渲染 ---------- */
+function render() {
+  const L = D.list, n = ['empty','loading','error'].includes(L) ? 0 : items().length;
+  $('#cnt').textContent = String(n).padStart(2, '0'); $('#refresh').disabled = L === 'loading';
+  $('#notice').hidden = !notice; $('#notice').textContent = notice;
+  if (L === 'loading') { $('#body').innerHTML = `<div class="rail">${'<article class="tk sk-l"></article>'.repeat(2)}</div><p class="printer">正在读取本地存档…</p>`; $('#acts').innerHTML = ''; updBoard(); return; }
+  if (L === 'error') { $('#body').innerHTML = `<div class="err" role="alert"><i>误</i><p>无法读取本地存档列表。请检查浏览器存储权限后点击「刷新列表」重试；原始数据未被修改。</p></div>`; $('#acts').innerHTML = `<button class="main" data-new>开始新游戏 ↗</button>`; updBoard(); return; }
+  const list = cards(); idx = Math.min(idx, list.length - 1);
+  $('#body').innerHTML = `<div class="rail" id="rail">${list.map(c => c === 'NEW' ? blank() : ticket(c)).join('')}</div><div class="dots">${list.map((c, i) => `<i class="${c === 'NEW' ? 'n' : ''}"></i>`).join('')}</div>${L === 'empty' ? '<p class="empty-n">还没有开始的人生。<br>创建角色，留下第一份存档。</p>' : ''}`;
+  bindRail(); bindTear(); go(idx, false);
+}
+function acts() {
+  const cur = cards()[idx], A = $('#acts');
+  if (cur === 'NEW') A.innerHTML = `<button class="main" data-new>开始新游戏 ↗</button>`;
+  else if (cur.status === 'unreadable') A.innerHTML = `<div class="sub"><button data-export>导出原始数据</button><button class="del" data-del>删除存档</button></div>`;
+  else { const sel = cur.saveId === selected;
+    A.innerHTML = `<button class="main" data-open>${sel ? '继续游戏 →' : '读取存档 ↗'}</button><div class="sub">${sel ? '' : `<button data-sel>选择</button>`}<button class="del" data-del>删除</button></div>`; }
+  updBoard();
+}
+/* ---------- 横滑 ---------- */
+function bindRail() { const r = $('#rail'); if (!r) return; let t;
+  r.addEventListener('scroll', () => { const w = r.firstElementChild.offsetWidth + 12, i = Math.round(r.scrollLeft / w); styleCards(r.scrollLeft / w);
+    if (i !== idx) { idx = i; acts(); navigator.vibrate?.(5); } }, {passive: true}); }
+function styleCards(pos) { $$('#rail .tk').forEach((el, i) => { const d = i - pos; el.classList.toggle('side', Math.abs(d) > .5); el.style.setProperty('--rot', `${Math.max(-1, Math.min(1, d)) * 3}deg`); });
+  $$('.dots i').forEach((d, i) => d.classList.toggle('on', i === Math.round(pos))); }
+function go(i, smooth = true) { const r = $('#rail'); if (!r) return; idx = i; const w = r.firstElementChild.offsetWidth + 12; r.scrollTo({left: i * w, behavior: smooth && !reduce ? 'smooth' : 'auto'}); styleCards(i); acts(); }
+/* ---------- 撕票根 ---------- */
+function bindTear() { $$('[data-tear]').forEach(st => { let y0 = null, dy = 0;
+  st.onpointerdown = e => { y0 = e.clientY; dy = 0; st.setPointerCapture(e.pointerId); st.style.transition = 'none'; };
+  st.onpointermove = e => { if (y0 === null) return; dy = Math.max(0, e.clientY - y0); st.style.transform = `translateY(${Math.min(dy, 90) * .6}px) rotate(${-Math.min(dy, 90) / 12}deg)`; st.style.transformOrigin = '100% 0'; };
+  st.onpointerup = st.onpointercancel = () => { if (y0 === null) return; y0 = null; st.style.transition = ''; st.style.transform = '';
+    if (dy > 60) tear(st); }; }); }
+function tear(st) { navigator.vibrate?.([10, 30, 18]); st.classList.add('tear'); const cur = cards()[idx];
+  setTimeout(() => { toast(cur === 'NEW' ? '进入创建角色' : '读取存档并进入游戏'); st.classList.remove('tear'); }, 700); }
+/* ---------- 操作表 ---------- */
+function sheet(h) { const a = $('#as'); a.innerHTML = h; $('#scrim').classList.add('on'); a.classList.add('on'); setTimeout(() => a.focus({preventScroll: true}), 30); }
+const closeSheet = () => { $('#scrim').classList.remove('on'); $('#as').classList.remove('on'); };
+function confirmDel() { const s = cards()[idx];
+  sheet(`<div class="card"><div class="hdr"><div class="bar"></div><h3 id="asT">删除这份存档？</h3><p>将永久删除「${esc(s.title)}」及其关联草稿、回合提交回执。此操作无法撤销。</p><p class="key">存档记录 ID：${esc(s.storageKey || s.saveId)}</p>${s.status === 'unreadable' ? '<p>此存档无法读取，建议取消并先导出原始数据。</p>' : ''}</div><button class="danger" data-confirm>确认删除</button></div><div class="card"><button class="cancel" data-x>取消</button></div>`); }
+document.addEventListener('click', e => { const t = e.target;
+  if (t.closest('[data-toast]')) toast(t.closest('[data-toast]').dataset.toast);
+  if (t.closest('[data-new]')) { const r = cards(); if (cards()[idx] !== 'NEW') return go(r.length - 1); toast('进入创建角色'); }
+  if (t.closest('[data-open]')) { const st = $$('#rail .tk')[idx]?.querySelector('.stub'); st ? tear(st) : toast('读取存档并进入游戏'); }
+  if (t.closest('[data-sel]')) { selected = cards()[idx].saveId; notice = ''; idx = 0; render(); toast('已设为最近选择'); }
+  if (t.closest('[data-del]')) confirmDel();
+  if (t.closest('[data-export]')) { notice = '已发起原始数据下载，请检查浏览器下载记录。数据库未修改。'; $('#notice').hidden = false; $('#notice').textContent = notice; }
+  if (t.closest('[data-confirm]')) { closeSheet(); const el = $$('#rail .tk')[idx]; el.classList.add('void'); toast('已删除（设计稿不执行）'); }
+  if (t.closest('[data-x]') || t.id === 'scrim') closeSheet(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); if (e.target.closest?.('#rail') && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) go(Math.max(0, Math.min(cards().length - 1, idx + (e.key === 'ArrowRight' ? 1 : -1)))); });
+$('#refresh').onclick = () => { const prev = D.list; D.list = 'loading'; render(); setTimeout(() => { D.list = prev === 'loading' ? 'normal' : prev; render(); }, 1200); };
+$$('.ctrl .seg[data-k]').forEach(seg => seg.onclick = e => { const b = e.target.closest('button'); if (!b) return; [...seg.children].forEach(x => x.setAttribute('aria-pressed', x === b)); D[seg.dataset.k] = b.dataset.v; notice = ''; idx = 0; render(); });
+render();
+const h = new URLSearchParams(location.hash.slice(1));
+if (h.get('list')) { D.list = h.get('list'); render(); }
+if (h.get('draft') === '0') { D.draft = '0'; render(); }
+if (h.get('i')) setTimeout(() => go(+h.get('i'), false), 50);
+if (h.has('del')) confirmDel();
+if (h.has('tear')) setTimeout(() => { const st = $$('#rail .tk')[idx].querySelector('.stub'); st.style.transformOrigin = '100% 0'; st.style.transform = 'translateY(30px) rotate(-7deg)'; }, 120);
+</script>
+</body>
+</html>

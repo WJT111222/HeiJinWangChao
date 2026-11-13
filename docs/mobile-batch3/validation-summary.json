@@ -1,0 +1,276 @@
+{
+  "uniqueChromiumScenarios": 26,
+  "allRecordedFinalExecutions": 32,
+  "expectedSkipped": 0,
+  "unexpectedFailed": 0,
+  "unit": {
+    "files": 3,
+    "passed": 45
+  },
+  "scenarios": [
+    {
+      "test": "排序、四城、中性、页码、键盘与横滑纯浏览不写入",
+      "project": "",
+      "report": "accessibility-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "真实触摸横滑同步当前页和发车屏，不读取也不写正式数据",
+      "project": "",
+      "report": "touch-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "明确选择持久化、重新排序且重载恢复首张",
+      "project": "",
+      "report": "accessibility-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "短拖与 pointercancel 不读取；reduced-motion 撕票立即进入同一存档",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "金色按钮等价读取，快速双击只导航一次",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "真实撕票动画、重复操作锁与切换/刷新/卸载清理",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "空白车票恢复正式创角草稿；无草稿空态按钮可达",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "删除取消不写；只有原子删除成功才作废，关联记录和选择保护",
+      "project": "",
+      "report": "accessibility-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "删除存储失败保留记录，不显示作废，刷新后可恢复",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "删除版本冲突保留正式新版本，不能误删或提前盖作废章",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "无法读取保留异常 ID，不能撕，原始导出完整且不改库",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "真实 Repository loading 与 listError，刷新恢复，不假冒空列表",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "Repository 不可用时错误原文保留、创建和票根禁用",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "长文本与大量存档 375×667 无溢出，底部和设置/公告可达",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "长文本与大量存档 390×844 无溢出，底部和设置/公告可达",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "长文本与大量存档 430×932 无溢出，底部和设置/公告可达",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "长文本与大量存档 750×800 无溢出，底部和设置/公告可达",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "长文本与大量存档 900×800 无溢出，底部和设置/公告可达",
+      "project": "",
+      "report": "final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "删除飞行中禁用操作、Esc 不取消提交；成功后才显示作废",
+      "project": "",
+      "report": "delete-busy-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费",
+      "project": "mobile",
+      "report": "privacy-billing-final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功",
+      "project": "mobile",
+      "report": "privacy-billing-final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费",
+      "project": "desktop",
+      "report": "privacy-billing-final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功",
+      "project": "desktop",
+      "report": "privacy-billing-final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "真实存档与封面/存档馆、键盘、继续和创角入口保持",
+      "project": "",
+      "report": "desktop-business-final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "下载 JSON 完整保留坏记录、草稿和回执，读取下载不改库",
+      "project": "",
+      "report": "desktop-business-final-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "二次确认取消不删数据，确认后只删选中的三类记录，刷新不再出现",
+      "project": "",
+      "report": "desktop-business-final-results.json",
+      "results": [
+        "passed"
+      ]
+    }
+  ],
+  "repeatVerification": [
+    {
+      "test": "排序、四城、中性、页码、键盘与横滑纯浏览不写入",
+      "project": "",
+      "report": "accessibility-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "明确选择持久化、重新排序且重载恢复首张",
+      "project": "",
+      "report": "accessibility-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "删除取消不写；只有原子删除成功才作废，关联记录和选择保护",
+      "project": "",
+      "report": "accessibility-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "真实触摸横滑同步当前页和发车屏，不读取也不写正式数据",
+      "project": "",
+      "report": "touch-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "排序、四城、中性、页码、键盘与横滑纯浏览不写入",
+      "report": "delete-busy-results.json",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "test": "无法读取保留异常 ID，不能撕，原始导出完整且不改库",
+      "report": "unreadable-initial-results.json",
+      "results": [
+        "passed"
+      ]
+    }
+  ],
+  "engineering": {
+    "node": "v24.19.0",
+    "npm": "11.9.0",
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "diffCheck": "passed"
+  }
+}

@@ -1,0 +1,65 @@
+[WebServer] (node:288415) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:288454) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 5 tests using 1 worker
+
+(node:288570) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [mobile] › e2e/npc-memory.spec.ts:72:1 › 手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费 (5.6s)
+  ✓  2 [mobile] › e2e/npc-memory.spec.ts:123:1 › 跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功 (4.5s)
+  ✘  3 [mobile] › e2e/pr125-compatibility.spec.ts:5:1 › #125 兼容：车票主按钮进入存档，#120 双层非模态工作流与行动输入共存 (6.7s)
+(node:288811) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  4 [desktop] › e2e/npc-memory.spec.ts:72:1 › 手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费 (5.2s)
+  ✓  5 [desktop] › e2e/npc-memory.spec.ts:123:1 › 跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功 (5.1s)
+
+
+  1) [mobile] › e2e/pr125-compatibility.spec.ts:5:1 › #125 兼容：车票主按钮进入存档，#120 双层非模态工作流与行动输入共存 ───────
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog', { name: '三阶段工作流', exact: true }).getByRole('region', { name: '三阶段详情', exact: true }).getByRole('navigation', { name: '三阶段导航' }).getByRole('button')
+    Expected: 3
+    Received: 5
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog', { name: '三阶段工作流', exact: true }).getByRole('region', { name: '三阶段详情', exact: true }).getByRole('navigation', { name: '三阶段导航' }).getByRole('button') with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '三阶段工作流', exact: true }).getByRole('region', { name: '三阶段详情', exact: true }).getByRole('navigation', { name: '三阶段导航' }).getByRole('button')
+        14 × locator resolved to 5 elements
+           - unexpected value "5"
+
+
+      31 |   expect(await drawer.evaluate(element=>element.tagName==='DIALOG'||element.matches(':modal'))).toBe(false);
+      32 |   await expect(panel).toHaveAttribute('data-level','home');
+    > 33 |   await expect(panel.getByRole('navigation',{name:'三阶段导航'}).getByRole('button')).toHaveCount(3);
+         |                                                                                  ^
+      34 |   await panel.getByRole('navigation',{name:'三阶段导航'}).getByRole('button',{name:/正文生成/}).click();
+      35 |   await expect(panel).toHaveAttribute('data-level','detail');
+      36 |   await panel.getByRole('button',{name:'返回三阶段列表',exact:true}).click();
+        at /workspace/mobile-batch3/e2e/pr125-compatibility.spec.ts:33:82
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/pr125-compatibility/pr125-compatibility--125-兼容：车票主按钮进入存档，-120-双层非模态工作流与行动输入共存-mobile/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/pr125-compatibility/pr125-compatibility--125-兼容：车票主按钮进入存档，-120-双层非模态工作流与行动输入共存-mobile/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/pr125-compatibility/pr125-compatibility--125-兼容：车票主按钮进入存档，-120-双层非模态工作流与行动输入共存-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/pr125-compatibility/pr125-compatibility--125-兼容：车票主按钮进入存档，-120-双层非模态工作流与行动输入共存-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [mobile] › e2e/pr125-compatibility.spec.ts:5:1 › #125 兼容：车票主按钮进入存档，#120 双层非模态工作流与行动输入共存 ────────
+  4 passed (29.3s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

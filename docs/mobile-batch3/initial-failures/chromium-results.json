@@ -1,0 +1,237 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/mobile-batch3/node_modules/.bin/playwright",
+      "test",
+      "--config",
+      "playwright.mobile-batch3.config.ts",
+      "--grep",
+      "真实触摸|删除版本"
+    ],
+    "configFile": "/workspace/mobile-batch3/playwright.mobile-batch3.config.ts",
+    "rootDir": "/workspace/mobile-batch3/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/mobile-batch3/test-results/mobile-batch3",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/workspace/mobile-batch3/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "mobile-home.spec.ts"
+        ],
+        "timeout": 35000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/mobile-batch3/test-results/mobile-batch3",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/workspace/mobile-batch3/e2e",
+        "snapshotDir": "/workspace/mobile-batch3/e2e",
+        "testIgnore": [],
+        "testMatch": "mobile-home.spec.ts",
+        "timeout": 35000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5251",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "isMobile": true,
+          "hasTouch": true,
+          "reducedMotion": "reduce",
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "docs/mobile-batch3/chromium-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5251 --strictPort",
+      "url": "http://127.0.0.1:5251",
+      "reuseExistingServer": true
+    }
+  },
+  "suites": [
+    {
+      "title": "mobile-home.spec.ts",
+      "file": "mobile-home.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "真实触摸横滑同步当前页和发车屏，不读取也不写正式数据",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 35000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 7185,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('.mh-ticket-wrap').nth(1)\nExpected: \u001b[32m\"true\"\u001b[39m\nReceived: \u001b[31m\"\"\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" locator('.mh-ticket-wrap').nth(1) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.mh-ticket-wrap').nth(1)\u001b[22m\n\u001b[2m    14 × locator resolved to <div class=\"mh-ticket-wrap side\">…</div>\u001b[22m\n\u001b[2m       - unexpected value \"null\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('.mh-ticket-wrap').nth(1)\nExpected: \u001b[32m\"true\"\u001b[39m\nReceived: \u001b[31m\"\"\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" locator('.mh-ticket-wrap').nth(1) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.mh-ticket-wrap').nth(1)\u001b[22m\n\u001b[2m    14 × locator resolved to <div class=\"mh-ticket-wrap side\">…</div>\u001b[22m\n\u001b[2m       - unexpected value \"null\"\u001b[22m\n\n    at /workspace/mobile-batch3/e2e/mobile-home.spec.ts:35:55",
+                    "location": {
+                      "file": "/workspace/mobile-batch3/e2e/mobile-home.spec.ts",
+                      "column": 55,
+                      "line": 35
+                    },
+                    "snippet": "  33 |  for(const x of [270,230,190,150,110,70])await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y}]});\n  34 |  await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});\n> 35 |  await expect(page.locator('.mh-ticket-wrap').nth(1)).toHaveAttribute('aria-current','true');await expect(page.locator('.mh-board')).toHaveAccessibleName(/重庆/);expect(new URL(page.url()).hash).toBe('');expect(await rawSnapshot(page)).toEqual(before);\n     |                                                       ^\n  36 | });\n  37 | test('明确选择持久化、重新排序且重载恢复首张',async({page})=>{\n  38 |  await seedTickets(page);const before=await rawSnapshot(page);await ticketAt(page,3);await page.getByRole('button',{name:'选择',exact:true}).click();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/mobile-batch3/e2e/mobile-home.spec.ts",
+                        "column": 55,
+                        "line": 35
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('.mh-ticket-wrap').nth(1)\nExpected: \u001b[32m\"true\"\u001b[39m\nReceived: \u001b[31m\"\"\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" locator('.mh-ticket-wrap').nth(1) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.mh-ticket-wrap').nth(1)\u001b[22m\n\u001b[2m    14 × locator resolved to <div class=\"mh-ticket-wrap side\">…</div>\u001b[22m\n\u001b[2m       - unexpected value \"null\"\u001b[22m\n\n\n  33 |  for(const x of [270,230,190,150,110,70])await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y}]});\n  34 |  await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});\n> 35 |  await expect(page.locator('.mh-ticket-wrap').nth(1)).toHaveAttribute('aria-current','true');await expect(page.locator('.mh-board')).toHaveAccessibleName(/重庆/);expect(new URL(page.url()).hash).toBe('');expect(await rawSnapshot(page)).toEqual(before);\n     |                                                       ^\n  36 | });\n  37 | test('明确选择持久化、重新排序且重载恢复首张',async({page})=>{\n  38 |  await seedTickets(page);const before=await rawSnapshot(page);await ticketAt(page,3);await page.getByRole('button',{name:'选择',exact:true}).click();\n    at /workspace/mobile-batch3/e2e/mobile-home.spec.ts:35:55"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:57:57.579Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/mobile-batch3/test-results/mobile-batch3/mobile-home-真实触摸横滑同步当前页和发车屏，不读取也不写正式数据/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/mobile-batch3/test-results/mobile-batch3/mobile-home-真实触摸横滑同步当前页和发车屏，不读取也不写正式数据/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/mobile-batch3/test-results/mobile-batch3/mobile-home-真实触摸横滑同步当前页和发车屏，不读取也不写正式数据/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/mobile-batch3/e2e/mobile-home.spec.ts",
+                    "column": 55,
+                    "line": 35
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "2ab141f70caec178beee-ff64cb4e3bf9d36f3fea",
+          "file": "mobile-home.spec.ts",
+          "line": 29,
+          "column": 1
+        },
+        {
+          "title": "删除版本冲突保留正式新版本，不能误删或提前盖作废章",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 35000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1794,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:58:05.528Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2ab141f70caec178beee-c76eedbddd2acbd20b5a",
+          "file": "mobile-home.spec.ts",
+          "line": 80,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-12T23:57:57.069Z",
+    "duration": 10474.135,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
