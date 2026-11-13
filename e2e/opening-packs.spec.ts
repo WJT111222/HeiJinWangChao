@@ -127,6 +127,8 @@ test('完整五步保存、再次套用直达第五步、编辑刷新与正式�
     await page.getByRole('button', { name: /开始新游戏/ }).click();
   }
   else await page.locator('.library .dossier.new button').click();
+  // The mobile blank ticket finishes its existing tear animation before onCreate runs.
+  await expect(page.getByRole('heading', { name: '基本信息', exact: true })).toBeVisible();
   expect((await draft(page)).step).toBe(1);
   await page.getByRole('button', { name: '我的开局包', exact: true }).click();
   await page.getByRole('radio', { name: /上海普通人生/ }).check();
