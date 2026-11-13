@@ -55,6 +55,7 @@ import { SettingsSchema, settingsKey } from '../settings/model';
 import { summaryFailureTitle } from '../../workflows/memorySummaryQueue';
 import type { OpeningStart } from './openingStart';
 import { runtimeLogEvent } from './runtimeLog';
+import { errorBannerKey } from './errorBanner';
 import { DesktopWorkflowPanel } from './WorkflowPanel';
 
 import type { StageAction, WorkflowStage, WorkflowTab, WorkflowView } from './WorkflowPanel';
@@ -151,6 +152,8 @@ export function GameScreen({
   }
   const [worldDirectoryOpen, setWorldDirectoryOpen] = useState(false);
   const [diagnosticsOpen,setDiagnosticsOpen]=useState(false);
+  // 玩家关掉的错误横幅：只记住当时那组错误，出现新的错误时会重新显示。
+  const [dismissedError, setDismissedError] = useState('');
   const [mobileStatusOpen,setMobileStatusOpen]=useState(false),[mobileMini,setMobileMini]=useState(false);
   const readerY=useRef(0),inputElement=useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState('');
@@ -161,9 +164,12 @@ export function GameScreen({
     submitToken = useRef(0);
   const [runtimeLogs, setRuntimeLogs] = useState<RuntimeLogEntry[]>([]);
   const runtimeLogId = useRef(0);
+  // 失败事件序号：用于判断错误横幅是否是「新的一次失败」；清空日志不回退。
+  const [failureSeq, setFailureSeq] = useState(0);
   const reportRuntimeEvent = useCallback<RuntimeLogReporter>((stage, kind, failure) => {
     const entry = runtimeLogEvent(++runtimeLogId.current, stage, kind, failure);
     setRuntimeLogs((current) => [...current.slice(-49), entry]);
+    if (kind === 'failed') setFailureSeq((current) => current + 1);
   }, []);
   useEffect(
     () => () => {
@@ -512,18 +518,23 @@ export function GameScreen({
             ? "off"
             : "pending";
 
+  const errorMessages = [automatic.error, error, submitError, variables.error, world.error].filter((message): message is string => Boolean(message));
+  const errorFailures = draft?.failures.filter(failure => failure.storyRevision === draft.storyRevision).slice(-6) ?? [];
+  const errorSignature = workflowError
+    ? errorBannerKey({ saveId: state.saveId, turnId: draft?.turnId, storyRevision: draft?.storyRevision, failureSeq }, errorMessages, errorFailures)
+    : '';
   const desktopNotices = (
     <>
-      {workflowError && (
+      {workflowError && errorSignature !== dismissedError && (
         <div className="wf-banner workflow-errors" data-level="err" role="alert">
           <span className="wf-banner-tag" aria-hidden="true">误</span>
           <div className="wf-banner-msg">
-            {[automatic.error, error, submitError, variables.error, world.error]
-              .filter(Boolean)
-              .map((message, i) => <p key={i}>{message}</p>)}
-            {draft?.failures.filter(failure => failure.storyRevision === draft.storyRevision).slice(-6).map((failure, i) => <small key={`code-${i}`}>{stageLabels[failure.stage]} · 安全失败码：{failure.errorCode} · {failure.attempt} 次尝试</small>)}
+            {errorMessages.map((message, i) => <p key={i}>{message}</p>)}
+            {errorFailures.map((failure, i) => <small key={`code-${i}`}>{stageLabels[failure.stage]} · 安全失败码：{failure.errorCode} · {failure.attempt} 次尝试</small>)}
           </div>
           {automatic.error && <button onClick={onOpenSettings}>打开 AI 设置</button>}
+          <button type="button" className="wf-banner-close" aria-label="关闭错误提示" title="关闭提示（运行诊断里仍保留完整记录）"
+            onClick={() => setDismissedError(errorSignature)}>×</button>
         </div>
       )}
       {workflowGuidance && (
