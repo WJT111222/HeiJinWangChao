@@ -8,5 +8,5 @@ export function announcementNamespace(jsoncText: string, binding?: string): stri
 export function publishDecision(input: { ref: string; current: string; latest: string | undefined }):
   { publish: boolean; fail: boolean; reason: string };
 export function checkOnline(input: {
-  version: string; url?: string; fetcher?: typeof fetch; attempts?: number; wait?: number;
+  version: string; url?: string; fetcher?: typeof fetch; attempts?: number; wait?: number; timeout?: number;
 }): Promise<{ ok: boolean; source: string; version: string }>;

@@ -51,10 +51,54 @@ describe('线上检查区分「KV 已写入」与「线上已由 KV 返回」', 
     expect(await checkOnline({ version: 'B', fetcher: reply('kv', 'A'), attempts: 2, wait: 0 })).toMatchObject({ ok: false, version: 'A' });
     expect(await checkOnline({ version: 'B', fetcher: async () => { throw new Error('offline'); }, attempts: 2, wait: 0 })).toMatchObject({ ok: false });
   });
+  it('每次 pending fetch 都会被单独中止，重试耗尽安全返回而不挂住', async () => {
+    const signals: AbortSignal[] = [];
+    const fetcher: typeof fetch = async (_url, init) => new Promise<Response>((_resolve, reject) => {
+      if (init?.signal) {
+        signals.push(init.signal);
+        init.signal.addEventListener('abort', () => reject(init.signal!.reason), { once: true });
+      }
+    });
+    expect(await checkOnline({ version: 'B', fetcher, attempts: 2, wait: 0, timeout: 10 })).toMatchObject({ ok: false });
+    expect(signals).toHaveLength(2);
+    expect(signals[0]).not.toBe(signals[1]);
+    expect(signals.every(signal => signal.aborted)).toBe(true);
+  });
+
+  it('响应头已返回但 body 一直挂起也受每次超时限制', async () => {
+    const signals: AbortSignal[] = [], bodies: ReadableStreamDefaultController<Uint8Array>[] = [];
+    const fetcher: typeof fetch = async (_url, init) => {
+      if (init?.signal) signals.push(init.signal);
+      // Deliberately does not reject body reads on abort: the whole attempt,
+      // including response.json(), must still have a bounded deadline.
+      return new Response(new ReadableStream<Uint8Array>({ start(controller) { bodies.push(controller); } }), {
+        headers: { 'x-announcement-source': 'kv' },
+      });
+    };
+    try {
+      expect(await checkOnline({ version: 'B', fetcher, attempts: 2, wait: 0, timeout: 10 })).toMatchObject({ ok: false });
+      expect(signals).toHaveLength(2);
+      expect(signals.every(signal => signal.aborted)).toBe(true);
+    } finally { for (const body of bodies) body.close(); }
+  });
+
+  it('首轮超时后仍能在下一轮验证成功', async () => {
+    let calls = 0;
+    const fetcher: typeof fetch = async (_url, init) => {
+      if (++calls === 1) return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(init.signal!.reason), { once: true });
+      });
+      return new Response(JSON.stringify({ version: 'B' }), { headers: { 'x-announcement-source': 'kv' } });
+    };
+    expect(await checkOnline({ version: 'B', fetcher, attempts: 2, wait: 0, timeout: 10 })).toEqual({ ok: true, source: 'kv', version: 'B' });
+    expect(calls).toBe(2);
+  });
+
 });
 
 describe('真实 git 次序演练（假 wrangler，不连 Cloudflare）', () => {
-  let root = '', origin = '', kv = '', wrangler = '';
+  let root = '', origin = '', kv = '', wrangler = '', fakeBin = '';
+  const realGit = execFileSync('sh', ['-c', 'command -v git'], { encoding: 'utf8' }).trim();
   const shas: Record<string, string> = {};
   const git = (cwd: string, ...args: string[]) => execFileSync('git',
     ['-c', 'user.name=test', '-c', 'user.email=test@example.invalid', '-c', 'init.defaultBranch=main', ...args],
@@ -70,7 +114,8 @@ describe('真实 git 次序演练（假 wrangler，不连 Cloudflare）', () => 
     git(root, 'clone', '-q', origin, dir); git(dir, 'checkout', '-q', shas[name]);
     return spawnSync(process.execPath, [scriptPath, ...(env.ARGS ? [env.ARGS] : [])], { cwd: dir, encoding: 'utf8', env: {
       ...process.env, GITHUB_REF: 'refs/heads/main', WRANGLER_BIN: wrangler, FAKE_KV: kv,
-      CLOUDFLARE_API_TOKEN: 'token', CLOUDFLARE_ACCOUNT_ID: 'account', GITHUB_OUTPUT: '', ...env } });
+      CLOUDFLARE_API_TOKEN: 'token', CLOUDFLARE_ACCOUNT_ID: 'account', GITHUB_OUTPUT: '',
+      PATH: `${fakeBin}:${process.env.PATH}`, FAKE_REAL_GIT: realGit, FAKE_FETCH_COUNT: join(dir, 'fetch-count'), ...env } });
   }
   const stored = () => existsSync(kv) ? JSON.parse(readFileSync(kv, 'utf8')).version : undefined;
 
@@ -88,6 +133,23 @@ copyFileSync(args[args.indexOf('--path') + 1], process.env.FAKE_KV);
 if (process.env.FAKE_ON_PUT) execSync(process.env.FAKE_ON_PUT, { stdio: 'ignore' });
 `);
     chmodSync(wrangler, 0o755);
+    fakeBin = join(root, 'fake-bin'); mkdirSync(fakeBin);
+    const fakeGit = join(fakeBin, 'git');
+    writeFileSync(fakeGit, `#!/usr/bin/env node
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+const args = process.argv.slice(2);
+if (args[0] === 'fetch') {
+  const count = existsSync(process.env.FAKE_FETCH_COUNT) ? Number(readFileSync(process.env.FAKE_FETCH_COUNT, 'utf8')) + 1 : 1;
+  writeFileSync(process.env.FAKE_FETCH_COUNT, String(count));
+  if ((process.env.FAKE_FAIL_FETCH === 'before' && count === 1) || (process.env.FAKE_FAIL_FETCH === 'after' && count === 2)) {
+    process.stderr.write('Simulated git fetch network failure\\n'); process.exit(71);
+  }
+}
+const result = spawnSync(process.env.FAKE_REAL_GIT, args, { stdio: 'inherit' });
+process.exit(result.status ?? 1);
+`);
+    chmodSync(fakeGit, 0o755);
     git(root, 'init', '-q', '--bare', origin);
     git(root, 'clone', '-q', origin, 'work');
     mkdirSync(join(root, 'work', 'announcements'), { recursive: true });
@@ -141,4 +203,39 @@ if (process.env.FAKE_ON_PUT) execSync(process.env.FAKE_ON_PUT, { stdio: 'ignore'
     expect(run('C').stdout).toContain('跳过');
     expect(stored()).toBe('D');
   }, 60_000);
+
+  it('写入前 fetch 失败必须拒绝，KV 与 version output 都不变', () => {
+    commit('BeforeFailure', { 'announcements/current.json': announcement('BeforeFailure') });
+    const previous = stored(), output = join(root, 'before-output');
+    const result = run('BeforeFailure', { FAKE_FAIL_FETCH: 'before', GITHUB_OUTPUT: output });
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('Simulated git fetch network failure');
+    expect(result.stdout).not.toContain('KV 写入成功');
+    expect(stored()).toBe(previous);
+    expect(existsSync(output)).toBe(false);
+  }, 60_000);
+
+  it('KV 写入成功后 fetch 失败只警告，保留 version 且后续 verify 仍可运行', () => {
+    commit('AfterFailure', { 'announcements/current.json': announcement('AfterFailure') });
+    const output = join(root, 'after-output');
+    const result = run('AfterFailure', { FAKE_FAIL_FETCH: 'after', GITHUB_OUTPUT: output });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('KV 写入成功');
+    expect(result.stdout).toContain('::warning::');
+    expect(result.stdout).toContain('写入后');
+    expect(stored()).toBe('AfterFailure');
+    const outputLines = readFileSync(output, 'utf8').trim().split('\n');
+    expect(outputLines[0]).toMatch(/^version<<EOF_/);
+    expect(outputLines[1]).toBe('AfterFailure');
+    const mock = join(root, 'verify-fetch.mjs');
+    // A fresh CLI subprocess like the next Actions step, with fetch entirely
+    // in memory. It must never contact the real announcement URL or KV.
+    writeFileSync(mock, `globalThis.fetch = async () => new Response(JSON.stringify({ version: process.env.ANNOUNCEMENT_VERSION }), { headers: { 'x-announcement-source': 'kv' } });`);
+    const verified = spawnSync(process.execPath, ['--import', mock, scriptPath, '--verify'], {
+      encoding: 'utf8', env: { ...process.env, ANNOUNCEMENT_VERSION: outputLines[1] },
+    });
+    expect(verified.status).toBe(0);
+    expect(verified.stdout).toContain('线上已可读取：来源 kv，版本 AfterFailure');
+  }, 60_000);
+
 });

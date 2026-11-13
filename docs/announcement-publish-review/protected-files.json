@@ -1,0 +1,16 @@
+{
+  "comparedWith": "3630021ad633a41111f6c7d0f8d9c7e919de4d81",
+  "unchangedFiles": {
+    ".github/workflows/publish-announcement.yml": "538c434775f7ef77dc4e140dbcdaa1cbdc0bcf8a6e96c5ead2bcd2fe7bfd0a1e",
+    "announcements/current.json": "f9962328bfba5b103ea707d6890e18c833fba0f4a4e39ccc87fcd4bdd670e2cd",
+    "wrangler.jsonc": "a06b18c396064dfb64c7dfcc2e6bd6d3d22a8b3153c000d21ab7721a9acc8b33",
+    "src/worker.ts": "431bc1c815edd7a66f05b83572af904f532daa7aacabd73317c708ccabdf9358",
+    "src/services/notices/announcement.ts": "c9a529bf81c760036aa8ba4e8063d010952dca5819091c0d64747db9bc9d04b4",
+    "src/services/notices/client.ts": "df0f9e1264e93919a9188e1e47dc279883806e8c32a09bf7112531b93449953e",
+    "src/ui/notices/useNotices.ts": "42490e730355197b67bc7260c7fd8e397c97ed5eb13598fd1820c2a4baa9ab56",
+    "src/ui/notices/preferences.ts": "c16f3656703b87d74261bb4550218a2a64acf8fdad06d00e6a6044cc8178317a",
+    "src/ui/notices/announcement.ts": "7554d99dfd8419fe787925e2c4b5a5a69e275760058bab256418f5c998fd52e0",
+    "package.json": "ade8c1babb45f5af0a71c31ab8ad0ee65a8dc1d19fa303cec020e52dcd6ea2bb",
+    "package-lock.json": "7dc0a3f4e776273aeb91e5f7a327b679d2ae74ebd206c7198c7474e2002d2a2e"
+  }
+}

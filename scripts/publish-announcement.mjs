@@ -68,17 +68,33 @@ export function publishDecision({ ref, current, latest }) {
   return { publish: true, fail: false, reason: '与最新 main 上的公告一致。' };
 }
 
-/** 读取线上接口：只有来源为 kv 且版本一致才算「线上已可读取」。 */
-export async function checkOnline({ version, url = announcementUrl, fetcher = globalThis.fetch, attempts = 6, wait = 20_000 }) {
+/** 读取线上接口：只有来源为 kv 且版本一致才算「线上已可读取」。
+ * 每轮最多 3 秒（含响应体），6 轮加 5 次 20 秒间隔，总预算约 118 秒。
+ */
+export async function checkOnline({ version, url = announcementUrl, fetcher = globalThis.fetch, attempts = 6, wait = 20_000, timeout = 3_000 }) {
   let last = { source: '无', version: '无' };
   for (let attempt = 1; attempt <= attempts; attempt++) {
+    const controller = new globalThis.AbortController();
+    let timer;
     try {
-      const response = await fetcher(url, { cache: 'no-store' });
-      const source = response.headers.get('x-announcement-source') ?? '无';
-      const body = await response.json().catch(() => ({}));
-      last = { source, version: typeof body?.version === 'string' ? body.version : '无' };
-      if (response.ok && source === 'kv' && last.version === version) return { ok: true, ...last };
-    } catch { /* 网络错误按未读取处理，继续重试 */ }
+      const deadline = new Promise((_, reject) => {
+        timer = globalThis.setTimeout(() => {
+          controller.abort();
+          reject(new Error('线上公告单次读取超时'));
+        }, timeout);
+      });
+      const reading = (async () => {
+        const response = await fetcher(url, { cache: 'no-store', signal: controller.signal });
+        const source = response.headers.get('x-announcement-source') ?? '无';
+        const body = await response.json().catch(() => ({}));
+        return { ok: response.ok, source, version: typeof body?.version === 'string' ? body.version : '无' };
+      })();
+      // Bound the entire read, even if a fetcher/body does not reject on abort.
+      const result = await Promise.race([reading, deadline]);
+      last = { source: result.source, version: result.version };
+      if (result.ok && last.source === 'kv' && last.version === version) return { ok: true, ...last };
+    } catch { /* 网络错误或超时按未读取处理，继续重试 */ }
+    finally { globalThis.clearTimeout(timer); }
     if (attempt < attempts) await delay(wait);
   }
   return { ok: false, ...last };
@@ -132,8 +148,12 @@ async function publish(dryRun) {
   say(`KV 写入成功：${announcement.version}（跨地区同步可能需要约 1 分钟，线上可读取另见下一步）。`);
   output('version', announcement.version);
   // 写入后复查：检查与写入之间若有新公告提交，本次内容会被排在后面的运行覆盖为最新。
-  if (latestOnMain(cwd) !== current)
-    say('::notice::写入期间 main 上的公告又有新提交；线上可能短暂显示本次内容，排在后面的发布运行会写入最新公告。');
+  try {
+    if (latestOnMain(cwd) !== current)
+      say('::notice::写入期间 main 上的公告又有新提交；线上可能短暂显示本次内容，排在后面的发布运行会写入最新公告。');
+  } catch {
+    say('::warning::KV 已写入，但写入后无法复查 main；version 输出已保留，后续线上验证照常执行。请核对最新公告，必要时手动补发。');
+  }
 }
 
 async function verify() {

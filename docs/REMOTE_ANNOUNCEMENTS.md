@@ -44,10 +44,10 @@
 1. **只从 `main` 执行**：job 只在 `refs/heads/main` 上运行，脚本内再检查一次；手动运行时选择其他分支会直接跳过或失败，不写入。
 2. 用与 Worker、客户端相同的 `parseAnnouncement` 校验文件，不合法就停止，线上不变。
 3. **防止旧运行覆盖新公告**：所有运行在同一 concurrency 组内串行执行；先装好 wrangler，再重新获取最新 `main`，本次检出的公告与此刻 `main` 上的公告不完全一致时，说明已有更新的提交（由排在后面的运行发布），本次跳过、成功退出、不写入。
-   **这不是原子操作**：concurrency 只让发布运行彼此排队，不能阻止 Git 在「检查」与「写入」之间收到新提交。预装 wrangler 把这个窗口缩到一次写入调用；写入后会再查一次 main，若期间有新公告提交，会在日志中提示。此时线上可能短暂显示本次内容，随后排队的那次运行会写入最新公告（最终一致）。若那次运行失败，需要手动补发（见下文）。
+   **这不是原子操作**：concurrency 只让发布运行彼此排队，不能阻止 Git 在「检查」与「写入」之间收到新提交。预装 wrangler 把这个窗口缩到一次写入调用；写入后会再查一次 main，若期间有新公告提交，会在日志中提示。**写入前**获取 main 失败仍会停止且不写入；**写入后**复查失败仅输出 warning，不撤销已成功的发布步骤，保留 version 输出，让后续线上验证照常执行。此时线上可能短暂显示本次内容，随后排队的那次运行会写入最新公告（最终一致）。若那次运行失败，需要手动补发（见下文）。
 4. 按 `wrangler.jsonc` 中 `binding` 为 `ANNOUNCEMENTS` 的那一项读取 KV Namespace ID；缺失、重复或格式不对时失败，不写入。
 5. 写入 KV 的 `current` 键。这一步成功只代表「KV 已写入」。
-6. 读取 `https://heijinwangchao.de5.net/api/announcement` 约两分钟：只有响应头 `X-Announcement-Source: kv` 且 `version` 一致才算「线上已可读取」。KV 跨地区同步较慢时只给警告，不算失败；稍后自行刷新确认。
+6. 读取 `https://heijinwangchao.de5.net/api/announcement` 最多6轮：每轮最多3秒（包含响应体读取），轮次间等待20秒，总预算约118秒。单轮超时会中止请求并继续重试，耗尽后仅 warning，不让网络挂起拖满整个 job。只有响应头 `X-Announcement-Source: kv` 且 `version` 一致才算「线上已可读取」。KV 跨地区同步较慢时只给警告，不算失败；稍后自行刷新确认。
 
 不需要重新构建或部署游戏。`npm run check` 中的 `announcement-file.test.ts` 会在 PR 阶段校验公告格式，`announcement-publish.test.ts` 用真实 git 次序和假 wrangler 演练上述规则（不连接 Cloudflare）。
 

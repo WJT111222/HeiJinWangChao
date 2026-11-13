@@ -1,0 +1,82 @@
+
+ RUN  v5.0.5 /workspace/pr129-fix
+
+ ❯ src/tests/announcement-publish.test.ts (19 tests | 4 failed) 18109ms
+   ❯ 线上检查区分「KV 已写入」与「线上已由 KV 返回」 (5)
+     × 每次 pending fetch 都会被单独中止，重试耗尽安全返回而不挂住 5009ms
+     × 响应头已返回但 body 一直挂起也受每次超时限制 5007ms
+     × 首轮超时后仍能在下一轮验证成功 5012ms
+   ❯ 真实 git 次序演练（假 wrangler，不连 Cloudflare） (6)
+     × KV 写入成功后 fetch 失败只警告，保留 version 且后续 verify 仍可运行 407ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tests/announcement-publish.test.ts > 线上检查区分「KV 已写入」与「线上已由 KV 返回」 > 每次 pending fetch 都会被单独中止，重试耗尽安全返回而不挂住
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/tests/announcement-publish.test.ts:54:3
+     52|     expect(await checkOnline({ version: 'B', fetcher: async () => { th…
+     53|   });
+     54|   it('每次 pending fetch 都会被单独中止，重试耗尽安全返回而不挂住', async () => {
+       |   ^
+     55|     const signals: AbortSignal[] = [];
+     56|     const fetcher: typeof fetch = async (_url, init) => new Promise<Re…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/tests/announcement-publish.test.ts > 线上检查区分「KV 已写入」与「线上已由 KV 返回」 > 响应头已返回但 body 一直挂起也受每次超时限制
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/tests/announcement-publish.test.ts:68:3
+     66|   });
+     67|
+     68|   it('响应头已返回但 body 一直挂起也受每次超时限制', async () => {
+       |   ^
+     69|     const signals: AbortSignal[] = [], bodies: ReadableStreamDefaultCo…
+     70|     const fetcher: typeof fetch = async (_url, init) => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/tests/announcement-publish.test.ts > 线上检查区分「KV 已写入」与「线上已由 KV 返回」 > 首轮超时后仍能在下一轮验证成功
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/tests/announcement-publish.test.ts:85:3
+     83|   });
+     84|
+     85|   it('首轮超时后仍能在下一轮验证成功', async () => {
+       |   ^
+     86|     let calls = 0;
+     87|     const fetcher: typeof fetch = async (_url, init) => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/tests/announcement-publish.test.ts > 真实 git 次序演练（假 wrangler，不连 Cloudflare） > KV 写入成功后 fetch 失败只警告，保留 version 且后续 verify 仍可运行
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ src/tests/announcement-publish.test.ts:222:27
+    220|     const output = join(root, 'after-output');
+    221|     const result = run('AfterFailure', { FAKE_FAIL_FETCH: 'after', GIT…
+    222|     expect(result.status).toBe(0);
+       |                           ^
+    223|     expect(result.stdout).toContain('KV 写入成功');
+    224|     expect(result.stdout).toContain('::warning::');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  4 failed | 16 passed (20)
+   Start at  12:19:35
+   Duration  18.33s (tests 99%, import 1%)
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

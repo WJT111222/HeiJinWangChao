@@ -1,0 +1,49 @@
+{
+  "baseHead": "3630021ad633a41111f6c7d0f8d9c7e919de4d81",
+  "main": "d122d9d044604dd0846e719bb18ad99069629123",
+  "node": "v24.19.0",
+  "npmCi": {
+    "exitCode": 0,
+    "packages": 143
+  },
+  "baselineTargeted": {
+    "passed": 15,
+    "failed": 0
+  },
+  "newTestsBeforeFix": {
+    "passed": 16,
+    "failed": 4
+  },
+  "targetedAfterFix": {
+    "passed": 20,
+    "failed": 0,
+    "skipped": 0
+  },
+  "check": {
+    "exitCode": 0,
+    "files": 141,
+    "passed": 3435,
+    "failed": 0,
+    "skipped": 0,
+    "lint": "passed",
+    "typescript": "passed",
+    "build": "passed"
+  },
+  "yamlValidation": "passed",
+  "announcementValidation": {
+    "exitCode": 0,
+    "version": "1.0 Beta · 2026.11.13",
+    "updates": 11
+  },
+  "productionReadonly": {
+    "curlExitCode": 56,
+    "connectStatus": 403,
+    "receivedTargetApiResponse": false,
+    "currentKvVersionVerified": false,
+    "cloudflareConfigurationVerified": false
+  },
+  "realKvWrites": 0,
+  "workflowDispatches": 0,
+  "paidModelRequests": 0,
+  "browserE2ERun": false
+}
