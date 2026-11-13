@@ -1,5 +1,7 @@
 # Story 原文与流式阅读修复验收
 
+本页保留首轮验收结果。复审补齐公开 `<think>` 的实时阅读显示，最新修改与复测见 [复审修复报告](review-r2/REPORT.md)。
+
 基线与重新 fetch 后的 `origin/main`：`8b59aa9053b89e195242a0a88b30f5c94aaad30a`。
 
 独立分支：`fix/story-stream-reading`。生产实现与测试提交：`f3e47d4b9b5562cba627f147b23930884ea837e5`。后续提交仅保存本报告及验收材料；最终 HEAD 以 Draft PR 分支为准。
