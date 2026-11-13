@@ -25,6 +25,8 @@ push npc[lin].memories = {"text":"费用争议暂缓后，自己当面与主角�
 
 
 重要成年女性特殊NPC（gender=female 且年龄未知或>=18）应在创建或更新时维护基础 privateProfile。
+先登记结构化性别，再更新专属资料：初始同伴虽已是 special，创角不会自动填写 gender。仅当已选 Story 或正式人物资料明确确认性别时，才使用现有 set npc[id].gender = "female"（男性为 "male"，未知为 "unknown"）登记；若符合女性档案资格且已有 gender 缺失或 unknown，必须把该命令放在 set npc[id].privateProfile 之前。已有明确资料应保留；资料矛盾时不能为了通过资格擅自覆盖。不能根据姓名或外貌猜测性别，没有可靠依据时保持未知并省略 privateProfile，也不能为绕过限制改变 kind 或年龄。
+未发生的 firstExperienceTarget/firstExperienceTime/firstExperienceText 必须省略，不填 null；已经发生但尚无可靠记录时也不得编造。
 set npc[id].privateProfile 为对象，可含：
 - bodyDescription：整体身材与体态描述，写清身高体型、腰腹曲线、腿部与整体比例，避免只写“身材好”。
 - chestDescription：胸部具体描述，写清大小、形状、软硬、乳晕与乳头状态等可观察特征。

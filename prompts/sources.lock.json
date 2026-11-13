@@ -330,6 +330,11 @@
           }
         },
         "sha256": "975cf76a09ae6425681b68510e237a7a4c9c02fd2cd0cdafd33902e19b4f6ff8"
+      },
+      "openingNpcEligibility": {
+        "baseCommit": "7e4cc22d8841f8449c3bdc0110620d22a2f51e23",
+        "notes": "开局 Variables 定向修复：有明确 Story/正式资料依据时先登记结构化性别，未知不猜测；未发生的初次经历省略，互动时间服从 Story 开局时钟。保留七字段、原资格限制及历次来源。",
+        "sha256": "dd816ac487e0c62cd653dfb9b673d07510d50c9e8673e4d37c4f46003969ccf5"
       }
     },
     "variableGroups/npc_special/update.md": {
@@ -375,6 +380,11 @@
           }
         },
         "sha256": "053930d0522f131969101bdfca8c7e37ad0c2304344ef48b2fe0944daa659abd"
+      },
+      "openingNpcEligibility": {
+        "baseCommit": "7e4cc22d8841f8449c3bdc0110620d22a2f51e23",
+        "notes": "开局 Variables 定向修复：有明确 Story/正式资料依据时先登记结构化性别，未知不猜测；未发生的初次经历省略，互动时间服从 Story 开局时钟。保留七字段、原资格限制及历次来源。",
+        "sha256": "dcfa5507b02b87b136b77031c37f7498fb24629e195c6ce27ec633d214e67446"
       }
     },
     "variableGroups/npc_special/offscreen.md": {
@@ -720,6 +730,11 @@
       "openingLifeInitialization": {
         "notes": "六代目任务明确批准：开局完整人生叙事与一次性生活初始化；保留此前来源和适配哈希，普通回合与输出协议不变。",
         "sha256": "2a5edcf7f3e2c4db1d93ef3bd326b07878d944dccddeb8fd1205d7436961cf6d"
+      },
+      "openingNpcEligibility": {
+        "baseCommit": "7e4cc22d8841f8449c3bdc0110620d22a2f51e23",
+        "notes": "开局 Variables 定向修复：有明确 Story/正式资料依据时先登记结构化性别，未知不猜测；未发生的初次经历省略，互动时间服从 Story 开局时钟。保留七字段、原资格限制及历次来源。",
+        "sha256": "3c0cd683d48ea5b2b36b3217c685b174633cf6778ad9406d0879fddc3df9820f"
       }
     },
     "stages/opening/world.md": {
