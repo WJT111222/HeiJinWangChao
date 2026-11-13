@@ -1,6 +1,12 @@
-# 合并到 main 且修改了 announcements/current.json 时，把它写入 Cloudflare KV 的 current 键。
-# 玩家刷新页面即可看到新公告，不需要重新构建或部署游戏。
-# 需要仓库 Secrets：CLOUDFLARE_API_TOKEN（权限 Workers KV Storage: Edit）、CLOUDFLARE_ACCOUNT_ID。
+# main 上 announcements/current.json 有改动时，把它写入 Cloudflare KV 的 current 键（只读 Worker 随即返回新公告）。
+# 不需要重新构建或部署游戏。逻辑在 scripts/publish-announcement.mjs，本文件只负责调度。
+# 需要仓库 Secrets：CLOUDFLARE_API_TOKEN（权限仅 Workers KV Storage: Edit）、CLOUDFLARE_ACCOUNT_ID。
+#
+# 生产安全边界：
+# - 只从 main 执行：job 级 if，脚本内再查一次 GITHUB_REF。手动运行选择其他分支时 job 直接跳过。
+# - 防止旧运行覆盖新公告：concurrency 组串行执行；写入前重新 fetch 最新 main，
+#   检出内容与此刻 main 上的公告不完全一致就跳过（成功退出、不写入）。
+# - KV Namespace 按 wrangler.jsonc 中 binding = ANNOUNCEMENTS 精确读取，缺失或重复时失败、不写入。
 name: 发布王朝公告
 
 on:
@@ -18,6 +24,7 @@ concurrency:
 
 jobs:
   publish:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -34,28 +41,15 @@ jobs:
       - name: 校验公告
         run: node scripts/check-announcement.mjs announcements/current.json
 
-      - name: 写入 Cloudflare KV
+      - name: 写入 Cloudflare KV（仅当仍是 main 上的最新公告）
+        id: publish
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::error::缺少 CLOUDFLARE_API_TOKEN 或 CLOUDFLARE_ACCOUNT_ID，见 docs/REMOTE_ANNOUNCEMENTS.md「自动发布」。"
-            exit 1
-          fi
-          # Namespace ID 以 wrangler.jsonc 为准；在临时目录运行，避免 wrangler 解析整份部署配置。
-          namespace=$(grep -o '"id": *"[0-9a-f]\{32\}"' wrangler.jsonc | head -1 | grep -o '[0-9a-f]\{32\}')
-          if [ -z "$namespace" ]; then echo "::error::wrangler.jsonc 里找不到 ANNOUNCEMENTS 的 Namespace ID"; exit 1; fi
-          file="$GITHUB_WORKSPACE/announcements/current.json"
-          cd "$RUNNER_TEMP"
-          npx --yes wrangler@4 kv key put current --namespace-id "$namespace" --path "$file" --remote
+        run: node scripts/publish-announcement.mjs
 
-      - name: 检查线上接口（KV 同步可能延迟，失败只警告）
-        run: |
-          expected=$(node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('announcements/current.json','utf8')).version)")
-          for i in 1 2 3 4 5 6; do
-            got=$(curl -fsS https://heijinwangchao.de5.net/api/announcement | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{process.stdout.write(JSON.parse(s).version)}catch{}})" || true)
-            if [ "$got" = "$expected" ]; then echo "线上已是 $expected"; exit 0; fi
-            sleep 20
-          done
-          echo "::warning::两分钟内线上接口还没返回 $expected（当前：${got:-无}）。KV 跨地区同步可能更慢，稍后刷新确认即可。"
+      - name: 检查线上是否已由 KV 返回（同步延迟只警告）
+        if: steps.publish.outputs.version != ''
+        env:
+          ANNOUNCEMENT_VERSION: ${{ steps.publish.outputs.version }}
+        run: node scripts/publish-announcement.mjs --verify

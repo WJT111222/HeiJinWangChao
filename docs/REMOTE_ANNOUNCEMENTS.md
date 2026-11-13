@@ -33,17 +33,33 @@
 
 ## 以后发布公告：合并 PR 自动发布（推荐）
 
-公告内容放在仓库的 `announcements/current.json`。**每次发布都要换一个新的 `version`**：玩家勾选「今日不再弹出」只对当时看到的那一版生效（#132），同一天发布了新 `version`，玩家刷新后会再看到新公告；`version` 不变则当天不再弹出。第二天无论是否更新都会照常弹出。手机公告顶部还会直接显示 `VERSION <version>`，所以写成玩家看得懂的形式，例如 `1.0 Beta · 2026.11.13`；同一天第二次可写 `1.0 Beta · 2026.11.13-2`。修改它的 PR 合并到 `main` 后，GitHub Actions「发布王朝公告」会自动：
+公告内容放在仓库的 `announcements/current.json`，修改它的 PR **合并到 `main` 本身就是向生产 KV 发布的授权**，合并前请确认内容。
 
-1. 用与 Worker、客户端相同的 `parseAnnouncement` 校验文件，不合法就停止，线上不变；
-2. 写入 KV Namespace（ID 取自 `wrangler.jsonc`）的 `current` 键；
-3. 轮询 `https://heijinwangchao.de5.net/api/announcement` 约两分钟，确认版本已更新。KV 同步慢时只给警告，不算失败。
+**`version`**：每次发布都换一个新值。手机公告顶部会直接显示 `VERSION <version>`，所以写成玩家看得懂的形式，例如 `1.0 Beta · 2026.11.13`；同一天第二次可写 `1.0 Beta · 2026.11.13-2`。
+- 当前 main：「今日不再弹出」只按本地日期生效，勾选后当天不再自动弹出任何公告，第二天恢复。
+- **合并 #132 后**：「今日不再弹出」只对当时看到的那一版生效，同一天发布了新 `version`，玩家刷新后会再看到新公告。
 
-不需要重新构建或部署游戏。`npm run check` 中的 `announcement-file.test.ts` 也会校验这个文件，PR 阶段就能发现格式错误。
+合并后，GitHub Actions「发布王朝公告」（逻辑在 `scripts/publish-announcement.mjs`）依次：
 
-**回滚**：在 GitHub 上对该 PR 点 Revert 并合并，旧内容会被自动写回。
+1. **只从 `main` 执行**：job 只在 `refs/heads/main` 上运行，脚本内再检查一次；手动运行时选择其他分支会直接跳过或失败，不写入。
+2. 用与 Worker、客户端相同的 `parseAnnouncement` 校验文件，不合法就停止，线上不变。
+3. **防止旧运行覆盖新公告**：所有运行在同一 concurrency 组内串行执行；写入前重新获取最新 `main`，本次检出的公告与此刻 `main` 上的公告不完全一致时，说明已有更新的提交（由排在后面的运行发布），本次跳过、成功退出、不写入。
+4. 按 `wrangler.jsonc` 中 `binding` 为 `ANNOUNCEMENTS` 的那一项读取 KV Namespace ID；缺失、重复或格式不对时失败，不写入。
+5. 写入 KV 的 `current` 键。这一步成功只代表「KV 已写入」。
+6. 读取 `https://heijinwangchao.de5.net/api/announcement` 约两分钟：只有响应头 `X-Announcement-Source: kv` 且 `version` 一致才算「线上已可读取」。KV 跨地区同步较慢时只给警告，不算失败；稍后自行刷新确认。
 
-**手动补发**：Actions → 发布王朝公告 → Run workflow，会把 main 上当前的文件再写一次。
+不需要重新构建或部署游戏。`npm run check` 中的 `announcement-file.test.ts` 会在 PR 阶段校验公告格式，`announcement-publish.test.ts` 用真实 git 次序和假 wrangler 演练上述规则（不连接 Cloudflare）。
+
+**发布顺序**：公告内容描述的界面或功能，必须先合并并**实际部署**到生产，再合并公告 PR。否则线上公告会早于玩家看到的界面（例如「版本号统一为 1.0 Beta」须在 #128 部署之后发布）。
+
+**回滚**：保留发布机制，不要回退工作流或脚本。
+1. 新建一个只改 `announcements/current.json` 的「公告恢复」PR，把之前备份的合法公告 JSON 放回去。
+2. 给它一个**新的** `version`（例如 `1.0 Beta · 2026.11.13-r1`）：合并 #132 后，同一天勾选过免打扰的玩家才会再看到恢复后的公告。
+3. 合并后由同一工作流发布，并按第 6 步确认线上已由 KV 返回。
+
+对**之后某一次只改公告内容的 PR** 点 Revert，同样会生成上述恢复提交，可以作为便捷做法；但**不要 Revert 引入发布机制的 #129 本身**，那会连工作流、脚本和公告文件一起删除，不会把旧公告写回 KV。
+
+**手动补发**：Actions → 发布王朝公告 → Run workflow，分支选择 `main`，会把 main 上当前的公告再写一次（同样经过上述检查）。
 
 ### 一次性配置（管理员）
 
