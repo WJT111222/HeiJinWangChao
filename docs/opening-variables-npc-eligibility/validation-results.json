@@ -1,0 +1,72 @@
+[
+  {
+    "name": "related-vitest",
+    "command": [
+      "npx",
+      "vitest",
+      "run",
+      "src/tests/opening-npc-eligibility.test.ts",
+      "src/tests/variable-text-executor.test.ts",
+      "src/tests/variable-text-bridge.test.ts",
+      "src/tests/variable-execution-without-review.test.ts",
+      "src/tests/variable-source-port.test.ts",
+      "src/tests/variable-source-runtime.test.ts",
+      "src/tests/variable-stage.test.ts",
+      "src/tests/variables-contract-stability.test.ts",
+      "src/tests/scene-text-variables.test.ts",
+      "src/tests/private-profile.test.ts",
+      "src/tests/opening-initialization.test.ts",
+      "src/tests/opening-start.test.ts",
+      "src/tests/opening-life-workflow.test.ts",
+      "src/tests/opening-time.test.ts",
+      "src/tests/world-npc-creation-contract.test.ts",
+      "src/tests/automatic-settlement-diagnostics.test.ts"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "prompts-check",
+    "command": [
+      "npm",
+      "run",
+      "prompts:check"
+    ],
+    "exitCode": 1
+  },
+  {
+    "name": "lint",
+    "command": [
+      "npm",
+      "run",
+      "lint"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "typecheck",
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "build",
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "diff-check",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exitCode": 0
+  }
+]

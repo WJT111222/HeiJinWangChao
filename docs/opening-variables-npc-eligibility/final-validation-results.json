@@ -1,0 +1,57 @@
+[
+  {
+    "name": "final-new-vitest",
+    "command": [
+      "npx",
+      "vitest",
+      "run",
+      "src/tests/opening-npc-eligibility.test.ts"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "final-prompts-check",
+    "command": [
+      "npm",
+      "run",
+      "prompts:check"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "final-lint",
+    "command": [
+      "npm",
+      "run",
+      "lint"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "final-typecheck",
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "final-build",
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "final-diff-check",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exitCode": 0
+  }
+]
