@@ -1,10 +1,21 @@
+import { openStoredSave } from './helpers/home';
 import { openWorldArchive, openSettings } from './helpers/gameLayout';
 import { variableReply } from '../src/tests/fixtures/variableReply';
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools as openLegacyGameTools } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { GameStateSchema } from '../src/domain/state';
 import { array, record, string } from '../src/services/ai/protocols';
+
+// These scenarios navigate to settings/archives. The phone workflow is now a
+// native sheet; explicitly close the sheet opened by the legacy test helper so
+// its focus trap does not block the navigation under test. Business assertions stay intact.
+async function openGameTools(page: Page, entering=false) {
+  await openLegacyGameTools(page, entering);
+  const sheet=page.getByRole('dialog',{name:'三阶段工作流',exact:true});
+  if ((page.viewportSize()?.width??0)<=900 && await sheet.isVisible())
+    await sheet.getByRole('button',{name:'关闭资料界面',exact:true}).click();
+}
 
 // 只在隔离浏览器存储中使用，全部请求拦截到mock.invalid。
 async function seed(page: Page, automatic = false) {
@@ -35,7 +46,7 @@ async function seed(page: Page, automatic = false) {
     for (const stage of ['variables', 'world', 'memory']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'npc-browser-mock-secret');
   }, automatic);
-  await page.reload(); await openGameTools(page); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+  await page.reload(); await openStoredSave(page); await openGameTools(page, true);
 }
 async function load(page: Page) {
   const value: unknown = await page.evaluate(async () => {
@@ -121,7 +132,7 @@ test('跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手
   await seed(page); const before = await load(page), panel = await memory(page);
   await panel.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true }).click();
   await expect.poll(() => requests).toBe(1);
-  const other = await browser.newPage(); await other.goto('/'); await other.getByRole('button', { name: /读取存档/ }).click();
+  const other = await browser.newPage(); await other.goto('/'); await openStoredSave(other);
   const second = await memory(other);
   await second.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true }).click();
   await expect(second).toContainText('另一个标签或任务正在总结此存档'); expect(requests).toBe(1);

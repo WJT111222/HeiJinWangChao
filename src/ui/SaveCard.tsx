@@ -1,35 +1,15 @@
 import { CITY, saveCity, skyline } from './home/skyline';
-import { useRef, useState } from 'react';
+import { useRawSaveExport } from './home/useRawSaveExport';
 import type { SaveRepository } from '../services/storage/saveRepository';
-import { saveKeyText, serializeRawSave } from '../services/storage/saveManagement';
+import { saveKeyText } from '../services/storage/saveManagement';
 import type { SaveSummary } from '../services/storage/saveManagement';
-import { DataError } from '../domain/common';
 import { dateTime } from './panels/playerView';
 
 export function SaveCard({ save, index, selected, repository, onOpen, onSelect, onDelete }: {
   save: SaveSummary; index: number; selected: boolean; repository?: SaveRepository;
   onOpen: (id: string) => void; onSelect: (id: string) => void; onDelete: () => void;
 }) {
-  const [exporting, setExporting] = useState(false), [notice, setNotice] = useState('');
-  const exportLock = useRef(false);
-  async function exportRaw() {
-    if (!repository || exportLock.current) return;
-    exportLock.current = true; setExporting(true); setNotice('');
-    try {
-      const text = serializeRawSave(await repository.exportRaw(save.storageKey));
-      const url = URL.createObjectURL(new Blob([text], { type: 'application/json;charset=utf-8' }));
-      const link = document.createElement('a');
-      try {
-        link.href = url; link.download = 'heijin-raw-save.json'; document.body.append(link); link.click();
-      } finally {
-        link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }
-      setNotice('已发起原始数据下载，请检查浏览器下载记录。数据库未修改。');
-    } catch (error) {
-      setNotice(error instanceof DataError && error.code === 'RAW_EXPORT_FORMAT'
-        ? error.message : '导出失败，未生成文件，原始数据未修改。请检查浏览器存储权限后重试。');
-    } finally { exportLock.current = false; setExporting(false); }
-  }
+  const {exporting,notice,exportRaw} = useRawSaveExport(repository, save.storageKey);
   const city = saveCity(save.title);
   return <article className={`save-card dossier ${selected ? 'selected sel' : ''} ${save.status === 'unreadable' ? 'bad' : ''}`} data-city={city}>
     <div className="tabline"><span className="tab">ARCHIVE {String(index + 1).padStart(2,'0')}</span><span className="clip" aria-hidden="true" /></div>

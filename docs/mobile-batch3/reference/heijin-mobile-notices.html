@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0b0b">
+<title>黑金王朝 · 手机端 · 须知与公告</title>
+<style>
+:root{--font-title:'Noto Serif SC','Noto Serif CJK SC','Source Han Serif SC','Songti SC','STSong',serif;--font-body:'Noto Sans SC','Noto Sans CJK SC','PingFang SC','Microsoft YaHei',-apple-system,sans-serif;--font-mono:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;
+  --bg:#08090a;--text:#ECE7DA;--prose:#DCD6C8;--muted:#A3A396;--dim:#77796f;--gold:#C9A961;--gold-hi:#E8D196;--gold-lo:#7d6a3e;--line:#ffffff14;--line-2:#ffffff22;
+  --warn:#C26A4A;--warn-text:#E6A18A;--ok:#7DB49A;--info:#8EC1E0;--tint:#7FA7A0;--ease:cubic-bezier(.22,.7,.2,1);
+  --sky-1:#040506;--sky-2:#080b0c;--sky-3:#0c1111;--lights:.5;
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);color-scheme:dark}
+[data-city=cq]{--tint:#7FA7A0}[data-city=sh]{--tint:#8E9BD8}[data-city=hrb]{--tint:#A9C3D8}[data-city=gz]{--tint:#D08A6A}
+[data-time=dusk]{--sky-1:#0e0d16;--sky-2:#2c1e26;--sky-3:#6a3a26;--lights:.8}
+[data-time=day]{--sky-1:#18222a;--sky-2:#26323a;--sky-3:#3a4549;--lights:.12}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:#050606;color:var(--text);font-family:var(--font-body);line-height:1.7;-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer;background:transparent;border:1px solid var(--line-2);border-radius:8px;padding:.5rem .9rem;touch-action:manipulation}
+button:active{transform:scale(.97)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+h1,h2,h3,h4{font-family:var(--font-title);font-weight:600;margin:0;line-height:1.35}p{margin:0}
+.seal{display:inline-grid;place-items:center;flex:none;font-family:var(--font-title);color:var(--gold-hi);border:1px solid var(--gold-lo);background:linear-gradient(145deg,#c9a96126,#c9a96108);border-radius:3px;box-shadow:inset 0 0 0 2px #0009,inset 0 0 0 3px #c9a96130}
+
+/* ===== 桌面查看：手机外框 + 说明 ===== */
+.desk{height:100%;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:3rem;padding:2rem}
+.desk .notes{justify-self:end;max-width:22rem;font-size:.84rem;color:var(--muted);line-height:1.85}
+.desk .notes h1{font-size:1.5rem;letter-spacing:.2em;color:var(--text);margin:.3rem 0 .8rem}
+.desk .notes .eyebrow{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.28em;color:var(--gold)}
+.desk .notes ol{padding-left:1.1rem;margin:.6rem 0}
+.desk .notes li{margin-bottom:.35rem}
+.desk .notes b{color:var(--text);font-weight:500}
+.desk .ctrl{justify-self:start;display:grid;gap:.9rem;font-size:.76rem;color:var(--dim);max-width:16rem}
+.desk .ctrl p{margin-bottom:.3rem}
+.desk .ctrl .seg{display:flex;flex-wrap:wrap;gap:.25rem}
+.desk .ctrl button{font-size:.72rem;padding:.2rem .6rem;border-style:dashed;color:var(--muted)}
+.desk .ctrl button[aria-pressed=true]{color:var(--gold-hi);border-color:var(--gold-lo);border-style:solid}
+.frame{position:relative;width:390px;height:844px;border-radius:52px;padding:12px;background:linear-gradient(145deg,#2a2c2b,#111);box-shadow:0 40px 90px -30px #000,inset 0 0 0 2px #3a3c3b}
+.frame::before{content:'';position:absolute;left:50%;top:22px;transform:translateX(-50%);width:110px;height:30px;border-radius:20px;background:#000;z-index:50}
+.phone{position:relative;width:100%;height:100%;border-radius:40px;overflow:hidden;background:var(--bg);--safe-t:44px;--safe-b:22px;container-type:inline-size}
+@media (max-width:600px){
+  .desk{display:block;padding:0;height:100%}
+  .desk .notes,.desk .ctrl{display:none}
+  .frame{width:100%;height:100dvh;border-radius:0;padding:0;background:none;box-shadow:none}
+  .frame::before{display:none}
+  .phone{border-radius:0;--safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)}
+}
+@media (max-width:1100px) and (min-width:601px){.desk{grid-template-columns:auto;justify-content:center}.desk .notes,.desk .ctrl{display:none}}
+
+
+.phone{background:#0a0b0b}
+.behind{position:absolute;inset:0;border:0;width:100%;height:100%;pointer-events:none;filter:blur(2px) brightness(.5)}
+.scrim{position:absolute;inset:0;background:#000a}
+/* 全屏文书 */
+.doc{position:absolute;left:0;right:0;bottom:0;top:calc(var(--safe-t) + 8px);display:flex;flex-direction:column;border-radius:22px 22px 0 0;overflow:hidden;
+  background:linear-gradient(180deg,#141816,#0d100f);border-top:1px solid #c9a96140;box-shadow:0 -20px 50px -20px #000;transition:transform .45s var(--ease),opacity .45s}
+.doc::before{content:'';position:absolute;left:18%;right:18%;top:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);z-index:3}
+.doc:focus{outline:none}
+.doc.out-l{transform:translateX(-30%);opacity:0;pointer-events:none}
+.doc.out-r{transform:translateX(100%);pointer-events:none}
+.doc.in{animation:up .4s var(--ease)}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.grab{flex:none;display:grid;place-items:center;padding:.55rem 0 0}.grab i{width:2.4rem;height:4px;border-radius:2px;background:#ffffff2a}
+.dh{flex:none;display:flex;align-items:center;gap:.65rem;padding:.55rem 14px .5rem}
+.dh .seal{width:2.3rem;height:2.3rem;font-size:1rem}
+.dh .t{flex:1;min-width:0}
+.dh small{display:block;font-family:var(--font-mono);font-size:.5rem;letter-spacing:.28em;color:var(--gold)}
+.dh h2{font-size:1.02rem;letter-spacing:.06em;background:linear-gradient(180deg,#f5e3b0,#c9a961);-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dh .x{flex:none;width:2.2rem;height:2.2rem;padding:0;border:0;border-radius:50%;background:#ffffff0d;color:var(--muted);font-size:1rem}
+.steps{flex:none;display:flex;align-items:center;justify-content:center;gap:.5rem;padding:0 0 .55rem;font-size:.66rem;color:var(--dim);letter-spacing:.14em}
+.steps i{width:1.15rem;height:1.15rem;border-radius:50%;display:inline-grid;place-items:center;font-style:normal;font-family:var(--font-mono);font-size:.56rem;border:1px solid #ffffff2a;margin-right:.3rem}
+.steps .on{color:var(--gold-hi)}.steps .on i{background:linear-gradient(180deg,#e9d196,#c5a45a);color:#171810;border:0}
+.steps .ok{color:var(--gold)}.steps .ok i{border-color:var(--gold);color:var(--gold)}
+.steps b{width:2rem;height:1px;background:#ffffff22}
+/* 章节横条 */
+.toc{flex:none;position:relative;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#0f1211}
+.toc .rail{display:flex;gap:.35rem;overflow-x:auto;scrollbar-width:none;padding:.5rem 14px;scroll-behavior:smooth}
+.toc .rail::-webkit-scrollbar{display:none}
+.toc button{flex:none;display:flex;align-items:center;gap:.35rem;padding:.3rem .7rem;border-radius:999px;font-size:.72rem;color:var(--muted);background:#ffffff06;border-color:var(--line)}
+.toc button i{font-style:normal;font-family:var(--font-title);font-size:.68rem;color:var(--dim)}
+.toc button[aria-current=true]{color:#171810;background:linear-gradient(180deg,#e9d196,#c5a45a);border-color:transparent;font-weight:600}
+.toc button[aria-current=true] i{color:#171810}
+.toc .prog{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:transparent}
+.toc .prog i{display:block;height:100%;background:var(--gold);width:0;transition:width .15s}
+.toc .pct{position:absolute;right:0;top:0;bottom:0;display:flex;align-items:center;padding:0 12px 0 22px;font-family:var(--font-mono);font-size:.6rem;color:var(--gold-hi);background:linear-gradient(90deg,transparent,#0f1211 30%);pointer-events:none}
+/* 正文 */
+.body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:1.1rem 20px 1.6rem;scrollbar-width:none}
+.body::-webkit-scrollbar{display:none}
+.body:focus{outline:none}
+.age{display:flex;align-items:center;gap:.9rem;padding:.85rem .95rem;margin-bottom:1.3rem;border:1px solid #6e4a3d;border-radius:12px;background:#c26a4a12}
+.notice-age{flex:none;width:3.4rem;height:3.4rem;display:grid;place-items:center;border-radius:50%;border:2px solid #D47C60;color:#D47C60;font-family:var(--font-title);font-size:1.1rem;font-weight:700;transform:rotate(-10deg);box-shadow:inset 0 0 0 3px #131715,inset 0 0 0 4px #D47C6055}
+.age strong{font-size:.92rem;line-height:1.6;color:#F1E6C8;font-weight:600}
+.body p{font-family:var(--font-title);font-size:1rem;line-height:2;color:#D9D4C6;margin:0 0 .9em;text-align:justify}
+.body p.em{padding:.5rem .8rem;border-left:2px solid var(--gold);background:linear-gradient(90deg,#c9a96114,transparent 80%);color:#F1E6C8}
+.body h3{display:flex;align-items:center;gap:.6rem;font-size:1.08rem;letter-spacing:.1em;color:var(--gold-hi);margin:1.7rem 0 .8rem;scroll-margin-top:.6rem}
+.body h3::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,#c9a96155,transparent)}
+.div{display:flex;align-items:center;gap:.8rem;margin:1.6rem 0;color:var(--gold-lo);font-size:.6rem}
+.div::before,.div::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,#c9a96144,transparent)}
+.closing p{text-align:center}
+.closing p.em{border:0;background:none;padding:0;color:#F1E6C8}
+.sign{display:flex;align-items:center;justify-content:flex-end;gap:.8rem;margin-top:.4rem}
+.sign p{margin:0!important;text-align:right!important}
+.stamp{width:3rem;height:3rem;display:grid;place-items:center;text-align:center;font-family:var(--font-title);font-size:.7rem;line-height:1.15;color:var(--gold-hi);border:1.5px solid var(--gold-lo);border-radius:3px;transform:rotate(-8deg);box-shadow:inset 0 0 0 3px #0e1110,inset 0 0 0 4px #c9a96144}
+.end{display:block;text-align:center;font-size:.62rem;letter-spacing:.3em;color:var(--dim);margin-top:1.4rem}
+/* 公告 */
+.ver{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--font-mono);font-size:.58rem;letter-spacing:.2em;padding:.18rem .65rem;border-radius:999px;color:var(--gold-hi);border:1px solid var(--gold-lo);background:#c9a96112;margin-bottom:.8rem}
+.notice-theme{font-family:var(--font-title);font-size:1.32rem;line-height:1.55;letter-spacing:.04em;color:#F1E6C8;margin:0 0 1.2rem}
+.ups{list-style:none;margin:0;padding:0;position:relative}
+.ups::before{content:'';position:absolute;left:1.05rem;top:1rem;bottom:1rem;width:1px;background:linear-gradient(#c9a96155,#c9a96111)}
+.ups li{position:relative;display:grid;grid-template-columns:2.1rem minmax(0,1fr);gap:.8rem;padding:0 0 1.1rem}
+.ups .n{width:2.1rem;height:2.1rem;border-radius:50%;display:grid;place-items:center;font-family:var(--font-title);font-size:.9rem;color:var(--gold-hi);border:1.5px solid var(--gold-lo);background:#121615;position:relative;z-index:1}
+.ups p{margin:0!important;font-family:var(--font-body)!important;font-size:.88rem!important;line-height:1.85!important;padding-top:.2rem}
+.notice-message{margin:.6rem 0 0!important;padding:1rem 1.1rem;border-radius:12px;background:#ffffff07;border:1px solid var(--line);color:#F1E6C8!important;text-align:left!important}
+.notice-message::before{content:'「';color:var(--gold)}.notice-message::after{content:'」';color:var(--gold)}
+.a-sign{display:flex;justify-content:flex-end;margin-top:.9rem}
+/* 底栏 */
+.notice-footer{flex:none;display:grid;gap:.5rem;padding:.7rem 14px calc(var(--safe-b) + 10px);border-top:1px solid var(--line);background:#0d100ff2}
+.notice-footer .r{display:flex;align-items:center;gap:.7rem}
+.mute{display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:var(--muted);white-space:nowrap}
+.mute input{appearance:none;width:1.25rem;height:1.25rem;margin:0;border-radius:4px;border:1.5px solid #ffffff40;display:grid;place-items:center}
+.mute input:checked{background:linear-gradient(180deg,#e9d196,#c5a45a);border-color:transparent}
+.mute input:checked::after{content:'✓';font-size:.75rem;color:#171810;font-weight:700}
+.notice-footer .go{flex:1;height:3rem;border:0;border-radius:14px;font-family:var(--font-title);font-weight:700;font-size:.98rem;letter-spacing:.14em;color:#171810;background:linear-gradient(180deg,#f0dba2,#c5a45a);box-shadow:inset 0 1px 0 #fff8,0 12px 26px -14px #c9a961aa;white-space:nowrap}
+.notice-footer .hint{text-align:right;font-size:.62rem;color:var(--dim);letter-spacing:.08em}
+.toast{position:absolute;left:50%;top:calc(var(--safe-t) + 60px);z-index:60;transform:translate(-50%,-8px);padding:.45rem .9rem;border-radius:999px;background:#1a1f1c;border:1px solid var(--line-2);font-size:.76rem;opacity:0;pointer-events:none;transition:all .25s;white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="desk">
+ <aside class="notes"><p class="eyebrow">MOBILE · 须知与公告</p><h1>手机端 · 须知与公告</h1>
+  <p>第一次打开游戏时，在车票首页上方依次弹出：须知 → 公告。</p>
+  <ol><li><b>整屏阅读</b>：从底部升起，几乎占满屏幕，长文像读一篇文章一样往下滑。</li>
+   <li><b>章节横条</b>：电脑端左侧的目录，在手机上变成一排可以横滑的章节胶囊，读到哪一节就高亮哪一节，点击可以跳转。下面一条金线是阅读进度。</li>
+   <li><b>拇指区底栏</b>：「今日不再弹出」和主按钮都在最下面。</li>
+   <li><b>须知 → 公告</b>：点「已阅读，查看公告」，须知向左退出，公告从右侧滑入，就像翻到下一页。</li>
+   <li><b>公告</b>：更新条目串成一条竖线，用壹贰叁编号。</li></ol></aside>
+ <div class="frame"><div class="phone" id="phone">
+  <iframe class="behind" src="heijin-mobile-home.html" title="首页" aria-hidden="true" tabindex="-1"></iframe><div class="scrim"></div>
+  <div id="host"></div>
+  <div class="toast" id="toast" role="status"></div>
+ </div></div>
+ <aside class="ctrl">
+  <div><p>演示状态</p><div class="seg" id="mode"><button data-m="d-auto" aria-pressed="true">自动 · 须知</button><button data-m="a-auto" aria-pressed="false">自动 · 公告</button><button data-m="d-man" aria-pressed="false">手动 · 须知</button><button data-m="a-man" aria-pressed="false">手动 · 公告</button></div></div>
+  <p style="color:var(--dim);line-height:1.7">以上控制仅用于设计稿演示。</p>
+ </aside>
+</div>
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let tt; const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 1800); };
+const N = {"disclaimer":{"title":"黑金王朝 · 游玩须知与免责声明","ageNotice":"｜本游戏仅面向年满18周岁的成年玩家。","intro":[{"text":"欢迎来到《黑金王朝》。"},{"text":"本作品是一款以现代都市为背景、由人工智能驱动的开放世界互动文字角色扮演游戏。玩家可以自由选择人生道路，并通过自己的行动影响人物关系、社会势力与世界发展。"},{"text":"在开始游玩前，请了解以下内容。"}],"sections":[{"title":"一、成人内容声明","paragraphs":[{"text":"本游戏可能包含露骨的成人性描写、暴力、血腥、犯罪、黑社会活动、毒品、赌博、权力斗争、道德争议及其他可能令人不适的情节。"},{"text":"相关内容仅作为虚构世界的叙事元素，不代表开发者对现实中任何违法行为或争议行为的支持、鼓励或认可。"},{"text":"未满18周岁的用户不得游玩本游戏。"}]},{"title":"二、架空世界与现实声明","paragraphs":[{"text":"《黑金王朝》采用「真实地理，架空社会」的世界观设定。","emphasis":true},{"text":"游戏借鉴现实中国城市的地理环境、建筑风貌、地域文化、生活习惯及社会生活特色，以营造具有真实感的现代都市环境。"},{"text":"但游戏中的人物、政治势力、政府官员、社会组织、商业集团、地下势力、权力关系及剧情事件均属于虚构设定或人工智能生成内容。"},{"text":"游戏中的架空社会结构不代表现实世界的实际政治制度、行政运作或社会状况。"},{"text":"本作品无意影射、评价或指控任何现实中的特定人物、政治组织、政府机构、企业或社会团体。"},{"text":"游戏可能出现的腐败、犯罪、政治斗争及其他社会冲突，均应理解为架空世界内部的虚构情节，不应作为判断现实人物、机构或事件的事实依据。"}]},{"title":"三、人工智能生成内容声明","paragraphs":[{"text":"本游戏的剧情、人物互动、世界变化及部分游戏数据由人工智能动态生成。"},{"text":"由于人工智能技术具有不确定性，游戏可能出现事实错误、逻辑矛盾、角色行为异常、不符合现实的描述或其他不可预期的内容。"},{"text":"AI 生成内容不代表开发者的个人观点、政治立场或价值判断。"},{"text":"游戏内容仅供虚构娱乐体验，不构成现实中的法律、医疗、金融或其他专业建议。"}]},{"title":"四、第三方 AI 服务与费用","paragraphs":[{"text":"本游戏允许玩家自行配置第三方人工智能模型服务。"},{"text":"为实现游戏功能，玩家输入、必要的游戏状态和剧情上下文可能发送至玩家选择的 AI 服务提供商。"},{"text":"相关服务的使用限制、数据处理方式及 API 调用费用，由对应服务提供商按照其服务条款和政策决定。"},{"text":"玩家应自行了解所选服务的规则、费用及隐私政策，并妥善保管自己的 API 密钥。"}]},{"title":"五、Demo 测试版与存档声明","paragraphs":[{"text":"《黑金王朝》目前仍处于 Demo 测试阶段，并非最终正式版本。"},{"text":"游戏可能存在程序错误、功能缺失、存档异常、版本兼容问题及其他不稳定情况。"},{"text":"游戏存档主要保存在玩家当前浏览器的本地存储中。清除浏览器数据、更换设备、浏览器存储故障或未来版本更新，均可能影响存档的正常使用。"},{"text":"建议玩家妥善保管重要游戏数据，并理解测试版本可能发生的调整。"}]},{"title":"六、虚构与现实的边界","paragraphs":[{"text":"《黑金王朝》致力于提供自由、开放且具有丰富可能性的虚构人生体验。"},{"text":"游戏中的自由不等于现实中的行为许可。","emphasis":true},{"text":"无论玩家在游戏中选择怎样的人生道路，虚构剧情与现实行为都应明确区分。任何现实行为均应遵守适用法律法规。"}]}],"closing":[{"text":"感谢你阅读以上说明。","emphasis":true},{"text":"愿你在这个架空世界中，书写一段真正属于自己的人生。"},{"text":"《黑金王朝》开发者","emphasis":true}]},"announcement":{"title":"王朝公告","theme":"《黑金王朝》0.9 开发里程碑 · 世界事件与历史更新","updates":["记忆总结 V2 已支持短期转中期、中期转长期和 NPC 个人经历总结；自动维护可关闭，手动「立即总结」仍可用，已提交的历史原文保留可追溯。","新增多回合撤回：可按完整快照恢复最近已结算的回合，每份存档最多保留 5 个恢复点；没有重做功能，也不能撤销已产生的第三方 AI 调用费用。","重大纪事时间轴已区分世界与主角的人生历史；传闻仍是传闻，日期不明确的往事不会被伪装成精确时间。","世界事件 V2 已支持主事件、多个并行子事件、固定时刻结算和后续阶段；Story 可根据剧情决定主角介入、获知或不参与，事件档案保留已结束阶段的结果。","「夜幕金印」已更新桌面和手机阅读布局、角色对白气泡及只读世界事件档案；目前仍为 0.9 开发阶段，真实模型长篇试玩、手机真机体验和正式 V1.0 发行尚待验收。"],"message":"王朝还在建设，城市已经有了自己的生活。感谢你在这里留下每一段经历。"}};
+const NUM = '壹贰叁肆伍陆柒捌玖拾';
+const CN = '一二三四五六';
+const P = x => `<p class="${x.emphasis ? 'em' : ''}">${x.text}</p>`;
+let auto = true;
+function foot(kind) {
+  const label = !auto ? '关闭' : kind === 'd' ? '已阅读，查看公告 →' : '开始游玩';
+  return `<footer class="notice-footer">${auto && kind === 'd' ? '<p class="hint">关闭后将显示王朝公告</p>' : ''}<div class="r"><label class="mute"><input type="checkbox">今日不再弹出</label><button class="go" data-close="${kind}">${label}</button></div></footer>`; }
+const steps = kind => auto ? `<div class="steps" aria-label="首次弹出 ${kind === 'd' ? 1 : 2} / 2"><span class="${kind === 'd' ? 'on' : 'ok'}"><i>${kind === 'd' ? '1' : '✓'}</i>须知</span><b></b><span class="${kind === 'a' ? 'on' : ''}"><i>2</i>公告</span></div>` : '';
+function disclaimer() { const d = N.disclaimer;
+  return `<section class="doc" id="doc" role="dialog" aria-modal="true" aria-labelledby="dT" tabindex="-1"><div class="grab" aria-hidden="true"><i></i></div>
+   <header class="dh"><span class="seal" aria-hidden="true">须</span><div class="t"><small>HEIJIN · NOTICE</small><h2 id="dT">${d.title}</h2></div><button class="x" data-close="d" aria-label="关闭免责声明">×</button></header>${steps('d')}
+   <nav class="toc" aria-label="章节"><div class="rail" id="rail">${d.sections.map((s, i) => `<button data-sec="${i}" aria-current="${i === 0}"><i>${CN[i]}</i>${s.title.replace(/^[一二三四五六七八九十]+、/, '')}</button>`).join('')}<span style="flex:none;width:3.4rem"></span></div><span class="pct" id="pct">0%</span><div class="prog"><i id="prog"></i></div></nav>
+   <div class="body notice-content" id="body" tabindex="0" aria-label="免责声明内容">
+    <div class="age"><span class="notice-age" aria-label="仅限 18 岁及以上">18+</span><strong>${d.ageNotice.replace(/^｜/, '')}</strong></div>
+    ${d.intro.map(P).join('')}
+    ${d.sections.map((s, i) => `<h3 id="sec${i}">${s.title}</h3>${s.paragraphs.map(P).join('')}`).join('')}
+    <div class="div" aria-hidden="true">◆</div>
+    <div class="closing">${d.closing.slice(0, -1).map(P).join('')}<div class="sign">${P(d.closing.at(-1))}<span class="stamp" aria-hidden="true">黑金<br>王朝</span></div></div>
+    <span class="end" aria-hidden="true">— 全文完 —</span></div>${foot('d')}</section>`; }
+function announcement() { const a = N.announcement;
+  return `<section class="doc" id="doc" role="dialog" aria-modal="true" aria-labelledby="aT" tabindex="-1"><div class="grab" aria-hidden="true"><i></i></div>
+   <header class="dh"><span class="seal" aria-hidden="true">诏</span><div class="t"><small>HEIJIN · BULLETIN</small><h2 id="aT">${a.title}</h2></div><button class="x" data-close="a" aria-label="关闭王朝公告">×</button></header>${steps('a')}
+   <div class="body" id="body" tabindex="0" aria-label="公告内容" style="border-top:1px solid var(--line)">
+    <span class="ver">VERSION 0.9 · 开发里程碑</span>
+    <h3 class="notice-theme" style="display:block;color:#F1E6C8;margin:0 0 1.2rem">${a.theme}</h3>
+    <ol class="ups">${a.updates.map((u, i) => `<li><span class="n" aria-hidden="true">${NUM[i]}</span><p>${u}</p></li>`).join('')}</ol>
+    <p class="notice-message">${a.message}</p><div class="a-sign"><span class="stamp" aria-hidden="true">黑金<br>王朝</span></div></div>${foot('a')}</section>`; }
+/* 章节高亮与进度 */
+function bindRead() { const b = $('#body'), rail = $('#rail'); if (!rail) return; const secs = $$('.body h3');
+  const upd = () => { const max = b.scrollHeight - b.clientHeight, p = max > 0 ? b.scrollTop / max : 1; $('#prog').style.width = p * 100 + '%'; $('#pct').textContent = `已阅读 ${Math.round(p * 100)}%`;
+    let cur = 0; secs.forEach((h, i) => { if (h.offsetTop - b.offsetTop - 80 <= b.scrollTop) cur = i; }); if (p > .985) cur = secs.length - 1;
+    $$('#rail button').forEach((x, i) => { const on = i === cur; if ((x.getAttribute('aria-current') === 'true') !== on) { x.setAttribute('aria-current', on); if (on) rail.scrollTo({left: x.offsetLeft - 14, behavior: reduce ? 'auto' : 'smooth'}); } }); };
+  b.addEventListener('scroll', upd, {passive: true}); upd();
+  rail.onclick = e => { const x = e.target.closest('[data-sec]'); if (x) $('#sec' + x.dataset.sec).scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block: 'start'}); }; }
+function show(kind, from) { const host = $('#host'), old = $('#doc');
+  const html = kind === 'd' ? disclaimer() : announcement();
+  if (old && from) { old.classList.add('out-l'); old.id = ''; setTimeout(() => old.remove(), 450); host.insertAdjacentHTML('beforeend', html); const n = $('#doc'); n.classList.add('out-r'); n.offsetHeight; n.classList.remove('out-r'); }
+  else { host.innerHTML = html; $('#doc').classList.add('in'); }
+  bindRead(); setTimeout(() => $('#doc').focus({preventScroll: true}), 60); }
+document.addEventListener('click', e => { const c = e.target.closest('[data-close]'); if (!c) return;
+  if (auto && c.dataset.close === 'd') return show('a', true);
+  $('#doc').style.transform = 'translateY(100%)'; toast(auto ? '首次弹出结束，进入首页' : '已关闭'); setTimeout(() => go(cur), 1200); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#doc .x')?.click(); });
+let cur = 'd-auto';
+function go(m) { cur = m; auto = m.endsWith('auto'); $$('#mode button').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === m)); show(m[0]); }
+$('#mode').onclick = e => { const b = e.target.closest('button'); if (b) go(b.dataset.m); };
+const h = location.hash.slice(1).split('&');
+go(['d-auto','a-auto','d-man','a-man'].includes(h[0]) ? h[0] : 'd-auto');
+const y = h.find(x => x.startsWith('y='))?.slice(2); if (y) setTimeout(() => { $('#body').scrollTop = y === 'end' ? 99999 : +y; }, 80);
+</script>
+</body>
+</html>

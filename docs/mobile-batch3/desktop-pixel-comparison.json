@@ -1,0 +1,32 @@
+[
+  {
+    "viewport": "901x800",
+    "state": "cover",
+    "pixelIdentical": true
+  },
+  {
+    "viewport": "901x800",
+    "state": "library",
+    "pixelIdentical": true
+  },
+  {
+    "viewport": "901x800",
+    "state": "delete",
+    "pixelIdentical": true
+  },
+  {
+    "viewport": "1440x900",
+    "state": "cover",
+    "pixelIdentical": true
+  },
+  {
+    "viewport": "1440x900",
+    "state": "library",
+    "pixelIdentical": true
+  },
+  {
+    "viewport": "1440x900",
+    "state": "delete",
+    "pixelIdentical": true
+  }
+]
