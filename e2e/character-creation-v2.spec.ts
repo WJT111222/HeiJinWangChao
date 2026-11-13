@@ -12,9 +12,10 @@ async function begin(page: Page) {
   await page.getByRole('radio', { name: '女性', exact: true }).check();
 }
 async function choose(page: Page, label: string, value: string) {
-  await page.getByRole('combobox', { name: label, exact: true }).click();
-  await page.getByRole('option', { name: value, exact: true }).click();
+  await page.getByRole('radiogroup', { name: label, exact: true }).getByRole('radio', { name: value, exact: true }).click();
 }
+const template = (page: Page, label: string, value: string) =>
+  page.getByRole('radiogroup', { name: label, exact: true }).getByRole('radio', { name: value, exact: true });
 async function confirm(page: Page) {
   await page.getByRole('button', { name: /下一步/ }).click();
   await page.getByRole('button', { name: '跳过背景，继续' }).click();
@@ -26,9 +27,9 @@ async function noOverflow(page: Page) {
 
 test('基本信息模板独立、可编辑、往返与刷新保留；键盘选择', async ({ page }, info) => {
   await begin(page);
-  await expect(page.getByRole('radio')).toHaveCount(2);
-  await expect(page.getByRole('combobox', { name: '外貌模板', exact: true })).toHaveText(/自由选择/);
-  await expect(page.getByRole('combobox', { name: '性格模板', exact: true })).toHaveText(/自由选择/);
+  await expect(page.getByRole('group', { name: '性别', exact: true }).getByRole('radio')).toHaveCount(2);
+  await expect(template(page, '外貌模板', '自由选择')).toHaveAttribute('aria-checked', 'true');
+  await expect(template(page, '性格模板', '自由选择')).toHaveAttribute('aria-checked', 'true');
   for (const item of appearanceTemplates) {
     await choose(page, '外貌模板', item.name); await expect(page.getByLabel('外貌', { exact: true })).toHaveValue(item.description);
     await expect(page.getByLabel('性格', { exact: true })).toHaveValue('');
@@ -37,9 +38,10 @@ test('基本信息模板独立、可编辑、往返与刷新保留；键盘选�
     await choose(page, '性格模板', item.name); await expect(page.getByLabel('性格', { exact: true })).toHaveValue(item.description);
     await expect(page.getByLabel('外貌', { exact: true })).toHaveValue(appearanceTemplates.at(-1)!.description);
   }
-  await page.getByRole('combobox', { name: '外貌模板', exact: true }).focus();
-  await page.keyboard.press('ArrowDown'); await page.keyboard.press('Home'); await page.keyboard.press('Enter');
-  await expect(page.getByRole('combobox', { name: '外貌模板', exact: true })).toHaveText(/自由选择/);
+  await template(page, '外貌模板', appearanceTemplates.at(-1)!.name).focus();
+  await page.keyboard.press('Home');
+  await expect(template(page, '外貌模板', '自由选择')).toHaveAttribute('aria-checked', 'true');
+  await expect(template(page, '外貌模板', '自由选择')).toBeFocused();
   const appearance = appearanceTemplates[0].description + '\n手背有淡淡旧痕。';
   await page.getByLabel('外貌', { exact: true }).fill(appearance);
   await page.getByLabel('性格', { exact: true }).fill('平日谨慎，今天愿意主动冒险。');
