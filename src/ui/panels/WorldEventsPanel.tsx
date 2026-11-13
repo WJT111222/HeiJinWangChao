@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { ArchiveLinks } from './OrganizationPanel';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Detail, Empty } from '../Dialog';
 import { RecordList, WorldRecord } from './WorldRecord';
@@ -20,7 +21,7 @@ export interface WorldEventsUiState { query:string; page:number; selection?:Sele
 function Outcome({event,desktop=false}:{event:ArchiveEvent;desktop?:boolean}) {
   return <span className={desktop ? `ev-st ${event.detail?.outcome??event.status}` : `event-status event-status-${event.detail?.outcome??event.status}`}>{eventStatusLabels[event.status]}{event.detail?.outcome?` · ${eventOutcomeLabels[event.detail.outcome]}`:''}</span>;
 }
-function EventFile({event,view,archive,onSelect,onOpenHistory,children,desktop=false}:{event:ArchiveEvent;view:PlayerView;archive:ReturnType<typeof eventArchive>;onSelect:(id:string)=>void;onOpenHistory?:()=>void;children?:ReactNode;desktop?:boolean}) {
+function EventFile({event,view,archive,onSelect,onOpenHistory,children,desktop=false,links}:{event:ArchiveEvent;view:PlayerView;archive:ReturnType<typeof eventArchive>;onSelect:(id:string)=>void;onOpenHistory?:()=>void;children?:ReactNode;desktop?:boolean;links?:ArchiveLinks}) {
   const d=event.detail,raw=event.raw;
   const actors=d?.actorRefs.map(ref=>ref.kind==='protagonist'?view.protagonist.name:ref.kind==='npc'
     ?[...view.npc,...view.retiredNpcs].find(n=>n.id===ref.id)?.name??ref.id:view.organizations.find(o=>o.id===ref.id)?.name??ref.id);
@@ -28,7 +29,7 @@ function EventFile({event,view,archive,onSelect,onOpenHistory,children,desktop=f
     const org=ref.kind==='organization'?view.organizations.find(o=>o.id===ref.id):undefined;
     return <span key={`${ref.kind}:${ref.id}:${i}`} className={`actor ${ref.kind==='protagonist'?'a-me':ref.kind==='organization'?'a-org':'a-npc'}`} data-kind={org?.kind}><i aria-hidden="true">{Array.from(actors?.[i]??'')[0]}</i>{actors?.[i]}</span>;
   });
-  const locationField=<Detail label="地点">{d?.locationId?view.locations.find(l=>l.id===d.locationId)?.name??d.locationId:'未记录'}</Detail>;
+  const locationField=<Detail label="地点">{d?.locationId?(!desktop&&links?.location&&view.locations.some(l=>l.id===d.locationId)?<button onClick={()=>links.location?.(d.locationId!)}>{view.locations.find(l=>l.id===d.locationId)!.name}</button>:view.locations.find(l=>l.id===d.locationId)?.name??d.locationId):'未记录'}</Detail>;
   const history=view.timeline.filter(h=>h.eventId===event.id);
   return <article className="event-file" aria-label={event.eventKind==='sub'?'阶段档案':'事件档案'}>
     {desktop ? <header className="ev-file-hd"><div className="row"><Outcome event={event} desktop/>{d?.impact&&<span className={`impact ${d.impact}`}>{eventImpactLabels[d.impact]}</span>}<span className="pill">{event.eventKind==='main'?'主事件':event.eventKind==='sub'?'阶段':'旧版独立事件'}</span></div>
@@ -40,7 +41,7 @@ function EventFile({event,view,archive,onSelect,onOpenHistory,children,desktop=f
       {event.eventKind!=='sub'&&d?.estimatedEndAt&&<Detail label={event.eventKind==='main'?'预计整体结束':'预计结束'}>{<EventTime time={d.estimatedEndAt} desktop={desktop}/>}（预计）</Detail>}
       {d?.resolvedAt&&<Detail label="实际结案时间">{<EventTime time={d.resolvedAt} desktop={desktop}/>}</Detail>}
       {desktop&&locationField}
-      {desktop ? <div className="detail fact-actors"><dt>参与人物与势力</dt><dd>{actorTags?.length ? actorTags : '未保留'}</dd></div> : <Detail label="参与人物与势力">{actors?.join('、')||'未保留'}</Detail>}
+      {desktop ? <div className="detail fact-actors"><dt>参与人物与势力</dt><dd>{actorTags?.length ? actorTags : '未保留'}</dd></div> : <Detail label="参与人物与势力">{links&&d?.actorRefs.length?d.actorRefs.map((ref,i)=><span key={`${ref.kind}:${ref.id}`}>{i>0&&'、'}{ref.kind==='npc'&&view.npc.some(n=>n.id===ref.id)?<button onClick={()=>links.npc(ref.id)}>{actors?.[i]}</button>:ref.kind==='organization'&&view.organizations.some(o=>o.id===ref.id)?<button onClick={()=>links.organization(ref.id)}>{actors?.[i]}</button>:actors?.[i]}</span>):actors?.join('、')||'未保留'}</Detail>}
       {!desktop&&locationField}
       {d?.impact&&<Detail label="影响描述">{eventImpactLabels[d.impact]}</Detail>}
       {event.parentEventId&&<Detail label="所属主事件">{archive.records.get(event.parentEventId)?.title??event.parentEventId}</Detail>}
@@ -61,7 +62,7 @@ function EventFile({event,view,archive,onSelect,onOpenHistory,children,desktop=f
     <WorldRecord title="完整技术记录" value={raw}/>
   </article>;
 }
-export function WorldEventsPanel({view,onOpenHistory,initialId,desktop=false,uiState,onUiStateChange}:{view:PlayerView;onOpenHistory?:()=>void;initialId?:string;desktop?:boolean;uiState?:WorldEventsUiState;onUiStateChange?:(state:WorldEventsUiState)=>void}) {
+export function WorldEventsPanel({view,onOpenHistory,initialId,desktop=false,uiState,onUiStateChange,links}:{view:PlayerView;onOpenHistory?:()=>void;initialId?:string;desktop?:boolean;uiState?:WorldEventsUiState;onUiStateChange?:(state:WorldEventsUiState)=>void;links?:ArchiveLinks}) {
   const archive=useMemo(()=>eventArchive(view),[view]),[query,setQuery]=useState(uiState?.query??''),[page,setPage]=useState(uiState?.page??0),[selection,setSelection]=useState<Selection|undefined>(uiState?.selection);
   const root=useRef<HTMLDivElement>(null),pane=useRef<HTMLDivElement>(null);
   useEffect(()=>{if(desktop)onUiStateChange?.({query,page,selection,positions:positions.current});},[desktop,query,page,selection,onUiStateChange]);
@@ -105,11 +106,11 @@ export function WorldEventsPanel({view,onOpenHistory,initialId,desktop=false,uiS
       <div className="event-detail-pane" ref={pane}>
         {main?<>
           <div className="event-back-links">{child?<button onClick={()=>{setSelection({id:main.id,origin:valid?.origin??'active'});restore('family');}}>返回主事件</button>:null}<button className="event-back-list" onClick={()=>{setSelection(undefined);restore('list');}}>返回事件列表</button></div>
-          <div hidden={Boolean(child)}><EventFile key={main.id} event={main} view={view} archive={archive} onSelect={related} onOpenHistory={onOpenHistory} desktop={desktop}>
+          <div hidden={Boolean(child)}><EventFile key={main.id} event={main} view={view} archive={archive} onSelect={related} onOpenHistory={onOpenHistory} desktop={desktop} links={!desktop?links:undefined}>
             {family&&<section className={desktop ? "event-stages sec" : "event-stages"} aria-label="主事件阶段"><h4>并行阶段</h4>{stages('正在进行的阶段',family.running)}{stages('已结束的阶段经过',[...family.ended,...family.incomplete])}
               <details><summary>尚未开始的阶段 · {family.upcoming.length}</summary>{stages('尚未开始的阶段',family.upcoming)}</details></section>}
           </EventFile></div>
-          {child&&<EventFile key={child.id} event={child} view={view} archive={archive} onSelect={related} onOpenHistory={onOpenHistory} desktop={desktop}/>}
+          {child&&<EventFile key={child.id} event={child} view={view} archive={archive} onSelect={related} onOpenHistory={onOpenHistory} desktop={desktop} links={!desktop?links:undefined}/>}
         </>:<Empty>选择主事件，阅读世界档案</Empty>}
       </div>
     </div>
