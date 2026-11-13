@@ -1,3 +1,4 @@
+import { MobileWorkflowDrawer } from './MobileWorkflowDrawer';
 import {MobileDiagnostics} from './MobileDiagnostics';
 import { useNpcManagement } from './useNpcManagement';
 import type { NpcManagementResult } from './npcManagement';
@@ -38,9 +39,7 @@ import type { SaveRepository } from '../../services/storage/saveRepository';
 import { mayStartStory } from './storyGenerationPolicy';
 import { useStoryGeneration } from './useStoryGeneration';
 import { useVariableGeneration } from './useVariableGeneration';
-import { VariableCandidates } from './VariableCandidates';
 import { useWorldGeneration } from './useWorldGeneration';
-import { WorldCandidates } from './WorldCandidates';
 import { useTurnGeneration } from './useTurnGeneration';
 import { completeTurnDraft, awaitingPlayerAction } from '../../domain/turnCommit';
 import type { TurnCommitResult } from '../../services/storage/saveRepository';
@@ -54,7 +53,8 @@ import { SettingsSchema, settingsKey } from '../settings/model';
 import { summaryFailureTitle } from '../../workflows/memorySummaryQueue';
 import type { OpeningStart } from './openingStart';
 import { runtimeLogEvent } from './runtimeLog';
-import { DesktopWorkflowPanel, stepState } from './WorkflowPanel';
+import { DesktopWorkflowPanel } from './WorkflowPanel';
+
 import type { StageAction, WorkflowStage, WorkflowTab, WorkflowView } from './WorkflowPanel';
 import type { RuntimeLogEntry, RuntimeLogReporter } from './runtimeLog';
 import { CityAtmosphere, CityBar, CityChapter } from './CityNight';
@@ -65,7 +65,6 @@ import './mobile-game.css';
 import {MobileCityBar,MobileStatus,mobileCitySeal} from './MobileCity';
 import {MobileActions} from './MobileActions';
 import {ComposerTools} from './ComposerTools';
-import { Feedback } from '../Feedback';
 
 const sidebarMedia = '(max-width: 900px)';
 function subscribeSidebarSize(changed: () => void) {
@@ -374,6 +373,7 @@ export function GameScreen({
       });
       return;
     }
+    setWorkflowView('home');
     setWorkflowOpen(true);
     requestAnimationFrame(() => {
       runtimeSwitches.current?.scrollIntoView({ block: "nearest" });
@@ -508,77 +508,7 @@ export function GameScreen({
           : workflowGuidance
             ? "off"
             : "pending";
-  // 移动端沿用原有折叠布局；PC 使用 DesktopWorkflowPanel（左侧阶段、右侧分页详情）。
-  const workflowBody = (
-    <div className="workflow-details" id="workflow-pop">
-      <div className="wf-body">
-        {workflowGuidance && (
-          <div className="field-hint" role="note" aria-label="阶段设置提示">
-            <p>{workflowGuidance}</p>
-            <button onClick={openRuntimeSettings} aria-controls="workflow-runtime-switches">
-              展开高级设置
-            </button>
-          </div>
-        )}
-        {(automatic.running || (!busy && (canCommit || canGenerate))) && (
-          <div className="workflow-primary">{workflowPrimaryButton}</div>
-        )}
-        {automatic.error && (
-          <div className="story-error" role="alert">
-            {automatic.error}
-            <button onClick={onOpenSettings}>打开 AI 设置</button>
-          </div>
-        )}
-        {[error, submitError, variables.error, world.error].map((message, i) => message && (
-          <p className="story-error" role="alert" key={i}>{message}</p>
-        ))}
-        {!validDraft && (
-          <Feedback className="field-hint" level="warn" mobileAs="p">{staleDraftMessage}</Feedback>
-        )}
-        <p className="workflow-fee">生成可能产生第三方 API 费用。</p>
-        <div className="runtime-switches mobile-stage-switches" id="workflow-runtime-switches" ref={runtimeSwitches as RefObject<HTMLDivElement>}>
-        <ol className="workflow-stages">
-          {progressSteps.map((step, i) => (
-            <li key={step.stage} data-s={stepState(step) === "off" ? "off" : step.visual}>
-              <span className="stage-number">0{i + 1}</span>
-              <strong>{["正文生成", "变量管理", "动态世界"][i]}</strong>
-              <small>{step.text}</small>
-              {step.stage === "story" ? (
-                <p className="stage-action-hint">正文生成位于行动输入旁。</p>
-              ) : (
-                <div className="variable-actions">
-                  <label className="toggle"><input type="checkbox" aria-label={step.stage==='variables'?'变量管理':'动态世界'} checked={settings.runtime[step.stage==='variables'?'useVariableStage':'useWorldStage']} onChange={e=>setStageEnabled(step.stage==='variables'?'useVariableStage':'useWorldStage',e.target.checked)}/>启用</label>
-                  <button
-                    disabled={stageActions[step.stage].disabled}
-                    onClick={stageActions[step.stage].onClick}
-                  >
-                    {stageActions[step.stage].label}
-                  </button>
-                  {step.stage === "variables" && draft?.variables && (
-                    <VariableCandidates key={`${draft.turnId}-${draft.draftRevision}`} draft={draft} />
-                  )}
-                  {step.stage === "world" && draft?.world && (
-                    <WorldCandidates key={`${draft.turnId}-${draft.draftRevision}`} draft={draft} />
-                  )}
-                </div>
-              )}
-            </li>
-          ))}
-        </ol>
-        </div>
-      </div>
-      <div className="wf-more">
-        <button type="button" className="mobile-diagnostic-trigger" onClick={()=>setDiagnosticsOpen(true)} aria-haspopup="dialog">重试与变更详情{runtimeLogs.some(e=>e.kind==='failed')&&<span className="error-count">错误 {runtimeLogs.filter(e=>e.kind==='failed').length}</span>}</button>
-        {draft && (
-          <details className="bound-input" id="workflow-bound-input">
-            <summary>本回合已绑定输入（只读）</summary>
-            <p className="prose">{draft.userInput || "未填写开局偏好，按人物资料正常生成。"}</p>
-          </details>
-        )}
 
-      </div>
-    </div>
-  );
   const desktopNotices = (
     <>
       {workflowError && (
@@ -621,6 +551,33 @@ export function GameScreen({
     </div>
   ) : (
     <small className="wf-idle">{awaitingAction ? "发送新行动后开始下一回合" : busy ? "正在处理，请稍候" : "当前没有可执行的自动操作"}</small>
+  );
+  const renderWorkflow = (layout: 'desktop' | 'sheet') => (
+                      <DesktopWorkflowPanel layout={layout}
+                        label={workflowLabel}
+                        state={workflowState}
+                        onClose={closeWorkflow}
+                        onFollow={progress && !following ? followLatest : undefined}
+                        notices={layout === 'sheet' && workflowView === 'diagnostics' ? <>{desktopNotices}<button type="button" onClick={() => setDiagnosticsOpen(true)}>重试与变更详情</button></> : desktopNotices}
+                        primary={desktopPrimary}
+                        steps={progressSteps}
+                        view={layout === 'desktop' && workflowView === 'home' ? autoWorkflowView : workflowView ?? (layout === 'sheet' ? 'home' : autoWorkflowView)}
+                        onView={(view) => { setWorkflowView(view); setWorkflowTab("overview"); }}
+                        tab={workflowTab}
+                        onTab={setWorkflowTab}
+                        switches={{
+                          variables: { checked: settings.runtime.useVariableStage, onChange: (checked) => setStageEnabled("useVariableStage", checked) },
+                          world: { checked: settings.runtime.useWorldStage, onChange: (checked) => setStageEnabled("useWorldStage", checked) },
+                        }}
+                        switchesRef={runtimeSwitches as RefObject<HTMLOListElement>}
+                        actions={stageActions}
+                        draft={draft}
+                        saveId={state.saveId}
+                        rawTurnId={rawTurnId}
+                        summary={summaryQuality}
+                        runtimeLogs={runtimeLogs}
+                        onClearLogs={() => setRuntimeLogs([])}
+                      />
   );
   return (
     <main className="game-layout city-night" data-city={atmosphere.city} data-time={atmosphere.time} data-wx={atmosphere.weather}
@@ -738,7 +695,7 @@ export function GameScreen({
                     <span className="mobile-progress-segments" aria-hidden="true">{progressSteps.map(step=><i key={step.stage} data-s={step.visual}/>)}</span>
                     <strong role="status" aria-live="polite"><span className="sr-only">三阶段 · </span>{workflowLabel}</strong><span className="more">详情 ›</span>
                   </button></div>
-                  {workflowOpen&&<Dialog title="三阶段工作流" mobileVariant="sheet" sheetFull seal="阶" eyebrow="WORKFLOW" className="mobile-workflow-sheet" onClose={closeWorkflow}>{workflowBody}</Dialog>}
+                  {workflowOpen&&<MobileWorkflowDrawer inputRef={inputElement} onClose={closeWorkflow}>{renderWorkflow('sheet')}</MobileWorkflowDrawer>}
                 </div>
               ) : (
                 <div
@@ -782,33 +739,7 @@ export function GameScreen({
                     </button>
                   </div>
                   <div hidden={!workflowOpen} className="workflow-pop-host">
-                    {(
-                      <DesktopWorkflowPanel
-                        label={workflowLabel}
-                        state={workflowState}
-                        onClose={closeWorkflow}
-                        onFollow={progress && !following ? followLatest : undefined}
-                        notices={desktopNotices}
-                        primary={desktopPrimary}
-                        steps={progressSteps}
-                        view={workflowView ?? autoWorkflowView}
-                        onView={(view) => { setWorkflowView(view); setWorkflowTab("overview"); }}
-                        tab={workflowTab}
-                        onTab={setWorkflowTab}
-                        switches={{
-                          variables: { checked: settings.runtime.useVariableStage, onChange: (checked) => setStageEnabled("useVariableStage", checked) },
-                          world: { checked: settings.runtime.useWorldStage, onChange: (checked) => setStageEnabled("useWorldStage", checked) },
-                        }}
-                        switchesRef={runtimeSwitches as RefObject<HTMLOListElement>}
-                        actions={stageActions}
-                        draft={draft}
-                        saveId={state.saveId}
-                        rawTurnId={rawTurnId}
-                        summary={summaryQuality}
-                        runtimeLogs={runtimeLogs}
-                        onClearLogs={() => setRuntimeLogs([])}
-                      />
-                    )}
+                    {renderWorkflow('desktop')}
                   </div>
                 </div>
               )}

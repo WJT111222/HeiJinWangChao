@@ -1,0 +1,23 @@
+[
+  {
+    "viewport": "901x900",
+    "sameSize": true,
+    "pixelIdentical": false,
+    "changedPixels": 32,
+    "differenceBounds": [
+      277,
+      494,
+      484,
+      762
+    ],
+    "maxChannelDifference": 4
+  },
+  {
+    "viewport": "1440x900",
+    "sameSize": true,
+    "pixelIdentical": true,
+    "changedPixels": 0,
+    "differenceBounds": null,
+    "maxChannelDifference": 0
+  }
+]

@@ -1,0 +1,37 @@
+[
+  {
+    "className": "mobile-workflow-sheet workflow-floating-drawer",
+    "y": 64,
+    "height": 644.0625,
+    "scrollTop": 0,
+    "overflow": "hidden"
+  },
+  {
+    "className": "workflow-details wf-v2 wf-mobile-content",
+    "y": 89,
+    "height": 618.0625,
+    "scrollTop": 0,
+    "overflow": "hidden"
+  },
+  {
+    "className": "wf-hd",
+    "y": 89,
+    "height": 50.890625,
+    "scrollTop": 0,
+    "overflow": "visible"
+  },
+  {
+    "className": "wf-main",
+    "y": 139.890625,
+    "height": 491.78125,
+    "scrollTop": 0,
+    "overflow": "auto"
+  },
+  {
+    "className": "wf-ft",
+    "y": 637.671875,
+    "height": 69.390625,
+    "scrollTop": 0,
+    "overflow": "visible"
+  }
+]
