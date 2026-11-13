@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import worker from '../worker';
 import { announcement } from '../ui/notices/announcement';
 import { announcementMaxBytes, parseAnnouncement } from '../services/notices/announcement';
-import { loadAnnouncement } from '../services/notices/client';
+import { loadAnnouncement, loadAnnouncementWithSource } from '../services/notices/client';
 const remote = { version: 'test-1', title: '王朝公告', theme: '合成更新', updates: ['新的内容'], message: '感谢支持' };
 const assets = { fetch: vi.fn(async () => new Response('asset')) };
 const request = (method = 'GET', path = '/api/announcement') => new Request(`https://game.invalid${path}`, { method });
@@ -51,5 +51,36 @@ describe('non-blocking browser fetch fallback', () => {
     vi.useFakeTimers();
     const pending = loadAnnouncement(async (_url, options) => new Promise((_resolve, reject) => options?.signal?.addEventListener('abort', () => reject(new Error('aborted')))));
     await vi.advanceTimersByTimeAsync(3000); expect(await pending).toEqual(announcement);
+  });
+});
+describe('公告来源：只有服务端明确的 kv 才算远程公告', () => {
+  const reply = (body: string, init: ResponseInit = {}) => async () => new Response(body, init);
+  it('X-Announcement-Source: kv 且内容合法 → kv', async () => {
+    expect(await loadAnnouncementWithSource(reply(JSON.stringify(remote), { headers: { 'X-Announcement-Source': 'kv' } })))
+      .toEqual({ announcement: remote, source: 'kv' });
+  });
+  it('服务端回退到它自己的旧版内置公告（版本与本页不同）→ builtin，仍正常展示', async () => {
+    const stale = { ...announcement, version: 'builtin-0.9', theme: '旧版内置公告' };
+    expect(await loadAnnouncementWithSource(reply(JSON.stringify(stale), { headers: { 'X-Announcement-Source': 'builtin' } })))
+      .toEqual({ announcement: stale, source: 'builtin' });
+  });
+  it('未标明来源或来源值不认识 → unknown', async () => {
+    expect((await loadAnnouncementWithSource(reply(JSON.stringify(remote)))).source).toBe('unknown');
+    expect((await loadAnnouncementWithSource(reply(JSON.stringify(remote), { headers: { 'X-Announcement-Source': 'KV ' } }))).source).toBe('unknown');
+  });
+  it.each([
+    ['HTTP 503', reply(JSON.stringify(remote), { status: 503, headers: { 'X-Announcement-Source': 'kv' } })],
+    ['非法 JSON', reply('{broken', { headers: { 'X-Announcement-Source': 'kv' } })],
+    ['不合法公告', reply(JSON.stringify({ ...remote, extra: true }), { headers: { 'X-Announcement-Source': 'kv' } })],
+    ['超长', reply('x'.repeat(announcementMaxBytes + 1), { headers: { 'X-Announcement-Source': 'kv' } })],
+    ['离线', async () => { throw new Error('offline'); }],
+  ] as const)('%s → 本页内置公告，来源 fallback', async (_label, fetcher) => {
+    expect(await loadAnnouncementWithSource(fetcher)).toEqual({ announcement, source: 'fallback' });
+  });
+  it('超时 → fallback', async () => {
+    vi.useFakeTimers();
+    const pending = loadAnnouncementWithSource(async (_url, options) => new Promise((_resolve, reject) => options?.signal?.addEventListener('abort', () => reject(new Error('aborted')))));
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(await pending).toEqual({ announcement, source: 'fallback' });
   });
 });
