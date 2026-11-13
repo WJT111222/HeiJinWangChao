@@ -127,7 +127,7 @@ dist/assets/composer-Dh23gqTX.js                            113.17 kB │ gzip: 
 dist/assets/GameScreen-C8cR79iw.js                          246.20 kB │ gzip:  71.45 kB
 dist/assets/index-D-FDvgN_.js                               746.04 kB │ gzip: 242.37 kB
 
-[plugin builtin:vite-reporter] 
+[plugin builtin:vite-reporter]
 (!) Some chunks are larger than 500 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
