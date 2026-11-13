@@ -7,9 +7,8 @@ import {Dialog} from '../Dialog';
 import {RuntimeLogPanel} from './RuntimeLogPanel';
 import {RequestUsage} from './RequestUsage';
 import {StageResponsesPanel} from './StageResponsesPanel';
-import {StoryInspectionPanel} from './StoryInspectionPanel';
 
-const tabs=['概要','运行日志','请求用量','模型原文','叙事规划'] as const;
+const tabs=['概要','运行日志','请求用量','模型原文'] as const;
 export function MobileDiagnostics({saveId,turnId,draft,entries,onClear,open,onOpen,onClose}:{saveId:string;turnId?:string;draft?:TurnDraft;entries:readonly RuntimeLogEntry[];onClear:()=>void;open:boolean;onOpen:()=>void;onClose:()=>void}){
  const id=useId(),[tab,setTab]=useState<typeof tabs[number]>('概要'),latest=entries.filter(e=>e.kind==='failed').at(-1)?.id,seen=useRef<number|undefined>(undefined),openLatest=useRef(onOpen);openLatest.current=onOpen;
  const records=useSyncExternalStore(requestInspections.subscribe,requestInspections.getSnapshot),requests=records.filter(r=>r.scope?.saveId===saveId&&r.stage!=='memory').slice(0,6);
@@ -31,7 +30,6 @@ export function MobileDiagnostics({saveId,turnId,draft,entries,onClear,open,onOp
    {tab==='运行日志'&&<RuntimeLogPanel entries={entries} onClear={onClear}/>}
    {tab==='请求用量'&&<RequestUsage saveId={saveId}/>}
    {tab==='模型原文'&&<StageResponsesPanel saveId={saveId} turnId={turnId}/>}
-   {tab==='叙事规划'&&draft&&<StoryInspectionPanel key={`${draft.turnId}-${draft.storyRevision}`} draft={draft}/>}
   </section><p className="diagnostic-temporary">仅本页临时保存 · 刷新即清空</p>
  </Dialog>;
 }

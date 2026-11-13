@@ -26,6 +26,10 @@ export interface TurnProgress {
   phase: 'generating' | 'saving' | 'retrying';
   attempt: 1 | 2;
   narrative?: string;
+  readingPhase?: 'thinking' | 'body';
+  planning?: string;
+  nativeReasoning?: string;
+  compatibilityReasoning?: string;
 }
 export interface TurnOutcome {
   draft: TurnDraft;
@@ -180,7 +184,10 @@ export class TurnCoordinator {
                   await story.generate({
                     ...common,
                     companionProfile,
-                    onProgress: (progress) => onProgress(progress.phase, progress.narrative),
+                    onProgress: (progress) => {
+                      check();
+                      input.onProgress?.({ stage, attempt: number, ...progress });
+                    },
                   }),
                 );
               } else {

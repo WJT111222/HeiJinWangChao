@@ -50,8 +50,9 @@ export function useStoryGeneration(
         vault: new CredentialVault(sessionStorage, localStorage),
         onProgress: (next) => {
           if (token.current !== id) return;
+          const bodyStarted = next.readingPhase === 'body' && latest.current?.readingPhase !== 'body';
           latest.current = next;
-          if (next.phase === 'saving') {
+          if (next.phase === 'saving' || bodyStarted) {
             clearTimeout(timer.current);
             timer.current = undefined;
             setProgress(next);

@@ -315,23 +315,23 @@ test('长篇流式阅读自动跟随、手动上滚暂停、恢复跟随，移�
 });
 
 
-test('P6：原生公开内容与项目规划只主动查看，正文/存档隔离，刷新清除临时资料', async ({ page }) => {
+test('P6：完整文本与原生思考在统一原文查看，正文/存档隔离，刷新清除临时资料', async ({ page }) => {
   const before = await seed(page);
   plans.push({ reasoning: '公开原生标记 mock-browser-key', chunks: [result().replace('本轮创作提纲：保持人物与场景连续，按行动呈现事实。', '私人规划标记，不是正文事实。')] });
   await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
   const reader = page.getByTestId('story-reader'); await expect(reader).toContainText(displayedStory);
   await expect(reader).not.toContainText('私人规划标记'); await expect(reader).not.toContainText('公开原生标记');
-  const inspection = page.locator('.story-inspection'); await expect(inspection.locator('pre')).toHaveCount(0);
+  const inspection = page.locator('.wf-raw'); await expect(inspection.locator('pre')).toHaveCount(0);
   const saved = await stored(page); expect(saved.state).toBe(before); expect(JSON.stringify(saved.draft)).not.toContain('私人规划标记');
   await openStoryInspection(page);
-  await inspection.getByText('项目叙事规划 · thinking', { exact: true }).click(); await expect(inspection).toContainText('私人规划标记');
-  await inspection.getByText('供应商公开返回的原生内容', { exact: true }).click(); await expect(inspection).toContainText('公开原生标记');
+  await expect(inspection.getByLabel('正文模型完整原文', { exact: true })).toContainText('<thinking>私人规划标记');
+  await expect(inspection.getByLabel('供应商公开原生思考全文', { exact: true })).toContainText('公开原生标记');
   await expect(inspection).not.toContainText('mock-browser-key'); expect(await stored(page)).toEqual(saved); expect(requests).toHaveLength(1);
   const messages = requests[0].messages as { role: string; content: string }[];
   expect(messages.slice(-3).map((message) => message.role)).toEqual(['user', 'assistant', 'user']);
   expect(messages.filter((message) => message.content.includes('### Step 0｜'))).toHaveLength(1);
   await page.reload(); await openGameTools(page); await openStoryInspection(page);
-  await expect(inspection).toContainText('没有对应请求的临时内容'); await expect(reader).toContainText(displayedStory);
+  await expect(inspection).toContainText('没有可恢复的模型原文'); await expect(reader).toContainText(displayedStory);
   expect(await stored(page)).toEqual(saved); expect(requests).toHaveLength(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

@@ -195,9 +195,10 @@ test('PC 标签页：鼠标、Tab、方向键与 Home/End；候选明细和完�
   await expect(pop.getByRole('region', { name: '模型原文', exact: true })).toBeVisible();
   await openWorkflowStage(page, 'story');
   const storyTabs = pop.getByRole('tablist', { name: '正文生成内容', exact: true });
-  await expect(storyTabs.getByRole('tab')).toHaveText(['概览', '模型原文', '叙事规划', '校验结果']);
+  await expect(storyTabs.getByRole('tab')).toHaveText(['概览', '模型原文', '校验结果']);
   await storyTabs.getByRole('tab', { name: '概览', exact: true }).focus(); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight');
-  await expect(storyTabs.getByRole('tab', { name: '叙事规划', exact: true })).toBeFocused(); await expect(pop.locator('.story-inspection')).toBeVisible();
+  await expect(storyTabs.getByRole('tab', { name: '校验结果', exact: true })).toBeFocused();
+  await expect(storyTabs.getByRole('tab', { name: '叙事规划', exact: true })).toHaveCount(0);
   await openWorkflowStage(page, 'world');
   const worldTabs = pop.getByRole('tablist', { name: '动态世界内容', exact: true });
   await worldTabs.getByRole('tab', { name: /^候选/ }).click();

@@ -38,7 +38,7 @@ describe('原输出上限字段与玩家预算', () => {
     for (const value of [0, -1, 1.1, 1000001, NaN]) expect(AiConfigSchema.safeParse({ ...config, channels: [{ ...legacy, parameters: { maxOutputTokens: value } }] }).success).toBe(false);
   });
   it('预算需求预测代码和UI已移除，不删除通用输入估算器', () => {
-    for (const path of ['src/services/ai/storyInspection.ts', 'src/ui/game/StoryInspectionPanel.tsx', 'src/workflows/storyStage.ts'])
+    for (const path of ['src/services/ai/storyInspection.ts', 'src/ui/game/StageResponsesPanel.tsx', 'src/workflows/storyStage.ts'])
       expect(readFileSync(path, 'utf8')).not.toMatch(/storyBudget|粗估需求|当前输出上限可能不足|item\.budget/);
     expect(contextStatistics(messages).estimatedTokens).toBeGreaterThan(0);
   });
