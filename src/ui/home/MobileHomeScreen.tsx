@@ -9,6 +9,8 @@ import { departure, guilloche, ticketKey, ticketName, ticketOrder, ticketTime } 
 import { useRawSaveExport } from './useRawSaveExport';
 import { useTicketTear } from './useTicketTear';
 import './mobile-home.css';
+import './backup.css';
+import type { BackupStatus } from './backupStatus';
 
 const BLANK = 'new-life';
 type Props = {
@@ -17,6 +19,9 @@ type Props = {
   deletion?: SaveSummary; onVoidShown: () => void;
   onCreate: () => void; onOpen: (id:string) => void; onSelect: (id:string) => void;
   onDelete: (save:SaveSummary) => void; onSettings: () => void; onRefresh: () => void;
+  /** 存档备份：导入、单份导出、票面状态与提醒；状态只存在本机。 */
+  onImport?: () => void; onExport?: (save:SaveSummary) => void; backupExporting?: boolean;
+  backupOf?: (save:SaveSummary) => BackupStatus|undefined; noticeAction?: ReactNode; backupReminder?: string;
 };
 
 function Flaps({text,mono=false}:{text:string;mono?:boolean}) {
@@ -25,7 +30,7 @@ function Flaps({text,mono=false}:{text:string;mono?:boolean}) {
   return <span className={`mh-flaps ${mono?'mono':''}`}>{[...text].map((char,i)=><span key={`${i}:${char}`} className={`mh-flap ${previous.current[i]!==char?'flipping':''}`} style={{animationDelay:`${i*60}ms`}}>{char}</span>)}</span>;
 }
 
-function Ticket({save,index,selected,hasDraft,voided,focused,children}:{save?:SaveSummary;index:number;selected:boolean;hasDraft:boolean;voided:boolean;focused:boolean;children:ReactNode}) {
+function Ticket({save,index,selected,hasDraft,voided,focused,backup,children}:{save?:SaveSummary;index:number;selected:boolean;hasDraft:boolean;voided:boolean;focused:boolean;backup?:BackupStatus;children:ReactNode}) {
   const city = save?.status==='readable'?saveCity(save.title):undefined;
   const meta = city ? CITY_TICKET_META[city] : undefined, time=ticketTime(save?.updatedAt);
   const paths=useMemo(()=>guilloche(city),[city]);
@@ -38,6 +43,7 @@ function Ticket({save,index,selected,hasDraft,voided,focused,children}:{save?:Sa
         <div className="mh-route"><div><small>FROM</small><span>{save?(bad?save.title:ticketName(save.title)):'？'}</span></div>{!bad&&<><div className="mh-arrow" aria-hidden="true">单程<i/></div><div className="mh-to"><small>TO</small><span>{save?(city?CITY[city][0]:''):'？'}</span></div></>}</div>
         {bad?<><p className="mh-keys">存档记录 ID：{saveKeyText(save.storageKey)}</p>{save.saveId&&save.saveId!==save.storageKey&&<p className="mh-keys">内容中的存档 ID：{save.saveId}</p>}<p className="mh-bad-note">当前版本无法读取这条记录。其他存档不受影响；可先导出原始数据，再决定是否删除。</p></>:
           <dl className="mh-info"><div><dt>{save?'保存日期':'城市'}</dt><dd>{save?time.date:<span className="mh-blank-line"/>}</dd></div><div><dt>{save?'时刻':'职业'}</dt><dd>{save?time.time:<span className="mh-blank-line"/>}</dd></div><div>{selected?<span className="mh-chop" aria-hidden="true">已检票<small>SELECTED</small></span>:<><dt>存档</dt><dd>{save?'本地':'—'}</dd></>}</div></dl>}
+        {save&&!bad&&backup&&<p className={`mh-backup ${backup.tone}`}>{backup.text}</p>}
         {!save?<><p className="mh-pitch">四座城市 · 自由职业 · 开放人生</p>{hasDraft&&<p className="mh-draft">✎ 有尚未完成的创角资料，可继续填写</p>}</>:
           !bad&&<div className="mh-mid" aria-hidden="true"><svg viewBox="0 0 320 74" preserveAspectRatio="none">{paths.map((d,k)=><path key={k} d={d} className={k%4?'':'deep'}/>)}</svg>{city&&meta&&<><span className="mh-co">{CITY[city][1].split(' · ')[1]} · {meta.longitude}</span><span className="mh-im">{CITY[city][2]}</span><span className="mh-em">{meta.seal}</span></>}</div>}
       </div>
@@ -47,17 +53,17 @@ function Ticket({save,index,selected,hasDraft,voided,focused,children}:{save?:Sa
   </article>;
 }
 
-function TicketActions({save,selected,repository,disabled,onActivate,onSelect,onDelete}:{save?:SaveSummary;selected:boolean;repository?:SaveRepository;disabled:boolean;onActivate:()=>void;onSelect:(id:string)=>void;onDelete:(save:SaveSummary)=>void}) {
+function TicketActions({save,selected,repository,disabled,backupExporting=false,onActivate,onSelect,onDelete,onExport}:{save?:SaveSummary;selected:boolean;repository?:SaveRepository;disabled:boolean;backupExporting?:boolean;onActivate:()=>void;onSelect:(id:string)=>void;onDelete:(save:SaveSummary)=>void;onExport?:(save:SaveSummary)=>void}) {
   const {exporting,notice,exportRaw}=useRawSaveExport(repository,save?.storageKey??'');
   return <div className="mh-acts">
     {save?.status!=='unreadable'&&<button className="mh-primary" disabled={disabled} onClick={onActivate}>{!save?'开始新游戏':selected?'继续游戏':'读取存档'} <span aria-hidden="true">{selected?'→':'↗'}</span></button>}
-    {save&&<div className="mh-secondary">{save.status==='unreadable'?<button disabled={disabled||exporting||!repository} onClick={()=>void exportRaw()}>{exporting?'正在导出…':'导出原始数据'}</button>:!selected&&<button disabled={disabled} onClick={()=>onSelect(save.saveId)}>选择</button>}<button className="mh-delete" disabled={disabled||exporting} onClick={()=>onDelete(save)}>{save.status==='unreadable'?'删除存档':'删除'}</button></div>}
+    {save&&<div className="mh-secondary">{save.status==='unreadable'?<button disabled={disabled||exporting||!repository} onClick={()=>void exportRaw()}>{exporting?'正在导出…':'导出原始数据'}</button>:<>{onExport&&<button className="mh-export" disabled={disabled||backupExporting} onClick={()=>onExport(save)}>{backupExporting?'正在导出…':'导出备份'}</button>}{!selected&&<button disabled={disabled} onClick={()=>onSelect(save.saveId)}>选择</button>}</>}<button className="mh-delete" disabled={disabled||exporting} onClick={()=>onDelete(save)}>{save.status==='unreadable'?'删除存档':'删除'}</button></div>}
     {notice&&<p className="mh-status" role="status">{notice}</p>}
   </div>;
 }
 
 export function MobileHomeScreen(props: Props) {
-  const {saves,active,loading,busy,blocked,repository,hasDraft,notice,listError,deletion,onVoidShown,onCreate,onOpen,onSelect,onDelete,onSettings,onRefresh,notices}=props;
+  const {saves,active,loading,busy,blocked,repository,hasDraft,notice,listError,deletion,onVoidShown,onCreate,onOpen,onSelect,onDelete,onSettings,onRefresh,notices,onImport,onExport,backupExporting,backupOf,noticeAction,backupReminder}=props;
   const ordered=useMemo(()=>ticketOrder(saves,active),[saves,active]);
   const [currentKey,setCurrentKey]=useState(()=>ordered[0]?ticketKey(ordered[0]):BLANK);
   const [ghost,setGhost]=useState<{save:SaveSummary;index:number}>();
@@ -108,7 +114,7 @@ export function MobileHomeScreen(props: Props) {
     <header className="mh-top"><span className="mh-seal" aria-hidden="true">黑</span><span className="mh-brand">黑金王朝<small>HEIJINWANGCHAO</small></span><span className="mh-spacer"/><button data-settings-open onClick={onSettings}>设置</button><span className="mh-version">{PRODUCT_VERSION}</span></header>
     <div className="mh-hero"><p>MODERN CITY / OPEN WORLD</p><h1>黑金王朝</h1><p>起点有冲突，人生不预设结局。</p></div>
     <div className="mh-board" role="status" aria-live="polite" aria-label={`终点 ${board.dest}，时刻 ${board.time}，${board.status}`}><span className="mh-board-label">终点<b>DEST</b></span><Flaps text={board.dest.padEnd(3,'　')}/><Flaps text={board.time} mono/><span className={`mh-board-status ${board.tone}`}>{board.status}</span></div>
-    <div className="mh-meta"><span>车票 <b>{String(saves.length).padStart(2,'0')}</b></span><span>本地保存 · 无需账号</span><span className="mh-spacer"/><button disabled={!repository||loading||busy} onClick={()=>{tear.reset();onRefresh();}}>刷新列表</button></div>
+    <div className="mh-meta"><span>车票 <b>{String(saves.length).padStart(2,'0')}</b></span><span>本地保存 · 无需账号</span><span className="mh-spacer"/>{onImport&&<button className="mh-import" disabled={!repository||loading||busy||blocked} onClick={()=>{tear.reset();onImport();}}><span aria-hidden="true">⤓ </span>导入备份</button>}<button disabled={!repository||loading||busy} onClick={()=>{tear.reset();onRefresh();}}>刷新列表</button></div>
     {loading?<><div className="mh-rail mh-skeletons" aria-hidden="true"><div className="mh-ticket mh-skeleton"/><div className="mh-ticket mh-skeleton"/></div><p className="mh-printer" role="status">正在读取本地存档…</p></>:listError?<p className="mh-error">{listError}</p>:<>
       <div className="mh-rail" ref={rail} tabIndex={0} role="region" aria-label="车票栏，左右方向键切换" aria-roledescription="轮播" onKeyDown={event=>{if(event.key==='ArrowRight'||event.key==='ArrowLeft'){event.preventDefault();go(index+(event.key==='ArrowRight'?1:-1));}}} onScroll={event=>{
         const node=event.currentTarget,first=node.firstElementChild as HTMLElement|null;if(!first)return;
@@ -119,7 +125,7 @@ export function MobileHomeScreen(props: Props) {
           const save=ordered.find(s=>ticketKey(s)===key)??(ghost&&ticketKey(ghost.save)===key?ghost.save:undefined),sel=save?.status==='readable'&&save.saveId===active;
           const unavailable=i!==index||disabled||save?.status==='unreadable';
           return <div className={`mh-ticket-wrap ${i!==index?'side':''}`} key={key} style={{'--rotation':`${Math.sign(i-index)*3}deg`} as CSSProperties} aria-current={i===index?'true':undefined}>
-            <Ticket save={save} index={i} selected={sel} hasDraft={hasDraft} voided={Boolean(ghost&&key===ticketKey(ghost.save))} focused={i===index}>
+            <Ticket save={save} index={i} selected={sel} hasDraft={hasDraft} voided={Boolean(ghost&&key===ticketKey(ghost.save))} focused={i===index} backup={save&&backupOf?backupOf(save):undefined}>
               <div className={`mh-stub ${i===index&&tear.torn?'torn':''} ${i===index&&tear.drag?'dragging':''}`} aria-disabled={unavailable} {...(i===index?tear.handlers:{})} style={i===index&&tear.drag?{transform:`translateY(${tear.drag*.6}px) rotate(${-tear.drag/12}deg)`}:undefined}>
                 <span>{save?.status==='unreadable'?'保存时间无法读取':!save?'开启新的人生':sel?'继续游戏':'读取存档'}{save?.status!=='unreadable'&&<small>↓ 按住票根往下撕</small>}</span><i className="mh-barcode" aria-hidden="true"/>
               </div>
@@ -130,8 +136,9 @@ export function MobileHomeScreen(props: Props) {
       <nav className="mh-dots" aria-label="车票页码" onKeyDown={event=>{if(event.key==='ArrowRight'||event.key==='ArrowLeft'){event.preventDefault();const next=Math.max(0,Math.min(keys.length-1,index+(event.key==='ArrowRight'?1:-1)));go(next);event.currentTarget.querySelectorAll<HTMLButtonElement>('button')[next]?.focus({preventScroll:true});}}}>{keys.map((key,i)=><button key={key} tabIndex={i===index?0:-1} aria-label={`第 ${i+1} 张${key===BLANK?'，空白车票':''}`} aria-current={i===index?'true':undefined} className={key===BLANK?'new':''} onClick={()=>go(i)}/>)}</nav>
       {!saves.length&&!ghost&&<p className="mh-empty">还没有开始的人生。<br/>创建角色，留下第一份存档。</p>}
     </>}
-    {notice&&<p className="mh-status" role="status">{notice}</p>}
-    {!loading&&<TicketActions key={effectiveKey} save={listError?undefined:current} selected={current?.status==='readable'&&current.saveId===active} repository={repository} disabled={disabled||tear.torn} onActivate={listError?onCreate:tear.activate} onSelect={onSelect} onDelete={onDelete}/>}
+    {backupReminder&&!loading&&<p className="mh-reminder" role="note">{backupReminder}</p>}
+    {notice&&<p className="mh-status" role="status">{notice}{noticeAction}</p>}
+    {!loading&&<TicketActions key={effectiveKey} save={listError?undefined:current} selected={current?.status==='readable'&&current.saveId===active} repository={repository} disabled={disabled||tear.torn} onActivate={listError?onCreate:tear.activate} onSelect={onSelect} onDelete={onDelete} onExport={onExport} backupExporting={backupExporting}/>}
     <footer className="mh-foot">{notices}<p>四座城市 · 自由职业 · 开放人生<br/>三阶段生成 · 原子结算 · 连续回合</p></footer>
   </main>;
 }

@@ -1,0 +1,57 @@
+/* 存档备份：导入对话框（桌面深色弹窗 / 手机底部抽屉）、存档卡与车票上的备份状态、存档馆提醒。 */
+.backup-import-dialog { --bk-ok:#7DBB9C; --bk-warn:#E0C27A; --bk-err:#D47C60; --bk-gold:#C9A961; }
+.backup-import-dialog.modal { width:min(34rem, 94vw); }
+.backup-import-dialog .bk-drop { display:grid; justify-items:center; gap:.35rem; margin:.4rem 0 .6rem; padding:1.4rem 1rem; border:1px dashed #C9A96180; border-radius:10px; background:#C9A9610a; text-align:center; transition:background .2s, border-color .2s; }
+.backup-import-dialog .bk-drop.over { background:#C9A96122; border-color:var(--bk-gold); }
+.backup-import-dialog .bk-drop p { margin:0; font-size:.84rem; color:var(--muted); }
+.backup-import-dialog .bk-drop small { font-size:.72rem; color:#7C7F73; }
+.backup-import-dialog .bk-pick { border:0; background:none; color:#E3CB8A; font:600 1.05rem var(--font-title); letter-spacing:.12em; padding:.3rem .6rem; }
+.backup-import-dialog .bk-card { display:flex; align-items:center; gap:.85rem; margin:.3rem 0 .7rem; padding:.85rem .95rem; border:1px solid var(--line); border-radius:10px; background:#ffffff05; }
+.backup-import-dialog .bk-card > div { flex:1; min-width:0; display:grid; gap:.1rem; }
+.backup-import-dialog .bk-card b, .backup-import-dialog .bk-name b { font:600 1rem var(--font-title); letter-spacing:.06em; color:var(--text); }
+.backup-import-dialog .bk-card small, .backup-import-dialog .bk-name small { font-size:.74rem; color:var(--muted); font-family:var(--font-mono); line-height:1.5; }
+.backup-import-dialog .bk-seal { flex:none; display:grid; place-items:center; width:2.6rem; height:2.6rem; border:1px solid #8E9BD855; border-radius:8px; background:#8E9BD812; color:#B8C2EC; font:1.05rem var(--font-title); }
+.backup-import-dialog .bk-tag { flex:none; padding:.08rem .55rem; border:1px solid currentColor; border-radius:999px; font-size:.7rem; white-space:nowrap; color:var(--muted); }
+.backup-import-dialog .bk-tag.ok { color:var(--bk-ok); } .backup-import-dialog .bk-tag.warn { color:var(--bk-warn); } .backup-import-dialog .bk-tag.err { color:var(--bk-err); }
+.backup-import-dialog .bk-compare { width:100%; margin:.5rem 0 .7rem; border:1px solid var(--line); border-radius:10px; border-collapse:separate; border-spacing:0; padding:.55rem .8rem; font-size:.82rem; background:#ffffff04; }
+.backup-import-dialog .bk-compare th { font-weight:400; color:var(--muted); text-align:left; padding:.2rem .5rem .2rem 0; font-size:.74rem; }
+.backup-import-dialog .bk-compare thead th { font-size:.68rem; letter-spacing:.12em; }
+.backup-import-dialog .bk-compare td { font-family:var(--font-mono); padding:.2rem .5rem .2rem 0; color:var(--text); }
+.backup-import-dialog .bk-compare td.newer { color:var(--bk-warn); }
+.backup-import-dialog .bk-list { list-style:none; margin:.3rem 0 .5rem; padding:0; display:grid; gap:.45rem; }
+.backup-import-dialog .bk-row label { display:flex; flex-direction:row; align-items:center; text-align:left; line-height:1.4; gap:.7rem; padding:.6rem .75rem; border:1px solid var(--line); border-radius:10px; background:#ffffff04; cursor:pointer; }
+.backup-import-dialog .bk-row.checked label { border-color:#C9A96166; background:#C9A96110; }
+.backup-import-dialog .bk-row input { flex:none; width:1.05rem; height:1.05rem; accent-color:var(--bk-gold); }
+.backup-import-dialog .bk-row input:disabled + .bk-seal, .backup-import-dialog .bk-row input:disabled ~ .bk-name { opacity:.55; }
+.backup-import-dialog .bk-row .bk-seal { width:2.2rem; height:2.2rem; font-size:.95rem; }
+.backup-import-dialog .bk-name { flex:1; min-width:0; display:grid; }
+.backup-import-dialog .bk-hint { margin:.2rem 0 .4rem; font-size:.74rem; color:var(--muted); }
+.backup-import-dialog .feedback { margin:.4rem 0 .6rem; }
+.backup-import-dialog .bk-actions .feedback-danger { background:#b4573b; color:#fff; border:0; font-weight:600; }
+/* 手机底部抽屉：按钮铺满一行，主按钮更宽。 */
+.backup-import-dialog.mobile-sheet .bk-actions { display:flex; flex:1; width:100%; gap:.6rem; justify-content:stretch; }
+.backup-import-dialog.mobile-sheet .bk-actions > button { min-width:0; white-space:nowrap; }
+.backup-import-dialog.mobile-sheet .bk-actions > button { flex:1; }
+.backup-import-dialog.mobile-sheet .bk-actions > button:last-child { flex:1.6; }
+
+/* 存档卡（电脑端）上的备份状态 */
+.app-shell-home .home-experience .backup-line { display:flex; align-items:center; gap:.45rem; margin-top:.35rem; font-size:.76rem; color:#7C7F73; }
+.app-shell-home .home-experience .backup-line::before { content:''; flex:none; width:.5rem; height:.5rem; border-radius:50%; border:1px solid currentColor; }
+.app-shell-home .home-experience .backup-line.ok { color:#7DBB9C; } .app-shell-home .home-experience .backup-line.ok::before { background:currentColor; }
+.app-shell-home .home-experience .backup-line.warn { color:#E0C27A; } .app-shell-home .home-experience .backup-line.warn::before { background:currentColor; }
+.app-shell-home .home-experience .card-actions { flex-wrap:wrap; }
+.app-shell-home .home-experience .card-actions .export { color:#8EC1E0; border-color:#2D5E7D88; }
+.app-shell-home .home-experience .lib-top .import { color:#E3CB8A; border-color:#8A7642; }
+.app-shell-home .home-experience .backup-banner { display:inline-flex; align-items:center; gap:.5rem; padding:.45rem .9rem; border:1px solid #8A764299; border-radius:999px; background:#C9A96112; color:#E3CB8A; font-size:.8rem; }
+.app-shell-home .home-experience .backup-banner::before { content:''; width:.55rem; height:.55rem; border-radius:50%; background:#E0C27A; }
+.app-shell-home .home-experience .status-msg .share { margin-left:.6rem; padding:.15rem .6rem; font-size:.78rem; }
+
+/* 手机车票 */
+.mobile-home .mh-backup { margin:.1rem .95rem 0; display:flex; align-items:center; gap:.4rem; font-size:.62rem; letter-spacing:.06em; color:#857B6C; }
+.mobile-home .mh-backup::before { content:''; flex:none; width:.42rem; height:.42rem; border-radius:50%; border:1px solid currentColor; }
+.mobile-home .mh-backup.ok { color:#2F7A58; } .mobile-home .mh-backup.ok::before { background:currentColor; }
+.mobile-home .mh-backup.warn { color:#8E6C25; } .mobile-home .mh-backup.warn::before { background:currentColor; }
+.mobile-home .mh-meta .mh-import { color:#E3CB8A; }
+.mobile-home .mh-secondary .mh-export { color:#8EC1E0; border-color:#2D5E7D88; }
+.mobile-home .mh-status .mh-share { display:block; margin-top:.45rem; min-height:40px; width:100%; border-radius:10px; border:1px solid #7DBB9C66; background:none; color:#cfe6da; font-size:.78rem; }
+.mobile-home .mh-reminder { margin:.5rem 16px 0; padding:.45rem .8rem; border-radius:10px; border:1px solid #8A764299; background:#C9A96112; color:#E3CB8A; font-size:.72rem; line-height:1.6; }
