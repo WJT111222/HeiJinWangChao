@@ -5,6 +5,7 @@ import type { ChronicleEntry, HistorySlot } from '../../domain/history/projectio
 import { historyTimeLabel } from '../../domain/history/time';
 import type { ReactNode } from 'react';
 import { Empty } from '../Dialog';
+import { ThemedSelect } from '../components/ThemedSelect';
 import { dateTime } from './playerView';
 import type { PlayerView } from './playerView';
 import { RecordList } from './WorldRecord';
@@ -45,7 +46,7 @@ function ChronicleDetail({ entry, view, onSelect,desktop=false }: { entry: Chron
   const links = c.relations ?? [];
   const incoming = view.timeline.flatMap(other => (other.chronicle?.relations ?? []).filter(r => r.entryId === entry.id).map(r => ({ entry: other, kind: r.kind })));
   return <article className={desktop ? "history-detail chron" : "history-detail"} aria-label="纪事详情">
-    <span className="tag">{categories[c.category]}</span><h3 tabIndex={desktop?-1:undefined} data-history-heading={desktop?true:undefined}>{entry.title}</h3><p className={desktop?"lead":undefined}>{entry.summary}</p>
+    <span className="tag">{categories[c.category]}</span><h3 tabIndex={-1} data-history-heading>{entry.title}</h3><p className={desktop?"lead":undefined}>{entry.summary}</p>
     <dl className={desktop?"facts-grid":undefined}><div><dt>发生 / 开始</dt><dd>{historyTimeLabel(c.time)}</dd></div>
       {entry.occurredTimeText && <div><dt>原始时间表述</dt><dd>{entry.occurredTimeText}</dd></div>}
       {c.endTime && <div><dt>实际结束</dt><dd>{historyTimeLabel(c.endTime)}</dd></div>}
@@ -93,25 +94,26 @@ export function HistoryPanel({ view,desktop=false,uiState,onUiStateChange }: { v
   const projection = useMemo(() => historyProjection(view.timeline), [view.timeline]);
   const [tab, setTab] = useState<'chronicles' | 'records'>(() => uiState?.tab??(projection.slots.length ? 'chronicles' : 'records'));
   const [query, setQuery] = useState(uiState?.query??''), [year, setYear] = useState(uiState?.year??'all'), [page, setPage] = useState(uiState?.page??0);
+  const [category,setCategory]=useState('all');
   const [selected, setSelected] = useState<string|undefined>(uiState?.selected);
   const groupPages=useRef<Record<string,number>>(uiState?.groupPages??{}),listScroll=useRef(uiState?.listScroll??0),returnId=useRef<string|undefined>(uiState?.returnId);
   useEffect(()=>{if(desktop)onUiStateChange?.({tab,query,year,page,selected,groupPages:groupPages.current,returnId:returnId.current,listScroll:listScroll.current});},[desktop,tab,query,year,page,selected,onUiStateChange]);
   const root = useRef<HTMLDivElement>(null), opener = useRef<HTMLElement | null>(null);
   const selectedEntry = view.timeline.find(entry => entry.id === selected);
   const slots = useMemo(() => projection.slots.filter(slot => year === 'all' || String(slot.year ?? 'unknown') === year)
-    .map(slot => ({ ...slot, entries: slot.entries.filter(entry => `${entry.title}\n${entry.summary}\n${entry.chronicle.narrative}`.includes(query.trim())) }))
-    .filter(slot => slot.entries.length), [projection, query, year]);
+    .map(slot => ({ ...slot, entries: slot.entries.filter(entry => (desktop||category==='all'||entry.chronicle.category===category)&&`${entry.title}\n${entry.summary}\n${entry.chronicle.narrative}`.includes(query.trim())) }))
+    .filter(slot => slot.entries.length), [projection, query, year,category,desktop]);
   const last = Math.max(0, Math.ceil(slots.length / historyPageSize) - 1), current = Math.min(page, last);
-  function select(id: string) { if(!selected) {opener.current = document.activeElement as HTMLElement;returnId.current=opener.current?.dataset.historyId;if(desktop)listScroll.current=root.current?.scrollTop??0;} setSelected(id);if(desktop)requestAnimationFrame(()=>{if(root.current)root.current.scrollTop=0;root.current?.querySelector<HTMLElement>('[data-history-heading]')?.focus({preventScroll:true});});else root.current?.scrollIntoView({ block: 'start' }); }
+  function select(id: string) { if(!selected) {opener.current = document.activeElement as HTMLElement;returnId.current=opener.current?.dataset.historyId;listScroll.current=(desktop?root.current:root.current?.closest<HTMLElement>('.modal-body'))?.scrollTop??0;} setSelected(id);requestAnimationFrame(()=>{const pane=desktop?root.current:root.current?.closest<HTMLElement>('.modal-body');if(pane)pane.scrollTop=0;root.current?.querySelector<HTMLElement>('[data-history-heading]')?.focus({preventScroll:true});}); }
   function back() { setSelected(undefined); requestAnimationFrame(() => {
     // The old DOM node was unmounted. Locate it by its stable ID without CSS interpolation.
-    if(desktop&&root.current)root.current.scrollTop=listScroll.current;
+    const pane=desktop?root.current:root.current?.closest<HTMLElement>('.modal-body');if(pane)pane.scrollTop=listScroll.current;
     const id = opener.current?.dataset.historyId??returnId.current;
     const button = [...(root.current?.querySelectorAll<HTMLButtonElement>('[data-history-id]') ?? [])].find(b => b.dataset.historyId === id);
     (button ?? root.current?.querySelector<HTMLButtonElement>('button'))?.focus({ preventScroll: true });
   }); }
   return <div className={desktop ? "history-panel hp" : "history-panel"} ref={root}>
-    {selectedEntry ? <><button onClick={back}>返回时间轴</button>{selectedEntry.chronicle
+    {selectedEntry ? <><button className={!desktop?'paper-back':undefined} onClick={back}>返回时间轴</button>{selectedEntry.chronicle
       ? <ChronicleDetail entry={selectedEntry as ChronicleEntry} view={view} onSelect={select} desktop={desktop} />
       : <OrdinaryRecord entry={selectedEntry} view={view} />}</> : <>
       <div className="history-tabs" role="group" aria-label="历史视图">
@@ -120,15 +122,16 @@ export function HistoryPanel({ view,desktop=false,uiState,onUiStateChange }: { v
       </div>
       {tab === 'records' ? <RecordList label="史料记录" entries={projection.records} render={entry => <OrdinaryRecord entry={entry} view={view} />} /> : <>
         <div className="history-filters"><label>搜索纪事<input value={query} maxLength={400} onChange={e => { setQuery(e.target.value); setPage(0); }} /></label>
-          <label>年代<select value={year} onChange={e => { setYear(e.target.value); setPage(0); }}><option value="all">全部年代</option>
+          {desktop?<label>年代<select value={year} onChange={e => { setYear(e.target.value); setPage(0); }}><option value="all">全部年代</option>
             {[...new Set(projection.slots.map(s => s.year))].map(y => <option key={y ?? 'unknown'} value={y ?? 'unknown'}>{y === undefined ? '时间待考' : `${y}年`}</option>)}
-          </select></label></div>
+          </select></label>:<ThemedSelect label="年代" value={year} options={[{value:'all',label:'全部年代'},...[...new Set(projection.slots.map(s=>s.year))].map(y=>({value:String(y??'unknown'),label:y===undefined?'时间待考':`${y}年`}))]} onChange={value=>{setYear(value);setPage(0);}}/>}</div>
+        {!desktop&&<nav className="paper-chips history-range" aria-label="纪事范围">{[['all','全部'],['world','世界重大纪事'],['protagonist','主角重大纪事']].map(([id,label])=><button key={id} aria-pressed={category===id} onClick={()=>{setCategory(id);setPage(0);}}>{label}</button>)}</nav>}
         <div className="history-legend"><span>世界重大纪事</span>{desktop&&<i aria-hidden="true">TIME</i>}<span>主角重大纪事</span></div>
         <ol className="history-axis" aria-label="统一历史主轴" tabIndex={0}>
           {slots.slice(current * historyPageSize, (current + 1) * historyPageSize).map(slot => <li className="history-slot" data-time-key={slot.key} key={slot.key}>
-            <SlotSide slot={slot} category="world" onSelect={select} initialPage={desktop?groupPages.current[`${slot.key}:world`]:0} onPage={desktop?p=>{groupPages.current[`${slot.key}:world`]=p;}:undefined} />
+            <SlotSide slot={slot} category="world" onSelect={select} initialPage={groupPages.current[`${slot.key}:world`]} onPage={p=>{groupPages.current[`${slot.key}:world`]=p;}} />
             <div className="history-time"><span className="history-pin" /><time>{slot.label}</time></div>
-            <SlotSide slot={slot} category="protagonist" onSelect={select} initialPage={desktop?groupPages.current[`${slot.key}:protagonist`]:0} onPage={desktop?p=>{groupPages.current[`${slot.key}:protagonist`]=p;}:undefined} />
+            <SlotSide slot={slot} category="protagonist" onSelect={select} initialPage={groupPages.current[`${slot.key}:protagonist`]} onPage={p=>{groupPages.current[`${slot.key}:protagonist`]=p;}} />
           </li>)}
         </ol>
         {!slots.length && <Empty>暂无符合条件的重大纪事。</Empty>}

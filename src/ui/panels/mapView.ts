@@ -18,4 +18,4 @@ export function mapProjection(locations:readonly Place[],currentId:string,npcs:r
  const leaves=(id:string)=>{const out:Place[]=[],pending=[...(children.get(id)??[])].reverse();while(pending.length){const p=pending.pop()!,ks=children.get(p.id)??[];if(ks.length)pending.push(...[...ks].reverse());else out.push(p);}return out;};
  return {nodes,parent,children,roots,order,issues,descendants,people,path,leaves,currentPath:path(currentId)};
 }
-export interface MapUiState {selected?:string;expanded:string[];query:string;limits:Record<string,number>}
+export interface MapUiState {layer?:string;selected?:string;expanded:string[];query:string;limits:Record<string,number>}

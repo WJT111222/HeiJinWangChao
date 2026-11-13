@@ -1,0 +1,9 @@
+
+Running 1 test using 1 worker
+
+(node:76705) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [mobile] › e2e/pr120-integration.spec.ts:80:1 › 整合：抽屉打开时真实输入发送、失败恢复、取消和原子结算/刷新
+  1 passed (10.6s)

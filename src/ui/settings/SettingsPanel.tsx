@@ -2,7 +2,7 @@ import type { FeedbackLevel } from '../Feedback';
 import { Feedback,useDesktopFeedback } from '../Feedback';
 import { MemorySummarySettings } from './MemorySummarySettings';
 import type { SaveRepository } from '../../services/storage/saveRepository';
-import { lazy, Suspense, useCallback, useState, cloneElement, isValidElement } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, cloneElement, isValidElement } from 'react';
 import type { ReactNode } from 'react';
 import { AiConnections } from './AiConnections';
 import { UnsavedAiChanges } from './UnsavedAiChanges';
@@ -16,6 +16,7 @@ const PromptInspector = lazy(() =>
   import('./PromptInspector').then((module) => ({ default: module.PromptInspector })),
 );
 
+const descriptions={'AI 连接':'渠道、密钥与模型路由','提示词':'叙事人称、风格与开关','记忆':'即时记忆与记忆总结','运行':'阶段开关与超时','提示词管理':'查看与编辑提示词'};
 const tabs = ['AI 连接', '提示词', '记忆', '运行', '提示词管理'] as const;
 export function SettingsPanel({
   settings,
@@ -37,14 +38,19 @@ export function SettingsPanel({
   onSave: (settings: Settings) => void;
 }) {
   const desktop=useDesktopFeedback();
+  const [mobileHome,setMobileHome]=useState(!desktop);
+  const host=useRef<HTMLDivElement>(null),lastCategory=useRef<(typeof tabs)[number]>('AI 连接'),homeScroll=useRef(0),categoryHeading=useRef<HTMLHeadingElement>(null);
   const [tab, setTab] = useState<(typeof tabs)[number]>('AI 连接');
+  // Once a desktop editor is visible, crossing back to phone must keep that same form mounted.
+  useEffect(()=>{if(desktop)setMobileHome(false);},[desktop]);
+  useEffect(()=>{if(!desktop&&!mobileHome&&document.querySelector('dialog:modal')===host.current?.closest('dialog')){const body=host.current?.closest<HTMLElement>('.modal-body');if(body)body.scrollTop=0;categoryHeading.current?.focus({preventScroll:true});}},[desktop,mobileHome,tab]);
   const [editing, setEditing] = useState(settings);
   const [notice, setNotice] = useState('');
   const [noticeLevel, setNoticeLevel] = useState<FeedbackLevel>('info');
   const [aiDirty, setAiDirty] = useState(false);
   const [summaryDirty, setSummaryDirty] = useState(false);
   const summaryDirtyChanged = useCallback((dirty: boolean) => { setSummaryDirty(dirty); onSummaryDirtyChange?.(dirty); }, [onSummaryDirtyChange]);
-  const [pendingTab, setPendingTab] = useState<(typeof tabs)[number]>();
+  const [pendingTab, setPendingTab] = useState<(typeof tabs)[number]|'home'>();
   const aiDirtyChanged = useCallback((dirty: boolean) => {
     setAiDirty(dirty);
     onAiDirtyChange?.(dirty);
@@ -73,26 +79,29 @@ export function SettingsPanel({
       setNotice('本地保存失败，请检查浏览器存储权限后重试。');
     }
   }
+  function showCategory(name:(typeof tabs)[number]){if(!desktop&&mobileHome)homeScroll.current=host.current?.closest<HTMLElement>('.modal-body')?.scrollTop??0;setTab(name);lastCategory.current=name;setMobileHome(false);setNotice('');const body=host.current?.closest<HTMLElement>('.modal-body');if(body)body.scrollTop=0;}
+  function back(){if((tab==='AI 连接'&&aiDirty)||(tab==='记忆'&&summaryDirty)){setPendingTab('home');return;}setMobileHome(true);requestAnimationFrame(()=>{const body=host.current?.closest<HTMLElement>('.modal-body');if(body)body.scrollTop=homeScroll.current;host.current?.querySelector<HTMLButtonElement>(`[data-settings-category="${lastCategory.current}"]`)?.focus({preventScroll:true});});}
   return (
-    <div className={`settings-layout st-wrap ${tab === '提示词管理' ? 'prompt-settings-layout' : ''}`}>
-      <nav aria-label="设置分类" className="settings-nav">
+    <div ref={host} data-tab={tab} className={`settings-layout st-wrap ${tab === '提示词管理' ? 'prompt-settings-layout' : ''}`}>
+      <nav aria-label="设置分类" className="settings-nav" hidden={!desktop&&!mobileHome}>
+        {!desktop&&<p className="muted">本地偏好与 AI 渠道</p>}
         {tabs.map((name) => (
           <button
-            key={name}
-            aria-pressed={tab === name}
+            key={name} data-settings-category={name} aria-label={name}
+            aria-pressed={desktop?tab === name:false}
             onClick={() => {
               if (name !== tab && ((tab === 'AI 连接' && aiDirty) || (tab === '记忆' && summaryDirty))) { setPendingTab(name); return; }
-              setTab(name);
-              setNotice('');
+              showCategory(name);
             }}
           >
-            {desktop&&<i aria-hidden="true">{{'AI 连接':'连','提示词':'词','记忆':'忆','运行':'运','提示词管理':'管'}[name]}</i>}{desktop?<span>{name}</span>:name}{desktop&&((name==='AI 连接'&&aiDirty)||(name==='记忆'&&summaryDirty)||((name==='提示词'||name==='运行')&&localDirty))&&<span className="dirty" aria-hidden="true" title="有未保存的修改"/>}
+            <i aria-hidden="true">{{'AI 连接':'连','提示词':'词','记忆':'忆','运行':'运','提示词管理':'管'}[name]}</i>{desktop?<span>{name}</span>:<span className="settings-row-text"><strong>{name}</strong><small>{descriptions[name]}</small></span>}{((name==='AI 连接'&&aiDirty)||(name==='记忆'&&summaryDirty)||((name==='提示词'||name==='运行')&&localDirty))&&<span className="dirty" aria-hidden="true" title="有未保存的修改"/>}{!desktop&&<span aria-hidden="true">›</span>}
           </button>
         ))}
         {onOpenNotice && <NoticeLinks onOpen={onOpenNotice} />}
       </nav>
-      <div className="settings-content">
-        <h3>{tab}</h3>
+      {(desktop||!mobileHome)&&<div className="settings-content">
+        {!desktop&&<button className="paper-back" aria-label="返回设置" onClick={back}>‹ 设置</button>}
+        <h3 ref={categoryHeading} tabIndex={!desktop?-1:undefined}>{tab}</h3>
         {tab === '提示词管理' && (
           <Suspense fallback={<p>正在打开提示词管理中心…</p>}>
             <PromptInspector
@@ -218,10 +227,10 @@ export function SettingsPanel({
             保存本地设置
           </button>
         )}</div>
-      </div>
+      </div>}
       {pendingTab && <UnsavedAiChanges subject={tab === '记忆' ? '记忆设置' : undefined} onContinue={() => setPendingTab(undefined)} onDiscard={() => {
         aiDirtyChanged(false);
-        setTab(pendingTab);
+        if(pendingTab==='home'){setMobileHome(true);requestAnimationFrame(()=>{const body=host.current?.closest<HTMLElement>('.modal-body');if(body)body.scrollTop=homeScroll.current;host.current?.querySelector<HTMLButtonElement>(`[data-settings-category="${lastCategory.current}"]`)?.focus({preventScroll:true});});}else showCategory(pendingTab);
         setPendingTab(undefined);
         setNotice('');
       }} />}

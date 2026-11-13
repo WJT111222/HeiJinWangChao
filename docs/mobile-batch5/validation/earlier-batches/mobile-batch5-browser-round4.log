@@ -1,0 +1,133 @@
+
+Running 3 tests using 1 worker
+
+(node:71119) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/3] [mobile] › e2e/mobile-archives.spec.ts:9:81 › 档案纸 390×844：全部资料、单一滚动、只读与手机边界
+  1) [mobile] › e2e/mobile-archives.spec.ts:9:81 › 档案纸 390×844：全部资料、单一滚动、只读与手机边界 ───────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: '设置', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog', { name: '设置', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '设置', exact: true })
+
+
+       at helpers/mobileArchives.ts:25
+
+      23 | export async function openPaperSettings(page:Page){
+      24 |  if((page.viewportSize()?.width??0)<=900)await page.getByRole('navigation',{name:'底部导航'}).getByRole('button',{name:'设置',exact:true}).click();else await page.locator('.dock-system [data-settings-open]').click();
+    > 25 |  const settings=page.getByRole('dialog',{name:'设置',exact:true});await expect(settings).toBeVisible();return settings;
+         |                                                                                        ^
+      26 | }
+      27 | export async function archiveFits(page:Page){
+      28 |  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+        at openPaperSettings (/workspace/mobile-redesign-batch5/e2e/helpers/mobileArchives.ts:25:88)
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:19:17
+
+    Error Context: ../../tmp/mobile-batch5-browser-round4/mobile-archives-档案纸-390×844：全部资料、单一滚动、只读与手机边界-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-round4/mobile-archives-档案纸-390×844：全部资料、单一滚动、只读与手机边界-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-round4/mobile-archives-档案纸-390×844：全部资料、单一滚动、只读与手机边界-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:71258) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/3] [mobile] › e2e/mobile-archives.spec.ts:56:1 › 设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达
+  2) [mobile] › e2e/mobile-archives.spec.ts:56:1 › 设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达 ─────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: '设置', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog', { name: '设置', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '设置', exact: true })
+
+
+       at helpers/mobileArchives.ts:25
+
+      23 | export async function openPaperSettings(page:Page){
+      24 |  if((page.viewportSize()?.width??0)<=900)await page.getByRole('navigation',{name:'底部导航'}).getByRole('button',{name:'设置',exact:true}).click();else await page.locator('.dock-system [data-settings-open]').click();
+    > 25 |  const settings=page.getByRole('dialog',{name:'设置',exact:true});await expect(settings).toBeVisible();return settings;
+         |                                                                                        ^
+      26 | }
+      27 | export async function archiveFits(page:Page){
+      28 |  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+        at openPaperSettings (/workspace/mobile-redesign-batch5/e2e/helpers/mobileArchives.ts:25:88)
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:57:158
+
+    Error Context: ../../tmp/mobile-batch5-browser-round4/mobile-archives-设置分类、AI-记忆未保存保护、手动保存与存储失败、短视口可达-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-round4/mobile-archives-设置分类、AI-记忆未保存保护、手动保存与存储失败、短视口可达-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-round4/mobile-archives-设置分类、AI-记忆未保存保护、手动保存与存储失败、短视口可达-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:71410) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[3/3] [mobile] › e2e/mobile-archives.spec.ts:64:31 › PC 901px：档案与设置和未修改 main 真实像素对照
+  3) [mobile] › e2e/mobile-archives.spec.ts:64:31 › PC 901px：档案与设置和未修改 main 真实像素对照 ─────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: '设置', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog', { name: '设置', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '设置', exact: true })
+
+
+       at helpers/mobileArchives.ts:25
+
+      23 | export async function openPaperSettings(page:Page){
+      24 |  if((page.viewportSize()?.width??0)<=900)await page.getByRole('navigation',{name:'底部导航'}).getByRole('button',{name:'设置',exact:true}).click();else await page.locator('.dock-system [data-settings-open]').click();
+    > 25 |  const settings=page.getByRole('dialog',{name:'设置',exact:true});await expect(settings).toBeVisible();return settings;
+         |                                                                                        ^
+      26 | }
+      27 | export async function archiveFits(page:Page){
+      28 |  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+        at openPaperSettings (/workspace/mobile-redesign-batch5/e2e/helpers/mobileArchives.ts:25:88)
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:74:19
+
+    Error Context: ../../tmp/mobile-batch5-browser-round4/mobile-archives-PC-901px：档案与设置和未修改-main-真实像素对照-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-round4/mobile-archives-PC-901px：档案与设置和未修改-main-真实像素对照-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-round4/mobile-archives-PC-901px：档案与设置和未修改-main-真实像素对照-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  3 failed
+    [mobile] › e2e/mobile-archives.spec.ts:9:81 › 档案纸 390×844：全部资料、单一滚动、只读与手机边界 ────────────────────
+    [mobile] › e2e/mobile-archives.spec.ts:56:1 › 设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达 ──────────────────
+    [mobile] › e2e/mobile-archives.spec.ts:64:31 › PC 901px：档案与设置和未修改 main 真实像素对照 ──────────────────

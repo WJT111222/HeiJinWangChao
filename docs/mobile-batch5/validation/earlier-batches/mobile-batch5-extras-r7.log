@@ -1,0 +1,48 @@
+
+Running 5 tests using 1 worker
+
+(node:73282) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/5] [mobile] › e2e/mobile-archives.spec.ts:66:31 › PC 1440px：档案与设置和未修改 main 真实像素对照
+[2/5] [mobile] › e2e/mobile-archives.spec.ts:85:1 › NPC 原星标入口与私密档案七字段：合法休眠恢复、男NPC资格、刷新和零请求
+[3/5] [mobile] › e2e/mobile-archives.spec.ts:93:1 › 手机设置真实保存 AI 与记忆：无模型 POST，关闭拦截、记忆费用保护和重载
+[4/5] [mobile] › e2e/mobile-archives.spec.ts:112:1 › 原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留
+  1) [mobile] › e2e/mobile-archives.spec.ts:112:1 › 原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留 ───────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.boundingBox: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('dialog', { name: '物品栏', exact: true }).getByRole('dialog', { name: '日常棉布外套', exact: true })
+
+
+      112 | test('原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留',async({page})=>{
+      113 |  await page.setViewportSize({width:390,height:844});await seedMobileArchives(page);const before=await storedArchives(page),verify=await readonly(page);const paper=await openArchive(page,'物品栏'),tile=paper.locator('[data-item-id="ui5-coat"]');await tile.tap();const sub=paper.getByRole('dialog',{name:'日常棉布外套',exact:true});await expect(sub).toBeVisible();const cdp=await page.context().newCDPSession(page),grab=sub.locator('.mobile-sheet-grab');const box=(await grab.boundingBox())!,x=box.x+box.width/2,y=box.y+box.height/2;
+    > 114 |  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});for(let i=1;i<=6;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:y+140*i/6}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await expect(sub).toHaveCount(0);await expect(paper).toBeVisible();await expect(tile).toBeFocused();await tile.tap();const top=(await sub.boundingBox())!.y;await page.touchscreen.tap(4,top/2);await expect(sub).toHaveCount(0);await expect(paper).toBeVisible();await page.keyboard.press('Escape');await cdp.detach();
+          |                                                                                                                                                                                                                                                                                                                                                                                                                            ^
+      115 |  const settings=await openPaperSettings(page);await settings.getByRole('button',{name:'AI 连接',exact:true}).click();await settings.getByRole('button',{name:'新增渠道',exact:true}).click();await settings.getByRole('textbox',{name:'渠道名称',exact:true}).fill('跨尺寸编辑保留');await page.setViewportSize({width:901,height:900});await expect(settings.getByRole('textbox',{name:'渠道名称',exact:true})).toHaveValue('跨尺寸编辑保留');await page.setViewportSize({width:392,height:420});await expect(settings.getByRole('textbox',{name:'渠道名称',exact:true})).toHaveValue('跨尺寸编辑保留');await settings.getByRole('button',{name:'关闭资料界面',exact:true}).click();const confirm=page.getByRole('dialog',{name:'AI 配置尚未保存',exact:true});await expect(confirm).toBeVisible();await page.setViewportSize({width:1440,height:900});await expect(confirm).toBeVisible();await page.setViewportSize({width:390,height:844});await page.keyboard.press('Escape');await expect(confirm).toHaveCount(0);await expect(settings).toBeVisible();await expect(settings.getByRole('textbox',{name:'渠道名称',exact:true})).toHaveValue('跨尺寸编辑保留');await archiveFits(page);expect(await storedArchives(page)).toEqual(before);verify();
+      116 | });
+      117 |
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:114:412
+
+    Error Context: ../../tmp/mobile-batch5-extras-r7/mobile-archives-原生内层手势、遮罩、Esc-与-settings-跨尺寸编辑保留-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-extras-r7/mobile-archives-原生内层手势、遮罩、Esc-与-settings-跨尺寸编辑保留-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-extras-r7/mobile-archives-原生内层手势、遮罩、Esc-与-settings-跨尺寸编辑保留-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:73601) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[5/5] [mobile] › e2e/mobile-archives.spec.ts:118:1 › 世界家族并行、退役成果、计划、历史及参与者地点真实 ID 导航
+  1 failed
+    [mobile] › e2e/mobile-archives.spec.ts:112:1 › 原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留 ────────────────
+  4 passed (1.2m)

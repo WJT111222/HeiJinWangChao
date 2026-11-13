@@ -9,6 +9,7 @@ import { organizationDynamics, organizationNpcIds } from './organizationView';
 import { eventStatusLabels } from './eventArchive';
 
 export interface ArchiveLinks {
+  location?: (id:string) => void;
   npc: (id: string) => void;
   organization: (id: string) => void;
   event: (id: string) => void;
@@ -54,14 +55,14 @@ export function OrganizationPanel({ view, initialId, links, desktop = false, onS
     return ()=>{observer.disconnect();pane.removeEventListener('scroll',update);};
   },[desktop,selected]);
   useEffect(()=>{if(initialId)setSelectedId(initialId);},[initialId]);
-  useEffect(()=>{if(selectedId && detail.current){detail.current.scrollTop=0;title.current?.focus({preventScroll:true});}},[selectedId]);
-  function select(id:string){scroll.current=directory.current?.scrollTop??0;setSelectedId(id);onSelect?.(id);}
+  useEffect(()=>{if(selectedId && detail.current){const pane=desktop?detail.current:detail.current.closest<HTMLElement>('.modal-body');if(pane)pane.scrollTop=0;title.current?.focus({preventScroll:true});}},[selectedId,desktop]);
+  function select(id:string){scroll.current=(desktop?directory.current:directory.current?.closest<HTMLElement>('.modal-body'))?.scrollTop??0;setSelectedId(id);onSelect?.(id);}
   function jump(key:string){
-    const pane=detail.current,target=document.getElementById(`${anchorId}-${key}`);
+    const pane=desktop?detail.current:detail.current?.closest<HTMLElement>('.modal-body'),target=document.getElementById(`${anchorId}-${key}`);
     if(!pane || !target) return;
-    pane.scrollTo({top:pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-(heading.current?.dataset.longHeading==='true'?0:heading.current?.offsetHeight??0)-12,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});setActiveSection(key);
+    pane.scrollTo({top:pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-(desktop?(heading.current?.dataset.longHeading==='true'?0:heading.current?.offsetHeight??0):60)-12,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});setActiveSection(key);
   }
-  function back(){setSelectedId(undefined);requestAnimationFrame(()=>{if(directory.current)directory.current.scrollTop=scroll.current;const button=directory.current?.querySelector<HTMLButtonElement>(`[data-org-id="${selectedId}"]`);(button??search.current)?.focus({preventScroll:true});});}
+  function back(){setSelectedId(undefined);requestAnimationFrame(()=>{const pane=desktop?directory.current:directory.current?.closest<HTMLElement>('.modal-body');if(pane)pane.scrollTop=scroll.current;const button=[...(directory.current?.querySelectorAll<HTMLButtonElement>('[data-org-id]')??[])].find(b=>b.dataset.orgId===selectedId);(button??search.current)?.focus({preventScroll:true});});}
   return <div className="organization-panel" data-detail={Boolean(selectedId && selected)}>
     <div className="organization-layout">
       <section className="organization-directory" ref={directory} aria-label="组织名录">
@@ -86,6 +87,7 @@ export function OrganizationPanel({ view, initialId, links, desktop = false, onS
               <div className="og-rel"><small>与主角</small>{selected.protagonistRelation}</div></div>
             <nav className="nd-tabs" aria-label="组织资料分节">{[['summary','组织概况'],['state','当前状况'],['leadership','管理层'],['relations','势力关系'],['dynamics','当前动态'],['protagonist','与主角关系']].map(([key,label])=><button key={key} aria-current={activeSection===key?'true':undefined} aria-controls={`${anchorId}-${key}`} onClick={()=>jump(key)}>{label}</button>)}</nav>
           </header>:<header><span className="tag">{orgLabels[selected.kind]}</span><h3 ref={title} tabIndex={-1}>{selected.name}</h3></header>}
+          {!desktop&&<nav className="paper-section-nav" aria-label="组织资料分节">{[['summary','组织概况'],['state','当前状况'],['leadership','管理层'],['relations','势力关系'],['dynamics','当前动态'],['protagonist','与主角关系']].map(([key,label])=><button key={key} aria-current={activeSection===key?'true':undefined} aria-controls={`${anchorId}-${key}`} onClick={()=>jump(key)}>{label}</button>)}</nav>}
           <section className={desktop?'sec':undefined} data-org-section="summary" id={`${anchorId}-summary`}><h4>组织概况</h4>{selected.description.length>500?<><p className="prose">{selected.description.slice(0,260)}…</p><details><summary>阅读完整组织概况</summary><p className="prose">{selected.description}</p></details></>:<p className="prose">{selected.description||'未记录'}</p>}</section>
           <section className={desktop?'sec':undefined} data-org-section="state" id={`${anchorId}-state`}><h4>当前状况</h4><CurrentState org={selected} desktop={desktop}/></section>
           <section className={desktop?'sec':undefined} data-org-section="leadership" id={`${anchorId}-leadership`}><h4>管理层与关键人物</h4>

@@ -1,0 +1,86 @@
+
+Running 2 tests using 1 worker
+
+(node:77655) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/2] [mobile] › e2e/mobile-archives.spec.ts:139:1 › 地图跨档案新目标覆盖旧层级：保留普通重开、搜索、定位与只读
+  1) [mobile] › e2e/mobile-archives.spec.ts:139:1 › 地图跨档案新目标覆盖旧层级：保留普通重开、搜索、定位与只读 ──────────────────
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  getByRole('dialog', { name: '地图', exact: true }).getByLabel('搜索地点', { exact: true })
+    Expected: ""
+    Received: "旧宿舍"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveValue" getByRole('dialog', { name: '地图', exact: true }).getByLabel('搜索地点', { exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '地图', exact: true }).getByLabel('搜索地点', { exact: true })
+        14 × locator resolved to <input value="旧宿舍" maxlength="4000" placeholder="按地点名称查找"/>
+           - unexpected value "旧宿舍"
+
+
+      146 |  await paper.getByLabel('搜索地点',{exact:true}).fill('旧宿舍');await page.keyboard.press('Escape');
+      147 |  paper=await openArchive(page,'世界事件');await paper.getByRole('button',{name:'查看主事件：临江旧城档案修复工程',exact:true}).click();await paper.getByRole('article',{name:'事件档案',exact:true}).getByRole('button',{name:'街角阅览室',exact:true}).click();
+    > 148 |  paper=page.getByRole('dialog',{name:'地图',exact:true});await expect(paper.locator('.place-card h3')).toHaveText('街角阅览室');await expect(paper.getByLabel('搜索地点',{exact:true})).toHaveValue('');
+          |                                                                                                                                                                              ^
+      149 |  await expect(paper.locator('.map-breadcrumb [aria-current="location"]')).toHaveText('旧厂房街区');await expect(paper.locator('.mobile-map-box h4')).toHaveText('旧厂房街区');await expect(paper.locator('.map-zones [data-location-id]')).toHaveCount(1);await expect(paper.locator('.map-zones [data-location-id="map-cafe"]')).toHaveAttribute('aria-pressed','true');
+      150 |  await page.keyboard.press('Escape');paper=await openArchive(page,'地图');await expect(paper.locator('.mobile-map-box h4')).toHaveText('旧厂房街区');
+      151 |  await paper.getByLabel('搜索地点',{exact:true}).fill('跨城关联');await paper.getByRole('region',{name:'地点搜索结果'}).getByRole('button').click();await expect(paper.locator('.mobile-map-box h4')).toHaveText('国外的工作地点');await expect(paper.locator('.map-zones [data-location-id="map-cross-city"]')).toHaveAttribute('aria-pressed','true');
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:148:174
+
+    Error Context: ../../tmp/pr131-map-before-chromium/mobile-archives-地图跨档案新目标覆盖旧层级：保留普通重开、搜索、定位与只读-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/pr131-map-before-chromium/mobile-archives-地图跨档案新目标覆盖旧层级：保留普通重开、搜索、定位与只读-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/pr131-map-before-chromium/mobile-archives-地图跨档案新目标覆盖旧层级：保留普通重开、搜索、定位与只读-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:77788) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/2] [mobile] › e2e/mobile-archives.spec.ts:155:1 › 地图同一挂载目标变更仅消费一次：无效目标、失效节点及异常父级安全
+  2) [mobile] › e2e/mobile-archives.spec.ts:155:1 › 地图同一挂载目标变更仅消费一次：无效目标、失效节点及异常父级安全 ───────────────
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: getByRole('dialog', { name: '地图同步回归', exact: true }).locator('.mobile-map-box h4')
+    Expected: "国外的工作地点"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" getByRole('dialog', { name: '地图同步回归', exact: true }).locator('.mobile-map-box h4') with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '地图同步回归', exact: true }).locator('.mobile-map-box h4')
+
+
+      163 |   Object.assign(window,{mapNavigationTarget:(id:string)=>{initialId=id;render();},mapNavigationRefresh:()=>render(),mapNavigationRemove:()=>{view.locations=view.locations.filter((p:{id:string})=>p.id!=='map-extra-0070');render();},mapNavigationOrphan:()=>{view.locations=[...view.locations,{id:'orphan',name:'孤立地点',parentId:'missing'}];initialId='orphan';render();}});render();
+      164 |  });
+    > 165 |  const paper=page.getByRole('dialog',{name:'地图同步回归',exact:true});await expect(paper.locator('.mobile-map-box h4')).toHaveText('国外的工作地点');
+          |                                                                                                                    ^
+      166 |  await page.evaluate(()=>Reflect.get(window,'mapNavigationTarget')('map-extra-0070'));await expect(paper.locator('.mobile-map-box h4')).toHaveText('沿江资料区');await expect(paper.locator('.map-zones [data-location-id="map-extra-0070"]')).toHaveAttribute('aria-pressed','true');await expect(paper.locator('.place-card h3')).toHaveText('地点档案70');
+      167 |  await paper.getByRole('navigation',{name:'地图层级',exact:true}).getByRole('button',{name:'全部地点',exact:true}).click();await page.evaluate(()=>Reflect.get(window,'mapNavigationRefresh')());await expect(paper.locator('.mobile-map-box h4')).toHaveText('全部已记录地点');
+      168 |  await paper.getByLabel('搜索地点',{exact:true}).fill('旧宿舍');await page.evaluate(()=>Reflect.get(window,'mapNavigationRefresh')());await expect(paper.getByLabel('搜索地点',{exact:true})).toHaveValue('旧宿舍');await paper.getByRole('region',{name:'地点搜索结果'}).getByRole('button').click();await expect(paper.locator('.mobile-map-box h4')).toHaveText('阅览街');
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:165:116
+
+    Error Context: ../../tmp/pr131-map-before-chromium/mobile-archives-地图同一挂载目标变更仅消费一次：无效目标、失效节点及异常父级安全-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/pr131-map-before-chromium/mobile-archives-地图同一挂载目标变更仅消费一次：无效目标、失效节点及异常父级安全-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/pr131-map-before-chromium/mobile-archives-地图同一挂载目标变更仅消费一次：无效目标、失效节点及异常父级安全-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2 failed
+    [mobile] › e2e/mobile-archives.spec.ts:139:1 › 地图跨档案新目标覆盖旧层级：保留普通重开、搜索、定位与只读 ───────────────────
+    [mobile] › e2e/mobile-archives.spec.ts:155:1 › 地图同一挂载目标变更仅消费一次：无效目标、失效节点及异常父级安全 ────────────────

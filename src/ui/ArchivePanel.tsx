@@ -8,6 +8,7 @@ import './archive-map.css';
 import './archive-records.css';
 import './archive-assets.css';
 import './archive-reading.css';
+import './mobile-archives.css';
 
 /** Nonmodal desktop host. Content and navigation remain owned by the caller. */
 function ArchiveReader({ title, seal, subtitle, children, onClose, returnFocus, index = 1, total = 7, eyebrow,className }: {
@@ -40,8 +41,19 @@ type ArchiveProps=Parameters<typeof ArchiveReader>[0];
 /** Settings retain the same native node and form instance across viewport changes. */
 function SettingsArchive(props:ArchiveProps&{inGame:boolean}) {
  const desktop=useDesktopFeedback();
+ // Settings can also be opened on the cover: keep its visible bounds above a soft keyboard
+ // without changing the game shell viewport or any other dialog.
+ useEffect(()=>{
+  if(desktop)return;
+  const dialog=document.querySelector<HTMLDialogElement>('dialog.settings-mobile-paper'),viewport=window.visualViewport;
+  if(!dialog||!viewport)return;
+  const update=()=>{if(viewport.scale!==1){dialog.style.removeProperty('--game-viewport-height');dialog.style.removeProperty('--game-viewport-top');return;}dialog.style.setProperty('--game-viewport-height',`${viewport.height}px`);dialog.style.setProperty('--game-viewport-top',`${viewport.offsetTop}px`);};
+  update();viewport.addEventListener('resize',update);viewport.addEventListener('scroll',update);
+  return()=>{viewport.removeEventListener('resize',update);viewport.removeEventListener('scroll',update);dialog.style.removeProperty('--game-viewport-height');dialog.style.removeProperty('--game-viewport-top');};
+ },[desktop]);
  return <Dialog title={props.title} onClose={props.onClose} nonmodal={desktop&&props.inGame}
-  className={desktop?'settings-paper settings-dialog':''} returnFocus={props.returnFocus}
+  mobileVariant="sheet" sheetFull seal={props.seal} eyebrow={props.eyebrow}
+  className={desktop?'settings-paper settings-dialog':'mobile-archive settings-mobile-paper'} returnFocus={props.returnFocus}
   archiveHeading={desktop?{title:props.title,seal:props.seal,subtitle:props.subtitle,eyebrow:props.eyebrow}:undefined}>{props.children}</Dialog>;
 }
 export function ArchivePanel(props:ArchiveProps&{settingsHost?:{inGame:boolean}}) {
