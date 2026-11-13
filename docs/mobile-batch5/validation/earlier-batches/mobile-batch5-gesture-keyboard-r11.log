@@ -1,0 +1,9 @@
+
+Running 1 test using 1 worker
+
+(node:74557) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [mobile] › e2e/mobile-archives.spec.ts:112:1 › 原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留
+  1 passed (10.3s)

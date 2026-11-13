@@ -1,0 +1,38 @@
+[
+  {
+    "panel": "NPC",
+    "identical": true
+  },
+  {
+    "panel": "势力组织",
+    "identical": true
+  },
+  {
+    "panel": "地图",
+    "identical": true
+  },
+  {
+    "panel": "物品栏",
+    "identical": true
+  },
+  {
+    "panel": "经济与资产",
+    "identical": true
+  },
+  {
+    "panel": "世界事件",
+    "identical": true
+  },
+  {
+    "panel": "历史时间轴",
+    "identical": true
+  },
+  {
+    "panel": "记忆",
+    "identical": true
+  },
+  {
+    "panel": "设置",
+    "identical": true
+  }
+]

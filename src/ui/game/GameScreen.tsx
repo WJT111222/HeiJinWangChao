@@ -17,6 +17,8 @@ import type { MapUiState } from '../panels/mapView';
 import { MemoryPanel } from '../panels/MemoryPanel';
 import type { MemoryUiState } from '../panels/MemoryPanel';
 import { TurnChanges } from './TurnChanges';
+import { useTurnComparison } from './useTurnComparison';
+import { turnChangeBadges } from './turnChangeBadges';
 import type { ChangeTarget } from './turnChanges';
 import { mapProjection } from '../panels/mapView';
 import { PlayerStatus } from './PlayerStatus';
@@ -31,10 +33,10 @@ import type { GameState } from '../../domain/state';
 import type { CompanionProfile } from '../../services/local/companionProfile';
 import type { TurnDraft } from '../../domain/drafts';
 import type { Settings } from '../settings/model';
-import { Dialog, Detail, Empty } from '../Dialog';
+import { Dialog, Detail } from '../Dialog';
 import { Panels, panelNames } from '../panels/Panels';
 import type { PanelName } from '../panels/Panels';
-import { playerView, money, dateTime } from '../panels/playerView';
+import { playerView, dateTime } from '../panels/playerView';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import { mayStartStory } from './storyGenerationPolicy';
 import { useStoryGeneration } from './useStoryGeneration';
@@ -114,7 +116,7 @@ export function GameScreen({
   const openingTime = useMemo(() => {
     try { return draft && openingTimeSelection(state, draft); } catch { return undefined; }
   }, [state, draft]);
-  const [archiveTarget, setArchiveTarget] = useState<{panel: 'NPC' | '势力组织' | '世界事件' | '地图'; id: string}>();
+  const [archiveTarget, setArchiveTarget] = useState<{panel: 'NPC' | '势力组织' | '世界事件' | '地图' | '物品栏'; id: string}>();
   const archiveReading=useRef<{events?:WorldEventsUiState;history?:HistoryUiState;memory?:MemoryUiState;map?:MapUiState}>({});
   const changeOpener=useRef<HTMLElement|null>(null);
   const archiveSelection = useRef<Partial<Record<'NPC' | '势力组织' | '物品栏', string>>>({});
@@ -129,7 +131,7 @@ export function GameScreen({
   function outsideSettings(action:()=>void){if(desktopSettings&&onCloseSettings)onCloseSettings(action);else action();}
   const desktopArchive = !compactSidebars && !desktopSettings && (panel === 'NPC' || panel === '势力组织' || panel === '人物档案' || panel === '物品栏' || panel === '经济与资产' || panel === '世界事件' || panel === '历史时间轴' || panel === '记忆' || panel === '地图') ? panel : undefined;
   function openChange(target:ChangeTarget){
-    changeOpener.current=document.activeElement as HTMLElement|null;
+    changeOpener.current=compactSidebars?document.querySelector<HTMLButtonElement>('.chg-btn'):document.activeElement as HTMLElement|null;
     if(target.panel==='NPC'||target.panel==='势力组织'||target.panel==='世界事件'){
       if(target.id){openArchive(target.panel,target.id);return;}
       if(target.panel==='世界事件')archiveReading.current.events=undefined;
@@ -137,7 +139,7 @@ export function GameScreen({
       setArchiveTarget(undefined);setPanel(target.panel);return;
     }
     setArchiveTarget(undefined);
-    if(target.panel==='物品栏')archiveSelection.current['物品栏']=target.id;
+    if(target.panel==='物品栏'){archiveSelection.current['物品栏']=target.id;if(target.id)setArchiveTarget({panel:'物品栏',id:target.id});}
     if(target.panel==='地图'&&target.id){
       const projection=mapProjection(view.locations,hero.locationId),path=projection.path(target.id),limits:Record<string,number>={};
       for(const place of path){const up=projection.parent.get(place.id),siblings=up?projection.children.get(up)??[]:projection.roots;limits[up??'__roots__']=Math.max(50,siblings.findIndex(p=>p.id===place.id)+1);}
@@ -315,6 +317,9 @@ export function GameScreen({
     if (follow.current && reader.current) reader.current.scrollTop = reader.current.scrollHeight;
   }, [progress?.narrative, draft?.storyRevision]);
   const view = useMemo(() => playerView(state, companionProfile, settings.memory.immediateWindowSize), [state, companionProfile, settings.memory.immediateWindowSize]);
+  const showChanges=Boolean(view.journal.length)&&!workflowBusy&&!draft?.story&&(!draft||awaitingAction);
+  const turnComparison=useTurnComparison(state,repository,showChanges);
+  const changeBadges=useMemo(()=>turnChangeBadges(turnComparison.groups),[turnComparison.groups]);
   const summaryQuality = draft?.story ? assessSummary(draft.story.summary) : undefined;
   const hero = state.protagonist;
   const itemName = (id?: string) => (id ? state.items[id]?.name || '无' : '无');
@@ -332,11 +337,6 @@ export function GameScreen({
         : '无',
     ],
   ];
-  const ownedAssets = [
-    ...Object.values(state.economy.properties),
-    ...Object.values(state.economy.vehicles),
-    ...Object.values(state.economy.otherAssets),
-  ].filter((asset) => asset.ownerRef.kind === 'protagonist' && asset.ownerRef.id === hero.id);
   const options = draft?.story?.actionOptions ?? (awaitingAction ? state.journal.at(-1)?.story.actionOptions : undefined);
   const workflowError = error || variables.error || world.error || automatic.error || submitError;
   const failedStage = (['story', 'variables', 'world'] as const).some((stage) => draft?.stageStatus[stage] === 'failed');
@@ -435,8 +435,8 @@ export function GameScreen({
   const worldNavigation = <aside className="world-sidebar" aria-label="世界资料">
     <h2>世界资料</h2>
     <nav aria-label="世界资料分类">
-      {panelNames.map((name, index) => <button key={name} data-archive-panel={name} aria-current={!compactSidebars && !desktopSettings && panel === name ? 'true' : undefined} onClick={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);if(compactSidebars)setWorldDirectoryOpen(false); setPanel(!compactSidebars && panel === name ? undefined : name); })}>
-        <span className="dock-seal" aria-hidden="true">{['人', '势', '图', '物', '事', '史', '忆'][index]}</span>
+      {panelNames.map((name, index) => <button key={name} aria-description={compactSidebars&&changeBadges[name]?`本回合变化 ${changeBadges[name]} 项`:undefined} data-archive-panel={name} aria-current={!compactSidebars && !desktopSettings && panel === name ? 'true' : undefined} onClick={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);if(compactSidebars)setWorldDirectoryOpen(false); setPanel(!compactSidebars && panel === name ? undefined : name); })}>
+        <span className="dock-seal" aria-hidden="true">{['人', '势', '图', '物', '事', '史', '忆'][index]}{compactSidebars&&Boolean(changeBadges[name])&&<span className="turn-change-badge" data-change-panel={name} aria-hidden="true">{changeBadges[name]}</span>}</span>
         <span>{name}</span>
       </button>)}
     </nav>
@@ -629,7 +629,7 @@ export function GameScreen({
             <article className={`story-entry glass ${index < view.journal.length - 1 || draft?.story || progress ? 'past' : 'latest'}`} key={entry.turnId}>
               <CityChapter number={index + 1} state={state} scene={state.journal[index]?.scene} desktop={!compactSidebars} />
               <StoryReading narrative={entry.narrative} protagonistName={hero.name} />
-              {!compactSidebars&&index===view.journal.length-1&&!workflowBusy&&!draft?.story&&(!draft||awaitingAction)&&<TurnChanges state={state} repository={repository} onOpen={openChange}/>}
+              {index===view.journal.length-1&&showChanges&&<TurnChanges state={state} comparison={turnComparison} mobile={compactSidebars} onOpen={openChange}/>}
             </article>
           ))}
           {progress ? (
@@ -839,7 +839,7 @@ export function GameScreen({
           : <OrganizationPanel view={view} initialId={archiveTarget?.panel === '势力组织' ? archiveTarget.id : archiveSelection.current['势力组织']} links={{npc:id=>openArchive('NPC',id), organization:id=>openArchive('势力组织',id), event:id=>openArchive('世界事件',id)}} onSelect={id => { archiveSelection.current['势力组织'] = id; }} desktop />}
       </ArchivePanel>}
       {panel && !desktopArchive && !desktopSettings && (
-        <Dialog title={panel} mobileVariant="sheet" sheetFull returnFocus={()=>mobileReturnFocus(panel==='人物档案'||panel==='经济与资产'?'hero':'world')} className={panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : ''} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>
+        <Dialog title={panel} mobileVariant="sheet" sheetFull seal={{NPC:'人',势力组织:'势',地图:'图',物品栏:'物',世界事件:'事',历史时间轴:'史',记忆:'忆',人物档案:'人',经济与资产:'财'}[panel]} eyebrow="WORLD · ARCHIVE" returnFocus={()=>changeOpener.current?.isConnected?changeOpener.current:mobileReturnFocus(panel==='人物档案'||panel==='经济与资产'?'hero':'world')} className={`mobile-archive ${panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : ''}`} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>
           {panel === '人物档案' ? (
             <>
             <dl className="profile-details">
@@ -876,59 +876,16 @@ export function GameScreen({
             </div>
             </>
           ) : panel === '经济与资产' ? (
-            <>
-              <div className="metric-row">
-                <span>现金 {money(state.economy.cash)}</span>
-                <span>线上资金 {money(state.economy.onlineBalance)}</span>
-              </div>
-              <h3>收入</h3>
-              {Object.values(state.economy.incomes).map((income) => (
-                <article className="card entry" key={income.id}>
-                  <h4>{income.source}</h4>
-                  <p>
-                    {money(income.amount)} ·{' '}
-                    {income.status === 'received'
-                      ? '已到账'
-                      : income.status === 'expected'
-                        ? '待确认收入'
-                        : '已取消'}
-                  </p>
-                  <p>{income.scheduleText}</p>
-                </article>
-              ))}
-              {!Object.keys(state.economy.incomes).length && <Empty>暂无收入记录</Empty>}
-              <h3>债务</h3>
-              {Object.values(state.economy.debts).map((debt) => (
-                <article className="card entry" key={debt.id}>
-                  <h4>{debt.creditor}</h4>
-                  <p>
-                    本金 {money(debt.principal)} · 未偿本金 {money(debt.outstanding)}
-                  </p>
-                  <p>{debt.repaymentTerms}</p>
-                </article>
-              ))}
-              {!Object.keys(state.economy.debts).length && <Empty>暂无债务记录</Empty>}
-              {(['property', 'vehicle', 'other'] as const).map((kind, i) => (
-                <section key={kind}>
-                  <h3>{['房产', '车辆', '其他资产'][i]}</h3>
-                  {ownedAssets
-                    .filter((a) => a.kind === kind)
-                    .map((asset) => (
-                      <article className="card entry" key={asset.id}>
-                        <h4>{asset.name}</h4>
-                        <p>
-                          估值 {money(asset.estimatedValue)} · {asset.statusText}
-                        </p>
-                        <p>来源：{asset.source}</p>
-                      </article>
-                    ))}
-                  {!ownedAssets.some((a) => a.kind === kind) && <Empty>暂无记录</Empty>}
-                </section>
-              ))}
-            </>
+            <EconomyPanel view={view} mobile />
+          ) : panel === '历史时间轴' ? (
+            <HistoryPanel view={view} uiState={archiveReading.current.history} onUiStateChange={value=>{archiveReading.current.history=value;}} />
+          ) : panel === '记忆' ? (
+            <MemoryPanel view={view} uiState={archiveReading.current.memory} onUiStateChange={value=>{archiveReading.current.memory=value;}} />
+          ) : panel === '地图' ? (
+            <MapPanel view={view} mobile initialId={archiveTarget?.panel==='地图'?archiveTarget.id:undefined} uiState={archiveReading.current.map} onUiStateChange={value=>{archiveReading.current.map=value;}} onNpc={id=>openArchive('NPC',id)} onEvent={id=>openArchive('世界事件',id)} />
           ) : (
             <>
-              <Panels name={panel} view={view} initialId={archiveTarget?.panel === panel ? archiveTarget.id : undefined} links={{npc:id=>openArchive('NPC',id), organization:id=>openArchive('势力组织',id), event:id=>openArchive('世界事件',id)}} npcManagement={npcManagement} onOpenHistory={()=>setPanel('历史时间轴')} />
+              <Panels name={panel} view={view} initialId={archiveTarget?.panel === panel ? archiveTarget.id : undefined} links={{location:id=>{setArchiveTarget({panel:'地图',id});setPanel('地图');},npc:id=>openArchive('NPC',id), organization:id=>openArchive('势力组织',id), event:id=>openArchive('世界事件',id)}} npcManagement={npcManagement} onOpenHistory={()=>setPanel('历史时间轴')} />
             </>
           )}
         </Dialog>

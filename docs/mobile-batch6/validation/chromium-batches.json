@@ -1,0 +1,901 @@
+[
+  {
+    "batch": "mobile-batch6-density-final",
+    "stats": {
+      "startTime": "2026-11-13T10:38:39.789Z",
+      "duration": 50372.594000000005,
+      "expected": 7,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "手机变化 375×667：可靠六组、角标、单一滚动与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 11073
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "手机变化 390×844：可靠六组、角标、单一滚动与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 7449
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "手机变化 430×932：可靠六组、角标、单一滚动与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 7136
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "手机变化 392×420：可靠六组、角标、单一滚动与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 5471
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "手机变化 900×800：可靠六组、角标、单一滚动与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 4356
+          }
+        ]
+      },
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 6833
+          }
+        ]
+      },
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "长列表按8条展开、超长文本与极大金额完整可达，901边界及只读压力",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 4865
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch6-existing-initial",
+    "stats": {
+      "startTime": "2026-11-13T10:27:41.461Z",
+      "duration": 71900.278,
+      "expected": 12,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "最新结算回合六组胶囊、收起展开、键盘及四尺寸，手机使用正式深色抽屉",
+        "project": "desktop",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 7937
+          }
+        ]
+      },
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变",
+        "project": "desktop",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 8044
+          }
+        ]
+      },
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "无变化、无恢复点、错误恢复点安全降级，草稿不显示；双端不改原存档",
+        "project": "desktop",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 8488
+          }
+        ]
+      },
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "长列表按8条展开、超长文本与极大金额完整可达，901边界及只读压力",
+        "project": "desktop",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 5753
+          }
+        ]
+      },
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "真实Repository正式结算、撤回后最新变化及重新结算，恢复点与回合始终对应",
+        "project": "desktop",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 4846
+          }
+        ]
+      },
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "已有恢复点时发送新行动，真实Mock生成预览及取消期间不展示变化",
+        "project": "desktop",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 5758
+          }
+        ]
+      },
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "最新结算回合六组胶囊、收起展开、键盘及四尺寸，手机使用正式深色抽屉",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 2914
+          }
+        ]
+      },
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 6363
+          }
+        ]
+      },
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "无变化、无恢复点、错误恢复点安全降级，草稿不显示；双端不改原存档",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 7007
+          }
+        ]
+      },
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "长列表按8条展开、超长文本与极大金额完整可达，901边界及只读压力",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 4076
+          }
+        ]
+      },
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "真实Repository正式结算、撤回后最新变化及重新结算，恢复点与回合始终对应",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 3931
+          }
+        ]
+      },
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "已有恢复点时发送新行动，真实Mock生成预览及取消期间不展示变化",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 4762
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch6-final-nav",
+    "stats": {
+      "startTime": "2026-11-13T10:44:36.595Z",
+      "duration": 18100.918999999998,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 14856
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch6-last-pc",
+    "stats": {
+      "startTime": "2026-11-13T10:42:56.001Z",
+      "duration": 53929.265999999996,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "PC 901：主界面、变化展开与资料入口原主干像素一致",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 27680
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "PC 1440：主界面、变化展开与资料入口原主干像素一致",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 23755
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch6-new-final",
+    "stats": {
+      "startTime": "2026-11-13T10:36:25.768Z",
+      "duration": 109726.03199999999,
+      "expected": 13,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "手机变化 375×667：可靠六组、角标、单一滚动与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 9334
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "手机变化 390×844：可靠六组、角标、单一滚动与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 6891
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "手机变化 430×932：可靠六组、角标、单一滚动与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 6385
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "手机变化 392×420：可靠六组、角标、单一滚动与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 7139
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "手机变化 900×800：可靠六组、角标、单一滚动与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 7700
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "零变化、缺失/损坏恢复点、草稿：七入口无旧角标，浏览不写入",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 12258
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "快照比较延迟和切换存档：只用当前已确认结果，迟到旧结果不复活",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 5767
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "变化抽屉可视区、触摸遮罩、拖动与原生关闭回焦",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 5145
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "PC 901：主界面、变化展开与资料入口原主干像素一致",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 19567
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "PC 1440：主界面、变化展开与资料入口原主干像素一致",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 17952
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "正式HTML变化设计参考截图，仅作为视觉对照",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 812
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "入口与角标共享只读比较，稀疏变化仅显示真实目标角标",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 3941
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "真实撤回消费快照后隐藏旧角标，刷新不会恢复失效数量",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 4520
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch6-new-initial",
+    "stats": {
+      "startTime": "2026-11-13T10:29:14.522Z",
+      "duration": 90536.83,
+      "expected": 8,
+      "skipped": 0,
+      "unexpected": 3,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "手机变化 375×667：可靠六组、角标、单一滚动与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 8228
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "手机变化 390×844：可靠六组、角标、单一滚动与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 6488
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "手机变化 430×932：可靠六组、角标、单一滚动与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 6079
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "手机变化 392×420：可靠六组、角标、单一滚动与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 6166
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "手机变化 900×800：可靠六组、角标、单一滚动与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 7185
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "零变化、缺失/损坏恢复点、草稿：七入口无旧角标，浏览不写入",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 12865
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "快照比较延迟和切换存档：只用当前已确认结果，迟到旧结果不复活",
+        "project": "mobile",
+        "status": "unexpected",
+        "results": [
+          {
+            "status": "failed",
+            "durationMs": 10056
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "变化抽屉可视区、触摸遮罩、拖动与原生关闭回焦",
+        "project": "mobile",
+        "status": "unexpected",
+        "results": [
+          {
+            "status": "failed",
+            "durationMs": 10917
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "PC 901：主界面、变化展开与资料入口原主干像素一致",
+        "project": "mobile",
+        "status": "unexpected",
+        "results": [
+          {
+            "status": "failed",
+            "durationMs": 7601
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "PC 1440：主界面、变化展开与资料入口原主干像素一致",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 7958
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "正式HTML变化设计参考截图，仅作为视觉对照",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 872
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch6-new-r2",
+    "stats": {
+      "startTime": "2026-11-13T10:31:56.800Z",
+      "duration": 50310.388,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "快照比较延迟和切换存档：只用当前已确认结果，迟到旧结果不复活",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 8718
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "变化抽屉可视区、触摸遮罩、拖动与原生关闭回焦",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 6900
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "PC 901：主界面、变化展开与资料入口原主干像素一致",
+        "project": "mobile",
+        "status": "unexpected",
+        "results": [
+          {
+            "status": "failed",
+            "durationMs": 12953
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "入口与角标共享只读比较，稀疏变化仅显示真实目标角标",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 8230
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "真实撤回消费快照后隐藏旧角标，刷新不会恢复失效数量",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 9272
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch6-pc-r3",
+    "stats": {
+      "startTime": "2026-11-13T10:33:19.332Z",
+      "duration": 20199.754,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "PC 901：主界面、变化展开与资料入口原主干像素一致",
+        "project": "mobile",
+        "status": "unexpected",
+        "results": [
+          {
+            "status": "failed",
+            "durationMs": 8486
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "PC 1440：主界面、变化展开与资料入口原主干像素一致",
+        "project": "mobile",
+        "status": "unexpected",
+        "results": [
+          {
+            "status": "failed",
+            "durationMs": 8436
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch6-pc-r4",
+    "stats": {
+      "startTime": "2026-11-13T10:34:06.619Z",
+      "duration": 19348.024,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "PC 901：主界面、变化展开与资料入口原主干像素一致",
+        "project": "mobile",
+        "status": "unexpected",
+        "results": [
+          {
+            "status": "failed",
+            "durationMs": 7999
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "PC 1440：主界面、变化展开与资料入口原主干像素一致",
+        "project": "mobile",
+        "status": "unexpected",
+        "results": [
+          {
+            "status": "failed",
+            "durationMs": 8460
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch6-pc-r5",
+    "stats": {
+      "startTime": "2026-11-13T10:35:07.335Z",
+      "duration": 51891.242999999995,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "PC 901：主界面、变化展开与资料入口原主干像素一致",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 22205
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "PC 1440：主界面、变化展开与资料入口原主干像素一致",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 27497
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch6-smoke",
+    "stats": {
+      "startTime": "2026-11-13T10:35:01.996Z",
+      "duration": 55003.015,
+      "expected": 6,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "手机设置真实保存 AI 与记忆：无模型 POST，关闭拦截、记忆费用保护和重载",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 13680
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "地图跨档案新目标覆盖旧层级：保留普通重开、搜索、定位与只读",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 10216
+          }
+        ]
+      },
+      {
+        "file": "mobile-batch4.spec.ts",
+        "title": "自动须知→公告、原文、焦点陷阱、章节与进度、手动打开仅一张",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 3723
+          }
+        ]
+      },
+      {
+        "file": "mobile-batch4.spec.ts",
+        "title": "五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 8539
+          }
+        ]
+      },
+      {
+        "file": "mobile-home.spec.ts",
+        "title": "金色按钮等价读取，快速双击只导航一次",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 4679
+          }
+        ]
+      },
+      {
+        "file": "pr120-integration.spec.ts",
+        "title": "整合：抽屉打开时真实输入发送、失败恢复、取消和原子结算/刷新",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 11357
+          }
+        ]
+      }
+    ]
+  }
+]

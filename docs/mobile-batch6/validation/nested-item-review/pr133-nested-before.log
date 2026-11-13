@@ -1,0 +1,60 @@
+
+Running 1 test using 1 worker
+
+(node:87339) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [mobile] › e2e/mobile-turn-changes.spec.ts:60:1 › 变化直达具体物品：子抽屉真实点击、原生Esc分层及安全回焦
+  1) [mobile] › e2e/mobile-turn-changes.spec.ts:60:1 › 变化直达具体物品：子抽屉真实点击、原生Esc分层及安全回焦 ───────────────
+
+    TimeoutError: locator.click: Timeout 5000ms exceeded.
+    Call log:
+      - waiting for getByRole('dialog', { name: '物品栏', exact: true }).getByRole('dialog', { name: '纸质归档袋', exact: true }).getByRole('button', { name: '← 返回背包', exact: true })
+        - locator resolved to <button class="inventory-back">← 返回背包</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div class="modal-body">…</div> intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div class="modal-body">…</div> intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        10 × waiting for element to be visible, enabled and stable
+           - element is visible, enabled and stable
+           - scrolling into view if needed
+           - done scrolling
+           - <div class="modal-body">…</div> intercepts pointer events
+         - retrying click action
+           - waiting 500ms
+
+
+      63 |  let {outer,inner}=await openItem();const back=inner.getByRole('button',{name:'← 返回背包',exact:true});await back.scrollIntoViewIfNeeded();
+      64 |  const hit=await back.evaluate(element=>{const r=element.getBoundingClientRect(),node=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return {innerReceivesPointer:element===node||element.contains(node),activeTag:document.activeElement?.tagName,activeInsideInner:element.closest('dialog')?.contains(document.activeElement),modalCount:document.querySelectorAll('dialog:modal').length};});writeFileSync('docs/mobile-batch6/validation/nested-item-hit-test.json',JSON.stringify(hit,null,2)+'\n');
+    > 65 |  await back.click({timeout:5000});await expect(inner).toHaveCount(0);await expect(outer).toBeVisible();await expect(outer.locator('[data-item-id="folder"]')).toBeFocused();await outer.getByRole('button',{name:'全部，3种物品',exact:true}).click();await page.keyboard.press('Escape');await expect(outer).toHaveCount(0);await expect(button(page)).toBeFocused();
+         |             ^
+      66 |  ({outer,inner}=await openItem());await expect(inner.locator('.inventory-detail h3')).toBeFocused();const grid=outer.locator('.inventory-grid');await grid.evaluate(e=>Reflect.set(window,'reviewInventoryGrid',e));await page.keyboard.press('Escape');await expect(inner).toHaveCount(0);await expect(outer).toBeVisible();expect(await grid.evaluate(e=>e===Reflect.get(window,'reviewInventoryGrid'))).toBe(true);await expect(outer.locator('[data-item-id="folder"]')).toBeFocused();await outer.getByRole('button',{name:'全部，3种物品',exact:true}).click();await page.keyboard.press('Escape');await expect(outer).toHaveCount(0);await expect(button(page)).toBeFocused();
+      67 |  const world=await directory(page);await world.getByRole('button',{name:'物品栏',exact:true}).click();outer=page.getByRole('dialog',{name:'物品栏',exact:true});await expect(outer.getByRole('dialog')).toHaveCount(0);await expect(outer.locator('.inventory-tile')).toHaveCount(3);await page.keyboard.press('Escape');await button(page).click();await sheet(page).locator('.g-item .chg-row').filter({hasText:'已归还的借阅凭据'}).click();outer=page.getByRole('dialog',{name:'物品栏',exact:true});await expect(outer.getByRole('dialog')).toHaveCount(0);await expect(outer.locator('.inventory-grid')).toBeVisible();await page.keyboard.press('Escape');await expect(button(page)).toBeFocused();expect(await raw(page)).toEqual(before);verify();
+      68 | });
+        at /workspace/mobile-redesign-batch6/e2e/mobile-turn-changes.spec.ts:65:13
+
+    Error Context: ../../tmp/pr133-nested-before/mobile-turn-changes-变化直达具体物品：子抽屉真实点击、原生Esc分层及安全回焦-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/pr133-nested-before/mobile-turn-changes-变化直达具体物品：子抽屉真实点击、原生Esc分层及安全回焦-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/pr133-nested-before/mobile-turn-changes-变化直达具体物品：子抽屉真实点击、原生Esc分层及安全回焦-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    [mobile] › e2e/mobile-turn-changes.spec.ts:60:1 › 变化直达具体物品：子抽屉真实点击、原生Esc分层及安全回焦 ────────────────

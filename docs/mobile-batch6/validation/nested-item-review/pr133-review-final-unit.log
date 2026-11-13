@@ -1,0 +1,8 @@
+
+ RUN  v5.0.5 /workspace/mobile-redesign-batch6
+
+
+ Test Files  3 passed (3)
+      Tests  47 passed (47)
+   Start at  11:09:26
+   Duration  2.00s (tests 35%, import 33%, transform 30%, worker 2%)

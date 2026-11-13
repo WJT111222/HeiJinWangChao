@@ -1,0 +1,9 @@
+
+Running 1 test using 1 worker
+
+(node:86798) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [mobile] › e2e/turn-changes.spec.ts:26:1 › 变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变
+  1 passed (18.1s)

@@ -1,0 +1,140 @@
+[
+  {
+    "batch": "pr131-map-before-chromium",
+    "stats": {
+      "startTime": "2026-11-13T10:05:12.362Z",
+      "duration": 24878.552,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "地图跨档案新目标覆盖旧层级：保留普通重开、搜索、定位与只读",
+        "status": "unexpected",
+        "results": [
+          {
+            "status": "failed",
+            "durationMs": 12328
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "地图同一挂载目标变更仅消费一次：无效目标、失效节点及异常父级安全",
+        "status": "unexpected",
+        "results": [
+          {
+            "status": "failed",
+            "durationMs": 9328
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "pr131-map-after-chromium",
+    "stats": {
+      "startTime": "2026-11-13T10:06:19.225Z",
+      "duration": 100733.003,
+      "expected": 5,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 11790
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "PC 901px：档案与设置和未修改 main 真实像素对照",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 36320
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "PC 1440px：档案与设置和未修改 main 真实像素对照",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 27910
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "世界家族并行、退役成果、计划、历史及参与者地点真实 ID 导航",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 6491
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "地图跨档案新目标覆盖旧层级：保留普通重开、搜索、定位与只读",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 6760
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "地图同一挂载目标变更仅消费一次：无效目标、失效节点及异常父级安全",
+        "status": "unexpected",
+        "results": [
+          {
+            "status": "failed",
+            "durationMs": 8856
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "pr131-map-live-r2",
+    "stats": {
+      "startTime": "2026-11-13T10:08:37.068Z",
+      "duration": 7020.094,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "地图同一挂载目标变更仅消费一次：无效目标、失效节点及异常父级安全",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 5248
+          }
+        ]
+      }
+    ]
+  }
+]

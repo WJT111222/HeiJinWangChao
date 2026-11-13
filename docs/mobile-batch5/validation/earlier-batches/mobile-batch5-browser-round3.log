@@ -1,0 +1,113 @@
+
+Running 7 tests using 1 worker
+
+(node:70182) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/7] [mobile] › e2e/mobile-archives.spec.ts:9:81 › 档案纸 390×844：全部资料、单一滚动、只读与手机边界
+  1) [mobile] › e2e/mobile-archives.spec.ts:9:81 › 档案纸 390×844：全部资料、单一滚动、只读与手机边界 ───────────────────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+       at helpers/mobileArchives.ts:31
+
+      29 |  for(const dialog of await page.locator('dialog.mobile-archive[open]').all()){
+      30 |   expect(await dialog.evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
+    > 31 |   const body=dialog.locator(':scope>.modal-body');expect(await body.evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
+         |                                                                                                                  ^
+      32 |  }
+      33 | }
+      34 |
+        at archiveFits (/workspace/mobile-redesign-batch5/e2e/helpers/mobileArchives.ts:31:114)
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:19:248
+
+    Error Context: ../../tmp/mobile-batch5-browser-round3/mobile-archives-档案纸-390×844：全部资料、单一滚动、只读与手机边界-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-round3/mobile-archives-档案纸-390×844：全部资料、单一滚动、只读与手机边界-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-round3/mobile-archives-档案纸-390×844：全部资料、单一滚动、只读与手机边界-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:70363) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/7] [mobile] › e2e/mobile-archives.spec.ts:21:1 › 物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性
+[3/7] [mobile] › e2e/mobile-archives.spec.ts:27:1 › 地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案
+[4/7] [mobile] › e2e/mobile-archives.spec.ts:35:1 › 经济共享金额口径：未知、部分合计、取消收入、原进度与车辆字段
+[5/7] [mobile] › e2e/mobile-archives.spec.ts:41:1 › 历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦
+[6/7] [mobile] › e2e/mobile-archives.spec.ts:56:1 › 设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达
+  2) [mobile] › e2e/mobile-archives.spec.ts:56:1 › 设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达 ─────────────────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+       at helpers/mobileArchives.ts:31
+
+      29 |  for(const dialog of await page.locator('dialog.mobile-archive[open]').all()){
+      30 |   expect(await dialog.evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
+    > 31 |   const body=dialog.locator(':scope>.modal-body');expect(await body.evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
+         |                                                                                                                  ^
+      32 |  }
+      33 | }
+      34 |
+        at archiveFits (/workspace/mobile-redesign-batch5/e2e/helpers/mobileArchives.ts:31:114)
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:61:231
+
+    Error Context: ../../tmp/mobile-batch5-browser-round3/mobile-archives-设置分类、AI-记忆未保存保护、手动保存与存储失败、短视口可达-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-round3/mobile-archives-设置分类、AI-记忆未保存保护、手动保存与存储失败、短视口可达-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-round3/mobile-archives-设置分类、AI-记忆未保存保护、手动保存与存储失败、短视口可达-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:70814) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[7/7] [mobile] › e2e/mobile-archives.spec.ts:63:31 › PC 901px：档案与设置和未修改 main 真实像素对照
+  3) [mobile] › e2e/mobile-archives.spec.ts:63:31 › PC 901px：档案与设置和未修改 main 真实像素对照 ─────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: keyboard.press: Test ended.
+
+      72 |   for(const [i,page] of pages.entries()){
+      73 |    if(name==='设置')await openPaperSettings(page);else if(name==='经济与资产')await openEconomy(page);else await openArchive(page,name);
+    > 74 |    await page.mouse.move(0,0);await page.evaluate(async()=>{await document.fonts.ready;await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));});images.push(await page.screenshot({animations:'disabled',path:`${shots}/${i?'main':'react'}-pc-${name}-${width}.png`}));await page.keyboard.press('Escape');
+         |                                                                                                                                                                                                                                                                                                                             ^
+      75 |   }
+      76 |   measurements.push({panel:name,identical:images[0].equals(images[1])});expect(images[0].equals(images[1]),`${width}px ${name}: untouched main pixel comparison`).toBe(true);
+      77 |  }
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:74:317
+
+    Error Context: ../../tmp/mobile-batch5-browser-round3/mobile-archives-PC-901px：档案与设置和未修改-main-真实像素对照-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-round3/mobile-archives-PC-901px：档案与设置和未修改-main-真实像素对照-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-round3/mobile-archives-PC-901px：档案与设置和未修改-main-真实像素对照-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  3 failed
+    [mobile] › e2e/mobile-archives.spec.ts:9:81 › 档案纸 390×844：全部资料、单一滚动、只读与手机边界 ────────────────────
+    [mobile] › e2e/mobile-archives.spec.ts:56:1 › 设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达 ──────────────────
+    [mobile] › e2e/mobile-archives.spec.ts:63:31 › PC 901px：档案与设置和未修改 main 真实像素对照 ──────────────────
+  4 passed (1.5m)

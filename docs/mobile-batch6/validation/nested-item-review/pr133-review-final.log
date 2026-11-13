@@ -1,0 +1,18 @@
+
+Running 6 tests using 1 worker
+
+(node:87977) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/6] [desktop] › e2e/turn-changes.spec.ts:26:1 › 变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变
+(node:88132) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/6] [mobile] › e2e/mobile-turn-changes.spec.ts:41:31 › PC 901：主界面、变化展开与资料入口原主干像素一致
+[3/6] [mobile] › e2e/mobile-turn-changes.spec.ts:41:31 › PC 1440：主界面、变化展开与资料入口原主干像素一致
+[4/6] [mobile] › e2e/mobile-turn-changes.spec.ts:60:1 › 变化直达具体物品：子抽屉真实点击、原生Esc分层及安全回焦
+[5/6] [mobile] › e2e/pr120-integration.spec.ts:80:1 › 整合：抽屉打开时真实输入发送、失败恢复、取消和原子结算/刷新
+[6/6] [mobile] › e2e/turn-changes.spec.ts:26:1 › 变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变
+  6 passed (1.5m)

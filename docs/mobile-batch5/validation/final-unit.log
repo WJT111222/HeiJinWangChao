@@ -1,0 +1,12 @@
+
+ RUN  v5.0.5 /workspace/mobile-redesign-batch5
+
+
+ Test Files  12 passed (12)
+      Tests  211 passed (211)
+   Start at  09:38:05
+   Duration  11.52s (tests 58%, import 29%, transform 13%, worker 1%)
+
+     Import  280 modules were evaluated 400 times · 2.71s total, 29% of tracked time
+             ~812ms faster with isolate: false — shared modules are evaluated once per worker instead of once per file
+             learn more: https://vitest.dev/guide/improving-performance#test-isolation

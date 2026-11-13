@@ -1,8 +1,7 @@
-import { useEffect,useId,useMemo,useState } from 'react';
+import { useId,useRef,useState } from 'react';
 import type { GameState } from '../../domain/state';
-import type { SaveRepository } from '../../services/storage/saveRepository';
-import type { TurnComparison } from '../../services/storage/turnUndo';
-import { diffTurn } from './turnChanges';
+import { Dialog } from '../Dialog';
+import type { TurnChangesView } from './useTurnComparison';
 import type { ChangeGroup,ChangeRow,ChangeTarget } from './turnChanges';
 import './turn-changes.css';
 
@@ -18,21 +17,21 @@ function Group({group,onOpen}:{group:ChangeGroup;onOpen:(target:ChangeTarget)=>v
   {remaining>0&&<button type="button" className="chg-more" aria-expanded={all} aria-controls={id} onClick={()=>setAll(!all)}>{all?'收起其余':'还有'} {remaining} 条</button>}
  </section>;
 }
-export function TurnChanges({state,repository,onOpen}:{state:GameState;repository:SaveRepository;onOpen:(target:ChangeTarget)=>void}){
- const id=useId(),[result,setResult]=useState<{state:GameState;data:TurnComparison}>(),[open,setOpen]=useState(false);
- useEffect(()=>{let active=true;repository.turnComparison(state).then(data=>{if(active)setResult({state,data});}).catch(()=>{if(active)setResult({state,data:{available:false,reason:'corrupt'}});});return()=>{active=false;};},[repository,state]);
- const ready=result?.state===state,comparison=ready?result.data:undefined;
- const groups=useMemo(()=>comparison?.available?diffTurn(comparison.before,state):[],[comparison,state]);
- const count=groups.reduce((total,g)=>total+g.rows.length,0),unavailable=Boolean(comparison&&!comparison.available);
+export function TurnChanges({state,comparison,mobile=false,onOpen}:{state:GameState;comparison:TurnChangesView;mobile?:boolean;onOpen:(target:ChangeTarget)=>void}){
+ const id=useId(),button=useRef<HTMLButtonElement>(null),[openedState,setOpenedState]=useState<GameState>();
+ const {ready,groups,count,unavailable}=comparison,open=Boolean(openedState)&&(!mobile||openedState===state)&&ready&&!unavailable&&count>0;
+ const close=()=>{setOpenedState(undefined);requestAnimationFrame(()=>{if(button.current?.isConnected&&!document.querySelector('dialog[open]'))button.current.focus({preventScroll:true});});};
+ const select=(target:ChangeTarget)=>{if(mobile)setOpenedState(undefined);onOpen(target);};
+ const content=<>{groups.map(group=><Group key={group.key} group={group} onOpen={select}/>)}<p className="chg-foot">与本回合开始时相比 · 点任一行打开对应资料 · 不影响存档</p></>;
  return <div className="turn-changes chg" onKeyDown={event=>{if(/^[1-5]$/.test(event.key)||(event.key==='Enter'&&(event.ctrlKey||event.metaKey)))event.stopPropagation();}}>
-  <button type="button" className="chg-btn" disabled={!ready||unavailable||!count} aria-expanded={open&&count>0&&!unavailable} aria-controls={id} aria-describedby={!ready||unavailable?`${id}-note`:undefined} onClick={()=>setOpen(!open)}>
+  <button ref={button} type="button" className="chg-btn" disabled={!ready||unavailable||!count} aria-expanded={open} aria-controls={id} aria-describedby={!ready||unavailable?`${id}-note`:undefined} onClick={()=>setOpenedState(open?undefined:state)}>
    <b>本回合变化</b><span className="n">{!ready?'核对中':unavailable?'不可用':count?`${count} 项`:'· 无'}</span>
    <span className="dots" aria-hidden="true">{groups.map(g=><i className={`g-${g.key}`} key={g.key}/>)}</span><span className="arr" aria-hidden="true">▼</span>
   </button>
   {(!ready||unavailable)&&<p className="chg-note" id={`${id}-note`} role="status">{unavailable?'本回合没有可对比的结算前记录':'正在核对本回合结算前记录…'}</p>}
-  <div className="chg-body" id={id} role="region" aria-label="本回合变化" hidden={!open||!ready||unavailable||!count}>
-   {open&&ready&&!unavailable&&groups.map(group=><Group key={group.key} group={group} onOpen={onOpen}/>)}
-   <p className="chg-foot">与本回合开始时相比 · 点任一行打开对应资料 · 不影响存档</p>
-  </div>
+  {mobile?open&&<Dialog title="本回合变化" seal="变" eyebrow={`THIS TURN · 第 ${state.turnNumber} 回`} mobileVariant="sheet" sheetFull className="turn-changes-sheet" onClose={close} returnFocus={()=>button.current}>
+   <div className="chg-summary"><b>{count}</b>项变化<span className="dots" aria-hidden="true">{groups.map(g=><i className={`g-${g.key}`} key={g.key}/>)}</span></div>
+   <div className="chg-body" id={id} role="region" aria-label="本回合变化">{content}</div>
+  </Dialog>:<div className="chg-body" id={id} role="region" aria-label="本回合变化" hidden={!open}>{open&&content}</div>}
  </div>;
 }

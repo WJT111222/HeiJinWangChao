@@ -62,13 +62,13 @@ test('首次访问按序展示完整内容；关闭后导航不重播，未勾�
   await expect(disclaimer(page).locator('label')).toHaveText('今日不再弹出');
   await expect(announcement(page)).toHaveCount(0);
   await disclaimer(page).getByRole('button', { name: '关闭免责声明' }).click();
-  await expect(announcement(page).getByRole('heading', { name: '《黑金王朝》0.9 开发里程碑 · 世界事件与历史更新' })).toBeVisible();
+  await expect(announcement(page).getByRole('heading', { name: '《黑金王朝》1.0 Beta · 世界事件与历史更新' })).toBeVisible();
   await expect(announcement(page).getByRole('listitem')).toHaveCount(5);
   await expect(announcement(page).getByText('记忆总结 V2 已支持短期转中期、中期转长期和 NPC 个人经历总结；自动维护可关闭，手动「立即总结」仍可用，已提交的历史原文保留可追溯。')).toBeVisible();
   await expect(announcement(page).getByText('新增多回合撤回：可按完整快照恢复最近已结算的回合，每份存档最多保留 5 个恢复点；没有重做功能，也不能撤销已产生的第三方 AI 调用费用。')).toBeVisible();
   await expect(announcement(page).getByText('重大纪事时间轴已区分世界与主角的人生历史；传闻仍是传闻，日期不明确的往事不会被伪装成精确时间。')).toBeVisible();
   await expect(announcement(page).getByText('世界事件 V2 已支持主事件、多个并行子事件、固定时刻结算和后续阶段；Story 可根据剧情决定主角介入、获知或不参与，事件档案保留已结束阶段的结果。')).toBeVisible();
-  await expect(announcement(page).getByText('「夜幕金印」已更新桌面和手机阅读布局、角色对白气泡及只读世界事件档案；目前仍为 0.9 开发阶段，真实模型长篇试玩、手机真机体验和正式 V1.0 发行尚待验收。')).toBeVisible();
+  await expect(announcement(page).getByText('「夜幕金印」已更新桌面和手机阅读布局、角色对白气泡及只读世界事件档案；目前为 1.0 Beta 测试阶段，真实模型长篇试玩、手机真机体验和 1.0 正式版发行尚待验收。')).toBeVisible();
   await expect(announcement(page).getByText('王朝还在建设，城市已经有了自己的生活。感谢你在这里留下每一段经历。')).toBeVisible();
   await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
   await page.getByRole('button', { name: /开始新游戏/ }).click();
@@ -277,5 +277,114 @@ test.describe('西半球本地日历与 UTC 不同', () => {
     await page.clock.setFixedTime(new Date('2026-11-07T08:01:00Z'));
     await page.reload();
     await expect(disclaimer(page)).toBeVisible();
+  });
+});
+
+test.describe('同一天发布新公告', () => {
+  type Reply = { status?: number; source?: 'kv' | 'builtin'; body: string } | 'hang' | undefined;
+  const remote = (version: string) => JSON.stringify({ version, title: '王朝公告', theme: `《黑金王朝》测试公告 ${version}`,
+    updates: [`这是 ${version} 的更新。`], message: '测试寄语。' });
+  const kv = (version: string): Reply => ({ source: 'kv', body: remote(version) });
+  // 显式返回 X-Announcement-Source：只有 kv 才代表 KV 中的新公告。
+  async function serve(page: Page, reply: () => Reply) {
+    await page.route('**/api/announcement', route => {
+      const value = reply();
+      if (value === 'hang') return new Promise<void>(() => undefined);
+      if (!value) return route.fulfill({ status: 503, body: 'down' });
+      return route.fulfill({ status: value.status ?? 200, contentType: 'application/json', body: value.body,
+        headers: value.source ? { 'X-Announcement-Source': value.source } : {} });
+    });
+  }
+  async function mutedOn(page: Page, version: string) {
+    await page.addInitScript(([date, muted]) => {
+      if (!sessionStorage.getItem('seeded')) {
+        localStorage.setItem('heijin.notices.hidden-on.v1', date); localStorage.setItem('heijin.notices.hidden-version.v1', muted);
+        sessionStorage.setItem('seeded', '1');
+      }
+    }, ['2026-11-07', version]);
+  }
+  async function noPopup(page: Page) {
+    await expect(page.getByRole('button', { name: /开始新游戏/ })).toBeVisible();
+    await page.waitForTimeout(800);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  }
+  const mutedVersion = (page: Page) => page.evaluate(() => localStorage.getItem('heijin.notices.hidden-version.v1'));
+
+  test('KV 新版本：只弹新公告不弹须知；勾选后刷新不再弹；次日照常', async ({ page }) => {
+    let current: Reply = kv('甲');
+    await serve(page, () => current);
+    await page.goto('/');
+    await disclaimer(page).getByRole('button', { name: '关闭免责声明' }).click();
+    await expect(announcement(page)).toContainText('测试公告 甲');
+    await announcement(page).getByRole('checkbox').check();
+    await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
+    expect(await mutedVersion(page)).toBe('甲');
+    await page.reload();
+    await noPopup(page);
+
+    current = kv('乙');
+    await page.reload();
+    await expect(announcement(page)).toContainText('测试公告 乙');
+    await expect(disclaimer(page)).toHaveCount(0);
+    await expect(announcement(page).getByRole('checkbox')).not.toBeChecked();
+    await announcement(page).getByRole('checkbox').check();
+    await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
+    expect(await mutedVersion(page)).toBe('乙');
+    await page.reload();
+    await noPopup(page);
+
+    await page.clock.setFixedTime(new Date('2026-11-07T16:00:00Z')); // 上海次日
+    await page.reload();
+    await expect(disclaimer(page)).toBeVisible();
+  });
+
+  for (const muted of ['builtin-1.0-beta', '甲']) {
+    test(`线上 Worker 返回旧版内置公告（builtin-0.9，来源 builtin）：已对 ${muted} 免打扰时不弹、不改记录`, async ({ page }) => {
+      await mutedOn(page, muted);
+      await serve(page, () => ({ source: 'builtin', body: JSON.stringify({ version: 'builtin-0.9', title: '王朝公告',
+        theme: '《黑金王朝》0.9 开发里程碑 · 世界事件与历史更新', updates: ['旧版内置公告。'], message: '旧寄语。' }) }));
+      await page.goto('/');
+      await noPopup(page);
+      expect(await mutedVersion(page)).toBe(muted);
+    });
+  }
+
+  const failures: Array<[string, Reply]> = [
+    ['HTTP 503', undefined],
+    ['非法 JSON（即使标为 kv）', { source: 'kv', body: '{broken' }],
+    ['未标明来源', { body: remote('丁') }],
+    ['请求超时', 'hang'],
+  ];
+  for (const [label, reply] of failures) {
+    test(`${label}：已对旧版免打扰时不弹`, async ({ page }) => {
+      await mutedOn(page, '甲');
+      await serve(page, () => reply);
+      await page.goto('/');
+      await noPopup(page);
+      if (reply === 'hang') { await page.waitForTimeout(3200); await expect(page.getByRole('dialog')).toHaveCount(0); }
+      expect(await mutedVersion(page)).toBe('甲');
+    });
+  }
+
+  test('只有日期的旧记录：当天对所有版本免打扰，KV 新版本也不弹', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('heijin.notices.hidden-on.v1', '2026-11-07'));
+    await serve(page, () => kv('戊'));
+    await page.goto('/');
+    await noPopup(page);
+  });
+
+  test('公告加载前在须知页勾选，免打扰绑定到随后加载出的 KV 版本', async ({ page }) => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    await page.route('**/api/announcement', async route => {
+      await gate;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: remote('丙'), headers: { 'X-Announcement-Source': 'kv' } });
+    });
+    await page.goto('/');
+    await disclaimer(page).getByRole('checkbox', { name: '今日不再弹出' }).check();
+    release();
+    await disclaimer(page).getByRole('button', { name: '关闭免责声明' }).click();
+    await expect(announcement(page)).toContainText('测试公告 丙');
+    await expect.poll(() => mutedVersion(page)).toBe('丙');
   });
 });
