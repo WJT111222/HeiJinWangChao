@@ -279,3 +279,63 @@ test.describe('西半球本地日历与 UTC 不同', () => {
     await expect(disclaimer(page)).toBeVisible();
   });
 });
+
+test.describe('同一天发布新公告', () => {
+  const remote = (version: string) => JSON.stringify({ version, title: '王朝公告', theme: `《黑金王朝》测试公告 ${version}`,
+    updates: [`这是 ${version} 的更新。`], message: '测试寄语。' });
+  async function serve(page: Page, body: () => string | undefined) {
+    await page.route('**/api/announcement', route => {
+      const value = body();
+      return value ? route.fulfill({ status: 200, contentType: 'application/json', body: value }) : route.fulfill({ status: 503, body: 'down' });
+    });
+  }
+
+  test('勾选免打扰后同一天出了新版本：刷新只弹新公告；同一版本、远程失败都不弹；次日照常', async ({ page }) => {
+    let current: string | undefined = remote('甲');
+    await serve(page, () => current);
+    await page.goto('/');
+    await disclaimer(page).getByRole('button', { name: '关闭免责声明' }).click();
+    await expect(announcement(page)).toContainText('测试公告 甲');
+    await announcement(page).getByRole('checkbox').check();
+    await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
+    expect(await page.evaluate(() => localStorage.getItem('heijin.notices.hidden-version.v1'))).toBe('甲');
+
+    await page.reload();
+    await expect(page.getByRole('button', { name: /开始新游戏/ })).toBeVisible();
+    await page.waitForTimeout(500);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+
+    current = undefined; // 远程不可用，回退内置公告不算新公告
+    await page.reload();
+    await expect(page.getByRole('button', { name: /开始新游戏/ })).toBeVisible();
+    await page.waitForTimeout(500);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+
+    current = remote('乙');
+    await page.reload();
+    await expect(announcement(page)).toContainText('测试公告 乙');
+    await expect(disclaimer(page)).toHaveCount(0);
+    await expect(announcement(page).getByRole('checkbox')).not.toBeChecked();
+    await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+
+    await page.clock.setFixedTime(new Date('2026-11-07T16:00:00Z')); // 上海次日
+    await page.reload();
+    await expect(disclaimer(page)).toBeVisible();
+  });
+
+  test('公告加载前在须知页勾选，免打扰绑定到随后加载出的远程版本', async ({ page }) => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    await page.route('**/api/announcement', async route => {
+      await gate;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: remote('丙') });
+    });
+    await page.goto('/');
+    await disclaimer(page).getByRole('checkbox', { name: '今日不再弹出' }).check();
+    release();
+    await disclaimer(page).getByRole('button', { name: '关闭免责声明' }).click();
+    await expect(announcement(page)).toContainText('测试公告 丙');
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('heijin.notices.hidden-version.v1'))).toBe('丙');
+  });
+});

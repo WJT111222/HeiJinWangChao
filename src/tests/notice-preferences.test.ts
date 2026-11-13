@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { localNoticeDate, noticeDateKey, noticesMutedToday, saveNoticePreference } from '../ui/notices/preferences';
+import { localNoticeDate, noticeDateKey, noticeMuteToday, noticesMutedFor, noticesMutedToday, noticeVersionKey, saveNoticePreference } from '../ui/notices/preferences';
 
 function memoryStorage() {
   const values = new Map<string, string>([['unrelated', 'preserve']]);
@@ -50,5 +50,44 @@ describe('公告免打扰：只存设备本地日期', () => {
     expect(noticesMutedToday(new Date(), () => storage)).toBe(false);
     expect(() => saveNoticePreference(true, new Date(), () => storage)).not.toThrow();
     expect(() => saveNoticePreference(false, new Date(), () => storage)).not.toThrow();
+  });
+});
+
+describe('公告免打扰：绑定当时看到的公告版本', () => {
+  const today = new Date(2026, 10, 13, 9), tomorrow = new Date(2026, 10, 14, 9);
+  it('只对勾选时的版本免打扰；同一天新版本照常弹出，次日全部恢复', () => {
+    const storage = memoryStorage();
+    saveNoticePreference(true, today, () => storage, '1.0 Beta · 2026.11.13');
+    expect(storage.values.get(noticeDateKey)).toBe('2026-11-13');
+    expect(storage.values.get(noticeVersionKey)).toBe('1.0 Beta · 2026.11.13');
+    expect(noticeMuteToday(today, () => storage)).toEqual({ version: '1.0 Beta · 2026.11.13' });
+    expect(noticesMutedFor('1.0 Beta · 2026.11.13', today, () => storage)).toBe(true);
+    expect(noticesMutedFor('1.0 Beta · 2026.11.13-2', today, () => storage)).toBe(false);
+    expect(noticesMutedFor('1.0 Beta · 2026.11.13', tomorrow, () => storage)).toBe(false);
+    expect(noticeMuteToday(tomorrow, () => storage)).toBeUndefined();
+  });
+  it('只有日期的旧记录当天对所有版本免打扰；不带版本保存会清掉旧版本记录', () => {
+    const storage = memoryStorage();
+    storage.setItem(noticeDateKey, '2026-11-13');
+    expect(noticeMuteToday(today, () => storage)).toEqual({});
+    expect(noticesMutedFor('任何版本', today, () => storage)).toBe(true);
+    storage.setItem(noticeVersionKey, '旧版本');
+    saveNoticePreference(true, today, () => storage);
+    expect(storage.values.has(noticeVersionKey)).toBe(false);
+  });
+  it('取消勾选同时清除日期与版本，保留其他本地配置', () => {
+    const storage = memoryStorage();
+    saveNoticePreference(true, today, () => storage, 'v');
+    saveNoticePreference(false, today, () => storage);
+    expect(storage.values.has(noticeDateKey)).toBe(false);
+    expect(storage.values.has(noticeVersionKey)).toBe(false);
+    expect(storage.values.get('unrelated')).toBe('preserve');
+    expect(noticesMutedToday(today, () => storage)).toBe(false);
+  });
+  it('存储不可用时视为未免打扰', () => {
+    const storage = memoryStorage();
+    vi.spyOn(storage, 'getItem').mockImplementation(() => { throw new Error('denied'); });
+    expect(noticeMuteToday(today, () => storage)).toBeUndefined();
+    expect(noticesMutedFor('v', today, () => storage)).toBe(false);
   });
 });
