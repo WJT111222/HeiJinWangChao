@@ -134,16 +134,15 @@ for (const mode of ['project', 'native', 'both', 'none'] as const) {
     const raw = await openStageRaw(page, 'story');
     await expect(page.locator('.wf-stage').getByRole('tab')).toHaveText(['概览', '模型原文', '校验结果']);
     await expect(page.getByRole('tab', { name: '叙事规划', exact: true })).toHaveCount(0);
-    await expect(raw.getByLabel('正文模型完整原文', { exact: true })).toHaveText(rawText, { useInnerText: false });
-    if (mode === 'native' || mode === 'both') {
-      await expect(raw.getByLabel('供应商公开原生思考全文', { exact: true })).toHaveText(native);
-      await expect(raw).toContainText('排列不代表真实返回先后');
-    } else await expect(raw.getByLabel('供应商公开原生思考全文', { exact: true })).toHaveCount(0);
-    expect(await raw.locator('pre').allTextContents()).toEqual(mode === 'native' || mode === 'both' ? [rawText, native] : [rawText]);
+    const rawBox = raw.getByRole('textbox', { name: '正文模型完整原文', exact: true });
+    await expect(rawBox).toHaveValue((mode === 'native' || mode === 'both' ? native : '') + rawText);
+    await expect(raw.locator('textarea')).toHaveCount(1); await expect(raw.locator('pre')).toHaveCount(0);
+    await expect(raw.getByLabel('供应商公开原生思考全文', { exact: true })).toHaveCount(0);
+    await expect(raw.locator('.story-native-response')).toHaveCount(0);
     if (mode === 'both') {
       await shot(page, info, 'unified-raw');
-      await raw.getByLabel('供应商公开原生思考全文', { exact: true }).scrollIntoViewIfNeeded();
-      await shot(page, info, 'unified-raw-native');
+      await rawBox.evaluate(el => { el.scrollTop = el.scrollHeight; });
+      await shot(page, info, 'unified-raw-end');
     }
     expect(await stored(page)).toEqual(saved);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -225,8 +224,8 @@ for (const mode of ['all', 'only', 'mirror'] as const) {
     }
     await closeDiagnostics(page);
     const raw = await openStageRaw(page, 'story');
-    await expect(raw.getByLabel('正文模型完整原文', { exact: true })).toHaveText(rawText, { useInnerText: false });
-    expect(await raw.locator('pre').allTextContents()).toEqual(mode === 'only' ? [rawText] : [rawText, nativeText]);
+    await expect(raw.getByRole('textbox', { name: '正文模型完整原文', exact: true })).toHaveValue((mode === 'only' ? '' : nativeText) + rawText);
+    await expect(raw.locator('textarea')).toHaveCount(1); await expect(raw.locator('pre')).toHaveCount(0);
     await expect(raw.getByRole('region', { name: '兼容文本思考', exact: true })).toHaveCount(0);
     await expect(raw).not.toContainText(key);
     await shot(page, info, `compat-${mode}-raw`);

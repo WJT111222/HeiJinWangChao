@@ -20,7 +20,8 @@ import { readSse } from './sse';
 import { rememberThinkingCapability, unsupportedThinkingParameter, blockThinkingCapability } from './thinking';
 import { checkFinish, LeadingThink, rememberUnsupported, splitLeadingThink, unsupportedParameter } from './compat';
 import { isOpenAiCompatible } from './configuration';
-import { responseContent } from './responseContent';
+import { rawResponseObservation, responseContent } from './responseContent';
+import type { RawResponseObservation } from './responseContent';
 
 export interface RequestOptions {
   signal?: AbortSignal;
@@ -31,6 +32,8 @@ export interface RequestOptions {
   /** Read-only observations before compatibility extraction; not a second request. */
   onRawTextDelta?: (text: string) => void;
   onNativeReasoningDelta?: (text: string) => void;
+  /** Read-only event observation; never used as accepted model text. */
+  onRawResponse?: (event: RawResponseObservation) => void;
   /** Only public text actually extracted from a leading <think> block. */
   onCompatibilityReasoningDelta?: (text: string) => void;
   onActivity?: (kind: 'content' | 'reasoning') => void;
@@ -159,6 +162,7 @@ export class AiClient {
           }
           usage = usageFrom(data, protocol); observedUsage = usage;
           if (!signal.aborted) {
+            if (options.onRawResponse) options.onRawResponse(rawResponseObservation(data, protocol));
             const raw = responseContent(data, protocol), native = nativeReasoning(data, protocol);
             if (raw) options.onRawTextDelta?.(raw);
             if (native) options.onNativeReasoningDelta?.(native);
@@ -195,6 +199,7 @@ export class AiClient {
               throw new AiError('rejected');
             const rawDelta = responseContent(data, protocol, true), native = nativeReasoning(data, protocol, true);
             if (!signal.aborted) {
+              if (options.onRawResponse) options.onRawResponse(rawResponseObservation(data, protocol, true));
               if (rawDelta) options.onRawTextDelta?.(rawDelta);
               if (native) options.onNativeReasoningDelta?.(native);
             }
