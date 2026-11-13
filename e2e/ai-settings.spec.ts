@@ -1,5 +1,5 @@
 import { expect, test } from './helpers/test';
-import { choose, selected, optionCount } from './helpers/select';
+import { addChannel, backToList, chooseText, follow, openAiSettings, openChannel, saveAi, stageModel, testReply } from './helpers/aiSettings';
 import { writeFile } from 'node:fs/promises';
 
 test.beforeEach(async ({ page }) => {
@@ -83,203 +83,190 @@ test('真实浏览器加载原文、校验哈希并组装六种模式，记录�
   await testInfo.attach('prompt-order.json', { path: artifact, contentType: 'application/json' });
 });
 
-test('AI 多渠道、原生模型列表与连接测试、路由和会话凭证恢复', async ({ page }) => {
+test('AI 多渠道：选服务商后自动获取模型、测试回复、阶段路由与密钥保存位置', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  const requests: { url: string; method: string; headers: Record<string, string>; body: string }[] =
-    [];
+  const requests: { url: string; method: string; headers: Record<string, string>; body: string }[] = [];
   await page.route('https://api.mock.invalid/**', async (route) => {
     const request = route.request();
-    requests.push({
-      url: request.url(),
-      method: request.method(),
-      headers: request.headers(),
-      body: request.postData() ?? '',
-    });
-    const native = request.url().includes('/gemini/')
-      ? 'gemini'
-      : request.url().includes('/anthropic/')
-        ? 'anthropic'
-        : 'openai';
-    const result =
-      request.method() === 'GET'
-        ? native === 'gemini'
-          ? { models: [{ name: 'models/mock-model' }] }
-          : { data: [{ id: 'mock-model' }] }
-        : native === 'gemini'
-          ? { candidates: [{ content: { parts: [{ text: 'OK' }] }, finishReason: 'STOP' }] }
-          : native === 'anthropic'
-            ? { content: [{ type: 'text', text: 'OK' }], stop_reason: 'end_turn' }
-            : { choices: [{ message: { content: 'OK' }, finish_reason: 'stop' }] };
+    requests.push({ url: request.url(), method: request.method(), headers: request.headers(), body: request.postData() ?? '' });
+    const native = request.url().includes('/gemini/') ? 'gemini' : request.url().includes('/anthropic/') ? 'anthropic' : 'openai';
+    const result = request.method() === 'GET'
+      ? native === 'gemini' ? { models: [{ name: 'models/mock-model' }] } : { data: [{ id: 'mock-model' }] }
+      : native === 'gemini' ? { candidates: [{ content: { parts: [{ text: 'OK' }] }, finishReason: 'STOP' }] }
+        : native === 'anthropic' ? { content: [{ type: 'text', text: 'OK' }], stop_reason: 'end_turn' }
+          : { choices: [{ message: { content: 'OK' }, finish_reason: 'stop' }] };
     await route.fulfill({ json: result });
   });
   await page.goto('/');
-  await page.getByRole('button', { name: '设置', exact: true }).click();
-  await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
-  const ids: string[] = [];
-  for (const protocol of ['openai', 'gemini', 'anthropic', 'deepseek']) {
-    await page.getByRole('button', { name: '新增渠道', exact: true }).click();
-    await page.getByLabel('渠道名称', { exact: true }).fill(`Mock ${protocol}`);
-    await choose(page, '协议', protocol);
-    await page
-      .getByLabel('API Base URL', { exact: true })
-      .fill(`https://api.mock.invalid/${protocol}/v1`);
-    const password = page.getByLabel('API 密钥', { exact: true });
+  const settings = await openAiSettings(page);
+  const channels = [
+    { name: 'Mock openai', preset: 'OpenAI 兼容', url: 'https://api.mock.invalid/openai/v1' },
+    { name: 'Mock gemini', preset: 'OpenAI 兼容', url: 'https://api.mock.invalid/gemini/v1', format: 'Gemini 格式' },
+    { name: 'Mock anthropic', preset: 'OpenAI 兼容', url: 'https://api.mock.invalid/anthropic/v1', format: 'Claude 格式' },
+    { name: 'Mock deepseek', preset: 'DeepSeek', url: 'https://api.mock.invalid/deepseek/v1' },
+  ];
+  for (const [index, channel] of channels.entries()) {
+    await addChannel(settings, { ...channel, key: undefined });
+    const password = settings.getByLabel('API 密钥', { exact: true });
     await expect(password).toHaveAttribute('type', 'password');
+    // 未保存时也能填好密钥后直接获取模型、测试回复。
     await password.fill('browser-mock-credential');
-    await page.getByRole('button', { name: '手动填写默认模型 ID', exact: true }).click();
-    await page.getByLabel('默认模型 ID', { exact: true }).fill('mock-model');
-    expect(requests).toHaveLength(ids.length * 2);
-    await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
-    await expect(
-      page.getByText('AI 配置已保存；模型列表会自动获取，尚未发起生成请求。', { exact: true }),
-    ).toBeVisible();
-    await expect(page.getByRole('group', { name: '默认模型选择', exact: true })).toContainText('当前接口返回 1 个模型。列表由服务端提供，可能不是该平台全部可用模型。');
-    await optionCount(page, '默认模型', 2);
-    await page.getByRole('button', { name: /测试连接（/ }).click();
-    await expect(page.getByText(/连接测试成功，已收到模型文本响应/)).toBeVisible();
-    ids.push(await page.getByRole('combobox', { name: '当前渠道', exact: true }).getAttribute('value') ?? '');
+    await expect(settings.getByRole('status').filter({ hasText: '连接正常' }).first()).toBeVisible();
+    await expect.poll(() => requests.length).toBe(index * 2 + 1);
+    await testReply(settings);
+    await expect(settings.getByRole('status').filter({ hasText: '收到了回复' }).first()).toBeVisible();
+    await expect.poll(() => requests.length).toBe(index * 2 + 2);
   }
-  expect(requests).toHaveLength(8);
-  expect(requests.map((request) => request.url)).toEqual([
-    'https://api.mock.invalid/openai/v1/models',
-    'https://api.mock.invalid/openai/v1/chat/completions',
-    'https://api.mock.invalid/gemini/v1/models',
-    'https://api.mock.invalid/gemini/v1/models/mock-model:generateContent',
-    'https://api.mock.invalid/anthropic/v1/models?limit=100',
-    'https://api.mock.invalid/anthropic/v1/messages',
-    'https://api.mock.invalid/deepseek/v1/models',
-    'https://api.mock.invalid/deepseek/v1/chat/completions',
+  expect(requests.map((request) => `${request.method} ${request.url}`)).toEqual([
+    'GET https://api.mock.invalid/openai/v1/models',
+    'POST https://api.mock.invalid/openai/v1/chat/completions',
+    'GET https://api.mock.invalid/gemini/v1/models',
+    'POST https://api.mock.invalid/gemini/v1/models/mock-model:generateContent',
+    'GET https://api.mock.invalid/anthropic/v1/models?limit=100',
+    'POST https://api.mock.invalid/anthropic/v1/messages',
+    'GET https://api.mock.invalid/deepseek/v1/models',
+    'POST https://api.mock.invalid/deepseek/v1/chat/completions',
   ]);
-  for (const [index, header] of [
-    [1, 'authorization'],
-    [3, 'x-goog-api-key'],
-    [5, 'x-api-key'],
-    [7, 'authorization'],
-  ] as const) {
+  for (const [index, header] of [[1, 'authorization'], [3, 'x-goog-api-key'], [5, 'x-api-key'], [7, 'authorization']] as const) {
     expect(requests[index].headers[header]).toContain('browser-mock-credential');
     expect(requests[index].url).not.toContain('browser-mock-credential');
     expect(requests[index].body).not.toContain('browser-mock-credential');
   }
-  await page.getByLabel('变量管理跟随正文模型', { exact: true }).uncheck();
-  await choose(page, '变量管理渠道', ids[1]);
-  await page.getByRole('button', { name: '手动填写变量管理模型 ID', exact: true }).click();
-  await page.getByLabel('变量管理模型 ID', { exact: true }).fill('variable-override');
-  await expect(page.getByLabel('动态世界跟随正文模型', { exact: true })).toBeChecked();
-  await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
+  // 正文用第一个渠道（从列表选），变量单独用 Gemini 渠道（手动填写），其余跟随正文。
+  await stageModel(settings, '正文生成', 'Mock openai', 'mock-model', 'list');
+  await stageModel(settings, '变量管理', 'Mock gemini', 'variable-override');
+  await expect(settings.getByRole('group', { name: '动态世界模型来源', exact: true }).getByRole('button', { name: '跟随正文', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  // 第三个渠道关闭「记住密钥」，只在本次会话保留。
+  await openChannel(settings, 'Mock anthropic');
+  await settings.getByRole('switch', { name: '记住密钥' }).uncheck();
+  await saveAi(settings);
   await page.keyboard.press('Escape');
   await page.reload();
-  await page.getByRole('button', { name: '设置', exact: true }).click();
-  await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
-  await expect(page.getByLabel('API 密钥', { exact: true })).toHaveValue('browser-mock-credential');
-  await selected(page, '变量管理渠道', ids[1]);
-  await expect(page.getByLabel('变量管理模型 ID', { exact: true })).toHaveValue(
-    'variable-override',
-  );
-  const stored = await page.evaluate(() => ({
-    local: JSON.stringify(localStorage),
-    session: JSON.stringify(sessionStorage),
-  }));
-  expect(stored.local).not.toContain('browser-mock-credential');
-  expect(stored.session).toContain('browser-mock-credential');
-  await page.getByRole('button', { name: '删除渠道', exact: true }).click();
-  await page.getByRole('button', { name: '取消删除', exact: true }).click();
-  await optionCount(page, '当前渠道', 4);
-  await page.getByRole('button', { name: '删除渠道', exact: true }).click();
+  const again = await openAiSettings(page);
+  await openChannel(again, 'Mock openai');
+  await expect(again.getByLabel('API 密钥', { exact: true })).toHaveValue('browser-mock-credential');
+  await backToList(again);
+  await expect(again.getByRole('combobox', { name: '变量管理渠道', exact: true })).toContainText('Mock gemini');
+  await expect(again.getByRole('combobox', { name: '变量管理模型', exact: true })).toHaveAttribute('value', 'variable-override');
+  await expect(again.getByRole('combobox', { name: '正文生成模型', exact: true })).toHaveAttribute('value', 'mock-model');
+  const stored = await page.evaluate(() => ({ local: Object.entries(localStorage), session: Object.entries(sessionStorage) }));
+  const config = stored.local.find(([key]) => key === 'heijin.ai.v1')?.[1] ?? '';
+  expect(config).not.toContain('browser-mock-credential');
+  expect(stored.local.filter(([key, value]) => key.startsWith('heijin.credential.v1:') && value === 'browser-mock-credential')).toHaveLength(3);
+  expect(stored.session.filter(([key, value]) => key.startsWith('heijin.credential.v1:') && value === 'browser-mock-credential')).toHaveLength(1);
+  // 删除：取消不改动；确认后保存才生效；删除正文用的渠道会阻止保存，直到重新选好模型或放弃修改。
+  await openChannel(again, 'Mock deepseek');
+  await again.getByRole('button', { name: '删除渠道', exact: true }).click();
+  await page.getByRole('button', { name: '取消', exact: true }).click();
+  await backToList(again);
+  await expect(again.getByRole('button', { name: /^编辑渠道：/ })).toHaveCount(4);
+  await openChannel(again, 'Mock deepseek');
+  await again.getByRole('button', { name: '删除渠道', exact: true }).click();
   await page.getByRole('button', { name: '确认删除渠道', exact: true }).click();
-  await optionCount(page, '当前渠道', 3);
-  await selected(page, '正文生成渠道', '');
+  await backToList(again);
+  await expect(again.getByRole('button', { name: /^编辑渠道：/ })).toHaveCount(3);
+  await openChannel(again, 'Mock openai');
+  await again.getByRole('button', { name: '删除渠道', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: '删除「Mock openai」？' })).toContainText('它正被「正文');
+  await page.getByRole('button', { name: '确认删除渠道', exact: true }).click();
+  await expect(again.getByRole('button', { name: '保存 AI 配置', exact: true })).toBeDisabled();
+  await expect(again.getByRole('status').filter({ hasText: '正文生成还没选模型' })).toBeVisible();
+  await again.getByRole('button', { name: '放弃修改', exact: true }).click();
+  await backToList(again);
+  await expect(again.getByRole('button', { name: /^编辑渠道：/ })).toHaveCount(4);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(errors).toEqual([]);
 });
 
-test('连接授权错误不展示服务详情，网络错误不误报密钥，取消请求有效', async ({ page }) => {
+test('连接授权错误不展示服务详情，网络错误不误报密钥，取消测试有效', async ({ page }) => {
   let mode = 'authorization';
   await page.route('https://api.mock.invalid/**', async (route) => {
-    if (mode === 'authorization')
-      await route.fulfill({
-        status: 401,
-        json: { error: 'browser-mock-credential secret service detail' },
-      });
+    if (mode === 'authorization') await route.fulfill({ status: 401, json: { error: 'browser-mock-credential secret service detail' } });
     else if (mode === 'network') await route.abort('failed');
-    else
-      await new Promise<void>((resolve) => {
-        route
-          .request()
-          .response()
-          .then(() => resolve())
-          .catch(() => resolve());
-      });
+    else await new Promise<void>((resolve) => { route.request().response().then(() => resolve()).catch(() => resolve()); });
   });
   await page.goto('/');
-  await page.getByRole('button', { name: '设置', exact: true }).click();
-  await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
-  await page.getByRole('button', { name: '新增渠道', exact: true }).click();
-  await page.getByLabel('API Base URL', { exact: true }).fill('https://api.mock.invalid/v1');
-  await page.getByRole('button', { name: '手动填写默认模型 ID', exact: true }).click();
-  await page.getByLabel('默认模型 ID', { exact: true }).fill('mock-model');
-  await page.getByLabel('API 密钥', { exact: true }).fill('browser-mock-credential');
-  await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
-  await page.getByRole('button', { name: /测试连接（/ }).click();
-  await expect(page.getByRole('status').filter({ hasText: '授权错误' }).last()).toBeVisible();
-  await expect(page.getByRole('dialog')).not.toContainText('secret service detail');
+  const settings = await openAiSettings(page);
+  await addChannel(settings, { name: 'Mock', url: 'https://api.mock.invalid/v1', key: 'browser-mock-credential' });
+  await expect(settings.getByRole('status').filter({ hasText: '连接失败' }).first()).toContainText('授权错误');
+  await expect(page.getByRole('dialog').first()).not.toContainText('secret service detail');
+  await stageModel(settings, '正文生成', 'Mock', 'mock-model');
+  await openChannel(settings, 'Mock');
+  await testReply(settings);
+  await expect(settings.getByRole('status').filter({ hasText: '测试失败' }).first()).toContainText('授权错误');
   mode = 'network';
-  await page.getByRole('button', { name: /测试连接（/ }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'CORS' })).toBeVisible();
+  await testReply(settings);
+  await expect(settings.getByRole('status').filter({ hasText: 'CORS' }).first()).toBeVisible();
   mode = 'hanging';
-  await page.getByRole('button', { name: /测试连接（/ }).click();
-  await page.getByRole('button', { name: '取消请求', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: '取消' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /测试连接（/ })).toBeEnabled();
+  await testReply(settings);
+  await settings.getByRole('button', { name: '取消', exact: true }).click();
+  await expect(settings.getByRole('status').filter({ hasText: '已取消测试' }).first()).toBeVisible();
+  await expect(settings.getByRole('button', { name: '测试回复（可能产生少量费用）', exact: true })).toBeEnabled();
+  await expect(page.getByRole('dialog').first()).not.toContainText('secret service detail');
 });
 
-test('P6完善：输出档位映射、旧渠道值与渠道隔离，新渠道默认8K', async ({ page }) => {
+test('最大输出：档位直接显示，旧渠道值与渠道隔离，新渠道默认 8K', async ({ page }) => {
   await page.goto('/');
-  const ids = await page.evaluate(async () => {
+  await page.evaluate(async () => {
     const path = '/src/services/ai/configuration.ts', vaultPath = '/src/services/ai/credentials.ts';
     const { defaultAiConfig, newChannel, saveAiConfig } = await import(path), { CredentialVault } = await import(vaultPath);
     const config = defaultAiConfig(), first = newChannel(), second = newChannel();
     first.name = '旧4K渠道'; first.parameters.maxOutputTokens = 4096;
     second.name = '旧自定义渠道'; second.parameters.maxOutputTokens = 32768; config.channels = [first, second];
+    config.routes.story = { channelId: first.id, modelId: 'mock-model' };
     saveAiConfig(localStorage, config); const vault = new CredentialVault(sessionStorage, localStorage);
     config.channels.forEach((channel: { id: string }) => vault.set(channel.id, 'mock-budget-key'));
-    return [first.id, second.id];
   });
-  await page.reload(); await page.getByRole('button', { name: '设置', exact: true }).click();
-  await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
-  await page.getByText('生成参数与模型兼容', { exact: true }).click();
-  const selector = page.getByLabel('最大输出 Token 档位', { exact: true }); await expect(selector).toHaveAttribute('value', '4096');
-  await choose(page, '最大输出 Token 档位', '16384'); await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
-  await choose(page, '当前渠道', ids[1]);
-  await expect(selector).toHaveAttribute('value', 'custom'); await expect(page.getByLabel('自定义最大输出 Token')).toHaveValue('32768');
+  await page.reload();
+  const settings = await openAiSettings(page);
+  await openChannel(settings, '旧4K渠道');
+  const tiers = settings.getByRole('group', { name: '最大输出 Token 档位', exact: true });
+  await expect(tiers.getByRole('button', { name: '4K', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await tiers.getByRole('button', { name: '16K', exact: true }).click();
+  await saveAi(settings);
+  await openChannel(settings, '旧自定义渠道');
+  await expect(tiers.getByRole('button', { name: '自定义', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(settings.getByLabel('自定义最大输出 Token')).toHaveValue('32768');
   const values = await page.evaluate(async () => { const path = '/src/services/ai/configuration.ts', { readAiConfig } = await import(path);
     return readAiConfig(localStorage).channels.map((channel: { parameters: { maxOutputTokens: number } }) => channel.parameters.maxOutputTokens); });
   expect(values).toEqual([16384, 32768]);
-  await page.getByRole('button', { name: '新增渠道', exact: true }).click(); await expect(selector).toHaveAttribute('value', '8192');
-  await page.getByLabel('API 密钥', { exact: true }).fill('new-mock-key'); await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
-  await page.reload(); await page.getByRole('button', { name: '设置', exact: true }).click(); await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
-  await page.getByText('生成参数与模型兼容', { exact: true }).click(); await expect(selector).toHaveAttribute('value', '16384');
-  await choose(page, '当前渠道', ids[1]); await expect(selector).toHaveAttribute('value', 'custom');
-  await expect(page.getByLabel('自定义最大输出 Token')).toHaveValue('32768');
+  await addChannel(settings, { preset: 'OpenAI', key: 'new-mock-key' });
+  await expect(tiers.getByRole('button', { name: '8K（推荐）', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await saveAi(settings);
+  await page.keyboard.press('Escape'); await page.reload();
+  const again = await openAiSettings(page);
+  await openChannel(again, '旧4K渠道');
+  await expect(tiers.getByRole('button', { name: '16K', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await openChannel(again, '旧自定义渠道');
+  await expect(tiers.getByRole('button', { name: '自定义', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(again.getByLabel('自定义最大输出 Token')).toHaveValue('32768');
 });
 
-test('P6完善：自定义合法范围与4K/8K/16K往返，只保存玩家明确设置', async ({ page }) => {
-  await page.goto('/'); await page.getByRole('button', { name: '设置', exact: true }).click(); await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
-  await page.getByRole('button', { name: '新增渠道', exact: true }).click();
-  await page.getByText('生成参数与模型兼容', { exact: true }).click();
-  const selector = page.getByLabel('最大输出 Token 档位', { exact: true }); await expect(selector).toHaveAttribute('value', '8192');
-  for (const value of ['4096', '8192', '16384']) { await choose(page, '最大输出 Token 档位', value); await expect(selector).toHaveAttribute('value', value); }
-  await choose(page, '最大输出 Token 档位', 'custom'); const custom = page.getByLabel('自定义最大输出 Token', { exact: true }); await expect(custom).toHaveValue('16384');
-  await custom.fill('12345'); await page.getByLabel('API 密钥', { exact: true }).fill('custom-mock-key');
-  await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
+test('最大输出：自定义合法范围与 4K/8K/16K 往返，只保存玩家明确设置', async ({ page }) => {
+  await page.goto('/');
+  const settings = await openAiSettings(page);
+  await addChannel(settings, { preset: 'OpenAI', key: 'custom-mock-key' });
+  await stageModel(settings, '正文生成', 'OpenAI 官方', 'mock-model');
+  await openChannel(settings, 'OpenAI 官方');
+  const tiers = settings.getByRole('group', { name: '最大输出 Token 档位', exact: true });
+  await expect(tiers.getByRole('button', { name: '8K（推荐）', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  for (const name of ['4K', '8K（推荐）', '16K']) { await tiers.getByRole('button', { name, exact: true }).click(); await expect(tiers.getByRole('button', { name, exact: true })).toHaveAttribute('aria-pressed', 'true'); }
+  await tiers.getByRole('button', { name: '自定义', exact: true }).click();
+  const custom = settings.getByLabel('自定义最大输出 Token', { exact: true }); await expect(custom).toHaveValue('16384');
+  await custom.fill('12345');
+  await saveAi(settings);
   for (const value of ['0', '1000001']) {
-    await custom.fill(value); await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
-    await expect(page.getByText(/配置无效：请核对/)).toBeVisible();
+    await custom.fill(value); await settings.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
+    await expect(settings.getByText(/配置无效：请核对/)).toBeVisible();
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.ai.v1')!).channels[0].parameters.maxOutputTokens)).toBe(12345);
   }
-  await custom.fill('1000000'); await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
-  await page.reload(); await page.getByRole('button', { name: '设置', exact: true }).click(); await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
-  await page.getByText('生成参数与模型兼容', { exact: true }).click(); await expect(selector).toHaveAttribute('value', 'custom'); await expect(custom).toHaveValue('1000000');
+  await custom.fill('1000000'); await saveAi(settings);
+  await page.keyboard.press('Escape'); await page.reload();
+  const again = await openAiSettings(page);
+  await openChannel(again, 'OpenAI 官方');
+  await expect(tiers.getByRole('button', { name: '自定义', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(again.getByLabel('自定义最大输出 Token', { exact: true })).toHaveValue('1000000');
 });
 
 test('原生 DeepSeek 官方地址、四阶段独立选模与刷新恢复，纯设置不生成内容', async ({ page }, testInfo) => {
@@ -293,46 +280,57 @@ test('原生 DeepSeek 官方地址、四阶段独立选模与刷新恢复，纯�
     await route.fulfill({ json: { object: 'list', data: models.map(id => ({ id })) } });
   });
   await page.goto('/');
-  await page.getByRole('button', { name: '设置', exact: true }).click();
-  await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
-  await page.getByRole('button', { name: '新增渠道', exact: true }).click();
-  await choose(page, '协议', 'deepseek');
-  await expect(page.getByLabel('API Base URL', { exact: true })).toHaveValue('https://api.deepseek.com');
-  await expect(page.getByLabel('API Base URL', { exact: true })).toHaveAttribute('placeholder', 'DeepSeek 官方地址无需 /v1');
-  await page.getByLabel('渠道名称', { exact: true }).fill('DeepSeek 审查用 Mock');
-  await page.getByLabel('API 密钥', { exact: true }).fill('fictional-review-key');
-  await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
-  await expect(page.getByRole('group', { name: '默认模型选择', exact: true })).toContainText('当前接口返回 4 个模型');
-  await choose(page, '默认模型', models[0]);
-  const id = await page.getByRole('combobox', { name: '当前渠道', exact: true }).getAttribute('value');
-  if (!id) throw new Error('missing authored channel');
+  const settings = await openAiSettings(page);
+  await addChannel(settings, { preset: 'DeepSeek' });
+  await expect(settings.getByLabel('服务地址', { exact: true })).toHaveValue('https://api.deepseek.com');
+  await expect(settings.getByLabel('服务地址', { exact: true })).toHaveAttribute('readonly', '');
+  await expect(settings.getByLabel('渠道名称', { exact: true })).toHaveValue('DeepSeek 官方');
+  await settings.getByLabel('渠道名称', { exact: true }).fill('DeepSeek 审查用 Mock');
+  await settings.getByLabel('API 密钥', { exact: true }).fill('fictional-review-key');
+  await expect(settings.getByRole('status').filter({ hasText: '连接正常' }).first()).toContainText('当前接口返回 4 个模型');
   const labels = ['正文生成', '变量管理', '动态世界', '记忆维护'];
-  for (let i = 0; i < labels.length; i++) {
-    if (i) await page.getByLabel(`${labels[i]}跟随正文模型`, { exact: true }).uncheck();
-    await choose(page, `${labels[i]}渠道`, id);
-    await choose(page, `${labels[i]}模型`, models[i]);
-  }
-  await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
-  await expect(page.getByText('AI 配置已保存；模型列表会自动获取，尚未发起生成请求。', { exact: true })).toBeVisible();
+  for (let i = 0; i < labels.length; i++) await stageModel(settings, labels[i], 'DeepSeek 审查用 Mock', models[i], 'list');
+  await saveAi(settings);
+  await page.keyboard.press('Escape');
   await page.reload();
-  await page.getByRole('button', { name: '设置', exact: true }).click();
-  await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
-  await selected(page, '协议', 'deepseek');
-  await expect(page.getByLabel('API 密钥', { exact: true })).toHaveAttribute('type', 'password');
-  await expect(page.getByLabel('API 密钥', { exact: true })).toHaveValue('fictional-review-key');
-  await expect(page.getByLabel('API Base URL', { exact: true })).toHaveValue('https://api.deepseek.com');
+  const again = await openAiSettings(page);
   for (let i = 0; i < labels.length; i++) {
-    await selected(page, `${labels[i]}渠道`, id);
-    await selected(page, `${labels[i]}模型`, models[i]);
-    if (i) await expect(page.getByLabel(`${labels[i]}跟随正文模型`, { exact: true })).not.toBeChecked();
+    await expect(again.getByRole('combobox', { name: `${labels[i]}渠道`, exact: true })).toContainText('DeepSeek 审查用 Mock');
+    await expect(again.getByRole('combobox', { name: `${labels[i]}模型`, exact: true })).toHaveAttribute('value', models[i]);
+    if (i) await expect(again.getByRole('group', { name: `${labels[i]}模型来源`, exact: true }).getByRole('button', { name: '单独指定', exact: true })).toHaveAttribute('aria-pressed', 'true');
   }
+  await openChannel(again, 'DeepSeek 审查用 Mock');
+  await expect(again.getByLabel('API 密钥', { exact: true })).toHaveAttribute('type', 'password');
+  await expect(again.getByLabel('API 密钥', { exact: true })).toHaveValue('fictional-review-key');
+  await expect(again.getByLabel('服务地址', { exact: true })).toHaveValue('https://api.deepseek.com');
   expect(posts).toEqual([]);
-  const data = await page.evaluate(() => ({ local: JSON.stringify(localStorage), session: JSON.stringify(sessionStorage) }));
-  expect(data.local).not.toContain('fictional-review-key');
-  expect(data.session).toContain('fictional-review-key');
+  // 默认记住密钥：密钥单独存放，不写进 AI 配置。
+  const data = await page.evaluate(() => ({ config: localStorage.getItem('heijin.ai.v1') ?? '', local: JSON.stringify(localStorage), session: JSON.stringify(sessionStorage) }));
+  expect(data.config).not.toContain('fictional-review-key');
+  expect(data.local).toContain('fictional-review-key');
+  expect(data.session).not.toContain('fictional-review-key');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.getByLabel('API 密钥', { exact: true }).scrollIntoViewIfNeeded();
   await testInfo.attach('deepseek-settings-key-masked', { body: await page.screenshot(), contentType: 'image/png' });
-  await page.getByRole('combobox', { name: '记忆维护模型', exact: true }).scrollIntoViewIfNeeded();
+  await backToList(again);
+  await again.getByRole('combobox', { name: '记忆维护模型', exact: true }).scrollIntoViewIfNeeded();
   await testInfo.attach('deepseek-settings-routes', { body: await page.screenshot(), contentType: 'image/png' });
+});
+
+test('换服务商：替换已填的中转地址前先确认；跟随正文可随时切换', async ({ page }) => {
+  await page.goto('/');
+  const settings = await openAiSettings(page);
+  await addChannel(settings, { name: '我的中转', url: 'https://relay.mock.invalid/v1' });
+  await settings.getByRole('group', { name: '服务商', exact: true }).getByRole('button', { name: 'Gemini', exact: true }).click();
+  await page.getByRole('button', { name: '取消', exact: true }).click();
+  await expect(settings.getByLabel('服务地址', { exact: true })).toHaveValue('https://relay.mock.invalid/v1');
+  await settings.getByRole('group', { name: '服务商', exact: true }).getByRole('button', { name: 'Gemini', exact: true }).click();
+  await page.getByRole('button', { name: '替换地址', exact: true }).click();
+  await expect(settings.getByLabel('服务地址', { exact: true })).toHaveValue('https://generativelanguage.googleapis.com/v1beta');
+  await expect(settings.getByLabel('渠道名称', { exact: true })).toHaveValue('我的中转');
+  await follow(settings, '动态世界', false);
+  await expect(settings.getByRole('combobox', { name: '动态世界渠道', exact: true })).toBeVisible();
+  await follow(settings, '动态世界', true);
+  await expect(settings.getByRole('combobox', { name: '动态世界渠道', exact: true })).toHaveCount(0);
+  await chooseText(settings, '正文生成渠道', '我的中转');
+  await expect(settings.getByRole('button', { name: '保存 AI 配置', exact: true })).toBeDisabled();
 });

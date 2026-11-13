@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { openWorkflow } from './helpers/gameLayout';
+import { addChannel, backToList, openAiSettings, openChannel } from './helpers/aiSettings';
 
 const cloud = readFileSync(new URL('../announcements/current.json', import.meta.url), 'utf8');
 const approved = readFileSync(new URL('../src/tests/fixtures/disclaimer-v1.md', import.meta.url), 'utf8');
@@ -71,19 +72,22 @@ test('五站创角与模型设置：中性费用提示、技术字段及密钥�
   await page.locator('#opening-generation-notice').scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath('creation-fee.png'), animations: 'disabled' });
   await page.goto('/');
-  await page.getByRole('button', { name: '设置', exact: true }).click();
-  const settings = page.getByRole('dialog', { name: '设置', exact: true });
-  await settings.getByRole('button', { name: 'AI 连接', exact: true }).click();
-  await settings.getByRole('button', { name: '新增渠道', exact: true }).click();
-  await expect(settings.getByLabel('API Base URL', { exact: true })).toBeVisible();
+  const settings = await openAiSettings(page);
+  await addChannel(settings, { preset: 'OpenAI 兼容' });
+  await expect(settings.getByLabel('服务地址', { exact: true })).toBeVisible();
   const key = settings.getByLabel('API 密钥', { exact: true });
   await expect(key).toHaveAttribute('type','password'); await expect(key).toHaveValue('');
+  // 安全说明默认收起，点开后完整显示。
+  await backToList(settings);
+  await settings.getByRole('button', { name: '安全说明', exact: true }).click();
   await settings.getByText('浏览器会直接连接你填写的服务地址', { exact: false }).scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath('ai-settings-security.png'), animations: 'disabled' });
-  await expect(settings).toContainText('浏览器存储不是安全密钥库');
-  await expect(settings).toContainText('密钥不进入游戏存档、提示词或诊断详情');
-  await expect(settings).toContainText('测试连接会调用模型，可能产生费用');
-  await settings.getByRole('button', { name: '测试连接（可能产生费用）', exact: true }).scrollIntoViewIfNeeded();
+  await expect(settings).toContainText('浏览器存储不是安全的密钥库');
+  await expect(settings).toContainText('密钥不会进入游戏存档、提示词或诊断详情');
+  await openChannel(settings, 'OpenAI 兼容');
+  const test = settings.getByRole('button', { name: '测试回复（可能产生少量费用）', exact: true });
+  await expect(test).toHaveAttribute('title', '会真实调用一次模型，可能产生少量费用');
+  await test.scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath('ai-settings.png'), animations: 'disabled' });
 });
 
