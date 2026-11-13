@@ -1,0 +1,62 @@
+[WebServer] (node:295651) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:295664) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:295694) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 e2e/mobile-batch4-review.spec.ts:32:1 › 复审：手机开局包删除赭红、覆盖金色、取消中性；PC 不附加这些样式 (7.0s)
+(node:295831) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  2 e2e/mobile-batch4-review.spec.ts:67:1 › 复审：第五站 CDP 真实触摸短拉与 touchCancel 零建档，超过60px松开只建一份原开局草稿 (2.8s)
+
+
+  1) e2e/mobile-batch4-review.spec.ts:32:1 › 复审：手机开局包删除赭红、覆盖金色、取消中性；PC 不附加这些样式 ─────────────────────
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  getByRole('dialog').getByRole('button', { name: '确认删除', exact: true })
+    Expected: "rgb(163, 65, 46)"
+    Received: "rgb(32, 39, 32)"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" getByRole('dialog').getByRole('button', { name: '确认删除', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog').getByRole('button', { name: '确认删除', exact: true })
+        14 × locator resolved to <button type="button" class="opening-pack-confirm-delete">确认删除</button>
+           - unexpected value "rgb(32, 39, 32)"
+
+
+      37 |   const remove=dialog.getByRole('button',{name:'确认删除',exact:true});
+      38 |   await expect(remove).toHaveClass('opening-pack-confirm-delete');
+    > 39 |   await expect(remove).toHaveCSS('background-color','rgb(163, 65, 46)');
+         |                        ^
+      40 |   await expect(remove).toHaveCSS('color','rgb(255, 241, 232)');
+      41 |   await expect(dialog.getByRole('button',{name:'取消',exact:true})).toHaveClass('opening-pack-confirm-cancel');
+      42 |   await expect(dialog.getByRole('button',{name:'取消',exact:true})).toHaveCSS('background-image','none');
+        at /workspace/mobile-batch4/e2e/mobile-batch4-review.spec.ts:39:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mobile-batch4-review-r2/mobile-batch4-review-复审：手机开局包删除赭红、覆盖金色、取消中性；PC-不附加这些样式/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mobile-batch4-review-r2/mobile-batch4-review-复审：手机开局包删除赭红、覆盖金色、取消中性；PC-不附加这些样式/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mobile-batch4-review-r2/mobile-batch4-review-复审：手机开局包删除赭红、覆盖金色、取消中性；PC-不附加这些样式/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mobile-batch4-review-r2/mobile-batch4-review-复审：手机开局包删除赭红、覆盖金色、取消中性；PC-不附加这些样式/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    e2e/mobile-batch4-review.spec.ts:32:1 › 复审：手机开局包删除赭红、覆盖金色、取消中性；PC 不附加这些样式 ──────────────────────
+  1 passed (12.1s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

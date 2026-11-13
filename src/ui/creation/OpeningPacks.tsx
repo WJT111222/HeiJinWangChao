@@ -99,15 +99,15 @@ export function OpeningPacks({ form, onApply, busy }: {
       </>}
       {view === 'delete' && <>
         <p>永久删除「{pack?.name}」？此操作不可撤销。</p>
-        <button type="button" onClick={() => attempt(() => {
+        <button type="button" className={mobile?'opening-pack-confirm-delete':undefined} onClick={() => attempt(() => {
           store().delete(selected); refresh(); setSelected(''); setView('browse'); setNotice('开局包已删除');
         })}>确认删除</button>
       </>}
       {view === 'overwrite' && <>
         <p>使用当前全部创角设置覆盖「{packs.find(item => item.id === target)?.name}」？原设置将被替换。</p>
-        <button type="button" onClick={save}>确认覆盖</button>
+        <button type="button" className={mobile?'opening-pack-confirm-overwrite':undefined} onClick={save}>确认覆盖</button>
       </>}
-      {['apply', 'delete', 'overwrite'].includes(view) && <button type="button" onClick={() => {
+      {['apply', 'delete', 'overwrite'].includes(view) && <button type="button" className={mobile?'opening-pack-confirm-cancel':undefined} onClick={() => {
         setError(''); setView(view === 'overwrite' ? 'save' : 'browse');
       }}>取消</button>}
     </Dialog>}

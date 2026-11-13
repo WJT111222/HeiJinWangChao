@@ -1,0 +1,235 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/mobile-batch4/node_modules/.bin/playwright",
+      "test",
+      "--config",
+      "playwright.mobile-batch4-review.config.ts"
+    ],
+    "configFile": "/workspace/mobile-batch4/playwright.mobile-batch4-review.config.ts",
+    "rootDir": "/workspace/mobile-batch4/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/mobile-batch4/test-results/mobile-batch4-review-r2",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/workspace/mobile-batch4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "mobile-batch4-review.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/mobile-batch4/test-results/mobile-batch4-review-r2",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/workspace/mobile-batch4/e2e",
+        "snapshotDir": "/workspace/mobile-batch4/e2e",
+        "testIgnore": [],
+        "testMatch": "mobile-batch4-review.spec.ts",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5281",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "isMobile": true,
+          "hasTouch": true,
+          "reducedMotion": "reduce",
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "docs/mobile-batch4/review-r2/chromium-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5281 --strictPort",
+      "url": "http://127.0.0.1:5281",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "mobile-batch4-review.spec.ts",
+      "file": "mobile-batch4-review.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "复审：手机开局包删除赭红、覆盖金色、取消中性；PC 不附加这些样式",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 6987,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCSS\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog').getByRole('button', { name: '确认删除', exact: true })\nExpected: \u001b[32m\"rgb(\u001b[7m163, 65, 46\u001b[27m)\"\u001b[39m\nReceived: \u001b[31m\"rgb(\u001b[7m32, 39, 32\u001b[27m)\"\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCSS\" getByRole('dialog').getByRole('button', { name: '确认删除', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog').getByRole('button', { name: '确认删除', exact: true })\u001b[22m\n\u001b[2m    14 × locator resolved to <button type=\"button\" class=\"opening-pack-confirm-delete\">确认删除</button>\u001b[22m\n\u001b[2m       - unexpected value \"rgb(32, 39, 32)\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCSS\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog').getByRole('button', { name: '确认删除', exact: true })\nExpected: \u001b[32m\"rgb(\u001b[7m163, 65, 46\u001b[27m)\"\u001b[39m\nReceived: \u001b[31m\"rgb(\u001b[7m32, 39, 32\u001b[27m)\"\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCSS\" getByRole('dialog').getByRole('button', { name: '确认删除', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog').getByRole('button', { name: '确认删除', exact: true })\u001b[22m\n\u001b[2m    14 × locator resolved to <button type=\"button\" class=\"opening-pack-confirm-delete\">确认删除</button>\u001b[22m\n\u001b[2m       - unexpected value \"rgb(32, 39, 32)\"\u001b[22m\n\n    at /workspace/mobile-batch4/e2e/mobile-batch4-review.spec.ts:39:24",
+                    "location": {
+                      "file": "/workspace/mobile-batch4/e2e/mobile-batch4-review.spec.ts",
+                      "column": 24,
+                      "line": 39
+                    },
+                    "snippet": "  37 |   const remove=dialog.getByRole('button',{name:'确认删除',exact:true});\n  38 |   await expect(remove).toHaveClass('opening-pack-confirm-delete');\n> 39 |   await expect(remove).toHaveCSS('background-color','rgb(163, 65, 46)');\n     |                        ^\n  40 |   await expect(remove).toHaveCSS('color','rgb(255, 241, 232)');\n  41 |   await expect(dialog.getByRole('button',{name:'取消',exact:true})).toHaveClass('opening-pack-confirm-cancel');\n  42 |   await expect(dialog.getByRole('button',{name:'取消',exact:true})).toHaveCSS('background-image','none');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/mobile-batch4/e2e/mobile-batch4-review.spec.ts",
+                        "column": 24,
+                        "line": 39
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCSS\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog').getByRole('button', { name: '确认删除', exact: true })\nExpected: \u001b[32m\"rgb(\u001b[7m163, 65, 46\u001b[27m)\"\u001b[39m\nReceived: \u001b[31m\"rgb(\u001b[7m32, 39, 32\u001b[27m)\"\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCSS\" getByRole('dialog').getByRole('button', { name: '确认删除', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog').getByRole('button', { name: '确认删除', exact: true })\u001b[22m\n\u001b[2m    14 × locator resolved to <button type=\"button\" class=\"opening-pack-confirm-delete\">确认删除</button>\u001b[22m\n\u001b[2m       - unexpected value \"rgb(32, 39, 32)\"\u001b[22m\n\n\n  37 |   const remove=dialog.getByRole('button',{name:'确认删除',exact:true});\n  38 |   await expect(remove).toHaveClass('opening-pack-confirm-delete');\n> 39 |   await expect(remove).toHaveCSS('background-color','rgb(163, 65, 46)');\n     |                        ^\n  40 |   await expect(remove).toHaveCSS('color','rgb(255, 241, 232)');\n  41 |   await expect(dialog.getByRole('button',{name:'取消',exact:true})).toHaveClass('opening-pack-confirm-cancel');\n  42 |   await expect(dialog.getByRole('button',{name:'取消',exact:true})).toHaveCSS('background-image','none');\n    at /workspace/mobile-batch4/e2e/mobile-batch4-review.spec.ts:39:24"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T01:18:10.473Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-review-r2/mobile-batch4-review-复审：手机开局包删除赭红、覆盖金色、取消中性；PC-不附加这些样式/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-review-r2/mobile-batch4-review-复审：手机开局包删除赭红、覆盖金色、取消中性；PC-不附加这些样式/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-review-r2/mobile-batch4-review-复审：手机开局包删除赭红、覆盖金色、取消中性；PC-不附加这些样式/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/mobile-batch4/e2e/mobile-batch4-review.spec.ts",
+                    "column": 24,
+                    "line": 39
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "d1953ae25b018db76a06-4fe5547e791ece92a405",
+          "file": "mobile-batch4-review.spec.ts",
+          "line": 32,
+          "column": 1
+        },
+        {
+          "title": "复审：第五站 CDP 真实触摸短拉与 touchCancel 零建档，超过60px松开只建一份原开局草稿",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2776,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T01:18:18.105Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d1953ae25b018db76a06-c7df24b1f72ceb9df68b",
+          "file": "mobile-batch4-review.spec.ts",
+          "line": 67,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-13T01:18:09.030Z",
+    "duration": 12093.255000000001,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

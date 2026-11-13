@@ -45,3 +45,9 @@
 
 @media(max-width:900px){.app-shell:has(>.mobile-creation)>.app-error{position:fixed;z-index:6;top:calc(env(safe-area-inset-top,0px) + 54px);left:14px;right:14px;max-height:30dvh;overflow:auto;}}
 @media(max-width:900px){.mobile-creation .creation-review .section-heading>button,.mobile-creation .creation-review-fold>button{border:0;padding:0;color:#8EC1E0;font-size:.74rem;background:none;}}
+/* PR #130 review: confirmation hierarchy, only within the phone pack sheet. */
+@media(max-width:900px){
+ .mobile-opening-pack .modal-body>button.opening-pack-confirm-delete{min-height:2.8rem;border:1px solid #A3412E;border-radius:12px;background:#A3412E;color:#FFF1E8;font-weight:650;}
+ .mobile-opening-pack .modal-body>button.opening-pack-confirm-overwrite{min-height:2.8rem;border:0;border-radius:12px;background:linear-gradient(180deg,#f0dba2,#c5a45a);color:#171810;font-weight:650;}
+ .mobile-opening-pack .modal-body>button.opening-pack-confirm-cancel{min-height:2.8rem;border:1px solid var(--line-2,#ffffff22);border-radius:12px;background:#ffffff06;color:var(--muted);font-weight:400;}
+}

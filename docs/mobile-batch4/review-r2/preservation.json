@@ -1,0 +1,20 @@
+{
+  "comparedWith": "f3e2018e8f2e1636c1f5eb98bc273b126e870e1c",
+  "unchangedOriginalEvidenceFiles": 109,
+  "originalPngCopiesMatch": [
+    "docs/mobile-batch4/screenshots/pack-delete-390.png",
+    "docs/mobile-batch4/screenshots/pack-overwrite-390.png"
+  ],
+  "productionControllersAndOriginalTestsUnchanged": [
+    "src/ui/home/useTicketTear.ts",
+    "src/ui/creation/useCreationTear.ts",
+    "src/ui/creation/CreationWizard.tsx",
+    "src/ui/creation/openingPacks.ts",
+    "e2e/mobile-batch4.spec.ts"
+  ],
+  "OpeningPacksOnlyAddsThreeMobileClassNames": true,
+  "screenshots": {
+    "docs/mobile-batch4/screenshots/pack-delete-390.png": "1164df24627e30e3b4f37b3107afdca503e7f427252bc698760c016af9a89dab",
+    "docs/mobile-batch4/screenshots/pack-overwrite-390.png": "98ff37d1faafa7bf8dd286cc72a5200aa46df6eeb8101a12fe0248aef375d66d"
+  }
+}
