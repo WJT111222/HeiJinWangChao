@@ -1,4 +1,4 @@
-import { openGameTools, openWorldArchive } from './helpers/gameLayout';
+import { openWorldArchive } from './helpers/gameLayout';
 import { openLibrary } from './helpers/home';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from './helpers/test';
@@ -132,6 +132,21 @@ test('无存档浏览真实模块、过滤与全文，缺少阶段请求时不�
   await source.getByRole('button', { name: 'JSON 变量', exact: true }).click();
   await expect(source).toContainText('variableGroups.protagonist.update');
   await expect(source).not.toContainText('variableGroups.protagonist.update.text');
+  for (const format of ['json', 'text'] as const) {
+    await source.getByRole('button', { name: format === 'json' ? 'JSON 变量' : '文本变量', exact: true }).click();
+    const id = `variableGroups.protagonist.update${format === 'text' ? '.text' : ''}`;
+    const expected = await page.evaluate(async id => {
+      const path = '/src/prompts/loader.ts';
+      return (await import(path)).readPromptResource(id);
+    }, id);
+    await expect(page.getByLabel('模块完整原文')).toHaveText(expected);
+    await screenshot(page, `source-${format}`);
+  }
+  for (const label of ['初始化', '场外规则', '常规更新']) {
+    await source.getByRole('group', { name: '规则阶段' }).getByRole('button', { name: label, exact: true }).click();
+    await expect(source.getByRole('button', { name: label, exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByLabel('模块完整原文')).not.toBeEmpty();
+  }
   await source.getByRole('button', { name: '高级', exact: true }).click();
   await page.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');
   await expect(page.getByText(/此阶段\/模式没有实际请求快照/)).toBeVisible();
@@ -147,7 +162,7 @@ test('真实存档六种模式预览、内部内容主动揭示、合法排序�
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   const before = await seed(page);
-  await page.reload(); await openGameTools(page);
+  await page.reload();
   await inspector(page);
   await page.getByRole('combobox', { name: '回合模式', exact: true }).selectOption('regular');
   await page.getByRole('button', { name: '下移 writing.conflict_pacing', exact: true }).click();
@@ -196,7 +211,7 @@ test('真实存档六种模式预览、内部内容主动揭示、合法排序�
   await page.getByRole('combobox', { name: '检查阶段', exact: true }).selectOption('variables');
   await expect(page.getByRole('region', { name: '上下文与统计' })).toContainText('模式不匹配');
   expect(await readFormal(page)).toBe(before);
-  await page.reload(); await openGameTools(page);
+  await page.reload();
   await inspector(page);
   const saved = await page.evaluate(() =>
     JSON.parse(localStorage.getItem('heijin.prompt-order.v1')!),
@@ -214,7 +229,8 @@ test('真实存档六种模式预览、内部内容主动揭示、合法排序�
     reset.indexOf('writing.emotion_guard'),
   );
   await page.keyboard.press('Escape');
-  await openLibrary(page);await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+  await openLibrary(page);await page.getByRole('button', { name: /读取存档/ }).click();
+  await expect(page.locator('.game-layout')).toBeVisible();
   await openWorldArchive(page);
   await page
     .getByRole('complementary', { name: '世界资料' })
@@ -229,7 +245,7 @@ test('已发送阶段快照保留原请求数据与真实 usage，默认隐藏�
   page,
 }, testInfo) => {
   const before = await seed(page);
-  await page.reload(); await openGameTools(page);
+  await page.reload();
   let transmitted = '';
   await page.route('https://inspector.mock.invalid/**', async (route) => {
     transmitted = route.request().postData() ?? '';
@@ -337,7 +353,7 @@ test('已发送阶段快照保留原请求数据与真实 usage，默认隐藏�
   const persisted = await page.evaluate(() => JSON.stringify(localStorage));
   expect(persisted).not.toContain('秘密计划不可见');
   expect(persisted).not.toContain('e2e-inspection-key');
-  await page.reload(); await openGameTools(page);
+  await page.reload();
   await inspector(page);
   await page.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');
   await expect(page.getByText(/此阶段\/模式没有实际请求快照/)).toBeVisible();
@@ -346,7 +362,7 @@ test('已发送阶段快照保留原请求数据与真实 usage，默认隐藏�
 
 test('无正文草稿的阶段预览诚实失败，七项写作偏好不因管理中心改变', async ({ page }) => {
   await seed(page, false);
-  await page.reload(); await openGameTools(page);
+  await page.reload();
   await inspector(page);
   await page.getByRole('button', { name: '生成三阶段组装预览（不联网）' }).click();
   await expect(
@@ -363,7 +379,7 @@ test('无正文草稿的阶段预览诚实失败，七项写作偏好不因管�
 
 for (const count of [300, 1000]) test(`${count} NPC 真实快照按需 Worker 分析、动画帧继续、结果与原算法一致且复用缓存`, async ({ page }, testInfo) => {
   await seed(page);
-  await page.reload(); await openGameTools(page);
+  await page.reload();
   let workers = 0;
   page.on('worker', () => workers++);
   const capture = await page.evaluate(async count => {
@@ -442,4 +458,136 @@ for (const count of [300, 1000]) test(`${count} NPC 真实快照按需 Worker �
   await writeFile(testInfo.outputPath('worker-measurement.json'), JSON.stringify({ count, ...capture, ...progress, workers, equality }, null, 2));
   await page.getByRole('button', { name: '清空内存请求记录' }).click();
   await expect(page.getByText(/此阶段\/模式没有实际请求快照/)).toBeVisible();
+});
+
+const promptSwitches = manifest.modules.filter((item) =>
+  ['noControl', 'naturalProse', 'actionOptions', 'realWorld'].includes(item.toggle?.split(':')[0] ?? ''),
+);
+const evidenceDir = 'docs/pr124-review/screenshots';
+async function screenshot(page: Page, name: string) {
+  if (name === 'preview-invalidated') {
+    await page.getByText('写作偏好已修改，请重新组装预览。', { exact: true })
+      .evaluate(element => element.scrollIntoView({ block: 'center' }));
+  }
+  await page.screenshot({ path: `${evidenceDir}/${page.viewportSize()!.width}-${name}.png`, animations: 'disabled', scale: 'css' });
+}
+
+test('四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.route('https://**', route => route.abort());
+  await page.goto('/');
+  const before = await page.evaluate(() => localStorage.getItem('heijin.settings.v1'));
+  await inspector(page, false);
+  const groups = page.getByRole('group', { name: '提示词分类' });
+  expect(promptSwitches).toHaveLength(4);
+  await groups.getByRole('button', { name: /^写作设定/ }).click();
+  await screenshot(page, 'list');
+  for (const item of promptSwitches) {
+    await page.locator(`[data-prompt-id="${item.id}"] input`).uncheck();
+    await expect(page.locator('.local-save-bar').getByRole('status')).toContainText('本地设置尚未保存');
+  }
+  expect(await page.evaluate(() => localStorage.getItem('heijin.settings.v1'))).toBe(before);
+  await expect(page.locator('.local-save-bar').getByRole('status')).toBeInViewport();
+  await expect(page.getByRole('button', { name: '保存本地设置', exact: true })).toBeInViewport();
+  await screenshot(page, 'unsaved');
+  await page.getByRole('button', { name: '提示词', exact: true }).click();
+  for (const label of ['NoControl（防抢话）', '自然文风修复', '行动选项', '真实世界模式']) {
+    await expect(page.getByLabel(label, { exact: true })).not.toBeChecked();
+  }
+  await page.getByRole('button', { name: '提示词管理', exact: true }).click();
+  await expect(page.locator('.local-save-bar').getByRole('status')).toContainText('本地设置尚未保存');
+  await page.reload();
+  await inspector(page, false);
+  for (const item of promptSwitches) await expect(page.locator(`[data-prompt-id="${item.id}"] input`)).toBeChecked();
+  for (const item of promptSwitches) {
+    const row = page.locator(`[data-prompt-id="${item.id}"]`);
+    await row.locator('.pm-open').click();
+    const source = page.getByRole('region', { name: '模块原文' });
+    await source.getByRole('checkbox').uncheck();
+    await expect(page.locator('.local-save-bar').getByRole('status')).toContainText('本地设置尚未保存');
+    await source.getByRole('button', { name: /返回列表/ }).click();
+    await expect(row.getByRole('checkbox')).not.toBeChecked();
+  }
+  const save = page.getByRole('button', { name: '保存本地设置', exact: true });
+  await save.click();
+  await expect(page.locator('.local-save-bar').getByRole('status')).toContainText('本地偏好已保存');
+  await screenshot(page, 'saved');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.settings.v1')!).prompts);
+  for (const field of ['noControl', 'naturalProse', 'actionOptions', 'realWorld']) expect(saved[field]).toBe(false);
+  await page.reload();
+  await inspector(page, false);
+  for (const item of promptSwitches) await expect(page.locator(`[data-prompt-id="${item.id}"] input`)).not.toBeChecked();
+  await page.locator(`[data-prompt-id="${promptSwitches[0].id}"] input`).check();
+  await save.click();
+  await expect(page.locator('.local-save-bar').getByRole('status')).toContainText('本地偏好已保存');
+  await page.locator(`[data-prompt-id="${promptSwitches[0].id}"] input`).uncheck();
+  await expect(page.locator('.local-save-bar').getByRole('status')).toContainText('本地设置尚未保存');
+  await expect(page.locator('.local-save-bar').getByRole('status')).toHaveClass(/l-info/);
+  expect(errors).toEqual([]);
+});
+
+test('四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效', async ({ page }) => {
+  // Observe completion of the real assembler in this test only; production stays unchanged.
+  await page.route('**/src/prompts/preview.ts', async route => {
+    const response = await route.fetch();
+    const source = await response.text();
+    expect(source).toContain('async function buildStagePreviews(');
+    await route.fulfill({ response, body: source.replace('async function buildStagePreviews(', 'async function buildStagePreviewsForTest(') + '\nexport async function buildStagePreviews(...args) { try { return await buildStagePreviewsForTest(...args); } finally { window.__pr124Builds = (window.__pr124Builds || 0) + 1; } }' });
+  });
+  await page.route('https://**', route => route.abort());
+  const before = await seed(page);
+  await page.reload();
+  await inspector(page);
+  await page.getByRole('combobox', { name: '预览存档', exact: true }).selectOption('ui-test');
+  const assemble = page.getByRole('button', { name: '生成三阶段组装预览（不联网）', exact: true });
+  await assemble.click();
+  await expect(page.getByText('已按此配置组装预览，尚未发送。', { exact: true })).toBeVisible();
+  await screenshot(page, 'advanced');
+  await page.evaluate(async () => {
+    const path = '/src/services/storage/saveRepository.ts';
+    const { SaveRepository } = await import(path);
+    const target = window as unknown as { __pr124Loads: Array<() => void>; __pr124Restore: () => void };
+    target.__pr124Loads = [];
+    const original = SaveRepository.prototype.load;
+    target.__pr124Restore = () => { SaveRepository.prototype.load = original; };
+    SaveRepository.prototype.load = async function (id: string) {
+      const value = await original.call(this, id);
+      await new Promise<void>(resolve => target.__pr124Loads.push(resolve));
+      return value;
+    };
+  });
+  let completed = 1;
+  for (const [index, item] of promptSwitches.entries()) {
+    await assemble.click();
+    await expect(page.getByRole('button', { name: '组装中…', exact: true })).toBeDisabled();
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __pr124Loads: unknown[] }).__pr124Loads.length)).toBe(1);
+    await backToList(page);
+    const row = page.locator(`[data-prompt-id="${item.id}"]`);
+    if (index % 2) {
+      await row.locator('.pm-open').click();
+      await page.getByRole('region', { name: '模块原文' }).getByRole('checkbox').uncheck();
+      await screenshot(page, 'source-unsaved');
+    } else await row.getByRole('checkbox').uncheck();
+    await openAdvanced(page);
+    await expect(page.getByText('已按此配置组装预览，尚未发送。', { exact: true })).toHaveCount(0);
+    await expect(page.locator('.stage-stat-cards')).not.toContainText('离线预览');
+    await expect(page.getByText('写作偏好已修改，请重新组装预览。', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '主动查看完整内部上下文' })).toHaveCount(0);
+    if (!index) await screenshot(page, 'preview-invalidated');
+    await assemble.click();
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __pr124Loads: unknown[] }).__pr124Loads.length)).toBe(2);
+    // Finish the superseded job first, while the current job remains blocked.
+    await page.evaluate(() => (window as unknown as { __pr124Loads: Array<() => void> }).__pr124Loads.shift()!());
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __pr124Builds: number }).__pr124Builds)).toBe(++completed);
+    await expect(page.getByRole('button', { name: '组装中…', exact: true })).toBeDisabled();
+    await expect(page.getByText('已按此配置组装预览，尚未发送。', { exact: true })).toHaveCount(0);
+    await page.evaluate(() => (window as unknown as { __pr124Loads: Array<() => void> }).__pr124Loads.shift()!());
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __pr124Builds: number }).__pr124Builds)).toBe(++completed);
+    await expect(page.getByText('已按此配置组装预览，尚未发送。', { exact: true })).toBeVisible();
+    await expect(page.locator(`[data-module-id="${item.id}"]`)).toHaveCount(0);
+    await expect(page.getByLabel('完整内部上下文', { exact: true })).toHaveCount(0);
+  }
+  await page.evaluate(() => (window as unknown as { __pr124Restore: () => void }).__pr124Restore());
+  expect(await readFormal(page)).toBe(before);
 });

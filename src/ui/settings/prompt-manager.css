@@ -113,6 +113,9 @@
 
 /* 窄屏（设置在手机上整屏显示） */
 @media (max-width: 900px) {
+  .prompt-settings-layout .local-save-bar { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; position: sticky; bottom: 0; z-index: 5; padding: .65rem; background: var(--sheet-solid, var(--bg)); border-top: 1px solid var(--line); }
+  .prompt-settings-layout .local-save-bar .field-hint { flex: 1 1 10rem; margin: 0; }
+  .prompt-settings-layout .local-save-bar > button { min-height: 44px; margin-left: auto; }
   .pm .pm-bar { flex-direction: column; align-items: stretch; gap: .5rem; }
   .prompt-inspector.pm .pm-search { width: 100%; order: -1; margin: 0; }
   .prompt-inspector.pm .pm-search input { font-size: 16px; padding-block: .55rem; }

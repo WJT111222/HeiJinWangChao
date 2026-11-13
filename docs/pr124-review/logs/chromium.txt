@@ -1,0 +1,167 @@
+[WebServer] (node:2540) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:2562) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 15 tests using 1 worker
+
+(node:2586) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [desktop] › e2e/prompt-inspector.spec.ts:85:1 › 无存档浏览真实模块、过滤与全文，缺少阶段请求时不伪造使用量 (9.6s)
+  ✓   2 [desktop] › e2e/prompt-inspector.spec.ts:159:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 (15.7s)
+  ✓   3 [desktop] › e2e/prompt-inspector.spec.ts:243:1 › 已发送阶段快照保留原请求数据与真实 usage，默认隐藏秘密且始终去密钥，刷新不持久化 (10.0s)
+  ✓   4 [desktop] › e2e/prompt-inspector.spec.ts:470:1 › 四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示 (16.7s)
+  ✘   5 [desktop] › e2e/prompt-inspector.spec.ts:524:1 › 四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效 (1.0m)
+(node:3060) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   6 [mobile] › e2e/prompt-inspector.spec.ts:85:1 › 无存档浏览真实模块、过滤与全文，缺少阶段请求时不伪造使用量 (8.7s)
+  ✘   7 [mobile] › e2e/prompt-inspector.spec.ts:159:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 (1.0m)
+(node:3269) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   8 [mobile] › e2e/prompt-inspector.spec.ts:243:1 › 已发送阶段快照保留原请求数据与真实 usage，默认隐藏秘密且始终去密钥，刷新不持久化 (8.6s)
+  ✓   9 [mobile] › e2e/prompt-inspector.spec.ts:470:1 › 四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示 (12.9s)
+  ✘  10 [mobile] › e2e/prompt-inspector.spec.ts:524:1 › 四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效 (1.0m)
+(node:3750) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  11 [business-desktop] › e2e/memory-maintenance.spec.ts:72:1 › 选择并恢复独立模型；手动整理、原文来源及真实memory快照/Token统计 (13.3s)
+  ✓  12 [business-desktop] › e2e/story-runtime.spec.ts:166:1 › 真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计 (9.9s)
+  ✓  13 [business-desktop] › e2e/variable-runtime.spec.ts:116:1 › 变量正常生成、真实独立路由/模块/usage，完整候选主动查看，刷新仍保留候选且正式资金不变 (8.7s)
+  ✓  14 [business-desktop] › e2e/world-runtime.spec.ts:143:1 › 世界生成、补算、只读查看与刷新恢复，真实路由和快照；正式世界不变 (14.3s)
+(node:4087) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  15 [mobile-dialog] › e2e/mobile-batch2.spec.ts:56:1 › 底部选择器：无匹配、Tab 环、Esc、遮罩与下拉仅关闭顶层 (1.4m)
+
+
+  1) [desktop] › e2e/prompt-inspector.spec.ts:524:1 › 四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效 ──────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: page.evaluate: Test timeout of 60000ms exceeded.
+
+      71 | }
+      72 | async function readFormal(page: Page) {
+    > 73 |   return page.evaluate(async () => {
+         |               ^
+      74 |     const path = '/src/services/storage/saveRepository.ts';
+      75 |     const { SaveRepository } = await import(path);
+      76 |     const repo = await SaveRepository.open();
+        at readFormal (/workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:73:15)
+        at /workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:584:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-desktop/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [mobile] › e2e/prompt-inspector.spec.ts:159:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 ─────────────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ })
+
+
+      235 |     .getByRole('complementary', { name: '世界资料' })
+      236 |     .getByRole('button', { name: /NPC/ })
+    > 237 |     .click();
+          |      ^
+      238 |   await expect(page.getByRole('dialog', { name: 'NPC', exact: true })).toContainText('隐藏人物不可见');
+      239 |   expect(await readFormal(page)).toBe(before);
+      240 |   expect(errors).toEqual([]);
+        at /workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:237:6
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/pr124/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/pr124/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/pr124/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/pr124/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [mobile] › e2e/prompt-inspector.spec.ts:524:1 › 四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效 ───────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: page.evaluate: Test timeout of 60000ms exceeded.
+
+      71 | }
+      72 | async function readFormal(page: Page) {
+    > 73 |   return page.evaluate(async () => {
+         |               ^
+      74 |     const path = '/src/services/storage/saveRepository.ts';
+      75 |     const { SaveRepository } = await import(path);
+      76 |     const repo = await SaveRepository.open();
+        at readFormal (/workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:73:15)
+        at /workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:584:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-mobile/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-mobile/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [mobile-dialog] › e2e/mobile-batch2.spec.ts:56:1 › 底部选择器：无匹配、Tab 环、Esc、遮罩与下拉仅关闭顶层 ─────────────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: page.reload: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for navigation until "load"
+        - navigated to "http://127.0.0.1:5174/#game/save-a"
+
+
+      14 |   const settings=defaultSettings();settings.prompts.minNarrativeChars=5;localStorage.setItem(settingsKey,JSON.stringify(settings));
+      15 |   const channel=newChannel(),config=defaultAiConfig();channel.name='隔离测试渠道';channel.baseUrl='https://mobile2.mock.invalid/v1';channel.defaultModel='mock-chat';config.channels=[channel];config.routes.story={channelId:channel.id,modelId:'mock-chat'};saveAiConfig(localStorage,config);new CredentialVault(sessionStorage,localStorage).set(channel.id,'fictional-mobile-test-value');
+    > 16 |  });await page.goto('/#game/save-a');await page.reload();await expect(page.locator('.game-layout')).toBeVisible();
+         |                                                 ^
+      17 | }
+      18 | async function workflow(page:Page){await page.getByRole('button',{name:'三阶段工作流详情',exact:true}).click();return page.getByRole('dialog',{name:'三阶段工作流',exact:true});}
+      19 | async function settings(page:Page){await page.getByRole('navigation',{name:'底部导航'}).getByRole('button',{name:'设置',exact:true}).click();return page.getByRole('dialog',{name:'设置',exact:true});}
+        at seedReady (/workspace/HeiJinWangChao/e2e/mobile-batch2.spec.ts:16:49)
+        at /workspace/HeiJinWangChao/e2e/mobile-batch2.spec.ts:57:130
+
+    Error Context: test-results/pr124/mobile-batch2-底部选择器：无匹配、Tab-环、Esc、遮罩与下拉仅关闭顶层-mobile-dialog/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/pr124/mobile-batch2-底部选择器：无匹配、Tab-环、Esc、遮罩与下拉仅关闭顶层-mobile-dialog/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/pr124/mobile-batch2-底部选择器：无匹配、Tab-环、Esc、遮罩与下拉仅关闭顶层-mobile-dialog/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4 failed
+    [desktop] › e2e/prompt-inspector.spec.ts:524:1 › 四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效 ───────
+    [mobile] › e2e/prompt-inspector.spec.ts:159:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 ──────────────
+    [mobile] › e2e/prompt-inspector.spec.ts:524:1 › 四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效 ────────
+    [mobile-dialog] › e2e/mobile-batch2.spec.ts:56:1 › 底部选择器：无匹配、Tab 环、Esc、遮罩与下拉仅关闭顶层 ──────────────
+  11 passed (7.0m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

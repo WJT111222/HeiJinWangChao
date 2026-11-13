@@ -1,0 +1,153 @@
+{
+  "unique_scenarios": 15,
+  "latest_outcomes_all_passed": true,
+  "attempts": [
+    {
+      "report": "chromium-initial-results.json",
+      "stats": {
+        "startTime": "2026-11-12T23:53:27.789Z",
+        "duration": 199266.581,
+        "expected": 12,
+        "skipped": 0,
+        "unexpected": 3,
+        "flaky": 0
+      }
+    },
+    {
+      "report": "chromium-results.json",
+      "stats": {
+        "startTime": "2026-11-12T23:57:04.143Z",
+        "duration": 421891.696,
+        "expected": 11,
+        "skipped": 0,
+        "unexpected": 4,
+        "flaky": 0
+      }
+    },
+    {
+      "report": "chromium-server-interruption-results.json",
+      "stats": {
+        "startTime": "2026-11-13T00:03:33.985Z",
+        "duration": 65158.181,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 4,
+        "flaky": 0
+      }
+    },
+    {
+      "report": "chromium-recheck-results.json",
+      "stats": {
+        "startTime": "2026-11-13T00:05:19.492Z",
+        "duration": 83974.22899999999,
+        "expected": 5,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "report": "chromium-save-recheck-results.json",
+      "stats": {
+        "startTime": "2026-11-13T00:07:02.508Z",
+        "duration": 47845.100999999995,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    }
+  ],
+  "latest_outcomes": [
+    {
+      "title": "无存档浏览真实模块、过滤与全文，缺少阶段请求时不伪造使用量",
+      "project": "desktop",
+      "status": "expected",
+      "report": "chromium-results.json"
+    },
+    {
+      "title": "真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离",
+      "project": "desktop",
+      "status": "expected",
+      "report": "chromium-recheck-results.json"
+    },
+    {
+      "title": "已发送阶段快照保留原请求数据与真实 usage，默认隐藏秘密且始终去密钥，刷新不持久化",
+      "project": "desktop",
+      "status": "expected",
+      "report": "chromium-results.json"
+    },
+    {
+      "title": "四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示",
+      "project": "desktop",
+      "status": "expected",
+      "report": "chromium-save-recheck-results.json"
+    },
+    {
+      "title": "四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效",
+      "project": "desktop",
+      "status": "expected",
+      "report": "chromium-recheck-results.json"
+    },
+    {
+      "title": "无存档浏览真实模块、过滤与全文，缺少阶段请求时不伪造使用量",
+      "project": "mobile",
+      "status": "expected",
+      "report": "chromium-results.json"
+    },
+    {
+      "title": "真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离",
+      "project": "mobile",
+      "status": "expected",
+      "report": "chromium-recheck-results.json"
+    },
+    {
+      "title": "已发送阶段快照保留原请求数据与真实 usage，默认隐藏秘密且始终去密钥，刷新不持久化",
+      "project": "mobile",
+      "status": "expected",
+      "report": "chromium-results.json"
+    },
+    {
+      "title": "四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示",
+      "project": "mobile",
+      "status": "expected",
+      "report": "chromium-save-recheck-results.json"
+    },
+    {
+      "title": "四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效",
+      "project": "mobile",
+      "status": "expected",
+      "report": "chromium-recheck-results.json"
+    },
+    {
+      "title": "选择并恢复独立模型；手动整理、原文来源及真实memory快照/Token统计",
+      "project": "business-desktop",
+      "status": "expected",
+      "report": "chromium-results.json"
+    },
+    {
+      "title": "真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计",
+      "project": "business-desktop",
+      "status": "expected",
+      "report": "chromium-results.json"
+    },
+    {
+      "title": "变量正常生成、真实独立路由/模块/usage，完整候选主动查看，刷新仍保留候选且正式资金不变",
+      "project": "business-desktop",
+      "status": "expected",
+      "report": "chromium-results.json"
+    },
+    {
+      "title": "世界生成、补算、只读查看与刷新恢复，真实路由和快照；正式世界不变",
+      "project": "business-desktop",
+      "status": "expected",
+      "report": "chromium-results.json"
+    },
+    {
+      "title": "底部选择器：无匹配、Tab 环、Esc、遮罩与下拉仅关闭顶层",
+      "project": "mobile-dialog",
+      "status": "expected",
+      "report": "chromium-recheck-results.json"
+    }
+  ]
+}

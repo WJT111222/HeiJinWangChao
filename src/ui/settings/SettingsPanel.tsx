@@ -50,8 +50,11 @@ export function SettingsPanel({
     onAiDirtyChange?.(dirty);
   }, [onAiDirtyChange]);
   const localDirty=JSON.stringify(editing.prompts)!==JSON.stringify(settings.prompts)||JSON.stringify(editing.runtime)!==JSON.stringify(settings.runtime);
-  const prompt = <K extends keyof Settings['prompts']>(key: K, value: Settings['prompts'][K]) =>
+  const prompt = <K extends keyof Settings['prompts']>(key: K, value: Settings['prompts'][K]) => {
+    setNotice('');
+    setNoticeLevel('info');
     setEditing({ ...editing, prompts: { ...editing.prompts, [key]: value } });
+  };
   function save() {
     const checked = SettingsSchema.safeParse({ ...editing, memory: settings.memory });
     if (!checked.success) {
@@ -221,8 +224,8 @@ export function SettingsPanel({
             </fieldset>
           </>
         )}
-        <div className="local-save-bar"><Feedback role="status" level={noticeLevel} className="field-hint">{notice||(desktop&&localDirty&&(tab==='提示词'||tab==='运行')?'本地设置尚未保存。':'')}</Feedback>
-        {tab !== 'AI 连接' && tab !== '提示词管理' && tab !== '记忆' && (
+        <div className="local-save-bar"><Feedback role="status" level={noticeLevel} className="field-hint">{notice||(localDirty&&(tab==='提示词管理'||(desktop&&(tab==='提示词'||tab==='运行')))?'本地设置尚未保存。':'')}</Feedback>
+        {tab !== 'AI 连接' && tab !== '记忆' && (
           <button className="primary" onClick={save}>
             保存本地设置
           </button>

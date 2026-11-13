@@ -222,6 +222,12 @@ export function PromptInspector({
     setBusy(false);
     setRequestId('');
   }
+  function changePrompt(field: SwitchField, value: boolean) {
+    // 在通知父组件之前使当前预览和所有在途组装失效。
+    invalidate();
+    setNotice('写作偏好已修改，请重新组装预览。');
+    onPromptChange?.(field, value);
+  }
   async function assemble() {
     if (!repository || !saveId) {
       setNotice('没有已选存档，无法组装游戏上下文。仍可浏览模块原文与固定顺序。');
@@ -331,7 +337,7 @@ export function PromptInspector({
           className="pm-switch"
           checked={checked}
           disabled={!onPromptChange}
-          onChange={(event) => onPromptChange?.(state.field, event.target.checked)}
+          onChange={(event) => changePrompt(state.field, event.target.checked)}
           aria-label={`${checked ? '关闭' : '打开'}提示词 ${item.title}`}
         />
       );
@@ -514,7 +520,8 @@ export function PromptInspector({
                   className="pm-switch"
                   checked={settings.prompts[currentState.field]}
                   disabled={!onPromptChange}
-                  onChange={(event) => onPromptChange?.(currentState.field, event.target.checked)}
+                  onChange={(event) => changePrompt(currentState.field, event.target.checked)}
+                  aria-label={`${settings.prompts[currentState.field] ? '关闭' : '打开'}提示词 ${module.title}`}
                 />
               </label>
             )}
