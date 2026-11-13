@@ -209,7 +209,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
   return (
     <>
       <Feedback className="notice" level="info" mobileAs="p">
-        浏览器会直接连接你填写的服务地址，不使用第三方 CORS
+        浏览器会直接连接你填写的服务地址，不使用额外的 CORS
         代理。服务及同源脚本可能接触密钥；浏览器存储不是安全密钥库。默认仅本次会话保留，密钥不进入游戏存档、提示词或诊断详情。
       </Feedback>
       <p className="field-hint">正文、变量、动态世界和记忆维护可分别选择渠道与模型。修改后需点击「保存 AI 配置」；勾选跟随正文时使用正文路由，原独立选择会保留。</p>
@@ -365,7 +365,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
           <p className="muted">
             三协议使用完整确认历史并以 user 收尾，不依赖尾部预填充。旧 cotModels 数据保留读取兼容，
             不再作为模型白名单。原生协议按已核实型号或服务能力声明自动请求公开思考摘要，不发送未经确认支持的扩展，
-            不额外收费探测；项目叙事规划始终启用。
+            不额外发起探测请求；项目叙事规划始终启用。
           </p>
         </details>
       </fieldset>

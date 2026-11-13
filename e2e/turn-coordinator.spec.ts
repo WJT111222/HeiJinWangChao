@@ -214,7 +214,7 @@ for (const failed of ['variables', 'world'] as const) {
 test('瞬时服务失败重试一次后完成，费用与次数可见', async ({ page }) => {
   await seed(page);
   const plan = await mock(page, { serverOnce: 'variables' });
-  await expect(workflow(page)).toContainText('生成可能产生第三方 API 费用');
+  await expect(workflow(page)).toContainText('生成可能产生费用');
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
   await complete(page);
   expect(plan.calls).toEqual(['story', 'variables', 'variables', 'world']);

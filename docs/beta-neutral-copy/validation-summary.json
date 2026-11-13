@@ -1,0 +1,62 @@
+{
+  "base": "4c8ca11b7250711a660cfa628f35ee01b0688ca2",
+  "branch": "chore/beta-neutral-copy",
+  "proposedCloudVersion": "1.0 Beta · 2026.11.13-2",
+  "fallbackVersion": "builtin-1.0-beta-20261113-2",
+  "node": "v24.19.0",
+  "check": {
+    "passed": 3435,
+    "failed": 0,
+    "skipped": 0,
+    "files": 141,
+    "lint": "passed",
+    "typescript": "passed",
+    "build": "passed"
+  },
+  "targetedVitest": {
+    "passed": 54,
+    "failed": 0,
+    "skipped": 0
+  },
+  "copyChromiumUniqueCases": {
+    "passedFinally": 6,
+    "failedFinally": 0,
+    "initialRun": {
+      "passed": 4,
+      "failed": 2
+    },
+    "desktopSelectorRetest": {
+      "passed": 2,
+      "failed": 0
+    },
+    "extraSecurityScreenshotsRetest": {
+      "passed": 2,
+      "failed": 0
+    }
+  },
+  "startupChromium": {
+    "passed": 38,
+    "failed": 6,
+    "skipped": 0,
+    "desktopIsolatedRetest": {
+      "passed": 1,
+      "failed": 0
+    }
+  },
+  "feeFlowChromium": {
+    "passed": 2,
+    "failed": 2,
+    "skipped": 0
+  },
+  "unmodifiedMainControls": {
+    "passed": 0,
+    "failed": 8,
+    "skipped": 0,
+    "allEightOriginalFailuresReproduced": true
+  },
+  "screenshots": 22,
+  "productionKvWrites": 0,
+  "paidModelRequests": 0,
+  "allProductionChangesCopyOnlyAstVerified": true,
+  "releaseVersionNeedsFinalReview": true
+}

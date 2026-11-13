@@ -1,0 +1,55 @@
+[WebServer] (node:319859) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:319897) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:320032) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [desktop] › e2e/startup-notices.spec.ts:164:1 › 直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型 (8.4s)
+
+
+  1) [desktop] › e2e/startup-notices.spec.ts:164:1 › 直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型 ────────────
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog')
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog') with timeout 5000ms
+      - waiting for getByRole('dialog')
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      24 |   await expect(announcement(page)).toBeVisible();
+      25 |   await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
+    > 26 |   await expect(page.getByRole('dialog')).toHaveCount(0);
+         |                                          ^
+      27 | }
+      28 |
+      29 | test('完整定稿实际分段渲染：开头、架空社会声明与开发者落款', async ({ page }) => {
+        at finishNotices (/workspace/beta-copy-baseline/e2e/startup-notices.spec.ts:26:42)
+        at /workspace/beta-copy-baseline/e2e/startup-notices.spec.ts:177:3
+
+    Error Context: ../beta-copy-evidence/main-artifacts/startup-notices-直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../beta-copy-evidence/main-artifacts/startup-notices-直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../beta-copy-evidence/main-artifacts/startup-notices-直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [desktop] › e2e/startup-notices.spec.ts:164:1 › 直接打开存档仍显示两步公告，关闭与从游戏设置查看不改存档、不调用模型 ─────────────
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

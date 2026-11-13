@@ -26,7 +26,7 @@ test('自动须知→公告、原文、焦点陷阱、章节与进度、手动�
  await page.route('**/api/announcement',r=>r.abort());await page.goto('/');await expect(doc(page)).toBeFocused();await expect(doc(page)).toHaveAttribute('aria-modal','true');await shot(page,'notice-auto-390');
  for(const section of disclaimer.sections){await expect(doc(page)).toContainText(section.title);for(const p of section.paragraphs)await expect(doc(page)).toContainText(p.text);}
  const chapter=page.getByRole('navigation',{name:'须知章节'});await expect(chapter.getByRole('button')).toHaveCount(6);
- await chapter.getByRole('button',{name:/第三方 AI 服务与费用/}).click();await expect(chapter.getByRole('button',{name:/第三方 AI 服务与费用/})).toHaveAttribute('aria-current','true');
+ await chapter.getByRole('button',{name:/个人信息与数据安全/}).click();await expect(chapter.getByRole('button',{name:/个人信息与数据安全/})).toHaveAttribute('aria-current','true');
  await doc(page).getByLabel('免责声明内容').evaluate(el=>{el.scrollTop=el.scrollHeight;});await expect(chapter.getByRole('button').last()).toHaveAttribute('aria-current','true');await expect(page.locator('.notice-percent')).toHaveText('已阅读 100%');await shot(page,'notice-read-end-390');
  await doc(page).getByRole('button',{name:'关闭免责声明'}).focus();await page.keyboard.press('Shift+Tab');expect(await page.evaluate(()=>Boolean(document.activeElement?.closest('dialog')))).toBe(true);
  await doc(page).getByRole('button',{name:'已阅读，查看公告 →'}).click();const a=page.getByRole('dialog',{name:announcement.title,exact:true});await expect(a).toBeVisible();await expect(a).toContainText(announcement.theme);await shot(page,'announcement-auto-390');await a.getByRole('button',{name:'开始游玩'}).click();await expect(page.getByRole('dialog')).toHaveCount(0);

@@ -1,0 +1,28 @@
+{
+  "base": "4c8ca11b7250711a660cfa628f35ee01b0688ca2",
+  "uiAstIdenticalExceptText": [
+    "src/ui/creation/CreationWizard.tsx",
+    "src/ui/game/WorkflowPanel.tsx",
+    "src/ui/game/GameScreen.tsx",
+    "src/ui/settings/AiConnections.tsx"
+  ],
+  "disclaimerOnlyChapter4Changed": true,
+  "cloudOnlyVersionAndFinalReminderChanged": true,
+  "protectedFiles": [
+    ".github/workflows/publish-announcement.yml",
+    "scripts/publish-announcement.mjs",
+    "scripts/check-announcement.mjs",
+    "wrangler.jsonc",
+    "src/worker.ts",
+    "src/domain/state.ts",
+    "src/services/storage/saveRepository.ts",
+    "src/services/storage/turnUndo.ts",
+    "src/services/ai/client.ts",
+    "src/ui/creation/model.ts",
+    "src/ui/notices/useNotices.ts",
+    "src/ui/notices/preferences.ts",
+    "THIRD_PARTY_NOTICES.md",
+    "package.json",
+    "package-lock.json"
+  ]
+}

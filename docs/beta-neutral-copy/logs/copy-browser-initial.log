@@ -1,0 +1,95 @@
+[WebServer] (node:311204) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:311217) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 6 tests using 2 workers
+
+(node:311246) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:311245) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [desktop] › e2e/beta-neutral-copy.spec.ts:25:1 › 中性须知第四章与云端公告：保留六章、完整隐私提醒、11条更新及本地备份告知 (8.1s)
+(node:311517) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  3 [desktop] › e2e/beta-neutral-copy.spec.ts:88:1 › 游戏工作流保留中性费用提醒，纯浏览不写入正式状态或草稿 (1.7s)
+(node:311646) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  4 [mobile] › e2e/beta-neutral-copy.spec.ts:25:1 › 中性须知第四章与云端公告：保留六章、完整隐私提醒、11条更新及本地备份告知 (2.0s)
+  ✓  5 [mobile] › e2e/beta-neutral-copy.spec.ts:48:1 › 五站创角与模型设置：中性费用提示、技术字段及密钥安全仍完整 (3.4s)
+  ✓  6 [mobile] › e2e/beta-neutral-copy.spec.ts:88:1 › 游戏工作流保留中性费用提醒，纯浏览不写入正式状态或草稿 (1.5s)
+  ✘  1 [desktop] › e2e/beta-neutral-copy.spec.ts:48:1 › 五站创角与模型设置：中性费用提示、技术字段及密钥安全仍完整 (30.1s)
+
+
+  1) [desktop] › e2e/beta-neutral-copy.spec.ts:25:1 › 中性须知第四章与云端公告：保留六章、完整隐私提醒、11条更新及本地备份告知 ────────
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog', { name: '王朝公告', exact: true }).locator('.notice-updates li')
+    Expected: 11
+    Received: 0
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog', { name: '王朝公告', exact: true }).locator('.notice-updates li') with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '王朝公告', exact: true }).locator('.notice-updates li')
+        14 × locator resolved to 0 elements
+           - unexpected value "0"
+
+
+      38 |   await dialog.getByRole('button', { name: '关闭免责声明' }).click();
+      39 |   const notice = page.getByRole('dialog', { name: '王朝公告', exact: true });
+    > 40 |   await expect(notice.locator('.notice-updates li')).toHaveCount(11);
+         |                                                      ^
+      41 |   await expect(notice).toContainText('请妥善保管并备份重要游戏数据。');
+      42 |   await expect(notice).not.toContainText('服务商收取');
+      43 |   await expect(notice).not.toContainText('收费的第三方');
+        at /workspace/beta-neutral-copy/e2e/beta-neutral-copy.spec.ts:40:54
+
+    Error Context: ../beta-copy-evidence/playwright-artifacts/beta-neutral-copy-中性须知第四章与云端公告：保留六章、完整隐私提醒、11条更新及本地备份告知-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../beta-copy-evidence/playwright-artifacts/beta-neutral-copy-中性须知第四章与云端公告：保留六章、完整隐私提醒、11条更新及本地备份告知-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../beta-copy-evidence/playwright-artifacts/beta-neutral-copy-中性须知第四章与云端公告：保留六章、完整隐私提醒、11条更新及本地备份告知-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [desktop] › e2e/beta-neutral-copy.spec.ts:48:1 › 五站创角与模型设置：中性费用提示、技术字段及密钥安全仍完整 ────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('navigation', { name: '角色创建步骤' }).getByRole('button', { name: '基本信息', exact: true })
+
+
+      59 |   const steps = ['基本信息','职业与能力','城市与背景','初始同伴','确认与开局'];
+      60 |   for (let i=0;i<steps.length;i++) {
+    > 61 |     await page.getByRole('navigation', { name: '角色创建步骤' }).getByRole('button', { name: steps[i], exact: true }).click();
+         |                                                                                                                 ^
+      62 |     await expect(page.locator('.creation-card')).toBeVisible();
+      63 |     await page.screenshot({ path: info.outputPath(`creation-step${i+1}.png`), animations: 'disabled' });
+      64 |   }
+        at /workspace/beta-neutral-copy/e2e/beta-neutral-copy.spec.ts:61:113
+
+    Error Context: ../beta-copy-evidence/playwright-artifacts/beta-neutral-copy-五站创角与模型设置：中性费用提示、技术字段及密钥安全仍完整-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../beta-copy-evidence/playwright-artifacts/beta-neutral-copy-五站创角与模型设置：中性费用提示、技术字段及密钥安全仍完整-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../beta-copy-evidence/playwright-artifacts/beta-neutral-copy-五站创角与模型设置：中性费用提示、技术字段及密钥安全仍完整-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [desktop] › e2e/beta-neutral-copy.spec.ts:25:1 › 中性须知第四章与云端公告：保留六章、完整隐私提醒、11条更新及本地备份告知 ─────────
+    [desktop] › e2e/beta-neutral-copy.spec.ts:48:1 › 五站创角与模型设置：中性费用提示、技术字段及密钥安全仍完整 ─────────────────
+  4 passed (32.7s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

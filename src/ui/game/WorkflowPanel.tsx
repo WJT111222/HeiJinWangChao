@@ -150,7 +150,7 @@ export function DesktopWorkflowPanel(props: {
       </div>
       <footer className="wf-ft">
         {props.primary}
-        <span className="workflow-fee">生成可能产生第三方 API 费用。</span>
+        <span className="workflow-fee">生成可能产生费用。</span>
       </footer>
     </div>
   );

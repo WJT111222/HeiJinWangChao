@@ -1,0 +1,135 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index ad94877..d3bdbb3 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -21,2 +21,2 @@
+-- 部分第三方中转站不能正确列模型或列表不全；已合并主体及后续加固状态见 [任务书](docs/API-MODEL-LIST-COMPATIBILITY.md)。
+-- 自动测试主要是 Mock 和 Chromium 浏览器场景；不等于全供应商真实收费 API 验收或百回合长期压力测试。
++- 部分接口地址不能正确列模型或列表不全；已合并主体及后续加固状态见 [任务书](docs/API-MODEL-LIST-COMPATIBILITY.md)。
++- 自动测试主要是 Mock 和 Chromium 浏览器场景；不等于所有接口的实际联网验收或百回合长期压力测试。
+diff --git a/README.md b/README.md
+index 125f83a..b636d89 100644
+--- a/README.md
++++ b/README.md
+@@ -11 +11 @@
+-《黑金王朝》是独立的个人学习与技术探索项目，也为未来的《浮生境》积累经验；**两者不是同一个正在开发的软件**。《黑金王朝》《浮生境》及其**官方 DLC／官方世界包永久免费**；玩家自行选用收费第三方 AI API 时，调用费用由对应模型服务商收取，并非游戏收费。
++《黑金王朝》是独立的个人学习与技术探索项目，也为未来的《浮生境》积累经验；**两者不是同一个正在开发的软件**。《黑金王朝》《浮生境》及其**官方 DLC／官方世界包永久免费**。生成和连接测试可能产生费用，请在操作前确认用量与数据发送范围。
+@@ -31 +31 @@
+-| 撤回 | 已结算回合的多回合快照撤回：每存档最多 5 个恢复点、64 MiB 逻辑预算；无 Redo，不能撤销已经发生的第三方 API 费用 |
++| 撤回 | 已结算回合的多回合快照撤回：每存档最多 5 个恢复点、64 MiB 逻辑预算；无 Redo，已发出的生成请求不能撤销 |
+@@ -33 +33 @@
+-| AI 服务 | OpenAI-compatible、原生 Gemini、原生 Anthropic；Story／Variables／World／Memory 分阶段选模及模型列表搜索／手动填写 |
++| 连接配置 | 多协议连接配置；Story／Variables／World／Memory 分阶段选模及模型列表搜索／手动填写 |
+@@ -36 +36 @@
+-**重要边界**：上表表示相关功能已进入 `main`，**不代表收费真实模型长期游玩、所有第三方中转站或手机真机均已验收**。程序严格处理结构、身份、稳定引用、时间、角色权限、经济与原子事务；文学事实意义、人物动机、事件成败交由 AI 结合剧情判断。已删除的 World 逐字来源／自然语言阻碍审批**不是现行功能**，不可据旧 README 或历史 PR 说明恢复。
++**重要边界**：上表表示相关功能已进入 `main`，**不代表模型长期游玩、所有服务地址或手机真机均已验收**。程序严格处理结构、身份、稳定引用、时间、角色权限、经济与原子事务；文学事实意义、人物动机、事件成败交由 AI 结合剧情判断。已删除的 World 逐字来源／自然语言阻碍审批**不是现行功能**，不可据旧 README 或历史 PR 说明恢复。
+@@ -52 +52 @@
+-创建角色或打开本地存档，配置自己的 AI 渠道
++创建角色或打开本地存档，检查连接设置
+@@ -81 +81 @@ npm run dev
+-开发服务默认通常显示在 `http://localhost:5173`。进入游戏后，需要在设置中配置你有权使用的 AI API 渠道、模型和凭证；真实调用可能产生供应商费用。浏览器端直连能否使用，取决于服务提供方的协议、授权和 CORS 支持。
++开发服务默认通常显示在 `http://localhost:5173`。AI 连接所需的服务地址、模型和凭证在设置中管理。生成和测试连接可能产生费用；操作前请核对数据发送范围与密钥安全。浏览器直连受接口协议、授权及 CORS 限制。
+@@ -91 +91 @@ npm run test:e2e
+-`npm run check` 包含 ESLint、Vitest 与生产构建；`test:e2e` 运行 Playwright，需事先准备可用的浏览器环境。工程与浏览器测试主要使用 **Mock AI**，不会证明真实第三方模型一定遵守输出协议。近期世界事件档案的工程和 Chromium 双端验证见 [PR #89](https://github.com/WJT111222/HeiJinWangChao/pull/89)：开发者报告 Vitest 2867/2867、Prompt 93/93、Chromium 44 通过／2 项既有跳过／0 失败；均不等于收费真实模型的文学与长玩质量验收。
++`npm run check` 包含 ESLint、Vitest 与生产构建；`test:e2e` 运行 Playwright，需事先准备可用的浏览器环境。工程与浏览器测试主要使用 **Mock AI**，不会证明模型一定遵守输出协议。近期世界事件档案的工程和 Chromium 双端验证见 [PR #89](https://github.com/WJT111222/HeiJinWangChao/pull/89)：开发者报告 Vitest 2867/2867、Prompt 93/93、Chromium 44 通过／2 项既有跳过／0 失败；均不等于模型的文学与长玩质量验收。
+@@ -97 +97 @@ npm run test:e2e
+-1. **真实模型与连续试玩**：在单独测试存档、明确模型和费用上限下跑通真实开局、连续多回合、NPC 场外行动、记忆维护、经济变化、事件入场与固定到期结算；依据真实失败做最小修复，避免无限付费 Roll。
++1. **真实模型与连续试玩**：在单独测试存档、明确模型和费用上限下跑通真实开局、连续多回合、NPC 场外行动、记忆维护、经济变化、事件入场与固定到期结算；依据真实失败做最小修复，避免无节制地重复生成。
+@@ -100 +100 @@ npm run test:e2e
+-4. **正式发布准备**：核实生产入口与对应构建 SHA、服务商兼容边界、发布说明／变更日志、对玩家的备份和费用提示，并在达到约定验收标准后创建 1.0 正式版 Tag／Release。
++4. **正式发布准备**：核实生产入口与对应构建 SHA、接口兼容边界、发布说明／变更日志、对玩家的备份和费用提示，并在达到约定验收标准后创建 1.0 正式版 Tag／Release。
+diff --git a/announcements/current.json b/announcements/current.json
+index 4bfe4d5..978f0b0 100644
+--- a/announcements/current.json
++++ b/announcements/current.json
+@@ -2 +2 @@
+-  "version": "1.0 Beta · 2026.11.13",
++  "version": "1.0 Beta · 2026.11.13-2",
+@@ -16 +16 @@
+-    "提醒：存档仍只保存在当前浏览器里，清除网站数据会丢失进度。使用收费的第三方 AI 时，调用费用由对应服务商收取。"
++    "提醒：存档仍只保存在当前浏览器里，清除网站数据会丢失进度。请妥善保管并备份重要游戏数据。"
+diff --git a/src/tests/fixtures/disclaimer-v1.md b/src/tests/fixtures/disclaimer-v1.md
+index 1bb51b1..4d66ea3 100644
+--- a/src/tests/fixtures/disclaimer-v1.md
++++ b/src/tests/fixtures/disclaimer-v1.md
+@@ -44 +44 @@ AI 生成内容不代表开发者的个人观点、政治立场或价值判断
+-### 四、第三方 AI 服务与费用
++### 四、个人信息与数据安全
+@@ -46 +46 @@ AI 生成内容不代表开发者的个人观点、政治立场或价值判断
+-本游戏允许玩家自行配置第三方人工智能模型服务。
++请勿在游戏输入、剧情或导入资料中填写真实姓名、联系方式、证件号码等敏感个人信息。
+@@ -48 +48 @@ AI 生成内容不代表开发者的个人观点、政治立场或价值判断
+-为实现游戏功能，玩家输入、必要的游戏状态和剧情上下文可能发送至玩家选择的 AI 服务提供商。
++生成内容时，玩家输入、必要的游戏状态和剧情上下文可能经网络发送至当前配置的服务地址；连接测试也会发起网络请求。
+@@ -50 +50 @@ AI 生成内容不代表开发者的个人观点、政治立场或价值判断
+-相关服务的使用限制、数据处理方式及 API 调用费用，由对应服务提供商按照其服务条款和政策决定。
++请妥善保管 API 密钥，不要将密钥写入剧情、存档、截图或公开分享的资料。浏览器存储并非安全密钥库。
+@@ -52 +52 @@ AI 生成内容不代表开发者的个人观点、政治立场或价值判断
+-玩家应自行了解所选服务的规则、费用及隐私政策，并妥善保管自己的 API 密钥。
++网络传输和接收端的数据处理不完全由本游戏控制；请了解相应的隐私规则，仅提交必要信息。
+diff --git a/src/ui/creation/CreationWizard.tsx b/src/ui/creation/CreationWizard.tsx
+index 76cb45b..068b328 100644
+--- a/src/ui/creation/CreationWizard.tsx
++++ b/src/ui/creation/CreationWizard.tsx
+@@ -318 +318 @@ export function CreationWizard({
+-              {mobile&&<FullCreationTicket form={form} stub={<div className={`creation-ticket-stub ${tear.torn?'torn':''}`} {...tear.handlers} style={tear.drag?{transform:`translateY(${tear.drag*.6}px) rotate(${-tear.drag/12}deg)`}:undefined} aria-disabled={busy}><span>确认并创建存档<small>↓ 按住票根往下撕 · 可能产生第三方 API 费用</small></span><i aria-hidden="true"/></div>}/>}
++              {mobile&&<FullCreationTicket form={form} stub={<div className={`creation-ticket-stub ${tear.torn?'torn':''}`} {...tear.handlers} style={tear.drag?{transform:`translateY(${tear.drag*.6}px) rotate(${-tear.drag/12}deg)`}:undefined} aria-disabled={busy}><span>确认并创建存档<small>↓ 按住票根往下撕 · 生成可能产生费用</small></span><i aria-hidden="true"/></div>}/>}
+@@ -417 +417 @@ export function CreationWizard({
+-                确认后创建存档并自动开始开局，可能产生第三方 API 费用。按已启用的阶段顺序生成候选，不会自动结算；未配置 AI 时会安全停止，设置后由你主动继续。
++                确认后创建存档并自动开始开局。生成可能产生费用。按已启用的阶段顺序生成候选，不会自动结算；未配置 AI 时会安全停止，设置后由你主动继续。
+@@ -430 +430 @@ export function CreationWizard({
+-          <span>{mobile&&form.step===5?'可能产生第三方 API 费用':<>0{form.step} / 05</>}</span>
++          <span>{mobile&&form.step===5?'生成可能产生费用':<>0{form.step} / 05</>}</span>
+diff --git a/src/ui/game/GameScreen.tsx b/src/ui/game/GameScreen.tsx
+index 5256668..2f9ec09 100644
+--- a/src/ui/game/GameScreen.tsx
++++ b/src/ui/game/GameScreen.tsx
+@@ -912 +912 @@ export function GameScreen({
+-          <p>原始记忆仍保留；重新生成可能产生 API 费用。</p>
++          <p>原始记忆仍保留；重新生成可能产生费用。</p>
+diff --git a/src/ui/game/WorkflowPanel.tsx b/src/ui/game/WorkflowPanel.tsx
+index 547594e..86d6c05 100644
+--- a/src/ui/game/WorkflowPanel.tsx
++++ b/src/ui/game/WorkflowPanel.tsx
+@@ -153 +153 @@ export function DesktopWorkflowPanel(props: {
+-        <span className="workflow-fee">生成可能产生第三方 API 费用。</span>
++        <span className="workflow-fee">生成可能产生费用。</span>
+diff --git a/src/ui/notices/announcement.ts b/src/ui/notices/announcement.ts
+index da13408..e4e1db4 100644
+--- a/src/ui/notices/announcement.ts
++++ b/src/ui/notices/announcement.ts
+@@ -3 +3 @@ export const announcement = {
+-  version: 'builtin-1.0-beta',
++  version: 'builtin-1.0-beta-20261113-2',
+@@ -8 +8 @@ export const announcement = {
+-    '新增多回合撤回：可按完整快照恢复最近已结算的回合，每份存档最多保留 5 个恢复点；没有重做功能，也不能撤销已产生的第三方 AI 调用费用。',
++    '新增多回合撤回：可按完整快照恢复最近已结算的回合，每份存档最多保留 5 个恢复点；没有重做功能，撤回不会撤销已发生的生成请求。',
+diff --git a/src/ui/notices/disclaimer.ts b/src/ui/notices/disclaimer.ts
+index 66a578e..6c8df14 100644
+--- a/src/ui/notices/disclaimer.ts
++++ b/src/ui/notices/disclaimer.ts
+@@ -1 +1 @@
+-// 完整定稿来源：PR #66 issuecomment-6694107863；逐段保留文案与强调。
++// 基础定稿来源：PR #66 issuecomment-6694107863；第四章按 Beta 对外文案任务更新，其余章节与强调保留。
+@@ -42 +42 @@ export const disclaimer = {
+-      title: '四、第三方 AI 服务与费用',
++      title: '四、个人信息与数据安全',
+@@ -44,4 +44,4 @@ export const disclaimer = {
+-        { text: '本游戏允许玩家自行配置第三方人工智能模型服务。' },
+-        { text: '为实现游戏功能，玩家输入、必要的游戏状态和剧情上下文可能发送至玩家选择的 AI 服务提供商。' },
+-        { text: '相关服务的使用限制、数据处理方式及 API 调用费用，由对应服务提供商按照其服务条款和政策决定。' },
+-        { text: '玩家应自行了解所选服务的规则、费用及隐私政策，并妥善保管自己的 API 密钥。' },
++        { text: '请勿在游戏输入、剧情或导入资料中填写真实姓名、联系方式、证件号码等敏感个人信息。' },
++        { text: '生成内容时，玩家输入、必要的游戏状态和剧情上下文可能经网络发送至当前配置的服务地址；连接测试也会发起网络请求。' },
++        { text: '请妥善保管 API 密钥，不要将密钥写入剧情、存档、截图或公开分享的资料。浏览器存储并非安全密钥库。' },
++        { text: '网络传输和接收端的数据处理不完全由本游戏控制；请了解相应的隐私规则，仅提交必要信息。' },
+diff --git a/src/ui/settings/AiConnections.tsx b/src/ui/settings/AiConnections.tsx
+index 3cc85c8..4b07cbc 100644
+--- a/src/ui/settings/AiConnections.tsx
++++ b/src/ui/settings/AiConnections.tsx
+@@ -212 +212 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
+-        浏览器会直接连接你填写的服务地址，不使用第三方 CORS
++        浏览器会直接连接你填写的服务地址，不使用额外的 CORS
+@@ -368 +368 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
+-            不额外收费探测；项目叙事规划始终启用。
++            不额外发起探测请求；项目叙事规划始终启用。

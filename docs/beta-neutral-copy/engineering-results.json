@@ -1,0 +1,34 @@
+[
+  {
+    "name": "check",
+    "command": [
+      "npm",
+      "run",
+      "check"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "targeted-vitest",
+    "command": [
+      "npx",
+      "vitest",
+      "run",
+      "src/tests/disclaimer-content.test.ts",
+      "src/tests/remote-announcement.test.ts",
+      "src/tests/notice-preferences.test.ts",
+      "src/tests/feedback.test.ts",
+      "src/tests/announcement-file.test.ts"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "announcement-validation",
+    "command": [
+      "node",
+      "scripts/check-announcement.mjs",
+      "announcements/current.json"
+    ],
+    "exitCode": 0
+  }
+]

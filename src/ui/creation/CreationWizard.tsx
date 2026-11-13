@@ -315,7 +315,7 @@ export function CreationWizard({
           )}
           {form.step === 5 && (
             <>
-              {mobile&&<FullCreationTicket form={form} stub={<div className={`creation-ticket-stub ${tear.torn?'torn':''}`} {...tear.handlers} style={tear.drag?{transform:`translateY(${tear.drag*.6}px) rotate(${-tear.drag/12}deg)`}:undefined} aria-disabled={busy}><span>确认并创建存档<small>↓ 按住票根往下撕 · 可能产生第三方 API 费用</small></span><i aria-hidden="true"/></div>}/>}
+              {mobile&&<FullCreationTicket form={form} stub={<div className={`creation-ticket-stub ${tear.torn?'torn':''}`} {...tear.handlers} style={tear.drag?{transform:`translateY(${tear.drag*.6}px) rotate(${-tear.drag/12}deg)`}:undefined} aria-disabled={busy}><span>确认并创建存档<small>↓ 按住票根往下撕 · 生成可能产生费用</small></span><i aria-hidden="true"/></div>}/>}
               <div className="two-grid creation-review">
                 <CreationReviewCard mobile={mobile} title="人物资料" index={1}>
                   <div className="section-heading">
@@ -414,7 +414,7 @@ export function CreationWizard({
                 />
               </label>
               <p className="notice" id="opening-generation-notice">
-                确认后创建存档并自动开始开局，可能产生第三方 API 费用。按已启用的阶段顺序生成候选，不会自动结算；未配置 AI 时会安全停止，设置后由你主动继续。
+                确认后创建存档并自动开始开局。生成可能产生费用。按已启用的阶段顺序生成候选，不会自动结算；未配置 AI 时会安全停止，设置后由你主动继续。
               </p>
             </>
           )}
@@ -427,7 +427,7 @@ export function CreationWizard({
           >
             上一步
           </button>
-          <span>{mobile&&form.step===5?'可能产生第三方 API 费用':<>0{form.step} / 05</>}</span>
+          <span>{mobile&&form.step===5?'生成可能产生费用':<>0{form.step} / 05</>}</span>
           <button className="primary" disabled={busy||tear.torn} type="submit" aria-describedby={form.step === 5 ? 'opening-generation-notice' : undefined}>
             {busy ? '正在保存…' : form.step === 5 ? '确认并创建存档' : '下一步 →'}
           </button>

@@ -909,7 +909,7 @@ export function GameScreen({
           onClose={() => memory.closeFailure(memory.failures[0].kind)}
         >
           <p>{memory.failures[0].message}</p>
-          <p>原始记忆仍保留；重新生成可能产生 API 费用。</p>
+          <p>原始记忆仍保留；重新生成可能产生费用。</p>
           <div className="feedback-dialog-actions memory-feedback-actions">
             {memory.failures[0].kind === "npc" && !memory.failures[0].npcId ? (
               <button
