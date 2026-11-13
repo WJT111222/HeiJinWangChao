@@ -111,6 +111,15 @@ test('完整五步保存、再次套用直达第五步、编辑刷新与正式�
   expect(saved.state.protagonist).toMatchObject({ name: original.person.name, background, skills: ['新编辑技能', '修补'] });
   expect(saved.state.npc.companion).toMatchObject({ name: '许宁', background: original.companion.background });
   expect(saved.draft.userInput).toBe(preference); expect(await packs(page)).toEqual(originalPacks);
+  // Without AI configuration, the existing mobile diagnostics sheet reports a safe stop.
+  // Close that real modal before using the external game menu; never bypass it with force.
+  if (mobileCreation(page)) {
+    const diagnostics = page.locator('.mobile-diagnostics-sheet');
+    await expect(diagnostics).toBeVisible();
+    await expect(diagnostics).toContainText('错误码：configuration');
+    await page.keyboard.press('Escape');
+    await expect(diagnostics).not.toBeVisible();
+  }
   // After the original creation flow finishes, the next new character starts at step 1.
   await goHome(page);
   if (mobileCreation(page)) {
