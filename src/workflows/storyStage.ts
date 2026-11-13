@@ -140,7 +140,7 @@ export class StoryStage {
         attempt.saving();
         input.onProgress?.({ phase: 'saving', narrative: story.narrative });
         // 网络从不放入 IDB 事务；整份草稿用现有乐观锁原子替换。
-        const saved = await this.repository.saveDraft(next, draft.draftRevision, attempt.signal);
+        const saved = await this.repository.saveDraft(next, draft.draftRevision, attempt.signal, draft);
         current();
         storyInspections.update(inspectionId, { status: 'saved' });
         return saved;

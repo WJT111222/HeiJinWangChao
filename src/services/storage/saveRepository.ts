@@ -26,12 +26,38 @@ import type { RawSaveExport, RawSaveRecord, SaveSummary } from './saveManagement
 import { backupSummary, compatibleDraft } from './backup';
 import type { BackupEntry } from './backup';
 
-/** 导入前与本机的比较结果。 */
+declare const confirmationBrand: unique symbol;
+/**
+ * compareBackup 给出的一次性确认凭据。只在内存中传递：本身是空的冻结对象，
+ * 不含也不暴露任何存档内容（JSON 序列化结果为 {}）；导入时消耗，不能重复使用。
+ */
+export interface BackupImportConfirmation { readonly [confirmationBrand]: true }
+
+/**
+ * 导入前与本机的比较结果（UI 合约）。
+ * - new：本机没有该 saveId 的存档记录。
+ * - same：正式存档完全相同（整份数据逐项比较，含记忆、NPC 管理等不推进回合版本的内容），
+ *   且未结算草稿也相同。导入只会清掉本机撤回与提交回执，UI 应显示「已是最新」。
+ * - overwrite：本机存档可读取，但正式存档或草稿至少一项不同；differences 指明哪一项。
+ * - overwrite-unreadable：本机同 ID 记录存在但无法读取。
+ * 每种结果都附带 confirmation；导入时会在写事务内按它重新核对本机全部相关记录。
+ */
 export type BackupComparison =
-  | { kind: 'new' }
-  | { kind: 'same'; local: BackupEntry['summary'] }
-  | { kind: 'overwrite'; local: BackupEntry['summary'] }
-  | { kind: 'overwrite-unreadable' };
+  | { kind: 'new'; confirmation: BackupImportConfirmation }
+  | { kind: 'same'; local: BackupEntry['summary']; confirmation: BackupImportConfirmation }
+  | { kind: 'overwrite'; local: BackupEntry['summary']; differences: { state: boolean; draft: boolean }; confirmation: BackupImportConfirmation }
+  | { kind: 'overwrite-unreadable'; confirmation: BackupImportConfirmation };
+
+/** 某个存储键在五个时间线仓库中的全部原始记录，按真实主键读取，不解析、不迁移。 */
+interface LocalSnapshot {
+  saves: RawSaveRecord[];
+  drafts: RawSaveRecord[];
+  turnReceipts: RawSaveRecord[];
+  turnUndo: RawSaveRecord[];
+  saveControls: RawSaveRecord[];
+}
+const snapshotStores = ['saves', 'drafts', 'turnReceipts', 'turnUndo', 'saveControls'] as const;
+const confirmations = new WeakMap<BackupImportConfirmation, { repository: SaveRepository; saveId: string; snapshot: LocalSnapshot }>();
 
 const ReceiptSchema = z.strictObject({
   saveId: IdSchema,
@@ -83,6 +109,45 @@ async function rawRecords(store: IDBObjectStore | IDBIndex, key?: IDBValidKey): 
   const keys = await request(store.getAllKeys(key));
   const values = await request<unknown[]>(store.getAll(key));
   return keys.map((key, index) => ({ key, value: values[index] }));
+}
+
+async function readSnapshot(tx: IDBTransaction, key: IDBValidKey): Promise<LocalSnapshot> {
+  return {
+    saves: await rawRecords(tx.objectStore('saves'), key),
+    drafts: await rawRecords(tx.objectStore('drafts'), key),
+    turnReceipts: await rawRecords(tx.objectStore('turnReceipts').index('saveId'), key),
+    turnUndo: await rawRecords(tx.objectStore('turnUndo').index('saveId'), key),
+    saveControls: await rawRecords(tx.objectStore('saveControls'), key),
+  };
+}
+
+/**
+ * 同步、逐项比较两份结构化克隆数据。只认识 IndexedDB 中正常存档会出现的类型；
+ * 遇到无法确定相等的类型一律视为不同，宁可拒绝导入，也不把变化误判为未变。
+ */
+function sameValue(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) return false;
+  if (Array.isArray(a)) {
+    const other = b as unknown[];
+    return a.length === other.length && a.every((value, index) => sameValue(value, other[index]));
+  }
+  if (a instanceof Date) return a.getTime() === (b as Date).getTime();
+  if (a instanceof ArrayBuffer || ArrayBuffer.isView(a)) {
+    const left = a instanceof ArrayBuffer ? new Uint8Array(a) : new Uint8Array(a.buffer, a.byteOffset, a.byteLength);
+    const right = b instanceof ArrayBuffer ? new Uint8Array(b) : new Uint8Array((b as ArrayBufferView).buffer, (b as ArrayBufferView).byteOffset, (b as ArrayBufferView).byteLength);
+    return left.length === right.length && left.every((byte, index) => byte === right[index]);
+  }
+  const prototype = Object.getPrototypeOf(a);
+  if (prototype !== Object.prototype && prototype !== null) return false;
+  const left = Object.keys(a), right = Object.keys(b);
+  return left.length === right.length && left.every((key) => Object.prototype.hasOwnProperty.call(b, key)
+    && sameValue((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key]));
+}
+function sameSnapshot(a: LocalSnapshot, b: LocalSnapshot): boolean {
+  return snapshotStores.every((name) => a[name].length === b[name].length
+    && a[name].every((record, index) => sameValue(record.key, b[name][index].key) && sameValue(record.value, b[name][index].value)));
 }
 
 async function deleteRecords(tx: IDBTransaction, key: IDBValidKey): Promise<void> {
@@ -340,41 +405,66 @@ export class SaveRepository {
     });
   }
 
-  /** 导入前比较：本机没有、完全相同，或需要明确确认覆盖。只读，不改任何记录。 */
-  async compareBackup(state: GameState): Promise<BackupComparison> {
-    IdSchema.parse(state.saveId);
-    return transaction(this.database, ['saves'], 'readonly', async (tx) => {
-      const raw: unknown = await request(tx.objectStore('saves').get(state.saveId));
-      if (raw === undefined) return { kind: 'new' } as const;
-      let local: GameState;
-      try { local = readState(raw, state.saveId); } catch { return { kind: 'overwrite-unreadable' } as const; }
-      const same = local.revision === state.revision && local.turnNumber === state.turnNumber && local.updatedAt === state.updatedAt;
-      return { kind: same ? 'same' : 'overwrite', local: backupSummary(local) } as const;
-    });
+  /**
+   * 导入前比较。在一个只读事务中按真实主键取得本机该存档在五个时间线仓库中的全部原始记录，
+   * 生成仅供本次确认的一次性凭据；不写入、不迁移任何记录。
+   */
+  async compareBackup(entry: { state: GameState; draft?: TurnDraft }): Promise<BackupComparison> {
+    const backup = normalizeOpeningCity(GameStateSchema.parse(entry.state));
+    const backupDraft = compatibleDraft(backup, entry.draft).draft;
+    const snapshot = await transaction(this.database, timelineStores, 'readonly', (tx) => readSnapshot(tx, backup.saveId));
+    const confirmation = Object.freeze({}) as BackupImportConfirmation;
+    confirmations.set(confirmation, { repository: this, saveId: backup.saveId, snapshot });
+    if (!snapshot.saves.length) return { kind: 'new', confirmation };
+    let local: GameState;
+    // 解析用副本：迁移与校验绝不能改动作为确认依据的原始快照。
+    try { local = readState(structuredClone(snapshot.saves[0].value), backup.saveId); } catch { return { kind: 'overwrite-unreadable', confirmation }; }
+    const rawDraft = snapshot.drafts[0]?.value === undefined ? undefined : structuredClone(snapshot.drafts[0].value);
+    const localDraft = rawDraft === undefined ? undefined : TurnDraftSchema.safeParse(rawDraft);
+    const differences = {
+      state: fingerprint(local) !== fingerprint(backup),
+      draft: localDraft === undefined ? backupDraft !== undefined
+        : !localDraft.success || backupDraft === undefined || fingerprint(localDraft.data) !== fingerprint(backupDraft),
+    };
+    const summary = backupSummary(local);
+    return differences.state || differences.draft
+      ? { kind: 'overwrite', local: summary, differences, confirmation }
+      : { kind: 'same', local: summary, confirmation };
   }
 
   /**
-   * 备份导入。没有同 ID 存档时直接新增；已有时必须带上 compareBackup 看到的本机版本
-   * （本机无法读取时为 null）确认覆盖。覆盖在同一事务中清掉本机该存档的全部记录
-   * （草稿、提交回执、撤回快照、控制），再写入备份；任何一步失败都整体回滚。
+   * 备份导入。必须带上 compareBackup 给出的凭据；凭据一次有效。
+   * 本机已有记录（包括无法读取的记录）时还必须显式 overwrite: true。
+   * 同页有阶段会话或其他标签持有工作流锁时拒绝；写事务内先重新读取本机全部相关原始记录，
+   * 与确认时逐项比较，完全一致才清理并写入，任一变化即以 IMPORT_CONFLICT 拒绝、什么都不改。
+   * 导入的草稿递增 draftRevision（与 NPC 管理相同），使此前发出的阶段响应不能再写入。
    */
-  async importBackup(entry: { state: GameState; draft?: TurnDraft }, options: { overwrite?: { localRevision: number | null } } = {}): Promise<GameState> {
+  async importBackup(entry: { state: GameState; draft?: TurnDraft }, confirmation: BackupImportConfirmation,
+    options: { overwrite?: boolean } = {}): Promise<GameState> {
     const state = normalizeOpeningCity(GameStateSchema.parse(entry.state));
     const { draft } = compatibleDraft(state, entry.draft);
-    return withBrowserLock(state.saveId, () => transaction(this.database, timelineStores, 'readwrite', async (tx) => {
-      const raw: unknown = await request(tx.objectStore('saves').get(state.saveId));
-      if (raw !== undefined) {
-        const overwrite = options.overwrite;
-        requireData(overwrite, 'SAVE_EXISTS', '本机已有这份存档，需要确认覆盖后才能导入。');
-        let localRevision: number | null = null;
-        try { localRevision = readState(raw, state.saveId).revision; } catch { localRevision = null; }
-        requireData(localRevision === overwrite.localRevision, 'REVISION_CONFLICT', '本机存档刚刚发生了变化，请重新选择文件导入。');
+    const confirmed = confirmations.get(confirmation);
+    confirmations.delete(confirmation);
+    requireData(confirmed?.repository === this && confirmed.saveId === state.saveId,
+      'IMPORT_CONFIRMATION_INVALID', '导入确认已失效，请重新选择文件导入。');
+    requireData(!confirmed.snapshot.saves.length || options.overwrite === true,
+      'SAVE_EXISTS', '本机已有这份存档，需要确认覆盖后才能导入。');
+    const session = reserveStageSession(state.saveId);
+    try {
+      return await withBrowserLock(state.saveId, () => transaction(this.database, timelineStores, 'readwrite', async (tx) => {
+        session.check();
+        const current = await readSnapshot(tx, state.saveId);
+        requireData(sameSnapshot(current, confirmed.snapshot), 'IMPORT_CONFLICT',
+          '本机存档在确认后发生了变化，本次没有导入，本机数据保持原样。请重新选择文件导入。');
+        const localRevision = (current.drafts[0]?.value as { draftRevision?: unknown } | undefined)?.draftRevision;
+        const floor = Number.isSafeInteger(localRevision) && (localRevision as number) >= 0 ? localRevision as number : -1;
         await deleteRecords(tx, state.saveId);
-      }
-      await request(tx.objectStore('saves').add(state));
-      if (draft) await request(tx.objectStore('drafts').put(draft));
-      return state;
-    }));
+        await request(tx.objectStore('saves').add(state));
+        if (draft) await request(tx.objectStore('drafts').put(TurnDraftSchema.parse({
+          ...draft, draftRevision: Math.max(draft.draftRevision, floor) + 1 })));
+        return state;
+      }));
+    } finally { session.release(); }
   }
 
   // Explicit recovery action, separate from the revision-checked normal delete path.
@@ -531,8 +621,13 @@ export class SaveRepository {
     } finally { session.release(); }
   }
 
-  async saveDraft(draft: TurnDraft, expectedDraftRevision: number | null, signal?: AbortSignal): Promise<TurnDraft> {
+  /**
+   * basedOn：调用方据以构造 next 的草稿。提供时要求库中草稿与它逐项相同，
+   * 不只看 draftRevision 数字，防止时间线被替换（如导入备份）后迟到的旧响应恰好对上版本号。
+   */
+  async saveDraft(draft: TurnDraft, expectedDraftRevision: number | null, signal?: AbortSignal, basedOn?: TurnDraft): Promise<TurnDraft> {
     const next = TurnDraftSchema.parse(draft);
+    const base = basedOn === undefined ? undefined : TurnDraftSchema.parse(basedOn);
     return transaction(this.database, ['saves', 'drafts'], 'readwrite', async (tx) => {
       const current = await readStoredState(tx, next.saveId);
       requireData(current.revision === next.baseSaveRevision, 'REVISION_CONFLICT', '草稿依赖的正式版本已失效');
@@ -546,6 +641,7 @@ export class SaveRepository {
       } else {
         const old = TurnDraftSchema.parse(raw);
         requireData(old.draftRevision === expectedDraftRevision, 'DRAFT_CONFLICT', '草稿已被其他操作更新');
+        requireData(!base || fingerprint(old) === fingerprint(base), 'DRAFT_CONFLICT', '草稿已被其他操作更新');
         validateDraftUpdate(old, next);
       }
       await request(store.put(next));
