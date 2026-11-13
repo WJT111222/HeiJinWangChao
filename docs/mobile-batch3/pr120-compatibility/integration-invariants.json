@@ -1,0 +1,73 @@
+{
+  "main": "f3c66c3ce76f22931275cbe92dbdd83f01d6855f",
+  "npcBusinessBodyByteIdentical": true,
+  "npcBusinessBodySHA256": "cdaed233854c5cc8d76dfba9bc46d47a1d02721929d432408cfae0e6cb9fbc5b",
+  "mainFiles": [
+    {
+      "path": "src/ui/game/GameScreen.tsx",
+      "mainSHA256": "ba8e5e9fb6a25d95d3b7b03bc476f78505777dce9d852c5e8da57231513f4e90",
+      "identical": true
+    },
+    {
+      "path": "src/ui/game/MobileWorkflowDrawer.tsx",
+      "mainSHA256": "04fae682860226dca175c5d26ab23d8dac6b762267ba8aa323bbee3c6a93eacf",
+      "identical": true
+    },
+    {
+      "path": "src/ui/game/WorkflowPanel.tsx",
+      "mainSHA256": "393003e04983905e6f68d4b34861544178739640f6dae4926aa5a57f59301631",
+      "identical": true
+    },
+    {
+      "path": "src/ui/game/mobile-workflow-content.css",
+      "mainSHA256": "f1da9f2cf0a26b08e7b6ea929578374c240b6ff665a16c7314d129fa093c0e21",
+      "identical": true
+    },
+    {
+      "path": "src/ui/game/mobile-workflow-drawer.css",
+      "mainSHA256": "cb1d36bd67599d985a8b20ddce7672d960bf7f22ab5dc70638142937d4a802f9",
+      "identical": true
+    },
+    {
+      "path": "src/ui/Dialog.tsx",
+      "mainSHA256": "ff26803a6403448b865dd5f7e016f271451cd4346ba39a17d255f09328ea1063",
+      "identical": true
+    },
+    {
+      "path": "e2e/helpers/gameLayout.ts",
+      "mainSHA256": "3577473c6767d19e4f0153bf38f7047713bb32f343cc17989e502410b0585f01",
+      "identical": true
+    },
+    {
+      "path": "src/worker.ts",
+      "mainSHA256": "431bc1c815edd7a66f05b83572af904f532daa7aacabd73317c708ccabdf9358",
+      "identical": true
+    },
+    {
+      "path": "wrangler.jsonc",
+      "mainSHA256": "a06b18c396064dfb64c7dfcc2e6bd6d3d22a8b3153c000d21ab7721a9acc8b33",
+      "identical": true
+    },
+    {
+      "path": "src/ui/notices/Notices.tsx",
+      "mainSHA256": "72b6c3c17be28a6ee56950d175dbb6bed031935bd5dfd88f1b34e67153a32dee",
+      "identical": true
+    },
+    {
+      "path": "src/ui/notices/useNotices.ts",
+      "mainSHA256": "28a6cd9d97661eb1a74c66b425103c1e00bb1529a73707f7e755b46a241ddd19",
+      "identical": true
+    },
+    {
+      "path": "src/services/storage/saveRepository.ts",
+      "mainSHA256": "fbe541e05237cc40819c107821e642368019c8dba3ec5c5e95a42b4ab24c2580",
+      "identical": true
+    },
+    {
+      "path": "src/services/storage/saveManagement.ts",
+      "mainSHA256": "04ac341557b53933e3a68b301fcb4a1446a5c5482c819bb7d21f250063ecfb47",
+      "identical": true
+    }
+  ],
+  "homeProductionFilesUnchangedFromOriginalHead": true
+}

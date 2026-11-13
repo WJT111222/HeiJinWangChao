@@ -1,20 +1,17 @@
 import { openStoredSave } from './helpers/home';
 import { openWorldArchive, openSettings } from './helpers/gameLayout';
 import { variableReply } from '../src/tests/fixtures/variableReply';
-import { openGameTools as openLegacyGameTools } from './helpers/gameLayout';
+import { openGameTools as openLegacyGameTools, closeWorkflowSheet } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { GameStateSchema } from '../src/domain/state';
 import { array, record, string } from '../src/services/ai/protocols';
 
-// These scenarios navigate to settings/archives. The phone workflow is now a
-// native sheet; explicitly close the sheet opened by the legacy test helper so
-// its focus trap does not block the navigation under test. Business assertions stay intact.
+// Reuse the current phone workflow's close helper before navigating to archives.
+// The #120 drawer is nonmodal; no native Dialog close button is involved.
 async function openGameTools(page: Page, entering=false) {
   await openLegacyGameTools(page, entering);
-  const sheet=page.getByRole('dialog',{name:'三阶段工作流',exact:true});
-  if ((page.viewportSize()?.width??0)<=900 && await sheet.isVisible())
-    await sheet.getByRole('button',{name:'关闭资料界面',exact:true}).click();
+  if ((page.viewportSize()?.width??0)<=900) await closeWorkflowSheet(page);
 }
 
 // 只在隔离浏览器存储中使用，全部请求拦截到mock.invalid。

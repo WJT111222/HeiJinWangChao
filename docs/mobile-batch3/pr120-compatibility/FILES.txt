@@ -1,0 +1,16 @@
+docs/mobile-batch3/pr120-compatibility/FILES.txt
+docs/mobile-batch3/pr120-compatibility/REPORT.md
+docs/mobile-batch3/pr120-compatibility/chromium-results.json
+docs/mobile-batch3/pr120-compatibility/chromium.log
+docs/mobile-batch3/pr120-compatibility/diff-check.log
+docs/mobile-batch3/pr120-compatibility/eslint.log
+docs/mobile-batch3/pr120-compatibility/integration-invariants.json
+docs/mobile-batch3/pr120-compatibility/original-evidence-preservation.json
+docs/mobile-batch3/pr120-compatibility/smoke-final-results.json
+docs/mobile-batch3/pr120-compatibility/smoke-final.log
+docs/mobile-batch3/pr120-compatibility/summary.json
+docs/mobile-batch3/pr120-compatibility/test-list.log
+docs/mobile-batch3/pr120-compatibility/typecheck.log
+e2e/npc-memory.spec.ts
+e2e/pr125-compatibility.spec.ts
+playwright.pr125-compatibility.config.ts
