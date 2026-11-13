@@ -2,6 +2,7 @@ import type { RequestSnapshot } from './snapshot';
 import { secretFor } from './snapshot';
 import { AiError } from './errors';
 import { thinkingParameters } from './thinking';
+import { checkFinish, skipsTemperature, usesCompletionTokens } from './compat';
 export interface AiMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -55,8 +56,11 @@ export function wireRequest(
   const thinking = thinkingParameters(snapshot.thinkingCapability, protocol === 'anthropic' ? max ?? 4096 : max);
   const temperature =
     cap.temperature && !thinking.anthropic && !(protocol === 'anthropic' && (params.temperature ?? 0) > 1)
+      && !(protocol === 'openai' && skipsTemperature(snapshot.channel, snapshot.model))
       ? params.temperature
       : undefined;
+  const completionTokens = protocol === 'openai' && usesCompletionTokens(snapshot.channel, snapshot.model);
+  if (completionTokens && max !== undefined) diagnostics.push('MAX_COMPLETION_TOKENS_FIELD');
   if (params.temperature !== undefined && temperature === undefined)
     diagnostics.push('TEMPERATURE_SKIPPED_UNSUPPORTED');
   if (params.maxOutputTokens !== undefined && max === undefined)
@@ -79,7 +83,7 @@ export function wireRequest(
       messages: ordered,
       stream,
       ...(temperature !== undefined ? { temperature } : {}),
-      ...(max !== undefined ? { max_tokens: max } : {}),
+      ...(max !== undefined ? completionTokens ? { max_completion_tokens: max } : { max_tokens: max } : {}),
       ...(structured && cap.jsonMode ? { response_format: { type: 'json_object' } } : {}),
     };
   } else if (protocol === 'gemini') {
@@ -165,9 +169,7 @@ export function responseText(value: unknown, protocol: RequestSnapshot['channel'
   if (data.error) throw new AiError('rejected');
   if (protocol === 'openai') {
     const choice = record(array(data.choices)[0]);
-    if (choice.finish_reason === 'length') throw new AiError('output_limit');
-    if (choice.finish_reason && choice.finish_reason !== 'stop')
-      throw new AiError('stream_interrupted');
+    checkFinish(choice.finish_reason);
     const content = record(choice.message).content;
     return typeof content === 'string'
       ? content
@@ -177,18 +179,15 @@ export function responseText(value: unknown, protocol: RequestSnapshot['channel'
           .join('');
   }
   if (protocol === 'gemini') {
+    if (record(data.promptFeedback).blockReason) throw new AiError('content_filter');
     const candidate = record(array(data.candidates)[0]);
-    if (candidate.finishReason === 'MAX_TOKENS') throw new AiError('output_limit');
-    if (candidate.finishReason && candidate.finishReason !== 'STOP')
-      throw new AiError('stream_interrupted');
+    checkFinish(candidate.finishReason);
     return array(record(candidate.content).parts)
       .filter((p) => record(p).thought !== true)
       .map((p) => string(record(p).text))
       .join('');
   }
-  if (data.stop_reason === 'max_tokens') throw new AiError('output_limit');
-  if (data.stop_reason && data.stop_reason !== 'end_turn' && data.stop_reason !== 'stop_sequence')
-    throw new AiError('stream_interrupted');
+  checkFinish(data.stop_reason);
   return array(data.content)
     .filter((part) => record(part).type === 'text')
     .map((part) => string(record(part).text))

@@ -18,6 +18,7 @@ import {
 import type { AiMessage, Usage } from './protocols';
 import { readSse } from './sse';
 import { rememberThinkingCapability, unsupportedThinkingParameter, blockThinkingCapability } from './thinking';
+import { checkFinish, LeadingThink, rememberUnsupported, splitLeadingThink, unsupportedParameter } from './compat';
 
 export interface RequestOptions {
   signal?: AbortSignal;
@@ -94,12 +95,17 @@ export class AiClient {
     });
     if (!response.ok) {
       const status = response.status;
-      if (snapshot && snapshot.thinkingCapability !== 'none' && [400, 422].includes(status)
+      if (snapshot && (snapshot.thinkingCapability !== 'none' || snapshot.channel.protocol === 'openai') && [400, 422].includes(status)
         && response.headers.get('content-type')?.includes('application/json')) {
         try {
           const error: unknown = await response.json();
-          if (!signal.aborted && unsupportedThinkingParameter(error)) blockThinkingCapability(snapshot.channel, snapshot.model);
-        } catch { /* 错误正文不外传，不猜测兼容能力，也不重发当前请求。 */ }
+          if (!signal.aborted && snapshot.thinkingCapability !== 'none' && unsupportedThinkingParameter(error)) blockThinkingCapability(snapshot.channel, snapshot.model);
+          const parameter = snapshot.channel.protocol === 'openai' ? unsupportedParameter(error) : undefined;
+          if (!signal.aborted && parameter) {
+            rememberUnsupported(snapshot.channel, snapshot.model, parameter);
+            throw new AiError('parameter_adjusted', status);
+          }
+        } catch (error) { if (error instanceof AiError) throw error; /* 错误正文不外传，不猜测兼容能力，也不重发当前请求。 */ }
       }
       throw new AiError(
         status === 401 || status === 403
@@ -133,7 +139,9 @@ export class AiClient {
         const protocol = snapshot.channel.protocol;
         let text = '', reasoning = '',
           usage: Usage | undefined;
-        if (!options.stream) {
+        // 部分中转忽略 stream:true 直接返回完整 JSON；按非流式读取，再一次性交给进度回调。
+        const wholeJson = options.stream === true && /application\/json/i.test(response.headers.get('content-type') ?? '');
+        if (!options.stream || wholeJson) {
           let data: unknown;
           try {
             data = await response.json();
@@ -143,13 +151,20 @@ export class AiClient {
           usage = usageFrom(data, protocol); observedUsage = usage;
           text = responseText(data, protocol);
           reasoning = nativeReasoning(data, protocol);
+          if (protocol === 'openai') {
+            const split = splitLeadingThink(text);
+            text = split.content;
+            if (!reasoning) reasoning = split.reasoning;
+          }
+          if (wholeJson && !signal.aborted) {
+            if (reasoning) { options.onActivity?.('reasoning'); options.onReasoningDelta?.(reasoning); }
+            if (text) { options.onActivity?.('content'); options.onDelta?.(text); }
+          }
         } else {
-          if (
-            !response.body ||
-            !response.headers.get('content-type')?.includes('text/event-stream')
-          )
-            throw new AiError('stream_interrupted');
-          let terminal = false;
+          // Content-Type 不可靠（有的中转写成 text/plain），只要有响应体就按 SSE 解析；是否完整由结束标记判断。
+          if (!response.body) throw new AiError('stream_interrupted');
+          let terminal = false, nativeSeen = false;
+          const think = protocol === 'openai' ? new LeadingThink() : undefined;
           for await (const event of readSse(response.body, signal)) {
             if (event.data === '[DONE]' && protocol === 'openai') {
               terminal = true;
@@ -167,18 +182,16 @@ export class AiClient {
             if (nextUsage) usage = { ...usage, ...nextUsage };
             observedUsage = usage;
             let delta = '';
+            let thinkReasoning = '';
             if (protocol === 'openai') {
               const choice = record(array(data.choices)[0]);
-              if (choice.finish_reason === 'length') throw new AiError('output_limit');
-              if (choice.finish_reason && choice.finish_reason !== 'stop')
-                throw new AiError('stream_interrupted');
-              delta = string(record(choice.delta).content);
+              if (checkFinish(choice.finish_reason)) terminal = true;
+              const split = think!.push(string(record(choice.delta).content));
+              delta = split.content; thinkReasoning = split.reasoning;
             } else if (protocol === 'gemini') {
+              if (record(data.promptFeedback).blockReason) throw new AiError('content_filter');
               const candidate = record(array(data.candidates)[0]);
-              if (candidate.finishReason === 'MAX_TOKENS') throw new AiError('output_limit');
-              if (candidate.finishReason && candidate.finishReason !== 'STOP')
-                throw new AiError('stream_interrupted');
-              if (candidate.finishReason === 'STOP') terminal = true;
+              if (checkFinish(candidate.finishReason)) terminal = true;
               delta = array(record(candidate.content).parts)
                 .filter((part) => record(part).thought !== true)
                 .map((part) => string(record(part).text))
@@ -188,13 +201,13 @@ export class AiClient {
                 delta = string(record(data.content_block).text);
               if (data.type === 'content_block_delta' && record(data.delta).type === 'text_delta')
                 delta = string(record(data.delta).text);
-              const stop = record(data.delta).stop_reason;
-              if (stop === 'max_tokens') throw new AiError('output_limit');
-              if (stop && stop !== 'end_turn' && stop !== 'stop_sequence')
-                throw new AiError('stream_interrupted');
+              checkFinish(record(data.delta).stop_reason);
               if (data.type === 'message_stop') terminal = true;
             }
-            const reasoningDelta = nativeReasoning(data, protocol, true);
+            const native = nativeReasoning(data, protocol, true);
+            if (native) nativeSeen = true;
+            // 服务已单独给出思考时，不再把正文里的 <think> 重复算进去。
+            const reasoningDelta = native || (nativeSeen ? '' : thinkReasoning);
             reasoning += reasoningDelta;
             if (reasoning.length > 2_000_000) throw new AiError('invalid_output');
             if (!signal.aborted) {
@@ -204,6 +217,11 @@ export class AiClient {
             text += delta;
             if (text.length > 8_000_000) throw new AiError('invalid_output');
             if (delta && !signal.aborted) options.onDelta?.(delta);
+          }
+          if (think) {
+            const rest = think.end();
+            if (rest.content) { text += rest.content; if (!signal.aborted) { options.onActivity?.('content'); options.onDelta?.(rest.content); } }
+            if (rest.reasoning && !nativeSeen) { reasoning += rest.reasoning; if (!signal.aborted) options.onReasoningDelta?.(rest.reasoning); }
           }
           if (!terminal) throw new AiError('stream_interrupted');
         }

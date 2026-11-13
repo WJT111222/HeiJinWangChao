@@ -31,7 +31,11 @@ export async function* readSse(
       }
       if (chunk.done) {
         if (signal.aborted) throw new AiError('cancelled');
-        if (buffer.trim() || data.length) throw new AiError('stream_interrupted');
+        // 部分服务在最后一条事件后直接断开，没有补空行；按完整事件交出，是否完整由调用方的结束标记判断。
+        const line = buffer.replace(/\r$/, '');
+        if (line.startsWith('data:')) data.push(line.slice(5).replace(/^ /, ''));
+        else if (line.trim() && !line.startsWith(':') && !line.startsWith('event:')) throw new AiError('stream_interrupted');
+        if (data.length) yield { event, data: data.join('\n') };
         break;
       }
     }
