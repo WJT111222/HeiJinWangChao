@@ -121,15 +121,10 @@ for (const mode of ['project', 'native', 'both', 'none'] as const) {
     text('</正文>' + tail); finish();
     await expect(page.getByRole('article', { name: '流式正文预览', exact: true })).toHaveCount(0);
     const saved = await stored(page); expect(saved.state).toEqual(before.state);
-    const valid = mode === 'project' || mode === 'both';
-    if (valid) {
-      expect(saved.draft?.story?.narrative).toContain('小说开场标记。');
-      expect(JSON.stringify(saved.draft?.story)).not.toContain(planning);
-      expect(JSON.stringify(saved.draft?.story)).not.toContain(native);
-      await expect(reader).not.toContainText(planning); await expect(reader).not.toContainText(native);
-    } else {
-      expect(saved).toEqual(before);
-    }
+    expect(saved.draft?.story?.narrative).toContain('小说开场标记。');
+    expect(JSON.stringify(saved.draft?.story)).not.toContain(planning);
+    expect(JSON.stringify(saved.draft?.story)).not.toContain(native);
+    await expect(reader).not.toContainText(planning); await expect(reader).not.toContainText(native);
     await closeDiagnostics(page);
     const raw = await openStageRaw(page, 'story');
     await expect(page.locator('.wf-stage').getByRole('tab')).toHaveText(['概览', '模型原文', '校验结果']);
@@ -215,13 +210,10 @@ for (const mode of ['all', 'only', 'mirror'] as const) {
     text('</正文>' + tail); finish();
     await expect(page.getByRole('article', { name: '流式正文预览', exact: true })).toHaveCount(0);
     const saved = await stored(page); expect(saved.state).toEqual(before.state);
-    if (mode === 'only') expect(saved).toEqual(before);
-    else {
-      expect(saved.draft?.story?.narrative).toBe('兼容切换后的小说正文。');
-      expect(JSON.stringify(saved.draft?.story)).not.toContain(compatibility);
-      expect(JSON.stringify(saved.draft?.story)).not.toContain(nativeText);
-      expect(JSON.stringify(saved.draft?.story)).not.toContain(planning);
-    }
+    expect(saved.draft?.story?.narrative).toBe('兼容切换后的小说正文。');
+    expect(JSON.stringify(saved.draft?.story)).not.toContain(compatibility);
+    expect(JSON.stringify(saved.draft?.story)).not.toContain(nativeText);
+    expect(JSON.stringify(saved.draft?.story)).not.toContain(planning);
     await closeDiagnostics(page);
     const raw = await openStageRaw(page, 'story');
     await expect(raw.getByRole('textbox', { name: '正文模型完整原文', exact: true })).toHaveValue((mode === 'only' ? '' : nativeText) + rawText);
