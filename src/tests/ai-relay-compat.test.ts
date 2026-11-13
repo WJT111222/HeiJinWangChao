@@ -183,3 +183,87 @@ describe('中转站地址漏写 /v1', () => {
     expect(catalog.getSnapshot()[target.id].message).not.toContain('备用路径');
   });
 });
+
+describe('参数兼容只在服务明确拒绝支持性时生效（不误判、不自动重发）', () => {
+  const relay = 'https://relay.example.com/v1';
+  function routes(temperature?: number) {
+    const s = configured('openai');
+    const base = { ...s.channel, baseUrl: relay, parameters: { ...s.channel.parameters, ...(temperature === undefined ? {} : { temperature }) } };
+    const otherModel = { ...base, defaultModel: 'other-model' };
+    const otherChannel = { ...base, id: 'second-channel' };
+    s.vault.set(otherChannel.id, 'second-key-not-real');
+    return { snap: (channel: typeof base) => channelSnapshot(channel, s.vault), base, otherModel, otherChannel };
+  }
+  const bad = (error: Record<string, unknown>) => json({ error: { type: 'invalid_request_error', ...error } }, 400);
+
+  it('① max_tokens 数值超限只是普通拒绝，下次仍发 max_tokens', async () => {
+    const { snap, base } = routes();
+    const { ai, sent } = client(bad({ code: 'invalid_value', param: 'max_tokens', message: 'max_tokens is too large: 8192. This model supports at most 4096 completion tokens.' }), json(reply('好')));
+    await expect(ai.generate(snap(base), messages)).rejects.toMatchObject({ code: 'rejected' });
+    await ai.generate(snap(base), messages);
+    expect(sent).toHaveLength(2);
+    expect(sent[1].body).toHaveProperty('max_tokens', 8192);
+    expect(sent[1].body).not.toHaveProperty('max_completion_tokens');
+  });
+  it.each([
+    { code: 'invalid_value', param: 'temperature', message: 'temperature must be <= 1' },
+    { code: 'unsupported_value', param: 'temperature', message: "Unsupported value: 'temperature' must be between 0 and 1." },
+    { param: 'temperature', message: 'Invalid temperature: 1.5 is out of range.' },
+  ])('② temperature 越界不丢玩家参数：$message', async error => {
+    const { snap, base } = routes(1.5);
+    const { ai, sent } = client(bad(error), json(reply('好')));
+    await expect(ai.generate(snap(base), messages)).rejects.toMatchObject({ code: 'rejected' });
+    await ai.generate(snap(base), messages);
+    expect(sent[0].body).toHaveProperty('temperature', 1.5);
+    expect(sent[1].body).toHaveProperty('temperature', 1.5);
+  });
+  it.each([
+    { code: 'unsupported_parameter', param: 'max_completion_tokens', message: "Unsupported parameter: 'max_completion_tokens' is not supported with this model. Use 'max_tokens' instead." },
+    { message: 'max_completion_tokens unsupported; use max_tokens' },
+    { code: 'unsupported_parameter', param: 'max_tokens', message: 'max_tokens is not supported for this endpoint.' },
+  ])('③ 方向相反或没有明确建议时不切换：$message', async error => {
+    const { snap, base } = routes();
+    const { ai, sent } = client(bad(error), json(reply('好')));
+    await expect(ai.generate(snap(base), messages)).rejects.toMatchObject({ code: 'rejected' });
+    await ai.generate(snap(base), messages);
+    expect(sent[1].body).toHaveProperty('max_tokens', 8192);
+    expect(sent[1].body).not.toHaveProperty('max_completion_tokens');
+  });
+  it('④ 真正不支持 max_tokens：首次只发一次，只影响同一渠道同一模型的下一次请求', async () => {
+    const { snap, base, otherModel, otherChannel } = routes();
+    const { ai, sent } = client(
+      bad({ code: 'unsupported_parameter', param: 'max_tokens', message: "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead." }),
+      json(reply('好')), json(reply('好')), json(reply('好')));
+    await expect(ai.generate(snap(base), messages)).rejects.toMatchObject({ code: 'parameter_adjusted' });
+    expect(sent).toHaveLength(1);
+    await ai.generate(snap(base), messages);
+    await ai.generate(snap(otherModel), messages);
+    await ai.generate(snap(otherChannel), messages);
+    expect(sent[1].body).toMatchObject({ max_completion_tokens: 8192 });
+    expect(sent[1].body).not.toHaveProperty('max_tokens');
+    expect(sent[2].body).toHaveProperty('max_tokens', 8192);
+    expect(sent[3].body).toHaveProperty('max_tokens', 8192);
+  });
+  it('④ 真正不支持自定义 temperature：首次只发一次，只影响同一渠道同一模型', async () => {
+    const { snap, base, otherModel, otherChannel } = routes(0.7);
+    const { ai, sent } = client(
+      bad({ code: 'unsupported_value', param: 'temperature', message: "Unsupported value: 'temperature' does not support 0.7 with this model. Only the default (1) value is supported." }),
+      json(reply('好')), json(reply('好')), json(reply('好')));
+    await expect(ai.generate(snap(base), messages)).rejects.toMatchObject({ code: 'parameter_adjusted' });
+    expect(sent).toHaveLength(1);
+    await ai.generate(snap(base), messages);
+    await ai.generate(snap(otherModel), messages);
+    await ai.generate(snap(otherChannel), messages);
+    expect(sent[1].body).not.toHaveProperty('temperature');
+    expect(sent[2].body).toHaveProperty('temperature', 0.7);
+    expect(sent[3].body).toHaveProperty('temperature', 0.7);
+  });
+  it('没有发送 temperature 时，即使服务提到 temperature 也不记录', async () => {
+    const { snap, base } = routes();
+    const { ai, sent } = client(bad({ code: 'unsupported_parameter', param: 'temperature', message: "Unsupported parameter: 'temperature' is not supported with this model." }), json(reply('好')));
+    await expect(ai.generate(snap(base), messages)).rejects.toMatchObject({ code: 'rejected' });
+    await ai.generate(snap(base), messages);
+    expect(sent[0].body).not.toHaveProperty('temperature');
+    expect(sent[1].body).toHaveProperty('max_tokens', 8192);
+  });
+});

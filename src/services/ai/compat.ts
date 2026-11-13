@@ -90,11 +90,26 @@ export function skipsTemperature(route: Route, model: string) {
 }
 const object = (value: unknown): Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value)
   ? Object.fromEntries(Object.entries(value)) : {};
-/** 只识别 OpenAI 格式的明确参数错误：error.param 或标准报错原文，不解读其他自然语言。 */
-export function unsupportedParameter(raw: unknown): AdjustedParameter | undefined {
+/**
+ * 只在服务明确拒绝「本次实际发送的参数」时才记住：
+ * - max_tokens：错误类别为 unsupported_parameter（或标准原文「Unsupported parameter: 'max_tokens'」），且建议改用 max_completion_tokens；
+ * - temperature：错误类别为 unsupported_parameter / unsupported_value（模型只接受默认值），或对应的标准原文。
+ * 数值越界（invalid_value、「must be <= 1」等）、方向相反的建议和其他模糊提示一律不记，不改动玩家参数。
+ */
+export function unsupportedParameter(raw: unknown, sent: { maxTokens: boolean; temperature: boolean }): AdjustedParameter | undefined {
   const error = object(object(raw).error), message = typeof error.message === 'string' ? error.message : '';
-  if (error.param === 'max_tokens' || /\bmax_completion_tokens\b/.test(message) && /\bmax_tokens\b/.test(message)) return 'max_tokens';
-  if (error.param === 'temperature' || /Unsupported (?:value|parameter): 'temperature'/.test(message)) return 'temperature';
+  const code = typeof error.code === 'string' ? error.code : '';
+  if (sent.maxTokens) {
+    const unsupported = (code === 'unsupported_parameter' && error.param === 'max_tokens') || /Unsupported parameter: 'max_tokens'/.test(message);
+    const suggestion = /\buse\s+'?max_completion_tokens'?/i.test(message);
+    if (unsupported && suggestion && error.param !== 'max_completion_tokens') return 'max_tokens';
+  }
+  if (sent.temperature) {
+    const unsupported = (['unsupported_parameter', 'unsupported_value'].includes(code) && error.param === 'temperature')
+      || /Unsupported (?:value|parameter): 'temperature'/.test(message);
+    const range = /must be|out of range|between|greater than|less than|<=|>=/i.test(message);
+    if (unsupported && code !== 'invalid_value' && !range) return 'temperature';
+  }
   return undefined;
 }
 export function rememberUnsupported(route: Route, model: string, parameter: AdjustedParameter) {

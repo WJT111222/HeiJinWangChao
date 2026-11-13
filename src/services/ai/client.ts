@@ -100,7 +100,9 @@ export class AiClient {
         try {
           const error: unknown = await response.json();
           if (!signal.aborted && snapshot.thinkingCapability !== 'none' && unsupportedThinkingParameter(error)) blockThinkingCapability(snapshot.channel, snapshot.model);
-          const parameter = snapshot.channel.protocol === 'openai' ? unsupportedParameter(error) : undefined;
+          const sentBody = record(typeof init.body === 'string' ? JSON.parse(init.body) : undefined);
+          const parameter = snapshot.channel.protocol === 'openai' ? unsupportedParameter(error, {
+            maxTokens: Object.hasOwn(sentBody, 'max_tokens'), temperature: Object.hasOwn(sentBody, 'temperature') }) : undefined;
           if (!signal.aborted && parameter) {
             rememberUnsupported(snapshot.channel, snapshot.model, parameter);
             throw new AiError('parameter_adjusted', status);
