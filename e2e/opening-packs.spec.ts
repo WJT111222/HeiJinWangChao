@@ -2,6 +2,7 @@ import { test, expect } from './helpers/test';
 import type { Page } from '@playwright/test';
 import type { Creation } from '../src/ui/creation/model';
 import type { OpeningPack } from '../src/ui/creation/openingPacks';
+import { chooseCustomProfession, chooseProfession, mobileCreation, showPersonalSkills, showCreationReview } from './helpers/creation';
 import { goHome } from './helpers/gameLayout';
 
 const draft = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('heijin.creation.v1')!) as Creation);
@@ -43,7 +44,8 @@ test('完整五步保存、再次套用直达第五步、编辑刷新与正式�
   await page.getByLabel('内置职业技能', { exact: true }).fill('修复\n\n  手写记录  ');
   await page.getByLabel('长期影响', { exact: true }).fill('长期与社区合作\n保持独立');
   await page.getByRole('button', { name: '技术与生产', exact: true }).click();
-  await page.getByRole('radio', { name: '程序员', exact: true }).check();
+  await chooseProfession(page, '程序员');
+  await showPersonalSkills(page);
   await page.getByLabel('个人技能与专长').fill('手工编程\n记录工作');
   await page.getByRole('button', { name: /下一步/ }).click();
   await page.getByRole('radio', { name: /上海/ }).check();
@@ -65,7 +67,7 @@ test('完整五步保存、再次套用直达第五步、编辑刷新与正式�
   await expect(page.getByRole('status')).toHaveText('开局包已保存');
   expect(await saves(page)).toEqual([]); expect((await draft(page)).step).toBe(5);
   const originalPacks = await packs(page);
-  await page.getByRole('button', { name: '返回首页', exact: true }).click();
+  await page.getByRole('button', { name: mobileCreation(page) ? '‹ 首页' : '返回首页', exact: true }).click();
   await page.getByRole('button', { name: /开始新游戏/ }).click();
   await page.getByRole('navigation', { name: '角色创建步骤' }).getByRole('button', { name: /基本信息/ }).click();
   await page.getByRole('button', { name: '我的开局包', exact: true }).click();
@@ -82,6 +84,7 @@ test('完整五步保存、再次套用直达第五步、编辑刷新与正式�
   expect(applied.saveId).not.toBe(original.saveId);
   await expect(page.getByRole('heading', { name: '确认与开局', exact: true })).toBeVisible();
   await expect(page.getByLabel('开局偏好（可选）')).toHaveValue(preference);
+  await showCreationReview(page);
   await page.getByText('完整职业表单', { exact: true }).click();
   await expect(page.getByRole('region', { name: '保留的自定义职业' })).toContainText('旧书修复师');
   await expect(page.locator('.creation-review')).toContainText('背景末行');
@@ -90,7 +93,7 @@ test('完整五步保存、再次套用直达第五步、编辑刷新与正式�
   await page.evaluate(() => scrollTo(0, 0));
   await page.screenshot({ path: `docs/opening-packs/screenshots/${info.project.name}-review-viewport.png` });
   await page.getByRole('button', { name: '修改职业', exact: true }).click();
-  await page.getByRole('radio', { name: '自由选择', exact: true }).check();
+  await chooseCustomProfession(page);
   await expect(page.getByLabel('内置职业技能')).toHaveValue(original.customProfile!.skills);
   await page.getByLabel('内置职业技能').fill('新编辑技能\n修补');
   await page.getByRole('button', { name: '确认与开局', exact: false }).click();
@@ -109,7 +112,12 @@ test('完整五步保存、再次套用直达第五步、编辑刷新与正式�
   expect(saved.state.npc.companion).toMatchObject({ name: '许宁', background: original.companion.background });
   expect(saved.draft.userInput).toBe(preference); expect(await packs(page)).toEqual(originalPacks);
   // After the original creation flow finishes, the next new character starts at step 1.
-  await goHome(page); await page.getByRole('button', { name: /开始新游戏/ }).click();
+  await goHome(page);
+  if (mobileCreation(page)) {
+    await page.getByRole('navigation', { name: '车票页码' }).getByRole('button', { name: /空白车票/ }).click();
+    await page.getByRole('button', { name: /开始新游戏/ }).click();
+  }
+  else await page.locator('.library .dossier.new button').click();
   expect((await draft(page)).step).toBe(1);
   await page.getByRole('button', { name: '我的开局包', exact: true }).click();
   await page.getByRole('radio', { name: /上海普通人生/ }).check();
@@ -136,7 +144,8 @@ test('同名包独立管理：重命名、取消删除、明确覆盖及确认�
   await page.getByRole('button', { name: '确认与开局', exact: false }).click();
   await page.getByLabel('开局偏好（可选）').fill('新的偏好');
   await page.getByRole('button', { name: '保存为开局包', exact: true }).click();
-  await page.getByLabel('保存方式').selectOption(original[0].id);
+  if (mobileCreation(page)) await page.getByRole('radiogroup', { name: '保存方式' }).getByRole('radio', { name: '覆盖：重命名包', exact: true }).click();
+  else await page.getByLabel('保存方式').selectOption(original[0].id);
   await page.getByRole('button', { name: '保存开局包', exact: true }).click();
   expect((await packs(page))[0].settings.openingPreference).toBe(original[0].settings.openingPreference);
   await page.getByRole('button', { name: '取消', exact: true }).click();
