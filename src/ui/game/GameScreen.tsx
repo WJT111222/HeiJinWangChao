@@ -89,6 +89,7 @@ export function GameScreen({
   onUndone,
   onMemorySaved,
   onNpcManaged,
+  instance,
   renderSettings,
 }: {
   openingStart?: OpeningStart;
@@ -106,6 +107,8 @@ export function GameScreen({
   onUndone: (result: TurnUndoResult) => void;
   onMemorySaved: (state: GameState) => void;
   onNpcManaged: (result: NpcManagementResult) => void;
+  /** 读档时的存档实例身份，人物管理时原样传回。 */
+  instance?: string;
   renderSettings?: (maintenance: ReactNode) => ReactNode;
 }) {
   const openingTime = useMemo(() => {
@@ -199,7 +202,7 @@ export function GameScreen({
   const workflowBusy = Boolean(
     submitting || automatic.running || progress || variables.phase || world.phase,
   );
-  const npcManagement = useNpcManagement(repository, state, draft, workflowBusy, onNpcManaged);
+  const npcManagement = useNpcManagement(repository, state, draft, workflowBusy, onNpcManaged, instance);
   const busy = workflowBusy || Boolean(npcManagement.pendingId);
   const reader = useRef<HTMLDivElement>(null);
   const runtimeSwitches = useRef<HTMLOListElement | HTMLDivElement>(null);

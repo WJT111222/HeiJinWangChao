@@ -9,6 +9,7 @@ import type { TurnDraft } from '../domain/drafts';
 import { DataError } from '../domain/common';
 import { GameStateSchema } from '../domain/state';
 import { reserveStageSession } from '../workflows/stageGuard';
+import { canAcceptNpcView, changeNpcImportance } from '../ui/game/npcManagement';
 import { compressionState } from './fixtures/compression';
 import { npcMemoryState, npcSummaryOutput } from './fixtures/npcMemory';
 import { parseCompression, planCompression } from '../domain/memories/compression';
@@ -340,7 +341,9 @@ describe('导入与覆盖', () => {
     await repository.importBackup(backup, token, { overwrite: true });
     const after = await all();
     expect(after.turnReceipts).toEqual([]);
-    expect(after.saveControls).toEqual([]);
+    // 旧控制记录被清除，换成只带新实例身份、没有撤回记录的新控制记录。
+    expect(after.saveControls).toEqual([expect.objectContaining({ saveId: 'save-a', records: [], instanceId: expect.stringMatching(/^instance-/) })]);
+    expect((after.saveControls[0] as { marker?: boolean }).marker).toBeUndefined();
     expect(after.turnUndo).toEqual([{ saveId: 'save-b', turnId: 'turn-x', marker: true }]);
     expect((await repository.loadDraft('save-a'))?.draftRevision).toBe(1);
     expect((await repository.load('save-b')).saveId).toBe('save-b');
@@ -455,5 +458,111 @@ describe('导入与覆盖', () => {
     expect(await code(repository.importBackup(backup, token, { overwrite: true }))).toBeDefined();
     vi.restoreAllMocks();
     expect(await all()).toEqual(before);
+  });
+});
+
+describe('二轮复审：确认内容绑定、残留记录与旧页面依据', () => {
+  it('A：确认凭据绑定当时比较的备份内容，换成同 ID 的另一份备份必须重新比较', async () => {
+    await withDraft();
+    const original = await backupOf('save-a');
+    const backupA = { ...original, state: { ...original.state, title: '备份甲' } };
+    const backupB = { ...original, state: { ...original.state, title: '备份乙' } };
+    const before = await all();
+    expect(await code(repository.importBackup(backupB, await confirm(backupA), { overwrite: true }))).toBe('IMPORT_CONFIRMATION_INVALID');
+    const otherDraft = { ...original, draft: createTurnDraft('save-a', 0, 'turn-a', 'regular', '换了一份草稿') };
+    expect(await code(repository.importBackup(otherDraft, await confirm(original), { overwrite: true }))).toBe('IMPORT_CONFIRMATION_INVALID');
+    expect(await all()).toEqual(before);
+    await repository.importBackup(backupB, await confirm(backupB), { overwrite: true });
+    expect((await repository.load('save-a')).title).toBe('备份乙');
+  });
+
+  it('C：没有正式存档但留有同 ID 关联记录时需要明确覆盖，不当作新建', async () => {
+    await put('drafts', createTurnDraft('save-a', 0, 'turn-old', 'regular', '残留草稿'));
+    await put('turnReceipts', { saveId: 'save-a', turnId: 'turn-x', marker: true });
+    const backup = { state: game('save-a') };
+    const comparison = await repository.compareBackup(backup);
+    expect(comparison).toMatchObject({ kind: 'overwrite-orphaned', records: { drafts: 1, turnReceipts: 1, turnUndo: 0, saveControls: 0 } });
+    const before = await all();
+    expect(await code(repository.importBackup(backup, comparison.confirmation))).toBe('SAVE_EXISTS');
+    expect(await all()).toEqual(before);
+    await repository.importBackup(backup, await confirm(backup), { overwrite: true });
+    const after = await all();
+    expect(after.drafts).toEqual([]);
+    expect(after.turnReceipts).toEqual([]);
+  });
+
+  it('B：旧列表准备删除，另一标签覆盖导入同 ID 同 revision 后，旧删除被拒绝且导入内容完整；刷新后可删除', async () => {
+    await repository.create(game('save-a'));
+    const [stale] = await repository.list();
+    if (stale.status !== 'readable') throw new Error('expected readable summary');
+    const backup = await backupOf('save-a');
+    const other = await SaveRepository.open(name, factory);
+    try {
+      const imported = { ...backup, state: { ...backup.state, title: '另一标签导入' } };
+      await other.importBackup(imported, (await other.compareBackup(imported)).confirmation, { overwrite: true });
+    } finally { other.close(); }
+    expect((await repository.load('save-a')).revision).toBe(stale.revision);
+    const before = await all();
+    expect(await code(repository.delete('save-a', stale.revision, stale.instance ?? null))).toBe('REVISION_CONFLICT');
+    expect(await all()).toEqual(before);
+    const [fresh] = await repository.list();
+    if (fresh.status !== 'readable') throw new Error('expected readable summary');
+    expect(fresh.instance).toMatch(/^instance-/);
+    await repository.delete('save-a', fresh.revision, fresh.instance ?? null);
+    expect(await repository.list()).toEqual([]);
+  });
+
+  it('B：旧页面的人物管理（无草稿、身份与版本都相同）跨导入被拒绝；重新读取后正常允许', async () => {
+    await repository.create(worldState());
+    const stale = await repository.loadGame('save-a');
+    expect(stale.instance).toBeUndefined();
+    const backup = await backupOf('save-a');
+    const other = await SaveRepository.open(name, factory);
+    try { await other.importBackup(backup, (await other.compareBackup(backup)).confirmation, { overwrite: true }); }
+    finally { other.close(); }
+    const current = await repository.load('save-a');
+    expect([current.revision, current.npcManagementRevision ?? 0, current.npc['npc-a'].identityKey])
+      .toEqual([stale.state.revision, stale.state.npcManagementRevision ?? 0, stale.state.npc['npc-a'].identityKey]);
+    const before = await all();
+    expect(await code(changeNpcImportance(repository, stale.state, stale.draft, 'npc-a', stale.instance))).toBe('REVISION_CONFLICT');
+    expect(await all()).toEqual(before);
+    const fresh = await repository.loadGame('save-a');
+    expect(fresh.instance).toMatch(/^instance-/);
+    const changed = await changeNpcImportance(repository, fresh.state, fresh.draft, 'npc-a', fresh.instance);
+    expect(changed.instance).toBe(fresh.instance);
+    expect(changed.state.npcManagementRevision).toBe(1);
+  });
+
+  it('实例身份只在导入时更换：人物管理、旧保存入口、记忆维护都原样保留它', async () => {
+    await repository.create(worldState());
+    const backup = await backupOf('save-a');
+    await repository.importBackup(backup, await confirm(backup), { overwrite: true });
+    const { instance, state } = await repository.loadGame('save-a');
+    await changeNpcImportance(repository, state, undefined, 'npc-a', instance);
+    await repository.save('save-a', 0, 'turn-x', [purchase()]);
+    await repository.loadMemoryContext('save-a');
+    expect((await repository.loadGame('save-a')).instance).toBe(instance);
+    const [summary] = await repository.list();
+    expect(summary.status === 'readable' && summary.instance).toBe(instance);
+  });
+
+  it('原存档不传身份照常删除与管理；控制记录损坏时读档、列表和删除仍可用', async () => {
+    await repository.create(worldState());
+    const { state } = await repository.loadGame('save-a');
+    expect((await changeNpcImportance(repository, state, undefined, 'npc-a')).instance).toBeUndefined();
+    await put('saveControls', { saveId: 'save-a', broken: true });
+    expect((await repository.loadGame('save-a')).instance).toBeUndefined();
+    const [summary] = await repository.list();
+    expect(summary.status === 'readable' && summary.instance).toBeUndefined();
+    await repository.delete('save-a', 0);
+    expect(await repository.list()).toEqual([]);
+  });
+
+  it('界面接受新实例的读取结果，即使新时间线版本号更小', async () => {
+    const draft = createTurnDraft('save-a', 3, 'turn-a', 'regular', '输入');
+    const current = { state: { ...game('save-a'), revision: 3 }, draft };
+    const replaced = { state: { ...game('save-a'), revision: 1 }, instance: 'instance-new' };
+    expect(canAcceptNpcView(current, replaced)).toBe(true);
+    expect(canAcceptNpcView(current, { state: replaced.state })).toBe(false);
   });
 });

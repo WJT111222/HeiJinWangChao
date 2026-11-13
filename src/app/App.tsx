@@ -88,6 +88,8 @@ export function App() {
     draft?: TurnDraft;
     companionProfile?: CompanionProfile;
     undoGeneration?: number;
+    /** 读档时的存档实例身份（导入备份后才有），人物管理据此证明操作的是同一条时间线。 */
+    instance?: string;
   }>();
   const [error, setError] = useState(initial.warning);
   const [listError, setListError] = useState('');
@@ -148,7 +150,7 @@ export function App() {
       const id = route.slice(6);
       repository
         .loadGame(id)
-        .then(({ state, draft }) => {
+        .then(({ state, draft, instance }) => {
           if (!disposed) {
             let companionProfile: CompanionProfile | undefined;
             try {
@@ -156,7 +158,7 @@ export function App() {
             } catch {
               setError('同伴创角档案无法读取，已隐藏无法确认来源的资料；正式存档未被修改。');
             }
-            setLoaded({ state, draft, companionProfile });
+            setLoaded({ state, draft, companionProfile, instance });
             setLoading(false);
           }
         })
@@ -259,7 +261,7 @@ export function App() {
     setBusy(true);
     setDeleteError('');
     try {
-      if (deleting.status === 'readable') await repository.delete(deleting.saveId, deleting.revision);
+      if (deleting.status === 'readable') await repository.delete(deleting.saveId, deleting.revision, deleting.instance ?? null);
       else await repository.deleteUnreadable(deleting.storageKey);
       try {
         if (typeof deleting.storageKey === 'string') localStorage.removeItem(companionProfileKey(deleting.storageKey));
@@ -391,7 +393,8 @@ export function App() {
                     : current,
                 )
               }
-              onNpcManaged={result => setLoaded(current => current && canAcceptNpcView(current, result) ? { ...current, state: result.state, draft: result.draft } : current)}
+              instance={loaded.instance}
+              onNpcManaged={result => setLoaded(current => current && canAcceptNpcView(current, result) ? { ...current, state: result.state, draft: result.draft, instance: result.instance } : current)}
               onMemorySaved={(state) => setLoaded((current) =>
                 current?.state.saveId === state.saveId && current.state.revision === state.revision && (current.state.npcManagementRevision ?? 0) === (state.npcManagementRevision ?? 0)
                   ? { ...current, state } : current)}
