@@ -1,0 +1,324 @@
+
+ RUN  v5.0.5 /workspace/mobile-redesign-batch5
+
+ ❯ src/tests/mobile-archives.test.tsx (7 tests | 7 failed) 262ms
+   × 手机地图使用安全森林、直接下级、真实人数和同一地点详情，无递归树和写入 141ms
+   × 异常手机地图仍完整可达并保留原始层级 {"id":"a","name":"孤立地点","parentId":"absent"} 36ms
+   × 异常手机地图仍完整可达并保留原始层级 {"id":"a","name":"循环一","parentId":"b"} 37ms
+   × 异常手机地图仍完整可达并保留原始层级 undefined 11ms
+   × 深层和大量地点展示不递归展开整棵树，真实森林保持完整 13ms
+   × 手机经济复用已知/未知合计和正式分值；取消收入仍是取消 10ms
+   × 物品仍仅属主角；旧物品估值、同组历史及史料不因手机展示改变 13ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tests/mobile-archives.test.tsx > 手机地图使用安全森林、直接下级、真实人数和同一地点详情，无递归树和写入
+ZodError: [
+  {
+    "code": "custom",
+    "message": "实体 ID 必须在存档内全局唯一",
+    "path": [
+      "entities"
+    ],
+    "params": {
+      "integrityRule": "entity_id"
+    }
+  },
+  {
+    "code": "custom",
+    "message": "地点引用不存在",
+    "path": [
+      "npc",
+      "person",
+      "usualLocations",
+      0,
+      "locationId"
+    ],
+    "params": {
+      "integrityRule": "location_reference"
+    }
+  },
+  {
+    "code": "custom",
+    "message": "地点引用不存在",
+    "path": [
+      "npc",
+      "person",
+      "usualLocations",
+      1,
+      "locationId"
+    ],
+    "params": {
+      "integrityRule": "location_reference"
+    }
+  },
+  {
+    "code": "custom",
+    "message": "在场 NPC 与主角地点不一致",
+    "path": [],
+    "params": {
+      "integrityRule": "domain_state"
+    }
+  }
+]
+ ❯ mobileArchivesState src/tests/fixtures/mobileArchives.ts:14:25
+     12|  for(const income of Object.values(state.economy.incomes))if(income.so…
+     13|  state.title='手机档案纸验收';
+     14|  return GameStateSchema.parse(state);
+       |                         ^
+     15| }
+     16|
+ ❯ src/tests/mobile-archives.test.tsx:13:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  src/tests/mobile-archives.test.tsx > 异常手机地图仍完整可达并保留原始层级 {"id":"a","name":"孤立地点","parentId":"absent"}
+ FAIL  src/tests/mobile-archives.test.tsx > 异常手机地图仍完整可达并保留原始层级 {"id":"a","name":"循环一","parentId":"b"}
+ FAIL  src/tests/mobile-archives.test.tsx > 异常手机地图仍完整可达并保留原始层级 undefined
+ZodError: [
+  {
+    "code": "custom",
+    "message": "实体 ID 必须在存档内全局唯一",
+    "path": [
+      "entities"
+    ],
+    "params": {
+      "integrityRule": "entity_id"
+    }
+  },
+  {
+    "code": "custom",
+    "message": "地点引用不存在",
+    "path": [
+      "npc",
+      "person",
+      "usualLocations",
+      0,
+      "locationId"
+    ],
+    "params": {
+      "integrityRule": "location_reference"
+    }
+  },
+  {
+    "code": "custom",
+    "message": "地点引用不存在",
+    "path": [
+      "npc",
+      "person",
+      "usualLocations",
+      1,
+      "locationId"
+    ],
+    "params": {
+      "integrityRule": "location_reference"
+    }
+  },
+  {
+    "code": "custom",
+    "message": "在场 NPC 与主角地点不一致",
+    "path": [],
+    "params": {
+      "integrityRule": "domain_state"
+    }
+  }
+]
+ ❯ mobileArchivesState src/tests/fixtures/mobileArchives.ts:14:25
+     12|  for(const income of Object.values(state.economy.incomes))if(income.so…
+     13|  state.title='手机档案纸验收';
+     14|  return GameStateSchema.parse(state);
+       |                         ^
+     15| }
+     16|
+ ❯ src/tests/mobile-archives.test.tsx:23:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  src/tests/mobile-archives.test.tsx > 深层和大量地点展示不递归展开整棵树，真实森林保持完整
+ZodError: [
+  {
+    "code": "custom",
+    "message": "实体 ID 必须在存档内全局唯一",
+    "path": [
+      "entities"
+    ],
+    "params": {
+      "integrityRule": "entity_id"
+    }
+  },
+  {
+    "code": "custom",
+    "message": "地点引用不存在",
+    "path": [
+      "npc",
+      "person",
+      "usualLocations",
+      0,
+      "locationId"
+    ],
+    "params": {
+      "integrityRule": "location_reference"
+    }
+  },
+  {
+    "code": "custom",
+    "message": "地点引用不存在",
+    "path": [
+      "npc",
+      "person",
+      "usualLocations",
+      1,
+      "locationId"
+    ],
+    "params": {
+      "integrityRule": "location_reference"
+    }
+  },
+  {
+    "code": "custom",
+    "message": "在场 NPC 与主角地点不一致",
+    "path": [],
+    "params": {
+      "integrityRule": "domain_state"
+    }
+  }
+]
+ ❯ mobileArchivesState src/tests/fixtures/mobileArchives.ts:14:25
+     12|  for(const income of Object.values(state.economy.incomes))if(income.so…
+     13|  state.title='手机档案纸验收';
+     14|  return GameStateSchema.parse(state);
+       |                         ^
+     15| }
+     16|
+ ❯ src/tests/mobile-archives.test.tsx:29:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  src/tests/mobile-archives.test.tsx > 手机经济复用已知/未知合计和正式分值；取消收入仍是取消
+ZodError: [
+  {
+    "code": "custom",
+    "message": "实体 ID 必须在存档内全局唯一",
+    "path": [
+      "entities"
+    ],
+    "params": {
+      "integrityRule": "entity_id"
+    }
+  },
+  {
+    "code": "custom",
+    "message": "地点引用不存在",
+    "path": [
+      "npc",
+      "person",
+      "usualLocations",
+      0,
+      "locationId"
+    ],
+    "params": {
+      "integrityRule": "location_reference"
+    }
+  },
+  {
+    "code": "custom",
+    "message": "地点引用不存在",
+    "path": [
+      "npc",
+      "person",
+      "usualLocations",
+      1,
+      "locationId"
+    ],
+    "params": {
+      "integrityRule": "location_reference"
+    }
+  },
+  {
+    "code": "custom",
+    "message": "在场 NPC 与主角地点不一致",
+    "path": [],
+    "params": {
+      "integrityRule": "domain_state"
+    }
+  }
+]
+ ❯ mobileArchivesState src/tests/fixtures/mobileArchives.ts:14:25
+     12|  for(const income of Object.values(state.economy.incomes))if(income.so…
+     13|  state.title='手机档案纸验收';
+     14|  return GameStateSchema.parse(state);
+       |                         ^
+     15| }
+     16|
+ ❯ src/tests/mobile-archives.test.tsx:35:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  src/tests/mobile-archives.test.tsx > 物品仍仅属主角；旧物品估值、同组历史及史料不因手机展示改变
+ZodError: [
+  {
+    "code": "custom",
+    "message": "实体 ID 必须在存档内全局唯一",
+    "path": [
+      "entities"
+    ],
+    "params": {
+      "integrityRule": "entity_id"
+    }
+  },
+  {
+    "code": "custom",
+    "message": "地点引用不存在",
+    "path": [
+      "npc",
+      "person",
+      "usualLocations",
+      0,
+      "locationId"
+    ],
+    "params": {
+      "integrityRule": "location_reference"
+    }
+  },
+  {
+    "code": "custom",
+    "message": "地点引用不存在",
+    "path": [
+      "npc",
+      "person",
+      "usualLocations",
+      1,
+      "locationId"
+    ],
+    "params": {
+      "integrityRule": "location_reference"
+    }
+  },
+  {
+    "code": "custom",
+    "message": "在场 NPC 与主角地点不一致",
+    "path": [],
+    "params": {
+      "integrityRule": "domain_state"
+    }
+  }
+]
+ ❯ mobileArchivesState src/tests/fixtures/mobileArchives.ts:14:25
+     12|  for(const income of Object.values(state.economy.incomes))if(income.so…
+     13|  state.title='手机档案纸验收';
+     14|  return GameStateSchema.parse(state);
+       |                         ^
+     15| }
+     16|
+ ❯ src/tests/mobile-archives.test.tsx:41:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  7 failed | 34 passed (41)
+   Start at  09:12:27
+   Duration  2.88s (transform 43%, tests 30%, import 27%, worker 1%)
+
+    Isolate  3 workers spawned · ~134ms startup each (spawn + environment, per file)
+             at least ~269ms faster with isolate: false — reuses workers across files instead of one per file

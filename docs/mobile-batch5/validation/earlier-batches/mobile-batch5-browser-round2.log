@@ -1,0 +1,215 @@
+
+Running 7 tests using 1 worker
+
+(node:69223) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/7] [mobile] › e2e/mobile-archives.spec.ts:9:81 › 档案纸 390×844：全部资料、单一滚动、只读与手机边界
+  1) [mobile] › e2e/mobile-archives.spec.ts:9:81 › 档案纸 390×844：全部资料、单一滚动、只读与手机边界 ───────────────────
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  getByRole('dialog', { name: 'NPC', exact: true })
+    Expected: "rgb(228, 220, 202)"
+    Received: "rgb(17, 21, 19)"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" getByRole('dialog', { name: 'NPC', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: 'NPC', exact: true })
+        13 × locator resolved to <dialog open="" tabindex="-1" aria-modal="true" aria-labelledby="_r_4_" class="modal mobile-archive npc-dialog mobile-sheet sheet-full">…</dialog>
+           - unexpected value "rgb(17, 21, 19)"
+
+
+      10 |  await page.setViewportSize({width,height});await seedMobileArchives(page);const before=await storedArchives(page),verify=await readonly(page);
+      11 |  for(const name of ['NPC','势力组织','地图','物品栏','世界事件','历史时间轴','记忆']){
+    > 12 |   const paper=await openArchive(page,name);await expect(paper).toHaveCSS('background-color','rgb(228, 220, 202)');await expect(paper).toHaveAttribute('aria-modal','true');await archiveFits(page);
+         |                                                                ^
+      13 |   const rect=(await paper.boundingBox())!;expect(rect.y).toBeGreaterThanOrEqual(9);expect(rect.y+rect.height).toBeLessThanOrEqual(height+1);
+      14 |   if(name==='地图')await expect(paper.locator('.map-zone')).toHaveCount(1);
+      15 |   if(name==='物品栏')await expect(paper.locator('.inventory-tile')).toHaveCount(9);
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:12:64
+
+    Error Context: ../../tmp/mobile-batch5-browser-round2/mobile-archives-档案纸-390×844：全部资料、单一滚动、只读与手机边界-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-round2/mobile-archives-档案纸-390×844：全部资料、单一滚动、只读与手机边界-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-round2/mobile-archives-档案纸-390×844：全部资料、单一滚动、只读与手机边界-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:69370) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/7] [mobile] › e2e/mobile-archives.spec.ts:21:1 › 物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性
+  2) [mobile] › e2e/mobile-archives.spec.ts:21:1 › 物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性 ───────────────
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog', { name: '物品栏', exact: true }).getByRole('dialog', { name: '库存记录0045', exact: true })
+    Expected substring: "待估价"
+    Received string:    "物ITEM · 物证库存记录0045关闭 ×← 返回背包其他库存记录0045暂无描述数量46单件参考价值120.00 元当前状态保存完好"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog', { name: '物品栏', exact: true }).getByRole('dialog', { name: '库存记录0045', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '物品栏', exact: true }).getByRole('dialog', { name: '库存记录0045', exact: true })
+        13 × locator resolved to <dialog open="" tabindex="-1" aria-modal="true" aria-labelledby="_r_5_" class="modal mobile-archive mobile-archive-sub mobile-sheet">…</dialog>
+           - unexpected value "物ITEM · 物证库存记录0045关闭 ×← 返回背包其他库存记录0045暂无描述数量46单件参考价值120.00 元当前状态保存完好"
+
+
+      22 |  await page.setViewportSize({width:390,height:844});await seedMobileArchives(page,80);const before=await storedArchives(page),verify=await readonly(page),paper=await openArchive(page,'物品栏');
+      23 |  const filter=paper.getByRole('button',{name:'生活用品与杂物，81种物品',exact:true});await filter.click();const tile=paper.locator('[data-item-id="ui5-extra-item-45"]');await tile.scrollIntoViewIfNeeded();await tile.focus();const body=paper.locator(':scope>.modal-body'),scroll=await body.evaluate(e=>e.scrollTop);await tile.press('Enter');
+    > 24 |  const sub=paper.getByRole('dialog',{name:'库存记录0045',exact:true});await expect(sub).toBeVisible();await expect(sub.getByRole('heading',{name:'库存记录0045',exact:true}).last()).toBeFocused();await expect(paper.locator('.inventory-tile')).toHaveCount(81);await expect(sub).toContainText('待估价');await archiveFits(page);await shot(page,'物品子抽屉-390x844');await page.keyboard.press('Escape');await expect(sub).toHaveCount(0);await expect(tile).toBeFocused();expect(await body.evaluate(e=>e.scrollTop)).toBe(scroll);await expect(filter).toHaveAttribute('aria-pressed','true');
+         |                                                                                                                                                                                                                                                                             ^
+      25 |  await paper.getByRole('button',{name:'全部，89种物品',exact:true}).click();await paper.locator('[data-item-id="ui5-coat"]').click();const coat=paper.getByRole('dialog',{name:'日常棉布外套',exact:true});await expect(coat).toContainText('120.00 元');await expect(coat).toContainText('棉布');await expect(coat).not.toContainText('不适用字段不可见');await page.keyboard.press('Escape');expect(await storedArchives(page)).toEqual(before);verify();
+      26 | });
+      27 | test('地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案',async({page})=>{
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:24:269
+
+    Error Context: ../../tmp/mobile-batch5-browser-round2/mobile-archives-物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-round2/mobile-archives-物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-round2/mobile-archives-物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:69498) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[3/7] [mobile] › e2e/mobile-archives.spec.ts:27:1 › 地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案
+[4/7] [mobile] › e2e/mobile-archives.spec.ts:35:1 › 经济共享金额口径：未知、部分合计、取消收入、原进度与车辆字段
+[5/7] [mobile] › e2e/mobile-archives.spec.ts:41:1 › 历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦
+  3) [mobile] › e2e/mobile-archives.spec.ts:41:1 › 历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦 ───────────────────
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog', { name: '历史时间轴', exact: true }).locator('.history-slot').filter({ has: getByRole('dialog', { name: '历史时间轴', exact: true }).locator('[data-history-id="hero-opening"]') }).locator('.history-pin')
+    Expected: 1
+    Received: 0
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog', { name: '历史时间轴', exact: true }).locator('.history-slot').filter({ has: getByRole('dialog', { name: '历史时间轴', exact: true }).locator('[data-history-id="hero-opening"]') }).locator('.history-pin') with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '历史时间轴', exact: true }).locator('.history-slot').filter({ has: getByRole('dialog', { name: '历史时间轴', exact: true }).locator('[data-history-id="hero-opening"]') }).locator('.history-pin')
+        14 × locator resolved to 0 elements
+           - unexpected value "0"
+
+
+      42 |  await page.setViewportSize({width:390,height:844});await seedMobileArchives(page);const before=await storedArchives(page),verify=await readonly(page),paper=await openArchive(page,'历史时间轴');
+      43 |  const keys=await paper.locator('[data-time-key]').evaluateAll(es=>es.map(e=>e.getAttribute('data-time-key')));expect(keys.length).toBeGreaterThan(3);await expect(paper).toContainText('时间待考');await expect(paper).toContainText('年内日期未详');
+    > 44 |  const same=paper.locator('.history-slot').filter({has:paper.locator('[data-history-id="hero-opening"]')});await expect(same.locator('.history-pin')).toHaveCount(1);const world=same.locator('.history-world'),hero=same.locator('.history-protagonist');expect((await hero.boundingBox())!.y).toBeGreaterThanOrEqual((await world.boundingBox())!.y+(await world.boundingBox())!.height-1);
+         |                                                                                                                                                       ^
+      45 |  const card=paper.locator('[data-history-id="hero-opening"]');await card.scrollIntoViewIfNeeded();const body=paper.locator(':scope>.modal-body'),scroll=await body.evaluate(e=>e.scrollTop);await card.click();await expect(paper.getByRole('article',{name:'纪事详情'})).toContainText('后续的运营与人员安排仍继续推进');await shot(page,'历史详情-390x844');await paper.getByRole('button',{name:'返回时间轴',exact:true}).click();await expect(card).toBeFocused();expect(await body.evaluate(e=>e.scrollTop)).toBe(scroll);
+      46 |  await paper.getByRole('navigation',{name:'纪事范围'}).getByRole('button',{name:'主角重大纪事',exact:true}).click();await expect(paper.locator('.history-world .history-node')).toHaveCount(0);await paper.getByRole('navigation',{name:'纪事范围'}).getByRole('button',{name:'全部',exact:true}).click();expect(await paper.locator('[data-time-key]').evaluateAll(es=>es.map(e=>e.getAttribute('data-time-key')))).toEqual(keys);
+      47 |  await paper.getByRole('combobox',{name:'年代',exact:true}).click();const year=paper.getByRole('dialog',{name:'年代',exact:true});await expect(year).toBeVisible();await year.getByRole('option',{name:'2021年',exact:true}).click();await expect(year).toHaveCount(0);await expect(paper.getByRole('combobox',{name:'年代',exact:true})).toBeFocused();await paper.getByRole('button',{name:'史料记录 · 1',exact:true}).click();await expect(paper).toContainText('大学时期');await expect(paper).toContainText('人物陈述');expect(await storedArchives(page)).toEqual(before);verify();
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:44:151
+
+    Error Context: ../../tmp/mobile-batch5-browser-round2/mobile-archives-历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-round2/mobile-archives-历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-round2/mobile-archives-历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:69723) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[6/7] [mobile] › e2e/mobile-archives.spec.ts:56:1 › 设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达
+  4) [mobile] › e2e/mobile-archives.spec.ts:56:1 › 设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达 ─────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('dialog', { name: '设置', exact: true }).getByRole('button', { name: 'AI 连接', exact: true })
+        - waiting for navigation to finish...
+        - navigated to "http://127.0.0.1:5176/#game/save-a"
+
+
+      56 | test('设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达',async({page})=>{
+      57 |  await page.setViewportSize({width:390,height:844});await seedMobileArchives(page);const before=await storedArchives(page),verify=await readonly(page),paper=await openPaperSettings(page);
+    > 58 |  await paper.getByRole('button',{name:'AI 连接',exact:true}).click();await paper.getByRole('button',{name:'新增渠道',exact:true}).click();await paper.getByRole('textbox',{name:'渠道名称',exact:true}).fill('档案测试渠道');await paper.getByRole('button',{name:'返回设置',exact:true}).click();let confirm=page.getByRole('dialog',{name:'AI 配置尚未保存',exact:true});await expect(confirm).toBeVisible();await page.keyboard.press('Escape');await expect(confirm).toHaveCount(0);await expect(paper.getByRole('textbox',{name:'渠道名称',exact:true})).toHaveValue('档案测试渠道');await paper.getByRole('button',{name:'返回设置',exact:true}).click();await confirm.getByRole('button',{name:'放弃本次修改',exact:true}).click();
+         |                                                            ^
+      59 |  await paper.getByRole('button',{name:'运行',exact:true}).click();const timeout=paper.getByRole('spinbutton',{name:'请求超时（秒）',exact:true});await timeout.fill('241');await page.setViewportSize({width:392,height:420});await timeout.click();await expect(timeout).toBeFocused();await expect(paper.getByRole('button',{name:'保存本地设置',exact:true})).toBeInViewport({ratio:1});await paper.getByRole('button',{name:'保存本地设置',exact:true}).click();await expect(paper).toContainText('本地偏好已保存');await shot(page,'设置运行短视口-392x420');await paper.getByRole('button',{name:'返回设置',exact:true}).click();await page.setViewportSize({width:390,height:844});
+      60 |  await paper.getByRole('button',{name:'记忆',exact:true}).click();const toggle=paper.getByRole('checkbox').first();await toggle.click();await paper.getByRole('button',{name:'返回设置',exact:true}).click();confirm=page.getByRole('dialog',{name:'记忆设置尚未保存',exact:true});await expect(confirm).toBeVisible();await confirm.getByRole('button',{name:'放弃本次修改',exact:true}).click();
+      61 |  await paper.getByRole('button',{name:'提示词管理',exact:true}).click();await expect(paper.getByRole('button',{name:'保存本地设置',exact:true})).toBeVisible();await shot(page,'提示词管理-390x844');await expect(paper).not.toContainText('校验与失败恢复');await archiveFits(page);await page.keyboard.press('Escape');await page.reload();expect(await storedArchives(page)).toEqual(before);verify();
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:58:60
+
+    Error Context: ../../tmp/mobile-batch5-browser-round2/mobile-archives-设置分类、AI-记忆未保存保护、手动保存与存储失败、短视口可达-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-round2/mobile-archives-设置分类、AI-记忆未保存保护、手动保存与存储失败、短视口可达-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-round2/mobile-archives-设置分类、AI-记忆未保存保护、手动保存与存储失败、短视口可达-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:69912) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[7/7] [mobile] › e2e/mobile-archives.spec.ts:63:31 › PC 901px：档案与设置和未修改 main 真实像素对照
+  5) [mobile] › e2e/mobile-archives.spec.ts:63:31 › PC 901px：档案与设置和未修改 main 真实像素对照 ─────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: '世界事件', exact: true })
+    Expected: visible
+    Error: Test ended.
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog', { name: '世界事件', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '世界事件', exact: true })
+      - Test ended.
+
+
+       at helpers/mobileArchives.ts:17
+
+      15 |  if((page.viewportSize()?.width??0)<=900){await page.getByRole('navigation',{name:'底部导航'}).getByRole('button',{name:'世界资料',exact:true}).click();await page.getByRole('dialog',{name:'世界资料',exact:true}).getByRole('button',{name,exact:true}).click();}
+      16 |  else await page.locator(`[data-archive-panel="${name}"]`).click();
+    > 17 |  const dialog=page.getByRole('dialog',{name,exact:true});await expect(dialog).toBeVisible();return dialog;
+         |                                                                               ^
+      18 | }
+      19 | export async function openEconomy(page:Page){
+      20 |  if((page.viewportSize()?.width??0)<=900){await page.locator('.mobile-city-pill').click();await page.getByRole('dialog',{name:'此时此地',exact:true}).getByRole('button',{name:'经济与资产',exact:true}).click();}
+        at openArchive (/workspace/mobile-redesign-batch5/e2e/helpers/mobileArchives.ts:17:79)
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:73:101
+
+    Error Context: ../../tmp/mobile-batch5-browser-round2/mobile-archives-PC-901px：档案与设置和未修改-main-真实像素对照-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-round2/mobile-archives-PC-901px：档案与设置和未修改-main-真实像素对照-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-round2/mobile-archives-PC-901px：档案与设置和未修改-main-真实像素对照-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  5 failed
+    [mobile] › e2e/mobile-archives.spec.ts:9:81 › 档案纸 390×844：全部资料、单一滚动、只读与手机边界 ────────────────────
+    [mobile] › e2e/mobile-archives.spec.ts:21:1 › 物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性 ────────────────
+    [mobile] › e2e/mobile-archives.spec.ts:41:1 › 历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦 ────────────────────
+    [mobile] › e2e/mobile-archives.spec.ts:56:1 › 设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达 ──────────────────
+    [mobile] › e2e/mobile-archives.spec.ts:63:31 › PC 901px：档案与设置和未修改 main 真实像素对照 ──────────────────
+  2 passed (1.8m)

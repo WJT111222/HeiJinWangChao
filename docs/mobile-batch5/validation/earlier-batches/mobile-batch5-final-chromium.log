@@ -1,0 +1,65 @@
+
+Running 21 tests using 1 worker
+
+(node:75045) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/21] [mobile] › e2e/mobile-archives.spec.ts:11:81 › 档案纸 375×667：全部资料、单一滚动、只读与手机边界
+[2/21] [mobile] › e2e/mobile-archives.spec.ts:11:81 › 档案纸 390×844：全部资料、单一滚动、只读与手机边界
+[3/21] [mobile] › e2e/mobile-archives.spec.ts:11:81 › 档案纸 430×932：全部资料、单一滚动、只读与手机边界
+[4/21] [mobile] › e2e/mobile-archives.spec.ts:11:81 › 档案纸 392×420：全部资料、单一滚动、只读与手机边界
+[5/21] [mobile] › e2e/mobile-archives.spec.ts:11:81 › 档案纸 900×800：全部资料、单一滚动、只读与手机边界
+[6/21] [mobile] › e2e/mobile-archives.spec.ts:23:1 › 物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性
+[7/21] [mobile] › e2e/mobile-archives.spec.ts:29:1 › 地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案
+[8/21] [mobile] › e2e/mobile-archives.spec.ts:37:1 › 经济共享金额口径：未知、部分合计、取消收入、原进度与车辆字段
+[9/21] [mobile] › e2e/mobile-archives.spec.ts:43:1 › 历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦
+[10/21] [mobile] › e2e/mobile-archives.spec.ts:51:1 › 人物分节、列表回焦、七字段资格与组织/事件链接，记忆各层只读
+[11/21] [mobile] › e2e/mobile-archives.spec.ts:58:1 › 设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达
+[12/21] [mobile] › e2e/mobile-archives.spec.ts:66:31 › PC 901px：档案与设置和未修改 main 真实像素对照
+[13/21] [mobile] › e2e/mobile-archives.spec.ts:66:31 › PC 1440px：档案与设置和未修改 main 真实像素对照
+[14/21] [mobile] › e2e/mobile-archives.spec.ts:85:1 › NPC 原星标入口与私密档案七字段：合法休眠恢复、男NPC资格、刷新和零请求
+[15/21] [mobile] › e2e/mobile-archives.spec.ts:93:1 › 手机设置真实保存 AI 与记忆：无模型 POST，关闭拦截、记忆费用保护和重载
+[16/21] [mobile] › e2e/mobile-archives.spec.ts:99:1 › 手机提示词管理：四开关手动保存、跨分类、刷新及迟到预览隔离
+  1) [mobile] › e2e/mobile-archives.spec.ts:99:1 › 手机提示词管理：四开关手动保存、跨分类、刷新及迟到预览隔离 ───────────────────
+
+    Error: expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      103 |  await paper.getByRole('button',{name:/高级/}).click();const assemble=paper.getByRole('button',{name:'生成三阶段组装预览（不联网）',exact:true});await paper.getByRole('combobox',{name:'预览存档',exact:true}).selectOption('save-a');await assemble.click();await expect(paper).toContainText('已按此配置组装预览，尚未发送。');
+      104 |  await page.evaluate(async()=>{const p='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(p),oldLoad=SaveRepository.prototype.load;const gates:Array<()=>void>=[];const target=window as unknown as {releasePreview:()=>void;previewGates:Array<()=>void>};target.previewGates=gates;target.releasePreview=()=>{SaveRepository.prototype.load=oldLoad;for(const release of gates)release();};SaveRepository.prototype.load=async function(...args:unknown[]){await new Promise<void>(resolve=>gates.push(resolve));return oldLoad.apply(this,args);};});
+    > 105 |  await assemble.click();await expect.poll(()=>page.evaluate(()=>(window as unknown as {previewGates:Array<()=>void>}).previewGates.length)).toBeGreaterThan(0);await paper.getByRole('button',{name:'返回设置',exact:true}).click();await paper.getByRole('button',{name:'提示词管理',exact:true}).click();await page.evaluate(()=>(window as unknown as {releasePreview:()=>void}).releasePreview());await expect.poll(()=>page.evaluate(()=>(window as unknown as {__ui5Builds:number}).__ui5Builds)).toBe(2);await expect(paper).not.toContainText('已按此配置组装预览，尚未发送。');await paper.getByRole('group',{name:'提示词分类'}).getByRole('button',{name:/^写作设定/}).click();for(const row of await rows.all())await expect(row.getByRole('checkbox')).not.toBeChecked();await page.reload();const next=await openPaperSettings(page);await next.getByRole('button',{name:'提示词',exact:true}).click();for(const name of ['NoControl（防抢话）','自然文风修复','行动选项','真实世界模式'])await expect(next.getByRole('checkbox',{name,exact:true})).not.toBeChecked();expect(await storedArchives(page)).toEqual(before);verify();
+          |                                                                                                                                             ^
+      106 | });
+      107 |
+      108 | test('设计稿参考截图：五个档案面板，演示数据不进入正式界面',async({page})=>{
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:105:141
+
+    Error Context: ../../tmp/mobile-batch5-final-chromium/mobile-archives-手机提示词管理：四开关手动保存、跨分类、刷新及迟到预览隔离-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-final-chromium/mobile-archives-手机提示词管理：四开关手动保存、跨分类、刷新及迟到预览隔离-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-final-chromium/mobile-archives-手机提示词管理：四开关手动保存、跨分类、刷新及迟到预览隔离-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:75982) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[17/21] [mobile] › e2e/mobile-archives.spec.ts:108:1 › 设计稿参考截图：五个档案面板，演示数据不进入正式界面
+[18/21] [mobile] › e2e/mobile-archives.spec.ts:112:1 › 原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留
+[19/21] [mobile] › e2e/mobile-archives.spec.ts:121:1 › 世界家族并行、退役成果、计划、历史及参与者地点真实 ID 导航
+[20/21] [mobile] › e2e/mobile-archives.spec.ts:128:1 › 同刻纪事与史料分页保持、详情回到原页
+[21/21] [mobile] › e2e/mobile-archives.spec.ts:133:1 › 封面打开设置的软键盘可视区：输入、保存与关闭可达
+  1 failed
+    [mobile] › e2e/mobile-archives.spec.ts:99:1 › 手机提示词管理：四开关手动保存、跨分类、刷新及迟到预览隔离 ────────────────────
+  20 passed (2.9m)

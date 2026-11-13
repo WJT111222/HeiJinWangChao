@@ -1,0 +1,9 @@
+
+Running 1 test using 1 worker
+
+(node:78776) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [mobile] › e2e/mobile-archives.spec.ts:155:1 › 地图同一挂载目标变更仅消费一次：无效目标、失效节点及异常父级安全
+  1 passed (7.0s)

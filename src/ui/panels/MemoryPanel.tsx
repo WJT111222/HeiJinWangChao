@@ -29,7 +29,7 @@ export function MemoryPanel({ view,desktop=false,uiState,onUiStateChange }: { vi
   const [sourceId, setSourceId] = useState<string|undefined>(uiState?.sourceId);
   const [sources, setSources] = useState<HistoryRecord[]>(()=>view.journal.filter(t=>uiState?.sourceIds.includes(t.turnId)));
   const [sourcePage, setSourcePage] = useState(uiState?.sourcePage??0);
-  const main=useRef<HTMLElement>(null),sourceOpener=useRef<HTMLElement|null>(null);
+  const main=useRef<HTMLElement>(null),sourceOpener=useRef<HTMLElement|null>(null),mobileRoot=useRef<HTMLDivElement>(null),sourceScroll=useRef(0);
   useEffect(()=>{if(desktop)onUiStateChange?.({level,query,memoryQuery,page,sourceId,sourceIds:sources.map(t=>t.turnId),sourcePage});},[desktop,level,query,memoryQuery,page,sourceId,sources,sourcePage,onUiStateChange]);
   const sourceArea = useRef<HTMLElement>(null), sourcePicker = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -54,10 +54,10 @@ export function MemoryPanel({ view,desktop=false,uiState,onUiStateChange }: { vi
   }
   function closeSource(list=false){
     if(list)setSources([]);else setSourceId(undefined);
-    if(desktop)requestAnimationFrame(()=>{const target=!list&&sources.length?sourcePicker.current:sourceOpener.current?.isConnected?sourceOpener.current:main.current?.querySelector<HTMLElement>('button');target?.focus({preventScroll:true});});
+    requestAnimationFrame(()=>{if(!desktop){const body=mobileRoot.current?.closest<HTMLElement>('.modal-body');if(body)body.scrollTop=sourceScroll.current;}const target=!list&&sources.length?sourcePicker.current:sourceOpener.current?.isConnected?sourceOpener.current:main.current?.querySelector<HTMLElement>('button');target?.focus({preventScroll:true});});
   }
   function showSources(ids: string[]) {
-    if(desktop)sourceOpener.current=document.activeElement as HTMLElement;
+    sourceOpener.current=document.activeElement as HTMLElement;if(!desktop)sourceScroll.current=mobileRoot.current?.closest<HTMLElement>('.modal-body')?.scrollTop??0;
     const originals = ids.flatMap((id) => { const turn = turns.get(id); return turn ? [turn] : []; });
     if (originals.length === 1) { setSourceId(originals[0].turnId); setSources([]); }
     else { setSources(originals); setSourcePage(0); setSourceId(undefined); }
@@ -119,7 +119,7 @@ export function MemoryPanel({ view,desktop=false,uiState,onUiStateChange }: { vi
           <details><summary>第 {entry.turnNumber} 回合 · {entry.summary || '未提供摘要，正文记录'}</summary>
             <p className="prose">{entry.narrative}</p>
           </details>
-          <button onClick={event => { if(desktop)sourceOpener.current=event.currentTarget;setSources([]); setSourceId(entry.turnId); }}>查看第 {entry.turnNumber} 回合原文</button>
+          <button onClick={event => { sourceOpener.current=event.currentTarget;if(!desktop)sourceScroll.current=mobileRoot.current?.closest<HTMLElement>('.modal-body')?.scrollTop??0;setSources([]); setSourceId(entry.turnId); }}>查看第 {entry.turnNumber} 回合原文</button>
         </article>)}
         {!count && <Empty>{level === 'immediate' ? emptyText.immediate : query.trim() ? '未找到相关的已提交历史。' : '开局尚未提交，正文档案为空。'}</Empty>}
       </> : <>
@@ -145,5 +145,5 @@ export function MemoryPanel({ view,desktop=false,uiState,onUiStateChange }: { vi
       </div>}
     </section>
 </>;
-  return <div className={desktop ? "memory-reader mem" : "memory-reader"}>{desktop ? <><aside className="mem-rail"><p className="lbl">记忆层级 · 由浅到深</p>{navigation}</aside><section className="mem-main" ref={main}>{intro}{content}</section></> : <>{intro}{navigation}{content}</>}</div>;
+  return <div ref={mobileRoot} className={desktop ? "memory-reader mem" : "memory-reader"}>{desktop ? <><aside className="mem-rail"><p className="lbl">记忆层级 · 由浅到深</p>{navigation}</aside><section className="mem-main" ref={main}>{intro}{content}</section></> : <>{intro}{navigation}{content}</>}</div>;
 }

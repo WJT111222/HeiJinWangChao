@@ -1,0 +1,15 @@
+
+> heijinwangchao@0.1.0 prompts:check
+> vitest run src/tests/prompts.test.ts src/tests/prompt-runtime.test.ts src/tests/prompt-inspector.test.ts
+
+
+ RUN  v5.0.5 /workspace/mobile-redesign-batch5
+
+
+ Test Files  3 passed (3)
+      Tests  93 passed (93)
+   Start at  09:43:14
+   Duration  7.11s (tests 68%, import 20%, transform 12%)
+
+    Isolate  3 workers spawned · ~224ms startup each (spawn + environment, per file)
+             at least ~447ms faster with isolate: false — reuses workers across files instead of one per file

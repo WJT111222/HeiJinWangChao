@@ -1,0 +1,1084 @@
+[
+  {
+    "batch": "mobile-batch5-boundaries-r8",
+    "stats": {
+      "startTime": "2026-11-13T09:33:00.125Z",
+      "duration": 18958.145,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 9836
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "同刻纪事与史料分页保持、详情回到原页，未知资金仍非零",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5103
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "封面打开设置的软键盘可视区：输入、保存与关闭可达",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 1953
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch5-browser-complete-r6",
+    "stats": {
+      "startTime": "2026-11-13T09:23:52.321Z",
+      "duration": 244298.078,
+      "expected": 14,
+      "skipped": 0,
+      "unexpected": 3,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "档案纸 375×667：全部资料、单一滚动、只读与手机边界",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 9017
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "档案纸 390×844：全部资料、单一滚动、只读与手机边界",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 10316
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "档案纸 430×932：全部资料、单一滚动、只读与手机边界",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 8515
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "档案纸 392×420：全部资料、单一滚动、只读与手机边界",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 8994
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "档案纸 900×800：全部资料、单一滚动、只读与手机边界",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 8593
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 7293
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 9691
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "经济共享金额口径：未知、部分合计、取消收入、原进度与车辆字段",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 7483
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 6567
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "人物分节、列表回焦、七字段资格与组织/事件链接，记忆各层只读",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 7002
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 7587
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "PC 901px：档案与设置和未修改 main 真实像素对照",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 43700
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "PC 1440px：档案与设置和未修改 main 真实像素对照",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 29553
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "NPC 原星标入口与私密档案七字段：合法休眠恢复、男NPC资格、刷新和零请求",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "timedOut",
+            "durationMs": 30107
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "手机设置真实保存 AI 与记忆：无模型 POST，关闭拦截、记忆费用保护和重载",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "timedOut",
+            "durationMs": 30277
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "手机提示词管理：四开关手动保存、跨分类、刷新及迟到预览隔离",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 9306
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "设计稿参考截图：五个档案面板，演示数据不进入正式界面",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3154
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch5-browser-initial",
+    "stats": {
+      "startTime": "2026-11-13T09:15:02.924Z",
+      "duration": 28083.323999999997,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 6,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "档案纸 390×844：全部资料、单一滚动、只读与手机边界",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 2539
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 4829
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 3738
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "经济共享金额口径：未知、部分合计、取消收入、原进度与车辆字段",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 3014
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 2655
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 3038
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch5-browser-round2",
+    "stats": {
+      "startTime": "2026-11-13T09:15:43.340Z",
+      "duration": 110099.207,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 5,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "档案纸 390×844：全部资料、单一滚动、只读与手机边界",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 12371
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 9953
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5872
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "经济共享金额口径：未知、部分合计、取消收入、原进度与车辆字段",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5294
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 9009
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "timedOut",
+            "durationMs": 30247
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "PC 901px：档案与设置和未修改 main 真实像素对照",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "timedOut",
+            "durationMs": 30330
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch5-browser-round3",
+    "stats": {
+      "startTime": "2026-11-13T09:17:43.609Z",
+      "duration": 88766.438,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 3,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "档案纸 390×844：全部资料、单一滚动、只读与手机边界",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 13914
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 12635
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 9278
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "经济共享金额口径：未知、部分合计、取消收入、原进度与车辆字段",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4949
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4962
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 7344
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "PC 901px：档案与设置和未修改 main 真实像素对照",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "timedOut",
+            "durationMs": 30072
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch5-browser-round4",
+    "stats": {
+      "startTime": "2026-11-13T09:20:13.642Z",
+      "duration": 74586.69,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 3,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "档案纸 390×844：全部资料、单一滚动、只读与手机边界",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 16246
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 8611
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "PC 901px：档案与设置和未修改 main 真实像素对照",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 45392
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch5-extras-r7",
+    "stats": {
+      "startTime": "2026-11-13T09:29:41.132Z",
+      "duration": 74766.02200000001,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "PC 1440px：档案与设置和未修改 main 真实像素对照",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 21777
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "NPC 原星标入口与私密档案七字段：合法休眠恢复、男NPC资格、刷新和零请求",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5907
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "手机设置真实保存 AI 与记忆：无模型 POST，关闭拦截、记忆费用保护和重载",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 6838
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "timedOut",
+            "durationMs": 30272
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "世界家族并行、退役成果、计划、历史及参与者地点真实 ID 导航",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 6984
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch5-final-chromium",
+    "stats": {
+      "startTime": "2026-11-13T09:38:28.400Z",
+      "duration": 174233.502,
+      "expected": 20,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "档案纸 375×667：全部资料、单一滚动、只读与手机边界",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 15560
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "档案纸 390×844：全部资料、单一滚动、只读与手机边界",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 13499
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "档案纸 430×932：全部资料、单一滚动、只读与手机边界",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 8068
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "档案纸 392×420：全部资料、单一滚动、只读与手机边界",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 8966
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "档案纸 900×800：全部资料、单一滚动、只读与手机边界",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 7811
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5310
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5232
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "经济共享金额口径：未知、部分合计、取消收入、原进度与车辆字段",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4641
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4523
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "人物分节、列表回焦、七字段资格与组织/事件链接，记忆各层只读",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5826
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 6833
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "PC 901px：档案与设置和未修改 main 真实像素对照",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 18223
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "PC 1440px：档案与设置和未修改 main 真实像素对照",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 19462
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "NPC 原星标入口与私密档案七字段：合法休眠恢复、男NPC资格、刷新和零请求",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5090
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "手机设置真实保存 AI 与记忆：无模型 POST，关闭拦截、记忆费用保护和重载",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 7897
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "手机提示词管理：四开关手动保存、跨分类、刷新及迟到预览隔离",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 10725
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "设计稿参考截图：五个档案面板，演示数据不进入正式界面",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 1519
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 8370
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "世界家族并行、退役成果、计划、历史及参与者地点真实 ID 导航",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 6735
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "同刻纪事与史料分页保持、详情回到原页",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4327
+          }
+        ]
+      },
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "封面打开设置的软键盘可视区：输入、保存与关闭可达",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 2001
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch5-gesture-diagnostic-r9",
+    "stats": {
+      "startTime": "2026-11-13T09:33:57.149Z",
+      "duration": 11648.404,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 9862
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch5-gesture-keyboard-r11",
+    "stats": {
+      "startTime": "2026-11-13T09:36:25.679Z",
+      "duration": 10293.324999999999,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 8263
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch5-gesture-paced-r10",
+    "stats": {
+      "startTime": "2026-11-13T09:35:11.268Z",
+      "duration": 12503.210000000001,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留",
+        "project": "mobile",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 10679
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch5-preview-r12",
+    "stats": {
+      "startTime": "2026-11-13T09:43:13.092Z",
+      "duration": 14436.088,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "手机提示词管理：四开关手动保存、跨分类、刷新及迟到预览隔离",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 11936
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch5-settings-r5",
+    "stats": {
+      "startTime": "2026-11-13T09:22:11.964Z",
+      "duration": 8329.419,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-archives.spec.ts",
+        "title": "设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 7531
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "mobile-batch5-workflow-smoke",
+    "stats": {
+      "startTime": "2026-11-13T09:43:39.900Z",
+      "duration": 10575.724999999999,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "pr120-integration.spec.ts",
+        "title": "整合：抽屉打开时真实输入发送、失败恢复、取消和原子结算/刷新",
+        "project": "mobile",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 9107
+          }
+        ]
+      }
+    ]
+  }
+]

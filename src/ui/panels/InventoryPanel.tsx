@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Detail, Empty } from '../Dialog';
+import { Dialog, Detail, Empty } from '../Dialog';
 import { categoryLabels, money } from './playerView';
 import type { PlayerView } from './playerView';
 import { inventoryGroups, protagonistInventory, itemAttributes, itemDescription, itemCategoryGroup } from './inventory';
@@ -35,7 +35,7 @@ export function InventoryPanel({ view, desktop = false, initialId, onSelect, onO
     if (desktop) { if(selected) { if(detailPane.current) detailPane.current.scrollTop=0;detailTitle.current?.focus({preventScroll:true}); } return; }
     const target = selected ? detailTitle.current : buttons.current.get(lastSelected.current ?? '');
     const body = target?.closest<HTMLElement>('.modal-body');
-    if (body) body.scrollTop = selected ? 0 : listScroll.current;
+    if (body && !selected) body.scrollTop = listScroll.current;
     target?.focus({ preventScroll: true });
     if (selected) lastSelected.current = selected.id;
   }, [selected, desktop]);
@@ -63,7 +63,6 @@ export function InventoryPanel({ view, desktop = false, initialId, onSelect, onO
         {selected.createdByTurnId && <Detail label="来源回合">{view.journal.find(t=>t.turnId===selected.createdByTurnId)?.turnNumber !== undefined ? `第 ${view.journal.find(t=>t.turnId===selected.createdByTurnId)!.turnNumber} 回合 · ` : ''}{selected.createdByTurnId}</Detail>}
       </dl></details>}
     </section> : desktop ? <section className="inventory-detail inv-detail inv-none" aria-label="物品详情"><div><ItemIcon group="all" /><p>选择物品，查看描述与属性</p></div></section> : null;
-  if (selected && !desktop) return detail;
   const needle=query.trim().toLocaleLowerCase();
   const visible = items.filter(item => (filter === 'all' || itemCategoryGroup[item.category] === filter) && (!desktop || [item.name,itemDescription(item),item.conditionText].some(text=>text.toLocaleLowerCase().includes(needle))));
   const last=Math.max(0,Math.ceil(visible.length/20)-1),current=Math.min(page,last);
@@ -79,12 +78,12 @@ export function InventoryPanel({ view, desktop = false, initialId, onSelect, onO
       <div className="inventory-summary" role="status">{inventoryGroups.find(group => group.id === filter)?.label}<span>{visible.length} 种物品</span></div>
       {visible.length ? <ul className="inventory-grid">
         {shown.map(item => <li key={item.id}>
-          <button className={desktop && equipped.has(item.id) ? 'inventory-tile is-eq' : 'inventory-tile'} data-item-id={desktop ? item.id : undefined} aria-pressed={desktop ? selectedId === item.id : undefined} onClick={event => {
+          <button className={equipped.has(item.id) ? 'inventory-tile is-eq' : 'inventory-tile'} data-item-id={item.id} aria-pressed={selectedId === item.id} onClick={event => {
             listScroll.current = event.currentTarget.closest('.modal-body')?.scrollTop ?? 0;
             setSelectedId(item.id);onSelect?.(item.id);
           }}
             ref={node => { if (node) buttons.current.set(item.id, node); else buttons.current.delete(item.id); }}>
-            {desktop && <span className="cat">{categoryLabels[item.category]}</span>}<ItemIcon group={itemCategoryGroup[item.category]} />
+            <span className="cat">{categoryLabels[item.category]}</span><ItemIcon group={itemCategoryGroup[item.category]} />
             <strong>{item.name}</strong>{desktop && <span className="inventory-condition">{item.conditionText || '未记录'}</span>}<span className="inventory-quantity">×{item.quantity}</span>
             <span className="inventory-badges">{equipped.has(item.id) && <span className={desktop ? 'b-eq' : undefined}>已装备</span>}{item.questItem && <span className={desktop ? 'b-quest' : undefined}>任务</span>}</span>
           </button>
@@ -92,6 +91,6 @@ export function InventoryPanel({ view, desktop = false, initialId, onSelect, onO
       </ul> : <Empty>{desktop && needle ? '暂无符合条件的物品。' : filter === 'all' ? '背包里暂时没有物品。' : '此分类暂无物品。'}</Empty>}
       {desktop && last>0 && <nav className="memory-pagination" aria-label="物品分页"><button disabled={!current} onClick={()=>setPage(current-1)}>上一页物品</button><span>{current+1}/{last+1}</span><button disabled={current===last} onClick={()=>setPage(current+1)}>下一页物品</button></nav>}
     </section>
-    {desktop && detail}
+    {desktop ? detail : selected&&<Dialog title={selected.name} seal="物" eyebrow="ITEM · 物证" mobileVariant="sheet" className="mobile-archive mobile-archive-sub" onClose={()=>setSelectedId(undefined)} returnFocus={()=>buttons.current.get(selected.id)??null}>{detail}</Dialog>}
   </div>;
 }

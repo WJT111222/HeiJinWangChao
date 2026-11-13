@@ -1,0 +1,190 @@
+
+Running 6 tests using 1 worker
+
+(node:68250) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/6] [mobile] › e2e/mobile-archives.spec.ts:9:81 › 档案纸 390×844：全部资料、单一滚动、只读与手机边界
+  1) [mobile] › e2e/mobile-archives.spec.ts:9:81 › 档案纸 390×844：全部资料、单一滚动、只读与手机边界 ───────────────────
+
+    Error: page.evaluate: DataError: 新存档必须从未提交状态创建
+        at requireData (http://127.0.0.1:5176/src/domain/common.ts:50:24)
+        at SaveRepository.create (http://127.0.0.1:5176/src/services/storage/saveRepository.ts:299:3)
+        at eval (eval at evaluate (:370:30), <anonymous>:18:16)
+        at async <anonymous>:396:30
+        at requireData (http://127.0.0.1:5176/src/domain/common.ts:50:24)
+        at SaveRepository.create (http://127.0.0.1:5176/src/services/storage/saveRepository.ts:299:3)
+        at eval (eval at evaluate (:370:30), <anonymous>:18:16)
+        at async <anonymous>:396:30
+        at seedMobileArchives (/workspace/mobile-redesign-batch5/e2e/helpers/mobileArchives.ts:4:46)
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:10:45
+
+    Error Context: ../../tmp/mobile-batch5-browser-initial/mobile-archives-档案纸-390×844：全部资料、单一滚动、只读与手机边界-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-initial/mobile-archives-档案纸-390×844：全部资料、单一滚动、只读与手机边界-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-initial/mobile-archives-档案纸-390×844：全部资料、单一滚动、只读与手机边界-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:68383) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/6] [mobile] › e2e/mobile-archives.spec.ts:21:1 › 物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性
+  2) [mobile] › e2e/mobile-archives.spec.ts:21:1 › 物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性 ───────────────
+
+    Error: page.evaluate: DataError: 新存档必须从未提交状态创建
+        at requireData (http://127.0.0.1:5176/src/domain/common.ts:50:24)
+        at SaveRepository.create (http://127.0.0.1:5176/src/services/storage/saveRepository.ts:299:3)
+        at eval (eval at evaluate (:370:30), <anonymous>:18:16)
+        at async <anonymous>:396:30
+        at requireData (http://127.0.0.1:5176/src/domain/common.ts:50:24)
+        at SaveRepository.create (http://127.0.0.1:5176/src/services/storage/saveRepository.ts:299:3)
+        at eval (eval at evaluate (:370:30), <anonymous>:18:16)
+        at async <anonymous>:396:30
+        at seedMobileArchives (/workspace/mobile-redesign-batch5/e2e/helpers/mobileArchives.ts:4:46)
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:22:53
+
+    Error Context: ../../tmp/mobile-batch5-browser-initial/mobile-archives-物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-initial/mobile-archives-物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-initial/mobile-archives-物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:68588) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[3/6] [mobile] › e2e/mobile-archives.spec.ts:27:1 › 地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案
+  3) [mobile] › e2e/mobile-archives.spec.ts:27:1 › 地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案 ────────────────────
+
+    Error: page.evaluate: DataError: 新存档必须从未提交状态创建
+        at requireData (http://127.0.0.1:5176/src/domain/common.ts:50:24)
+        at SaveRepository.create (http://127.0.0.1:5176/src/services/storage/saveRepository.ts:299:3)
+        at eval (eval at evaluate (:370:30), <anonymous>:18:16)
+        at async <anonymous>:396:30
+        at requireData (http://127.0.0.1:5176/src/domain/common.ts:50:24)
+        at SaveRepository.create (http://127.0.0.1:5176/src/services/storage/saveRepository.ts:299:3)
+        at eval (eval at evaluate (:370:30), <anonymous>:18:16)
+        at async <anonymous>:396:30
+        at seedMobileArchives (/workspace/mobile-redesign-batch5/e2e/helpers/mobileArchives.ts:4:46)
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:28:53
+
+    Error Context: ../../tmp/mobile-batch5-browser-initial/mobile-archives-地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-initial/mobile-archives-地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-initial/mobile-archives-地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:68752) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[4/6] [mobile] › e2e/mobile-archives.spec.ts:35:1 › 经济共享金额口径：未知、部分合计、取消收入、原进度与车辆字段
+  4) [mobile] › e2e/mobile-archives.spec.ts:35:1 › 经济共享金额口径：未知、部分合计、取消收入、原进度与车辆字段 ──────────────────
+
+    Error: page.evaluate: DataError: 新存档必须从未提交状态创建
+        at requireData (http://127.0.0.1:5176/src/domain/common.ts:50:24)
+        at SaveRepository.create (http://127.0.0.1:5176/src/services/storage/saveRepository.ts:299:3)
+        at eval (eval at evaluate (:370:30), <anonymous>:18:16)
+        at async <anonymous>:396:30
+        at requireData (http://127.0.0.1:5176/src/domain/common.ts:50:24)
+        at SaveRepository.create (http://127.0.0.1:5176/src/services/storage/saveRepository.ts:299:3)
+        at eval (eval at evaluate (:370:30), <anonymous>:18:16)
+        at async <anonymous>:396:30
+        at seedMobileArchives (/workspace/mobile-redesign-batch5/e2e/helpers/mobileArchives.ts:4:46)
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:36:53
+
+    Error Context: ../../tmp/mobile-batch5-browser-initial/mobile-archives-经济共享金额口径：未知、部分合计、取消收入、原进度与车辆字段-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-initial/mobile-archives-经济共享金额口径：未知、部分合计、取消收入、原进度与车辆字段-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-initial/mobile-archives-经济共享金额口径：未知、部分合计、取消收入、原进度与车辆字段-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:68882) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[5/6] [mobile] › e2e/mobile-archives.spec.ts:41:1 › 历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦
+  5) [mobile] › e2e/mobile-archives.spec.ts:41:1 › 历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦 ───────────────────
+
+    Error: page.evaluate: DataError: 新存档必须从未提交状态创建
+        at requireData (http://127.0.0.1:5176/src/domain/common.ts:50:24)
+        at SaveRepository.create (http://127.0.0.1:5176/src/services/storage/saveRepository.ts:299:3)
+        at eval (eval at evaluate (:370:30), <anonymous>:18:16)
+        at async <anonymous>:396:30
+        at requireData (http://127.0.0.1:5176/src/domain/common.ts:50:24)
+        at SaveRepository.create (http://127.0.0.1:5176/src/services/storage/saveRepository.ts:299:3)
+        at eval (eval at evaluate (:370:30), <anonymous>:18:16)
+        at async <anonymous>:396:30
+        at seedMobileArchives (/workspace/mobile-redesign-batch5/e2e/helpers/mobileArchives.ts:4:46)
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:42:53
+
+    Error Context: ../../tmp/mobile-batch5-browser-initial/mobile-archives-历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-initial/mobile-archives-历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-initial/mobile-archives-历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:69024) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[6/6] [mobile] › e2e/mobile-archives.spec.ts:56:1 › 设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达
+  6) [mobile] › e2e/mobile-archives.spec.ts:56:1 › 设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达 ─────────────────
+
+    Error: page.evaluate: DataError: 新存档必须从未提交状态创建
+        at requireData (http://127.0.0.1:5176/src/domain/common.ts:50:24)
+        at SaveRepository.create (http://127.0.0.1:5176/src/services/storage/saveRepository.ts:299:3)
+        at eval (eval at evaluate (:370:30), <anonymous>:18:16)
+        at async <anonymous>:396:30
+        at requireData (http://127.0.0.1:5176/src/domain/common.ts:50:24)
+        at SaveRepository.create (http://127.0.0.1:5176/src/services/storage/saveRepository.ts:299:3)
+        at eval (eval at evaluate (:370:30), <anonymous>:18:16)
+        at async <anonymous>:396:30
+        at seedMobileArchives (/workspace/mobile-redesign-batch5/e2e/helpers/mobileArchives.ts:4:46)
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:57:53
+
+    Error Context: ../../tmp/mobile-batch5-browser-initial/mobile-archives-设置分类、AI-记忆未保存保护、手动保存与存储失败、短视口可达-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-browser-initial/mobile-archives-设置分类、AI-记忆未保存保护、手动保存与存储失败、短视口可达-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-browser-initial/mobile-archives-设置分类、AI-记忆未保存保护、手动保存与存储失败、短视口可达-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  6 failed
+    [mobile] › e2e/mobile-archives.spec.ts:9:81 › 档案纸 390×844：全部资料、单一滚动、只读与手机边界 ────────────────────
+    [mobile] › e2e/mobile-archives.spec.ts:21:1 › 物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性 ────────────────
+    [mobile] › e2e/mobile-archives.spec.ts:27:1 › 地图逐层下钻、多根、路径搜索与定位到我，人物和事件跨档案 ─────────────────────
+    [mobile] › e2e/mobile-archives.spec.ts:35:1 › 经济共享金额口径：未知、部分合计、取消收入、原进度与车辆字段 ───────────────────
+    [mobile] › e2e/mobile-archives.spec.ts:41:1 › 历史同轴、月季年模糊精度、范围筛选、内层年代选择与返回回焦 ────────────────────
+    [mobile] › e2e/mobile-archives.spec.ts:56:1 › 设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达 ──────────────────

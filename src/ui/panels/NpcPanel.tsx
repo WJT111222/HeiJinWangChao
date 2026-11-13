@@ -59,15 +59,16 @@ export function PrivateProfile({ person }: { person: Person }) {
 export function NpcPanel({ view, management, initialId, onOpenOrganization, desktop = false, onSelect }: { view: PlayerView; management?: NpcManagement; initialId?: string; onOpenOrganization?: (id: string) => void; desktop?: boolean; onSelect?: (id: string) => void }) {
   const anchorId = useId();
   const [activeSection, setActiveSection] = useState('profile');
-  const heading = useRef<HTMLElement>(null);
+  const heading = useRef<HTMLElement>(null), mobileNav = useRef<HTMLElement>(null);
+  const returnPerson=useRef<string|undefined>(undefined);
   const [query, setQuery] = useState(''), [filter, setFilter] = useState('all');
   const [personId, setPersonId] = useState<string | undefined>(initialId), [page, setPage] = useState(0);
   const directory = useRef<HTMLDivElement>(null), detail = useRef<HTMLElement>(null);
   const directoryScroll = useRef(0), backButton = useRef<HTMLButtonElement>(null), detailTitle = useRef<HTMLHeadingElement>(null);
   const selected = view.npc.find(p => p.id === personId);
   useEffect(() => {
-    if (!desktop || !selected) return;
-    const pane = detail.current, head = heading.current;
+    if (!selected) return;
+    const pane = desktop?detail.current:detail.current?.closest<HTMLElement>('.modal-body'), head = desktop?heading.current:mobileNav.current;
     if (!pane || !head) return;
     const update = () => {
       const sections = [...pane.querySelectorAll<HTMLElement>('[data-npc-section]')];
@@ -97,13 +98,14 @@ export function NpcPanel({ view, management, initialId, onOpenOrganization, desk
   useEffect(() => { if (initialId) setPersonId(initialId); }, [initialId]);
   useEffect(() => {
     if (personId && detail.current) {
-      detail.current.scrollTop = 0;
+      const pane=desktop?detail.current:detail.current.closest<HTMLElement>('.modal-body');if(pane)pane.scrollTop=0;
+      setActiveSection('profile');
       const target = backButton.current?.getClientRects().length ? backButton.current : detailTitle.current;
       target?.focus({ preventScroll: true });
     }
-    else if (directory.current) directory.current.scrollTop = directoryScroll.current;
-  }, [personId]);
-  function select(id: string) { if (directory.current?.getClientRects().length) directoryScroll.current = directory.current.scrollTop; setPersonId(id); onSelect?.(id); }
+    else if (directory.current) {const pane=desktop?directory.current:directory.current.closest<HTMLElement>('.modal-body');if(pane)pane.scrollTop=directoryScroll.current;if(!desktop)[...directory.current.querySelectorAll<HTMLElement>('[data-npc-id]')].find(b=>b.dataset.npcId===returnPerson.current)?.focus({preventScroll:true});}
+  }, [personId,desktop]);
+  function select(id: string) { if (directory.current?.getClientRects().length) directoryScroll.current = (desktop?directory.current:directory.current.closest<HTMLElement>('.modal-body'))?.scrollTop??0;returnPerson.current=id; setPersonId(id); onSelect?.(id); }
   const location = (id?: string) => view.locations.find(p => p.id === id)?.name ?? '未记录';
   return <div className="npc-panel" data-detail={Boolean(selected)}>
     {management?.message && <p className="npc-feedback" role="status">{management.message}</p>}
@@ -119,7 +121,7 @@ export function NpcPanel({ view, management, initialId, onOpenOrganization, desk
           </select></label>
         </div>
         <ul className="npc-people" aria-label="人物名录">{matches.slice(currentPage * 20, (currentPage + 1) * 20).map(person => <li key={person.id} className="npc-directory-row" data-kind={person.kind}>
-          <button className="person-row" aria-label={`查看人物：${person.name}`} aria-pressed={person.id === personId} onClick={() => select(person.id)}>
+          <button className="person-row" data-npc-id={person.id} aria-label={`查看人物：${person.name}`} aria-pressed={person.id === personId} onClick={() => select(person.id)}>
             <span className="avatar" aria-hidden="true">{Array.from(person.name)[0]}</span>
             <span className={desktop ? 'txt' : undefined}><strong title={person.name}>{person.name}</strong><small>{person.identity || '身份未记录'}</small><small>{person.relationshipText}</small>
               <small>{desktop ? <><span className={`pill ${person.onScene ? 'on' : ''}`}>{person.onScene ? '本幕在场' : '场外人物'}</span>{person.lastInteractionAt && <time>{dateTime(person.lastInteractionAt)}</time>}</> : <>{person.onScene ? '本幕在场' : '场外人物'}{person.lastInteractionAt ? ` · ${dateTime(person.lastInteractionAt)}` : ''}</>}</small></span>
@@ -139,8 +141,9 @@ export function NpcPanel({ view, management, initialId, onOpenOrganization, desk
             <nav className="nd-tabs" aria-label="人物资料分节">{[['profile','人物档案'],['contact','联系与地点'],...(selected.kind === 'special' ? [['special','特殊人物资料']] : []),['known','已知信息'],['memory','记忆与总结']].map(([key,label]) => <button key={key} aria-current={activeSection === key ? 'true' : undefined} aria-controls={`${anchorId}-${key}`} onClick={() => { const pane=detail.current, target=document.getElementById(`${anchorId}-${key}`); if(pane && target) { pane.scrollTo({top:pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-(heading.current?.dataset.longHeading === 'true' ? 0 : heading.current?.offsetHeight ?? 0)-12,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'}); setActiveSection(key); } }}>{label}</button>)}</nav>
           </header> : <header className="npc-detail-heading">
             <button className="npc-back" ref={backButton} onClick={() => setPersonId(undefined)}>← 返回人物名录</button>
-            <div className="npc-detail-title"><div><span className="tag">{selected.kind === 'special' ? '特殊人物' : '普通人物'}</span><h3 ref={detailTitle} tabIndex={-1}>{selected.name}</h3></div><Star person={selected} management={management} /></div>
+            <div className="npc-detail-title"><div><span className="avatar" aria-hidden="true">{Array.from(selected.name)[0]}</span><span className="tag">{selected.kind === 'special' ? '特殊人物' : '普通人物'}</span><h3 ref={detailTitle} tabIndex={-1}>{selected.name}</h3></div><Star person={selected} management={management} /></div>
           </header>}
+          {!desktop&&<nav className="paper-section-nav" aria-label="人物资料分节" ref={mobileNav}>{[['profile','人物档案'],['contact','联系与地点'],...(selected.kind==='special'?[['special','特殊人物资料']]:[]),['known','已知信息'],['memory','记忆与总结']].map(([key,label])=><button key={key} aria-current={activeSection===key?'true':undefined} aria-controls={`${anchorId}-${key}`} onClick={()=>{const pane=detail.current?.closest<HTMLElement>('.modal-body'),target=document.getElementById(`${anchorId}-${key}`);if(pane&&target)pane.scrollTo({top:pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-(mobileNav.current?.offsetHeight??0)-8,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});setActiveSection(key);}}>{label}</button>)}</nav>}
           <section className="npc-section" data-npc-section="profile" id={`${anchorId}-profile`}><h4>人物档案</h4><dl>
             <Detail label="别名">{selected.aliases.join('、') || '未记录'}</Detail>
             <Detail label="年龄">{selected.age ?? '未记录'}</Detail><Detail label="性别">{gender[selected.gender ?? 'unknown']}</Detail>

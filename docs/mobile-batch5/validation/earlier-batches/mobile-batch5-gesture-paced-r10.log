@@ -1,0 +1,44 @@
+
+Running 1 test using 1 worker
+
+(node:74365) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [mobile] › e2e/mobile-archives.spec.ts:112:1 › 原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留
+  1) [mobile] › e2e/mobile-archives.spec.ts:112:1 › 原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留 ───────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: '物品栏', exact: true }).getByRole('dialog', { name: '日常棉布外套', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog', { name: '物品栏', exact: true }).getByRole('dialog', { name: '日常棉布外套', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '物品栏', exact: true }).getByRole('dialog', { name: '日常棉布外套', exact: true })
+
+
+      112 | test('原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留',async({page})=>{
+      113 |  await page.setViewportSize({width:390,height:844});await seedMobileArchives(page);const before=await storedArchives(page),verify=await readonly(page);const paper=await openArchive(page,'物品栏'),tile=paper.locator('[data-item-id="ui5-coat"]');await tile.tap();const sub=paper.getByRole('dialog',{name:'日常棉布外套',exact:true});await expect(sub).toBeVisible();const cdp=await page.context().newCDPSession(page),grab=sub.locator('.mobile-sheet-grab');const box=(await grab.boundingBox())!,x=box.x+box.width/2,y=box.y+box.height/2;
+    > 114 |  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});for(let i=1;i<=6;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:y+140*i/6}]});await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>resolve())));}await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await expect(sub).toHaveCount(0);await expect(paper).toBeVisible();await expect(tile).toBeFocused();await page.evaluate(()=>{const result:unknown[]=[];(window as unknown as {gestureTrace:unknown[]}).gestureTrace=result;for(const type of ['pointerdown','pointerup','touchstart','touchend','click'])document.addEventListener(type,e=>{result.push({type,tag:(e.target as Element).tagName,tile:Boolean((e.target as Element).closest('.inventory-tile')),dialogs:document.querySelectorAll('dialog[open]').length,scale:visualViewport?.scale});},{capture:true});});await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));await tile.tap();await test.info().attach('gesture-sequence',{body:JSON.stringify(await page.evaluate(()=>(window as unknown as {gestureTrace:unknown[]}).gestureTrace)),contentType:'application/json'});await expect(sub).toBeVisible();const top=(await sub.boundingBox())!.y;await page.touchscreen.tap(4,top/2);await expect(sub).toHaveCount(0);await expect(paper).toBeVisible();await page.keyboard.press('Escape');await cdp.detach();
+          |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ^
+      115 |  const settings=await openPaperSettings(page);await settings.getByRole('button',{name:'AI 连接',exact:true}).click();await settings.getByRole('button',{name:'新增渠道',exact:true}).click();await settings.getByRole('textbox',{name:'渠道名称',exact:true}).fill('跨尺寸编辑保留');await page.setViewportSize({width:901,height:900});await expect(settings.getByRole('textbox',{name:'渠道名称',exact:true})).toHaveValue('跨尺寸编辑保留');await page.setViewportSize({width:392,height:420});await expect(settings.getByRole('textbox',{name:'渠道名称',exact:true})).toHaveValue('跨尺寸编辑保留');await settings.getByRole('button',{name:'关闭资料界面',exact:true}).click();const confirm=page.getByRole('dialog',{name:'AI 配置尚未保存',exact:true});await expect(confirm).toBeVisible();await page.setViewportSize({width:1440,height:900});await expect(confirm).toBeVisible();await page.setViewportSize({width:390,height:844});await page.keyboard.press('Escape');await expect(confirm).toHaveCount(0);await expect(settings).toBeVisible();await expect(settings.getByRole('textbox',{name:'渠道名称',exact:true})).toHaveValue('跨尺寸编辑保留');await archiveFits(page);expect(await storedArchives(page)).toEqual(before);verify();
+      116 | });
+      117 |
+        at /workspace/mobile-redesign-batch5/e2e/mobile-archives.spec.ts:114:1258
+
+    Error Context: ../../tmp/mobile-batch5-gesture-paced-r10/mobile-archives-原生内层手势、遮罩、Esc-与-settings-跨尺寸编辑保留-mobile/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch5-gesture-paced-r10/mobile-archives-原生内层手势、遮罩、Esc-与-settings-跨尺寸编辑保留-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch5-gesture-paced-r10/mobile-archives-原生内层手势、遮罩、Esc-与-settings-跨尺寸编辑保留-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    [mobile] › e2e/mobile-archives.spec.ts:112:1 › 原生内层手势、遮罩、Esc 与 settings 跨尺寸编辑保留 ────────────────
