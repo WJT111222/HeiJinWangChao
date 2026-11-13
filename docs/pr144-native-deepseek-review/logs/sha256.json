@@ -1,0 +1,70 @@
+{
+  "environment.log": {
+    "sha256": "33befa44f81aca2852f56e2fdb60282da56305bc772f58d8dd6f35cfe0d119b4",
+    "bytes": 271
+  },
+  "npm-ci.log": {
+    "sha256": "0110f1db6c61733c3dd4f87d609a2fb7726160aaee88d228cb088a05a5165114",
+    "bytes": 26
+  },
+  "deepseek-initial.log": {
+    "sha256": "c326bf20a3b223d252344bf182a44f44624df49a9740c894f538967cb920b1ad",
+    "bytes": 186
+  },
+  "check-initial.log": {
+    "sha256": "047ced03ea50f4c39a21334686110c2c9240185d0c27a27061b88b3a64987fab",
+    "bytes": 11234
+  },
+  "deepseek-review-red.log": {
+    "sha256": "7384c047233620c6699e321f830ed0857cdd863121a5c4a2b2cad1352cb1b93c",
+    "bytes": 1462
+  },
+  "deepseek-review-green.log": {
+    "sha256": "84ca0dd5a35e591d52d91b781fa09d878628902c3054d3799bf94d63f72efdc5",
+    "bytes": 188
+  },
+  "deepseek-final.log": {
+    "sha256": "7706b42c6e8d468c3e6ffe636386ee6b1a2884167d0f12215385e14947386221",
+    "bytes": 188
+  },
+  "check-final.log": {
+    "sha256": "ae8ae28ffa3d80d4db87d34da4789734db0ad2470e4327617ebb5f2a71e10529",
+    "bytes": 11234
+  },
+  "diff-check.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "ai-settings-initial.log": {
+    "sha256": "6c169810fd2ca43126e0b031f170b67331531faaa9221620e7ab17d538df8bd3",
+    "bytes": 7196
+  },
+  "ai-settings-main-control.log": {
+    "sha256": "ad38b381a03d324ed8f2cd9e40d1be347f937e9a0c6b914ac7822a25990bc75f",
+    "bytes": 5336
+  },
+  "ai-settings-final.log": {
+    "sha256": "0d900c28459f991419d446698df176d86908eb6b896b929d3484b3721b6d182c",
+    "bytes": 2698
+  },
+  "main-control-npm-ci.log": {
+    "sha256": "0110f1db6c61733c3dd4f87d609a2fb7726160aaee88d228cb088a05a5165114",
+    "bytes": 26
+  },
+  "official-docs-access.log": {
+    "sha256": "89f0e31b478e682015e1f1984db8e4c7df145311c93213b22a74806e6598c944",
+    "bytes": 507
+  },
+  "ai-settings-initial.json": {
+    "sha256": "01ee1e01fe478a7384fbf5def9d1aec3d5edebaccd5d21d0fca39c30a47d1409",
+    "bytes": 21149
+  },
+  "ai-settings-main-control.json": {
+    "sha256": "959c32ad50ca3d4df89bbe2f467ee6283a995dca4a6c60e3881dcd857effbe2f",
+    "bytes": 10490
+  },
+  "ai-settings-final.json": {
+    "sha256": "4e9c49faa027c119fee18a76ab836a4fb48952b27e94001bda97a7265f14b112",
+    "bytes": 1476456
+  }
+}

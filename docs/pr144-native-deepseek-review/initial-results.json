@@ -1,0 +1,29 @@
+[
+  {
+    "name": "npm-ci",
+    "command": [
+      "npm",
+      "ci"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "deepseek-initial",
+    "command": [
+      "npx",
+      "vitest",
+      "run",
+      "src/tests/deepseek-native.test.ts"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "check-initial",
+    "command": [
+      "npm",
+      "run",
+      "check"
+    ],
+    "exitCode": 0
+  }
+]

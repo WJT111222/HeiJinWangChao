@@ -19,6 +19,7 @@ import type { AiMessage, Usage } from './protocols';
 import { readSse } from './sse';
 import { rememberThinkingCapability, unsupportedThinkingParameter, blockThinkingCapability } from './thinking';
 import { checkFinish, LeadingThink, rememberUnsupported, splitLeadingThink, unsupportedParameter } from './compat';
+import { isOpenAiCompatible } from './configuration';
 
 export interface RequestOptions {
   signal?: AbortSignal;
@@ -153,7 +154,7 @@ export class AiClient {
           usage = usageFrom(data, protocol); observedUsage = usage;
           text = responseText(data, protocol);
           reasoning = nativeReasoning(data, protocol);
-          if (protocol === 'openai') {
+          if (isOpenAiCompatible(protocol)) {
             const split = splitLeadingThink(text);
             text = split.content;
             if (!reasoning) reasoning = split.reasoning;
@@ -166,9 +167,9 @@ export class AiClient {
           // Content-Type 不可靠（有的中转写成 text/plain），只要有响应体就按 SSE 解析；是否完整由结束标记判断。
           if (!response.body) throw new AiError('stream_interrupted');
           let terminal = false, nativeSeen = false;
-          const think = protocol === 'openai' ? new LeadingThink() : undefined;
+          const think = isOpenAiCompatible(protocol) ? new LeadingThink() : undefined;
           for await (const event of readSse(response.body, signal)) {
-            if (event.data === '[DONE]' && protocol === 'openai') {
+            if (event.data === '[DONE]' && isOpenAiCompatible(protocol)) {
               terminal = true;
               break;
             }
@@ -185,7 +186,7 @@ export class AiClient {
             observedUsage = usage;
             let delta = '';
             let thinkReasoning = '';
-            if (protocol === 'openai') {
+            if (isOpenAiCompatible(protocol)) {
               const choice = record(array(data.choices)[0]);
               if (checkFinish(choice.finish_reason)) terminal = true;
               const split = think!.push(string(record(choice.delta).content));
@@ -292,7 +293,7 @@ export class AiClient {
             duplicateEntries: validEntries - ids.size, uniqueModels: ids.size, pages: number,
             attemptedEndpoints: attempts, complete: !page.next,
             fullEndpointInput: /\/models\/*$/i.test(new URL(snapshot.channel.baseUrl).pathname)
-              || (protocol === 'openai' && /\/chat\/completions\/*$/i.test(new URL(snapshot.channel.baseUrl).pathname)),
+              || (isOpenAiCompatible(protocol) && /\/chat\/completions\/*$/i.test(new URL(snapshot.channel.baseUrl).pathname)),
             endpoint: safeModelListEndpoint(selected, secretFor(snapshot)), httpStatus: first.httpStatus });
           return [...ids].sort();
         }

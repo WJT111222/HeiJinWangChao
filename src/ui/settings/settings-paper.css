@@ -56,6 +56,7 @@
 .app-shell .settings-paper[data-tone=paper] .p-openai{--c:#2F7A58}
 .app-shell .settings-paper[data-tone=paper] .p-anthropic{--c:#A3412E}
 .app-shell .settings-paper[data-tone=paper] .p-gemini{--c:#2D5E7D}
+.app-shell .settings-paper[data-tone=paper] .p-deepseek{--c:#366A81}
 .app-shell .settings-paper[data-tone=paper] .secret{display:flex;gap:.4rem;max-width:22rem;width:100%}
 .app-shell .settings-paper[data-tone=paper] .secret .f-input{font-family:var(--font-mono);letter-spacing:.15em}
 .app-shell .settings-paper[data-tone=paper] .routes{width:100%;border-collapse:separate;border-spacing:0 .45rem;font-size:.86rem}

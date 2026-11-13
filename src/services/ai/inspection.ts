@@ -2,6 +2,7 @@ import type { ModuleRecord } from '../../prompts/composer';
 import type { AiMessage, Usage } from './protocols';
 import { record, array, string } from './protocols';
 import type { RequestSnapshot } from './snapshot';
+import { isOpenAiCompatible } from './configuration';
 import { freeze, secretFor } from './snapshot';
 import { browserCredentials } from './credentials';
 import { contextStatistics } from '../../prompts/statistics';
@@ -71,7 +72,7 @@ export function payloadMessages(
   body: Record<string, unknown>,
   protocol: RequestSnapshot['channel']['protocol'],
 ): AiMessage[] {
-  if (protocol === 'openai')
+  if (isOpenAiCompatible(protocol))
     return array(body.messages).map((m) => ({
       role: string(record(m).role) as AiMessage['role'],
       content: string(record(m).content),
