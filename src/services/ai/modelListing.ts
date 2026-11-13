@@ -1,4 +1,5 @@
 import { modelIdSchema } from './configuration';
+import { isOpenAiCompatible } from './configuration';
 import type { Protocol } from './configuration';
 import { AiError } from './errors';
 import { record } from './protocols';
@@ -62,7 +63,7 @@ export function modelListCandidates(snapshot: RequestSnapshot): string[] {
     if (candidate.origin !== url.origin) throw new AiError('configuration');
     if (!paths.includes(candidate.href)) paths.push(candidate.href);
   };
-  if (snapshot.channel.protocol !== 'openai') { push(/\/models$/i.test(base) ? base : `${base}/models`); return paths; }
+  if (!isOpenAiCompatible(snapshot.channel.protocol)) { push(/\/models$/i.test(base) ? base : `${base}/models`); return paths; }
   const completeModels = /\/models$/i.test(base);
   const configuredModels = base;
   base = base.replace(/\/(?:chat\/completions|models)$/i, '');
@@ -112,15 +113,15 @@ export function parseModelPage(raw: unknown, protocol: Protocol, secret: string)
   // 仅识别 Ollama 官方 ListModelResponse：model 是请求标识，name 不作为回退ID。
   const ollamaModel = (item: unknown) => {
     const value = record(item);
-    return protocol === 'openai' && values === data.models && typeof value.model === 'string'
+    return isOpenAiCompatible(protocol) && values === data.models && typeof value.model === 'string'
       && typeof value.modified_at === 'string' && Number.isFinite(Date.parse(value.modified_at))
       && typeof value.size === 'number' && Number.isSafeInteger(value.size) && value.size >= 0
       && typeof value.digest === 'string' && Boolean(value.digest);
   };
-  if (protocol === 'openai' && values.length && !values.some((item) => typeof item === 'string'
+  if (isOpenAiCompatible(protocol) && values.length && !values.some((item) => typeof item === 'string'
     || Object.hasOwn(record(item), 'id') || ollamaModel(item))) throw new AiError('model_list_format');
   for (const item of values) {
-    const value = protocol === 'gemini' ? record(item).name : typeof item === 'string' && protocol === 'openai' ? item : Object.hasOwn(record(item), 'id') ? record(item).id : ollamaModel(item) ? record(item).model : undefined;
+    const value = protocol === 'gemini' ? record(item).name : typeof item === 'string' && isOpenAiCompatible(protocol) ? item : Object.hasOwn(record(item), 'id') ? record(item).id : ollamaModel(item) ? record(item).model : undefined;
     const id = typeof value === 'string' ? value.trim().replace(protocol === 'gemini' ? /^models\// : /$^/, '') : '';
     if (modelIdSchema.safeParse(id).success && !secretForms(secret).some((part) => id.includes(part))) entries.push({ id, source: item });
   }

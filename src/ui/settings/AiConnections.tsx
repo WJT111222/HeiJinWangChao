@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   AiConfigSchema,
+  ProtocolSchema,
   defaultAiConfig,
   defaultUrls,
   newChannel,
@@ -240,7 +241,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
         </button>}
       </div>
       {desktop&&<section className="channel-cards" aria-label="API 渠道列表"><h4>API 渠道</h4><div className="ch-list">{config.channels.map(item=><button key={item.id} className={`ch p-${item.protocol}`} disabled={busy} aria-label={`编辑渠道：${item.name||'未命名渠道'}`} aria-pressed={selectedId===item.id} onClick={()=>select(item.id)}>
-       <span className="nm">{item.name||'未命名渠道'}<span className="proto">{{openai:'OpenAI 兼容',anthropic:'原生 Anthropic',gemini:'原生 Gemini'}[item.protocol]}</span></span>
+       <span className="nm">{item.name||'未命名渠道'}<span className="proto">{{openai:'OpenAI 兼容',anthropic:'原生 Anthropic',gemini:'原生 Gemini',deepseek:'原生 DeepSeek'}[item.protocol]}</span></span>
        {selectedId===item.id&&<span className="def">当前渠道</span>}<span className="url" title={cardUrl(item.baseUrl,item.id===selectedId?key:'')}>{cardUrl(item.baseUrl,item.id===selectedId?key:'')}</span><span className="mdl">{item.defaultModel||'尚未选择默认模型'}</span>
       </button>)}<button className={desktop?"ch add":undefined}
           disabled={busy || dirty}
@@ -271,10 +272,11 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
             <input value={channel?.name ?? ''} onChange={(e) => patch({ name: e.target.value })} />
           </label>
           <ThemedSelect label="协议" value={channel?.protocol ?? 'openai'} disabled={!channel || busy}
-            options={[{ value: 'openai', label: 'OpenAI 兼容' }, { value: 'gemini', label: '原生 Gemini' }, { value: 'anthropic', label: '原生 Anthropic' }]}
+            options={[{ value: 'openai', label: 'OpenAI 兼容' }, { value: 'gemini', label: '原生 Gemini' }, { value: 'anthropic', label: '原生 Anthropic' }, { value: 'deepseek', label: '原生 DeepSeek' }]}
             onChange={(value) => {
-              if (value !== 'openai' && value !== 'gemini' && value !== 'anthropic') return;
-              patch({ protocol: value, baseUrl: defaultUrls[value], defaultModel: '',
+              const parsed = ProtocolSchema.safeParse(value);
+              if (!parsed.success) return;
+              patch({ protocol: parsed.data, baseUrl: defaultUrls[parsed.data], defaultModel: '',
                 compatibility: { temperature: true, maxOutputTokens: true, jsonMode: false, cotMode: 'confirmation', cotModels: [] } });
             }} />
           <label className="wide-field">
@@ -283,7 +285,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
               type="url"
               value={channel?.baseUrl ?? ''}
               onChange={(e) => patch({ baseUrl: e.target.value })}
-              placeholder="填写含版本路径的服务根地址"
+              placeholder="填写服务根地址（DeepSeek 官方无需 /v1）"
             />
           </label>
           <label>

@@ -1,4 +1,5 @@
 import { AiClient } from '../../services/ai/client';
+import { isOpenAiCompatible } from '../../services/ai/configuration';
 import type { Channel } from '../../services/ai/configuration';
 import type { CredentialVault } from '../../services/ai/credentials';
 import { channelSnapshot, secretFor } from '../../services/ai/snapshot';
@@ -44,7 +45,7 @@ export class ModelCatalog {
       const corrected = diagnostics?.fullEndpointInput ? ' 列表已兼容完整接口地址；生成请求仍使用原配置，请将 Base URL 改为接口根地址。' : '';
       // 列表在备用路径（如补上 /v1）才找到时，生成请求仍按原地址发送，常见于中转站地址漏写 /v1。
       const fallback = diagnostics && !diagnostics.fullEndpointInput && diagnostics.attemptedEndpoints > 1
-        ? ` 注意：列表是在备用路径找到的，生成请求仍会发到当前地址下的${channel.protocol === 'openai' ? ' /chat/completions' : '接口'}；如果生成时报「服务路径或模型不存在」，请把服务地址改成列表端点去掉末尾 /models 后的部分。` : '';
+        ? ` 注意：列表是在备用路径找到的，生成请求仍会发到当前地址下的${isOpenAiCompatible(channel.protocol) ? ' /chat/completions' : '接口'}；如果生成时报「服务路径或模型不存在」，请把服务地址改成列表端点去掉末尾 /models 后的部分。` : '';
       this.publish(channel.id, { models: result, diagnostics, status: result.length ? 'ready' : 'empty',
         message: (result.length ? `当前接口返回 ${result.length} 个模型。列表由服务端提供，可能不是该平台全部可用模型。`
           : '请求成功，服务未返回可用模型，可手动填写模型 ID。') + counts + endpoint + limit + corrected + fallback });

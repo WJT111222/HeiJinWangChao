@@ -3,8 +3,11 @@ import { IdSchema } from '../../domain/common';
 import { readDocument, writeDocument } from '../local/documents';
 
 export const aiConfigKey = 'heijin.ai.v1';
-export const ProtocolSchema = z.enum(['openai', 'gemini', 'anthropic']);
+export const ProtocolSchema = z.enum(['openai', 'gemini', 'anthropic', 'deepseek']);
 export type Protocol = z.infer<typeof ProtocolSchema>;
+/** DeepSeek 官方 Chat Completions 兼容 OpenAI 的传输与响应结构，保留独立协议标识。 */
+export const isOpenAiCompatible = (protocol: Protocol): protocol is 'openai' | 'deepseek' =>
+  protocol === 'openai' || protocol === 'deepseek';
 export type AiStage = 'story' | 'variables' | 'world';
 export type AiTask = AiStage | 'memory';
 export const modelIdSchema = z
@@ -97,6 +100,7 @@ export const defaultUrls: Record<Protocol, string> = {
   openai: 'https://api.openai.com/v1',
   gemini: 'https://generativelanguage.googleapis.com/v1beta',
   anthropic: 'https://api.anthropic.com/v1',
+  deepseek: 'https://api.deepseek.com',
 };
 export function newChannel(protocol: Protocol = 'openai'): Channel {
   return {

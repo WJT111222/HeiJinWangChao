@@ -116,7 +116,7 @@ test('AI 多渠道、原生模型列表与连接测试、路由和会话凭证�
   await page.goto('/');
   await page.getByRole('button', { name: '设置', exact: true }).click();
   const ids: string[] = [];
-  for (const protocol of ['openai', 'gemini', 'anthropic']) {
+  for (const protocol of ['openai', 'gemini', 'anthropic', 'deepseek']) {
     await page.getByRole('button', { name: '新增渠道', exact: true }).click();
     await page.getByLabel('渠道名称', { exact: true }).fill(`Mock ${protocol}`);
     await choose(page, '协议', protocol);
@@ -139,7 +139,7 @@ test('AI 多渠道、原生模型列表与连接测试、路由和会话凭证�
     await expect(page.getByText(/连接测试成功，已收到模型文本响应/)).toBeVisible();
     ids.push(await page.getByRole('combobox', { name: '当前渠道', exact: true }).getAttribute('value') ?? '');
   }
-  expect(requests).toHaveLength(6);
+  expect(requests).toHaveLength(8);
   expect(requests.map((request) => request.url)).toEqual([
     'https://api.mock.invalid/openai/v1/models',
     'https://api.mock.invalid/openai/v1/chat/completions',
@@ -147,11 +147,14 @@ test('AI 多渠道、原生模型列表与连接测试、路由和会话凭证�
     'https://api.mock.invalid/gemini/v1/models/mock-model:generateContent',
     'https://api.mock.invalid/anthropic/v1/models?limit=100',
     'https://api.mock.invalid/anthropic/v1/messages',
+    'https://api.mock.invalid/deepseek/v1/models',
+    'https://api.mock.invalid/deepseek/v1/chat/completions',
   ]);
   for (const [index, header] of [
     [1, 'authorization'],
     [3, 'x-goog-api-key'],
     [5, 'x-api-key'],
+    [7, 'authorization'],
   ] as const) {
     expect(requests[index].headers[header]).toContain('browser-mock-credential');
     expect(requests[index].url).not.toContain('browser-mock-credential');
@@ -179,10 +182,10 @@ test('AI 多渠道、原生模型列表与连接测试、路由和会话凭证�
   expect(stored.session).toContain('browser-mock-credential');
   await page.getByRole('button', { name: '删除渠道', exact: true }).click();
   await page.getByRole('button', { name: '取消删除', exact: true }).click();
-  await optionCount(page, '当前渠道', 3);
+  await optionCount(page, '当前渠道', 4);
   await page.getByRole('button', { name: '删除渠道', exact: true }).click();
   await page.getByRole('button', { name: '确认删除渠道', exact: true }).click();
-  await optionCount(page, '当前渠道', 2);
+  await optionCount(page, '当前渠道', 3);
   await selected(page, '正文生成渠道', '');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(errors).toEqual([]);

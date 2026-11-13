@@ -3,6 +3,7 @@ import { secretFor } from './snapshot';
 import { AiError } from './errors';
 import { thinkingParameters } from './thinking';
 import { checkFinish, skipsTemperature, usesCompletionTokens } from './compat';
+import { isOpenAiCompatible } from './configuration';
 export interface AiMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -24,7 +25,7 @@ export function endpoint(snapshot: RequestSnapshot, path: string) {
 }
 export function authHeaders(snapshot: RequestSnapshot): Record<string, string> {
   const key = secretFor(snapshot);
-  if (snapshot.channel.protocol === 'openai') return { Authorization: `Bearer ${key}` };
+  if (isOpenAiCompatible(snapshot.channel.protocol)) return { Authorization: `Bearer ${key}` };
   if (snapshot.channel.protocol === 'gemini') return { 'x-goog-api-key': key };
   return {
     'x-api-key': key,
@@ -76,7 +77,7 @@ export function wireRequest(
     .join('\n\n');
   const conversation = ordered.filter((m) => m.role !== 'system');
   let path: string, body: Record<string, unknown>;
-  if (protocol === 'openai') {
+  if (isOpenAiCompatible(protocol)) {
     path = 'chat/completions';
     body = {
       model: snapshot.model,
@@ -144,7 +145,7 @@ export function usageFrom(
       ? record(data.usageMetadata)
       : record(data.usage ?? record(data.message).usage);
   const result: Usage =
-    protocol === 'openai'
+    isOpenAiCompatible(protocol)
       ? {
           inputTokens: token(usage.prompt_tokens),
           outputTokens: token(usage.completion_tokens),
@@ -167,7 +168,7 @@ export function usageFrom(
 export function responseText(value: unknown, protocol: RequestSnapshot['channel']['protocol']) {
   const data = record(value);
   if (data.error) throw new AiError('rejected');
-  if (protocol === 'openai') {
+  if (isOpenAiCompatible(protocol)) {
     const choice = record(array(data.choices)[0]);
     checkFinish(choice.finish_reason);
     const content = record(choice.message).content;
@@ -197,7 +198,7 @@ export function responseText(value: unknown, protocol: RequestSnapshot['channel'
 // 只读取协议实际公开的文本，不解释为世界事实；不提取签名、redacted 或隐藏推理。
 export function nativeReasoning(value: unknown, protocol: RequestSnapshot['channel']['protocol'], streaming = false): string {
   const data = record(value);
-  if (protocol === 'openai') {
+  if (isOpenAiCompatible(protocol)) {
     const choice = record(array(data.choices)[0]);
     const message = record(streaming ? choice.delta : choice.message);
     return [message.reasoning_content, message.reasoning, message.reasoning_text]
