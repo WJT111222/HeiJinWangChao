@@ -1,0 +1,47 @@
+{
+  "1440x900-step1.png": {
+    "byteIdentical": false,
+    "previousSha256": "5e481a9e7e6d124f38823c43286325c509f15efa71a342316d3865132a37596a",
+    "reviewSha256": "f056bd6c1d7b1a628b40399d70ab5915851ab61c09120d9604be617500e81f52"
+  },
+  "1440x900-step2.png": {
+    "byteIdentical": true,
+    "previousSha256": "3e82fbfff946f0d8ef7b2254df51292a967d602bd126bc90f0da837268b332b1",
+    "reviewSha256": "3e82fbfff946f0d8ef7b2254df51292a967d602bd126bc90f0da837268b332b1"
+  },
+  "1440x900-step5.png": {
+    "byteIdentical": true,
+    "previousSha256": "5664272f2f51866190fdd9149fa474ed7fbadb17c7efe13b17de79df5d4536b2",
+    "reviewSha256": "5664272f2f51866190fdd9149fa474ed7fbadb17c7efe13b17de79df5d4536b2"
+  },
+  "game-1440.png": {
+    "byteIdentical": true,
+    "previousSha256": "51db1c1a7478c0d3302d8f8017c98326a6d88b366963c322afe01f9262054e0f",
+    "reviewSha256": "51db1c1a7478c0d3302d8f8017c98326a6d88b366963c322afe01f9262054e0f"
+  },
+  "home-1440.png": {
+    "byteIdentical": true,
+    "previousSha256": "cf91c70d844a025f0bd3c465dba560cc9be8158625efc2ed61925021d87b20d6",
+    "reviewSha256": "cf91c70d844a025f0bd3c465dba560cc9be8158625efc2ed61925021d87b20d6"
+  },
+  "mobile-390-step1.png": {
+    "byteIdentical": true,
+    "previousSha256": "70f349a4a62435ee78d84c4a47cf5c2600e130d9ba09c41a8cc8e7eb4ecb6a01",
+    "reviewSha256": "70f349a4a62435ee78d84c4a47cf5c2600e130d9ba09c41a8cc8e7eb4ecb6a01"
+  },
+  "mobile-390-step5.png": {
+    "byteIdentical": true,
+    "previousSha256": "374bf972f4931befc1acff66b415c9ad54cf145db33801fa7b757ffb86a6b16a",
+    "reviewSha256": "374bf972f4931befc1acff66b415c9ad54cf145db33801fa7b757ffb86a6b16a"
+  },
+  "mobile-900-step1.png": {
+    "byteIdentical": true,
+    "previousSha256": "ebca2365e5779732f6da8cbfca9a7e94922e2058cdb3f7636026c9a5ef40dd35",
+    "reviewSha256": "ebca2365e5779732f6da8cbfca9a7e94922e2058cdb3f7636026c9a5ef40dd35"
+  },
+  "mobile-900-step5.png": {
+    "byteIdentical": true,
+    "previousSha256": "2cf8fbc0e9a511cb7c13ee3980da3ec6a82db50bda69345631e9441bed8a42be",
+    "reviewSha256": "2cf8fbc0e9a511cb7c13ee3980da3ec6a82db50bda69345631e9441bed8a42be"
+  }
+}

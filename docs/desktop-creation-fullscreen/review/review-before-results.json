@@ -1,0 +1,782 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/desktop-creation-fullscreen/node_modules/.bin/playwright",
+      "test",
+      "--config",
+      "playwright.creation-fullscreen.config.ts",
+      "--grep",
+      "第五步根滚动隔离"
+    ],
+    "configFile": "/workspace/desktop-creation-fullscreen/playwright.creation-fullscreen.config.ts",
+    "rootDir": "/workspace/desktop-creation-fullscreen/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/desktop-creation-fullscreen/test-results/creation-fullscreen",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/workspace/desktop-creation-fullscreen/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "creation-fullscreen.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/desktop-creation-fullscreen/test-results/creation-fullscreen",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/workspace/desktop-creation-fullscreen/e2e",
+        "snapshotDir": "/workspace/desktop-creation-fullscreen/e2e",
+        "testIgnore": [],
+        "testMatch": "creation-fullscreen.spec.ts",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5311",
+          "reducedMotion": "reduce",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/workspace/creation-fullscreen-evidence/review-before-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5311 --strictPort",
+      "url": "http://127.0.0.1:5311",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "creation-fullscreen.spec.ts",
+      "file": "creation-fullscreen.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "第五步根滚动隔离 901x500",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 3362,
+                  "error": {
+                    "message": "Error: initial\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m500\u001b[39m\nReceived:    \u001b[31m570\u001b[39m",
+                    "stack": "Error: initial\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m500\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:137:5",
+                    "location": {
+                      "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                      "column": 47,
+                      "line": 131
+                    },
+                    "snippet": "  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: initial\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m500\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:137:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: window.scrollTo(0,9999)\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m70\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:140:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: window.scrollTo(0,9999)\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m500\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:140:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: window.scrollTo(0,9999)\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m430\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:140:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: window.scrollTo(0,9999)\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m430\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:140:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: wheel over fixed rail\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m70\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:145:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: wheel over fixed rail\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m500\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:145:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: wheel over fixed rail\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m430\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:145:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: wheel over fixed rail\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m430\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:145:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: Control+End\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:148:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: Control+End\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m500\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:148:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: Control+End\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m487\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:148:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: Control+End\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m487\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:148:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: focus and fill opening preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m57\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:153:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: focus and fill opening preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m500\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:153:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: focus and fill opening preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m443\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:153:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: focus and fill opening preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m443\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:153:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: Tab from preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m57\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:155:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: Tab from preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m500\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:155:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: Tab from preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m443\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:155:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: Tab from preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m443\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:155:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: wheel inside form\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m57\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:160:19"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: wheel inside form\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m500\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:160:19"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: wheel inside form\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m443\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:160:19"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: wheel inside form\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m443\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:160:19"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: wheel beyond form bottom\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m70\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:163:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: wheel beyond form bottom\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m500\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:163:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: wheel beyond form bottom\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m430\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:163:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: wheel beyond form bottom\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m430\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:163:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: independent dossier scroll\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m70\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:165:18"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: independent dossier scroll\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m500\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:165:18"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: independent dossier scroll\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m430\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:165:18"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: independent dossier scroll\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m500\u001b[39m\nReceived: \u001b[31m430\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:165:18"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T15:27:00.926Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "root-scroll-samples",
+                      "contentType": "application/json",
+                      "body": "W3siYWN0aW9uIjoiaW5pdGlhbCIsInNjcm9sbFkiOjAsInNjcm9sbEhlaWdodCI6NTcwLCJjbGllbnRIZWlnaHQiOjUwMCwiY2FyZFNjcm9sbFRvcCI6MCwiY2FyZFNjcm9sbEhlaWdodCI6MTMzOSwiY2FyZENsaWVudEhlaWdodCI6MjgyLCJkb3NzaWVyU2Nyb2xsVG9wIjowLCJoaWRkZW5IZWFkaW5nIjp7InRvcCI6NTY4LjYyNSwib2Zmc2V0UGFyZW50IjoiIn0sImJvdW5kcyI6eyJ2aWV3cG9ydCI6eyJ3aWR0aCI6OTAxLCJoZWlnaHQiOjUwMH0sImhlYWRlciI6eyJsZWZ0IjowLCJ0b3AiOjAsInJpZ2h0Ijo5MDEsImJvdHRvbSI6NjAsIndpZHRoIjo5MDEsImhlaWdodCI6NjB9LCJtYWluIjp7ImxlZnQiOjAsInRvcCI6NjAsInJpZ2h0Ijo5MDEsImJvdHRvbSI6NTAwLCJ3aWR0aCI6OTAxLCJoZWlnaHQiOjQ0MH0sImZvb3RlciI6eyJsZWZ0IjozNDAsInRvcCI6NDMzLCJyaWdodCI6OTAxLCJib3R0b20iOjUwMCwid2lkdGgiOjU2MSwiaGVpZ2h0Ijo2N30sImNhcmQiOnsibGVmdCI6MzQwLCJ0b3AiOjE1MS4zOTA2MjUsInJpZ2h0Ijo5MDEsImJvdHRvbSI6NDMzLCJ3aWR0aCI6NTYxLCJoZWlnaHQiOjI4MS42MDkzNzV9LCJkb3NzaWVyIjp7ImxlZnQiOjI4LCJ0b3AiOjIwNS4yODEyNSwicmlnaHQiOjMxMSwiYm90dG9tIjo0NzIsIndpZHRoIjoyODMsImhlaWdodCI6MjY2LjcxODc1fSwic2Nyb2xsV2lkdGgiOjkwMSwic2Nyb2xsSGVpZ2h0Ijo1NzB9fSx7ImFjdGlvbiI6IndpbmRvdy5zY3JvbGxUbygwLDk5OTkpIiwic2Nyb2xsWSI6NzAsInNjcm9sbEhlaWdodCI6NTcwLCJjbGllbnRIZWlnaHQiOjUwMCwiY2FyZFNjcm9sbFRvcCI6MCwiY2FyZFNjcm9sbEhlaWdodCI6MTMzOSwiY2FyZENsaWVudEhlaWdodCI6MjgyLCJkb3NzaWVyU2Nyb2xsVG9wIjowLCJoaWRkZW5IZWFkaW5nIjp7InRvcCI6NDk4LjYyNSwib2Zmc2V0UGFyZW50IjoiIn0sImJvdW5kcyI6eyJ2aWV3cG9ydCI6eyJ3aWR0aCI6OTAxLCJoZWlnaHQiOjUwMH0sImhlYWRlciI6eyJsZWZ0IjowLCJ0b3AiOi03MCwicmlnaHQiOjkwMSwiYm90dG9tIjotMTAsIndpZHRoIjo5MDEsImhlaWdodCI6NjB9LCJtYWluIjp7ImxlZnQiOjAsInRvcCI6LTEwLCJyaWdodCI6OTAxLCJib3R0b20iOjQzMCwid2lkdGgiOjkwMSwiaGVpZ2h0Ijo0NDB9LCJmb290ZXIiOnsibGVmdCI6MzQwLCJ0b3AiOjM2MywicmlnaHQiOjkwMSwiYm90dG9tIjo0MzAsIndpZHRoIjo1NjEsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjo4MS4zOTA2MjUsInJpZ2h0Ijo5MDEsImJvdHRvbSI6MzYzLCJ3aWR0aCI6NTYxLCJoZWlnaHQiOjI4MS42MDkzNzV9LCJkb3NzaWVyIjp7ImxlZnQiOjI4LCJ0b3AiOjEzNS4yODEyNSwicmlnaHQiOjMxMSwiYm90dG9tIjo0MDIsIndpZHRoIjoyODMsImhlaWdodCI6MjY2LjcxODc1fSwic2Nyb2xsV2lkdGgiOjkwMSwic2Nyb2xsSGVpZ2h0Ijo1NzB9fSx7ImFjdGlvbiI6IndoZWVsIG92ZXIgZml4ZWQgcmFpbCIsInNjcm9sbFkiOjcwLCJzY3JvbGxIZWlnaHQiOjU3MCwiY2xpZW50SGVpZ2h0Ijo1MDAsImNhcmRTY3JvbGxUb3AiOjAsImNhcmRTY3JvbGxIZWlnaHQiOjEzMzksImNhcmRDbGllbnRIZWlnaHQiOjI4MiwiZG9zc2llclNjcm9sbFRvcCI6MCwiaGlkZGVuSGVhZGluZyI6eyJ0b3AiOjQ5OC42MjUsIm9mZnNldFBhcmVudCI6IiJ9LCJib3VuZHMiOnsidmlld3BvcnQiOnsid2lkdGgiOjkwMSwiaGVpZ2h0Ijo1MDB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjotNzAsInJpZ2h0Ijo5MDEsImJvdHRvbSI6LTEwLCJ3aWR0aCI6OTAxLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOi0xMCwicmlnaHQiOjkwMSwiYm90dG9tIjo0MzAsIndpZHRoIjo5MDEsImhlaWdodCI6NDQwfSwiZm9vdGVyIjp7ImxlZnQiOjM0MCwidG9wIjozNjMsInJpZ2h0Ijo5MDEsImJvdHRvbSI6NDMwLCJ3aWR0aCI6NTYxLCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0IjozNDAsInRvcCI6ODEuMzkwNjI1LCJyaWdodCI6OTAxLCJib3R0b20iOjM2Mywid2lkdGgiOjU2MSwiaGVpZ2h0IjoyODEuNjA5Mzc1fSwiZG9zc2llciI6eyJsZWZ0IjoyOCwidG9wIjoxMzUuMjgxMjUsInJpZ2h0IjozMTEsImJvdHRvbSI6NDAyLCJ3aWR0aCI6MjgzLCJoZWlnaHQiOjI2Ni43MTg3NX0sInNjcm9sbFdpZHRoIjo5MDEsInNjcm9sbEhlaWdodCI6NTcwfX0seyJhY3Rpb24iOiJDb250cm9sK0VuZCIsInNjcm9sbFkiOjUsInNjcm9sbEhlaWdodCI6NTcwLCJjbGllbnRIZWlnaHQiOjUwMCwiY2FyZFNjcm9sbFRvcCI6MCwiY2FyZFNjcm9sbEhlaWdodCI6MTMzOSwiY2FyZENsaWVudEhlaWdodCI6MjgyLCJkb3NzaWVyU2Nyb2xsVG9wIjowLCJoaWRkZW5IZWFkaW5nIjp7InRvcCI6NTYzLjYyNSwib2Zmc2V0UGFyZW50IjoiIn0sImJvdW5kcyI6eyJ2aWV3cG9ydCI6eyJ3aWR0aCI6OTAxLCJoZWlnaHQiOjUwMH0sImhlYWRlciI6eyJsZWZ0IjowLCJ0b3AiOi0xMywicmlnaHQiOjkwMSwiYm90dG9tIjo0Nywid2lkdGgiOjkwMSwiaGVpZ2h0Ijo2MH0sIm1haW4iOnsibGVmdCI6MCwidG9wIjo0NywicmlnaHQiOjkwMSwiYm90dG9tIjo0ODcsIndpZHRoIjo5MDEsImhlaWdodCI6NDQwfSwiZm9vdGVyIjp7ImxlZnQiOjM0MCwidG9wIjo0MjAsInJpZ2h0Ijo5MDEsImJvdHRvbSI6NDg3LCJ3aWR0aCI6NTYxLCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0IjozNDAsInRvcCI6MTM4LjM5MDYyNSwicmlnaHQiOjkwMSwiYm90dG9tIjo0MjAsIndpZHRoIjo1NjEsImhlaWdodCI6MjgxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6MTkyLjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjQ1OSwid2lkdGgiOjI4MywiaGVpZ2h0IjoyNjYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6OTAxLCJzY3JvbGxIZWlnaHQiOjU3MH19LHsiYWN0aW9uIjoiZm9jdXMgYW5kIGZpbGwgb3BlbmluZyBwcmVmZXJlbmNlIiwic2Nyb2xsWSI6NTcsInNjcm9sbEhlaWdodCI6NTcwLCJjbGllbnRIZWlnaHQiOjUwMCwiY2FyZFNjcm9sbFRvcCI6ODUwLCJjYXJkU2Nyb2xsSGVpZ2h0IjoxMzM5LCJjYXJkQ2xpZW50SGVpZ2h0IjoyODIsImRvc3NpZXJTY3JvbGxUb3AiOjAsImhpZGRlbkhlYWRpbmciOnsidG9wIjo1MTEuNjI1LCJvZmZzZXRQYXJlbnQiOiIifSwiYm91bmRzIjp7InZpZXdwb3J0Ijp7IndpZHRoIjo5MDEsImhlaWdodCI6NTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6LTU3LCJyaWdodCI6OTAxLCJib3R0b20iOjMsIndpZHRoIjo5MDEsImhlaWdodCI6NjB9LCJtYWluIjp7ImxlZnQiOjAsInRvcCI6MywicmlnaHQiOjkwMSwiYm90dG9tIjo0NDMsIndpZHRoIjo5MDEsImhlaWdodCI6NDQwfSwiZm9vdGVyIjp7ImxlZnQiOjM0MCwidG9wIjozNzYsInJpZ2h0Ijo5MDEsImJvdHRvbSI6NDQzLCJ3aWR0aCI6NTYxLCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0IjozNDAsInRvcCI6OTQuMzkwNjI1LCJyaWdodCI6OTAxLCJib3R0b20iOjM3Niwid2lkdGgiOjU2MSwiaGVpZ2h0IjoyODEuNjA5Mzc1fSwiZG9zc2llciI6eyJsZWZ0IjoyOCwidG9wIjoxNDguMjgxMjUsInJpZ2h0IjozMTEsImJvdHRvbSI6NDE1LCJ3aWR0aCI6MjgzLCJoZWlnaHQiOjI2Ni43MTg3NX0sInNjcm9sbFdpZHRoIjo5MDEsInNjcm9sbEhlaWdodCI6NTcwfX0seyJhY3Rpb24iOiJUYWIgZnJvbSBwcmVmZXJlbmNlIiwic2Nyb2xsWSI6NTcsInNjcm9sbEhlaWdodCI6NTcwLCJjbGllbnRIZWlnaHQiOjUwMCwiY2FyZFNjcm9sbFRvcCI6ODUwLCJjYXJkU2Nyb2xsSGVpZ2h0IjoxMzM5LCJjYXJkQ2xpZW50SGVpZ2h0IjoyODIsImRvc3NpZXJTY3JvbGxUb3AiOjAsImhpZGRlbkhlYWRpbmciOnsidG9wIjo1MTEuNjI1LCJvZmZzZXRQYXJlbnQiOiIifSwiYm91bmRzIjp7InZpZXdwb3J0Ijp7IndpZHRoIjo5MDEsImhlaWdodCI6NTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6LTU3LCJyaWdodCI6OTAxLCJib3R0b20iOjMsIndpZHRoIjo5MDEsImhlaWdodCI6NjB9LCJtYWluIjp7ImxlZnQiOjAsInRvcCI6MywicmlnaHQiOjkwMSwiYm90dG9tIjo0NDMsIndpZHRoIjo5MDEsImhlaWdodCI6NDQwfSwiZm9vdGVyIjp7ImxlZnQiOjM0MCwidG9wIjozNzYsInJpZ2h0Ijo5MDEsImJvdHRvbSI6NDQzLCJ3aWR0aCI6NTYxLCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0IjozNDAsInRvcCI6OTQuMzkwNjI1LCJyaWdodCI6OTAxLCJib3R0b20iOjM3Niwid2lkdGgiOjU2MSwiaGVpZ2h0IjoyODEuNjA5Mzc1fSwiZG9zc2llciI6eyJsZWZ0IjoyOCwidG9wIjoxNDguMjgxMjUsInJpZ2h0IjozMTEsImJvdHRvbSI6NDE1LCJ3aWR0aCI6MjgzLCJoZWlnaHQiOjI2Ni43MTg3NX0sInNjcm9sbFdpZHRoIjo5MDEsInNjcm9sbEhlaWdodCI6NTcwfX0seyJhY3Rpb24iOiJ3aGVlbCBpbnNpZGUgZm9ybSIsInNjcm9sbFkiOjU3LCJzY3JvbGxIZWlnaHQiOjU3MCwiY2xpZW50SGVpZ2h0Ijo1MDAsImNhcmRTY3JvbGxUb3AiOjEwNTcsImNhcmRTY3JvbGxIZWlnaHQiOjEzMzksImNhcmRDbGllbnRIZWlnaHQiOjI4MiwiZG9zc2llclNjcm9sbFRvcCI6MCwiaGlkZGVuSGVhZGluZyI6eyJ0b3AiOjUxMS42MjUsIm9mZnNldFBhcmVudCI6IiJ9LCJib3VuZHMiOnsidmlld3BvcnQiOnsid2lkdGgiOjkwMSwiaGVpZ2h0Ijo1MDB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjotNTcsInJpZ2h0Ijo5MDEsImJvdHRvbSI6Mywid2lkdGgiOjkwMSwiaGVpZ2h0Ijo2MH0sIm1haW4iOnsibGVmdCI6MCwidG9wIjozLCJyaWdodCI6OTAxLCJib3R0b20iOjQ0Mywid2lkdGgiOjkwMSwiaGVpZ2h0Ijo0NDB9LCJmb290ZXIiOnsibGVmdCI6MzQwLCJ0b3AiOjM3NiwicmlnaHQiOjkwMSwiYm90dG9tIjo0NDMsIndpZHRoIjo1NjEsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjo5NC4zOTA2MjUsInJpZ2h0Ijo5MDEsImJvdHRvbSI6Mzc2LCJ3aWR0aCI6NTYxLCJoZWlnaHQiOjI4MS42MDkzNzV9LCJkb3NzaWVyIjp7ImxlZnQiOjI4LCJ0b3AiOjE0OC4yODEyNSwicmlnaHQiOjMxMSwiYm90dG9tIjo0MTUsIndpZHRoIjoyODMsImhlaWdodCI6MjY2LjcxODc1fSwic2Nyb2xsV2lkdGgiOjkwMSwic2Nyb2xsSGVpZ2h0Ijo1NzB9fSx7ImFjdGlvbiI6IndoZWVsIGJleW9uZCBmb3JtIGJvdHRvbSIsInNjcm9sbFkiOjcwLCJzY3JvbGxIZWlnaHQiOjU3MCwiY2xpZW50SGVpZ2h0Ijo1MDAsImNhcmRTY3JvbGxUb3AiOjEwNTcsImNhcmRTY3JvbGxIZWlnaHQiOjEzMzksImNhcmRDbGllbnRIZWlnaHQiOjI4MiwiZG9zc2llclNjcm9sbFRvcCI6MCwiaGlkZGVuSGVhZGluZyI6eyJ0b3AiOjQ5OC42MjUsIm9mZnNldFBhcmVudCI6IiJ9LCJib3VuZHMiOnsidmlld3BvcnQiOnsid2lkdGgiOjkwMSwiaGVpZ2h0Ijo1MDB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjotNzAsInJpZ2h0Ijo5MDEsImJvdHRvbSI6LTEwLCJ3aWR0aCI6OTAxLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOi0xMCwicmlnaHQiOjkwMSwiYm90dG9tIjo0MzAsIndpZHRoIjo5MDEsImhlaWdodCI6NDQwfSwiZm9vdGVyIjp7ImxlZnQiOjM0MCwidG9wIjozNjMsInJpZ2h0Ijo5MDEsImJvdHRvbSI6NDMwLCJ3aWR0aCI6NTYxLCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0IjozNDAsInRvcCI6ODEuMzkwNjI1LCJyaWdodCI6OTAxLCJib3R0b20iOjM2Mywid2lkdGgiOjU2MSwiaGVpZ2h0IjoyODEuNjA5Mzc1fSwiZG9zc2llciI6eyJsZWZ0IjoyOCwidG9wIjoxMzUuMjgxMjUsInJpZ2h0IjozMTEsImJvdHRvbSI6NDAyLCJ3aWR0aCI6MjgzLCJoZWlnaHQiOjI2Ni43MTg3NX0sInNjcm9sbFdpZHRoIjo5MDEsInNjcm9sbEhlaWdodCI6NTcwfX0seyJhY3Rpb24iOiJpbmRlcGVuZGVudCBkb3NzaWVyIHNjcm9sbCIsInNjcm9sbFkiOjcwLCJzY3JvbGxIZWlnaHQiOjU3MCwiY2xpZW50SGVpZ2h0Ijo1MDAsImNhcmRTY3JvbGxUb3AiOjEwNTcsImNhcmRTY3JvbGxIZWlnaHQiOjEzMzksImNhcmRDbGllbnRIZWlnaHQiOjI4MiwiZG9zc2llclNjcm9sbFRvcCI6MzUzLCJoaWRkZW5IZWFkaW5nIjp7InRvcCI6NDk4LjYyNSwib2Zmc2V0UGFyZW50IjoiIn0sImJvdW5kcyI6eyJ2aWV3cG9ydCI6eyJ3aWR0aCI6OTAxLCJoZWlnaHQiOjUwMH0sImhlYWRlciI6eyJsZWZ0IjowLCJ0b3AiOi03MCwicmlnaHQiOjkwMSwiYm90dG9tIjotMTAsIndpZHRoIjo5MDEsImhlaWdodCI6NjB9LCJtYWluIjp7ImxlZnQiOjAsInRvcCI6LTEwLCJyaWdodCI6OTAxLCJib3R0b20iOjQzMCwid2lkdGgiOjkwMSwiaGVpZ2h0Ijo0NDB9LCJmb290ZXIiOnsibGVmdCI6MzQwLCJ0b3AiOjM2MywicmlnaHQiOjkwMSwiYm90dG9tIjo0MzAsIndpZHRoIjo1NjEsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjo4MS4zOTA2MjUsInJpZ2h0Ijo5MDEsImJvdHRvbSI6MzYzLCJ3aWR0aCI6NTYxLCJoZWlnaHQiOjI4MS42MDkzNzV9LCJkb3NzaWVyIjp7ImxlZnQiOjI4LCJ0b3AiOjEzNS4yODEyNSwicmlnaHQiOjMxMSwiYm90dG9tIjo0MDIsIndpZHRoIjoyODMsImhlaWdodCI6MjY2LjcxODc1fSwic2Nyb2xsV2lkdGgiOjkwMSwic2Nyb2xsSGVpZ2h0Ijo1NzB9fV0="
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/desktop-creation-fullscreen/test-results/creation-fullscreen/creation-fullscreen-第五步根滚动隔离-901x500/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/desktop-creation-fullscreen/test-results/creation-fullscreen/creation-fullscreen-第五步根滚动隔离-901x500/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                    "column": 47,
+                    "line": 131
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f747acb7fe0c8627cb90-e08487e156cf9484f866",
+          "file": "creation-fullscreen.spec.ts",
+          "line": 103,
+          "column": 3
+        },
+        {
+          "title": "第五步根滚动隔离 1100x420",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2590,
+                  "error": {
+                    "message": "Error: initial\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m420\u001b[39m\nReceived:    \u001b[31m570\u001b[39m",
+                    "stack": "Error: initial\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m420\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:137:5",
+                    "location": {
+                      "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                      "column": 47,
+                      "line": 131
+                    },
+                    "snippet": "  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: initial\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m420\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:137:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: window.scrollTo(0,9999)\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m150\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:140:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: window.scrollTo(0,9999)\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m420\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:140:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: window.scrollTo(0,9999)\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m270\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:140:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: window.scrollTo(0,9999)\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m270\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:140:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: wheel over fixed rail\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m150\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:145:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: wheel over fixed rail\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m420\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:145:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: wheel over fixed rail\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m270\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:145:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: wheel over fixed rail\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m270\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:145:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: Control+End\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m13\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:148:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: Control+End\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m420\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:148:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: Control+End\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m407\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:148:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: Control+End\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m407\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:148:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: focus and fill opening preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m120\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:153:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: focus and fill opening preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m420\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:153:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: focus and fill opening preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m288\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:153:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: focus and fill opening preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m288\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:153:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: Tab from preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m137\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:155:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: Tab from preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m420\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:155:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: Tab from preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m283\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:155:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: Tab from preference\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m283\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:155:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: wheel inside form\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m137\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:160:19"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: wheel inside form\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m420\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:160:19"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: wheel inside form\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m283\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:160:19"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: wheel inside form\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m283\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:160:19"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: wheel beyond form bottom\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m150\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:163:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: wheel beyond form bottom\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m420\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:163:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: wheel beyond form bottom\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m270\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:163:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: wheel beyond form bottom\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m270\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:163:5"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 42,
+                        "line": 130
+                      },
+                      "message": "Error: independent dossier scroll\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m150\u001b[39m\n\n  128 |       const bounds = await metrics(page);\n  129 |       samples.push({ action, ...state, bounds });\n> 130 |       expect.soft(state.scrollY, action).toBe(0);\n      |                                          ^\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:130:42)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:165:18"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 131
+                      },
+                      "message": "Error: independent dossier scroll\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m420\u001b[39m\nReceived:    \u001b[31m570\u001b[39m\n\n  129 |       samples.push({ action, ...state, bounds });\n  130 |       expect.soft(state.scrollY, action).toBe(0);\n> 131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n      |                                               ^\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:131:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:165:18"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 47,
+                        "line": 133
+                      },
+                      "message": "Error: independent dossier scroll\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m270\u001b[39m\n\n  131 |       expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n> 133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n      |                                               ^\n  134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n  135 |       return state;\n  136 |     }\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:133:47)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:165:18"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                        "column": 49,
+                        "line": 134
+                      },
+                      "message": "Error: independent dossier scroll\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m420\u001b[39m\nReceived: \u001b[31m270\u001b[39m\n\n  132 |       expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);\n  133 |       expect.soft(bounds.main.bottom, action).toBe(height);\n> 134 |       expect.soft(bounds.footer.bottom, action).toBe(height);\n      |                                                 ^\n  135 |       return state;\n  136 |     }\n  137 |     await record('initial');\n    at record (/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:134:49)\n    at /workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts:165:18"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T15:27:05.066Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "root-scroll-samples",
+                      "contentType": "application/json",
+                      "body": "W3siYWN0aW9uIjoiaW5pdGlhbCIsInNjcm9sbFkiOjAsInNjcm9sbEhlaWdodCI6NTcwLCJjbGllbnRIZWlnaHQiOjQyMCwiY2FyZFNjcm9sbFRvcCI6MCwiY2FyZFNjcm9sbEhlaWdodCI6MTMxNywiY2FyZENsaWVudEhlaWdodCI6MjAyLCJkb3NzaWVyU2Nyb2xsVG9wIjowLCJoaWRkZW5IZWFkaW5nIjp7InRvcCI6NTY4LjYyNSwib2Zmc2V0UGFyZW50IjoiIn0sImJvdW5kcyI6eyJ2aWV3cG9ydCI6eyJ3aWR0aCI6MTEwMCwiaGVpZ2h0Ijo0MjB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjowLCJyaWdodCI6MTEwMCwiYm90dG9tIjo2MCwid2lkdGgiOjExMDAsImhlaWdodCI6NjB9LCJtYWluIjp7ImxlZnQiOjAsInRvcCI6NjAsInJpZ2h0IjoxMTAwLCJib3R0b20iOjQyMCwid2lkdGgiOjExMDAsImhlaWdodCI6MzYwfSwiZm9vdGVyIjp7ImxlZnQiOjM0MCwidG9wIjozNTMsInJpZ2h0IjoxMTAwLCJib3R0b20iOjQyMCwid2lkdGgiOjc2MCwiaGVpZ2h0Ijo2N30sImNhcmQiOnsibGVmdCI6MzQwLCJ0b3AiOjE1MS4zOTA2MjUsInJpZ2h0IjoxMTAwLCJib3R0b20iOjM1Mywid2lkdGgiOjc2MCwiaGVpZ2h0IjoyMDEuNjA5Mzc1fSwiZG9zc2llciI6eyJsZWZ0IjoyOCwidG9wIjoyMDUuMjgxMjUsInJpZ2h0IjozMTEsImJvdHRvbSI6MzkyLCJ3aWR0aCI6MjgzLCJoZWlnaHQiOjE4Ni43MTg3NX0sInNjcm9sbFdpZHRoIjoxMTAwLCJzY3JvbGxIZWlnaHQiOjU3MH19LHsiYWN0aW9uIjoid2luZG93LnNjcm9sbFRvKDAsOTk5OSkiLCJzY3JvbGxZIjoxNTAsInNjcm9sbEhlaWdodCI6NTcwLCJjbGllbnRIZWlnaHQiOjQyMCwiY2FyZFNjcm9sbFRvcCI6MCwiY2FyZFNjcm9sbEhlaWdodCI6MTMxNywiY2FyZENsaWVudEhlaWdodCI6MjAyLCJkb3NzaWVyU2Nyb2xsVG9wIjowLCJoaWRkZW5IZWFkaW5nIjp7InRvcCI6NDE4LjYyNSwib2Zmc2V0UGFyZW50IjoiIn0sImJvdW5kcyI6eyJ2aWV3cG9ydCI6eyJ3aWR0aCI6MTEwMCwiaGVpZ2h0Ijo0MjB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjotMTUwLCJyaWdodCI6MTEwMCwiYm90dG9tIjotOTAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOi05MCwicmlnaHQiOjExMDAsImJvdHRvbSI6MjcwLCJ3aWR0aCI6MTEwMCwiaGVpZ2h0IjozNjB9LCJmb290ZXIiOnsibGVmdCI6MzQwLCJ0b3AiOjIwMywicmlnaHQiOjExMDAsImJvdHRvbSI6MjcwLCJ3aWR0aCI6NzYwLCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0IjozNDAsInRvcCI6MS4zOTA2MjUsInJpZ2h0IjoxMTAwLCJib3R0b20iOjIwMywid2lkdGgiOjc2MCwiaGVpZ2h0IjoyMDEuNjA5Mzc1fSwiZG9zc2llciI6eyJsZWZ0IjoyOCwidG9wIjo1NS4yODEyNSwicmlnaHQiOjMxMSwiYm90dG9tIjoyNDIsIndpZHRoIjoyODMsImhlaWdodCI6MTg2LjcxODc1fSwic2Nyb2xsV2lkdGgiOjExMDAsInNjcm9sbEhlaWdodCI6NTcwfX0seyJhY3Rpb24iOiJ3aGVlbCBvdmVyIGZpeGVkIHJhaWwiLCJzY3JvbGxZIjoxNTAsInNjcm9sbEhlaWdodCI6NTcwLCJjbGllbnRIZWlnaHQiOjQyMCwiY2FyZFNjcm9sbFRvcCI6MCwiY2FyZFNjcm9sbEhlaWdodCI6MTMxNywiY2FyZENsaWVudEhlaWdodCI6MjAyLCJkb3NzaWVyU2Nyb2xsVG9wIjowLCJoaWRkZW5IZWFkaW5nIjp7InRvcCI6NDE4LjYyNSwib2Zmc2V0UGFyZW50IjoiIn0sImJvdW5kcyI6eyJ2aWV3cG9ydCI6eyJ3aWR0aCI6MTEwMCwiaGVpZ2h0Ijo0MjB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjotMTUwLCJyaWdodCI6MTEwMCwiYm90dG9tIjotOTAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOi05MCwicmlnaHQiOjExMDAsImJvdHRvbSI6MjcwLCJ3aWR0aCI6MTEwMCwiaGVpZ2h0IjozNjB9LCJmb290ZXIiOnsibGVmdCI6MzQwLCJ0b3AiOjIwMywicmlnaHQiOjExMDAsImJvdHRvbSI6MjcwLCJ3aWR0aCI6NzYwLCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0IjozNDAsInRvcCI6MS4zOTA2MjUsInJpZ2h0IjoxMTAwLCJib3R0b20iOjIwMywid2lkdGgiOjc2MCwiaGVpZ2h0IjoyMDEuNjA5Mzc1fSwiZG9zc2llciI6eyJsZWZ0IjoyOCwidG9wIjo1NS4yODEyNSwicmlnaHQiOjMxMSwiYm90dG9tIjoyNDIsIndpZHRoIjoyODMsImhlaWdodCI6MTg2LjcxODc1fSwic2Nyb2xsV2lkdGgiOjExMDAsInNjcm9sbEhlaWdodCI6NTcwfX0seyJhY3Rpb24iOiJDb250cm9sK0VuZCIsInNjcm9sbFkiOjEzLCJzY3JvbGxIZWlnaHQiOjU3MCwiY2xpZW50SGVpZ2h0Ijo0MjAsImNhcmRTY3JvbGxUb3AiOjAsImNhcmRTY3JvbGxIZWlnaHQiOjEzMTcsImNhcmRDbGllbnRIZWlnaHQiOjIwMiwiZG9zc2llclNjcm9sbFRvcCI6MCwiaGlkZGVuSGVhZGluZyI6eyJ0b3AiOjU1NS42MjUsIm9mZnNldFBhcmVudCI6IiJ9LCJib3VuZHMiOnsidmlld3BvcnQiOnsid2lkdGgiOjExMDAsImhlaWdodCI6NDIwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6LTEzLCJyaWdodCI6MTEwMCwiYm90dG9tIjo0Nywid2lkdGgiOjExMDAsImhlaWdodCI6NjB9LCJtYWluIjp7ImxlZnQiOjAsInRvcCI6NDcsInJpZ2h0IjoxMTAwLCJib3R0b20iOjQwNywid2lkdGgiOjExMDAsImhlaWdodCI6MzYwfSwiZm9vdGVyIjp7ImxlZnQiOjM0MCwidG9wIjozNDAsInJpZ2h0IjoxMTAwLCJib3R0b20iOjQwNywid2lkdGgiOjc2MCwiaGVpZ2h0Ijo2N30sImNhcmQiOnsibGVmdCI6MzQwLCJ0b3AiOjEzOC4zOTA2MjUsInJpZ2h0IjoxMTAwLCJib3R0b20iOjM0MCwid2lkdGgiOjc2MCwiaGVpZ2h0IjoyMDEuNjA5Mzc1fSwiZG9zc2llciI6eyJsZWZ0IjoyOCwidG9wIjoxOTIuMjgxMjUsInJpZ2h0IjozMTEsImJvdHRvbSI6Mzc5LCJ3aWR0aCI6MjgzLCJoZWlnaHQiOjE4Ni43MTg3NX0sInNjcm9sbFdpZHRoIjoxMTAwLCJzY3JvbGxIZWlnaHQiOjU3MH19LHsiYWN0aW9uIjoiZm9jdXMgYW5kIGZpbGwgb3BlbmluZyBwcmVmZXJlbmNlIiwic2Nyb2xsWSI6MTIwLCJzY3JvbGxIZWlnaHQiOjU3MCwiY2xpZW50SGVpZ2h0Ijo0MjAsImNhcmRTY3JvbGxUb3AiOjkwOCwiY2FyZFNjcm9sbEhlaWdodCI6MTMxNywiY2FyZENsaWVudEhlaWdodCI6MjAyLCJkb3NzaWVyU2Nyb2xsVG9wIjowLCJoaWRkZW5IZWFkaW5nIjp7InRvcCI6NDQ4LjYyNSwib2Zmc2V0UGFyZW50IjoiIn0sImJvdW5kcyI6eyJ2aWV3cG9ydCI6eyJ3aWR0aCI6MTEwMCwiaGVpZ2h0Ijo0MjB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjotMTMyLCJyaWdodCI6MTEwMCwiYm90dG9tIjotNzIsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOi03MiwicmlnaHQiOjExMDAsImJvdHRvbSI6Mjg4LCJ3aWR0aCI6MTEwMCwiaGVpZ2h0IjozNjB9LCJmb290ZXIiOnsibGVmdCI6MzQwLCJ0b3AiOjIyMSwicmlnaHQiOjExMDAsImJvdHRvbSI6Mjg4LCJ3aWR0aCI6NzYwLCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0IjozNDAsInRvcCI6MTkuMzkwNjI1LCJyaWdodCI6MTEwMCwiYm90dG9tIjoyMjEsIndpZHRoIjo3NjAsImhlaWdodCI6MjAxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6NzMuMjgxMjUsInJpZ2h0IjozMTEsImJvdHRvbSI6MjYwLCJ3aWR0aCI6MjgzLCJoZWlnaHQiOjE4Ni43MTg3NX0sInNjcm9sbFdpZHRoIjoxMTAwLCJzY3JvbGxIZWlnaHQiOjU3MH19LHsiYWN0aW9uIjoiVGFiIGZyb20gcHJlZmVyZW5jZSIsInNjcm9sbFkiOjEzNywic2Nyb2xsSGVpZ2h0Ijo1NzAsImNsaWVudEhlaWdodCI6NDIwLCJjYXJkU2Nyb2xsVG9wIjo5MDgsImNhcmRTY3JvbGxIZWlnaHQiOjEzMTcsImNhcmRDbGllbnRIZWlnaHQiOjIwMiwiZG9zc2llclNjcm9sbFRvcCI6MCwiaGlkZGVuSGVhZGluZyI6eyJ0b3AiOjQzMS42MjUsIm9mZnNldFBhcmVudCI6IiJ9LCJib3VuZHMiOnsidmlld3BvcnQiOnsid2lkdGgiOjExMDAsImhlaWdodCI6NDIwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6LTEzNywicmlnaHQiOjExMDAsImJvdHRvbSI6LTc3LCJ3aWR0aCI6MTEwMCwiaGVpZ2h0Ijo2MH0sIm1haW4iOnsibGVmdCI6MCwidG9wIjotNzcsInJpZ2h0IjoxMTAwLCJib3R0b20iOjI4Mywid2lkdGgiOjExMDAsImhlaWdodCI6MzYwfSwiZm9vdGVyIjp7ImxlZnQiOjM0MCwidG9wIjoyMTYsInJpZ2h0IjoxMTAwLCJib3R0b20iOjI4Mywid2lkdGgiOjc2MCwiaGVpZ2h0Ijo2N30sImNhcmQiOnsibGVmdCI6MzQwLCJ0b3AiOjE0LjM5MDYyNSwicmlnaHQiOjExMDAsImJvdHRvbSI6MjE2LCJ3aWR0aCI6NzYwLCJoZWlnaHQiOjIwMS42MDkzNzV9LCJkb3NzaWVyIjp7ImxlZnQiOjI4LCJ0b3AiOjY4LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjI1NSwid2lkdGgiOjI4MywiaGVpZ2h0IjoxODYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6MTEwMCwic2Nyb2xsSGVpZ2h0Ijo1NzB9fSx7ImFjdGlvbiI6IndoZWVsIGluc2lkZSBmb3JtIiwic2Nyb2xsWSI6MTM3LCJzY3JvbGxIZWlnaHQiOjU3MCwiY2xpZW50SGVpZ2h0Ijo0MjAsImNhcmRTY3JvbGxUb3AiOjExMTUsImNhcmRTY3JvbGxIZWlnaHQiOjEzMTcsImNhcmRDbGllbnRIZWlnaHQiOjIwMiwiZG9zc2llclNjcm9sbFRvcCI6MCwiaGlkZGVuSGVhZGluZyI6eyJ0b3AiOjQzMS42MjUsIm9mZnNldFBhcmVudCI6IiJ9LCJib3VuZHMiOnsidmlld3BvcnQiOnsid2lkdGgiOjExMDAsImhlaWdodCI6NDIwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6LTEzNywicmlnaHQiOjExMDAsImJvdHRvbSI6LTc3LCJ3aWR0aCI6MTEwMCwiaGVpZ2h0Ijo2MH0sIm1haW4iOnsibGVmdCI6MCwidG9wIjotNzcsInJpZ2h0IjoxMTAwLCJib3R0b20iOjI4Mywid2lkdGgiOjExMDAsImhlaWdodCI6MzYwfSwiZm9vdGVyIjp7ImxlZnQiOjM0MCwidG9wIjoyMTYsInJpZ2h0IjoxMTAwLCJib3R0b20iOjI4Mywid2lkdGgiOjc2MCwiaGVpZ2h0Ijo2N30sImNhcmQiOnsibGVmdCI6MzQwLCJ0b3AiOjE0LjM5MDYyNSwicmlnaHQiOjExMDAsImJvdHRvbSI6MjE2LCJ3aWR0aCI6NzYwLCJoZWlnaHQiOjIwMS42MDkzNzV9LCJkb3NzaWVyIjp7ImxlZnQiOjI4LCJ0b3AiOjY4LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjI1NSwid2lkdGgiOjI4MywiaGVpZ2h0IjoxODYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6MTEwMCwic2Nyb2xsSGVpZ2h0Ijo1NzB9fSx7ImFjdGlvbiI6IndoZWVsIGJleW9uZCBmb3JtIGJvdHRvbSIsInNjcm9sbFkiOjE1MCwic2Nyb2xsSGVpZ2h0Ijo1NzAsImNsaWVudEhlaWdodCI6NDIwLCJjYXJkU2Nyb2xsVG9wIjoxMTE1LCJjYXJkU2Nyb2xsSGVpZ2h0IjoxMzE3LCJjYXJkQ2xpZW50SGVpZ2h0IjoyMDIsImRvc3NpZXJTY3JvbGxUb3AiOjAsImhpZGRlbkhlYWRpbmciOnsidG9wIjo0MTguNjI1LCJvZmZzZXRQYXJlbnQiOiIifSwiYm91bmRzIjp7InZpZXdwb3J0Ijp7IndpZHRoIjoxMTAwLCJoZWlnaHQiOjQyMH0sImhlYWRlciI6eyJsZWZ0IjowLCJ0b3AiOi0xNTAsInJpZ2h0IjoxMTAwLCJib3R0b20iOi05MCwid2lkdGgiOjExMDAsImhlaWdodCI6NjB9LCJtYWluIjp7ImxlZnQiOjAsInRvcCI6LTkwLCJyaWdodCI6MTEwMCwiYm90dG9tIjoyNzAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjM2MH0sImZvb3RlciI6eyJsZWZ0IjozNDAsInRvcCI6MjAzLCJyaWdodCI6MTEwMCwiYm90dG9tIjoyNzAsIndpZHRoIjo3NjAsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjoxLjM5MDYyNSwicmlnaHQiOjExMDAsImJvdHRvbSI6MjAzLCJ3aWR0aCI6NzYwLCJoZWlnaHQiOjIwMS42MDkzNzV9LCJkb3NzaWVyIjp7ImxlZnQiOjI4LCJ0b3AiOjU1LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjI0Miwid2lkdGgiOjI4MywiaGVpZ2h0IjoxODYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6MTEwMCwic2Nyb2xsSGVpZ2h0Ijo1NzB9fSx7ImFjdGlvbiI6ImluZGVwZW5kZW50IGRvc3NpZXIgc2Nyb2xsIiwic2Nyb2xsWSI6MTUwLCJzY3JvbGxIZWlnaHQiOjU3MCwiY2xpZW50SGVpZ2h0Ijo0MjAsImNhcmRTY3JvbGxUb3AiOjExMTUsImNhcmRTY3JvbGxIZWlnaHQiOjEzMTcsImNhcmRDbGllbnRIZWlnaHQiOjIwMiwiZG9zc2llclNjcm9sbFRvcCI6NDMzLCJoaWRkZW5IZWFkaW5nIjp7InRvcCI6NDE4LjYyNSwib2Zmc2V0UGFyZW50IjoiIn0sImJvdW5kcyI6eyJ2aWV3cG9ydCI6eyJ3aWR0aCI6MTEwMCwiaGVpZ2h0Ijo0MjB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjotMTUwLCJyaWdodCI6MTEwMCwiYm90dG9tIjotOTAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOi05MCwicmlnaHQiOjExMDAsImJvdHRvbSI6MjcwLCJ3aWR0aCI6MTEwMCwiaGVpZ2h0IjozNjB9LCJmb290ZXIiOnsibGVmdCI6MzQwLCJ0b3AiOjIwMywicmlnaHQiOjExMDAsImJvdHRvbSI6MjcwLCJ3aWR0aCI6NzYwLCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0IjozNDAsInRvcCI6MS4zOTA2MjUsInJpZ2h0IjoxMTAwLCJib3R0b20iOjIwMywid2lkdGgiOjc2MCwiaGVpZ2h0IjoyMDEuNjA5Mzc1fSwiZG9zc2llciI6eyJsZWZ0IjoyOCwidG9wIjo1NS4yODEyNSwicmlnaHQiOjMxMSwiYm90dG9tIjoyNDIsIndpZHRoIjoyODMsImhlaWdodCI6MTg2LjcxODc1fSwic2Nyb2xsV2lkdGgiOjExMDAsInNjcm9sbEhlaWdodCI6NTcwfX1d"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/desktop-creation-fullscreen/test-results/creation-fullscreen/creation-fullscreen-第五步根滚动隔离-1100x420/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/desktop-creation-fullscreen/test-results/creation-fullscreen/creation-fullscreen-第五步根滚动隔离-1100x420/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/desktop-creation-fullscreen/e2e/creation-fullscreen.spec.ts",
+                    "column": 47,
+                    "line": 131
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f747acb7fe0c8627cb90-369be8f400ff3c36d329",
+          "file": "creation-fullscreen.spec.ts",
+          "line": 103,
+          "column": 3
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-13T15:26:59.207Z",
+    "duration": 8942.389000000001,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

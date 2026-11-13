@@ -98,3 +98,88 @@ test('首页及游戏界面隔离',async({page},info:TestInfo)=>{
  await page.goto(`/#game/${id}`);await expect(page.locator('.game-layout')).toBeVisible();await shot(page,'game-1440');
  await info.attach('route-isolation',{body:'Home and game rendered without desktop-creation selectors.',contentType:'text/plain'});
 });
+
+async function rootScrollState(page: Page) {
+  return page.evaluate(() => {
+    const scroller = document.scrollingElement!;
+    const card = document.querySelector('.creation-card')!;
+    const dossier = document.querySelector('.creation-dossier')!;
+    const hiddenHeading = document.querySelector('.creation-review .profession-profile h3') as HTMLElement;
+    return {
+      scrollY, scrollHeight: scroller.scrollHeight, clientHeight: scroller.clientHeight,
+      cardScrollTop: card.scrollTop, cardScrollHeight: card.scrollHeight, cardClientHeight: card.clientHeight,
+      dossierScrollTop: dossier.scrollTop,
+      hiddenHeading: {
+        top: hiddenHeading.getBoundingClientRect().top,
+        offsetParent: hiddenHeading.offsetParent?.className,
+      },
+    };
+  });
+}
+
+for (const [width, height] of [[901, 500], [1100, 420]]) {
+  test(`第五步根滚动隔离 ${width}x${height}`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height });
+    await seed(page);
+    await page.getByRole('navigation', { name: '角色创建步骤' })
+      .getByRole('button', { name: /确认与开局$/ }).click();
+    const samples: Array<Awaited<ReturnType<typeof rootScrollState>> & {
+      action: string; bounds: Awaited<ReturnType<typeof metrics>>;
+    }> = [];
+    async function record(action: string) {
+      await page.evaluate(() => new Promise<void>(resolve => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }));
+      const state = await rootScrollState(page);
+      const bounds = await metrics(page);
+      samples.push({ action, ...state, bounds });
+      expect.soft(state.scrollY, action).toBe(0);
+      expect.soft(state.scrollHeight, action).toBeLessThanOrEqual(state.clientHeight);
+      expect.soft(bounds.main.top, action).toBe(bounds.header.bottom);
+      expect.soft(bounds.main.bottom, action).toBe(height);
+      expect.soft(bounds.footer.bottom, action).toBe(height);
+      return state;
+    }
+    await record('initial');
+    await shot(page, `${width}x${height}-step5-initial`);
+    await page.evaluate(() => scrollTo(0, 9999));
+    await record('window.scrollTo(0,9999)');
+    await shot(page, `${width}x${height}-step5-scrollTo`);
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.locator('.creation-rail').hover();
+    await page.mouse.wheel(0, 9999);
+    await record('wheel over fixed rail');
+    await page.evaluate(() => { scrollTo(0, 0); (document.activeElement as HTMLElement)?.blur(); });
+    await page.keyboard.press('Control+End');
+    await record('Control+End');
+    await page.evaluate(() => scrollTo(0, 0));
+    const preference = page.getByLabel('开局偏好（可选）');
+    await preference.fill('第五步长内容下输入与聚焦仍可操作。');
+    await expect(preference).toBeInViewport();
+    await record('focus and fill opening preference');
+    await page.keyboard.press('Tab');
+    await record('Tab from preference');
+    const card = page.locator('.creation-card');
+    await card.evaluate(el => { el.scrollTop = 0; });
+    await card.hover();
+    await page.mouse.wheel(0, 9999);
+    const inner = await record('wheel inside form');
+    expect(inner.cardScrollTop).toBeGreaterThan(0);
+    await page.mouse.wheel(0, 9999);
+    await record('wheel beyond form bottom');
+    await page.locator('.creation-dossier').evaluate(el => { el.scrollTop = el.scrollHeight; });
+    const last = await record('independent dossier scroll');
+    expect(last.dossierScrollTop).toBeGreaterThan(0);
+    const back = page.getByRole('button', { name: '上一步', exact: true });
+    await expect(back).toBeInViewport();
+    const create = page.getByRole('button', { name: '确认并创建存档', exact: true });
+    await expect(create).toBeInViewport();
+    await create.click({ trial: true });
+    await shot(page, `${width}x${height}-step5-input`);
+    mkdirSync(root, { recursive: true });
+    writeFileSync(resolve(root, `${width}x${height}-root-scroll.json`), JSON.stringify(samples, null, 2) + '\n');
+    await info.attach('root-scroll-samples', { body: JSON.stringify(samples), contentType: 'application/json' });
+    await back.click();
+    await expect(page.getByRole('heading', { name: '初始同伴', exact: true })).toBeVisible();
+  });
+}

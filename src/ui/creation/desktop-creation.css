@@ -217,7 +217,8 @@
   .desktop-creation .creation-review .detail { grid-template-columns: 5.5rem minmax(0, 1fr); gap: 14px; padding: 3px 0; border: 0; font-size: 13px; }
   .desktop-creation .creation-review .detail dt { color: var(--cr-dim); white-space: nowrap; }
   .desktop-creation .creation-review dd { max-height: 8.5rem; color: var(--cr-prose); }
-  .desktop-creation .creation-review .profession-profile { margin: 0 0 4px; }
+  /* Contain the screen-reader heading within the review scroll area. */
+  .desktop-creation .creation-review .profession-profile { position: relative; margin: 0 0 4px; }
   .desktop-creation .creation-review .profession-profile h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .desktop-creation .creation-review details { margin: 8px 0 6px; font-size: 12px; }
   .desktop-creation .creation-review summary { cursor: pointer; color: var(--muted); }

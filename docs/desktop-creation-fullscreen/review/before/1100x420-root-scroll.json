@@ -1,0 +1,560 @@
+[
+  {
+    "action": "initial",
+    "scrollY": 0,
+    "scrollHeight": 570,
+    "clientHeight": 420,
+    "cardScrollTop": 0,
+    "cardScrollHeight": 1317,
+    "cardClientHeight": 202,
+    "dossierScrollTop": 0,
+    "hiddenHeading": {
+      "top": 568.625,
+      "offsetParent": ""
+    },
+    "bounds": {
+      "viewport": {
+        "width": 1100,
+        "height": 420
+      },
+      "header": {
+        "left": 0,
+        "top": 0,
+        "right": 1100,
+        "bottom": 60,
+        "width": 1100,
+        "height": 60
+      },
+      "main": {
+        "left": 0,
+        "top": 60,
+        "right": 1100,
+        "bottom": 420,
+        "width": 1100,
+        "height": 360
+      },
+      "footer": {
+        "left": 340,
+        "top": 353,
+        "right": 1100,
+        "bottom": 420,
+        "width": 760,
+        "height": 67
+      },
+      "card": {
+        "left": 340,
+        "top": 151.390625,
+        "right": 1100,
+        "bottom": 353,
+        "width": 760,
+        "height": 201.609375
+      },
+      "dossier": {
+        "left": 28,
+        "top": 205.28125,
+        "right": 311,
+        "bottom": 392,
+        "width": 283,
+        "height": 186.71875
+      },
+      "scrollWidth": 1100,
+      "scrollHeight": 570
+    }
+  },
+  {
+    "action": "window.scrollTo(0,9999)",
+    "scrollY": 150,
+    "scrollHeight": 570,
+    "clientHeight": 420,
+    "cardScrollTop": 0,
+    "cardScrollHeight": 1317,
+    "cardClientHeight": 202,
+    "dossierScrollTop": 0,
+    "hiddenHeading": {
+      "top": 418.625,
+      "offsetParent": ""
+    },
+    "bounds": {
+      "viewport": {
+        "width": 1100,
+        "height": 420
+      },
+      "header": {
+        "left": 0,
+        "top": -150,
+        "right": 1100,
+        "bottom": -90,
+        "width": 1100,
+        "height": 60
+      },
+      "main": {
+        "left": 0,
+        "top": -90,
+        "right": 1100,
+        "bottom": 270,
+        "width": 1100,
+        "height": 360
+      },
+      "footer": {
+        "left": 340,
+        "top": 203,
+        "right": 1100,
+        "bottom": 270,
+        "width": 760,
+        "height": 67
+      },
+      "card": {
+        "left": 340,
+        "top": 1.390625,
+        "right": 1100,
+        "bottom": 203,
+        "width": 760,
+        "height": 201.609375
+      },
+      "dossier": {
+        "left": 28,
+        "top": 55.28125,
+        "right": 311,
+        "bottom": 242,
+        "width": 283,
+        "height": 186.71875
+      },
+      "scrollWidth": 1100,
+      "scrollHeight": 570
+    }
+  },
+  {
+    "action": "wheel over fixed rail",
+    "scrollY": 150,
+    "scrollHeight": 570,
+    "clientHeight": 420,
+    "cardScrollTop": 0,
+    "cardScrollHeight": 1317,
+    "cardClientHeight": 202,
+    "dossierScrollTop": 0,
+    "hiddenHeading": {
+      "top": 418.625,
+      "offsetParent": ""
+    },
+    "bounds": {
+      "viewport": {
+        "width": 1100,
+        "height": 420
+      },
+      "header": {
+        "left": 0,
+        "top": -150,
+        "right": 1100,
+        "bottom": -90,
+        "width": 1100,
+        "height": 60
+      },
+      "main": {
+        "left": 0,
+        "top": -90,
+        "right": 1100,
+        "bottom": 270,
+        "width": 1100,
+        "height": 360
+      },
+      "footer": {
+        "left": 340,
+        "top": 203,
+        "right": 1100,
+        "bottom": 270,
+        "width": 760,
+        "height": 67
+      },
+      "card": {
+        "left": 340,
+        "top": 1.390625,
+        "right": 1100,
+        "bottom": 203,
+        "width": 760,
+        "height": 201.609375
+      },
+      "dossier": {
+        "left": 28,
+        "top": 55.28125,
+        "right": 311,
+        "bottom": 242,
+        "width": 283,
+        "height": 186.71875
+      },
+      "scrollWidth": 1100,
+      "scrollHeight": 570
+    }
+  },
+  {
+    "action": "Control+End",
+    "scrollY": 13,
+    "scrollHeight": 570,
+    "clientHeight": 420,
+    "cardScrollTop": 0,
+    "cardScrollHeight": 1317,
+    "cardClientHeight": 202,
+    "dossierScrollTop": 0,
+    "hiddenHeading": {
+      "top": 555.625,
+      "offsetParent": ""
+    },
+    "bounds": {
+      "viewport": {
+        "width": 1100,
+        "height": 420
+      },
+      "header": {
+        "left": 0,
+        "top": -13,
+        "right": 1100,
+        "bottom": 47,
+        "width": 1100,
+        "height": 60
+      },
+      "main": {
+        "left": 0,
+        "top": 47,
+        "right": 1100,
+        "bottom": 407,
+        "width": 1100,
+        "height": 360
+      },
+      "footer": {
+        "left": 340,
+        "top": 340,
+        "right": 1100,
+        "bottom": 407,
+        "width": 760,
+        "height": 67
+      },
+      "card": {
+        "left": 340,
+        "top": 138.390625,
+        "right": 1100,
+        "bottom": 340,
+        "width": 760,
+        "height": 201.609375
+      },
+      "dossier": {
+        "left": 28,
+        "top": 192.28125,
+        "right": 311,
+        "bottom": 379,
+        "width": 283,
+        "height": 186.71875
+      },
+      "scrollWidth": 1100,
+      "scrollHeight": 570
+    }
+  },
+  {
+    "action": "focus and fill opening preference",
+    "scrollY": 120,
+    "scrollHeight": 570,
+    "clientHeight": 420,
+    "cardScrollTop": 908,
+    "cardScrollHeight": 1317,
+    "cardClientHeight": 202,
+    "dossierScrollTop": 0,
+    "hiddenHeading": {
+      "top": 448.625,
+      "offsetParent": ""
+    },
+    "bounds": {
+      "viewport": {
+        "width": 1100,
+        "height": 420
+      },
+      "header": {
+        "left": 0,
+        "top": -132,
+        "right": 1100,
+        "bottom": -72,
+        "width": 1100,
+        "height": 60
+      },
+      "main": {
+        "left": 0,
+        "top": -72,
+        "right": 1100,
+        "bottom": 288,
+        "width": 1100,
+        "height": 360
+      },
+      "footer": {
+        "left": 340,
+        "top": 221,
+        "right": 1100,
+        "bottom": 288,
+        "width": 760,
+        "height": 67
+      },
+      "card": {
+        "left": 340,
+        "top": 19.390625,
+        "right": 1100,
+        "bottom": 221,
+        "width": 760,
+        "height": 201.609375
+      },
+      "dossier": {
+        "left": 28,
+        "top": 73.28125,
+        "right": 311,
+        "bottom": 260,
+        "width": 283,
+        "height": 186.71875
+      },
+      "scrollWidth": 1100,
+      "scrollHeight": 570
+    }
+  },
+  {
+    "action": "Tab from preference",
+    "scrollY": 137,
+    "scrollHeight": 570,
+    "clientHeight": 420,
+    "cardScrollTop": 908,
+    "cardScrollHeight": 1317,
+    "cardClientHeight": 202,
+    "dossierScrollTop": 0,
+    "hiddenHeading": {
+      "top": 431.625,
+      "offsetParent": ""
+    },
+    "bounds": {
+      "viewport": {
+        "width": 1100,
+        "height": 420
+      },
+      "header": {
+        "left": 0,
+        "top": -137,
+        "right": 1100,
+        "bottom": -77,
+        "width": 1100,
+        "height": 60
+      },
+      "main": {
+        "left": 0,
+        "top": -77,
+        "right": 1100,
+        "bottom": 283,
+        "width": 1100,
+        "height": 360
+      },
+      "footer": {
+        "left": 340,
+        "top": 216,
+        "right": 1100,
+        "bottom": 283,
+        "width": 760,
+        "height": 67
+      },
+      "card": {
+        "left": 340,
+        "top": 14.390625,
+        "right": 1100,
+        "bottom": 216,
+        "width": 760,
+        "height": 201.609375
+      },
+      "dossier": {
+        "left": 28,
+        "top": 68.28125,
+        "right": 311,
+        "bottom": 255,
+        "width": 283,
+        "height": 186.71875
+      },
+      "scrollWidth": 1100,
+      "scrollHeight": 570
+    }
+  },
+  {
+    "action": "wheel inside form",
+    "scrollY": 137,
+    "scrollHeight": 570,
+    "clientHeight": 420,
+    "cardScrollTop": 1115,
+    "cardScrollHeight": 1317,
+    "cardClientHeight": 202,
+    "dossierScrollTop": 0,
+    "hiddenHeading": {
+      "top": 431.625,
+      "offsetParent": ""
+    },
+    "bounds": {
+      "viewport": {
+        "width": 1100,
+        "height": 420
+      },
+      "header": {
+        "left": 0,
+        "top": -137,
+        "right": 1100,
+        "bottom": -77,
+        "width": 1100,
+        "height": 60
+      },
+      "main": {
+        "left": 0,
+        "top": -77,
+        "right": 1100,
+        "bottom": 283,
+        "width": 1100,
+        "height": 360
+      },
+      "footer": {
+        "left": 340,
+        "top": 216,
+        "right": 1100,
+        "bottom": 283,
+        "width": 760,
+        "height": 67
+      },
+      "card": {
+        "left": 340,
+        "top": 14.390625,
+        "right": 1100,
+        "bottom": 216,
+        "width": 760,
+        "height": 201.609375
+      },
+      "dossier": {
+        "left": 28,
+        "top": 68.28125,
+        "right": 311,
+        "bottom": 255,
+        "width": 283,
+        "height": 186.71875
+      },
+      "scrollWidth": 1100,
+      "scrollHeight": 570
+    }
+  },
+  {
+    "action": "wheel beyond form bottom",
+    "scrollY": 150,
+    "scrollHeight": 570,
+    "clientHeight": 420,
+    "cardScrollTop": 1115,
+    "cardScrollHeight": 1317,
+    "cardClientHeight": 202,
+    "dossierScrollTop": 0,
+    "hiddenHeading": {
+      "top": 418.625,
+      "offsetParent": ""
+    },
+    "bounds": {
+      "viewport": {
+        "width": 1100,
+        "height": 420
+      },
+      "header": {
+        "left": 0,
+        "top": -150,
+        "right": 1100,
+        "bottom": -90,
+        "width": 1100,
+        "height": 60
+      },
+      "main": {
+        "left": 0,
+        "top": -90,
+        "right": 1100,
+        "bottom": 270,
+        "width": 1100,
+        "height": 360
+      },
+      "footer": {
+        "left": 340,
+        "top": 203,
+        "right": 1100,
+        "bottom": 270,
+        "width": 760,
+        "height": 67
+      },
+      "card": {
+        "left": 340,
+        "top": 1.390625,
+        "right": 1100,
+        "bottom": 203,
+        "width": 760,
+        "height": 201.609375
+      },
+      "dossier": {
+        "left": 28,
+        "top": 55.28125,
+        "right": 311,
+        "bottom": 242,
+        "width": 283,
+        "height": 186.71875
+      },
+      "scrollWidth": 1100,
+      "scrollHeight": 570
+    }
+  },
+  {
+    "action": "independent dossier scroll",
+    "scrollY": 150,
+    "scrollHeight": 570,
+    "clientHeight": 420,
+    "cardScrollTop": 1115,
+    "cardScrollHeight": 1317,
+    "cardClientHeight": 202,
+    "dossierScrollTop": 433,
+    "hiddenHeading": {
+      "top": 418.625,
+      "offsetParent": ""
+    },
+    "bounds": {
+      "viewport": {
+        "width": 1100,
+        "height": 420
+      },
+      "header": {
+        "left": 0,
+        "top": -150,
+        "right": 1100,
+        "bottom": -90,
+        "width": 1100,
+        "height": 60
+      },
+      "main": {
+        "left": 0,
+        "top": -90,
+        "right": 1100,
+        "bottom": 270,
+        "width": 1100,
+        "height": 360
+      },
+      "footer": {
+        "left": 340,
+        "top": 203,
+        "right": 1100,
+        "bottom": 270,
+        "width": 760,
+        "height": 67
+      },
+      "card": {
+        "left": 340,
+        "top": 1.390625,
+        "right": 1100,
+        "bottom": 203,
+        "width": 760,
+        "height": 201.609375
+      },
+      "dossier": {
+        "left": 28,
+        "top": 55.28125,
+        "right": 311,
+        "bottom": 242,
+        "width": 283,
+        "height": 186.71875
+      },
+      "scrollWidth": 1100,
+      "scrollHeight": 570
+    }
+  }
+]
