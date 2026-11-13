@@ -174,3 +174,66 @@ for (const mode of ['cancel', 'network', 'timeout'] as const) {
     expect(await stored(page)).toEqual(before);
   });
 }
+
+for (const mode of ['all', 'only', 'mirror'] as const) {
+  test(`兼容公开思考 ${mode}：真实分块来源、原生优先去重和正文清空`, async ({ page }, info) => {
+    const before = await seed(page); await start(page);
+    const reader = page.getByTestId('story-reader'), compatibility = '兼容公开文本标记：核对已经收到的站台场景。';
+    const nativeText = mode === 'mirror' ? compatibility : native;
+    const compatibleRegion = reader.getByRole('region', { name: '兼容文本思考', exact: true });
+    let rawText = '';
+    const text = (value: string) => { rawText += value; send(value); };
+    if (mode !== 'only') send(nativeText, true);
+    text('<th'); text('ink>' + compatibility.slice(0, 10));
+    if (mode === 'mirror') {
+      await expect(reader.getByRole('region', { name: '供应商公开思考', exact: true })).toContainText(nativeText);
+      await expect(compatibleRegion).toHaveCount(0);
+    } else await expect(compatibleRegion).toContainText(compatibility.slice(0, 10));
+    text(compatibility.slice(10));
+    if (mode === 'mirror') await expect(compatibleRegion).toHaveCount(0);
+    else {
+      await expect(compatibleRegion).toContainText(compatibility);
+      await expect(compatibleRegion).toContainText('响应文本开头的 <think>');
+      await expect(reader).not.toContainText('正在等待模型内容');
+    }
+    await shot(page, info, `compat-${mode}-sources`);
+    if (mode === 'all') {
+      text('\n' + '兼容思考按实际片段增长。\n'.repeat(50));
+      await expect.poll(() => reader.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
+    }
+    text('</th'); text('ink>');
+    if (mode !== 'only') {
+      text('<thi'); text('nking>' + planning); await expect(reader).toContainText(planning); text('</thinking>');
+    }
+    text('<正');
+    await expect(reader.getByRole('region', { name: '生成中的公开思考', exact: true })).toBeVisible();
+    text('文>');
+    await expect(reader.getByRole('region', { name: '生成中的公开思考', exact: true })).toHaveCount(0);
+    await expect(reader.getByTestId('stream-narrative')).toHaveText('');
+    await shot(page, info, `compat-${mode}-body-boundary`);
+    text('兼容切换后的小说正文。'); await expect(reader.getByTestId('stream-narrative')).toHaveText('兼容切换后的小说正文。');
+    await expect(reader).not.toContainText(compatibility); await expect(reader).not.toContainText(planning); await expect(reader).not.toContainText(native);
+    text('</正文>' + tail); finish();
+    await expect(page.getByRole('article', { name: '流式正文预览', exact: true })).toHaveCount(0);
+    const saved = await stored(page); expect(saved.state).toEqual(before.state);
+    if (mode === 'only') expect(saved).toEqual(before);
+    else {
+      expect(saved.draft?.story?.narrative).toBe('兼容切换后的小说正文。');
+      expect(JSON.stringify(saved.draft?.story)).not.toContain(compatibility);
+      expect(JSON.stringify(saved.draft?.story)).not.toContain(nativeText);
+      expect(JSON.stringify(saved.draft?.story)).not.toContain(planning);
+    }
+    await closeDiagnostics(page);
+    const raw = await openStageRaw(page, 'story');
+    await expect(raw.getByLabel('正文模型完整原文', { exact: true })).toHaveText(rawText, { useInnerText: false });
+    expect(await raw.locator('pre').allTextContents()).toEqual(mode === 'only' ? [rawText] : [rawText, nativeText]);
+    await expect(raw.getByRole('region', { name: '兼容文本思考', exact: true })).toHaveCount(0);
+    await expect(raw).not.toContainText(key);
+    await shot(page, info, `compat-${mode}-raw`);
+    expect(await stored(page)).toEqual(saved);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.reload(); await openGameTools(page);
+    await expect(await openStageRaw(page, 'story')).toContainText('没有可恢复的模型原文');
+    expect(await stored(page)).toEqual(saved);
+  });
+}

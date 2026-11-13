@@ -29,6 +29,7 @@ export interface TurnProgress {
   readingPhase?: 'thinking' | 'body';
   planning?: string;
   nativeReasoning?: string;
+  compatibilityReasoning?: string;
 }
 export interface TurnOutcome {
   draft: TurnDraft;

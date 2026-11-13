@@ -28,6 +28,7 @@ export interface StoryProgress {
   readingPhase?: 'thinking' | 'body';
   planning?: string;
   nativeReasoning?: string;
+  compatibilityReasoning?: string;
 }
 interface StoryInput {
   draft: TurnDraft;
@@ -76,10 +77,11 @@ export class StoryStage {
       const stream = new StoryStream();
       const inspectionId = storyInspections.begin({ saveId: draft.saveId, turnId: draft.turnId,
         baseSaveRevision: draft.baseSaveRevision, basedOnStoryRevision: draft.storyRevision });
-      let reasoning = '', inspectionReasoning = '', narrative = '';
+      let reasoning = '', inspectionReasoning = '', compatibilityReasoning = '', narrative = '';
       const progress = () => input.onProgress?.({ phase: 'generating', narrative: safeStreamResponseText(narrative, secrets),
         readingPhase: stream.bodyStarted ? 'body' : 'thinking',
-        ...(stream.bodyStarted ? {} : { planning: safeStreamResponseText(stream.planning, secrets), nativeReasoning: safeStreamResponseText(reasoning, secrets) }) });
+        ...(stream.bodyStarted ? {} : { planning: safeStreamResponseText(stream.planning, secrets), nativeReasoning: safeStreamResponseText(reasoning, secrets),
+          compatibilityReasoning: safeStreamResponseText(compatibilityReasoning, secrets) }) });
       let responseInspectionId: string | undefined;
       try {
         progress();
@@ -111,6 +113,10 @@ export class StoryStage {
             },
             onNativeReasoningDelta: (delta) => {
               current(); reasoning += delta;
+              progress();
+            },
+            onCompatibilityReasoningDelta: (delta) => {
+              current(); compatibilityReasoning += delta;
               progress();
             },
           },

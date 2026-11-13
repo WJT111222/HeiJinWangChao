@@ -8,6 +8,7 @@ import type { StoryProgress } from '../workflows/storyStage';
 import { StoryStreamReading } from '../ui/game/StoryStreamReading';
 import { StageResponseContent } from '../ui/game/StageResponsesPanel';
 import { AiClient } from '../services/ai/client';
+import { requestSnapshot } from '../services/ai/snapshot';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import type { Protocol } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
@@ -22,6 +23,7 @@ import { game } from './fixtures/game';
 const body = '【旁白】雨落在站台，主角看着驶来的公交车。';
 const planning = '项目规划标记：保持本幕连续。';
 const native = '供应商公开思考标记';
+const compatibility = '兼容公开文本标记：沿着站台核对现场。';
 const tail = '<短期记忆>主角等车。</短期记忆><变量规划>[]</变量规划>';
 const output = (p = planning) => `<thinking>${p}</thinking><正文>${body}</正文>${tail}`;
 const secret = 'stream-test-api-secret';
@@ -123,12 +125,113 @@ it('兼容层提取前的 think 标签仍属于完整文本，不伪装成独立
   const a = await fixture(), raw = '<think>兼容文本思考</think>\n' + output();
   const progress: StoryProgress[] = [];
   await runner(a.repo, async () => sse(packets('openai', raw))).generate({ ...a, onProgress: p => progress.push(p) });
+  expect(progress.some(p => p.readingPhase === 'thinking' && p.compatibilityReasoning === '兼容文本思考')).toBe(true);
+  const bodyIndex = progress.findIndex(p => p.readingPhase === 'body');
+  expect(bodyIndex).toBeGreaterThanOrEqual(0);
+  expect(progress.slice(bodyIndex).every(p => !p.compatibilityReasoning && !p.planning && !p.nativeReasoning)).toBe(true);
   expect(progress.every(p => !p.nativeReasoning)).toBe(true);
   const record = stageResponses.getSnapshot()[0]; expect(record.text).toBe(raw);
   expect(record.nativeReasoning).toBe('');
   const html = renderToStaticMarkup(<StageResponseContent record={record} label="正文" />);
   expect(html).toContain('&lt;think&gt;兼容文本思考'); expect(html).not.toContain('story-native-response');
   expect(html.split(planning)).toHaveLength(2);
+});
+
+it.each(['openai', 'deepseek'] as const)('%s兼容 think 任意切点及UTF-8单字节：只报告一次确认来源的增量', async protocol => {
+  const a = await fixture(protocol), raw = `<think>${compatibility}</think>` + output();
+  const snapshot = requestSnapshot(a.config, 'story', a.vault);
+  for (let cut = 0; cut <= raw.length; cut++) {
+    const chunks = [raw.slice(0, cut), raw.slice(cut)];
+    const wire = chunks.map(content => frame({ choices: [{ delta: { content } }] })).join('') + 'data: [DONE]\n\n';
+    const fetcher = vi.fn<typeof fetch>(async () => sse(wire));
+    let compatText = '', rawText = '', received = '', legacy = '', nativeText = '';
+    const response = await new AiClient(fetcher).generate(snapshot, [{ role: 'user', content: '隔离流式显示测试' }], { stream: true,
+      onCompatibilityReasoningDelta: delta => { compatText += delta; },
+      onRawTextDelta: delta => { rawText += delta; },
+      onNativeReasoningDelta: delta => { nativeText += delta; },
+      onReasoningDelta: delta => { legacy += delta; },
+      onDelta: delta => { received += delta; },
+    });
+    expect(compatText).toBe(compatibility); expect(legacy).toBe(compatibility); expect(nativeText).toBe('');
+    expect(rawText).toBe(raw); expect(received).toBe(output()); expect(response.text).toBe(output());
+    expect(parseStoryEnvelope(response.text, 'opening', a.settings).story.narrative).toBe(body);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  }
+});
+
+it.each(['only-think', 'direct-body'] as const)('%s公开兼容思考实时可读，但不代替项目必需规划或产生存档写入', async mode => {
+  const a = await fixture(), before = await a.repo.loadGame('save-a'), progress: StoryProgress[] = [];
+  const raw = `<think>${compatibility}</think>` + (mode === 'direct-body' ? `<正文>${body}</正文>${tail}` : '');
+  const fetcher = vi.fn<typeof fetch>(async () => sse(packets('deepseek', raw)));
+  await expect(runner(a.repo, fetcher).generate({ ...a, onProgress: p => progress.push(p) }))
+    .rejects.toMatchObject({ code: mode === 'only-think' ? 'empty' : 'invalid_output' });
+  expect(progress.some(p => p.readingPhase === 'thinking' && p.compatibilityReasoning === compatibility)).toBe(true);
+  expect(progress.every(p => !p.nativeReasoning && !p.planning)).toBe(true);
+  if (mode === 'direct-body') {
+    const index = progress.findIndex(p => p.readingPhase === 'body'); expect(index).toBeGreaterThanOrEqual(0);
+    expect(progress.slice(index).every(p => !p.compatibilityReasoning)).toBe(true);
+  }
+  expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: raw, nativeReasoning: '', status: 'failed' });
+  expect(await a.repo.loadGame('save-a')).toEqual(before); expect(fetcher).toHaveBeenCalledTimes(1);
+});
+
+it.each([
+  ['native-first', false], ['native-last', false], ['native-first', true], ['native-last', true],
+] as const)('%s同次响应两类公开来源（相同=%s）：独立去重且正文开始三类思考同时清空', async (order, duplicate) => {
+  const a = await fixture(), progress: StoryProgress[] = [], before = await a.repo.load('save-a');
+  const raw = `<think>${compatibility}</think>` + output(), nativeText = duplicate ? compatibility : native;
+  const nativeFrame = frame({ choices: [{ delta: { reasoning_content: nativeText } }] });
+  const lead = Array.from(`<think>${compatibility}</think>`).map(content => frame({ choices: [{ delta: { content } }] })).join('');
+  const wire = (order === 'native-first' ? nativeFrame + lead : lead + nativeFrame) + packets('openai', output());
+  const fetcher = vi.fn<typeof fetch>(async () => sse(wire));
+  await runner(a.repo, fetcher).generate({ ...a, onProgress: p => progress.push(p) });
+  const complete = progress.find(p => p.readingPhase === 'thinking' && p.planning === planning
+    && p.nativeReasoning === nativeText && p.compatibilityReasoning === compatibility);
+  expect(complete).toBeDefined();
+  const html = renderToStaticMarkup(<StoryStreamReading progress={complete!} />);
+  expect(html).toContain('aria-label="供应商公开思考"'); expect(html).toContain('aria-label="项目 thinking 内容"');
+  expect(html.split(compatibility)).toHaveLength(2);
+  if (duplicate) expect(html).not.toContain('aria-label="兼容文本思考"');
+  else expect(html).toContain('aria-label="兼容文本思考"');
+  const index = progress.findIndex(p => p.readingPhase === 'body'); expect(index).toBeGreaterThanOrEqual(0);
+  expect(progress.slice(index).every(p => !p.compatibilityReasoning && !p.planning && !p.nativeReasoning)).toBe(true);
+  const record = stageResponses.getSnapshot()[0]; expect(record).toMatchObject({ text: raw, nativeReasoning: nativeText });
+  expect(renderToStaticMarkup(<StageResponseContent record={record} label="正文" />).split('&lt;think&gt;')).toHaveLength(2);
+  expect(await a.repo.load('save-a')).toEqual(before);
+  const saved = JSON.stringify((await a.repo.loadDraft('save-a'))?.story);
+  expect(saved).not.toContain(compatibility); expect(saved).not.toContain(nativeText); expect(saved).not.toContain(planning);
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});
+
+it('完整JSON回退中的兼容文本和独立原生字段仍分源，不复制到正文', async () => {
+  const a = await fixture(), progress: StoryProgress[] = [], raw = `<think>${compatibility}</think>` + output();
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json({ choices: [{
+    message: { content: raw, reasoning_content: native }, finish_reason: 'stop',
+  }] }));
+  await runner(a.repo, fetcher).generate({ ...a, onProgress: p => progress.push(p) });
+  expect(progress.some(p => p.readingPhase === 'thinking' && p.compatibilityReasoning === compatibility && p.nativeReasoning === native)).toBe(true);
+  expect(progress.at(-1)).toMatchObject({ phase: 'saving', narrative: body });
+  expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: raw, nativeReasoning: native });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});
+
+it('兼容思考取消时保护分块凭证，不写草稿且不重复请求', async () => {
+  const a = await fixture(), before = await a.repo.loadGame('save-a'), progress: StoryProgress[] = [];
+  let controller: ReadableStreamDefaultController<Uint8Array>;
+  const fetcher = vi.fn<typeof fetch>(async () => new Response(new ReadableStream<Uint8Array>({ start(c) {
+    controller = c;
+    c.enqueue(new TextEncoder().encode(frame({ choices: [{ delta: { content: '<think>' + compatibility + ' ' + secret.slice(0, 10) } }] })));
+  } }), { headers: { 'content-type': 'text/event-stream' } }));
+  const stage = runner(a.repo, fetcher), pending = stage.generate({ ...a, onProgress: p => progress.push(p) });
+  const rejected = expect(pending).rejects.toMatchObject({ code: 'cancelled' });
+  await vi.waitFor(() => expect(progress.at(-1)?.compatibilityReasoning).toContain(compatibility));
+  expect(progress.at(-1)?.compatibilityReasoning).not.toContain(secret.slice(0, 10));
+  controller!.enqueue(new TextEncoder().encode(frame({ choices: [{ delta: { content: secret.slice(10) + ' 末尾' } }] })));
+  await vi.waitFor(() => expect(progress.at(-1)?.compatibilityReasoning).toContain('末尾'));
+  expect(JSON.stringify(progress)).not.toContain(secret); stage.cancel(); await rejected;
+  expect(stageResponses.getSnapshot()[0].text).toContain('<think>');
+  expect(JSON.stringify(stageResponses.getSnapshot())).not.toContain(secret);
+  expect(await a.repo.loadGame('save-a')).toEqual(before); expect(fetcher).toHaveBeenCalledTimes(1);
 });
 
 it.each(['stop', 'length'] as const)('完整JSON回退在最终%s检查前保留真实原文和独立原生字段', async finish => {
@@ -143,10 +246,10 @@ it.each(['stop', 'length'] as const)('完整JSON回退在最终%s检查前保留
 });
 
 it('思考阶段组件按实际内容显示，正文开始立即移除全部思考节点', () => {
-  const thought = renderToStaticMarkup(<StoryStreamReading progress={{ phase: 'generating', narrative: '', readingPhase: 'thinking', planning, nativeReasoning: native }} />);
-  expect(thought).toContain(planning); expect(thought).toContain(native);
-  const novel = renderToStaticMarkup(<StoryStreamReading progress={{ phase: 'generating', narrative: '', readingPhase: 'body', planning, nativeReasoning: native }} />);
-  expect(novel).not.toContain(planning); expect(novel).not.toContain(native); expect(novel).toContain('stream-narrative');
+  const thought = renderToStaticMarkup(<StoryStreamReading progress={{ phase: 'generating', narrative: '', readingPhase: 'thinking', planning, nativeReasoning: native, compatibilityReasoning: compatibility }} />);
+  expect(thought).toContain(planning); expect(thought).toContain(native); expect(thought).toContain(compatibility);
+  const novel = renderToStaticMarkup(<StoryStreamReading progress={{ phase: 'generating', narrative: '', readingPhase: 'body', planning, nativeReasoning: native, compatibilityReasoning: compatibility }} />);
+  expect(novel).not.toContain(planning); expect(novel).not.toContain(native); expect(novel).not.toContain(compatibility); expect(novel).toContain('stream-narrative');
   const waiting = renderToStaticMarkup(<StoryStreamReading progress={{ phase: 'generating', narrative: '' }} />);
   expect(waiting).not.toContain('项目 &lt;thinking&gt;'); expect(waiting).not.toContain('供应商公开思考');
 });
@@ -186,16 +289,17 @@ it('自动工作流完整转发思考/正文阶段，只生成同一次Story，�
   const a = await fixture('openai', true);
   const activeDraft = a.draft;
   a.settings.runtime.useVariableStage = false; a.settings.runtime.useWorldStage = false;
-  const fetcher = vi.fn<typeof fetch>(async () => sse(packets('openai', output(), native)));
+  const fetcher = vi.fn<typeof fetch>(async () => sse(packets('openai', `<think>${compatibility}</think>` + output(), native)));
   const coordinator = new TurnCoordinator(a.repo, new AiClient(fetcher));
-  const progress: Array<{ readingPhase?: string; nativeReasoning?: string; planning?: string }> = [];
+  const progress: Array<{ readingPhase?: string; nativeReasoning?: string; compatibilityReasoning?: string; planning?: string }> = [];
   try {
     await coordinator.generate({ ...a, draft: activeDraft, onProgress: p => progress.push(p) });
     expect(progress.some(p => p.readingPhase === 'thinking' && p.nativeReasoning === native)).toBe(true);
     expect(progress.some(p => p.readingPhase === 'thinking' && p.planning === planning)).toBe(true);
+    expect(progress.some(p => p.readingPhase === 'thinking' && p.compatibilityReasoning === compatibility)).toBe(true);
     const index = progress.findIndex(p => p.readingPhase === 'body');
     expect(index).toBeGreaterThanOrEqual(0);
-    expect(progress.slice(index).every(p => !p.nativeReasoning && !p.planning)).toBe(true);
+    expect(progress.slice(index).every(p => !p.nativeReasoning && !p.planning && !p.compatibilityReasoning)).toBe(true);
     expect(fetcher).toHaveBeenCalledTimes(1); expect(await a.repo.load('save-a')).toEqual(a.state);
   } finally { coordinator.dispose(); }
 });

@@ -322,7 +322,7 @@ export function GameScreen({
   }
   useEffect(() => {
     if (follow.current && reader.current) reader.current.scrollTop = reader.current.scrollHeight;
-  }, [progress?.narrative, progress?.nativeReasoning, progress?.planning, progress?.readingPhase, draft?.storyRevision]);
+  }, [progress?.narrative, progress?.nativeReasoning, progress?.compatibilityReasoning, progress?.planning, progress?.readingPhase, draft?.storyRevision]);
   const view = useMemo(() => playerView(state, companionProfile, settings.memory.immediateWindowSize), [state, companionProfile, settings.memory.immediateWindowSize]);
   const showChanges=Boolean(view.journal.length)&&!workflowBusy&&!draft?.story&&(!draft||awaitingAction);
   const turnComparison=useTurnComparison(state,repository,showChanges);

@@ -31,6 +31,8 @@ export interface RequestOptions {
   /** Read-only observations before compatibility extraction; not a second request. */
   onRawTextDelta?: (text: string) => void;
   onNativeReasoningDelta?: (text: string) => void;
+  /** Only public text actually extracted from a leading <think> block. */
+  onCompatibilityReasoningDelta?: (text: string) => void;
   onActivity?: (kind: 'content' | 'reasoning') => void;
   inspection?: InspectionScope;
 }
@@ -166,6 +168,7 @@ export class AiClient {
           if (isOpenAiCompatible(protocol)) {
             const split = splitLeadingThink(text);
             text = split.content;
+            if (split.reasoning && !signal.aborted) options.onCompatibilityReasoningDelta?.(split.reasoning);
             if (!reasoning) reasoning = split.reasoning;
           }
           if (wholeJson && !signal.aborted) {
@@ -227,6 +230,7 @@ export class AiClient {
             reasoning += reasoningDelta;
             if (reasoning.length > 2_000_000) throw new AiError('invalid_output');
             if (!signal.aborted) {
+              if (thinkReasoning) options.onCompatibilityReasoningDelta?.(thinkReasoning);
               if (reasoningDelta) { options.onActivity?.('reasoning'); options.onReasoningDelta?.(reasoningDelta); }
               if (delta) options.onActivity?.('content');
             }
@@ -237,6 +241,7 @@ export class AiClient {
           if (think) {
             const rest = think.end();
             if (rest.content) { text += rest.content; if (!signal.aborted) { options.onActivity?.('content'); options.onDelta?.(rest.content); } }
+            if (rest.reasoning && !signal.aborted) options.onCompatibilityReasoningDelta?.(rest.reasoning);
             if (rest.reasoning && !nativeSeen) { reasoning += rest.reasoning; if (!signal.aborted) options.onReasoningDelta?.(rest.reasoning); }
           }
           if (!terminal) throw new AiError('stream_interrupted');
