@@ -23,6 +23,15 @@ import type { NpcMemoryBatch } from '../../domain/memories/npcMemory';
 import { NpcSummarySchema, MemoryEntrySchema } from '../../domain/memories/schema';
 import { unreadableSaveSummary } from './saveManagement';
 import type { RawSaveExport, RawSaveRecord, SaveSummary } from './saveManagement';
+import { backupSummary, compatibleDraft } from './backup';
+import type { BackupEntry } from './backup';
+
+/** 导入前与本机的比较结果。 */
+export type BackupComparison =
+  | { kind: 'new' }
+  | { kind: 'same'; local: BackupEntry['summary'] }
+  | { kind: 'overwrite'; local: BackupEntry['summary'] }
+  | { kind: 'overwrite-unreadable' };
 
 const ReceiptSchema = z.strictObject({
   saveId: IdSchema,
@@ -314,6 +323,58 @@ export class SaveRepository {
         turnUndo: await rawRecords(tx.objectStore('turnUndo').index('saveId'), storageKey),
         saveControls: await rawRecords(tx.objectStore('saveControls'), storageKey) } };
     });
+  }
+
+  /** 备份导出：只读可读取的存档，迁移到当前版本；草稿不合法或过期就跳过，不影响导出。 */
+  async exportBackup(saveIds: readonly string[]): Promise<BackupEntry[]> {
+    requireData(saveIds.length > 0, 'INVALID_KEY', '未选择存档');
+    for (const saveId of saveIds) IdSchema.parse(saveId);
+    return transaction(this.database, ['saves', 'drafts'], 'readonly', async (tx) => {
+      const entries: BackupEntry[] = [];
+      for (const saveId of saveIds) {
+        const state = readState(await request(tx.objectStore('saves').get(saveId)), saveId);
+        const { draft } = compatibleDraft(state, await request(tx.objectStore('drafts').get(saveId)));
+        entries.push({ summary: backupSummary(state), state, ...(draft ? { draft } : {}) });
+      }
+      return entries;
+    });
+  }
+
+  /** 导入前比较：本机没有、完全相同，或需要明确确认覆盖。只读，不改任何记录。 */
+  async compareBackup(state: GameState): Promise<BackupComparison> {
+    IdSchema.parse(state.saveId);
+    return transaction(this.database, ['saves'], 'readonly', async (tx) => {
+      const raw: unknown = await request(tx.objectStore('saves').get(state.saveId));
+      if (raw === undefined) return { kind: 'new' } as const;
+      let local: GameState;
+      try { local = readState(raw, state.saveId); } catch { return { kind: 'overwrite-unreadable' } as const; }
+      const same = local.revision === state.revision && local.turnNumber === state.turnNumber && local.updatedAt === state.updatedAt;
+      return { kind: same ? 'same' : 'overwrite', local: backupSummary(local) } as const;
+    });
+  }
+
+  /**
+   * 备份导入。没有同 ID 存档时直接新增；已有时必须带上 compareBackup 看到的本机版本
+   * （本机无法读取时为 null）确认覆盖。覆盖在同一事务中清掉本机该存档的全部记录
+   * （草稿、提交回执、撤回快照、控制），再写入备份；任何一步失败都整体回滚。
+   */
+  async importBackup(entry: { state: GameState; draft?: TurnDraft }, options: { overwrite?: { localRevision: number | null } } = {}): Promise<GameState> {
+    const state = normalizeOpeningCity(GameStateSchema.parse(entry.state));
+    const { draft } = compatibleDraft(state, entry.draft);
+    return withBrowserLock(state.saveId, () => transaction(this.database, timelineStores, 'readwrite', async (tx) => {
+      const raw: unknown = await request(tx.objectStore('saves').get(state.saveId));
+      if (raw !== undefined) {
+        const overwrite = options.overwrite;
+        requireData(overwrite, 'SAVE_EXISTS', '本机已有这份存档，需要确认覆盖后才能导入。');
+        let localRevision: number | null = null;
+        try { localRevision = readState(raw, state.saveId).revision; } catch { localRevision = null; }
+        requireData(localRevision === overwrite.localRevision, 'REVISION_CONFLICT', '本机存档刚刚发生了变化，请重新选择文件导入。');
+        await deleteRecords(tx, state.saveId);
+      }
+      await request(tx.objectStore('saves').add(state));
+      if (draft) await request(tx.objectStore('drafts').put(draft));
+      return state;
+    }));
   }
 
   // Explicit recovery action, separate from the revision-checked normal delete path.
