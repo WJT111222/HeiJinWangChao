@@ -33,7 +33,7 @@
 
 ## 以后发布公告：合并 PR 自动发布（推荐）
 
-公告内容放在仓库的 `announcements/current.json`。修改它的 PR 合并到 `main` 后，GitHub Actions「发布王朝公告」会自动：
+公告内容放在仓库的 `announcements/current.json`。`version` 目前只用于显示：手机公告顶部直接显示 `VERSION <version>`，所以写成玩家看得懂的形式，例如 `1.0 Beta · 2026.11.13`，每次发布换一个新值便于区分（同一天第二次可写 `1.0 Beta · 2026.11.13-2`）。是否弹出与 `version` 无关：公告每天首次打开都会弹出，玩家勾选「今日不再弹出」后当天不再自动弹出。修改它的 PR 合并到 `main` 后，GitHub Actions「发布王朝公告」会自动：
 
 1. 用与 Worker、客户端相同的 `parseAnnouncement` 校验文件，不合法就停止，线上不变；
 2. 写入 KV Namespace（ID 取自 `wrangler.jsonc`）的 `current` 键；
