@@ -1,0 +1,13 @@
+
+Running 1 test using 1 worker
+
+(node:294618) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 e2e/mobile-batch4.spec.ts:58:1 › 撕票动画切换步骤可取消，不创建未确认存档 (5.1s)
+
+  1 passed (6.2s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

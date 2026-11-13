@@ -1,4 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
+import { useDesktopFeedback } from '../Feedback';
+import { Dialog } from '../Dialog';
+import { MiniCreationTicket, FullCreationTicket, TemplateChips, CreationReviewCard, CreationGuilloche, creationCity, ticketMeta } from './MobileCreation';
+import { useCreationTear } from './useCreationTear';
+import './mobile-creation.css';
 import { cities, professions, professionCategories, professionProfile, validateStep, selectProfession } from './model';
 import type { Creation } from './model';
 import { Detail } from '../Dialog';
@@ -24,11 +30,29 @@ export function CreationWizard({
   onExit: () => void;
 }) {
   const [error, setError] = useState('');
+  const mobile=!useDesktopFeedback(),[preview,setPreview]=useState(false),[direction,setDirection]=useState('forward'),[showPreset,setShowPreset]=useState(form.profession!=='custom');
+  const main=useRef<HTMLElement>(null),formRef=useRef<HTMLFormElement>(null),card=useRef<HTMLDivElement>(null),submitted=useRef(false);
+  const resetTear=useRef<()=>void>(()=>{});
+  const tear=useCreationTear(`${form.saveId}:${form.step}`,busy||!mobile||preview,()=>{
+    if(document.querySelector('dialog:modal')){resetTear.current();return;}
+    formRef.current?.requestSubmit();
+  });
+  resetTear.current=tear.reset;
+  useEffect(()=>{tear.reset();},[form]);
+  useEffect(()=>{setShowPreset(form.profession!=='custom');},[form.saveId]);
+  useEffect(()=>{if(!busy)submitted.current=false;},[busy]);
+  useLayoutEffect(()=>{
+    if(!mobile)return;
+    const update=()=>{const viewport=window.visualViewport;if(viewport?.scale!==1)return;main.current?.style.setProperty('--creation-height',`${viewport.height}px`);main.current?.style.setProperty('--creation-top',`${viewport.offsetTop}px`);};
+    update();window.visualViewport?.addEventListener('resize',update);window.visualViewport?.addEventListener('scroll',update);return()=>{window.visualViewport?.removeEventListener('resize',update);window.visualViewport?.removeEventListener('scroll',update);};
+  },[mobile]);
+  useLayoutEffect(()=>{if(mobile&&card.current)card.current.scrollTop=0;},[form.step,mobile]);
   const change = (patch: Partial<Creation>) => onChange({ ...form, ...patch });
   function move(step: number) {
     try {
       if (step > form.step) validateStep(form);
       setError('');
+      setDirection(step<form.step?'back':'forward');
       change({ step });
     } catch (e) {
       setError(e instanceof Error ? e.message : '请检查填写内容');
@@ -52,6 +76,7 @@ export function CreationWizard({
           value={form.person[key]}
           onChange={(e) => change({ person: { ...form.person, [key]: e.target.value } })}
           type={key === 'age' ? 'number' : 'text'}
+          inputMode={mobile&&key==='age'?'numeric':undefined}
           min={key === 'age' ? 0 : undefined}
           required={['name', 'age', 'gender'].includes(key)}
         />
@@ -70,6 +95,7 @@ export function CreationWizard({
       ) : (
         <input
           type={key === 'age' ? 'number' : 'text'}
+          inputMode={mobile&&key==='age'?'numeric':undefined}
           min={key === 'age' ? 0 : undefined}
           required={['name', 'relationship'].includes(key)}
           value={form.companion[key]}
@@ -79,7 +105,8 @@ export function CreationWizard({
     </label>
   );
   return (
-    <main className="creation-page">
+    <main ref={main} data-profession-view={mobile?(showPreset?'preset':'custom'):undefined} className={`creation-page${mobile?' mobile-creation':''}`} style={mobile?{'--tint':form.step>=3?ticketMeta[creationCity[form.city]].tint:'#c9a961'} as CSSProperties:undefined}>
+      {mobile&&<><header className="creation-mobile-bar"><button type="button" disabled={busy} onClick={onExit}>‹ 首页</button><span><small>NEW LIFE</small>空白车票</span></header><MiniCreationTicket form={form} onPreview={()=>setPreview(true)}/></>}
       <div className="section-heading">
         <div>
           <p className="eyebrow">A LIFE, UNWRITTEN</p>
@@ -90,24 +117,27 @@ export function CreationWizard({
           返回首页
         </button>
       </div>
-      <nav className="steps" aria-label="角色创建步骤">
+      <nav className="steps" aria-label="角色创建步骤" style={mobile?{'--route-progress':`${(form.step-1)*25}%`} as CSSProperties:undefined}>
         {steps.map((label, index) => (
           <button
             disabled={busy}
             key={label}
+            aria-label={mobile?label:undefined}
+            className={mobile&&index+1<form.step?'done':undefined}
             aria-current={form.step === index + 1 ? 'step' : undefined}
             onClick={() => move(index + 1)}
           >
-            <span>0{index + 1}</span>
-            {label}
+            <span>{mobile?(index+1<form.step?'✓':''):<>0{index+1}</>}</span>
+            {mobile?['基本','职业','城市','同伴','确认'][index]:label}
           </button>
         ))}
       </nav>
       <OpeningPacks form={form} onApply={onChange} busy={busy} />
-      <form
+      <form ref={formRef}
         inert={busy}
         onSubmit={(e) => {
           e.preventDefault();
+          if(busy||submitted.current)return;
           if (form.step < 5) move(form.step + 1);
           else {
             for (let step = 1; step <= 4; step++) {
@@ -119,11 +149,12 @@ export function CreationWizard({
                 return;
               }
             }
+            submitted.current=true;
             onCreate();
           }
         }}
       >
-        <div className="creation-card">
+        <div className={`creation-card ${mobile?`creation-step-${direction}`:''}`} key={mobile?form.step:undefined} ref={card}>
           <div className="section-heading">
             <div>
               <p className="eyebrow">STEP 0{form.step} / 05</p>
@@ -155,10 +186,12 @@ export function CreationWizard({
                   const templates = field === 'appearance' ? appearanceTemplates : personalityTemplates;
                   const key = field === 'appearance' ? 'appearanceTemplate' : 'personalityTemplate';
                   return <div key={field}>
+                    {mobile?<><h3 className="creation-field-heading">{label}</h3><TemplateChips label={`${label}模板`} value={form[key]??'custom'} options={templates} onChange={value=>change({[key]:value,person:{...form.person,[field]:templates.find(item=>item.name===value)?.description??form.person[field]}})}/></>:<>
                     <ThemedSelect label={`${label}模板`} value={form[key] ?? 'custom'}
                       options={[{ value: 'custom', label: '自由选择' }, ...templates.map((item) => ({ value: item.name, label: item.name }))]}
                       onChange={(value) => change({ [key]: value, person: { ...form.person,
                         [field]: templates.find((item) => item.name === value)?.description ?? form.person[field] } })} />
+                    </>}
                     {person(field, label, true)}
                   </div>;
                 })}
@@ -169,20 +202,20 @@ export function CreationWizard({
             <>
               <fieldset className="profession-picker">
                 <legend className="sr-only">选择职业</legend>
-                <label className="creation-choice">
+                <label className={`creation-choice ${mobile?'mobile-profession-custom':''}`}>
                   <input type="radio" name="profession" checked={form.profession === 'custom'}
                     onChange={() => onChange(selectProfession(form, 'custom'))} />自由选择
                 </label>
                 <nav className="profession-categories" aria-label="职业方向">
                   {professionCategories.map((name) => <button type="button" key={name}
-                    aria-pressed={category === name} onClick={() => change({ professionCategory: name })}>{name}</button>)}
+                    aria-pressed={category === name && (!mobile||showPreset)} onClick={() => {if(mobile)setShowPreset(true);change({ professionCategory: name });}}>{name}</button>)}
+                  {mobile&&<button type="button" aria-pressed={!showPreset} onClick={()=>{setShowPreset(false);onChange(selectProfession(form,'custom'));}}>✎ 自由选择</button>}
                 </nav>
                 <div className="profession-buttons">
-                  {professions.filter((job) => job.category === category).map((job) => <label
-                    className="creation-choice" key={job.name}>
-                    <input type="radio" name="profession" checked={form.profession === job.name}
-                      onChange={() => onChange(selectProfession(form, job.name))} />{job.name}
-                  </label>)}
+                  {professions.filter((job) => job.category === category).map((job) => {
+                    const label=<label className="creation-choice" key={job.name}><input type="radio" name="profession" checked={form.profession===job.name} onChange={()=>onChange(selectProfession(form,job.name))}/>{mobile?<span><b>{job.name}</b><small>{job.skills.slice(0,3).join(' · ')}</small></span>:job.name}</label>;
+                    return mobile?<div className={`creation-profession-card ${form.profession===job.name?'selected':''}`} key={job.name}>{label}{form.profession===job.name&&<ProfessionProfile hero={{profession:profile.name,professionDescription:profile.description,professionLongTermImpact:profile.longTermImpact,skills:profile.skills}}/>}</div>:label;
+                  })}
                 </div>
               </fieldset>
               {form.profession === 'custom' ? <div className="custom-profession">
@@ -195,10 +228,10 @@ export function CreationWizard({
                 <label>长期影响<textarea aria-label="长期影响" rows={5} value={form.professionLongTermImpact ?? ''}
                   onChange={(e) => change({ professionLongTermImpact: e.target.value })} /></label>
               </div> : <>
-                <ProfessionProfile hero={{ profession: profile.name, professionDescription: profile.description,
-                  professionLongTermImpact: profile.longTermImpact, skills: profile.skills }} />
-                <label>个人技能与专长<textarea aria-label="个人技能与专长" rows={3} value={form.skills} placeholder="每行一项"
-                  onChange={(e) => change({ skills: e.target.value, skillsSource: 'manual' })} /></label>
+                {!mobile&&<ProfessionProfile hero={{ profession: profile.name, professionDescription: profile.description,
+                  professionLongTermImpact: profile.longTermImpact, skills: profile.skills }} />}
+                {mobile?<details className="creation-manual-skills"><summary>个人技能与专长{form.skillsSource==='manual'?' · 已保留手动技能':''}</summary><label>个人技能与专长<textarea aria-label="个人技能与专长" rows={3} value={form.skills} onChange={e=>change({skills:e.target.value,skillsSource:'manual'})}/></label></details>:<label>个人技能与专长<textarea aria-label="个人技能与专长" rows={3} value={form.skills} placeholder="每行一项"
+                  onChange={(e) => change({ skills: e.target.value, skillsSource: 'manual' })} /></label>}
               </>}
             </>
           )}
@@ -219,6 +252,7 @@ export function CreationWizard({
                         checked={form.city === city.id}
                         onChange={() => change({ city: city.id })}
                       />
+                      {mobile&&<span className="creation-city-art" style={{'--tint':ticketMeta[creationCity[city.id]].tint} as CSSProperties}><CreationGuilloche city={city.id}/><span className="creation-city-seal" aria-hidden="true">{form.city===city.id?'起点':ticketMeta[creationCity[city.id]].seal}</span></span>}
                       <small>{city.label}</small>
                       <strong>{city.name}</strong>
                       <p>{city.description}</p>
@@ -281,8 +315,9 @@ export function CreationWizard({
           )}
           {form.step === 5 && (
             <>
+              {mobile&&<FullCreationTicket form={form} stub={<div className={`creation-ticket-stub ${tear.torn?'torn':''}`} {...tear.handlers} style={tear.drag?{transform:`translateY(${tear.drag*.6}px) rotate(${-tear.drag/12}deg)`}:undefined} aria-disabled={busy}><span>确认并创建存档<small>↓ 按住票根往下撕 · 可能产生第三方 API 费用</small></span><i aria-hidden="true"/></div>}/>}
               <div className="two-grid creation-review">
-                <section className="card">
+                <CreationReviewCard mobile={mobile} title="人物资料" index={1}>
                   <div className="section-heading">
                     <h3>人物资料</h3>
                     <button type="button" onClick={() => move(1)}>
@@ -298,8 +333,8 @@ export function CreationWizard({
                     <Detail label="外貌模板">{form.appearanceTemplate === 'custom' ? '自由选择' : form.appearanceTemplate}</Detail>
                     <Detail label="性格模板">{form.personalityTemplate === 'custom' ? '自由选择' : form.personalityTemplate}</Detail>
                   </dl>
-                </section>
-                <section className="card">
+                </CreationReviewCard>
+                <CreationReviewCard mobile={mobile} title="职业与起点" index={2}>
                   <div className="section-heading">
                     <h3>职业与起点</h3>
                     <button type="button" onClick={() => move(2)}>
@@ -332,8 +367,8 @@ export function CreationWizard({
                   <button type="button" onClick={() => move(3)}>
                     修改城市与背景
                   </button>
-                </section>
-                <section className="card">
+                </CreationReviewCard>
+                <CreationReviewCard mobile={mobile} title="初始同伴" index={3}>
                   <div className="section-heading">
                     <h3>初始同伴</h3>
                     <button type="button" onClick={() => move(4)}>
@@ -360,14 +395,14 @@ export function CreationWizard({
                   ) : (
                     <p className="muted">未创建同伴</p>
                   )}
-                </section>
-                <section className="card">
+                </CreationReviewCard>
+                <CreationReviewCard mobile={mobile} title="开局准备" index={4}>
                   <h3>开局准备</h3>
                   <p>{form.openingTimePending ? '开局时间待确认' : `初始游戏时间：${dateTime(form.worldClock)}`}</p>
                   <p className="muted">
                     可以在开局偏好中指定故事年份、季节或日期；未指定时由 AI 在开局正文中根据剧情安排。请用明确年份，不以设备日期解释“今年”。首次正式结算后时间成为存档事实。资产、健康与天气等待开局确认，同伴关系倾向暂不作推断。
                   </p>
-                </section>
+                </CreationReviewCard>
               </div>
               <label>
                 开局偏好（可选）
@@ -392,12 +427,13 @@ export function CreationWizard({
           >
             上一步
           </button>
-          <span>0{form.step} / 05</span>
-          <button className="primary" disabled={busy} type="submit" aria-describedby={form.step === 5 ? 'opening-generation-notice' : undefined}>
+          <span>{mobile&&form.step===5?'可能产生第三方 API 费用':<>0{form.step} / 05</>}</span>
+          <button className="primary" disabled={busy||tear.torn} type="submit" aria-describedby={form.step === 5 ? 'opening-generation-notice' : undefined}>
             {busy ? '正在保存…' : form.step === 5 ? '确认并创建存档' : '下一步 →'}
           </button>
         </footer>
       </form>
+      {mobile&&preview&&<Dialog title="车票预览" seal="票" mobileVariant="sheet" onClose={()=>setPreview(false)}><FullCreationTicket form={form} stub={<div className="creation-ticket-stub preview-only"><span>STATION 0{form.step} / 05<small>填完第 5 站即可撕票</small></span><i aria-hidden="true"/></div>}/></Dialog>}
     </main>
   );
 }

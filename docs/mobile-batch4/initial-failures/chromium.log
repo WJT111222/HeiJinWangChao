@@ -1,0 +1,282 @@
+
+Running 14 tests using 1 worker
+
+(node:290169) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 e2e/mobile-batch4.spec.ts:25:1 › 自动须知→公告、原文、焦点陷阱、章节与进度、手动打开仅一张 (2.5s)
+  ✓   2 e2e/mobile-batch4.spec.ts:35:1 › 今日免打扰、隔日恢复；云端实际版本和长内容、滚动不重复请求 (2.3s)
+  ✓   3 e2e/mobile-batch4.spec.ts:40:1 › 自动翻页动画防重复关闭，reduced-motion 与 Esc 顺序 (1.8s)
+  ✘   4 e2e/mobile-batch4.spec.ts:43:1 › 五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文 (45.3s)
+(node:290580) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   5 e2e/mobile-batch4.spec.ts:50:1 › 顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复 (6.9s)
+(node:290711) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   6 e2e/mobile-batch4.spec.ts:54:1 › 确认按钮同一校验路径、草稿保留、无效撕票返回错误步骤 (2.7s)
+  ✓   7 e2e/mobile-batch4.spec.ts:58:1 › 撕票动画可取消，保存失败可以重试且不重复创建 (2.3s)
+  ✓   8 e2e/mobile-batch4.spec.ts:61:1 › 开局包六视图、手动技能完整恢复、取消不写、覆盖与删除隔离 (2.6s)
+  ✓   9 e2e/mobile-batch4.spec.ts:67:1 › 开局包损坏隔离、存储失败不清空原数据和创角草稿 (1.4s)
+  ✘  10 e2e/mobile-batch4.spec.ts:70:81 › 短视口 375×667 仅正文滚动，底栏与输入可达 (7.4s)
+(node:291008) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  11 e2e/mobile-batch4.spec.ts:70:81 › 短视口 390×844 仅正文滚动，底栏与输入可达 (8.5s)
+(node:291382) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  12 e2e/mobile-batch4.spec.ts:70:81 › 短视口 430×932 仅正文滚动，底栏与输入可达 (8.1s)
+(node:291571) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  13 e2e/mobile-batch4.spec.ts:70:81 › 短视口 392×640 仅正文滚动，底栏与输入可达 (7.5s)
+(node:291706) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  14 e2e/mobile-batch4.spec.ts:70:81 › 短视口 392×420 仅正文滚动，底栏与输入可达 (7.5s)
+
+
+  1) e2e/mobile-batch4.spec.ts:43:1 › 五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文 ────────────────────────────────
+
+    Test timeout of 45000ms exceeded.
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mobile-batch4-chromium/mobile-batch4-五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mobile-batch4-chromium/mobile-batch4-五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mobile-batch4-chromium/mobile-batch4-五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mobile-batch4-chromium/mobile-batch4-五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) e2e/mobile-batch4.spec.ts:50:1 › 顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复 ───────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.game-layout')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('.game-layout') with timeout 5000ms
+      - waiting for locator('.game-layout')
+
+
+      50 | test('顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复',async({page})=>{
+      51 |  await create(page,5,true);await page.getByRole('button',{name:'展开完整车票预览'}).click();const preview=page.getByRole('dialog',{name:'车票预览'});await expect(preview).toContainText('填完第 5 站即可撕票');await expect(preview.getByRole('button',{name:'确认并创建存档'})).toHaveCount(0);await page.keyboard.press('Escape');await drag(page,40);expect(await stores(page)).toEqual([]);await drag(page,90,true);expect(await stores(page)).toEqual([]);
+    > 52 |  await drag(page,75);await expect(page.locator('.game-layout')).toBeVisible();expect(await stores(page)).toHaveLength(1);const saved=await page.evaluate(async()=>{const p='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(p),r=await SaveRepository.open();try{return await r.loadGame(location.hash.slice(6));}finally{r.close();}});expect(saved.state.protagonist.skills).toEqual(['玩家自存技能','第二技能']);expect(saved.state.openingTimePending).toBe(true);expect(saved.state.turnNumber).toBe(0);expect(saved.draft!.turnKind??saved.draft!.mode).toBeDefined();
+         |                                                                 ^
+      53 | });
+      54 | test('确认按钮同一校验路径、草稿保留、无效撕票返回错误步骤',async({page})=>{
+      55 |  await create(page,5);await page.evaluate(()=>{const f=JSON.parse(localStorage.getItem('heijin.creation.v1')!);f.person.name='';localStorage.setItem('heijin.creation.v1',JSON.stringify(f));});await page.reload();await drag(page,75);await expect(page.getByRole('heading',{name:'基本信息',exact:true})).toBeVisible();await expect(page.getByRole('alert')).toContainText('姓名');expect(await stores(page)).toEqual([]);await shot(page,'creation-validation-390');
+        at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:52:65
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mobile-batch4-chromium/mobile-batch4-顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mobile-batch4-chromium/mobile-batch4-顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mobile-batch4-chromium/mobile-batch4-顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mobile-batch4-chromium/mobile-batch4-顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) e2e/mobile-batch4.spec.ts:70:81 › 短视口 375×667 仅正文滚动，底栏与输入可达 ───────────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })
+
+
+      70 | for(const [width,height] of [[375,667],[390,844],[430,932],[392,640],[392,420]])test(`短视口 ${width}×${height} 仅正文滚动，底栏与输入可达`,async({page})=>{
+      71 |  await page.setViewportSize({width,height});await create(page,1);await expect(page.locator('.creation-mini-ticket')).toBeInViewport({ratio:1});await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await page.getByLabel('性格',{exact:true}).fill('长性格'.repeat(100));await expect(page.getByLabel('性格',{exact:true})).toBeInViewport();await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await shot(page,`creation-${width}x${height}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    > 72 |  await page.goto('/');await page.evaluate(()=>localStorage.removeItem('heijin.notices.hidden-on.v1'));await page.reload();await expect(doc(page)).toBeVisible();await doc(page).getByLabel('免责声明内容').evaluate(el=>el.scrollTop=el.scrollHeight);await expect(doc(page).getByRole('checkbox')).toBeInViewport();await expect(doc(page).getByRole('button',{name:'关闭免责声明'})).toBeInViewport();await shot(page,`notice-${width}x${height}`);
+         |                                                                                                                                                   ^
+      73 | });
+      74 |
+        at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:72:147
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mobile-batch4-chromium/mobile-batch4-短视口-375×667-仅正文滚动，底栏与输入可达/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mobile-batch4-chromium/mobile-batch4-短视口-375×667-仅正文滚动，底栏与输入可达/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mobile-batch4-chromium/mobile-batch4-短视口-375×667-仅正文滚动，底栏与输入可达/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mobile-batch4-chromium/mobile-batch4-短视口-375×667-仅正文滚动，底栏与输入可达/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) e2e/mobile-batch4.spec.ts:70:81 › 短视口 390×844 仅正文滚动，底栏与输入可达 ───────────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })
+
+
+      70 | for(const [width,height] of [[375,667],[390,844],[430,932],[392,640],[392,420]])test(`短视口 ${width}×${height} 仅正文滚动，底栏与输入可达`,async({page})=>{
+      71 |  await page.setViewportSize({width,height});await create(page,1);await expect(page.locator('.creation-mini-ticket')).toBeInViewport({ratio:1});await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await page.getByLabel('性格',{exact:true}).fill('长性格'.repeat(100));await expect(page.getByLabel('性格',{exact:true})).toBeInViewport();await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await shot(page,`creation-${width}x${height}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    > 72 |  await page.goto('/');await page.evaluate(()=>localStorage.removeItem('heijin.notices.hidden-on.v1'));await page.reload();await expect(doc(page)).toBeVisible();await doc(page).getByLabel('免责声明内容').evaluate(el=>el.scrollTop=el.scrollHeight);await expect(doc(page).getByRole('checkbox')).toBeInViewport();await expect(doc(page).getByRole('button',{name:'关闭免责声明'})).toBeInViewport();await shot(page,`notice-${width}x${height}`);
+         |                                                                                                                                                   ^
+      73 | });
+      74 |
+        at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:72:147
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mobile-batch4-chromium/mobile-batch4-短视口-390×844-仅正文滚动，底栏与输入可达/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mobile-batch4-chromium/mobile-batch4-短视口-390×844-仅正文滚动，底栏与输入可达/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mobile-batch4-chromium/mobile-batch4-短视口-390×844-仅正文滚动，底栏与输入可达/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mobile-batch4-chromium/mobile-batch4-短视口-390×844-仅正文滚动，底栏与输入可达/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) e2e/mobile-batch4.spec.ts:70:81 › 短视口 430×932 仅正文滚动，底栏与输入可达 ───────────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })
+
+
+      70 | for(const [width,height] of [[375,667],[390,844],[430,932],[392,640],[392,420]])test(`短视口 ${width}×${height} 仅正文滚动，底栏与输入可达`,async({page})=>{
+      71 |  await page.setViewportSize({width,height});await create(page,1);await expect(page.locator('.creation-mini-ticket')).toBeInViewport({ratio:1});await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await page.getByLabel('性格',{exact:true}).fill('长性格'.repeat(100));await expect(page.getByLabel('性格',{exact:true})).toBeInViewport();await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await shot(page,`creation-${width}x${height}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    > 72 |  await page.goto('/');await page.evaluate(()=>localStorage.removeItem('heijin.notices.hidden-on.v1'));await page.reload();await expect(doc(page)).toBeVisible();await doc(page).getByLabel('免责声明内容').evaluate(el=>el.scrollTop=el.scrollHeight);await expect(doc(page).getByRole('checkbox')).toBeInViewport();await expect(doc(page).getByRole('button',{name:'关闭免责声明'})).toBeInViewport();await shot(page,`notice-${width}x${height}`);
+         |                                                                                                                                                   ^
+      73 | });
+      74 |
+        at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:72:147
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mobile-batch4-chromium/mobile-batch4-短视口-430×932-仅正文滚动，底栏与输入可达/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mobile-batch4-chromium/mobile-batch4-短视口-430×932-仅正文滚动，底栏与输入可达/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mobile-batch4-chromium/mobile-batch4-短视口-430×932-仅正文滚动，底栏与输入可达/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mobile-batch4-chromium/mobile-batch4-短视口-430×932-仅正文滚动，底栏与输入可达/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) e2e/mobile-batch4.spec.ts:70:81 › 短视口 392×640 仅正文滚动，底栏与输入可达 ───────────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })
+
+
+      70 | for(const [width,height] of [[375,667],[390,844],[430,932],[392,640],[392,420]])test(`短视口 ${width}×${height} 仅正文滚动，底栏与输入可达`,async({page})=>{
+      71 |  await page.setViewportSize({width,height});await create(page,1);await expect(page.locator('.creation-mini-ticket')).toBeInViewport({ratio:1});await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await page.getByLabel('性格',{exact:true}).fill('长性格'.repeat(100));await expect(page.getByLabel('性格',{exact:true})).toBeInViewport();await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await shot(page,`creation-${width}x${height}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    > 72 |  await page.goto('/');await page.evaluate(()=>localStorage.removeItem('heijin.notices.hidden-on.v1'));await page.reload();await expect(doc(page)).toBeVisible();await doc(page).getByLabel('免责声明内容').evaluate(el=>el.scrollTop=el.scrollHeight);await expect(doc(page).getByRole('checkbox')).toBeInViewport();await expect(doc(page).getByRole('button',{name:'关闭免责声明'})).toBeInViewport();await shot(page,`notice-${width}x${height}`);
+         |                                                                                                                                                   ^
+      73 | });
+      74 |
+        at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:72:147
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mobile-batch4-chromium/mobile-batch4-短视口-392×640-仅正文滚动，底栏与输入可达/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mobile-batch4-chromium/mobile-batch4-短视口-392×640-仅正文滚动，底栏与输入可达/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mobile-batch4-chromium/mobile-batch4-短视口-392×640-仅正文滚动，底栏与输入可达/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mobile-batch4-chromium/mobile-batch4-短视口-392×640-仅正文滚动，底栏与输入可达/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) e2e/mobile-batch4.spec.ts:70:81 › 短视口 392×420 仅正文滚动，底栏与输入可达 ───────────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })
+
+
+      70 | for(const [width,height] of [[375,667],[390,844],[430,932],[392,640],[392,420]])test(`短视口 ${width}×${height} 仅正文滚动，底栏与输入可达`,async({page})=>{
+      71 |  await page.setViewportSize({width,height});await create(page,1);await expect(page.locator('.creation-mini-ticket')).toBeInViewport({ratio:1});await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await page.getByLabel('性格',{exact:true}).fill('长性格'.repeat(100));await expect(page.getByLabel('性格',{exact:true})).toBeInViewport();await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await shot(page,`creation-${width}x${height}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    > 72 |  await page.goto('/');await page.evaluate(()=>localStorage.removeItem('heijin.notices.hidden-on.v1'));await page.reload();await expect(doc(page)).toBeVisible();await doc(page).getByLabel('免责声明内容').evaluate(el=>el.scrollTop=el.scrollHeight);await expect(doc(page).getByRole('checkbox')).toBeInViewport();await expect(doc(page).getByRole('button',{name:'关闭免责声明'})).toBeInViewport();await shot(page,`notice-${width}x${height}`);
+         |                                                                                                                                                   ^
+      73 | });
+      74 |
+        at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:72:147
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mobile-batch4-chromium/mobile-batch4-短视口-392×420-仅正文滚动，底栏与输入可达/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mobile-batch4-chromium/mobile-batch4-短视口-392×420-仅正文滚动，底栏与输入可达/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mobile-batch4-chromium/mobile-batch4-短视口-392×420-仅正文滚动，底栏与输入可达/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mobile-batch4-chromium/mobile-batch4-短视口-392×420-仅正文滚动，底栏与输入可达/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7 failed
+    e2e/mobile-batch4.spec.ts:43:1 › 五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文 ─────────────────────────────────
+    e2e/mobile-batch4.spec.ts:50:1 › 顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复 ────────────────────────────────
+    e2e/mobile-batch4.spec.ts:70:81 › 短视口 375×667 仅正文滚动，底栏与输入可达 ────────────────────────────────────
+    e2e/mobile-batch4.spec.ts:70:81 › 短视口 390×844 仅正文滚动，底栏与输入可达 ────────────────────────────────────
+    e2e/mobile-batch4.spec.ts:70:81 › 短视口 430×932 仅正文滚动，底栏与输入可达 ────────────────────────────────────
+    e2e/mobile-batch4.spec.ts:70:81 › 短视口 392×640 仅正文滚动，底栏与输入可达 ────────────────────────────────────
+    e2e/mobile-batch4.spec.ts:70:81 › 短视口 392×420 仅正文滚动，底栏与输入可达 ────────────────────────────────────
+  7 passed (1.9m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

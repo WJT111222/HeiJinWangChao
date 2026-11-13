@@ -1,0 +1,14 @@
+
+Running 2 tests using 1 worker
+
+(node:293049) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 e2e/mobile-batch4.spec.ts:61:1 › 正式保存失败保留同一创角身份，解除 busy 后可重试一次建档 (3.2s)
+  ✓  2 e2e/mobile-batch4.spec.ts:71:1 › #125 车票首页与第四批创角、公告手动入口及真实草稿恢复衔接 (1.4s)
+
+  2 passed (5.6s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

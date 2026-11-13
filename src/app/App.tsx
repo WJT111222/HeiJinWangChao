@@ -440,7 +440,7 @@ export function App() {
           </>}
         </HomeScreen>
       )}
-      {notices.kind && <NoticeDialog announcement={notices.announcement} key={notices.kind} kind={notices.kind} muted={notices.muted}
+      {notices.kind && <NoticeDialog announcement={notices.announcement} key={desktopUi?notices.kind:'mobile-notice'} automatic={notices.automatic} kind={notices.kind} muted={notices.muted}
         onMutedChange={notices.setMuted} onClose={notices.close} />}
       {settingsOpen && !(gameRoute && loaded) && renderSettings()}
       {settingsOpen && confirmSettingsClose && <UnsavedAiChanges subject={summarySettingsDirty ? '记忆设置' : undefined} onContinue={() => {setConfirmSettingsClose(false);settingsDestination.current=undefined;}} onDiscard={() => {

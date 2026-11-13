@@ -1,0 +1,82 @@
+[
+  {
+    "width": 901,
+    "state": "notice",
+    "pixelIdentical": true
+  },
+  {
+    "width": 901,
+    "state": "announcement",
+    "pixelIdentical": true
+  },
+  {
+    "width": 901,
+    "state": "creation-1",
+    "pixelIdentical": true
+  },
+  {
+    "width": 901,
+    "state": "creation-2",
+    "pixelIdentical": true
+  },
+  {
+    "width": 901,
+    "state": "creation-3",
+    "pixelIdentical": true
+  },
+  {
+    "width": 901,
+    "state": "creation-4",
+    "pixelIdentical": true
+  },
+  {
+    "width": 901,
+    "state": "creation-5",
+    "pixelIdentical": true
+  },
+  {
+    "width": 901,
+    "state": "pack",
+    "pixelIdentical": true
+  },
+  {
+    "width": 1440,
+    "state": "notice",
+    "pixelIdentical": true
+  },
+  {
+    "width": 1440,
+    "state": "announcement",
+    "pixelIdentical": true
+  },
+  {
+    "width": 1440,
+    "state": "creation-1",
+    "pixelIdentical": true
+  },
+  {
+    "width": 1440,
+    "state": "creation-2",
+    "pixelIdentical": true
+  },
+  {
+    "width": 1440,
+    "state": "creation-3",
+    "pixelIdentical": true
+  },
+  {
+    "width": 1440,
+    "state": "creation-4",
+    "pixelIdentical": true
+  },
+  {
+    "width": 1440,
+    "state": "creation-5",
+    "pixelIdentical": true
+  },
+  {
+    "width": 1440,
+    "state": "pack",
+    "pixelIdentical": true
+  }
+]
