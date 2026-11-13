@@ -86,3 +86,42 @@
  .app-shell-game .city-night .turn-changes .chg-row .go {grid-column:2;grid-row:2;align-self:end;}
  .app-shell-game .city-night .turn-changes .chg-row .txt {grid-row:2;padding-right:6.5rem;}
 }
+
+/* Phone-only entry and native dark sheet. Desktop rules above are unchanged. */
+@media(max-width:900px){
+ .app-shell-game .turn-changes{margin:1.4rem 0 .6rem;padding-top:1rem;border-top:1px dashed #ffffff1c}
+ .app-shell-game .turn-changes .chg-btn{display:flex;align-items:center;gap:.5rem;width:100%;min-height:48px;padding:.7rem .8rem;border:1px solid var(--line-2);border-radius:14px;background:#ffffff05;font-size:.8rem;color:var(--text)}
+ .app-shell-game .turn-changes .chg-btn b{font-weight:500}.app-shell-game .turn-changes .chg-btn .n{font-family:var(--font-mono);color:var(--gold-hi)}
+ .app-shell-game .turn-changes .chg-btn .dots{margin-left:auto}.app-shell-game .turn-changes .chg-btn .arr{font-size:.65rem;color:var(--dim)}
+ .app-shell-game :is(.turn-changes,.turn-changes-sheet) .dots{display:inline-flex;gap:4px}.app-shell-game :is(.turn-changes,.turn-changes-sheet) .dots i{width:7px;height:7px;border-radius:50%;background:var(--c)}
+ .app-shell-game :is(.turn-changes,.turn-changes-sheet) .g-time{--c:#8EC1E0}.app-shell-game :is(.turn-changes,.turn-changes-sheet) .g-me{--c:var(--gold)}
+ .app-shell-game :is(.turn-changes,.turn-changes-sheet) .g-npc{--c:#D08A6A}.app-shell-game :is(.turn-changes,.turn-changes-sheet) .g-item{--c:#A9C3D8}
+ .app-shell-game :is(.turn-changes,.turn-changes-sheet) .g-world{--c:#7DBB9C}.app-shell-game :is(.turn-changes,.turn-changes-sheet) .g-mem{--c:#9A8FC8}
+ .app-shell-game .turn-changes .chg-note{font-size:.75rem;color:var(--dim);line-height:1.6}
+ .app-shell-game dialog.turn-changes-sheet{background:#0c100f;color:var(--text)}
+ .app-shell-game .turn-changes-sheet>.modal-body{display:block;overflow:auto;overscroll-behavior:contain;padding:1rem 14px calc(1rem + env(safe-area-inset-bottom,0px));scrollbar-gutter:auto}
+ .turn-changes-sheet .chg-summary{display:flex;align-items:center;gap:.6rem;margin-bottom:.8rem;font-size:.74rem;color:var(--muted)}
+ .turn-changes-sheet .chg-summary>b{font-family:var(--font-mono);font-size:1.5rem;font-weight:500;color:var(--gold-hi)}.turn-changes-sheet .chg-summary .dots{margin-left:auto}
+ .turn-changes-sheet .chg-body{display:block;min-width:0}.turn-changes-sheet .chg-grp{margin-bottom:.7rem;border-radius:14px;background:#151a18;border:1px solid var(--line);overflow:hidden;min-width:0}
+ .turn-changes-sheet .chg-grp h4{display:flex;align-items:center;gap:.5rem;margin:0;padding:.65rem .85rem;font-family:var(--font-title);font-size:.9rem;letter-spacing:.16em;border-bottom:1px solid var(--line)}
+ .turn-changes-sheet .chg-grp h4 i{width:8px;height:8px;border-radius:50%;background:var(--c)}.turn-changes-sheet .chg-grp h4 span{margin-left:auto;font-family:var(--font-mono);font-size:.7rem;color:var(--dim);letter-spacing:0}
+ .turn-changes-sheet .chg-grp ul{list-style:none;margin:0;padding:0}.turn-changes-sheet .chg-grp li+li{border-top:1px dashed #ffffff0f}
+ .turn-changes-sheet .chg-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,auto);gap:.2rem .6rem;width:100%;min-width:0;min-height:44px;text-align:left;border:0;border-radius:0;padding:.65rem .85rem;background:transparent}
+ .turn-changes-sheet .chg-row .what{font-size:.88rem;color:var(--text);min-width:0}.turn-changes-sheet .chg-row .what em{font-style:normal;color:var(--muted);margin-right:.3rem}
+ .turn-changes-sheet .chg-row .val{font-family:var(--font-mono);font-size:.8rem;text-align:right;min-width:0}.turn-changes-sheet .chg-row .from{color:var(--dim);text-decoration:line-through}.turn-changes-sheet .chg-row .to{color:var(--text)}
+ .turn-changes-sheet .chg-row :is(.what,.val,.txt){white-space:pre-wrap;overflow-wrap:anywhere}.turn-changes-sheet .chg-row .txt{grid-column:1/-1;font-size:.74rem;color:var(--dim);line-height:1.65}
+ .turn-changes-sheet .chg-row .go{grid-column:1/-1;text-align:right;font-size:.68rem;color:var(--dim)}.turn-changes-sheet .chg-row:is(:hover,:focus-visible){background:#ffffff08}
+ .turn-changes-sheet .chg-row :is(.up,.add){color:#7DBB9C}.turn-changes-sheet .chg-row :is(.down,.del){color:#D47C60}.turn-changes-sheet .chg-row .mod{color:var(--gold-hi)}
+ .turn-changes-sheet .change-tag{font-family:var(--font-body);font-size:.66rem;padding:.04rem .4rem;border-radius:99px;border:1px solid currentColor}
+ .turn-changes-sheet .chg-more{display:block;width:100%;min-height:44px;border:0;border-top:1px dashed #ffffff0f;border-radius:0;padding:.6rem;font-size:.74rem;color:var(--info)}
+ .turn-changes-sheet .chg-foot{font-size:.7rem;line-height:1.7;color:var(--dim)}
+ .app-shell-game .world-directory .dock-seal{position:relative;overflow:visible}
+ .app-shell-game .world-directory .turn-change-badge{position:absolute;top:-5px;right:-7px;min-width:19px;height:19px;padding:0 4px;border-radius:99px;background:var(--gold);color:#111;font:600 .65rem/19px var(--font-mono);letter-spacing:0;border:2px solid #101311;box-sizing:content-box}
+}
+@media(max-width:900px){
+ /* Keep the two-line mobile density; destination text remains in the accessible name. */
+ .turn-changes-sheet .chg-row{position:relative}
+ .turn-changes-sheet .chg-row .txt{padding-right:1.3rem}
+ .turn-changes-sheet .chg-row .go{position:absolute;right:.85rem;bottom:.65rem;font-size:0}
+ .turn-changes-sheet .chg-row .go span{font-size:.8rem}
+}

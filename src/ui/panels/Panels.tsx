@@ -23,7 +23,7 @@ export function Panels({ name, view, onOpenHistory, npcManagement, initialId, li
   if (name === 'NPC') return <NpcPanel view={view} management={npcManagement} initialId={initialId} onOpenOrganization={links?.organization} />;
   if (name === '势力组织') return <OrganizationPanel view={view} initialId={initialId} links={links}/>;
   if (name === '地图') return <MapPanel view={view} mobile initialId={initialId} onNpc={id=>links?.npc(id)} onEvent={id=>links?.event(id)} />;
-  if (name === '物品栏') return <InventoryPanel view={view} />;
+  if (name === '物品栏') return <InventoryPanel view={view} initialId={initialId} />;
   if (name === '世界事件') return <WorldEventsPanel view={view} links={links} onOpenHistory={onOpenHistory} initialId={initialId}/>;
   if (name === '历史时间轴') return <HistoryPanel view={view} />;
   return <MemoryPanel view={view} />;

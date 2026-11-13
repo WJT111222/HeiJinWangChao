@@ -17,6 +17,8 @@ import type { MapUiState } from '../panels/mapView';
 import { MemoryPanel } from '../panels/MemoryPanel';
 import type { MemoryUiState } from '../panels/MemoryPanel';
 import { TurnChanges } from './TurnChanges';
+import { useTurnComparison } from './useTurnComparison';
+import { turnChangeBadges } from './turnChangeBadges';
 import type { ChangeTarget } from './turnChanges';
 import { mapProjection } from '../panels/mapView';
 import { PlayerStatus } from './PlayerStatus';
@@ -114,7 +116,7 @@ export function GameScreen({
   const openingTime = useMemo(() => {
     try { return draft && openingTimeSelection(state, draft); } catch { return undefined; }
   }, [state, draft]);
-  const [archiveTarget, setArchiveTarget] = useState<{panel: 'NPC' | '势力组织' | '世界事件' | '地图'; id: string}>();
+  const [archiveTarget, setArchiveTarget] = useState<{panel: 'NPC' | '势力组织' | '世界事件' | '地图' | '物品栏'; id: string}>();
   const archiveReading=useRef<{events?:WorldEventsUiState;history?:HistoryUiState;memory?:MemoryUiState;map?:MapUiState}>({});
   const changeOpener=useRef<HTMLElement|null>(null);
   const archiveSelection = useRef<Partial<Record<'NPC' | '势力组织' | '物品栏', string>>>({});
@@ -129,7 +131,7 @@ export function GameScreen({
   function outsideSettings(action:()=>void){if(desktopSettings&&onCloseSettings)onCloseSettings(action);else action();}
   const desktopArchive = !compactSidebars && !desktopSettings && (panel === 'NPC' || panel === '势力组织' || panel === '人物档案' || panel === '物品栏' || panel === '经济与资产' || panel === '世界事件' || panel === '历史时间轴' || panel === '记忆' || panel === '地图') ? panel : undefined;
   function openChange(target:ChangeTarget){
-    changeOpener.current=document.activeElement as HTMLElement|null;
+    changeOpener.current=compactSidebars?document.querySelector<HTMLButtonElement>('.chg-btn'):document.activeElement as HTMLElement|null;
     if(target.panel==='NPC'||target.panel==='势力组织'||target.panel==='世界事件'){
       if(target.id){openArchive(target.panel,target.id);return;}
       if(target.panel==='世界事件')archiveReading.current.events=undefined;
@@ -137,7 +139,7 @@ export function GameScreen({
       setArchiveTarget(undefined);setPanel(target.panel);return;
     }
     setArchiveTarget(undefined);
-    if(target.panel==='物品栏')archiveSelection.current['物品栏']=target.id;
+    if(target.panel==='物品栏'){archiveSelection.current['物品栏']=target.id;if(target.id)setArchiveTarget({panel:'物品栏',id:target.id});}
     if(target.panel==='地图'&&target.id){
       const projection=mapProjection(view.locations,hero.locationId),path=projection.path(target.id),limits:Record<string,number>={};
       for(const place of path){const up=projection.parent.get(place.id),siblings=up?projection.children.get(up)??[]:projection.roots;limits[up??'__roots__']=Math.max(50,siblings.findIndex(p=>p.id===place.id)+1);}
@@ -315,6 +317,9 @@ export function GameScreen({
     if (follow.current && reader.current) reader.current.scrollTop = reader.current.scrollHeight;
   }, [progress?.narrative, draft?.storyRevision]);
   const view = useMemo(() => playerView(state, companionProfile, settings.memory.immediateWindowSize), [state, companionProfile, settings.memory.immediateWindowSize]);
+  const showChanges=Boolean(view.journal.length)&&!workflowBusy&&!draft?.story&&(!draft||awaitingAction);
+  const turnComparison=useTurnComparison(state,repository,showChanges);
+  const changeBadges=useMemo(()=>turnChangeBadges(turnComparison.groups),[turnComparison.groups]);
   const summaryQuality = draft?.story ? assessSummary(draft.story.summary) : undefined;
   const hero = state.protagonist;
   const itemName = (id?: string) => (id ? state.items[id]?.name || '无' : '无');
@@ -430,8 +435,8 @@ export function GameScreen({
   const worldNavigation = <aside className="world-sidebar" aria-label="世界资料">
     <h2>世界资料</h2>
     <nav aria-label="世界资料分类">
-      {panelNames.map((name, index) => <button key={name} data-archive-panel={name} aria-current={!compactSidebars && !desktopSettings && panel === name ? 'true' : undefined} onClick={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);if(compactSidebars)setWorldDirectoryOpen(false); setPanel(!compactSidebars && panel === name ? undefined : name); })}>
-        <span className="dock-seal" aria-hidden="true">{['人', '势', '图', '物', '事', '史', '忆'][index]}</span>
+      {panelNames.map((name, index) => <button key={name} aria-description={compactSidebars&&changeBadges[name]?`本回合变化 ${changeBadges[name]} 项`:undefined} data-archive-panel={name} aria-current={!compactSidebars && !desktopSettings && panel === name ? 'true' : undefined} onClick={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);if(compactSidebars)setWorldDirectoryOpen(false); setPanel(!compactSidebars && panel === name ? undefined : name); })}>
+        <span className="dock-seal" aria-hidden="true">{['人', '势', '图', '物', '事', '史', '忆'][index]}{compactSidebars&&Boolean(changeBadges[name])&&<span className="turn-change-badge" data-change-panel={name} aria-hidden="true">{changeBadges[name]}</span>}</span>
         <span>{name}</span>
       </button>)}
     </nav>
@@ -624,7 +629,7 @@ export function GameScreen({
             <article className={`story-entry glass ${index < view.journal.length - 1 || draft?.story || progress ? 'past' : 'latest'}`} key={entry.turnId}>
               <CityChapter number={index + 1} state={state} scene={state.journal[index]?.scene} desktop={!compactSidebars} />
               <StoryReading narrative={entry.narrative} protagonistName={hero.name} />
-              {!compactSidebars&&index===view.journal.length-1&&!workflowBusy&&!draft?.story&&(!draft||awaitingAction)&&<TurnChanges state={state} repository={repository} onOpen={openChange}/>}
+              {index===view.journal.length-1&&showChanges&&<TurnChanges state={state} comparison={turnComparison} mobile={compactSidebars} onOpen={openChange}/>}
             </article>
           ))}
           {progress ? (
@@ -834,7 +839,7 @@ export function GameScreen({
           : <OrganizationPanel view={view} initialId={archiveTarget?.panel === '势力组织' ? archiveTarget.id : archiveSelection.current['势力组织']} links={{npc:id=>openArchive('NPC',id), organization:id=>openArchive('势力组织',id), event:id=>openArchive('世界事件',id)}} onSelect={id => { archiveSelection.current['势力组织'] = id; }} desktop />}
       </ArchivePanel>}
       {panel && !desktopArchive && !desktopSettings && (
-        <Dialog title={panel} mobileVariant="sheet" sheetFull seal={{NPC:'人',势力组织:'势',地图:'图',物品栏:'物',世界事件:'事',历史时间轴:'史',记忆:'忆',人物档案:'人',经济与资产:'财'}[panel]} eyebrow="WORLD · ARCHIVE" returnFocus={()=>mobileReturnFocus(panel==='人物档案'||panel==='经济与资产'?'hero':'world')} className={`mobile-archive ${panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : ''}`} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>
+        <Dialog title={panel} mobileVariant="sheet" sheetFull seal={{NPC:'人',势力组织:'势',地图:'图',物品栏:'物',世界事件:'事',历史时间轴:'史',记忆:'忆',人物档案:'人',经济与资产:'财'}[panel]} eyebrow="WORLD · ARCHIVE" returnFocus={()=>changeOpener.current?.isConnected?changeOpener.current:mobileReturnFocus(panel==='人物档案'||panel==='经济与资产'?'hero':'world')} className={`mobile-archive ${panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : ''}`} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>
           {panel === '人物档案' ? (
             <>
             <dl className="profile-details">
@@ -872,6 +877,10 @@ export function GameScreen({
             </>
           ) : panel === '经济与资产' ? (
             <EconomyPanel view={view} mobile />
+          ) : panel === '历史时间轴' ? (
+            <HistoryPanel view={view} uiState={archiveReading.current.history} onUiStateChange={value=>{archiveReading.current.history=value;}} />
+          ) : panel === '记忆' ? (
+            <MemoryPanel view={view} uiState={archiveReading.current.memory} onUiStateChange={value=>{archiveReading.current.memory=value;}} />
           ) : panel === '地图' ? (
             <MapPanel view={view} mobile initialId={archiveTarget?.panel==='地图'?archiveTarget.id:undefined} uiState={archiveReading.current.map} onUiStateChange={value=>{archiveReading.current.map=value;}} onNpc={id=>openArchive('NPC',id)} onEvent={id=>openArchive('世界事件',id)} />
           ) : (

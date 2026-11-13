@@ -1,0 +1,130 @@
+
+Running 11 tests using 1 worker
+
+(node:80365) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/11] [mobile] › e2e/mobile-turn-changes.spec.ts:11:81 › 手机变化 375×667：可靠六组、角标、单一滚动与只读
+[2/11] [mobile] › e2e/mobile-turn-changes.spec.ts:11:81 › 手机变化 390×844：可靠六组、角标、单一滚动与只读
+[3/11] [mobile] › e2e/mobile-turn-changes.spec.ts:11:81 › 手机变化 430×932：可靠六组、角标、单一滚动与只读
+[4/11] [mobile] › e2e/mobile-turn-changes.spec.ts:11:81 › 手机变化 392×420：可靠六组、角标、单一滚动与只读
+[5/11] [mobile] › e2e/mobile-turn-changes.spec.ts:11:81 › 手机变化 900×800：可靠六组、角标、单一滚动与只读
+[6/11] [mobile] › e2e/mobile-turn-changes.spec.ts:21:1 › 零变化、缺失/损坏恢复点、草稿：七入口无旧角标，浏览不写入
+[7/11] [mobile] › e2e/mobile-turn-changes.spec.ts:25:1 › 快照比较延迟和切换存档：只用当前已确认结果，迟到旧结果不复活
+  1) [mobile] › e2e/mobile-turn-changes.spec.ts:25:1 › 快照比较延迟和切换存档：只用当前已确认结果，迟到旧结果不复活 ──────────────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 2
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      26 |  await page.addInitScript(()=>{Object.assign(window,{comparisonGates:[],__holdCompare:async(promise:Promise<unknown>,id:string)=>{const data=await promise;return new Promise(resolve=>Reflect.get(window,'comparisonGates').push({id,release:()=>resolve(data)}));}});});
+      27 |  await page.route('**/src/ui/game/useTurnComparison.ts*',async route=>{const response=await route.fetch(),source=await response.text();expect(source).toContain('repository.turnComparison(state)');await route.fulfill({response,body:source.replace('repository.turnComparison(state)','window.__holdCompare(repository.turnComparison(state),state.saveId)')});});
+    > 28 |  await seed(page);const before=await raw(page),verify=await guard(page);await expect(button(page)).toBeDisabled();await expect(button(page)).toContainText('核对中');await expect.poll(()=>page.evaluate(()=>Reflect.get(window,'comparisonGates').filter((g:{id:string})=>g.id==='save-a').length)).toBe(1);
+         |                                                                                                                                                                                                                                                                                                   ^
+      29 |  await page.evaluate(async()=>{const paths=['/src/tests/fixtures/turnChanges.ts','/src/services/storage/saveRepository.ts'];const [{turnChangesPair,comparisonCheckpoint},{SaveRepository}]=await Promise.all(paths.map(p=>import(p))),pair=turnChangesPair(0,true);pair.before.saveId=pair.after.saveId='save-b';const point=comparisonCheckpoint(pair.before,pair.after),repo=await SaveRepository.open();repo.close();await new Promise<void>((resolve,reject)=>{const q=indexedDB.open('heijinwangchao');q.onsuccess=()=>{const db=q.result,t=db.transaction(['saves','drafts','turnUndo','saveControls'],'readwrite');t.objectStore('saves').put(pair.after);t.objectStore('drafts').put(point.draft);t.objectStore('turnUndo').put(point.snapshot);t.objectStore('saveControls').put(point.control);t.oncomplete=()=>{db.close();resolve();};t.onabort=()=>reject(t.error);};});location.hash='#game/save-b';});
+      30 |  await expect.poll(()=>page.evaluate(()=>Reflect.get(window,'comparisonGates').filter((g:{id:string})=>g.id==='save-b').length)).toBe(1);await page.evaluate(()=>Reflect.get(window,'comparisonGates').find((g:{id:string})=>g.id==='save-a').release());await expect(button(page)).toContainText('核对中');let world=await directory(page);await expect(world.locator('[data-change-panel]')).toHaveCount(0);await page.keyboard.press('Escape');
+      31 |  await page.evaluate(()=>Reflect.get(window,'comparisonGates').find((g:{id:string})=>g.id==='save-b').release());await expect(button(page)).toContainText('无');await expect(button(page)).toBeDisabled();world=await directory(page);await expect(world.locator('[data-change-panel]')).toHaveCount(0);await page.keyboard.press('Escape');
+        at /workspace/mobile-redesign-batch6/e2e/mobile-turn-changes.spec.ts:28:291
+
+    Error Context: ../../tmp/mobile-batch6-new-initial/mobile-turn-changes-快照比较延迟和切换存档：只用当前已确认结果，迟到旧结果不复活-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch6-new-initial/mobile-turn-changes-快照比较延迟和切换存档：只用当前已确认结果，迟到旧结果不复活-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch6-new-initial/mobile-turn-changes-快照比较延迟和切换存档：只用当前已确认结果，迟到旧结果不复活-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:80853) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[8/11] [mobile] › e2e/mobile-turn-changes.spec.ts:35:1 › 变化抽屉可视区、触摸遮罩、拖动与原生关闭回焦
+  2) [mobile] › e2e/mobile-turn-changes.spec.ts:35:1 › 变化抽屉可视区、触摸遮罩、拖动与原生关闭回焦 ──────────────────────
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  locator('.chg-btn')
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeFocused" locator('.chg-btn') with timeout 5000ms
+      - waiting for locator('.chg-btn')
+        14 × locator resolved to <button type="button" class="chg-btn" aria-expanded="false" aria-controls="_r_1_">…</button>
+           - unexpected value "inactive"
+
+
+      35 | test('变化抽屉可视区、触摸遮罩、拖动与原生关闭回焦',async({page})=>{
+      36 |  await page.setViewportSize({width:392,height:844});await seed(page);const before=await raw(page),verify=await guard(page);await button(page).click();let dialog=sheet(page);await page.setViewportSize({width:392,height:420});await expect(dialog.getByRole('button',{name:'关闭资料界面',exact:true})).toBeInViewport({ratio:1});await fit(page);await picture(page,'short-viewport');await dialog.getByRole('button',{name:'关闭资料界面',exact:true}).click();await expect(button(page)).toBeFocused();await page.getByLabel('你的行动',{exact:true}).click();await expect(page.getByLabel('你的行动',{exact:true})).toBeFocused();
+    > 37 |  await page.setViewportSize({width:392,height:844});await button(page).click();dialog=sheet(page);const top=(await dialog.boundingBox())!.y;await page.touchscreen.tap(3,top/2);await expect(dialog).toHaveCount(0);await expect(button(page)).toBeFocused();await button(page).press('Enter');dialog=sheet(page);const grab=(await dialog.locator('.mobile-sheet-grab').boundingBox())!,cdp=await page.context().newCDPSession(page),x=grab.x+grab.width/2,y=grab.y+grab.height/2;await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});for(let i=1;i<=6;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:y+145*i/6}]});await page.evaluate(()=>new Promise<void>(r=>requestAnimationFrame(()=>r())));}await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await expect(dialog).toHaveCount(0);await expect(button(page)).toBeFocused();await cdp.detach();expect(await raw(page)).toEqual(before);verify();
+         |                                                                                                                                                                                                                                                ^
+      38 | });
+      39 |
+      40 | for(const width of [901,1440])test(`PC ${width}：主界面、变化展开与资料入口原主干像素一致`,async({browser})=>{
+        at /workspace/mobile-redesign-batch6/e2e/mobile-turn-changes.spec.ts:37:240
+
+    Error Context: ../../tmp/mobile-batch6-new-initial/mobile-turn-changes-变化抽屉可视区、触摸遮罩、拖动与原生关闭回焦-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch6-new-initial/mobile-turn-changes-变化抽屉可视区、触摸遮罩、拖动与原生关闭回焦-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch6-new-initial/mobile-turn-changes-变化抽屉可视区、触摸遮罩、拖动与原生关闭回焦-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:81085) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[9/11] [mobile] › e2e/mobile-turn-changes.spec.ts:40:31 › PC 901：主界面、变化展开与资料入口原主干像素一致
+  3) [mobile] › e2e/mobile-turn-changes.spec.ts:40:31 › PC 901：主界面、变化展开与资料入口原主干像素一致 ────────────────
+
+    Error: 901 open
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      41 |  test.setTimeout(90000);const contexts=[],images:Buffer[][]=[[],[]];
+      42 |  for(const [i,port] of [5180,5280].entries()){const context=await browser.newContext({baseURL:`http://127.0.0.1:${port}`,viewport:{width,height:900},isMobile:false,deviceScaleFactor:1,reducedMotion:'reduce'});contexts.push(context);await context.addInitScript(()=>{const d=new Date();localStorage.setItem('heijin.notices.hidden-on.v1',[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'));});const page=await context.newPage();await seed(page);await expect(button(page)).toBeEnabled();for(const state of ['closed','open']){if(state==='open')await button(page).click();await page.locator('[data-testid="story-reader"]').evaluate(e=>{const target=e.querySelector('.chg-btn')!;e.scrollTop+=target.getBoundingClientRect().top-e.getBoundingClientRect().top-20;});await page.mouse.move(0,0);await page.evaluate(async()=>{await document.fonts.ready;await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));});images[i].push(await page.screenshot({animations:'disabled',path:`${shots}/${i?'main':'react'}-pc-${width}-${state}.png`}));}await expect(page.locator('[data-change-panel]')).toHaveCount(0);}
+    > 43 |  const result=['closed','open'].map((state,i)=>({state,identical:images[0][i].equals(images[1][i])}));writeFileSync(`docs/mobile-batch6/validation/pc-${width}.json`,JSON.stringify(result,null,2)+'\n');for(const r of result)expect(r.identical,`${width} ${r.state}`).toBe(true);for(const c of contexts)await c.close();
+         |                                                                                                                                                                                                                                                                          ^
+      44 | });
+      45 |
+      46 | test('正式HTML变化设计参考截图，仅作为视觉对照',async({page})=>{await page.setViewportSize({width:390,height:844});await page.goto('/docs/mobile-batch3/reference/heijin-mobile-misc.html#chg');await expect(page.locator('.grpx')).toHaveCount(6);await picture(page,'design-chg-390x844');});
+        at /workspace/mobile-redesign-batch6/e2e/mobile-turn-changes.spec.ts:43:266
+
+    Error Context: ../../tmp/mobile-batch6-new-initial/mobile-turn-changes-PC-901：主界面、变化展开与资料入口原主干像素一致-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch6-new-initial/mobile-turn-changes-PC-901：主界面、变化展开与资料入口原主干像素一致-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch6-new-initial/mobile-turn-changes-PC-901：主界面、变化展开与资料入口原主干像素一致-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:81259) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[10/11] [mobile] › e2e/mobile-turn-changes.spec.ts:40:31 › PC 1440：主界面、变化展开与资料入口原主干像素一致
+[11/11] [mobile] › e2e/mobile-turn-changes.spec.ts:46:1 › 正式HTML变化设计参考截图，仅作为视觉对照
+  3 failed
+    [mobile] › e2e/mobile-turn-changes.spec.ts:25:1 › 快照比较延迟和切换存档：只用当前已确认结果，迟到旧结果不复活 ───────────────
+    [mobile] › e2e/mobile-turn-changes.spec.ts:35:1 › 变化抽屉可视区、触摸遮罩、拖动与原生关闭回焦 ───────────────────────
+    [mobile] › e2e/mobile-turn-changes.spec.ts:40:31 › PC 901：主界面、变化展开与资料入口原主干像素一致 ─────────────────
+  8 passed (1.5m)

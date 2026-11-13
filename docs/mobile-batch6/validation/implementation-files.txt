@@ -1,0 +1,11 @@
+e2e/helpers/turnChanges.ts
+e2e/mobile-turn-changes.spec.ts
+e2e/turn-changes.spec.ts
+playwright.mobile-batch6.config.ts
+src/tests/mobile-turn-changes.test.tsx
+src/ui/game/GameScreen.tsx
+src/ui/game/TurnChanges.tsx
+src/ui/game/turn-changes.css
+src/ui/game/turnChangeBadges.ts
+src/ui/game/useTurnComparison.ts
+src/ui/panels/Panels.tsx
