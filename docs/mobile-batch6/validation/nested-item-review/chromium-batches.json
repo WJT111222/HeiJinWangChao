@@ -1,0 +1,149 @@
+[
+  {
+    "batch": "pr133-nested-after",
+    "stats": {
+      "startTime": "2026-11-13T11:06:49.077Z",
+      "duration": 14230.036999999998,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "变化直达具体物品：子抽屉真实点击、原生Esc分层及安全回焦",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 5638
+          }
+        ]
+      },
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 6741
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "pr133-nested-before",
+    "stats": {
+      "startTime": "2026-11-13T11:05:56.822Z",
+      "duration": 10142.148000000001,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "变化直达具体物品：子抽屉真实点击、原生Esc分层及安全回焦",
+        "project": "mobile",
+        "status": "unexpected",
+        "results": [
+          {
+            "status": "failed",
+            "durationMs": 8612
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "batch": "pr133-review-final",
+    "stats": {
+      "startTime": "2026-11-13T11:08:18.160Z",
+      "duration": 90804.986,
+      "expected": 6,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变",
+        "project": "desktop",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 18579
+          }
+        ]
+      },
+      {
+        "file": "turn-changes.spec.ts",
+        "title": "变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 7044
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "PC 901：主界面、变化展开与资料入口原主干像素一致",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 23618
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "PC 1440：主界面、变化展开与资料入口原主干像素一致",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 25904
+          }
+        ]
+      },
+      {
+        "file": "mobile-turn-changes.spec.ts",
+        "title": "变化直达具体物品：子抽屉真实点击、原生Esc分层及安全回焦",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 4044
+          }
+        ]
+      },
+      {
+        "file": "pr120-integration.spec.ts",
+        "title": "整合：抽屉打开时真实输入发送、失败恢复、取消和原子结算/刷新",
+        "project": "mobile",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 8036
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -8,4 +8,5 @@ src/ui/game/TurnChanges.tsx
 src/ui/game/turn-changes.css
 src/ui/game/turnChangeBadges.ts
 src/ui/game/useTurnComparison.ts
+src/ui/panels/InventoryPanel.tsx
 src/ui/panels/Panels.tsx

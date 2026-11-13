@@ -4,7 +4,7 @@
 
 2026-11-13 开工核验 #131 已合并，main 为 `7648d3e6745b643fa03f59ac32dd805928c1bd1c`。独立工作树 `/workspace/mobile-redesign-batch6`，分支 `feat/mobile-redesign-batch6`；未继续修改第五批分支。最终开发 SHA 以本 PR HEAD 为准。
 
-交付前 main 已由仓库另行合入 #128，成为 `0f7ed77805564e2ffa427b0b0b3446fa25ef6fdf`。该提交八个文件：CHANGELOG、README、package/lock、product、announcement 及 game-window/startup-notices 测试，和本批文件无交集。本分支保持开工基线，不自行合并 #128；#129/#132 仍开放，未改动、合并或关闭。**截图与本地验证基于 7648d3e6，不能声称已经完整回归新版 main 的版本公告内容。** PR 三方合并应保留主干的新版本文字，本分支没有版本或公告修改。
+交付前 main 已由仓库另行合入 #128，成为 `0f7ed77805564e2ffa427b0b0b3446fa25ef6fdf`。该提交八个文件：CHANGELOG、README、package/lock、product、announcement 及 game-window/startup-notices 测试，和本批文件无交集。首轮交付时分支保持开工基线；#129/#132 未改动、合并或关闭。首轮截图与本地验证基于7648d3e6。**十代目返修现已同步已合并的main@0f7ed778，保留Beta文案，最新PC/交互对照也改为该main，详见末节。** 未自行合并任何PR，没有另行改写版本或公告。
 
 已阅读手机 MISC/MAIN 交接和 HTML `#chg`、桌面 CHANGES_HANDOFF、第二及第五批报告，核对实际 GameScreen、TurnChanges、diffTurn、Repository.turnComparison/readTurnComparison、Undo、Dialog 和手机主界面样式。桌面原交接的“不在别处加标记”继续适用于 PC，本轮明确产品指令仅允许手机七资料入口的变化数，未改成未读通知。
 
@@ -30,7 +30,7 @@ GameScreen：仅最新正式回合且原工作流条件允许
 
 ## 修改清单
 
-[完整实现文件列表](validation/implementation-files.txt)，共11个源码/测试/配置文件，另新增本报告、验证输出及截图。
+[完整实现文件列表](validation/implementation-files.txt)，首轮11个源码/测试/配置文件，返修后增加InventoryPanel.tsx，共12个。另新增本报告、验证输出及截图。
 
 | 文件 | 目的 |
 | --- | --- |
@@ -110,3 +110,64 @@ PC对应原始 `main-pc-*` / `react-pc-*` 图片及 [901结果](validation/pc-90
 实机待验：iOS Safari/Android Chrome真实IME及visualViewport、横竖屏/系统安全区、连续触摸/滚动与拖动关闭、VoiceOver/TalkBack朗读数量/目的地、字体放大与低端机长列表性能。浏览器短视口/触摸模拟不能替代这些项目。参考图与PC对照都为实际浏览器截图，未用静态HTML冒充正式React。
 
 未发现本轮数据或流程阻断项；最新main的#128版本公告组合没有冒充本地已测。只提交独立Draft PR，不合并、不主动部署、不发布，不开始其他开发任务。
+
+
+## 十代目定向返修：自动直达物品的原生模态层级（2026-11-13）
+
+审查：review `5889822261`，返修前 HEAD `88d2a5e1cdb5a7d47e5824ab8cd44e9cfe4f39db`，远端无后续提交、工作区干净。修复提交 `1e1d7e1`，随后以 `ddfe394` 无冲突同步当前 main `0f7ed77805564e2ffa427b0b0b3446fa25ef6fdf`；最终完整SHA见本PR HEAD。只是将已合并的main同步到开发分支，没有合并PR或推送main。
+
+### 真实复现与根因
+
+手机InventoryPanel原先在初次render就以initialId选中物品。同一个React提交中新建内外两层native Dialog，内层effect先showModal，外层随后showModal并盖在内层上。原九目标测试只检查外层文本和一次Esc，未证明内层真正可点击；因此首轮导航通过不能消除本风险。
+
+新增专门Chromium先在原审查HEAD实际点击“变化→纸质归档袋→←返回背包”，**0通过 / 1失败 / 0跳过**。Playwright报告外层modal-body拦截指针，未使用force click。命中证据如下：
+
+| 观察 | 修复前 | 修复后 |
+| --- | --- | --- |
+| 返回按钮中心elementFromPoint落入内层按钮 | false | true |
+| 活动元素 | DIALOG（外层） | H3（内层详情标题） |
+| 活动元素位于内层 | false | true |
+| 原生dialog:modal数量 | 2 | 2 |
+
+modal数量仅记录存在数量，不把DOM查询顺序误称为top-layer顺序。真实命中、真实click、焦点和Esc行为共同证明层级。前值见 [before-hit-test.json](validation/nested-item-review/before-hit-test.json)，后值见 [nested-item-hit-test.json](validation/nested-item-hit-test.json)。
+
+### 最小实现
+
+**生产增量只有InventoryPanel.tsx**：PC仍在初始化时选中initialId；手机先挂载背包网格，在effect中设置目标选中，产生下一次React提交。父层Dialog的本次passive effects先完成，内层才在下一提交showModal。没有setTimeout、固定等待、额外rAF或调用showModal重排；没有修改通用Dialog生命周期、CSS、GameScreen、工作流、领域或存储。
+
+正常点击网格的详情行为不变；无initialId的普通入口不自动打开详情，失去/不存在的物品使用列表。inner关闭后回原物品卡，网格DOM不卸载；outer关闭回变化入口。
+
+### 测试强化与本轮结果
+
+- 新专门测试真实点击内层“返回背包”，外层分类仍可点击；再次进入时标题已聚焦，第一次Esc只关内层，网格DOM为同一节点且回焦原卡；第二次Esc才关外层并回焦变化入口。
+- 普通世界资料→物品栏没有上次详情；失去物品进入可用列表。全流程raw export深比较不变，浏览模型请求为0。
+- 原九目标测试不再用一次Esc把内外层一起卸载作为成功；增加内层标题焦点、分层Esc和外层保留断言。未删除或弱化旧业务/隐私/请求/存储断言。
+
+| 本轮独立批次 | 通过 / 失败 / 跳过 |
+| --- | --- |
+| 修复前专门Chromium | 0 / 1 / 0 |
+| 修复后手机专门场景+九目标（同步main前） | 2 / 0 / 0 |
+| 定向Vitest（物品协议、差异、手机投影，3文件） | 47 / 0 / 0 |
+| 同步main后同三文件Vitest | 47 / 0 / 0 |
+| 整合main后Chromium：专门场景、双端九目标、#120、PC901/1440 | 6 / 0 / 0 |
+
+当前Node24环境已使用正式锁文件依赖；本次main合入的package/lock差异仅为包版本元数据，依赖未变，未重复安装。同步后typecheck、lint、build和diff检查通过，构建仅有原大chunk提醒。未修改Prompt，未重复此前93项Prompt或完整六批/700项浏览器套件。原始批次输出与每项结果见 [本轮证据](validation/nested-item-review/)。日志只清理行末空白，不改结果。
+
+```sh
+npx vitest run src/tests/inventory-v2.test.tsx src/tests/mobile-turn-changes.test.tsx src/tests/turn-changes.test.ts
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/mobile-turn-changes.spec.ts e2e/turn-changes.spec.ts e2e/pr120-integration.spec.ts --config=playwright.mobile-batch6.config.ts --grep '变化直达具体物品|变化行使用|抽屉打开时真实输入发送|PC 901|PC 1440'
+npm run typecheck
+npm run lint
+npm run build
+git diff --check
+```
+
+### main/Beta及PC保护
+
+已同步main@0f7ed778；package/lock为1.0.0-beta，PRODUCT_VERSION为V1.0 Beta，内置公告为builtin-1.0-beta。上游#128八个文件与该main逐字节无差异，未覆盖文案。#129/#132没有被合并、关闭或部署。
+
+PC901/1440在双方一致DPR2/字体条件下，收起/展开**四对完整PNG严格相等**；这次基线是0f7ed778，已不是首轮7648d3e6。[本轮901结果](validation/nested-item-review/pc-901.json)、[本轮1440结果](validation/nested-item-review/pc-1440.json)及[整合截图](review-screenshots/)。首轮screenshots与原批次记录保留，不以新版覆盖旧基线证据。
+
+![修复后真实内层物品详情](screenshots/nested-item-review-390x844.png)
+
+没有真实付费模型调用或玩家存档操作；#120受控Mock生成/取消/恢复/单次结算继续通过。没有新增UI功能或更换六批设计。真机IME/连续触摸/读屏等未验证边界保持原说明。PR仍Draft，等待十代目复审，不合并、不主动部署正式站、不发布。仓库已有Cloudflare集成可能因推送自动生成预览，与主动生产部署及发布不是同一回事。
