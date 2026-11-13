@@ -324,8 +324,10 @@ test('P6：完整文本与原生思考在统一原文查看，正文/存档隔�
   const inspection = page.locator('.wf-raw'); await expect(inspection.locator('pre')).toHaveCount(0);
   const saved = await stored(page); expect(saved.state).toBe(before); expect(JSON.stringify(saved.draft)).not.toContain('私人规划标记');
   await openStoryInspection(page);
-  await expect(inspection.getByLabel('正文模型完整原文', { exact: true })).toContainText('<thinking>私人规划标记');
-  await expect(inspection.getByLabel('供应商公开原生思考全文', { exact: true })).toContainText('公开原生标记');
+  await expect(inspection.getByRole('textbox', { name: '正文模型完整原文', exact: true })).toHaveValue(/<thinking>私人规划标记/);
+  await expect(inspection.getByRole('textbox', { name: '正文模型完整原文', exact: true })).toHaveValue(/公开原生标记/);
+  await expect(inspection.locator('textarea')).toHaveCount(1);
+  await expect(inspection.getByLabel('供应商公开原生思考全文', { exact: true })).toHaveCount(0);
   await expect(inspection).not.toContainText('mock-browser-key'); expect(await stored(page)).toEqual(saved); expect(requests).toHaveLength(1);
   const messages = requests[0].messages as { role: string; content: string }[];
   expect(messages.slice(-3).map((message) => message.role)).toEqual(['user', 'assistant', 'user']);

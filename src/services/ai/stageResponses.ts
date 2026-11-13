@@ -2,6 +2,7 @@ import { redactInspection } from './inspection';
 import { safeAiError } from './errors';
 import type { AiStage, Protocol } from './configuration';
 import { freeze } from './snapshot';
+import type { RawResponseObservation } from './responseContent';
 
 export interface StageResponse {
   id: string; saveId: string; turnId?: string; storyRevision?: number; stage: AiStage;
@@ -10,6 +11,9 @@ export interface StageResponse {
   protocol?: Protocol;
   /** Only actual independent provider fields, never extracted project <thinking>. */
   nativeReasoning?: string;
+  /** Single display transcript only; text remains the untouched model content. */
+  displayText?: string;
+  displayOrder?: RawResponseObservation['order'];
 }
 // 保留字符串布局；仅安全边界中的凭证会被遮蔽，不把响应重新格式化或截断。
 export function safeResponseText(text: string, secrets: readonly string[]) {
@@ -43,10 +47,11 @@ export class StageResponseStore {
     this.publish([freeze({ ...scope, id, status: 'pending' as const }), ...this.records].slice(0, 6));
     return id;
   }
-  update(id: string, patch: Partial<Pick<StageResponse, 'text' | 'nativeReasoning' | 'normalized' | 'status' | 'error'>>, secrets: readonly string[]) {
+  update(id: string, patch: Partial<Pick<StageResponse, 'text' | 'nativeReasoning' | 'displayText' | 'displayOrder' | 'normalized' | 'status' | 'error'>>, secrets: readonly string[]) {
     this.publish(this.records.map(item => item.id === id ? freeze({ ...item, ...patch,
       ...(patch.text === undefined ? {} : { text: safeResponseText(patch.text, secrets) }),
       ...(patch.nativeReasoning === undefined ? {} : { nativeReasoning: safeResponseText(patch.nativeReasoning, secrets) }),
+      ...(patch.displayText === undefined ? {} : { displayText: safeResponseText(patch.displayText, secrets) }),
       ...(patch.normalized === undefined ? {} : { normalized: safeResponseText(patch.normalized, secrets) }),
     }) : item));
   }

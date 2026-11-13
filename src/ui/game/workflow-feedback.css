@@ -902,3 +902,15 @@
     outline-offset: -2px;
   }
 }
+.story-raw-text.candidate-json[readonly],
+.app-shell-game textarea.story-raw-text.candidate-json[readonly] {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  height: clamp(10rem, 40dvh, 24rem);
+  min-height: 10rem;
+  max-height: 50dvh;
+  resize: vertical;
+  font-family: var(--font-mono);
+}

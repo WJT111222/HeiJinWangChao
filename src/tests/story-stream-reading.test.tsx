@@ -118,7 +118,9 @@ it.each(['openai', 'deepseek', 'gemini', 'anthropic'] as const)('%s真实SSE/中
   const html = renderToStaticMarkup(<StageResponseContent record={record} label="正文" />);
   expect(html.split(planning)).toHaveLength(2); expect(html.split(native)).toHaveLength(2);
   expect(html).toContain('&lt;thinking&gt;'); expect(html).toContain('&lt;变量规划&gt;');
-  expect(html).toContain('排列不代表真实返回先后'); expect(transport).toHaveBeenCalledTimes(1);
+  expect(record.displayText).toBe(native + rawText);
+  expect(html.match(/<textarea\b/g)).toHaveLength(1);
+  expect(html).not.toContain('story-native-response'); expect(transport).toHaveBeenCalledTimes(1);
 });
 
 it('兼容层提取前的 think 标签仍属于完整文本，不伪装成独立供应商字段或复制项目规划', async () => {
