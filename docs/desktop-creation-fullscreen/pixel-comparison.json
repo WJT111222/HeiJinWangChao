@@ -1,0 +1,32 @@
+{
+  "mobile-390-step1": {
+    "byteIdentical": true,
+    "beforeSha256": "70f349a4a62435ee78d84c4a47cf5c2600e130d9ba09c41a8cc8e7eb4ecb6a01",
+    "afterSha256": "70f349a4a62435ee78d84c4a47cf5c2600e130d9ba09c41a8cc8e7eb4ecb6a01"
+  },
+  "mobile-390-step5": {
+    "byteIdentical": true,
+    "beforeSha256": "374bf972f4931befc1acff66b415c9ad54cf145db33801fa7b757ffb86a6b16a",
+    "afterSha256": "374bf972f4931befc1acff66b415c9ad54cf145db33801fa7b757ffb86a6b16a"
+  },
+  "mobile-900-step1": {
+    "byteIdentical": true,
+    "beforeSha256": "ebca2365e5779732f6da8cbfca9a7e94922e2058cdb3f7636026c9a5ef40dd35",
+    "afterSha256": "ebca2365e5779732f6da8cbfca9a7e94922e2058cdb3f7636026c9a5ef40dd35"
+  },
+  "mobile-900-step5": {
+    "byteIdentical": true,
+    "beforeSha256": "2cf8fbc0e9a511cb7c13ee3980da3ec6a82db50bda69345631e9441bed8a42be",
+    "afterSha256": "2cf8fbc0e9a511cb7c13ee3980da3ec6a82db50bda69345631e9441bed8a42be"
+  },
+  "home-1440": {
+    "byteIdentical": true,
+    "beforeSha256": "cf91c70d844a025f0bd3c465dba560cc9be8158625efc2ed61925021d87b20d6",
+    "afterSha256": "cf91c70d844a025f0bd3c465dba560cc9be8158625efc2ed61925021d87b20d6"
+  },
+  "game-1440": {
+    "byteIdentical": true,
+    "beforeSha256": "51db1c1a7478c0d3302d8f8017c98326a6d88b366963c322afe01f9262054e0f",
+    "afterSha256": "51db1c1a7478c0d3302d8f8017c98326a6d88b366963c322afe01f9262054e0f"
+  }
+}

@@ -1,0 +1,592 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/desktop-creation-fullscreen/node_modules/.bin/playwright",
+      "test",
+      "--config",
+      "playwright.creation-fullscreen.config.ts"
+    ],
+    "configFile": "/workspace/desktop-creation-fullscreen/playwright.creation-fullscreen.config.ts",
+    "rootDir": "/workspace/desktop-creation-fullscreen/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/desktop-creation-fullscreen/test-results/creation-fullscreen",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/workspace/desktop-creation-fullscreen/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "creation-fullscreen.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/desktop-creation-fullscreen/test-results/creation-fullscreen",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/workspace/desktop-creation-fullscreen/e2e",
+        "snapshotDir": "/workspace/desktop-creation-fullscreen/e2e",
+        "testIgnore": [],
+        "testMatch": "creation-fullscreen.spec.ts",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5311",
+          "reducedMotion": "reduce",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/workspace/creation-fullscreen-evidence/after-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5311 --strictPort",
+      "url": "http://127.0.0.1:5311",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "creation-fullscreen.spec.ts",
+      "file": "creation-fullscreen.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "视口边界与五步 901x800",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2686,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T15:01:07.632Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "measured-bounds",
+                      "contentType": "application/json",
+                      "body": "W3sic3RlcCI6MSwidmlld3BvcnQiOnsid2lkdGgiOjkwMSwiaGVpZ2h0Ijo4MDB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjowLCJyaWdodCI6OTAxLCJib3R0b20iOjYwLCJ3aWR0aCI6OTAxLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6OTAxLCJib3R0b20iOjgwMCwid2lkdGgiOjkwMSwiaGVpZ2h0Ijo3NDB9LCJmb290ZXIiOnsibGVmdCI6MzQwLCJ0b3AiOjczMywicmlnaHQiOjkwMSwiYm90dG9tIjo4MDAsIndpZHRoIjo1NjEsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjoxNTEuMzkwNjI1LCJyaWdodCI6OTAxLCJib3R0b20iOjczMywid2lkdGgiOjU2MSwiaGVpZ2h0Ijo1ODEuNjA5Mzc1fSwiZG9zc2llciI6eyJsZWZ0IjoyOCwidG9wIjoyMDUuMjgxMjUsInJpZ2h0IjozMTEsImJvdHRvbSI6NzcyLCJ3aWR0aCI6MjgzLCJoZWlnaHQiOjU2Ni43MTg3NX0sInNjcm9sbFdpZHRoIjo5MDEsInNjcm9sbEhlaWdodCI6ODAwfSx7InN0ZXAiOjIsInZpZXdwb3J0Ijp7IndpZHRoIjo5MDEsImhlaWdodCI6ODAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjkwMSwiYm90dG9tIjo2MCwid2lkdGgiOjkwMSwiaGVpZ2h0Ijo2MH0sIm1haW4iOnsibGVmdCI6MCwidG9wIjo2MCwicmlnaHQiOjkwMSwiYm90dG9tIjo4MDAsIndpZHRoIjo5MDEsImhlaWdodCI6NzQwfSwiZm9vdGVyIjp7ImxlZnQiOjM0MCwidG9wIjo3MzMsInJpZ2h0Ijo5MDEsImJvdHRvbSI6ODAwLCJ3aWR0aCI6NTYxLCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0IjozNDAsInRvcCI6MTUxLjM5MDYyNSwicmlnaHQiOjkwMSwiYm90dG9tIjo3MzMsIndpZHRoIjo1NjEsImhlaWdodCI6NTgxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6MjA1LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjc3Miwid2lkdGgiOjI4MywiaGVpZ2h0Ijo1NjYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6OTAxLCJzY3JvbGxIZWlnaHQiOjgwMH0seyJzdGVwIjozLCJ2aWV3cG9ydCI6eyJ3aWR0aCI6OTAxLCJoZWlnaHQiOjgwMH0sImhlYWRlciI6eyJsZWZ0IjowLCJ0b3AiOjAsInJpZ2h0Ijo5MDEsImJvdHRvbSI6NjAsIndpZHRoIjo5MDEsImhlaWdodCI6NjB9LCJtYWluIjp7ImxlZnQiOjAsInRvcCI6NjAsInJpZ2h0Ijo5MDEsImJvdHRvbSI6ODAwLCJ3aWR0aCI6OTAxLCJoZWlnaHQiOjc0MH0sImZvb3RlciI6eyJsZWZ0IjozNDAsInRvcCI6NzMzLCJyaWdodCI6OTAxLCJib3R0b20iOjgwMCwid2lkdGgiOjU2MSwiaGVpZ2h0Ijo2N30sImNhcmQiOnsibGVmdCI6MzQwLCJ0b3AiOjE1MS4zOTA2MjUsInJpZ2h0Ijo5MDEsImJvdHRvbSI6NzMzLCJ3aWR0aCI6NTYxLCJoZWlnaHQiOjU4MS42MDkzNzV9LCJkb3NzaWVyIjp7ImxlZnQiOjI4LCJ0b3AiOjIwNS4yODEyNSwicmlnaHQiOjMxMSwiYm90dG9tIjo3NzIsIndpZHRoIjoyODMsImhlaWdodCI6NTY2LjcxODc1fSwic2Nyb2xsV2lkdGgiOjkwMSwic2Nyb2xsSGVpZ2h0Ijo4MDB9LHsic3RlcCI6NCwidmlld3BvcnQiOnsid2lkdGgiOjkwMSwiaGVpZ2h0Ijo4MDB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjowLCJyaWdodCI6OTAxLCJib3R0b20iOjYwLCJ3aWR0aCI6OTAxLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6OTAxLCJib3R0b20iOjgwMCwid2lkdGgiOjkwMSwiaGVpZ2h0Ijo3NDB9LCJmb290ZXIiOnsibGVmdCI6MzQwLCJ0b3AiOjczMywicmlnaHQiOjkwMSwiYm90dG9tIjo4MDAsIndpZHRoIjo1NjEsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjoxNTEuMzkwNjI1LCJyaWdodCI6OTAxLCJib3R0b20iOjczMywid2lkdGgiOjU2MSwiaGVpZ2h0Ijo1ODEuNjA5Mzc1fSwiZG9zc2llciI6eyJsZWZ0IjoyOCwidG9wIjoyMDUuMjgxMjUsInJpZ2h0IjozMTEsImJvdHRvbSI6NzcyLCJ3aWR0aCI6MjgzLCJoZWlnaHQiOjU2Ni43MTg3NX0sInNjcm9sbFdpZHRoIjo5MDEsInNjcm9sbEhlaWdodCI6ODAwfSx7InN0ZXAiOjUsInZpZXdwb3J0Ijp7IndpZHRoIjo5MDEsImhlaWdodCI6ODAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjkwMSwiYm90dG9tIjo2MCwid2lkdGgiOjkwMSwiaGVpZ2h0Ijo2MH0sIm1haW4iOnsibGVmdCI6MCwidG9wIjo2MCwicmlnaHQiOjkwMSwiYm90dG9tIjo4MDAsIndpZHRoIjo5MDEsImhlaWdodCI6NzQwfSwiZm9vdGVyIjp7ImxlZnQiOjM0MCwidG9wIjo3MzMsInJpZ2h0Ijo5MDEsImJvdHRvbSI6ODAwLCJ3aWR0aCI6NTYxLCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0IjozNDAsInRvcCI6MTUxLjM5MDYyNSwicmlnaHQiOjkwMSwiYm90dG9tIjo3MzMsIndpZHRoIjo1NjEsImhlaWdodCI6NTgxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6MjA1LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjc3Miwid2lkdGgiOjI4MywiaGVpZ2h0Ijo1NjYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6OTAxLCJzY3JvbGxIZWlnaHQiOjgwMH1d"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f747acb7fe0c8627cb90-405937570c278f1a6bfe",
+          "file": "creation-fullscreen.spec.ts",
+          "line": 35,
+          "column": 2
+        },
+        {
+          "title": "视口边界与五步 1100x800",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2149,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T15:01:10.684Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "measured-bounds",
+                      "contentType": "application/json",
+                      "body": "W3sic3RlcCI6MSwidmlld3BvcnQiOnsid2lkdGgiOjExMDAsImhlaWdodCI6ODAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjExMDAsImJvdHRvbSI6NjAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTEwMCwiYm90dG9tIjo4MDAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjc0MH0sImZvb3RlciI6eyJsZWZ0IjozNDAsInRvcCI6NzMzLCJyaWdodCI6MTEwMCwiYm90dG9tIjo4MDAsIndpZHRoIjo3NjAsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjoxNTEuMzkwNjI1LCJyaWdodCI6MTEwMCwiYm90dG9tIjo3MzMsIndpZHRoIjo3NjAsImhlaWdodCI6NTgxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6MjA1LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjc3Miwid2lkdGgiOjI4MywiaGVpZ2h0Ijo1NjYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6MTEwMCwic2Nyb2xsSGVpZ2h0Ijo4MDB9LHsic3RlcCI6Miwidmlld3BvcnQiOnsid2lkdGgiOjExMDAsImhlaWdodCI6ODAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjExMDAsImJvdHRvbSI6NjAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTEwMCwiYm90dG9tIjo4MDAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjc0MH0sImZvb3RlciI6eyJsZWZ0IjozNDAsInRvcCI6NzMzLCJyaWdodCI6MTEwMCwiYm90dG9tIjo4MDAsIndpZHRoIjo3NjAsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjoxNTEuMzkwNjI1LCJyaWdodCI6MTEwMCwiYm90dG9tIjo3MzMsIndpZHRoIjo3NjAsImhlaWdodCI6NTgxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6MjA1LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjc3Miwid2lkdGgiOjI4MywiaGVpZ2h0Ijo1NjYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6MTEwMCwic2Nyb2xsSGVpZ2h0Ijo4MDB9LHsic3RlcCI6Mywidmlld3BvcnQiOnsid2lkdGgiOjExMDAsImhlaWdodCI6ODAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjExMDAsImJvdHRvbSI6NjAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTEwMCwiYm90dG9tIjo4MDAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjc0MH0sImZvb3RlciI6eyJsZWZ0IjozNDAsInRvcCI6NzMzLCJyaWdodCI6MTEwMCwiYm90dG9tIjo4MDAsIndpZHRoIjo3NjAsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjoxNTEuMzkwNjI1LCJyaWdodCI6MTEwMCwiYm90dG9tIjo3MzMsIndpZHRoIjo3NjAsImhlaWdodCI6NTgxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6MjA1LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjc3Miwid2lkdGgiOjI4MywiaGVpZ2h0Ijo1NjYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6MTEwMCwic2Nyb2xsSGVpZ2h0Ijo4MDB9LHsic3RlcCI6NCwidmlld3BvcnQiOnsid2lkdGgiOjExMDAsImhlaWdodCI6ODAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjExMDAsImJvdHRvbSI6NjAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTEwMCwiYm90dG9tIjo4MDAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjc0MH0sImZvb3RlciI6eyJsZWZ0IjozNDAsInRvcCI6NzMzLCJyaWdodCI6MTEwMCwiYm90dG9tIjo4MDAsIndpZHRoIjo3NjAsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjoxNTEuMzkwNjI1LCJyaWdodCI6MTEwMCwiYm90dG9tIjo3MzMsIndpZHRoIjo3NjAsImhlaWdodCI6NTgxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6MjA1LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjc3Miwid2lkdGgiOjI4MywiaGVpZ2h0Ijo1NjYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6MTEwMCwic2Nyb2xsSGVpZ2h0Ijo4MDB9LHsic3RlcCI6NSwidmlld3BvcnQiOnsid2lkdGgiOjExMDAsImhlaWdodCI6ODAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjExMDAsImJvdHRvbSI6NjAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTEwMCwiYm90dG9tIjo4MDAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjc0MH0sImZvb3RlciI6eyJsZWZ0IjozNDAsInRvcCI6NzMzLCJyaWdodCI6MTEwMCwiYm90dG9tIjo4MDAsIndpZHRoIjo3NjAsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjoxNTEuMzkwNjI1LCJyaWdodCI6MTEwMCwiYm90dG9tIjo3MzMsIndpZHRoIjo3NjAsImhlaWdodCI6NTgxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6MjA1LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjc3Miwid2lkdGgiOjI4MywiaGVpZ2h0Ijo1NjYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6MTEwMCwic2Nyb2xsSGVpZ2h0Ijo4MDB9XQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f747acb7fe0c8627cb90-7191eda1d7503cb17c42",
+          "file": "creation-fullscreen.spec.ts",
+          "line": 35,
+          "column": 2
+        },
+        {
+          "title": "视口边界与五步 1440x900",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2194,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T15:01:12.844Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "measured-bounds",
+                      "contentType": "application/json",
+                      "body": "W3sic3RlcCI6MSwidmlld3BvcnQiOnsid2lkdGgiOjE0NDAsImhlaWdodCI6OTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjE0NDAsImJvdHRvbSI6NjAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo5MDAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjg0MH0sImZvb3RlciI6eyJsZWZ0Ijo0ODkuNTkzNzUsInRvcCI6ODMzLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo5MDAsIndpZHRoIjo5NTAuNDA2MjUsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjQ4OS41OTM3NSwidG9wIjoxNTMuMDkzNzUsInJpZ2h0IjoxNDQwLCJib3R0b20iOjgzMywid2lkdGgiOjk1MC40MDYyNSwiaGVpZ2h0Ijo2NzkuOTA2MjV9LCJkb3NzaWVyIjp7ImxlZnQiOjQwLCJ0b3AiOjE4MS44OTA2MjUsInJpZ2h0Ijo0NjAuNTkzNzUsImJvdHRvbSI6ODcyLCJ3aWR0aCI6NDIwLjU5Mzc1LCJoZWlnaHQiOjY5MC4xMDkzNzV9LCJzY3JvbGxXaWR0aCI6MTQ0MCwic2Nyb2xsSGVpZ2h0Ijo5MDB9LHsic3RlcCI6Miwidmlld3BvcnQiOnsid2lkdGgiOjE0NDAsImhlaWdodCI6OTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjE0NDAsImJvdHRvbSI6NjAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo5MDAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjg0MH0sImZvb3RlciI6eyJsZWZ0Ijo0ODkuNTkzNzUsInRvcCI6ODMzLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo5MDAsIndpZHRoIjo5NTAuNDA2MjUsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjQ4OS41OTM3NSwidG9wIjoxNTMuMDkzNzUsInJpZ2h0IjoxNDQwLCJib3R0b20iOjgzMywid2lkdGgiOjk1MC40MDYyNSwiaGVpZ2h0Ijo2NzkuOTA2MjV9LCJkb3NzaWVyIjp7ImxlZnQiOjQwLCJ0b3AiOjE4MS44OTA2MjUsInJpZ2h0Ijo0NjAuNTkzNzUsImJvdHRvbSI6ODcyLCJ3aWR0aCI6NDIwLjU5Mzc1LCJoZWlnaHQiOjY5MC4xMDkzNzV9LCJzY3JvbGxXaWR0aCI6MTQ0MCwic2Nyb2xsSGVpZ2h0Ijo5MDB9LHsic3RlcCI6Mywidmlld3BvcnQiOnsid2lkdGgiOjE0NDAsImhlaWdodCI6OTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjE0NDAsImJvdHRvbSI6NjAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo5MDAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjg0MH0sImZvb3RlciI6eyJsZWZ0Ijo0ODkuNTkzNzUsInRvcCI6ODMzLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo5MDAsIndpZHRoIjo5NTAuNDA2MjUsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjQ4OS41OTM3NSwidG9wIjoxNTMuMDkzNzUsInJpZ2h0IjoxNDQwLCJib3R0b20iOjgzMywid2lkdGgiOjk1MC40MDYyNSwiaGVpZ2h0Ijo2NzkuOTA2MjV9LCJkb3NzaWVyIjp7ImxlZnQiOjQwLCJ0b3AiOjE4MS44OTA2MjUsInJpZ2h0Ijo0NjAuNTkzNzUsImJvdHRvbSI6ODcyLCJ3aWR0aCI6NDIwLjU5Mzc1LCJoZWlnaHQiOjY5MC4xMDkzNzV9LCJzY3JvbGxXaWR0aCI6MTQ0MCwic2Nyb2xsSGVpZ2h0Ijo5MDB9LHsic3RlcCI6NCwidmlld3BvcnQiOnsid2lkdGgiOjE0NDAsImhlaWdodCI6OTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjE0NDAsImJvdHRvbSI6NjAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo5MDAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjg0MH0sImZvb3RlciI6eyJsZWZ0Ijo0ODkuNTkzNzUsInRvcCI6ODMzLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo5MDAsIndpZHRoIjo5NTAuNDA2MjUsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjQ4OS41OTM3NSwidG9wIjoxNTMuMDkzNzUsInJpZ2h0IjoxNDQwLCJib3R0b20iOjgzMywid2lkdGgiOjk1MC40MDYyNSwiaGVpZ2h0Ijo2NzkuOTA2MjV9LCJkb3NzaWVyIjp7ImxlZnQiOjQwLCJ0b3AiOjE4MS44OTA2MjUsInJpZ2h0Ijo0NjAuNTkzNzUsImJvdHRvbSI6ODcyLCJ3aWR0aCI6NDIwLjU5Mzc1LCJoZWlnaHQiOjY5MC4xMDkzNzV9LCJzY3JvbGxXaWR0aCI6MTQ0MCwic2Nyb2xsSGVpZ2h0Ijo5MDB9LHsic3RlcCI6NSwidmlld3BvcnQiOnsid2lkdGgiOjE0NDAsImhlaWdodCI6OTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjE0NDAsImJvdHRvbSI6NjAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo5MDAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjg0MH0sImZvb3RlciI6eyJsZWZ0Ijo0ODkuNTkzNzUsInRvcCI6ODMzLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo5MDAsIndpZHRoIjo5NTAuNDA2MjUsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjQ4OS41OTM3NSwidG9wIjoxNTMuMDkzNzUsInJpZ2h0IjoxNDQwLCJib3R0b20iOjgzMywid2lkdGgiOjk1MC40MDYyNSwiaGVpZ2h0Ijo2NzkuOTA2MjV9LCJkb3NzaWVyIjp7ImxlZnQiOjQwLCJ0b3AiOjE4MS44OTA2MjUsInJpZ2h0Ijo0NjAuNTkzNzUsImJvdHRvbSI6ODcyLCJ3aWR0aCI6NDIwLjU5Mzc1LCJoZWlnaHQiOjY5MC4xMDkzNzV9LCJzY3JvbGxXaWR0aCI6MTQ0MCwic2Nyb2xsSGVpZ2h0Ijo5MDB9XQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f747acb7fe0c8627cb90-3f9cfac6bec54bdeb6c3",
+          "file": "creation-fullscreen.spec.ts",
+          "line": 35,
+          "column": 2
+        },
+        {
+          "title": "视口边界与五步 1600x900",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2137,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T15:01:15.054Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "measured-bounds",
+                      "contentType": "application/json",
+                      "body": "W3sic3RlcCI6MSwidmlld3BvcnQiOnsid2lkdGgiOjE2MDAsImhlaWdodCI6OTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjE2MDAsImJvdHRvbSI6NjAsIndpZHRoIjoxNjAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTYwMCwiYm90dG9tIjo5MDAsIndpZHRoIjoxNjAwLCJoZWlnaHQiOjg0MH0sImZvb3RlciI6eyJsZWZ0Ijo1NDQsInRvcCI6ODMzLCJyaWdodCI6MTYwMCwiYm90dG9tIjo5MDAsIndpZHRoIjoxMDU2LCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0Ijo1NDQsInRvcCI6MTUzLjA5Mzc1LCJyaWdodCI6MTYwMCwiYm90dG9tIjo4MzMsIndpZHRoIjoxMDU2LCJoZWlnaHQiOjY3OS45MDYyNX0sImRvc3NpZXIiOnsibGVmdCI6NDAsInRvcCI6MTgxLjg5MDYyNSwicmlnaHQiOjUxNSwiYm90dG9tIjo4NzIsIndpZHRoIjo0NzUsImhlaWdodCI6NjkwLjEwOTM3NX0sInNjcm9sbFdpZHRoIjoxNjAwLCJzY3JvbGxIZWlnaHQiOjkwMH0seyJzdGVwIjoyLCJ2aWV3cG9ydCI6eyJ3aWR0aCI6MTYwMCwiaGVpZ2h0Ijo5MDB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjowLCJyaWdodCI6MTYwMCwiYm90dG9tIjo2MCwid2lkdGgiOjE2MDAsImhlaWdodCI6NjB9LCJtYWluIjp7ImxlZnQiOjAsInRvcCI6NjAsInJpZ2h0IjoxNjAwLCJib3R0b20iOjkwMCwid2lkdGgiOjE2MDAsImhlaWdodCI6ODQwfSwiZm9vdGVyIjp7ImxlZnQiOjU0NCwidG9wIjo4MzMsInJpZ2h0IjoxNjAwLCJib3R0b20iOjkwMCwid2lkdGgiOjEwNTYsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjU0NCwidG9wIjoxNTMuMDkzNzUsInJpZ2h0IjoxNjAwLCJib3R0b20iOjgzMywid2lkdGgiOjEwNTYsImhlaWdodCI6Njc5LjkwNjI1fSwiZG9zc2llciI6eyJsZWZ0Ijo0MCwidG9wIjoxODEuODkwNjI1LCJyaWdodCI6NTE1LCJib3R0b20iOjg3Miwid2lkdGgiOjQ3NSwiaGVpZ2h0Ijo2OTAuMTA5Mzc1fSwic2Nyb2xsV2lkdGgiOjE2MDAsInNjcm9sbEhlaWdodCI6OTAwfSx7InN0ZXAiOjMsInZpZXdwb3J0Ijp7IndpZHRoIjoxNjAwLCJoZWlnaHQiOjkwMH0sImhlYWRlciI6eyJsZWZ0IjowLCJ0b3AiOjAsInJpZ2h0IjoxNjAwLCJib3R0b20iOjYwLCJ3aWR0aCI6MTYwMCwiaGVpZ2h0Ijo2MH0sIm1haW4iOnsibGVmdCI6MCwidG9wIjo2MCwicmlnaHQiOjE2MDAsImJvdHRvbSI6OTAwLCJ3aWR0aCI6MTYwMCwiaGVpZ2h0Ijo4NDB9LCJmb290ZXIiOnsibGVmdCI6NTQ0LCJ0b3AiOjgzMywicmlnaHQiOjE2MDAsImJvdHRvbSI6OTAwLCJ3aWR0aCI6MTA1NiwiaGVpZ2h0Ijo2N30sImNhcmQiOnsibGVmdCI6NTQ0LCJ0b3AiOjE1My4wOTM3NSwicmlnaHQiOjE2MDAsImJvdHRvbSI6ODMzLCJ3aWR0aCI6MTA1NiwiaGVpZ2h0Ijo2NzkuOTA2MjV9LCJkb3NzaWVyIjp7ImxlZnQiOjQwLCJ0b3AiOjE4MS44OTA2MjUsInJpZ2h0Ijo1MTUsImJvdHRvbSI6ODcyLCJ3aWR0aCI6NDc1LCJoZWlnaHQiOjY5MC4xMDkzNzV9LCJzY3JvbGxXaWR0aCI6MTYwMCwic2Nyb2xsSGVpZ2h0Ijo5MDB9LHsic3RlcCI6NCwidmlld3BvcnQiOnsid2lkdGgiOjE2MDAsImhlaWdodCI6OTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjE2MDAsImJvdHRvbSI6NjAsIndpZHRoIjoxNjAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTYwMCwiYm90dG9tIjo5MDAsIndpZHRoIjoxNjAwLCJoZWlnaHQiOjg0MH0sImZvb3RlciI6eyJsZWZ0Ijo1NDQsInRvcCI6ODMzLCJyaWdodCI6MTYwMCwiYm90dG9tIjo5MDAsIndpZHRoIjoxMDU2LCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0Ijo1NDQsInRvcCI6MTUzLjA5Mzc1LCJyaWdodCI6MTYwMCwiYm90dG9tIjo4MzMsIndpZHRoIjoxMDU2LCJoZWlnaHQiOjY3OS45MDYyNX0sImRvc3NpZXIiOnsibGVmdCI6NDAsInRvcCI6MTgxLjg5MDYyNSwicmlnaHQiOjUxNSwiYm90dG9tIjo4NzIsIndpZHRoIjo0NzUsImhlaWdodCI6NjkwLjEwOTM3NX0sInNjcm9sbFdpZHRoIjoxNjAwLCJzY3JvbGxIZWlnaHQiOjkwMH0seyJzdGVwIjo1LCJ2aWV3cG9ydCI6eyJ3aWR0aCI6MTYwMCwiaGVpZ2h0Ijo5MDB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjowLCJyaWdodCI6MTYwMCwiYm90dG9tIjo2MCwid2lkdGgiOjE2MDAsImhlaWdodCI6NjB9LCJtYWluIjp7ImxlZnQiOjAsInRvcCI6NjAsInJpZ2h0IjoxNjAwLCJib3R0b20iOjkwMCwid2lkdGgiOjE2MDAsImhlaWdodCI6ODQwfSwiZm9vdGVyIjp7ImxlZnQiOjU0NCwidG9wIjo4MzMsInJpZ2h0IjoxNjAwLCJib3R0b20iOjkwMCwid2lkdGgiOjEwNTYsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjU0NCwidG9wIjoxNTMuMDkzNzUsInJpZ2h0IjoxNjAwLCJib3R0b20iOjgzMywid2lkdGgiOjEwNTYsImhlaWdodCI6Njc5LjkwNjI1fSwiZG9zc2llciI6eyJsZWZ0Ijo0MCwidG9wIjoxODEuODkwNjI1LCJyaWdodCI6NTE1LCJib3R0b20iOjg3Miwid2lkdGgiOjQ3NSwiaGVpZ2h0Ijo2OTAuMTA5Mzc1fSwic2Nyb2xsV2lkdGgiOjE2MDAsInNjcm9sbEhlaWdodCI6OTAwfV0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f747acb7fe0c8627cb90-9a5a02b1345fddcc2948",
+          "file": "creation-fullscreen.spec.ts",
+          "line": 35,
+          "column": 2
+        },
+        {
+          "title": "视口边界与五步 1920x1080",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2109,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T15:01:17.201Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "measured-bounds",
+                      "contentType": "application/json",
+                      "body": "W3sic3RlcCI6MSwidmlld3BvcnQiOnsid2lkdGgiOjE5MjAsImhlaWdodCI6MTA4MH0sImhlYWRlciI6eyJsZWZ0IjowLCJ0b3AiOjAsInJpZ2h0IjoxOTIwLCJib3R0b20iOjYwLCJ3aWR0aCI6MTkyMCwiaGVpZ2h0Ijo2MH0sIm1haW4iOnsibGVmdCI6MCwidG9wIjo2MCwicmlnaHQiOjE5MjAsImJvdHRvbSI6MTA4MCwid2lkdGgiOjE5MjAsImhlaWdodCI6MTAyMH0sImZvb3RlciI6eyJsZWZ0Ijo2NTIuNzk2ODc1LCJ0b3AiOjEwMTMsInJpZ2h0IjoxOTIwLCJib3R0b20iOjEwODAsIndpZHRoIjoxMjY3LjIwMzEyNSwiaGVpZ2h0Ijo2N30sImNhcmQiOnsibGVmdCI6NjUyLjc5Njg3NSwidG9wIjoxNTMuMDkzNzUsInJpZ2h0IjoxOTIwLCJib3R0b20iOjEwMTMsIndpZHRoIjoxMjY3LjIwMzEyNSwiaGVpZ2h0Ijo4NTkuOTA2MjV9LCJkb3NzaWVyIjp7ImxlZnQiOjQwLCJ0b3AiOjE4MS44OTA2MjUsInJpZ2h0Ijo2MjMuNzk2ODc1LCJib3R0b20iOjEwNTIsIndpZHRoIjo1ODMuNzk2ODc1LCJoZWlnaHQiOjg3MC4xMDkzNzV9LCJzY3JvbGxXaWR0aCI6MTkyMCwic2Nyb2xsSGVpZ2h0IjoxMDgwfSx7InN0ZXAiOjIsInZpZXdwb3J0Ijp7IndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjowLCJyaWdodCI6MTkyMCwiYm90dG9tIjo2MCwid2lkdGgiOjE5MjAsImhlaWdodCI6NjB9LCJtYWluIjp7ImxlZnQiOjAsInRvcCI6NjAsInJpZ2h0IjoxOTIwLCJib3R0b20iOjEwODAsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwMjB9LCJmb290ZXIiOnsibGVmdCI6NjUyLjc5Njg3NSwidG9wIjoxMDEzLCJyaWdodCI6MTkyMCwiYm90dG9tIjoxMDgwLCJ3aWR0aCI6MTI2Ny4yMDMxMjUsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjY1Mi43OTY4NzUsInRvcCI6MTUzLjA5Mzc1LCJyaWdodCI6MTkyMCwiYm90dG9tIjoxMDEzLCJ3aWR0aCI6MTI2Ny4yMDMxMjUsImhlaWdodCI6ODU5LjkwNjI1fSwiZG9zc2llciI6eyJsZWZ0Ijo0MCwidG9wIjoxODEuODkwNjI1LCJyaWdodCI6NjIzLjc5Njg3NSwiYm90dG9tIjoxMDUyLCJ3aWR0aCI6NTgzLjc5Njg3NSwiaGVpZ2h0Ijo4NzAuMTA5Mzc1fSwic2Nyb2xsV2lkdGgiOjE5MjAsInNjcm9sbEhlaWdodCI6MTA4MH0seyJzdGVwIjozLCJ2aWV3cG9ydCI6eyJ3aWR0aCI6MTkyMCwiaGVpZ2h0IjoxMDgwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjE5MjAsImJvdHRvbSI6NjAsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTkyMCwiYm90dG9tIjoxMDgwLCJ3aWR0aCI6MTkyMCwiaGVpZ2h0IjoxMDIwfSwiZm9vdGVyIjp7ImxlZnQiOjY1Mi43OTY4NzUsInRvcCI6MTAxMywicmlnaHQiOjE5MjAsImJvdHRvbSI6MTA4MCwid2lkdGgiOjEyNjcuMjAzMTI1LCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0Ijo2NTIuNzk2ODc1LCJ0b3AiOjE1My4wOTM3NSwicmlnaHQiOjE5MjAsImJvdHRvbSI6MTAxMywid2lkdGgiOjEyNjcuMjAzMTI1LCJoZWlnaHQiOjg1OS45MDYyNX0sImRvc3NpZXIiOnsibGVmdCI6NDAsInRvcCI6MTgxLjg5MDYyNSwicmlnaHQiOjYyMy43OTY4NzUsImJvdHRvbSI6MTA1Miwid2lkdGgiOjU4My43OTY4NzUsImhlaWdodCI6ODcwLjEwOTM3NX0sInNjcm9sbFdpZHRoIjoxOTIwLCJzY3JvbGxIZWlnaHQiOjEwODB9LHsic3RlcCI6NCwidmlld3BvcnQiOnsid2lkdGgiOjE5MjAsImhlaWdodCI6MTA4MH0sImhlYWRlciI6eyJsZWZ0IjowLCJ0b3AiOjAsInJpZ2h0IjoxOTIwLCJib3R0b20iOjYwLCJ3aWR0aCI6MTkyMCwiaGVpZ2h0Ijo2MH0sIm1haW4iOnsibGVmdCI6MCwidG9wIjo2MCwicmlnaHQiOjE5MjAsImJvdHRvbSI6MTA4MCwid2lkdGgiOjE5MjAsImhlaWdodCI6MTAyMH0sImZvb3RlciI6eyJsZWZ0Ijo2NTIuNzk2ODc1LCJ0b3AiOjEwMTMsInJpZ2h0IjoxOTIwLCJib3R0b20iOjEwODAsIndpZHRoIjoxMjY3LjIwMzEyNSwiaGVpZ2h0Ijo2N30sImNhcmQiOnsibGVmdCI6NjUyLjc5Njg3NSwidG9wIjoxNTMuMDkzNzUsInJpZ2h0IjoxOTIwLCJib3R0b20iOjEwMTMsIndpZHRoIjoxMjY3LjIwMzEyNSwiaGVpZ2h0Ijo4NTkuOTA2MjV9LCJkb3NzaWVyIjp7ImxlZnQiOjQwLCJ0b3AiOjE4MS44OTA2MjUsInJpZ2h0Ijo2MjMuNzk2ODc1LCJib3R0b20iOjEwNTIsIndpZHRoIjo1ODMuNzk2ODc1LCJoZWlnaHQiOjg3MC4xMDkzNzV9LCJzY3JvbGxXaWR0aCI6MTkyMCwic2Nyb2xsSGVpZ2h0IjoxMDgwfSx7InN0ZXAiOjUsInZpZXdwb3J0Ijp7IndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjowLCJyaWdodCI6MTkyMCwiYm90dG9tIjo2MCwid2lkdGgiOjE5MjAsImhlaWdodCI6NjB9LCJtYWluIjp7ImxlZnQiOjAsInRvcCI6NjAsInJpZ2h0IjoxOTIwLCJib3R0b20iOjEwODAsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwMjB9LCJmb290ZXIiOnsibGVmdCI6NjUyLjc5Njg3NSwidG9wIjoxMDEzLCJyaWdodCI6MTkyMCwiYm90dG9tIjoxMDgwLCJ3aWR0aCI6MTI2Ny4yMDMxMjUsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjY1Mi43OTY4NzUsInRvcCI6MTUzLjA5Mzc1LCJyaWdodCI6MTkyMCwiYm90dG9tIjoxMDEzLCJ3aWR0aCI6MTI2Ny4yMDMxMjUsImhlaWdodCI6ODU5LjkwNjI1fSwiZG9zc2llciI6eyJsZWZ0Ijo0MCwidG9wIjoxODEuODkwNjI1LCJyaWdodCI6NjIzLjc5Njg3NSwiYm90dG9tIjoxMDUyLCJ3aWR0aCI6NTgzLjc5Njg3NSwiaGVpZ2h0Ijo4NzAuMTA5Mzc1fSwic2Nyb2xsV2lkdGgiOjE5MjAsInNjcm9sbEhlaWdodCI6MTA4MH1d"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f747acb7fe0c8627cb90-cd38648a1a613eea35df",
+          "file": "creation-fullscreen.spec.ts",
+          "line": 35,
+          "column": 2
+        },
+        {
+          "title": "视口边界与五步 901x500",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1996,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T15:01:19.320Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "measured-bounds",
+                      "contentType": "application/json",
+                      "body": "W3sic3RlcCI6MSwidmlld3BvcnQiOnsid2lkdGgiOjkwMSwiaGVpZ2h0Ijo1MDB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjowLCJyaWdodCI6OTAxLCJib3R0b20iOjYwLCJ3aWR0aCI6OTAxLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6OTAxLCJib3R0b20iOjUwMCwid2lkdGgiOjkwMSwiaGVpZ2h0Ijo0NDB9LCJmb290ZXIiOnsibGVmdCI6MzQwLCJ0b3AiOjQzMywicmlnaHQiOjkwMSwiYm90dG9tIjo1MDAsIndpZHRoIjo1NjEsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjoxNTEuMzkwNjI1LCJyaWdodCI6OTAxLCJib3R0b20iOjQzMywid2lkdGgiOjU2MSwiaGVpZ2h0IjoyODEuNjA5Mzc1fSwiZG9zc2llciI6eyJsZWZ0IjoyOCwidG9wIjoyMDUuMjgxMjUsInJpZ2h0IjozMTEsImJvdHRvbSI6NDcyLCJ3aWR0aCI6MjgzLCJoZWlnaHQiOjI2Ni43MTg3NX0sInNjcm9sbFdpZHRoIjo5MDEsInNjcm9sbEhlaWdodCI6NTAwfSx7InN0ZXAiOjIsInZpZXdwb3J0Ijp7IndpZHRoIjo5MDEsImhlaWdodCI6NTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjkwMSwiYm90dG9tIjo2MCwid2lkdGgiOjkwMSwiaGVpZ2h0Ijo2MH0sIm1haW4iOnsibGVmdCI6MCwidG9wIjo2MCwicmlnaHQiOjkwMSwiYm90dG9tIjo1MDAsIndpZHRoIjo5MDEsImhlaWdodCI6NDQwfSwiZm9vdGVyIjp7ImxlZnQiOjM0MCwidG9wIjo0MzMsInJpZ2h0Ijo5MDEsImJvdHRvbSI6NTAwLCJ3aWR0aCI6NTYxLCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0IjozNDAsInRvcCI6MTUxLjM5MDYyNSwicmlnaHQiOjkwMSwiYm90dG9tIjo0MzMsIndpZHRoIjo1NjEsImhlaWdodCI6MjgxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6MjA1LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjQ3Miwid2lkdGgiOjI4MywiaGVpZ2h0IjoyNjYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6OTAxLCJzY3JvbGxIZWlnaHQiOjUwMH0seyJzdGVwIjozLCJ2aWV3cG9ydCI6eyJ3aWR0aCI6OTAxLCJoZWlnaHQiOjUwMH0sImhlYWRlciI6eyJsZWZ0IjowLCJ0b3AiOjAsInJpZ2h0Ijo5MDEsImJvdHRvbSI6NjAsIndpZHRoIjo5MDEsImhlaWdodCI6NjB9LCJtYWluIjp7ImxlZnQiOjAsInRvcCI6NjAsInJpZ2h0Ijo5MDEsImJvdHRvbSI6NTAwLCJ3aWR0aCI6OTAxLCJoZWlnaHQiOjQ0MH0sImZvb3RlciI6eyJsZWZ0IjozNDAsInRvcCI6NDMzLCJyaWdodCI6OTAxLCJib3R0b20iOjUwMCwid2lkdGgiOjU2MSwiaGVpZ2h0Ijo2N30sImNhcmQiOnsibGVmdCI6MzQwLCJ0b3AiOjE1MS4zOTA2MjUsInJpZ2h0Ijo5MDEsImJvdHRvbSI6NDMzLCJ3aWR0aCI6NTYxLCJoZWlnaHQiOjI4MS42MDkzNzV9LCJkb3NzaWVyIjp7ImxlZnQiOjI4LCJ0b3AiOjIwNS4yODEyNSwicmlnaHQiOjMxMSwiYm90dG9tIjo0NzIsIndpZHRoIjoyODMsImhlaWdodCI6MjY2LjcxODc1fSwic2Nyb2xsV2lkdGgiOjkwMSwic2Nyb2xsSGVpZ2h0Ijo1MDB9LHsic3RlcCI6NCwidmlld3BvcnQiOnsid2lkdGgiOjkwMSwiaGVpZ2h0Ijo1MDB9LCJoZWFkZXIiOnsibGVmdCI6MCwidG9wIjowLCJyaWdodCI6OTAxLCJib3R0b20iOjYwLCJ3aWR0aCI6OTAxLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6OTAxLCJib3R0b20iOjUwMCwid2lkdGgiOjkwMSwiaGVpZ2h0Ijo0NDB9LCJmb290ZXIiOnsibGVmdCI6MzQwLCJ0b3AiOjQzMywicmlnaHQiOjkwMSwiYm90dG9tIjo1MDAsIndpZHRoIjo1NjEsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjoxNTEuMzkwNjI1LCJyaWdodCI6OTAxLCJib3R0b20iOjQzMywid2lkdGgiOjU2MSwiaGVpZ2h0IjoyODEuNjA5Mzc1fSwiZG9zc2llciI6eyJsZWZ0IjoyOCwidG9wIjoyMDUuMjgxMjUsInJpZ2h0IjozMTEsImJvdHRvbSI6NDcyLCJ3aWR0aCI6MjgzLCJoZWlnaHQiOjI2Ni43MTg3NX0sInNjcm9sbFdpZHRoIjo5MDEsInNjcm9sbEhlaWdodCI6NTAwfSx7InN0ZXAiOjUsInZpZXdwb3J0Ijp7IndpZHRoIjo5MDEsImhlaWdodCI6NTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjkwMSwiYm90dG9tIjo2MCwid2lkdGgiOjkwMSwiaGVpZ2h0Ijo2MH0sIm1haW4iOnsibGVmdCI6MCwidG9wIjo2MCwicmlnaHQiOjkwMSwiYm90dG9tIjo1MDAsIndpZHRoIjo5MDEsImhlaWdodCI6NDQwfSwiZm9vdGVyIjp7ImxlZnQiOjM0MCwidG9wIjo0MzMsInJpZ2h0Ijo5MDEsImJvdHRvbSI6NTAwLCJ3aWR0aCI6NTYxLCJoZWlnaHQiOjY3fSwiY2FyZCI6eyJsZWZ0IjozNDAsInRvcCI6MTUxLjM5MDYyNSwicmlnaHQiOjkwMSwiYm90dG9tIjo0MzMsIndpZHRoIjo1NjEsImhlaWdodCI6MjgxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6MjA1LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjQ3Miwid2lkdGgiOjI4MywiaGVpZ2h0IjoyNjYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6OTAxLCJzY3JvbGxIZWlnaHQiOjU3MH1d"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f747acb7fe0c8627cb90-fa9161e4bc937f50d3db",
+          "file": "creation-fullscreen.spec.ts",
+          "line": 35,
+          "column": 2
+        },
+        {
+          "title": "视口边界与五步 1100x420",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1889,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T15:01:21.326Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "measured-bounds",
+                      "contentType": "application/json",
+                      "body": "W3sic3RlcCI6MSwidmlld3BvcnQiOnsid2lkdGgiOjExMDAsImhlaWdodCI6NDIwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjExMDAsImJvdHRvbSI6NjAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTEwMCwiYm90dG9tIjo0MjAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjM2MH0sImZvb3RlciI6eyJsZWZ0IjozNDAsInRvcCI6MzUzLCJyaWdodCI6MTEwMCwiYm90dG9tIjo0MjAsIndpZHRoIjo3NjAsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjoxNTEuMzkwNjI1LCJyaWdodCI6MTEwMCwiYm90dG9tIjozNTMsIndpZHRoIjo3NjAsImhlaWdodCI6MjAxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6MjA1LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjM5Miwid2lkdGgiOjI4MywiaGVpZ2h0IjoxODYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6MTEwMCwic2Nyb2xsSGVpZ2h0Ijo0MjB9LHsic3RlcCI6Miwidmlld3BvcnQiOnsid2lkdGgiOjExMDAsImhlaWdodCI6NDIwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjExMDAsImJvdHRvbSI6NjAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTEwMCwiYm90dG9tIjo0MjAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjM2MH0sImZvb3RlciI6eyJsZWZ0IjozNDAsInRvcCI6MzUzLCJyaWdodCI6MTEwMCwiYm90dG9tIjo0MjAsIndpZHRoIjo3NjAsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjoxNTEuMzkwNjI1LCJyaWdodCI6MTEwMCwiYm90dG9tIjozNTMsIndpZHRoIjo3NjAsImhlaWdodCI6MjAxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6MjA1LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjM5Miwid2lkdGgiOjI4MywiaGVpZ2h0IjoxODYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6MTEwMCwic2Nyb2xsSGVpZ2h0Ijo0MjB9LHsic3RlcCI6Mywidmlld3BvcnQiOnsid2lkdGgiOjExMDAsImhlaWdodCI6NDIwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjExMDAsImJvdHRvbSI6NjAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTEwMCwiYm90dG9tIjo0MjAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjM2MH0sImZvb3RlciI6eyJsZWZ0IjozNDAsInRvcCI6MzUzLCJyaWdodCI6MTEwMCwiYm90dG9tIjo0MjAsIndpZHRoIjo3NjAsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjoxNTEuMzkwNjI1LCJyaWdodCI6MTEwMCwiYm90dG9tIjozNTMsIndpZHRoIjo3NjAsImhlaWdodCI6MjAxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6MjA1LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjM5Miwid2lkdGgiOjI4MywiaGVpZ2h0IjoxODYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6MTEwMCwic2Nyb2xsSGVpZ2h0Ijo0MjB9LHsic3RlcCI6NCwidmlld3BvcnQiOnsid2lkdGgiOjExMDAsImhlaWdodCI6NDIwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjExMDAsImJvdHRvbSI6NjAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTEwMCwiYm90dG9tIjo0MjAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjM2MH0sImZvb3RlciI6eyJsZWZ0IjozNDAsInRvcCI6MzUzLCJyaWdodCI6MTEwMCwiYm90dG9tIjo0MjAsIndpZHRoIjo3NjAsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjoxNTEuMzkwNjI1LCJyaWdodCI6MTEwMCwiYm90dG9tIjozNTMsIndpZHRoIjo3NjAsImhlaWdodCI6MjAxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6MjA1LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjM5Miwid2lkdGgiOjI4MywiaGVpZ2h0IjoxODYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6MTEwMCwic2Nyb2xsSGVpZ2h0Ijo0MjB9LHsic3RlcCI6NSwidmlld3BvcnQiOnsid2lkdGgiOjExMDAsImhlaWdodCI6NDIwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjExMDAsImJvdHRvbSI6NjAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTEwMCwiYm90dG9tIjo0MjAsIndpZHRoIjoxMTAwLCJoZWlnaHQiOjM2MH0sImZvb3RlciI6eyJsZWZ0IjozNDAsInRvcCI6MzUzLCJyaWdodCI6MTEwMCwiYm90dG9tIjo0MjAsIndpZHRoIjo3NjAsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjM0MCwidG9wIjoxNTEuMzkwNjI1LCJyaWdodCI6MTEwMCwiYm90dG9tIjozNTMsIndpZHRoIjo3NjAsImhlaWdodCI6MjAxLjYwOTM3NX0sImRvc3NpZXIiOnsibGVmdCI6MjgsInRvcCI6MjA1LjI4MTI1LCJyaWdodCI6MzExLCJib3R0b20iOjM5Miwid2lkdGgiOjI4MywiaGVpZ2h0IjoxODYuNzE4NzV9LCJzY3JvbGxXaWR0aCI6MTEwMCwic2Nyb2xsSGVpZ2h0Ijo1NzB9XQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f747acb7fe0c8627cb90-0e537d3a3fe255152eca",
+          "file": "creation-fullscreen.spec.ts",
+          "line": 35,
+          "column": 2
+        },
+        {
+          "title": "视口边界与五步 1440x500",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1802,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T15:01:23.230Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "measured-bounds",
+                      "contentType": "application/json",
+                      "body": "W3sic3RlcCI6MSwidmlld3BvcnQiOnsid2lkdGgiOjE0NDAsImhlaWdodCI6NTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjE0NDAsImJvdHRvbSI6NjAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo1MDAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjQ0MH0sImZvb3RlciI6eyJsZWZ0Ijo0ODkuNTkzNzUsInRvcCI6NDMzLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo1MDAsIndpZHRoIjo5NTAuNDA2MjUsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjQ4OS41OTM3NSwidG9wIjoxNTMuMDkzNzUsInJpZ2h0IjoxNDQwLCJib3R0b20iOjQzMywid2lkdGgiOjk1MC40MDYyNSwiaGVpZ2h0IjoyNzkuOTA2MjV9LCJkb3NzaWVyIjp7ImxlZnQiOjQwLCJ0b3AiOjE4MS44OTA2MjUsInJpZ2h0Ijo0NjAuNTkzNzUsImJvdHRvbSI6NDcyLCJ3aWR0aCI6NDIwLjU5Mzc1LCJoZWlnaHQiOjI5MC4xMDkzNzV9LCJzY3JvbGxXaWR0aCI6MTQ0MCwic2Nyb2xsSGVpZ2h0Ijo1MDB9LHsic3RlcCI6Miwidmlld3BvcnQiOnsid2lkdGgiOjE0NDAsImhlaWdodCI6NTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjE0NDAsImJvdHRvbSI6NjAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo1MDAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjQ0MH0sImZvb3RlciI6eyJsZWZ0Ijo0ODkuNTkzNzUsInRvcCI6NDMzLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo1MDAsIndpZHRoIjo5NTAuNDA2MjUsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjQ4OS41OTM3NSwidG9wIjoxNTMuMDkzNzUsInJpZ2h0IjoxNDQwLCJib3R0b20iOjQzMywid2lkdGgiOjk1MC40MDYyNSwiaGVpZ2h0IjoyNzkuOTA2MjV9LCJkb3NzaWVyIjp7ImxlZnQiOjQwLCJ0b3AiOjE4MS44OTA2MjUsInJpZ2h0Ijo0NjAuNTkzNzUsImJvdHRvbSI6NDcyLCJ3aWR0aCI6NDIwLjU5Mzc1LCJoZWlnaHQiOjI5MC4xMDkzNzV9LCJzY3JvbGxXaWR0aCI6MTQ0MCwic2Nyb2xsSGVpZ2h0Ijo1MDB9LHsic3RlcCI6Mywidmlld3BvcnQiOnsid2lkdGgiOjE0NDAsImhlaWdodCI6NTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjE0NDAsImJvdHRvbSI6NjAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo1MDAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjQ0MH0sImZvb3RlciI6eyJsZWZ0Ijo0ODkuNTkzNzUsInRvcCI6NDMzLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo1MDAsIndpZHRoIjo5NTAuNDA2MjUsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjQ4OS41OTM3NSwidG9wIjoxNTMuMDkzNzUsInJpZ2h0IjoxNDQwLCJib3R0b20iOjQzMywid2lkdGgiOjk1MC40MDYyNSwiaGVpZ2h0IjoyNzkuOTA2MjV9LCJkb3NzaWVyIjp7ImxlZnQiOjQwLCJ0b3AiOjE4MS44OTA2MjUsInJpZ2h0Ijo0NjAuNTkzNzUsImJvdHRvbSI6NDcyLCJ3aWR0aCI6NDIwLjU5Mzc1LCJoZWlnaHQiOjI5MC4xMDkzNzV9LCJzY3JvbGxXaWR0aCI6MTQ0MCwic2Nyb2xsSGVpZ2h0Ijo1MDB9LHsic3RlcCI6NCwidmlld3BvcnQiOnsid2lkdGgiOjE0NDAsImhlaWdodCI6NTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjE0NDAsImJvdHRvbSI6NjAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo1MDAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjQ0MH0sImZvb3RlciI6eyJsZWZ0Ijo0ODkuNTkzNzUsInRvcCI6NDMzLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo1MDAsIndpZHRoIjo5NTAuNDA2MjUsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjQ4OS41OTM3NSwidG9wIjoxNTMuMDkzNzUsInJpZ2h0IjoxNDQwLCJib3R0b20iOjQzMywid2lkdGgiOjk1MC40MDYyNSwiaGVpZ2h0IjoyNzkuOTA2MjV9LCJkb3NzaWVyIjp7ImxlZnQiOjQwLCJ0b3AiOjE4MS44OTA2MjUsInJpZ2h0Ijo0NjAuNTkzNzUsImJvdHRvbSI6NDcyLCJ3aWR0aCI6NDIwLjU5Mzc1LCJoZWlnaHQiOjI5MC4xMDkzNzV9LCJzY3JvbGxXaWR0aCI6MTQ0MCwic2Nyb2xsSGVpZ2h0Ijo1MDB9LHsic3RlcCI6NSwidmlld3BvcnQiOnsid2lkdGgiOjE0NDAsImhlaWdodCI6NTAwfSwiaGVhZGVyIjp7ImxlZnQiOjAsInRvcCI6MCwicmlnaHQiOjE0NDAsImJvdHRvbSI6NjAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjYwfSwibWFpbiI6eyJsZWZ0IjowLCJ0b3AiOjYwLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo1MDAsIndpZHRoIjoxNDQwLCJoZWlnaHQiOjQ0MH0sImZvb3RlciI6eyJsZWZ0Ijo0ODkuNTkzNzUsInRvcCI6NDMzLCJyaWdodCI6MTQ0MCwiYm90dG9tIjo1MDAsIndpZHRoIjo5NTAuNDA2MjUsImhlaWdodCI6Njd9LCJjYXJkIjp7ImxlZnQiOjQ4OS41OTM3NSwidG9wIjoxNTMuMDkzNzUsInJpZ2h0IjoxNDQwLCJib3R0b20iOjQzMywid2lkdGgiOjk1MC40MDYyNSwiaGVpZ2h0IjoyNzkuOTA2MjV9LCJkb3NzaWVyIjp7ImxlZnQiOjQwLCJ0b3AiOjE4MS44OTA2MjUsInJpZ2h0Ijo0NjAuNTkzNzUsImJvdHRvbSI6NDcyLCJ3aWR0aCI6NDIwLjU5Mzc1LCJoZWlnaHQiOjI5MC4xMDkzNzV9LCJzY3JvbGxXaWR0aCI6MTQ0MCwic2Nyb2xsSGVpZ2h0Ijo1MDB9XQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f747acb7fe0c8627cb90-0dc25dd7ecbf79e907e8",
+          "file": "creation-fullscreen.spec.ts",
+          "line": 35,
+          "column": 2
+        },
+        {
+          "title": "短屏：独立滚动、五步按钮与表单交互可达",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2392,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T15:01:25.041Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f747acb7fe0c8627cb90-4995e4fb7cdc610a39a2",
+          "file": "creation-fullscreen.spec.ts",
+          "line": 54,
+          "column": 1
+        },
+        {
+          "title": "首页及游戏界面隔离",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1733,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T15:01:30.948Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "route-isolation",
+                      "contentType": "text/plain",
+                      "body": "SG9tZSBhbmQgZ2FtZSByZW5kZXJlZCB3aXRob3V0IGRlc2t0b3AtY3JlYXRpb24gc2VsZWN0b3JzLg=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f747acb7fe0c8627cb90-04412fba5e7495dab35a",
+          "file": "creation-fullscreen.spec.ts",
+          "line": 95,
+          "column": 1
+        }
+      ],
+      "suites": [
+        {
+          "title": "未改手机",
+          "file": "creation-fullscreen.spec.ts",
+          "line": 80,
+          "column": 6,
+          "specs": [
+            {
+              "title": "人生车票与断点 390",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1735,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T15:01:27.443Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f747acb7fe0c8627cb90-790f631929700d86dd8b",
+              "file": "creation-fullscreen.spec.ts",
+              "line": 82,
+              "column": 31
+            },
+            {
+              "title": "人生车票与断点 900",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1753,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T15:01:29.185Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f747acb7fe0c8627cb90-bdcac17d85080d8d7474",
+              "file": "creation-fullscreen.spec.ts",
+              "line": 82,
+              "column": 31
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-13T15:01:06.104Z",
+    "duration": 26696.019999999997,
+    "expected": 12,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

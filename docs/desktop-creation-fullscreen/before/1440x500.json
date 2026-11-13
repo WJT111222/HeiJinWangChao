@@ -1,0 +1,247 @@
+[
+  {
+    "step": 1,
+    "viewport": {
+      "width": 1440,
+      "height": 500
+    },
+    "header": {
+      "left": 0,
+      "top": 0,
+      "right": 1440,
+      "bottom": 60,
+      "width": 1440,
+      "height": 60
+    },
+    "main": {
+      "left": 100,
+      "top": 104.796875,
+      "right": 1340,
+      "bottom": 891.65625,
+      "width": 1240,
+      "height": 786.859375
+    },
+    "footer": {
+      "left": 531.828125,
+      "top": 433,
+      "right": 1308,
+      "bottom": 500,
+      "width": 776.171875,
+      "height": 67
+    },
+    "card": {
+      "left": 531.828125,
+      "top": 197.890625,
+      "right": 1308,
+      "bottom": 776.65625,
+      "width": 776.171875,
+      "height": 578.765625
+    },
+    "dossier": {
+      "left": 172,
+      "top": 250.078125,
+      "right": 502.828125,
+      "bottom": 576.796875,
+      "width": 330.828125,
+      "height": 326.71875
+    },
+    "scrollWidth": 1440,
+    "scrollHeight": 936
+  },
+  {
+    "step": 2,
+    "viewport": {
+      "width": 1440,
+      "height": 500
+    },
+    "header": {
+      "left": 0,
+      "top": 0,
+      "right": 1440,
+      "bottom": 60,
+      "width": 1440,
+      "height": 60
+    },
+    "main": {
+      "left": 100,
+      "top": 104.796875,
+      "right": 1340,
+      "bottom": 897.234375,
+      "width": 1240,
+      "height": 792.4375
+    },
+    "footer": {
+      "left": 531.828125,
+      "top": 433,
+      "right": 1308,
+      "bottom": 500,
+      "width": 776.171875,
+      "height": 67
+    },
+    "card": {
+      "left": 531.828125,
+      "top": 197.890625,
+      "right": 1308,
+      "bottom": 782.234375,
+      "width": 776.171875,
+      "height": 584.34375
+    },
+    "dossier": {
+      "left": 172,
+      "top": 250.078125,
+      "right": 502.828125,
+      "bottom": 576.796875,
+      "width": 330.828125,
+      "height": 326.71875
+    },
+    "scrollWidth": 1440,
+    "scrollHeight": 942
+  },
+  {
+    "step": 3,
+    "viewport": {
+      "width": 1440,
+      "height": 500
+    },
+    "header": {
+      "left": 0,
+      "top": 0,
+      "right": 1440,
+      "bottom": 60,
+      "width": 1440,
+      "height": 60
+    },
+    "main": {
+      "left": 100,
+      "top": 104.796875,
+      "right": 1340,
+      "bottom": 1076.9375,
+      "width": 1240,
+      "height": 972.140625
+    },
+    "footer": {
+      "left": 531.828125,
+      "top": 433,
+      "right": 1308,
+      "bottom": 500,
+      "width": 776.171875,
+      "height": 67
+    },
+    "card": {
+      "left": 531.828125,
+      "top": 197.890625,
+      "right": 1308,
+      "bottom": 961.9375,
+      "width": 776.171875,
+      "height": 764.046875
+    },
+    "dossier": {
+      "left": 172,
+      "top": 250.078125,
+      "right": 502.828125,
+      "bottom": 576.796875,
+      "width": 330.828125,
+      "height": 326.71875
+    },
+    "scrollWidth": 1440,
+    "scrollHeight": 1122
+  },
+  {
+    "step": 4,
+    "viewport": {
+      "width": 1440,
+      "height": 500
+    },
+    "header": {
+      "left": 0,
+      "top": 0,
+      "right": 1440,
+      "bottom": 60,
+      "width": 1440,
+      "height": 60
+    },
+    "main": {
+      "left": 100,
+      "top": 104.796875,
+      "right": 1340,
+      "bottom": 652.796875,
+      "width": 1240,
+      "height": 548
+    },
+    "footer": {
+      "left": 531.828125,
+      "top": 433,
+      "right": 1308,
+      "bottom": 500,
+      "width": 776.171875,
+      "height": 67
+    },
+    "card": {
+      "left": 531.828125,
+      "top": 197.890625,
+      "right": 1308,
+      "bottom": 537.796875,
+      "width": 776.171875,
+      "height": 339.90625
+    },
+    "dossier": {
+      "left": 172,
+      "top": 250.078125,
+      "right": 502.828125,
+      "bottom": 576.796875,
+      "width": 330.828125,
+      "height": 326.71875
+    },
+    "scrollWidth": 1440,
+    "scrollHeight": 698
+  },
+  {
+    "step": 5,
+    "viewport": {
+      "width": 1440,
+      "height": 500
+    },
+    "header": {
+      "left": 0,
+      "top": 0,
+      "right": 1440,
+      "bottom": 60,
+      "width": 1440,
+      "height": 60
+    },
+    "main": {
+      "left": 100,
+      "top": 104.796875,
+      "right": 1340,
+      "bottom": 1330.4375,
+      "width": 1240,
+      "height": 1225.640625
+    },
+    "footer": {
+      "left": 531.828125,
+      "top": 433,
+      "right": 1308,
+      "bottom": 500,
+      "width": 776.171875,
+      "height": 67
+    },
+    "card": {
+      "left": 531.828125,
+      "top": 197.890625,
+      "right": 1308,
+      "bottom": 1215.4375,
+      "width": 776.171875,
+      "height": 1017.546875
+    },
+    "dossier": {
+      "left": 172,
+      "top": 250.078125,
+      "right": 502.828125,
+      "bottom": 576.796875,
+      "width": 330.828125,
+      "height": 326.71875
+    },
+    "scrollWidth": 1440,
+    "scrollHeight": 1375
+  }
+]
