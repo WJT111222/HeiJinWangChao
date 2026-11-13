@@ -1,0 +1,9 @@
+Listing tests:
+  mobile-batch4-review.spec.ts:32:1 › 复审：手机开局包删除赭红、覆盖金色、取消中性；PC 不附加这些样式
+  mobile-batch4-review.spec.ts:67:1 › 复审：第五站 CDP 真实触摸短拉与 touchCancel 零建档，超过60px松开只建一份原开局草稿
+Total: 2 tests in 1 file
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

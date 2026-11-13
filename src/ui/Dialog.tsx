@@ -26,7 +26,7 @@ export function Dialog({
   seal,
   eyebrow,
   badge,
-  nonmodal=false,archiveHeading,returnFocus,mobileVariant,sheetFull=false,footer,
+  nonmodal=false,archiveHeading,returnFocus,mobileVariant,sheetFull=false,footer,beforeBody,closeDisabled=false,
 }: {
   title: string;
   onClose: () => void;
@@ -39,7 +39,7 @@ export function Dialog({
   eyebrow?: string;
   badge?: ReactNode;
   nonmodal?:boolean;archiveHeading?:ArchiveHeading;returnFocus?:()=>HTMLElement|null;
-  mobileVariant?:'sheet'|'actions'|'confirm'|'select';sheetFull?:boolean;footer?:ReactNode;
+  mobileVariant?:'sheet'|'actions'|'confirm'|'select';sheetFull?:boolean;footer?:ReactNode;beforeBody?:ReactNode;closeDisabled?:boolean;
 }) {
   const desktop = useDesktopFeedback();
   const sheet = !desktop && !nonmodal && Boolean(mobileVariant);
@@ -135,11 +135,12 @@ export function Dialog({
           <h2 id={titleId} title={sheet?title:undefined}>{title}</h2>
         </div>
         {desktop && badge}
-        <button type="button" onClick={onClose} aria-label={closeLabel}>
+        <button type="button" onClick={onClose} disabled={closeDisabled||undefined} aria-label={closeLabel}>
           关闭 <span aria-hidden="true">×</span>
         </button>
       </header>}
       {sheet&&badge&&<div className="mobile-sheet-badge">{badge}</div>}
+      {beforeBody}
       <div className={nonmodal?"ar-body":"modal-body"}>{children}</div>
       {sheet&&footer&&<footer className="mobile-sheet-footer">{footer}</footer>}
     </dialog>
