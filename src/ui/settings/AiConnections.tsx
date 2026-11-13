@@ -285,7 +285,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
               type="url"
               value={channel?.baseUrl ?? ''}
               onChange={(e) => patch({ baseUrl: e.target.value })}
-              placeholder="填写服务根地址（DeepSeek 官方无需 /v1）"
+              placeholder={channel?.protocol === 'deepseek' ? 'DeepSeek 官方地址无需 /v1' : '填写含版本路径的服务根地址'}
             />
           </label>
           <label>
