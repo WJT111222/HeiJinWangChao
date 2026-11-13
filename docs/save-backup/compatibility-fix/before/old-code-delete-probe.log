@@ -1,0 +1,41 @@
+
+> heijinwangchao@0.1.0 test
+> vitest run src/tests/pr126-review-probes.test.ts
+
+
+ RUN  v5.0.5 /workspace/pr126-review
+
+stdout | src/tests/pr126-review-probes.test.ts > PR126 independent review: actual deployed-main code with imported timeline > pre-deployment page delete must not remove the imported same-ID same-revision save
+{"oldCodeCommit":"fbb1f13902eff11924b5dd74f42fa91a082106c5","newInstanceCreated":true,"oldDeleteError":null,"remainingSaveCount":0}
+
+ ❯ src/tests/pr126-review-probes.test.ts (1 test | 1 failed) 76ms
+   ❯ PR126 independent review: actual deployed-main code with imported timeline (1)
+     × pre-deployment page delete must not remove the imported same-ID same-revision save 73ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tests/pr126-review-probes.test.ts > PR126 independent review: actual deployed-main code with imported timeline > pre-deployment page delete must not remove the imported same-ID same-revision save
+AssertionError: Actual deployed-main delete must preserve the imported save: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/tests/pr126-review-probes.test.ts:28:84
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  08:44:43
+   Duration  1.60s (transform 70%, import 25%, tests 5%)
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

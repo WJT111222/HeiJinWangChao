@@ -1,0 +1,29 @@
+{
+  "baselineHead": "2c2a9e54b74b3b26e411bd6feb298adc27654072",
+  "main": "fbb1f13902eff11924b5dd74f42fa91a082106c5",
+  "node": "v24.19.0",
+  "storageConnectionVersion": {
+    "from": 3,
+    "to": 4
+  },
+  "gameStateSchemaOrBackupVersionChanged": false,
+  "vitest": {
+    "files": 13,
+    "passed": 340,
+    "failed": 0,
+    "includedNewScenarios": 6
+  },
+  "chromium": {
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "retries": 0,
+    "postRequests": 0
+  },
+  "typecheck": "passed",
+  "lint": "passed",
+  "build": "passed",
+  "diffCheck": "passed",
+  "fullE2ERun": false,
+  "paidModelRequests": 0
+}

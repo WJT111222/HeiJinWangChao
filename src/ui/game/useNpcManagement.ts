@@ -7,7 +7,7 @@ import { changeNpcImportance, npcManagementError } from './npcManagement';
 import type { NpcManagementResult } from './npcManagement';
 
 export function useNpcManagement(repository: SaveRepository, state: GameState, draft: TurnDraft | undefined,
-  busy: boolean, onChanged: (result: NpcManagementResult) => void) {
+  busy: boolean, onChanged: (result: NpcManagementResult) => void, instance?: string) {
   const lock = useRef(false);
   const [pendingId, setPendingId] = useState<string>();
   const [message, setMessage] = useState('');
@@ -16,7 +16,7 @@ export function useNpcManagement(repository: SaveRepository, state: GameState, d
     if (busy) { setMessage('当前回合正在生成，请完成或取消后再修改人物重要性。'); return; }
     lock.current = true; setPendingId(npcId); setMessage('');
     try {
-      const result = await changeNpcImportance(repository, state, draft, npcId);
+      const result = await changeNpcImportance(repository, state, draft, npcId, instance);
       onChanged(result);
       setMessage(`${result.state.npc[npcId].name}：${result.state.npc[npcId].kind === 'special' ? '已设为特殊人物。' : '已取消特殊身份，人物记忆与关系保留。'}`);
     } catch (error) {

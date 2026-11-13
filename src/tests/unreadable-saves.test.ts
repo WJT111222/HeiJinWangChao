@@ -1,6 +1,6 @@
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SaveRepository } from '../services/storage/saveRepository';
+import { SaveRepository, saveDatabaseVersion } from '../services/storage/saveRepository';
 import { game } from './fixtures/game';
 import { saveKeyText, serializeRawSave } from '../services/storage/saveManagement';
 import * as migrations from '../services/storage/migrations';
@@ -187,7 +187,7 @@ describe('targeted unreadable deletion stays atomic', () => {
     // Damaged/foreign DB layout with out-of-line saves, using the same version: key identity
     // must remain authoritative even when an unreadable payload names a different save.
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const open = factory.open('out-of-line', 3);
+      const open = factory.open('out-of-line', saveDatabaseVersion);
       open.onupgradeneeded = () => {
         open.result.createObjectStore('saves'); open.result.createObjectStore('drafts', { keyPath: 'saveId' });
         open.result.createObjectStore('turnReceipts', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');

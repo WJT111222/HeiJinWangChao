@@ -219,6 +219,7 @@ export class TurnCoordinator {
                       failed,
                       draft.draftRevision,
                       attempt.controller.signal,
+                      draft,
                     ),
                   );
                 } finally {

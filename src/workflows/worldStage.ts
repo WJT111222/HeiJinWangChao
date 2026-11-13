@@ -70,7 +70,7 @@ export class WorldStage {
         useVariableStage: settings.runtime.useVariableStage,
         useWorldStage: true,
       });
-      const draft = await this.repository.saveDraft(started, current.draftRevision, attempt.signal);
+      const draft = await this.repository.saveDraft(started, current.draftRevision, attempt.signal, current);
       attempt.check();
       input.onDraft?.(draft);
       let responseInspectionId: string | undefined;
@@ -139,7 +139,7 @@ export class WorldStage {
         });
         attempt.saving();
         input.onProgress?.('saving');
-        const saved = await this.repository.saveDraft(next, draft.draftRevision, attempt.signal);
+        const saved = await this.repository.saveDraft(next, draft.draftRevision, attempt.signal, draft);
         attempt.check();
         return saved;
       } catch (error) {
@@ -171,6 +171,7 @@ export class WorldStage {
             failed,
             draft.draftRevision,
             attempt.signal,
+            draft,
           );
           attempt.check();
           input.onDraft?.(stored);
