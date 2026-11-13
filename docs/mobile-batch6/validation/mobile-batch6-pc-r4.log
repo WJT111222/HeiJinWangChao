@@ -1,0 +1,74 @@
+
+Running 2 tests using 1 worker
+
+(node:82774) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/2] [mobile] › e2e/mobile-turn-changes.spec.ts:41:31 › PC 901：主界面、变化展开与资料入口原主干像素一致
+  1) [mobile] › e2e/mobile-turn-changes.spec.ts:41:31 › PC 901：主界面、变化展开与资料入口原主干像素一致 ────────────────
+
+    Error: 901 closed
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |  test.setTimeout(90000);const desktopBrowser=await browser.browserType().launch({executablePath:process.env.CHROMIUM_PATH,args:['--disable-gpu','--disable-lcd-text','--font-render-hinting=none']}),contexts=[],images:Buffer[][]=[[],[]];
+      43 |  for(const [i,port] of [5180,5280].entries()){const context=await desktopBrowser.newContext({baseURL:`http://127.0.0.1:${port}`,viewport:{width,height:900},isMobile:false,deviceScaleFactor:1,reducedMotion:'reduce'});contexts.push(context);await context.addInitScript(()=>{const d=new Date();localStorage.setItem('heijin.notices.hidden-on.v1',[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'));});const page=await context.newPage();await seed(page);await expect(button(page)).toBeEnabled();for(const state of ['closed','open']){if(state==='open')await button(page).click();await page.locator('[data-testid="story-reader"]').evaluate(e=>{const target=e.querySelector('.chg-btn')!;e.scrollTop+=target.getBoundingClientRect().top-e.getBoundingClientRect().top-20;});await page.mouse.move(0,0);await page.evaluate(async()=>{await document.fonts.ready;await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));});await page.screenshot({animations:'disabled'});images[i].push(await page.screenshot({animations:'disabled',path:`${shots}/${i?'main':'react'}-pc-${width}-${state}.png`}));}await expect(page.locator('[data-change-panel]')).toHaveCount(0);}
+    > 44 |  const result=['closed','open'].map((state,i)=>({state,identical:images[0][i].equals(images[1][i])}));writeFileSync(`docs/mobile-batch6/validation/pc-${width}.json`,JSON.stringify(result,null,2)+'\n');for(const r of result)expect(r.identical,`${width} ${r.state}`).toBe(true);for(const c of contexts)await c.close();await desktopBrowser.close();
+         |                                                                                                                                                                                                                                                                          ^
+      45 | });
+      46 |
+      47 | test('正式HTML变化设计参考截图，仅作为视觉对照',async({page})=>{await page.setViewportSize({width:390,height:844});await page.goto('/docs/mobile-batch3/reference/heijin-mobile-misc.html#chg');await expect(page.locator('.grpx')).toHaveCount(6);await picture(page,'design-chg-390x844');});
+        at /workspace/mobile-redesign-batch6/e2e/mobile-turn-changes.spec.ts:44:266
+
+    Error Context: ../../tmp/mobile-batch6-pc-r4/mobile-turn-changes-PC-901：主界面、变化展开与资料入口原主干像素一致-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch6-pc-r4/mobile-turn-changes-PC-901：主界面、变化展开与资料入口原主干像素一致-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch6-pc-r4/mobile-turn-changes-PC-901：主界面、变化展开与资料入口原主干像素一致-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:83059) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/2] [mobile] › e2e/mobile-turn-changes.spec.ts:41:31 › PC 1440：主界面、变化展开与资料入口原主干像素一致
+  2) [mobile] › e2e/mobile-turn-changes.spec.ts:41:31 › PC 1440：主界面、变化展开与资料入口原主干像素一致 ───────────────
+
+    Error: 1440 closed
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |  test.setTimeout(90000);const desktopBrowser=await browser.browserType().launch({executablePath:process.env.CHROMIUM_PATH,args:['--disable-gpu','--disable-lcd-text','--font-render-hinting=none']}),contexts=[],images:Buffer[][]=[[],[]];
+      43 |  for(const [i,port] of [5180,5280].entries()){const context=await desktopBrowser.newContext({baseURL:`http://127.0.0.1:${port}`,viewport:{width,height:900},isMobile:false,deviceScaleFactor:1,reducedMotion:'reduce'});contexts.push(context);await context.addInitScript(()=>{const d=new Date();localStorage.setItem('heijin.notices.hidden-on.v1',[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'));});const page=await context.newPage();await seed(page);await expect(button(page)).toBeEnabled();for(const state of ['closed','open']){if(state==='open')await button(page).click();await page.locator('[data-testid="story-reader"]').evaluate(e=>{const target=e.querySelector('.chg-btn')!;e.scrollTop+=target.getBoundingClientRect().top-e.getBoundingClientRect().top-20;});await page.mouse.move(0,0);await page.evaluate(async()=>{await document.fonts.ready;await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));});await page.screenshot({animations:'disabled'});images[i].push(await page.screenshot({animations:'disabled',path:`${shots}/${i?'main':'react'}-pc-${width}-${state}.png`}));}await expect(page.locator('[data-change-panel]')).toHaveCount(0);}
+    > 44 |  const result=['closed','open'].map((state,i)=>({state,identical:images[0][i].equals(images[1][i])}));writeFileSync(`docs/mobile-batch6/validation/pc-${width}.json`,JSON.stringify(result,null,2)+'\n');for(const r of result)expect(r.identical,`${width} ${r.state}`).toBe(true);for(const c of contexts)await c.close();await desktopBrowser.close();
+         |                                                                                                                                                                                                                                                                          ^
+      45 | });
+      46 |
+      47 | test('正式HTML变化设计参考截图，仅作为视觉对照',async({page})=>{await page.setViewportSize({width:390,height:844});await page.goto('/docs/mobile-batch3/reference/heijin-mobile-misc.html#chg');await expect(page.locator('.grpx')).toHaveCount(6);await picture(page,'design-chg-390x844');});
+        at /workspace/mobile-redesign-batch6/e2e/mobile-turn-changes.spec.ts:44:266
+
+    Error Context: ../../tmp/mobile-batch6-pc-r4/mobile-turn-changes-PC-1440：主界面、变化展开与资料入口原主干像素一致-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../tmp/mobile-batch6-pc-r4/mobile-turn-changes-PC-1440：主界面、变化展开与资料入口原主干像素一致-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../tmp/mobile-batch6-pc-r4/mobile-turn-changes-PC-1440：主界面、变化展开与资料入口原主干像素一致-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2 failed
+    [mobile] › e2e/mobile-turn-changes.spec.ts:41:31 › PC 901：主界面、变化展开与资料入口原主干像素一致 ─────────────────
+    [mobile] › e2e/mobile-turn-changes.spec.ts:41:31 › PC 1440：主界面、变化展开与资料入口原主干像素一致 ────────────────

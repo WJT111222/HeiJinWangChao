@@ -1,0 +1,3 @@
+
+> heijinwangchao@1.0.0-beta lint
+> eslint . --max-warnings=0

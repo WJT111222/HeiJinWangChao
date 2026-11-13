@@ -1,0 +1,14 @@
+
+Running 6 tests using 1 worker
+
+(node:83394) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/6] [mobile] › e2e/mobile-archives.spec.ts:93:1 › 手机设置真实保存 AI 与记忆：无模型 POST，关闭拦截、记忆费用保护和重载
+[2/6] [mobile] › e2e/mobile-archives.spec.ts:139:1 › 地图跨档案新目标覆盖旧层级：保留普通重开、搜索、定位与只读
+[3/6] [mobile] › e2e/mobile-batch4.spec.ts:25:1 › 自动须知→公告、原文、焦点陷阱、章节与进度、手动打开仅一张
+[4/6] [mobile] › e2e/mobile-batch4.spec.ts:43:1 › 五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文
+[5/6] [mobile] › e2e/mobile-home.spec.ts:49:1 › 金色按钮等价读取，快速双击只导航一次
+[6/6] [mobile] › e2e/pr120-integration.spec.ts:80:1 › 整合：抽屉打开时真实输入发送、失败恢复、取消和原子结算/刷新
+  6 passed (55.0s)

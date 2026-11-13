@@ -1,0 +1,11 @@
+
+ RUN  v5.0.5 /workspace/mobile-redesign-batch6
+
+
+ Test Files  3 passed (3)
+      Tests  47 passed (47)
+   Start at  11:06:50
+   Duration  4.13s (transform 39%, import 35%, tests 26%)
+
+    Isolate  3 workers spawned · ~206ms startup each (spawn + environment, per file)
+             at least ~412ms faster with isolate: false — reuses workers across files instead of one per file

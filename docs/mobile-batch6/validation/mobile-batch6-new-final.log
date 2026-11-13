@@ -1,0 +1,21 @@
+
+Running 13 tests using 1 worker
+
+(node:84307) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/13] [mobile] › e2e/mobile-turn-changes.spec.ts:12:81 › 手机变化 375×667：可靠六组、角标、单一滚动与只读
+[2/13] [mobile] › e2e/mobile-turn-changes.spec.ts:12:81 › 手机变化 390×844：可靠六组、角标、单一滚动与只读
+[3/13] [mobile] › e2e/mobile-turn-changes.spec.ts:12:81 › 手机变化 430×932：可靠六组、角标、单一滚动与只读
+[4/13] [mobile] › e2e/mobile-turn-changes.spec.ts:12:81 › 手机变化 392×420：可靠六组、角标、单一滚动与只读
+[5/13] [mobile] › e2e/mobile-turn-changes.spec.ts:12:81 › 手机变化 900×800：可靠六组、角标、单一滚动与只读
+[6/13] [mobile] › e2e/mobile-turn-changes.spec.ts:22:1 › 零变化、缺失/损坏恢复点、草稿：七入口无旧角标，浏览不写入
+[7/13] [mobile] › e2e/mobile-turn-changes.spec.ts:26:1 › 快照比较延迟和切换存档：只用当前已确认结果，迟到旧结果不复活
+[8/13] [mobile] › e2e/mobile-turn-changes.spec.ts:36:1 › 变化抽屉可视区、触摸遮罩、拖动与原生关闭回焦
+[9/13] [mobile] › e2e/mobile-turn-changes.spec.ts:41:31 › PC 901：主界面、变化展开与资料入口原主干像素一致
+[10/13] [mobile] › e2e/mobile-turn-changes.spec.ts:41:31 › PC 1440：主界面、变化展开与资料入口原主干像素一致
+[11/13] [mobile] › e2e/mobile-turn-changes.spec.ts:47:1 › 正式HTML变化设计参考截图，仅作为视觉对照
+[12/13] [mobile] › e2e/mobile-turn-changes.spec.ts:49:1 › 入口与角标共享只读比较，稀疏变化仅显示真实目标角标
+[13/13] [mobile] › e2e/mobile-turn-changes.spec.ts:55:1 › 真实撤回消费快照后隐藏旧角标，刷新不会恢复失效数量
+  13 passed (1.8m)

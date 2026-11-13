@@ -1,0 +1,16 @@
+import {expect} from '@playwright/test';
+import type {Page} from '@playwright/test';
+export async function seed(page:Page,variant='rich',extra=0){
+ await page.goto('/');await page.evaluate(async({variant,extra})=>{
+  const paths=['/src/tests/fixtures/turnChanges.ts','/src/services/storage/saveRepository.ts','/src/ui/settings/model.ts','/src/domain/drafts.ts'];
+  const [{turnChangesPair,comparisonCheckpoint},{SaveRepository},{defaultSettings,settingsKey},{createTurnDraft,rerollStory}]=await Promise.all(paths.map(p=>import(p)));
+  const {before,after}=turnChangesPair(extra,variant==='none'),point=comparisonCheckpoint(before,after),settings=defaultSettings();for(const cfg of Object.values(settings.memory.summaries) as {automatic:boolean}[])cfg.automatic=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
+  if(variant==='corrupt'){const wrong={...before,saveId:'wrong-save'};point.snapshot.stateJSON=JSON.stringify(wrong);point.control.records[0].bytes=new TextEncoder().encode(JSON.stringify(point.snapshot)).byteLength;}
+  if(variant==='stress'){before.economy.cash=Number.MAX_SAFE_INTEGER;after.economy.cash=0;before.economy.onlineBalance=null;after.economy.onlineBalance=100;after.protagonist.healthText='完整身体描述需要自然换行。'.repeat(120)+'状态原文末尾';point.snapshot.stateJSON=JSON.stringify(before);point.control.records[0].bytes=new TextEncoder().encode(JSON.stringify(point.snapshot)).byteLength;}
+  const draft=variant==='draft'?rerollStory(createTurnDraft(after.saveId,after.revision,'changes-preview','regular','下一步'),{turnKind:'regular',narrative:'尚未正式结算的草稿预览。',summary:'草稿',variableGuide:[]}):point.draft;
+  const repo=await SaveRepository.open();repo.close();await new Promise<void>((resolve,reject)=>{const q=indexedDB.open('heijinwangchao');q.onsuccess=()=>{const db=q.result,t=db.transaction(['saves','drafts','turnUndo','saveControls','turnReceipts'],'readwrite');for(const name of ['saves','drafts','turnUndo','saveControls','turnReceipts'])t.objectStore(name).clear();t.objectStore('saves').put(after);t.objectStore('drafts').put(draft);if(variant!=='missing'){t.objectStore('turnUndo').put(point.snapshot);t.objectStore('saveControls').put(point.control);}t.oncomplete=()=>{db.close();resolve();};t.onabort=()=>reject(t.error);};q.onerror=()=>reject(q.error);});
+ },{variant,extra});await page.goto('/#game/save-a');await page.reload();await expect(page.locator('.game-layout')).toBeVisible();
+}
+export const raw=(page:Page)=>page.evaluate(async()=>{const p='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(p),r=await SaveRepository.open();try{return await r.exportRaw('save-a');}finally{r.close();}});
+export async function guard(page:Page){let calls=0;const errors:string[]=[];await page.route('https://**',async r=>{calls++;await r.abort();});page.on('pageerror',e=>errors.push(e.message));return()=>{expect(calls).toBe(0);expect(errors).toEqual([]);};}
+export async function fit(page:Page){expect(await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)<=innerWidth)).toBe(true);for(const node of await page.locator('.turn-changes,.chg-body,.chg-grp').all())if(await node.isVisible())expect(await node.evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);}

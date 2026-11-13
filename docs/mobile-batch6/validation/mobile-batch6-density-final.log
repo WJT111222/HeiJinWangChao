@@ -1,0 +1,15 @@
+
+Running 7 tests using 1 worker
+
+(node:85582) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/7] [mobile] › e2e/mobile-turn-changes.spec.ts:12:81 › 手机变化 375×667：可靠六组、角标、单一滚动与只读
+[2/7] [mobile] › e2e/mobile-turn-changes.spec.ts:12:81 › 手机变化 390×844：可靠六组、角标、单一滚动与只读
+[3/7] [mobile] › e2e/mobile-turn-changes.spec.ts:12:81 › 手机变化 430×932：可靠六组、角标、单一滚动与只读
+[4/7] [mobile] › e2e/mobile-turn-changes.spec.ts:12:81 › 手机变化 392×420：可靠六组、角标、单一滚动与只读
+[5/7] [mobile] › e2e/mobile-turn-changes.spec.ts:12:81 › 手机变化 900×800：可靠六组、角标、单一滚动与只读
+[6/7] [mobile] › e2e/turn-changes.spec.ts:26:1 › 变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变
+[7/7] [mobile] › e2e/turn-changes.spec.ts:37:1 › 长列表按8条展开、超长文本与极大金额完整可达，901边界及只读压力
+  7 passed (50.4s)

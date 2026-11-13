@@ -1,0 +1,5 @@
+
+> heijinwangchao@0.1.0 typecheck
+> tsc --noEmit
+
+e2e/turn-changes.spec.ts(33,54): error TS6133: 'info' is declared but its value is never read.

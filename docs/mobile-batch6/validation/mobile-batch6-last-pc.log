@@ -1,0 +1,10 @@
+
+Running 2 tests using 1 worker
+
+(node:86142) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/2] [mobile] › e2e/mobile-turn-changes.spec.ts:41:31 › PC 901：主界面、变化展开与资料入口原主干像素一致
+[2/2] [mobile] › e2e/mobile-turn-changes.spec.ts:41:31 › PC 1440：主界面、变化展开与资料入口原主干像素一致
+  2 passed (53.9s)
