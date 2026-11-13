@@ -1,0 +1,29 @@
+{
+  "comparedWith": "2c2a9e54b74b3b26e411bd6feb298adc27654072",
+  "onlyProductionChanges": [
+    "src/services/storage/backup.ts",
+    "src/services/storage/saveRepository.ts"
+  ],
+  "unchangedFiles": {
+    "package.json": "9d789149038f79d2f426c9030ce4a1f46a3c5847f89eaac4a2b65d89f21b5dfd",
+    "package-lock.json": "28bec122be53c6964f42e96eca9a626dce163624aa9838db3267cf9079a6c940",
+    "src/services/storage/idb.ts": "5674aca6ae61c07db9354b12d2e6387d09feeed5de34b5954362ed82398fb8bc",
+    "src/services/storage/migrations.ts": "96a7a4a2ee0c3f72aaf4b41ef86a9267d7abd947ad75a204a344c556cb1ebf3a",
+    "src/services/storage/turnUndo.ts": "3b628daefbb61e864b0a9f0aca9b31a545b740118049749bbf39756c91b1c40e",
+    "src/app/App.tsx": "5a0930a77fd2833d34cbd14869e2dcafdc79f3734f48d803721c6377a1ea812b",
+    "src/ui/game/GameScreen.tsx": "87c2167a958198298089f7540fcc5ff50425839b6fd6432521914de6aca4cfbc",
+    "src/workflows/storyStage.ts": "1ba4371a6cca6e9e9075bcdd5e116b618d6168276f83ab9037205f0aade352c4",
+    "src/workflows/variableStage.ts": "a9f7343bbe621a3bc53ee9b598fd3cea5c222de08ae6b8147d2de5982b36df86",
+    "src/workflows/worldStage.ts": "5d777bd77508a6cfb7d2d656ead8f131f61847940888dec549af394b2d602f69",
+    "src/workflows/turnCoordinator.ts": "428fc37d04982d76a7bf72dc600e6ba03f14ce96d92c9d143673e65cefb2c558",
+    "src/tests/save-backup.test.ts": "a947ccb73bd290e5081a668b99dba4f150c656a57dad288c717518cc2ace2ddd"
+  },
+  "legacyFixtureSource": "fbb1f13902eff11924b5dd74f42fa91a082106c5",
+  "legacySourceExcerptsUnmodifiedExceptClassName": [
+    "open/close",
+    "delete",
+    "load",
+    "read state",
+    "delete records"
+  ]
+}

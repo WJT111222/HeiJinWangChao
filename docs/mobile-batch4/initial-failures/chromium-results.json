@@ -1,0 +1,867 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/mobile-batch4/node_modules/.bin/playwright",
+      "test",
+      "--config",
+      "playwright.mobile-batch4.config.ts"
+    ],
+    "configFile": "/workspace/mobile-batch4/playwright.mobile-batch4.config.ts",
+    "rootDir": "/workspace/mobile-batch4/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/workspace/mobile-batch4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "mobile-batch4.spec.ts"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/workspace/mobile-batch4/e2e",
+        "snapshotDir": "/workspace/mobile-batch4/e2e",
+        "testIgnore": [],
+        "testMatch": "mobile-batch4.spec.ts",
+        "timeout": 45000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5271",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "isMobile": true,
+          "hasTouch": true,
+          "reducedMotion": "reduce",
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "docs/mobile-batch4/chromium-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5271 --strictPort",
+      "url": "http://127.0.0.1:5271",
+      "reuseExistingServer": true
+    }
+  },
+  "suites": [
+    {
+      "title": "mobile-batch4.spec.ts",
+      "file": "mobile-batch4.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "自动须知→公告、原文、焦点陷阱、章节与进度、手动打开仅一张",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2494,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:43:38.004Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f3cd06cddbff3a56b797-cc8a840f4f3a733d68c7",
+          "file": "mobile-batch4.spec.ts",
+          "line": 25,
+          "column": 1
+        },
+        {
+          "title": "今日免打扰、隔日恢复；云端实际版本和长内容、滚动不重复请求",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2345,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:43:40.772Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f3cd06cddbff3a56b797-609a0ab6770ce4d28086",
+          "file": "mobile-batch4.spec.ts",
+          "line": 35,
+          "column": 1
+        },
+        {
+          "title": "自动翻页动画防重复关闭，reduced-motion 与 Esc 顺序",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1826,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:43:43.129Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f3cd06cddbff3a56b797-5bacf32ae2936b03c0e0",
+          "file": "mobile-batch4.spec.ts",
+          "line": 40,
+          "column": 1
+        },
+        {
+          "title": "五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "timedOut",
+                  "duration": 45257,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:43:44.965Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f3cd06cddbff3a56b797-9042c76b38935c7317c8",
+          "file": "mobile-batch4.spec.ts",
+          "line": 43,
+          "column": 1
+        },
+        {
+          "title": "顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 6857,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.game-layout')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('.game-layout') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.game-layout')\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.game-layout')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('.game-layout') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.game-layout')\u001b[22m\n\n    at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:52:65",
+                    "location": {
+                      "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                      "column": 65,
+                      "line": 52
+                    },
+                    "snippet": "  50 | test('顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复',async({page})=>{\n  51 |  await create(page,5,true);await page.getByRole('button',{name:'展开完整车票预览'}).click();const preview=page.getByRole('dialog',{name:'车票预览'});await expect(preview).toContainText('填完第 5 站即可撕票');await expect(preview.getByRole('button',{name:'确认并创建存档'})).toHaveCount(0);await page.keyboard.press('Escape');await drag(page,40);expect(await stores(page)).toEqual([]);await drag(page,90,true);expect(await stores(page)).toEqual([]);\n> 52 |  await drag(page,75);await expect(page.locator('.game-layout')).toBeVisible();expect(await stores(page)).toHaveLength(1);const saved=await page.evaluate(async()=>{const p='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(p),r=await SaveRepository.open();try{return await r.loadGame(location.hash.slice(6));}finally{r.close();}});expect(saved.state.protagonist.skills).toEqual(['玩家自存技能','第二技能']);expect(saved.state.openingTimePending).toBe(true);expect(saved.state.turnNumber).toBe(0);expect(saved.draft!.turnKind??saved.draft!.mode).toBeDefined();\n     |                                                                 ^\n  53 | });\n  54 | test('确认按钮同一校验路径、草稿保留、无效撕票返回错误步骤',async({page})=>{\n  55 |  await create(page,5);await page.evaluate(()=>{const f=JSON.parse(localStorage.getItem('heijin.creation.v1')!);f.person.name='';localStorage.setItem('heijin.creation.v1',JSON.stringify(f));});await page.reload();await drag(page,75);await expect(page.getByRole('heading',{name:'基本信息',exact:true})).toBeVisible();await expect(page.getByRole('alert')).toContainText('姓名');expect(await stores(page)).toEqual([]);await shot(page,'creation-validation-390');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                        "column": 65,
+                        "line": 52
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.game-layout')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('.game-layout') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.game-layout')\u001b[22m\n\n\n  50 | test('顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复',async({page})=>{\n  51 |  await create(page,5,true);await page.getByRole('button',{name:'展开完整车票预览'}).click();const preview=page.getByRole('dialog',{name:'车票预览'});await expect(preview).toContainText('填完第 5 站即可撕票');await expect(preview.getByRole('button',{name:'确认并创建存档'})).toHaveCount(0);await page.keyboard.press('Escape');await drag(page,40);expect(await stores(page)).toEqual([]);await drag(page,90,true);expect(await stores(page)).toEqual([]);\n> 52 |  await drag(page,75);await expect(page.locator('.game-layout')).toBeVisible();expect(await stores(page)).toHaveLength(1);const saved=await page.evaluate(async()=>{const p='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(p),r=await SaveRepository.open();try{return await r.loadGame(location.hash.slice(6));}finally{r.close();}});expect(saved.state.protagonist.skills).toEqual(['玩家自存技能','第二技能']);expect(saved.state.openingTimePending).toBe(true);expect(saved.state.turnNumber).toBe(0);expect(saved.draft!.turnKind??saved.draft!.mode).toBeDefined();\n     |                                                                 ^\n  53 | });\n  54 | test('确认按钮同一校验路径、草稿保留、无效撕票返回错误步骤',async({page})=>{\n  55 |  await create(page,5);await page.evaluate(()=>{const f=JSON.parse(localStorage.getItem('heijin.creation.v1')!);f.person.name='';localStorage.setItem('heijin.creation.v1',JSON.stringify(f));});await page.reload();await drag(page,75);await expect(page.getByRole('heading',{name:'基本信息',exact:true})).toBeVisible();await expect(page.getByRole('alert')).toContainText('姓名');expect(await stores(page)).toEqual([]);await shot(page,'creation-validation-390');\n    at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:52:65"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:44:30.923Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                    "column": 65,
+                    "line": 52
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f3cd06cddbff3a56b797-f25b2012311c17b77990",
+          "file": "mobile-batch4.spec.ts",
+          "line": 50,
+          "column": 1
+        },
+        {
+          "title": "确认按钮同一校验路径、草稿保留、无效撕票返回错误步骤",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2690,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:44:38.336Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f3cd06cddbff3a56b797-20711123a8b2577207d5",
+          "file": "mobile-batch4.spec.ts",
+          "line": 54,
+          "column": 1
+        },
+        {
+          "title": "撕票动画可取消，保存失败可以重试且不重复创建",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2263,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:44:41.191Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f3cd06cddbff3a56b797-3fec10cc49375b12e971",
+          "file": "mobile-batch4.spec.ts",
+          "line": 58,
+          "column": 1
+        },
+        {
+          "title": "开局包六视图、手动技能完整恢复、取消不写、覆盖与删除隔离",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2596,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:44:43.460Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f3cd06cddbff3a56b797-e3c3024ef65f7165dc29",
+          "file": "mobile-batch4.spec.ts",
+          "line": 61,
+          "column": 1
+        },
+        {
+          "title": "开局包损坏隔离、存储失败不清空原数据和创角草稿",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1394,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:44:46.063Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f3cd06cddbff3a56b797-779cc81cf5d3c8312a27",
+          "file": "mobile-batch4.spec.ts",
+          "line": 67,
+          "column": 1
+        },
+        {
+          "title": "短视口 375×667 仅正文滚动，底栏与输入可达",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 7354,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\u001b[22m\n\n    at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:72:147",
+                    "location": {
+                      "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                      "column": 147,
+                      "line": 72
+                    },
+                    "snippet": "  70 | for(const [width,height] of [[375,667],[390,844],[430,932],[392,640],[392,420]])test(`短视口 ${width}×${height} 仅正文滚动，底栏与输入可达`,async({page})=>{\n  71 |  await page.setViewportSize({width,height});await create(page,1);await expect(page.locator('.creation-mini-ticket')).toBeInViewport({ratio:1});await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await page.getByLabel('性格',{exact:true}).fill('长性格'.repeat(100));await expect(page.getByLabel('性格',{exact:true})).toBeInViewport();await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await shot(page,`creation-${width}x${height}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);\n> 72 |  await page.goto('/');await page.evaluate(()=>localStorage.removeItem('heijin.notices.hidden-on.v1'));await page.reload();await expect(doc(page)).toBeVisible();await doc(page).getByLabel('免责声明内容').evaluate(el=>el.scrollTop=el.scrollHeight);await expect(doc(page).getByRole('checkbox')).toBeInViewport();await expect(doc(page).getByRole('button',{name:'关闭免责声明'})).toBeInViewport();await shot(page,`notice-${width}x${height}`);\n     |                                                                                                                                                   ^\n  73 | });\n  74 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                        "column": 147,
+                        "line": 72
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\u001b[22m\n\n\n  70 | for(const [width,height] of [[375,667],[390,844],[430,932],[392,640],[392,420]])test(`短视口 ${width}×${height} 仅正文滚动，底栏与输入可达`,async({page})=>{\n  71 |  await page.setViewportSize({width,height});await create(page,1);await expect(page.locator('.creation-mini-ticket')).toBeInViewport({ratio:1});await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await page.getByLabel('性格',{exact:true}).fill('长性格'.repeat(100));await expect(page.getByLabel('性格',{exact:true})).toBeInViewport();await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await shot(page,`creation-${width}x${height}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);\n> 72 |  await page.goto('/');await page.evaluate(()=>localStorage.removeItem('heijin.notices.hidden-on.v1'));await page.reload();await expect(doc(page)).toBeVisible();await doc(page).getByLabel('免责声明内容').evaluate(el=>el.scrollTop=el.scrollHeight);await expect(doc(page).getByRole('checkbox')).toBeInViewport();await expect(doc(page).getByRole('button',{name:'关闭免责声明'})).toBeInViewport();await shot(page,`notice-${width}x${height}`);\n     |                                                                                                                                                   ^\n  73 | });\n  74 |\n    at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:72:147"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:44:47.464Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-短视口-375×667-仅正文滚动，底栏与输入可达/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-短视口-375×667-仅正文滚动，底栏与输入可达/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-短视口-375×667-仅正文滚动，底栏与输入可达/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                    "column": 147,
+                    "line": 72
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f3cd06cddbff3a56b797-3256b79efc9ca572af55",
+          "file": "mobile-batch4.spec.ts",
+          "line": 70,
+          "column": 81
+        },
+        {
+          "title": "短视口 390×844 仅正文滚动，底栏与输入可达",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8542,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\u001b[22m\n\n    at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:72:147",
+                    "location": {
+                      "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                      "column": 147,
+                      "line": 72
+                    },
+                    "snippet": "  70 | for(const [width,height] of [[375,667],[390,844],[430,932],[392,640],[392,420]])test(`短视口 ${width}×${height} 仅正文滚动，底栏与输入可达`,async({page})=>{\n  71 |  await page.setViewportSize({width,height});await create(page,1);await expect(page.locator('.creation-mini-ticket')).toBeInViewport({ratio:1});await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await page.getByLabel('性格',{exact:true}).fill('长性格'.repeat(100));await expect(page.getByLabel('性格',{exact:true})).toBeInViewport();await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await shot(page,`creation-${width}x${height}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);\n> 72 |  await page.goto('/');await page.evaluate(()=>localStorage.removeItem('heijin.notices.hidden-on.v1'));await page.reload();await expect(doc(page)).toBeVisible();await doc(page).getByLabel('免责声明内容').evaluate(el=>el.scrollTop=el.scrollHeight);await expect(doc(page).getByRole('checkbox')).toBeInViewport();await expect(doc(page).getByRole('button',{name:'关闭免责声明'})).toBeInViewport();await shot(page,`notice-${width}x${height}`);\n     |                                                                                                                                                   ^\n  73 | });\n  74 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                        "column": 147,
+                        "line": 72
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\u001b[22m\n\n\n  70 | for(const [width,height] of [[375,667],[390,844],[430,932],[392,640],[392,420]])test(`短视口 ${width}×${height} 仅正文滚动，底栏与输入可达`,async({page})=>{\n  71 |  await page.setViewportSize({width,height});await create(page,1);await expect(page.locator('.creation-mini-ticket')).toBeInViewport({ratio:1});await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await page.getByLabel('性格',{exact:true}).fill('长性格'.repeat(100));await expect(page.getByLabel('性格',{exact:true})).toBeInViewport();await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await shot(page,`creation-${width}x${height}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);\n> 72 |  await page.goto('/');await page.evaluate(()=>localStorage.removeItem('heijin.notices.hidden-on.v1'));await page.reload();await expect(doc(page)).toBeVisible();await doc(page).getByLabel('免责声明内容').evaluate(el=>el.scrollTop=el.scrollHeight);await expect(doc(page).getByRole('checkbox')).toBeInViewport();await expect(doc(page).getByRole('button',{name:'关闭免责声明'})).toBeInViewport();await shot(page,`notice-${width}x${height}`);\n     |                                                                                                                                                   ^\n  73 | });\n  74 |\n    at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:72:147"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:44:55.216Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-短视口-390×844-仅正文滚动，底栏与输入可达/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-短视口-390×844-仅正文滚动，底栏与输入可达/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-短视口-390×844-仅正文滚动，底栏与输入可达/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                    "column": 147,
+                    "line": 72
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f3cd06cddbff3a56b797-eaa1028f7c7082a2759c",
+          "file": "mobile-batch4.spec.ts",
+          "line": 70,
+          "column": 81
+        },
+        {
+          "title": "短视口 430×932 仅正文滚动，底栏与输入可达",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8096,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\u001b[22m\n\n    at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:72:147",
+                    "location": {
+                      "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                      "column": 147,
+                      "line": 72
+                    },
+                    "snippet": "  70 | for(const [width,height] of [[375,667],[390,844],[430,932],[392,640],[392,420]])test(`短视口 ${width}×${height} 仅正文滚动，底栏与输入可达`,async({page})=>{\n  71 |  await page.setViewportSize({width,height});await create(page,1);await expect(page.locator('.creation-mini-ticket')).toBeInViewport({ratio:1});await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await page.getByLabel('性格',{exact:true}).fill('长性格'.repeat(100));await expect(page.getByLabel('性格',{exact:true})).toBeInViewport();await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await shot(page,`creation-${width}x${height}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);\n> 72 |  await page.goto('/');await page.evaluate(()=>localStorage.removeItem('heijin.notices.hidden-on.v1'));await page.reload();await expect(doc(page)).toBeVisible();await doc(page).getByLabel('免责声明内容').evaluate(el=>el.scrollTop=el.scrollHeight);await expect(doc(page).getByRole('checkbox')).toBeInViewport();await expect(doc(page).getByRole('button',{name:'关闭免责声明'})).toBeInViewport();await shot(page,`notice-${width}x${height}`);\n     |                                                                                                                                                   ^\n  73 | });\n  74 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                        "column": 147,
+                        "line": 72
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\u001b[22m\n\n\n  70 | for(const [width,height] of [[375,667],[390,844],[430,932],[392,640],[392,420]])test(`短视口 ${width}×${height} 仅正文滚动，底栏与输入可达`,async({page})=>{\n  71 |  await page.setViewportSize({width,height});await create(page,1);await expect(page.locator('.creation-mini-ticket')).toBeInViewport({ratio:1});await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await page.getByLabel('性格',{exact:true}).fill('长性格'.repeat(100));await expect(page.getByLabel('性格',{exact:true})).toBeInViewport();await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await shot(page,`creation-${width}x${height}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);\n> 72 |  await page.goto('/');await page.evaluate(()=>localStorage.removeItem('heijin.notices.hidden-on.v1'));await page.reload();await expect(doc(page)).toBeVisible();await doc(page).getByLabel('免责声明内容').evaluate(el=>el.scrollTop=el.scrollHeight);await expect(doc(page).getByRole('checkbox')).toBeInViewport();await expect(doc(page).getByRole('button',{name:'关闭免责声明'})).toBeInViewport();await shot(page,`notice-${width}x${height}`);\n     |                                                                                                                                                   ^\n  73 | });\n  74 |\n    at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:72:147"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:45:04.412Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-短视口-430×932-仅正文滚动，底栏与输入可达/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-短视口-430×932-仅正文滚动，底栏与输入可达/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-短视口-430×932-仅正文滚动，底栏与输入可达/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                    "column": 147,
+                    "line": 72
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f3cd06cddbff3a56b797-0dcf2d3150c37399338a",
+          "file": "mobile-batch4.spec.ts",
+          "line": 70,
+          "column": 81
+        },
+        {
+          "title": "短视口 392×640 仅正文滚动，底栏与输入可达",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 7528,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\u001b[22m\n\n    at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:72:147",
+                    "location": {
+                      "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                      "column": 147,
+                      "line": 72
+                    },
+                    "snippet": "  70 | for(const [width,height] of [[375,667],[390,844],[430,932],[392,640],[392,420]])test(`短视口 ${width}×${height} 仅正文滚动，底栏与输入可达`,async({page})=>{\n  71 |  await page.setViewportSize({width,height});await create(page,1);await expect(page.locator('.creation-mini-ticket')).toBeInViewport({ratio:1});await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await page.getByLabel('性格',{exact:true}).fill('长性格'.repeat(100));await expect(page.getByLabel('性格',{exact:true})).toBeInViewport();await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await shot(page,`creation-${width}x${height}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);\n> 72 |  await page.goto('/');await page.evaluate(()=>localStorage.removeItem('heijin.notices.hidden-on.v1'));await page.reload();await expect(doc(page)).toBeVisible();await doc(page).getByLabel('免责声明内容').evaluate(el=>el.scrollTop=el.scrollHeight);await expect(doc(page).getByRole('checkbox')).toBeInViewport();await expect(doc(page).getByRole('button',{name:'关闭免责声明'})).toBeInViewport();await shot(page,`notice-${width}x${height}`);\n     |                                                                                                                                                   ^\n  73 | });\n  74 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                        "column": 147,
+                        "line": 72
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\u001b[22m\n\n\n  70 | for(const [width,height] of [[375,667],[390,844],[430,932],[392,640],[392,420]])test(`短视口 ${width}×${height} 仅正文滚动，底栏与输入可达`,async({page})=>{\n  71 |  await page.setViewportSize({width,height});await create(page,1);await expect(page.locator('.creation-mini-ticket')).toBeInViewport({ratio:1});await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await page.getByLabel('性格',{exact:true}).fill('长性格'.repeat(100));await expect(page.getByLabel('性格',{exact:true})).toBeInViewport();await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await shot(page,`creation-${width}x${height}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);\n> 72 |  await page.goto('/');await page.evaluate(()=>localStorage.removeItem('heijin.notices.hidden-on.v1'));await page.reload();await expect(doc(page)).toBeVisible();await doc(page).getByLabel('免责声明内容').evaluate(el=>el.scrollTop=el.scrollHeight);await expect(doc(page).getByRole('checkbox')).toBeInViewport();await expect(doc(page).getByRole('button',{name:'关闭免责声明'})).toBeInViewport();await shot(page,`notice-${width}x${height}`);\n     |                                                                                                                                                   ^\n  73 | });\n  74 |\n    at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:72:147"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:45:13.284Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-短视口-392×640-仅正文滚动，底栏与输入可达/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-短视口-392×640-仅正文滚动，底栏与输入可达/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-短视口-392×640-仅正文滚动，底栏与输入可达/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                    "column": 147,
+                    "line": 72
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f3cd06cddbff3a56b797-d1814516f4bb1eaf9762",
+          "file": "mobile-batch4.spec.ts",
+          "line": 70,
+          "column": 81
+        },
+        {
+          "title": "短视口 392×420 仅正文滚动，底栏与输入可达",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 7468,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\u001b[22m\n\n    at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:72:147",
+                    "location": {
+                      "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                      "column": 147,
+                      "line": 72
+                    },
+                    "snippet": "  70 | for(const [width,height] of [[375,667],[390,844],[430,932],[392,640],[392,420]])test(`短视口 ${width}×${height} 仅正文滚动，底栏与输入可达`,async({page})=>{\n  71 |  await page.setViewportSize({width,height});await create(page,1);await expect(page.locator('.creation-mini-ticket')).toBeInViewport({ratio:1});await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await page.getByLabel('性格',{exact:true}).fill('长性格'.repeat(100));await expect(page.getByLabel('性格',{exact:true})).toBeInViewport();await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await shot(page,`creation-${width}x${height}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);\n> 72 |  await page.goto('/');await page.evaluate(()=>localStorage.removeItem('heijin.notices.hidden-on.v1'));await page.reload();await expect(doc(page)).toBeVisible();await doc(page).getByLabel('免责声明内容').evaluate(el=>el.scrollTop=el.scrollHeight);await expect(doc(page).getByRole('checkbox')).toBeInViewport();await expect(doc(page).getByRole('button',{name:'关闭免责声明'})).toBeInViewport();await shot(page,`notice-${width}x${height}`);\n     |                                                                                                                                                   ^\n  73 | });\n  74 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                        "column": 147,
+                        "line": 72
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true })\u001b[22m\n\n\n  70 | for(const [width,height] of [[375,667],[390,844],[430,932],[392,640],[392,420]])test(`短视口 ${width}×${height} 仅正文滚动，底栏与输入可达`,async({page})=>{\n  71 |  await page.setViewportSize({width,height});await create(page,1);await expect(page.locator('.creation-mini-ticket')).toBeInViewport({ratio:1});await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await page.getByLabel('性格',{exact:true}).fill('长性格'.repeat(100));await expect(page.getByLabel('性格',{exact:true})).toBeInViewport();await expect(page.locator('.wizard-footer')).toBeInViewport({ratio:1});await shot(page,`creation-${width}x${height}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);\n> 72 |  await page.goto('/');await page.evaluate(()=>localStorage.removeItem('heijin.notices.hidden-on.v1'));await page.reload();await expect(doc(page)).toBeVisible();await doc(page).getByLabel('免责声明内容').evaluate(el=>el.scrollTop=el.scrollHeight);await expect(doc(page).getByRole('checkbox')).toBeInViewport();await expect(doc(page).getByRole('button',{name:'关闭免责声明'})).toBeInViewport();await shot(page,`notice-${width}x${height}`);\n     |                                                                                                                                                   ^\n  73 | });\n  74 |\n    at /workspace/mobile-batch4/e2e/mobile-batch4.spec.ts:72:147"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T00:45:21.559Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-短视口-392×420-仅正文滚动，底栏与输入可达/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-短视口-392×420-仅正文滚动，底栏与输入可达/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/mobile-batch4/test-results/mobile-batch4-chromium/mobile-batch4-短视口-392×420-仅正文滚动，底栏与输入可达/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/mobile-batch4/e2e/mobile-batch4.spec.ts",
+                    "column": 147,
+                    "line": 72
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f3cd06cddbff3a56b797-4d617cb7d4bfe38c12e3",
+          "file": "mobile-batch4.spec.ts",
+          "line": 70,
+          "column": 81
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-13T00:43:37.417Z",
+    "duration": 111942.02,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 7,
+    "flaky": 0
+  }
+}

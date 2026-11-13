@@ -1,0 +1,52 @@
+[
+  {
+    "name": "typecheck",
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "lint",
+    "command": [
+      "npm",
+      "run",
+      "lint"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "build",
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "targeted-vitest",
+    "command": [
+      "npm",
+      "run",
+      "test",
+      "--",
+      "src/tests/save-backup-upgrade.test.ts",
+      "src/tests/save-backup.test.ts",
+      "src/tests/saveRepository.test.ts",
+      "src/tests/unreadable-saves.test.ts",
+      "src/tests/npc-importance.test.ts",
+      "src/tests/npc-roster.test.ts",
+      "src/tests/drafts.test.ts",
+      "src/tests/turn-undo.test.ts",
+      "src/tests/turn-commit.test.ts",
+      "src/tests/story-stage.test.ts",
+      "src/tests/variable-stage.test.ts",
+      "src/tests/world-stage.test.ts",
+      "src/tests/turn-coordinator.test.ts"
+    ],
+    "exitCode": 0
+  }
+]
