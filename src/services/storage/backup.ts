@@ -110,7 +110,7 @@ export function backupSummary(state: GameState): BackupEntry['summary'] {
 /** 安全的文件名：去掉系统不允许的字符。 */
 export function backupFileName(entries: readonly BackupEntry[], now = new Date()): string {
   const date = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-  const clean = (text: string) => text.replace(/[\\/:*?"<>|\u0000-\u001f]/g, '').replace(/\s+/g, '').slice(0, 40) || '存档';
+  const clean = (text: string) => Array.from(text).filter(character => character.charCodeAt(0) >= 32).join('').replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '').slice(0, 40) || '存档';
   if (entries.length === 1) {
     const [entry] = entries;
     return `黑金王朝备份_${clean(entry.summary.title)}_第${entry.summary.turnNumber}回_${date}.heijin.json`;

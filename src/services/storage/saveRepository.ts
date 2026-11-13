@@ -26,6 +26,12 @@ import type { RawSaveExport, RawSaveRecord, SaveSummary } from './saveManagement
 import { backupSummary, compatibleDraft } from './backup';
 import type { BackupEntry } from './backup';
 
+/** Storage connection boundary, independent of GameState/backup format versions.
+ * V4 closes deployed V3 clients via their existing versionchange handler before
+ * imports become available. Old V3 code cannot reopen and bypass instance CAS.
+ * No store, index or saved payload changes are required for this upgrade. */
+export const saveDatabaseVersion = 4;
+
 declare const confirmationBrand: unique symbol;
 /**
  * compareBackup 给出的一次性确认凭据。只在内存中传递：本身是空的冻结对象，
@@ -181,7 +187,7 @@ export class SaveRepository {
     if (!factory) return Promise.reject(new DataError('STORAGE_UNAVAILABLE', '当前环境不支持 IndexedDB'));
     return new Promise((resolve, reject) => {
       // IndexedDB 结构版本独立于每个存档的 schemaVersion。
-      const operation = factory.open(name, 3);
+      const operation = factory.open(name, saveDatabaseVersion);
       operation.onupgradeneeded = () => {
         const db = operation.result;
         if (!db.objectStoreNames.contains('saves')) db.createObjectStore('saves', { keyPath: 'saveId' });
@@ -194,7 +200,7 @@ export class SaveRepository {
       };
       operation.onerror = () => reject(operation.error);
       let blocked = false;
-      operation.onblocked = () => { blocked = true; reject(new DataError('STORAGE_BLOCKED', '数据库升级被其他页面阻塞')); };
+      operation.onblocked = () => { blocked = true; reject(new DataError('STORAGE_BLOCKED', '数据库升级被其他页面阻塞，请关闭旧版游戏标签后重试。原存档未修改。')); };
       operation.onsuccess = () => {
         const db = operation.result;
         if (blocked) { db.close(); return; }
