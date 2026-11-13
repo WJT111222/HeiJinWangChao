@@ -114,3 +114,64 @@ describe('原生 DeepSeek 协议（Chat Completions）', () => {
     await expect(rejected.generate(a.snapshot(), messages)).rejects.toMatchObject({ code: 'content_filter' });
   });
 });
+it('DeepSeek 官方尾部内容块包含 usage，无需 include_usage，流式正文与思考均保留', async () => {
+  const a = setup();
+  // Official contract: usage is on the last single-choice chunk even when stream_options is absent.
+  // https://api-docs.deepseek.com/api/create-chat-completion/#request
+  const sse = frame({ choices: [{ delta: { reasoning_content: '核对上下文' } }] })
+    + frame({ choices: [{ delta: { content: '正文' }, finish_reason: null }] })
+    + frame({ choices: [{ delta: {}, finish_reason: 'stop' }], usage: reply('').usage }) + 'data: [DONE]\n\n';
+  const fetcher = vi.fn<typeof fetch>(async () => new Response(sse, { headers: { 'content-type': 'text/event-stream' } }));
+  const result = await new AiClient(fetcher).generate(a.snapshot(), messages, { stream: true });
+  expect(result).toMatchObject({ text: '正文', nativeReasoning: '核对上下文',
+    usage: { inputTokens: 8, outputTokens: 4, totalTokens: 12, reasoningTokens: 2 } });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(JSON.parse(String(fetcher.mock.calls[0][1]?.body))).toMatchObject({ stream: true, max_tokens: 8192 });
+  expect(JSON.parse(String(wireRequest(a.snapshot(), messages, false).init.body))).not.toHaveProperty('stream_options');
+});
+
+it('四阶段独立模型选择保存/重载后仍走 DeepSeek，旧三协议渠道原样保留', () => {
+  const a = setup(), disk = memory(), config = defaultAiConfig();
+  const previous = ['openai', 'gemini', 'anthropic'].map(protocol => newChannel(protocol as 'openai' | 'gemini' | 'anthropic'));
+  config.channels = [...previous, a.channel];
+  config.routes.story = { channelId: a.channel.id, modelId: 'authored-story' };
+  for (const stage of ['variables', 'world', 'memory'] as const)
+    config.routes[stage] = { mode: 'independent', channelId: a.channel.id, modelId: `authored-${stage}` };
+  saveAiConfig(disk, config);
+  const restored = readAiConfig(disk);
+  expect(restored.channels.slice(0, 3)).toEqual(previous);
+  for (const stage of ['story', 'variables', 'world', 'memory'] as const) {
+    const snapshot = requestSnapshot(restored, stage, a.vault);
+    expect(snapshot).toMatchObject({ model: `authored-${stage}`, stage, channel: { protocol: 'deepseek' } });
+    const sent = JSON.parse(String(wireRequest(snapshot, messages, false).init.body));
+    expect(sent.model).toBe(`authored-${stage}`);
+    expect(sent.max_tokens).toBe(8192); expect(sent).not.toHaveProperty('max_completion_tokens');
+  }
+});
+
+it('DeepSeek 不学习 OpenAI max_completion_tokens 或丢弃玩家温度，也不自动重发', async () => {
+  const a = setup(); a.channel.parameters.temperature = 0.7;
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json({ error: {
+    code: 'unsupported_parameter', param: 'max_tokens',
+    message: "Unsupported parameter: 'max_tokens'. Use 'max_completion_tokens' instead.",
+  } }, { status: 400 }));
+  const client = new AiClient(fetcher);
+  await expect(client.generate(a.snapshot(), messages)).rejects.toMatchObject({ code: 'rejected', status: 400 });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  await expect(client.generate(a.snapshot(), messages)).rejects.toMatchObject({ code: 'rejected' });
+  expect(fetcher).toHaveBeenCalledTimes(2);
+  for (const call of fetcher.mock.calls) {
+    const sent = JSON.parse(String(call[1]?.body));
+    expect(sent).toMatchObject({ max_tokens: 8192, temperature: 0.7 });
+    expect(sent).not.toHaveProperty('max_completion_tokens');
+  }
+});
+
+it.each(['length', 'content_filter'] as const)('DeepSeek SSE %s 保留失败类别，不自动重试', async reason => {
+  const a = setup();
+  const fetcher = vi.fn<typeof fetch>(async () => new Response(frame({ choices: [{ delta: { content: '片段' }, finish_reason: reason }] }),
+    { headers: { 'content-type': 'text/event-stream' } }));
+  await expect(new AiClient(fetcher).generate(a.snapshot(), messages, { stream: true }))
+    .rejects.toMatchObject({ code: reason === 'length' ? 'output_limit' : 'content_filter' });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});

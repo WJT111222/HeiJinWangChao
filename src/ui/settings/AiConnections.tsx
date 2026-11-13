@@ -365,7 +365,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
             onChange={(value) => { if (channel && (value === 'off' || value === 'confirmation' || value === 'prefix'))
               patch({ compatibility: { ...channel.compatibility, cotMode: value } }); }} />
           <p className="muted">
-            三协议使用完整确认历史并以 user 收尾，不依赖尾部预填充。旧 cotModels 数据保留读取兼容，
+            各协议使用完整确认历史并以 user 收尾，不依赖尾部预填充。旧 cotModels 数据保留读取兼容，
             不再作为模型白名单。原生协议按已核实型号或服务能力声明自动请求公开思考摘要，不发送未经确认支持的扩展，
             不额外发起探测请求；项目叙事规划始终启用。
           </p>

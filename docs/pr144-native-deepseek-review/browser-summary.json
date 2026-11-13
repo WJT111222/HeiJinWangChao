@@ -1,0 +1,26 @@
+{
+  "ai-settings-initial": {
+    "startTime": "2026-11-13T20:00:10.222Z",
+    "duration": 62761.259000000005,
+    "expected": 8,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  },
+  "ai-settings-main-control": {
+    "startTime": "2026-11-13T20:02:28.369Z",
+    "duration": 32136.39,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  },
+  "ai-settings-final": {
+    "startTime": "2026-11-13T20:04:47.278Z",
+    "duration": 51959.736,
+    "expected": 12,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

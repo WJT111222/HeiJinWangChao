@@ -3,7 +3,7 @@ import { choose, selected, optionCount } from './helpers/select';
 import { writeFile } from 'node:fs/promises';
 
 test.beforeEach(async ({ page }) => {
-  await page.route(/^https:\/\/(?:api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com)\//, (route) => route.fulfill({ json: { data: [], models: [] } }));
+  await page.route(/^https:\/\/(?:api\.openai\.com|api\.anthropic\.com|api\.deepseek\.com|generativelanguage\.googleapis\.com)\//, (route) => route.fulfill({ json: { data: [], models: [] } }));
 });
 
 test('真实浏览器加载原文、校验哈希并组装六种模式，记录模块顺序', async ({ page }, testInfo) => {
@@ -115,6 +115,7 @@ test('AI 多渠道、原生模型列表与连接测试、路由和会话凭证�
   });
   await page.goto('/');
   await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
   const ids: string[] = [];
   for (const protocol of ['openai', 'gemini', 'anthropic', 'deepseek']) {
     await page.getByRole('button', { name: '新增渠道', exact: true }).click();
@@ -169,6 +170,7 @@ test('AI 多渠道、原生模型列表与连接测试、路由和会话凭证�
   await page.keyboard.press('Escape');
   await page.reload();
   await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
   await expect(page.getByLabel('API 密钥', { exact: true })).toHaveValue('browser-mock-credential');
   await selected(page, '变量管理渠道', ids[1]);
   await expect(page.getByLabel('变量管理模型 ID', { exact: true })).toHaveValue(
@@ -211,6 +213,7 @@ test('连接授权错误不展示服务详情，网络错误不误报密钥，�
   });
   await page.goto('/');
   await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
   await page.getByRole('button', { name: '新增渠道', exact: true }).click();
   await page.getByLabel('API Base URL', { exact: true }).fill('https://api.mock.invalid/v1');
   await page.getByRole('button', { name: '手动填写默认模型 ID', exact: true }).click();
@@ -277,4 +280,59 @@ test('P6完善：自定义合法范围与4K/8K/16K往返，只保存玩家明确
   await custom.fill('1000000'); await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
   await page.reload(); await page.getByRole('button', { name: '设置', exact: true }).click(); await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
   await page.getByText('生成参数与模型兼容', { exact: true }).click(); await expect(selector).toHaveAttribute('value', 'custom'); await expect(custom).toHaveValue('1000000');
+});
+
+test('原生 DeepSeek 官方地址、四阶段独立选模与刷新恢复，纯设置不生成内容', async ({ page }, testInfo) => {
+  const posts: string[] = [], models = ['mock-story', 'mock-variables', 'mock-world', 'mock-memory'];
+  await page.route('https://api.deepseek.com/**', async route => {
+    const request = route.request();
+    if (request.method() !== 'GET') posts.push(request.url());
+    expect(request.method()).toBe('GET');
+    expect(request.url()).toBe('https://api.deepseek.com/models');
+    expect(request.headers().authorization).toBe('Bearer fictional-review-key');
+    await route.fulfill({ json: { object: 'list', data: models.map(id => ({ id })) } });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
+  await page.getByRole('button', { name: '新增渠道', exact: true }).click();
+  await choose(page, '协议', 'deepseek');
+  await expect(page.getByLabel('API Base URL', { exact: true })).toHaveValue('https://api.deepseek.com');
+  await expect(page.getByLabel('API Base URL', { exact: true })).toHaveAttribute('placeholder', 'DeepSeek 官方地址无需 /v1');
+  await page.getByLabel('渠道名称', { exact: true }).fill('DeepSeek 审查用 Mock');
+  await page.getByLabel('API 密钥', { exact: true }).fill('fictional-review-key');
+  await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
+  await expect(page.getByRole('group', { name: '默认模型选择', exact: true })).toContainText('当前接口返回 4 个模型');
+  await choose(page, '默认模型', models[0]);
+  const id = await page.getByRole('combobox', { name: '当前渠道', exact: true }).getAttribute('value');
+  if (!id) throw new Error('missing authored channel');
+  const labels = ['正文生成', '变量管理', '动态世界', '记忆维护'];
+  for (let i = 0; i < labels.length; i++) {
+    if (i) await page.getByLabel(`${labels[i]}跟随正文模型`, { exact: true }).uncheck();
+    await choose(page, `${labels[i]}渠道`, id);
+    await choose(page, `${labels[i]}模型`, models[i]);
+  }
+  await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
+  await expect(page.getByText('AI 配置已保存；模型列表会自动获取，尚未发起生成请求。', { exact: true })).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('button', { name: 'AI 连接', exact: true }).click();
+  await selected(page, '协议', 'deepseek');
+  await expect(page.getByLabel('API 密钥', { exact: true })).toHaveAttribute('type', 'password');
+  await expect(page.getByLabel('API 密钥', { exact: true })).toHaveValue('fictional-review-key');
+  await expect(page.getByLabel('API Base URL', { exact: true })).toHaveValue('https://api.deepseek.com');
+  for (let i = 0; i < labels.length; i++) {
+    await selected(page, `${labels[i]}渠道`, id);
+    await selected(page, `${labels[i]}模型`, models[i]);
+    if (i) await expect(page.getByLabel(`${labels[i]}跟随正文模型`, { exact: true })).not.toBeChecked();
+  }
+  expect(posts).toEqual([]);
+  const data = await page.evaluate(() => ({ local: JSON.stringify(localStorage), session: JSON.stringify(sessionStorage) }));
+  expect(data.local).not.toContain('fictional-review-key');
+  expect(data.session).toContain('fictional-review-key');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByLabel('API 密钥', { exact: true }).scrollIntoViewIfNeeded();
+  await testInfo.attach('deepseek-settings-key-masked', { body: await page.screenshot(), contentType: 'image/png' });
+  await page.getByRole('combobox', { name: '记忆维护模型', exact: true }).scrollIntoViewIfNeeded();
+  await testInfo.attach('deepseek-settings-routes', { body: await page.screenshot(), contentType: 'image/png' });
 });

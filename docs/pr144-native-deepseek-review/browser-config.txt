@@ -1,0 +1,12 @@
+import { defineConfig } from '@playwright/test';
+import original from './playwright.config';
+export default defineConfig({
+  ...original,
+  reporter: [['list'], ['json', { outputFile: '/workspace/pr144-evidence/ai-settings-final.json' }]],
+  outputDir: 'test-results/pr144-ai-settings',
+  use: { ...original.use, baseURL: 'http://127.0.0.1:5354' },
+  webServer: {
+    command: 'npm run dev -- --host 127.0.0.1 --port 5354 --strictPort',
+    url: 'http://127.0.0.1:5354', reuseExistingServer: false,
+  },
+});
