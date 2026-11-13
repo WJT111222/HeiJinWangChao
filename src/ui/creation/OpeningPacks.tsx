@@ -1,3 +1,4 @@
+import { useDesktopFeedback } from '../Feedback';
 import { useState } from 'react';
 import { Dialog } from '../Dialog';
 import { cities } from './model';
@@ -9,6 +10,7 @@ type View = 'browse' | 'save' | 'rename' | 'delete' | 'apply' | 'overwrite';
 export function OpeningPacks({ form, onApply, busy }: {
   form: Creation; onApply: (form: Creation) => void; busy: boolean;
 }) {
+  const mobile=!useDesktopFeedback();
   const [view, setView] = useState<View>();
   const [packs, setPacks] = useState<OpeningPack[]>([]);
   const [selected, setSelected] = useState('');
@@ -48,16 +50,18 @@ export function OpeningPacks({ form, onApply, busy }: {
     {notice && <p role="status">{notice}</p>}
     {view && <Dialog title={view === 'browse' ? '我的开局包' : view === 'save' ? '保存为开局包' :
       view === 'rename' ? '重命名开局包' : view === 'delete' ? '删除开局包' : view === 'apply' ? '套用开局包' : '覆盖开局包'}
-      onClose={() => { setView(undefined); setError(''); }} closeLabel="关闭开局包" small>
+      onClose={() => { setView(undefined); setError(''); }} closeLabel="关闭开局包" small mobileVariant="sheet" seal={mobile?'包':undefined} className={mobile?'mobile-opening-pack':undefined}>
       {error && <p role="alert" className="error">{error}</p>}
       {notice && <p role="status">{notice}</p>}
       {invalidCount > 0 && <p role="status">{invalidCount} 份开局包无法读取，原始数据已保留。</p>}
       {view === 'browse' && <>
+        {mobile&&<p className="opening-pack-reminder">套用后将替换当前创角草稿；开局包只保存在本机浏览器。</p>}
         {!packs.length && <p>暂无可用开局包</p>}
         <fieldset className="opening-pack-list"><legend className="sr-only">选择开局包</legend>
           {packs.map(item => <label key={item.id} className="opening-pack-choice">
             <input type="radio" name="opening-pack" checked={selected === item.id} onChange={() => setSelected(item.id)} />
-            <span><strong>{item.name}</strong><span>{item.settings.person.name} · {item.settings.person.age} 岁 · {cities.find(city => city.id === item.settings.city)?.name}</span></span>
+            {mobile&&<span className="opening-pack-seal" aria-hidden="true">{[...item.settings.person.name][0]||'包'}</span>}
+            <span><strong>{item.name}</strong><span>{item.settings.person.name} · {item.settings.person.age} 岁 · {cities.find(city => city.id === item.settings.city)?.name}</span></span>{mobile&&<i className="opening-pack-ring" aria-hidden="true"/>}
           </label>)}
         </fieldset>
         <div className="button-row">
@@ -74,11 +78,14 @@ export function OpeningPacks({ form, onApply, busy }: {
         else if (target) setView('overwrite');
         else save();
       }}>
+        {view==='save'&&mobile?<fieldset className="opening-pack-save-method"><legend>保存方式</legend><div role="radiogroup" aria-label="保存方式">{[{id:'',name:'新建开局包'},...packs.map(item=>({id:item.id,name:`覆盖：${item.name}`}))].map(item=><button type="button" role="radio" aria-checked={target===item.id} key={item.id} onClick={()=>{setTarget(item.id);if(item.id)setName(packs.find(p=>p.id===item.id)!.name);}}>{item.name}</button>)}</div></fieldset>:<>
         {view === 'save' && <label>保存方式<select aria-label="保存方式" value={target} onChange={event => {
           setTarget(event.target.value);
           if (event.target.value) setName(packs.find(item => item.id === event.target.value)!.name);
         }}><option value="">新建开局包</option>{packs.map(item => <option key={item.id} value={item.id}>覆盖：{item.name}</option>)}</select></label>}
+        </>}
         <label>开局包名称<input required maxLength={80} value={name} onChange={event => setName(event.target.value)} /></label>
+        {mobile&&<button type="button" onClick={()=>{setView(undefined);setError('');}}>取消</button>}
         <button type="submit" className="primary">{view === 'rename' ? '确认重命名' : '保存开局包'}</button>
       </form>}
       {view === 'apply' && <>

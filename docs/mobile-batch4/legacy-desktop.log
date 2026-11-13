@@ -1,0 +1,14 @@
+
+Running 2 tests using 1 worker
+
+(node:292828) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [desktop] › e2e/opening-packs.spec.ts:125:1 › 同名包独立管理：重命名、取消删除、明确覆盖及确认删除 (3.1s)
+  ✓  2 [desktop] › e2e/opening-packs.spec.ts:158:1 › 损坏包隔离，存储拒绝不误报成功、不丢失有效包或当前草稿 (1.9s)
+
+  2 passed (5.9s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
