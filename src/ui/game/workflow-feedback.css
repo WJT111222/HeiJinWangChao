@@ -218,6 +218,24 @@
     font-size: 0.76rem;
     padding: 0.3rem 0.75rem;
   }
+  .app-shell-game .city-night .wf-banner > .wf-banner-close {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-color: transparent;
+    background: transparent;
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--banner-text);
+    opacity: 0.75;
+  }
+  .app-shell-game .city-night .wf-banner > .wf-banner-close:hover,
+  .app-shell-game .city-night .wf-banner > .wf-banner-close:focus-visible {
+    opacity: 1;
+    background: #ffffff0f;
+  }
 
   /* 主体：左侧阶段导航 + 右侧详情 */
   .app-shell-game .city-night .wf-main {
@@ -747,8 +765,11 @@
     border-color: #ffffff14;
     border-radius: 8px;
   }
+  /* 桌面诊断区由外层统一滚动；日志内容不再是独立滚动区，否则 overscroll-behavior: contain 会吞掉鼠标滚轮。 */
   .app-shell-game .city-night .wf-dt-body .runtime-log-content {
     max-height: none;
+    overflow: visible;
+    overscroll-behavior: auto;
   }
   .app-shell-game .city-night .wf-dt-body .field-hint {
     text-align: left;

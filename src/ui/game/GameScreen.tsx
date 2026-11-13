@@ -151,6 +151,8 @@ export function GameScreen({
   }
   const [worldDirectoryOpen, setWorldDirectoryOpen] = useState(false);
   const [diagnosticsOpen,setDiagnosticsOpen]=useState(false);
+  // 玩家关掉的错误横幅：只记住当时那组错误，出现新的错误时会重新显示。
+  const [dismissedError, setDismissedError] = useState('');
   const [mobileStatusOpen,setMobileStatusOpen]=useState(false),[mobileMini,setMobileMini]=useState(false);
   const readerY=useRef(0),inputElement=useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState('');
@@ -512,18 +514,21 @@ export function GameScreen({
             ? "off"
             : "pending";
 
+  const errorMessages = [automatic.error, error, submitError, variables.error, world.error].filter(Boolean);
+  const errorFailures = draft?.failures.filter(failure => failure.storyRevision === draft.storyRevision).slice(-6) ?? [];
+  const errorSignature = workflowError ? JSON.stringify([errorMessages, errorFailures.map(failure => [failure.stage, failure.errorCode, failure.attempt])]) : '';
   const desktopNotices = (
     <>
-      {workflowError && (
+      {workflowError && errorSignature !== dismissedError && (
         <div className="wf-banner workflow-errors" data-level="err" role="alert">
           <span className="wf-banner-tag" aria-hidden="true">误</span>
           <div className="wf-banner-msg">
-            {[automatic.error, error, submitError, variables.error, world.error]
-              .filter(Boolean)
-              .map((message, i) => <p key={i}>{message}</p>)}
-            {draft?.failures.filter(failure => failure.storyRevision === draft.storyRevision).slice(-6).map((failure, i) => <small key={`code-${i}`}>{stageLabels[failure.stage]} · 安全失败码：{failure.errorCode} · {failure.attempt} 次尝试</small>)}
+            {errorMessages.map((message, i) => <p key={i}>{message}</p>)}
+            {errorFailures.map((failure, i) => <small key={`code-${i}`}>{stageLabels[failure.stage]} · 安全失败码：{failure.errorCode} · {failure.attempt} 次尝试</small>)}
           </div>
           {automatic.error && <button onClick={onOpenSettings}>打开 AI 设置</button>}
+          <button type="button" className="wf-banner-close" aria-label="关闭错误提示" title="关闭提示（运行诊断里仍保留完整记录）"
+            onClick={() => setDismissedError(errorSignature)}>×</button>
         </div>
       )}
       {workflowGuidance && (
