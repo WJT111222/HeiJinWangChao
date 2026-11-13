@@ -1,6 +1,6 @@
 {
   "distinctScenarios": 19,
-  "recordedSuccessfulExecutions": 23,
+  "recordedSuccessfulExecutions": 24,
   "finalFailed": 0,
   "skipped": 0,
   "automaticRetries": 0,
@@ -32,7 +32,7 @@
     {
       "title": "五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文",
       "project": "",
-      "report": "visual-final-results.json",
+      "report": "visual-current-results.json",
       "results": [
         "passed"
       ]

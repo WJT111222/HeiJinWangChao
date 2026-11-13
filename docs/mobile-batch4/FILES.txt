@@ -105,6 +105,8 @@ docs/mobile-batch4/typecheck.log
 docs/mobile-batch4/unit-final.log
 docs/mobile-batch4/unit.log
 docs/mobile-batch4/validation-summary.json
+docs/mobile-batch4/visual-current-results.json
+docs/mobile-batch4/visual-current.log
 docs/mobile-batch4/visual-final-results.json
 docs/mobile-batch4/visual-final.log
 e2e/mobile-batch4.spec.ts

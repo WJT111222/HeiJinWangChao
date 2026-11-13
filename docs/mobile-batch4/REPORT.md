@@ -71,10 +71,11 @@ Node.js `v24.19.0`、npm `11.9.0`、Chromium `154.0.8037.57`，使用真实 npm 
 | 原 #125→#120 双层非模态工作流冒烟 | **1 通过**，[日志](pr125-cross.log) |
 | 最终视觉更新后的三项复核 | **3 通过（重复验证）**，[日志](visual-final.log) |
 | 撕票期间打开预览/开局包的取消保护复核 | **1 通过（重复验证）**，[日志](gesture-final.log) |
+| 最后手机样式截图刷新 | **1 通过（重复验证）**，[日志](visual-current.log) |
 | PC 完整 PNG | **16 组逐像素一致**，[结果](desktop-pixel-comparison.json) |
 | `git diff --check` | [通过](diff-check.log) |
 
-共 **19 个不同 Chromium 场景最终通过**，最终验收记录23次成功执行（含4次复核），无跳过、自动重试或 flaky。每个用例/项目/报告来源见 [validation-summary.json](validation-summary.json)。初轮另有14次执行，7通过7失败，原因与修复如下，原始记录不隐去。
+共 **19 个不同 Chromium 场景最终通过**，最终验收记录24次成功执行（含5次复核），无跳过、自动重试或 flaky。每个用例/项目/报告来源见 [validation-summary.json](validation-summary.json)。初轮另有14次执行，7通过7失败，原因与修复如下，原始记录不隐去。
 
 四个定向单测文件：`disclaimer-content.test.ts`、`notice-preferences.test.ts`、`character-creation-v2.test.tsx`、`opening-packs.test.tsx`，原断言不变。
 
