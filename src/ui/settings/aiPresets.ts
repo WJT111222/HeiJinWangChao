@@ -14,12 +14,12 @@ export const presets: readonly Preset[] = [
   { id: 'local', label: '本地模型', sub: 'Ollama 等', protocol: 'openai', url: localUrl, name: '本地模型', official: false },
 ];
 export const presetById = (id: PresetId) => presets.find((preset) => preset.id === id)!;
-export const protocolNames: Record<Protocol, string> = { openai: 'OpenAI 兼容', anthropic: 'Claude 格式', gemini: 'Gemini 格式', deepseek: 'DeepSeek' };
+export const protocolNames: Record<Protocol, string> = { openai: 'OpenAI 兼容', anthropic: 'Claude 格式', gemini: 'Gemini 格式', deepseek: 'DeepSeek 格式' };
 
 const trim = (url: string) => url.trim().replace(/\/+$/, '');
 /** 由已保存的协议与地址推断服务商；只用于显示与快捷切换。 */
 export function detectPreset(channel: Pick<Channel, 'protocol' | 'baseUrl'>): PresetId {
-  if (channel.protocol === 'deepseek') return 'deepseek';
+  // 以真实地址为准：只有地址就是官方地址时才算官方，DeepSeek 格式的中转地址按「OpenAI 兼容」显示。
   const official = presets.find((preset) => preset.official && preset.protocol === channel.protocol && trim(preset.url) === trim(channel.baseUrl));
   if (official) return official.id;
   try {

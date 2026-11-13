@@ -149,7 +149,7 @@ test('主题浮层的搜索、键盘、Escape、Tab与窄屏内部滚动', async
   await expect(list.getByRole('option')).toHaveCount(60);
   // 长列表在浮层内部滚动（手机端滚动容器可能是列表外层）。
   expect(await list.evaluate((element) => {
-    for (let node: HTMLElement | null = element; node && !node.matches('.ai-conn'); node = node.parentElement) {
+    for (let node: Element | null = element; node && !node.matches('.ai-conn'); node = node.parentElement) {
       if (node.scrollHeight > node.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(node).overflowY)) return true;
     }
     return false;

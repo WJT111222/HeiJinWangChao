@@ -334,3 +334,111 @@ test('换服务商：替换已填的中转地址前先确认；跟随正文可�
   await chooseText(settings, '正文生成渠道', '我的中转');
   await expect(settings.getByRole('button', { name: '保存 AI 配置', exact: true })).toBeDisabled();
 });
+
+// —— 保存失败不改变密钥；换服务商清理隐藏的旧模型；预设识别以地址为准 ——
+async function seedVault(page: import('@playwright/test').Page) {
+  await page.goto('/');
+  await page.evaluate(async () => {
+    const cp = '/src/services/ai/configuration.ts', vp = '/src/services/ai/credentials.ts';
+    const { defaultAiConfig, newChannel, saveAiConfig } = await import(cp), { CredentialVault } = await import(vp);
+    const config = defaultAiConfig();
+    config.channels = [['a', '甲渠道'], ['b', '乙渠道'], ['c', '丙渠道']].map(([id, name]) => ({ ...newChannel(), id, name, baseUrl: `https://${id}.mock.invalid/v1`, defaultModel: `${id}-model` }));
+    config.routes.story = { channelId: 'a', modelId: 'a-model' };
+    config.routes.world = { mode: 'follow-story', independent: { channelId: 'b', modelId: 'b-old' } };
+    saveAiConfig(localStorage, config);
+    const vault = new CredentialVault(sessionStorage, localStorage);
+    vault.set('a', 'secret-a', true); vault.set('b', 'secret-b', false); vault.set('c', 'secret-c', true);
+  });
+  await page.reload();
+}
+const vaultDump = (page: import('@playwright/test').Page) => page.evaluate(() => {
+  const pick = (store: Storage) => Object.fromEntries(Object.entries(store).filter(([key]) => key === 'heijin.ai.v1' || key.startsWith('heijin.credential.v1:')).sort());
+  return { local: pick(localStorage), session: pick(sessionStorage) };
+});
+
+test('保存失败（配置写入失败、密钥写到一半、删除失败）时，密钥值和存放位置都保持原样', async ({ page }) => {
+  await page.route('https://*.mock.invalid/**', (route) => route.fulfill({ json: { data: [] } }));
+  await seedVault(page);
+  await page.evaluate(() => {
+    const w = window as unknown as { failMode: string; credentialSets: number };
+    const set = Storage.prototype.setItem, remove = Storage.prototype.removeItem;
+    w.failMode = ''; w.credentialSets = 0;
+    Storage.prototype.setItem = function (key: string, value: string) {
+      if (w.failMode === 'config' && key === 'heijin.ai.v1') { w.failMode = ''; throw new DOMException('mock', 'QuotaExceededError'); }
+      if (w.failMode === 'partial' && key.startsWith('heijin.credential.v1:') && ++w.credentialSets === 2) { w.failMode = ''; throw new DOMException('mock', 'QuotaExceededError'); }
+      return set.call(this, key, value);
+    };
+    Storage.prototype.removeItem = function (key: string) {
+      if (w.failMode === 'remove' && this === localStorage && key === 'heijin.credential.v1:c') { w.failMode = ''; throw new DOMException('mock', 'SecurityError'); }
+      return remove.call(this, key);
+    };
+  });
+  const settings = await openAiSettings(page);
+  const before = await vaultDump(page);
+  expect(before.local['heijin.credential.v1:a']).toBe('secret-a');
+  expect(before.session['heijin.credential.v1:b']).toBe('secret-b');
+  // 改甲的密钥、把乙改成记住（会从本次会话移到长期保存）、删除丙。
+  await openChannel(settings, '甲渠道'); await settings.getByLabel('API 密钥', { exact: true }).fill('secret-a-new');
+  await openChannel(settings, '乙渠道'); await settings.getByRole('switch', { name: '记住密钥' }).check();
+  await openChannel(settings, '丙渠道'); await settings.getByRole('button', { name: '删除渠道', exact: true }).click();
+  await page.getByRole('button', { name: '确认删除渠道', exact: true }).click();
+  const status = settings.locator('.ai-save-bar').getByRole('status'), saveButton = settings.getByRole('button', { name: '保存 AI 配置', exact: true });
+  for (const mode of ['config', 'partial', 'remove']) {
+    await page.evaluate((value) => { const w = window as unknown as { failMode: string; credentialSets: number }; w.failMode = value; w.credentialSets = 0; }, mode);
+    await saveButton.click();
+    await expect(status).toContainText('保存失败');
+    expect(await page.evaluate(() => (window as unknown as { failMode: string }).failMode)).toBe(''); // 确实触发了这一种失败
+    expect(await vaultDump(page), mode).toEqual(before);
+    await expect(saveButton).toBeEnabled(); // 修改仍未保存，可以重试
+  }
+  await saveAi(settings);
+  const after = await vaultDump(page);
+  expect(after.local['heijin.credential.v1:a']).toBe('secret-a-new');
+  expect(after.local['heijin.credential.v1:b']).toBe('secret-b');
+  expect(after.session['heijin.credential.v1:b']).toBeUndefined();
+  expect(after.local['heijin.credential.v1:c']).toBeUndefined();
+  expect(after.local['heijin.ai.v1']).not.toContain('secret-');
+});
+
+test('换服务商只清掉指向这个渠道的隐藏旧模型，其他阶段的选择不动；DeepSeek 中转地址不显示为官方', async ({ page }) => {
+  await page.route('https://*.mock.invalid/**', (route) => route.fulfill({ json: { data: [] } }));
+  await seedVault(page);
+  await page.evaluate(async () => {
+    const cp = '/src/services/ai/configuration.ts', { readAiConfig, saveAiConfig } = await import(cp);
+    const config = readAiConfig(localStorage);
+    config.channels[2] = { ...config.channels[2], protocol: 'deepseek', baseUrl: 'https://c.mock.invalid/deepseek' };
+    config.routes.variables = { mode: 'follow-story', independent: { channelId: 'b', modelId: 'b-variables' } };
+    config.routes.memory = { mode: 'independent', channelId: 'c', modelId: 'c-memory' };
+    saveAiConfig(localStorage, config);
+  });
+  await page.reload();
+  const settings = await openAiSettings(page);
+  // 旧配置里 DeepSeek 格式 + 第三方地址：按「OpenAI 兼容」显示，接口格式保留 DeepSeek。
+  await openChannel(settings, '丙渠道');
+  await expect(settings.getByRole('group', { name: '服务商', exact: true }).getByRole('button', { name: 'OpenAI 兼容', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(settings.getByRole('combobox', { name: '接口格式', exact: true })).toHaveAttribute('value', 'deepseek');
+  await expect(settings).not.toContainText('官方地址已自动填写');
+  // 乙渠道换成 Claude 官方：变量、动态世界隐藏着的乙渠道旧模型被清掉，渠道保留。
+  await openChannel(settings, '乙渠道');
+  await settings.getByRole('group', { name: '服务商', exact: true }).getByRole('button', { name: 'Claude', exact: true }).click();
+  await page.getByRole('button', { name: '替换地址', exact: true }).click();
+  await follow(settings, '变量管理', false);
+  await expect(settings.getByRole('combobox', { name: '变量管理渠道', exact: true })).toHaveAttribute('value', 'b');
+  await expect(settings.getByRole('combobox', { name: '变量管理模型', exact: true })).toHaveAttribute('value', '');
+  await follow(settings, '动态世界', false);
+  await expect(settings.getByRole('combobox', { name: '动态世界渠道', exact: true })).toHaveAttribute('value', 'b');
+  await expect(settings.getByRole('combobox', { name: '动态世界模型', exact: true })).toHaveAttribute('value', '');
+  // 正文（甲）和记忆（丙）不受影响。
+  await expect(settings.getByRole('combobox', { name: '正文生成模型', exact: true })).toHaveAttribute('value', 'a-model');
+  await expect(settings.getByRole('combobox', { name: '记忆维护模型', exact: true })).toHaveAttribute('value', 'c-memory');
+  await expect(settings.locator('.ai-save-bar').getByRole('status')).toContainText('选了「单独指定」但还没选模型');
+});
+
+test('本地模型提示可以填占位密钥', async ({ page }) => {
+  await page.goto('/');
+  const settings = await openAiSettings(page);
+  await addChannel(settings, { preset: '本地模型' });
+  await expect(settings.getByLabel('服务地址', { exact: true })).toHaveValue('http://localhost:11434/v1');
+  await expect(settings).toContainText('本地服务一般不需要真实密钥');
+  await expect(settings.getByLabel('API 密钥', { exact: true })).toHaveAttribute('placeholder', '本地服务一般不校验，可填 ollama');
+});

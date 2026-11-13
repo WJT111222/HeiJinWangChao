@@ -27,7 +27,26 @@ export class CredentialVault {
     this.session.removeItem(keyFor(id));
     this.persistent.removeItem(keyFor(id));
   }
+  /** 记下这些渠道当前在两处存储里的原始值，供保存失败时原样恢复（只在内存中短暂持有，不记录、不输出）。 */
+  snapshot(ids: Iterable<string>): VaultSnapshot {
+    return [...new Set(ids)].map((id) => ({ id, session: this.session.getItem(keyFor(id)), persistent: this.persistent.getItem(keyFor(id)) }));
+  }
+  /** 恢复快照：先移除本次写入的值腾出空间，再写回原值；尽量恢复每一项，不因单项失败中断。 */
+  restore(snapshot: VaultSnapshot) {
+    for (const entry of snapshot) {
+      for (const store of [this.session, this.persistent]) {
+        try { store.removeItem(keyFor(entry.id)); } catch { /* 继续恢复其他项 */ }
+      }
+    }
+    for (const entry of snapshot) {
+      for (const [store, value] of [[this.session, entry.session], [this.persistent, entry.persistent]] as const) {
+        if (value === null) continue;
+        try { store.setItem(keyFor(entry.id), value); } catch { /* 继续恢复其他项 */ }
+      }
+    }
+  }
 }
+export type VaultSnapshot = { id: string; session: string | null; persistent: string | null }[];
 
 // 只供脱敏使用；不向查看器返回凭证，也不持久化调试内容。
 export function browserCredentials(): string[] {

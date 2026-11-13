@@ -196,6 +196,8 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
       for (const [stage] of stages) {
         const route = next.config.routes[stage];
         if ('channelId' in route && route.channelId === id) route.modelId = '';
+        // 跟随正文时保留着的「上次单独指定」也一样：只清掉指向这个渠道的旧模型，渠道本身和其他阶段不动。
+        if ('independent' in route && route.independent?.channelId === id) route.independent = { channelId: id, modelId: '' };
       }
     });
     catalog.remove(id);
@@ -252,17 +254,24 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
     if (problems.length) { setNotice(problems[0], 'warn'); return; }
     const checked = AiConfigSchema.safeParse(config);
     if (!checked.success) { setNotice('配置无效：请核对名称、HTTPS 地址、模型 ID 和生成参数；地址不能含密钥或查询参数。'); return; }
+    const vault = start.vault;
+    if (!vault) { setNotice('保存失败，请检查浏览器存储权限或空间后重试。'); return; }
+    const removed = saved.config.channels.filter((item) => !config.channels.some((next) => next.id === item.id)).map((item) => item.id);
+    // 密钥和配置要么一起保存成功，要么都保持原样：先记下原值，任何一步失败就把密钥原样放回。
+    const before = vault.snapshot([...removed, ...checked.data.channels.map((item) => item.id)]);
     try {
-      if (!start.vault) throw new Error('vault');
-      for (const item of saved.config.channels) if (!config.channels.some((next) => next.id === item.id)) { start.vault.delete(item.id); catalog.remove(item.id); }
-      for (const item of checked.data.channels) start.vault.set(item.id, draft.keys[item.id] ?? '', draft.remember[item.id] ?? true);
+      for (const id of removed) vault.delete(id);
+      for (const item of checked.data.channels) vault.set(item.id, draft.keys[item.id] ?? '', draft.remember[item.id] ?? true);
       saveAiConfig(localStorage, checked.data);
-      const next = { ...clone(draft), config: checked.data };
-      setSaved(next); setDraft(clone(next));
-      setNotice(warnings.length ? `已保存。${warnings[0]}，这个渠道暂时不能使用。` : '已保存，下一次生成开始生效。', warnings.length ? 'warn' : 'ok');
     } catch {
-      setNotice('保存失败，请检查浏览器存储权限或空间后重试。');
+      vault.restore(before);
+      setNotice('保存失败，请检查浏览器存储权限或空间后重试。密钥和配置都保持原样。');
+      return;
     }
+    for (const id of removed) catalog.remove(id);
+    const next = { ...clone(draft), config: checked.data };
+    setSaved(next); setDraft(clone(next));
+    setNotice(warnings.length ? `已保存。${warnings[0]}，这个渠道暂时不能使用。` : '已保存，下一次生成开始生效。', warnings.length ? 'warn' : 'ok');
   }
   function discard() {
     setDraft(clone(saved));
@@ -382,7 +391,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
               : chosen?.official ? (locked ? <p className="ai-hint">官方地址已自动填写 · <button type="button" className="ai-link" onClick={() => setUrlEditing((current) => ({ ...current, [channel.id]: true }))}>需要改地址？</button></p>
                 : <p className="ai-hint">正在使用自定义地址。</p>)
               : preset === 'compat' ? <div className="ai-hint ai-format"><ThemedSelect label="接口格式" value={channel.protocol}
-                  options={(['openai', 'anthropic', 'gemini'] as Protocol[]).map((value) => ({ value, label: protocolNames[value] }))}
+                  options={(['openai', 'anthropic', 'gemini', 'deepseek'] as Protocol[]).map((value) => ({ value, label: protocolNames[value] }))}
                   onChange={(value) => { if (value !== channel.protocol) patchChannel(channel.id, { protocol: value as Protocol, defaultModel: '',
                     compatibility: { temperature: true, maxOutputTokens: true, jsonMode: false, cotMode: 'confirmation', cotModels: [] } }); }} />
                   <span>服务商说明里没提就保持「OpenAI 兼容」</span></div>
@@ -392,9 +401,10 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
             <div className="ai-lbl">API 密钥</div>
             <div className="ai-field">
               <input aria-label="API 密钥" type={showKey ? 'text' : 'password'} autoComplete="off" spellCheck={false} value={draft.keys[channel.id] ?? ''}
-                placeholder="粘贴密钥后自动获取模型" onChange={(event) => { const value = event.target.value; update((next) => { next.keys[channel.id] = value.trim(); }); }} />
+                placeholder={preset === 'local' ? '本地服务一般不校验，可填 ollama' : '粘贴密钥后自动获取模型'} onChange={(event) => { const value = event.target.value; update((next) => { next.keys[channel.id] = value.trim(); }); }} />
               <button type="button" className="ai-show" onClick={() => setShowKey(!showKey)}>{showKey ? '隐藏' : '显示'}</button>
             </div>
+            {preset === 'local' && <p className="ai-hint">本地服务一般不需要真实密钥，填一个占位值（如 ollama）就能连接，它只会发给你本机的服务。</p>}
             <label className="ai-switch">
               <input type="checkbox" role="switch" checked={draft.remember[channel.id] ?? true}
                 onChange={(event) => { const checked = event.target.checked; update((next) => { next.remember[channel.id] = checked; }); }} />
