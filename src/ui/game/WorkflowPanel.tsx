@@ -1,3 +1,4 @@
+import './mobile-workflow-content.css';
 import { useRef, useState, useSyncExternalStore } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { ReactNode, RefObject } from 'react';
@@ -12,9 +13,12 @@ import { RuntimeLogPanel } from './RuntimeLogPanel';
 import { StoryInspectionPanel } from './StoryInspectionPanel';
 import type { RuntimeLogEntry } from './runtimeLog';
 
-// PC 三阶段详情：左侧选阶段，右侧分页查看该阶段全部内容。只重排展示，不新增数据或请求。
+// 三阶段详情：只重排展示，不新增数据或请求。
+// - desktop（>900px）：左侧选阶段，右侧分页查看该阶段全部内容。
+// - sheet（≤900px）：底部抽屉两层——第一层（home）为阶段列表与本回合入口，第二层为同一套分页详情。
 export type WorkflowStage = 'story' | 'variables' | 'world';
-export type WorkflowView = WorkflowStage | 'diagnostics' | 'input';
+export type WorkflowView = WorkflowStage | 'diagnostics' | 'input' | 'home';
+export type WorkflowLayout = 'desktop' | 'sheet';
 export type WorkflowTab = 'overview' | 'candidates' | 'raw' | 'plan' | 'normalized';
 export type WorkflowStep = { stage: WorkflowStage; name: string; text: string; visual: string };
 export type StageAction = { label: string; cancel: boolean; disabled: boolean; onClick: () => void };
@@ -23,6 +27,8 @@ export type StageSwitch = { checked: boolean; onChange: (checked: boolean) => vo
 const stageNames = { story: '正文生成', variables: '变量管理', world: '动态世界' } as const;
 const rawLabels = { story: '正文', variables: '变量', world: '动态世界' } as const;
 const stageEyebrows = { story: 'STAGE 01 · STORY', variables: 'STAGE 02 · VARIABLES', world: 'STAGE 03 · WORLD' } as const;
+const viewTitles = { ...stageNames, diagnostics: '运行诊断', input: '本回合已绑定输入' } as const;
+const viewEyebrows = { ...stageEyebrows, diagnostics: 'DIAGNOSTICS', input: 'BOUND INPUT · 只读' } as const;
 const glyphs: Record<string, string> = { done: '✓', fail: '!', run: '', off: '–', idle: '' };
 const credentials = () => browserCredentials();
 
@@ -30,6 +36,7 @@ const credentials = () => browserCredentials();
 export const stepState = (step: WorkflowStep) => (step.visual === 'idle' && step.text === '已关闭' ? 'off' : step.text === '仅预览' ? 'preview' : step.visual);
 
 export function DesktopWorkflowPanel(props: {
+  layout?: WorkflowLayout;
   label: string;
   state: string;
   onClose: () => void;
@@ -42,7 +49,7 @@ export function DesktopWorkflowPanel(props: {
   tab: WorkflowTab;
   onTab: (tab: WorkflowTab) => void;
   switches: Record<'variables' | 'world', StageSwitch>;
-  switchesRef: RefObject<HTMLOListElement>;
+  switchesRef: RefObject<HTMLOListElement | null>;
   actions: Record<'variables' | 'world', StageAction>;
   draft?: TurnDraft;
   saveId: string;
@@ -52,23 +59,39 @@ export function DesktopWorkflowPanel(props: {
   onClearLogs: () => void;
 }) {
   const { steps, view, draft } = props;
+  const sheet = props.layout === 'sheet';
+  // 抽屉第二层：标题区显示当前视图，左侧“三阶段”返回第一层；状态文案仍在下方收起条。
+  const inner = sheet && view !== 'home';
+  const returnHome = () => {
+    const index = Math.max(0, steps.findIndex(step => step.stage === view));
+    props.onView('home');
+    requestAnimationFrame(() => props.switchesRef.current?.querySelector<HTMLButtonElement>(`li:nth-child(${index + 1}) > button`)?.focus({ preventScroll: true }));
+  };
   const failedLogs = props.runtimeLogs.filter((entry) => entry.kind === 'failed').length;
   return (
-    <div className="workflow-details wf-v2" id="workflow-pop" role="region" aria-label="三阶段详情">
+    <div
+      className={`workflow-details wf-v2${sheet ? ' wf-mobile-content' : ''}`}
+      id="workflow-pop"
+      role="region"
+      aria-label="三阶段详情"
+      data-level={sheet ? (inner ? 'detail' : 'home') : undefined}
+    >
       <header className="wf-hd" data-state={props.state}>
-        <span className="dot" aria-hidden="true" />
+        {inner
+          ? <button className="wf-back" onClick={returnHome} aria-label="返回三阶段列表">三阶段</button>
+          : <span className="dot" aria-hidden="true" />}
         <div className="wf-hd-title">
-          <span className="wf-eyebrow">THREE STAGES · 三阶段</span>
-          <h3>{props.label}</h3>
+          <span className="wf-eyebrow">{inner ? viewEyebrows[view as Exclude<WorkflowView, 'home'>] : 'THREE STAGES · 三阶段'}</span>
+          <h3>{inner ? viewTitles[view as Exclude<WorkflowView, 'home'>] : props.label}</h3>
         </div>
         {props.onFollow && <button className="wf-follow" onClick={props.onFollow}>跟随最新正文 ↓</button>}
         <button className="wf-close" onClick={props.onClose} aria-label="收起三阶段详情">×</button>
       </header>
       <div className="wf-notices">{props.notices}</div>
       <div className="wf-main">
-        <nav className="wf-rail" aria-label="三阶段导航">
+        <nav className="wf-rail" aria-label="三阶段导航" hidden={inner}>
           <p className="wf-rail-h">STAGES</p>
-          <ol className="workflow-stages" id="workflow-runtime-switches" ref={props.switchesRef}>
+          <ol className={sheet ? 'workflow-stages mobile-stage-switches' : 'workflow-stages'} id="workflow-runtime-switches" ref={props.switchesRef}>
             {steps.map((step, i) => {
               const state = stepState(step);
               return (
@@ -115,14 +138,14 @@ export function DesktopWorkflowPanel(props: {
             )}
           </ul>
         </nav>
-        <div className="wf-detail" id="wf-detail">
+        <div className="wf-detail" id="wf-detail" hidden={sheet && !inner}>
           {view === 'story' || view === 'variables' || view === 'world'
-            ? <StageDetail {...props} stage={view} step={steps.find((step) => step.stage === view)!} />
+            ? <StageDetail {...props} stage={view} step={steps.find((step) => step.stage === view)!} compact={sheet} />
             : view === 'input' && draft
-              ? <BoundInput draft={draft} />
+              ? <BoundInput draft={draft} compact={sheet} />
               : null}
           {/* 诊断视图常驻 DOM：新错误进入日志时无需切换视图即可保留并累计。 */}
-          <Diagnostics hidden={view !== 'diagnostics'} {...props} failedLogs={failedLogs} />
+          <Diagnostics hidden={view !== 'diagnostics'} {...props} failedLogs={failedLogs} compact={sheet} />
         </div>
       </div>
       <footer className="wf-ft">
@@ -133,19 +156,22 @@ export function DesktopWorkflowPanel(props: {
   );
 }
 
-function DetailHead({ eyebrow, title, badges, actions }: { eyebrow: string; title: string; badges?: ReactNode; actions?: ReactNode }) {
+// compact（抽屉第二层）：视图名称已在抽屉标题区，这里只保留状态标签与操作。
+function DetailHead({ eyebrow, title, badges, actions, compact = false }: { eyebrow: string; title: string; badges?: ReactNode; actions?: ReactNode; compact?: boolean }) {
   return (
     <div className="wf-dt-hd">
       <div className="wf-dt-title">
-        <span className="wf-eyebrow">{eyebrow}</span>
-        <h4>{title}{badges}</h4>
+        {compact ? (badges && <div className="wf-badges">{badges}</div>) : <>
+          <span className="wf-eyebrow">{eyebrow}</span>
+          <h4>{title}{badges}</h4>
+        </>}
       </div>
       {actions && <div className="wf-dt-act">{actions}</div>}
     </div>
   );
 }
 
-function StageDetail(props: Parameters<typeof DesktopWorkflowPanel>[0] & { stage: WorkflowStage; step: WorkflowStep }) {
+function StageDetail(props: Parameters<typeof DesktopWorkflowPanel>[0] & { stage: WorkflowStage; step: WorkflowStep; compact: boolean }) {
   const { stage, step, draft } = props;
   const state = stepState(step);
   const variables = draft?.variables?.result;
@@ -192,6 +218,7 @@ function StageDetail(props: Parameters<typeof DesktopWorkflowPanel>[0] & { stage
       <DetailHead
         eyebrow={stageEyebrows[stage]}
         title={stageNames[stage]}
+        compact={props.compact}
         badges={badges}
         actions={action
           ? <button className={action.cancel ? 'wf-cancel' : undefined} disabled={action.disabled} onClick={action.onClick}>{action.label}</button>
@@ -445,10 +472,10 @@ function StageNormalized({ saveId, turnId, stage }: { saveId: string; turnId?: s
   </>;
 }
 
-function BoundInput({ draft }: { draft: TurnDraft }) {
+function BoundInput({ draft, compact }: { draft: TurnDraft; compact: boolean }) {
   return (
     <section className="bound-input wf-bound" aria-label="本回合已绑定输入">
-      <DetailHead eyebrow="BOUND INPUT" title="本回合已绑定输入" badges={<span className="wf-pill" data-s="idle">只读</span>} />
+      <DetailHead eyebrow="BOUND INPUT" title="本回合已绑定输入" compact={compact} badges={<span className="wf-pill" data-s="idle">只读</span>} />
       <div className="wf-dt-body">
         <p className="prose">{draft.userInput || '未填写开局偏好，按人物资料正常生成。'}</p>
       </div>
@@ -456,7 +483,7 @@ function BoundInput({ draft }: { draft: TurnDraft }) {
   );
 }
 
-function Diagnostics(props: Parameters<typeof DesktopWorkflowPanel>[0] & { hidden: boolean; failedLogs: number }) {
+function Diagnostics(props: Parameters<typeof DesktopWorkflowPanel>[0] & { hidden: boolean; failedLogs: number; compact: boolean }) {
   const { draft } = props;
   const failures = draft?.failures.filter((failure) => failure.storyRevision === draft.storyRevision).slice(-6) ?? [];
   return (
@@ -464,6 +491,7 @@ function Diagnostics(props: Parameters<typeof DesktopWorkflowPanel>[0] & { hidde
       <DetailHead
         eyebrow="DIAGNOSTICS"
         title="运行诊断"
+        compact={props.compact}
         badges={props.failedLogs > 0 ? <span className="wf-pill" data-s="fail">错误 {props.failedLogs} 条</span> : undefined}
       />
       <div className="wf-dt-body">

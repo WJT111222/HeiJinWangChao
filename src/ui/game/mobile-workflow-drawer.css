@@ -1,0 +1,21 @@
+@media(max-width:900px){
+ .app-shell-game.workflow-drawer-root{display:contents;}
+ .workflow-drawer-shade{position:fixed;left:0;right:0;width:100%;min-height:0;border:0;border-radius:0;padding:0;background:#0009;z-index:44;}
+ .workflow-drawer-viewport{position:fixed;left:8px;right:8px;z-index:45;overflow:hidden;pointer-events:none;border-radius:18px 18px 0 0;}
+ .workflow-floating-drawer{height:100%;display:flex;flex-direction:column;min-height:0;overflow:hidden;pointer-events:auto;padding:0 12px;background:#111513;border:1px solid var(--line-2);border-radius:18px 18px 0 0;box-shadow:0 -8px 24px #0008;color:var(--text);}
+ .workflow-floating-drawer:focus{outline:none;}
+ .workflow-floating-drawer :focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px;}
+ .workflow-drawer-tools{display:flex;align-items:center;gap:8px;flex:none;}
+ .workflow-drawer-grip{display:grid;place-items:center;flex:1;min-height:24px;padding:4px;border:0;background:none;touch-action:none;}
+ .workflow-drawer-grip span{width:42px;height:4px;background:#ffffff44;border-radius:4px;}
+ .workflow-drawer-input{font-size:11px;min-height:24px;padding:2px 6px;}
+ .mobile-workflow-sheet.workflow-floating-drawer .wf-mobile-content .wf-close{display:block;flex:none;min-height:32px;padding:4px 10px;}
+ .workflow-floating-drawer .wf-mobile-content{flex:1;min-height:0;}
+ .mobile-workflow-sheet.workflow-floating-drawer .wf-mobile-content .wf-hd{padding:4px 0;}
+ .mobile-workflow-sheet.workflow-floating-drawer .wf-mobile-content .wf-hd h3{font-size:14px;}
+ .mobile-workflow-sheet.workflow-floating-drawer .wf-mobile-content .wf-ft{padding:6px 0;margin-top:6px;}
+ .mobile-workflow-sheet.workflow-floating-drawer .wf-mobile-content .wf-ft small{display:none;}
+ .mobile-workflow-sheet.workflow-floating-drawer .wf-mobile-content .wf-ft .workflow-primary button{min-height:32px;}
+ .mobile-workflow-sheet.workflow-floating-drawer .wf-mobile-content .workflow-fee{margin-top:3px;font-size:10px;}
+ @media(max-height:500px){.mobile-workflow-sheet.workflow-floating-drawer .wf-mobile-content .wf-eyebrow{display:none;}.mobile-workflow-sheet.workflow-floating-drawer .wf-mobile-content .workflow-fee{display:none;}.mobile-workflow-sheet.workflow-floating-drawer .wf-mobile-content .wf-ri{padding:6px;}.mobile-workflow-sheet.workflow-floating-drawer .wf-mobile-content .workflow-stages>li{padding:4px;}.mobile-workflow-sheet.workflow-floating-drawer .wf-mobile-content .wf-ft{margin-top:2px;padding:3px 0;}}
+}

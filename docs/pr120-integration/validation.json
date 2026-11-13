@@ -1,0 +1,82 @@
+{
+  "note": "Independent batches, never added to claim one full green run. All AI calls mocked.",
+  "batches": [
+    {
+      "batch": "initial",
+      "stats": {
+        "startTime": "2026-11-12T23:17:13.484Z",
+        "duration": 32230.771,
+        "expected": 0,
+        "skipped": 1,
+        "unexpected": 3,
+        "flaky": 0
+      }
+    },
+    {
+      "batch": "mock-protocol-corrected",
+      "stats": {
+        "startTime": "2026-11-12T23:18:07.056Z",
+        "duration": 38821.293,
+        "expected": 2,
+        "skipped": 1,
+        "unexpected": 1,
+        "flaky": 0
+      }
+    },
+    {
+      "batch": "modal-and-actions",
+      "stats": {
+        "startTime": "2026-11-12T23:19:20.243Z",
+        "duration": 45117.431,
+        "expected": 4,
+        "skipped": 2,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "batch": "short-screen",
+      "stats": {
+        "startTime": "2026-11-12T23:20:29.810Z",
+        "duration": 15910.344,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "batch": "release",
+      "stats": {
+        "startTime": "2026-11-12T23:21:26.935Z",
+        "duration": 64933.219000000005,
+        "expected": 8,
+        "skipped": 2,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "batch": "breakpoint-final",
+      "stats": {
+        "startTime": "2026-11-12T23:22:51.111Z",
+        "duration": 28021.545,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "batch": "stable-screenshots",
+      "stats": {
+        "startTime": "2026-11-12T23:23:54.956Z",
+        "duration": 16494.404000000002,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    }
+  ]
+}
