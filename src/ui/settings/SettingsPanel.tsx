@@ -50,8 +50,11 @@ export function SettingsPanel({
     onAiDirtyChange?.(dirty);
   }, [onAiDirtyChange]);
   const localDirty=JSON.stringify(editing.prompts)!==JSON.stringify(settings.prompts)||JSON.stringify(editing.runtime)!==JSON.stringify(settings.runtime);
-  const prompt = <K extends keyof Settings['prompts']>(key: K, value: Settings['prompts'][K]) =>
+  const prompt = <K extends keyof Settings['prompts']>(key: K, value: Settings['prompts'][K]) => {
+    setNotice('');
+    setNoticeLevel('info');
     setEditing({ ...editing, prompts: { ...editing.prompts, [key]: value } });
+  };
   function save() {
     const checked = SettingsSchema.safeParse({ ...editing, memory: settings.memory });
     if (!checked.success) {
@@ -96,6 +99,7 @@ export function SettingsPanel({
               settings={editing}
               repository={repository}
               activeSaveId={activeSaveId}
+              onPromptChange={prompt}
             />
           </Suspense>
         )}
@@ -206,22 +210,10 @@ export function SettingsPanel({
             <p className="muted">
               两个阶段独立控制。切换只保存后续尝试的偏好，不修改进行中尝试或正式世界状态。
             </p>
-            <fieldset disabled>
-              <legend>校验与失败恢复（后续接入）</legend>
-              <label className="toggle">
-                <input type="checkbox" defaultChecked />
-                输出协议校验
-              </label>
-              <label>
-                自动重试
-                <input readOnly value="首次 + 2 次，共 3 次" />
-              </label>
-              <button>失败阶段重新加载（后续开放）</button>
-            </fieldset>
           </>
         )}
-        <div className="local-save-bar"><Feedback role="status" level={noticeLevel} className="field-hint">{notice||(desktop&&localDirty&&(tab==='提示词'||tab==='运行')?'本地设置尚未保存。':'')}</Feedback>
-        {tab !== 'AI 连接' && tab !== '提示词管理' && tab !== '记忆' && (
+        <div className="local-save-bar"><Feedback role="status" level={noticeLevel} className="field-hint">{notice||(localDirty&&(tab==='提示词管理'||(desktop&&(tab==='提示词'||tab==='运行')))?'本地设置尚未保存。':'')}</Feedback>
+        {tab !== 'AI 连接' && tab !== '记忆' && (
           <button className="primary" onClick={save}>
             保存本地设置
           </button>

@@ -1,0 +1,63 @@
+{
+  "main": "f3c66c3ce76f22931275cbe92dbdd83f01d6855f",
+  "originalPrHead": "2955f2f417029240cb7abade551337874a0f52ca",
+  "mergeCommit": "24f04facd3e52c513776d9eafdf508172cb336c1",
+  "uniqueScenarios": 5,
+  "passed": 5,
+  "failedFinal": 0,
+  "skipped": 0,
+  "actualExecutions": 6,
+  "automaticRetries": 0,
+  "scenarios": [
+    {
+      "file": "npc-memory.spec.ts",
+      "title": "手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费",
+      "project": "mobile",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "file": "npc-memory.spec.ts",
+      "title": "跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功",
+      "project": "mobile",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "file": "npc-memory.spec.ts",
+      "title": "手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费",
+      "project": "desktop",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "file": "npc-memory.spec.ts",
+      "title": "跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功",
+      "project": "desktop",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "file": "pr125-compatibility.spec.ts",
+      "title": "#125 兼容：车票主按钮进入存档，#120 双层非模态工作流与行动输入共存",
+      "project": "mobile",
+      "results": [
+        "passed"
+      ]
+    }
+  ],
+  "initialSmokeHarnessFailure": {
+    "reason": "Navigation contains three stage entries plus two auxiliary entries. Restrict the new three-button assertion to .workflow-stages; production unchanged.",
+    "initialReport": "chromium-results.json",
+    "rerunReport": "smoke-final-results.json"
+  },
+  "engineering": {
+    "typecheck": "passed",
+    "modifiedFileESLint": "passed",
+    "build": "not run: merge had no production conflict or manual production edits"
+  }
+}

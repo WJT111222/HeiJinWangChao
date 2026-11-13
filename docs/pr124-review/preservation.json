@@ -1,0 +1,102 @@
+{
+  "main": "f3c66c3ce76f22931275cbe92dbdd83f01d6855f",
+  "merge_commit": "f0cc64d1b811fa21c18c28667e3f891448f3596f",
+  "original_review_head": "9e5d13f4b3bc09c925015cdc5a5f42bd02f98299",
+  "source_changes_from_main": [
+    "src/ui/settings/PromptInspector.tsx",
+    "src/ui/settings/SettingsPanel.tsx",
+    "src/ui/settings/prompt-manager.css"
+  ],
+  "protected_paths": [
+    {
+      "path": "prompts",
+      "identical_to_main": true
+    },
+    {
+      "path": "src/prompts",
+      "identical_to_main": true
+    },
+    {
+      "path": "src/services/ai",
+      "identical_to_main": true
+    },
+    {
+      "path": "src/services/storage",
+      "identical_to_main": true
+    },
+    {
+      "path": "src/domain",
+      "identical_to_main": true
+    },
+    {
+      "path": "src/app/App.tsx",
+      "identical_to_main": true
+    },
+    {
+      "path": "src/ui/Dialog.tsx",
+      "identical_to_main": true
+    },
+    {
+      "path": "src/ui/components/ThemedSelect.tsx",
+      "identical_to_main": true
+    },
+    {
+      "path": "src/ui/mobile-feedback.css",
+      "identical_to_main": true
+    },
+    {
+      "path": "src/ui/game/MobileDiagnostics.tsx",
+      "identical_to_main": true
+    },
+    {
+      "path": "src/ui/notices",
+      "identical_to_main": true
+    },
+    {
+      "path": "wrangler.jsonc",
+      "identical_to_main": true
+    },
+    {
+      "path": "package.json",
+      "identical_to_main": true
+    },
+    {
+      "path": "package-lock.json",
+      "identical_to_main": true
+    },
+    {
+      "path": "src/ui/game/GameScreen.tsx",
+      "identical_to_main": true
+    },
+    {
+      "path": "src/ui/game/WorkflowPanel.tsx",
+      "identical_to_main": true
+    },
+    {
+      "path": "src/ui/game/MobileWorkflowDrawer.tsx",
+      "identical_to_main": true
+    },
+    {
+      "path": "src/ui/game/mobile-workflow-content.css",
+      "identical_to_main": true
+    },
+    {
+      "path": "src/ui/game/mobile-workflow-drawer.css",
+      "identical_to_main": true
+    },
+    {
+      "path": "e2e/helpers/gameLayout.ts",
+      "identical_to_main": true
+    },
+    {
+      "path": "e2e/mobile-batch2.spec.ts",
+      "identical_to_main": true
+    },
+    {
+      "path": "e2e/mobile-main-batch1.spec.ts",
+      "identical_to_main": true
+    }
+  ],
+  "initial_main": "ae342d6008d298eac8b2efb3bb59daf94295040e",
+  "initial_merge_commit": "b71b666"
+}

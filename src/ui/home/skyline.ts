@@ -49,3 +49,12 @@ export const ORDER: readonly City[] = ['cq','sh','hrb','gz'];
 
 
 export function saveCity(title: string): City | undefined { return ORDER.find(c => title.trim().endsWith('· '+CITY[c][0]) || title.trim().endsWith('·'+CITY[c][0])); }
+
+// Ticket decorations share the cover's existing city names, latitude and imagery.
+// Longitude and seal are decorative metadata, never location hierarchy or save data.
+export const CITY_TICKET_META = {
+  cq: {longitude:'106°33′E', seal:'渝', tint:'#7FA7A0'},
+  sh: {longitude:'121°29′E', seal:'沪', tint:'#8E9BD8'},
+  hrb: {longitude:'126°38′E', seal:'冰', tint:'#A9C3D8'},
+  gz: {longitude:'113°15′E', seal:'穗', tint:'#D08A6A'},
+};

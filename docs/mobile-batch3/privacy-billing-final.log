@@ -1,0 +1,18 @@
+
+Running 4 tests using 1 worker
+
+(node:286313) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [mobile] › e2e/npc-memory.spec.ts:75:1 › 手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费 (5.2s)
+  ✓  2 [mobile] › e2e/npc-memory.spec.ts:126:1 › 跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功 (4.2s)
+(node:286516) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  3 [desktop] › e2e/npc-memory.spec.ts:75:1 › 手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费 (5.7s)
+  ✓  4 [desktop] › e2e/npc-memory.spec.ts:126:1 › 跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功 (5.0s)
+
+  4 passed (21.7s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

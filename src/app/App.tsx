@@ -16,6 +16,7 @@ import { SettingsPanel } from '../ui/settings/SettingsPanel';
 import { UnsavedAiChanges } from '../ui/settings/UnsavedAiChanges';
 import { SettingsSchema, defaultSettings, settingsKey } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
+import { MobileHomeScreen } from '../ui/home/MobileHomeScreen';
 import { HomeScreen } from '../ui/home/HomeScreen';
 import { dateTime } from '../ui/panels/playerView';
 import { SaveCard } from '../ui/SaveCard';
@@ -104,6 +105,7 @@ export function App() {
   const settingsDestination=useRef<(()=>void)|undefined>(undefined);
   const [confirmSettingsClose, setConfirmSettingsClose] = useState(false);
   const [deleting, setDeleting] = useState<SaveSummary>();
+  const [deletedTicket, setDeletedTicket] = useState<SaveSummary>();
   useEffect(() => {
     let disposed = false;
     let connection: SaveRepository | undefined;
@@ -264,6 +266,7 @@ export function App() {
       } catch {
         // 已删除的正式存档不再读取此 UI 档案。
       }
+      if (!desktopUi) setDeletedTicket(deleting);
       setSaves(current => current.filter(item => item !== deleting));
       setDeleting(undefined); setSaveNotice('存档及关联草稿、提交回执已删除。');
       setError(current => [listFailure, openFailure, loadFailure].includes(current) ? '' : current);
@@ -285,6 +288,16 @@ export function App() {
       setBusy(false);
     }
   }
+  function selectSave(id: string) {
+    setSelected(id);
+    try { writeDocument(localStorage, selectedKey, IdSchema, id); }
+    catch { setError('未能保存最近选择'); }
+  }
+  function refreshSaves() {
+    if (repository) { setLoading(true); repository.list().then(acceptList)
+      .catch(() => { setError(listFailure); setListError(listFailure); }).finally(() => setLoading(false)); }
+  }
+  function requestDelete(save: SaveSummary) {setDeleteError(''); setSaveNotice(''); setDeleting(save);}
   const readableSaves = saves.filter(save => save.status === 'readable');
   const active = readableSaves.find((save) => save.saveId === selected) ?? readableSaves[0];
   // 游戏中由原GameScreen提供唯一维护控制器；设置只是展示，不拥有任务生命周期。
@@ -405,27 +418,23 @@ export function App() {
           </main>
         )
       ) : (
+        !desktopUi ? <MobileHomeScreen saves={saves} active={active?.saveId} repository={repository}
+          loading={loading} busy={busy} blocked={settingsOpen || Boolean(deleting) || Boolean(notices.kind)}
+          hasDraft={hasDraft} notice={saveNotice} listError={listError} notices={<NoticeLinks onOpen={notices.open}/>}
+          deletion={deletedTicket} onVoidShown={()=>setDeletedTicket(undefined)}
+          onCreate={()=>{changeForm(form);navigate('create');}} onOpen={openSave} onSelect={selectSave}
+          onDelete={requestDelete} onSettings={()=>setSettingsOpen(true)} onRefresh={refreshSaves}/> :
         <HomeScreen count={saves.length} loading={loading} canCreate={!!repository}
           active={active ? `${active.title} · 保存于 ${dateTime(active.updatedAt)}` : undefined}
           hasDraft={hasDraft} notice={saveNotice} notices={<NoticeLinks onOpen={notices.open} />}
           onCreate={() => { changeForm(form); navigate('create'); }} onContinue={() => active && openSave(active.saveId)}
-          onSettings={() => setSettingsOpen(true)} onRefresh={() => {
-            if (repository) { setLoading(true); repository.list().then(acceptList)
-              .catch(() => { setError(listFailure); setListError(listFailure); }).finally(() => setLoading(false)); }
-          }}>
+          onSettings={() => setSettingsOpen(true)} onRefresh={refreshSaves}>
           {loading ? <Empty>正在读取本地存档…</Empty> : listError ? <p className="empty err">{listError}</p> : !saves.length ?
             <Empty>还没有开始的人生。<br />创建角色，留下第一份存档。</Empty> : <>
                 {saves.map((save, i) => (
                   <SaveCard key={`${typeof save.storageKey}:${saveKeyText(save.storageKey)}`} save={save} index={i}
                     selected={save.status === 'readable' && active?.saveId === save.saveId} repository={repository}
-                    onOpen={openSave} onSelect={id => {
-                          setSelected(id);
-                          try {
-                            writeDocument(localStorage, selectedKey, IdSchema, id);
-                          } catch {
-                            setError('未能保存最近选择');
-                          }
-                    }} onDelete={() => { setDeleteError(''); setSaveNotice(''); setDeleting(save); }} />
+                    onOpen={openSave} onSelect={selectSave} onDelete={() => requestDelete(save)} />
                 ))}
 
           </>}

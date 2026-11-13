@@ -1,0 +1,955 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/HeiJinWangChao/node_modules/.bin/playwright",
+      "test",
+      "--config",
+      "playwright.pr124.config.ts"
+    ],
+    "configFile": "/workspace/HeiJinWangChao/playwright.pr124.config.ts",
+    "rootDir": "/workspace/HeiJinWangChao/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/HeiJinWangChao/test-results/pr124",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "/workspace/HeiJinWangChao/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "prompt-inspector.spec.ts"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/workspace/HeiJinWangChao/test-results/pr124",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/workspace/HeiJinWangChao/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "prompt-inspector.spec.ts"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/workspace/HeiJinWangChao/test-results/pr124",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "business-desktop",
+        "name": "business-desktop",
+        "testDir": "/workspace/HeiJinWangChao/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "story-runtime.spec.ts",
+          "variable-runtime.spec.ts",
+          "world-runtime.spec.ts",
+          "memory-maintenance.spec.ts"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/workspace/HeiJinWangChao/test-results/pr124",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-dialog",
+        "name": "mobile-dialog",
+        "testDir": "/workspace/HeiJinWangChao/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "mobile-batch2.spec.ts"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/HeiJinWangChao/test-results/pr124",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "desktop",
+        "testDir": "/workspace/HeiJinWangChao/e2e",
+        "snapshotDir": "/workspace/HeiJinWangChao/e2e",
+        "testIgnore": [],
+        "testMatch": "prompt-inspector.spec.ts",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5174",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "reducedMotion": "reduce",
+          "screenshot": "only-on-failure",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "desktop"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/HeiJinWangChao/test-results/pr124",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "mobile",
+        "testDir": "/workspace/HeiJinWangChao/e2e",
+        "snapshotDir": "/workspace/HeiJinWangChao/e2e",
+        "testIgnore": [],
+        "testMatch": "prompt-inspector.spec.ts",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5174",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "reducedMotion": "reduce",
+          "screenshot": "only-on-failure",
+          "userAgent": "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Mobile Safari/537.36",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "screen": {
+            "width": 412,
+            "height": 915
+          },
+          "deviceScaleFactor": 2.625,
+          "isMobile": true,
+          "hasTouch": true,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "mobile"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/HeiJinWangChao/test-results/pr124",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "business-desktop",
+        "testDir": "/workspace/HeiJinWangChao/e2e",
+        "snapshotDir": "/workspace/HeiJinWangChao/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "story-runtime.spec.ts",
+          "variable-runtime.spec.ts",
+          "world-runtime.spec.ts",
+          "memory-maintenance.spec.ts"
+        ],
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5174",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "reducedMotion": "reduce",
+          "screenshot": "only-on-failure",
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "business-desktop"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/HeiJinWangChao/test-results/pr124",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "mobile-dialog",
+        "testDir": "/workspace/HeiJinWangChao/e2e",
+        "snapshotDir": "/workspace/HeiJinWangChao/e2e",
+        "testIgnore": [],
+        "testMatch": "mobile-batch2.spec.ts",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5174",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          },
+          "reducedMotion": "reduce",
+          "screenshot": "only-on-failure",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "isMobile": true,
+          "hasTouch": true
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "mobile-dialog"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "docs/pr124-review/chromium-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "prompt-inspector.spec.ts",
+      "file": "prompt-inspector.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "无存档浏览真实模块、过滤与全文，缺少阶段请求时不伪造使用量",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5143,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:53:31.265Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c4d553eead6a638e4a03-7d7a6283db216199660e",
+          "file": "prompt-inspector.spec.ts",
+          "line": 85,
+          "column": 1
+        },
+        {
+          "title": "真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11031,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:53:37.930Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c4d553eead6a638e4a03-0fecbb0329d02fe95414",
+          "file": "prompt-inspector.spec.ts",
+          "line": 144,
+          "column": 1
+        },
+        {
+          "title": "已发送阶段快照保留原请求数据与真实 usage，默认隐藏秘密且始终去密钥，刷新不持久化",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7432,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:53:48.985Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c4d553eead6a638e4a03-054b99c2f9f40e1fe4b7",
+          "file": "prompt-inspector.spec.ts",
+          "line": 228,
+          "column": 1
+        },
+        {
+          "title": "四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12233,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:53:56.438Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c4d553eead6a638e4a03-0f8d5b0262f9886f5cd7",
+          "file": "prompt-inspector.spec.ts",
+          "line": 455,
+          "column": 1
+        },
+        {
+          "title": "四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8576,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '模块库' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('region', { name: '模块库' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '模块库' })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '模块库' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('region', { name: '模块库' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '模块库' })\u001b[22m\n\n    at inspector (/workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:61:59)\n    at /workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:517:3",
+                    "location": {
+                      "file": "/workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts",
+                      "column": 59,
+                      "line": 61
+                    },
+                    "snippet": "  59 |   await page.getByRole('button', { name: '设置', exact: true }).click();\n  60 |   await page.getByRole('button', { name: '提示词管理', exact: true }).click();\n> 61 |   await expect(page.getByRole('region', { name: '模块库' })).toBeVisible();\n     |                                                           ^\n  62 |   if (advanced) await openAdvanced(page);\n  63 | }\n  64 | async function openAdvanced(page: Page) {"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts",
+                        "column": 59,
+                        "line": 61
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '模块库' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('region', { name: '模块库' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '模块库' })\u001b[22m\n\n\n  59 |   await page.getByRole('button', { name: '设置', exact: true }).click();\n  60 |   await page.getByRole('button', { name: '提示词管理', exact: true }).click();\n> 61 |   await expect(page.getByRole('region', { name: '模块库' })).toBeVisible();\n     |                                                           ^\n  62 |   if (advanced) await openAdvanced(page);\n  63 | }\n  64 | async function openAdvanced(page: Page) {\n    at inspector (/workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:61:59)\n    at /workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:517:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:54:08.696Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/HeiJinWangChao/test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-desktop/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/HeiJinWangChao/test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-desktop/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/HeiJinWangChao/test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-desktop/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts",
+                    "column": 59,
+                    "line": 61
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "c4d553eead6a638e4a03-d9a7d7033cbcaeef30ea",
+          "file": "prompt-inspector.spec.ts",
+          "line": 506,
+          "column": 1
+        },
+        {
+          "title": "无存档浏览真实模块、过滤与全文，缺少阶段请求时不伪造使用量",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6384,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:54:18.295Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c4d553eead6a638e4a03-c41be988dc12ce0eda13",
+          "file": "prompt-inspector.spec.ts",
+          "line": 85,
+          "column": 1
+        },
+        {
+          "title": "真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "timedOut",
+                  "duration": 60946,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/HeiJinWangChao/e2e/helpers/gameLayout.ts",
+                        "column": 124,
+                        "line": 116
+                      },
+                      "message": "Error: locator.click: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('navigation', { name: '底部导航' }).getByRole('button', { name: '世界资料', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button data-mobile-tab=\"world\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"modal-body\">…</div> from <section aria-label=\"剧情与行动\" class=\"story-column\">…</section> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"modal-body\">…</div> from <section aria-label=\"剧情与行动\" class=\"story-column\">…</section> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    89 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <div class=\"modal-body\">…</div> from <section aria-label=\"剧情与行动\" class=\"story-column\">…</section> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\n\n   at helpers/gameLayout.ts:116\n\n  114 | export async function openWorldArchive(page: Page) {\n  115 |   const opener = page.getByRole('navigation', { name: '底部导航' }).getByRole('button', { name: '世界资料', exact: true });\n> 116 |   if (await opener.isVisible() && !await page.getByRole('dialog', { name: '世界资料', exact: true }).isVisible()) await opener.click();\n      |                                                                                                                            ^\n  117 | }\n  118 | export async function openProfile(page: Page) {\n  119 |   const compact = page.getByRole('button', { name: '展开人物状态', exact: true });\n    at openWorldArchive (/workspace/HeiJinWangChao/e2e/helpers/gameLayout.ts:116:124)\n    at /workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:218:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:54:25.087Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/HeiJinWangChao/test-results/pr124/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/HeiJinWangChao/test-results/pr124/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/HeiJinWangChao/test-results/pr124/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "c4d553eead6a638e4a03-71591392d687c2906cda",
+          "file": "prompt-inspector.spec.ts",
+          "line": 144,
+          "column": 1
+        },
+        {
+          "title": "已发送阶段快照保留原请求数据与真实 usage，默认隐藏秘密且始终去密钥，刷新不持久化",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8548,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:55:27.297Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c4d553eead6a638e4a03-fc9e7d25e041e95273a2",
+          "file": "prompt-inspector.spec.ts",
+          "line": 228,
+          "column": 1
+        },
+        {
+          "title": "四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14467,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:55:36.341Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c4d553eead6a638e4a03-81158ea0bf3124c4f6a6",
+          "file": "prompt-inspector.spec.ts",
+          "line": 455,
+          "column": 1
+        },
+        {
+          "title": "四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8234,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '模块库' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('region', { name: '模块库' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '模块库' })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '模块库' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('region', { name: '模块库' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '模块库' })\u001b[22m\n\n    at inspector (/workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:61:59)\n    at /workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:517:3",
+                    "location": {
+                      "file": "/workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts",
+                      "column": 59,
+                      "line": 61
+                    },
+                    "snippet": "  59 |   await page.getByRole('button', { name: '设置', exact: true }).click();\n  60 |   await page.getByRole('button', { name: '提示词管理', exact: true }).click();\n> 61 |   await expect(page.getByRole('region', { name: '模块库' })).toBeVisible();\n     |                                                           ^\n  62 |   if (advanced) await openAdvanced(page);\n  63 | }\n  64 | async function openAdvanced(page: Page) {"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts",
+                        "column": 59,
+                        "line": 61
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '模块库' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('region', { name: '模块库' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '模块库' })\u001b[22m\n\n\n  59 |   await page.getByRole('button', { name: '设置', exact: true }).click();\n  60 |   await page.getByRole('button', { name: '提示词管理', exact: true }).click();\n> 61 |   await expect(page.getByRole('region', { name: '模块库' })).toBeVisible();\n     |                                                           ^\n  62 |   if (advanced) await openAdvanced(page);\n  63 | }\n  64 | async function openAdvanced(page: Page) {\n    at inspector (/workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:61:59)\n    at /workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:517:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:55:50.833Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/HeiJinWangChao/test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-mobile/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/HeiJinWangChao/test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/HeiJinWangChao/test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-mobile/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts",
+                    "column": 59,
+                    "line": 61
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "c4d553eead6a638e4a03-998af7dee288881371a8",
+          "file": "prompt-inspector.spec.ts",
+          "line": 506,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "memory-maintenance.spec.ts",
+      "file": "memory-maintenance.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "选择并恢复独立模型；手动整理、原文来源及真实memory快照/Token统计",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "business-desktop",
+              "projectName": "business-desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14494,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:56:00.233Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6696014f2b567fc84e2d-59715b1b0e52c355853e",
+          "file": "memory-maintenance.spec.ts",
+          "line": 72,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "story-runtime.spec.ts",
+      "file": "story-runtime.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "business-desktop",
+              "projectName": "business-desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9078,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:56:15.183Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "072a91744c9c996a993a-04f18e1ef3ce3637b1cd",
+          "file": "story-runtime.spec.ts",
+          "line": 166,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "variable-runtime.spec.ts",
+      "file": "variable-runtime.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "变量正常生成、真实独立路由/模块/usage，完整候选主动查看，刷新仍保留候选且正式资金不变",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "business-desktop",
+              "projectName": "business-desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8088,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:56:24.298Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b15a11faf5dea1965354-dc8ce40bbfe943ef772a",
+          "file": "variable-runtime.spec.ts",
+          "line": 116,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "world-runtime.spec.ts",
+      "file": "world-runtime.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "世界生成、补算、只读查看与刷新恢复，真实路由和快照；正式世界不变",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "business-desktop",
+              "projectName": "business-desktop",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8460,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:56:32.446Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "478f018a27ca1dfc097b-d62bc3c72beaa4814b9f",
+          "file": "world-runtime.spec.ts",
+          "line": 143,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "mobile-batch2.spec.ts",
+      "file": "mobile-batch2.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "底部选择器：无匹配、Tab 环、Esc、遮罩与下拉仅关闭顶层",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-dialog",
+              "projectName": "mobile-dialog",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4649,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:56:41.841Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1215c71094e18255d5d0-73ad543440d58b4a2361",
+          "file": "mobile-batch2.spec.ts",
+          "line": 56,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-12T23:53:27.789Z",
+    "duration": 199266.581,
+    "expected": 12,
+    "skipped": 0,
+    "unexpected": 3,
+    "flaky": 0
+  }
+}

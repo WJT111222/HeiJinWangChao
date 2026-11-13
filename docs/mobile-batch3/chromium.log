@@ -1,0 +1,30 @@
+
+Running 18 tests using 1 worker
+
+(node:285170) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 e2e/mobile-home.spec.ts:16:1 › 排序、四城、中性、页码、键盘与横滑纯浏览不写入 (2.9s)
+  ✓   2 e2e/mobile-home.spec.ts:29:1 › 真实触摸横滑同步当前页和发车屏，不读取也不写正式数据 (1.8s)
+  ✓   3 e2e/mobile-home.spec.ts:37:1 › 明确选择持久化、重新排序且重载恢复首张 (1.9s)
+  ✓   4 e2e/mobile-home.spec.ts:43:1 › 短拖与 pointercancel 不读取；reduced-motion 撕票立即进入同一存档 (1.9s)
+  ✓   5 e2e/mobile-home.spec.ts:48:1 › 金色按钮等价读取，快速双击只导航一次 (1.5s)
+  ✓   6 e2e/mobile-home.spec.ts:52:1 › 真实撕票动画、重复操作锁与切换/刷新/卸载清理 (6.0s)
+  ✓   7 e2e/mobile-home.spec.ts:60:1 › 空白车票恢复正式创角草稿；无草稿空态按钮可达 (2.1s)
+  ✓   8 e2e/mobile-home.spec.ts:65:1 › 删除取消不写；只有原子删除成功才作废，关联记录和选择保护 (3.1s)
+  ✓   9 e2e/mobile-home.spec.ts:73:1 › 删除存储失败保留记录，不显示作废，刷新后可恢复 (1.4s)
+  ✓  10 e2e/mobile-home.spec.ts:80:1 › 删除版本冲突保留正式新版本，不能误删或提前盖作废章 (1.7s)
+  ✓  11 e2e/mobile-home.spec.ts:86:1 › 无法读取保留异常 ID，不能撕，原始导出完整且不改库 (967ms)
+  ✓  12 e2e/mobile-home.spec.ts:100:1 › 真实 Repository loading 与 listError，刷新恢复，不假冒空列表 (5.2s)
+  ✓  13 e2e/mobile-home.spec.ts:107:1 › Repository 不可用时错误原文保留、创建和票根禁用 (681ms)
+  ✓  14 e2e/mobile-home.spec.ts:110:81 › 长文本与大量存档 375×667 无溢出，底部和设置/公告可达 (2.5s)
+  ✓  15 e2e/mobile-home.spec.ts:110:81 › 长文本与大量存档 390×844 无溢出，底部和设置/公告可达 (2.5s)
+  ✓  16 e2e/mobile-home.spec.ts:110:81 › 长文本与大量存档 430×932 无溢出，底部和设置/公告可达 (2.4s)
+  ✓  17 e2e/mobile-home.spec.ts:110:81 › 长文本与大量存档 750×800 无溢出，底部和设置/公告可达 (2.5s)
+  ✓  18 e2e/mobile-home.spec.ts:110:81 › 长文本与大量存档 900×800 无溢出，底部和设置/公告可达 (2.8s)
+
+  18 passed (44.7s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

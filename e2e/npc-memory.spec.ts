@@ -1,10 +1,18 @@
+import { openStoredSave } from './helpers/home';
 import { openWorldArchive, openSettings } from './helpers/gameLayout';
 import { variableReply } from '../src/tests/fixtures/variableReply';
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools as openLegacyGameTools, closeWorkflowSheet } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { GameStateSchema } from '../src/domain/state';
 import { array, record, string } from '../src/services/ai/protocols';
+
+// Reuse the current phone workflow's close helper before navigating to archives.
+// The #120 drawer is nonmodal; no native Dialog close button is involved.
+async function openGameTools(page: Page, entering=false) {
+  await openLegacyGameTools(page, entering);
+  if ((page.viewportSize()?.width??0)<=900) await closeWorkflowSheet(page);
+}
 
 // 只在隔离浏览器存储中使用，全部请求拦截到mock.invalid。
 async function seed(page: Page, automatic = false) {
@@ -35,7 +43,7 @@ async function seed(page: Page, automatic = false) {
     for (const stage of ['variables', 'world', 'memory']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'npc-browser-mock-secret');
   }, automatic);
-  await page.reload(); await openGameTools(page); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+  await page.reload(); await openStoredSave(page); await openGameTools(page, true);
 }
 async function load(page: Page) {
   const value: unknown = await page.evaluate(async () => {
@@ -100,6 +108,7 @@ test('手动仅一人一批；普通界面不暴露身份、原文、总结和�
   await openSettings(page);
   const settings = page.getByRole('dialog');
   await settings.getByRole('button', { name: '提示词管理', exact: true }).click();
+  await settings.getByRole('button', { name: '高级', exact: true }).click();
   await settings.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');
   const requestsList = settings.getByRole('combobox', { name: '选择请求', exact: true });
   await requestsList.selectOption({ label: await requestsList.locator('option').filter({ hasText: 'memory.npc_summarize' }).innerText() });
@@ -121,7 +130,7 @@ test('跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手
   await seed(page); const before = await load(page), panel = await memory(page);
   await panel.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true }).click();
   await expect.poll(() => requests).toBe(1);
-  const other = await browser.newPage(); await other.goto('/'); await other.getByRole('button', { name: /读取存档/ }).click();
+  const other = await browser.newPage(); await other.goto('/'); await openStoredSave(other);
   const second = await memory(other);
   await second.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true }).click();
   await expect(second).toContainText('另一个标签或任务正在总结此存档'); expect(requests).toBe(1);

@@ -121,6 +121,7 @@ test('选择并恢复独立模型；手动整理、原文来源及真实memory�
   await reading.getByRole('button', { name: '关闭资料界面' }).click();
   await openSettings(page);
   await settings.getByRole('button', { name: '提示词管理', exact: true }).click();
+  await settings.getByRole('button', { name: '高级', exact: true }).click();
   await settings.getByRole('combobox', { name: '数据来源', exact: true }).selectOption('actual');
   await settings.getByRole('combobox', { name: '选择请求', exact: true }).selectOption({ label: await settings.getByRole('combobox', { name: '选择请求', exact: true }).locator('option').filter({ hasText: '记忆维护 memory.short_to_medium' }).innerText() });
   await expect(settings).toContainText('memory-summary');

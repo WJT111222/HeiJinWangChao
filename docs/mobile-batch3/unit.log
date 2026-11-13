@@ -1,0 +1,18 @@
+
+> heijinwangchao@0.1.0 test
+> vitest run src/tests/mobile-home.test.ts src/tests/unreadable-saves.test.ts src/tests/storage.test.ts
+
+
+ RUN  v5.0.5 /workspace/mobile-batch3
+
+
+ Test Files  2 passed (2)
+      Tests  43 passed (43)
+   Start at  23:57:33
+   Duration  524ms (transform 57%, import 31%, tests 11%, worker 1%)
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

@@ -1,0 +1,269 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/mobile-batch3/node_modules/.bin/playwright",
+      "test",
+      "--config",
+      "playwright.mobile-batch3.config.ts",
+      "--project",
+      "mobile"
+    ],
+    "configFile": "/workspace/mobile-batch3/playwright.mobile-batch3.config.ts",
+    "rootDir": "/workspace/mobile-batch3/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/mobile-batch3/test-results/mobile-batch3-business",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/workspace/mobile-batch3/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "npc-memory.spec.ts"
+        ],
+        "timeout": 35000
+      },
+      {
+        "outputDir": "/workspace/mobile-batch3/test-results/mobile-batch3-business",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "/workspace/mobile-batch3/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "npc-memory.spec.ts"
+        ],
+        "timeout": 35000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/mobile-batch3/test-results/mobile-batch3-business",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "mobile",
+        "testDir": "/workspace/mobile-batch3/e2e",
+        "snapshotDir": "/workspace/mobile-batch3/e2e",
+        "testIgnore": [],
+        "testMatch": "npc-memory.spec.ts",
+        "timeout": 35000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5251",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "isMobile": true,
+          "hasTouch": true,
+          "reducedMotion": "reduce",
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "mobile"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "docs/mobile-batch3/privacy-billing-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5251 --strictPort",
+      "url": "http://127.0.0.1:5251",
+      "reuseExistingServer": true
+    }
+  },
+  "suites": [
+    {
+      "title": "npc-memory.spec.ts",
+      "file": "npc-memory.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 35000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "timedOut",
+                  "duration": 35155,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 35000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 35000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 35000ms exceeded.\u001b[39m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:59:02.855Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/mobile-batch3/test-results/mobile-batch3-business/npc-memory-手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费-mobile/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/mobile-batch3/test-results/mobile-batch3-business/npc-memory-手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/mobile-batch3/test-results/mobile-batch3-business/npc-memory-手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费-mobile/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "737108fe3267f234a302-a2119ba8e609e8022d91",
+          "file": "npc-memory.spec.ts",
+          "line": 65,
+          "column": 1
+        },
+        {
+          "title": "跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 35000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "timedOut",
+                  "duration": 35133,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 35000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 35000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 35000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/workspace/mobile-batch3/e2e/helpers/gameLayout.ts",
+                        "column": 63,
+                        "line": 139
+                      },
+                      "message": "Error: locator.click: Test timeout of 35000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '设置', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button data-settings-open=\"true\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"modal-body\">…</div> from <section aria-label=\"剧情与行动\" class=\"story-column\">…</section> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"modal-body\">…</div> from <section aria-label=\"剧情与行动\" class=\"story-column\">…</section> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    63 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <div class=\"modal-body\">…</div> from <section aria-label=\"剧情与行动\" class=\"story-column\">…</section> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\n\n   at helpers/gameLayout.ts:139\n\n  137 | export async function openSettings(page: Page) {\n  138 |   await closeWorldArchive(page);\n> 139 |   await page.getByRole('button', { name: '设置', exact: true }).click();\n      |                                                               ^\n  140 | }\n  141 |\n  142 | export const workflowTrigger = (page: Page) => page.locator('details.workflow-disclosure > summary, .workflow-summary > .workflow-toggle');\n    at openSettings (/workspace/mobile-batch3/e2e/helpers/gameLayout.ts:139:63)\n    at memory (/workspace/mobile-batch3/e2e/npc-memory.spec.ts:49:3)\n    at /workspace/mobile-batch3/e2e/npc-memory.spec.ts:122:62"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-12T23:59:38.679Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/mobile-batch3/test-results/mobile-batch3-business/npc-memory-跨标签拒绝重复付费；取消-迟到-429不删除来源，明确手动重试可成功-mobile/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/mobile-batch3/test-results/mobile-batch3-business/npc-memory-跨标签拒绝重复付费；取消-迟到-429不删除来源，明确手动重试可成功-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/mobile-batch3/test-results/mobile-batch3-business/npc-memory-跨标签拒绝重复付费；取消-迟到-429不删除来源，明确手动重试可成功-mobile/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "737108fe3267f234a302-31026f32396764babb9e",
+          "file": "npc-memory.spec.ts",
+          "line": 116,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-12T23:59:02.480Z",
+    "duration": 71725.525,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

@@ -1,0 +1,193 @@
+[WebServer] (node:1094) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:1107) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 15 tests using 1 worker
+
+(node:1134) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [desktop] › e2e/prompt-inspector.spec.ts:85:1 › 无存档浏览真实模块、过滤与全文，缺少阶段请求时不伪造使用量 (5.1s)
+  ✓   2 [desktop] › e2e/prompt-inspector.spec.ts:144:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 (11.0s)
+  ✓   3 [desktop] › e2e/prompt-inspector.spec.ts:228:1 › 已发送阶段快照保留原请求数据与真实 usage，默认隐藏秘密且始终去密钥，刷新不持久化 (7.4s)
+  ✓   4 [desktop] › e2e/prompt-inspector.spec.ts:455:1 › 四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示 (12.2s)
+[WebServer] 11:54:12 PM [vite] (client) [Unhandled error] SyntaxError: The requested module '/src/prompts/preview.ts' does not provide an export named 'buildStagePreviews'
+[WebServer]
+[WebServer] 11:54:12 PM [vite] (client) [console.warn] An error occurred in one of your React components.
+[WebServer]
+[WebServer] Consider adding an error boundary to your tree to customize error handling behavior.
+[WebServer] Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+[WebServer]
+  ✘   5 [desktop] › e2e/prompt-inspector.spec.ts:506:1 › 四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效 (8.6s)
+(node:1505) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   6 [mobile] › e2e/prompt-inspector.spec.ts:85:1 › 无存档浏览真实模块、过滤与全文，缺少阶段请求时不伪造使用量 (6.4s)
+  ✘   7 [mobile] › e2e/prompt-inspector.spec.ts:144:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 (1.0m)
+(node:1778) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   8 [mobile] › e2e/prompt-inspector.spec.ts:228:1 › 已发送阶段快照保留原请求数据与真实 usage，默认隐藏秘密且始终去密钥，刷新不持久化 (8.5s)
+  ✓   9 [mobile] › e2e/prompt-inspector.spec.ts:455:1 › 四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示 (14.5s)
+[WebServer] 11:55:54 PM [vite] (client) [Unhandled error] SyntaxError: The requested module '/src/prompts/preview.ts' does not provide an export named 'buildStagePreviews'
+[WebServer]
+[WebServer] 11:55:54 PM [vite] (client) [console.warn] An error occurred in one of your React components.
+[WebServer]
+[WebServer] Consider adding an error boundary to your tree to customize error handling behavior.
+[WebServer] Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+[WebServer]
+  ✘  10 [mobile] › e2e/prompt-inspector.spec.ts:506:1 › 四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效 (8.2s)
+(node:2015) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  11 [business-desktop] › e2e/memory-maintenance.spec.ts:72:1 › 选择并恢复独立模型；手动整理、原文来源及真实memory快照/Token统计 (14.5s)
+  ✓  12 [business-desktop] › e2e/story-runtime.spec.ts:166:1 › 真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计 (9.1s)
+  ✓  13 [business-desktop] › e2e/variable-runtime.spec.ts:116:1 › 变量正常生成、真实独立路由/模块/usage，完整候选主动查看，刷新仍保留候选且正式资金不变 (8.1s)
+  ✓  14 [business-desktop] › e2e/world-runtime.spec.ts:143:1 › 世界生成、补算、只读查看与刷新恢复，真实路由和快照；正式世界不变 (8.5s)
+(node:2320) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  15 [mobile-dialog] › e2e/mobile-batch2.spec.ts:56:1 › 底部选择器：无匹配、Tab 环、Esc、遮罩与下拉仅关闭顶层 (4.6s)
+
+
+  1) [desktop] › e2e/prompt-inspector.spec.ts:506:1 › 四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效 ──────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('region', { name: '模块库' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('region', { name: '模块库' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '模块库' })
+
+
+      59 |   await page.getByRole('button', { name: '设置', exact: true }).click();
+      60 |   await page.getByRole('button', { name: '提示词管理', exact: true }).click();
+    > 61 |   await expect(page.getByRole('region', { name: '模块库' })).toBeVisible();
+         |                                                           ^
+      62 |   if (advanced) await openAdvanced(page);
+      63 | }
+      64 | async function openAdvanced(page: Page) {
+        at inspector (/workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:61:59)
+        at /workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:517:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-desktop/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [mobile] › e2e/prompt-inspector.spec.ts:144:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 ─────────────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('navigation', { name: '底部导航' }).getByRole('button', { name: '世界资料', exact: true })
+        - locator resolved to <button data-mobile-tab="world">…</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div class="modal-body">…</div> from <section aria-label="剧情与行动" class="story-column">…</section> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div class="modal-body">…</div> from <section aria-label="剧情与行动" class="story-column">…</section> subtree intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        89 × waiting for element to be visible, enabled and stable
+           - element is visible, enabled and stable
+           - scrolling into view if needed
+           - done scrolling
+           - <div class="modal-body">…</div> from <section aria-label="剧情与行动" class="story-column">…</section> subtree intercepts pointer events
+         - retrying click action
+           - waiting 500ms
+        - waiting for element to be visible, enabled and stable
+
+
+       at helpers/gameLayout.ts:116
+
+      114 | export async function openWorldArchive(page: Page) {
+      115 |   const opener = page.getByRole('navigation', { name: '底部导航' }).getByRole('button', { name: '世界资料', exact: true });
+    > 116 |   if (await opener.isVisible() && !await page.getByRole('dialog', { name: '世界资料', exact: true }).isVisible()) await opener.click();
+          |                                                                                                                            ^
+      117 | }
+      118 | export async function openProfile(page: Page) {
+      119 |   const compact = page.getByRole('button', { name: '展开人物状态', exact: true });
+        at openWorldArchive (/workspace/HeiJinWangChao/e2e/helpers/gameLayout.ts:116:124)
+        at /workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:218:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/pr124/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/pr124/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/pr124/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/pr124/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [mobile] › e2e/prompt-inspector.spec.ts:506:1 › 四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效 ───────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('region', { name: '模块库' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('region', { name: '模块库' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '模块库' })
+
+
+      59 |   await page.getByRole('button', { name: '设置', exact: true }).click();
+      60 |   await page.getByRole('button', { name: '提示词管理', exact: true }).click();
+    > 61 |   await expect(page.getByRole('region', { name: '模块库' })).toBeVisible();
+         |                                                           ^
+      62 |   if (advanced) await openAdvanced(page);
+      63 | }
+      64 | async function openAdvanced(page: Page) {
+        at inspector (/workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:61:59)
+        at /workspace/HeiJinWangChao/e2e/prompt-inspector.spec.ts:517:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-mobile/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-mobile/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/pr124/prompt-inspector-四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [desktop] › e2e/prompt-inspector.spec.ts:506:1 › 四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效 ───────
+    [mobile] › e2e/prompt-inspector.spec.ts:144:1 › 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离 ──────────────
+    [mobile] › e2e/prompt-inspector.spec.ts:506:1 › 四开关取消旧组装：列表与原文修改立即失效，迟到成功不覆盖新任务，重新组装才有效 ────────
+  12 passed (3.3m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

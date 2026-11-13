@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0b0b">
+<title>黑金王朝 · 手机端 · 创建角色</title>
+<style>
+:root{--font-title:'Noto Serif SC','Noto Serif CJK SC','Source Han Serif SC','Songti SC','STSong',serif;--font-body:'Noto Sans SC','Noto Sans CJK SC','PingFang SC','Microsoft YaHei',-apple-system,sans-serif;--font-mono:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;
+  --bg:#08090a;--text:#ECE7DA;--prose:#DCD6C8;--muted:#A3A396;--dim:#77796f;--gold:#C9A961;--gold-hi:#E8D196;--gold-lo:#7d6a3e;--line:#ffffff14;--line-2:#ffffff22;
+  --warn:#C26A4A;--warn-text:#E6A18A;--ok:#7DB49A;--info:#8EC1E0;--tint:#7FA7A0;--ease:cubic-bezier(.22,.7,.2,1);
+  --sky-1:#040506;--sky-2:#080b0c;--sky-3:#0c1111;--lights:.5;
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);color-scheme:dark}
+[data-city=cq]{--tint:#7FA7A0}[data-city=sh]{--tint:#8E9BD8}[data-city=hrb]{--tint:#A9C3D8}[data-city=gz]{--tint:#D08A6A}
+[data-time=dusk]{--sky-1:#0e0d16;--sky-2:#2c1e26;--sky-3:#6a3a26;--lights:.8}
+[data-time=day]{--sky-1:#18222a;--sky-2:#26323a;--sky-3:#3a4549;--lights:.12}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:#050606;color:var(--text);font-family:var(--font-body);line-height:1.7;-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer;background:transparent;border:1px solid var(--line-2);border-radius:8px;padding:.5rem .9rem;touch-action:manipulation}
+button:active{transform:scale(.97)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+h1,h2,h3,h4{font-family:var(--font-title);font-weight:600;margin:0;line-height:1.35}p{margin:0}
+.seal{display:inline-grid;place-items:center;flex:none;font-family:var(--font-title);color:var(--gold-hi);border:1px solid var(--gold-lo);background:linear-gradient(145deg,#c9a96126,#c9a96108);border-radius:3px;box-shadow:inset 0 0 0 2px #0009,inset 0 0 0 3px #c9a96130}
+
+/* ===== 桌面查看：手机外框 + 说明 ===== */
+.desk{height:100%;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:3rem;padding:2rem}
+.desk .notes{justify-self:end;max-width:22rem;font-size:.84rem;color:var(--muted);line-height:1.85}
+.desk .notes h1{font-size:1.5rem;letter-spacing:.2em;color:var(--text);margin:.3rem 0 .8rem}
+.desk .notes .eyebrow{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.28em;color:var(--gold)}
+.desk .notes ol{padding-left:1.1rem;margin:.6rem 0}
+.desk .notes li{margin-bottom:.35rem}
+.desk .notes b{color:var(--text);font-weight:500}
+.desk .ctrl{justify-self:start;display:grid;gap:.9rem;font-size:.76rem;color:var(--dim);max-width:16rem}
+.desk .ctrl p{margin-bottom:.3rem}
+.desk .ctrl .seg{display:flex;flex-wrap:wrap;gap:.25rem}
+.desk .ctrl button{font-size:.72rem;padding:.2rem .6rem;border-style:dashed;color:var(--muted)}
+.desk .ctrl button[aria-pressed=true]{color:var(--gold-hi);border-color:var(--gold-lo);border-style:solid}
+.frame{position:relative;width:390px;height:844px;border-radius:52px;padding:12px;background:linear-gradient(145deg,#2a2c2b,#111);box-shadow:0 40px 90px -30px #000,inset 0 0 0 2px #3a3c3b}
+.frame::before{content:'';position:absolute;left:50%;top:22px;transform:translateX(-50%);width:110px;height:30px;border-radius:20px;background:#000;z-index:50}
+.phone{position:relative;width:100%;height:100%;border-radius:40px;overflow:hidden;background:var(--bg);--safe-t:44px;--safe-b:22px;container-type:inline-size}
+@media (max-width:600px){
+  .desk{display:block;padding:0;height:100%}
+  .desk .notes,.desk .ctrl{display:none}
+  .frame{width:100%;height:100dvh;border-radius:0;padding:0;background:none;box-shadow:none}
+  .frame::before{display:none}
+  .phone{border-radius:0;--safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)}
+}
+@media (max-width:1100px) and (min-width:601px){.desk{grid-template-columns:auto;justify-content:center}.desk .notes,.desk .ctrl{display:none}}
+
+
+.phone{background:#0a0b0b}
+.app{position:absolute;inset:0;display:flex;flex-direction:column;background:radial-gradient(120% 34% at 50% 0%,color-mix(in srgb,var(--tint) 18%,#16140f),#0a0b0b 60%);transition:background .6s}
+/* 顶栏 */
+.bar{flex:none;display:flex;align-items:center;gap:.5rem;padding:calc(var(--safe-t) + 6px) 12px 6px}
+.bar .back{border:0;padding:.4rem .4rem;font-size:.84rem;color:var(--muted)}
+.bar .tt{flex:1;text-align:center;font-family:var(--font-title);font-size:.92rem;letter-spacing:.24em}
+.bar .tt small{display:block;font-family:var(--font-mono);font-size:.48rem;letter-spacing:.3em;color:var(--gold)}
+.bar .pk{display:flex;align-items:center;gap:.3rem;border:0;padding:.35rem .6rem;border-radius:999px;background:#ffffff0d;font-size:.72rem;color:var(--muted)}
+.bar .pk .seal{width:1.2rem;height:1.2rem;font-size:.6rem;box-shadow:none}
+/* 实时车票 */
+.mt{flex:none;margin:.2rem 14px 0;position:relative;display:grid;grid-template-columns:8px minmax(0,1fr) 4.4rem;min-height:92px;border-radius:12px;background:#EBE3D1;color:#2B2723;box-shadow:0 14px 30px -18px #000;text-align:left;border:0;padding:0;overflow:hidden;transition:transform .2s}
+.mt:active{transform:scale(.985)}
+.mt .cb{background:var(--band,#c9a961);transition:background .4s}
+.mt .mc{padding:.55rem .75rem .5rem}
+.mt .rt{display:flex;align-items:flex-end;gap:.5rem}
+.mt small{display:block;font-family:var(--font-mono);font-size:.46rem;letter-spacing:.22em;color:#857B6C}
+.mt .big{font-family:var(--font-title);font-weight:600;font-size:1.3rem;letter-spacing:.08em;color:#1F1B17;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:6.5em}
+.mt .big.q{color:#B8AD98}
+.mt .ar{flex:1;min-width:1.4rem;height:6px;margin-bottom:.55rem;background:linear-gradient(#857B6C,#857B6C) 0 50%/100% 1px no-repeat,linear-gradient(135deg,transparent 50%,#857B6C 50%) 100% 50%/6px 6px no-repeat}
+.mt .ln{margin-top:.3rem;font-size:.68rem;color:#5F574C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mt .ln b{font-weight:500;color:#2B2723}
+.mt .ln i{font-style:normal;color:#B8AD98}
+.mt .sb{position:relative;display:grid;place-items:center;align-content:center;gap:.15rem;border-left:2px dashed #2a262240;font-family:var(--font-mono)}
+.mt .sb::before,.mt .sb::after{content:'';position:absolute;left:-9px;width:16px;height:16px;border-radius:50%;background:#0b0b0a}
+.mt .sb::before{top:-8px}.mt .sb::after{bottom:-8px}
+.mt .sb b{font-size:1.05rem;font-weight:500;color:#1F1B17}
+.mt .sb small{font-size:.44rem}
+.mt .sb .pct{width:2.6rem;height:3px;border-radius:2px;background:#2a262222;overflow:hidden}
+.mt .sb .pct i{display:block;height:100%;background:#8E6C25;transition:width .3s}
+.mt .ex{position:absolute;right:4.9rem;top:.45rem;font-size:.54rem;color:#2D5E7D}
+/* 站点进度 */
+.route{flex:none;position:relative;display:grid;grid-template-columns:repeat(5,1fr);margin:.85rem 10px .2rem;padding:0}
+.route::before{content:'';position:absolute;left:10%;right:10%;top:8px;height:2px;background:#ffffff1a}
+.route .fill{position:absolute;left:10%;top:8px;height:2px;background:var(--gold);transition:width .35s var(--ease)}
+.route button{position:relative;display:grid;justify-items:center;gap:.3rem;border:0;padding:0;font-size:.6rem;letter-spacing:.06em;color:var(--dim)}
+.route button i{width:18px;height:18px;border-radius:50%;background:#0f1211;border:2px solid #ffffff2a;display:grid;place-items:center;font-style:normal;font-size:.55rem;color:var(--gold)}
+.route button.done i{border-color:var(--gold);background:#0f1211}
+.route button.done{color:var(--muted)}
+.route button[aria-current=step] i{background:linear-gradient(180deg,#e9d196,#c5a45a);border-color:transparent;box-shadow:0 0 0 4px #c9a96126}
+.route button[aria-current=step]{color:var(--gold-hi)}
+/* 表单区 */
+.form{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:.8rem 16px 1.4rem;scrollbar-width:none}
+.form::-webkit-scrollbar{display:none}
+.sh{display:flex;align-items:baseline;gap:.6rem;margin:.2rem 0 .9rem}
+.sh small{font-family:var(--font-mono);font-size:.56rem;letter-spacing:.24em;color:var(--gold)}
+.sh h2{font-size:1.45rem;letter-spacing:.2em}
+.sh .keep{margin-left:auto;display:flex;align-items:center;gap:.3rem;font-size:.62rem;color:var(--dim)}
+.sh .keep::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--ok)}
+.lead{font-size:.76rem;color:var(--muted);line-height:1.75;margin:-.3rem 0 .9rem}
+.alert{display:flex;gap:.6rem;padding:.65rem .8rem;border-radius:12px;font-size:.78rem;line-height:1.65;margin-bottom:.9rem}
+.alert i{flex:none;width:1.25rem;height:1.25rem;border-radius:50%;display:grid;place-items:center;font-style:normal;font-family:var(--font-title);font-size:.6rem;color:#0c0e0d;margin-top:.15rem}
+.l-err{border:1px solid #6e4a3d;background:#c26a4a14;color:#ecc9bc}.l-err i{background:#D47C60}
+.l-info{border:1px solid #3d5a6b;background:#8ec1e012;color:#cfe3ef}.l-info i{background:#8EC1E0}
+.l-info b{display:block;font-weight:600;color:#e6f1f7}
+.fl{display:block;margin-bottom:.95rem}
+.fl>span{display:flex;align-items:baseline;gap:.25rem;font-size:.72rem;color:var(--muted);margin-bottom:.35rem;letter-spacing:.06em}
+.fl>span em{font-style:normal;color:var(--gold)}
+.fl>span small{margin-left:auto;font-size:.62rem;color:var(--dim)}
+input[type=text],input[type=number],textarea{width:100%;font:inherit;font-size:16px;color:var(--text);background:#121615;border:1px solid var(--line-2);border-radius:12px;padding:.7rem .85rem;outline:none;transition:border-color .2s,box-shadow .2s}
+input:focus,textarea:focus{border-color:var(--gold-lo);box-shadow:0 0 0 3px #c9a96118}
+textarea{resize:none;line-height:1.7;min-height:6.2rem}
+input::placeholder,textarea::placeholder{color:var(--dim)}
+.in-name{font-family:var(--font-title);font-size:1.5rem!important;letter-spacing:.24em;padding:.6rem .85rem!important}
+.row2{display:grid;grid-template-columns:6.2rem minmax(0,1fr);gap:.6rem}
+.in-age{font-family:var(--font-mono)!important;text-align:center}
+.seg2{display:grid;grid-template-columns:1fr 1fr;gap:.4rem}
+.seg2 label{position:relative}
+.seg2 input{position:absolute;opacity:0;inset:0}
+.seg2 span{display:grid;place-items:center;height:3.05rem;border-radius:12px;border:1px solid var(--line-2);background:#121615;font-family:var(--font-title);letter-spacing:.2em;font-size:.95rem;color:var(--muted)}
+.seg2 input:checked+span{border-color:var(--gold);background:#c9a96114;color:var(--gold-hi)}
+.seg2 input:focus-visible+span{outline:2px solid var(--gold);outline-offset:2px}
+.sec{display:flex;align-items:center;gap:.6rem;margin:1.3rem 0 .6rem;font-family:var(--font-title);font-size:.95rem;letter-spacing:.3em}
+.sec::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line-2),transparent)}
+.chips{display:flex;gap:.4rem;overflow-x:auto;scrollbar-width:none;margin:0 -16px .6rem;padding:0 16px}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;border-radius:999px;padding:.38rem .85rem;font-size:.76rem;color:var(--muted);background:#121615}
+.chips button[aria-checked=true],.chips button[aria-pressed=true]{color:#171810;background:linear-gradient(180deg,#e9d196,#c5a45a);border-color:transparent;font-weight:600}
+/* 职业 */
+.plist{display:grid;gap:.5rem}
+.pro{border:1px solid var(--line-2);border-radius:14px;background:#121615;overflow:hidden;transition:border-color .2s}
+.pro>label{display:flex;align-items:center;gap:.7rem;padding:.75rem .85rem;position:relative}
+.pro>label input{position:absolute;opacity:0}
+.pro .rd{flex:none;width:1.15rem;height:1.15rem;border-radius:50%;border:1.5px solid #ffffff40}
+.pro b{display:block;font-family:var(--font-title);font-size:1rem;letter-spacing:.12em;font-weight:600}
+.pro small{display:block;font-size:.66rem;color:var(--dim)}
+.pro.on{border-color:var(--gold-lo);box-shadow:inset 3px 0 0 var(--gold)}
+.pro.on .rd{border-color:var(--gold);background:radial-gradient(circle,var(--gold) 0 40%,transparent 45%)}
+.pro .pf{padding:0 .85rem .9rem 2.7rem;font-size:.78rem;line-height:1.8;color:var(--muted)}
+.pro .pf p{font-family:var(--font-title);color:var(--prose);margin-bottom:.6rem}
+.pro .pf h4{font-family:var(--font-body);font-size:.62rem;letter-spacing:.24em;color:var(--dim);font-weight:500;margin:.6rem 0 .3rem}
+.tags{display:flex;flex-wrap:wrap;gap:.3rem}
+.tags span{font-size:.68rem;padding:.08rem .55rem;border-radius:999px;color:var(--info);background:#8ec1e014;border:1px solid #8ec1e033}
+/* 城市 */
+.cities{display:grid;gap:.6rem}
+.city{position:relative;display:block;border-radius:16px;overflow:hidden;border:1px solid var(--line-2);background:#121615;transition:border-color .25s,box-shadow .25s}
+.city input{position:absolute;opacity:0}
+.city .gb{position:relative;height:66px;background:#EBE3D1;--paper:#EBE3D1}
+.city .gb svg{position:absolute;inset:0;width:100%;height:100%}
+.city .gb path{fill:none;stroke:var(--ct);stroke-width:.7;opacity:.55}
+.city .gb path.d{stroke:color-mix(in srgb,var(--ct) 55%,#2B2723);opacity:.35}
+.city .gb .nm{position:absolute;left:.85rem;bottom:.45rem;padding:0 .4rem;background:#EBE3D1;font-family:var(--font-title);font-weight:700;font-size:1.5rem;letter-spacing:.2em;color:#1F1B17}
+.city .gb .em{position:absolute;right:.85rem;top:50%;transform:translateY(-50%);width:2.7rem;height:2.7rem;border-radius:50%;display:grid;place-items:center;background:#EBE3D1;border:1.5px solid color-mix(in srgb,var(--ct) 70%,#2B2723);font-family:var(--font-title);font-weight:700;font-size:1.15rem;color:color-mix(in srgb,var(--ct) 65%,#2B2723)}
+.city .gb .lb{position:absolute;left:.85rem;top:.45rem;padding:0 .4rem;background:#EBE3D1;font-size:.62rem;letter-spacing:.2em;color:color-mix(in srgb,var(--ct) 50%,#2B2723)}
+.city .ds{padding:.65rem .85rem .75rem;font-size:.74rem;line-height:1.75;color:var(--muted)}
+.city .start{position:absolute;right:.6rem;top:.5rem;z-index:2;font-size:.58rem;letter-spacing:.18em;padding:.1rem .5rem;border-radius:999px;color:#171810;background:var(--ct);display:none}
+.city.on{border-color:var(--ct);box-shadow:0 0 0 1px var(--ct),0 10px 30px -16px var(--ct)}
+.city.on .start{display:block}
+.city.on .gb .em{display:none}
+.skip{display:block;margin:.2rem auto 0;border:0;font-size:.78rem;color:var(--info)}
+/* 同伴 */
+.tog{display:flex;align-items:center;gap:.8rem;padding:.9rem;border-radius:14px;border:1px solid var(--line-2);background:#121615;margin-bottom:1rem}
+.tog b{display:block;font-family:var(--font-title);font-size:1rem;letter-spacing:.14em}
+.tog small{display:block;font-size:.68rem;color:var(--dim);line-height:1.6;margin-top:.15rem}
+.tog input{appearance:none;flex:none;width:2.9rem;height:1.7rem;border-radius:999px;background:#ffffff22;position:relative;margin:0;transition:background .2s}
+.tog input::after{content:'';position:absolute;left:3px;top:3px;width:calc(1.7rem - 6px);height:calc(1.7rem - 6px);border-radius:50%;background:#e8e4d8;transition:transform .2s}
+.tog input:checked{background:var(--gold)}.tog input:checked::after{transform:translateX(1.2rem)}
+.tog.on{border-color:var(--gold-lo)}
+/* 确认 */
+.rv{border:1px solid var(--line-2);border-radius:14px;background:#121615;margin-bottom:.55rem;overflow:hidden}
+.rv summary{list-style:none;display:flex;align-items:center;gap:.6rem;padding:.8rem .85rem;cursor:pointer}
+.rv summary::-webkit-details-marker{display:none}
+.rv summary small{font-family:var(--font-mono);font-size:.62rem;color:var(--gold)}
+.rv summary b{font-family:var(--font-title);font-size:.98rem;letter-spacing:.16em}
+.rv summary span{margin-left:auto;font-size:.68rem;color:var(--dim);max-width:9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rv summary::after{content:'›';color:var(--dim);transition:transform .2s}
+.rv[open] summary::after{transform:rotate(90deg)}
+.rv dl{margin:0;padding:0 .85rem .3rem;display:grid}
+.rv dl div{display:grid;grid-template-columns:4.2rem minmax(0,1fr);gap:.6rem;padding:.42rem 0;border-top:1px dashed #ffffff10;font-size:.8rem}
+.rv dt{font-size:.68rem;color:var(--dim);padding-top:.1rem}
+.rv dd{margin:0;line-height:1.65;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.rv .ed{display:block;margin:.1rem .85rem .75rem auto;border:0;padding:0;font-size:.74rem;color:var(--info)}
+.rv .tm{font-family:var(--font-mono);color:var(--gold-hi)}
+.rv .note{padding:0 .85rem .8rem;font-size:.7rem;color:var(--dim);line-height:1.7}
+/* 底栏 */
+.foot{flex:none;display:flex;align-items:center;gap:.6rem;padding:.6rem 14px calc(var(--safe-b) + 10px);border-top:1px solid var(--line);background:#0a0b0bf2}
+.foot .prev{width:3rem;height:3rem;padding:0;border-radius:14px;font-size:1rem;color:var(--muted)}
+.foot .prev:disabled{opacity:.3}
+.foot .no{font-family:var(--font-mono);font-size:.74rem;color:var(--dim)}
+.foot.s5 .no{display:none}
+.foot.s5 .next{letter-spacing:.1em}
+.foot .fee{font-size:.58rem;color:var(--dim);line-height:1.4;max-width:4.6rem}
+.foot .next{flex:1;white-space:nowrap;height:3rem;border:0;border-radius:14px;font-family:var(--font-title);font-weight:700;font-size:1rem;letter-spacing:.2em;color:#171810;background:linear-gradient(180deg,#f0dba2,#c5a45a);box-shadow:inset 0 1px 0 #fff8}
+/* 抽屉：完整车票 / 开局包 */
+.scrim{position:absolute;inset:0;z-index:40;background:#000;opacity:0;pointer-events:none;transition:opacity .3s}
+.scrim.on{opacity:.62;pointer-events:auto}
+.bs{position:absolute;left:0;right:0;bottom:0;z-index:41;max-height:calc(100% - var(--safe-t) - 24px);display:flex;flex-direction:column;border-radius:22px 22px 0 0;background:#111513;border-top:1px solid var(--line-2);transform:translateY(105%);transition:transform .36s var(--ease)}
+.bs.on{transform:none}.bs:focus{outline:none}
+.bs .grab{display:grid;place-items:center;padding:.6rem 0 .2rem}.bs .grab i{width:2.6rem;height:4px;border-radius:2px;background:#ffffff33}
+.bs .hd{display:flex;align-items:center;gap:.6rem;padding:.2rem 16px .7rem}
+.bs .hd .seal{width:2rem;height:2rem;font-size:.9rem}
+.bs .hd h3{font-size:1.08rem;letter-spacing:.14em;flex:1}
+.bs .hd button{border:0;width:2rem;height:2rem;padding:0;border-radius:50%;background:#ffffff0c;color:var(--muted)}
+.bs .bd{flex:1;min-height:0;overflow-y:auto;padding:0 16px calc(var(--safe-b) + 16px)}
+.bs .tip{font-size:.7rem;color:var(--dim);line-height:1.7;margin-bottom:.7rem}
+.pkl{display:grid;gap:.45rem}
+.pkl label{display:flex;align-items:center;gap:.7rem;padding:.7rem .8rem;border-radius:14px;border:1px solid var(--line-2);background:#151a18;position:relative}
+.pkl input{position:absolute;opacity:0}
+.pkl .seal{width:2.2rem;height:2.2rem;font-size:.95rem}
+.pkl b{display:block;font-family:var(--font-title);font-size:.95rem;letter-spacing:.08em}
+.pkl small{font-size:.68rem;color:var(--muted)}
+.pkl small i{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:.3rem;vertical-align:middle}
+.pkl .ck{margin-left:auto;width:1.15rem;height:1.15rem;border-radius:50%;border:1.5px solid #ffffff40}
+.pkl label:has(input:checked){border-color:var(--gold-lo)}
+.pkl label:has(input:checked) .ck{border-color:var(--gold);background:radial-gradient(circle,var(--gold) 0 40%,transparent 45%)}
+.pkb{display:flex;gap:.45rem;margin-top:.9rem}
+.pkb button{height:2.8rem;border-radius:12px;font-size:.8rem}
+.pkb .del{color:var(--warn-text);border-color:#6e4a3d}
+.pkb .go{flex:1;border:0;font-weight:650;color:#171810;background:linear-gradient(180deg,#e9d196,#c5a45a)}
+/* 完整车票（预览） */
+.fullt{position:relative;margin:.2rem auto .6rem;max-width:330px;padding-top:262px;border-radius:14px;background:linear-gradient(#EBE3D1,#EBE3D1) top/100% 262px no-repeat;color:#2B2723;--paper:#EBE3D1}
+.fullt .band{height:40px;border-radius:14px 14px 0 0;display:flex;align-items:center;gap:.6rem;padding:0 .9rem;background:var(--band,#c9a961);color:#fff}
+.fullt .band b{font-family:var(--font-title);font-size:.98rem;letter-spacing:.4em}
+.fullt .band small{font-family:var(--font-mono);font-size:.5rem;letter-spacing:.24em;opacity:.85}
+.fullt .band .no{margin-left:auto;font-family:var(--font-mono);font-size:.54rem;letter-spacing:.16em}
+.fullt .rt{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;padding:.8rem .9rem .2rem}
+.fullt .rt small{display:block;font-family:var(--font-mono);font-size:.5rem;letter-spacing:.22em;color:#857B6C}
+.fullt .rt .big{font-family:var(--font-title);font-size:1.6rem;font-weight:600;letter-spacing:.1em;color:#1F1B17;white-space:nowrap}
+.fullt .rt .q{color:#B8AD98}
+.fullt .rt .ar{padding:0 .4rem .5rem;font-size:.56rem;letter-spacing:.3em;color:#857B6C;text-align:center}
+.fullt .rt .to{text-align:right}
+.fullt dl{display:grid;grid-template-columns:repeat(3,1fr);margin:.3rem .9rem 0;padding:.45rem 0;border-top:1px dashed #2a262240}
+.fullt dl div:nth-child(n+4){margin-top:.35rem}
+.fullt dt{font-size:.5rem;color:#857B6C;letter-spacing:.16em}
+.fullt dd{margin:0;font-size:.76rem;color:#2B2723;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fullt .mid{position:absolute;left:0;right:0;top:188px;height:70px;overflow:hidden}
+.fullt .mid svg{position:absolute;inset:0;width:100%;height:100%}
+.fullt .mid path{fill:none;stroke:var(--ct,#c9a961);stroke-width:.7;opacity:.55}
+.fullt .mid path.d{stroke:color-mix(in srgb,var(--ct,#c9a961) 55%,#2B2723);opacity:.35}
+.fullt .mid .co{position:absolute;left:.9rem;top:.5rem;padding:0 .4rem;background:#EBE3D1;font-family:var(--font-mono);font-size:.54rem;letter-spacing:.2em;color:color-mix(in srgb,var(--ct,#c9a961) 45%,#2B2723)}
+.fullt .mid .im{position:absolute;left:.9rem;bottom:.5rem;padding:0 .4rem;background:#EBE3D1;font-family:var(--font-title);font-size:.8rem;letter-spacing:.3em}
+.fullt .chop{position:absolute;right:14px;top:190px;width:66px;height:66px;border-radius:50%;border:2px solid #A3412Ecc;color:#A3412E;display:grid;place-items:center;text-align:center;font-family:var(--font-title);font-size:.76rem;line-height:1.25;transform:rotate(-14deg);opacity:.85;box-shadow:inset 0 0 0 3px #EBE3D1,inset 0 0 0 4px #A3412E88;mix-blend-mode:multiply}
+.fullt .chop small{display:block;font-family:var(--font-mono);font-size:.42rem;letter-spacing:.12em}
+.fullt .perf{position:absolute;left:12px;right:12px;top:260px;border-top:2px dashed #2a262250}
+.fullt .perf::before,.fullt .perf::after{content:'';position:absolute;top:-10px;width:18px;height:18px;border-radius:50%;background:#111513}
+.fullt .perf::before{left:-21px}.fullt .perf::after{right:-21px}
+.fullt .stub{position:relative;height:74px;display:flex;align-items:center;gap:.6rem;padding:0 .9rem;border-radius:0 0 14px 14px;background:#EBE3D1;touch-action:none;cursor:grab;transition:transform .5s var(--ease),opacity .5s}
+.fullt .stub .go{font-family:var(--font-title);font-weight:700;font-size:.9rem;letter-spacing:.14em;color:#1F1B17}
+.fullt .stub .go small{display:block;font-family:var(--font-body);font-weight:400;font-size:.56rem;letter-spacing:.1em;color:#857B6C}
+.fullt .stub .bc{margin-left:auto;width:78px;height:24px;background:repeating-linear-gradient(90deg,#2B2723 0 2px,transparent 2px 4px,#2B2723 4px 5px,transparent 5px 8px,#2B2723 8px 11px,transparent 11px 13px)}
+.fullt .stub.tear{transform:translateY(70px) rotate(-12deg);opacity:0}
+.fullt>.band,.fullt>.rt,.fullt>dl{position:relative}
+.fullt-wrap{position:relative}
+.fullt-wrap .fullt{position:relative}
+.fullt .abs{position:absolute;left:0;right:0;top:0}
+.toast{position:absolute;left:50%;top:calc(var(--safe-t) + 50px);z-index:60;transform:translate(-50%,-8px);padding:.45rem .9rem;border-radius:999px;background:#1a1f1c;border:1px solid var(--line-2);font-size:.76rem;opacity:0;pointer-events:none;transition:all .25s;white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.step{animation:si .3s var(--ease)}
+@keyframes si{from{opacity:0;transform:translateX(18px)}}
+.step.back{animation-name:sb}
+@keyframes sb{from{opacity:0;transform:translateX(-18px)}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="desk">
+ <aside class="notes"><p class="eyebrow">MOBILE · 空白车票</p><h1>手机端 · 创建角色</h1>
+  <p>从开场撕下「空白车票」进入。五个步骤就是在这张票上一格一格写字。</p>
+  <ol><li><b>实时车票</b>：顶部的小车票随填写实时更新，姓名写上 FROM，城市写上 TO，城市选好后票头变色。点一下展开完整车票。</li>
+   <li><b>五站进度</b>：五个步骤画成一条线路，已过的站点亮起，可以点站名跳回。</li>
+   <li><b>单手填写</b>：模板、职业方向都是横滑胶囊，职业列表点开后原地展开职业档案。</li>
+   <li><b>最后一步</b>：车票盖上「待开局」章，和开场一样，撕下票根或点按钮都可以确认创建存档。</li>
+   <li><b>开局包</b>：右上角「包」，从底部弹出。</li></ol></aside>
+ <div class="frame"><div class="phone" id="phone">
+  <div class="app" id="app">
+   <header class="bar"><button class="back" data-toast="返回首页（草稿自动保留）">‹ 首页</button><div class="tt"><small>NEW LIFE</small>空白车票</div><button class="pk" id="pkBtn"><span class="seal" aria-hidden="true">包</span><span id="pkT">我的开局包</span></button></header>
+   <button class="mt" id="mt" aria-label="展开完整车票预览"></button>
+   <nav class="route" id="route" aria-label="创建步骤"></nav>
+   <main class="form" id="form"></main>
+   <footer class="foot"><button class="prev" id="prev" aria-label="上一步">←</button><span class="no" id="no">01 / 05</span><span class="fee" id="fee" hidden>可能产生第三方 API 费用</span><button class="next" id="next">下一步 →</button></footer>
+  </div>
+  <div class="scrim" id="scrim"></div>
+  <section class="bs" id="bs" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="bsT"><div class="grab"><i></i></div><div id="bsIn"></div></section>
+  <div class="toast" id="toast" role="status"></div>
+ </div></div>
+ <aside class="ctrl">
+  <div><p>步骤</p><div class="seg" id="dS"><button data-s="1">1</button><button data-s="2">2</button><button data-s="3">3</button><button data-s="4">4</button><button data-s="5">5</button></div></div>
+  <div><p>数据</p><div class="seg"><button id="dFill">示例填写</button><button id="dBlank">空白新档</button><button id="dErr">校验错误</button></div></div>
+  <p style="color:var(--dim);line-height:1.7">以上控制仅用于设计稿演示。</p>
+ </aside>
+</div>
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let tt; const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 1800); };
+const rng = seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const PROF = [
+  {
+    "name": "大学生",
+    "category": "学生与人生阶段",
+    "description": "在高校接受专业教育，日常围绕课堂、实验、作业和社团活动展开，也可能利用课余时间实习或兼职。需要在学业要求、生活开支与同龄人的交往之间寻找平衡，接触教师、同学和校园服务人员。具体专业与家庭条件各不相同，对未来方向可能已有打算，也可能仍在尝试和探索。",
+    "skills": [
+      "课程学习",
+      "资料检索",
+      "团队协作",
+      "基础写作"
+    ],
+    "longTermImpact": "校园生活逐渐形成资料检索、独立学习和合作完成任务的习惯，同学与师长可能成为多年后的联系。所学专业影响观察问题的角度，但课堂知识仍需实践检验。毕业、实习和异地求职会带来生活节奏变化，具体学历、成绩和机会依人物背景确定，学生身份并不意味着缺乏生活经验。"
+  },
+  {
+    "name": "研究生",
+    "category": "学生与人生阶段",
+    "description": "在完成基础高等教育后继续接受研究训练，围绕专业问题阅读文献、开展实验或调查，并承担论文和项目任务。日常往返于课堂、实验室、图书馆及实践地点，与导师和同门频繁协作。研究进展、成果要求与个人生活可能相互牵制，不同学科的工作方式和资助条件存在明显差别。",
+    "skills": [
+      "文献检索",
+      "研究设计",
+      "数据整理",
+      "学术写作"
+    ],
+    "longTermImpact": "长期研究训练有助于形成追问依据、记录过程和反复检验结论的习惯，也会使知识积累集中在特定领域。导师、同门及合作项目可能影响就业方向，但并不自动带来职位或资源。面对研究受阻和毕业选择，人物可能重新衡量理想与生活；专业深度也不能替代其他行业的实际经验。"
+  },
+  {
+    "name": "职业学校学生",
+    "category": "学生与人生阶段",
+    "description": "在职业院校学习一门面向实际岗位的专业，课程包含基础理论、实训操作与安全规范，部分阶段需要进入企业见习。日常接触实训教师、同学和带教人员，在反复练习中了解工具与工作流程。所学方向可能是制造、护理、服务或信息技术，具体资格与熟练程度仍需由经历决定。",
+    "skills": [
+      "实操学习",
+      "工具识别",
+      "规范操作",
+      "协作记录"
+    ],
+    "longTermImpact": "实训经历使人物更容易注意操作步骤、设备状况和现场协作，也较早接触岗位纪律及劳动环境。同学、带教人员和实习单位可能成为求职线索，技能需要持续练习才能熟练。升学、就业或跨行发展都可成为之后的选择，不因学校类型限定志向，也不自动授予尚未取得的职业证书。"
+  },
+  {
+    "name": "应届毕业生",
+    "category": "学生与人生阶段",
+    "description": "刚完成一段正式教育，正从校园走向工作与独立生活，日常可能同时处理求职、面试、搬家和毕业手续。已积累所学专业的基础知识，但对岗位分工、劳动关系及城市生活成本仍在熟悉。会接触招聘人员、旧同学和新同事，第一份工作的选择常与家庭支持和个人期待交织在一起。",
+    "skills": [
+      "信息检索",
+      "简历整理",
+      "基础办公",
+      "学习适应"
+    ],
+    "longTermImpact": "从学生到职场的过渡会逐渐改变时间安排、消费习惯与交往范围，面试和试岗经历也可能修正对行业的想象。校园联系仍然重要，新工作带来的技能则需要实际积累。毕业并不自动意味着失业或经济拮据，人物可以从稳定机会起步，也可以继续深造或尝试其他生活方式。"
+  },
+  {
+    "name": "待业求职者",
+    "category": "学生与人生阶段",
+    "description": "当前没有固定工作，正在寻找适合自己的岗位或调整职业方向，日常可能包括投递简历、参加面试、学习技能和处理生活事务。此前可能已有丰富经历，也可能刚离开学校，不能仅凭待业状态判断能力。求职节奏受到行业机会、家庭安排与可承受开支影响，兼职或短期项目也可能出现。",
+    "skills": [
+      "岗位筛选",
+      "信息核对",
+      "面试沟通",
+      "时间安排"
+    ],
+    "longTermImpact": "求职过程会让人物更熟悉招聘渠道、岗位要求与自身优势，也可能促使其重新考虑通勤、收入和生活质量的取舍。原有同行与朋友可以提供信息，但具体帮助取决于关系。待业不会抹去已学技能，也不预设失败人生；重新就业、转行或自主经营都应由后续选择和实际条件展开。"
+  },
+  {
+    "name": "退休人士",
+    "category": "学生与人生阶段",
+    "description": "已经结束主要的全职职业阶段，将更多时间用于家庭、兴趣、社区活动或个人事务，也可能继续承担顾问和零散工作。此前行业、健康状况和家庭结构会影响当下生活，收入可能来自养老金或其他既有安排。与旧同事、邻里和亲友保持联系，日常节奏不必围绕固定的上下班时间展开。",
+    "skills": [
+      "生活统筹",
+      "经验整理",
+      "人际沟通",
+      "事务协调"
+    ],
+    "longTermImpact": "多年职业与生活经历可能留下稳定的知识、习惯和社会联系，退休后仍可学习新事物并选择新的目标。家庭照料、社区参与和兴趣活动会带来不同的人际互动，体力与时间安排需依实际状态描述。退休身份不等于衰弱、富有或孤独，养老金与资产也必须以明确的世界资料为准。"
+  },
+  {
+    "name": "企业职员",
+    "category": "企业与商业",
+    "description": "在企业承担具体业务岗位，日常处理文件、会议、客户需求或内部协作，工作内容随部门和行业而变化。需要理解组织流程，与同事、上级及合作方保持沟通，并在期限和质量要求之间安排任务。通勤、绩效和团队氛围影响生活感受，普通岗位也可能积累扎实而有价值的专业经验。",
+    "skills": [
+      "办公协作",
+      "业务沟通",
+      "资料整理",
+      "流程跟进"
+    ],
+    "longTermImpact": "长期职场生活会培养对流程、分工和组织关系的认识，办公技能及沟通习惯随着任务磨练逐渐形成。熟悉的同事和合作方可能成为持续联系，岗位调整也会改变生活节奏。晋升、离职或转行都取决于经历与选择，不凭企业职员身份自动确定收入、管理权限或所属公司的规模。"
+  },
+  {
+    "name": "企业经营者",
+    "category": "企业与商业",
+    "description": "从事企业经营、商业管理和项目运作，日常处理客户往来、业务谈判、人员安排及经营决策。需要关注市场竞争、行业变化与资金周转，也要面对团队协作和合作关系中的具体问题。经历可以从初创业务负责人到多年管理者不等，经营成果与企业规模应根据人物背景分别确定。",
+    "skills": [
+      "商业谈判",
+      "企业管理",
+      "市场分析",
+      "商务沟通",
+      "经营规划"
+    ],
+    "longTermImpact": "经营经历使人物较熟悉市场变化、利益交换和经营风险，也可能在相关行业积累经验与联系。商业合作、企业竞争和经营纠纷更容易进入生活，作息往往受到客户与项目影响。但财富、公司规模、股权及实际人脉必须依正式状态确定，职业名称不能直接创造企业资产或支配他人的权限。"
+  },
+  {
+    "name": "个体商户",
+    "category": "企业与商业",
+    "description": "经营个人门店、摊位或小型业务，日常需要进货、陈列、接待顾客和核对收支，并与供货方及周边商户打交道。熟悉商品特点、客流变化与附近居民的实际需求，营业时间往往较长。生意可能平稳也可能具有季节性，租金、进货成本和家庭分工共同影响经营方式与生活安排。",
+    "skills": [
+      "采购比价",
+      "库存管理",
+      "顾客沟通",
+      "日常记账"
+    ],
+    "longTermImpact": "持续经营会积累辨别货品、控制损耗和处理顾客关系的经验，对街区变化与生活价格较为敏感。熟客、邻铺和供应商可能构成稳定社交圈，节假日也可能意味着更忙碌的工作。是否拥有店面、存货和盈利须由具体状态决定，之后可以扩大经营、转行或调整营业方式，不被身份固定。"
+  },
+  {
+    "name": "销售人员",
+    "category": "企业与商业",
+    "description": "围绕产品或服务开展客户沟通，日常寻找潜在需求、准备介绍材料、跟进合作进度并处理成交后的反馈。工作可能发生在门店、办公室或频繁外出的途中，需要与客户、同事和业务支持部门配合。业绩目标与客户节奏带来压力，收入方式和销售对象因行业而异，不意味着总能说服别人。",
+    "skills": [
+      "需求访谈",
+      "产品讲解",
+      "客户维护",
+      "商务谈判"
+    ],
+    "longTermImpact": "反复接触不同客户有助于形成提问、倾听和表达方案的习惯，对需求变化与合作信号较为敏感。积累的联系可能提供机会，也需要长期维护信用和服务质量。业绩波动会影响作息与规划，但职业经历不等同于操纵他人的能力，更不能自动生成客户资源、订单或额外收入。"
+  },
+  {
+    "name": "金融从业者",
+    "category": "企业与商业",
+    "description": "在银行、证券、保险或其他金融机构承担具体岗位，日常可能涉及业务办理、资料核对、客户服务及风险管理。需要理解产品条款和合规流程，与客户、同事及审核人员协作。市场变化和考核压力影响工作节奏，前台业务与分析岗位的经历并不相同，专业方向应依人物设定明确。",
+    "skills": [
+      "财务阅读",
+      "数据核对",
+      "风险识别",
+      "客户沟通"
+    ],
+    "longTermImpact": "长期接触资金、合同与风险问题，会形成关注数字、期限和责任边界的习惯，也可能拓宽对企业和家庭财务的理解。同行联系及专业学习有助于发展，但信息和执业权限仍受实际岗位限制。金融背景不保证投资获利或财富，更不自动拥有账户访问权、内幕消息和任何尚未取得的资质。"
+  },
+  {
+    "name": "房地产经纪人",
+    "category": "企业与商业",
+    "description": "从事房屋租赁或买卖的居间服务，日常核实房源信息、安排带看、沟通双方需求并跟进手续。需要熟悉街区、交通、楼宇条件和常见交易流程，频繁接触租客、业主及其他经纪人。工作时间常随客户安排变化，收入可能波动，能否成交还取决于市场、真实房源和双方条件。",
+    "skills": [
+      "房源整理",
+      "带看沟通",
+      "价格比较",
+      "交易流程协调"
+    ],
+    "longTermImpact": "持续走访社区使人物熟悉城市生活空间、住房需求及不同家庭的预算压力，沟通和材料核对能力也随经验积累。业主与同行联系可能带来业务线索，市场起落则影响生活规划。职业不会赋予房屋产权或无条件进入住宅的权利，对合同和价格的判断也不能替代专业审查与真实交易。"
+  },
+  {
+    "name": "教师",
+    "category": "专业与公共服务",
+    "description": "从事学校或其他教育机构的教学工作，日常准备课程、组织课堂、批改作业并了解学习进度。与学生、家长、同事和管理人员保持联系，也需要处理考试安排及集体活动。学科、学段与任职经历影响工作方式，课堂之外仍有大量准备和沟通任务，不同学校的资源和要求并不一致。",
+    "skills": [
+      "课程设计",
+      "课堂讲授",
+      "学习反馈",
+      "班级沟通"
+    ],
+    "longTermImpact": "长期教学可能培养条理化表达、观察理解差异和耐心沟通的习惯，对教育与家庭议题更有切身体会。师生、家校及同事关系会留下持续影响，学期节奏也容易融入生活安排。具体任职和资质应以背景为准，教师身份不意味着替学生做决定，也不自动获得学校管理权限或额外社会地位。"
+  },
+  {
+    "name": "医生",
+    "category": "专业与公共服务",
+    "description": "在医疗机构承担与专业方向相符的诊疗工作，日常接诊、查看检查资料、记录病情并与团队协作。需要面对患者和家属的焦虑，遵循诊疗流程及岗位要求，部分科室存在夜班与突发任务。专科、年资及工作环境决定实际职责，医学知识不能脱离检查条件直接保证诊断和治疗结果。",
+    "skills": [
+      "临床问询",
+      "医学资料阅读",
+      "诊疗协作",
+      "基础急救"
+    ],
+    "longTermImpact": "长期临床经历会强化观察细节、关注风险和交接记录的习惯，也可能改变作息与情绪调节方式。患者、同事和学术交流构成不同的社会联系，持续学习十分重要。职业资料不自动授予执业证件、处方权限或医疗设备，能力边界仍取决于具体资质、经验和现场条件，不把人物写成全能医生。"
+  },
+  {
+    "name": "律师",
+    "category": "专业与公共服务",
+    "description": "围绕委托事务提供法律服务，日常查阅法规、整理材料、起草文书并与当事人沟通方案。工作可能涉及合同审阅、纠纷协商或诉讼准备，需要与团队及有关机构按程序联系。专业领域与执业阶段决定熟悉的事务，案件期限和客户需求影响作息，结果受事实、程序及多方因素制约。",
+    "skills": [
+      "法律检索",
+      "文书写作",
+      "争议分析",
+      "协商沟通"
+    ],
+    "longTermImpact": "法律工作会培养区分主张与材料、留意责任和期限的习惯，也使人物经常接触商业合作及家庭纠纷。同行、客户和学习经历可能拓宽视野，但不能由职业自动推定具体委托、执业证件或司法关系。谨慎表达可以成为习惯，也可能增加沟通距离，人物依然可以选择自己的生活与交往方式。"
+  },
+  {
+    "name": "记者",
+    "category": "专业与公共服务",
+    "description": "从事新闻采访、调查与报道，日常寻找选题、联系受访者、核对材料并完成稿件或影像内容。需要适应现场变化和编辑期限，与不同职业、年龄和处境的人交流。媒体类型与负责领域影响工作方式，采访机会、公开资料与报道要求存在现实边界，不能把听到的说法直接当成定论。",
+    "skills": [
+      "采访提问",
+      "资料核对",
+      "线索整理",
+      "报道写作"
+    ],
+    "longTermImpact": "长期采访可能培养倾听、追问和整理复杂经历的能力，也使人物对社会变化较为敏感。受访者、同行和编辑之间的联系会影响信息来源与职业选择，赶稿和外出可能打乱日常。记者身份不赋予任意进入场所或调取私人资料的权限，具体信誉、资源与成果须在实际经历中逐步建立。"
+  },
+  {
+    "name": "刑警",
+    "category": "专业与公共服务",
+    "description": "在公安机关刑事侦查岗位工作，按具体分工参与线索核查、走访调查、材料整理和团队行动。需要与同事及有关人员配合，重视程序和现场记录，日常可能交织着案头工作、等待与突发任务。岗位、辖区和年资影响实际职责，行动受法律和组织安排约束，不能仅凭身份任意调动资源。",
+    "skills": [
+      "案件调查",
+      "现场观察",
+      "材料整理",
+      "警务协作"
+    ],
+    "longTermImpact": "侦查经历可能形成细致观察、核对信息和重视协作的习惯，也会影响对风险及人际关系的感受。复杂作息与工作保密要求可能进入家庭生活，同行关系需依实际经历积累。执法权限、装备、案件资料和行动指令都须有明确状态支持，职业模板不直接授予武器、无限调查权或他人的服从。"
+  },
+  {
+    "name": "基层公务员",
+    "category": "专业与公共服务",
+    "description": "在基层机关承担公共服务或行政事务，日常阅读政策、整理材料、办理流程并回应群众需求。需要与同事、其他部门及社区人员协作，将具体问题放入制度和职责范围内处理。岗位可能偏向窗口、综合事务或基层走访，工作节奏受到事务数量和阶段任务影响，不等同于拥有管理一切的权力。",
+    "skills": [
+      "政策阅读",
+      "公文处理",
+      "群众沟通",
+      "事务协调"
+    ],
+    "longTermImpact": "长期公共服务会让人物熟悉办事程序、政策表达和不同群体的现实诉求，也可能培养耐心解释与协调冲突的习惯。部门同事和工作往来构成部分社会联系，但私人关系不能替代法定程序。具体职级、权限与待遇依正式资料确定，身份不会自动赋予特殊资产、通行便利或任意调动人员的能力。"
+  },
+  {
+    "name": "程序员",
+    "category": "技术与生产",
+    "description": "从事软件开发、维护或相关技术工作，日常分析需求、编写代码、测试功能并处理运行问题。与产品、设计、测试和其他开发者协作，工作可能发生在办公室或远程环境。项目交付与故障处理影响节奏，技术方向和经验差异很大，能够编程不等于熟悉所有设备、系统和网络安全事务。",
+    "skills": [
+      "编程实现",
+      "代码阅读",
+      "问题排查",
+      "版本协作"
+    ],
+    "longTermImpact": "持续开发会培养拆解问题、检索资料和记录变更的习惯，对数字产品及流程改进较为敏感。技术社区、团队协作与项目积累可能影响后续机会，久坐及集中工作也会改变作息。职业不自动赋予系统访问权限、黑客能力或高收入，跨领域任务仍需学习，人物可以自主决定技术之外的生活目标。"
+  },
+  {
+    "name": "工程师",
+    "category": "技术与生产",
+    "description": "在具体工程领域参与设计、实施或技术支持，日常阅读图纸、核对参数、沟通方案并跟进现场问题。工作可能往返于办公室、工厂和项目地点，需要与施工、生产及管理人员协作。专业方向、项目规模和岗位分工决定实际职责，技术判断需要依赖资料、规范及现场条件，不能泛化为万能技能。",
+    "skills": [
+      "技术制图",
+      "方案分析",
+      "质量检查",
+      "项目协作"
+    ],
+    "longTermImpact": "工程实践会形成关注安全、成本和可实施性的习惯，长期项目也可能带来跨部门及跨城市的协作经验。行业联系人、技术学习和现场反馈逐步塑造能力，项目周期常影响生活安排。具体资质与签审权限须以正式经历为准，职业名称不能自动生成承包项目、工程设备或任何尚未确认的权利。"
+  },
+  {
+    "name": "汽修技师",
+    "category": "技术与生产",
+    "description": "在维修门店或汽车服务机构处理车辆保养与故障问题，日常检查零部件、读取检测结果、拆装维护并向客户解释情况。需要与同事和配件供应方协作，重视工序、工具及安全操作。熟悉的车型和技术方向随经历不同，维修效果受到检测条件、配件和实际故障影响，不能凭听声便保证排除问题。",
+    "skills": [
+      "车辆检修",
+      "故障排查",
+      "工具使用",
+      "保养沟通"
+    ],
+    "longTermImpact": "反复检修会积累对车辆结构、磨损和使用习惯的认识，也培养耐心排查及动手操作能力。客户、同行和供应商可能构成稳定联系，旺季与紧急维修影响休息安排。技能并不自动转化为车辆所有权或万能改装能力，后续可选择深造、管理或自主经营，所需设备与资金仍以实际状态为准。"
+  },
+  {
+    "name": "工厂技工",
+    "category": "技术与生产",
+    "description": "在生产现场从事具有技术要求的操作、装配或维护工作，日常依据工艺要求处理材料、使用设备并核对质量。需要与班组、质检及维修人员配合，关注安全规范和生产节拍。行业、工种与熟练程度决定实际工作，轮班和订单变化可能影响生活，不将所有工厂岗位混同为简单重复劳动。",
+    "skills": [
+      "设备操作",
+      "工艺识读",
+      "质量自检",
+      "生产协作"
+    ],
+    "longTermImpact": "长期生产实践会使人物熟悉工序衔接、异常征兆和团队配合，技术经验往往来自持续操作与问题反馈。班组关系及师徒传授可能留下深刻影响，作息也容易受到班次安排牵动。技能成长不能自动获得设备产权或管理权限，具体待遇与职业发展仍由企业、岗位和人物选择共同决定。"
+  },
+  {
+    "name": "建筑工人",
+    "category": "技术与生产",
+    "description": "在建筑施工现场承担具体工种的作业，日常按施工安排准备材料、使用工具并与不同工序的人员配合。需要关注现场安全、天气和进度要求，工作地点可能随项目变化。泥瓦、木工等工种各有专长，劳动强度与住宿通勤条件因项目不同，不能只凭职业推定人物贫困或缺乏教育。",
+    "skills": [
+      "施工识图",
+      "安全操作",
+      "工具使用",
+      "现场配合"
+    ],
+    "longTermImpact": "长期现场经历会培养对空间、材料和安全风险的直观认识，也可能形成跨地区工作及班组合作的习惯。熟悉的工友和项目负责人可能带来后续机会，工程周期会影响家庭团聚与收入节奏。具体技能、劳动关系和报酬应依实际经历确定，不自动赋予工程承包权或任何未登记的设备资产。"
+  },
+  {
+    "name": "仓储物流人员",
+    "category": "技术与生产",
+    "description": "在仓库、分拣中心或物流网点参与收货、验货、存放与出库作业，日常使用清单和系统核对货品流向。需要与运输、采购及同班人员协作，在效率和差错控制之间保持平衡。工作可能包含轮班、搬运和异常件处理，所需设备资格依岗位而定，不默认所有人员都能操作特殊机械。",
+    "skills": [
+      "货品核对",
+      "库存盘点",
+      "配送协调",
+      "安全搬运"
+    ],
+    "longTermImpact": "持续物流工作会培养分类记录、检查细节与安排顺序的习惯，对配送节奏和供应链中断较为敏感。网点、司机及同事之间的联系可能影响工作机会，旺季和夜班也会改变生活节律。对货物流转的了解不代表货物归属或任意处置权，后续岗位调整仍须尊重实际能力、手续与个人选择。"
+  },
+  {
+    "name": "外卖骑手",
+    "category": "城市服务与自由职业",
+    "description": "在城市中提供即时配送服务，日常往返商家、道路和住宅楼宇，核对订单并安排取送顺序。需要适应天气、交通及楼宇出入条件，与商家和顾客沟通等待或地址问题。平台规则和高峰时段影响节奏，实际收入与工作安排因人而异，熟悉街面并不意味着可以忽略交通和安全风险。",
+    "skills": [
+      "路线规划",
+      "地址辨认",
+      "配送调度",
+      "客户沟通"
+    ],
+    "longTermImpact": "长期配送会积累对街区、商圈及生活设施的细致认识，也训练临场安排和处理突发情况的能力。商家、同行和常见顾客可能成为日常联系，饭点与天气会影响休息安排。职业不自动带来交通工具产权或特定经济困境，人物可以选择兼职、稳定接单或转向其他工作，既有经历仍然保留。"
+  },
+  {
+    "name": "网约车司机",
+    "category": "城市服务与自由职业",
+    "description": "通过合法客运安排提供出行服务，日常接送乘客、规划路线、关注交通变化并维护车辆使用状态。频繁接触机场、车站、商务区与住宅社区，需要处理等候、沟通和行程异常。收入、车源和排班方式各不相同，夜间与高峰出车可能带来疲劳，驾驶经验也需要适应具体道路和车辆条件。",
+    "skills": [
+      "城市驾驶",
+      "路线判断",
+      "服务沟通",
+      "车辆日检"
+    ],
+    "longTermImpact": "持续客运工作会加深对城市空间、出行节律和服务需求的认识，乘客交谈可能扩展生活见闻，但不构成自动获得私人信息的渠道。作息与车辆维护常成为生活安排的重要部分。驾驶资格、营运手续和车辆产权须以正式资料为准，职业不会自动授予这些条件，也不预设人物的收入或家庭关系。"
+  },
+  {
+    "name": "安保人员",
+    "category": "城市服务与自由职业",
+    "description": "在企业、社区或公共场所承担巡查、出入登记及秩序维护工作，日常留意设施状况、回应访客并处理常见纠纷。需要与同事、物业或现场负责人按流程协作，岗位可能包含轮班和夜间值守。不同场所的风险与职责差别明显，工作强调观察和沟通，不能把安保身份当作普遍执法资格。",
+    "skills": [
+      "秩序维护",
+      "风险观察",
+      "出入登记",
+      "应急协作"
+    ],
+    "longTermImpact": "长期值守可能培养对环境变化、人员往来和应急路线的敏感，也形成交接记录与守时的习惯。与居民、员工或商户的日常接触会留下关系，轮班则可能影响家庭和休息安排。具体装备、访问权限和处置范围依实际岗位确定，不因职业自动拥有武器、搜查权或强迫他人服从的资格。"
+  },
+  {
+    "name": "餐饮从业者",
+    "category": "城市服务与自由职业",
+    "description": "在餐馆、食堂或其他餐饮场所承担厨房、服务及相关岗位，日常准备食材、安排出餐或回应顾客需求。需要重视卫生、节奏和团队配合，午晚高峰往往较为忙碌。不同岗位有各自的操作与服务经验，工作环境和排班差异明显，不能仅凭身份推定拥有店铺或掌握所有菜系的制作技能。",
+    "skills": [
+      "餐饮服务",
+      "食品卫生",
+      "备料协作",
+      "顾客沟通"
+    ],
+    "longTermImpact": "长期餐饮工作会让人物熟悉食材使用、顾客偏好和忙时协作，也可能养成错峰用餐与站立工作的习惯。同事、供货方及熟客形成生活中的部分联系，节假日经常与工作安排交织。具体厨艺与管理经验需要逐步积累，职业不自动附带门店资产、食品资质或稳定盈利，转岗选择仍由人物决定。"
+  },
+  {
+    "name": "酒店服务人员",
+    "category": "城市服务与自由职业",
+    "description": "在酒店承担前台、客房或其他服务岗位，日常根据分工处理接待、客房安排、用品检查和客人反馈。需要与不同班组协作，兼顾服务礼仪、隐私与工作流程，节假日和夜班可能比较忙碌。服务对象与酒店规模影响工作体验，不能把接触住客等同于可随意查看或传播住客资料。",
+    "skills": [
+      "接待沟通",
+      "服务协调",
+      "客房流程",
+      "突发事务处理"
+    ],
+    "longTermImpact": "长期服务经历会培养留意细节、应对需求和协调异常的习惯，也可能提高面对不同文化与生活方式的适应能力。同事和行业联系影响工作机会，轮班则改变休息与社交节奏。实际语言能力、岗位权限和管理职责依人物资料确定，职业不会自动生成酒店所有权或任何私人信息访问权。"
+  },
+  {
+    "name": "自由职业者",
+    "category": "城市服务与自由职业",
+    "description": "以非固定雇佣方式提供专业服务或独立创作，日常联系客户、商议任务、安排交付并处理收支事务。工作可以在家中、共享空间或项目现场进行，业务方向由个人专长决定。自由度与不确定性并存，需要在寻找项目、完成工作和维持生活之间分配时间，不将所有自由职业者描绘为同一种行业。",
+    "skills": [
+      "项目沟通",
+      "工作规划",
+      "合同阅读",
+      "自我学习"
+    ],
+    "longTermImpact": "独立工作可能强化自我安排、表达需求和维护合作关系的能力，也让人物更关注期限、信用及收入节奏。客户、同行和兴趣社群可能形成长期联系，但具体资源需要在经历中积累。自由职业不自动意味着高收入或不稳定生活，人物可保留多种身份并调整方向，专业技能与资产仍按实际资料确定。"
+  }
+];
+const TPL = {"appearanceTemplates":[{"name":"自然耐看","description":"五官协调，体态自然，眉眼舒展，神情真实亲切。外表没有夸张的特征，肤色健康，发型和衣着简单舒适。整体不刻意张扬，初看普通，相处久后却能发现自然耐看的特点。举止随和，表情变化丰富，带有鲜明的日常生活气息，在熟悉的环境里尤其显得自在。"},{"name":"清爽干练","description":"身形匀称，仪态挺拔，眉眼清晰，面容整洁，目光专注。发型利落，衣着讲究合身和协调，喜欢简洁得体的搭配。行动节奏明快，动作干净，不拖泥带水，站立和行走时都保持自然的精神状态。整体形象既有年轻活力，也有成熟得体的一面，不靠繁复装饰引人注意。"},{"name":"温润斯文","description":"面容清秀柔和，眉眼细致，目光温和，五官线条流畅。身形匀称，姿态舒展，表情平静自然，衣着偏向干净、素雅、舒适的风格。微笑时显得亲切，倾听时神情专注，举止文雅而不拘谨。整体气质温和、含蓄、从容，细微的表情与放松的动作让人感到容易接近。"},{"name":"冷峻凌厉","description":"面部轮廓鲜明，眉骨与下颌线条清晰，眼神深邃锐利，神情沉静。发型简洁，身姿挺拔，站姿稳定，举止克制，衣着偏好低调、深色且有质感的搭配。平时表情较少，沉默时带有距离感，目光转动和抬手等细节却十分鲜明。偶尔流露的浅笑柔化了轮廓，也更容易令人留下印象。"},{"name":"成熟硬朗","description":"体格结实，肩背宽实，面部骨相明显，眉眼沉稳，肤色健康。发型简单实用，双手骨节分明，体态放松却有力量，站立与行走都显得稳健。外表带有生活历练留下的自然痕迹，衣着重视耐穿与舒适，不刻意追逐繁复搭配。整体气质沉着、厚重、坚实，表情变化中透出成熟感。"},{"name":"惊艳出众","description":"五官比例精致协调，面部轮廓立体，眉眼明亮而富有神采，容貌具有鲜明辨识度。肤质细腻，发型整洁，身形修长，体态优雅，拥有较为突出的个人风格。即使穿着简单也容易引人注意，表情自然生动，微笑时具有感染力。整体气质耀眼而不过分浮夸，日常举止也保持舒展自然。"}],"personalityTemplates":[{"name":"沉稳谨慎","description":"做事周密细致，习惯先观察环境、分析利弊，再采取行动。面对陌生人礼貌克制，不轻易交付信任，却重视承诺与可靠的关系。遇到突发情况时善于稳定情绪，寻找解决办法。重视长期积累与安全感，有时会因为过度考虑风险而显得犹豫，真正触及原则时又能够坚持立场。"},{"name":"开朗健谈","description":"性格热情爽朗，待人自然大方，擅长主动交流，容易活跃气氛。对新鲜事物充满好奇，适应陌生环境的能力较强。重视友情，乐于帮助熟悉的人。说话风趣，情绪表达丰富，偶尔因为过分乐观而忽视风险，也可能先答应事情再考虑细节，但对真正重要的人与事往往格外认真。"},{"name":"冷静理性","description":"思维清晰，观察细致，善于从复杂信息中找出关键问题。做决定时重视逻辑、事实和实际后果，不愿轻易受到情绪影响。表达观点简洁明确，习惯通过理由说服别人。对陌生人保持距离，内心并非没有感情，只是不习惯直接流露。有时容易显得固执、挑剔，面对复杂的人情纠葛也可能感到为难。"},{"name":"直率果敢","description":"性格坦率，爱憎分明，讨厌虚伪与拐弯抹角。遇到困难时倾向于主动面对，行动果断，敢于承担一定风险。重视朋友与承诺，对不公平的事情往往难以保持沉默。情绪表达直接，有时显得急躁、好胜、缺乏耐心，容易因为冲动与人发生摩擦，但做错事情后也愿意面对后果。"},{"name":"圆滑世故","description":"心思细腻，善于察言观色，能够敏锐察觉不同人物的情绪、身份和利益关系。说话讲究分寸，懂得保留余地，不轻易暴露全部想法。熟悉人情往来，善于协调矛盾和寻找机会。看似随和，实际上对得失有着清醒判断。重视利益，也珍惜值得信任的关系，有时因顾虑较多而显得不够坦诚。"},{"name":"野心勃勃","description":"拥有强烈的进取心，不甘心长期停留在平凡的位置，对事业、财富、地位和个人成就抱有较高期待。善于寻找机会，能够为明确目标投入时间与精力。面对竞争不轻易认输，渴望掌握自己的人生。具有韧性和行动力，但也容易给自己过多压力，有时忽略生活中的简单快乐与身边人的感受。"}]};
+const CITIES = [
+ {id:'chongqing',k:'cq',name:'重庆',label:'山城 · 江岸与街巷',description:'长江与嘉陵江交汇，山地街区、跨江交通与立体城市空间交织。制造业、商贸与社区生活相邻，出行距离不能只看地图上的直线。'},
+ {id:'shanghai',k:'sh',name:'上海',label:'海派 · 街区与都市',description:'金融、航运与专业服务汇集，老街区和新商务区共存。轨道交通连接广阔城区，住房、通勤与职场节奏构成日常生活的重要背景。'},
+ {id:'harbin',k:'hrb',name:'哈尔滨',label:'北国 · 工业与生活',description:'松花江畔的东北城市，拥有工业和高校基础，街区建筑保留多重历史痕迹。四季温差明显，冬季气候会实际影响出行与工作安排。'},
+ {id:'guangzhou',k:'gz',name:'广州',label:'岭南 · 商贸与人情',description:'珠江沿岸的商贸中心，制造业、专业市场与现代服务业联系紧密。老城街巷、城中村和新城并存，粤语文化与多元迁入人口共同塑造城市生活。'}];
+const TINT = {cq:'#7FA7A0',sh:'#8E9BD8',hrb:'#A9C3D8',gz:'#D08A6A'}, BAND = {cq:'#2f6f63',sh:'#34468e',hrb:'#6f8fa8',gz:'#a8482c'};
+const META = {cq:['29°33′N · 106°33′E','山城 · 江雾 · 轻轨','渝',7],sh:['31°14′N · 121°29′E','外滩 · 霓虹 · 江风','沪',31],hrb:['45°45′N · 126°38′E','冰雪 · 圆顶 · 长街','冰',53],gz:['23°07′N · 113°15′E','早茶 · 榕荫 · 珠江','穗',97]};
+const STEPS = ['基本信息','职业与能力','城市与背景','初始同伴','确认与开局'], SHORT = ['基本','职业','城市','同伴','确认'];
+const CATS = [...new Set(PROF.map(p => p.category))];
+const BLANK = () => ({step:1,person:{name:'',age:'',gender:'',appearance:'',personality:''},appearanceTemplate:'custom',personalityTemplate:'custom',
+  profession:'',professionCategory:CATS[0],customProfession:'',professionDescription:'',professionLongTermImpact:'',skills:'',city:'chongqing',background:'',
+  hasCompanion:false,companion:{name:'',age:'',identity:'',relationship:'',appearance:'',personality:'',skills:'',background:''},openingPreference:''});
+const FILLED = () => Object.assign(BLANK(), {person:{name:'沈砚',age:'27',gender:'男性',appearance:TPL.appearanceTemplates[3].description,personality:TPL.personalityTemplates[0].description},
+  appearanceTemplate:TPL.appearanceTemplates[3].name,personalityTemplate:TPL.personalityTemplates[0].name,profession:PROF.find(p => p.category === CATS[4]).name,professionCategory:CATS[4],
+  background:'十六岁那年父亲在嘉陵江出事，此后跟着母亲在较场口生活。',hasCompanion:true,
+  companion:{name:'林晚',age:'26',identity:'「旧时光」咖啡馆店主',relationship:'大学同学，十年没见',appearance:'齐肩短发，常穿深色针织开衫。',personality:'说话直，记性好。',skills:'咖啡烘焙\n观察细节',background:'毕业后在报社干了三年，辞职后回重庆开店。'}});
+let F = BLANK(), err = '', dir = 1;
+const city = () => CITIES.find(c => c.id === F.city), ck = () => city().k;
+const prof = () => PROF.find(p => p.name === F.profession);
+const profName = () => F.profession === 'custom' ? (F.customProfession || '自由职业') : F.profession;
+function guilloche(k, h = 74) { const r = rng(META[k][3] * 7), a = 4 + r() * 4, f1 = 14 + r() * 8, f2 = 5 + r() * 3; let s = '';
+  for (let j = 0; j < 15; j++) { let d = ''; for (let x = 0; x <= 320; x += 4) { const y = h / 2 + a * Math.sin(x / f1 + j * .45) + (a * .6) * Math.sin(x / f2 + j * 1.1) + (j - 6.5) * (h / 16); d += (x ? 'L' : 'M') + x + ' ' + y.toFixed(1); } s += `<path class="${j % 4 ? '' : 'd'}" d="${d}"/>`; }
+  return `<svg viewBox="0 0 320 ${h}" preserveAspectRatio="none" aria-hidden="true">${s}</svg>`; }
+/* ---------- 实时车票 ---------- */
+function filled() { const p = F.person; return [p.name && p.age && p.gender, F.profession && (F.profession !== 'custom' || F.customProfession), F.step > 3 || F.background, F.step > 4 || F.hasCompanion, !!F.openingPreference].filter(Boolean).length; }
+function mini() { const p = F.person, cityOn = F.step >= 3, k = ck();
+  $('#mt').style.setProperty('--band', cityOn ? BAND[k] : '#c9a961');
+  $('#mt').innerHTML = `<span class="cb"></span><span class="mc"><span class="rt"><span><small>FROM</small><span class="big ${p.name ? '' : 'q'}">${esc(p.name) || '？'}</span></span><span class="ar"></span><span style="text-align:right"><small>TO</small><span class="big ${cityOn ? '' : 'q'}">${cityOn ? city().name : '？'}</span></span></span>
+   <span class="ln">${p.age ? `<b>${esc(p.age)} 岁</b>` : '<i>年龄</i>'} · ${p.gender ? `<b>${p.gender}</b>` : '<i>性别</i>'} · ${F.profession ? `<b>${esc(profName())}</b>` : '<i>职业</i>'}${F.hasCompanion && F.companion.name ? ` · 同伴 <b>${esc(F.companion.name)}</b>` : ''}</span></span>
+   <span class="sb"><small>STATION</small><b>0${F.step}</b><span class="pct"><i style="width:${filled() * 20}%"></i></span></span><span class="ex">展开 ›</span>`;
+  $('#app').style.setProperty('--tint', cityOn ? TINT[k] : '#c9a961'); }
+function full() { const p = F.person, k = ck(), m = META[k], on = F.step >= 3;
+  return `<div class="fullt" style="--band:${on ? BAND[k] : '#c9a961'};--ct:${on ? TINT[k] : '#c9a961'}"><div class="abs"><div class="band"><b>${on ? city().name : '空白车票'}</b><small>${on ? m[0].split(' ')[0] : 'NEW LIFE'}</small><span class="no">NEW LIFE</span></div>
+   <div class="rt"><div><small>FROM</small><span class="big ${p.name ? '' : 'q'}">${esc(p.name) || '？'}</span></div><div class="ar">单程</div><div class="to"><small>TO</small><span class="big ${on ? '' : 'q'}">${on ? city().name : '？'}</span></div></div>
+   <dl><div><dt>年龄</dt><dd>${esc(p.age) || '—'}</dd></div><div><dt>性别</dt><dd>${p.gender || '—'}</dd></div><div><dt>职业</dt><dd>${esc(profName()) || '—'}</dd></div></dl>
+   <div class="mid">${guilloche(k)}${on ? `<span class="co">${m[0]}</span><span class="im">${m[1]}</span>` : ''}</div>
+   <span class="chop" aria-hidden="true">待开局<small>BOARDING</small></span><div class="perf"></div></div>
+   <div class="stub" id="stub"><span class="go">确认并创建存档<small>↓ 按住票根往下撕 · 可能产生第三方 API 费用</small></span><span class="bc"></span></div></div>`; }
+/* ---------- 进度 ---------- */
+function route() { $('#route').innerHTML = `<span class="fill" style="width:${(F.step - 1) * 20}%"></span>` + STEPS.map((s, i) => `<button type="button" data-go="${i + 1}" class="${i + 1 < F.step ? 'done' : ''}" ${i + 1 === F.step ? 'aria-current="step"' : ''} aria-label="${s}"><i>${i + 1 < F.step ? '✓' : ''}</i>${SHORT[i]}</button>`).join(''); }
+/* ---------- 各步 ---------- */
+const errBox = () => err ? `<div class="alert l-err" role="alert"><i>误</i><span>${err}</span></div>` : '';
+const head = n => `<div class="sh"><small>STEP 0${n} / 05</small><h2>${STEPS[n - 1]}</h2><span class="keep">填写内容自动保留</span></div>`;
+const tplChips = (kind, label) => { const list = TPL[kind + 'Templates'], cur = F[kind + 'Template'];
+  return `<div class="chips" role="radiogroup" aria-label="${label}模板">${[['custom','自由选择'], ...list.map(t => [t.name, t.name])].map(([v, n]) => `<button type="button" role="radio" aria-checked="${cur === v}" data-tpl="${kind}" data-v="${esc(v)}">${esc(n)}</button>`).join('')}</div>`; };
+const S = {
+ 1: () => head(1) + errBox() + `
+  <label class="fl"><span>姓名<em aria-hidden="true">*</em></span><input type="text" class="in-name" name="name" required placeholder="你的名字" value="${esc(F.person.name)}" autocomplete="off"></label>
+  <div class="row2"><label class="fl"><span>年龄<em aria-hidden="true">*</em></span><input type="number" class="in-age" name="age" required inputmode="numeric" value="${esc(F.person.age)}"></label>
+   <div class="fl"><span>性别<em aria-hidden="true">*</em></span><div class="seg2" role="radiogroup" aria-label="性别">${['男性','女性'].map(g => `<label><input type="radio" name="gender" value="${g}" ${F.person.gender === g ? 'checked' : ''}><span>${g}</span></label>`).join('')}</div></div></div>
+  <p class="sec">外貌</p>${tplChips('appearance', '外貌')}<label class="fl"><textarea name="appearance" aria-label="外貌" placeholder="体态、五官、穿着习惯……">${esc(F.person.appearance)}</textarea></label>
+  <p class="sec">性格</p>${tplChips('personality', '性格')}<label class="fl"><textarea name="personality" aria-label="性格" placeholder="待人方式、做事风格、弱点……">${esc(F.person.personality)}</textarea></label>`,
+ 2: () => head(2) + `<p class="lead">职业决定你的起点、人脉与日常节奏。选好之后，下方会展开完整的职业档案。</p>` + errBox() + `
+  <div class="chips" aria-label="职业方向">${CATS.map(c => `<button type="button" aria-pressed="${F.professionCategory === c && F.profession !== 'custom'}" data-cat="${esc(c)}">${esc(c)}</button>`).join('')}<button type="button" aria-pressed="${F.profession === 'custom'}" data-cat="custom">✎ 自由选择</button></div>
+  ${F.profession === 'custom' ? `<label class="fl"><span>职业名称<em aria-hidden="true">*</em></span><input type="text" name="customProfession" value="${esc(F.customProfession)}"></label>
+   <label class="fl"><span>职业介绍</span><textarea name="professionDescription">${esc(F.professionDescription)}</textarea></label>
+   <label class="fl"><span>长期影响</span><textarea name="professionLongTermImpact">${esc(F.professionLongTermImpact)}</textarea></label>
+   <label class="fl"><span>内置职业技能<small>每行一项</small></span><textarea name="skills">${esc(F.skills)}</textarea></label>`
+  : `<div class="plist" role="radiogroup" aria-label="选择职业">${PROF.filter(p => p.category === F.professionCategory).map(p => { const on = F.profession === p.name;
+     return `<div class="pro ${on ? 'on' : ''}"><label><input type="radio" name="profession" value="${esc(p.name)}" ${on ? 'checked' : ''}><span class="rd"></span><span><b>${esc(p.name)}</b><small>${p.skills.slice(0, 3).join(' · ')}</small></span></label>
+     ${on ? `<div class="pf"><p>${esc(p.description)}</p><h4>技能</h4><div class="tags">${p.skills.map(s => `<span>${esc(s)}</span>`).join('')}</div><h4>长期影响</h4>${esc(p.longTermImpact)}</div>` : ''}</div>`; }).join('')}</div>`}`,
+ 3: () => head(3) + `<p class="lead">选择起点，不限制未来的目的地。</p>` + `<div class="cities" role="radiogroup" aria-label="初始城市">${CITIES.map(c => `<label class="city ${F.city === c.id ? 'on' : ''}" style="--ct:${TINT[c.k]}"><input type="radio" name="city" value="${c.id}" ${F.city === c.id ? 'checked' : ''}>
+   <span class="start">起点</span><div class="gb">${guilloche(c.k, 66)}<span class="lb">${c.label}</span><span class="nm">${c.name}</span><span class="em" aria-hidden="true">${META[c.k][2]}</span></div><p class="ds">${c.description}</p></label>`).join('')}</div>
+  <p class="sec">人物背景</p><label class="fl"><span>人物背景（可选）</span><textarea name="background" placeholder="家庭、工作经历、个人秘密……也可以留白。切换城市不会改写这里的内容。">${esc(F.background)}</textarea></label>
+  <button type="button" class="skip" data-skip>跳过背景，继续 →</button>`,
+ 4: () => head(4) + errBox() + `<label class="tog ${F.hasCompanion ? 'on' : ''}"><span style="flex:1"><b>创建一名初始同伴</b><small>可完全跳过。同伴将作为特殊 NPC 保存；开局保护规则将在 AI 接入后执行。</small></span><input type="checkbox" name="hasCompanion" ${F.hasCompanion ? 'checked' : ''}></label>
+  ${F.hasCompanion ? [['name','同伴姓名',1],['age','同伴年龄（可选）'],['identity','同伴身份'],['relationship','与主角的关系',1],['appearance','同伴外貌',0,1],['personality','同伴性格',0,1],['skills','同伴能力（一行一项）',0,1],['background','同伴个人经历',0,1]]
+    .map(([k, l, req, ta]) => `<label class="fl"><span>${l}${req ? '<em aria-hidden="true">*</em>' : ''}</span>${ta ? `<textarea name="c_${k}" style="min-height:4.6rem">${esc(F.companion[k])}</textarea>` : `<input type="${k === 'age' ? 'number' : 'text'}" name="c_${k}" value="${esc(F.companion[k])}" ${k === 'age' ? 'inputmode="numeric"' : ''}>`}</label>`).join('') : ''}
+  <button type="button" class="skip" data-skip>跳过同伴，继续 →</button>`,
+ 5: () => { const p = F.person, c = F.companion, na = '<span style="color:var(--dim)">未填写</span>';
+  return head(5) + `<div class="fullt-wrap">${full()}</div>
+  <details class="rv" open><summary><small>01</small><b>人物资料</b><span>${esc(p.name) || '未填写'}</span></summary><dl><div><dt>姓名</dt><dd>${esc(p.name) || na}</dd></div><div><dt>年龄 · 性别</dt><dd>${esc(p.age) || '—'} 岁 · ${p.gender || '—'}</dd></div><div><dt>外貌</dt><dd>${esc(p.appearance) || na}</dd></div><div><dt>性格</dt><dd>${esc(p.personality) || na}</dd></div><div><dt>模板</dt><dd>外貌模板：${F.appearanceTemplate === 'custom' ? '自由选择' : esc(F.appearanceTemplate)}<br>性格模板：${F.personalityTemplate === 'custom' ? '自由选择' : esc(F.personalityTemplate)}</dd></div></dl><button class="ed" data-go="1">修改基本信息</button></details>
+  <details class="rv"><summary><small>02</small><b>职业与起点</b><span>${esc(profName()) || '未填写'} · ${city().name}</span></summary><dl><div><dt>职业</dt><dd>${esc(profName()) || na}</dd></div><div><dt>城市</dt><dd>${city().name} · ${city().label}</dd></div><div><dt>人物背景</dt><dd>${esc(F.background) || na}</dd></div><div><dt>完整职业表单</dt><dd>职业分类、技能模式、技能原文、自定义职业及保留的自定义职业（字段同现有）。</dd></div></dl><button class="ed" data-go="2">修改职业</button><button class="ed" data-go="3">修改城市与背景</button></details>
+  <details class="rv"><summary><small>03</small><b>初始同伴</b><span>${F.hasCompanion ? esc(c.name) + ' · ' + esc(c.relationship) : '未创建同伴'}</span></summary>${F.hasCompanion ? `<dl><div><dt>姓名</dt><dd>${esc(c.name)}</dd></div><div><dt>身份</dt><dd>${esc(c.identity) || na}</dd></div><div><dt>关系</dt><dd>${esc(c.relationship)}</dd></div></dl>` : '<p class="note">未创建同伴</p>'}<button class="ed" data-go="4">修改同伴</button></details>
+  <details class="rv"><summary><small>04</small><b>开局准备</b><span class="tm">开局时间待确认</span></summary><p class="note">可以在开局偏好中指定故事年份、季节或日期；未指定时由 AI 在开局正文中根据剧情安排。请用明确年份，不以设备日期解释“今年”。首次正式结算后时间成为存档事实。资产、健康与天气等待开局确认，同伴关系倾向暂不作推断。</p></details>
+  <label class="fl" style="margin-top:1rem"><span>开局偏好（可选）</span><textarea name="openingPreference" placeholder="对故事起点的期待，将随开局草稿保存。">${esc(F.openingPreference)}</textarea></label>
+  <div class="alert l-info" id="opening-generation-notice"><i>示</i><span><b>确认后创建存档并自动开始开局，可能产生第三方 API 费用。</b>按已启用的阶段顺序生成候选，不会自动结算；未配置 AI 时会安全停止，设置后由你主动继续。</span></div>`; },
+};
+function validate(n) { const p = F.person;
+  if (n === 1) { if (!p.name.trim()) return '请填写姓名'; if (!p.age) return '请填写年龄'; if (!p.gender) return '请选择性别'; }
+  if (n === 2) { if (!F.profession) return '请选择职业'; if (F.profession === 'custom' && !F.customProfession.trim()) return '请填写职业名称'; }
+  if (n === 4 && F.hasCompanion && (!F.companion.name.trim() || !F.companion.relationship.trim())) return '请填写同伴姓名与关系';
+  return ''; }
+function render(keepScroll) { const fm = $('#form'), y = fm.scrollTop;
+  fm.innerHTML = `<div class="step ${dir < 0 ? 'back' : ''}">${S[F.step]()}</div>`; if (keepScroll) { fm.firstElementChild.style.animation = 'none'; fm.scrollTop = y; } else fm.scrollTop = 0;
+  route(); mini(); $('#no').textContent = `0${F.step} / 05`; $('#prev').disabled = F.step === 1; $('#fee').hidden = F.step !== 5;
+  $('#next').textContent = F.step === 5 ? '确认并创建存档' : '下一步 →'; $('#pkT').textContent = F.step === 5 ? '保存为开局包' : '我的开局包';
+  $('#pkBtn').hidden = !(F.step === 1 || F.step === 5); $('.foot').classList.toggle('s5', F.step === 5); bindTear();
+  $$('.chips').forEach(c => { const on = c.querySelector('[aria-checked=true],[aria-pressed=true]'); if (on) c.scrollLeft = on.offsetLeft - (c.clientWidth - on.offsetWidth) / 2; }); }
+function move(n) { if (n > F.step) { for (let i = F.step; i < n; i++) { const e = validate(i); if (e) { err = e; F.step = i; dir = 1; render(); return; } } }
+  dir = n >= F.step ? 1 : -1; err = ''; F.step = n; render(); }
+function submit() { if (F.step < 5) return move(F.step + 1); for (let i = 1; i <= 4; i++) { const e = validate(i); if (e) { err = e; F.step = i; return render(); } } const st = $('#stub'); st ? tear(st) : toast('确认后创建存档并进入开局（设计稿不执行）'); }
+function tear(st) { navigator.vibrate?.([10, 30, 18]); st.classList.add('tear'); setTimeout(() => { toast('确认后创建存档并进入开局（设计稿不执行）'); st.classList.remove('tear'); }, 700); }
+function bindTear() { const st = $('#stub'); if (!st) return; let y0 = null, dy = 0;
+  st.onpointerdown = e => { y0 = e.clientY; dy = 0; st.setPointerCapture(e.pointerId); st.style.transition = 'none'; };
+  st.onpointermove = e => { if (y0 === null) return; dy = Math.max(0, e.clientY - y0); st.style.transformOrigin = '100% 0'; st.style.transform = `translateY(${Math.min(dy, 90) * .6}px) rotate(${-Math.min(dy, 90) / 12}deg)`; };
+  st.onpointerup = st.onpointercancel = () => { if (y0 === null) return; y0 = null; st.style.transition = ''; st.style.transform = ''; if (dy > 60) submit(); }; }
+/* ---------- 输入 ---------- */
+$('#form').addEventListener('input', e => { const t = e.target, n = t.name; if (!n) return;
+  if (['name','age','appearance','personality'].includes(n)) { F.person[n] = t.value; if (n === 'appearance') F.appearanceTemplate = 'custom'; if (n === 'personality') F.personalityTemplate = 'custom'; }
+  else if (n.startsWith('c_')) F.companion[n.slice(2)] = t.value;
+  else if (['customProfession','professionDescription','professionLongTermImpact','skills','background','openingPreference'].includes(n)) F[n] = t.value;
+  if (['appearance','personality'].includes(n)) $$(`[data-tpl=${n}]`).forEach(b => b.setAttribute('aria-checked', b.dataset.v === 'custom'));
+  mini(); });
+$('#form').addEventListener('change', e => { const t = e.target;
+  if (t.name === 'gender') { F.person.gender = t.value; mini(); }
+  if (t.name === 'profession') { F.profession = t.value; F.skills = ''; F.skillsSource = 'automatic'; render(true); }
+  if (t.name === 'city') { F.city = t.value; render(true); }
+  if (t.name === 'hasCompanion') { F.hasCompanion = t.checked; render(true); } });
+$('#form').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); submit(); } });
+document.addEventListener('click', e => { const t = e.target;
+  const tp = t.closest('[data-tpl]'); if (tp) { const k = tp.dataset.tpl, v = tp.dataset.v; F[k + 'Template'] = v; if (v !== 'custom') F.person[k] = TPL[k + 'Templates'].find(x => x.name === v).description; render(true); }
+  const ca = t.closest('[data-cat]'); if (ca) { if (ca.dataset.cat === 'custom') { F.profession = 'custom'; } else { F.professionCategory = ca.dataset.cat; if (F.profession === 'custom') F.profession = ''; } render(true); }
+  const g = t.closest('[data-go]'); if (g) { closeSheet(); move(+g.dataset.go); }
+  if (t.closest('[data-skip]')) { if (F.step === 3) F.background = ''; if (F.step === 4) F.hasCompanion = false; move(F.step + 1); }
+  if (t.closest('[data-toast]')) toast(t.closest('[data-toast]').dataset.toast);
+  if (t.closest('[data-x]') || t.id === 'scrim') closeSheet();
+  if (t.closest('[data-apply]')) { closeSheet(); setTimeout(() => sheetConfirm(), 300); }
+  if (t.closest('[data-ok]')) { closeSheet(); F = FILLED(); F.step = 1; render(); toast('已套用开局包'); } });
+$('#prev').onclick = () => move(F.step - 1);
+$('#next').onclick = submit;
+/* ---------- 抽屉 ---------- */
+function sheet(h) { $('#bsIn').innerHTML = h; $('#scrim').classList.add('on'); $('#bs').classList.add('on'); setTimeout(() => $('#bs').focus({preventScroll: true}), 30); bindTear(); }
+function closeSheet() { $('#scrim').classList.remove('on'); $('#bs').classList.remove('on'); }
+const sh = (seal, title) => `<div class="hd"><span class="seal" aria-hidden="true">${seal}</span><h3 id="bsT">${title}</h3><button data-x aria-label="关闭">×</button></div>`;
+$('#mt').onclick = () => sheet(sh('票', '车票预览') + `<div class="bd">${full().replace('id="stub"', '').replace(/确认并创建存档<small>[^<]*<\/small>/, `STATION 0${F.step} / 05<small>填完第 5 站即可撕票</small>`)}</div>`);
+const PACKS = [['山城夜雨 · 摄影师','沈砚',27,'cq'],['外滩晨跑 · 投行分析师','周远',29,'sh'],['冰城旧书 · 修复师','白露',31,'hrb']];
+$('#pkBtn').onclick = () => F.step === 5
+  ? sheet(sh('包', '保存为开局包') + `<div class="bd"><div class="chips" role="radiogroup" aria-label="保存方式" style="margin-bottom:.8rem"><button aria-checked="true" role="radio">新建开局包</button>${PACKS.map(p => `<button role="radio" aria-checked="false">覆盖：${p[0]}</button>`).join('')}</div><label class="fl"><span>开局包名称</span><input type="text" maxlength="80" value="山城夜雨 · 摄影师"></label><div class="pkb"><button data-x>取消</button><button class="go" data-x data-toast="开局包已保存">保存开局包</button></div></div>`)
+  : sheet(sh('包', '我的开局包') + `<div class="bd"><p class="tip">套用后将替换当前创角草稿；开局包只保存在本机浏览器。</p><div class="pkl" role="radiogroup" aria-label="选择开局包">${PACKS.map((p, i) => `<label><input type="radio" name="pk" ${i ? '' : 'checked'}><span class="seal" aria-hidden="true">${p[1][0]}</span><span><b>${p[0]}</b><small><i style="background:${TINT[p[3]]}"></i>${p[1]} · ${p[2]} 岁 · ${CITIES.find(c => c.k === p[3]).name}</small></span><span class="ck"></span></label>`).join('')}</div>
+   <div class="pkb"><button class="del" data-toast="删除确认（底部操作表）">删除</button><button data-toast="重命名开局包">重命名</button><button class="go" data-apply>套用开局包</button></div></div>`);
+const sheetConfirm = () => sheet(sh('包', '套用开局包') + `<div class="bd"><p class="tip" style="font-size:.84rem;color:var(--text)">套用「山城夜雨 · 摄影师」将替换当前创角草稿，是否继续？</p><div class="pkb"><button data-x>取消</button><button class="go" data-ok>确认替换并套用</button></div></div>`);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+/* ---------- 演示 ---------- */
+$('#dS').onclick = e => { const b = e.target.closest('button'); if (b) { err = ''; F.step = +b.dataset.s; render(); } };
+$('#dFill').onclick = () => { const s = F.step; F = FILLED(); F.step = s; err = ''; render(); };
+$('#dBlank').onclick = () => { F = BLANK(); err = ''; render(); };
+$('#dErr').onclick = () => { F = BLANK(); F.step = 1; err = '请填写姓名'; render(); };
+const h = new URLSearchParams(location.hash.slice(1));
+if (!h.has('blank')) F = FILLED();
+if (h.get('s')) F.step = +h.get('s');
+if (h.get('city')) F.city = h.get('city');
+if (h.has('err')) { F = BLANK(); err = '请填写姓名'; }
+if (h.has('custom')) F.profession = 'custom';
+render();
+if (h.has('pack')) $('#pkBtn').click();
+if (h.has('preview')) $('#mt').click();
+if (h.get('y')) setTimeout(() => $('#form').scrollTop = +h.get('y'), 50);
+</script>
+</body>
+</html>
