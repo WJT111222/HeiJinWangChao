@@ -1,0 +1,15 @@
+
+Running 3 tests using 1 worker
+
+(node:286065) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 e2e/home-cover.spec.ts:20:1 › 真实存档与封面/存档馆、键盘、继续和创角入口保持 (3.0s)
+  ✓  2 e2e/unreadable-saves.spec.ts:79:1 › 下载 JSON 完整保留坏记录、草稿和回执，读取下载不改库 (1.8s)
+  ✓  3 e2e/unreadable-saves.spec.ts:93:1 › 二次确认取消不删数据，确认后只删选中的三类记录，刷新不再出现 (2.6s)
+
+  3 passed (8.4s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

@@ -1,0 +1,58 @@
+
+Running 2 tests using 1 worker
+
+(node:283448) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 e2e/mobile-home.spec.ts:29:1 › 真实触摸横滑同步当前页和发车屏，不读取也不写正式数据 (7.2s)
+(node:283744) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  2 e2e/mobile-home.spec.ts:80:1 › 删除版本冲突保留正式新版本，不能误删或提前盖作废章 (1.8s)
+
+
+  1) e2e/mobile-home.spec.ts:29:1 › 真实触摸横滑同步当前页和发车屏，不读取也不写正式数据 ─────────────────────────────────────
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  locator('.mh-ticket-wrap').nth(1)
+    Expected: "true"
+    Received: ""
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveAttribute" locator('.mh-ticket-wrap').nth(1) with timeout 5000ms
+      - waiting for locator('.mh-ticket-wrap').nth(1)
+        14 × locator resolved to <div class="mh-ticket-wrap side">…</div>
+           - unexpected value "null"
+
+
+      33 |  for(const x of [270,230,190,150,110,70])await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y}]});
+      34 |  await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    > 35 |  await expect(page.locator('.mh-ticket-wrap').nth(1)).toHaveAttribute('aria-current','true');await expect(page.locator('.mh-board')).toHaveAccessibleName(/重庆/);expect(new URL(page.url()).hash).toBe('');expect(await rawSnapshot(page)).toEqual(before);
+         |                                                       ^
+      36 | });
+      37 | test('明确选择持久化、重新排序且重载恢复首张',async({page})=>{
+      38 |  await seedTickets(page);const before=await rawSnapshot(page);await ticketAt(page,3);await page.getByRole('button',{name:'选择',exact:true}).click();
+        at /workspace/mobile-batch3/e2e/mobile-home.spec.ts:35:55
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mobile-batch3/mobile-home-真实触摸横滑同步当前页和发车屏，不读取也不写正式数据/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mobile-batch3/mobile-home-真实触摸横滑同步当前页和发车屏，不读取也不写正式数据/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mobile-batch3/mobile-home-真实触摸横滑同步当前页和发车屏，不读取也不写正式数据/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mobile-batch3/mobile-home-真实触摸横滑同步当前页和发车屏，不读取也不写正式数据/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    e2e/mobile-home.spec.ts:29:1 › 真实触摸横滑同步当前页和发车屏，不读取也不写正式数据 ──────────────────────────────────────
+  1 passed (10.5s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

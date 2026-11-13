@@ -1,0 +1,15 @@
+
+Running 3 tests using 1 worker
+
+(node:286865) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 e2e/mobile-home.spec.ts:16:1 › 排序、四城、中性、页码、键盘与横滑纯浏览不写入 (4.1s)
+  ✓  2 e2e/mobile-home.spec.ts:37:1 › 明确选择持久化、重新排序且重载恢复首张 (1.8s)
+  ✓  3 e2e/mobile-home.spec.ts:65:1 › 删除取消不写；只有原子删除成功才作废，关联记录和选择保护 (3.0s)
+
+  3 passed (9.8s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
