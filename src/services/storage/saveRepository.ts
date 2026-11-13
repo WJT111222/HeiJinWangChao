@@ -1,5 +1,5 @@
 import { setNpcImportance } from '../../domain/npc/profiles';
-import { timelineStores, newSaveControl, readControl, writeControl, clearUndoRecords, recordUndo, inspectUndo, restoreSnapshot, assertMemoryLineage, readTurnComparison } from './turnUndo';
+import { timelineStores, newSaveControl, readControl, writeControl, controlInstance, clearUndoRecords, recordUndo, inspectUndo, restoreSnapshot, assertMemoryLineage, readTurnComparison } from './turnUndo';
 import type { MemoryLineage, UndoStatus, TurnComparison } from './turnUndo';
 import { request, transaction } from './idb';
 import { CountSchema, DataError, IdSchema, requireData } from '../../domain/common';
@@ -23,6 +23,55 @@ import type { NpcMemoryBatch } from '../../domain/memories/npcMemory';
 import { NpcSummarySchema, MemoryEntrySchema } from '../../domain/memories/schema';
 import { unreadableSaveSummary } from './saveManagement';
 import type { RawSaveExport, RawSaveRecord, SaveSummary } from './saveManagement';
+import { backupSummary, compatibleDraft } from './backup';
+import type { BackupEntry } from './backup';
+
+/** Storage connection boundary, independent of GameState/backup format versions.
+ * V4 closes deployed V3 clients via their existing versionchange handler before
+ * imports become available. Old V3 code cannot reopen and bypass instance CAS.
+ * No store, index or saved payload changes are required for this upgrade. */
+export const saveDatabaseVersion = 4;
+
+declare const confirmationBrand: unique symbol;
+/**
+ * compareBackup 给出的一次性确认凭据。只在内存中传递：本身是空的冻结对象，
+ * 不含也不暴露任何存档内容（JSON 序列化结果为 {}）；导入时消耗，不能重复使用。
+ */
+export interface BackupImportConfirmation { readonly [confirmationBrand]: true }
+
+/**
+ * 导入前与本机的比较结果（UI 合约）。
+ * - new：本机没有该 saveId 的存档记录。
+ * - same：正式存档完全相同（整份数据逐项比较，含记忆、NPC 管理等不推进回合版本的内容），
+ *   且未结算草稿也相同。导入只会清掉本机撤回与提交回执，UI 应显示「已是最新」。
+ * - overwrite：本机存档可读取，但正式存档或草稿至少一项不同；differences 指明哪一项。
+ * - overwrite-unreadable：本机同 ID 记录存在但无法读取。
+ * - overwrite-orphaned：本机没有正式存档，但留有同 ID 的草稿、回执、撤回或控制记录；导入会清除它们，
+ *   因此同样需要明确覆盖，不能当作新建。
+ * 每种结果都附带 confirmation：它同时绑定本机快照与当时比较的备份内容；导入时备份内容必须与确认时完全一致，
+ * 并在写事务内按它重新核对本机全部相关记录。
+ */
+export type BackupComparison =
+  | { kind: 'new'; confirmation: BackupImportConfirmation }
+  | { kind: 'same'; local: BackupEntry['summary']; confirmation: BackupImportConfirmation }
+  | { kind: 'overwrite'; local: BackupEntry['summary']; differences: { state: boolean; draft: boolean }; confirmation: BackupImportConfirmation }
+  | { kind: 'overwrite-unreadable'; confirmation: BackupImportConfirmation }
+  | { kind: 'overwrite-orphaned'; records: { drafts: number; turnReceipts: number; turnUndo: number; saveControls: number }; confirmation: BackupImportConfirmation };
+
+/** 某个存储键在五个时间线仓库中的全部原始记录，按真实主键读取，不解析、不迁移。 */
+interface LocalSnapshot {
+  saves: RawSaveRecord[];
+  drafts: RawSaveRecord[];
+  turnReceipts: RawSaveRecord[];
+  turnUndo: RawSaveRecord[];
+  saveControls: RawSaveRecord[];
+}
+const snapshotStores = ['saves', 'drafts', 'turnReceipts', 'turnUndo', 'saveControls'] as const;
+const confirmations = new WeakMap<BackupImportConfirmation, { repository: SaveRepository; saveId: string; incoming: string; snapshot: LocalSnapshot }>();
+const emptySnapshot = (snapshot: LocalSnapshot) => snapshotStores.every((name) => snapshot[name].length === 0);
+/** 备份条目的确定性内容指纹：规范化后的正式存档与兼容草稿（同步计算，可在事务外比较）。 */
+const incomingFingerprint = (state: GameState, draft: TurnDraft | undefined) => fingerprint({ state, draft: draft ?? null });
+const replacedMessage = '这份存档已被替换（例如在其他标签导入了备份），本次没有修改。请刷新后重新操作。';
 
 const ReceiptSchema = z.strictObject({
   saveId: IdSchema,
@@ -76,6 +125,51 @@ async function rawRecords(store: IDBObjectStore | IDBIndex, key?: IDBValidKey): 
   return keys.map((key, index) => ({ key, value: values[index] }));
 }
 
+async function readSnapshot(tx: IDBTransaction, key: IDBValidKey): Promise<LocalSnapshot> {
+  return {
+    saves: await rawRecords(tx.objectStore('saves'), key),
+    drafts: await rawRecords(tx.objectStore('drafts'), key),
+    turnReceipts: await rawRecords(tx.objectStore('turnReceipts').index('saveId'), key),
+    turnUndo: await rawRecords(tx.objectStore('turnUndo').index('saveId'), key),
+    saveControls: await rawRecords(tx.objectStore('saveControls'), key),
+  };
+}
+
+/**
+ * 同步、逐项比较两份结构化克隆数据。只认识 IndexedDB 中正常存档会出现的类型；
+ * 遇到无法确定相等的类型一律视为不同，宁可拒绝导入，也不把变化误判为未变。
+ */
+function sameValue(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) return false;
+  if (Array.isArray(a)) {
+    const other = b as unknown[];
+    return a.length === other.length && a.every((value, index) => sameValue(value, other[index]));
+  }
+  if (a instanceof Date) return a.getTime() === (b as Date).getTime();
+  if (a instanceof ArrayBuffer || ArrayBuffer.isView(a)) {
+    const left = a instanceof ArrayBuffer ? new Uint8Array(a) : new Uint8Array(a.buffer, a.byteOffset, a.byteLength);
+    const right = b instanceof ArrayBuffer ? new Uint8Array(b) : new Uint8Array((b as ArrayBufferView).buffer, (b as ArrayBufferView).byteOffset, (b as ArrayBufferView).byteLength);
+    return left.length === right.length && left.every((byte, index) => byte === right[index]);
+  }
+  const prototype = Object.getPrototypeOf(a);
+  if (prototype !== Object.prototype && prototype !== null) return false;
+  const left = Object.keys(a), right = Object.keys(b);
+  return left.length === right.length && left.every((key) => Object.prototype.hasOwnProperty.call(b, key)
+    && sameValue((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key]));
+}
+function sameSnapshot(a: LocalSnapshot, b: LocalSnapshot): boolean {
+  return snapshotStores.every((name) => a[name].length === b[name].length
+    && a[name].every((record, index) => sameValue(record.key, b[name][index].key) && sameValue(record.value, b[name][index].value)));
+}
+
+/** 只读取实例身份，不严格解析整条控制记录：控制记录损坏时读档与删除仍按原行为工作（身份视为原存档）。 */
+async function storedInstance(tx: IDBTransaction, key: IDBValidKey): Promise<string | null> {
+  const id = ((await request(tx.objectStore('saveControls').get(key))) as { instanceId?: unknown } | null | undefined)?.instanceId;
+  return typeof id === 'string' ? id : null;
+}
+
 async function deleteRecords(tx: IDBTransaction, key: IDBValidKey): Promise<void> {
   await request(tx.objectStore('drafts').delete(key));
   const receipts = tx.objectStore('turnReceipts');
@@ -93,7 +187,7 @@ export class SaveRepository {
     if (!factory) return Promise.reject(new DataError('STORAGE_UNAVAILABLE', '当前环境不支持 IndexedDB'));
     return new Promise((resolve, reject) => {
       // IndexedDB 结构版本独立于每个存档的 schemaVersion。
-      const operation = factory.open(name, 3);
+      const operation = factory.open(name, saveDatabaseVersion);
       operation.onupgradeneeded = () => {
         const db = operation.result;
         if (!db.objectStoreNames.contains('saves')) db.createObjectStore('saves', { keyPath: 'saveId' });
@@ -106,7 +200,7 @@ export class SaveRepository {
       };
       operation.onerror = () => reject(operation.error);
       let blocked = false;
-      operation.onblocked = () => { blocked = true; reject(new DataError('STORAGE_BLOCKED', '数据库升级被其他页面阻塞')); };
+      operation.onblocked = () => { blocked = true; reject(new DataError('STORAGE_BLOCKED', '数据库升级被其他页面阻塞，请关闭旧版游戏标签后重试。原存档未修改。')); };
       operation.onsuccess = () => {
         const db = operation.result;
         if (blocked) { db.close(); return; }
@@ -120,23 +214,28 @@ export class SaveRepository {
 
   /** Management CAS is separate from narrative revision: retain the entire draft,
    * increment its CAS revision, and invalidate pre-management summary/phase responses. */
+  /** expectedInstance：载入时拿到的实例身份（原存档省略或 null）；存档被导入替换后，旧页面的管理操作一律拒绝。 */
   async setNpcImportance(input: {saveId:string;expectedRevision:number;expectedManagementRevision:number;
-    expectedDraftRevision?:number;expectedTurnId?:string;npcId:string;identityKey:string;choice:'ordinary'|'special';operationId:string}) {
+    expectedDraftRevision?:number;expectedTurnId?:string;npcId:string;identityKey:string;choice:'ordinary'|'special';operationId:string;
+    expectedInstance?:string|null}) {
     const checked = z.strictObject({saveId:IdSchema,expectedRevision:CountSchema,expectedManagementRevision:CountSchema,
       expectedDraftRevision:CountSchema.optional(),expectedTurnId:IdSchema.optional(),npcId:IdSchema,identityKey:z.string().min(1),
-      choice:z.enum(['ordinary','special']),operationId:IdSchema}).parse(input);
+      choice:z.enum(['ordinary','special']),operationId:IdSchema,expectedInstance:IdSchema.nullable().optional()}).parse(input);
     const session = reserveStageSession(checked.saveId);
     try { return await withBrowserLock(checked.saveId,()=>transaction(this.database,timelineStores,'readwrite',async tx=>{
       session.check();
       const state=await readStoredState(tx, checked.saveId);
       const raw=await request(tx.objectStore('drafts').get(checked.saveId));
       const draft=raw===undefined?undefined:TurnDraftSchema.parse(raw);
-      const control=await readControl(tx,state.saveId)??newSaveControl(state.saveId), signature=fingerprint(checked);
+      const stored=await readControl(tx,state.saveId);
+      requireData(controlInstance(stored)===(checked.expectedInstance??null),'REVISION_CONFLICT',replacedMessage);
+      const control=stored??newSaveControl(state.saveId), signature=fingerprint(checked);
+      const instance=control.instanceId?{instance:control.instanceId}:{};
       if(control.lastNpcManagement?.operationId===checked.operationId) {
         requireData(control.lastNpcManagement.request===signature && control.lastNpcManagement.managementRevision===(state.npcManagementRevision??0)
           && state.npc[checked.npcId]?.identityKey===checked.identityKey && state.npc[checked.npcId]?.importancePreference===checked.choice,
           'NPC_MANAGEMENT_CONFLICT','人物管理回执已被后续操作取代');
-        return {state,draft,replayed:true};
+        return {state,draft,replayed:true,...instance};
       }
       requireData(state.revision===checked.expectedRevision && (state.npcManagementRevision??0)===checked.expectedManagementRevision,
         'REVISION_CONFLICT','存档或人物管理版本已改变');
@@ -150,7 +249,7 @@ export class SaveRepository {
       await request(tx.objectStore('saves').put(GameStateSchema.parse(next)));
       if(nextDraft)await request(tx.objectStore('drafts').put(nextDraft));
       await writeControl(tx,control);
-      return {state:next,draft:nextDraft,replayed:false};
+      return {state:next,draft:nextDraft,replayed:false,...instance};
     })); } finally {session.release();}
   }
 
@@ -258,14 +357,16 @@ export class SaveRepository {
     });
   }
 
-  async loadGame(saveId: string): Promise<{ state: GameState; draft?: TurnDraft }> {
+  /** instance：导入备份后的实例身份（原存档省略），供删除、人物管理等手动操作作为依据传回。 */
+  async loadGame(saveId: string): Promise<{ state: GameState; draft?: TurnDraft; instance?: string }> {
     IdSchema.parse(saveId);
-    return transaction(this.database, ['saves', 'drafts'], 'readwrite', async (tx) => {
+    return transaction(this.database, ['saves', 'drafts', 'saveControls'], 'readwrite', async (tx) => {
       const state = await readStoredState(tx, saveId);
       const rawDraft: unknown = await request(tx.objectStore('drafts').get(saveId));
       const draft = rawDraft === undefined ? undefined : TurnDraftSchema.parse(rawDraft);
       requireData(!draft || draft.saveId === saveId, 'CORRUPT_DRAFT', '草稿主键不符');
-      return { state, draft };
+      const instance = await storedInstance(tx, saveId);
+      return { state, draft, ...(instance ? { instance } : {}) };
     });
   }
 
@@ -295,9 +396,19 @@ export class SaveRepository {
   }
 
   async list(): Promise<SaveSummary[]> {
-    return transaction(this.database, ['saves'], 'readonly', async (tx) => {
+    return transaction(this.database, ['saves', 'saveControls'], 'readonly', async (tx) => {
       const records = await rawRecords(tx.objectStore('saves'));
-      return records.map(({ key, value }) => listRecord(key, value));
+      const controls = await rawRecords(tx.objectStore('saveControls'));
+      const instances = new Map<IDBValidKey, string>();
+      // 只取实例身份；控制记录损坏不应让整个列表不可用（此时删除会因身份不符被拒绝，不会误删）。
+      for (const { key, value } of controls) {
+        const id = (value as { instanceId?: unknown } | null)?.instanceId;
+        if (typeof key === 'string' && typeof id === 'string') instances.set(key, id);
+      }
+      return records.map(({ key, value }) => {
+        const summary = listRecord(key, value), instance = typeof key === 'string' ? instances.get(key) : undefined;
+        return summary.status === 'readable' && instance ? { ...summary, instance } : summary;
+      });
     });
   }
 
@@ -314,6 +425,89 @@ export class SaveRepository {
         turnUndo: await rawRecords(tx.objectStore('turnUndo').index('saveId'), storageKey),
         saveControls: await rawRecords(tx.objectStore('saveControls'), storageKey) } };
     });
+  }
+
+  /** 备份导出：只读可读取的存档，迁移到当前版本；草稿不合法或过期就跳过，不影响导出。 */
+  async exportBackup(saveIds: readonly string[]): Promise<BackupEntry[]> {
+    requireData(saveIds.length > 0, 'INVALID_KEY', '未选择存档');
+    for (const saveId of saveIds) IdSchema.parse(saveId);
+    return transaction(this.database, ['saves', 'drafts'], 'readonly', async (tx) => {
+      const entries: BackupEntry[] = [];
+      for (const saveId of saveIds) {
+        const state = readState(await request(tx.objectStore('saves').get(saveId)), saveId);
+        const { draft } = compatibleDraft(state, await request(tx.objectStore('drafts').get(saveId)));
+        entries.push({ summary: backupSummary(state), state, ...(draft ? { draft } : {}) });
+      }
+      return entries;
+    });
+  }
+
+  /**
+   * 导入前比较。在一个只读事务中按真实主键取得本机该存档在五个时间线仓库中的全部原始记录，
+   * 生成仅供本次确认的一次性凭据；不写入、不迁移任何记录。
+   */
+  async compareBackup(entry: { state: GameState; draft?: TurnDraft }): Promise<BackupComparison> {
+    const backup = normalizeOpeningCity(GameStateSchema.parse(entry.state));
+    const backupDraft = compatibleDraft(backup, entry.draft).draft;
+    const snapshot = await transaction(this.database, timelineStores, 'readonly', (tx) => readSnapshot(tx, backup.saveId));
+    const confirmation = Object.freeze({}) as BackupImportConfirmation;
+    confirmations.set(confirmation, { repository: this, saveId: backup.saveId, incoming: incomingFingerprint(backup, backupDraft), snapshot });
+    if (!snapshot.saves.length) return emptySnapshot(snapshot) ? { kind: 'new', confirmation } : {
+      kind: 'overwrite-orphaned', confirmation, records: { drafts: snapshot.drafts.length, turnReceipts: snapshot.turnReceipts.length,
+        turnUndo: snapshot.turnUndo.length, saveControls: snapshot.saveControls.length } };
+    let local: GameState;
+    // 解析用副本：迁移与校验绝不能改动作为确认依据的原始快照。
+    try { local = readState(structuredClone(snapshot.saves[0].value), backup.saveId); } catch { return { kind: 'overwrite-unreadable', confirmation }; }
+    const rawDraft = snapshot.drafts[0]?.value === undefined ? undefined : structuredClone(snapshot.drafts[0].value);
+    const localDraft = rawDraft === undefined ? undefined : TurnDraftSchema.safeParse(rawDraft);
+    const differences = {
+      state: fingerprint(local) !== fingerprint(backup),
+      draft: localDraft === undefined ? backupDraft !== undefined
+        : !localDraft.success || backupDraft === undefined || fingerprint(localDraft.data) !== fingerprint(backupDraft),
+    };
+    const summary = backupSummary(local);
+    return differences.state || differences.draft
+      ? { kind: 'overwrite', local: summary, differences, confirmation }
+      : { kind: 'same', local: summary, confirmation };
+  }
+
+  /**
+   * 备份导入。必须带上 compareBackup 给出的凭据；凭据一次有效。
+   * 本机已有记录（包括无法读取的记录）时还必须显式 overwrite: true。
+   * 同页有阶段会话或其他标签持有工作流锁时拒绝；写事务内先重新读取本机全部相关原始记录，
+   * 与确认时逐项比较，完全一致才清理并写入，任一变化即以 IMPORT_CONFLICT 拒绝、什么都不改。
+   * 导入的草稿递增 draftRevision（与 NPC 管理相同），使此前发出的阶段响应不能再写入。
+   * 写入新的实例身份，旧页面凭旧身份发起的删除与人物管理随之失效。
+   */
+  async importBackup(entry: { state: GameState; draft?: TurnDraft }, confirmation: BackupImportConfirmation,
+    options: { overwrite?: boolean } = {}): Promise<GameState> {
+    const state = normalizeOpeningCity(GameStateSchema.parse(entry.state));
+    const { draft } = compatibleDraft(state, entry.draft);
+    const confirmed = confirmations.get(confirmation);
+    confirmations.delete(confirmation);
+    requireData(confirmed?.repository === this && confirmed.saveId === state.saveId
+      && confirmed.incoming === incomingFingerprint(state, draft),
+      'IMPORT_CONFIRMATION_INVALID', '导入确认已失效或与所选备份不符，请重新选择文件导入。');
+    requireData(emptySnapshot(confirmed.snapshot) || options.overwrite === true, 'SAVE_EXISTS', confirmed.snapshot.saves.length
+      ? '本机已有这份存档，需要确认覆盖后才能导入。' : '本机留有这份存档的残留记录，需要确认覆盖后才能导入。');
+    const session = reserveStageSession(state.saveId);
+    try {
+      return await withBrowserLock(state.saveId, () => transaction(this.database, timelineStores, 'readwrite', async (tx) => {
+        session.check();
+        const current = await readSnapshot(tx, state.saveId);
+        requireData(sameSnapshot(current, confirmed.snapshot), 'IMPORT_CONFLICT',
+          '本机存档在确认后发生了变化，本次没有导入，本机数据保持原样。请重新选择文件导入。');
+        const localRevision = (current.drafts[0]?.value as { draftRevision?: unknown } | undefined)?.draftRevision;
+        const floor = Number.isSafeInteger(localRevision) && (localRevision as number) >= 0 ? localRevision as number : -1;
+        await deleteRecords(tx, state.saveId);
+        await request(tx.objectStore('saves').add(state));
+        // 新实例身份：此前载入的旧页面凭旧身份发起的删除、人物管理都会被拒绝；新 epoch 同时使旧记忆 lineage 失效。
+        await writeControl(tx, { ...newSaveControl(state.saveId), instanceId: `instance-${crypto.randomUUID()}` });
+        if (draft) await request(tx.objectStore('drafts').put(TurnDraftSchema.parse({
+          ...draft, draftRevision: Math.max(draft.draftRevision, floor) + 1 })));
+        return state;
+      }));
+    } finally { session.release(); }
   }
 
   // Explicit recovery action, separate from the revision-checked normal delete path.
@@ -441,10 +635,13 @@ export class SaveRepository {
     }
   }
 
-  async delete(saveId: string, expectedRevision: number): Promise<void> {
+  /** expectedInstance：列表摘要里的 instance（原存档为 null）。存档被导入替换后，旧列表即使版本号相同也不能删除。 */
+  async delete(saveId: string, expectedRevision: number, expectedInstance: string | null = null): Promise<void> {
     IdSchema.parse(saveId); CountSchema.parse(expectedRevision);
+    if (expectedInstance !== null) IdSchema.parse(expectedInstance);
     return transaction(this.database, timelineStores, 'readwrite', async (tx) => {
       const current = await readStoredState(tx, saveId);
+      requireData(await storedInstance(tx, saveId) === expectedInstance, 'REVISION_CONFLICT', replacedMessage);
       requireData(current.revision === expectedRevision, 'REVISION_CONFLICT', '删除时存档版本已变化');
       await deleteRecords(tx, saveId);
     });
@@ -470,8 +667,13 @@ export class SaveRepository {
     } finally { session.release(); }
   }
 
-  async saveDraft(draft: TurnDraft, expectedDraftRevision: number | null, signal?: AbortSignal): Promise<TurnDraft> {
+  /**
+   * basedOn：调用方据以构造 next 的草稿。提供时要求库中草稿与它逐项相同，
+   * 不只看 draftRevision 数字，防止时间线被替换（如导入备份）后迟到的旧响应恰好对上版本号。
+   */
+  async saveDraft(draft: TurnDraft, expectedDraftRevision: number | null, signal?: AbortSignal, basedOn?: TurnDraft): Promise<TurnDraft> {
     const next = TurnDraftSchema.parse(draft);
+    const base = basedOn === undefined ? undefined : TurnDraftSchema.parse(basedOn);
     return transaction(this.database, ['saves', 'drafts'], 'readwrite', async (tx) => {
       const current = await readStoredState(tx, next.saveId);
       requireData(current.revision === next.baseSaveRevision, 'REVISION_CONFLICT', '草稿依赖的正式版本已失效');
@@ -485,6 +687,7 @@ export class SaveRepository {
       } else {
         const old = TurnDraftSchema.parse(raw);
         requireData(old.draftRevision === expectedDraftRevision, 'DRAFT_CONFLICT', '草稿已被其他操作更新');
+        requireData(!base || fingerprint(old) === fingerprint(base), 'DRAFT_CONFLICT', '草稿已被其他操作更新');
         validateDraftUpdate(old, next);
       }
       await request(store.put(next));

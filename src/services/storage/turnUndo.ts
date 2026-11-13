@@ -21,8 +21,14 @@ const ControlSchema = z.strictObject({
   notice: z.enum(['budget', 'quota', 'legacy_write']).optional(),
   lastNpcManagement: z.strictObject({operationId:IdSchema,request:z.string(),managementRevision:CountSchema}).optional(),
   lastUndo: z.strictObject({ operationId: IdSchema, revision: CountSchema, draftTurnId: IdSchema }).optional(),
+  /** 存档实例身份：只在导入备份替换整条时间线时生成；缺省表示从未被替换的原存档。其他写入一律原样保留。 */
+  instanceId: IdSchema.optional(),
 });
 export type SaveControl = z.infer<typeof ControlSchema>;
+/** 调用方据以操作的实例身份；null 表示从未被替换的原存档。 */
+export function controlInstance(control: SaveControl | undefined): string | null {
+  return control?.instanceId ?? null;
+}
 export interface MemoryLineage { saveId: string; epoch: string }
 export interface UndoStatus {
   available: number; bytes: number; maxTurns: number; maxBytes: number;

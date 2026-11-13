@@ -1,0 +1,196 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/pr126-review/node_modules/.bin/playwright",
+      "test",
+      "--config",
+      "playwright.backup-upgrade.config.ts"
+    ],
+    "configFile": "/workspace/pr126-review/playwright.backup-upgrade.config.ts",
+    "rootDir": "/workspace/pr126-review/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/pr126-review/test-results/backup-upgrade",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/workspace/pr126-review/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "save-backup-upgrade.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/pr126-review/test-results/backup-upgrade",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/workspace/pr126-review/e2e",
+        "snapshotDir": "/workspace/pr126-review/e2e",
+        "testIgnore": [],
+        "testMatch": "save-backup-upgrade.spec.ts",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5291",
+          "browserName": "chromium",
+          "trace": "retain-on-failure",
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/backup-upgrade-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5291 --strictPort",
+      "url": "http://127.0.0.1:5291",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "save-backup-upgrade.spec.ts",
+      "file": "save-backup-upgrade.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "真实双标签：V3 连接关闭，旧删除与重开拒绝；同 ID 同 revision 导入及草稿保留，新版刷新后正常操作",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1131,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "{\"case\":\"v3-closed\",\"deletion\":\"InvalidStateError\",\"reopen\":\"VersionError\",\"importedSaveIntact\":true,\"importedDraftIntact\":true,\"refreshedDelete\":true,\"posts\":0}\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T08:54:00.474Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4f586387ab2282db26fa-819b9257ede2f1a75613",
+          "file": "save-backup-upgrade.spec.ts",
+          "line": 59,
+          "column": 1
+        },
+        {
+          "title": "真实双标签：不释放的旧连接阻止升级与导入，原记录不变，关闭后重试成功",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 793,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "{\"case\":\"v3-blocked\",\"blocked\":\"STORAGE_BLOCKED\",\"originalRecordsIntact\":true,\"retryImportSucceeded\":true,\"posts\":0}\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T08:54:01.971Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4f586387ab2282db26fa-90ade8453f1364ebe160",
+          "file": "save-backup-upgrade.spec.ts",
+          "line": 93,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-13T08:53:58.778Z",
+    "duration": 4120.159,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

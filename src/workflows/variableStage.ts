@@ -76,7 +76,7 @@ export class VariableStage {
         useWorldStage: settings.runtime.useWorldStage,
       });
       step = 'draft_start';
-      const draft = await this.repository.saveDraft(started, current.draftRevision, attempt.signal);
+      const draft = await this.repository.saveDraft(started, current.draftRevision, attempt.signal, current);
       attempt.check();
       input.onDraft?.(draft);
       try {
@@ -140,7 +140,7 @@ export class VariableStage {
         attempt.saving();
         input.onProgress?.('saving');
         step = 'candidate_save';
-        const saved = await this.repository.saveDraft(next, draft.draftRevision, attempt.signal);
+        const saved = await this.repository.saveDraft(next, draft.draftRevision, attempt.signal, draft);
         attempt.check();
         return saved;
       } catch (error) {
@@ -168,6 +168,7 @@ export class VariableStage {
             failed,
             draft.draftRevision,
             attempt.signal,
+            draft,
           );
           attempt.check();
           input.onDraft?.(stored);
