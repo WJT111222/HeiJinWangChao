@@ -21,7 +21,8 @@ export function InventoryPanel({ view, desktop = false, initialId, onSelect, onO
   view: PlayerView; desktop?: boolean; initialId?: string; onSelect?: (id: string) => void; onOpenProfile?: (id: string) => void;
 }) {
   const [filter, setFilter] = useState<InventoryFilter>('all');
-  const [selectedId, setSelectedId] = useState<string | undefined>(initialId);
+  // Defer a phone deep link until the outer native dialog has opened in this commit.
+  const [selectedId, setSelectedId] = useState<string | undefined>(desktop ? initialId : undefined);
   const [query,setQuery] = useState(''), [page,setPage] = useState(0);
   const detailPane = useRef<HTMLElement>(null);
   const { items, equipped, counts } = protagonistInventory(view.items, view.protagonist);
@@ -30,7 +31,9 @@ export function InventoryPanel({ view, desktop = false, initialId, onSelect, onO
   const buttons = useRef(new Map<string, HTMLButtonElement>());
   const detailTitle = useRef<HTMLHeadingElement>(null);
   const listScroll = useRef(0);
-  useEffect(() => { if (desktop && initialId) setSelectedId(initialId); },[desktop,initialId]);
+  // React flushes the enclosing dialog's passive effects before this follow-up render,
+  // so the inner dialog enters the native top layer after its parent. No timer is needed.
+  useEffect(() => { if (initialId) setSelectedId(initialId); },[desktop,initialId]);
   useEffect(() => {
     if (desktop) { if(selected) { if(detailPane.current) detailPane.current.scrollTop=0;detailTitle.current?.focus({preventScroll:true}); } return; }
     const target = selected ? detailTitle.current : buttons.current.get(lastSelected.current ?? '');
