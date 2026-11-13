@@ -4,8 +4,10 @@
 #
 # 生产安全边界：
 # - 只从 main 执行：job 级 if，脚本内再查一次 GITHUB_REF。手动运行选择其他分支时 job 直接跳过。
-# - 防止旧运行覆盖新公告：concurrency 组串行执行；写入前重新 fetch 最新 main，
+# - 防止旧运行覆盖新公告：concurrency 组串行执行；预装 wrangler 后重新 fetch 最新 main，
 #   检出内容与此刻 main 上的公告不完全一致就跳过（成功退出、不写入）。
+#   非原子：检查与写入之间 main 仍可能收到新提交，写入后会复查并提示；
+#   排在后面的运行随后写入最新公告（最终一致）。
 # - KV Namespace 按 wrangler.jsonc 中 binding = ANNOUNCEMENTS 精确读取，缺失或重复时失败、不写入。
 name: 发布王朝公告
 

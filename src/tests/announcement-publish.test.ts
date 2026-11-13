@@ -79,9 +79,13 @@ describe('真实 git 次序演练（假 wrangler，不连 Cloudflare）', () => 
     origin = join(root, 'origin.git'); kv = join(root, 'kv.json'); wrangler = join(root, 'fake-wrangler.mjs');
     writeFileSync(wrangler, `#!/usr/bin/env node
 import { copyFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 const args = process.argv.slice(2);
+if (args.join(' ') === '--version') process.exit(0);
 if (args.slice(0, 4).join(' ') !== 'kv key put current' || !args.includes('--remote')) process.exit(9);
 copyFileSync(args[args.indexOf('--path') + 1], process.env.FAKE_KV);
+// 模拟「检查之后、写入期间」main 又收到新提交。
+if (process.env.FAKE_ON_PUT) execSync(process.env.FAKE_ON_PUT, { stdio: 'ignore' });
 `);
     chmodSync(wrangler, 0o755);
     git(root, 'init', '-q', '--bare', origin);
@@ -119,5 +123,22 @@ copyFileSync(args[args.indexOf('--path') + 1], process.env.FAKE_KV);
     expect(stored()).toBeUndefined();
     expect(run('C').status).toBe(0);
     expect(stored()).toBe('B');
+  }, 60_000);
+
+  it('写入期间 main 又收到新公告：本次如实提示，线上短暂是旧内容，排在后面的运行写入最新（最终一致）', () => {
+    rmSync(kv, { force: true });
+    const work = join(root, 'work');
+    writeFileSync(join(root, 'd.json'), announcement('D'));
+    writeFileSync(join(root, 'push-d.sh'), `cd ${JSON.stringify(work)} && cp ${JSON.stringify(join(root, 'd.json'))} announcements/current.json`
+      + ` && git -c user.name=test -c user.email=test@example.invalid commit -qam D && git push -q origin HEAD:main\n`);
+    const racing = run('C', { FAKE_ON_PUT: `sh ${JSON.stringify(join(root, 'push-d.sh'))}` });
+    expect(racing.status).toBe(0);
+    expect(racing.stdout).toContain('写入期间');
+    expect(stored()).toBe('B');
+    shas.D = git(work, 'rev-parse', 'HEAD');
+    expect(run('D').status).toBe(0);
+    expect(stored()).toBe('D');
+    expect(run('C').stdout).toContain('跳过');
+    expect(stored()).toBe('D');
   }, 60_000);
 });

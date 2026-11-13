@@ -56,7 +56,10 @@ export function announcementNamespace(jsoncText, binding = announcementBinding) 
 /**
  * 写入前的决定。只允许 main；本次运行检出的公告必须与「此刻」main 上的公告逐字相同，
  * 否则说明有更新的提交（它会由排在后面的运行发布），本次跳过、不写旧内容。
- * 工作流用 concurrency 组串行执行，检查与写入之间不会有另一次运行插入。
+ *
+ * 这不是原子操作：concurrency 组只保证发布运行彼此串行，不能阻止 Git 在「检查」与「写入」之间收到新提交。
+ * 因此写入前先装好 wrangler，把窗口缩到一次写入调用；写入后再查一次 main，若期间有新公告提交，
+ * 线上可能短暂是本次内容，随后排队的那次运行会写入更新内容（最终一致，而非严格原子一致）。
  */
 export function publishDecision({ ref, current, latest }) {
   if (ref !== 'refs/heads/main') return { publish: false, fail: true, reason: `只能从 main 发布公告（当前 ${ref || '未知分支'}），未写入。` };
@@ -89,13 +92,29 @@ function output(name, value) {
   appendFileSync(process.env.GITHUB_OUTPUT, `${name}<<${marker}\n${value}\n${marker}\n`);
 }
 
+function latestOnMain(cwd) {
+  execFileSync('git', ['fetch', '--quiet', '--no-tags', '--depth=1', 'origin', 'main'], { cwd, stdio: 'inherit' });
+  try { return execFileSync('git', ['show', `FETCH_HEAD:${announcementFile}`], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); }
+  catch { return undefined; }
+}
+
 async function publish(dryRun) {
   const cwd = process.cwd();
+  const ref = process.env.GITHUB_REF ?? '';
   const current = readFileSync(resolve(cwd, announcementFile), 'utf8');
-  execFileSync('git', ['fetch', '--quiet', '--no-tags', '--depth=1', 'origin', 'main'], { cwd, stdio: 'inherit' });
-  let latest;
-  try { latest = execFileSync('git', ['show', `FETCH_HEAD:${announcementFile}`], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); } catch { latest = undefined; }
-  const decision = publishDecision({ ref: process.env.GITHUB_REF ?? '', current, latest });
+  // 先排除非 main，再做耗时准备。
+  const early = publishDecision({ ref, current, latest: current });
+  if (early.fail) fail(early.reason);
+  const [command, ...prefix] = process.env.WRANGLER_BIN ? [process.env.WRANGLER_BIN] : ['npx', '--yes', 'wrangler@4'];
+  if (!dryRun) {
+    if (!process.env.CLOUDFLARE_API_TOKEN || !process.env.CLOUDFLARE_ACCOUNT_ID)
+      fail('缺少 CLOUDFLARE_API_TOKEN 或 CLOUDFLARE_ACCOUNT_ID，见 docs/REMOTE_ANNOUNCEMENTS.md「一次性配置」。未写入。');
+    // 预先下载、初始化 wrangler，避免 npx 安装耗时落在「最新检查」与「写入」之间。
+    const warm = spawnSync(command, [...prefix, '--version'], { cwd: tmpdir(), stdio: 'inherit' });
+    if (warm.status !== 0) fail('wrangler 无法启动，未写入。');
+  }
+  const latest = latestOnMain(cwd);
+  const decision = publishDecision({ ref, current, latest });
   if (!decision.publish) {
     if (decision.fail) fail(decision.reason);
     say(`::notice::${decision.reason}`);
@@ -106,15 +125,15 @@ async function publish(dryRun) {
   if (!announcement) fail(`${announcementFile} 不是合法公告，未写入。`);
   const namespace = announcementNamespace(readFileSync(resolve(cwd, 'wrangler.jsonc'), 'utf8'));
   if (dryRun) { say(`[演练] 将把 ${announcement.version} 写入 KV ${namespace} 的 current 键；未写入。`); return; }
-  if (!process.env.CLOUDFLARE_API_TOKEN || !process.env.CLOUDFLARE_ACCOUNT_ID)
-    fail('缺少 CLOUDFLARE_API_TOKEN 或 CLOUDFLARE_ACCOUNT_ID，见 docs/REMOTE_ANNOUNCEMENTS.md「一次性配置」。未写入。');
-  const [command, ...prefix] = process.env.WRANGLER_BIN ? [process.env.WRANGLER_BIN] : ['npx', '--yes', 'wrangler@4'];
   // 在临时目录运行，避免 wrangler 解析整份部署配置。
   const result = spawnSync(command, [...prefix, 'kv', 'key', 'put', 'current', '--namespace-id', namespace,
     '--path', resolve(cwd, announcementFile), '--remote'], { cwd: tmpdir(), stdio: 'inherit' });
   if (result.status !== 0) fail('wrangler 写入 KV 失败，线上公告未更新。');
   say(`KV 写入成功：${announcement.version}（跨地区同步可能需要约 1 分钟，线上可读取另见下一步）。`);
   output('version', announcement.version);
+  // 写入后复查：检查与写入之间若有新公告提交，本次内容会被排在后面的运行覆盖为最新。
+  if (latestOnMain(cwd) !== current)
+    say('::notice::写入期间 main 上的公告又有新提交；线上可能短暂显示本次内容，排在后面的发布运行会写入最新公告。');
 }
 
 async function verify() {
