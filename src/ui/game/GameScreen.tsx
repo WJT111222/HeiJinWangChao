@@ -55,6 +55,7 @@ import { SettingsSchema, settingsKey } from '../settings/model';
 import { summaryFailureTitle } from '../../workflows/memorySummaryQueue';
 import type { OpeningStart } from './openingStart';
 import { runtimeLogEvent } from './runtimeLog';
+import { errorBannerKey } from './errorBanner';
 import { DesktopWorkflowPanel } from './WorkflowPanel';
 
 import type { StageAction, WorkflowStage, WorkflowTab, WorkflowView } from './WorkflowPanel';
@@ -163,9 +164,12 @@ export function GameScreen({
     submitToken = useRef(0);
   const [runtimeLogs, setRuntimeLogs] = useState<RuntimeLogEntry[]>([]);
   const runtimeLogId = useRef(0);
+  // 失败事件序号：用于判断错误横幅是否是「新的一次失败」；清空日志不回退。
+  const [failureSeq, setFailureSeq] = useState(0);
   const reportRuntimeEvent = useCallback<RuntimeLogReporter>((stage, kind, failure) => {
     const entry = runtimeLogEvent(++runtimeLogId.current, stage, kind, failure);
     setRuntimeLogs((current) => [...current.slice(-49), entry]);
+    if (kind === 'failed') setFailureSeq((current) => current + 1);
   }, []);
   useEffect(
     () => () => {
@@ -514,9 +518,11 @@ export function GameScreen({
             ? "off"
             : "pending";
 
-  const errorMessages = [automatic.error, error, submitError, variables.error, world.error].filter(Boolean);
+  const errorMessages = [automatic.error, error, submitError, variables.error, world.error].filter((message): message is string => Boolean(message));
   const errorFailures = draft?.failures.filter(failure => failure.storyRevision === draft.storyRevision).slice(-6) ?? [];
-  const errorSignature = workflowError ? JSON.stringify([errorMessages, errorFailures.map(failure => [failure.stage, failure.errorCode, failure.attempt])]) : '';
+  const errorSignature = workflowError
+    ? errorBannerKey({ saveId: state.saveId, turnId: draft?.turnId, storyRevision: draft?.storyRevision, failureSeq }, errorMessages, errorFailures)
+    : '';
   const desktopNotices = (
     <>
       {workflowError && errorSignature !== dismissedError && (

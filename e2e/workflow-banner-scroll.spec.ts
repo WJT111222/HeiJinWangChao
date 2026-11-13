@@ -40,6 +40,25 @@ test('电脑端：错误横幅可关闭，新错误会重新出现；日志上�
   await banner.getByRole('button', { name: '关闭错误提示' }).click();
   await expect(banner).toHaveCount(0);
 
+  // ① 同一回合：切换面板视图、收起再展开三阶段详情、清空日志等重渲染，都不会让同一错误再弹出。
+  await openWorkflowDiagnostics(page);
+  await expect(page.locator('.runtime-log li')).toHaveCount(4);
+  await openWorkflowStage(page, 'variables');
+  await page.getByRole('button', { name: '收起三阶段详情' }).click();
+  await page.getByRole('button', { name: /^详情/ }).click();
+  await expect(page.locator('.wf-rail')).toBeVisible();
+  await expect(banner).toHaveCount(0);
+  // ④ 完整诊断与底栏入口不受影响。
+  await openWorkflowDiagnostics(page);
+  await expect(page.locator('.runtime-log li')).toHaveCount(4);
+  await expect(page.locator('.runtime-log li').first()).toContainText('变量管理');
+  await expect(page.getByRole('status').filter({ hasText: '变量生成失败 · 查看详情' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '变量生成失败 · 查看详情' })).toBeVisible();
+  await page.getByRole('button', { name: '清空日志' }).click();
+  await expect(page.locator('.runtime-log li')).toHaveCount(0);
+  await expect(banner).toHaveCount(0);
+  await openWorkflowStage(page, 'variables');
+
   // 新的一次失败（第 5 次）会让横幅重新出现。
   await page.getByRole('button', { name: /^(重新)?生成变量候选$/ }).click();
   await expect.poll(() => calls).toBe(5);
@@ -47,7 +66,7 @@ test('电脑端：错误横幅可关闭，新错误会重新出现；日志上�
 
   await openWorkflowDiagnostics(page);
   const body = page.locator('.wf-dt-body');
-  await expect(page.locator('.runtime-log li')).toHaveCount(5);
+  await expect(page.locator('.runtime-log li')).toHaveCount(1);
   expect(await body.evaluate(element => element.scrollHeight - element.clientHeight)).toBeGreaterThan(50);
   // 把第一条日志滚到诊断区顶部，再把鼠标停在诊断区正中（正好压在日志内容上）滚动。
   const start = await page.locator('.runtime-log ol').evaluate(list => {
