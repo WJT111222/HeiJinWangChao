@@ -11,9 +11,10 @@ import { Detail } from '../Dialog';
 import { dateTime } from '../panels/playerView';
 
 import { appearanceTemplates, personalityTemplates } from './personTemplates';
-import { ThemedSelect } from '../components/ThemedSelect';
 import { ProfessionProfile } from '../components/ProfessionProfile';
 import { OpeningPacks } from './OpeningPacks';
+import { CityCardArt, CreationDossier, TemplateCards, creationStepHints, creationTint } from './DesktopCreation';
+import './desktop-creation.css';
 
 const steps = ['基本信息', '职业与能力', '城市与背景', '初始同伴', '确认与开局'];
 export function CreationWizard({
@@ -104,35 +105,86 @@ export function CreationWizard({
       )}
     </label>
   );
-  return (
-    <main ref={main} data-profession-view={mobile?(showPreset?'preset':'custom'):undefined} className={`creation-page${mobile?' mobile-creation':''}`} style={mobile?{'--tint':form.step>=3?ticketMeta[creationCity[form.city]].tint:'#c9a961'} as CSSProperties:undefined}>
-      {mobile&&<><header className="creation-mobile-bar"><button type="button" disabled={busy} onClick={onExit}>‹ 首页</button><span><small>NEW LIFE</small>空白车票</span></header><MiniCreationTicket form={form} onPreview={()=>setPreview(true)}/></>}
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">A LIFE, UNWRITTEN</p>
-          <h1>写下你是谁。</h1>
-          <p className="muted">从一座真实的城市开始。此后的人生，由你选择。</p>
-        </div>
-        <button onClick={onExit} disabled={busy}>
-          返回首页
-        </button>
+  const tint = creationTint(form);
+  const appearanceAndPersonality = (['appearance', 'personality'] as const).map((field) => {
+    const label = field === 'appearance' ? '外貌' : '性格';
+    const templates = field === 'appearance' ? appearanceTemplates : personalityTemplates;
+    const key = field === 'appearance' ? 'appearanceTemplate' : 'personalityTemplate';
+    const apply = (value: string) => change({ [key]: value, person: { ...form.person,
+      [field]: templates.find((item) => item.name === value)?.description ?? form.person[field] } });
+    return { field, label, templates, key, apply } as const;
+  });
+  const genderField = (
+    <fieldset className="creation-gender">
+      <legend>性别</legend>
+      <div className="creation-options">
+        {['男性', '女性'].map((gender) => <label key={gender} className="creation-choice">
+          <input type="radio" name="gender" value={gender} required checked={form.person.gender === gender}
+            onChange={() => change({ person: { ...form.person, gender } })} />{gender}
+        </label>)}
       </div>
-      <nav className="steps" aria-label="角色创建步骤" style={mobile?{'--route-progress':`${(form.step-1)*25}%`} as CSSProperties:undefined}>
-        {steps.map((label, index) => (
-          <button
-            disabled={busy}
-            key={label}
-            aria-label={mobile?label:undefined}
-            className={mobile&&index+1<form.step?'done':undefined}
-            aria-current={form.step === index + 1 ? 'step' : undefined}
-            onClick={() => move(index + 1)}
-          >
-            <span>{mobile?(index+1<form.step?'✓':''):<>0{index+1}</>}</span>
-            {mobile?['基本','职业','城市','同伴','确认'][index]:label}
-          </button>
-        ))}
-      </nav>
-      <OpeningPacks form={form} onApply={onChange} busy={busy} />
+    </fieldset>
+  );
+  const customProfessionFields = (
+    <div className="custom-profession">
+      <label>职业名称<input value={form.customProfession} required
+        onChange={(e) => change({ customProfession: e.target.value })} /></label>
+      <label>职业介绍<textarea aria-label="职业介绍" rows={mobile ? 5 : 4} value={form.professionDescription ?? ''}
+        onChange={(e) => change({ professionDescription: e.target.value })} /></label>
+      <label>内置职业技能<textarea aria-label="内置职业技能" rows={4} value={form.skills} placeholder="每行一项"
+        onChange={(e) => change({ skills: e.target.value, skillsSource: 'manual' })} /></label>
+      <label>长期影响<textarea aria-label="长期影响" rows={mobile ? 5 : 4} value={form.professionLongTermImpact ?? ''}
+        onChange={(e) => change({ professionLongTermImpact: e.target.value })} /></label>
+    </div>
+  );
+  const professionHero = <ProfessionProfile hero={{ profession: profile.name, professionDescription: profile.description,
+    professionLongTermImpact: profile.longTermImpact, skills: profile.skills }} />;
+  const companionToggle = (
+    <label className="toggle">
+      <input
+        type="checkbox"
+        checked={form.hasCompanion}
+        onChange={(e) => change({ hasCompanion: e.target.checked })}
+      />
+      <span>创建一名初始同伴</span>
+    </label>
+  );
+  const companionHint = (
+    <p className="muted">
+      可完全跳过。同伴将作为特殊 NPC 保存；开局保护规则将在 AI 接入后执行。
+    </p>
+  );
+  const heading = (
+    <div className="section-heading">
+      <div>
+        <p className="eyebrow">A LIFE, UNWRITTEN</p>
+        <h1>写下你是谁。</h1>
+        <p className="muted">从一座真实的城市开始。此后的人生，由你选择。</p>
+      </div>
+      <button onClick={onExit} disabled={busy}>
+        返回首页
+      </button>
+    </div>
+  );
+  const stepNav = (
+    <nav className="steps" aria-label="角色创建步骤" style={mobile?{'--route-progress':`${(form.step-1)*25}%`} as CSSProperties:undefined}>
+      {steps.map((label, index) => (
+        <button
+          disabled={busy}
+          key={label}
+          aria-label={mobile?label:undefined}
+          className={index+1<form.step?'done':undefined}
+          aria-current={form.step === index + 1 ? 'step' : undefined}
+          onClick={() => move(index + 1)}
+        >
+          {mobile?<span>{index+1<form.step?'✓':''}</span>:<span aria-hidden="true">{index+1<form.step?'✓':<>0{index+1}</>}</span>}
+          {mobile?['基本','职业','城市','同伴','确认'][index]:label}
+        </button>
+      ))}
+    </nav>
+  );
+  const packs = <OpeningPacks form={form} onApply={onChange} busy={busy} />;
+  const formElement = (
       <form ref={formRef}
         inert={busy}
         onSubmit={(e) => {
@@ -154,12 +206,13 @@ export function CreationWizard({
           }
         }}
       >
-        <div className={`creation-card ${mobile?`creation-step-${direction}`:''}`} key={mobile?form.step:undefined} ref={card}>
+        <div className={`creation-card ${mobile?`creation-step-${direction}`:`creation-stage creation-stage-${direction}`}`} key={form.step} ref={card}>
           <div className="section-heading">
             <div>
               <p className="eyebrow">STEP 0{form.step} / 05</p>
               <h2>{steps[form.step - 1]}</h2>
             </div>
+            {!mobile&&<p className="creation-step-hint">{creationStepHints[form.step - 1]}</p>}
             <span className="tag">填写内容自动保留</span>
           </div>
           {error && (
@@ -167,84 +220,103 @@ export function CreationWizard({
               {error}
             </p>
           )}
-          {form.step === 1 && (
+          {form.step === 1 && (mobile ? (
             <div className="form-grid">
               {person('name', '姓名')}
               {person('age', '年龄')}
-              <fieldset className="creation-gender">
-                <legend>性别</legend>
-                <div className="creation-options">
-                  {['男性', '女性'].map((gender) => <label key={gender} className="creation-choice">
-                    <input type="radio" name="gender" value={gender} required checked={form.person.gender === gender}
-                      onChange={() => change({ person: { ...form.person, gender } })} />{gender}
-                  </label>)}
-                </div>
-              </fieldset>
+              {genderField}
               <div className="creation-templates">
-                {(['appearance', 'personality'] as const).map((field) => {
-                  const label = field === 'appearance' ? '外貌' : '性格';
-                  const templates = field === 'appearance' ? appearanceTemplates : personalityTemplates;
-                  const key = field === 'appearance' ? 'appearanceTemplate' : 'personalityTemplate';
-                  return <div key={field}>
-                    {mobile?<><h3 className="creation-field-heading">{label}</h3><TemplateChips label={`${label}模板`} value={form[key]??'custom'} options={templates} onChange={value=>change({[key]:value,person:{...form.person,[field]:templates.find(item=>item.name===value)?.description??form.person[field]}})}/></>:<>
-                    <ThemedSelect label={`${label}模板`} value={form[key] ?? 'custom'}
-                      options={[{ value: 'custom', label: '自由选择' }, ...templates.map((item) => ({ value: item.name, label: item.name }))]}
-                      onChange={(value) => change({ [key]: value, person: { ...form.person,
-                        [field]: templates.find((item) => item.name === value)?.description ?? form.person[field] } })} />
-                    </>}
-                    {person(field, label, true)}
-                  </div>;
-                })}
+                {appearanceAndPersonality.map(({ field, label, templates, key, apply }) => <div key={field}>
+                  <h3 className="creation-field-heading">{label}</h3><TemplateChips label={`${label}模板`} value={form[key]??'custom'} options={templates} onChange={apply}/>
+                  {person(field, label, true)}
+                </div>)}
               </div>
             </div>
-          )}
-          {form.step === 2 && (
+          ) : (
+            <div className="creation-basics">
+              <div className="creation-identity">
+                {person('name', '姓名')}
+                {person('age', '年龄')}
+                {genderField}
+              </div>
+              <div className="creation-templates">
+                {appearanceAndPersonality.map(({ field, label, templates, key, apply }) => <div key={field} className="creation-template-field">
+                  <h3 className="creation-sub-heading">{label}<small>{field === 'appearance' ? '选模板会填入下方，可继续改写' : '同上'}</small></h3>
+                  <TemplateCards label={`${label}模板`} value={form[key] ?? 'custom'} options={templates} onChange={apply} />
+                  <textarea aria-label={label} rows={4} value={form.person[field]}
+                    onChange={(e) => change({ person: { ...form.person, [field]: e.target.value } })} />
+                </div>)}
+              </div>
+            </div>
+          ))}
+          {form.step === 2 && (mobile ? (
             <>
               <fieldset className="profession-picker">
                 <legend className="sr-only">选择职业</legend>
-                <label className={`creation-choice ${mobile?'mobile-profession-custom':''}`}>
+                <label className="creation-choice mobile-profession-custom">
                   <input type="radio" name="profession" checked={form.profession === 'custom'}
                     onChange={() => onChange(selectProfession(form, 'custom'))} />自由选择
                 </label>
                 <nav className="profession-categories" aria-label="职业方向">
                   {professionCategories.map((name) => <button type="button" key={name}
-                    aria-pressed={category === name && (!mobile||showPreset)} onClick={() => {if(mobile)setShowPreset(true);change({ professionCategory: name });}}>{name}</button>)}
-                  {mobile&&<button type="button" aria-pressed={!showPreset} onClick={()=>{setShowPreset(false);onChange(selectProfession(form,'custom'));}}>✎ 自由选择</button>}
+                    aria-pressed={category === name && showPreset} onClick={() => {setShowPreset(true);change({ professionCategory: name });}}>{name}</button>)}
+                  <button type="button" aria-pressed={!showPreset} onClick={()=>{setShowPreset(false);onChange(selectProfession(form,'custom'));}}>✎ 自由选择</button>
                 </nav>
                 <div className="profession-buttons">
-                  {professions.filter((job) => job.category === category).map((job) => {
-                    const label=<label className="creation-choice" key={job.name}><input type="radio" name="profession" checked={form.profession===job.name} onChange={()=>onChange(selectProfession(form,job.name))}/>{mobile?<span><b>{job.name}</b><small>{job.skills.slice(0,3).join(' · ')}</small></span>:job.name}</label>;
-                    return mobile?<div className={`creation-profession-card ${form.profession===job.name?'selected':''}`} key={job.name}>{label}{form.profession===job.name&&<ProfessionProfile hero={{profession:profile.name,professionDescription:profile.description,professionLongTermImpact:profile.longTermImpact,skills:profile.skills}}/>}</div>:label;
-                  })}
+                  {professions.filter((job) => job.category === category).map((job) => <div className={`creation-profession-card ${form.profession===job.name?'selected':''}`} key={job.name}>
+                    <label className="creation-choice"><input type="radio" name="profession" checked={form.profession===job.name} onChange={()=>onChange(selectProfession(form,job.name))}/><span><b>{job.name}</b><small>{job.skills.slice(0,3).join(' · ')}</small></span></label>
+                    {form.profession===job.name&&professionHero}
+                  </div>)}
                 </div>
               </fieldset>
-              {form.profession === 'custom' ? <div className="custom-profession">
-                <label>职业名称<input value={form.customProfession} required
-                  onChange={(e) => change({ customProfession: e.target.value })} /></label>
-                <label>职业介绍<textarea aria-label="职业介绍" rows={5} value={form.professionDescription ?? ''}
-                  onChange={(e) => change({ professionDescription: e.target.value })} /></label>
-                <label>内置职业技能<textarea aria-label="内置职业技能" rows={4} value={form.skills} placeholder="每行一项"
-                  onChange={(e) => change({ skills: e.target.value, skillsSource: 'manual' })} /></label>
-                <label>长期影响<textarea aria-label="长期影响" rows={5} value={form.professionLongTermImpact ?? ''}
-                  onChange={(e) => change({ professionLongTermImpact: e.target.value })} /></label>
-              </div> : <>
-                {!mobile&&<ProfessionProfile hero={{ profession: profile.name, professionDescription: profile.description,
-                  professionLongTermImpact: profile.longTermImpact, skills: profile.skills }} />}
-                {mobile?<details className="creation-manual-skills"><summary>个人技能与专长{form.skillsSource==='manual'?' · 已保留手动技能':''}</summary><label>个人技能与专长<textarea aria-label="个人技能与专长" rows={3} value={form.skills} onChange={e=>change({skills:e.target.value,skillsSource:'manual'})}/></label></details>:<label>个人技能与专长<textarea aria-label="个人技能与专长" rows={3} value={form.skills} placeholder="每行一项"
-                  onChange={(e) => change({ skills: e.target.value, skillsSource: 'manual' })} /></label>}
-              </>}
+              {form.profession === 'custom' ? customProfessionFields :
+                <details className="creation-manual-skills"><summary>个人技能与专长{form.skillsSource==='manual'?' · 已保留手动技能':''}</summary><label>个人技能与专长<textarea aria-label="个人技能与专长" rows={3} value={form.skills} onChange={e=>change({skills:e.target.value,skillsSource:'manual'})}/></label></details>}
             </>
-          )}
+          ) : (
+            <>
+              <fieldset className="profession-picker creation-jobs">
+                <legend className="sr-only">选择职业</legend>
+                <div className="creation-jobs-categories">
+                  <p className="creation-jobs-caption" aria-hidden="true">CATEGORY</p>
+                  <nav className="profession-categories" aria-label="职业方向">
+                    {professionCategories.map((name) => <button type="button" key={name}
+                      aria-pressed={category === name} onClick={() => change({ professionCategory: name })}>
+                      {name}<small aria-hidden="true">{professions.filter((job) => job.category === name).length}</small></button>)}
+                  </nav>
+                  <label className="creation-choice creation-job-free">
+                    <input type="radio" name="profession" checked={form.profession === 'custom'}
+                      onChange={() => onChange(selectProfession(form, 'custom'))} /><span aria-hidden="true">✎ </span>自由选择
+                  </label>
+                </div>
+                <div className="profession-buttons creation-jobs-list">
+                  <p className="creation-jobs-caption" aria-hidden="true">{category}</p>
+                  {professions.filter((job) => job.category === category).map((job) => <label className="creation-choice creation-job" key={job.name}>
+                    <input type="radio" name="profession" checked={form.profession===job.name} onChange={()=>onChange(selectProfession(form,job.name))}/>
+                    <b>{job.name}</b><small aria-hidden="true">{job.skills.join(' · ')}</small>
+                  </label>)}
+                </div>
+                <div className="creation-jobs-detail">
+                  {form.profession === 'custom' ? <><p className="creation-jobs-kind">自由选择 · 自定义职业</p>{customProfessionFields}</>
+                    : <><p className="creation-jobs-kind">{professions.find((job) => job.name === form.profession)?.category ?? category}</p>{professionHero}</>}
+                </div>
+              </fieldset>
+              {form.profession !== 'custom' && <label className="creation-manual-skill">
+                <span>个人技能与专长<small>{form.skillsSource === 'manual' ? '已保留手动技能' : '可选 · 每行一项'}</small></span>
+                <textarea aria-label="个人技能与专长" rows={2} value={form.skills} placeholder="每行一项"
+                  onChange={(e) => change({ skills: e.target.value, skillsSource: 'manual' })} /></label>}
+            </>
+          ))}
           {form.step === 3 && (
             <div className="city-stage">
               <section>
-                <p className="muted">选择起点，不限制未来的目的地。</p>
+                {mobile&&<p className="muted">选择起点，不限制未来的目的地。</p>}
                 <fieldset className="city-list">
                   <legend className="sr-only">初始城市</legend>
                   {cities.map((city) => (
                     <label
                       className={`choice-card city-card ${form.city === city.id ? 'selected' : ''}`}
                       key={city.id}
+                      style={mobile?undefined:{'--c':ticketMeta[creationCity[city.id]].tint} as CSSProperties}
                     >
                       <input
                         type="radio"
@@ -252,19 +324,21 @@ export function CreationWizard({
                         checked={form.city === city.id}
                         onChange={() => change({ city: city.id })}
                       />
-                      {mobile&&<span className="creation-city-art" style={{'--tint':ticketMeta[creationCity[city.id]].tint} as CSSProperties}><CreationGuilloche city={city.id}/><span className="creation-city-seal" aria-hidden="true">{form.city===city.id?'起点':ticketMeta[creationCity[city.id]].seal}</span></span>}
+                      {mobile?<span className="creation-city-art" style={{'--tint':ticketMeta[creationCity[city.id]].tint} as CSSProperties}><CreationGuilloche city={city.id}/><span className="creation-city-seal" aria-hidden="true">{form.city===city.id?'起点':ticketMeta[creationCity[city.id]].seal}</span></span>
+                        :<CityCardArt city={city.id} selected={form.city === city.id} />}
                       <small>{city.label}</small>
                       <strong>{city.name}</strong>
                       <p>{city.description}</p>
                     </label>
                   ))}
                 </fieldset>
+                {!mobile&&<p className="muted creation-city-note">选择起点，不限制未来的目的地。</p>}
               </section>
               <section className="background-box">
                 <label>
                   人物背景（可选）
                   <textarea
-                    rows={5}
+                    rows={mobile ? 5 : 4}
                     value={form.background}
                     onChange={(e) => change({ background: e.target.value })}
                     placeholder="家庭、工作经历、个人秘密……也可以留白。切换城市不会改写这里的内容。"
@@ -278,19 +352,9 @@ export function CreationWizard({
           )}
           {form.step === 4 && (
             <>
-              <label className="toggle">
-                <input
-                  type="checkbox"
-                  checked={form.hasCompanion}
-                  onChange={(e) => change({ hasCompanion: e.target.checked })}
-                />
-                <span>创建一名初始同伴</span>
-              </label>
-              <p className="muted">
-                可完全跳过。同伴将作为特殊 NPC 保存；开局保护规则将在 AI 接入后执行。
-              </p>
+              {mobile ? <>{companionToggle}{companionHint}</> : <div className="creation-switch-card">{companionToggle}{companionHint}</div>}
               {form.hasCompanion && (
-                <div className="form-grid">
+                <div className={mobile ? 'form-grid' : 'form-grid creation-companion-grid'}>
                   {companion('name', '同伴姓名')}
                   {companion('age', '同伴年龄（可选）')}
                   {companion('identity', '同伴身份')}
@@ -425,14 +489,38 @@ export function CreationWizard({
             disabled={form.step === 1 || busy}
             onClick={() => move(form.step - 1)}
           >
-            上一步
+            {mobile?'上一步':<><span aria-hidden="true">← </span>上一步</>}
           </button>
-          <span>{mobile&&form.step===5?'生成可能产生费用':<>0{form.step} / 05</>}</span>
+          <span>{mobile?(form.step===5?'生成可能产生费用':<>0{form.step} / 05</>):<><b>0{form.step} / 05</b>{form.step<5?`下一步：${steps[form.step]}`:'确认后立档并自动开局'}</>}</span>
           <button className="primary" disabled={busy||tear.torn} type="submit" aria-describedby={form.step === 5 ? 'opening-generation-notice' : undefined}>
             {busy ? '正在保存…' : form.step === 5 ? '确认并创建存档' : '下一步 →'}
           </button>
         </footer>
       </form>
+  );
+  return (
+    <main ref={main} data-profession-view={mobile?(showPreset?'preset':'custom'):undefined}
+      className={`creation-page${mobile?' mobile-creation':' desktop-creation'}`}
+      style={{'--tint':mobile?(form.step>=3?ticketMeta[creationCity[form.city]].tint:'#c9a961'):tint} as CSSProperties}>
+      {mobile ? <>
+        <header className="creation-mobile-bar"><button type="button" disabled={busy} onClick={onExit}>‹ 首页</button><span><small>NEW LIFE</small>空白车票</span></header><MiniCreationTicket form={form} onPreview={()=>setPreview(true)}/>
+        {heading}
+        {stepNav}
+        {packs}
+        {formElement}
+      </> : <>
+        <div className="creation-dossier-col">
+          {heading}
+          <CreationDossier form={form} busy={busy} />
+        </div>
+        <div className="creation-desk">
+          <div className="creation-rail">
+            {stepNav}
+            {packs}
+          </div>
+          {formElement}
+        </div>
+      </>}
       {mobile&&preview&&<Dialog title="车票预览" seal="票" mobileVariant="sheet" onClose={()=>setPreview(false)}><FullCreationTicket form={form} stub={<div className="creation-ticket-stub preview-only"><span>STATION 0{form.step} / 05<small>填完第 5 站即可撕票</small></span><i aria-hidden="true"/></div>}/></Dialog>}
     </main>
   );

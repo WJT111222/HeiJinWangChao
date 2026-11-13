@@ -1,0 +1,797 @@
+[
+  {
+    "batch": "pr134-core-initial",
+    "startTime": "2026-11-13T14:03:25.019Z",
+    "exitCode": 1,
+    "counts": {
+      "passed": 9,
+      "failed": 2,
+      "timedOut": 3
+    },
+    "cases": [
+      {
+        "project": "desktop",
+        "title": "基本信息模板独立、可编辑、往返与刷新保留；键盘选择",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "五类各六职业，点击呈现完整介绍、独立技能与长期影响",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "基本信息模板独立、可编辑、往返与刷新保留；键盘选择",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "五类各六职业，点击呈现完整介绍、独立技能与长期影响",
+        "status": "failed"
+      },
+      {
+        "project": "mobile",
+        "title": "自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用",
+        "status": "timedOut"
+      },
+      {
+        "project": "desktop",
+        "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+        "status": "timedOut"
+      },
+      {
+        "project": "desktop",
+        "title": "同名包独立管理：重命名、取消删除、明确覆盖及确认删除",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "损坏包隔离，存储拒绝不误报成功、不丢失有效包或当前草稿",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "读取被拒绝时明确反馈，恢复权限后仍可查看有效包",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+        "status": "timedOut"
+      },
+      {
+        "project": "mobile",
+        "title": "同名包独立管理：重命名、取消删除、明确覆盖及确认删除",
+        "status": "failed"
+      },
+      {
+        "project": "mobile",
+        "title": "损坏包隔离，存储拒绝不误报成功、不丢失有效包或当前草稿",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "读取被拒绝时明确反馈，恢复权限后仍可查看有效包",
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "batch": "pr134-main-mobile-before",
+    "startTime": "2026-11-13T14:03:53.488Z",
+    "exitCode": 1,
+    "counts": {
+      "failed": 1,
+      "timedOut": 1
+    },
+    "cases": [
+      {
+        "project": "mobile",
+        "title": "五类各六职业，点击呈现完整介绍、独立技能与长期影响",
+        "status": "failed"
+      },
+      {
+        "project": "mobile",
+        "title": "自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用",
+        "status": "timedOut"
+      }
+    ]
+  },
+  {
+    "batch": "pr134-main-packs-before",
+    "startTime": "2026-11-13T14:06:04.488Z",
+    "exitCode": 1,
+    "counts": {
+      "timedOut": 2,
+      "passed": 1,
+      "failed": 1
+    },
+    "cases": [
+      {
+        "project": "desktop",
+        "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+        "status": "timedOut"
+      },
+      {
+        "project": "desktop",
+        "title": "同名包独立管理：重命名、取消删除、明确覆盖及确认删除",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+        "status": "timedOut"
+      },
+      {
+        "project": "mobile",
+        "title": "同名包独立管理：重命名、取消删除、明确覆盖及确认删除",
+        "status": "failed"
+      }
+    ]
+  },
+  {
+    "batch": "pr134-core-revised",
+    "startTime": "2026-11-13T14:08:53.072Z",
+    "exitCode": 1,
+    "counts": {
+      "passed": 10,
+      "timedOut": 3,
+      "failed": 1
+    },
+    "cases": [
+      {
+        "project": "desktop",
+        "title": "基本信息模板独立、可编辑、往返与刷新保留；键盘选择",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "五类各六职业，点击呈现完整介绍、独立技能与长期影响",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "基本信息模板独立、可编辑、往返与刷新保留；键盘选择",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "五类各六职业，点击呈现完整介绍、独立技能与长期影响",
+        "status": "timedOut"
+      },
+      {
+        "project": "mobile",
+        "title": "自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用",
+        "status": "failed"
+      },
+      {
+        "project": "desktop",
+        "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+        "status": "timedOut"
+      },
+      {
+        "project": "desktop",
+        "title": "同名包独立管理：重命名、取消删除、明确覆盖及确认删除",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "损坏包隔离，存储拒绝不误报成功、不丢失有效包或当前草稿",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "读取被拒绝时明确反馈，恢复权限后仍可查看有效包",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+        "status": "timedOut"
+      },
+      {
+        "project": "mobile",
+        "title": "同名包独立管理：重命名、取消删除、明确覆盖及确认删除",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "损坏包隔离，存储拒绝不误报成功、不丢失有效包或当前草稿",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "读取被拒绝时明确反馈，恢复权限后仍可查看有效包",
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "batch": "pr134-compat",
+    "startTime": "2026-11-13T14:10:06.801Z",
+    "exitCode": 130,
+    "counts": {
+      "passed": 3,
+      "timedOut": 1,
+      "failed": 6,
+      "interrupted": 1,
+      "notRun": 7
+    },
+    "cases": [
+      {
+        "project": "mobile",
+        "title": "自动须知→公告、原文、焦点陷阱、章节与进度、手动打开仅一张",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "今日免打扰、隔日恢复；云端实际版本和长内容、滚动不重复请求",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "自动翻页动画防重复关闭，reduced-motion 与 Esc 顺序",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文",
+        "status": "timedOut"
+      },
+      {
+        "project": "mobile",
+        "title": "顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复",
+        "status": "failed"
+      },
+      {
+        "project": "mobile",
+        "title": "确认按钮同一校验路径、草稿保留、无效撕票返回错误步骤",
+        "status": "failed"
+      },
+      {
+        "project": "mobile",
+        "title": "撕票动画切换步骤可取消，不创建未确认存档",
+        "status": "failed"
+      },
+      {
+        "project": "mobile",
+        "title": "正式保存失败保留同一创角身份，解除 busy 后可重试一次建档",
+        "status": "failed"
+      },
+      {
+        "project": "mobile",
+        "title": "开局包六视图、手动技能完整恢复、取消不写、覆盖与删除隔离",
+        "status": "failed"
+      },
+      {
+        "project": "mobile",
+        "title": "#125 车票首页与第四批创角、公告手动入口及真实草稿恢复衔接",
+        "status": "failed"
+      },
+      {
+        "project": "mobile",
+        "title": "开局包损坏隔离、存储失败不清空原数据和创角草稿",
+        "status": "interrupted"
+      },
+      {
+        "project": "mobile",
+        "title": "短视口 375×667 仅正文滚动，底栏与输入可达",
+        "status": "notRun"
+      },
+      {
+        "project": "mobile",
+        "title": "短视口 390×844 仅正文滚动，底栏与输入可达",
+        "status": "notRun"
+      },
+      {
+        "project": "mobile",
+        "title": "短视口 430×932 仅正文滚动，底栏与输入可达",
+        "status": "notRun"
+      },
+      {
+        "project": "mobile",
+        "title": "短视口 392×640 仅正文滚动，底栏与输入可达",
+        "status": "notRun"
+      },
+      {
+        "project": "mobile",
+        "title": "短视口 392×420 仅正文滚动，底栏与输入可达",
+        "status": "notRun"
+      },
+      {
+        "project": "mobile",
+        "title": "创角自动三阶段初始化生活基础，刷新不重复，下一回合正常消费",
+        "status": "notRun"
+      },
+      {
+        "project": "mobile",
+        "title": "World失败不提前初始化，刷新后明确恢复只请求World",
+        "status": "notRun"
+      }
+    ]
+  },
+  {
+    "batch": "pr134-acceptance-initial",
+    "startTime": "2026-11-13T14:10:30.710Z",
+    "exitCode": 130,
+    "counts": {
+      "timedOut": 4,
+      "failed": 1,
+      "notRun": 2
+    },
+    "cases": [
+      {
+        "project": "desktop",
+        "title": "PC 正式五步、实时档案、键盘、滚动与错误 901x768",
+        "status": "timedOut"
+      },
+      {
+        "project": "desktop",
+        "title": "PC 正式五步、实时档案、键盘、滚动与错误 1100x800",
+        "status": "timedOut"
+      },
+      {
+        "project": "desktop",
+        "title": "PC 正式五步、实时档案、键盘、滚动与错误 1440x900",
+        "status": "timedOut"
+      },
+      {
+        "project": "desktop",
+        "title": "PC 正式五步、实时档案、键盘、滚动与错误 1100x580",
+        "status": "timedOut"
+      },
+      {
+        "project": "desktop",
+        "title": "PC 保存中印章与首次建档失败恢复；已有存档不变且只创建一次",
+        "status": "failed"
+      },
+      {
+        "project": "desktop",
+        "title": "创角自动三阶段初始化生活基础，刷新不重复，下一回合正常消费",
+        "status": "notRun"
+      },
+      {
+        "project": "desktop",
+        "title": "World失败不提前初始化，刷新后明确恢复只请求World",
+        "status": "notRun"
+      }
+    ]
+  },
+  {
+    "batch": "pr134-core-final",
+    "startTime": "2026-11-13T14:12:24.054Z",
+    "exitCode": 1,
+    "counts": {
+      "passed": 12,
+      "timedOut": 2
+    },
+    "cases": [
+      {
+        "project": "desktop",
+        "title": "基本信息模板独立、可编辑、往返与刷新保留；键盘选择",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "五类各六职业，点击呈现完整介绍、独立技能与长期影响",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "基本信息模板独立、可编辑、往返与刷新保留；键盘选择",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "五类各六职业，点击呈现完整介绍、独立技能与长期影响",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用",
+        "status": "timedOut"
+      },
+      {
+        "project": "desktop",
+        "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "同名包独立管理：重命名、取消删除、明确覆盖及确认删除",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "损坏包隔离，存储拒绝不误报成功、不丢失有效包或当前草稿",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "读取被拒绝时明确反馈，恢复权限后仍可查看有效包",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+        "status": "timedOut"
+      },
+      {
+        "project": "mobile",
+        "title": "同名包独立管理：重命名、取消删除、明确覆盖及确认删除",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "损坏包隔离，存储拒绝不误报成功、不丢失有效包或当前草稿",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "读取被拒绝时明确反馈，恢复权限后仍可查看有效包",
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "batch": "pr134-core-verified",
+    "startTime": "2026-11-13T14:16:00.421Z",
+    "exitCode": 1,
+    "counts": {
+      "passed": 13,
+      "timedOut": 1
+    },
+    "cases": [
+      {
+        "project": "desktop",
+        "title": "基本信息模板独立、可编辑、往返与刷新保留；键盘选择",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "五类各六职业，点击呈现完整介绍、独立技能与长期影响",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "基本信息模板独立、可编辑、往返与刷新保留；键盘选择",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "五类各六职业，点击呈现完整介绍、独立技能与长期影响",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "同名包独立管理：重命名、取消删除、明确覆盖及确认删除",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "损坏包隔离，存储拒绝不误报成功、不丢失有效包或当前草稿",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "读取被拒绝时明确反馈，恢复权限后仍可查看有效包",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+        "status": "timedOut"
+      },
+      {
+        "project": "mobile",
+        "title": "同名包独立管理：重命名、取消删除、明确覆盖及确认删除",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "损坏包隔离，存储拒绝不误报成功、不丢失有效包或当前草稿",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "读取被拒绝时明确反馈，恢复权限后仍可查看有效包",
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "batch": "pr134-desktop-verified",
+    "startTime": "2026-11-13T14:19:07.789Z",
+    "exitCode": 0,
+    "counts": {
+      "passed": 7
+    },
+    "cases": [
+      {
+        "project": "desktop",
+        "title": "PC 正式五步、实时档案、键盘、滚动与错误 901x768",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "PC 正式五步、实时档案、键盘、滚动与错误 1100x800",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "PC 正式五步、实时档案、键盘、滚动与错误 1440x900",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "PC 正式五步、实时档案、键盘、滚动与错误 1100x580",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "PC 保存中印章与首次建档失败恢复；已有存档不变且只创建一次",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "创角自动三阶段初始化生活基础，刷新不重复，下一回合正常消费",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "World失败不提前初始化，刷新后明确恢复只请求World",
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "batch": "pr134-pack-mobile-verified",
+    "startTime": "2026-11-13T14:19:29.405Z",
+    "exitCode": 1,
+    "counts": {
+      "failed": 1
+    },
+    "cases": [
+      {
+        "project": "mobile",
+        "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+        "status": "failed"
+      }
+    ]
+  },
+  {
+    "batch": "pr134-mobile-compat-verified",
+    "startTime": "2026-11-13T14:20:52.480Z",
+    "exitCode": 0,
+    "counts": {
+      "passed": 20
+    },
+    "cases": [
+      {
+        "project": "mobile",
+        "title": "手机人生车票保持、断点切换及跳过 375",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "手机人生车票保持、断点切换及跳过 390",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "自动须知→公告、原文、焦点陷阱、章节与进度、手动打开仅一张",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "今日免打扰、隔日恢复；云端实际版本和长内容、滚动不重复请求",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "自动翻页动画防重复关闭，reduced-motion 与 Esc 顺序",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "五站真实字段、模板与手动技能、城市背景无损、同伴及回顾全文",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "顶部预览只读，短拖和取消不建档，正式撕票沿原授权建档且不重复",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "确认按钮同一校验路径、草稿保留、无效撕票返回错误步骤",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "撕票动画切换步骤可取消，不创建未确认存档",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "正式保存失败保留同一创角身份，解除 busy 后可重试一次建档",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "开局包六视图、手动技能完整恢复、取消不写、覆盖与删除隔离",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "#125 车票首页与第四批创角、公告手动入口及真实草稿恢复衔接",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "开局包损坏隔离、存储失败不清空原数据和创角草稿",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "短视口 375×667 仅正文滚动，底栏与输入可达",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "短视口 390×844 仅正文滚动，底栏与输入可达",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "短视口 430×932 仅正文滚动，底栏与输入可达",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "短视口 392×640 仅正文滚动，底栏与输入可达",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "短视口 392×420 仅正文滚动，底栏与输入可达",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "创角自动三阶段初始化生活基础，刷新不重复，下一回合正常消费",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "World失败不提前初始化，刷新后明确恢复只请求World",
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "batch": "pr134-pack-mobile-final",
+    "startTime": "2026-11-13T14:20:56.741Z",
+    "exitCode": 0,
+    "counts": {
+      "passed": 1
+    },
+    "cases": [
+      {
+        "project": "mobile",
+        "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "batch": "pr134-core-delivery",
+    "startTime": "2026-11-13T14:24:05.774Z",
+    "exitCode": 0,
+    "counts": {
+      "passed": 14
+    },
+    "cases": [
+      {
+        "project": "desktop",
+        "title": "基本信息模板独立、可编辑、往返与刷新保留；键盘选择",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "五类各六职业，点击呈现完整介绍、独立技能与长期影响",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "基本信息模板独立、可编辑、往返与刷新保留；键盘选择",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "五类各六职业，点击呈现完整介绍、独立技能与长期影响",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "同名包独立管理：重命名、取消删除、明确覆盖及确认删除",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "损坏包隔离，存储拒绝不误报成功、不丢失有效包或当前草稿",
+        "status": "passed"
+      },
+      {
+        "project": "desktop",
+        "title": "读取被拒绝时明确反馈，恢复权限后仍可查看有效包",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "同名包独立管理：重命名、取消删除、明确覆盖及确认删除",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "损坏包隔离，存储拒绝不误报成功、不丢失有效包或当前草稿",
+        "status": "passed"
+      },
+      {
+        "project": "mobile",
+        "title": "读取被拒绝时明确反馈，恢复权限后仍可查看有效包",
+        "status": "passed"
+      }
+    ]
+  }
+]
