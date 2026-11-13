@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>黑金王朝 · 电脑端创角五步 设计稿</title>
+<style>
+:root{
+  --font-title:'Noto Serif SC','Noto Serif CJK SC','Source Han Serif SC','Songti SC','STSong',serif;
+  --font-body:'Noto Sans SC','Noto Sans CJK SC','PingFang SC','Microsoft YaHei',sans-serif;
+  --font-mono:'IBM Plex Mono','SFMono-Regular',Consolas,'Liberation Mono',monospace;
+  --bg:#0a0c0b;--panel:#111413;--panel-2:#151917;--well:#0b0d0d;
+  --text:#ECE7DA;--prose:#DCD6C8;--muted:#A3A396;--dim:#77796f;
+  --gold:#C9A961;--gold-hi:#E8D196;--gold-lo:#7d6a3e;
+  --line:#ffffff14;--line-2:#ffffff22;
+  --ok:#7DB49A;--err:#D9876B;--err-line:#6e4a3d;--warn:#D9B36A;
+  /* 档案纸 */
+  --paper:#ECE5D4;--paper-2:#E3DAC5;--ink:#2B2721;--ink-2:#5E5546;--ink-3:#968B76;--rule:#C9BDA3;--seal:#A8442E;
+  --tint:#C9A961;
+  --ease:cubic-bezier(.22,.7,.2,1);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font:14px/1.7 var(--font-body);overflow:hidden}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+::selection{background:#c9a96155}
+
+/* ───────── 演示控制条 ───────── */
+.demo-bar{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;padding:.5rem 1rem;background:#151515;border-bottom:1px solid #333;font-size:12px;color:#aaa}
+.demo-bar b{color:#ddd;font-weight:600;margin-right:.4rem}
+.demo-bar .grp{display:flex;align-items:center;gap:.3rem;margin-right:.8rem}
+.demo-bar .grp>span{color:#888}
+.demo-bar button{background:#222;border:1px solid #3a3a3a;border-radius:6px;padding:.22rem .6rem;color:#bbb}
+.demo-bar button[aria-pressed=true]{background:#3a3220;border-color:var(--gold-lo);color:var(--gold-hi)}
+.demo-bar .sp{flex:1}
+.demo-notes{position:fixed;top:44px;right:12px;z-index:110;width:400px;max-height:calc(100vh - 56px);overflow:auto;background:#151515f6;border:1px solid #333;border-radius:10px;padding:1rem 1.1rem;font-size:12.5px;line-height:1.75;color:#bbb;box-shadow:0 20px 50px -20px #000}
+.demo-notes[hidden]{display:none}
+.demo-notes h4{margin:.9rem 0 .3rem;color:var(--gold-hi);font-size:13px}
+.demo-notes h4:first-child{margin-top:0}
+.demo-notes ul{margin:0;padding-left:1.1rem}
+
+/* ───────── 应用外壳（沿用现有顶栏） ───────── */
+.app{position:absolute;inset:40px 0 0;display:flex;flex-direction:column}
+.app-hd{flex:none;display:flex;align-items:center;gap:.8rem;height:58px;padding:0 32px;border-bottom:1px solid var(--line);background:#0c0e0d}
+.brand-mark{width:30px;height:30px;border:1px solid var(--gold);display:grid;place-items:center;color:var(--gold);font:16px var(--font-title);box-shadow:inset 0 0 0 2px #0c0e0d,inset 0 0 0 3px #c9a96150}
+.brand{display:flex;flex-direction:column;line-height:1.2}
+.brand b{font:500 16px var(--font-title);letter-spacing:.2em}
+.brand small{font:9px var(--font-mono);letter-spacing:.24em;color:var(--dim)}
+.app-hd nav{margin-left:auto;display:flex;align-items:center;gap:1.6rem;font-size:13px;color:var(--muted)}
+.app-hd nav span:last-child{font:11px var(--font-mono);color:var(--dim);padding-left:1.2rem;border-left:1px solid var(--line-2)}
+
+/* ───────── 创角页：左档案 · 右表单 ───────── */
+.creation{flex:1;min-height:0;display:grid;grid-template-columns:minmax(380px,34%) minmax(0,1fr);
+  background:radial-gradient(90% 70% at 0% 100%,color-mix(in srgb,var(--tint) 10%,transparent),transparent 60%),var(--bg);transition:background .6s}
+
+/* 左：人物档案（档案纸） */
+.dossier-col{position:relative;min-height:0;padding:28px 28px 28px 40px;border-right:1px solid var(--line);display:flex;flex-direction:column}
+.dossier-col .lede{margin:0 0 16px}
+.dossier-col .lede small{font:600 10px var(--font-mono);letter-spacing:.3em;color:var(--gold)}
+.dossier-col .lede h1{margin:4px 0 2px;font:600 30px/1.25 var(--font-title);letter-spacing:.06em}
+.dossier-col .lede p{margin:0;color:var(--muted);font-size:13px}
+.dossier{position:relative;flex:1;min-height:0;overflow:auto;border-radius:3px;background:
+  repeating-linear-gradient(0deg,transparent 0 27px,#0000000a 27px 28px),
+  linear-gradient(180deg,var(--paper),var(--paper-2));color:var(--ink);
+  box-shadow:0 1px 0 #fff6 inset,0 24px 50px -24px #000,0 0 0 1px #00000040;scrollbar-width:thin;scrollbar-color:#0003 transparent}
+.dossier::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 80% at 100% 0%,#ffffff30,transparent 50%),radial-gradient(80% 60% at 0% 100%,#8a6a3a14,transparent 60%)}
+.dz-band{position:relative;display:flex;align-items:center;gap:10px;padding:12px 18px;background:var(--ink);color:var(--paper);overflow:hidden}
+.dz-band::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--tint);transition:background .5s}
+.dz-band b{font:600 15px var(--font-title);letter-spacing:.32em;white-space:nowrap}
+.dz-band small{font:9px var(--font-mono);letter-spacing:.2em;color:#cfc6b0;white-space:nowrap}
+.dz-band .no{margin-left:auto;font:11px var(--font-mono);letter-spacing:.08em;color:#e9e1cc;white-space:nowrap}
+.dz-body{position:relative;padding:16px 18px 18px}
+.dz-top{display:grid;grid-template-columns:92px 1fr;gap:16px;align-items:start}
+.dz-photo{position:relative;width:92px;height:116px;border:1px solid var(--rule);background:#f4eee0;display:grid;place-items:center;font:600 44px var(--font-title);color:var(--ink-2)}
+.dz-photo::after{content:"像";position:absolute;bottom:4px;right:6px;font:10px var(--font-title);color:var(--ink-3)}
+.dz-photo.empty{color:#0000001a}
+.dz-city-seal{position:absolute;right:-12px;top:-10px;width:40px;height:40px;border-radius:50%;border:2px solid var(--seal);color:var(--seal);display:grid;place-items:center;font:600 18px var(--font-title);transform:rotate(-12deg);background:#ece5d4cc;opacity:0;transition:opacity .4s}
+.dz-city-seal.on{opacity:.92}
+.dz-fields{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
+.dz-f{min-width:0}
+.dz-f.wide{grid-column:1/-1}
+.dz-f dt{font:10px var(--font-body);letter-spacing:.12em;color:var(--ink-3)}
+.dz-f dd{margin:0;padding:1px 0 3px;border-bottom:1px dotted var(--rule);font:500 15px var(--font-title);color:var(--ink);min-height:26px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dz-f dd.pending{color:#00000033;font-weight:400}
+.dz-sec{margin:14px 0 4px;display:flex;align-items:center;gap:8px;font:600 11px var(--font-body);letter-spacing:.2em;color:var(--ink-2)}
+.dz-sec::after{content:"";flex:1;height:1px;background:var(--rule)}
+.dz-text{margin:0;font:13px/1.85 var(--font-title);color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.dz-text.pending{color:#00000033}
+.dz-skills{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.dz-skills span{font-size:11px;padding:0 7px;border:1px solid var(--rule);border-radius:2px;color:var(--ink-2);background:#ffffff40}
+.dz-stamps{position:sticky;bottom:0;z-index:2;display:flex;gap:10px;margin:16px -18px -18px;padding:10px 18px 12px;border-top:1px dashed var(--rule);background:linear-gradient(180deg,#e6ddc9f0,var(--paper-2))}
+.stamp{width:40px;height:40px;display:grid;place-items:center;border:1.5px dashed #00000026;color:#00000030;font:600 15px var(--font-title);border-radius:3px;transition:all .3s}
+.stamp.cur{border-color:var(--ink-3);color:var(--ink-3)}
+.stamp.done{border:2px solid var(--seal);color:var(--seal);transform:rotate(-6deg);background:#a8442e0d;animation:stampin .35s var(--ease)}
+.stamp-note{margin-left:auto;align-self:center;font:10px var(--font-body);color:var(--ink-3);text-align:right;line-height:1.5}
+/* 大印：最后一步确认时盖下 */
+.big-seal{position:absolute;right:26px;bottom:72px;width:128px;height:128px;border:3px solid var(--seal);border-radius:50%;display:grid;place-items:center;color:var(--seal);transform:rotate(-14deg) scale(1.6);opacity:0;pointer-events:none;
+  font:700 30px/1.1 var(--font-title);letter-spacing:.1em;text-align:center;box-shadow:inset 0 0 0 4px #ece5d4,inset 0 0 0 6px var(--seal)}
+.big-seal small{display:block;font:600 10px var(--font-body);letter-spacing:.3em}
+.big-seal.on{animation:bigstamp .5s var(--ease) forwards}
+.big-seal.wait{opacity:.16;transform:rotate(-14deg) scale(1);border-style:dashed}
+
+/* 右：步骤与表单 */
+.form-col{min-width:0;min-height:0;display:flex;flex-direction:column}
+.rail{flex:none;display:flex;align-items:center;gap:0;padding:22px 40px 14px;border-bottom:1px solid var(--line)}
+.rail ol{flex:1;display:flex;margin:0;padding:0;list-style:none}
+.rail li{flex:1;position:relative}
+.rail li:not(:last-child)::after{content:"";position:absolute;top:15px;left:calc(50% + 20px);right:calc(-50% + 20px);height:1px;background:var(--line-2)}
+.rail li.done:not(:last-child)::after{background:var(--gold-lo)}
+.rail ol button{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;border:0;background:none;padding:0;color:var(--muted)}
+.rail .n{width:30px;height:30px;border-radius:50%;border:1px solid var(--line-2);display:grid;place-items:center;font:12px var(--font-mono);background:var(--bg);transition:all .2s}
+.rail .t{font-size:13px;white-space:nowrap}
+.rail li.done .n{background:var(--gold);border-color:var(--gold);color:#17130a}
+.rail li[aria-current] .n{border-color:var(--gold-hi);color:var(--gold-hi);box-shadow:0 0 0 4px #e8d19620}
+.rail li[aria-current] .t{color:var(--gold-hi)}
+.rail li.done .t{color:var(--text)}
+.rail ol button:hover .t{color:var(--text)}
+.rail ol button:focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:6px}
+.rail-tools{display:flex;gap:8px;margin-left:24px}
+.btn{min-height:36px;padding:0 14px;border:1px solid var(--line-2);border-radius:8px;background:#ffffff06;font-size:13px;color:var(--text);white-space:nowrap}
+.btn:hover:not(:disabled){border-color:var(--gold-lo);background:#c9a96112}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--gold);border-color:var(--gold);color:#17130a;font-weight:600;letter-spacing:.12em}
+.btn.primary:hover:not(:disabled){background:var(--gold-hi);border-color:var(--gold-hi)}
+.btn.ghost{border-color:transparent;background:none;color:var(--muted)}
+.btn.link{border:0;background:none;padding:0;min-height:0;color:var(--gold);font-size:12px}
+.btn.danger{color:var(--err);border-color:var(--err-line)}
+
+.stage{flex:1;min-height:0;overflow:auto;padding:26px 40px 30px;scrollbar-width:thin;scrollbar-color:#ffffff22 transparent}
+.stage-in{max-width:980px;animation:slide .28s var(--ease)}
+.stage-in.back{animation:slideback .28s var(--ease)}
+.st-head{display:flex;align-items:flex-end;gap:16px;margin-bottom:18px}
+.st-head small{font:600 10px var(--font-mono);letter-spacing:.28em;color:var(--gold)}
+.st-head h2{margin:2px 0 0;font:600 26px var(--font-title);letter-spacing:.1em}
+.st-head p{margin:0 0 4px auto;font-size:12px;color:var(--dim);text-align:right;max-width:360px}
+.alert{display:flex;gap:10px;align-items:flex-start;margin:0 0 16px;padding:10px 14px;border:1px solid var(--err-line);border-radius:8px;background:#d9876b10;color:#E9B3A0;font-size:13px}
+.alert .tag{flex:none;width:20px;height:20px;border-radius:5px;display:grid;place-items:center;background:#d9876b22;color:var(--err);font:600 11px var(--font-title)}
+.alert.warn{border-color:#6e5a32;background:#d9b36a0e;color:#E6CC96}.alert.warn .tag{background:#d9b36a22;color:var(--warn)}
+.alert .grow{flex:1}
+
+.fld{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fld>span{font-size:12px;color:var(--muted);letter-spacing:.04em}
+.fld>span em{font-style:normal;color:var(--err);margin-left:2px}
+.fld>span i{font-style:normal;color:var(--dim);margin-left:6px;font-size:11px}
+.inp{width:100%;min-height:42px;padding:9px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--well);color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;resize:vertical}
+.inp:focus{border-color:var(--gold-lo);box-shadow:0 0 0 3px #c9a96118}
+.inp.bad{border-color:var(--err-line);box-shadow:0 0 0 3px #d9876b14}
+textarea.inp{line-height:1.75;font-family:var(--font-body)}
+.row{display:grid;gap:16px}
+.r-2{grid-template-columns:1fr 1fr}
+.r-name{grid-template-columns:2fr 1fr 1.4fr}
+.seg{display:flex;padding:3px;border:1px solid var(--line-2);border-radius:9px;background:var(--well);height:42px}
+.seg button{flex:1;border:0;border-radius:6px;background:none;color:var(--muted);font-size:14px}
+.seg button[aria-pressed=true]{background:#c9a9611e;color:var(--gold-hi);box-shadow:inset 0 0 0 1px var(--gold-lo)}
+.seg.bad{border-color:var(--err-line)}
+.sub-h{display:flex;align-items:center;gap:10px;margin:22px 0 10px;font:500 15px var(--font-title);letter-spacing:.12em}
+.sub-h::after{content:"";flex:1;height:1px;background:var(--line)}
+.sub-h small{font:11px var(--font-body);letter-spacing:0;color:var(--dim)}
+.tpl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.tpl button{position:relative;min-height:62px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#ffffff04;text-align:left}
+.tpl button b{display:block;font:500 14px var(--font-title);letter-spacing:.06em}
+.tpl button span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:11px;line-height:1.5;color:var(--dim);margin-top:2px}
+.tpl button:hover{border-color:var(--line-2);background:#ffffff08}
+.tpl button[aria-pressed=true]{border-color:var(--gold-lo);background:#c9a96112}
+.tpl button[aria-pressed=true] b{color:var(--gold-hi)}
+.tpl button[aria-pressed=true]::after{content:"✓";position:absolute;top:6px;right:9px;font-size:11px;color:var(--gold)}
+.tpl .free b{color:var(--muted)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+
+/* 步骤二：三栏职业浏览 */
+.jobs{display:grid;grid-template-columns:188px 260px minmax(0,1fr);gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#ffffff03;min-height:430px}
+.jobs-cat{border-right:1px solid var(--line);padding:8px;display:flex;flex-direction:column;gap:2px;background:#ffffff03}
+.jobs-cat h6,.jobs-list h6{margin:6px 8px 6px;font:500 10px var(--font-mono);letter-spacing:.22em;color:var(--dim)}
+.jobs-cat button{position:relative;display:flex;justify-content:space-between;gap:6px;text-align:left;border:0;background:none;padding:9px 10px;border-radius:7px;font-size:13px;color:var(--muted)}
+.jobs-cat button:hover{background:#ffffff08;color:var(--text)}
+.jobs-cat button[aria-pressed=true]{background:#c9a96114;color:var(--gold-hi)}
+.jobs-cat button[aria-pressed=true]::before{content:"";position:absolute;left:-8px;top:9px;bottom:9px;width:2px;background:var(--gold);border-radius:2px}
+.jobs-cat button small{flex:none;font:11px var(--font-mono);color:var(--dim)}
+.jobs-cat .free{margin-top:auto;border-top:1px solid var(--line);border-radius:0 0 7px 7px;padding-top:12px}
+.jobs-list{border-right:1px solid var(--line);padding:8px;overflow:auto}
+.job{display:block;width:100%;text-align:left;border:1px solid transparent;background:none;padding:9px 10px;border-radius:8px;margin-bottom:2px}
+.job:hover{background:#ffffff07}
+.job b{display:block;font:500 15px var(--font-title);letter-spacing:.06em}
+.job span{display:block;font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.job[aria-checked=true]{border-color:var(--gold-lo);background:#c9a96112}
+.job[aria-checked=true] b{color:var(--gold-hi)}
+.jobs-detail{padding:18px 20px;overflow:auto;min-width:0}
+.jobs-detail h4{margin:0;font:600 22px var(--font-title);letter-spacing:.12em}
+.jobs-detail .cat{font-size:11px;color:var(--gold);letter-spacing:.2em}
+.jobs-detail p{margin:8px 0 0;font-size:13px;line-height:1.85;color:var(--prose)}
+.jobs-detail h5{margin:16px 0 6px;font:500 11px var(--font-body);letter-spacing:.2em;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips span{font-size:12px;padding:2px 10px;border:1px solid var(--gold-lo);border-radius:999px;color:var(--gold-hi);background:#c9a9610c}
+.jobs-detail .empty{height:100%;display:grid;place-items:center;text-align:center;color:var(--dim);font-size:13px}
+
+/* 步骤三：四城 */
+.cities{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.city{position:relative;display:flex;flex-direction:column;min-height:300px;padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#ffffff04;text-align:left;transition:transform .2s var(--ease),border-color .2s,box-shadow .2s}
+.city:hover{transform:translateY(-2px);border-color:var(--line-2)}
+.city[aria-checked=true]{border-color:var(--c);box-shadow:0 0 0 1px var(--c),0 18px 40px -20px var(--c)}
+.city-art{position:relative;height:150px;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 32%,#0a0c0b),#0b0d0c 92%);overflow:hidden}
+.city-art svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:100%}
+.city-art .seal{position:absolute;top:12px;left:12px;width:36px;height:36px;border:1px solid var(--c);color:var(--c);display:grid;place-items:center;font:600 17px var(--font-title);background:#0006}
+.city-art .lon{position:absolute;top:16px;right:12px;font:10px var(--font-mono);color:color-mix(in srgb,var(--c) 70%,#fff);letter-spacing:.1em}
+.city-art .start{position:absolute;right:12px;bottom:12px;padding:1px 10px;border:1.5px solid var(--c);color:var(--c);font:600 12px var(--font-title);letter-spacing:.3em;transform:rotate(-6deg);background:#0009;opacity:0;transition:opacity .25s}
+.city[aria-checked=true] .start{opacity:1}
+.city-body{padding:12px 14px 14px}
+.city-body small{font-size:11px;color:var(--c);letter-spacing:.08em}
+.city-body b{display:block;margin:2px 0 6px;font:600 24px var(--font-title);letter-spacing:.24em}
+.city-body p{margin:0;font-size:12px;line-height:1.75;color:var(--muted)}
+
+/* 步骤四：同伴 */
+.switch-card{display:flex;align-items:center;gap:16px;padding:16px 18px;border:1px solid var(--line);border-radius:12px;background:#ffffff04;cursor:pointer}
+.switch-card .t{flex:1}
+.switch-card b{font:500 16px var(--font-title);letter-spacing:.1em}
+.switch-card p{margin:2px 0 0;font-size:12px;color:var(--dim)}
+.sw{appearance:none;width:44px;height:24px;border-radius:999px;background:#ffffff22;position:relative;margin:0;cursor:pointer;transition:background .2s;flex:none}
+.sw::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#e8e4d8;transition:transform .2s}
+.sw:checked{background:var(--ok)}
+.sw:checked::after{transform:translateX(20px)}
+.sw:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.comp-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 16px;margin-top:16px}
+.comp-grid .w2{grid-column:span 2}
+.skip{margin-top:14px}
+
+/* 步骤五：复核 */
+.review{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.rv{border:1px solid var(--line);border-radius:12px;background:#ffffff04;padding:14px 16px}
+.rv-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.rv-h b{font:600 15px var(--font-title);letter-spacing:.14em}
+.rv-h .idx{font:11px var(--font-mono);color:var(--gold)}
+.rv-h .btn.link{margin-left:auto}
+.rv dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0;font-size:13px}
+.rv dt{color:var(--dim);white-space:nowrap}
+.rv dd{margin:0;min-width:0;color:var(--prose);overflow-wrap:anywhere}
+.rv dd.long{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.rv details{margin:8px 0 6px;font-size:12px}
+.rv details summary{cursor:pointer;color:var(--muted)}
+.rv details dl{margin-top:6px}
+.rv .muted{color:var(--dim);font-size:12px;margin:4px 0 0}
+.rv.full{grid-column:1/-1}
+.fee{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:10px 14px;border:1px solid #6e5a32;border-radius:8px;background:#d9b36a0a;font-size:12px;color:#E6CC96;line-height:1.7}
+
+/* 底栏 */
+.foot{flex:none;display:flex;align-items:center;gap:14px;padding:12px 40px;border-top:1px solid var(--line);background:#0c0e0dcc;backdrop-filter:blur(10px)}
+.foot .mid{flex:1;text-align:center;font-size:12px;color:var(--dim)}
+.foot .mid b{font:12px var(--font-mono);color:var(--muted);margin-right:8px}
+.foot .btn{min-height:42px;padding:0 20px}
+.foot .btn.primary{min-width:200px}
+
+/* 开局包对话框 */
+.modal-bg{position:fixed;inset:0;z-index:80;background:#000a;display:grid;place-items:center;animation:fade .2s}
+.modal{width:min(560px,92vw);max-height:80vh;display:flex;flex-direction:column;border:1px solid var(--line-2);border-radius:14px;background:var(--panel);box-shadow:0 30px 80px -20px #000;animation:pop .22s var(--ease)}
+.modal-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.modal-h .seal{width:28px;height:28px;border:1px solid var(--gold);display:grid;place-items:center;color:var(--gold);font:14px var(--font-title)}
+.modal-h b{flex:1;font:600 16px var(--font-title);letter-spacing:.14em}
+.modal-h .x{border:0;background:none;color:var(--muted);font-size:20px;width:34px;height:34px;border-radius:8px}
+.modal-b{padding:14px 18px;overflow:auto}
+.modal-f{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--line)}
+.packs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.packs button{width:100%;display:grid;grid-template-columns:1fr auto;gap:2px 10px;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#ffffff04}
+.packs button b{font:500 15px var(--font-title);letter-spacing:.06em}
+.packs button small{grid-column:1;font-size:11px;color:var(--dim)}
+.packs button time{grid-row:1/span 2;grid-column:2;align-self:center;font:11px var(--font-mono);color:var(--dim)}
+.packs button[aria-pressed=true]{border-color:var(--gold-lo);background:#c9a96112}
+.packs button[aria-pressed=true] b{color:var(--gold-hi)}
+.modal-note{margin:10px 0 0;font-size:12px;color:var(--dim)}
+
+@keyframes slide{from{opacity:0;transform:translateX(18px)}}
+@keyframes slideback{from{opacity:0;transform:translateX(-18px)}}
+@keyframes stampin{0%{transform:rotate(-6deg) scale(1.6);opacity:0}100%{transform:rotate(-6deg) scale(1);opacity:1}}
+@keyframes bigstamp{0%{opacity:0;transform:rotate(-14deg) scale(1.8)}60%{opacity:.95;transform:rotate(-14deg) scale(.96)}100%{opacity:.9;transform:rotate(-14deg) scale(1)}}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:1240px){
+  .creation{grid-template-columns:340px minmax(0,1fr)}
+  .tpl{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cities{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .city{min-height:250px}.city-art{height:110px}
+  .jobs{grid-template-columns:160px 210px minmax(0,1fr)}
+  .comp-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .two-col{grid-template-columns:1fr;gap:6px}
+  .review{grid-template-columns:1fr}
+  .rail,.stage,.foot{padding-left:28px;padding-right:28px}
+  .rail .t{font-size:12px}
+  .dz-band small,.stamp-note{display:none}
+  .dossier-col{padding-left:28px}
+}
+</style>
+</head>
+<body>
+
+<div class="demo-bar" role="toolbar" aria-label="演示控制">
+  <b>电脑端创角五步 · 设计稿</b>
+  <div class="grp"><span>状态</span><span id="modeBtns"></span></div>
+  <div class="grp"><span>示例</span><button id="fillBtn">填入示例人物</button><button id="clearBtn">清空</button></div>
+  <span class="sp"></span>
+  <button id="notesBtn" aria-pressed="false">设计说明</button>
+</div>
+
+<aside class="demo-notes" id="notes" hidden>
+  <h4>思路：左边立档，右边填写</h4>
+  <ul>
+    <li>左边是一份<b>人物档案</b>（档案纸，和电脑端世界资料面板同一套纸张语言），你在右边填什么，它就实时写上什么。每完成一步盖一枚红章；选好城市后档案顶边换成城市色，并盖上城市印（渝 / 沪 / 冰 / 穗）。</li>
+    <li>右边是分步表单：顶部五个站点可以直接点，底部固定“上一步 / 下一步”，整页不滚动，只有表单区域在需要时滚动。</li>
+    <li>最后一步点“确认并创建存档”时，档案上盖下“立档”大印，然后进入保存与自动开局。</li>
+  </ul>
+  <h4>每一步怎么用宽屏</h4>
+  <ul>
+    <li><b>基本信息</b>：姓名 / 年龄 / 性别一行；外貌与性格并排，模板做成可预览的小卡（显示前两行描述），选中后填入下方文本框，仍可自由改写。</li>
+    <li><b>职业与能力</b>：三栏浏览——左分类（5 类 + 自由选择）、中职业（显示技能摘要）、右详情（介绍、内置技能、长期影响）。下方保留“个人技能与专长”。自由选择时右侧换成四个自定义字段。</li>
+    <li><b>城市与背景</b>：四城大卡，用城市色、天际线剪影、城市印和经度；选中盖“起点”。背景文本框与“跳过背景”在下方。</li>
+    <li><b>初始同伴</b>：一张开关卡；打开后 8 个字段四列排布。</li>
+    <li><b>确认与开局</b>：四块复核卡并排，每块都能“修改”跳回对应步骤；“完整职业表单”保留在折叠里；开局偏好与费用提醒放在最后。</li>
+  </ul>
+  <h4>没有少的东西</h4>
+  <ul>
+    <li>所有字段、模板、30 种职业、4 座城市、跳过背景 / 跳过同伴、开局包（我的开局包 / 保存为开局包）、开局时间说明、费用提醒、校验提示、“填写内容自动保留”都保留，文案不变。</li>
+    <li>顶部演示条可切换：<b>校验错误</b>（第 1 步未填姓名）、<b>保存中</b>、<b>保存失败</b>。</li>
+  </ul>
+  <h4>只改电脑端</h4>
+  <ul>
+    <li>≥901px 生效；手机端的“人生车票”保持不变。数据、校验、建档与开局授权流程不改。</li>
+  </ul>
+</aside>
+
+<div class="app">
+  <header class="app-hd">
+    <span class="brand-mark">黑</span>
+    <span class="brand"><b>黑金王朝</b><small>HEIJINWANGCHAO</small></span>
+    <nav><span>游戏首页</span><span>设置</span><span>V1.0 BETA</span></nav>
+  </header>
+  <main class="creation" id="root"></main>
+</div>
+<div id="modalHost"></div>
+
+<script>
+const DATA={"professions": [{"name": "大学生", "category": "学生与人生阶段", "description": "在高校接受专业教育，日常围绕课堂、实验、作业和社团活动展开，也可能利用课余时间实习或兼职。需要在学业要求、生活开支与同龄人的交往之间寻找平衡，接触教师、同学和校园服务人员。具体专业与家庭条件各不相同，对未来方向可能已有打算，也可能仍在尝试和探索。", "skills": ["课程学习", "资料检索", "团队协作", "基础写作"], "longTermImpact": "校园生活逐渐形成资料检索、独立学习和合作完成任务的习惯，同学与师长可能成为多年后的联系。所学专业影响观察问题的角度，但课堂知识仍需实践检验。毕业、实习和异地求职会带来生活节奏变化，具体学历、成绩和机会依人物背景确定，学生身份并不意味着缺乏生活经验。"}, {"name": "研究生", "category": "学生与人生阶段", "description": "在完成基础高等教育后继续接受研究训练，围绕专业问题阅读文献、开展实验或调查，并承担论文和项目任务。日常往返于课堂、实验室、图书馆及实践地点，与导师和同门频繁协作。研究进展、成果要求与个人生活可能相互牵制，不同学科的工作方式和资助条件存在明显差别。", "skills": ["文献检索", "研究设计", "数据整理", "学术写作"], "longTermImpact": "长期研究训练有助于形成追问依据、记录过程和反复检验结论的习惯，也会使知识积累集中在特定领域。导师、同门及合作项目可能影响就业方向，但并不自动带来职位或资源。面对研究受阻和毕业选择，人物可能重新衡量理想与生活；专业深度也不能替代其他行业的实际经验。"}, {"name": "职业学校学生", "category": "学生与人生阶段", "description": "在职业院校学习一门面向实际岗位的专业，课程包含基础理论、实训操作与安全规范，部分阶段需要进入企业见习。日常接触实训教师、同学和带教人员，在反复练习中了解工具与工作流程。所学方向可能是制造、护理、服务或信息技术，具体资格与熟练程度仍需由经历决定。", "skills": ["实操学习", "工具识别", "规范操作", "协作记录"], "longTermImpact": "实训经历使人物更容易注意操作步骤、设备状况和现场协作，也较早接触岗位纪律及劳动环境。同学、带教人员和实习单位可能成为求职线索，技能需要持续练习才能熟练。升学、就业或跨行发展都可成为之后的选择，不因学校类型限定志向，也不自动授予尚未取得的职业证书。"}, {"name": "应届毕业生", "category": "学生与人生阶段", "description": "刚完成一段正式教育，正从校园走向工作与独立生活，日常可能同时处理求职、面试、搬家和毕业手续。已积累所学专业的基础知识，但对岗位分工、劳动关系及城市生活成本仍在熟悉。会接触招聘人员、旧同学和新同事，第一份工作的选择常与家庭支持和个人期待交织在一起。", "skills": ["信息检索", "简历整理", "基础办公", "学习适应"], "longTermImpact": "从学生到职场的过渡会逐渐改变时间安排、消费习惯与交往范围，面试和试岗经历也可能修正对行业的想象。校园联系仍然重要，新工作带来的技能则需要实际积累。毕业并不自动意味着失业或经济拮据，人物可以从稳定机会起步，也可以继续深造或尝试其他生活方式。"}, {"name": "待业求职者", "category": "学生与人生阶段", "description": "当前没有固定工作，正在寻找适合自己的岗位或调整职业方向，日常可能包括投递简历、参加面试、学习技能和处理生活事务。此前可能已有丰富经历，也可能刚离开学校，不能仅凭待业状态判断能力。求职节奏受到行业机会、家庭安排与可承受开支影响，兼职或短期项目也可能出现。", "skills": ["岗位筛选", "信息核对", "面试沟通", "时间安排"], "longTermImpact": "求职过程会让人物更熟悉招聘渠道、岗位要求与自身优势，也可能促使其重新考虑通勤、收入和生活质量的取舍。原有同行与朋友可以提供信息，但具体帮助取决于关系。待业不会抹去已学技能，也不预设失败人生；重新就业、转行或自主经营都应由后续选择和实际条件展开。"}, {"name": "退休人士", "category": "学生与人生阶段", "description": "已经结束主要的全职职业阶段，将更多时间用于家庭、兴趣、社区活动或个人事务，也可能继续承担顾问和零散工作。此前行业、健康状况和家庭结构会影响当下生活，收入可能来自养老金或其他既有安排。与旧同事、邻里和亲友保持联系，日常节奏不必围绕固定的上下班时间展开。", "skills": ["生活统筹", "经验整理", "人际沟通", "事务协调"], "longTermImpact": "多年职业与生活经历可能留下稳定的知识、习惯和社会联系，退休后仍可学习新事物并选择新的目标。家庭照料、社区参与和兴趣活动会带来不同的人际互动，体力与时间安排需依实际状态描述。退休身份不等于衰弱、富有或孤独，养老金与资产也必须以明确的世界资料为准。"}, {"name": "企业职员", "category": "企业与商业", "description": "在企业承担具体业务岗位，日常处理文件、会议、客户需求或内部协作，工作内容随部门和行业而变化。需要理解组织流程，与同事、上级及合作方保持沟通，并在期限和质量要求之间安排任务。通勤、绩效和团队氛围影响生活感受，普通岗位也可能积累扎实而有价值的专业经验。", "skills": ["办公协作", "业务沟通", "资料整理", "流程跟进"], "longTermImpact": "长期职场生活会培养对流程、分工和组织关系的认识，办公技能及沟通习惯随着任务磨练逐渐形成。熟悉的同事和合作方可能成为持续联系，岗位调整也会改变生活节奏。晋升、离职或转行都取决于经历与选择，不凭企业职员身份自动确定收入、管理权限或所属公司的规模。"}, {"name": "企业经营者", "category": "企业与商业", "description": "从事企业经营、商业管理和项目运作，日常处理客户往来、业务谈判、人员安排及经营决策。需要关注市场竞争、行业变化与资金周转，也要面对团队协作和合作关系中的具体问题。经历可以从初创业务负责人到多年管理者不等，经营成果与企业规模应根据人物背景分别确定。", "skills": ["商业谈判", "企业管理", "市场分析", "商务沟通", "经营规划"], "longTermImpact": "经营经历使人物较熟悉市场变化、利益交换和经营风险，也可能在相关行业积累经验与联系。商业合作、企业竞争和经营纠纷更容易进入生活，作息往往受到客户与项目影响。但财富、公司规模、股权及实际人脉必须依正式状态确定，职业名称不能直接创造企业资产或支配他人的权限。"}, {"name": "个体商户", "category": "企业与商业", "description": "经营个人门店、摊位或小型业务，日常需要进货、陈列、接待顾客和核对收支，并与供货方及周边商户打交道。熟悉商品特点、客流变化与附近居民的实际需求，营业时间往往较长。生意可能平稳也可能具有季节性，租金、进货成本和家庭分工共同影响经营方式与生活安排。", "skills": ["采购比价", "库存管理", "顾客沟通", "日常记账"], "longTermImpact": "持续经营会积累辨别货品、控制损耗和处理顾客关系的经验，对街区变化与生活价格较为敏感。熟客、邻铺和供应商可能构成稳定社交圈，节假日也可能意味着更忙碌的工作。是否拥有店面、存货和盈利须由具体状态决定，之后可以扩大经营、转行或调整营业方式，不被身份固定。"}, {"name": "销售人员", "category": "企业与商业", "description": "围绕产品或服务开展客户沟通，日常寻找潜在需求、准备介绍材料、跟进合作进度并处理成交后的反馈。工作可能发生在门店、办公室或频繁外出的途中，需要与客户、同事和业务支持部门配合。业绩目标与客户节奏带来压力，收入方式和销售对象因行业而异，不意味着总能说服别人。", "skills": ["需求访谈", "产品讲解", "客户维护", "商务谈判"], "longTermImpact": "反复接触不同客户有助于形成提问、倾听和表达方案的习惯，对需求变化与合作信号较为敏感。积累的联系可能提供机会，也需要长期维护信用和服务质量。业绩波动会影响作息与规划，但职业经历不等同于操纵他人的能力，更不能自动生成客户资源、订单或额外收入。"}, {"name": "金融从业者", "category": "企业与商业", "description": "在银行、证券、保险或其他金融机构承担具体岗位，日常可能涉及业务办理、资料核对、客户服务及风险管理。需要理解产品条款和合规流程，与客户、同事及审核人员协作。市场变化和考核压力影响工作节奏，前台业务与分析岗位的经历并不相同，专业方向应依人物设定明确。", "skills": ["财务阅读", "数据核对", "风险识别", "客户沟通"], "longTermImpact": "长期接触资金、合同与风险问题，会形成关注数字、期限和责任边界的习惯，也可能拓宽对企业和家庭财务的理解。同行联系及专业学习有助于发展，但信息和执业权限仍受实际岗位限制。金融背景不保证投资获利或财富，更不自动拥有账户访问权、内幕消息和任何尚未取得的资质。"}, {"name": "房地产经纪人", "category": "企业与商业", "description": "从事房屋租赁或买卖的居间服务，日常核实房源信息、安排带看、沟通双方需求并跟进手续。需要熟悉街区、交通、楼宇条件和常见交易流程，频繁接触租客、业主及其他经纪人。工作时间常随客户安排变化，收入可能波动，能否成交还取决于市场、真实房源和双方条件。", "skills": ["房源整理", "带看沟通", "价格比较", "交易流程协调"], "longTermImpact": "持续走访社区使人物熟悉城市生活空间、住房需求及不同家庭的预算压力，沟通和材料核对能力也随经验积累。业主与同行联系可能带来业务线索，市场起落则影响生活规划。职业不会赋予房屋产权或无条件进入住宅的权利，对合同和价格的判断也不能替代专业审查与真实交易。"}, {"name": "教师", "category": "专业与公共服务", "description": "从事学校或其他教育机构的教学工作，日常准备课程、组织课堂、批改作业并了解学习进度。与学生、家长、同事和管理人员保持联系，也需要处理考试安排及集体活动。学科、学段与任职经历影响工作方式，课堂之外仍有大量准备和沟通任务，不同学校的资源和要求并不一致。", "skills": ["课程设计", "课堂讲授", "学习反馈", "班级沟通"], "longTermImpact": "长期教学可能培养条理化表达、观察理解差异和耐心沟通的习惯，对教育与家庭议题更有切身体会。师生、家校及同事关系会留下持续影响，学期节奏也容易融入生活安排。具体任职和资质应以背景为准，教师身份不意味着替学生做决定，也不自动获得学校管理权限或额外社会地位。"}, {"name": "医生", "category": "专业与公共服务", "description": "在医疗机构承担与专业方向相符的诊疗工作，日常接诊、查看检查资料、记录病情并与团队协作。需要面对患者和家属的焦虑，遵循诊疗流程及岗位要求，部分科室存在夜班与突发任务。专科、年资及工作环境决定实际职责，医学知识不能脱离检查条件直接保证诊断和治疗结果。", "skills": ["临床问询", "医学资料阅读", "诊疗协作", "基础急救"], "longTermImpact": "长期临床经历会强化观察细节、关注风险和交接记录的习惯，也可能改变作息与情绪调节方式。患者、同事和学术交流构成不同的社会联系，持续学习十分重要。职业资料不自动授予执业证件、处方权限或医疗设备，能力边界仍取决于具体资质、经验和现场条件，不把人物写成全能医生。"}, {"name": "律师", "category": "专业与公共服务", "description": "围绕委托事务提供法律服务，日常查阅法规、整理材料、起草文书并与当事人沟通方案。工作可能涉及合同审阅、纠纷协商或诉讼准备，需要与团队及有关机构按程序联系。专业领域与执业阶段决定熟悉的事务，案件期限和客户需求影响作息，结果受事实、程序及多方因素制约。", "skills": ["法律检索", "文书写作", "争议分析", "协商沟通"], "longTermImpact": "法律工作会培养区分主张与材料、留意责任和期限的习惯，也使人物经常接触商业合作及家庭纠纷。同行、客户和学习经历可能拓宽视野，但不能由职业自动推定具体委托、执业证件或司法关系。谨慎表达可以成为习惯，也可能增加沟通距离，人物依然可以选择自己的生活与交往方式。"}, {"name": "记者", "category": "专业与公共服务", "description": "从事新闻采访、调查与报道，日常寻找选题、联系受访者、核对材料并完成稿件或影像内容。需要适应现场变化和编辑期限，与不同职业、年龄和处境的人交流。媒体类型与负责领域影响工作方式，采访机会、公开资料与报道要求存在现实边界，不能把听到的说法直接当成定论。", "skills": ["采访提问", "资料核对", "线索整理", "报道写作"], "longTermImpact": "长期采访可能培养倾听、追问和整理复杂经历的能力，也使人物对社会变化较为敏感。受访者、同行和编辑之间的联系会影响信息来源与职业选择，赶稿和外出可能打乱日常。记者身份不赋予任意进入场所或调取私人资料的权限，具体信誉、资源与成果须在实际经历中逐步建立。"}, {"name": "刑警", "category": "专业与公共服务", "description": "在公安机关刑事侦查岗位工作，按具体分工参与线索核查、走访调查、材料整理和团队行动。需要与同事及有关人员配合，重视程序和现场记录，日常可能交织着案头工作、等待与突发任务。岗位、辖区和年资影响实际职责，行动受法律和组织安排约束，不能仅凭身份任意调动资源。", "skills": ["案件调查", "现场观察", "材料整理", "警务协作"], "longTermImpact": "侦查经历可能形成细致观察、核对信息和重视协作的习惯，也会影响对风险及人际关系的感受。复杂作息与工作保密要求可能进入家庭生活，同行关系需依实际经历积累。执法权限、装备、案件资料和行动指令都须有明确状态支持，职业模板不直接授予武器、无限调查权或他人的服从。"}, {"name": "基层公务员", "category": "专业与公共服务", "description": "在基层机关承担公共服务或行政事务，日常阅读政策、整理材料、办理流程并回应群众需求。需要与同事、其他部门及社区人员协作，将具体问题放入制度和职责范围内处理。岗位可能偏向窗口、综合事务或基层走访，工作节奏受到事务数量和阶段任务影响，不等同于拥有管理一切的权力。", "skills": ["政策阅读", "公文处理", "群众沟通", "事务协调"], "longTermImpact": "长期公共服务会让人物熟悉办事程序、政策表达和不同群体的现实诉求，也可能培养耐心解释与协调冲突的习惯。部门同事和工作往来构成部分社会联系，但私人关系不能替代法定程序。具体职级、权限与待遇依正式资料确定，身份不会自动赋予特殊资产、通行便利或任意调动人员的能力。"}, {"name": "程序员", "category": "技术与生产", "description": "从事软件开发、维护或相关技术工作，日常分析需求、编写代码、测试功能并处理运行问题。与产品、设计、测试和其他开发者协作，工作可能发生在办公室或远程环境。项目交付与故障处理影响节奏，技术方向和经验差异很大，能够编程不等于熟悉所有设备、系统和网络安全事务。", "skills": ["编程实现", "代码阅读", "问题排查", "版本协作"], "longTermImpact": "持续开发会培养拆解问题、检索资料和记录变更的习惯，对数字产品及流程改进较为敏感。技术社区、团队协作与项目积累可能影响后续机会，久坐及集中工作也会改变作息。职业不自动赋予系统访问权限、黑客能力或高收入，跨领域任务仍需学习，人物可以自主决定技术之外的生活目标。"}, {"name": "工程师", "category": "技术与生产", "description": "在具体工程领域参与设计、实施或技术支持，日常阅读图纸、核对参数、沟通方案并跟进现场问题。工作可能往返于办公室、工厂和项目地点，需要与施工、生产及管理人员协作。专业方向、项目规模和岗位分工决定实际职责，技术判断需要依赖资料、规范及现场条件，不能泛化为万能技能。", "skills": ["技术制图", "方案分析", "质量检查", "项目协作"], "longTermImpact": "工程实践会形成关注安全、成本和可实施性的习惯，长期项目也可能带来跨部门及跨城市的协作经验。行业联系人、技术学习和现场反馈逐步塑造能力，项目周期常影响生活安排。具体资质与签审权限须以正式经历为准，职业名称不能自动生成承包项目、工程设备或任何尚未确认的权利。"}, {"name": "汽修技师", "category": "技术与生产", "description": "在维修门店或汽车服务机构处理车辆保养与故障问题，日常检查零部件、读取检测结果、拆装维护并向客户解释情况。需要与同事和配件供应方协作，重视工序、工具及安全操作。熟悉的车型和技术方向随经历不同，维修效果受到检测条件、配件和实际故障影响，不能凭听声便保证排除问题。", "skills": ["车辆检修", "故障排查", "工具使用", "保养沟通"], "longTermImpact": "反复检修会积累对车辆结构、磨损和使用习惯的认识，也培养耐心排查及动手操作能力。客户、同行和供应商可能构成稳定联系，旺季与紧急维修影响休息安排。技能并不自动转化为车辆所有权或万能改装能力，后续可选择深造、管理或自主经营，所需设备与资金仍以实际状态为准。"}, {"name": "工厂技工", "category": "技术与生产", "description": "在生产现场从事具有技术要求的操作、装配或维护工作，日常依据工艺要求处理材料、使用设备并核对质量。需要与班组、质检及维修人员配合，关注安全规范和生产节拍。行业、工种与熟练程度决定实际工作，轮班和订单变化可能影响生活，不将所有工厂岗位混同为简单重复劳动。", "skills": ["设备操作", "工艺识读", "质量自检", "生产协作"], "longTermImpact": "长期生产实践会使人物熟悉工序衔接、异常征兆和团队配合，技术经验往往来自持续操作与问题反馈。班组关系及师徒传授可能留下深刻影响，作息也容易受到班次安排牵动。技能成长不能自动获得设备产权或管理权限，具体待遇与职业发展仍由企业、岗位和人物选择共同决定。"}, {"name": "建筑工人", "category": "技术与生产", "description": "在建筑施工现场承担具体工种的作业，日常按施工安排准备材料、使用工具并与不同工序的人员配合。需要关注现场安全、天气和进度要求，工作地点可能随项目变化。泥瓦、木工等工种各有专长，劳动强度与住宿通勤条件因项目不同，不能只凭职业推定人物贫困或缺乏教育。", "skills": ["施工识图", "安全操作", "工具使用", "现场配合"], "longTermImpact": "长期现场经历会培养对空间、材料和安全风险的直观认识，也可能形成跨地区工作及班组合作的习惯。熟悉的工友和项目负责人可能带来后续机会，工程周期会影响家庭团聚与收入节奏。具体技能、劳动关系和报酬应依实际经历确定，不自动赋予工程承包权或任何未登记的设备资产。"}, {"name": "仓储物流人员", "category": "技术与生产", "description": "在仓库、分拣中心或物流网点参与收货、验货、存放与出库作业，日常使用清单和系统核对货品流向。需要与运输、采购及同班人员协作，在效率和差错控制之间保持平衡。工作可能包含轮班、搬运和异常件处理，所需设备资格依岗位而定，不默认所有人员都能操作特殊机械。", "skills": ["货品核对", "库存盘点", "配送协调", "安全搬运"], "longTermImpact": "持续物流工作会培养分类记录、检查细节与安排顺序的习惯，对配送节奏和供应链中断较为敏感。网点、司机及同事之间的联系可能影响工作机会，旺季和夜班也会改变生活节律。对货物流转的了解不代表货物归属或任意处置权，后续岗位调整仍须尊重实际能力、手续与个人选择。"}, {"name": "外卖骑手", "category": "城市服务与自由职业", "description": "在城市中提供即时配送服务，日常往返商家、道路和住宅楼宇，核对订单并安排取送顺序。需要适应天气、交通及楼宇出入条件，与商家和顾客沟通等待或地址问题。平台规则和高峰时段影响节奏，实际收入与工作安排因人而异，熟悉街面并不意味着可以忽略交通和安全风险。", "skills": ["路线规划", "地址辨认", "配送调度", "客户沟通"], "longTermImpact": "长期配送会积累对街区、商圈及生活设施的细致认识，也训练临场安排和处理突发情况的能力。商家、同行和常见顾客可能成为日常联系，饭点与天气会影响休息安排。职业不自动带来交通工具产权或特定经济困境，人物可以选择兼职、稳定接单或转向其他工作，既有经历仍然保留。"}, {"name": "网约车司机", "category": "城市服务与自由职业", "description": "通过合法客运安排提供出行服务，日常接送乘客、规划路线、关注交通变化并维护车辆使用状态。频繁接触机场、车站、商务区与住宅社区，需要处理等候、沟通和行程异常。收入、车源和排班方式各不相同，夜间与高峰出车可能带来疲劳，驾驶经验也需要适应具体道路和车辆条件。", "skills": ["城市驾驶", "路线判断", "服务沟通", "车辆日检"], "longTermImpact": "持续客运工作会加深对城市空间、出行节律和服务需求的认识，乘客交谈可能扩展生活见闻，但不构成自动获得私人信息的渠道。作息与车辆维护常成为生活安排的重要部分。驾驶资格、营运手续和车辆产权须以正式资料为准，职业不会自动授予这些条件，也不预设人物的收入或家庭关系。"}, {"name": "安保人员", "category": "城市服务与自由职业", "description": "在企业、社区或公共场所承担巡查、出入登记及秩序维护工作，日常留意设施状况、回应访客并处理常见纠纷。需要与同事、物业或现场负责人按流程协作，岗位可能包含轮班和夜间值守。不同场所的风险与职责差别明显，工作强调观察和沟通，不能把安保身份当作普遍执法资格。", "skills": ["秩序维护", "风险观察", "出入登记", "应急协作"], "longTermImpact": "长期值守可能培养对环境变化、人员往来和应急路线的敏感，也形成交接记录与守时的习惯。与居民、员工或商户的日常接触会留下关系，轮班则可能影响家庭和休息安排。具体装备、访问权限和处置范围依实际岗位确定，不因职业自动拥有武器、搜查权或强迫他人服从的资格。"}, {"name": "餐饮从业者", "category": "城市服务与自由职业", "description": "在餐馆、食堂或其他餐饮场所承担厨房、服务及相关岗位，日常准备食材、安排出餐或回应顾客需求。需要重视卫生、节奏和团队配合，午晚高峰往往较为忙碌。不同岗位有各自的操作与服务经验，工作环境和排班差异明显，不能仅凭身份推定拥有店铺或掌握所有菜系的制作技能。", "skills": ["餐饮服务", "食品卫生", "备料协作", "顾客沟通"], "longTermImpact": "长期餐饮工作会让人物熟悉食材使用、顾客偏好和忙时协作，也可能养成错峰用餐与站立工作的习惯。同事、供货方及熟客形成生活中的部分联系，节假日经常与工作安排交织。具体厨艺与管理经验需要逐步积累，职业不自动附带门店资产、食品资质或稳定盈利，转岗选择仍由人物决定。"}, {"name": "酒店服务人员", "category": "城市服务与自由职业", "description": "在酒店承担前台、客房或其他服务岗位，日常根据分工处理接待、客房安排、用品检查和客人反馈。需要与不同班组协作，兼顾服务礼仪、隐私与工作流程，节假日和夜班可能比较忙碌。服务对象与酒店规模影响工作体验，不能把接触住客等同于可随意查看或传播住客资料。", "skills": ["接待沟通", "服务协调", "客房流程", "突发事务处理"], "longTermImpact": "长期服务经历会培养留意细节、应对需求和协调异常的习惯，也可能提高面对不同文化与生活方式的适应能力。同事和行业联系影响工作机会，轮班则改变休息与社交节奏。实际语言能力、岗位权限和管理职责依人物资料确定，职业不会自动生成酒店所有权或任何私人信息访问权。"}, {"name": "自由职业者", "category": "城市服务与自由职业", "description": "以非固定雇佣方式提供专业服务或独立创作，日常联系客户、商议任务、安排交付并处理收支事务。工作可以在家中、共享空间或项目现场进行，业务方向由个人专长决定。自由度与不确定性并存，需要在寻找项目、完成工作和维持生活之间分配时间，不将所有自由职业者描绘为同一种行业。", "skills": ["项目沟通", "工作规划", "合同阅读", "自我学习"], "longTermImpact": "独立工作可能强化自我安排、表达需求和维护合作关系的能力，也让人物更关注期限、信用及收入节奏。客户、同行和兴趣社群可能形成长期联系，但具体资源需要在经历中积累。自由职业不自动意味着高收入或不稳定生活，人物可保留多种身份并调整方向，专业技能与资产仍按实际资料确定。"}], "appearance": [{"name": "自然耐看", "description": "五官协调，体态自然，眉眼舒展，神情真实亲切。外表没有夸张的特征，肤色健康，发型和衣着简单舒适。整体不刻意张扬，初看普通，相处久后却能发现自然耐看的特点。举止随和，表情变化丰富，带有鲜明的日常生活气息，在熟悉的环境里尤其显得自在。"}, {"name": "清爽干练", "description": "身形匀称，仪态挺拔，眉眼清晰，面容整洁，目光专注。发型利落，衣着讲究合身和协调，喜欢简洁得体的搭配。行动节奏明快，动作干净，不拖泥带水，站立和行走时都保持自然的精神状态。整体形象既有年轻活力，也有成熟得体的一面，不靠繁复装饰引人注意。"}, {"name": "温润斯文", "description": "面容清秀柔和，眉眼细致，目光温和，五官线条流畅。身形匀称，姿态舒展，表情平静自然，衣着偏向干净、素雅、舒适的风格。微笑时显得亲切，倾听时神情专注，举止文雅而不拘谨。整体气质温和、含蓄、从容，细微的表情与放松的动作让人感到容易接近。"}, {"name": "冷峻凌厉", "description": "面部轮廓鲜明，眉骨与下颌线条清晰，眼神深邃锐利，神情沉静。发型简洁，身姿挺拔，站姿稳定，举止克制，衣着偏好低调、深色且有质感的搭配。平时表情较少，沉默时带有距离感，目光转动和抬手等细节却十分鲜明。偶尔流露的浅笑柔化了轮廓，也更容易令人留下印象。"}, {"name": "成熟硬朗", "description": "体格结实，肩背宽实，面部骨相明显，眉眼沉稳，肤色健康。发型简单实用，双手骨节分明，体态放松却有力量，站立与行走都显得稳健。外表带有生活历练留下的自然痕迹，衣着重视耐穿与舒适，不刻意追逐繁复搭配。整体气质沉着、厚重、坚实，表情变化中透出成熟感。"}, {"name": "惊艳出众", "description": "五官比例精致协调，面部轮廓立体，眉眼明亮而富有神采，容貌具有鲜明辨识度。肤质细腻，发型整洁，身形修长，体态优雅，拥有较为突出的个人风格。即使穿着简单也容易引人注意，表情自然生动，微笑时具有感染力。整体气质耀眼而不过分浮夸，日常举止也保持舒展自然。"}], "personality": [{"name": "沉稳谨慎", "description": "做事周密细致，习惯先观察环境、分析利弊，再采取行动。面对陌生人礼貌克制，不轻易交付信任，却重视承诺与可靠的关系。遇到突发情况时善于稳定情绪，寻找解决办法。重视长期积累与安全感，有时会因为过度考虑风险而显得犹豫，真正触及原则时又能够坚持立场。"}, {"name": "开朗健谈", "description": "性格热情爽朗，待人自然大方，擅长主动交流，容易活跃气氛。对新鲜事物充满好奇，适应陌生环境的能力较强。重视友情，乐于帮助熟悉的人。说话风趣，情绪表达丰富，偶尔因为过分乐观而忽视风险，也可能先答应事情再考虑细节，但对真正重要的人与事往往格外认真。"}, {"name": "冷静理性", "description": "思维清晰，观察细致，善于从复杂信息中找出关键问题。做决定时重视逻辑、事实和实际后果，不愿轻易受到情绪影响。表达观点简洁明确，习惯通过理由说服别人。对陌生人保持距离，内心并非没有感情，只是不习惯直接流露。有时容易显得固执、挑剔，面对复杂的人情纠葛也可能感到为难。"}, {"name": "直率果敢", "description": "性格坦率，爱憎分明，讨厌虚伪与拐弯抹角。遇到困难时倾向于主动面对，行动果断，敢于承担一定风险。重视朋友与承诺，对不公平的事情往往难以保持沉默。情绪表达直接，有时显得急躁、好胜、缺乏耐心，容易因为冲动与人发生摩擦，但做错事情后也愿意面对后果。"}, {"name": "圆滑世故", "description": "心思细腻，善于察言观色，能够敏锐察觉不同人物的情绪、身份和利益关系。说话讲究分寸，懂得保留余地，不轻易暴露全部想法。熟悉人情往来，善于协调矛盾和寻找机会。看似随和，实际上对得失有着清醒判断。重视利益，也珍惜值得信任的关系，有时因顾虑较多而显得不够坦诚。"}, {"name": "野心勃勃", "description": "拥有强烈的进取心，不甘心长期停留在平凡的位置，对事业、财富、地位和个人成就抱有较高期待。善于寻找机会，能够为明确目标投入时间与精力。面对竞争不轻易认输，渴望掌握自己的人生。具有韧性和行动力，但也容易给自己过多压力，有时忽略生活中的简单快乐与身边人的感受。"}], "cities": [{"id": "chongqing", "name": "重庆", "label": "山城 · 江岸与街巷", "description": "长江与嘉陵江交汇，山地街区、跨江交通与立体城市空间交织。制造业、商贸与社区生活相邻，出行距离不能只看地图上的直线。"}, {"id": "shanghai", "name": "上海", "label": "海派 · 街区与都市", "description": "金融、航运与专业服务汇集，老街区和新商务区共存。轨道交通连接广阔城区，住房、通勤与职场节奏构成日常生活的重要背景。"}, {"id": "harbin", "name": "哈尔滨", "label": "北国 · 工业与生活", "description": "松花江畔的东北城市，拥有工业和高校基础，街区建筑保留多重历史痕迹。四季温差明显，冬季气候会实际影响出行与工作安排。"}, {"id": "guangzhou", "name": "广州", "label": "岭南 · 商贸与人情", "description": "珠江沿岸的商贸中心，制造业、专业市场与现代服务业联系紧密。老城街巷、城中村和新城并存，粤语文化与多元迁入人口共同塑造城市生活。"}]};
+const CITY_META={chongqing:{seal:'渝',tint:'#7FA7A0',lon:'106°33′E',short:'cq'},shanghai:{seal:'沪',tint:'#8E9BD8',lon:'121°29′E',short:'sh'},harbin:{seal:'冰',tint:'#A9C3D8',lon:'126°38′E',short:'hrb'},guangzhou:{seal:'穗',tint:'#D08A6A',lon:'113°15′E',short:'gz'}};
+const STEPS=['基本信息','职业与能力','城市与背景','初始同伴','确认与开局'];
+const STAMPS=['基','职','城','伴','启'];
+const CATS=[...new Set(DATA.professions.map(p=>p.category))];
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const blank=()=>({step:1,person:{name:'',age:'',gender:'',appearance:'',personality:''},appearanceTemplate:'custom',personalityTemplate:'custom',
+  profession:'custom',professionCategory:CATS[0],customProfession:'',professionDescription:'',skills:'',professionLongTermImpact:'',skillsSource:undefined,
+  city:'chongqing',cityPicked:false,background:'',hasCompanion:false,companion:{name:'',age:'',identity:'',relationship:'',appearance:'',personality:'',skills:'',background:''},openingPreference:''});
+const sample=()=>{const f=blank();Object.assign(f.person,{name:'沈砚',age:'27',gender:'男性'});
+  f.appearanceTemplate='清爽干练';f.person.appearance=DATA.appearance.find(t=>t.name==='清爽干练').description;
+  f.personalityTemplate='冷静理性';f.person.personality=DATA.personality.find(t=>t.name==='冷静理性').description;
+  f.profession='记者';f.professionCategory='专业与公共服务';f.skillsSource='automatic';f.city='chongqing';f.cityPicked=true;
+  f.background='父亲曾在朝天门码头做货运调度，二十年前一场仓库纠纷后离开重庆。我回到这座城市，表面是为了一篇旧城改造的报道。';
+  f.hasCompanion=true;Object.assign(f.companion,{name:'陈伯',age:'64',identity:'老街茶馆老板',relationship:'父亲的旧识',appearance:'头发花白，常穿洗旧的灰色中山装，手指有长年烫茶留下的茧。',personality:'话少，记性好，对旧事讳莫如深。',skills:'泡茶\n熟悉渝中老街人情',background:'在老街开了三十年茶馆，见过码头最乱的年月。'});
+  f.openingPreference='2025 年深秋，雨夜，从老街茶馆开始。';return f;};
+
+let form=blank(), mode='normal', done=new Set(), dir='', modal=null, packSel=0, stamped=false, error='';
+
+function profile(){
+  if(form.profession==='custom') return {name:form.customProfession||'自由选择',category:'自由选择',description:form.professionDescription,skills:form.skills.split('\n').filter(Boolean),longTermImpact:form.professionLongTermImpact,custom:true};
+  const p=DATA.professions.find(x=>x.name===form.profession);return {...p,custom:false};
+}
+function validate(step){
+  if(step===1&&(!form.person.name.trim()||!['男性','女性'].includes(form.person.gender))) return '请填写姓名并选择男性或女性';
+  if(step===1&&!/^\d{1,3}$/.test(form.person.age.trim())) return '请填写有效年龄';
+  if(step===2&&form.profession==='custom'&&!form.customProfession.trim()) return '请选择职业或填写自定义职业';
+  if(step===4&&form.hasCompanion&&(!form.companion.name.trim()||!form.companion.relationship.trim())) return '请填写同伴姓名及与主角的关系';
+  return '';
+}
+function move(to){
+  if(to>form.step){const e=validate(form.step);if(e){error=e;render();return;} done.add(form.step);}
+  error='';dir=to<form.step?'back':'';form.step=to;stamped=false;render();
+}
+
+/* ───────── 左：档案 ───────── */
+function dossier(){
+  const p=profile(),c=DATA.cities.find(x=>x.id===form.city),meta=CITY_META[form.city];
+  const v=(x,ph='（待填）')=>x?`<dd>${esc(x)}</dd>`:`<dd class="pending">${ph}</dd>`;
+  const no=`No. ${String(1000+form.person.name.length*137%8999).padStart(4,'0')}-${form.cityPicked?meta.short.toUpperCase():'—'}`;
+  return `<section class="dossier-col">
+    <div class="lede"><small>A LIFE, UNWRITTEN</small><h1>写下你是谁。</h1><p>从一座真实的城市开始。此后的人生，由你选择。</p></div>
+    <article class="dossier" aria-label="人物档案预览">
+      <div class="dz-band"><b>人物档案</b><small>黑金王朝 · 立档处</small><span class="no">${no}</span></div>
+      <div class="dz-body">
+        <div class="dz-top">
+          <div class="dz-photo ${form.person.name?'':'empty'}">${esc(form.person.name?.[0]||'人')}<span class="dz-city-seal ${form.cityPicked?'on':''}">${meta.seal}</span></div>
+          <dl class="dz-fields">
+            <div class="dz-f wide"><dt>姓名</dt>${v(form.person.name)}</div>
+            <div class="dz-f"><dt>年龄</dt>${v(form.person.age&&form.person.age+' 岁')}</div>
+            <div class="dz-f"><dt>性别</dt>${v(form.person.gender)}</div>
+            <div class="dz-f"><dt>职业</dt>${v(form.profession==='custom'?form.customProfession:p.name)}</div>
+            <div class="dz-f"><dt>起点城市</dt>${v(form.cityPicked?c.name:'')}</div>
+          </dl>
+        </div>
+        <div class="dz-sec">外貌</div><p class="dz-text ${form.person.appearance?'':'pending'}">${esc(form.person.appearance||'（待填）')}</p>
+        <div class="dz-sec">性格</div><p class="dz-text ${form.person.personality?'':'pending'}">${esc(form.person.personality||'（待填）')}</p>
+        ${p.skills&&p.skills.length?`<div class="dz-sec">职业技能</div><div class="dz-skills">${p.skills.slice(0,6).map(s=>`<span>${esc(s)}</span>`).join('')}</div>`:''}
+        ${form.background?`<div class="dz-sec">人物背景</div><p class="dz-text">${esc(form.background)}</p>`:''}
+        <div class="dz-sec">初始同伴</div><p class="dz-text ${form.hasCompanion&&form.companion.name?'':'pending'}">${form.hasCompanion?esc([form.companion.name,form.companion.identity,form.companion.relationship].filter(Boolean).join(' · ')||'（待填）'):'未创建同伴'}</p>
+        <div class="dz-stamps" aria-label="完成进度">${STAMPS.map((s,i)=>`<span class="stamp ${done.has(i+1)?'done':form.step===i+1?'cur':''}" title="${STEPS[i]}">${s}</span>`).join('')}<span class="stamp-note">每完成一步<br>盖一枚章</span></div>
+      </div>
+      <div class="big-seal ${stamped?'on':form.step===5?'wait':''}">立档<small>HEIJIN</small></div>
+    </article>
+  </section>`;
+}
+
+/* ───────── 右：步骤 ───────── */
+function rail(){
+  return `<div class="rail"><ol>${STEPS.map((s,i)=>`<li class="${done.has(i+1)&&form.step!==i+1?'done':''}" ${form.step===i+1?'aria-current="step"':''}><button data-go="${i+1}" ${busy()?'disabled':''}><span class="n">${done.has(i+1)&&form.step!==i+1?'✓':'0'+(i+1)}</span><span class="t">${s}</span></button></li>`).join('')}</ol>
+    <div class="rail-tools">${form.step===1?`<button class="btn" data-modal="browse" ${busy()?'disabled':''}>我的开局包</button>`:''}${form.step===5?`<button class="btn" data-modal="save" ${busy()?'disabled':''}>保存为开局包</button>`:''}</div></div>`;
+}
+const busy=()=>mode==='saving';
+const fld=(label,html,{req,hint}={})=>`<label class="fld"><span>${label}${req?'<em>*</em>':''}${hint?`<i>${hint}</i>`:''}</span>${html}</label>`;
+const inp=(path,{type='text',bad,ph=''}={})=>`<input class="inp ${bad?'bad':''}" data-path="${path}" type="${type}" value="${esc(get(path))}" placeholder="${ph}">`;
+const ta=(path,rows=4,ph='',aria='')=>`<textarea class="inp" data-path="${path}" rows="${rows}" placeholder="${ph}" ${aria?`aria-label="${aria}"`:''}>${esc(get(path))}</textarea>`;
+function get(path){return path.split('.').reduce((o,k)=>o?.[k],form)??''}
+function set(path,val){const ks=path.split('.');let o=form;ks.slice(0,-1).forEach(k=>o=o[k]);o[ks.at(-1)]=val;}
+
+function step1(){
+  const bad=mode==='invalid'||error;
+  const tpl=(kind,list,key,field)=>`<div class="tpl" role="group" aria-label="${kind}模板">
+      <button class="free" data-tpl="${key}" data-name="custom" data-field="${field}" aria-pressed="${form[key]==='custom'}"><b>自由选择</b><span>不套模板，自己写</span></button>
+      ${list.map(t=>`<button data-tpl="${key}" data-name="${t.name}" data-field="${field}" aria-pressed="${form[key]===t.name}" title="${esc(t.description)}"><b>${t.name}</b><span>${esc(t.description)}</span></button>`).join('')}</div>`;
+  return `<div class="row r-name">${fld('姓名',inp('person.name',{bad:bad&&!form.person.name.trim(),ph:'例如：沈砚'}),{req:1})}${fld('年龄',inp('person.age',{type:'number',bad:bad&&!form.person.age.trim()}),{req:1})}
+      <div class="fld"><span>性别<em>*</em></span><div class="seg ${bad&&!form.person.gender?'bad':''}" role="radiogroup" aria-label="性别">${['男性','女性'].map(g=>`<button role="radio" data-gender="${g}" aria-pressed="${form.person.gender===g}" aria-checked="${form.person.gender===g}">${g}</button>`).join('')}</div></div></div>
+    <div class="two-col">
+      <div><div class="sub-h">外貌 <small>选模板会填入下方，可继续改写</small></div>${tpl('外貌',DATA.appearance,'appearanceTemplate','appearance')}${ta('person.appearance',4,'','外貌')}</div>
+      <div><div class="sub-h">性格 <small>同上</small></div>${tpl('性格',DATA.personality,'personalityTemplate','personality')}${ta('person.personality',4,'','性格')}</div>
+    </div>`;
+}
+function step2(){
+  const p=profile(),custom=form.profession==='custom';
+  const list=DATA.professions.filter(j=>j.category===form.professionCategory);
+  return `<div class="jobs">
+      <nav class="jobs-cat" aria-label="职业方向"><h6>CATEGORY</h6>
+        ${CATS.map(c=>`<button data-cat="${c}" aria-pressed="${!custom&&form.professionCategory===c||custom&&form.professionCategory===c&&false}">${c}<small>${DATA.professions.filter(j=>j.category===c).length}</small></button>`).join('')}
+        <button class="free" data-custom aria-pressed="${custom}">✎ 自由选择</button></nav>
+      <div class="jobs-list" role="radiogroup" aria-label="选择职业"><h6>${esc(form.professionCategory)}</h6>
+        ${list.map(j=>`<button class="job" role="radio" data-job="${j.name}" aria-checked="${form.profession===j.name}"><b>${j.name}</b><span>${j.skills.join(' · ')}</span></button>`).join('')}</div>
+      <div class="jobs-detail">${custom?`
+        <span class="cat">自由选择 · 自定义职业</span>
+        <div class="row" style="margin-top:10px;gap:12px">${fld('职业名称',inp('customProfession',{bad:(mode==='invalid'||error)&&!form.customProfession.trim(),ph:'例如：拍卖行鉴定师'}),{req:1})}
+        ${fld('职业介绍',ta('professionDescription',3,'','职业介绍'))}
+        <div class="row r-2">${fld('内置职业技能',ta('skills',3,'每行一项','内置职业技能'),{hint:'每行一项'})}${fld('长期影响',ta('professionLongTermImpact',3,'','长期影响'))}</div></div>`
+      :`<span class="cat">${esc(p.category)}</span><h4>${esc(p.name)}</h4><p>${esc(p.description)}</p>
+        <h5>内置职业技能</h5><div class="chips">${p.skills.map(s=>`<span>${esc(s)}</span>`).join('')}</div>
+        <h5>长期影响</h5><p style="margin-top:0">${esc(p.longTermImpact)}</p>`}
+      </div></div>
+    ${custom?'':`<div style="margin-top:16px">${fld('个人技能与专长',ta('skills',2,'每行一项','个人技能与专长'),{hint:form.skillsSource==='manual'?'已保留手动技能':'可选 · 每行一项'})}</div>`}`;
+}
+function skyline(id,c){
+  const shapes={chongqing:'M0 120 L0 92 L18 92 L18 70 L30 70 L30 84 L44 84 L44 52 L52 46 L60 52 L60 80 L76 80 L76 60 L92 60 L92 86 L108 86 L108 40 L116 34 L124 40 L124 78 L140 78 L140 66 L158 66 L158 88 L176 88 L176 56 L190 56 L190 82 L210 82 L210 70 L230 70 L230 92 L260 92 L260 120 Z M0 104 Q60 96 130 104 T260 100 L260 120 L0 120Z',
+    shanghai:'M0 120 L0 90 L20 90 L20 76 L34 76 L34 88 L52 88 L52 30 L56 16 L60 30 L60 88 L74 88 L74 58 L84 50 L94 58 L94 84 L110 84 L110 22 L116 10 L122 22 L122 84 L138 84 L138 64 L152 64 L152 88 L170 88 L170 46 L186 46 L186 90 L210 90 L210 72 L232 72 L232 92 L260 92 L260 120Z',
+    harbin:'M0 120 L0 94 L22 94 L22 80 L36 80 L36 94 L56 94 L56 70 L66 54 Q72 40 78 54 L88 70 L88 94 L108 94 L108 82 L124 82 L124 64 L134 64 L134 92 L156 92 L156 76 L174 76 L174 94 L198 94 L198 84 L222 84 L222 96 L260 96 L260 120Z',
+    guangzhou:'M0 120 L0 92 L16 92 L16 78 L30 78 L30 90 L48 90 L48 64 L62 64 L62 88 L80 88 L80 50 L90 50 L90 86 L104 86 L112 18 Q114 10 116 18 L124 86 L140 86 L140 58 L154 58 L154 90 L176 90 L176 70 L194 70 L194 88 L216 88 L216 80 L236 80 L236 94 L260 94 L260 120Z'};
+  return `<svg viewBox="0 0 260 120" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><defs><linearGradient id="g${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity=".55"/><stop offset="1" stop-color="#0b0d0c" stop-opacity=".95"/></linearGradient></defs>
+    ${Array.from({length:7},(_,i)=>`<line x1="0" x2="260" y1="${14+i*9}" y2="${14+i*9}" stroke="${c}" stroke-opacity=".08"/>`).join('')}
+    <path d="${shapes[id]}" fill="url(#g${id})"/></svg>`;
+}
+function step3(){
+  return `<div class="cities" role="radiogroup" aria-label="初始城市">${DATA.cities.map(c=>{const m=CITY_META[c.id];return `<button class="city" role="radio" data-city="${c.id}" aria-checked="${form.cityPicked&&form.city===c.id}" style="--c:${m.tint}">
+      <div class="city-art">${skyline(c.id,m.tint)}<span class="seal">${m.seal}</span><span class="lon">${m.lon}</span><span class="start">起点</span></div>
+      <div class="city-body"><small>${esc(c.label)}</small><b>${c.name}</b><p>${esc(c.description)}</p></div></button>`}).join('')}</div>
+    <p style="margin:10px 0 0;font-size:12px;color:var(--dim)">选择起点，不限制未来的目的地。</p>
+    <div style="margin-top:18px">${fld('人物背景（可选）',ta('background',4,'家庭、工作经历、个人秘密……也可以留白。切换城市不会改写这里的内容。','人物背景'))}
+    <button class="btn link" style="margin-top:8px" data-go="4">跳过背景，继续 →</button></div>`;
+}
+function step4(){
+  const bad=mode==='invalid'||error;
+  return `<label class="switch-card"><input class="sw" type="checkbox" data-companion ${form.hasCompanion?'checked':''}><span class="t"><b>创建一名初始同伴</b><p>可完全跳过。同伴将作为特殊 NPC 保存；开局保护规则将在 AI 接入后执行。</p></span></label>
+    ${form.hasCompanion?`<div class="comp-grid">
+      ${fld('同伴姓名',inp('companion.name',{bad:bad&&!form.companion.name.trim()}),{req:1})}${fld('同伴年龄（可选）',inp('companion.age',{type:'number'}))}
+      ${fld('同伴身份',inp('companion.identity'))}${fld('与主角的关系',inp('companion.relationship',{bad:bad&&!form.companion.relationship.trim()}),{req:1})}
+      <div class="w2">${fld('同伴外貌',ta('companion.appearance',3))}</div><div class="w2">${fld('同伴性格',ta('companion.personality',3))}</div>
+      <div class="w2">${fld('同伴能力（一行一项）',ta('companion.skills',3))}</div><div class="w2">${fld('同伴个人经历',ta('companion.background',3))}</div>
+    </div>`:''}
+    <button class="btn link skip" data-skipcomp>跳过同伴，继续 →</button>`;
+}
+function step5(){
+  const p=profile(),c=DATA.cities.find(x=>x.id===form.city);
+  const dl=o=>`<dl>${Object.entries(o).map(([k,v])=>`<dt>${k}</dt><dd class="${String(v).length>40?'long':''}">${esc(v)||'<span style="color:var(--dim)">—</span>'}</dd>`).join('')}</dl>`;
+  return `<div class="review">
+    <section class="rv"><div class="rv-h"><span class="idx">01</span><b>人物资料</b><button class="btn link" data-go="1">修改基本信息</button></div>
+      ${dl({姓名:form.person.name,年龄:form.person.age,性别:form.person.gender,外貌:form.person.appearance,性格:form.person.personality,外貌模板:form.appearanceTemplate==='custom'?'自由选择':form.appearanceTemplate,性格模板:form.personalityTemplate==='custom'?'自由选择':form.personalityTemplate})}</section>
+    <section class="rv"><div class="rv-h"><span class="idx">02</span><b>职业与起点</b><button class="btn link" data-go="2">修改职业</button></div>
+      ${dl({职业:p.name,职业介绍:p.description,内置技能:(p.skills||[]).join('、'),长期影响:p.longTermImpact})}
+      <details><summary>完整职业表单</summary>${dl({职业分类:form.profession==='custom'?'自由选择':form.professionCategory,技能模式:form.skillsSource==='manual'?'手动技能':form.skillsSource==='automatic'?'自动技能':'未设置',技能原文:form.skills,自定义职业:form.customProfession,自定义介绍:form.professionDescription,自定义长期影响:form.professionLongTermImpact})}</details>
+      ${dl({城市:form.cityPicked?c.name:'',人物背景:form.background})}
+      <button class="btn link" data-go="3" style="margin-top:6px">修改城市与背景</button></section>
+    <section class="rv"><div class="rv-h"><span class="idx">03</span><b>初始同伴</b><button class="btn link" data-go="4">修改同伴</button></div>
+      ${form.hasCompanion?dl({姓名:form.companion.name,年龄:form.companion.age,身份:form.companion.identity,外貌:form.companion.appearance,性格:form.companion.personality,能力:form.companion.skills,个人经历:form.companion.background,与主角的关系:form.companion.relationship}):'<p class="muted">未创建同伴</p>'}</section>
+    <section class="rv"><div class="rv-h"><span class="idx">04</span><b>开局准备</b></div>
+      <p style="margin:0;font-size:13px">开局时间待确认</p>
+      <p class="muted">可以在开局偏好中指定故事年份、季节或日期；未指定时由 AI 在开局正文中根据剧情安排。请用明确年份，不以设备日期解释“今年”。首次正式结算后时间成为存档事实。</p></section>
+    <section class="rv full">${fld('开局偏好（可选）',ta('openingPreference',3,'对故事起点的期待，将随开局草稿保存。','开局偏好'))}</section>
+  </div>
+  <p class="fee" id="opening-generation-notice"><span>⚠</span><span>确认后创建存档并自动开始开局，可能产生第三方 API 费用。按已启用的阶段顺序生成候选，不会自动结算；未配置 AI 时会安全停止，设置后由你主动继续。</span></p>`;
+}
+
+function form_col(){
+  const s=form.step,body=[step1,step2,step3,step4,step5][s-1]();
+  const head={1:'姓名、年龄、性别是必填；外貌与性格可选模板后改写。',2:'选择一种职业，或自由填写。职业影响 AI 对人物经历与能力的理解。',3:'人物从哪座城市开始，以及可选的人物背景。',4:'可选。同伴会作为特殊 NPC 进入故事。',5:'核对档案。确认后立档并自动开始开局。'}[s];
+  const failed=mode==='failed';
+  return `<section class="form-col">${rail()}
+    <div class="stage"><div class="stage-in ${dir}" key="${s}">
+      <div class="st-head"><div><small>STEP 0${s} / 05</small><h2>${STEPS[s-1]}</h2></div><p>${head}<br><span style="color:var(--gold-lo)">填写内容自动保留</span></p></div>
+      ${(error||mode==='invalid')&&s!==5?`<p class="alert" role="alert"><span class="tag">误</span><span class="grow">${esc(error||validate(s)||'请检查填写内容')}</span></p>`:''}
+      ${failed&&s===5?`<p class="alert" role="alert"><span class="tag">误</span><span class="grow">保存失败，请重试。原填写内容已保留，没有创建存档，也没有发起开局请求。</span></p>`:''}
+      ${body}
+    </div></div>
+    <footer class="foot">
+      <button class="btn" data-go="${s-1}" ${s===1||busy()?'disabled':''}>← 上一步</button>
+      <span class="mid"><b>0${s} / 05</b>${s===5?'可能产生第三方 API 费用':STEPS[s]?'下一步：'+STEPS[s]:''}</span>
+      <button class="btn primary" data-next ${busy()?'disabled':''} ${s===5?'aria-describedby="opening-generation-notice"':''}>${busy()?'正在保存…':s===5?(failed?'重试创建存档':'确认并创建存档'):'下一步 →'}</button>
+    </footer></section>`;
+}
+
+function render(){
+  const root=document.getElementById('root');
+  const active=document.activeElement, path=active?.dataset?.path, pos=active?.selectionStart;
+  root.style.setProperty('--tint',form.cityPicked?CITY_META[form.city].tint:'#C9A961');
+  document.documentElement.style.setProperty('--tint',form.cityPicked?CITY_META[form.city].tint:'#C9A961');
+  root.innerHTML=dossier()+form_col();
+  if(path){const el=root.querySelector(`[data-path="${path}"]`);if(el){el.focus();try{el.setSelectionRange(pos,pos)}catch{}}}
+  bind();renderModal();
+}
+
+function refreshDossier(){
+  const col=document.querySelector('.dossier-col');if(!col)return;
+  const keep=col.querySelector('.dossier')?.scrollTop||0;
+  col.outerHTML=dossier();document.querySelector('.dossier').scrollTop=keep;
+}
+function bind(){
+  const root=document.getElementById('root'),q=s=>root.querySelectorAll(s);
+  // 文字输入只刷新左侧档案，不重绘表单，避免打断中文输入法组字。
+  q('[data-path]').forEach(el=>el.oninput=()=>{set(el.dataset.path,el.value);
+    if(el.dataset.path==='skills')form.skillsSource='manual';
+    refreshDossier();});
+  q('[data-go]').forEach(b=>b.onclick=()=>{const t=+b.dataset.go;if(t>=1)move(t)});
+  q('[data-next]').forEach(b=>b.onclick=()=>{
+    if(form.step<5)return move(form.step+1);
+    for(let i=1;i<=4;i++){const e=validate(i);if(e){error=e;dir='back';form.step=i;render();return;}}
+    done.add(5);stamped=true;render();
+    setTimeout(()=>{if(mode==='normal'){mode='saving';syncMode();render();}},650);
+  });
+  q('[data-gender]').forEach(b=>b.onclick=()=>{form.person.gender=b.dataset.gender;error='';render()});
+  q('[data-tpl]').forEach(b=>b.onclick=()=>{const k=b.dataset.tpl,n=b.dataset.name,f=b.dataset.field,list=f==='appearance'?DATA.appearance:DATA.personality;
+    form[k]=n;if(n!=='custom')form.person[f]=list.find(t=>t.name===n).description;render()});
+  q('[data-cat]').forEach(b=>b.onclick=()=>{form.professionCategory=b.dataset.cat;if(form.profession==='custom'){const first=DATA.professions.find(j=>j.category===b.dataset.cat);form.profession=first.name;form.skillsSource='automatic';}render()});
+  q('[data-custom]').forEach(b=>b.onclick=()=>{form.profession='custom';render()});
+  q('[data-job]').forEach(b=>b.onclick=()=>{form.profession=b.dataset.job;form.skillsSource=form.skillsSource==='manual'?'manual':'automatic';error='';render()});
+  q('[data-city]').forEach(b=>b.onclick=()=>{form.city=b.dataset.city;form.cityPicked=true;render()});
+  q('[data-companion]').forEach(b=>b.onchange=()=>{form.hasCompanion=b.checked;error='';render()});
+  q('[data-skipcomp]').forEach(b=>b.onclick=()=>{form.hasCompanion=false;error='';done.add(4);dir='';form.step=5;render()});
+  q('[data-modal]').forEach(b=>b.onclick=()=>{modal=b.dataset.modal;packSel=0;renderModal()});
+}
+
+/* ───────── 开局包（沿用原六个视图，这里演示浏览/套用/保存） ───────── */
+const PACKS=[{name:'山城记者 · 雨夜',meta:'沈砚 · 记者 · 重庆 · 含同伴',time:'11-12 21:40'},{name:'沪上新人',meta:'林夏 · 企业职员 · 上海',time:'11-10 09:12'},{name:'冰城旧案',meta:'周屹 · 刑警 · 哈尔滨 · 含同伴',time:'11-08 23:05'}];
+function renderModal(){
+  const host=document.getElementById('modalHost');
+  if(!modal){host.innerHTML='';return;}
+  const title={browse:'我的开局包',apply:'套用开局包',save:'保存为开局包'}[modal];
+  let body='',foot='';
+  if(modal==='browse'){body=`<ul class="packs">${PACKS.map((p,i)=>`<li><button data-pack="${i}" aria-pressed="${packSel===i}"><b>${p.name}</b><small>${p.meta}</small><time>${p.time}</time></button></li>`).join('')}</ul><p class="modal-note">开局包保存在本机浏览器，只包含创角填写内容，不含存档与 AI 设置。</p>`;
+    foot=`<button class="btn danger" data-mx="delete">删除</button><button class="btn" data-mx="rename">重命名</button><span style="flex:1"></span><button class="btn primary" data-mx="apply">套用开局包</button>`;}
+  if(modal==='apply'){body=`<p style="margin:0">套用「${PACKS[packSel].name}」会替换当前五步中已填写的全部内容。</p><p class="modal-note">替换后仍可逐步修改；当前内容不会另存。</p>`;
+    foot=`<button class="btn" data-mx="browse">取消</button><button class="btn primary" data-mx="doapply">确认替换并套用</button>`;}
+  if(modal==='save'){body=`<label class="fld"><span>保存方式</span><select class="inp"><option>新建开局包</option>${PACKS.map(p=>`<option>覆盖：${p.name}</option>`).join('')}</select></label><label class="fld" style="margin-top:12px"><span>名称<i>最多 80 字</i></span><input class="inp" value="${esc((form.person.name||'未命名')+' · '+(profile().name||''))}"></label>`;
+    foot=`<button class="btn" data-mx="close">取消</button><button class="btn primary" data-mx="close">保存开局包</button>`;}
+  host.innerHTML=`<div class="modal-bg" data-mx="close"><div class="modal" role="dialog" aria-modal="true" aria-label="${title}" onclick="event.stopPropagation()">
+    <div class="modal-h"><span class="seal">包</span><b>${title}</b><button class="x" data-mx="close" aria-label="关闭开局包">×</button></div>
+    <div class="modal-b">${body}</div><div class="modal-f">${foot}</div></div></div>`;
+  host.querySelectorAll('[data-pack]').forEach(b=>b.onclick=()=>{packSel=+b.dataset.pack;renderModal()});
+  host.querySelectorAll('[data-mx]').forEach(b=>b.onclick=e=>{if(e.target!==b&&b.classList.contains('modal-bg'))return;const a=b.dataset.mx;
+    if(a==='close'||a==='delete'||a==='rename'){modal=null;}else if(a==='doapply'){form=sample();done=new Set([1,2,3,4]);form.step=1;modal=null;render();return;}else modal=a;renderModal()});
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal){modal=null;renderModal()}});
+
+/* 演示控制 */
+const MODES={normal:'正常',invalid:'校验错误',saving:'保存中',failed:'保存失败'};
+const mb=document.getElementById('modeBtns');
+mb.innerHTML=Object.entries(MODES).map(([k,v])=>`<button data-mode="${k}" aria-pressed="${k===mode}">${v}</button>`).join('');
+function syncMode(){mb.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===mode))}
+mb.querySelectorAll('button').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;syncMode();error='';stamped=false;
+  if(mode==='invalid'){form.person.name='';form.step=1;done.delete(1);}
+  if(mode==='saving'||mode==='failed'){if(!form.person.name)form=sample();done=new Set([1,2,3,4]);form.step=5;stamped=mode==='saving';}
+  render()});
+document.getElementById('fillBtn').onclick=()=>{form=sample();form.step=1;done=new Set([1,2,3,4]);mode='normal';syncMode();error='';stamped=false;render()};
+document.getElementById('clearBtn').onclick=()=>{form=blank();done=new Set();mode='normal';syncMode();error='';stamped=false;render()};
+const nb=document.getElementById('notesBtn'),notes=document.getElementById('notes');
+nb.onclick=()=>{notes.hidden=!notes.hidden;nb.setAttribute('aria-pressed',!notes.hidden)};
+form=sample();form.step=1;done=new Set();
+render();
+</script>
+</body>
+</html>

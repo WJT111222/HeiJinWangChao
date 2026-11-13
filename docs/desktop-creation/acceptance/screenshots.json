@@ -1,0 +1,674 @@
+[
+  {
+    "file": "screenshots/desktop-1100x580-01.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 580
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 580
+    },
+    "sha256": "85d6101668459305a4df57c8eaaa4e3a5f1540a302a1fee774d3c53afd943de9",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x580-02-custom.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 580
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 580
+    },
+    "sha256": "ea87d04392928607226006777bfdd45237885264e4b5c122badf5b05ce2c7e9c",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x580-02-preset.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 580
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 580
+    },
+    "sha256": "d4b9c2db401343e800fda9be14d0a5f576645735f48753651056df1e2a71cea9",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x580-03.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 580
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 580
+    },
+    "sha256": "5b6e8d74b82eff40a8512503ba79f449a42dbbe4563b1df1a2f9a68ed1f8833b",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x580-04-error.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 580
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 580
+    },
+    "sha256": "c6c266518c33dcf99fcc238ba711fffc90fd30ecb47c0912450b928d52ba2bcf",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x580-04.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 580
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 580
+    },
+    "sha256": "7761b0fc5d71a703ea1c3fee4a48104ec6a016687233d5b9e63c80079e274e4a",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x580-05-input.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 580
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 580
+    },
+    "sha256": "874f1c33eb27cf2be16587756cc41349ed8d3e3d0f16bb21b89727e339722aa9",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x580-05.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 580
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 580
+    },
+    "sha256": "f6a39b443971a1afa222c5f5027158132ce70b2d404c3ab6abd6029a76eea64c",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x580-pack.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 580
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 580
+    },
+    "sha256": "7d5222bcef9a678dde3bf6a5431af4529f6b9fa6b955c2fa3efd7a740d243cab",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x800-01.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 800
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 800
+    },
+    "sha256": "376a5cd18ecece4bf9f713d6df35c6ef83992dbcf52d2182752e5efdb5d0ddab",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x800-02-custom.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 800
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 800
+    },
+    "sha256": "437a854e166da09e2fa0eb6e3f29fc73d33e23ade776b874565e92af48dec598",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x800-02-preset.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 800
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 800
+    },
+    "sha256": "ee409fa7c8d410baccef82aa40981ac8f0ee63f14e1ac81f939535149074b055",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x800-03.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 800
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 800
+    },
+    "sha256": "bc489d862313c16a9377527e9b16c8f1ae4276bdc5dd01c37e9efc867e61b0d3",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x800-04-error.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 800
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 800
+    },
+    "sha256": "fc37aab7f1a4f03262631a29c8ee2aab4f948ea7a2a68c8fd080399c0152ae6b",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x800-04.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 800
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 800
+    },
+    "sha256": "5326a9586ee4f7d3ec583e1d9db743c7e1ab0284e55f3852fd6bf795733274e2",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x800-05-input.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 800
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 800
+    },
+    "sha256": "20d50303f33f60e04e5831e1f6bd93f55cb0d52ba8a0b60e4e838b506a85ba56",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x800-05.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 800
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 800
+    },
+    "sha256": "462a6eb35fa9db3e9a29587e20182f3d938018ad05879d210295f1868997a650",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1100x800-pack.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1100,
+      "height": 800
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1100,
+      "height": 800
+    },
+    "sha256": "06ef51fd1ac35eab0e67d9fbf31118d3532beb698a651952e3c80cdd1d74afbd",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1440-save-failure.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 900
+    },
+    "sha256": "6a2b47959a200e9c46b8e9bb2594c01376bf8219aaf6caa12ccaeccfd4ead92b",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1440-saving.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 900
+    },
+    "sha256": "7f1fba5b99827e2ba202d1afa942e5f6145be9fd98f7b1b7c51ffcd7f255bf03",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1440x900-01.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 900
+    },
+    "sha256": "02d0b47bd25a28965b7050f7b7e32adc2ced3448610861773b6dbb35d0477f13",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1440x900-02-custom.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 900
+    },
+    "sha256": "ebedb159b33a3cae4eb55d05ce169d4c6bfdbcef2cf099d35145696ef7c1a355",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1440x900-02-preset.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 900
+    },
+    "sha256": "002f7e37366161a5cc2f17a927dc5f1574e29a382ce00be20d41100c1817490d",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1440x900-03.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 900
+    },
+    "sha256": "272d5bbbdd51ce27d967a2a97a80db0f86a3fe78b5c943cd4cb29e13b70f55d5",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1440x900-04-error.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 900
+    },
+    "sha256": "cee447339ee2a70c814397b82a083f612a9b39f10c04bd9fe61cd853170c82e8",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1440x900-04.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 900
+    },
+    "sha256": "fe927e6c383d9f2203c3e89500a0c58b3bd26eb00eba2a4a43b2cce28f03d803",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1440x900-05-input.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 900
+    },
+    "sha256": "dced2cc32b1e6d2940b1fb2a68e34718833e830a6f565befab65363d3e929c4f",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1440x900-05.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 900
+    },
+    "sha256": "18a3214f20b0ec5e74e73b798be20696ee92d2da040d36eb7e2705d36dcc461e",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-1440x900-pack.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 900
+    },
+    "sha256": "8d20e3450fab2266fed61b44aefc9949831d52bd362f55c7e37874993b2efedf",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-901x768-01.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 901,
+      "height": 768
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 901,
+      "height": 768
+    },
+    "sha256": "7b9a8bd3b3422d817f8bb83ffd112ec4aa7a044772d47b28ab4492ea74ca5e80",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-901x768-02-custom.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 901,
+      "height": 768
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 901,
+      "height": 768
+    },
+    "sha256": "11f1a3133418926f4fd6258b337a8e2db12d241c64d7d2aeb4521b0429f27c31",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-901x768-02-preset.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 901,
+      "height": 768
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 901,
+      "height": 768
+    },
+    "sha256": "23846a07263a187f3fac93f61b77954536c78ea98c1b70c36fde2fce6f541501",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-901x768-03.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 901,
+      "height": 768
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 901,
+      "height": 768
+    },
+    "sha256": "cccc458f5c0e1b3f8ae719f0769d6690f4cd2329b012b03da6c4af33803b5b30",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-901x768-04-error.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 901,
+      "height": 768
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 901,
+      "height": 768
+    },
+    "sha256": "88d57b586fce38a72f0f0e2f3ddcf06449d09b72f8e0aececcb0210bad7c03c0",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-901x768-04.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 901,
+      "height": 768
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 901,
+      "height": 768
+    },
+    "sha256": "4afde3687c6d1df61a0d4e06e06d4d2539537717f6c38ca9af9def84e15c0de0",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-901x768-05-input.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 901,
+      "height": 768
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 901,
+      "height": 768
+    },
+    "sha256": "a254f90f5cc549a87bc1748bf05724d5447539531e2aaba74bb87f9bb66e2850",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-901x768-05.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 901,
+      "height": 768
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 901,
+      "height": 768
+    },
+    "sha256": "1a10e724740f7dc42349da62549679b7eb5477a1b5c092a930b8cc51168e9201",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/desktop-901x768-pack.png",
+    "sourceCommit": "5b681bcd089050125c86c00a5b05f3efe4c7ad05",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 901,
+      "height": 768
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 901,
+      "height": 768
+    },
+    "sha256": "4d92fc6856fbb3d04f45ea23c0837282018bc7935ec2047db3bf3ef7030fdfd1",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/mobile-375-ticket-01.png",
+    "sourceCommit": "3fa515191a108fbc24828bc8ccca13c3043eaa1e",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 375,
+      "height": 844
+    },
+    "deviceScaleFactor": 2.625,
+    "pngPixels": {
+      "width": 984,
+      "height": 2216
+    },
+    "sha256": "d30124df62ec95b55dd1e83559f2f3d32a5d67214ec7c94ffe98818d189fe84e",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/mobile-375-ticket-05.png",
+    "sourceCommit": "3fa515191a108fbc24828bc8ccca13c3043eaa1e",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 375,
+      "height": 844
+    },
+    "deviceScaleFactor": 2.625,
+    "pngPixels": {
+      "width": 984,
+      "height": 2216
+    },
+    "sha256": "97037f25da5ee1fdb081541fb18d2972bb0d47fba9f4f1aeea6f887cea823355",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/mobile-390-ticket-01.png",
+    "sourceCommit": "3fa515191a108fbc24828bc8ccca13c3043eaa1e",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 390,
+      "height": 844
+    },
+    "deviceScaleFactor": 2.625,
+    "pngPixels": {
+      "width": 1024,
+      "height": 2216
+    },
+    "sha256": "0d0400308e845cc663da961f00d0be057707ce2dc2ff8d70cc20b33e40507e4f",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  },
+  {
+    "file": "screenshots/mobile-390-ticket-05.png",
+    "sourceCommit": "3fa515191a108fbc24828bc8ccca13c3043eaa1e",
+    "browser": "Chromium",
+    "cssViewport": {
+      "width": 390,
+      "height": 844
+    },
+    "deviceScaleFactor": 2.625,
+    "pngPixels": {
+      "width": 1024,
+      "height": 2216
+    },
+    "sha256": "f9e0d5f28dc0627406edc2d916a144c8b9df7a55a7206609e81a1ca57b1b2ce1",
+    "app": "Vite + full React App + real IndexedDB; not static preview"
+  }
+]
