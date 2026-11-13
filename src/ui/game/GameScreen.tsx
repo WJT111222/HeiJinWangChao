@@ -26,6 +26,7 @@ import { TurnUndoControl } from './TurnUndoControl';
 import type { TurnUndoResult } from '../../services/storage/saveRepository';
 import { ProfessionProfile } from '../components/ProfessionProfile';
 import { StoryReading } from './StoryReading';
+import { StoryStreamReading } from './StoryStreamReading';
 import { openingTimeSelection } from '../../domain/openingTime';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode, RefObject } from 'react';
@@ -205,7 +206,7 @@ export function GameScreen({
   }
   const progress =
     automatic.progress?.stage === 'story' && automatic.progress.phase !== 'retrying'
-      ? { phase: automatic.progress.phase, narrative: automatic.progress.narrative ?? '' }
+      ? { ...automatic.progress, phase: automatic.progress.phase, narrative: automatic.progress.narrative ?? '' }
       : manualProgress;
   const workflowBusy = Boolean(
     submitting || automatic.running || progress || variables.phase || world.phase,
@@ -321,7 +322,7 @@ export function GameScreen({
   }
   useEffect(() => {
     if (follow.current && reader.current) reader.current.scrollTop = reader.current.scrollHeight;
-  }, [progress?.narrative, draft?.storyRevision]);
+  }, [progress?.narrative, progress?.nativeReasoning, progress?.planning, progress?.readingPhase, draft?.storyRevision]);
   const view = useMemo(() => playerView(state, companionProfile, settings.memory.immediateWindowSize), [state, companionProfile, settings.memory.immediateWindowSize]);
   const showChanges=Boolean(view.journal.length)&&!workflowBusy&&!draft?.story&&(!draft||awaitingAction);
   const turnComparison=useTurnComparison(state,repository,showChanges);
@@ -647,7 +648,7 @@ export function GameScreen({
             <article className="story-entry glass latest" aria-label="流式正文预览" aria-busy="true">
               <CityChapter number={state.turnNumber + 1} state={state} scene={draftScene} status="preview" desktop={!compactSidebars} />
               <span className="tag preview-tag">临时预览 · 完整校验前不保存</span>
-              <p className="prose">{progress.narrative || '正在等待正文…'}{!compactSidebars && <span className="caret" aria-hidden="true" />}</p>
+              <StoryStreamReading progress={progress} caret={!compactSidebars} />
             </article>
           ) : draft?.story ? (
             <article className="story-entry glass latest">

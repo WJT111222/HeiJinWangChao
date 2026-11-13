@@ -10,7 +10,7 @@ import { browserCredentials } from '../../services/ai/credentials';
 import { worldRuleNames } from '../../services/validation/worldDiagnostics';
 import { RequestUsage } from './RequestUsage';
 import { RuntimeLogPanel } from './RuntimeLogPanel';
-import { StoryInspectionPanel } from './StoryInspectionPanel';
+import { StageResponseContent } from './StageResponsesPanel';
 import type { RuntimeLogEntry } from './runtimeLog';
 
 // 三阶段详情：只重排展示，不新增数据或请求。
@@ -19,7 +19,7 @@ import type { RuntimeLogEntry } from './runtimeLog';
 export type WorkflowStage = 'story' | 'variables' | 'world';
 export type WorkflowView = WorkflowStage | 'diagnostics' | 'input' | 'home';
 export type WorkflowLayout = 'desktop' | 'sheet';
-export type WorkflowTab = 'overview' | 'candidates' | 'raw' | 'plan' | 'normalized';
+export type WorkflowTab = 'overview' | 'candidates' | 'raw' | 'normalized';
 export type WorkflowStep = { stage: WorkflowStage; name: string; text: string; visual: string };
 export type StageAction = { label: string; cancel: boolean; disabled: boolean; onClick: () => void };
 export type StageSwitch = { checked: boolean; onChange: (checked: boolean) => void };
@@ -182,7 +182,7 @@ function StageDetail(props: Parameters<typeof DesktopWorkflowPanel>[0] & { stage
       ? world.result.worldCommands.length + world.result.taskCommands.length + world.result.eventCommands.length + world.result.unresolved.length
       : undefined;
   const tabs: [WorkflowTab, string, number?][] = stage === 'story'
-    ? [['overview', '概览'], ['raw', '模型原文'], ['plan', '叙事规划'], ['normalized', '校验结果']]
+    ? [['overview', '概览'], ['raw', '模型原文'], ['normalized', '校验结果']]
     : [['overview', '概览'], ['candidates', '候选', count], ['raw', '模型原文'], ['normalized', '校验结果']];
   const tab = tabs.some(([key]) => key === props.tab) ? props.tab : 'overview';
   // WAI-ARIA Tabs：只有选中的页签在 Tab 顺序中；←/→ 循环、Home/End 首尾，切换即激活并移动焦点。
@@ -245,7 +245,6 @@ function StageDetail(props: Parameters<typeof DesktopWorkflowPanel>[0] & { stage
       <div className="wf-dt-body" role="tabpanel" id={panelId} aria-labelledby={tabId(tab)} tabIndex={0}>
         {tab === 'raw' ? <StageRaw saveId={props.saveId} turnId={props.rawTurnId} stage={stage} />
           : tab === 'normalized' ? <StageNormalized saveId={props.saveId} turnId={props.rawTurnId} stage={stage} />
-            : tab === 'plan' ? (draft ? <StoryInspectionPanel key={`${draft.turnId}-${draft.storyRevision}`} draft={draft} inline /> : <Empty>没有可执行的回合草稿。</Empty>)
               : stage === 'story' ? <StoryOverview {...props} state={state} step={step} />
                 : stage === 'variables' ? (draft && variables ? (tab === 'candidates' ? <VariableList draft={draft} /> : <VariableOverview draft={draft} onAll={() => selectTab('candidates')} saveId={props.saveId} />) : <StageEmpty step={step} state={state} />)
                   : draft && world ? (tab === 'candidates' ? <WorldList draft={draft} /> : <WorldOverview draft={draft} onAll={() => selectTab('candidates')} saveId={props.saveId} />)
@@ -450,9 +449,7 @@ function StageRaw({ saveId, turnId, stage }: { saveId: string; turnId?: string; 
         {record?.status === 'failed' && <span className="wf-pill" data-s="fail">未通过验收</span>}
         {record?.status === 'pending' && <span className="wf-pill" data-s="run">请求中</span>}
       </h5>
-      {!record?.text
-        ? <Empty>{record?.status === 'pending' ? '请求尚未返回完整内容。' : '本页面没有可恢复的模型原文；已保存的候选不是模型原文，刷新后请查看规范化记录。'}</Empty>
-        : <pre className="candidate-json" tabIndex={0} aria-label={`${label}模型完整原文`}>{record.text}</pre>}
+      <StageResponseContent record={record} label={label} />
       {record?.error && <p className="wf-raw-error" role="note">{record.error.message}{'details' in record.error && record.error.details?.worldRule ? ` · ${worldRuleNames[record.error.details.worldRule]}` : ''}</p>}
       {record?.error && 'details' in record.error && record.error.details?.storyRule && <small className="wf-raw-error">正文失败类型：{record.error.details.storyRule} · {storyRuleNames[record.error.details.storyRule]}</small>}
       <Note>仅本页面临时保存，刷新或淘汰后无法恢复；模型原文不等于已执行结果。不会写入正式世界或剧情历史，不会发起请求。系统凭证会隐藏。</Note>

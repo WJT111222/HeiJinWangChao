@@ -66,12 +66,13 @@ export function useTurnGeneration(
         },
         onProgress: (next) => {
           if (token.current !== id) return;
+          const bodyStarted = next.readingPhase === 'body' && pending.current?.readingPhase !== 'body';
           pending.current = next;
           if (next.stage !== lastLoggedStage.current) {
             lastLoggedStage.current = next.stage;
             onRuntimeEvent?.(next.stage, 'started');
           }
-          if (next.stage !== 'story' || next.phase !== 'generating') {
+          if (next.stage !== 'story' || next.phase !== 'generating' || bodyStarted) {
             clearTimeout(timer.current);
             timer.current = undefined;
             setProgress(next);

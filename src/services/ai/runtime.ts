@@ -13,7 +13,7 @@ import type { RequestOptions } from './client';
 import { variableFailure, variableValidationError } from '../validation/variableDiagnostics';
 import { storyFailure } from '../validation/storyDiagnostics';
 import { timeOutcome } from '../../domain/timePreflight';
-import { stageResponses } from './stageResponses';
+import { stageResponses, safeStreamResponseText } from './stageResponses';
 import { safeAiError } from './errors';
 
 // 独立阶段请求入口；没有 SaveRepository、写库、重试或自动执行下游阶段。
@@ -42,14 +42,37 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   const prompt = captured.stage === 'variables'
     ? await composeTextVariablesPrompt({ ...captured, stage: 'variables', cotAllowed: snapshot.useCot })
     : await composePrompt({ ...captured, cotAllowed: snapshot.useCot });
-  const responseId = stageResponses.begin({ saveId: captured.state.saveId, turnId: captured.draft?.turnId, stage: captured.stage, storyRevision: captured.draft?.storyRevision });
+  const responseId = stageResponses.begin({ saveId: captured.state.saveId, turnId: captured.draft?.turnId, stage: captured.stage, storyRevision: captured.draft?.storyRevision, protocol: snapshot.channel.protocol });
   const secrets = config.channels.map(channel => vault.get(channel.id)).filter(Boolean);
   let received = '';
+  let rawObserved = false, publicReasoning = '';
+  let observationTimer: ReturnType<typeof setTimeout> | undefined;
+  const observe = () => {
+    if (!observationTimer) observationTimer = setTimeout(() => {
+      observationTimer = undefined;
+      stageResponses.update(responseId, { text: safeStreamResponseText(received, secrets),
+        nativeReasoning: safeStreamResponseText(publicReasoning, secrets) }, secrets);
+    }, 50);
+  };
   let step: 'request' | 'response' = 'request';
   try {
   const response = await client.generate(snapshot, prompt.messages, {
     ...options,
-    onDelta: (delta) => { received += delta; options.onDelta?.(delta); },
+    onDelta: (delta) => { if (!rawObserved) received += delta; options.onDelta?.(delta); },
+    onRawTextDelta: (delta) => {
+      if (captured.stage === 'story') {
+        rawObserved = true; received += delta;
+        observe();
+      }
+      options.onRawTextDelta?.(delta);
+    },
+    onNativeReasoningDelta: (delta) => {
+      if (captured.stage === 'story') {
+        publicReasoning += delta;
+        observe();
+      }
+      options.onNativeReasoningDelta?.(delta);
+    },
     inspection: {
       kind: 'stage',
       mode: captured.mode,
@@ -61,9 +84,10 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     timeoutSeconds: options.timeoutSeconds ?? captured.settings.runtime.timeoutSeconds,
     stream: options.stream ?? captured.stage === 'story',
   });
+  clearTimeout(observationTimer);
   step = 'response';
-  received = response.text;
-  stageResponses.update(responseId, { text: received, status: 'received' }, secrets);
+  if (!rawObserved) received = response.text;
+  stageResponses.update(responseId, { text: received, ...(captured.stage === 'story' ? { nativeReasoning: publicReasoning } : {}), status: 'received' }, secrets);
   const envelope = captured.stage === 'story' ? parseStoryEnvelope(response.text, captured.mode, captured.settings) : undefined;
   const story = envelope?.story;
   if (story) {
@@ -108,7 +132,9 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   };
   } catch (error) {
     const failure = captured.stage === 'variables' ? variableFailure(error, step) : captured.stage === 'story' ? storyFailure(error, true) : error;
-    stageResponses.update(responseId, { status: 'failed', ...(received ? { text: received } : {}), error: safeAiError(failure) }, secrets);
+    clearTimeout(observationTimer);
+    stageResponses.update(responseId, { status: 'failed', ...(received ? { text: captured.stage === 'story' ? safeStreamResponseText(received, secrets) : received } : {}),
+      ...(captured.stage === 'story' ? { nativeReasoning: safeStreamResponseText(publicReasoning, secrets) } : {}), error: safeAiError(failure) }, secrets);
     throw failure;
   }
 }

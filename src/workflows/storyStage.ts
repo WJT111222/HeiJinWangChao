@@ -1,4 +1,4 @@
-import { stageResponses } from '../services/ai/stageResponses';
+import { stageResponses, safeStreamResponseText } from '../services/ai/stageResponses';
 import { storyFailure, storySchemaError } from '../services/validation/storyDiagnostics';
 import { DataError } from '../domain/common';
 import { fingerprint } from '../domain/commands';
@@ -25,6 +25,9 @@ type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>;
 export interface StoryProgress {
   phase: 'generating' | 'saving';
   narrative: string;
+  readingPhase?: 'thinking' | 'body';
+  planning?: string;
+  nativeReasoning?: string;
 }
 interface StoryInput {
   draft: TurnDraft;
@@ -73,10 +76,13 @@ export class StoryStage {
       const stream = new StoryStream();
       const inspectionId = storyInspections.begin({ saveId: draft.saveId, turnId: draft.turnId,
         baseSaveRevision: draft.baseSaveRevision, basedOnStoryRevision: draft.storyRevision });
-      let reasoning = '';
+      let reasoning = '', inspectionReasoning = '', narrative = '';
+      const progress = () => input.onProgress?.({ phase: 'generating', narrative: safeStreamResponseText(narrative, secrets),
+        readingPhase: stream.bodyStarted ? 'body' : 'thinking',
+        ...(stream.bodyStarted ? {} : { planning: safeStreamResponseText(stream.planning, secrets), nativeReasoning: safeStreamResponseText(reasoning, secrets) }) });
       let responseInspectionId: string | undefined;
       try {
-        input.onProgress?.({ phase: 'generating', narrative: '' });
+        progress();
         const response = await runStageRequest(
           {
             stage: 'story',
@@ -95,15 +101,17 @@ export class StoryStage {
             signal: attempt.signal,
             onDelta: (delta) => {
               current();
-              input.onProgress?.({
-                phase: 'generating',
-                narrative: redactInspection(stream.push(delta), secrets),
-              });
+              narrative = stream.push(delta);
+              progress();
               storyInspections.update(inspectionId, { planning: redactInspection(stream.planning, secrets), activity: 'content' });
             },
             onReasoningDelta: (delta) => {
+              current(); inspectionReasoning += delta;
+              storyInspections.update(inspectionId, { nativeReasoning: redactInspection(inspectionReasoning, secrets), activity: 'reasoning' });
+            },
+            onNativeReasoningDelta: (delta) => {
               current(); reasoning += delta;
-              storyInspections.update(inspectionId, { nativeReasoning: redactInspection(reasoning, secrets), activity: 'reasoning' });
+              progress();
             },
           },
           this.client,
@@ -138,7 +146,7 @@ export class StoryStage {
         const next = rerollStory(draft, story);
         current();
         attempt.saving();
-        input.onProgress?.({ phase: 'saving', narrative: story.narrative });
+        input.onProgress?.({ phase: 'saving', readingPhase: 'body', narrative: story.narrative });
         // 网络从不放入 IDB 事务；整份草稿用现有乐观锁原子替换。
         const saved = await this.repository.saveDraft(next, draft.draftRevision, attempt.signal, draft);
         current();

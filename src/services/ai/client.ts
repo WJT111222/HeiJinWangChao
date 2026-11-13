@@ -20,6 +20,7 @@ import { readSse } from './sse';
 import { rememberThinkingCapability, unsupportedThinkingParameter, blockThinkingCapability } from './thinking';
 import { checkFinish, LeadingThink, rememberUnsupported, splitLeadingThink, unsupportedParameter } from './compat';
 import { isOpenAiCompatible } from './configuration';
+import { responseContent } from './responseContent';
 
 export interface RequestOptions {
   signal?: AbortSignal;
@@ -27,6 +28,9 @@ export interface RequestOptions {
   stream?: boolean;
   onDelta?: (text: string) => void;
   onReasoningDelta?: (text: string) => void;
+  /** Read-only observations before compatibility extraction; not a second request. */
+  onRawTextDelta?: (text: string) => void;
+  onNativeReasoningDelta?: (text: string) => void;
   onActivity?: (kind: 'content' | 'reasoning') => void;
   inspection?: InspectionScope;
 }
@@ -152,6 +156,11 @@ export class AiClient {
             throw new AiError('invalid_json');
           }
           usage = usageFrom(data, protocol); observedUsage = usage;
+          if (!signal.aborted) {
+            const raw = responseContent(data, protocol), native = nativeReasoning(data, protocol);
+            if (raw) options.onRawTextDelta?.(raw);
+            if (native) options.onNativeReasoningDelta?.(native);
+          }
           text = responseText(data, protocol);
           reasoning = nativeReasoning(data, protocol);
           if (isOpenAiCompatible(protocol)) {
@@ -181,6 +190,11 @@ export class AiClient {
             }
             if (data.error || data.type === 'error' || event.event === 'error')
               throw new AiError('rejected');
+            const rawDelta = responseContent(data, protocol, true), native = nativeReasoning(data, protocol, true);
+            if (!signal.aborted) {
+              if (rawDelta) options.onRawTextDelta?.(rawDelta);
+              if (native) options.onNativeReasoningDelta?.(native);
+            }
             const nextUsage = usageFrom(data, protocol);
             if (nextUsage) usage = { ...usage, ...nextUsage };
             observedUsage = usage;
@@ -207,7 +221,6 @@ export class AiClient {
               checkFinish(record(data.delta).stop_reason);
               if (data.type === 'message_stop') terminal = true;
             }
-            const native = nativeReasoning(data, protocol, true);
             if (native) nativeSeen = true;
             // 服务已单独给出思考时，不再把正文里的 <think> 重复算进去。
             const reasoningDelta = native || (nativeSeen ? '' : thinkReasoning);

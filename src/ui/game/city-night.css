@@ -759,3 +759,8 @@ to {transform:translateX(250%)}
   .app-shell-game .city-night .clock .date:has(.tod) { display: grid; }
   .app-shell-game .city-night .clock .date > span:not(.tod) { display: none; }
 }
+
+/* Temporary streaming thoughts use the reader's existing scroll and text layout. */
+.story-stream-thinking { min-width: 0; overflow-wrap: anywhere; }
+.story-stream-thinking h3 { margin: 1rem 0 .35rem; font: 500 .8rem var(--font-body); color: var(--gold); }
+.story-stream-thinking .prose { white-space: pre-wrap; }
