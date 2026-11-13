@@ -12,9 +12,9 @@
 
 ## 分支整合与范围
 
-无冲突合并最新 main `ae342d6008d298eac8b2efb3bb59daf94295040e`，本地合并提交 `b71b666`；包含 #123 手机第二批设置、弹窗、选择器和公告成果。
+先无冲突合并 main `ae342d6008d298eac8b2efb3bb59daf94295040e`（合并提交 `b71b666`），保留 #123 手机第二批设置、弹窗、选择器和公告。交付前主分支刚合入 #120，已再次无冲突同步最新 main `f3c66c3ce76f22931275cbe92dbdd83f01d6855f`（合并提交 `f0cc64d1b811fa21c18c28667e3f891448f3596f`），保留其手机非模态双层抽屉、更新后的测试辅助函数及 #122/#123 测试适配。
 
-[范围核验](preservation.json)：相对该 main，产品源码只有 `PromptInspector.tsx`、`SettingsPanel.tsx` 和专用 `prompt-manager.css` 有差异。Prompt、manifest、组装/选择器、模型路由、正式存档协议、Dialog、ThemedSelect、手机诊断、公告、wrangler、依赖清单及锁文件均保持一致。
+[范围核验](preservation.json)：相对该 main，产品源码只有 `PromptInspector.tsx`、`SettingsPanel.tsx` 和专用 `prompt-manager.css` 有差异。Prompt、manifest、组装/选择器、模型路由、正式存档协议、Dialog、ThemedSelect、手机诊断、#120 工作流抽屉与对应样式、公告、wrangler、依赖清单及锁文件均保持一致。
 
 ## 执行环境与命令
 
@@ -26,7 +26,7 @@ Node **v24.19.0**、npm **11.9.0**，真实系统 Chromium **154.0.8037.57**。�
 | Lint | `npm run lint` | 通过（零警告） |
 | Build | `npm run build` | 通过（有既有的大 chunk 提醒，未为此扩展范围） |
 | 定向 Vitest | `npm run test -- src/tests/prompt-inspector.test.ts src/tests/prompt-runtime.test.ts src/tests/mobile-feedback.test.tsx` | 3 文件、77 项通过 |
-| 定向 Chromium | `npx playwright test --config playwright.pr124.config.ts` + 下述复测 | 15 个唯一场景的最终结果均通过；见分轮记录 |
+| 定向 Chromium | `npx playwright test --config playwright.pr124.config.ts` + 下述复测 | 最新 main 上本轮 15/15 全部通过；见分轮记录 |
 
 命令日志位于 [logs](logs)，环境版本见 [environment.txt](logs/environment.txt)。依赖安装使用临时 npm cache，未修改锁文件。
 
@@ -49,6 +49,10 @@ Node **v24.19.0**、npm **11.9.0**，真实系统 Chromium **154.0.8037.57**。�
 - 保存成功后再次编辑时同时重置提示颜色，并新增断言；双端保存流程 **2/2 通过**（[日志](logs/chromium-save-recheck.txt) / [JSON](chromium-save-recheck-results.json)）。命令：`PLAYWRIGHT_JSON_OUTPUT_NAME=docs/pr124-review/chromium-save-recheck-results.json npx playwright test --config playwright.pr124.config.ts --grep '四开关显式保存' --output test-results/pr124-save-final --reporter=list,json`。
 - [汇总](validation-summary.json) 按项目和场景记录每项的最新结果：**15 个唯一场景最终全部通过**。保留各轮失败记录，不宣称一次全绿。
 
+### 最新 main 整合后的最终一轮
+
+同步 `f3c66c3ce76f22931275cbe92dbdd83f01d6855f`（#120 + #123）后，再次使用 Node24 执行 TypeScript、Lint、构建、77 项定向 Vitest，均通过。然后独立执行同一份 15 场景清单，**本轮 15/15 全部通过，无失败、无跳过**（[日志](logs/chromium-latest-main.txt) / [JSON](chromium-latest-main-results.json)）。命令：`PLAYWRIGHT_JSON_OUTPUT_NAME=docs/pr124-review/chromium-latest-main-results.json npx playwright test --config playwright.pr124.config.ts --output test-results/pr124-latest-main --reporter=list,json`。全部 16 张截图由这轮重新生成。
+
 ## 真实界面截图
 
 均来自运行中的 React 页面，CSS 像素尺寸为 390×844 和 1440×900；已查看手机与电脑的列表、未保存状态、原文/格式、高级与预览失效界面。
@@ -70,4 +74,4 @@ Node **v24.19.0**、npm **11.9.0**，真实系统 Chromium **154.0.8037.57**。�
 
 ## 交付与部署边界
 
-保持原 PR #124，等待九代目复审，不合并。用户已明确允许现有 Cloudflare 自动 Preview 随新 HEAD 更新。**自动 Preview 已运行，未进行生产部署**；没有执行手动部署，没有修改正式域名或生产 KV。原 HEAD 的自动 Preview 已有 PR 机器人记录，新 HEAD 的状态以 PR 最新检查和机器人记录为准。
+保持原 PR #124，等待九代目复审，不合并。用户已明确允许现有 Cloudflare 自动 Preview 随新 HEAD 更新。**自动 Preview 已运行，未进行生产部署**；没有执行手动部署，没有修改正式域名或生产 KV。原 HEAD 的自动 Preview 已有 PR 机器人记录，整改 HEAD `0bb8d48ec4bf52d64fa14c7b4dc7e13550c765d6` 的 Workers Builds 已 success；后续同步 main 的新 HEAD 状态以 PR 最新检查和机器人记录为准。

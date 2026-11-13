@@ -8,8 +8,8 @@
 
  Test Files  3 passed (3)
       Tests  77 passed (77)
-   Start at  23:52:04
-   Duration  3.78s (transform 47%, tests 36%, import 17%, worker 1%)
+   Start at  00:14:24
+   Duration  2.03s (tests 54%, import 23%, transform 22%)
 
 npm notice
 npm notice New major version of npm available! 11.9.0 -> 12.2.2

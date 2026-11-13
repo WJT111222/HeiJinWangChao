@@ -13,13 +13,13 @@ npm notice To update run: npm install -g npm@12.2.2
 npm notice
 vite v8.3.4 building client environment for production...
 transforming...
-✓ 431 modules transformed.
+✓ 432 modules transformed.
 rendering chunks...
 computing gzip size...
 dist/index.html                                               0.65 kB │ gzip:   0.46 kB
 dist/assets/budgetInspection.worker-Dbc5bqJN.js               7.20 kB
 dist/assets/PromptInspector-1PYJVW24.css                     10.56 kB │ gzip:   2.71 kB
-dist/assets/GameScreen-CkDXC85k.css                         108.71 kB │ gzip:  19.30 kB
+dist/assets/GameScreen--LPdAgpZ.css                         114.33 kB │ gzip:  20.19 kB
 dist/assets/index-R4giBQvh.css                              264.20 kB │ gzip:  43.45 kB
 dist/assets/cot_legacy-NbBMqO2C.js                            0.26 kB │ gzip:   0.23 kB
 dist/assets/00_world-BDNfXdvE.js                              0.33 kB │ gzip:   0.33 kB
@@ -120,15 +120,15 @@ dist/assets/regular-D2yzkI00.js                              15.30 kB │ gzip: 
 dist/assets/07_command_output-Bc1rk43g.js                    20.81 kB │ gzip:  10.47 kB
 dist/assets/OUTPUT_CONTRACT-BampIqgY.js                      29.36 kB │ gzip:  14.32 kB
 dist/assets/08_world_output-9PsvaCE_.js                      29.42 kB │ gzip:  13.66 kB
-dist/assets/PromptInspector-B65jbfsr.js                      31.41 kB │ gzip:  11.49 kB
+dist/assets/PromptInspector-CS5Q5D4m.js                      31.41 kB │ gzip:  11.49 kB
 dist/assets/manifest-yNXOnNaL.js                             80.12 kB │ gzip:  10.98 kB
 dist/assets/完整提示词库_汇编阅读版-DAFQH9ht.js                         92.23 kB │ gzip:  33.28 kB
 dist/assets/sources.lock-B2Frmrc5.js                        104.23 kB │ gzip:  24.74 kB
-dist/assets/composer-DFS8KgJG.js                            113.17 kB │ gzip:  31.02 kB
-dist/assets/GameScreen-Cyk6VW7e.js                          246.20 kB │ gzip:  71.45 kB
-dist/assets/index-DJUJSCZZ.js                               732.03 kB │ gzip: 238.32 kB
+dist/assets/composer-vDyiXqEq.js                            113.17 kB │ gzip:  31.02 kB
+dist/assets/GameScreen-DcJtcCYl.js                          239.95 kB │ gzip:  71.13 kB
+dist/assets/index-D20FOxzu.js                               732.04 kB │ gzip: 238.32 kB
 
-✓ built in 661ms
+✓ built in 768ms
 [plugin builtin:vite-reporter]
 (!) Some chunks are larger than 500 kB after minification. Consider:
 - Using dynamic import() to code-split the application
