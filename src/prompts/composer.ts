@@ -7,6 +7,7 @@ import { checkedInput, contextFor, contextMessage, worldWeekday } from './contex
 import type { ComposeInput } from './context';
 import type { AiMessage } from '../services/ai/protocols';
 import { estimateTokens } from './statistics';
+import { formatTailMessage } from './formatTail';
 import { AiError } from '../services/ai/errors';
 
 export interface ModuleRecord {
@@ -93,7 +94,18 @@ async function compose(unchecked: ComposeInput, variableProtocol: 'json' | 'text
     role: 'user',
     content: contextMessage({ ...context, PROMPT_SETTINGS: input.settings.prompts }),
   });
-  if (confirmation) messages.push(confirmation, { role: 'user', content: '请按已确认的本阶段协议生成当前回合。' });
+  // 最终格式提醒紧贴生成点：有确认历史时并入收尾 user 消息；否则作为末尾独立 user 消息。
+  const tail = formatTailMessage(input.stage, {
+    actionOptions: input.settings.prompts.actionOptions,
+    minNarrativeChars: input.settings.prompts.minNarrativeChars,
+  });
+  if (confirmation) {
+    const closing = tail ? `${tail}
+请按已确认的本阶段协议生成当前回合。` : '请按已确认的本阶段协议生成当前回合。';
+    messages.push(confirmation, { role: 'user', content: closing });
+  } else if (tail) {
+    messages.push({ role: 'user', content: tail });
+  }
   if (messages.some((m) => /\{\{[^{}]*\}\}/.test(m.content))) throw new AiError('placeholder');
   return {
     messages,
