@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import type { Server, ServerResponse } from 'node:http';
 import { test, expect } from './helpers/test';
 import type { Page, TestInfo } from '@playwright/test';
-import { deepSeekUntagged, recoveryPlanning, recoveryTransition, recoveryNarrative, recoverySummary, recoveryGuide, recoveryActions, recoveryTail, inlineRecoveryOutput, inlineRecoveryNarrative, inlineRecoveryTransition } from '../src/tests/fixtures/storyRecovery';
+import { deepSeekUntagged, recoveryPlanning, recoveryTransition, recoveryNarrative, recoverySummary, recoveryGuide, recoveryActions, recoveryTail, inlineRecoveryOutput, inlineRecoveryNarrative, inlineRecoveryTransition, missingNarrativeCloseOutput } from '../src/tests/fixtures/storyRecovery';
 import { closeWorkflowSheet, openGameTools, openStageRaw, openWorkflowStage, workflowTrigger } from './helpers/gameLayout';
 
 let server: Server, response: ServerResponse | undefined, baseUrl: string, calls: number;
@@ -179,6 +179,39 @@ test('同行短正文：准确显示低于1500的实际小说字数，不猜缺�
     actualCount: Array.from(recoveryNarrative.replace(/\s/gu, '')).length } });
   await raw(page, output, info, 'inline-short-rejected-raw'); expect(await stored(page)).toEqual(before);
 });
+
+test('PR150 DeepSeek SSE：原生思考分离、无项目thinking且缺正文闭合，一次请求保存且阅读只含小说', async ({ page }, info) => {
+  const before = await seed(page, 120, 1500); await start(page); const reader = page.getByTestId('story-reader');
+  send(native, true); await expect(reader).toContainText(native);
+  send('<正'); send('文>' + inlineRecoveryNarrative.slice(0, 35));
+  await expect(reader.getByTestId('stream-narrative')).toContainText('站台边的雨声');
+  await expect(reader).not.toContainText(native);
+  send(inlineRecoveryNarrative.slice(35) + '\n<短期');
+  send(recoveryTail.slice('<短期'.length)); finish();
+  await expect(page.getByRole('article', { name: '流式正文预览', exact: true })).toHaveCount(0);
+  const saved = await stored(page); expect(saved.state).toEqual(before.state);
+  expect(saved.draft?.story).toEqual({ turnKind: 'regular', narrative: inlineRecoveryNarrative, summary: recoverySummary, variableGuide: recoveryGuide, actionOptions: recoveryActions });
+  expect(saved.draft?.draftRevision).toBe(before.draft!.draftRevision + 1);
+  await expect(reader).not.toContainText(native); await expect(reader).not.toContainText(recoverySummary);
+  await reader.evaluate(el => { el.scrollTop = 0; }); await shot(page, info, 'pr150-sse-repaired-novel');
+  await raw(page, native + missingNarrativeCloseOutput, info, 'pr150-sse-untouched-raw');
+  expect(await stored(page)).toEqual(saved);
+});
+
+for (const [name, brokenTag] of [['slashes', '<//正文>'], ['backslash', '<\\正文>'], ['prefix-colon', '<:正文>']] as const) {
+  test(`PR150 DeepSeek SSE损坏闭合 ${name}：拒绝补全，失败原文完整且零部分保存`, async ({ page }, info) => {
+    const before = await seed(page, 120, 1500); await start(page);
+    const output = missingNarrativeCloseOutput.replace('<短期记忆>', `${brokenTag}<短期记忆>`);
+    send(native, true); send(output); finish();
+    await expect(page.getByRole('article', { name: '流式正文预览', exact: true })).toHaveCount(0);
+    expect(await stored(page)).toEqual(before);
+    const error = await page.evaluate(async () => { const path = '/src/services/ai/stageResponses.ts';
+      return (await import(path)).stageResponses.getSnapshot()[0].error;
+    });
+    expect(error).toMatchObject({ code: 'invalid_output', details: { storyRule: 'tag_unclosed', storyTag: '正文' } });
+    await raw(page, native + output, info, `pr150-rejected-${name}-raw`); expect(await stored(page)).toEqual(before);
+  });
+}
 
 for (const [name, brokenTag] of [['question', '<正文?bad>'], ['colon', '<正文：>'], ['closing', '</正文?broken>']] as const) {
   test(`损坏保留标签 ${name}：拒绝恢复、不写草稿，统一原文完整可复制`, async ({ page }, info) => {

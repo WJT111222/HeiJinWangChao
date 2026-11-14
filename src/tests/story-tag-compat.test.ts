@@ -256,6 +256,16 @@ describe('Unclosed closing-tag repair keeps every boundary unambiguous', () => {
     expect(repairUnclosedTags(raw, false)).toBeUndefined();
     expect(fails(raw, false).details).toMatchObject({ storyRule: 'tag_unclosed', storyTag: '正文' });
   });
+  it.each(['thinking', 'think', 'judge', '正文', '短期记忆', '变量规划', '行动选项'].flatMap(
+    name => ['//', '\\', ':'].map(prefix => `<${prefix}${name}>`),
+  ))('名称前的畸形分隔符 %s 不能被当作完全缺失的闭合标签', brokenTag => {
+    const raw = drop(full(false), '正文').replace('<短期记忆>', `${brokenTag}\n<短期记忆>`);
+    // All payloads otherwise satisfy the configured minimum; failure must be structural.
+    expect(Array.from(narrative.replace(/\s/gu, '')).length).toBeGreaterThanOrEqual(settings(true).prompts.minNarrativeChars);
+    expect(repairUnclosedTags(raw, true)).toBeUndefined();
+    expect(fails(raw).details).toMatchObject({ storyRule: 'tag_unclosed', storyTag: '正文' });
+    expect(raw).toContain(brokenTag);
+  });
   it.each([
     ['开标签带参数 <正文?bad>', full().replace('<正文>', '<正文?bad><正文>')],
     ['损坏闭合 </正文?broken>', drop(full(), '正文').replace('<短期记忆>', '</正文?broken><短期记忆>')],
@@ -280,6 +290,15 @@ describe('Unclosed closing-tag repair keeps every boundary unambiguous', () => {
     const quoted = `${narrative}\n【吴思源】她说："3<5，这还用算？"`;
     const raw = drop(full(), '正文').replace(narrative, quoted);
     expect(parsed(raw).story.narrative).toBe(quoted);
+  });
+  it.each([
+    ['guide_json', (raw: string) => raw.replace('<变量规划>[]</变量规划>', '<变量规划>{broken}</变量规划>')],
+    ['story_schema', (raw: string) => raw.replace('<变量规划>[]</变量规划>', '<变量规划>[{"group":"npc","observedFact":42}]</变量规划>')],
+    ['summary_empty', (raw: string) => raw.replace('<短期记忆>两人一起核对本周生活费。</短期记忆>', '<短期记忆> </短期记忆>')],
+    ['actions_count', (raw: string) => raw.replace(choices, '<行动选项>继续核对\n留在原处</行动选项>')],
+    ['narrative_short', (raw: string) => raw.replace(narrative, '短')],
+  ] as const)('补回中间闭合后仍执行%s业务校验', (rule, change) => {
+    expect(fails(change(drop(full(false), '正文'))).details).toMatchObject({ storyRule: rule });
   });
   it('结构完整或无从补起时不产出修补副本', () => {
     expect(repairUnclosedTags(full(), true)).toBeUndefined();

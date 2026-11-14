@@ -97,8 +97,9 @@ export function recoverStoryEnvelope(text: string, actions: boolean): string | u
 const reservedNameSource = '(?:thinking|think|judge|正文|短期记忆|变量规划|行动选项)';
 /** 精确的保留标签：区分大小写、无空格、无多余字符。 */
 const canonicalReservedTag = new RegExp(`^</?${reservedNameSource}>`, 'u');
-/** 任何「像保留标签但不精确」的片段：<正文?bad>、</正文?broken>、<正文：>、< 正文 >、<THINKING>、残缺的 <正文……。 */
-const reservedTagProbe = new RegExp(`<\\s*/?\\s*${reservedNameSource}`, 'giu');
+/** 名称前只跨过非字母/数字的分隔符，识别 <//正文>、<\\正文>、<:正文> 等损坏结构。
+ * 不跨越其他尖括号或普通词语；3<5 等普通比较不含保留名称，不受影响。 */
+const reservedTagProbe = new RegExp(`<[^<>\\p{L}\\p{N}]*${reservedNameSource}`, 'giu');
 
 function hasMalformedReservedTag(text: string): boolean {
   for (const match of text.matchAll(reservedTagProbe)) {

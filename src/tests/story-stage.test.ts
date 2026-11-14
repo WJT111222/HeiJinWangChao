@@ -12,7 +12,7 @@ import { createTurnDraft, rerollStory, TurnDraftSchema } from '../domain/drafts'
 import type { TurnDraft } from '../domain/drafts';
 import { defaultSettings } from '../ui/settings/model';
 import { game } from './fixtures/game';
-import { deepSeekUntagged, recoveryNarrative, recoverySummary, recoveryGuide, recoveryActions, inlineRecoveryOutput, inlineRecoveryNarrative } from './fixtures/storyRecovery';
+import { deepSeekUntagged, recoveryNarrative, recoverySummary, recoveryGuide, recoveryActions, inlineRecoveryOutput, inlineRecoveryNarrative, missingNarrativeCloseOutput } from './fixtures/storyRecovery';
 import { stageResponses } from '../services/ai/stageResponses';
 
 const narrative = '【旁白】街边的公交车缓缓驶过。\n\n你看着窗外的路灯，没有作出决定。';
@@ -20,9 +20,9 @@ function output(body = narrative, actions = true) {
   return `<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>${body}</正文><短期记忆>等车</短期记忆><变量规划>[{"group":"time","observedFact":"公交车驶过"}]</变量规划>${actions ? '<行动选项>留在原地\n看看周围\n询问站台</行动选项>' : ''}`;
 }
 const frame = (value: unknown) => `data: ${JSON.stringify(value)}\n\n`;
-function sse(text: string, protocol: Protocol = 'openai') {
+function sse(text: string, protocol: Protocol = 'openai', nativeReasoning = '') {
   // 每个 delta 一个 UTF-16 代码单元，网络再按单字节拆，覆盖标签与中文边界。
-  const deltas = text
+  const deltas = (nativeReasoning ? frame({ choices: [{ delta: { reasoning_content: nativeReasoning } }] }) : '') + text
     .split('')
     .map((text) =>
       frame(
@@ -218,7 +218,33 @@ describe('真实正文入口与草稿原子替换', () => {
     expect(save).not.toHaveBeenCalled(); expect(transport).toHaveBeenCalledTimes(1);
     expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: raw, displayText: raw, status: 'failed' });
   });
-  for (const inline of [false, true]) {
+  it('DeepSeek真实SSE：原生思考独立返回，无项目thinking且缺正文闭合，只保存一次完整草稿', async () => {
+    await repo.deleteDraft(draft.saveId, draft.draftRevision);
+    draft = await repo.saveDraft(createTurnDraft(draft.saveId, 0, 'unclosed-deepseek', 'regular', '', false, true), null);
+    const before = await repo.loadGame(draft.saveId), save = vi.spyOn(repo, 'saveDraft');
+    const native = '公开原生思考：核对当前场景。', visible: string[] = [], thoughts: string[] = [];
+    const configuration = setup('deepseek'); configuration.settings.prompts.minNarrativeChars = 1500;
+    const transport = vi.fn<typeof fetch>(async () => sse(missingNarrativeCloseOutput, 'deepseek', native));
+    const saved = await runner(transport).generate({ ...configuration, draft, onProgress: p => { visible.push(p.narrative); thoughts.push(p.nativeReasoning ?? ''); } });
+    expect(thoughts).toContain(native);
+    expect(visible.some(value => value.length > 0 && value.length < inlineRecoveryNarrative.length)).toBe(true);
+    expect(visible.every(value => (inlineRecoveryNarrative + '\n').startsWith(value))).toBe(true);
+    expect(saved.story).toEqual({ turnKind: 'regular', narrative: inlineRecoveryNarrative, summary: recoverySummary, variableGuide: recoveryGuide, actionOptions: recoveryActions });
+    expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: missingNarrativeCloseOutput, displayText: native + missingNarrativeCloseOutput, status: 'validated' });
+    expect(await repo.load(draft.saveId)).toEqual(before.state);
+    expect(await repo.loadDraft(draft.saveId)).toEqual(saved);
+    expect(save).toHaveBeenCalledTimes(1); expect(transport).toHaveBeenCalledTimes(1);
+  });
+  it.each(['<//正文>', '<\\正文>', '<:正文>'])('DeepSeek补全拒绝畸形分隔符%s，原文完整且不写任何草稿', async brokenTag => {
+    const before = await repo.loadGame(draft.saveId), save = vi.spyOn(repo, 'saveDraft');
+    const raw = missingNarrativeCloseOutput.replace('<短期记忆>', `${brokenTag}<短期记忆>`), native = '真实Mock公开思考。';
+    const transport = vi.fn<typeof fetch>(async () => sse(raw, 'deepseek', native));
+    const configuration = setup('deepseek'); configuration.settings.prompts.minNarrativeChars = 1500;
+    await expect(runner(transport).generate({ ...configuration, draft })).rejects.toMatchObject({ code: 'invalid_output', details: { storyRule: 'tag_unclosed', storyTag: '正文' } });
+    expect(await repo.loadGame(draft.saveId)).toEqual(before); expect(save).not.toHaveBeenCalled(); expect(transport).toHaveBeenCalledTimes(1);
+    expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: raw, displayText: native + raw, status: 'failed' });
+  });
+  for (const inline of [false, true, 'unclosed'] as const) {
     it.each([
       ['时间倒退', [{ group: 'time', subjectHint: 'time:end', observedFact: '2026-10-18T07:00:00+08:00' }], 'time_data', 'time_invalid_or_reversed'],
       ['不存在的事件', [{ group: 'event', observedFact: '不存在的事件', eventNarration: { eventId: 'absent-event', mode: 'enter', at: '2026-10-18T08:00:00+08:00' } }], 'event_entry', 'narration_reference'],
@@ -226,21 +252,21 @@ describe('真实正文入口与草稿原子替换', () => {
       await repo.deleteDraft(draft.saveId, draft.draftRevision);
       draft = await repo.saveDraft(createTurnDraft(draft.saveId, 0, 'recovery-invalid', 'regular', ''), null);
       const before = await repo.loadGame(draft.saveId), save = vi.spyOn(repo, 'saveDraft');
-      const raw = (inline ? inlineRecoveryOutput() : deepSeekUntagged).replace(/<变量规划>[\s\S]*?<\/变量规划>/, `<变量规划>${JSON.stringify(guide)}</变量规划>`);
+      const raw = (inline === 'unclosed' ? missingNarrativeCloseOutput : inline ? inlineRecoveryOutput() : deepSeekUntagged).replace(/<变量规划>[\s\S]*?<\/变量规划>/, `<变量规划>${JSON.stringify(guide)}</变量规划>`);
       const transport = vi.fn<typeof fetch>(async () => sse(raw, 'deepseek'));
       await expect(runner(transport).generate({ ...setup('deepseek'), draft })).rejects.toMatchObject({ code, details: { storyRule } });
       expect(await repo.loadGame(draft.saveId)).toEqual(before); expect(save).not.toHaveBeenCalled(); expect(transport).toHaveBeenCalledTimes(1);
       expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: raw, status: 'failed' });
     });
   }
-  it.each([false, true])('恢复成功后IDB已排入草稿put仍能原子回滚，不能把请求成功当作保存成功（同行=%s）', async inline => {
+  it.each([false, true, 'unclosed'] as const)('恢复成功后IDB已排入草稿put仍能原子回滚，不能把请求成功当作保存成功（同行=%s）', async inline => {
     const before = await repo.loadGame(draft.saveId), original = IDBObjectStore.prototype.put;
     const spy = vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(function (this: IDBObjectStore, value: unknown, key?: IDBValidKey) {
       const request = original.call(this, value, key);
       if (this.name === 'drafts') throw new DOMException('isolated quota failure', 'QuotaExceededError');
       return request;
     });
-    const transport = vi.fn<typeof fetch>(async () => sse(inline ? inlineRecoveryOutput() : deepSeekUntagged, 'deepseek'));
+    const transport = vi.fn<typeof fetch>(async () => sse(inline === 'unclosed' ? missingNarrativeCloseOutput : inline ? inlineRecoveryOutput() : deepSeekUntagged, 'deepseek'));
     await expect(runner(transport).generate({ ...setup('deepseek'), draft })).rejects.toBeDefined(); spy.mockRestore();
     expect(await repo.loadGame(draft.saveId)).toEqual(before); expect(transport).toHaveBeenCalledTimes(1);
   });
@@ -474,7 +500,7 @@ describe('真实正文入口与草稿原子替换', () => {
     expect(await repo.loadDraft('save-b')).toEqual(saved);
     expect(await repo.load(draft.saveId)).toEqual(before);
   });
-  it.each([false, true, 'inline'] as const)('请求期间草稿被其他标签页改写，乐观锁拒绝响应覆盖（恢复=%s）', async recovered => {
+  it.each([false, true, 'inline', 'unclosed'] as const)('请求期间草稿被其他标签页改写，乐观锁拒绝响应覆盖（恢复=%s）', async recovered => {
     const started = deferred<void>(),
       response = deferred<Response>();
     const request = runner(async () => {
@@ -489,7 +515,7 @@ describe('真实正文入口与草稿原子替换', () => {
       variableGuide: [],
     });
     await repo.saveDraft(elsewhere, 0);
-    response.resolve(sse(recovered === 'inline' ? inlineRecoveryOutput() : recovered ? deepSeekUntagged : output()));
+    response.resolve(sse(recovered === 'unclosed' ? missingNarrativeCloseOutput : recovered === 'inline' ? inlineRecoveryOutput() : recovered ? deepSeekUntagged : output()));
     await expect(request).rejects.toMatchObject({ code: 'DRAFT_CONFLICT' });
     expect(await repo.loadDraft(draft.saveId)).toEqual(elsewhere);
   });
@@ -528,8 +554,8 @@ describe('真实正文入口与草稿原子替换', () => {
     ).rejects.toBeDefined();
     expect(await repo.loadDraft(draft.saveId)).toEqual(draft);
   });
-  it.each([false, true, 'inline'] as const)('完整响应到达后、进入草稿事务前离开页面，整份替换仍可取消回滚（恢复=%s）', async recovered => {
-    const stage = runner(async () => sse(recovered === 'inline' ? inlineRecoveryOutput() : recovered ? deepSeekUntagged : output()));
+  it.each([false, true, 'inline', 'unclosed'] as const)('完整响应到达后、进入草稿事务前离开页面，整份替换仍可取消回滚（恢复=%s）', async recovered => {
+    const stage = runner(async () => sse(recovered === 'unclosed' ? missingNarrativeCloseOutput : recovered === 'inline' ? inlineRecoveryOutput() : recovered ? deepSeekUntagged : output()));
     await expect(
       stage.generate({
         ...setup(),
@@ -568,7 +594,7 @@ describe('真实正文入口与草稿原子替换', () => {
     spy.mockRestore();
     expect(await repo.loadDraft(draft.saveId)).toEqual(draft);
   });
-  it.each([false, true, 'inline'] as const)('模型请求期间正式状态变更，事务重新读取 revision 后拒绝草稿写入（恢复=%s）', async recovered => {
+  it.each([false, true, 'inline', 'unclosed'] as const)('模型请求期间正式状态变更，事务重新读取 revision 后拒绝草稿写入（恢复=%s）', async recovered => {
     const started = deferred<void>(),
       response = deferred<Response>();
     const pending = runner(async () => {
@@ -584,7 +610,7 @@ describe('真实正文入口与草稿原子替换', () => {
         worldClock: '2026-10-18T09:00:00+08:00',
       },
     ]);
-    response.resolve(sse(recovered === 'inline' ? inlineRecoveryOutput() : recovered ? deepSeekUntagged : output()));
+    response.resolve(sse(recovered === 'unclosed' ? missingNarrativeCloseOutput : recovered === 'inline' ? inlineRecoveryOutput() : recovered ? deepSeekUntagged : output()));
     await expect(pending).rejects.toMatchObject({ code: 'REVISION_CONFLICT' });
     expect(await repo.loadDraft(draft.saveId)).toEqual(draft);
     expect(await repo.load(draft.saveId)).toEqual(updated);

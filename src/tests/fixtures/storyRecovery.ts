@@ -22,3 +22,6 @@ export const inlineRecoveryNarrative = Array.from({ length: 9 }, () => recoveryN
 export function inlineRecoveryOutput(narrative = inlineRecoveryNarrative, transition = inlineRecoveryTransition) {
   return `${recoveryPlanning}\n\n${transition}${narrative}\n${recoveryTail}`;
 }
+
+// PR150: no project thinking, actual body opening, only its closing tag omitted.
+export const missingNarrativeCloseOutput = `<正文>${inlineRecoveryNarrative}\n${recoveryTail}`;
