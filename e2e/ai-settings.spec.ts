@@ -364,6 +364,8 @@ test('保存失败（配置写入失败、密钥写到一半、删除失败）�
     const set = Storage.prototype.setItem, remove = Storage.prototype.removeItem;
     w.failMode = ''; w.credentialSets = 0;
     Storage.prototype.setItem = function (key: string, value: string) {
+      // persistent：长期存储里的密钥一直写不进去（不会自动解除），删除仍然正常。
+      if (w.failMode === 'persistent' && this === localStorage && key.startsWith('heijin.credential.v1:')) throw new DOMException('mock', 'QuotaExceededError');
       if (w.failMode === 'config' && key === 'heijin.ai.v1') { w.failMode = ''; throw new DOMException('mock', 'QuotaExceededError'); }
       if (w.failMode === 'partial' && key.startsWith('heijin.credential.v1:') && ++w.credentialSets === 2) { w.failMode = ''; throw new DOMException('mock', 'QuotaExceededError'); }
       return set.call(this, key, value);
@@ -391,6 +393,17 @@ test('保存失败（配置写入失败、密钥写到一半、删除失败）�
     expect(await vaultDump(page), mode).toEqual(before);
     await expect(saveButton).toBeEnabled(); // 修改仍未保存，可以重试
   }
+  // 持续写入失败：丙已被删除、它的原值写不回去，必须如实提示没能完全恢复；甲、乙的旧密钥不能被回滚删掉。
+  await page.evaluate(() => { (window as unknown as { failMode: string }).failMode = 'persistent'; });
+  await saveButton.click();
+  await expect(status).toContainText('没能完全恢复');
+  await expect(status).not.toContainText('保持原样');
+  const stuck = await vaultDump(page);
+  expect(stuck.local['heijin.credential.v1:a']).toBe('secret-a');
+  expect(stuck.session['heijin.credential.v1:b']).toBe('secret-b');
+  expect(stuck.local['heijin.credential.v1:b']).toBeUndefined();
+  expect(stuck.local['heijin.ai.v1']).toBe(before.local['heijin.ai.v1']);
+  await page.evaluate(() => { (window as unknown as { failMode: string }).failMode = ''; });
   await saveAi(settings);
   const after = await vaultDump(page);
   expect(after.local['heijin.credential.v1:a']).toBe('secret-a-new');
@@ -398,6 +411,23 @@ test('保存失败（配置写入失败、密钥写到一半、删除失败）�
   expect(after.session['heijin.credential.v1:b']).toBeUndefined();
   expect(after.local['heijin.credential.v1:c']).toBeUndefined();
   expect(after.local['heijin.ai.v1']).not.toContain('secret-');
+});
+
+test('长期存储持续写不进去时，旧密钥原封不动并提示保持原样', async ({ page }) => {
+  await page.route('https://*.mock.invalid/**', (route) => route.fulfill({ json: { data: [] } }));
+  await seedVault(page);
+  await page.evaluate(() => {
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key: string, value: string) {
+      if (this === localStorage && key.startsWith('heijin.credential.v1:')) throw new DOMException('mock', 'QuotaExceededError');
+      return set.call(this, key, value);
+    };
+  });
+  const settings = await openAiSettings(page), before = await vaultDump(page);
+  await openChannel(settings, '甲渠道'); await settings.getByLabel('API 密钥', { exact: true }).fill('secret-a-new');
+  await settings.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
+  await expect(settings.locator('.ai-save-bar').getByRole('status')).toContainText('密钥和配置都保持原样');
+  expect(await vaultDump(page)).toEqual(before);
 });
 
 test('换服务商只清掉指向这个渠道的隐藏旧模型，其他阶段的选择不动；DeepSeek 中转地址不显示为官方', async ({ page }) => {

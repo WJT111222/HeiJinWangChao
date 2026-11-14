@@ -7,7 +7,7 @@ import {
   saveAiConfig,
 } from '../../services/ai/configuration';
 import type { AiConfig, AiTask, Channel, Protocol } from '../../services/ai/configuration';
-import { CredentialVault } from '../../services/ai/credentials';
+import { CredentialVault, type VaultSnapshot } from '../../services/ai/credentials';
 import { channelSnapshot } from '../../services/ai/snapshot';
 import { AiClient } from '../../services/ai/client';
 import { safeAiError } from '../../services/ai/errors';
@@ -257,15 +257,22 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
     const vault = start.vault;
     if (!vault) { setNotice('保存失败，请检查浏览器存储权限或空间后重试。'); return; }
     const removed = saved.config.channels.filter((item) => !config.channels.some((next) => next.id === item.id)).map((item) => item.id);
-    // 密钥和配置要么一起保存成功，要么都保持原样：先记下原值，任何一步失败就把密钥原样放回。
-    const before = vault.snapshot([...removed, ...checked.data.channels.map((item) => item.id)]);
+    // 密钥和配置要么一起保存成功，要么尽量保持原样：先记下原值，任何一步失败就把密钥放回，并如实说明是否放回成功。
+    let before: VaultSnapshot;
+    try {
+      before = vault.snapshot([...removed, ...checked.data.channels.map((item) => item.id)]);
+    } catch {
+      setNotice('保存失败：无法读取浏览器存储，没有做任何修改。请检查浏览器存储权限后重试。');
+      return;
+    }
     try {
       for (const id of removed) vault.delete(id);
       for (const item of checked.data.channels) vault.set(item.id, draft.keys[item.id] ?? '', draft.remember[item.id] ?? true);
       saveAiConfig(localStorage, checked.data);
     } catch {
-      vault.restore(before);
-      setNotice('保存失败，请检查浏览器存储权限或空间后重试。密钥和配置都保持原样。');
+      setNotice(vault.restore(before)
+        ? '保存失败，请检查浏览器存储权限或空间后重试。密钥和配置都保持原样。'
+        : '保存失败，而且浏览器存储没能完全恢复：部分渠道的密钥可能丢失或换了存放位置。配置没有改动；请逐个检查渠道密钥，清理浏览器存储空间后重新保存。');
       return;
     }
     for (const id of removed) catalog.remove(id);

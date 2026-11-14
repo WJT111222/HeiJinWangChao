@@ -20,8 +20,9 @@ export class CredentialVault {
     }
     const target = remember ? this.persistent : this.session;
     const other = remember ? this.session : this.persistent;
-    other.removeItem(keyFor(id));
+    // 先写新位置再删旧位置：写入失败时旧密钥原封不动。
     target.setItem(keyFor(id), key.trim());
+    other.removeItem(keyFor(id));
   }
   delete(id: string) {
     this.session.removeItem(keyFor(id));
@@ -31,19 +32,26 @@ export class CredentialVault {
   snapshot(ids: Iterable<string>): VaultSnapshot {
     return [...new Set(ids)].map((id) => ({ id, session: this.session.getItem(keyFor(id)), persistent: this.persistent.getItem(keyFor(id)) }));
   }
-  /** 恢复快照：先移除本次写入的值腾出空间，再写回原值；尽量恢复每一项，不因单项失败中断。 */
-  restore(snapshot: VaultSnapshot) {
+  /**
+   * 恢复快照，返回两处存储是否已与快照完全一致。
+   * 只动和快照不一致的项：先把原值写回；某个渠道的原值都已就位后，才清掉不该存在的新副本。
+   * 原值写不回去的渠道，保留它现有的副本，避免回滚本身让密钥丢失。
+   */
+  restore(snapshot: VaultSnapshot): boolean {
+    const places = (entry: VaultSnapshot[number]) => [[this.session, entry.session], [this.persistent, entry.persistent]] as const;
+    const read = (store: Store, id: string) => { try { return store.getItem(keyFor(id)); } catch { return undefined; } };
+    const attempt = (action: () => void) => { try { action(); return true; } catch { return false; } };
+    const writeOriginals = (entry: VaultSnapshot[number]) => places(entry).every(([store, value]) =>
+      value === null || read(store, entry.id) === value || attempt(() => store.setItem(keyFor(entry.id), value)));
+    const removeExtras = (entry: VaultSnapshot[number]) => places(entry).every(([store, value]) =>
+      value !== null || read(store, entry.id) === null || attempt(() => store.removeItem(keyFor(entry.id))));
+    const pending: VaultSnapshot = [];
     for (const entry of snapshot) {
-      for (const store of [this.session, this.persistent]) {
-        try { store.removeItem(keyFor(entry.id)); } catch { /* 继续恢复其他项 */ }
-      }
+      if (writeOriginals(entry)) removeExtras(entry); else pending.push(entry);
     }
-    for (const entry of snapshot) {
-      for (const [store, value] of [[this.session, entry.session], [this.persistent, entry.persistent]] as const) {
-        if (value === null) continue;
-        try { store.setItem(keyFor(entry.id), value); } catch { /* 继续恢复其他项 */ }
-      }
-    }
+    // 空间不足时，前面清掉新副本可能腾出了位置，再试一次写回原值。
+    for (const entry of pending) if (writeOriginals(entry)) removeExtras(entry);
+    return snapshot.every((entry) => places(entry).every(([store, value]) => read(store, entry.id) === value));
   }
 }
 export type VaultSnapshot = { id: string; session: string | null; persistent: string | null }[];
