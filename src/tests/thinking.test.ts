@@ -199,7 +199,6 @@ describe('结构隔离、流式与事务', () => {
   });
   it.each([
     output().replace(/<thinking>[\s\S]*?<\/thinking>/, ''),
-    output().replace('</thinking>', ''),
     `<thinking>重复</thinking>${output()}`,
     output().replace(planning, '<thinking>嵌套</thinking>'),
     output().replace(narrative, '<thinking>伪装</thinking>'),
@@ -210,6 +209,13 @@ describe('结构隔离、流式与事务', () => {
     output().replace(planning, ''),
   ])('缺失/重复/嵌套/截断输出不得保存（%#）', (text) => {
     expect(() => parseStory(text, 'regular', setup().settings)).toThrow();
+  });
+  it('漏写</thinking>但<正文>已出现：按下一个开标签补回边界，规划不混入正文', () => {
+    const parsed = parseStoryEnvelope(output().replace('</thinking>', ''), 'regular', setup().settings);
+    expect(parsed.planning).toBe(planning); expect(parsed.story.narrative).toBe(narrative);
+    expect(parsed.story.narrative).not.toContain('秘密规划标记');
+    // 最后一段（本配置下是变量规划）缺闭合仍可能是截断，照旧拒绝。
+    expect(() => parseStory(output().replace('</变量规划>', ''), 'regular', setup().settings)).toThrow();
   });
   it('所有增量切点只展示正文，规划标签拆分也不泄漏；规划内容不是叙事质量门槛', () => {
     const text = output();

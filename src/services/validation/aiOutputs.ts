@@ -78,13 +78,33 @@ function worldJson(text: string): unknown {
   const body = trimmed.slice(opening[0].length).replace(/\r?\n```[ \t]*$/, '');
   return json(body);
 }
+/**
+ * 模型偶尔漏写某段的闭合标签就直接开下一段。只修这一种情况：该段完全没有闭合标签，
+ * 且下一段的开标签已经出现——此时这段在哪里结束没有歧义，在下一段开标签前补上闭合。
+ * 最后一段缺闭合不补：那通常意味着输出被截断，内容可能不完整，仍按原规则拒绝。
+ */
+function repairUnclosedTags(text: string, actions: boolean): string {
+  const order = ['thinking', '正文', '短期记忆', '变量规划', ...(actions ? ['行动选项'] : [])];
+  let repaired = text;
+  for (const [index, tag] of order.entries()) {
+    const next = order[index + 1];
+    if (!next) break;
+    const open = repaired.indexOf(`<${tag}>`);
+    if (open < 0 || repaired.includes(`</${tag}>`)) continue;
+    const nextOpen = repaired.indexOf(`<${next}>`, open + tag.length + 2);
+    if (nextOpen < 0) continue;
+    repaired = `${repaired.slice(0, nextOpen)}</${tag}>\n${repaired.slice(nextOpen)}`;
+  }
+  return repaired;
+}
 // 只解析结构；叙事规划不属于 StorySchema，也不检查文学步骤的内容质量。
 export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', settings: Settings) {
   const actions = settings.prompts.actionOptions;
   const pattern = actions
     ? /^\s*<thinking>([\s\S]*?)<\/thinking>\s*<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*<变量规划>([\s\S]*?)<\/变量规划>\s*<行动选项>([\s\S]*?)<\/行动选项>\s*$/
     : /^\s*<thinking>([\s\S]*?)<\/thinking>\s*<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*<变量规划>([\s\S]*?)<\/变量规划>\s*$/;
-  const envelope = text.match(pattern);
+  const envelope = text.match(pattern) ?? repairUnclosedTags(text, actions).match(pattern);
+  // 诊断仍基于原始输出，不描述补过的版本。
   if (!envelope) throw new AiError('invalid_output', undefined, storyEnvelopeDiagnostic(text, actions));
   if (!envelope[1].trim()) throw new AiError('invalid_output', undefined, { storyRule: 'planning_empty', storyTag: 'thinking' });
   const nested = envelope.slice(1).map(nestedStoryTag).find(Boolean);

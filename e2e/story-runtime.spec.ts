@@ -379,7 +379,7 @@ test('Story标签与变量规划诊断分别定位；只有玩家明确重试才
   await seed(page); const before = await stored(page);
   const cases = [
     [result().replace(/<正文>.*?<\/正文>/s, ''), 'tag_missing', '标签：<正文>'],
-    [result().replace('</正文>', ''), 'tag_unclosed', '未闭合'],
+    [result().replace('</行动选项>', ''), 'tag_unclosed', '未闭合'], // 最后一段缺闭合＝可能被截断，仍拒绝；中间段缺闭合会按下一个开标签补回，见下方成功用例。
     [result().replace('本轮创作提纲：保持人物与场景连续，按行动呈现事实。', ' '), 'planning_empty', '正文规划区块为空'],
     [result().replace('等车</短期记忆>', ' </短期记忆>'), 'summary_empty', '<短期记忆> 内容为空'],
     [result().replace(/<变量规划>.*?<\/变量规划>/s, '<变量规划>[private-game-detail</变量规划>'), 'guide_json', '不是合法 JSON'],
@@ -393,8 +393,12 @@ test('Story标签与变量规划诊断分别定位；只有玩家明确重试才
     await expect(latest).not.toContainText('private-game-detail'); await expect(latest).not.toContainText('mock-browser-key');
     expect(await stored(page)).toEqual(before); expect(requests).toHaveLength(index + 1);
   }
-  plans.push({}); await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
-  expect((await stored(page)).draft.story.narrative).toBe(story); expect((await stored(page)).state).toBe(before.state); expect(requests).toHaveLength(cases.length + 1);
+  // 模型漏写 </正文> 直接开 <短期记忆>：边界无歧义，整回合照常保存，正文不混入后续段落（合法原协议的成功在本文件其他用例覆盖）。
+  plans.push({ chunks: [result().replace('</正文>', '')] });
+  await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
+  expect((await stored(page)).draft.story.narrative).toBe(story);
+  expect((await stored(page)).draft.story.summary).toBe('等车');
+  expect((await stored(page)).state).toBe(before.state); expect(requests).toHaveLength(cases.length + 1);
 });
 
 test('Story后置凭证拒绝同步到原文面板，诊断与原文均不泄露密钥', async ({ page }) => {
