@@ -34,33 +34,37 @@ export class CredentialVault {
   }
   /** 尽力恢复原值/位置，一致项不写；原副本恢复后才清理额外副本。结果不包含凭证值。 */
   restore(snapshot: VaultSnapshot): VaultRestoreResult {
-    for (const entry of snapshot) {
-      for (const [store, value] of [[this.session, entry.session], [this.persistent, entry.persistent]] as const) {
+    const places = (entry: VaultSnapshot[number]) => [[this.session, entry.session], [this.persistent, entry.persistent]] as const;
+    const read = (store: Store, id: string) => { try { return store.getItem(keyFor(id)); } catch { return undefined; } };
+    const writeOriginals = (entry: VaultSnapshot[number]) => {
+      let ready = true;
+      // 单个位置失败也继续恢复另一位置；无法读取时不盲目重写已有副本。
+      for (const [store, value] of places(entry)) {
         if (value === null) continue;
-        try {
-          if (store.getItem(keyFor(entry.id)) !== value) store.setItem(keyFor(entry.id), value);
-        } catch { /* 保留现有副本，继续恢复其他位置与渠道，最后统一核验。 */ }
+        const current = read(store, entry.id);
+        if (current === value) continue;
+        if (current === undefined) { ready = false; continue; }
+        try { store.setItem(keyFor(entry.id), value); } catch { /* 最终核验决定结果。 */ }
+        if (read(store, entry.id) !== value) ready = false;
       }
-    }
-    for (const entry of snapshot) {
-      // 不能恢复原位置时，宁可保留现有副本并明确报错，也不先将它删除。
-      try {
-        if (entry.session !== null && this.session.getItem(keyFor(entry.id)) !== entry.session) continue;
-        if (entry.persistent !== null && this.persistent.getItem(keyFor(entry.id)) !== entry.persistent) continue;
-      } catch { continue; }
-      for (const [store, value] of [[this.session, entry.session], [this.persistent, entry.persistent]] as const) {
+      return ready;
+    };
+    const removeExtras = (entry: VaultSnapshot[number]) => {
+      for (const [store, value] of places(entry)) {
         if (value !== null) continue;
-        try {
-          if (store.getItem(keyFor(entry.id)) !== null) store.removeItem(keyFor(entry.id));
-        } catch { /* 继续核验其他渠道；多余副本也算未恢复。 */ }
+        const current = read(store, entry.id);
+        if (current === undefined || current === null) continue;
+        try { store.removeItem(keyFor(entry.id)); } catch { /* 多余副本也会在最终核验中报告。 */ }
       }
+    };
+    const pending: VaultSnapshot = [];
+    for (const entry of snapshot) {
+      if (writeOriginals(entry)) removeExtras(entry); else pending.push(entry);
     }
-    const failedIds = snapshot.filter((entry) => {
-      try {
-        const session = this.session.getItem(keyFor(entry.id)), persistent = this.persistent.getItem(keyFor(entry.id));
-        return session !== entry.session || persistent !== entry.persistent;
-      } catch { return true; }
-    }).map(entry => entry.id);
+    // 其他渠道清理成功后若腾出容量，再尝试一次原副本。
+    for (const entry of pending) if (writeOriginals(entry)) removeExtras(entry);
+    const failedIds = snapshot.filter(entry => places(entry).map(([store, value]) => read(store, entry.id) === value)
+      .some(matches => !matches)).map(entry => entry.id);
     return { restored: failedIds.length === 0, failedIds };
   }
 }

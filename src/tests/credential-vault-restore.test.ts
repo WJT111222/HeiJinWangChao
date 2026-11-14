@@ -138,3 +138,59 @@ it('正常迁移目标持续拒写时保留原始存储的旧密钥', () => {
   expect(() => new CredentialVault(session, blocked).set('a', 'new-a', true)).toThrow();
   expect(session.getItem(credential('a'))).toBe('old-a'); expect(persistent.getItem(credential('a'))).toBeNull();
 });
+
+it('写入持续失败（删除正常）：旧密钥不会因回滚被删掉，恢复结果为成功', () => {
+  const session = store(), persistent = store();
+  persistent.data.set('heijin.credential.v1:a', 'old-key');
+  persistent.setItem = () => { throw new DOMException('mock', 'QuotaExceededError'); };
+  session.setItem = () => { throw new DOMException('mock', 'QuotaExceededError'); };
+  const vault = new CredentialVault(session, persistent);
+  const snapshot = vault.snapshot(['a']);
+  expect(() => vault.set('a', 'new-key', true)).toThrow();
+  expect(vault.restore(snapshot).restored).toBe(true);
+  expect(persistent.data.get('heijin.credential.v1:a')).toBe('old-key');
+  // 换存放位置时也一样：写新位置失败，旧位置的密钥原封不动。
+  expect(() => vault.set('a', 'new-key', false)).toThrow();
+  expect(vault.restore(snapshot).restored).toBe(true);
+  expect(persistent.data.get('heijin.credential.v1:a')).toBe('old-key');
+  expect(session.data.has('heijin.credential.v1:a')).toBe(false);
+});
+
+it('原值确实写不回去时如实返回失败，并保留现有副本而不是删光', () => {
+  const session = store(), persistent = store();
+  const vault = new CredentialVault(session, persistent);
+  vault.set('a', 'old-key', true);
+  const snapshot = vault.snapshot(['a']);
+  vault.set('a', 'new-key', false); // 已移到本次会话
+  persistent.setItem = () => { throw new DOMException('mock', 'QuotaExceededError'); };
+  expect(vault.restore(snapshot).restored).toBe(false);
+  expect(session.data.get('heijin.credential.v1:a')).toBe('new-key');
+});
+
+it('已经和快照一致的项不重复写入或删除', () => {
+  const session = store(), persistent = store();
+  const vault = new CredentialVault(session, persistent);
+  vault.set('a', 'key-a', true); vault.set('b', 'key-b', false);
+  const snapshot = vault.snapshot(['a', 'b']);
+  let writes = 0, removes = 0;
+  for (const target of [session, persistent]) {
+    const set = target.setItem, remove = target.removeItem;
+    target.setItem = (key, value) => { writes++; set(key, value); };
+    target.removeItem = (key) => { removes++; remove(key); };
+  }
+  expect(vault.restore(snapshot).restored).toBe(true);
+  expect({ writes, removes }).toEqual({ writes: 0, removes: 0 });
+});
+
+it('其他渠道释放空间后重试原副本，仍先恢复再清理唯一备份', () => {
+  const session = store(), persistent = store(), vault = new CredentialVault(session, persistent);
+  vault.set('a', 'old-a'); const snapshot = vault.snapshot(['a', 'temporary']);
+  vault.set('a', 'old-a', true); session.data.set(credential('temporary'), 'fills-session-space');
+  const quotaSession = { ...session, setItem: (key: string, value: string) => {
+    if (session.data.has(credential('temporary'))) throw new DOMException('full', 'QuotaExceededError');
+    session.setItem(key, value);
+  } };
+  expect(new CredentialVault(quotaSession, persistent).restore(snapshot)).toEqual({ restored: true, failedIds: [] });
+  expect(session.getItem(credential('a'))).toBe('old-a'); expect(persistent.getItem(credential('a'))).toBeNull();
+  expect(session.getItem(credential('temporary'))).toBeNull();
+});

@@ -271,11 +271,11 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
         return;
       }
       const result = vault.restore(before);
-      if (result.restored) setNotice('保存失败，请检查浏览器存储权限或空间后重试。已核对密钥值和存放位置与保存前一致，修改仍未保存。');
+      if (result.restored) setNotice('保存失败，请检查浏览器存储权限或空间后重试。密钥和配置都保持原样。已核对密钥值和原存放位置，修改仍未保存。');
       else {
         const affected = result.failedIds.map(id => saved.config.channels.find(item => item.id === id)?.name
           || checked.data.channels.find(item => item.id === id)?.name || '未命名渠道');
-        setNotice(`保存失败：密钥未能完全恢复或核验，请检查密钥存储状态（${affected.join('、')}）。保存未完成，编辑仍未保存。`);
+        setNotice(`保存失败：浏览器存储没能完全恢复或核验，请检查密钥存储状态（${affected.join('、')}）。保存未完成，编辑仍未保存。`);
       }
       return;
     }
