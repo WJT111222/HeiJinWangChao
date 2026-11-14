@@ -1,0 +1,258 @@
+[
+  {
+    "file": "screenshots/desktop-partial-failure.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 1000
+    },
+    "sha256": "4574e1900cf64f3037fd8e7a0dbc14e793515f2998aae195ed4581d8908b125b",
+    "data": "synthetic Mock credentials only; real React App"
+  },
+  {
+    "file": "screenshots/desktop-partial-saved.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 1000
+    },
+    "sha256": "8e63afc16c57cb80f7008ac4307c6b28efb623dd5b4a605648b19dd01f3686fa",
+    "data": "synthetic Mock credentials only; real React App"
+  },
+  {
+    "file": "screenshots/desktop-read-failure.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 1000
+    },
+    "sha256": "208de181135ec82bbd2437d94402fff99b1944390a5e8375ebaf978b7f6e1fb5",
+    "data": "synthetic Mock credentials only; real React App"
+  },
+  {
+    "file": "screenshots/desktop-read-saved.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 1000
+    },
+    "sha256": "af7545b142bd70c3f296387603067d686ee19f163f401d0aeb388e9840c6cb5e",
+    "data": "synthetic Mock credentials only; real React App"
+  },
+  {
+    "file": "screenshots/desktop-remove-failure.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 1000
+    },
+    "sha256": "ddbbe971dc6b6f250e97d4282b07bf52f4dc4c378502c0277d7df70a324cc7a6",
+    "data": "synthetic Mock credentials only; real React App"
+  },
+  {
+    "file": "screenshots/desktop-remove-saved.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 1000
+    },
+    "sha256": "a3ab214b8fdf2ecf767bdf35afca5b624cdcece6047647f14a73452066a3321e",
+    "data": "synthetic Mock credentials only; real React App"
+  },
+  {
+    "file": "screenshots/desktop-set-failure.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 1000
+    },
+    "sha256": "7f044aae0becff58292306d2525755009daac2143564aa26fd673414ac844fdd",
+    "data": "synthetic Mock credentials only; real React App"
+  },
+  {
+    "file": "screenshots/desktop-set-saved.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "deviceScaleFactor": 1,
+    "pngPixels": {
+      "width": 1440,
+      "height": 1000
+    },
+    "sha256": "b654f81a042af6eb3a543f68be8123f9128387659475a08165ff11343ab06383",
+    "data": "synthetic Mock credentials only; real React App"
+  },
+  {
+    "file": "screenshots/mobile-partial-failure.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 412,
+      "height": 839
+    },
+    "deviceScaleFactor": 2.625,
+    "pngPixels": {
+      "width": 1082,
+      "height": 2202
+    },
+    "sha256": "c0271a0904fb5f243c043525bdbfc6d23876226c988b6632786479b3ed7c6ae6",
+    "data": "synthetic Mock credentials only; real React App"
+  },
+  {
+    "file": "screenshots/mobile-partial-saved.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 412,
+      "height": 839
+    },
+    "deviceScaleFactor": 2.625,
+    "pngPixels": {
+      "width": 1082,
+      "height": 2202
+    },
+    "sha256": "c563b0390a9441d101fd2ba9bdbcc697f92b895ad8186ff8554659d4b2f8ede1",
+    "data": "synthetic Mock credentials only; real React App"
+  },
+  {
+    "file": "screenshots/mobile-read-failure.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 412,
+      "height": 839
+    },
+    "deviceScaleFactor": 2.625,
+    "pngPixels": {
+      "width": 1082,
+      "height": 2202
+    },
+    "sha256": "e42ee5c98838e491bc60c111b327ba7e56d9a4f30f502c010268838384f4098a",
+    "data": "synthetic Mock credentials only; real React App"
+  },
+  {
+    "file": "screenshots/mobile-read-saved.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 412,
+      "height": 839
+    },
+    "deviceScaleFactor": 2.625,
+    "pngPixels": {
+      "width": 1082,
+      "height": 2202
+    },
+    "sha256": "5289883d6642c0ab30be09cb5948a247fcb035b74594ebbd09d3842fcea45ff3",
+    "data": "synthetic Mock credentials only; real React App"
+  },
+  {
+    "file": "screenshots/mobile-remove-failure.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 412,
+      "height": 839
+    },
+    "deviceScaleFactor": 2.625,
+    "pngPixels": {
+      "width": 1082,
+      "height": 2202
+    },
+    "sha256": "5df3c4bf9f923ba546c747ae079ae2a542803c671dfbf74c187a8e2c9441b0ec",
+    "data": "synthetic Mock credentials only; real React App"
+  },
+  {
+    "file": "screenshots/mobile-remove-saved.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 412,
+      "height": 839
+    },
+    "deviceScaleFactor": 2.625,
+    "pngPixels": {
+      "width": 1082,
+      "height": 2202
+    },
+    "sha256": "726d75c559b3026de38a24a3a997a6f5e9b40eca70a448d46d9f1b3a0c565173",
+    "data": "synthetic Mock credentials only; real React App"
+  },
+  {
+    "file": "screenshots/mobile-set-failure.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 412,
+      "height": 839
+    },
+    "deviceScaleFactor": 2.625,
+    "pngPixels": {
+      "width": 1082,
+      "height": 2202
+    },
+    "sha256": "89ed674b521755ca98bd71e25f57c6d6a1738868298e3cbb92c97a0eb29d1cc3",
+    "data": "synthetic Mock credentials only; real React App"
+  },
+  {
+    "file": "screenshots/mobile-set-saved.png",
+    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "browser": "Chromium 154.0.8037.57",
+    "cssViewport": {
+      "width": 412,
+      "height": 839
+    },
+    "deviceScaleFactor": 2.625,
+    "pngPixels": {
+      "width": 1082,
+      "height": 2202
+    },
+    "sha256": "5289883d6642c0ab30be09cb5948a247fcb035b74594ebbd09d3842fcea45ff3",
+    "data": "synthetic Mock credentials only; real React App"
+  }
+]
