@@ -1,5 +1,7 @@
 # PR #149 同行正文边界返修
 
+> 后续又发现疑似保留标签后缀损坏时会绕过守卫，已在[第三轮返修](../review-r3/REPORT.md)补强。本报告及成绩保留为同行边界修复的历史记录。
+
 回应[最新合并阻断评论](https://github.com/WJT111222/HeiJinWangChao/pull/149#issuecomment-6873874166)。上轮 HEAD 为 `af790a18ff29aea3c77d75c977ddde6e0ca7245e`；本轮代码提交为 `a765d8abe03ded89edf6f3ec5e86efc5952bb03b`。main 重新核实为 `086ea8f6c25b028460b71b121e42b45ee5e965c2`。后续材料提交的最终 HEAD 在原 PR 回复提供。
 
 ## 问题与最小修复
