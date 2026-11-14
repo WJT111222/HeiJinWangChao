@@ -1,0 +1,7 @@
+Node v24.19.0
+npm 11.9.0
+Chromium 154.0.8037.57 built on Debian GNU/Linux 13 (trixie)
+Source commit: cee09f2c18d3f1918285095a1cac1e686fab27be
+Review baseline: d1d2a6ba92832de0e07c1f06006972b94ba6d24f
+Observed main: 35312565d2f6331663908c4eb4b74affd5f968fe
+No main merge in this narrow follow-up. Existing genuine Node24 npm-ci dependencies, no dependency delta; npm ci not rerun this round.

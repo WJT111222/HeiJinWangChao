@@ -198,7 +198,6 @@ describe('结构隔离、流式与事务', () => {
     expect(() => parseStory(output('短', '详'.repeat(500)), 'regular', a.settings)).toThrow();
   });
   it.each([
-    output().replace(/<thinking>[\s\S]*?<\/thinking>/, ''),
     output().replace('</thinking>', ''),
     `<thinking>重复</thinking>${output()}`,
     output().replace(planning, '<thinking>嵌套</thinking>'),
@@ -210,6 +209,11 @@ describe('结构隔离、流式与事务', () => {
     output().replace(planning, ''),
   ])('缺失/重复/嵌套/截断输出不得保存（%#）', (text) => {
     expect(() => parseStory(text, 'regular', setup().settings)).toThrow();
+  });
+  it('项目规划缺省合法且不增补思考字段，其他正式内容完整保留', () => {
+    const raw = output().replace(/<thinking>[\s\S]*?<\/thinking>/, '');
+    expect(parseStoryEnvelope(raw, 'regular', setup().settings).planning).toBe('');
+    expect(parseStory(raw, 'regular', setup().settings)).toEqual(parseStory(output(), 'regular', setup().settings));
   });
   it('所有增量切点只展示正文，规划标签拆分也不泄漏；规划内容不是叙事质量门槛', () => {
     const text = output();

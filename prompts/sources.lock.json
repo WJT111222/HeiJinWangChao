@@ -169,6 +169,11 @@
         "baseCommit": "d0285e2201f67103195a42de4312f8c23df1193f",
         "reason": "第三批Story结构化事件入场与实际暂停时间，保留旧回执与作者知识边界",
         "sha256": "5e0b435068d0a64caf0b38261b36164a638da171debd2c002ef8890b1c2c05a6"
+      },
+      "storyTagCompatibilityV1": {
+        "baseCommit": "086ea8f6c25b028460b71b121e42b45ee5e965c2",
+        "notes": "正文项目规划可选；禁用裸露Step/元指令；仅调整本次Story标签兼容说明，原始来源及历次适配记录保持。",
+        "sha256": "1854ea0696c08cff778420072dfe89819083cec16041175ffcfb79a0a933a369"
       }
     },
     "variableGroups/npc_ordinary/init.md": {
@@ -456,6 +461,11 @@
       "m5P6": {
         "notes": "用户明确批准thinking结构/开局契机与兼容消息调整，原始来源及历史适配记录保留。",
         "sha256": "8333d0523447d7433c7955bec8a28463d572a67b26b913c6ba9e63312fefa17a"
+      },
+      "storyTagCompatibilityV1": {
+        "baseCommit": "086ea8f6c25b028460b71b121e42b45ee5e965c2",
+        "notes": "正文项目规划可选；禁用裸露Step/元指令；仅调整本次Story标签兼容说明，原始来源及历次适配记录保持。",
+        "sha256": "78cbef11db6b8b0c31f8207282914f26ca53872958c8d038397e72f21580dc68"
       }
     },
     "shared/01_agency.md": {
@@ -511,6 +521,11 @@
         "baseCommit": "d0285e2201f67103195a42de4312f8c23df1193f",
         "reason": "第三批Story结构化事件入场与实际暂停时间，保留旧回执与作者知识边界",
         "sha256": "05d86fd4c56fcc143022590a8ea7471673591dc22399bf07248005c5c0aab347"
+      },
+      "storyTagCompatibilityV1": {
+        "baseCommit": "086ea8f6c25b028460b71b121e42b45ee5e965c2",
+        "notes": "正文项目规划可选；禁用裸露Step/元指令；仅调整本次Story标签兼容说明，原始来源及历次适配记录保持。",
+        "sha256": "a38a1d5fdcde622a8f1ef9b3d2ddd311e0416cc0161c79fa36b6ba3416b13beb"
       }
     },
     "shared/07_command_output.md": {
@@ -1339,7 +1354,12 @@
       "origin": "user-approved-m5-p6",
       "sourcePath": "附录A",
       "sourceSha256": "4d71e81a009892b1a56fd9afae28f6194a14f4a67e635b9b867ffbaa8bd4da63",
-      "treatment": "verbatim"
+      "treatment": "adapted-story-tag-compatibility-v1",
+      "storyTagCompatibilityV1": {
+        "baseCommit": "086ea8f6c25b028460b71b121e42b45ee5e965c2",
+        "notes": "正文项目规划可选；禁用裸露Step/元指令；仅调整本次Story标签兼容说明，原始来源及历次适配记录保持。",
+        "sha256": "e377b8e25d4b4d8dd5e06d9a10571df3be58e3f712394d384fd1d3785fe0e0f3"
+      }
     },
     "planning/regular.md": {
       "origin": "user-approved-m5-p6",
@@ -1350,6 +1370,11 @@
         "baseCommit": "d0285e2201f67103195a42de4312f8c23df1193f",
         "reason": "第三批Story结构化事件入场与实际暂停时间，保留旧回执与作者知识边界",
         "sha256": "afd5d5cc88c83077801f47ac4f7184ab0206b5a284b2afeac2f02fb79469b242"
+      },
+      "storyTagCompatibilityV1": {
+        "baseCommit": "086ea8f6c25b028460b71b121e42b45ee5e965c2",
+        "notes": "正文项目规划可选；禁用裸露Step/元指令；仅调整本次Story标签兼容说明，原始来源及历次适配记录保持。",
+        "sha256": "8283d6f3a0f8436f5c3e88804d8fd589127070285e4dd69819185b75344c87f1"
       }
     },
     "legacy/variables_json/shared/07_command_output.md": {

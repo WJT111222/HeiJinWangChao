@@ -4,17 +4,29 @@ import { StoryValidationError, storyFieldPath, storyTags } from '../../domain/st
 import type { StoryDiagnostic, StoryTag, StoryRule } from '../../domain/storyDiagnostics';
 import { AiError } from '../ai/errors';
 
-/** Called only AFTER the original full-envelope regex has rejected the response. */
+/** Diagnose only missing REQUIRED tags; an absent project <thinking> is valid. */
 export function storyEnvelopeDiagnostic(text: string, actions: boolean): StoryDiagnostic {
-  const required: StoryTag[] = ['thinking', '正文', '短期记忆', '变量规划', ...(actions ? ['行动选项' as const] : [])];
+  const required: StoryTag[] = ['正文', '短期记忆', '变量规划', ...(actions ? ['行动选项' as const] : [])];
   for (const tag of required) {
     const open = text.indexOf(`<${tag}>`), close = text.indexOf(`</${tag}>`);
     if (open < 0) return { storyRule: 'tag_missing', storyTag: tag };
     if (close < 0) return { storyRule: 'tag_unclosed', storyTag: tag };
     if (close < open) return { storyRule: 'tag_order', storyTag: tag };
   }
-  if (!actions && /<\/?行动选项>/.test(text)) return { storyRule: 'tag_unexpected', storyTag: '行动选项' };
+  if (!actions && /<\/?行动选项>/u.test(text)) return { storyRule: 'tag_unexpected', storyTag: '行动选项' };
+
+  const hasThinking = /<\/?thinking>/u.test(text);
   let after = 0;
+  if (hasThinking) {
+    const open = text.indexOf('<thinking>'), close = text.indexOf('</thinking>');
+    if (open < 0) return { storyRule: 'tag_order', storyTag: 'thinking' };
+    if (close < 0) return { storyRule: 'tag_unclosed', storyTag: 'thinking' };
+    if (close < open) return { storyRule: 'tag_order', storyTag: 'thinking' };
+    if (open > text.indexOf('<正文>')) return { storyRule: 'tag_order', storyTag: 'thinking' };
+    if (text.indexOf('<thinking>', open + 1) >= 0 || text.indexOf('</thinking>', close + 1) >= 0)
+      return { storyRule: 'tag_nested', storyTag: 'thinking' };
+    after = close + '</thinking>'.length;
+  }
   for (const tag of required) {
     const open = text.indexOf(`<${tag}>`), close = text.indexOf(`</${tag}>`);
     if (open < after) return { storyRule: 'tag_order', storyTag: tag };

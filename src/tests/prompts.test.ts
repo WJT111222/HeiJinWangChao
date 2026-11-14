@@ -283,7 +283,7 @@ describe('正式文本来源与旧架构保留', () => {
     for (const module of promptManifest.modules.filter((m) => m.kind === 'prompt')) {
       const record = sources.resources[module.path as keyof typeof sources.resources];
       expect(record, module.path).toBeDefined();
-      const latest = ['openingNpcEligibility','variablesContractStability','worldCommandStability','worldNpcCreationContract','organizationFinalAcceptance','npcMemoryContentQuality','npcContextTiersV2','npcImportanceV2','npcUnifiedMemoryV2','npcV2Foundation','storyEventArbitrationV2','worldEventStagesV2','worldNarrativeConditions','historyTimelineV2','contextV2','memorySummaryV2']
+      const latest = ['storyTagCompatibilityV1','openingNpcEligibility','variablesContractStability','worldCommandStability','worldNpcCreationContract','organizationFinalAcceptance','npcMemoryContentQuality','npcContextTiersV2','npcImportanceV2','npcUnifiedMemoryV2','npcV2Foundation','storyEventArbitrationV2','worldEventStagesV2','worldNarrativeConditions','historyTimelineV2','contextV2','memorySummaryV2']
         .map(key=>Reflect.get(record,key)).find(value=>value && typeof value==='object' && 'sha256' in value);
       if(latest) expect(sha(text(module.path)),module.path).toBe(Reflect.get(latest,'sha256'));
       if (record.treatment === 'verbatim')
@@ -301,7 +301,7 @@ describe('正式文本来源与旧架构保留', () => {
     expect(promptManifest.modules.filter((m) => m.category === 'stage' && m.variableProtocol !== 'text')).toHaveLength(6);
     for (const mode of ['opening', 'regular'] as const) {
       const path = `stages/${mode}/story.md` as const;
-      expect(sha(text(path))).toBe(mode === 'opening' ? sources.resources['stages/opening/story.md'].openingLifeInitialization.sha256 : sources.resources['stages/regular/story.md'].storyEventArbitrationV2.sha256);
+      expect(sha(text(path))).toBe(mode === 'opening' ? sources.resources['stages/opening/story.md'].openingLifeInitialization.sha256 : sources.resources['stages/regular/story.md'].storyTagCompatibilityV1.sha256);
     }
     expect(text('stages/opening/story.md')).toContain('不得死亡、背叛主角');
     expect(text('stages/regular/story.md')).toContain('不是开局');
