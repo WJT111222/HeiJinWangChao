@@ -1,0 +1,1281 @@
+[
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "variables失败保留上游，仅明确恢复缺少阶段，折叠无额外请求",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-variables失败保留上游，仅明确恢复缺少阶段，折叠无额外请求-mobile/error-context.md",
+        "bytes": 5532,
+        "sha256": "3841d044736bf2c38a177d0e00ef4062d82c1793f136577d016ff84423795348",
+        "repository_path": "failure-contexts/main-mobile-21.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-variables失败保留上游，仅明确恢复缺少阶段，折叠无额外请求-mobile/trace.zip",
+        "bytes": 11723917,
+        "sha256": "d446b6a429fb55b563d6be8264e50746094c84af6b5bd349c3268f5b019c4847"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "variables失败保留上游，仅明确恢复缺少阶段，折叠无额外请求",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-variables失败保留上游，仅明确恢复缺少阶段，折叠无额外请求-mobile/error-context.md",
+        "bytes": 23886,
+        "sha256": "069474612e30fa033ea36d0330e7deabe36a665853edb2ad5092522019717ad1",
+        "repository_path": "failure-contexts/pr-mobile-21.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-variables失败保留上游，仅明确恢复缺少阶段，折叠无额外请求-mobile/trace.zip",
+        "bytes": 5608326,
+        "sha256": "ec5517d4273683abcd495d12b52e7e40442ff99d6a952ade042da3b600d0680d"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "world失败保留上游，仅明确恢复缺少阶段，折叠无额外请求",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-world失败保留上游，仅明确恢复缺少阶段，折叠无额外请求-mobile/error-context.md",
+        "bytes": 23759,
+        "sha256": "f578492f4f98b12ee84447a55fef0e77addc3d16f85edff53b72f967cdc7c1ac",
+        "repository_path": "failure-contexts/main-mobile-22.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-world失败保留上游，仅明确恢复缺少阶段，折叠无额外请求-mobile/trace.zip",
+        "bytes": 4358381,
+        "sha256": "4e058f2adb61ce4e04611cd03a219299bbe21e1d69c401bb6e6c4898beab801c"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "world失败保留上游，仅明确恢复缺少阶段，折叠无额外请求",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-world失败保留上游，仅明确恢复缺少阶段，折叠无额外请求-mobile/error-context.md",
+        "bytes": 23759,
+        "sha256": "804af5c781c225098d859c2d06e3389e863a9f34396ce430b66d8fbbbfb512a4",
+        "repository_path": "failure-contexts/pr-mobile-22.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-world失败保留上游，仅明确恢复缺少阶段，折叠无额外请求-mobile/trace.zip",
+        "bytes": 5522506,
+        "sha256": "b83959cf3b4b790c7cd5a8aa888bfb1dcfb6ea20c54caab2ba997d084cf61f29"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求-mobile/error-context.md",
+        "bytes": 24246,
+        "sha256": "36a34bcbe9ae0aee8a0a7663db68eec71f47c9147512d040131ec0d6048366a5",
+        "repository_path": "failure-contexts/main-mobile-23.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求-mobile/trace.zip",
+        "bytes": 6741962,
+        "sha256": "7c995297b1cf4a64fbdde2123d32f7fd349bf7d9f27fa09dfd85e4307715e4c3"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求-mobile/error-context.md",
+        "bytes": 24246,
+        "sha256": "3c3b7612f463b4077d63f6a17eb98c47da39f60d5e1e6abbdf203b1d62be24ff",
+        "repository_path": "failure-contexts/pr-mobile-23.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求-mobile/trace.zip",
+        "bytes": 7197907,
+        "sha256": "08d0b781fc6c76771796ef6c722261179e9a7d55e775be9eee21d05bb2ecf05b"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "下一条行动绑定冲突显示发送失败，不误报等待行动且不请求模型",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-下一条行动绑定冲突显示发送失败，不误报等待行动且不请求模型-mobile/error-context.md",
+        "bytes": 5633,
+        "sha256": "1e32fec4a0b2167d0d4f000d517b943ec487e5d0a6ba006ca6184ce567a4bbb7",
+        "repository_path": "failure-contexts/main-mobile-24.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-下一条行动绑定冲突显示发送失败，不误报等待行动且不请求模型-mobile/trace.zip",
+        "bytes": 12957469,
+        "sha256": "aba52faa1924a7062f9f3ffbb60bf8f0c15be0ca8eafed5eb99cf7016c65f9af"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "下一条行动绑定冲突显示发送失败，不误报等待行动且不请求模型",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-下一条行动绑定冲突显示发送失败，不误报等待行动且不请求模型-mobile/error-context.md",
+        "bytes": 5633,
+        "sha256": "568e066c95795f61025744272c2b4fc7b9e68ae4e5bdf3deb33bb6b53eed0228",
+        "repository_path": "failure-contexts/pr-mobile-24.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-下一条行动绑定冲突显示发送失败，不误报等待行动且不请求模型-mobile/trace.zip",
+        "bytes": 9119390,
+        "sha256": "315b27251dab97d31cdb956892880c7adbc24932cbe84e37e129cb8aa6661edd"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/error-context.md",
+        "bytes": 21073,
+        "sha256": "2acc01968ba0f4a7be4f27a9f486b165ab3e00dc3e9af6c1fb65f7aa9950309a",
+        "repository_path": "failure-contexts/main-mobile-26.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/trace.zip",
+        "bytes": 3721760,
+        "sha256": "33306cfa3fa63df2ed4608661cbaf219cc97e347360c9c10519eadb02338ee34"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/error-context.md",
+        "bytes": 21073,
+        "sha256": "2acc01968ba0f4a7be4f27a9f486b165ab3e00dc3e9af6c1fb65f7aa9950309a",
+        "repository_path": "failure-contexts/pr-mobile-26.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/trace.zip",
+        "bytes": 5028999,
+        "sha256": "abcc2562cf661bab392e27ea302ec8df33fe4cd5a7564a980c6fbd01a8a20917"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/error-context.md",
+        "bytes": 21036,
+        "sha256": "8cd748a1989064d31a7403d61adbf51cd2d77a0ff00efb3080562c3ab93cd6ef",
+        "repository_path": "failure-contexts/main-mobile-27.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/trace.zip",
+        "bytes": 4086530,
+        "sha256": "f23f39f35623573e6d991096497837d886e34af1945b388bf8fc2fe49a099446"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/error-context.md",
+        "bytes": 21036,
+        "sha256": "8cd748a1989064d31a7403d61adbf51cd2d77a0ff00efb3080562c3ab93cd6ef",
+        "repository_path": "failure-contexts/pr-mobile-27.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/trace.zip",
+        "bytes": 5178973,
+        "sha256": "d2e1811324af1fba819dd520b687dff1d110562cffb5dfcbfa5c6a5fe301cba7"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "单行状态跟随三个实际请求，展开收起不重发且自动结算后等待行动",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-单行状态跟随三个实际请求，展开收起不重发且自动结算后等待行动-mobile/error-context.md",
+        "bytes": 16447,
+        "sha256": "37cc38ad95899d0b3eb506a815a3c0501bf857d24603d62b95974d7f96f102d4",
+        "repository_path": "failure-contexts/main-mobile-28.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-单行状态跟随三个实际请求，展开收起不重发且自动结算后等待行动-mobile/trace.zip",
+        "bytes": 4624315,
+        "sha256": "10249379b68b8b85408befce0f4548457e36031e472cf1b9ad14a9465e2efe11"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "单行状态跟随三个实际请求，展开收起不重发且自动结算后等待行动",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-单行状态跟随三个实际请求，展开收起不重发且自动结算后等待行动-mobile/error-context.md",
+        "bytes": 16447,
+        "sha256": "37cc38ad95899d0b3eb506a815a3c0501bf857d24603d62b95974d7f96f102d4",
+        "repository_path": "failure-contexts/pr-mobile-28.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-单行状态跟随三个实际请求，展开收起不重发且自动结算后等待行动-mobile/trace.zip",
+        "bytes": 4437668,
+        "sha256": "d4bf883d658df98c66e775b8e4a64950c3da7e45700adc0a5566832da9939930"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复-mobile/error-context.md",
+        "bytes": 5852,
+        "sha256": "ad17a67010742a3a4264536a712ac2f63866001e2fd7141e95e9269be36ac0d6",
+        "repository_path": "failure-contexts/main-mobile-30.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复-mobile/trace.zip",
+        "bytes": 35126189,
+        "sha256": "fbb06675152da1d25daefcb1f36018cbdd6f3ff6ddd18cdf5829e301f3cba79d"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复-mobile/error-context.md",
+        "bytes": 26969,
+        "sha256": "90bf4d761e162efb270ce78dbdf41c498360136b983d1c8ca8120fcdaef506a4",
+        "repository_path": "failure-contexts/pr-mobile-30.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复-mobile/trace.zip",
+        "bytes": 23296872,
+        "sha256": "6c735912ffea291f6df3a00c2698c4e93ac38d1348e8d2bc07b986865ede5abe"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "开局network不隐式重试，刷新不重发，草稿和正式状态安全",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-开局network不隐式重试，刷新不重发，草稿和正式状态安全-mobile/error-context.md",
+        "bytes": 22864,
+        "sha256": "c25b24aa4005c9853d79d74d65134b9b3ccebd93921f75b83a9cb76c9d870959",
+        "repository_path": "failure-contexts/main-mobile-31.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-开局network不隐式重试，刷新不重发，草稿和正式状态安全-mobile/trace.zip",
+        "bytes": 4663808,
+        "sha256": "c550bb17b655f77819df7a4623bd9f4b73db15a76c96798d9880cf15ba69e7d7"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "开局network不隐式重试，刷新不重发，草稿和正式状态安全",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-开局network不隐式重试，刷新不重发，草稿和正式状态安全-mobile/error-context.md",
+        "bytes": 22864,
+        "sha256": "5b9cbd152cda8f5094c9975fde1a66249c88fa85d15d853786e5da05aadd4963",
+        "repository_path": "failure-contexts/pr-mobile-31.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-开局network不隐式重试，刷新不重发，草稿和正式状态安全-mobile/trace.zip",
+        "bytes": 4718863,
+        "sha256": "e120d72494ba98ffafc7dac5ffc6015a0a423da5553c960b0f582435764bfa74"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "开局timeout不隐式重试，刷新不重发，草稿和正式状态安全",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-开局timeout不隐式重试，刷新不重发，草稿和正式状态安全-mobile/error-context.md",
+        "bytes": 22624,
+        "sha256": "6b8e163ba4e59ea3e150dc0c1239683a836662dfdb07e56be8023e26623ddeba",
+        "repository_path": "failure-contexts/main-mobile-32.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-开局timeout不隐式重试，刷新不重发，草稿和正式状态安全-mobile/trace.zip",
+        "bytes": 4382740,
+        "sha256": "0aaba8184e41d949913ca56c4229a8ac5cb47e683d093b4126220474fb87004b"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "开局timeout不隐式重试，刷新不重发，草稿和正式状态安全",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-开局timeout不隐式重试，刷新不重发，草稿和正式状态安全-mobile/error-context.md",
+        "bytes": 22624,
+        "sha256": "9b701c508f928c00b48f336741a732ce3f60538bc12762be405976ad4d59fc92",
+        "repository_path": "failure-contexts/pr-mobile-32.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-开局timeout不隐式重试，刷新不重发，草稿和正式状态安全-mobile/trace.zip",
+        "bytes": 4704991,
+        "sha256": "7a39d9c6cf5b2180f740a2a548d1bccfa925cbd1bb0f5007224b8c30e10b269d"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "快速离开并重读同一存档或新标签不能延续开局收费授权",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-快速离开并重读同一存档或新标签不能延续开局收费授权-mobile/error-context.md",
+        "bytes": 24495,
+        "sha256": "251eb6206ceaa6d38b2098e84118c5cb15d5bef00bdec7ec766596852d1ed640",
+        "repository_path": "failure-contexts/main-mobile-34.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-快速离开并重读同一存档或新标签不能延续开局收费授权-mobile/trace.zip",
+        "bytes": 4644576,
+        "sha256": "262a6f264836b82613385ddcbc1dd13a863f76c46cdf7865277560f606a6f18d"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "快速离开并重读同一存档或新标签不能延续开局收费授权",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-快速离开并重读同一存档或新标签不能延续开局收费授权-mobile/error-context.md",
+        "bytes": 24495,
+        "sha256": "6dfda4d2d4934d9d1a1e7aca4854088755c07b030a35c27b05e08fb12777cf5c",
+        "repository_path": "failure-contexts/pr-mobile-34.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-快速离开并重读同一存档或新标签不能延续开局收费授权-mobile/trace.zip",
+        "bytes": 5990730,
+        "sha256": "2e884148591216cccdc29eed164a2ab20d1dd29cda79954c411694dbb0dd055e"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "最新阶段失败覆盖旧变量错误，状态栏准确指出World失败",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-最新阶段失败覆盖旧变量错误，状态栏准确指出World失败-mobile/error-context.md",
+        "bytes": 9135,
+        "sha256": "6e6de6d2acf577949b0327b39d7c1527644a23f21a0f5232a1dbfdbcadb00f70",
+        "repository_path": "failure-contexts/main-mobile-35.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-最新阶段失败覆盖旧变量错误，状态栏准确指出World失败-mobile/trace.zip",
+        "bytes": 13308605,
+        "sha256": "aeac4392a4d8f27bb86c9567faa6c4668eaa2895e838c1fe42088913de9d5279"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "最新阶段失败覆盖旧变量错误，状态栏准确指出World失败",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-最新阶段失败覆盖旧变量错误，状态栏准确指出World失败-mobile/error-context.md",
+        "bytes": 9135,
+        "sha256": "02192bfba986147b168506cdf74cd5e41ad086aeb473abba51c5e9dd287ccaf3",
+        "repository_path": "failure-contexts/pr-mobile-35.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-最新阶段失败覆盖旧变量错误，状态栏准确指出World失败-mobile/trace.zip",
+        "bytes": 9245849,
+        "sha256": "c97bc70035869c9d8d913e77d87122f0b8515acf51a349686145e48ee90e0acb"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "正文摘要不合法时不保存、不运行下游、不结算",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-正文摘要不合法时不保存、不运行下游、不结算-mobile/error-context.md",
+        "bytes": 23502,
+        "sha256": "84df1414a4a59d932df2c5f83cf183f7613d5d15871f7d484a0173f9008804a9",
+        "repository_path": "failure-contexts/main-mobile-36.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-正文摘要不合法时不保存、不运行下游、不结算-mobile/trace.zip",
+        "bytes": 4766037,
+        "sha256": "af9d313fd77d4e98766fd4012acf213da929dfb49116f870fb49a7dae7d91f38"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "正文摘要不合法时不保存、不运行下游、不结算",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-正文摘要不合法时不保存、不运行下游、不结算-mobile/error-context.md",
+        "bytes": 23502,
+        "sha256": "a9c69227e4c2f8867ef0488187ae31f653605f1f000083e8607ae539091c9c4b",
+        "repository_path": "failure-contexts/pr-mobile-36.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-正文摘要不合法时不保存、不运行下游、不结算-mobile/trace.zip",
+        "bytes": 5127793,
+        "sha256": "b4bc5d12065e4792dfc41af2094698cb682e66784a404d87f1e865cd7545be30"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "缺少AI配置零请求，设置后不自动补发，只在明确开始时运行",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-缺少AI配置零请求，设置后不自动补发，只在明确开始时运行-mobile/error-context.md",
+        "bytes": 4924,
+        "sha256": "61dbdc1a949c7eec213b882e63ca3aa54f9011ef8638d8ce1bbbb36c2672a60f",
+        "repository_path": "failure-contexts/main-mobile-37.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-缺少AI配置零请求，设置后不自动补发，只在明确开始时运行-mobile/trace.zip",
+        "bytes": 10529153,
+        "sha256": "878b5bfb13e64d65d1770f0a3b77c07261ce267f235b95eb7bf294c27e91420b"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "缺少AI配置零请求，设置后不自动补发，只在明确开始时运行",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-缺少AI配置零请求，设置后不自动补发，只在明确开始时运行-mobile/error-context.md",
+        "bytes": 4924,
+        "sha256": "b55b588c1fe06636d25d8c1c0ce4dd83a52f7c47d044e8749dc403965d64ffcd",
+        "repository_path": "failure-contexts/pr-mobile-37.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-缺少AI配置零请求，设置后不自动补发，只在明确开始时运行-mobile/trace.zip",
+        "bytes": 8967573,
+        "sha256": "e452b4975d5b527804f3322ea872a794026acf0827000af745d3564aa04824dd"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "自动开局HTTP 401停止、不无限重试，刷新不重新授权",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-自动开局HTTP-401停止、不无限重试，刷新不重新授权-mobile/error-context.md",
+        "bytes": 24028,
+        "sha256": "b6cb8ad0328351e9187eb953a174aa623265df6ab58237d8dc7e6ed8f1b4d0ce",
+        "repository_path": "failure-contexts/main-mobile-38.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-自动开局HTTP-401停止、不无限重试，刷新不重新授权-mobile/trace.zip",
+        "bytes": 4759550,
+        "sha256": "26a5540d312b9395a7d5e11feb32ebcdfa1e1b6049bc3a266c04d3b12d1fcd74"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "自动开局HTTP 401停止、不无限重试，刷新不重新授权",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-自动开局HTTP-401停止、不无限重试，刷新不重新授权-mobile/error-context.md",
+        "bytes": 24028,
+        "sha256": "b75a79e5710dc62fcafb8ac351666a2734a5f93a0e394e505f954f6766de18ef",
+        "repository_path": "failure-contexts/pr-mobile-38.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-自动开局HTTP-401停止、不无限重试，刷新不重新授权-mobile/trace.zip",
+        "bytes": 4719797,
+        "sha256": "dc981403e0e52855d53491f509a8441f5656f79b1405c40f421eecfc192a61ac"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "自动开局HTTP 403停止、不无限重试，刷新不重新授权",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-自动开局HTTP-403停止、不无限重试，刷新不重新授权-mobile/error-context.md",
+        "bytes": 24028,
+        "sha256": "2dce979d1b69df81a4e6a50a1cef31309fbf63bc34eb28b160bcbd6a6d0e1b09",
+        "repository_path": "failure-contexts/main-mobile-39.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-自动开局HTTP-403停止、不无限重试，刷新不重新授权-mobile/trace.zip",
+        "bytes": 4598588,
+        "sha256": "ad316ce3d3d48059241d585929af35a13bb7f09b40b254809f7d687ca1bfe25d"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "自动开局HTTP 403停止、不无限重试，刷新不重新授权",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-自动开局HTTP-403停止、不无限重试，刷新不重新授权-mobile/error-context.md",
+        "bytes": 24028,
+        "sha256": "caf8b74ebf6e6d5e3c6a6eb13d1eeaba3119916e8a065ff20710bb70799c433f",
+        "repository_path": "failure-contexts/pr-mobile-39.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-自动开局HTTP-403停止、不无限重试，刷新不重新授权-mobile/trace.zip",
+        "bytes": 5161340,
+        "sha256": "348b83e66ba88bdd0b4c9686e9a8dc941ac36dfec252f2990a89dc27e667f964"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "自动开局HTTP 429停止、不无限重试，刷新不重新授权",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-自动开局HTTP-429停止、不无限重试，刷新不重新授权-mobile/error-context.md",
+        "bytes": 24019,
+        "sha256": "b5dbaabd09e42fa73af3a6aa5b547de8ca6ff494836f72a6fbb90aabcf5d171f",
+        "repository_path": "failure-contexts/main-mobile-40.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/action-workflow-自动开局HTTP-429停止、不无限重试，刷新不重新授权-mobile/trace.zip",
+        "bytes": 4969288,
+        "sha256": "9c97a9ed11f0b2e03bc9100edfd25d96fdf0b4c7167c8bcdacb1600604fcd794"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "action-workflow.spec.ts",
+    "project": "mobile",
+    "title": "自动开局HTTP 429停止、不无限重试，刷新不重新授权",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-自动开局HTTP-429停止、不无限重试，刷新不重新授权-mobile/error-context.md",
+        "bytes": 24019,
+        "sha256": "55808e0e1d2b9b6e1017c0a7eb25bcf1bfa302d3de749d0f0b7faf412f7b51ea",
+        "repository_path": "failure-contexts/pr-mobile-40.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/action-workflow-自动开局HTTP-429停止、不无限重试，刷新不重新授权-mobile/trace.zip",
+        "bytes": 4806374,
+        "sha256": "7edd7d2081b6d66b0ac869a541ca80707084adc7adc68e4b2bddb0d0a9babaef"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "continuous-turns.spec.ts",
+    "project": "mobile",
+    "title": "下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/continuous-turns-下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合-mobile/error-context.md",
+        "bytes": 15349,
+        "sha256": "d7b660c56d9cbe819a19edfe5e6a1038256fb5bf60328ca88f61ad4f0e9775e8",
+        "repository_path": "failure-contexts/main-mobile-47.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/continuous-turns-下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合-mobile/trace.zip",
+        "bytes": 5896452,
+        "sha256": "3562f74cc9e06be6760557f30f159a0f65fcb655f432b694c9cf249d6e430ebb"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "continuous-turns.spec.ts",
+    "project": "mobile",
+    "title": "下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/continuous-turns-下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合-mobile/error-context.md",
+        "bytes": 15349,
+        "sha256": "338f359c621c7b9d500fad0573938b9e0983931fbb519d88b1ab43fb403e1af6",
+        "repository_path": "failure-contexts/pr-mobile-47.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/continuous-turns-下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合-mobile/trace.zip",
+        "bytes": 8233995,
+        "sha256": "23681ef3c02c8bfb93fda9cfa545e4b70ebf311c82c04e02cccc74dbc0dca6ca"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "continuous-turns.spec.ts",
+    "project": "mobile",
+    "title": "提交事务中途失败 UI 不虚报成功；重试后只结算一次",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/continuous-turns-提交事务中途失败-UI-不虚报成功；重试后只结算一次-mobile/error-context.md",
+        "bytes": 9829,
+        "sha256": "183e2757c6b7523b3b7d0398e097b18b74138670e3f9b21fa43ae7dfa377609e",
+        "repository_path": "failure-contexts/main-mobile-49.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/continuous-turns-提交事务中途失败-UI-不虚报成功；重试后只结算一次-mobile/trace.zip",
+        "bytes": 14394238,
+        "sha256": "fa7018ee6e92c7a8f4ed442b8629f9ca98240a9d20447260419223903267d56d"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "continuous-turns.spec.ts",
+    "project": "mobile",
+    "title": "提交事务中途失败 UI 不虚报成功；重试后只结算一次",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/continuous-turns-提交事务中途失败-UI-不虚报成功；重试后只结算一次-mobile/error-context.md",
+        "bytes": 21823,
+        "sha256": "45839ff7cd90814606ea6e3c08f40ea7cc4dd83c340a4254ca41050f4b852305",
+        "repository_path": "failure-contexts/pr-mobile-49.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/continuous-turns-提交事务中途失败-UI-不虚报成功；重试后只结算一次-mobile/trace.zip",
+        "bytes": 8792468,
+        "sha256": "f83e7a7248dcd0cb2bc84c3e0bf7c1581808c66345d9b40a11e55b516291bbd3"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "continuous-turns.spec.ts",
+    "project": "mobile",
+    "title": "正式资金与时间显示新版本，结算后刷新不重复扣款",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/continuous-turns-正式资金与时间显示新版本，结算后刷新不重复扣款-mobile/error-context.md",
+        "bytes": 17069,
+        "sha256": "918609eb872ee4e52116b2d6bd7064a8901d875cf62a1828c8085ccfe59c506e",
+        "repository_path": "failure-contexts/main-mobile-50.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/continuous-turns-正式资金与时间显示新版本，结算后刷新不重复扣款-mobile/trace.zip",
+        "bytes": 783404,
+        "sha256": "f145f66ed1902a2350982beea492e9c3633d7f3a426dc20f98c598b305846d6c"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "continuous-turns.spec.ts",
+    "project": "mobile",
+    "title": "正式资金与时间显示新版本，结算后刷新不重复扣款",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/continuous-turns-正式资金与时间显示新版本，结算后刷新不重复扣款-mobile/error-context.md",
+        "bytes": 17069,
+        "sha256": "918609eb872ee4e52116b2d6bd7064a8901d875cf62a1828c8085ccfe59c506e",
+        "repository_path": "failure-contexts/pr-mobile-50.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/continuous-turns-正式资金与时间显示新版本，结算后刷新不重复扣款-mobile/trace.zip",
+        "bytes": 947867,
+        "sha256": "3752213df4028979945dcf5e54e61af35f5eff78a2a5adc8b6eb5e4e032c1200"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "continuous-turns.spec.ts",
+    "project": "mobile",
+    "title": "真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/continuous-turns-真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致-mobile/error-context.md",
+        "bytes": 13612,
+        "sha256": "9a4d32deab67e46460857039fc1739cfc9675c759507449fec77f2c21ab36f22",
+        "repository_path": "failure-contexts/main-mobile-51.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/continuous-turns-真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致-mobile/trace.zip",
+        "bytes": 4979781,
+        "sha256": "b746d3c36f01ae7bdeeaf9b45f7b8e6ed5807d6d0ee374ca8eca20e305d0e5af"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "continuous-turns.spec.ts",
+    "project": "mobile",
+    "title": "真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/continuous-turns-真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致-mobile/error-context.md",
+        "bytes": 13612,
+        "sha256": "9a4d32deab67e46460857039fc1739cfc9675c759507449fec77f2c21ab36f22",
+        "repository_path": "failure-contexts/pr-mobile-51.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/continuous-turns-真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致-mobile/trace.zip",
+        "bytes": 7483347,
+        "sha256": "d21bc6bf5b869168fe872d3ab7aeb5cdd6c36954a4eee83b8a3c634017abcc81"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "continuous-turns.spec.ts",
+    "project": "mobile",
+    "title": "阶段未完成或主动关闭时，即使填写行动也不能部分结算",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/continuous-turns-阶段未完成或主动关闭时，即使填写行动也不能部分结算-mobile/error-context.md",
+        "bytes": 14343,
+        "sha256": "db9fe4fb702cf052808e035ff73045b96846c4b7574e3c6a50589148a1445da1",
+        "repository_path": "failure-contexts/main-mobile-52.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/continuous-turns-阶段未完成或主动关闭时，即使填写行动也不能部分结算-mobile/trace.zip",
+        "bytes": 5101255,
+        "sha256": "0a90af0d9094cca27e3a689c6854f837710d60587031981efa3498a3bfe1a8fa"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "continuous-turns.spec.ts",
+    "project": "mobile",
+    "title": "阶段未完成或主动关闭时，即使填写行动也不能部分结算",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/continuous-turns-阶段未完成或主动关闭时，即使填写行动也不能部分结算-mobile/error-context.md",
+        "bytes": 14343,
+        "sha256": "db9fe4fb702cf052808e035ff73045b96846c4b7574e3c6a50589148a1445da1",
+        "repository_path": "failure-contexts/pr-mobile-52.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/continuous-turns-阶段未完成或主动关闭时，即使填写行动也不能部分结算-mobile/trace.zip",
+        "bytes": 7358887,
+        "sha256": "c9d6376c4b8ca75452a1dd833ead8d1a77aaf4e461147d0cb7940c5e750ed741"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "event-stages-v2.spec.ts",
+    "project": "mobile",
+    "title": "固定阶段积压结算保留原时刻并退役，失败仅重试World后刷新不重复请求",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/event-stages-v2-固定阶段积压结算保留原时刻并退役，失败仅重试World后刷新不重复请求-mobile/error-context.md",
+        "bytes": 19888,
+        "sha256": "ae2da33cb7c0602972a5b090d4f4eef98149c5d4900e23fb0e3ce503abfc2653",
+        "repository_path": "failure-contexts/main-mobile-57.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/event-stages-v2-固定阶段积压结算保留原时刻并退役，失败仅重试World后刷新不重复请求-mobile/trace.zip",
+        "bytes": 986399,
+        "sha256": "2055399ec1ccdf07ea4a2b43ee3397fa5fb3f1b9b4eb378cc8aa3d5d8cfcbe64"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "event-stages-v2.spec.ts",
+    "project": "mobile",
+    "title": "固定阶段积压结算保留原时刻并退役，失败仅重试World后刷新不重复请求",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/event-stages-v2-固定阶段积压结算保留原时刻并退役，失败仅重试World后刷新不重复请求-mobile/error-context.md",
+        "bytes": 19917,
+        "sha256": "b8255725ded36232ac7c3b1e84bfd8991d8a450dc24ba3dc6bc8a6b6b4a2eeb5",
+        "repository_path": "failure-contexts/pr-mobile-57.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/event-stages-v2-固定阶段积压结算保留原时刻并退役，失败仅重试World后刷新不重复请求-mobile/trace.zip",
+        "bytes": 1454622,
+        "sha256": "34d5b865d8de9e24aedf66f8e5d0ace9d991ae094d85f46b815f717de928f6a4"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "prompt-inspector.spec.ts",
+    "project": "desktop",
+    "title": "1000 NPC 真实快照按需 Worker 分析、动画帧继续、结果与原算法一致且复用缓存",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/prompt-inspector-1000-NPC--7ba0a-rker-分析、动画帧继续、结果与原算法一致且复用缓存-desktop/error-context.md",
+        "bytes": 41694,
+        "sha256": "38defafb9405eeeaae460b778a4cda659d5058e7fd8ba74039391e31e6067ad7",
+        "repository_path": "failure-contexts/main-desktop-61.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/prompt-inspector-1000-NPC--7ba0a-rker-分析、动画帧继续、结果与原算法一致且复用缓存-desktop/trace.zip",
+        "bytes": 5145498,
+        "sha256": "7dc065b8530df7d8938e587fdf63bd57fee0532e0478388cba372957ba2d6eef"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "prompt-inspector.spec.ts",
+    "project": "desktop",
+    "title": "300 NPC 真实快照按需 Worker 分析、动画帧继续、结果与原算法一致且复用缓存",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/prompt-inspector-300-NPC-真-ba844-rker-分析、动画帧继续、结果与原算法一致且复用缓存-desktop/error-context.md",
+        "bytes": 41679,
+        "sha256": "a31f4c4bdee4e94f17669db6f06599b9cf52dd6bc68fc4bdbc2428a0310a481e",
+        "repository_path": "failure-contexts/main-desktop-62.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/prompt-inspector-300-NPC-真-ba844-rker-分析、动画帧继续、结果与原算法一致且复用缓存-desktop/trace.zip",
+        "bytes": 4685541,
+        "sha256": "8f6ccefaf84931dbc3f99109bda51451fe0ca863320dee9a723de94aab250cbd",
+        "repository_path": "traces/main-desktop-62.zip"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "prompt-inspector.spec.ts",
+    "project": "desktop",
+    "title": "300 NPC 真实快照按需 Worker 分析、动画帧继续、结果与原算法一致且复用缓存",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/prompt-inspector-300-NPC-真-ba844-rker-分析、动画帧继续、结果与原算法一致且复用缓存-desktop/error-context.md",
+        "bytes": 41690,
+        "sha256": "bc15df29ac9a4e976e438e1e5957e9545448aee4a5d46adcc090a7237da0ae9b",
+        "repository_path": "failure-contexts/pr-desktop-62.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/prompt-inspector-300-NPC-真-ba844-rker-分析、动画帧继续、结果与原算法一致且复用缓存-desktop/trace.zip",
+        "bytes": 4675568,
+        "sha256": "2eb41688df084b298ee86e9a720c3b280e6df16401d8933668015cfe91a51264",
+        "repository_path": "traces/pr-desktop-62.zip"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "prompt-inspector.spec.ts",
+    "project": "desktop",
+    "title": "无存档浏览真实模块、过滤与全文，缺少阶段请求时不伪造使用量",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/prompt-inspector-无存档浏览真实模块、过滤与全文，缺少阶段请求时不伪造使用量-desktop/error-context.md",
+        "bytes": 19354,
+        "sha256": "27786f0a0aa362e38165eeccdd5189ad51768792da28151deb7a2231209345f3",
+        "repository_path": "failure-contexts/main-desktop-66.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/prompt-inspector-无存档浏览真实模块、过滤与全文，缺少阶段请求时不伪造使用量-desktop/trace.zip",
+        "bytes": 6297624,
+        "sha256": "bee92692e741128c151ba4740baaba89181403828607f965c97d21b152db24d8"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "prompt-inspector.spec.ts",
+    "project": "desktop",
+    "title": "真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-desktop/error-context.md",
+        "bytes": 176668,
+        "sha256": "73f4688913260c4734f5d18d3355a7a4a30180cb456a0c11fa5639d6428ed7fa",
+        "repository_path": "failure-contexts/main-desktop-68.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-desktop/trace.zip",
+        "bytes": 6921464,
+        "sha256": "2772e79adb950b4401f06762c8cc3b665b8181d7a979f76c031ab85551a37360"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "prompt-inspector.spec.ts",
+    "project": "mobile",
+    "title": "300 NPC 真实快照按需 Worker 分析、动画帧继续、结果与原算法一致且复用缓存",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/prompt-inspector-300-NPC-真-ba844-rker-分析、动画帧继续、结果与原算法一致且复用缓存-mobile/error-context.md",
+        "bytes": 42660,
+        "sha256": "205ed81c6079bb20478730e5b8aba991bdecc5c8cb261de8dca8687038db26ce",
+        "repository_path": "failure-contexts/pr-mobile-70.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/prompt-inspector-300-NPC-真-ba844-rker-分析、动画帧继续、结果与原算法一致且复用缓存-mobile/trace.zip",
+        "bytes": 2678020,
+        "sha256": "a80a11f0f0ea56f83b87a674ab944e8ccbb72859450f80372b81ccccad576115",
+        "repository_path": "traces/pr-mobile-70.zip"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "prompt-inspector.spec.ts",
+    "project": "mobile",
+    "title": "四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/prompt-inspector-四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示-mobile/error-context.md",
+        "bytes": 25186,
+        "sha256": "8d6c6e68011f3ebae1a24c49781555f5845b554187e7abb6f928d9eba836706e",
+        "repository_path": "failure-contexts/main-mobile-72.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/prompt-inspector-四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示-mobile/trace.zip",
+        "bytes": 2604028,
+        "sha256": "36ee481301a2f653b4fe9e41d21839d81d6a4475de175241fdae54b3667cc6e4"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "prompt-inspector.spec.ts",
+    "project": "mobile",
+    "title": "四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/prompt-inspector-四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示-mobile/error-context.md",
+        "bytes": 25186,
+        "sha256": "8d6c6e68011f3ebae1a24c49781555f5845b554187e7abb6f928d9eba836706e",
+        "repository_path": "failure-contexts/pr-mobile-72.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/prompt-inspector-四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示-mobile/trace.zip",
+        "bytes": 2599491,
+        "sha256": "3ae4238bc527f85a63ef2357b8372b5ec39cf908f1f03c60421c0eb3426073b3"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "prompt-inspector.spec.ts",
+    "project": "mobile",
+    "title": "无正文草稿的阶段预览诚实失败，七项写作偏好不因管理中心改变",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/prompt-inspector-无正文草稿的阶段预览诚实失败，七项写作偏好不因管理中心改变-mobile/error-context.md",
+        "bytes": 26087,
+        "sha256": "fcfd95d2bfc3c61fa600aae8b9369a3fc3111eec6ce1585949c6356e9b26e878",
+        "repository_path": "failure-contexts/main-mobile-75.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/prompt-inspector-无正文草稿的阶段预览诚实失败，七项写作偏好不因管理中心改变-mobile/trace.zip",
+        "bytes": 1662534,
+        "sha256": "f79bc88c410f8d655019108f352c674287861529277c4dfc0b7428695a8a1dbd"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "prompt-inspector.spec.ts",
+    "project": "mobile",
+    "title": "无正文草稿的阶段预览诚实失败，七项写作偏好不因管理中心改变",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/prompt-inspector-无正文草稿的阶段预览诚实失败，七项写作偏好不因管理中心改变-mobile/error-context.md",
+        "bytes": 26087,
+        "sha256": "42c33c72e9c713b1b57094a3e1a64aeedbbbbb8088593d9dcc5e1b3d90db4143",
+        "repository_path": "failure-contexts/pr-mobile-75.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/prompt-inspector-无正文草稿的阶段预览诚实失败，七项写作偏好不因管理中心改变-mobile/trace.zip",
+        "bytes": 2217296,
+        "sha256": "141179f89f4c252834fbf500723500466b58855a54dde2c6eefbaf131f266068"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "file": "prompt-inspector.spec.ts",
+    "project": "mobile",
+    "title": "真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/error-context.md",
+        "bytes": 17127,
+        "sha256": "c247e9eb64fa85d0b48dbf1315d683cf1cce78d701a2617e6f53b6c17bc236ee",
+        "repository_path": "failure-contexts/main-mobile-76.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/main-browser-output/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/trace.zip",
+        "bytes": 4940150,
+        "sha256": "f7dce89d67a7482407472943b5cb3cc55c8ff86f23a6c8aa8d34e8faf2a5ba27"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "file": "prompt-inspector.spec.ts",
+    "project": "mobile",
+    "title": "真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/error-context.md",
+        "bytes": 17127,
+        "sha256": "023a088a450438408f3f516896e2b0760e52037930949f1e2f879d98704a4af0",
+        "repository_path": "failure-contexts/pr-mobile-76.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr151-evidence/pr-browser-output/prompt-inspector-真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离-mobile/trace.zip",
+        "bytes": 6024553,
+        "sha256": "78c966cd0c2bed269f367003bc14012dc8738080bed3ef7f6d3decb1eb91fc98"
+      }
+    ]
+  }
+]

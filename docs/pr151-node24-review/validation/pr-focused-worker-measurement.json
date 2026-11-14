@@ -1,0 +1,9 @@
+{
+  "count": 300,
+  "calls": 1,
+  "captureAndMockResponseMs": 108.90000000596046,
+  "frames": 17,
+  "analysisMs": 279.2000000178814,
+  "workers": 1,
+  "equality": true
+}
