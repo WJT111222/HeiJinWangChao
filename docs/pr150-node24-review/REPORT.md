@@ -85,6 +85,8 @@ PR与main的22项按“项目 + 完整用例名称”比对，状态差异集合
 
 保留全部24个失败的error-context及两侧完整日志/JSON；[trace索引](validation/runtime-trace-index.json)记录全部trace的原路径、大小和校验和。为避免重复提交相同入口快照，每侧保存桌面/手机代表trace各一份，共4份，见[traces](validation/traces)；另外20份完整trace仍保留在 `/workspace/pr150-evidence/{main,pr}-runtime-output/`，没有删除。
 
+最终材料差异检查发现Playwright自动生成的两个桌面error-context含源代码空行的尾空格，见[材料初次差异日志](validation/material-diff-initial.log.gz)。现在24份上下文均以gzip逐字节保存，解压结果与原件核对相同，没有删改日志内容；整个PR的最终 `git diff --check` 已重新通过。
+
 最初按默认配置运行main时，5174端口已被其他服务占用，**没有启动任何测试**，见[首次启动日志](validation/main-runtime.log.gz)。没有停止或复用其他服务。随后使用独立5531/5532端口、相同项目/视口/worker/重试设置，同时执行PR与干净main；只改运行配置的端口、cwd与证据输出位置，不改main文件。临时配置原样提交于validation目录，干净main的git status为空。
 
 ```bash
