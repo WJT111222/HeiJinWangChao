@@ -182,6 +182,22 @@ describe('Story optional project planning, without relaxing mandatory payloads',
     expect(fails(raw).code).toBe('invalid_output');
   });
 
+  for (const inline of [false, true]) {
+    it.each([
+      '<正文?bad>', '<正文：>', '</正文?broken>', '<正文attr="x">', '<正文', '</正文',
+      '<thinking?bad>', '<thinking：>', '</thinking?broken>', '<thinkingattr="x">', '<thinking', '</thinking',
+      '<THINKING?broken>', '< think?bad>', '<think?bad>', '<正文!>',
+      '<短期记忆?bad>', '</短期记忆：>', '<变量规划=bad>', '<行动选项.bad>', '<judge?bad>',
+    ])(`${inline ? '同行' : '独立行'}恢复拒绝疑似保留标签残片 %s，不得随规划静默删除`, brokenTag => {
+      const output = inline ? inlineRecoveryOutput() : preface + narrative + tail + choices;
+      const raw = output.replace('Step 7｜', brokenTag + '\nStep 7｜');
+      expect(raw).toContain(brokenTag);
+      expect(recoverStoryEnvelope(raw, true)).toBeUndefined();
+      expect(fails(raw).code).toBe('invalid_output');
+      expect(raw).toContain(brokenTag);
+    });
+  }
+
   it.each(['。', '.', '：'])('完全相同的明确转正文句允许句末标点 %s', punctuation => {
     const raw = steps + '\n现在按照这些规划写正文' + punctuation + '\n' + narrative + tail + choices;
     expect(parseStoryEnvelope(raw, 'regular', settings(true)).story.narrative).toBe(narrative);

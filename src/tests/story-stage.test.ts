@@ -208,6 +208,16 @@ describe('真实正文入口与草稿原子替换', () => {
     expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: raw, displayText: raw, status: 'validated' });
     expect(await repo.load(draft.saveId)).toEqual(before); expect(save).toHaveBeenCalledTimes(1); expect(transport).toHaveBeenCalledTimes(1);
   });
+  it.each(['<正文?bad>', '<正文：>', '</正文?broken>'])('DeepSeek疑似保留标签%s不能被删除后保存，失败原文保持完整', async brokenTag => {
+    const before = await repo.loadGame(draft.saveId), save = vi.spyOn(repo, 'saveDraft');
+    const raw = inlineRecoveryOutput().replace('Step 7｜', brokenTag + '\nStep 7｜');
+    const transport = vi.fn<typeof fetch>(async () => sse(raw, 'deepseek'));
+    const configuration = setup('deepseek'); configuration.settings.prompts.minNarrativeChars = 1500;
+    await expect(runner(transport).generate({ ...configuration, draft })).rejects.toMatchObject({ code: 'invalid_output' });
+    expect(await repo.loadGame(draft.saveId)).toEqual(before);
+    expect(save).not.toHaveBeenCalled(); expect(transport).toHaveBeenCalledTimes(1);
+    expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: raw, displayText: raw, status: 'failed' });
+  });
   for (const inline of [false, true]) {
     it.each([
       ['时间倒退', [{ group: 'time', subjectHint: 'time:end', observedFact: '2026-10-18T07:00:00+08:00' }], 'time_data', 'time_invalid_or_reversed'],

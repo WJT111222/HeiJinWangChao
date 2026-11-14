@@ -180,6 +180,22 @@ test('同行短正文：准确显示低于1500的实际小说字数，不猜缺�
   await raw(page, output, info, 'inline-short-rejected-raw'); expect(await stored(page)).toEqual(before);
 });
 
+for (const [name, brokenTag] of [['question', '<正文?bad>'], ['colon', '<正文：>'], ['closing', '</正文?broken>']] as const) {
+  test(`损坏保留标签 ${name}：拒绝恢复、不写草稿，统一原文完整可复制`, async ({ page }, info) => {
+    const before = await seed(page, 120, 1500); await start(page);
+    const output = inlineRecoveryOutput().replace('Step 7｜', brokenTag + '\nStep 7｜');
+    send(output); finish();
+    await expect(page.getByRole('article', { name: '流式正文预览', exact: true })).toHaveCount(0);
+    expect(await stored(page)).toEqual(before);
+    const error = await page.evaluate(async () => { const path = '/src/services/ai/stageResponses.ts';
+      return (await import(path)).stageResponses.getSnapshot()[0].error;
+    });
+    expect(error).toMatchObject({ code: 'invalid_output' });
+    await raw(page, output, info, `malformed-${name}-raw`);
+    expect(await stored(page)).toEqual(before);
+  });
+}
+
 for (const mode of ['ambiguous', 'time', 'event'] as const) {
   test(`恢复拒绝 ${mode}：不猜测边界，后续校验仍有效，无任何部分保存`, async ({ page }, info) => {
     const before = await seed(page); await start(page);

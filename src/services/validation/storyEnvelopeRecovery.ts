@@ -37,7 +37,7 @@ function inlineBodyStart(value: string): number | false | undefined {
  */
 export function recoverStoryEnvelope(text: string, actions: boolean): string | undefined {
   const source = text.trim();
-  if (!source || /<\s*\/?\s*正文(?=[\s/>]|$)/u.test(source)) return undefined;
+  if (!source || /<\s*\/?\s*正文/u.test(source)) return undefined;
 
   const tailPattern = actions
     ? /<短期记忆>[\s\S]*?<\/短期记忆>\s*<变量规划>[\s\S]*?<\/变量规划>\s*<行动选项>[\s\S]*?<\/行动选项>\s*$/u
@@ -56,8 +56,10 @@ export function recoverStoryEnvelope(text: string, actions: boolean): string | u
     return undefined; // Broken planning is never silently repaired or discarded.
   }
 
-  // No ambiguous structural markup is permitted in the untagged region.
-  if (/<\s*\/?\s*(?:thinking|think|正文|短期记忆|变量规划|行动选项|judge)(?=[\s/>]|$)/iu.test(beforeBody))
+  // A reserved-name prefix is enough to make recovery ambiguous. Requiring a
+  // valid tag delimiter would miss damaged suffixes such as <正文?bad> and let
+  // them disappear along with an otherwise valid Step preface.
+  if (/<\s*\/?\s*(?:thinking|think|正文|短期记忆|变量规划|行动选项|judge)/iu.test(beforeBody))
     return undefined;
 
   // Preserve the standalone-line route. An inline hint must not fall back to a
