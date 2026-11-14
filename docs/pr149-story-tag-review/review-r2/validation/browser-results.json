@@ -1,0 +1,181 @@
+{
+  "stats": {
+    "startTime": "2026-11-14T07:52:12.512Z",
+    "duration": 37630.626,
+    "expected": 14,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "errors": [],
+  "tests": [
+    {
+      "project": "desktop",
+      "title": "DeepSeek真实掉标签结构：Step0–15+明确转入句+旁白+全部尾块，一次请求安全恢复",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7753
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "title": "可选thinking：无项目规划时标签正文仍实时显示，空白边界和完整原文不变",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 6271
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "title": "同行双旁白：元指令引用标签后同句号起小说，1500字严格通过且原文不变",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 5963
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "title": "同行短正文：准确显示低于1500的实际小说字数，不猜缺标签、不补字、不保存",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 5327
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "title": "恢复拒绝 ambiguous：不猜测边界，后续校验仍有效，无任何部分保存",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4903
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "title": "恢复拒绝 time：不猜测边界，后续校验仍有效，无任何部分保存",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4407
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "title": "恢复拒绝 event：不猜测边界，后续校验仍有效，无任何部分保存",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4796
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "title": "DeepSeek真实掉标签结构：Step0–15+明确转入句+旁白+全部尾块，一次请求安全恢复",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 6049
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "title": "可选thinking：无项目规划时标签正文仍实时显示，空白边界和完整原文不变",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4477
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "title": "同行双旁白：元指令引用标签后同句号起小说，1500字严格通过且原文不变",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4415
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "title": "同行短正文：准确显示低于1500的实际小说字数，不猜缺标签、不补字、不保存",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 3424
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "title": "恢复拒绝 ambiguous：不猜测边界，后续校验仍有效，无任何部分保存",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 3333
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "title": "恢复拒绝 time：不猜测边界，后续校验仍有效，无任何部分保存",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 3591
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "title": "恢复拒绝 event：不猜测边界，后续校验仍有效，无任何部分保存",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 3279
+        }
+      ]
+    }
+  ]
+}

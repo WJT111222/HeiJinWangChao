@@ -1,0 +1,7 @@
+Node v24.19.0
+npm 11.9.0
+Chromium 154.0.8037.57 built on Debian GNU/Linux 13 (trixie)
+Source commit: a765d8abe03ded89edf6f3ec5e86efc5952bb03b
+Review baseline: af790a18ff29aea3c77d75c977ddde6e0ca7245e
+Main: 086ea8f6c25b028460b71b121e42b45ee5e965c2
+Real dependencies installed by previous Node24 npm ci; no lockfile/dependency delta; install was not rerun in this narrow follow-up.
