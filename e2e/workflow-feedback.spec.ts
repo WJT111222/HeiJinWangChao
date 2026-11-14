@@ -111,7 +111,7 @@ test('全局运行偏好错误浮条、撤回确认和未保存设置：焦点�
   await page.getByRole('button',{name:/^撤回（/}).click();const undo=page.getByRole('dialog',{name:'撤回上一回合',exact:true});await expect(undo).toContainText('此操作不调用 AI');
   await page.screenshot({path:`docs/workflow-feedback/screenshots/react-undo-${info.project.name}.png`});await page.keyboard.press('Escape');await expect(page.getByRole('button',{name:/^撤回（/})).toBeFocused();
   await page.getByRole('button',{name:'设置',exact:true}).click();const settings=page.getByRole('dialog',{name:'设置',exact:true});await settings.getByRole('button',{name:'AI 连接',exact:true}).click();
-  await settings.getByRole('button',{name:'新增渠道',exact:true}).click();await settings.getByRole('button',{name:'关闭资料界面',exact:true}).click();
+  await settings.getByRole('button',{name:'＋ 添加渠道',exact:true}).click();await settings.getByRole('button',{name:'关闭资料界面',exact:true}).click();
   const unsaved=page.getByRole('dialog',{name:'AI 配置尚未保存',exact:true});await expect(unsaved).toBeVisible();await page.screenshot({path:`docs/workflow-feedback/screenshots/react-unsaved-${info.project.name}.png`});
   await page.keyboard.press('Escape');await expect(unsaved).toHaveCount(0);await expect(settings).toBeVisible();expect(await stored(page)).toEqual(before);
 });

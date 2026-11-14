@@ -1,5 +1,6 @@
 import { openLibrary } from './helpers/home';
 import { openWorldArchive, openSettings, goHome } from './helpers/gameLayout';
+import { aiTab, follow, saveAi, stageModel } from './helpers/aiSettings';
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
@@ -84,14 +85,18 @@ test('选择并恢复独立模型；手动整理、原文来源及真实memory�
   await seed(page);
   const before = await load(page);
   await openSettings(page);
-  const settings = page.getByRole('dialog');
-  await expect(settings.getByLabel('记忆维护跟随正文模型')).not.toBeChecked();
-  await settings.getByLabel('记忆维护跟随正文模型').check();
-  await expect(settings.getByRole('combobox', { name: '记忆维护模型', exact: true })).toBeDisabled();
-  await settings.getByLabel('记忆维护跟随正文模型').uncheck();
-  await settings.getByRole('button', { name: '手动填写记忆维护模型 ID', exact: true }).click();
-  await settings.getByLabel('记忆维护模型 ID', { exact: true }).fill('memory-summary');
-  await settings.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
+  const settings = await aiTab(page);
+  const source = settings.getByRole('group', { name: '记忆维护模型来源', exact: true });
+  await expect(source.getByRole('button', { name: '单独指定', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await follow(settings, '记忆维护', true);
+  await expect(settings.getByRole('combobox', { name: '记忆维护模型', exact: true })).toHaveCount(0);
+  await follow(settings, '记忆维护', false);
+  await expect(settings.getByRole('combobox', { name: '记忆维护模型', exact: true })).toHaveAttribute('value', 'memory');
+  await stageModel(settings, '记忆维护', '新渠道', 'memory-summary');
+  await saveAi(settings);
+  // 手机端先回到分类菜单再进「记忆」。
+  const back = settings.getByRole('button', { name: '返回设置', exact: true });
+  if (await back.isVisible()) await back.click();
   await settings.getByRole('button', { name: '记忆', exact: true }).click();
   await expect(settings.getByLabel('自动总结 短期 → 中期', { exact: true })).not.toBeChecked();
   await settings.getByRole('button', { name: '关闭资料界面' }).click();

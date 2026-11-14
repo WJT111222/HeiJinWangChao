@@ -1,6 +1,7 @@
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
 import { workflowTrigger, workflowSummary, goHome, openWorkflow, openBoundInput } from './helpers/gameLayout';
+import { addChannel, aiTab, saveAi, stageModel } from './helpers/aiSettings';
 import type { Page } from '@playwright/test';
 import { GameStateSchema } from '../src/domain/state';
 import { TurnDraftSchema } from '../src/domain/drafts';
@@ -107,22 +108,12 @@ test('缺少AI配置零请求，设置后不自动补发，只在明确开始时
   await openWorkflow(page); await expect(workflow(page).getByRole('alert')).toContainText('配置'); expect(server.calls).toHaveLength(0);
   const before = await stored(page); await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: '打开 AI 设置', exact: true }).click();
-  await page.getByRole('button', { name: '新增渠道', exact: true }).click();
-  await page.getByLabel('API Base URL', { exact: true }).fill('https://action.mock.invalid/v1');
-  await page.getByLabel('API 密钥', { exact: true }).fill('mock-action-key');
-  await page.getByRole('button', { name: '手动填写默认模型 ID', exact: true }).click();
-  await page.getByLabel('默认模型 ID', { exact: true }).fill('story');
-  await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
-  // 从真实设置选择同一渠道的两个独立路由；不通过生成请求探测模型。
-  const channel = await page.getByRole('combobox', { name: '当前渠道', exact: true }).getAttribute('value'); expect(channel).toBeTruthy();
-  for (const [label, model] of [['正文生成', 'story'], ['变量管理', 'variables'], ['动态世界', 'world']]) {
-    if (label !== '正文生成') await page.getByLabel(`${label}跟随正文模型`, { exact: true }).uncheck();
-    await page.getByRole('combobox', { name: `${label}渠道`, exact: true }).click();
-    await page.getByRole('listbox', { name: `${label}渠道`, exact: true }).getByRole('option').last().click();
-    await page.getByRole('combobox', { name: `${label}模型`, exact: true }).click();
-    await page.getByRole('listbox', { name: `${label}模型`, exact: true }).getByRole('option', { name: model, exact: true }).click();
-  }
-  await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
+  const settings = await aiTab(page);
+  await addChannel(settings, { preset: 'OpenAI 兼容', name: '行动测试', url: 'https://action.mock.invalid/v1', key: 'mock-action-key' });
+  // 填好后只自动读取模型列表（不产生费用）；从真实设置给三个阶段选同一渠道的不同模型，不通过生成请求探测模型。
+  await expect(settings.locator('.ai-connect')).toContainText('连接正常');
+  for (const [label, model] of [['正文生成', 'story'], ['变量管理', 'variables'], ['动态世界', 'world']]) await stageModel(settings, label, '行动测试', model, 'list');
+  await saveAi(settings);
   await page.getByRole('button', { name: '关闭资料界面', exact: true }).click(); expect(server.calls).toHaveLength(0);
   expect(await stored(page)).toEqual(before);
   await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await ready(page);

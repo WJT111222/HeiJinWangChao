@@ -1,0 +1,435 @@
+[
+  {
+    "batch": "pr148-browser-red",
+    "startTime": "2026-11-14T07:43:40.118Z",
+    "exitCode": 1,
+    "counts": {
+      "failed": 1
+    },
+    "cases": [
+      {
+        "title": "持续存储异常 set：原副本、精确回滚状态、未保存与成功重试",
+        "project": "desktop",
+        "status": "failed",
+        "durationMs": 4774
+      }
+    ]
+  },
+  {
+    "batch": "pr148-browser-green",
+    "startTime": "2026-11-14T07:45:20.923Z",
+    "exitCode": 1,
+    "counts": {
+      "passed": 21,
+      "timedOut": 1
+    },
+    "cases": [
+      {
+        "title": "未保存关闭与分类切换需要明确放弃；继续编辑保留选择，保存后可直接关闭",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 12179
+      },
+      {
+        "title": "Escape、明确放弃和分类切换不会静默保存；密钥编辑同样提示且不出现在配置内",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 12111
+      },
+      {
+        "title": "名称为空时不能保存、存储失败不清除未保存保护；成功保存后才解除",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 12328
+      },
+      {
+        "title": "恢复后四路真实Mock请求使用各自渠道模型，默认模型及旧配置不变",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 10902
+      },
+      {
+        "title": "删除单独指定用的渠道后该阶段改回跟随正文，其他渠道和选择不受影响",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 9726
+      },
+      {
+        "title": "未保存关闭与分类切换需要明确放弃；继续编辑保留选择，保存后可直接关闭",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 7897
+      },
+      {
+        "title": "Escape、明确放弃和分类切换不会静默保存；密钥编辑同样提示且不出现在配置内",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 10065
+      },
+      {
+        "title": "名称为空时不能保存、存储失败不清除未保存保护；成功保存后才解除",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 7032
+      },
+      {
+        "title": "恢复后四路真实Mock请求使用各自渠道模型，默认模型及旧配置不变",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 8996
+      },
+      {
+        "title": "删除单独指定用的渠道后该阶段改回跟随正文，其他渠道和选择不受影响",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 7116
+      },
+      {
+        "title": "AI 多渠道：选服务商后自动获取模型、测试回复、阶段路由与密钥保存位置",
+        "project": "desktop",
+        "status": "timedOut",
+        "durationMs": 31789
+      },
+      {
+        "title": "保存失败（配置写入失败、密钥写到一半、删除失败）时，密钥值和存放位置都保持原样",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 10406
+      },
+      {
+        "title": "持续存储异常 set：原副本、精确回滚状态、未保存与成功重试",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 10623
+      },
+      {
+        "title": "持续存储异常 partial：原副本、精确回滚状态、未保存与成功重试",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 13236
+      },
+      {
+        "title": "持续存储异常 remove：原副本、精确回滚状态、未保存与成功重试",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 11567
+      },
+      {
+        "title": "持续存储异常 read：原副本、精确回滚状态、未保存与成功重试",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 12268
+      },
+      {
+        "title": "AI 多渠道：选服务商后自动获取模型、测试回复、阶段路由与密钥保存位置",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 17353
+      },
+      {
+        "title": "保存失败（配置写入失败、密钥写到一半、删除失败）时，密钥值和存放位置都保持原样",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 5718
+      },
+      {
+        "title": "持续存储异常 set：原副本、精确回滚状态、未保存与成功重试",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 9534
+      },
+      {
+        "title": "持续存储异常 partial：原副本、精确回滚状态、未保存与成功重试",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 9160
+      },
+      {
+        "title": "持续存储异常 remove：原副本、精确回滚状态、未保存与成功重试",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 7874
+      },
+      {
+        "title": "持续存储异常 read：原副本、精确回滚状态、未保存与成功重试",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 6298
+      }
+    ]
+  },
+  {
+    "batch": "pr148-main-long-flow",
+    "startTime": "2026-11-14T07:49:49.841Z",
+    "exitCode": 1,
+    "counts": {
+      "timedOut": 1
+    },
+    "cases": [
+      {
+        "title": "AI 多渠道、原生模型列表与连接测试、路由和会话凭证恢复",
+        "project": "desktop",
+        "status": "timedOut",
+        "durationMs": 31674
+      }
+    ]
+  },
+  {
+    "batch": "pr148-reviewed-long-flow",
+    "startTime": "2026-11-14T07:49:50.729Z",
+    "exitCode": 1,
+    "counts": {
+      "timedOut": 1
+    },
+    "cases": [
+      {
+        "title": "AI 多渠道：选服务商后自动获取模型、测试回复、阶段路由与密钥保存位置",
+        "project": "desktop",
+        "status": "timedOut",
+        "durationMs": 31505
+      }
+    ]
+  },
+  {
+    "batch": "pr148-reviewed-long-budget",
+    "startTime": "2026-11-14T07:51:14.178Z",
+    "exitCode": 0,
+    "counts": {
+      "passed": 1
+    },
+    "cases": [
+      {
+        "title": "AI 多渠道：选服务商后自动获取模型、测试回复、阶段路由与密钥保存位置",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 22613
+      }
+    ]
+  },
+  {
+    "batch": "pr148-browser-final",
+    "startTime": "2026-11-14T07:52:14.825Z",
+    "exitCode": 0,
+    "counts": {
+      "passed": 4
+    },
+    "cases": [
+      {
+        "title": "AI 多渠道：选服务商后自动获取模型、测试回复、阶段路由与密钥保存位置",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 21541
+      },
+      {
+        "title": "删除渠道后放弃不写凭证；明确保存才删除，重载保留其他渠道",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 5862
+      },
+      {
+        "title": "AI 多渠道：选服务商后自动获取模型、测试回复、阶段路由与密钥保存位置",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 14055
+      },
+      {
+        "title": "删除渠道后放弃不写凭证；明确保存才删除，重载保留其他渠道",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 4681
+      }
+    ]
+  },
+  {
+    "batch": "pr148-main-long-budget",
+    "startTime": "2026-11-14T07:53:13.686Z",
+    "exitCode": 0,
+    "counts": {
+      "passed": 1
+    },
+    "cases": [
+      {
+        "title": "AI 多渠道、原生模型列表与连接测试、路由和会话凭证恢复",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 17766
+      }
+    ]
+  },
+  {
+    "batch": "pr148-integrated-browser",
+    "startTime": "2026-11-14T07:59:03.044Z",
+    "exitCode": 0,
+    "counts": {
+      "passed": 24
+    },
+    "cases": [
+      {
+        "title": "未保存关闭与分类切换需要明确放弃；继续编辑保留选择，保存后可直接关闭",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 11520
+      },
+      {
+        "title": "Escape、明确放弃和分类切换不会静默保存；密钥编辑同样提示且不出现在配置内",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 11717
+      },
+      {
+        "title": "名称为空时不能保存、存储失败不清除未保存保护；成功保存后才解除",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 10794
+      },
+      {
+        "title": "恢复后四路真实Mock请求使用各自渠道模型，默认模型及旧配置不变",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 12366
+      },
+      {
+        "title": "删除单独指定用的渠道后该阶段改回跟随正文，其他渠道和选择不受影响",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 11411
+      },
+      {
+        "title": "未保存关闭与分类切换需要明确放弃；继续编辑保留选择，保存后可直接关闭",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 7181
+      },
+      {
+        "title": "Escape、明确放弃和分类切换不会静默保存；密钥编辑同样提示且不出现在配置内",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 7756
+      },
+      {
+        "title": "名称为空时不能保存、存储失败不清除未保存保护；成功保存后才解除",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 6755
+      },
+      {
+        "title": "恢复后四路真实Mock请求使用各自渠道模型，默认模型及旧配置不变",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 7823
+      },
+      {
+        "title": "删除单独指定用的渠道后该阶段改回跟随正文，其他渠道和选择不受影响",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 6877
+      },
+      {
+        "title": "保存失败（配置写入失败、密钥写到一半、删除失败）时，密钥值和存放位置都保持原样",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 11018
+      },
+      {
+        "title": "长期存储持续写不进去时，旧密钥原封不动并提示保持原样",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 6036
+      },
+      {
+        "title": "持续存储异常 set：原副本、精确回滚状态、未保存与成功重试",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 12102
+      },
+      {
+        "title": "持续存储异常 partial：原副本、精确回滚状态、未保存与成功重试",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 12681
+      },
+      {
+        "title": "持续存储异常 remove：原副本、精确回滚状态、未保存与成功重试",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 11576
+      },
+      {
+        "title": "持续存储异常 read：原副本、精确回滚状态、未保存与成功重试",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 12014
+      },
+      {
+        "title": "删除渠道后放弃不写凭证；明确保存才删除，重载保留其他渠道",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 10192
+      },
+      {
+        "title": "保存失败（配置写入失败、密钥写到一半、删除失败）时，密钥值和存放位置都保持原样",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 5652
+      },
+      {
+        "title": "长期存储持续写不进去时，旧密钥原封不动并提示保持原样",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 4456
+      },
+      {
+        "title": "持续存储异常 set：原副本、精确回滚状态、未保存与成功重试",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 7846
+      },
+      {
+        "title": "持续存储异常 partial：原副本、精确回滚状态、未保存与成功重试",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 8320
+      },
+      {
+        "title": "持续存储异常 remove：原副本、精确回滚状态、未保存与成功重试",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 7598
+      },
+      {
+        "title": "持续存储异常 read：原副本、精确回滚状态、未保存与成功重试",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 7749
+      },
+      {
+        "title": "删除渠道后放弃不写凭证；明确保存才删除，重载保留其他渠道",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 8400
+      }
+    ]
+  },
+  {
+    "batch": "pr148-integrated-long",
+    "startTime": "2026-11-14T08:03:17.060Z",
+    "exitCode": 0,
+    "counts": {
+      "passed": 2
+    },
+    "cases": [
+      {
+        "title": "AI 多渠道：选服务商后自动获取模型、测试回复、阶段路由与密钥保存位置",
+        "project": "desktop",
+        "status": "passed",
+        "durationMs": 21894
+      },
+      {
+        "title": "AI 多渠道：选服务商后自动获取模型、测试回复、阶段路由与密钥保存位置",
+        "project": "mobile",
+        "status": "passed",
+        "durationMs": 14255
+      }
+    ]
+  }
+]

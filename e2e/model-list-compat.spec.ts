@@ -1,6 +1,7 @@
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { selected } from './helpers/select';
+import { addChannel, backToList, openAiSettings, openChannel, saveAi, setUrl, stageModel } from './helpers/aiSettings';
 
 async function seed(page: Page) {
   await page.goto('/');
@@ -12,7 +13,10 @@ async function seed(page: Page) {
     config.routes.story = { channelId: channel.id, modelId: 'kept-route' };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'browser-list-secret');
   });
-  await page.reload(); await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.reload(); const settings = await openAiSettings(page); await openChannel(settings, '列表兼容测试'); return settings;
+}
+async function fetchModels(settings: Awaited<ReturnType<typeof seed>>) {
+  await settings.locator('.ai-connect').getByRole('button', { name: '获取模型', exact: true }).click();
 }
 
 test('同源候选与分页真实接入共享缓存；数量可核对，Unicode模型可保存', async ({ page }) => {
@@ -27,19 +31,17 @@ test('同源候选与分页真实接入共享缓存；数量可核对，Unicode�
       : { data: ids.map((id) => ({ id })), has_more: true, last_id: 'beta' };
     await route.fulfill({ json: body });
   });
-  await page.goto('/'); await page.getByRole('button', { name: '设置', exact: true }).click(); await page.getByRole('button', { name: '新增渠道', exact: true }).click();
-  await page.getByLabel('API Base URL', { exact: true }).fill('https://list-browser.mock.invalid');
-  await page.getByLabel('API 密钥', { exact: true }).fill('browser-list-secret');
-  await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
-  const group = page.getByRole('group', { name: '默认模型选择', exact: true }); await expect(group).toContainText('正在获取模型列表');
-  await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click(); expect(calls).toBe(1); release();
-  await expect(group).toContainText('当前接口返回 4 个模型'); await expect(group).toContainText('可能不是该平台全部可用模型');
-  await expect(group).toContainText('原始条目 8，有效 7，过滤 1，重复 3'); await expect(group).toContainText('读取 2 页');
+  await page.goto('/'); const settings = await openAiSettings(page);
+  await addChannel(settings, { preset: 'OpenAI 兼容', name: '列表兼容测试', url: 'https://list-browser.mock.invalid', key: 'browser-list-secret' });
+  // 填好地址和密钥后自动获取（只读列表，不产生费用）；获取中不会重复请求。
+  const box = settings.locator('.ai-connect'); await expect(box).toContainText('正在连接');
+  await page.waitForTimeout(800); expect(calls).toBe(1); release();
+  await expect(box).toContainText('当前接口返回 4 个模型'); await expect(box).toContainText('可能不是该平台全部可用模型');
+  await expect(box).toContainText('原始条目 8，有效 7，过滤 1，重复 3'); await expect(box).toContainText('读取 2 页');
   expect(urls).toEqual(['https://list-browser.mock.invalid/models', 'https://list-browser.mock.invalid/v1/models', 'https://list-browser.mock.invalid/v1/models?after=beta']);
-  await page.getByRole('combobox', { name: '默认模型', exact: true }).click(); await page.getByRole('combobox', { name: '搜索默认模型', exact: true }).fill('线路');
-  await page.getByRole('option', { name: '厂商/模型 (线路A)+', exact: true }).click(); await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
-  expect(calls).toBe(3); await page.reload(); await page.getByRole('button', { name: '设置', exact: true }).click();
-  await selected(page, '默认模型', '厂商/模型 (线路A)+'); await expect(page.getByRole('dialog')).not.toContainText('browser-list-secret');
+  await stageModel(settings, '正文生成', '列表兼容测试', '厂商/模型 (线路A)+', 'list'); await saveAi(settings);
+  expect(calls).toBe(3); await page.reload(); const again = await openAiSettings(page); await backToList(again);
+  await selected(page, '正文生成模型', '厂商/模型 (线路A)+'); await expect(again).not.toContainText('browser-list-secret');
 });
 
 for (const kind of ['authorization', 'missing', 'network', 'format', 'json', 'empty'] as const) {
@@ -53,15 +55,19 @@ for (const kind of ['authorization', 'missing', 'network', 'format', 'json', 'em
         : kind === 'missing' ? { status: 404, json: { error: 'browser-list-secret hidden' } }
           : kind === 'format' ? { json: { result: 'browser-list-secret hidden' } } : { json: { data: [] } });
     });
-    await seed(page);
+    const settings = await seed(page);
     const before = await page.evaluate(() => ({ config: localStorage.getItem('heijin.ai.v1'), key: JSON.stringify(sessionStorage) }));
-    await page.getByRole('button', { name: '刷新默认模型', exact: true }).click();
-    const group = page.getByRole('group', { name: '默认模型选择', exact: true });
+    // 打开设置不联网；点「获取模型」才读取列表。失败只影响列表，不动配置。
+    expect(calls).toBe(0); await fetchModels(settings);
+    const box = settings.locator('.ai-connect');
     const labels = { authorization: '授权错误', missing: '模型列表接口不存在或路径不受支持（404）', network: 'CORS', format: '模型列表返回格式不受支持', json: '响应不是完整合法的 JSON', empty: '请求成功，服务未返回可用模型' };
-    await expect(group).toContainText(labels[kind]);
-    await expect(group.getByLabel('默认模型 ID', { exact: true })).toHaveValue('kept-model'); await selected(page, '正文生成模型', 'kept-route');
+    await expect(box).toContainText(labels[kind]);
+    await expect(box).toContainText(kind === 'empty' ? '连接正常' : '连接失败');
+    await backToList(settings); await selected(page, '正文生成模型', 'kept-route');
+    await expect(settings.getByRole('button', { name: '列表里没有？手动填写正文生成模型 ID', exact: true })).toBeEnabled();
     expect(await page.evaluate(() => ({ config: localStorage.getItem('heijin.ai.v1'), key: JSON.stringify(sessionStorage) }))).toEqual(before);
-    await expect(page.getByRole('dialog')).not.toContainText('browser-list-secret'); await expect(page.getByRole('dialog')).not.toContainText('hidden');
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.ai.v1')!).channels[0].defaultModel)).toBe('kept-model');
+    await expect(settings).not.toContainText('browser-list-secret'); await expect(settings).not.toContainText('hidden');
     expect(calls).toBe(kind === 'authorization' || kind === 'empty' ? 1 : 2);
   });
 }
@@ -72,12 +78,13 @@ test('完整models地址只用于列表兼容，显示真实脱敏端点与HTTP�
     expect(route.request().method()).toBe('GET'); urls.push(route.request().url());
     await route.fulfill({ json: { data: [{ id: 'kept-model' }] } });
   });
-  await seed(page); await page.getByLabel('API Base URL', { exact: true }).fill('https://list-browser.mock.invalid/v1/models///');
-  await page.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
-  const group = page.getByRole('group', { name: '默认模型选择', exact: true });
-  await expect(group).toContainText('列表端点 https://list-browser.mock.invalid/v1/models，HTTP 200');
-  await expect(group).toContainText('生成请求仍使用原配置');
-  expect(urls).toEqual(['https://list-browser.mock.invalid/v1/models']);
+  const settings = await seed(page); expect(urls).toHaveLength(0);
+  await setUrl(settings, 'https://list-browser.mock.invalid/v1/models///');
+  const box = settings.locator('.ai-connect');
+  await expect(box).toContainText('列表端点 https://list-browser.mock.invalid/v1/models，HTTP 200');
+  await expect(box).toContainText('生成请求仍使用原配置');
+  expect(urls).toEqual(['https://list-browser.mock.invalid/v1/models']); // 改地址后自动读取一次
+  await saveAi(settings);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.ai.v1')!).channels[0].baseUrl)).toBe('https://list-browser.mock.invalid/v1/models///');
-  await selected(page, '默认模型', 'kept-model'); await selected(page, '正文生成模型', 'kept-route');
+  await backToList(settings); await selected(page, '正文生成模型', 'kept-route');
 });
