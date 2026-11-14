@@ -12,3 +12,13 @@ export const recoveryGuide = [{ group: 'protagonist', subjectHint: 'emotionText'
 export const recoveryActions = ['继续核对笔记', '看看站台周围', '留在原地等候'];
 export const recoveryTail = `<短期记忆>${recoverySummary}</短期记忆><变量规划>${JSON.stringify(recoveryGuide)}</变量规划><行动选项>${recoveryActions.join('\n')}</行动选项>`;
 export const deepSeekUntagged = `${recoveryPlanning}\n\n${recoveryTransition}\n\n${recoveryNarrative}\n${recoveryTail}`;
+
+// Review-reported layout: the instruction contains one narrator label, then
+// its full stop is immediately followed by the actual narrator on the SAME line.
+// All text is fictional; the long prose is supplied by the mock, never padding
+// inserted by the production recovery function.
+export const inlineRecoveryTransition = '现在按照这些规划写正文，保证层次完整，段落以【旁白】和【角色名】标签呈现，并控制字数不低于1500。';
+export const inlineRecoveryNarrative = Array.from({ length: 9 }, () => recoveryNarrative).join('\n\n');
+export function inlineRecoveryOutput(narrative = inlineRecoveryNarrative, transition = inlineRecoveryTransition) {
+  return `${recoveryPlanning}\n\n${transition}${narrative}\n${recoveryTail}`;
+}

@@ -1,3 +1,29 @@
+const stepHeadings = (value: string) => [...value.matchAll(/(?:^|\r?\n)[ \t]*(?:(?:#{1,6}|[-*+])[ \t]+)?(?:\*\*|__)?Step[ \t]+\d+/giu)];
+function completeStepPrefix(value: string) {
+  const steps = [...value.matchAll(/(?:^|\r?\n)[ \t]*(?:(?:#{1,6}|[-*+])[ \t]+)?(?:\*\*|__)?Step[ \t]+(\d{1,2})[ \t]*[｜|:：]/giu)];
+  return steps.length === 16 && stepHeadings(value).length === 16 && steps[0].index === 0
+    && steps.every((step, i) => Number(step[1]) === i);
+}
+
+/** undefined: no inline body; false: an inline hint exists but is ambiguous.
+ * Only the reviewed instruction clauses and a full stop are admitted here.
+ * A label quoted by the instruction is not a candidate body boundary. */
+function inlineBodyStart(value: string): number | false | undefined {
+  const transitions = [...value.matchAll(/(?:^|\r?\n)([ \t]*现在按照这些规划写正文[^\r\n]*)/gu)];
+  const reference = '段落以【旁白】和【角色名】标签呈现';
+  if (!transitions.some(match => match[1].replaceAll(reference, '').includes('【旁白】'))) return undefined;
+  if (transitions.length !== 1) return false;
+  const transition = transitions[0], line = transition[1];
+  const boundaries = [...line.matchAll(/[。.][ \t]*(?=【旁白】)/gu)];
+  if (boundaries.length !== 1) return false;
+  const lineStart = transition.index + transition[0].length - line.length;
+  if (!completeStepPrefix(value.slice(0, lineStart).trim())) return false;
+  const boundary = boundaries[0], end = boundary.index + boundary[0].length;
+  const instruction = line.slice(0, end).trim();
+  if (!/^现在按照这些规划写正文(?:[，,]保证层次完整)?(?:[，,]段落以【旁白】和【角色名】标签呈现)?(?:[，,]并控制字数不低于[1-9]\d{0,5})?[。.]$/u.test(instruction)) return false;
+  return lineStart + end;
+}
+
 /**
  * Narrow, display-independent recovery for a Story response that contains all
  * post-story blocks but omits BOTH <正文> delimiters.
@@ -34,24 +60,28 @@ export function recoverStoryEnvelope(text: string, actions: boolean): string | u
   if (/<\s*\/?\s*(?:thinking|think|正文|短期记忆|变量规划|行动选项|judge)(?=[\s/>]|$)/iu.test(beforeBody))
     return undefined;
 
-  // Project prose has an explicit narrator marker, unlike a free-form Step plan.
-  const marker = /(?:^|\r?\n)[ \t]*【旁白】/u.exec(beforeBody);
-  if (!marker) return undefined;
-  const preface = beforeBody.slice(0, marker.index).trim();
-  const narrative = beforeBody.slice(marker.index).trim();
+  // Preserve the standalone-line route. An inline hint must not fall back to a
+  // later paragraph if it fails: doing that could silently discard real prose.
+  const inline = inlineBodyStart(beforeBody);
+  if (inline === false || (inline !== undefined && wrappedPlanning)) return undefined;
+  const marker = inline === undefined ? /(?:^|\r?\n)[ \t]*【旁白】/u.exec(beforeBody) : undefined;
+  const start = inline ?? marker?.index;
+  if (start === undefined) return undefined;
+  const preface = beforeBody.slice(0, start).trim();
+  const narrative = beforeBody.slice(start).trim();
   // Recognizable planning headings cannot become prose or disappear merely
   // because their casing, Markdown decoration or delimiter differs.
-  const stepHeadings = (value: string) => [...value.matchAll(/(?:^|\r?\n)[ \t]*(?:(?:#{1,6}|[-*+])[ \t]+)?(?:\*\*|__)?Step[ \t]+\d+/giu)];
   if (!narrative.startsWith('【旁白】') || stepHeadings(narrative).length)
+    return undefined;
+  if (inline !== undefined && (!narrative.slice('【旁白】'.length).trim()
+    || narrative.includes('现在按照这些规划写正文') || narrative.includes('段落以【旁白】和【角色名】标签呈现')))
     return undefined;
 
   if (preface) {
     // A numbered preface plus an already wrapped planning block would be
     // ambiguous; do not guess which text belongs to which section.
     if (wrappedPlanning) return undefined;
-    const steps = [...preface.matchAll(/(?:^|\r?\n)[ \t]*(?:(?:#{1,6}|[-*+])[ \t]+)?(?:\*\*|__)?Step[ \t]+(\d{1,2})[ \t]*[｜|:：]/giu)];
-    if (steps.length !== 16 || stepHeadings(preface).length !== 16 || steps[0].index !== 0 || steps.some((step, i) => Number(step[1]) !== i))
-      return undefined;
+    if (!completeStepPrefix(preface)) return undefined;
     const finalLine = preface.split(/\r?\n/u).filter(Boolean).at(-1)?.trim() ?? '';
     if (!/^现在按照这些规划写正文(?:[，,:：。.\s]|$)/u.test(finalLine))
       return undefined;

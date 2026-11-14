@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import type { Server, ServerResponse } from 'node:http';
 import { test, expect } from './helpers/test';
 import type { Page, TestInfo } from '@playwright/test';
-import { deepSeekUntagged, recoveryPlanning, recoveryTransition, recoveryNarrative, recoverySummary, recoveryGuide, recoveryActions, recoveryTail } from '../src/tests/fixtures/storyRecovery';
+import { deepSeekUntagged, recoveryPlanning, recoveryTransition, recoveryNarrative, recoverySummary, recoveryGuide, recoveryActions, recoveryTail, inlineRecoveryOutput, inlineRecoveryNarrative, inlineRecoveryTransition } from '../src/tests/fixtures/storyRecovery';
 import { closeWorkflowSheet, openGameTools, openStageRaw, openWorkflowStage, workflowTrigger } from './helpers/gameLayout';
 
 let server: Server, response: ServerResponse | undefined, baseUrl: string, calls: number;
@@ -34,19 +34,19 @@ test.afterEach(async () => {
   server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve()));
   expect(calls).toBe(1);
 });
-async function seed(page: Page, timeout = 120) {
+async function seed(page: Page, timeout = 120, minimum = 1) {
   await page.goto('/');
-  await page.evaluate(async ({ baseUrl, key, timeout }) => {
+  await page.evaluate(async ({ baseUrl, key, timeout, minimum }) => {
     const p = ['/src/services/storage/saveRepository.ts','/src/tests/fixtures/game.ts','/src/domain/drafts.ts','/src/ui/settings/model.ts','/src/services/ai/configuration.ts','/src/services/ai/credentials.ts'];
     const [{ SaveRepository }, { game }, { createTurnDraft }, { defaultSettings, settingsKey }, { defaultAiConfig, newChannel, saveAiConfig }, { CredentialVault }] = await Promise.all(p.map(path => import(path)));
     const repo = await SaveRepository.open();
     await repo.create(game()); await repo.saveDraft(createTurnDraft('save-a', 0, 'tag-recovery', 'regular', '核对眼前的笔记', false, false), null); repo.close();
-    const settings = defaultSettings(); settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = true; settings.runtime.timeoutSeconds = timeout;
+    const settings = defaultSettings(); settings.prompts.minNarrativeChars = minimum; settings.prompts.actionOptions = true; settings.runtime.timeoutSeconds = timeout;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const channel = newChannel('deepseek'), config = defaultAiConfig(); channel.baseUrl = baseUrl; channel.defaultModel = 'mock-stream';
     config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: '' };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, key);
-  }, { baseUrl, key, timeout });
+  }, { baseUrl, key, timeout, minimum });
   await page.goto('/#game/save-a'); await page.reload(); await openGameTools(page);
   return stored(page);
 }
@@ -91,6 +91,7 @@ async function raw(page: Page, expected: string, info: TestInfo, name: string) {
   await box.evaluate(el => { const input = el as HTMLTextAreaElement; input.setSelectionRange(0, 0); input.scrollTop = 0; input.blur(); });
   await shot(page, info, name);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  return { box, panel };
 }
 test.beforeEach(async ({ context }) => { await context.grantPermissions(['clipboard-read', 'clipboard-write']); });
 
@@ -129,6 +130,54 @@ test('可选thinking：无项目规划时标签正文仍实时显示，空白边
     variableGuide: recoveryGuide, actionOptions: recoveryActions });
   await raw(page, '<正文>' + recoveryNarrative + '</正文>' + recoveryTail, info, 'optional-thinking-raw');
   expect(await stored(page)).toEqual(saved);
+});
+
+test('同行双旁白：元指令引用标签后同句号起小说，1500字严格通过且原文不变', async ({ page }, info) => {
+  const before = await seed(page, 120, 1500); await start(page);
+  const reader = page.getByTestId('story-reader'), responseText = inlineRecoveryOutput();
+  send(native, true); send(recoveryPlanning + '\n\n' + inlineRecoveryTransition);
+  await expect(reader).not.toContainText('规划独有标记'); await expect(reader).not.toContainText('段落以');
+  send('【旁'); send('白】' + inlineRecoveryNarrative.slice('【旁白】'.length));
+  await expect(reader.getByTestId('stream-narrative')).toHaveCount(0);
+  send('\n' + recoveryTail); finish();
+  await expect(page.getByRole('article', { name: '流式正文预览', exact: true })).toHaveCount(0);
+  const saved = await stored(page); expect(saved.state).toEqual(before.state);
+  expect(saved.draft?.story).toEqual({ turnKind: 'regular', narrative: inlineRecoveryNarrative, summary: recoverySummary,
+    variableGuide: recoveryGuide, actionOptions: recoveryActions });
+  expect(Array.from(saved.draft!.story!.narrative.replace(/\s/gu, '')).length).toBeGreaterThanOrEqual(1500);
+  await expect(reader).not.toContainText('段落以'); await expect(reader).not.toContainText('规划独有标记');
+  await reader.evaluate(el => { el.scrollTop = 0; }); await shot(page, info, 'inline-recovered-novel');
+  const { box } = await raw(page, native + responseText, info, 'inline-complete-raw');
+  // Locate the known fixture substring for the screenshot, never for recovery.
+  await box.evaluate((el, needle) => {
+    const area = el as HTMLTextAreaElement, position = area.value.indexOf(needle);
+    if (position < 0) throw new Error('missing inline fixture boundary');
+    const mirror = document.createElement('div'), style = getComputedStyle(area);
+    for (const property of ['font', 'line-height', 'letter-spacing', 'padding', 'white-space', 'word-break', 'overflow-wrap', 'tab-size'])
+      mirror.style.setProperty(property, style.getPropertyValue(property));
+    Object.assign(mirror.style, { position: 'fixed', visibility: 'hidden', boxSizing: 'border-box', width: `${area.clientWidth}px` });
+    mirror.append(document.createTextNode(area.value.slice(0, position)));
+    const marker = document.createElement('span'); marker.textContent = needle; mirror.append(marker);
+    document.body.append(mirror);
+    area.scrollTop = marker.getBoundingClientRect().top - mirror.getBoundingClientRect().top - area.clientHeight / 3;
+    mirror.remove();
+  }, '1500。【旁白】');
+  await expect.poll(() => box.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
+  await shot(page, info, 'inline-actual-boundary');
+  expect(await stored(page)).toEqual(saved);
+});
+
+test('同行短正文：准确显示低于1500的实际小说字数，不猜缺标签、不补字、不保存', async ({ page }, info) => {
+  const before = await seed(page, 120, 1500); await start(page);
+  const output = inlineRecoveryOutput(recoveryNarrative); send(output); finish();
+  await expect(page.getByRole('article', { name: '流式正文预览', exact: true })).toHaveCount(0);
+  expect(await stored(page)).toEqual(before);
+  const error = await page.evaluate(async () => { const path = '/src/services/ai/stageResponses.ts';
+    return (await import(path)).stageResponses.getSnapshot()[0].error;
+  });
+  expect(error).toMatchObject({ code: 'invalid_output', details: { storyRule: 'narrative_short', minimumCount: 1500,
+    actualCount: Array.from(recoveryNarrative.replace(/\s/gu, '')).length } });
+  await raw(page, output, info, 'inline-short-rejected-raw'); expect(await stored(page)).toEqual(before);
 });
 
 for (const mode of ['ambiguous', 'time', 'event'] as const) {

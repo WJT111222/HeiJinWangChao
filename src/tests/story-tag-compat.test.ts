@@ -3,6 +3,7 @@ import { parseStoryEnvelope } from '../services/validation/aiOutputs';
 import { recoverStoryEnvelope } from '../services/validation/storyEnvelopeRecovery';
 import { defaultSettings } from '../ui/settings/model';
 import { AiError } from '../services/ai/errors';
+import { inlineRecoveryOutput, inlineRecoveryNarrative, inlineRecoveryTransition, recoveryNarrative, recoveryPlanning, recoveryTail } from './fixtures/storyRecovery';
 
 const narrative = '【旁白】雨停了，街边的灯亮起来。\n【吴思源】今晚把账本再看一遍。\n【旁白】两人拿起手机，继续核对生活费用。';
 const tail = '<短期记忆>两人一起核对本周生活费。</短期记忆><变量规划>[]</变量规划>';
@@ -22,6 +23,64 @@ function fails(raw: string, actions = true) {
 }
 
 describe('Story optional project planning, without relaxing mandatory payloads', () => {
+  it('复审同行双旁白：忽略元指令中的标签，仅恢复句末后的实际小说，1500字门槛不变', () => {
+    const raw = inlineRecoveryOutput(), config = settings(true); config.prompts.minNarrativeChars = 1500;
+    expect(Array.from(inlineRecoveryNarrative.replace(/\s/gu, '')).length).toBeGreaterThanOrEqual(1500);
+    expect(raw).toContain('段落以【旁白】和【角色名】'); expect(raw).toContain('1500。【旁白】');
+    const parsed = parseStoryEnvelope(raw, 'regular', config);
+    expect(parsed.story.narrative).toBe(inlineRecoveryNarrative);
+    expect(parsed.story.narrative).not.toContain('规划独有标记'); expect(parsed.story.narrative).not.toContain('段落以');
+    expect(parsed.planning).toBe(''); expect(raw).not.toContain('<正文>');
+  });
+  it('同行短小说应在恢复后准确报告字数不足，而不是仍报缺正文或擅自补写', () => {
+    const config = settings(true); config.prompts.minNarrativeChars = 1500;
+    try { parseStoryEnvelope(inlineRecoveryOutput(recoveryNarrative), 'regular', config); throw new Error('must reject'); }
+    catch (error) {
+      expect(error).toBeInstanceOf(AiError);
+      expect((error as AiError).details).toMatchObject({ storyRule: 'narrative_short', minimumCount: 1500,
+        actualCount: Array.from(recoveryNarrative.replace(/\s/gu, '')).length });
+    }
+  });
+  it('元指令引用旁白标签但小说另起独立行时，原路径完整保留', () => {
+    const raw = `${recoveryPlanning}\n${inlineRecoveryTransition}\n${inlineRecoveryNarrative}\n${recoveryTail}`;
+    const config = settings(true); config.prompts.minNarrativeChars = 1500;
+    expect(parseStoryEnvelope(raw, 'regular', config).story.narrative).toBe(inlineRecoveryNarrative);
+  });
+  it('同行句末只认可明确句号，ASCII句号同样保留完整小说', () => {
+    const raw = inlineRecoveryOutput(inlineRecoveryNarrative, inlineRecoveryTransition.replace(/。$/, '.'));
+    expect(parseStoryEnvelope(raw, 'regular', settings(true)).story.narrative).toBe(inlineRecoveryNarrative);
+  });
+  it.each([
+    ['guide_json', '<变量规划>{broken json}</变量规划>'],
+    ['story_schema', '<变量规划>[{"group":"npc","observedFact":42}]</变量规划>'],
+  ])('同行恢复不绕过后续%s检查', (rule, guide) => {
+    const raw = inlineRecoveryOutput().replace(/<变量规划>[\s\S]*?<\/变量规划>/, guide);
+    expect(fails(raw).details).toMatchObject({ storyRule: rule });
+  });
+  it('同行恢复仍拒绝空摘要和不合法行动数量', () => {
+    expect(fails(inlineRecoveryOutput().replace(/<短期记忆>[\s\S]*?<\/短期记忆>/, '<短期记忆> </短期记忆>')).details)
+      .toMatchObject({ storyRule: 'summary_empty' });
+    expect(fails(inlineRecoveryOutput().replace(/<行动选项>[\s\S]*?<\/行动选项>/, '<行动选项>只有一项</行动选项>')).details)
+      .toMatchObject({ storyRule: 'actions_count', actualCount: 1 });
+  });
+  it.each([
+    ['多个同行候选', inlineRecoveryOutput('【旁白】候选甲。【旁白】候选乙。')],
+    ['额外元指令句', inlineRecoveryOutput(inlineRecoveryNarrative, inlineRecoveryTransition + '请先输出额外分析。')],
+    ['额外元指令分句', inlineRecoveryOutput(inlineRecoveryNarrative, inlineRecoveryTransition.replace('1500。', '1500，再输出内部预算。'))],
+    ['重复转入句', inlineRecoveryOutput(inlineRecoveryNarrative, inlineRecoveryTransition + '\n现在按照这些规划写正文。')],
+    ['只见说明中的旁白', `${recoveryPlanning}\n${inlineRecoveryTransition}不是小说。\n${recoveryTail}`],
+    ['逗号不是句末边界', inlineRecoveryOutput(inlineRecoveryNarrative, inlineRecoveryTransition.replace(/。$/, '，'))],
+    ['无效同行边界不能退到后面的独立行', inlineRecoveryOutput(inlineRecoveryNarrative, inlineRecoveryTransition.replace(/。$/, '，'))],
+    ['额外转入指令出现在正文里', inlineRecoveryOutput(inlineRecoveryNarrative + '\n现在按照这些规划写正文，额外指令。')],
+    ['无完整Step', inlineRecoveryOutput().replace('### Step 12｜', '### Step 13｜')],
+    ['缺尾块', inlineRecoveryOutput().replace(/<短期记忆>[\s\S]*?<\/短期记忆>/, '')],
+    ['畸形正文标签', inlineRecoveryOutput().replace('### Step 7｜', '<正文 invalid="x">\n### Step 7｜')],
+    ['空小说', inlineRecoveryOutput('【旁白】 \n\t')],
+    ['无Step的同行转入', inlineRecoveryTransition + inlineRecoveryNarrative + recoveryTail],
+  ])('同行歧义/非法响应拒绝：%s', (_name, raw) => {
+    expect(recoverStoryEnvelope(raw, true)).toBeUndefined();
+    expect(fails(raw).code).toBe('invalid_output');
+  });
   it.each(['opening', 'regular'] as const)('%s两种正式模式都接受有/无项目规划', mode => {
     for (const actions of [false, true]) {
       const suffix = tail + (actions ? choices : '');
