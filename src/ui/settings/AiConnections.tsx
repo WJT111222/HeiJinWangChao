@@ -8,6 +8,7 @@ import {
 } from '../../services/ai/configuration';
 import type { AiConfig, AiTask, Channel, Protocol } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
+import type { VaultSnapshot } from '../../services/ai/credentials';
 import { channelSnapshot } from '../../services/ai/snapshot';
 import { AiClient } from '../../services/ai/client';
 import { safeAiError } from '../../services/ai/errors';
@@ -257,15 +258,25 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
     const vault = start.vault;
     if (!vault) { setNotice('保存失败，请检查浏览器存储权限或空间后重试。'); return; }
     const removed = saved.config.channels.filter((item) => !config.channels.some((next) => next.id === item.id)).map((item) => item.id);
-    // 密钥和配置要么一起保存成功，要么都保持原样：先记下原值，任何一步失败就把密钥原样放回。
-    const before = vault.snapshot([...removed, ...checked.data.channels.map((item) => item.id)]);
+    // 快照只在本次调用的内存中持有；读取失败时，不开始任何密钥或配置写入。
+    let before: VaultSnapshot | undefined;
     try {
+      before = vault.snapshot([...removed, ...checked.data.channels.map((item) => item.id)]);
       for (const id of removed) vault.delete(id);
       for (const item of checked.data.channels) vault.set(item.id, draft.keys[item.id] ?? '', draft.remember[item.id] ?? true);
       saveAiConfig(localStorage, checked.data);
     } catch {
-      vault.restore(before);
-      setNotice('保存失败，请检查浏览器存储权限或空间后重试。密钥和配置都保持原样。');
+      if (!before) {
+        setNotice('保存失败：无法读取密钥存储，尚未写入密钥或配置。请检查浏览器存储权限后重试。');
+        return;
+      }
+      const result = vault.restore(before);
+      if (result.restored) setNotice('保存失败，请检查浏览器存储权限或空间后重试。已核对密钥值和存放位置与保存前一致，修改仍未保存。');
+      else {
+        const affected = result.failedIds.map(id => saved.config.channels.find(item => item.id === id)?.name
+          || checked.data.channels.find(item => item.id === id)?.name || '未命名渠道');
+        setNotice(`保存失败：密钥未能完全恢复或核验，请检查密钥存储状态（${affected.join('、')}）。保存未完成，编辑仍未保存。`);
+      }
       return;
     }
     for (const id of removed) catalog.remove(id);

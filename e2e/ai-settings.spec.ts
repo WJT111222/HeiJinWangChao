@@ -442,3 +442,111 @@ test('本地模型提示可以填占位密钥', async ({ page }) => {
   await expect(settings).toContainText('本地服务一般不需要真实密钥');
   await expect(settings.getByLabel('API 密钥', { exact: true })).toHaveAttribute('placeholder', '本地服务一般不校验，可填 ollama');
 });
+
+// 持续故障不会在第一次异常后自动解除；所有凭证均为隔离测试用值。
+for (const mode of ['set', 'partial', 'remove', 'read'] as const) {
+  test(`持续存储异常 ${mode}：原副本、精确回滚状态、未保存与成功重试`, async ({ page }, info) => {
+    const posts: string[] = [], errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.route('https://*.mock.invalid/**', route => {
+      if (route.request().method() === 'POST') posts.push(route.request().url());
+      return route.fulfill({ json: { data: [] } });
+    });
+    await seedVault(page);
+    const before = await vaultDump(page), settings = await openAiSettings(page);
+    await openChannel(settings, '甲渠道');
+    await settings.getByLabel('API 密钥', { exact: true }).fill('secret-a-new');
+    if (mode === 'remove') await settings.getByRole('switch', { name: '记住密钥' }).uncheck();
+    if (mode === 'partial') {
+      await openChannel(settings, '乙渠道'); await settings.getByRole('switch', { name: '记住密钥' }).check();
+      await openChannel(settings, '丙渠道'); await settings.getByRole('button', { name: '删除渠道', exact: true }).click();
+      await page.getByRole('button', { name: '确认删除渠道', exact: true }).click();
+    }
+    await page.evaluate(mode => {
+      const control = { mode: mode as string, activated: false, hits: 0, mutations: [] as string[] };
+      Reflect.set(window, '__vaultFault', control);
+      const get = Storage.prototype.getItem, set = Storage.prototype.setItem, remove = Storage.prototype.removeItem;
+      Storage.prototype.getItem = function(key) {
+        if (control.mode === 'read' && key === 'heijin.credential.v1:a') {
+          control.hits++; throw new DOMException('mock read denied', 'SecurityError');
+        }
+        return get.call(this, key);
+      };
+      Storage.prototype.setItem = function(key, value) {
+        if (key.startsWith('heijin.credential.v1:') || key === 'heijin.ai.v1') control.mutations.push(`set:${key}`);
+        if (this === localStorage && ((control.mode === 'set' && key === 'heijin.credential.v1:a')
+          || (control.mode === 'partial' && (key === 'heijin.credential.v1:b' || (control.activated && key === 'heijin.credential.v1:a'))))) {
+          control.activated = true; control.hits++; throw new DOMException('mock write denied', 'QuotaExceededError');
+        }
+        return set.call(this, key, value);
+      };
+      Storage.prototype.removeItem = function(key) {
+        if (key.startsWith('heijin.credential.v1:')) control.mutations.push(`remove:${key}`);
+        if (control.mode === 'remove' && key === 'heijin.credential.v1:a') {
+          control.hits++; throw new DOMException('mock remove denied', 'SecurityError');
+        }
+        return remove.call(this, key);
+      };
+    }, mode);
+    const status = settings.locator('.ai-save-bar').getByRole('status'), save = settings.getByRole('button', { name: '保存 AI 配置', exact: true });
+    await save.click(); await expect(status).toContainText('保存失败');
+    if (mode === 'read') {
+      await expect(status).toContainText('无法读取密钥存储');
+      expect(await page.evaluate(() => Reflect.get(window, '__vaultFault').mutations)).toEqual([]);
+    } else if (mode === 'partial' || mode === 'remove') {
+      await expect(status).toContainText('未能完全恢复'); await expect(status).toContainText('甲渠道');
+      await expect(status).toContainText('检查密钥存储状态'); await expect(status).not.toContainText('保持原样');
+    }
+    // Disarm only after the UI has handled a still-active, persistent fault.
+    const fault = await page.evaluate(() => { const c = Reflect.get(window, '__vaultFault'); const copy = { hits: c.hits, mutations: [...c.mutations] }; c.mode = ''; return copy; });
+    expect(fault.hits).toBeGreaterThan(0);
+    const after = await vaultDump(page);
+    expect(after.local['heijin.ai.v1']).toBe(before.local['heijin.ai.v1']);
+    if (mode === 'set' || mode === 'read') expect(after).toEqual(before);
+    if (mode === 'partial') {
+      expect(after.local['heijin.credential.v1:a']).toBe('secret-a-new');
+      expect(after.session['heijin.credential.v1:b']).toBe('secret-b');
+      expect(after.local['heijin.credential.v1:b']).toBeUndefined();
+      expect(after.local['heijin.credential.v1:c']).toBe('secret-c');
+    }
+    if (mode === 'remove') {
+      expect(after.local['heijin.credential.v1:a']).toBe('secret-a');
+      expect(after.session['heijin.credential.v1:a']).toBe('secret-a-new');
+    }
+    await expect(save).toBeEnabled(); await expect(settings).not.toContainText('secret-');
+    await page.screenshot({ path: `docs/pr148-security/screenshots/${info.project.name}-${mode}-failure.png` });
+    await saveAi(settings);
+    const success = await vaultDump(page);
+    expect(success.local['heijin.ai.v1']).not.toContain('secret-');
+    expect(mode === 'remove' ? success.session['heijin.credential.v1:a'] : success.local['heijin.credential.v1:a']).toBe('secret-a-new');
+    expect(mode === 'remove' ? success.local['heijin.credential.v1:a'] : success.session['heijin.credential.v1:a']).toBeUndefined();
+    await page.screenshot({ path: `docs/pr148-security/screenshots/${info.project.name}-${mode}-saved.png` });
+    await page.reload(); expect(await vaultDump(page)).toEqual(success);
+    const reopened = await openAiSettings(page); await openChannel(reopened, '甲渠道');
+    await expect(reopened.getByLabel('API 密钥', { exact: true })).toHaveValue('secret-a-new');
+    await expect(reopened.getByRole('switch', { name: '记住密钥' })).toBeChecked({ checked: mode !== 'remove' });
+    expect(posts).toEqual([]); expect(errors).toEqual([]);
+  });
+}
+
+test('删除渠道后放弃不写凭证；明确保存才删除，重载保留其他渠道', async ({ page }) => {
+  let posts = 0;
+  await page.route('https://*.mock.invalid/**', route => {
+    if (route.request().method() === 'POST') posts++;
+    return route.fulfill({ json: { data: [] } });
+  });
+  await seedVault(page); const before = await vaultDump(page), settings = await openAiSettings(page);
+  await openChannel(settings, '丙渠道'); await settings.getByRole('button', { name: '删除渠道', exact: true }).click();
+  await page.getByRole('button', { name: '确认删除渠道', exact: true }).click();
+  expect(await vaultDump(page)).toEqual(before);
+  await settings.getByRole('button', { name: '放弃修改', exact: true }).click();
+  expect(await vaultDump(page)).toEqual(before);
+  await openChannel(settings, '丙渠道'); await expect(settings.getByLabel('API 密钥', { exact: true })).toHaveValue('secret-c');
+  await settings.getByRole('button', { name: '删除渠道', exact: true }).click();
+  await page.getByRole('button', { name: '确认删除渠道', exact: true }).click(); await saveAi(settings);
+  const after = await vaultDump(page);
+  expect(after.local['heijin.credential.v1:c']).toBeUndefined(); expect(after.session['heijin.credential.v1:c']).toBeUndefined();
+  expect(after.local['heijin.credential.v1:a']).toBe('secret-a'); expect(after.session['heijin.credential.v1:b']).toBe('secret-b');
+  expect(JSON.parse(after.local['heijin.ai.v1']).channels.map((c: { id: string }) => c.id)).toEqual(['a', 'b']);
+  await page.reload(); expect(await vaultDump(page)).toEqual(after); expect(posts).toBe(0);
+});

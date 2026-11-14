@@ -49,3 +49,92 @@ it('删除失败后恢复：两处存储里的原值都在', () => {
   expect(session.data.get('heijin.credential.v1:a')).toBe('key-a-session');
   expect(persistent.data.get('heijin.credential.v1:a')).toBe('key-a');
 });
+
+const credential = (id: string) => `heijin.credential.v1:${id}`;
+it('持续写入失败：已经与快照一致的旧密钥不删除、不重写', () => {
+  const session = store(), persistent = store();
+  persistent.data.set(credential('a'), 'old-a');
+  const operations: string[] = [];
+  const blocked = { getItem: persistent.getItem,
+    setItem: () => { operations.push('set'); throw new DOMException('blocked', 'QuotaExceededError'); },
+    removeItem: (key: string) => { operations.push('remove'); persistent.removeItem(key); } };
+  const vault = new CredentialVault(session, blocked), snapshot = vault.snapshot(['a']);
+  expect(() => vault.set('a', 'new-a', true)).toThrow();
+  operations.length = 0;
+  expect(vault.restore(snapshot)).toEqual({ restored: true, failedIds: [] });
+  expect(operations).toEqual([]);
+  expect(persistent.getItem(credential('a'))).toBe('old-a');
+});
+
+it('三渠道部分写入后持续失败：尽力恢复其他渠道，准确报告无法恢复的渠道', () => {
+  const session = store(), persistent = store();
+  let blocked = false;
+  const local = { ...persistent, setItem: (key: string, value: string) => {
+    if (blocked && [credential('a'), credential('b')].includes(key)) throw new DOMException('blocked', 'QuotaExceededError');
+    persistent.setItem(key, value);
+  } };
+  const vault = new CredentialVault(session, local);
+  vault.set('a', 'old-a', true); vault.set('b', 'old-b'); vault.set('c', 'old-c', true);
+  const snapshot = vault.snapshot(['a', 'b', 'c']);
+  vault.delete('c'); vault.set('a', 'new-a', true); blocked = true;
+  expect(() => vault.set('b', 'new-b', true)).toThrow();
+  const result = vault.restore(snapshot);
+  expect(result).toEqual({ restored: false, failedIds: ['a'] });
+  expect(persistent.getItem(credential('a'))).toBe('new-a');
+  expect(session.getItem(credential('b'))).toBe('old-b');
+  expect(persistent.getItem(credential('b'))).toBeNull();
+  expect(persistent.getItem(credential('c'))).toBe('old-c');
+  expect(JSON.stringify(result)).not.toMatch(/old-|new-/);
+});
+
+it('恢复迁移时先写回原存储，成功后才删除多余副本', () => {
+  const session = store(), persistent = store(), vault = new CredentialVault(session, persistent);
+  vault.set('a', 'old-a');
+  const snapshot = vault.snapshot(['a']); vault.set('a', 'old-a', true);
+  const checkedLocal = { ...persistent, removeItem: (key: string) => {
+    expect(session.getItem(key)).toBe('old-a'); persistent.removeItem(key);
+  } };
+  expect(new CredentialVault(session, checkedLocal).restore(snapshot)).toEqual({ restored: true, failedIds: [] });
+  expect(session.getItem(credential('a'))).toBe('old-a');
+  expect(persistent.getItem(credential('a'))).toBeNull();
+});
+
+it('原位置持续拒写时保留尚存副本，不为清理而造成额外丢失', () => {
+  const session = store(), persistent = store(), vault = new CredentialVault(session, persistent);
+  vault.set('a', 'old-a'); const snapshot = vault.snapshot(['a']); vault.set('a', 'old-a', true);
+  const blockedSession = { ...session, setItem: () => { throw new DOMException('blocked', 'QuotaExceededError'); } };
+  expect(new CredentialVault(blockedSession, persistent).restore(snapshot)).toEqual({ restored: false, failedIds: ['a'] });
+  expect(persistent.getItem(credential('a'))).toBe('old-a');
+  expect(session.getItem(credential('a'))).toBeNull();
+});
+
+it('持续删除失败：不覆盖原副本，额外副本无法清理时明确失败', () => {
+  const session = store(), persistent = store(), vault = new CredentialVault(session, persistent);
+  vault.set('a', 'old-a'); const snapshot = vault.snapshot(['a']); persistent.data.set(credential('a'), 'extra-a');
+  const blockedSession = { ...session, setItem: () => { throw new Error('unchanged original must not be rewritten'); } };
+  const blockedLocal = { ...persistent, removeItem: () => { throw new DOMException('blocked', 'SecurityError'); } };
+  expect(new CredentialVault(blockedSession, blockedLocal).restore(snapshot)).toEqual({ restored: false, failedIds: ['a'] });
+  expect(session.getItem(credential('a'))).toBe('old-a'); expect(persistent.getItem(credential('a'))).toBe('extra-a');
+});
+
+it('最终核验读取失败不能被报告为恢复成功', () => {
+  const session = store(), persistent = store(); persistent.data.set(credential('a'), 'old-a');
+  const snapshot = new CredentialVault(session, persistent).snapshot(['a']);
+  const unreadable = { ...persistent, getItem: () => { throw new DOMException('blocked', 'SecurityError'); } };
+  expect(new CredentialVault(session, unreadable).restore(snapshot)).toEqual({ restored: false, failedIds: ['a'] });
+  expect(persistent.getItem(credential('a'))).toBe('old-a');
+});
+
+it('快照读取失败不执行任何存储写入或删除', () => {
+  const mutations: string[] = [];
+  const unreadable = { getItem: () => { throw new DOMException('blocked', 'SecurityError'); },
+    setItem: () => { mutations.push('set'); }, removeItem: () => { mutations.push('remove'); } };
+  expect(() => new CredentialVault(unreadable, store()).snapshot(['a'])).toThrow(); expect(mutations).toEqual([]);
+});
+
+it('正常迁移目标持续拒写时保留原始存储的旧密钥', () => {
+  const session = store(), persistent = store(); session.data.set(credential('a'), 'old-a');
+  const blocked = { ...persistent, setItem: () => { throw new DOMException('blocked', 'QuotaExceededError'); } };
+  expect(() => new CredentialVault(session, blocked).set('a', 'new-a', true)).toThrow();
+  expect(session.getItem(credential('a'))).toBe('old-a'); expect(persistent.getItem(credential('a'))).toBeNull();
+});
