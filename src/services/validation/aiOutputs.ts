@@ -1,5 +1,6 @@
 import { storySceneAuthority, validateNarrationClock } from '../../domain/events/narration';
 import { nestedStoryTag, storyEnvelopeDiagnostic, storySchemaError } from './storyDiagnostics';
+import { recoverStoryEnvelope, repairUnclosedTags } from './storyEnvelopeRecovery';
 import { validateSceneEventUpdate } from '../../domain/events/scenePermission';
 import { openingTimeBase } from '../../domain/openingTime';
 import { StorySchema } from '../../domain/state';
@@ -78,48 +79,31 @@ function worldJson(text: string): unknown {
   const body = trimmed.slice(opening[0].length).replace(/\r?\n```[ \t]*$/, '');
   return json(body);
 }
-/**
- * 模型偶尔漏写某段的闭合标签就直接开下一段。只修这一种情况：该段完全没有闭合标签，
- * 且下一段的开标签已经出现——此时这段在哪里结束没有歧义，在下一段开标签前补上闭合。
- * 最后一段缺闭合不补：那通常意味着输出被截断，内容可能不完整，仍按原规则拒绝。
- */
-function repairUnclosedTags(text: string, actions: boolean): string {
-  const order = ['thinking', '正文', '短期记忆', '变量规划', ...(actions ? ['行动选项'] : [])];
-  let repaired = text;
-  for (const [index, tag] of order.entries()) {
-    const next = order[index + 1];
-    if (!next) break;
-    const open = repaired.indexOf(`<${tag}>`);
-    if (open < 0 || repaired.includes(`</${tag}>`)) continue;
-    const nextOpen = repaired.indexOf(`<${next}>`, open + tag.length + 2);
-    if (nextOpen < 0) continue;
-    repaired = `${repaired.slice(0, nextOpen)}</${tag}>\n${repaired.slice(nextOpen)}`;
-  }
-  return repaired;
-}
 // 只解析结构；叙事规划不属于 StorySchema，也不检查文学步骤的内容质量。
+// 可选项目规划与确定性标签恢复只影响封套解析，原文仍在临时原文视图保留。
 export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', settings: Settings) {
   const actions = settings.prompts.actionOptions;
   const pattern = actions
-    ? /^\s*<thinking>([\s\S]*?)<\/thinking>\s*<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*<变量规划>([\s\S]*?)<\/变量规划>\s*<行动选项>([\s\S]*?)<\/行动选项>\s*$/
-    : /^\s*<thinking>([\s\S]*?)<\/thinking>\s*<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*<变量规划>([\s\S]*?)<\/变量规划>\s*$/;
-  const envelope = text.match(pattern) ?? repairUnclosedTags(text, actions).match(pattern);
-  // 诊断仍基于原始输出，不描述补过的版本。
+    ? /^\s*(?:<thinking>([\s\S]*?)<\/thinking>\s*)?<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*<变量规划>([\s\S]*?)<\/变量规划>\s*<行动选项>([\s\S]*?)<\/行动选项>\s*$/
+    : /^\s*(?:<thinking>([\s\S]*?)<\/thinking>\s*)?<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*<变量规划>([\s\S]*?)<\/变量规划>\s*$/;
+  // 顺序：严格解析（含 #149 的双正文标签缺失恢复）→ 漏写闭合标签的确定性补全；诊断仍基于原始输出。
+  const envelope = (recoverStoryEnvelope(text, actions) ?? text).match(pattern)
+    ?? repairUnclosedTags(text, actions)?.match(pattern);
   if (!envelope) throw new AiError('invalid_output', undefined, storyEnvelopeDiagnostic(text, actions));
-  if (!envelope[1].trim()) throw new AiError('invalid_output', undefined, { storyRule: 'planning_empty', storyTag: 'thinking' });
-  const nested = envelope.slice(1).map(nestedStoryTag).find(Boolean);
+  if (envelope[1] !== undefined && !envelope[1].trim())
+    throw new AiError('invalid_output', undefined, { storyRule: 'planning_empty', storyTag: 'thinking' });
+  const nested = envelope.slice(1).filter((part): part is string => part !== undefined).map(nestedStoryTag).find(Boolean);
   if (nested) throw new AiError('invalid_output', undefined, { storyRule: 'tag_nested', storyTag: nested });
-  const planning = envelope[1].trim();
-  const match = envelope.slice(1);
-  const narrative = match[1].trim();
-  const summary = match[2].trim();
+  const planning = envelope[1]?.trim() ?? '';
+  const narrative = envelope[2].trim();
+  const summary = envelope[3].trim();
   // 100～200 汉字为质量目标，偏离仅提示；空摘要不能充当有效的本回合事实记录。
   if (assessSummary(summary).status === 'empty') throw new AiError('invalid_output', undefined, { storyRule: 'summary_empty', storyTag: '短期记忆' });
   const narrativeChars = Array.from(narrative.replace(/\s/gu, '')).length;
   if (narrativeChars < settings.prompts.minNarrativeChars)
     throw new AiError('invalid_output', undefined, { storyRule: 'narrative_short', actualCount: narrativeChars, minimumCount: settings.prompts.minNarrativeChars });
   const actionOptions = actions
-    ? match[4]
+    ? envelope[5]
         .split('\n')
         .map((line) => line.trim())
         .filter(Boolean)
@@ -127,7 +111,7 @@ export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', se
   if (actions && (!actionOptions || actionOptions.length < 3 || actionOptions.length > 5))
     throw new AiError('invalid_output', undefined, { storyRule: 'actions_count', actualCount: actionOptions?.length ?? 0, minimumCount: 3, maximumCount: 5 });
   let variableGuide: unknown;
-  try { variableGuide = json(match[3]); }
+  try { variableGuide = json(envelope[4]); }
   catch { throw new AiError('invalid_json', undefined, { storyRule: 'guide_json', storyTag: '变量规划' }); }
   const parsed = StorySchema.safeParse({
     turnKind: mode,

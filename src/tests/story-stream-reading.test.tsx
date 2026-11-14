@@ -68,7 +68,7 @@ function runner(repo: SaveRepository, transport: typeof fetch) {
   const s = new StoryStage(repo, new AiClient(transport)); stages.push(s); return s;
 }
 
-it('任意标签切点、空规划和直接正文仅影响显示，严格格式验收完全保留', () => {
+it('任意标签切点、空规划仍不合法，但直接正文通过正式校验', () => {
   for (const text of [output(), output(''), `<正文>${body}</正文>${tail}`]) {
     for (let i = 0; i <= text.length; i++) {
       const stream = new StoryStream(); stream.push(text.slice(0, i));
@@ -81,14 +81,14 @@ it('任意标签切点、空规划和直接正文仅影响显示，严格格式�
   expect(stream.planning).toBe('实际规划'); stream.push('文>'); expect(stream.bodyStarted).toBe(true);
   const settings = defaultSettings(); settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
   expect(() => parseStoryEnvelope(output(''), 'opening', settings)).toThrow();
-  expect(() => parseStoryEnvelope(`<正文>${body}</正文>${tail}`, 'opening', settings)).toThrow();
+  expect(parseStoryEnvelope(`<正文>${body}</正文>${tail}`, 'opening', settings)).toMatchObject({ planning: '', story: { narrative: body } });
   expect(parseStoryEnvelope(output(), 'opening', settings).story.narrative).toBe(body);
 });
 
 it.each([
-  ['仅项目规划', output(), '', true], ['仅公开原生思考', `<正文>${body}</正文>${tail}`, native, false],
+  ['仅项目规划', output(), '', true], ['仅公开原生思考', `<正文>${body}</正文>${tail}`, native, true],
   ['两种思考', output(), native, true], ['空规划且无公开思考', output(''), '', false],
-  ['没有任何思考', `<正文>${body}</正文>${tail}`, '', false],
+  ['没有任何思考', `<正文>${body}</正文>${tail}`, '', true],
 ] as const)('%s：收到正文开标签才清空思考，不改变最终成功/失败', async (_name, text, reasoning, valid) => {
   const a = await fixture(), progress: StoryProgress[] = [], before = await a.repo.loadGame('save-a');
   const transport = vi.fn<typeof fetch>(async () => sse(packets('openai', text, reasoning)));
@@ -161,20 +161,24 @@ it.each(['openai', 'deepseek'] as const)('%s兼容 think 任意切点及UTF-8单
   }
 });
 
-it.each(['only-think', 'direct-body'] as const)('%s公开兼容思考实时可读，但不代替项目必需规划或产生存档写入', async mode => {
+it.each(['only-think', 'direct-body'] as const)('%s兼容思考可见；只有无正文的输出不能写入存档', async mode => {
   const a = await fixture(), before = await a.repo.loadGame('save-a'), progress: StoryProgress[] = [];
   const raw = `<think>${compatibility}</think>` + (mode === 'direct-body' ? `<正文>${body}</正文>${tail}` : '');
   const fetcher = vi.fn<typeof fetch>(async () => sse(packets('deepseek', raw)));
-  await expect(runner(a.repo, fetcher).generate({ ...a, onProgress: p => progress.push(p) }))
-    .rejects.toMatchObject({ code: mode === 'only-think' ? 'empty' : 'invalid_output' });
+  const request = runner(a.repo, fetcher).generate({ ...a, onProgress: p => progress.push(p) });
+  if (mode === 'only-think') await expect(request).rejects.toMatchObject({ code: 'empty' });
+  else await expect(request).resolves.toHaveProperty('story.narrative', body);
   expect(progress.some(p => p.readingPhase === 'thinking' && p.compatibilityReasoning === compatibility)).toBe(true);
   expect(progress.every(p => !p.nativeReasoning && !p.planning)).toBe(true);
   if (mode === 'direct-body') {
     const index = progress.findIndex(p => p.readingPhase === 'body'); expect(index).toBeGreaterThanOrEqual(0);
     expect(progress.slice(index).every(p => !p.compatibilityReasoning)).toBe(true);
   }
-  expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: raw, nativeReasoning: '', status: 'failed' });
-  expect(await a.repo.loadGame('save-a')).toEqual(before); expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: raw, nativeReasoning: '', status: mode === 'only-think' ? 'failed' : 'validated' });
+  expect(await a.repo.load('save-a')).toEqual(before.state);
+  if (mode === 'only-think') expect(await a.repo.loadGame('save-a')).toEqual(before);
+  else expect((await a.repo.loadDraft('save-a'))?.story?.narrative).toBe(body);
+  expect(fetcher).toHaveBeenCalledTimes(1);
 });
 
 it.each([

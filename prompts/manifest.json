@@ -242,8 +242,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 2751,
-      "version": "1.0.0-world-freedom",
+      "characters": 2838,
+      "version": "1.0.0-world-freedom-story-tags",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -252,7 +252,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "05d86fd4c56fcc143022590a8ea7471673591dc22399bf07248005c5c0aab347",
+      "contentSha256": "a38a1d5fdcde622a8f1ef9b3d2ddd311e0416cc0161c79fa36b6ba3416b13beb",
       "placeholders": [
         "minNarrativeChars"
       ]
@@ -406,8 +406,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 849,
-      "version": "0.5.6",
+      "characters": 895,
+      "version": "0.5.6-story-tags",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -416,7 +416,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "5e0b435068d0a64caf0b38261b36164a638da171debd2c002ef8890b1c2c05a6",
+      "contentSha256": "1854ea0696c08cff778420072dfe89819083cec16041175ffcfb79a0a933a369",
       "placeholders": [
         "immediateMemoryTurns",
         "minNarrativeChars"
@@ -2022,8 +2022,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 160,
-      "version": "0.5.6",
+      "characters": 210,
+      "version": "0.5.6-story-tags",
       "messageRole": "assistant",
       "activation": "protocol-compatibility",
       "permanent": false,
@@ -2032,7 +2032,7 @@
       "orderGroup": "assistant_tail",
       "reorderable": false,
       "category": "compatibility",
-      "contentSha256": "8333d0523447d7433c7955bec8a28463d572a67b26b913c6ba9e63312fefa17a",
+      "contentSha256": "78cbef11db6b8b0c31f8207282914f26ca53872958c8d038397e72f21580dc68",
       "placeholders": [
         "playerName"
       ]
@@ -2101,8 +2101,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 3548,
-      "version": "0.5.6",
+      "characters": 3582,
+      "version": "0.5.6-story-tags",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -2111,7 +2111,7 @@
       "orderGroup": "planning",
       "reorderable": false,
       "category": "planning",
-      "contentSha256": "4d71e81a009892b1a56fd9afae28f6194a14f4a67e635b9b867ffbaa8bd4da63",
+      "contentSha256": "e377b8e25d4b4d8dd5e06d9a10571df3be58e3f712394d384fd1d3785fe0e0f3",
       "placeholders": []
     },
     {
@@ -2127,8 +2127,8 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 5645,
-      "version": "0.5.6",
+      "characters": 5710,
+      "version": "0.5.6-story-tags",
       "messageRole": "system",
       "activation": "always",
       "permanent": true,
@@ -2137,7 +2137,7 @@
       "orderGroup": "planning",
       "reorderable": false,
       "category": "planning",
-      "contentSha256": "afd5d5cc88c83077801f47ac4f7184ab0206b5a284b2afeac2f02fb79469b242",
+      "contentSha256": "8283d6f3a0f8436f5c3e88804d8fd589127070285e4dd69819185b75344c87f1",
       "placeholders": []
     },
     {

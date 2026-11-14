@@ -1,6 +1,7 @@
 import { openGameTools, goHome, openWorldArchive, openProfile } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
+import { aiTab } from './helpers/aiSettings';
 
 async function seed(page: Page) {
   await page.goto('/');
@@ -302,8 +303,11 @@ test('四类设置可键盘操作、保存恢复，七项提示词与两个运�
   });
   await page.goto('/');
   await page.getByRole('button', { name: '设置', exact: true }).click();
-  await expect(page.getByLabel('API 密钥')).toBeDisabled();
-  await expect(page.getByRole('button', { name: /测试连接/ })).toBeDisabled();
+  await aiTab(page);
+  // 还没有渠道：只显示添加入口，没有可填写的密钥或可点的测试按钮。
+  await expect(page.getByRole('button', { name: '＋ 添加渠道', exact: true })).toBeVisible();
+  await expect(page.getByLabel('API 密钥')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /测试回复/ })).toHaveCount(0);
   await page.getByRole('button', { name: '提示词', exact: true }).click();
   await expect(page.locator('.settings-fields > label')).toHaveCount(7);
   await page.getByLabel('叙事人称').selectOption('first');
