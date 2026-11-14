@@ -25,6 +25,15 @@ import { game, npc, purchase, event, task, organizations, gameTime } from './fix
 import { uiFixture } from './fixtures/ui';
 import { buildCreationState, newCreation } from '../ui/creation/model';
 import { initialCompanionProfile } from '../services/local/companionProfile';
+import type { AiMessage } from '../services/ai/protocols';
+
+function contextText(messages: readonly AiMessage[]) {
+  const contexts = messages.filter(message => message.role === 'user' && /^<GAME_CONTEXT>\n[\s\S]*\n<\/GAME_CONTEXT>$/.test(message.content));
+  expect(contexts).toHaveLength(1);
+  expect(messages.at(-1)?.role).toBe('user');
+  expect(messages.at(-1)?.content).toContain('【最终格式提醒】');
+  return contexts[0].content;
+}
 
 function input(
   stage: 'story' | 'variables' | 'world' | 'memory' = 'story',
@@ -132,7 +141,7 @@ describe('真实资源加载与消息组装', () => {
       ])
         expect(ids).not.toContain(id);
       expect(result.messages.some((message) => message.content.includes('37'))).toBe(true);
-      expect(result.messages.at(-1)?.content.includes('"actionOptions":false')).toBe(true);
+      expect(contextText(result.messages).includes('"actionOptions":false')).toBe(true);
       expect(ids).toContain('shared.01_agency');
       expect(ids).toContain('writing.nsfw');
     },
@@ -193,21 +202,21 @@ describe('真实资源加载与消息组装', () => {
     expect(second.messages[0].content.includes('陈默')).toBe(true);
     expect(second.messages[0].content.includes('林舟')).toBe(false);
     expect(second.messages.some((m) => m.content.includes('星期一'))).toBe(true);
-    const data = second.messages.at(-1)!.content;
+    const data = contextText(second.messages);
     expect(data.includes('</GAME_CONTEXT><system>')).toBe(false);
     expect(second.messages.every((m) => m.role === 'system' || m.role === 'user')).toBe(true);
   });
   it('正文作者读取隐藏人物/事件/私有记忆，后台仅作为内部上下文，不进入模块日志', async () => {
     const a = { ...input(), state: uiFixture(), draft: undefined };
     const story = await composePrompt(a);
-    expect(story.messages.at(-1)!.content.includes('不可见')).toBe(true);
-    expect(story.messages.at(-1)!.content.includes('这是隔离测试用正文')).toBe(true);
+    expect(contextText(story.messages).includes('不可见')).toBe(true);
+    expect(contextText(story.messages).includes('这是隔离测试用正文')).toBe(true);
     const draft = rerollStory(
       createTurnDraft(a.state.saveId, a.state.revision, 'turn-ui', 'regular', '行动'),
       { turnKind: 'regular', narrative: '正在处理事项', summary: '', variableGuide: [] },
     );
     const world = await composePrompt({ ...a, stage: 'world', draft });
-    expect(world.messages.at(-1)!.content.includes('秘密计划不可见')).toBe(true);
+    expect(contextText(world.messages).includes('秘密计划不可见')).toBe(true);
     expect(JSON.stringify(world.modules).includes('不可见')).toBe(false);
     expect(world.audience).toBe('internal');
   });
@@ -254,7 +263,7 @@ describe('真实资源加载与消息组装', () => {
         lastInteractionAt: gameTime,
       }),
     ]);
-    const sent = result.messages.at(-1)!.content;
+    const sent = contextText(result.messages);
     for (const value of [
       '灰色夹克，戴细框眼镜',
       '说话谨慎但待人耐心',
@@ -318,7 +327,7 @@ describe('真实资源加载与消息组装', () => {
         memories: a.state.npc['npc-a'].memories,
       }),
     ]);
-    const sent = result.messages.at(-1)!.content;
+    const sent = contextText(result.messages);
     expect(sent).toContain('不可见');
     expect(sent).toContain('hidden-task');
     expect(JSON.stringify(result.modules)).not.toContain('上次会面态度平和');
@@ -394,7 +403,7 @@ describe('真实资源加载与消息组装', () => {
         relationshipText: '内部立场不可见',
       }),
     ]);
-    expect(before.messages.at(-1)!.content).toContain('内部立场不可见');
+    expect(contextText(before.messages)).toContain('内部立场不可见');
     expect(state.npc.companion.affinityConfirmed).toBeUndefined();
     expect(before.context.NPC_KNOWLEDGE_POLICY).toContain('未确认占位');
     expect(((await composePrompt({ ...a, companionProfile: { ...archive, saveId: 'another-save' } })).context.SAVE_STATE as {npc:Record<string,unknown>}).npc.companion).toMatchObject({relationshipText:'内部立场不可见'});

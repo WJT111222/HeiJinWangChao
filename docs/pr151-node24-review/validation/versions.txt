@@ -1,0 +1,7 @@
+Node v24.19.0
+npm 11.9.0
+Chromium 154.0.8037.57 built on Debian GNU/Linux 13 (trixie)
+Main: d6d35ba8eb9412c961bbdf66f23b450402858876
+Original PR HEAD: 5f2dc3de36e0041cbc3eb0c03f09d10b50ad846a
+Test commit: cf27ee533d4f5ebe2e0c42f9b8c21f2a14856319
+Genuine npm ci in both worktrees; no shims; mock only.

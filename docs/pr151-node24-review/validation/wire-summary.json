@@ -1,0 +1,450 @@
+[
+  {
+    "protocol": "openai",
+    "scenario": "story:false:false:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 25,
+    "bodySha256": "691812cf0c588b158532366ee214d4183a935abee66027e3a83631ae90cb4865"
+  },
+  {
+    "protocol": "openai",
+    "scenario": "story:false:false:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 26,
+    "bodySha256": "23ac38f40330c6ae23803ae0396a837285af49f7f71b6005de736830a472a9c4"
+  },
+  {
+    "protocol": "openai",
+    "scenario": "story:false:true:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 26,
+    "bodySha256": "07773bff3e8f74659a06300f2780b8e0a349662386af24f28f3d2cc5756939a4"
+  },
+  {
+    "protocol": "openai",
+    "scenario": "story:false:true:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 27,
+    "bodySha256": "f3825e4efca3e2c0cbce360202524042d4006d4c228972c9beb2d594cb4ca9d4"
+  },
+  {
+    "protocol": "openai",
+    "scenario": "story:true:false:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 25,
+    "bodySha256": "750037eea14d290543d75973e2b533ce67d41b187dcbe7fbca462b6fe1d6223a"
+  },
+  {
+    "protocol": "openai",
+    "scenario": "story:true:false:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 26,
+    "bodySha256": "3e69900fe22f20fd97d112c429172d376c71ad9091308bc6edf3c0cf0586fcd5"
+  },
+  {
+    "protocol": "openai",
+    "scenario": "story:true:true:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 26,
+    "bodySha256": "79d4346dfea72c4b7f1a9deff29e5ff92bacf7ac6f14c87f05b35b6618a35e9c"
+  },
+  {
+    "protocol": "openai",
+    "scenario": "story:true:true:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 27,
+    "bodySha256": "94e5a0099f910c129f45be2761bfd4a0646715a7a36cfc54df602107ff149008"
+  },
+  {
+    "protocol": "openai",
+    "scenario": "variables:empty",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 11,
+    "bodySha256": "6f02323a30a598e9e15d4b90fea10543be78cce3273108dc845201f23e7eb654"
+  },
+  {
+    "protocol": "openai",
+    "scenario": "variables:valid",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 11,
+    "bodySha256": "d415fcc40074173a2645f466f74e081623b9ba67d2836e6238bb05563fb0bcc7"
+  },
+  {
+    "protocol": "openai",
+    "scenario": "variables:invalid",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 11,
+    "bodySha256": "f2c1eb0007afb45f25e9a5ac1c57cfec58ba0fc2ff26fcc1afc658d2ce26bdc8"
+  },
+  {
+    "protocol": "openai",
+    "scenario": "world:idle",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 11,
+    "bodySha256": "3061bde1e550f5c36dba732ceb927f2ff3e07fe4dfa7dcfee24b55e0de946445"
+  },
+  {
+    "protocol": "openai",
+    "scenario": "world:due-handled",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 11,
+    "bodySha256": "e890e862c3998944e35f0c0b8027092888dc6ad46ebd059016cecbcb3ec98982"
+  },
+  {
+    "protocol": "openai",
+    "scenario": "world:due-omitted",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 11,
+    "bodySha256": "8ae48819c0d10dc689c4a5c9462033d3c7031726ec04b18a82bd8d6fcaddd29e"
+  },
+  {
+    "protocol": "deepseek",
+    "scenario": "story:false:false:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 25,
+    "bodySha256": "adbbe964e5b6b7f25f817990f7d4440c1adb4e43c11d8e514193b8735bbb62e3"
+  },
+  {
+    "protocol": "deepseek",
+    "scenario": "story:false:false:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 26,
+    "bodySha256": "62fdae68f7d431bf328d4948b427982cc41398a2135ad4b14c9cd0ef1e0e5ec9"
+  },
+  {
+    "protocol": "deepseek",
+    "scenario": "story:false:true:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 26,
+    "bodySha256": "c090827320cca7f96cf1fe2edb9090539a9e392b4dc04c76f2dcff981fd657f5"
+  },
+  {
+    "protocol": "deepseek",
+    "scenario": "story:false:true:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 27,
+    "bodySha256": "c3481ce259f6adc2bea511b1cf77e8fc96efef46701a97810ec92e8728f52cea"
+  },
+  {
+    "protocol": "deepseek",
+    "scenario": "story:true:false:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 25,
+    "bodySha256": "a9555ab415ed348f1d8a85c335126604d7c778ff5535dfc573a8cddcec6a549b"
+  },
+  {
+    "protocol": "deepseek",
+    "scenario": "story:true:false:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 26,
+    "bodySha256": "2af068009490b67f3ab613fd5fe1765cc33db27ad98ca7a376d7102b0347221f"
+  },
+  {
+    "protocol": "deepseek",
+    "scenario": "story:true:true:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 26,
+    "bodySha256": "445b2adbf358843d280e3023745d26a1f2838f2bfd48347e9888bb49303171d3"
+  },
+  {
+    "protocol": "deepseek",
+    "scenario": "story:true:true:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 27,
+    "bodySha256": "cf2ac7373e7e62e935a22ba063b9ee039285325c9b49de08652b3b112e28583e"
+  },
+  {
+    "protocol": "deepseek",
+    "scenario": "variables:empty",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 11,
+    "bodySha256": "8a0201c0e290504225d86e76e24c7791cf09e656394399ef9d902a43b23c055f"
+  },
+  {
+    "protocol": "deepseek",
+    "scenario": "variables:valid",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 11,
+    "bodySha256": "23e4f706feeda50ad10e56437e431735466ad30376283f6092cba196ae5382c5"
+  },
+  {
+    "protocol": "deepseek",
+    "scenario": "variables:invalid",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 11,
+    "bodySha256": "da1cd455c168ce83c6c9f74514ff751cf033631e29b4e959422a60d6e4cf36c4"
+  },
+  {
+    "protocol": "deepseek",
+    "scenario": "world:idle",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 11,
+    "bodySha256": "c2a3966f3fb1d8eb6f796cd18d910f60c471ae804b8d0fed528c4d06e85bcca2"
+  },
+  {
+    "protocol": "deepseek",
+    "scenario": "world:due-handled",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 11,
+    "bodySha256": "e4d36a112c80f1706f5c99bbc7e49e90066f2b7cc8b98cb3180321bc22daf43a"
+  },
+  {
+    "protocol": "deepseek",
+    "scenario": "world:due-omitted",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 11,
+    "bodySha256": "0035187b19623a9ec521cfff4e68da0eabe887d01fea2b87e7a6a819ea96b5b9"
+  },
+  {
+    "protocol": "gemini",
+    "scenario": "story:false:false:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "dbbc0ac6ed11a8d9d34d889e865530cdc3505b85337876680d4007e2b7d3d902"
+  },
+  {
+    "protocol": "gemini",
+    "scenario": "story:false:false:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 3,
+    "bodySha256": "41e1a170a65016b2073c44a047246025fbcead493cc164b3c795a6e00885b517"
+  },
+  {
+    "protocol": "gemini",
+    "scenario": "story:false:true:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "1bdd5dd2dd31b27d34b9af9125d4f0828b8b9c0eb7ae3adcf72f4e7b28e91323"
+  },
+  {
+    "protocol": "gemini",
+    "scenario": "story:false:true:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 3,
+    "bodySha256": "e0d63ce0ef398872c12e8dac302630293f963023290eb9562d91cdf2db7f489c"
+  },
+  {
+    "protocol": "gemini",
+    "scenario": "story:true:false:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "ff9b51e27de813d6a73dbd0d2bbe23168d7149ca283456eee2c0b83c811ed406"
+  },
+  {
+    "protocol": "gemini",
+    "scenario": "story:true:false:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 3,
+    "bodySha256": "71e0ba5192d9dc31e8d9d300422807517f2fb4b7c7843de9ae6d5f06e0844456"
+  },
+  {
+    "protocol": "gemini",
+    "scenario": "story:true:true:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "4785c22cb2e3f5ad4d36be906f90b79b404c3380eca5655c6ba24eea5a9a4519"
+  },
+  {
+    "protocol": "gemini",
+    "scenario": "story:true:true:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 3,
+    "bodySha256": "f11d03e4053c3b0d7959542b0bb3fc20630ca27e209647c1fc0de9cfa33fdcdc"
+  },
+  {
+    "protocol": "gemini",
+    "scenario": "variables:empty",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "8ee49c51126e38fb20c8c6e569922d31dc15325138bfce84e97f3e0cf16d5404"
+  },
+  {
+    "protocol": "gemini",
+    "scenario": "variables:valid",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "12ac752ff4edc45f3d6236f2c92823552203b741f4af4c9055da602eccda1d80"
+  },
+  {
+    "protocol": "gemini",
+    "scenario": "variables:invalid",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "d49c3d8ded8db73f0a03b415dd3a250af3d45750e6a1839c53d6f89425e85a7b"
+  },
+  {
+    "protocol": "gemini",
+    "scenario": "world:idle",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "4937dd7558b6eca0ff23cf4f1f3799e8b8421271e29185cdc0b20769ea2d5c8f"
+  },
+  {
+    "protocol": "gemini",
+    "scenario": "world:due-handled",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "d3acf334abab767338ce904aacf0f96c4f0182ad84576314955b39cc0dcf0995"
+  },
+  {
+    "protocol": "gemini",
+    "scenario": "world:due-omitted",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "bd7e71c204230b0e4f3b781301ee6719a53921e8d6f7368d242b4f4e81026584"
+  },
+  {
+    "protocol": "anthropic",
+    "scenario": "story:false:false:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "f33dd46ff7b00829a1bc7d5782f6e5baa430dd35a7bbc217af7405fddcd68292"
+  },
+  {
+    "protocol": "anthropic",
+    "scenario": "story:false:false:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 3,
+    "bodySha256": "40643cd12ba5be1ab3f6087f2c1a950f7b2ec13b1d5cff3ec789967e5d42c39f"
+  },
+  {
+    "protocol": "anthropic",
+    "scenario": "story:false:true:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "45d0485c4af2987242b7b411920d19f1b64815c0a5b2d5af527c896852e500ec"
+  },
+  {
+    "protocol": "anthropic",
+    "scenario": "story:false:true:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 3,
+    "bodySha256": "fcaf54cb549d7cdccceb60c43e56c54a155c0e76ed8d5dd385b4bbb157c71526"
+  },
+  {
+    "protocol": "anthropic",
+    "scenario": "story:true:false:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "66daf33de7f5fc7db1b8c73f81f2d93d9dd56d00d465801bc076340e5014f51d"
+  },
+  {
+    "protocol": "anthropic",
+    "scenario": "story:true:false:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 3,
+    "bodySha256": "cc312d92c47f58ed293a10eee160d53afbec99f6420124d2e63ea721b979765a"
+  },
+  {
+    "protocol": "anthropic",
+    "scenario": "story:true:true:false",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "e50b2f6a735f074d37096ff310b13338f7e5c5ed7346ff7dab89877837dee2ca"
+  },
+  {
+    "protocol": "anthropic",
+    "scenario": "story:true:true:true",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 3,
+    "bodySha256": "ed71a693fb1273d6b97a58cf58ebb24068edc3b4c91a1ebfc643abd76d7d240e"
+  },
+  {
+    "protocol": "anthropic",
+    "scenario": "variables:empty",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "cf5ff7e2d8ca8bc644a87ff1fbf1b0d8e5194a732126070883783cdc7d92eda7"
+  },
+  {
+    "protocol": "anthropic",
+    "scenario": "variables:valid",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "dd8ba163b3eaca12cca308b0ac1111c8baab63cdf09811eae9a088d09077cebc"
+  },
+  {
+    "protocol": "anthropic",
+    "scenario": "variables:invalid",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "2ed4ac66d03b9271ce17de1a516b9cd94871bbebf358d73ca9c8b63213dc51e4"
+  },
+  {
+    "protocol": "anthropic",
+    "scenario": "world:idle",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "9a1dc5251f450b07697e468bbdc4b313c4977eb637e58ff30d84f89b096ffba8"
+  },
+  {
+    "protocol": "anthropic",
+    "scenario": "world:due-handled",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "6f5f1ac94cff6cdbaa7d0bbdb7a44c82707ad5e81cfbcdc13a5a25e156e87ad5"
+  },
+  {
+    "protocol": "anthropic",
+    "scenario": "world:due-omitted",
+    "lastRole": "user",
+    "hasFormatTail": true,
+    "messageCount": 2,
+    "bodySha256": "bdb454c6b0159658262c98862b6214a46eef499f6af7055d3a7f08c6baebec34"
+  }
+]
