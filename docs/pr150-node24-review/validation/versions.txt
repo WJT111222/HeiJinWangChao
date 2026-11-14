@@ -1,0 +1,7 @@
+Node v24.19.0
+npm 11.9.0
+Chromium 154.0.8037.57 built on Debian GNU/Linux 13 (trixie)
+PR review baseline: 107ce54a3d858ed3314c112d771346f768d772f0
+Main baseline: ba97b6c198107bdfcd58915f17c0891af4285a05
+Source commit: ba7d7bc1c2585f076328f64a5093d599a1b40df6
+Both worktrees use genuine npm ci dependencies. No shims.
