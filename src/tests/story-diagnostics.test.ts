@@ -15,7 +15,7 @@ function failure(text: string) {
 describe('Story failures report the actual existing rejection branch', () => {
   it.each([
     ['missing narrative', body.replace(/<正文>.*?<\/正文>/, ''), 'tag_missing', '正文'],
-    ['unclosed narrative', body.replace('</正文>', ''), 'tag_unclosed', '正文'],
+    ['unclosed final tag (possible truncation)', body.replace('</行动选项>', ''), 'tag_unclosed', '行动选项'],
     ['wrong order', body.replace('<正文>一二三四五六七八九十</正文><短期记忆>已到站。</短期记忆>', '<短期记忆>已到站。</短期记忆><正文>一二三四五六七八九十</正文>'), 'tag_order', '短期记忆'],
     ['duplicate', body.replace('</正文>', '</正文><正文>额外</正文>'), 'tag_nested', '正文'],
     ['nested', body.replace('一二三四五六七八九十', '<judge>私密内容</judge>一二三四五六七八九十'), 'tag_nested', 'judge'],
@@ -49,6 +49,21 @@ describe('Story failures report the actual existing rejection branch', () => {
     const error = failure(body.replace('[]', guide));
     expect(error.details).toMatchObject({ storyRule: 'story_schema', fieldPath: path, ...(index === undefined ? {} : { guideIndex: index }) });
     expect(JSON.stringify(safeAiError(error))).not.toMatch(/secret-|私密正文/);
+  });
+  it.each([
+    ['unclosed thinking', body.replace('</thinking>', '')],
+    ['unclosed narrative', body.replace('</正文>', '')],
+    ['unclosed summary', body.replace('</短期记忆>', '')],
+    ['unclosed guide (actions follow)', body.replace('</变量规划>', '')],
+    ['two unclosed in a row', body.replace('</正文>', '').replace('</短期记忆>', '')],
+  ])('repairs a missing closing tag when the next opening tag already appears: %s', (_name, text) => {
+    expect(parseStoryEnvelope(text, 'regular', settings()).story.narrative).toBe('一二三四五六七八九十');
+  });
+  it('without action options the guide is the final tag: unclosed means possible truncation and stays rejected', () => {
+    const noOptions = settings(); noOptions.prompts.actionOptions = false;
+    const text = body.split('<行动选项>')[0].replace('</变量规划>', '');
+    try { parseStoryEnvelope(text, 'regular', noOptions); throw Error('预期拒绝'); }
+    catch (error) { expect((error as AiError).details).toMatchObject({ storyRule: 'tag_unclosed', storyTag: '变量规划' }); }
   });
   it('valid Story still returns the same fields and options; optional options unchanged', () => {
     expect(parseStoryEnvelope(body, 'regular', settings())).toEqual({ planning: '规划', story: {

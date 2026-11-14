@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseStoryEnvelope } from '../services/validation/aiOutputs';
-import { recoverStoryEnvelope } from '../services/validation/storyEnvelopeRecovery';
+import { recoverStoryEnvelope, repairUnclosedTags } from '../services/validation/storyEnvelopeRecovery';
 import { defaultSettings } from '../ui/settings/model';
 import { AiError } from '../services/ai/errors';
 import { inlineRecoveryOutput, inlineRecoveryNarrative, inlineRecoveryTransition, recoveryNarrative, recoveryPlanning, recoveryTail } from './fixtures/storyRecovery';
@@ -96,8 +96,12 @@ describe('Story optional project planning, without relaxing mandatory payloads',
   it('显式空规划仍不能冒充合法规划；嵌套与重复保留原诊断', () => {
     expect(fails(`<thinking> \n </thinking><正文>${narrative}</正文>${tail}${choices}`).details)
       .toMatchObject({ storyRule: 'planning_empty', storyTag: 'thinking' });
-    expect(fails(`<thinking>未闭合<正文>${narrative}</正文>${tail}${choices}`).details)
-      .toMatchObject({ storyRule: 'tag_unclosed', storyTag: 'thinking' });
+    // 本轮返修（PR #150 审查第二节）：<thinking> 缺闭合但 <正文> 已出现属于边界明确的漏写，
+    // 补回后规划归规划、小说归小说，不再整回合作废。
+    {
+      const recovered = parseStoryEnvelope(`<thinking>未闭合<正文>${narrative}</正文>${tail}${choices}`, 'regular', settings(true));
+      expect(recovered.planning).toBe('未闭合'); expect(recovered.story.narrative).toBe(narrative);
+    }
     expect(fails(`<正文>${narrative}<正文>重复</正文></正文>${tail}${choices}`).details)
       .toMatchObject({ storyRule: 'tag_nested', storyTag: '正文' });
   });
@@ -209,5 +213,95 @@ describe('Story optional project planning, without relaxing mandatory payloads',
     const result = parseStoryEnvelope(raw, 'regular', settings(true));
     expect(result.planning).toBe(''); expect(result.story.narrative).toBe(narrative);
     expect(result.story.summary).toBe('两人一起核对本周生活费。');
+  });
+});
+
+// —— 漏写闭合标签的确定性补全（PR #150）：开标签已存在时的逐段补回与拒绝边界 ——
+describe('Unclosed closing-tag repair keeps every boundary unambiguous', () => {
+  const full = (withPlan = true) => `${withPlan ? plan : ''}<正文>${narrative}</正文>${tail}${choices}`;
+  const drop = (raw: string, ...tags: string[]) => tags.reduce((value, tag) => value.replace(`</${tag}>`, ''), raw);
+  const parsed = (raw: string) => parseStoryEnvelope(raw, 'regular', settings(true));
+  const expectStory = (raw: string, planning: string) => {
+    const result = parsed(raw);
+    expect(result.planning).toBe(planning);
+    expect(result.story.narrative).toBe(narrative);
+    expect(result.story.summary).toBe('两人一起核对本周生活费。');
+    expect(result.story.variableGuide).toEqual([]);
+    expect(result.story.actionOptions).toEqual(['继续讨论', '准备晚饭', '查看课表']);
+  };
+  const planningText = '维持已有场景，不代玩家做重大选择。';
+
+  it('标准完整输出：带项目规划与不带项目规划都照常解析', () => {
+    expectStory(full(), planningText);
+    expectStory(full(false), '');
+  });
+  it.each([
+    ['只缺</正文>', drop(full(), '正文'), planningText],
+    ['缺</thinking>', drop(full(), 'thinking'), planningText],
+    ['缺</短期记忆>', drop(full(), '短期记忆'), planningText],
+    ['启用行动选项时缺</变量规划>', drop(full(), '变量规划'), planningText],
+    ['没有项目规划且缺</正文>', drop(full(false), '正文'), ''],
+    ['连续两段缺闭合（正文+短期记忆）', drop(full(), '正文', '短期记忆'), planningText],
+    ['连续三段缺闭合（thinking+正文+短期记忆）', drop(full(), 'thinking', '正文', '短期记忆'), planningText],
+  ])('%s：下一段开标签已出现，补回后字段准确归位', (_name, raw, planning) => {
+    expectStory(raw, planning);
+  });
+  it('最后一个必需区块缺闭合＝可能截断，仍拒绝：行动选项启用与否各自的末段', () => {
+    expect(fails(drop(full(), '行动选项')).details).toMatchObject({ storyRule: 'tag_unclosed', storyTag: '行动选项' });
+    const noChoices = `${plan}<正文>${narrative}</正文>${drop(tail, '变量规划')}`;
+    expect(fails(noChoices, false).details).toMatchObject({ storyRule: 'tag_unclosed', storyTag: '变量规划' });
+  });
+  it('复审样例：损坏的</正文?broken>不能靠补一个正常闭合混入小说', () => {
+    const raw = `<正文>\n【旁白】两人洗好碗。\n</正文?broken>\n${tail}`;
+    expect(repairUnclosedTags(raw, false)).toBeUndefined();
+    expect(fails(raw, false).details).toMatchObject({ storyRule: 'tag_unclosed', storyTag: '正文' });
+  });
+  it.each(['thinking', 'think', 'judge', '正文', '短期记忆', '变量规划', '行动选项'].flatMap(
+    name => ['//', '\\', ':'].map(prefix => `<${prefix}${name}>`),
+  ))('名称前的畸形分隔符 %s 不能被当作完全缺失的闭合标签', brokenTag => {
+    const raw = drop(full(false), '正文').replace('<短期记忆>', `${brokenTag}\n<短期记忆>`);
+    // All payloads otherwise satisfy the configured minimum; failure must be structural.
+    expect(Array.from(narrative.replace(/\s/gu, '')).length).toBeGreaterThanOrEqual(settings(true).prompts.minNarrativeChars);
+    expect(repairUnclosedTags(raw, true)).toBeUndefined();
+    expect(fails(raw).details).toMatchObject({ storyRule: 'tag_unclosed', storyTag: '正文' });
+    expect(raw).toContain(brokenTag);
+  });
+  it.each([
+    ['开标签带参数 <正文?bad>', full().replace('<正文>', '<正文?bad><正文>')],
+    ['损坏闭合 </正文?broken>', drop(full(), '正文').replace('<短期记忆>', '</正文?broken><短期记忆>')],
+    ['全角冒号 <正文：>', drop(full(), '正文').replace('<短期记忆>', '<正文：><短期记忆>')],
+    ['<thinking?bad>', `<thinking?bad>${drop(full(false), '正文')}`],
+    ['<变量规划?bad>', drop(full(), '变量规划').replace('<行动选项>', '<变量规划?bad><行动选项>')],
+    ['带空格的 < 正文 >', drop(full(), '正文').replace('<短期记忆>', '< 正文 ><短期记忆>')],
+    ['大小写变体 <THINKING>', `<THINKING>x</THINKING>${drop(full(false), '正文')}`],
+    ['残缺前缀 </正文（无右尖括号）', drop(full(), '正文').replace('<短期记忆>', '</正文\n<短期记忆>')],
+  ])('畸形或疑似保留标签存在时一律不补：%s', (_name, raw) => {
+    expect(repairUnclosedTags(raw, true)).toBeUndefined();
+    expect(() => parsed(raw)).toThrow();
+  });
+  it('重复、乱序、嵌套照旧拒绝，不因补全改变结论', () => {
+    expect(fails(full().replace(narrative, `${narrative}<正文>额外`)).details).toMatchObject({ storyRule: 'tag_nested' });
+    const disordered = `${plan}${tail}<正文>${narrative}${choices}`;
+    expect(repairUnclosedTags(disordered, true)).toBeUndefined();
+    expect(() => parsed(disordered)).toThrow();
+    expect(fails(full().replace(narrative, `<judge>判定</judge>${narrative}`)).details).toMatchObject({ storyRule: 'tag_nested', storyTag: 'judge' });
+  });
+  it('正常对白里的普通标点与无关尖括号不阻止补全', () => {
+    const quoted = `${narrative}\n【吴思源】她说："3<5，这还用算？"`;
+    const raw = drop(full(), '正文').replace(narrative, quoted);
+    expect(parsed(raw).story.narrative).toBe(quoted);
+  });
+  it.each([
+    ['guide_json', (raw: string) => raw.replace('<变量规划>[]</变量规划>', '<变量规划>{broken}</变量规划>')],
+    ['story_schema', (raw: string) => raw.replace('<变量规划>[]</变量规划>', '<变量规划>[{"group":"npc","observedFact":42}]</变量规划>')],
+    ['summary_empty', (raw: string) => raw.replace('<短期记忆>两人一起核对本周生活费。</短期记忆>', '<短期记忆> </短期记忆>')],
+    ['actions_count', (raw: string) => raw.replace(choices, '<行动选项>继续核对\n留在原处</行动选项>')],
+    ['narrative_short', (raw: string) => raw.replace(narrative, '短')],
+  ] as const)('补回中间闭合后仍执行%s业务校验', (rule, change) => {
+    expect(fails(change(drop(full(false), '正文'))).details).toMatchObject({ storyRule: rule });
+  });
+  it('结构完整或无从补起时不产出修补副本', () => {
+    expect(repairUnclosedTags(full(), true)).toBeUndefined();
+    expect(repairUnclosedTags(`${plan}<正文>${narrative}`, true)).toBeUndefined(); // 后续开标签不存在
   });
 });

@@ -1,0 +1,510 @@
+[
+  {
+    "side": "main",
+    "project": "desktop",
+    "title": "P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功-desktop/error-context.md",
+        "bytes": 28125,
+        "sha256": "fbfca6f7435c72805f2fa039013a2332d62cbad1ed88ccc8ce7355b9358b7b92",
+        "repository_path": "failure-contexts/main-desktop-02.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功-desktop/trace.zip",
+        "bytes": 7418722,
+        "sha256": "c1aa286c0e2d1505dc5500c9e9eb879a3309be263ca974e5f4a1ac8109510955",
+        "repository_path": "traces/main-desktop-02.zip"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "project": "desktop",
+    "title": "P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功",
+    "status": "timedOut",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功-desktop/error-context.md",
+        "bytes": 28600,
+        "sha256": "a53a5c4ba3ce2626673a532ab81d5536f160cf83842be8b1f7e9441dcfa0cb85",
+        "repository_path": "failure-contexts/pr-desktop-02.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功-desktop/trace.zip",
+        "bytes": 7450399,
+        "sha256": "979e1c0525799f1b33b9f021f0a58ee25c91641bcdf0c3455a44c6b2f8ab05b6",
+        "repository_path": "traces/pr-desktop-02.zip"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "project": "mobile",
+    "title": "P6：完整文本与原生思考在统一原文查看，正文/存档隔离，刷新清除临时资料",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-P6：完整文本与原生思考在统一原文查看，正文-存档隔离，刷新清除临时资料-mobile/error-context.md",
+        "bytes": 14371,
+        "sha256": "f26d9151cf50dd0d1cfee5236c0826272662de291234ca5932f49a8454803a68",
+        "repository_path": "failure-contexts/main-mobile-12.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-P6：完整文本与原生思考在统一原文查看，正文-存档隔离，刷新清除临时资料-mobile/trace.zip",
+        "bytes": 1265617,
+        "sha256": "b5982b498524ae0b7073ec03353c4f0a66fe6ef415124fbb4623b87f7975aaf0",
+        "repository_path": "traces/main-mobile-12.zip"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "project": "mobile",
+    "title": "P6：完整文本与原生思考在统一原文查看，正文/存档隔离，刷新清除临时资料",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-P6：完整文本与原生思考在统一原文查看，正文-存档隔离，刷新清除临时资料-mobile/error-context.md",
+        "bytes": 14371,
+        "sha256": "f26d9151cf50dd0d1cfee5236c0826272662de291234ca5932f49a8454803a68",
+        "repository_path": "failure-contexts/pr-mobile-12.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-P6：完整文本与原生思考在统一原文查看，正文-存档隔离，刷新清除临时资料-mobile/trace.zip",
+        "bytes": 1484846,
+        "sha256": "56927b7c120b94e72c7264ccfaa8f21d02625a63a9e651b9cf57e125d2e6fc86",
+        "repository_path": "traces/pr-mobile-12.zip"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "project": "mobile",
+    "title": "P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功-mobile/error-context.md",
+        "bytes": 14364,
+        "sha256": "b1c4e915738dae62ee95bcf675880555d25b2d5ba27f0dfa93d5551477ecf98b",
+        "repository_path": "failure-contexts/main-mobile-13.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功-mobile/trace.zip",
+        "bytes": 1346945,
+        "sha256": "7508af43508549a9b339a93bc136b0d5cf53efce785931128f80230cccdffdf7"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "project": "mobile",
+    "title": "P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功-mobile/error-context.md",
+        "bytes": 14364,
+        "sha256": "b1c4e915738dae62ee95bcf675880555d25b2d5ba27f0dfa93d5551477ecf98b",
+        "repository_path": "failure-contexts/pr-mobile-13.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功-mobile/trace.zip",
+        "bytes": 1285257,
+        "sha256": "f36ccb53583afb24a9534bae4a8d23eaadefcd32dc00206e78c46636b9cfaba1"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "project": "mobile",
+    "title": "Story保存版本冲突保留原DataError处理，原文面板显示具体失败而非校验成功",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-Story保存版本冲突保留原DataError处理，原文面板显示具体失败而非校验成功-mobile/error-context.md",
+        "bytes": 14367,
+        "sha256": "9ddf3d962285c710444cf9553fe7e61f85f01c26f77260444f1fb12fde93d30b",
+        "repository_path": "failure-contexts/main-mobile-14.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-Story保存版本冲突保留原DataError处理，原文面板显示具体失败而非校验成功-mobile/trace.zip",
+        "bytes": 1340875,
+        "sha256": "03f441d9006146b9c607a9f5434ff1c1bf28bd8688ed2f7e690a8cf4d57cb2ea"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "project": "mobile",
+    "title": "Story保存版本冲突保留原DataError处理，原文面板显示具体失败而非校验成功",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-Story保存版本冲突保留原DataError处理，原文面板显示具体失败而非校验成功-mobile/error-context.md",
+        "bytes": 14367,
+        "sha256": "373d705848226247fa23b69f5466325a799bc2a5251cdc20d9c5f27a37a40bb3",
+        "repository_path": "failure-contexts/pr-mobile-14.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-Story保存版本冲突保留原DataError处理，原文面板显示具体失败而非校验成功-mobile/trace.zip",
+        "bytes": 1260128,
+        "sha256": "8253c35ebc73769a18c9a15332aad754105c5beb39eaee3f0bf0b67af62b6ea4"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "project": "mobile",
+    "title": "Story后置凭证拒绝同步到原文面板，诊断与原文均不泄露密钥",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-Story后置凭证拒绝同步到原文面板，诊断与原文均不泄露密钥-mobile/error-context.md",
+        "bytes": 14349,
+        "sha256": "686b8c05a0146bfad5fdf8be2eb1342f5bb5f0e578a2675e788bb9334266169b",
+        "repository_path": "failure-contexts/main-mobile-15.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-Story后置凭证拒绝同步到原文面板，诊断与原文均不泄露密钥-mobile/trace.zip",
+        "bytes": 1444243,
+        "sha256": "93508ecc5e5ea0b0cfb7572205522199e9d7e6842efb858b025e74e4cbca3800"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "project": "mobile",
+    "title": "Story后置凭证拒绝同步到原文面板，诊断与原文均不泄露密钥",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-Story后置凭证拒绝同步到原文面板，诊断与原文均不泄露密钥-mobile/error-context.md",
+        "bytes": 14349,
+        "sha256": "0ffd69a2d37655b763594c47ec5312bc7c6830f0a489d2e106a87907e5e14ace",
+        "repository_path": "failure-contexts/pr-mobile-15.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-Story后置凭证拒绝同步到原文面板，诊断与原文均不泄露密钥-mobile/trace.zip",
+        "bytes": 1142444,
+        "sha256": "b9064b827a17d77bac497c73f3fc067e64de9bdd392fb0c6610829579eeda241"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "project": "mobile",
+    "title": "Story标签与变量规划诊断分别定位；只有玩家明确重试才再次请求，合法原协议仍成功",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-Story标签与变量规划诊断分别定位；只有玩家明确重试才再次请求，合法原协议仍成功-mobile/error-context.md",
+        "bytes": 14382,
+        "sha256": "63f0fad6cc7b2cb873f36c0992b28fb6fc8d56f18282b1cdd03bf0f90b222ac2",
+        "repository_path": "failure-contexts/main-mobile-16.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-Story标签与变量规划诊断分别定位；只有玩家明确重试才再次请求，合法原协议仍成功-mobile/trace.zip",
+        "bytes": 1135509,
+        "sha256": "5f92b22ffab6633b058fa9c076bb48a9915aa9f03a7799b482ef7768702e9295"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "project": "mobile",
+    "title": "Story标签与变量规划诊断分别定位；只有玩家明确重试才再次请求，合法原协议仍成功",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-Story标签与变量规划诊断分别定位；只有玩家明确重试才再次请求，合法原协议仍成功-mobile/error-context.md",
+        "bytes": 14382,
+        "sha256": "63f0fad6cc7b2cb873f36c0992b28fb6fc8d56f18282b1cdd03bf0f90b222ac2",
+        "repository_path": "failure-contexts/pr-mobile-16.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-Story标签与变量规划诊断分别定位；只有玩家明确重试才再次请求，合法原协议仍成功-mobile/trace.zip",
+        "bytes": 1457733,
+        "sha256": "e324480ea7698c46bed8755b194644f55f15e1c429520290b9b1614d720364bf"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "project": "mobile",
+    "title": "Story精确诊断：1268/1500字符直接可见，可复制单条，原文仍可查看且不自动重试",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-Story精确诊断：1268-1500字符直接可见，可复制单条，原文仍可查看且不自动重试-mobile/error-context.md",
+        "bytes": 14373,
+        "sha256": "710862950ded8a694d7837bc6cf83c6cb91ae6fb3a124ccc9bb49f0c4ad2252c",
+        "repository_path": "failure-contexts/main-mobile-17.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-Story精确诊断：1268-1500字符直接可见，可复制单条，原文仍可查看且不自动重试-mobile/trace.zip",
+        "bytes": 1498575,
+        "sha256": "a92a93511b97ca90836672da50ffa414d74a34790a2fbb82f16058628abee298"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "project": "mobile",
+    "title": "Story精确诊断：1268/1500字符直接可见，可复制单条，原文仍可查看且不自动重试",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-Story精确诊断：1268-1500字符直接可见，可复制单条，原文仍可查看且不自动重试-mobile/error-context.md",
+        "bytes": 14373,
+        "sha256": "710862950ded8a694d7837bc6cf83c6cb91ae6fb3a124ccc9bb49f0c4ad2252c",
+        "repository_path": "failure-contexts/pr-mobile-17.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-Story精确诊断：1268-1500字符直接可见，可复制单条，原文仍可查看且不自动重试-mobile/trace.zip",
+        "bytes": 1294024,
+        "sha256": "6fb025b88980d666f32d1e5db6dc8b7dba6bcc0a103adcaf7b1e703c9919c839"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "project": "mobile",
+    "title": "已有 regular 草稿生成正确模式，没有草稿时不自动创建下一回合",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-已有-regular-草稿生成正确模式，没有草稿时不自动创建下一回合-mobile/error-context.md",
+        "bytes": 14356,
+        "sha256": "652bc218245a804622055113668d6d0686e3bedbd75fc21a62cbfdafa6558a09",
+        "repository_path": "failure-contexts/main-mobile-18.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-已有-regular-草稿生成正确模式，没有草稿时不自动创建下一回合-mobile/trace.zip",
+        "bytes": 1231821,
+        "sha256": "1525ea84827e55149e5de6b4e7de056bc17eb74414c07624571550e351bf5b0f"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "project": "mobile",
+    "title": "已有 regular 草稿生成正确模式，没有草稿时不自动创建下一回合",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-已有-regular-草稿生成正确模式，没有草稿时不自动创建下一回合-mobile/error-context.md",
+        "bytes": 14356,
+        "sha256": "652bc218245a804622055113668d6d0686e3bedbd75fc21a62cbfdafa6558a09",
+        "repository_path": "failure-contexts/pr-mobile-18.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-已有-regular-草稿生成正确模式，没有草稿时不自动创建下一回合-mobile/trace.zip",
+        "bytes": 1252028,
+        "sha256": "d59fef31c418a4e8ae1a50ee2f2d3e3d156e70bba8c1309b97d9569bcc2604a2"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "project": "mobile",
+    "title": "快速重复点击、取消重试、迟到请求与切档隔离、刷新保留空草稿",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-快速重复点击、取消重试、迟到请求与切档隔离、刷新保留空草稿-mobile/error-context.md",
+        "bytes": 14356,
+        "sha256": "9dc7cbb3b7d2ef3a74323666472805ce5ff2b2c67b2e74afd30877e7beab76dd",
+        "repository_path": "failure-contexts/main-mobile-19.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-快速重复点击、取消重试、迟到请求与切档隔离、刷新保留空草稿-mobile/trace.zip",
+        "bytes": 1404458,
+        "sha256": "6d97dbcc215f77ca3da43aa6d83c4181cc2adb82825516b87739df1c25b0ddb0"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "project": "mobile",
+    "title": "快速重复点击、取消重试、迟到请求与切档隔离、刷新保留空草稿",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-快速重复点击、取消重试、迟到请求与切档隔离、刷新保留空草稿-mobile/error-context.md",
+        "bytes": 14356,
+        "sha256": "9dc7cbb3b7d2ef3a74323666472805ce5ff2b2c67b2e74afd30877e7beab76dd",
+        "repository_path": "failure-contexts/pr-mobile-19.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-快速重复点击、取消重试、迟到请求与切档隔离、刷新保留空草稿-mobile/trace.zip",
+        "bytes": 1250311,
+        "sha256": "52ca2eaf648163c39d7cf2313f6552ada9c2339671ca52a2a93d95d64f0b9c42"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "project": "mobile",
+    "title": "有效正文草稿没有主动重生成入口，刷新后保持原稿且不请求模型",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-有效正文草稿没有主动重生成入口，刷新后保持原稿且不请求模型-mobile/error-context.md",
+        "bytes": 14356,
+        "sha256": "8955f54d9ce8ff35192c1d9860ef61262e357aa1e43f8b45e84e03221d1b6a49",
+        "repository_path": "failure-contexts/main-mobile-20.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-有效正文草稿没有主动重生成入口，刷新后保持原稿且不请求模型-mobile/trace.zip",
+        "bytes": 1093377,
+        "sha256": "aa60f33f5dc565c453737a3790aa51fbcb020811abad73fad246ec2205952df0"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "project": "mobile",
+    "title": "有效正文草稿没有主动重生成入口，刷新后保持原稿且不请求模型",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-有效正文草稿没有主动重生成入口，刷新后保持原稿且不请求模型-mobile/error-context.md",
+        "bytes": 14356,
+        "sha256": "8955f54d9ce8ff35192c1d9860ef61262e357aa1e43f8b45e84e03221d1b6a49",
+        "repository_path": "failure-contexts/pr-mobile-20.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-有效正文草稿没有主动重生成入口，刷新后保持原稿且不请求模型-mobile/trace.zip",
+        "bytes": 1179197,
+        "sha256": "e1b88b404fab5e888458a94fd3a0b7b5ca43f565423edb74f550719544b2363d"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "project": "mobile",
+    "title": "真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计-mobile/error-context.md",
+        "bytes": 14380,
+        "sha256": "9624b66464693303dfebdcf85c4fe0b1f49b9bb1e1eb5e19d89be375f7cc85c9",
+        "repository_path": "failure-contexts/main-mobile-21.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计-mobile/trace.zip",
+        "bytes": 1044439,
+        "sha256": "dc207e672f944686e570b6c1e0b0dabf0b8983bac29dc530428f96ea022b052e"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "project": "mobile",
+    "title": "真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计-mobile/error-context.md",
+        "bytes": 14380,
+        "sha256": "9624b66464693303dfebdcf85c4fe0b1f49b9bb1e1eb5e19d89be375f7cc85c9",
+        "repository_path": "failure-contexts/pr-mobile-21.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计-mobile/trace.zip",
+        "bytes": 1134197,
+        "sha256": "8f5fc0f07509d149beb6bab249f9806a864eda4c3e72b615e218e29b2968eb64"
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "project": "mobile",
+    "title": "长篇流式阅读自动跟随、手动上滚暂停、恢复跟随，移动端无横向溢出",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-长篇流式阅读自动跟随、手动上滚暂停、恢复跟随，移动端无横向溢出-mobile/error-context.md",
+        "bytes": 14362,
+        "sha256": "4358ff59adbf43703364a7ecc9c182bab23cdb2bbfa38c4bc41a54a65d349703",
+        "repository_path": "failure-contexts/main-mobile-22.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/main-runtime-output/story-runtime-长篇流式阅读自动跟随、手动上滚暂停、恢复跟随，移动端无横向溢出-mobile/trace.zip",
+        "bytes": 1316184,
+        "sha256": "0c1aa74d72f3a720d5d770d6e2c8147c550ec5eaa517f8772875ee5da15b31ab"
+      }
+    ]
+  },
+  {
+    "side": "pr",
+    "project": "mobile",
+    "title": "长篇流式阅读自动跟随、手动上滚暂停、恢复跟随，移动端无横向溢出",
+    "status": "failed",
+    "attachments": [
+      {
+        "name": "error-context",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-长篇流式阅读自动跟随、手动上滚暂停、恢复跟随，移动端无横向溢出-mobile/error-context.md",
+        "bytes": 14362,
+        "sha256": "4358ff59adbf43703364a7ecc9c182bab23cdb2bbfa38c4bc41a54a65d349703",
+        "repository_path": "failure-contexts/pr-mobile-22.md.gz"
+      },
+      {
+        "name": "trace",
+        "workspace_path": "/workspace/pr150-evidence/pr-runtime-output/story-runtime-长篇流式阅读自动跟随、手动上滚暂停、恢复跟随，移动端无横向溢出-mobile/trace.zip",
+        "bytes": 1277867,
+        "sha256": "110e2675e8c0ee86c9b2ca212bb2caf46b5cd911e46947fc67cd09c8155e55d6"
+      }
+    ]
+  }
+]

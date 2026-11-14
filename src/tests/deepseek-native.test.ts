@@ -175,3 +175,19 @@ it.each(['length', 'content_filter'] as const)('DeepSeek SSE %s 保留失败类�
     .rejects.toMatchObject({ code: reason === 'length' ? 'output_limit' : 'content_filter' });
   expect(fetcher).toHaveBeenCalledTimes(1);
 });
+
+it('原生公开思考与正式正文分开：content 漏写</正文>时补回解析，思考不混入小说（PR #150）', async () => {
+  const a = setup();
+  const envelope = '<正文>【旁白】两人洗好碗，把楼道灯的事记在便签上。</正文><短期记忆>两人约定明天去社区反映楼道灯。</短期记忆><变量规划>[]</变量规划>';
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json(reply(envelope.replace('</正文>', ''), '内部核对称呼与时间线')));
+  const result = await new AiClient(fetcher).generate(a.snapshot(), messages);
+  expect(result).toMatchObject({ text: envelope.replace('</正文>', ''), nativeReasoning: '内部核对称呼与时间线' });
+  const { parseStoryEnvelope } = await import('../services/validation/aiOutputs');
+  const { defaultSettings } = await import('../ui/settings/model');
+  const config = defaultSettings(); config.prompts.minNarrativeChars = 10; config.prompts.actionOptions = false;
+  const parsed = parseStoryEnvelope(result.text, 'regular', config);
+  expect(parsed.story.narrative).toBe('【旁白】两人洗好碗，把楼道灯的事记在便签上。');
+  expect(parsed.story.summary).toBe('两人约定明天去社区反映楼道灯。');
+  expect(parsed.planning).toBe('');
+  expect(parsed.story.narrative).not.toContain('内部核对');
+});

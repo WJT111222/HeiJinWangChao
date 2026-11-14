@@ -91,3 +91,49 @@ export function recoverStoryEnvelope(text: string, actions: boolean): string | u
 
   return `${wrappedPlanning ? wrappedPlanning + '\n' : ''}<正文>${narrative}</正文>\n${tail[0].trim()}`;
 }
+
+// —— 漏写闭合标签的确定性补全（与上面的双标签缺失恢复互斥：这里要求开标签已存在） ——
+
+const reservedNameSource = '(?:thinking|think|judge|正文|短期记忆|变量规划|行动选项)';
+/** 精确的保留标签：区分大小写、无空格、无多余字符。 */
+const canonicalReservedTag = new RegExp(`^</?${reservedNameSource}>`, 'u');
+/** 名称前只跨过非字母/数字的分隔符，识别 <//正文>、<\\正文>、<:正文> 等损坏结构。
+ * 不跨越其他尖括号或普通词语；3<5 等普通比较不含保留名称，不受影响。 */
+const reservedTagProbe = new RegExp(`<[^<>\\p{L}\\p{N}]*${reservedNameSource}`, 'giu');
+
+function hasMalformedReservedTag(text: string): boolean {
+  for (const match of text.matchAll(reservedTagProbe)) {
+    if (!canonicalReservedTag.test(text.slice(match.index))) return true;
+  }
+  return false;
+}
+
+/**
+ * 模型偶尔漏写某段的闭合标签就直接开下一段。只补一种情况：该段完全没有对应的
+ * 闭合标签，且下一段的开标签已经出现——此时这段在哪里结束没有歧义，在下一段
+ * 开标签前补上闭合，再交回原有严格正则与全部校验。连续多段漏写同样适用。
+ *
+ * 一律不补的情况：
+ * - 文本任何位置存在畸形或疑似保留标签（见 hasMalformedReservedTag）：损坏的
+ *   闭合标签不能靠补一个正常闭合被伪装成合法响应，边界有歧义就拒绝；
+ * - 最后一段缺闭合：通常意味着输出被截断，内容可能不完整，仍按原规则拒绝；
+ * - 闭合标签存在但位置不对（乱序、重复、嵌套）：由原有诊断处理。
+ *
+ * 只作用于内部解析副本；不生成任何正文、摘要、变量或行动选项，原始响应不变。
+ */
+export function repairUnclosedTags(text: string, actions: boolean): string | undefined {
+  const order = ['thinking', '正文', '短期记忆', '变量规划', ...(actions ? ['行动选项'] : [])];
+  if (hasMalformedReservedTag(text)) return undefined;
+  let repaired = text, inserted = false;
+  for (const [index, tag] of order.entries()) {
+    const next = order[index + 1];
+    if (!next) break; // 最后一段不补。
+    const open = repaired.indexOf(`<${tag}>`);
+    if (open < 0 || repaired.includes(`</${tag}>`)) continue;
+    const nextOpen = repaired.indexOf(`<${next}>`, open + tag.length + 2);
+    if (nextOpen < 0) continue;
+    repaired = `${repaired.slice(0, nextOpen)}</${tag}>\n${repaired.slice(nextOpen)}`;
+    inserted = true;
+  }
+  return inserted ? repaired : undefined;
+}
