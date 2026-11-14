@@ -2,7 +2,7 @@
 
 审查 HEAD：`591ea9a18a3f685acfa9872d47cdb347e2792f28`；开工重新 fetch 后一致。
 
-main：`086ea8f6c25b028460b71b121e42b45ee5e965c2`。原分支：`feat/ai-settings-redesign`。修复与测试代码提交：`4ebb50d3f72e51bc664521e7d16a87a448da8248`；后续提交仅收录本报告、日志和截图。
+main：`086ea8f6c25b028460b71b121e42b45ee5e965c2`。原分支：`feat/ai-settings-redesign`。首轮修复代码：`4ebb50d3f72e51bc664521e7d16a87a448da8248`。首次推送前发现原分支新增 `29070a5dcdf31a7498883428c31d5af2830de049`；普通推送被拒绝，没有覆盖远端。已完整保留该提交，并在 `3260de3009c117f759ff22d6be139ee46ecf143a` 整合；后续提交仅收录本报告、日志和截图。
 
 审查依据：[十一代目第二轮复审](https://github.com/WJT111222/HeiJinWangChao/pull/148#issuecomment-6873932051)。本轮未合入 main 或 #149，未创建新 PR，未部署或发布正式生产环境。
 
@@ -12,10 +12,11 @@ main：`086ea8f6c25b028460b71b121e42b45ee5e965c2`。原分支：`feat/ai-setting
 2. `AiConnections.save()` 将快照读取放在 try 外，读取异常逃过受控提示；保存失败后不论实际恢复结果都声称“密钥和配置都保持原样”。
 3. 同时确认 `CredentialVault.set()` 在迁移密钥时也先删除原位置再写目标。目标持续拒写时会不必要地先丢掉旧副本，因此同处改为先写目标、成功后清理另一位置。相同 Store 测试替身不重复清理自己；正常浏览器 session/local 的存放语义不变。
 
-现在 restore 分三步：
+现在 restore 的流程：
 
 - 逐项读取；已经一致的原值不 set/remove，不移动。只尝试恢复不一致的非空原副本，保留原始字节及 session/local 位置。单项故障不阻止其他渠道恢复。
 - 只有该渠道所有原始非空副本均已恢复后，才清理快照中原本为空的位置；原副本不能恢复时，保留现存副本，不为腾空间或清理而先删掉它。
+- 保留 `29070a5` 的本地容量恢复策略：其他渠道清理成功后，对尚未恢复的原副本再尝试一次。该重试仅限本地存储，不是 AI 或网络重试。新增测试验证释放空间后恢复原副本，且不先删除唯一备份。
 - 最后再次读取两处，与快照精确比较，包括额外副本。返回 `{ restored, failedIds }`，不返回密钥值；读取不可用也属于未能确认恢复，不能报告成功。
 
 保存操作先在 try 内完成整个快照，再开始删除/写入/保存配置。快照失败时不进行任何密钥或配置写入。恢复完全核验通过时才报告与保存前一致；否则指出受影响渠道并提示“密钥未能完全恢复或核验，请检查密钥存储状态”，保留未保存编辑供玩家处理。
@@ -33,6 +34,12 @@ main：`086ea8f6c25b028460b71b121e42b45ee5e965c2`。原分支：`feat/ai-setting
 
 继续保留原三种单次失败：配置写入失败、第二个密钥写到一半失败、删除失败，以及解除故障后的明确点击重试。新增“删除渠道→放弃”不写凭证，“删除→保存→重载”才清理该渠道且其他渠道不变。
 
+## 远端后续提交整合
+
+`29070a5` 的新单测、持续写失败浏览器用例、快照受控读取和本地容量重试逻辑全部保留。内部 restore 返回值增加 `failedIds` 以精确指出未恢复/未核验渠道；其三条新测试仅将布尔返回断言改为同一结果对象的 `.restored` 布尔断言，原凭证值、位置及不写不删断言均保留。没有删除或放宽远端新增测试。
+
+同时保留每个存储位置独立恢复，避免第一位置失败就短路跳过仍能恢复的另一位置；以及相同 Store 的既有测试/适配用法，防止目标写完后把自己删除。
+
 ## 先红后绿与工程结果
 
 环境：Node **24.19.0**，npm **11.9.0**，系统 Chromium **154.0.8037.57**。正式锁文件 `npm ci` 安装 143 包成功，未替换测试运行器或模拟编译。
@@ -41,11 +48,26 @@ main：`086ea8f6c25b028460b71b121e42b45ee5e965c2`。原分支：`feat/ai-setting
 | --- | --- | --- |
 | 新 Vault 单测，生产修复前 | 1 | 7 失败、4 通过（原三项及快照读取测试通过）；原始失败保留 |
 | 持续 set 旧密钥丢失的桌面 Chromium，修复前 | 1 | 1 失败，快照差异直接显示旧 local 副本被删除 |
-| 相关 Vault / AI Client / mobile-feedback Vitest | 0 | 3 文件、50 通过，0 失败/跳过；其中 Vault 11/11 |
-| `npm run check` | 0 | ESLint、149 文件 / 3597 Vitest、TypeScript、生产 Build 全部通过，0 失败/跳过 |
+| 首轮相关 Vault / AI Client / mobile-feedback Vitest | 0 | 3 文件、50 通过，0 失败/跳过；其中 Vault 11/11 |
+| 首轮 `npm run check` | 0 | ESLint、149 文件 / 3597 Vitest、TypeScript、生产 Build 全部通过，0 失败/跳过 |
 | `npm run prompts:check` | 0 | 3 文件、93 通过，0 失败/跳过 |
 | 补充删除/放弃场景后的 Lint | 0 | 项目正式 ESLint，无放宽规则 |
 | `git diff --check` | 0 | 无差异格式问题 |
+
+### 整合 `29070a5` 后的最终正式成绩
+
+以下是代码 `3260de3` 的独立新批次，不能用上面的首轮成绩代替：
+
+| 命令 / 批次 | 退出码 | 实际结果 |
+| --- | --- | --- |
+| 相关 Vault / AI Client / mobile-feedback | 0 | 3 文件、54 通过，0 失败/跳过；Vault 15/15，包含远端新增三项和容量恢复一项 |
+| `npm run check` | 0 | ESLint、149 文件 / **3601 Vitest**、TypeScript、生产构建全部通过，0 失败/跳过 |
+| `npm run prompts:check` | 0 | 3 文件、93 通过，0 失败/跳过 |
+| 双端安全、旧配置、故障恢复、删除/放弃定向 Chromium | 0 | **24/24 通过**，含远端新增持续失败测试；0 失败/跳过 |
+| 两端原多渠道长流程，默认 30 秒、零重试 | 0 | **2/2 通过**，0 失败/跳过 |
+| `git diff --check` | 0 | 通过 |
+
+最终 24 项与 2 项是两个独立命令；没有把首轮 21/22 或基线失败拼接成一次全绿。
 
 生产构建只有既有的大分包体积警告，本轮不改打包、路由或其他代码。
 
@@ -58,13 +80,13 @@ main：`086ea8f6c25b028460b71b121e42b45ee5e965c2`。原分支：`feat/ai-setting
 - 对照诊断仅在命令行给这条测试 90 秒总预算，main 与审查 HEAD 随后分别通过，整个运行器耗时约 20.1 / 24.9 秒；原用例和单步断言没有修改。
 - 返修版在工程检查结束、单 worker 的独立复测中，**仍用默认 30 秒**，PC/手机原长流程及新增删除/放弃/保存共 **4/4 通过**。没有改变测试超时配置，没有增加自动重试。
 
-以上是分开的执行批次，不合并为一次全绿。24 个不同双端相关场景均已取得通过证据；详细用例名、项目、状态、耗时及失败批次见 [browser-batches.json](browser-batches.json)。
+以上是分开的执行批次，不合并为一次全绿。首轮 24 个不同双端相关场景均已取得通过证据；详细用例名、项目、状态、耗时及失败批次见 [browser-batches.json](browser-batches.json)。
 
 新持续故障/删除测试断言保存、回滚、浏览不产生模型 POST；旧显式“测试回复”和四阶段请求测试仍按原断言 Mock 处理，未调用付费模型。校验原配置 JSON 不含密钥、页面正文不泄露凭证、没有 pageerror、重载后值/位置一致。涉及的游戏数据与请求协议均未变更。
 
 ## 截图
 
-16 张完整 React App 实拍：PC **1440×1000**；手机使用项目原 Pixel 7 **412×839、DPR 2.625**。每种故障各有失败提示与成功保存两态。使用的凭证均是隔离 Mock 值，截图保持密码掩码。没有重新设计任何视觉布局。
+16 张整合后代码 `3260de3` 的完整 React App 实拍：PC **1440×1000**；手机使用项目原 Pixel 7 **412×839、DPR 2.625**。每种故障各有失败提示与成功保存两态。使用的凭证均是隔离 Mock 值，截图保持密码掩码。没有重新设计任何视觉布局。
 
 - [PC：无法完整恢复并指出渠道](screenshots/desktop-partial-failure.png)
 - [手机：无法完整恢复并指出渠道](screenshots/mobile-partial-failure.png)
@@ -78,7 +100,7 @@ main：`086ea8f6c25b028460b71b121e42b45ee5e965c2`。原分支：`feat/ai-setting
 
 - `src/services/ai/credentials.ts`：安全写入顺序、无损尽力恢复与明确核验结果。
 - `src/ui/settings/AiConnections.tsx`：快照纳入 try、受控读取错误、按实际恢复结果显示反馈。
-- `src/tests/credential-vault-restore.test.ts`：保留原三项并新增八项持续故障/顺序/核验/来源保护测试。
+- `src/tests/credential-vault-restore.test.ts`：保留原三项、首轮新增八项、远端新增三项，并补充一项容量释放后的原副本恢复测试，共十五项。
 - `e2e/ai-settings.spec.ts`：只追加四种持续故障和删除/放弃测试，保留既有用例与断言。
 - `docs/pr148-security/`：本次要求的报告、真实截图、原始日志与失败对照。
 
@@ -100,7 +122,7 @@ npm ci
 npm run check
 npm run prompts:check
 npx vitest run src/tests/credential-vault-restore.test.ts src/tests/ai-client.test.ts src/tests/mobile-feedback.test.tsx
-CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/ai-settings.spec.ts e2e/ai-route-persistence.spec.ts --grep '持续存储异常|保存失败（|AI 多渠道|旧配置|放弃|删除单独指定|未保存关闭|存储失败不清除' --workers=1
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/ai-settings.spec.ts e2e/ai-route-persistence.spec.ts --grep '持续存储异常|保存失败（|长期存储持续|旧配置|放弃|删除单独指定|未保存关闭|存储失败不清除' --workers=1
 CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/ai-settings.spec.ts --grep 'AI 多渠道|删除渠道后放弃' --workers=1
 git diff --check
 ```

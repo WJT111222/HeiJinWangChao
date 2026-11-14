@@ -1,7 +1,7 @@
 [
   {
     "file": "screenshots/desktop-partial-failure.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 1440,
@@ -12,12 +12,12 @@
       "width": 1440,
       "height": 1000
     },
-    "sha256": "4574e1900cf64f3037fd8e7a0dbc14e793515f2998aae195ed4581d8908b125b",
+    "sha256": "46a6014ff7d236c167b7573adaf020607181d477863395e2468dae38811f091e",
     "data": "synthetic Mock credentials only; real React App"
   },
   {
     "file": "screenshots/desktop-partial-saved.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 1440,
@@ -28,12 +28,12 @@
       "width": 1440,
       "height": 1000
     },
-    "sha256": "8e63afc16c57cb80f7008ac4307c6b28efb623dd5b4a605648b19dd01f3686fa",
+    "sha256": "ea9ecd67512c5d31f8414252dabaf7da87c324ac0eefe876033ba91814326c5a",
     "data": "synthetic Mock credentials only; real React App"
   },
   {
     "file": "screenshots/desktop-read-failure.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 1440,
@@ -49,7 +49,7 @@
   },
   {
     "file": "screenshots/desktop-read-saved.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 1440,
@@ -60,12 +60,12 @@
       "width": 1440,
       "height": 1000
     },
-    "sha256": "af7545b142bd70c3f296387603067d686ee19f163f401d0aeb388e9840c6cb5e",
+    "sha256": "0d6a994c2e38979008510ca4cce45c43c7b8448ab24b8f9025580a6c0abd3ab6",
     "data": "synthetic Mock credentials only; real React App"
   },
   {
     "file": "screenshots/desktop-remove-failure.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 1440,
@@ -76,12 +76,12 @@
       "width": 1440,
       "height": 1000
     },
-    "sha256": "ddbbe971dc6b6f250e97d4282b07bf52f4dc4c378502c0277d7df70a324cc7a6",
+    "sha256": "755585670ed3d5bfbb64924d3a61e979331d1cd146e03b438e33b2fc191ba979",
     "data": "synthetic Mock credentials only; real React App"
   },
   {
     "file": "screenshots/desktop-remove-saved.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 1440,
@@ -92,12 +92,12 @@
       "width": 1440,
       "height": 1000
     },
-    "sha256": "a3ab214b8fdf2ecf767bdf35afca5b624cdcece6047647f14a73452066a3321e",
+    "sha256": "2f9ac52e6537b3302e9c746ae5506fa34d4b466f947f6748b3d773522e17a46d",
     "data": "synthetic Mock credentials only; real React App"
   },
   {
     "file": "screenshots/desktop-set-failure.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 1440,
@@ -108,12 +108,12 @@
       "width": 1440,
       "height": 1000
     },
-    "sha256": "7f044aae0becff58292306d2525755009daac2143564aa26fd673414ac844fdd",
+    "sha256": "869b986fe933408dbc33ab5353181fd74e2ac2a85d253c4f8430cf6dcb6557ab",
     "data": "synthetic Mock credentials only; real React App"
   },
   {
     "file": "screenshots/desktop-set-saved.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 1440,
@@ -124,12 +124,12 @@
       "width": 1440,
       "height": 1000
     },
-    "sha256": "b654f81a042af6eb3a543f68be8123f9128387659475a08165ff11343ab06383",
+    "sha256": "556babb843ce50539b249127402e8a6d1f8a3fff93dd4a8de75b0ca9348c0407",
     "data": "synthetic Mock credentials only; real React App"
   },
   {
     "file": "screenshots/mobile-partial-failure.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 412,
@@ -140,12 +140,12 @@
       "width": 1082,
       "height": 2202
     },
-    "sha256": "c0271a0904fb5f243c043525bdbfc6d23876226c988b6632786479b3ed7c6ae6",
+    "sha256": "788680578394ea034759699ac496899d58e442fadc9b0cf785c98321221a6ab5",
     "data": "synthetic Mock credentials only; real React App"
   },
   {
     "file": "screenshots/mobile-partial-saved.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 412,
@@ -161,7 +161,7 @@
   },
   {
     "file": "screenshots/mobile-read-failure.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 412,
@@ -177,7 +177,7 @@
   },
   {
     "file": "screenshots/mobile-read-saved.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 412,
@@ -193,7 +193,7 @@
   },
   {
     "file": "screenshots/mobile-remove-failure.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 412,
@@ -204,12 +204,12 @@
       "width": 1082,
       "height": 2202
     },
-    "sha256": "5df3c4bf9f923ba546c747ae079ae2a542803c671dfbf74c187a8e2c9441b0ec",
+    "sha256": "8a00e2b7169afbfe40994cec88ffa8d05c1ee8dde6a07f2370ddbcc68a44b977",
     "data": "synthetic Mock credentials only; real React App"
   },
   {
     "file": "screenshots/mobile-remove-saved.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 412,
@@ -225,7 +225,7 @@
   },
   {
     "file": "screenshots/mobile-set-failure.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 412,
@@ -236,12 +236,12 @@
       "width": 1082,
       "height": 2202
     },
-    "sha256": "89ed674b521755ca98bd71e25f57c6d6a1738868298e3cbb92c97a0eb29d1cc3",
+    "sha256": "0babb718bdb1313f0d1432c415bf1f150fb20b35f00dc7986b3a8936658f68b4",
     "data": "synthetic Mock credentials only; real React App"
   },
   {
     "file": "screenshots/mobile-set-saved.png",
-    "sourceCommit": "4ebb50d3f72e51bc664521e7d16a87a448da8248",
+    "sourceCommit": "3260de3009c117f759ff22d6be139ee46ecf143a",
     "browser": "Chromium 154.0.8037.57",
     "cssViewport": {
       "width": 412,
