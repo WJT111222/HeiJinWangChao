@@ -1,0 +1,8 @@
+import original from '/workspace/pr153-catalog/playwright.config';
+export default { ...original,
+ testDir: '/workspace/pr153-catalog/e2e',
+ reporter: [['list'], ['json', {outputFile:'/workspace/pr153-evidence/pr-tail-after.json'}]],
+ outputDir:'/workspace/pr153-evidence/pr-tail-after-output',
+ use: {...original.use,baseURL:'http://127.0.0.1:5779'},
+ webServer: {command:'npm run dev -- --host 127.0.0.1 --port 5779 --strictPort',cwd:'/workspace/pr153-catalog',url:'http://127.0.0.1:5779',reuseExistingServer:false},
+};

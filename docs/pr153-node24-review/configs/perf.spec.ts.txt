@@ -1,0 +1,49 @@
+import { test, expect, chromium } from '/workspace/pr153-catalog/node_modules/@playwright/test/index.mjs';
+import { readFile } from 'node:fs/promises';
+const target = process.env.PR153_TARGET ?? 'pr';
+test('isolated cold World composition, warm cache, renderer RSS high-water and frame/input delay', async ({ baseURL }, info) => {
+  test.setTimeout(180000);
+  const samples: unknown[] = [];
+  for(let trial=0;trial<5;trial++) {
+    const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH});
+    try {
+      const context=await browser.newContext({...info.project.use,baseURL});
+      const page=await context.newPage(); await page.route('https://**/*',r=>r.abort()); await page.goto(baseURL!);
+      await page.evaluate(async()=>{
+        const paths=['/src/prompts/composer.ts','/src/tests/fixtures/world.ts','/src/ui/settings/model.ts'];
+        await Promise.all(paths.map(p=>import(p)));
+      });
+      const cdp=await context.newCDPSession(page);await cdp.send('Emulation.setCPUThrottlingRate',{rate:info.project.name==='mobile'?4:1});
+      const bcdp=await browser.newBrowserCDPSession();
+      const rss = async()=>{
+        const {processInfo}=await bcdp.send('SystemInfo.getProcessInfo');
+        const rows=[];
+        for(const p of processInfo.filter((p:{type:string})=>p.type==='renderer')){
+          try {const status=await readFile(`/proc/${p.id}/status`,'utf8');rows.push({id:p.id,hwmKiB:Number(status.match(/VmHWM:\s+(\d+)/)?.[1]),rssKiB:Number(status.match(/VmRSS:\s+(\d+)/)?.[1])});}catch{/* process exited */}
+        }return rows;
+      };
+      const before=await rss();
+      const timing=await page.evaluate(async()=>{
+        const paths=['/src/prompts/composer.ts','/src/tests/fixtures/world.ts','/src/ui/settings/model.ts'];
+        const [{composePrompt},{worldState,worldDraft},{defaultSettings}]=await Promise.all(paths.map(p=>import(p)));
+        const input={stage:'world',mode:'regular',state:worldState(),draft:worldDraft(true,'regular'),settings:defaultSettings(),userInput:''};
+        // Preload prompt resources with Story. No commandCatalog is called for Story.
+        await composePrompt({...input,stage:'story'});
+        const frames:number[]=[],longTasks:number[]=[],start=performance.now();let frame=0;
+        const tick=(now:number)=>{frames.push(now);frame=requestAnimationFrame(tick);};frame=requestAnimationFrame(tick);
+        const observer=new PerformanceObserver(list=>{for(const e of list.getEntries())longTasks.push(e.duration);});observer.observe({type:'longtask',buffered:false});
+        await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));
+        const button=document.createElement('button');button.textContent='Performance probe';document.body.append(button);
+        let clicked=0;button.onclick=()=>{clicked=performance.now();};
+        const requested=performance.now();setTimeout(()=>button.click(),0);
+        const first=performance.now();const prompt=await composePrompt(input);const coldMs=performance.now()-first;
+        const hot=[];for(let i=0;i<10;i++){const at=performance.now();await composePrompt(input);hot.push(performance.now()-at);}
+        await new Promise(r=>setTimeout(r,100));cancelAnimationFrame(frame);observer.disconnect();button.remove();
+        return {coldMs,hotMs:hot,inputDelayMs:clicked-requested,frameGapsMs:frames.slice(1).map((v,i)=>v-frames[i]),longTasksMs:longTasks,totalMs:performance.now()-start,contextChars:JSON.stringify(prompt.context).length};
+      });
+      const after=await rss();expect(timing.contextChars).toBeGreaterThan(10000);expect(timing.coldMs).toBeGreaterThan(0);
+      samples.push({trial,cpuRate:info.project.name==='mobile'?4:1,before,after,...timing});
+    }finally{await browser.close();}
+  }
+  await info.attach(`${target}-${info.project.name}-performance`,{body:JSON.stringify(samples,null,2),contentType:'application/json'});
+});

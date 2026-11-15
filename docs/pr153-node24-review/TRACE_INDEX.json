@@ -1,0 +1,192 @@
+[
+  {
+    "path": "main-browser-output/continuous-turns-下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合-mobile/trace.zip",
+    "bytes": 7216943,
+    "sha256": "987ec3c5db8e9ca24cf53be3bf85036e02bd3afb9921b10c9753139228f6fe26"
+  },
+  {
+    "path": "main-browser-output/continuous-turns-提交事务中途失败-UI-不虚报成功；重试后只结算一次-mobile/trace.zip",
+    "bytes": 13347561,
+    "sha256": "a9d68248360df9261fca27961cfefdff473975def788b58900f9723d5117239f"
+  },
+  {
+    "path": "main-browser-output/continuous-turns-正式资金与时间显示新版本，结算后刷新不重复扣款-mobile/trace.zip",
+    "bytes": 563746,
+    "sha256": "4339e3860e12760595f9be63ee7ea3b541bc124302d4b5cd3fed8a5bc018b81b"
+  },
+  {
+    "path": "main-browser-output/continuous-turns-真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致-mobile/trace.zip",
+    "bytes": 6459970,
+    "sha256": "fd9ce3ad88dc94f98328bb16486787e8095bed47e0e2a2ed7bddcf4ed2d397e0"
+  },
+  {
+    "path": "main-browser-output/continuous-turns-阶段未完成或主动关闭时，即使填写行动也不能部分结算-mobile/trace.zip",
+    "bytes": 4870837,
+    "sha256": "6e3f5d9f137a91390fc37e94092893eb6d6ba59317a1db2689a6e7563d50dbaf"
+  },
+  {
+    "path": "main-browser-output/event-stages-v2-固定阶段积压结算保留原时刻并退役，失败仅重试World后刷新不重复请求-mobile/trace.zip",
+    "bytes": 1014368,
+    "sha256": "1b163a45954603959a73b998e2d76081196635f9324cb1865f4728c5bbfc386e"
+  },
+  {
+    "path": "main-browser-output/history-timeline-v2-单轴顺序、同日双视角、冬季、详情与史料；桌面双轨和手机原轴真实截图-mobile/trace.zip",
+    "bytes": 1380314,
+    "sha256": "493e19191da7aec7eb550903ada8edbf4bc95b5ef3c0eda0c2526214dd5ab305"
+  },
+  {
+    "path": "main-browser-output/history-timeline-v2-正式scope显示四类世界事件与主角标签，双端仍共用时间槽位且只读-mobile/trace.zip",
+    "bytes": 2446726,
+    "sha256": "cd90f968b05d7cb9b2d66f0c2fc8dce59c33b55685a654a32e62d2300dcb1fe1"
+  },
+  {
+    "path": "main-browser-output/history-timeline-v2-长纪事完整详情、同刻大组有界分页与键盘访问-mobile/trace.zip",
+    "bytes": 3503841,
+    "sha256": "7ebd8e1aa3e655f9ed1f1136388c60badb428916a426ebfd288ef46ffd0d0bb6"
+  },
+  {
+    "path": "main-browser-output/npc-final-acceptance-千人轻量名-f8929-口实际布局、分页、关系跳转、焦点与长文滚动，只读零请求-mobile/trace.zip",
+    "bytes": 1752281,
+    "sha256": "e0ae19c3b224ef63ca0d9acc52d69eb03c23fa18b7b15da1d41b23d85eaa6fe4"
+  },
+  {
+    "path": "main-browser-output/npc-final-acceptance-真实Rea-50b07-离场结案、重逢记忆、七字段休眠恢复，严格12次Mock-mobile/trace.zip",
+    "bytes": 1636312,
+    "sha256": "01f1461ab8cb166df5e4a4c4025c1e3eacac21421f4050992b96b1e6aed94c23"
+  },
+  {
+    "path": "main-browser-output/world-npc-creation-真实三阶段创建普通-特殊男性-成年女性，组织任务主子引用、七字段、重载与原人物原样-mobile/trace.zip",
+    "bytes": 2013260,
+    "sha256": "d46182381f3f3711ef273aac57cb07ec1a38174afd648616414d43eecdc16a9b"
+  },
+  {
+    "path": "main-browser-output/world-npc-creation-非法确认仍整批-ad238-y、不自动请求；玩家明确继续才单独重试World并结算-mobile/trace.zip",
+    "bytes": 1818367,
+    "sha256": "5e9106310180985112d9bcadf3ea5aa860471c03fd5738171d694fa9c41e1633"
+  },
+  {
+    "path": "main-browser-output/world-runtime-世界生成、补算、只读查看与刷新恢复，真实路由和快照；正式世界不变-mobile/trace.zip",
+    "bytes": 806698,
+    "sha256": "68753dca8b3d6f9ebfcc7ede7dd1c4b898dca81121d93a3e4d63510d36f3c181"
+  },
+  {
+    "path": "main-browser-output/world-runtime-双开关关闭后只补算世界，无变量时明确预览；不-Roll-正文-mobile/trace.zip",
+    "bytes": 1096666,
+    "sha256": "87fe6be20eb4e9cda208f4ce2558716f372cdb040d97774e029d3cbfb1db3a72"
+  },
+  {
+    "path": "main-browser-output/world-runtime-真实迎检准备文本：无效行动者安全失败，明确恢复后任务及合成事件入候选，正式状态不变-mobile/trace.zip",
+    "bytes": 806840,
+    "sha256": "aea9dbfafd8fe5450efb01038a1574587f3ae5235e0da6f9d037526f6a404008"
+  },
+  {
+    "path": "main-browser-output/world-runtime-错误输出可重试；取消后新请求不受旧回包影响；世界生成中其他阶段禁止执行-mobile/trace.zip",
+    "bytes": 1082403,
+    "sha256": "a4d97b0b409a8ba6901c3c3c729575a33ca701eb3e4cc6655dcd09b6354ea511"
+  },
+  {
+    "path": "main-browser-output/world-runtime-非法地点与事件预结案拒绝；NPC双任务和合法预计时间可重试保存-mobile/trace.zip",
+    "bytes": 1353366,
+    "sha256": "d67f18dc67f45400a667136074407d51ab2bcde7c369b3555a751768744d1fc7"
+  },
+  {
+    "path": "pr-after-output/catalog-wire-ui-regular-三阶-c700e-目录在React检查器完整可读，其他阶段隔离且不写存档-desktop/trace.zip",
+    "bytes": 470285,
+    "sha256": "40908fcc390f7d89801a7c3467cd1cf6d797f9c27cd3323c984643b18721cde4"
+  },
+  {
+    "path": "pr-browser-output/continuous-turns-下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完成的新回合-mobile/trace.zip",
+    "bytes": 5589583,
+    "sha256": "cd9cc4074f7a9ec037c3b11bb3b63eb882687b16a54ea27ac0aac298d3e89b7c"
+  },
+  {
+    "path": "pr-browser-output/continuous-turns-提交事务中途失败-UI-不虚报成功；重试后只结算一次-mobile/trace.zip",
+    "bytes": 12220618,
+    "sha256": "d5ed4258ac0d1d379df0fd23501a049fcef0eb7419accd8e2da1388d4c281657"
+  },
+  {
+    "path": "pr-browser-output/continuous-turns-正式资金与时间显示新版本，结算后刷新不重复扣款-mobile/trace.zip",
+    "bytes": 749137,
+    "sha256": "dfdc358df7afdc0eaa836219a5afa103fa01f1ffa4ec43bb0fe1bc03a3dc4a67"
+  },
+  {
+    "path": "pr-browser-output/continuous-turns-真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致-mobile/trace.zip",
+    "bytes": 5762364,
+    "sha256": "047a3f6cee99ecd019d704df84e600d54ad11e6c394f7edefdaf6a6d71978308"
+  },
+  {
+    "path": "pr-browser-output/continuous-turns-阶段未完成或主动关闭时，即使填写行动也不能部分结算-mobile/trace.zip",
+    "bytes": 6378839,
+    "sha256": "794a39a688c78d75211986f23bde4d77c1d3fc1920e4953190ffd2a11dd64a68"
+  },
+  {
+    "path": "pr-browser-output/event-stages-v2-固定阶段积压结算保留原时刻并退役，失败仅重试World后刷新不重复请求-mobile/trace.zip",
+    "bytes": 929703,
+    "sha256": "a5f190199cd2b390a94b06de5eb1ebdd543e68d522541330a654292bbf09415f"
+  },
+  {
+    "path": "pr-browser-output/history-timeline-v2-单轴顺序、同日双视角、冬季、详情与史料；桌面双轨和手机原轴真实截图-mobile/trace.zip",
+    "bytes": 1513011,
+    "sha256": "545f193ea988020c44e13350d0ec3f682450b3f05a10cd2ccae636906201aee6"
+  },
+  {
+    "path": "pr-browser-output/history-timeline-v2-正式scope显示四类世界事件与主角标签，双端仍共用时间槽位且只读-mobile/trace.zip",
+    "bytes": 2446510,
+    "sha256": "6095a2f82f867dc6c8a8e5224b2a68457854b5b8bfd81256c67badc3fa17fe87"
+  },
+  {
+    "path": "pr-browser-output/history-timeline-v2-长纪事完整详情、同刻大组有界分页与键盘访问-mobile/trace.zip",
+    "bytes": 3153973,
+    "sha256": "23ef6ed80feb841f7446d2a8814456a06eb191db6759f6af32987a8139f35ef4"
+  },
+  {
+    "path": "pr-browser-output/npc-final-acceptance-千人轻量名-f8929-口实际布局、分页、关系跳转、焦点与长文滚动，只读零请求-mobile/trace.zip",
+    "bytes": 1943000,
+    "sha256": "efc52be4dbba3097cd1dd76607c2837771edc2ac6026b829d84b31e72e7f4403"
+  },
+  {
+    "path": "pr-browser-output/npc-final-acceptance-真实Rea-50b07-离场结案、重逢记忆、七字段休眠恢复，严格12次Mock-mobile/trace.zip",
+    "bytes": 1841479,
+    "sha256": "8aba82e662f6d74a925c04beea7e407adfa5475a05da3bdd014ca81644f7778f"
+  },
+  {
+    "path": "pr-browser-output/world-npc-creation-真实三阶段创建普通-特殊男性-成年女性，组织任务主子引用、七字段、重载与原人物原样-mobile/trace.zip",
+    "bytes": 981683,
+    "sha256": "780bb2e51015ad0ae4087859805087def8b8416bb357f0eb91ae1a108a153aa7"
+  },
+  {
+    "path": "pr-browser-output/world-npc-creation-非法确认仍整批-ad238-y、不自动请求；玩家明确继续才单独重试World并结算-mobile/trace.zip",
+    "bytes": 1815055,
+    "sha256": "e38f876bd848e5996a88981dbcc220dd84d061c7c3b516abca7495b4c9e32570"
+  },
+  {
+    "path": "pr-browser-output/world-runtime-世界生成、补算、只读查看与刷新恢复，真实路由和快照；正式世界不变-mobile/trace.zip",
+    "bytes": 650618,
+    "sha256": "9951eab7252aa02a2812410d58c342dd3e7e9b5f5fdbf2dc82800961228b0610"
+  },
+  {
+    "path": "pr-browser-output/world-runtime-双开关关闭后只补算世界，无变量时明确预览；不-Roll-正文-mobile/trace.zip",
+    "bytes": 641041,
+    "sha256": "a044ed78a6f5abc8c0845b8f724da120153f027e3968ef39cf47eed197ba07e8"
+  },
+  {
+    "path": "pr-browser-output/world-runtime-真实迎检准备文本：无效行动者安全失败，明确恢复后任务及合成事件入候选，正式状态不变-mobile/trace.zip",
+    "bytes": 678488,
+    "sha256": "c02bb071a115d82bb7a67b0e155b3f0643ab2508a1f8da9afb0809ace1f39591"
+  },
+  {
+    "path": "pr-browser-output/world-runtime-错误输出可重试；取消后新请求不受旧回包影响；世界生成中其他阶段禁止执行-mobile/trace.zip",
+    "bytes": 670715,
+    "sha256": "5125d7a54f737c3a2875bf69c8f117432554ce1f422db689afce40440ad568dd"
+  },
+  {
+    "path": "pr-browser-output/world-runtime-非法地点与事件预结案拒绝；NPC双任务和合法预计时间可重试保存-mobile/trace.zip",
+    "bytes": 648577,
+    "sha256": "6189dc69fc0ea2287ba4ff7e8e63854331d4a31bcc8bb0e6503b9d76625090ae"
+  },
+  {
+    "path": "pr-wire-mobile-output/catalog-wire-ui-regular-三阶-c700e-目录在React检查器完整可读，其他阶段隔离且不写存档-mobile/trace.zip",
+    "bytes": 504588,
+    "sha256": "9fda11e8c15788cb055c6c855473351adbc2f1c998df642add51e8e3693b3012"
+  }
+]
