@@ -6,7 +6,7 @@ import { runStageRequest } from '../services/ai/runtime';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import type { Protocol } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
-import { stageResponses } from '../services/ai/stageResponses';
+import { stageResponses, selectStageResponse } from '../services/ai/stageResponses';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
 import { generateAndSettleTurn } from '../workflows/automaticTurn';
@@ -92,10 +92,22 @@ it('真实协调器开局→变量四操作→World投影→原子结算→刷�
       const loaded = await repo.loadGame(state.saveId); expect(loaded.state.economy.cash).toBe(10000 - turn * 3000);
       expect(loaded.state.protagonist.skills).toEqual(['急救', '烹饪']); expect(loaded.state.npc.scene.memories).toHaveLength(turn);
       expect(loaded.draft?.userInput).toBe('');
+      // Commit advances the save revision and creates a new draft; the actual
+      // completed journal turn must still select its own temporary responses.
+      for (const stage of ['story', 'variables', 'world'] as const) {
+        const raw = selectStageResponse(stageResponses.getSnapshot(), state.saveId, loaded.state.journal.at(-1)?.turnId, stage, loaded.draft);
+        expect(raw?.status).toBe('validated'); expect(raw?.text).toBeTruthy();
+        expect(raw?.baseSaveRevision).toBe(draft.baseSaveRevision);
+      }
       expect(JSON.stringify(worlds[turn - 1])).toContain('合作的同事');
       if (turn === 1) { if (!loaded.draft) throw Error('draft'); await repo.bindTurnAction(loaded.draft, '继续在现场交流', true, true); }
     }
     expect(calls).toEqual(['story','variables','world','story','variables','world']);
     const loaded = await repo.loadGame(state.saveId); expect(loaded.state.journal).toHaveLength(2); expect(loaded.state.memories.short).toHaveLength(2);
+    const undone = await repo.undoTurn({ saveId: state.saveId, expectedRevision: loaded.state.revision,
+      expectedDraft: loaded.draft, operationId: 'observation-undo' });
+    expect(undone.state.journal).toHaveLength(1);
+    for (const stage of ['story', 'variables', 'world'] as const)
+      expect(selectStageResponse(stageResponses.getSnapshot(), state.saveId, undone.draft.turnId, stage, undone.draft)).toBeUndefined();
   } finally { runner.dispose(); repo.close(); }
 });

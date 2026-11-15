@@ -29,7 +29,7 @@ export function MobileDiagnostics({saveId,turnId,draft,entries,onClear,open,onOp
    </>}
    {tab==='运行日志'&&<RuntimeLogPanel entries={entries} onClear={onClear}/>}
    {tab==='请求用量'&&<RequestUsage saveId={saveId}/>}
-   {tab==='模型原文'&&<StageResponsesPanel saveId={saveId} turnId={turnId}/>}
+   {tab==='模型原文'&&<StageResponsesPanel draft={draft} saveId={saveId} turnId={turnId}/>}
   </section><p className="diagnostic-temporary">仅本页临时保存 · 刷新即清空</p>
  </Dialog>;
 }

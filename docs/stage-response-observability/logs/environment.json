@@ -1,0 +1,9 @@
+{
+  "node": "v24.19.0",
+  "npm": "11.9.0",
+  "chromium": "154.0.8037.57",
+  "base": "9b0893811572a7f0af1b6790b45c60557499af08",
+  "branch": "fix/stage-response-observability",
+  "all_generation": "Mock",
+  "rawEvidence": "/workspace/stage-response-evidence"
+}

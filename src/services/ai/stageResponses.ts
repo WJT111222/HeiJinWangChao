@@ -2,10 +2,17 @@ import { redactInspection } from './inspection';
 import { safeAiError } from './errors';
 import type { AiStage, Protocol } from './configuration';
 import { freeze } from './snapshot';
-import type { RawResponseObservation } from './responseContent';
+import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
 
+import type { TurnDraft } from '../../domain/drafts';
+
+export const responseLimits = { text: 8_000_000, nativeReasoning: 2_000_000, displayText: 10_000_000, normalized: 8_000_000, diagnostics: 16_000 } as const;
 export interface StageResponse {
   id: string; saveId: string; turnId?: string; storyRevision?: number; stage: AiStage;
+  baseSaveRevision?: number; draftRevision?: number; executionRevision?: number; stageRequestRevision?: number;
+  basedOnVariableRevision?: number;
+  diagnostics?: ResponseDiagnostics;
+  truncated?: boolean;
   status: 'pending' | 'received' | 'validated' | 'failed';
   text?: string; normalized?: string; error?: ReturnType<typeof safeAiError>;
   protocol?: Protocol;
@@ -15,7 +22,7 @@ export interface StageResponse {
   displayText?: string;
   displayOrder?: RawResponseObservation['order'];
 }
-// 保留字符串布局；仅安全边界中的凭证会被遮蔽，不把响应重新格式化或截断。
+// 保留字符串布局；此函数仅隐藏凭证，展示容量由 Store 单独限制。
 export function safeResponseText(text: string, secrets: readonly string[]) {
   return redactInspection(text, secrets)
     .replace(/("(?:authorization|proxy-authorization|x-api-key|x-goog-api-key|api[-_]?key|access[-_]?token|refresh[-_]?token)"\s*:\s*)"(?:\\.|[^"\\])*"/gi, '$1"[凭证已隐藏]"')
@@ -34,26 +41,54 @@ export function safeStreamResponseText(text: string, secrets: readonly string[])
   }
   return tail ? safe.slice(0, -tail) + '[凭证片段已隐藏]' : safe;
 }
-// 最近六次请求，单次长度沿用AiClient上限。没有Storage/IndexedDB或普通日志写入。
+// 最近六次请求；content/reasoning 沿用 AiClient 长度上限，合并显示、规范化和诊断也有独立上限。
+// 没有 Storage/IndexedDB 或普通日志写入。
 export class StageResponseStore {
+  private epoch = 0;
+  generation = () => this.epoch;
   private records: readonly StageResponse[] = [];
   private listeners = new Set<() => void>();
   getSnapshot = () => this.records;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   private publish(records: readonly StageResponse[]) { this.records = records; this.listeners.forEach(listener => listener()); }
-  clear = () => this.publish([]);
-  begin(scope: Pick<StageResponse, 'saveId' | 'turnId' | 'stage' | 'storyRevision' | 'protocol'>) {
+  clear = () => { this.epoch++; this.publish([]); };
+  clearSave = (saveId: string) => { this.epoch++; this.publish(this.records.filter(item => item.saveId !== saveId)); };
+  begin(scope: Pick<StageResponse, 'saveId' | 'turnId' | 'stage' | 'storyRevision' | 'protocol' | 'baseSaveRevision' | 'draftRevision' | 'executionRevision' | 'stageRequestRevision' | 'basedOnVariableRevision'>, generation = this.epoch) {
     const id = crypto.randomUUID();
+    if (generation !== this.epoch) return id; // A cleared/unmounted request cannot resurrect its record.
     this.publish([freeze({ ...scope, id, status: 'pending' as const }), ...this.records].slice(0, 6));
     return id;
   }
-  update(id: string, patch: Partial<Pick<StageResponse, 'text' | 'nativeReasoning' | 'displayText' | 'displayOrder' | 'normalized' | 'status' | 'error'>>, secrets: readonly string[]) {
-    this.publish(this.records.map(item => item.id === id ? freeze({ ...item, ...patch,
-      ...(patch.text === undefined ? {} : { text: safeResponseText(patch.text, secrets) }),
-      ...(patch.nativeReasoning === undefined ? {} : { nativeReasoning: safeResponseText(patch.nativeReasoning, secrets) }),
-      ...(patch.displayText === undefined ? {} : { displayText: safeResponseText(patch.displayText, secrets) }),
-      ...(patch.normalized === undefined ? {} : { normalized: safeResponseText(patch.normalized, secrets) }),
-    }) : item));
+  update(id: string, patch: Partial<Pick<StageResponse, 'text' | 'nativeReasoning' | 'displayText' | 'displayOrder' | 'normalized' | 'status' | 'error' | 'diagnostics' | 'truncated'>>, secrets: readonly string[]) {
+    const safe = { ...patch };
+    for (const field of ['text', 'nativeReasoning', 'displayText', 'normalized'] as const) {
+      if (patch[field] === undefined) continue;
+      const value = safeStreamResponseText(patch[field], secrets);
+      safe[field] = value.slice(0, responseLimits[field]);
+      if (value.length > responseLimits[field]) safe.truncated = true;
+    }
+    if (patch.diagnostics) {
+      const text = safeResponseText(JSON.stringify(patch.diagnostics), secrets);
+      if (text.length <= responseLimits.diagnostics) safe.diagnostics = JSON.parse(text) as ResponseDiagnostics;
+      else { delete safe.diagnostics; safe.truncated = true; }
+    }
+    this.publish(this.records.map(item => item.id === id ? freeze({ ...item, ...safe, truncated: item.truncated || safe.truncated }) : item));
   }
 }
 export const stageResponses = new StageResponseStore();
+
+/** Draft revisions advance on candidate/failure saves. Match the actual request
+ * basis instead; after commit the journal turn identifies the last response. */
+export function selectStageResponse(records: readonly StageResponse[], saveId: string, turnId: string | undefined,
+  stage: AiStage, draft?: TurnDraft | null) {
+  return records.find(item => {
+    if (item.saveId !== saveId || item.turnId !== turnId || item.stage !== stage) return false;
+    if (!draft || draft.turnId !== turnId) return true;
+    if (item.baseSaveRevision !== undefined && item.baseSaveRevision !== draft.baseSaveRevision) return false;
+    if (stage === 'story') return item.storyRevision === undefined || item.storyRevision === draft.storyRevision
+      || (item.status === 'validated' && item.storyRevision + 1 === draft.storyRevision);
+    return (item.storyRevision === undefined || item.storyRevision === draft.storyRevision)
+      && (item.stageRequestRevision === undefined || item.stageRequestRevision === draft.stageRequestRevisions[stage])
+      && (stage !== 'world' || item.basedOnVariableRevision === draft.variables?.candidateRevision);
+  });
+}

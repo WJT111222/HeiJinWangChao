@@ -170,9 +170,9 @@ it('成功响应最后一个公开事件中的凭证前缀也保持脱敏，不�
   expect((await a.repo.loadDraft('save-a'))?.story?.narrative).toBe(body);
 });
 
-it.each(['variables', 'world'] as const)('%s原文显示保留原有pre，不受Story文本框迁移影响', stage => {
+it.each(['variables', 'world'] as const)('%s原文使用独立只读查看器，默认不挂载公开思考', stage => {
   const html = renderToStaticMarkup(<StageResponseContent label="候选" record={{ id: 'raw', saveId: 's', stage,
     status: 'received', text: '{"原始":"正式候选"}', nativeReasoning: '不会增加其他阶段分区',
   }} />);
-  expect(html.match(/<pre\b/g)).toHaveLength(1); expect(html).not.toContain('<textarea'); expect(html).not.toContain('不会增加其他阶段分区');
+  expect(html.match(/<textarea\b/g)).toHaveLength(1); expect(html).toContain('readOnly=""'); expect(html).toContain('公开思考'); expect(html).not.toContain('不会增加其他阶段分区');
 });

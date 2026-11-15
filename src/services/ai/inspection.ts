@@ -9,6 +9,8 @@ import { contextStatistics } from '../../prompts/statistics';
 import { cancelBudgetAnalyses } from '../../prompts/budgetAnalysis';
 
 export interface InspectionScope {
+  /** Joins the temporary response by exact request, without storing response values here. */
+  responseId?: string;
   kind: 'stage' | 'memory';
   memoryTask?: string;
   mode: 'opening' | 'regular';
