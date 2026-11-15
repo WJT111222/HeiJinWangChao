@@ -2,7 +2,7 @@
    Workflow/status/notice dialogs and all desktop archives retain their own themes. */
 @media (max-width:900px) {
  .app-shell dialog.modal.mobile-sheet.mobile-archive {
-  --bg:#E4DCCA;--panel:#EFE8D9;--panel-strong:#F8F4EA;--text:#2B2723;--prose:#2B2723;--muted:#5F574C;--dim:#857B6C;
+  --bg:#E4DCCA;--panel:#EFE8D9;--panel-strong:#F8F4EA;--text:#2B2723;--prose:#2B2723;--muted:#5F574C;--dim:var(--settings-detail,#857B6C);
   --gold:#8E6C25;--gold-hi:#684C14;--gold-hover:#684C14;--gold-lo:#8E6C2566;--line:#2a26221f;--line-2:#2a262233;--line-soft:#2a26221f;--selected:#8E6C2514;--ok:#2F7A58;--info:#2D5E7D;--warn:#A3412E;
   color-scheme:light;background:#E4DCCA;color:#2B2723;border-color:#2a262233;
   max-width:none;width:calc(100% - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px));
@@ -225,9 +225,9 @@
  .mobile-archive :is(.ai-save-bar,.memory-save-bar,.local-save-bar)>:is(p,div) {font-size:.7rem;margin:0}
  .mobile-archive .settings-layout[data-tab="AI 连接"] .local-save-bar,.mobile-archive .settings-layout[data-tab="记忆"] .local-save-bar {display:none}
  .mobile-archive .settings-layout[data-tab="提示词管理"] .local-save-bar {position:static;margin-top:1rem;box-shadow:none}
- .mobile-archive .feedback.l-err {color:#A3412E;border-color:#A3412E44;background:#A3412E0d}
- .mobile-archive .feedback.l-ok {color:#2F7A58;background:#2F7A580d;border-color:#2F7A5844}
- .mobile-archive .feedback.l-info {color:#2D5E7D;background:#2D5E7D0d;border-color:#2D5E7D44}
+ .mobile-archive .feedback.l-err {color:var(--settings-negative,#A3412E);border-color:#A3412E44;background:#A3412E0d}
+ .mobile-archive .feedback.l-ok {color:var(--settings-positive,#2F7A58);background:#2F7A580d;border-color:#2F7A5844}
+ .mobile-archive .feedback.l-info {color:var(--settings-info,#2D5E7D);background:#2D5E7D0d;border-color:#2D5E7D44}
  .mobile-archive .select-trigger {background:#F8F4EA;color:#2B2723;border-color:var(--line-2);font-size:16px;min-width:0}
  .mobile-archive .field-hint {font-size:.75rem;color:var(--muted)}
  .mobile-archive .candidate-json,.mobile-archive pre {max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;max-height:18rem;overflow:auto}

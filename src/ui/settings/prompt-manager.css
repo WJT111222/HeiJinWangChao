@@ -29,7 +29,7 @@
 .pm .pm-groups { flex: 1; min-width: 0; display: flex; gap: .1rem; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--pm-line); }
 .pm .pm-groups::-webkit-scrollbar { display: none; }
 .pm .pm-groups button { flex: none; position: relative; border: 0; border-radius: 0; background: none; padding: .5rem .7rem; font-size: .84rem; color: var(--pm-dim); white-space: nowrap; }
-.pm .pm-groups button small { margin-left: .25rem; font-family: var(--font-mono, monospace); font-size: .66rem; opacity: .8; }
+.pm .pm-groups button small { margin-left: .25rem; font-family: var(--font-mono, monospace); font-size: .66rem; }
 .pm .pm-groups button[aria-pressed='true'] { color: var(--pm-head); font-weight: 600; background: none; }
 .pm .pm-groups button[aria-pressed='true']::after { content: ''; position: absolute; left: .55rem; right: .55rem; bottom: -1px; height: 2px; background: var(--gold); }
 .pm .pm-groups button:hover:not(:disabled) { background: none; color: var(--pm-head); }
@@ -47,12 +47,12 @@
 .pm .pm-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: .28rem; }
 .pm .pm-row { display: flex; align-items: center; gap: .8rem; min-width: 0; padding: .35rem .75rem; border-radius: 10px; background: var(--pm-card); border: 1px solid var(--line); border-left: 3px solid var(--pm-line); }
 .pm .pm-row.on { border-left-color: var(--gold); background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 8%, transparent), var(--pm-card) 40%); }
-.pm .pm-row.off { opacity: .62; }
+.pm .pm-row.off { opacity: 1; }
 .pm .pm-row.pm-domain { border-left-color: color-mix(in srgb, var(--pm-info) 50%, transparent); padding-block: .45rem; }
 .pm .pm-slot { flex: none; width: 3.3rem; display: grid; place-items: center; }
 .pm .pm-open { flex: 1; min-width: 0; display: flex; align-items: center; gap: .6rem; border: 0; background: none; padding: .2rem 0; text-align: left; color: inherit; }
 .pm .pm-open:hover:not(:disabled) { background: none; }
-.pm .pm-open:hover strong { color: var(--gold); }
+.pm .pm-open:hover strong { color: var(--gold-hi, var(--gold)); }
 .pm .pm-text { flex: 1; min-width: 0; display: grid; }
 .pm .pm-text strong { font-family: var(--font-title); font-size: .92rem; font-weight: 600; color: var(--pm-head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pm .pm-text small { font-size: .68rem; color: var(--pm-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -63,7 +63,7 @@
 
 /* 状态与开关 */
 .pm .pm-state { min-width: 3.1rem; text-align: center; font-size: .64rem; padding: .1rem .45rem; border-radius: 999px; border: 1px solid var(--pm-line); color: var(--muted); white-space: nowrap; }
-.pm .pm-state.always { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 40%, transparent); background: color-mix(in srgb, var(--gold) 6%, transparent); }
+.pm .pm-state.always { color: var(--gold-hi, var(--gold)); border-color: color-mix(in srgb, var(--gold) 40%, transparent); background: color-mix(in srgb, var(--gold) 6%, transparent); }
 .pm .pm-state.ondemand { color: var(--pm-info); border-color: color-mix(in srgb, var(--pm-info) 40%, transparent); background: color-mix(in srgb, var(--pm-info) 6%, transparent); }
 .pm .pm-state.never, .pm .pm-state.unused { color: var(--pm-dim); border-style: dashed; }
 .pm .pm-state.current { color: var(--sheet-solid, var(--bg)); background: var(--pm-head); border-color: var(--pm-head); }
