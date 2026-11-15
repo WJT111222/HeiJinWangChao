@@ -56,15 +56,51 @@ describe.each(['story', 'variables', 'world'] as const)('%s 提示词按缓存�
   });
 });
 
-function snapshot(protocol: Protocol) {
-  const channel = { ...newChannel(protocol), defaultModel: 'cache-model' };
+function snapshot(protocol: Protocol, baseUrl?: string) {
+  const channel = { ...newChannel(protocol), defaultModel: 'cache-model', ...(baseUrl ? { baseUrl } : {}) };
   const data = new Map<string, string>(), storage = { getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => { data.set(k, v); }, removeItem: (k: string) => { data.delete(k); } };
   const vault = new CredentialVault(storage, storage); vault.set(channel.id, 'cache-mock-secret');
   return channelSnapshot(channel, vault, 'cache-model', 'world');
 }
-const body = (protocol: Protocol, messages: readonly AiMessage[]) => JSON.parse(wireRequest(snapshot(protocol), messages, false).init.body as string) as Record<string, unknown>;
+const body = (protocol: Protocol, messages: readonly AiMessage[], baseUrl?: string) => JSON.parse(wireRequest(snapshot(protocol, baseUrl), messages, false).init.body as string) as Record<string, unknown>;
+
+describe('记忆维护请求不受影响', () => {
+  it('独立记忆请求不加 CURRENT_TIME，字段顺序与原来一致（PROMPT_SETTINGS 仍在最后）', async () => {
+    const { state } = await turn('story', 3);
+    const prompt = await composePrompt({ stage: 'memory', memoryTask: 'memory.short_to_medium', state, mode: 'regular', userInput: '', settings: defaultSettings() });
+    const context = parsed(contextOf(prompt.messages));
+    expect(context).not.toHaveProperty('CURRENT_TIME');
+    const sentKeys = Object.keys(prompt.context).filter((key) => prompt.context[key] !== undefined);
+    expect(Object.keys(context)).toEqual([...sentKeys, 'PROMPT_SETTINGS']);
+  });
+});
+
+describe('各家返回的提示缓存用量', () => {
+  it('DeepSeek、OpenAI、Gemini、Claude 的缓存命中与写入都能读出，且不改变原输入 Token 口径', async () => {
+    const { usageFrom } = await import('../services/ai/protocols');
+    expect(usageFrom({ usage: { prompt_tokens: 1000, completion_tokens: 10, total_tokens: 1010, prompt_cache_hit_tokens: 900, prompt_cache_miss_tokens: 100 } }, 'deepseek'))
+      .toEqual({ inputTokens: 1000, outputTokens: 10, totalTokens: 1010, cacheReadTokens: 900 });
+    expect(usageFrom({ usage: { prompt_tokens: 1000, completion_tokens: 10, total_tokens: 1010, prompt_tokens_details: { cached_tokens: 768 } } }, 'openai'))
+      .toEqual({ inputTokens: 1000, outputTokens: 10, totalTokens: 1010, cacheReadTokens: 768 });
+    expect(usageFrom({ usageMetadata: { promptTokenCount: 1000, candidatesTokenCount: 10, totalTokenCount: 1010, cachedContentTokenCount: 640 } }, 'gemini'))
+      .toEqual({ inputTokens: 1000, outputTokens: 10, totalTokens: 1010, cacheReadTokens: 640 });
+    expect(usageFrom({ usage: { input_tokens: 100, output_tokens: 10, cache_read_input_tokens: 800, cache_creation_input_tokens: 100 } }, 'anthropic'))
+      .toEqual({ inputTokens: 1000, outputTokens: 10, cacheReadTokens: 800, cacheWriteTokens: 100 });
+    // 没有缓存字段时与原来完全一样。
+    expect(usageFrom({ usage: { prompt_tokens: 5, completion_tokens: 1, total_tokens: 6 } }, 'openai')).toEqual({ inputTokens: 5, outputTokens: 1, totalTokens: 6 });
+  });
+});
 
 describe('Claude 格式的缓存标记', () => {
+  it('只对官方地址启用：兼容 Claude 格式的中转保持原来的纯文本请求体', async () => {
+    const { prompt } = await turn('world', 3);
+    for (const relay of ['https://relay.example.com/v1', 'https://api.anthropic.com.evil.example/v1', 'http://localhost:8080/v1']) {
+      const sent = body('anthropic', prompt.messages, relay);
+      expect(JSON.stringify(sent)).not.toContain('cache_control');
+      expect(sent.system).toBe(prompt.messages.filter((m) => m.role === 'system').map((m) => m.content).join('\n\n'));
+      expect(sent.messages).toEqual(prompt.messages.filter((m) => m.role !== 'system'));
+    }
+  });
   it('系统提示词一个标记，GAME_CONTEXT 固定部分末尾一个标记；拼回来与原文一字不差', async () => {
     const { prompt } = await turn('world', 3);
     const sent = body('anthropic', prompt.messages);

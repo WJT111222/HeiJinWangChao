@@ -169,7 +169,8 @@ describe('完整真实输入估算和每请求实际用量', () => {
     const client = new AiClient(async () => streaming ? new Response(text, { headers: { 'Content-Type': 'text/event-stream' } })
       : Response.json({ content: [{ type: 'text', text: '文本' }], stop_reason: 'end_turn', usage }));
     const result = await client.generate(a.snapshot(), messages, { stream: streaming });
-    expect(result.usage).toEqual({ inputTokens: 21050, outputTokens: 500, reasoningTokens: 300 });
+    // 缓存命中与写入单独列出，已包含在 inputTokens 内，不重复计算。
+    expect(result.usage).toEqual({ inputTokens: 21050, outputTokens: 500, reasoningTokens: 300, cacheReadTokens: 20000, cacheWriteTokens: 1000 });
     expect(requestInspections.getSnapshot()[0].statistics.actual.totalTokens).toBeUndefined();
   });
   it('无完整或合法输入用量时不凭缓存或字符数编造真实输入', async () => {

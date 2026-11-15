@@ -68,21 +68,10 @@ async function verify(protocol: Protocol, scenario: string, input: ReturnType<ty
   const expected = await composePrompt({ ...input, cotAllowed: input.stage === 'story' && confirmation });
   const messages: AiMessage[] = protocol === 'gemini'
     ? array(body.contents).map(value => { const row = record(value); return { role: row.role === 'model' ? 'assistant' : 'user', content: array(row.parts).map(part => string(record(part).text)).join('') }; })
-    : array(body.messages).map(value => { const row = record(value); return { role: row.role as AiMessage['role'],
-      // Claude 格式把 GAME_CONTEXT 拆成「固定部分 + 变化部分」两块以打缓存标记，拼回来必须与原文一字不差。
-      content: Array.isArray(row.content) ? array(row.content).map(part => string(record(part).text)).join('') : string(row.content) }; });
-  if (protocol === 'anthropic') {
-    const blocks = array(body.messages).flatMap(value => Array.isArray(record(value).content) ? array(record(value).content) : []).map(record);
-    expect(blocks).toHaveLength(2); expect(blocks[0].cache_control).toEqual({ type: 'ephemeral' }); expect(blocks[1]).not.toHaveProperty('cache_control');
-    expect(string(blocks[0].text).startsWith('<GAME_CONTEXT>')).toBe(true); expect(string(blocks[1].text).startsWith('"CURRENT_TIME":')).toBe(true);
-  }
+    : array(body.messages).map(value => { const row = record(value); return { role: row.role as AiMessage['role'], content: string(row.content) }; });
   expect(messages).toEqual(protocol === 'gemini' || protocol === 'anthropic' ? expected.messages.filter(m => m.role !== 'system') : expected.messages);
   if (protocol === 'gemini') expect(array(record(body.systemInstruction).parts).map(part => string(record(part).text)).join('')).toBe(expected.messages.filter(m => m.role === 'system').map(m => m.content).join('\n\n'));
-  if (protocol === 'anthropic') {
-    const system = array(body.system).map(record);
-    expect(system).toHaveLength(1); expect(system[0].cache_control).toEqual({ type: 'ephemeral' });
-    expect(system[0].text).toBe(expected.messages.filter(m => m.role === 'system').map(m => m.content).join('\n\n'));
-  }
+  if (protocol === 'anthropic') expect(body.system).toBe(expected.messages.filter(m => m.role === 'system').map(m => m.content).join('\n\n'));
   expect(messages.at(-1)?.role).toBe('user');
   const tail = formatTailMessage(input.stage, input.settings.prompts)!;
   expect(messages.at(-1)?.content).toBe(tail + (input.stage === 'story' && confirmation ? '\n请按已确认的本阶段协议生成当前回合。' : ''));

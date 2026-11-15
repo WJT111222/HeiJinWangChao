@@ -28,6 +28,8 @@ export function contextStatistics(messages: readonly AiMessage[], usage?: Usage)
       outputTokens: usage?.outputTokens,
       totalTokens: usage?.totalTokens,
       ...(usage?.reasoningTokens !== undefined ? { reasoningTokens: usage.reasoningTokens } : {}),
+      ...(usage?.cacheReadTokens !== undefined ? { cacheReadTokens: usage.cacheReadTokens } : {}),
+      ...(usage?.cacheWriteTokens !== undefined ? { cacheWriteTokens: usage.cacheWriteTokens } : {}),
     },
   };
 }

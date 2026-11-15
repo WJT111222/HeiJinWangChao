@@ -178,6 +178,8 @@ export class RequestInspectionStore {
                   outputTokens: usage?.outputTokens,
                   totalTokens: usage?.totalTokens,
                   ...(usage?.reasoningTokens !== undefined ? { reasoningTokens: usage.reasoningTokens } : {}),
+                  ...(usage?.cacheReadTokens !== undefined ? { cacheReadTokens: usage.cacheReadTokens } : {}),
+                  ...(usage?.cacheWriteTokens !== undefined ? { cacheWriteTokens: usage.cacheWriteTokens } : {}),
                 },
               },
             }),

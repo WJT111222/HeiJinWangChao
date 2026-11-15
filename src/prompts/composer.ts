@@ -106,10 +106,13 @@ async function compose(unchecked: ComposeInput) {
   }
   messages.push({
     role: 'user',
-    content: contextMessage(cacheFriendlyContext(context, {
-      PROMPT_SETTINGS: input.settings.prompts,
-      CURRENT_TIME: { worldClock: replacements.worldClock, worldWeekday: replacements.worldWeekday },
-    })),
+    // 只调整正文 / 变量 / 世界三阶段；独立的记忆维护请求保持原来的字段与顺序。
+    content: contextMessage(input.stage === 'memory'
+      ? { ...context, PROMPT_SETTINGS: input.settings.prompts }
+      : cacheFriendlyContext(context, {
+        PROMPT_SETTINGS: input.settings.prompts,
+        CURRENT_TIME: { worldClock: replacements.worldClock, worldWeekday: replacements.worldWeekday },
+      })),
   });
   // 最终格式提醒紧贴生成点：有确认历史时并入收尾 user 消息；否则作为末尾独立 user 消息。
   const tail = formatTailMessage(input.stage, {

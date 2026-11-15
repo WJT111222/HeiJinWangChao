@@ -13,6 +13,10 @@ export interface Usage {
   outputTokens?: number;
   totalTokens?: number;
   reasoningTokens?: number;
+  /** 本次输入中命中提示缓存的 Token（供应商返回才有）；已包含在 inputTokens 内。 */
+  cacheReadTokens?: number;
+  /** 本次写入提示缓存的 Token（目前只有 Claude 返回）；已包含在 inputTokens 内。 */
+  cacheWriteTokens?: number;
 }
 export const record = (value: unknown): Record<string, unknown> =>
   value && typeof value === 'object' && !Array.isArray(value)
@@ -36,8 +40,12 @@ export function authHeaders(snapshot: RequestSnapshot): Record<string, string> {
 /**
  * Claude 格式需要显式缓存标记：系统提示词整体一个，GAME_CONTEXT 里固定字段结束处一个
  * （第一个会变的字段 CURRENT_TIME 之前，见 composer.ts）。内容不变，只把同一段文字拆成两块。
- * 其他格式的服务按前缀自动缓存，不需要也不发送这些字段。
+ * 只对官方地址 api.anthropic.com 启用：兼容 Claude 格式的中转不一定认这些字段，
+ * 一律保持原来的纯文本请求体，也不会因此额外重发请求。其他格式按前缀自动缓存，不发送这些字段。
  */
+export function officialAnthropic(baseUrl: string) {
+  try { return new URL(baseUrl).hostname.toLowerCase() === 'api.anthropic.com'; } catch { return false; }
+}
 const CACHE_MARK = { type: 'ephemeral' } as const;
 const DYNAMIC_CONTEXT_MARKER = ',"CURRENT_TIME":';
 export function anthropicMessage(message: AiMessage) {
@@ -125,8 +133,9 @@ export function wireRequest(
     body = {
       model: snapshot.model,
       // 空系统块会被 Claude 接口拒绝；没有系统提示词时保持原来的空字符串。
-      system: system ? [{ type: 'text', text: system, cache_control: CACHE_MARK }] : system,
-      messages: conversation.map(anthropicMessage),
+      ...(officialAnthropic(snapshot.channel.baseUrl)
+        ? { system: system ? [{ type: 'text', text: system, cache_control: CACHE_MARK }] : system, messages: conversation.map(anthropicMessage) }
+        : { system, messages: conversation }),
       stream,
       max_tokens: max ?? 4096,
       ...(thinking.anthropic ? { thinking: thinking.anthropic } : {}),
@@ -169,6 +178,8 @@ export function usageFrom(
           outputTokens: token(usage.completion_tokens),
           totalTokens: token(usage.total_tokens),
           reasoningTokens: token(record(usage.completion_tokens_details).reasoning_tokens),
+          // DeepSeek 返回 prompt_cache_hit_tokens；OpenAI 及多数兼容服务返回 prompt_tokens_details.cached_tokens。
+          cacheReadTokens: token(usage.prompt_cache_hit_tokens) ?? token(record(usage.prompt_tokens_details).cached_tokens),
         }
       : protocol === 'gemini'
         ? {
@@ -176,9 +187,11 @@ export function usageFrom(
             outputTokens: token(usage.candidatesTokenCount),
             totalTokens: token(usage.totalTokenCount),
             reasoningTokens: token(usage.thoughtsTokenCount),
+            cacheReadTokens: token(usage.cachedContentTokenCount),
           }
         : { inputTokens: anthropicInputTokens(usage), outputTokens: token(usage.output_tokens),
-            reasoningTokens: token(record(usage.output_tokens_details).thinking_tokens) };
+            reasoningTokens: token(record(usage.output_tokens_details).thinking_tokens),
+            cacheReadTokens: token(usage.cache_read_input_tokens), cacheWriteTokens: token(usage.cache_creation_input_tokens) };
   return Object.values(result).some((v) => v !== undefined)
     ? Object.fromEntries(Object.entries(result).filter(([, v]) => v !== undefined))
     : undefined;
