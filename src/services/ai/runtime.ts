@@ -13,9 +13,10 @@ import type { RequestOptions } from './client';
 import { variableFailure, variableValidationError } from '../validation/variableDiagnostics';
 import { storyFailure } from '../validation/storyDiagnostics';
 import { timeOutcome } from '../../domain/timePreflight';
-import { stageResponses, safeStreamResponseText } from './stageResponses';
+import { stageResponses, safeStreamResponseText, responseLimits } from './stageResponses';
 import { safeAiError } from './errors';
-import type { RawResponseObservation } from './responseContent';
+import { mergeResponseDiagnostics } from './responseContent';
+import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
 
 // 独立阶段请求入口；没有 SaveRepository、写库、重试或自动执行下游阶段。
 export async function runStageRequest(
@@ -39,13 +40,22 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   }) as ComposeInput & { stage: AiStage };
   if (captured.stage === 'world' && captured.draft?.variables?.validation === 'validated')
     parseVariables(JSON.stringify(captured.draft.variables.result), captured.state, captured.draft);
+  const generation = stageResponses.generation();
   const snapshot = requestSnapshot(config, captured.stage, vault);
   const prompt = captured.stage === 'variables'
     ? await composeTextVariablesPrompt({ ...captured, stage: 'variables', cotAllowed: snapshot.useCot })
     : await composePrompt({ ...captured, cotAllowed: snapshot.useCot });
-  const responseId = stageResponses.begin({ saveId: captured.state.saveId, turnId: captured.draft?.turnId, stage: captured.stage, storyRevision: captured.draft?.storyRevision, protocol: snapshot.channel.protocol });
+  const responseId = stageResponses.begin({ saveId: captured.state.saveId, turnId: captured.draft?.turnId, stage: captured.stage, storyRevision: captured.draft?.storyRevision, protocol: snapshot.channel.protocol, baseSaveRevision: captured.state.revision,
+    draftRevision: captured.draft?.draftRevision, executionRevision: captured.draft?.executionRevision,
+    stageRequestRevision: captured.stage === 'story' ? undefined : captured.draft?.stageRequestRevisions[captured.stage],
+    basedOnVariableRevision: captured.stage === 'world' ? captured.draft?.variables?.candidateRevision : undefined }, generation);
   const secrets = config.channels.map(channel => vault.get(channel.id)).filter(Boolean);
-  let received = '';
+  let received = '', sealed = false, truncated = false;
+  let diagnostics: ResponseDiagnostics = {};
+  const append = (text: string, delta: string, limit: number) => {
+    if (text.length + delta.length > limit) truncated = true;
+    return text + delta.slice(0, Math.max(0, limit - text.length));
+  };
   let rawObserved = false, publicReasoning = '';
   let displayText = '', displayObserved = false, displayOrder: RawResponseObservation['order'] = 'events';
   const display = () => !displayObserved ? {} : {
@@ -56,38 +66,43 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     if (!observationTimer) observationTimer = setTimeout(() => {
       observationTimer = undefined;
       stageResponses.update(responseId, { text: safeStreamResponseText(received, secrets),
-        nativeReasoning: safeStreamResponseText(publicReasoning, secrets), ...display() }, secrets);
+        nativeReasoning: safeStreamResponseText(publicReasoning, secrets), diagnostics, truncated, ...display() }, secrets);
     }, 50);
   };
   let step: 'request' | 'response' = 'request';
   try {
   const response = await client.generate(snapshot, prompt.messages, {
     ...options,
-    ...(captured.stage === 'story' ? { onRawResponse: (event: RawResponseObservation) => {
-      if (event.text) {
-        displayObserved = true; displayText += event.text;
+    onResponseDiagnostics: (value) => {
+      if (sealed || options.signal?.aborted) return;
+      diagnostics = mergeResponseDiagnostics(diagnostics, value); observe();
+      options.onResponseDiagnostics?.(value);
+    },
+    onRawResponse: (event: RawResponseObservation) => {
+      if (sealed || options.signal?.aborted) return;
+      if (event.text && captured.stage === 'story') {
+        displayObserved = true; displayText = append(displayText, event.text, responseLimits.displayText);
         if (event.order === 'unknown' || displayOrder === 'events') displayOrder = event.order;
         observe();
       }
       options.onRawResponse?.(event);
-    } } : {}),
-    onDelta: (delta) => { if (!rawObserved) received += delta; options.onDelta?.(delta); },
+    },
+    onDelta: (delta) => { if (sealed || options.signal?.aborted) return; if (!rawObserved) received = append(received, delta, responseLimits.text); options.onDelta?.(delta); },
     onRawTextDelta: (delta) => {
-      if (captured.stage === 'story') {
-        rawObserved = true; received += delta;
-        observe();
-      }
+      if (sealed || options.signal?.aborted) return;
+      rawObserved = true; received = append(received, delta, responseLimits.text);
+      observe();
       options.onRawTextDelta?.(delta);
     },
     onNativeReasoningDelta: (delta) => {
-      if (captured.stage === 'story') {
-        publicReasoning += delta;
-        observe();
-      }
+      if (sealed || options.signal?.aborted) return;
+      publicReasoning = append(publicReasoning, delta, responseLimits.nativeReasoning);
+      observe();
       options.onNativeReasoningDelta?.(delta);
     },
     inspection: {
       kind: 'stage',
+      responseId,
       mode: captured.mode,
       saveId: captured.state.saveId,
       revision: captured.state.revision,
@@ -97,10 +112,11 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     timeoutSeconds: options.timeoutSeconds ?? captured.settings.runtime.timeoutSeconds,
     stream: options.stream ?? captured.stage === 'story',
   });
+  sealed = true;
   clearTimeout(observationTimer);
   step = 'response';
-  if (!rawObserved) received = response.text;
-  stageResponses.update(responseId, { text: received, ...(captured.stage === 'story' ? { nativeReasoning: publicReasoning, ...display() } : {}), status: 'received' }, secrets);
+  if (!rawObserved) received = append('', response.text, responseLimits.text);
+  stageResponses.update(responseId, { text: received, nativeReasoning: publicReasoning, diagnostics, truncated, ...display(), status: 'received' }, secrets);
   const envelope = captured.stage === 'story' ? parseStoryEnvelope(response.text, captured.mode, captured.settings) : undefined;
   const story = envelope?.story;
   if (story) {
@@ -145,9 +161,10 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   };
   } catch (error) {
     const failure = captured.stage === 'variables' ? variableFailure(error, step) : captured.stage === 'story' ? storyFailure(error, true) : error;
+    sealed = true;
     clearTimeout(observationTimer);
-    stageResponses.update(responseId, { status: 'failed', ...(received ? { text: captured.stage === 'story' ? safeStreamResponseText(received, secrets) : received } : {}),
-      ...(captured.stage === 'story' ? { nativeReasoning: safeStreamResponseText(publicReasoning, secrets), ...display() } : {}), error: safeAiError(failure) }, secrets);
+    stageResponses.update(responseId, { status: 'failed', text: safeStreamResponseText(received, secrets),
+      nativeReasoning: safeStreamResponseText(publicReasoning, secrets), diagnostics, truncated, ...display(), error: safeAiError(failure) }, secrets);
     throw failure;
   }
 }

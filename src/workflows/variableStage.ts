@@ -1,3 +1,4 @@
+import { stageResponses } from '../services/ai/stageResponses';
 import { DataError } from '../domain/common';
 import { fingerprint } from '../domain/commands';
 import { startStageAttempt, TurnDraftSchema, VariableResultSchema } from '../domain/drafts';
@@ -79,6 +80,7 @@ export class VariableStage {
       const draft = await this.repository.saveDraft(started, current.draftRevision, attempt.signal, current);
       attempt.check();
       input.onDraft?.(draft);
+      let responseInspectionId: string | undefined;
       try {
         input.onProgress?.('generating');
         const selection = selectVariableDomains(state, draft);
@@ -99,6 +101,7 @@ export class VariableStage {
           { signal: attempt.signal, stream: false },
           this.client,
         );
+        responseInspectionId = response.responseInspectionId;
         attempt.check();
         const basis = response.requestBasis;
         if (
@@ -145,6 +148,7 @@ export class VariableStage {
         return saved;
       } catch (error) {
         const failure = stageFailure(error, step);
+        if (responseInspectionId) stageResponses.update(responseInspectionId, { status: 'failed', error: safeAiError(failure) }, secrets);
         // 仅当前仍活跃且版本未变时保存安全失败元数据；取消/迟到不追加任何写入。
         try {
           attempt.check();

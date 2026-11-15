@@ -4,7 +4,7 @@ import type { KeyboardEvent } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import type { TurnDraft } from '../../domain/drafts';
 import { storyRuleNames } from '../../domain/storyDiagnostics';
-import { stageResponses } from '../../services/ai/stageResponses';
+import { stageResponses, selectStageResponse } from '../../services/ai/stageResponses';
 import { redactInspection } from '../../services/ai/inspection';
 import { browserCredentials } from '../../services/ai/credentials';
 import { worldRuleNames } from '../../services/validation/worldDiagnostics';
@@ -243,8 +243,8 @@ function StageDetail(props: Parameters<typeof DesktopWorkflowPanel>[0] & { stage
         ))}
       </div>
       <div className="wf-dt-body" role="tabpanel" id={panelId} aria-labelledby={tabId(tab)} tabIndex={0}>
-        {tab === 'raw' ? <StageRaw saveId={props.saveId} turnId={props.rawTurnId} stage={stage} />
-          : tab === 'normalized' ? <StageNormalized saveId={props.saveId} turnId={props.rawTurnId} stage={stage} />
+        {tab === 'raw' ? <StageRaw saveId={props.saveId} turnId={props.rawTurnId} stage={stage} draft={draft} />
+          : tab === 'normalized' ? <StageNormalized saveId={props.saveId} turnId={props.rawTurnId} stage={stage} draft={draft} />
               : stage === 'story' ? <StoryOverview {...props} state={state} step={step} />
                 : stage === 'variables' ? (draft && variables ? (tab === 'candidates' ? <VariableList draft={draft} /> : <VariableOverview draft={draft} onAll={() => selectTab('candidates')} saveId={props.saveId} />) : <StageEmpty step={step} state={state} />)
                   : draft && world ? (tab === 'candidates' ? <WorldList draft={draft} /> : <WorldOverview draft={draft} onAll={() => selectTab('candidates')} saveId={props.saveId} />)
@@ -434,13 +434,13 @@ function WorldList({ draft }: { draft: TurnDraft }) {
   </>;
 }
 
-function useStageRecord(saveId: string, turnId: string | undefined, stage: WorkflowStage) {
+function useStageRecord(saveId: string, turnId: string | undefined, stage: WorkflowStage, draft?: TurnDraft) {
   const records = useSyncExternalStore(stageResponses.subscribe, stageResponses.getSnapshot);
-  return records.find((item) => item.saveId === saveId && item.turnId === turnId && item.stage === stage);
+  return selectStageResponse(records, saveId, turnId, stage, draft);
 }
 
-function StageRaw({ saveId, turnId, stage }: { saveId: string; turnId?: string; stage: WorkflowStage }) {
-  const record = useStageRecord(saveId, turnId, stage);
+function StageRaw({ saveId, turnId, stage, draft }: { saveId: string; turnId?: string; stage: WorkflowStage; draft?: TurnDraft }) {
+  const record = useStageRecord(saveId, turnId, stage, draft);
   const label = rawLabels[stage];
   return (
     <section className="stage-responses wf-raw" aria-label="模型原文">
@@ -457,8 +457,8 @@ function StageRaw({ saveId, turnId, stage }: { saveId: string; turnId?: string; 
   );
 }
 
-function StageNormalized({ saveId, turnId, stage }: { saveId: string; turnId?: string; stage: WorkflowStage }) {
-  const record = useStageRecord(saveId, turnId, stage);
+function StageNormalized({ saveId, turnId, stage, draft }: { saveId: string; turnId?: string; stage: WorkflowStage; draft?: TurnDraft }) {
+  const record = useStageRecord(saveId, turnId, stage, draft);
   const label = rawLabels[stage];
   return <>
     <h5 className="wf-sec">{label}程序校验后的结果</h5>

@@ -20,10 +20,11 @@ import { readSse } from './sse';
 import { rememberThinkingCapability, unsupportedThinkingParameter, blockThinkingCapability } from './thinking';
 import { checkFinish, LeadingThink, rememberUnsupported, splitLeadingThink, unsupportedParameter } from './compat';
 import { isOpenAiCompatible } from './configuration';
-import { rawResponseObservation, responseContent } from './responseContent';
-import type { RawResponseObservation } from './responseContent';
+import { rawResponseObservation, responseContent, responseDiagnostics } from './responseContent';
+import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
 
 export interface RequestOptions {
+  onResponseDiagnostics?: (diagnostics: ResponseDiagnostics) => void;
   signal?: AbortSignal;
   timeoutSeconds?: number;
   stream?: boolean;
@@ -94,7 +95,7 @@ async function operation<T>(
 }
 export class AiClient {
   constructor(private transport: typeof fetch = (input, init) => globalThis.fetch(input, init)) {}
-  private async response(url: string, init: RequestInit, signal: AbortSignal, snapshot?: RequestSnapshot) {
+  private async response(url: string, init: RequestInit, signal: AbortSignal, snapshot?: RequestSnapshot, observe?: (value: ResponseDiagnostics) => void) {
     const response = await this.transport(url, {
       ...init,
       signal,
@@ -105,10 +106,14 @@ export class AiClient {
     });
     if (!response.ok) {
       const status = response.status;
+      // Do not wait for an extra error body: preserve HTTP failure/retry timing.
+      // Only the JSON already consumed for compatibility below is projected.
+      if (!signal.aborted) observe?.({ transport: 'http', httpStatus: status, complete: false });
       if (snapshot && (snapshot.thinkingCapability !== 'none' || snapshot.channel.protocol === 'openai') && [400, 422].includes(status)
         && response.headers.get('content-type')?.includes('application/json')) {
         try {
           const error: unknown = await response.json();
+          if (!signal.aborted) observe?.({ ...responseDiagnostics(error, snapshot.channel.protocol), transport: 'http', httpStatus: status, complete: true });
           if (!signal.aborted && snapshot.thinkingCapability !== 'none' && unsupportedThinkingParameter(error)) blockThinkingCapability(snapshot.channel, snapshot.model);
           const sentBody = record(typeof init.body === 'string' ? JSON.parse(init.body) : undefined);
           const parameter = snapshot.channel.protocol === 'openai' ? unsupportedParameter(error, {
@@ -142,13 +147,17 @@ export class AiClient {
     const wire = wireRequest(snapshot, messages, options.stream === true);
     let inspectionId: string | undefined;
     let observedUsage: Usage | undefined;
+    const observe = (value: ResponseDiagnostics) => {
+      try { options.onResponseDiagnostics?.(value); } catch { /* Observation never changes request semantics. */ }
+    };
     try {
       return await operation(options, async (signal) => {
         if (signal.aborted) throw new AiError('cancelled');
         try { inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection); }
         catch { /* 只读诊断失败不能阻断真实发送。 */ }
-        const response = await this.response(wire.url, wire.init, signal, snapshot);
+        const response = await this.response(wire.url, wire.init, signal, snapshot, options.onResponseDiagnostics ? observe : undefined);
         const protocol = snapshot.channel.protocol;
+        if (!signal.aborted) observe({ httpStatus: response.status, complete: false });
         let text = '', reasoning = '',
           usage: Usage | undefined;
         // 部分中转忽略 stream:true 直接返回完整 JSON；按非流式读取，再一次性交给进度回调。
@@ -160,6 +169,7 @@ export class AiClient {
           } catch {
             throw new AiError('invalid_json');
           }
+          if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol), httpStatus: response.status, complete: true });
           usage = usageFrom(data, protocol); observedUsage = usage;
           if (!signal.aborted) {
             if (options.onRawResponse) options.onRawResponse(rawResponseObservation(data, protocol));
@@ -195,6 +205,7 @@ export class AiClient {
             } catch {
               throw new AiError('invalid_json');
             }
+            if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol, true), httpStatus: response.status, complete: false });
             if (data.error || data.type === 'error' || event.event === 'error')
               throw new AiError('rejected');
             const rawDelta = responseContent(data, protocol, true), native = nativeReasoning(data, protocol, true);
@@ -250,6 +261,7 @@ export class AiClient {
             if (rest.reasoning && !nativeSeen) { reasoning += rest.reasoning; if (!signal.aborted) options.onReasoningDelta?.(rest.reasoning); }
           }
           if (!terminal) throw new AiError('stream_interrupted');
+          if (!signal.aborted) observe({ transport: 'sse', complete: true });
         }
         if (text.length > 8_000_000 || reasoning.length > 2_000_000) throw new AiError('invalid_output');
         if (!text.trim()) throw new AiError('empty');

@@ -1,3 +1,4 @@
+import { stageResponses } from '../../services/ai/stageResponses';
 import { MobileWorkflowDrawer } from './MobileWorkflowDrawer';
 import {MobileDiagnostics} from './MobileDiagnostics';
 import { useNpcManagement } from './useNpcManagement';
@@ -128,6 +129,7 @@ export function GameScreen({
     setArchiveTarget({panel,id}); setPanel(panel);
   };
   const [panel, setPanel] = useState<PanelName | '人物档案' | '经济与资产'>();
+  useEffect(() => () => stageResponses.clearSave(state.saveId), [state.saveId]);
   const compactSidebars = useSyncExternalStore(subscribeSidebarSize, () => window.matchMedia(sidebarMedia).matches, () => false);
   const desktopSettings=!compactSidebars&&Boolean(renderSettings);
   useEffect(()=>{if(desktopSettings)setPanel(undefined);},[desktopSettings]);

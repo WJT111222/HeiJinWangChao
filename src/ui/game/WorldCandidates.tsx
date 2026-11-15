@@ -99,7 +99,7 @@ export function WorldCandidates({ draft }: { draft: TurnDraft }) {
                 <p className="notice">
                   此处为只读候选。未改变正式人物、经济、任务、时间或历史；线索尚未发布。查看内部结果不会更新任何人物认知。
                 </p>
-                {desktop?<StageResponseText saveId={draft.saveId} turnId={draft.turnId} stage="world" />:<details className="candidate-response" onToggle={e=>setRawOpened(e.currentTarget.open)}><summary>模型原文（临时响应）</summary>{rawOpened&&<StageResponseText saveId={draft.saveId} turnId={draft.turnId} stage="world" />}</details>}
+                {desktop?<StageResponseText draft={draft} saveId={draft.saveId} turnId={draft.turnId} stage="world" />:<details className="candidate-response" onToggle={e=>setRawOpened(e.currentTarget.open)}><summary>模型原文（临时响应）</summary>{rawOpened&&<StageResponseText draft={draft} saveId={draft.saveId} turnId={draft.turnId} stage="world" />}</details>}
               </section>
             </div>
           )}

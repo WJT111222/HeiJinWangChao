@@ -91,7 +91,7 @@ export function VariableCandidates({ draft }: { draft: TurnDraft }) {
                   候选尚未改变任何正式资金、人物或时间。完整候选可能包含 NPC
                   内部资料；查看不会更新主角认知或普通历史。
                 </p>
-                {desktop?<StageResponseText saveId={draft.saveId} turnId={draft.turnId} stage="variables" />:<details className="candidate-response" onToggle={e=>setRawOpened(e.currentTarget.open)}><summary>模型原文（临时响应）</summary>{rawOpened&&<StageResponseText saveId={draft.saveId} turnId={draft.turnId} stage="variables" />}</details>}
+                {desktop?<StageResponseText draft={draft} saveId={draft.saveId} turnId={draft.turnId} stage="variables" />:<details className="candidate-response" onToggle={e=>setRawOpened(e.currentTarget.open)}><summary>模型原文（临时响应）</summary>{rawOpened&&<StageResponseText draft={draft} saveId={draft.saveId} turnId={draft.turnId} stage="variables" />}</details>}
               </section>
             </div>
           )}
