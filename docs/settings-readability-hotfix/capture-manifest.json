@@ -1,0 +1,33 @@
+{
+  "base": "6fd868b8ee3acf97abd61dd9872712a8d4add08e",
+  "codeCommit": "eb785d38c3cb309bdc0e102e14c6c277166769f3",
+  "viewportCSSPixels": [
+    [
+      1440,
+      900
+    ],
+    [
+      412,
+      839
+    ],
+    [
+      900,
+      900
+    ],
+    [
+      901,
+      900
+    ]
+  ],
+  "recordedTextObservations": 4590,
+  "recordedControlObservations": 588,
+  "minNormalTextContrast": 4.7680660625087095,
+  "minRequiredControlContrast": 3.560689653105605,
+  "sourceSHA256": {
+    "src/ui/settings/settings-paper.css": "19761f1e5074225e847f4e8c2544b3f923f1f8ba6f0f91e50ee4939228211812",
+    "src/ui/settings/prompt-manager.css": "4329587041b24795af47471afcee29b818037b816cb6ce6fa4416d314a2499f3",
+    "src/ui/mobile-archives.css": "ae9b8ca78c173e1a70d3a1759ec3b97e8d632fd4084f41ca3d64352a00f087a6",
+    "e2e/settings-readability.spec.ts": "15fd4f18f7cd3dec7b5cd6b375adb420f9caf822ad8934a97bf3b27519dcc61c",
+    "e2e/helpers/settingsContrast.ts": "48f29ae9655dd05ec4f36eb3b22ffd9db28b373e9487de23a1cb08483ff79edb"
+  }
+}
