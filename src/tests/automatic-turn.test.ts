@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
-import { createTurnDraft } from '../domain/drafts';
-import { awaitingPlayerAction } from '../domain/turnCommit';
+import { createTurnDraft, TurnDraftSchema } from '../domain/drafts';
+import { awaitingPlayerAction, rebindableAfterStoryStop } from '../domain/turnCommit';
 import { AiClient } from '../services/ai/client';
 import { record } from '../services/ai/protocols';
 import { AiError } from '../services/ai/errors';
@@ -88,6 +88,22 @@ describe('真实协调器→自动正式结算→等待玩家', () => {
     expect(result.filter(item => item.status === 'fulfilled')).toHaveLength(1); expect(value.calls).toHaveLength(3);
     await expect(repo.bindTurnAction(draft, '第三条行动', true, true)).rejects.toThrow();
     expect((await repo.load('save-a')).turnNumber).toBe(1);
+  });
+  it('正文失败且尚无候选时可用修改后的行动重新绑定，正式状态不变；已有正文后不可再重绑', async () => {
+    const value = server(), first = (await run(value)).committed!;
+    const bound = await repo.bindTurnAction(first.draft, '去码头找老周', true, true);
+    const failed = await repo.saveDraft(TurnDraftSchema.parse({ ...bound, draftRevision: bound.draftRevision + 1,
+      stageStatus: { ...bound.stageStatus, story: 'failed' },
+      failures: [{ stage: 'story', attempt: 1, storyRevision: 0, errorCode: 'authorization', retryable: false }] }), bound.draftRevision);
+    const before = await repo.load('save-a');
+    expect(awaitingPlayerAction(before, failed)).toBe(false); expect(rebindableAfterStoryStop(before, failed)).toBe(true);
+    const rebound = await repo.bindTurnAction(failed, '改去菜市场找老周', true, true);
+    expect(rebound).toMatchObject({ userInput: '改去菜市场找老周', failures: [], executionRevision: 0, draftRevision: failed.draftRevision + 1, stageStatus: { story: 'pending' } });
+    expect(rebound.turnId).toBe(failed.turnId); expect(await repo.load('save-a')).toEqual(before);
+    await expect(repo.bindTurnAction(failed, '过期草稿', true, true)).rejects.toThrow();
+    const second = (await run(value)).committed!;
+    expect(second.state.turnNumber).toBe(2);
+    expect(value.calls).toEqual(['story','variables','world','story','variables','world']);
   });
   it('原文按字节顺序保留Unicode和换行，只隐藏凭证；清空后不以规范化结果冒充原文', () => {
     const text = '中文\n<命令>\nset protagonist.emotionText = "安心🟡"\n</命令>';

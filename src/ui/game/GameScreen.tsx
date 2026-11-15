@@ -44,7 +44,7 @@ import { useStoryGeneration } from './useStoryGeneration';
 import { useVariableGeneration } from './useVariableGeneration';
 import { useWorldGeneration } from './useWorldGeneration';
 import { useTurnGeneration } from './useTurnGeneration';
-import { completeTurnDraft, awaitingPlayerAction } from '../../domain/turnCommit';
+import { completeTurnDraft, awaitingPlayerAction, rebindableAfterStoryStop } from '../../domain/turnCommit';
 import type { TurnCommitResult } from '../../services/storage/saveRepository';
 import { DataError } from '../../domain/common';
 import { storyError } from '../../workflows/storyStage';
@@ -268,14 +268,25 @@ export function GameScreen({
     (draft.turnKind !== 'opening' || state.turnNumber === 0);
   const canCommit = Boolean(validDraft && draft && completeTurnDraft(draft));
   const awaitingAction = awaitingPlayerAction(state, draft);
+  // 正文失败或被取消、尚无候选时：原行动放回输入框，玩家可原样或修改后直接重新发送。
+  const rebindAction = !busy && rebindableAfterStoryStop(state, draft);
+  const restoredInputFor = useRef('');
+  useEffect(() => {
+    if (!rebindAction || !draft) return;
+    const key = `${draft.saveId}:${draft.turnId}:${draft.draftRevision}`;
+    if (restoredInputFor.current === key) return;
+    restoredInputFor.current = key;
+    setInput((current) => (current.trim() ? current : draft.userInput));
+  }, [rebindAction, draft]);
   async function send() {
-    if (!draft || (!canCommit && !awaitingAction) || busy || submitLock.current || !input.trim()) return;
+    const bindAction = awaitingAction || rebindAction;
+    if (!draft || (!canCommit && !bindAction) || busy || submitLock.current || !input.trim()) return;
     submitLock.current = true;
     const token = submitToken.current;
     setSubmitting(true);
     setSubmitError('');
     try {
-      if (awaitingAction) {
+      if (bindAction) {
         const bound = await repository.bindTurnAction(draft, input, settings.runtime.useVariableStage, settings.runtime.useWorldStage);
         if (submitToken.current !== token) return;
         onDraftSaved(bound); setInput(''); setSubmitting(false);
@@ -300,9 +311,9 @@ export function GameScreen({
       if (!result.replayed) await automatic.generate(result.draft);
     } catch (failure) {
       if (submitToken.current === token) {
-        reportRuntimeEvent(awaitingAction ? 'workflow' : 'commit', 'failed', failure);
+        reportRuntimeEvent(bindAction ? 'workflow' : 'commit', 'failed', failure);
         setSubmitError(
-          awaitingAction
+          bindAction
             ? '行动未发送：草稿版本冲突或存储失败。输入仍保留，请重新读取存档后重试。'
             : failure instanceof DataError && failure.code === 'TURN_TIME_REQUIRED'
             ? '本回合尚未推进时间，未正式结算。请补算变量；正文无需写出时间。'
@@ -813,7 +824,7 @@ export function GameScreen({
               onChange={(e) => setInput(e.target.value)} rows={compactSidebars?1:2}
               placeholder={compactSidebars ? '填写你的行动' : '填写你的行动；发送后生成三阶段并自动结算'} />
             <div className="composer-footer">
-              <button className="primary" disabled={(!canCommit && !awaitingAction) || busy || !input.trim()}
+              <button className="primary" disabled={(!canCommit && !awaitingAction && !rebindAction) || busy || !input.trim()}
                 onClick={() => void send()}>{submitting ? '正在结算…' : '发送'}</button>
               {!compactSidebars && <span className="kbd">Ctrl + Enter</span>}
             </div>

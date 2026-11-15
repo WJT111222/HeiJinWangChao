@@ -25,6 +25,15 @@ export function awaitingPlayerAction(state: GameState, draft?: TurnDraft) {
     && draft.baseSaveRevision === state.revision && draft.storyRevision === 0 && draft.executionRevision === 0
     && !draft.story && !draft.variables && !draft.world && draft.failures.length === 0);
 }
+/**
+ * 已绑定行动、但正文失败或被取消且尚未产生任何候选的普通回合。
+ * 此时没有任何结果被保存，允许把原行动放回输入框，由玩家原样或修改后重新发送（重新绑定为全新草稿）。
+ */
+export function rebindableAfterStoryStop(state: GameState, draft?: TurnDraft) {
+  return Boolean(draft && state.turnNumber > 0 && draft.turnKind === 'regular' && draft.userInput.trim() !== ''
+    && draft.baseSaveRevision === state.revision && draft.executionRevision === 0
+    && !draft.story && !draft.variables && !draft.world && draft.stageStatus.story !== 'ready');
+}
 export function completeTurnDraft(draft: TurnDraft) {
   return (
     draft.useVariableStage &&
