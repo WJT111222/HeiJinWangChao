@@ -68,6 +68,10 @@ export function redactInspection<T>(value: T, secrets: readonly string[] = []): 
   return visit(value) as T;
 }
 // 从已序列化原生 payload 派生显示用角色，不再次调用 Composer。
+/** Claude 格式的 system / content 可能是字符串，也可能是带缓存标记的文本块数组；按原顺序拼回原文。 */
+const anthropicText = (value: unknown) => Array.isArray(value)
+  ? array(value).map((part) => string(record(part).text)).join('')
+  : string(value);
 export function payloadMessages(
   body: Record<string, unknown>,
   protocol: RequestSnapshot['channel']['protocol'],
@@ -82,7 +86,7 @@ export function payloadMessages(
       ? array(record(body.systemInstruction).parts)
           .map((part) => string(record(part).text))
           .join('')
-      : string(body.system);
+      : anthropicText(body.system);
   const conversation = protocol === 'gemini' ? array(body.contents) : array(body.messages);
   return [
     ...(system ? [{ role: 'system' as const, content: system }] : []),
@@ -93,7 +97,7 @@ export function payloadMessages(
           ? array(record(m).parts)
               .map((part) => string(record(part).text))
               .join('')
-          : string(record(m).content),
+          : anthropicText(record(m).content),
     })),
   ];
 }
@@ -174,6 +178,8 @@ export class RequestInspectionStore {
                   outputTokens: usage?.outputTokens,
                   totalTokens: usage?.totalTokens,
                   ...(usage?.reasoningTokens !== undefined ? { reasoningTokens: usage.reasoningTokens } : {}),
+                  ...(usage?.cacheReadTokens !== undefined ? { cacheReadTokens: usage.cacheReadTokens } : {}),
+                  ...(usage?.cacheWriteTokens !== undefined ? { cacheWriteTokens: usage.cacheWriteTokens } : {}),
                 },
               },
             }),

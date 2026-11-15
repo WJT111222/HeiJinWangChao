@@ -94,6 +94,10 @@
         "baseCommit": "d0285e2201f67103195a42de4312f8c23df1193f",
         "reason": "第三批Story结构化事件入场与实际暂停时间，保留旧回执与作者知识边界",
         "sha256": "ff4cfc0db487199eec51e42c02cc90e8ed1279f185a9f520b3f52504c49330c7"
+      },
+      "promptCacheOrderingV1": {
+        "notes": "提示缓存友好：当前时间与星期不再以占位符写入靠前的系统模块（每回合变化会使其后的提示缓存失效），改为引用 GAME_CONTEXT.CURRENT_TIME；时间规则与星期计算要求不变。原始来源及历次适配记录保留。",
+        "sha256": "60d6ab4706d108612a852990ef2c43f0d598d3942adef536e450e8bb680c6bee"
       }
     },
     "writing/natural_prose.md": {

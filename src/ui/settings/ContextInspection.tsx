@@ -29,6 +29,8 @@ export function TokenStatistics({
       <dd>{statistics?.actual.totalTokens ?? '未提供'}</dd>
       <dt>供应商原生思考 Token</dt>
       <dd>{statistics?.actual.reasoningTokens ?? '未提供'}</dd>
+      {statistics?.actual.cacheReadTokens !== undefined && <><dt>其中命中提示缓存的输入 Token</dt><dd>{statistics.actual.cacheReadTokens}</dd></>}
+      {statistics?.actual.cacheWriteTokens !== undefined && <><dt>其中写入提示缓存的输入 Token</dt><dd>{statistics.actual.cacheWriteTokens}</dd></>}
       <dt>估算方法</dt>
       <dd>
         Unicode 启发式；ASCII 约 4 字符/Token，其他字符约 1.5 Token/字符。不含协议开销，不是精确

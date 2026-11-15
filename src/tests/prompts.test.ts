@@ -286,7 +286,7 @@ describe('正式文本来源与旧架构保留', () => {
     for (const module of promptManifest.modules.filter((m) => m.kind === 'prompt')) {
       const record = sources.resources[module.path as keyof typeof sources.resources];
       expect(record, module.path).toBeDefined();
-      const latest = ['legacyCleanupV10','storyTagCompatibilityV1','openingNpcEligibility','variablesContractStability','worldCommandStability','worldNpcCreationContract','organizationFinalAcceptance','npcMemoryContentQuality','npcContextTiersV2','npcImportanceV2','npcUnifiedMemoryV2','npcV2Foundation','storyEventArbitrationV2','worldEventStagesV2','worldNarrativeConditions','historyTimelineV2','contextV2','memorySummaryV2']
+      const latest = ['promptCacheOrderingV1','legacyCleanupV10','storyTagCompatibilityV1','openingNpcEligibility','variablesContractStability','worldCommandStability','worldNpcCreationContract','organizationFinalAcceptance','npcMemoryContentQuality','npcContextTiersV2','npcImportanceV2','npcUnifiedMemoryV2','npcV2Foundation','storyEventArbitrationV2','worldEventStagesV2','worldNarrativeConditions','historyTimelineV2','contextV2','memorySummaryV2']
         .map(key=>Reflect.get(record,key)).find(value=>value && typeof value==='object' && 'sha256' in value);
       if(latest) expect(sha(text(module.path)),module.path).toBe(Reflect.get(latest,'sha256'));
       if (record.treatment === 'verbatim')
@@ -330,9 +330,11 @@ describe('正式文本来源与旧架构保留', () => {
     expect(identity).not.toContain('黑金王朝');
     expect(identity).not.toMatch(/COMMAND_CATALOG|commands|SetWorldClock/);
     const clock = text('shared/03_time_events.md');
+    // 当前时间每回合都变，不再写进最前面的系统模块（会让后面的提示缓存全部失效），改由 GAME_CONTEXT.CURRENT_TIME 提供。
+    expect(clock).not.toMatch(/\{\{world(?:Clock|Weekday)\}\}/);
     for (const required of [
-      '{{worldClock}}',
-      '{{worldWeekday}}',
+      'GAME_CONTEXT.CURRENT_TIME.worldClock',
+      'GAME_CONTEXT.CURRENT_TIME.worldWeekday',
       'Asia/Shanghai',
       '星期一至星期日',
       '不得把所有人默认为双休',
@@ -340,10 +342,7 @@ describe('正式文本来源与旧架构保留', () => {
       '闰年',
     ])
       expect(clock).toContain(required);
-    expect(moduleById('shared.03_time_events').placeholders).toEqual([
-      'worldClock',
-      'worldWeekday',
-    ]);
+    expect(moduleById('shared.03_time_events').placeholders).toEqual([]);
     const ecology = text('worldbooks/heijin/02_modern_underworld.md');
     expect(ecology.match(/^\d+\. \*\*/gm)).toHaveLength(14);
     for (const required of [

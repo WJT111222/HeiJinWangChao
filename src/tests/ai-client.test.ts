@@ -192,11 +192,22 @@ describe('三种原生协议与响应规范化', () => {
       }
       if (protocol === 'anthropic') {
         expect(String(url)).toMatch(/\/v1\/messages$/);
-        expect(body.system).toBe('系统规则');
+        // 官方地址：system 为单个合法文本块，带 ephemeral 缓存标记，文本与原系统提示词完全一致。
+        expect(body.system).toEqual([{ type: 'text', text: '系统规则', cache_control: { type: 'ephemeral' } }]);
         expect(body.messages).toEqual([messages[1]]);
         expect(body.max_tokens).toBe(8192);
         expect(headers.get('anthropic-version')).toBe('2023-06-01');
         expect(headers.get('x-api-key')).toBe('mock-key-not-real');
+        // 非官方 Anthropic 兼容中转：system 仍为原始字符串，请求体不含任何缓存标记。
+        const relay = configured(protocol);
+        relay.config.channels[0].baseUrl = 'https://relay.example.com/v1';
+        const relayTransport = vi.fn<typeof fetch>().mockResolvedValue(Response.json(normal(protocol)));
+        await new AiClient(relayTransport).generate(requestSnapshot(relay.config, 'story', relay.vault), messages);
+        const relayBody = JSON.parse(relayTransport.mock.calls[0][1]!.body as string);
+        expect(String(relayTransport.mock.calls[0][0])).toBe('https://relay.example.com/v1/messages');
+        expect(relayBody.system).toBe('系统规则');
+        expect(relayBody.messages).toEqual([messages[1]]);
+        expect(JSON.stringify(relayBody)).not.toContain('cache_control');
       }
     },
   );
