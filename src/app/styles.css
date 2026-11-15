@@ -1635,6 +1635,7 @@ summary {
 .select-popup [role='option'] { display: flex; width: 100%; justify-content: space-between; gap: .5rem; border: 1px solid transparent; text-align: left; padding: .65rem; overflow-wrap: anywhere; min-height: 44px; }
 .select-popup [role='option'].option-active { background: var(--hover); border-color: #a28f60; }
 .select-popup [role='option'][aria-selected='true'] { color: var(--gold-hover); background: var(--selected); }
+.select-popup .select-hint { margin: 0; padding: .2rem .65rem .35rem; font-size: .78rem; line-height: 1.6; color: var(--muted); }
 .model-picker { min-width: 0; display: grid; align-content: start; gap: .4rem; }
 .model-picker > button { justify-self: start; }
 .model-picker label { display: grid; gap: .4rem; }

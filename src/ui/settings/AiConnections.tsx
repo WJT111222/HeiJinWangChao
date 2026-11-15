@@ -347,6 +347,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
       {follow ? <p className="ai-inherit">同正文 · {routeChannel?.name || '未设置'} / {model || '未选模型'}</p> : <div className="ai-route-pick">
         <div className="ai-route-channel">
           <ThemedSelect label={`${label}渠道`} value={route.channelId}
+            hint={config.channels.length ? undefined : '还没有渠道：先关闭这里，在设置页下方「我的渠道」点「＋ 添加渠道」，填好地址和密钥后再回来选择。'}
             options={[{ value: '', label: '① 选择渠道' }, ...config.channels.map((item) => ({ value: item.id, label: `${item.name || '未命名渠道'}` }))]}
             onChange={(channelId) => { if (channelId !== route.channelId) setRoute(stage, { channelId, modelId: '' }); if (channelId && !lists[channelId]) loadModels(channelId, false, stage); }} />
         </div>
@@ -360,6 +361,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
           title="刷新这个渠道的模型列表（不产生费用）" disabled={!routeChannel || loading || !canLoad(routeChannel.id)}
           onClick={() => routeChannel && loadModels(routeChannel.id, true, stage)}>↻</button>
         <div className="ai-route-foot">
+          {!config.channels.length && <span className="ai-hint warn">还没有渠道：先在下方「我的渠道」点「＋ 添加渠道」，填好地址和密钥后再回来选择。</span>}
           {routeChannel && !canLoad(routeChannel.id) && <span className="ai-hint warn">这个渠道还没填好地址或密钥，先在下方补全。</span>}
           {routeChannel && list?.status === 'error' && <span className="ai-hint err" role="status">{list.message}</span>}
           <button type="button" className="ai-link" disabled={!routeChannel} aria-expanded={Boolean(manual[stage])}
