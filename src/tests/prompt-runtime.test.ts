@@ -152,9 +152,9 @@ describe('真实资源加载与消息组装', () => {
       const a = input(stage);
       const result = await composePrompt({ ...a, domains: ['economy'] });
       const ids = result.modules.map((m) => m.id);
-      expect(ids.filter((id) => id.startsWith('stages.'))).toEqual([`stages.regular.${stage}${stage === 'variables' ? '.text' : ''}`]);
+      expect(ids.filter((id) => id.startsWith('stages.'))).toEqual([`stages.regular.${stage}`]);
       expect(ids.filter((id) => id.startsWith('variableGroups.'))).toEqual([
-        `variableGroups.economy.${stage === 'variables' ? 'update.text' : 'offscreen'}`,
+        `variableGroups.economy.${stage === 'variables' ? 'update' : 'offscreen'}`,
       ]);
       expect(ids).not.toContain('shared.06_story_output');
       expect(ids).not.toContain('writing.nsfw');

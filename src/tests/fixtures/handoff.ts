@@ -27,10 +27,11 @@ export function receiveTask(actor: WorldTask['actorRef'] = { kind: 'npc', id: 'n
     handoff: { fromTaskId: 'work', at: '2026-10-18T08:06:00+08:00', channel: '内部工作电话报告编号和清单', content: resultText, necessity: '后续登记核验属于接收方职责', knowledgeKind: 'reported' } },
     evidence: proof({ at: '2026-10-18T08:06:00+08:00', sources: ['task:work', actor.kind === 'organization' ? `org:${actor.id}` : `npc:${actor.id}`], fact: resultText }) };
 }
-export function retireCommand(state: GameState, id = 'npc-a'): Extract<DomainCommand, { type: 'RetireNpc' }> {
+// V10 起 RetireNpc 不再是合法命令类型：产出原始对象，供各层拒绝路径测试使用。
+export function retireCommand(state: GameState, id = 'npc-a'): DomainCommand {
   const reason = '临时核对工作告一段落，成果已登记，没有其他职责。';
   return { type: 'RetireNpc', commandId: `retire-${id}`, npcId: id, expectedIdentityKey: state.npc[id].identityKey, reason, retainMemoryIds: [],
-    evidence: proof({ sources: [`npc:${id}`], fact: '临时人员办妥离任安排。', decision: { targetId: id, status: 'retired', reason, result: '必要成果留存于任务登记清单。', conditionsSatisfied: true, continues: false } }) };
+    evidence: proof({ sources: [`npc:${id}`], fact: '临时人员办妥离任安排。', decision: { targetId: id, status: 'retired', reason, result: '必要成果留存于任务登记清单。', conditionsSatisfied: true, continues: false } }) } as unknown as DomainCommand;
 }
 export function handoffResult(state: GameState, recipient: WorldTask['actorRef'] = { kind: 'npc', id: 'npc-b' }) {
   return { ...worldResult(), visibleHooks: [], taskCommands: [receiveTask(recipient), finishTask(state)] };

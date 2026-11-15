@@ -27,13 +27,13 @@ async function seed(page: Page, variant?: 'mixed-result' | 'unindexed-history' |
       resultKnowledge: { facts: ['同事归档了一份举报。'], reported: ['蓝仓暗格藏着违禁货物。'], suspected: [] } };
     if (variant === 'unindexed-history' || variant === 'refused-confirmation') {
       initial.npc['npc-a'].relationshipText = '尚未与主角接触'; initial.npc['npc-a'].affinity = 0;
-      initial.contactReviewNpcIds = ['npc-a']; initial.revision = 1; initial.turnNumber = 1;
+      initial.revision = 1; initial.turnNumber = 1;
       initial.journal = [{ turnId: 'past', revision: 1, relatedActorRefs: [], story: { turnKind: 'opening',
         narrative: '主角与同事交换联系方式，约好以后经常联系。', summary: '与同事建立联系。', variableGuide: [] } }];
     }
     const repo = await SaveRepository.open();
     if (variant === 'unindexed-history' || variant === 'refused-confirmation') {
-      // 隔离的已提交V6测试档：明确保留待复核人物，不依赖旧版迁移。
+      // 隔离的已提交V10测试档：带有既往联系历史的人物，直接写入存储。
       await repo.create(handoffState());
       const raw = initial;
       await new Promise<void>((resolve, reject) => { const request = indexedDB.open('heijinwangchao'); request.onsuccess = () => {
@@ -79,7 +79,7 @@ test('真实浏览器：世界成果/交接只是候选，正式原子提交后�
     const draft = await repo.loadDraft('save-a'); const input = { draft, nextAction: '在街边休息', useVariableStage: true, useWorldStage: true };
     const first = await repo.commitTurn(input), replay = await repo.commitTurn(input); return { first, replay };
   } finally { repo.close(); } });
-  expect(final.first.state.npc['npc-a']).toEqual(before.npc['npc-a']); expect(final.first.state.retiredNpcs).toEqual(before.retiredNpcs);
+  expect(final.first.state.npc['npc-a']).toEqual(before.npc['npc-a']);
   expect(final.first.state.tasks.work.resolution.result).toBe(resultText); expect(final.first.state.tasks.next.actorRef.id).toBe('npc-b');
   expect(final.first.state.tasks.next.handoff).toMatchObject({ content: '登记号318的三份材料均已核对齐全。', knowledgeKind: 'reported' });
   expect(final.first.state.journal).toHaveLength(1); expect(final.replay.replayed).toBe(true); expect(final.replay.state).toEqual(final.first.state);
@@ -99,9 +99,7 @@ for (const variant of ['event-report', 'refused-confirmation'] as const) test(`�
     const invalid=makeEvent('蓝仓暗格藏着违禁货物。');invalid.event.actorRefs[0].id='missing-npc';
     bad.eventCommands = [invalid]; good.eventCommands = [makeEvent('同事归档了一份举报。')];
   } else {
-    const retirement = retireCommand(before), evidence = JSON.parse(retirement.evidence);
-    retirement.contactReview = { conclusion: 'non_contact', basis: 'player_confirmed', reason: '截取玩家确认片段。', playerConfirmation: '同事属于非联系人临时人员' };
-    evidence.kind = 'established'; evidence.fact = '主角确认同事属于非联系人临时人员。'; evidence.sources = ['story:current', 'npc:npc-a']; retirement.evidence = JSON.stringify(evidence);
+    const retirement = retireCommand(before);
     bad.worldCommands = [retirement]; bad.taskCommands = [finishTask(before)]; good.taskCommands = [finishTask(before)];
     expect(initial.draft.userInput).toContain('我不确认');
   }
@@ -119,9 +117,9 @@ for (const variant of ['event-report', 'refused-confirmation'] as const) test(`�
     const draft = await repo.loadDraft('save-a'), input = { draft, nextAction: '在街边休息', useVariableStage: true, useWorldStage: true };
     return { result: await repo.commitTurn(input), replay: await repo.commitTurn(input) };
   } finally { repo.close(); } });
-  expect(committed.result.state.npc['npc-a']).toBeDefined(); expect(committed.result.state.retiredNpcs['npc-a']).toBeUndefined(); expect(committed.replay.replayed).toBe(true);
+  expect(committed.result.state.npc['npc-a']).toEqual(before.npc['npc-a']); expect(committed.replay.replayed).toBe(true);
   if (variant === 'event-report') expect(committed.result.state.events['next-event'].resolutionText).toBe('同事归档了一份举报。');
-  else expect(committed.result.state.contactReviewNpcIds).toContain('npc-a');
+  else expect(committed.result.state.tasks.work.resolution).toBeDefined();
   await page.reload(); await openGameTools(page); await expect(page.locator('main')).not.toContainText('蓝仓暗格'); expect((await stored(page)).state).toEqual(committed.result.state); expect(calls).toBe(2);
 });
 
@@ -136,7 +134,7 @@ for (const variant of ['mixed-result', 'unindexed-history'] as const) test(`第�
     const invalid=makeEvent('蓝仓暗格藏着违禁货物。');invalid.event.actorRefs[0].id='missing-npc';
     bad.eventCommands = [invalid]; good.eventCommands = [makeEvent('同事归档了一份举报。')];
   } else {
-    bad.worldCommands = [{ ...retireCommand(before), contactReview: { conclusion: 'non_contact', basis: 'no_known_connection', reason: '结构化索引未发现联系。' } }];
+    bad.worldCommands = [retireCommand(before)];
     bad.taskCommands = [finishTask(before)]; good.taskCommands = [finishTask(before)];
   }
   const currentTurn=(await stored(page)).draft.turnId;
@@ -166,22 +164,29 @@ test('旧联系人登记保留但不冒充已知电话，刷新后档案仍保�
 });
 
 
-test('V6待复核NPC显示待确认身份，不冒充联系人且不自动删除', async ({ page }) => {
-  const before = await seed(page);
-  await page.evaluate(async () => {
-    const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open();
+test('V10 之前的旧档不可读也不迁移，原始数据原样保留', async ({ page }) => {
+  await seed(page);
+  const checked = await page.evaluate(async () => {
+    const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path);
+    let repo = await SaveRepository.open();
     const state = await repo.load('save-a'); repo.close();
     const raw = { ...state, schemaVersion: 6, contactNpcIds: [], contactReviewNpcIds: Object.keys(state.npc) };
     await new Promise<void>((resolve, reject) => { const request = indexedDB.open('heijinwangchao'); request.onsuccess = () => {
       const db = request.result, tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(raw);
       tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); };
     }; request.onerror = () => reject(request.error); });
+    repo = await SaveRepository.open();
+    try {
+      const listed = await repo.list();
+      let loadError = ''; try { await repo.load('save-a'); } catch (error) { loadError = String((error as Error).message); }
+      const kept = await new Promise<unknown>((resolve, reject) => { const request = indexedDB.open('heijinwangchao'); request.onsuccess = () => {
+        const db = request.result, tx = db.transaction('saves', 'readonly'), get = tx.objectStore('saves').get('save-a');
+        get.onsuccess = () => { db.close(); resolve(get.result); }; tx.onabort = () => { db.close(); reject(tx.error); };
+      }; request.onerror = () => reject(request.error); });
+      return { status: listed[0]?.status, loadError, keptRaw: JSON.stringify(kept) === JSON.stringify(raw) };
+    } finally { repo.close(); }
   });
-  await page.reload(); await openGameTools(page); await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /NPC/ }).click();
-  const panel = page.getByRole('dialog', { name: 'NPC', exact: true }); await panel.getByRole('button', { name: '查看人物：现场人物', exact: true }).click();
-  await expect(panel).toContainText('尚未掌握'); await expect(panel).not.toContainText('旧档联系人身份待确认 · 暂缓清理');
-  await expect(panel).not.toContainText('联系人 · 永久保留档案');
-  const migrated = (await stored(page)).state; expect(migrated.schemaVersion).toBe(9); expect(migrated.contactNpcIds).toEqual([]);
-  expect(migrated.contactReviewNpcIds).toContain('scene'); expect(migrated.npc).toEqual(before.npc); expect(migrated.revision).toBe(before.revision);
-  await page.reload(); await openGameTools(page); expect((await stored(page)).state).toEqual(migrated);
+  expect(checked.status).toBe('unreadable');
+  expect(checked.loadError).toContain('只支持 V10 存档');
+  expect(checked.keptRaw).toBe(true);
 });

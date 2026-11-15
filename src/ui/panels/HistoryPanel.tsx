@@ -38,7 +38,7 @@ function SourceFooter({desktop,children}:{desktop:boolean;children:ReactNode}){r
 function ChronicleDetail({ entry, view, onSelect,desktop=false }: { entry: ChronicleEntry; view: PlayerView; onSelect: (id: string) => void;desktop?:boolean }) {
   const c = entry.chronicle;
   const names = new Map([
-        ...[...view.npc, ...view.retiredNpcs].map(p => [`npc:${p.id}`, p.name] as const),
+        ...view.npc.map(p => [`npc:${p.id}`, p.name] as const),
     ...view.organizations.map(o => [`organization:${o.id}`, o.name] as const),
   ]);
   const peers = view.timeline.filter(other => other.id !== entry.id && other.chronicle?.milestoneId === c.milestoneId);
@@ -78,7 +78,7 @@ function HistorySource({ entry, view }: { entry: TimelineEntry; view: PlayerView
   return <>
     {ref && <p>记录来源：{ref.kind === 'protagonist' ? view.protagonist.name : ref.kind === 'organization'
       ? view.organizations.find(o => o.id === ref.id)?.name ?? ref.id
-      : [...view.npc, ...view.retiredNpcs].find(p => p.id === ref.id)?.name ?? ref.id}</p>}
+      : view.npc.find(p => p.id === ref.id)?.name ?? ref.id}</p>}
     {entry.sourceText && <p>来源说明：{entry.sourceText}</p>}
     <small>记录于 {dateTime(entry.recordedAt)}</small>
   </>;

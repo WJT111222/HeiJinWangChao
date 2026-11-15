@@ -149,7 +149,7 @@ it.each(['opening', 'regular'] as const)('%s 实际Composer具备新增创建及
   for (const field of ['description', 'referenceValue', 'itemDetails', 'category', 'questItem']) expect(text).toContain(`items[id].${field}`);
   expect(text).not.toContain('任意itemDetails修改不支持');
 });
-it('V6物品可缺少可选描述与估值，读取不改数量、归属及装备',()=>{
+it('物品可缺少可选描述与估值，读取不改数量、归属及装备',()=>{
  const state=game();state.items.coat=ImportantItemSchema.parse({...item,id:'coat',itemDetails:{描述:'旧外套'}});state.protagonist.currentWear.topItemId='coat';
  const before=structuredClone(state),restored=migrateSave(state);expect(restored.items).toEqual(before.items);expect(restored.protagonist.currentWear).toEqual(before.protagonist.currentWear);expect(restored.items.coat.referenceValue).toBeUndefined();expect(restored.items.coat.description).toBeUndefined();expect(state).toEqual(before);
 });

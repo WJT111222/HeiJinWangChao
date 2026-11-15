@@ -1,0 +1,9 @@
+import { expect, it } from '/workspace/pr152-main-baseline/node_modules/vitest/dist/index.js';
+import { readFileSync } from 'node:fs';
+import { migrateSave } from '/workspace/pr152-main-baseline/src/services/storage/migrations';
+it.each([6, 7, 8, 9])('PR152 old V%d synthetic sample is actually readable by clean pre-V10 main', version => {
+  const raw = JSON.parse(readFileSync(`/workspace/pr152-evidence/legacy-v${version}.json`, 'utf8'));
+  const before = structuredClone(raw), state = migrateSave(raw);
+  expect(state.schemaVersion).toBe(9); expect(state.protagonist.background).toBe('旧记录原文\n第二行');
+  expect(raw).toEqual(before);
+});

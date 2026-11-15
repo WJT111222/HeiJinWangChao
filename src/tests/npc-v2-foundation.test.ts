@@ -29,10 +29,11 @@ async function rawAccess(factory: IDBFactory, name: string, store: string, mode:
     };
   });
 }
-const retirement = (state: ReturnType<typeof npcV2State>) => DomainCommandSchema.parse({
+// V10 起 RetireNpc 不再是合法命令类型：构造原始对象（不经 schema）验证各层都拒绝。
+const retirement = (state: ReturnType<typeof npcV2State>) => ({
   type: 'RetireNpc', commandId: 'old-retirement', npcId: 'person', expectedIdentityKey: state.npc.person.identityKey,
   reason: '旧版清理提案', evidence: '只用于测试旧候选拦截', retainMemoryIds: [],
-});
+} as never);
 
 describe('NPC V2第一批：人物基础与内部休眠', () => {
   it('两种NPC均保存独立电话状态和多个常驻地点，当前位置和联系人登记不变', () => {
@@ -73,7 +74,7 @@ describe('NPC V2第一批：人物基础与内部休眠', () => {
     const restored = restoreNpcProfile(archived, 'special', before.npc.special.identityKey);
     expect(restored.npc.special).toEqual({ ...before.npc.special, name: '许岸新名', locationId: 'office' });
     expect(restored.dormantNpcProfiles).toEqual({});
-    for (const key of ['memories', 'tasks', 'events', 'timeline', 'contactNpcIds', 'contactReviewNpcIds', 'retiredNpcs'] as const)
+    for (const key of ['memories', 'tasks', 'events', 'timeline', 'contactNpcIds'] as const)
       expect(restored[key]).toEqual(before[key]);
   });
   it('身份冲突、重复身份与休眠档案双重权威拒绝', () => {
@@ -132,28 +133,28 @@ describe('NPC V2第一批：人物基础与内部休眠', () => {
 });
 
 describe('V6 → V7与永久人物保留', () => {
-  it('旧V6、联系人、初始同伴、原记忆与总结仅升版本，不猜造电话或住所', () => {
+  it('V10 存档原样读取；联系人、初始同伴、原记忆与总结保持不变', () => {
     let state = npcMemoryState(21, true);
     const batch = planNpcSummary(state, 'npc-a')!;
     state = applyNpcSummary(state, batch, parseNpcSummary(JSON.stringify(npcSummaryOutput(batch)), batch, 'legacy-summary'));
-    state.initialCompanionId = 'npc-a'; state.contactNpcIds = ['npc-a']; state.contactReviewNpcIds = ['npc-b'];
-    const raw = { ...state, schemaVersion: 6 }, before = structuredClone(raw), next = migrateSave(raw);
-    expect(next).toEqual({ ...raw, schemaVersion: 9 }); expect(raw).toEqual(before);
+    state.initialCompanionId = 'npc-a'; state.contactNpcIds = ['npc-a'];
+    const before = structuredClone(state), next = migrateSave(state);
+    expect(next).toEqual(before); expect(state).toEqual(before);
     expect(next.memories.npcSummaries['npc-a'][0].npcProvenance?.sourceMemoryIds).toHaveLength(15);
     for (const person of Object.values(next.npc)) { expect(person.phoneContact).toBeUndefined(); expect(person.usualLocations).toBeUndefined(); }
   });
-  it('新回合RetireNpc不能删除任何正式人物，包括无职责离场非联系人', () => {
+  it('RetireNpc 已不是合法命令：各层拒绝且不改动正式人物', () => {
     const state = npcV2State(), before = structuredClone(state), command = retirement(state);
-    expect(() => commitCommands(state, 'retire', 0, [command])).toThrow(/永久保留/);
+    expect(DomainCommandSchema.safeParse(command).success).toBe(false);
+    expect(() => commitCommands(state, 'retire', 0, [command])).toThrow();
     expect(() => parseWorld(JSON.stringify(worldResult([command])), state, worldDraft())).toThrow();
     expect(state).toEqual(before);
-    expect(DomainCommandSchema.parse(command)).toEqual(command); // legacy draft remains inspectable
   });
-  it('旧历史身份和组织/资产/任务/事件引用保留；RegisterContact不设置电话号码', () => {
-    const state = npcV2State(); state.retiredNpcs.legacy = { id: 'legacy', identityKey: 'old-identity', name: '历史人物', aliases: [], retiredAt: state.worldClock, sourceTurnIds: [] };
-    const command = { type: 'RegisterContact' as const, commandId: 'register', npcId: 'person', reason: '兼容登记', evidence: '旧格式联系登记' };
+  it('RegisterContact 登记联系人但不设置电话号码', () => {
+    const state = npcV2State();
+    const command = { type: 'RegisterContact' as const, commandId: 'register', npcId: 'person', reason: '联系登记', evidence: '联系登记' };
     const next = commitCommands(state, 'register', 0, [command]);
-    expect(next.retiredNpcs).toEqual(state.retiredNpcs); expect(next.contactNpcIds).toContain('person');
+    expect(next.contactNpcIds).toContain('person');
     expect(next.npc.person.phoneContact).toEqual({ status: 'unknown' });
     expect(next.npc.person.usualLocations).toEqual(state.npc.person.usualLocations);
   });
@@ -162,8 +163,8 @@ describe('V6 → V7与永久人物保留', () => {
     expect(DomainCommandSchema.safeParse({ type: 'CreateNpc', commandId: 'create', evidence: '候选', npc: state.npc.person }).success).toBe(false);
     expect(DomainCommandSchema.safeParse({ type: 'ChangeNpcKind', npcId: 'person', kind: 'special' }).success).toBe(false);
   });
-  it('未来版本与损坏V6拒绝迁移，不修改原文', () => {
-    for (const raw of [{ ...npcV2State(), schemaVersion: 10 }, { ...worldState(), schemaVersion: 6, unknown: true }, { ...worldState(), schemaVersion: 6, npc: { bad: npc() } }]) {
+  it('未来版本、旧版本与损坏 V10 均拒绝迁移，不修改原文', () => {
+    for (const raw of [{ ...npcV2State(), schemaVersion: 11 }, { ...worldState(), schemaVersion: 6 }, { ...worldState(), schemaVersion: 9 }, { ...npcV2State(), schemaVersion: 10, unknown: true }]) {
       const before = structuredClone(raw); expect(() => migrateSave(raw)).toThrow(); expect(raw).toEqual(before);
     }
   });
@@ -187,7 +188,7 @@ describe('V6 → V7与永久人物保留', () => {
       expect(await reopened.load('save-a')).toEqual(restored.state);
     } finally { reopened.close(); }
   });
-  it('旧V6撤回快照按需读取迁移，保留索引/容量元数据，消费前不重写原记录', async () => {
+  it('旧V6撤回快照不再迁移：撤回被拒绝，快照、控制记录和正式状态都不改', async () => {
     const factory = new IDBFactory(), name = 'legacy-undo', repo = await SaveRepository.open(name, factory);
     try {
       await repo.create(worldState());
@@ -200,20 +201,17 @@ describe('V6 → V7与永久人物保留', () => {
       expect((await repo.undoStatus('save-a')).available).toBe(1);
       expect(await rawAccess(factory, name, 'turnUndo', 'readonly', s => s.getAll())).toEqual([record]);
       expect(await rawAccess(factory, name, 'saveControls', 'readonly', s => s.get('save-a'))).toEqual(control);
-      const current = await repo.loadGame('save-a');
-      const restored = await repo.undoTurn({ saveId: 'save-a', expectedRevision: second.state.revision, expectedDraft: current.draft, operationId: 'legacy-undo' });
-      expect(restored.state.schemaVersion).toBe(9); expect(restored.state.npc).toEqual(first.state.npc);
-      expect(restored.state.journal).toEqual(first.state.journal); expect(restored.state.worldClock).toBe(first.state.worldClock);
+      const current = await repo.loadGame('save-a'); void first;
+      await expect(repo.undoTurn({ saveId: 'save-a', expectedRevision: second.state.revision, expectedDraft: current.draft, operationId: 'legacy-undo' })).rejects.toThrow();
+      expect(await repo.load('save-a')).toEqual(second.state);
+      expect(await rawAccess(factory, name, 'turnUndo', 'readonly', s => s.getAll())).toEqual([record]);
+      expect(await rawAccess(factory, name, 'saveControls', 'readonly', s => s.get('save-a'))).toEqual(control);
     } finally { repo.close(); }
   });
-  it('合法V6迁移仅更改版本，损坏和未来版本失败不覆盖原记录', async () => {
+  it('旧版本与损坏记录读取失败，不覆盖原记录', async () => {
     const factory = new IDBFactory(), name = 'raw-legacy', repo = await SaveRepository.open(name, factory);
     try {
-      const raw = { ...worldState(), schemaVersion: 6 };
-      await rawAccess(factory, name, 'saves', 'readwrite', s => s.put(raw));
-      expect((await repo.load('save-a')).schemaVersion).toBe(9);
-      expect(await rawAccess(factory, name, 'saves', 'readonly', s => s.get('save-a'))).toEqual({ ...raw, schemaVersion: 9 });
-      for (const broken of [{ ...raw, schemaVersion: 10 }, { ...raw, npc: { bad: npc() } }]) {
+      for (const broken of [{ ...worldState(), schemaVersion: 6 }, { ...worldState(), schemaVersion: 9 }, { ...worldState(), schemaVersion: 11 }, { ...worldState(), npc: { bad: npc() } }]) {
         await rawAccess(factory, name, 'saves', 'readwrite', s => s.put(broken));
         await expect(repo.load('save-a')).rejects.toThrow();
         await expect(repo.save('save-a', 0, 'overwrite', [])).rejects.toThrow();

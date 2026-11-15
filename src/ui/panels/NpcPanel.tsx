@@ -31,7 +31,7 @@ export function PersonMemory({ memory, view, person }: { memory: ObservedMemory;
     {memory.knowledgeSource && <p className="prose">知识来源：{memory.knowledgeSource}</p>}
     <details><summary>来源与认知</summary>
       <p>{turns.length ? turns.map(t => `第 ${t.turnNumber} 回合`).join('、') : '来源回合未记录或原文暂不可用'}</p>
-      {memory.affectedEntityRefs.length > 0 && <p>相关人物／组织：{memory.affectedEntityRefs.map(ref => ref.kind === 'protagonist' ? view.protagonist.name : ref.kind === 'npc' ? view.npc.find(n => n.id === ref.id)?.name ?? view.retiredNpcs.find(n => n.id === ref.id)?.name ?? '历史人物' : view.organizations.find(o => o.id === ref.id)?.name ?? '历史组织').join('、')}</p>}
+      {memory.affectedEntityRefs.length > 0 && <p>相关人物／组织：{memory.affectedEntityRefs.map(ref => ref.kind === 'protagonist' ? view.protagonist.name : ref.kind === 'npc' ? view.npc.find(n => n.id === ref.id)?.name ?? '历史人物' : view.organizations.find(o => o.id === ref.id)?.name ?? '历史组织').join('、')}</p>}
       {memory.npcProvenance && <p>总结依据：{memory.npcProvenance.sourceMemoryIds.map(id => {
         const index = person.memories.findIndex(m => m.id === id);
         return index < 0 ? '原始来源暂不可用' : `第 ${index + 1} 条人物原始记忆`;
@@ -129,7 +129,6 @@ export function NpcPanel({ view, management, initialId, onOpenOrganization, desk
         </li>)}</ul>
         {!matches.length && <Empty>{view.npc.length ? '暂无符合条件的人物' : '尚无正式人物档案'}</Empty>}
         {matches.length > 20 && <div className="memory-pagination"><button disabled={!currentPage} onClick={() => setPage(currentPage - 1)}>上一页人物</button><span>第 {currentPage + 1} 页</span><button disabled={(currentPage + 1) * 20 >= matches.length} onClick={() => setPage(currentPage + 1)}>下一页人物</button></div>}
-        {view.retiredNpcs.length > 0 && <details><summary>历史身份记录</summary>{view.retiredNpcs.map(p => <p key={p.id}>{p.name} · {dateTime(p.retiredAt)}</p>)}</details>}
       </div>
       <section className="npc-detail" ref={detail} aria-label="人物详情">
         {selected ? <div key={selected.id}>

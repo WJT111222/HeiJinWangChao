@@ -13,7 +13,7 @@ import { projectTurn } from '../domain/turnProjection';
 const time='2026-10-18T08:05:00+08:00';
 const body=`set protagonist.emotionText = "逐渐平静"
 set npc[friend].healthText = "稍感疲倦"
-set npc[friend].affinityChange = {"from":30,"to":32,"reason":"双方解释误会","relationshipText":"愿意继续沟通"}
+set npc[friend].affinityChange = {"to":32,"reason":"双方解释误会","relationshipText":"愿意继续沟通"}
 set npc[friend].lastInteractionAt = "${time}"
 push npc[friend].memories = {"text":"自己听取对方解释并回应，误会有所缓和，但远方的问题仍待处理。","knowledgeKind":"observed","knowledgeSource":"本轮交谈","visibility":"npc_private"}
 set worldClock = "${time}"`;
@@ -44,9 +44,9 @@ it.each(['none','mention','enter'] as const)('后台active重复写入的权限�
  }
  expect(a.state).toEqual(before);
 });
-it.each(['from','past','future'] as const)('好感前值与互动时间%s仍严格拒绝',async kind=>{
+it.each(['range','past','future'] as const)('好感越界与互动时间%s仍严格拒绝',async kind=>{
  const a=fixture();a.state.npc.friend.lastInteractionAt='2026-10-18T08:01:00+08:00';
- const bad=kind==='from'?body.replace('"from":30','"from":0'):body.replace(`lastInteractionAt = "${time}"`,`lastInteractionAt = "2026-10-18T${kind==='past'?'08:00:00':'09:00:00'}+08:00"`);
+ const bad=kind==='range'?body.replace('"to":32','"to":101'):body.replace(`lastInteractionAt = "${time}"`,`lastInteractionAt = "2026-10-18T${kind==='past'?'08:00:00':'09:00:00'}+08:00"`);
  await expect(parseTextVariables(envelope(bad),a.state,a.draft)).rejects.toThrow();
 });
 it.each(['opening','regular'] as const)('%s最终Composer含真实目录、四字段记忆与现场语义',async mode=>{
@@ -54,7 +54,7 @@ it.each(['opening','regular'] as const)('%s最终Composer含真实目录、四�
  if(mode==='opening'){a.state.turnNumber=0;a.state.journal=[];}
  const p=await composePrompt({stage:'variables',mode,state:a.state,draft:a.draft,userInput:'解释误会',settings:defaultSettings()});
  const sent=p.messages.map(m=>m.content).join('\n');
- for(const text of ['active仍为active不是变化','mention不授权','affinityChange','relationshipText','四字段','lastInteractionAt','程序会将时钟优先应用'])expect(sent).toContain(text);
+ for(const text of ['active仍为active不是变化','mention不授权','set npc[id].affinityChange','relationshipText','四字段','lastInteractionAt','程序会将时钟优先应用'])expect(sent).toContain(text);
  expect(sent).not.toContain('正文实际涉及的现场事件使用 set events');
 });
 it('文本多命令候选保存→Commit→重载；失败保留Story和正式状态',async()=>{

@@ -20,17 +20,16 @@ export interface ModuleRecord {
   estimatedTokens: number;
 }
 export async function composePrompt(unchecked: ComposeInput) {
-  if (unchecked.stage === 'variables') return composeTextVariablesPrompt({ ...unchecked, stage: 'variables' });
-  return compose(unchecked, 'json');
+  return compose(unchecked);
 }
 /** 正式Variables及离线预览共用同一组装器；组装本身不请求模型或写库。 */
 export async function composeTextVariablesPrompt(input: ComposeInput & { stage: 'variables' }) {
   if (input.stage !== 'variables') throw new AiError('configuration');
-  return compose(input, 'text');
+  return compose(input);
 }
-async function compose(unchecked: ComposeInput, variableProtocol: 'json' | 'text') {
+async function compose(unchecked: ComposeInput) {
   const input = checkedInput(unchecked);
-  const selected = selectPromptModules(input, variableProtocol);
+  const selected = selectPromptModules(input);
   if (input.orderOverrides && input.orderPreferences) throw new AiError('configuration');
   const overrides =
     input.orderOverrides ?? projectPromptOrder(input.orderPreferences ?? {}, selected);

@@ -49,14 +49,14 @@ function category(path: string[]): Category {
   if (top === 'MEMORY_CONTEXT' && field === 'recentTurns') return 'recent';
   if (top === 'MEMORY_CONTEXT' && ['recalledTurns', 'recallDiagnostics', 'recallPolicy'].includes(field)) return 'recall';
   if (top === 'NPC_CONTEXT' || top === 'SCENE_NPC_IDS' || top === 'OFFSCREEN_STATE' && field === 'npcIds') return 'npc';
-  if (top === 'NPC_KNOWLEDGE' || top === 'SAVE_STATE' && field === 'memories' && third === 'npcSummaries') return 'npcMemory';
-  const npcField = top === 'SCENE_NPCS' ? third : fourth;
-  const npcContainer = top === 'SAVE_STATE' && field === 'npc' || top === 'SCENE_NPCS' || top === 'OFFSCREEN_STATE' && field === 'npc';
+  if (top === 'SAVE_STATE' && field === 'memories' && third === 'npcSummaries') return 'npcMemory';
+  const npcField = fourth;
+  const npcContainer = top === 'SAVE_STATE' && field === 'npc' || top === 'OFFSCREEN_STATE' && field === 'npc';
   if (npcContainer && ['memories', 'longTermMemories'].includes(npcField)) return 'npcMemory';
   if (top === 'SAVE_STATE' && field === 'memories') return 'layeredMemory';
   if (top === 'SAVE_STATE' && ['protagonist', 'economy', 'items'].includes(field) || top === 'PROTAGONIST_PROFILE' || top === 'CREATION_PROFILE' && field === 'protagonist') return 'protagonist';
   if (npcContainer || top === 'CREATION_PROFILE' && field === 'companion') return 'npc';
-  if (['SAVE_STATE', 'OFFSCREEN_STATE'].includes(top) && ['organizations', 'locations', 'tasks', 'events', 'timeline', 'history', 'retiredEvents', 'retiredNpcs'].includes(field)
+  if (['SAVE_STATE', 'OFFSCREEN_STATE'].includes(top) && ['organizations', 'locations', 'tasks', 'events', 'timeline', 'history', 'retiredEvents'].includes(field)
     || ['KNOWN_EVENTS', 'EVENT_ENTRIES', 'EVENT_SCHEDULE'].includes(top)) return 'world';
   return 'other';
 }

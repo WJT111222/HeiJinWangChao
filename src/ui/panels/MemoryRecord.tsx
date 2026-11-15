@@ -6,7 +6,7 @@ import { WorldRecord } from './WorldRecord';
 const nature = { observed: '亲历 / 观察', reported: '转述（未核实）', suspected: '推测（未确认）', unknown: '认知来源未分类' };
 export function MemoryRecord({ memory, view,desktop=false,heading }: { memory: ObservedMemory; view: PlayerView;desktop?:boolean;heading?:ReactNode }) {
   const owner = memory.ownerNpcId && (view.npc.find(person => person.id === memory.ownerNpcId)?.name
-    ?? view.retiredNpcs.find(person => person.id === memory.ownerNpcId)?.name ?? memory.ownerNpcId);
+    ?? memory.ownerNpcId);
   const context=<>    <p className="muted">{memory.layer}{owner ? ` · 所属人物：${owner}` : ''} · {memory.visibility === 'internal'
       ? '内部世界记录 · 不代表任何角色已知' : memory.visibility === 'npc_private'
         ? '人物私有记录 · 不代表主角已知' : '主角已知记录'}</p>

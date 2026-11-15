@@ -1,0 +1,5 @@
+import original from './main-browser.config';
+export default { ...original,
+  reporter: [['list'], ['json', { outputFile: '/workspace/pr152-evidence/main-more.json' }]],
+  outputDir: '/workspace/pr152-evidence/main-more-output',
+};

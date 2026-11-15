@@ -1,4 +1,5 @@
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
+import { writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SaveRepository } from '../services/storage/saveRepository';
 import type { BackupImportConfirmation } from '../services/storage/saveRepository';
@@ -59,6 +60,32 @@ async function withDraft(saveId = 'save-a', input = '去银行') {
 }
 
 describe('备份文件格式', () => {
+  it.each([6, 7, 8, 9])('V%d重置保护：旧记录只读导出、旧备份拒绝覆盖V10，五仓库逐字保持', async version => {
+    await withDraft();
+    const legacy = { ...game('legacy'), schemaVersion: version, contactReviewNpcIds: [], retiredNpcs: {} };
+    legacy.protagonist.background = '旧记录原文\n第二行';
+    if (version < 9) Reflect.deleteProperty(legacy, 'npcManagementRevision');
+    if (version === 6) Reflect.deleteProperty(legacy, 'dormantNpcProfiles');
+    if (process.env.PR152_OLD_SAMPLES) await writeFile(`${process.env.PR152_OLD_SAMPLES}/legacy-v${version}.json`, JSON.stringify(legacy));
+    const legacyDraft = { saveId: 'legacy', turnId: 'legacy-turn', oldPayload: '未结算原文' };
+    const receipt = { saveId: 'legacy', turnId: 'legacy-turn', oldPayload: '原始回执' };
+    await put('saves', legacy); await put('drafts', legacyDraft); await put('turnReceipts', receipt);
+    const before = await all();
+    expect((await repository.list()).find(entry => entry.saveId === 'legacy')).toMatchObject({ status: 'unreadable' });
+    expect(await code(repository.load('legacy'))).toBe('UNSUPPORTED_VERSION');
+    const raw = await repository.exportRaw('legacy');
+    expect(raw.records.saves[0].value).toEqual(legacy);
+    expect(raw.records.drafts[0].value).toEqual(legacyDraft);
+    expect(raw.records.turnReceipts[0].value).toEqual(receipt);
+    const currentBackup = await backupOf('save-a'), confirmation = await confirm(currentBackup);
+    const oldIncoming = { ...currentBackup, state: { ...legacy, saveId: 'save-a' } };
+    const parsed = await parseBackup(JSON.stringify({ format: 'heijin-backup', version: 1, app: 'synthetic', exportedAt: '', saves: [oldIncoming] }));
+    expect(parsed.entries[0]).toMatchObject({ ok: false, code: 'UNSUPPORTED_VERSION' });
+    await expect(Reflect.apply(repository.compareBackup, repository, [oldIncoming])).rejects.toBeDefined();
+    await expect(Reflect.apply(repository.importBackup, repository, [oldIncoming, confirmation, { overwrite: true }])).rejects.toBeDefined();
+    expect(await all()).toEqual(before);
+    expect((await repository.load('save-a')).schemaVersion).toBe(10);
+  });
   it('导出→序列化→解析往返保留同一正式版本的未结算草稿，校验和为 valid', async () => {
     await withDraft();
     const entries = await repository.exportBackup(['save-a']);

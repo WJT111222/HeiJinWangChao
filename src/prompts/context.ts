@@ -186,9 +186,8 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
           ),
         ],
       },
-      NPC_LIFECYCLE: { contactNpcIds: temporary.contactNpcIds, contactReviewNpcIds: temporary.contactReviewNpcIds, initialCompanionId: temporary.initialCompanionId,
-        playerConfirmationInput: draft!.userInput, // 仅保留输入数据兼容；不是已发生事实或删除授权。
-        retiredIdentities: temporary.retiredNpcs, policy: '所有已正式建档的NPC永久保留完整人物、记忆和关系，离场、死亡或失联不是删除。contactNpcIds/contactReviewNpcIds仅兼容旧登记，不推断已知电话。旧retiredNpcs保持历史身份，不凭空恢复档案。' },
+      NPC_LIFECYCLE: { contactNpcIds: temporary.contactNpcIds, initialCompanionId: temporary.initialCompanionId,
+        policy: '所有已正式建档的NPC永久保留完整人物、记忆和关系，离场、死亡或失联不是删除。contactNpcIds只是联系人登记，不推断已知电话。' },
       EVENT_STAGE_RESULTS:Object.fromEntries([...Object.values(temporary.events),...Object.values(temporary.retiredEvents)]
         .filter(e=>e.eventKind==='main').map(e=>[e.id,stageResults(temporary,e.id)])),
       OFFSCREEN_STATE: {
@@ -200,9 +199,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
           (task) =>
             (task.actorRef.kind === 'organization' ||
             (task.actorRef.kind === 'npc' &&
-              (worldNpcAllowed(temporary, draft!, task.actorRef.id)
-                // Retired actors cannot act again, but their terminal results remain available for handoffs.
-                || (temporary.retiredNpcs[task.actorRef.id] && ['completed','cancelled'].includes(task.status))))),
+              worldNpcAllowed(temporary, draft!, task.actorRef.id))),
         ),
         events: temporary.events,
         history: temporary.timeline,

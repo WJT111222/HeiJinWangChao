@@ -34,8 +34,7 @@ export function playerView(state: GameState, authoredCompanion?: CompanionProfil
   const memories: ObservedMemory[] = [
     ...short.map(memory => ({ ...memory, recordKey: `short:${memory.id}`, tier: 'short' as const, layer: memory.origin === 'journal' ? '短期（历史摘要，只读）' : '短期' })),
     ...state.memories.medium.map(memory => ({ ...memory, recordKey: `medium:${memory.id}`, tier: 'medium' as const, origin: 'stored' as const, layer: '中期' })),
-    ...state.memories.long.map(memory => ({ ...memory, recordKey: `long:${memory.id}`, tier: 'long' as const, origin: 'stored' as const, layer: memory.retiredNpcSource ? '退场人物保留记录' : '长期',
-      ownerNpcId: memory.retiredNpcSource?.npcId, knowledgeKind: memory.retiredNpcSource?.knowledgeKind, knowledgeSource: memory.retiredNpcSource?.knowledgeSource })),
+    ...state.memories.long.map(memory => ({ ...memory, recordKey: `long:${memory.id}`, tier: 'long' as const, origin: 'stored' as const, layer: '长期' })),
     ...Object.entries(state.memories.npcSummaries).flatMap(([npcId, entries]) => entries.map(memory => ({
       ...memory, recordKey: `summary:${npcId}:${memory.id}`, ownerNpcId: npcId, knowledgeKind: memory.npcProvenance?.knowledgeKind ?? 'unknown',
       tier: 'npc' as const, origin: 'stored' as const, layer: '人物总结',
@@ -49,7 +48,6 @@ export function playerView(state: GameState, authoredCompanion?: CompanionProfil
   const npc = Object.values(state.npc).map(person => ({
     ...person,
     isContact: state.contactNpcIds.includes(person.id),
-    contactReviewPending: state.contactReviewNpcIds.includes(person.id),
     affinity: person.id === state.initialCompanionId && !person.affinityConfirmed ? null : person.affinity,
     storedAffinity: person.affinity,
     profile: person.id === companion?.npcId ? companion.profile : undefined,
@@ -60,7 +58,7 @@ export function playerView(state: GameState, authoredCompanion?: CompanionProfil
     worldClock:state.worldClock,
     npc, organizations: Object.values(state.organizations), items: Object.values(state.items),
     locations: Object.values(state.locations), events: Object.values(state.events),
-    retiredEvents: Object.values(state.retiredEvents), retiredNpcs: Object.values(state.retiredNpcs),
+    retiredEvents: Object.values(state.retiredEvents),
     tasks: Object.values(state.tasks), economy: state.economy,
     protagonist: state.protagonist,
     timeline: [...state.timeline].sort((a, b) => Date.parse(a.recordedAt) - Date.parse(b.recordedAt)),

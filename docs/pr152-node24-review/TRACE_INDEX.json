@@ -1,0 +1,312 @@
+[
+  {
+    "path": "main-browser-output/event-stages-v2-固定阶段积压结算保留原时刻并退役，失败仅重试World后刷新不重复请求-mobile/trace.zip",
+    "bytes": 2109893,
+    "sha256": "77237c56a7bd4d8f0b3538f0d35a992f5e5bb6ebcaee4c0471b010a79d1bab13"
+  },
+  {
+    "path": "main-browser-output/npc-directory-IndexedDB中途写入失败原子回滚，星标不假成功，候选完整保留-mobile/trace.zip",
+    "bytes": 1745607,
+    "sha256": "922edaefb4a69ec38e05f379dc609d13840f6f7ce62d15ac87e5bd9218f37a34"
+  },
+  {
+    "path": "main-browser-output/npc-directory-初始同伴取消及恢复金星，七字段完整、普通记忆不丢、刷新及回填输入保留，零请求-mobile/trace.zip",
+    "bytes": 1980201,
+    "sha256": "f3fa37ad9339e0a7f2b8563e47220f6ce16abcb99487c8733e07342b15fa7783"
+  },
+  {
+    "path": "main-browser-output/npc-directory-名录只读空状态，以及正式人物消失后的安全返回-mobile/trace.zip",
+    "bytes": 1683958,
+    "sha256": "1b2bcf499269bdb916da7fb031e5ff5a4c3a5656864276066579565a3564c58a"
+  },
+  {
+    "path": "main-browser-output/npc-directory-真实Story请求中本页与其他标签管理均拒绝，不取消请求；随后正常三阶段结算-mobile/trace.zip",
+    "bytes": 1953957,
+    "sha256": "7cc45bcb96d57089d851b8252d6ad6f6a42626e261033e7f70463d531d99e812"
+  },
+  {
+    "path": "main-browser-output/npc-directory-统一名录搜索筛选、详情、联系与单向关系、来源无技术ID；双端真实截图-mobile/trace.zip",
+    "bytes": 1826956,
+    "sha256": "79f5a8278674227aa9f21efd3d8eb12b462bd031af2ce769ef132cd25c594e3b"
+  },
+  {
+    "path": "main-browser-output/npc-directory-跨标签过期星标准确失败并同步正式状态，完整候选不丢，无自动重试-mobile/trace.zip",
+    "bytes": 1782928,
+    "sha256": "16dfc0fb3cd71c154e5d4e12548b6617023b9c9f5a8c512a4760b84cd4dcf390"
+  },
+  {
+    "path": "main-browser-output/npc-directory-首次加星只保存待完善；保存中重复点击无效，正式CAS只递增一次-mobile/trace.zip",
+    "bytes": 1268174,
+    "sha256": "e8e54f1ad746081a6bc72c0fda5f7c2372b14f68a2dc47a0b452f6336b8813b3"
+  },
+  {
+    "path": "main-more-output/npc-final-acceptance-千人轻量名-f8929-口实际布局、分页、关系跳转、焦点与长文滚动，只读零请求-mobile/trace.zip",
+    "bytes": 1806590,
+    "sha256": "55b34329cf680118f2790122d10a68d471058910e07045d34e1faaec72120234"
+  },
+  {
+    "path": "main-more-output/npc-final-acceptance-真实Rea-50b07-离场结案、重逢记忆、七字段休眠恢复，严格12次Mock-mobile/trace.zip",
+    "bytes": 1876404,
+    "sha256": "df8bd6e00fb08f44f2586d97acaaf1025980d0c6c22c62fe8bc3c74316028a4b"
+  },
+  {
+    "path": "main-more-output/turn-undo-另一个标签仍在生成时撤回明确拒绝，取消后重新读取才可撤回-mobile/trace.zip",
+    "bytes": 6217240,
+    "sha256": "f782ccb6258cefee7d8c8a3868083eea40f235690c55cf4daaa06e74e418993a"
+  },
+  {
+    "path": "main-more-output/turn-undo-开局不撤回，生成期间按钮禁用；取消后可以撤回且没有额外请求-mobile/trace.zip",
+    "bytes": 3262959,
+    "sha256": "962f1c39882e961cbe749e4b6a8854000b5a87586ddd6d3da835482b3c154f2e"
+  },
+  {
+    "path": "main-more-output/turn-undo-撤回后编辑发送才开始三阶段，失败可恢复且只保存新分支-mobile/trace.zip",
+    "bytes": 3631245,
+    "sha256": "4fef7a1eebb6fea90f160c9764bf1520ea1e65c074ae47d2e03ad222f47f59df"
+  },
+  {
+    "path": "main-more-output/unreadable-saves-下载-JSON-完整保留坏记录、草稿和回执，读取下载不改库-mobile/trace.zip",
+    "bytes": 1776171,
+    "sha256": "d3dd6faed187a2357fd4e8d734c47e6b78c3569e3db71cc287bc73243b1c4dc4"
+  },
+  {
+    "path": "main-more-output/unreadable-saves-二次确认取消不删数据，确认后只删选中的三类记录，刷新不再出现-mobile/trace.zip",
+    "bytes": 1696756,
+    "sha256": "eaa3b22f1e0f9b559bfd85f3377cdb5da0e36c5ca366abe4ae625aa7cbc6a826"
+  },
+  {
+    "path": "main-more-output/unreadable-saves-列表请求失败明确提示，手动刷新恢复而不是把数据库错误当作坏记录-mobile/trace.zip",
+    "bytes": 1631085,
+    "sha256": "ae28b65ecb4259cb40280ad9e8f2d1f068d98e9024b6254b1cf59fdae34087b1"
+  },
+  {
+    "path": "main-more-output/unreadable-saves-只有坏记录时不显示空档状态、不能继续游戏，正常删除流程仍可用-mobile/trace.zip",
+    "bytes": 1483834,
+    "sha256": "5b839cde58b8d89812da0208c97b935b02207a0e4da3bdec4e1ec723684402fe"
+  },
+  {
+    "path": "main-more-output/unreadable-saves-存储整体不可用明确报错，关闭提示不会重复弹回或伪装成没有存档-mobile/trace.zip",
+    "bytes": 877822,
+    "sha256": "a8a8ad23149b52e8a34f8ca1122f50e8344f4a0cb3cd87950a30a37b26145958"
+  },
+  {
+    "path": "main-more-output/unreadable-saves-导出和删除失败分别可定位且保留全部记录；重试删除成功后清除错误-mobile/trace.zip",
+    "bytes": 1672566,
+    "sha256": "7140990c41171e3f33d0bd8d91b2e46973621545a21d88c9f5af1fc5badb147a"
+  },
+  {
+    "path": "main-more-output/unreadable-saves-混合存档列表独立展示，坏记录不触发全局错误，正常存档都能进入且刷新保持-mobile/trace.zip",
+    "bytes": 1778981,
+    "sha256": "ecb92d31992e5e3a77e56689ecce4c903c6d74eabb9aa49e7e39b6f30b464151"
+  },
+  {
+    "path": "main-more-output/world-handoff-V6待复核NPC显示待确认身份，不冒充联系人且不自动删除-mobile/trace.zip",
+    "bytes": 676357,
+    "sha256": "1b42307c057225bebb768a71883a09c712b8914c89236e1d0be844a4715277fe"
+  },
+  {
+    "path": "main-more-output/world-handoff-旧联系人登记保留但不冒充已知电话，刷新后档案仍保留-mobile/trace.zip",
+    "bytes": 703198,
+    "sha256": "1c550a240d1e578f9fbc8babb38673ee8513606fe96b1e148fc0e1d8a37aefd2"
+  },
+  {
+    "path": "main-more-output/world-handoff-真实浏览器：世界成果-交接只是候选，正式原子提交后生效且完整人物永久保留-mobile/trace.zip",
+    "bytes": 653510,
+    "sha256": "c4f381caca30659378831703c98709a1dde974d567999f138074ec109823443f"
+  },
+  {
+    "path": "main-more-output/world-handoff-第三轮审查event-report：拒绝无效人物引用或否定授权，合法重试及正式提交保持隔离-mobile/trace.zip",
+    "bytes": 674425,
+    "sha256": "71647a2a70f24db9db41840e68c9b8c9348c4cb7cdc72d38945e194e00c7a53f"
+  },
+  {
+    "path": "main-more-output/world-handoff-第三轮审查refused-0dced-拒绝无效人物引用或否定授权，合法重试及正式提交保持隔离-mobile/trace.zip",
+    "bytes": 688112,
+    "sha256": "f4ff5da20f2b2f0d1cda0b972b8b67b70d8eaf50a354778ce8b31b6b3ea953ec"
+  },
+  {
+    "path": "main-more-output/world-handoff-第二轮审查mixed-result：越权候选拒绝，正式状态不变，可安全重试-mobile/trace.zip",
+    "bytes": 700041,
+    "sha256": "c481f30d5f6a2fc0a7bd80e4be0d148c16d76c1d58fbeb717fefd7029947da2d"
+  },
+  {
+    "path": "main-more-output/world-handoff-第二轮审查unindexed-history：越权候选拒绝，正式状态不变，可安全重试-mobile/trace.zip",
+    "bytes": 691270,
+    "sha256": "594c129f5dbb0b32683d614a3e34628c614755241b0c2811faacfdeada3fc39b"
+  },
+  {
+    "path": "pr-browser-output/event-stages-v2-固定阶段积压结算保留原时刻并退役，失败仅重试World后刷新不重复请求-mobile/trace.zip",
+    "bytes": 2132219,
+    "sha256": "92e1d2d58c7ab825a066969ccc0130cfe0e97dc030df5ba2f0b07fa009e4101e"
+  },
+  {
+    "path": "pr-browser-output/npc-directory-IndexedDB中途写入失败原子回滚，星标不假成功，候选完整保留-mobile/trace.zip",
+    "bytes": 1748052,
+    "sha256": "d2a8ef6740c0de34a75b45f88d8edc55017fe754fb32f5013a101bbd15c6b5f2"
+  },
+  {
+    "path": "pr-browser-output/npc-directory-初始同伴取消及恢复金星，七字段完整、普通记忆不丢、刷新及回填输入保留，零请求-mobile/trace.zip",
+    "bytes": 1639225,
+    "sha256": "72542a39c62d0949d8eec36b3aa639cb1df8b9660cac7ac38a2fd9d1e4c04e62"
+  },
+  {
+    "path": "pr-browser-output/npc-directory-名录只读空状态，以及正式人物消失后的安全返回-mobile/trace.zip",
+    "bytes": 1684080,
+    "sha256": "56e82826dfefd2fa52d61557ed1432998eab03b53ec76a047afb86353374c345"
+  },
+  {
+    "path": "pr-browser-output/npc-directory-真实Story请求中本页与其他标签管理均拒绝，不取消请求；随后正常三阶段结算-mobile/trace.zip",
+    "bytes": 1751000,
+    "sha256": "03c019c46591e1f093362cb030bfdb34fb55ba1aac2325581810caae834be25d"
+  },
+  {
+    "path": "pr-browser-output/npc-directory-统一名录搜索筛选、详情、联系与单向关系、来源无技术ID；双端真实截图-mobile/trace.zip",
+    "bytes": 1671974,
+    "sha256": "74f0d2cca5c84faecc2b98f98260807049f704b8bfaf865783a0187a173fe368"
+  },
+  {
+    "path": "pr-browser-output/npc-directory-跨标签过期星标准确失败并同步正式状态，完整候选不丢，无自动重试-mobile/trace.zip",
+    "bytes": 1483432,
+    "sha256": "b017d6d212545c34d3363aa08062526ff1187abc65b389c0be8909ad07af4308"
+  },
+  {
+    "path": "pr-browser-output/npc-directory-首次加星只保存待完善；保存中重复点击无效，正式CAS只递增一次-mobile/trace.zip",
+    "bytes": 1771654,
+    "sha256": "1d44e909a290cdcc361e14ff67885a248f4f0f8c7fe4bbb86578c88b7407cc48"
+  },
+  {
+    "path": "pr-browser-output/npc-final-acceptance-千人轻量名-f8929-口实际布局、分页、关系跳转、焦点与长文滚动，只读零请求-mobile/trace.zip",
+    "bytes": 1731470,
+    "sha256": "fe547753fd335c50f57b124c231d8a891bee5cb4cafab06e17915dab3eafee87"
+  },
+  {
+    "path": "pr-browser-output/npc-final-acceptance-真实Rea-50b07-离场结案、重逢记忆、七字段休眠恢复，严格12次Mock-mobile/trace.zip",
+    "bytes": 1684601,
+    "sha256": "bf89fdc95680c60b01b25b125176934bddbad9de48ef29a03a22c6edba4db68f"
+  },
+  {
+    "path": "pr-browser-output/turn-undo-另一个标签仍在生成时撤回明确拒绝，取消后重新读取才可撤回-mobile/trace.zip",
+    "bytes": 5056698,
+    "sha256": "c491bb54d3deb869c58807b9b1fc4c5469a2ca91d14a578f8d6c16b458914767"
+  },
+  {
+    "path": "pr-browser-output/turn-undo-开局不撤回，生成期间按钮禁用；取消后可以撤回且没有额外请求-mobile/trace.zip",
+    "bytes": 3057667,
+    "sha256": "8be8a0538e781a190699ec79451b7fb56e10460d3e1676e0043311616495e3b8"
+  },
+  {
+    "path": "pr-browser-output/turn-undo-撤回后编辑发送才开始三阶段，失败可恢复且只保存新分支-mobile/trace.zip",
+    "bytes": 2698714,
+    "sha256": "ac082ebf83f88ede707c8d51db1ec0ba056ee13b08aba94352406eaf7e6680dd"
+  },
+  {
+    "path": "pr-browser-output/unreadable-saves-下载-JSON-完整保留坏记录、草稿和回执，读取下载不改库-mobile/trace.zip",
+    "bytes": 1639341,
+    "sha256": "52c5afbd2b08464efe4fc4edb2d80f0580be6cd3394b3cf42a6cd74a743805af"
+  },
+  {
+    "path": "pr-browser-output/unreadable-saves-二次确认取消不删数据，确认后只删选中的三类记录，刷新不再出现-mobile/trace.zip",
+    "bytes": 1736733,
+    "sha256": "04daa724ab23273320388be76aa190891eb8e4e02012a90065cb7010dd83c2da"
+  },
+  {
+    "path": "pr-browser-output/unreadable-saves-列表请求失败明确提示，手动刷新恢复而不是把数据库错误当作坏记录-mobile/trace.zip",
+    "bytes": 1707657,
+    "sha256": "e71122eafb6aedd0dadaa9d33cee176c8b657f1f17029e8a270a2ea59dbd8449"
+  },
+  {
+    "path": "pr-browser-output/unreadable-saves-只有坏记录时不显示空档状态、不能继续游戏，正常删除流程仍可用-mobile/trace.zip",
+    "bytes": 1522502,
+    "sha256": "fb16ef22674b53c6dd7f62fb467727b3e9a99c9bbb1e1021236772192a1bc76a"
+  },
+  {
+    "path": "pr-browser-output/unreadable-saves-存储整体不可用明确报错，关闭提示不会重复弹回或伪装成没有存档-mobile/trace.zip",
+    "bytes": 814894,
+    "sha256": "e1a59e40d629a6a342f3be1316d8afcaf1492e911370e719d93c4d29fffbb263"
+  },
+  {
+    "path": "pr-browser-output/unreadable-saves-导出和删除失败分别可定位且保留全部记录；重试删除成功后清除错误-mobile/trace.zip",
+    "bytes": 1992223,
+    "sha256": "6e61323016f1aa3d26adf8c58bc7d1a4f24b437ee0ddf22f0250619c91f228e3"
+  },
+  {
+    "path": "pr-browser-output/unreadable-saves-混合存档列表独立展示，坏记录不触发全局错误，正常存档都能进入且刷新保持-mobile/trace.zip",
+    "bytes": 1717341,
+    "sha256": "24e42d0e162f6297c8a5c89094febb0fc8f4b7484f073f40b46da5ac10a1a73c"
+  },
+  {
+    "path": "pr-browser-output/world-handoff-V10-之前的旧档不可读也不迁移，原始数据原样保留-mobile/trace.zip",
+    "bytes": 768934,
+    "sha256": "2d8401412b3cb6bc3473afacd73e02970893daed844c3551651dd89df433e99a"
+  },
+  {
+    "path": "pr-browser-output/world-handoff-旧联系人登记保留但不冒充已知电话，刷新后档案仍保留-mobile/trace.zip",
+    "bytes": 865531,
+    "sha256": "f747982a17a1b6922197c70174cb123c0687a14d75e7d45895d98b0bfd14cb90"
+  },
+  {
+    "path": "pr-browser-output/world-handoff-真实浏览器：世界成果-交接只是候选，正式原子提交后生效且完整人物永久保留-mobile/trace.zip",
+    "bytes": 758289,
+    "sha256": "3bd866b561a67b0e2acca2531e847e0482adef028ab3b785c5c187c485d5b96f"
+  },
+  {
+    "path": "pr-browser-output/world-handoff-第三轮审查event-report：拒绝无效人物引用或否定授权，合法重试及正式提交保持隔离-mobile/trace.zip",
+    "bytes": 804610,
+    "sha256": "0768013c48578ab0853fbaf6f871b532650c9a64e3a2ae49ee1099d65427c800"
+  },
+  {
+    "path": "pr-browser-output/world-handoff-第三轮审查refused-0dced-拒绝无效人物引用或否定授权，合法重试及正式提交保持隔离-mobile/trace.zip",
+    "bytes": 980294,
+    "sha256": "46eb0ee7a21cba5420b859a266fcfa09f7b814befd781192c9c43df1499f559e"
+  },
+  {
+    "path": "pr-browser-output/world-handoff-第二轮审查mixed-result：越权候选拒绝，正式状态不变，可安全重试-mobile/trace.zip",
+    "bytes": 951912,
+    "sha256": "d64991ad57611692f53a1ae49ca431a61de3278730413c9a4f6da383594bbd47"
+  },
+  {
+    "path": "pr-browser-output/world-handoff-第二轮审查unindexed-history：越权候选拒绝，正式状态不变，可安全重试-mobile/trace.zip",
+    "bytes": 886783,
+    "sha256": "e894de14e73e81d4728c4fc4c271280313c61a199c207ae03524a29f8d20a6f3"
+  },
+  {
+    "path": "v10-browser-initial-output/v10-save-reset-V6旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变-desktop/trace.zip",
+    "bytes": 3603680,
+    "sha256": "c943f8ed08e1f38c19c89f235e24d9fce948063f46a7783babf12a4a1dae9288"
+  },
+  {
+    "path": "v10-browser-initial-output/v10-save-reset-V6旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变-mobile/trace.zip",
+    "bytes": 1744213,
+    "sha256": "e3a3bd4d74e1ca33277e7b430a7d12262733c218e7418a96282b1f7139bef6cb"
+  },
+  {
+    "path": "v10-browser-initial-output/v10-save-reset-V7旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变-desktop/trace.zip",
+    "bytes": 3912672,
+    "sha256": "32be9f6e2c20be652886a35b379907e9359648921666261e423ffab7be199997"
+  },
+  {
+    "path": "v10-browser-initial-output/v10-save-reset-V7旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变-mobile/trace.zip",
+    "bytes": 1658843,
+    "sha256": "20d86e29fd8af2023d9f042f5be2f7786a0c88309a9c272bedba3b02da317d7a"
+  },
+  {
+    "path": "v10-browser-initial-output/v10-save-reset-V8旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变-desktop/trace.zip",
+    "bytes": 3757067,
+    "sha256": "8e5dd107c00e93fca43aee1d9b28351d5f0da3634d4d3835e26770f29ba497f9"
+  },
+  {
+    "path": "v10-browser-initial-output/v10-save-reset-V8旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变-mobile/trace.zip",
+    "bytes": 1700888,
+    "sha256": "ce3f4cae8b565f1abc0cee922e7b5cb709ed6201c0225c003347a0686bac45c7"
+  },
+  {
+    "path": "v10-browser-initial-output/v10-save-reset-V9旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变-desktop/trace.zip",
+    "bytes": 4097709,
+    "sha256": "74ec1711d8bb293340a17a8ab0b1a9626900bf194eb74d066aa00e87138f6a07"
+  },
+  {
+    "path": "v10-browser-initial-output/v10-save-reset-V9旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变-mobile/trace.zip",
+    "bytes": 1630690,
+    "sha256": "0b0216c39a10fe79963e910a6513facb2467ec5b9189d11cae8cb4e000b2d36c"
+  }
+]

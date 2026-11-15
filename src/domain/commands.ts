@@ -2,7 +2,7 @@ import type { SceneIntervention } from './events/narration';
 import { validateStageWrite } from './events/stages';
 import { z } from 'zod';
 import { AccountSchema, DebtRecordSchema, IncomeRecordSchema, VehicleAssetSchema } from './economy/schema';
-import { ActorRefSchema, CommandDataError, DataError, CountSchema, IdSchema, IdsSchema, MoneySchema, TextSchema, GameTimeSchema, requireData } from './common';
+import { ActorRefSchema, CommandDataError, DataError, CountSchema, IdSchema, MoneySchema, TextSchema, GameTimeSchema, requireData } from './common';
 import { EquipmentSchema } from './protagonist/schema';
 import { ImportantItemSchema } from './items/schema';
 import { NpcCreationSchema, NpcSchema } from './npc/schema';
@@ -11,7 +11,6 @@ import { StoredWorldEventSchema, WorldTaskSchema, HistoryRecordSchema } from './
 import { GameStateSchema } from './state';
 import type { GameState } from './state';
 import { variableCommandSchemas, applyVariableCommand, assertImportantItem, unequipItem } from './variableCommands';
-import { ContactReviewSchema } from './npc/contactReview';
 import { validateTaskTransitions } from './npc/lifecycle';
 import { deleteEvent, validateEventLinks, validateEventWrite } from './events/lifecycle';
 import { maintainSceneTransition } from './sceneTransitions';
@@ -41,7 +40,6 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('RecordOrgRelation'), organizationId: IdSchema, relation: TextSchema, reason: TextSchema }),
   z.strictObject({ ...base, type: z.literal('RegisterContact'), npcId: IdSchema, reason: TextSchema }),
   // Parse historical drafts/receipts, but never authorize a fresh deletion.
-  z.strictObject({ ...base, type: z.literal('RetireNpc'), npcId: IdSchema, expectedIdentityKey: TextSchema, reason: TextSchema, retainMemoryIds: IdsSchema, contactReview: ContactReviewSchema.optional() }),
   ...variableCommandSchemas,
 ]);
 export type DomainCommand = z.infer<typeof DomainCommandSchema>;
@@ -56,7 +54,7 @@ export function fingerprint(value: unknown): string {
 }
 
 function allEntityIds(s: GameState): string[] {
-  return [s.protagonist.id, ...s.timeline.map(entry => entry.id), ...[s.npc, s.retiredNpcs, s.items, s.organizations, s.events, s.retiredEvents, s.tasks, s.locations,
+  return [s.protagonist.id, ...s.timeline.map(entry => entry.id), ...[s.npc, s.items, s.organizations, s.events, s.retiredEvents, s.tasks, s.locations,
     s.economy.incomes, s.economy.debts, s.economy.properties, s.economy.vehicles, s.economy.otherAssets].flatMap(Object.keys)];
 }
 function newEntity(s: GameState, id: string) {
@@ -106,14 +104,7 @@ function apply(s: GameState, c: DomainCommand, turnId: string) {
         requireData(c.npc.gender === 'female' && (c.npc.age === undefined || c.npc.age >= 18),
           'NPC_KIND', '仅重要成年女性 NPC 可持有私密档案');
       }
-      // 再出现只能复用历史稳定身份，不能把旧人换ID重新建档或恢复不存在的旧关系。
-      if (s.retiredNpcs[c.npc.id]) {
-        const prior = s.retiredNpcs[c.npc.id];
-        requireData(prior.identityKey === c.npc.identityKey && prior.name === c.npc.name, 'NPC_IDENTITY', '历史身份不一致');
-        delete s.retiredNpcs[c.npc.id];
-      }
       newEntity(s, c.npc.id);
-      requireData(!Object.values(s.retiredNpcs).some((n) => n.identityKey === c.npc.identityKey), 'DUPLICATE_NPC', '历史人物应复用稳定ID');
       requireData(!Object.values(s.npc).some((npc) => npc.identityKey === c.npc.identityKey), 'DUPLICATE_NPC', 'NPC 稳定身份已存在');
       requireData(!Object.values(s.npc).some((npc) => npc.aliases.includes(c.npc.name)
         || c.npc.aliases.includes(npc.name) || npc.aliases.some((alias) => c.npc.aliases.includes(alias))
@@ -124,9 +115,7 @@ function apply(s: GameState, c: DomainCommand, turnId: string) {
     case 'RegisterContact':
       requireData(s.npc[c.npcId], 'NOT_FOUND', '联系人不存在');
       if (!s.contactNpcIds.includes(c.npcId)) s.contactNpcIds.push(c.npcId);
-      s.contactReviewNpcIds = s.contactReviewNpcIds.filter((id) => id !== c.npcId);
       break;
-    case 'RetireNpc': throw new DataError('NPC_RETAINED', '正式NPC永久保留完整档案，旧退场命令不可再执行');
     case 'SetEquipment': s.protagonist.currentWear = c.equipment; break;
     case 'TransferItem': {
       const item = s.items[c.itemId];
@@ -204,7 +193,7 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
   if (parsed.length > 0 && fresh.length === 0) return current;
   requireData(current.revision === expectedRevision, 'REVISION_CONFLICT', '存档版本已变化，请重新读取');
   if (fresh.length === 0) return current;
-  // 事件清理在引用写入后执行；旧RetireNpc仅可解析，任何新执行均整批拒绝。
+  // 事件清理在引用写入后执行。
   const cleanup = (c: DomainCommand) => c.type==='DeleteEvent';
   const ordered = [...fresh.filter((c) => !cleanup(c)), ...fresh.filter(cleanup)];
   for (const command of ordered) {

@@ -12,20 +12,20 @@ async function read(page:Page) {
     try{return await repo.loadGame('save-a');}finally{repo.close();}
   });
 }
-async function seed(page:Page,version:6|7) {
-  return page.evaluate(async version=>{
+async function seed(page:Page) {
+  return page.evaluate(async()=>{
     const paths=['/src/services/storage/saveRepository.ts','/src/tests/fixtures/npcUnified.ts','/src/domain/drafts.ts'];
-    const [{SaveRepository},{legacyNpcMemories},{createTurnDraft}]=await Promise.all(paths.map(path=>import(path)));
-    const raw=legacyNpcMemories(version),repo=await SaveRepository.open();
+    const [{SaveRepository},{unifiedNpcMemories},{createTurnDraft}]=await Promise.all(paths.map(path=>import(path)));
+    const raw=unifiedNpcMemories(),repo=await SaveRepository.open();
     try {
       await new Promise<void>((resolve,reject)=>{
         const open=indexedDB.open('heijinwangchao');open.onerror=()=>reject(open.error);
         open.onsuccess=()=>{const db=open.result,tx=db.transaction('saves','readwrite');tx.objectStore('saves').put(raw);tx.oncomplete=()=>{db.close();resolve();};tx.onabort=()=>{db.close();reject(tx.error);};};
       });
       await repo.saveDraft(createTurnDraft(raw.saveId,raw.revision,'unified-next','regular',''),null);
-      return {memories:[...raw.npc['npc-a'].memories,...raw.npc['npc-a'].longTermMemories],summary:raw.memories.npcSummaries['npc-a'],clock:raw.worldClock,journal:raw.journal};
+      return {memories:raw.npc['npc-a'].memories,summary:raw.memories.npcSummaries['npc-a'],clock:raw.worldClock,journal:raw.journal};
     } finally {repo.close();}
-  },version);
+  });
 }
 // Fixture-only persistence of internal pure transitions. No player switch or new
 // domain command is introduced by this batch.
@@ -42,10 +42,10 @@ async function switchFixture(page:Page,mode:'sleep'|'restore') {
   },mode);
 }
 
-for(const version of [6,7] as const) test(`V${version}实际浏览器迁移与身份往返：记忆和总结可读，香闺七字段完整，零模型请求`,async({page})=>{
+test('V10实际浏览器身份往返：记忆和总结可读，香闺七字段完整，零模型请求',async({page})=>{
   const calls:string[]=[];await page.route('https://**/*',route=>{calls.push(route.request().url());return route.abort();});
-  await page.goto('/');const old=await seed(page,version);await page.goto('/#game/save-a');await page.reload();await expect(page.locator('.game-layout')).toBeVisible();
-  const baseline=(await read(page)).state;expect(baseline.schemaVersion).toBe(9);
+  await page.goto('/');const old=await seed(page);await page.goto('/#game/save-a');await page.reload();await expect(page.locator('.game-layout')).toBeVisible();
+  const baseline=(await read(page)).state;expect(baseline.schemaVersion).toBe(10);
   expect(baseline.npc['npc-a'].memories).toEqual(old.memories);expect(baseline.memories.npcSummaries['npc-a']).toEqual(old.summary);
   const sleeping=await switchFixture(page,'sleep');await page.reload();await expect(page.locator('.game-layout')).toBeVisible();
   expect((await read(page)).state).toEqual(sleeping);
@@ -79,7 +79,7 @@ test('关闭Chromium进程后重开：统一原文、旧总结来源与休眠七
   };
   let context:Awaited<ReturnType<typeof launch>>|undefined;
   try {
-    context=await launch();let page=context.pages()[0];await page.goto(baseURL!);await seed(page,7);await page.goto(baseURL+'#game/save-a');await expect(page.locator('.game-layout')).toBeVisible();
+    context=await launch();let page=context.pages()[0];await page.goto(baseURL!);await seed(page);await page.goto(baseURL+'#game/save-a');await expect(page.locator('.game-layout')).toBeVisible();
     await switchFixture(page,'sleep');await page.reload();await expect(page.locator('.game-layout')).toBeVisible();const before=await read(page);
     await context.close();context=undefined;context=await launch();page=context.pages()[0];await page.goto(baseURL+'#game/save-a');await expect(page.locator('.game-layout')).toBeVisible();
     expect(await read(page)).toEqual(before);expect(before.state.dormantNpcProfiles['npc-a'].profile.privateProfile).toEqual(fullPrivateProfile);expect(calls).toEqual([]);

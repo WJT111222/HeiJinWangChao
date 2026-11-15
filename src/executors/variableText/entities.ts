@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { DomainCommandSchema } from '../../domain/commands';
 import type { DomainCommand } from '../../domain/commands';
 import { IdSchema } from '../../domain/common';
+import { variableCommandSchemas } from '../../domain/variableCommands';
 import type { ParsedVariableCommand } from '../../parsers/variableText';
 import { failed } from './model';
 import { diagnosticForObject, diagnosticForRule } from './diagnostics';
@@ -9,6 +10,8 @@ import type { ExecutionResult } from './model';
 
 const object = z.record(z.string(), z.unknown());
 export const textInputSchema = z.string().trim().min(1).max(8192);
+/** 好感唯一写入格式：set npc[id].affinityChange = {to,reason,relationshipText}；前值由程序读取，不接受from。 */
+export const affinityChangeInput = variableCommandSchemas[1].shape.affinityChange.unwrap().omit({ from: true }).extend({ relationshipText: textInputSchema });
 export const memoryInputSchema = z.strictObject({ text: textInputSchema, knowledgeKind: z.enum(['observed', 'reported', 'suspected']),
   knowledgeSource: textInputSchema, visibility: z.enum(['npc_private', 'internal', 'player_known']) });
 /** 有限实体操作；创建值使用原领域Schema，路径只绑定稳定ID，不是任意字段补丁。 */
@@ -20,7 +23,7 @@ export function compileEntity(command: ParsedVariableCommand, common: { commandI
   const relation = command.path.nodes.length === 3 && root.name === 'organizations' && field?.kind === 'field' && field.name === 'protagonistRelation';
   const organizationState = command.path.nodes.length === 3 && root.name === 'organizations' && field?.kind === 'field' && field.name === 'state';
   const npc = command.path.nodes.length === 3 && root.name === 'npc' && field?.kind === 'field'
-    && ['affinityChange', 'activeGoals', 'contact', 'specialProfile'].includes(field.name);
+    && ['activeGoals', 'contact', 'specialProfile'].includes(field.name);
   if (!creation && !relation && !npc && !organizationState) return;
   if (command.operation !== 'set') return failed('unsupported_operation');
   let raw: unknown;
@@ -52,9 +55,8 @@ export function compileEntity(command: ParsedVariableCommand, common: { commandI
       if (Object.keys(data).some((key) => key !== 'reason')) return failed('type_mismatch', null, [], diagnosticForRule(command, 'schema_constraint'));
       raw = { ...common, type: 'RegisterContact', npcId: id.id, ...data };
     } else {
-      if (Object.keys(data).some((key) => !['from', 'to', 'reason', 'relationshipText'].includes(key))) return failed('type_mismatch', null, [], diagnosticForRule(command, 'schema_constraint'));
-      const { relationshipText, ...affinityChange } = data;
-      raw = { ...common, type: 'UpdateNpc', expectedRevision, npcId: id.id, changes: { relationshipText }, affinityChange };
+      // 好感由取值语义层的 npc[id].affinityChange 处理（需读取正式前值），这里没有其他结构化入口。
+      return failed('unsupported_path');
     }
   }
   const parsed = DomainCommandSchema.safeParse(raw);

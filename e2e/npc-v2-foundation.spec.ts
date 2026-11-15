@@ -26,7 +26,7 @@ test('NPC新字段与休眠档案真实持久化、刷新及原子撤回；零�
   });
   await page.goto('/#game/save-a'); await page.reload(); await expect(page.locator('.game-layout')).toBeVisible();
   const before = await stored(page);
-  expect(before.state.schemaVersion).toBe(9); expect(before.undo.available).toBe(1);
+  expect(before.state.schemaVersion).toBe(10); expect(before.undo.available).toBe(1);
   expect(before.state.npc.person.usualLocations[0]).toMatchObject({ locationId: 'home', knownToProtagonist: false });
   expect(before.state.npc.special.kind).toBe('ordinary'); expect(before.state.dormantNpcProfiles.special.profile).toHaveProperty('privateProfile');
   await page.getByRole('button', { name: '撤回（1）', exact: true }).click();
@@ -40,27 +40,36 @@ test('NPC新字段与休眠档案真实持久化、刷新及原子撤回；零�
   expect(calls).toEqual([]);
 });
 
-test('V6联系人/初始同伴无损升级，旧RetireNpc拒绝且刷新不删档案', async ({ page }) => {
+test('V6旧档不可读且原样保留；V10档上旧RetireNpc拒绝，刷新不删档案', async ({ page }) => {
   const calls: string[] = [];
   await page.route('https://**/*', route => { calls.push(route.request().url()); return route.abort(); });
   await page.goto('/');
-  const original = await page.evaluate(async () => {
+  const legacyChecked = await page.evaluate(async () => {
     const repoPath = '/src/services/storage/saveRepository.ts', fixturePath = '/src/tests/fixtures/world.ts';
     const { SaveRepository } = await import(repoPath), { worldState } = await import(fixturePath);
-    const state = worldState(); state.initialCompanionId = 'npc-a'; state.contactNpcIds = ['npc-a']; state.contactReviewNpcIds = ['scene'];
-    const repo = await SaveRepository.open(); await repo.create(state); repo.close();
+    const state = worldState(); state.initialCompanionId = 'npc-a'; state.contactNpcIds = ['npc-a'];
+    let repo = await SaveRepository.open(); await repo.create(state); repo.close();
     const raw = { ...state, schemaVersion: 6 };
-    await new Promise<void>((resolve, reject) => {
+    const put = (value: unknown) => new Promise<void>((resolve, reject) => {
       const request = indexedDB.open('heijinwangchao'); request.onsuccess = () => {
-        const db = request.result, tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(raw);
+        const db = request.result, tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(value);
         tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); };
       }; request.onerror = () => reject(request.error);
-    }); return state;
+    });
+    await put(raw);
+    repo = await SaveRepository.open();
+    let status: string | undefined, loadError = '';
+    try {
+      status = String((await repo.list())[0]?.status);
+      try { await repo.load('save-a'); } catch (error) { loadError = String((error as Error).message); }
+    } finally { repo.close(); }
+    await put(state);
+    return { status, loadError };
   });
+  expect(legacyChecked.status).toBe('unreadable'); expect(legacyChecked.loadError).toContain('只支持 V10 存档');
   await page.goto('/#game/save-a'); await page.reload(); await expect(page.locator('.game-layout')).toBeVisible();
-  const migrated = (await stored(page)).state;
-  expect(migrated).toEqual(original); expect(migrated.schemaVersion).toBe(9);
-  expect(migrated.npc['npc-a'].phoneContact).toBeUndefined(); expect(migrated.npc['npc-a'].usualLocations).toBeUndefined();
+  const current = (await stored(page)).state;
+  expect(current.schemaVersion).toBe(10); expect(current.initialCompanionId).toBe('npc-a'); expect(current.contactNpcIds).toEqual(['npc-a']);
   const failed = await page.evaluate(async () => {
     const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open();
     try {
@@ -72,9 +81,8 @@ test('V6联系人/初始同伴无损升级，旧RetireNpc拒绝且刷新不删�
     } finally { repo.close(); }
   });
   expect(failed).toBe(true); await page.reload(); await expect(page.locator('.game-layout')).toBeVisible();
-  expect((await stored(page)).state).toEqual(migrated); expect(calls).toEqual([]);
+  expect((await stored(page)).state).toEqual(current); expect(calls).toEqual([]);
 });
-
 test('完整关闭浏览器再打开，持久人物与休眠专属档案仍一致', async ({ baseURL }, info) => {
   test.setTimeout(60000);
   const directory = await mkdtemp(join(tmpdir(), 'heijin-npc-v2-'));

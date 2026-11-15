@@ -24,7 +24,7 @@ function Outcome({event,desktop=false}:{event:ArchiveEvent;desktop?:boolean}) {
 function EventFile({event,view,archive,onSelect,onOpenHistory,children,desktop=false,links}:{event:ArchiveEvent;view:PlayerView;archive:ReturnType<typeof eventArchive>;onSelect:(id:string)=>void;onOpenHistory?:()=>void;children?:ReactNode;desktop?:boolean;links?:ArchiveLinks}) {
   const d=event.detail,raw=event.raw;
   const actors=d?.actorRefs.map(ref=>ref.kind==='protagonist'?view.protagonist.name:ref.kind==='npc'
-    ?[...view.npc,...view.retiredNpcs].find(n=>n.id===ref.id)?.name??ref.id:view.organizations.find(o=>o.id===ref.id)?.name??ref.id);
+    ?view.npc.find(n=>n.id===ref.id)?.name??ref.id:view.organizations.find(o=>o.id===ref.id)?.name??ref.id);
   const actorTags=d?.actorRefs.map((ref,i)=>{
     const org=ref.kind==='organization'?view.organizations.find(o=>o.id===ref.id):undefined;
     return <span key={`${ref.kind}:${ref.id}:${i}`} className={`actor ${ref.kind==='protagonist'?'a-me':ref.kind==='organization'?'a-org':'a-npc'}`} data-kind={org?.kind}><i aria-hidden="true">{Array.from(actors?.[i]??'')[0]}</i>{actors?.[i]}</span>;

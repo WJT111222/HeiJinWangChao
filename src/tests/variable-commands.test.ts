@@ -71,7 +71,7 @@ function withItem() {
 
 describe('M4-P2 八类严格领域命令', () => {
   it('真实目录包含旧十四类和八类新命令，所有类型均可导出严格 JSON Schema', () => {
-    expect(DomainCommandSchema.options).toHaveLength(29);
+    expect(DomainCommandSchema.options).toHaveLength(28);
     expect(commandCatalog('variables').commandTypes).toContain('UpdateOrganization');
     expect(commandCatalog('variables').schema.oneOf).toHaveLength(26);
     for (const type of [
@@ -577,12 +577,12 @@ describe('证据防护与领域提示词绑定', () => {
         userInput: current.userInput,
         domains: selection.domains,
       });
-      expect(prompt.modules.some((module) => module.id === `stages.${mode}.variables.text`)).toBe(true);
+      expect(prompt.modules.some((module) => module.id === `stages.${mode}.variables`)).toBe(true);
       for (const domain of selection.domains)
         expect(
           prompt.modules.filter(
             (module) =>
-              module.id === `variableGroups.${domain}.${mode === 'opening' ? 'init' : 'update'}.text`,
+              module.id === `variableGroups.${domain}.${mode === 'opening' ? 'init' : 'update'}`,
           ),
         ).toHaveLength(1);
       expect(

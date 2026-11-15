@@ -82,9 +82,9 @@ describe('源操作语义与有限领域适配', () => {
     const state = await simulate('SET gameState.protagonist.skills[1] = "骑行"\npush protagonist.skills = "游泳"\ndelete protagonist.skills[0]\ndelete protagonist.skills[1]');
     expect(state.protagonist.skills).toEqual(['骑行', '游泳']);
   });
-  it('好感set/add由程序读取连续前值，保留关系字段及人物身份', async () => {
-    const state = await simulate('set npc[npc-a].relationshipText = "同事"\nset npc[npc-a].affinity = 10\nadd npc[npc-a].affinity = -3');
-    expect(state.npc['npc-a'].affinity).toBe(7); expect(state.npc['npc-a'].relationshipText).toBe('同事');
+  it('好感affinityChange由程序读取连续前值，可降为负值，保留关系字段及人物身份', async () => {
+    const state = await simulate('set npc[npc-a].affinityChange = {"to":10,"reason":"主角在会上替自己说话","relationshipText":"同事"}\nset npc[npc-a].affinityChange = {"to":-3,"reason":"随后发现主角隐瞒了报价","relationshipText":"心存芥蒂的同事"}');
+    expect(state.npc['npc-a'].affinity).toBe(-3); expect(state.npc['npc-a'].relationshipText).toBe('心存芥蒂的同事');
     expect(state.npc.scene.affinity).toBe(fixture().state.npc.scene.affinity);
   });
   it('特殊NPC目标数组可追加、改项、删除，不修改别人的记忆', async () => {
@@ -154,17 +154,22 @@ describe('三标签严格失败与安全步骤诊断', () => {
   });
 });
 
-it('未确认同伴的好感占位不能作为add的数值基线', async () => {
+it.each(['add npc[npc-a].affinity = 5', 'set npc[npc-a].affinity = 5', 'add npc[npc-a].affinityChange = 5'])('纯数值好感入口“%s”已不合法，整批拒绝且不改状态', async (line: string) => {
   const { state, draft } = fixture(); state.initialCompanionId = 'npc-a'; state.npc['npc-a'].affinity = 0; delete state.npc['npc-a'].affinityConfirmed;
-  const before = structuredClone(state), ast = parseVariableText(reply('add npc[npc-a].affinity = 5')); if (!ast.ok) throw Error('parser');
-  const result = await compileVariableCommands(ast.value, state, { draft, expectedRevision: state.revision });
-  expect(result).toMatchObject({ ok: false, error: { code: 'type_mismatch' } }); expect(state).toEqual(before);
+  const before = structuredClone(state), ast = parseVariableText(reply(`set npc[npc-a].healthText = "正常"\n${line}`)); if (!ast.ok) throw Error('parser');
+  const context = { draft, expectedRevision: state.revision }, plan = await compileVariableCommands(ast.value, state, context);
+  const result = plan.ok ? await simulateVariablePlan(plan.value, state, context) : plan;
+  expect(result.ok).toBe(false); expect(state).toEqual(before);
 });
-it('未确认同伴由模型set绝对好感后可在同批add，原from=null边界不变', async () => {
+it('未确认同伴首次affinityChange以from=null确认，同批第二笔按上一笔结果', async () => {
   const { state, draft } = fixture(); state.initialCompanionId = 'npc-a'; state.npc['npc-a'].affinity = 0; delete state.npc['npc-a'].affinityConfirmed;
-  const ast = parseVariableText(reply('set npc[npc-a].affinity = 2\nadd npc[npc-a].affinity = 3')); if (!ast.ok) throw Error('parser');
+  const ast = parseVariableText(reply('set npc[npc-a].affinityChange = {"to":2,"reason":"重逢时略显生疏","relationshipText":"多年未见的老友"}\nset npc[npc-a].affinityChange = {"to":5,"reason":"聊起旧事后放松下来","relationshipText":"重新熟络的老友"}')); if (!ast.ok) throw Error('parser');
   const context = { draft, expectedRevision: state.revision }, plan = await compileVariableCommands(ast.value, state, context); if (!plan.ok) throw Error(plan.error.code);
-  expect(plan.value.commands[0]).toMatchObject({ type: 'UpdateNpc', affinityChange: { from: null, to: 2 } });
+  expect(plan.value.commands[0]).toMatchObject({ type: 'UpdateNpc', affinityChange: { from: null, to: 2, reason: '重逢时略显生疏' }, changes: { relationshipText: '多年未见的老友' } });
+  expect(plan.value.commands[1]).toMatchObject({ type: 'UpdateNpc', affinityChange: { from: 2, to: 5, reason: '聊起旧事后放松下来' }, changes: { relationshipText: '重新熟络的老友' } });
   const result = await simulateVariablePlan(plan.value, state, context); if (!result.ok) throw Error(result.error.code);
   expect(result.value.npc['npc-a'].affinity).toBe(5); expect(result.value.npc['npc-a'].affinityConfirmed).toBe(true);
+  expect(result.value.npc['npc-a'].memories).toEqual(state.npc['npc-a'].memories);
+  const replay = await compileVariableCommands(ast.value, result.value, context); if (!replay.ok) throw Error(replay.error.code);
+  expect(await simulateVariablePlan(replay.value, result.value, context)).toEqual(result);
 });

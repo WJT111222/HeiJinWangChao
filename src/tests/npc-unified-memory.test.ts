@@ -1,6 +1,5 @@
 import { expect, it } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
-import { migrateSave } from '../services/storage/migrations';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { GameStateSchema } from '../domain/state';
 import { hibernateNpcProfile, restoreNpcProfile } from '../domain/npc/profiles';
@@ -14,27 +13,13 @@ import { compileVariableCommands, simulateVariablePlan } from '../executors/vari
 import { parseVariables, parseWorld } from '../services/validation/aiOutputs';
 import { projectTurn } from '../domain/turnProjection';
 import { textVariableCatalog } from '../executors/variableText/catalog';
-import { legacyNpcMemories, fullPrivateProfile } from './fixtures/npcUnified';
+import { unifiedNpcMemories, fullPrivateProfile } from './fixtures/npcUnified';
 import { npcSummaryOutput } from './fixtures/npcMemory';
 import { worldDraft, worldState, worldResult } from './fixtures/world';
 import { completeDraft, elapsedVariables, submission } from './fixtures/turn';
 
-it.each([6, 7] as const)('V%s两层原文、来源与总结无损整合，不猜造认知、不改变世界历史', version => {
-  const raw = legacyNpcMemories(version), before = structuredClone(raw), person = raw.npc['npc-a'];
-  if (person.kind !== 'special') throw Error();
-  const expected = [...person.memories, ...person.longTermMemories];
-  const result = migrateSave(raw);
-  expect(result.npc['npc-a'].memories).toEqual(expected);
-  expect(result.npc['npc-a']).toMatchObject({ longTermMemories: [], privateProfile: fullPrivateProfile });
-  expect(result.npc['npc-a'].memories.find(m => m.id === 'npc-a-memory-21')!.knowledgeKind).toBeUndefined();
-  expect(result.memories).toEqual(raw.memories); expect(result.journal).toEqual(raw.journal);
-  expect(result.worldClock).toBe(raw.worldClock); expect(result.turnNumber).toBe(raw.turnNumber); expect(raw).toEqual(before);
-  expect(npcSummaryCandidates(result, 'npc-a')).toHaveLength(6);
-  expect(migrateSave(result)).toEqual(result); expect(result.schemaVersion).toBe(9);
-});
-
 it('含真实来源的总结和全部原文随特殊身份降级/恢复保留；香闺七字段逐字往返', () => {
-  const state = migrateSave(legacyNpcMemories()), original = structuredClone(state), person = state.npc['npc-a'];
+  const state = unifiedNpcMemories(), original = structuredClone(state), person = state.npc['npc-a'];
   const sleeping = hibernateNpcProfile(state, person.id, person.identityKey);
   expect(sleeping.npc['npc-a'].kind).toBe('ordinary'); expect(sleeping.npc['npc-a'].memories).toEqual(person.memories);
   expect(sleeping.memories).toEqual(state.memories);
@@ -46,7 +31,7 @@ it('含真实来源的总结和全部原文随特殊身份降级/恢复保留；
 });
 
 it('降级后的普通人物可继续记录和总结；重复恢复不复制来源或重新总结', () => {
-  const state = migrateSave(legacyNpcMemories(7, false)), id = 'npc-a', identity = state.npc[id].identityKey;
+  const state = unifiedNpcMemories(false), id = 'npc-a', identity = state.npc[id].identityKey;
   const sleeping = hibernateNpcProfile(state, id, identity), batch = planNpcSummary(sleeping, id)!;
   expect(batch.entries).toHaveLength(15);
   const summarized = applyNpcSummary(sleeping, batch, parseNpcSummary(JSON.stringify(npcSummaryOutput(batch)), batch, 'normal-summary'));
@@ -57,32 +42,12 @@ it('降级后的普通人物可继续记录和总结；重复恢复不复制来�
 });
 
 it('无可靠来源的旧总结保守保留，身份切换不擅自启用付费重做', () => {
-  const raw = legacyNpcMemories(), summary = raw.memories.npcSummaries['npc-a'][0]; delete summary.npcProvenance;
-  const state = migrateSave(raw), sleeping = hibernateNpcProfile(state, 'npc-a', state.npc['npc-a'].identityKey);
+  const state = unifiedNpcMemories(); delete state.memories.npcSummaries['npc-a'][0].npcProvenance;
+  const raw = structuredClone(state);
+  const sleeping = hibernateNpcProfile(state, 'npc-a', state.npc['npc-a'].identityKey);
   expect(sleeping.memories.npcSummaries).toEqual(raw.memories.npcSummaries);
   expect(planNpcSummary(sleeping, 'npc-a')).toBeUndefined();
   expect(restoreNpcProfile(sleeping, 'npc-a', state.npc['npc-a'].identityKey).memories).toEqual(state.memories);
-});
-
-it.each(['same-id', 'other-owner', 'public-id', 'missing-source'] as const)('旧记忆%s歧义安全拒绝，原输入不变', issue => {
-  const raw = legacyNpcMemories(), owner = raw.npc['npc-a']; if (owner.kind !== 'special') throw Error();
-  if (issue === 'same-id') owner.longTermMemories[0].id = owner.memories[0].id;
-  if (issue === 'other-owner') raw.npc['npc-b'].memories[0].id = owner.memories[0].id;
-  if (issue === 'public-id') raw.memories.short.push({id:owner.memories[0].id,text:'公开记忆',sourceTurnIds:[],affectedEntityRefs:[],visibility:'player_known',createdAtGameTime:raw.worldClock});
-  if (issue === 'missing-source') owner.longTermMemories = owner.longTermMemories.filter(m => m.id !== raw.memories.npcSummaries['npc-a'][0].npcProvenance!.sourceMemoryIds[1]);
-  const before = structuredClone(raw); expect(() => migrateSave(raw)).toThrow(); expect(raw).toEqual(before);
-});
-
-it('旧V7休眠长期经历归还所属人物统一记忆，专属原文仍留休眠，不授予其他人知识', () => {
-  const raw = legacyNpcMemories(7, false), person = raw.npc['npc-a']; if (person.kind !== 'special') throw Error();
-  const { detailedBackground, activeGoals, habits, longTermMemories, offscreenTaskIds, privateProfile, ...base } = person;
-  raw.npc['npc-a'] = { ...base, kind:'ordinary' };
-  raw.dormantNpcProfiles = { 'npc-a': { id:'npc-a', identityKey:person.identityKey, profile:{ detailedBackground, activeGoals, habits, longTermMemories, offscreenTaskIds, privateProfile } } };
-  const next = migrateSave(raw);
-  expect(next.npc['npc-a'].memories).toHaveLength(21); expect(next.npc['npc-b']).toEqual(raw.npc['npc-b']);
-  expect(next.npc['npc-a'].knownInformation).toEqual(raw.npc['npc-a'].knownInformation);
-  expect(next.dormantNpcProfiles!['npc-a'].profile.privateProfile).toEqual(fullPrivateProfile);
-  expect(next.dormantNpcProfiles!['npc-a'].profile.longTermMemories).toEqual([]);
 });
 
 it.each(['ordinary', 'special'] as const)('%s实际文本→命令→模拟→正式重验只写统一人物记忆，可空命令且不强制记录', async kind => {
@@ -114,7 +79,7 @@ it.each(['ordinary','special'] as const)('%s旧layer命令和已应用回执保�
 });
 
 it('最终请求目录不要求长期层；原始记忆仍读全，休眠香闺资料不泄漏', async () => {
-  const state = migrateSave(legacyNpcMemories()), sleeping = hibernateNpcProfile(state,'npc-a',state.npc['npc-a'].identityKey);
+  const state = unifiedNpcMemories(), sleeping = hibernateNpcProfile(state,'npc-a',state.npc['npc-a'].identityKey);
   for (const stage of ['story','variables','world'] as const) {
     const draft = worldDraft(); draft.baseSaveRevision = sleeping.revision; draft.userInput='找npc-a核对原始经历';
     const request = await composePrompt({stage,mode:'regular',state:sleeping,draft,settings:defaultSettings(),userInput:draft.userInput});
@@ -130,7 +95,7 @@ it('最终请求目录不要求长期层；原始记忆仍读全，休眠香闺�
   expect(schema.properties).not.toHaveProperty('layer');
 });
 
-it('V8正式存储、回合快照、撤回及重开保留统一记忆与香闺全部字段', async () => {
+it('正式存储、回合快照、撤回及重开保留统一记忆与香闺全部字段', async () => {
   const repo = await SaveRepository.open('unified', new IDBFactory());
   try {
     const seed = worldState(); seed.npc['npc-a'] = { ...seed.npc['npc-a'], kind:'special', detailedBackground:'独立背景',activeGoals:[],habits:[],longTermMemories:[],offscreenTaskIds:[],age:30,gender:'female',privateProfile:fullPrivateProfile };
@@ -154,11 +119,11 @@ async function rawStore(factory: IDBFactory, name: string, table: string, action
   });
 }
 
-it.each([6,7] as const)('V%s实际Repository迁移、旧层候选提交、旧快照撤回和重开完整保留来源', async version => {
-  const factory = new IDBFactory(), name='legacy-unified-'+version;
+it('实际Repository候选提交、旧快照撤回和重开完整保留来源', async () => {
+  const factory = new IDBFactory(), name='legacy-unified';
   let repo = await SaveRepository.open(name,factory);
   try {
-    await repo.create(worldState()); const raw=legacyNpcMemories(version);
+    await repo.create(worldState()); const raw=unifiedNpcMemories();
     await rawStore(factory,name,'saves',s=>s.put(raw));
     const baseline = await repo.load('save-a'); expect(baseline.npc['npc-a'].memories).toHaveLength(21);
     const next = await completeDraft(repo,{variables:{commands:[
@@ -185,14 +150,13 @@ it.each([6,7] as const)('V%s实际Repository迁移、旧层候选提交、旧快
   } finally { repo.close(); }
 });
 
-it('迁移冲突或来源丢失不写回正式状态、不删除旧快照或草稿', async () => {
+it('旧版本记录读取失败时不写回正式状态、不删除旧快照或草稿', async () => {
   const factory=new IDBFactory(), name='bad-legacy',repo=await SaveRepository.open(name,factory);
   try {
-    await repo.create(worldState()); const legacy=legacyNpcMemories();
+    await repo.create(worldState()); const legacy=unifiedNpcMemories();
     await rawStore(factory,name,'saves',s=>s.put(legacy));
     const committed=await repo.commitTurn(submission(await completeDraft(repo,{variables:await elapsedVariables(repo,'日常',60),world:worldResult()}),''));
-    const raw={...committed.state,schemaVersion:7},owner=raw.npc['npc-a'];if(owner.kind!=='special')throw Error();
-    owner.longTermMemories=[{...owner.memories[0]}];
+    const raw={...committed.state,schemaVersion:9};
     await rawStore(factory,name,'saves',s=>s.put(raw));
     const records=await rawStore(factory,name,'turnUndo',s=>s.getAll()) as {stateJSON:string}[];
     records[0].stateJSON=JSON.stringify(legacy);await rawStore(factory,name,'turnUndo',s=>s.put(records[0]));
@@ -203,10 +167,10 @@ it('迁移冲突或来源丢失不写回正式状态、不删除旧快照或草�
   } finally {repo.close();}
 });
 
-it.each([6,7] as const)('V%s来源批次在迁移写回后仍可完成一次正常总结，取消和重复保存不改原文', async version => {
-  const factory=new IDBFactory(), name='summary-migrate-'+version,repo=await SaveRepository.open(name,factory);
+it('来源批次可完成一次正常总结，取消和重复保存不改原文', async () => {
+  const factory=new IDBFactory(), name='summary-batch',repo=await SaveRepository.open(name,factory);
   try {
-    await repo.create(worldState());const raw=legacyNpcMemories(version,false);
+    await repo.create(worldState());const raw=unifiedNpcMemories(false);
     await rawStore(factory,name,'saves',s=>s.put(raw));
     const context=await repo.loadMemoryContext('save-a'), batch=planNpcSummary(context.state,'npc-a')!;
     const outputs=parseNpcSummary(JSON.stringify(npcSummaryOutput(batch)),batch,'from-old-sources');
@@ -224,7 +188,7 @@ it.each([6,7] as const)('V%s来源批次在迁移写回后仍可完成一次正�
 it('从旧长期来源启动的迟到总结不能越过持久epoch污染撤回后的时间线', async () => {
   const factory=new IDBFactory(), name='late-old-summary',repo=await SaveRepository.open(name,factory);
   try {
-    await repo.create(worldState()); await rawStore(factory,name,'saves',s=>s.put(legacyNpcMemories(7,false)));
+    await repo.create(worldState()); await rawStore(factory,name,'saves',s=>s.put(unifiedNpcMemories(false)));
     const context=await repo.loadMemoryContext('save-a'), batch=planNpcSummary(context.state,'npc-a')!;
     const outputs=parseNpcSummary(JSON.stringify(npcSummaryOutput(batch)),batch,'late');
     const committed=await repo.commitTurn(submission(await completeDraft(repo,{variables:await elapsedVariables(repo,'日常',60),world:worldResult()}),''));

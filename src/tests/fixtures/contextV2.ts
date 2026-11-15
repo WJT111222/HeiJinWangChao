@@ -42,8 +42,6 @@ export function contextV2Fixture() {
   }
   state.initialCompanionId = 'companion';
   state.contactNpcIds = ['scene-ordinary'];
-  state.contactReviewNpcIds = ['off-ordinary'];
-  state.retiredNpcs.retired = { id: 'retired', identityKey: 'retired-identity', name: '已退场人物', aliases: [], retiredAt: gameTime, sourceTurnIds: ['past-1'] };
   const ownerRef = { kind: 'protagonist' as const, id: 'hero' };
   state.items.bag = { id: 'bag', name: '背包标记', category: 'other', quantity: 1, ownerRef, conditionText: '完整' };
   state.items.offscreenItem = { id: 'offscreenItem', name: '场外人物物品标记', category: 'other', quantity: 1, ownerRef: { kind: 'npc', id: 'off-ordinary' }, conditionText: '完整' };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import manifest from '../../prompts/manifest.json';
 import sources from '../../prompts/sources.lock.json';
@@ -95,7 +95,7 @@ describe('M3-P1 静态资源注册（不是提示词组装或 API 请求）', ()
         // 只检查注册声明，不生成消息或拼接任何正文。
         const eligible = promptManifest.modules.filter(
           (module) =>
-            module.activation !== 'never' && module.variableProtocol !== 'text' &&
+            module.activation !== 'never' &&
             module.applicableStages.includes(stage) &&
             module.modes.includes(mode),
         );
@@ -130,7 +130,7 @@ describe('M3-P1 静态资源注册（不是提示词组装或 API 请求）', ()
       expect(PromptManifestSchema.safeParse(altered(id, patch)).success).toBe(false);
   });
   it('九个变量组各保留 init/update/offscreen，五项记忆仍为独立按需任务', () => {
-    const groups = promptManifest.modules.filter((m) => m.category === 'variable_group' && m.variableProtocol !== 'text');
+    const groups = promptManifest.modules.filter((m) => m.category === 'variable_group');
     const domains = [
       'protagonist',
       'npc_ordinary',
@@ -142,7 +142,10 @@ describe('M3-P1 静态资源注册（不是提示词组装或 API 请求）', ()
       'org_civil',
       'org_business',
     ];
-    expect(groups).toHaveLength(27);
+    // 9 域 × init/update/offscreen ＋ 4 个组织的 World 建档变体（原 JSON 双轨已随 V10 清理移除）。
+    expect(groups).toHaveLength(31);
+    for (const org of ['org_gang', 'org_government', 'org_civil', 'org_business'])
+      expect(moduleById(`variableGroups.${org}.init.world`).applicableStages).toEqual(['world']);
     expect([...new Set(groups.map((m) => m.domain))].sort()).toEqual(domains.sort());
     for (const domain of domains) {
       const init = moduleById(`variableGroups.${domain}.init`);
@@ -283,7 +286,7 @@ describe('正式文本来源与旧架构保留', () => {
     for (const module of promptManifest.modules.filter((m) => m.kind === 'prompt')) {
       const record = sources.resources[module.path as keyof typeof sources.resources];
       expect(record, module.path).toBeDefined();
-      const latest = ['storyTagCompatibilityV1','openingNpcEligibility','variablesContractStability','worldCommandStability','worldNpcCreationContract','organizationFinalAcceptance','npcMemoryContentQuality','npcContextTiersV2','npcImportanceV2','npcUnifiedMemoryV2','npcV2Foundation','storyEventArbitrationV2','worldEventStagesV2','worldNarrativeConditions','historyTimelineV2','contextV2','memorySummaryV2']
+      const latest = ['legacyCleanupV10','storyTagCompatibilityV1','openingNpcEligibility','variablesContractStability','worldCommandStability','worldNpcCreationContract','organizationFinalAcceptance','npcMemoryContentQuality','npcContextTiersV2','npcImportanceV2','npcUnifiedMemoryV2','npcV2Foundation','storyEventArbitrationV2','worldEventStagesV2','worldNarrativeConditions','historyTimelineV2','contextV2','memorySummaryV2']
         .map(key=>Reflect.get(record,key)).find(value=>value && typeof value==='object' && 'sha256' in value);
       if(latest) expect(sha(text(module.path)),module.path).toBe(Reflect.get(latest,'sha256'));
       if (record.treatment === 'verbatim')
@@ -298,7 +301,7 @@ describe('正式文本来源与旧架构保留', () => {
     );
   });
   it('六主模板来源仍保留：开局按人生初始化任务更新，普通正文保留V2读取并新增事件叙事裁定', () => {
-    expect(promptManifest.modules.filter((m) => m.category === 'stage' && m.variableProtocol !== 'text')).toHaveLength(6);
+    expect(promptManifest.modules.filter((m) => m.category === 'stage')).toHaveLength(6);
     for (const mode of ['opening', 'regular'] as const) {
       const path = `stages/${mode}/story.md` as const;
       expect(sha(text(path))).toBe(mode === 'opening' ? sources.resources['stages/opening/story.md'].openingLifeInitialization.sha256 : sources.resources['stages/regular/story.md'].storyTagCompatibilityV1.sha256);
@@ -307,23 +310,19 @@ describe('正式文本来源与旧架构保留', () => {
     expect(text('stages/regular/story.md')).toContain('不是开局');
     expect(text('shared/06_story_output.md')).toContain('<变量规划>');
   });
-  it('历史JSON文本前缀保留；当前场外规则支持多任务且不臆造命令', () => {
+  it('场外规则支持多任务且不臆造命令；变量组正文不再携带旧JSON双轨', () => {
     for (const group of ['npc_ordinary', 'npc_special'] as const) {
       for (const mode of ['init', 'update', 'offscreen'] as const) {
-        const path = `variableGroups/${group}/${mode}.md` as const;
-        if(mode === 'offscreen'){const current=text(path);expect(current).toContain('多个');expect(current).toContain('<COMMAND_CATALOG>');expect(current).toContain('unresolved');continue;}
-        const record = sources.resources[path];
-        // 原审核前缀在正式JSON冻结资源中继续逐字验证；文本适配另有端到端测试。
-        const preserved = `legacy/variables_json/${path}`;
-        const bytes = readFileSync(resolve(root, preserved));
-        expect(sha(bytes.subarray(0, record.baselineBytes))).toBe(record.baselineSha256);
-        const suffix = bytes.subarray(record.baselineBytes).toString('utf8');
-        const section = suffix.split('补充规则：\n')[1].split('\n\n记忆写入受实际')[0];
-        expect(sha(section)).toBe(record.sectionSha256);
-        expect(suffix).toContain('<COMMAND_CATALOG>');
-        expect(suffix).toContain('unresolved');
+        const current = text(`variableGroups/${group}/${mode}.md`);
+        if (mode === 'offscreen') { expect(current).toContain('多个'); expect(current).toContain('<COMMAND_CATALOG>'); expect(current).toContain('unresolved'); continue; }
+        // 好感唯一写法：终值+具体原因+关系描述，前值由程序读取；不再教纯数值 set/add affinity。
+        expect(current).toContain('set npc[id].affinityChange');
+        expect(current).toContain('"reason"');
+        expect(current).not.toMatch(/(?:^|\n)(?:set|add) npc\[[^\]]+\]\.affinity =/);
+        expect(current).not.toContain('"from"');
       }
     }
+    expect(existsSync(resolve(root, 'legacy'))).toBe(false);
   });
   it('身份占位符、时间星期要求、双世界书产业分类均保留', () => {
     const identity = text('identity/fusheng.md');
@@ -442,7 +441,7 @@ describe('M3-P1 审阅修订与 P2 协议差异记录', () => {
     ).toBe(false);
     const todo = text('docs/OUTPUT_CONTRACT.md');
     expect(todo).toContain('M3-P2 待办');
-    expect(DomainCommandSchema.options).toHaveLength(29);
+    expect(DomainCommandSchema.options).toHaveLength(28);
     for (const option of DomainCommandSchema.options)
       expect(todo).toContain(option.shape.type.value);
     for (const required of [

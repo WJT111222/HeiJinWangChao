@@ -1,0 +1,8 @@
+import original from '/workspace/pr152-main-baseline/playwright.config';
+export default { ...original,
+  testDir: '/workspace/pr152-main-baseline/e2e',
+  reporter: [['list'], ['json', { outputFile: '/workspace/pr152-evidence/main-browser.json' }]],
+  outputDir: '/workspace/pr152-evidence/main-browser-output',
+  use: { ...original.use, baseURL: 'http://127.0.0.1:5762' },
+  webServer: { command: 'npm run dev -- --host 127.0.0.1 --port 5762 --strictPort', cwd: '/workspace/pr152-main-baseline', url: 'http://127.0.0.1:5762', reuseExistingServer: false },
+};

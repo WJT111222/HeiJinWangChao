@@ -157,7 +157,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
           // Event participants record identities; they do not execute movements, payments or player decisions.
           event.actorRefs.forEach((ref, index) => requireWorld(ref.kind === 'protagonist' ? ref.id === base.protagonist.id
             : ref.kind === 'organization' ? Boolean(causal.organizations[ref.id])
-              : Boolean(causal.npc[ref.id] || (base.retiredNpcs[ref.id] && old?.actorRefs.some(prior => sameActor(prior,ref)))), 'permission', 'actor_permission', `event.actorRefs.${index}`));
+              : Boolean(causal.npc[ref.id]), 'permission', 'actor_permission', `event.actorRefs.${index}`));
           if (old) {
             requireWorld(old.startAt === event.startAt
               && old.completionCondition === event.completionCondition, 'invalid_output', 'event_immutable', old.startAt !== event.startAt ? 'event.startAt' : 'event.completionCondition');

@@ -76,7 +76,7 @@ describe('玩家全量观察与角色认知分离', () => {
  const after=commitCommands(state,'cleanup',0,[{type:'DeleteEvent',commandId:'delete',eventId:'followup',expectedStatus:'cancelled',reason:'自然结束',evidence:'结束'}]);
  expect(after.retiredEvents.followup.predecessorEventIds).toEqual(['prior']);expect(after.events.prior).toBeDefined();
 });
-  it.each([1,2,3,4,5])('V%s旧档不迁移且原始数据保持不变',version=>{
+  it.each([1,2,3,4,5,6,7,8,9])('V%s旧档不迁移且原始数据保持不变',version=>{
  const raw={...worldState(),schemaVersion:version},before=structuredClone(raw);
  expect(()=>migrateSave(raw)).toThrow(expect.objectContaining({code:'UNSUPPORTED_VERSION'}));expect(raw).toEqual(before);
 });

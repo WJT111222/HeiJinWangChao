@@ -145,7 +145,7 @@ describe('开局时间确定性边界', () => {
     expect(() => parseVariables(JSON.stringify(variables()), state, draft)).toThrow();
     expect(() => commitCommands(state, 'regular', 0, variables().commands)).toThrow('不可倒退');
   });
-  it.each([1,2,3,4,5])('V%s旧测试档不迁移也不重选世界时间',version=>{
+  it.each([1,2,3,4,5,6,7,8,9])('V%s旧测试档不迁移也不重选世界时间',version=>{
  for(const original of [game(),historyState(2)]){const raw={...original,schemaVersion:version},before=structuredClone(raw);expect(()=>migrateSave(raw)).toThrow();expect(raw).toEqual(before);}
 });
   it('待定标记不能附加在已有历史/命令/事件或任意占位日期上', () => {
