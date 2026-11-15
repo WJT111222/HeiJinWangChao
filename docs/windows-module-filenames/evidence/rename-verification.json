@@ -1,0 +1,20 @@
+[
+  {
+    "before": "src/ui/creation/OpeningPacks.tsx",
+    "after": "src/ui/creation/OpeningPacksPanel.tsx",
+    "bytesIdentical": true,
+    "sha256": "ecbaaf1b0c51c73f4018b6b239450f7530c71668268edaad796c0e9c2bb240f9"
+  },
+  {
+    "before": "src/ui/game/StoryReading.tsx",
+    "after": "src/ui/game/StoryReadingView.tsx",
+    "bytesIdentical": true,
+    "sha256": "8de119cf0feb45bd63f26f84d3e9f288e3fb5f1c952d30d66e52e1c595f1561b"
+  },
+  {
+    "before": "src/ui/game/TurnChanges.tsx",
+    "after": "src/ui/game/TurnChangesView.tsx",
+    "bytesIdentical": true,
+    "sha256": "cc5a655f1efe4dd5be1cc897a0b4a7f43e2f3f16d86de5fdfe201cf8969832f9"
+  }
+]
