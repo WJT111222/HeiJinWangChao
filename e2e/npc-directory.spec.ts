@@ -122,7 +122,7 @@ test('名录只读空状态，以及正式人物消失后的安全返回', async
   await page.evaluate(async () => {
     const paths = ['/src/services/storage/saveRepository.ts', '/src/domain/state.ts'];
     const [{ SaveRepository }, { GameStateSchema }] = await Promise.all(paths.map(p => import(p))), repo = await SaveRepository.open();
-    const state = await repo.load('save-a'); repo.close(); state.npc = {}; state.tasks = {}; delete state.initialCompanionId; state.memories.npcSummaries = {}; state.contactNpcIds = []; state.contactReviewNpcIds = [];
+    const state = await repo.load('save-a'); repo.close(); state.npc = {}; state.tasks = {}; delete state.initialCompanionId; state.memories.npcSummaries = {}; state.contactNpcIds = [];
     GameStateSchema.parse(state);
     await new Promise<void>((resolve, reject) => { const req = indexedDB.open('heijinwangchao'); req.onsuccess = () => { const db = req.result, tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(state); tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => reject(tx.error); }; });
   });

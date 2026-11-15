@@ -21,19 +21,15 @@ export const StorySchema = z.strictObject({
     eventNarration: z.strictObject({eventId:IdSchema,mode:z.enum(['enter','mention']),at:GameTimeSchema}).optional(),
   })), actionOptions: z.array(TextSchema).optional(),
 });
-export const RetiredNpcSchema = z.strictObject({
-  id: IdSchema, identityKey: TextSchema, name: TextSchema, aliases: z.array(TextSchema),
-  retiredAt: GameTimeSchema, sourceTurnIds: IdsSchema,
-});
 export const SaveShape = {
-  schemaVersion: z.literal(9), saveId: IdSchema, title: TextSchema,
+  schemaVersion: z.literal(10), saveId: IdSchema, title: TextSchema,
   openingCityId: IdSchema.nullable().optional(),
   createdAt: GameTimeSchema, updatedAt: GameTimeSchema, revision: CountSchema, turnNumber: CountSchema,
   worldClock: GameTimeSchema, openingTimePending: z.literal(true).optional(), weatherText: z.string(), environmentText: z.string(),
   openingInitializationPending: z.literal(true).optional(),
   npcManagementRevision: CountSchema.optional(),
   protagonist: ProtagonistSchema, initialCompanionId: IdSchema.optional(),
-  contactNpcIds: IdsSchema, contactReviewNpcIds: IdsSchema, retiredNpcs: entityTable(RetiredNpcSchema),
+  contactNpcIds: IdsSchema,
   npc: entityTable(NpcSchema), items: entityTable(ImportantItemSchema), economy: EconomySchema,
   dormantNpcProfiles: entityTable(DormantNpcProfileSchema).optional(),
   organizations: entityTable(OrganizationSchema), locations: entityTable(LocationSchema),
@@ -60,16 +56,16 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     && Object.keys(s.retiredEvents).length === 0 && Object.keys(s.tasks).length === 0 && s.timeline.length === 0
     && [...s.memories.short, ...s.memories.medium, ...s.memories.long, ...Object.values(s.memories.npcSummaries).flat(),
       ...Object.values(s.npc).flatMap((npc) => npc.memories)].length === 0
-    && Object.values(s.npc).every((npc) => !npc.lastInteractionAt) && Object.keys(s.retiredNpcs).length === 0
+    && Object.values(s.npc).every((npc) => !npc.lastInteractionAt)
     && Object.keys(s.economy.incomes).length === 0, '待定开局只能保留无已发生时间事实的初始存档');
   const allIds = [s.protagonist.id, ...s.timeline.map(entry => entry.id)];
-  const tables = [s.npc, s.retiredNpcs, s.items, s.organizations, s.locations, s.events, s.retiredEvents, s.tasks,
+  const tables = [s.npc, s.items, s.organizations, s.locations, s.events, s.retiredEvents, s.tasks,
     s.economy.incomes, s.economy.debts, s.economy.properties, s.economy.vehicles, s.economy.otherAssets];
   for (const table of tables) allIds.push(...Object.keys(table));
   check(new Set(allIds).size === allIds.length, '实体 ID 必须在存档内全局唯一', ['entities'], 'entity_id');
-  function actor(ref: z.infer<typeof ActorRefSchema>, historical = false, path: (string | number)[] = []) {
+  function actor(ref: z.infer<typeof ActorRefSchema>, path: (string | number)[] = []) {
     check(ref.kind === 'protagonist' ? ref.id === s.protagonist.id
-      : ref.kind === 'npc' ? (Object.hasOwn(s.npc, ref.id) || (historical && Object.hasOwn(s.retiredNpcs, ref.id))) : Object.hasOwn(s.organizations, ref.id), '参与者引用不存在', path, 'actor_reference');
+      : ref.kind === 'npc' ? Object.hasOwn(s.npc, ref.id) : Object.hasOwn(s.organizations, ref.id), '参与者引用不存在', path, 'actor_reference');
   }
   function location(id?: string, path: (string | number)[] = []) { if (id) check(Object.hasOwn(s.locations, id), '地点引用不存在', path, 'location_reference'); }
   function timeRange(start: string, end?: string, path: (string | number)[] = []) {
@@ -79,9 +75,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
   location(s.protagonist.locationId);
   if (s.initialCompanionId) check(Boolean(s.npc[s.initialCompanionId]), '初始同伴必须保留正式身份');
   for (const id of s.contactNpcIds) check(Object.hasOwn(s.npc, id), '联系人必须保留完整 NPC');
-  for (const id of s.contactReviewNpcIds) check(Object.hasOwn(s.npc, id) && !s.contactNpcIds.includes(id), '旧档待复核人物须存在且不是正式联系人');
-  for (const retired of Object.values(s.retiredNpcs)) check(Date.parse(retired.retiredAt) <= Date.parse(s.worldClock), '退场时间在未来');
-  const identities = [...Object.values(s.npc), ...Object.values(s.retiredNpcs)].map((npc) => npc.identityKey);
+  const identities = Object.values(s.npc).map((npc) => npc.identityKey);
   check(new Set(identities).size === identities.length, 'NPC 稳定身份重复', ['npc'], 'entity_id');
   for (const node of Object.values(s.locations)) {
     location(node.parentId, ['locations', node.id, 'parentId']);
@@ -100,7 +94,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     if (npc.onScene && npc.locationId) check(npc.locationId === s.protagonist.locationId, '在场 NPC 与主角地点不一致');
     if (npc.kind === 'special') validateSpecialProfile(npc, npc.id, ['npc', npc.id]);
     for (const memory of npc.memories) {
-      for (const ref of memory.affectedEntityRefs) actor(ref, true);
+      for (const ref of memory.affectedEntityRefs) actor(ref);
     }
   }
   function validateSpecialProfile(profile: z.infer<typeof SpecialProfileSchema>, npcId: string, path: (string | number)[]) {
@@ -108,7 +102,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
       check(s.tasks[id]?.actorRef.kind === 'npc' && s.tasks[id]?.actorRef.id === npcId,
         'NPC 任务归属错误', [...path, 'offscreenTaskIds', index], 'actor_reference');
     for (const [index, relation] of (profile.relationshipNetwork ?? []).entries()) if (relation.npcId)
-      check(relation.npcId !== npcId && (Object.hasOwn(s.npc, relation.npcId) || Object.hasOwn(s.retiredNpcs, relation.npcId)),
+      check(relation.npcId !== npcId && Object.hasOwn(s.npc, relation.npcId),
         '人物关系引用不存在或指向自身', [...path, 'relationshipNetwork', index, 'npcId'], 'actor_reference');
   }
   for (const [id, archived] of Object.entries(s.dormantNpcProfiles ?? {})) {
@@ -116,7 +110,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     check(npc?.kind === 'ordinary' && npc.identityKey === archived.identityKey,
       '休眠专属档案必须属于同一稳定身份的普通人物', path, 'npc_profile_owner');
     validateSpecialProfile(archived.profile, id, [...path, 'profile']);
-    for (const memory of archived.profile.longTermMemories) memory.affectedEntityRefs.forEach(ref => actor(ref, true, path));
+    for (const memory of archived.profile.longTermMemories) memory.affectedEntityRefs.forEach(ref => actor(ref, path));
   }
   const wear = s.protagonist.currentWear;
   const equipped = [wear.topItemId, wear.bottomItemId, wear.shoesItemId,
@@ -174,7 +168,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
         : Boolean(entry.handledTurnId && entry.textEvidence && event.sourceTurnIds.includes(entry.handledTurnId)), '入场处理缺少合法回执');
     }
     if (event.resultKnowledge) check(['resolved', 'cancelled'].includes(event.status), '未结案事件不能预存成果分类', path('resultKnowledge'), 'event_transition');
-    location(event.locationId, path('locationId')); event.actorRefs.forEach((ref, index) => actor(ref, true, [...path('actorRefs'), index])); timeRange(event.startAt, event.estimatedEndAt, path('estimatedEndAt'));
+    location(event.locationId, path('locationId')); event.actorRefs.forEach((ref, index) => actor(ref, [...path('actorRefs'), index])); timeRange(event.startAt, event.estimatedEndAt, path('estimatedEndAt'));
     if(event.status!=='cancelled')timeRange(event.startAt, event.resolvedAt, path('resolvedAt'));
     if(event.resolvedAt)check(Date.parse(event.resolvedAt)<=Date.parse(s.worldClock),'事件实际终止时间在未来', path('resolvedAt'), 'event_time');
     if (event.status === 'resolved') check(event.resolvedAt && event.resolutionText
@@ -183,7 +177,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
   }
   for (const task of Object.values(s.tasks)) {
     const path = (field: string) => ['tasks', task.id, field];
-    actor(task.actorRef, ['completed', 'cancelled'].includes(task.status), path('actorRef')); location(task.locationId, path('locationId')); timeRange(task.startAt, task.dueAt, path('dueAt'));
+    actor(task.actorRef, path('actorRef')); location(task.locationId, path('locationId')); timeRange(task.startAt, task.dueAt, path('dueAt'));
     if (task.resolution) {
       check(['completed', 'cancelled'].includes(task.status), '未终结任务不能预存成果', path('resolution'), 'task_state');
       check((task.status === 'completed') === (task.resolution.outcome === 'success'), '成果与任务终态不符', [...path('resolution'), 'outcome'], 'task_state');
@@ -211,14 +205,14 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     if (entry.occurredAt) check(Date.parse(entry.occurredAt) <= Date.parse(entry.recordedAt), '历史发生时间晚于记录时间', path('occurredAt'), 'event_time');
     if (entry.eventId) check(Boolean(eventById(s, entry.eventId)), '历史关联事件不存在', path('eventId'), 'event_reference');
     for (const id of entry.relatedEntryIds) check(id !== entry.id && historyIds.has(id), '关联历史记录不存在或自引用', path('relatedEntryIds'), 'history_reference');
-    if (entry.sourceRef) actor(entry.sourceRef, true, path('sourceRef'));
-    location(entry.locationId, path('locationId')); entry.actorRefs.forEach((ref, i) => actor(ref, true, [...path('actorRefs'), i]));
+    if (entry.sourceRef) actor(entry.sourceRef, path('sourceRef'));
+    location(entry.locationId, path('locationId')); entry.actorRefs.forEach((ref, i) => actor(ref, [...path('actorRefs'), i]));
   }
   validateChronicles(s, check);
   for (const event of Object.values(s.retiredEvents)) {
     check(Date.parse(event.retiredAt) <= Date.parse(s.worldClock), '事件清理时间在未来');
     if (event.detail) {
-      location(event.detail.locationId); event.detail.actorRefs.forEach((ref) => actor(ref, true));
+      location(event.detail.locationId); event.detail.actorRefs.forEach((ref) => actor(ref));
       timeRange(event.detail.startAt, event.detail.estimatedEndAt);
       if(event.status!=='cancelled')timeRange(event.detail.startAt,event.detail.resolvedAt);
       if (event.detail.resolvedAt) check(Date.parse(event.detail.resolvedAt) <= Date.parse(s.worldClock), '事件结案时间在未来');
@@ -254,11 +248,10 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
       check(Date.parse(summary.createdAtGameTime) === Math.max(...selected.map((entry) => Date.parse(entry.createdAtGameTime))), '私人总结时间来源不符');
     }
   }
-  for (const entry of s.memories.long) if (entry.retiredNpcSource) check(Object.hasOwn(s.retiredNpcs, entry.retiredNpcSource.npcId) || Object.hasOwn(s.npc, entry.retiredNpcSource.npcId), '退场历史材料所属身份不存在');
-  for (const memory of [...s.memories.short, ...s.memories.medium, ...s.memories.long, ...Object.values(s.memories.npcSummaries).flat()]) memory.affectedEntityRefs.forEach((ref) => actor(ref, true));
+  for (const memory of [...s.memories.short, ...s.memories.medium, ...s.memories.long, ...Object.values(s.memories.npcSummaries).flat()]) memory.affectedEntityRefs.forEach((ref) => actor(ref));
   check(new Set(s.journal.map((entry) => entry.turnId)).size === s.journal.length, '回合原文重复');
   check(s.turnNumber === s.journal.length, '已提交回合数与永久原文数量不一致');
-  for (const entry of s.journal) { check(entry.revision <= s.revision, '回合版本超前'); entry.relatedActorRefs.forEach((ref) => actor(ref, true)); }
+  for (const entry of s.journal) { check(entry.revision <= s.revision, '回合版本超前'); entry.relatedActorRefs.forEach((ref) => actor(ref)); }
   check(new Set(s.appliedCommands.map((c) => JSON.stringify([c.turnId, c.commandId]))).size === s.appliedCommands.length, '幂等凭据重复');
 });
 export type GameState = z.infer<typeof GameStateSchema>;
@@ -271,13 +264,12 @@ export function createGameState(input: {
   companion?: z.infer<typeof SpecialNpcSchema>;
 }, now = new Date().toISOString()): GameState {
   return GameStateSchema.parse({
-    schemaVersion: 9, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
+    schemaVersion: 10, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
     openingCityId: input.openingCityId ?? null,
     createdAt: now, updatedAt: now, revision: 0, turnNumber: 0,
     weatherText: '', environmentText: '', protagonist: input.protagonist,
     initialCompanionId: input.companion?.id,
-    contactReviewNpcIds: [],
-    contactNpcIds: input.companion ? [input.companion.id] : [], retiredNpcs: {},
+    contactNpcIds: input.companion ? [input.companion.id] : [],
     npc: input.companion ? { [input.companion.id]: input.companion } : {},
     locations: input.locations, items: {}, organizations: {}, events: {}, retiredEvents: {}, tasks: {},
     economy: { cash: input.cash ?? null, onlineBalance: input.onlineBalance ?? null,

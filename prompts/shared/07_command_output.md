@@ -23,18 +23,18 @@ AI根据选定Story理解已发生变化，不替World推演后台任务、事�
 开局OPENING_TIME为candidate时，Story结构化endAt是唯一开局时钟候选，程序统一应用一次，不再输出时钟指令。普通回合可用 `set worldClock = "2026-10-18T09:00:00+08:00"` 更新，不能倒退或使用设备日期；没有实际耗时也可保持原值。回顾过去不改写现在，预计到期不代表任务完成。
 创建地点：`set locations[clinic] = {"name":"社区诊所","parentId":"chongqing"}`；人物地点引用需真实存在，主角移动时分别处理同行/留守NPC，不自动决定跟随。去向未知可set该NPC的onScene=false、locationId=null。
 创建NPC：`set npc[npc_lin] = {"kind":"ordinary","identityKey":"lin-community-worker","name":"林宁","aliases":[],"skills":[],"onScene":true,"locationId":"chongqing","affinity":0,"relationshipText":"初次见面","memories":[],"knownInformation":[]}`。开局和普通回合均可建档；先检索已有稳定ID、身份键、别名与同伴，避免重复。初始同伴已经存在，不能重建。
-更新好感用 `set npc[npc_lin].affinityChange = {"from":0,"to":5,"reason":"一起解决问题","relationshipText":"愿意协作"}`，示例ID、数值和剧情仅说明结构，必须换成实际资料；from必须匹配正式前值（同批连续更新使用上一笔结果），relationshipText与reason均需提供，不能借记忆补写伪造好感。好感与个人记忆可在同批分别写入，不是冲突操作。关系不等于恋爱。未确认同伴from=null，不把占位0当确认结果。登记联系人用 `set npc[npc_lin].contact = {"reason":"互换联系方式"}`，不撤销永久保护。
+更新好感用 `set npc[npc_lin].affinity = 5` 或 `add npc[npc_lin].affinity = 2`（示例ID与数值必须换成实际资料）；程序读取正式前值生成内部关系变更，同批连续更新按上一笔结果，不需要也不能填写前值或理由。需要新的关系描述先 `set npc[npc_lin].relationshipText`。不能借记忆补写伪造好感。好感与个人记忆可在同批分别写入，不是冲突操作。关系不等于恋爱。未确认同伴from=null，不把占位0当确认结果。登记联系人用 `set npc[npc_lin].contact = {"reason":"互换联系方式"}`，不撤销永久保护。
 记忆用 `push npc[npc_lin].memories = {"text":"工作室交付旧相机时，委托方临时提出加急费用。自己核对清单并请主角保留凭据、暂不承诺；主角出示书面确认后，对方同意暂缓收费、次日核算。费用仍未确定，这次合作让自己愿意继续协助核实，但不会把暂缓当成免除。","knowledgeKind":"observed","knowledgeSource":"当面经历","visibility":"npc_private"}`。亲历、转述reported、推测suspected由AI区分，后两类由程序保留标记；记忆只属于指定人物，不自动公开或传播。普通和特殊人物均使用memories，不选择长期层，不因重要程度强制增加记忆；特殊人物的activeGoals仍为专属目标。知晓信息用knownInformation路径，值结构同个人记忆。
 实际到账收入必须set economy.incomes[id]完整received记录，借款必须set economy.debts[id]完整债务；转账用push economy.transfers，还款用push economy.debts[id].repayments。均为整数人民币分；未知余额不能当0，不能透支，不能提前使用后面的收入。完整示例见经济组及目录。
 物品新增可选description（描述）、referenceValue（单件非负整数分，未知null/省略）、questItem（任务布尔标记）及itemDetails字符串资料；创建和购买使用同一ImportantItem结构。已有物品用set items[id].description/referenceValue/itemDetails/category/questItem更新对应字段，itemDetails整记录替换且保留有效旧属性，不是自由深层补丁。referenceValue不代表成交、不自动改余额；证件等不可交易物品不虚构市价。类别与适用资料见TEXT_COMMAND_CATALOG.itemDetailsGuide。
 物品获得set items[id]；购买set items[id].purchase一次扣款入库；转交set items[id].transfer；遗失set items[id].loss；数量用add items[id].quantity。装备用set protagonist.currentWear完整装备对象。车辆购买set economy.vehicles[id].purchase，车辆房产不重复进重要物品表。
 组织用set organizations[id]创建四类之一的完整对象；关系用set organizations[id].protagonistRelation={relation,reason}开放文字。已有组织使用set organizations[id].state白名单更新，不覆盖组织表。
 
-现场事件与任务：变量阶段不负责新建追踪事件或估计后台结束时间。仅对正式状态中已有、本轮Story实际成立且满足现场权限的状态变化使用 events[id].sceneState；原来 active、本轮仍 active 不需要重复写入。提及事件、讨论风险、等待发展不等于实际介入或状态变化，纯后台推进交给World。所选Story的 eventNarration.mode=enter 可授权指定事件介入，mention 不授权；eventInteraction 沿用既有入场回执语义，不另造许可。不能通过改状态绕过参与授权。没有合法事件变化就省略这一条，仍完整记录已经成立的人物、情绪、关系和记忆变化；合法现场更新及提前结案继续保留。结案可给 status=resolved、resolvedAt、resolutionText、outcome(success/failure/changed)，取消为cancelled。程序保留原排程/参与者/关联并添加当前来源回合；不能改预计时间、背景、目标、前序或清理。新事件与延期、承接、归档交给World根据Story处理，不写不支持的旧 events[id] 路径。Task仍用set tasks[id]完整对象，其dueAt或非空completionCondition至少一项；Task不套用事件强制预计时间规则。已有缺规划旧记录可记录现场状态，不编造历史日期。未知操作写说明，不自由补丁。
+现场事件与任务：变量阶段不负责新建追踪事件或估计后台结束时间。仅对正式状态中已有、本轮Story实际成立且满足现场权限的状态变化使用 events[id].sceneState；原来 active、本轮仍 active 不需要重复写入。提及事件、讨论风险、等待发展不等于实际介入或状态变化，纯后台推进交给World。所选Story的 eventNarration.mode=enter 可授权指定事件介入，mention 不授权；eventInteraction 沿用既有入场回执语义，不另造许可。不能通过改状态绕过参与授权。没有合法事件变化就省略这一条，仍完整记录已经成立的人物、情绪、关系和记忆变化；合法现场更新及提前结案继续保留。结案可给 status=resolved、resolvedAt、resolutionText、outcome(success/failure/changed)，取消为cancelled。程序保留原排程/参与者/关联并添加当前来源回合；不能改预计时间、背景、目标、前序或清理。新事件与延期、承接、归档交给World根据Story处理，不写不支持的旧 events[id] 路径。Task仍用set tasks[id]完整对象，其dueAt或非空completionCondition至少一项；Task不套用事件强制预计时间规则。未知操作写说明，不自由补丁。
 
-主角skills允许push单项、set skills[index]及delete skills[index]。特殊NPC的activeGoals同理；普通NPC不能写特殊目标。好感可set/add npc[id].affinity，程序根据当前前值生成原affinityChange；原显式affinityChange路径继续可用。需要新关系描述时先set relationshipText，不把数值当成恋爱或主角已知事实。set protagonist只接受已有UpdateProtagonist白名单字段的局部对象，不覆盖身份/ID或整个存档。
+主角skills允许push单项、set skills[index]及delete skills[index]。特殊NPC的activeGoals同理；普通NPC不能写特殊目标。好感只用set/add npc[id].affinity，程序根据当前前值生成内部关系变更。需要新关系描述时先set relationshipText，不把数值当成恋爱或主角已知事实。set protagonist只接受已有UpdateProtagonist白名单字段的局部对象，不覆盖身份/ID或整个存档。
 
-未确认初始同伴的affinity占位不是已知数值，不能直接add。由模型决定最终绝对好感后用set（原显式affinityChange.from=null也仍可用），再做后续相对增减。
+未确认初始同伴的affinity占位不是已知数值，不能直接add。由模型决定最终绝对好感后用set，再做后续相对增减。
 
 Story变量规划中的eventInteraction为程序维护的承接回执，不生成对应文本字段更新，不写protagonistEntry、continuation或protagonistKnowledge路径。Variables仅处理本幕实际人物/时间/位置和已有现场sceneState；World读取合并后的回执调整同一事件，不能代主角作决定。
 
@@ -57,7 +57,7 @@ push npc[lin].knownInformation = {"text":"得知值班安排","knowledgeKind":"r
 正式NPC只有ordinary/special。仅当Story或正式设定已经明确姓名，且有合理后续接触、持续关系或事件追踪价值时才建档；不能为一个小混混、茶楼服务员、黑衣保镖、黄毛青年或某个路人编造姓名来建档，也不用角色称呼冒充姓名。一次性服务和无名群众可留在正文，损失、受伤、情报和事件照常记录，不为保存剧情强制建NPC。人物后来获得姓名和持续关系才建档，不猜合先前不同路人。先检索稳定ID、identityKey、姓名/别名、初始同伴与正式引用，改名/职业或重要性变化均复用原身份。
 AI判断持续价值，不设次数、好感、职位阈值；新人物可直接ordinary/special，已有ordinary可升级，AI不得降级special。NPC_IMPORTANCE中的playerPreference=ordinary表示玩家取消，禁止AI再升级；special为玩家指定；automatic不代表玩家拒绝。
 升级/补齐用set npc[id].specialProfile={detailedBackground,activeGoals,habits,offscreenTaskIds,relationshipNetwork?}，沿用原人并编译为PromoteNpc；任务ID必须真实归属。profilePending=true是待完善，不是空白经历事实，应在本次正常Variables补齐，不单独请求AI。canRestoreProfile=true时先用set npc[id].specialProfile={}恢复原档案，不重新生成已有内容；待完善时只补缺失资料。香闺秘档继续使用原privateProfile路径及原保护，不混入specialProfile。
-set npc[id].phoneContact={status:"unknown"|"known"|"invalid",note?}，仅实际交换可用电话才能known，不从认识/好感或旧RegisterContact推断号码。set npc[id].usualLocations=[{locationId,role:"home"|"work"|"frequent",knownToProtagonist}]，区分常驻与当前位置、世界记录与主角知晓，不虚构地点，不必人人都有。
+set npc[id].phoneContact={status:"unknown"|"known"|"invalid",note?}，仅实际交换可用电话才能known，不从认识或好感推断号码。set npc[id].usualLocations=[{locationId,role:"home"|"work"|"frequent",knownToProtagonist}]，区分常驻与当前位置、世界记录与主角知晓，不虚构地点，不必人人都有。
 已有special可set npc[id].detailedBackground、habits、relationshipNetwork；关系数组条目{name,relationship,description,affinity?,npcId?}，好感单向[-100,100]，未知缺省/null；未建档只记姓名不自动建NPC，不猜ID或传播关系。任务另由原正式任务命令处理，不伪造offscreenTaskIds。记忆/总结、基础关系及认知不因身份升级而重置，休眠专属资料不能从其他人物或文本中复造。
 
 

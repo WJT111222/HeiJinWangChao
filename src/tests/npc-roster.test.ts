@@ -41,16 +41,11 @@ it('七字段真实React展示保留换行/尾部空白；普通及不适用人�
 
 it('人物记忆/总结实际React来源映射为回合与人物姓名，不展示技术来源ID', () => {
   const state = npcRosterState();
-  state.retiredNpcs['retired-person'] = { id: 'retired-person', identityKey: 'retired-identity', name: '旧同事', aliases: [], retiredAt: state.worldClock, sourceTurnIds: [] };
-  state.npc.special.memories[0].affectedEntityRefs.push({ kind: 'npc', id: 'retired-person' });
-  state.memories.npcSummaries.special[0].affectedEntityRefs.push({ kind: 'npc', id: 'retired-person' });
   const view = playerView(GameStateSchema.parse(state)), person = view.npc.find(n => n.id === 'special')!;
   for (const memory of view.memories.filter(m => m.ownerNpcId === person.id)) {
     const html = renderToStaticMarkup(createElement(PersonMemory, { view, person, memory }));
     expect(html).toContain(memory.text); expect(html).toContain('第'); expect(html).toContain('回合');
     expect(html).toContain('许岸');
-    if (memory.affectedEntityRefs.some(ref => ref.id === 'retired-person')) expect(html).toContain('旧同事');
-    expect(html).not.toContain('retired-person'); expect(html).not.toContain('retired-identity');
     for (const text of ['roster-turn-', 'roster-memory-', person.identityKey, 'sourceMemoryIds']) expect(html).not.toContain(text);
   }
   expect(view.npc.find(n => n.id === 'special')!.affinity).toBeNull();

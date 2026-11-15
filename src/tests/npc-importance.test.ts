@@ -9,7 +9,7 @@ import { defaultSettings } from '../ui/settings/model';
 import { migrateSave } from '../services/storage/migrations';
 import { setNpcImportance } from '../domain/npc/profiles';
 import { planNpcSummary, parseNpcSummary } from '../domain/memories/npcMemory';
-import { legacyNpcMemories, fullPrivateProfile } from './fixtures/npcUnified';
+import { unifiedNpcMemories, fullPrivateProfile } from './fixtures/npcUnified';
 import { npcSummaryOutput } from './fixtures/npcMemory';
 import { npcV2State } from './fixtures/npcV2';
 import { worldState, worldDraft, worldResult } from './fixtures/world';
@@ -62,7 +62,7 @@ it('首升待完善不编造资料，后续正常Variables补齐，不重置基�
 });
 
 it.each(['special','initialCompanion'] as const)('%s玩家取消与恢复：七字段、原始设定、记忆及总结逐字保留',async kind=>{
-  const state=migrateSave(legacyNpcMemories());if(kind==='initialCompanion')state.initialCompanionId='npc-a';
+  const state=unifiedNpcMemories();if(kind==='initialCompanion')state.initialCompanionId='npc-a';
   const repo=await SaveRepository.open('roundtrip-'+kind,new IDBFactory());
   // Legacy fixture is a committed save; seed using a real IndexedDB record.
   repo.close();const factory=new IDBFactory(),name='roundtrip-record-'+kind;let store=await SaveRepository.open(name,factory);
@@ -107,7 +107,7 @@ it('跨标签玩家操作有独立CAS，重复回执不增加计数，非法身�
 
 it('管理后迟到NPC总结受epoch拒绝，玩家原记忆不变，未清除费用尝试记录',async()=>{
   const factory=new IDBFactory(),repo=await SaveRepository.open('management-summary',factory);
-  try{await put(factory,'management-summary','saves',migrateSave(legacyNpcMemories(7,false)));
+  try{await put(factory,'management-summary','saves',unifiedNpcMemories(false));
     const context=await repo.loadMemoryContext('save-a'),batch=planNpcSummary(context.state,'npc-a')!;
     const result=parseNpcSummary(JSON.stringify(npcSummaryOutput(batch)),batch,'late');
     await manage(repo,'npc-a','ordinary');const before=await repo.load('save-a');
@@ -142,10 +142,10 @@ it('新能力不扩大World权限，不允许World升级或填写新的Variables
     expect(()=>parseWorld(JSON.stringify(worldResult([c as never])),state,draft)).toThrow();
 });
 
-it.each([6,7,8] as const)('V%s存档保留身份/原始记忆/初始同伴，迁移不自动声明玩家选择',version=>{
-  const raw=version===8?{...migrateSave(legacyNpcMemories()),schemaVersion:8}:legacyNpcMemories(version);
-  const before=structuredClone(raw),state=migrateSave(raw);expect(state.schemaVersion).toBe(9);expect(raw).toEqual(before);
-  expect(state.npc['npc-a'].memories).toHaveLength(21);expect(state.npc['npc-a'].importancePreference).toBeUndefined();expect(state.npcManagementRevision).toBeUndefined();
+it('V10存档保留身份/原始记忆/初始同伴，读取不自动声明玩家选择',()=>{
+  const raw=unifiedNpcMemories();
+  const before=structuredClone(raw),state=migrateSave(raw);expect(state.schemaVersion).toBe(10);expect(raw).toEqual(before);
+  expect(state.npc['npc-a'].memories).toHaveLength(21);expect(state.npc['npc-a'].importancePreference).toBeUndefined();
 });
 
 it('真实Composer三阶段隔离休眠七字段，Variables接收玩家选择与待完善标记',async()=>{
@@ -216,7 +216,7 @@ it('已保存的AI升级候选不能越过玩家取消，失败Commit不改变�
  }finally{repo.close();}
 });
 
-it('V8旧完整快照按需恢复为V9，不清除已有撤回链',async()=>{
+it('V8旧完整快照不再迁移：撤回被拒绝，正式状态和撤回链都不改',async()=>{
  const factory=new IDBFactory(),name='v8-undo',repo=await SaveRepository.open(name,factory);
  try{await repo.create(worldState());
   await repo.commitTurn(submission(await completeDraft(repo,{variables:await elapsedVariables(repo,'一',60),world:worldResult()}),''));
@@ -224,7 +224,7 @@ it('V8旧完整快照按需恢复为V9，不清除已有撤回链',async()=>{
   const exported=await repo.exportRaw('save-a'),record=exported.records.turnUndo![0].value as {stateJSON:string};
   const old=JSON.parse(record.stateJSON);old.schemaVersion=8;record.stateJSON=JSON.stringify(old);await put(factory,name,'turnUndo',record);
   expect((await repo.undoStatus('save-a')).available).toBe(1);
-  const result=await repo.undoTurn({saveId:'save-a',expectedRevision:latest.state.revision,expectedDraft:latest.draft,operationId:'v8-undo'});
-  expect(result.state.schemaVersion).toBe(9);expect(result.state.npc).toEqual(old.npc);expect((await repo.undoStatus('save-a')).available).toBe(0);
+  await expect(repo.undoTurn({saveId:'save-a',expectedRevision:latest.state.revision,expectedDraft:latest.draft,operationId:'v8-undo'})).rejects.toThrow();
+  expect(await repo.load('save-a')).toEqual(latest.state);expect((await repo.undoStatus('save-a')).available).toBe(1);
  }finally{repo.close();}
 });

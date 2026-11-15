@@ -28,7 +28,7 @@ const labels: Record<string, string> = {
   identity: '身份', age: '年龄', aliases: '别名', appearance: '外貌', temperament: '性格', skills: '能力与技能',
   background: '个人背景', detailedBackground: '详细经历', onScene: '是否在场', affinity: '已存好感值',
   affinityConfirmed: '好感是否确认', relationshipText: '关系描述', healthText: '身体状态', lastInteractionAt: '最近互动时间',
-  activeGoals: '个人目标', habits: '习惯', offscreenTaskIds: '场外任务', isContact: '已登记联系人', contactReviewPending: '旧档联系人待复核',
+  activeGoals: '个人目标', habits: '习惯', offscreenTaskIds: '场外任务', isContact: '已登记联系人',
   affectedEntityRefs: '相关人物或组织', learnedAt: '获知时间',
   amount: '金额（分）', principal: '本金（分）', outstanding: '未偿本金（分）', creditor: '债权人', account: '账户',
   repaymentTerms: '偿还条件', autoPaymentAuthorized: '自动还款授权', collateralAssetIds: '抵押资产',

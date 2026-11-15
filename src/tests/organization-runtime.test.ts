@@ -9,7 +9,6 @@ import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
 import { defaultSettings } from '../ui/settings/model';
 import { createTurnDraft, rerollStory } from '../domain/drafts';
-import { migrateSave } from '../services/storage/migrations';
 import { composePrompt } from '../prompts/composer';
 import { selectVariableDomains } from '../prompts/variableDomains';
 import { selectWorldDomains } from '../prompts/worldDomains';
@@ -19,7 +18,7 @@ import { projectTurn } from '../domain/turnProjection';
 import { playerView } from '../ui/panels/playerView';
 import { organizationDynamics, organizationNpcIds } from '../ui/panels/organizationView';
 import { organizationArchiveState, organizationState, organizationUpdate, organizationWorld } from './fixtures/organizations';
-import { legacyNpcMemories } from './fixtures/npcUnified';
+import { unifiedNpcMemories } from './fixtures/npcUnified';
 import { completeDraft, submission, elapsedVariables } from './fixtures/turn';
 import { sentContext } from './fixtures/contextAssertions';
 import type { GameState } from '../domain/state';
@@ -82,14 +81,13 @@ async function rawStore(factory:IDBFactory,name:string,table:string,operation:(s
     request.onsuccess=()=>{value=request.result;};tx.oncomplete=()=>{db.close();resolve(value);};tx.onabort=()=>{db.close();reject(tx.error);};
   };});
 }
-it.each([6,7,8,9] as const)('V%s旧组织/文字关系/原记忆无损读取，不猜管理层和组织ID，刷新后仍原样',async version=>{
-  const old=legacyNpcMemories(version===6?6:7),raw=version<8?{...old,schemaVersion:version}:{...migrateSave(old),schemaVersion:version};
-  if(version===6)delete raw.dormantNpcProfiles;
+it('非结构化文字关系/原记忆无损读取，不猜管理层和组织ID，刷新后仍原样',async()=>{
+  const raw=unifiedNpcMemories();
   raw.organizations=organizationState().organizations;
   for(const org of Object.values(raw.organizations)){delete org.leadership;delete org.relations;org.keyNpcIds=[];if(org.kind==='business')org.businessRelations=['旧合作对象：尚无结构化身份'];}
-  const original=structuredClone(raw),a=await seed(raw,`org-legacy-${version}`),state=await a.repo.load('save-a');
+  const original=structuredClone(raw),a=await seed(raw,'org-freeform'),state=await a.repo.load('save-a');
   expect(state.organizations).toEqual(raw.organizations);expect(raw).toEqual(original);
-  expect(state.npc).toEqual(migrateSave(original).npc);expect(state.memories).toEqual(original.memories);
+  expect(state.npc).toEqual(original.npc);expect(state.memories).toEqual(original.memories);
   a.repo.close();const again=await SaveRepository.open(a.name,a.factory);repos.push(again);expect((await again.load('save-a')).organizations).toEqual(raw.organizations);
 });
 
@@ -121,11 +119,11 @@ it('只读关联投影按稳定ID和真实任务状态过滤，1000组织不改�
   expect(organizationDynamics(view,'org-business').tasks).toEqual([]);expect(state).toEqual(before);expect(view.organizations).toHaveLength(1004);
 });
 
-it.each([6,7,8,9] as const)('V%s历史撤回快照按需恢复旧组织，不自动补齐或清空其他撤回点',async version=>{
-  const old=legacyNpcMemories(version===6?6:7),raw=version<8?old:{...migrateSave(old),schemaVersion:version};
+it('历史撤回快照按需恢复组织，不自动补齐或清空其他撤回点',async()=>{
+  const raw=unifiedNpcMemories();
   raw.organizations=organizationState().organizations;
   for(const org of Object.values(raw.organizations)){delete org.leadership;delete org.relations;org.keyNpcIds=[];}
-  const a=await seed(raw,`org-old-undo-${version}`),baseline=await a.repo.load('save-a');
+  const a=await seed(raw,'org-undo-roundtrip'),baseline=await a.repo.load('save-a');
   const committed=await a.repo.commitTurn(submission(await completeDraft(a.repo,{variables:await elapsedVariables(a.repo,'继续活动',60),world:organizationWorld([organizationUpdate('org-business',{leadership:[{position:'新任经理',publicName:'顾桥'}]},baseline.revision)])}),''));
   const records=await rawStore(a.factory,a.name,'turnUndo',store=>store.getAll()) as {stateJSON:string}[];
   expect(records).toHaveLength(1);records[0].stateJSON=JSON.stringify(raw);await rawStore(a.factory,a.name,'turnUndo',store=>store.put(records[0]));

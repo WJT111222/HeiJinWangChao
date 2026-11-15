@@ -49,7 +49,6 @@ export function recallJournal(state: GameState, windowSize: number, cues: Recall
       npc.kind === 'special' ? npc.offscreenTaskIds.map(id => ref('task', id)) : []);
     rawNpcMemories(npc).forEach(entry => memorySource(`npc.${npc.id}.${npc.memories.includes(entry) ? 'memories' : 'longTermMemories'}.${entry.id}`, entry, ref('npc', npc.id)));
   }
-  for (const npc of Object.values(state.retiredNpcs)) add('npc', npc.id, [npc.name, ...npc.aliases], '', [], npc.sourceTurnIds);
   for (const [layer, entries] of Object.entries(state.memories)) {
     if (Array.isArray(entries)) entries.forEach(entry => memorySource(`memories.${layer}.${entry.id}`, entry));
   }

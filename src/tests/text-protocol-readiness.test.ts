@@ -8,6 +8,7 @@ import { game, npc, story, organizations } from './fixtures/game';
 function unwrap<T>(r: ExecutionResult<T>): T { if (!r.ok) throw new Error(r.error.code); return r.value; }
 const set = (path: string, value: unknown) => `set ${path} = ${JSON.stringify(value)}`;
 const push = (path: string, value: unknown) => `push ${path} = ${JSON.stringify(value)}`;
+const add = (path: string, value: unknown) => `add ${path} = ${JSON.stringify(value)}`;
 function ordinary() { const { id: _id, ...value } = npc('new-person'); void _id; return value; }
 function special() { return { ...ordinary(), kind:'special', detailedBackground:'在社区工作多年', activeGoals:[], habits:[], longTermMemories:[], offscreenTaskIds:[] }; }
 const memory = {text:'约定周末去书店', knowledgeKind:'observed', knowledgeSource:'当面谈话', visibility:'npc_private'};
@@ -31,8 +32,8 @@ describe('正式文本能力缺口复现',()=>{
     const r=await execute([set('npc[new-person]',special()),set('npc[new-person].activeGoals',['参加资格考试']),push('npc[new-person].longTermMemories',memory),push('npc[new-person].knownInformation',{...memory,text:'听说周末下雨',knowledgeKind:'reported'})].join('\n'));
     expect(r.after.npc['new-person']).toMatchObject({kind:'special',activeGoals:['参加资格考试'],longTermMemories:[],memories:expect.arrayContaining([expect.objectContaining({text:memory.text})]),knownInformation:[expect.objectContaining({text:'[转述]听说周末下雨'})]});
   });
-  it('结构化好感和联系人可在同批建档后记录',async()=>{
-    const r=await execute([set('npc[new-person]',ordinary()),set('npc[new-person].affinityChange',{from:30,to:35,reason:'互相帮助',relationshipText:'愿意互相帮助'}),set('npc[new-person].contact',{reason:'交换联系方式'})].join('\n'));
+  it('好感经 set/add npc[id].affinity 在同批建档后记录，并派生内部关系变更',async()=>{
+    const r=await execute([set('npc[new-person]',ordinary()),set('npc[new-person].relationshipText','愿意互相帮助'),add('npc[new-person].affinity',5),set('npc[new-person].contact',{reason:'交换联系方式'})].join('\n'));
     expect(r.after.npc['new-person']).toMatchObject({affinity:35,affinityConfirmed:true,relationshipText:'愿意互相帮助'});
     expect(r.after.contactNpcIds).toEqual(['new-person']);
   });
@@ -45,7 +46,7 @@ describe('正式文本能力缺口复现',()=>{
 
 describe('实体映射的执行与安全回归',()=>{
   it('同批连续好感变化依次检查真实前值，精确重放不重复记录',async()=>{
-    const r=await execute([set('npc[new-person]',ordinary()),set('npc[new-person].affinityChange',{from:30,to:35,reason:'协作',relationshipText:'愿意协作'}),set('npc[new-person].affinityChange',{from:35,to:40,reason:'达成共识',relationshipText:'达成共识'}),set('npc[new-person].contact',{reason:'交换联系方式'}),push('npc[new-person].memories',memory)].join('\n'));
+    const r=await execute([set('npc[new-person]',ordinary()),set('npc[new-person].relationshipText','愿意协作'),add('npc[new-person].affinity',5),set('npc[new-person].relationshipText','达成共识'),add('npc[new-person].affinity',5),set('npc[new-person].contact',{reason:'交换联系方式'}),push('npc[new-person].memories',memory)].join('\n'));
     expect(r.after.npc['new-person'].affinity).toBe(40);
     const replay=unwrap(await compileVariableCommands(r.ast,r.after,r.context));
     expect(replay.commands).toEqual(r.plan.commands);
@@ -71,9 +72,10 @@ describe('实体映射的执行与安全回归',()=>{
     set('npc[new-person]',ordinary())+'\n'+set('npc[duplicate]',ordinary()),
     set('npc[new-person]',ordinary())+'\n'+set('npc[new-person].activeGoals',['不适用于普通人物']),
     set('npc[new-person]',ordinary())+'\n'+push('npc[new-person].longTermMemories',{...memory,knowledgeKind:'invalid'}),
-    set('npc[new-person]',ordinary())+'\n'+set('npc[new-person].affinityChange',{from:0,to:35,reason:'协作',relationshipText:'愿意协作'}),
-    set('npc[new-person]',ordinary())+'\n'+set('npc[new-person].affinityChange',{from:30,to:101,reason:'协作',relationshipText:'愿意协作'}),
-    set('npc[new-person]',ordinary())+'\n'+set('npc[new-person].affinityChange',{from:30,to:35,reason:'协作'}),
+    set('npc[new-person]',ordinary())+'\n'+set('npc[new-person].affinity','abc'),
+    set('npc[new-person]',ordinary())+'\n'+set('npc[new-person].affinity',101),
+    set('npc[new-person]',ordinary())+'\n'+add('npc[new-person].affinity',80),
+    set('npc[new-person]',ordinary())+'\n'+set('npc[new-person].affinityChange',{from:30,to:35,reason:'旧结构化写法'}),
     set('npc[new-person].contact',{reason:'无此实体'}),set('npc[new-person].healthText','更新在创建之前')+'\n'+set('npc[new-person]',ordinary()),
     set('npc[new-person]',ordinary())+'\n'+set('npc[new-person].contact',{reason:'联系',npcId:'other'}),
     set('npc[new-person].habits',[]),set('npc[new-person].identity','自由更新'),set('npc[new-person].affinity',50),
@@ -114,7 +116,7 @@ describe('开局初始化和跨变量组整批执行',()=>{
     const {id:_id,...org}=organizations[3];void _id;
     const parsed=parseVariableText(`<命令>\n${[
       set('npc[new-person]',ordinary()),set('npc[new-person].relationshipText','初次交流后愿意帮忙'),
-      set('npc[companion].affinityChange',{from:null,to:10,reason:'开局互助',relationshipText:'彼此支持'}),
+      set('npc[companion].relationshipText','彼此支持'),set('npc[companion].affinity',10),
       set('organizations[office]',{...org,keyNpcIds:['new-person']}),
       set('items[note]',{name:'便条',category:'document',quantity:1,conditionText:'完好',ownerRef:{kind:'npc',id:'new-person'}}),
       push('npc[new-person].knownInformation',memory),

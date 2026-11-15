@@ -20,7 +20,7 @@ export function compileEntity(command: ParsedVariableCommand, common: { commandI
   const relation = command.path.nodes.length === 3 && root.name === 'organizations' && field?.kind === 'field' && field.name === 'protagonistRelation';
   const organizationState = command.path.nodes.length === 3 && root.name === 'organizations' && field?.kind === 'field' && field.name === 'state';
   const npc = command.path.nodes.length === 3 && root.name === 'npc' && field?.kind === 'field'
-    && ['affinityChange', 'activeGoals', 'contact', 'specialProfile'].includes(field.name);
+    && ['activeGoals', 'contact', 'specialProfile'].includes(field.name);
   if (!creation && !relation && !npc && !organizationState) return;
   if (command.operation !== 'set') return failed('unsupported_operation');
   let raw: unknown;
@@ -52,9 +52,8 @@ export function compileEntity(command: ParsedVariableCommand, common: { commandI
       if (Object.keys(data).some((key) => key !== 'reason')) return failed('type_mismatch', null, [], diagnosticForRule(command, 'schema_constraint'));
       raw = { ...common, type: 'RegisterContact', npcId: id.id, ...data };
     } else {
-      if (Object.keys(data).some((key) => !['from', 'to', 'reason', 'relationshipText'].includes(key))) return failed('type_mismatch', null, [], diagnosticForRule(command, 'schema_constraint'));
-      const { relationshipText, ...affinityChange } = data;
-      raw = { ...common, type: 'UpdateNpc', expectedRevision, npcId: id.id, changes: { relationshipText }, affinityChange };
+      // 好感只走 set/add npc[id].affinity（由取值语义层派生内部关系变更），这里不再有其他结构化入口。
+      return failed('unsupported_path');
     }
   }
   const parsed = DomainCommandSchema.safeParse(raw);

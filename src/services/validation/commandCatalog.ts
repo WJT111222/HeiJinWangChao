@@ -19,7 +19,7 @@ export const worldTypes = [
 export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
   const options = DomainCommandSchema.options.filter(
     (option) =>
-      (stage === 'variables' && !['RetireNpc','DeleteEvent','RecordHistory'].includes(option.shape.type.value)) ||
+      (stage === 'variables' && !['DeleteEvent','RecordHistory'].includes(option.shape.type.value)) ||
       (stage === 'world' && [...worldTypes, 'SaveTask', 'SaveEvent','DeleteEvent'].includes(option.shape.type.value)),
   );
   return {
@@ -150,7 +150,7 @@ export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
             '事件predecessorEventIds引用实际已结束且时间不晚于新事件开始的前序。DeleteEvent清理无未处理入场、无必要任务/因果/知识/历史引用的终态，V2终态安全退役保留detail中的阶段经过、实际结果、参与者、时间和认知分类；父子与前序可引用退役身份。旧事件保留轻量身份；不按impact判断清理或历史资格。',
             'continuation指定protagonist/world/end及reason。protagonist提供entry的channel/cue；旧事件到期、新sub开始后程序排队；Story通过结构化eventInteraction回执回应，合法现场结果可以提前结束sub。sub的world终态需要真实显式后继（可同窗已结案、可并行或跨父关联）；旧world终态需要同批非终态后继；end不强制续篇。protagonistEntry与protagonistKnowledge为程序元数据，不得伪造。',
             '事件客观进展不自动刷新主角旧知情快照。SAVE_STATE.npc[id].memories 和 knownInformation 仅属于该人物；亲历、转述、推测由AI区分，不能把其他人物秘密当作本人已知或把猜测当作已确认。visibleHooks仅内部候选，不公开角色知识。',
-            '所有正式NPC永久保留档案、记忆与关系，不再提供RetireNpc；旧retiredNpcs仅保留历史身份，不猜补已不存在的详细资料。',
+            '所有正式NPC永久保留档案、记忆与关系；死亡、失联、离开是状态变化，不是删除。',
             '主角资金、物品和交易仍无后台变更权限。组织现状使用UpdateOrganization：仅本类白名单字段，金额仅funds/assetsEstimate/liquidityEstimate且须financialBasis与合法时间，不覆盖Variables本轮已确认字段或主角关系。不以事件说明假装已写入资产。',
           ],
           stageEntryPolicy:'V2到期不因pending/presented无限延期；保存结局，并创建唯一无eventKind后继互动，引用前序并原样保留channel/cue/locationId。程序移交未处理入场，不代玩家接受、拒绝或离开。合法Variables提前结案优先。',

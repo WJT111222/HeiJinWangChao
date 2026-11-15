@@ -74,14 +74,6 @@ test('同名地点之间实际移动仍有变化条目且跳转使用真实ID，
  const row=rows(diffTurn(before,after)).find(r=>r.subject==='地点')!;expect(row.detail).toBe('重庆 › 资料室 → 重庆 › 资料室');expect(row.target).toEqual({panel:'地图',id:'sameB'});
 });
 
-test.each(['reported','suspected','unknown'] as const)('退场人物保留到长期记忆后仍保留 %s 的正式认知性质',kind=>{
- const {before,after}=turnChangesPair(0,true);
- after.memories.long.push({id:'retired-knowledge',text:'后来保存的原始说法，不补造事实。',sourceTurnIds:['changes-turn-3'],affectedEntityRefs:[],visibility:'npc_private',createdAtGameTime:after.worldClock,retiredNpcSource:{npcId:'npc-a',sourceMemoryId:'retired-source',knowledgeKind:kind,knowledgeSource:'原始来源记录'}});
- expect(GameStateSchema.safeParse(after).success).toBe(true);
- const memory=diffTurn(before,after).find(g=>g.key==='mem')!.rows[0],labels={reported:'转述（未核实）',suspected:'推测（未确认）',unknown:'认知来源未分类'};
- expect(memory.detail).toContain(labels[kind]);expect(memory.detail).toContain('人物私有记录 · 不代表主角已知');expect(memory.target).toEqual({panel:'记忆',level:'long'});
-});
-
 test('正式时钟含毫秒时，时长不出现浮点减法尾数，回溯同样精确',()=>{
  const {before,after}=turnChangesPair(0,true);before.worldClock='2027-04-01T10:00:00+08:00';after.worldClock='2027-04-01T10:01:01.100+08:00';
  expect(GameStateSchema.safeParse(after).success).toBe(true);

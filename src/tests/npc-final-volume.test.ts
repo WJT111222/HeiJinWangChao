@@ -5,7 +5,6 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
 import { IDBFactory } from 'fake-indexeddb';
 import { npcAcceptanceState } from './fixtures/npcAcceptance';
-import { legacyNpcMemories } from './fixtures/npcUnified';
 import { playerView } from '../ui/panels/playerView';
 import { NpcPanel } from '../ui/panels/NpcPanel';
 import { npcContext } from '../prompts/npcContext';
@@ -31,7 +30,7 @@ it('30/100/300/1000人、100/300回合：正式投影、名录、实际请求及
     const roster = measure(() => renderToStaticMarkup(createElement(NpcPanel, { view: view.result })));
     expect(roster.result).toContain('人物名录'); expect((roster.result.match(/class="npc-directory-row"/g) ?? []).length).toBe(20);
     const projected = measure(() => npcContext(state, { stage: 'story', playerInput: '继续当前日常' }, new Set()));
-    const migrated = measure(() => migrateSave({ ...state, schemaVersion: 8 }));
+    const migrated = measure(() => migrateSave(structuredClone(state)));
     expect(migrated.result).toEqual(state);
     expect(Object.keys(projected.result.npc)).toHaveLength(count);
     expect(Object.values(projected.result.index.groups).flat()).toHaveLength(count);
@@ -57,15 +56,10 @@ it('30/100/300/1000人、100/300回合：正式投影、名录、实际请求及
         tasks: Object.keys(state.tasks).length, events: Object.keys(state.events).length, organizations: Object.keys(state.organizations).length,
         encodedSnapshotBytes: new TextEncoder().encode(JSON.stringify({ version: 1, saveId: state.saveId, turnId: 'volume-next', beforeTurnId: state.journal.at(-1)!.turnId, input: '继续当前日常', stateJSON: before })).length,
         stateBytes: new TextEncoder().encode(before).length, heapDeltaBytes: process.memoryUsage().heapUsed - memoryBefore,
-        playerView: view.timing, initialRosterSsr: roster.timing, npcProjection: projected.timing, v8Migration: migrated.timing, repositoryLoad: summary(times), requests });
+        playerView: view.timing, initialRosterSsr: roster.timing, npcProjection: projected.timing, v10Validation: migrated.timing, repositoryLoad: summary(times), requests });
     } finally { repo.close(); }
     expect(JSON.stringify(state)).toBe(before);
   }
-  const legacy = [6, 7].map(version => {
-    const raw = legacyNpcMemories(version as 6 | 7), measured = measure(() => migrateSave(raw));
-    expect(measured.result.npc['npc-a'].memories).toHaveLength(21);
-    return { version, memories: 21, migrate: measured.timing };
-  });
   if (process.env.NPC_FINAL_METRICS) writeFileSync(process.env.NPC_FINAL_METRICS, JSON.stringify({ environment: { node: process.version, cpu: cpus()[0].model, logicalCpus: cpus().length, totalMemoryBytes: totalmem() }, sampleCount: 3,
-    note: 'Synthetic, warm cache after first sample; elapsed times include GC and shared-host load. SSR is not browser rendering. Heap delta is not peak RAM. No network or usage.', rows, legacy }, null, 2));
+    note: 'Synthetic, warm cache after first sample; elapsed times include GC and shared-host load. SSR is not browser rendering. Heap delta is not peak RAM. No network or usage.', rows }, null, 2));
 }, 120000);

@@ -11,14 +11,13 @@ import { defaultSettings } from '../ui/settings/model';
 import { createTurnDraft, rerollStory } from '../domain/drafts';
 import { projectTurn } from '../domain/turnProjection';
 import { planNpcSummary, parseNpcSummary } from '../domain/memories/npcMemory';
-import { migrateSave } from '../services/storage/migrations';
 import { composePrompt } from '../prompts/composer';
 import { record } from '../services/ai/protocols';
 import { parseTextVariables, parseWorld } from '../services/validation/aiOutputs';
 import { npc } from './fixtures/game';
 import { npcAcceptanceState } from './fixtures/npcAcceptance';
 import { VariableStateProjectionSchema } from './fixtures/variableState';
-import { legacyNpcMemories, fullPrivateProfile } from './fixtures/npcUnified';
+import { unifiedNpcMemories, fullPrivateProfile } from './fixtures/npcUnified';
 import { npcSummaryOutput } from './fixtures/npcMemory';
 import { expectWorldWithNpcProjection, sentContext } from './fixtures/contextAssertions';
 import { submission } from './fixtures/turn';
@@ -122,10 +121,9 @@ it('百回合世界继续四轮：建档/改名/升级/离场任务结案/重逢
   expect(calls).toEqual(Array.from({ length: 4 }, () => ['story', 'variables', 'world']).flat());
 }, 30000);
 
-it.each([6, 7, 8, 9] as const)('V%s真实读档→Runtime继续→Commit→旧快照按需恢复，来源与七字段不丢失', async version => {
-  const legacy = legacyNpcMemories(version === 6 ? 6 : 7);
-  const raw = version < 8 ? legacy : { ...migrateSave(legacy), schemaVersion: version };
-  const a = await setup(raw, `npc-final-v${version}`), baseline = a.state;
+it('V10真实读档→Runtime继续→Commit→旧快照按需恢复，来源与七字段不丢失', async () => {
+  const raw = unifiedNpcMemories();
+  const a = await setup(raw, 'npc-final-v10'), baseline = a.state;
   const fetcher = vi.fn<typeof fetch>(async (_url, init) => {
     const body = JSON.parse(String(init?.body)), context = sentContext(body.messages);
     if (body.model === 'story') return stream('<thinking>保持既有经历。</thinking><正文>【旁白】主角整理当日工作，人物各自继续生活。</正文><短期记忆>继续工作。</短期记忆><变量规划>[]</变量规划>');
@@ -142,7 +140,7 @@ it.each([6, 7, 8, 9] as const)('V%s真实读档→Runtime继续→Commit→旧�
   await rawStore(a.factory, a.name, 'saveControls', s => s.put(control));
   const reopened = await SaveRepository.open(a.name, a.factory); closed.push(() => reopened.close());
   const restored = await reopened.undoTurn({ saveId: 'save-a', expectedRevision: committed.state.revision, expectedDraft: committed.draft, operationId: 'old-restore' });
-  expect(restored.state.schemaVersion).toBe(9); expect(restored.state.npc).toEqual(baseline.npc); expect(restored.state.memories).toEqual(baseline.memories);
+  expect(restored.state.schemaVersion).toBe(10); expect(restored.state.npc).toEqual(baseline.npc); expect(restored.state.memories).toEqual(baseline.memories);
   expect(restored.state.journal).toEqual(baseline.journal); expect(restored.state.worldClock).toBe(baseline.worldClock);
   expect(restored.state.npc['npc-a']).toMatchObject({ privateProfile: fullPrivateProfile }); expect(fetcher).toHaveBeenCalledTimes(3);
   expect((await reopened.exportRaw('save-a')).records.turnUndo).toHaveLength(0);

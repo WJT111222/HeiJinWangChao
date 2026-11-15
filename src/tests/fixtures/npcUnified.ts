@@ -5,8 +5,8 @@ export const fullPrivateProfile = {
   bodyDescription: '原始体态描述\n第二行', chestDescription: '原始胸部资料', pussyDescription: '原始私密资料\n保留原文',
   isVirgin: false, firstExperienceTarget: '原记录对象', firstExperienceTime: '某年冬季', firstExperienceText: '原始经历全文\n末尾空格  ',
 };
-/** Synthetic actual old representation, not passed through the current canonical schema. */
-export function legacyNpcMemories(version: 6 | 7 = 7, withSummary = true) {
+/** 统一记忆的 V10 状态样本：特殊人物带完整私密档案与多种认知性质的原始记忆。 */
+export function unifiedNpcMemories(withSummary = true) {
   let state = npcMemoryState(21, true);
   const person = state.npc['npc-a'];
   if (person.kind !== 'special') throw Error();
@@ -20,8 +20,5 @@ export function legacyNpcMemories(version: 6 | 7 = 7, withSummary = true) {
     const batch = planNpcSummary(state, 'npc-a')!;
     state = applyNpcSummary(state, batch, parseNpcSummary(JSON.stringify(npcSummaryOutput(batch)), batch, 'old-summary'));
   }
-  const owner = state.npc['npc-a'];
-  if (owner.kind !== 'special') throw Error();
-  const all = [...owner.memories]; owner.memories = all.filter((_, i) => i % 2 === 0); owner.longTermMemories = all.filter((_, i) => i % 2 === 1);
-  return { ...state, schemaVersion: version };
+  return state;
 }

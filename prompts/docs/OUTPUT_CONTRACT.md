@@ -203,3 +203,6 @@ UpdateNpc新增phoneContact/usualLocations、特殊人物detailedBackground/habi
 共通字段为name/description/keyNpcIds/currentTaskIds/leadership/relations；类型专有字段见实际目录。leadership保存职位、普通渠道可知姓名（未知null）及可选说明/已有npcId，隐秘身份不绑定公开入口；relations每目标一个当前项、可空、可单向。旧businessRelations文字不猜ID。
 
 仅gang.funds和business.assetsEstimate/liquidityEstimate可更新组织金额，必须financialBasis={at,note}且at不晚于当前时钟，非负安全整数人民币分。不是主角交易，不增减玩家余额。World原创建金额限制不变。非法引用、类型和版本仍整批拒绝，没有关键词、逐字来源匹配或文学审批。
+
+## V10 测试期清理（正式发布前存档重置）
+存档 schemaVersion 升至 10，只读取 V10；V6–V9 迁移代码移除，旧档提示重新开局且不覆盖原始数据。随存档重置删除：RetireNpc 命令、retiredNpcs 退场表、contactReviewNpcIds 旧档复核名单、长期记忆的 retiredNpcSource 标记、显式 set npc[id].affinityChange 路径（好感统一为 set/add npc[id].affinity，内部关系变更由程序派生）。提示词侧同步移除旧 JSON 双轨（legacy/variables_json）与上述机制的兼容说明；04/05 统一为三阶段共用版本，组织 init 的 World 建档变体改为 variableGroups/*/init_world.md。
