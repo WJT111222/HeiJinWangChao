@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { resolveCatalogRefs } from '../services/validation/catalogCompaction';
 import { IDBFactory } from 'fake-indexeddb';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { GameStateSchema } from '../domain/state';
@@ -91,7 +92,7 @@ it('最终请求目录不要求长期层；原始记忆仍读全，休眠香闺�
   }
   expect(textVariableCatalog().entries.some(e => e.path === 'npc[id].longTermMemories')).toBe(false);
   const catalog = commandCatalog('world');
-  const schema = catalog.schema.oneOf.find(s => s.properties?.type && typeof s.properties.type === 'object' && s.properties.type.const === 'RecordNpcMemory')!;
+  const schema = resolveCatalogRefs(catalog.schema).oneOf.find(s => s.properties?.type && typeof s.properties.type === 'object' && s.properties.type.const === 'RecordNpcMemory')!;
   expect(schema.properties).not.toHaveProperty('layer');
 });
 

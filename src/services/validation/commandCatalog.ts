@@ -6,6 +6,7 @@ import { DomainCommandSchema } from '../../domain/commands';
 import { OrdinaryNpcCreationSchema, SpecialNpcCreationSchema } from '../../domain/npc/schema';
 import { WorldResultSchema } from '../../domain/drafts';
 import type { AiStage } from '../ai/configuration';
+import { describeTimeFormats, factorRepeatedSchemas } from './catalogCompaction';
 export const worldTypes = [
   'CreateNpc',
   'UpdateNpc',
@@ -16,7 +17,21 @@ export const worldTypes = [
   'RecordOrgRelation',
   'RecordHistory',
 ] as const;
-export function commandCatalog(stage: Exclude<AiStage, 'story'>) {
+type CatalogStage = Exclude<AiStage, 'story'>;
+const CATALOG_REF_RULE = 'schema.definitions 是只写一次的公共结构；字段写作 {"$ref":"#/definitions/名称"} 时，表示它的格式与该同名定义完全相同，按展开后的结构填写，输出中不要写 $ref。';
+const compactCatalogs = new Map<CatalogStage, ReturnType<typeof compactCatalog>>();
+function compactCatalog(stage: CatalogStage) {
+  const inline = inlineCommandCatalog(stage);
+  return { ...inline, schema: factorRepeatedSchemas(describeTimeFormats(inline.schema)), rules: [...inline.rules, CATALOG_REF_RULE] };
+}
+/** 发给模型的命令目录：重复结构只写一次（见 catalogCompaction）。程序校验不读取本目录。 */
+export function commandCatalog(stage: CatalogStage) {
+  let catalog = compactCatalogs.get(stage);
+  if (!catalog) { catalog = compactCatalog(stage); compactCatalogs.set(stage, catalog); }
+  return structuredClone(catalog);
+}
+/** 未合并重复结构的原始内联目录，仅供测试核对合并前后逐字段等价。 */
+export function inlineCommandCatalog(stage: CatalogStage) {
   const options = DomainCommandSchema.options.filter(
     (option) =>
       (stage === 'variables' && !['DeleteEvent','RecordHistory'].includes(option.shape.type.value)) ||
