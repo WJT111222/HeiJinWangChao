@@ -27,6 +27,7 @@ describe.each(['world', 'variables'] as const)('%s 命令目录只合并重复�
   it('展开公共定义后与原内联目录逐字段一致（时间格式除外）', () => {
     const compact = commandCatalog(stage), inline = inlineCommandCatalog(stage);
     expect(resolveCatalogRefs(compact.schema)).toEqual(describeTimeFormats(inline.schema));
+    expect(compact.schema).toEqual(factorRepeatedSchemas(describeTimeFormats(inline.schema))); // generated snapshot must be fresh
     expect(withoutTimeNotes(describeTimeFormats(inline.schema))).toEqual(withoutTimeNotes(inline.schema));
   });
   it('目录其余部分原样保留，只追加一条公共定义的阅读说明', () => {
@@ -80,9 +81,9 @@ describe('合并与展开的工具行为', () => {
     expect(() => resolveCatalogRefs({ definitions: { a: { $ref: '#/definitions/a' } }, oneOf: [{ $ref: '#/definitions/a' }] })).toThrow('无法展开目录引用');
   });
   it('目录按阶段缓存，但每次返回独立副本，调用方修改不会影响下一次', () => {
-    const first = commandCatalog('world');
-    first.rules.push('被调用方修改');
-    expect(commandCatalog('world').rules).not.toContain('被调用方修改');
+    const first = commandCatalog('world'), original = structuredClone(first);
+    first.rules.push('被调用方修改'); delete first.schema.definitions['游戏时间'];
+    expect(commandCatalog('world')).toEqual(original);
   });
 });
 
@@ -92,7 +93,13 @@ describe.each(['opening', 'regular'] as const)('%s 实际发送的 World 上下�
     const prompt = await composePrompt({ stage: 'world', mode, state, draft, settings: defaultSettings(), userInput: '' });
     const catalog = prompt.context.COMMAND_CATALOG as ReturnType<typeof commandCatalog>;
     expect(catalog).toEqual(commandCatalog('world'));
-    expect(Object.keys(catalog.schema.definitions)).toEqual(expect.arrayContaining(['游戏时间', '稳定ID', '实体引用', '纪事时间']));
+    expect(Object.keys(catalog.schema.definitions)).toEqual(expect.arrayContaining(['游戏时间', '稳定ID', '实体引用']));
+    // Zod/贪心提取可以命名为 time 或各精度子结构；验证正式纪事结构而非依赖某个别名。
+    const resolved = resolveCatalogRefs(catalog.schema);
+    const isHistory = (option: unknown) => isNode(option) && isNode(option.properties) && isNode(option.properties.type) && option.properties.type.const === 'RecordHistory';
+    const history = resolved.oneOf.find(isHistory);
+    const original = describeTimeFormats(inlineCommandCatalog('world').schema).oneOf.find(isHistory);
+    expect(history).toBeDefined(); expect(history).toEqual(original);
     expect(JSON.stringify(prompt.messages)).not.toContain('[2468][048]');
   });
 });

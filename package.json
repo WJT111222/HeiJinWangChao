@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "npm run typecheck && vite build",
+    "build": "npm run catalog:check && npm run typecheck && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
@@ -17,7 +17,9 @@
     "check": "npm run lint && npm run test && npm run build",
     "test:e2e": "playwright test",
     "prompts:refresh": "node scripts/refresh-prompt-metadata.mjs",
-    "prompts:check": "vitest run src/tests/prompts.test.ts src/tests/prompt-runtime.test.ts src/tests/prompt-inspector.test.ts"
+    "prompts:check": "vitest run src/tests/prompts.test.ts src/tests/prompt-runtime.test.ts src/tests/prompt-inspector.test.ts",
+    "catalog:refresh": "node scripts/refresh-command-catalog.mjs",
+    "catalog:check": "node scripts/refresh-command-catalog.mjs --check"
   },
   "dependencies": {
     "react": "^19.3.1",

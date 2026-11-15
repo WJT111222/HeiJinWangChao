@@ -6,7 +6,8 @@ import { DomainCommandSchema } from '../../domain/commands';
 import { OrdinaryNpcCreationSchema, SpecialNpcCreationSchema } from '../../domain/npc/schema';
 import { WorldResultSchema } from '../../domain/drafts';
 import type { AiStage } from '../ai/configuration';
-import { describeTimeFormats, factorRepeatedSchemas } from './catalogCompaction';
+import type { factorRepeatedSchemas } from './catalogCompaction';
+import generatedSchemas from './commandCatalogSchemas.json';
 export const worldTypes = [
   'CreateNpc',
   'UpdateNpc',
@@ -22,7 +23,11 @@ const CATALOG_REF_RULE = 'schema.definitions 是只写一次的公共结构；�
 const compactCatalogs = new Map<CatalogStage, ReturnType<typeof compactCatalog>>();
 function compactCatalog(stage: CatalogStage) {
   const inline = inlineCommandCatalog(stage);
-  return { ...inline, schema: factorRepeatedSchemas(describeTimeFormats(inline.schema)), rules: [...inline.rules, CATALOG_REF_RULE] };
+  // Greedy factoring runs in catalog:refresh, never on the player's main thread.
+  // Formal equivalence tests reject stale generated schemas after domain changes.
+  type Schema = ReturnType<typeof factorRepeatedSchemas<(typeof inline.schema.oneOf)[number]>>;
+  const schema = structuredClone(generatedSchemas[stage]) as unknown as Schema;
+  return { ...inline, schema, rules: [...inline.rules, CATALOG_REF_RULE] };
 }
 /** 发给模型的命令目录：重复结构只写一次（见 catalogCompaction）。程序校验不读取本目录。 */
 export function commandCatalog(stage: CatalogStage) {
