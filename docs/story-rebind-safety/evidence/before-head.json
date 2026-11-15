@@ -1,0 +1,15 @@
+{
+  "withoutLocks": true,
+  "activeLocks": [],
+  "result": {
+    "code": "bound",
+    "locksAvailable": false,
+    "stateUnchanged": true,
+    "draftUnchanged": false
+  },
+  "calls": [
+    "story",
+    "story"
+  ],
+  "concurrentStoryPosts": 2
+}

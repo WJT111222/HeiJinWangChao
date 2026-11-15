@@ -122,7 +122,7 @@ export class TurnCoordinator {
       const vault = new CredentialVault(store, store);
       for (const channel of config.channels) vault.set(channel.id, input.vault.get(channel.id));
       let draft = TurnDraftSchema.parse(input.draft);
-      return await withBrowserLock(input.draft.saveId, async () => {
+      return await withBrowserLock(input.draft.saveId, async (scope) => {
         const reread = async () => {
           const [state, stored] = await Promise.all([
             this.repository.load(draft.saveId),
@@ -160,9 +160,9 @@ export class TurnCoordinator {
           needed.push('world');
         // 全部所需路由及凭证在首次付费前检查，关闭/已经合法完成的阶段不要求配置。
         for (const stage of needed) requestSnapshot(config, stage, vault);
-        const story = new StoryStage(this.repository, this.client, session.guard());
-        const variables = new VariableStage(this.repository, this.client, session.guard());
-        const world = new WorldStage(this.repository, this.client, session.guard());
+        const story = new StoryStage(this.repository, this.client, session.guard(scope));
+        const variables = new VariableStage(this.repository, this.client, session.guard(scope));
+        const world = new WorldStage(this.repository, this.client, session.guard(scope));
         const saved = (next: TurnDraft) => {
           check();
           draft = next;
@@ -256,7 +256,7 @@ export class TurnCoordinator {
                   ? 'complete'
                   : 'skipped',
         };
-      });
+      }, { required: true });
     } finally {
       attempt.release();
       if (this.attempt === attempt) this.attempt = undefined;

@@ -1,0 +1,11 @@
+{
+  "unavailable": {
+    "code": "concurrency_unavailable",
+    "locksAvailable": false,
+    "stateUnchanged": true,
+    "draftUnchanged": true
+  },
+  "calls": [
+    "story"
+  ]
+}

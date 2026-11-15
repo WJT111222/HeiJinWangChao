@@ -25,6 +25,16 @@ export function awaitingPlayerAction(state: GameState, draft?: TurnDraft) {
     && draft.baseSaveRevision === state.revision && draft.storyRevision === 0 && draft.executionRevision === 0
     && !draft.story && !draft.variables && !draft.world && draft.failures.length === 0);
 }
+/**
+ * 已绑定行动、但正文失败或被取消且尚未产生任何候选的普通回合。
+ * 仅判断可回填/重绑的数据形态，pending 也可能仍在运行，failed 也可能正在手动重试。
+ * 是否允许写入或发送必须另外取得跨标签执行锁；本函数不证明请求已经停止。
+ */
+export function rebindableAfterStoryStop(state: GameState, draft?: TurnDraft) {
+  return Boolean(draft && state.turnNumber > 0 && draft.turnKind === 'regular' && draft.userInput.trim() !== ''
+    && draft.baseSaveRevision === state.revision && draft.executionRevision === 0
+    && !draft.story && !draft.variables && !draft.world && draft.stageStatus.story !== 'ready');
+}
 export function completeTurnDraft(draft: TurnDraft) {
   return (
     draft.useVariableStage &&
