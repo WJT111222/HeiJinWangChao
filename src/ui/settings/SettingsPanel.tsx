@@ -73,7 +73,7 @@ export function SettingsPanel({
     try {
       onSave(checked.data);
       setNoticeLevel('ok');
-      setNotice('本地偏好已保存，将用于下一次正文请求；不会改写进行中的请求或已保存草稿。');
+      setNotice('本地偏好已保存，将用于下一次生成尝试；不会改写进行中的请求或已保存草稿。');
     } catch {
       setNoticeLevel('err');
       setNotice('本地保存失败，请检查浏览器存储权限后重试。');
@@ -180,6 +180,8 @@ export function SettingsPanel({
                 [
                   ['useVariableStage', '变量管理'],
                   ['useWorldStage', '动态世界'],
+                  ['streamVariables', '变量管理 · 流式传输'],
+                  ['streamWorld', '动态世界 · 流式传输'],
                 ] as const
               ).map(([key, label]) => (
                 <label className="toggle" key={key}>
@@ -216,6 +218,7 @@ export function SettingsPanel({
                 />
               </label>
             </div>
+            <p className="muted">开启流式传输后可实时查看模型返回的内容。部分中转服务可能不支持流式传输；不会因流式不兼容自动重试。</p>
             <p className="muted">
               两个阶段独立控制。切换只保存后续尝试的偏好，不修改进行中尝试或正式世界状态。
             </p>

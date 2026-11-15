@@ -90,7 +90,7 @@ export class WorldStage {
           },
           config,
           input.vault,
-          { signal: attempt.signal, stream: false },
+          { signal: attempt.signal, stream: settings.runtime.streamWorld },
           this.client,
         );
         responseInspectionId = response.responseInspectionId;

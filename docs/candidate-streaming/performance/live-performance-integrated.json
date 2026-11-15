@@ -1,0 +1,34 @@
+{
+  "mobile-variables": {
+    "publishes": 3,
+    "frames": 114,
+    "active": false,
+    "inputLatencyMs": 664,
+    "textChars": 19600,
+    "fragments": 98
+  },
+  "mobile-world": {
+    "publishes": 3,
+    "frames": 101,
+    "active": false,
+    "inputLatencyMs": 118,
+    "textChars": 21000,
+    "fragments": 105
+  },
+  "desktop-variables": {
+    "publishes": 3,
+    "frames": 27,
+    "active": false,
+    "inputLatencyMs": 91,
+    "textChars": 19600,
+    "fragments": 98
+  },
+  "desktop-world": {
+    "publishes": 3,
+    "frames": 23,
+    "active": false,
+    "inputLatencyMs": 94,
+    "textChars": 21000,
+    "fragments": 105
+  }
+}

@@ -1,0 +1,26 @@
+import { createRequire } from 'node:module';
+import { writeFile } from 'node:fs/promises';
+const require = createRequire('/workspace/variables-world-streaming/package.json');
+const { chromium, devices } = require('@playwright/test');
+const browser = await chromium.launch({ executablePath: '/usr/bin/chromium', headless: true });
+const results=[];
+for(const device of ['desktop','mobile']) for(const [label,port] of [['main',54132],['branch',54131]]){
+ const context=await browser.newContext(device==='mobile'?{...devices['Pixel 7']}:{viewport:{width:1440,height:1000}});
+ const page=await context.newPage();await page.route('https://**/*',route=>route.abort());await page.goto('http://127.0.0.1:'+port);
+ const data=await page.evaluate(async()=>{
+  const {StageResponseStore}=await import('/src/services/ai/stageResponses.ts');const store=new StageResponseStore();
+  const times=[],base='中文诊断。'.repeat(400_000),thought='公开思考。'.repeat(100_000);
+  const memoryBefore=performance.memory?.usedJSHeapSize;
+  let frames=0;let running=true;const tick=()=>{if(running){frames++;requestAnimationFrame(tick);}};requestAnimationFrame(tick);
+  let publications=0;store.subscribe(()=>{publications++;});
+  for(let n=0;n<15;n++){
+   const id=store.begin({saveId:'synthetic',stage:n%2?'world':'variables'});
+   const start=performance.now();store.update(id,{text:base,nativeReasoning:thought,normalized:base},['mock-key']);times.push(performance.now()-start);
+   await new Promise(resolve=>setTimeout(resolve,8));
+  }
+  running=false;
+  const retainedChars=store.getSnapshot().reduce((n,r)=>n+(r.text?.length??0)+(r.nativeReasoning?.length??0)+(r.normalized?.length??0),0);
+  const result={retainedChars,records:store.getSnapshot().length,publications,frames,updateMs:times,totalUpdateMs:times.reduce((a,b)=>a+b,0),memoryBefore,memoryAfter:performance.memory?.usedJSHeapSize};store.clear();return result;
+ });results.push({device,label,...data});await context.close();
+}
+await browser.close();await writeFile('/workspace/variables-world-streaming-evidence/preview-benchmark.json',JSON.stringify(results,null,2));console.log(JSON.stringify(results));

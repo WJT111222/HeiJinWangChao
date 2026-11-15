@@ -1,0 +1,19 @@
+{
+  "initialMain": "0e8b75f57a6e3f07b641c76fe09bfcd3cfdf553c",
+  "deliveryBase": "5ba35a859853c66501451e1a8cb3a1cdcf221aa0",
+  "verifiedCodeHead": "81aab8ea8300b21f7f188ae3f622eba3d77ba69a",
+  "node": "v24.19.0",
+  "npm": "11.9.0",
+  "chromium": "154.0.8037.57",
+  "allModels": "Mock",
+  "fullVitest": 3965,
+  "promptChecks": 93,
+  "newVitestTests": 59,
+  "targetedVitest": 150,
+  "stableChromium": 34,
+  "integratedChromium": 10,
+  "integratedChromiumOverlapsStable": true,
+  "productionFiles": 7,
+  "gameScreenChanged": false,
+  "otherWorkBranchesTouched": false
+}
