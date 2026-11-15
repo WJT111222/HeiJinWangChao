@@ -1,0 +1,11 @@
+{
+  "mode": "variables",
+  "calls": [
+    "variables",
+    "world"
+  ],
+  "turnBefore": 1,
+  "turnAfter": 2,
+  "revisionBefore": 1,
+  "revisionAfter": 2
+}
