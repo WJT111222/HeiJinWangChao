@@ -1,0 +1,1 @@
+export default { root: '/workspace/pr152-main-baseline', test: { include: ['/workspace/pr152-evidence/legacy-baseline.test.ts'] } };
