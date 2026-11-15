@@ -30,7 +30,7 @@ describe('正式Variables文本请求',()=>{
     const response=await runStageRequest(a.input,a.config,a.vault,{},new AiClient(transport));
     const result=VariableResultSchema.parse(response.result);
     expect(result.commands).toEqual([{type:'SetWorldClock',commandId:'opening-clock:1',worldClock:'2015-07-08T08:05:00+08:00',evidence:'Story结构化开局时间'}]);
-    expect(response.modules.some(m=>m.id==='stages.opening.variables.text')).toBe(true);
+    expect(response.modules.some(m=>m.id==='stages.opening.variables')).toBe(true);
     const body=JSON.parse(String(transport.mock.calls[0][1]?.body));
     expect(body).not.toHaveProperty('response_format');expect(body.generationConfig??{}).not.toHaveProperty('responseMimeType');
     expect(JSON.stringify(body)).toContain('TEXT_COMMAND_CATALOG');expect(transport).toHaveBeenCalledTimes(1);expect(a.input).toEqual(before);

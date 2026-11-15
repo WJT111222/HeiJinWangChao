@@ -165,7 +165,11 @@ it('未确认同伴首次affinityChange以from=null确认，同批第二笔按�
   const { state, draft } = fixture(); state.initialCompanionId = 'npc-a'; state.npc['npc-a'].affinity = 0; delete state.npc['npc-a'].affinityConfirmed;
   const ast = parseVariableText(reply('set npc[npc-a].affinityChange = {"to":2,"reason":"重逢时略显生疏","relationshipText":"多年未见的老友"}\nset npc[npc-a].affinityChange = {"to":5,"reason":"聊起旧事后放松下来","relationshipText":"重新熟络的老友"}')); if (!ast.ok) throw Error('parser');
   const context = { draft, expectedRevision: state.revision }, plan = await compileVariableCommands(ast.value, state, context); if (!plan.ok) throw Error(plan.error.code);
-  expect(plan.value.commands[0]).toMatchObject({ type: 'UpdateNpc', affinityChange: { from: null, to: 2 } });
+  expect(plan.value.commands[0]).toMatchObject({ type: 'UpdateNpc', affinityChange: { from: null, to: 2, reason: '重逢时略显生疏' }, changes: { relationshipText: '多年未见的老友' } });
+  expect(plan.value.commands[1]).toMatchObject({ type: 'UpdateNpc', affinityChange: { from: 2, to: 5, reason: '聊起旧事后放松下来' }, changes: { relationshipText: '重新熟络的老友' } });
   const result = await simulateVariablePlan(plan.value, state, context); if (!result.ok) throw Error(result.error.code);
   expect(result.value.npc['npc-a'].affinity).toBe(5); expect(result.value.npc['npc-a'].affinityConfirmed).toBe(true);
+  expect(result.value.npc['npc-a'].memories).toEqual(state.npc['npc-a'].memories);
+  const replay = await compileVariableCommands(ast.value, result.value, context); if (!replay.ok) throw Error(replay.error.code);
+  expect(await simulateVariablePlan(replay.value, result.value, context)).toEqual(result);
 });

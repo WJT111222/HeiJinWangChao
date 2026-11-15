@@ -130,7 +130,7 @@ describe('变量阶段真实请求到草稿保存', () => {
       const [inspection] = requestInspections.getSnapshot();
       expect(inspection.stage).toBe('variables');
       expect(inspection.route.model).toBe('variables-only');
-      expect(inspection.scope?.modules.some((m) => m.id === 'stages.opening.variables.text')).toBe(true);
+      expect(inspection.scope?.modules.some((m) => m.id === 'stages.opening.variables')).toBe(true);
       expect(
         inspection.scope?.modules.filter((m) => m.id.startsWith('variableGroups.')),
       ).toHaveLength(9);
@@ -245,8 +245,8 @@ describe('变量阶段真实请求到草稿保存', () => {
       await repo.saveDraft(current, 0);
       await runner(async () => wire()).generate({ ...setup(), draft: current });
       const ids = requestInspections.getSnapshot()[0].scope?.modules.map((m) => m.id) ?? [];
-      expect(ids).toContain(`stages.${mode}.variables.text`);
-      expect(ids).toContain(`variableGroups.economy.${mode === 'opening' ? 'init' : 'update'}.text`);
+      expect(ids).toContain(`stages.${mode}.variables`);
+      expect(ids).toContain(`variableGroups.economy.${mode === 'opening' ? 'init' : 'update'}`);
       expect(ids).not.toContain('shared.06_story_output');
       expect(ids).not.toContain('shared.08_world_output');
     },

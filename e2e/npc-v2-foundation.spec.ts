@@ -58,7 +58,7 @@ test('V6旧档不可读且原样保留；V10档上旧RetireNpc拒绝，刷新不
     });
     await put(raw);
     repo = await SaveRepository.open();
-    let status = '', loadError = '';
+    let status: string | undefined, loadError = '';
     try {
       status = String((await repo.list())[0]?.status);
       try { await repo.load('save-a'); } catch (error) { loadError = String((error as Error).message); }

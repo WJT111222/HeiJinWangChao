@@ -79,7 +79,7 @@ test('真实浏览器：世界成果/交接只是候选，正式原子提交后�
     const draft = await repo.loadDraft('save-a'); const input = { draft, nextAction: '在街边休息', useVariableStage: true, useWorldStage: true };
     const first = await repo.commitTurn(input), replay = await repo.commitTurn(input); return { first, replay };
   } finally { repo.close(); } });
-  expect(final.first.state.npc['npc-a']).toEqual(before.npc['npc-a']); 
+  expect(final.first.state.npc['npc-a']).toEqual(before.npc['npc-a']);
   expect(final.first.state.tasks.work.resolution.result).toBe(resultText); expect(final.first.state.tasks.next.actorRef.id).toBe('npc-b');
   expect(final.first.state.tasks.next.handoff).toMatchObject({ content: '登记号318的三份材料均已核对齐全。', knowledgeKind: 'reported' });
   expect(final.first.state.journal).toHaveLength(1); expect(final.replay.replayed).toBe(true); expect(final.replay.state).toEqual(final.first.state);

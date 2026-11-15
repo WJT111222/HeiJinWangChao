@@ -147,7 +147,7 @@ describe('真实三阶段顺序协调及恢复，正式 GameState 不变', () =>
       expect(await repo.load('save-a')).toEqual(before);
       for (const stage of stages) {
         const inspection = requestInspections.getSnapshot().find((r) => r.stage === stage)!;
-        expect(inspection.scope?.modules.some((m) => m.id === `stages.${mode}.${stage}${stage === 'variables' ? '.text' : ''}`)).toBe(
+        expect(inspection.scope?.modules.some((m) => m.id === `stages.${mode}.${stage}`)).toBe(
           true,
         );
         expect(

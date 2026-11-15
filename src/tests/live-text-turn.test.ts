@@ -78,7 +78,7 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
       ...(mode==='regular'?[set('worldClock',end)]:[]),
       set('locations[clinic]',{name:'社区诊所',parentId:'chongqing'}),set('protagonist.locationId','clinic'),
       set('npc[new-person]',{identityKey:'community-worker',kind:'ordinary',name:'周宁',aliases:[],skills:[],locationId:'clinic',onScene:true,affinity:0,relationshipText:'初次会面',memories:[],knownInformation:[]}),
-      set('npc[new-person].affinityChange',{from:0,to:5,reason:'完成协作',relationshipText:'愿意协作'}),
+      set('npc[new-person].affinityChange',{to:5,reason:'完成协作',relationshipText:'愿意协作'}),
       'push npc[new-person].memories = {"text":"今天在社区收到手机","knowledgeKind":"observed","knowledgeSource":"亲自接收","visibility":"npc_private"}',
       set('economy.incomes[pay]',{source:'本次报酬',amount:4500,status:'received',account:'cash',receivedAt:end,sourceTurnId:a.draft.turnId}),
       'add economy.cash = -3000',
@@ -90,6 +90,9 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
     expect(completed.status).toBe('complete');expect(completeTurnDraft(completed.draft)).toBeTruthy();
     expect(t.calls.map(c=>c.stage)).toEqual(['story','variables','world']);
     const vars=completed.draft.variables!.result.commands;
+    expect(vars.find(c=>c.type==='UpdateNpc'&&c.npcId==='new-person'&&c.affinityChange)).toMatchObject({
+      affinityChange:{from:0,to:5,reason:'完成协作'},changes:{relationshipText:'愿意协作'},
+    });
     expect(vars.filter(c=>c.type==='SetWorldClock')).toHaveLength(1);
     if(mode==='opening')expect(vars[0].commandId).toBe('opening-clock:1');
     expect(new Set(vars.map(c=>c.commandId)).size).toBe(vars.length);

@@ -81,7 +81,7 @@ it('真实协调器开局→变量四操作→World投影→原子结算→刷�
       worlds.push(record(JSON.parse(string(message.content).replace(/^<GAME_CONTEXT>\n|\n<\/GAME_CONTEXT>$/g, ''))));
       return response(JSON.stringify(worldResult()));
     }
-    return response(variableText(`set worldClock = "2026-10-18T08:${turn === 1 ? '10' : '20'}:00+08:00"\nset protagonist.skills = ["驾驶","急救"]\npush protagonist.skills = "烹饪"\nadd economy.cash = -3000\nset npc[scene].affinityChange = {\"to\":32,\"reason\":\"一起用餐时聊开了工作上的误会\",\"relationshipText\":\"合作的同事\"}\npush npc[scene].memories = {"text":"一起用餐交流","knowledgeKind":"observed","knowledgeSource":"当面经历","visibility":"npc_private"}\ndelete protagonist.skills[0]`));
+    return response(variableText(`set worldClock = "2026-10-18T08:${turn === 1 ? '10' : '20'}:00+08:00"\nset protagonist.skills = ["驾驶","急救"]\npush protagonist.skills = "烹饪"\nadd economy.cash = -3000\nset npc[scene].affinityChange = {"to":32,"reason":"一起用餐时聊开了工作上的误会","relationshipText":"合作的同事"}\npush npc[scene].memories = {"text":"一起用餐交流","knowledgeKind":"observed","knowledgeSource":"当面经历","visibility":"npc_private"}\ndelete protagonist.skills[0]`));
   });
   const runner = new TurnCoordinator(repo, client);
   try {
