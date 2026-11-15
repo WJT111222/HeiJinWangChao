@@ -1,0 +1,65 @@
+{
+  "note": "Playwright end-to-end latency, includes automation waits and process communication; not JS execution time or real-device keyboard validation.",
+  "metrics": [
+    {
+      "width": 1280,
+      "openedMs": 1563.8357890000043,
+      "searchMs": 245.14068100001896,
+      "switchMs": 298.7397650000057,
+      "geometry": {
+        "viewportWidth": 1280,
+        "dialogWidth": 971,
+        "scrollWidth": 971,
+        "list": {
+          "x": 258.59375,
+          "right": 528.59375,
+          "width": 270
+        },
+        "detail": {
+          "x": 528.59375,
+          "width": 649.8125
+        }
+      }
+    },
+    {
+      "width": 1440,
+      "openedMs": 482.92213700001594,
+      "searchMs": 182.16477999999188,
+      "switchMs": 543.038446999999,
+      "geometry": {
+        "viewportWidth": 1440,
+        "dialogWidth": 1118,
+        "scrollWidth": 1118,
+        "list": {
+          "x": 271.390625,
+          "right": 548.8125,
+          "width": 277.421875
+        },
+        "detail": {
+          "x": 548.8125,
+          "width": 789.59375
+        }
+      }
+    },
+    {
+      "width": 1650,
+      "openedMs": 1434.8533060000045,
+      "searchMs": 170.1409960000019,
+      "switchMs": 258.0979449999868,
+      "geometry": {
+        "viewportWidth": 1650,
+        "dialogWidth": 1293,
+        "scrollWidth": 1293,
+        "list": {
+          "x": 306.59375,
+          "right": 629.453125,
+          "width": 322.859375
+        },
+        "detail": {
+          "x": 629.453125,
+          "width": 918.953125
+        }
+      }
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
+import { resolveCatalogRefs } from '../services/validation/catalogCompaction';
 import { IDBFactory } from 'fake-indexeddb';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
@@ -193,7 +194,7 @@ it('姓名/别名/职业仅Variables正常更新；稳定身份不可赋值，�
     }
     if (stage === 'world') {
       // Actual generated World command schema must not invite these writes.
-      const catalog = record(prompt.context.COMMAND_CATALOG), schema = record(catalog.schema);
+      const catalog = record(prompt.context.COMMAND_CATALOG), schema = record(resolveCatalogRefs(catalog.schema));
       const update = (schema.oneOf as Record<string, unknown>[]).find(s => record(record(s.properties).type).const === 'UpdateNpc')!;
       const properties = record(record(record(update.properties).changes).properties);
       for (const field of ['name', 'aliases', 'identity']) expect(properties).not.toHaveProperty(field);

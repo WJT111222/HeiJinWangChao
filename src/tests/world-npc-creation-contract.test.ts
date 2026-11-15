@@ -1,4 +1,5 @@
 import { afterEach, expect,it,vi } from 'vitest';
+import { resolveCatalogRefs } from '../services/validation/catalogCompaction';
 import { IDBFactory } from 'fake-indexeddb';
 import { parseWorld } from '../services/validation/aiOutputs';
 import { projectTurn } from '../domain/turnProjection';
@@ -70,7 +71,7 @@ it.each(['opening','regular'] as const)('%s实际World messages和命令Schema�
  const prompt=await composePrompt({...a,stage:'world',mode,settings:defaultSettings(),userInput:'继续',domains:selectWorldDomains(a.state,a.draft).domains}),text=prompt.messages.map(m=>m.content).join('\n');
  for(const marker of ['World新建NPC初值','affinityConfirmed必须省略','亲属关系','男性特殊NPC不得携带privateProfile','私密档案资格','地理从属','瑞士','苏黎世'])expect(text).toContain(marker);
  const catalog=record(sentContext(prompt.messages).COMMAND_CATALOG);expect(catalog).toEqual(commandCatalog('world'));
- const create=array(record(catalog.schema).oneOf).map(record).find(s=>record(record(s.properties).type).const==='CreateNpc')!,schema=record(record(create.properties).npc),variants=array(schema.oneOf??schema.anyOf).map(record);
+ const create=array(record(resolveCatalogRefs(catalog.schema)).oneOf).map(record).find(s=>record(record(s.properties).type).const==='CreateNpc')!,schema=record(record(create.properties).npc),variants=array(schema.oneOf??schema.anyOf).map(record);
  expect(variants).toHaveLength(2);
  for(const variant of variants){const properties=record(variant.properties);expect(properties).not.toHaveProperty('affinityConfirmed');expect(properties).not.toHaveProperty('lastInteractionAt');expect(record(properties.affinity).const).toBe(0);expect(record(properties.onScene).const).toBe(false);expect(record(properties.memories).maxItems).toBe(0);expect(record(properties.knownInformation).maxItems).toBe(0);}
  const special=variants.find(v=>record(record(v.properties).kind).const==='special')!;

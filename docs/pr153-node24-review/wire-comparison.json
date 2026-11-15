@@ -1,0 +1,1130 @@
+[
+  {
+    "protocol": "openai",
+    "mode": "opening",
+    "stage": "story",
+    "main": {
+      "utf16": 39312,
+      "characters": 39312,
+      "bytes": 90187,
+      "heuristic": {
+        "estimatedTokens": 41627,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 37106,
+        "contentBytes": 87616,
+        "serializedMessagesBytes": 89499,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 40853,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 39312,
+      "characters": 39312,
+      "bytes": 90187,
+      "heuristic": {
+        "estimatedTokens": 41627,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 37106,
+        "contentBytes": 87616,
+        "serializedMessagesBytes": 89499,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 40853,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "openai",
+    "mode": "opening",
+    "stage": "variables",
+    "main": {
+      "utf16": 100253,
+      "characters": 100253,
+      "bytes": 145861,
+      "heuristic": {
+        "estimatedTokens": 53569,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 90651,
+        "contentBytes": 136259,
+        "serializedMessagesBytes": 145792,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 51171,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 100253,
+      "characters": 100253,
+      "bytes": 145861,
+      "heuristic": {
+        "estimatedTokens": 53569,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 90651,
+        "contentBytes": 136259,
+        "serializedMessagesBytes": 145792,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 51171,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "openai",
+    "mode": "opening",
+    "stage": "world",
+    "main": {
+      "utf16": 151648,
+      "characters": 151648,
+      "bytes": 204878,
+      "heuristic": {
+        "estimatedTokens": 71181,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 135632,
+        "contentBytes": 188862,
+        "serializedMessagesBytes": 204809,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 67180,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 95874
+    },
+    "pr": {
+      "utf16": 88898,
+      "characters": 88898,
+      "bytes": 142928,
+      "heuristic": {
+        "estimatedTokens": 55994,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 81476,
+        "contentBytes": 135506,
+        "serializedMessagesBytes": 142859,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 54141,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 41718
+    },
+    "identical": false,
+    "onlyCatalogDiff": true
+  },
+  {
+    "protocol": "openai",
+    "mode": "regular",
+    "stage": "story",
+    "main": {
+      "utf16": 43496,
+      "characters": 43496,
+      "bytes": 100519,
+      "heuristic": {
+        "estimatedTokens": 46516,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 41177,
+        "contentBytes": 97835,
+        "serializedMessagesBytes": 99831,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 45713,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 43496,
+      "characters": 43496,
+      "bytes": 100519,
+      "heuristic": {
+        "estimatedTokens": 46516,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 41177,
+        "contentBytes": 97835,
+        "serializedMessagesBytes": 99831,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 45713,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "openai",
+    "mode": "regular",
+    "stage": "variables",
+    "main": {
+      "utf16": 101268,
+      "characters": 101268,
+      "bytes": 148780,
+      "heuristic": {
+        "estimatedTokens": 55012,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 91614,
+        "contentBytes": 139126,
+        "serializedMessagesBytes": 148711,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 52601,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 101268,
+      "characters": 101268,
+      "bytes": 148780,
+      "heuristic": {
+        "estimatedTokens": 55012,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 91614,
+        "contentBytes": 139126,
+        "serializedMessagesBytes": 148711,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 52601,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "openai",
+    "mode": "regular",
+    "stage": "world",
+    "main": {
+      "utf16": 153551,
+      "characters": 153551,
+      "bytes": 210003,
+      "heuristic": {
+        "estimatedTokens": 73671,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 137479,
+        "contentBytes": 193931,
+        "serializedMessagesBytes": 209934,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 69655,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 95874
+    },
+    "pr": {
+      "utf16": 90801,
+      "characters": 90801,
+      "bytes": 148053,
+      "heuristic": {
+        "estimatedTokens": 58483,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 83323,
+        "contentBytes": 140575,
+        "serializedMessagesBytes": 147984,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 56616,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 41718
+    },
+    "identical": false,
+    "onlyCatalogDiff": true
+  },
+  {
+    "protocol": "deepseek",
+    "mode": "opening",
+    "stage": "story",
+    "main": {
+      "utf16": 39312,
+      "characters": 39312,
+      "bytes": 90187,
+      "heuristic": {
+        "estimatedTokens": 41627,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 37106,
+        "contentBytes": 87616,
+        "serializedMessagesBytes": 89499,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 40853,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 39312,
+      "characters": 39312,
+      "bytes": 90187,
+      "heuristic": {
+        "estimatedTokens": 41627,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 37106,
+        "contentBytes": 87616,
+        "serializedMessagesBytes": 89499,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 40853,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "deepseek",
+    "mode": "opening",
+    "stage": "variables",
+    "main": {
+      "utf16": 100253,
+      "characters": 100253,
+      "bytes": 145861,
+      "heuristic": {
+        "estimatedTokens": 53569,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 90651,
+        "contentBytes": 136259,
+        "serializedMessagesBytes": 145792,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 51171,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 100253,
+      "characters": 100253,
+      "bytes": 145861,
+      "heuristic": {
+        "estimatedTokens": 53569,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 90651,
+        "contentBytes": 136259,
+        "serializedMessagesBytes": 145792,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 51171,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "deepseek",
+    "mode": "opening",
+    "stage": "world",
+    "main": {
+      "utf16": 151648,
+      "characters": 151648,
+      "bytes": 204878,
+      "heuristic": {
+        "estimatedTokens": 71181,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 135632,
+        "contentBytes": 188862,
+        "serializedMessagesBytes": 204809,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 67180,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 95874
+    },
+    "pr": {
+      "utf16": 88898,
+      "characters": 88898,
+      "bytes": 142928,
+      "heuristic": {
+        "estimatedTokens": 55994,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 81476,
+        "contentBytes": 135506,
+        "serializedMessagesBytes": 142859,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 54141,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 41718
+    },
+    "identical": false,
+    "onlyCatalogDiff": true
+  },
+  {
+    "protocol": "deepseek",
+    "mode": "regular",
+    "stage": "story",
+    "main": {
+      "utf16": 43496,
+      "characters": 43496,
+      "bytes": 100519,
+      "heuristic": {
+        "estimatedTokens": 46516,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 41177,
+        "contentBytes": 97835,
+        "serializedMessagesBytes": 99831,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 45713,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 43496,
+      "characters": 43496,
+      "bytes": 100519,
+      "heuristic": {
+        "estimatedTokens": 46516,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 41177,
+        "contentBytes": 97835,
+        "serializedMessagesBytes": 99831,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 45713,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "deepseek",
+    "mode": "regular",
+    "stage": "variables",
+    "main": {
+      "utf16": 101268,
+      "characters": 101268,
+      "bytes": 148780,
+      "heuristic": {
+        "estimatedTokens": 55012,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 91614,
+        "contentBytes": 139126,
+        "serializedMessagesBytes": 148711,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 52601,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 101268,
+      "characters": 101268,
+      "bytes": 148780,
+      "heuristic": {
+        "estimatedTokens": 55012,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 91614,
+        "contentBytes": 139126,
+        "serializedMessagesBytes": 148711,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 52601,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "deepseek",
+    "mode": "regular",
+    "stage": "world",
+    "main": {
+      "utf16": 153551,
+      "characters": 153551,
+      "bytes": 210003,
+      "heuristic": {
+        "estimatedTokens": 73671,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 137479,
+        "contentBytes": 193931,
+        "serializedMessagesBytes": 209934,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 69655,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 95874
+    },
+    "pr": {
+      "utf16": 90801,
+      "characters": 90801,
+      "bytes": 148053,
+      "heuristic": {
+        "estimatedTokens": 58483,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 83323,
+        "contentBytes": 140575,
+        "serializedMessagesBytes": 147984,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 56616,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 41718
+    },
+    "identical": false,
+    "onlyCatalogDiff": true
+  },
+  {
+    "protocol": "gemini",
+    "mode": "opening",
+    "stage": "story",
+    "main": {
+      "utf16": 38715,
+      "characters": 38715,
+      "bytes": 89590,
+      "heuristic": {
+        "estimatedTokens": 41478,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 37106,
+        "contentBytes": 87616,
+        "serializedMessagesBytes": 89499,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 40853,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 38715,
+      "characters": 38715,
+      "bytes": 89590,
+      "heuristic": {
+        "estimatedTokens": 41478,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 37106,
+        "contentBytes": 87616,
+        "serializedMessagesBytes": 89499,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 40853,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "gemini",
+    "mode": "opening",
+    "stage": "variables",
+    "main": {
+      "utf16": 100056,
+      "characters": 100056,
+      "bytes": 145664,
+      "heuristic": {
+        "estimatedTokens": 53519,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 90651,
+        "contentBytes": 136259,
+        "serializedMessagesBytes": 145792,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 51171,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 100056,
+      "characters": 100056,
+      "bytes": 145664,
+      "heuristic": {
+        "estimatedTokens": 53519,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 90651,
+        "contentBytes": 136259,
+        "serializedMessagesBytes": 145792,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 51171,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "gemini",
+    "mode": "opening",
+    "stage": "world",
+    "main": {
+      "utf16": 151451,
+      "characters": 151451,
+      "bytes": 204681,
+      "heuristic": {
+        "estimatedTokens": 71132,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 135632,
+        "contentBytes": 188862,
+        "serializedMessagesBytes": 204809,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 67180,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 95874
+    },
+    "pr": {
+      "utf16": 88701,
+      "characters": 88701,
+      "bytes": 142731,
+      "heuristic": {
+        "estimatedTokens": 55944,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 81476,
+        "contentBytes": 135506,
+        "serializedMessagesBytes": 142859,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 54141,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 41718
+    },
+    "identical": false,
+    "onlyCatalogDiff": true
+  },
+  {
+    "protocol": "gemini",
+    "mode": "regular",
+    "stage": "story",
+    "main": {
+      "utf16": 42899,
+      "characters": 42899,
+      "bytes": 99922,
+      "heuristic": {
+        "estimatedTokens": 46366,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 41177,
+        "contentBytes": 97835,
+        "serializedMessagesBytes": 99831,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 45713,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 42899,
+      "characters": 42899,
+      "bytes": 99922,
+      "heuristic": {
+        "estimatedTokens": 46366,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 41177,
+        "contentBytes": 97835,
+        "serializedMessagesBytes": 99831,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 45713,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "gemini",
+    "mode": "regular",
+    "stage": "variables",
+    "main": {
+      "utf16": 101071,
+      "characters": 101071,
+      "bytes": 148583,
+      "heuristic": {
+        "estimatedTokens": 54963,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 91614,
+        "contentBytes": 139126,
+        "serializedMessagesBytes": 148711,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 52601,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 101071,
+      "characters": 101071,
+      "bytes": 148583,
+      "heuristic": {
+        "estimatedTokens": 54963,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 91614,
+        "contentBytes": 139126,
+        "serializedMessagesBytes": 148711,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 52601,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "gemini",
+    "mode": "regular",
+    "stage": "world",
+    "main": {
+      "utf16": 153354,
+      "characters": 153354,
+      "bytes": 209806,
+      "heuristic": {
+        "estimatedTokens": 73621,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 137479,
+        "contentBytes": 193931,
+        "serializedMessagesBytes": 209934,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 69655,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 95874
+    },
+    "pr": {
+      "utf16": 90604,
+      "characters": 90604,
+      "bytes": 147856,
+      "heuristic": {
+        "estimatedTokens": 58434,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 83323,
+        "contentBytes": 140575,
+        "serializedMessagesBytes": 147984,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 56616,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 41718
+    },
+    "identical": false,
+    "onlyCatalogDiff": true
+  },
+  {
+    "protocol": "anthropic",
+    "mode": "opening",
+    "stage": "story",
+    "main": {
+      "utf16": 38672,
+      "characters": 38672,
+      "bytes": 89547,
+      "heuristic": {
+        "estimatedTokens": 41467,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 37106,
+        "contentBytes": 87616,
+        "serializedMessagesBytes": 89499,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 40853,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 38672,
+      "characters": 38672,
+      "bytes": 89547,
+      "heuristic": {
+        "estimatedTokens": 41467,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 37106,
+        "contentBytes": 87616,
+        "serializedMessagesBytes": 89499,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 40853,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "anthropic",
+    "mode": "opening",
+    "stage": "variables",
+    "main": {
+      "utf16": 100018,
+      "characters": 100018,
+      "bytes": 145626,
+      "heuristic": {
+        "estimatedTokens": 53510,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 90651,
+        "contentBytes": 136259,
+        "serializedMessagesBytes": 145792,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 51171,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 100018,
+      "characters": 100018,
+      "bytes": 145626,
+      "heuristic": {
+        "estimatedTokens": 53510,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 90651,
+        "contentBytes": 136259,
+        "serializedMessagesBytes": 145792,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 51171,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "anthropic",
+    "mode": "opening",
+    "stage": "world",
+    "main": {
+      "utf16": 151413,
+      "characters": 151413,
+      "bytes": 204643,
+      "heuristic": {
+        "estimatedTokens": 71122,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 135632,
+        "contentBytes": 188862,
+        "serializedMessagesBytes": 204809,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 67180,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 95874
+    },
+    "pr": {
+      "utf16": 88663,
+      "characters": 88663,
+      "bytes": 142693,
+      "heuristic": {
+        "estimatedTokens": 55935,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 81476,
+        "contentBytes": 135506,
+        "serializedMessagesBytes": 142859,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 54141,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 41718
+    },
+    "identical": false,
+    "onlyCatalogDiff": true
+  },
+  {
+    "protocol": "anthropic",
+    "mode": "regular",
+    "stage": "story",
+    "main": {
+      "utf16": 42856,
+      "characters": 42856,
+      "bytes": 99879,
+      "heuristic": {
+        "estimatedTokens": 46356,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 41177,
+        "contentBytes": 97835,
+        "serializedMessagesBytes": 99831,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 45713,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 42856,
+      "characters": 42856,
+      "bytes": 99879,
+      "heuristic": {
+        "estimatedTokens": 46356,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 41177,
+        "contentBytes": 97835,
+        "serializedMessagesBytes": 99831,
+        "messageCount": 26,
+        "estimateSeparatorCharacters": 25,
+        "estimatedTokens": 45713,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "anthropic",
+    "mode": "regular",
+    "stage": "variables",
+    "main": {
+      "utf16": 101033,
+      "characters": 101033,
+      "bytes": 148545,
+      "heuristic": {
+        "estimatedTokens": 54954,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 91614,
+        "contentBytes": 139126,
+        "serializedMessagesBytes": 148711,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 52601,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "pr": {
+      "utf16": 101033,
+      "characters": 101033,
+      "bytes": 148545,
+      "heuristic": {
+        "estimatedTokens": 54954,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 91614,
+        "contentBytes": 139126,
+        "serializedMessagesBytes": 148711,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 52601,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": null
+    },
+    "identical": true,
+    "onlyCatalogDiff": false
+  },
+  {
+    "protocol": "anthropic",
+    "mode": "regular",
+    "stage": "world",
+    "main": {
+      "utf16": 153316,
+      "characters": 153316,
+      "bytes": 209768,
+      "heuristic": {
+        "estimatedTokens": 73612,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 137479,
+        "contentBytes": 193931,
+        "serializedMessagesBytes": 209934,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 69655,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 95874
+    },
+    "pr": {
+      "utf16": 90566,
+      "characters": 90566,
+      "bytes": 147818,
+      "heuristic": {
+        "estimatedTokens": 58424,
+        "method": "unicode-heuristic-v1"
+      },
+      "promptStats": {
+        "characters": 83323,
+        "contentBytes": 140575,
+        "serializedMessagesBytes": 147984,
+        "messageCount": 11,
+        "estimateSeparatorCharacters": 10,
+        "estimatedTokens": 56616,
+        "method": "unicode-heuristic-v1",
+        "actual": {}
+      },
+      "catalogChars": 41718
+    },
+    "identical": false,
+    "onlyCatalogDiff": true
+  }
+]

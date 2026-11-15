@@ -1,0 +1,5 @@
+import original from '/workspace/pr153-main-baseline/playwright.config';
+export default {...original,testDir:'/workspace/pr153-evidence',testMatch:'perf-main.spec.ts',workers:1,
+ reporter:[['list'],['json',{outputFile:'/workspace/pr153-evidence/main-perf.json'}]],outputDir:'/workspace/pr153-evidence/main-perf-output',
+ use:{...original.use,baseURL:'http://127.0.0.1:5774'},
+ webServer:{command:'npm run dev -- --host 127.0.0.1 --port 5774 --strictPort',cwd:'/workspace/pr153-main-baseline',url:'http://127.0.0.1:5774',reuseExistingServer:false}};
