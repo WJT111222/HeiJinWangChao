@@ -11,6 +11,12 @@ export async function openGameTools(page: Page, entering = false) {
   await openWorkflow(page);
 }
 
+// 旧版手机端把回合按钮折进「⋯ 回合操作」；现在常驻显示。仍兼容出现折叠菜单的情况。
+export async function openTurnTools(page: Page) {
+  const tools = page.getByRole('button', { name: '回合操作', exact: true });
+  if (await tools.isVisible() && await tools.getAttribute('aria-expanded') !== 'true') await tools.click();
+}
+
 // 操作高级控件前显式展开；不调用生成/恢复，也不修改业务状态。
 export async function openWorkflow(page: Page) {
   const disclosure = page.locator('.workflow-disclosure');

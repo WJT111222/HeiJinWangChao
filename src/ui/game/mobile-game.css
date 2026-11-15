@@ -189,3 +189,4 @@
  .app-shell-game .modal :is(input,textarea,select){font-size:16px}
 }
 @media(max-width:900px){.app-shell-game .mobile-menu-toggle[aria-expanded=true]{border-color:var(--gold);color:var(--gold-hi)}}
+@media(max-width:900px){.city-night .composer-roll .composer-workflow-action[data-kind=continue]:not(:disabled){color:var(--gold-hi);background:#c9a9611f}.city-night .composer-roll .composer-workflow-action[data-kind=cancel]:not(:disabled){color:#E6A18A;background:#d47c601a}}

@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import type { Server, ServerResponse } from 'node:http';
 import { test, expect } from './helpers/test';
 import type { Page, TestInfo } from '@playwright/test';
-import { closeWorkflowSheet, openGameTools, openStageRaw, openWorkflowStage, workflowTrigger } from './helpers/gameLayout';
+import { closeWorkflowSheet, openGameTools, openStageRaw, openWorkflowStage, workflowTrigger, openTurnTools } from './helpers/gameLayout';
 
 let server: Server, response: ServerResponse | undefined, baseUrl: string, calls: number;
 const key = 'fictional-stream-browser-key';
@@ -61,7 +61,7 @@ async function start(page: Page) {
   await openWorkflowStage(page, 'story');
   if ((page.viewportSize()?.width ?? 0) <= 900) {
     await closeWorkflowSheet(page);
-    await page.getByRole('button', { name: '回合操作', exact: true }).click();
+    await openTurnTools(page);
   }
   await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
   await expect.poll(() => Boolean(response)).toBe(true);
@@ -155,7 +155,7 @@ for (const mode of ['cancel', 'network', 'timeout'] as const) {
     send(key.slice(12) + '，公开片段终点', true); send('<thinking>尚未完成的项目规划');
     await expect(preview).toContainText('尚未完成的项目规划'); await expect(preview).not.toContainText(key);
     if (mode === 'cancel') {
-      if ((page.viewportSize()?.width ?? 0) <= 900) await page.getByRole('button', { name: '回合操作', exact: true }).click();
+      if ((page.viewportSize()?.width ?? 0) <= 900) await openTurnTools(page);
       await page.getByRole('button', { name: '取消生成', exact: true }).click();
     }
     if (mode === 'network') response!.destroy();

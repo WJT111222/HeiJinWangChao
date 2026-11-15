@@ -3,7 +3,7 @@ import type { Server, ServerResponse } from 'node:http';
 import { test, expect } from './helpers/test';
 import type { Page, TestInfo } from '@playwright/test';
 import { deepSeekUntagged, recoveryPlanning, recoveryTransition, recoveryNarrative, recoverySummary, recoveryGuide, recoveryActions, recoveryTail, inlineRecoveryOutput, inlineRecoveryNarrative, inlineRecoveryTransition, missingNarrativeCloseOutput } from '../src/tests/fixtures/storyRecovery';
-import { closeWorkflowSheet, openGameTools, openStageRaw, openWorkflowStage, workflowTrigger } from './helpers/gameLayout';
+import { closeWorkflowSheet, openGameTools, openStageRaw, openWorkflowStage, workflowTrigger, openTurnTools } from './helpers/gameLayout';
 
 let server: Server, response: ServerResponse | undefined, baseUrl: string, calls: number;
 const key = 'fictional-stream-browser-key';
@@ -60,7 +60,7 @@ async function start(page: Page) {
   await openWorkflowStage(page, 'story');
   if ((page.viewportSize()?.width ?? 0) <= 900) {
     await closeWorkflowSheet(page);
-    await page.getByRole('button', { name: '回合操作', exact: true }).click();
+    await openTurnTools(page);
   }
   await page.getByRole('button', { name: '生成本回合正文', exact: true }).click();
   await expect.poll(() => Boolean(response)).toBe(true);
