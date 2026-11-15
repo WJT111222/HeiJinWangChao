@@ -10,7 +10,7 @@ import { runStageRequest } from '../services/ai/runtime';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import type { Protocol } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
-import { stageResponses, StageResponseStore, selectStageResponse, responseLimits } from '../services/ai/stageResponses';
+import { stageResponses, StageResponseStore, selectStageResponse, candidateResponseLimits } from '../services/ai/stageResponses';
 import { StageResponseContent } from '../ui/game/StageResponsesPanel';
 import { defaultSettings } from '../ui/settings/model';
 import { worldState, worldDraft } from './fixtures/world';
@@ -146,9 +146,9 @@ it('same turn newer requests keep their own basis; late old results cannot repla
 
 it('bounded temporary records redact before clipping, mark truncation, evict six records and do not retain large diagnostics', () => {
   const store = new StageResponseStore(), id = store.begin({ saveId: 's', stage: 'variables' });
-  store.update(id, { text: key + '长'.repeat(responseLimits.text), nativeReasoning: '思'.repeat(responseLimits.nativeReasoning + 1),
-    diagnostics: { finishReasons: ['x'.repeat(responseLimits.diagnostics + 1)] } }, [key]);
-  const r = store.getSnapshot()[0]; expect(r.text?.length).toBe(responseLimits.text); expect(r.nativeReasoning?.length).toBe(responseLimits.nativeReasoning);
+  store.update(id, { text: key + '长'.repeat(candidateResponseLimits.text), nativeReasoning: '思'.repeat(candidateResponseLimits.nativeReasoning + 1),
+    diagnostics: { finishReasons: ['x'.repeat(candidateResponseLimits.diagnostics + 1)] } }, [key]);
+  const r = store.getSnapshot()[0]; expect(r.text?.length).toBe(candidateResponseLimits.text - key.length + '[密钥已隐藏]'.length); expect(r.nativeReasoning?.length).toBe(candidateResponseLimits.nativeReasoning);
   expect(r.truncated).toBe(true); expect(r.text).not.toContain(key); expect(r.diagnostics).toBeUndefined();
   for (let n = 0; n < 6; n++) store.begin({ saveId: 's', stage: 'world' });
   expect(store.getSnapshot()).toHaveLength(6); expect(store.getSnapshot().some(entry => entry.id === id)).toBe(false);

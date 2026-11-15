@@ -7,6 +7,14 @@ import type { RawResponseObservation, ResponseDiagnostics } from './responseCont
 import type { TurnDraft } from '../../domain/drafts';
 
 export const responseLimits = { text: 8_000_000, nativeReasoning: 2_000_000, displayText: 10_000_000, normalized: 8_000_000, diagnostics: 16_000 } as const;
+// Candidate raw output is a diagnostic preview, never the parser input.
+export const candidateResponseLimits = { text: 256_000, nativeReasoning: 64_000, displayText: 0, normalized: 256_000, diagnostics: 16_000 } as const;
+export const responseStoreBudget = 32_000_000;
+export const responseLimitsFor = (stage: AiStage) => stage === 'story' ? responseLimits : candidateResponseLimits;
+export function responseSize(record: StageResponse) {
+  return (record.text?.length ?? 0) + (record.nativeReasoning?.length ?? 0) + (record.displayText?.length ?? 0)
+    + (record.normalized?.length ?? 0) + (record.diagnostics ? JSON.stringify(record.diagnostics).length : 0);
+}
 export interface StageResponse {
   id: string; saveId: string; turnId?: string; storyRevision?: number; stage: AiStage;
   baseSaveRevision?: number; draftRevision?: number; executionRevision?: number; stageRequestRevision?: number;
@@ -41,7 +49,7 @@ export function safeStreamResponseText(text: string, secrets: readonly string[])
   }
   return tail ? safe.slice(0, -tail) + '[凭证片段已隐藏]' : safe;
 }
-// 最近六次请求；content/reasoning 沿用 AiClient 长度上限，合并显示、规范化和诊断也有独立上限。
+// 最近最多六次请求；超过总字符预算时更早淘汰最旧记录。Story 单次上限保留，候选预览另有限制。
 // 没有 Storage/IndexedDB 或普通日志写入。
 export class StageResponseStore {
   private epoch = 0;
@@ -50,7 +58,12 @@ export class StageResponseStore {
   private listeners = new Set<() => void>();
   getSnapshot = () => this.records;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
-  private publish(records: readonly StageResponse[]) { this.records = records; this.listeners.forEach(listener => listener()); }
+  private publish(records: readonly StageResponse[]) {
+    const kept = [...records];
+    let size = kept.reduce((total, item) => total + responseSize(item), 0);
+    while (size > responseStoreBudget && kept.length > 1) size -= responseSize(kept.pop()!);
+    this.records = kept; this.listeners.forEach(listener => listener());
+  }
   clear = () => { this.epoch++; this.publish([]); };
   clearSave = (saveId: string) => { this.epoch++; this.publish(this.records.filter(item => item.saveId !== saveId)); };
   begin(scope: Pick<StageResponse, 'saveId' | 'turnId' | 'stage' | 'storyRevision' | 'protocol' | 'baseSaveRevision' | 'draftRevision' | 'executionRevision' | 'stageRequestRevision' | 'basedOnVariableRevision'>, generation = this.epoch) {
@@ -60,19 +73,26 @@ export class StageResponseStore {
     return id;
   }
   update(id: string, patch: Partial<Pick<StageResponse, 'text' | 'nativeReasoning' | 'displayText' | 'displayOrder' | 'normalized' | 'status' | 'error' | 'diagnostics' | 'truncated'>>, secrets: readonly string[]) {
+    const current = this.records.find(item => item.id === id);
+    if (!current) return;
+    const limits = responseLimitsFor(current.stage);
     const safe = { ...patch };
     for (const field of ['text', 'nativeReasoning', 'displayText', 'normalized'] as const) {
       if (patch[field] === undefined) continue;
-      const value = safeStreamResponseText(patch[field], secrets);
-      safe[field] = value.slice(0, responseLimits[field]);
-      if (value.length > responseLimits[field]) safe.truncated = true;
+      // Bound work before redaction; partial credentials at the clipped edge are also hidden.
+      const value = safeStreamResponseText(patch[field].slice(0, limits[field]), secrets);
+      safe[field] = value.slice(0, limits[field]);
+      if (patch[field].length > limits[field] || value.length > limits[field]) safe.truncated = true;
     }
     if (patch.diagnostics) {
       const text = safeResponseText(JSON.stringify(patch.diagnostics), secrets);
       if (text.length <= responseLimits.diagnostics) safe.diagnostics = JSON.parse(text) as ResponseDiagnostics;
       else { delete safe.diagnostics; safe.truncated = true; }
     }
-    this.publish(this.records.map(item => item.id === id ? freeze({ ...item, ...safe, truncated: item.truncated || safe.truncated }) : item));
+    const next = { ...current, ...safe, truncated: current.truncated || safe.truncated };
+    if ((Object.keys(next) as (keyof StageResponse)[]).every(key => key === 'diagnostics'
+      ? JSON.stringify(next[key]) === JSON.stringify(current[key]) : next[key] === current[key])) return;
+    this.publish(this.records.map(item => item.id === id ? freeze(next) : item));
   }
 }
 export const stageResponses = new StageResponseStore();

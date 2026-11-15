@@ -13,7 +13,7 @@ import type { RequestOptions } from './client';
 import { variableFailure, variableValidationError } from '../validation/variableDiagnostics';
 import { storyFailure } from '../validation/storyDiagnostics';
 import { timeOutcome } from '../../domain/timePreflight';
-import { stageResponses, safeStreamResponseText, responseLimits } from './stageResponses';
+import { stageResponses, safeStreamResponseText, responseLimitsFor } from './stageResponses';
 import { safeAiError } from './errors';
 import { mergeResponseDiagnostics } from './responseContent';
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
@@ -50,6 +50,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     stageRequestRevision: captured.stage === 'story' ? undefined : captured.draft?.stageRequestRevisions[captured.stage],
     basedOnVariableRevision: captured.stage === 'world' ? captured.draft?.variables?.candidateRevision : undefined }, generation);
   const secrets = config.channels.map(channel => vault.get(channel.id)).filter(Boolean);
+  const responseLimits = responseLimitsFor(captured.stage);
   let received = '', sealed = false, truncated = false;
   let diagnostics: ResponseDiagnostics = {};
   const append = (text: string, delta: string, limit: number) => {
@@ -58,6 +59,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   };
   let rawObserved = false, publicReasoning = '';
   let displayText = '', displayObserved = false, displayOrder: RawResponseObservation['order'] = 'events';
+  const preview = (value: string) => captured.stage === 'story' ? safeStreamResponseText(value, secrets) : value;
   const display = () => !displayObserved ? {} : {
     displayText: safeStreamResponseText(displayText, secrets), displayOrder,
   };
@@ -65,8 +67,8 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   const observe = () => {
     if (!observationTimer) observationTimer = setTimeout(() => {
       observationTimer = undefined;
-      stageResponses.update(responseId, { text: safeStreamResponseText(received, secrets),
-        nativeReasoning: safeStreamResponseText(publicReasoning, secrets), diagnostics, truncated, ...display() }, secrets);
+      stageResponses.update(responseId, { text: preview(received),
+        nativeReasoning: preview(publicReasoning), diagnostics, truncated, ...display() }, secrets);
     }, 50);
   };
   let step: 'request' | 'response' = 'request';
@@ -163,8 +165,8 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     const failure = captured.stage === 'variables' ? variableFailure(error, step) : captured.stage === 'story' ? storyFailure(error, true) : error;
     sealed = true;
     clearTimeout(observationTimer);
-    stageResponses.update(responseId, { status: 'failed', text: safeStreamResponseText(received, secrets),
-      nativeReasoning: safeStreamResponseText(publicReasoning, secrets), diagnostics, truncated, ...display(), error: safeAiError(failure) }, secrets);
+    stageResponses.update(responseId, { status: 'failed', text: preview(received),
+      nativeReasoning: preview(publicReasoning), diagnostics, truncated, ...display(), error: safeAiError(failure) }, secrets);
     throw failure;
   }
 }
