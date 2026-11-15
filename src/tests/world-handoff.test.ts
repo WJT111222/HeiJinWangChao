@@ -25,7 +25,6 @@ import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { recallHistory, historyRecords } from '../domain/memories/history';
-import { publicShortMemories, storyMemoryContext } from '../domain/memories/publicMemory';
 describe('M5-P5 成果及生命周期缺口', () => {
   it('同窗口的真实终结留下成果，不需要强制接班', () => {
     const state = worldState();
