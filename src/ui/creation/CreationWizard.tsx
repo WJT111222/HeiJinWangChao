@@ -12,7 +12,7 @@ import { dateTime } from '../panels/playerView';
 
 import { appearanceTemplates, personalityTemplates } from './personTemplates';
 import { ProfessionProfile } from '../components/ProfessionProfile';
-import { OpeningPacks } from './OpeningPacks';
+import { OpeningPacks } from './OpeningPacksPanel';
 import { CityCardArt, CreationDossier, TemplateCards, creationStepHints, creationTint } from './DesktopCreation';
 import './desktop-creation.css';
 

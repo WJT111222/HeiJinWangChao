@@ -3,7 +3,7 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {turnChangesPair} from './fixtures/turnChanges';
 import {diffTurn} from '../ui/game/turnChanges';
 import {turnChangeBadges} from '../ui/game/turnChangeBadges';
-import {TurnChanges} from '../ui/game/TurnChanges';
+import {TurnChanges} from '../ui/game/TurnChangesView';
 import {panelNames} from '../ui/panels/Panels';
 test('七入口按真实 target.panel 逐行计数，与世界分组、对象数量及未读状态无关',()=>{
  const {before,after}=turnChangesPair(),original=structuredClone({before,after}),groups=diffTurn(before,after),badges=turnChangeBadges(groups);
