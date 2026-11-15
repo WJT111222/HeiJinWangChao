@@ -6,9 +6,11 @@ import '../mobile-feedback.css';
 
 export interface SelectOption { value: string; label: string; group?:string }
 // 只替换设置选择控件；浮层留在原 dialog 内，避免原生模态框使 body portal 不可交互。
-export function ThemedSelect({ label, value, options, onChange, disabled = false, searchable = false, onOpen }: {
+export function ThemedSelect({ label, value, options, onChange, disabled = false, searchable = false, onOpen, hint }: {
   label: string; value: string; options: readonly SelectOption[]; onChange: (value: string) => void;
   disabled?: boolean; searchable?: boolean; onOpen?: () => void;
+  /** 列表下方的说明文字（例如还没有可选项时告诉玩家下一步做什么）；不是选项，不能被选中。 */
+  hint?: string;
 }) {
   const desktop=useDesktopFeedback();
   const id = useId(), button = useRef<HTMLButtonElement>(null), popup = useRef<HTMLDivElement>(null);
@@ -71,6 +73,7 @@ export function ThemedSelect({ label, value, options, onChange, disabled = false
         </button></Fragment>)}
         {!filtered.length && <p className="muted">没有匹配项，可换个关键词或手动填写模型 ID。</p>}
       </div>
+      {hint && <p className="select-hint">{hint}</p>}
     </div>;
   return <div className="themed-select">
     <span id={`${id}-label`} className="select-label">{label}</span>
