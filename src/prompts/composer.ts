@@ -19,6 +19,21 @@ export interface ModuleRecord {
   characters: number;
   estimatedTokens: number;
 }
+/**
+ * 模型服务的提示缓存按「与上一回合一字不差的开头」计费：从第一个变化的字符起后面全部重新计算。
+ * 因此每回合都不变的上下文字段排在 GAME_CONTEXT 最前面，CURRENT_TIME 是第一个会变的字段。
+ * Claude 格式据此在 CURRENT_TIME 之前打缓存标记（见 protocols.ts）。只调整字段顺序，不增删内容。
+ */
+export const STABLE_CONTEXT_KEYS = ['COMMAND_CATALOG', 'TEXT_COMMAND_CATALOG', 'NPC_KNOWLEDGE_POLICY', 'TURN_TIME_POLICY', 'PROMPT_SETTINGS'] as const;
+export const FIRST_DYNAMIC_CONTEXT_KEY = 'CURRENT_TIME';
+function cacheFriendlyContext(context: Record<string, unknown>, extra: { PROMPT_SETTINGS: unknown; CURRENT_TIME: unknown }) {
+  const all: Record<string, unknown> = { ...context, PROMPT_SETTINGS: extra.PROMPT_SETTINGS };
+  const ordered: Record<string, unknown> = {};
+  for (const key of STABLE_CONTEXT_KEYS) if (key in all) ordered[key] = all[key];
+  ordered[FIRST_DYNAMIC_CONTEXT_KEY] = extra.CURRENT_TIME;
+  for (const [key, value] of Object.entries(all)) if (!(key in ordered)) ordered[key] = value;
+  return ordered;
+}
 export async function composePrompt(unchecked: ComposeInput) {
   return compose(unchecked);
 }
@@ -91,7 +106,10 @@ async function compose(unchecked: ComposeInput) {
   }
   messages.push({
     role: 'user',
-    content: contextMessage({ ...context, PROMPT_SETTINGS: input.settings.prompts }),
+    content: contextMessage(cacheFriendlyContext(context, {
+      PROMPT_SETTINGS: input.settings.prompts,
+      CURRENT_TIME: { worldClock: replacements.worldClock, worldWeekday: replacements.worldWeekday },
+    })),
   });
   // 最终格式提醒紧贴生成点：有确认历史时并入收尾 user 消息；否则作为末尾独立 user 消息。
   const tail = formatTailMessage(input.stage, {

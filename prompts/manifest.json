@@ -152,7 +152,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 4042,
+      "characters": 4082,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -162,11 +162,8 @@
       "orderGroup": "shared",
       "reorderable": false,
       "category": "shared",
-      "contentSha256": "ff4cfc0db487199eec51e42c02cc90e8ed1279f185a9f520b3f52504c49330c7",
-      "placeholders": [
-        "worldClock",
-        "worldWeekday"
-      ]
+      "contentSha256": "60d6ab4706d108612a852990ef2c43f0d598d3942adef536e450e8bb680c6bee",
+      "placeholders": []
     },
     {
       "id": "shared.04_state_authority",

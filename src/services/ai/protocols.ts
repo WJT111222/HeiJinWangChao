@@ -33,6 +33,23 @@ export function authHeaders(snapshot: RequestSnapshot): Record<string, string> {
     'anthropic-dangerous-direct-browser-access': 'true',
   };
 }
+/**
+ * Claude 格式需要显式缓存标记：系统提示词整体一个，GAME_CONTEXT 里固定字段结束处一个
+ * （第一个会变的字段 CURRENT_TIME 之前，见 composer.ts）。内容不变，只把同一段文字拆成两块。
+ * 其他格式的服务按前缀自动缓存，不需要也不发送这些字段。
+ */
+const CACHE_MARK = { type: 'ephemeral' } as const;
+const DYNAMIC_CONTEXT_MARKER = ',"CURRENT_TIME":';
+export function anthropicMessage(message: AiMessage) {
+  const boundary = message.role === 'user' && message.content.startsWith('<GAME_CONTEXT>')
+    ? message.content.indexOf(DYNAMIC_CONTEXT_MARKER) : -1;
+  if (boundary <= 0) return { role: message.role, content: message.content };
+  const cut = boundary + 1;
+  return { role: message.role, content: [
+    { type: 'text', text: message.content.slice(0, cut), cache_control: CACHE_MARK },
+    { type: 'text', text: message.content.slice(cut) },
+  ] };
+}
 export function wireRequest(
   snapshot: RequestSnapshot,
   messages: readonly AiMessage[],
@@ -107,8 +124,9 @@ export function wireRequest(
     path = 'messages';
     body = {
       model: snapshot.model,
-      system,
-      messages: conversation,
+      // 空系统块会被 Claude 接口拒绝；没有系统提示词时保持原来的空字符串。
+      system: system ? [{ type: 'text', text: system, cache_control: CACHE_MARK }] : system,
+      messages: conversation.map(anthropicMessage),
       stream,
       max_tokens: max ?? 4096,
       ...(thinking.anthropic ? { thinking: thinking.anthropic } : {}),
