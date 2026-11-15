@@ -13,6 +13,7 @@ export const variableStepNames = {
 export type VariableStep = keyof typeof variableStepNames;
 export const isVariableStep = (value: unknown): value is VariableStep => typeof value === 'string' && Object.hasOwn(variableStepNames, value);
 export type AiErrorCode =
+  | 'concurrency_unavailable'
   | 'storage'
   | 'variable_runtime'
   | 'configuration'
@@ -48,6 +49,7 @@ export type AiErrorCode =
   | 'content_filter'
   | 'parameter_adjusted';
 const messages: Record<AiErrorCode, string> = {
+  concurrency_unavailable: '当前浏览器无法使用 Web Locks，不能安全确认其他标签页是否正在生成，已阻止重新绑定和模型请求；输入未清除。请使用支持 Web Locks 的浏览器并重新读取存档后主动发送。',
   storage: '浏览器存储读取或保存失败，未接受新的变量候选。请检查存储空间及权限后明确重试。',
   variable_runtime: '变量处理未完成，请查看处理步骤定位错误；合法正文及正式存档仍保留。',
   model_list_format: '模型列表返回格式不受支持，未读取到约定的模型数组。',

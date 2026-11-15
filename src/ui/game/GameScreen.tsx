@@ -48,6 +48,7 @@ import { completeTurnDraft, awaitingPlayerAction, rebindableAfterStoryStop } fro
 import type { TurnCommitResult } from '../../services/storage/saveRepository';
 import { DataError } from '../../domain/common';
 import { storyError } from '../../workflows/storyStage';
+import { AiError } from '../../services/ai/errors';
 import { assessSummary } from '../../domain/memories/summary';
 import { useMemoryMaintenance } from './useMemoryMaintenance';
 import { MemorySummarySettings } from '../settings/MemorySummarySettings';
@@ -160,6 +161,7 @@ export function GameScreen({
   const [input, setInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [concurrencyBlocked, setConcurrencyBlocked] = useState(false);
   const [undoNotice, setUndoNotice] = useState('');
   const submitLock = useRef(false),
     submitToken = useRef(0);
@@ -285,6 +287,7 @@ export function GameScreen({
     const token = submitToken.current;
     setSubmitting(true);
     setSubmitError('');
+    setConcurrencyBlocked(false);
     try {
       if (bindAction) {
         const bound = await repository.bindTurnAction(draft, input, settings.runtime.useVariableStage, settings.runtime.useWorldStage);
@@ -312,8 +315,11 @@ export function GameScreen({
     } catch (failure) {
       if (submitToken.current === token) {
         reportRuntimeEvent(bindAction ? 'workflow' : 'commit', 'failed', failure);
+        setConcurrencyBlocked(failure instanceof AiError && failure.code === 'concurrency_unavailable');
         setSubmitError(
-          bindAction
+          bindAction && failure instanceof AiError && failure.code === 'concurrency_unavailable'
+            ? storyError(failure)
+            : bindAction
             ? '行动未发送：草稿版本冲突或存储失败。输入仍保留，请重新读取存档后重试。'
             : failure instanceof DataError && failure.code === 'TURN_TIME_REQUIRED'
             ? '本回合尚未推进时间，未正式结算。请补算变量；正文无需写出时间。'
@@ -424,7 +430,7 @@ export function GameScreen({
     : automatic.settling ? '正在正式结算'
     : activeStage ? `${stageLabels[activeStage]}${activePhase === 'saving' ? '保存中' : activePhase === 'retrying' ? '重试中' : '生成中'} · ${{ story: 1, variables: 2, world: 3 }[activeStage]}/3`
     : automatic.running ? '正在准备生成'
-    : hasWorkflowError && submitError ? `${awaitingAction ? '行动发送' : '结算'}失败 · 查看详情`
+    : hasWorkflowError && submitError ? `${awaitingAction || rebindAction ? '行动发送' : '结算'}失败 · 查看详情`
     : hasWorkflowError && (currentFailure?.kind === 'cancelled' || currentFailure?.code === 'cancelled') ? '已取消 · 可恢复'
     : hasWorkflowError ? `${errorLabel}${errorStage === 'commit' ? '' : '生成'}失败 · 查看详情`
     : awaitingAction ? '本回合已结算 · 等待行动'
@@ -772,6 +778,7 @@ export function GameScreen({
             </section>
           </div>
           {undoNotice && <p role="status" className="undo-feedback">{undoNotice}</p>}
+          {concurrencyBlocked && <p id="action-concurrency-error" role="alert" className="undo-feedback">{submitError}</p>}
           <div className="composer-action-row">
             <ComposerTools compact={compactSidebars} menu={Boolean(automatic.running||manualProgress||((!draft||canStartStory)&&!awaitingAction))}>
               <TurnUndoControl compact={compactSidebars&&!(automatic.running||manualProgress||((!draft||canStartStory)&&!awaitingAction))}
@@ -820,7 +827,7 @@ export function GameScreen({
               ) : null}
             </ComposerTools>
             <label className="sr-only" htmlFor="player-input">你的行动</label>
-            <textarea id="player-input" ref={inputElement} disabled={submitting} value={input}
+            <textarea id="player-input" ref={inputElement} aria-describedby={concurrencyBlocked ? "action-concurrency-error" : undefined} disabled={submitting} value={input}
               onChange={(e) => setInput(e.target.value)} rows={compactSidebars?1:2}
               placeholder={compactSidebars ? '填写你的行动' : '填写你的行动；发送后生成三阶段并自动结算'} />
             <div className="composer-footer">

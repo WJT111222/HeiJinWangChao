@@ -446,9 +446,10 @@ describe('真实正文入口与草稿原子替换', () => {
     const rejected = expect(pending).rejects.toMatchObject({ code: 'cancelled' });
     await started.promise;
     first.cancel();
+    // 等本地取消完成并释放跨标签锁；旧 transport 仍未返回，不等待它才能恢复。
+    await rejected;
     const saved = await runner(async () => sse(output())).generate({ ...setup(), draft });
     late.resolve(sse(output('迟到的旧正文，绝不允许取代新正文。')));
-    await rejected;
     await new Promise((done) => setTimeout(done, 5));
     expect(await repo.loadDraft(draft.saveId)).toEqual(saved);
   });

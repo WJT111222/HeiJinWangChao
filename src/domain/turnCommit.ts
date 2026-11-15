@@ -27,7 +27,8 @@ export function awaitingPlayerAction(state: GameState, draft?: TurnDraft) {
 }
 /**
  * 已绑定行动、但正文失败或被取消且尚未产生任何候选的普通回合。
- * 此时没有任何结果被保存，允许把原行动放回输入框，由玩家原样或修改后重新发送（重新绑定为全新草稿）。
+ * 仅判断可回填/重绑的数据形态，pending 也可能仍在运行，failed 也可能正在手动重试。
+ * 是否允许写入或发送必须另外取得跨标签执行锁；本函数不证明请求已经停止。
  */
 export function rebindableAfterStoryStop(state: GameState, draft?: TurnDraft) {
   return Boolean(draft && state.turnNumber > 0 && draft.turnKind === 'regular' && draft.userInput.trim() !== ''

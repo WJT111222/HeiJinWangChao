@@ -664,7 +664,7 @@ export class SaveRepository {
         control.input = ''; control.memoryPaused = false; delete control.lastUndo;
         await writeControl(tx, control);
         await request(store.put(next)); return next;
-      }));
+      }), { required: true });
     } finally { session.release(); }
   }
 

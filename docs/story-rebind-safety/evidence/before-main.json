@@ -1,0 +1,13 @@
+{
+  "withoutLocks": true,
+  "activeLocks": [],
+  "result": {
+    "code": "DRAFT_CONFLICT",
+    "locksAvailable": false,
+    "stateUnchanged": true,
+    "draftUnchanged": true
+  },
+  "calls": [
+    "story"
+  ]
+}
