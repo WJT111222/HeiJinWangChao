@@ -1,0 +1,2306 @@
+{
+  "rows": [
+    {
+      "text": "设置",
+      "tag": "H2",
+      "classes": "",
+      "color": "rgb(31, 27, 23)",
+      "foreground": [
+        31,
+        27,
+        23,
+        1
+      ],
+      "background": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "23.2px",
+      "fontWeight": "600",
+      "ratio": 12.537757913281162,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "H2",
+          "classes": "",
+          "color": "rgb(31, 27, 23)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "ar-title",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HEADER",
+          "classes": "ar-head",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "本地偏好与 AI 渠道",
+      "tag": "SPAN",
+      "classes": "sub",
+      "color": "rgb(95, 87, 76)",
+      "foreground": [
+        95,
+        87,
+        76,
+        1
+      ],
+      "background": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "12.8px",
+      "fontWeight": "400",
+      "ratio": 5.209138505051918,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "SPAN",
+          "classes": "sub",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "ar-title",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HEADER",
+          "classes": "ar-head",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "关闭 ×",
+      "tag": "BUTTON",
+      "classes": "ar-close",
+      "color": "rgb(43, 39, 35)",
+      "foreground": [
+        43,
+        39,
+        35,
+        1
+      ],
+      "background": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "13.44px",
+      "fontWeight": "400",
+      "ratio": 10.858718668328587,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "BUTTON",
+          "classes": "ar-close",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HEADER",
+          "classes": "ar-head",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "AI 连接",
+      "tag": "SPAN",
+      "classes": "",
+      "color": "rgb(95, 87, 76)",
+      "foreground": [
+        95,
+        87,
+        76,
+        1
+      ],
+      "background": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "14.08px",
+      "fontWeight": "400",
+      "ratio": 5.209138505051918,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "SPAN",
+          "classes": "",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BUTTON",
+          "classes": "",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "NAV",
+          "classes": "settings-nav",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "提示词",
+      "tag": "SPAN",
+      "classes": "",
+      "color": "rgb(31, 27, 23)",
+      "foreground": [
+        31,
+        27,
+        23,
+        1
+      ],
+      "background": [
+        221.12,
+        211.04000000000002,
+        188.8,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "14.08px",
+      "fontWeight": "400",
+      "ratio": 11.514494917100716,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "SPAN",
+          "classes": "",
+          "color": "rgb(31, 27, 23)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BUTTON",
+          "classes": "",
+          "color": "rgb(31, 27, 23)",
+          "background": "rgba(142, 108, 37, 0.08)",
+          "opacity": 1
+        },
+        {
+          "tag": "NAV",
+          "classes": "settings-nav",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "记忆",
+      "tag": "SPAN",
+      "classes": "",
+      "color": "rgb(95, 87, 76)",
+      "foreground": [
+        95,
+        87,
+        76,
+        1
+      ],
+      "background": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "14.08px",
+      "fontWeight": "400",
+      "ratio": 5.209138505051918,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "SPAN",
+          "classes": "",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BUTTON",
+          "classes": "",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "NAV",
+          "classes": "settings-nav",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "运行",
+      "tag": "SPAN",
+      "classes": "",
+      "color": "rgb(95, 87, 76)",
+      "foreground": [
+        95,
+        87,
+        76,
+        1
+      ],
+      "background": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "14.08px",
+      "fontWeight": "400",
+      "ratio": 5.209138505051918,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "SPAN",
+          "classes": "",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BUTTON",
+          "classes": "",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "NAV",
+          "classes": "settings-nav",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "提示词管理",
+      "tag": "SPAN",
+      "classes": "",
+      "color": "rgb(95, 87, 76)",
+      "foreground": [
+        95,
+        87,
+        76,
+        1
+      ],
+      "background": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "14.08px",
+      "fontWeight": "400",
+      "ratio": 5.209138505051918,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "SPAN",
+          "classes": "",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BUTTON",
+          "classes": "",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "NAV",
+          "classes": "settings-nav",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "游玩须知与免责声明",
+      "tag": "BUTTON",
+      "classes": "",
+      "color": "rgb(45, 94, 125)",
+      "foreground": [
+        45,
+        94,
+        125,
+        1
+      ],
+      "background": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "12.48px",
+      "fontWeight": "400",
+      "ratio": 5.114652432884239,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "BUTTON",
+          "classes": "",
+          "color": "rgb(45, 94, 125)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "notice-links",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "NAV",
+          "classes": "settings-nav",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "王朝公告",
+      "tag": "BUTTON",
+      "classes": "",
+      "color": "rgb(45, 94, 125)",
+      "foreground": [
+        45,
+        94,
+        125,
+        1
+      ],
+      "background": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "12.48px",
+      "fontWeight": "400",
+      "ratio": 5.114652432884239,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "BUTTON",
+          "classes": "",
+          "color": "rgb(45, 94, 125)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "notice-links",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "NAV",
+          "classes": "settings-nav",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "提示词",
+      "tag": "H3",
+      "classes": "",
+      "color": "rgb(31, 27, 23)",
+      "foreground": [
+        31,
+        27,
+        23,
+        1
+      ],
+      "background": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "21.6px",
+      "fontWeight": "600",
+      "ratio": 12.537757913281162,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "H3",
+          "classes": "",
+          "color": "rgb(31, 27, 23)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-content",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "七项叙事偏好用于下一次正文请求的提示词与输出校验。",
+      "tag": "P",
+      "classes": "muted",
+      "color": "rgb(95, 87, 76)",
+      "foreground": [
+        95,
+        87,
+        76,
+        1
+      ],
+      "background": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "ratio": 5.209138505051918,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "P",
+          "classes": "muted",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-content",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "叙事人称",
+      "tag": "LABEL",
+      "classes": "",
+      "color": "rgb(95, 87, 76)",
+      "foreground": [
+        95,
+        87,
+        76,
+        1
+      ],
+      "background": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "13.76px",
+      "fontWeight": "400",
+      "ratio": 5.209138505051918,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "LABEL",
+          "classes": "",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-fields",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-content",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "third",
+      "tag": "SELECT",
+      "classes": "",
+      "color": "rgb(43, 39, 35)",
+      "foreground": [
+        43,
+        39,
+        35,
+        1
+      ],
+      "background": [
+        248,
+        244,
+        234,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "13.76px",
+      "fontWeight": "400",
+      "ratio": 13.491197901673056,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "SELECT",
+          "classes": "",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(248, 244, 234)",
+          "opacity": 1
+        },
+        {
+          "tag": "LABEL",
+          "classes": "",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-fields",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-content",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "剧情风格",
+      "tag": "LABEL",
+      "classes": "",
+      "color": "rgb(95, 87, 76)",
+      "foreground": [
+        95,
+        87,
+        76,
+        1
+      ],
+      "background": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "13.76px",
+      "fontWeight": "400",
+      "ratio": 5.209138505051918,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "LABEL",
+          "classes": "",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-fields",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-content",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "general",
+      "tag": "SELECT",
+      "classes": "",
+      "color": "rgb(43, 39, 35)",
+      "foreground": [
+        43,
+        39,
+        35,
+        1
+      ],
+      "background": [
+        248,
+        244,
+        234,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "13.76px",
+      "fontWeight": "400",
+      "ratio": 13.491197901673056,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "SELECT",
+          "classes": "",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(248, 244, 234)",
+          "opacity": 1
+        },
+        {
+          "tag": "LABEL",
+          "classes": "",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-fields",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-content",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "正文最低字数",
+      "tag": "LABEL",
+      "classes": "",
+      "color": "rgb(95, 87, 76)",
+      "foreground": [
+        95,
+        87,
+        76,
+        1
+      ],
+      "background": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "13.76px",
+      "fontWeight": "400",
+      "ratio": 5.209138505051918,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "LABEL",
+          "classes": "",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-fields",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-content",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "1500",
+      "tag": "INPUT",
+      "classes": "",
+      "color": "rgb(43, 39, 35)",
+      "foreground": [
+        43,
+        39,
+        35,
+        1
+      ],
+      "background": [
+        248,
+        244,
+        234,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "13.76px",
+      "fontWeight": "400",
+      "ratio": 13.491197901673056,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "INPUT",
+          "classes": "",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(248, 244, 234)",
+          "opacity": 1
+        },
+        {
+          "tag": "LABEL",
+          "classes": "",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-fields",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-content",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "NoControl（防抢话）",
+      "tag": "LABEL",
+      "classes": "toggle",
+      "color": "rgb(95, 87, 76)",
+      "foreground": [
+        95,
+        87,
+        76,
+        1
+      ],
+      "background": [
+        246,
+        241,
+        230,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "14.08px",
+      "fontWeight": "400",
+      "ratio": 6.310746373303333,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "LABEL",
+          "classes": "toggle",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgb(246, 241, 230)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-fields",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-content",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "自然文风修复",
+      "tag": "LABEL",
+      "classes": "toggle",
+      "color": "rgb(95, 87, 76)",
+      "foreground": [
+        95,
+        87,
+        76,
+        1
+      ],
+      "background": [
+        246,
+        241,
+        230,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "14.08px",
+      "fontWeight": "400",
+      "ratio": 6.310746373303333,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "LABEL",
+          "classes": "toggle",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgb(246, 241, 230)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-fields",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-content",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "行动选项",
+      "tag": "LABEL",
+      "classes": "toggle",
+      "color": "rgb(95, 87, 76)",
+      "foreground": [
+        95,
+        87,
+        76,
+        1
+      ],
+      "background": [
+        246,
+        241,
+        230,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "14.08px",
+      "fontWeight": "400",
+      "ratio": 6.310746373303333,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "LABEL",
+          "classes": "toggle",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgb(246, 241, 230)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-fields",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-content",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "真实世界模式",
+      "tag": "LABEL",
+      "classes": "toggle",
+      "color": "rgb(95, 87, 76)",
+      "foreground": [
+        95,
+        87,
+        76,
+        1
+      ],
+      "background": [
+        246,
+        241,
+        230,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "14.08px",
+      "fontWeight": "400",
+      "ratio": 6.310746373303333,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "LABEL",
+          "classes": "toggle",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgb(246, 241, 230)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-fields",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-content",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "本地设置尚未保存。",
+      "tag": "B",
+      "classes": "",
+      "color": "rgb(36, 79, 107)",
+      "foreground": [
+        36,
+        79,
+        107,
+        1
+      ],
+      "background": [
+        216.47100000000003,
+        212.062,
+        197.149,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "12.48px",
+      "fontWeight": "600",
+      "ratio": 5.888214810239198,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "B",
+          "classes": "",
+          "color": "rgb(36, 79, 107)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "feedback-text",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "feedback l-info field-hint",
+          "color": "rgb(95, 87, 76)",
+          "background": "rgba(45, 94, 125, 0.063)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "local-save-bar",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-content",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "text": "保存本地设置",
+      "tag": "BUTTON",
+      "classes": "primary",
+      "color": "rgb(244, 237, 224)",
+      "foreground": [
+        244,
+        237,
+        224,
+        1
+      ],
+      "background": [
+        31,
+        27,
+        23,
+        1
+      ],
+      "opacity": "1",
+      "fontSize": "16px",
+      "fontWeight": "650",
+      "ratio": 14.69493037887628,
+      "threshold": 4.5,
+      "ancestors": [
+        {
+          "tag": "BUTTON",
+          "classes": "primary",
+          "color": "rgb(244, 237, 224)",
+          "background": "rgb(31, 27, 23)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "local-save-bar",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-content",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "settings-layout st-wrap ",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "modal-body",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIALOG",
+          "classes": "modal settings-paper settings-dialog",
+          "color": "rgb(43, 39, 35)",
+          "background": "rgb(228, 220, 202)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "app-shell app-shell-home",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "DIV",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "BODY",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": 1
+        },
+        {
+          "tag": "HTML",
+          "classes": "",
+          "color": "rgb(232, 228, 216)",
+          "background": "rgb(11, 13, 12)",
+          "opacity": 1
+        }
+      ]
+    }
+  ],
+  "failures": [],
+  "controls": [
+    {
+      "classes": "",
+      "kind": "field",
+      "boundaryRatio": 3.9416880270710797,
+      "thumbRatio": 4.897271479642867
+    },
+    {
+      "classes": "",
+      "kind": "field",
+      "boundaryRatio": 3.9416880270710797,
+      "thumbRatio": 4.897271479642867
+    },
+    {
+      "classes": "",
+      "kind": "field",
+      "boundaryRatio": 3.9416880270710797,
+      "thumbRatio": 4.897271479642867
+    },
+    {
+      "classes": "",
+      "kind": "switch",
+      "checked": false,
+      "boundaryRatio": 5.120140319166987,
+      "thumbRatio": 5.4375276383265545
+    },
+    {
+      "classes": "",
+      "kind": "switch",
+      "checked": true,
+      "boundaryRatio": 4.608298503771455,
+      "thumbRatio": 4.893957766374833
+    },
+    {
+      "classes": "",
+      "kind": "switch",
+      "checked": true,
+      "boundaryRatio": 4.608298503771455,
+      "thumbRatio": 4.893957766374833
+    },
+    {
+      "classes": "",
+      "kind": "switch",
+      "checked": true,
+      "boundaryRatio": 4.608298503771455,
+      "thumbRatio": 4.893957766374833
+    }
+  ],
+  "controlFailures": []
+}

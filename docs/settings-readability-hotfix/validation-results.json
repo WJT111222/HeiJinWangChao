@@ -1,0 +1,314 @@
+{
+  "base": "6fd868b8ee3acf97abd61dd9872712a8d4add08e",
+  "codeCommit": "eb785d38c3cb309bdc0e102e14c6c277166769f3",
+  "node": "v24.19.0",
+  "chromium": "154.0.8037.57",
+  "batches": [
+    {
+      "log": "acceptance-chromium.log",
+      "exit": "130",
+      "chromiumSummary": {
+        "passed": 4,
+        "failed": 2,
+        "skipped": 0,
+        "interrupted": 2,
+        "did not run": 4
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "check-node24-final.log",
+      "exit": "0",
+      "chromiumSummary": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": [
+        "Test Files  153 passed (153)",
+        "Tests  3841 passed (3841)"
+      ]
+    },
+    {
+      "log": "check-release.log",
+      "exit": "0",
+      "chromiumSummary": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": [
+        "Test Files  153 passed (153)",
+        "Tests  3841 passed (3841)"
+      ]
+    },
+    {
+      "log": "check.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": [
+        "Test Files  1 failed | 152 passed (153)",
+        "Tests  3822 passed (3822)"
+      ]
+    },
+    {
+      "log": "existing-chromium.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 1,
+        "failed": 3,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "existing-desktop-budget.log",
+      "exit": "0",
+      "chromiumSummary": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "existing-main-chromium.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 2,
+        "failed": 2,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "existing-main-desktop-budget.log",
+      "exit": "0",
+      "chromiumSummary": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "existing-stable-chromium.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 1,
+        "failed": 3,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "final-chromium.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 4,
+        "failed": 8,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "hover-chromium.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 2,
+        "failed": 2,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "initial-chromium.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 5,
+        "failed": 7,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "main-chromium-control.log",
+      "exit": "130",
+      "chromiumSummary": {
+        "passed": 0,
+        "failed": 2,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 2
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "main-unit-environment-control.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": [
+        "Test Files  1 failed (1)",
+        "Tests  no tests"
+      ]
+    },
+    {
+      "log": "main-verified-chromium.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 0,
+        "failed": 4,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "mobile-menu-chromium.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "mobile-menu-main-chromium.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "preview-chromium.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 1,
+        "failed": 1,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "prompts-check.log",
+      "exit": "0",
+      "chromiumSummary": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": [
+        "Test Files  3 passed (3)",
+        "Tests  93 passed (93)"
+      ]
+    },
+    {
+      "log": "red.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "release-chromium.log",
+      "exit": "0",
+      "chromiumSummary": {
+        "passed": 14,
+        "failed": 0,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "second-chromium.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 8,
+        "failed": 4,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    },
+    {
+      "log": "unit-environment-probe.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": [
+        "Test Files  1 failed (1)",
+        "Tests  no tests"
+      ]
+    },
+    {
+      "log": "verified-chromium.log",
+      "exit": "1",
+      "chromiumSummary": {
+        "passed": 9,
+        "failed": 3,
+        "skipped": 0,
+        "interrupted": 0,
+        "did not run": 0
+      },
+      "unitSummary": []
+    }
+  ]
+}

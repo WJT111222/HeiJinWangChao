@@ -1,0 +1,242 @@
+[
+  {
+    "caseName": "pc-home",
+    "page": "prompts",
+    "text": "叙事人称",
+    "sampleBoxPixels": [
+      389,
+      281,
+      444,
+      301
+    ],
+    "backgroundMode": [
+      225,
+      217,
+      199
+    ],
+    "backgroundCss": [
+      228,
+      220,
+      202
+    ],
+    "modeCount": 163,
+    "pixelCount": 1100,
+    "contrastUsingRenderedBackgroundMode": 5.061020352739841,
+    "contrastCss": 5.209138505051918,
+    "foregroundCss": [
+      95,
+      87,
+      76
+    ]
+  },
+  {
+    "caseName": "pc-game",
+    "page": "prompts",
+    "text": "叙事人称",
+    "sampleBoxPixels": [
+      495,
+      292,
+      550,
+      312
+    ],
+    "backgroundMode": [
+      225,
+      217,
+      199
+    ],
+    "backgroundCss": [
+      228,
+      220,
+      202
+    ],
+    "modeCount": 166,
+    "pixelCount": 1100,
+    "contrastUsingRenderedBackgroundMode": 5.061020352739841,
+    "contrastCss": 5.209138505051918,
+    "foregroundCss": [
+      95,
+      87,
+      76
+    ]
+  },
+  {
+    "caseName": "pc-home",
+    "page": "prompts",
+    "text": "1500",
+    "sampleBoxPixels": [
+      1205,
+      450,
+      1215,
+      458
+    ],
+    "backgroundMode": [
+      248,
+      244,
+      234
+    ],
+    "backgroundCss": [
+      248,
+      244,
+      234
+    ],
+    "modeCount": 80,
+    "pixelCount": 80,
+    "contrastUsingRenderedBackgroundMode": 13.491197901673056,
+    "contrastCss": 13.491197901673056,
+    "foregroundCss": [
+      43,
+      39,
+      35
+    ]
+  },
+  {
+    "caseName": "mobile-home",
+    "page": "prompts",
+    "text": "叙事人称",
+    "sampleBoxPixels": [
+      36,
+      625,
+      171,
+      675
+    ],
+    "backgroundMode": [
+      228,
+      220,
+      202
+    ],
+    "backgroundCss": [
+      228,
+      220,
+      202
+    ],
+    "modeCount": 4966,
+    "pixelCount": 6750,
+    "contrastUsingRenderedBackgroundMode": 5.209138505051918,
+    "contrastCss": 5.209138505051918,
+    "foregroundCss": [
+      95,
+      87,
+      76
+    ]
+  },
+  {
+    "caseName": "mobile-home",
+    "page": "prompts",
+    "text": "NoControl（防抢话）",
+    "sampleBoxPixels": [
+      68,
+      1376,
+      419,
+      1429
+    ],
+    "backgroundMode": [
+      239,
+      232,
+      217
+    ],
+    "backgroundCss": [
+      239,
+      232,
+      217
+    ],
+    "modeCount": 15046,
+    "pixelCount": 18603,
+    "contrastUsingRenderedBackgroundMode": 5.827173810601192,
+    "contrastCss": 5.827173810601192,
+    "foregroundCss": [
+      95,
+      87,
+      76
+    ]
+  },
+  {
+    "caseName": "pc-home",
+    "page": "ai",
+    "text": "设置本身不会发起生成请求。",
+    "sampleBoxPixels": [
+      440,
+      806,
+      618,
+      826
+    ],
+    "backgroundMode": [
+      216,
+      212,
+      197
+    ],
+    "backgroundCss": [
+      216.47100000000003,
+      212.062,
+      197.149
+    ],
+    "modeCount": 1942,
+    "pixelCount": 3560,
+    "contrastUsingRenderedBackgroundMode": 5.879096089500948,
+    "contrastCss": 5.888214810239198,
+    "foregroundCss": [
+      36,
+      79,
+      107
+    ]
+  },
+  {
+    "caseName": "pc-home",
+    "page": "manager",
+    "text": "不注入",
+    "sampleBoxPixels": [
+      415,
+      358,
+      446,
+      373
+    ],
+    "backgroundMode": [
+      239,
+      232,
+      217
+    ],
+    "backgroundCss": [
+      239,
+      232,
+      217
+    ],
+    "modeCount": 330,
+    "pixelCount": 465,
+    "contrastUsingRenderedBackgroundMode": 5.827173810601192,
+    "contrastCss": 5.827173810601192,
+    "foregroundCss": [
+      95,
+      87,
+      76
+    ]
+  },
+  {
+    "caseName": "pc-home",
+    "page": "manager",
+    "text": "游戏实际发给模型的提示词 · 原文只读",
+    "sampleBoxPixels": [
+      389,
+      211,
+      607,
+      229
+    ],
+    "backgroundMode": [
+      225,
+      217,
+      199
+    ],
+    "backgroundCss": [
+      228,
+      220,
+      202
+    ],
+    "modeCount": 630,
+    "pixelCount": 3924,
+    "contrastUsingRenderedBackgroundMode": 5.061020352739841,
+    "contrastCss": 5.209138505051918,
+    "foregroundCss": [
+      95,
+      87,
+      76
+    ]
+  }
+]

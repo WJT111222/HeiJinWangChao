@@ -1,8 +1,8 @@
 /* Settings presentation only. All operations remain in the original controllers. */
 .local-save-bar,.memory-save-bar {display:contents;}
 @media(min-width:901px){
-.app-shell .settings-paper[data-tone=paper]{--sheet:#E4DCCA;--sheet-solid:#E4DCCA;--card:#EFE8D9;--hair:#2a26221a;--line:#2a26221f;--line-2:#2a262233;--ink-3:#2a262245;
-  --head:#1F1B17;--text:#2B2723;--muted:#5F574C;--dim:#857B6C;--gold:#8E6C25;--gold-hi:#6F5216;--gold-lo:#B79755;--info:#2D5E7D;--pos:#2F7A58;--neg:#A3412E;
+.app-shell dialog.settings-paper.settings-dialog[data-tone=paper]{--sheet:#E4DCCA;--sheet-solid:#E4DCCA;--card:#EFE8D9;--hair:#2a26221a;--line:#2a26221f;--line-2:#2a262233;--ink-3:#2a262245;
+  --head:#1F1B17;--text:#2B2723;--muted:#5F574C;--dim:var(--settings-detail,#857B6C);--gold:#8E6C25;--gold-hi:#6F5216;--gold-lo:#B79755;--info:#2D5E7D;--pos:#2F7A58;--neg:#A3412E;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   backdrop-filter:none;box-shadow:-30px 0 60px -20px #000c;color-scheme:light}
 .app-shell .settings-paper[data-tone=paper] .st-wrap{flex:1;min-height:0;display:grid;grid-template-columns:12.5rem minmax(0,1fr)}
@@ -109,7 +109,7 @@
  .app-shell .settings-paper[data-tone=paper] .settings-layout .settings-nav>button {margin:0;white-space:normal;min-width:0;}
  .app-shell .settings-paper[data-tone=paper] .settings-content {min-height:0;overflow:auto;overscroll-behavior:contain;padding:1.3rem 1.5rem 0;display:block;scrollbar-gutter:stable;}
  .app-shell .settings-paper[data-tone=paper] .settings-content>h3 {font:1.35rem var(--font-title);letter-spacing:.2em;color:var(--head);margin:0 0 .7rem;}
- .app-shell .settings-paper[data-tone=paper] .settings-content input,.app-shell .settings-paper[data-tone=paper] .settings-content textarea,.app-shell .settings-paper[data-tone=paper] .settings-content select,.app-shell .settings-paper[data-tone=paper] .select-trigger {background:#F8F4EA;color:var(--text);border-color:var(--line-2);min-width:0;max-width:100%;font-size:.86rem;}
+ .app-shell .settings-paper[data-tone=paper] .settings-content input:not([type=checkbox]):not([type=radio]),.app-shell .settings-paper[data-tone=paper] .settings-content textarea,.app-shell .settings-paper[data-tone=paper] .settings-content select,.app-shell .settings-paper[data-tone=paper] .select-trigger {background:#F8F4EA;color:var(--text);border-color:var(--settings-control,var(--line-2));min-width:0;max-width:100%;font-size:.86rem;}
  .app-shell .settings-paper[data-tone=paper] .select-popup {background:#F8F4EA;color:var(--text);border-color:var(--line-2);}
  .app-shell .settings-paper[data-tone=paper] .select-popup [role=option] {color:var(--text);background:transparent;}
  .app-shell .settings-paper[data-tone=paper] .select-popup [aria-selected=true],.app-shell .settings-paper[data-tone=paper] .select-popup .option-active {background:#8E6C251a;}
@@ -181,3 +181,51 @@
  .app-shell .settings-paper[data-tone=paper] .ai-route .model-picker>.field-hint {grid-row:3;margin:.2rem 0;font-size:.7rem;line-height:1.5;}
  .app-shell .settings-paper[data-tone=paper] .ai-route .model-picker>button {grid-row:2;margin:0;padding:.25rem .4rem;font-size:.68rem;}
 }
+
+/* Shared readable ink for both settings hosts, independent of home/game entry.
+   The paper, texture, typography, layout and actual disabled states stay intact. */
+.app-shell :is(.settings-paper,.settings-mobile-paper) {
+ --settings-detail:#5F574C;
+ --settings-control:#746958;
+ --settings-switch-off:#6B655C;
+ --settings-positive:#256347;
+ --settings-negative:#963925;
+ --settings-info:#244F6B;
+ --feedback-err:var(--settings-negative);
+ --feedback-warn:#6F5216;
+ --feedback-info:var(--settings-info);
+ --feedback-ok:var(--settings-positive);
+ --feedback-err-bg:#a3412e10;--feedback-err-bd:#a3412e55;
+ --feedback-warn-bg:#8e6c2512;--feedback-warn-bd:#8e6c2555;
+ --feedback-info-bg:#2d5e7d10;--feedback-info-bd:#2d5e7d44;
+ --feedback-ok-bg:#2f7a5810;--feedback-ok-bd:#2f7a5855;
+}
+.app-shell :is(.settings-paper,.settings-mobile-paper) .settings-content label,
+.app-shell :is(.settings-paper,.settings-mobile-paper) .settings-content label.toggle {color:var(--muted);}
+.app-shell dialog:is(.settings-paper,.settings-mobile-paper) .settings-content button.primary:hover:not(:disabled) {background:#000;color:#fff;}
+/* The global dark hover surface must not sit behind paper-ink button labels.
+   Selected controls and prompt resources keep their own component treatments. */
+.app-shell dialog:is(.settings-paper,.settings-mobile-paper) .settings-content button:hover:not(:disabled):where(:not([aria-pressed=true],.primary,.feedback-danger,.pm-open,.pm-back,.pm-groups button,dialog dialog *)) {background:#F8F4EA;}
+.app-shell dialog:is(.settings-paper,.settings-mobile-paper) .ai-conn .ai-chip[aria-pressed=true]:hover:not(:disabled) {background:var(--ac-head);color:#F4EDE0;}
+.app-shell .settings-mobile-paper .ai-save-bar .ai-btn.ghost:not(:disabled) {color:var(--text);}
+.app-shell :is(.settings-paper,.settings-mobile-paper) :is(input,textarea)::placeholder {color:var(--muted);opacity:1;}
+.app-shell :is(.settings-paper,.settings-mobile-paper) .settings-content :is(input:not([type=checkbox]):not([type=radio]),textarea,select,.select-trigger,.ai-field) {border-color:var(--settings-control);}
+.app-shell :is(.settings-paper,.settings-mobile-paper) :is(.toggle input,.pm-switch):not(:checked),
+.app-shell :is(.settings-paper,.settings-mobile-paper) .ai-switch input:not(:checked)+.ai-sw {background:var(--settings-switch-off);}
+.app-shell :is(.settings-paper,.settings-mobile-paper) .feedback-icon {color:#F6F0E2;}
+.app-shell :is(.settings-paper,.settings-mobile-paper) .ai-conn {
+ --ac-ok:var(--settings-positive);--ac-err:var(--settings-negative);
+ --ac-info:var(--settings-info);--ac-warn:var(--feedback-warn);
+}
+.app-shell :is(.settings-paper,.settings-mobile-paper) .pm {--pm-pos:var(--settings-positive);}
+.app-shell :is(.settings-paper,.settings-mobile-paper) .pm-switch:checked {background:var(--pm-pos);}
+
+/* Confirmations keep their existing dark surface. Reset their text theme at
+   their own root instead of inheriting paper ink or styling other dialogs. */
+.app-shell :is(.settings-paper,.settings-mobile-paper) dialog.feedback-dialog {
+ --text:#ECE7DA;--muted:#B5B1A6;--dim:#B5B1A6;--status-bg:#0E110F;
+ --feedback-err:#D47C60;--feedback-warn:#E0C27A;--feedback-info:#8EC1E0;--feedback-ok:#7DBB9C;
+ color:var(--text);color-scheme:dark;
+}
+.app-shell :is(.settings-paper,.settings-mobile-paper) dialog.feedback-dialog>.modal-heading :is(h2,button) {color:var(--text);}
+.app-shell dialog:is(.settings-paper,.settings-mobile-paper) dialog.feedback-dialog .feedback-danger:hover:not(:disabled) {background:var(--settings-negative);color:#fff;}

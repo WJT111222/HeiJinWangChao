@@ -1,0 +1,242 @@
+[
+  {
+    "caseName": "pc-home",
+    "page": "prompts",
+    "text": "叙事人称",
+    "sampleBoxPixels": [
+      389,
+      281,
+      444,
+      301
+    ],
+    "backgroundMode": [
+      225,
+      217,
+      199
+    ],
+    "backgroundCss": [
+      228,
+      220,
+      202
+    ],
+    "modeCount": 169,
+    "pixelCount": 1100,
+    "contrastUsingRenderedBackgroundMode": 1.0690060014519795,
+    "contrastCss": 1.1002920233822946,
+    "foregroundCss": [
+      207,
+      213,
+      198
+    ]
+  },
+  {
+    "caseName": "pc-game",
+    "page": "prompts",
+    "text": "叙事人称",
+    "sampleBoxPixels": [
+      495,
+      292,
+      550,
+      312
+    ],
+    "backgroundMode": [
+      225,
+      217,
+      199
+    ],
+    "backgroundCss": [
+      228,
+      220,
+      202
+    ],
+    "modeCount": 166,
+    "pixelCount": 1100,
+    "contrastUsingRenderedBackgroundMode": 5.061020352739841,
+    "contrastCss": 5.209138505051918,
+    "foregroundCss": [
+      95,
+      87,
+      76
+    ]
+  },
+  {
+    "caseName": "pc-home",
+    "page": "prompts",
+    "text": "1500",
+    "sampleBoxPixels": [
+      1205,
+      450,
+      1215,
+      458
+    ],
+    "backgroundMode": [
+      248,
+      244,
+      234
+    ],
+    "backgroundCss": [
+      248,
+      244,
+      234
+    ],
+    "modeCount": 80,
+    "pixelCount": 80,
+    "contrastUsingRenderedBackgroundMode": 13.491197901673056,
+    "contrastCss": 13.491197901673056,
+    "foregroundCss": [
+      43,
+      39,
+      35
+    ]
+  },
+  {
+    "caseName": "mobile-home",
+    "page": "prompts",
+    "text": "叙事人称",
+    "sampleBoxPixels": [
+      36,
+      625,
+      171,
+      675
+    ],
+    "backgroundMode": [
+      228,
+      220,
+      202
+    ],
+    "backgroundCss": [
+      228,
+      220,
+      202
+    ],
+    "modeCount": 4966,
+    "pixelCount": 6750,
+    "contrastUsingRenderedBackgroundMode": 5.209138505051918,
+    "contrastCss": 5.209138505051918,
+    "foregroundCss": [
+      95,
+      87,
+      76
+    ]
+  },
+  {
+    "caseName": "mobile-home",
+    "page": "prompts",
+    "text": "NoControl（防抢话）",
+    "sampleBoxPixels": [
+      68,
+      1376,
+      419,
+      1429
+    ],
+    "backgroundMode": [
+      239,
+      232,
+      217
+    ],
+    "backgroundCss": [
+      239,
+      232,
+      217
+    ],
+    "modeCount": 15071,
+    "pixelCount": 18603,
+    "contrastUsingRenderedBackgroundMode": 1.2308355511086182,
+    "contrastCss": 1.2308355511086182,
+    "foregroundCss": [
+      207,
+      213,
+      198
+    ]
+  },
+  {
+    "caseName": "pc-home",
+    "page": "ai",
+    "text": "设置本身不会发起生成请求。",
+    "sampleBoxPixels": [
+      440,
+      806,
+      618,
+      826
+    ],
+    "backgroundMode": [
+      221,
+      218,
+      203
+    ],
+    "backgroundCss": [
+      221.98,
+      218.10999999999999,
+      203.54
+    ],
+    "modeCount": 1954,
+    "pixelCount": 3560,
+    "contrastUsingRenderedBackgroundMode": 1.3787224674821172,
+    "contrastCss": 1.3830920915749498,
+    "foregroundCss": [
+      142,
+      193,
+      224
+    ]
+  },
+  {
+    "caseName": "pc-home",
+    "page": "manager",
+    "text": "不注入",
+    "sampleBoxPixels": [
+      415,
+      358,
+      446,
+      373
+    ],
+    "backgroundMode": [
+      234,
+      226,
+      210
+    ],
+    "backgroundCss": [
+      234.82,
+      227.44,
+      211.3
+    ],
+    "modeCount": 111,
+    "pixelCount": 465,
+    "contrastUsingRenderedBackgroundMode": 2.0110939772494656,
+    "contrastCss": 2.0355278084344053,
+    "foregroundCss": [
+      169.1,
+      159.86,
+      143.72
+    ]
+  },
+  {
+    "caseName": "pc-home",
+    "page": "manager",
+    "text": "游戏实际发给模型的提示词 · 原文只读",
+    "sampleBoxPixels": [
+      389,
+      211,
+      607,
+      229
+    ],
+    "backgroundMode": [
+      225,
+      217,
+      199
+    ],
+    "backgroundCss": [
+      228,
+      220,
+      202
+    ],
+    "modeCount": 630,
+    "pixelCount": 3924,
+    "contrastUsingRenderedBackgroundMode": 2.9624041719447987,
+    "contrastCss": 3.049103256668398,
+    "foregroundCss": [
+      133,
+      123,
+      108
+    ]
+  }
+]
