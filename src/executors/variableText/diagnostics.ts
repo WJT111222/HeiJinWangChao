@@ -27,7 +27,7 @@ const allowedPaths = new Set([
 const allowedPatterns = [
   /^protagonist\.skills\[index\]$/,
   /^protagonist\.currentWear\.(?:topItemId|bottomItemId|shoesItemId|primaryWeaponItemId|secondaryWeaponItemId|currentVehicleAssetId|accessoryItemIds)(?:\[index\])?$/,
-  /^npc\[id\]\.(?:activeGoals(?:\[index\])?|affinity)$/,
+  /^npc\[id\]\.(?:activeGoals(?:\[index\])?|affinityChange)$/,
   /^npc\[id\](?:\.(?:name|aliases|identity|relationshipText|healthText|locationId|onScene|lastInteractionAt|memories|longTermMemories|knownInformation|activeGoals|contact|specialProfile|phoneContact|usualLocations|detailedBackground|habits|relationshipNetwork))?$/,
   /^items\[id\](?:\.(?:conditionText|locationId|quantity|purchase|transfer|loss|description|referenceValue|itemDetails|category|questItem))?$/,
   /^locations\[id\]$/,

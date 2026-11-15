@@ -6,7 +6,8 @@ import type { GameState } from '../../domain/state';
 import type { ParsedVariableCommand } from '../../parsers/variableText';
 import { digest, failed } from './model';
 import type { ExecutionResult } from './model';
-import { textInputSchema } from './entities';
+import { affinityChangeInput, textInputSchema } from './entities';
+import { diagnosticForRule } from './diagnostics';
 
 /** 来源：MoRanJiangHu utils/stateHelpers.ts 的数组替换/push/splice及数值增量语义。
  * 这里只算已有领域命令所需的终值；不写GameState，不是任意路径执行器。 */
@@ -44,7 +45,7 @@ export async function compileSourceOperation(command: ParsedVariableCommand, val
   const nodes = command.path.nodes, [root, second, third, fourth] = nodes;
   const skills = root.name === 'protagonist' && second?.kind === 'field' && second.name === 'skills';
   const goals = root.name === 'npc' && second?.kind === 'id' && third?.kind === 'field' && third.name === 'activeGoals';
-  const affinity = root.name === 'npc' && second?.kind === 'id' && third?.kind === 'field' && third.name === 'affinity' && nodes.length === 3;
+  const affinity = root.name === 'npc' && second?.kind === 'id' && third?.kind === 'field' && third.name === 'affinityChange' && nodes.length === 3;
   const equipment = root.name === 'protagonist' && second?.kind === 'field' && second.name === 'currentWear' && nodes.length >= 3;
   const item = root.name === 'items' && second?.kind === 'id' && (nodes.length === 2 && command.operation === 'delete'
     || nodes.length === 3 && third?.kind === 'field' && third.name === 'quantity' && command.operation === 'set');
@@ -88,15 +89,14 @@ export async function compileSourceOperation(command: ParsedVariableCommand, val
   } else if (affinity && second?.kind === 'id') {
     const person = values.npc.get(second.id);
     if (!person) return failed('entity_not_found');
-    if (command.operation !== 'set' && command.operation !== 'add') return failed('unsupported_operation');
-    if (typeof command.value !== 'number' || !Number.isFinite(command.value)) return failed('type_mismatch');
-    if (command.operation === 'add' && person.from === null) return failed('type_mismatch', null, [], {
-      valuePath: 'npc[id].affinity', validationRule: 'value_constraint', expectedType: 'number', actualType: 'null',
-    });
-    const to = command.operation === 'add' ? person.affinity + command.value : command.value;
-    if (to < -100 || to > 100 || !person.relationshipText.trim()) return failed('type_mismatch');
-    mapped = { ...base, type: 'UpdateNpc', expectedRevision, npcId: second.id, changes: { relationshipText: person.relationshipText },
-      affinityChange: { from: person.from, to, reason: '变量模型根据本回合剧情更新' } };
+    if (command.operation !== 'set') return failed('unsupported_operation');
+    // 模型写终值、本回合具体原因与当前关系描述；前值由程序按正式状态（同批按上一笔结果）读取，
+    // 未确认初始同伴保持 from=null 语义。from 不由模型填写，出现即按未知字段拒绝。
+    const change = affinityChangeInput.safeParse(command.value);
+    if (!change.success) return failed('type_mismatch', null, [], diagnosticForRule(command, 'schema_constraint'));
+    const { to, reason, relationshipText } = change.data;
+    mapped = { ...base, type: 'UpdateNpc', expectedRevision, npcId: second.id, changes: { relationshipText },
+      affinityChange: { from: person.from, to, reason } };
   } else if (equipment && third?.kind === 'field') {
     const next = structuredClone(values.wear);
     if (third.name === 'accessoryItemIds' && fourth?.kind === 'index' && nodes.length === 4 && command.operation === 'delete') {

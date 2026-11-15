@@ -221,8 +221,8 @@
         "sha256": "bb1440980c215f9216f09be35ea80006a16109689746dbb3ea682810ce5314c3"
       },
       "legacyCleanupV10": {
-        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set/add npc[id].affinity；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
-        "sha256": "bb0bd2962c8b47fe31c4f51643897f4c1011fca161463dc1af03db9729cc200c"
+        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
+        "sha256": "1b32f888a7e000f65c715c15ce7e63e4b2d6de8010690029e543c8dac3f7a2ba"
       }
     },
     "variableGroups/npc_ordinary/update.md": {
@@ -270,8 +270,8 @@
         "sha256": "098399fe40cdc268823c05d4c1ac80f80bd5e465bccab80ab8bf58a237810f38"
       },
       "legacyCleanupV10": {
-        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set/add npc[id].affinity；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
-        "sha256": "5c25d2509de7ca5f5be6c2dfcdffcddc3fbd8ca60802ae1979cbadd5e98d4832"
+        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
+        "sha256": "dd75c9bd7bfdb3bc503dc71f830c6987e542175d379369eb85104ffacd1a3a54"
       }
     },
     "variableGroups/npc_ordinary/offscreen.md": {
@@ -350,8 +350,8 @@
         "sha256": "dd816ac487e0c62cd653dfb9b673d07510d50c9e8673e4d37c4f46003969ccf5"
       },
       "legacyCleanupV10": {
-        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set/add npc[id].affinity；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
-        "sha256": "bfc3c54ea9c367d0c7ec34cd68c18780f382af224d137832ba0fea22d6ce44bd"
+        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
+        "sha256": "c3a15471a55015ac10150a6e281c4260c05c55c02262ae621479e024fa2bd147"
       }
     },
     "variableGroups/npc_special/update.md": {
@@ -404,8 +404,8 @@
         "sha256": "dcfa5507b02b87b136b77031c37f7498fb24629e195c6ce27ec633d214e67446"
       },
       "legacyCleanupV10": {
-        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set/add npc[id].affinity；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
-        "sha256": "359cad390f5f5b25f6e3e96e9ad1e1a536a1cfe246d073012dc198c42b4406f3"
+        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
+        "sha256": "aa4692daa7d22f9177773704a82877e115e6d45e1a96b0ab8e2a0e0462bd7a92"
       }
     },
     "variableGroups/npc_special/offscreen.md": {
@@ -500,7 +500,7 @@
         "sha256": "1eae7d53ea96b6655a8bfbc1ff3ec5a99e20e175d2007a9466baacd0e861c5ae"
       },
       "legacyCleanupV10": {
-        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set/add npc[id].affinity；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
+        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "b842f17668b785491ed34d007187e3cc6f2bc02105611f2b5c284d98765b8627"
       }
     },
@@ -524,7 +524,7 @@
         "sha256": "0585d577fef7f2b28f47de6b648676a47bc1259a281e3a551b7184c0171f4203"
       },
       "legacyCleanupV10": {
-        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set/add npc[id].affinity；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
+        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "dbb290131aa0eac876c37a81f00268f9bde7548a12a7faa31645f52c8649ccf3"
       }
     },
@@ -629,8 +629,8 @@
         "sha256": "f4a31911aedc766b0b2ced4852dc84db687718a46526bd5ae22a76f2ae2060d7"
       },
       "legacyCleanupV10": {
-        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set/add npc[id].affinity；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
-        "sha256": "db682b133940c0e9bc85cf262fe9c345ba50b317f68b96d4ee3cb5cb0a218cb5"
+        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
+        "sha256": "abb4485c4adfa4811efc45084d2960f166842efac1338aa20e69d1fd67d16a7e"
       }
     },
     "shared/08_world_output.md": {
@@ -755,7 +755,7 @@
         "sha256": "afb7f9847672b6e26988fabc6a21a51cc79d2d7d1fd7a9bb01adac95f47f7725"
       },
       "legacyCleanupV10": {
-        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set/add npc[id].affinity；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
+        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "eb4de4b0f8b2abb1443967eb5e66386e6191db10cf8079df74680e8e72e7a12d"
       }
     },
@@ -784,7 +784,7 @@
         "sha256": "3c0cd683d48ea5b2b36b3217c685b174633cf6778ad9406d0879fddc3df9820f"
       },
       "legacyCleanupV10": {
-        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set/add npc[id].affinity；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
+        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "c2ef76f035f92c62017c9da0d4676556e992da285190814ad938c217dfe8ab48"
       }
     },
@@ -843,7 +843,7 @@
         "notes": "同一次三标签与标准set/add/push/delete；仅白名单领域适配，不复制武侠业务、语义审核、任意深合并或额外请求。"
       },
       "legacyCleanupV10": {
-        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set/add npc[id].affinity；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
+        "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "c622cb517ec456dd989e5dbe5975286845901bd6cd7d4428a11ef957ee21e864"
       }
     },

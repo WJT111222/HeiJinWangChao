@@ -13,8 +13,8 @@ function commandText(value:unknown):string[]{
     case 'SaveTask':return[line('set',`tasks[${nested('task').id}]`,withoutId(c.task))];
     case 'SpendFunds':return[line('add',`economy.${c.account}`,typeof c.amount==='number'?-c.amount:c.amount)];
     case 'UpdateProtagonist':return Object.entries(nested('changes')).map(([key,v])=>line('set',`protagonist.${key}`,v));
-    case 'UpdateNpc':return [...Object.entries(nested('changes')).map(([key,v])=>line('set',`npc[${c.npcId}].${key}`,v)),
-      ...(c.affinityChange?[line('set',`npc[${c.npcId}].affinity`,object(c.affinityChange).to)]:[]),
+    case 'UpdateNpc':return [...Object.entries(nested('changes')).filter(([key])=>!c.affinityChange||key!=='relationshipText').map(([key,v])=>line('set',`npc[${c.npcId}].${key}`,v)),
+      ...(c.affinityChange?[line('set',`npc[${c.npcId}].affinityChange`,{to:object(c.affinityChange).to,reason:object(c.affinityChange).reason,relationshipText:nested('changes').relationshipText})]:[]),
       ...(c.activeGoals?[line('set',`npc[${c.npcId}].activeGoals`,c.activeGoals)]:[])];
     case 'CreateNpc':return[line('set',`npc[${nested('npc').id}]`,withoutId(c.npc))];
     case 'RegisterContact':return[line('set',`npc[${c.npcId}].contact`,{reason:c.reason})];

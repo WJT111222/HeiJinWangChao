@@ -92,7 +92,7 @@ test('真实React连续四轮：首次建档、改名升级、离场结案、重
       const lines = [set('worldClock', new Date(Date.parse(state.worldClock) + 60000).toISOString())];
       if (!round) lines.push(set('npc[guest]', { kind: 'ordinary', identityKey: 'guest-stable', name: '林遥', aliases: [], age: 28, gender: 'female', identity: '合作伙伴', skills: [], onScene: true, affinity: 25, relationshipText: '初步接触', locationId: 'chongqing', memories: [], knownInformation: [] }), memory);
       if (round === 1) lines.push(set('npc[guest].specialProfile', { detailedBackground: '在社区成长，学习协调合作。', activeGoals: ['核验资料'], habits: ['保留记录'], offscreenTaskIds: [], relationshipNetwork: [] }), set('npc[guest].privateProfile', fullPrivateProfile), set('npc[guest].name', '林知遥'), set('npc[guest].aliases', ['林遥']), set('npc[guest].identity', '协调员'), memory, set('npc[guest].onScene', false));
-      if (round === 3) lines.push(set('npc[guest].onScene', true), set('npc[guest].relationshipText', '经过合作更加信任'), set('npc[guest].affinity', 40), memory);
+      if (round === 3) lines.push(set('npc[guest].onScene', true), set('npc[guest].affinityChange', { to: 40, reason: '合作核验后确认主角值得信赖', relationshipText: '经过合作更加信任' }), memory);
       await route.fulfill({ json: { choices: [{ message: { content: `<thinking>记录当前事实。</thinking><说明></说明><命令>\n${lines.join('\n')}\n</命令>` }, finish_reason: 'stop' }] } }); return;
     }
     expect(state.revision).toBe(context.BASE_SAVE_REVISION);

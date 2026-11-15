@@ -13,7 +13,7 @@ import { variableCommandSchemas } from '../../domain/variableCommands';
 import type { DomainCommand } from '../../domain/commands';
 import type { VariableOperation } from '../../parsers/variableText';
 import { variableTextLimits } from '../../parsers/variableText';
-import { memoryInputSchema, textInputSchema } from './entities';
+import { affinityChangeInput, memoryInputSchema, textInputSchema } from './entities';
 import { SceneEventStateSchema, WorldTaskSchema } from '../../domain/events/schema';
 
 const positive = MoneySchema.refine(n=>n>0);
@@ -30,8 +30,7 @@ const entries:Entry[] = [
   {operation:'push',path:'npc[id].activeGoals',commandType:'UpdateNpc',value:TextSchema},
   {operation:'set',path:'npc[id].activeGoals[index]',commandType:'UpdateNpc',value:TextSchema},
   {operation:'delete',path:'npc[id].activeGoals[index]',commandType:'UpdateNpc',value:z.null()},
-  {operation:'set',path:'npc[id].affinity',commandType:'UpdateNpc',value:z.number().min(-100).max(100)},
-  {operation:'add',path:'npc[id].affinity',commandType:'UpdateNpc',value:z.number()},
+  {operation:'set',path:'npc[id].affinityChange',commandType:'UpdateNpc',value:affinityChangeInput},
   {operation:'set',path:'items[id].quantity',commandType:'UpdateItem',value:z.number().int().nonnegative()},
   {operation:'delete',path:'items[id]',commandType:'UpdateItem',value:z.null()},
   ...slotFields.flatMap((slot):Entry[]=>[
@@ -77,9 +76,9 @@ export function textVariableCatalog() {
     itemDetailsGuide: { categoryGroups: itemCategoryGroup, suggestedStringFields: itemDetailFields },
     entries:entries.map(({value,...entry})=>({...entry,...(entry.operation==='delete'?{valueRequired:false}:{}),valueSchema:{...z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'}),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
     usageExamples: {
-      affinity: 'add npc[example-npc].affinity = 5',
+      affinityChange: 'set npc[example-npc].affinityChange = {"to":35,"reason":"共同核对材料后彼此更信任","relationshipText":"愿意继续协作"}',
       memory: 'push npc[example-npc].memories = {"text":"自己与对方核对材料并约定继续合作，尚有问题待确认。","knowledgeKind":"observed","knowledgeSource":"本人参与本轮交谈","visibility":"npc_private"}',
-      caution: '示例只说明结构，替换人物ID、数值和剧情。好感只用set/add npc[id].affinity，程序读取正式前值生成内部关系变更（同批连续更新按上一笔结果）；关系描述另用set npc[id].relationshipText。可与healthText、lastInteractionAt及四字段记忆同批写入。记忆ID、来源回合、时间和人物引用由程序生成。',
+      caution: '示例只说明结构，替换人物ID、数值和剧情。好感只用set npc[id].affinityChange={to,reason,relationshipText}：to为变化后的好感终值（-100～100），reason写本回合具体剧情原因，relationshipText写当前关系与态度，三项都不可省略；前值由程序读取正式状态（同批连续更新按上一笔结果），不要填写from。可与healthText、lastInteractionAt及四字段记忆同批写入。记忆ID、来源回合、时间和人物引用由程序生成。',
     },
     rules:[
       'events[id].sceneState只写本轮Story实际成立且满足现场权限的变化；active仍为active不是变化，提及、讨论风险、等待发展均不授予介入权限。eventNarration.mode=enter与既有eventInteraction沿用正式语义，mention不授权，不得靠改状态绕过权限。没有合法事件变化省略此命令，其他合法人物、情绪、好感和记忆仍完整记录。合法现场更新和提前结案不禁用；后台推进属于World。无交易不生成经济命令。',

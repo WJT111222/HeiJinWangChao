@@ -23,17 +23,20 @@ function input(mode:'opening'|'regular'='regular') {
 }
 const textModules=promptManifest.modules.filter(m=>m.applicableStages.join()==='variables');
 describe('文本协议真实资源与离线组装',()=>{
-  it('83条路径目录类型齐备，含一条开局专用初始化，现场任务事件复用旧命令',()=>{
+  it('82条路径目录类型齐备，含一条开局专用初始化，现场任务事件复用旧命令',()=>{
     const catalog=textVariableCatalog();
-    expect(catalog.entries).toHaveLength(83);
+    expect(catalog.entries).toHaveLength(82);
     expect(catalog.entries).toContainEqual(expect.objectContaining({operation:'set',path:'organizations[id].state',commandType:'UpdateOrganization'}));
-    expect(new Set(catalog.entries.map(e=>`${e.operation}:${e.path}`)).size).toBe(83);
+    expect(new Set(catalog.entries.map(e=>`${e.operation}:${e.path}`)).size).toBe(82);
     for (const field of ['name', 'aliases', 'identity'])
       expect(catalog.entries).toContainEqual(expect.objectContaining({ operation: 'set', path: `npc[id].${field}`, commandType: 'UpdateNpc' }));
     expect(new Set(catalog.entries.map(e=>e.commandType)).size).toBe(26);
     for(const e of catalog.entries)expect(e.valueSchema).toHaveProperty('$schema');
     expect(catalog.entries.some(e=>['RetireNpc'].includes(e.commandType))).toBe(false);
-    expect(catalog.entries.some(e=>e.path==='npc[id].affinityChange')).toBe(false);
+    // 好感唯一入口：set npc[id].affinityChange={to,reason,relationshipText}，纯数值 set/add affinity 不在目录中。
+    expect(catalog.entries.filter(e=>e.path.startsWith('npc[id].affinity')).map(e=>`${e.operation}:${e.path}`)).toEqual(['set:npc[id].affinityChange']);
+    expect(catalog.entries.find(e=>e.path==='npc[id].affinityChange')?.valueSchema).toMatchObject({required:expect.arrayContaining(['to','reason','relationshipText'])});
+    expect(Object.keys((catalog.entries.find(e=>e.path==='npc[id].affinityChange')?.valueSchema as {properties:object}).properties)).not.toContain('from');
     expect(catalog.entries.some(e=>e.path==='economy.cash'&&e.operation==='set')).toBe(false);
   });
   it.each(['opening','regular'] as const)('%s文本组装只加载相应主模板/九组',async(mode)=>{

@@ -79,8 +79,8 @@ it('百回合世界继续四轮：建档/改名/升级/离场任务结案/重逢
       }
       if (round === 1) lines.push(textLine('npc[guest].specialProfile', { detailedBackground: '在社区成长，学习档案整理后担任合作协调。', activeGoals: ['完成清单核验'], habits: ['复核记录'], offscreenTaskIds: [], relationshipNetwork: [{ name: '许岸', npcId: 'special', relationship: '合作伙伴', description: '共享工作安排', affinity: 36 }] }),
         textLine('npc[guest].privateProfile', fullPrivateProfile), textLine('npc[guest].name', '林知遥'), textLine('npc[guest].aliases', ['林遥']), textLine('npc[guest].identity', '项目协调'),
-        textLine('npc[guest].affinity', 42), textLine('npc[guest].relationshipText', '逐渐建立合作信任'), memoryLine('guest', '接任协调职责，准备独立核验清单。'), textLine('npc[guest].onScene', false));
-      if (round === 3) lines.push(textLine('npc[guest].onScene', true), textLine('npc[guest].affinity', 48), textLine('npc[guest].relationshipText', '经过合作更为信任'), memoryLine('guest', '返回工作室，说明核验结果已确认。'));
+        textLine('npc[guest].affinityChange', { to: 42, reason: '一起完成资料核验，对主角的可靠有了实感', relationshipText: '逐渐建立合作信任' }), memoryLine('guest', '接任协调职责，准备独立核验清单。'), textLine('npc[guest].onScene', false));
+      if (round === 3) lines.push(textLine('npc[guest].onScene', true), textLine('npc[guest].affinityChange', { to: 48, reason: '主角在交接中守住承诺', relationshipText: '经过合作更为信任' }), memoryLine('guest', '返回工作室，说明核验结果已确认。'));
       return reply(variables(lines));
     }
     const world = emptyWorld();

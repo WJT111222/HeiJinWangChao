@@ -315,8 +315,11 @@ describe('正式文本来源与旧架构保留', () => {
       for (const mode of ['init', 'update', 'offscreen'] as const) {
         const current = text(`variableGroups/${group}/${mode}.md`);
         if (mode === 'offscreen') { expect(current).toContain('多个'); expect(current).toContain('<COMMAND_CATALOG>'); expect(current).toContain('unresolved'); continue; }
-        expect(current).not.toContain('affinityChange');
-        expect(current).toContain('set/add npc[id].affinity');
+        // 好感唯一写法：终值+具体原因+关系描述，前值由程序读取；不再教纯数值 set/add affinity。
+        expect(current).toContain('set npc[id].affinityChange');
+        expect(current).toContain('"reason"');
+        expect(current).not.toMatch(/(?:^|\n)(?:set|add) npc\[[^\]]+\]\.affinity =/);
+        expect(current).not.toContain('"from"');
       }
     }
     expect(existsSync(resolve(root, 'legacy'))).toBe(false);
