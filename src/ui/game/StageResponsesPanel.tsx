@@ -1,6 +1,6 @@
 import type { TurnDraft } from '../../domain/drafts';
 import { storyRuleNames } from '../../domain/storyDiagnostics';
-import { useState, useSyncExternalStore } from 'react';
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { stageResponses, selectStageResponse } from '../../services/ai/stageResponses';
 import type { StageResponse } from '../../services/ai/stageResponses';
 import { worldRuleNames } from '../../services/validation/worldDiagnostics';
@@ -25,17 +25,25 @@ export function StageResponseContent({ record, label }: { record?: StageResponse
 function ObservedResponse({ record, label }: { record: StageResponse; label: string }) {
   const [view, setView] = useState('content');
   const diagnostic = record.diagnostics;
+  const box = useRef<HTMLTextAreaElement>(null), following = useRef(true);
+  useLayoutEffect(() => {
+    // Follow only at the bottom and without a selection; copying/reading older text is stable.
+    const element = box.current;
+    if (record.status === 'pending' && following.current && element && element.selectionStart === element.selectionEnd)
+      element.scrollTop = element.scrollHeight;
+  }, [record.text, record.nativeReasoning, record.status]);
   const text = view === 'reasoning' ? record.nativeReasoning : view === 'diagnostics'
     ? JSON.stringify({ protocol: record.protocol, status: record.status, ...diagnostic }, null, 2) : record.text;
   return <>
-    <label>查看响应内容<select aria-label={`${label}原文内容`} value={view} onChange={event => setView(event.target.value)}>
+    <label>查看响应内容<select aria-label={`${label}原文内容`} value={view} onChange={event => { following.current = true; setView(event.target.value); }}>
       <option value="content">供应商 content</option><option value="reasoning">供应商公开思考</option><option value="diagnostics">安全响应诊断</option>
     </select></label>
     {!record.text?.trim() && record.nativeReasoning && <p role="note">供应商未返回可展示的正文；已收到公开思考。</p>}
-    {text ? <textarea key={view} className="candidate-json story-raw-text" aria-label={`${label}${view === 'content' ? '模型完整原文' : view === 'reasoning' ? '公开思考原文' : '安全响应诊断'}`} readOnly spellCheck={false} value={text} />
+    {record.status === 'pending' && <p role="status">响应接收中 · 未完成；尚未通过完整校验，不是候选或正式结果。</p>}
+    {text ? <textarea ref={box} onScroll={event => { const e = event.currentTarget; following.current = e.scrollHeight - e.clientHeight - e.scrollTop < 24; }} key={view} className="candidate-json story-raw-text" aria-label={`${label}${view === 'content' ? '模型完整原文' : view === 'reasoning' ? '公开思考原文' : '安全响应诊断'}`} readOnly spellCheck={false} value={text} />
       : <p>{record.status === 'pending' ? '请求尚未返回完整内容。' : view === 'reasoning' ? '未收到供应商独立公开的思考。' : '供应商未返回当前提取器可展示的正文；可查看安全响应诊断。'}</p>}
     {diagnostic && <p className="field-hint">{diagnostic.complete ? '响应传输已结束；是否可用仍以正式校验为准。' : record.status === 'pending' ? '响应接收中。' : '响应未完整接收或完整性未确认。'}{diagnostic.filtered ? ' 供应商明确返回过滤标识。' : ''}{diagnostic.refusal ? ' 供应商明确返回拒绝标识。' : ''}</p>}
-    <p className="field-hint">content 与公开思考按来源分别查看，不代表两者的生成先后。安全诊断仅保留白名单结构，不展示任意供应商错误文字。</p>
+    <p className="field-hint">content 与公开思考按来源分别查看，不代表两者的生成先后。最近最多保留六次，容量超限会提前淘汰旧响应。安全诊断仅保留白名单结构，不展示任意供应商错误文字。</p>
     {record.truncated && <p role="note">临时展示已达到容量上限，后续内容未保留；不影响正式解析输入。</p>}
   </>;
 }

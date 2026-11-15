@@ -98,7 +98,7 @@ export class VariableStage {
           },
           config,
           input.vault,
-          { signal: attempt.signal, stream: false },
+          { signal: attempt.signal, stream: settings.runtime.streamVariables },
           this.client,
         );
         responseInspectionId = response.responseInspectionId;
