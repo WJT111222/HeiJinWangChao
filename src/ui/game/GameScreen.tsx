@@ -40,7 +40,6 @@ import { Panels, panelNames } from '../panels/Panels';
 import type { PanelName } from '../panels/Panels';
 import { playerView, dateTime } from '../panels/playerView';
 import type { SaveRepository } from '../../services/storage/saveRepository';
-import { mayStartStory } from './storyGenerationPolicy';
 import { useStoryGeneration } from './useStoryGeneration';
 import { useVariableGeneration } from './useVariableGeneration';
 import { useWorldGeneration } from './useWorldGeneration';
@@ -71,6 +70,7 @@ import './mobile-game.css';
 import {MobileCityBar,MobileStatus,mobileCitySeal} from './MobileCity';
 import {MobileActions} from './MobileActions';
 import {ComposerTools} from './ComposerTools';
+import { mayStartStory } from './storyGenerationPolicy';
 
 const sidebarMedia = '(max-width: 900px)';
 function subscribeSidebarSize(changed: () => void) {
@@ -275,13 +275,27 @@ export function GameScreen({
   // 正文失败或被取消、尚无候选时：原行动放回输入框，玩家可原样或修改后直接重新发送。
   const rebindAction = !busy && rebindableAfterStoryStop(state, draft);
   const restoredInputFor = useRef('');
+  const restoredText = useRef<{ turnId: string; text: string }>(undefined);
   useEffect(() => {
     if (!rebindAction || !draft) return;
     const key = `${draft.saveId}:${draft.turnId}:${draft.draftRevision}`;
     if (restoredInputFor.current === key) return;
     restoredInputFor.current = key;
-    setInput((current) => (current.trim() ? current : draft.userInput));
+    setInput((current) => {
+      if (current.trim()) return current;
+      restoredText.current = { turnId: draft.turnId, text: draft.userInput };
+      return draft.userInput;
+    });
   }, [rebindAction, draft]);
+  // 玩家没改回填文字、直接用按钮重试正文且已成功：清掉这份重复文字，避免下一回合误发同一行动。
+  useEffect(() => {
+    const restored = restoredText.current;
+    if (!restored || !draft) return;
+    if (draft.turnId !== restored.turnId || awaitingAction) { restoredText.current = undefined; return; }
+    if (draft.stageStatus.story !== 'ready') return;
+    restoredText.current = undefined;
+    setInput((current) => (current.trim() === restored.text.trim() ? '' : current));
+  }, [draft, awaitingAction]);
   async function send() {
     const bindAction = awaitingAction || rebindAction;
     if (!draft || (!canCommit && !bindAction) || busy || submitLock.current || !input.trim()) return;
@@ -368,7 +382,6 @@ export function GameScreen({
   const failedStage = (['story', 'variables', 'world'] as const).some((stage) => draft?.stageStatus[stage] === 'failed');
   // 仅用于入口展示，与 TurnCoordinator 的 needed 条件保持一致；实际执行仍由协调器重验。
   const storyNeeded = !draft?.story || draft.stageStatus.story !== 'ready';
-  const canStartStory = mayStartStory(draft);
   const variablesNeeded = settings.runtime.useVariableStage &&
     (draft?.stageStatus.variables !== 'ready' || draft.variables?.validation !== 'validated' || storyNeeded);
   const worldNeeded = settings.runtime.useWorldStage &&
@@ -526,6 +539,32 @@ export function GameScreen({
             : "自动生成开局"}
     </button>
   );
+  // 输入栏常驻的多功能按钮：运行中=取消；某环节停下=继续当前环节；已结算=留在原位不可点。
+  // 正文环节沿用原来的「只生成正文」（使用已绑定的行动，输入框改过的字不会顶替它，换行动请按发送）；
+  // 变量、世界与结算环节等同详情里的「继续未完成阶段」。
+  const nextStage = storyNeeded ? 'story' : variablesNeeded ? 'variables' : worldNeeded ? 'world' : undefined;
+  const runningCancel = automatic.running ? { onClick: automatic.cancel, saving: automatic.settling || automatic.progress?.phase === 'saving' }
+    : manualProgress ? { onClick: cancel, saving: manualProgress.phase === 'saving' }
+    : variables.phase ? { onClick: variables.cancel, saving: variables.phase === 'saving' }
+    : world.phase ? { onClick: world.cancel, saving: world.phase === 'saving' }
+    : undefined;
+  const storyLabel = draft?.turnKind === 'regular' ? '生成本回合正文' : '生成开局正文';
+  const continueStory = () => {
+    if (!draft || busy || !mayStartStory(draft)) return;
+    void generate();
+  };
+  const continueWorkflow = () => { if (draft && !busy) void automatic.generate(); };
+  const workflowAction: { kind: 'cancel' | 'continue' | 'idle'; label: string; short: string; title?: string; disabled: boolean; onClick?: () => void } =
+    runningCancel ? { kind: 'cancel', label: runningCancel.saving ? '正在保存…' : '取消生成', short: '停', disabled: runningCancel.saving,
+      title: runningCancel.saving ? '正在保存，稍候即可' : '取消正在进行的生成', onClick: runningCancel.onClick }
+    : awaitingAction ? { kind: 'idle', label: '本回合已完成', short: '完', disabled: true, title: '本回合已结算；发送新行动后继续' }
+    : nextStage === 'story' ? { kind: 'continue', label: storyLabel, short: '续', disabled: !validDraft || busy || !mayStartStory(draft),
+        title: !validDraft ? staleDraftMessage : '生成本回合正文（使用已绑定的行动）', onClick: continueStory }
+    : !validDraft ? { kind: 'idle', label: '继续', short: '续', disabled: true, title: staleDraftMessage }
+    : canCommit && !nextStage ? { kind: 'continue', label: '完成本回合结算', short: '结', disabled: busy, title: '候选已完成，保存本回合结果', onClick: continueWorkflow }
+    : nextStage && canGenerate ? { kind: 'continue', label: nextStage === 'variables' ? '继续生成变量' : '继续生成世界', short: '续', disabled: busy,
+        title: '从当前环节继续，完成后自动结算', onClick: continueWorkflow }
+    : { kind: 'idle', label: '继续', short: '续', disabled: true, title: workflowGuidance || '当前没有可继续的环节' };
   const workflowState = hasWorkflowError
     ? "error"
     : busy
@@ -782,8 +821,8 @@ export function GameScreen({
           {undoNotice && <p role="status" className="undo-feedback">{undoNotice}</p>}
           {concurrencyBlocked && <p id="action-concurrency-error" role="alert" className="undo-feedback">{submitError}</p>}
           <div className="composer-action-row">
-            <ComposerTools compact={compactSidebars} menu={Boolean(automatic.running||manualProgress||((!draft||canStartStory)&&!awaitingAction))}>
-              <TurnUndoControl compact={compactSidebars&&!(automatic.running||manualProgress||((!draft||canStartStory)&&!awaitingAction))}
+            <ComposerTools compact={compactSidebars} menu={false}>
+              <TurnUndoControl compact={compactSidebars}
                 repository={repository}
                 state={state}
                 draft={draft}
@@ -794,39 +833,10 @@ export function GameScreen({
                 cancelMemory={memory.cancel}
                 onNotice={setUndoNotice}
               />
-              {automatic.running ? (
-                <button
-                  disabled={
-                    automatic.settling || automatic.progress?.phase === "saving"
-                  }
-                  onClick={automatic.cancel}
-                >
-                  取消生成
-                </button>
-              ) : manualProgress ? (
-                <button
-                  disabled={manualProgress.phase === "saving"}
-                  onClick={cancel}
-                >
-                  {manualProgress.phase === "saving" ? "正在保存…" : "取消生成"}
-                </button>
-              ) : (!draft || canStartStory) && !awaitingAction ? (
-                <button
-                  disabled={!validDraft || busy}
-                  title={
-                    awaitingAction
-                      ? "本回合已结算；发送新行动后继续"
-                      : undefined
-                  }
-                  onClick={() => {
-                    if (canStartStory) void generate();
-                  }}
-                >
-                  {draft?.turnKind === "regular"
-                    ? "生成本回合正文"
-                    : "生成开局正文"}
-                </button>
-              ) : null}
+              <button className="composer-workflow-action" data-kind={workflowAction.kind} disabled={workflowAction.disabled}
+                title={workflowAction.title} aria-label={compactSidebars ? workflowAction.label : undefined} onClick={workflowAction.onClick}>
+                {compactSidebars ? <span aria-hidden="true">{workflowAction.short}</span> : workflowAction.label}
+              </button>
             </ComposerTools>
             <label className="sr-only" htmlFor="player-input">你的行动</label>
             <textarea id="player-input" ref={inputElement} aria-describedby={concurrencyBlocked ? "action-concurrency-error" : undefined} disabled={submitting} value={input}

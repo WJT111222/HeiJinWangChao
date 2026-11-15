@@ -1,7 +1,7 @@
 import {test,expect} from './helpers/test';
 import type {Page} from '@playwright/test';
 import {seedNightSeal,nightSealStored} from './helpers/nightSeal';
-import {openStageCandidates,openWorkflowDiagnostics,openWorkflowStage} from './helpers/gameLayout';
+import {openStageCandidates,openWorkflowDiagnostics,openWorkflowStage, openTurnTools } from './helpers/gameLayout';
 
 const shots='docs/mobile-main-batch1/screenshots';
 test.beforeEach(async({page})=>{
@@ -39,7 +39,7 @@ async function seedWorkflow(page:Page,mode:'opening'|'ready'|'error',long=false)
 }
 for(const mode of ['opening','ready','error'] as const)test(`工作流 ${mode}：保留全部操作、候选与正式状态`,async({page})=>{
  await seedWorkflow(page,mode);const before=await nightSealStored(page);
- if(mode==='opening'){await expect(page.locator('.mobile-city-pill')).toContainText('--:--');await page.locator('.mobile-city-pill').click();await expect(page.getByRole('dialog',{name:'此时此地'})).toContainText('开局时间待确认');await expect(page.locator('.st-place')).not.toContainText('早晨');await page.keyboard.press('Escape');await page.getByRole('button',{name:'回合操作',exact:true}).click();await expect(page.getByRole('button',{name:'生成开局正文',exact:true})).toBeVisible();await page.keyboard.press('Escape');}
+ if(mode==='opening'){await expect(page.locator('.mobile-city-pill')).toContainText('--:--');await page.locator('.mobile-city-pill').click();await expect(page.getByRole('dialog',{name:'此时此地'})).toContainText('开局时间待确认');await expect(page.locator('.st-place')).not.toContainText('早晨');await page.keyboard.press('Escape');await openTurnTools(page);await expect(page.getByRole('button',{name:'生成开局正文',exact:true})).toBeVisible();await page.keyboard.press('Escape');}
  const sheet=await workflow(page);await expect(sheet.locator('.workflow-stages>li')).toHaveCount(3);await expect(sheet.getByRole('checkbox',{name:'变量管理',exact:true})).toBeChecked();await expect(sheet.getByRole('checkbox',{name:'动态世界',exact:true})).toBeChecked();
  if(mode==='ready'){
   await expect(sheet.getByRole('button',{name:'完成本回合结算',exact:true})).toBeEnabled();
@@ -83,7 +83,7 @@ test('正式结算与发送复用原回调，开局不可撤回',async({page})=>
  await seedWorkflow(page,'ready');let calls=0;await page.route('https://mobile.mock.invalid/**',async r=>{calls++;await r.fulfill({status:401,body:'mock-only'});});
  const sheet=await workflow(page);await sheet.getByRole('button',{name:'完成本回合结算',exact:true}).click();await expect.poll(async()=>(await nightSealStored(page)).state.turnNumber).toBe(1);expect(calls).toBe(0);await page.keyboard.press('Escape');
  const input=page.getByLabel('你的行动',{exact:true});await input.fill('沿着街道继续观察');await page.getByRole('button',{name:'发送',exact:true}).click();await expect.poll(()=>calls).toBe(1);await expect.poll(async()=>(await nightSealStored(page)).draft?.userInput).toBe('沿着街道继续观察');await expect(page.locator('.workflow')).toHaveAttribute('data-state','error');
- await page.getByRole('button',{name:'回合操作',exact:true}).click();await expect(page.getByRole('button',{name:'撤回',exact:true})).toBeDisabled();expect((await nightSealStored(page)).state.turnNumber).toBe(1);
+ await openTurnTools(page);await expect(page.getByRole('button',{name:'撤回',exact:true})).toBeDisabled();expect((await nightSealStored(page)).state.turnNumber).toBe(1);
 });
 
 for(const width of [901,1440])test(`桌面 ${width}px：与未修改 main 逐像素对照`,async({browser},info)=>{

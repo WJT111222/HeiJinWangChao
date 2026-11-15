@@ -764,3 +764,9 @@ to {transform:translateX(250%)}
 .story-stream-thinking { min-width: 0; overflow-wrap: anywhere; }
 .story-stream-thinking h3 { margin: 1rem 0 .35rem; font: 500 .8rem var(--font-body); color: var(--gold); }
 .story-stream-thinking .prose { white-space: pre-wrap; }
+
+/* 输入栏常驻的多功能按钮：固定列宽，避免文字切换时输入框左右跳动；继续时用金色提示可点。 */
+@media (min-width: 901px) {
+  .app-shell-game .city-night .composer-roll:not(:where(.modal, .modal *)) { width: 8.5rem; }
+  .app-shell-game .city-night .composer-roll .composer-workflow-action[data-kind=continue]:not(:disabled) { color: var(--gold-hi); border-color: var(--gold-lo); }
+}

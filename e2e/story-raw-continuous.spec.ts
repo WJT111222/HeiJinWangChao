@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import type { Server, ServerResponse } from 'node:http';
 import { test, expect } from './helpers/test';
 import type { Page, TestInfo } from '@playwright/test';
-import { closeWorkflowSheet, openGameTools, openStageRaw, openWorkflowStage, workflowTrigger } from './helpers/gameLayout';
+import { closeWorkflowSheet, openGameTools, openStageRaw, openWorkflowStage, workflowTrigger, openTurnTools } from './helpers/gameLayout';
 
 const key = 'fictional-unified-browser-key';
 const thoughts = '公开思考甲。\n', later = '公开思考乙。\n';
@@ -68,7 +68,7 @@ async function closeWorkflow(page: Page) {
 }
 async function begin(page: Page) {
   await openWorkflowStage(page, 'story');
-  if ((page.viewportSize()?.width ?? 0) <= 900) { await closeWorkflowSheet(page); await page.getByRole('button', { name: '回合操作', exact: true }).click(); }
+  if ((page.viewportSize()?.width ?? 0) <= 900) { await closeWorkflowSheet(page); await openTurnTools(page); }
   await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
   await expect.poll(() => Boolean(response)).toBe(true);
   // An immediate JSON response can finish before the menu-close step. Wait for

@@ -1,0 +1,23 @@
+{
+  "main": "6a348898de4dd8aa1e87ea819da050feb0511564",
+  "headUnderTest": "d1783625613e273b405e91e91e32b31193321882",
+  "file": "e2e/game.spec.ts",
+  "caseLine": 299,
+  "failureLine": 311,
+  "fileSHA256": "13090a3789f685975518f81008bead111666195c49083803abcea637641375a0",
+  "sameFileAsMain": true,
+  "node": "v24.19.0",
+  "chromium": "154.0.8037.57",
+  "workers": 1,
+  "retries": 0,
+  "head": {
+    "desktop": "passed",
+    "mobile": "failed"
+  },
+  "mainResults": {
+    "desktop": "passed",
+    "mobile": "failed"
+  },
+  "failure": "mobile waits for exact button 提示词 while category navigation is hidden in AI connections; 返回设置 is visible",
+  "remainingMobileAssertions": "not reached"
+}
