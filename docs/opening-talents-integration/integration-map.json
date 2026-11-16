@@ -1,0 +1,57 @@
+{
+  "main": "4ccf92d205cc9b1d748c49c5b647eb755de3a019",
+  "sourceHead": "25a8a339901c21adff14c64996bd5d9bcf740d13",
+  "increments": [
+    {
+      "batch": "A",
+      "source": "5dc8d448ed7c8a49c6002cb1ecddc19f897cfbec",
+      "sourceParent": "f36bc51aede49e4ac6edf9a0bda2138905f007c7",
+      "integrated": "ce0edffda7e7ea58e8773b838c02091e5e306fac",
+      "incrementByteIdentical": true,
+      "originalPatchSHA256": "a17bec9cb9a00e6a48f65220345708a3695d704eb9d0f7aa67f0abf4f07d4c4f",
+      "integratedPatchSHA256": "a17bec9cb9a00e6a48f65220345708a3695d704eb9d0f7aa67f0abf4f07d4c4f"
+    },
+    {
+      "batch": "B",
+      "source": "9de3351739aa0335ee4f1fe04d5b783167fa435b",
+      "sourceParent": "5dc8d448ed7c8a49c6002cb1ecddc19f897cfbec",
+      "integrated": "3ecea83a46a8fe44a5b5b66dc800b713da9e9b14",
+      "incrementByteIdentical": true,
+      "originalPatchSHA256": "7532cb673f7e4a54bc8782d6faf4f569b0320ca2e5f6282ab3320ceec638f8c5",
+      "integratedPatchSHA256": "7532cb673f7e4a54bc8782d6faf4f569b0320ca2e5f6282ab3320ceec638f8c5"
+    },
+    {
+      "batch": "C",
+      "source": "5006240b6dd9d8c71eb2d99f0dc67a2e42abb12d",
+      "sourceParent": "9de3351739aa0335ee4f1fe04d5b783167fa435b",
+      "integrated": "0d1f15fba2f05ab735459abc1d2ec1bfc425010c",
+      "incrementByteIdentical": true,
+      "originalPatchSHA256": "d59452da4ec8ba58f95bad853a46d5ef52380130c81d042d21b24eaeea3eef33",
+      "integratedPatchSHA256": "d59452da4ec8ba58f95bad853a46d5ef52380130c81d042d21b24eaeea3eef33"
+    }
+  ],
+  "unchangedAgainstMain": [
+    "src/domain/state.ts",
+    "src/domain/drafts.ts",
+    "src/domain/turnCommit.ts",
+    "src/services/storage",
+    "src/workflows",
+    "src/services/ai",
+    "src/domain/variableCommands.ts",
+    "src/domain/commands.ts",
+    "src/app/styles.css",
+    "src/ui/game/day-appearance.css",
+    "src/ui/mobile-feedback.css",
+    "e2e/mobile-select-sheet.spec.ts",
+    "prompts",
+    "wrangler.jsonc"
+  ],
+  "latestMain": "377686834589c7d63b29fea6beb48278b27ab5e9",
+  "latestSourceHead": "4c12854729bb2cb785e8fb4720fa3d4b55b40090",
+  "mainRefresh": {
+    "from": "4ccf92d205cc9b1d748c49c5b647eb755de3a019",
+    "to": "377686834589c7d63b29fea6beb48278b27ab5e9",
+    "reason": "PR #173 merged externally during verification",
+    "conflicts": false
+  }
+}

@@ -1,0 +1,19 @@
+import { expect, it } from 'vitest';
+import { readFile, writeFile } from 'node:fs/promises';
+import type { ComposeInput } from '../prompts/context';
+import type { AiStage } from '../services/ai/configuration';
+import { captureTalentPrompt, captureTalentWire } from './fixtures/talentWire';
+it('capture latest main complete no-talent requests using shared synthetic inputs', async () => {
+ const inputs=JSON.parse(await readFile('/workspace/opening-talents-integration-evidence/no-talent-inputs.json','utf8'));
+ const prompts=[],wires=[];
+ for(const row of inputs.stages){
+  expect(row.input.state.protagonist).not.toHaveProperty('talentId');
+  prompts.push({stage:row.stage,mode:row.mode,...await captureTalentPrompt(row.input as ComposeInput)});
+  for(const protocol of ['openai','deepseek','gemini','anthropic'] as const){
+   const requests=await captureTalentWire(row.input as ComposeInput & {stage:AiStage},protocol,row.answer);
+   expect(requests).toHaveLength(1);wires.push({stage:row.stage,mode:row.mode,protocol,request:requests[0]});
+  }
+ }
+ for(const row of inputs.memories)prompts.push({stage:'memory',task:row.task,...await captureTalentPrompt(row.input as ComposeInput)});
+ await writeFile('/workspace/opening-talents-integration-evidence/latest-main-377-baseline.json',JSON.stringify({base:'377686834589c7d63b29fea6beb48278b27ab5e9',prompts,wires},null,2)+'\n');
+});

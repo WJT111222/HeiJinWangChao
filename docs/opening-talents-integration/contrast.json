@@ -1,0 +1,818 @@
+[
+  {
+    "project": "desktop",
+    "target": "creation-contrast-901",
+    "value": {
+      "foreground": [
+        237,
+        231,
+        218
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 14.803686389325378
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "creation-contrast-901",
+    "value": {
+      "foreground": [
+        237,
+        231,
+        218
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 14.803686389325378
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "creation-contrast-901",
+    "value": {
+      "foreground": [
+        225,
+        194,
+        127
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 10.618048111445377
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "creation-contrast-901",
+    "value": {
+      "foreground": [
+        225,
+        194,
+        127
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 10.618048111445377
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "creation-contrast-1100",
+    "value": {
+      "foreground": [
+        237,
+        231,
+        218
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 14.803686389325378
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "creation-contrast-1100",
+    "value": {
+      "foreground": [
+        237,
+        231,
+        218
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 14.803686389325378
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "creation-contrast-1100",
+    "value": {
+      "foreground": [
+        225,
+        194,
+        127
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 10.618048111445377
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "creation-contrast-1100",
+    "value": {
+      "foreground": [
+        225,
+        194,
+        127
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 10.618048111445377
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "creation-contrast-1440",
+    "value": {
+      "foreground": [
+        237,
+        231,
+        218
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 14.803686389325378
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "creation-contrast-1440",
+    "value": {
+      "foreground": [
+        237,
+        231,
+        218
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 14.803686389325378
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "creation-contrast-1440",
+    "value": {
+      "foreground": [
+        225,
+        194,
+        127
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 10.618048111445377
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "creation-contrast-1440",
+    "value": {
+      "foreground": [
+        225,
+        194,
+        127
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 10.618048111445377
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "profile-contrast-night",
+    "value": {
+      "foreground": [
+        43,
+        39,
+        35
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 12.914539767406428
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "profile-contrast-night",
+    "value": {
+      "foreground": [
+        43,
+        39,
+        35
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 12.914539767406428
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "profile-contrast-night",
+    "value": {
+      "foreground": [
+        117,
+        86,
+        19
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 5.90991893106655
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "profile-contrast-night",
+    "value": {
+      "foreground": [
+        117,
+        86,
+        19
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 5.90991893106655
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "profile-contrast-night",
+    "value": {
+      "foreground": [
+        95,
+        87,
+        76
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 6.195355864006013
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "profile-contrast-day",
+    "value": {
+      "foreground": [
+        43,
+        39,
+        35
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 12.914539767406428
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "profile-contrast-day",
+    "value": {
+      "foreground": [
+        43,
+        39,
+        35
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 12.914539767406428
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "profile-contrast-day",
+    "value": {
+      "foreground": [
+        117,
+        86,
+        19
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 5.90991893106655
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "profile-contrast-day",
+    "value": {
+      "foreground": [
+        117,
+        86,
+        19
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 5.90991893106655
+    }
+  },
+  {
+    "project": "desktop",
+    "target": "profile-contrast-day",
+    "value": {
+      "foreground": [
+        95,
+        87,
+        76
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 6.195355864006013
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-375",
+    "value": {
+      "foreground": [
+        237,
+        231,
+        218
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 14.803686389325378
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-375",
+    "value": {
+      "foreground": [
+        237,
+        231,
+        218
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 14.803686389325378
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-375",
+    "value": {
+      "foreground": [
+        225,
+        194,
+        127
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 10.618048111445377
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-375",
+    "value": {
+      "foreground": [
+        225,
+        194,
+        127
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 10.618048111445377
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-390",
+    "value": {
+      "foreground": [
+        237,
+        231,
+        218
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 14.803686389325378
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-390",
+    "value": {
+      "foreground": [
+        237,
+        231,
+        218
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 14.803686389325378
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-390",
+    "value": {
+      "foreground": [
+        225,
+        194,
+        127
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 10.618048111445377
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-390",
+    "value": {
+      "foreground": [
+        225,
+        194,
+        127
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 10.618048111445377
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-430",
+    "value": {
+      "foreground": [
+        237,
+        231,
+        218
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 14.803686389325378
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-430",
+    "value": {
+      "foreground": [
+        237,
+        231,
+        218
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 14.803686389325378
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-430",
+    "value": {
+      "foreground": [
+        225,
+        194,
+        127
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 10.618048111445377
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-430",
+    "value": {
+      "foreground": [
+        225,
+        194,
+        127
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 10.618048111445377
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-900",
+    "value": {
+      "foreground": [
+        237,
+        231,
+        218
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 14.803686389325378
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-900",
+    "value": {
+      "foreground": [
+        237,
+        231,
+        218
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 14.803686389325378
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-900",
+    "value": {
+      "foreground": [
+        225,
+        194,
+        127
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 10.618048111445377
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "creation-contrast-900",
+    "value": {
+      "foreground": [
+        225,
+        194,
+        127
+      ],
+      "background": [
+        18,
+        22,
+        21
+      ],
+      "ratio": 10.618048111445377
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "profile-contrast-night",
+    "value": {
+      "foreground": [
+        43,
+        39,
+        35
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 12.914539767406428
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "profile-contrast-night",
+    "value": {
+      "foreground": [
+        43,
+        39,
+        35
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 12.914539767406428
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "profile-contrast-night",
+    "value": {
+      "foreground": [
+        117,
+        86,
+        19
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 5.90991893106655
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "profile-contrast-night",
+    "value": {
+      "foreground": [
+        117,
+        86,
+        19
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 5.90991893106655
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "profile-contrast-night",
+    "value": {
+      "foreground": [
+        95,
+        87,
+        76
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 6.195355864006013
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "profile-contrast-day",
+    "value": {
+      "foreground": [
+        43,
+        39,
+        35
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 12.914539767406428
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "profile-contrast-day",
+    "value": {
+      "foreground": [
+        43,
+        39,
+        35
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 12.914539767406428
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "profile-contrast-day",
+    "value": {
+      "foreground": [
+        117,
+        86,
+        19
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 5.90991893106655
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "profile-contrast-day",
+    "value": {
+      "foreground": [
+        117,
+        86,
+        19
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 5.90991893106655
+    }
+  },
+  {
+    "project": "mobile",
+    "target": "profile-contrast-day",
+    "value": {
+      "foreground": [
+        95,
+        87,
+        76
+      ],
+      "background": [
+        244,
+        239,
+        227
+      ],
+      "ratio": 6.195355864006013
+    }
+  }
+]

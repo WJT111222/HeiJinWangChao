@@ -1,0 +1,15 @@
+import { it } from 'vitest';
+import { writeFile } from 'node:fs/promises';
+import { talentPromptInput, talentMemoryInput, talentNarrative, emptyTalentWorld } from './fixtures/talentPrompt';
+import { talentStory } from './fixtures/talentAi';
+import { variableTextEnvelope } from './fixtures/variableReply';
+it('export stable no-talent inputs only', async () => {
+ const stages = [];
+ for(const stage of ['story','variables','world'] as const)for(const mode of ['opening','regular'] as const){
+  const input=talentPromptInput(stage,mode);
+  const answer=stage==='story'?talentStory(talentNarrative):stage==='world'?JSON.stringify(emptyTalentWorld):variableTextEnvelope(`<命令>set worldClock = ${JSON.stringify(new Date(Date.parse(input.state.worldClock)+60000).toISOString())}\nset protagonist.emotionText = "审慎"</命令>`);
+  stages.push({stage,mode,input,answer});
+ }
+ const memories=['memory.short_to_medium','memory.medium_to_long','memory.npc_summarize'].map(task=>({task,input:talentMemoryInput(task)}));
+ await writeFile('/workspace/opening-talents-integration-evidence/no-talent-inputs.json',JSON.stringify({stages,memories}));
+});

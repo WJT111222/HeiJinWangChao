@@ -1,0 +1,170 @@
+[
+  {
+    "project": "desktop",
+    "title": "基本信息模板独立、可编辑、往返与刷新保留；键盘选择",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "desktop",
+    "title": "五类各六职业，点击呈现完整介绍、独立技能与长期影响",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "desktop",
+    "title": "自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "mobile",
+    "title": "基本信息模板独立、可编辑、往返与刷新保留；键盘选择",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "mobile",
+    "title": "五类各六职业，点击呈现完整介绍、独立技能与长期影响",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "mobile",
+    "title": "自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "desktop",
+    "title": "默认夜间；在设置「外观」中切换后立即生效、刷新后保留，可切回夜间",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "desktop",
+    "title": "跟随系统：随设备深浅色实时切换",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "desktop",
+    "title": "日间下游戏内弹出内容换成纸色：浅色底、深色字；夜间保持深色",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "desktop",
+    "title": "日间下天际线转为浅色剪影，夜间保持原样",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "mobile",
+    "title": "默认夜间；在设置「外观」中切换后立即生效、刷新后保留，可切回夜间",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "mobile",
+    "title": "跟随系统：随设备深浅色实时切换",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "mobile",
+    "title": "日间下游戏内弹出内容换成纸色：浅色底、深色字；夜间保持深色",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "mobile",
+    "title": "日间下天际线转为浅色剪影，夜间保持原样",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "desktop",
+    "title": "日间工作流关键文字至少4.5:1，夜间恢复且原回调保持有效",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "mobile",
+    "title": "日间工作流关键文字至少4.5:1，夜间恢复且原回调保持有效",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "desktop",
+    "title": "八张正式全文卡片、原生单选键盘、取消与刷新；没有额外请求",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "desktop",
+    "title": "五步旧草稿与正式建档：有天赋，双端档案只读",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "desktop",
+    "title": "五步旧草稿与正式建档：清除后无天赋，双端档案只读",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "desktop",
+    "title": "开局包仍完整覆盖：有天赋保存与套用，旧包回到无天赋",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "desktop",
+    "title": "矮屏、断点与长卡片：内部滚动、底栏可达、触控与对比度",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "desktop",
+    "title": "日夜正式人物档案：全文、对比度、展开关闭与 Repository 不变",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "mobile",
+    "title": "八张正式全文卡片、原生单选键盘、取消与刷新；没有额外请求",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "mobile",
+    "title": "五步旧草稿与正式建档：有天赋，双端档案只读",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "mobile",
+    "title": "五步旧草稿与正式建档：清除后无天赋，双端档案只读",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "mobile",
+    "title": "开局包仍完整覆盖：有天赋保存与套用，旧包回到无天赋",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "mobile",
+    "title": "矮屏、断点与长卡片：内部滚动、底栏可达、触控与对比度",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "project": "mobile",
+    "title": "日夜正式人物档案：全文、对比度、展开关闭与 Repository 不变",
+    "status": "passed",
+    "retry": 0
+  }
+]
