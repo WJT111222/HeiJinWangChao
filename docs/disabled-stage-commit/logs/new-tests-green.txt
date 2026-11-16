@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /workspace/disabled-stage-commit
+
+ ❯ src/tests/disabled-stage-turns.test.ts (21 tests | 1 failed) 697ms
+   × 缺失Web Locks在设置CAS和任何收费请求之前拒绝，草稿及正式存档不变 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tests/disabled-stage-turns.test.ts > 缺失Web Locks在设置CAS和任何收费请求之前拒绝，草稿及正式存档不变
+AssertionError: expected AiError: 渠道、模型或路由配置无效，请检查设置。 { …(3) } to match object { code: 'concurrency_unavailable' }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+- {
+-   "code": "concurrency_unavailable",
++ AiError {
++   "code": "configuration",
+  }
+
+ ❯ src/tests/disabled-stage-turns.test.ts:212:46
+    210|   const { state, draft } = await seed(); vi.stubGlobal('navigator', {}…
+    211|   const transport = vi.fn<typeof fetch>();
+    212|   await expect(run(runner(transport), draft)).rejects.toMatchObject({ …
+       |                                              ^
+    213|   expect(transport).not.toHaveBeenCalled(); expect(await repo.loadDraf…
+    214|   expect(await repo.load(state.saveId)).toEqual(state);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+   Start at  21:42:47
+   Duration  1.30s (tests 60%, import 21%, transform 19%)
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

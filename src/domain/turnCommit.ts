@@ -1,7 +1,7 @@
 import { validateStageSettlement } from './events/stages';
 import { historicalPerspective } from './timePreflight';
 import { z } from 'zod';
-import { projectTurn, preparedVariableCommands } from './turnProjection';
+import { projectTurn, preparedVariableCommands, variableCommandsForTurn } from './turnProjection';
 import { requireData } from './common';
 import type { DomainCommand } from './commands';
 import { TurnDraftSchema } from './drafts';
@@ -36,21 +36,33 @@ export function rebindableAfterStoryStop(state: GameState, draft?: TurnDraft) {
     && !draft.story && !draft.variables && !draft.world && draft.stageStatus.story !== 'ready');
 }
 export function completeTurnDraft(draft: TurnDraft) {
-  return (
-    draft.useVariableStage &&
-    draft.useWorldStage &&
-    draft.story &&
-    draft.stageStatus.story === 'ready' &&
-    draft.stageStatus.variables === 'ready' &&
-    draft.stageStatus.world === 'ready' &&
-    draft.variables?.validation === 'validated' &&
-    draft.world?.validation === 'validated' &&
-    draft.world.basedOnVariableRevision === draft.variables.candidateRevision
-  );
+  const parsed = TurnDraftSchema.safeParse(draft);
+  if (!parsed.success) return false;
+  const current = parsed.data;
+  const ready = (stage: 'variables' | 'world') => current.stageStatus[stage] === 'ready' && current[stage]?.validation === 'validated';
+  const complete = (stage: 'variables' | 'world', enabled: boolean) => ready(stage)
+    || (!enabled && current.stageStatus[stage] === 'skipped' && !current[stage]);
+  return Boolean(current.story && current.stageStatus.story === 'ready'
+    && complete('variables', current.useVariableStage) && complete('world', current.useWorldStage)
+    && (!current.world || ready('variables') && current.world.basedOnVariableRevision === current.variables?.candidateRevision));
 }
-export function turnCommands(draft: TurnDraft, state: GameState): DomainCommand[] {
+// 只读结算投影：保留草稿内可复用候选，但关闭阶段不应用其结果。
+// World 仍可复用原有合法 Variables 依赖；纯小说模式不应用任何下游候选。
+export function settlementDraft(draft: TurnDraft): TurnDraft {
+  const useVariables = draft.useVariableStage || draft.useWorldStage;
+  return TurnDraftSchema.parse({ ...draft,
+    variables: useVariables ? draft.variables : undefined,
+    world: draft.useWorldStage ? draft.world : undefined,
+    stageStatus: { ...draft.stageStatus,
+      variables: useVariables ? draft.stageStatus.variables : 'skipped',
+      world: draft.useWorldStage ? draft.stageStatus.world : 'skipped',
+    },
+  });
+}
+export function turnCommands(input: TurnDraft, state: GameState): DomainCommand[] {
+  const draft = settlementDraft(input);
   return [
-    ...preparedVariableCommands(state, draft, draft.variables?.result.commands ?? []),
+    ...(draft.variables ? preparedVariableCommands(state, draft, draft.variables.result.commands) : variableCommandsForTurn(state, draft, [])),
     ...(draft.world?.result.worldCommands ?? []),
     ...(draft.world?.result.taskCommands ?? []),
     ...(draft.world?.result.eventCommands ?? []),
@@ -59,7 +71,9 @@ export function turnCommands(draft: TurnDraft, state: GameState): DomainCommand[
 // 正式提交保持同一候选投影，另验历史回顾不修改当前世界。
 export function settleTurn(state: GameState, input: TurnDraft, now: string): GameState {
   const current = GameStateSchema.parse(state),
-    draft = TurnDraftSchema.parse(input);
+    storedDraft = TurnDraftSchema.parse(input);
+  requireData(completeTurnDraft(storedDraft), 'TURN_INCOMPLETE', '需要合法正文与所有已启用阶段的候选');
+  const draft = settlementDraft(storedDraft);
   requireData(
     current.saveId === draft.saveId && current.revision === draft.baseSaveRevision,
     'REVISION_CONFLICT',
@@ -75,7 +89,7 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
     'TURN_CONTEXT',
     '回合模式不符',
   );
-  requireData(completeTurnDraft(draft), 'TURN_INCOMPLETE', '需要完整合法的三阶段候选');
+  requireData(completeTurnDraft(draft), 'TURN_INCOMPLETE', '需要合法正文与所有已启用阶段的候选');
   validateCommittedTime(current, draft);
   // 不能混入同 turnId 先前独立 save 的命令，再把一次不完整结算伪装为新回合。
   requireData(
@@ -83,8 +97,9 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
     'TURN_CONTEXT',
     '回合已有独立命令记录',
   );
-  const projected = projectTurn(current, draft, [...draft.world!.result.worldCommands, ...draft.world!.result.taskCommands, ...draft.world!.result.eventCommands]);
-  if(!historicalPerspective(current,draft)) validateStageSettlement(projectTurn(current,draft),projected,draft.turnId);
+  const world = draft.world?.result;
+  const projected = projectTurn(current, draft, world ? [...world.worldCommands, ...world.taskCommands, ...world.eventCommands] : []);
+  if(draft.world && !historicalPerspective(current,draft)) validateStageSettlement(projectTurn(current,draft),projected,draft.turnId);
   projected.updatedAt = now;
   delete projected.openingInitializationPending;
   requireData(draft.story!.summary.trim(), 'MISSING_SUMMARY', '正文缺少有效摘要，请重新生成正文后重试');

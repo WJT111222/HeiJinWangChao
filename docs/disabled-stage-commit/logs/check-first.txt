@@ -1,0 +1,452 @@
+
+> heijinwangchao@1.0.0-beta check
+> npm run filenames:check && npm run lint && npm run test && npm run build
+
+
+> heijinwangchao@1.0.0-beta filenames:check
+> node scripts/check-source-filenames.mjs
+
+Filename check: 4026 paths; Git index + untracked files.
+No case-insensitive path or extensionless module collisions.
+
+> heijinwangchao@1.0.0-beta lint
+> eslint . --max-warnings=0
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+
+> heijinwangchao@1.0.0-beta test
+> vitest run
+
+
+ RUN  v5.0.5 /workspace/disabled-stage-commit
+
+ ❯ src/tests/live-text-turn.test.ts (33 tests | 1 failed) 2632ms
+   ❯ 事件生命周期贯通真实Runtime、协调器和存档事务 (4)
+     × world-disabled不能结算或清理到期事件，不额外请求 43ms
+ ❯ src/tests/disabled-stage-turns.test.ts (21 tests | 1 failed) 504ms
+   × 缺失Web Locks在设置CAS和任何收费请求之前拒绝，草稿及正式存档不变 10ms
+ ❯ src/tests/time-runtime.test.ts (12 tests | 2 failed) 720ms
+   ❯ 真实三阶段、正式事务及恢复中的时间预检 (12)
+     × 关闭阶段{"variables":false,"world":false}不伪造时间结算 18ms
+     × 关闭阶段{"variables":true,"world":false}不伪造时间结算 33ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tests/disabled-stage-turns.test.ts > 缺失Web Locks在设置CAS和任何收费请求之前拒绝，草稿及正式存档不变
+AssertionError: expected AiError: 渠道、模型或路由配置无效，请检查设置。 { …(3) } to match object { code: 'concurrency_unavailable' }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+- {
+-   "code": "concurrency_unavailable",
++ AiError {
++   "code": "configuration",
+  }
+
+ ❯ src/tests/disabled-stage-turns.test.ts:212:46
+    210|   const { state, draft } = await seed(); vi.stubGlobal('navigator', {}…
+    211|   const transport = vi.fn<typeof fetch>();
+    212|   await expect(run(runner(transport), draft)).rejects.toMatchObject({ …
+       |                                              ^
+    213|   expect(transport).not.toHaveBeenCalled(); expect(await repo.loadDraf…
+    214|   expect(await repo.load(state.saveId)).toEqual(state);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/tests/live-text-turn.test.ts > 事件生命周期贯通真实Runtime、协调器和存档事务 > world-disabled不能结算或清理到期事件，不额外请求
+AssertionError: expected 'complete' to be 'skipped' // Object.is equality
+
+Expected: "skipped"
+Received: "complete"
+
+ ❯ src/tests/live-text-turn.test.ts:267:52
+    265|     const runner=coordinator(a.repo,t.fetcher);
+    266|     if(mode==='variables-failed')await expect(runner.generate(a)).reje…
+    267|     else expect((await runner.generate(a)).status).toBe('skipped');
+       |                                                    ^
+    268|     expect(t.calls.map(c=>c.stage)).toEqual(['story','variables']);exp…
+    269|     const pending=await a.repo.loadDraft('save-a');if(!pending)throw E…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/tests/time-runtime.test.ts > 真实三阶段、正式事务及恢复中的时间预检 > 关闭阶段{"variables":false,"world":false}不伪造时间结算
+AssertionError: promise resolved "{ state: { …(26) }, …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "draft": {
++     "baseSaveRevision": 2,
++     "draftRevision": 0,
++     "executionRevision": 0,
++     "failures": [],
++     "requestedStages": [],
++     "saveId": "save-a",
++     "stageRequestRevisions": {
++       "variables": 0,
++       "world": 0,
++     },
++     "stageStatus": {
++       "story": "pending",
++       "variables": "pending",
++       "world": "pending",
++     },
++     "storyRevision": 0,
++     "turnId": "turn-88ced7bc-ef23-499b-80bb-fbd6d3877c74",
++     "turnKind": "regular",
++     "useVariableStage": true,
++     "useWorldStage": true,
++     "userInput": "去社区诊所咨询",
++   },
++   "replayed": false,
++   "state": {
++     "appliedCommands": [],
++     "contactNpcIds": [],
++     "createdAt": "2026-11-16T21:43:29.112Z",
++     "economy": {
++       "cash": 10000,
++       "debts": {},
++       "incomes": {},
++       "onlineBalance": 20000,
++       "otherAssets": {},
++       "properties": {},
++       "vehicles": {},
++     },
++     "environmentText": "",
++     "events": {},
++     "initialCompanionId": undefined,
++     "items": {},
++     "journal": [
++       {
++         "relatedActorRefs": [],
++         "revision": 1,
++         "story": {
++           "narrative": "第 1 回合，主角在河边散步，观察水面。",
++           "summary": "第 1 回合散步。",
++           "turnKind": "opening",
++           "variableGuide": [],
++         },
++         "turnId": "history-1",
++       },
++       {
++         "relatedActorRefs": [],
++         "revision": 2,
++         "scene": {
++           "locationId": "home",
++           "worldClock": "2026-12-31T23:00:00+08:00",
++         },
++         "story": {
++           "narrative": "次日08:00，你自然醒来。你观察当前局面，尚未决定后续行动。",
++           "summary": "次日08:00，你自然醒来。",
++           "turnKind": "regular",
++           "variableGuide": [
++             {
++               "group": "time",
++               "observedFact": "2027-01-01T08:00:00+08:00",
++               "subjectHint": "time:end",
++               "textEvidence": "次日08:00，你自然醒来。",
++             },
++           ],
++         },
++         "turnId": "sleep-turn",
++       },
++     ],
++     "locations": {
++       "chongqing": {
++         "id": "chongqing",
++         "name": "重庆",
++       },
++       "home": {
++         "id": "home",
++         "name": "主角住所",
++         "parentId": "chongqing",
++       },
++     },
++     "memories": {
++       "immediateWindowSize": 10,
++       "long": [],
++       "medium": [],
++       "npcSummaries": {},
++       "short": [
++         {
++           "affectedEntityRefs": [],
++           "createdAtGameTime": "2026-12-31T23:00:00+08:00",
++           "id": "sleep-turn",
++           "sourceTurnIds": [
++             "sleep-turn",
++           ],
++           "text": "次日08:00，你自然醒来。",
++           "visibility": "player_known",
++         },
++       ],
++     },
++     "npc": {
++       "npc-a": {
++         "affinity": 30,
++         "aliases": [],
++         "id": "npc-a",
++         "identityKey": "identity-npc-a",
++         "kind": "ordinary",
++         "knownInformation": [],
++         "locationId": "chongqing",
++         "memories": [],
++         "name": "陈宁",
++         "onScene": false,
++         "relationshipText": "工作中相互信任",
++         "skills": [],
++       },
++     },
++     "openingCityId": null,
++     "organizations": {},
++     "protagonist": {
++       "age": 30,
++       "appearance": "",
++       "background": "自由背景",
++       "currentWear": {
++         "accessoryItemIds": [],
++       },
++       "emotionText": "平静",
++       "gender": "男",
++       "healthText": "健康",
++       "id": "hero",
++       "locationId": "home",
++       "name": "林舟",
++       "personality": "",
++       "profession": "教师",
++       "skills": [
++         "教学",
++       ],
++     },
++     "retiredEvents": {},
++     "revision": 2,
++     "saveId": "save-a",
++     "schemaVersion": 10,
++     "tasks": {},
++     "timeline": [],
++     "title": "测试存档",
++     "turnNumber": 2,
++     "updatedAt": "2026-11-16T21:43:29.122Z",
++     "weatherText": "",
++     "worldClock": "2026-12-31T23:00:00+08:00",
++   },
+  }
+
+ ❯ src/tests/time-runtime.test.ts:122:60
+    120|     expect(calls).toEqual(['story', ...(flags.variables ? ['variables'…
+    121|     if (flags.world && !flags.variables) expect(result.draft.world?.va…
+    122|     await expect(repo.commitTurn(submission(result.draft))).rejects.to…
+       |                                                            ^
+    123|   });
+    124|   it('并发/取消/迟到不能覆盖新行动，新动作地点重新预检而不是沿用旧事件', async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/tests/time-runtime.test.ts > 真实三阶段、正式事务及恢复中的时间预检 > 关闭阶段{"variables":true,"world":false}不伪造时间结算
+AssertionError: promise resolved "{ state: { …(26) }, …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "draft": {
++     "baseSaveRevision": 2,
++     "draftRevision": 0,
++     "executionRevision": 0,
++     "failures": [],
++     "requestedStages": [],
++     "saveId": "save-a",
++     "stageRequestRevisions": {
++       "variables": 0,
++       "world": 0,
++     },
++     "stageStatus": {
++       "story": "pending",
++       "variables": "pending",
++       "world": "pending",
++     },
++     "storyRevision": 0,
++     "turnId": "turn-d9d248e0-68f6-4bc7-91f7-e3e9d1fece55",
++     "turnKind": "regular",
++     "useVariableStage": true,
++     "useWorldStage": true,
++     "userInput": "去社区诊所咨询",
++   },
++   "replayed": false,
++   "state": {
++     "appliedCommands": [
++       {
++         "commandId": "text-v1:s1:c1",
++         "fingerprint": "{\"commandId\":\"text-v1:s1:c1\",\"evidence\":\"文本变量指令第1条\",\"type\":\"SetWorldClock\",\"worldClock\":\"2027-01-01T08:00:00+08:00\"}",
++         "turnId": "sleep-turn",
++       },
++     ],
++     "contactNpcIds": [],
++     "createdAt": "2026-11-16T21:43:29.154Z",
++     "economy": {
++       "cash": 10000,
++       "debts": {},
++       "incomes": {},
++       "onlineBalance": 20000,
++       "otherAssets": {},
++       "properties": {},
++       "vehicles": {},
++     },
++     "environmentText": "",
++     "events": {},
++     "initialCompanionId": undefined,
++     "items": {},
++     "journal": [
++       {
++         "relatedActorRefs": [],
++         "revision": 1,
++         "story": {
++           "narrative": "第 1 回合，主角在河边散步，观察水面。",
++           "summary": "第 1 回合散步。",
++           "turnKind": "opening",
++           "variableGuide": [],
++         },
++         "turnId": "history-1",
++       },
++       {
++         "relatedActorRefs": [],
++         "revision": 2,
++         "scene": {
++           "locationId": "home",
++           "worldClock": "2026-12-31T23:00:00+08:00",
++         },
++         "story": {
++           "narrative": "次日08:00，你自然醒来。你观察当前局面，尚未决定后续行动。",
++           "summary": "次日08:00，你自然醒来。",
++           "turnKind": "regular",
++           "variableGuide": [
++             {
++               "group": "time",
++               "observedFact": "2027-01-01T08:00:00+08:00",
++               "subjectHint": "time:end",
++               "textEvidence": "次日08:00，你自然醒来。",
++             },
++           ],
++         },
++         "turnId": "sleep-turn",
++       },
++     ],
++     "locations": {
++       "chongqing": {
++         "id": "chongqing",
++         "name": "重庆",
++       },
++       "home": {
++         "id": "home",
++         "name": "主角住所",
++         "parentId": "chongqing",
++       },
++     },
++     "memories": {
++       "immediateWindowSize": 10,
++       "long": [],
++       "medium": [],
++       "npcSummaries": {},
++       "short": [
++         {
++           "affectedEntityRefs": [],
++           "createdAtGameTime": "2027-01-01T08:00:00+08:00",
++           "id": "sleep-turn",
++           "sourceTurnIds": [
++             "sleep-turn",
++           ],
++           "text": "次日08:00，你自然醒来。",
++           "visibility": "player_known",
++         },
++       ],
++     },
++     "npc": {
++       "npc-a": {
++         "affinity": 30,
++         "aliases": [],
++         "id": "npc-a",
++         "identityKey": "identity-npc-a",
++         "kind": "ordinary",
++         "knownInformation": [],
++         "locationId": "chongqing",
++         "memories": [],
++         "name": "陈宁",
++         "onScene": false,
++         "relationshipText": "工作中相互信任",
++         "skills": [],
++       },
++     },
++     "openingCityId": null,
++     "organizations": {},
++     "protagonist": {
++       "age": 30,
++       "appearance": "",
++       "background": "自由背景",
++       "currentWear": {
++         "accessoryItemIds": [],
++       },
++       "emotionText": "平静",
++       "gender": "男",
++       "healthText": "健康",
++       "id": "hero",
++       "locationId": "home",
++       "name": "林舟",
++       "personality": "",
++       "profession": "教师",
++       "skills": [
++         "教学",
++       ],
++     },
++     "retiredEvents": {},
++     "revision": 2,
++     "saveId": "save-a",
++     "schemaVersion": 10,
++     "tasks": {},
++     "timeline": [],
++     "title": "测试存档",
++     "turnNumber": 2,
++     "updatedAt": "2026-11-16T21:43:29.181Z",
++     "weatherText": "",
++     "worldClock": "2027-01-01T08:00:00+08:00",
++   },
+  }
+
+ ❯ src/tests/time-runtime.test.ts:122:60
+    120|     expect(calls).toEqual(['story', ...(flags.variables ? ['variables'…
+    121|     if (flags.world && !flags.variables) expect(result.draft.world?.va…
+    122|     await expect(repo.commitTurn(submission(result.draft))).rejects.to…
+       |                                                            ^
+    123|   });
+    124|   it('并发/取消/迟到不能覆盖新行动，新动作地点重新预检而不是沿用旧事件', async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  3 failed | 173 passed (176)
+      Tests  4 failed | 4266 passed (4270)
+   Start at  21:43:12
+   Duration  64.72s (tests 73%, import 22%, transform 4%, worker 1%)
+
+    Isolate  176 workers spawned · ~145ms startup each (spawn + environment, per file)
+             at least ~8.38s faster with isolate: false — reuses workers across files instead of one per file
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

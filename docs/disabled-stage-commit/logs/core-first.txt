@@ -1,0 +1,123 @@
+
+ RUN  v5.0.5 /workspace/disabled-stage-commit
+
+ ❯ src/tests/automatic-turn.test.ts (12 tests | 2 failed) 649ms
+   ❯ 真实协调器→自动正式结算→等待玩家 (12)
+     × 关闭World按新规则自动提交Story与合法Variables；下一回合恢复全部阶段 4ms
+     × 两个阶段关闭：原始开局草稿通过CAS同步后，连续三回合只请求Story并原子结算 2ms
+ ❯ src/tests/turn-coordinator.test.ts (37 tests | 5 failed) 6359ms
+   ❯ 真实三阶段顺序协调及恢复，正式 GameState 不变 (22)
+     × 独立开关 variables=false/world=false，不偷偷请求 3ms
+     × 独立开关 variables=true/world=false，不偷偷请求 2ms
+     × 独立开关 variables=false/world=true，不偷偷请求 2ms
+     × 已合法变量在关闭变量开关时仍可供世界复用 1ms
+   ❯ 会话互斥、取消、版本与配置快照 (15)
+     × 保存不可中断时取消返回 false，不虚报取消成功 5008ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tests/automatic-turn.test.ts > 真实协调器→自动正式结算→等待玩家 > 关闭World按新规则自动提交Story与合法Variables；下一回合恢复全部阶段
+ FAIL  src/tests/automatic-turn.test.ts > 真实协调器→自动正式结算→等待玩家 > 两个阶段关闭：原始开局草稿通过CAS同步后，连续三回合只请求Story并原子结算
+ FAIL  src/tests/turn-coordinator.test.ts > 真实三阶段顺序协调及恢复，正式 GameState 不变 > 独立开关 variables=false/world=false，不偷偷请求
+ FAIL  src/tests/turn-coordinator.test.ts > 真实三阶段顺序协调及恢复，正式 GameState 不变 > 独立开关 variables=true/world=false，不偷偷请求
+ FAIL  src/tests/turn-coordinator.test.ts > 真实三阶段顺序协调及恢复，正式 GameState 不变 > 独立开关 variables=false/world=true，不偷偷请求
+ FAIL  src/tests/turn-coordinator.test.ts > 真实三阶段顺序协调及恢复，正式 GameState 不变 > 已合法变量在关闭变量开关时仍可供世界复用
+ZodError: [
+  {
+    "code": "unrecognized_keys",
+    "keys": [
+      "streamStory",
+      "streamVariables",
+      "streamWorld",
+      "timeoutSeconds"
+    ],
+    "path": [],
+    "message": "Unrecognized keys: \"streamStory\", \"streamVariables\", \"streamWorld\", \"timeoutSeconds\""
+  }
+]
+ ❯ configureTurnStages src/domain/drafts.ts:139:26
+    137|   // 正文尚未产生时保持初始执行版本，保留失败回填/续写身份；draftRevision 的 CAS 使旧响应失效。
+    138|   const executionRevision = current.story ? current.executionRevision …
+    139|   return TurnDraftSchema.parse({
+       |                          ^
+    140|     ...current, ...config, draftRevision: current.draftRevision + 1, e…
+    141|     requestedStages: current.story ? [
+ ❯ required src/workflows/turnCoordinator.ts:166:28
+ ❯ run src/workflows/stageGuard.ts:102:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  src/tests/turn-coordinator.test.ts > 会话互斥、取消、版本与配置快照 > 保存不可中断时取消返回 false，不虚报取消成功
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/tests/turn-coordinator.test.ts:378:3
+    376|     },
+    377|   );
+    378|   it('保存不可中断时取消返回 false，不虚报取消成功', async () => {
+       |   ^
+    379|     const hold = deferred<void>(),
+    380|       entered = deferred<void>();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+ZodError: [
+  {
+    "code": "unrecognized_keys",
+    "keys": [
+      "streamStory",
+      "streamVariables",
+      "streamWorld",
+      "timeoutSeconds"
+    ],
+    "path": [],
+    "message": "Unrecognized keys: \"streamStory\", \"streamVariables\", \"streamWorld\", \"timeoutSeconds\""
+  }
+]
+ ❯ configureTurnStages src/domain/drafts.ts:139:26
+    137|   // 正文尚未产生时保持初始执行版本，保留失败回填/续写身份；draftRevision 的 CAS 使旧响应失效。
+    138|   const executionRevision = current.story ? current.executionRevision …
+    139|   return TurnDraftSchema.parse({
+       |                          ^
+    140|     ...current, ...config, draftRevision: current.draftRevision + 1, e…
+    141|     requestedStages: current.story ? [
+ ❯ required src/workflows/turnCoordinator.ts:166:28
+ ❯ run src/workflows/stageGuard.ts:102:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { _zod: { def: [ { code: 'unrecognized_keys', keys: [ 'streamStory', 'streamVariables', 'streamWorld', 'timeoutSeconds' ], path: [], message: 'Unrecognized keys: "streamStory", "streamVariables", "streamWorld", "timeoutSeconds"' } ], constr: 'Function<ZodError>', traits: { constructor: 'Function<Set>', has: 'Function<has>', add: 'Function<add>', delete: 'Function<delete>', difference: 'Function<difference>', clear: 'Function<clear>', entries: 'Function<entries>', forEach: 'Function<forEach>', intersection: 'Function<intersection>', isSubsetOf: 'Function<isSubsetOf>', isSupersetOf: 'Function<isSupersetOf>', isDisjointFrom: 'Function<isDisjointFrom>', size: 2, symmetricDifference: 'Function<symmetricDifference>', union: 'Function<union>', values: 'Function<values>', keys: 'Function<values>' }, message: '[
+  {
+    "code": "unrecognized_keys",
+    "keys": [
+      "streamStory",
+      "streamVariables",
+      "streamWorld",
+      "timeoutSeconds"
+    ],
+    "path": [],
+    "message": "Unrecognized keys: \"streamStory\", \"streamVariables\", \"streamWorld\", \"timeoutSeconds\""
+  }
+]' }, issues: [ { code: 'unrecognized_keys', keys: [ 'streamStory', 'streamVariables', 'streamWorld', 'timeoutSeconds' ], path: [], message: 'Unrecognized keys: "streamStory", "streamVariables", "streamWorld", "timeoutSeconds"' } ], format: 'Function<anonymous>', flatten: 'Function<anonymous>', addIssue: 'Function<anonymous>', addIssues: 'Function<anonymous>', isEmpty: false }
+This error originated in "src/tests/turn-coordinator.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "保存不可中断时取消返回 false，不虚报取消成功". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  2 failed | 3 passed (5)
+      Tests  7 failed | 136 passed (143)
+     Errors  1 error
+   Start at  21:36:31
+   Duration  7.10s (tests 80%, import 11%, transform 9%)
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

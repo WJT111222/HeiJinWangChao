@@ -1,0 +1,56 @@
+[WebServer] (node:753089) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:753116) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] npm notice
+[WebServer] npm notice New major version of npm available! 11.9.0 -> 12.2.2
+[WebServer] npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+[WebServer] npm notice To update run: npm install -g npm@12.2.2
+[WebServer] npm notice
+
+[WebServer] (node:753156) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 16 tests using 2 workers
+
+(node:753203) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/16] [desktop] › e2e/disabled-stage-turns.spec.ts:72:1 › 开局通过真实开关关闭两阶段，连续三章保存、刷新不收费；重启两阶段后恢复完整流程
+(node:753201) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/16] [desktop] › e2e/disabled-stage-turns.spec.ts:91:1 › 只关闭World：变量仍严格执行并正式结算，关闭状态可见
+[3/16] [desktop] › e2e/disabled-stage-turns.spec.ts:97:1 › World-only说明变量依赖且不提交；关闭World后无额外AI请求完成本章
+[4/16] [desktop] › e2e/disabled-stage-turns.spec.ts:107:1 › 纯小说截断不提交，刷新保留，续写完整后一次正式保存
+[5/16] [desktop] › e2e/disabled-stage-turns.spec.ts:117:1 › 自动提交故障后有完成结算入口，重试只提交，不再次生成正文
+[6/16] [desktop] › e2e/disabled-stage-turns.spec.ts:134:1 › 旧完整候选切为纯小说须先CAS应用开关，不能通过发送绕过；不应用关闭阶段旧结果
+[7/16] [desktop] › e2e/disabled-stage-turns.spec.ts:154:1 › 纯小说双标签由Web Locks阻止第二次请求；取消后迟到响应不提交
+[8/16] [desktop] › e2e/disabled-stage-turns.spec.ts:175:1 › 纯小说缺少Web Locks零请求，保留原草稿和输入并显示明确提示
+(node:754773) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[9/16] [mobile] › e2e/disabled-stage-turns.spec.ts:72:1 › 开局通过真实开关关闭两阶段，连续三章保存、刷新不收费；重启两阶段后恢复完整流程
+(node:754814) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[10/16] [mobile] › e2e/disabled-stage-turns.spec.ts:91:1 › 只关闭World：变量仍严格执行并正式结算，关闭状态可见
+[11/16] [mobile] › e2e/disabled-stage-turns.spec.ts:97:1 › World-only说明变量依赖且不提交；关闭World后无额外AI请求完成本章
+[12/16] [mobile] › e2e/disabled-stage-turns.spec.ts:107:1 › 纯小说截断不提交，刷新保留，续写完整后一次正式保存
+[13/16] [mobile] › e2e/disabled-stage-turns.spec.ts:117:1 › 自动提交故障后有完成结算入口，重试只提交，不再次生成正文
+[14/16] [mobile] › e2e/disabled-stage-turns.spec.ts:134:1 › 旧完整候选切为纯小说须先CAS应用开关，不能通过发送绕过；不应用关闭阶段旧结果
+[15/16] [mobile] › e2e/disabled-stage-turns.spec.ts:154:1 › 纯小说双标签由Web Locks阻止第二次请求；取消后迟到响应不提交
+[16/16] [mobile] › e2e/disabled-stage-turns.spec.ts:175:1 › 纯小说缺少Web Locks零请求，保留原草稿和输入并显示明确提示
+  16 passed (1.6m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

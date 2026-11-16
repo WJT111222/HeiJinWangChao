@@ -1,0 +1,45 @@
+
+ RUN  v5.0.5 /workspace/disabled-stage-commit
+
+ ❯ src/tests/automatic-turn.test.ts (12 tests | 2 failed) 867ms
+   ❯ 真实协调器→自动正式结算→等待玩家 (12)
+     × 关闭World按新规则自动提交Story与合法Variables；下一回合恢复全部阶段 24ms
+     × 两个阶段关闭：原始开局草稿通过CAS同步后，连续三回合只请求Story并原子结算 10ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tests/automatic-turn.test.ts > 真实协调器→自动正式结算→等待玩家 > 关闭World按新规则自动提交Story与合法Variables；下一回合恢复全部阶段
+TypeError: Cannot read properties of undefined (reading 'state')
+ ❯ src/tests/automatic-turn.test.ts:83:18
+     81|     const value = server(), config = setup(); config.settings.runtime.…
+     82|     const first = (await run(value, config)).committed!;
+     83|     expect(first.state.turnNumber).toBe(1); expect(first.state.economy…
+       |                  ^
+     84|     expect(value.calls).toEqual(['story','variables']); expect(first.d…
+     85|     await repo.bindTurnAction(first.draft, '继续用餐', true, true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/tests/automatic-turn.test.ts > 真实协调器→自动正式结算→等待玩家 > 两个阶段关闭：原始开局草稿通过CAS同步后，连续三回合只请求Story并原子结算
+TypeError: Cannot read properties of undefined (reading 'state')
+ ❯ src/tests/automatic-turn.test.ts:94:21
+     92|     for (let turn = 1; turn <= 3; turn++) {
+     93|       const result = (await run(value, config)).committed!;
+     94|       expect(result.state.turnNumber).toBe(turn); expect(result.state.…
+       |                     ^
+     95|       expect(result.state.journal).toHaveLength(turn); expect(result.s…
+     96|       expect(result.state.worldClock).toBe(before.worldClock); expect(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  21:35:27
+   Duration  2.04s (tests 46%, transform 40%, import 14%)
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

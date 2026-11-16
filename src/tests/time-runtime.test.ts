@@ -118,8 +118,18 @@ describe('真实三阶段、正式事务及恢复中的时间预检', () => {
     input.settings.runtime.useVariableStage = flags.variables; input.settings.runtime.useWorldStage = flags.world;
     const result = await coordinator(repo, async (_url, init) => { const { model } = context(init); calls.push(model); return model === 'story' ? wireStory() : jsonWire(model === 'variables' ? variableResult(state, draft) : worldResult()); }).generate({ draft, ...input });
     expect(calls).toEqual(['story', ...(flags.variables ? ['variables'] : []), ...(flags.world ? ['world'] : [])]);
-    if (flags.world && !flags.variables) expect(result.draft.world?.validation).toBe('preview');
-    await expect(repo.commitTurn(submission(result.draft))).rejects.toThrow(); expect(await repo.load(state.saveId)).toEqual(state);
+    if (flags.world && !flags.variables) {
+      expect(result.draft.world?.validation).toBe('preview');
+      await expect(repo.commitTurn(submission(result.draft))).rejects.toThrow(); expect(await repo.load(state.saveId)).toEqual(state);
+    } else {
+      const saved = await repo.commitTurn(submission(result.draft));
+      expect(saved.state.worldClock).toBe(flags.variables ? timeStory().variableGuide[0].observedFact : state.worldClock);
+      expect(saved.state.events).toEqual(state.events); expect(saved.state.economy).toEqual(state.economy);
+      expect(saved.state.revision).toBe(state.revision + 1); expect(saved.state.turnNumber).toBe(state.turnNumber + 1);
+      expect(saved.state.journal).toHaveLength(state.journal.length + 1);
+      expect(await repo.load(state.saveId)).toEqual(saved.state);
+    }
+    expect(calls).toEqual(['story', ...(flags.variables ? ['variables'] : []), ...(flags.world ? ['world'] : [])]);
   });
   it('并发/取消/迟到不能覆盖新行动，新动作地点重新预检而不是沿用旧事件', async () => {
     const { state, repo, draft } = await seed(timeState(true)); let release!: () => void, started!: () => void;

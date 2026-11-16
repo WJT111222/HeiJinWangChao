@@ -259,15 +259,24 @@ describe('事件生命周期贯通真实Runtime、协调器和存档事务',()=>
     expect(await a.repo.loadGame('save-a')).toEqual(before);expect((await a.repo.load('save-a')).events['due-event']).toBeDefined();
     const saved=await a.repo.commitTurn(submission(done.draft));expect(saved.state.events['due-event']).toBeUndefined();expect(saved.state.journal).toHaveLength(2);
   });
-  it.each(['world-disabled','variables-failed'] as const)('%s不能结算或清理到期事件，不额外请求',async(mode)=>{
+  it.each(['world-disabled','variables-failed'] as const)('%s保留到期事件；仅已启用阶段合法时允许结算，不额外请求',async(mode)=>{
     const a=await dueFixture(),before=await a.repo.load('save-a'),t=dueTransport(a,mode==='variables-failed');
     if(mode==='world-disabled')a.settings.runtime.useWorldStage=false;
     const runner=coordinator(a.repo,t.fetcher);
     if(mode==='variables-failed')await expect(runner.generate(a)).rejects.toThrow();
-    else expect((await runner.generate(a)).status).toBe('skipped');
+    else expect((await runner.generate(a)).status).toBe('complete');
     expect(t.calls.map(c=>c.stage)).toEqual(['story','variables']);expect(await a.repo.load('save-a')).toEqual(before);
     const pending=await a.repo.loadDraft('save-a');if(!pending)throw Error('missing draft');
-    await expect(a.repo.commitTurn(submission(pending))).rejects.toThrow();expect(await a.repo.load('save-a')).toEqual(before);
+    if(mode==='variables-failed') {
+      await expect(a.repo.commitTurn(submission(pending))).rejects.toThrow();expect(await a.repo.load('save-a')).toEqual(before);
+    } else {
+      const saved=await a.repo.commitTurn(submission(pending));
+      expect(saved.state.events).toEqual(before.events);expect(saved.state.retiredEvents).toEqual(before.retiredEvents);
+      expect(saved.state.revision).toBe(before.revision+1);expect(saved.state.turnNumber).toBe(before.turnNumber+1);
+      expect(saved.state.journal).toHaveLength(before.journal.length+1);
+      expect(await a.repo.load('save-a')).toEqual(saved.state);
+    }
+    expect(t.calls.map(c=>c.stage)).toEqual(['story','variables']);
   });
 });
 

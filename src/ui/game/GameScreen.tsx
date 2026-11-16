@@ -280,7 +280,8 @@ export function GameScreen({
     draft.baseSaveRevision === state.revision &&
     !state.journal.some((entry) => entry.turnId === draft.turnId) &&
     (draft.turnKind !== 'opening' || state.turnNumber === 0);
-  const canCommit = Boolean(validDraft && draft && completeTurnDraft(draft));
+  const stageSettingsChanged = Boolean(draft && (draft.useVariableStage !== settings.runtime.useVariableStage || draft.useWorldStage !== settings.runtime.useWorldStage));
+  const canCommit = Boolean(validDraft && draft && !stageSettingsChanged && completeTurnDraft(draft));
   const awaitingAction = awaitingPlayerAction(state, draft);
   // 正文失败或被取消、尚无候选时：原行动放回输入框，玩家可原样或修改后直接重新发送。
   const rebindAction = !busy && rebindableAfterStoryStop(state, draft);
@@ -434,15 +435,13 @@ export function GameScreen({
     (draft?.stageStatus.variables !== 'ready' || draft.variables?.validation !== 'validated' || storyNeeded);
   const worldNeeded = settings.runtime.useWorldStage &&
     (!draft?.world || !['ready', 'preview'].includes(draft.stageStatus.world) || variablesNeeded || storyNeeded);
-  const canGenerate = Boolean(validDraft && !awaitingAction && (storyNeeded || variablesNeeded || worldNeeded));
+  const canGenerate = Boolean(validDraft && !awaitingAction && (storyNeeded || variablesNeeded || worldNeeded || stageSettingsChanged));
   const disabledGuidance = !settings.runtime.useVariableStage && !settings.runtime.useWorldStage
-    ? '变量管理和动态世界阶段已关闭。需要启用并完成必要候选后，才能正式结算本回合。'
-    : !settings.runtime.useVariableStage
-      ? draft?.world?.validation === 'preview'
-        ? '变量阶段未启用，当前世界结果仅为预览。请启用变量阶段并补全必要候选。'
-        : '变量阶段已关闭。需要启用该阶段并完成候选后，才能正式结算本回合。'
+    ? '变量管理和动态世界已关闭：正文通过校验后正式结算。纯小说模式不更新世界变量和普通回合时钟。'
+    : !settings.runtime.useVariableStage && draft?.variables?.validation !== 'validated'
+      ? '动态世界依赖合法变量候选。变量管理已关闭，世界结果仅供预览，不能正式结算；请启用变量补算，或同时关闭动态世界。'
       : !settings.runtime.useWorldStage
-        ? '动态世界阶段已关闭。需要启用该阶段并完成候选后，才能正式结算本回合。'
+        ? '动态世界已关闭：正文与变量候选通过校验后正式结算，不执行场外世界更新。'
         : '';
   const workflowGuidance = validDraft && !awaitingAction && !busy && !canCommit
     ? disabledGuidance || (!canGenerate
@@ -509,10 +508,10 @@ export function GameScreen({
     const status = draft?.stageStatus[stage];
     const auto = automatic.progress?.stage === stage ? automatic.progress : undefined;
     const skipped = automatic.outcome?.draft.draftRevision === draft?.draftRevision && automatic.outcome?.skipped.includes(stage);
-    const text = awaitingAction ? '已结算'
+    const enabled = stage === 'story' || (busy && draft ? stage === 'variables' ? draft.useVariableStage : draft.useWorldStage : stage === 'variables' ? settings.runtime.useVariableStage : settings.runtime.useWorldStage);
+    const text = !enabled ? '已关闭' : awaitingAction ? '已结算'
       : auto ? auto.phase === 'saving' ? '保存中' : auto.phase === 'retrying' ? '重试中' : '生成中'
       : activeStage === stage ? activePhase === 'saving' ? '保存中' : '生成中'
-      : (stage === 'variables' && !settings.runtime.useVariableStage) || (stage === 'world' && !settings.runtime.useWorldStage) ? '已关闭'
       : skipped || status === 'skipped' ? '已跳过'
       : status === 'failed' || errorStage === stage && hasWorkflowError ? '失败 · 可重试'
       : status === 'preview' ? '仅预览' : status === 'ready' ? '已完成' : '待生成';
@@ -588,7 +587,7 @@ export function GameScreen({
     </button>
   );
   // 输入栏常驻的多功能按钮：运行中=取消；某环节停下=继续当前环节；已结算=留在原位不可点。
-  // 正文环节沿用原来的「只生成正文」（使用已绑定的行动，输入框改过的字不会顶替它，换行动请按发送）；
+  // 全阶段模式沿用原来的独立正文入口；关闭阶段时自动完成已启用阶段并结算。均使用已绑定行动。
   // 变量、世界与结算环节等同详情里的「继续未完成阶段」。
   const nextStage = storyNeeded ? 'story' : variablesNeeded ? 'variables' : worldNeeded ? 'world' : undefined;
   const runningCancel = automatic.running ? { onClick: automatic.cancel, saving: automatic.settling || automatic.progress?.phase === 'saving' }
@@ -599,7 +598,8 @@ export function GameScreen({
   const storyLabel = draft?.turnKind === 'regular' ? '生成本回合正文' : '生成开局正文';
   const continueStory = () => {
     if (!draft || busy || !mayStartStory(draft)) return;
-    void generate();
+    if (!settings.runtime.useVariableStage || !settings.runtime.useWorldStage) void automatic.generate();
+    else void generate();
   };
   const continueWorkflow = () => { if (draft && !busy) void automatic.generate(); };
   const workflowAction: { kind: 'cancel' | 'continue' | 'idle'; label: string; short: string; title?: string; disabled: boolean; onClick?: () => void } =
@@ -607,11 +607,12 @@ export function GameScreen({
       title: runningCancel.saving ? '正在保存，稍候即可' : '取消正在进行的生成', onClick: runningCancel.onClick }
     : awaitingAction ? { kind: 'idle', label: '本回合已完成', short: '完', disabled: true, title: '本回合已结算；发送新行动后继续' }
     : nextStage === 'story' && storyContinuable ? { kind: 'continue', label: '续写正文', short: '续', disabled: !validDraft || busy,
-        title: !validDraft ? staleDraftMessage : '从中断处接着写正文，写完后自动生成变量、世界并结算', onClick: continueWorkflow }
+        title: !validDraft ? staleDraftMessage : '从中断处接着写正文，写完后完成已启用阶段并正式结算', onClick: continueWorkflow }
     : nextStage === 'story' ? { kind: 'continue', label: storyLabel, short: '续', disabled: !validDraft || busy || !mayStartStory(draft),
         title: !validDraft ? staleDraftMessage : '生成本回合正文（使用已绑定的行动）', onClick: continueStory }
     : !validDraft ? { kind: 'idle', label: '继续', short: '续', disabled: true, title: staleDraftMessage }
     : canCommit && !nextStage ? { kind: 'continue', label: '完成本回合结算', short: '结', disabled: busy, title: '候选已完成，保存本回合结果', onClick: continueWorkflow }
+    : stageSettingsChanged && !nextStage ? { kind: 'continue', label: '应用阶段设置并继续', short: '续', disabled: busy, title: '在执行锁内保存本次阶段选择，再校验并结算', onClick: continueWorkflow }
     : nextStage && canGenerate ? { kind: 'continue', label: nextStage === 'variables' ? '继续生成变量' : '继续生成世界', short: '续', disabled: busy,
         title: '从当前环节继续，完成后自动结算', onClick: continueWorkflow }
     : { kind: 'idle', label: '继续', short: '续', disabled: true, title: workflowGuidance || '当前没有可继续的环节' };
@@ -682,9 +683,9 @@ export function GameScreen({
       {workflowPrimaryButton}
       <small>
         {automatic.running
-          ? "正在依次执行三个阶段"
+          ? "正在执行本次已启用阶段"
           : canCommit
-            ? "三个阶段的候选均已通过校验"
+            ? "正文及已启用阶段的候选均已通过校验"
             : "从第一个未完成的阶段继续"}
       </small>
     </div>
@@ -933,7 +934,8 @@ export function GameScreen({
             <label className="sr-only" htmlFor="player-input">你的行动</label>
             <textarea id="player-input" ref={inputElement} aria-describedby={[concurrencyBlocked && 'action-concurrency-error', actionGuidance && 'action-recovery-guidance'].filter(Boolean).join(' ') || undefined} disabled={submitting} value={input}
               onChange={(e) => setInput(e.target.value)} rows={compactSidebars?1:2}
-              placeholder={compactSidebars ? '填写你的行动' : '填写你的行动；发送后生成三阶段并自动结算'} />
+              placeholder={compactSidebars ? '填写你的行动' : !settings.runtime.useVariableStage || !settings.runtime.useWorldStage
+                ? '填写你的行动；发送后完成已启用阶段并自动结算' : '填写你的行动；发送后生成三阶段并自动结算'} />
             <div className="composer-footer">
               <button className="primary" disabled={(!canCommit && !awaitingAction && !rebindAction) || busy || !input.trim()}
                 onClick={() => void send()}>{submitting ? '正在结算…' : '发送'}</button>

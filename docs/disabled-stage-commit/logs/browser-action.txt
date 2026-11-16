@@ -1,0 +1,40 @@
+[WebServer] (node:751500) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:751513) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:751535) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 6 tests using 2 workers
+
+(node:751640) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+(node:751639) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/6] [desktop] › e2e/action-workflow.spec.ts:248:3 › 关闭阶段时world：按合法阶段结算或保留预览，重新启用后继续完整流程
+[2/6] [desktop] › e2e/action-workflow.spec.ts:123:1 › 发送行动只结算一次并自动串联下一轮，刷新及再次读档不补发
+[3/6] [desktop] › e2e/action-workflow.spec.ts:248:3 › 关闭阶段时variables：按合法阶段结算或保留预览，重新启用后继续完整流程
+(node:751948) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[4/6] [mobile] › e2e/action-workflow.spec.ts:123:1 › 发送行动只结算一次并自动串联下一轮，刷新及再次读档不补发
+[5/6] [mobile] › e2e/action-workflow.spec.ts:248:3 › 关闭阶段时world：按合法阶段结算或保留预览，重新启用后继续完整流程
+(node:752129) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[6/6] [mobile] › e2e/action-workflow.spec.ts:248:3 › 关闭阶段时variables：按合法阶段结算或保留预览，重新启用后继续完整流程
+  6 passed (31.8s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
