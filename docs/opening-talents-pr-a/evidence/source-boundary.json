@@ -1,0 +1,43 @@
+{
+  "baseline": "f36bc51aede49e4ac6edf9a0bda2138905f007c7",
+  "inputSpecSha256": "c37a83c363b3ec11f8b0b780a9374a051e8e84895e6dcdaf44d1f0f29f9a1beb",
+  "inputSpecBytes": 24594,
+  "protectedFileCount": 219,
+  "protectedChanges": [],
+  "protectedScopes": [
+    "prompts/",
+    "src/prompts/",
+    "src/services/ai/",
+    "src/workflows/",
+    "src/services/storage/",
+    "src/executors/variableText/",
+    "src/domain/variableCommands.ts",
+    "src/domain/commands.ts",
+    "src/domain/drafts.ts",
+    "src/domain/state.ts",
+    "src/ui/creation/CreationWizard.tsx",
+    "src/ui/creation/DesktopCreation.tsx",
+    "src/ui/creation/MobileCreation.tsx",
+    "src/ui/creation/openingPacks.ts",
+    "src/ui/game/",
+    "src/ui/panels/",
+    "src/app/",
+    "announcements/"
+  ],
+  "newProductionFiles": [
+    "src/domain/protagonist/talents.ts"
+  ],
+  "modifiedProductionFiles": [
+    "src/domain/protagonist/schema.ts",
+    "src/ui/creation/model.ts"
+  ],
+  "formalSaveVersion": 10,
+  "creationVersion": 1,
+  "creationKey": "heijin.creation.v1",
+  "openingPackVersion": 1,
+  "openingPackPrefix": "heijin.opening-pack.v1:",
+  "indexedDbVersionUnchanged": 4,
+  "catalogDefinitionCount": 8,
+  "approvedTextDigests": 32,
+  "textNormalization": "仅去除规范中 Markdown 的 ** 强调标记，保留全部正文、段落和标点。"
+}
