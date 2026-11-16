@@ -72,6 +72,7 @@ import {MobileActions} from './MobileActions';
 import {ComposerTools} from './ComposerTools';
 import { mayStartStory } from './storyGenerationPolicy';
 import { actionSuggestions } from './actionSuggestions';
+import { appendActionOption, includesActionOption } from './actionOptions';
 
 const sidebarMedia = '(max-width: 900px)';
 function subscribeSidebarSize(changed: () => void) {
@@ -688,7 +689,7 @@ export function GameScreen({
           (event.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return;
         if (/^[1-5]$/.test(event.key) && settings.prompts.actionOptions && !progress && !referenceOptions && options && options.length >= 3 && options.length <= 5) {
           const option = options[Number(event.key) - 1];
-          if (option) { event.preventDefault(); setInput(option); document.getElementById('player-input')?.focus(); }
+          if (option) { event.preventDefault(); setInput((current) => appendActionOption(current, option)); document.getElementById('player-input')?.focus(); }
         }
       }}>
       <CityAtmosphere state={state} />
@@ -757,11 +758,11 @@ export function GameScreen({
           )}
           {settings.prompts.actionOptions &&
             (!progress && options && options.length >= 3 && options.length <= 5 ? (
-              compactSidebars?<MobileActions options={options} value={input} onChoose={setInput} source={suggestions!.label} referenceOnly={referenceOptions}/>:<div className="action-options" aria-label="行动建议">
+              compactSidebars?<MobileActions options={options} value={input} onChoose={(option) => setInput((current) => appendActionOption(current, option))} source={suggestions!.label} referenceOnly={referenceOptions}/>:<div className="action-options" aria-label="行动建议">
                 <p>{suggestions!.label}</p>
                 {referenceOptions && <p className="field-hint">仅供参考；请先完成当前回合，不能替换已绑定行动。</p>}
                 {options.map((option, index) => (
-                  <button key={option} disabled={referenceOptions} aria-pressed={input === option} onClick={() => setInput(option)}>
+                  <button key={option} disabled={referenceOptions} aria-pressed={includesActionOption(input, option)} onClick={() => setInput((current) => appendActionOption(current, option))}>
                     <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span>{option}</span><span aria-hidden="true">→</span>
                   </button>
                 ))}
