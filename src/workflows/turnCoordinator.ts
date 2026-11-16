@@ -161,7 +161,7 @@ export class TurnCoordinator {
           needed.push('world');
         // 全部所需路由及凭证在首次付费前检查，关闭/已经合法完成的阶段不要求配置。
         for (const stage of needed) requestSnapshot(config, stage, vault);
-        // 本次运行开始时草稿里有可续写的截断正文：正文阶段从断点续写（含本次运行内的自动重试）；否则照常从头生成。
+        // 本次运行是否续写在开始时固定（玩家点「续写正文」）：自动重试也只能续写，绝不悄悄改成从头生成。
         const continueStory = canContinueStory(draft);
         const secrets = config.channels.map((channel) => vault.get(channel.id)).filter(Boolean);
         const story = new StoryStage(this.repository, this.client, session.guard(scope));
@@ -188,7 +188,7 @@ export class TurnCoordinator {
                   await story.generate({
                     ...common,
                     companionProfile,
-                    continuation: continueStory && canContinueStory(draft),
+                    continuation: continueStory,
                     onProgress: (progress) => {
                       check();
                       input.onProgress?.({ stage, attempt: number, ...progress });
@@ -212,7 +212,7 @@ export class TurnCoordinator {
                 const failed = TurnDraftSchema.parse({
                   ...draft,
                   draftRevision: draft.draftRevision + 1,
-                  storyPartial: storyPartialAfterFailure(draft, error, continueStory && canContinueStory(draft), secrets),
+                  storyPartial: storyPartialAfterFailure(draft, error, continueStory, secrets),
                   stageStatus: { ...draft.stageStatus, story: 'failed' },
                   failures: [
                     ...draft.failures,
@@ -240,6 +240,8 @@ export class TurnCoordinator {
                 }
               }
               if (number === 2 || !transientStageError(error)) throw error;
+              // 续写次数已用完：停下并保留已写部分，由玩家决定是否重新生成。
+              if (stage === 'story' && continueStory && !canContinueStory(draft)) throw error;
               // 失败记录由原执行器 CAS 保存；如果其他标签已写入，不能接受它的新版本重试。
               await reread();
               input.onProgress?.({ stage, phase: 'retrying', attempt: 2 });

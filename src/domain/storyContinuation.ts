@@ -41,16 +41,56 @@ export function trimIncompleteTag(partial: string): string {
  * - 去掉续写开头与已写结尾重叠的文字（模型常把最后一句再写一遍）。
  */
 export function mergeContinuation(partial: string, addition: string): string {
-  const base = trimIncompleteTag(partial);
+  const base = trimIncompleteTag(partial), next = continuationOpening(base, addition);
+  return base + next.slice(overlapLength(base, next));
+}
+
+/** 续写开头去掉重复的规划块与重复的 <正文> 后的文字（尚未去掉与已写结尾重叠的部分）。base 须已去掉末尾残缺标签。 */
+function continuationOpening(base: string, addition: string): string {
   let next = addition.replace(/^\s+/u, '');
   if (/<\/thinking>/u.test(base) || /<正文>/u.test(base)) next = next.replace(/^<thinking>[\s\S]*?<\/thinking>\s*/u, '');
   // 已写部分的正文还没闭合、续写却重新打开 <正文>：只去掉重复的开头标签，保留后续文字。
   if (/<正文>/u.test(base) && !/<\/正文>/u.test(base)) next = next.replace(/^<正文>\s*/u, '');
-  return base + next.slice(overlapLength(base, next));
+  return next;
+}
+
+/** 认定为重复的最长重叠（字符）。 */
+const OVERLAP_MAX = 2000;
+
+/**
+ * 流式显示时，续写开头是否已经能确定怎么拼接：
+ * - 重新输出的规划块还没闭合、或开头可能是 <thinking>/<正文> 的前半截：继续等；
+ * - 开头仍完整出现在已写结尾附近（可能正在重复旧文字，重叠还会变长）：继续等；
+ * - 开头已经和已写内容对不上，或超过可去重的最大长度：可以确定。
+ */
+export function continuationSettled(partial: string, addition: string): boolean {
+  const base = trimIncompleteTag(partial), head = addition.replace(/^\s+/u, '');
+  if (!head) return false;
+  if ((/<\/thinking>/u.test(base) || /<正文>/u.test(base))
+    && (head.startsWith('<thinking>') ? !head.includes('</thinking>') : '<thinking>'.startsWith(head))) return false;
+  const next = continuationOpening(base, addition);
+  if (next.length > OVERLAP_MAX) return true;
+  if (next.length < 4) return false;
+  return !base.slice(-OVERLAP_MAX).includes(next);
+}
+
+/** 续写的流式显示：开头先缓冲到能确定拼接方式，再按最终拼接同一套规则去重后显示，之后的增量原样显示。 */
+export class ContinuationPreview {
+  private opening = '';
+  private settled = false;
+  constructor(private readonly partial: string) {}
+  /** 返回本次可以追加到显示里的文字（缓冲期间为空）。 */
+  push(delta: string): string {
+    if (this.settled) return delta;
+    this.opening += delta;
+    if (!continuationSettled(this.partial, this.opening)) return '';
+    this.settled = true;
+    return mergeContinuation(this.partial, this.opening).slice(trimIncompleteTag(this.partial).length);
+  }
 }
 
 /** 已写结尾与续写开头的最长重叠（至少 4 个字符才认定为重复，避免误删正常衔接；中文 4 字已足够特定）。 */
-export function overlapLength(base: string, next: string, max = 2000): number {
+export function overlapLength(base: string, next: string, max = OVERLAP_MAX): number {
   const limit = Math.min(base.length, next.length, max);
   for (let k = limit; k >= 4; k--) if (base.endsWith(next.slice(0, k))) return k;
   return 0;
@@ -68,17 +108,32 @@ export function continuationInstruction(actionOptions: boolean): string {
   ].join('\n');
 }
 
+/** 正文请求失败时收到的内容：text 为可保存的原文（已去掉前导 <think>，续写时为拼接后的全文）；produced 表示模型这次是否返回了任何文字。 */
+export interface StoryFailureText { text: string; produced: boolean }
+
+/** 截断正文是否应在阅读区显示（不论还能否续写；次数用完后仍可阅读、复制）。 */
+export function storyPartialVisible(draft: TurnDraft | undefined): boolean {
+  return Boolean(draft && !draft.story && draft.stageStatus.story === 'failed' && draft.storyPartial
+    && draft.storyPartial.storyRevision === draft.storyRevision);
+}
+
 /**
  * 正文失败后草稿里应保存的截断原文：
  * - 失败属于「没写完」且收到了有效内容：保存新的（续写时为拼接后的）原文；
- * - 续写本身失败但没有新内容：保留原来的截断原文，消耗一次续写次数；
+ * - 续写失败但不能用新内容替换：保留原来的截断原文；模型返回过文字才消耗一次续写次数，什么都没返回（如网络断开、服务器 500）不扣；
  * - 其余情况不保留。
  */
-export function nextStoryPartial(draft: TurnDraft, failure: { code: string; storyRule?: string }, received: string | undefined,
+export function nextStoryPartial(draft: TurnDraft, failure: { code: string; storyRule?: string }, received: StoryFailureText | undefined,
   continuation: boolean): TurnDraft['storyPartial'] {
   const previous = continuation && draft.storyPartial?.storyRevision === draft.storyRevision ? draft.storyPartial : undefined;
-  const continuations = previous ? Math.min(STORY_CONTINUATION_LIMIT, previous.continuations + 1) : 0;
-  if (received && continuableStoryFailure(failure.code, failure.storyRule) && partialWorthKeeping(received))
-    return { text: received, storyRevision: draft.storyRevision, continuations };
+  const produced = Boolean(received?.produced);
+  const continuations = previous ? Math.min(STORY_CONTINUATION_LIMIT, previous.continuations + (produced ? 1 : 0)) : 0;
+  if (received && produced && continuableStoryFailure(failure.code, failure.storyRule) && partialWorthKeeping(received.text))
+    return { text: received.text, storyRevision: draft.storyRevision, continuations };
   return previous ? { ...previous, continuations } : undefined;
+}
+
+/** 玩家点「放弃这段」：只清掉没写完的正文，不调用 AI，失败记录与上一回合都不受影响。 */
+export function discardStoryPartial(draft: TurnDraft): TurnDraft {
+  return { ...draft, draftRevision: draft.draftRevision + 1, storyPartial: undefined };
 }

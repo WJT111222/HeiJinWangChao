@@ -15,7 +15,7 @@ import type { CredentialVault } from '../services/ai/credentials';
 import { AiError, safeAiError } from '../services/ai/errors';
 import { redactInspection } from '../services/ai/inspection';
 import { runStageRequest, storyFailureText } from '../services/ai/runtime';
-import { canContinueStory, mergeContinuation, nextStoryPartial, trimIncompleteTag } from '../domain/storyContinuation';
+import { canContinueStory, ContinuationPreview, nextStoryPartial, trimIncompleteTag } from '../domain/storyContinuation';
 import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { StoryStream } from './storyStream';
@@ -48,10 +48,10 @@ interface StoryInput {
 /** 正文失败后应写入草稿的截断原文（已隐藏凭证；含凭证时不保存）。 */
 export function storyPartialAfterFailure(draft: TurnDraft, error: AiError, continuation: boolean, secrets: readonly string[]): TurnDraft['storyPartial'] {
   const raw = storyFailureText.get(error);
-  const received = raw === undefined ? undefined : safeResponseText(raw, secrets);
-  const leaked = raw !== undefined && secrets.some((secret) => secret && raw.includes(secret));
+  const leaked = raw !== undefined && secrets.some((secret) => secret && raw.text.includes(secret));
+  const received = raw === undefined ? undefined : leaked ? { text: '', produced: raw.produced } : { ...raw, text: safeResponseText(raw.text, secrets) };
   const storyRule = typeof error.details?.storyRule === 'string' ? error.details.storyRule : undefined;
-  return nextStoryPartial(draft, { code: error.code, storyRule }, leaked ? undefined : received, continuation);
+  return nextStoryPartial(draft, { code: error.code, storyRule }, received, continuation);
 }
 export class StoryStage {
   constructor(
@@ -94,18 +94,12 @@ export class StoryStage {
         throw new DataError('DRAFT_CONFLICT', '这段正文已不能续写，请重新生成。');
       const partial = continuation ? trimIncompleteTag(draft.storyPartial!.text) : '';
       const stream = new StoryStream();
-      // 续写：先把已写部分放进显示流；续写开头先缓冲一小段，去掉与已写结尾重复的文字再显示。
+      // 续写：先把已写部分放进显示流；续写开头缓冲到能确定拼接方式，去掉重复后再显示。
       let narrative = continuation ? stream.push(partial) : '';
-      let opening = '', openingResolved = !continuation;
+      const preview = continuation ? new ContinuationPreview(partial) : undefined;
       const pushDelta = (delta: string) => {
-        if (openingResolved) return stream.push(delta);
-        opening += delta;
-        // 等开头足够判断：至少 64 字，且若重新输出了规划块要等它闭合。
-        const head = opening.replace(/^\s+/u, '');
-        if (head.length < 64 || (head.startsWith('<thinking>') && !head.includes('</thinking>'))) return narrative;
-        openingResolved = true;
-        // 与最终拼接同一套规则清理开头（重复的规划块、重复的 <正文>、与结尾重叠的文字）。
-        return stream.push(mergeContinuation(partial, opening).slice(partial.length));
+        const shown = preview ? preview.push(delta) : delta;
+        return shown ? stream.push(shown) : narrative;
       };
       const inspectionId = storyInspections.begin({ saveId: draft.saveId, turnId: draft.turnId,
         baseSaveRevision: draft.baseSaveRevision, basedOnStoryRevision: draft.storyRevision });

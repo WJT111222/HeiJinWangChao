@@ -73,7 +73,7 @@ import {MobileCityBar,MobileStatus,mobileCitySeal} from './MobileCity';
 import {MobileActions} from './MobileActions';
 import {ComposerTools} from './ComposerTools';
 import { mayStartStory } from './storyGenerationPolicy';
-import { canContinueStory } from '../../domain/storyContinuation';
+import { canContinueStory, discardStoryPartial, STORY_CONTINUATION_LIMIT, storyPartialVisible } from '../../domain/storyContinuation';
 import { StoryStream } from '../../workflows/storyStream';
 import { actionSuggestions } from './actionSuggestions';
 import { appendActionOption, includesActionOption } from './actionOptions';
@@ -284,10 +284,15 @@ export function GameScreen({
   const awaitingAction = awaitingPlayerAction(state, draft);
   // 正文失败或被取消、尚无候选时：原行动放回输入框，玩家可原样或修改后直接重新发送。
   const rebindAction = !busy && rebindableAfterStoryStop(state, draft);
-  // 正文被截断且可以续写：显示已写出的部分（只取正文，不显示规划和尾部标签）。
+  // 正文被截断：显示已写出的部分（只取正文，不显示规划和尾部标签）；续写次数用完后仍显示，只是不能再续写。
   const storyContinuable = !busy && canContinueStory(draft);
-  const partialText = storyContinuable ? draft?.storyPartial?.text : undefined;
+  const partialText = !busy && storyPartialVisible(draft) ? draft?.storyPartial?.text : undefined;
   const partialNarrative = useMemo(() => partialText === undefined ? undefined : new StoryStream().push(partialText).trim(), [partialText]);
+  const [partialCopy, setPartialCopy] = useState<{ text: string; ok: boolean }>();
+  async function copyPartial(text: string) {
+    try { await navigator.clipboard.writeText(text); setPartialCopy({ text, ok: true }); }
+    catch { setPartialCopy({ text, ok: false }); }
+  }
   const restoredInputFor = useRef('');
   const restoredText = useRef<{ turnId: string; text: string }>(undefined);
   useEffect(() => {
@@ -359,6 +364,28 @@ export function GameScreen({
             ? '结算未完成：候选不完整、版本冲突或存储失败。请重新读取或补齐草稿后重试。'
             : storyError(failure),
         );
+      }
+    } finally {
+      if (submitToken.current === token) {
+        submitLock.current = false;
+        setSubmitting(false);
+      }
+    }
+  }
+  // 「放弃这段」：只清掉没写完的正文，不调用 AI，也不撤回上一回合；原行动留在输入框里。
+  async function discardPartial() {
+    if (!draft?.storyPartial || busy || submitLock.current) return;
+    submitLock.current = true;
+    const token = submitToken.current;
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      const saved = await repository.saveDraft(discardStoryPartial(draft), draft.draftRevision, undefined, draft);
+      if (submitToken.current === token) onDraftSaved(saved);
+    } catch (failure) {
+      if (submitToken.current === token) {
+        reportRuntimeEvent('workflow', 'failed', failure);
+        setSubmitError('未能放弃这段正文：草稿版本冲突或存储失败。请重新读取存档后重试。');
       }
     } finally {
       if (submitToken.current === token) {
@@ -747,10 +774,18 @@ export function GameScreen({
           ) : partialNarrative !== undefined ? (
             <article className="story-entry glass latest story-partial">
               <CityChapter number={state.turnNumber + 1} state={state} scene={draftScene} status="draft" desktop={!compactSidebars} />
-              <span className="tag preview-tag">正文未写完 · 点「续写正文」从断点接着写，或按「发送」重新生成</span>
+              <span className="tag preview-tag">{storyContinuable
+                ? '正文未写完 · 点「续写正文」从断点接着写，或按「发送」重新生成'
+                : `正文未写完 · 已续写 ${STORY_CONTINUATION_LIMIT} 次，不能再续写；可复制已写内容，按「发送」重新生成`}</span>
               {partialNarrative ? <StoryReading narrative={partialNarrative} protagonistName={hero.name} />
-                : <p className="field-hint">模型还在写创作提纲时就中断了，续写会从提纲处接着往下写。</p>}
+                : <p className="field-hint">模型还在写创作提纲时就中断了，{storyContinuable ? '续写会从提纲处接着往下写。' : '没有可阅读的正文。'}</p>}
               <p className="story-partial-end" aria-hidden="true">……</p>
+              <div className="story-partial-actions">
+                {partialNarrative && <button type="button" onClick={() => void copyPartial(partialNarrative)}>
+                  {partialCopy?.text !== partialNarrative ? '复制已写内容' : partialCopy.ok ? '已复制' : '复制失败，请手动选中'}</button>}
+                <button type="button" disabled={busy} onClick={() => void discardPartial()}
+                  title="只丢掉这段没写完的正文，不调用 AI，也不会撤回上一回合；原行动留在输入框里">放弃这段</button>
+              </div>
             </article>
           ) : draft?.story ? (
             <article className="story-entry glass latest">

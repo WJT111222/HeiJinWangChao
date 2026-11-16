@@ -18,14 +18,16 @@ import { safeAiError } from './errors';
 import { mergeResponseDiagnostics } from './responseContent';
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
 import { continuationInstruction, mergeContinuation, trimIncompleteTag } from '../../domain/storyContinuation';
+import type { StoryFailureText } from '../../domain/storyContinuation';
+import { splitLeadingThink } from './compat';
 
 /** 正文续写：已写出的截断原文（已隐藏凭证）。只用于正文阶段。 */
 export interface StageRequestOptions extends RequestOptions { continuation?: { partial: string } }
 /**
- * 正文请求失败时已收到的原始输出（续写时为与已写部分拼接后的全文），供上层保存为可续写的截断正文。
+ * 正文请求失败时收到的内容（去掉前导 <think> 推理；续写时为与已写部分拼接后的全文），供上层保存为可续写的截断正文。
  * 以失败对象为键，不进入错误消息或诊断展示。
  */
-export const storyFailureText = new WeakMap<object, string>();
+export const storyFailureText = new WeakMap<object, StoryFailureText>();
 
 // 独立阶段请求入口；没有 SaveRepository、写库、重试或自动执行下游阶段。
 export async function runStageRequest(
@@ -90,6 +92,8 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     }, 50);
   };
   let step: 'request' | 'response' = 'request';
+  // 本次请求模型返回的原始文字（续写时不含已写部分）；诊断展示用的 received 在续写成功接收后会换成拼接全文。
+  let addition: string | undefined;
   try {
   const response = await client.generate(snapshot, messages, {
     ...options,
@@ -136,6 +140,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   clearTimeout(observationTimer);
   step = 'response';
   if (!rawObserved) received = append('', response.text, responseLimits.text);
+  addition = received;
   // 续写时诊断原文与解析输入都是拼接后的全文；非续写时与原来完全一致。
   if (continuation) received = append('', merged(received), responseLimits.text);
   stageResponses.update(responseId, { text: received, nativeReasoning: publicReasoning, diagnostics, truncated, ...display(), status: 'received' }, secrets);
@@ -186,8 +191,10 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     const failure = captured.stage === 'variables' ? variableFailure(error, step) : captured.stage === 'story' ? storyFailure(error, true) : error;
     sealed = true;
     if (captured.stage === 'story' && failure && typeof failure === 'object') {
-      const full = step === 'response' || !continuation ? received : merged(received);
-      storyFailureText.set(failure, continuation && !received.trim() ? continuation.partial : full);
+      // 兼容渠道会把推理写成开头的 <think>…</think>：与正式解析一致先去掉，推理不进入可续写的正文。
+      const raw = addition ?? received, content = splitLeadingThink(raw).content;
+      storyFailureText.set(failure, { produced: raw.trim() !== '',
+        text: !continuation ? content : content.trim() ? merged(content) : continuation.partial });
     }
     clearTimeout(observationTimer);
     stageResponses.update(responseId, { status: 'failed', text: preview(received),

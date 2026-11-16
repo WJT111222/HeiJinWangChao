@@ -773,3 +773,4 @@ to {transform:translateX(250%)}
 
 /* 截断正文的末尾标记：提示正文在此中断，可续写。 */
 .story-partial .story-partial-end { margin: .2rem 0 0; color: var(--muted); letter-spacing: .4em; text-align: center; }
+.story-partial .story-partial-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.5rem; margin-top:.6rem; }
