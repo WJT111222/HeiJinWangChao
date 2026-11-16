@@ -147,7 +147,12 @@
 :root[data-appearance=day] .app-shell-game .turn-changes-sheet :is(.chg-grp li+li,.chg-more) { border-top-color:#2a26221a; }
 :root[data-appearance=day] .app-shell-game .turn-changes-sheet .chg-row:is(:hover,:focus-visible) { background:#2a262208; }
 /* 电脑端三阶段详情浮层 */
-:root[data-appearance=day] .app-shell-game .city-night .workflow-details { background:#E4DCCA; border-color:#1F1B17; box-shadow:inset 0 3px 0 #8E6C25,0 18px 50px -16px #1f1b17aa; }
+:root[data-appearance=day] .app-shell-game .city-night .workflow-details {
+  --feedback-err:#7F2D23;
+  background:#E4DCCA; border-color:#1F1B17; box-shadow:inset 0 3px 0 #8E6C25,0 18px 50px -16px #1f1b17aa;
+}
+/* 实际错误标签读取 --feedback-err；横幅另有自己的文字变量，两者都需配合纸色背景。 */
+:root[data-appearance=day] .app-shell-game .city-night .workflow-details .wf-banner[data-level=err] { --banner-text:var(--feedback-err); }
 :root[data-appearance=day] .app-shell-game .city-night :is(.wf-hd,.wf-notices,.wf-tabs) { border-bottom-color:#2a26221f; }
 :root[data-appearance=day] .app-shell-game .city-night .wf-banner+.wf-banner { border-top-color:#2a262214; }
 :root[data-appearance=day] .app-shell-game .city-night .wf-banner>.wf-banner-close:hover { background:#2a26220d; }
@@ -245,6 +250,8 @@
   }
 }
 @media (max-width:900px) {
+  /* 仅可用的工作流主操作使用浅字配深金底；夜间、禁用态与其他按钮保持原样。 */
+  :root[data-appearance=day] .app-shell-game .workflow-floating-drawer .workflow-primary .primary:not(:disabled) { color:#FFFBF2; }
   :root[data-appearance=day] .app-shell-game dialog.modal.mobile-sheet::backdrop { background:#1f1b1773; backdrop-filter:none; }
   :root[data-appearance=day] .app-shell-game dialog.modal.mobile-sheet:not(.mobile-actions) {
     box-shadow:inset 0 3px 0 #8E6C25,0 0 0 1px #1F1B17,0 -12px 40px -10px #1f1b17aa;

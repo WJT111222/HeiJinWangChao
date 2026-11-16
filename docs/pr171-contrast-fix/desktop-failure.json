@@ -1,0 +1,296 @@
+{
+  "head": {
+    ".wf-banner": {
+      "text": "误正文生成失败：正文长度不足。 实际：1 字符；最低要求：5 字符（仅统计正文非空白 Unicode 字符）。 本次正文未保存。正文 · 安全失败码：invalid_output · 1 次尝试×",
+      "color": "rgb(127, 45, 35)",
+      "background": "rgba(194, 106, 74, 0.07)",
+      "image": "none",
+      "effectiveBackground": [
+        225.62,
+        212.01999999999998,
+        193.04,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "12.8px",
+      "fontWeight": "400",
+      "contrast": 6.260249371848212,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#7F2D23",
+        "--feedback-warn": "#e0c27a",
+        "--feedback-info": "#8ec1e0",
+        "--feedback-ok": "#7dbb9c",
+        "--warn-text": "#A3412E"
+      }
+    },
+    ".wf-banner-msg p": {
+      "text": "正文生成失败：正文长度不足。 实际：1 字符；最低要求：5 字符（仅统计正文非空白 Unicode 字符）。 本次正文未保存。",
+      "color": "rgb(127, 45, 35)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "none",
+      "effectiveBackground": [
+        225.62,
+        212.01999999999998,
+        193.04,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "12.8px",
+      "fontWeight": "400",
+      "contrast": 6.260249371848212,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#7F2D23",
+        "--feedback-warn": "#e0c27a",
+        "--feedback-info": "#8ec1e0",
+        "--feedback-ok": "#7dbb9c",
+        "--warn-text": "#A3412E"
+      }
+    },
+    ".wf-pill[data-s=fail]": {
+      "text": "失败 · 可重试",
+      "color": "rgb(127, 45, 35)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "none",
+      "effectiveBackground": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "10.24px",
+      "fontWeight": "500",
+      "contrast": 6.6849402739676185,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#7F2D23",
+        "--feedback-warn": "#e0c27a",
+        "--feedback-info": "#8ec1e0",
+        "--feedback-ok": "#7dbb9c",
+        "--warn-text": "#A3412E"
+      }
+    },
+    ".wf-count": {
+      "text": "1",
+      "color": "rgb(127, 45, 35)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "none",
+      "effectiveBackground": [
+        223.536,
+        215.632,
+        197.968,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "9.92px",
+      "fontWeight": "400",
+      "contrast": 6.409333203619333,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#7F2D23",
+        "--feedback-warn": "#e0c27a",
+        "--feedback-info": "#8ec1e0",
+        "--feedback-ok": "#7dbb9c",
+        "--warn-text": "#A3412E"
+      }
+    },
+    ".workflow-primary button.primary": {
+      "text": "继续未完成阶段",
+      "color": "rgb(23, 24, 16)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "linear-gradient(rgb(233, 209, 150), rgb(197, 164, 90))",
+      "effectiveBackground": [
+        223.536,
+        215.632,
+        197.968,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "11.52px",
+      "fontWeight": "650",
+      "disabled": false,
+      "contrast": null,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#7F2D23",
+        "--feedback-warn": "#e0c27a",
+        "--feedback-info": "#8ec1e0",
+        "--feedback-ok": "#7dbb9c",
+        "--warn-text": "#A3412E"
+      }
+    },
+    ".workflow-stages li[data-s=fail] small": {
+      "text": "失败 · 可重试",
+      "color": "rgb(127, 45, 35)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "none",
+      "effectiveBackground": [
+        216.27456,
+        208.52672,
+        191.40928,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "10.88px",
+      "fontWeight": "400",
+      "contrast": 5.976417609141737,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#7F2D23",
+        "--feedback-warn": "#e0c27a",
+        "--feedback-info": "#8ec1e0",
+        "--feedback-ok": "#7dbb9c",
+        "--warn-text": "#A3412E"
+      }
+    }
+  },
+  "base": {
+    ".wf-banner": {
+      "text": "误正文生成失败：正文长度不足。 实际：1 字符；最低要求：5 字符（仅统计正文非空白 Unicode 字符）。 本次正文未保存。正文 · 安全失败码：invalid_output · 1 次尝试×",
+      "color": "rgb(233, 179, 160)",
+      "background": "rgba(194, 106, 74, 0.07)",
+      "image": "none",
+      "effectiveBackground": [
+        225.62,
+        212.01999999999998,
+        193.04,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "12.8px",
+      "fontWeight": "400",
+      "contrast": 1.2618912734014731,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#d47c60",
+        "--feedback-warn": "#e0c27a",
+        "--feedback-info": "#8ec1e0",
+        "--feedback-ok": "#7dbb9c",
+        "--warn-text": "#A3412E"
+      }
+    },
+    ".wf-banner-msg p": {
+      "text": "正文生成失败：正文长度不足。 实际：1 字符；最低要求：5 字符（仅统计正文非空白 Unicode 字符）。 本次正文未保存。",
+      "color": "rgb(233, 179, 160)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "none",
+      "effectiveBackground": [
+        225.62,
+        212.01999999999998,
+        193.04,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "12.8px",
+      "fontWeight": "400",
+      "contrast": 1.2618912734014731,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#d47c60",
+        "--feedback-warn": "#e0c27a",
+        "--feedback-info": "#8ec1e0",
+        "--feedback-ok": "#7dbb9c",
+        "--warn-text": "#A3412E"
+      }
+    },
+    ".wf-pill[data-s=fail]": {
+      "text": "失败 · 可重试",
+      "color": "rgb(212, 124, 96)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "none",
+      "effectiveBackground": [
+        228,
+        220,
+        202,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "10.24px",
+      "fontWeight": "500",
+      "contrast": 2.2461078564836,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#d47c60",
+        "--feedback-warn": "#e0c27a",
+        "--feedback-info": "#8ec1e0",
+        "--feedback-ok": "#7dbb9c",
+        "--warn-text": "#A3412E"
+      }
+    },
+    ".wf-count": {
+      "text": "1",
+      "color": "rgb(212, 124, 96)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "none",
+      "effectiveBackground": [
+        223.536,
+        215.632,
+        197.968,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "9.92px",
+      "fontWeight": "400",
+      "contrast": 2.1535052032598485,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#d47c60",
+        "--feedback-warn": "#e0c27a",
+        "--feedback-info": "#8ec1e0",
+        "--feedback-ok": "#7dbb9c",
+        "--warn-text": "#A3412E"
+      }
+    },
+    ".workflow-primary button.primary": {
+      "text": "继续未完成阶段",
+      "color": "rgb(23, 24, 16)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "linear-gradient(rgb(233, 209, 150), rgb(197, 164, 90))",
+      "effectiveBackground": [
+        223.536,
+        215.632,
+        197.968,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "11.52px",
+      "fontWeight": "650",
+      "disabled": false,
+      "contrast": null,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#d47c60",
+        "--feedback-warn": "#e0c27a",
+        "--feedback-info": "#8ec1e0",
+        "--feedback-ok": "#7dbb9c",
+        "--warn-text": "#A3412E"
+      }
+    },
+    ".workflow-stages li[data-s=fail] small": {
+      "text": "失败 · 可重试",
+      "color": "rgb(212, 124, 96)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "none",
+      "effectiveBackground": [
+        216.27456,
+        208.52672,
+        191.40928,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "10.88px",
+      "fontWeight": "400",
+      "contrast": 2.0080476407237993,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#d47c60",
+        "--feedback-warn": "#e0c27a",
+        "--feedback-info": "#8ec1e0",
+        "--feedback-ok": "#7dbb9c",
+        "--warn-text": "#A3412E"
+      }
+    }
+  }
+}

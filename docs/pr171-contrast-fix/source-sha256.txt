@@ -1,0 +1,2 @@
+8a78c2b5f03f91246d4a5cfeec5729667f476e360e75277621b111a9964da198  src/ui/game/day-appearance.css
+085e4332a46c2b4fb2a69100dcb05f685d8fff5e8c2c4d38d716d157782c35ab  e2e/day-dialog-contrast.spec.ts

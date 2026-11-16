@@ -1,0 +1,56 @@
+[
+  {
+    "theme": "night",
+    "disabled": false,
+    "head": {
+      "color": "rgb(23, 26, 19)",
+      "background": "rgb(201, 169, 97)",
+      "image": "none",
+      "opacity": 1,
+      "disabled": false
+    },
+    "base": {
+      "color": "rgb(23, 26, 19)",
+      "background": "rgb(201, 169, 97)",
+      "image": "none",
+      "opacity": 1,
+      "disabled": false
+    }
+  },
+  {
+    "theme": "night",
+    "disabled": true,
+    "head": {
+      "color": "rgb(23, 26, 19)",
+      "background": "rgb(201, 169, 97)",
+      "image": "none",
+      "opacity": 0.48,
+      "disabled": true
+    },
+    "base": {
+      "color": "rgb(23, 26, 19)",
+      "background": "rgb(201, 169, 97)",
+      "image": "none",
+      "opacity": 0.48,
+      "disabled": true
+    }
+  },
+  {
+    "theme": "day",
+    "disabled": true,
+    "head": {
+      "color": "rgb(23, 26, 19)",
+      "background": "rgb(122, 91, 28)",
+      "image": "none",
+      "opacity": 0.48,
+      "disabled": true
+    },
+    "base": {
+      "color": "rgb(23, 26, 19)",
+      "background": "rgb(122, 91, 28)",
+      "image": "none",
+      "opacity": 0.48,
+      "disabled": true
+    }
+  }
+]

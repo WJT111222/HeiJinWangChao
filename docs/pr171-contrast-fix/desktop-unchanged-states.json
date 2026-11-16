@@ -1,0 +1,56 @@
+[
+  {
+    "theme": "night",
+    "disabled": false,
+    "head": {
+      "color": "rgb(23, 24, 16)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "linear-gradient(rgb(233, 209, 150), rgb(197, 164, 90))",
+      "opacity": 1,
+      "disabled": false
+    },
+    "base": {
+      "color": "rgb(23, 24, 16)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "linear-gradient(rgb(233, 209, 150), rgb(197, 164, 90))",
+      "opacity": 1,
+      "disabled": false
+    }
+  },
+  {
+    "theme": "night",
+    "disabled": true,
+    "head": {
+      "color": "rgb(23, 24, 16)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "linear-gradient(rgb(233, 209, 150), rgb(197, 164, 90))",
+      "opacity": 0.42,
+      "disabled": true
+    },
+    "base": {
+      "color": "rgb(23, 24, 16)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "linear-gradient(rgb(233, 209, 150), rgb(197, 164, 90))",
+      "opacity": 0.42,
+      "disabled": true
+    }
+  },
+  {
+    "theme": "day",
+    "disabled": true,
+    "head": {
+      "color": "rgb(23, 24, 16)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "linear-gradient(rgb(233, 209, 150), rgb(197, 164, 90))",
+      "opacity": 0.42,
+      "disabled": true
+    },
+    "base": {
+      "color": "rgb(23, 24, 16)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "linear-gradient(rgb(233, 209, 150), rgb(197, 164, 90))",
+      "opacity": 0.42,
+      "disabled": true
+    }
+  }
+]
