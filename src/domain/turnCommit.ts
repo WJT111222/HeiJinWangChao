@@ -36,17 +36,17 @@ export function rebindableAfterStoryStop(state: GameState, draft?: TurnDraft) {
     && !draft.story && !draft.variables && !draft.world && draft.stageStatus.story !== 'ready');
 }
 export function completeTurnDraft(draft: TurnDraft) {
-  return (
-    draft.useVariableStage &&
-    draft.useWorldStage &&
-    draft.story &&
-    draft.stageStatus.story === 'ready' &&
-    draft.stageStatus.variables === 'ready' &&
-    draft.stageStatus.world === 'ready' &&
-    draft.variables?.validation === 'validated' &&
-    draft.world?.validation === 'validated' &&
-    draft.world.basedOnVariableRevision === draft.variables.candidateRevision
-  );
+  // A disabled stage is genuinely optional. A previously validated candidate may
+  // still be reused, but preview/pending/failed results never count as complete.
+  const variablesReady = draft.stageStatus.variables === 'ready'
+    && draft.variables?.validation === 'validated';
+  const worldReady = draft.stageStatus.world === 'ready'
+    && draft.world?.validation === 'validated'
+    && draft.variables?.validation === 'validated'
+    && draft.world.basedOnVariableRevision === draft.variables.candidateRevision;
+  return Boolean(draft.story && draft.stageStatus.story === 'ready'
+    && (variablesReady || (!draft.useVariableStage && draft.stageStatus.variables === 'skipped' && !draft.variables))
+    && (worldReady || (!draft.useWorldStage && draft.stageStatus.world === 'skipped' && !draft.world)));
 }
 export function turnCommands(draft: TurnDraft, state: GameState): DomainCommand[] {
   return [
@@ -75,7 +75,7 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
     'TURN_CONTEXT',
     '回合模式不符',
   );
-  requireData(completeTurnDraft(draft), 'TURN_INCOMPLETE', '需要完整合法的三阶段候选');
+  requireData(completeTurnDraft(draft), 'TURN_INCOMPLETE', '需要完整正文及已启用阶段的合法候选');
   validateCommittedTime(current, draft);
   // 不能混入同 turnId 先前独立 save 的命令，再把一次不完整结算伪装为新回合。
   requireData(
@@ -83,8 +83,14 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
     'TURN_CONTEXT',
     '回合已有独立命令记录',
   );
-  const projected = projectTurn(current, draft, [...draft.world!.result.worldCommands, ...draft.world!.result.taskCommands, ...draft.world!.result.eventCommands]);
-  if(!historicalPerspective(current,draft)) validateStageSettlement(projectTurn(current,draft),projected,draft.turnId);
+  const worldCommands = draft.world?.validation === 'validated'
+    ? [...draft.world.result.worldCommands, ...draft.world.result.taskCommands, ...draft.world.result.eventCommands]
+    : [];
+  const projected = projectTurn(current, draft, worldCommands);
+  // With World intentionally skipped, due off-screen events remain pending until
+  // World is enabled again; never invent their completion to unblock a chapter.
+  if (!historicalPerspective(current, draft) && draft.world?.validation === 'validated')
+    validateStageSettlement(projectTurn(current, draft), projected, draft.turnId);
   projected.updatedAt = now;
   delete projected.openingInitializationPending;
   requireData(draft.story!.summary.trim(), 'MISSING_SUMMARY', '正文缺少有效摘要，请重新生成正文后重试');
