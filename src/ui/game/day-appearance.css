@@ -80,6 +80,9 @@
   }
 }
 
+/* 天际线（两端共用）：建筑颜色写在 SVG 上，日间反相后再转回原色相，深色剪影变成同色系浅色剪影，层次与城市色调保留。 */
+:root[data-appearance=day] .app-shell-game .city-night .atmo .skyline { filter:invert(1) hue-rotate(180deg) saturate(.7); opacity:.5; }
+
 /* 本回合变化（正文卡片内展开的部分） */
 :root[data-appearance=day] .app-shell-game .city-night .turn-changes:not(:where(dialog *)) { border-top-color:#2a26221c; }
 :root[data-appearance=day] .app-shell-game .city-night .turn-changes:not(:where(dialog *)) .chg-btn { background:#2a262206; }
