@@ -26,7 +26,7 @@ export interface TurnProgress {
   phase: 'generating' | 'saving' | 'retrying';
   attempt: 1 | 2;
   narrative?: string;
-  readingPhase?: 'thinking' | 'body';
+  readingPhase?: 'thinking' | 'body' | 'waiting';
   planning?: string;
   nativeReasoning?: string;
   compatibilityReasoning?: string;

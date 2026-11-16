@@ -714,7 +714,7 @@ export function GameScreen({
             <span className="eyebrow">THE STORY</span>
             <span className="tag">
               {progress
-                ? '生成预览 · 尚未保存'
+                ? progress.readingPhase === 'waiting' ? '完整响应 · 尚未保存' : '生成预览 · 尚未保存'
                 : draft?.story
                   ? '已保存草稿'
                   : state.journal.length
@@ -730,9 +730,9 @@ export function GameScreen({
             </article>
           ))}
           {progress ? (
-            <article className="story-entry glass latest" aria-label="流式正文预览" aria-busy="true">
+            <article className="story-entry glass latest" aria-label={progress.readingPhase === 'waiting' ? '完整正文等待' : '流式正文预览'} aria-busy="true">
               <CityChapter number={state.turnNumber + 1} state={state} scene={draftScene} status="preview" desktop={!compactSidebars} />
-              <span className="tag preview-tag">临时预览 · 完整校验前不保存</span>
+              <span className="tag preview-tag">{progress.readingPhase === 'waiting' ? '完整响应模式 · 校验保存后展示' : '临时预览 · 完整校验前不保存'}</span>
               <StoryStreamReading progress={progress} caret={!compactSidebars} />
             </article>
           ) : draft?.story ? (

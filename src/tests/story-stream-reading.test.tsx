@@ -321,3 +321,11 @@ it('正文开始后迟到的公开原生思考只进入原文视图，不回流�
   expect(progress.slice(index).every(p => !p.nativeReasoning && !p.planning)).toBe(true);
   expect(stageResponses.getSnapshot()[0].nativeReasoning).toBe(native + '迟到原生片段');
 });
+
+it('完整响应等待及保存期间只显示等待说明，不渲染正文或思考预览', () => {
+  for (const phase of ['generating', 'saving'] as const) {
+    const html = renderToStaticMarkup(<StoryStreamReading progress={{ phase, readingPhase: 'waiting', narrative: '尚未保存的正文', nativeReasoning: '不应提前展示的思考' }} caret />);
+    expect(html).toContain('正在等待完整正文');
+    expect(html).not.toMatch(/尚未保存的正文|不应提前展示的思考|caret|stream-narrative/);
+  }
+});

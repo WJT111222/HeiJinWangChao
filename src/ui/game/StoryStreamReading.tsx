@@ -2,6 +2,7 @@ import type { StoryProgress } from '../../workflows/storyStage';
 
 /** Temporary display only. Never feeds a parser, candidate or repository write. */
 export function StoryStreamReading({ progress, caret = false }: { progress: StoryProgress; caret?: boolean }) {
+  if (progress.readingPhase === 'waiting') return <p role="status" className="muted">正在等待完整正文</p>;
   if (progress.readingPhase === 'body' || progress.phase === 'saving' || progress.narrative) {
     return <p className="prose" data-testid="stream-narrative">{progress.narrative}{caret && <span className="caret" aria-hidden="true" />}</p>;
   }

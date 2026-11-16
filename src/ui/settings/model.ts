@@ -23,6 +23,7 @@ export const SettingsSchema = z.strictObject({
   runtime: z.strictObject({
     useVariableStage: z.boolean(),
     useWorldStage: z.boolean(),
+    streamStory: z.boolean().default(true),
     streamVariables: z.boolean().default(false),
     streamWorld: z.boolean().default(false),
     timeoutSeconds: z.number().int().min(1).max(3600),
@@ -45,7 +46,7 @@ export function defaultSettings(): Settings {
       realWorld: true,
     },
     memory: { immediateWindowSize: 10, automaticMaintenance: true, summaries: defaultSummarySettings() },
-    runtime: { useVariableStage: true, useWorldStage: true, streamVariables: false, streamWorld: false, timeoutSeconds: 120 },
+    runtime: { useVariableStage: true, useWorldStage: true, streamStory: true, streamVariables: false, streamWorld: false, timeoutSeconds: 120 },
     display: { appearance: 'night' },
   };
 }
