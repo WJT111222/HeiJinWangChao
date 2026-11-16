@@ -1,0 +1,121 @@
+[
+  {
+    "file": "desktop-confirmation.png",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "7bea611b725a71896e8b148439a212b743d844bc039407b5ffd04f7dd85c67d5",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "desktop-creation-day.png",
+    "width": 1440,
+    "height": 900,
+    "sha256": "aa21041e0184d4d05efdc9c40e24dcf3c4fbd38bd24b75f38b53349931154b01",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "desktop-profile-day-boundary.png",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "dd59eacabe781514ff1ffbb6082e4d1506fecc3fa0d2476f94290a6cc18789f1",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "desktop-profile-day.png",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "5a9734e26a4d0b5d397cb6e97e2db356ae5f38969106c8fa248c9b299189ceb8",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "desktop-profile-night.png",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "0604cb75adc1513cb114299694d3cbd016d374b4c53210f556734a64f1fb60e4",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "desktop-selection-cyber.png",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "8365a07e65b421f6c111b9b8847f5214c0076be87f722cee8a9f69f8d8fc7fcc",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "desktop-short-1100x580.png",
+    "width": 1100,
+    "height": 580,
+    "sha256": "006f7ca15fe772401bbda036ba7897f67193821dc39051a9dfd9f16f756cbae1",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "desktop-short-901x500.png",
+    "width": 901,
+    "height": 500,
+    "sha256": "e0eb20237055be64a267831f8e7b9fc75ed721bfe1baa98104f1506bd91d7ed5",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "mobile-confirmation-ticket.png",
+    "width": 412,
+    "height": 839,
+    "sha256": "47cbe2bddaa60f48008e370e059d3d70341465db3e009913ef7bc71201ad6b2d",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "mobile-confirmation.png",
+    "width": 412,
+    "height": 839,
+    "sha256": "a50ed02b2018c944332e3d03726809a0f2add5d097db9322f8c4a95de92ea28a",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "mobile-creation-day.png",
+    "width": 390,
+    "height": 844,
+    "sha256": "579966dc33f6beeec01201465f777d4b0c7e3394ea9540c96c598c5084176455",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "mobile-profile-day-boundary.png",
+    "width": 412,
+    "height": 839,
+    "sha256": "42eb056bd9934928a324abc3cd91b6ef96ec3fecae89c413ef8e06d7d708edf4",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "mobile-profile-day.png",
+    "width": 412,
+    "height": 839,
+    "sha256": "6f05140130f9279e6d4472734cf2486a46750a6a9acf7cb658dd71cc885ec4b2",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "mobile-profile-night.png",
+    "width": 412,
+    "height": 839,
+    "sha256": "8179e53cfd182ac003b43f16b7ceabaaaeacefada8d6c970ce792fba63b52105",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "mobile-selection-cyber.png",
+    "width": 412,
+    "height": 839,
+    "sha256": "bdf0785598b8ad6b6d7e2673fb13c9c013598caf08fe59620a88c4165866577d",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "mobile-short-375x667.png",
+    "width": 375,
+    "height": 667,
+    "sha256": "cee454965513bfcd04c1c1cee286af536388bcf7a992a31ad8b58d022a6398f0",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  },
+  {
+    "file": "mobile-short-390x844.png",
+    "width": 390,
+    "height": 844,
+    "sha256": "c364e789fc6c6a1308c6f00a3088f18e70166cbb61f28dc24d41b919957c67a8",
+    "source": "Real Chromium React App, synthetic catalog/save fixtures; no static design substitution."
+  }
+]

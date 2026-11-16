@@ -26,6 +26,7 @@ import { PlayerStatus } from './PlayerStatus';
 import { TurnUndoControl } from './TurnUndoControl';
 import type { TurnUndoResult } from '../../services/storage/saveRepository';
 import { ProfessionProfile } from '../components/ProfessionProfile';
+import { TalentProfile } from '../components/TalentProfile';
 import { StoryReading } from './StoryReadingView';
 import { StoryStreamReading } from './StoryStreamReading';
 import { openingTimeSelection } from '../../domain/openingTime';
@@ -938,6 +939,7 @@ export function GameScreen({
               ))}
             </dl>
             <ProfessionProfile hero={hero} />
+            <TalentProfile talentId={hero.talentId} />
             <h3>当前穿戴与装备</h3>
             <dl>{equipment.map(([label, value]) => <Detail key={label} label={label}>{value}</Detail>)}</dl>
             <div className="profile-entrypoints">
