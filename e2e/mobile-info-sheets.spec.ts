@@ -147,3 +147,51 @@ test('PC: 901/1440 主界面、人物与 NPC 在相同 main 状态下像素一�
   }
   for (let n = 0; n < 3; n++) expect(pictures[0][n].equals(pictures[1][n]), `${width}px picture ${n}`).toBe(true);
 });
+
+test('手机: #163 两处展开入口与 #164 持久诊断在同一草稿中共存且只读', async ({ page }, info) => {
+  await page.setViewportSize({ width: 390, height: 640 });
+  await seed(page);
+  await page.evaluate(async () => {
+    const paths = ['/src/services/storage/saveRepository.ts', '/src/domain/drafts.ts'];
+    const [{ SaveRepository }, { TurnDraftSchema }] = await Promise.all(paths.map(p => import(p)));
+    const repo = await SaveRepository.open();
+    try {
+      const draft = await repo.loadDraft('save-a');
+      await repo.saveDraft(TurnDraftSchema.parse({ ...draft, draftRevision: draft.draftRevision + 1,
+        stageStatus: { ...draft.stageStatus, story: 'failed' }, failures: [{ stage: 'story', attempt: 1,
+          storyRevision: draft.storyRevision, errorCode: 'invalid_output', retryable: false }] }), draft.draftRevision);
+    } finally { repo.close(); }
+  });
+  await page.reload(); await expect(page.getByTestId('story-reader')).toBeVisible();
+  const before = await stored(page);
+  const { openWorkflowDiagnostics } = await import('./helpers/gameLayout');
+  await openWorkflowDiagnostics(page);
+  const diagnosis = page.getByRole('region', { name: '运行诊断', exact: true });
+  await expect(diagnosis.getByRole('region', { name: '持久失败摘要', exact: true })).toContainText('invalid_output');
+  await expect(diagnosis).toContainText('本页没有该次请求的详细运行日志');
+  await expect(diagnosis).not.toContainText('本次页面尚无错误');
+  await page.screenshot({ path: info.outputPath('integrated-persisted-diagnostics.png') });
+  await page.keyboard.press('Escape');
+  for (const name of ['人物', '世界资料'] as const) {
+    const dialog = await open(page, name);
+    await expect(dialog).toHaveClass(/sheet-expandable/);
+    await dialog.getByRole('button', { name: '展开面板', exact: true }).click();
+    await expect(dialog.getByRole('button', { name: '收起面板', exact: true })).toHaveAttribute('aria-expanded', 'true');
+    // Main also fits the directory at 420px. Use a genuine short viewport, not injected CSS.
+    await page.setViewportSize({ width: 390, height: 300 });
+    const body = dialog.locator(':scope>.modal-body');
+    await expect.poll(() => body.evaluate(el => el.scrollHeight - el.clientHeight)).toBeGreaterThan(0);
+    await swipe(page, body, -130);
+    await expect.poll(() => body.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
+    await bottom(page, dialog);
+    await expect(dialog).toBeVisible();
+    await page.screenshot({ path: info.outputPath(name === '人物' ? 'integrated-status-scroll.png' : 'integrated-world-scroll.png') });
+    await dialog.getByRole('button', { name: '关闭资料界面', exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    await page.setViewportSize({ width: 390, height: 640 });
+  }
+  await openWorkflowDiagnostics(page);
+  await expect(page.getByRole('region', { name: '持久失败摘要', exact: true })).toContainText('invalid_output');
+  expect(await stored(page)).toEqual(before);
+  expect(modelPosts.get(page)).toBe(0);
+});

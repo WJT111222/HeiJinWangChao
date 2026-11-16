@@ -1,0 +1,90 @@
+{
+  "reviewedHead": "cc744021390bdb85f473ad56775271f9a7c83731",
+  "main": "dcfdfac566a02d81ecd74653e2d030a0244e0355",
+  "conflictedFiles": [
+    "src/ui/game/GameScreen.tsx"
+  ],
+  "diagnosticsUnchanged": [
+    {
+      "path": "src/workflows/storyStage.ts",
+      "reference": "cc744021390bdb85f473ad56775271f9a7c83731",
+      "referenceSHA256": "914f50ed10ad00095d6d2919216ce463159fdd9f0edcd6640995a23816e7c13d",
+      "integratedSHA256": "914f50ed10ad00095d6d2919216ce463159fdd9f0edcd6640995a23816e7c13d",
+      "identical": true
+    },
+    {
+      "path": "src/ui/game/runtimeLog.ts",
+      "reference": "cc744021390bdb85f473ad56775271f9a7c83731",
+      "referenceSHA256": "f5607d7ad05c128b810a5ec01e5770760e9742faa450eab3c563ce37bda9c2ef",
+      "integratedSHA256": "f5607d7ad05c128b810a5ec01e5770760e9742faa450eab3c563ce37bda9c2ef",
+      "identical": true
+    },
+    {
+      "path": "src/ui/game/useStoryGeneration.ts",
+      "reference": "cc744021390bdb85f473ad56775271f9a7c83731",
+      "referenceSHA256": "b2f11d9eab4137bd41b22ece5e1c9d1aa47ea3724cee1c89af02bb1322f6f8f6",
+      "integratedSHA256": "b2f11d9eab4137bd41b22ece5e1c9d1aa47ea3724cee1c89af02bb1322f6f8f6",
+      "identical": true
+    },
+    {
+      "path": "src/ui/game/useTurnGeneration.ts",
+      "reference": "cc744021390bdb85f473ad56775271f9a7c83731",
+      "referenceSHA256": "714bbd6b8c16c2c59172f5183a578c56d0b2b25b13239807f23b0672f61e84fb",
+      "integratedSHA256": "714bbd6b8c16c2c59172f5183a578c56d0b2b25b13239807f23b0672f61e84fb",
+      "identical": true
+    },
+    {
+      "path": "src/ui/game/SavedFailureSummary.tsx",
+      "reference": "cc744021390bdb85f473ad56775271f9a7c83731",
+      "referenceSHA256": "50d07a1c4fc988b7364280f31e2851cd435f34b81272563549e3a1f1c5780558",
+      "integratedSHA256": "50d07a1c4fc988b7364280f31e2851cd435f34b81272563549e3a1f1c5780558",
+      "identical": true
+    },
+    {
+      "path": "src/ui/game/MobileDiagnostics.tsx",
+      "reference": "cc744021390bdb85f473ad56775271f9a7c83731",
+      "referenceSHA256": "3cb5130594e5fe872ee3c449d1da661a059e3f6acbf68a68f07d36c1adc644c6",
+      "integratedSHA256": "3cb5130594e5fe872ee3c449d1da661a059e3f6acbf68a68f07d36c1adc644c6",
+      "identical": true
+    },
+    {
+      "path": "src/ui/game/RuntimeLogPanel.tsx",
+      "reference": "cc744021390bdb85f473ad56775271f9a7c83731",
+      "referenceSHA256": "2c3b86ef0267432bd111f7af87a0f97e855f11031ce0a3742b328cd9e25ea505",
+      "integratedSHA256": "2c3b86ef0267432bd111f7af87a0f97e855f11031ce0a3742b328cd9e25ea505",
+      "identical": true
+    },
+    {
+      "path": "src/ui/game/WorkflowPanel.tsx",
+      "reference": "cc744021390bdb85f473ad56775271f9a7c83731",
+      "referenceSHA256": "16b08f760f93fae871e2846dc7b49911564f2b4c1b102943739b3450594e960b",
+      "integratedSHA256": "16b08f760f93fae871e2846dc7b49911564f2b4c1b102943739b3450594e960b",
+      "identical": true
+    }
+  ],
+  "gesturesUnchanged": [
+    {
+      "path": "src/ui/Dialog.tsx",
+      "reference": "dcfdfac566a02d81ecd74653e2d030a0244e0355",
+      "referenceSHA256": "b73d7b7985e0ed496c3c79e1d4620fcdfd2d9ee3917b5f79e05b0cd0fe2926e2",
+      "integratedSHA256": "b73d7b7985e0ed496c3c79e1d4620fcdfd2d9ee3917b5f79e05b0cd0fe2926e2",
+      "identical": true
+    },
+    {
+      "path": "src/ui/useSheetGesture.ts",
+      "reference": "dcfdfac566a02d81ecd74653e2d030a0244e0355",
+      "referenceSHA256": "beb2cce7845613550c4fe5f84ac6d5b2916fcac9a41a0e3e787aaa9142240d0a",
+      "integratedSHA256": "beb2cce7845613550c4fe5f84ac6d5b2916fcac9a41a0e3e787aaa9142240d0a",
+      "identical": true
+    },
+    {
+      "path": "src/ui/mobile-sheet.css",
+      "reference": "dcfdfac566a02d81ecd74653e2d030a0244e0355",
+      "referenceSHA256": "0fc877b4f715116bdbd83c56af1d5005e22f9705d9c8243573af5602408f255b",
+      "integratedSHA256": "0fc877b4f715116bdbd83c56af1d5005e22f9705d9c8243573af5602408f255b",
+      "identical": true
+    }
+  ],
+  "gameScreenOnlyAddsTwoExpandableOptions": true,
+  "expandableEntryCount": 2
+}

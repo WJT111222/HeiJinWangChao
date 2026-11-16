@@ -18,6 +18,9 @@ export type RuntimeLogStage = AiStage | 'workflow' | 'commit';
 export type RuntimeLogKind = 'started' | 'completed' | 'failed' | 'cancelled';
 export type RuntimeLogReporter = (stage: RuntimeLogStage, kind: RuntimeLogKind, failure?: unknown) => void;
 
+/** Anonymous, page-local correlation tokens, never actual save/turn IDs or player text. */
+export interface RuntimeLogScope { saveRef: string; turnRef: string }
+
 export interface RuntimeLogEntry extends Partial<StoryDiagnostic> {
   id: number;
   timestamp: string;
@@ -25,6 +28,7 @@ export interface RuntimeLogEntry extends Partial<StoryDiagnostic> {
   kind: RuntimeLogKind;
   message: string;
   code?: string;
+  scope?: RuntimeLogScope;
   httpStatus?: number;
   fieldPath?: string;
   commandIndex?: number;
@@ -71,10 +75,12 @@ export function runtimeLogEvent(
   stage: RuntimeLogStage,
   kind: RuntimeLogKind,
   failure?: unknown,
+  scope?: RuntimeLogScope,
 ): RuntimeLogEntry {
   const label = runtimeStageNames[stage];
   const entry: RuntimeLogEntry = {
     id, timestamp: new Date().toISOString(), stage, kind,
+    ...(scope ? { scope: { ...scope } } : {}),
     message: kind === 'started' ? `${label}已开始`
       : kind === 'completed' ? (stage === 'workflow' ? '本次自动执行已结束' : `${label}已完成`)
       : kind === 'cancelled' ? (stage === 'workflow' ? '已请求取消自动执行' : `${label}已取消`)
@@ -89,6 +95,7 @@ export function runtimeLogEvent(
     return { ...entry, code: failure.code, message: safeCommitCodes[failure.code] };
   }
   const safe = safeAiError(stage === 'commit' ? variableFailure(failure, 'commit') : stage === 'variables' ? variableFailure(failure, 'context') : stage === 'story' ? storyFailure(failure, true) : failure);
+  if (safe.code === 'cancelled') return { ...entry, kind: 'cancelled', code: 'cancelled', message: `${label}已取消，未计入生成失败。` };
   const details = 'details' in safe ? safe.details : undefined;
   const status = 'status' in safe ? safe.status : undefined;
   const path = details?.fieldPath;
@@ -118,4 +125,14 @@ export function runtimeLogEvent(
         .filter((index) => Number.isSafeInteger(index) && index > 0))].slice(0, 20) }
       : {}),
   };
+}
+
+/** Retain session records in memory, but show only this turn's still-relevant events. */
+export function currentRuntimeLogs(entries: readonly RuntimeLogEntry[], scope: RuntimeLogScope) {
+  const scoped = entries.filter(e => e.scope?.saveRef === scope.saveRef && e.scope.turnRef === scope.turnRef);
+  return scoped.filter((entry, index) => {
+    if (entry.kind !== 'failed') return true;
+    return !scoped.slice(index + 1).some(later => later.kind === 'completed' &&
+      (later.stage === entry.stage || later.stage === 'workflow' || later.stage === 'story'));
+  });
 }

@@ -56,7 +56,7 @@ test('整合：双层导航、候选/原文/诊断、非模态输入边界与四
   await page.screenshot({animations:'disabled',path:`docs/pr120-integration/screenshots/${width}x${height}.png`});
   await panel(page).getByRole('tab',{name:'模型原文',exact:true}).click();await expect(panel(page).getByRole('region',{name:'模型原文',exact:true})).toContainText('没有可恢复');
   if(mobile)await panel(page).getByRole('button',{name:'返回三阶段列表'}).click();
-  await panel(page).getByRole('button',{name:/运行诊断/}).click();await expect(panel(page).getByRole('region',{name:'运行诊断',exact:true})).toContainText('本次页面尚无错误');
+  await panel(page).getByRole('button',{name:/运行诊断/}).click();await expect(panel(page).getByRole('region',{name:'运行诊断',exact:true})).toContainText('本页暂无错误');
   if(mobile){await panel(page).getByRole('button',{name:'重试与变更详情',exact:true}).click();const native=page.getByRole('dialog',{name:'重试与变更详情',exact:true});await expect(native).toBeVisible();await page.keyboard.press('Escape');await expect(native).toHaveCount(0);await expect(panel(page)).toBeVisible();
    const input=page.getByLabel('你的行动',{exact:true});await input.click();await page.keyboard.type('实际点击后的输入');await expect(input).toHaveValue('实际点击后的输入');await page.keyboard.type('多行行动输入仍保持可用。'.repeat(8));
    await page.getByRole('button',{name:'行动输入',exact:true}).focus();await page.keyboard.press('Enter');await expect(input).toBeFocused();await page.keyboard.press('Tab');await expect(page.getByRole('button',{name:'发送',exact:true})).toBeFocused();

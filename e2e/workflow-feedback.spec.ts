@@ -273,7 +273,7 @@ test('手机非模态抽屉：两层导航、统一候选原文、诊断与只�
  await expect(sheet.locator('.workflow-stages>li')).toHaveCount(3);await expect(sheet.getByRole('checkbox')).toHaveCount(2);
  const candidate=await openStageCandidates(page,'variables');await expect(candidate.getByLabel('完整变量候选')).toHaveCount(0);
  await candidate.getByRole('button',{name:'主动查看完整变量候选'}).click();await expect(candidate.getByLabel('完整变量候选')).toContainText('SetWorldClock');
- await expect(await openCandidateRaw(page,'variables')).toContainText('没有可恢复');await openWorkflowDiagnostics(page);await expect(sheet.getByRole('region',{name:'运行诊断',exact:true})).toContainText('本次页面尚无错误');
+ await expect(await openCandidateRaw(page,'variables')).toContainText('没有可恢复');await openWorkflowDiagnostics(page);await expect(sheet.getByRole('region',{name:'运行诊断',exact:true})).toContainText('本页暂无错误');
  await openBoundInput(page);await expect(sheet.locator('.bound-input')).toBeVisible();
  await page.keyboard.press('Escape');await expect(sheet).toHaveCount(0);await expect(workflowTrigger(page)).toBeFocused();expect(await stored(page)).toEqual(before);
 });

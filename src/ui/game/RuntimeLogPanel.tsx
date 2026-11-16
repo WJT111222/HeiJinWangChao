@@ -5,6 +5,8 @@ import type { RuntimeLogEntry } from './runtimeLog';
 import { runtimeStageNames } from './runtimeLog';
 import { domainRuleNames } from '../../executors/variableText/aggregateDiagnostics';
 import { worldRuleNames } from '../../services/validation/worldDiagnostics';
+import type { TurnDraft } from '../../domain/drafts';
+import { SavedFailureSummary, currentDraftFailures } from './SavedFailureSummary';
 
 const ruleNames = {
   invalid_type: '字段值类型不符合要求',
@@ -19,15 +21,21 @@ const ruleNames = {
 export function RuntimeLogPanel({
   entries,
   onClear,
+  draft,
+  recovery,
 }: {
   entries: readonly RuntimeLogEntry[];
   onClear: () => void;
+  draft?: TurnDraft;
+  recovery?: string;
 }) {
   const [copyFeedback, setCopyFeedback] = useState<{ id: number; ok: boolean } | null>(null);
   const logElement = useRef<HTMLDetailsElement>(null);
   const errors = entries.filter((entry) => entry.kind === 'failed');
   const latestError = errors[errors.length - 1];
   const latestErrorId = latestError?.id;
+  const cancelled = entries.filter(entry => entry.kind === 'cancelled').at(-1);
+  const failures = currentDraftFailures(draft);
   // Only new failures reopen the log; the player can still collapse it manually.
   useEffect(() => {
     if (latestErrorId !== undefined && logElement.current) logElement.current.open = true;
@@ -42,15 +50,17 @@ export function RuntimeLogPanel({
     }
   }
   return (
+    <><SavedFailureSummary draft={draft} entries={entries} recovery={recovery} />
     <details ref={logElement} className="runtime-log" data-testid="runtime-log">
       <summary>
         <span>运行日志 · 错误 {errors.length} 条</span>
         {latestError?.code && <strong className="runtime-log-error-count">最近错误 · {latestError.code}</strong>}
       </summary>
       <div className="runtime-log-content">
-        <p className="field-hint">仅显示本次页面会话的错误；每条可单独复制安全诊断，不含原始模型响应、请求正文或密钥。刷新即清空。</p>
+        <p className="field-hint">仅显示当前存档、当前回合的本页临时日志；已恢复的失败不再计为当前错误。每条可单独复制安全诊断，不含原始模型响应、请求正文或密钥。刷新即清空。</p>
+        {cancelled && <p className="field-hint">最近操作已取消，未计入生成失败。</p>}
         <div className="runtime-log-actions">
-          <button type="button" disabled={!errors.length} onClick={onClear}>清空日志</button>
+          <button type="button" disabled={!entries.length} onClick={onClear}>清空日志</button>
         </div>
         {errors.length ? (
           <ol aria-label="错误日志条目">
@@ -68,6 +78,7 @@ export function RuntimeLogPanel({
                   <small role="status">{copyFeedback.ok ? '已复制此条错误日志' : '复制失败，请检查浏览器剪贴板权限'}</small>
                 )}
                 <p>{entry.message}</p>
+                {entry.scope && <small>本页存档标识：{entry.scope.saveRef} · 本页回合标识：{entry.scope.turnRef}（匿名关联标识）</small>}
                 {entry.code && <small>错误码：{entry.code}</small>}
                 {entry.storyRule && <small>正文失败类型：{entry.storyRule} · {storyRuleNames[entry.storyRule]}</small>}
                 {entry.httpStatus && <small>HTTP 状态：{entry.httpStatus}</small>}
@@ -86,8 +97,8 @@ export function RuntimeLogPanel({
               </li>
             ))}
           </ol>
-        ) : <p className="muted">本次页面尚无错误。</p>}
+        ) : <p className="muted">{failures.length ? '本页暂无该次失败的详细运行日志；请查看上方持久失败摘要。' : '本页暂无错误。'}</p>}
       </div>
-    </details>
+    </details></>
   );
 }
