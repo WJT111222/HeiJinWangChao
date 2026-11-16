@@ -42,7 +42,7 @@ test('整合：日间失败后恢复旧建议，主动继续正文与剩余阶�
   await expect(page.getByText('上一已结算回合建议 · 第1回合', { exact: false })).toBeVisible();
   await expect(page.locator('#action-recovery-guidance')).toContainText('尚无正文候选');
   const suggestion = page.getByRole('button', { name: /去书店看看/ }); await expect(suggestion).toBeEnabled(); await suggestion.click();
-  await expect(page.locator('#player-input')).toHaveValue('去书店看看');
+  await expect(page.locator('#player-input')).toHaveValue('沿江走一走，去书店看看');
   expect(await data(page)).toEqual(failed); expect(await calls(page)).toEqual([{ stage: 'story', action: oldOptions[0] }]);
   await page.screenshot({ path: info.outputPath('day-failed-suggestions.png'), animations: 'disabled' });
   // Continue uses the original binding; selecting a suggestion alone never sends or rebinds.
