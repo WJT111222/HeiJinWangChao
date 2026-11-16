@@ -55,7 +55,7 @@ for(const mode of ['opening','ready','error'] as const)test(`工作流 ${mode}�
 
 test('抽屉：Tab 环、Esc、遮罩、短拉回弹、长拉关闭和取消手势',async({page})=>{
  await enter(page);const before=await nightSealStored(page);const trigger=page.locator('.mobile-city-pill'),sheet=page.getByRole('dialog',{name:'此时此地',exact:true});
- await trigger.click();await expect(sheet).toBeFocused();await page.keyboard.press('Shift+Tab');await expect(sheet.getByRole('button',{name:'经济与资产',exact:true})).toBeFocused();await page.keyboard.press('Tab');await expect(sheet.getByRole('button',{name:'关闭资料界面',exact:true})).toBeFocused();
+ await trigger.click();await expect(sheet).toBeFocused();await page.keyboard.press('Shift+Tab');await expect(sheet.getByRole('button',{name:'经济与资产',exact:true})).toBeFocused();await page.keyboard.press('Tab');await expect(sheet.getByRole('button',{name:'展开面板',exact:true})).toBeFocused();await page.keyboard.press('Tab');await expect(sheet.getByRole('button',{name:'关闭资料界面',exact:true})).toBeFocused();
  // Test the real header hit target; cancellation is never an implicit close.
  async function drag(distance:number,cancel=false){const box=(await sheet.locator('.mobile-sheet-grab').boundingBox())!;const x=box.x+box.width/2,y=box.y+box.height/2;await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x,y+distance,{steps:5});if(cancel)await sheet.dispatchEvent('pointercancel',{pointerId:1});await page.mouse.up();}
  await drag(55);await expect(sheet).toBeVisible();await drag(120,true);await expect(sheet).toBeVisible();await drag(125);await expect(sheet).toHaveCount(0);await expect(trigger).toBeFocused();
@@ -110,11 +110,11 @@ test('撤回保留原确认、回填与恢复点；回填后仍可发送',async(
  await undo.click();await confirm.getByRole('button',{name:'确认撤回',exact:true}).click();await expect.poll(async()=>(await nightSealStored(page)).state.turnNumber).toBe(1);await expect(page.getByLabel('你的行动',{exact:true})).toHaveValue('沿江步道走一走');await expect(page.getByRole('button',{name:'发送',exact:true})).toBeEnabled();
 });
 
-test('真实触屏：长内容原生滚动不误关闭，顶部下拉才关闭；reduced motion',async({page})=>{
+test('真实触屏：长内容原生滚动不误关闭，内容顶部下拉不关闭、横条下拉关闭；reduced motion',async({page})=>{
  await enter(page,true);const before=await nightSealStored(page);const animations=await page.locator('.atmo *').evaluateAll(es=>es.flatMap(e=>[getComputedStyle(e).animationName,getComputedStyle(e,'::before').animationName,getComputedStyle(e,'::after').animationName]));expect(animations.every(a=>a==='none')).toBe(true);
  await page.locator('.mobile-city-pill').click();const sheet=page.getByRole('dialog',{name:'此时此地'}),body=sheet.locator('.modal-body');const cdp=await page.context().newCDPSession(page);
  async function swipe(y:number,dy:number){await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:200,y}]});for(let i=1;i<=6;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:200,y:y+dy*i/6}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}
- const box=(await body.boundingBox())!;await swipe(box.y+220,-170);await expect.poll(()=>body.evaluate(e=>e.scrollTop)).toBeGreaterThan(0);await expect(sheet).toBeVisible();await page.keyboard.press('Escape');await page.locator('.mobile-city-pill').click();await expect.poll(()=>body.evaluate(e=>e.scrollTop)).toBe(0);await swipe(box.y+70,140);await expect(sheet).toHaveCount(0);expect(await nightSealStored(page)).toEqual(before);await cdp.detach();
+ const box=(await body.boundingBox())!;await swipe(box.y+220,-170);await expect.poll(()=>body.evaluate(e=>e.scrollTop)).toBeGreaterThan(0);await expect(sheet).toBeVisible();await page.keyboard.press('Escape');await page.locator('.mobile-city-pill').click();await expect.poll(()=>body.evaluate(e=>e.scrollTop)).toBe(0);await swipe(box.y+70,140);await expect(sheet).toBeVisible();const grab=(await sheet.locator('.mobile-sheet-grab').boundingBox())!;await swipe(grab.y+grab.height/2,140);await expect(sheet).toHaveCount(0);expect(await nightSealStored(page)).toEqual(before);await cdp.detach();
 });
 
 

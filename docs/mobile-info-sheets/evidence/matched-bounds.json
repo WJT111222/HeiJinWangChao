@@ -1,0 +1,62 @@
+[
+  {
+    "label": "before",
+    "entry": "人物",
+    "initial": {
+      "x": 0,
+      "y": 18,
+      "width": 390,
+      "height": 826
+    }
+  },
+  {
+    "label": "before",
+    "entry": "世界资料",
+    "initial": {
+      "x": 0,
+      "y": 496.9375,
+      "width": 390,
+      "height": 347.0625
+    }
+  },
+  {
+    "label": "after",
+    "entry": "人物",
+    "initial": {
+      "x": 0,
+      "y": 270.09375,
+      "width": 390,
+      "height": 573.90625
+    }
+  },
+  {
+    "label": "after",
+    "entry": "人物",
+    "expanded": {
+      "x": 0,
+      "y": 18,
+      "width": 390,
+      "height": 826
+    }
+  },
+  {
+    "label": "after",
+    "entry": "世界资料",
+    "initial": {
+      "x": 0,
+      "y": 496.9375,
+      "width": 390,
+      "height": 347.0625
+    }
+  },
+  {
+    "label": "after",
+    "entry": "世界资料",
+    "expanded": {
+      "x": 0,
+      "y": 18,
+      "width": 390,
+      "height": 826
+    }
+  }
+]
