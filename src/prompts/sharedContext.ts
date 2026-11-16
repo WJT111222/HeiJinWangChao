@@ -2,6 +2,7 @@ import type { GameState } from '../domain/state';
 import { npcContext } from './npcContext';
 import { recallJournal } from '../domain/memories/recall';
 import type { RecallCues } from '../domain/memories/recall';
+import { talentContext } from './talentContext';
 
 /** 三阶段共用的模型只读背景。调用方决定正式基线或合法 Variables 投影；
  * 阅读范围不参与任何命令授权。永久 journal 保持现有窗口/检索，幂等凭据不注入。 */
@@ -14,7 +15,9 @@ export function sharedContext(state: GameState, windowSize: number, query: strin
   const recent = journal.slice(-windowSize);
   const sources=new Set([...recent.map(t=>t.turnId),...memory.recalledTurns.map(t=>t.turnId)]);
   const people=npcContext(state,cues,sources);
+  const talent = talentContext(state.protagonist.talentId, cues.stage);
   return {
+    ...(talent ? { PROTAGONIST_TALENT: talent } : {}),
     SAVE_STATE: { ...snapshot, npc:people.npc, memories:{...memories,npcSummaries:people.npcSummaries}, worldClock: state.openingTimePending ? null : state.worldClock },
     MEMORY_CONTEXT: {
       ...memory,

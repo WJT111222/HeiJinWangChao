@@ -1,0 +1,197 @@
+{
+  "method": "JSON.stringify(talentContext(id, stage)); statistics.estimateTokens heuristic, not supplier or paid tokens",
+  "rows": [
+    {
+      "id": "underworld_aura",
+      "name": "枭雄光环",
+      "stage": "story",
+      "characters": 1320,
+      "estimatedTokens": 1603,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "underworld_aura",
+      "name": "枭雄光环",
+      "stage": "variables",
+      "characters": 1332,
+      "estimatedTokens": 1610,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "underworld_aura",
+      "name": "枭雄光环",
+      "stage": "world",
+      "characters": 1336,
+      "estimatedTokens": 1597,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "cyber_tyrant",
+      "name": "赛博暴君",
+      "stage": "story",
+      "characters": 1191,
+      "estimatedTokens": 1418,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "cyber_tyrant",
+      "name": "赛博暴君",
+      "stage": "variables",
+      "characters": 1203,
+      "estimatedTokens": 1425,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "cyber_tyrant",
+      "name": "赛博暴君",
+      "stage": "world",
+      "characters": 1207,
+      "estimatedTokens": 1412,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "golden_edict",
+      "name": "黄金律令",
+      "stage": "story",
+      "characters": 1180,
+      "estimatedTokens": 1408,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "golden_edict",
+      "name": "黄金律令",
+      "stage": "variables",
+      "characters": 1192,
+      "estimatedTokens": 1415,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "golden_edict",
+      "name": "黄金律令",
+      "stage": "world",
+      "characters": 1196,
+      "estimatedTokens": 1402,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "power_hunter",
+      "name": "权柄猎手",
+      "stage": "story",
+      "characters": 1174,
+      "estimatedTokens": 1404,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "power_hunter",
+      "name": "权柄猎手",
+      "stage": "variables",
+      "characters": 1186,
+      "estimatedTokens": 1411,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "power_hunter",
+      "name": "权柄猎手",
+      "stage": "world",
+      "characters": 1190,
+      "estimatedTokens": 1398,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "public_sovereign",
+      "name": "众声主宰",
+      "stage": "story",
+      "characters": 1317,
+      "estimatedTokens": 1593,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "public_sovereign",
+      "name": "众声主宰",
+      "stage": "variables",
+      "characters": 1329,
+      "estimatedTokens": 1600,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "public_sovereign",
+      "name": "众声主宰",
+      "stage": "world",
+      "characters": 1333,
+      "estimatedTokens": 1587,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "engineering_genius",
+      "name": "天工奇才",
+      "stage": "story",
+      "characters": 1185,
+      "estimatedTokens": 1408,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "engineering_genius",
+      "name": "天工奇才",
+      "stage": "variables",
+      "characters": 1197,
+      "estimatedTokens": 1415,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "engineering_genius",
+      "name": "天工奇才",
+      "stage": "world",
+      "characters": 1201,
+      "estimatedTokens": 1402,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "tactical_mastermind",
+      "name": "千机谋主",
+      "stage": "story",
+      "characters": 1201,
+      "estimatedTokens": 1431,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "tactical_mastermind",
+      "name": "千机谋主",
+      "stage": "variables",
+      "characters": 1213,
+      "estimatedTokens": 1437,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "tactical_mastermind",
+      "name": "千机谋主",
+      "stage": "world",
+      "characters": 1217,
+      "estimatedTokens": 1425,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "desperate_gambler",
+      "name": "绝命赌徒",
+      "stage": "story",
+      "characters": 1441,
+      "estimatedTokens": 1781,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "desperate_gambler",
+      "name": "绝命赌徒",
+      "stage": "variables",
+      "characters": 1453,
+      "estimatedTokens": 1787,
+      "method": "unicode-heuristic-v1"
+    },
+    {
+      "id": "desperate_gambler",
+      "name": "绝命赌徒",
+      "stage": "world",
+      "characters": 1457,
+      "estimatedTokens": 1775,
+      "method": "unicode-heuristic-v1"
+    }
+  ]
+}
