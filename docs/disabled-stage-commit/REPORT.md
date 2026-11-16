@@ -56,7 +56,7 @@ World-only 若草稿已经有真实、版本匹配的 validated Variables，仍�
 
 ## 正式环境与测试
 
-Node **24.19.0**；npm **11.9.0**；Chromium **154.0.8037.57**（Debian 13）。真实锁定依赖、Vitest、Playwright，没有替代运行器。桌面 1440×1000；手机使用仓库 Pixel 7 项目（393×727 CSS 像素，设备缩放比 2.75）。所有模型为 `.mock.invalid` Mock，未调用收费模型、未使用真实玩家存档。
+Node **24.19.0**；npm **11.9.0**；Chromium **154.0.8037.57**（Debian 13）。真实锁定依赖、Vitest、Playwright，没有替代运行器。桌面 1440×1000；手机使用仓库 Pixel 7 项目（412×839 CSS 像素，设备缩放比 2.625）。所有模型为 `.mock.invalid` Mock，未调用收费模型、未使用真实玩家存档。
 
 | 批次/命令 | 结果 | 退出码 | 原始日志 |
 |---|---|---|---|
@@ -121,7 +121,7 @@ CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/action-workflow.spec.ts 
 git diff --check
 ```
 
-本次浏览器沿用仓库两个项目、2 workers、0 retry，仅在外部配置改为独立端口 55809、禁用旧服务器复用，并保存截图/失败 trace；main 对照端口 55810。原始全部运行证据和 trace 位于隔离环境 `/workspace/disabled-stage-evidence/`，报告收录原始日志副本（`.log` 改名 `.txt`，内容不改）。失败 trace 子目录：`browser-first/`、`browser-locks/`、`browser-main-old-rules/`；未包含真实玩家数据或凭证。
+本次浏览器沿用仓库两个项目、2 workers、0 retry，仅在外部配置改为独立端口 55809、禁用旧服务器复用，并保存截图/失败 trace；main 对照端口 55810。原始全部运行证据和 trace 位于隔离环境 `/workspace/disabled-stage-evidence/`，报告收录日志（`.log` 改名 `.txt`）；3 份带行尾空白的日志仅清理了文本副本的行尾空白，未改消息和结果，同时保留 `.txt.gz` 原始字节副本（browser-first、check-final、check-complete）。失败 trace 子目录：`browser-first/`、`browser-locks/`、`browser-main-old-rules/`；未包含真实玩家数据或凭证。
 
 ## 已知限制与边界
 

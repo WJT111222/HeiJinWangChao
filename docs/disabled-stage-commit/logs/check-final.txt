@@ -166,7 +166,7 @@ dist/assets/GameScreen-f5j00CM2.js               266.61 kB │ gzip:  79.73 kB
 dist/assets/index-DY5HLnWZ.js                    920.61 kB │ gzip: 283.86 kB
 
 ✓ built in 427ms
-[plugin builtin:vite-reporter] 
+[plugin builtin:vite-reporter]
 (!) Some chunks are larger than 500 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
