@@ -73,7 +73,7 @@ import {MobileCityBar,MobileStatus,mobileCitySeal} from './MobileCity';
 import {MobileActions} from './MobileActions';
 import {ComposerTools} from './ComposerTools';
 import { mayStartStory } from './storyGenerationPolicy';
-import { canContinueStory, discardStoryPartial, STORY_CONTINUATION_LIMIT, storyPartialVisible } from '../../domain/storyContinuation';
+import { canContinueStory, continuationBlock, discardStoryPartial, partialNarrative as countPartialNarrative, STORY_CONTINUATION_LIMIT, storyPartialVisible } from '../../domain/storyContinuation';
 import { StoryStream } from '../../workflows/storyStream';
 import { actionSuggestions } from './actionSuggestions';
 import { appendActionOption, includesActionOption } from './actionOptions';
@@ -285,9 +285,13 @@ export function GameScreen({
   // 正文失败或被取消、尚无候选时：原行动放回输入框，玩家可原样或修改后直接重新发送。
   const rebindAction = !busy && rebindableAfterStoryStop(state, draft);
   // 正文被截断：显示已写出的部分（只取正文，不显示规划和尾部标签）；续写次数用完后仍显示，只是不能再续写。
-  const storyContinuable = !busy && canContinueStory(draft);
+  // 「正文已闭合但字数不足」也不能续写（续写只能补 </正文> 之后的标签）；按本次设置的最低字数判断。
+  const minNarrativeChars = settings.prompts.minNarrativeChars;
+  const storyContinuable = !busy && canContinueStory(draft, minNarrativeChars);
+  const partialBlock = continuationBlock(draft, minNarrativeChars);
   const partialText = !busy && storyPartialVisible(draft) ? draft?.storyPartial?.text : undefined;
   const partialNarrative = useMemo(() => partialText === undefined ? undefined : new StoryStream().push(partialText).trim(), [partialText]);
+  const partialCount = useMemo(() => partialText === undefined ? undefined : countPartialNarrative(partialText), [partialText]);
   const [partialCopy, setPartialCopy] = useState<{ text: string; ok: boolean }>();
   async function copyPartial(text: string) {
     try { await navigator.clipboard.writeText(text); setPartialCopy({ text, ok: true }); }
@@ -774,17 +778,25 @@ export function GameScreen({
           ) : partialNarrative !== undefined ? (
             <article className="story-entry glass latest story-partial">
               <CityChapter number={state.turnNumber + 1} state={state} scene={draftScene} status="draft" desktop={!compactSidebars} />
-              <span className="tag preview-tag">{storyContinuable
-                ? '正文未写完 · 点「续写正文」从断点接着写，或按「发送」重新生成'
-                : `正文未写完 · 已续写 ${STORY_CONTINUATION_LIMIT} 次，不能再续写；可复制已写内容，按「发送」重新生成`}</span>
+              <span className="tag preview-tag">{partialBlock === 'used_up'
+                ? `正文未写完 · 已续写 ${STORY_CONTINUATION_LIMIT} 次，不能再续写；可复制已写内容，按「发送」重新生成`
+                : partialBlock === 'closed_short'
+                  ? `正文已结束但只有 ${partialCount?.chars ?? 0} 字，低于最低 ${minNarrativeChars} 字，续写无法补足 · 可复制已写内容，按「发送」重新生成`
+                  : partialCount?.closed
+                    ? '正文已写完，只差结尾的记录标签 · 点「续写正文」补齐，或按「发送」重新生成'
+                    : '正文未写完 · 点「续写正文」从断点接着写，或按「发送」重新生成'}</span>
               {partialNarrative ? <StoryReading narrative={partialNarrative} protagonistName={hero.name} />
                 : <p className="field-hint">模型还在写创作提纲时就中断了，{storyContinuable ? '续写会从提纲处接着往下写。' : '没有可阅读的正文。'}</p>}
-              <p className="story-partial-end" aria-hidden="true">……</p>
-              <div className="story-partial-actions">
-                {partialNarrative && <button type="button" onClick={() => void copyPartial(partialNarrative)}>
+              {!partialCount?.closed && <p className="story-partial-end" aria-hidden="true">……</p>}
+              <div className="story-partial-actions" role="group" aria-label="未写完的正文">
+                <span className="story-partial-meta">已写 <b>{partialCount?.chars ?? 0}</b> 字 · 最低 {minNarrativeChars} 字</span>
+                {partialNarrative && <button type="button" className={`partial-action partial-copy${partialCopy?.text === partialNarrative ? (partialCopy.ok ? ' is-done' : ' is-failed') : ''}`}
+                  onClick={() => void copyPartial(partialNarrative)} title="把已写出的正文复制到剪贴板">
+                  <span className="partial-seal" aria-hidden="true">{partialCopy?.text === partialNarrative && partialCopy.ok ? '✓' : '抄'}</span>
                   {partialCopy?.text !== partialNarrative ? '复制已写内容' : partialCopy.ok ? '已复制' : '复制失败，请手动选中'}</button>}
-                <button type="button" disabled={busy} onClick={() => void discardPartial()}
-                  title="只丢掉这段没写完的正文，不调用 AI，也不会撤回上一回合；原行动留在输入框里">放弃这段</button>
+                <button type="button" className="partial-action partial-discard" disabled={busy} onClick={() => void discardPartial()}
+                  title="只丢掉这段没写完的正文，不调用 AI，也不会撤回上一回合；原行动留在输入框里">
+                  <span className="partial-seal" aria-hidden="true">弃</span>放弃这段</button>
               </div>
             </article>
           ) : draft?.story ? (

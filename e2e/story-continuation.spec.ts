@@ -9,12 +9,12 @@ const head = '<thinking>保持当前行动连续。</thinking>\n<正文>第一�
 const tail = '老周蹲在缆桩边上，烟头一明一灭。</正文>\n<短期记忆>码头见老周。</短期记忆>\n<变量规划>[]</变量规划>';
 const fresh = '<thinking>重新开始。</thinking>\n<正文>第二种写法：主角直接走进货场。</正文>\n<短期记忆>走进货场。</短期记忆>\n<变量规划>[]</变量规划>';
 
-async function seed(page: Page, baseUrl = 'https://continuation.mock.invalid/v1') {
+async function seed(page: Page, baseUrl = 'https://continuation.mock.invalid/v1', minChars = 5) {
   await page.goto('/');
-  await page.evaluate(async (baseUrl) => {
+  await page.evaluate(async ({ baseUrl, minChars }) => {
     const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/world.ts', '/src/tests/fixtures/turn.ts', '/src/ui/settings/model.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts'];
     const [{ SaveRepository }, { worldState }, { completeDraft }, { defaultSettings, settingsKey }, { defaultAiConfig, newChannel, saveAiConfig }, { CredentialVault }] = await Promise.all(paths.map((p) => import(p)));
-    const settings = defaultSettings(); settings.prompts.minNarrativeChars = 5; settings.prompts.actionOptions = false;
+    const settings = defaultSettings(); settings.prompts.minNarrativeChars = minChars; settings.prompts.actionOptions = false;
     settings.runtime.streamStory = true;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const channel = newChannel(), config = defaultAiConfig(); channel.baseUrl = baseUrl; channel.compatibility.jsonMode = true;
@@ -25,7 +25,7 @@ async function seed(page: Page, baseUrl = 'https://continuation.mock.invalid/v1'
     const repo = await SaveRepository.open(), state = worldState(); state.openingCityId = 'chongqing'; state.protagonist.name = '沈砚';
     await repo.create(state); const draft = await completeDraft(repo);
     await repo.commitTurn({ draft, nextAction: '', useVariableStage: true, useWorldStage: true }); repo.close();
-  }, baseUrl);
+  }, { baseUrl, minChars });
   await page.goto('/#game/save-a'); await page.reload(); await expect(page.getByTestId('story-reader')).toBeVisible();
 }
 type Message = { role: string; content: string };
@@ -64,10 +64,10 @@ async function closeDiagnostics(page: Page) {
 /** 三阶段结算在本地并行负载下可能超过默认 5 秒。 */
 const settle = { timeout: 20_000 };
 const continueButton = (page: Page) => page.getByRole('button', { name: '续写正文', exact: true });
-async function truncate(page: Page) {
+async function truncate(page: Page, written = '老周蹲在') {
   await page.locator('#player-input').fill('去码头找老周');
   await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect.poll(async () => (await stored(page)).draft?.storyPartial?.text ?? '').toContain('老周蹲在');
+  await expect.poll(async () => (await stored(page)).draft?.storyPartial?.text ?? '').toContain(written);
   await closeDiagnostics(page);
 }
 
@@ -94,6 +94,8 @@ test('正文被截断后保留已写部分，刷新仍在；续写从断点接�
   expect(request.at(-2)).toMatchObject({ role: 'assistant' });
   expect(request.at(-2)!.content).toBe(head);
   expect(request.at(-1)!.content).toContain('【续写】');
+  // 续写指令带上已写字数（只计 <正文> 内非空白字符）与本次设置的最低字数。
+  expect(request.at(-1)!.content).toContain(`目前已写 ${Array.from('第一段：雨丝斜着落进货场，老周蹲在').length} 字，已达到最低 5 字`);
   // 续写请求前面的上下文与原请求相同（缓存前缀不变）；唯一差别是上下文末尾的草稿版本号（失败保存后加一）。
   const normalize = (messages: Message[]) => JSON.stringify(messages).replace(/\\"draftRevision\\":\d+/gu, '\\"draftRevision\\":N');
   expect(normalize(request.slice(0, -2))).toBe(normalize(requests[0]));
@@ -232,4 +234,31 @@ test.describe('续写流式显示', () => {
     expect(narrative.split('像是早就等着这一刻').length - 1).toBe(1);
     expect(narrative).toContain('“货今晚到不了。”他把手插进口袋。');
   });
+});
+
+test('正文已闭合但字数不足：不给续写（补不了字数），仍可阅读；把最低字数调低后可以续写补齐标签', async ({ page }) => {
+  await seed(page, undefined, 30);
+  const requests = await mock(page, [
+    { text: '<thinking>保持当前行动连续。</thinking>\n<正文>老周不在。</正文>', finish: 'stop' },
+    { text: '<短期记忆>码头没见到老周。</短期记忆>\n<变量规划>[]</变量规划>', finish: 'stop' },
+  ]);
+  await truncate(page, '老周不在');
+  const reader = page.getByTestId('story-reader');
+  await expect(reader).toContainText('正文已结束但只有 5 字，低于最低 30 字，续写无法补足');
+  await expect(reader).toContainText('老周不在。');
+  await expect(continueButton(page)).toHaveCount(0);
+  expect(requests).toHaveLength(1);
+
+  await page.evaluate(async () => {
+    const p = '/src/ui/settings/model.ts', { settingsKey } = await import(p);
+    const settings = JSON.parse(localStorage.getItem(settingsKey)!); settings.prompts.minNarrativeChars = 5;
+    localStorage.setItem(settingsKey, JSON.stringify(settings));
+  });
+  await page.reload(); await expect(page.getByTestId('story-reader')).toBeVisible(); await closeDiagnostics(page);
+  await expect(page.getByTestId('story-reader')).toContainText('正文已写完，只差结尾的记录标签');
+  await continueButton(page).click();
+  await expect.poll(async () => (await stored(page)).state.turnNumber, settle).toBe(2);
+  expect(requests).toHaveLength(2);
+  expect(requests[1]!.at(-1)!.content).toContain('<正文> 已经完整结束，共 5 字');
+  expect((await stored(page)).state.journal.at(-1)!.story.narrative).toBe('老周不在。');
 });

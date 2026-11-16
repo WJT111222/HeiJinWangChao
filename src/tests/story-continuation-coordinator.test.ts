@@ -6,6 +6,8 @@ import { CredentialVault } from '../services/ai/credentials';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import type { AiStage } from '../services/ai/configuration';
 import { storyFailureText } from '../services/ai/runtime';
+import { partialNarrative } from '../domain/storyContinuation';
+import { DataError } from '../domain/common';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { createTurnDraft, TurnDraftSchema } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
@@ -82,6 +84,8 @@ describe('续写与自动重试', () => {
     for (const messages of story) {
       expect(messages.at(-2)).toEqual({ role: 'assistant', content: head });
       expect(String(messages.at(-1)?.content)).toContain('【续写】');
+      // 续写指令带上按已写部分与本次设置算出的字数。
+      expect(String(messages.at(-1)?.content)).toContain(`目前已写 ${partialNarrative(head).chars} 字，已达到最低 5 字`);
     }
     const saved = await current();
     expect(saved.storyPartial).toEqual({ text: head, storyRevision: 0, continuations: 2 });
@@ -156,5 +160,38 @@ describe('前导 <think> 的截断原文', () => {
     const saved = await current();
     expect(saved.storyPartial).toEqual({ text: `${head}${more}`, storyRevision: 0, continuations: 3 });
     expect(JSON.stringify(saved)).not.toContain('续写前的推理');
+  });
+});
+
+/** 正文已闭合但字数不足：续写只能在 </正文> 后补标签，补不了字数，所以不发请求。 */
+describe('正文已闭合但字数不足', () => {
+  const closed = `<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>${worldNarrative}</正文>`;
+  const chars = partialNarrative(closed).chars;
+  async function closedDraft() {
+    const latest = await current();
+    return repo.saveDraft({ ...latest, draftRevision: latest.draftRevision + 1, storyPartial: { text: closed, storyRevision: 0, continuations: 0 } }, latest.draftRevision, undefined, latest);
+  }
+  it('最低字数高于已写字数：拒绝续写，不发出任何请求，已写部分不变', async () => {
+    const saved = await closedDraft();
+    const transport = vi.fn<typeof fetch>(async () => new Response('', { status: 500 }));
+    const { config, vault, settings } = setup(); settings.prompts.minNarrativeChars = chars + 1;
+    const stage = new StoryStage(repo, new AiClient(transport));
+    await expect(stage.generate({ draft: saved, settings, config, vault, continuation: true })).rejects.toBeInstanceOf(DataError);
+    expect(transport).not.toHaveBeenCalled();
+    expect((await current()).storyPartial?.text).toBe(closed);
+  });
+  it('设置改为不高于已写字数后：可以续写，指令要求只补结构标签，补齐后照常结算', async () => {
+    const saved = await closedDraft();
+    const story: Message[][] = [];
+    const coordinator = runner(async (_url, init) => {
+      const body = JSON.parse(String(init?.body)), stage = body.model as AiStage;
+      if (stage === 'story') story.push(body.messages);
+      return reply(stage, '<短期记忆>用餐</短期记忆><变量规划>[]</变量规划>');
+    });
+    const { config, vault, settings } = setup(); settings.prompts.minNarrativeChars = chars;
+    expect((await coordinator.generate({ config, vault, settings, draft: saved })).status).toBe('complete');
+    expect(story).toHaveLength(1);
+    expect(String(story[0]!.at(-1)?.content)).toContain(`<正文> 已经完整结束，共 ${chars} 字`);
+    expect(String(story[0]!.at(-1)?.content)).toContain('只补齐缺少的结构标签');
   });
 });

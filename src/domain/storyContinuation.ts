@@ -24,10 +24,37 @@ export function partialWorthKeeping(text: string): boolean {
   return /^(?:<thinking>|<正文>)/u.test(trimmed) && content.length >= 4 && trimmed.length <= STORY_PARTIAL_MAX_CHARS;
 }
 
-export function canContinueStory(draft: TurnDraft | undefined): boolean {
-  return Boolean(draft && !draft.story && draft.stageStatus.story === 'failed' && draft.storyPartial
-    && draft.storyPartial.storyRevision === draft.storyRevision
-    && draft.storyPartial.continuations < STORY_CONTINUATION_LIMIT);
+/**
+ * 截断原文里已写出的正文：只统计 <正文> 之内的文字（不含规划、标签、摘要、变量规划、行动选项），
+ * 计数规则与正式解析一致：去掉空白后按 Unicode 字符计数。正文尚未开始时为 0。
+ */
+export interface PartialNarrative { started: boolean; closed: boolean; chars: number }
+export function partialNarrative(partial: string): PartialNarrative {
+  const base = trimIncompleteTag(partial), open = base.indexOf('<正文>');
+  if (open < 0) return { started: false, closed: false, chars: 0 };
+  const rest = base.slice(open + '<正文>'.length), close = rest.indexOf('</正文>');
+  // 模型漏写 </正文> 就开始写后续结构标签时，正文到第一个结构标签为止。
+  const body = (close < 0 ? rest : rest.slice(0, close)).split(/<\/?(?:thinking|短期记忆|变量规划|行动选项)>/u)[0]!;
+  return { started: true, closed: close >= 0, chars: Array.from(body.trim().replace(/\s/gu, '')).length };
+}
+
+/**
+ * 为什么这段截断正文不能续写：
+ * - used_up：续写次数已用完；
+ * - closed_short：<正文> 已经闭合但字数低于本次设置的最低要求——续写只能在 </正文> 之后补标签，无法补足字数。
+ * 可以续写时返回 undefined。
+ */
+export type ContinuationBlock = 'used_up' | 'closed_short';
+export function continuationBlock(draft: TurnDraft | undefined, minNarrativeChars: number): ContinuationBlock | undefined {
+  if (!storyPartialVisible(draft)) return undefined;
+  const partial = draft!.storyPartial!;
+  if (partial.continuations >= STORY_CONTINUATION_LIMIT) return 'used_up';
+  const narrative = partialNarrative(partial.text);
+  return narrative.closed && narrative.chars < minNarrativeChars ? 'closed_short' : undefined;
+}
+
+export function canContinueStory(draft: TurnDraft | undefined, minNarrativeChars: number): boolean {
+  return storyPartialVisible(draft) && !continuationBlock(draft, minNarrativeChars);
 }
 
 /** 截断点可能落在半个标签上（如「<短期记」）：去掉末尾不完整的标签片段，由续写补出完整标签。 */
@@ -96,15 +123,27 @@ export function overlapLength(base: string, next: string, max = OVERLAP_MAX): nu
   return 0;
 }
 
-/** 续写请求末尾追加的指令（user 消息）；紧跟在作为 assistant 消息的已写部分之后。 */
-export function continuationInstruction(actionOptions: boolean): string {
-  const tags = actionOptions ? '<短期记忆>、<变量规划>、<行动选项>' : '<短期记忆>、<变量规划>';
+/**
+ * 续写请求末尾追加的指令（user 消息）；紧跟在作为 assistant 消息的已写部分之后。
+ * 每次请求都按当前已写部分与本次设置重新计算字数，告诉模型已写多少、至少还需多少；不要求凑到某个精确字数。
+ */
+export function continuationInstruction(options: { actionOptions: boolean; minNarrativeChars: number; partial: string }): string {
+  const tags = options.actionOptions ? '<短期记忆>、<变量规划>、<行动选项>' : '<短期记忆>、<变量规划>';
+  const min = options.minNarrativeChars, narrative = partialNarrative(options.partial), need = Math.max(0, min - narrative.chars);
+  const progress = !narrative.started
+    ? `正文字数：<正文> 还没有开始（已写 0 字）；本回合 <正文> 至少需要 ${min} 字（只计正文里的非空白字符）。`
+    : narrative.closed
+      ? `正文字数：<正文> 已经完整结束，共 ${narrative.chars} 字，已达到最低 ${min} 字。不要再写正文，也不要重新打开 <正文>，只补齐缺少的结构标签。`
+      : need > 0
+        ? `正文字数：<正文> 目前已写 ${narrative.chars} 字（只计非空白字符），本回合至少需要 ${min} 字，还需至少约 ${need} 字。请自然推进场景直到合适的收束点，不必恰好停在某个字数，也不要为凑字数重复或灌水。`
+        : `正文字数：<正文> 目前已写 ${narrative.chars} 字，已达到最低 ${min} 字；把当前场景自然收尾即可，不必扩写。`;
   return [
     '【续写】你的上一条回复在中途被截断，上面那条助手消息就是你已经输出的全部内容。请直接从中断处接着写：',
     '1. 不要重复已经写过的任何文字，不要重新输出 <thinking>，也不要从头开始；',
-    '2. 如果 <正文> 还没有结束，先把正文自然地写完并输出 </正文>；',
+    narrative.closed ? '2. <正文> 已经结束，不要在 </正文> 之后再写任何正文；' : '2. 如果 <正文> 还没有结束，先把正文自然地写完并输出 </正文>；',
     `3. 然后按本阶段的格式要求，依次补齐还没输出的结构标签（${tags}），每个都要完整闭合；`,
     '4. 只输出续写部分，第一个字符就是接在断点后面的内容，不加任何说明。',
+    progress,
   ].join('\n');
 }
 

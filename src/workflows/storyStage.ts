@@ -90,7 +90,7 @@ export class StoryStage {
       )
         throw new DataError('DRAFT_CONFLICT', '草稿或正式版本已变化，请重新读取存档。');
       const continuation = Boolean(input.continuation);
-      if (continuation && !canContinueStory(draft))
+      if (continuation && !canContinueStory(draft, settings.prompts.minNarrativeChars))
         throw new DataError('DRAFT_CONFLICT', '这段正文已不能续写，请重新生成。');
       const partial = continuation ? trimIncompleteTag(draft.storyPartial!.text) : '';
       const stream = new StoryStream();

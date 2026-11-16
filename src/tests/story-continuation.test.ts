@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  STORY_CONTINUATION_LIMIT, canContinueStory, continuableStoryFailure, continuationInstruction, continuationSettled,
+  STORY_CONTINUATION_LIMIT, canContinueStory, continuableStoryFailure, continuationBlock, continuationInstruction, continuationSettled,
   ContinuationPreview, discardStoryPartial, mergeContinuation, nextStoryPartial, overlapLength, partialWorthKeeping,
-  storyPartialVisible, trimIncompleteTag,
+  partialNarrative, storyPartialVisible, trimIncompleteTag,
 } from '../domain/storyContinuation';
 import { createTurnDraft, rerollStory, TurnDraftSchema } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
@@ -56,9 +56,10 @@ describe('正文续写：拼接', () => {
     expect(trimIncompleteTag('<正文>【旁白】a<b')).toBe('<正文>【旁白】a');
   });
   it('续写指令按行动选项开关列出要补齐的标签', () => {
-    expect(continuationInstruction(true)).toContain('<行动选项>');
-    expect(continuationInstruction(false)).not.toContain('<行动选项>');
-    expect(continuationInstruction(true)).toContain('不要重复已经写过的任何文字');
+    const instruction = (actionOptions: boolean) => continuationInstruction({ actionOptions, minNarrativeChars: 1500, partial });
+    expect(instruction(true)).toContain('<行动选项>');
+    expect(instruction(false)).not.toContain('<行动选项>');
+    expect(instruction(true)).toContain('不要重复已经写过的任何文字');
   });
 });
 
@@ -75,11 +76,11 @@ describe('正文续写：草稿字段与资格', () => {
     expect(rerollStory(failedDraft(), { ...story, turnKind: 'regular' }).storyPartial).toBeUndefined();
   });
   it('失败、未超次数、版本一致时才可续写', () => {
-    expect(canContinueStory(failedDraft())).toBe(true);
-    expect(canContinueStory(failedDraft({ storyPartial: { text: partial, storyRevision: 0, continuations: STORY_CONTINUATION_LIMIT } }))).toBe(false);
-    expect(canContinueStory(failedDraft({ stageStatus: { story: 'pending', variables: 'pending', world: 'pending' } }))).toBe(false);
-    expect(canContinueStory(failedDraft({ storyPartial: undefined }))).toBe(false);
-    expect(canContinueStory(undefined)).toBe(false);
+    expect(canContinueStory(failedDraft(), 5)).toBe(true);
+    expect(canContinueStory(failedDraft({ storyPartial: { text: partial, storyRevision: 0, continuations: STORY_CONTINUATION_LIMIT } }), 5)).toBe(false);
+    expect(canContinueStory(failedDraft({ stageStatus: { story: 'pending', variables: 'pending', world: 'pending' } }), 5)).toBe(false);
+    expect(canContinueStory(failedDraft({ storyPartial: undefined }), 5)).toBe(false);
+    expect(canContinueStory(undefined, 5)).toBe(false);
   });
 });
 
@@ -113,7 +114,7 @@ describe('正文续写：失败后保存什么', () => {
 describe('正文续写：次数用完与放弃', () => {
   const used = failedDraft({ storyPartial: { text: partial, storyRevision: 0, continuations: STORY_CONTINUATION_LIMIT } });
   it('次数用完：不能再续写，但已写内容仍显示', () => {
-    expect(canContinueStory(used)).toBe(false);
+    expect(canContinueStory(used, 5)).toBe(false);
     expect(storyPartialVisible(used)).toBe(true);
     expect(storyPartialVisible(failedDraft({ storyPartial: undefined }))).toBe(false);
   });
@@ -157,5 +158,72 @@ describe('正文续写：流式显示去重', () => {
     expect(continuationSettled(base, '<thinking>接着')).toBe(false);
     expect(continuationSettled(base, repeated.slice(0, 120))).toBe(false);
     expect(continuationSettled(base, `${repeated}“货`)).toBe(true);
+  });
+});
+
+describe('正文续写：已写字数', () => {
+  it('只统计 <正文> 内的非空白 Unicode 字符，与正式解析一致', () => {
+    expect(partialNarrative('<thinking>很长很长的提纲</thinking>\n<正文>  雨 落\n下，😀 ab\t</正文><短期记忆>摘要</短期记忆>'))
+      .toEqual({ started: true, closed: true, chars: Array.from('雨落下，😀ab').length });
+    expect(partialNarrative('<thinking>只写了提纲')).toEqual({ started: false, closed: false, chars: 0 });
+    expect(partialNarrative(partial)).toEqual({ started: true, closed: false, chars: Array.from('【旁白】雨丝斜着落进货场，老周蹲在').length });
+  });
+  it('末尾半个标签与漏写 </正文> 后的结构标签都不计入正文', () => {
+    expect(partialNarrative('<正文>一二三四</正')).toEqual({ started: true, closed: false, chars: 4 });
+    expect(partialNarrative('<正文>一二三四<短期记忆>摘要摘要')).toEqual({ started: true, closed: false, chars: 4 });
+  });
+});
+
+describe('正文续写：正文已闭合但字数不足', () => {
+  const short = '<thinking>提纲</thinking><正文>周衡走进会议室，翻开档案。</正文>';
+  const draft = failedDraft({ storyPartial: { text: short, storyRevision: 0, continuations: 0 } });
+  const chars = partialNarrative(short).chars;
+  it('低于最低字数：不能续写（续写只能在 </正文> 后补标签），但已写内容仍显示', () => {
+    expect(continuationBlock(draft, 1500)).toBe('closed_short');
+    expect(canContinueStory(draft, 1500)).toBe(false);
+    expect(storyPartialVisible(draft)).toBe(true);
+  });
+  it('按本次设置判断：把最低字数调到不超过已写字数后，可以续写补齐标签', () => {
+    expect(continuationBlock(draft, chars)).toBeUndefined();
+    expect(canContinueStory(draft, chars)).toBe(true);
+    expect(canContinueStory(draft, chars + 1)).toBe(false);
+  });
+  it('正文还没闭合时，字数不足也可以续写', () => {
+    expect(continuationBlock(failedDraft(), 1500)).toBeUndefined();
+  });
+  it('次数用完优先报告', () => {
+    expect(continuationBlock(failedDraft({ storyPartial: { text: short, storyRevision: 0, continuations: STORY_CONTINUATION_LIMIT } }), 1500)).toBe('used_up');
+  });
+});
+
+describe('正文续写：续写指令里的字数', () => {
+  const ask = (text: string, min = 1500, actionOptions = false) => continuationInstruction({ actionOptions, minNarrativeChars: min, partial: text });
+  it('正文还没开始：已写 0 字，告知最低要求', () => {
+    expect(ask('<thinking>只写了提纲')).toContain('还没有开始（已写 0 字）；本回合 <正文> 至少需要 1500 字');
+  });
+  it('正文未闭合且不足：已写 N 字、还需至少约 M-N 字，不要求凑字', () => {
+    const n = partialNarrative(partial).chars, text = ask(partial);
+    expect(text).toContain(`目前已写 ${n} 字`);
+    expect(text).toContain(`还需至少约 ${1500 - n} 字`);
+    expect(text).toContain('不必恰好停在某个字数');
+  });
+  it('正文未闭合但已达标：自然收尾即可', () => {
+    expect(ask(partial, 5)).toContain('已达到最低 5 字；把当前场景自然收尾即可');
+  });
+  it('正文已闭合且达标：不要再写正文，只补标签', () => {
+    const closed = `${partial}，烟头一明一灭。</正文>`, text = ask(closed, 5);
+    expect(text).toContain('<正文> 已经完整结束');
+    expect(text).toContain('只补齐缺少的结构标签');
+    expect(text).toContain('不要在 </正文> 之后再写任何正文');
+    expect(text).not.toContain('<行动选项>');
+    expect(ask(closed, 5, true)).toContain('<行动选项>');
+  });
+  it('连续续写：每次按拼接后的已写部分重新计算', () => {
+    const first = partialNarrative(partial).chars;
+    const merged = mergeContinuation(partial, '缆桩边上，烟头一明一灭');
+    const second = partialNarrative(merged).chars;
+    expect(second).toBe(first + Array.from('缆桩边上，烟头一明一灭').length);
+    expect(ask(merged)).toContain(`目前已写 ${second} 字`);
+    expect(ask(merged)).toContain(`还需至少约 ${1500 - second} 字`);
   });
 });

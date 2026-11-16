@@ -62,7 +62,8 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   const continuation = requestedContinuation ? { partial: trimIncompleteTag(requestedContinuation.partial) } : undefined;
   const messages = continuation
     ? [...prompt.messages, { role: 'assistant' as const, content: continuation.partial },
-      { role: 'user' as const, content: continuationInstruction(captured.settings.prompts.actionOptions) }]
+      { role: 'user' as const, content: continuationInstruction({ actionOptions: captured.settings.prompts.actionOptions,
+        minNarrativeChars: captured.settings.prompts.minNarrativeChars, partial: continuation.partial }) }]
     : prompt.messages;
   const merged = (text: string) => continuation ? mergeContinuation(continuation.partial, text) : text;
   const responseId = stageResponses.begin({ saveId: captured.state.saveId, turnId: captured.draft?.turnId, stage: captured.stage, storyRevision: captured.draft?.storyRevision, protocol: snapshot.channel.protocol, baseSaveRevision: captured.state.revision,
