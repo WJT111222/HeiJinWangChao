@@ -71,6 +71,7 @@ import {MobileCityBar,MobileStatus,mobileCitySeal} from './MobileCity';
 import {MobileActions} from './MobileActions';
 import {ComposerTools} from './ComposerTools';
 import { mayStartStory } from './storyGenerationPolicy';
+import { actionSuggestions } from './actionSuggestions';
 
 const sidebarMedia = '(max-width: 900px)';
 function subscribeSidebarSize(changed: () => void) {
@@ -381,7 +382,10 @@ export function GameScreen({
         : '无',
     ],
   ];
-  const options = draft?.story?.actionOptions ?? (awaitingAction ? state.journal.at(-1)?.story.actionOptions : undefined);
+  const suggestions = actionSuggestions(state, validDraft ? draft?.story : undefined);
+  const options = suggestions?.options;
+  // Old suggestions are references until the existing binding/commit rules allow an action.
+  const referenceOptions = Boolean(suggestions?.previous && !canCommit && !awaitingAction && !rebindAction);
   const workflowError = error || variables.error || world.error || automatic.error || submitError;
   const failedStage = (['story', 'variables', 'world'] as const).some((stage) => draft?.stageStatus[stage] === 'failed');
   // 仅用于入口展示，与 TurnCoordinator 的 needed 条件保持一致；实际执行仍由协调器重验。
@@ -569,6 +573,17 @@ export function GameScreen({
     : nextStage && canGenerate ? { kind: 'continue', label: nextStage === 'variables' ? '继续生成变量' : '继续生成世界', short: '续', disabled: busy,
         title: '从当前环节继续，完成后自动结算', onClick: continueWorkflow }
     : { kind: 'idle', label: '继续', short: '续', disabled: true, title: workflowGuidance || '当前没有可继续的环节' };
+  const actionGuidance = submitting || automatic.settling || runningCancel?.saving
+    ? '正在保存，请稍候；保存期间不能取消或发送新行动。'
+    : busy ? `${activeStage ? stageLabels[activeStage] : '当前操作'}正在处理，请等待完成或使用原有取消按钮。`
+    : !validDraft ? staleDraftMessage
+    : !navigator.locks ? '当前浏览器缺少 Web Locks，不能安全启动请求。输入仍保留，请使用支持的浏览器重新读档。'
+    : workflowGuidance || (awaitingAction ? undefined
+      : canCommit ? '候选已完成，可点击左侧按钮完成本回合结算；发送新行动将先结算，再绑定下一回合。'
+      : nextStage === 'variables' || nextStage === 'world'
+        ? `本回合尚未结算，请点击输入框左侧${compactSidebars ? `“续”（${workflowAction.label}）` : `“${workflowAction.label}”`}。输入仅本页暂存，不会替换已绑定行动。`
+        : rebindAction ? `尚无正文候选。可修改回填行动后尝试发送；左侧“${compactSidebars ? '续' : workflowAction.label}”使用原已绑定行动。请求前仍会检查运行锁。`
+        : '请先使用左侧按钮生成本回合正文，再继续必要阶段。');
   const workflowState = hasWorkflowError
     ? "error"
     : busy
@@ -671,7 +686,7 @@ export function GameScreen({
         }
         if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey ||
           (event.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return;
-        if (/^[1-5]$/.test(event.key) && settings.prompts.actionOptions && !progress && options && options.length >= 3 && options.length <= 5) {
+        if (/^[1-5]$/.test(event.key) && settings.prompts.actionOptions && !progress && !referenceOptions && options && options.length >= 3 && options.length <= 5) {
           const option = options[Number(event.key) - 1];
           if (option) { event.preventDefault(); setInput(option); document.getElementById('player-input')?.focus(); }
         }
@@ -742,16 +757,17 @@ export function GameScreen({
           )}
           {settings.prompts.actionOptions &&
             (!progress && options && options.length >= 3 && options.length <= 5 ? (
-              compactSidebars?<MobileActions options={options} value={input} onChoose={setInput}/>:<div className="action-options" aria-label="行动建议">
-                <p>接下来你想做什么</p>
+              compactSidebars?<MobileActions options={options} value={input} onChoose={setInput} source={suggestions!.label} referenceOnly={referenceOptions}/>:<div className="action-options" aria-label="行动建议">
+                <p>{suggestions!.label}</p>
+                {referenceOptions && <p className="field-hint">仅供参考；请先完成当前回合，不能替换已绑定行动。</p>}
                 {options.map((option, index) => (
-                  <button key={option} aria-pressed={input === option} onClick={() => setInput(option)}>
+                  <button key={option} disabled={referenceOptions} aria-pressed={input === option} onClick={() => setInput(option)}>
                     <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span>{option}</span><span aria-hidden="true">→</span>
                   </button>
                 ))}
               </div>
             ) : (
-              <p className="field-hint">行动建议将在正文生成后显示。</p>
+              <p className="field-hint">{progress ? '正文生成中暂时隐藏行动建议；停止后可查看已有建议。' : '行动建议将在正文生成后显示。'}</p>
             ))}
         </div>
         <div className="composer">
@@ -849,7 +865,7 @@ export function GameScreen({
               </button>
             </ComposerTools>
             <label className="sr-only" htmlFor="player-input">你的行动</label>
-            <textarea id="player-input" ref={inputElement} aria-describedby={concurrencyBlocked ? "action-concurrency-error" : undefined} disabled={submitting} value={input}
+            <textarea id="player-input" ref={inputElement} aria-describedby={[concurrencyBlocked && 'action-concurrency-error', actionGuidance && 'action-recovery-guidance'].filter(Boolean).join(' ') || undefined} disabled={submitting} value={input}
               onChange={(e) => setInput(e.target.value)} rows={compactSidebars?1:2}
               placeholder={compactSidebars ? '填写你的行动' : '填写你的行动；发送后生成三阶段并自动结算'} />
             <div className="composer-footer">
@@ -858,6 +874,7 @@ export function GameScreen({
               {!compactSidebars && <span className="kbd">Ctrl + Enter</span>}
             </div>
           </div>
+          {actionGuidance && <p id="action-recovery-guidance" className="field-hint" role="status">{actionGuidance}</p>}
         </div>
       </section>
       {!compactSidebars && worldNavigation}
