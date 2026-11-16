@@ -53,6 +53,34 @@ describe('真实 Repository → 候选重验 → 单事务正式结算', () => {
     expect(await repo.loadGame('save-a')).toEqual({ state: result.state, draft: result.draft });
     expect(GameStateSchema.safeParse(result.state).success).toBe(true);
   });
+  it('不启用变量与世界时允许正式提交正文：存档、短期记忆、幂等回执和下一章均正常', async () => {
+    const before = await repo.load('save-a');
+    const initial = await repo.saveDraft(
+      createTurnDraft('save-a', before.revision, 'story-only-opening', 'opening', '', false, false), null);
+    const opening = await repo.saveDraft(rerollStory(initial, {
+      turnKind: 'opening', narrative: '主角决定先观察周围。', summary: '主角观察了周围环境。', variableGuide: [],
+    }), initial.draftRevision);
+    const input = { draft: opening, nextAction: '', useVariableStage: false, useWorldStage: false };
+    const first = await repo.commitTurn(input);
+    expect(first.replayed).toBe(false);
+    expect(first.state.turnNumber).toBe(1);
+    expect(first.state.journal).toHaveLength(1);
+    expect(first.state.memories.short.at(-1)?.text).toBe('主角观察了周围环境。');
+    expect(first.state.economy).toEqual(before.economy);
+    expect(first.state.worldClock).toBe(before.worldClock);
+    expect(first.draft.stageStatus).toEqual({ story: 'pending', variables: 'skipped', world: 'skipped' });
+    expect((await repo.commitTurn(input)).replayed).toBe(true);
+    const bound = await repo.bindTurnAction(first.draft, '继续往前走', false, false);
+    const regular = await repo.saveDraft(rerollStory(bound, {
+      turnKind: 'regular', narrative: '主角沿着街道继续往前走。', summary: '主角继续前行。', variableGuide: [],
+    }), bound.draftRevision);
+    const second = await repo.commitTurn({ draft: regular, nextAction: '', useVariableStage: false, useWorldStage: false });
+    expect(second.state.turnNumber).toBe(2);
+    expect(second.state.journal).toHaveLength(2);
+    expect(second.state.memories.short).toHaveLength(2);
+    expect(second.state.economy).toEqual(before.economy);
+  });
+
   it('十个连续开局/普通仅时钟命令回合，各递增一次，正文与摘要永久保留', async () => {
     for (let index = 1; index <= 10; index++) {
       const draft = await completeDraft(repo, {
