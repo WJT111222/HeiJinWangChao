@@ -13,6 +13,48 @@ const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(valu
 afterEach(() => vi.unstubAllGlobals());
 
 describe('PR-B 条件式单项天赋上下文', () => {
+  it.each(talentDefinitions)('$name 的开局与普通 Story 均注入自然叙事约束，不宣读系统标签或削弱能力', async definition => {
+    for (const mode of ['opening', 'regular'] as const) {
+      const prompt = await composePrompt(talentPromptInput('story', mode, definition.id));
+      const selected = sentContext(prompt.messages).PROTAGONIST_TALENT as NonNullable<ReturnType<typeof talentContext>>;
+      const rules = selected.stageRules.join('\n');
+      for (const requirement of [
+        '天赋名称和专属机制名称只是系统识别标签',
+        '核心领域、能力介绍、专属机制、长期影响和能力边界',
+        '不得按名称字面扩展或误解能力',
+        '小说正文不得宣读系统标签',
+        '作为千机谋主', '他拥有赛博暴君天赋', '黄金律令的能力发动了', '凭借天工奇才的加持',
+        '仅当玩家明确设定为世界内真实外号、头衔或称呼时',
+        '成长经历、职业经验、专业能力、分析方法、具体行动与临场表现',
+        'NPC 亲历评价和有因果依据的成果',
+        '优先具体场景、对话与行动，而非旁白夸赞',
+        '开局介绍人生背景时', '不得推翻玩家背景或凭空添加不合理重大成就',
+        '普通回合按玩家行动和世界情势自然体现，不强制每回合出现天赋情节',
+        '叙事写实不等于能力普通化', '各自领域的顶级优势与独特机会',
+        'NPC 不因模型收到天赋资料就自动知道主角能力或秘密',
+      ]) expect(rules).toContain(requirement);
+      expect(selected.definition).toEqual(definition);
+      expect(selected.commonRules.join('')).toContain('显著强于普通角色');
+      expect(selected.commonRules.join('')).toContain('NPC 独立意志');
+      expect(rules).toContain('不能全知、预知未来或凭空取得访问权限和资源');
+      expect(rules).toContain('不能写成已经获利、任职、归附或完成制造');
+    }
+  });
+
+  it('有天赋 Variables/World 完整请求保持修改前 main 基线，通用边界与专属规则不变', async () => {
+    // Captured with the production composer at main 659df836, before changing Story rules.
+    const requests = [];
+    for (const definition of talentDefinitions) {
+      for (const stage of ['variables', 'world'] as const) for (const mode of ['opening', 'regular'] as const) {
+        const prompt = await composePrompt(talentPromptInput(stage, mode, definition.id));
+        requests.push({ messages: prompt.messages, context: prompt.context, modules: prompt.modules });
+      }
+      const { commonRules, additionalRules } = talentContext(definition.id, 'story')!;
+      requests.push({ definition, commonRules, additionalRules });
+    }
+    expect(hash(requests)).toBe('d7f2989c549beb19710eee4e5d49b584f1fc6f201a56473381d9fbf78a928586');
+  });
+
   it.each(talentDefinitions)('$name 在开局/普通三阶段读取同一正式全文，单份注入且不改输入', async definition => {
     for (const stage of stages) for (const mode of ['opening', 'regular'] as const) {
       const input = talentPromptInput(stage, mode, definition.id), before = structuredClone(input);
