@@ -3,6 +3,7 @@ import { pendingOpeningClock } from '../../domain/openingTime';
 import { IdSchema, GameTimeSchema, requireData, DataError } from '../../domain/common';
 import { createGameState, GameStateSchema } from '../../domain/state';
 import { SpecialNpcSchema } from '../../domain/npc/schema';
+import { TalentIdSchema } from '../../domain/protagonist/talents';
 import { createTurnDraft } from '../../domain/drafts';
 import { fingerprint } from '../../domain/commands';
 import { SaveRepository } from '../../services/storage/saveRepository';
@@ -59,6 +60,7 @@ export const CreationSchema = z.strictObject({
   profession: z.string(),
   customProfession: z.string(),
   skills: z.string(),
+  talentId: TalentIdSchema.optional(),
   skillsSource: z.enum(['automatic', 'manual']).optional(),
   appearanceTemplate: z.string().optional(),
   personalityTemplate: z.string().optional(),
@@ -233,6 +235,7 @@ export function buildCreationState(form: Creation, settings: Settings) {
       professionDescription: professionProfile(form).description,
       professionLongTermImpact: professionProfile(form).longTermImpact,
       skills: professionProfile(form).skills,
+      ...(form.talentId !== undefined ? { talentId: form.talentId } : {}),
       background: form.background,
       healthText: '',
       emotionText: '',

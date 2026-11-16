@@ -1,0 +1,29 @@
+{
+  "baseline": "f36bc51aede49e4ac6edf9a0bda2138905f007c7",
+  "node": "24.19.0",
+  "npm": "11.9.0",
+  "newSpecializedTests": 126,
+  "targetedRelatedTests": 390,
+  "fullCheck": {
+    "files": 169,
+    "passed": 4142,
+    "failed": 0,
+    "skipped": 0
+  },
+  "promptsCheck": {
+    "passed": 93,
+    "overlapsFullCheck": true
+  },
+  "chromium": "Not run: no UI change; permitted by specification section 8.3",
+  "exitCodes": {
+    "typecheck-targeted": 0,
+    "targeted-final": 0,
+    "npm-ci": 0,
+    "targeted-first": 0,
+    "check": 0,
+    "prompts-check": 0,
+    "lint-targeted": 0,
+    "diff-check": 0,
+    "staged-diff-check": 0
+  }
+}
