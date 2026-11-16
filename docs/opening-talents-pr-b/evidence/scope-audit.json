@@ -1,0 +1,32 @@
+{
+  "base": "5dc8d448ed7c8a49c6002cb1ecddc19f897cfbec",
+  "branch": "feat/opening-talents-ai",
+  "protectedPaths": [
+    "src/domain",
+    "src/executors",
+    "src/services",
+    "src/workflows",
+    "src/ui",
+    "src/app",
+    "prompts",
+    "announcements",
+    "package.json",
+    "package-lock.json"
+  ],
+  "changesInProtectedPaths": [],
+  "baselineFixtureIdentical": true,
+  "files": {
+    "src/domain/protagonist/talents.ts": {
+      "sha256": "6dcc99636a257450bbdf6eb5d82097cd089b79b10b189b8dbf754bc30ab58a9a",
+      "byteIdenticalToApprovedBase": true
+    },
+    "prompts/manifest.json": {
+      "sha256": "a97713a9626353ab1b022e7d6da04f468438b74eb2cf6b539107ff9c0934c2ae",
+      "byteIdenticalToApprovedBase": true
+    },
+    "prompts/sources.lock.json": {
+      "sha256": "d8744c6ab4b2404d4c1a0dee8514cac9b971cda3ca260f451db349e82456cc0f",
+      "byteIdenticalToApprovedBase": true
+    }
+  }
+}

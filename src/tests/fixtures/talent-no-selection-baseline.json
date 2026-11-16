@@ -1,0 +1,71 @@
+{
+  "base": "5dc8d448ed7c8a49c6002cb1ecddc19f897cfbec",
+  "results": [
+    {
+      "stage": "story",
+      "mode": "opening",
+      "messages": "e5e8c4dd99837b9bc98cb05ed978683f18efdae41a662ef45b1a2b0951e947e5",
+      "context": "52789774e7cb81db58751426ee7c97881e3c794f5afee7d3e2b533f421100c0f",
+      "modules": "244ce513ddcea2a4b198ddb13889e0d33be307e00155c664d063293cc1f61103"
+    },
+    {
+      "stage": "story",
+      "mode": "regular",
+      "messages": "6533336f1b413daf26302553ce811670f8c2e3852d56ca5f60b828a895793a53",
+      "context": "5ac8ab68c9f2e4dac234d7564d431461c0300e6f7fbd320eaf064a64e877b1f1",
+      "modules": "dea58bb334e8bf92538b687954a140e438044ca7e087921b0d4f4c39be74dbd1"
+    },
+    {
+      "stage": "variables",
+      "mode": "opening",
+      "messages": "f5fa56169a78dd58f417a0b18128770e6818c39e6121e46ff1ea98b53f8374ea",
+      "context": "feb9330d7f38a6e2b84f2984bc8ca726d031522bc896565a714f824cc82af762",
+      "modules": "2ffa85bc57f11c3300b3c792eea06b9011dc32d1901233fcd82a13f414059e12"
+    },
+    {
+      "stage": "variables",
+      "mode": "regular",
+      "messages": "670a178d3ff60796aa733dfd69f7fcb8e8e0000f8b85d92ab0a41d3a3037d905",
+      "context": "2515efd22aa976319ea56f5fa813bfad9fc5ba8c28ecd6f7ccc622e7a4b82128",
+      "modules": "d5286b9ad8ec6f3bf8dd4853a96a6b23fcedee6747c081bb6f44f6282470009d"
+    },
+    {
+      "stage": "world",
+      "mode": "opening",
+      "messages": "8aaf67110a9e27da17da1e3d7cac4f683678dc392b38c8de0c33e9525be92de1",
+      "context": "2fd0e2d8a1c25ace0fac6d08ecb1ff0bb3e4c74ab7d818e20644d3ffbd4e1b73",
+      "modules": "f0c6f6f347ecfc80cc6b8c9e491f3ce0a7d964fe2763cda09490b06b7564e7d0"
+    },
+    {
+      "stage": "world",
+      "mode": "regular",
+      "messages": "151b89d7da2542651d0176e676bbe951bca34a2a1bd280f3e60e20069d5daa94",
+      "context": "b72c8b6ca732d6f4fca2c7d525d0fdf36a1f79f93853256ad90eb9ebe1a0d5f9",
+      "modules": "161bc85083b9240f0001140623431ca8da072ec2bc159ad003c717e010d70c36"
+    },
+    {
+      "stage": "memory",
+      "mode": "opening",
+      "task": "memory.short_to_medium",
+      "messages": "5f8e49d80d8fac37f68b34488513bbd06bf84f7d58d72c8d704c60c4d3d2baba",
+      "context": "0bf50d06cc383b953461ff2c937c469b0e6fc5faf0de571dcee81411d96e456a",
+      "modules": "b50c3bc26ea6e21c7354da0db49582d7e4f7ef8a99aa1cfec714b923056ea01c"
+    },
+    {
+      "stage": "memory",
+      "mode": "opening",
+      "task": "memory.medium_to_long",
+      "messages": "5f8e49d80d8fac37f68b34488513bbd06bf84f7d58d72c8d704c60c4d3d2baba",
+      "context": "0bf50d06cc383b953461ff2c937c469b0e6fc5faf0de571dcee81411d96e456a",
+      "modules": "e08ee4b76141d9b80f8c64f2f61764bb1f0182d9d9ba5a70a7ec406208d812ea"
+    },
+    {
+      "stage": "memory",
+      "mode": "opening",
+      "task": "memory.npc_summarize",
+      "messages": "444e3c8df23b7bffe86a22f1f9b926697f7f7d51d8a015de6c02812621eb4081",
+      "context": "e9e1533a3af4997c7f0de8a3a9b8f358e280953359a07b3eb6799c39659686a6",
+      "modules": "34995cfee43917be5610e941ce341347eddbd2184e55795368bd76c32eb53548"
+    }
+  ]
+}

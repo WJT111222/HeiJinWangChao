@@ -1,0 +1,19 @@
+import {createHash} from 'node:crypto';
+import {writeFile} from 'node:fs/promises';
+import {expect,it} from 'vitest';
+import {composePrompt} from '../prompts/composer';
+import {talentPromptInput,talentMemoryInput} from './fixtures/talentPrompt';
+const hash=(v:unknown)=>createHash('sha256').update(JSON.stringify(v)).digest('hex');
+it('capture approved PR-A no-talent and isolated memory output',async()=>{
+ const results=[];
+ for(const stage of ['story','variables','world'] as const)for(const mode of ['opening','regular'] as const){
+  const prompt=await composePrompt(talentPromptInput(stage,mode));
+  expect(prompt.context).not.toHaveProperty('PROTAGONIST_TALENT');
+  results.push({stage,mode,messages:hash(prompt.messages),context:hash(prompt.context),modules:hash(prompt.modules)});
+ }
+ for(const task of ['memory.short_to_medium','memory.medium_to_long','memory.npc_summarize']){
+  const prompt=await composePrompt(talentMemoryInput(task));
+  results.push({stage:'memory',mode:'opening',task,messages:hash(prompt.messages),context:hash(prompt.context),modules:hash(prompt.modules)});
+ }
+ await writeFile(process.env.TALENT_BASELINE_OUTPUT!,JSON.stringify({base:'5dc8d448ed7c8a49c6002cb1ecddc19f897cfbec',results},null,2)+'\n');
+});
