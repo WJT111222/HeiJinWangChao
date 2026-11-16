@@ -40,3 +40,52 @@ test('手机选择抽屉：选项远离屏幕底边；没有渠道时提示先�
   await expect(picker.locator('.select-hint')).toHaveCount(0);
   await page.keyboard.press('Escape');
 });
+
+test('手机选择抽屉：选项多时可以用手指滑到底并选中最后一项；高亮项为纸页浅金、文字清楚', async ({ page }, info) => {
+  test.skip(info.project.name !== 'mobile', '贴底选择抽屉只在手机端出现');
+  const ids = Array.from({ length: 48 }, (_, i) => `[AA]model-${String(i + 1).padStart(2, '0')}`);
+  await page.route('https://relay.example.com/**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ object: 'list', data: ids.map((id) => ({ id, object: 'model' })) }) }));
+  await page.goto('/');
+  await page.locator('[data-settings-open]').first().click();
+  const settings = await aiTab(page);
+  await addChannel(settings, { name: '测试渠道', url: 'https://relay.example.com/v1', key: 'sk-test' });
+  await backToList(settings);
+  await settings.getByRole('combobox', { name: '正文生成渠道', exact: true }).click();
+  await page.getByRole('dialog', { name: '正文生成渠道', exact: true }).getByRole('option', { name: '测试渠道' }).click();
+  const model = settings.getByRole('combobox', { name: '正文生成模型', exact: true });
+  await model.click();
+  const picker = page.getByRole('dialog', { name: '正文生成模型', exact: true });
+  await expect(picker.getByRole('option')).toHaveCount(48);
+  const body = picker.locator('.modal-body');
+  await expect.poll(() => body.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+
+  // 高亮项：浅色底、深色字（不再是深色块）。
+  const active = picker.locator('[role=option].option-active').first();
+  await expect(active).toBeVisible();
+  const colors = await active.evaluate((el) => {
+    const lum = (value: string) => { const [r, g, b] = value.match(/[\d.]+/g)!.map(Number); return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255; };
+    const style = getComputedStyle(el), sheet = getComputedStyle(el.closest('dialog')!);
+    const [r, g, b, a = 1] = style.backgroundColor.match(/[\d.]+/g)!.map(Number);
+    const [sr, sg, sb] = sheet.backgroundColor.match(/[\d.]+/g)!.map(Number);
+    const mixed = `rgb(${r * a + sr * (1 - a)},${g * a + sg * (1 - a)},${b * a + sb * (1 - a)})`;
+    return { background: lum(mixed), text: lum(style.color) };
+  });
+  expect(colors.background).toBeGreaterThan(0.7);
+  expect(colors.text).toBeLessThan(0.3);
+
+  // 用真实触摸手势往上划，直到最后一项进入可见区域。
+  const cdp = await page.context().newCDPSession(page);
+  const start = (await picker.getByRole('option').nth(2).boundingBox())!;
+  for (let round = 0; round < 12; round++) {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: start.x + 40, y: start.y + 260 }] });
+    for (let i = 1; i <= 8; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: start.x + 40, y: start.y + 260 - i * 30 }] });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    if (await body.evaluate((el) => el.scrollTop + el.clientHeight >= el.scrollHeight - 2)) break;
+  }
+  await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  const last = picker.getByRole('option', { name: ids[47] });
+  await expect(last).toBeInViewport();
+  await last.click();
+  await expect(picker).toHaveCount(0);
+  await expect(model).toContainText(ids[47]);
+});
