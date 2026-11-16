@@ -1,0 +1,98 @@
+[
+  {
+    "id": "underworld_aura",
+    "name": "枭雄光环",
+    "coreDomain": "地下人才与势力归附",
+    "mechanismName": "群雄来投",
+    "sha256": {
+      "introduction": "8ef252dde336b1f2daf8370e3572272264b6962d4f0222845b89b77cf0a48f34",
+      "mechanism": "13270c5cb8f5c1cc958350b5515e7ccf65248155b33aecf3074e5552d57f0576",
+      "longTermImpact": "651fcb7069b94cfa68c78d3c349cadf6e90fb639ddd9dc90685adf344808d6a5",
+      "boundary": "70fcfe02de6b9fbd1cb47b15361883dfdf2fd00ca60bae5ef3fb9a6bc61ccb68"
+    }
+  },
+  {
+    "id": "cyber_tyrant",
+    "name": "赛博暴君",
+    "coreDomain": "软件、AI、网络与数字技术",
+    "mechanismName": "数字统御",
+    "sha256": {
+      "introduction": "16ff028db565aa1fad107e32728424c25fce2490e709e168739f957416859996",
+      "mechanism": "49c336b05342eebe9518a40f10dac3c2b8652ef9830c0f337f3e1e5ed5d4bac1",
+      "longTermImpact": "00e9d971a2add26dc403435bd2b5a8ce15563e89051e493d27d3c411e90ea9af",
+      "boundary": "71a391d582cf0cd9b6dad30891eafe589f025cb34bacae0c39c61c30dd8718e1"
+    }
+  },
+  {
+    "id": "golden_edict",
+    "name": "黄金律令",
+    "coreDomain": "财富、商业和资本",
+    "mechanismName": "财富炼成",
+    "sha256": {
+      "introduction": "e26a9326dee967a36841fd752ddfbd311d20643eef7ec8859528cc92bc62ac24",
+      "mechanism": "4ff496abde78a1c41139eecaf27e96fdbd5f458d134a6a89f2a12d3e718d5f44",
+      "longTermImpact": "ea0f3dba69a9f6de79cebc62e18c76fc2bae14cea35fa631318d6c5873692443",
+      "boundary": "cf8ca926559fbe24804319579e44335713234925dc61899a85f64410ac0c29a8"
+    }
+  },
+  {
+    "id": "power_hunter",
+    "name": "权柄猎手",
+    "coreDomain": "机构内的职位、联盟和决策权",
+    "mechanismName": "权力攫取",
+    "sha256": {
+      "introduction": "c3fd38d42e63008616d6851753caafc2f2e2634e8374ef6d1544c6416f186f8d",
+      "mechanism": "cdd4461cba90edf4d041df1c7aa694e00b0fa14e72b34c9ab84d3357796dcbab",
+      "longTermImpact": "a769656be9ce2f5d92a8a35f2620d9e35330f4d2b17b61a0a1c20a7689981297",
+      "boundary": "1c70643cb8a17f2a0fe30063dbe67760473b1ad173dfa1f02ce02fa4db81987f"
+    }
+  },
+  {
+    "id": "public_sovereign",
+    "name": "众声主宰",
+    "coreDomain": "公众认知、舆论与社会话语权",
+    "mechanismName": "众声共振",
+    "sha256": {
+      "introduction": "f7ee76c506ed3cc800280734b525a7e9c814d34d3e905c708b94ab839fe56d36",
+      "mechanism": "62907ab57542f7d249153e0d055f2442ff065122fb99d87923dc759e14fddfc8",
+      "longTermImpact": "2f6b9ff936be8e0e2a7522f335fb1bc8c4f11f32a895802ff05423beaea6d184",
+      "boundary": "581b5efad7a7734763df73d43ab68184ed758c58a4024d26e9928cb42fa5d64e"
+    }
+  },
+  {
+    "id": "engineering_genius",
+    "name": "天工奇才",
+    "coreDomain": "实体科研、材料、机械与工程",
+    "mechanismName": "天工造物",
+    "sha256": {
+      "introduction": "b50b03492b699d674f99ea649fa68727888127f641944b5d3c1a46cc58e31c44",
+      "mechanism": "4e2147db70db8f38f0fd93af6bd09b0d206618c0a74df7011e6c52dbef5b1073",
+      "longTermImpact": "a5e0f26a496259f022525b70640e6b39d673117bc0713816e71a6baeb36e3d3b",
+      "boundary": "3fe23efcbbc068afb88c0479f102fb959dc497c0c05f7d675d827c56885dcb5b"
+    }
+  },
+  {
+    "id": "tactical_mastermind",
+    "name": "千机谋主",
+    "coreDomain": "战术部署、行动规划和临场指挥",
+    "mechanismName": "千机推演",
+    "sha256": {
+      "introduction": "f76e6f138eb5c042e7370e6afbdbc61e230929fee8a5b7d741aa93e3b6313a0e",
+      "mechanism": "572a5f74d699bcd5da446b78ec44fe73652b394abf904cd5f0035f57a4f01103",
+      "longTermImpact": "638a2432520ce0d07f64685f2cad2da2c482afbe4932a2a24da6960d2e6f77ef",
+      "boundary": "d33523de90f0cddd1c71f35c265c48fc1fb0f7ef734d296f392a9100d3e8ec07"
+    }
+  },
+  {
+    "id": "desperate_gambler",
+    "name": "绝命赌徒",
+    "coreDomain": "主动承担高风险后的惊人逆转",
+    "mechanismName": "逆命豪赌",
+    "sha256": {
+      "introduction": "7fa038334a1b10a5f1fc9a1e72d53298c41661a1997b895fb32e800a42f4b16b",
+      "mechanism": "1d547d2cb248e9b1a3cff92974c67bbee163501ab4b27192266cea240256fde8",
+      "longTermImpact": "dc623601dc76374d234175aaaa0fa9207be6427e2f773fc19b5d024c7590d5b7",
+      "boundary": "f4506d3fc852cbcfcc8716d7775a7657c25915de96e664d2198fe2abf26a2be9"
+    }
+  }
+]
