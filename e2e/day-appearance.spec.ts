@@ -68,3 +68,17 @@ test('日间下尚未适配的弹出内容保持夜间配色，文字仍清楚',
     expect(await textLuminance(page, '#workflow-pop .workflow-title, #workflow-pop h2, #workflow-pop strong')).toBeGreaterThan(0.6);
   }
 });
+
+test('日间下天际线转为浅色剪影，夜间保持原样', async ({ page }) => {
+  const skyline = () => page.locator('.atmo .skyline').first().evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { filter: style.filter, opacity: Number(style.opacity) };
+  });
+  await seed(page, 'day');
+  await expect(page.locator('.atmo .skyline svg').first()).toBeAttached();
+  const day = await skyline();
+  expect(day.filter).toContain('invert(1)');
+  expect(day.opacity).toBeLessThanOrEqual(0.5);
+  await page.evaluate(() => { document.documentElement.dataset.appearance = 'night'; });
+  expect((await skyline()).filter).toBe('none');
+});
