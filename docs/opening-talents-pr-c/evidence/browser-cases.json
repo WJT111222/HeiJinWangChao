@@ -1,0 +1,282 @@
+[
+  {
+    "batch": "chromium-final",
+    "project": "desktop",
+    "title": "基本信息模板独立、可编辑、往返与刷新保留；键盘选择",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "desktop",
+    "title": "五类各六职业，点击呈现完整介绍、独立技能与长期影响",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "desktop",
+    "title": "自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "mobile",
+    "title": "基本信息模板独立、可编辑、往返与刷新保留；键盘选择",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "mobile",
+    "title": "五类各六职业，点击呈现完整介绍、独立技能与长期影响",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "mobile",
+    "title": "自定义四项跨预设保存、确认、正式档案与重载；纯UI无模型调用",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "desktop",
+    "title": "八张正式全文卡片、原生单选键盘、取消与刷新；没有额外请求",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "desktop",
+    "title": "五步旧草稿与正式建档：有天赋，双端档案只读",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "desktop",
+    "title": "五步旧草稿与正式建档：清除后无天赋，双端档案只读",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "desktop",
+    "title": "开局包仍完整覆盖：有天赋保存与套用，旧包回到无天赋",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "desktop",
+    "title": "矮屏、断点与长卡片：内部滚动、底栏可达、触控与对比度",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "desktop",
+    "title": "日夜正式人物档案：全文、对比度、展开关闭与 Repository 不变",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "mobile",
+    "title": "八张正式全文卡片、原生单选键盘、取消与刷新；没有额外请求",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "mobile",
+    "title": "五步旧草稿与正式建档：有天赋，双端档案只读",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "mobile",
+    "title": "五步旧草稿与正式建档：清除后无天赋，双端档案只读",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "mobile",
+    "title": "开局包仍完整覆盖：有天赋保存与套用，旧包回到无天赋",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "mobile",
+    "title": "矮屏、断点与长卡片：内部滚动、底栏可达、触控与对比度",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-final",
+    "project": "mobile",
+    "title": "日夜正式人物档案：全文、对比度、展开关闭与 Repository 不变",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-polish",
+    "project": "desktop",
+    "title": "八张正式全文卡片、原生单选键盘、取消与刷新；没有额外请求",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-polish",
+    "project": "desktop",
+    "title": "五步旧草稿与正式建档：有天赋，双端档案只读",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-polish",
+    "project": "desktop",
+    "title": "五步旧草稿与正式建档：清除后无天赋，双端档案只读",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-polish",
+    "project": "desktop",
+    "title": "开局包仍完整覆盖：有天赋保存与套用，旧包回到无天赋",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-polish",
+    "project": "desktop",
+    "title": "矮屏、断点与长卡片：内部滚动、底栏可达、触控与对比度",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-polish",
+    "project": "desktop",
+    "title": "日夜正式人物档案：全文、对比度、展开关闭与 Repository 不变",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-polish",
+    "project": "mobile",
+    "title": "八张正式全文卡片、原生单选键盘、取消与刷新；没有额外请求",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-polish",
+    "project": "mobile",
+    "title": "五步旧草稿与正式建档：有天赋，双端档案只读",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-polish",
+    "project": "mobile",
+    "title": "五步旧草稿与正式建档：清除后无天赋，双端档案只读",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-polish",
+    "project": "mobile",
+    "title": "开局包仍完整覆盖：有天赋保存与套用，旧包回到无天赋",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-polish",
+    "project": "mobile",
+    "title": "矮屏、断点与长卡片：内部滚动、底栏可达、触控与对比度",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-polish",
+    "project": "mobile",
+    "title": "日夜正式人物档案：全文、对比度、展开关闭与 Repository 不变",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-visual-final",
+    "project": "desktop",
+    "title": "八张正式全文卡片、原生单选键盘、取消与刷新；没有额外请求",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-visual-final",
+    "project": "desktop",
+    "title": "矮屏、断点与长卡片：内部滚动、底栏可达、触控与对比度",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-visual-final",
+    "project": "desktop",
+    "title": "日夜正式人物档案：全文、对比度、展开关闭与 Repository 不变",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-visual-final",
+    "project": "mobile",
+    "title": "八张正式全文卡片、原生单选键盘、取消与刷新；没有额外请求",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-visual-final",
+    "project": "mobile",
+    "title": "矮屏、断点与长卡片：内部滚动、底栏可达、触控与对比度",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-visual-final",
+    "project": "mobile",
+    "title": "日夜正式人物档案：全文、对比度、展开关闭与 Repository 不变",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-touch-final",
+    "project": "desktop",
+    "title": "八张正式全文卡片、原生单选键盘、取消与刷新；没有额外请求",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-touch-final",
+    "project": "mobile",
+    "title": "八张正式全文卡片、原生单选键盘、取消与刷新；没有额外请求",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-confirmation-final",
+    "project": "desktop",
+    "title": "五步旧草稿与正式建档：有天赋，双端档案只读",
+    "status": "passed",
+    "retry": 0
+  },
+  {
+    "batch": "chromium-confirmation-final",
+    "project": "mobile",
+    "title": "五步旧草稿与正式建档：有天赋，双端档案只读",
+    "status": "passed",
+    "retry": 0
+  }
+]
