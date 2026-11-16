@@ -55,6 +55,47 @@ describe('真实协调器→自动正式结算→等待玩家', () => {
     expect(stageResponses.getSnapshot().find(item => item.stage === 'variables')?.text).toContain('<命令>');
     expect(stageResponses.getSnapshot().every(item => item.status === 'validated')).toBe(true);
   });
+  it('两个可选阶段都关闭：开局和下一普通回合只调用 Story，自动保存两章与摘要', async () => {
+    await repo.deleteDraft('save-a', 0);
+    await repo.saveDraft(createTurnDraft('save-a', 0, 'opening', 'opening', '', false, false), null);
+    const input = setup();
+    input.settings.runtime.useVariableStage = false;
+    input.settings.runtime.useWorldStage = false;
+    const value = server(), before = await repo.load('save-a');
+    const first = (await run(value, input)).committed!;
+    expect(value.calls).toEqual(['story']);
+    expect(first.state.turnNumber).toBe(1);
+    expect(first.state.revision).toBe(1);
+    expect(first.state.journal).toHaveLength(1);
+    expect(first.state.memories.short).toHaveLength(1);
+    expect(first.state.economy).toEqual(before.economy);
+    expect(first.draft.stageStatus).toMatchObject({ variables: 'skipped', world: 'skipped' });
+    expect(awaitingPlayerAction(first.state, first.draft)).toBe(true);
+    const secondDraft = await repo.bindTurnAction(first.draft, '走进码头仓库', false, false);
+    expect(secondDraft.userInput).toBe('走进码头仓库');
+    const second = (await run(value, input)).committed!;
+    expect(value.calls).toEqual(['story', 'story']);
+    expect(second.state.turnNumber).toBe(2);
+    expect(second.state.revision).toBe(2);
+    expect(second.state.journal).toHaveLength(2);
+    expect(second.state.memories.short).toHaveLength(2);
+    expect(second.state.economy).toEqual(before.economy);
+    expect(awaitingPlayerAction(second.state, second.draft)).toBe(true);
+  });
+
+  it('仅关闭动态世界：Story 加 Variables 即可自动结算，不调用 World', async () => {
+    await repo.deleteDraft('save-a', 0);
+    await repo.saveDraft(createTurnDraft('save-a', 0, 'opening', 'opening', '', true, false), null);
+    const input = setup();
+    input.settings.runtime.useWorldStage = false;
+    const value = server(), result = (await run(value, input)).committed!;
+    expect(value.calls).toEqual(['story', 'variables']);
+    expect(result.state.turnNumber).toBe(1);
+    expect(result.state.economy.cash).toBe(7000);
+    expect(result.draft.useWorldStage).toBe(false);
+    expect(result.draft.stageStatus.world).toBe('skipped');
+  });
+
   it('玩家下一条行动CAS绑定后再生成普通回合，旧输入不重复，时钟/正文/摘要连续', async () => {
     const value = server(), first = (await run(value)).committed!;
     const bound = await repo.bindTurnAction(first.draft, '在街边吃饭', true, true);
