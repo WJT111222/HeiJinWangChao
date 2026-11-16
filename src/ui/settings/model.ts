@@ -27,7 +27,10 @@ export const SettingsSchema = z.strictObject({
     streamWorld: z.boolean().default(false),
     timeoutSeconds: z.number().int().min(1).max(3600),
   }),
+  // 外观：夜间（原黑金）、日间（档案纸）、跟随系统。旧设置缺字段时为夜间，原样保持现有观感。
+  display: z.strictObject({ appearance: z.enum(['night', 'day', 'system']) }).default({ appearance: 'night' }),
 });
+export type Appearance = Settings['display']['appearance'];
 export type Settings = z.infer<typeof SettingsSchema>;
 export function defaultSettings(): Settings {
   return {
@@ -43,5 +46,6 @@ export function defaultSettings(): Settings {
     },
     memory: { immediateWindowSize: 10, automaticMaintenance: true, summaries: defaultSummarySettings() },
     runtime: { useVariableStage: true, useWorldStage: true, streamVariables: false, streamWorld: false, timeoutSeconds: 120 },
+    display: { appearance: 'night' },
   };
 }

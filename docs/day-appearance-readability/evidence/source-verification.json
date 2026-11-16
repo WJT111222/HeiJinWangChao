@@ -1,0 +1,63 @@
+{
+  "main": "e0e2b446136b9589bf60094d9975a807ab06fbdf",
+  "syncedBeforeFix": "942d6e53f041e45afc4e4a39879c1ec495aeb024",
+  "protectedFiles": [
+    {
+      "file": "src/domain/state.ts",
+      "matchesMain": true,
+      "sha256": "2e49e1707a4872053b11ffd0b2fe4f757bdec3387d7d4fa7bbaa62bbc4abd897"
+    },
+    {
+      "file": "src/domain/drafts.ts",
+      "matchesMain": true,
+      "sha256": "6715bda3bd7e03e3f77dfc4e220efe4b1d41df80b219898e2686439200fc862b"
+    },
+    {
+      "file": "src/ui/Dialog.tsx",
+      "matchesMain": true,
+      "sha256": "b73d7b7985e0ed496c3c79e1d4620fcdfd2d9ee3917b5f79e05b0cd0fe2926e2"
+    },
+    {
+      "file": "src/ui/useSheetGesture.ts",
+      "matchesMain": true,
+      "sha256": "beb2cce7845613550c4fe5f84ac6d5b2916fcac9a41a0e3e787aaa9142240d0a"
+    },
+    {
+      "file": "src/ui/game/SavedFailureSummary.tsx",
+      "matchesMain": true,
+      "sha256": "50d07a1c4fc988b7364280f31e2851cd435f34b81272563549e3a1f1c5780558"
+    },
+    {
+      "file": "src/ui/game/StoryReadingView.tsx",
+      "matchesMain": true,
+      "sha256": "8de119cf0feb45bd63f26f84d3e9f288e3fb5f1c952d30d66e52e1c595f1561b"
+    },
+    {
+      "file": "src/ui/game/StoryStreamReading.tsx",
+      "matchesMain": true,
+      "sha256": "4af3fcdc286e3c565c85df39e14710acd2cd62e1a6ab0e0f2622dae4328156e3"
+    },
+    {
+      "file": "src/workflows/storyStage.ts",
+      "matchesMain": true,
+      "sha256": "914f50ed10ad00095d6d2919216ce463159fdd9f0edcd6640995a23816e7c13d"
+    },
+    {
+      "file": "src/workflows/variableStage.ts",
+      "matchesMain": true,
+      "sha256": "45ab5dab7eb26156e4b8790211aecab30e19508a1e5ced4b90c83c30a7f50a12"
+    },
+    {
+      "file": "src/workflows/worldStage.ts",
+      "matchesMain": true,
+      "sha256": "76a65f5e00d7f8b86179c67eed82a85e8a1ce5c5e2c43c1ab98a0d8dbb57a205"
+    },
+    {
+      "file": "src/services/storage/saveRepository.ts",
+      "matchesMain": true,
+      "sha256": "6ca9d1445268d7913cca5bc244b9f1e7d3b6debbbfd4bdc99a1dec3cb2c3a7a9"
+    }
+  ],
+  "announcementMatchesAuthorCommit": true,
+  "readabilityCssSha256": "defa61c725e5ce0b4f91585921a336a02768220e9125ec2c5bbbedb19e00ce9d"
+}

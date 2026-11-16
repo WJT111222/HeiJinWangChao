@@ -1,0 +1,10 @@
+device,element,before,after,threshold
+desktop,hero,1.085417,11.212505,4.5
+desktop,plate-latest,1.498319,7.107851,4.5
+desktop,plate-past,1.217315,4.666267,4.5
+desktop,heading,1.271109,15.255986,4.5
+mobile,hero,1.014664,10.501532,4.5
+mobile,plate-latest,1.507996,7.684288,4.5
+mobile,plate-past,1.269747,5.006141,4.5
+mobile,heading,14.913875,14.913875,4.5
+mobile,input,1.242605,14.913875,4.5

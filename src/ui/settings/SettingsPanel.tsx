@@ -16,8 +16,9 @@ const PromptInspector = lazy(() =>
   import('./PromptInspector').then((module) => ({ default: module.PromptInspector })),
 );
 
-const descriptions={'AI 连接':'渠道、密钥与模型路由','提示词':'叙事人称、风格与开关','记忆':'即时记忆与记忆总结','运行':'阶段开关与超时','提示词管理':'查看与编辑提示词'};
-const tabs = ['AI 连接', '提示词', '记忆', '运行', '提示词管理'] as const;
+const descriptions={'AI 连接':'渠道、密钥与模型路由','提示词':'叙事人称、风格与开关','记忆':'即时记忆与记忆总结','运行':'阶段开关与超时','外观':'日间 / 夜间配色','提示词管理':'查看与编辑提示词'};
+const tabs = ['AI 连接', '提示词', '记忆', '运行', '外观', '提示词管理'] as const;
+const appearances = [['night', '夜间', '黑金配色，适合夜里或暗处'], ['day', '日间', '浅色纸页，适合白天或光线充足时'], ['system', '跟随系统', '随设备的深浅色自动切换']] as const;
 export function SettingsPanel({
   settings,
   onSave,
@@ -61,8 +62,21 @@ export function SettingsPanel({
     setNoticeLevel('info');
     setEditing({ ...editing, prompts: { ...editing.prompts, [key]: value } });
   };
+  // 外观点选即生效并立即保存，不受其他分类未保存修改的影响。
+  function chooseAppearance(appearance: Settings['display']['appearance']) {
+    const next = { ...settings, display: { appearance } };
+    try {
+      onSave(next);
+      setEditing({ ...editing, display: next.display });
+      setNoticeLevel('ok');
+      setNotice('外观已切换。');
+    } catch {
+      setNoticeLevel('err');
+      setNotice('外观保存失败，请检查浏览器存储权限后重试。');
+    }
+  }
   function save() {
-    const checked = SettingsSchema.safeParse({ ...editing, memory: settings.memory });
+    const checked = SettingsSchema.safeParse({ ...editing, memory: settings.memory, display: settings.display });
     if (!checked.success) {
       setNoticeLevel('err');
       setNotice(
@@ -94,7 +108,7 @@ export function SettingsPanel({
               showCategory(name);
             }}
           >
-            <i aria-hidden="true">{{'AI 连接':'连','提示词':'词','记忆':'忆','运行':'运','提示词管理':'管'}[name]}</i>{desktop?<span>{name}</span>:<span className="settings-row-text"><strong>{name}</strong><small>{descriptions[name]}</small></span>}{((name==='AI 连接'&&aiDirty)||(name==='记忆'&&summaryDirty)||((name==='提示词'||name==='运行')&&localDirty))&&<span className="dirty" aria-hidden="true" title="有未保存的修改"/>}{!desktop&&<span aria-hidden="true">›</span>}
+            <i aria-hidden="true">{{'AI 连接':'连','提示词':'词','记忆':'忆','运行':'运','外观':'色','提示词管理':'管'}[name]}</i>{desktop?<span>{name}</span>:<span className="settings-row-text"><strong>{name}</strong><small>{descriptions[name]}</small></span>}{((name==='AI 连接'&&aiDirty)||(name==='记忆'&&summaryDirty)||((name==='提示词'||name==='运行')&&localDirty))&&<span className="dirty" aria-hidden="true" title="有未保存的修改"/>}{!desktop&&<span aria-hidden="true">›</span>}
           </button>
         ))}
         {onOpenNotice && <NoticeLinks onOpen={onOpenNotice} />}
@@ -173,6 +187,19 @@ export function SettingsPanel({
         {tab === '记忆' && (isValidElement<{ onDirtyChange?: (dirty: boolean) => void }>(memoryMaintenance)
           ? cloneElement(memoryMaintenance, { onDirtyChange: summaryDirtyChanged })
           : <MemorySummarySettings settings={settings} onSave={onSave} onDirtyChange={summaryDirtyChanged} />)}
+        {tab === '外观' && (
+          <>
+            <div className="appearance-options" role="radiogroup" aria-label="外观">
+              {appearances.map(([value, label, hint]) => (
+                <label className="appearance-option" key={value} data-checked={settings.display.appearance === value || undefined}>
+                  <input type="radio" name="appearance" value={value} checked={settings.display.appearance === value} onChange={() => chooseAppearance(value)} />
+                  <span><strong>{label}</strong><small>{hint}</small></span>
+                </label>
+              ))}
+            </div>
+            <p className="muted">切换后立即生效，并自动保存在本机。当前先覆盖游戏主界面，其余弹出面板会陆续适配。</p>
+          </>
+        )}
         {tab === '运行' && (
           <>
             <div className="settings-fields">
@@ -225,7 +252,7 @@ export function SettingsPanel({
           </>
         )}
         <div className="local-save-bar"><Feedback role="status" level={noticeLevel} className="field-hint">{notice||(localDirty&&(tab==='提示词管理'||(desktop&&(tab==='提示词'||tab==='运行')))?'本地设置尚未保存。':'')}</Feedback>
-        {tab !== 'AI 连接' && tab !== '记忆' && (
+        {tab !== 'AI 连接' && tab !== '记忆' && tab !== '外观' && (
           <button className="primary" onClick={save}>
             保存本地设置
           </button>

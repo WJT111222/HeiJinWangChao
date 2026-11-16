@@ -15,6 +15,7 @@ import type { Creation } from '../ui/creation/model';
 import { SettingsPanel } from '../ui/settings/SettingsPanel';
 import { UnsavedAiChanges } from '../ui/settings/UnsavedAiChanges';
 import { SettingsSchema, defaultSettings, settingsKey } from '../ui/settings/model';
+import { useAppearance } from './useAppearance';
 import type { Settings } from '../ui/settings/model';
 import { MobileHomeScreen } from '../ui/home/MobileHomeScreen';
 import { HomeScreen } from '../ui/home/HomeScreen';
@@ -84,6 +85,7 @@ export function App() {
   const shell = useGameViewport(gameRoute);
   const [saves, setSaves] = useState<SaveSummary[]>([]);
   const [settings, setSettings] = useState(initial.settings);
+  useAppearance(settings.display.appearance);
   const [form, setForm] = useState(initial.form);
   const [hasDraft, setHasDraft] = useState(initial.hasDraft);
   const [selected, setSelected] = useState(initial.selected);

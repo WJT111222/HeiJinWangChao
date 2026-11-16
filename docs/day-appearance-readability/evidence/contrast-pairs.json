@@ -1,0 +1,520 @@
+[
+  {
+    "project": "desktop",
+    "before": {
+      "hero": {
+        "color": "rgb(241, 230, 200)",
+        "strokeOnly": false,
+        "fontSize": 17.15142857142857,
+        "weight": "400",
+        "text": "今天先看看街坊们有什么消息。",
+        "background": "rgba(0, 0, 0, 0) linear-gradient(90deg, rgba(201, 169, 97, 0.07), rgba(0, 0, 0, 0) 60%) repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 1.0854173915773808,
+        "worst": {
+          "foreground": [
+            241,
+            230,
+            200
+          ],
+          "background": [
+            244,
+            239,
+            230
+          ],
+          "x": 8,
+          "y": 10
+        },
+        "samples": 5525,
+        "threshold": 4.5
+      },
+      "plate-latest": {
+        "color": "rgb(169, 195, 216)",
+        "strokeOnly": false,
+        "fontSize": 8.96,
+        "weight": "400",
+        "text": "TURN 002",
+        "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 1.4983188585058242,
+        "worst": {
+          "foreground": [
+            181,
+            203,
+            221
+          ],
+          "background": [
+            244,
+            242,
+            240
+          ],
+          "x": 56,
+          "y": 10
+        },
+        "samples": 135,
+        "threshold": 4.5
+      },
+      "plate-past": {
+        "color": "rgb(169, 195, 216)",
+        "strokeOnly": false,
+        "fontSize": 7.6361614583333335,
+        "weight": "400",
+        "text": "TURN 001",
+        "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 1.2173149766989102,
+        "worst": {
+          "foreground": [
+            210,
+            222,
+            230
+          ],
+          "background": [
+            243,
+            241,
+            241
+          ],
+          "x": 48,
+          "y": 9
+        },
+        "samples": 84,
+        "threshold": 4.5
+      },
+      "heading": {
+        "color": "rgb(43, 39, 35)",
+        "strokeOnly": false,
+        "fontSize": 15.01,
+        "weight": "600",
+        "text": "本回合已结算 · 等待行动",
+        "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 1.271109281785961,
+        "worst": {
+          "foreground": [
+            43,
+            39,
+            35
+          ],
+          "background": [
+            15,
+            18,
+            17
+          ],
+          "x": 8,
+          "y": 5
+        },
+        "samples": 504,
+        "threshold": 4.5
+      }
+    },
+    "after": {
+      "hero": {
+        "color": "rgb(53, 47, 40)",
+        "strokeOnly": false,
+        "fontSize": 17.15142857142857,
+        "weight": "400",
+        "text": "今天先看看街坊们有什么消息。",
+        "background": "rgba(0, 0, 0, 0) linear-gradient(90deg, rgba(142, 108, 37, 0.063), rgba(0, 0, 0, 0) 70%) repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 11.21250483462746,
+        "worst": {
+          "foreground": [
+            53,
+            47,
+            40
+          ],
+          "background": [
+            240,
+            236,
+            227
+          ],
+          "x": 8,
+          "y": 8
+        },
+        "samples": 5525,
+        "threshold": 4.5
+      },
+      "plate-latest": {
+        "color": "rgb(244, 250, 255)",
+        "strokeOnly": false,
+        "fontSize": 8.96,
+        "weight": "400",
+        "text": "TURN 002",
+        "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 7.107850866934089,
+        "worst": {
+          "foreground": [
+            244,
+            250,
+            255
+          ],
+          "background": [
+            60,
+            88,
+            109
+          ],
+          "x": 56,
+          "y": 12
+        },
+        "samples": 135,
+        "threshold": 4.5
+      },
+      "plate-past": {
+        "color": "rgb(244, 250, 255)",
+        "strokeOnly": false,
+        "fontSize": 7.6361614583333335,
+        "weight": "400",
+        "text": "TURN 001",
+        "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 4.666266857471935,
+        "worst": {
+          "foreground": [
+            241,
+            245,
+            247
+          ],
+          "background": [
+            103,
+            111,
+            116
+          ],
+          "x": 48,
+          "y": 9
+        },
+        "samples": 84,
+        "threshold": 4.5
+      },
+      "heading": {
+        "color": "rgb(236, 231, 218)",
+        "strokeOnly": false,
+        "fontSize": 15.01,
+        "weight": "600",
+        "text": "本回合已结算 · 等待行动",
+        "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 15.2559856141926,
+        "worst": {
+          "foreground": [
+            236,
+            231,
+            218
+          ],
+          "background": [
+            15,
+            18,
+            17
+          ],
+          "x": 8,
+          "y": 5
+        },
+        "samples": 504,
+        "threshold": 4.5
+      }
+    }
+  },
+  {
+    "project": "mobile",
+    "before": {
+      "hero": {
+        "color": "rgb(241, 230, 200)",
+        "strokeOnly": false,
+        "fontSize": 16.24457142857143,
+        "weight": "400",
+        "text": "今天先看看街坊们有什么消息。",
+        "background": "rgba(0, 0, 0, 0) linear-gradient(90deg, rgba(201, 169, 97, 0.07), rgba(0, 0, 0, 0) 70%) repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 1.0146638422760321,
+        "worst": {
+          "foreground": [
+            241,
+            230,
+            200
+          ],
+          "background": [
+            235,
+            232,
+            223
+          ],
+          "x": 8,
+          "y": 8
+        },
+        "samples": 1620,
+        "threshold": 4.5
+      },
+      "plate-latest": {
+        "color": "rgb(169, 195, 216)",
+        "strokeOnly": false,
+        "fontSize": 6.9887890625,
+        "weight": "400",
+        "text": "TURN 002",
+        "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 1.5079963098576594,
+        "worst": {
+          "foreground": [
+            168,
+            195,
+            216
+          ],
+          "background": [
+            233,
+            233,
+            232
+          ],
+          "x": 36,
+          "y": 2
+        },
+        "samples": 57,
+        "threshold": 4.5
+      },
+      "plate-past": {
+        "color": "rgb(169, 195, 216)",
+        "strokeOnly": false,
+        "fontSize": 5.913591796875,
+        "weight": "400",
+        "text": "TURN 001",
+        "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 1.2697471522937338,
+        "worst": {
+          "foreground": [
+            196,
+            212,
+            222
+          ],
+          "background": [
+            234,
+            235,
+            232
+          ],
+          "x": 12,
+          "y": 3
+        },
+        "samples": 45,
+        "threshold": 4.5
+      },
+      "heading": {
+        "color": "rgb(236, 231, 218)",
+        "strokeOnly": false,
+        "fontSize": 13.91940789473684,
+        "weight": "550",
+        "text": "本回合已结算 · 等待行动",
+        "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 14.9138749117646,
+        "worst": {
+          "foreground": [
+            236,
+            231,
+            218
+          ],
+          "background": [
+            17,
+            21,
+            19
+          ],
+          "x": 8,
+          "y": 4
+        },
+        "samples": 810,
+        "threshold": 4.5
+      },
+      "input": {
+        "color": "rgb(43, 39, 35)",
+        "strokeOnly": false,
+        "fontSize": 11,
+        "weight": "400",
+        "text": "行动输入",
+        "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 1.2426050539863491,
+        "worst": {
+          "foreground": [
+            43,
+            39,
+            35
+          ],
+          "background": [
+            17,
+            21,
+            19
+          ],
+          "x": 8,
+          "y": 6
+        },
+        "samples": 126,
+        "threshold": 4.5
+      }
+    },
+    "after": {
+      "hero": {
+        "color": "rgb(53, 47, 40)",
+        "strokeOnly": false,
+        "fontSize": 16.24457142857143,
+        "weight": "400",
+        "text": "今天先看看街坊们有什么消息。",
+        "background": "rgba(0, 0, 0, 0) linear-gradient(90deg, rgba(142, 108, 37, 0.063), rgba(0, 0, 0, 0) 70%) repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 10.501532466239384,
+        "worst": {
+          "foreground": [
+            53,
+            47,
+            40
+          ],
+          "background": [
+            232,
+            229,
+            221
+          ],
+          "x": 8,
+          "y": 8
+        },
+        "samples": 1620,
+        "threshold": 4.5
+      },
+      "plate-latest": {
+        "color": "rgb(244, 250, 255)",
+        "strokeOnly": false,
+        "fontSize": 6.9887890625,
+        "weight": "400",
+        "text": "TURN 002",
+        "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 7.684288159055442,
+        "worst": {
+          "foreground": [
+            244,
+            250,
+            255
+          ],
+          "background": [
+            54,
+            83,
+            105
+          ],
+          "x": 8,
+          "y": 6
+        },
+        "samples": 57,
+        "threshold": 4.5
+      },
+      "plate-past": {
+        "color": "rgb(244, 250, 255)",
+        "strokeOnly": false,
+        "fontSize": 5.913591796875,
+        "weight": "400",
+        "text": "TURN 001",
+        "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 5.006140603991198,
+        "worst": {
+          "foreground": [
+            241,
+            245,
+            246
+          ],
+          "background": [
+            99,
+            106,
+            111
+          ],
+          "x": 8,
+          "y": 5
+        },
+        "samples": 45,
+        "threshold": 4.5
+      },
+      "heading": {
+        "color": "rgb(236, 231, 218)",
+        "strokeOnly": false,
+        "fontSize": 13.91940789473684,
+        "weight": "550",
+        "text": "本回合已结算 · 等待行动",
+        "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 14.9138749117646,
+        "worst": {
+          "foreground": [
+            236,
+            231,
+            218
+          ],
+          "background": [
+            17,
+            21,
+            19
+          ],
+          "x": 8,
+          "y": 4
+        },
+        "samples": 810,
+        "threshold": 4.5
+      },
+      "input": {
+        "color": "rgb(236, 231, 218)",
+        "strokeOnly": false,
+        "fontSize": 11,
+        "weight": "400",
+        "text": "行动输入",
+        "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+        "opacity": "1",
+        "large": false,
+        "pseudo": null,
+        "ratio": 14.9138749117646,
+        "worst": {
+          "foreground": [
+            236,
+            231,
+            218
+          ],
+          "background": [
+            17,
+            21,
+            19
+          ],
+          "x": 8,
+          "y": 6
+        },
+        "samples": 126,
+        "threshold": 4.5
+      }
+    }
+  }
+]
