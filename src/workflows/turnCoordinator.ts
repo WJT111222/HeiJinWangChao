@@ -18,6 +18,7 @@ import type { Settings } from '../ui/settings/model';
 import { reserveStageSession, withBrowserLock } from './stageGuard';
 import { StoryStage, storyPartialAfterFailure } from './storyStage';
 import { canContinueStory } from '../domain/storyContinuation';
+import { completeTurnDraft } from '../domain/turnCommit';
 import { VariableStage } from './variableStage';
 import { WorldStage } from './worldStage';
 
@@ -255,14 +256,10 @@ export class TurnCoordinator {
         return {
           draft,
           skipped,
-          status:
-            draft.world?.validation === 'preview'
-              ? 'preview'
-              : skipped.length
-                ? 'skipped'
-                : storyReady() && variableReady() && draft.stageStatus.world === 'ready'
-                  ? 'complete'
-                  : 'skipped',
+          // "skipped" records disabled optional stages; it must not prevent
+          // a completed Story (and any enabled stages) from being settled.
+          status: completeTurnDraft(draft) ? 'complete'
+            : draft.world?.validation === 'preview' ? 'preview' : 'skipped',
         };
       }, { required: true });
     } finally {
