@@ -25,7 +25,7 @@ type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>;
 export interface StoryProgress {
   phase: 'generating' | 'saving';
   narrative: string;
-  readingPhase?: 'thinking' | 'body';
+  readingPhase?: 'thinking' | 'body' | 'waiting';
   planning?: string;
   nativeReasoning?: string;
   compatibilityReasoning?: string;
@@ -60,6 +60,7 @@ export class StoryStage {
       const current = attempt.check;
       // 在第一个 await 之前快照本次设置；运行开关始终取绑定草稿，不被界面切换重写。
       const settings = SettingsSchema.parse(input.settings);
+      const streaming = settings.runtime.streamStory;
       const config = AiConfigSchema.parse(input.config);
       const companionProfile = input.companionProfile && structuredClone(input.companionProfile);
       const secrets = config.channels.map((channel) => input.vault.get(channel.id)).filter(Boolean);
@@ -80,9 +81,9 @@ export class StoryStage {
       const inspectionId = storyInspections.begin({ saveId: draft.saveId, turnId: draft.turnId,
         baseSaveRevision: draft.baseSaveRevision, basedOnStoryRevision: draft.storyRevision });
       let reasoning = '', inspectionReasoning = '', compatibilityReasoning = '', narrative = '';
-      const progress = () => input.onProgress?.({ phase: 'generating', narrative: safeStreamResponseText(narrative, secrets),
-        readingPhase: stream.bodyStarted ? 'body' : 'thinking',
-        ...(stream.bodyStarted ? {} : { planning: safeStreamResponseText(stream.planning, secrets), nativeReasoning: safeStreamResponseText(reasoning, secrets),
+      const progress = () => input.onProgress?.({ phase: 'generating', narrative: streaming ? safeStreamResponseText(narrative, secrets) : '',
+        readingPhase: !streaming ? 'waiting' : stream.bodyStarted ? 'body' : 'thinking',
+        ...(!streaming || stream.bodyStarted ? {} : { planning: safeStreamResponseText(stream.planning, secrets), nativeReasoning: safeStreamResponseText(reasoning, secrets),
           compatibilityReasoning: safeStreamResponseText(compatibilityReasoning, secrets) }) });
       let responseInspectionId: string | undefined;
       try {
@@ -101,7 +102,7 @@ export class StoryStage {
           config,
           input.vault,
           {
-            stream: true,
+            stream: streaming,
             signal: attempt.signal,
             onDelta: (delta) => {
               current();
@@ -154,7 +155,7 @@ export class StoryStage {
         const next = rerollStory(draft, story);
         current();
         attempt.saving();
-        input.onProgress?.({ phase: 'saving', readingPhase: 'body', narrative: story.narrative });
+        input.onProgress?.({ phase: 'saving', readingPhase: streaming ? 'body' : 'waiting', narrative: streaming ? story.narrative : '' });
         // 网络从不放入 IDB 事务；整份草稿用现有乐观锁原子替换。
         const saved = await this.repository.saveDraft(next, draft.draftRevision, attempt.signal, draft);
         current();
@@ -176,7 +177,7 @@ export class StoryStage {
           // Still inside the original stage lock. Cancellation and the full request basis
           // must remain valid; a failed CAS must never overwrite a newer timeline.
           attempt.saving();
-          input.onProgress?.({ phase: 'saving', readingPhase: stream.bodyStarted ? 'body' : 'thinking', narrative: safeStreamResponseText(narrative, secrets) });
+          input.onProgress?.({ phase: 'saving', readingPhase: !streaming ? 'waiting' : stream.bodyStarted ? 'body' : 'thinking', narrative: streaming ? safeStreamResponseText(narrative, secrets) : '' });
           const saved = await this.repository.saveDraft(failed, draft.draftRevision, attempt.signal, draft);
           current();
           input.onFailureSaved(saved);
