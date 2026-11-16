@@ -1,0 +1,358 @@
+{
+  "base": "4ccf92d205cc9b1d748c49c5b647eb755de3a019",
+  "prompts": [
+    {
+      "stage": "story",
+      "mode": "opening",
+      "messages": "e5e8c4dd99837b9bc98cb05ed978683f18efdae41a662ef45b1a2b0951e947e5",
+      "context": "52789774e7cb81db58751426ee7c97881e3c794f5afee7d3e2b533f421100c0f",
+      "modules": "244ce513ddcea2a4b198ddb13889e0d33be307e00155c664d063293cc1f61103"
+    },
+    {
+      "stage": "story",
+      "mode": "regular",
+      "messages": "6533336f1b413daf26302553ce811670f8c2e3852d56ca5f60b828a895793a53",
+      "context": "5ac8ab68c9f2e4dac234d7564d431461c0300e6f7fbd320eaf064a64e877b1f1",
+      "modules": "dea58bb334e8bf92538b687954a140e438044ca7e087921b0d4f4c39be74dbd1"
+    },
+    {
+      "stage": "variables",
+      "mode": "opening",
+      "messages": "f5fa56169a78dd58f417a0b18128770e6818c39e6121e46ff1ea98b53f8374ea",
+      "context": "feb9330d7f38a6e2b84f2984bc8ca726d031522bc896565a714f824cc82af762",
+      "modules": "2ffa85bc57f11c3300b3c792eea06b9011dc32d1901233fcd82a13f414059e12"
+    },
+    {
+      "stage": "variables",
+      "mode": "regular",
+      "messages": "670a178d3ff60796aa733dfd69f7fcb8e8e0000f8b85d92ab0a41d3a3037d905",
+      "context": "2515efd22aa976319ea56f5fa813bfad9fc5ba8c28ecd6f7ccc622e7a4b82128",
+      "modules": "d5286b9ad8ec6f3bf8dd4853a96a6b23fcedee6747c081bb6f44f6282470009d"
+    },
+    {
+      "stage": "world",
+      "mode": "opening",
+      "messages": "8aaf67110a9e27da17da1e3d7cac4f683678dc392b38c8de0c33e9525be92de1",
+      "context": "2fd0e2d8a1c25ace0fac6d08ecb1ff0bb3e4c74ab7d818e20644d3ffbd4e1b73",
+      "modules": "f0c6f6f347ecfc80cc6b8c9e491f3ce0a7d964fe2763cda09490b06b7564e7d0"
+    },
+    {
+      "stage": "world",
+      "mode": "regular",
+      "messages": "151b89d7da2542651d0176e676bbe951bca34a2a1bd280f3e60e20069d5daa94",
+      "context": "b72c8b6ca732d6f4fca2c7d525d0fdf36a1f79f93853256ad90eb9ebe1a0d5f9",
+      "modules": "161bc85083b9240f0001140623431ca8da072ec2bc159ad003c717e010d70c36"
+    },
+    {
+      "stage": "memory",
+      "task": "memory.short_to_medium",
+      "messages": "5f8e49d80d8fac37f68b34488513bbd06bf84f7d58d72c8d704c60c4d3d2baba",
+      "context": "0bf50d06cc383b953461ff2c937c469b0e6fc5faf0de571dcee81411d96e456a",
+      "modules": "b50c3bc26ea6e21c7354da0db49582d7e4f7ef8a99aa1cfec714b923056ea01c"
+    },
+    {
+      "stage": "memory",
+      "task": "memory.medium_to_long",
+      "messages": "5f8e49d80d8fac37f68b34488513bbd06bf84f7d58d72c8d704c60c4d3d2baba",
+      "context": "0bf50d06cc383b953461ff2c937c469b0e6fc5faf0de571dcee81411d96e456a",
+      "modules": "e08ee4b76141d9b80f8c64f2f61764bb1f0182d9d9ba5a70a7ec406208d812ea"
+    },
+    {
+      "stage": "memory",
+      "task": "memory.npc_summarize",
+      "messages": "444e3c8df23b7bffe86a22f1f9b926697f7f7d51d8a015de6c02812621eb4081",
+      "context": "e9e1533a3af4997c7f0de8a3a9b8f358e280953359a07b3eb6799c39659686a6",
+      "modules": "34995cfee43917be5610e941ce341347eddbd2184e55795368bd76c32eb53548"
+    }
+  ],
+  "wires": [
+    {
+      "stage": "story",
+      "mode": "opening",
+      "protocol": "openai",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/chat/completions",
+        "method": "POST",
+        "body": "00a18fedf9e3ab9e95fc71ecc3368cbc4708a81defd5b218ea9164320bea48fb",
+        "messages": "e5e8c4dd99837b9bc98cb05ed978683f18efdae41a662ef45b1a2b0951e947e5",
+        "characters": 39031
+      }
+    },
+    {
+      "stage": "story",
+      "mode": "opening",
+      "protocol": "deepseek",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/chat/completions",
+        "method": "POST",
+        "body": "00a18fedf9e3ab9e95fc71ecc3368cbc4708a81defd5b218ea9164320bea48fb",
+        "messages": "e5e8c4dd99837b9bc98cb05ed978683f18efdae41a662ef45b1a2b0951e947e5",
+        "characters": 39031
+      }
+    },
+    {
+      "stage": "story",
+      "mode": "opening",
+      "protocol": "gemini",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/models/story:generateContent",
+        "method": "POST",
+        "body": "9749cba18c3c6fa2a8d3a6fc6be39ac5a6601247389409c86a43ad726cdb0117",
+        "messages": "639c8755cd8960351ed9aa73fdc8f3d6e40f53fa79acd371002a099682a38a83",
+        "characters": 38463
+      }
+    },
+    {
+      "stage": "story",
+      "mode": "opening",
+      "protocol": "anthropic",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/messages",
+        "method": "POST",
+        "body": "f39818d11ead199ad49e7e0671934269ed64a925d9322195f2625641a89c8ae2",
+        "messages": "639c8755cd8960351ed9aa73fdc8f3d6e40f53fa79acd371002a099682a38a83",
+        "characters": 38418
+      }
+    },
+    {
+      "stage": "story",
+      "mode": "regular",
+      "protocol": "openai",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/chat/completions",
+        "method": "POST",
+        "body": "c5739ef5ec84ce933ee9bf44af4b85554b7c8bd3ecdaa03cf6ae7a3e13d348b6",
+        "messages": "6533336f1b413daf26302553ce811670f8c2e3852d56ca5f60b828a895793a53",
+        "characters": 41606
+      }
+    },
+    {
+      "stage": "story",
+      "mode": "regular",
+      "protocol": "deepseek",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/chat/completions",
+        "method": "POST",
+        "body": "c5739ef5ec84ce933ee9bf44af4b85554b7c8bd3ecdaa03cf6ae7a3e13d348b6",
+        "messages": "6533336f1b413daf26302553ce811670f8c2e3852d56ca5f60b828a895793a53",
+        "characters": 41606
+      }
+    },
+    {
+      "stage": "story",
+      "mode": "regular",
+      "protocol": "gemini",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/models/story:generateContent",
+        "method": "POST",
+        "body": "09be81c22afb7c96e7d90916fddd08d99b40da26e21aa7d264a4269fc55b41d8",
+        "messages": "7e60341ad929eb7075c8168c6b0bf5711ebbf3569b695d107d81e4600dcdf7d6",
+        "characters": 41038
+      }
+    },
+    {
+      "stage": "story",
+      "mode": "regular",
+      "protocol": "anthropic",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/messages",
+        "method": "POST",
+        "body": "a03009336e627272a415497a10994bfd8c70a89f530178471940e3d86309efbd",
+        "messages": "7e60341ad929eb7075c8168c6b0bf5711ebbf3569b695d107d81e4600dcdf7d6",
+        "characters": 40993
+      }
+    },
+    {
+      "stage": "variables",
+      "mode": "opening",
+      "protocol": "openai",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/chat/completions",
+        "method": "POST",
+        "body": "e52dbba2bc34f31f06e8ceaa85d8b4e956966de117058aaad88b53c5e0491f5c",
+        "messages": "f5fa56169a78dd58f417a0b18128770e6818c39e6121e46ff1ea98b53f8374ea",
+        "characters": 114915
+      }
+    },
+    {
+      "stage": "variables",
+      "mode": "opening",
+      "protocol": "deepseek",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/chat/completions",
+        "method": "POST",
+        "body": "e52dbba2bc34f31f06e8ceaa85d8b4e956966de117058aaad88b53c5e0491f5c",
+        "messages": "f5fa56169a78dd58f417a0b18128770e6818c39e6121e46ff1ea98b53f8374ea",
+        "characters": 114915
+      }
+    },
+    {
+      "stage": "variables",
+      "mode": "opening",
+      "protocol": "gemini",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/models/variables:generateContent",
+        "method": "POST",
+        "body": "1e665b686b579eb4a19a60f2052163487bcff1be4b94532c0c506038c81de7a9",
+        "messages": "81acc6a5a32a24f0d7a322fbaf4e7ac1d5c078bb732142013095d7973fe4119b",
+        "characters": 114478
+      }
+    },
+    {
+      "stage": "variables",
+      "mode": "opening",
+      "protocol": "anthropic",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/messages",
+        "method": "POST",
+        "body": "1bc9bcded3645239a08978c7af6fceefb143e761a9e2cc34c76c379d93961290",
+        "messages": "81acc6a5a32a24f0d7a322fbaf4e7ac1d5c078bb732142013095d7973fe4119b",
+        "characters": 114437
+      }
+    },
+    {
+      "stage": "variables",
+      "mode": "regular",
+      "protocol": "openai",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/chat/completions",
+        "method": "POST",
+        "body": "1c197b098d41f5bf636ae5253fc52217b15796b9f8b70d5efe1e3b475c53b4b1",
+        "messages": "670a178d3ff60796aa733dfd69f7fcb8e8e0000f8b85d92ab0a41d3a3037d905",
+        "characters": 110701
+      }
+    },
+    {
+      "stage": "variables",
+      "mode": "regular",
+      "protocol": "deepseek",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/chat/completions",
+        "method": "POST",
+        "body": "1c197b098d41f5bf636ae5253fc52217b15796b9f8b70d5efe1e3b475c53b4b1",
+        "messages": "670a178d3ff60796aa733dfd69f7fcb8e8e0000f8b85d92ab0a41d3a3037d905",
+        "characters": 110701
+      }
+    },
+    {
+      "stage": "variables",
+      "mode": "regular",
+      "protocol": "gemini",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/models/variables:generateContent",
+        "method": "POST",
+        "body": "d75e15baae0aa172a88c7dbe003bd0cb1b77d8cb45a365f2b1da76aef47a379f",
+        "messages": "37aee857697471dab7403fa809f738bd3d82baa9e33867d6c6b641eb361ec462",
+        "characters": 110345
+      }
+    },
+    {
+      "stage": "variables",
+      "mode": "regular",
+      "protocol": "anthropic",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/messages",
+        "method": "POST",
+        "body": "3d137eefb62ded36ad0364bb04a2929d8dc2fcaa5eb51d45d1cbeaa7ead5f51f",
+        "messages": "37aee857697471dab7403fa809f738bd3d82baa9e33867d6c6b641eb361ec462",
+        "characters": 110304
+      }
+    },
+    {
+      "stage": "world",
+      "mode": "opening",
+      "protocol": "openai",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/chat/completions",
+        "method": "POST",
+        "body": "7a9dc4a56961b78aa2c5d61ecf65bb8322a79a6504752b4740089df8e1f29b9f",
+        "messages": "8aaf67110a9e27da17da1e3d7cac4f683678dc392b38c8de0c33e9525be92de1",
+        "characters": 88517
+      }
+    },
+    {
+      "stage": "world",
+      "mode": "opening",
+      "protocol": "deepseek",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/chat/completions",
+        "method": "POST",
+        "body": "7a9dc4a56961b78aa2c5d61ecf65bb8322a79a6504752b4740089df8e1f29b9f",
+        "messages": "8aaf67110a9e27da17da1e3d7cac4f683678dc392b38c8de0c33e9525be92de1",
+        "characters": 88517
+      }
+    },
+    {
+      "stage": "world",
+      "mode": "opening",
+      "protocol": "gemini",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/models/world:generateContent",
+        "method": "POST",
+        "body": "1d5c6320459ae0c5513cf9a94844dc2c9d48e5fa875d1fafd94575bb91bf0ef6",
+        "messages": "9437b4cc9eb12c683b65fc019447ca30301a0474970d3d96190a63a92911f0af",
+        "characters": 88327
+      }
+    },
+    {
+      "stage": "world",
+      "mode": "opening",
+      "protocol": "anthropic",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/messages",
+        "method": "POST",
+        "body": "25b0bdfb079cd0b185e5b4354a67103d181d52a5b91db301e4cfd4052e6655d2",
+        "messages": "9437b4cc9eb12c683b65fc019447ca30301a0474970d3d96190a63a92911f0af",
+        "characters": 88282
+      }
+    },
+    {
+      "stage": "world",
+      "mode": "regular",
+      "protocol": "openai",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/chat/completions",
+        "method": "POST",
+        "body": "a07443f6b42ea5cc8e7b397348127548fadbd2f73fba673867c23ef96c340d0f",
+        "messages": "151b89d7da2542651d0176e676bbe951bca34a2a1bd280f3e60e20069d5daa94",
+        "characters": 88808
+      }
+    },
+    {
+      "stage": "world",
+      "mode": "regular",
+      "protocol": "deepseek",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/chat/completions",
+        "method": "POST",
+        "body": "a07443f6b42ea5cc8e7b397348127548fadbd2f73fba673867c23ef96c340d0f",
+        "messages": "151b89d7da2542651d0176e676bbe951bca34a2a1bd280f3e60e20069d5daa94",
+        "characters": 88808
+      }
+    },
+    {
+      "stage": "world",
+      "mode": "regular",
+      "protocol": "gemini",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/models/world:generateContent",
+        "method": "POST",
+        "body": "3a849932b92f902564b725b20fc3f4f0577a9e06579563295c23c0efafce61d1",
+        "messages": "879b41bf71dd5d39088633b71d38401ca90350dcefb80e1f6f6a9f7e58ca33ce",
+        "characters": 88618
+      }
+    },
+    {
+      "stage": "world",
+      "mode": "regular",
+      "protocol": "anthropic",
+      "request": {
+        "url": "http://127.0.0.1:1/v1/messages",
+        "method": "POST",
+        "body": "585f4df9f36900f921c6aef5c3dc56effcc513f68e3a923cc711621efeb012b1",
+        "messages": "879b41bf71dd5d39088633b71d38401ca90350dcefb80e1f6f6a9f7e58ca33ce",
+        "characters": 88573
+      }
+    }
+  ]
+}
