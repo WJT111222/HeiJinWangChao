@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { GameState } from '../../domain/state';
 import type { TurnDraft } from '../../domain/drafts';
 import { awaitingPlayerAction } from '../../domain/turnCommit';
+import { storyPartialVisible } from '../../domain/storyContinuation';
 import type { SaveRepository, TurnUndoResult } from '../../services/storage/saveRepository';
 import type { UndoStatus } from '../../services/storage/turnUndo';
 import { DataError } from '../../domain/common';
@@ -72,8 +73,10 @@ export function TurnUndoControl({ repository, state, draft, busy, input, onInput
     {confirm && <Dialog title="撤回上一回合" small mobileVariant="confirm" footer={<button disabled={saving} onClick={()=>setConfirm(false)}>保留当前回合</button>} feedback="warn" seal="撤" onClose={() => { if (!saving) setConfirm(false); }}>
       {desktop ? <><p>恢复到第 {state.turnNumber - 1} 回合结束，回填原行动。</p><ul className="dialog-consequences"><li>已撤回的剧情无法重做；此操作不调用 AI。</li>
         {draft && !awaitingPlayerAction(state, draft) && <li>当前未结算草稿会被丢弃。</li>}
+        {storyPartialVisible(draft) && <li>这会连上一回合一起撤回。如果只是不想要那段没写完的正文，请用阅读区的「放弃这段」。</li>}
         {input && <li>输入框现有文字会被本次回填替换。</li>}</ul></> : <><p>恢复到第 {state.turnNumber - 1} 回合结束，回填原行动。</p><ul className="dialog-consequences"><li>已撤回的剧情无法重做；此操作不调用 AI。</li>
       {draft && !awaitingPlayerAction(state, draft) && <li>当前未结算草稿会被丢弃。</li>}
+        {storyPartialVisible(draft) && <li>这会连上一回合一起撤回。如果只是不想要那段没写完的正文，请用阅读区的「放弃这段」。</li>}
       {input && <li>输入框现有文字会被本次回填替换。</li>}</ul>
 </>}
       {desktop && error && <Feedback level="err" role="alert">{error}</Feedback>}

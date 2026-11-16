@@ -17,20 +17,33 @@ import { stageResponses, safeStreamResponseText, responseLimitsFor } from './sta
 import { safeAiError } from './errors';
 import { mergeResponseDiagnostics } from './responseContent';
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
+import { continuationInstruction, mergeContinuation, trimIncompleteTag } from '../../domain/storyContinuation';
+import type { StoryFailureText } from '../../domain/storyContinuation';
+import { splitLeadingThink } from './compat';
+
+/** 正文续写：已写出的截断原文（已隐藏凭证）。只用于正文阶段。 */
+export interface StageRequestOptions extends RequestOptions { continuation?: { partial: string } }
+/**
+ * 正文请求失败时收到的内容（去掉前导 <think> 推理；续写时为与已写部分拼接后的全文），供上层保存为可续写的截断正文。
+ * 以失败对象为键，不进入错误消息或诊断展示。
+ */
+export const storyFailureText = new WeakMap<object, StoryFailureText>();
 
 // 独立阶段请求入口；没有 SaveRepository、写库、重试或自动执行下游阶段。
 export async function runStageRequest(
   input: ComposeInput & { stage: AiStage },
   config: AiConfig,
   vault: CredentialVault,
-  options: RequestOptions = {},
+  options: StageRequestOptions = {},
   client = new AiClient(),
 ) {
   try { return await runStageRequestUnchecked(input, config, vault, options, client); }
   catch (error) { throw input.stage === 'variables' ? variableFailure(error, 'context') : error; }
 }
 async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }, config: AiConfig,
-  vault: CredentialVault, options: RequestOptions, client: AiClient) {
+  vault: CredentialVault, stageOptions: StageRequestOptions, client: AiClient) {
+  const { continuation: requestedContinuation, ...options } = stageOptions;
+  if (requestedContinuation && input.stage !== 'story') throw new AiError('configuration');
   if (input.orderOverrides && input.orderPreferences) throw new AiError('configuration');
   const captured = checkedInput({
     ...input,
@@ -45,6 +58,14 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   const prompt = captured.stage === 'variables'
     ? await composeTextVariablesPrompt({ ...captured, stage: 'variables', cotAllowed: snapshot.useCot })
     : await composePrompt({ ...captured, cotAllowed: snapshot.useCot });
+  // 续写：上下文与原请求完全相同（缓存前缀不变），末尾追加已写部分（assistant）与续写指令（user）。
+  const continuation = requestedContinuation ? { partial: trimIncompleteTag(requestedContinuation.partial) } : undefined;
+  const messages = continuation
+    ? [...prompt.messages, { role: 'assistant' as const, content: continuation.partial },
+      { role: 'user' as const, content: continuationInstruction({ actionOptions: captured.settings.prompts.actionOptions,
+        minNarrativeChars: captured.settings.prompts.minNarrativeChars, partial: continuation.partial }) }]
+    : prompt.messages;
+  const merged = (text: string) => continuation ? mergeContinuation(continuation.partial, text) : text;
   const responseId = stageResponses.begin({ saveId: captured.state.saveId, turnId: captured.draft?.turnId, stage: captured.stage, storyRevision: captured.draft?.storyRevision, protocol: snapshot.channel.protocol, baseSaveRevision: captured.state.revision,
     draftRevision: captured.draft?.draftRevision, executionRevision: captured.draft?.executionRevision,
     stageRequestRevision: captured.stage === 'story' ? undefined : captured.draft?.stageRequestRevisions[captured.stage],
@@ -72,8 +93,10 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     }, 50);
   };
   let step: 'request' | 'response' = 'request';
+  // 本次请求模型返回的原始文字（续写时不含已写部分）；诊断展示用的 received 在续写成功接收后会换成拼接全文。
+  let addition: string | undefined;
   try {
-  const response = await client.generate(snapshot, prompt.messages, {
+  const response = await client.generate(snapshot, messages, {
     ...options,
     onResponseDiagnostics: (value) => {
       if (sealed || options.signal?.aborted) return;
@@ -118,8 +141,12 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   clearTimeout(observationTimer);
   step = 'response';
   if (!rawObserved) received = append('', response.text, responseLimits.text);
+  addition = received;
+  // 续写时诊断原文与解析输入都是拼接后的全文；非续写时与原来完全一致。
+  if (continuation) received = append('', merged(received), responseLimits.text);
   stageResponses.update(responseId, { text: received, nativeReasoning: publicReasoning, diagnostics, truncated, ...display(), status: 'received' }, secrets);
-  const envelope = captured.stage === 'story' ? parseStoryEnvelope(response.text, captured.mode, captured.settings) : undefined;
+  const responseText = merged(response.text);
+  const envelope = captured.stage === 'story' ? parseStoryEnvelope(responseText, captured.mode, captured.settings) : undefined;
   const story = envelope?.story;
   if (story) {
     try { validateStoryEventInteractions(captured.state, story); }
@@ -130,8 +157,8 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     catch (error) { const failure = storyFailure(error); throw failure instanceof AiError ? failure : variableValidationError(error); }
   }
   const result = story ?? (captured.stage === 'variables'
-        ? await parseTextVariables(response.text, captured.state, captured.draft!)
-        : parseWorld(response.text, captured.state, captured.draft!));
+        ? await parseTextVariables(responseText, captured.state, captured.draft!)
+        : parseWorld(responseText, captured.state, captured.draft!));
   stageResponses.update(responseId, { status: 'validated', normalized: JSON.stringify(result, null, 2) }, secrets);
   return {
     result,
@@ -164,6 +191,12 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   } catch (error) {
     const failure = captured.stage === 'variables' ? variableFailure(error, step) : captured.stage === 'story' ? storyFailure(error, true) : error;
     sealed = true;
+    if (captured.stage === 'story' && failure && typeof failure === 'object') {
+      // 兼容渠道会把推理写成开头的 <think>…</think>：与正式解析一致先去掉，推理不进入可续写的正文。
+      const raw = addition ?? received, content = splitLeadingThink(raw).content;
+      storyFailureText.set(failure, { produced: raw.trim() !== '',
+        text: !continuation ? content : content.trim() ? merged(content) : continuation.partial });
+    }
     clearTimeout(observationTimer);
     stageResponses.update(responseId, { status: 'failed', text: preview(received),
       nativeReasoning: preview(publicReasoning), diagnostics, truncated, ...display(), error: safeAiError(failure) }, secrets);

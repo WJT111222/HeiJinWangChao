@@ -770,3 +770,41 @@ to {transform:translateX(250%)}
   .app-shell-game .city-night .composer-roll:not(:where(.modal, .modal *)) { width: 8.5rem; }
   .app-shell-game .city-night .composer-roll .composer-workflow-action[data-kind=continue]:not(:disabled) { color: var(--gold-hi); border-color: var(--gold-lo); }
 }
+
+/* 截断正文的末尾标记：提示正文在此中断，可续写。 */
+.story-partial .story-partial-end { margin: .2rem 0 0; color: var(--muted); letter-spacing: .4em; text-align: center; }
+/* 截断正文的操作条：细线分隔；左侧字数，右侧「复制」「放弃」两枚印章式小按钮。颜色全部取主题变量，日夜两套自动适配。 */
+.app-shell-game .city-night .story-partial .story-partial-actions {
+  display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:.55rem .65rem;
+  margin-top:1.1rem; padding-top:.85rem; border-top:1px solid var(--line-2);
+}
+.app-shell-game .city-night .story-partial .story-partial-meta {
+  margin-right:auto; font-family:var(--font-mono); font-size:.74rem; letter-spacing:.06em; color:var(--muted);
+}
+.app-shell-game .city-night .story-partial .story-partial-meta b { font-weight:600; color:var(--gold); }
+.app-shell-game .city-night .story-partial .story-partial-actions button.partial-action {
+  display:inline-flex; align-items:center; gap:.5rem; min-height:2.25rem;
+  padding:.3rem .95rem .3rem .38rem; border-radius:999px; font-size:.84rem; letter-spacing:.08em;
+  background:transparent; border:1px solid var(--line-2); color:var(--muted);
+}
+.app-shell-game .city-night .story-partial .partial-seal {
+  display:inline-grid; place-items:center; inline-size:1.55rem; block-size:1.55rem; border-radius:50%;
+  font-family:var(--font-title); font-size:.78rem; line-height:1; letter-spacing:0;
+  border:1px solid currentColor; opacity:.9; transition:background .2s, color .2s, border-color .2s;
+}
+.app-shell-game .city-night .story-partial .story-partial-actions button.partial-copy { color:var(--gold); border-color:color-mix(in srgb, var(--gold) 45%, transparent); }
+.app-shell-game .city-night .story-partial .story-partial-actions button.partial-copy:hover:not(:disabled) {
+  background:color-mix(in srgb, var(--gold) 12%, transparent); border-color:var(--gold);
+}
+.app-shell-game .city-night .story-partial .story-partial-actions button.partial-copy:hover:not(:disabled) .partial-seal { background:var(--gold); border-color:var(--gold); color:var(--bg); }
+.app-shell-game .city-night .story-partial .story-partial-actions button.partial-copy.is-done { color:var(--ok); border-color:color-mix(in srgb, var(--ok) 55%, transparent); }
+.app-shell-game .city-night .story-partial .story-partial-actions button.partial-copy.is-failed { color:var(--warn-text); border-color:color-mix(in srgb, var(--warn) 55%, transparent); }
+.app-shell-game .city-night .story-partial .story-partial-actions button.partial-discard:hover:not(:disabled) {
+  color:var(--warn-text); background:color-mix(in srgb, var(--warn) 10%, transparent); border-color:color-mix(in srgb, var(--warn) 60%, transparent);
+}
+.app-shell-game .city-night .story-partial .story-partial-actions button.partial-action:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+@media (max-width: 900px) {
+  .app-shell-game .city-night .story-partial .story-partial-meta { flex-basis:100%; text-align:center; margin-right:0; }
+  .app-shell-game .city-night .story-partial .story-partial-actions { justify-content:center; }
+  .app-shell-game .city-night .story-partial .story-partial-actions button.partial-action { flex:1 1 0; justify-content:center; min-height:2.6rem; }
+}

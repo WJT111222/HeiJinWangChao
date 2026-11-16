@@ -1,4 +1,4 @@
-import { stageResponses, safeStreamResponseText } from '../services/ai/stageResponses';
+import { stageResponses, safeStreamResponseText, safeResponseText } from '../services/ai/stageResponses';
 import { storyFailure, storySchemaError } from '../services/validation/storyDiagnostics';
 import { DataError } from '../domain/common';
 import { fingerprint } from '../domain/commands';
@@ -14,7 +14,8 @@ import type { AiConfig } from '../services/ai/configuration';
 import type { CredentialVault } from '../services/ai/credentials';
 import { AiError, safeAiError } from '../services/ai/errors';
 import { redactInspection } from '../services/ai/inspection';
-import { runStageRequest } from '../services/ai/runtime';
+import { runStageRequest, storyFailureText } from '../services/ai/runtime';
+import { canContinueStory, ContinuationPreview, nextStoryPartial, trimIncompleteTag } from '../domain/storyContinuation';
 import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { StoryStream } from './storyStream';
@@ -40,6 +41,17 @@ interface StoryInput {
   onProgress?: (progress: StoryProgress) => void;
   /** Manual UI owns this failure save; Coordinator records its own attempts. */
   onFailureSaved?: (draft: TurnDraft) => void;
+  /** 从草稿里保存的截断原文接着写（玩家点「续写正文」）。 */
+  continuation?: boolean;
+}
+
+/** 正文失败后应写入草稿的截断原文（已隐藏凭证；含凭证时不保存）。 */
+export function storyPartialAfterFailure(draft: TurnDraft, error: AiError, continuation: boolean, secrets: readonly string[]): TurnDraft['storyPartial'] {
+  const raw = storyFailureText.get(error);
+  const leaked = raw !== undefined && secrets.some((secret) => secret && raw.text.includes(secret));
+  const received = raw === undefined ? undefined : leaked ? { text: '', produced: raw.produced } : { ...raw, text: safeResponseText(raw.text, secrets) };
+  const storyRule = typeof error.details?.storyRule === 'string' ? error.details.storyRule : undefined;
+  return nextStoryPartial(draft, { code: error.code, storyRule }, received, continuation);
 }
 export class StoryStage {
   constructor(
@@ -77,10 +89,21 @@ export class StoryStage {
         (draft.turnKind === 'opening' && state.turnNumber !== 0)
       )
         throw new DataError('DRAFT_CONFLICT', '草稿或正式版本已变化，请重新读取存档。');
+      const continuation = Boolean(input.continuation);
+      if (continuation && !canContinueStory(draft, settings.prompts.minNarrativeChars))
+        throw new DataError('DRAFT_CONFLICT', '这段正文已不能续写，请重新生成。');
+      const partial = continuation ? trimIncompleteTag(draft.storyPartial!.text) : '';
       const stream = new StoryStream();
+      // 续写：先把已写部分放进显示流；续写开头缓冲到能确定拼接方式，去掉重复后再显示。
+      let narrative = continuation ? stream.push(partial) : '';
+      const preview = continuation ? new ContinuationPreview(partial) : undefined;
+      const pushDelta = (delta: string) => {
+        const shown = preview ? preview.push(delta) : delta;
+        return shown ? stream.push(shown) : narrative;
+      };
       const inspectionId = storyInspections.begin({ saveId: draft.saveId, turnId: draft.turnId,
         baseSaveRevision: draft.baseSaveRevision, basedOnStoryRevision: draft.storyRevision });
-      let reasoning = '', inspectionReasoning = '', compatibilityReasoning = '', narrative = '';
+      let reasoning = '', inspectionReasoning = '', compatibilityReasoning = '';
       const progress = () => input.onProgress?.({ phase: 'generating', narrative: streaming ? safeStreamResponseText(narrative, secrets) : '',
         readingPhase: !streaming ? 'waiting' : stream.bodyStarted ? 'body' : 'thinking',
         ...(!streaming || stream.bodyStarted ? {} : { planning: safeStreamResponseText(stream.planning, secrets), nativeReasoning: safeStreamResponseText(reasoning, secrets),
@@ -104,9 +127,10 @@ export class StoryStage {
           {
             stream: streaming,
             signal: attempt.signal,
+            ...(continuation ? { continuation: { partial } } : {}),
             onDelta: (delta) => {
               current();
-              narrative = stream.push(delta);
+              narrative = pushDelta(delta);
               progress();
               storyInspections.update(inspectionId, { planning: redactInspection(stream.planning, secrets), activity: 'content' });
             },
@@ -170,6 +194,7 @@ export class StoryStage {
             .reduce((last, failure) => Math.max(last, failure.attempt), 0);
           const failed = TurnDraftSchema.parse({
             ...draft, draftRevision: draft.draftRevision + 1,
+            storyPartial: storyPartialAfterFailure(draft, error, continuation, secrets),
             stageStatus: { ...draft.stageStatus, story: 'failed' },
             failures: [...draft.failures, { stage: 'story', attempt: previousAttempt + 1,
               storyRevision: draft.storyRevision, errorCode: error.code, retryable: false }],
