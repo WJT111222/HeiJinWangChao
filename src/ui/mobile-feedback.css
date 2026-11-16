@@ -54,4 +54,8 @@
 @media(max-width:900px){
  .mobile-diagnostics-sheet .modal-body,.candidate-dialog.mobile-sheet .modal-body{touch-action:auto}
  .mobile-diagnostic-tabs{position:sticky;top:0;z-index:2;background:#111513}.mobile-diagnostics-sheet .modal-body{scroll-padding-top:60px}
+ /* 选择抽屉：列表不再单独滚动、也不拦截滚动传递，由抽屉主体统一滚动（选项多时可以滑到底）；
+    高亮项用纸页浅金，盖过全局的深色高亮。电脑端下拉框不受影响。 */
+ .app-shell .mobile-select-sheet .select-popup [role=listbox]{overflow:visible;overscroll-behavior:auto;max-height:none}
+ .app-shell .mobile-select-sheet .select-popup [role=option].option-active{background:#8E6C251a;border-color:transparent;box-shadow:inset 2px 0 #8E6C25;color:#2B2723}
 }
