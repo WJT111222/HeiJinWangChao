@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useLayoutEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useDesktopFeedback } from './Feedback';
 import type { FeedbackLevel } from './Feedback';
@@ -26,7 +26,7 @@ export function Dialog({
   seal,
   eyebrow,
   badge,
-  nonmodal=false,archiveHeading,returnFocus,mobileVariant,sheetFull=false,footer,beforeBody,closeDisabled=false,
+  nonmodal=false,archiveHeading,returnFocus,mobileVariant,sheetFull=false,sheetExpandable=false,footer,beforeBody,closeDisabled=false,
 }: {
   title: string;
   onClose: () => void;
@@ -39,7 +39,7 @@ export function Dialog({
   eyebrow?: string;
   badge?: ReactNode;
   nonmodal?:boolean;archiveHeading?:ArchiveHeading;returnFocus?:()=>HTMLElement|null;
-  mobileVariant?:'sheet'|'actions'|'confirm'|'select';sheetFull?:boolean;footer?:ReactNode;beforeBody?:ReactNode;closeDisabled?:boolean;
+  mobileVariant?:'sheet'|'actions'|'confirm'|'select';sheetFull?:boolean;sheetExpandable?:boolean;footer?:ReactNode;beforeBody?:ReactNode;closeDisabled?:boolean;
 }) {
   const desktop = useDesktopFeedback();
   const sheet = !desktop && !nonmodal && Boolean(mobileVariant);
@@ -48,7 +48,22 @@ export function Dialog({
   const close = useRef(onClose),restore=useRef<HTMLElement|null>(null);
   const initialOpener=useRef<HTMLElement|null>(null),previousMode=useRef<boolean|undefined>(undefined);
   const focusReturn=useRef(returnFocus);focusReturn.current=returnFocus;
-  useSheetGesture(ref,sheet,close);
+  const [expanded, setExpanded] = useState(false);
+  const scrollRestore = useRef<{ top: number; atBottom: boolean } | undefined>(undefined);
+  const expansion = useRef<{ expanded: boolean; setExpanded: (value: boolean) => void } | undefined>(undefined);
+  const resizeSheet = (value: boolean) => {
+    if (value === expanded) return;
+    const body = ref.current?.querySelector<HTMLElement>('.modal-body');
+    if (body) scrollRestore.current = { top: body.scrollTop, atBottom: body.scrollHeight - body.clientHeight - body.scrollTop < 2 };
+    setExpanded(value);
+  };
+  expansion.current = sheet && sheetExpandable ? { expanded, setExpanded: resizeSheet } : undefined;
+  useLayoutEffect(() => {
+    const saved = scrollRestore.current, body = ref.current?.querySelector<HTMLElement>('.modal-body');
+    if (saved && body) body.scrollTop = saved.atBottom ? body.scrollHeight : saved.top;
+    scrollRestore.current = undefined;
+  }, [expanded]);
+  useSheetGesture(ref,sheet,close,expansion);
   useEffect(() => {
     close.current = onClose;
   }, [onClose]);
@@ -90,7 +105,7 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className={`${nonmodal?'archive':small ? 'modal modal-small' : 'modal'} ${className} ${feedback ? `feedback-dialog l-${feedback}` : ''} ${sheet?`mobile-sheet${sheetFull?' sheet-full':''}${mobileVariant==='actions'?' mobile-actions':''}${mobileVariant==='confirm'?' mobile-confirm':''}${mobileVariant==='select'?' mobile-select-sheet':''}`:''}`.trim()}
+      className={`${nonmodal?'archive':small ? 'modal modal-small' : 'modal'} ${className} ${feedback ? `feedback-dialog l-${feedback}` : ''} ${sheet?`mobile-sheet${sheetFull?' sheet-full':''}${sheetExpandable?` sheet-expandable${expanded?' sheet-expanded':''}`:''}${mobileVariant==='actions'?' mobile-actions':''}${mobileVariant==='confirm'?' mobile-confirm':''}${mobileVariant==='select'?' mobile-select-sheet':''}`:''}`.trim()}
       aria-labelledby={titleId}
       aria-modal={nonmodal?false:sheet?true:undefined}
       tabIndex={nonmodal||sheet?-1:undefined}
@@ -135,13 +150,17 @@ export function Dialog({
           <h2 id={titleId} title={sheet?title:undefined}>{title}</h2>
         </div>
         {desktop && badge}
+        {sheet && sheetExpandable && <button type="button" className="mobile-sheet-size-toggle" aria-expanded={expanded}
+          aria-controls={`${titleId}-body`} aria-label={expanded ? '收起面板' : '展开面板'} onClick={() => resizeSheet(!expanded)}>
+          {expanded ? '收起' : '展开'}
+        </button>}
         <button type="button" onClick={onClose} disabled={closeDisabled||undefined} aria-label={closeLabel}>
           关闭 <span aria-hidden="true">×</span>
         </button>
       </header>}
       {sheet&&badge&&<div className="mobile-sheet-badge">{badge}</div>}
       {beforeBody}
-      <div className={nonmodal?"ar-body":"modal-body"}>{children}</div>
+      <div id={sheet && sheetExpandable ? `${titleId}-body` : undefined} className={nonmodal?"ar-body":"modal-body"}>{children}</div>
       {sheet&&footer&&<footer className="mobile-sheet-footer">{footer}</footer>}
     </dialog>
   );

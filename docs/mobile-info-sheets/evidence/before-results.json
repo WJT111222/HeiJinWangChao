@@ -1,0 +1,162 @@
+[
+  {
+    "width": 390,
+    "height": 844,
+    "人物": {
+      "opened": true,
+      "before": {
+        "x": 0,
+        "y": 18,
+        "width": 390,
+        "height": 826
+      },
+      "afterUp": {
+        "x": 0,
+        "y": 18,
+        "width": 390,
+        "height": 826
+      },
+      "upChangesHeight": false,
+      "expandControl": 0,
+      "nativeScroll": 229,
+      "endControlsReachable": true,
+      "profileOpens": true
+    },
+    "世界资料": {
+      "opened": true,
+      "before": {
+        "x": 0,
+        "y": 496.9375,
+        "width": 390,
+        "height": 347.0625
+      },
+      "afterUp": {
+        "x": 0,
+        "y": 496.9375,
+        "width": 390,
+        "height": 347.0625
+      },
+      "upChangesHeight": false,
+      "expandControl": 0,
+      "categories": [
+        "人NPC",
+        "势势力组织",
+        "图地图",
+        "物物品栏",
+        "事世界事件",
+        "史历史时间轴",
+        "忆记忆"
+      ],
+      "npcOpens": true
+    },
+    "contentPullDismisses": true,
+    "allCategories": {
+      "NPC": true,
+      "势力组织": true,
+      "地图": true,
+      "物品栏": true,
+      "世界事件": true,
+      "历史时间轴": true,
+      "记忆": true
+    },
+    "economyOpens": true,
+    "safeAreaEmulated": false,
+    "safeAreaLimitation": "Error: cdpSession.send: Protocol error (Emulation.setSafeAreaInsets): 'Emulation.setSafeAreaInsets' wasn't found",
+    "viewport": {
+      "box": {
+        "x": 0,
+        "y": 42,
+        "width": 390,
+        "height": 482
+      },
+      "lastButton": {
+        "x": 199,
+        "y": 460.171875,
+        "width": 175,
+        "height": 46
+      },
+      "bodyPadding": "18px",
+      "visualBottom": 524
+    }
+  },
+  {
+    "width": 375,
+    "height": 667,
+    "人物": {
+      "opened": true,
+      "before": {
+        "x": 0,
+        "y": 18,
+        "width": 375,
+        "height": 649
+      },
+      "afterUp": {
+        "x": 0,
+        "y": 18,
+        "width": 375,
+        "height": 649
+      },
+      "upChangesHeight": false,
+      "expandControl": 0,
+      "nativeScroll": 229,
+      "endControlsReachable": true,
+      "profileOpens": true
+    },
+    "世界资料": {
+      "opened": true,
+      "before": {
+        "x": 0,
+        "y": 319.9375,
+        "width": 375,
+        "height": 347.0625
+      },
+      "afterUp": {
+        "x": 0,
+        "y": 319.9375,
+        "width": 375,
+        "height": 347.0625
+      },
+      "upChangesHeight": false,
+      "expandControl": 0,
+      "categories": [
+        "人NPC",
+        "势势力组织",
+        "图地图",
+        "物物品栏",
+        "事世界事件",
+        "史历史时间轴",
+        "忆记忆"
+      ],
+      "npcOpens": true
+    },
+    "contentPullDismisses": true,
+    "allCategories": {
+      "NPC": true,
+      "势力组织": true,
+      "地图": true,
+      "物品栏": true,
+      "世界事件": true,
+      "历史时间轴": true,
+      "记忆": true
+    },
+    "economyOpens": true,
+    "safeAreaEmulated": false,
+    "safeAreaLimitation": "Error: cdpSession.send: Protocol error (Emulation.setSafeAreaInsets): 'Emulation.setSafeAreaInsets' wasn't found",
+    "viewport": {
+      "box": {
+        "x": 0,
+        "y": 42,
+        "width": 375,
+        "height": 482
+      },
+      "lastButton": {
+        "x": 191.5,
+        "y": 460.171875,
+        "width": 167.5,
+        "height": 46
+      },
+      "bodyPadding": "18px",
+      "visualBottom": 524
+    }
+  }
+]

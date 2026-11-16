@@ -859,10 +859,10 @@ export function GameScreen({
         <button data-settings-open aria-current={renderSettings?'page':undefined} onClick={onOpenSettings}><span className="mobile-seal" aria-hidden="true">设</span>设置</button>
       </nav>
       {compactSidebars&&<MobileDiagnostics saveId={state.saveId} turnId={rawTurnId} draft={draft} entries={runtimeLogs} onClear={()=>setRuntimeLogs([])} open={diagnosticsOpen} onOpen={()=>setDiagnosticsOpen(true)} onClose={()=>setDiagnosticsOpen(false)}/>}
-      {compactSidebars && mobileStatusOpen && <Dialog title="此时此地" mobileVariant="sheet" seal={mobileCitySeal(state)} eyebrow="NOW · HERE" className="mobile-status-sheet" onClose={()=>setMobileStatusOpen(false)} returnFocus={()=>document.querySelector<HTMLElement>('[data-mobile-status]')??mobileReturnFocus('hero')}>
+      {compactSidebars && mobileStatusOpen && <Dialog title="此时此地" mobileVariant="sheet" sheetExpandable seal={mobileCitySeal(state)} eyebrow="NOW · HERE" className="mobile-status-sheet" onClose={()=>setMobileStatusOpen(false)} returnFocus={()=>document.querySelector<HTMLElement>('[data-mobile-status]')??mobileReturnFocus('hero')}>
         <MobileStatus state={state} equipment={equipment} onProfile={()=>{setMobileStatusOpen(false);setPanel('人物档案');}} onEconomy={()=>{setMobileStatusOpen(false);setPanel('经济与资产');}}/>
       </Dialog>}
-      {compactSidebars && worldDirectoryOpen && <Dialog title="世界资料" mobileVariant="sheet" seal="世" eyebrow="WORLD ARCHIVE" className="world-directory" onClose={() => setWorldDirectoryOpen(false)} returnFocus={()=>mobileReturnFocus('world')}>
+      {compactSidebars && worldDirectoryOpen && <Dialog title="世界资料" mobileVariant="sheet" sheetExpandable seal="世" eyebrow="WORLD ARCHIVE" className="world-directory" onClose={() => setWorldDirectoryOpen(false)} returnFocus={()=>mobileReturnFocus('world')}>
         {worldNavigation}
         <p className="muted mobile-world-hint">从身边的人，到更远的城市。</p>
       </Dialog>}

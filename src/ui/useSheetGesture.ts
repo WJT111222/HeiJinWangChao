@@ -1,13 +1,14 @@
 import {useEffect} from 'react';
 import type {RefObject} from 'react';
 
-/** Presentation only. Content keeps native scrolling; only a downward pull at its
- * scroll boundary can dismiss. Cancelled pointers/touches always spring back. */
-export function useSheetGesture(ref:RefObject<HTMLDialogElement|null>,enabled:boolean,close:RefObject<()=>void>){
+/** Presentation only. Expandable info sheets reserve content entirely for native
+ * scrolling and resize/dismiss from the header. Other sheets keep their existing
+ * downward pull at the scroll boundary. Cancelled pointers/touches spring back. */
+export function useSheetGesture(ref:RefObject<HTMLDialogElement|null>,enabled:boolean,close:RefObject<()=>void>,expansion?:RefObject<{expanded:boolean;setExpanded:(value:boolean)=>void}|undefined>){
  useEffect(()=>{
   const dialog=ref.current,body=dialog?.querySelector<HTMLElement>('.modal-body');
   if(!enabled||!dialog||!body)return;
-  let pointer:{id:number;y:number;dy:number}|undefined,touch:{x:number;y:number;dy:number;target:Element}|undefined,outside=false;
+  let pointer:{id:number;x:number;y:number;dy:number}|undefined,touch:{x:number;y:number;dy:number;target:Element}|undefined,outside=false;
   const interactive=(target:Element)=>Boolean(target.closest('button,input,textarea,select,a,summary,[contenteditable="true"],[role="button"]'));
   const owned=(target:EventTarget|null):target is Element=>target instanceof Element&&target.closest('dialog')===dialog;
   const out=(x:number,y:number)=>{const r=dialog.getBoundingClientRect();return x<r.left||x>r.right||y<r.top||y>r.bottom;};
@@ -18,16 +19,27 @@ export function useSheetGesture(ref:RefObject<HTMLDialogElement|null>,enabled:bo
    if(!owned(e.target)||e.button!==0)return;
    outside=e.target===dialog&&out(e.clientX,e.clientY);
    if(outside||interactive(e.target)||!e.target.closest('.mobile-sheet-grab,.modal-heading'))return;
-   pointer={id:e.pointerId,y:e.clientY,dy:0};dialog.setPointerCapture(e.pointerId);
+   pointer={id:e.pointerId,x:e.clientX,y:e.clientY,dy:0};dialog.setPointerCapture(e.pointerId);
   };
-  const pointerMove=(e:PointerEvent)=>{if(pointer?.id!==e.pointerId)return;pointer.dy=Math.max(0,e.clientY-pointer.y);if(pointer.dy>4)move(pointer.dy);};
+  const pointerMove=(e:PointerEvent)=>{
+   if(pointer?.id!==e.pointerId)return;
+   const dy=e.clientY-pointer.y;
+   if(expansion?.current&&Math.abs(e.clientX-pointer.x)>Math.max(10,Math.abs(dy))){pointer.dy=0;reset();return;}
+   pointer.dy=expansion?.current?dy:Math.max(0,dy);
+   if(pointer.dy>4)move(pointer.dy);
+  };
   const up=(e:PointerEvent)=>{
-   if(pointer?.id===e.pointerId){const dismiss=pointer.dy>110;pointer=undefined;reset();if(dialog.hasPointerCapture(e.pointerId))dialog.releasePointerCapture(e.pointerId);if(dismiss)close.current();}
+   if(pointer?.id===e.pointerId){
+    const dy=pointer.dy,mode=expansion?.current;pointer=undefined;reset();
+    if(dialog.hasPointerCapture(e.pointerId))dialog.releasePointerCapture(e.pointerId);
+    if(mode&&dy < -60)mode.setExpanded(true);
+    else if(dy>110){if(mode?.expanded)mode.setExpanded(false);else close.current();}
+   }
    else if(outside&&owned(e.target)&&out(e.clientX,e.clientY))close.current();
    outside=false;
   };
   const cancel=()=>{pointer=undefined;touch=undefined;outside=false;reset();};
-  const touchStart=(e:TouchEvent)=>{if(e.touches.length!==1||!owned(e.target)||interactive(e.target)||!atTop(e.target))return;const p=e.touches[0];touch={x:p.clientX,y:p.clientY,dy:0,target:e.target};};
+  const touchStart=(e:TouchEvent)=>{if(expansion?.current)return;if(e.touches.length!==1||!owned(e.target)||interactive(e.target)||!atTop(e.target))return;const p=e.touches[0];touch={x:p.clientX,y:p.clientY,dy:0,target:e.target};};
   const touchMove=(e:TouchEvent)=>{
    if(!touch||e.touches.length!==1)return;
    const p=e.touches[0],dy=p.clientY-touch.y,dx=Math.abs(p.clientX-touch.x);
@@ -38,5 +50,5 @@ export function useSheetGesture(ref:RefObject<HTMLDialogElement|null>,enabled:bo
   dialog.addEventListener('pointerdown',down);dialog.addEventListener('pointermove',pointerMove);dialog.addEventListener('pointerup',up);dialog.addEventListener('pointercancel',cancel);
   body.addEventListener('touchstart',touchStart,{passive:true});body.addEventListener('touchmove',touchMove,{passive:false});body.addEventListener('touchend',touchEnd);body.addEventListener('touchcancel',cancel);
   return()=>{cancel();dialog.classList.remove('sheet-interacted');dialog.removeEventListener('pointerdown',down);dialog.removeEventListener('pointermove',pointerMove);dialog.removeEventListener('pointerup',up);dialog.removeEventListener('pointercancel',cancel);body.removeEventListener('touchstart',touchStart);body.removeEventListener('touchmove',touchMove);body.removeEventListener('touchend',touchEnd);body.removeEventListener('touchcancel',cancel);};
- },[ref,enabled,close]);
+ },[ref,enabled,close,expansion]);
 }
