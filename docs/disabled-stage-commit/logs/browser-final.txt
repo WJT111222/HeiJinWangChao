@@ -1,0 +1,44 @@
+[WebServer] (node:746689) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:746702) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:746724) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 10 tests using 2 workers
+
+(node:746748) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+(node:746749) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/10] [desktop] › e2e/disabled-stage-turns.spec.ts:72:1 › 开局通过真实开关关闭两阶段，连续三章保存、刷新不收费；重启两阶段后恢复完整流程
+[2/10] [desktop] › e2e/disabled-stage-turns.spec.ts:91:1 › 只关闭World：变量仍严格执行并正式结算，关闭状态可见
+[3/10] [desktop] › e2e/disabled-stage-turns.spec.ts:97:1 › World-only说明变量依赖且不提交；关闭World后无额外AI请求完成本章
+[4/10] [desktop] › e2e/disabled-stage-turns.spec.ts:107:1 › 纯小说截断不提交，刷新保留，续写完整后一次正式保存
+[5/10] [desktop] › e2e/disabled-stage-turns.spec.ts:117:1 › 自动提交故障后有完成结算入口，重试只提交，不再次生成正文
+(node:747180) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[6/10] [mobile] › e2e/disabled-stage-turns.spec.ts:72:1 › 开局通过真实开关关闭两阶段，连续三章保存、刷新不收费；重启两阶段后恢复完整流程
+(node:747212) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[7/10] [mobile] › e2e/disabled-stage-turns.spec.ts:91:1 › 只关闭World：变量仍严格执行并正式结算，关闭状态可见
+[8/10] [mobile] › e2e/disabled-stage-turns.spec.ts:97:1 › World-only说明变量依赖且不提交；关闭World后无额外AI请求完成本章
+[9/10] [mobile] › e2e/disabled-stage-turns.spec.ts:107:1 › 纯小说截断不提交，刷新保留，续写完整后一次正式保存
+[10/10] [mobile] › e2e/disabled-stage-turns.spec.ts:117:1 › 自动提交故障后有完成结算入口，重试只提交，不再次生成正文
+  10 passed (31.0s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /workspace/disabled-stage-commit
+
+ ❯ src/tests/disabled-stage-turns.test.ts (18 tests | 1 failed) 541ms
+   × 纯小说同时提交、幂等回执与撤回保留原有保护 20ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tests/disabled-stage-turns.test.ts > 纯小说同时提交、幂等回执与撤回保留原有保护
+AssertionError: expected { available: 1, bytes: 2467, …(5) } to have property "available" with value true
+
+- Expected:
+true
+
++ Received:
+1
+
+ ❯ src/tests/disabled-stage-turns.test.ts:180:20
+    178|     const next = (await run(runner(async () => json(story())), bound))…
+    179|     const status = await repo.undoStatus(state.saveId);
+    180|     expect(status).toHaveProperty('available', true);
+       |                    ^
+    181|     expect(next.state.turnNumber).toBe(2);
+    182|   } finally { other.close(); }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  21:40:14
+   Duration  1.15s (tests 53%, transform 24%, import 23%)
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

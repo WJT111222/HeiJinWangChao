@@ -1,0 +1,117 @@
+[WebServer] (node:752330) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:752343) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:752365) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 4 tests using 2 workers
+
+(node:752390) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+(node:752389) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/4] [desktop] › e2e/disabled-stage-turns.spec.ts:174:1 › 纯小说缺少Web Locks零请求，保留原草稿和输入并显示明确提示
+[2/4] [desktop] › e2e/disabled-stage-turns.spec.ts:154:1 › 纯小说双标签由Web Locks阻止第二次请求；取消后迟到响应不提交
+(node:752729) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[3/4] [mobile] › e2e/disabled-stage-turns.spec.ts:154:1 › 纯小说双标签由Web Locks阻止第二次请求；取消后迟到响应不提交
+  1) [desktop] › e2e/disabled-stage-turns.spec.ts:154:1 › 纯小说双标签由Web Locks阻止第二次请求；取消后迟到响应不提交 ───────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "failed"
+    Received: "pending"
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      166 |   expect(secondCalls).toEqual([]);expect((await stored(page)).state).toEqual(before);
+      167 |   await page.getByRole('button',{name:'取消自动执行',exact:true}).click();release();
+    > 168 |   await expect.poll(async()=>(await stored(page)).draft?.stageStatus.story).toBe('failed');
+          |                                                                             ^
+      169 |   await page.reload();await expect(page.getByTestId('story-reader')).toBeVisible();
+      170 |   expect((await stored(page)).state).toEqual(before);expect((await stored(page)).draft?.story).toBeUndefined();
+      171 |   expect(calls).toBe(1);expect(secondCalls).toEqual([]);await second.close();
+        at /workspace/disabled-stage-commit/e2e/disabled-stage-turns.spec.ts:168:77
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../disabled-stage-evidence/browser-locks/disabled-stage-turns-纯小说双标签由Web-Locks阻止第二次请求；取消后迟到响应不提交-desktop/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../disabled-stage-evidence/browser-locks/disabled-stage-turns-纯小说双标签由Web-Locks阻止第二次请求；取消后迟到响应不提交-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../disabled-stage-evidence/browser-locks/disabled-stage-turns-纯小说双标签由Web-Locks阻止第二次请求；取消后迟到响应不提交-desktop/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../disabled-stage-evidence/browser-locks/disabled-stage-turns-纯小说双标签由Web-Locks阻止第二次请求；取消后迟到响应不提交-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../disabled-stage-evidence/browser-locks/disabled-stage-turns-纯小说双标签由Web-Locks阻止第二次请求；取消后迟到响应不提交-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:752893) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[4/4] [mobile] › e2e/disabled-stage-turns.spec.ts:174:1 › 纯小说缺少Web Locks零请求，保留原草稿和输入并显示明确提示
+  2) [mobile] › e2e/disabled-stage-turns.spec.ts:154:1 › 纯小说双标签由Web Locks阻止第二次请求；取消后迟到响应不提交 ────────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "failed"
+    Received: "pending"
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      166 |   expect(secondCalls).toEqual([]);expect((await stored(page)).state).toEqual(before);
+      167 |   await page.getByRole('button',{name:'取消自动执行',exact:true}).click();release();
+    > 168 |   await expect.poll(async()=>(await stored(page)).draft?.stageStatus.story).toBe('failed');
+          |                                                                             ^
+      169 |   await page.reload();await expect(page.getByTestId('story-reader')).toBeVisible();
+      170 |   expect((await stored(page)).state).toEqual(before);expect((await stored(page)).draft?.story).toBeUndefined();
+      171 |   expect(calls).toBe(1);expect(secondCalls).toEqual([]);await second.close();
+        at /workspace/disabled-stage-commit/e2e/disabled-stage-turns.spec.ts:168:77
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../disabled-stage-evidence/browser-locks/disabled-stage-turns-纯小说双标签由Web-Locks阻止第二次请求；取消后迟到响应不提交-mobile/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../disabled-stage-evidence/browser-locks/disabled-stage-turns-纯小说双标签由Web-Locks阻止第二次请求；取消后迟到响应不提交-mobile/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../disabled-stage-evidence/browser-locks/disabled-stage-turns-纯小说双标签由Web-Locks阻止第二次请求；取消后迟到响应不提交-mobile/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../disabled-stage-evidence/browser-locks/disabled-stage-turns-纯小说双标签由Web-Locks阻止第二次请求；取消后迟到响应不提交-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../disabled-stage-evidence/browser-locks/disabled-stage-turns-纯小说双标签由Web-Locks阻止第二次请求；取消后迟到响应不提交-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2 failed
+    [desktop] › e2e/disabled-stage-turns.spec.ts:154:1 › 纯小说双标签由Web Locks阻止第二次请求；取消后迟到响应不提交 ────────
+    [mobile] › e2e/disabled-stage-turns.spec.ts:154:1 › 纯小说双标签由Web Locks阻止第二次请求；取消后迟到响应不提交 ─────────
+  2 passed (19.2s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

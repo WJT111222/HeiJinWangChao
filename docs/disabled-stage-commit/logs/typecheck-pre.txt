@@ -1,0 +1,17 @@
+
+> heijinwangchao@1.0.0-beta typecheck
+> tsc --noEmit
+
+src/tests/disabled-stage-turns.test.ts(3,61): error TS6133: 'TurnDraftSchema' is declared but its value is never read.
+src/tests/disabled-stage-turns.test.ts(74,117): error TS2345: Argument of type '(guides: { group: string; subjectHint: string; observedFact: string; } | undefined) => Promise<void>' is not assignable to parameter of type '(...args: [] | [{ group: string; subjectHint: string; observedFact: string; }]) => Awaitable<void>'.
+  Types of parameters 'guides' and 'args' are incompatible.
+    Type '[] | [{ group: string; subjectHint: string; observedFact: string; }]' is not assignable to type '[guides: { group: string; subjectHint: string; observedFact: string; } | undefined]'.
+      Type '[]' is not assignable to type '[guides: { group: string; subjectHint: string; observedFact: string; } | undefined]'.
+        Source has 0 element(s) but target requires 1.
+src/tests/disabled-stage-turns.test.ts(76,50): error TS2345: Argument of type '{ group: string; subjectHint: string; observedFact: string; } | undefined' is not assignable to parameter of type 'unknown[] | undefined'.
+  Type '{ group: string; subjectHint: string; observedFact: string; }' is missing the following properties from type 'unknown[]': length, pop, push, concat, and 29 more.
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

@@ -1,0 +1,117 @@
+[WebServer] (node:749920) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:749954) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:749991) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 4 tests using 2 workers
+
+(node:750112) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+(node:750111) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/4] [desktop] › e2e/action-workflow.spec.ts:248:3 › 关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送
+[2/4] [desktop] › e2e/action-workflow.spec.ts:248:3 › 关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送
+(node:751158) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+(node:751167) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[3/4] [mobile] › e2e/action-workflow.spec.ts:248:3 › 关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送
+[4/4] [mobile] › e2e/action-workflow.spec.ts:248:3 › 关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送
+  1) [mobile] › e2e/action-workflow.spec.ts:248:3 › 关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送 ────────
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('region', { name: '三阶段工作流', exact: true }).getByRole('note', { name: '阶段设置提示', exact: true })
+    Expected substring: "变量阶段未启用，当前世界结果仅为预览"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('region', { name: '三阶段工作流', exact: true }).getByRole('note', { name: '阶段设置提示', exact: true }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '三阶段工作流', exact: true }).getByRole('note', { name: '阶段设置提示', exact: true })
+
+
+      257 |     await openWorkflow(page);
+      258 |     const guidance = workflow(page).getByRole('note', { name: '阶段设置提示', exact: true });
+    > 259 |     await expect(guidance).toContainText(disabled === 'world' ? '动态世界阶段已关闭' : '变量阶段未启用，当前世界结果仅为预览');
+          |                            ^
+      260 |     await workflowTrigger(page).click();
+      261 |     await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');
+      262 |     await page.getByLabel('你的行动', { exact: true }).fill('继续观察街道');
+        at /workspace/disabled-stage-main-control/e2e/action-workflow.spec.ts:259:28
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../disabled-stage-evidence/browser-main-old-rules/action-workflow-关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../disabled-stage-evidence/browser-main-old-rules/action-workflow-关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../disabled-stage-evidence/browser-main-old-rules/action-workflow-关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../disabled-stage-evidence/browser-main-old-rules/action-workflow-关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2) [mobile] › e2e/action-workflow.spec.ts:248:3 › 关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送 ────────────
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('region', { name: '三阶段工作流', exact: true }).getByRole('note', { name: '阶段设置提示', exact: true })
+    Expected substring: "动态世界阶段已关闭"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('region', { name: '三阶段工作流', exact: true }).getByRole('note', { name: '阶段设置提示', exact: true }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '三阶段工作流', exact: true }).getByRole('note', { name: '阶段设置提示', exact: true })
+
+
+      257 |     await openWorkflow(page);
+      258 |     const guidance = workflow(page).getByRole('note', { name: '阶段设置提示', exact: true });
+    > 259 |     await expect(guidance).toContainText(disabled === 'world' ? '动态世界阶段已关闭' : '变量阶段未启用，当前世界结果仅为预览');
+          |                            ^
+      260 |     await workflowTrigger(page).click();
+      261 |     await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');
+      262 |     await page.getByLabel('你的行动', { exact: true }).fill('继续观察街道');
+        at /workspace/disabled-stage-main-control/e2e/action-workflow.spec.ts:259:28
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../disabled-stage-evidence/browser-main-old-rules/action-workflow-关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../disabled-stage-evidence/browser-main-old-rules/action-workflow-关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../disabled-stage-evidence/browser-main-old-rules/action-workflow-关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../disabled-stage-evidence/browser-main-old-rules/action-workflow-关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2 failed
+    [mobile] › e2e/action-workflow.spec.ts:248:3 › 关闭阶段时world：不显示无效继续，引导启用后只补必要候选并正常发送 ─────────────
+    [mobile] › e2e/action-workflow.spec.ts:248:3 › 关闭阶段时variables：不显示无效继续，引导启用后只补必要候选并正常发送 ─────────
+  2 passed (35.7s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

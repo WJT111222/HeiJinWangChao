@@ -1,0 +1,5 @@
+v24.19.0
+11.9.0
+Chromium 154.0.8037.57 built on Debian GNU/Linux 13 (trixie)
+fd5ed0b8132c7e89d411b7c72480b09416217e80
+6e013f47db4ae7947e8218e44f1f917b1fc1f976
