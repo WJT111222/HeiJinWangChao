@@ -1,0 +1,47 @@
+{
+  "main": "ee2bd3d8b55a46558ff67e4aa27e1a87b877ca13",
+  "originalPrHead": "ad87fd3cdf7c9762394b30a1a1109f1209da992e",
+  "integrationMerge": "eda8ef281ccb941b6fbaa541117641d25ab33f09",
+  "behindMain": "0",
+  "identicalToMain": {
+    "src/ui/game/MobileActions.tsx": {
+      "main": "9415837bfa69f587fcb4c3f632fbf48fd8e07ce5",
+      "integration": "9415837bfa69f587fcb4c3f632fbf48fd8e07ce5"
+    },
+    "src/ui/game/actionSuggestions.ts": {
+      "main": "6509461817291235643e4781d35b332f82c6a6d9",
+      "integration": "6509461817291235643e4781d35b332f82c6a6d9"
+    },
+    "src/ui/game/MobileCity.tsx": {
+      "main": "0172362654b709a2ba3127668b0f84405fc54791",
+      "integration": "0172362654b709a2ba3127668b0f84405fc54791"
+    },
+    "src/ui/Dialog.tsx": {
+      "main": "fdddc3adb10f105dec07cba77a98f4f0bfdd0b6f",
+      "integration": "fdddc3adb10f105dec07cba77a98f4f0bfdd0b6f"
+    },
+    "src/ui/useSheetGesture.ts": {
+      "main": "22b4607ae67fcd6fa5915ddc4a19143562ca5a9f",
+      "integration": "22b4607ae67fcd6fa5915ddc4a19143562ca5a9f"
+    },
+    "src/services/ai/runtime.ts": {
+      "main": "d27eb82f1e3278ffec0ec860743da43df69811c7",
+      "integration": "d27eb82f1e3278ffec0ec860743da43df69811c7"
+    },
+    "src/services/storage/saveRepository.ts": {
+      "main": "371d1e9a782271483e3d6c6211b2c73eb4451454",
+      "integration": "371d1e9a782271483e3d6c6211b2c73eb4451454"
+    }
+  },
+  "identicalToAcceptedPr": {
+    "src/ui/game/day-appearance.css": {
+      "acceptedHead": "499a1bd8727662f9cb5760992ded2a35bd87c4e5",
+      "integration": "499a1bd8727662f9cb5760992ded2a35bd87c4e5"
+    },
+    "announcements/current.json": {
+      "acceptedHead": "f4d871d959791d688a215d1a2a5eb81e29579f83",
+      "integration": "f4d871d959791d688a215d1a2a5eb81e29579f83"
+    }
+  },
+  "gameScreenVsMain": "diff --git a/src/ui/game/GameScreen.tsx b/src/ui/game/GameScreen.tsx\nindex 613819e..85a3054 100644\n--- a/src/ui/game/GameScreen.tsx\n+++ b/src/ui/game/GameScreen.tsx\n@@ -67,6 +67,7 @@ import { deriveAtmosphere } from './atmosphere';\n import './city-night.css';\n import './workflow-feedback.css';\n import './mobile-game.css';\n+import './day-appearance.css';\n import {MobileCityBar,MobileStatus,mobileCitySeal} from './MobileCity';\n import {MobileActions} from './MobileActions';\n import {ComposerTools} from './ComposerTools';"
+}
