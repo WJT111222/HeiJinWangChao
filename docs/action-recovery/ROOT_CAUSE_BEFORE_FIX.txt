@@ -1,0 +1,27 @@
+《黑金王朝》生成停止与行动建议：修复前只读根因记录
+日期：2026-11-16。基线：e0e2b446136b9589bf60094d9975a807ab06fbdf。
+隔离工作树：/workspace/action-recovery-fix；分支 fix/stalled-turn-actions。
+记录形成时生产代码未修改。Node v24.19.0；真实 React/Vite + Chromium154；SaveRepository/IndexedDB 真实，模型传输全部 Mock，零付费请求。
+
+一、已证实
+1. GameScreen.tsx 原384行只有 awaitingAction 时才回退上回合 Journal.actionOptions。行动绑定后该标志为false，正文中断/失败且无新Story时options为空。原743行显示“行动建议将在正文生成后显示”，即使请求已经停止。Journal原建议3条始终完整，正式state未改变。这是展示逻辑问题，非存档丢失。
+2. 生成中的progress临时隐藏建议属于既有设计。部分SSE断网、静默超时、请求超时、缺少结束标记、不完整协议、校验失败、401/429/500及取消后，都能释放本页busy；Send可在合法重绑定状态恢复，修改输入再发送完成三阶段且仅提交一次。未复现永久锁死，不能宣称已修复某个未证实的死锁。
+3. Variables失败或World失败，Story及新建议已保存；Send禁用是正确的未结算保护。常驻继续按钮仅请求剩余阶段，并能在刷新后恢复。界面缺少发送区附近的明确原因和下一步说明，容易被误认为输入无效。不得放宽Send条件或重发Story。
+4. 真正IDB写入失败可原子保留正式state和全部候选；候选完成后的常驻结算重试不发出新模型请求。保存中禁止取消是正确行为。
+5. 两次明确失败、编辑、切换存档、设置、刷新、旧请求迟到及跨标签/Web Locks缺失已复核。未发送编辑仅本页内存；刷新恢复的是已绑定行动，不能承诺保存未发送修改。Web Locks缺失零Mock POST，未绕过互斥。
+6. HTTP500已有自动重试一次，测试观察到2次Story调用，用户明确要求保留。此次恢复不增加自动请求。
+
+二、证据批次（不拼接成绩）
+初批28项：27通过、1失败。失败为测试等待“continue”过早，在新请求尚未真正失败时读取pending草稿，随后正常写入摘要被误认为迟到污染。修改测试等待真实failed，生产代码未改；生命周期复核2/2通过。
+补充C：桌面/手机2项通过，验证点击旧建议只填字、两次主动失败、未发送编辑、切换存档/刷新和主动重发。
+独立RED断言要求失败后明确标注旧建议、Variables阶段解释发送禁用；在未修改main上预期失败，完整日志见logs/supplement-red.log（等待该批结束后记最终成绩）。
+安全合成UI/Repository对照、各场景调用计数见logs/*-{401,429,500,invalid,incomplete,missing-done,partial,silence,timeout,hold,variables,world,commit,no-locks,twice-failed-unsent}.json。真实页面截图见before-screenshots。
+
+三、最小修复边界
+只调整GameScreen/MobileActions建议来源和说明：无新正文建议时允许查看上回合已结算建议，明确来源；不具备合法行动绑定条件时只作参考，不越过绑定规则。生成中仍临时隐藏，结束后恢复。发送不可用时提示继续当前阶段、等待保存、草稿失效或缺少Web Locks。使用既有状态、回调和安全诊断，不写新持久字段。
+不修改领域、Repository、CAS、Web Locks、解析器、超时、500策略、Commit、Undo、Prompt及#165。
+
+四、限制
+这是本地合成Mock复现，不能证明社区所有网络/浏览器挂起均已复现。真实请求在超时前仍运行时，不应伪装成停止并允许并发。未测试真实付费模型、真实玩家存档、iPhone实机。当前证据不支持新增运行锁/强制解锁或自动重试。
+
+验收补注（不改变上述修复前记录）：补充RED批最终为2通过、4预期失败，退出1。生命周期2/2的原始日志为lifecycle-recheck.log；外部复现配置的JSON输出在后续RED批被覆盖，已按真实内容另存supplement-red-results.json，不把它当作生命周期JSON。

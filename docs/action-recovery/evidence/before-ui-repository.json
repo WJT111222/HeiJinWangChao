@@ -1,0 +1,1702 @@
+{
+  "desktop-401.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-1373ef24-27fe-4afb-986f-7e2c66ccc33d",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "authorization",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 · 正文生成失败 · 查看详情\n01\n正文\n· 失败 · 可重试\n02\n变量\n· 待生成\n03\n动态世界\n· 待生成\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "desktop-429.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-f695467b-b476-4ca9-822f-3806431913f8",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "rate_limit",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 · 正文生成失败 · 查看详情\n01\n正文\n· 失败 · 可重试\n02\n变量\n· 待生成\n03\n动态世界\n· 待生成\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "desktop-500.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-96b99719-01a8-42ff-9207-384fb3c2a267",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "server",
+          "retryable": true
+        },
+        {
+          "stage": "story",
+          "attempt": 2,
+          "storyRevision": 0,
+          "errorCode": "server",
+          "retryable": true
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 · 正文生成失败 · 查看详情\n01\n正文\n· 失败 · 可重试\n02\n变量\n· 待生成\n03\n动态世界\n· 待生成\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      },
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "desktop-commit.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-7e0d4e6a-733b-4c64-9898-1c83da69db9f",
+      "story": true,
+      "variables": true,
+      "world": true,
+      "stageStatus": {
+        "story": "ready",
+        "variables": "ready",
+        "world": "ready"
+      },
+      "failures": [],
+      "executionRevision": 2,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "完成本回合结算",
+      "kind": "continue",
+      "sendDisabled": true,
+      "input": "",
+      "suggestions": [
+        "01去公园等候→",
+        "02去码头问路→",
+        "03去社区走走→"
+      ],
+      "placeholder": 0,
+      "workflow": "三阶段 · 结算失败 · 查看详情\n01\n正文\n· 已完成\n02\n变量\n· 已完成\n03\n动态世界\n· 已完成\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      },
+      {
+        "stage": "variables",
+        "action": "沿江走一走"
+      },
+      {
+        "stage": "world",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "desktop-hold.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-79db2e44-89e7-47f1-9c36-e6eec97c3a6b",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "pending",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 · 已取消 · 可恢复\n01\n正文\n· 失败 · 可重试\n02\n变量\n· 待生成\n03\n动态世界\n· 待生成\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "desktop-incomplete.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-472a926b-26bd-4dd1-9717-f527792a531a",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "invalid_output",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 · 正文生成失败 · 查看详情\n01\n正文\n· 失败 · 可重试\n02\n变量\n· 待生成\n03\n动态世界\n· 待生成\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "desktop-invalid.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-fc1828a3-ad4d-47c8-b150-29440e0a3418",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "invalid_output",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 · 正文生成失败 · 查看详情\n01\n正文\n· 失败 · 可重试\n02\n变量\n· 待生成\n03\n动态世界\n· 待生成\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "desktop-missing-done.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-9debc99f-a026-4378-b8e4-a9282bdb5431",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "stream_interrupted",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 · 正文生成失败 · 查看详情\n01\n正文\n· 失败 · 可重试\n02\n变量\n· 待生成\n03\n动态世界\n· 待生成\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "desktop-no-locks.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-08b0d91c-685a-4494-98db-7d64618e9aeb",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "invalid_output",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "改去书店"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "读档后重新输入",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 · 行动发送失败 · 查看详情\n01\n正文\n· 失败 · 可重试\n02\n变量\n· 待生成\n03\n动态世界\n· 待生成\n详情"
+    },
+    "calls": []
+  },
+  "desktop-partial-running.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-60642ff0-a196-4da6-ba00-e2725915f56f",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "pending",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "取消生成",
+      "kind": "cancel",
+      "sendDisabled": true,
+      "input": "",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 · 正文生成中 · 1/3\n01\n正文\n· 生成中\n02\n变量\n· 待生成\n03\n动态世界\n· 待生成\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "desktop-partial.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-60642ff0-a196-4da6-ba00-e2725915f56f",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "stream_interrupted",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 · 正文生成失败 · 查看详情\n01\n正文\n· 失败 · 可重试\n02\n变量\n· 待生成\n03\n动态世界\n· 待生成\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "desktop-silence-running.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-2cf1544c-02b0-42b9-9095-87e05d8f229d",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "pending",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "取消生成",
+      "kind": "cancel",
+      "sendDisabled": true,
+      "input": "",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 · 正文生成中 · 1/3\n01\n正文\n· 生成中\n02\n变量\n· 待生成\n03\n动态世界\n· 待生成\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "desktop-silence.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-2cf1544c-02b0-42b9-9095-87e05d8f229d",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "timeout",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 · 正文生成失败 · 查看详情\n01\n正文\n· 失败 · 可重试\n02\n变量\n· 待生成\n03\n动态世界\n· 待生成\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "desktop-timeout.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-535de314-4285-46ba-a435-e28e5a1b29b1",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "timeout",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 · 正文生成失败 · 查看详情\n01\n正文\n· 失败 · 可重试\n02\n变量\n· 待生成\n03\n动态世界\n· 待生成\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "desktop-twice-failed-unsent.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-7f387d9d-4d4e-4f57-98b2-2f239729e236",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "invalid_output",
+          "retryable": false
+        },
+        {
+          "stage": "story",
+          "attempt": 2,
+          "storyRevision": 0,
+          "errorCode": "invalid_output",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "暂未发送的修改",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 · 正文生成失败 · 查看详情\n01\n正文\n· 失败 · 可重试\n02\n变量\n· 待生成\n03\n动态世界\n· 待生成\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      },
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "desktop-variables.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-42de8560-6387-4f20-802b-b7e733afe8a8",
+      "story": true,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "ready",
+        "variables": "failed",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "variables",
+          "attempt": 1,
+          "storyRevision": 1,
+          "errorCode": "authorization",
+          "retryable": true
+        }
+      ],
+      "executionRevision": 1,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "继续生成变量",
+      "kind": "continue",
+      "sendDisabled": true,
+      "input": "下一轮想去书店",
+      "suggestions": [
+        "01去公园等候→",
+        "02去码头问路→",
+        "03去社区走走→"
+      ],
+      "placeholder": 0,
+      "workflow": "三阶段 · 变量生成失败 · 查看详情\n01\n正文\n· 已完成\n02\n变量\n· 失败 · 可重试\n03\n动态世界\n· 待生成\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      },
+      {
+        "stage": "variables",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "desktop-world.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-efdccab5-b680-402f-b25e-f8a9c6492345",
+      "story": true,
+      "variables": true,
+      "world": false,
+      "stageStatus": {
+        "story": "ready",
+        "variables": "ready",
+        "world": "failed"
+      },
+      "failures": [
+        {
+          "stage": "world",
+          "attempt": 2,
+          "storyRevision": 1,
+          "errorCode": "authorization",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 2,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "继续生成世界",
+      "kind": "continue",
+      "sendDisabled": true,
+      "input": "下一轮想去书店",
+      "suggestions": [
+        "01去公园等候→",
+        "02去码头问路→",
+        "03去社区走走→"
+      ],
+      "placeholder": 0,
+      "workflow": "三阶段 · 动态世界生成失败 · 查看详情\n01\n正文\n· 已完成\n02\n变量\n· 已完成\n03\n动态世界\n· 失败 · 可重试\n详情"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      },
+      {
+        "stage": "variables",
+        "action": "沿江走一走"
+      },
+      {
+        "stage": "world",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-401.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-01c53a4c-b5d1-4a07-b581-e5fdf2e9232e",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "authorization",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 ·\n正文生成失败 · 查看详情\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-429.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-bd206c53-156f-4e8a-b34a-1c3f0addb611",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "rate_limit",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 ·\n正文生成失败 · 查看详情\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-500.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-2e4dd1cd-76fb-40d4-99ea-25c7d34d1b9b",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "server",
+          "retryable": true
+        },
+        {
+          "stage": "story",
+          "attempt": 2,
+          "storyRevision": 0,
+          "errorCode": "server",
+          "retryable": true
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 ·\n正文生成失败 · 查看详情\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      },
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-commit.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-5af5c6f1-c870-4be7-b82f-7862499cccbb",
+      "story": true,
+      "variables": true,
+      "world": true,
+      "stageStatus": {
+        "story": "ready",
+        "variables": "ready",
+        "world": "ready"
+      },
+      "failures": [],
+      "executionRevision": 2,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "完成本回合结算",
+      "kind": "continue",
+      "sendDisabled": true,
+      "input": "",
+      "suggestions": [
+        "01去公园等候点按填入 →",
+        "02去码头问路点按填入 →",
+        "03去社区走走点按填入 →"
+      ],
+      "placeholder": 0,
+      "workflow": "三阶段 ·\n结算失败 · 查看详情\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      },
+      {
+        "stage": "variables",
+        "action": "沿江走一走"
+      },
+      {
+        "stage": "world",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-hold.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-abe209e9-5d90-4371-8da3-50b2b5271819",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "pending",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 ·\n已取消 · 可恢复\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-incomplete.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-8625606b-51cb-47a6-a54c-ff5c51d94fce",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "invalid_output",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 ·\n正文生成失败 · 查看详情\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-invalid.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-f7495c70-e7ec-404e-95e4-591432c20094",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "invalid_output",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 ·\n正文生成失败 · 查看详情\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-missing-done.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-b675d978-063a-40d9-bd39-9f652e3c8ef8",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "stream_interrupted",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 ·\n正文生成失败 · 查看详情\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-no-locks.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-ff6073d5-0299-41fb-8811-0e0ad266398e",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "invalid_output",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "改去书店"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "读档后重新输入",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 ·\n行动发送失败 · 查看详情\n详情 ›"
+    },
+    "calls": []
+  },
+  "mobile-partial-running.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-3289ca51-65af-47f4-979e-584153810ba8",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "pending",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "取消生成",
+      "kind": "cancel",
+      "sendDisabled": true,
+      "input": "",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 ·\n正文生成中 · 1/3\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-partial.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-3289ca51-65af-47f4-979e-584153810ba8",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "stream_interrupted",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 ·\n正文生成失败 · 查看详情\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-silence-running.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-dc808ca2-ff54-496f-b661-255f5e7060b3",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "pending",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "取消生成",
+      "kind": "cancel",
+      "sendDisabled": true,
+      "input": "",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 ·\n正文生成中 · 1/3\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-silence.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-dc808ca2-ff54-496f-b661-255f5e7060b3",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "timeout",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 ·\n正文生成失败 · 查看详情\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-timeout.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-e311a0d0-f11f-4151-ac94-1f2589392ed6",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "timeout",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "沿江走一走",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 ·\n正文生成失败 · 查看详情\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-twice-failed-unsent.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-f6325140-59fe-4321-a32d-baabdc4775e0",
+      "story": false,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "failed",
+        "variables": "pending",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "story",
+          "attempt": 1,
+          "storyRevision": 0,
+          "errorCode": "invalid_output",
+          "retryable": false
+        },
+        {
+          "stage": "story",
+          "attempt": 2,
+          "storyRevision": 0,
+          "errorCode": "invalid_output",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 0,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "生成本回合正文",
+      "kind": "continue",
+      "sendDisabled": false,
+      "input": "暂未发送的修改",
+      "suggestions": [],
+      "placeholder": 1,
+      "workflow": "三阶段 ·\n正文生成失败 · 查看详情\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      },
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-variables.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-3daf389f-96e9-4149-82d0-e4d3e1f46ddc",
+      "story": true,
+      "variables": false,
+      "world": false,
+      "stageStatus": {
+        "story": "ready",
+        "variables": "failed",
+        "world": "pending"
+      },
+      "failures": [
+        {
+          "stage": "variables",
+          "attempt": 1,
+          "storyRevision": 1,
+          "errorCode": "authorization",
+          "retryable": true
+        }
+      ],
+      "executionRevision": 1,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "继续生成变量",
+      "kind": "continue",
+      "sendDisabled": true,
+      "input": "下一轮想去书店",
+      "suggestions": [
+        "01去公园等候点按填入 →",
+        "02去码头问路点按填入 →",
+        "03去社区走走点按填入 →"
+      ],
+      "placeholder": 0,
+      "workflow": "三阶段 ·\n变量生成失败 · 查看详情\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      },
+      {
+        "stage": "variables",
+        "action": "沿江走一走"
+      }
+    ]
+  },
+  "mobile-world.json": {
+    "state": {
+      "revision": 1,
+      "turnNumber": 1,
+      "journalCount": 1,
+      "oldOptions": [
+        "沿江走一走",
+        "去书店看看",
+        "留下观察街道"
+      ]
+    },
+    "draft": {
+      "turnId": "turn-526dc66d-614b-4780-8076-302b90427674",
+      "story": true,
+      "variables": true,
+      "world": false,
+      "stageStatus": {
+        "story": "ready",
+        "variables": "ready",
+        "world": "failed"
+      },
+      "failures": [
+        {
+          "stage": "world",
+          "attempt": 2,
+          "storyRevision": 1,
+          "errorCode": "authorization",
+          "retryable": false
+        }
+      ],
+      "executionRevision": 2,
+      "userInput": "沿江走一走"
+    },
+    "ui": {
+      "action": "继续生成世界",
+      "kind": "continue",
+      "sendDisabled": true,
+      "input": "下一轮想去书店",
+      "suggestions": [
+        "01去公园等候点按填入 →",
+        "02去码头问路点按填入 →",
+        "03去社区走走点按填入 →"
+      ],
+      "placeholder": 0,
+      "workflow": "三阶段 ·\n动态世界生成失败 · 查看详情\n详情 ›"
+    },
+    "calls": [
+      {
+        "stage": "story",
+        "action": "沿江走一走"
+      },
+      {
+        "stage": "variables",
+        "action": "沿江走一走"
+      },
+      {
+        "stage": "world",
+        "action": "沿江走一走"
+      }
+    ]
+  }
+}
