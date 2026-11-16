@@ -1,5 +1,7 @@
 # 运行诊断与持久失败摘要修复
 
+> 最新主干同步与验收：main `dcfdfac`（#163），见[最终集成报告](main-sync/README.md)。下文保留首次实现与分批历史记录。
+
 基线：`main@8ab4cf0e44829275b7e0bdacd03eb429ae2b0dad`，开工与交付前均重新读取远端确认。调查依据：`/workspace/stage-diagnostics-audit-20261116/REPORT.html`。验证时间：2026-11-16，北京时间。
 
 ## 根因与修复

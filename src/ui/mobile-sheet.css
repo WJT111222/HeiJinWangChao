@@ -25,3 +25,10 @@
  @keyframes mobile-sheet-enter{from{transform:translateY(40%);opacity:0}to{transform:translateY(0);opacity:1}}
 }
 @media(max-width:900px) and (prefers-reduced-motion:reduce){.app-shell dialog.modal.mobile-sheet,.mobile-sheet *{animation:none!important;transition:none!important;scroll-behavior:auto!important;}}
+
+/* Opt-in only for the game status and world directory. Reading/theme unchanged. */
+@media(max-width:900px){
+ .app-shell dialog.modal.mobile-sheet.sheet-expandable:not(.sheet-expanded){max-height:min(calc(var(--game-viewport-height,100dvh) * .68),calc(var(--game-viewport-height,100dvh) - env(safe-area-inset-top,0px) - 18px));}
+ .app-shell dialog.modal.mobile-sheet.sheet-expandable.sheet-expanded{height:calc(var(--game-viewport-height,100dvh) - env(safe-area-inset-top,0px) - 18px);}
+ .mobile-sheet.sheet-expandable .modal-heading>.mobile-sheet-size-toggle{width:auto;padding:0 .7rem;font-size:.78rem;border-radius:8px;}
+}
