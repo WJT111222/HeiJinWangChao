@@ -61,7 +61,7 @@ test('五类各六职业，点击呈现完整介绍、独立技能与长期影�
   else await expect(page.getByRole('radio', { name: '自由选择', exact: true })).toBeChecked();
   for (const category of professionCategories) {
     await page.getByRole('button', { name: category, exact: true }).click();
-    await expect(page.getByRole('radio')).toHaveCount(mobileCreation(page) ? 6 : 7);
+    await expect(page.locator('.profession-picker').getByRole('radio')).toHaveCount(mobileCreation(page) ? 6 : 7);
     for (const job of professions.filter(job => job.category === category)) {
       await chooseProfession(page, job.name);
       const profile = page.getByRole('region', { name: '职业档案', exact: true });

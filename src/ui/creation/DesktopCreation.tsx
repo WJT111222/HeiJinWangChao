@@ -5,6 +5,7 @@ import { CITY_TICKET_META, skyline } from '../home/skyline';
 import { cities, professionProfile } from './model';
 import type { Creation } from './model';
 import { creationCity } from './MobileCreation';
+import { getTalentDefinition } from '../../domain/protagonist/talents';
 
 export const creationSteps = ['基本信息', '职业与能力', '城市与背景', '初始同伴', '确认与开局'] as const;
 const stampMarks = ['基', '职', '城', '伴', '启'];
@@ -23,7 +24,7 @@ export function creationTint(form: Creation) {
 
 /** 左侧人物档案：右侧填什么，这里就实时写上什么。纯展示，屏幕阅读器直接读右侧表单。 */
 export function CreationDossier({ form, busy }: { form: Creation; busy: boolean }) {
-  const profile = professionProfile(form), city = cities.find(item => item.id === form.city);
+  const profile = professionProfile(form), city = cities.find(item => item.id === form.city), talent = getTalentDefinition(form.talentId);
   const meta = CITY_TICKET_META[creationCity[form.city]], cityOn = form.step >= 3;
   const companion = [form.companion.name, form.companion.identity, form.companion.relationship].filter(text => text.trim()).join(' · ');
   const text = (value: string, pending = '（待填）') => value.trim() ? <dd>{value}</dd> : <dd className="pending">{pending}</dd>;
@@ -47,6 +48,7 @@ export function CreationDossier({ form, busy }: { form: Creation; busy: boolean 
       <h3 className="dz-sec">性格</h3>{para(form.person.personality)}
       {profile.skills.length > 0 && <><h3 className="dz-sec">职业技能</h3>
         <div className="dz-skills">{profile.skills.slice(0, 6).map((skill, index) => <span key={index}>{skill}</span>)}</div></>}
+      {talent && <><h3 className="dz-sec">开局天赋</h3><p className="dz-text dz-talent"><b>{talent.name}</b> · {talent.mechanismName}<br />{talent.coreDomain}</p></>}
       {form.background.trim() && <><h3 className="dz-sec">人物背景</h3>{para(form.background)}</>}
       <h3 className="dz-sec">初始同伴</h3>{form.hasCompanion ? para(companion) : <p className="dz-text pending">未创建同伴</p>}
       <div className="dz-stamps">

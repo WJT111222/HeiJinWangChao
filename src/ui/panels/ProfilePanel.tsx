@@ -2,6 +2,7 @@ import type { GameState } from '../../domain/state';
 import { openingCity } from '../../domain/openingCity';
 import { Detail } from '../Dialog';
 import { ProfessionProfile } from '../components/ProfessionProfile';
+import { TalentProfile } from '../components/TalentProfile';
 import { locationText } from '../game/atmosphere';
 import { dateTime } from './playerView';
 
@@ -37,6 +38,7 @@ export function ProfilePanel({ state, equipment, candidateTime, onEconomy, onNpc
         {Object.entries(basics).map(([label,value]) => <Detail key={label} label={label}>{value}</Detail>)}
       </dl></section>
       <div className="sec pf-profession"><ProfessionProfile hero={hero} /></div>
+      <TalentProfile talentId={hero.talentId} />
     </div><div>
       <section className="pf-now"><div className="hd"><h4>此时此地</h4>
         <span className="city" aria-hidden="true">{openingCity(state.openingCityId)?.english.split(' · ')[0]}</span></div>

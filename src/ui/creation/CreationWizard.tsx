@@ -9,6 +9,9 @@ import { cities, professions, professionCategories, professionProfile, validateS
 import type { Creation } from './model';
 import { Detail } from '../Dialog';
 import { dateTime } from '../panels/playerView';
+import { TalentProfile } from '../components/TalentProfile';
+import { TalentPicker } from './TalentPicker';
+import type { TalentId } from '../../domain/protagonist/talents';
 
 import { appearanceTemplates, personalityTemplates } from './personTemplates';
 import { ProfessionProfile } from '../components/ProfessionProfile';
@@ -49,6 +52,12 @@ export function CreationWizard({
   },[mobile]);
   useLayoutEffect(()=>{if(mobile&&card.current)card.current.scrollTop=0;},[form.step,mobile]);
   const change = (patch: Partial<Creation>) => onChange({ ...form, ...patch });
+  const chooseTalent = (id?: TalentId) => {
+    const next = { ...form };
+    if (id === undefined) delete next.talentId;
+    else next.talentId = id;
+    onChange(next);
+  };
   function move(step: number) {
     try {
       if (step > form.step) validateStep(form);
@@ -306,6 +315,7 @@ export function CreationWizard({
                   onChange={(e) => change({ skills: e.target.value, skillsSource: 'manual' })} /></label>}
             </>
           ))}
+          {form.step === 2 && <TalentPicker value={form.talentId} onChange={chooseTalent} />}
           {form.step === 3 && (
             <div className="city-stage">
               <section>
@@ -407,6 +417,7 @@ export function CreationWizard({
                   </div>
                   <ProfessionProfile hero={{ profession: profile.name, professionDescription: profile.description,
                     professionLongTermImpact: profile.longTermImpact, skills: profile.skills }} />
+                  <TalentProfile talentId={form.talentId} />
                   <details>
                     <summary>完整职业表单</summary>
                     <dl>
