@@ -229,3 +229,12 @@
 }
 .app-shell :is(.settings-paper,.settings-mobile-paper) dialog.feedback-dialog>.modal-heading :is(h2,button) {color:var(--text);}
 .app-shell dialog:is(.settings-paper,.settings-mobile-paper) dialog.feedback-dialog .feedback-danger:hover:not(:disabled) {background:var(--settings-negative);color:#fff;}
+/* 外观：单选卡片（两端设置通用；设置页对 label 有更高优先级的通用排版，这里显式覆盖布局）。 */
+.app-shell .settings-layout .appearance-options{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:.6rem;max-width:34rem;margin:.2rem 0 .8rem}
+.app-shell .settings-layout .appearance-options>label.appearance-option{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;text-align:left!important;gap:.8rem;padding:.75rem .9rem!important;margin:0!important;border:1px solid #2a262233!important;border-radius:8px!important;background:#EFE8D9!important;cursor:pointer;color:#2B2723;min-height:3.4rem}
+.app-shell .settings-layout .appearance-options>label.appearance-option[data-checked]{border-color:#8E6C25!important;box-shadow:inset 0 0 0 1px #8E6C25}
+.app-shell .settings-layout .appearance-options>label.appearance-option>input{appearance:auto!important;-webkit-appearance:radio!important;width:1.05rem!important;height:1.05rem!important;min-height:0!important;margin:0!important;padding:0!important;flex:none!important;accent-color:#8E6C25;border:0!important;background:none!important;box-shadow:none!important;outline-offset:2px}
+.app-shell .settings-layout .appearance-options>label.appearance-option>span{display:grid!important;gap:.1rem;min-width:0;text-align:left}
+.app-shell .settings-layout .appearance-options>label.appearance-option strong{font-size:.95rem;color:#2B2723}
+.app-shell .settings-layout .appearance-options>label.appearance-option small{font-size:.8rem;color:#5F574C}
+.app-shell .settings-layout .appearance-options>label.appearance-option:focus-within{outline:2px solid #8E6C25;outline-offset:2px}

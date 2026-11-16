@@ -1,0 +1,58 @@
+[
+  {
+    "project": "desktop",
+    "name": "chongqing-night-pixel-difference",
+    "maxChannelDelta": 0,
+    "differentPixels": 0,
+    "differentRatio": 0
+  },
+  {
+    "project": "desktop",
+    "name": "shanghai-night-pixel-difference",
+    "maxChannelDelta": 0,
+    "differentPixels": 0,
+    "differentRatio": 0
+  },
+  {
+    "project": "desktop",
+    "name": "harbin-night-pixel-difference",
+    "maxChannelDelta": 0,
+    "differentPixels": 0,
+    "differentRatio": 0
+  },
+  {
+    "project": "desktop",
+    "name": "guangzhou-night-pixel-difference",
+    "maxChannelDelta": 0,
+    "differentPixels": 0,
+    "differentRatio": 0
+  },
+  {
+    "project": "mobile",
+    "name": "chongqing-night-pixel-difference",
+    "maxChannelDelta": 0,
+    "differentPixels": 0,
+    "differentRatio": 0
+  },
+  {
+    "project": "mobile",
+    "name": "shanghai-night-pixel-difference",
+    "maxChannelDelta": 0,
+    "differentPixels": 0,
+    "differentRatio": 0
+  },
+  {
+    "project": "mobile",
+    "name": "harbin-night-pixel-difference",
+    "maxChannelDelta": 0,
+    "differentPixels": 0,
+    "differentRatio": 0
+  },
+  {
+    "project": "mobile",
+    "name": "guangzhou-night-pixel-difference",
+    "maxChannelDelta": 0,
+    "differentPixels": 0,
+    "differentRatio": 0
+  }
+]

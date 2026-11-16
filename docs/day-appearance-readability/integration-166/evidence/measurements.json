@@ -1,0 +1,461 @@
+[
+  {
+    "project": "desktop",
+    "scenario": "整合：日间主角对白、哈尔滨铭牌与工作流文字可读",
+    "name": ".story-dialogue-hero .story-bubble",
+    "value": {
+      "color": "rgb(53, 47, 40)",
+      "strokeOnly": false,
+      "fontSize": 17.15142857142857,
+      "weight": "400",
+      "text": "今天先看看街坊们有什么消息。",
+      "background": "rgba(0, 0, 0, 0) linear-gradient(90deg, rgba(142, 108, 37, 0.063), rgba(0, 0, 0, 0) 70%) repeat scroll 0% 0% / auto padding-box border-box",
+      "opacity": "1",
+      "large": false,
+      "pseudo": null,
+      "ratio": 11.190530762245618,
+      "worst": {
+        "foreground": [
+          53,
+          47,
+          40
+        ],
+        "background": [
+          239,
+          236,
+          227
+        ],
+        "x": 8,
+        "y": 8
+      },
+      "samples": 5950,
+      "threshold": 4.5
+    }
+  },
+  {
+    "project": "desktop",
+    "scenario": "整合：日间主角对白、哈尔滨铭牌与工作流文字可读",
+    "name": ".plate .p-num",
+    "value": {
+      "color": "rgb(244, 250, 255)",
+      "strokeOnly": false,
+      "fontSize": 27.2,
+      "weight": "400",
+      "text": "1",
+      "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+      "opacity": "1",
+      "large": true,
+      "pseudo": null,
+      "ratio": 7.804294072213096,
+      "worst": {
+        "foreground": [
+          244,
+          250,
+          255
+        ],
+        "background": [
+          53,
+          82,
+          104
+        ],
+        "x": 3,
+        "y": 7
+      },
+      "samples": 28,
+      "threshold": 3
+    }
+  },
+  {
+    "project": "desktop",
+    "scenario": "整合：日间主角对白、哈尔滨铭牌与工作流文字可读",
+    "name": ".plate .p-cn",
+    "value": {
+      "color": "rgb(244, 250, 255)",
+      "strokeOnly": false,
+      "fontSize": 16.5375,
+      "weight": "400",
+      "text": "第一回",
+      "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+      "opacity": "1",
+      "large": false,
+      "pseudo": null,
+      "ratio": 7.804294072213096,
+      "worst": {
+        "foreground": [
+          244,
+          250,
+          255
+        ],
+        "background": [
+          53,
+          82,
+          104
+        ],
+        "x": 8,
+        "y": 7
+      },
+      "samples": 208,
+      "threshold": 4.5
+    }
+  },
+  {
+    "project": "desktop",
+    "scenario": "整合：日间主角对白、哈尔滨铭牌与工作流文字可读",
+    "name": ".plate .p-sub",
+    "value": {
+      "color": "rgb(244, 250, 255)",
+      "strokeOnly": false,
+      "fontSize": 8.96,
+      "weight": "400",
+      "text": "TURN 001",
+      "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+      "opacity": "1",
+      "large": false,
+      "pseudo": null,
+      "ratio": 6.476377020483102,
+      "worst": {
+        "foreground": [
+          244,
+          250,
+          255
+        ],
+        "background": [
+          67,
+          94,
+          114
+        ],
+        "x": 56,
+        "y": 10
+      },
+      "samples": 104,
+      "threshold": 4.5
+    }
+  },
+  {
+    "project": "desktop",
+    "scenario": "整合：日间主角对白、哈尔滨铭牌与工作流文字可读",
+    "name": "#workflow-pop .wf-hd h3",
+    "value": {
+      "color": "rgb(236, 231, 218)",
+      "strokeOnly": false,
+      "fontSize": 15.01,
+      "weight": "600",
+      "text": "等待开始",
+      "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+      "opacity": "1",
+      "large": false,
+      "pseudo": null,
+      "ratio": 15.2559856141926,
+      "worst": {
+        "foreground": [
+          236,
+          231,
+          218
+        ],
+        "background": [
+          15,
+          18,
+          17
+        ],
+        "x": 8,
+        "y": 5
+      },
+      "samples": 408,
+      "threshold": 4.5
+    }
+  },
+  {
+    "project": "desktop",
+    "scenario": "整合：日间主角对白、哈尔滨铭牌与工作流文字可读",
+    "name": "#workflow-pop .workflow-primary button",
+    "value": {
+      "color": "rgb(23, 24, 16)",
+      "strokeOnly": false,
+      "fontSize": 11.379999999999999,
+      "weight": "650",
+      "text": "自动生成本回合",
+      "background": "rgba(0, 0, 0, 0) linear-gradient(rgb(233, 209, 150), rgb(197, 164, 90)) repeat scroll 0% 0% / auto padding-box border-box",
+      "opacity": "1",
+      "large": false,
+      "pseudo": null,
+      "ratio": 8.574505887959692,
+      "worst": {
+        "foreground": [
+          23,
+          24,
+          16
+        ],
+        "background": [
+          207,
+          176,
+          106
+        ],
+        "x": 8,
+        "y": 26
+      },
+      "samples": 600,
+      "threshold": 4.5
+    }
+  },
+  {
+    "project": "desktop",
+    "scenario": "整合：日间失败后恢复旧建议，主动继续正文与剩余阶段后原子结算",
+    "name": "request-and-state-check",
+    "value": {
+      "stages": [
+        "story",
+        "story",
+        "variables",
+        "world"
+      ],
+      "formalRevision": 2,
+      "committedTurns": 1
+    }
+  },
+  {
+    "project": "mobile",
+    "scenario": "整合：日间主角对白、哈尔滨铭牌与工作流文字可读",
+    "name": ".story-dialogue-hero .story-bubble",
+    "value": {
+      "color": "rgb(53, 47, 40)",
+      "strokeOnly": false,
+      "fontSize": 16.24457142857143,
+      "weight": "400",
+      "text": "今天先看看街坊们有什么消息。",
+      "background": "rgba(0, 0, 0, 0) linear-gradient(90deg, rgba(142, 108, 37, 0.063), rgba(0, 0, 0, 0) 70%) repeat scroll 0% 0% / auto padding-box border-box",
+      "opacity": "1",
+      "large": false,
+      "pseudo": null,
+      "ratio": 10.501532466239384,
+      "worst": {
+        "foreground": [
+          53,
+          47,
+          40
+        ],
+        "background": [
+          232,
+          229,
+          221
+        ],
+        "x": 8,
+        "y": 10
+      },
+      "samples": 1620,
+      "threshold": 4.5
+    }
+  },
+  {
+    "project": "mobile",
+    "scenario": "整合：日间主角对白、哈尔滨铭牌与工作流文字可读",
+    "name": ".plate .p-num",
+    "value": {
+      "color": "rgb(244, 250, 255)",
+      "strokeOnly": false,
+      "fontSize": 21.375603117766204,
+      "weight": "400",
+      "text": "1",
+      "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+      "opacity": "1",
+      "large": false,
+      "pseudo": null,
+      "ratio": 7.804294072213096,
+      "worst": {
+        "foreground": [
+          244,
+          250,
+          255
+        ],
+        "background": [
+          53,
+          82,
+          104
+        ],
+        "x": 2,
+        "y": 5
+      },
+      "samples": 24,
+      "threshold": 4.5
+    }
+  },
+  {
+    "project": "mobile",
+    "scenario": "整合：日间主角对白、哈尔滨铭牌与工作流文字可读",
+    "name": ".plate .p-cn",
+    "value": {
+      "color": "rgb(244, 250, 255)",
+      "strokeOnly": false,
+      "fontSize": 13.104000854492188,
+      "weight": "400",
+      "text": "第一回",
+      "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+      "opacity": "1",
+      "large": false,
+      "pseudo": null,
+      "ratio": 7.804294072213096,
+      "worst": {
+        "foreground": [
+          244,
+          250,
+          255
+        ],
+        "background": [
+          53,
+          82,
+          104
+        ],
+        "x": 8,
+        "y": 5
+      },
+      "samples": 95,
+      "threshold": 4.5
+    }
+  },
+  {
+    "project": "mobile",
+    "scenario": "整合：日间主角对白、哈尔滨铭牌与工作流文字可读",
+    "name": ".plate .p-sub",
+    "value": {
+      "color": "rgb(244, 250, 255)",
+      "strokeOnly": false,
+      "fontSize": 6.988795898437501,
+      "weight": "400",
+      "text": "TURN 001",
+      "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+      "opacity": "1",
+      "large": false,
+      "pseudo": null,
+      "ratio": 7.684288159055442,
+      "worst": {
+        "foreground": [
+          244,
+          250,
+          255
+        ],
+        "background": [
+          54,
+          83,
+          105
+        ],
+        "x": 8,
+        "y": 6
+      },
+      "samples": 57,
+      "threshold": 4.5
+    }
+  },
+  {
+    "project": "mobile",
+    "scenario": "整合：日间主角对白、哈尔滨铭牌与工作流文字可读",
+    "name": "#workflow-pop .wf-hd h3",
+    "value": {
+      "color": "rgb(236, 231, 218)",
+      "strokeOnly": false,
+      "fontSize": 13.91940789473684,
+      "weight": "550",
+      "text": "等待开始",
+      "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+      "opacity": "1",
+      "large": false,
+      "pseudo": null,
+      "ratio": 14.9138749117646,
+      "worst": {
+        "foreground": [
+          236,
+          231,
+          218
+        ],
+        "background": [
+          17,
+          21,
+          19
+        ],
+        "x": 8,
+        "y": 4
+      },
+      "samples": 810,
+      "threshold": 4.5
+    }
+  },
+  {
+    "project": "mobile",
+    "scenario": "整合：日间主角对白、哈尔滨铭牌与工作流文字可读",
+    "name": "#workflow-pop .workflow-primary button",
+    "value": {
+      "color": "rgb(23, 26, 19)",
+      "strokeOnly": false,
+      "fontSize": 11.52,
+      "weight": "650",
+      "text": "自动生成本回合",
+      "background": "rgb(201, 169, 97) none repeat scroll 0% 0% / auto padding-box border-box",
+      "opacity": "1",
+      "large": false,
+      "pseudo": null,
+      "ratio": 7.817825997165952,
+      "worst": {
+        "foreground": [
+          23,
+          26,
+          19
+        ],
+        "background": [
+          201,
+          169,
+          97
+        ],
+        "x": 8,
+        "y": 8
+      },
+      "samples": 387,
+      "threshold": 4.5
+    }
+  },
+  {
+    "project": "mobile",
+    "scenario": "整合：日间主角对白、哈尔滨铭牌与工作流文字可读",
+    "name": ".workflow-drawer-input",
+    "value": {
+      "color": "rgb(236, 231, 218)",
+      "strokeOnly": false,
+      "fontSize": 11,
+      "weight": "400",
+      "text": "行动输入",
+      "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+      "opacity": "1",
+      "large": false,
+      "pseudo": null,
+      "ratio": 14.9138749117646,
+      "worst": {
+        "foreground": [
+          236,
+          231,
+          218
+        ],
+        "background": [
+          17,
+          21,
+          19
+        ],
+        "x": 8,
+        "y": 6
+      },
+      "samples": 126,
+      "threshold": 4.5
+    }
+  },
+  {
+    "project": "mobile",
+    "scenario": "整合：日间失败后恢复旧建议，主动继续正文与剩余阶段后原子结算",
+    "name": "request-and-state-check",
+    "value": {
+      "stages": [
+        "story",
+        "story",
+        "variables",
+        "world"
+      ],
+      "formalRevision": 2,
+      "committedTurns": 1
+    }
+  }
+]

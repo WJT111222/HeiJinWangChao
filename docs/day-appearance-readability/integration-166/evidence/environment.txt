@@ -1,0 +1,6 @@
+Node v24.19.0
+npm 11.9.0
+Chromium 154.0.8037.57 built on Debian GNU/Linux 13 (trixie)
+Playwright 1.64.1
+PC 1440x1000 / mobile 390x844
+Mock only; no production publication

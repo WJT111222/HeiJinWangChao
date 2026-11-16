@@ -1,0 +1,164 @@
+/* 日间外观（档案纸 · 白宣）：只在 <html data-appearance="day"> 下生效，夜间样式不改。
+   第一批覆盖游戏主界面；弹出面板内部先恢复夜间变量，后续批次再适配。 */
+
+/* ---------- 主界面配色变量 ---------- */
+:root[data-appearance=day] .app-shell-game,
+:root[data-appearance=day] .app-shell-game .city-night {
+  --bg:#F1EEE7; --surface:#F8F6F1; --panel:#F8F6F1; --status-bg:#F8F6F1;
+  --text:#2B2723; --prose:#352F28; --muted:#6B6253; --dim:#8C8273;
+  --gold:#8E6C25; --gold-hi:#7A5B1C; --gold-lo:#C9B48A; --gold-hover:#7A5B1C;
+  --line:#2a26221a; --line-2:#2a26222e; --line-soft:#2a262214; --line-selected:#B79755;
+  --warn:#B4553A; --warn-text:#A3412E; --warning:#B4553A; --warning-text:#A3412E; --ok:#3F7A60; --success:#3F7A60; --info:#2D5E7D;
+  --hover:#2a26220a; --selected:#8E6C2514;
+  --glass:rgba(248,246,241,.84); --glass-2:rgba(248,246,241,.94);
+  --sky-1:#E8ECEE; --sky-2:#F0EEE8; --sky-3:#F3F1EB; --lights:.0; --haze:0;
+  --tint:#3F7A72;
+  color-scheme:light;
+}
+:root[data-appearance=day] .app-shell-game .city-night[data-time] { --sky-1:#E8ECEE; --sky-2:#F0EEE8; --sky-3:#F3F1EB; --lights:0; }
+:root[data-appearance=day] .app-shell-game .city-night[data-city=sh] { --tint:#5B6BB3 }
+:root[data-appearance=day] .app-shell-game .city-night[data-city=hrb] { --tint:#4F7591 }
+:root[data-appearance=day] .app-shell-game .city-night[data-city=gz] { --tint:#B0613E }
+:root[data-appearance=day] .app-shell-game .city-night:is([data-city=cq],[data-city=other]) { --tint:#3F7A72 }
+:root[data-appearance=day] body:has(.app-shell-game) { background:#F1EEE7; }
+
+
+/* 阅读区含硬编码的夜间对白，不能仅替换主题变量。名称、引号和金线
+   继续区分主角；历史正文抵消原有整体淡化，铭牌的淡化与几何保持原样。 */
+:root[data-appearance=day] .app-shell-game .city-night .reader { --gold:#65490E; --gold-hi:#65490E; --muted:#534B3F; --dim:#534B3F; }
+:root[data-appearance=day] .app-shell-game .city-night .story-dialogue-hero .story-bubble {
+  color:var(--prose); border-left-color:var(--gold); background:linear-gradient(90deg,#8E6C2510,transparent 70%);
+}
+:root[data-appearance=day] .app-shell-game .city-night .story-dialogue-hero :is(.story-speaker,.story-avatar),
+:root[data-appearance=day] .app-shell-game .city-night .story-dialogue-hero .story-bubble::before,
+:root[data-appearance=day] .app-shell-game .city-night .story-dialogue-hero .story-bubble::after { color:var(--gold-hi); }
+:root[data-appearance=day] .app-shell-game .city-night .past .story-reading {
+  --text:#000500; --prose:#000500; --muted:#000500; --gold-hi:#100A00;
+}
+:root[data-appearance=day] .app-shell-game .city-night .past .chapter .c-sub { color:#000500; }
+:root[data-appearance=day] .app-shell-game .city-night .reader .chapter .c-sub b { color:inherit; }
+:root[data-appearance=day] .app-shell-game .city-night .preview-tag { color:var(--gold-hi); }
+
+/* 只改日间哈尔滨：实底与实心字，保留冰拱轮廓、霜纹和原有缩放。
+   历史底色加深以补偿父级透明度；预览不能以字迹淡出表示未结算。 */
+:root[data-appearance=day] .app-shell-game .city-night[data-city=hrb] .plate {
+  background:#355268; border-color:#607F94;
+  box-shadow:inset 0 1px 0 #E8F3FA66,inset 0 0 18px #BFE0F51A;
+}
+:root[data-appearance=day] .app-shell-game .city-night[data-city=hrb] .p-num {
+  color:#F4FAFF; -webkit-text-stroke:0; text-shadow:0 1px 0 #102C44;
+}
+:root[data-appearance=day] .app-shell-game .city-night[data-city=hrb] :is(.p-cn,.p-sub) {
+  color:#F4FAFF; text-shadow:0 1px 0 #102C44;
+}
+:root[data-appearance=day] .app-shell-game .city-night[data-city=hrb] .p-frost { opacity:.22; }
+:root[data-appearance=day] .app-shell-game .city-night[data-city=hrb] .past .plate { background:#07121D; }
+:root[data-appearance=day] .app-shell-game .city-night[data-city=hrb] .chapter:is([data-state=draft],[data-state=preview]) .plate {
+  filter:none; animation:none;
+}
+
+/* ---------- 深色弹层的独立阅读边界（包括手机非模态 Portal 外壳） ----------
+   恢复夜间变量和实际文字色，辅助字采用更清晰的灰色；缺省变量仍设回 initial。
+   零优先级：纸页面板自带的变量写在面板自身上，始终优先。 */
+:where(:root[data-appearance=day] .app-shell-game) :where(dialog, #workflow-pop, .workflow-floating-drawer) {
+  --surface:#1B201C; --panel:#131614; --status-bg:#0E110F; --gold-hover:#E3CB8A;
+  --line-soft:#1E231F; --line-selected:#75623A; --warning:#C26A4A; --warning-text:#E6A18A; --success:#6FA58A;
+  --hover:#202720; --selected:#C9A96112;
+  --bg:#08090a; --text:#ECE7DA; --prose:#DCD6C8; --muted:#A3A396; --dim:#929487;
+  --gold:#C9A961; --gold-hi:#E8D196; --gold-lo:#7d6a3e; --line:#ffffff14; --line-2:#ffffff22; --warn:#C26A4A;
+  color:var(--text);
+  color-scheme:dark;
+}
+@media (min-width:901px) {
+  :where(:root[data-appearance=day] .app-shell-game) :where(dialog, #workflow-pop, .workflow-floating-drawer) {
+    --warn-text:#E6A18A; --ok:#7DB49A; --glass:rgba(11,13,13,.72); --glass-2:rgba(14,16,16,.86); --info:initial;
+  }
+}
+@media (max-width:900px) {
+  :where(:root[data-appearance=day] .app-shell-game) :where(dialog, #workflow-pop, .workflow-floating-drawer) {
+    --info:#8EC1E0; --warn-text:initial; --ok:initial; --glass:initial; --glass-2:initial;
+  }
+}
+
+/* 本回合变化（正文卡片内展开的部分） */
+:root[data-appearance=day] .app-shell-game .city-night .turn-changes:not(:where(dialog *)) { border-top-color:#2a26221c; }
+:root[data-appearance=day] .app-shell-game .city-night .turn-changes:not(:where(dialog *)) .chg-btn { background:#2a262206; }
+:root[data-appearance=day] .app-shell-game .city-night .turn-changes:not(:where(dialog *)) .chg-btn:hover:not(:disabled) { background:#8E6C250f; }
+:root[data-appearance=day] .app-shell-game .city-night .turn-changes:not(:where(dialog *)) .chg-btn .arr { background:#2a26220c; }
+:root[data-appearance=day] .app-shell-game .city-night .turn-changes:not(:where(dialog *)) .chg-grp { background:#FFFDF8; border-color:#2a262222; }
+:root[data-appearance=day] .app-shell-game .city-night .turn-changes:not(:where(dialog *)) .chg-row:hover:not(:disabled) { background:#2a262207; }
+:root[data-appearance=day] .app-shell-game .city-night .turn-changes:not(:where(dialog *)) .chg-row .from { text-decoration-color:#2a262240; }
+:root[data-appearance=day] .app-shell-game .city-night .turn-changes:not(:where(dialog *)) .chg-row :is(.up,.add) { color:#2F7A58; }
+:root[data-appearance=day] .app-shell-game .city-night .turn-changes:not(:where(dialog *)) .chg-row :is(.down,.del,.do) { color:#A3412E; }
+
+/* ---------- 电脑端 ---------- */
+@media (min-width:901px) {
+  :root[data-appearance=day] .app-shell-game .city-night button:hover:not(:disabled):not(:where(dialog *, #workflow-pop *)) { background:#2a26220a; border-color:#2a262238; }
+  :root[data-appearance=day] .app-shell-game .city-night .seal:not(:where(dialog *, #workflow-pop *)) { background:linear-gradient(145deg,#8E6C251a,#FFFDF8); box-shadow:inset 0 0 0 2px #FFFDF8,inset 0 0 0 3px #8E6C2540; }
+  :root[data-appearance=day] .app-shell-game .city-night .atmo .vignette { background:radial-gradient(120% 90% at 50% 40%,transparent 60%,#2a262214); }
+  :root[data-appearance=day] .app-shell-game .city-night .fund,
+  :root[data-appearance=day] .app-shell-game .city-night .status-funds>span { background:#FFFDF8; }
+  :root[data-appearance=day] .app-shell-game .city-night .status-wear div { border-bottom-color:#2a26221a; }
+  :root[data-appearance=day] .app-shell-game .city-night .status-wear [data-empty] dd { color:var(--dim); }
+  :root[data-appearance=day] .app-shell-game .city-night .reader { scrollbar-color:#2a262233 transparent; }
+  :root[data-appearance=day] .app-shell-game .city-night .action-options button:hover:not(:disabled) { background:linear-gradient(90deg,#8E6C2514,var(--glass-2)); }
+  :root[data-appearance=day] .app-shell-game .city-night .rail :not([data-s=done],[data-s=run],[data-s=fail])>.bar-seg { background:#2a26221a; }
+  :root[data-appearance=day] .app-shell-game .city-night .rail [data-s=run] .bar-seg { background:#8E6C2533; }
+  :root[data-appearance=day] .app-shell-game .city-night textarea:focus:not(:where(dialog *, #workflow-pop *)) { box-shadow:0 0 0 3px #8E6C251f; }
+  :root[data-appearance=day] .app-shell-game .city-night .primary:not(:where(dialog *, #workflow-pop *)) { color:#FFFBF2; background:linear-gradient(180deg,#B8913F,#8E6C25); box-shadow:inset 0 1px 0 #ffffff40,0 10px 24px -12px #8E6C25b0; }
+  :root[data-appearance=day] .app-shell-game .city-night .primary:hover:not(:disabled):not(:where(dialog *, #workflow-pop *)) { background:linear-gradient(180deg,#C49D4B,#9A772D); }
+  :root[data-appearance=day] .app-shell-game .city-night .world-sidebar button:hover:not(:disabled) { background:#2a26220a; }
+  :root[data-appearance=day] .app-shell-game .city-night .world-sidebar button:hover .seal { color:#7A5B1C; box-shadow:inset 0 0 0 2px #FFFDF8,inset 0 0 0 3px #8E6C2560,0 0 18px -6px #8E6C2566; }
+  :root[data-appearance=day] .app-shell-game .city-night .world-sidebar .dock-system .seal { border-color:#2a262222; background:#2a262206; }
+  :root[data-appearance=day] .app-shell-game .city-night .workflow-details { box-shadow:0 8px 30px #5a4a2a33; }
+  :root[data-appearance=day] .app-shell-game .city-night .scene-details-popover { border-color:#B79755; background:#FFFDF8; color:#2B2723; box-shadow:0 12px 44px #5a4a2a44; }
+  :root[data-appearance=day] .app-shell-game .city-night .scene-details-popover>header { border-bottom-color:#8E6C2533; }
+  :root[data-appearance=day] .app-shell-game .city-night .scene-details-popover>header>:is(span,button) { color:#7A5B1C; }
+  :root[data-appearance=day] .app-shell-game .city-night .scene-details-popover dl>div+div { border-top-color:#2a26221a; }
+  :root[data-appearance=day] .app-shell-game .city-night .scene-details-popover dt { color:#8E6C25; }
+  :root[data-appearance=day] .app-shell-game .city-night .scene-details-popover dd { color:#2B2723; }
+}
+
+/* ---------- 手机端 ---------- */
+@media (max-width:900px) {
+  :root[data-appearance=day] .app-shell-game .mobile-menu-toggle { background:#F8F6F1e6; }
+  :root[data-appearance=day] .app-shell-game .city-night .atmo .vignette { background:linear-gradient(180deg,#F1EEE7cc,#F1EEE766 30%,#F1EEE744 60%,#F1EEE7ee); }
+  :root[data-appearance=day] .app-shell-game .city-night .mobile-city-top { background:linear-gradient(#F1EEE7f2 60%,#F1EEE700); }
+  :root[data-appearance=day] .app-shell-game .city-night .mobile-city-pill { background:#F8F6F1e6; }
+  :root[data-appearance=day] .app-shell-game .city-night .mobile-seal { background:linear-gradient(145deg,#8E6C251a,#FFFDF8); }
+  :root[data-appearance=day] .app-shell-game .city-night .mobile-weather { background:#2D5E7D14; border-color:#2D5E7D33; }
+  :root[data-appearance=day] .app-shell-game .city-night .mobile-actions-rail .rail-cards .opt { background:linear-gradient(160deg,#FFFDF8f2,#F8F6F1f2); }
+  :root[data-appearance=day] .app-shell-game .city-night .dots-pg i { background:#2a262222; }
+  :root[data-appearance=day] .app-shell-game .city-night .composer { background:linear-gradient(#F1EEE700,#F1EEE7e6 1.4rem,#F1EEE7 2.6rem); }
+  :root[data-appearance=day] .app-shell-game .city-night .mobile-progress-segments i:not([data-s=done],[data-s=run],[data-s=fail]) { background:#2a262218; }
+  :root[data-appearance=day] .app-shell-game .city-night .mobile-progress-segments [data-s=run] { background:linear-gradient(90deg,#8E6C2533,var(--gold-hi),#8E6C2533); }
+  :root[data-appearance=day] .app-shell-game .city-night .workflow[data-state=error] .mobile-workflow-line strong { color:#A3412E; }
+  :root[data-appearance=day] .app-shell-game .city-night .composer-action-row { background:#FFFDF8f2; }
+  :root[data-appearance=day] .app-shell-game .city-night .composer-roll>button,
+  :root[data-appearance=day] .app-shell-game .city-night .composer-roll:not(.has-tool-menu) .composer-secondary-actions>button { background:#2a26220a; }
+  :root[data-appearance=day] .app-shell-game .city-night .has-tool-menu .composer-secondary-actions { background:#FFFDF8; box-shadow:0 -8px 28px #5a4a2a33; }
+  :root[data-appearance=day] .app-shell-game .city-night .composer-footer button.primary { color:#FFFBF2; background:linear-gradient(#B8913F,#8E6C25); box-shadow:inset 0 1px 0 #ffffff40,0 6px 16px -6px #8E6C25b0; }
+  :root[data-appearance=day] .app-shell-game .city-night .composer-roll .composer-workflow-action[data-kind=continue]:not(:disabled) { background:#8E6C251a; }
+  :root[data-appearance=day] .app-shell-game .city-night .composer-roll .composer-workflow-action[data-kind=cancel]:not(:disabled) { color:#A3412E; background:#B4553A1a; }
+  :root[data-appearance=day] .app-shell-game .mobile-game-nav { background:#F8F6F1; }
+  :root[data-appearance=day] .app-shell-game .mobile-game-nav .mobile-seal { border-color:#2a262222; }
+  :root[data-appearance=day] .app-shell-game .mobile-game-nav [aria-current=page] .mobile-seal { background:linear-gradient(#B8913F,#8E6C25); color:#FFFBF2; }
+}
+
+/* ---------- 面板叠放：主界面压暗，纸页面板加深墨描边与古铜金线，避免与白宣底混色 ---------- */
+:root[data-appearance=day] .app-shell-game dialog.modal::backdrop { background:#1f1b1780; backdrop-filter:blur(3px); }
+@media (min-width:901px) {
+  /* 设置与世界资料是非模态面板：下面垫一层不拦截点击的墨色薄罩，两侧栏仍可点击切换。 */
+  :root[data-appearance=day] .app-shell-game .city-night:has(.archive[data-tone=paper])::after {
+    content:''; position:fixed; inset:0; z-index:11; background:#1f1b176b; pointer-events:none;
+  }
+  :root[data-appearance=day] .app-shell-game .city-night .archive[data-tone=paper] {
+    box-shadow:inset 0 3px 0 #8E6C25,0 0 0 1px #1F1B17,0 30px 70px -20px #1f1b17aa;
+  }
+}
+@media (max-width:900px) {
+  :root[data-appearance=day] .app-shell-game dialog.modal.mobile-sheet::backdrop { background:#1f1b1773; backdrop-filter:none; }
+  :root[data-appearance=day] .app-shell-game dialog.modal.mobile-sheet:is([data-tone=paper],.feedback-paper,.settings-paper,.mobile-archive) {
+    box-shadow:inset 0 3px 0 #8E6C25,0 0 0 1px #1F1B17,0 -12px 40px -10px #1f1b17aa;
+  }
+}
