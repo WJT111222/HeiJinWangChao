@@ -1,5 +1,5 @@
 import { test, expect } from './helpers/test';
-import { addChannel, aiTab, backToList } from './helpers/aiSettings';
+import { addChannel, aiTab, backToList, openAiSettings, saveAi } from './helpers/aiSettings';
 
 // iOS 26 Safari 的悬浮工具栏约 80px 会盖住贴底抽屉的底部；键盘收起后视口偏移还可能把抽屉往下推。
 // 选项很少时，选择抽屉也必须保持足够高度，让选项落在屏幕上半部分，而不是紧贴底边。
@@ -44,7 +44,11 @@ test('手机选择抽屉：选项远离屏幕底边；没有渠道时提示先�
 test('手机选择抽屉：选项多时可以用手指滑到底并选中最后一项；高亮项为纸页浅金、文字清楚', async ({ page }, info) => {
   test.skip(info.project.name !== 'mobile', '贴底选择抽屉只在手机端出现');
   const ids = Array.from({ length: 48 }, (_, i) => `[AA]model-${String(i + 1).padStart(2, '0')}`);
-  await page.route('https://relay.example.com/**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ object: 'list', data: ids.map((id) => ({ id, object: 'model' })) }) }));
+  let generationPosts = 0;
+  await page.route('https://relay.example.com/**', (route) => {
+    if (route.request().method() === 'POST') { generationPosts++; return route.abort(); }
+    return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ object: 'list', data: ids.map((id) => ({ id, object: 'model' })) }) });
+  });
   await page.goto('/');
   await page.locator('[data-settings-open]').first().click();
   const settings = await aiTab(page);
@@ -88,4 +92,27 @@ test('手机选择抽屉：选项多时可以用手指滑到底并选中最后�
   await last.click();
   await expect(picker).toHaveCount(0);
   await expect(model).toContainText(ids[47]);
+  await page.screenshot({ path: info.outputPath('last-model-selected.png'), animations: 'disabled' });
+
+  // 末项不仅在编辑态可见：通过原保存入口持久化，关闭、重新打开并刷新后仍为正式路由。
+  await saveAi(settings);
+  const savedRoute = await page.evaluate(() => {
+    const config = JSON.parse(localStorage.getItem('heijin.ai.v1')!);
+    return { route: config.routes.story, channelId: config.channels[0].id };
+  });
+  expect(savedRoute.route).toEqual({ channelId: savedRoute.channelId, modelId: ids[47] });
+  await page.keyboard.press('Escape');
+  await expect(settings).toHaveCount(0);
+  const reopened = await openAiSettings(page);
+  await expect(reopened.getByRole('combobox', { name: '正文生成渠道', exact: true })).toContainText('测试渠道');
+  await expect(reopened.getByRole('combobox', { name: '正文生成模型', exact: true })).toContainText(ids[47]);
+  await expect(reopened.getByRole('combobox', { name: '正文生成模型', exact: true })).toHaveAttribute('value', ids[47]);
+  await page.screenshot({ path: info.outputPath('last-model-saved-reopened.png'), animations: 'disabled' });
+  await page.keyboard.press('Escape');
+  await expect(reopened).toHaveCount(0);
+  await page.reload();
+  const reloaded = await openAiSettings(page);
+  await expect(reloaded.getByRole('combobox', { name: '正文生成模型', exact: true })).toContainText(ids[47]);
+  await expect(reloaded.getByRole('combobox', { name: '正文生成模型', exact: true })).toHaveAttribute('value', ids[47]);
+  expect(generationPosts).toBe(0);
 });
