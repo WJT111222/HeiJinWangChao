@@ -56,7 +56,7 @@ import { fingerprint } from '../../domain/commands';
 import { SettingsSchema, settingsKey } from '../settings/model';
 import { summaryFailureTitle } from '../../workflows/memorySummaryQueue';
 import type { OpeningStart } from './openingStart';
-import { runtimeLogEvent } from './runtimeLog';
+import { currentRuntimeLogs, runtimeLogEvent } from './runtimeLog';
 import { errorBannerKey } from './errorBanner';
 import { DesktopWorkflowPanel } from './WorkflowPanel';
 
@@ -167,15 +167,19 @@ export function GameScreen({
   const [undoNotice, setUndoNotice] = useState('');
   const submitLock = useRef(false),
     submitToken = useRef(0);
-  const [runtimeLogs, setRuntimeLogs] = useState<RuntimeLogEntry[]>([]);
+  const [runtimeEntries, setRuntimeLogs] = useState<RuntimeLogEntry[]>([]);
+  const diagnosticSaveRef = useRef(crypto.randomUUID());
+  const diagnosticScope = useMemo(() => ({ saveRef: diagnosticSaveRef.current, turnRef: crypto.randomUUID() }), [draft?.turnId]);
+  const runtimeLogs = currentRuntimeLogs(runtimeEntries, diagnosticScope);
   const runtimeLogId = useRef(0);
   // 失败事件序号：用于判断错误横幅是否是「新的一次失败」；清空日志不回退。
   const [failureSeq, setFailureSeq] = useState(0);
   const reportRuntimeEvent = useCallback<RuntimeLogReporter>((stage, kind, failure) => {
-    const entry = runtimeLogEvent(++runtimeLogId.current, stage, kind, failure);
+    // The callback captures the request's turn, not whatever turn is current when it finishes.
+    const entry = runtimeLogEvent(++runtimeLogId.current, stage, kind, failure, diagnosticScope);
     setRuntimeLogs((current) => [...current.slice(-49), entry]);
-    if (kind === 'failed') setFailureSeq((current) => current + 1);
-  }, []);
+    if (entry.kind === 'failed') setFailureSeq((current) => current + 1);
+  }, [diagnosticScope]);
   useEffect(
     () => () => {
       submitToken.current++;
@@ -578,13 +582,18 @@ export function GameScreen({
             : "pending";
 
   const errorMessages = [automatic.error, error, submitError, variables.error, world.error].filter((message): message is string => Boolean(message));
+  const diagnosticRecovery = busy ? '当前仍在处理，请等待结束或使用原有取消操作。'
+    : !validDraft ? '当前草稿版本不可继续，请重新读取存档后检查。'
+    : !navigator.locks ? '当前浏览器缺少 Web Locks，不能安全启动请求；请更换支持的浏览器并重新读档。'
+    : workflowAction.kind === 'continue' && !workflowAction.disabled ? `当前可主动${workflowAction.label}；生成可能产生费用，查看诊断不会发起请求。`
+    : '当前暂不可继续，请检查阶段开关与现有操作按钮。';
   const errorFailures = draft?.failures.filter(failure => failure.storyRevision === draft.storyRevision).slice(-6) ?? [];
-  const errorSignature = workflowError
+  const errorSignature = hasWorkflowError && workflowError
     ? errorBannerKey({ saveId: state.saveId, turnId: draft?.turnId, storyRevision: draft?.storyRevision, failureSeq }, errorMessages, errorFailures)
     : '';
   const desktopNotices = (
     <>
-      {workflowError && errorSignature !== dismissedError && (
+      {hasWorkflowError && workflowError && errorSignature !== dismissedError && (
         <div className="wf-banner workflow-errors" data-level="err" role="alert">
           <span className="wf-banner-tag" aria-hidden="true">误</span>
           <div className="wf-banner-msg">
@@ -649,6 +658,7 @@ export function GameScreen({
                         rawTurnId={rawTurnId}
                         summary={summaryQuality}
                         runtimeLogs={runtimeLogs}
+                        recovery={diagnosticRecovery}
                         onClearLogs={() => setRuntimeLogs([])}
                       />
   );
@@ -858,7 +868,7 @@ export function GameScreen({
         <button data-mobile-tab="world" aria-current={worldDirectoryOpen||(panel&&panel!=='人物档案'&&panel!=='经济与资产')?'page':undefined} onClick={() => setWorldDirectoryOpen(true)}><span className="mobile-seal" aria-hidden="true">世</span>世界资料</button>
         <button data-settings-open aria-current={renderSettings?'page':undefined} onClick={onOpenSettings}><span className="mobile-seal" aria-hidden="true">设</span>设置</button>
       </nav>
-      {compactSidebars&&<MobileDiagnostics saveId={state.saveId} turnId={rawTurnId} draft={draft} entries={runtimeLogs} onClear={()=>setRuntimeLogs([])} open={diagnosticsOpen} onOpen={()=>setDiagnosticsOpen(true)} onClose={()=>setDiagnosticsOpen(false)}/>}
+      {compactSidebars&&<MobileDiagnostics saveId={state.saveId} turnId={rawTurnId} draft={draft} entries={runtimeLogs} recovery={diagnosticRecovery} onClear={()=>setRuntimeLogs([])} open={diagnosticsOpen} onOpen={()=>setDiagnosticsOpen(true)} onClose={()=>setDiagnosticsOpen(false)}/>}
       {compactSidebars && mobileStatusOpen && <Dialog title="此时此地" mobileVariant="sheet" seal={mobileCitySeal(state)} eyebrow="NOW · HERE" className="mobile-status-sheet" onClose={()=>setMobileStatusOpen(false)} returnFocus={()=>document.querySelector<HTMLElement>('[data-mobile-status]')??mobileReturnFocus('hero')}>
         <MobileStatus state={state} equipment={equipment} onProfile={()=>{setMobileStatusOpen(false);setPanel('人物档案');}} onEconomy={()=>{setMobileStatusOpen(false);setPanel('经济与资产');}}/>
       </Dialog>}

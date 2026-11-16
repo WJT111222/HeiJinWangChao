@@ -84,6 +84,12 @@ test('撤回后编辑发送才开始三阶段，失败可恢复且只保存新�
   await expect.poll(() => server.calls).toEqual(['story', 'variables', 'world']);
   await expect.poll(async () => (await read(page)).draft.stageStatus.world).toBe('failed');
   expect((await read(page)).state.turnNumber).toBe(2);
+  if ((page.viewportSize()?.width ?? 1440) <= 900) {
+    const diagnostics = page.getByRole('dialog', { name: '重试与变更详情', exact: true });
+    await expect(diagnostics).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(diagnostics).toBeHidden();
+  }
   server.control.failWorld = false; await openWorkflow(page);
   await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await expect.poll(async () => (await read(page)).state.turnNumber).toBe(3);

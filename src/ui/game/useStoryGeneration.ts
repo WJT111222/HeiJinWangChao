@@ -48,6 +48,7 @@ export function useStoryGeneration(
         companionProfile,
         config: readAiConfig(localStorage),
         vault: new CredentialVault(sessionStorage, localStorage),
+        onFailureSaved: (saved) => { if (token.current === id) onSaved(saved); },
         onProgress: (next) => {
           if (token.current !== id) return;
           const bodyStarted = next.readingPhase === 'body' && latest.current?.readingPhase !== 'body';

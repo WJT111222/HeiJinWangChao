@@ -54,6 +54,7 @@ export function useTurnGeneration(
     setOutcome(undefined);
     setProgress(undefined);
     pending.current = undefined;
+    let observed = expected;
     try {
       const result = await generateAndSettleTurn(runner, repository, {
         draft: expected,
@@ -62,7 +63,15 @@ export function useTurnGeneration(
         config: readAiConfig(localStorage),
         vault: new CredentialVault(sessionStorage, localStorage),
         onDraft: (next) => {
-          if (token.current === id) onSaved(next);
+          if (token.current === id) {
+            // Only a newly saved ready stage retires its earlier diagnostic errors.
+            // A ready candidate by itself must not hide a later failed preflight.
+            for (const stage of ['story', 'variables', 'world'] as const)
+              if (next.stageStatus[stage] === 'ready' && observed.stageStatus[stage] !== 'ready')
+                onRuntimeEvent?.(stage, 'completed');
+            observed = next;
+            onSaved(next);
+          }
         },
         onProgress: (next) => {
           if (token.current !== id) return;
