@@ -1,0 +1,55 @@
+import { getTalentDefinition } from '../domain/protagonist/talents';
+import type { TalentId } from '../domain/protagonist/talents';
+import type { AiStage } from '../services/ai/configuration';
+
+const commonRules = [
+  '天赋是正式主角的只读固有事实，八项同属顶级优势；在其核心领域应体现显著强于普通角色的能力与独有机会，不能只改称号或降格为普通观察力。定义与四项说明以本段单份正式目录为准，不扩展到相邻天赋的领域。',
+  '沿用“机会发现 → 能力兑现 → 世界回响”，规模取决于真实资源、经验、地位、关系和世界情势；不设等级、稀有度或早中晚期，不强制每回合发挥，不保证成功，不创造胜率百分比或虚构判定结果。',
+  '尊重玩家主动权和 NPC 独立意志。机会、接触意向、玩家同意、行动执行与已验证成果必须区分；不能仅凭天赋赠送财富、职位、忠诚部下、武器、技术成品或组织。没有成立事实就不记收益。',
+  '天赋不授予额外命令权限，也不改变时间、地点、知识、资源或受保护现场边界。只能读取合法保存的 ID，不得按姓名、职业、性别、城市、玩家文字或剧情推断/补选/更换天赋；不得用命令修改 talentId 或目录。',
+] as const;
+
+const stageRules: Record<AiStage, readonly string[]> = {
+  story: [
+    '本阶段负责机会发现与能力兑现：结合 PLAYER_ACTION、当前世界事实和所选天赋的核心领域，提供实质不同的解决路径；玩家已授权且条件具备时，可呈现卓越能力及有依据的结果，而非只有旁白夸赞。',
+    '尚未行动的机会、提案、人才求见或研发设想不能写成已经获利、任职、归附或完成制造。不得替玩家加入组织、接纳人才、投资押注、任职或公开发声；不能全知、预知未来或凭空取得访问权限和资源。',
+    '正文与后续变量规划要清楚区分已发生事实和未来可能性，保留证据与失败代价；继续使用原 Story 协议，不输出新的天赋状态、数值或万能效果指令。',
+  ],
+  variables: [
+    '本阶段只将 STORY_RESULT 中真实已经发生、有充分证据的结果落为候选。天赋解释事件为何发展，不能单独充当发生证据；提议、意向、推测、潜在收益和未完成研发不得当作既成事实。',
+    '继续使用既有 Variables 文本命令、字段白名单、实体引用、归属、数量、时间和版本校验。不得凭天赋新增人物、资金、职位、忠诚关系或技术成果；合法更新必须有正文事实支撑，不新增“天赋效果”赋值指令。',
+    '没有成立变化时保留合法空命令块，不强行产生奖励；禁止修改/清除主角天赋。候选仍须整批严格验证并由原原子结算提交，不能从机会说明或思考文本提取正式收益。',
+  ],
+  world: [
+    '本阶段负责独立世界的长期回响：只由正式状态、合法 Variables 投影、已成立正文事实及真实历史，推演有资源、动机和时空条件的 NPC/组织后续行动，可形成对应天赋的机会，不必每回合发生。',
+    'NPC 有独立人格、利益、目标与知识边界，可能拒绝或背叛；模型看到天赋 ID 不代表 NPC 知道该天赋或主角秘密。维持亲历/转述/推测、作者背景和角色认知的区分，不自动广播私人事实。',
+    '不得替玩家作重大决策、操纵受保护现场、强制效忠或凭空实现资产/职位/发明；只用原 World JSON 与合法命令记录有根据的变化，不制造全球舆论数字、隐藏等级或必成结果。',
+  ],
+};
+
+const additionalRules: Partial<Record<TalentId, readonly string[]>> = {
+  underworld_aura: [
+    '地下人才接触机会须有自身动机且与既有世界事实相连；“主动求见 → 提议合作 → 玩家同意 → 合作成立”不是同一事实。不得凭空登记无关联人才或自动设为忠诚部下，不能用公众影响替代地下人才归附。',
+  ],
+  public_sovereign: [
+    '作用于公开社会的传播、议题、声望和公众认知，不等于地下人才投奔或每个 NPC 好感增加。公众能独立判断、反对和使舆论反转；没有正式量化领域，不创造受众规模、支持率或社会风向数值。',
+  ],
+  desperate_gambler: [
+    '仅在玩家主动选择押注、现有筹码具有真实重大价值、失败代价合理明确、潜在收益明显四项同时有事实支撑时，才体现显著的高风险逆转机会优势。不能从“危险/冒险”等词自动判为满足条件；条件不明就保持未确认，不套用豪赌优势。',
+    '不得替玩家押注或把普通计划变成下注；不保证翻盘、不虚构概率加成，不提前发放收益。即使条件成立，失败及筹码损失仍可能真实发生；本上下文本身不代表已触发、已成功或已经完成任何经济交易。',
+  ],
+};
+
+/** Only the saved identity selects policy. This is model context, never a trigger,
+ * success roll, authority grant or state mutation. Memory does not call this path. */
+export function talentContext(id: TalentId | undefined, stage: AiStage) {
+  const definition = getTalentDefinition(id);
+  if (!definition) return undefined;
+  return {
+    definition,
+    stage,
+    commonRules: [...commonRules],
+    stageRules: [...stageRules[stage]],
+    additionalRules: [...(additionalRules[definition.id] ?? [])],
+  };
+}

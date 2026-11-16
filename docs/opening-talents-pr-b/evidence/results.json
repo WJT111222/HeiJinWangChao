@@ -1,0 +1,52 @@
+{
+  "base": "5dc8d448ed7c8a49c6002cb1ecddc19f897cfbec",
+  "observedMain": "f36bc51aede49e4ac6edf9a0bda2138905f007c7",
+  "node": "24.19.0",
+  "npm": "11.9.0",
+  "targeted": {
+    "files": 3,
+    "passed": 40,
+    "failed": 0,
+    "skipped": 0,
+    "overlapsFullCheck": true
+  },
+  "fullCheck": {
+    "files": 172,
+    "passed": 4182,
+    "failed": 0,
+    "skipped": 0
+  },
+  "promptsCheck": {
+    "passed": 93,
+    "failed": 0,
+    "skipped": 0,
+    "overlapsFullCheck": true
+  },
+  "outboundMockMatrix": {
+    "protocols": 4,
+    "stages": 3,
+    "modes": 2,
+    "combinations": 24,
+    "vitestTestCases": 4
+  },
+  "baseGoldenCapture": {
+    "passed": 1,
+    "includedInPrTestCount": false
+  },
+  "exitCodes": {
+    "typecheck-precheck": 2,
+    "staged-diff-check": 0,
+    "targeted-final": 0,
+    "baseline-golden": 0,
+    "lint-precheck": 0,
+    "npm-ci": 0,
+    "context-first": 0,
+    "targeted-first": 1,
+    "check": 0,
+    "prompts-check": 0,
+    "diff-check": 0,
+    "context-wire-first": 1
+  },
+  "initialTestHarnessFailures": "wireRequest.init.body accessor; opening turn is intentionally not undoable. Both fixed in new tests; no production transport/Undo changes.",
+  "chromium": "Not run: PR-B conditional model context only, no UI/CSS/interaction changes; specification 8.3."
+}
