@@ -1,3 +1,4 @@
+import { HistorySummarySchema, historySummary } from './history/model';
 import { fingerprint } from '../../domain/commands';
 import { TurnDraftSchema } from '../../domain/drafts';
 import { retainNpcChoices } from '../../domain/npc/profiles';
@@ -13,7 +14,7 @@ import { request } from './idb';
  * not a claim about the browser's physical IndexedDB allocation. */
 export const undoPolicy = Object.freeze({ maxTurns: 5, maxBytes: 64 * 1024 * 1024 });
 export const timelineStores = ['saves', 'drafts', 'turnReceipts', 'turnUndo', 'saveControls'];
-const DescriptorSchema = z.strictObject({ turnId: IdSchema, beforeTurnId: IdSchema, bytes: CountSchema });
+const DescriptorSchema = z.strictObject({ turnId: IdSchema, beforeTurnId: IdSchema, bytes: CountSchema, summary: HistorySummarySchema.optional() });
 const ControlSchema = z.strictObject({
   saveId: IdSchema, epoch: IdSchema,
   records: z.array(DescriptorSchema).max(undoPolicy.maxTurns),
@@ -21,7 +22,7 @@ const ControlSchema = z.strictObject({
   notice: z.enum(['budget', 'quota', 'legacy_write']).optional(),
   lastNpcManagement: z.strictObject({operationId:IdSchema,request:z.string(),managementRevision:CountSchema}).optional(),
   lastUndo: z.strictObject({ operationId: IdSchema, revision: CountSchema, draftTurnId: IdSchema }).optional(),
-  /** 存档实例身份：只在导入备份替换整条时间线时生成；缺省表示从未被替换的原存档。其他写入一律原样保留。 */
+  /** 存档实例身份：导入备份或确认历史回溯替换整条时间线时生成；缺省表示原存档。其他写入一律原样保留。 */
   instanceId: IdSchema.optional(),
 });
 export type SaveControl = z.infer<typeof ControlSchema>;
@@ -35,7 +36,7 @@ export interface UndoStatus {
   input: string; memoryPaused: boolean; notice?: SaveControl['notice'];
   unavailable?: 'opening' | 'no_history' | 'chain';
 }
-const SnapshotSchema = z.strictObject({
+export const SnapshotSchema = z.strictObject({
   version: z.literal(1), saveId: IdSchema, turnId: IdSchema, beforeTurnId: IdSchema,
   input: z.string().max(100000), stateJSON: z.string(),
 });
@@ -103,7 +104,7 @@ export async function recordUndo(tx: IDBTransaction, state: GameState, draft: Tu
       await request(store.delete([state.saveId, oldest.turnId]));
     }
     await request(store.add(snapshot));
-    control.records.push({ turnId: draft.turnId, beforeTurnId: previousTurn, bytes });
+    control.records.push({ turnId: draft.turnId, beforeTurnId: previousTurn, bytes, summary: historySummary(state) });
   }
   await writeControl(tx, control);
 }

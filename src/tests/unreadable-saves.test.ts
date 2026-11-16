@@ -193,17 +193,20 @@ describe('targeted unreadable deletion stays atomic', () => {
         open.result.createObjectStore('turnReceipts', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
         open.result.createObjectStore('turnUndo', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
         open.result.createObjectStore('saveControls', { keyPath: 'saveId' });
+        for (const name of ['historyMetadata', 'historyPayloads'])
+          open.result.createObjectStore(name, { keyPath: ['saveId', 'id'] }).createIndex('saveId', 'saveId');
       };
       open.onsuccess = () => resolve(open.result); open.onerror = () => reject(open.error);
     });
     const repo = await SaveRepository.open('out-of-line', factory);
     try {
       await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(['saves', 'drafts', 'turnReceipts'], 'readwrite');
+        const tx = db.transaction(['saves', 'drafts', 'turnReceipts', 'historyMetadata', 'historyPayloads'], 'readwrite');
         tx.oncomplete = () => resolve(); tx.onabort = () => reject(tx.error);
         tx.objectStore('saves').put(game('save-b'), 'bad-key'); tx.objectStore('saves').put(game('save-b'), 'save-b');
         for (const saveId of ['bad-key', 'save-b']) {
           tx.objectStore('drafts').put({ saveId }); tx.objectStore('turnReceipts').put({ saveId, turnId: 'turn-a' });
+          for (const name of ['historyMetadata', 'historyPayloads']) tx.objectStore(name).put({ saveId, id: 'history-a' });
         }
       });
       expect(await repo.list()).toContainEqual(expect.objectContaining({ status: 'unreadable', storageKey: 'bad-key', saveId: 'save-b' }));
@@ -211,6 +214,12 @@ describe('targeted unreadable deletion stays atomic', () => {
       expect(data.records.drafts[0].key).toBe('bad-key');
       expect(data.records.turnReceipts[0].key).toEqual(['bad-key', 'turn-a']);
       await repo.deleteUnreadable('bad-key'); expect(await repo.exportRaw('save-b')).toEqual(protectedData);
+      for (const name of ['historyMetadata', 'historyPayloads']) {
+        const retained = await new Promise<unknown[]>(resolve => {
+          const read = db.transaction(name).objectStore(name).getAll(); read.onsuccess = () => resolve(read.result);
+        });
+        expect(retained).toEqual([{ saveId: 'save-b', id: 'history-a' }]);
+      }
       expect(await repo.list()).toHaveLength(1);
     } finally { repo.close(); db.close(); }
   });

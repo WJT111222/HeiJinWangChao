@@ -1,0 +1,28 @@
+/* Scoped to the history manager. Existing game, archive and settings themes are untouched. */
+.app-shell dialog.modal.history-saves { --history-bg:#201e1a; --history-text:#eee5d2; --history-muted:#c7baa1; --history-line:#988967; background:var(--history-bg); color:var(--history-text); }
+:root[data-appearance=day] .app-shell dialog.modal.history-saves { --history-bg:#f6f0e3; --history-text:#30291f; --history-muted:#65543a; --history-line:#947c54; }
+dialog.history-saves .modal-body { overflow-y:auto; min-height:0; }
+dialog.history-saves :is(label,p,h3,summary,dt,dd) { color:inherit; overflow-wrap:anywhere; }
+dialog.history-saves label { display:grid; gap:.5rem; margin:.75rem 0; }
+dialog.history-saves :is(input,select,textarea) { width:100%; min-width:0; color:var(--history-text); background:var(--history-bg); border:1px solid var(--history-line); }
+dialog.history-saves textarea { min-height:6rem; }
+dialog.history-saves button { color:var(--history-text); border:1px solid var(--history-line); }
+dialog.history-saves button.primary { color:#241b0e; background:#d9b76e; }
+dialog.history-saves button:disabled { opacity:.5; }
+dialog.history-saves :focus-visible { outline:2px solid var(--history-line); outline-offset:3px; }
+dialog.history-saves .history-actions { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; margin:.75rem 0; }
+dialog.history-saves .history-node-list { padding:0; list-style:none; display:grid; gap:1rem; }
+dialog.history-saves .history-node-list li { padding:1rem; border:1px solid var(--history-line); border-radius:.5rem; }
+dialog.history-saves .history-node-list p { color:var(--history-muted); }
+dialog.history-saves :is(.history-warning,.history-notice) { padding:1rem; border-left:3px solid var(--history-line); background:color-mix(in srgb,var(--history-line) 12%,transparent); }
+dialog.history-saves .history-world { border-top:1px solid var(--history-line); margin-top:1rem; padding-top:1rem; }
+dialog.history-saves .history-story { white-space:pre-wrap; line-height:1.9; }
+dialog.history-saves .history-source { word-break:break-all; }
+@media(max-width:900px) { dialog.history-saves .history-actions>button { min-height:44px; } dialog.history-saves .history-node-list li { padding:.75rem; } }
+/* Historical profile has no live-save switching action. Its other two links stay read-only. */
+dialog.history-saves .history-world .pf-entry button:last-child { display:none; }
+
+.app-shell dialog.modal.history-saves { --text:var(--history-text); --muted:var(--history-muted); --gold:var(--history-muted); color-scheme:dark; }
+.app-shell dialog.modal.history-saves>.modal-heading { background:var(--history-bg); color:var(--history-text); }
+.app-shell dialog.modal.history-saves>.modal-heading :is(h2,button) { color:var(--history-text); }
+:root[data-appearance=day] .app-shell dialog.modal.history-saves { color-scheme:light; }

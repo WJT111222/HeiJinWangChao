@@ -20,7 +20,7 @@ type Props = {
   onCreate: () => void; onOpen: (id:string) => void; onSelect: (id:string) => void;
   onDelete: (save:SaveSummary) => void; onSettings: () => void; onRefresh: () => void;
   /** 存档备份：导入、单份导出、票面状态与提醒；状态只存在本机。 */
-  onImport?: () => void; onExport?: (save:SaveSummary) => void; backupExporting?: boolean;
+  onHistory?: (saveId: string) => void; onImport?: () => void; onExport?: (save:SaveSummary) => void; backupExporting?: boolean;
   backupOf?: (save:SaveSummary) => BackupStatus|undefined; noticeAction?: ReactNode; backupReminder?: string;
 };
 
@@ -53,17 +53,17 @@ function Ticket({save,index,selected,hasDraft,voided,focused,backup,children}:{s
   </article>;
 }
 
-function TicketActions({save,selected,repository,disabled,backupExporting=false,onActivate,onSelect,onDelete,onExport}:{save?:SaveSummary;selected:boolean;repository?:SaveRepository;disabled:boolean;backupExporting?:boolean;onActivate:()=>void;onSelect:(id:string)=>void;onDelete:(save:SaveSummary)=>void;onExport?:(save:SaveSummary)=>void}) {
+function TicketActions({save,selected,repository,disabled,backupExporting=false,onActivate,onSelect,onDelete,onExport,onHistory}:{save?:SaveSummary;selected:boolean;repository?:SaveRepository;disabled:boolean;backupExporting?:boolean;onActivate:()=>void;onSelect:(id:string)=>void;onDelete:(save:SaveSummary)=>void;onExport?:(save:SaveSummary)=>void;onHistory?:(saveId:string)=>void}) {
   const {exporting,notice,exportRaw}=useRawSaveExport(repository,save?.storageKey??'');
   return <div className="mh-acts">
     {save?.status!=='unreadable'&&<button className="mh-primary" disabled={disabled} onClick={onActivate}>{!save?'开始新游戏':selected?'继续游戏':'读取存档'} <span aria-hidden="true">{selected?'→':'↗'}</span></button>}
-    {save&&<div className="mh-secondary">{save.status==='unreadable'?<button disabled={disabled||exporting||!repository} onClick={()=>void exportRaw()}>{exporting?'正在导出…':'导出原始数据'}</button>:<>{onExport&&<button className="mh-export" disabled={disabled||backupExporting} onClick={()=>onExport(save)}>{backupExporting?'正在导出…':'导出备份'}</button>}{!selected&&<button disabled={disabled} onClick={()=>onSelect(save.saveId)}>选择</button>}</>}<button className="mh-delete" disabled={disabled||exporting} onClick={()=>onDelete(save)}>{save.status==='unreadable'?'删除存档':'删除'}</button></div>}
+    {save&&<div className="mh-secondary">{save.status==='unreadable'?<button disabled={disabled||exporting||!repository} onClick={()=>void exportRaw()}>{exporting?'正在导出…':'导出原始数据'}</button>:<>{onHistory&&<button disabled={disabled} onClick={()=>onHistory(save.saveId)}>历史存档</button>}{onExport&&<button className="mh-export" disabled={disabled||backupExporting} onClick={()=>onExport(save)}>{backupExporting?'正在导出…':'导出备份'}</button>}{!selected&&<button disabled={disabled} onClick={()=>onSelect(save.saveId)}>选择</button>}</>}<button className="mh-delete" disabled={disabled||exporting} onClick={()=>onDelete(save)}>{save.status==='unreadable'?'删除存档':'删除'}</button></div>}
     {notice&&<p className="mh-status" role="status">{notice}</p>}
   </div>;
 }
 
 export function MobileHomeScreen(props: Props) {
-  const {saves,active,loading,busy,blocked,repository,hasDraft,notice,listError,deletion,onVoidShown,onCreate,onOpen,onSelect,onDelete,onSettings,onRefresh,notices,onImport,onExport,backupExporting,backupOf,noticeAction,backupReminder}=props;
+  const {saves,active,loading,busy,blocked,repository,hasDraft,notice,listError,deletion,onVoidShown,onCreate,onOpen,onSelect,onDelete,onSettings,onRefresh,notices,onHistory,onImport,onExport,backupExporting,backupOf,noticeAction,backupReminder}=props;
   const ordered=useMemo(()=>ticketOrder(saves,active),[saves,active]);
   const [currentKey,setCurrentKey]=useState(()=>ordered[0]?ticketKey(ordered[0]):BLANK);
   const [ghost,setGhost]=useState<{save:SaveSummary;index:number}>();
@@ -138,7 +138,7 @@ export function MobileHomeScreen(props: Props) {
     </>}
     {backupReminder&&!loading&&<p className="mh-reminder" role="note">{backupReminder}</p>}
     {notice&&<p className="mh-status" role="status">{notice}{noticeAction}</p>}
-    {!loading&&<TicketActions key={effectiveKey} save={listError?undefined:current} selected={current?.status==='readable'&&current.saveId===active} repository={repository} disabled={disabled||tear.torn} onActivate={listError?onCreate:tear.activate} onSelect={onSelect} onDelete={onDelete} onExport={onExport} backupExporting={backupExporting}/>}
+    {!loading&&<TicketActions key={effectiveKey} save={listError?undefined:current} selected={current?.status==='readable'&&current.saveId===active} repository={repository} disabled={disabled||tear.torn} onActivate={listError?onCreate:tear.activate} onSelect={onSelect} onDelete={onDelete} onHistory={onHistory} onExport={onExport} backupExporting={backupExporting}/>}
     <footer className="mh-foot">{notices}<p>四座城市 · 自由职业 · 开放人生<br/>三阶段生成 · 原子结算 · 连续回合</p></footer>
   </main>;
 }

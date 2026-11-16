@@ -6,11 +6,11 @@ import type { SaveSummary } from '../services/storage/saveManagement';
 import { dateTime } from './panels/playerView';
 import type { BackupStatus } from './home/backupStatus';
 
-export function SaveCard({ save, index, selected, repository, backup, exporting: backupExporting = false, onOpen, onSelect, onDelete, onExport }: {
+export function SaveCard({ save, index, selected, repository, backup, exporting: backupExporting = false, onOpen, onSelect, onDelete, onExport, onHistory }: {
   save: SaveSummary; index: number; selected: boolean; repository?: SaveRepository;
   /** 只存在本机的备份状态；无法读取的存档没有。 */
   backup?: BackupStatus; exporting?: boolean;
-  onOpen: (id: string) => void; onSelect: (id: string) => void; onDelete: () => void; onExport?: () => void;
+  onOpen: (id: string) => void; onSelect: (id: string) => void; onDelete: () => void; onExport?: () => void; onHistory?: () => void;
 }) {
   const {exporting,notice,exportRaw} = useRawSaveExport(repository, save.storageKey);
   const city = saveCity(save.title);
@@ -34,6 +34,7 @@ export function SaveCard({ save, index, selected, repository, backup, exporting:
     <div className="save-card-actions card-actions">
       {save.status === 'readable' ? <>
         <button className="open" onClick={() => onOpen(save.saveId)}>读取存档 ↗</button>
+        {onHistory && <button disabled={!repository} onClick={onHistory}>历史存档</button>}
         {onExport && <button className="export" disabled={backupExporting || !repository} onClick={onExport}>导出备份</button>}
         {!selected && <button onClick={() => onSelect(save.saveId)}>选择</button>}
       </> : <button disabled={exporting || !repository} onClick={() => void exportRaw()}>{exporting ? '正在导出…' : '导出原始数据'}</button>}

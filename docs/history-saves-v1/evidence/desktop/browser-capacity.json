@@ -1,0 +1,57 @@
+{
+  "project": "desktop",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "metrics": [
+    {
+      "turns": 10,
+      "rawBytes": 94034,
+      "recordBytes": 2301,
+      "encoding": "gzip",
+      "saveMs": 1292.2000000029802,
+      "readMs": 1136.2999999970198,
+      "timerTicks": 319,
+      "maxTimerGapMs": 65.3999999910593,
+      "sampledPeakHeap": 28879383,
+      "heap": 28879383
+    },
+    {
+      "turns": 100,
+      "rawBytes": 926358,
+      "recordBytes": 5952,
+      "encoding": "gzip",
+      "saveMs": 1211.6000000089407,
+      "readMs": 1085.8999999910593,
+      "timerTicks": 297,
+      "maxTimerGapMs": 47.79999999701977,
+      "sampledPeakHeap": 36238987,
+      "heap": 38216203
+    },
+    {
+      "turns": 300,
+      "rawBytes": 2776558,
+      "recordBytes": 13820,
+      "encoding": "gzip",
+      "saveMs": 1410.5999999940395,
+      "readMs": 1273.1000000089407,
+      "timerTicks": 260,
+      "maxTimerGapMs": 134.20000000298023,
+      "sampledPeakHeap": 60122794,
+      "heap": 41079174
+    },
+    {
+      "turns": 1000,
+      "rawBytes": 9252262,
+      "recordBytes": 40720,
+      "encoding": "gzip",
+      "saveMs": 1978.2999999970198,
+      "readMs": 1289.9000000059605,
+      "timerTicks": 300,
+      "maxTimerGapMs": 399.19999998807907,
+      "sampledPeakHeap": 114154677,
+      "heap": 69180917
+    }
+  ]
+}

@@ -201,7 +201,7 @@ export function GameScreen({
   const variables = useVariableGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent);
   const world = useWorldGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent);
   const automatic = useTurnGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent, handleSettled);
-  // 延后一微任务，让 StrictMode 的首次 effect 清理先完成。消费的是创角事件授权，
+  // 延后一微任务，让 StrictMode 的首次 effect 清理先完成。消费的是创角或历史覆盖确认的单次事件授权，
   // 而不是“草稿没有正文”；刷新、读档和重新挂载没有新的授权。
   useEffect(() => {
     if (!openingStart) return;

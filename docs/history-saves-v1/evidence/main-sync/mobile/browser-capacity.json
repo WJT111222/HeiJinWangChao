@@ -1,0 +1,57 @@
+{
+  "project": "mobile",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "metrics": [
+    {
+      "turns": 10,
+      "rawBytes": 94034,
+      "recordBytes": 2301,
+      "encoding": "gzip",
+      "saveMs": 833.7999999970198,
+      "readMs": 471.09999999403954,
+      "timerTicks": 176,
+      "maxTimerGapMs": 99.30000001192093,
+      "sampledPeakHeap": 35895865,
+      "heap": 35895865
+    },
+    {
+      "turns": 100,
+      "rawBytes": 926358,
+      "recordBytes": 5951,
+      "encoding": "gzip",
+      "saveMs": 321.40000000596046,
+      "readMs": 226.70000000298023,
+      "timerTicks": 107,
+      "maxTimerGapMs": 15.400000005960464,
+      "sampledPeakHeap": 39408867,
+      "heap": 36648012
+    },
+    {
+      "turns": 300,
+      "rawBytes": 2776558,
+      "recordBytes": 13819,
+      "encoding": "gzip",
+      "saveMs": 772.2000000029802,
+      "readMs": 447.59999999403954,
+      "timerTicks": 190,
+      "maxTimerGapMs": 41.29999999701977,
+      "sampledPeakHeap": 51178851,
+      "heap": 57102863
+    },
+    {
+      "turns": 1000,
+      "rawBytes": 9252262,
+      "recordBytes": 40720,
+      "encoding": "gzip",
+      "saveMs": 967.2000000029802,
+      "readMs": 487.09999999403954,
+      "timerTicks": 226,
+      "maxTimerGapMs": 101.79999999701977,
+      "sampledPeakHeap": 110005280,
+      "heap": 80055744
+    }
+  ]
+}
