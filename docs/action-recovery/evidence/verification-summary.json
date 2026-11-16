@@ -1,0 +1,49 @@
+{
+  "baseline": "e0e2b446136b9589bf60094d9975a807ab06fbdf",
+  "node": "24.19.0",
+  "chromium": "154.0.8037.57",
+  "paidModelRequests": 0,
+  "codeScope": [
+    "GameScreen.tsx",
+    "MobileActions.tsx",
+    "actionSuggestions.ts"
+  ],
+  "check": {
+    "exit": 0,
+    "vitestFiles": 163,
+    "passed": 3981,
+    "failed": 0,
+    "skipped": 0
+  },
+  "prompts": {
+    "exit": 0,
+    "passed": 93,
+    "failed": 0,
+    "skipped": 0
+  },
+  "newChromium34": {
+    "startTime": "2026-11-16T08:28:39.912Z",
+    "duration": 248394.043,
+    "expected": 34,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "existingChromium": {
+    "startTime": "2026-11-16T08:33:33.352Z",
+    "duration": 132925.34999999998,
+    "expected": 20,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "strengthenedIsolation": {
+    "startTime": "2026-11-16T08:38:04.859Z",
+    "duration": 20552.757999999998,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "knownMainLimitation": "固定392x420高度下的工作流诊断导航点击同环境main也失败；不在本次修复范围。"
+}
