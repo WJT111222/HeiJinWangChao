@@ -1,23 +1,29 @@
+import { validateStoryEventInteractions } from '../../domain/events/interactions';
 import { validateSceneEventUpdate } from '../../domain/events/scenePermission';
 import { requireData } from '../../domain/common';
 import { fingerprint } from '../../domain/commands';
-import { completeTurnDraft, turnCommands } from '../../domain/turnCommit';
+import { completeTurnDraft, turnCommands, settlementDraft } from '../../domain/turnCommit';
 import type { TurnDraft } from '../../domain/drafts';
 import type { GameState } from '../../domain/state';
 import { projectTurn } from '../../domain/turnProjection';
 import { parseVariables, parseWorld } from './aiOutputs';
-import { validateCommittedTime } from '../../domain/timePreflight';
+import { validateCommittedTime, timeOutcome } from '../../domain/timePreflight';
 
 // 提交边界重新验证，不信任持久化 validated；同一事务内仅运行同步纯计算。
-export function validateTurnCandidates(state: GameState, draft: TurnDraft) {
-  requireData(completeTurnDraft(draft), 'TURN_INCOMPLETE', '三阶段尚未完整完成');
-  parseVariables(JSON.stringify(draft.variables!.result), state, draft);
-  const world = parseWorld(JSON.stringify(draft.world!.result), state, draft);
-  requireData(fingerprint(world) === fingerprint(draft.world!.result), 'WORLD_NORMALIZATION', '世界候选需先保存程序校验后的完整成果元数据');
+export function validateTurnCandidates(state: GameState, input: TurnDraft) {
+  requireData(completeTurnDraft(input), 'TURN_INCOMPLETE', '正文或已启用阶段尚未完整完成');
+  const draft = settlementDraft(input);
+  validateStoryEventInteractions(state, draft.story!);
+  timeOutcome(state, draft, true);
+  if (draft.variables) parseVariables(JSON.stringify(draft.variables.result), state, draft);
+  if (draft.world) {
+    const world = parseWorld(JSON.stringify(draft.world.result), state, draft);
+    requireData(fingerprint(world) === fingerprint(draft.world.result), 'WORLD_NORMALIZATION', '世界候选需先保存程序校验后的完整成果元数据');
+  }
   validateCommittedTime(state, draft);
   // 现场 SaveTask/SaveEvent 原来只有字符串事实与结构检查；正式落库前补足时间/终态边界。
   const projected = projectTurn(state, draft);
-  for (const command of draft.variables!.result.commands) {
+  for (const command of draft.variables?.result.commands ?? []) {
     if (command.type !== 'SaveTask' && command.type !== 'SaveEvent') continue;
     const task = command.type === 'SaveTask' ? command.task : undefined;
     const event = command.type === 'SaveEvent' ? command.event : undefined;

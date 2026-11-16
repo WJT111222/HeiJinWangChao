@@ -1,6 +1,7 @@
+import { completeTurnDraft } from '../domain/turnCommit';
 import { DataError } from '../domain/common';
 import { fingerprint } from '../domain/commands';
-import { TurnDraftSchema } from '../domain/drafts';
+import { TurnDraftSchema, configureTurnStages } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
 import { browserPromptOrder } from '../prompts/order';
 import type { OrderPreferences } from '../prompts/order';
@@ -161,6 +162,13 @@ export class TurnCoordinator {
           needed.push('world');
         // 全部所需路由及凭证在首次付费前检查，关闭/已经合法完成的阶段不要求配置。
         for (const stage of needed) requestSnapshot(config, stage, vault);
+        // 在同一执行锁内CAS保存本次设置，之后所有阶段只使用此快照。
+        const configured = configureTurnStages(draft, settings.runtime);
+        if (configured.draftRevision !== draft.draftRevision) {
+          draft = await this.repository.saveDraft(configured, draft.draftRevision, attempt.controller.signal, draft);
+          check();
+          input.onDraft?.(draft);
+        }
         // 本次运行是否续写在开始时固定（玩家点「续写正文」）：自动重试也只能续写，绝不悄悄改成从头生成。
         const continueStory = canContinueStory(draft, settings.prompts.minNarrativeChars);
         const secrets = config.channels.map((channel) => vault.get(channel.id)).filter(Boolean);
@@ -250,19 +258,12 @@ export class TurnCoordinator {
         }
         await reread();
         const skipped: AiStage[] = [];
-        if (!settings.runtime.useVariableStage) skipped.push('variables');
-        if (!settings.runtime.useWorldStage) skipped.push('world');
+        if (draft.stageStatus.variables === 'skipped') skipped.push('variables');
+        if (draft.stageStatus.world === 'skipped') skipped.push('world');
         return {
           draft,
           skipped,
-          status:
-            draft.world?.validation === 'preview'
-              ? 'preview'
-              : skipped.length
-                ? 'skipped'
-                : storyReady() && variableReady() && draft.stageStatus.world === 'ready'
-                  ? 'complete'
-                  : 'skipped',
+          status: completeTurnDraft(draft) ? 'complete' : draft.world?.validation === 'preview' ? 'preview' : 'skipped',
         };
       }, { required: true });
     } finally {

@@ -60,7 +60,7 @@ export const TurnDraftSchema = z.strictObject({
   for (const stage of ['variables', 'world'] as const) {
     const enabled = stage === 'variables' ? draft.useVariableStage : draft.useWorldStage;
     const candidate = draft[stage];
-    // 新尝试可以复用先前已验证的候选；关闭阶段只阻止本次新请求。
+    // 新尝试可以保留先前已验证的候选供复用；正式结算仅应用本次启用路径。
     const reused = candidate?.validation === 'validated' && draft.stageStatus[stage] === 'ready';
     check(enabled ? draft.stageStatus[stage] !== 'skipped' : draft.stageStatus[stage] === 'skipped' || reused, '运行开关与阶段状态不符');
     if (draft.requestedStages.includes(stage)) check(enabled, '补算阶段必须启用');
@@ -127,12 +127,40 @@ export function startStageAttempt(draft: TurnDraft, stages: readonly DraftStage[
   });
 }
 
+// 在执行锁内、请求开始前应用玩家设置。已验证候选仍可复用；未执行不伪装为 ready。
+export function configureTurnStages(draft: TurnDraft, config: { useVariableStage: boolean; useWorldStage: boolean }): TurnDraft {
+  const current = TurnDraftSchema.parse(draft);
+  if (current.useVariableStage === config.useVariableStage && current.useWorldStage === config.useWorldStage) return current;
+  const variables = current.variables?.validation === 'validated' ? current.variables : undefined;
+  const world = current.world?.validation === 'validated'
+    || (!config.useVariableStage && config.useWorldStage && current.world?.validation === 'preview') ? current.world : undefined;
+  // 正文尚未产生时保持初始执行版本，保留失败回填/续写身份；draftRevision 的 CAS 使旧响应失效。
+  const executionRevision = current.story ? current.executionRevision + 1 : current.executionRevision;
+  return TurnDraftSchema.parse({
+    ...current, useVariableStage: config.useVariableStage, useWorldStage: config.useWorldStage, draftRevision: current.draftRevision + 1, executionRevision, variables, world,
+    requestedStages: current.story ? [
+      ...(config.useVariableStage && !variables ? ['variables' as const] : []),
+      ...(config.useWorldStage && !world ? ['world' as const] : []),
+    ] : current.requestedStages,
+    stageRequestRevisions: current.story ? {
+      variables: variables ? current.stageRequestRevisions.variables : executionRevision,
+      world: world ? current.stageRequestRevisions.world : executionRevision,
+    } : current.stageRequestRevisions,
+    stageStatus: { story: current.stageStatus.story,
+      variables: variables ? 'ready' : config.useVariableStage ? 'pending' : 'skipped',
+      world: world ? current.stageStatus.world : config.useWorldStage ? 'pending' : 'skipped',
+    },
+  });
+}
+
 // 仅校验持久化前后的版本关系，不执行阶段、自动重试或候选提交。
 export function validateDraftUpdate(old: TurnDraft, next: TurnDraft) {
   requireData(next.draftRevision === old.draftRevision + 1, 'DRAFT_CONFLICT', '草稿版本冲突');
   for (const key of ['saveId', 'turnId', 'baseSaveRevision', 'turnKind', 'userInput'] as const) {
     requireData(old[key] === next[key], 'DRAFT_CONTEXT', '同次草稿的输入不可悄然改变');
   }
+  if ((old.useVariableStage !== next.useVariableStage || old.useWorldStage !== next.useWorldStage)
+    && fingerprint(next) === fingerprint(configureTurnStages(old, next))) return;
   if (next.executionRevision !== old.executionRevision) {
     requireData(next.executionRevision === old.executionRevision + 1, 'ATTEMPT_CONFLICT', '执行尝试版本不连续');
     const expected = startStageAttempt(old, next.requestedStages, next);

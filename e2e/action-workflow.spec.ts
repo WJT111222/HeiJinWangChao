@@ -1,6 +1,6 @@
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
-import { workflowTrigger, workflowSummary, goHome, openWorkflow, openBoundInput } from './helpers/gameLayout';
+import { workflowTrigger, workflowSummary, goHome, openWorkflow, openBoundInput, openStageSwitches, closeWorkflowSheet } from './helpers/gameLayout';
 import { addChannel, aiTab, saveAi, stageModel } from './helpers/aiSettings';
 import type { Page } from '@playwright/test';
 import { GameStateSchema } from '../src/domain/state';
@@ -245,45 +245,49 @@ for (const failure of ['network', 'timeout'] as const) {
 }
 
 for (const disabled of ['world', 'variables'] as const) {
-  test(`关闭阶段时${disabled}：不显示无效继续，引导启用后只补必要候选并正常发送`, async ({ page }) => {
+  test(`关闭阶段时${disabled}：按合法阶段结算或保留预览，重新启用后继续完整流程`, async ({ page }) => {
     test.setTimeout(60000);
     await prepare(page, true, { variables: disabled !== 'variables', world: disabled !== 'world' });
     const server = await mock(page); await creation(page); await confirm(page);
-    await expect(workflow(page).getByRole('status')).toContainText(disabled === 'world' ? '阶段已关闭' : '预览');
+    await expect(workflowSummary(page).getByRole('status')).toContainText(disabled === 'world' ? '本回合已结算' : '预览');
     const before = await stored(page), initial = disabled === 'world' ? ['story', 'variables'] : ['story', 'world'];
     expect(server.calls.map((call) => call.stage)).toEqual(initial);
-    await expect(workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true })).toHaveCount(0);
     await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');
-    await openWorkflow(page);
-    const guidance = workflow(page).getByRole('note', { name: '阶段设置提示', exact: true });
-    await expect(guidance).toContainText(disabled === 'world' ? '动态世界阶段已关闭' : '变量阶段未启用，当前世界结果仅为预览');
-    await workflowTrigger(page).click();
-    await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');
-    await page.getByLabel('你的行动', { exact: true }).fill('继续观察街道');
-    await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
-    await page.reload();
-    await openWorkflow(page); await expect(guidance).toBeVisible();
-    await page.getByLabel('你的行动', { exact: true }).fill('继续观察街道');
-    await expect(workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true })).toHaveCount(0);
+    if (disabled === 'world') {
+      expect(before.state.revision).toBe(1); expect(before.state.journal).toHaveLength(1);
+      expect(before.draft.userInput).toBe(''); expect(before.draft.world).toBeUndefined();
+      expect(before.state.worldClock).toBe('2015-07-08T14:01:00+08:00');
+      expect(before.state.appliedCommands.length).toBeGreaterThan(0);
+    } else {
+      expect(before.state.revision).toBe(0); expect(before.state.journal).toHaveLength(0);
+      expect(before.draft.world?.validation).toBe('preview'); expect(before.draft.variables).toBeUndefined();
+    }
+    await page.reload(); await openStageSwitches(page);
     expect(await stored(page)).toEqual(before); expect(server.calls.map((call) => call.stage)).toEqual(initial);
-    // PC 横幅按钮直达对应阶段开关；移动端仍展开高级设置。
-    await guidance.getByRole('button', { name: /^(?:展开高级设置|前往阶段开关)$/ }).click();
-    await expect(page.locator('.workflow-disclosure')).toHaveAttribute('open');
+    if (disabled === 'variables') {
+      const guidance = page.getByRole('note', { name: '阶段设置提示', exact: true });
+      await expect(guidance).toContainText('世界结果仅供预览，不能正式结算');
+      await guidance.getByRole('button', { name: /^(?:展开高级设置|前往阶段开关)$/ }).click();
+      await expect(page.getByLabel('变量管理', {exact:true})).toBeFocused();
+      await page.getByLabel('你的行动', { exact: true }).fill('继续观察街道');
+      await expect(page.getByRole('button', {name:'发送',exact:true})).toBeDisabled();
+    }
     const toggle = page.getByLabel(disabled === 'world' ? '动态世界' : '变量管理', { exact: true });
-    await expect(toggle).toBeFocused(); await expect(toggle).not.toBeChecked();
+    await expect(toggle).not.toBeChecked(); await toggle.check();
     expect(await stored(page)).toEqual(before); expect(server.calls.map((call) => call.stage)).toEqual(initial);
-    await toggle.check();
-    const resume = workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true });
-    await expect(resume).toBeEnabled(); expect(server.calls.map((call) => call.stage)).toEqual(initial);
-    expect(await stored(page)).toEqual(before);
-    await workflowTrigger(page).click();
-    await expect(resume).toBeHidden(); await openWorkflow(page); await resume.click(); await ready(page);
-    const complete = await stored(page);
-    expect(complete.state.revision).toBe(1); expect(complete.state.journal[0].story).toEqual(before.draft.story);
-    if (disabled === 'world') expect(complete.state.appliedCommands).toEqual(expect.arrayContaining(before.draft.variables!.result.commands.map(command => expect.objectContaining({ commandId: command.commandId }))));
-    const completedCalls = disabled === 'world' ? ['story', 'variables', 'world'] : ['story', 'world', 'variables', 'world'];
-    expect(server.calls.map((call) => call.stage)).toEqual(completedCalls);
-    await expect(resume).toHaveCount(0); await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
+    let completedCalls = initial;
+    if (disabled === 'variables') {
+      const resume = page.getByRole('button', {name:'继续未完成阶段',exact:true});
+      await expect(resume).toBeEnabled(); await resume.click(); await ready(page);
+      const complete = await stored(page);
+      expect(complete.state.revision).toBe(1); expect(complete.state.journal[0].story).toEqual(before.draft.story);
+      completedCalls = ['story','world','variables','world'];
+      expect(server.calls.map((call) => call.stage)).toEqual(completedCalls);
+    }
+    await closeWorkflowSheet(page);
+    const close = page.getByRole('button', {name:'关闭三阶段详情',exact:true}); if(await close.isVisible()) await close.click();
+    await page.getByLabel('你的行动', {exact:true}).fill('继续观察街道');
+    await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
     await page.getByRole('button', { name: '发送', exact: true }).click();
     await expect(page.getByTestId('story-reader')).toContainText('第2幕'); await ready(page);
     const committed = await stored(page); expect(committed.state.revision).toBe(2); expect(committed.state.journal).toHaveLength(2);

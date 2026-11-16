@@ -295,10 +295,8 @@ describe('真实三阶段顺序协调及恢复，正式 GameState 不变', () =>
         ...(useVariableStage ? ['variables'] : []),
         ...(useWorldStage ? ['world'] : []),
       ]);
-      expect(result.status).toBe(useWorldStage ? 'preview' : 'skipped');
-      expect((await coordinator.generate({ ...input, draft: result.draft })).status).not.toBe(
-        'complete',
-      );
+      expect(result.status).toBe(useWorldStage ? 'preview' : 'complete');
+      expect((await coordinator.generate({ ...input, draft: result.draft })).status).toBe(useWorldStage ? 'preview' : 'complete');
       expect(calls).toHaveLength(useWorldStage || useVariableStage ? 2 : 1);
     },
   );
@@ -312,7 +310,7 @@ describe('真实三阶段顺序协调及恢复，正式 GameState 不变', () =>
     const final = await coordinator.generate({ ...input, draft: partial.draft });
     expect(final.draft.world?.validation).toBe('validated');
     expect(final.draft.variables).toEqual(partial.draft.variables);
-    expect(final.status).toBe('skipped');
+    expect(final.status).toBe('complete');
   });
 });
 

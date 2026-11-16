@@ -77,10 +77,29 @@ describe('真实协调器→自动正式结算→等待玩家', () => {
     expect((await repo.loadDraft('save-a'))?.world?.validation).toBe('validated');
     expect((await run(value)).committed?.state.turnNumber).toBe(1); expect(value.calls).toHaveLength(3);
   });
-  it('关闭World不自动提交，不伪称完整，恢复开关后只补World', async () => {
+  it('关闭World按新规则自动提交Story与合法Variables；下一回合恢复全部阶段', async () => {
     const value = server(), config = setup(); config.settings.runtime.useWorldStage = false;
-    expect((await run(value, config)).committed).toBeUndefined(); expect((await repo.load('save-a')).revision).toBe(0); expect(value.calls).toEqual(['story','variables']);
-    expect((await run(value)).committed?.state.turnNumber).toBe(1); expect(value.calls).toEqual(['story','variables','world']);
+    const first = (await run(value, config)).committed!;
+    expect(first.state.turnNumber).toBe(1); expect(first.state.economy.cash).toBe(7000);
+    expect(value.calls).toEqual(['story','variables']); expect(first.draft.userInput).toBe('');
+    await repo.bindTurnAction(first.draft, '继续用餐', true, true);
+    expect((await run(value)).committed?.state.turnNumber).toBe(2);
+    expect(value.calls).toEqual(['story','variables','story','variables','world']);
+  });
+  it('两个阶段关闭：原始开局草稿通过CAS同步后，连续三回合只请求Story并原子结算', async () => {
+    const value = server(), config = setup(), before = await repo.load('save-a');
+    config.settings.runtime.useVariableStage = false; config.settings.runtime.useWorldStage = false;
+    for (let turn = 1; turn <= 3; turn++) {
+      const result = (await run(value, config)).committed!;
+      expect(result.state.turnNumber).toBe(turn); expect(result.state.revision).toBe(turn);
+      expect(result.state.journal).toHaveLength(turn); expect(result.state.memories.short).toHaveLength(turn);
+      expect(result.state.worldClock).toBe(before.worldClock); expect(result.state.economy).toEqual(before.economy);
+      for (const field of ['npc', 'organizations', 'items', 'tasks', 'events'] as const) expect(result.state[field]).toEqual(before[field]);
+      expect(result.draft).toMatchObject({ userInput: '', useVariableStage: false, useWorldStage: false,
+        stageStatus: { story: 'pending', variables: 'skipped', world: 'skipped' } });
+      expect(value.calls).toEqual(Array(turn).fill('story'));
+      if (turn < 3) await repo.bindTurnAction(result.draft, '静坐观察', false, false);
+    }
   });
   it('过期输入绑定和同时双绑定只有一个成功，状态不被覆盖', async () => {
     const value = server(), draft = (await run(value)).committed!.draft;
