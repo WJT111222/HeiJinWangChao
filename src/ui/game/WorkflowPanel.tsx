@@ -57,6 +57,7 @@ export function DesktopWorkflowPanel(props: {
   summary?: { hanCharacters: number; status: string };
   runtimeLogs: RuntimeLogEntry[];
   onClearLogs: () => void;
+  recovery?: string;
 }) {
   const { steps, view, draft } = props;
   const sheet = props.layout === 'sheet';
@@ -482,7 +483,6 @@ function BoundInput({ draft, compact }: { draft: TurnDraft; compact: boolean }) 
 
 function Diagnostics(props: Parameters<typeof DesktopWorkflowPanel>[0] & { hidden: boolean; failedLogs: number; compact: boolean }) {
   const { draft } = props;
-  const failures = draft?.failures.filter((failure) => failure.storyRevision === draft.storyRevision).slice(-6) ?? [];
   return (
     <section className="workflow-diagnostics wf-diag" hidden={props.hidden} aria-label="运行诊断">
       <DetailHead
@@ -498,12 +498,7 @@ function Diagnostics(props: Parameters<typeof DesktopWorkflowPanel>[0] & { hidde
             {props.summary.status === 'empty' ? '缺少有效摘要，无法正式结算。' : props.summary.status === 'within_target' ? '符合目标范围。' : '可继续。'}
           </p>
         )}
-        {failures.map((failure, index) => (
-          <p className="muted" key={index}>{stageNames[failure.stage]} · 安全失败码：{failure.errorCode}</p>
-        ))}
-        {props.runtimeLogs.some((entry) => entry.kind === 'failed')
-          ? <RuntimeLogPanel entries={props.runtimeLogs} onClear={props.onClearLogs} />
-          : <Empty>本次页面尚无错误。</Empty>}
+        <RuntimeLogPanel draft={draft} entries={props.runtimeLogs} onClear={props.onClearLogs} recovery={props.recovery} />
         <RequestUsage saveId={props.saveId} />
       </div>
     </section>

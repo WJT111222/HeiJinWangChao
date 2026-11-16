@@ -1,0 +1,32 @@
+{
+  "901-game": {
+    "baselineSHA256": "f350d3270b0be5fc9105daa39eeb712ca553722ead3f064539ca116b6b96e467",
+    "featureSHA256": "f350d3270b0be5fc9105daa39eeb712ca553722ead3f064539ca116b6b96e467",
+    "equal": true
+  },
+  "901-人物档案": {
+    "baselineSHA256": "9e28825366249888d66b2dfd00cda64b2eb8bc373aa11590d38ee5544f530be3",
+    "featureSHA256": "9e28825366249888d66b2dfd00cda64b2eb8bc373aa11590d38ee5544f530be3",
+    "equal": true
+  },
+  "901-NPC": {
+    "baselineSHA256": "0b9260a0ec2eef5c542612f92f8cbefcdcadb4ae4d13bdc8bb62ff01847fa743",
+    "featureSHA256": "0b9260a0ec2eef5c542612f92f8cbefcdcadb4ae4d13bdc8bb62ff01847fa743",
+    "equal": true
+  },
+  "1440-game": {
+    "baselineSHA256": "222accba486643c6d79f6079635ae26129de8ecc70879e2b196dea2a18e2d895",
+    "featureSHA256": "222accba486643c6d79f6079635ae26129de8ecc70879e2b196dea2a18e2d895",
+    "equal": true
+  },
+  "1440-人物档案": {
+    "baselineSHA256": "48e10e965efe0728f1050b55da37a9df812fc3f8c5af760c6d9372d033737fc7",
+    "featureSHA256": "48e10e965efe0728f1050b55da37a9df812fc3f8c5af760c6d9372d033737fc7",
+    "equal": true
+  },
+  "1440-NPC": {
+    "baselineSHA256": "afe6a12aef1a0123a756cd1bbe32f81ba120b4e408bbd655ca5704f8c86e056f",
+    "featureSHA256": "afe6a12aef1a0123a756cd1bbe32f81ba120b4e408bbd655ca5704f8c86e056f",
+    "equal": true
+  }
+}

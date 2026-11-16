@@ -38,6 +38,8 @@ interface StoryInput {
   companionProfile?: CompanionProfile;
   orderPreferences?: OrderPreferences;
   onProgress?: (progress: StoryProgress) => void;
+  /** Manual UI owns this failure save; Coordinator records its own attempts. */
+  onFailureSaved?: (draft: TurnDraft) => void;
 }
 export class StoryStage {
   constructor(
@@ -161,6 +163,24 @@ export class StoryStage {
       } catch (error) {
         storyInspections.update(inspectionId, { status: 'failed' });
         if (responseInspectionId) stageResponses.update(responseInspectionId, { status: 'failed', normalized: undefined, error: safeAiError(storyFailure(error)) }, secrets);
+        if (input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled') {
+          current();
+          const previousAttempt = draft.failures.filter(f => f.stage === 'story' && f.storyRevision === draft.storyRevision)
+            .reduce((last, failure) => Math.max(last, failure.attempt), 0);
+          const failed = TurnDraftSchema.parse({
+            ...draft, draftRevision: draft.draftRevision + 1,
+            stageStatus: { ...draft.stageStatus, story: 'failed' },
+            failures: [...draft.failures, { stage: 'story', attempt: previousAttempt + 1,
+              storyRevision: draft.storyRevision, errorCode: error.code, retryable: false }],
+          });
+          // Still inside the original stage lock. Cancellation and the full request basis
+          // must remain valid; a failed CAS must never overwrite a newer timeline.
+          attempt.saving();
+          input.onProgress?.({ phase: 'saving', readingPhase: stream.bodyStarted ? 'body' : 'thinking', narrative: safeStreamResponseText(narrative, secrets) });
+          const saved = await this.repository.saveDraft(failed, draft.draftRevision, attempt.signal, draft);
+          current();
+          input.onFailureSaved(saved);
+        }
         throw error;
       }
     });
