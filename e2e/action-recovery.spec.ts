@@ -35,7 +35,8 @@ for (const mode of ['500', '401', '429', 'invalid', 'incomplete', 'missing-done'
         const beforeView = await data(page);
         const beforeCalls = await calls(page);
         await page.getByRole('button', { name: /去书店看看/ }).click();
-        await expect(page.locator('#player-input')).toHaveValue('去书店看看');
+        // 行动建议叠加到输入框：失败后回填的原行动保留，建议用中文逗号接在后面。
+        await expect(page.locator('#player-input')).toHaveValue('沿江走一走，去书店看看');
         expect(await data(page)).toEqual(beforeView);
         expect(await calls(page)).toEqual(beforeCalls);
         await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
