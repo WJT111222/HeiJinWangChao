@@ -16,7 +16,8 @@ import { parseVariables, parseWorld } from '../services/validation/aiOutputs';
 import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { reserveStageSession, withBrowserLock } from './stageGuard';
-import { StoryStage } from './storyStage';
+import { StoryStage, storyPartialAfterFailure } from './storyStage';
+import { canContinueStory } from '../domain/storyContinuation';
 import { VariableStage } from './variableStage';
 import { WorldStage } from './worldStage';
 
@@ -160,6 +161,9 @@ export class TurnCoordinator {
           needed.push('world');
         // 全部所需路由及凭证在首次付费前检查，关闭/已经合法完成的阶段不要求配置。
         for (const stage of needed) requestSnapshot(config, stage, vault);
+        // 本次运行开始时草稿里有可续写的截断正文：正文阶段从断点续写（含本次运行内的自动重试）；否则照常从头生成。
+        const continueStory = canContinueStory(draft);
+        const secrets = config.channels.map((channel) => vault.get(channel.id)).filter(Boolean);
         const story = new StoryStage(this.repository, this.client, session.guard(scope));
         const variables = new VariableStage(this.repository, this.client, session.guard(scope));
         const world = new WorldStage(this.repository, this.client, session.guard(scope));
@@ -184,6 +188,7 @@ export class TurnCoordinator {
                   await story.generate({
                     ...common,
                     companionProfile,
+                    continuation: continueStory && canContinueStory(draft),
                     onProgress: (progress) => {
                       check();
                       input.onProgress?.({ stage, attempt: number, ...progress });
@@ -207,6 +212,7 @@ export class TurnCoordinator {
                 const failed = TurnDraftSchema.parse({
                   ...draft,
                   draftRevision: draft.draftRevision + 1,
+                  storyPartial: storyPartialAfterFailure(draft, error, continueStory && canContinueStory(draft), secrets),
                   stageStatus: { ...draft.stageStatus, story: 'failed' },
                   failures: [
                     ...draft.failures,

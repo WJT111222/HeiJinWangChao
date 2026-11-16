@@ -73,6 +73,8 @@ import {MobileCityBar,MobileStatus,mobileCitySeal} from './MobileCity';
 import {MobileActions} from './MobileActions';
 import {ComposerTools} from './ComposerTools';
 import { mayStartStory } from './storyGenerationPolicy';
+import { canContinueStory } from '../../domain/storyContinuation';
+import { StoryStream } from '../../workflows/storyStream';
 import { actionSuggestions } from './actionSuggestions';
 import { appendActionOption, includesActionOption } from './actionOptions';
 
@@ -282,6 +284,10 @@ export function GameScreen({
   const awaitingAction = awaitingPlayerAction(state, draft);
   // 正文失败或被取消、尚无候选时：原行动放回输入框，玩家可原样或修改后直接重新发送。
   const rebindAction = !busy && rebindableAfterStoryStop(state, draft);
+  // 正文被截断且可以续写：显示已写出的部分（只取正文，不显示规划和尾部标签）。
+  const storyContinuable = !busy && canContinueStory(draft);
+  const partialText = storyContinuable ? draft?.storyPartial?.text : undefined;
+  const partialNarrative = useMemo(() => partialText === undefined ? undefined : new StoryStream().push(partialText).trim(), [partialText]);
   const restoredInputFor = useRef('');
   const restoredText = useRef<{ turnId: string; text: string }>(undefined);
   useEffect(() => {
@@ -569,6 +575,8 @@ export function GameScreen({
     runningCancel ? { kind: 'cancel', label: runningCancel.saving ? '正在保存…' : '取消生成', short: '停', disabled: runningCancel.saving,
       title: runningCancel.saving ? '正在保存，稍候即可' : '取消正在进行的生成', onClick: runningCancel.onClick }
     : awaitingAction ? { kind: 'idle', label: '本回合已完成', short: '完', disabled: true, title: '本回合已结算；发送新行动后继续' }
+    : nextStage === 'story' && storyContinuable ? { kind: 'continue', label: '续写正文', short: '续', disabled: !validDraft || busy,
+        title: !validDraft ? staleDraftMessage : '从中断处接着写正文，写完后自动生成变量、世界并结算', onClick: continueWorkflow }
     : nextStage === 'story' ? { kind: 'continue', label: storyLabel, short: '续', disabled: !validDraft || busy || !mayStartStory(draft),
         title: !validDraft ? staleDraftMessage : '生成本回合正文（使用已绑定的行动）', onClick: continueStory }
     : !validDraft ? { kind: 'idle', label: '继续', short: '续', disabled: true, title: staleDraftMessage }
@@ -735,6 +743,14 @@ export function GameScreen({
               <CityChapter number={state.turnNumber + 1} state={state} scene={draftScene} status="preview" desktop={!compactSidebars} />
               <span className="tag preview-tag">{progress.readingPhase === 'waiting' ? '完整响应模式 · 校验保存后展示' : '临时预览 · 完整校验前不保存'}</span>
               <StoryStreamReading progress={progress} caret={!compactSidebars} />
+            </article>
+          ) : partialNarrative !== undefined ? (
+            <article className="story-entry glass latest story-partial">
+              <CityChapter number={state.turnNumber + 1} state={state} scene={draftScene} status="draft" desktop={!compactSidebars} />
+              <span className="tag preview-tag">正文未写完 · 点「续写正文」从断点接着写，或按「发送」重新生成</span>
+              {partialNarrative ? <StoryReading narrative={partialNarrative} protagonistName={hero.name} />
+                : <p className="field-hint">模型还在写创作提纲时就中断了，续写会从提纲处接着往下写。</p>}
+              <p className="story-partial-end" aria-hidden="true">……</p>
             </article>
           ) : draft?.story ? (
             <article className="story-entry glass latest">

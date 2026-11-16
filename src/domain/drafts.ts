@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CountSchema, IdSchema, TextSchema, requireData } from './common';
+import { STORY_CONTINUATION_LIMIT, STORY_PARTIAL_MAX_CHARS } from './storyContinuation';
 import { DomainCommandSchema, fingerprint } from './commands';
 import { StorySchema } from './state';
 
@@ -42,8 +43,18 @@ export const TurnDraftSchema = z.strictObject({
     stage: z.enum(['story', 'variables', 'world']), attempt: CountSchema,
     storyRevision: CountSchema, errorCode: TextSchema, retryable: z.boolean(),
   })),
+  // 正文被截断时已收到的原始输出（已隐藏凭证），供玩家点「续写正文」从断点接着写。可选字段：旧草稿没有它照常可用。
+  storyPartial: z.strictObject({
+    text: z.string().min(1).max(STORY_PARTIAL_MAX_CHARS),
+    storyRevision: CountSchema,
+    continuations: z.number().int().min(0).max(STORY_CONTINUATION_LIMIT),
+  }).optional(),
 }).superRefine((draft, ctx) => {
   function check(ok: unknown, message: string) { if (!ok) ctx.addIssue({ code: 'custom', message }); }
+  if (draft.storyPartial) {
+    check(!draft.story, '已有完整正文时不能保留截断正文');
+    check(draft.storyPartial.storyRevision === draft.storyRevision, '截断正文引用旧正文版本');
+  }
   if (draft.story) check(draft.story.turnKind === draft.turnKind, '正文回合类型不符');
   check(draft.stageStatus.story !== 'ready' || draft.story, '正文未完成');
   for (const stage of ['variables', 'world'] as const) {
@@ -81,7 +92,7 @@ export function createTurnDraft(saveId: string, baseSaveRevision: number, turnId
 
 export function rerollStory(draft: TurnDraft, story: z.infer<typeof StorySchema>): TurnDraft {
   return TurnDraftSchema.parse({ ...draft, draftRevision: draft.draftRevision + 1, storyRevision: draft.storyRevision + 1,
-    story, variables: undefined, world: undefined,
+    story, variables: undefined, world: undefined, storyPartial: undefined,
     stageStatus: { story: 'ready', variables: draft.useVariableStage ? 'pending' : 'skipped', world: draft.useWorldStage ? 'pending' : 'skipped' },
   });
 }

@@ -770,3 +770,6 @@ to {transform:translateX(250%)}
   .app-shell-game .city-night .composer-roll:not(:where(.modal, .modal *)) { width: 8.5rem; }
   .app-shell-game .city-night .composer-roll .composer-workflow-action[data-kind=continue]:not(:disabled) { color: var(--gold-hi); border-color: var(--gold-lo); }
 }
+
+/* 截断正文的末尾标记：提示正文在此中断，可续写。 */
+.story-partial .story-partial-end { margin: .2rem 0 0; color: var(--muted); letter-spacing: .4em; text-align: center; }
