@@ -435,15 +435,19 @@ export function GameScreen({
   const worldNeeded = settings.runtime.useWorldStage &&
     (!draft?.world || !['ready', 'preview'].includes(draft.stageStatus.world) || variablesNeeded || storyNeeded);
   const canGenerate = Boolean(validDraft && !awaitingAction && (storyNeeded || variablesNeeded || worldNeeded));
-  const disabledGuidance = !settings.runtime.useVariableStage && !settings.runtime.useWorldStage
-    ? '变量管理和动态世界阶段已关闭。需要启用并完成必要候选后，才能正式结算本回合。'
-    : !settings.runtime.useVariableStage
-      ? draft?.world?.validation === 'preview'
-        ? '变量阶段未启用，当前世界结果仅为预览。请启用变量阶段并补全必要候选。'
-        : '变量阶段已关闭。需要启用该阶段并完成候选后，才能正式结算本回合。'
-      : !settings.runtime.useWorldStage
-        ? '动态世界阶段已关闭。需要启用该阶段并完成候选后，才能正式结算本回合。'
-        : '';
+  // The stage flags saved on a bound turn determine which results are required.
+  // Disabled stages are not an obstacle once the Story and enabled stages are ready.
+  const disabledGuidance = storyNeeded ? ''
+    : !settings.runtime.useVariableStage && !settings.runtime.useWorldStage
+      ? draft?.useVariableStage || draft?.useWorldStage
+        ? '当前回合仍沿用行动绑定时的阶段配置；新开关会在下一次新回合生效。'
+        : ''
+      : !settings.runtime.useVariableStage && draft?.world?.validation === 'preview'
+        ? '变量阶段未启用，当前世界结果仅为预览；须补足有效候选才可正式结算。'
+        : draft && (settings.runtime.useVariableStage !== draft.useVariableStage
+          || settings.runtime.useWorldStage !== draft.useWorldStage)
+          ? '本回合的阶段配置已随行动固定，刚调整的开关将在下一次新回合生效。'
+          : '';
   const workflowGuidance = validDraft && !awaitingAction && !busy && !canCommit
     ? disabledGuidance || (!canGenerate
       ? draft?.world?.validation === 'preview'
