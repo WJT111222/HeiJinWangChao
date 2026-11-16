@@ -55,17 +55,34 @@ test('跟随系统：随设备深浅色实时切换', async ({ page }) => {
   await expect(html(page)).toHaveAttribute('data-appearance', 'day');
 });
 
-test('日间下尚未适配的弹出内容保持夜间配色，文字仍清楚', async ({ page }, info) => {
+const backgroundLuminance = (page: Page, selector: string) => page.locator(selector).first().evaluate((el) => {
+  const [r, g, b] = getComputedStyle(el).backgroundColor.match(/[\d.]+/g)!.map(Number);
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+});
+
+test('日间下游戏内弹出内容换成纸色：浅色底、深色字；夜间保持深色', async ({ page }, info) => {
   await seed(page, 'day');
   expect(await textLuminance(page, '.story-narration')).toBeLessThan(0.35);
   if (info.project.name === 'mobile') {
     await page.locator('[data-mobile-status]').click();
-    await expect(page.locator('dialog.mobile-status-sheet[open]')).toBeVisible();
-    expect(await textLuminance(page, 'dialog.mobile-status-sheet .st-place h3')).toBeGreaterThan(0.7);
+    const sheet = 'dialog.mobile-status-sheet[open]';
+    await expect(page.locator(sheet)).toBeVisible();
+    expect(await backgroundLuminance(page, sheet)).toBeGreaterThan(0.75);
+    expect(await textLuminance(page, `${sheet} .st-place h3`)).toBeLessThan(0.35);
+    await page.keyboard.press('Escape'); await expect(page.locator(sheet)).toHaveCount(0);
+    await page.getByRole('button', { name: '三阶段工作流详情', exact: true }).click();
+    await expect(page.locator('.workflow-floating-drawer')).toBeVisible();
+    expect(await backgroundLuminance(page, '.workflow-floating-drawer')).toBeGreaterThan(0.75);
+    expect(await textLuminance(page, '.workflow-floating-drawer .modal-heading h2, .workflow-floating-drawer h2, .workflow-floating-drawer strong')).toBeLessThan(0.35);
+    await page.evaluate(() => { document.documentElement.dataset.appearance = 'night'; });
+    expect(await backgroundLuminance(page, '.workflow-floating-drawer')).toBeLessThan(0.2);
   } else {
     await page.getByRole('button', { name: '详情', exact: true }).click();
     await expect(page.locator('#workflow-pop')).toBeVisible();
-    expect(await textLuminance(page, '#workflow-pop .workflow-title, #workflow-pop h2, #workflow-pop strong')).toBeGreaterThan(0.6);
+    expect(await backgroundLuminance(page, '#workflow-pop')).toBeGreaterThan(0.75);
+    expect(await textLuminance(page, '#workflow-pop .workflow-title, #workflow-pop h2, #workflow-pop strong')).toBeLessThan(0.35);
+    await page.evaluate(() => { document.documentElement.dataset.appearance = 'night'; });
+    expect(await backgroundLuminance(page, '#workflow-pop')).toBeLessThan(0.2);
   }
 });
 

@@ -1,0 +1,354 @@
+{
+  "normal": {
+    "text": "完成本回合结算",
+    "tag": "BUTTON",
+    "classes": "primary",
+    "color": "rgb(255, 251, 242)",
+    "foreground": [
+      255,
+      251,
+      242,
+      1
+    ],
+    "background": [
+      122,
+      91,
+      28,
+      1
+    ],
+    "opacity": "1",
+    "fontSize": "11.52px",
+    "fontWeight": "650",
+    "ratio": 6.086427355064754,
+    "threshold": 4.5,
+    "ancestors": [
+      {
+        "tag": "BUTTON",
+        "classes": "primary",
+        "color": "rgb(255, 251, 242)",
+        "background": "rgb(122, 91, 28)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "workflow-primary",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "FOOTER",
+        "classes": "wf-ft",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "workflow-details wf-v2 wf-mobile-content",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "SECTION",
+        "classes": "mobile-workflow-sheet workflow-floating-drawer",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgb(228, 220, 202)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "workflow-drawer-viewport",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "app-shell-game workflow-drawer-root",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgb(241, 238, 231)",
+        "opacity": 1
+      },
+      {
+        "tag": "BODY",
+        "classes": "",
+        "color": "rgb(232, 228, 216)",
+        "background": "rgb(241, 238, 231)",
+        "opacity": 1
+      },
+      {
+        "tag": "HTML",
+        "classes": "",
+        "color": "rgb(232, 228, 216)",
+        "background": "rgb(11, 13, 12)",
+        "opacity": 1
+      }
+    ]
+  },
+  "hover": {
+    "text": "完成本回合结算",
+    "tag": "BUTTON",
+    "classes": "primary",
+    "color": "rgb(255, 251, 242)",
+    "foreground": [
+      255,
+      251,
+      242,
+      1
+    ],
+    "background": [
+      101,
+      73,
+      14,
+      1
+    ],
+    "opacity": "1",
+    "fontSize": "11.52px",
+    "fontWeight": "650",
+    "ratio": 8.092108658734332,
+    "threshold": 4.5,
+    "ancestors": [
+      {
+        "tag": "BUTTON",
+        "classes": "primary",
+        "color": "rgb(255, 251, 242)",
+        "background": "rgb(101, 73, 14)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "workflow-primary",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "FOOTER",
+        "classes": "wf-ft",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "workflow-details wf-v2 wf-mobile-content",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "SECTION",
+        "classes": "mobile-workflow-sheet workflow-floating-drawer",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgb(228, 220, 202)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "workflow-drawer-viewport",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "app-shell-game workflow-drawer-root",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgb(241, 238, 231)",
+        "opacity": 1
+      },
+      {
+        "tag": "BODY",
+        "classes": "",
+        "color": "rgb(232, 228, 216)",
+        "background": "rgb(241, 238, 231)",
+        "opacity": 1
+      },
+      {
+        "tag": "HTML",
+        "classes": "",
+        "color": "rgb(232, 228, 216)",
+        "background": "rgb(11, 13, 12)",
+        "opacity": 1
+      }
+    ]
+  },
+  "focus": {
+    "text": "完成本回合结算",
+    "tag": "BUTTON",
+    "classes": "primary",
+    "color": "rgb(255, 251, 242)",
+    "foreground": [
+      255,
+      251,
+      242,
+      1
+    ],
+    "background": [
+      122,
+      91,
+      28,
+      1
+    ],
+    "opacity": "1",
+    "fontSize": "11.52px",
+    "fontWeight": "650",
+    "ratio": 6.086427355064754,
+    "threshold": 4.5,
+    "ancestors": [
+      {
+        "tag": "BUTTON",
+        "classes": "primary",
+        "color": "rgb(255, 251, 242)",
+        "background": "rgb(122, 91, 28)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "workflow-primary",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "FOOTER",
+        "classes": "wf-ft",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "workflow-details wf-v2 wf-mobile-content",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "SECTION",
+        "classes": "mobile-workflow-sheet workflow-floating-drawer",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgb(228, 220, 202)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "workflow-drawer-viewport",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "app-shell-game workflow-drawer-root",
+        "color": "rgb(43, 39, 35)",
+        "background": "rgb(241, 238, 231)",
+        "opacity": 1
+      },
+      {
+        "tag": "BODY",
+        "classes": "",
+        "color": "rgb(232, 228, 216)",
+        "background": "rgb(241, 238, 231)",
+        "opacity": 1
+      },
+      {
+        "tag": "HTML",
+        "classes": "",
+        "color": "rgb(232, 228, 216)",
+        "background": "rgb(11, 13, 12)",
+        "opacity": 1
+      }
+    ]
+  },
+  "night": {
+    "text": "完成本回合结算",
+    "tag": "BUTTON",
+    "classes": "primary",
+    "color": "rgb(23, 26, 19)",
+    "foreground": [
+      23,
+      26,
+      19,
+      1
+    ],
+    "background": [
+      201,
+      169,
+      97,
+      1
+    ],
+    "opacity": "1",
+    "fontSize": "11.52px",
+    "fontWeight": "650",
+    "ratio": 7.817825997165952,
+    "threshold": 4.5,
+    "ancestors": [
+      {
+        "tag": "BUTTON",
+        "classes": "primary",
+        "color": "rgb(23, 26, 19)",
+        "background": "rgb(201, 169, 97)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "workflow-primary",
+        "color": "rgb(236, 231, 218)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "FOOTER",
+        "classes": "wf-ft",
+        "color": "rgb(236, 231, 218)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "workflow-details wf-v2 wf-mobile-content",
+        "color": "rgb(236, 231, 218)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "SECTION",
+        "classes": "mobile-workflow-sheet workflow-floating-drawer",
+        "color": "rgb(236, 231, 218)",
+        "background": "rgb(17, 21, 19)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "workflow-drawer-viewport",
+        "color": "rgb(236, 231, 218)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "DIV",
+        "classes": "app-shell-game workflow-drawer-root",
+        "color": "rgb(236, 231, 218)",
+        "background": "rgb(8, 9, 10)",
+        "opacity": 1
+      },
+      {
+        "tag": "BODY",
+        "classes": "",
+        "color": "rgb(232, 228, 216)",
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": 1
+      },
+      {
+        "tag": "HTML",
+        "classes": "",
+        "color": "rgb(232, 228, 216)",
+        "background": "rgb(11, 13, 12)",
+        "opacity": 1
+      }
+    ]
+  }
+}

@@ -57,28 +57,118 @@
   filter:none; animation:none;
 }
 
-/* ---------- 深色弹层的独立阅读边界（包括手机非模态 Portal 外壳） ----------
-   恢复夜间变量和实际文字色，辅助字采用更清晰的灰色；缺省变量仍设回 initial。
-   零优先级：纸页面板自带的变量写在面板自身上，始终优先。 */
+/* ---------- 弹出面板（含电脑端三阶段详情浮层与手机非模态 Portal 外壳）：牛皮纸档案色 ----------
+   与设置、世界资料同一套纸页视觉，叠在白宣主界面上层次分明。
+   零优先级：已自带纸页变量的面板（设置、选择抽屉、反馈弹窗等）写在面板自身上，始终优先。 */
 :where(:root[data-appearance=day] .app-shell-game) :where(dialog, #workflow-pop, .workflow-floating-drawer) {
-  --surface:#1B201C; --panel:#131614; --status-bg:#0E110F; --gold-hover:#E3CB8A;
-  --line-soft:#1E231F; --line-selected:#75623A; --warning:#C26A4A; --warning-text:#E6A18A; --success:#6FA58A;
-  --hover:#202720; --selected:#C9A96112;
-  --bg:#08090a; --text:#ECE7DA; --prose:#DCD6C8; --muted:#A3A396; --dim:#929487;
-  --gold:#C9A961; --gold-hi:#E8D196; --gold-lo:#7d6a3e; --line:#ffffff14; --line-2:#ffffff22; --warn:#C26A4A;
+  --bg:#E4DCCA; --panel:#E4DCCA; --status-bg:#E4DCCA; --surface:#EFE8D9;
+  --text:#2B2723; --prose:#352F28; --muted:#5F574C; --dim:#6F6556;
+  --gold:#7A5B1C; --gold-hi:#65490E; --gold-lo:#B79755; --gold-hover:#65490E;
+  --line:#2a26221f; --line-2:#2a262233; --line-soft:#2a262214; --line-selected:#B79755;
+  --warn:#B4553A; --warn-text:#A3412E; --warning:#B4553A; --warning-text:#A3412E; --ok:#2F7A58; --success:#2F7A58; --info:#2D5E7D;
+  --hover:#2a26220a; --selected:#8E6C2514;
+  --glass:rgba(228,220,202,.94); --glass-2:rgba(239,232,217,.97);
   color:var(--text);
-  color-scheme:dark;
+  color-scheme:light;
 }
-@media (min-width:901px) {
-  :where(:root[data-appearance=day] .app-shell-game) :where(dialog, #workflow-pop, .workflow-floating-drawer) {
-    --warn-text:#E6A18A; --ok:#7DB49A; --glass:rgba(11,13,13,.72); --glass-2:rgba(14,16,16,.86); --info:initial;
-  }
+
+/* 弹出面板内的写死深色：底色换牛皮纸、卡片换浅纸、白色细线换墨色细线、浅色字换深墨或古铜。 */
+/* 手机面板外壳：通用样式在手机面板上直接写了夜间变量，这里用更高优先级换成牛皮纸变量；已是纸页的面板不动。 */
+:root[data-appearance=day] .app-shell-game dialog.modal.mobile-sheet:not(.mobile-archive,.feedback-paper,[data-tone=paper]) {
+  --bg:#E4DCCA; --panel:#E4DCCA; --surface:#EFE8D9; --text:#2B2723; --prose:#352F28; --muted:#5F574C; --dim:#6F6556;
+  --gold:#7A5B1C; --gold-hi:#65490E; --gold-lo:#B79755; --line:#2a26221f; --line-2:#2a262233;
+  background:#E4DCCA; border-top-color:#1F1B17; color:#2B2723;
 }
-@media (max-width:900px) {
-  :where(:root[data-appearance=day] .app-shell-game) :where(dialog, #workflow-pop, .workflow-floating-drawer) {
-    --info:#8EC1E0; --warn-text:initial; --ok:initial; --glass:initial; --glass-2:initial;
-  }
+:root[data-appearance=day] .app-shell-game .mobile-sheet .mobile-sheet-grab i { background:#2a262233; }
+:root[data-appearance=day] .app-shell-game .mobile-sheet .modal-heading>.dialog-seal { background:linear-gradient(145deg,#8E6C251a,#EFE8D9); box-shadow:inset 0 0 0 2px #EFE8D9,inset 0 0 0 3px #8E6C2540; }
+:root[data-appearance=day] .app-shell-game .mobile-sheet .modal-heading>button { background:#2a26220d; }
+:root[data-appearance=day] .app-shell-game dialog.modal.mobile-confirm>:is(.modal-heading,.modal-body,.mobile-sheet-footer) { background:#EFE8D9; }
+:root[data-appearance=day] .app-shell-game .mobile-sheet pre { background:#F6F1E6; color:#2B2723; border-color:#2a26221f; }
+/* 此时此地 */
+:root[data-appearance=day] .app-shell-game .mobile-status-sheet .st-place { background:linear-gradient(160deg,color-mix(in srgb,var(--tint) 14%,#EFE8D9),#EFE8D9 70%); }
+:root[data-appearance=day] .app-shell-game .mobile-status-sheet .money>div { background:#2a262208; }
+:root[data-appearance=day] .app-shell-game .mobile-status-sheet .wear>div { border-bottom-color:#2a26221a; }
+:root[data-appearance=day] .app-shell-game .mobile-status-sheet .wear [data-empty] dd { color:#857B6C; }
+/* 手机菜单 */
+:root[data-appearance=day] .app-shell-game .mobile-game-menu .mobile-menu-card,
+:root[data-appearance=day] .app-shell-game .mobile-menu-close { background:#E4DCCAf5; }
+/* 手机三阶段面板 */
+:root[data-appearance=day] .app-shell-game .mobile-workflow-sheet .workflow-stages>li { background:#2a262207; }
+:root[data-appearance=day] .app-shell-game .mobile-stage-switches input[type=checkbox] { border-color:#2a262240; background:#2a26221a; }
+/* 手机三阶段浮动抽屉（Portal，非模态） */
+:root[data-appearance=day] .app-shell-game .workflow-drawer-shade { background:#1f1b1773; }
+:root[data-appearance=day] .app-shell-game .workflow-floating-drawer { background:#E4DCCA; box-shadow:inset 0 3px 0 #8E6C25,0 0 0 1px #1F1B17,0 -12px 40px -10px #1f1b17aa; }
+:root[data-appearance=day] .app-shell-game .workflow-drawer-grip span { background:#2a262244; }
+:root[data-appearance=day] .app-shell-game .mobile-workflow-sheet .wf-mobile-content .wf-ft { border-top-color:#2a26221f; }
+/* 王朝公告与免责声明（手机） */
+:root[data-appearance=day] .app-shell-game dialog.mobile-notice-document.mobile-sheet { background:#E4DCCA; }
+:root[data-appearance=day] .app-shell-game dialog.mobile-notice-document::backdrop { background:#1f1b1780; }
+:root[data-appearance=day] .app-shell-game .notice-steps i { border-color:#2a262233; }
+:root[data-appearance=day] .app-shell-game .notice-steps b { background:#2a262226; }
+:root[data-appearance=day] .app-shell-game .notice-chapters { background:#E4DCCA; }
+:root[data-appearance=day] .app-shell-game .notice-chapters button { background:#2a262207; }
+:root[data-appearance=day] .app-shell-game .notice-percent { background:linear-gradient(90deg,transparent,#E4DCCA 30%); }
+:root[data-appearance=day] .app-shell-game .mobile-notice-document .notice-content p { color:#352F28; }
+:root[data-appearance=day] .app-shell-game .mobile-notice-document .notice-content :is(p:has(>strong),.notice-theme,.notice-message),
+:root[data-appearance=day] .app-shell-game .notice-age-block strong { color:#1F1B17; }
+:root[data-appearance=day] .app-shell-game .notice-age-block .notice-age { box-shadow:inset 0 0 0 3px #E4DCCA,inset 0 0 0 4px #A3412E55; }
+:root[data-appearance=day] .app-shell-game .notice-stamp { box-shadow:inset 0 0 0 3px #E4DCCA,inset 0 0 0 4px #8E6C2544; }
+:root[data-appearance=day] .app-shell-game .notice-updates li>span { background:#EFE8D9; }
+:root[data-appearance=day] .app-shell-game .mobile-notice-document .notice-content .notice-message { background:#2a262208; }
+:root[data-appearance=day] .app-shell-game .mobile-notice-document .notice-footer { background:#E4DCCAf2; }
+:root[data-appearance=day] .app-shell-game .mobile-notice-document .notice-footer input { border-color:#2a262255; }
+:root[data-appearance=day] .app-shell-game .mobile-notice-document .modal-heading h2 { background:linear-gradient(180deg,#7A5B1C,#4A3510); background-clip:text; -webkit-background-clip:text; }
+/* 全局表单标签写死了浅灰字：日间弹窗内改为深墨（已是纸页的面板不动） */
+:root[data-appearance=day] .app-shell-game :is(dialog:not(.mobile-archive,.feedback-paper,.settings-paper,[data-tone=paper]),#workflow-pop,.workflow-floating-drawer) label { color:var(--prose); }
+/* 手机诊断 */
+:root[data-appearance=day] .app-shell-game .mobile-diagnostic-tabs { background:#E4DCCA; }
+:root[data-appearance=day] .app-shell-game .mobile-diagnostic-tabs button { background:#2a262207; }
+:root[data-appearance=day] .app-shell-game .mobile-diagnostic-tabs .n { background:#2a262214; }
+:root[data-appearance=day] .app-shell-game :is(.diagnostic-metrics>div,.mobile-diagnostics-sheet .request-usage>div) { background:#EFE8D9; }
+:root[data-appearance=day] .app-shell-game .mobile-diagnostics-sheet .runtime-log li>p { color:#A3412E; }
+/* 候选详情（两端） */
+:root[data-appearance=day] .app-shell-game .modal.candidate-dialog { background:#E4DCCA; border-color:#1F1B17; box-shadow:0 30px 70px -30px #1f1b17aa; }
+:root[data-appearance=day] .app-shell-game .candidate-dialog .modal-heading { background:#EFE8D9; }
+:root[data-appearance=day] .app-shell-game .candidate-dialog .candidate-json { background:#F6F1E6; border-color:#2a26221f; color:#2B2723; }
+:root[data-appearance=day] .app-shell-game :is(.candidate-counts p) { background:#EFE8D9; border-color:#2a26221f; }
+:root[data-appearance=day] .app-shell-game .candidate-versions>div { background:#2a262207; }
+:root[data-appearance=day] .app-shell-game .candidate-commands li { background:#2a262207; border-color:#2a26221f; border-top-color:#2a26221f; }
+:root[data-appearance=day] .app-shell-game .candidate-commands code,
+:root[data-appearance=day] .app-shell-game .candidate-dialog .raw-toggle,
+:root[data-appearance=day] .app-shell-game .candidate-response summary { color:#2D5E7D; }
+:root[data-appearance=day] .app-shell-game .candidate-commands .l-warn code,
+:root[data-appearance=day] .app-shell-game .mobile-sheet-badge .candidate-badge { color:var(--feedback-color,#7A5B1C); }
+/* 反馈弹窗（电脑端） */
+:root[data-appearance=day] .app-shell-game .modal.feedback-dialog { background:#E4DCCA; border-color:#1F1B17; box-shadow:0 30px 70px -30px #1f1b17aa; }
+:root[data-appearance=day] .app-shell-game .feedback-dialog .feedback-dialog-actions { background:#EFE8D9; border-top-color:#2a26221f; }
+/* 本回合变化（手机全屏面板） */
+:root[data-appearance=day] .app-shell-game dialog.turn-changes-sheet { background:#E4DCCA; }
+:root[data-appearance=day] .app-shell-game .turn-changes-sheet .chg-grp { background:#EFE8D9; }
+:root[data-appearance=day] .app-shell-game .turn-changes-sheet :is(.chg-grp li+li,.chg-more) { border-top-color:#2a26221a; }
+:root[data-appearance=day] .app-shell-game .turn-changes-sheet .chg-row:is(:hover,:focus-visible) { background:#2a262208; }
+/* 电脑端三阶段详情浮层 */
+:root[data-appearance=day] .app-shell-game .city-night .workflow-details {
+  --feedback-err:#7F2D23;
+  background:#E4DCCA; border-color:#1F1B17; box-shadow:inset 0 3px 0 #8E6C25,0 18px 50px -16px #1f1b17aa;
 }
+/* 实际错误标签读取 --feedback-err；横幅另有自己的文字变量，两者都需配合纸色背景。 */
+:root[data-appearance=day] .app-shell-game .city-night .workflow-details .wf-banner[data-level=err] { --banner-text:var(--feedback-err); }
+:root[data-appearance=day] .app-shell-game .city-night :is(.wf-hd,.wf-notices,.wf-tabs) { border-bottom-color:#2a26221f; }
+:root[data-appearance=day] .app-shell-game .city-night .wf-banner+.wf-banner { border-top-color:#2a262214; }
+:root[data-appearance=day] .app-shell-game .city-night .wf-banner>.wf-banner-close:hover { background:#2a26220d; }
+:root[data-appearance=day] .app-shell-game .city-night .wf-rail { background:#2a262206; }
+:root[data-appearance=day] .app-shell-game .city-night .wf-v2 .workflow-stages>li+li::before { background:#2a262233; }
+:root[data-appearance=day] .app-shell-game .city-night .wf-ri:hover:not(:disabled) { background:#2a26220a; }
+:root[data-appearance=day] .app-shell-game .city-night .wf-sw input:not(:checked) { background:#2a262226; }
+:root[data-appearance=day] .app-shell-game .city-night .wf-dt-body .candidate-json { background:#F6F1E6; border-color:#2a26221f; color:#2B2723; }
+:root[data-appearance=day] .app-shell-game .city-night .wf-sec::after { background:#2a26221f; }
+:root[data-appearance=day] .app-shell-game .city-night .wf-stats p { background:#2a262206; border-color:#2a26221f; }
+:root[data-appearance=day] .app-shell-game .city-night .wf-cmds { border-color:#2a26221f; }
+:root[data-appearance=day] .app-shell-game .city-night .wf-cmds li { background:#2a262205; }
+:root[data-appearance=day] .app-shell-game .city-night .wf-cmds li:nth-child(even) { background:#2a26220a; }
+:root[data-appearance=day] .app-shell-game .city-night .wf-empty { border-color:#2a262233; }
+:root[data-appearance=day] .app-shell-game .city-night .wf-dt-body :is(.request-usage,.runtime-log) { border-color:#2a26221f; }
+:root[data-appearance=day] .app-shell-game .city-night .wf-ft { background:#2a262206; border-top-color:#2a26221f; }
 
 /* 天际线（两端共用）：建筑颜色写在 SVG 上，日间反相后再转回原色相，深色剪影变成同色系浅色剪影，层次与城市色调保留。 */
 :root[data-appearance=day] .app-shell-game .city-night .atmo .skyline { filter:invert(1) hue-rotate(180deg) saturate(.7); opacity:.5; }
@@ -160,8 +250,10 @@
   }
 }
 @media (max-width:900px) {
+  /* 仅可用的工作流主操作使用浅字配深金底；夜间、禁用态与其他按钮保持原样。 */
+  :root[data-appearance=day] .app-shell-game .workflow-floating-drawer .workflow-primary .primary:not(:disabled) { color:#FFFBF2; }
   :root[data-appearance=day] .app-shell-game dialog.modal.mobile-sheet::backdrop { background:#1f1b1773; backdrop-filter:none; }
-  :root[data-appearance=day] .app-shell-game dialog.modal.mobile-sheet:is([data-tone=paper],.feedback-paper,.settings-paper,.mobile-archive) {
+  :root[data-appearance=day] .app-shell-game dialog.modal.mobile-sheet:not(.mobile-actions) {
     box-shadow:inset 0 3px 0 #8E6C25,0 0 0 1px #1F1B17,0 -12px 40px -10px #1f1b17aa;
   }
 }

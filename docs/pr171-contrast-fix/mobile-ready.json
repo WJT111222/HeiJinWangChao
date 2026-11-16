@@ -1,0 +1,154 @@
+{
+  "head": {
+    ".workflow-primary button.primary": {
+      "text": "完成本回合结算",
+      "color": "rgb(255, 251, 242)",
+      "background": "rgb(122, 91, 28)",
+      "image": "none",
+      "effectiveBackground": [
+        122,
+        91,
+        28,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "11.52px",
+      "fontWeight": "650",
+      "disabled": false,
+      "contrast": 6.086427355064754,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#D47C60",
+        "--feedback-warn": "#E0C27A",
+        "--feedback-info": "#8EC1E0",
+        "--feedback-ok": "#7DBB9C",
+        "--warn-text": "#A3412E"
+      }
+    },
+    ".wf-node": {
+      "text": "✓",
+      "color": "rgb(43, 39, 35)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "none",
+      "effectiveBackground": [
+        222.97799999999998,
+        215.086,
+        197.464,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "11.2px",
+      "fontWeight": "400",
+      "contrast": 10.355901088688382,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#D47C60",
+        "--feedback-warn": "#E0C27A",
+        "--feedback-info": "#8EC1E0",
+        "--feedback-ok": "#7DBB9C",
+        "--warn-text": "#A3412E"
+      }
+    },
+    ".wf-sw input": {
+      "text": "",
+      "color": "rgb(43, 39, 35)",
+      "background": "rgba(42, 38, 34, 0.1)",
+      "image": "none",
+      "effectiveBackground": [
+        204.88019999999997,
+        197.37740000000002,
+        181.1176,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "14.4px",
+      "fontWeight": "400",
+      "disabled": false,
+      "contrast": 8.666022242833552,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#D47C60",
+        "--feedback-warn": "#E0C27A",
+        "--feedback-info": "#8EC1E0",
+        "--feedback-ok": "#7DBB9C",
+        "--warn-text": "#A3412E"
+      }
+    }
+  },
+  "base": {
+    ".workflow-primary button.primary": {
+      "text": "完成本回合结算",
+      "color": "rgb(23, 26, 19)",
+      "background": "rgb(122, 91, 28)",
+      "image": "none",
+      "effectiveBackground": [
+        122,
+        91,
+        28,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "11.52px",
+      "fontWeight": "650",
+      "disabled": false,
+      "contrast": 2.7988749225645253,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#D47C60",
+        "--feedback-warn": "#E0C27A",
+        "--feedback-info": "#8EC1E0",
+        "--feedback-ok": "#7DBB9C",
+        "--warn-text": "#A3412E"
+      }
+    },
+    ".wf-node": {
+      "text": "✓",
+      "color": "rgb(43, 39, 35)",
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "none",
+      "effectiveBackground": [
+        222.97799999999998,
+        215.086,
+        197.464,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "11.2px",
+      "fontWeight": "400",
+      "contrast": 10.355901088688382,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#D47C60",
+        "--feedback-warn": "#E0C27A",
+        "--feedback-info": "#8EC1E0",
+        "--feedback-ok": "#7DBB9C",
+        "--warn-text": "#A3412E"
+      }
+    },
+    ".wf-sw input": {
+      "text": "",
+      "color": "rgb(43, 39, 35)",
+      "background": "rgba(42, 38, 34, 0.1)",
+      "image": "none",
+      "effectiveBackground": [
+        204.88019999999997,
+        197.37740000000002,
+        181.1176,
+        1
+      ],
+      "opacity": 1,
+      "fontSize": "14.4px",
+      "fontWeight": "400",
+      "disabled": false,
+      "contrast": 8.666022242833552,
+      "variables": {
+        "--gold": "#7A5B1C",
+        "--feedback-err": "#D47C60",
+        "--feedback-warn": "#E0C27A",
+        "--feedback-info": "#8EC1E0",
+        "--feedback-ok": "#7DBB9C",
+        "--warn-text": "#A3412E"
+      }
+    }
+  }
+}
