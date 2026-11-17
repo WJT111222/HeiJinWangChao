@@ -1,7 +1,7 @@
 import { CITY, saveCity, skyline } from './home/skyline';
 import { useRawSaveExport } from './home/useRawSaveExport';
 import type { SaveRepository } from '../services/storage/saveRepository';
-import { saveKeyText } from '../services/storage/saveManagement';
+import { rawSaveHistoryNotice, saveKeyText } from '../services/storage/saveManagement';
 import type { SaveSummary } from '../services/storage/saveManagement';
 import { dateTime } from './panels/playerView';
 import type { BackupStatus } from './home/backupStatus';
@@ -29,7 +29,7 @@ export function SaveCard({ save, index, selected, repository, backup, exporting:
     {save.status === 'unreadable' && <>
       <p className="save-record-key keyline">存档记录 ID：{saveKeyText(save.storageKey)}</p>
       {save.saveId && save.saveId !== save.storageKey && <p className="save-record-key keyline">内容中的存档 ID：{save.saveId}</p>}
-      <p className="bad-note">当前版本无法读取这条记录。其他存档不受影响；可先导出原始数据，再决定是否删除。</p>
+      <p className="bad-note">当前版本无法读取这条记录。其他存档不受影响；可先导出主存档原始数据。{rawSaveHistoryNotice}</p>
     </>}
     <div className="save-card-actions card-actions">
       {save.status === 'readable' ? <>

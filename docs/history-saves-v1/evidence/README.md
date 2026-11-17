@@ -1,5 +1,7 @@
 # 合成测试证据
 
+本目录根级日志与源码哈希对应返修前 `1d070559e17fbc9a472cce0df0639cae768031f2`；应在该提交核验原哈希。本轮 P1 返修证据与新哈希独立保存在 [revision1](revision1/README.md)，不覆盖旧成绩。
+
 开工基线 `6e013f47db4ae7947e8218e44f1f917b1fc1f976`；随后无冲突 rebase 至 `4ef1093ed82e05ce76583ab3ba7cafbdf61249a4`。`*-main-sync` 日志及 `main-sync/` 为最新基线证据，其他批次不冒充同一版本；本目录随实现提交。业务代码与测试的 SHA-256 在 `tested-files.sha256`，可在仓库根运行 `sha256sum -c docs/history-saves-v1/evidence/tested-files.sha256` 核对。最终 Git HEAD 见本 PR，避免在提交内部写入不可能自洽的自身 SHA。
 
 - `raw-logs.zip` 内的 `logs/`（校验值见 `raw-logs.sha256`）：独立批次原始输出及实际 exit；中断与失败没有删除。`check-first` 为完整失败批次，`check-second-interrupted` 明确未完成。`*-before` 是先红证据。`types-ui` 是实现期间首次 TypeScript 报错记录，随后修复类型边界。不要把子集加到完整成绩。

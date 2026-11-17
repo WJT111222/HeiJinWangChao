@@ -3,7 +3,7 @@ import {GlobalFeedback} from '../ui/GlobalFeedback';
 import { canAcceptNpcView } from '../ui/game/npcManagement';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { IdSchema } from '../domain/common';
+import { DataError, IdSchema } from '../domain/common';
 import type { GameState } from '../domain/state';
 import type { TurnDraft } from '../domain/drafts';
 import { SaveRepository } from '../services/storage/saveRepository';
@@ -26,7 +26,7 @@ import { canShareFile, shareFile, useBackupExport } from '../ui/home/useBackupEx
 import { backupReminderCount, backupStatus, forgetBackup, recordBackup, useBackupStatusVersion } from '../ui/home/backupStatus';
 import { dateTime } from '../ui/panels/playerView';
 import { SaveCard } from '../ui/SaveCard';
-import { saveKeyText } from '../services/storage/saveManagement';
+import { rawSaveHistoryNotice, saveKeyText } from '../services/storage/saveManagement';
 import { Feedback, useDesktopFeedback } from '../ui/Feedback';
 import { ArchivePanel } from '../ui/ArchivePanel';
 import { Dialog, Empty } from '../ui/Dialog';
@@ -303,8 +303,9 @@ export function App() {
       // Deletion has committed. A later refresh failure must not claim it rolled back.
       try { acceptList(await repository.list()); }
       catch { setListError(listFailure); setError(listFailure); }
-    } catch {
-      setDeleteError('删除失败，存档可能已更新或存储不可用。请刷新列表后重试；本次未删除数据。');
+    } catch (error) {
+      setDeleteError(error instanceof DataError && error.code === 'HISTORY_RECOVERY_REQUIRED'
+        ? error.message : '删除失败，存档可能已更新或存储不可用。请刷新列表后重试；本次未删除数据。');
     } finally {
       lock.current = false;
       setBusy(false);
@@ -540,9 +541,11 @@ export function App() {
             if (!busy) setDeleting(undefined);
           }}
         >
-          <p>将永久删除「{deleting.title}」及其关联草稿、回合提交回执、全部自动历史和手动收藏。此操作无法撤销，请先导出重要历史节点。</p>
+          <p>{deleting.status === 'readable'
+            ? `将永久删除「${deleting.title}」及其关联草稿、回合提交回执、全部自动历史和手动收藏。此操作无法撤销，请先导出重要历史节点。`
+            : `仅在没有关联手动收藏时，才允许永久删除「${deleting.title}」及其草稿、回合提交回执和自动历史。此操作无法撤销。`}</p>
           <p className="save-record-key">存档记录 ID：{saveKeyText(deleting.storageKey)}</p>
-          {deleting.status === 'unreadable' && <p>此存档无法读取，建议取消并先导出原始数据。</p>}
+          {deleting.status === 'unreadable' && <p>此存档无法读取，建议取消并先导出主存档原始数据。{rawSaveHistoryNotice}</p>}
           {deleteError && <Feedback role="alert" level="err" mobileAs="p">{deleteError}</Feedback>}
           <div className="dialog-actions">
             {desktopUi&&<button disabled={busy} onClick={() => setDeleting(undefined)}>

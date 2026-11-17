@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { PRODUCT_VERSION } from '../../app/product';
 import type { SaveSummary } from '../../services/storage/saveManagement';
-import { saveKeyText } from '../../services/storage/saveManagement';
+import { rawSaveHistoryNotice, saveKeyText } from '../../services/storage/saveManagement';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import { CITY, CITY_TICKET_META, saveCity } from './skyline';
 import { departure, guilloche, ticketKey, ticketName, ticketOrder, ticketTime } from './ticketView';
@@ -41,7 +41,7 @@ function Ticket({save,index,selected,hasDraft,voided,focused,backup,children}:{s
       <div className="mh-band"><b>{!save?'空白车票':bad?'未知':city?CITY[city][0]:''}</b><small>{!save?'NEW LIFE':bad?'UNREADABLE':city?CITY[city][1].split(' · ')[0]:''}</small><span>{save?`ARCHIVE ${String(index+1).padStart(2,'0')}`:'NEW'}</span></div>
       <div className="mh-ticket-content" tabIndex={focused?0:-1}>
         <div className="mh-route"><div><small>FROM</small><span>{save?(bad?save.title:ticketName(save.title)):'？'}</span></div>{!bad&&<><div className="mh-arrow" aria-hidden="true">单程<i/></div><div className="mh-to"><small>TO</small><span>{save?(city?CITY[city][0]:''):'？'}</span></div></>}</div>
-        {bad?<><p className="mh-keys">存档记录 ID：{saveKeyText(save.storageKey)}</p>{save.saveId&&save.saveId!==save.storageKey&&<p className="mh-keys">内容中的存档 ID：{save.saveId}</p>}<p className="mh-bad-note">当前版本无法读取这条记录。其他存档不受影响；可先导出原始数据，再决定是否删除。</p></>:
+        {bad?<><p className="mh-keys">存档记录 ID：{saveKeyText(save.storageKey)}</p>{save.saveId&&save.saveId!==save.storageKey&&<p className="mh-keys">内容中的存档 ID：{save.saveId}</p>}<p className="mh-bad-note">当前版本无法读取这条记录。其他存档不受影响；可先导出主存档原始数据。{rawSaveHistoryNotice}</p></>:
           <dl className="mh-info"><div><dt>{save?'保存日期':'城市'}</dt><dd>{save?time.date:<span className="mh-blank-line"/>}</dd></div><div><dt>{save?'时刻':'职业'}</dt><dd>{save?time.time:<span className="mh-blank-line"/>}</dd></div><div>{selected?<span className="mh-chop" aria-hidden="true">已检票<small>SELECTED</small></span>:<><dt>存档</dt><dd>{save?'本地':'—'}</dd></>}</div></dl>}
         {save&&!bad&&backup&&<p className={`mh-backup ${backup.tone}`}>{backup.text}</p>}
         {!save?<><p className="mh-pitch">四座城市 · 自由职业 · 开放人生</p>{hasDraft&&<p className="mh-draft">✎ 有尚未完成的创角资料，可继续填写</p>}</>:

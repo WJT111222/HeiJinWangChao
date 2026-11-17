@@ -1,4 +1,4 @@
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { settingsTextContrast } from './helpers/settingsContrast';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
@@ -71,6 +71,119 @@ async function confirm(page: Page) {
   await page.getByRole('button', { name: '发送新行动（先确认覆盖）', exact: true }).click();
   await page.getByRole('button', { name: '确认覆盖并继续', exact: true }).click();
 }
+
+// Include every store and binary byte: JSON.stringify(ArrayBuffer) alone would hide data loss.
+async function recoverySnapshot(page: Page) {
+  return page.evaluate(async () => {
+    const p = '/src/services/storage/idb.ts', { request, transaction } = await import(p);
+    const db: IDBDatabase = await request(indexedDB.open('heijinwangchao'));
+    function binary(value: unknown): unknown {
+      if (value instanceof ArrayBuffer) return { arrayBuffer: Array.from(new Uint8Array(value)) };
+      if (Array.isArray(value)) return value.map(binary);
+      if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, part]) => [key, binary(part)]));
+      return value;
+    }
+    try {
+      return await transaction(db, Array.from(db.objectStoreNames), 'readonly', async (tx: IDBTransaction) => {
+        const result: Record<string, { keys: IDBValidKey[]; values: unknown[] }> = {};
+        for (const name of Array.from(db.objectStoreNames)) result[name] = {
+          keys: await request(tx.objectStore(name).getAllKeys()), values: binary(await request(tx.objectStore(name).getAll())) as unknown[],
+        };
+        return result;
+      });
+    } finally { db.close(); }
+  });
+}
+
+test('损坏主档的原始导出不解锁收藏删除；二进制保留并可用已有标准备份恢复', async ({ page }, info) => {
+  await seed(page, 2); const server = await mock(page), posts: string[] = [];
+  page.on('request', request => { if (request.method() === 'POST') posts.push(request.url()); });
+  await open(page);
+  await page.getByRole('button', { name: '保存当前正式节点' }).click();
+  await page.getByLabel('历史收藏名称').fill('不可丢失的收藏');
+  await page.getByRole('button', { name: '保存收藏', exact: true }).click();
+  await expect(page.locator('.history-node-list')).toContainText('不可丢失的收藏');
+  const original = await read(page);
+  expect(original.history.nodes.find((n: { kind: string }) => n.kind === 'manual')).toBeTruthy();
+  const savedDownload = page.waitForEvent('download'); await page.getByRole('button', { name: '导出节点备份' }).click();
+  const backupPath = (await (await savedDownload).path())!;
+  await page.getByRole('button', { name: '关闭资料界面' }).click();
+  const savedId = await page.evaluate(async () => {
+    const rp = '/src/services/storage/saveRepository.ts', ip = '/src/services/storage/idb.ts';
+    const { SaveRepository } = await import(rp), { request, transaction } = await import(ip), repo = await SaveRepository.open();
+    try {
+      const state = await repo.load('save-a'), other = { ...state, saveId: 'save-b', title: '其他人生' };
+      await repo.importBackup({ state: other }, (await repo.compareBackup({ state: other })).confirmation);
+      await repo.history.create('save-b', '另一份收藏');
+      const node = (await repo.history.list('save-a')).nodes.find((n: { kind: string }) => n.kind === 'manual');
+      const db: IDBDatabase = await request(indexedDB.open('heijinwangchao'));
+      try { await transaction(db, ['saves'], 'readwrite', async (tx: IDBTransaction) => {
+        await request(tx.objectStore('saves').put({ ...state, schemaVersion: 999 }));
+      }); } finally { db.close(); }
+      return node.id;
+    } finally { repo.close(); }
+  });
+  await page.reload();
+  if (info.project.name === 'desktop') await page.getByRole('button', { name: '存档馆', exact: true }).click();
+  else {
+    await expect(page.locator('.mh-ticket.bad')).toContainText('存档记录 ID：save-a');
+    const index = await page.locator('.mh-ticket-wrap').evaluateAll(items => items.findIndex(item => item.textContent?.includes('存档记录 ID：save-a')));
+    expect(index).toBeGreaterThanOrEqual(0);
+    await page.getByRole('navigation', { name: '车票页码' }).getByRole('button').nth(index).click();
+  }
+  const card = info.project.name === 'desktop' ? page.locator('.save-card.bad') : page.locator('.mh-ticket-wrap[aria-current=true]');
+  await expect(card).toContainText('原始数据导出不包含手动历史收藏');
+  const before = await recoverySnapshot(page);
+  const payload = before.historyPayloads.values.find((row: { saveId?: string }) => row.saveId === 'save-a');
+  expect(payload.payload.encoding).toBe('gzip'); expect(payload.payload.data.arrayBuffer.length).toBeGreaterThan(0);
+  const pending = page.waitForEvent('download'); await page.getByRole('button', { name: '导出原始数据', exact: true }).click();
+  const raw = JSON.parse(await readFile((await (await pending).path())!, 'utf8'));
+  expect(raw.version).toBe(1); expect(raw.records.saves[0].value.schemaVersion).toBe(999);
+  expect(raw.records).not.toHaveProperty('historyPayloads');
+  await expect(page.getByRole('status').filter({ hasText: '已发起主存档原始数据下载' })).toContainText('不含手动历史收藏');
+  await page.screenshot({ path: info.outputPath('unreadable-export-warning.png') });
+  expect(await recoverySnapshot(page)).toEqual(before);
+  await page.getByRole('button', { name: '删除存档', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '删除这份存档？', exact: true });
+  await expect(dialog).toContainText('有关联收藏时禁止删除');
+  await dialog.getByRole('button', { name: '确认删除', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('已阻止删除');
+  await expect(dialog.getByRole('alert')).toContainText('本次未删除任何数据');
+  expect(await recoverySnapshot(page)).toEqual(before); expect(server.calls).toEqual([]);
+  await page.screenshot({ path: info.outputPath('unreadable-delete-protected.png') });
+  await dialog.getByRole('button', { name: '取消', exact: true }).click();
+  await page.reload(); expect(await recoverySnapshot(page)).toEqual(before);
+  // A verified backup saved BEFORE damage can repair the main record using the existing import flow.
+  // The raw rescue JSON above is deliberately NOT represented as an importable collection backup.
+  const importer = page.locator('dialog.backup-import-dialog');
+  if (info.project.name === 'desktop') {
+    await page.getByRole('button', { name: '存档馆', exact: true }).click();
+    await page.getByRole('button', { name: '导入备份', exact: true }).click();
+    await importer.locator('input[type=file]').setInputFiles(backupPath);
+  } else {
+    const picker = page.waitForEvent('filechooser');
+    await page.getByRole('button', { name: '导入备份', exact: true }).click();
+    await (await picker).setFiles(backupPath);
+  }
+  await expect(importer.getByRole('heading', { name: '覆盖本机存档？', exact: true })).toBeVisible();
+  await expect(importer).toContainText('无法读取');
+  await importer.getByRole('button', { name: '覆盖并导入', exact: true }).click();
+  await expect(importer).toHaveCount(0);
+  await expect(page.getByRole('status').filter({ hasText: '已导入「测试存档」' })).toBeVisible();
+  const after = await recoverySnapshot(page);
+  expect(after.historyMetadata).toEqual(before.historyMetadata); expect(after.historyPayloads).toEqual(before.historyPayloads);
+  for (const store of ['saves', 'drafts', 'turnReceipts', 'turnUndo', 'saveControls']) {
+    const rows = (data: typeof before) => data[store].values.filter((row: { saveId?: string }) => row.saveId === 'save-b');
+    expect(rows(after)).toEqual(rows(before));
+  }
+  const restored = await page.evaluate(async id => {
+    const p = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(p), repo = await SaveRepository.open();
+    try { const preview = await repo.history.preview('save-a', { kind: 'manual', id }); repo.history.release(preview.confirmation); return preview.state; }
+    finally { repo.close(); }
+  }, savedId);
+  expect(restored).toEqual(original.state); expect(server.calls).toEqual([]); expect(posts).toEqual([]);
+  await page.screenshot({ path: info.outputPath('unreadable-recovered.png') });
+});
 
 test('自动五节点只读预览、取消覆盖、旧链不变、日夜与窄屏截图', async ({ page }, info) => {
   await seed(page); const server = await mock(page), before = await read(page); await open(page);

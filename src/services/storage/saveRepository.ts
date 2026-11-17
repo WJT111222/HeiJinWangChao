@@ -525,7 +525,14 @@ export class SaveRepository {
       const records = await rawRecords(tx.objectStore('saves'), storageKey);
       requireData(records.length === 1, 'NOT_FOUND', '此存档已不存在，请刷新列表。');
       requireData(listRecord(storageKey, records[0].value).status === 'unreadable', 'SAVE_READABLE', '此存档现在可以读取，请刷新列表后重新选择。');
-      await clearManualHistory(tx, storageKey);
+      // V1 raw export does not contain binary history payloads. Until a reversible
+      // rescue format exists, even orphaned/corrupt history must prevent deletion.
+      // Check both indexes by the physical save key in this same write transaction;
+      // neither a successful raw download nor unreadable metadata permits deletion.
+      for (const name of historyStores) requireData(
+        await request(tx.objectStore(name).index('saveId').count(storageKey)) === 0,
+        'HISTORY_RECOVERY_REQUIRED',
+        '已阻止删除：此存档仍有关联的手动历史收藏或残留载荷，原始数据导出不包含这些收藏。本次未删除任何数据，请保留本机数据并联系维护者恢复。');
       await deleteRecords(tx, storageKey);
     });
   }
