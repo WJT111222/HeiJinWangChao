@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /workspace/story-limit-fix
+
+ ❯ src/tests/story-limit-acceptance.test.ts (32 tests | 2 failed) 1083ms
+   × 四协议完整limit严格保存 gemini stream=false 25ms
+   × 四协议完整limit严格保存 gemini stream=true 18ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tests/story-limit-acceptance.test.ts > 四协议完整limit严格保存 gemini stream=false
+ FAIL  src/tests/story-limit-acceptance.test.ts > 四协议完整limit严格保存 gemini stream=true
+AssertionError: expected [ 'MAX_TOKENS' ] to include 'max_tokens'
+ ❯ src/tests/story-limit-acceptance.test.ts:60:69
+     58|  expect(calls).toBe(1);expect(done.draft.stageStatus.story).toBe('read…
+     59|  if(stream)expect(shown.join('')).toContain('决定回家');
+     60|  expect(stageResponses.getSnapshot()[0].diagnostics?.finishReasons).to…
+       |                                                                     ^
+     61| });
+     62| for(const stream of [false,true])it(`limit不得掩盖拒绝信息 stream=${stream}`,a…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 98 passed (100)
+   Start at  01:10:08
+   Duration  2.88s (tests 45%, import 29%, transform 26%)
+

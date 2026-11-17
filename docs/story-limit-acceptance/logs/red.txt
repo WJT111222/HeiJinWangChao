@@ -1,0 +1,75 @@
+
+ RUN  v5.0.5 /workspace/story-limit-fix
+
+ ❯ src/tests/story-limit-acceptance.test.ts (22 tests | 6 failed) 445ms
+   × matrix stream=false complete-length 26ms
+   × matrix stream=false closed-short-length 49ms
+   × matrix stream=false invalid-guide-length 10ms
+   × matrix stream=true complete-length 8ms
+   × matrix stream=true closed-short-length 7ms
+   × matrix stream=true invalid-guide-length 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tests/story-limit-acceptance.test.ts > matrix stream=false complete-length
+ FAIL  src/tests/story-limit-acceptance.test.ts > matrix stream=true complete-length
+AssertionError: expected AiError: 模型达到输出上限，规划、原生思考与正文可能共享预算；本次结果不完… { …(3) } to be undefined
+
+- Expected:
+undefined
+
++ Received:
+AiError {
+  "message": "模型达到输出上限，规划、原生思考与正文可能共享预算；本次结果不完整且未保存。请检查最大输出 Token，程序不会自动提高付费上限或重发。",
+  "code": "output_limit",
+  "status": undefined,
+  "details": undefined,
+  "name": "AiError",
+}
+
+ ❯ src/tests/story-limit-acceptance.test.ts:52:45
+     50|  expect(calls).toBe(1);expect(got.formalUnchanged).toBe(true);
+     51|  if(c.id==='complete-stop'){expect(draft.story).toBeDefined();expect(o…
+     52|  if(c.id==='complete-length'){expect(error).toBeUndefined();expect(dra…
+       |                                             ^
+     53|  if(c.id==='closed-short-length')expect(error.details.storyRule).toBe(…
+     54|  if(c.id==='invalid-guide-length'){expect(error.code).toBe('invalid_js…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/tests/story-limit-acceptance.test.ts > matrix stream=false closed-short-length
+ FAIL  src/tests/story-limit-acceptance.test.ts > matrix stream=true closed-short-length
+TypeError: Cannot read properties of undefined (reading 'storyRule')
+ ❯ src/tests/story-limit-acceptance.test.ts:53:55
+     51|  if(c.id==='complete-stop'){expect(draft.story).toBeDefined();expect(o…
+     52|  if(c.id==='complete-length'){expect(error).toBeUndefined();expect(dra…
+     53|  if(c.id==='closed-short-length')expect(error.details.storyRule).toBe(…
+       |                                                       ^
+     54|  if(c.id==='invalid-guide-length'){expect(error.code).toBe('invalid_js…
+     55|  });}
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/tests/story-limit-acceptance.test.ts > matrix stream=false invalid-guide-length
+ FAIL  src/tests/story-limit-acceptance.test.ts > matrix stream=true invalid-guide-length
+AssertionError: expected 'output_limit' to be 'invalid_json' // Object.is equality
+
+Expected: "invalid_json"
+Received: "output_limit"
+
+ ❯ src/tests/story-limit-acceptance.test.ts:54:55
+     52|  if(c.id==='complete-length'){expect(error).toBeUndefined();expect(dra…
+     53|  if(c.id==='closed-short-length')expect(error.details.storyRule).toBe(…
+     54|  if(c.id==='invalid-guide-length'){expect(error.code).toBe('invalid_js…
+       |                                                       ^
+     55|  });}
+     56|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 16 passed (22)
+   Start at  01:07:12
+   Duration  1.23s (transform 46%, tests 39%, import 16%)
+

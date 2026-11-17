@@ -1,0 +1,14 @@
+
+ RUN  v5.0.5 /workspace/story-continuation-investigation
+
+
+ Test Files  2 passed (2)
+      Tests  57 passed (57)
+   Start at  01:12:21
+   Duration  3.57s (tests 77%, transform 13%, import 10%)
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
