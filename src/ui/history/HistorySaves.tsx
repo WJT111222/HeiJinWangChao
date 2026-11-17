@@ -108,27 +108,30 @@ export function HistorySaves({ repository, saveId, settings, onClose, onRestored
       </section>}
       <HistoryWorld key={`${preview.node.kind}:${preview.node.id}`} preview={preview}/>
     </> : <>
-      <div className="history-actions"><button aria-pressed={tab === 'automatic'} onClick={() => { setTab('automatic'); setPage(0); }}>自动历史</button>
-        <button aria-pressed={tab === 'manual'} onClick={() => { setTab('manual'); setPage(0); }}>手动收藏</button>
-        <button disabled={busy} onClick={() => setEditing({ name: '' })}>保存当前正式节点</button><button disabled={busy} onClick={() => void run(refresh)}>刷新历史列表</button></div>
+      <div className="history-toolbar"><div className="history-tabs" role="group" aria-label="历史节点分类"><button aria-pressed={tab === 'automatic'} onClick={() => { setTab('automatic'); setPage(0); }}>自动历史</button>
+        <button aria-pressed={tab === 'manual'} onClick={() => { setTab('manual'); setPage(0); }}>手动收藏</button></div><div className="history-actions">
+        <button className="primary" disabled={busy} onClick={() => setEditing({ name: '' })}>保存当前正式节点</button><button disabled={busy} onClick={() => void run(refresh)}>刷新历史列表</button></div></div>
+      <details className="history-storage"><summary>收藏容量与备份说明</summary>
       <p>手动收藏记录体积：{size(list?.manualBytes ?? 0)}（编码载荷及元数据，不含数据库内部开销）。普通整档备份不含历史收藏，请单独导出重要节点。</p>
       {estimate?.quota !== undefined && <p>浏览器估算：已使用约 {size(estimate.usage ?? 0)} / 配额约 {size(estimate.quota)}，不是精确剩余空间。{(estimate.usage ?? 0) > estimate.quota * .8 && '空间接近配额，请先导出并清理不需要的收藏。'}</p>}
+      </details>
       {list?.notice && <p role="alert">{list.notice}</p>}
       {editing && <form className="history-edit" onSubmit={event => { event.preventDefault(); void run(async () => {
         if (editing.id) await repository.history.rename(saveId, editing.id, editing.name); else await repository.history.create(saveId, editing.name);
         setEditing(undefined); setTab('manual'); setPage(0); await refresh(); setMessage('历史收藏已保存；正式游戏进度未改变。');
       }); }}><label>历史收藏名称<input value={editing.name} maxLength={100} onChange={e => setEditing({ ...editing, name: e.target.value })}/></label>
-        <button disabled={busy || !editing.name.trim()} type="submit">{editing.id ? '保存名称' : '保存收藏'}</button><button disabled={busy} type="button" onClick={() => setEditing(undefined)}>取消命名</button></form>}
-      {deleting && <section className="history-warning"><p>永久删除收藏「{deleting.name}」？不会删除当前正式存档。建议先导出此节点。</p>
-        <button disabled={busy} onClick={() => setDeleting(undefined)}>保留收藏</button><button disabled={busy} onClick={() => void run(async () => { await repository.history.delete(saveId, deleting.id); setDeleting(undefined); await refresh(); setMessage('已删除所选收藏。'); })}>确认删除收藏</button></section>}
+        <button className="primary" disabled={busy || !editing.name.trim()} type="submit">{editing.id ? '保存名称' : '保存收藏'}</button><button disabled={busy} type="button" onClick={() => setEditing(undefined)}>取消命名</button></form>}
+      {deleting && <section className="history-warning history-delete" aria-label="删除收藏确认"><h3>永久删除收藏</h3><p>永久删除收藏「{deleting.name}」？不会删除当前正式存档。建议先导出此节点。</p>
+        <button disabled={busy} onClick={() => setDeleting(undefined)}>保留收藏</button><button className="history-danger" disabled={busy} onClick={() => void run(async () => { await repository.history.delete(saveId, deleting.id); setDeleting(undefined); await refresh(); setMessage('已删除所选收藏。'); })}>确认删除收藏</button></section>}
       {!list ? <p>正在读取历史元数据…</p> : !nodes.length ? <p>{tab === 'automatic' ? '没有可靠的自动历史节点；开局、旧存档或新回溯根不伪造恢复点。' : '尚未保存手动收藏。'}</p> : <>
-        <ul className="history-node-list">{nodes.slice(pageIndex * 20, (pageIndex + 1) * 20).map(node => <li key={node.id}>
-          <h3>{node.name}</h3><p>{node.error ?? `第 ${node.turnNumber} 回合结束 · ${node.summary ? dateTime(node.summary.worldClock) : '旧恢复点，选中后读取真实游戏时间'}`}</p>
-          <p>{node.summary?.protagonistName} · {size(node.bytes)} · {node.oldTimeline ? '旧时间线收藏' : '当前时间线'}{node.createdAt && ` · 收藏于 ${dateTime(node.createdAt)}`}</p>
-          <details><summary>来源时间线</summary><p className="history-source">{node.source}</p></details>
-          <div className="history-actions"><button disabled={busy || Boolean(node.error)} onClick={() => void run(() => select(node))}>预览第 {node.turnNumber} 回合</button>
+        <ul className="history-node-list">{nodes.slice(pageIndex * 20, (pageIndex + 1) * 20).map(node => <li key={node.id} data-kind={node.oldTimeline ? 'old' : node.kind}>
+          <div className="history-turn" aria-label={`第 ${node.turnNumber} 回合`}><span aria-hidden="true">第</span><b>{node.turnNumber}</b><span aria-hidden="true">回合</span></div>
+          <div className="history-node-content"><span className="history-badge">{node.oldTimeline ? '旧时间线收藏' : node.kind === 'manual' ? '手动收藏 · 人生节点' : '自动历史 · 恢复点'}</span><h3>{node.name}</h3><p>{node.error ?? `第 ${node.turnNumber} 回合结束 · ${node.summary ? dateTime(node.summary.worldClock) : '旧恢复点，选中后读取真实游戏时间'}`}</p>
+          <p className="history-meta">{node.summary?.protagonistName} · {size(node.bytes)} · {node.oldTimeline ? '旧时间线收藏' : '当前时间线'}{node.createdAt && ` · 收藏于 ${dateTime(node.createdAt)}`}</p>
+          <details><summary>来源时间线</summary><p className="history-source">{node.source}</p></details></div>
+          <div className="history-actions history-node-actions"><button disabled={busy || Boolean(node.error)} onClick={() => void run(() => select(node))}>预览第 {node.turnNumber} 回合</button>
             <button disabled={busy || Boolean(node.error)} onClick={() => void run(() => download(node))}>导出节点备份</button>
-            {node.kind === 'manual' && <><button disabled={busy || Boolean(node.error)} onClick={() => setEditing({ id: node.id, name: node.name })}>重命名</button><button disabled={busy} onClick={() => setDeleting(node)}>删除收藏</button></>}</div>
+            {node.kind === 'manual' && <><button disabled={busy || Boolean(node.error)} onClick={() => setEditing({ id: node.id, name: node.name })}>重命名</button><button className="history-danger" disabled={busy} onClick={() => setDeleting(node)}>删除收藏</button></>}</div>
         </li>)}</ul>
         <nav className="history-actions" aria-label="历史列表分页"><button disabled={pageIndex === 0} onClick={() => setPage(pageIndex - 1)}>上一页</button><span>{pageIndex + 1} / {pages}</span><button disabled={pageIndex + 1 >= pages} onClick={() => setPage(pageIndex + 1)}>下一页</button></nav>
       </>}
