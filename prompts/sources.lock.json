@@ -1489,60 +1489,60 @@
       "origin": "project",
       "treatment": "project-authored",
       "sourcePath": "prompts/writing/style_jianghu.md",
-      "sourceSha256": "6c85f4e4ef81b0f2a5efa981451cc4e40da72071271ebf228ccb829ff7dafb44",
+      "sourceSha256": "d5e4dfa60ee084aea3c86defc8ca118a6b24a6a94725ff28e14775760037983c",
       "storyStylesV1": {
-        "notes": "剧情风格「江湖义气」：项目原创写法要点、禁写清单与原创语感示例；参考作品只作笔法参照（附防火墙与背景锚定），未摘录任何作品原文；不改输出协议。",
-        "sha256": "6c85f4e4ef81b0f2a5efa981451cc4e40da72071271ebf228ccb829ff7dafb44"
+        "notes": "剧情风格「江湖义气」：项目原创写法要点、禁写清单与原创语感示例；参考作品只作笔法参照（附防火墙与背景锚定），未摘录任何作品原文；明确只作用于 <正文>，短期记忆、变量规划与行动选项保持中性事实规则；不改输出协议。",
+        "sha256": "d5e4dfa60ee084aea3c86defc8ca118a6b24a6a94725ff28e14775760037983c"
       }
     },
     "writing/style_noir.md": {
       "origin": "project",
       "treatment": "project-authored",
       "sourcePath": "prompts/writing/style_noir.md",
-      "sourceSha256": "7a27c762d5f0e47970ed19f043512339b6835c5765c999e6888987df0ba71a20",
+      "sourceSha256": "9175d568da375d81a211f58606b9d263bea6f50680d224b06ade4bd3959ab85b",
       "storyStylesV1": {
-        "notes": "剧情风格「冷硬黑色」：项目原创写法要点、禁写清单与原创语感示例；参考作品只作笔法参照（附防火墙与背景锚定），未摘录任何作品原文；不改输出协议。",
-        "sha256": "7a27c762d5f0e47970ed19f043512339b6835c5765c999e6888987df0ba71a20"
+        "notes": "剧情风格「冷硬黑色」：项目原创写法要点、禁写清单与原创语感示例；参考作品只作笔法参照（附防火墙与背景锚定），未摘录任何作品原文；明确只作用于 <正文>，短期记忆、变量规划与行动选项保持中性事实规则；不改输出协议。",
+        "sha256": "9175d568da375d81a211f58606b9d263bea6f50680d224b06ade4bd3959ab85b"
       }
     },
     "writing/style_power.md": {
       "origin": "project",
       "treatment": "project-authored",
       "sourcePath": "prompts/writing/style_power.md",
-      "sourceSha256": "823b577192228404c44c1a6cab36251a38092fdc67a632ec7953d4194e5b5fc4",
+      "sourceSha256": "cfa1c281dfe131d3412bb0e479ad121cbb5c82d06853d37ebba7ceadbf415439",
       "storyStylesV1": {
-        "notes": "剧情风格「权谋暗流」：项目原创写法要点、禁写清单与原创语感示例；参考作品只作笔法参照（附防火墙与背景锚定），未摘录任何作品原文；不改输出协议。",
-        "sha256": "823b577192228404c44c1a6cab36251a38092fdc67a632ec7953d4194e5b5fc4"
+        "notes": "剧情风格「权谋暗流」：项目原创写法要点、禁写清单与原创语感示例；参考作品只作笔法参照（附防火墙与背景锚定），未摘录任何作品原文；明确只作用于 <正文>，短期记忆、变量规划与行动选项保持中性事实规则；不改输出协议。",
+        "sha256": "cfa1c281dfe131d3412bb0e479ad121cbb5c82d06853d37ebba7ceadbf415439"
       }
     },
     "writing/style_docu.md": {
       "origin": "project",
       "treatment": "project-authored",
       "sourcePath": "prompts/writing/style_docu.md",
-      "sourceSha256": "879201fe013dcd0080c1e53ba8a12d527a85c4dc12e78d3594d53a4f290973c1",
+      "sourceSha256": "53540566b81f15561a3b50293019f0aba1d716f9c3074e7d52132c59fb863116",
       "storyStylesV1": {
-        "notes": "剧情风格「纪实白描」：项目原创写法要点、禁写清单与原创语感示例；参考作品只作笔法参照（附防火墙与背景锚定），未摘录任何作品原文；不改输出协议。",
-        "sha256": "879201fe013dcd0080c1e53ba8a12d527a85c4dc12e78d3594d53a4f290973c1"
+        "notes": "剧情风格「纪实白描」：项目原创写法要点、禁写清单与原创语感示例；参考作品只作笔法参照（附防火墙与背景锚定），未摘录任何作品原文；明确只作用于 <正文>，短期记忆、变量规划与行动选项保持中性事实规则；不改输出协议。",
+        "sha256": "53540566b81f15561a3b50293019f0aba1d716f9c3074e7d52132c59fb863116"
       }
     },
     "writing/style_shuang.md": {
       "origin": "project",
       "treatment": "project-authored",
       "sourcePath": "prompts/writing/style_shuang.md",
-      "sourceSha256": "9a070c2c4a79a7d4e0b5baf87e09d54a4bf953b4e089b99e8d64972e4f42631f",
+      "sourceSha256": "677ec4b40e610e0117c97025cffbe5d3a278c34daabdeb1f55dab960b277302a",
       "storyStylesV1": {
-        "notes": "剧情风格「快意爽文」：项目原创写法要点、禁写清单与原创语感示例；参考作品只作笔法参照（附防火墙与背景锚定），未摘录任何作品原文；不改输出协议。",
-        "sha256": "9a070c2c4a79a7d4e0b5baf87e09d54a4bf953b4e089b99e8d64972e4f42631f"
+        "notes": "剧情风格「快意爽文」：项目原创写法要点、禁写清单与原创语感示例；参考作品只作笔法参照（附防火墙与背景锚定），未摘录任何作品原文；明确只作用于 <正文>，短期记忆、变量规划与行动选项保持中性事实规则；不改输出协议。",
+        "sha256": "677ec4b40e610e0117c97025cffbe5d3a278c34daabdeb1f55dab960b277302a"
       }
     },
     "writing/style_absurd.md": {
       "origin": "project",
       "treatment": "project-authored",
       "sourcePath": "prompts/writing/style_absurd.md",
-      "sourceSha256": "92965c0c44c663ebe3c8d9313f4fcb33107233e03b9086c83a1cb37898b6bb0d",
+      "sourceSha256": "5a21908fb1acbbcc3fd5f5b3c8cb71619eb28e754db6af091718df2a6bd654a9",
       "storyStylesV1": {
-        "notes": "剧情风格「荒诞喜剧」：项目原创写法要点、禁写清单与原创语感示例；参考作品只作笔法参照（附防火墙与背景锚定），未摘录任何作品原文；不改输出协议。",
-        "sha256": "92965c0c44c663ebe3c8d9313f4fcb33107233e03b9086c83a1cb37898b6bb0d"
+        "notes": "剧情风格「荒诞喜剧」：项目原创写法要点、禁写清单与原创语感示例；参考作品只作笔法参照（附防火墙与背景锚定），未摘录任何作品原文；明确只作用于 <正文>，短期记忆、变量规划与行动选项保持中性事实规则；不改输出协议。",
+        "sha256": "5a21908fb1acbbcc3fd5f5b3c8cb71619eb28e754db6af091718df2a6bd654a9"
       }
     }
   },

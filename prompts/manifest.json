@@ -1303,7 +1303,7 @@
       ],
       "toggle": "style:jianghu",
       "domain": null,
-      "characters": 645,
+      "characters": 835,
       "version": "1.0.0-story-styles",
       "messageRole": "system",
       "activation": "setting",
@@ -1313,7 +1313,7 @@
       "orderGroup": "writing",
       "reorderable": false,
       "category": "writing",
-      "contentSha256": "6c85f4e4ef81b0f2a5efa981451cc4e40da72071271ebf228ccb829ff7dafb44",
+      "contentSha256": "d5e4dfa60ee084aea3c86defc8ca118a6b24a6a94725ff28e14775760037983c",
       "placeholders": []
     },
     {
@@ -1330,7 +1330,7 @@
       ],
       "toggle": "style:noir",
       "domain": null,
-      "characters": 582,
+      "characters": 753,
       "version": "1.0.0-story-styles",
       "messageRole": "system",
       "activation": "setting",
@@ -1340,7 +1340,7 @@
       "orderGroup": "writing",
       "reorderable": false,
       "category": "writing",
-      "contentSha256": "7a27c762d5f0e47970ed19f043512339b6835c5765c999e6888987df0ba71a20",
+      "contentSha256": "9175d568da375d81a211f58606b9d263bea6f50680d224b06ade4bd3959ab85b",
       "placeholders": []
     },
     {
@@ -1357,7 +1357,7 @@
       ],
       "toggle": "style:power",
       "domain": null,
-      "characters": 624,
+      "characters": 837,
       "version": "1.0.0-story-styles",
       "messageRole": "system",
       "activation": "setting",
@@ -1367,7 +1367,7 @@
       "orderGroup": "writing",
       "reorderable": false,
       "category": "writing",
-      "contentSha256": "823b577192228404c44c1a6cab36251a38092fdc67a632ec7953d4194e5b5fc4",
+      "contentSha256": "cfa1c281dfe131d3412bb0e479ad121cbb5c82d06853d37ebba7ceadbf415439",
       "placeholders": []
     },
     {
@@ -1384,7 +1384,7 @@
       ],
       "toggle": "style:docu",
       "domain": null,
-      "characters": 575,
+      "characters": 746,
       "version": "1.0.0-story-styles",
       "messageRole": "system",
       "activation": "setting",
@@ -1394,7 +1394,7 @@
       "orderGroup": "writing",
       "reorderable": false,
       "category": "writing",
-      "contentSha256": "879201fe013dcd0080c1e53ba8a12d527a85c4dc12e78d3594d53a4f290973c1",
+      "contentSha256": "53540566b81f15561a3b50293019f0aba1d716f9c3074e7d52132c59fb863116",
       "placeholders": []
     },
     {
@@ -1411,7 +1411,7 @@
       ],
       "toggle": "style:shuang",
       "domain": null,
-      "characters": 633,
+      "characters": 840,
       "version": "1.0.0-story-styles",
       "messageRole": "system",
       "activation": "setting",
@@ -1421,7 +1421,7 @@
       "orderGroup": "writing",
       "reorderable": false,
       "category": "writing",
-      "contentSha256": "9a070c2c4a79a7d4e0b5baf87e09d54a4bf953b4e089b99e8d64972e4f42631f",
+      "contentSha256": "677ec4b40e610e0117c97025cffbe5d3a278c34daabdeb1f55dab960b277302a",
       "placeholders": []
     },
     {
@@ -1438,7 +1438,7 @@
       ],
       "toggle": "style:absurd",
       "domain": null,
-      "characters": 647,
+      "characters": 859,
       "version": "1.0.0-story-styles",
       "messageRole": "system",
       "activation": "setting",
@@ -1448,7 +1448,7 @@
       "orderGroup": "writing",
       "reorderable": false,
       "category": "writing",
-      "contentSha256": "92965c0c44c663ebe3c8d9313f4fcb33107233e03b9086c83a1cb37898b6bb0d",
+      "contentSha256": "5a21908fb1acbbcc3fd5f5b3c8cb71619eb28e754db6af091718df2a6bd654a9",
       "placeholders": []
     },
     {
