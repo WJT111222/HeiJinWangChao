@@ -27,6 +27,8 @@ export function useTurnGeneration(
   const [progress, setProgress] = useState<TurnProgress>();
   const [outcome, setOutcome] = useState<TurnOutcome>();
   const [error, setError] = useState('');
+  const errorTurn = useRef<string | undefined>(undefined);
+  const turnKey = (value: TurnDraft | undefined) => value && `${value.saveId}:${value.turnId}`;
   const [settling, setSettling] = useState(false);
   const saving = useRef(false);
   const active = useRef(false),
@@ -46,6 +48,7 @@ export function useTurnGeneration(
   async function generate(expected = draft) {
     if (!expected || active.current) return;
     active.current = true;
+    errorTurn.current = turnKey(expected);
     const id = ++token.current;
     setRunning(true);
     onRuntimeEvent?.('workflow', 'started');
@@ -126,5 +129,5 @@ export function useTurnGeneration(
     setError('正在取消自动执行；已完整保存的合法候选将保留。');
     onRuntimeEvent?.('workflow', 'cancelled');
   }
-  return { generate, cancel, running, settling, progress, error, outcome };
+  return { generate, cancel, running, settling, progress, error: errorTurn.current === turnKey(draft) ? error : '', outcome };
 }

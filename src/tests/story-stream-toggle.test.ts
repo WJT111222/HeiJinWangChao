@@ -88,11 +88,19 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
     expect(await a.repo.load('save-a')).toEqual(before); expect(transport).toHaveBeenCalledTimes(1);
   });
   for (const [finish, code] of [['length', 'output_limit'], ['content_filter', 'content_filter'], ['unrecognized', 'stream_interrupted']] as const) {
-    test(`${protocol} 非流式${finish}不能成为成功正文，不重试、不改正式状态`, async () => {
+    test(`${protocol} 非流式${finish}按完整内容校验，不重试、不改正式状态`, async () => {
       const a = await fixture(protocol), before = await a.repo.loadGame('save-a');
       const transport = vi.fn<typeof fetch>(async () => Response.json(json(protocol, text, finish)));
-      await expect(runner(a, transport).generate(a)).rejects.toMatchObject({ code });
-      expect(await a.repo.loadGame('save-a')).toEqual(before); expect(transport).toHaveBeenCalledTimes(1);
+      if (finish === 'length') {
+        const saved = await runner(a, transport).generate(a);
+        expect(saved.stageStatus.story).toBe('ready');
+        expect(saved.story?.narrative).toBe(narrative);
+        expect(saved.storyPartial).toBeUndefined();
+        expect((await a.repo.loadGame('save-a')).state).toEqual(before.state);
+      } else {
+        await expect(runner(a, transport).generate(a)).rejects.toMatchObject({ code });
+        expect(await a.repo.loadGame('save-a')).toEqual(before);
+      } expect(transport).toHaveBeenCalledTimes(1);
     });
   }
 }

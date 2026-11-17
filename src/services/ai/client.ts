@@ -24,6 +24,8 @@ import { rawResponseObservation, responseContent, responseDiagnostics } from './
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
 
 export interface RequestOptions {
+  /** Internal Story-only handoff: caller must strictly validate received content. */
+  validateStoryOutputLimit?: boolean;
   onResponseDiagnostics?: (diagnostics: ResponseDiagnostics) => void;
   signal?: AbortSignal;
   timeoutSeconds?: number;
@@ -46,6 +48,7 @@ export interface ModelListOptions extends RequestOptions {
 }
 export interface AiResponse {
   text: string;
+  outputLimited?: boolean;
   nativeReasoning?: string;
   usage?: Usage;
   diagnostics: string[];
@@ -147,6 +150,11 @@ export class AiClient {
     const wire = wireRequest(snapshot, messages, options.stream === true);
     let inspectionId: string | undefined;
     let observedUsage: Usage | undefined;
+    let outputLimited = false;
+    const finish = (reason: unknown) => {
+      if (options.validateStoryOutputLimit && typeof reason === 'string' && ['length', 'max_tokens'].includes(reason.toLowerCase())) outputLimited = true;
+      return checkFinish(reason, options.validateStoryOutputLimit === true);
+    };
     const observe = (value: ResponseDiagnostics) => {
       try { options.onResponseDiagnostics?.(value); } catch { /* Observation never changes request semantics. */ }
     };
@@ -177,7 +185,12 @@ export class AiClient {
             if (raw) options.onRawTextDelta?.(raw);
             if (native) options.onNativeReasoningDelta?.(native);
           }
-          text = responseText(data, protocol);
+          if (options.validateStoryOutputLimit) {
+            const d = record(data);
+            finish(isOpenAiCompatible(protocol) ? record(array(d.choices)[0]).finish_reason : protocol === 'gemini' ? record(array(d.candidates)[0]).finishReason : d.stop_reason);
+          }
+          if (options.validateStoryOutputLimit && responseDiagnostics(data, protocol).refusal) throw new AiError('content_filter');
+          text = responseText(data, protocol, options.validateStoryOutputLimit === true);
           reasoning = nativeReasoning(data, protocol);
           if (isOpenAiCompatible(protocol)) {
             const split = splitLeadingThink(text);
@@ -214,6 +227,7 @@ export class AiClient {
               if (rawDelta) options.onRawTextDelta?.(rawDelta);
               if (native) options.onNativeReasoningDelta?.(native);
             }
+            if (options.validateStoryOutputLimit && responseDiagnostics(data, protocol, true).refusal) throw new AiError('content_filter');
             const nextUsage = usageFrom(data, protocol);
             if (nextUsage) usage = { ...usage, ...nextUsage };
             observedUsage = usage;
@@ -221,13 +235,13 @@ export class AiClient {
             let thinkReasoning = '';
             if (isOpenAiCompatible(protocol)) {
               const choice = record(array(data.choices)[0]);
-              if (checkFinish(choice.finish_reason)) terminal = true;
+              if (finish(choice.finish_reason)) terminal = true;
               const split = think!.push(string(record(choice.delta).content));
               delta = split.content; thinkReasoning = split.reasoning;
             } else if (protocol === 'gemini') {
               if (record(data.promptFeedback).blockReason) throw new AiError('content_filter');
               const candidate = record(array(data.candidates)[0]);
-              if (checkFinish(candidate.finishReason)) terminal = true;
+              if (finish(candidate.finishReason)) terminal = true;
               delta = array(record(candidate.content).parts)
                 .filter((part) => record(part).thought !== true)
                 .map((part) => string(record(part).text))
@@ -237,7 +251,7 @@ export class AiClient {
                 delta = string(record(data.content_block).text);
               if (data.type === 'content_block_delta' && record(data.delta).type === 'text_delta')
                 delta = string(record(data.delta).text);
-              checkFinish(record(data.delta).stop_reason);
+              finish(record(data.delta).stop_reason);
               if (data.type === 'message_stop') terminal = true;
             }
             if (native) nativeSeen = true;
@@ -267,7 +281,7 @@ export class AiClient {
         if (!text.trim()) throw new AiError('empty');
         try { if (inspectionId) requestInspections.finish(inspectionId, usage); }
         catch { /* 诊断观察器失败不改变响应。 */ }
-        return { text, ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics: wire.diagnostics, protocol, model: snapshot.model };
+        return { text, ...(outputLimited ? { outputLimited: true } : {}), ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics: wire.diagnostics, protocol, model: snapshot.model };
       });
     } catch (error) {
       try { if (inspectionId) requestInspections.finish(inspectionId, observedUsage, safeAiError(error).code); }
