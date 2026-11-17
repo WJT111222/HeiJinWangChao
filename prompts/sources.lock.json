@@ -104,7 +104,12 @@
       "origin": "m3-review",
       "sourcePath": "prompts/writing/natural_prose.md",
       "sourceSha256": "9e0a9ef91022ef5a3d85c7bbf1ee624d85bb2b11b31c343188949a128fad14c0",
-      "treatment": "verbatim"
+      "treatment": "anti-template-v1",
+      "antiTemplateV1": {
+        "baseCommit": "07d473d5165dfc8154dd66c58e98cb1030975bbe",
+        "notes": "反模板表达修订：套话按类别点名并给出替代写法，补充结构性模板、跨回合不重复、下笔前预想、与剧情风格的关系及只作用于 <正文> 的范围；原有段落保留。",
+        "sha256": "d4db353b663dfcd4c09ba59be2fbc90a592d9e4e6c423da3e8e0038b003a0255"
+      }
     },
     "writing/action_options.md": {
       "origin": "m3-review",
@@ -1407,6 +1412,11 @@
         "baseCommit": "086ea8f6c25b028460b71b121e42b45ee5e965c2",
         "notes": "正文项目规划可选；禁用裸露Step/元指令；仅调整本次Story标签兼容说明，原始来源及历次适配记录保持。",
         "sha256": "e377b8e25d4b4d8dd5e06d9a10571df3be58e3f712394d384fd1d3785fe0e0f3"
+      },
+      "antiTemplateV1": {
+        "baseCommit": "07d473d5165dfc8154dd66c58e98cb1030975bbe",
+        "notes": "Step 7 新增第 4 条「文风预检」（开局无前文，不含跨回合回看）；其余原文与历次适配不变。",
+        "sha256": "9c6545ac3506b60e1b071d15f35950eb489d0d7ac491153458a0824ac0c81450"
       }
     },
     "planning/regular.md": {
@@ -1423,6 +1433,11 @@
         "baseCommit": "086ea8f6c25b028460b71b121e42b45ee5e965c2",
         "notes": "正文项目规划可选；禁用裸露Step/元指令；仅调整本次Story标签兼容说明，原始来源及历次适配记录保持。",
         "sha256": "8283d6f3a0f8436f5c3e88804d8fd589127070285e4dd69819185b75344c87f1"
+      },
+      "antiTemplateV1": {
+        "baseCommit": "07d473d5165dfc8154dd66c58e98cb1030975bbe",
+        "notes": "Step 14 新增第 4 条「文风预检」：动笔前确定具体细节、回避前几回合已用表达、人物说话方式与句子节奏；规划只写准备怎么写，不抄写套话清单。其余原文与历次适配不变。",
+        "sha256": "dfe2b328600e3d630a1ab93d1c826ec04ef1fbd3b6ed173a192f0d3dbc8465c5"
       }
     },
     "variableGroups/org_gang/init_world.md": {
