@@ -1,0 +1,25 @@
+{
+  "source": "day-contrast.json computed color(srgb ... / 0.12); explicit alpha composite because existing helper only parses rgb/rgba",
+  "foreground": [
+    48,
+    41,
+    31
+  ],
+  "paper": [
+    246,
+    240,
+    227
+  ],
+  "overlay": [
+    148,
+    124,
+    84
+  ],
+  "alpha": 0.12,
+  "compositedBackground": [
+    234.23999999999998,
+    226.07999999999998,
+    209.84
+  ],
+  "ratio": 11.159911270444189
+}

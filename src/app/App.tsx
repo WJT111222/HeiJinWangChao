@@ -1,8 +1,9 @@
+import { authorizeHistoryStart } from '../ui/history/authorize';
 import {GlobalFeedback} from '../ui/GlobalFeedback';
 import { canAcceptNpcView } from '../ui/game/npcManagement';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { IdSchema } from '../domain/common';
+import { DataError, IdSchema } from '../domain/common';
 import type { GameState } from '../domain/state';
 import type { TurnDraft } from '../domain/drafts';
 import { SaveRepository } from '../services/storage/saveRepository';
@@ -25,7 +26,7 @@ import { canShareFile, shareFile, useBackupExport } from '../ui/home/useBackupEx
 import { backupReminderCount, backupStatus, forgetBackup, recordBackup, useBackupStatusVersion } from '../ui/home/backupStatus';
 import { dateTime } from '../ui/panels/playerView';
 import { SaveCard } from '../ui/SaveCard';
-import { saveKeyText } from '../services/storage/saveManagement';
+import { rawSaveHistoryNotice, saveKeyText } from '../services/storage/saveManagement';
 import { Feedback, useDesktopFeedback } from '../ui/Feedback';
 import { ArchivePanel } from '../ui/ArchivePanel';
 import { Dialog, Empty } from '../ui/Dialog';
@@ -36,6 +37,7 @@ import type { OpeningStart } from '../ui/game/openingStart';
 import { NoticeDialog, NoticeLinks } from '../ui/notices/Notices';
 import { useNotices } from '../ui/notices/useNotices';
 
+const HistorySaves = lazy(() => import('../ui/history/HistorySaves').then(module => ({ default: module.HistorySaves })));
 const GameScreen = lazy(() =>
   import('../ui/game/GameScreen').then((module) => ({ default: module.GameScreen })),
 );
@@ -112,6 +114,7 @@ export function App() {
   const [summarySettingsDirty, setSummarySettingsDirty] = useState(false);
   const settingsDestination=useRef<(()=>void)|undefined>(undefined);
   const [confirmSettingsClose, setConfirmSettingsClose] = useState(false);
+  const [historySaveId, setHistorySaveId] = useState<string>();
   const [deleting, setDeleting] = useState<SaveSummary>();
   const [deletedTicket, setDeletedTicket] = useState<SaveSummary>();
   // 存档备份：导入对话框（手机端先调起系统文件选择）、导出全部确认、手机分享。
@@ -151,6 +154,7 @@ export function App() {
       }
       setLoaded(undefined);
       setLoading(true);
+      setHistorySaveId(undefined);
       setRoute(window.location.hash);
     };
     window.addEventListener('hashchange', changed);
@@ -299,8 +303,9 @@ export function App() {
       // Deletion has committed. A later refresh failure must not claim it rolled back.
       try { acceptList(await repository.list()); }
       catch { setListError(listFailure); setError(listFailure); }
-    } catch {
-      setDeleteError('删除失败，存档可能已更新或存储不可用。请刷新列表后重试；本次未删除数据。');
+    } catch (error) {
+      setDeleteError(error instanceof DataError && error.code === 'HISTORY_RECOVERY_REQUIRED'
+        ? error.message : '删除失败，存档可能已更新或存储不可用。请刷新列表后重试；本次未删除数据。');
     } finally {
       lock.current = false;
       setBusy(false);
@@ -469,7 +474,7 @@ export function App() {
       ) : (
         !desktopUi ? <MobileHomeScreen saves={saves} active={active?.saveId} repository={repository}
           loading={loading} busy={busy || backupExport.exporting} blocked={settingsOpen || Boolean(deleting) || Boolean(notices.kind) || Boolean(importing)}
-          onImport={openImport} onExport={save => save.status === 'readable' && void exportBackups([save.saveId])} backupExporting={backupExport.exporting}
+          onHistory={setHistorySaveId} onImport={openImport} onExport={save => save.status === 'readable' && void exportBackups([save.saveId])} backupExporting={backupExport.exporting}
           backupOf={backupOf} noticeAction={shareAction} backupReminder={loading ? undefined : backupReminder}
           hasDraft={hasDraft} notice={saveNotice} listError={listError} notices={<NoticeLinks onOpen={notices.open}/>}
           deletion={deletedTicket} onVoidShown={()=>setDeletedTicket(undefined)}
@@ -489,6 +494,7 @@ export function App() {
                     selected={save.status === 'readable' && active?.saveId === save.saveId} repository={repository}
                     backup={backupOf(save)} exporting={backupExport.exporting}
                     onExport={save.status === 'readable' ? () => void exportBackups([save.saveId]) : undefined}
+                    onHistory={save.status === 'readable' ? () => setHistorySaveId(save.saveId) : undefined}
                     onOpen={openSave} onSelect={selectSave} onDelete={() => requestDelete(save)} />
                 ))}
 
@@ -497,6 +503,12 @@ export function App() {
       )}
       {!gameRoute && route !== '#create' && <input ref={importInput} type="file" accept=".json,application/json" hidden aria-label="选择备份文件"
         onChange={event => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) setImporting({ file }); }} />}
+      {historySaveId && repository && <Suspense fallback={<Dialog title="历史存档" onClose={() => setHistorySaveId(undefined)}><p>正在打开历史存档…</p></Dialog>}>
+        <HistorySaves repository={repository} saveId={historySaveId} settings={settings} onClose={() => setHistorySaveId(undefined)}
+          onRestored={result => {
+            setHistorySaveId(undefined); openSave(result.state.saveId, authorizeHistoryStart(result.state, result.draft));
+          }}/>
+      </Suspense>}
       {importing && repository && <BackupImportDialog repository={repository} file={importing.file}
         onClose={() => setImporting(undefined)} onImported={backupImported} />}
       {exportAllOpen && <Dialog title="导出全部存档" small feedback="info" seal="备"
@@ -504,7 +516,7 @@ export function App() {
         <p>把 {readableSaves.length} 份可读取的存档打包成一个备份文件。{saves.length > readableSaves.length && '无法读取的存档不会打包，请用它卡片上的「导出原始数据」。'}</p>
         <ul className="dialog-consequences">
           <li>包含：游戏进度、未结算的草稿</li>
-          <li>不包含：AI 密钥、渠道与设置、撤回记录</li>
+          <li>不包含：AI 密钥、渠道与设置、撤回记录、手动历史收藏（请单独导出节点）</li>
         </ul>
         <div className="dialog-actions feedback-dialog-actions">
           <button disabled={backupExport.exporting} onClick={() => setExportAllOpen(false)}>取消</button>
@@ -529,9 +541,11 @@ export function App() {
             if (!busy) setDeleting(undefined);
           }}
         >
-          <p>将永久删除「{deleting.title}」及其关联草稿、回合提交回执。此操作无法撤销。</p>
+          <p>{deleting.status === 'readable'
+            ? `将永久删除「${deleting.title}」及其关联草稿、回合提交回执、全部自动历史和手动收藏。此操作无法撤销，请先导出重要历史节点。`
+            : `仅在没有关联手动收藏时，才允许永久删除「${deleting.title}」及其草稿、回合提交回执和自动历史。此操作无法撤销。`}</p>
           <p className="save-record-key">存档记录 ID：{saveKeyText(deleting.storageKey)}</p>
-          {deleting.status === 'unreadable' && <p>此存档无法读取，建议取消并先导出原始数据。</p>}
+          {deleting.status === 'unreadable' && <p>此存档无法读取，建议取消并先导出主存档原始数据。{rawSaveHistoryNotice}</p>}
           {deleteError && <Feedback role="alert" level="err" mobileAs="p">{deleteError}</Feedback>}
           <div className="dialog-actions">
             {desktopUi&&<button disabled={busy} onClick={() => setDeleting(undefined)}>

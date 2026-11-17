@@ -1,16 +1,16 @@
 import { CITY, saveCity, skyline } from './home/skyline';
 import { useRawSaveExport } from './home/useRawSaveExport';
 import type { SaveRepository } from '../services/storage/saveRepository';
-import { saveKeyText } from '../services/storage/saveManagement';
+import { rawSaveHistoryNotice, saveKeyText } from '../services/storage/saveManagement';
 import type { SaveSummary } from '../services/storage/saveManagement';
 import { dateTime } from './panels/playerView';
 import type { BackupStatus } from './home/backupStatus';
 
-export function SaveCard({ save, index, selected, repository, backup, exporting: backupExporting = false, onOpen, onSelect, onDelete, onExport }: {
+export function SaveCard({ save, index, selected, repository, backup, exporting: backupExporting = false, onOpen, onSelect, onDelete, onExport, onHistory }: {
   save: SaveSummary; index: number; selected: boolean; repository?: SaveRepository;
   /** 只存在本机的备份状态；无法读取的存档没有。 */
   backup?: BackupStatus; exporting?: boolean;
-  onOpen: (id: string) => void; onSelect: (id: string) => void; onDelete: () => void; onExport?: () => void;
+  onOpen: (id: string) => void; onSelect: (id: string) => void; onDelete: () => void; onExport?: () => void; onHistory?: () => void;
 }) {
   const {exporting,notice,exportRaw} = useRawSaveExport(repository, save.storageKey);
   const city = saveCity(save.title);
@@ -29,11 +29,12 @@ export function SaveCard({ save, index, selected, repository, backup, exporting:
     {save.status === 'unreadable' && <>
       <p className="save-record-key keyline">存档记录 ID：{saveKeyText(save.storageKey)}</p>
       {save.saveId && save.saveId !== save.storageKey && <p className="save-record-key keyline">内容中的存档 ID：{save.saveId}</p>}
-      <p className="bad-note">当前版本无法读取这条记录。其他存档不受影响；可先导出原始数据，再决定是否删除。</p>
+      <p className="bad-note">当前版本无法读取这条记录。其他存档不受影响；可先导出主存档原始数据。{rawSaveHistoryNotice}</p>
     </>}
     <div className="save-card-actions card-actions">
       {save.status === 'readable' ? <>
         <button className="open" onClick={() => onOpen(save.saveId)}>读取存档 ↗</button>
+        {onHistory && <button disabled={!repository} onClick={onHistory}>历史存档</button>}
         {onExport && <button className="export" disabled={backupExporting || !repository} onClick={onExport}>导出备份</button>}
         {!selected && <button onClick={() => onSelect(save.saveId)}>选择</button>}
       </> : <button disabled={exporting || !repository} onClick={() => void exportRaw()}>{exporting ? '正在导出…' : '导出原始数据'}</button>}

@@ -1,0 +1,107 @@
+/* History-only palette: opaque reading surfaces keep contrast measurable in both themes. */
+.app-shell dialog.modal.history-saves {
+ --history-bg:#141a17; --history-card:#1c231e; --history-text:#eee6d6; --history-muted:#c1b49b;
+ --history-line:#97825c; --history-gold:#e0c17e; --history-selected:#302b1e;
+ --history-danger:#f1b49f; --history-danger-bg:#301b17; --history-danger-line:#c78972;
+ --text:var(--history-text); --muted:var(--history-muted); --dim:var(--history-muted); --gold:var(--history-gold); --prose:var(--history-text);
+ background:var(--history-bg);color:var(--history-text);color-scheme:dark;
+ border:1px solid var(--history-line);border-top:3px solid var(--history-gold);padding:0;
+ box-shadow:0 24px 70px #0008;isolation:isolate;
+}
+:root[data-appearance=day] .app-shell dialog.modal.history-saves {
+ --history-bg:#e9e1cf; --history-card:#f7f1e5; --history-text:#30291f; --history-muted:#66563b;
+ --history-line:#897047; --history-gold:#73531b; --history-selected:#ded0ae;
+ --history-danger:#873827; --history-danger-bg:#f5e5dc; --history-danger-line:#a15a43;
+ color-scheme:light;
+}
+.app-shell dialog.modal.history-saves>.modal-heading {background:var(--history-bg);color:var(--history-text);border-bottom:1px solid var(--history-line);padding:20px 26px;}
+.app-shell dialog.modal.history-saves>.modal-heading :is(h2,button) {color:var(--history-text);}
+dialog.history-saves .modal-heading h2 {font-family:var(--font-title);letter-spacing:.14em;}
+dialog.history-saves .modal-body {overflow-y:auto;min-height:0;padding:20px 26px 28px;scrollbar-gutter:stable;}
+dialog.history-saves :is(label,p,h3,summary,dt,dd) {color:inherit;overflow-wrap:anywhere;}
+dialog.history-saves p {line-height:1.75;margin:.65rem 0;font-size:14px;}
+dialog.history-saves h3 {font-family:var(--font-title);font-size:19px;line-height:1.5;letter-spacing:.04em;margin:0 0 8px;}
+dialog.history-saves label {display:grid;gap:8px;margin:12px 0;font-size:14px;}
+dialog.history-saves :is(input,select,textarea) {width:100%;min-width:0;color:var(--history-text);background:var(--history-card);border:1px solid var(--history-line);border-radius:6px;padding:10px 12px;}
+dialog.history-saves textarea {min-height:6rem;resize:vertical;}
+dialog.history-saves button {color:var(--history-text);background:var(--history-card);border:1px solid var(--history-line);border-radius:6px;min-height:44px;padding:9px 16px;font-size:13px;line-height:1.5;white-space:normal;overflow-wrap:anywhere;}
+dialog.history-saves button.primary {color:#241b0e;background:#dfbf78;border-color:var(--history-line);font-weight:600;}
+dialog.history-saves button.history-danger {color:var(--history-danger);background:var(--history-danger-bg);border-color:var(--history-danger-line);}
+dialog.history-saves button:hover:not(:disabled) {box-shadow:inset 0 0 0 1px currentColor;}
+dialog.history-saves button:disabled {opacity:.58;cursor:not-allowed;}
+dialog.history-saves :focus-visible {outline:2px solid var(--history-gold);outline-offset:3px;}
+dialog.history-saves .history-actions {display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0;}
+dialog.history-saves .history-toolbar {display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:16px 0;}
+dialog.history-saves .history-toolbar .history-actions {margin:0;}
+dialog.history-saves .history-tabs {display:flex;gap:4px;border-bottom:1px solid var(--history-line);padding-bottom:6px;}
+dialog.history-saves .history-tabs button {background:transparent;border-color:transparent;border-radius:4px;}
+dialog.history-saves .history-tabs [aria-pressed=true] {background:var(--history-selected);border-color:var(--history-line);font-weight:600;color:var(--history-gold);}
+dialog.history-saves .history-storage {font-size:13px;color:var(--history-muted);border-bottom:1px solid var(--history-line);padding-bottom:10px;}
+dialog.history-saves summary {cursor:pointer;padding:8px 0;line-height:1.6;}
+dialog.history-saves .history-storage p {font-size:13px;}
+dialog.history-saves .history-node-list {padding:0;list-style:none;display:grid;gap:14px;margin:20px 0;}
+dialog.history-saves .history-node-list>li {display:grid;grid-template-columns:58px minmax(0,1fr);column-gap:18px;row-gap:10px;padding:20px;background:var(--history-card);border:1px solid var(--history-line);border-left:3px solid var(--history-line);border-radius:7px;}
+dialog.history-saves .history-node-list>li[data-kind=manual] {border-left-color:var(--history-gold);}
+dialog.history-saves .history-node-list>li[data-kind=old] {border-left-color:var(--history-danger-line);}
+dialog.history-saves .history-turn {align-self:start;text-align:center;border:1px double var(--history-line);padding:8px 2px;color:var(--history-gold);font-family:var(--font-title);}
+dialog.history-saves .history-turn span {display:block;font-size:10px;letter-spacing:.12em;}
+dialog.history-saves .history-turn b {display:block;font-size:25px;line-height:1.4;font-family:var(--font-mono);overflow-wrap:anywhere;}
+dialog.history-saves .history-node-content {min-width:0;}
+dialog.history-saves .history-badge {display:inline-block;color:var(--history-gold);font-size:11px;letter-spacing:.1em;line-height:1.6;margin-bottom:6px;}
+dialog.history-saves [data-kind=old] .history-badge {color:var(--history-danger);}
+dialog.history-saves .history-node-list p {color:var(--history-muted);margin:4px 0;font-size:13px;}
+dialog.history-saves .history-node-list .history-meta {font-size:12px;}
+dialog.history-saves .history-node-list details {font-size:12px;color:var(--history-muted);}
+dialog.history-saves .history-source {word-break:break-all;}
+dialog.history-saves .history-node-actions {grid-column:2;margin:0;padding-top:8px;border-top:1px solid var(--history-line);}
+dialog.history-saves :is(.history-warning,.history-notice) {padding:14px 18px;border:1px solid var(--history-line);border-left:3px solid var(--history-gold);background:var(--history-card);border-radius:4px;}
+dialog.history-saves .history-notice {font-size:13px;margin-top:0;}
+dialog.history-saves .history-warning {margin:18px 0;border-left-color:var(--history-danger-line);}
+dialog.history-saves .history-warning h3 {color:var(--history-danger);}
+dialog.history-saves .history-edit {background:var(--history-card);padding:16px;border:1px solid var(--history-line);border-radius:6px;margin:16px 0;}
+dialog.history-saves .history-edit>button {margin:4px 8px 4px 0;}
+dialog.history-saves .history-world {border-top:1px solid var(--history-line);margin-top:24px;padding-top:18px;}
+dialog.history-saves .history-story {white-space:pre-wrap;line-height:1.9;max-width:46rem;margin:24px auto;font-size:16px;}
+dialog.history-saves .history-world .pf-entry button:last-child {display:none;}
+@media(min-width:901px) {
+ .app-shell dialog.modal.history-saves {width:min(1080px,calc(100vw - 48px));height:min(880px,calc(100dvh - 48px));max-height:calc(100dvh - 48px);}
+}
+@media(max-width:900px) {
+ .app-shell dialog.modal.history-saves>.modal-heading {padding:8px 16px 14px;}
+ dialog.history-saves .modal-body {padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 24px);}
+ dialog.history-saves .mobile-sheet-grab i {background:var(--history-line);}
+ dialog.history-saves .history-toolbar {align-items:stretch;gap:12px;}
+ dialog.history-saves .history-tabs {width:100%;}
+ dialog.history-saves .history-tabs button {flex:1;}
+ dialog.history-saves .history-toolbar>.history-actions {display:grid;grid-template-columns:1fr 1fr;width:100%;}
+ dialog.history-saves .history-node-list>li {padding:14px;column-gap:12px;grid-template-columns:42px minmax(0,1fr);}
+ dialog.history-saves .history-turn {padding:6px 1px;}
+ dialog.history-saves .history-turn b {font-size:22px;}
+ dialog.history-saves .history-node-content h3 {font-size:17px;}
+ dialog.history-saves .history-node-actions {grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;}
+ dialog.history-saves .history-warning>.history-actions {display:grid;grid-template-columns:1fr;width:100%;}
+ dialog.history-saves .history-warning>button {margin:4px 0;width:100%;}
+ dialog.history-saves .history-node-content summary {min-height:44px;}
+ dialog.history-saves :is(input,select,textarea) {font-size:16px;}
+ dialog.history-saves .history-notice {padding:12px 14px;}
+}
+/* Existing shared panels are read-only here; their local palette cannot inherit night money text on paper. */
+dialog.history-saves .history-world .metric-row {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px;}
+dialog.history-saves .history-world .metric {min-width:0;background:var(--history-card);border:1px solid var(--history-line);padding:14px;color:var(--history-text);border-radius:6px;}
+dialog.history-saves .history-world .metric :is(b,em,p) {color:var(--history-text);overflow-wrap:anywhere;}
+dialog.history-saves .history-world .metric small {color:var(--history-muted);}
+.app-shell dialog.history-saves button:hover:not(:disabled) {color:var(--history-text);background:var(--history-card);}
+.app-shell dialog.history-saves button.primary:hover:not(:disabled) {color:#241b0e;background:#dfbf78;}
+.app-shell dialog.history-saves button.history-danger:hover:not(:disabled) {color:var(--history-danger);background:var(--history-danger-bg);}
+@media(min-width:1100px) {
+ dialog.history-saves .history-node-list>li {grid-template-columns:58px minmax(0,1fr) 238px;}
+ dialog.history-saves .history-node-actions {grid-column:3;grid-row:1;align-self:center;display:grid;grid-template-columns:1fr 1fr;border-top:0;padding-top:0;}
+}
+@media(max-width:900px) {
+ .app-shell dialog.modal.history-saves>.modal-heading>button {min-height:44px;min-width:44px;height:44px;width:44px;}
+}
+/* Change the paper palette atomically; shared button color transitions can briefly mix day text with a night fill. */
+dialog.history-saves :is(button,input,select,textarea) {transition:box-shadow .15s ease;}
+@media(prefers-reduced-motion:reduce) {dialog.history-saves :is(button,input,select,textarea) {transition:none;}}
+.app-shell dialog.history-saves button:hover:not(:disabled) {border-color:var(--history-line);}
+.app-shell dialog.history-saves button.history-danger:hover:not(:disabled) {border-color:var(--history-danger-line);}

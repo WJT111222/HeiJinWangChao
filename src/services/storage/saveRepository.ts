@@ -1,3 +1,5 @@
+import { HistoryRepository } from './history/repository';
+import { clearManualHistory, historyStores } from './history/model';
 import { setNpcImportance } from '../../domain/npc/profiles';
 import { timelineStores, newSaveControl, readControl, writeControl, controlInstance, clearUndoRecords, recordUndo, inspectUndo, restoreSnapshot, assertMemoryLineage, readTurnComparison } from './turnUndo';
 import type { MemoryLineage, UndoStatus, TurnComparison } from './turnUndo';
@@ -27,10 +29,12 @@ import { backupSummary, compatibleDraft } from './backup';
 import type { BackupEntry } from './backup';
 
 /** Storage connection boundary, independent of GameState/backup format versions.
+ * V5 adds separate history metadata/payload stores, preserving all V4 records.
+ * Versionchange closes older clients before history writes become available.
  * V4 closes deployed V3 clients via their existing versionchange handler before
  * imports become available. Old V3 code cannot reopen and bypass instance CAS.
- * No store, index or saved payload changes are required for this upgrade. */
-export const saveDatabaseVersion = 4;
+ * That V4 upgrade required no store, index or saved payload changes. */
+export const saveDatabaseVersion = 5;
 
 declare const confirmationBrand: unique symbol;
 /**
@@ -181,7 +185,8 @@ async function deleteRecords(tx: IDBTransaction, key: IDBValidKey): Promise<void
 }
 
 export class SaveRepository {
-  private constructor(private readonly database: IDBDatabase) {}
+  readonly history: HistoryRepository;
+  private constructor(private readonly database: IDBDatabase) { this.history = new HistoryRepository(database); }
 
   static open(name = 'heijinwangchao', factory: IDBFactory = globalThis.indexedDB): Promise<SaveRepository> {
     if (!factory) return Promise.reject(new DataError('STORAGE_UNAVAILABLE', '当前环境不支持 IndexedDB'));
@@ -190,6 +195,8 @@ export class SaveRepository {
       const operation = factory.open(name, saveDatabaseVersion);
       operation.onupgradeneeded = () => {
         const db = operation.result;
+        for (const name of historyStores) if (!db.objectStoreNames.contains(name))
+          db.createObjectStore(name, { keyPath: ['saveId', 'id'] }).createIndex('saveId', 'saveId');
         if (!db.objectStoreNames.contains('saves')) db.createObjectStore('saves', { keyPath: 'saveId' });
         if (!db.objectStoreNames.contains('drafts')) db.createObjectStore('drafts', { keyPath: 'saveId' });
         if (!db.objectStoreNames.contains('turnUndo'))
@@ -514,10 +521,18 @@ export class SaveRepository {
   // Recheck within the write transaction: never delete a record that has become readable.
   async deleteUnreadable(storageKey: IDBValidKey): Promise<void> {
     requireData(storageKey !== undefined && storageKey !== null, 'INVALID_KEY', '未选择存档记录');
-    return transaction(this.database, timelineStores, 'readwrite', async tx => {
+    return transaction(this.database, [...timelineStores, ...historyStores], 'readwrite', async tx => {
       const records = await rawRecords(tx.objectStore('saves'), storageKey);
       requireData(records.length === 1, 'NOT_FOUND', '此存档已不存在，请刷新列表。');
       requireData(listRecord(storageKey, records[0].value).status === 'unreadable', 'SAVE_READABLE', '此存档现在可以读取，请刷新列表后重新选择。');
+      // V1 raw export does not contain binary history payloads. Until a reversible
+      // rescue format exists, even orphaned/corrupt history must prevent deletion.
+      // Check both indexes by the physical save key in this same write transaction;
+      // neither a successful raw download nor unreadable metadata permits deletion.
+      for (const name of historyStores) requireData(
+        await request(tx.objectStore(name).index('saveId').count(storageKey)) === 0,
+        'HISTORY_RECOVERY_REQUIRED',
+        '已阻止删除：此存档仍有关联的手动历史收藏或残留载荷，原始数据导出不包含这些收藏。本次未删除任何数据，请保留本机数据并联系维护者恢复。');
       await deleteRecords(tx, storageKey);
     });
   }
@@ -639,10 +654,11 @@ export class SaveRepository {
   async delete(saveId: string, expectedRevision: number, expectedInstance: string | null = null): Promise<void> {
     IdSchema.parse(saveId); CountSchema.parse(expectedRevision);
     if (expectedInstance !== null) IdSchema.parse(expectedInstance);
-    return transaction(this.database, timelineStores, 'readwrite', async (tx) => {
+    return transaction(this.database, [...timelineStores, ...historyStores], 'readwrite', async (tx) => {
       const current = await readStoredState(tx, saveId);
       requireData(await storedInstance(tx, saveId) === expectedInstance, 'REVISION_CONFLICT', replacedMessage);
       requireData(current.revision === expectedRevision, 'REVISION_CONFLICT', '删除时存档版本已变化');
+      await clearManualHistory(tx, saveId);
       await deleteRecords(tx, saveId);
     });
   }

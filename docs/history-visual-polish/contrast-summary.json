@@ -1,0 +1,74 @@
+[
+  {
+    "platform": "desktop",
+    "theme": "day",
+    "viewport": "1440x900",
+    "textMin": 4.607318191460927,
+    "buttonBoundaryMin": 3.6079225515736684,
+    "fieldBoundaryMin": 3.6079225515736684,
+    "buttonHeightMin": 44
+  },
+  {
+    "platform": "mobile",
+    "theme": "day",
+    "viewport": "390x844",
+    "textMin": 4.607318191460927,
+    "buttonBoundaryMin": 3.6079225515736684,
+    "fieldBoundaryMin": 3.6079225515736684,
+    "buttonHeightMin": 44
+  },
+  {
+    "platform": "desktop",
+    "theme": "day",
+    "viewport": "901x600",
+    "textMin": 4.607318191460927,
+    "buttonBoundaryMin": 3.6079225515736684,
+    "fieldBoundaryMin": 3.6079225515736684,
+    "buttonHeightMin": 44
+  },
+  {
+    "platform": "mobile",
+    "theme": "day",
+    "viewport": "375x667",
+    "textMin": 4.607318191460927,
+    "buttonBoundaryMin": 3.6079225515736684,
+    "fieldBoundaryMin": 3.6079225515736684,
+    "buttonHeightMin": 44
+  },
+  {
+    "platform": "desktop",
+    "theme": "night",
+    "viewport": "1440x900",
+    "textMin": 7.847938684387089,
+    "buttonBoundaryMin": 4.328087438655195,
+    "fieldBoundaryMin": 4.759708041873493,
+    "buttonHeightMin": 44
+  },
+  {
+    "platform": "mobile",
+    "theme": "night",
+    "viewport": "390x844",
+    "textMin": 7.847938684387089,
+    "buttonBoundaryMin": 4.328087438655195,
+    "fieldBoundaryMin": 4.759708041873493,
+    "buttonHeightMin": 44
+  },
+  {
+    "platform": "desktop",
+    "theme": "night",
+    "viewport": "901x600",
+    "textMin": 7.847938684387089,
+    "buttonBoundaryMin": 4.328087438655195,
+    "fieldBoundaryMin": 4.759708041873493,
+    "buttonHeightMin": 44
+  },
+  {
+    "platform": "mobile",
+    "theme": "night",
+    "viewport": "375x667",
+    "textMin": 7.847938684387089,
+    "buttonBoundaryMin": 4.328087438655195,
+    "fieldBoundaryMin": 4.759708041873493,
+    "buttonHeightMin": 44
+  }
+]

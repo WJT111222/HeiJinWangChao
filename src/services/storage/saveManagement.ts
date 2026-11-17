@@ -10,6 +10,8 @@ export type UnreadableSaveSummary = {
   status: 'unreadable'; storageKey: IDBValidKey; title: string; saveId?: string; updatedAt?: string;
 };
 export type SaveSummary = ReadableSaveSummary | UnreadableSaveSummary;
+/** Recovery V1 exports only the original timeline stores, never binary collections. */
+export const rawSaveHistoryNotice = '原始数据导出不包含手动历史收藏。有关联收藏时禁止删除，请保留本机数据并联系维护者恢复。';
 export interface RawSaveRecord { key: IDBValidKey; value: unknown }
 export interface RawSaveExport {
   format: 'heijin-raw-save'; version: 1;

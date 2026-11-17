@@ -20,7 +20,7 @@ export function useRawSaveExport(repository: SaveRepository | undefined, storage
       } finally {
         link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
       }
-      setNotice('已发起原始数据下载，请检查浏览器下载记录。数据库未修改。');
+      setNotice('已发起主存档原始数据下载，不含手动历史收藏，请检查浏览器下载记录。数据库未修改；有关联收藏的损坏主档仍禁止删除。');
     } catch (error) {
       setNotice(error instanceof DataError && error.code === 'RAW_EXPORT_FORMAT'
         ? error.message : '导出失败，未生成文件，原始数据未修改。请检查浏览器存储权限后重试。');
