@@ -170,6 +170,7 @@ describe('M3-P1 静态资源注册（不是提示词组装或 API 请求）', ()
         'perspective',
         'style',
         'minNarrativeChars',
+        'maxNarrativeChars',
         'noControl',
         'naturalProse',
         'actionOptions',
@@ -180,7 +181,8 @@ describe('M3-P1 静态资源注册（不是提示词组装或 API 请求）', ()
     const toggles = promptManifest.modules
       .filter((m) => m.toggle !== null)
       .map((m) => m.toggle!.split(':')[0]);
-    expect([...new Set(toggles)].sort()).toEqual(Object.keys(defaultSettings().prompts).sort());
+    // 正文建议上限与最低字数同属 writing.min_length 一个模块（toggle 记在 minNarrativeChars 上）。
+    expect([...new Set(toggles)].sort()).toEqual(Object.keys(defaultSettings().prompts).filter((key) => key !== 'maxNarrativeChars').sort());
     expect(JSON.stringify(promptManifest.globalDefaults)).not.toMatch(/nsfw/i);
     for (const id of ['writing.nsfw', 'writing.intimacy_boundaries']) {
       expect(moduleById(id)).toMatchObject({
@@ -286,7 +288,7 @@ describe('正式文本来源与旧架构保留', () => {
     for (const module of promptManifest.modules.filter((m) => m.kind === 'prompt')) {
       const record = sources.resources[module.path as keyof typeof sources.resources];
       expect(record, module.path).toBeDefined();
-      const latest = ['promptCacheOrderingV1','legacyCleanupV10','storyTagCompatibilityV1','openingNpcEligibility','variablesContractStability','worldCommandStability','worldNpcCreationContract','organizationFinalAcceptance','npcMemoryContentQuality','npcContextTiersV2','npcImportanceV2','npcUnifiedMemoryV2','npcV2Foundation','storyEventArbitrationV2','worldEventStagesV2','worldNarrativeConditions','historyTimelineV2','contextV2','memorySummaryV2']
+      const latest = ['narrativeLengthTiers','promptCacheOrderingV1','legacyCleanupV10','storyTagCompatibilityV1','openingNpcEligibility','variablesContractStability','worldCommandStability','worldNpcCreationContract','organizationFinalAcceptance','npcMemoryContentQuality','npcContextTiersV2','npcImportanceV2','npcUnifiedMemoryV2','npcV2Foundation','storyEventArbitrationV2','worldEventStagesV2','worldNarrativeConditions','historyTimelineV2','contextV2','memorySummaryV2']
         .map(key=>Reflect.get(record,key)).find(value=>value && typeof value==='object' && 'sha256' in value);
       if(latest) expect(sha(text(module.path)),module.path).toBe(Reflect.get(latest,'sha256'));
       if (record.treatment === 'verbatim')

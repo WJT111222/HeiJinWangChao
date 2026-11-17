@@ -1,3 +1,4 @@
+import { narrativeRange } from './model';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { promptManifest } from '../../prompts/manifest';
 import { moduleActivation, selectPromptModules, comparePromptModes } from '../../prompts/selection';
@@ -71,7 +72,7 @@ function moduleState(item: PromptModule, prompts: PromptSettings): { kind: 'swit
   if (item.toggle) {
     const [field, value] = item.toggle.split(':');
     if ((switchFields as readonly string[]).includes(field)) return { kind: 'switch', field: field as SwitchField };
-    if (field === 'minNarrativeChars') return { kind: 'always', label: `≥${prompts.minNarrativeChars} 字` };
+    if (field === 'minNarrativeChars') return { kind: 'always', label: `${narrativeRange(prompts).min}～${narrativeRange(prompts).max} 字` };
     return String(prompts[field as keyof PromptSettings]) === value ? { kind: 'current', label: '当前' } : { kind: 'unused', label: '未选用' };
   }
   if (item.activation === 'relevant-domain') return { kind: 'ondemand', label: '按需' };

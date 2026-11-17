@@ -1256,7 +1256,11 @@
     "writing/min_length.md": {
       "origin": "baseline",
       "sourceSha256": "2fa17dbc24358bd3fd739d8c5db6dc43b7bc24972d05648076ac45ea12a794d4",
-      "treatment": "verbatim"
+      "treatment": "narrative-length-tiers",
+      "narrativeLengthTiers": {
+        "notes": "正文篇幅改为低/中/高/自定义档位：保留硬性最低字数与原计数口径，新增只写进提示词的建议上限 {{maxNarrativeChars}}；不改输出协议与校验。",
+        "sha256": "059aae2ef2c17eb7053879909c7b4bebbceef9a4e1e7fde10875968157c35993"
+      }
     },
     "writing/no_control.md": {
       "origin": "baseline",

@@ -127,7 +127,7 @@ export function overlapLength(base: string, next: string, max = OVERLAP_MAX): nu
  * 续写请求末尾追加的指令（user 消息）；紧跟在作为 assistant 消息的已写部分之后。
  * 每次请求都按当前已写部分与本次设置重新计算字数，告诉模型已写多少、至少还需多少；不要求凑到某个精确字数。
  */
-export function continuationInstruction(options: { actionOptions: boolean; minNarrativeChars: number; partial: string }): string {
+export function continuationInstruction(options: { actionOptions: boolean; minNarrativeChars: number; maxNarrativeChars?: number; partial: string }): string {
   const tags = options.actionOptions ? '<短期记忆>、<变量规划>、<行动选项>' : '<短期记忆>、<变量规划>';
   const min = options.minNarrativeChars, narrative = partialNarrative(options.partial), need = Math.max(0, min - narrative.chars);
   const progress = !narrative.started
@@ -137,13 +137,16 @@ export function continuationInstruction(options: { actionOptions: boolean; minNa
       : need > 0
         ? `正文字数：<正文> 目前已写 ${narrative.chars} 字（只计非空白字符），本回合至少需要 ${min} 字，还需至少约 ${need} 字。请自然推进场景直到合适的收束点，不必恰好停在某个字数，也不要为凑字数重复或灌水。`
         : `正文字数：<正文> 目前已写 ${narrative.chars} 字，已达到最低 ${min} 字；把当前场景自然收尾即可，不必扩写。`;
+  // 建议上限只作目标（程序不因超出判失败）；正文已闭合时不再提。
+  const ceiling = !narrative.closed && options.maxNarrativeChars && options.maxNarrativeChars > min
+    ? `本回合正文建议上限约 ${options.maxNarrativeChars} 字，不要明显超出。` : '';
   return [
     '【续写】你的上一条回复在中途被截断，上面那条助手消息就是你已经输出的全部内容。请直接从中断处接着写：',
     '1. 不要重复已经写过的任何文字，不要重新输出 <thinking>，也不要从头开始；',
     narrative.closed ? '2. <正文> 已经结束，不要在 </正文> 之后再写任何正文；' : '2. 如果 <正文> 还没有结束，先把正文自然地写完并输出 </正文>；',
     `3. 然后按本阶段的格式要求，依次补齐还没输出的结构标签（${tags}），每个都要完整闭合；`,
     '4. 只输出续写部分，第一个字符就是接在断点后面的内容，不加任何说明。',
-    progress,
+    progress + ceiling,
   ].join('\n');
 }
 

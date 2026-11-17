@@ -1,12 +1,39 @@
 import { z } from 'zod';
 import { SummarySettingsSchema, defaultSummarySettings } from '../../domain/memories/configuration';
 export const settingsKey = 'heijin.settings.v1';
+
+/**
+ * 正文篇幅档位：最低字数是程序硬性检查（不足判失败重写），上限只写进提示词作为目标，写多了照常通过。
+ * 自定义 = 两个数不等于任何一档。
+ */
+export const NARRATIVE_LENGTH_TIERS = [
+  { id: 'low', label: '低', min: 1000, max: 2000 },
+  { id: 'mid', label: '中', min: 4000, max: 5000 },
+  { id: 'high', label: '高', min: 8000, max: 10000 },
+] as const;
+export type NarrativeLengthTier = (typeof NARRATIVE_LENGTH_TIERS)[number]['id'] | 'custom';
+export const NARRATIVE_CHARS_LIMIT = 100000;
+export function narrativeLengthTier(prompts: { minNarrativeChars: number; maxNarrativeChars?: number }): NarrativeLengthTier {
+  const { min, max } = narrativeRange(prompts);
+  return NARRATIVE_LENGTH_TIERS.find((tier) => tier.min === min && tier.max === max)?.id ?? 'custom';
+}
+/** 实际使用的篇幅区间：建议上限缺失时按最低字数推出，且不低于最低字数。 */
+export function narrativeRange(prompts: { minNarrativeChars: number; maxNarrativeChars?: number }): { min: number; max: number } {
+  const min = prompts.minNarrativeChars;
+  return { min, max: Math.max(min, prompts.maxNarrativeChars ?? defaultMaxNarrativeChars(min)) };
+}
+/** 旧设置只有最低字数：建议上限取最低字数的 1.25 倍（取整到百位），且不少于 2000。 */
+export function defaultMaxNarrativeChars(min: number): number {
+  return Math.min(NARRATIVE_CHARS_LIMIT, Math.max(2000, Math.ceil((min * 1.25) / 100) * 100));
+}
 export const SettingsSchema = z.strictObject({
   version: z.literal(1),
   prompts: z.strictObject({
     perspective: z.enum(['first', 'second', 'third']),
     style: z.literal('general'),
-    minNarrativeChars: z.number().int().positive().max(100000),
+    minNarrativeChars: z.number().int().positive().max(NARRATIVE_CHARS_LIMIT),
+    // 建议上限（可选）：读取一律经 narrativeRange，旧设置缺字段时按最低字数推出，低于最低字数时按最低字数处理。
+    maxNarrativeChars: z.number().int().positive().max(NARRATIVE_CHARS_LIMIT).optional(),
     noControl: z.boolean(),
     naturalProse: z.boolean(),
     actionOptions: z.boolean(),
@@ -39,7 +66,8 @@ export function defaultSettings(): Settings {
     prompts: {
       perspective: 'third',
       style: 'general',
-      minNarrativeChars: 1500,
+      minNarrativeChars: 1000,
+      maxNarrativeChars: 2000,
       noControl: true,
       naturalProse: true,
       actionOptions: true,

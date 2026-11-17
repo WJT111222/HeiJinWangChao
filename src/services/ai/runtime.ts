@@ -1,3 +1,4 @@
+import { narrativeRange } from '../../ui/settings/model';
 import { validateStoryEventInteractions } from '../../domain/events/interactions';
 import { AiError } from './errors';
 import { browserPromptOrder } from '../../prompts/order';
@@ -63,7 +64,8 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   const messages = continuation
     ? [...prompt.messages, { role: 'assistant' as const, content: continuation.partial },
       { role: 'user' as const, content: continuationInstruction({ actionOptions: captured.settings.prompts.actionOptions,
-        minNarrativeChars: captured.settings.prompts.minNarrativeChars, partial: continuation.partial }) }]
+        minNarrativeChars: captured.settings.prompts.minNarrativeChars, maxNarrativeChars: narrativeRange(captured.settings.prompts).max,
+        partial: continuation.partial }) }]
     : prompt.messages;
   const merged = (text: string) => continuation ? mergeContinuation(continuation.partial, text) : text;
   const responseId = stageResponses.begin({ saveId: captured.state.saveId, turnId: captured.draft?.turnId, stage: captured.stage, storyRevision: captured.draft?.storyRevision, protocol: snapshot.channel.protocol, baseSaveRevision: captured.state.revision,

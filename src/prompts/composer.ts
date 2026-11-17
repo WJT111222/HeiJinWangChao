@@ -1,3 +1,4 @@
+import { narrativeRange } from '../ui/settings/model';
 import { openingTimeSelection } from '../domain/openingTime';
 import { selectPromptModules } from './selection';
 import { projectPromptOrder } from './order';
@@ -75,6 +76,7 @@ async function compose(unchecked: ComposeInput) {
     worldClock: clock ?? '开局时间待确认（由本次正文按玩家设定或剧情确定）',
     worldWeekday: clock ? worldWeekday(clock) : '待开局日期确定后由程序计算',
     minNarrativeChars: input.settings.prompts.minNarrativeChars,
+    maxNarrativeChars: narrativeRange(input.settings.prompts).max,
     immediateMemoryTurns: input.settings.memory.immediateWindowSize,
     npcId: input.npcId,
     npcSummaryThreshold: input.npcSummaryThreshold,
@@ -118,6 +120,7 @@ async function compose(unchecked: ComposeInput) {
   const tail = formatTailMessage(input.stage, {
     actionOptions: input.settings.prompts.actionOptions,
     minNarrativeChars: input.settings.prompts.minNarrativeChars,
+    maxNarrativeChars: narrativeRange(input.settings.prompts).max,
   });
   if (confirmation) {
     const closing = tail ? `${tail}
