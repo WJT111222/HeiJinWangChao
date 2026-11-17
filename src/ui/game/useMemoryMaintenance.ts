@@ -9,7 +9,16 @@ import { DataError } from '../../domain/common';
 import { MemoryMaintenance } from '../../workflows/memoryMaintenance';
 import { MemorySummaryQueue } from '../../workflows/memorySummaryQueue';
 import type { SummaryFailure } from '../../workflows/memorySummaryQueue';
+import { summaryKinds } from '../../domain/memories/configuration';
 import type { SummaryKind } from '../../domain/memories/configuration';
+
+/** 仅队列判断自动维护资格的配置参与唤醒；不包含提示词正文或运行参数。 */
+export function memoryScheduleKey(settings: Settings) {
+  return JSON.stringify(summaryKinds.map(kind => {
+    const { automatic, threshold, batchSize } = settings.memory.summaries[kind];
+    return [automatic, threshold, batchSize];
+  }));
+}
 
 export function useMemoryMaintenance(repository: SaveRepository, saveId: string, settings: Settings, onSaved: (state: GameState) => void,
   onSettings?: (settings: Settings) => void) {
@@ -21,6 +30,8 @@ export function useMemoryMaintenance(repository: SaveRepository, saveId: string,
   const [notice, setNotice] = useState('');
   const current = useRef({ settings, onSaved, onSettings }); current.current = { settings, onSaved, onSettings };
   const queue = useRef<MemorySummaryQueue | undefined>(undefined);
+  const scheduleKey = memoryScheduleKey(settings);
+  const previousScheduleKey = useRef(scheduleKey);
   useEffect(() => {
     let mounted = true;
     const tasks = new MemorySummaryQueue({ saveId, storage: { getItem: key => localStorage.getItem(key), setItem: (key, value) => localStorage.setItem(key, value) },
@@ -47,11 +58,17 @@ export function useMemoryMaintenance(repository: SaveRepository, saveId: string,
       },
     });
     queue.current = tasks;
+    // 初始化已经唤醒一次；记录最新配置，避免后面的配置 Effect 再次触发。
+    previousScheduleKey.current = memoryScheduleKey(current.current.settings);
     void tasks.wake();
     const timer = setInterval(() => { void tasks.wake(); }, 60000);
     return () => { mounted = false; clearInterval(timer); tasks.stop(); runner.cancel(); if (queue.current === tasks) queue.current = undefined; };
   }, [repository, runner, saveId]);
-  useEffect(() => { void queue.current?.wake(); }, [settings]);
+  useEffect(() => {
+    if (previousScheduleKey.current === scheduleKey) return;
+    previousScheduleKey.current = scheduleKey;
+    void queue.current?.wake();
+  }, [scheduleKey]);
   async function run(automatic = false, kind: SummaryKind = 'short', npcId?: string) {
     if (automatic) await queue.current?.wake();
     else { setDismissed(value => value.filter(item => item !== kind)); await queue.current?.immediate(kind, npcId); }

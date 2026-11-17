@@ -1290,6 +1290,168 @@
       "placeholders": []
     },
     {
+      "id": "writing.style_jianghu",
+      "path": "writing/style_jianghu.md",
+      "title": "剧情风格：江湖义气",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": "style:jianghu",
+      "domain": null,
+      "characters": 835,
+      "version": "1.0.0-story-styles",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 223,
+      "orderGroup": "writing",
+      "reorderable": false,
+      "category": "writing",
+      "contentSha256": "d5e4dfa60ee084aea3c86defc8ca118a6b24a6a94725ff28e14775760037983c",
+      "placeholders": []
+    },
+    {
+      "id": "writing.style_noir",
+      "path": "writing/style_noir.md",
+      "title": "剧情风格：冷硬黑色",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": "style:noir",
+      "domain": null,
+      "characters": 753,
+      "version": "1.0.0-story-styles",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 223,
+      "orderGroup": "writing",
+      "reorderable": false,
+      "category": "writing",
+      "contentSha256": "9175d568da375d81a211f58606b9d263bea6f50680d224b06ade4bd3959ab85b",
+      "placeholders": []
+    },
+    {
+      "id": "writing.style_power",
+      "path": "writing/style_power.md",
+      "title": "剧情风格：权谋暗流",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": "style:power",
+      "domain": null,
+      "characters": 837,
+      "version": "1.0.0-story-styles",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 223,
+      "orderGroup": "writing",
+      "reorderable": false,
+      "category": "writing",
+      "contentSha256": "cfa1c281dfe131d3412bb0e479ad121cbb5c82d06853d37ebba7ceadbf415439",
+      "placeholders": []
+    },
+    {
+      "id": "writing.style_docu",
+      "path": "writing/style_docu.md",
+      "title": "剧情风格：纪实白描",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": "style:docu",
+      "domain": null,
+      "characters": 746,
+      "version": "1.0.0-story-styles",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 223,
+      "orderGroup": "writing",
+      "reorderable": false,
+      "category": "writing",
+      "contentSha256": "53540566b81f15561a3b50293019f0aba1d716f9c3074e7d52132c59fb863116",
+      "placeholders": []
+    },
+    {
+      "id": "writing.style_shuang",
+      "path": "writing/style_shuang.md",
+      "title": "剧情风格：快意爽文",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": "style:shuang",
+      "domain": null,
+      "characters": 840,
+      "version": "1.0.0-story-styles",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 223,
+      "orderGroup": "writing",
+      "reorderable": false,
+      "category": "writing",
+      "contentSha256": "677ec4b40e610e0117c97025cffbe5d3a278c34daabdeb1f55dab960b277302a",
+      "placeholders": []
+    },
+    {
+      "id": "writing.style_absurd",
+      "path": "writing/style_absurd.md",
+      "title": "剧情风格：荒诞喜剧",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": "style:absurd",
+      "domain": null,
+      "characters": 859,
+      "version": "1.0.0-story-styles",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 223,
+      "orderGroup": "writing",
+      "reorderable": false,
+      "category": "writing",
+      "contentSha256": "5a21908fb1acbbcc3fd5f5b3c8cb71619eb28e754db6af091718df2a6bd654a9",
+      "placeholders": []
+    },
+    {
       "id": "writing.min_length",
       "path": "writing/min_length.md",
       "title": "正文篇幅（硬性最低 + 建议上限）",

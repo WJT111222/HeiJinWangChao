@@ -258,3 +258,31 @@
 .app-shell .settings-layout .length-field .length-warn{color:#8A3A24!important}
 @media(max-width:1199px){.app-shell .settings-layout .settings-fields>.length-field{grid-template-columns:minmax(0,1fr);gap:.6rem}.app-shell .settings-layout .length-field-title{padding-top:0}}
 @media(max-width:520px){.app-shell .settings-layout .length-tiers{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* 剧情风格：电脑端七枚按钮（4 + 3）+ 下方一段当前说明；手机端竖排列表，说明在选中项内展开。 */
+.app-shell .settings-layout .settings-fields>.style-field{grid-column:1/-1;display:grid;grid-template-columns:minmax(9rem,40%) minmax(0,1fr);gap:1.2rem;align-items:start;padding:.85rem 0;border-bottom:1px dashed var(--hair,#2a26221a)}
+.app-shell .settings-layout .style-field-title{padding-top:.75rem;color:var(--text,#2B2723)}
+.app-shell .settings-layout .style-field-body{display:grid;gap:.6rem;min-width:0}
+.app-shell .settings-layout .style-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.45rem}
+.app-shell .settings-layout .style-item{border:1px solid #2a262233;border-radius:8px;background:#EFE8D9}
+.app-shell .settings-layout .style-item:hover{border-color:#B79755}
+.app-shell .settings-layout .style-item[data-checked]{border-color:#8E6C25;background:#E8DCC0;box-shadow:inset 0 0 0 1px #8E6C25}
+.app-shell .settings-layout .style-item:focus-within{outline:2px solid #8E6C25;outline-offset:2px}
+.app-shell .settings-layout .style-item>label.style-option{position:relative;display:flex!important;flex-direction:row!important;grid-template-columns:none!important;align-items:center;justify-content:center;gap:.6rem;min-height:3.1rem;padding:.5rem .4rem!important;margin:0!important;border:0!important;background:transparent!important;text-align:center!important;cursor:pointer}
+.app-shell .settings-layout .style-item>label.style-option>input{position:absolute;opacity:0;inset:0;width:100%!important;height:100%!important;margin:0!important;cursor:pointer}
+.app-shell .settings-layout .style-item>label.style-option span{font-family:var(--font-title);font-size:.98rem;font-weight:700;letter-spacing:.14em;color:#1F1B17}
+.app-shell .settings-layout .style-item[data-checked]>label.style-option span{color:#6F5216}
+.app-shell .settings-layout .style-dot{display:none;flex:none;width:16px;height:16px;border-radius:50%;border:1px solid #5F574C}
+.app-shell .settings-layout .style-item[data-checked] .style-dot{border:5px solid #8E6C25;background:#FBF8F2}
+.app-shell .settings-layout .style-item-desc{display:none;margin:0;padding:0 .9rem .85rem;font-size:.88rem;line-height:1.8;color:#2B2723}
+.app-shell .settings-layout .style-explain{margin:0;padding:.85rem 1.05rem;border-radius:10px;border:1px solid #2a262226;background:#EAE1CD;color:#2B2723;font-size:.9rem;line-height:1.85}
+.app-shell .settings-layout .style-explain b{font-family:var(--font-title);color:#1F1B17;letter-spacing:.08em;margin-right:.45em}
+.app-shell .settings-layout .style-field .field-hint{margin:0!important}
+@media(max-width:1199px){.app-shell .settings-layout .settings-fields>.style-field{grid-template-columns:minmax(0,1fr);gap:.6rem}.app-shell .settings-layout .style-field-title{padding-top:0}}
+@media(max-width:900px){
+.app-shell .settings-layout .style-options{grid-template-columns:minmax(0,1fr)}
+.app-shell .settings-layout .style-item>label.style-option{justify-content:flex-start;min-height:3.25rem;padding:.5rem .9rem!important}
+.app-shell .settings-layout .style-item>label.style-option span{flex-grow:1;text-align:left;font-size:1rem}
+.app-shell .settings-layout .style-dot{display:block}
+.app-shell .settings-layout .style-item-desc{display:block}
+.app-shell .settings-layout .style-explain{display:none}
+}
