@@ -309,8 +309,9 @@ test('四类设置可键盘操作、保存恢复，七项提示词与两个运�
   await expect(page.getByLabel('API 密钥')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /测试回复/ })).toHaveCount(0);
   await page.getByRole('button', { name: '提示词', exact: true }).click();
-  // 叙事人称、剧情风格两个下拉 + 四个开关；正文篇幅是单独的档位组。
-  await expect(page.locator('.settings-fields > label')).toHaveCount(6);
+  // 叙事人称下拉 + 四个开关；剧情风格与正文篇幅各是单独的选项组。
+  await expect(page.locator('.settings-fields > label')).toHaveCount(5);
+  await expect(page.getByRole('radiogroup', { name: '剧情风格' })).toBeVisible();
   await expect(page.getByRole('group', { name: '正文篇幅' })).toBeVisible();
   await page.getByLabel('叙事人称').selectOption('first');
   await page.getByLabel('正文最低字数').fill('2000');

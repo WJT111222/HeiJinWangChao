@@ -8,6 +8,8 @@ import { AiConnections } from './AiConnections';
 import { UnsavedAiChanges } from './UnsavedAiChanges';
 import { NARRATIVE_LENGTH_TIERS, narrativeLengthTier, narrativeRange, SettingsSchema } from './model';
 import type { Settings } from './model';
+import { STORY_STYLES } from './storyStyles';
+import type { StoryStyle } from './storyStyles';
 import { NoticeLinks } from '../notices/Notices';
 import './settings-paper.css';
 import type { NoticeKind } from '../notices/useNotices';
@@ -163,12 +165,7 @@ export function SettingsPanel({
                   <option value="third">第三人称</option>
                 </select>
               </label>
-              <label>
-                剧情风格
-                <select value="general" onChange={() => undefined}>
-                  <option value="general">一般</option>
-                </select>
-              </label>
+              <StyleField value={editing.prompts.style} onChange={(value) => prompt('style', value)} />
               <LengthField
                 min={editing.prompts.minNarrativeChars}
                 max={editing.prompts.maxNarrativeChars}
@@ -329,6 +326,32 @@ function LengthField({ min, max, custom, minInput, onTier, onCustom, onMin, onMa
           ? <p className="field-hint length-warn" role="alert">建议上限不能低于最低字数。</p>
           : <p className="field-hint">最低字数由程序硬性检查，不够会判失败并重写；建议上限只告诉模型写到这里收尾，写多了也照常通过。</p>}
         {tier === 'high' && <p className="field-hint length-warn">高档每回合要写 8000 字以上：需要模型单次输出足够长（建议在「AI 连接」把最大输出调到 16k 以上），生成更慢、更耗额度；正文写到一半被截断时，可以用「续写正文」接着写。</p>}
+      </div>
+    </div>
+  );
+}
+
+/** 剧情风格：七枚风格按钮，下方只显示当前风格的一段说明（笔法要点与示例只在提示词里）。 */
+function StyleField({ value, onChange }: { value: StoryStyle; onChange: (value: StoryStyle) => void }) {
+  const current = STORY_STYLES.find((style) => style.id === value) ?? STORY_STYLES[0]!;
+  return (
+    <div className="style-field" role="group" aria-labelledby="style-field-title">
+      <span id="style-field-title" className="style-field-title">剧情风格</span>
+      <div className="style-field-body">
+        <div className="style-options" role="radiogroup" aria-label="剧情风格">
+          {STORY_STYLES.map((style) => (
+            <div key={style.id} className="style-item" data-checked={style.id === value || undefined}>
+              <label className="style-option">
+                <input type="radio" name="story-style" value={style.id} checked={style.id === value} onChange={() => onChange(style.id)} />
+                <span>{style.name}</span>
+                <i className="style-dot" aria-hidden="true" />
+              </label>
+              {style.id === value && <p className="style-item-desc">{style.text}</p>}
+            </div>
+          ))}
+        </div>
+        <p className="style-explain" aria-live="polite"><b>{current.name}</b>{current.text}</p>
+        <p className="field-hint">风格只影响笔法与节奏；城市、年代和世界规则一律以当前存档为准。</p>
       </div>
     </div>
   );

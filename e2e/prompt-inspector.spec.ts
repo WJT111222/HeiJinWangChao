@@ -373,7 +373,10 @@ test('无正文草稿的阶段预览诚实失败，七项写作偏好不因管�
     '缺少已选定的正文草稿',
   );
   await page.getByRole('button', { name: '提示词', exact: true }).click();
-  await expect(page.locator('.settings-fields > label')).toHaveCount(7);
+  // 叙事人称下拉 + 四个开关；剧情风格与正文篇幅各是单独的选项组。
+  await expect(page.locator('.settings-fields > label')).toHaveCount(5);
+  await expect(page.getByRole('group', { name: '剧情风格' })).toBeVisible();
+  await expect(page.getByRole('group', { name: '正文篇幅' })).toBeVisible();
   await expect(page.getByLabel('叙事人称')).toHaveValue('third');
 });
 

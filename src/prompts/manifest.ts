@@ -1,3 +1,4 @@
+import { STORY_STYLE_IDS } from '../ui/settings/storyStyles';
 import { z } from 'zod';
 import source from '../../prompts/manifest.json';
 
@@ -75,7 +76,7 @@ export const PromptManifestSchema = z
       minNarrativeChars: z.number().int().positive(),
       maxNarrativeChars: z.number().int().positive(),
       perspective: z.enum(['first', 'second', 'third']),
-      style: z.literal('general'),
+      style: z.enum(STORY_STYLE_IDS),
       noControl: z.boolean(),
       naturalProse: z.boolean(),
       actionOptions: z.boolean(),
