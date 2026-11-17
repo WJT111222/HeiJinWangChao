@@ -1,0 +1,61 @@
+import { expect, test } from './helpers/test';
+import type { Page } from '@playwright/test';
+const choices = [
+  ['general','一般'], ['jianghu','江湖义气'], ['noir','冷硬黑色'], ['power','权谋暗流'],
+  ['docu','纪实白描'], ['shuang','快意爽文'], ['absurd','荒诞喜剧'],
+] as const;
+async function openSettings(page:Page) {
+  await page.getByRole('button',{name:'设置',exact:true}).first().click();
+  const root=page.getByRole('dialog',{name:'设置',exact:true});
+  const back=root.getByRole('button',{name:'返回设置',exact:true});
+  if(await back.isVisible()) await back.click();
+  await root.getByRole('button',{name:'提示词',exact:true}).click();
+  return root;
+}
+async function repository(page:Page) {
+  return page.evaluate(async()=>{
+    const path='/src/services/storage/saveRepository.ts'; const {SaveRepository}=await import(path);
+    const repo=await SaveRepository.open();
+    try{return {state:await repo.load('save-a'),draft:await repo.loadDraft('save-a')};}finally{repo.close();}
+  });
+}
+test('七种风格逐项真实选择、保存刷新和说明展示；世界与草稿不变且零模型请求',async({page},info)=>{
+  let modelRequests=0;
+  page.on('request',request=>{if(/chat\/completions|generateContent|\/messages(?:\?|$)/.test(request.url())) modelRequests++;});
+  await page.route('**/*',route=>['127.0.0.1','localhost'].includes(new URL(route.request().url()).hostname)?route.continue():route.abort());
+  await page.goto('/');
+  const originalSettings=await page.evaluate(async()=>{
+    const r='/src/services/storage/saveRepository.ts', f='/src/tests/fixtures/world.ts', s='/src/ui/settings/model.ts';
+    const {SaveRepository}=await import(r),{worldState}=await import(f),{defaultSettings,settingsKey}=await import(s);
+    const repo=await SaveRepository.open();try{await repo.create(worldState());}finally{repo.close();}
+    const settings=defaultSettings();localStorage.setItem(settingsKey,JSON.stringify(settings));return settings;
+  });
+  await page.reload();
+  const before=await repository(page);
+  for(const [id,name] of choices){
+    const root=await openSettings(page), group=root.getByRole('radiogroup',{name:'剧情风格'});
+    await group.getByRole('radio',{name,exact:true}).check();
+    await expect(group.getByRole('radio',{name,exact:true})).toBeChecked();
+    const field=root.getByRole('group',{name:'剧情风格'});
+    if(info.project.name==='mobile'){
+      await expect(field.locator('.style-item[data-checked] .style-item-desc')).toBeVisible();
+      await expect(field.locator('.style-item[data-checked] .style-item-desc')).not.toBeEmpty();
+      await expect(field.locator('.style-explain')).toBeHidden();
+    }else{
+      await expect(field.locator('.style-explain')).toBeVisible();
+      await expect(field.locator('.style-explain b')).toHaveText(name);
+    }
+    await field.screenshot({path:info.outputPath(`${id}.png`),animations:'disabled'});
+    await root.getByRole('button',{name:'保存本地设置',exact:true}).click();
+    await expect(root.getByRole('status')).toContainText('本地偏好已保存');
+    const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('heijin.settings.v1')!));
+    expect(saved).toEqual({...originalSettings,prompts:{...originalSettings.prompts,style:id}});
+    await page.reload();
+    const again=await openSettings(page);
+    await expect(again.getByRole('radiogroup',{name:'剧情风格'}).getByRole('radio',{name,exact:true})).toBeChecked();
+    expect(await repository(page)).toEqual(before);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await again.getByRole('button',{name:'关闭资料界面',exact:true}).click();
+  }
+  expect(modelRequests).toBe(0);
+});

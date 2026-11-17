@@ -106,13 +106,16 @@ async function compose(unchecked: ComposeInput) {
     if (role === 'assistant') confirmation = { role, content };
     else messages.push({ role, content });
   }
+  // 剧情风格只作用于正文：非 Story 阶段出站的 PROMPT_SETTINGS 一律投影为原有的 style:'general'，
+  // 字段与顺序不变；不修改玩家保存的设置，也不影响其他写作偏好。
+  const promptSettings = input.stage === 'story' ? input.settings.prompts : { ...input.settings.prompts, style: 'general' as const };
   messages.push({
     role: 'user',
     // 只调整正文 / 变量 / 世界三阶段；独立的记忆维护请求保持原来的字段与顺序。
     content: contextMessage(input.stage === 'memory'
-      ? { ...context, PROMPT_SETTINGS: input.settings.prompts }
+      ? { ...context, PROMPT_SETTINGS: promptSettings }
       : cacheFriendlyContext(context, {
-        PROMPT_SETTINGS: input.settings.prompts,
+        PROMPT_SETTINGS: promptSettings,
         CURRENT_TIME: { worldClock: replacements.worldClock, worldWeekday: replacements.worldWeekday },
       })),
   });
