@@ -1,3 +1,4 @@
+import { settingsCategory } from './helpers/aiSettings';
 import { openWorldArchive } from './helpers/gameLayout';
 import { openLibrary } from './helpers/home';
 import { writeFile } from 'node:fs/promises';
@@ -372,7 +373,7 @@ test('无正文草稿的阶段预览诚实失败，七项写作偏好不因管�
   await expect(page.getByRole('region', { name: '上下文与统计' })).toContainText(
     '缺少已选定的正文草稿',
   );
-  await page.getByRole('button', { name: '提示词', exact: true }).click();
+  await settingsCategory(page, '提示词');
   // 叙事人称下拉 + 四个开关；剧情风格与正文篇幅各是单独的选项组。
   await expect(page.locator('.settings-fields > label')).toHaveCount(5);
   await expect(page.getByRole('group', { name: '剧情风格' })).toBeVisible();

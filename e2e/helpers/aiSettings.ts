@@ -19,6 +19,15 @@ export async function aiTab(page: Page) {
   if (await entry.isVisible().catch(() => false)) await entry.click();
   return settings;
 }
+/** 沿用手机「返回设置 → 分类」导航；桌面直接切换分类。 */
+export async function settingsCategory(page: Page, name: string) {
+  const settings = page.getByRole('dialog', { name: '设置', exact: true });
+  const entry = settings.getByRole('button', { name, exact: true });
+  if (!await entry.isVisible()) {
+    await settings.getByRole('button', { name: '返回设置', exact: true }).click();
+  }
+  await entry.click();
+}
 /** 手机端如果正在编辑渠道，先返回渠道列表（各阶段模型在列表页）。 */
 export async function backToList(scope: Scope) {
   const back = scope.getByRole('button', { name: '‹ 返回渠道列表', exact: true });

@@ -1,0 +1,81 @@
+import { describe, it, expect, vi } from 'vitest';
+import { composePrompt } from '../prompts/composer';
+import { defaultSettings } from '../ui/settings/model';
+import { STORY_STYLE_IDS } from '../ui/settings/storyStyles';
+import { MemoryMaintenance } from '../workflows/memoryMaintenance';
+import { AiClient } from '../services/ai/client';
+import { defaultAiConfig, newChannel } from '../services/ai/configuration';
+import { CredentialVault } from '../services/ai/credentials';
+import { applyCompression } from '../domain/memories/compression';
+import { applyNpcSummary, planNpcSummary } from '../domain/memories/npcMemory';
+import { compressionState } from './fixtures/compression';
+import { npcMemoryState, npcSummaryOutput } from './fixtures/npcMemory';
+import { stageContext } from './fixtures/eventStages';
+
+// Supplemental acceptance proof. Copy to src/tests/pr187-memory-live-proof.test.ts to reproduce.
+describe('PR187 supplemental complete-request comparison', () => {
+  it.each(['variables', 'world'] as const)('%s opening: all seven styles have identical complete requests', async stage => {
+    const a = stageContext();
+    const settings = defaultSettings();
+    const input = { stage, mode: 'opening' as const, state: a.state, draft: a.draft, settings, userInput: '' };
+    const base = await composePrompt(input);
+    for (const style of STORY_STYLE_IDS) {
+      const current = await composePrompt({...input, settings: {...settings, prompts: {...settings.prompts, style}}});
+      expect(current).toEqual(base);
+    }
+  });
+  it('Memory medium_to_long preview: all seven styles have identical complete requests', async () => {
+    const a = stageContext(), settings = defaultSettings();
+    const input = {stage: 'memory' as const, memoryTask: 'memory.medium_to_long', mode:'regular' as const, state: a.state, settings, userInput: ''};
+    const base = await composePrompt(input);
+    for (const style of STORY_STYLE_IDS) expect(await composePrompt({...input,settings:{...settings,prompts:{...settings.prompts,style}}})).toEqual(base);
+  });
+});
+
+describe('actual MemoryMaintenance path, not composePrompt preview', () => {
+  it.each(['short', 'medium', 'npc'] as const)('%s: seven UI styles produce identical wire requests and inspection modules, exactly one call each', async kind => {
+    const state = kind === 'npc' ? npcMemoryState(21) : compressionState(kind);
+    const original = structuredClone(state);
+    const config = defaultAiConfig(), channel = newChannel();
+    channel.baseUrl = 'https://pr187-memory.mock.invalid/v1'; channel.defaultModel = 'memory-mock';
+    config.channels = [channel]; config.routes.story = {channelId:channel.id,modelId:'unused-story'};
+    config.routes.memory = {mode:'independent',channelId:channel.id,modelId:'memory-mock'};
+    const values = new Map<string,string>();
+    const storage = {getItem:(key:string)=>values.get(key)??null,setItem:(key:string,value:string)=>{values.set(key,value);},removeItem:(key:string)=>{values.delete(key);}};
+    const vault = new CredentialVault(storage,storage); vault.set(channel.id,'pr187-fake-key');
+    const text = kind === 'npc' ? JSON.stringify(npcSummaryOutput(planNpcSummary(state,'npc-a')!))
+      : JSON.stringify({summary:'已发生的约定及其后续。',importantEvents:['已记录的事实与关系变化。']});
+    let baseBody: unknown, baseModules: unknown;
+    for(const style of STORY_STYLE_IDS) {
+      let current=structuredClone(state);
+      const savePublic = vi.fn(async (...args:Parameters<typeof applyCompression> extends [unknown,...infer P] ? P : never) => {
+        current=applyCompression(current,...args); return current;
+      });
+      const saveNpc = vi.fn(async (...args:Parameters<typeof applyNpcSummary> extends [unknown,...infer P] ? P : never) => {
+        current=applyNpcSummary(current,...args); return current;
+      });
+      const repository = {
+        loadMemoryContext:async()=>({state:structuredClone(current),lineage:{saveId:state.saveId,epoch:'pr187-frozen-epoch'},paused:false}),
+        checkMemoryLineage:vi.fn(async()=>{}),saveMemoryCompression:savePublic,saveNpcSummary:saveNpc,
+      };
+      const transport=vi.fn<typeof fetch>(async()=>Response.json({choices:[{message:{content:text},finish_reason:'stop'}]}));
+      const client=new AiClient(transport), generate=vi.spyOn(client,'generate');
+      const runner=new MemoryMaintenance(repository,client,async(_id,work)=>work());
+      const settings=defaultSettings(); settings.prompts.style=style;
+      const saved=await runner.run({saveId:state.saveId,config,vault,kind,npcId:kind==='npc'?'npc-a':undefined,
+        summaryConfig:settings.memory.summaries[kind],timeoutSeconds:settings.runtime.timeoutSeconds,automatic:false});
+      expect(saved).toBeDefined(); expect(transport).toHaveBeenCalledTimes(1); expect(savePublic.mock.calls.length+saveNpc.mock.calls.length).toBe(1);
+      const body=JSON.parse(String(transport.mock.calls[0][1]!.body));
+      const modules=generate.mock.calls[0][2]?.inspection?.modules;
+      expect(modules).toBeDefined();
+      const contextMessage=body.messages.find((message:{content:string})=>message.content.includes('<GAME_CONTEXT>')).content;
+      const context=JSON.parse(contextMessage.match(/<GAME_CONTEXT>\s*([\s\S]*?)\s*<\/GAME_CONTEXT>/)[1]);
+      expect(Object.keys(context)).toEqual(['MEMORY_TASK']);
+      expect(JSON.stringify(body)).not.toContain('PROMPT_SETTINGS');
+      expect(JSON.stringify(body)).not.toContain('剧情风格：');
+      if(style==='general'){baseBody=body;baseModules=modules;}
+      else {expect(body,style).toEqual(baseBody);expect(modules,style).toEqual(baseModules);}
+      expect(state).toEqual(original);
+    }
+  });
+});

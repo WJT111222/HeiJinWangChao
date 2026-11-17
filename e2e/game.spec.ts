@@ -1,7 +1,7 @@
 import { openGameTools, goHome, openWorldArchive, openProfile } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
-import { aiTab } from './helpers/aiSettings';
+import { aiTab, settingsCategory } from './helpers/aiSettings';
 
 async function seed(page: Page) {
   await page.goto('/');
@@ -308,7 +308,7 @@ test('四类设置可键盘操作、保存恢复，七项提示词与两个运�
   await expect(page.getByRole('button', { name: '＋ 添加渠道', exact: true })).toBeVisible();
   await expect(page.getByLabel('API 密钥')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /测试回复/ })).toHaveCount(0);
-  await page.getByRole('button', { name: '提示词', exact: true }).click();
+  await settingsCategory(page, '提示词');
   // 叙事人称下拉 + 四个开关；剧情风格与正文篇幅各是单独的选项组。
   await expect(page.locator('.settings-fields > label')).toHaveCount(5);
   await expect(page.getByRole('radiogroup', { name: '剧情风格' })).toBeVisible();
@@ -317,7 +317,7 @@ test('四类设置可键盘操作、保存恢复，七项提示词与两个运�
   await page.getByLabel('正文最低字数').fill('2000');
   await page.getByLabel('NoControl（防抢话）').uncheck();
   await page.getByRole('button', { name: '保存本地设置' }).click();
-  await page.getByRole('button', { name: '记忆', exact: true }).click();
+  await settingsCategory(page, '记忆');
   await expect(page.getByRole('button', { name: '记忆总结', exact: true })).toHaveCount(0);
   await page.getByLabel('即时记忆完整回合数').fill('0');
   await page.getByRole('button', { name: '保存记忆设置', exact: true }).click();
@@ -325,20 +325,20 @@ test('四类设置可键盘操作、保存恢复，七项提示词与两个运�
   await page.getByLabel('即时记忆完整回合数').fill('12');
   await page.getByRole('button', { name: '保存记忆设置', exact: true }).click();
   await expect(page.getByText(/记忆设置已保存/)).toBeVisible();
-  await page.getByRole('button', { name: '运行', exact: true }).click();
+  await settingsCategory(page, '运行');
   await page.getByLabel('变量管理', { exact: true }).uncheck();
   await expect(page.getByLabel('动态世界', { exact: true })).toBeChecked();
   await page.getByRole('button', { name: '保存本地设置' }).click();
   await page.keyboard.press('Escape');
   await page.reload(); await openGameTools(page);
   await page.getByRole('button', { name: '设置', exact: true }).click();
-  await page.getByRole('button', { name: '提示词', exact: true }).click();
+  await settingsCategory(page, '提示词');
   await expect(page.getByLabel('叙事人称')).toHaveValue('first');
   await expect(page.getByLabel('正文最低字数')).toHaveValue('2000');
   await expect(page.getByLabel('NoControl（防抢话）')).not.toBeChecked();
-  await page.getByRole('button', { name: '记忆', exact: true }).click();
+  await settingsCategory(page, '记忆');
   await expect(page.getByLabel('即时记忆完整回合数')).toHaveValue('12');
-  await page.getByRole('button', { name: '运行', exact: true }).click();
+  await settingsCategory(page, '运行');
   await expect(page.getByLabel('变量管理', { exact: true })).not.toBeChecked();
   await expect(page.getByLabel('动态世界', { exact: true })).toBeChecked();
   expect(external).toEqual([]);

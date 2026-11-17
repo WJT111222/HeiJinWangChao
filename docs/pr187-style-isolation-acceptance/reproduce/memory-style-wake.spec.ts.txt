@@ -1,0 +1,63 @@
+import { expect,test } from './helpers/test';
+
+test('调查：仅保存剧情风格是否唤醒已有自动记忆任务',async({page},info)=>{
+  let calls=0;
+  const summary=JSON.stringify({summary:'已记录的散步与约定。',importantEvents:['与陈宁约定见面并保管蓝色钥匙。']});
+  await page.route('https://pr187-memory-toggle.mock.invalid/**',async route=>{
+    const headers={'access-control-allow-origin':'*','access-control-allow-headers':'authorization, content-type','access-control-allow-methods':'POST, OPTIONS'};
+    if(route.request().method()==='OPTIONS'){await route.fulfill({status:204,headers});return;}
+    expect(route.request().postDataJSON().model).toBe('memory');
+    calls++;
+    await route.fulfill({headers,contentType:'application/json',body:JSON.stringify({choices:[{message:{content:summary},finish_reason:'stop'}]})});
+  });
+  await page.goto('/');
+  await page.evaluate(async()=>{
+    const f='/src/tests/fixtures/compression.ts',r='/src/services/storage/saveRepository.ts',s='/src/ui/settings/model.ts',
+      c='/src/services/ai/configuration.ts',v='/src/services/ai/credentials.ts';
+    const {compressionState}=await import(f),{SaveRepository}=await import(r),{defaultSettings,settingsKey}=await import(s),
+      {defaultAiConfig,newChannel,saveAiConfig}=await import(c),{CredentialVault}=await import(v);
+    const state=compressionState('short',100),repo=await SaveRepository.open();repo.close();
+    await new Promise<void>((resolve,reject)=>{
+      const request=indexedDB.open('heijinwangchao');request.onerror=()=>reject(request.error);
+      request.onsuccess=()=>{const db=request.result,tx=db.transaction('saves','readwrite');tx.objectStore('saves').put(state);
+        tx.oncomplete=()=>{db.close();resolve();};tx.onabort=()=>{db.close();reject(tx.error);};};
+    });
+    const settings=defaultSettings();settings.memory.summaries.short.automatic=true;
+    settings.memory.summaries.medium.automatic=false;settings.memory.summaries.npc.automatic=false;
+    localStorage.setItem(settingsKey,JSON.stringify(settings));
+    const config=defaultAiConfig(),channel=newChannel();channel.baseUrl='https://pr187-memory-toggle.mock.invalid/v1';
+    config.channels=[channel];config.routes.story={channelId:channel.id,modelId:'unused-story'};
+    config.routes.memory={mode:'independent',channelId:channel.id,modelId:'memory'};
+    saveAiConfig(localStorage,config);new CredentialVault(sessionStorage,localStorage).set(channel.id,'pr187-mock-memory-secret');
+  });
+  // 种子设置先在首页刷新加载，避免同文档 hash 路由仍使用旧的 React 设置对象。
+  await page.reload();
+  await page.goto('/#game/save-a');
+  await expect(page.locator('.game-layout')).toBeVisible();
+  const mediumCount=()=>page.evaluate(async()=>{const p='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(p),r=await SaveRepository.open();try{return(await r.load('save-a')).memories.medium.length;}finally{r.close();}});
+  await expect.poll(mediumCount).toBe(1);expect(calls).toBe(1);
+  const beforeSettings=await page.evaluate(()=>JSON.parse(localStorage.getItem('heijin.settings.v1')!));
+  const started=Date.now();
+  const menu=page.getByRole('button',{name:'打开游戏菜单',exact:true});
+  if(await menu.isVisible())await menu.click();
+  await page.getByRole('button',{name:'设置',exact:true}).first().click();
+  const root=page.getByRole('dialog',{name:'设置',exact:true});
+  const back=root.getByRole('button',{name:'返回设置',exact:true});if(await back.isVisible())await back.click();
+  await root.getByRole('button',{name:'提示词',exact:true}).click();
+  const group=root.getByRole('radiogroup',{name:'剧情风格'});
+  const hasStyles=await group.isVisible();
+  if(hasStyles)await group.getByRole('radio',{name:'冷硬黑色',exact:true}).check();
+  expect(calls).toBe(1);
+  await root.getByRole('button',{name:'保存本地设置',exact:true}).click();
+  await expect(root.getByRole('status')).toContainText('本地偏好已保存');
+  const afterSettings=await page.evaluate(()=>JSON.parse(localStorage.getItem('heijin.settings.v1')!));
+  expect(afterSettings).toEqual(hasStyles?{...beforeSettings,prompts:{...beforeSettings.prompts,style:'noir'}}:beforeSettings);
+  // 观察第二次实际 Mock 请求与合法总结保存，不修改正式代码去触发它。
+  await expect.poll(()=>calls).toBe(2);
+  await expect.poll(mediumCount).toBe(2);
+  expect(Date.now()-started).toBeLessThan(20_000);
+  await page.screenshot({path:info.outputPath('style-save-wakes-memory.png'),animations:'disabled'});
+  await info.attach('observation',{body:JSON.stringify({before:1,after:calls,hasStyles,mediumAfter:await mediumCount(),elapsed:Date.now()-started}),contentType:'application/json'});
+  // 产品要求：只保存风格不应增加模型请求。观测到 2 时，此安全验收必须报红。
+  expect(calls).toBe(1);
+});
