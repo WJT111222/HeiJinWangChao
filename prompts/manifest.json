@@ -5,7 +5,8 @@
   "status": "runtime-integrated-mock-verified",
   "globalDefaults": {
     "immediateMemoryTurns": 10,
-    "minNarrativeChars": 1500,
+    "minNarrativeChars": 1000,
+    "maxNarrativeChars": 2000,
     "perspective": "third",
     "style": "general",
     "noControl": true,
@@ -1291,7 +1292,7 @@
     {
       "id": "writing.min_length",
       "path": "writing/min_length.md",
-      "title": "硬性最低正文字数",
+      "title": "正文篇幅（硬性最低 + 建议上限）",
       "kind": "prompt",
       "applicableStages": [
         "story"
@@ -1302,7 +1303,7 @@
       ],
       "toggle": "minNarrativeChars",
       "domain": null,
-      "characters": 180,
+      "characters": 295,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "always",
@@ -1312,8 +1313,9 @@
       "orderGroup": "writing",
       "reorderable": false,
       "category": "writing",
-      "contentSha256": "2fa17dbc24358bd3fd739d8c5db6dc43b7bc24972d05648076ac45ea12a794d4",
+      "contentSha256": "059aae2ef2c17eb7053879909c7b4bebbceef9a4e1e7fde10875968157c35993",
       "placeholders": [
+        "maxNarrativeChars",
         "minNarrativeChars"
       ]
     },
@@ -1623,7 +1625,7 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 6533,
+      "characters": 6644,
       "version": "1.2.0-variable-source-port",
       "messageRole": null,
       "activation": "never",
@@ -1633,7 +1635,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "b1dbc54f922faa77bf7f31aa7f38c7d89be6b3b3bedaf45279547e2f4d458c68",
+      "contentSha256": "625c1fffdef2f4610f7405418a20b613b26afaa8b41a92886b3b822e9d21834a",
       "placeholders": [
         "worldWeekday"
       ]
@@ -1647,7 +1649,7 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 15075,
+      "characters": 15154,
       "version": "1.2.0-variable-source-port",
       "messageRole": null,
       "activation": "never",
@@ -1657,9 +1659,10 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "2d4dae7ef7566af5c7951774c5172cef7993c12a88d535c3dd2753ec97dfa8bc",
+      "contentSha256": "24a2ba0f73555ea87d71ce9ace2a6218b742e218b6f04a59358fb544a41cca4b",
       "placeholders": [
         "immediateMemoryTurns",
+        "maxNarrativeChars",
         "minNarrativeChars",
         "npcId",
         "npcSummaryThreshold",

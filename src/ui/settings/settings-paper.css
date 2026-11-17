@@ -238,3 +238,23 @@
 .app-shell .settings-layout .appearance-options>label.appearance-option strong{font-size:.95rem;color:#2B2723}
 .app-shell .settings-layout .appearance-options>label.appearance-option small{font-size:.8rem;color:#5F574C}
 .app-shell .settings-layout .appearance-options>label.appearance-option:focus-within{outline:2px solid #8E6C25;outline-offset:2px}
+/* 正文篇幅：低 / 中 / 高 / 自定义四枚档位卡，下方是始终可见的两个数字（档位只是一键填好它们）。 */
+.app-shell .settings-layout .settings-fields>.length-field{grid-column:1/-1;display:grid;grid-template-columns:minmax(9rem,40%) minmax(0,1fr);gap:1.2rem;align-items:start;padding:.85rem 0;border-bottom:1px dashed var(--hair,#2a26221a)}
+.app-shell .settings-layout .length-field-title{padding-top:.55rem;color:var(--text,#2B2723)}
+.app-shell .settings-layout .length-field-body{display:grid;gap:.6rem;min-width:0}
+.app-shell .settings-layout .length-tiers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.45rem}
+.app-shell .settings-layout .length-tiers>label.length-tier{position:relative;display:grid!important;grid-template-columns:none!important;justify-items:center;align-content:center;gap:.15rem!important;min-height:3.6rem;padding:.55rem .4rem!important;margin:0!important;border:1px solid #2a262233!important;border-radius:8px!important;background:#EFE8D9!important;color:#2B2723;text-align:center!important;cursor:pointer;border-bottom-style:solid!important}
+.app-shell .settings-layout .length-tiers>label.length-tier>input{position:absolute;opacity:0;inset:0;width:100%!important;height:100%!important;margin:0!important;cursor:pointer}
+.app-shell .settings-layout .length-tiers>label.length-tier strong{font-family:var(--font-title);font-size:1rem;letter-spacing:.2em;color:#1F1B17}
+.app-shell .settings-layout .length-tiers>label.length-tier small{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.02em;color:#5F574C;white-space:nowrap}
+.app-shell .settings-layout .length-tiers>label.length-tier[data-checked]{border-color:#8E6C25!important;background:#E8DCC0!important;box-shadow:inset 0 0 0 1px #8E6C25}
+.app-shell .settings-layout .length-tiers>label.length-tier[data-checked] strong{color:#6F5216}
+.app-shell .settings-layout .length-tiers>label.length-tier:hover{border-color:#B79755!important}
+.app-shell .settings-layout .length-tiers>label.length-tier:focus-within{outline:2px solid #8E6C25;outline-offset:2px}
+.app-shell .settings-layout .length-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+.app-shell .settings-layout .length-inputs>label{display:grid!important;grid-template-columns:none!important;gap:.3rem!important;padding:0!important;border:0!important;font-size:.78rem;color:#5F574C}
+.app-shell .settings-layout .length-inputs input[aria-invalid]{border-color:#A3412E!important}
+.app-shell .settings-layout .length-field .field-hint{margin:0!important}
+.app-shell .settings-layout .length-field .length-warn{color:#8A3A24!important}
+@media(max-width:1199px){.app-shell .settings-layout .settings-fields>.length-field{grid-template-columns:minmax(0,1fr);gap:.6rem}.app-shell .settings-layout .length-field-title{padding-top:0}}
+@media(max-width:520px){.app-shell .settings-layout .length-tiers{grid-template-columns:repeat(2,minmax(0,1fr))}}

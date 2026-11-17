@@ -73,6 +73,7 @@ export const PromptManifestSchema = z
     globalDefaults: z.strictObject({
       immediateMemoryTurns: z.number().int().positive(),
       minNarrativeChars: z.number().int().positive(),
+      maxNarrativeChars: z.number().int().positive(),
       perspective: z.enum(['first', 'second', 'third']),
       style: z.literal('general'),
       noControl: z.boolean(),

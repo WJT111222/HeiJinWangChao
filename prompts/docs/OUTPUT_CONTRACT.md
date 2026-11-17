@@ -2,7 +2,7 @@
 
 ## 阶段① 正文输出
 结构顺序必须为 `<thinking>...</thinking><正文>...</正文><短期记忆>...</短期记忆><变量规划>[{...}]</变量规划>`，若开启行动选项再加 `<行动选项>3～5行</行动选项>`。最终解析成 `StoryResult{turnKind,narrative,summary,variableGuide,actionOptions?}`。项目规划不加入StoryResult或正式存档，原生公开返回内容也单独处理。其中变量规划条目的 `group` 属于 `protagonist|npc|items|economy|organization|time|event`；字段为`group,subjectHint,observedFact,textEvidence`。
-叙事流式显示时，只能实时展示解析明确落入正文标签的文本；`【旁白】`代表普通叙述，`【角色名】`只代表角色直接对白（详见`shared/09_dialogue_labels.md`）；任何变量变更可见信息都属于候选，不能在流式时写库。仅`narrative`参加硬最低字数校验，`minNarrativeChars`由玩家任意合法正整数设置，具体字符口径须统一。
+叙事流式显示时，只能实时展示解析明确落入正文标签的文本；`【旁白】`代表普通叙述，`【角色名】`只代表角色直接对白（详见`shared/09_dialogue_labels.md`）；任何变量变更可见信息都属于候选，不能在流式时写库。仅`narrative`参加硬最低字数校验，`minNarrativeChars`由玩家任意合法正整数设置（低/中/高档或自定义），具体字符口径须统一；`maxNarrativeChars`只是写进提示词的建议上限，程序不因超出而判失败。
 
 ## 阶段② 变量输出
 正式新请求使用 `VARIABLE_TEXT_V1`：同次响应依次完整输出 `<thinking>`、`<说明>`、`<命令>`；只执行唯一命令区块内的 `set/add/push 路径 = JSON值` 或 `delete 路径`；真实有限路径和类型由 `TEXT_COMMAND_CATALOG` 给出。`<thinking>`/`<说明>` 不执行，不要求整份模型回复为 JSON。
@@ -18,7 +18,7 @@
 程序记录的是**世界真值**（所有已合法提交的真实事件）。主角只知道经感知、告知或媒体合理传播的部分；玩家可只读查看全部正式世界变量；查看不改变角色认知。`hidden`/`npc_private`/`internal`存量字段仍保留角色来源含义，不再屏蔽玩家面板。主角正文/回忆上下文继续按主角知晓范围构造，不复用玩家观察投影。
 
 ## 参数占位符（由程序替换，不能让模型自行改）
-`{{worldClock}}`、`{{playerName}}`、`{{minNarrativeChars}}`、`{{immediateMemoryTurns}}`、`{{npcSummaryThreshold}}`、`{{npcId}}`。所有占位符必须在最终发出的消息中消失；若缺值应作为组包错误停止，而不是让AI看到原始花括号。
+`{{worldClock}}`、`{{playerName}}`、`{{minNarrativeChars}}`、`{{maxNarrativeChars}}`、`{{immediateMemoryTurns}}`、`{{npcSummaryThreshold}}`、`{{npcId}}`。所有占位符必须在最终发出的消息中消失；若缺值应作为组包错误停止，而不是让AI看到原始花括号。
 
 ## 校验最低要求
 标签平衡与唯一、变量规划JSON解析、命令枚举和对象校验、时间不倒退、同一事实幂等、余额来源、物品归属/数量、NPC在场区分、不同组织Schema、秘密隔离、重大结案时间轴去重。来源证据无法确认时列unresolved或拒绝；不允许生成半段后“尽量提交”。

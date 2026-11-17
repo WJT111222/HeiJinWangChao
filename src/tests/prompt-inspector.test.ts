@@ -130,6 +130,7 @@ describe('真实资源库、选择器与独立排序', () => {
       'perspective',
       'style',
       'minNarrativeChars',
+      'maxNarrativeChars',
       'noControl',
       'naturalProse',
       'actionOptions',

@@ -40,7 +40,7 @@ M3-P1 仅提供静态注册契约。M3-P2 已在 `src/prompts/loader.ts`、`cont
 ## 3. 七项提示词设置（不是9、10项）
 - perspective：first/second/third（恰好注入一个）。
 - style：目前只有general（未来风格需单独讨论和新增文件，互斥注入）。
-- minNarrativeChars：自由整数输入，注入writing/min_length，并在story_output中替换同名占位符；程序计数是硬性判定。
+- minNarrativeChars / maxNarrativeChars：设置里选低（1000～2000）、中（4000～5000）、高（8000～10000）档或自定义；注入writing/min_length，minNarrativeChars 也在story_output中替换同名占位符。最低值由程序计数硬性判定，上限只作提示词目标。
 - noControl：true时注入no_control，否则不注入。
 - naturalProse：true时注入natural_prose，否则不注入。
 - actionOptions：true时注入action_options，并要求正文末尾3～5个选项；false时不注入，正文输出协议也应选择不出现该块。
@@ -68,7 +68,7 @@ M3-P1 仅提供静态注册契约。M3-P2 已在 `src/prompts/loader.ts`、`cont
 
 `worldClock` 仍是正式存档唯一时间真值。`{{worldWeekday}}` 是新增的只读上下文占位符，当前仅登记，P2 根据 worldClock 在 Asia/Shanghai 的游戏日期计算星期一至星期日，禁止使用系统日期、无时区 getDay 或 AI 可写星期。测试应覆盖跨日、跨月、跨年、闰年及 UTC 与中国日期边界。工作日/休息日影响日程，但不是所有职业双休。P1 不改 Schema、UI 或 SetWorldClock 命令。
 
-P2 须从当前正式存档替换 playerName、worldClock、派生 worldWeekday、minNarrativeChars、immediateMemoryTurns 及按任务需要的 npcId/npcSummaryThreshold；缺值或残留花括号应阻止发送，切档不得沿用旧缓存。已开始的游戏只读取正式主角背景，不注入任何出身/天赋候选池。
+P2 须从当前正式存档替换 playerName、worldClock、派生 worldWeekday、minNarrativeChars、maxNarrativeChars、immediateMemoryTurns 及按任务需要的 npcId/npcSummaryThreshold；缺值或残留花括号应阻止发送，切档不得沿用旧缓存。已开始的游戏只读取正式主角背景，不注入任何出身/天赋候选池。
 
 ## 8. COT 来源与模型兼容（P2 待实现）
 
