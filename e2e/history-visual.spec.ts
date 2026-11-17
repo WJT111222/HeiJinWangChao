@@ -49,7 +49,7 @@ for(const appearance of ['night','day'])for(const short of [false,true])test(`åŽ
  test.setTimeout(120000);const mobile=info.project.name==='mobile';await page.setViewportSize(mobile?short?{width:375,height:667}:{width:390,height:844}:short?{width:901,height:600}:{width:1440,height:900});
  await seed(page);await page.evaluate(a=>{document.documentElement.dataset.appearance=a},appearance);let posts=0;await page.route('**/*',async r=>{if(r.request().method()==='POST'){posts++;throw Error('Unexpected model request')}const u=new URL(r.request().url());if(['localhost','127.0.0.1'].includes(u.hostname))return r.continue();return r.abort()});
  await open(page);const root=page.locator('dialog.history-saves'),metrics:unknown[]=[];const contrasts:Awaited<ReturnType<typeof settingsTextContrast>>[]=[];const buttonChecks:{text:string;ratio:number;minHeight:number}[]=[];
- async function capture(name:string){await page.screenshot({path:info.outputPath(`${appearance}-${short?'short':'normal'}-${name}.png`)});buttonChecks.push(...await root.locator('button').evaluateAll(elements=>{
+ async function capture(name:string){await page.screenshot({animations:'disabled',path:info.outputPath(`${appearance}-${short?'short':'normal'}-${name}.png`)});buttonChecks.push(...await root.locator('button').evaluateAll(elements=>{
  const parse=(s:string)=>s.match(/[\d.]+/g)?.map(Number)??[0,0,0,0];
  const lum=(c:number[])=>c.slice(0,3).reduce((v,n,i)=>v+(n/255<=.04045?n/255/12.92:((n/255+.055)/1.055)**2.4)*[.2126,.7152,.0722][i],0);
  return elements.filter(e=>e.getClientRects().length&&!e.matches(':disabled')).flatMap(e=>{const st=getComputedStyle(e),border=parse(st.borderTopColor);if(border[3]===0||parseFloat(st.borderTopWidth)===0)return[];
