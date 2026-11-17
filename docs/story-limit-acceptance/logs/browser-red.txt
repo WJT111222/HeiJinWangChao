@@ -1,0 +1,196 @@
+[WebServer] (node:761322) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:761412) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] npm notice
+[WebServer] npm notice New major version of npm available! 11.9.0 -> 12.2.2
+[WebServer] npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+[WebServer] npm notice To update run: npm install -g npm@12.2.2
+[WebServer] npm notice
+
+[WebServer] (node:761610) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 4 tests using 2 workers
+
+(node:761688) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/4] [desktop] › e2e/story-limit-acceptance.spec.ts:23:2 › 完整limit原请求直接保存并完成后续阶段 stream=true
+(node:761689) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/4] [desktop] › e2e/story-limit-acceptance.spec.ts:36:2 › 手动失败→自动续写成功Commit后旧错误不再显示 stream=true
+  1) [desktop] › e2e/story-limit-acceptance.spec.ts:36:2 › 手动失败→自动续写成功Commit后旧错误不再显示 stream=true ───
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.workflow-summary')
+    Expected substring: "本回合已结算"
+    Received string:    "三阶段 · 正文生成失败 · 查看详情01 正文 · 已结算02 变量 · 已结算03 动态世界 · 已结算详情"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('.workflow-summary') with timeout 5000ms
+      - waiting for locator('.workflow-summary')
+        14 × locator resolved to <div class="workflow-summary">…</div>
+           - unexpected value "三阶段 · 正文生成失败 · 查看详情01 正文 · 已结算02 变量 · 已结算03 动态世界 · 已结算详情"
+
+
+      44 |   await page.getByRole('button',{name:'续写正文',exact:true}).click();await expect.poll(async()=>(await load(page)).state.turnNumber,{timeout:15000}).toBe(2);
+      45 |   await expect(page.getByRole('button',{name:'续写正文',exact:true})).toHaveCount(0);
+    > 46 |   await expect(page.locator('.workflow-summary')).toContainText('本回合已结算');
+         |                                                   ^
+      47 |   await openStageSwitches(page);await expect(page.locator('.workflow-stages>li').first()).toContainText('已结算');
+      48 |   await shot(page,`${info.project.name}-${stream}-committed-stale-error`);
+      49 |   expect(calls).toEqual(['story','story','variables','world']);await closeWorkflowSheet(page);
+        at /workspace/story-limit-fix/e2e/story-limit-acceptance.spec.ts:46:51
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../story-limit-evidence/browser-red/story-limit-acceptance-手动失败→自动续写成功Commit后旧错误不再显示-stream-true-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../story-limit-evidence/browser-red/story-limit-acceptance-手动失败→自动续写成功Commit后旧错误不再显示-stream-true-desktop/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../story-limit-evidence/browser-red/story-limit-acceptance-手动失败→自动续写成功Commit后旧错误不再显示-stream-true-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../story-limit-evidence/browser-red/story-limit-acceptance-手动失败→自动续写成功Commit后旧错误不再显示-stream-true-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:762063) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[3/4] [desktop] › e2e/story-limit-acceptance.spec.ts:23:2 › 完整limit原请求直接保存并完成后续阶段 stream=false
+  2) [desktop] › e2e/story-limit-acceptance.spec.ts:23:2 › 完整limit原请求直接保存并完成后续阶段 stream=true ───────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 1
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+      28 |   });
+      29 |   await openStageSwitches(page);await page.getByRole('button',{name:'自动生成本回合',exact:true}).click();
+    > 30 |   await expect.poll(async()=>(await load(page)).state.turnNumber,{timeout:15000}).toBe(2);
+         |                                                                                   ^
+      31 |   const current=await load(page);expect(current.state.journal.at(-1).story.narrative).toBe(body);expect(current.state.revision).toBe(2);
+      32 |   expect(current.draft.storyPartial).toBeUndefined();expect(calls).toEqual(['story','variables','world']);
+      33 |   await expect(page.locator('.workflow-summary')).toContainText('本回合已结算');await expect(page.getByRole('button',{name:'续写正文',exact:true})).toHaveCount(0);
+        at /workspace/story-limit-fix/e2e/story-limit-acceptance.spec.ts:30:83
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../story-limit-evidence/browser-red/story-limit-acceptance-完整limit原请求直接保存并完成后续阶段-stream-true-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../story-limit-evidence/browser-red/story-limit-acceptance-完整limit原请求直接保存并完成后续阶段-stream-true-desktop/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../story-limit-evidence/browser-red/story-limit-acceptance-完整limit原请求直接保存并完成后续阶段-stream-true-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../story-limit-evidence/browser-red/story-limit-acceptance-完整limit原请求直接保存并完成后续阶段-stream-true-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:762597) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[4/4] [desktop] › e2e/story-limit-acceptance.spec.ts:36:2 › 手动失败→自动续写成功Commit后旧错误不再显示 stream=false
+  3) [desktop] › e2e/story-limit-acceptance.spec.ts:23:2 › 完整limit原请求直接保存并完成后续阶段 stream=false ──────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 1
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+      28 |   });
+      29 |   await openStageSwitches(page);await page.getByRole('button',{name:'自动生成本回合',exact:true}).click();
+    > 30 |   await expect.poll(async()=>(await load(page)).state.turnNumber,{timeout:15000}).toBe(2);
+         |                                                                                   ^
+      31 |   const current=await load(page);expect(current.state.journal.at(-1).story.narrative).toBe(body);expect(current.state.revision).toBe(2);
+      32 |   expect(current.draft.storyPartial).toBeUndefined();expect(calls).toEqual(['story','variables','world']);
+      33 |   await expect(page.locator('.workflow-summary')).toContainText('本回合已结算');await expect(page.getByRole('button',{name:'续写正文',exact:true})).toHaveCount(0);
+        at /workspace/story-limit-fix/e2e/story-limit-acceptance.spec.ts:30:83
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../story-limit-evidence/browser-red/story-limit-acceptance-完整limit原请求直接保存并完成后续阶段-stream-false-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../story-limit-evidence/browser-red/story-limit-acceptance-完整limit原请求直接保存并完成后续阶段-stream-false-desktop/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../story-limit-evidence/browser-red/story-limit-acceptance-完整limit原请求直接保存并完成后续阶段-stream-false-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../story-limit-evidence/browser-red/story-limit-acceptance-完整limit原请求直接保存并完成后续阶段-stream-false-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  4) [desktop] › e2e/story-limit-acceptance.spec.ts:36:2 › 手动失败→自动续写成功Commit后旧错误不再显示 stream=false ──
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.workflow-summary')
+    Expected substring: "本回合已结算"
+    Received string:    "三阶段 · 正文生成失败 · 查看详情01 正文 · 已结算02 变量 · 已结算03 动态世界 · 已结算详情"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('.workflow-summary') with timeout 5000ms
+      - waiting for locator('.workflow-summary')
+        14 × locator resolved to <div class="workflow-summary">…</div>
+           - unexpected value "三阶段 · 正文生成失败 · 查看详情01 正文 · 已结算02 变量 · 已结算03 动态世界 · 已结算详情"
+
+
+      44 |   await page.getByRole('button',{name:'续写正文',exact:true}).click();await expect.poll(async()=>(await load(page)).state.turnNumber,{timeout:15000}).toBe(2);
+      45 |   await expect(page.getByRole('button',{name:'续写正文',exact:true})).toHaveCount(0);
+    > 46 |   await expect(page.locator('.workflow-summary')).toContainText('本回合已结算');
+         |                                                   ^
+      47 |   await openStageSwitches(page);await expect(page.locator('.workflow-stages>li').first()).toContainText('已结算');
+      48 |   await shot(page,`${info.project.name}-${stream}-committed-stale-error`);
+      49 |   expect(calls).toEqual(['story','story','variables','world']);await closeWorkflowSheet(page);
+        at /workspace/story-limit-fix/e2e/story-limit-acceptance.spec.ts:46:51
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../story-limit-evidence/browser-red/story-limit-acceptance-手动失-ae307-Commit后旧错误不再显示-stream-false-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../story-limit-evidence/browser-red/story-limit-acceptance-手动失-ae307-Commit后旧错误不再显示-stream-false-desktop/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../story-limit-evidence/browser-red/story-limit-acceptance-手动失-ae307-Commit后旧错误不再显示-stream-false-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../story-limit-evidence/browser-red/story-limit-acceptance-手动失-ae307-Commit后旧错误不再显示-stream-false-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  4 failed
+    [desktop] › e2e/story-limit-acceptance.spec.ts:23:2 › 完整limit原请求直接保存并完成后续阶段 stream=true ────────
+    [desktop] › e2e/story-limit-acceptance.spec.ts:36:2 › 手动失败→自动续写成功Commit后旧错误不再显示 stream=true ────
+    [desktop] › e2e/story-limit-acceptance.spec.ts:23:2 › 完整limit原请求直接保存并完成后续阶段 stream=false ───────
+    [desktop] › e2e/story-limit-acceptance.spec.ts:36:2 › 手动失败→自动续写成功Commit后旧错误不再显示 stream=false ───
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

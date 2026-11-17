@@ -98,6 +98,8 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   try {
   const response = await client.generate(snapshot, messages, {
     ...options,
+    // Only Story may evaluate a complete limit response; other stages remain strict.
+    validateStoryOutputLimit: captured.stage === 'story',
     onResponseDiagnostics: (value) => {
       if (sealed || options.signal?.aborted) return;
       diagnostics = mergeResponseDiagnostics(diagnostics, value); observe();
@@ -146,7 +148,17 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   if (continuation) received = append('', merged(received), responseLimits.text);
   stageResponses.update(responseId, { text: received, nativeReasoning: publicReasoning, diagnostics, truncated, ...display(), status: 'received' }, secrets);
   const responseText = merged(response.text);
-  const envelope = captured.stage === 'story' ? parseStoryEnvelope(responseText, captured.mode, captured.settings) : undefined;
+  const envelope = (() => {
+    if (captured.stage !== 'story') return undefined;
+    try { return parseStoryEnvelope(responseText, captured.mode, captured.settings); }
+    catch (error) {
+      // Genuine missing tail/body retains the established partial/continuation path.
+      // Complete but invalid content keeps its precise strict validation error.
+      if (response.outputLimited && error instanceof AiError && ['tag_missing', 'tag_unclosed'].includes(String(error.details?.storyRule)))
+        throw new AiError('output_limit');
+      throw error;
+    }
+  })();
   const story = envelope?.story;
   if (story) {
     try { validateStoryEventInteractions(captured.state, story); }

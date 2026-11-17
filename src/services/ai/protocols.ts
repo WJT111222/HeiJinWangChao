@@ -196,12 +196,12 @@ export function usageFrom(
     ? Object.fromEntries(Object.entries(result).filter(([, v]) => v !== undefined))
     : undefined;
 }
-export function responseText(value: unknown, protocol: RequestSnapshot['channel']['protocol']) {
+export function responseText(value: unknown, protocol: RequestSnapshot['channel']['protocol'], allowOutputLimit = false) {
   const data = record(value);
   if (data.error) throw new AiError('rejected');
   if (isOpenAiCompatible(protocol)) {
     const choice = record(array(data.choices)[0]);
-    checkFinish(choice.finish_reason);
+    checkFinish(choice.finish_reason, allowOutputLimit);
     const content = record(choice.message).content;
     return typeof content === 'string'
       ? content
@@ -213,13 +213,13 @@ export function responseText(value: unknown, protocol: RequestSnapshot['channel'
   if (protocol === 'gemini') {
     if (record(data.promptFeedback).blockReason) throw new AiError('content_filter');
     const candidate = record(array(data.candidates)[0]);
-    checkFinish(candidate.finishReason);
+    checkFinish(candidate.finishReason, allowOutputLimit);
     return array(record(candidate.content).parts)
       .filter((p) => record(p).thought !== true)
       .map((p) => string(record(p).text))
       .join('');
   }
-  checkFinish(data.stop_reason);
+  checkFinish(data.stop_reason, allowOutputLimit);
   return array(data.content)
     .filter((part) => record(part).type === 'text')
     .map((part) => string(record(part).text))

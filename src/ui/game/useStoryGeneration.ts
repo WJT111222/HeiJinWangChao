@@ -21,6 +21,8 @@ export function useStoryGeneration(
   const [runner] = useState(() => new StoryStage(repository));
   const [progress, setProgress] = useState<StoryProgress>();
   const [error, setError] = useState('');
+  const errorTurn = useRef<string | undefined>(undefined);
+  const turnKey = (value: TurnDraft | undefined) => value && `${value.saveId}:${value.turnId}:${value.storyRevision}`;
   const token = useRef(0);
   const running = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -37,6 +39,7 @@ export function useStoryGeneration(
     // The UI may start an empty/failed story, but cannot replace a valid saved story.
     if (!draft || running.current || !mayStartStory(draft)) return;
     running.current = true;
+    errorTurn.current = turnKey(draft);
     const id = ++token.current;
     setError('');
     onRuntimeEvent?.('story', 'started');
@@ -91,8 +94,9 @@ export function useStoryGeneration(
     clearTimeout(timer.current);
     timer.current = undefined;
     setProgress(undefined);
+    errorTurn.current = turnKey(draft);
     setError('请求已取消，已保存的正文草稿保持不变。');
     onRuntimeEvent?.('story', 'cancelled');
   }
-  return { generate, cancel, progress, error };
+  return { generate, cancel, progress, error: errorTurn.current === turnKey(draft) ? error : '' };
 }

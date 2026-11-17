@@ -19,6 +19,8 @@ export function useVariableGeneration(
   const [phase, setPhase] = useState<'generating' | 'saving'>();
   const [error, setError] = useState('');
   const errorStory = useRef<number | undefined>(undefined);
+  const errorTurn = useRef<string | undefined>(undefined);
+  const turnKey = (value: TurnDraft | undefined) => value && `${value.saveId}:${value.turnId}`;
   const token = useRef(0),
     running = useRef(false);
   useEffect(
@@ -31,6 +33,7 @@ export function useVariableGeneration(
   async function generate() {
     if (!draft || running.current) return;
     running.current = true;
+    errorTurn.current = turnKey(draft);
     errorStory.current = draft.storyRevision;
     const id = ++token.current;
     setError('');
@@ -77,6 +80,6 @@ export function useVariableGeneration(
     generate,
     cancel,
     phase,
-    error: errorStory.current === draft?.storyRevision ? error : '',
+    error: errorTurn.current === turnKey(draft) && errorStory.current === draft?.storyRevision ? error : '',
   };
 }

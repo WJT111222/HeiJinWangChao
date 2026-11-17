@@ -1,0 +1,227 @@
+
+> heijinwangchao@1.0.0-beta check
+> npm run filenames:check && npm run lint && npm run test && npm run build
+
+
+> heijinwangchao@1.0.0-beta filenames:check
+> node scripts/check-source-filenames.mjs
+
+Filename check: 4088 paths; Git index + untracked files.
+No case-insensitive path or extensionless module collisions.
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+
+> heijinwangchao@1.0.0-beta lint
+> eslint . --max-warnings=0
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+
+> heijinwangchao@1.0.0-beta test
+> vitest run
+
+
+ RUN  v5.0.5 /workspace/story-limit-fix
+
+ ❯ src/tests/story-stream-reading.test.tsx (31 tests | 1 failed) 3475ms
+   × 完整JSON回退在最终length检查前保留真实原文和独立原生字段 47ms
+ ❯ src/tests/story-stream-toggle.test.ts (26 tests | 4 failed) 1519ms
+   × openai 非流式length不能成为成功正文，不重试、不改正式状态 22ms
+   × deepseek 非流式length不能成为成功正文，不重试、不改正式状态 10ms
+   × gemini 非流式length不能成为成功正文，不重试、不改正式状态 25ms
+   × anthropic 非流式length不能成为成功正文，不重试、不改正式状态 10ms
+ ❯ src/tests/story-limit-acceptance.test.ts (32 tests | 2 failed) 655ms
+   × limit不得掩盖拒绝信息 stream=false 16ms
+   × limit不得掩盖拒绝信息 stream=true 14ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tests/story-limit-acceptance.test.ts > limit不得掩盖拒绝信息 stream=false
+ FAIL  src/tests/story-limit-acceptance.test.ts > limit不得掩盖拒绝信息 stream=true
+AssertionError: promise resolved "{ …(3) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "draft": {
++     "baseSaveRevision": 0,
++     "draftRevision": 1,
++     "executionRevision": 0,
++     "failures": [],
++     "requestedStages": [],
++     "saveId": "save-a",
++     "stageRequestRevisions": {
++       "variables": 0,
++       "world": 0,
++     },
++     "stageStatus": {
++       "story": "ready",
++       "variables": "skipped",
++       "world": "skipped",
++     },
++     "story": {
++       "actionOptions": [
++         "沿街走走",
++         "回家休息",
++         "询问路人",
++       ],
++       "narrative": "【旁白】他走过街边，停下来观察行人，然后决定回家。",
++       "summary": "他观察街景后准备回家。",
++       "turnKind": "opening",
++       "variableGuide": [],
++     },
++     "storyPartial": undefined,
++     "storyRevision": 1,
++     "turnId": "probe-turn",
++     "turnKind": "opening",
++     "useVariableStage": false,
++     "useWorldStage": false,
++     "userInput": "",
++     "variables": undefined,
++     "world": undefined,
++   },
++   "skipped": [
++     "variables",
++     "world",
++   ],
++   "status": "complete",
+  }
+
+ ❯ src/tests/story-limit-acceptance.test.ts:65:29
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  src/tests/story-stream-reading.test.tsx > 完整JSON回退在最终length检查前保留真实原文和独立原生字段
+AssertionError: promise resolved "{ saveId: 'save-a', …(17) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "baseSaveRevision": 0,
++   "draftRevision": 1,
++   "executionRevision": 0,
++   "failures": [],
++   "requestedStages": [],
++   "saveId": "save-a",
++   "stageRequestRevisions": {
++     "variables": 0,
++     "world": 0,
++   },
++   "stageStatus": {
++     "story": "ready",
++     "variables": "pending",
++     "world": "pending",
++   },
++   "story": {
++     "narrative": "【旁白】雨落在站台，主角看着驶来的公交车。",
++     "summary": "主角等车。",
++     "turnKind": "opening",
++     "variableGuide": [],
++   },
++   "storyPartial": undefined,
++   "storyRevision": 1,
++   "turnId": "stream-turn",
++   "turnKind": "opening",
++   "useVariableStage": true,
++   "useWorldStage": true,
++   "userInput": "",
++   "variables": undefined,
++   "world": undefined,
+  }
+
+ ❯ src/tests/story-stream-reading.test.tsx:249:67
+    248|   const pending = runner(a.repo, transport).generate(a);
+    249|   const saved = await pending;
+    250|   expect(saved.stageStatus.story).toBe('ready');
+       |                                    ^
+    251|   expect(saved.story?.narrative).toBe(body);
+    252|   expect(saved.storyPartial).toBeUndefined();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  src/tests/story-stream-toggle.test.ts > openai 非流式length不能成为成功正文，不重试、不改正式状态
+ FAIL  src/tests/story-stream-toggle.test.ts > deepseek 非流式length不能成为成功正文，不重试、不改正式状态
+ FAIL  src/tests/story-stream-toggle.test.ts > gemini 非流式length不能成为成功正文，不重试、不改正式状态
+ FAIL  src/tests/story-stream-toggle.test.ts > anthropic 非流式length不能成为成功正文，不重试、不改正式状态
+AssertionError: promise resolved "{ saveId: 'save-a', …(17) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "baseSaveRevision": 0,
++   "draftRevision": 1,
++   "executionRevision": 0,
++   "failures": [],
++   "requestedStages": [],
++   "saveId": "save-a",
++   "stageRequestRevisions": {
++     "variables": 0,
++     "world": 0,
++   },
++   "stageStatus": {
++     "story": "ready",
++     "variables": "pending",
++     "world": "pending",
++   },
++   "story": {
++     "narrative": "主角在站台看着来往车辆，保持安静等候。",
++     "summary": "站台等候。",
++     "turnKind": "opening",
++     "variableGuide": [],
++   },
++   "storyPartial": undefined,
++   "storyRevision": 1,
++   "turnId": "story-toggle",
++   "turnKind": "opening",
++   "useVariableStage": true,
++   "useWorldStage": true,
++   "userInput": "",
++   "variables": undefined,
++   "world": undefined,
+  }
+
+ ❯ src/tests/story-stream-toggle.test.ts:94:53
+     92|       const a = await fixture(protocol), before = await a.repo.loadGam…
+     93|       const transport = vi.fn<typeof fetch>(async () => Response.json(…
+     94|       await expect(runner(a, transport).generate(a)).rejects.toMatchOb…
+       |                                                     ^
+     95|       expect(await a.repo.loadGame('save-a')).toEqual(before); expect(…
+     96|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+
+ Test Files  3 failed | 174 passed (177)
+      Tests  7 failed | 4295 passed (4302)
+   Start at  01:09:47
+   Duration  60.38s (tests 74%, import 19%, transform 6%)
+
+    Isolate  177 workers spawned · ~110ms startup each (spawn + environment, per file)
+             at least ~6.35s faster with isolate: false — reuses workers across files instead of one per file
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

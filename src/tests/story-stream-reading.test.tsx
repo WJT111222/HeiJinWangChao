@@ -246,7 +246,10 @@ it.each(['stop', 'length'] as const)('完整JSON回退在最终%s检查前保留
     message: { content: output(), reasoning_content: native }, finish_reason: finish,
   }] }));
   const pending = runner(a.repo, transport).generate(a);
-  if (finish === 'stop') await pending; else await expect(pending).rejects.toMatchObject({ code: 'output_limit' });
+  const saved = await pending;
+  expect(saved.stageStatus.story).toBe('ready');
+  expect(saved.story?.narrative).toBe(body);
+  expect(saved.storyPartial).toBeUndefined();
   expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: output(), nativeReasoning: native });
   expect(transport).toHaveBeenCalledTimes(1);
 });

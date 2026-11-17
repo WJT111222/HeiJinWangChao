@@ -8,10 +8,11 @@ const truncated = new Set(['length', 'max_tokens']);
 const filtered = new Set(['content_filter', 'sensitive', 'safety', 'refusal', 'prohibited_content', 'blocklist', 'spii', 'recitation', 'image_safety']);
 
 /** 返回 true 表示正常结束；undefined 表示这一块没有结束原因；其他情况直接抛出对应错误。 */
-export function checkFinish(reason: unknown): true | undefined {
+export function checkFinish(reason: unknown, allowOutputLimit = false): true | undefined {
   if (reason === undefined || reason === null || reason === '') return undefined;
   const value = typeof reason === 'string' ? reason.toLowerCase() : '';
   if (finished.has(value)) return true;
+  if (truncated.has(value) && allowOutputLimit) return true;
   if (truncated.has(value)) throw new AiError('output_limit');
   if (filtered.has(value)) throw new AiError('content_filter');
   throw new AiError('stream_interrupted');
