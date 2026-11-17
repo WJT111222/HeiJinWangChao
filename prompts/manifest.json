@@ -1522,7 +1522,7 @@
       ],
       "toggle": "naturalProse:true",
       "domain": null,
-      "characters": 877,
+      "characters": 1677,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "setting",
@@ -1532,7 +1532,7 @@
       "orderGroup": "writing",
       "reorderable": true,
       "category": "writing",
-      "contentSha256": "9e0a9ef91022ef5a3d85c7bbf1ee624d85bb2b11b31c343188949a128fad14c0",
+      "contentSha256": "d4db353b663dfcd4c09ba59be2fbc90a592d9e4e6c423da3e8e0038b003a0255",
       "placeholders": []
     },
     {
@@ -2207,7 +2207,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 3582,
+      "characters": 3695,
       "version": "0.5.6-story-tags",
       "messageRole": "system",
       "activation": "always",
@@ -2217,7 +2217,7 @@
       "orderGroup": "planning",
       "reorderable": false,
       "category": "planning",
-      "contentSha256": "e377b8e25d4b4d8dd5e06d9a10571df3be58e3f712394d384fd1d3785fe0e0f3",
+      "contentSha256": "9c6545ac3506b60e1b071d15f35950eb489d0d7ac491153458a0824ac0c81450",
       "placeholders": []
     },
     {
@@ -2233,7 +2233,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 5710,
+      "characters": 5856,
       "version": "0.5.6-story-tags",
       "messageRole": "system",
       "activation": "always",
@@ -2243,7 +2243,7 @@
       "orderGroup": "planning",
       "reorderable": false,
       "category": "planning",
-      "contentSha256": "8283d6f3a0f8436f5c3e88804d8fd589127070285e4dd69819185b75344c87f1",
+      "contentSha256": "dfe2b328600e3d630a1ab93d1c826ec04ef1fbd3b6ed173a192f0d3dbc8465c5",
       "placeholders": []
     },
     {
