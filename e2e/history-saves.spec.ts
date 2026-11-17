@@ -46,7 +46,7 @@ async function open(page: Page) {
   }
   await page.getByRole('button', { name: '历史存档', exact: true }).click();
   await expect(page.getByRole('dialog', { name: '历史存档', exact: true })).toBeVisible();
-  await expect(page.getByText('正在读取历史元数据…')).toHaveCount(0);
+  await expect(page.getByText('正在读取历史存档…')).toHaveCount(0);
 }
 async function mock(page: Page) {
   const calls: string[] = [], control = { failStory: false };

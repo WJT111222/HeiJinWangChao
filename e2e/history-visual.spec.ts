@@ -42,7 +42,7 @@ async function open(page: Page) {
   }
   await page.getByRole('button', { name: '历史存档', exact: true }).click();
   await expect(page.getByRole('dialog', { name: '历史存档', exact: true })).toBeVisible();
-  await expect(page.getByText('正在读取历史元数据…')).toHaveCount(0);
+  await expect(page.getByText('正在读取历史存档…')).toHaveCount(0);
 }
 
 for(const appearance of ['night','day'])for(const short of [false,true])test(`历史档案视觉 ${appearance} short=${short}`,async({page},info)=>{
@@ -56,6 +56,10 @@ for(const appearance of ['night','day'])for(const short of [false,true])test(`�
  let parent=e.parentElement;while(parent&&parse(getComputedStyle(parent).backgroundColor)[3]===0)parent=parent.parentElement;
  const bg=parse(parent?getComputedStyle(parent).backgroundColor:'rgb(255,255,255)'),a=lum(border),b=lum(bg);return[{text:e.textContent??'',ratio:(Math.max(a,b)+.05)/(Math.min(a,b)+.05),minHeight:e.getBoundingClientRect().height}];});}));const contrast=await settingsTextContrast(root);contrasts.push(contrast);metrics.push({name,...await root.evaluate(el=>{const body=el.querySelector('.modal-body')!,r=el.getBoundingClientRect();return{rect:{x:r.x,y:r.y,width:r.width,height:r.height},body:{scroll:body.scrollHeight,client:body.clientHeight,width:body.scrollWidth,clientWidth:body.clientWidth},pageWidth:document.documentElement.scrollWidth,viewport:innerWidth}})});}
  await root.getByRole('button',{name:'自动历史',exact:true}).focus();await expect(root.getByRole('button',{name:'自动历史',exact:true})).toBeFocused();
+ await expect(root.getByRole('note')).toHaveText('自动保留最近 5 个恢复点；手动收藏不会自动轮换删除。');
+ await expect(root.getByText('普通备份不含历史收藏，重要节点请单独导出。',{exact:true})).toBeVisible();
+ await expect(root.getByRole('button',{name:'保存当前正式节点',exact:true})).toHaveText('收藏');
+ await expect(root.getByText('存储详情',{exact:true})).toBeVisible();
  await capture('automatic');await page.getByRole('button',{name:'关闭资料界面',exact:true}).click();
  await page.evaluate(async()=>{const p='/src/services/storage/saveRepository.ts',f='/src/tests/fixtures/turn.ts',{SaveRepository}=await import(p),{completeDraft,elapsedVariables,submission}=await import(f),r=await SaveRepository.open();try{
   await r.history.create('save-a','雨夜转折 · 被珍藏的旧人生');const n=(await r.history.list('save-a')).nodes.find((n:{kind:string;turnNumber:number})=>n.kind==='automatic'&&n.turnNumber===2);const preview=await r.history.preview('save-a',n);await r.history.restore(preview.confirmation,'合成新时间线',true,true);
@@ -71,7 +75,7 @@ for(const appearance of ['night','day'])for(const short of [false,true])test(`�
  await capture('long-reading-bottom');
  await page.getByLabel('历史阅读内容').selectOption('人物档案');await root.locator('.history-world').scrollIntoViewIfNeeded();await capture('profile');await page.getByLabel('历史阅读内容').selectOption('经济与资产');await capture('economy');
  await page.getByLabel('历史阅读内容').selectOption('正文');await page.getByLabel('从此历史节点开始的行动').fill('先核对再决定');await page.getByRole('button',{name:'发送新行动（先确认覆盖）',exact:true}).click();await root.getByRole('heading',{name:'确认覆盖并继续？'}).scrollIntoViewIfNeeded();await capture('overwrite');
- await expect(root.getByRole('region',{name:'覆盖时间线确认'})).toContainText('不能通过撤回恢复');await expect(root).toContainText('玩家自行保存的历史节点不会被删除');await page.getByRole('button',{name:'取消，保留原进度',exact:true}).click();await page.getByRole('button',{name:'返回历史列表',exact:true}).click();
+ await expect(root.getByRole('region',{name:'覆盖时间线确认'})).toContainText('无法撤销');await expect(root).toContainText('手动收藏会保留');await page.getByRole('button',{name:'取消，保留原进度',exact:true}).click();await page.getByRole('button',{name:'返回历史列表',exact:true}).click();
  expect(await read(page)).toEqual(before);expect(posts).toBe(0);
  await writeFile(info.outputPath('computed-contrast.json'),JSON.stringify({contrasts,metrics,buttonChecks},null,2));
  expect(buttonChecks.filter(c=>c.ratio<3)).toEqual([]);if(mobile)expect(buttonChecks.every(c=>c.minHeight>=44)).toBe(true);
