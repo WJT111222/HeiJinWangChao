@@ -19,6 +19,7 @@ import { requireWorld, worldValidationError } from './worldDiagnostics';
 import { worldProjectionError } from './worldProjectionDiagnostics';
 import { worldNpcAllowed } from '../../domain/npc/worldAccess';
 import { NpcSchema } from '../../domain/npc/schema';
+import { stripVariableSceneWrites, worldForbiddenNpcChange, worldNormalizationNotes } from './worldSceneWrites';
 
 function sameActor(a: ActorRef, b: ActorRef) { return a.kind === b.kind && a.id === b.id; }
 function offscreen(state: GameState, ref: ActorRef) {
@@ -34,6 +35,8 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   state = openingTimeBase(state, draft);
   const result = WorldResultSchema.parse(raw);
   requireWorld(draft.story, 'invalid_output', 'command_structure');
+  // 与本轮 Variables 重复写入的字段先剔除（以 Variables 为准），不再让整个 World 阶段失败（#186）。
+  const sceneWriteNotes = stripVariableSceneWrites(result, state, draft);
   const base = projectTurn(original, draft), now = Date.parse(base.worldClock);
   const stageHandoffs=normalizeStageEntryHandoffs(result,base,draft);
   const commands = [...result.worldCommands, ...result.taskCommands, ...result.eventCommands];
@@ -64,16 +67,11 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     try {
       switch (command.type) {
         case 'UpdateNpc': {
-          requireWorld(!['name','aliases','identity','phoneContact','usualLocations','detailedBackground','habits','relationshipNetwork'].some(key => Object.hasOwn(command.changes,key)), 'permission');
+          // 身份、关系、互动与重新入场字段不属于 World；冲突剔除不会处理这些字段，越权仍在此拒绝。
+          requireWorld(!Object.entries(command.changes).some(([key, value]) => worldForbiddenNpcChange(key, value)), 'permission');
           requireWorld(causal.npc[command.npcId] && actorAllowed({kind:'npc', id:command.npcId}), 'permission');
-          requireWorld(!command.affinityChange && command.changes.relationshipText === undefined
-            && command.changes.lastInteractionAt === undefined && command.changes.onScene !== true, 'permission');
-          // A departing actor can take a new background task, not overwrite the same scene fields twice.
-          if (state.npc[command.npcId]?.onScene) {
-            const prior = draft.variables?.validation === 'validated' ? draft.variables.result.commands : [];
-            requireWorld(!prior.some(c => c.type === 'UpdateNpc' && c.npcId === command.npcId
-              && Object.keys(c.changes).some(key => Object.hasOwn(command.changes, key))), 'permission', 'scene_write_conflict');
-          }
+          requireWorld(!command.affinityChange, 'permission');
+          // 在场人物与本轮 Variables 重复的字段已由 stripVariableSceneWrites 剔除。
           break;
         }
         case 'RecordNpcMemory': {
@@ -99,17 +97,12 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         }
         case 'UpdateOrganization': {
           requireWorld(causal.organizations[command.organizationId], 'permission');
-          const prior = draft.variables?.validation === 'validated' ? draft.variables.result.commands : [];
-          requireWorld(!prior.some(c => c.type === 'UpdateOrganization' && c.organizationId === command.organizationId
-            && Object.keys(c.changes).some(key => Object.hasOwn(command.changes, key))
-            || c.type === 'CreateOrganization' && c.organization.id === command.organizationId
-              && Object.keys(command.changes).some(key => Object.hasOwn(c.organization, key))), 'permission', 'scene_write_conflict');
+          // 与本轮 Variables 重复的字段已由 stripVariableSceneWrites 剔除。
           break;
         }
         case 'RecordOrgRelation':
           requireWorld(causal.organizations[command.organizationId], 'permission');
-          requireWorld(!(draft.variables?.validation === 'validated' && draft.variables.result.commands.some(c =>
-            c.type === 'RecordOrgRelation' && c.organizationId === command.organizationId || c.type === 'CreateOrganization' && c.organization.id === command.organizationId)), 'permission', 'scene_write_conflict');
+          // Variables 本轮已记录或新建该组织时，这条关系记录已由 stripVariableSceneWrites 忽略。
           break;
         case 'CreateLocation': break; // Domain validation enforces hierarchy and references.
         case 'SaveTask': {
@@ -231,5 +224,6 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     const successors=result.eventCommands.filter(c=>c.type==='SaveEvent' && c.event.predecessorEventIds?.includes(command.event.id));
     requireWorld(successors.length>0 && (command.event.eventKind==='sub' || successors.every(c=>c.type==='SaveEvent' && !terminalEvent(c.event))), 'invalid_output','event_continuation');
   }
+  if (sceneWriteNotes.length) worldNormalizationNotes.set(result, sceneWriteNotes);
   return result;
 }

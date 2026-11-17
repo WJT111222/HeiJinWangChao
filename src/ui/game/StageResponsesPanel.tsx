@@ -69,6 +69,7 @@ export function StageResponsesPanel({ saveId, turnId, draft }: { saveId: string;
       return <ResponseDetail key={stage} record={record} label={label}>
         {record?.error && <p role="note">{record.error.message}{'details' in record.error && record.error.details?.worldRule ? ` · ${worldRuleNames[record.error.details.worldRule]}` : ''}</p>}
         {record?.error && 'details' in record.error && record.error.details?.storyRule && <small>正文失败类型：{record.error.details.storyRule} · {storyRuleNames[record.error.details.storyRule]}</small>}
+        {record?.notes?.length ? <div className="stage-notes" role="note"><b>程序处理说明</b><ul>{record.notes.map((note, index) => <li key={index}>{note}</li>)}</ul></div> : null}
         {record?.normalized && <details><summary>{label}程序校验后的结果</summary><pre className="candidate-json" tabIndex={0} aria-label={`${label}规范化结果`}>{record.normalized}</pre></details>}
       </ResponseDetail>;
     })}

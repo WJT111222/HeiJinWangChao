@@ -123,7 +123,7 @@ set organizations[org-business].state = {"operatingStatus":"完成现场确认�
 
 若有金额，`financialBasis` 与变化字段一起放在 state 值内；编译器拆为命令元数据并注入正式 expectedRevision，不存进组织对象。数组为明确替换，清空当前关系使用 `relations:[]`。
 
-链路：实际 Composer/目录 → 文本编译或 World JSON 解析 → 原候选模拟 → 原子 Commit 重验 → IndexedDB → 刷新/撤回。World使用正式基线 revision，不改变 PR #73 投影语义。World不能覆盖本轮已验证 Variables 写过的同一组织字段或主角关系；不冲突字段仍可独立推演。整个数组是一个字段，当前不做隐式合并或冲突覆盖。
+链路：实际 Composer/目录 → 文本编译或 World JSON 解析 → 原候选模拟 → 原子 Commit 重验 → IndexedDB → 刷新/撤回。World使用正式基线 revision，不改变 PR #73 投影语义。World不能覆盖本轮已验证 Variables 写过的同一组织字段或主角关系；不冲突字段仍可独立推演。整个数组是一个字段，当前不做隐式合并或冲突覆盖。World 若仍输出这些重复字段或关系记录，程序以 Variables 为准剔除它们（剩余内容为空的命令整条忽略），不再让整个 World 阶段失败；处理说明只显示在本页诊断的“校验结果”中，模型原文保持原样（#186）。World 无权写入的人物字段即使与 Variables 重复也不剔除，仍按越权拒绝。
 
 World 创建后可在同批使用明确的 UpdateOrganization（仍必须上述金额依据）；结构化依赖顺序支持先创建后更新。不存在的对象、安全引用、任务归属和失败原子回滚继续由原完整投影验证，安全诊断支持映射 UpdateOrganization 的字段路径与命令位置。
 

@@ -1,3 +1,4 @@
+import { worldNormalizationNotes } from '../validation/worldSceneWrites';
 import { narrativeRange } from '../../ui/settings/model';
 import { validateStoryEventInteractions } from '../../domain/events/interactions';
 import { AiError } from './errors';
@@ -173,7 +174,8 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   const result = story ?? (captured.stage === 'variables'
         ? await parseTextVariables(responseText, captured.state, captured.draft!)
         : parseWorld(responseText, captured.state, captured.draft!));
-  stageResponses.update(responseId, { status: 'validated', normalized: JSON.stringify(result, null, 2) }, secrets);
+  const notes = story ? undefined : worldNormalizationNotes.get(result);
+  stageResponses.update(responseId, { status: 'validated', normalized: JSON.stringify(result, null, 2), ...(notes ? { notes } : {}) }, secrets);
   return {
     result,
     responseInspectionId: responseId,

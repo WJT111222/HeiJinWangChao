@@ -914,3 +914,9 @@
   resize: vertical;
   font-family: var(--font-mono);
 }
+
+/* 程序处理说明（如忽略与变量阶段重复的字段），只在诊断页显示。 */
+.stage-notes { margin:6px 0; padding:8px 10px; border-left:2px solid #b8955a; background:#b8955a14; font-size:12px; line-height:1.6; }
+.stage-notes b { display:block; margin-bottom:2px; }
+.stage-notes ul { margin:0; padding-left:18px; }
+.stage-notes li { overflow-wrap:anywhere; }
