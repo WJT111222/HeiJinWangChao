@@ -324,7 +324,7 @@ describe('玩家可见资料投影', () => {
   });
 });
 describe('本地设置与填写草稿存储', () => {
-  it('设置恰好七个提示词字段，保存恢复全部分类', () => {
+  it('设置完整八个提示词字段，保存恢复全部分类', () => {
     const data = new Map<string, string>();
     const storage = {
       getItem: (k: string) => data.get(k) ?? null,
@@ -336,7 +336,10 @@ describe('本地设置与填写草稿存储', () => {
     settings.prompts.perspective = 'first';
     settings.memory.immediateWindowSize = 12;
     settings.runtime.useWorldStage = false;
-    expect(Object.keys(settings.prompts)).toHaveLength(7);
+    expect(Object.keys(settings.prompts).sort()).toEqual([
+      'actionOptions', 'maxNarrativeChars', 'minNarrativeChars', 'naturalProse',
+      'noControl', 'perspective', 'realWorld', 'style',
+    ]);
     writeDocument(storage, settingsKey, SettingsSchema, settings);
     expect(readDocument(storage, settingsKey, SettingsSchema)).toEqual(settings);
   });

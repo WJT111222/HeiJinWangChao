@@ -28,7 +28,7 @@ async function stored(page: Page) {
   return page.evaluate(async () => {
     const path = '/src/ui/settings/model.ts', { SettingsSchema, settingsKey } = await import(path);
     const raw = localStorage.getItem(settingsKey);
-    return raw === null ? null : SettingsSchema.parse(JSON.parse(raw)).prompts as { minNarrativeChars: number; maxNarrativeChars: number };
+    return raw === null ? null : SettingsSchema.parse(JSON.parse(raw)).prompts as { minNarrativeChars: number; maxNarrativeChars?: number };
   });
 }
 const tier = (root: ReturnType<Page['getByRole']>, name: string) => root.getByRole('radiogroup', { name: '正文篇幅档位' }).getByRole('radio', { name: new RegExp(`^${name}`) });
@@ -43,6 +43,10 @@ test('新玩家默认低档；选中档 / 高档后保存，刷新仍在；高�
   await tier(root, '中').check();
   await expect(root.getByLabel('正文最低字数', { exact: true })).toHaveValue('4000');
   await expect(root.getByLabel('正文建议上限', { exact: true })).toHaveValue('5000');
+  await root.getByRole('button', { name: '保存本地设置', exact: true }).click();
+  await page.reload();
+  const mid = await openPromptSettings(page);
+  await expect(tier(mid, '中')).toBeChecked();
   await tier(root, '高').check();
   await expect(root.getByLabel('正文最低字数', { exact: true })).toHaveValue('8000');
   await expect(root.getByLabel('正文建议上限', { exact: true })).toHaveValue('10000');
@@ -80,16 +84,54 @@ test('自定义：手动改数字即为自定义；上限低于最低时不能�
   await expect(root.getByLabel('正文最低字数', { exact: true })).toHaveValue('1000');
 });
 
-test('老玩家的设置没有上限：保留原最低字数，自动补上建议上限，显示为自定义', async ({ page }) => {
+for (const [min, max] of [[1000, 2000], [1500, 2000], [4000, 5000], [8000, 10000]]) {
+  test(`旧设置 ${min} 缺少上限：自定义显示，打开和保存均不补写，刷新不变`, async ({ page }, info) => {
+    const root = await openPromptSettings(page, { minNarrativeChars: min });
+    const raw = () => page.evaluate(() => localStorage.getItem('heijin.settings.v1'));
+    const before = await raw();
+    await expect(tier(root, '自定义')).toBeChecked();
+    await expect(root.getByLabel('正文最低字数', { exact: true })).toHaveValue(String(min));
+    await expect(root.getByLabel('正文建议上限', { exact: true })).toHaveValue(String(max));
+    expect(await raw()).toBe(before);
+    expect(await stored(page)).not.toHaveProperty('maxNarrativeChars');
+    await root.getByRole('group', { name: '正文篇幅' }).screenshot({ path: info.outputPath(`legacy-${min}.png`), animations: 'disabled' });
+    await root.getByRole('button', { name: '保存本地设置', exact: true }).click();
+    await expect(root.getByRole('status')).toContainText('本地偏好已保存');
+    expect(await raw()).toBe(before);
+    await root.getByRole('button', { name: '关闭资料界面', exact: true }).click();
+    const reopened = await openPromptSettings(page);
+    await expect(tier(reopened, '自定义')).toBeChecked();
+    await page.reload();
+    const again = await openPromptSettings(page);
+    await expect(tier(again, '自定义')).toBeChecked();
+    await expect(again.getByLabel('正文最低字数', { exact: true })).toHaveValue(String(min));
+    await expect(again.getByLabel('正文建议上限', { exact: true })).toHaveValue(String(max));
+    expect(await raw()).toBe(before);
+  });
+}
+
+test('旧设置手动改最低字数时，固定当前推算上限', async ({ page }) => {
   const root = await openPromptSettings(page, { minNarrativeChars: 1500 });
-  await expect(tier(root, '自定义')).toBeChecked();
-  await expect(root.getByLabel('正文最低字数', { exact: true })).toHaveValue('1500');
-  await expect(root.getByLabel('正文建议上限', { exact: true })).toHaveValue('2000');
-  expect(await stored(page)).toEqual(expect.not.objectContaining({ maxNarrativeChars: expect.anything() }));
-  // 只改最低字数：上限固定为原来推出的 2000，不随最低字数漂移。
   await root.getByLabel('正文最低字数', { exact: true }).fill('1800');
+  await expect(tier(root, '自定义')).toBeChecked();
   await expect(root.getByLabel('正文建议上限', { exact: true })).toHaveValue('2000');
   await root.getByRole('button', { name: '保存本地设置', exact: true }).click();
   await expect(root.getByRole('status')).toContainText('本地偏好已保存');
   expect(await stored(page)).toMatchObject({ minNarrativeChars: 1800, maxNarrativeChars: 2000 });
+  await page.reload();
+  const again = await openPromptSettings(page);
+  await expect(tier(again, '自定义')).toBeChecked();
+  await expect(again.getByLabel('正文最低字数', { exact: true })).toHaveValue('1800');
+});
+
+test('旧设置主动选择低档后保存刷新，按显式预设恢复', async ({ page }) => {
+  const root = await openPromptSettings(page, { minNarrativeChars: 1000 });
+  await expect(tier(root, '自定义')).toBeChecked();
+  await tier(root, '低').check();
+  await root.getByRole('button', { name: '保存本地设置', exact: true }).click();
+  await expect(root.getByRole('status')).toContainText('本地偏好已保存');
+  expect(await stored(page)).toMatchObject({ minNarrativeChars: 1000, maxNarrativeChars: 2000 });
+  await page.reload();
+  const again = await openPromptSettings(page);
+  await expect(tier(again, '低')).toBeChecked();
 });

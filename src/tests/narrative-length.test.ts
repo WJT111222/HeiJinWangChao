@@ -27,6 +27,20 @@ describe('篇幅档位与区间', () => {
     expect(defaultMaxNarrativeChars(99999)).toBe(100000);
     expect(narrativeRange({ minNarrativeChars: 1500 })).toEqual({ min: 1500, max: 2000 });
   });
+  it.each([[1000, 2000], [1500, 2000], [4000, 5000], [8000, 10000]])(
+    '旧最低字数 %i 缺少上限时保持自定义，生成上限仍为 %i', (min, max) => {
+      const old = defaultSettings();
+      old.prompts.minNarrativeChars = min;
+      delete old.prompts.maxNarrativeChars;
+      const original = structuredClone(old);
+      const parsed = SettingsSchema.parse(old);
+      expect(parsed.prompts.minNarrativeChars).toBe(min);
+      expect(parsed.prompts).not.toHaveProperty('maxNarrativeChars');
+      expect(narrativeRange(parsed.prompts)).toEqual({ min, max });
+      expect(narrativeLengthTier(parsed.prompts)).toBe('custom');
+      expect(old).toEqual(original);
+    },
+  );
   it('上限低于最低字数时按最低字数处理，已存设置不会失效', () => {
     expect(narrativeRange({ minNarrativeChars: 3000, maxNarrativeChars: 2000 })).toEqual({ min: 3000, max: 3000 });
     const old = { ...defaultSettings(), prompts: { ...defaultSettings().prompts, minNarrativeChars: 1500 } };

@@ -5,8 +5,21 @@ import { composePrompt, STABLE_CONTEXT_KEYS } from '../prompts/composer';
 import { talentContext } from '../prompts/talentContext';
 import { estimateTokens } from '../prompts/statistics';
 import { sentContext } from './fixtures/contextAssertions';
-import { talentPromptInput, talentMemoryInput } from './fixtures/talentPrompt';
+import { talentPromptInput as currentTalentPromptInput, talentMemoryInput as currentTalentMemoryInput } from './fixtures/talentPrompt';
 import baseline from './fixtures/talent-no-selection-baseline.json';
+import storyLengthBaseline from './fixtures/talent-story-length-baseline.json';
+
+// 仅本文件的历史字节对照固定为原七字段设置；其他请求测试继续使用新默认设置。
+function talentPromptInput(...args: Parameters<typeof currentTalentPromptInput>) {
+  const input = currentTalentPromptInput(...args);
+  delete input.settings.prompts.maxNarrativeChars;
+  return input;
+}
+function talentMemoryInput(...args: Parameters<typeof currentTalentMemoryInput>) {
+  const input = currentTalentMemoryInput(...args);
+  delete input.settings.prompts.maxNarrativeChars;
+  return input;
+}
 
 const stages = ['story', 'variables', 'world'] as const;
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -79,12 +92,18 @@ describe('PR-B 条件式单项天赋上下文', () => {
     }
   });
 
-  it.each(baseline.results.filter(r => r.stage !== 'memory'))('无天赋 $stage/$mode 与独立 PR-A 基线消息、模块、上下文字节相同', async expected => {
+  it.each(baseline.results.filter(r => r.stage !== 'memory'))('无天赋 $stage/$mode 保留 PR-A 上下文与非 Story 字节，仅 Story 篇幅规则更新', async expected => {
     const input = talentPromptInput(expected.stage as typeof stages[number], expected.mode as 'opening' | 'regular');
     const prompt = await composePrompt(input);
     expect(prompt.context).not.toHaveProperty('PROTAGONIST_TALENT');
     expect(sentContext(prompt.messages)).not.toHaveProperty('PROTAGONIST_TALENT');
-    expect(hash(prompt.messages)).toBe(expected.messages); expect(hash(prompt.context)).toBe(expected.context); expect(hash(prompt.modules)).toBe(expected.modules);
+    // 已逐消息对照 main：Story 只改变篇幅模块与末尾篇幅提醒；不重录其他阶段或上下文。
+    const expectedText = expected.stage === 'story'
+      ? storyLengthBaseline.results.find(result => result.mode === expected.mode)!
+      : expected;
+    expect(hash(prompt.messages)).toBe(expectedText.messages);
+    expect(hash(prompt.context)).toBe(expected.context);
+    expect(hash(prompt.modules)).toBe(expectedText.modules);
     expect(input.state.protagonist).not.toHaveProperty('talentId');
   });
 

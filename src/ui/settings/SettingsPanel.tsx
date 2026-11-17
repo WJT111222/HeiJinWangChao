@@ -171,7 +171,7 @@ export function SettingsPanel({
               </label>
               <LengthField
                 min={editing.prompts.minNarrativeChars}
-                max={editing.prompts.maxNarrativeChars ?? narrativeRange(editing.prompts).max}
+                max={editing.prompts.maxNarrativeChars}
                 custom={customLength}
                 minInput={minLengthInput}
                 onTier={chooseLength}
@@ -289,12 +289,14 @@ export function SettingsPanel({
  * 最低字数是程序硬性检查；建议上限只写进提示词，写多了照常通过。
  */
 function LengthField({ min, max, custom, minInput, onTier, onCustom, onMin, onMax }: {
-  min: number; max: number; custom: boolean; minInput: RefObject<HTMLInputElement | null>;
+  min: number; max: number | undefined; custom: boolean; minInput: RefObject<HTMLInputElement | null>;
   onTier: (min: number, max: number) => void; onCustom: () => void; onMin: (value: number) => void; onMax: (value: number) => void;
 }) {
   const tier = custom ? 'custom' : Number.isNaN(min) || Number.isNaN(max) ? 'custom' : narrativeLengthTier({ minNarrativeChars: min, maxNarrativeChars: max });
+  // 推算值仅供输入框显示，不参与旧设置的档位识别或自动保存。
+  const displayMax = max ?? narrativeRange({ minNarrativeChars: min }).max;
   const shown = (value: number) => Number.isNaN(value) ? '' : value;
-  const inverted = !Number.isNaN(min) && !Number.isNaN(max) && max < min;
+  const inverted = !Number.isNaN(min) && !Number.isNaN(displayMax) && displayMax < min;
   return (
     <div className="length-field" role="group" aria-labelledby="length-field-title">
       <span id="length-field-title" className="length-field-title">正文篇幅</span>
@@ -320,7 +322,7 @@ function LengthField({ min, max, custom, minInput, onTier, onCustom, onMin, onMa
           </label>
           <label>
             正文建议上限
-            <input type="number" min="1" max="100000" value={shown(max)} aria-invalid={inverted || undefined} onChange={(e) => onMax(e.target.valueAsNumber)} />
+            <input type="number" min="1" max="100000" value={shown(displayMax)} aria-invalid={inverted || undefined} onChange={(e) => onMax(e.target.valueAsNumber)} />
           </label>
         </div>
         {inverted

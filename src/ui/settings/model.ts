@@ -4,7 +4,7 @@ export const settingsKey = 'heijin.settings.v1';
 
 /**
  * 正文篇幅档位：最低字数是程序硬性检查（不足判失败重写），上限只写进提示词作为目标，写多了照常通过。
- * 自定义 = 两个数不等于任何一档。
+ * 旧设置缺少建议上限时保持自定义；显式保存的两个数可用于识别预设。
  */
 export const NARRATIVE_LENGTH_TIERS = [
   { id: 'low', label: '低', min: 1000, max: 2000 },
@@ -14,7 +14,8 @@ export const NARRATIVE_LENGTH_TIERS = [
 export type NarrativeLengthTier = (typeof NARRATIVE_LENGTH_TIERS)[number]['id'] | 'custom';
 export const NARRATIVE_CHARS_LIMIT = 100000;
 export function narrativeLengthTier(prompts: { minNarrativeChars: number; maxNarrativeChars?: number }): NarrativeLengthTier {
-  const { min, max } = narrativeRange(prompts);
+  if (prompts.maxNarrativeChars === undefined) return 'custom';
+  const { minNarrativeChars: min, maxNarrativeChars: max } = prompts;
   return NARRATIVE_LENGTH_TIERS.find((tier) => tier.min === min && tier.max === max)?.id ?? 'custom';
 }
 /** 实际使用的篇幅区间：建议上限缺失时按最低字数推出，且不低于最低字数。 */

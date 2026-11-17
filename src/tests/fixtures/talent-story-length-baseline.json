@@ -1,0 +1,20 @@
+{
+  "base": "cf3e83ad74decb83a97ec6907daf9869641eaf79",
+  "reason": "Only Story writing.min_length and the final length reminder change; context and non-Story baselines remain PR-A.",
+  "results": [
+    {
+      "stage": "story",
+      "mode": "opening",
+      "messages": "6ff67411227812c1866d17508a39b03a658bd4de8ea86dff244103b56907ce6c",
+      "context": "52789774e7cb81db58751426ee7c97881e3c794f5afee7d3e2b533f421100c0f",
+      "modules": "396a4b87727d77005ccbaa6d29be5047adb40ab888be5930fcb0a78d524ae40e"
+    },
+    {
+      "stage": "story",
+      "mode": "regular",
+      "messages": "3f85c93e51dcfaa365da5661aaca0114e59ee6d2c53b4c5ec0aa3c3cbad5fd30",
+      "context": "5ac8ab68c9f2e4dac234d7564d431461c0300e6f7fbd320eaf064a64e877b1f1",
+      "modules": "37052bf73b4078f46002959b886d31af7f1c052a1ba40bf0fa82c644cf37c2a6"
+    }
+  ]
+}
