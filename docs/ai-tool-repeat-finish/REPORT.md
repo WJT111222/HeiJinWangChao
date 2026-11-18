@@ -1,6 +1,6 @@
 # PR #191 · OpenAI 兼容 SSE 重复结束返修
 
-本轮基于 PR #191 的 `1b81aef2e9750dcf153f30a1b5f817d11d91d4b5`，main 为 `a820f5eadcd18362aa22a2fc51232a186e2ef8f9`。
+本轮基于 PR #191 的 `1b81aef2e9750dcf153f30a1b5f817d11d91d4b5`，原开发基线为 `a820f5eadcd18362aa22a2fc51232a186e2ef8f9`。返修期间主干合入 #196，`05475f4bcecc1c725676474884bceefcd786f96c` 相对原基线仅新增统一 CI 工作流。
 
 玩家提供的脱敏轨迹摘要显示，第三方中转以 HTTP 200 返回 SSE。第 16 帧第一次报 `tool_calls`，同帧含合法名称、非空参数和派生的工具结束。第 18 帧第二次报 `tool_calls`，触发 `tool_response / storyTool.ordering / duplicate_provider_finish`。请求用时 91,554 ms，报错时尚未读到 `[DONE]` 或 EOF。不能从这一点推断后续有没有真正的结束边界。测试只使用上述已知信息合成帧，第 17 帧用独立 usage 作为占位，其他前缀、响应标识、文本和参数全部为虚构。仓库未收录玩家原始文件。
 
@@ -17,8 +17,8 @@
 | 先红，旧运行逻辑 + 新回归 | 26 通过、21 失败，退出 1。第 18 帧提前拦截，因此正例、后续拒绝分类以及等待结束的断言均能观察到差异 |
 | 最终本地定向 Vitest，Node 24.19.0 | 5 文件、366 通过，退出 0。包含四协议兼容、取消、120 秒超时及正式 Repository 回归 |
 | TypeScript、改动文件 ESLint、差异检查 | 通过 |
-| 完整工程和 Prompt 检查 | 新增仅由原 PR 分支 push 触发的 GitHub Actions 工作流，使用 Node 24、npm ci、npm run check 和 npm run prompts:check。实际运行状态以对应提交的 Actions 为准 |
+| 完整工程与全量浏览器 CI | 使用主干 #196 的 GitHub Actions「自动测试」，Node 24、npm ci、npm run check，以及 4 个 Chromium 分片。完整 Vitest 包含 Prompt 测试，统一工作流不单独重新运行 Prompt 命令。分片结果属于参考项，须以实际通过、失败或跳过数量为准 |
 
 Mock 测试涵盖第 16～18 帧后真正 DONE 和 EOF 的两种成功，接收重报后连接断开、主动取消、120 秒超时，以及有边界仍不完整的参数 JSON。成功的自动流程只请求一次 Story，随后各执行一次 Variables、World 与正式提交。断开、取消和参数失败的 StoryStage 对照确认无候选写入、无 Commit、草稿与正式状态相同，每次仅一次 Mock 请求。开启和关闭诊断的出站与结果一致。没有调用真实模型、没有修改计费重试、Story Schema 或存档流程。真实中转能否稳定复现成功，仍需独立复审或后续由玩家运行验证。
 
-原始先红、最终定向、TypeScript 和 ESLint 结果收在 `test-evidence.zip`。未运行本地全量检查。工作流只做工程检查，不发布公告、不部署生产。
+原始先红、最终定向、TypeScript 和 ESLint 结果收在 `test-evidence.zip`。未运行本地全量检查。推送时发现新主干已启用统一 CI，随后移除原分支上临时添加的重复工作流。统一 CI 只做工程和浏览器检查，不发布公告或部署生产。
