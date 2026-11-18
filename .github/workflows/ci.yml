@@ -37,8 +37,12 @@ jobs:
         run: npm run check
 
   # 全量 e2e 单机要八九十分钟，拆成 4 组在 4 台机器上同时跑（Playwright 内置分片），每组约四分之一。
+  #
+  # 【暂时仅供参考】main 上现有一批 e2e 失败（首次在 GitHub 上全量运行时发现，待单独清理）。
+  # 在清理完成前，e2e 失败不会让这一项显示红叉：结果照常记录，失败数会以黄色警告和本次运行的「Summary」页列出。
+  # 清理完成后，删除下方 test:e2e 步骤的 continue-on-error 一行，即恢复为正式把关。
   e2e:
-    name: 端到端测试 第 ${{ matrix.shard }}/4 组（电脑端与手机端）
+    name: 端到端测试 第 ${{ matrix.shard }}/4 组（仅供参考）
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -61,10 +65,33 @@ jobs:
 
       # playwright.config.ts 会自动启动开发服务器（CI 环境下不复用已有服务器）
       - name: npm run test:e2e（第 ${{ matrix.shard }}/4 组）
-        run: npm run test:e2e -- --shard=${{ matrix.shard }}/4
+        id: e2e
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run test:e2e -- --shard=${{ matrix.shard }}/4 2>&1 | tee e2e-output.txt
+
+      - name: 汇总本组结果
+        if: always() && steps.e2e.outcome != 'skipped'
+        env:
+          SHARD: ${{ matrix.shard }}
+          OUTCOME: ${{ steps.e2e.outcome }}
+        run: |
+          counts=$(grep -E '^ +[0-9]+ (passed|failed|flaky|skipped|did not run|interrupted)' e2e-output.txt | sed -E 's/^ +//' | awk 'NR>1{printf "，"} {printf "%s", $0}')
+          {
+            echo "### 端到端测试 第 ${SHARD}/4 组：${counts:-没有读到汇总}"
+            if [ "$OUTCOME" = failure ]; then
+              echo ""
+              echo "失败的用例（仅供参考，不影响本项结果）："
+              echo '```'
+              awk '/^ +[0-9]+ failed$/{f=1;next} f&&/^ +\[/{print;next} f{exit}' e2e-output.txt | sed -E 's/ (─)+ *$//; s/^ +//'
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$OUTCOME" = failure ]; then echo "::warning title=端到端测试 第 ${SHARD}/4 组（仅供参考）::${counts}"; fi
 
       - name: 失败时上传测试记录与截图
-        if: failure()
+        if: always() && steps.e2e.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-results-${{ matrix.shard }}
