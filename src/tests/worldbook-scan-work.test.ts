@@ -5,6 +5,7 @@ import type { WorldbookEntry } from '../domain/worldbook/schema';
 import { EMPTY_TIMED_STATE } from '../domain/worldbook/timedEffects';
 import { DEFAULT_TRIGGER_SETTINGS, runWorldbookTrigger, type TriggerInput, type TriggerResult } from '../domain/worldbook/trigger';
 import { runGroupBench } from './support/worldbookGroupBench';
+import { conservativeTokens } from '../domain/worldbook/triggerSupport';
 
 function entry(partial: Partial<WorldbookEntry>): WorldbookEntry {
   return {
@@ -227,3 +228,81 @@ describe('分组处理计入单次扫描工作量（独立审查 P2-5）', () =>
     expect(rows.filter((row) => row.exhausted.includes('分组处理未完成')).length).toBeGreaterThanOrEqual(4);
   });
 });
+
+describe('P2-5 剩余：超大分组、高预算与不计工作量的阶段（第二轮独立审查）', () => {
+  const scored = (count: number, extra: Partial<WorldbookEntry> = {}) =>
+    Array.from({ length: count }, (_, i) => entry({ entryId: `s${i}`, constant: true, keys: ['码头'], group: 'g', useGroupScoring: true, content: `${i}`, ...extra }));
+
+  it('正常预算：评分分组照常只留最高分', () => {
+    const entries = [...scored(200), entry({ entryId: 'top', constant: true, keys: ['码头', '茶楼'], group: 'g', useGroupScoring: true, content: '高分' })];
+    const r = run(entries, ['码头 茶楼']);
+    expect(r.work.exhausted).toBeUndefined();
+    expect(r.activated.map((a) => a.entryId)).toEqual(['top']);
+    expect(r.decisions.filter((d) => d.reason === 'group_scoring')).toHaveLength(200);
+  });
+
+  it('高预算 + 15 万成员的评分分组：不抛 RangeError，评分语义不变', () => {
+    const entries = [...scored(150_000), entry({ entryId: 'top', constant: true, keys: ['码头', '茶楼'], group: 'g', useGroupScoring: true, content: '高分' })];
+    const r = run(entries, ['码头 茶楼'], { settings: { maxScanWork: 1e13 } });
+    expect(r.work.exhausted).toBeUndefined();
+    expect(r.activated.map((a) => a.entryId)).toEqual(['top']);
+    expect(r.decisions.filter((d) => d.reason === 'group_scoring')).toHaveLength(150_000);
+  }, 60_000);
+
+  it('默认预算 + 15 万成员：在上限内停止并给出诊断，不抛异常', () => {
+    const r = run(scored(150_000), ['码头']);
+    expect(r.work.exhausted).toBeDefined();
+    expect(r.work.used <= DEFAULT_TRIGGER_SETTINGS.maxScanWork).toBe(true);
+    expect(r.activated).toEqual([]);
+    expect(r.decisions.every((d) => d.reason === 'scan_limit_reached')).toBe(true);
+  }, 60_000);
+
+  it('评估阶段超限后移出分组候选：线性时间（分组与非分组交错 6 万条）', () => {
+    const entries = Array.from({ length: 60_000 }, (_, i) => entry({ entryId: `x${i}`, constant: true, group: i % 2 ? '' : `g${i}`, content: '内' }));
+    const started = Date.now();
+    const r = run(entries, ['码头'], { settings: { budgetCap: 1e9 }, contextTokens: 1e9, storyRemainingTokens: 1e9 });
+    const elapsed = Date.now() - started;
+    expect(r.work.exhausted?.loop).toBe(1);
+    expect(r.activated.every((a) => !a.entryId || Number(a.entryId.slice(1)) % 2 === 1)).toBe(true);
+    expect(r.decisions.filter((d) => d.detail === '同组条目未判断完').length).toBeGreaterThan(20_000);
+    expect(elapsed).toBeLessThan(3000);
+  }, 60_000);
+
+  it('大量条目同时激活（预算放开）：预算判断与插入计划都是线性时间', () => {
+    const positions = [0, 1, 2, 3, 5, 6, 4];
+    const entries = Array.from({ length: 20_000 }, (_, i) => entry({ entryId: `a${i}`, constant: true, content: `条目${i}`, position: positions[i % 7], depth: i % 3, role: i % 2 }));
+    const started = Date.now();
+    const r = run(entries, ['码头'], { settings: { budgetCap: 1e9 }, contextTokens: 1e9, storyRemainingTokens: 1e9 });
+    const elapsed = Date.now() - started;
+    expect(r.activated).toHaveLength(20_000);
+    expect(r.activated.every((a) => a.placed)).toBe(true);
+    expect(elapsed).toBeLessThan(2000);
+  }, 60_000);
+
+  it('增量 Token 计数与逐次整段估算结果完全一致（含代理对、ASCII 与中文混排、预算边界）', () => {
+    const texts = ['abc', '码头', '😀x', 'a'.repeat(7), '中文 mixed 文本', '', 'ab😀😀', '\u{1F600}'.repeat(3), '茶'.repeat(50)];
+    for (const budgetCap of [3, 10, 37, 100, 1000]) {
+      for (const contextTokens of [40, 400, 4000]) {
+        const entries = Array.from({ length: 60 }, (_, i) => entry({ entryId: `t${i}`, constant: true, content: texts[i % texts.length], ignoreBudget: i % 11 === 0, order: 1000 - i }));
+        const fast = run(entries, ['码头'], { settings: { budgetCap }, contextTokens, storyRemainingTokens: 1e9 });
+        const slow = run(entries, ['码头'], { settings: { budgetCap }, contextTokens, storyRemainingTokens: 1e9, estimateTokens: conservativeTokens });
+        expect(JSON.stringify({ ...fast, work: null })).toBe(JSON.stringify({ ...slow, work: null }));
+      }
+    }
+  });
+
+  it('插入计划顺序与逐条前插一致（各位置、同深度同角色分组）', () => {
+    const entries = Array.from({ length: 40 }, (_, i) => entry({ entryId: `p${i}`, constant: true, content: `内容${i}`, order: 100 + (i * 7) % 13, position: [0, 1, 2, 3, 4, 5, 6][i % 7], depth: i % 2, role: (i >> 1) % 2 }));
+    const r = run(entries, ['码头']);
+    const ordered = [...r.activated].sort((a, b) => b.order - a.order || entries.findIndex((e) => e.entryId === a.entryId) - entries.findIndex((e) => e.entryId === b.entryId));
+    const expected = (position: number) => ordered.filter((a) => a.position === position).map((a) => a.content).reverse();
+    expect(r.plan.before).toEqual(expected(0));
+    expect(r.plan.after).toEqual(expected(1));
+    expect(r.plan.authorNoteTop).toEqual(expected(2));
+    expect(r.plan.authorNoteBottom).toEqual(expected(3));
+    for (const group of r.plan.atDepth) {
+      expect(group.contents).toEqual(ordered.filter((a) => a.position === 4 && a.depth === group.depth && a.role === group.role).map((a) => a.content).reverse());
+    }
+  });
+});
+
