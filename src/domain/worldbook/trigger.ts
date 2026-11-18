@@ -1,4 +1,4 @@
-import { KeyMatcher, type MatchOptions } from './keyMatch';
+import { KeyMatcher, ScanLimitReached, WORK_WEIGHTS, WorkMeter, type MatchOptions } from './keyMatch';
 import type { SafeRegexReason } from './safeRegex';
 import { ENTRY_POSITIONS, type WorldbookEntry } from './schema';
 import { evaluateTimed, recordActivations, type TimedEntry, type TimedState } from './timedEffects';
@@ -26,10 +26,18 @@ export interface TriggerSettings {
   maxRecursionSteps: number;
   minActivations: number;
   minActivationsDepthMax: number;
+  /**
+   * 单次扫描的工作量上限（约等于处理的字符数；正则按 文本长度 × 状态数 计）。
+   * 超出时停止扫描，已选出的条目照常处理，未判断的条目标为 scan_limit_reached。
+   */
+  maxScanWork: number;
 }
+/** 默认单次扫描工作量上限，标定依据见 docs/WORLDBOOK_COMPATIBILITY.md「扫描工作量」。 */
+export const MAX_SCAN_WORK_DEFAULT = 100_000_000;
 export const DEFAULT_TRIGGER_SETTINGS: TriggerSettings = {
   scanDepth: 2, budgetPercent: 25, budgetCap: 4096, recursive: false, caseSensitive: false, matchWholeWords: false,
   useGroupScoring: false, maxRecursionSteps: 0, minActivations: 0, minActivationsDepthMax: 0,
+  maxScanWork: MAX_SCAN_WORK_DEFAULT,
 };
 
 export type TriggerMode = 'normal' | 'continue' | 'regenerate' | 'swipe' | 'impersonate' | 'quiet';
@@ -72,7 +80,7 @@ export type DecisionReason =
   | 'disabled' | 'trigger_filtered' | 'delay' | 'cooldown' | 'delay_until_recursion' | 'exclude_recursion'
   | 'decorator_suppress' | 'no_keys' | 'no_primary_match' | 'secondary_failed'
   | 'group_sticky' | 'group_timed' | 'group_scoring' | 'group_already_active' | 'group_priority' | 'group_weighted'
-  | 'probability_failed' | 'budget_exceeded' | 'hard_budget_exceeded' | 'not_scanned';
+  | 'probability_failed' | 'budget_exceeded' | 'hard_budget_exceeded' | 'not_scanned' | 'scan_limit_reached';
 export const DECISION_TEXT: Record<DecisionReason, string> = {
   constant: '常驻条目', sticky: 'Sticky 持续中', decorator_activate: '正文开头 @@activate 强制激活',
   primary_match: '命中主关键词', secondary_match: '命中主关键词且满足副关键词逻辑',
@@ -83,6 +91,7 @@ export const DECISION_TEXT: Record<DecisionReason, string> = {
   group_already_active: '同组已有条目激活', group_priority: '同组有优先条目', group_weighted: '分组按权重抽选未中',
   probability_failed: '概率检定未通过', budget_exceeded: '超出世界书预算', hard_budget_exceeded: '超出王朝硬性 Token 上限',
   not_scanned: '扫描已结束，未轮到该条目',
+  scan_limit_reached: '超出单次扫描工作量上限，未完成判断',
 };
 export interface EntryDecision {
   key: string; bookId: string; entryId: string; comment: string;
@@ -95,6 +104,8 @@ export interface TriggerResult {
   /** 每个条目一条，按扫描顺序。 */
   decisions: EntryDecision[];
   budget: { soft: number; hard: number; limit: number; used: number; overflowed: boolean };
+  /** 扫描工作量。exhausted 存在时表示在该轮、该条目处停止，结果不完整（每个受影响条目都有 scan_limit_reached）。 */
+  work: { limit: number; used: number; exhausted?: { loop: number; key: string } };
   loops: number;
   /** 不在安全子集内、因此未运行的正则关键词。 */
   unsupportedKeys: Array<{ key: string; reason: SafeRegexReason }>;
@@ -110,6 +121,7 @@ interface Item {
   key: string; bookId: string; versionId: string; entry: WorldbookEntry;
   content: string; decorators: string[]; index: number; fingerprint: string; level: number;
 }
+const emptyPlan = (): InjectionPlan => ({ before: [], after: [], authorNoteTop: [], authorNoteBottom: [], exampleMessages: [], atDepth: [], outlets: {} });
 const levelOf = (value: boolean | number) => value === true ? 1 : value === false ? 0 : value;
 
 export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
@@ -117,7 +129,8 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
   const estimate = input.estimateTokens ?? conservativeTokens;
   const substitute = input.substitute ?? ((text: string) => text);
   const rng = seededRandom(input.seed);
-  const matcher = new KeyMatcher();
+  const meter = new WorkMeter(settings.maxScanWork);
+  const matcher = new KeyMatcher(meter);
 
   // 1. 合并所有书的条目，按 order 从高到低稳定排序；解析正文开头的前缀指令。
   const merged: Item[] = [];
@@ -126,14 +139,53 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
     merged.push({
       key: `${book.bookId}#${entry.entryId}`, bookId: book.bookId, versionId: book.versionId, entry,
       content: parsed.content, decorators: parsed.decorators, index: 0,
-      fingerprint: entryFingerprint(book.bookId, entry), level: levelOf(entry.delayUntilRecursion),
+      fingerprint: '', level: levelOf(entry.delayUntilRecursion),
     });
   }
   const items = merged.map((item, i) => ({ item, i })).sort((a, b) => b.item.entry.order - a.item.entry.order || a.i - b.i).map(({ item }) => item);
   items.forEach((item, index) => { item.index = index; });
-  const timedEntries = new Map<string, TimedEntry>(items.map((item) => [item.key, {
-    key: item.key, fingerprint: item.fingerprint, sticky: item.entry.sticky, cooldown: item.entry.cooldown, delay: item.entry.delay,
-  }]));
+  const decisions = new Map<string, EntryDecision>();
+  const decide = (item: Item, reason: DecisionReason, loop: number, detail?: string, status: EntryDecision['status'] = 'not_activated') => {
+    decisions.set(item.key, {
+      key: item.key, bookId: item.bookId, entryId: item.entry.entryId, comment: item.entry.comment,
+      status, reason, loop, ...(detail !== undefined ? { detail } : {}),
+    });
+  };
+  for (const item of items) decide(item, 'not_scanned', 0);
+
+  // 准备阶段（计入工作量）：
+  // - 登记普通关键词（未停用条目的主副关键词，按各自的大小写模式），扫描时一次走完；
+  // - 计时效果只需要设置了 Sticky / 冷却 / 延迟的条目的指纹（指纹覆盖条目全部内容，其他条目不可能对上已有记录）。
+  // 准备阶段就超限时不做任何扫描，所有条目标明原因，计时状态原样返回。
+  const timedEntries = new Map<string, TimedEntry>();
+  let preparing: Item | undefined;
+  try {
+    for (const item of items) {
+      preparing = item;
+      const e = item.entry;
+      if (!e.disabled) {
+        const caseSensitive = e.caseSensitive ?? settings.caseSensitive;
+        for (const key of [...e.keys, ...e.secondaryKeys]) {
+          const substituted = substitute(key);
+          if (substituted) matcher.register(substituted.trim(), caseSensitive);
+        }
+      }
+      if (e.sticky === null && e.cooldown === null && e.delay === null) continue;
+      meter.charge((e.content.length + e.comment.length + 200) * WORK_WEIGHTS.fingerprintChar);
+      item.fingerprint = entryFingerprint(item.bookId, e);
+      timedEntries.set(item.key, { key: item.key, fingerprint: item.fingerprint, sticky: e.sticky, cooldown: e.cooldown, delay: e.delay });
+    }
+  } catch (error) {
+    if (!(error instanceof ScanLimitReached)) throw error;
+    for (const rest of items) decide(rest, 'scan_limit_reached', 0, '准备阶段');
+    return {
+      activated: [], plan: emptyPlan(), decisions: items.map((i) => decisions.get(i.key)!),
+      budget: { soft: 0, hard: 0, limit: 0, used: 0, overflowed: false },
+      work: { limit: meter.limit, used: meter.used, exhausted: { loop: 0, key: preparing!.key } },
+      loops: 0, unsupportedKeys: [],
+      nextTimedState: { sticky: { ...input.timedState.sticky }, cooldown: { ...input.timedState.cooldown } },
+    };
+  }
 
   // 2. 计时效果（只读输入状态）。
   const timed = evaluateTimed(input.timedState, [...timedEntries.values()], input.messageCount);
@@ -145,24 +197,23 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
   const budget = Math.min(soft, hard);
   let used = 0, overflowed = false;
 
-  const decisions = new Map<string, EntryDecision>();
-  const decide = (item: Item, reason: DecisionReason, loop: number, detail?: string, status: EntryDecision['status'] = 'not_activated') => {
-    decisions.set(item.key, {
-      key: item.key, bookId: item.bookId, entryId: item.entry.entryId, comment: item.entry.comment,
-      status, reason, loop, ...(detail !== undefined ? { detail } : {}),
-    });
-  };
-  for (const item of items) decide(item, 'not_scanned', 0);
-
   const messages = input.messages.slice(0, MAX_SCAN_MESSAGES).map((m) => m.trim());
   const recurse: string[] = [];
   let skew = 0;
+  // 扫描文本只取决于深度、是否带递归缓冲；同一轮内按这两项缓存，拼接时计入工作量。
+  let textCache = new Map<string, string>();
   const scanText = (item: Item, state: Scan) => {
     let depth = item.entry.scanDepth ?? settings.scanDepth + skew;
     if (depth <= 0) return '';
-    depth = Math.min(depth, MAX_SCAN_MESSAGES);
+    depth = Math.min(Math.trunc(depth), MAX_SCAN_MESSAGES);
+    const withRecursion = recurse.length > 0 && state !== Scan.MinActivations;
+    const cacheKey = `${depth}|${withRecursion ? 1 : 0}`;
+    const cached = textCache.get(cacheKey);
+    if (cached !== undefined) return cached;
     let text = `\u0001${messages.slice(0, depth).join('\n\u0001')}`;
-    if (recurse.length && state !== Scan.MinActivations) text += `\n\u0001${recurse.join('\n\u0001')}`;
+    if (withRecursion) text += `\n\u0001${recurse.join('\n\u0001')}`;
+    meter.charge(text.length * WORK_WEIGHTS.textChar);
+    textCache.set(cacheKey, text);
     return text;
   };
   const optionsOf = (item: Item): MatchOptions => ({
@@ -193,44 +244,64 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
   let currentLevel = delayLevels.shift() ?? 0;
   const safetyLimit = items.length + delayLevels.length + messages.length + 5;
 
+  let exhausted: { loop: number; key: string } | undefined;
   let state: Scan = Scan.Initial;
   let loop = 0;
+
+  /** 判断单个条目本轮能否成为候选；可能因工作量超限抛出 ScanLimitReached。 */
+  function evaluate(item: Item, state: Scan): { item: Item; reason: DecisionReason; detail?: string } | null {
+    meter.charge(WORK_WEIGHTS.entry);
+    const e = item.entry;
+    if (e.disabled) { decide(item, 'disabled', loop); return null; }
+    if (e.triggers.length && !e.triggers.includes(input.trigger)) { decide(item, 'trigger_filtered', loop); return null; }
+    const sticky = isSticky(item);
+    if (timed.delay.has(item.key)) { decide(item, 'delay', loop); return null; }
+    if (timed.cooldown.has(item.key) && !sticky) { decide(item, 'cooldown', loop); return null; }
+    if (state !== Scan.Recursion && e.delayUntilRecursion && !sticky) { decide(item, 'delay_until_recursion', loop); return null; }
+    if (state === Scan.Recursion && e.delayUntilRecursion && item.level > currentLevel && !sticky) { decide(item, 'delay_until_recursion', loop, `层级 ${item.level}`); return null; }
+    if (state === Scan.Recursion && settings.recursive && e.excludeRecursion && !sticky) { decide(item, 'exclude_recursion', loop); return null; }
+    if (item.decorators.includes('@@activate')) return { item, reason: 'decorator_activate' };
+    if (item.decorators.includes('@@dont_activate')) { decide(item, 'decorator_suppress', loop); return null; }
+    if (e.constant) return { item, reason: 'constant' };
+    if (sticky) return { item, reason: 'sticky' };
+    if (!e.keys.length) { decide(item, 'no_keys', loop); return null; }
+    const text = scanText(item, state), options = optionsOf(item);
+    const primary = e.keys.find((k) => keyHits(text, k, options));
+    if (primary === undefined) { decide(item, 'no_primary_match', loop); return null; }
+    if (!(e.selective && e.secondaryKeys.length)) return { item, reason: 'primary_match', detail: primary };
+    const hits = e.secondaryKeys.map((k) => keyHits(text, k, options));
+    const ok = e.selectiveLogic === 0 ? hits.some(Boolean)
+      : e.selectiveLogic === 1 ? hits.some((hit) => !hit)
+      : e.selectiveLogic === 2 ? !hits.some(Boolean)
+      : e.selectiveLogic === 3 ? hits.every(Boolean)
+      : false;
+    if (!ok) { decide(item, 'secondary_failed', loop, primary); return null; }
+    return { item, reason: 'secondary_match', detail: primary };
+  }
+
   while (state !== Scan.None) {
     if (settings.maxRecursionSteps && settings.maxRecursionSteps <= loop) break;
     if (loop >= safetyLimit) break;
     loop++;
+    textCache = new Map();
     let next: Scan = Scan.None;
     const found: Array<{ item: Item; reason: DecisionReason; detail?: string }> = [];
 
-    // 4. 找出本轮可以激活的条目。
-    for (const item of items) {
+    // 4. 找出本轮可以激活的条目。工作量超限时停止，本轮未判断的条目逐条标明原因。
+    for (let k = 0; k < items.length; k++) {
+      const item = items[k];
       if (failedProbability.has(item.key) || activated.has(item.key)) continue;
-      const e = item.entry;
-      if (e.disabled) { decide(item, 'disabled', loop); continue; }
-      if (e.triggers.length && !e.triggers.includes(input.trigger)) { decide(item, 'trigger_filtered', loop); continue; }
-      const sticky = isSticky(item);
-      if (timed.delay.has(item.key)) { decide(item, 'delay', loop); continue; }
-      if (timed.cooldown.has(item.key) && !sticky) { decide(item, 'cooldown', loop); continue; }
-      if (state !== Scan.Recursion && e.delayUntilRecursion && !sticky) { decide(item, 'delay_until_recursion', loop); continue; }
-      if (state === Scan.Recursion && e.delayUntilRecursion && item.level > currentLevel && !sticky) { decide(item, 'delay_until_recursion', loop, `层级 ${item.level}`); continue; }
-      if (state === Scan.Recursion && settings.recursive && e.excludeRecursion && !sticky) { decide(item, 'exclude_recursion', loop); continue; }
-      if (item.decorators.includes('@@activate')) { found.push({ item, reason: 'decorator_activate' }); continue; }
-      if (item.decorators.includes('@@dont_activate')) { decide(item, 'decorator_suppress', loop); continue; }
-      if (e.constant) { found.push({ item, reason: 'constant' }); continue; }
-      if (sticky) { found.push({ item, reason: 'sticky' }); continue; }
-      if (!e.keys.length) { decide(item, 'no_keys', loop); continue; }
-      const text = scanText(item, state), options = optionsOf(item);
-      const primary = e.keys.find((k) => keyHits(text, k, options));
-      if (primary === undefined) { decide(item, 'no_primary_match', loop); continue; }
-      if (!(e.selective && e.secondaryKeys.length)) { found.push({ item, reason: 'primary_match', detail: primary }); continue; }
-      const hits = e.secondaryKeys.map((k) => keyHits(text, k, options));
-      const ok = e.selectiveLogic === 0 ? hits.some(Boolean)
-        : e.selectiveLogic === 1 ? hits.some((hit) => !hit)
-        : e.selectiveLogic === 2 ? !hits.some(Boolean)
-        : e.selectiveLogic === 3 ? hits.every(Boolean)
-        : false;
-      if (!ok) { decide(item, 'secondary_failed', loop, primary); continue; }
-      found.push({ item, reason: 'secondary_match', detail: primary });
+      try {
+        const hit = evaluate(item, state);
+        if (hit) found.push(hit);
+      } catch (error) {
+        if (!(error instanceof ScanLimitReached)) throw error;
+        exhausted ??= { loop, key: item.key };
+        for (const rest of items.slice(k)) {
+          if (!failedProbability.has(rest.key) && !activated.has(rest.key)) decide(rest, 'scan_limit_reached', loop);
+        }
+        break;
+      }
     }
 
     // 5. 排序（Sticky 优先，其余保持扫描顺序）→ 分组互斥 → 概率与预算。
@@ -275,8 +346,9 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
     }
 
     // 6. 决定是否继续扫描（递归、最少激活数、延迟到递归的层级）。
-    const successful = list.filter((i) => !failedProbability.has(i.key));
-    const forRecursion = successful.filter((i) => !i.entry.preventRecursion);
+    // 有意与参照版本不同：只有本轮真正激活、且未设置阻止递归的条目提供递归文本。
+    // 参照版本会把被预算拒绝的条目也放进递归缓冲；王朝有硬上限，被拒绝的条目不得间接激活其他条目。
+    const forRecursion = list.filter((i) => activated.get(i.key)?.loop === loop && !i.entry.preventRecursion);
     if (settings.recursive && !overflowed && forRecursion.length) next = Scan.Recursion;
     if (settings.recursive && !overflowed && state === Scan.MinActivations && recurse.length) next = Scan.Recursion;
     if (next === Scan.None && !overflowed && settings.minActivations > 0 && activated.size < settings.minActivations) {
@@ -285,6 +357,7 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
       if (!overMax) { next = Scan.MinActivations; skew++; }
     }
     if (next === Scan.None && delayLevels.length) { next = Scan.Recursion; currentLevel = delayLevels.shift()!; }
+    if (exhausted) next = Scan.None;
     state = next;
     if (state !== Scan.None) {
       const text = forRecursion.map((i) => i.content).join('\n');
@@ -293,7 +366,7 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
   }
 
   // 7. 插入计划：按 order 从高到低处理，各位置内越靠后越接近生成点（与参照版本一致）。
-  const plan: InjectionPlan = { before: [], after: [], authorNoteTop: [], authorNoteBottom: [], exampleMessages: [], atDepth: [], outlets: {} };
+  const plan = emptyPlan();
   const placed = new Set<string>();
   const ordered = [...activated.values()].map((a, i) => ({ a, i })).sort((x, y) => y.a.item.entry.order - x.a.item.entry.order || x.i - y.i).map(({ a }) => a);
   for (const { item, content } of ordered) {
@@ -325,13 +398,14 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
     content, order: item.entry.order, position: item.entry.position, depth: item.entry.depth, role: item.entry.role,
     outletName: item.entry.outletName, tokens, loop: at, reason, ...(detail !== undefined ? { detail } : {}), placed: placed.has(item.key),
   }));
-  const nextTimedState = recordActivations(timed.working, [...activated.keys()].map((key) => timedEntries.get(key)!), input.messageCount);
+  const nextTimedState = recordActivations(timed.working, [...activated.keys()].flatMap((key) => timedEntries.get(key) ?? []), input.messageCount);
 
   return {
     activated: activatedList,
     plan,
     decisions: items.map((item) => decisions.get(item.key)!),
     budget: { soft, hard, limit: budget, used, overflowed },
+    work: { limit: meter.limit, used: meter.used, ...(exhausted ? { exhausted } : {}) },
     loops: loop,
     unsupportedKeys: [...matcher.unsupported].map(([key, reason]) => ({ key, reason })),
     nextTimedState,
@@ -373,7 +447,15 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
       const group = groups[name];
       if (!settings.useGroupScoring && !group.some((i) => i.entry.useGroupScoring)) continue;
       if (hasSticky.get(name)) continue;
-      const scores = group.map((item) => score(item, scanState));
+      let scores: number[];
+      try {
+        scores = group.map((item) => score(item, scanState));
+      } catch (error) {
+        if (!(error instanceof ScanLimitReached)) throw error;
+        exhausted ??= { loop, key: group[0].key };
+        for (const item of group) remove(item, 'scan_limit_reached', `组「${name}」评分未完成`);
+        continue;
+      }
       const max = Math.max(...scores);
       for (let k = 0; k < group.length; k++) {
         if (!(group[k].entry.useGroupScoring ?? settings.useGroupScoring)) continue;

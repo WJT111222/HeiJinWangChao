@@ -128,6 +128,27 @@ describe('递归', () => {
     expect(ids(run([a(), b(), c], ['去码头'], { settings: { recursive: true } }))).toEqual(['a', 'b', 'c']);
     expect(ids(run([a(), b(), c], ['去码头'], { settings: { recursive: true, maxRecursionSteps: 2 } }))).toEqual(['a', 'b']);
   });
+  it('回归：无视软预算但超出硬上限而被拒绝的条目，不能通过递归间接激活其他条目', () => {
+    const small = entry({ entryId: 'small', constant: true, order: 300, content: '无关' });
+    const rejected = entry({ entryId: 'big', constant: true, order: 200, ignoreBudget: true, content: `老七${'字'.repeat(200)}` });
+    const target = entry({ entryId: 'target', keys: ['老七'], content: '老七的情报' });
+    const r = run([small, rejected, target], ['开场'], { settings: { recursive: true }, storyRemainingTokens: 40 });
+    expect(ids(r)).toEqual(['small']);
+    expect(reason(r, 'big')).toBe('hard_budget_exceeded');
+    expect(reason(r, 'target')).toBe('no_primary_match');
+    expect(r.loops).toBe(2); // 第二轮只扫描到“无关”，没有被拒绝条目的正文
+  });
+
+  it('回归：超出软预算被拒绝的条目，在延迟层级的追加扫描中也不提供递归文本', () => {
+    const big = entry({ entryId: 'big', constant: true, content: `老七${'字'.repeat(200)}` });
+    const delayed = entry({ entryId: 'delayed', keys: ['老七'], delayUntilRecursion: 1, ignoreBudget: true });
+    const level2 = entry({ entryId: 'level2', delayUntilRecursion: 2 });
+    const r = run([big, delayed, level2], ['无关'], { contextTokens: 400 });
+    expect(r.budget.overflowed).toBe(true);
+    expect(r.activated).toEqual([]);
+    expect(reason(r, 'delayed')).toBe('no_primary_match');
+  });
+
   it('互相触发的条目不会无限循环', () => {
     const x = entry({ entryId: 'x', keys: ['甲'], content: '乙' }), y = entry({ entryId: 'y', keys: ['乙'], content: '甲' });
     const r = run([x, y], ['甲'], { settings: { recursive: true } });

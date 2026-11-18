@@ -14,7 +14,8 @@
 export type SafeRegexReason =
   | 'unicode_flag' | 'too_long' | 'lookaround' | 'backreference' | 'unsupported_escape'
   | 'unsupported_syntax' | 'too_large';
-export type SafeRegex = { ok: true; test: (text: string) => boolean } | { ok: false; reason: SafeRegexReason };
+/** size：NFA 状态数。单次判断最多处理 文本长度 × size 个状态步，用于扫描工作量计费。 */
+export type SafeRegex = { ok: true; test: (text: string) => boolean; size: number } | { ok: false; reason: SafeRegexReason };
 
 export const SAFE_REGEX_LIMITS = { maxSourceChars: 1_000, maxStates: 5_000, maxRepeat: 1_000, maxNesting: 50 } as const;
 
@@ -307,7 +308,7 @@ export function compileSafeRegex(source: string, flags: string): SafeRegex {
   try {
     const root = new Parser(source, flags.includes('i'), flags.includes('s')).parse();
     const { states, start } = compileNfa(root);
-    return { ok: true, test: runner(states, start, flags.includes('m'), flags.includes('y')) };
+    return { ok: true, test: runner(states, start, flags.includes('m'), flags.includes('y')), size: states.length };
   } catch (error) {
     if (error instanceof Unsupported) return { ok: false, reason: error.reason };
     throw error;
