@@ -1,0 +1,6 @@
+import base from '/workspace/ai-response-events/playwright.config.ts';
+export default {...base,testDir:'/workspace/ai-response-events/e2e',workers:1,
+outputDir:'/workspace/ai-response-events-phase3-evidence/browser-results',
+reporter:[['list'],['json',{outputFile:'/workspace/ai-response-events-phase3-evidence/browser-report.json'}]],
+use:{...base.use,baseURL:'http://127.0.0.1:43749'},
+webServer:{...base.webServer,command:'npm run dev -- --host 127.0.0.1 --port 43749 --strictPort',cwd:'/workspace/ai-response-events',url:'http://127.0.0.1:43749',reuseExistingServer:false}};

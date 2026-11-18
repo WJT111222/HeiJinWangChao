@@ -1,0 +1,2763 @@
+{
+  "reviewedHead": "5efb8c65f8cf14a7e2fa90173cf2b1e3304377a4",
+  "realModelCalls": 0,
+  "usageSource": "synthetic fixture, not billed tokens",
+  "records": [
+    {
+      "category": "round-trip",
+      "protocol": "openai",
+      "tool": false,
+      "stream": false,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39900,
+        "utf8Bytes": 91691
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 130.43243799999993,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "openai",
+      "tool": false,
+      "stream": false,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39900,
+        "utf8Bytes": 91691
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 25.543946000000005,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "openai",
+      "tool": false,
+      "stream": false,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39900,
+        "utf8Bytes": 91691
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 47.63171699999998,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "openai",
+      "tool": false,
+      "stream": true,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39899,
+        "utf8Bytes": 91690
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 34.33005200000002,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "openai",
+      "tool": false,
+      "stream": true,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39899,
+        "utf8Bytes": 91690
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 8.33139600000004,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "openai",
+      "tool": false,
+      "stream": true,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39899,
+        "utf8Bytes": 91690
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 17.241952999999967,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "openai",
+      "tool": true,
+      "stream": false,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 40278,
+        "utf8Bytes": 92157
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 17.023577999999816,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "openai",
+      "tool": true,
+      "stream": false,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 40278,
+        "utf8Bytes": 92157
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 9.301066999999875,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "openai",
+      "tool": true,
+      "stream": false,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 40278,
+        "utf8Bytes": 92157
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 7.88736700000004,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "openai",
+      "tool": true,
+      "stream": true,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 40277,
+        "utf8Bytes": 92156
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 7.898187000000007,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "openai",
+      "tool": true,
+      "stream": true,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 40277,
+        "utf8Bytes": 92156
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 12.687026999999944,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "openai",
+      "tool": true,
+      "stream": true,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 40277,
+        "utf8Bytes": 92156
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 12.354511999999886,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": false,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39906,
+        "utf8Bytes": 91697
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 5.587440000000015,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": false,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39906,
+        "utf8Bytes": 91697
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 4.644219000000021,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": false,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39906,
+        "utf8Bytes": 91697
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 6.860030000000052,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": true,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39905,
+        "utf8Bytes": 91696
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 5.374184000000014,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": true,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39905,
+        "utf8Bytes": 91696
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 6.512535000000071,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": true,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39905,
+        "utf8Bytes": 91696
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 8.785401000000093,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": false,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 40256,
+        "utf8Bytes": 92135
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 7.0741689999999835,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": false,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 40256,
+        "utf8Bytes": 92135
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 4.838456999999835,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": false,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 40256,
+        "utf8Bytes": 92135
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 5.62849099999994,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": true,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 40255,
+        "utf8Bytes": 92134
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 5.102699999999913,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": true,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 40255,
+        "utf8Bytes": 92134
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 6.885283000000072,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": true,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 40255,
+        "utf8Bytes": 92134
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 11.957699000000048,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": false,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39377,
+        "utf8Bytes": 91168
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 5.622082000000091,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": false,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39377,
+        "utf8Bytes": 91168
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 6.450380999999879,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": false,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39377,
+        "utf8Bytes": 91168
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 4.70599100000004,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": true,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39377,
+        "utf8Bytes": 91168
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 4.647794000000204,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": true,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39377,
+        "utf8Bytes": 91168
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 4.456300000000056,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": true,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39377,
+        "utf8Bytes": 91168
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 7.082030000000032,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": false,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39758,
+        "utf8Bytes": 91637
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 7.251372000000174,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": false,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39758,
+        "utf8Bytes": 91637
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 4.775254000000132,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": false,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39758,
+        "utf8Bytes": 91637
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 5.067377000000079,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": true,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39758,
+        "utf8Bytes": 91637
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 4.875984000000017,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": true,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39758,
+        "utf8Bytes": 91637
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 9.014541000000008,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": true,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39758,
+        "utf8Bytes": 91637
+      },
+      "usage": {
+        "inputTokens": 100,
+        "outputTokens": 200,
+        "totalTokens": 300,
+        "cacheReadTokens": 10
+      },
+      "elapsedMs": 8.44679700000006,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": false,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39351,
+        "utf8Bytes": 91142
+      },
+      "usage": {
+        "inputTokens": 115,
+        "outputTokens": 200,
+        "cacheReadTokens": 10,
+        "cacheWriteTokens": 5
+      },
+      "elapsedMs": 7.096246000000065,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": false,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39351,
+        "utf8Bytes": 91142
+      },
+      "usage": {
+        "inputTokens": 115,
+        "outputTokens": 200,
+        "cacheReadTokens": 10,
+        "cacheWriteTokens": 5
+      },
+      "elapsedMs": 4.438594000000194,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": false,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39351,
+        "utf8Bytes": 91142
+      },
+      "usage": {
+        "inputTokens": 115,
+        "outputTokens": 200,
+        "cacheReadTokens": 10,
+        "cacheWriteTokens": 5
+      },
+      "elapsedMs": 7.402787999999873,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": true,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39350,
+        "utf8Bytes": 91141
+      },
+      "usage": {
+        "inputTokens": 115,
+        "outputTokens": 200,
+        "cacheReadTokens": 10,
+        "cacheWriteTokens": 5
+      },
+      "elapsedMs": 6.844323000000031,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": true,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39350,
+        "utf8Bytes": 91141
+      },
+      "usage": {
+        "inputTokens": 115,
+        "outputTokens": 200,
+        "cacheReadTokens": 10,
+        "cacheWriteTokens": 5
+      },
+      "elapsedMs": 7.504850000000033,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": true,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39350,
+        "utf8Bytes": 91141
+      },
+      "usage": {
+        "inputTokens": 115,
+        "outputTokens": 200,
+        "cacheReadTokens": 10,
+        "cacheWriteTokens": 5
+      },
+      "elapsedMs": 9.833126999999877,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": false,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39659,
+        "utf8Bytes": 91538
+      },
+      "usage": {
+        "inputTokens": 115,
+        "outputTokens": 200,
+        "cacheReadTokens": 10,
+        "cacheWriteTokens": 5
+      },
+      "elapsedMs": 5.540459999999939,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": false,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39659,
+        "utf8Bytes": 91538
+      },
+      "usage": {
+        "inputTokens": 115,
+        "outputTokens": 200,
+        "cacheReadTokens": 10,
+        "cacheWriteTokens": 5
+      },
+      "elapsedMs": 4.271816000000172,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": false,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39659,
+        "utf8Bytes": 91538
+      },
+      "usage": {
+        "inputTokens": 115,
+        "outputTokens": 200,
+        "cacheReadTokens": 10,
+        "cacheWriteTokens": 5
+      },
+      "elapsedMs": 5.227635999999848,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": true,
+      "variant": "normal",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39658,
+        "utf8Bytes": 91537
+      },
+      "usage": {
+        "inputTokens": 115,
+        "outputTokens": 200,
+        "cacheReadTokens": 10,
+        "cacheWriteTokens": 5
+      },
+      "elapsedMs": 5.612763000000086,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": true,
+      "variant": "reasoning",
+      "narrativeCharacters": 70,
+      "narrativeSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "expectedSha256": "079aeb12442f444513b2e5f5ed45bcc1a0f6b6ed63dbb59c3d7359c8e20dcad0",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39658,
+        "utf8Bytes": 91537
+      },
+      "usage": {
+        "inputTokens": 115,
+        "outputTokens": 200,
+        "cacheReadTokens": 10,
+        "cacheWriteTokens": 5
+      },
+      "elapsedMs": 4.360398000000032,
+      "usageSource": "mock"
+    },
+    {
+      "category": "round-trip",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": true,
+      "variant": "long",
+      "narrativeCharacters": 18442,
+      "narrativeSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "expectedSha256": "98667d61ee1af57c3c116b90f696bf230b7c363ca6497d722048c2ab0410c06f",
+      "exactText": true,
+      "modelRequests": 1,
+      "inputPayload": {
+        "characters": 39658,
+        "utf8Bytes": 91537
+      },
+      "usage": {
+        "inputTokens": 115,
+        "outputTokens": 200,
+        "cacheReadTokens": 10,
+        "cacheWriteTokens": 5
+      },
+      "elapsedMs": 7.580541000000039,
+      "usageSource": "mock"
+    },
+    {
+      "category": "stream-json",
+      "protocol": "openai",
+      "tool": false,
+      "modelRequests": 1,
+      "accepted": true
+    },
+    {
+      "category": "stream-json",
+      "protocol": "openai",
+      "tool": true,
+      "modelRequests": 1,
+      "accepted": true
+    },
+    {
+      "category": "stream-json",
+      "protocol": "deepseek",
+      "tool": false,
+      "modelRequests": 1,
+      "accepted": true
+    },
+    {
+      "category": "stream-json",
+      "protocol": "deepseek",
+      "tool": true,
+      "modelRequests": 1,
+      "accepted": true
+    },
+    {
+      "category": "stream-json",
+      "protocol": "gemini",
+      "tool": false,
+      "modelRequests": 1,
+      "accepted": true
+    },
+    {
+      "category": "stream-json",
+      "protocol": "gemini",
+      "tool": true,
+      "modelRequests": 1,
+      "accepted": true
+    },
+    {
+      "category": "stream-json",
+      "protocol": "anthropic",
+      "tool": false,
+      "modelRequests": 1,
+      "accepted": true
+    },
+    {
+      "category": "stream-json",
+      "protocol": "anthropic",
+      "tool": true,
+      "modelRequests": 1,
+      "accepted": true
+    },
+    {
+      "category": "wire-overhead",
+      "protocol": "openai",
+      "official": false,
+      "model": "gpt-4.1",
+      "text": {
+        "characters": 141,
+        "utf8Bytes": 161
+      },
+      "tool": {
+        "characters": 519,
+        "utf8Bytes": 627
+      },
+      "extraInputCharacters": 378,
+      "extraInputUtf8Bytes": 466,
+      "plainOutputUtf8Bytes": 367,
+      "toolArgumentUtf8Bytes": 383,
+      "modelRequests": 0,
+      "interpretation": "serialized sizes only; not tokenizer output, actual cache hits or billed usage"
+    },
+    {
+      "category": "wire-overhead",
+      "protocol": "openai",
+      "official": true,
+      "model": "gpt-4.1",
+      "text": {
+        "characters": 152,
+        "utf8Bytes": 172
+      },
+      "tool": {
+        "characters": 530,
+        "utf8Bytes": 638
+      },
+      "extraInputCharacters": 378,
+      "extraInputUtf8Bytes": 466,
+      "plainOutputUtf8Bytes": 367,
+      "toolArgumentUtf8Bytes": 383,
+      "modelRequests": 0,
+      "interpretation": "serialized sizes only; not tokenizer output, actual cache hits or billed usage"
+    },
+    {
+      "category": "wire-overhead",
+      "protocol": "deepseek",
+      "official": false,
+      "model": "deepseek-chat",
+      "text": {
+        "characters": 147,
+        "utf8Bytes": 167
+      },
+      "tool": {
+        "characters": 497,
+        "utf8Bytes": 605
+      },
+      "extraInputCharacters": 350,
+      "extraInputUtf8Bytes": 438,
+      "plainOutputUtf8Bytes": 367,
+      "toolArgumentUtf8Bytes": 383,
+      "modelRequests": 0,
+      "interpretation": "serialized sizes only; not tokenizer output, actual cache hits or billed usage"
+    },
+    {
+      "category": "wire-overhead",
+      "protocol": "deepseek",
+      "official": true,
+      "model": "deepseek-chat",
+      "text": {
+        "characters": 147,
+        "utf8Bytes": 167
+      },
+      "tool": {
+        "characters": 497,
+        "utf8Bytes": 605
+      },
+      "extraInputCharacters": 350,
+      "extraInputUtf8Bytes": 438,
+      "plainOutputUtf8Bytes": 367,
+      "toolArgumentUtf8Bytes": 383,
+      "modelRequests": 0,
+      "interpretation": "serialized sizes only; not tokenizer output, actual cache hits or billed usage"
+    },
+    {
+      "category": "wire-overhead",
+      "protocol": "gemini",
+      "official": false,
+      "model": "gemini-2.5-flash",
+      "text": {
+        "characters": 199,
+        "utf8Bytes": 219
+      },
+      "tool": {
+        "characters": 580,
+        "utf8Bytes": 688
+      },
+      "extraInputCharacters": 381,
+      "extraInputUtf8Bytes": 469,
+      "plainOutputUtf8Bytes": 367,
+      "toolArgumentUtf8Bytes": 383,
+      "modelRequests": 0,
+      "interpretation": "serialized sizes only; not tokenizer output, actual cache hits or billed usage"
+    },
+    {
+      "category": "wire-overhead",
+      "protocol": "gemini",
+      "official": true,
+      "model": "gemini-2.5-flash",
+      "text": {
+        "characters": 199,
+        "utf8Bytes": 219
+      },
+      "tool": {
+        "characters": 580,
+        "utf8Bytes": 688
+      },
+      "extraInputCharacters": 381,
+      "extraInputUtf8Bytes": 469,
+      "plainOutputUtf8Bytes": 367,
+      "toolArgumentUtf8Bytes": 383,
+      "modelRequests": 0,
+      "interpretation": "serialized sizes only; not tokenizer output, actual cache hits or billed usage"
+    },
+    {
+      "category": "wire-overhead",
+      "protocol": "anthropic",
+      "official": false,
+      "model": "claude-sonnet-4-6",
+      "text": {
+        "characters": 186,
+        "utf8Bytes": 206
+      },
+      "tool": {
+        "characters": 494,
+        "utf8Bytes": 602
+      },
+      "extraInputCharacters": 308,
+      "extraInputUtf8Bytes": 396,
+      "plainOutputUtf8Bytes": 367,
+      "toolArgumentUtf8Bytes": 383,
+      "modelRequests": 0,
+      "interpretation": "serialized sizes only; not tokenizer output, actual cache hits or billed usage"
+    },
+    {
+      "category": "wire-overhead",
+      "protocol": "anthropic",
+      "official": true,
+      "model": "claude-sonnet-4-6",
+      "text": {
+        "characters": 248,
+        "utf8Bytes": 268
+      },
+      "tool": {
+        "characters": 556,
+        "utf8Bytes": 664
+      },
+      "extraInputCharacters": 308,
+      "extraInputUtf8Bytes": 396,
+      "plainOutputUtf8Bytes": 367,
+      "toolArgumentUtf8Bytes": 383,
+      "modelRequests": 0,
+      "interpretation": "serialized sizes only; not tokenizer output, actual cache hits or billed usage"
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": false,
+      "stream": false,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": false,
+      "stream": false,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": false,
+      "stream": false,
+      "scenario": "incomplete-transport",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": false,
+      "stream": false,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": false,
+      "stream": false,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": false,
+      "stream": true,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": false,
+      "stream": true,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": false,
+      "stream": true,
+      "scenario": "incomplete-transport",
+      "code": "stream_interrupted",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": false,
+      "stream": true,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": false,
+      "stream": true,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": true,
+      "stream": false,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": true,
+      "stream": false,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": true,
+      "stream": false,
+      "scenario": "incomplete-transport",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": true,
+      "stream": false,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": true,
+      "stream": false,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": true,
+      "stream": true,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": true,
+      "stream": true,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": true,
+      "stream": true,
+      "scenario": "incomplete-transport",
+      "code": "tool_response",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": true,
+      "stream": true,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "openai",
+      "tool": true,
+      "stream": true,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": false,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": false,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": false,
+      "scenario": "incomplete-transport",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": false,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": false,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": true,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": true,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": true,
+      "scenario": "incomplete-transport",
+      "code": "stream_interrupted",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": true,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": true,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": false,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": false,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": false,
+      "scenario": "incomplete-transport",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": false,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": false,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": true,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": true,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": true,
+      "scenario": "incomplete-transport",
+      "code": "tool_response",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": true,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": true,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": false,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": false,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": false,
+      "scenario": "incomplete-transport",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": false,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": false,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": true,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": true,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": true,
+      "scenario": "incomplete-transport",
+      "code": "stream_interrupted",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": true,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": true,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": false,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": false,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": false,
+      "scenario": "incomplete-transport",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": false,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": false,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": true,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": true,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": true,
+      "scenario": "incomplete-transport",
+      "code": "tool_response",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": true,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": true,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": false,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": false,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": false,
+      "scenario": "incomplete-transport",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": false,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": false,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": true,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": true,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": true,
+      "scenario": "incomplete-transport",
+      "code": "stream_interrupted",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": true,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": true,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": false,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": false,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": false,
+      "scenario": "incomplete-transport",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": false,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": false,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": true,
+      "scenario": "limit",
+      "code": "output_limit",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": true,
+      "scenario": "filter",
+      "code": "content_filter",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": true,
+      "scenario": "incomplete-transport",
+      "code": "tool_response",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": true,
+      "scenario": "invalid-guide",
+      "code": "invalid_json",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "strict-failure",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": true,
+      "scenario": "http-rejected",
+      "code": "rejected",
+      "modelRequests": 1,
+      "formalAndDraftUnchanged": true
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "openai",
+      "stream": false,
+      "scenario": "model-returned-text",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "openai",
+      "stream": false,
+      "scenario": "multiple",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "openai",
+      "stream": false,
+      "scenario": "badIdentity",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "openai",
+      "stream": false,
+      "scenario": "badArguments",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "openai",
+      "stream": true,
+      "scenario": "model-returned-text",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "openai",
+      "stream": true,
+      "scenario": "multiple",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "openai",
+      "stream": true,
+      "scenario": "badIdentity",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "openai",
+      "stream": true,
+      "scenario": "badArguments",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "deepseek",
+      "stream": false,
+      "scenario": "model-returned-text",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "deepseek",
+      "stream": false,
+      "scenario": "multiple",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "deepseek",
+      "stream": false,
+      "scenario": "badIdentity",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "deepseek",
+      "stream": false,
+      "scenario": "badArguments",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "deepseek",
+      "stream": true,
+      "scenario": "model-returned-text",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "deepseek",
+      "stream": true,
+      "scenario": "multiple",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "deepseek",
+      "stream": true,
+      "scenario": "badIdentity",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "deepseek",
+      "stream": true,
+      "scenario": "badArguments",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "gemini",
+      "stream": false,
+      "scenario": "model-returned-text",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "gemini",
+      "stream": false,
+      "scenario": "multiple",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "gemini",
+      "stream": false,
+      "scenario": "badIdentity",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "gemini",
+      "stream": false,
+      "scenario": "badArguments",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "gemini",
+      "stream": true,
+      "scenario": "model-returned-text",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "gemini",
+      "stream": true,
+      "scenario": "multiple",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "gemini",
+      "stream": true,
+      "scenario": "badIdentity",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "gemini",
+      "stream": true,
+      "scenario": "badArguments",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "anthropic",
+      "stream": false,
+      "scenario": "model-returned-text",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "anthropic",
+      "stream": false,
+      "scenario": "multiple",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "anthropic",
+      "stream": false,
+      "scenario": "badIdentity",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "anthropic",
+      "stream": false,
+      "scenario": "badArguments",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "anthropic",
+      "stream": true,
+      "scenario": "model-returned-text",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "anthropic",
+      "stream": true,
+      "scenario": "multiple",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "anthropic",
+      "stream": true,
+      "scenario": "badIdentity",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "single-carrier-policy",
+      "protocol": "anthropic",
+      "stream": true,
+      "scenario": "badArguments",
+      "expectedRejected": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "openai",
+      "stream": false,
+      "tool": false,
+      "accepted": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "openai",
+      "stream": false,
+      "tool": true,
+      "accepted": false,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "openai",
+      "stream": true,
+      "tool": false,
+      "accepted": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "openai",
+      "stream": true,
+      "tool": true,
+      "accepted": false,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "deepseek",
+      "stream": false,
+      "tool": false,
+      "accepted": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "deepseek",
+      "stream": false,
+      "tool": true,
+      "accepted": false,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "deepseek",
+      "stream": true,
+      "tool": false,
+      "accepted": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "deepseek",
+      "stream": true,
+      "tool": true,
+      "accepted": false,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "gemini",
+      "stream": false,
+      "tool": false,
+      "accepted": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "gemini",
+      "stream": false,
+      "tool": true,
+      "accepted": false,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "gemini",
+      "stream": true,
+      "tool": false,
+      "accepted": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "gemini",
+      "stream": true,
+      "tool": true,
+      "accepted": false,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "anthropic",
+      "stream": false,
+      "tool": false,
+      "accepted": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "anthropic",
+      "stream": false,
+      "tool": true,
+      "accepted": false,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "anthropic",
+      "stream": true,
+      "tool": false,
+      "accepted": true,
+      "modelRequests": 1
+    },
+    {
+      "category": "complete-limit-policy",
+      "protocol": "anthropic",
+      "stream": true,
+      "tool": true,
+      "accepted": false,
+      "modelRequests": 1
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "openai",
+      "tool": false,
+      "stream": false,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "openai",
+      "tool": false,
+      "stream": true,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "openai",
+      "tool": true,
+      "stream": false,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "openai",
+      "tool": true,
+      "stream": true,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": false,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "deepseek",
+      "tool": false,
+      "stream": true,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": false,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "deepseek",
+      "tool": true,
+      "stream": true,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": false,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "gemini",
+      "tool": false,
+      "stream": true,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": false,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "gemini",
+      "tool": true,
+      "stream": true,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": false,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "anthropic",
+      "tool": false,
+      "stream": true,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": false,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "atomic-workflow",
+      "protocol": "anthropic",
+      "tool": true,
+      "stream": true,
+      "modelRequests": 3,
+      "commits": 1,
+      "turnNumber": 1,
+      "revision": 1,
+      "reloadExact": true
+    },
+    {
+      "category": "failed-workflow",
+      "protocol": "openai",
+      "modelRequests": 1,
+      "commits": 0,
+      "formalUnchanged": true
+    },
+    {
+      "category": "failed-workflow",
+      "protocol": "deepseek",
+      "modelRequests": 1,
+      "commits": 0,
+      "formalUnchanged": true
+    },
+    {
+      "category": "failed-workflow",
+      "protocol": "gemini",
+      "modelRequests": 1,
+      "commits": 0,
+      "formalUnchanged": true
+    },
+    {
+      "category": "failed-workflow",
+      "protocol": "anthropic",
+      "modelRequests": 1,
+      "commits": 0,
+      "formalUnchanged": true
+    }
+  ]
+}
