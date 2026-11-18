@@ -4,6 +4,8 @@ import type { Page } from '@playwright/test';
 import { handoffState, handoffResult, retireCommand, resultText, finishTask } from '../src/tests/fixtures/handoff';
 import { event } from '../src/tests/fixtures/game';
 import { worldResult, proof, worldResultForTurn } from '../src/tests/fixtures/world';
+// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
+test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
 
 async function seed(page: Page, variant?: 'mixed-result' | 'unindexed-history' | 'event-report' | 'refused-confirmation') {
   await page.goto('/');

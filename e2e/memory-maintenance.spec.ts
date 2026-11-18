@@ -7,6 +7,8 @@ import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { GameStateSchema } from '../src/domain/state';
 import { array, record, string } from '../src/services/ai/protocols';
+// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
+test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
 
 // 隔离浏览器夹具：真实 IndexedDB、真实路由/客户端，网络仅拦截 mock.invalid。
 async function seed(page: Page, count = 31, automatic = false, ready = false) {

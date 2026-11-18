@@ -5,6 +5,8 @@ import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { array, record, string } from '../src/services/ai/protocols';
 import { GameStateSchema } from '../src/domain/state';
+// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
+test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
 
 async function seed(page: Page) {
   await page.goto('/');

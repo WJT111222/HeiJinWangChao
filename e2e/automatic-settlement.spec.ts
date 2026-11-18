@@ -2,6 +2,8 @@ import { variableTextEnvelope } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { openGameTools, openWorkflowDiagnostics, openStageRaw, openStageTab } from './helpers/gameLayout';
+// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
+test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
 
 async function seed(page: Page, remoteLocation = false, organization = false) {
   await page.goto('/');

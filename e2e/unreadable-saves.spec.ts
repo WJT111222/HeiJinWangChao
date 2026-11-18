@@ -159,3 +159,5 @@ test('导出和删除失败分别可定位且保留全部记录；重试删除�
   await page.getByRole('button', { name: '确认删除' }).click(); await expect(page.locator('.save-card')).toHaveCount(2);
   await expect(page.getByRole('alert')).toHaveCount(0); await expect(page.getByText(/导出失败/)).toHaveCount(0);
 });
+// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
+test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
