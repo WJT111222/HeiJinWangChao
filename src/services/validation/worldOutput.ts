@@ -20,6 +20,7 @@ import { worldProjectionError } from './worldProjectionDiagnostics';
 import { worldNpcAllowed } from '../../domain/npc/worldAccess';
 import { NpcSchema } from '../../domain/npc/schema';
 import { stripVariableSceneWrites, worldForbiddenNpcChange, worldNormalizationNotes } from './worldSceneWrites';
+import { keepTaskIdentity, sameTaskInstant, sameTaskText } from './worldTaskIdentity';
 
 function sameActor(a: ActorRef, b: ActorRef) { return a.kind === b.kind && a.id === b.id; }
 function offscreen(state: GameState, ref: ActorRef) {
@@ -60,6 +61,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
       : c.type === 'DeleteEvent' ? [`cleanup:${c.eventId}`] : []);
   requireWorld(new Set(entityKeys).size === entityKeys.length);
   const stageHandoffs=normalizeStageEntryHandoffs(result,base,draft);
+  const taskNotes: string[] = [];
   const createdNpcs = new Map(result.worldCommands.flatMap(c => c.type === 'CreateNpc' ? [[c.npc.id, c.npc] as const] : []));
   const createdOrgs = new Map(result.worldCommands.flatMap(c => c.type === 'CreateOrganization' ? [[c.organization.id, c.organization] as const] : []));
   const actorAllowed = (ref: ActorRef) =>
@@ -125,11 +127,13 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
               && Date.parse(transfer.at) <= Date.parse(task.startAt) && Date.parse(transfer.at) <= now, 'invalid_output', 'event_time');
           }
           if (old) {
-            requireWorld(old.goal === task.goal && old.startAt === task.startAt && old.completionCondition === task.completionCondition);
+            // 只差空白、全半角或时间写法时沿用存档原值；内容确有改写仍拒绝（#193）。
+            const identityNote = keepTaskIdentity(old, task);
+            if (identityNote) taskNotes.push(identityNote);
             if (['completed','cancelled'].includes(old.status)) requireWorld(fingerprint(old) === fingerprint(task), 'invalid_output', 'task_state');
             if (['active','blocked'].includes(old.status)) requireWorld(task.status !== 'planned', 'invalid_output', 'task_state', 'task.status');
           } else requireWorld(!Object.values(base.tasks).some(known => sameActor(known.actorRef,task.actorRef)
-            && known.goal === task.goal && known.startAt === task.startAt));
+            && sameTaskText(known.goal, task.goal) && sameTaskInstant(known.startAt, task.startAt)), 'invalid_output', 'task_duplicate', 'task.goal');
           if (['active','blocked','completed'].includes(task.status)) requireWorld(Date.parse(task.startAt) <= now, 'invalid_output','task_state', 'task.startAt');
           if (task.status === 'completed' || task.status === 'cancelled') {
             if (!old || !['completed','cancelled'].includes(old.status)) {
@@ -244,6 +248,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     const successors=result.eventCommands.filter(c=>c.type==='SaveEvent' && c.event.predecessorEventIds?.includes(command.event.id));
     requireWorld(successors.length>0 && (command.event.eventKind==='sub' || successors.every(c=>c.type==='SaveEvent' && !terminalEvent(c.event))), 'invalid_output','event_continuation');
   }
-  if (sceneWriteNotes.length) worldNormalizationNotes.set(result, sceneWriteNotes);
+  const notes = [...taskNotes, ...sceneWriteNotes];
+  if (notes.length) worldNormalizationNotes.set(result, notes);
   return result;
 }

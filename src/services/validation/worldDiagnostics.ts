@@ -8,6 +8,8 @@ export const worldRuleNames = {
   constraint: '世界命令未满足执行约束', command_structure: '命令类型或分组不符合世界协议',
   task_state: '任务状态、成果或执行时间不合法',
   task_plan: '任务必须提供 dueAt 或非空 completionCondition',
+  task_immutable: '既有任务的目标、开始时间或完成条件不可改写',
+  task_duplicate: '同一行动者已有相同目标与开始时间的任务，请复用原任务ID',
   memory_time_window: 'NPC 记忆记录时间必须位于正式起始时间与本轮投影停止时间之间',
   event_sources: '事件来源须包含当前回合、保留全部旧来源，且只能引用正式历史或当前回合',
   event_immutable: '事件类型或父子字段组合不合法，或既有起点、固定结束时间、完成条件被改写',
