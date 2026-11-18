@@ -10,6 +10,7 @@
  * 标志 i m s g y（g 不影响单次判断；y 只从文本开头匹配）。
  * 不支持（不运行，报告“暂不支持”）：u / v 标志、前后瞻、反向引用、\p、\c、八进制、其他字母转义、
  * 超长或展开后过大的正则。判断结果与 JavaScript 非 Unicode 模式的 RegExp.test 一致（测试中做差分对照）。
+ * 忽略大小写按规范的 Canonicalize 与大小写等价类判断，大小写数据取自运行环境的 String.prototype.toUpperCase。
  */
 export type SafeRegexReason =
   | 'unicode_flag' | 'too_long' | 'lookaround' | 'backreference' | 'unsupported_escape'
@@ -39,24 +40,55 @@ const isSpace = (c: number) => c === 9 || c === 10 || c === 11 || c === 12 || c 
   || c === 0x1680 || c >= 0x2000 && c <= 0x200a || c === 0x2028 || c === 0x2029 || c === 0x202f || c === 0x205f
   || c === 0x3000 || c === 0xfeff;
 
-/** JavaScript 非 Unicode 模式忽略大小写时的规范化规则。 */
+/**
+ * JavaScript 非 Unicode 模式忽略大小写时的规范化（ECMAScript 规范 Canonicalize，rer.[[IgnoreCase]] 且非 Unicode）：
+ * 取 toUpperCase 的结果；结果不是单个码元时保持原字符；非 ASCII 字符不会规范化成 ASCII。
+ */
 function canonicalize(c: number): number {
   const upper = String.fromCharCode(c).toUpperCase();
   if (upper.length !== 1) return c;
   const cu = upper.charCodeAt(0);
   return c >= 128 && cu < 128 ? c : cu;
 }
-/** 忽略大小写：集合中存在与 c 规范化后相同的字符即匹配。 */
+
+/**
+ * 大小写等价类：规范化结果相同的全部码元。按需建立一次（遍历 65536 个码元，约 10 毫秒）。
+ * 只记录成员多于一个的类；查不到即只有字符自己。
+ */
+let canonOf: Uint16Array | undefined;
+let classesByCanon: Map<number, number[]> | undefined;
+function caseClass(c: number): readonly number[] | undefined {
+  if (!canonOf || !classesByCanon) {
+    const table = new Uint16Array(0x10000);
+    const shared = new Set<number>();
+    for (let code = 0; code < 0x10000; code++) {
+      table[code] = canonicalize(code);
+      if (table[code] !== code) shared.add(table[code]);
+    }
+    const classes = new Map<number, number[]>();
+    for (let code = 0; code < 0x10000; code++) {
+      const canon = table[code];
+      if (!shared.has(canon)) continue;
+      let members = classes.get(canon);
+      if (!members) classes.set(canon, members = []);
+      members.push(code);
+    }
+    canonOf = table;
+    classesByCanon = classes;
+  }
+  return classesByCanon.get(canonOf[c]);
+}
+
+/**
+ * 忽略大小写：集合里存在与 c 规范化结果相同的字符即匹配（规范 CharacterSetMatcher 的定义）。
+ * 必须遍历整个等价类，只看 c 自己的大小写形式不够（例如 µ、μ、Μ 同属一类，但 µ 的小写仍是 µ）。
+ */
 function folded(base: Pred): Pred {
   return (c) => {
     if (base(c)) return true;
-    const canon = canonicalize(c);
-    const ch = String.fromCharCode(c);
-    for (const variant of [ch.toLowerCase(), ch.toUpperCase()]) {
-      if (variant.length !== 1) continue;
-      const v = variant.charCodeAt(0);
-      if (v !== c && canonicalize(v) === canon && base(v)) return true;
-    }
+    const members = caseClass(c);
+    if (!members) return false;
+    for (const m of members) if (m !== c && base(m)) return true;
     return false;
   };
 }
