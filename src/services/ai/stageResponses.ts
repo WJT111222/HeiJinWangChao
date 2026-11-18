@@ -29,6 +29,8 @@ export interface StageResponse {
   /** Single display transcript only; text remains the untouched model content. */
   displayText?: string;
   displayOrder?: RawResponseObservation['order'];
+  /** 程序在校验时对模型输出做的处理说明（如忽略与变量阶段重复的字段），只在本页诊断展示。 */
+  notes?: readonly string[];
 }
 // 保留字符串布局；此函数仅隐藏凭证，展示容量由 Store 单独限制。
 export function safeResponseText(text: string, secrets: readonly string[]) {
@@ -72,7 +74,7 @@ export class StageResponseStore {
     this.publish([freeze({ ...scope, id, status: 'pending' as const }), ...this.records].slice(0, 6));
     return id;
   }
-  update(id: string, patch: Partial<Pick<StageResponse, 'text' | 'nativeReasoning' | 'displayText' | 'displayOrder' | 'normalized' | 'status' | 'error' | 'diagnostics' | 'truncated'>>, secrets: readonly string[]) {
+  update(id: string, patch: Partial<Pick<StageResponse, 'text' | 'nativeReasoning' | 'displayText' | 'displayOrder' | 'normalized' | 'status' | 'error' | 'diagnostics' | 'truncated' | 'notes'>>, secrets: readonly string[]) {
     const current = this.records.find(item => item.id === id);
     if (!current) return;
     const limits = responseLimitsFor(current.stage);
@@ -84,6 +86,7 @@ export class StageResponseStore {
       safe[field] = value.slice(0, limits[field]);
       if (patch[field].length > limits[field] || value.length > limits[field]) safe.truncated = true;
     }
+    if (patch.notes) safe.notes = Object.freeze(patch.notes.slice(0, 20).map((note) => safeResponseText(note, secrets).slice(0, 600)));
     if (patch.diagnostics) {
       const text = safeResponseText(JSON.stringify(patch.diagnostics), secrets);
       if (text.length <= responseLimits.diagnostics) safe.diagnostics = JSON.parse(text) as ResponseDiagnostics;

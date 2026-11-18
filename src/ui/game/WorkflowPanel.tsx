@@ -463,6 +463,7 @@ function StageNormalized({ saveId, turnId, stage, draft }: { saveId: string; tur
   const label = rawLabels[stage];
   return <>
     <h5 className="wf-sec">{label}程序校验后的结果</h5>
+    {record?.notes?.length ? <div className="stage-notes" role="note"><b>程序处理说明</b><ul>{record.notes.map((note, index) => <li key={index}>{note}</li>)}</ul></div> : null}
     {record?.normalized
       ? <pre className="candidate-json" tabIndex={0} aria-label={`${label}规范化结果`}>{record.normalized}</pre>
       : <Empty>本页面没有可显示的程序校验结果；刷新后不保留。</Empty>}

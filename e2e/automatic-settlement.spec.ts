@@ -1,13 +1,13 @@
 import { variableTextEnvelope } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
-import { openGameTools, openWorkflowDiagnostics, openStageRaw } from './helpers/gameLayout';
+import { openGameTools, openWorkflowDiagnostics, openStageRaw, openStageTab } from './helpers/gameLayout';
 
-async function seed(page: Page, remoteLocation = false) {
+async function seed(page: Page, remoteLocation = false, organization = false) {
   await page.goto('/');
-  await page.evaluate(async remoteLocation => {
+  await page.evaluate(async ([remoteLocation, organization]) => {
     const storage = '/src/services/storage/saveRepository.ts', fixtures = '/src/tests/fixtures/world.ts', drafts = '/src/domain/drafts.ts',
-      configuration = '/src/services/ai/configuration.ts', credentials = '/src/services/ai/credentials.ts', settingsPath = '/src/ui/settings/model.ts';
+      configuration = '/src/services/ai/configuration.ts', gameFixtures = '/src/tests/fixtures/game.ts', credentials = '/src/services/ai/credentials.ts', settingsPath = '/src/ui/settings/model.ts';
     const { SaveRepository } = await import(storage), { worldState } = await import(fixtures), { createTurnDraft } = await import(drafts),
       { defaultAiConfig, newChannel, saveAiConfig } = await import(configuration), { CredentialVault } = await import(credentials), { defaultSettings, settingsKey } = await import(settingsPath);
     const settings = defaultSettings(); settings.prompts.minNarrativeChars = 5; settings.prompts.actionOptions = false; localStorage.setItem(settingsKey, JSON.stringify(settings));
@@ -16,8 +16,9 @@ async function seed(page: Page, remoteLocation = false) {
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-auto-settlement-key');
     const state = worldState();
     if (remoteLocation) state.locations.remote = { id: 'remote', name: '诊所' };
+    if (organization) { const { organizations } = await import(gameFixtures); state.organizations['org-shop'] = { ...organizations[3], id: 'org-shop', name: '街口商行' }; }
     const repo = await SaveRepository.open(); try { await repo.create(state); await repo.saveDraft(createTurnDraft('save-a', 0, 'auto-opening', 'opening', ''), null); } finally { repo.close(); }
-  }, remoteLocation);
+  }, [remoteLocation, organization] as const);
   await page.goto('/#game/save-a'); await page.reload(); await openGameTools(page);
 }
 async function stored(page: Page) { return page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try { return await repo.loadGame('save-a'); } finally { repo.close(); } }); }
@@ -216,3 +217,65 @@ test('认知格式、时间线对象和组织历史逐项拒绝，明确修正�
   expect(server.calls).toEqual(['story', 'variables', 'variables', 'world', 'world', 'world']);
   await page.reload(); await openGameTools(page); await settled(page); expect(await stored(page)).toEqual(committed); expect(server.calls).toHaveLength(6);
 });
+
+test('#186 World重复写入Variables本轮组织字段：以Variables为准剔除，阶段不失败，只在诊断页说明', async ({ page }, info) => {
+  await seed(page, false, true); const server = await mock(page);
+  server.control.variables = '<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset organizations[org-shop].state = {"operatingStatus":"正文确认：今晚照常营业"}\n</命令>';
+  server.control.world = JSON.stringify({ worldCommands: [{ type: 'UpdateOrganization', commandId: 'world-shop', evidence: '后台推演', organizationId: 'org-shop', expectedRevision: 0,
+    changes: { operatingStatus: '模型另写：暂停营业', ownershipText: '股权结构不变' } }], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
+  await page.getByRole('button', { name: '自动生成开局', exact: true }).click(); await settled(page);
+  const committed = await stored(page);
+  expect(committed.state.organizations['org-shop']).toMatchObject({ operatingStatus: '正文确认：今晚照常营业', ownershipText: '股权结构不变' });
+  expect(server.calls).toEqual(['story', 'variables', 'world']);
+  await openWorkflowDiagnostics(page); await expect(page.getByTestId('runtime-log')).not.toContainText('scene_write_conflict');
+  // 模型原文保持原样（含被忽略的字段），处理说明只出现在“校验结果”。
+  await openStageRaw(page, 'world'); expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
+  await openStageTab(page, 'world', '校验结果');
+  const notes = page.locator('.wf-stage .stage-notes');
+  await expect(notes).toContainText('程序处理说明'); await expect(notes).toContainText('operatingStatus 的值与变量阶段不同，以变量阶段为准');
+  await expect(page.getByLabel('动态世界规范化结果')).not.toContainText('模型另写');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath('world-scene-write-notes.png') });
+});
+
+for (const group of ['taskCommands', 'eventCommands'] as const) {
+  test(`#190 ${group} 的非法重复组织命令必须整批拒绝，主动修正后仅重试World`, async ({ page }, info) => {
+    await seed(page, false, true); const server = await mock(page), before = await stored(page);
+    server.control.variables = '<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset organizations[org-shop].state = {"operatingStatus":"正文确认照常营业"}\n</命令>';
+    const repeated = { type: 'UpdateOrganization', commandId: 'repeated-shop', evidence: '后台', organizationId: 'org-shop', expectedRevision: 0,
+      changes: { operatingStatus: 'World重复值' } };
+    const independent = { ...repeated, commandId: 'independent-shop', changes: { ownershipText: 'World独立合法字段' } };
+    const wrong = { ...repeated, commandId: 'wrong-group' };
+    server.control.world = JSON.stringify({ worldCommands: [repeated, independent], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [], [group]: [wrong] });
+    await page.getByRole('button', { name: '自动生成开局', exact: true }).click();
+    await expect.poll(async () => (await stored(page)).draft.stageStatus.world).toBe('failed');
+    const failed = await stored(page);
+    expect(failed.state).toEqual(before.state); expect(failed.draft.world).toBeUndefined();
+    expect(failed.draft.variables.validation).toBe('validated');
+    expect(server.calls).toEqual(['story', 'variables', 'world']);
+    // Mobile opens failed-request diagnostics automatically; do not click the
+    // workflow behind that modal. Desktop still uses its existing diagnostics rail.
+    const mobile = (page.viewportSize()?.width ?? 0) <= 900;
+    const diagnosticDialog = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: '重试与变更详情', exact: true }) });
+    if (!mobile) await openWorkflowDiagnostics(page);
+    const log = mobile ? diagnosticDialog.getByTestId('runtime-log') : page.getByTestId('runtime-log');
+    await expect(log).toBeVisible();
+    await expect(log).toContainText(`${group}.0`);
+    await expect(log).toContainText('UpdateOrganization');
+    // Close the active diagnostics modal before switching the underlying sheet.
+    if (mobile) await diagnosticDialog.getByRole('button', { name: '关闭资料界面', exact: true }).click();
+    await openStageRaw(page, 'world');
+    expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
+    expect(await stored(page)).toEqual(failed);
+    await page.screenshot({ path: info.outputPath(`world-rejected-${group}.png`) });
+    // Explicit recovery only: do not rerun Story/Variables or keep any failed World candidate.
+    server.control.world = JSON.stringify({ worldCommands: [repeated, independent], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
+    await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
+    await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(1);
+    await settled(page);
+    const committed = await stored(page);
+    expect(committed.state.organizations['org-shop']).toMatchObject({ operatingStatus: '正文确认照常营业', ownershipText: 'World独立合法字段' });
+    expect(committed.state.revision).toBe(1); expect(committed.state.journal).toHaveLength(1);
+    expect(server.calls).toEqual(['story', 'variables', 'world', 'world']);
+  });
+}

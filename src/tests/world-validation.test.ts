@@ -12,6 +12,7 @@ import { composePrompt } from '../prompts/composer';
 import { selectWorldDomains } from '../prompts/worldDomains';
 import { defaultSettings } from '../ui/settings/model';
 import { npc, task, event, organizations, gameTime } from './fixtures/game';
+import { worldNormalizationNotes } from '../services/validation/worldSceneWrites';
 import {
   worldState,
   worldDraft,
@@ -85,7 +86,7 @@ describe('动态世界权限与同基线投影', () => {
     expect(() => parse(worldResult([npcUpdate()]), state, worldDraft(true, 'opening'))).toThrow();
     expect(parse(worldResult([npcUpdate()]), state)).toBeDefined();
   });
-  it('本轮合法离场人物可更新独立后台字段，但不能重写Variables现场字段', () => {
+  it('本轮合法离场人物可更新独立后台字段；重写Variables现场字段时以Variables为准并剔除（#186）', () => {
     const state = worldState(),
       draft = worldDraft();
     draft.story!.narrative += '现场人物离开了现场。';
@@ -98,8 +99,19 @@ describe('动态世界权限与同基线投影', () => {
       evidence: '现场人物离开了现场。',
     });
     expect(() => parse(worldResult([{ ...npcUpdate(), npcId: 'scene' }]), state, draft)).not.toThrow();
-    expect(() => parse(worldResult([{ ...npcUpdate({ onScene: false }), npcId: 'scene' }]), state, draft))
-      .toThrow(expect.objectContaining({ details: expect.objectContaining({ worldRule: 'scene_write_conflict' }) }));
+    // 只有重复字段时整条忽略，阶段仍成功。
+    const only = parse(worldResult([{ ...npcUpdate({ onScene: false }), npcId: 'scene' }]), state, draft);
+    expect(only.worldCommands).toEqual([]);
+    expect(worldNormalizationNotes.get(only)?.[0]).toMatch(/UpdateNpc（scene）.*onScene.*值与变量阶段相同.*整条忽略/);
+    // 重复字段剔除，其余字段保留。
+    const mixed = parse(worldResult([{ ...npcUpdate({ onScene: false, healthText: '稍感疲倦' }), npcId: 'scene' }]), state, draft);
+    expect(mixed.worldCommands).toEqual([{ ...npcUpdate(), npcId: 'scene' }]);
+    expect(worldNormalizationNotes.get(mixed)?.[0]).not.toMatch(/整条忽略/);
+    // 冲突处理不掩盖越权：World 无权写的字段即使与 Variables 重复，仍按权限拒绝。
+    draft.variables!.result.commands.push({ type: 'UpdateNpc', commandId: 'rel', npcId: 'scene', expectedRevision: 0,
+      changes: { relationshipText: '主角已答应帮助他' }, evidence: '现场人物离开了现场。' });
+    expect(() => parse(worldResult([{ ...npcUpdate({ relationshipText: '主角已答应帮助他', healthText: '稍感疲倦' }), npcId: 'scene' }]), state, draft)).toThrow();
+    expect(() => parse(worldResult([{ ...npcUpdate({ onScene: true }), npcId: 'scene' }]), state, draft)).toThrow();
   });
   it('地点增量创建支持合法父级；循环/不存在的父级和地点引用拒绝', () => {
     const create: DomainCommand = {

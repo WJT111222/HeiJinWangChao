@@ -5,6 +5,7 @@ import { parseTextVariables, parseWorld } from '../services/validation/aiOutputs
 import { projectTurn } from '../domain/turnProjection';
 import { organizationState, organizationUpdate, organizationWorld } from './fixtures/organizations';
 import { organizations } from './fixtures/game';
+import { worldNormalizationNotes } from '../services/validation/worldSceneWrites';
 
 function draft(state = organizationState()) {
   return rerollStory(createTurnDraft(state.saveId,state.revision,'organization-turn','regular','查看本轮发展'),{
@@ -62,15 +63,50 @@ it('组织金额独立白名单需要依据和合法时间，不影响主角经�
   expect(()=>commitCommands(state,'field',10,[organizationUpdate('org-government',{liquidityEstimate:1})])).toThrow();
 });
 
-it('文本协议编译/模拟/World不得重写Variables字段，新可选字段按正式投影校验',async()=>{
+it('文本协议编译/模拟/World不得重写Variables字段（重复字段以Variables为准并剔除），新可选字段按正式投影校验',async()=>{
   const state=organizationState(),selected=draft(state),before=structuredClone(state);
   const variables=await parseTextVariables(body('set organizations[org-business].state = '+JSON.stringify({operatingStatus:'现场已经确认的新现状',leadership:[{position:'董事长',publicName:'顾行远'}]})),state,selected);
   expect(variables.commands[0]).toMatchObject({type:'UpdateOrganization',expectedRevision:10});
   selected.variables={result:variables,storyRevision:selected.storyRevision,candidateRevision:1,requestRevision:0,validation:'validated'};selected.stageStatus.variables='ready';
   expect(projectTurn(state,selected).organizations['org-business']).toMatchObject({operatingStatus:'现场已经确认的新现状'});
-  expect(()=>parseWorld(JSON.stringify(organizationWorld([organizationUpdate()])),state,selected)).toThrow();
+  // #186：World 与 Variables 重复的字段被剔除，不再让整个 World 阶段失败；只剩重复字段的命令整条忽略。
+  const dropped=parseWorld(JSON.stringify(organizationWorld([organizationUpdate()])),state,selected);
+  expect(dropped.worldCommands).toEqual([]);
+  expect(worldNormalizationNotes.get(dropped)?.join('')).toMatch(/operatingStatus.*以变量阶段为准.*整条忽略/);
+  const mixed=parseWorld(JSON.stringify(organizationWorld([organizationUpdate('org-business',{operatingStatus:'模型另写的现状',ownershipText:'独立更新的股权说明'})])),state,selected);
+  expect(mixed.worldCommands).toEqual([organizationUpdate('org-business',{ownershipText:'独立更新的股权说明'})]);
+  expect(projectTurn(state,selected,mixed.worldCommands).organizations['org-business']).toMatchObject({operatingStatus:'现场已经确认的新现状',ownershipText:'独立更新的股权说明'});
+  // 提交前重验使用保存下来的剔除结果：不再冲突、不再产生说明，结果不变。
+  const again=parseWorld(JSON.stringify(mixed),state,selected);
+  expect(again).toEqual(mixed); expect(worldNormalizationNotes.get(again)).toBeUndefined();
   expect(()=>parseWorld(JSON.stringify(organizationWorld([organizationUpdate('org-business',{ownershipText:'独立更新的股权说明'})])),state,selected)).not.toThrow();
   expect(state).toEqual(before);
+});
+
+it('#186 Variables新建组织或记录关系后，World重复字段与关系记录被忽略，其余命令照常',()=>{
+  const state=organizationState(),selected=draft(state);
+  const create={type:'CreateOrganization' as const,commandId:'new-org',evidence:'正文出现的新机构',organization:{...organizations[2],id:'new-civil',name:'江湾读书会',protagonistRelation:'闻所未闻',relationHistory:[]}};
+  const relation={type:'RecordOrgRelation' as const,commandId:'rel',evidence:'正文',organizationId:'org-civil',relation:'合作',reason:'主角答应协助'};
+  selected.variables={result:{commands:[create,relation],rejectedSuggestions:[],unresolved:[]},storyRevision:selected.storyRevision,candidateRevision:1,requestRevision:0,validation:'validated'};selected.stageStatus.variables='ready';
+  const fullName={...organizationUpdate('new-civil',{name:create.organization.name,activities:['周末公开读书活动']}),commandId:'w1'};
+  const worldRelation={type:'RecordOrgRelation' as const,commandId:'w2',evidence:'后台',organizationId:'org-civil',relation:'敌对',reason:'模型另写'};
+  const createdRelation={...worldRelation,commandId:'w3',organizationId:'new-civil'};
+  const independent={...organizationUpdate('org-government',{administrativeAffairs:['处理公开行政事务']}),commandId:'w4'};
+  const result=parseWorld(JSON.stringify(organizationWorld([fullName,worldRelation,createdRelation,independent])),state,selected);
+  expect(result.worldCommands.map(c=>c.commandId)).toEqual(['w4']);
+  const notes=worldNormalizationNotes.get(result)!;
+  expect(notes).toHaveLength(3);
+  expect(notes[0]).toMatch(/UpdateOrganization（new-civil）.*name、activities.*activities 的值与变量阶段不同.*整条忽略/);
+  expect(notes.slice(1).every(note=>note.startsWith('RecordOrgRelation'))).toBe(true);
+});
+
+it('#186 剔除金额字段后不保留孤立的财务依据',()=>{
+  const state=organizationState(),selected=draft(state);
+  const prior={...organizationUpdate('org-business',{assetsEstimate:80000000}),financialBasis:{at:state.worldClock,note:'正文确认'}};
+  selected.variables={result:{commands:[prior],rejectedSuggestions:[],unresolved:[]},storyRevision:selected.storyRevision,candidateRevision:1,requestRevision:0,validation:'validated'};selected.stageStatus.variables='ready';
+  const world={...organizationUpdate('org-business',{assetsEstimate:90000000,ownershipText:'股权不变'}),commandId:'w',financialBasis:{at:state.worldClock,note:'模型估计'}};
+  const result=parseWorld(JSON.stringify(organizationWorld([world])),state,selected);
+  expect(result.worldCommands).toEqual([{...organizationUpdate('org-business',{ownershipText:'股权不变'}),commandId:'w'}]);
 });
 
 it('无变化回合可不更新，World支持同批创建后更新；重复命令幂等，不允许同类重名',()=>{

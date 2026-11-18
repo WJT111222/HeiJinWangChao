@@ -25,7 +25,7 @@ export const worldRuleNames = {
   event_reference: '引用的事件不存在', history_reference: '历史关联不存在、自引用、重复或因果关系成环',
   history_structure: '重大纪事字段超出结构上限', history_duplicate: '同一重大事实与类别已记录',
   history_source: '纪事来源回合不存在', history_event: '世界纪事归档依据与事件终态不符',
-  scene_write_conflict: 'World不能重复覆盖本轮Variables已经写入的NPC字段',
+  scene_write_conflict: 'World不能重复覆盖本轮Variables已经写入的NPC或组织字段',
   request_basis: '世界响应依赖的版本已失效', domain_modules: '世界命令缺少对应领域模块',
   secret_in_output: '输出含系统凭证，已阻止保存',
 } as const;
