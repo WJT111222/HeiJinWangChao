@@ -2,7 +2,7 @@ import { KeyMatcher, ScanLimitReached, WORK_WEIGHTS, WorkMeter, type MatchOption
 import type { SafeRegexReason } from './safeRegex';
 import { ENTRY_POSITIONS, type WorldbookEntry } from './schema';
 import { evaluateTimed, recordActivations, type TimedEntry, type TimedState } from './timedEffects';
-import { conservativeTokens, entryFingerprint, parseDecorators, seededRandom } from './triggerSupport';
+import { conservativeTokens, countChars, entryFingerprint, parseDecorators, seededRandom, tokensOf, type CharCounts } from './triggerSupport';
 
 /**
  * 世界书触发引擎（阶段 B）：纯函数，不读写存档、不联网、不调用模型。
@@ -251,6 +251,10 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
   const activated = new Map<string, { item: Item; content: string; tokens: number; loop: number; reason: DecisionReason; detail?: string }>();
   const failedProbability = new Set<string>();
   let allActivatedText = '';
+  // 默认估算器（conservativeTokens）按码点分类计数后取整，可以分段累加；自定义估算器仍整段计算。
+  // 各段都以换行分隔，拼接处不会把两个代理码元拼成一个码点，所以累加结果与整段估算完全一致。
+  const incremental = input.estimateTokens === undefined;
+  const allCounts: CharCounts = { ascii: 0, other: 0 };
   const delayLevels = [...new Set(items.filter((i) => i.entry.delayUntilRecursion).map((i) => i.level))].sort((a, b) => a - b);
   let currentLevel = delayLevels.shift() ?? 0;
   const safetyLimit = items.length + delayLevels.length + messages.length + 5;
@@ -316,12 +320,14 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
     }
 
     // 本轮判断未完成时，属于分组的候选无法与没轮到的组员比较，不作为正常候选（不属于分组的照常处理）。
+    // 一次线性过滤（此时工作量已耗尽，后续步骤都必须是线性的）。
     if (exhausted?.loop === loop) {
-      for (let k = found.length - 1; k >= 0; k--) {
-        if (!found[k].item.entry.group) continue;
-        decide(found[k].item, 'scan_limit_reached', loop, '同组条目未判断完');
-        found.splice(k, 1);
+      let kept = 0;
+      for (const hit of found) {
+        if (hit.item.entry.group) decide(hit.item, 'scan_limit_reached', loop, '同组条目未判断完');
+        else found[kept++] = hit;
       }
+      found.length = kept;
     }
 
     // 5. 排序（Sticky 优先，其余保持扫描顺序）→ 分组互斥 → 概率与预算。
@@ -330,8 +336,9 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
     const list = candidates.map((c) => c.item);
     filterGroups(list, state);
 
-    const allTokens = estimate(allActivatedText);
+    const allTokens = incremental ? tokensOf(allCounts) : estimate(allActivatedText);
     let pending = '';
+    const pendingCounts: CharCounts = { ascii: 0, other: 0 };
     let ignoresLeft = list.filter((i) => i.entry.ignoreBudget).length;
     for (let k = 0; k < list.length; k++) {
       const item = list[k], e = item.entry;
@@ -347,13 +354,20 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
         if (!(roll <= e.probability)) { failedProbability.add(item.key); decide(item, 'probability_failed', loop, `掷出 ${roll.toFixed(2)}，需要 ≤ ${e.probability}`); continue; }
       }
       item.content = substitute(item.content);
-      pending += `${item.content}\n`;
-      if (!e.ignoreBudget && allTokens + estimate(pending) >= budget) {
+      // 软预算按“已激活文本 + 本轮累积文本”整体估算（参照版本语义）。默认估算器可加性计数，
+      // 逐条累加与整段重算结果完全相同，避免每条都重扫已累积的全文（平方级）。
+      let contentCounts: CharCounts | undefined;
+      if (incremental) {
+        contentCounts = countChars(item.content);
+        pendingCounts.ascii += contentCounts.ascii + 1; // 末尾换行
+        pendingCounts.other += contentCounts.other;
+      } else pending += `${item.content}\n`;
+      if (!e.ignoreBudget && allTokens + (incremental ? tokensOf(pendingCounts) : estimate(pending)) >= budget) {
         overflowed = true;
         decide(item, 'budget_exceeded', loop, `预算 ${budget}`);
         continue;
       }
-      const tokens = estimate(item.content) + 1;
+      const tokens = (contentCounts ? tokensOf(contentCounts) : estimate(item.content)) + 1;
       if (used + tokens > hard) {
         if (!e.ignoreBudget) overflowed = true;
         decide(item, 'hard_budget_exceeded', loop, `上限 ${hard}，已用 ${used}，本条约 ${tokens}`);
@@ -381,27 +395,35 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
     state = next;
     if (state !== Scan.None) {
       const text = forRecursion.map((i) => i.content).join('\n');
-      if (text) { recurse.push(text); allActivatedText = `${text}\n${allActivatedText}`; }
+      if (text) {
+        recurse.push(text);
+        if (incremental) { const counts = countChars(text); allCounts.ascii += counts.ascii + 1; allCounts.other += counts.other; }
+        else allActivatedText = `${text}\n${allActivatedText}`;
+      }
     }
   }
 
   // 7. 插入计划：按 order 从高到低处理，各位置内越靠后越接近生成点（与参照版本一致）。
   const plan = emptyPlan();
   const placed = new Set<string>();
+  const depthGroups = new Map<string, InjectionPlan['atDepth'][number]>();
   const ordered = [...activated.values()].map((a, i) => ({ a, i })).sort((x, y) => y.a.item.entry.order - x.a.item.entry.order || x.i - y.i).map(({ a }) => a);
   for (const { item, content } of ordered) {
     if (!content) continue;
     const e = item.entry;
+    // 各位置内越晚处理越靠前：先按处理顺序追加，最后统一反转（逐条前插是平方级）。
     switch (e.position) {
-      case ENTRY_POSITIONS.before: plan.before.unshift(content); break;
-      case ENTRY_POSITIONS.after: plan.after.unshift(content); break;
-      case ENTRY_POSITIONS.authorNoteTop: plan.authorNoteTop.unshift(content); break;
-      case ENTRY_POSITIONS.authorNoteBottom: plan.authorNoteBottom.unshift(content); break;
-      case ENTRY_POSITIONS.exampleTop: plan.exampleMessages.unshift({ position: 'before', content }); break;
-      case ENTRY_POSITIONS.exampleBottom: plan.exampleMessages.unshift({ position: 'after', content }); break;
+      case ENTRY_POSITIONS.before: plan.before.push(content); break;
+      case ENTRY_POSITIONS.after: plan.after.push(content); break;
+      case ENTRY_POSITIONS.authorNoteTop: plan.authorNoteTop.push(content); break;
+      case ENTRY_POSITIONS.authorNoteBottom: plan.authorNoteBottom.push(content); break;
+      case ENTRY_POSITIONS.exampleTop: plan.exampleMessages.push({ position: 'before', content }); break;
+      case ENTRY_POSITIONS.exampleBottom: plan.exampleMessages.push({ position: 'after', content }); break;
       case ENTRY_POSITIONS.atDepth: {
-        const group = plan.atDepth.find((g) => g.depth === e.depth && g.role === e.role);
-        if (group) group.contents.unshift(content); else plan.atDepth.push({ depth: e.depth, role: e.role, contents: [content] });
+        const slot = `${e.depth}|${e.role}`;
+        let group = depthGroups.get(slot);
+        if (!group) { group = { depth: e.depth, role: e.role, contents: [] }; depthGroups.set(slot, group); plan.atDepth.push(group); }
+        group.contents.push(content);
         break;
       }
       case ENTRY_POSITIONS.outlet:
@@ -412,6 +434,8 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
     }
     placed.add(item.key);
   }
+  for (const list of [plan.before, plan.after, plan.authorNoteTop, plan.authorNoteBottom, plan.exampleMessages]) list.reverse();
+  for (const group of plan.atDepth) group.contents.reverse();
 
   const activatedList: ActivatedEntry[] = [...activated.values()].map(({ item, content, tokens, loop: at, reason, detail }) => ({
     key: item.key, bookId: item.bookId, versionId: item.versionId, entryId: item.entry.entryId, comment: item.entry.comment,

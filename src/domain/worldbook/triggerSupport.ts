@@ -38,13 +38,20 @@ export function entryFingerprint(bookId: string, entry: unknown): string {
  * 保守的 Token 估算：ASCII 每 3 个字符算 1，其余字符每个算 1.5，向上取整。
  * 比项目现有估算（ASCII 每 4 个算 1）更宁多勿少，避免世界书挤爆请求。
  */
-export function conservativeTokens(text: string): number {
+export interface CharCounts { ascii: number; other: number }
+/** 按码点分类计数：ASCII（< 128）与其他。 */
+export function countChars(text: string): CharCounts {
   let ascii = 0, other = 0;
   for (const char of text) {
     if (char.codePointAt(0)! < 128) ascii++;
     else other++;
   }
-  return Math.ceil(ascii / 3 + other * 1.5);
+  return { ascii, other };
+}
+/** 保守估算的取整公式。计数可以分段累加（拼接处不拆开代理对时），结果与整段计算相同。 */
+export const tokensOf = (counts: CharCounts) => Math.ceil(counts.ascii / 3 + counts.other * 1.5);
+export function conservativeTokens(text: string): number {
+  return tokensOf(countChars(text));
 }
 
 const KNOWN_DECORATORS = ['@@activate', '@@dont_activate'];
