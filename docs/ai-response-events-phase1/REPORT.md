@@ -153,10 +153,12 @@
 
 [logs/](logs/) 保留正式命令日志、退出码、main 对照、失败定位、复测性能样本与配置文本。核心入口：
 
-- [完整工程检查](logs/check-final.log) / [退出码](logs/check-final.exit)
-- [Prompt](logs/prompts.log) / [事件专项](logs/events-corrected.log)
-- [浏览器首轮](logs/chromium.log) / [干净 main](logs/main-chromium.log) / [定位修正后](logs/chromium-repeat.log)
-- [旧 main 静态轨迹捕获](logs/baseline-capture.log)
+- [完整工程检查](logs/check-final.log.gz) / [退出码](logs/check-final.exit)
+- [Prompt](logs/prompts.log.gz) / [事件专项](logs/events-corrected.log.gz)
+- [浏览器首轮](logs/chromium.log.gz) / [干净 main](logs/main-chromium.log.gz) / [定位修正后](logs/chromium-repeat.log.gz)
+- [旧 main 静态轨迹捕获](logs/baseline-capture.log.gz)
+
+原始 `.log` 与 Playwright 错误上下文按字节无损 gzip 保存，避免生成器自带的行尾空格触发 Git 差异检查；可用 `gzip -dc 文件.log.gz` 直接查看。文档暂存时发现的该项格式问题与最终复核日志也分别保留。
 
 完整 JSON 浏览器报告、全部附件和失败 trace 仍在隔离证据目录 `/workspace/ai-response-events-evidence/`，包括 `browser-results/`、`main-browser-results/`、`browser-repeat-results/`。未把大型 trace 存入 Git，也未上传私人玩家数据。报告与复测是同一代码基线；后续仅增加文档和证据，不修改受验收代码。
 
