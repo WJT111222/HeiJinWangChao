@@ -1,7 +1,9 @@
 import { AiError } from './errors';
+import { observeToolTrace } from './storyToolTrace';
 export async function* readSse(
   body: ReadableStream<Uint8Array>,
   signal: AbortSignal,
+  onBodyChunk?: () => void,
 ): AsyncGenerator<{ event: string; data: string }> {
   const reader = body.getReader();
   const decoder = new TextDecoder('utf-8', { fatal: true });
@@ -16,6 +18,10 @@ export async function* readSse(
     while (true) {
       if (signal.aborted) throw new AiError('cancelled');
       const chunk = await reader.read();
+      if (onBodyChunk && chunk.value?.byteLength && !signal.aborted) {
+        observeToolTrace(onBodyChunk);
+        onBodyChunk = undefined;
+      }
       buffer += chunk.done ? decoder.decode() : decoder.decode(chunk.value, { stream: true });
       if (buffer.length > 8_000_000) throw new AiError('invalid_output');
       let end: number;

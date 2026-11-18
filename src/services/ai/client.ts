@@ -1,3 +1,6 @@
+import { observeToolTrace, StoryToolTraceRecorder } from './storyToolTrace';
+import type { StoryToolTrace } from './storyToolTrace';
+import { toolFailureMetadata } from './storyToolContract';
 import { StoryToolAssembler } from './storyToolAssembler';
 import { AiError, safeAiError } from './errors';
 import { requestInspections } from './inspection';
@@ -24,6 +27,7 @@ export interface RequestOptions {
   validateStoryOutputLimit?: boolean;
   /** Opt-in Story output carrier only; never executes tools. */
   storyToolOutput?: boolean;
+  onStoryToolTrace?: (trace: StoryToolTrace) => void;
   onResponseDiagnostics?: (diagnostics: ResponseDiagnostics) => void;
   signal?: AbortSignal;
   timeoutSeconds?: number;
@@ -56,6 +60,7 @@ export interface AiResponse {
 async function operation<T>(
   options: RequestOptions,
   run: (signal: AbortSignal) => Promise<T>,
+  trace?: StoryToolTraceRecorder,
 ): Promise<T> {
   if (options.signal?.aborted) throw new AiError('cancelled');
   if (
@@ -67,6 +72,7 @@ async function operation<T>(
   const controller = new AbortController();
   let timedOut = false;
   const cancel = () => controller.abort();
+  if (trace) observeToolTrace(() => trace.operationStarted());
   const timeout = setTimeout(
     () => {
       timedOut = true;
@@ -96,7 +102,8 @@ async function operation<T>(
 }
 export class AiClient {
   constructor(private transport: typeof fetch = (input, init) => globalThis.fetch(input, init)) {}
-  private async response(url: string, init: RequestInit, signal: AbortSignal, snapshot?: RequestSnapshot, observe?: (value: ResponseDiagnostics) => void) {
+  private async response(url: string, init: RequestInit, signal: AbortSignal, snapshot?: RequestSnapshot, observe?: (value: ResponseDiagnostics) => void, trace?: StoryToolTraceRecorder) {
+    if (trace) observeToolTrace(() => trace.dispatch());
     const response = await this.transport(url, {
       ...init,
       signal,
@@ -105,6 +112,7 @@ export class AiClient {
       cache: 'no-store',
       referrerPolicy: 'no-referrer',
     });
+    if (trace && !signal.aborted) observeToolTrace(() => trace.http(response.status));
     if (!response.ok) {
       const status = response.status;
       // Do not wait for an extra error body: preserve HTTP failure/retry timing.
@@ -147,6 +155,13 @@ export class AiClient {
   ): Promise<AiResponse> {
     const carrier = options.storyToolOutput === true ? new StoryToolAssembler(snapshot.channel.protocol) : undefined;
     const wire = wireRequest(snapshot, messages, options.stream === true, Boolean(carrier));
+    let trace: StoryToolTraceRecorder | undefined;
+    if (carrier && options.onStoryToolTrace) observeToolTrace(() => {
+      const secret = secretFor(snapshot);
+      const model = [secret, encodeURIComponent(secret)].some(value => snapshot.model.includes(value))
+        ? '[已隐藏]' : snapshot.model;
+      trace = StoryToolTraceRecorder.start(snapshot.channel.protocol, model, wire.url, options.stream === true, options.timeoutSeconds ?? 120);
+    });
     let inspectionId: string | undefined;
     let observedUsage: Usage | undefined;
     let outputLimited = false;
@@ -158,7 +173,7 @@ export class AiClient {
       try { options.onResponseDiagnostics?.(value); } catch { /* Observation never changes request semantics. */ }
     };
     try {
-      return await operation(options, async (signal) => {
+      const response = await operation(options, async (signal) => {
         if (signal.aborted) throw new AiError('cancelled');
         try { inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection); }
         catch { /* 只读诊断失败不能阻断真实发送。 */ }
@@ -167,8 +182,8 @@ export class AiClient {
         let streaming = false, terminal = false, nativeSeen = false;
         let think: LeadingThink | undefined;
         const events = readAiResponseEvents(
-          () => this.response(wire.url, wire.init, signal, snapshot, options.onResponseDiagnostics ? observe : undefined),
-          protocol, options.stream === true, signal, Boolean(carrier),
+          () => this.response(wire.url, wire.init, signal, snapshot, options.onResponseDiagnostics ? observe : undefined, trace),
+          protocol, options.stream === true, signal, Boolean(carrier), trace,
         );
         for await (const event of events) {
           if (event.type === 'error') throw event.error;
@@ -180,13 +195,17 @@ export class AiClient {
             continue;
           }
           if (event.type === 'end') {
+            if (trace) observeToolTrace(() => trace?.boundary(event.boundary, event.source.sequence));
             carrier?.boundary(event);
             if (event.boundary === 'done-marker') terminal = true;
             continue;
           }
           if (event.type === 'tool-start' || event.type === 'tool-identity-delta' || event.type === 'tool-arguments' || event.type === 'tool-end') {
             if (!carrier) throw new AiError('unsupported');
-            carrier.event(event); continue;
+            if (trace) observeToolTrace(() => trace?.tool(event));
+            carrier.event(event);
+            if (trace && event.type === 'tool-end') observeToolTrace(() => trace?.acceptedToolEnd());
+            continue;
           }
           if (carrier) {
             if (!signal.aborted) observe({ ...event.diagnostics, httpStatus: event.source.httpStatus, complete: false });
@@ -275,6 +294,7 @@ export class AiClient {
           if (delta && !signal.aborted) options.onDelta?.(delta);
         }
         if (carrier) {
+          if (trace) observeToolTrace(() => trace?.validatingCarrier());
           text = carrier.complete();
           if (isOpenAiCompatible(protocol)) {
             const split = splitLeadingThink(text); text = split.content;
@@ -302,8 +322,13 @@ export class AiClient {
         try { if (inspectionId) requestInspections.finish(inspectionId, usage); }
         catch { /* 诊断观察器失败不改变响应。 */ }
         return { text, ...(outputLimited ? { outputLimited: true } : {}), ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics: wire.diagnostics, protocol, model: snapshot.model };
-      });
+      }, trace);
+      if (trace) observeToolTrace(() => options.onStoryToolTrace?.(trace!.seal({ code: 'received' })));
+      return response;
     } catch (error) {
+      if (trace) observeToolTrace(() => options.onStoryToolTrace?.(trace!.seal(error instanceof AiError
+        ? { code: error.code, ...toolFailureMetadata(error) }
+        : { code: 'unknown' })));
       try { if (inspectionId) requestInspections.finish(inspectionId, observedUsage, safeAiError(error).code); }
       catch { /* 保留原始失败语义。 */ }
       throw error;

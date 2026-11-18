@@ -3,7 +3,7 @@ import type { Protocol } from './configuration';
 import type { AiResponseEvent, ResponsePayloadEvent } from './responseEvents';
 import type { ToolResponseEvent } from './toolResponseEvents';
 import { checkFinish } from './compat';
-import { parseStoryToolArguments, STORY_OUTPUT_TOOL, STORY_TOOL_ARGUMENT_LIMIT, toolFailure } from './storyToolContract';
+import { parseStoryToolArguments, STORY_OUTPUT_TOOL, STORY_TOOL_ARGUMENT_LIMIT, toolFailure, toolOrderingFailure } from './storyToolContract';
 
 /** Request-local, single-carrier assembly. No execution, recovery heuristic,
  * partial acceptance, storage, callbacks or requests. */
@@ -18,9 +18,10 @@ export class StoryToolAssembler {
   response(event: ResponsePayloadEvent) {
     this.streaming = event.source.transport === 'sse';
     if (event.content.trim()) throw toolFailure('mixed_text');
-    if (this.finishSequence !== undefined && event.source.sequence > this.finishSequence && event.nativeReasoning) throw toolFailure('ordering');
+    if (this.finishSequence !== undefined && event.source.sequence > this.finishSequence && event.nativeReasoning) throw toolOrderingFailure('reasoning_after_finish');
     if (event.messageStop) {
-      if (this.messageStop || !this.call?.closed || !this.providerFinish) throw toolFailure('ordering');
+      if (this.messageStop) throw toolOrderingFailure('duplicate_message_stop');
+      if (!this.call?.closed || !this.providerFinish) throw toolOrderingFailure('message_stop_before_required_boundaries');
       this.messageStop = true;
     }
     const reason = event.finishReason;
@@ -31,11 +32,12 @@ export class StoryToolAssembler {
       checkFinish(reason);
       throw toolFailure('finish');
     }
-    if (this.providerFinish) throw toolFailure('ordering');
+    if (this.providerFinish) throw toolOrderingFailure('duplicate_provider_finish');
     this.providerFinish = true; this.finishSequence = event.source.sequence;
   }
   event(event: ToolResponseEvent) {
-    if (this.messageStop || (this.finishSequence !== undefined && event.source.sequence > this.finishSequence)) throw toolFailure('ordering');
+    if (this.messageStop) throw toolOrderingFailure('tool_event_after_message_stop');
+    if (this.finishSequence !== undefined && event.source.sequence > this.finishSequence) throw toolOrderingFailure('tool_event_after_finish');
     if (event.type === 'tool-start') {
       if (this.call) throw toolFailure('multiple');
       if ((event.callId?.length ?? 0) > 512 || (event.name?.length ?? 0) > 512) throw toolFailure('identity');
@@ -43,12 +45,12 @@ export class StoryToolAssembler {
       return;
     }
     const call = this.call;
-    if (!call || call.slot !== event.slot || call.closed) throw toolFailure('ordering');
+    if (!call || call.slot !== event.slot || call.closed) throw toolOrderingFailure('missing_or_closed_slot');
     if (event.type === 'tool-identity-delta') {
       call.id += event.callId ?? ''; call.name += event.name ?? '';
       if (call.id.length > 512 || call.name.length > 512) throw toolFailure('identity');
     } else if (event.type === 'tool-arguments') {
-      if (call.snapshot || (event.delivery === 'snapshot' && call.chunks.length)) throw toolFailure('ordering');
+      if (call.snapshot || (event.delivery === 'snapshot' && call.chunks.length)) throw toolOrderingFailure('snapshot_delta_conflict');
       call.snapshot = event.delivery === 'snapshot'; call.chars += event.text.length;
       if (call.chars > STORY_TOOL_ARGUMENT_LIMIT) throw toolFailure('arguments');
       if (event.text) {

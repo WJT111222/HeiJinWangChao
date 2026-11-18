@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "startedAt": "2026-11-18T22:22:06.485Z",
+  "protocol": "openai",
+  "model": "story",
+  "endpointKind": "local",
+  "requestedStream": true,
+  "observedTransport": "sse",
+  "timeoutSeconds": 120,
+  "httpStatus": 200,
+  "operationStartedMs": 2,
+  "dispatchMs": 6,
+  "httpMs": 33,
+  "firstBodyChunkMs": 34,
+  "firstSseFrameMs": 34,
+  "firstToolEventMs": 39,
+  "firstArgumentsMs": 39,
+  "firstNonEmptyArgumentsMs": 39,
+  "lastArgumentsMs": 39,
+  "firstProviderFinishMs": 39,
+  "lastFrameMs": 39,
+  "lastToolEventMs": 39,
+  "boundaryMs": null,
+  "totalMs": 40,
+  "boundary": null,
+  "firstProviderFinish": {
+    "frame": 3,
+    "reason": "tool_calls",
+    "field": "choices.0.finish_reason"
+  },
+  "outcome": {
+    "code": "tool_response",
+    "toolRule": "ordering",
+    "orderingSite": "duplicate_provider_finish",
+    "frame": 4,
+    "step": "waiting-boundary"
+  },
+  "counts": {
+    "sse-frame": 4,
+    "tool-start": 1,
+    "tool-arguments": 1,
+    "provider-finish": 2,
+    "tool-end": 1
+  },
+  "omittedEvents": 0,
+  "events": [
+    {
+      "kind": "sse-frame",
+      "frame": 1,
+      "ms": 34,
+      "reasoningPresent": true
+    },
+    {
+      "kind": "sse-frame",
+      "frame": 2,
+      "ms": 39,
+      "toolCalls": 1,
+      "argumentsPresent": true,
+      "toolIdentityPresent": true
+    },
+    {
+      "kind": "tool-start",
+      "frame": 2,
+      "ms": 39,
+      "slot": 0,
+      "idPresent": true,
+      "namePresent": true,
+      "expectedName": true
+    },
+    {
+      "kind": "tool-arguments",
+      "frame": 2,
+      "ms": 39,
+      "slot": 0,
+      "delivery": "delta",
+      "nonEmpty": true
+    },
+    {
+      "kind": "sse-frame",
+      "frame": 3,
+      "ms": 39
+    },
+    {
+      "kind": "provider-finish",
+      "ms": 39,
+      "frame": 3,
+      "reason": "tool_calls",
+      "field": "choices.0.finish_reason"
+    },
+    {
+      "kind": "tool-end",
+      "frame": 3,
+      "ms": 39,
+      "slot": 0,
+      "derivedFrom": "choice-finish"
+    },
+    {
+      "kind": "sse-frame",
+      "frame": 4,
+      "ms": 39
+    },
+    {
+      "kind": "provider-finish",
+      "ms": 40,
+      "frame": 4,
+      "reason": "tool_calls",
+      "field": "choices.0.finish_reason"
+    }
+  ],
+  "turnGroup": "500cfa52-a2f4-4a49-abcc-b6e913a75f42",
+  "attemptId": "d36045f0-2af3-4252-bfd4-61ab92983d11",
+  "stage": {
+    "status": "failed",
+    "errorCode": "tool_response",
+    "storyRule": null
+  }
+}

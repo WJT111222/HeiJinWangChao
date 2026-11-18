@@ -8,6 +8,8 @@ import type { RawResponseObservation, ResponseDiagnostics } from './responseCont
 import { readSse } from './sse';
 import { ToolEventProjector, observedToolArguments } from './toolResponseEvents';
 import type { ToolResponseEvent } from './toolResponseEvents';
+import { observeToolTrace } from './storyToolTrace';
+import type { StoryToolTraceRecorder } from './storyToolTrace';
 
 /** Request-local provenance. A sequence identifies a wire frame, not the order of
  * content/reasoning fields inside it. No URL, credential, signature or save data. */
@@ -81,11 +83,22 @@ export async function* readAiResponseEvents(
   requestedStream: boolean,
   signal: AbortSignal,
   toolResponses = false,
+  trace?: StoryToolTraceRecorder,
 ): AsyncGenerator<AiResponseEvent> {
   let source: ResponseSource = { protocol, requestedStream, transport: 'http', sequence: 0 };
   const tools = toolResponses ? new ToolEventProjector() : undefined;
   const observed = (data: unknown) => {
     const result = payload(data, source);
+    if (trace) observeToolTrace(() => {
+      const wire = record(data);
+      const choice = record(array(wire.choices)[0]);
+      const calls = isOpenAiCompatible(protocol) ? array(record(choice[source.transport === 'sse' ? 'delta' : 'message']).tool_calls) : [];
+      trace.payload(result, wire.type ?? source.eventName, calls.length ? {
+        toolCalls: calls.length,
+        argumentsPresent: calls.some(call => Object.hasOwn(record(record(call).function), 'arguments')),
+        toolIdentityPresent: calls.some(call => Object.hasOwn(record(call), 'id') || Object.hasOwn(record(record(call).function), 'name')),
+      } : undefined);
+    });
     if (toolResponses && (result.finishReason === 'tool_calls' || result.finishReason === 'tool_use'))
       result.diagnostics.finishReasons = [String(result.finishReason)];
     const args = toolResponses ? observedToolArguments(data, source).join('') : '';
@@ -99,6 +112,7 @@ export async function* readAiResponseEvents(
     const response = await receive();
     if (signal.aborted) { yield { type: 'aborted', source }; return; }
     source = { ...source, httpStatus: response.status, transport: !requestedStream || /application\/json/i.test(response.headers.get('content-type') ?? '') ? 'json' : 'sse' };
+    if (trace) observeToolTrace(() => trace.opened(source.transport));
     yield { type: 'opened', source };
     if (source.transport === 'json') {
       let data: unknown;
@@ -106,15 +120,17 @@ export async function* readAiResponseEvents(
       catch { throw new AiError('invalid_json'); }
       if (signal.aborted) { yield { type: 'aborted', source }; return; }
       source = { ...source, sequence: 1 };
+      if (trace) observeToolTrace(() => trace.wireFrame(source));
       yield observed(data);
       if (tools) for (const event of tools.project(data, source)) yield event;
       yield { type: 'end', source, boundary: 'json-body' };
       return;
     }
     if (!response.body) throw new AiError('stream_interrupted');
-    for await (const event of readSse(response.body, signal)) {
+    for await (const event of readSse(response.body, signal, trace && (() => trace.bodyChunk()))) {
       if (signal.aborted) { yield { type: 'aborted', source }; return; }
       source = { ...source, sequence: source.sequence + 1, eventName: event.event };
+      if (trace) observeToolTrace(() => trace.wireFrame(source));
       if (event.data === '[DONE]' && isOpenAiCompatible(protocol)) {
         yield { type: 'end', source, boundary: 'done-marker' };
         return;

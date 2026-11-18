@@ -1,3 +1,6 @@
+import { isStoryRule } from '../../domain/storyDiagnostics';
+import { observeToolTrace } from './storyToolTrace';
+import type { StoryToolTrace } from './storyToolTrace';
 import { redactInspection } from './inspection';
 import { safeAiError } from './errors';
 import type { AiStage, Protocol } from './configuration';
@@ -13,13 +16,15 @@ export const responseStoreBudget = 32_000_000;
 export const responseLimitsFor = (stage: AiStage) => stage === 'story' ? responseLimits : candidateResponseLimits;
 export function responseSize(record: StageResponse) {
   return (record.text?.length ?? 0) + (record.nativeReasoning?.length ?? 0) + (record.displayText?.length ?? 0)
-    + (record.normalized?.length ?? 0) + (record.diagnostics ? JSON.stringify(record.diagnostics).length : 0);
+    + (record.normalized?.length ?? 0) + (record.diagnostics ? JSON.stringify(record.diagnostics).length : 0)
+    + (record.toolTrace ? JSON.stringify(record.toolTrace).length : 0);
 }
 export interface StageResponse {
   id: string; saveId: string; turnId?: string; storyRevision?: number; stage: AiStage;
   baseSaveRevision?: number; draftRevision?: number; executionRevision?: number; stageRequestRevision?: number;
   basedOnVariableRevision?: number;
   diagnostics?: ResponseDiagnostics;
+  toolTrace?: StoryToolTrace & { turnGroup: string | null };
   truncated?: boolean;
   status: 'pending' | 'received' | 'validated' | 'failed';
   text?: string; normalized?: string; error?: ReturnType<typeof safeAiError>;
@@ -74,7 +79,7 @@ export class StageResponseStore {
     this.publish([freeze({ ...scope, id, status: 'pending' as const }), ...this.records].slice(0, 6));
     return id;
   }
-  update(id: string, patch: Partial<Pick<StageResponse, 'text' | 'nativeReasoning' | 'displayText' | 'displayOrder' | 'normalized' | 'status' | 'error' | 'diagnostics' | 'truncated' | 'notes'>>, secrets: readonly string[]) {
+  update(id: string, patch: Partial<Pick<StageResponse, 'text' | 'nativeReasoning' | 'displayText' | 'displayOrder' | 'normalized' | 'status' | 'error' | 'diagnostics' | 'truncated' | 'notes'>>, secrets: readonly string[], toolTrace?: StoryToolTrace) {
     const current = this.records.find(item => item.id === id);
     if (!current) return;
     const limits = responseLimitsFor(current.stage);
@@ -92,7 +97,18 @@ export class StageResponseStore {
       if (text.length <= responseLimits.diagnostics) safe.diagnostics = JSON.parse(text) as ResponseDiagnostics;
       else { delete safe.diagnostics; safe.truncated = true; }
     }
-    const next = { ...current, ...safe, truncated: current.truncated || safe.truncated };
+    let trace = current.toolTrace;
+    if (toolTrace && !trace && current.stage === 'story') observeToolTrace(() => {
+      const turnGroup = current.turnId === undefined ? null
+        : this.records.find(item => item.saveId === current.saveId && item.turnId === current.turnId && item.toolTrace)?.toolTrace?.turnGroup
+          ?? crypto.randomUUID();
+      const values = [...secrets, current.saveId, current.turnId ?? ''];
+      const model = safeResponseText(toolTrace.model, values) === toolTrace.model ? toolTrace.model : '[已隐藏]';
+      const projected = { ...toolTrace, model, turnGroup };
+      const diagnosticSize = JSON.stringify(safe.diagnostics ?? current.diagnostics ?? {}).length;
+      if (diagnosticSize + JSON.stringify(projected).length <= limits.diagnostics) trace = projected;
+    });
+    const next = { ...current, ...safe, ...(trace && { toolTrace: trace }), truncated: current.truncated || safe.truncated };
     if ((Object.keys(next) as (keyof StageResponse)[]).every(key => key === 'diagnostics'
       ? JSON.stringify(next[key]) === JSON.stringify(current[key]) : next[key] === current[key])) return;
     this.publish(this.records.map(item => item.id === id ? freeze(next) : item));
@@ -114,4 +130,16 @@ export function selectStageResponse(records: readonly StageResponse[], saveId: s
       && (item.stageRequestRevision === undefined || item.stageRequestRevision === draft.stageRequestRevisions[stage])
       && (stage !== 'world' || item.basedOnVariableRevision === draft.variables?.candidateRevision);
   });
+}
+
+/** The export never serializes a StageResponse, an inspection record, or an error message. */
+export function storyToolDiagnosticExport(record: StageResponse) {
+  if (!record.toolTrace || record.status === 'pending') return undefined;
+  const error = record.error;
+  const rule = error && 'details' in error ? error.details?.storyRule : undefined;
+  return {
+    ...record.toolTrace,
+    attemptId: record.id, // Random in-memory response ID, not the save or draft ID.
+    stage: { status: record.status, errorCode: error?.code ?? null, storyRule: isStoryRule(rule) ? rule : null },
+  };
 }

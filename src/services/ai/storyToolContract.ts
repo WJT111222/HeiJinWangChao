@@ -9,7 +9,27 @@ export const STORY_TOOL_PARAMETERS = {
 } as const;
 export const STORY_TOOL_ARGUMENT_LIMIT = 8_000_000;
 const schema = z.strictObject({ content: z.string().min(1).max(8_000_000) });
-export type ToolFailureRule = 'identity' | 'name' | 'multiple' | 'mixed_text' | 'ordering' | 'arguments' | 'incomplete' | 'unsupported_shape' | 'finish';
+const toolRules = ['identity', 'name', 'multiple', 'mixed_text', 'ordering', 'arguments', 'incomplete', 'unsupported_shape', 'finish'] as const;
+export type ToolFailureRule = typeof toolRules[number];
+export type ToolOrderingSite =
+  | 'reasoning_after_finish' | 'duplicate_provider_finish' | 'tool_event_after_finish' | 'tool_event_after_message_stop'
+  | 'duplicate_message_stop' | 'message_stop_before_required_boundaries' | 'missing_or_closed_slot'
+  | 'snapshot_delta_conflict' | 'projector_reopened_slot' | 'projector_arguments_without_open_slot'
+  | 'projector_end_without_open_slot' | 'duplicate_content_block_stop';
+const orderingSites = new WeakMap<AiError, ToolOrderingSite>();
+
+export function toolOrderingFailure(site: ToolOrderingSite) {
+  const error = toolFailure('ordering');
+  orderingSites.set(error, site);
+  return error;
+}
+
+export function toolFailureMetadata(error: AiError) {
+  const toolRule = toolRules.find(rule => error.details?.fieldPath === `storyTool.${rule}`);
+  const orderingSite = orderingSites.get(error);
+  return { ...(toolRule && { toolRule }), ...(orderingSite && { orderingSite }) };
+}
+
 export function toolFailure(rule: ToolFailureRule): AiError {
   return new AiError('tool_response', undefined, { fieldPath: `storyTool.${rule}` });
 }

@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import type { Server, ServerResponse } from 'node:http';
 import { test, expect } from './helpers/test';
 import type { Page } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 import { openGameTools, openStageRaw, openSettings, openWorkflowStage } from './helpers/gameLayout';
 import { STORY_OUTPUT_TOOL } from '../src/services/ai/storyToolContract';
 import { variableTextEnvelope } from '../src/tests/fixtures/variableReply';
@@ -12,15 +13,15 @@ const story=`<thinking>仅本次原文可见的规划。</thinking><正文>${nar
 const args=JSON.stringify({content:story});
 const frame=(data:unknown)=>`data: ${JSON.stringify(data)}\n\n`;
 let server:Server,active:ServerResponse|undefined,baseUrl:string,calls:{model:string;tools:boolean}[];
-let mode:'hold'|'mixed'|'multiple'|'incomplete'|'story-partial';
+let mode:'hold'|'mixed'|'multiple'|'incomplete'|'story-partial'|'ordering';
 function write(value:unknown){
   const bytes=Buffer.from(frame(value));for(let n=0;n<bytes.length;n+=3)active!.write(bytes.subarray(n,n+3));
 }
 function begin(argumentsText:string){write({choices:[{delta:{tool_calls:[{index:0,id:'native-call-1',type:'function',function:{name:STORY_OUTPUT_TOOL,arguments:argumentsText}}]}}]});}
 function finish(){active!.end(frame({choices:[{delta:{},finish_reason:'tool_calls'}],usage:{prompt_tokens:10,completion_tokens:4,total_tokens:14}})+'data: [DONE]\n\n');}
 async function stored(page:Page){return page.evaluate(async()=>{const p='/src/services/storage/saveRepository.ts';const {SaveRepository}=await import(p),repo=await SaveRepository.open();try{return await repo.loadGame('save-a');}finally{repo.close();}});}
-async function seed(page:Page,enabled=true,storyOnly=false){
-  await page.goto('/');await page.evaluate(async({baseUrl,key,enabled,storyOnly})=>{
+async function seed(page:Page,enabled=true,storyOnly=false,protocol:'deepseek'|'openai'='deepseek'){
+  await page.goto('/');await page.evaluate(async({baseUrl,key,enabled,storyOnly,protocol})=>{
     const paths=['/src/services/storage/saveRepository.ts','/src/tests/fixtures/world.ts','/src/domain/drafts.ts','/src/ui/settings/model.ts','/src/services/ai/configuration.ts','/src/services/ai/credentials.ts'];
     const [{SaveRepository},{worldState},{createTurnDraft},{defaultSettings,settingsKey},{defaultAiConfig,newChannel,saveAiConfig},{CredentialVault}]=await Promise.all(paths.map(p=>import(p)));
     const repo=await SaveRepository.open();await repo.create(worldState());await repo.saveDraft(createTurnDraft('save-a',0,'tool-browser-opening','opening',''),null);repo.close();
@@ -29,10 +30,10 @@ async function seed(page:Page,enabled=true,storyOnly=false){
     for(const summary of Object.values(settings.memory.summaries) as {automatic:boolean}[])summary.automatic=false;
     if(enabled)settings.runtime.storyToolOutput=true;else delete (settings.runtime as Partial<typeof settings.runtime>).storyToolOutput;
     localStorage.setItem(settingsKey,JSON.stringify(settings));
-    const channel=newChannel('deepseek'),config=defaultAiConfig();channel.baseUrl=baseUrl;config.channels=[channel];
+    const channel=newChannel(protocol),config=defaultAiConfig();channel.baseUrl=baseUrl;config.channels=[channel];
     config.routes.story={channelId:channel.id,modelId:'story'};config.routes.variables={mode:'independent',channelId:channel.id,modelId:'variables'};config.routes.world={mode:'independent',channelId:channel.id,modelId:'world'};
     saveAiConfig(localStorage,config);new CredentialVault(sessionStorage,localStorage).set(channel.id,key);
-  },{baseUrl,key,enabled,storyOnly});await page.goto('/#game/save-a');await page.reload();await openGameTools(page);return stored(page);
+  },{baseUrl,key,enabled,storyOnly,protocol});await page.goto('/#game/save-a');await page.reload();await openGameTools(page);return stored(page);
 }
 async function start(page:Page){await page.getByRole('button',{name:'自动生成开局',exact:true}).click();await expect.poll(()=>Boolean(active)).toBe(true);}
 async function closeDiagnostics(page:Page){const dialog=page.getByRole('dialog',{name:'重试与变更详情',exact:true});if(await dialog.isVisible())await page.keyboard.press('Escape');}
@@ -52,6 +53,13 @@ test.beforeEach(async({page,context})=>{
     if(mode==='story-partial'){
       const content=calls.filter(c=>c.model==='story').length===1?'<正文>【旁白】雨水沿着站台落下。':'</正文><短期记忆>等待</短期记忆><变量规划>[]</变量规划>';
       begin(JSON.stringify({content}));finish();return;
+    }
+    if(mode==='ordering'){
+      write({choices:[{delta:{reasoning_content:`SYNTHETIC_PRIVATE_THOUGHT ${key}`}}]});
+      begin(args);
+      write({choices:[{delta:{},finish_reason:'tool_calls'}]});
+      finish();
+      return;
     }
     if(mode==='incomplete'){begin('{"content":"<正文>参数没有闭合');finish();return;}
     const call={index:0,id:'native-call-1',type:'function',function:{name:STORY_OUTPUT_TOOL,arguments:args}};
@@ -112,4 +120,48 @@ test('工具载体中的Story缺尾可刷新后主动续写；原文只保留真
   await page.getByRole('button',{name:'续写正文',exact:true}).click();await expect.poll(async()=>(await stored(page)).state.turnNumber).toBe(1);
   const after=await stored(page);expect(after.state.journal[0].story.narrative).toBe('【旁白】雨水沿着站台落下。');expect(after.state.memories.short).toHaveLength(1);expect(after.state.economy).toEqual(before.state.economy);expect(after.draft?.storyPartial).toBeUndefined();expect(calls).toEqual([{model:'story',tools:true},{model:'story',tools:true}]);
   await closeDiagnostics(page);const panel=await openStageRaw(page,'story');await expect(panel.getByRole('textbox',{name:'正文模型完整原文',exact:true})).toHaveValue(JSON.stringify({content:tail}));await page.screenshot({path:info.outputPath('tool-continuation.png')});expect(await stored(page)).toEqual(after);
+});
+
+test('两端主动下载顺序诊断，仅导出时间及白名单元数据，刷新销毁临时记录', async ({page}, info) => {
+  const before = await seed(page, true, false, 'openai');
+  mode = 'ordering';
+  await start(page);
+  await expect.poll(async () => (await stored(page)).draft?.stageStatus.story).toBe('failed');
+  const after = await stored(page);
+  expect(after.state).toEqual(before.state);
+  expect(after.draft?.story).toBeUndefined();
+  expect(after.draft?.storyPartial).toBeUndefined();
+  expect(calls).toEqual([{model:'story',tools:true}]);
+  await expect(page.getByRole('button', {name:'导出诊断', exact:true})).toBeHidden();
+  await closeDiagnostics(page);
+  const panel = await openStageRaw(page, 'story');
+  const button = panel.getByRole('button', {name:'导出诊断', exact:true});
+  await expect(button).toBeVisible();
+  await expect(panel.getByRole('textbox', {name:'正文模型完整原文', exact:true})).toHaveCount(1);
+  await page.screenshot({path:info.outputPath('diagnostic-entry.png')});
+  const [download] = await Promise.all([page.waitForEvent('download'), button.click()]);
+  expect(download.suggestedFilename()).toBe('story-tool-diagnostics.json');
+  const bytes = await readFile((await download.path())!, 'utf8');
+  const summary = JSON.parse(bytes);
+  expect(summary).toMatchObject({
+    protocol: 'openai', model: 'story', endpointKind: 'local', requestedStream: true, observedTransport: 'sse',
+    httpStatus: 200, boundary: null, timeoutSeconds: 120,
+    counts: {'tool-start': 1, 'tool-arguments': 1, 'tool-end': 1, 'provider-finish': 2},
+    outcome: {code: 'tool_response', toolRule: 'ordering', orderingSite: 'duplicate_provider_finish'},
+    stage: {status: 'failed', errorCode: 'tool_response'},
+  });
+  expect(summary.httpMs).toBeLessThanOrEqual(summary.firstBodyChunkMs);
+  expect(summary.firstBodyChunkMs).toBeLessThanOrEqual(summary.firstSseFrameMs);
+  expect(summary.firstSseFrameMs).toBeLessThanOrEqual(summary.firstArgumentsMs);
+  expect(summary.lastArgumentsMs).toBeLessThanOrEqual(summary.firstProviderFinishMs);
+  expect(summary.firstProviderFinishMs).toBeLessThanOrEqual(summary.totalMs);
+  for (const value of [key, narrative, 'SYNTHETIC_PRIVATE_THOUGHT', '本次原文可见的规划', 'native-call-1', 'save-a',
+    'tool-browser-opening', baseUrl, 'Authorization', 'GAME_CONTEXT', STORY_OUTPUT_TOOL, 'requestBody']) expect(bytes).not.toContain(value);
+  await download.saveAs(info.outputPath('redacted-export.json'));
+  expect(await stored(page)).toEqual(after);
+  await page.reload();
+  await closeDiagnostics(page);
+  await openStageRaw(page, 'story');
+  await expect(button).toHaveCount(0);
+  expect(calls).toHaveLength(1);
 });

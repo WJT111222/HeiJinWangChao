@@ -1,7 +1,7 @@
 import type { TurnDraft } from '../../domain/drafts';
 import { storyRuleNames } from '../../domain/storyDiagnostics';
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { stageResponses, selectStageResponse } from '../../services/ai/stageResponses';
+import { stageResponses, selectStageResponse, storyToolDiagnosticExport } from '../../services/ai/stageResponses';
 import type { StageResponse } from '../../services/ai/stageResponses';
 import { worldRuleNames } from '../../services/validation/worldDiagnostics';
 import type { AiStage } from '../../services/ai/configuration';
@@ -12,6 +12,7 @@ export function StageResponseContent({ record, label }: { record?: StageResponse
   const order = record?.displayOrder ?? 'unknown';
   if (record && !story) return <ObservedResponse key={record.id} record={record} label={label} />;
   return <>
+    {record?.toolTrace && record.status !== 'pending' && <StoryToolDiagnosticDownload key={record.id} record={record} />}
     {!text ? <p>{record?.status === 'pending' ? '请求尚未返回完整内容。' : '本页面没有可恢复的模型原文；已保存的候选不是模型原文，刷新后请查看规范化记录。'}</p>
       : story ? <textarea className="candidate-json story-raw-text" aria-label={`${label}模型完整原文`} readOnly spellCheck={false} value={text} />
         : <pre className="candidate-json" tabIndex={0} aria-label={`${label}模型完整原文`}>{text}</pre>}
@@ -20,6 +21,30 @@ export function StageResponseContent({ record, label }: { record?: StageResponse
       ? '合并显示公开返回内容；非流式响应或缺少事件记录时，字段间真实返回先后不可知。'
       : '按收到的事件顺序显示；同一事件内的字段及内容块按响应排列，不代表生成先后。'}</p>}
   </>;
+}
+
+function StoryToolDiagnosticDownload({ record }: { record: StageResponse }) {
+  const [failed, setFailed] = useState(false);
+  function download() {
+    let url: string | undefined;
+    const link = document.createElement('a');
+    try {
+      const summary = storyToolDiagnosticExport(record);
+      if (!summary) return;
+      url = URL.createObjectURL(new Blob([JSON.stringify(summary, null, 2)], { type: 'application/json' }));
+      link.href = url;
+      link.download = 'story-tool-diagnostics.json';
+      document.body.append(link);
+      link.click();
+      setFailed(false);
+    } catch {
+      setFailed(true);
+    } finally {
+      link.remove();
+      if (url) setTimeout(URL.revokeObjectURL, 1000, url);
+    }
+  }
+  return <p><button type="button" onClick={download}>导出诊断</button>{failed && <span role="status"> 下载失败，请重试。</span>}</p>;
 }
 
 function ObservedResponse({ record, label }: { record: StageResponse; label: string }) {

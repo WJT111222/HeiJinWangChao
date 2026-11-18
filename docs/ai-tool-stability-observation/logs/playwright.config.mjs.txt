@@ -1,0 +1,10 @@
+import base from '/workspace/ai-response-events/playwright.config.ts';
+export default {
+  ...base,
+  testDir: '/workspace/ai-response-events/e2e',
+  use: { ...base.use, baseURL: 'http://127.0.0.1:5368' },
+  webServer: { ...base.webServer, cwd: '/workspace/ai-response-events',
+    command: 'npm run dev -- --host 127.0.0.1 --port 5368 --strictPort',
+    url: 'http://127.0.0.1:5368', reuseExistingServer: false },
+  outputDir: '/workspace/pr191-observation-evidence/browser',
+};

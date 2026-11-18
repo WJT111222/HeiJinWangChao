@@ -1,7 +1,7 @@
 import { array, record } from './protocols';
 import { isOpenAiCompatible } from './configuration';
 import type { ResponseSource } from './responseEvents';
-import { toolFailure } from './storyToolContract';
+import { toolFailure, toolOrderingFailure } from './storyToolContract';
 
 export type ToolResponseEvent =
   | { readonly type: 'tool-start'; readonly source: ResponseSource; readonly slot: number; readonly callId?: string; readonly name?: string }
@@ -29,15 +29,15 @@ export class ToolEventProjector {
   project(value: unknown, source: ResponseSource): ToolResponseEvent[] {
     const data = record(value), events: ToolResponseEvent[] = [], stream = source.transport === 'sse';
     const start = (slot: number, callId?: string, name?: string) => {
-      if (this.open.has(slot) || this.closed.has(slot)) throw toolFailure('ordering');
+      if (this.open.has(slot) || this.closed.has(slot)) throw toolOrderingFailure('projector_reopened_slot');
       this.open.add(slot); events.push({ type: 'tool-start', source, slot, callId, name });
     };
     const args = (slot: number, text: string, delivery: 'delta' | 'snapshot') => {
-      if (!this.open.has(slot)) throw toolFailure('ordering');
+      if (!this.open.has(slot)) throw toolOrderingFailure('projector_arguments_without_open_slot');
       events.push({ type: 'tool-arguments', source, slot, text, delivery });
     };
     const end = (slot: number, boundary: 'choice-finish' | 'content-block-stop' | 'complete-value') => {
-      if (!this.open.delete(slot)) throw toolFailure('ordering');
+      if (!this.open.delete(slot)) throw toolOrderingFailure('projector_end_without_open_slot');
       this.closed.add(slot); events.push({ type: 'tool-end', source, slot, boundary });
     };
     if (isOpenAiCompatible(source.protocol)) {
@@ -90,7 +90,7 @@ export class ToolEventProjector {
         args(index(data.index), delta.partial_json, 'delta');
       } else if (data.type === 'content_block_stop') {
         const slot = index(data.index);
-        if (this.closed.has(slot)) throw toolFailure('ordering');
+        if (this.closed.has(slot)) throw toolOrderingFailure('duplicate_content_block_stop');
         if (this.open.has(slot)) end(slot, 'content-block-stop');
       }
     } else {

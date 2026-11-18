@@ -12,6 +12,7 @@ import type { CredentialVault } from './credentials';
 import { requestSnapshot } from './snapshot';
 import { AiClient } from './client';
 import type { RequestOptions } from './client';
+import type { StoryToolTrace } from './storyToolTrace';
 import { variableFailure, variableValidationError } from '../validation/variableDiagnostics';
 import { storyFailure } from '../validation/storyDiagnostics';
 import { timeOutcome } from '../../domain/timePreflight';
@@ -24,7 +25,11 @@ import type { StoryFailureText } from '../../domain/storyContinuation';
 import { splitLeadingThink } from './compat';
 
 /** 正文续写：已写出的截断原文（已隐藏凭证）。只用于正文阶段。 */
-export interface StageRequestOptions extends RequestOptions { continuation?: { partial: string } }
+export interface StageRequestOptions extends Omit<RequestOptions, 'onStoryToolTrace'> {
+  continuation?: { partial: string };
+  /** Allows local comparison with the same request without trace collection. */
+  observeStoryTool?: boolean;
+}
 /**
  * 正文请求失败时收到的内容（去掉前导 <think> 推理；续写时为与已写部分拼接后的全文），供上层保存为可续写的截断正文。
  * 以失败对象为键，不进入错误消息或诊断展示。
@@ -44,7 +49,7 @@ export async function runStageRequest(
 }
 async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }, config: AiConfig,
   vault: CredentialVault, stageOptions: StageRequestOptions, client: AiClient) {
-  const { continuation: requestedContinuation, ...options } = stageOptions;
+  const { continuation: requestedContinuation, observeStoryTool = true, ...options } = stageOptions;
   if (requestedContinuation && input.stage !== 'story') throw new AiError('configuration');
   if (input.orderOverrides && input.orderPreferences) throw new AiError('configuration');
   const captured = checkedInput({
@@ -78,6 +83,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   const responseLimits = responseLimitsFor(captured.stage);
   let received = '', sealed = false, truncated = false;
   let diagnostics: ResponseDiagnostics = {};
+  let toolTrace: StoryToolTrace | undefined;
   const append = (text: string, delta: string, limit: number) => {
     if (text.length + delta.length > limit) truncated = true;
     return text + delta.slice(0, Math.max(0, limit - text.length));
@@ -105,6 +111,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     // Only Story may evaluate a complete limit response; other stages remain strict.
     validateStoryOutputLimit: captured.stage === 'story',
     storyToolOutput: toolOutput,
+    onStoryToolTrace: toolOutput && observeStoryTool ? value => { toolTrace = value; } : undefined,
     onResponseDiagnostics: (value) => {
       if (sealed || options.signal?.aborted) return;
       diagnostics = mergeResponseDiagnostics(diagnostics, value); observe();
@@ -153,7 +160,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   // 普通文本续写保留原来的合并诊断；工具参数仍是实际收到的JSON，
   // 不把上次正文前缀拼到工具原文。正式解析仍在下方合并已解码文本。
   if (continuation && !toolOutput) received = append('', merged(received), responseLimits.text);
-  stageResponses.update(responseId, { text: received, nativeReasoning: publicReasoning, diagnostics, truncated, ...display(), status: 'received' }, secrets);
+  stageResponses.update(responseId, { text: received, nativeReasoning: publicReasoning, diagnostics, truncated, ...display(), status: 'received' }, secrets, toolTrace);
   const responseText = merged(response.text);
   const envelope = (() => {
     if (captured.stage !== 'story') return undefined;
@@ -219,7 +226,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     }
     clearTimeout(observationTimer);
     stageResponses.update(responseId, { status: 'failed', text: preview(received),
-      nativeReasoning: preview(publicReasoning), diagnostics, truncated, ...display(), error: safeAiError(failure) }, secrets);
+      nativeReasoning: preview(publicReasoning), diagnostics, truncated, ...display(), error: safeAiError(failure) }, secrets, toolTrace);
     throw failure;
   }
 }
