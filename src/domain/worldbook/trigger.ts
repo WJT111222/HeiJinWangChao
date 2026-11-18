@@ -315,6 +315,15 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
       }
     }
 
+    // 本轮判断未完成时，属于分组的候选无法与没轮到的组员比较，不作为正常候选（不属于分组的照常处理）。
+    if (exhausted?.loop === loop) {
+      for (let k = found.length - 1; k >= 0; k--) {
+        if (!found[k].item.entry.group) continue;
+        decide(found[k].item, 'scan_limit_reached', loop, '同组条目未判断完');
+        found.splice(k, 1);
+      }
+    }
+
     // 5. 排序（Sticky 优先，其余保持扫描顺序）→ 分组互斥 → 概率与预算。
     const candidates = found.slice().sort((a, b) => Number(isSticky(b.item)) - Number(isSticky(a.item)) || a.item.index - b.item.index);
     const why = new Map(candidates.map((c) => [c.item.key, c]));
@@ -426,61 +435,104 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
    * 分组互斥（就地修改 list）。组名按逗号拆分，一个条目可属于多个组。
    * 有意与参照版本不同的一处：移出列表时如果条目已经不在列表里，什么也不做
    * （参照版本此时会误删列表最后一个无关条目）。
+   *
+   * 工作量：拆分组名按字符计费，每个“条目 × 组名”成员和每个组名在登记时预付后续筛选、移出、抽选的开销，
+   * 优先条目排序按比较步计费，分组评分走关键词匹配的计费。任何一步超限时，停止全部分组处理：
+   * 正在评分的组标为“评分未完成”，其余仍在列表里的分组条目标为“分组处理未完成”并移出，
+   * 不留下只处理了一部分的抽选结果。不属于分组的条目不受影响。
    */
   function filterGroups(list: Item[], scanState: Scan) {
-    const groups: Record<string, Item[]> = Object.create(null);
-    for (const item of list) {
-      if (!item.entry.group) continue;
-      for (const name of item.entry.group.split(/,\s*/).filter(Boolean)) (groups[name] ??= []).push(item);
-    }
-    const names = Object.keys(groups);
-    if (!names.length) return;
+    const grouped = list.filter((item) => item.entry.group);
+    if (!grouped.length) return;
+    const removed = new Set<Item>();
     const remove = (item: Item, reason: DecisionReason, detail?: string) => {
-      const at = list.indexOf(item);
-      if (at < 0) return;
-      list.splice(at, 1);
+      if (removed.has(item)) return;
+      removed.add(item);
       decide(item, reason, loop, detail);
     };
     const removeAllBut = (group: Item[], keep: Item | null, reason: DecisionReason, name: string) => {
       for (const item of group) if (item !== keep) remove(item, reason, `组「${name}」`);
     };
+    const finish = () => {
+      if (!removed.size) return;
+      let w = 0;
+      for (const item of list) if (!removed.has(item)) list[w++] = item;
+      list.length = w;
+    };
+    let at: Item = grouped[0];
+    const stop = () => {
+      exhausted ??= { loop, key: at.key };
+      for (const item of grouped) remove(item, 'scan_limit_reached', '分组处理未完成');
+      finish();
+    };
+
+    // 登记（计费）。
+    const groups: Record<string, Item[]> = Object.create(null);
+    const activeGroups = new Set<string>();
+    try {
+      let overrides = 0;
+      for (const item of grouped) {
+        at = item;
+        meter.charge(item.entry.group.length * WORK_WEIGHTS.groupChar);
+        for (const name of item.entry.group.split(/,\s*/)) {
+          if (!name) continue;
+          meter.charge(WORK_WEIGHTS.groupMember);
+          let group = groups[name];
+          if (!group) { meter.charge(WORK_WEIGHTS.group); groups[name] = group = []; }
+          group.push(item);
+          if (item.entry.groupOverride) overrides++;
+        }
+      }
+      meter.charge(overrides * Math.ceil(Math.log2(overrides + 2)) * WORK_WEIGHTS.groupSortStep);
+      // 与参照版本一致：拿已激活条目的完整组字符串与组名比较（多组条目因此可能不被识别）。
+      for (const a of activated.values()) {
+        meter.charge(a.item.entry.group.length * WORK_WEIGHTS.groupChar + WORK_WEIGHTS.groupMember);
+        activeGroups.add(a.item.entry.group);
+      }
+    } catch (error) {
+      if (!(error instanceof ScanLimitReached)) throw error;
+      stop();
+      return;
+    }
+    const names = Object.keys(groups);
+
     // 计时效果：有 Sticky 的组只留 Sticky 条目；冷却、延迟中的条目移出。
     const hasSticky = new Map<string, boolean>();
     for (const name of names) {
       const group = groups[name];
-      const stickies = group.filter(isSticky);
-      hasSticky.set(name, stickies.length > 0);
-      if (stickies.length) for (const item of group) if (!stickies.includes(item)) remove(item, 'group_sticky', `组「${name}」`);
+      const sticky = group.some(isSticky);
+      hasSticky.set(name, sticky);
+      if (sticky) for (const item of group) if (!isSticky(item)) remove(item, 'group_sticky', `组「${name}」`);
       for (const item of group) if (timed.cooldown.has(item.key) || timed.delay.has(item.key)) remove(item, 'group_timed', `组「${name}」`);
     }
-    // 分组评分：只保留得分最高的条目（仅对开启评分的条目生效）。
+    // 分组评分：只保留得分最高的条目（仅对开启评分的条目生效）。低分条目同时移出该组，不参加后面的抽选。
     for (const name of names) {
       const group = groups[name];
       if (!settings.useGroupScoring && !group.some((i) => i.entry.useGroupScoring)) continue;
       if (hasSticky.get(name)) continue;
       let scores: number[];
       try {
-        scores = group.map((item) => score(item, scanState));
+        scores = group.map((item) => { at = item; return score(item, scanState); });
       } catch (error) {
         if (!(error instanceof ScanLimitReached)) throw error;
-        exhausted ??= { loop, key: group[0].key };
+        exhausted ??= { loop, key: at.key };
         for (const item of group) remove(item, 'scan_limit_reached', `组「${name}」评分未完成`);
-        continue;
+        stop();
+        return;
       }
       const max = Math.max(...scores);
+      const kept: Item[] = [];
       for (let k = 0; k < group.length; k++) {
-        if (!(group[k].entry.useGroupScoring ?? settings.useGroupScoring)) continue;
-        if (scores[k] < max) {
+        if ((group[k].entry.useGroupScoring ?? settings.useGroupScoring) && scores[k] < max)
           remove(group[k], 'group_scoring', `组「${name}」得分 ${scores[k]} < ${max}`);
-          group.splice(k, 1); scores.splice(k, 1); k--;
-        }
+        else kept.push(group[k]);
       }
+      groups[name] = kept;
     }
     for (const name of names) {
       const group = groups[name];
       if (hasSticky.get(name)) continue;
-      // 与参照版本一致：拿已激活条目的完整组字符串与组名比较（多组条目因此可能不被识别）。
-      if ([...activated.values()].some((a) => a.item.entry.group === name)) { removeAllBut(group, null, 'group_already_active', name); continue; }
+      if (activeGroups.has(name)) { removeAllBut(group, null, 'group_already_active', name); continue; }
       if (group.length <= 1) continue;
       const priority = group.filter((i) => i.entry.groupOverride).map((item, i) => ({ item, i }))
         .sort((a, b) => b.item.entry.order - a.item.entry.order || a.i - b.i).map(({ item }) => item);
@@ -495,5 +547,6 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
       if (!winner) continue;
       removeAllBut(group, winner, 'group_weighted', name);
     }
+    finish();
   }
 }

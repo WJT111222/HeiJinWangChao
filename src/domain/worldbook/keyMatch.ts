@@ -49,6 +49,14 @@ export const WORK_WEIGHTS = {
   register: 300,
   /** 计算计时效果指纹：每个正文字符（实测约 14 纳秒）。 */
   fingerprintChar: 16,
+  /** 分组：拆分组名字符串，每个字符。 */
+  groupChar: 8,
+  /** 分组：每个“条目 × 组名”成员（重复的组名每次出现都算），预付登记、Sticky / 计时筛选、移出与抽选的开销。 */
+  groupMember: 800,
+  /** 分组：每个不同的组名。 */
+  group: 1_000,
+  /** 分组：优先条目排序，每个比较步。 */
+  groupSortStep: 100,
 } as const;
 
 const isWordCode = (c: number) => c >= 48 && c <= 57 || c >= 65 && c <= 90 || c >= 97 && c <= 122 || c === 95;

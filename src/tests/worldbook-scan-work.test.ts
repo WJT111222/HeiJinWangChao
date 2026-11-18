@@ -4,6 +4,7 @@ import { PlainIndex } from '../domain/worldbook/plainIndex';
 import type { WorldbookEntry } from '../domain/worldbook/schema';
 import { EMPTY_TIMED_STATE } from '../domain/worldbook/timedEffects';
 import { DEFAULT_TRIGGER_SETTINGS, runWorldbookTrigger, type TriggerInput, type TriggerResult } from '../domain/worldbook/trigger';
+import { runGroupBench } from './support/worldbookGroupBench';
 
 function entry(partial: Partial<WorldbookEntry>): WorldbookEntry {
   return {
@@ -213,5 +214,16 @@ describe('分组处理计入单次扫描工作量（独立审查 P2-5）', () =>
     expect(r.work.exhausted).toBeUndefined();
     expect(r.activated).toHaveLength(50); // 每组留一条
     expect(r.decisions.filter((d) => d.reason === 'group_weighted')).toHaveLength(450);
+  });
+
+  it('分组基准（默认上限）：每个对抗负载都在上限内结束，记录工作量、耗尽位置与耗时', () => {
+    const rows = runGroupBench(DEFAULT_TRIGGER_SETTINGS.maxScanWork);
+    expect(rows).toHaveLength(6);
+    for (const row of rows) {
+      expect(row.used <= row.limit).toBe(true);
+      expect(row.ms).toBeLessThan(3000);
+      if (row.exhausted !== '未耗尽') expect(row.activated).toBe(0);
+    }
+    expect(rows.filter((row) => row.exhausted.includes('分组处理未完成')).length).toBeGreaterThanOrEqual(4);
   });
 });
