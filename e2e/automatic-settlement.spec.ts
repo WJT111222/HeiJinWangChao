@@ -237,3 +237,43 @@ test('#186 World重复写入Variables本轮组织字段：以Variables为准剔�
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('world-scene-write-notes.png') });
 });
+
+for (const group of ['taskCommands', 'eventCommands'] as const) {
+  test(`#190 ${group} 的非法重复组织命令必须整批拒绝，主动修正后仅重试World`, async ({ page }, info) => {
+    await seed(page, false, true); const server = await mock(page), before = await stored(page);
+    server.control.variables = '<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset organizations[org-shop].state = {"operatingStatus":"正文确认照常营业"}\n</命令>';
+    const repeated = { type: 'UpdateOrganization', commandId: 'repeated-shop', evidence: '后台', organizationId: 'org-shop', expectedRevision: 0,
+      changes: { operatingStatus: 'World重复值' } };
+    const independent = { ...repeated, commandId: 'independent-shop', changes: { ownershipText: 'World独立合法字段' } };
+    const wrong = { ...repeated, commandId: 'wrong-group' };
+    server.control.world = JSON.stringify({ worldCommands: [repeated, independent], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [], [group]: [wrong] });
+    await page.getByRole('button', { name: '自动生成开局', exact: true }).click();
+    await expect.poll(async () => (await stored(page)).draft.stageStatus.world).toBe('failed');
+    const failed = await stored(page);
+    expect(failed.state).toEqual(before.state); expect(failed.draft.world).toBeUndefined();
+    expect(failed.draft.variables.validation).toBe('validated');
+    expect(server.calls).toEqual(['story', 'variables', 'world']);
+    // Mobile opens failed-request diagnostics automatically; do not click the
+    // workflow behind that modal. Desktop still uses its existing diagnostics rail.
+    const mobile = (page.viewportSize()?.width ?? 0) <= 900;
+    const diagnosticDialog = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: '重试与变更详情', exact: true }) });
+    if (!mobile) await openWorkflowDiagnostics(page);
+    const log = mobile ? diagnosticDialog.getByTestId('runtime-log') : page.getByTestId('runtime-log');
+    await expect(log).toBeVisible();
+    await expect(log).toContainText(`${group}.0`);
+    await expect(log).toContainText('UpdateOrganization');
+    // Close the active diagnostics modal before switching the underlying sheet.
+    if (mobile) await diagnosticDialog.getByRole('button', { name: '关闭资料界面', exact: true }).click();
+    await openStageRaw(page, 'world');
+    expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
+    expect(await stored(page)).toEqual(failed);
+    await page.screenshot({ path: info.outputPath(`world-rejected-${group}.png`) });
+    // Explicit recovery only: do not rerun Story/Variables or keep any failed World candidate.
+    server.control.world = JSON.stringify({ worldCommands: [repeated, independent], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
+    await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
+    const committed = await stored(page);
+    expect(committed.state.organizations['org-shop']).toMatchObject({ operatingStatus: '正文确认照常营业', ownershipText: 'World独立合法字段' });
+    expect(committed.state.revision).toBe(1); expect(committed.state.journal).toHaveLength(1);
+    expect(server.calls).toEqual(['story', 'variables', 'world', 'world']);
+  });
+}

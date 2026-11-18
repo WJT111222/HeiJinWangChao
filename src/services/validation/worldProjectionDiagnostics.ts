@@ -9,10 +9,12 @@ import { safeWorldPath, worldValidationError } from './worldDiagnostics';
 type WorldResult = NonNullable<TurnDraft['world']>['result'];
 // Map actual execution indices / structured state paths back to original output positions.
 // Never guess an index for an unattributable batch constraint; never emit entity-key strings.
-export function worldProjectionError(error: unknown, result: WorldResult, state: GameState, draft: TurnDraft) {
+export function worldProjectionError(error: unknown, result: WorldResult, state: GameState, draft: TurnDraft, source: WorldResult = result) {
+  const original = [...source.worldCommands, ...source.taskCommands, ...source.eventCommands];
   const entries = (['worldCommands','taskCommands','eventCommands'] as const).flatMap(group =>
-    result[group].map((command, index) => ({ command, fieldPath:`${group}.${index}` })));
-  const scope = (index: number) => ({fieldPath:entries[index].fieldPath,commandIndex:index,commandType:entries[index].command.type});
+    result[group].map(command => ({ command, fieldPath:`${group}.${source[group].indexOf(command)}` })));
+  const scope = (index: number) => ({fieldPath:entries[index].fieldPath,
+    commandIndex:original.indexOf(entries[index].command),commandType:entries[index].command.type});
   if (error instanceof CommandDataError) {
     const variables = draft.variables?.validation === 'validated'
       ? preparedVariableCommands(state,draft,draft.variables.result.commands) : variableCommandsForTurn(state,draft,[]);

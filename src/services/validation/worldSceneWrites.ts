@@ -28,7 +28,7 @@ function describe(command: string, id: string, same: string[], changed: string[]
   return `${command}（${id}）：字段 ${fields} 已由本轮变量阶段写入，动态世界的同名字段已忽略${detail}${dropped ? '；该命令没有剩余内容，整条忽略' : ''}。`;
 }
 
-/** 剔除冲突字段并返回处理说明；直接修改 result（与校验器其余规范化一致）。 */
+/** 原始候选已通过权限和领域校验后，仅剔除合法 worldCommands 的冲突字段。 */
 export function stripVariableSceneWrites(result: WorldResult, state: GameState, draft: TurnDraft): string[] {
   const prior = draft.variables?.validation === 'validated' ? draft.variables.result.commands : [];
   if (!prior.length) return [];
@@ -78,7 +78,5 @@ export function stripVariableSceneWrites(result: WorldResult, state: GameState, 
     return true;
   };
   result.worldCommands = result.worldCommands.filter(keep);
-  result.taskCommands = result.taskCommands.filter(keep);
-  result.eventCommands = result.eventCommands.filter(keep);
   return notes;
 }

@@ -35,15 +35,21 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   state = openingTimeBase(state, draft);
   const result = WorldResultSchema.parse(raw);
   requireWorld(draft.story, 'invalid_output', 'command_structure');
-  // 与本轮 Variables 重复写入的字段先剔除（以 Variables 为准），不再让整个 World 阶段失败（#186）。
-  const sceneWriteNotes = stripVariableSceneWrites(result, state, draft);
   const base = projectTurn(original, draft), now = Date.parse(base.worldClock);
-  const stageHandoffs=normalizeStageEntryHandoffs(result,base,draft);
   const commands = [...result.worldCommands, ...result.taskCommands, ...result.eventCommands];
   const allowed = new Set<string>(worldTypes);
-  for (const command of result.worldCommands) requireWorld(allowed.has(command.type), 'permission');
-  for (const command of result.taskCommands) requireWorld(command.type === 'SaveTask', 'permission');
-  for (const command of result.eventCommands) requireWorld(['SaveEvent','DeleteEvent'].includes(command.type), 'permission');
+  // Validate the original groups before any normalization can remove commands.
+  for (const group of ['worldCommands', 'taskCommands', 'eventCommands'] as const) {
+    for (const [index, command] of result[group].entries()) {
+      try {
+        requireWorld(group === 'worldCommands' ? allowed.has(command.type)
+          : group === 'taskCommands' ? command.type === 'SaveTask'
+            : ['SaveEvent', 'DeleteEvent'].includes(command.type), 'permission', 'command_structure');
+      } catch (error) {
+        throw worldValidationError(error, { fieldPath: `${group}.${index}`, commandIndex: commands.indexOf(command), commandType: command.type });
+      }
+    }
+  }
   const variableIds = base.appliedCommands.filter(entry => entry.turnId === draft.turnId).map(entry => entry.commandId);
   const ids = [...variableIds, ...commands.map(command => command.commandId)];
   requireWorld(new Set(ids).size === ids.length);
@@ -53,6 +59,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     : c.type === 'SaveEvent' ? [`event:${c.event.id}`]
       : c.type === 'DeleteEvent' ? [`cleanup:${c.eventId}`] : []);
   requireWorld(new Set(entityKeys).size === entityKeys.length);
+  const stageHandoffs=normalizeStageEntryHandoffs(result,base,draft);
   const createdNpcs = new Map(result.worldCommands.flatMap(c => c.type === 'CreateNpc' ? [[c.npc.id, c.npc] as const] : []));
   const createdOrgs = new Map(result.worldCommands.flatMap(c => c.type === 'CreateOrganization' ? [[c.organization.id, c.organization] as const] : []));
   const actorAllowed = (ref: ActorRef) =>
@@ -71,7 +78,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
           requireWorld(!Object.entries(command.changes).some(([key, value]) => worldForbiddenNpcChange(key, value)), 'permission');
           requireWorld(causal.npc[command.npcId] && actorAllowed({kind:'npc', id:command.npcId}), 'permission');
           requireWorld(!command.affinityChange, 'permission');
-          // 在场人物与本轮 Variables 重复的字段已由 stripVariableSceneWrites 剔除。
+          // Validate original permissions even if every scene field will later be stripped.
           break;
         }
         case 'RecordNpcMemory': {
@@ -97,12 +104,12 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         }
         case 'UpdateOrganization': {
           requireWorld(causal.organizations[command.organizationId], 'permission');
-          // 与本轮 Variables 重复的字段已由 stripVariableSceneWrites 剔除。
+          // Duplicate scene fields are stripped only after the original candidate is valid.
           break;
         }
         case 'RecordOrgRelation':
           requireWorld(causal.organizations[command.organizationId], 'permission');
-          // Variables 本轮已记录或新建该组织时，这条关系记录已由 stripVariableSceneWrites 忽略。
+          // A duplicate relationship may be ignored only after validating its target.
           break;
         case 'CreateLocation': break; // Domain validation enforces hierarchy and references.
         case 'SaveTask': {
@@ -204,6 +211,15 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   let projected: GameState;
   try { projected = projectTurn(original, draft, commands); }
   catch (error) { throw worldProjectionError(error, result, original, draft); }
+  // The original domain projection must also pass: stripping must not hide stale
+  // revisions, invalid references or other domain constraints in discarded values.
+  const source = { ...result };
+  const sceneWriteNotes = stripVariableSceneWrites(result, state, draft);
+  if (sceneWriteNotes.length) {
+    const retained = [...result.worldCommands, ...result.taskCommands, ...result.eventCommands];
+    try { projected = projectTurn(original, draft, retained); }
+    catch (error) { throw worldProjectionError(error, result, original, draft, source); }
+  }
   if (draft.variables?.validation === 'validated' && !historicalPerspective(state,draft)) for (const due of worldEventSchedule(state,base).due.filter(e=>e.eventKind!=='sub')) {
     const after=projected.events[due.eventId] ?? projected.retiredEvents[due.eventId];
     requireWorld(after && (terminalEvent(after) || ('estimatedEndAt' in after && after.estimatedEndAt && Date.parse(after.estimatedEndAt)>Date.parse(base.worldClock)) || ('protagonistEntry' in after && ['pending','presented'].includes(after.protagonistEntry?.status??''))), 'invalid_output', 'due_event_unhandled');
