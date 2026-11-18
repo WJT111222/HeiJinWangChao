@@ -7,20 +7,15 @@ import { canTryModelCandidate, modelListCandidates, parseModelPage, safeModelLis
 import type { ModelListDiagnostics, ModelListFailureDiagnostics } from './modelListing';
 import {
   wireRequest,
-  responseText,
-  nativeReasoning,
-  usageFrom,
   authHeaders,
   record,
-  array,
-  string,
 } from './protocols';
 import type { AiMessage, Usage } from './protocols';
-import { readSse } from './sse';
+import { readAiResponseEvents } from './responseEvents';
 import { rememberThinkingCapability, unsupportedThinkingParameter, blockThinkingCapability } from './thinking';
 import { checkFinish, LeadingThink, rememberUnsupported, splitLeadingThink, unsupportedParameter } from './compat';
 import { isOpenAiCompatible } from './configuration';
-import { rawResponseObservation, responseContent, responseDiagnostics } from './responseContent';
+import { responseDiagnostics } from './responseContent';
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
 
 export interface RequestOptions {
@@ -163,111 +158,95 @@ export class AiClient {
         if (signal.aborted) throw new AiError('cancelled');
         try { inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection); }
         catch { /* 只读诊断失败不能阻断真实发送。 */ }
-        const response = await this.response(wire.url, wire.init, signal, snapshot, options.onResponseDiagnostics ? observe : undefined);
         const protocol = snapshot.channel.protocol;
-        if (!signal.aborted) observe({ httpStatus: response.status, complete: false });
-        let text = '', reasoning = '',
-          usage: Usage | undefined;
-        // 部分中转忽略 stream:true 直接返回完整 JSON；按非流式读取，再一次性交给进度回调。
-        const wholeJson = options.stream === true && /application\/json/i.test(response.headers.get('content-type') ?? '');
-        if (!options.stream || wholeJson) {
-          let data: unknown;
-          try {
-            data = await response.json();
-          } catch {
-            throw new AiError('invalid_json');
+        let text = '', reasoning = '', usage: Usage | undefined;
+        let streaming = false, terminal = false, nativeSeen = false;
+        let think: LeadingThink | undefined;
+        const events = readAiResponseEvents(
+          () => this.response(wire.url, wire.init, signal, snapshot, options.onResponseDiagnostics ? observe : undefined),
+          protocol, options.stream === true, signal,
+        );
+        for await (const event of events) {
+          if (event.type === 'error') throw event.error;
+          if (event.type === 'aborted') throw new AiError('cancelled');
+          if (event.type === 'opened') {
+            streaming = event.source.transport === 'sse';
+            think = streaming && isOpenAiCompatible(protocol) ? new LeadingThink() : undefined;
+            if (!signal.aborted) observe({ httpStatus: event.source.httpStatus, complete: false });
+            continue;
           }
-          if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol), httpStatus: response.status, complete: true });
-          usage = usageFrom(data, protocol); observedUsage = usage;
+          if (event.type === 'end') {
+            if (event.boundary === 'done-marker') terminal = true;
+            continue;
+          }
+          if (!streaming) {
+            if (!signal.aborted) observe({ ...event.diagnostics, httpStatus: event.source.httpStatus, complete: true });
+            usage = event.usage; observedUsage = usage;
+            if (!signal.aborted) {
+              options.onRawResponse?.(event.observation);
+              if (event.rawText) options.onRawTextDelta?.(event.rawText);
+              if (event.nativeReasoning) options.onNativeReasoningDelta?.(event.nativeReasoning);
+            }
+            // Preserve legacy error precedence, including Story's limit handoff.
+            if (options.validateStoryOutputLimit) finish(event.finishReason);
+            if (options.validateStoryOutputLimit && event.diagnostics.refusal) throw new AiError('content_filter');
+            if (event.providerError) throw new AiError('rejected');
+            if (event.filtered) throw new AiError('content_filter');
+            finish(event.finishReason);
+            text = event.content;
+            reasoning = event.nativeReasoning;
+            if (isOpenAiCompatible(protocol)) {
+              const split = splitLeadingThink(text);
+              text = split.content;
+              if (split.reasoning && !signal.aborted) options.onCompatibilityReasoningDelta?.(split.reasoning);
+              if (!reasoning) reasoning = split.reasoning;
+            }
+            // A stream request answered by complete JSON uses the original callbacks.
+            if (options.stream === true && !signal.aborted) {
+              if (reasoning) { options.onActivity?.('reasoning'); options.onReasoningDelta?.(reasoning); }
+              if (text) { options.onActivity?.('content'); options.onDelta?.(text); }
+            }
+            continue;
+          }
+          if (!signal.aborted) observe({ ...event.diagnostics, httpStatus: event.source.httpStatus, complete: false });
+          if (event.providerError) throw new AiError('rejected');
+          const native = event.nativeReasoning;
           if (!signal.aborted) {
-            if (options.onRawResponse) options.onRawResponse(rawResponseObservation(data, protocol));
-            const raw = responseContent(data, protocol), native = nativeReasoning(data, protocol);
-            if (raw) options.onRawTextDelta?.(raw);
+            options.onRawResponse?.(event.observation);
+            if (event.rawText) options.onRawTextDelta?.(event.rawText);
             if (native) options.onNativeReasoningDelta?.(native);
           }
-          if (options.validateStoryOutputLimit) {
-            const d = record(data);
-            finish(isOpenAiCompatible(protocol) ? record(array(d.choices)[0]).finish_reason : protocol === 'gemini' ? record(array(d.candidates)[0]).finishReason : d.stop_reason);
-          }
-          if (options.validateStoryOutputLimit && responseDiagnostics(data, protocol).refusal) throw new AiError('content_filter');
-          text = responseText(data, protocol, options.validateStoryOutputLimit === true);
-          reasoning = nativeReasoning(data, protocol);
+          if (options.validateStoryOutputLimit && event.diagnostics.refusal) throw new AiError('content_filter');
+          if (event.usage) usage = { ...usage, ...event.usage };
+          observedUsage = usage;
+          let delta: string, thinkReasoning = '';
           if (isOpenAiCompatible(protocol)) {
-            const split = splitLeadingThink(text);
-            text = split.content;
-            if (split.reasoning && !signal.aborted) options.onCompatibilityReasoningDelta?.(split.reasoning);
-            if (!reasoning) reasoning = split.reasoning;
+            if (finish(event.finishReason)) terminal = true;
+            const split = think!.push(event.content);
+            delta = split.content; thinkReasoning = split.reasoning;
+          } else if (protocol === 'gemini') {
+            if (event.filtered) throw new AiError('content_filter');
+            if (finish(event.finishReason)) terminal = true;
+            delta = event.content;
+          } else {
+            delta = event.content;
+            finish(event.finishReason);
+            if (event.messageStop) terminal = true;
           }
-          if (wholeJson && !signal.aborted) {
-            if (reasoning) { options.onActivity?.('reasoning'); options.onReasoningDelta?.(reasoning); }
-            if (text) { options.onActivity?.('content'); options.onDelta?.(text); }
+          if (native) nativeSeen = true;
+          const reasoningDelta = native || (nativeSeen ? '' : thinkReasoning);
+          reasoning += reasoningDelta;
+          if (reasoning.length > 2_000_000) throw new AiError('invalid_output');
+          if (!signal.aborted) {
+            if (thinkReasoning) options.onCompatibilityReasoningDelta?.(thinkReasoning);
+            if (reasoningDelta) { options.onActivity?.('reasoning'); options.onReasoningDelta?.(reasoningDelta); }
+            if (delta) options.onActivity?.('content');
           }
-        } else {
-          // Content-Type 不可靠（有的中转写成 text/plain），只要有响应体就按 SSE 解析；是否完整由结束标记判断。
-          if (!response.body) throw new AiError('stream_interrupted');
-          let terminal = false, nativeSeen = false;
-          const think = isOpenAiCompatible(protocol) ? new LeadingThink() : undefined;
-          for await (const event of readSse(response.body, signal)) {
-            if (event.data === '[DONE]' && isOpenAiCompatible(protocol)) {
-              terminal = true;
-              break;
-            }
-            let data: Record<string, unknown>;
-            try {
-              data = record(JSON.parse(event.data));
-            } catch {
-              throw new AiError('invalid_json');
-            }
-            if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol, true), httpStatus: response.status, complete: false });
-            if (data.error || data.type === 'error' || event.event === 'error')
-              throw new AiError('rejected');
-            const rawDelta = responseContent(data, protocol, true), native = nativeReasoning(data, protocol, true);
-            if (!signal.aborted) {
-              if (options.onRawResponse) options.onRawResponse(rawResponseObservation(data, protocol, true));
-              if (rawDelta) options.onRawTextDelta?.(rawDelta);
-              if (native) options.onNativeReasoningDelta?.(native);
-            }
-            if (options.validateStoryOutputLimit && responseDiagnostics(data, protocol, true).refusal) throw new AiError('content_filter');
-            const nextUsage = usageFrom(data, protocol);
-            if (nextUsage) usage = { ...usage, ...nextUsage };
-            observedUsage = usage;
-            let delta = '';
-            let thinkReasoning = '';
-            if (isOpenAiCompatible(protocol)) {
-              const choice = record(array(data.choices)[0]);
-              if (finish(choice.finish_reason)) terminal = true;
-              const split = think!.push(string(record(choice.delta).content));
-              delta = split.content; thinkReasoning = split.reasoning;
-            } else if (protocol === 'gemini') {
-              if (record(data.promptFeedback).blockReason) throw new AiError('content_filter');
-              const candidate = record(array(data.candidates)[0]);
-              if (finish(candidate.finishReason)) terminal = true;
-              delta = array(record(candidate.content).parts)
-                .filter((part) => record(part).thought !== true)
-                .map((part) => string(record(part).text))
-                .join('');
-            } else {
-              if (data.type === 'content_block_start' && record(data.content_block).type === 'text')
-                delta = string(record(data.content_block).text);
-              if (data.type === 'content_block_delta' && record(data.delta).type === 'text_delta')
-                delta = string(record(data.delta).text);
-              finish(record(data.delta).stop_reason);
-              if (data.type === 'message_stop') terminal = true;
-            }
-            if (native) nativeSeen = true;
-            // 服务已单独给出思考时，不再把正文里的 <think> 重复算进去。
-            const reasoningDelta = native || (nativeSeen ? '' : thinkReasoning);
-            reasoning += reasoningDelta;
-            if (reasoning.length > 2_000_000) throw new AiError('invalid_output');
-            if (!signal.aborted) {
-              if (thinkReasoning) options.onCompatibilityReasoningDelta?.(thinkReasoning);
-              if (reasoningDelta) { options.onActivity?.('reasoning'); options.onReasoningDelta?.(reasoningDelta); }
-              if (delta) options.onActivity?.('content');
-            }
-            text += delta;
-            if (text.length > 8_000_000) throw new AiError('invalid_output');
-            if (delta && !signal.aborted) options.onDelta?.(delta);
-          }
+          text += delta;
+          if (text.length > 8_000_000) throw new AiError('invalid_output');
+          if (delta && !signal.aborted) options.onDelta?.(delta);
+        }
+        if (streaming) {
           if (think) {
             const rest = think.end();
             if (rest.content) { text += rest.content; if (!signal.aborted) { options.onActivity?.('content'); options.onDelta?.(rest.content); } }

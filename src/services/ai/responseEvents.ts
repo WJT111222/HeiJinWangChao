@@ -1,0 +1,117 @@
+import { AiError } from './errors';
+import type { Protocol } from './configuration';
+import { isOpenAiCompatible } from './configuration';
+import { array, record, string, nativeReasoning, usageFrom } from './protocols';
+import type { Usage } from './protocols';
+import { rawResponseObservation, responseContent, responseDiagnostics } from './responseContent';
+import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
+import { readSse } from './sse';
+
+/** Request-local provenance. A sequence identifies a wire frame, not the order of
+ * content/reasoning fields inside it. No URL, credential, signature or save data. */
+export interface ResponseSource {
+  readonly protocol: Protocol;
+  readonly requestedStream: boolean;
+  readonly transport: 'http' | 'json' | 'sse';
+  readonly sequence: number;
+  readonly httpStatus?: number;
+  readonly eventName?: string;
+}
+/** A complete JSON body or one atomic SSE payload. These are internal, transient
+ * public model values, not a logging API, UI projection or accepted candidate.
+ * Keep finishReason verbatim (including unknown values); policy belongs to the
+ * existing consumer. In particular transport EOF is never a fabricated stop. */
+export interface ResponsePayloadEvent {
+  readonly type: 'response';
+  readonly source: ResponseSource;
+  readonly delivery: 'complete' | 'delta';
+  readonly content: string;
+  readonly rawText: string;
+  readonly nativeReasoning: string;
+  readonly observation: RawResponseObservation;
+  readonly diagnostics: ResponseDiagnostics;
+  readonly usage?: Usage;
+  readonly finishReason: unknown;
+  readonly finishField: 'choices.0.finish_reason' | 'candidates.0.finishReason' | 'stop_reason' | 'delta.stop_reason';
+  readonly messageStop: boolean;
+  readonly providerError: boolean;
+  readonly filtered: boolean;
+}
+export type AiResponseEvent =
+  | { readonly type: 'opened'; readonly source: ResponseSource }
+  | ResponsePayloadEvent
+  | { readonly type: 'end'; readonly source: ResponseSource; readonly boundary: 'json-body' | 'eof' | 'done-marker' }
+  | { readonly type: 'aborted'; readonly source: ResponseSource }
+  | { readonly type: 'error'; readonly source: ResponseSource; readonly error: AiError };
+
+function payload(value: unknown, source: ResponseSource): ResponsePayloadEvent {
+  const data = record(value), streaming = source.transport === 'sse';
+  const compatible = isOpenAiCompatible(source.protocol), google = source.protocol === 'gemini';
+  const choice = record(array(data.choices)[0]), candidate = record(array(data.candidates)[0]);
+  const rawText = responseContent(value, source.protocol, streaming);
+  // Preserve existing extraction, including the deliberate distinction between
+  // multipart raw observation and string-only OpenAI-compatible SSE deltas.
+  const content = !streaming ? rawText : compatible ? string(record(choice.delta).content)
+    : google ? rawText : data.type === 'content_block_start' && record(data.content_block).type === 'text'
+      ? string(record(data.content_block).text)
+      : data.type === 'content_block_delta' && record(data.delta).type === 'text_delta' ? string(record(data.delta).text) : '';
+  return {
+    type: 'response', source, delivery: streaming ? 'delta' : 'complete', content, rawText,
+    nativeReasoning: nativeReasoning(value, source.protocol, streaming),
+    observation: rawResponseObservation(value, source.protocol, streaming),
+    diagnostics: responseDiagnostics(value, source.protocol, streaming), usage: usageFrom(value, source.protocol),
+    finishReason: compatible ? choice.finish_reason : google ? candidate.finishReason : streaming ? record(data.delta).stop_reason : data.stop_reason,
+    finishField: compatible ? 'choices.0.finish_reason' : google ? 'candidates.0.finishReason' : streaming ? 'delta.stop_reason' : 'stop_reason',
+    messageStop: streaming && !compatible && !google && data.type === 'message_stop',
+    providerError: Boolean(data.error || (streaming && (data.type === 'error' || source.eventName === 'error'))),
+    filtered: google && Boolean(record(data.promptFeedback).blockReason),
+  };
+}
+
+/** One response, one reader, no retry, synthesized terminator or tool execution.
+ * receive is the existing HTTP operation (including its existing safe error
+ * handling); readSse remains the sole UTF-8/SSE framer. Cancellation classification
+ * as user cancellation versus timeout remains with operation() in AiClient. */
+export async function* readAiResponseEvents(
+  receive: () => Promise<Response>,
+  protocol: Protocol,
+  requestedStream: boolean,
+  signal: AbortSignal,
+): AsyncGenerator<AiResponseEvent> {
+  let source: ResponseSource = { protocol, requestedStream, transport: 'http', sequence: 0 };
+  try {
+    if (signal.aborted) { yield { type: 'aborted', source }; return; }
+    const response = await receive();
+    if (signal.aborted) { yield { type: 'aborted', source }; return; }
+    source = { ...source, httpStatus: response.status, transport: !requestedStream || /application\/json/i.test(response.headers.get('content-type') ?? '') ? 'json' : 'sse' };
+    yield { type: 'opened', source };
+    if (source.transport === 'json') {
+      let data: unknown;
+      try { data = await response.json(); }
+      catch { throw new AiError('invalid_json'); }
+      if (signal.aborted) { yield { type: 'aborted', source }; return; }
+      source = { ...source, sequence: 1 };
+      yield payload(data, source);
+      yield { type: 'end', source, boundary: 'json-body' };
+      return;
+    }
+    if (!response.body) throw new AiError('stream_interrupted');
+    for await (const event of readSse(response.body, signal)) {
+      if (signal.aborted) { yield { type: 'aborted', source }; return; }
+      source = { ...source, sequence: source.sequence + 1, eventName: event.event };
+      if (event.data === '[DONE]' && isOpenAiCompatible(protocol)) {
+        yield { type: 'end', source, boundary: 'done-marker' };
+        return;
+      }
+      let data: unknown;
+      try { data = JSON.parse(event.data); }
+      catch { throw new AiError('invalid_json'); }
+      yield payload(data, source);
+    }
+    yield { type: 'end', source, boundary: 'eof' };
+  } catch (error) {
+    if (signal.aborted) yield { type: 'aborted', source };
+    else yield { type: 'error', source: { ...source, ...(error instanceof AiError && error.status !== undefined ? { httpStatus: error.status } : {}) },
+      error: error instanceof AiError ? error : new AiError('network') };
+  }
+}

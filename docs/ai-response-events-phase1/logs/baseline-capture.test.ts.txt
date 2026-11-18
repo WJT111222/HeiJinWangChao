@@ -1,0 +1,13 @@
+import { writeFileSync } from 'node:fs';
+import { expect, it } from 'vitest';
+import { captureResponse, responseMatrix, responseCaseKey } from './fixtures/responseEvents';
+it('capture unchanged main wire requests, responses, errors and callback order', async () => {
+  const captures: Record<string, unknown> = {};
+  for (const c of responseMatrix) captures[responseCaseKey(c)] = await captureResponse(c.protocol, c.mode, c.scenario, c.allowLimit);
+  expect(Object.keys(captures)).toHaveLength(108);
+  writeFileSync('/workspace/ai-response-events-evidence/baseline-capture.json', JSON.stringify({
+    base: 'a820f5eadcd18362aa22a2fc51232a186e2ef8f9',
+    reason: 'Captured with the unchanged production AiClient on main, synthetic responses only. Includes full sent bodies and ordered legacy callbacks; no credentials.',
+    captures,
+  }, null, 2) + '\n');
+});

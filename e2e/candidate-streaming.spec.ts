@@ -136,7 +136,7 @@ for (const stage of ['variables', 'world'] as const) {
     await expect.poll(async () => (await stored(page)).draft?.stageStatus[stage]).toBe('ready');
     expect((await stored(page)).state).toEqual(before.state);
     await closeWorkflow(page); await openWorkflowStage(page, stage);
-    await page.getByRole('button', { name: stage === 'variables' ? '继续未完成阶段' : '完成本回合结算', exact: true }).click();
+    await page.getByRole('region', { name: '三阶段详情', exact: true }).getByRole('button', { name: stage === 'variables' ? '继续未完成阶段' : '完成本回合结算', exact: true }).click();
     await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);
     expect(calls.map(c => c.model)).toEqual(stage === 'variables' ? ['variables', 'world'] : ['world']);
     await page.screenshot({ path: info.outputPath('stream-committed.png') });
