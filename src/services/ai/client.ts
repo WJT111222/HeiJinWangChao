@@ -179,6 +179,7 @@ export class AiClient {
             if (event.boundary === 'done-marker') terminal = true;
             continue;
           }
+          if (event.type === 'tool-start' || event.type === 'tool-identity-delta' || event.type === 'tool-arguments' || event.type === 'tool-end') throw new AiError('unsupported');
           if (!streaming) {
             if (!signal.aborted) observe({ ...event.diagnostics, httpStatus: event.source.httpStatus, complete: true });
             usage = event.usage; observedUsage = usage;

@@ -6,6 +6,8 @@ import type { Usage } from './protocols';
 import { rawResponseObservation, responseContent, responseDiagnostics } from './responseContent';
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
 import { readSse } from './sse';
+import { ToolEventProjector, observedToolArguments } from './toolResponseEvents';
+import type { ToolResponseEvent } from './toolResponseEvents';
 
 /** Request-local provenance. A sequence identifies a wire frame, not the order of
  * content/reasoning fields inside it. No URL, credential, signature or save data. */
@@ -38,6 +40,7 @@ export interface ResponsePayloadEvent {
   readonly filtered: boolean;
 }
 export type AiResponseEvent =
+  | ToolResponseEvent
   | { readonly type: 'opened'; readonly source: ResponseSource }
   | ResponsePayloadEvent
   | { readonly type: 'end'; readonly source: ResponseSource; readonly boundary: 'json-body' | 'eof' | 'done-marker' }
@@ -77,8 +80,18 @@ export async function* readAiResponseEvents(
   protocol: Protocol,
   requestedStream: boolean,
   signal: AbortSignal,
+  toolResponses = false,
 ): AsyncGenerator<AiResponseEvent> {
   let source: ResponseSource = { protocol, requestedStream, transport: 'http', sequence: 0 };
+  const tools = toolResponses ? new ToolEventProjector() : undefined;
+  const observed = (data: unknown) => {
+    const result = payload(data, source);
+    const args = toolResponses ? observedToolArguments(data, source).join('') : '';
+    return !args ? result : { ...result, rawText: result.rawText + args, observation: {
+      text: result.observation.text + args,
+      order: source.transport === 'json' ? 'unknown' as const : 'same-event' as const,
+    } };
+  };
   try {
     if (signal.aborted) { yield { type: 'aborted', source }; return; }
     const response = await receive();
@@ -91,7 +104,8 @@ export async function* readAiResponseEvents(
       catch { throw new AiError('invalid_json'); }
       if (signal.aborted) { yield { type: 'aborted', source }; return; }
       source = { ...source, sequence: 1 };
-      yield payload(data, source);
+      yield observed(data);
+      if (tools) for (const event of tools.project(data, source)) yield event;
       yield { type: 'end', source, boundary: 'json-body' };
       return;
     }
@@ -106,7 +120,8 @@ export async function* readAiResponseEvents(
       let data: unknown;
       try { data = JSON.parse(event.data); }
       catch { throw new AiError('invalid_json'); }
-      yield payload(data, source);
+      yield observed(data);
+      if (tools) for (const event of tools.project(data, source)) yield event;
     }
     yield { type: 'end', source, boundary: 'eof' };
   } catch (error) {

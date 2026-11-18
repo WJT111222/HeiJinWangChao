@@ -37,6 +37,7 @@ export type AiErrorCode =
   | 'invalid_json'
   | 'variable_text_syntax'
   | 'invalid_output'
+  | 'tool_response'
   | 'unsupported'
   | 'resource'
   | 'placeholder'
@@ -76,6 +77,7 @@ const messages: Record<AiErrorCode, string> = {
   invalid_json: '响应不是完整合法的 JSON。',
   variable_text_syntax: '变量文本命令区块或JSON值格式不合法，候选未保存。',
   invalid_output: '模型输出未通过结构或状态校验，候选未被接受。',
+  tool_response: '结构化正文响应不符合约定，未保存。请查看详情；可关闭结构化输出后主动重试。',
   unsupported: '当前协议不支持此请求特性，请检查兼容配置。',
   resource: '提示词资源缺失或与注册校验值不符。',
   placeholder: '提示词缺少必需参数或仍有未解析占位符，已阻止发送。',
