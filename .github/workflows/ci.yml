@@ -1,0 +1,102 @@
+# 每个 PR、以及推送到 main 时，在 GitHub 的服务器上自动运行测试；结果显示在 PR 页面底部。
+# 公开仓库使用 GitHub Actions 免费。只读权限，不使用任何 Secrets，不部署、不发布。
+name: 自动测试
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 同一个 PR 推送新提交时，取消还没跑完的旧一轮，只测最新的。
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: 检查、单元测试与构建（npm run check）
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      # 依次运行：文件名检查、lint、Vitest 单元测试、命令目录检查、类型检查、Vite 构建
+      - name: npm run check
+        run: npm run check
+
+  # 全量 e2e 单机要八九十分钟，拆成 4 组在 4 台机器上同时跑（Playwright 内置分片），每组约四分之一。
+  #
+  # 【暂时仅供参考】main 上现有一批 e2e 失败（首次在 GitHub 上全量运行时发现，待单独清理）。
+  # 在清理完成前，e2e 失败不会让这一项显示红叉：结果照常记录，失败数会以黄色警告和本次运行的「Summary」页列出。
+  # 清理完成后，删除下方 test:e2e 步骤的 continue-on-error 一行，即恢复为正式把关。
+  e2e:
+    name: 端到端测试 第 ${{ matrix.shard }}/4 组（仅供参考）
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 安装 Chromium 浏览器
+        run: npx playwright install --with-deps chromium
+
+      # playwright.config.ts 会自动启动开发服务器（CI 环境下不复用已有服务器）
+      - name: npm run test:e2e（第 ${{ matrix.shard }}/4 组）
+        id: e2e
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run test:e2e -- --shard=${{ matrix.shard }}/4 2>&1 | tee e2e-output.txt
+
+      - name: 汇总本组结果
+        if: always() && steps.e2e.outcome != 'skipped'
+        env:
+          SHARD: ${{ matrix.shard }}
+          OUTCOME: ${{ steps.e2e.outcome }}
+        run: |
+          counts=$(grep -E '^ +[0-9]+ (passed|failed|flaky|skipped|did not run|interrupted)' e2e-output.txt | sed -E 's/^ +//' | awk 'NR>1{printf "，"} {printf "%s", $0}')
+          {
+            echo "### 端到端测试 第 ${SHARD}/4 组：${counts:-没有读到汇总}"
+            if [ "$OUTCOME" = failure ]; then
+              echo ""
+              echo "失败的用例（仅供参考，不影响本项结果）："
+              echo '```'
+              awk '/^ +[0-9]+ failed$/{f=1;next} f&&/^ +\[/{print;next} f{exit}' e2e-output.txt | sed -E 's/ (─)+ *$//; s/^ +//'
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$OUTCOME" = failure ]; then echo "::warning title=端到端测试 第 ${SHARD}/4 组（仅供参考）::${counts}"; fi
+
+      - name: 失败时上传测试记录与截图
+        if: always() && steps.e2e.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results-${{ matrix.shard }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
