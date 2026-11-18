@@ -40,6 +40,12 @@ export interface ResponsePayloadEvent {
   readonly messageStop: boolean;
   readonly providerError: boolean;
   readonly filtered: boolean;
+  /** Transient wire-shape facts for the Story tool carrier, never exported. */
+  readonly openAiToolSse?: {
+    readonly envelope: readonly unknown[];
+    readonly finishOnly: boolean;
+    readonly hasText: boolean;
+  };
 }
 export type AiResponseEvent =
   | ToolResponseEvent
@@ -49,7 +55,25 @@ export type AiResponseEvent =
   | { readonly type: 'aborted'; readonly source: ResponseSource }
   | { readonly type: 'error'; readonly source: ResponseSource; readonly error: AiError };
 
-function payload(value: unknown, source: ResponseSource): ResponsePayloadEvent {
+const completionFields = ['id', 'object', 'created', 'model', 'system_fingerprint', 'service_tier'] as const;
+const emptyDeltaFields = new Set(['content', 'reasoning', 'reasoning_content', 'reasoning_text', 'refusal']);
+function openAiToolSseShape(data: Record<string, unknown>, choice: Record<string, unknown>, source: ResponseSource, rawText: string) {
+  const envelope = completionFields.map(key => data[key] ?? undefined);
+  const delta = choice.delta;
+  const finishOnly = (source.eventName === '' || source.eventName === 'message')
+    && choice.finish_reason === 'tool_calls'
+    && array(data.choices).length === 1 && (choice.index === undefined || choice.index === 0)
+    && Object.keys(choice).every(key => key === 'index' || key === 'finish_reason'
+      || key === 'delta' || (key === 'logprobs' && choice.logprobs === null))
+    && Object.keys(data).every(key => key === 'choices' || (key === 'usage' && data.usage === null)
+      || completionFields.some(field => key === field && (data[key] === null
+        || (field === 'created' ? Number.isSafeInteger(data[key]) : typeof data[key] === 'string'))))
+    && (delta === undefined || (delta !== null && typeof delta === 'object' && !Array.isArray(delta)
+      && Object.entries(delta).every(([key, part]) => emptyDeltaFields.has(key) && (part === null || part === ''))));
+  return { envelope, finishOnly, hasText: Boolean(rawText) };
+}
+
+function payload(value: unknown, source: ResponseSource, toolResponses: boolean): ResponsePayloadEvent {
   const data = record(value), streaming = source.transport === 'sse';
   const compatible = isOpenAiCompatible(source.protocol), google = source.protocol === 'gemini';
   const choice = record(array(data.choices)[0]), candidate = record(array(data.candidates)[0]);
@@ -70,6 +94,7 @@ function payload(value: unknown, source: ResponseSource): ResponsePayloadEvent {
     messageStop: streaming && !compatible && !google && data.type === 'message_stop',
     providerError: Boolean(data.error || (streaming && (data.type === 'error' || source.eventName === 'error'))),
     filtered: google && Boolean(record(data.promptFeedback).blockReason),
+    ...(toolResponses && compatible && streaming && { openAiToolSse: openAiToolSseShape(data, choice, source, rawText) }),
   };
 }
 
@@ -88,7 +113,7 @@ export async function* readAiResponseEvents(
   let source: ResponseSource = { protocol, requestedStream, transport: 'http', sequence: 0 };
   const tools = toolResponses ? new ToolEventProjector() : undefined;
   const observed = (data: unknown) => {
-    const result = payload(data, source);
+    const result = payload(data, source, toolResponses);
     if (trace) observeToolTrace(() => {
       const wire = record(data);
       const choice = record(array(wire.choices)[0]);
@@ -132,6 +157,7 @@ export async function* readAiResponseEvents(
       source = { ...source, sequence: source.sequence + 1, eventName: event.event };
       if (trace) observeToolTrace(() => trace.wireFrame(source));
       if (event.data === '[DONE]' && isOpenAiCompatible(protocol)) {
+        if (toolResponses && event.event === 'error') throw new AiError('rejected');
         yield { type: 'end', source, boundary: 'done-marker' };
         return;
       }

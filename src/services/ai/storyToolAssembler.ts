@@ -11,14 +11,16 @@ export class StoryToolAssembler {
   private call: { slot: number; id: string; name: string; chunks: string[]; chars: number; snapshot: boolean; closed: boolean } | undefined;
   private providerFinish = false;
   private finishSequence: number | undefined;
+  private finishEnvelope: readonly unknown[] | undefined;
   private messageStop = false;
   private transportEnd = false;
   private streaming = false;
   constructor(private readonly protocol: Protocol) {}
   response(event: ResponsePayloadEvent) {
     this.streaming = event.source.transport === 'sse';
-    if (event.content.trim()) throw toolFailure('mixed_text');
-    if (this.finishSequence !== undefined && event.source.sequence > this.finishSequence && event.nativeReasoning) throw toolOrderingFailure('reasoning_after_finish');
+    const afterFinish = this.finishSequence !== undefined && event.source.sequence > this.finishSequence;
+    if (event.content.trim() || (afterFinish && event.openAiToolSse?.hasText)) throw toolFailure('mixed_text');
+    if (afterFinish && event.nativeReasoning) throw toolOrderingFailure('reasoning_after_finish');
     if (event.messageStop) {
       if (this.messageStop) throw toolOrderingFailure('duplicate_message_stop');
       if (!this.call?.closed || !this.providerFinish) throw toolOrderingFailure('message_stop_before_required_boundaries');
@@ -32,8 +34,18 @@ export class StoryToolAssembler {
       checkFinish(reason);
       throw toolFailure('finish');
     }
-    if (this.providerFinish) throw toolOrderingFailure('duplicate_provider_finish');
+    if (this.providerFinish) {
+      // Only an empty, later OpenAI-compatible SSE repetition is idempotent.
+      // It cannot close a call or substitute for the transport boundary.
+      const tail = event.openAiToolSse;
+      if (!afterFinish || !this.call?.closed || !tail?.finishOnly
+        || !this.finishEnvelope || !tail.envelope.every((value, i) => value === undefined || value === this.finishEnvelope?.[i])) {
+        throw toolOrderingFailure('duplicate_provider_finish');
+      }
+      return true;
+    }
     this.providerFinish = true; this.finishSequence = event.source.sequence;
+    this.finishEnvelope = event.openAiToolSse?.envelope;
   }
   event(event: ToolResponseEvent) {
     if (this.messageStop) throw toolOrderingFailure('tool_event_after_message_stop');

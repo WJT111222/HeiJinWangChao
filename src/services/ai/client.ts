@@ -223,7 +223,7 @@ export class AiClient {
             if (event.nativeReasoning && options.stream === true && !signal.aborted) {
               options.onActivity?.('reasoning'); options.onReasoningDelta?.(event.nativeReasoning);
             }
-            carrier.response(event);
+            if (carrier.response(event) && trace) observeToolTrace(() => trace?.toleratedProviderFinish(event.source.sequence));
             continue;
           }
           if (!streaming) {

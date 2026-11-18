@@ -10,12 +10,14 @@ import { stageResponses, storyToolDiagnosticExport } from '../services/ai/stageR
 import { storyInspections } from '../services/ai/storyInspection';
 import { channelSnapshot } from '../services/ai/snapshot';
 import { STORY_OUTPUT_TOOL } from '../services/ai/storyToolContract';
+import { StoryToolTraceRecorder } from '../services/ai/storyToolTrace';
 import type { StoryToolTrace } from '../services/ai/storyToolTrace';
 import { createTurnDraft } from '../domain/drafts';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
+import { StoryStage } from '../workflows/storyStage';
 import { generateAndSettleTurn } from '../workflows/automaticTurn';
-import { compatibilityProtocols, compatibilitySetup, compatibilityResponse, storyEnvelope } from './fixtures/storyCompatibility';
+import { compatibilityProtocols, compatibilitySetup, storyEnvelope } from './fixtures/storyCompatibility';
 import { splitResponse } from './fixtures/responseEvents';
 import { carrierResponse, toolFrame, toolStoryText } from './fixtures/storyTools';
 import { worldState, worldDraft, worldResult } from './fixtures/world';
@@ -30,6 +32,16 @@ const begin = toolFrame({ choices: [{ delta: { tool_calls: [{ index: 0, id: 'PRI
   function: { name: STORY_OUTPUT_TOOL, arguments: args } }] } }] });
 const additionalArgs = toolFrame({ choices: [{ delta: { tool_calls: [{ index: 0, function: { arguments: 'late' } }] } }] });
 const reasoning = toolFrame({ choices: [{ delta: { reasoning_content: 'PRIVATE_FIXTURE_THOUGHT' } }] });
+const relayId = 'PRIVATE_SYNTHETIC_COMPLETION_ID';
+const relayTail = (choice: Record<string, unknown> = {}, root: Record<string, unknown> = {}) =>
+  toolFrame({ id: relayId, object: 'chat.completion.chunk', choices: [{ index: 0, delta: {}, finish_reason: 'tool_calls', ...choice }], ...root });
+function relayFrames(raw = args) {
+  // The first 15 frames and frame 17 are synthetic padding/usage. Only the
+  // observed combined finish (16) and repeated finish (18) are reconstructed.
+  return reasoning + toolFrame({ choices: [{ delta: {} }] }).repeat(14)
+    + relayTail({ delta: { tool_calls: [{ index: 0, id: 'PRIVATE_TOOL_ID', type: 'function',
+      function: { name: STORY_OUTPUT_TOOL, arguments: raw } }] } }) + usage;
+}
 const snapshot = (protocol = 'openai' as typeof compatibilityProtocols[number]) => {
   const { channel, vault } = compatibilitySetup(protocol, true, true);
   return channelSnapshot(channel, vault);
@@ -78,7 +90,7 @@ it.each(compatibilityProtocols.flatMap(protocol => [true, false].map(stream => (
 );
 
 it.each([
-  ['duplicate_provider_finish', begin + finish + finish],
+  ['duplicate_provider_finish', begin + finish + toolFrame({ choices: [{ delta: { role: 'assistant' }, finish_reason: 'tool_calls' }] })],
   ['tool_event_after_finish', reasoning + finish + begin],
   ['projector_reopened_slot', begin + finish + additionalArgs],
   ['reasoning_after_finish', begin + finish + reasoning],
@@ -97,6 +109,97 @@ it.each([
   if (orderingSite === 'duplicate_provider_finish') expect(on.traces[0].counts['provider-finish']).toBe(2);
   if (orderingSite === 'reasoning_after_finish') expect(on.traces[0].events.at(-1)).toMatchObject({ reasoningPresent: true });
 });
+
+it.each([
+  ['done-marker', done, relayTail()],
+  ['eof', '', relayTail({ delta: { content: null, reasoning_content: '', refusal: null }, logprobs: null }, { usage: null })],
+] as const)('第 16–18 帧纯结束重报，仍须收到真实 %s', async (boundary, end, repeated) => {
+  const response = () => splitResponse(relayFrames() + repeated + end, 3);
+  const { traces, ...withObservation } = await capture(response);
+  const withoutObservation = await capture(response, {}, false);
+  expect({ ...withObservation, traces: [] }).toEqual(withoutObservation);
+  expect(withObservation.outbound).toHaveLength(1);
+  expect(withObservation.result).toMatchObject({ text: toolStoryText, usage: { outputTokens: 12 } });
+  expect(withObservation.deltas).toEqual([toolStoryText]);
+  expect(traces[0]).toMatchObject({
+    endpointKind: 'relay', observedTransport: 'sse', httpStatus: 200, boundary,
+    firstProviderFinish: { frame: 16, reason: 'tool_calls' },
+    counts: { 'provider-finish': 2, 'tolerated-provider-finish': 1, 'tool-end': 1 },
+    outcome: { code: 'received' },
+  });
+  expect(traces[0].events).toContainEqual(expect.objectContaining({ kind: 'tolerated-provider-finish', frame: 18 }));
+  expect(JSON.stringify(traces[0])).not.toMatch(/PRIVATE_|中文|fictional-phase3-key|https:\/\//);
+});
+
+it.each([
+  ['重复帧携带参数', relayTail({ delta: { tool_calls: [{ index: 0, function: { arguments: 'late' } }] } }), 'tool_response', 'storyTool.ordering'],
+  ['另开工具调用', begin, 'tool_response', 'storyTool.ordering'],
+  ['独立迟到参数', additionalArgs, 'tool_response', 'storyTool.ordering'],
+  ['重复帧携带推理', relayTail({ delta: { reasoning_content: 'late' } }), 'tool_response', 'storyTool.ordering'],
+  ['独立迟到文字', toolFrame({ choices: [{ delta: { content: 'late' } }] }), 'tool_response', 'storyTool.mixed_text'],
+  ['独立迟到多段文字', toolFrame({ choices: [{ delta: { content: [{ type: 'text', text: 'late' }] } }] }), 'tool_response', 'storyTool.mixed_text'],
+  ['重复帧携带空白文字', relayTail({ delta: { content: ' ' } }), 'tool_response', 'storyTool.mixed_text'],
+  ['矛盾结束', relayTail({ finish_reason: 'stop' }), 'tool_response', 'storyTool.finish'],
+  ['截断结束', relayTail({ finish_reason: 'length' }), 'output_limit', undefined],
+  ['拒绝结束', relayTail({ finish_reason: 'content_filter' }), 'content_filter', undefined],
+  ['不同响应 ID', relayTail({}, { id: 'other' }), 'tool_response', 'storyTool.ordering'],
+  ['重复帧另报用量', relayTail({}, { usage: { completion_tokens: 999 } }), 'tool_response', 'storyTool.ordering'],
+  ['重复帧携带其他选择字段', relayTail({ message: { content: 'late' } }), 'tool_response', 'storyTool.ordering'],
+  ['服务商错误', relayTail({}, { error: { message: 'PRIVATE_RELAY_ERROR' } }), 'rejected', undefined],
+  ['error 事件伪装 DONE', 'event: error\ndata: [DONE]\n\n', 'rejected', undefined],
+] as const)('已容忍纯尾帧仍拒绝%s', async (_name, tail, code, fieldPath) => {
+  const { result, traces, outbound, deltas } = await capture(() => splitResponse(relayFrames() + relayTail() + tail + done, 7));
+  expect(result).toMatchObject({ code, ...(fieldPath && { details: { fieldPath } }) });
+  expect(traces[0]).toMatchObject({ boundary: null, counts: { 'tolerated-provider-finish': 1 }, outcome: { code } });
+  expect(outbound).toHaveLength(1);
+  expect(deltas).toEqual([]);
+});
+
+it.each(['aborted-body', 'cancelled', 'incomplete-json'] as const)(
+  '第 18 帧后 %s：不保存 Story 候选、草稿或正式世界', async failure => {
+    const input = compatibilitySetup('openai', true, true);
+    const repo = await SaveRepository.open('relay-tail-safety', new IDBFactory());
+    await repo.create(worldState());
+    const draft = await repo.saveDraft(createTurnDraft('save-a', 0, 'relay-tail-draft', 'opening', ''), null);
+    const before = await repo.loadGame('save-a');
+    const save = vi.spyOn(repo, 'saveDraft'), commit = vi.spyOn(repo, 'commitTurn');
+    let wire!: ReadableStreamDefaultController<Uint8Array>;
+    const cancelReader = vi.fn();
+    const transport = vi.fn(async () => new Response(new ReadableStream<Uint8Array>({
+      start(c) {
+        wire = c;
+        const body = relayFrames(failure === 'incomplete-json' ? '{"content":' : args) + relayTail();
+        c.enqueue(new TextEncoder().encode(body + (failure === 'incomplete-json' ? done : '')));
+        if (failure === 'incomplete-json') c.close();
+      },
+      cancel: cancelReader,
+    }), { headers: { 'Content-Type': 'text/event-stream' } }));
+    const stage = new StoryStage(repo, new AiClient(transport));
+    try {
+      let frames = 0;
+      const recordPayload = StoryToolTraceRecorder.prototype.payload;
+      vi.spyOn(StoryToolTraceRecorder.prototype, 'payload').mockImplementation(function (this: StoryToolTraceRecorder, ...event) {
+        recordPayload.apply(this, event);
+        frames = event[0].source.sequence;
+      });
+      const result = stage.generate({ ...input, draft }).catch(safeAiError);
+      await vi.waitFor(() => expect(frames).toBe(18));
+      if (failure === 'aborted-body') wire.error(new Error('synthetic disconnect before transport boundary'));
+      if (failure === 'cancelled') stage.cancel();
+      expect(await result).toMatchObject(failure === 'incomplete-json'
+        ? { code: 'tool_response', details: { fieldPath: 'storyTool.arguments' } }
+        : { code: failure === 'cancelled' ? 'cancelled' : 'stream_interrupted' });
+      if (failure === 'cancelled') expect(cancelReader).toHaveBeenCalledTimes(1);
+      const exported = storyToolDiagnosticExport(stageResponses.getSnapshot()[0]);
+      expect(exported).toMatchObject({ counts: { 'tolerated-provider-finish': 1 },
+        boundary: failure === 'incomplete-json' ? 'done-marker' : null });
+      expect(save).not.toHaveBeenCalled();
+      expect(commit).not.toHaveBeenCalled();
+      expect(await repo.loadGame('save-a')).toEqual(before);
+      expect(transport).toHaveBeenCalledTimes(1);
+    } finally { stage.dispose(); repo.close(); }
+  },
+);
 
 it('保留同一帧的最后参数、供应商结束与派生 tool-end，接受纯 usage 尾帧', async () => {
   const combined = toolFrame({ choices: [{ delta: { tool_calls: [{ index: 0, id: 'PRIVATE_TOOL_ID',
@@ -159,7 +262,7 @@ it.each(['timeout', 'cancelled'] as const)('持续有字节和工具参数仍受
     await vi.advanceTimersByTimeAsync(1000);
     emit(begin);
     await vi.advanceTimersByTimeAsync(1000);
-    emit(finish);
+    emit(finish + finish);
     if (code === 'timeout') await vi.advanceTimersByTimeAsync(116000);
     else {
       await vi.advanceTimersByTimeAsync(0);
@@ -175,6 +278,7 @@ it.each(['timeout', 'cancelled'] as const)('持续有字节和工具参数仍受
         httpMs: 1000, firstBodyChunkMs: 2000, firstSseFrameMs: 3000,
         firstToolEventMs: 3000, firstArgumentsMs: 3000, lastArgumentsMs: 3000,
         firstProviderFinishMs: 4000, boundaryMs: null, totalMs: code === 'timeout' ? 120000 : 4000,
+        counts: { 'tolerated-provider-finish': 1 },
         outcome: { code, step: 'waiting-boundary' },
       });
     }
@@ -256,7 +360,7 @@ it('同回合隔离两次请求，导出匿名分组，已清除请求的迟到�
   const input = compatibilitySetup('openai', true, true);
   const state = worldState(), draft = createTurnDraft(state.saveId, 0, 'private-draft-id', 'opening', '');
   const options = { stage: 'story' as const, mode: 'opening' as const, state, draft, userInput: '', settings: input.settings };
-  const response = () => splitResponse(reasoning + begin + finish + finish + done, 3);
+  const response = () => splitResponse(reasoning + begin + finish + additionalArgs + done, 3);
   for (let attempt = 0; attempt < 2; attempt++) {
     await expect(runStageRequest(options, input.config, input.vault, { stream: true }, new AiClient(async () => response())))
       .rejects.toMatchObject({ code: 'tool_response' });
@@ -290,8 +394,8 @@ it.each([false, true])('开启或关闭观察时原子流程与写入等价，�
     const client = new AiClient(async (_url, init) => {
       const body = JSON.parse(String(init?.body));
       bodies.push(createHash('sha256').update(String(init?.body)).digest('hex'));
-      if (body.model === input.channel.defaultModel) return fail ? splitResponse(begin + finish + finish + done, 5)
-        : compatibilityResponse({ protocol: 'openai', tool: true, stream: true, text: storyEnvelope() });
+      if (body.model === input.channel.defaultModel) return fail ? splitResponse(relayFrames() + relayTail() + additionalArgs + done, 5)
+        : splitResponse(relayFrames(JSON.stringify({ content: storyEnvelope() })) + relayTail() + done, 5);
       const content = body.model === 'variables' ? variableReply(worldDraft().variables!.result) : JSON.stringify(worldResult());
       return Response.json({ choices: [{ message: { content }, finish_reason: 'stop' }] });
     });

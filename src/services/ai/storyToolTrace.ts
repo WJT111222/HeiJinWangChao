@@ -21,7 +21,7 @@ const edgeSize = 32;
 
 type Boundary = 'done-marker' | 'eof' | 'json-body';
 type TraceEvent = {
-  kind: 'sse-frame' | 'json-value' | 'provider-finish' | 'message-stop' | Boundary | ToolResponseEvent['type'];
+  kind: 'sse-frame' | 'json-value' | 'provider-finish' | 'tolerated-provider-finish' | 'message-stop' | Boundary | ToolResponseEvent['type'];
   frame: number;
   ms: number;
   providerType?: string;
@@ -192,6 +192,10 @@ export class StoryToolTraceRecorder {
   validatingCarrier() { if (!this.closed) this.validating = true; }
 
   acceptedToolEnd() { if (!this.closed) this.finishedTool = true; }
+
+  toleratedProviderFinish(frame: number) {
+    if (!this.closed) this.add({ kind: 'tolerated-provider-finish', frame, ms: this.elapsed() });
+  }
 
   boundary(boundary: Boundary, frame: number) {
     if (this.closed) return;
