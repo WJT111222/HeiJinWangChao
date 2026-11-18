@@ -1,5 +1,5 @@
 import { canonicalJson } from './canonical';
-import { notice, type NoticeCollector } from './notices';
+import { notice, NoticeCollector } from './notices';
 import { classifyKey } from './regexKey';
 import { compileSafeRegex, SAFE_REGEX_REASON_TEXT } from './safeRegex';
 import { ENTRY_POSITIONS, GENERATION_TRIGGERS, WORLDBOOK_LIMITS, isPlainObject, type WorldbookEntry } from './schema';
@@ -186,21 +186,39 @@ export function checkEntry(entry: WorldbookEntry, notices: NoticeCollector) {
 }
 function nonEmptyArray(value: unknown) { return Array.isArray(value) && value.length > 0; }
 
+/** 原始字段按导入规则读出的规范值是否等于 value（即这个字段没有被编辑过）。 */
+function unchangedFromRaw(raw: Record<string, unknown>, stKey: string, kind: Kind, fallback: unknown, value: unknown): boolean {
+  if (!Object.hasOwn(raw, stKey)) return false;
+  const read = readField(raw, stKey, kind, fallback, { entryRef: '', field: stKey }, new NoticeCollector());
+  return read.ok && canonicalJson(read.value) === canonicalJson(value);
+}
+
 /**
  * 规范化条目 → 酒馆形状的条目对象。
- * 有原始条目时以它为底：只覆盖原来就有的字段和与默认值不同的字段，未知字段原样带回；
+ * 有原始条目时以它为底（无损回环）：
+ * - 原文件里有、且规范值没有被编辑过的字段，保留原来的写法（数字字符串、0 / 1、null 都不改）；
+ * - 被编辑过的字段写出新值；原文件里没有的字段，只在与默认值不同时写出；
+ * - 未知字段、保留字段原样带回。
  * 没有原始条目时写出完整字段。
  */
 export function writeSillyTavernEntry(entry: WorldbookEntry, raw: Record<string, unknown> | undefined, uid: number | string): Record<string, unknown> {
   const out: Record<string, unknown> = raw ? { ...raw } : {};
   const has = (key: string) => raw !== undefined && Object.hasOwn(raw, key);
-  if (!raw || has('uid')) out.uid = entry.sourceUid ?? uid;
-  for (const [stKey, key, , fallback] of MAIN_FIELDS) {
+  if (!raw) out.uid = entry.sourceUid ?? uid;
+  else if (has('uid')) {
+    const rawUid = raw.uid === undefined || raw.uid === null ? null : raw.uid;
+    if (canonicalJson(rawUid) !== canonicalJson(entry.sourceUid)) out.uid = entry.sourceUid ?? uid;
+  }
+  for (const [stKey, key, kind, fallback] of MAIN_FIELDS) {
     const value = entry[key];
+    if (raw && unchangedFromRaw(raw, stKey, kind, fallback, value)) continue; // out 里已是原写法
     if (!raw || has(stKey) || canonicalJson(value) !== canonicalJson(fallback)) out[stKey] = Array.isArray(value) ? [...value] : value;
   }
   for (const key of INERT_FIELDS) if (Object.hasOwn(entry.inert, key)) out[key] = entry.inert[key];
-  if (has('extensions') || Object.keys(entry.extensions).length > 0) out.extensions = entry.extensions;
+  if (has('extensions')) {
+    const rawExtensions = isPlainObject(raw!.extensions) ? raw!.extensions : {};
+    if (canonicalJson(rawExtensions) !== canonicalJson(entry.extensions)) out.extensions = entry.extensions;
+  } else if (Object.keys(entry.extensions).length > 0) out.extensions = entry.extensions;
   return out;
 }
 
