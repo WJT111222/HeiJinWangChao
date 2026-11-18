@@ -46,18 +46,21 @@ function cloneRecords(records: Record<string, TimedRecord>): Record<string, Time
 /** 扫描开始前：清理回退或到期的效果，得出本次处于 Sticky / 冷却 / 延迟中的条目。不修改输入。 */
 export function evaluateTimed(state: TimedState, entries: readonly TimedEntry[], messageCount: number): TimedEvaluation {
   const working: TimedState = { sticky: cloneRecords(state.sticky), cooldown: cloneRecords(state.cooldown) };
-  const byFingerprint = new Map<string, TimedEntry>();
-  for (const entry of entries) if (!byFingerprint.has(entry.fingerprint)) byFingerprint.set(entry.fingerprint, entry);
+  const byKey = new Map<string, TimedEntry>();
+  for (const entry of entries) if (!byKey.has(entry.key)) byKey.set(entry.key, entry);
   const active = { sticky: new Set<string>(), cooldown: new Set<string>(), delay: new Set<string>() };
 
   const check = (type: 'sticky' | 'cooldown') => {
     const records = working[type];
     for (const key of Object.keys(records)) {
       const record = records[key];
-      const entry = byFingerprint.get(record.fingerprint);
+      // 记录只作用于同一键名、同一指纹的条目（同一条目的同一内容）。
+      const current = byKey.get(key);
+      const entry = current && current.fingerprint === record.fingerprint ? current : undefined;
       // 回到了效果开始之前（例如回溯）：清掉，除非是受保护的冷却。
       if (messageCount <= record.start && !record.protected) { delete records[key]; continue; }
-      // 条目不在本次的书里（被修改、停用或换了版本）：只在到期后清掉。
+      // 条目不在本次的书里，或已被修改、换了版本：旧记录不作用于任何条目，只在到期后清掉。
+      // 期间若新内容的条目激活，recordActivations 会用新记录取代它。
       if (!entry) { if (messageCount >= record.end) delete records[key]; continue; }
       // 条目已不再设置这种效果。
       if (!entry[type]) { delete records[key]; continue; }
@@ -79,12 +82,18 @@ export function evaluateTimed(state: TimedState, entries: readonly TimedEntry[],
   return { ...active, working };
 }
 
-/** 扫描结束后：为本次激活、设置了 Sticky / 冷却且还没有对应记录的条目建立记录。返回新状态，不修改输入。 */
+/**
+ * 扫描结束后：为本次激活、设置了 Sticky / 冷却的条目建立记录。返回新状态，不修改输入。
+ * - 已有同一指纹的记录（例如 Sticky 期间再次激活）：保留原记录，不重新计时；
+ * - 已有的记录属于旧内容（条目被修改或换了版本）：新内容的条目按自己的规则建立新记录，取代旧记录。
+ * 每个条目、每种效果只保存一份记录；回溯时由调用方恢复回溯点保存的整份状态。
+ */
 export function recordActivations(working: TimedState, activated: readonly TimedEntry[], messageCount: number): TimedState {
   const next: TimedState = { sticky: cloneRecords(working.sticky), cooldown: cloneRecords(working.cooldown) };
   for (const entry of activated) {
     for (const type of ['sticky', 'cooldown'] as const) {
-      if (!entry[type] || next[type][entry.key]) continue;
+      const existing = next[type][entry.key];
+      if (!entry[type] || existing && existing.fingerprint === entry.fingerprint) continue;
       next[type][entry.key] = { fingerprint: entry.fingerprint, start: messageCount, end: messageCount + Number(entry[type]), protected: false };
     }
   }
