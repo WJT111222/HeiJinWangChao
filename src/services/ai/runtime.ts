@@ -55,6 +55,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   }) as ComposeInput & { stage: AiStage };
   if (captured.stage === 'world' && captured.draft?.variables?.validation === 'validated')
     parseVariables(JSON.stringify(captured.draft.variables.result), captured.state, captured.draft);
+  const toolOutput = captured.stage === 'story' && captured.settings.runtime.storyToolOutput;
   const generation = stageResponses.generation();
   const snapshot = requestSnapshot(config, captured.stage, vault);
   const prompt = captured.stage === 'variables'
@@ -103,6 +104,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     ...options,
     // Only Story may evaluate a complete limit response; other stages remain strict.
     validateStoryOutputLimit: captured.stage === 'story',
+    storyToolOutput: toolOutput,
     onResponseDiagnostics: (value) => {
       if (sealed || options.signal?.aborted) return;
       diagnostics = mergeResponseDiagnostics(diagnostics, value); observe();
@@ -146,7 +148,8 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   clearTimeout(observationTimer);
   step = 'response';
   if (!rawObserved) received = append('', response.text, responseLimits.text);
-  addition = received;
+  // Tool arguments remain raw observations, never a resumable Story prefix.
+  addition = toolOutput ? response.text : received;
   // 续写时诊断原文与解析输入都是拼接后的全文；非续写时与原来完全一致。
   if (continuation) received = append('', merged(received), responseLimits.text);
   stageResponses.update(responseId, { text: received, nativeReasoning: publicReasoning, diagnostics, truncated, ...display(), status: 'received' }, secrets);
@@ -209,7 +212,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     sealed = true;
     if (captured.stage === 'story' && failure && typeof failure === 'object') {
       // 兼容渠道会把推理写成开头的 <think>…</think>：与正式解析一致先去掉，推理不进入可续写的正文。
-      const raw = addition ?? received, content = splitLeadingThink(raw).content;
+      const raw = addition ?? (toolOutput ? '' : received), content = splitLeadingThink(raw).content;
       storyFailureText.set(failure, { produced: raw.trim() !== '',
         text: !continuation ? content : content.trim() ? merged(content) : continuation.partial });
     }

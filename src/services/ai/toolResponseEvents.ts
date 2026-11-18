@@ -49,8 +49,11 @@ export class ToolEventProjector {
         const message = record(stream ? choice.delta : choice.message);
         if (message.function_call !== undefined) throw toolFailure('unsupported_shape');
         if (message.tool_calls !== undefined && !Array.isArray(message.tool_calls)) throw toolFailure('unsupported_shape');
+        const slots = new Set<number>();
         for (const [position, raw] of array(message.tool_calls).entries()) {
           const call = record(raw), fn = record(call.function), slot = stream ? index(call.index) : position;
+          if (slots.has(slot)) throw toolFailure('multiple');
+          slots.add(slot);
           if (call.type !== undefined && call.type !== 'function') throw toolFailure('unsupported_shape');
           if (!stream && call.type !== 'function') throw toolFailure('unsupported_shape');
           const callId = optionalString(call.id), name = optionalString(fn.name);
@@ -84,7 +87,11 @@ export class ToolEventProjector {
         const delta = record(data.delta);
         if (typeof delta.partial_json !== 'string') throw toolFailure('arguments');
         args(index(data.index), delta.partial_json, 'delta');
-      } else if (data.type === 'content_block_stop' && this.open.has(index(data.index))) end(index(data.index), 'content-block-stop');
+      } else if (data.type === 'content_block_stop') {
+        const slot = index(data.index);
+        if (this.closed.has(slot)) throw toolFailure('ordering');
+        if (this.open.has(slot)) end(slot, 'content-block-stop');
+      }
     } else {
       const candidates = array(data.candidates);
       if (candidates.length > 1) throw toolFailure('multiple');
@@ -95,6 +102,7 @@ export class ToolEventProjector {
           const part = record(rawPart);
           if (part.functionResponse !== undefined) throw toolFailure('unsupported_shape');
           if (part.functionCall !== undefined) {
+            if (part.text !== undefined) throw toolFailure('unsupported_shape');
             const call = record(part.functionCall);
             if (Object.keys(call).some(key => !['name', 'args', 'id'].includes(key))) throw toolFailure('unsupported_shape');
             // Gemini's native complete functionCall does not require an ID;

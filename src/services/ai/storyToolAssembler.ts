@@ -32,6 +32,7 @@ export class StoryToolAssembler {
   event(event: ToolResponseEvent) {
     if (event.type === 'tool-start') {
       if (this.call) throw toolFailure('multiple');
+      if ((event.callId?.length ?? 0) > 512 || (event.name?.length ?? 0) > 512) throw toolFailure('identity');
       this.call = { slot: event.slot, id: event.callId ?? '', name: event.name ?? '', chunks: [], chars: 0, snapshot: false, closed: false };
       return;
     }
@@ -44,7 +45,10 @@ export class StoryToolAssembler {
       if (call.snapshot || (event.delivery === 'snapshot' && call.chunks.length)) throw toolFailure('ordering');
       call.snapshot = event.delivery === 'snapshot'; call.chars += event.text.length;
       if (call.chars > STORY_TOOL_ARGUMENT_LIMIT) throw toolFailure('arguments');
-      call.chunks.push(event.text);
+      if (event.text) {
+        if (call.chunks.length >= 131072) throw toolFailure('arguments');
+        call.chunks.push(event.text);
+      }
     } else {
       if (call.name !== STORY_OUTPUT_TOOL) throw toolFailure('name');
       if ((this.protocol !== 'gemini' && !call.id) || (call.id && (call.id.length > 512 || call.id.trim() !== call.id || /[\p{C}\s]/u.test(call.id)))) throw toolFailure('identity');

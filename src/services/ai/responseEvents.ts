@@ -86,6 +86,8 @@ export async function* readAiResponseEvents(
   const tools = toolResponses ? new ToolEventProjector() : undefined;
   const observed = (data: unknown) => {
     const result = payload(data, source);
+    if (toolResponses && (result.finishReason === 'tool_calls' || result.finishReason === 'tool_use'))
+      result.diagnostics.finishReasons = [String(result.finishReason)];
     const args = toolResponses ? observedToolArguments(data, source).join('') : '';
     return !args ? result : { ...result, rawText: result.rawText + args, observation: {
       text: result.observation.text + args,

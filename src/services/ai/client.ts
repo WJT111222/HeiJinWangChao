@@ -1,3 +1,4 @@
+import { StoryToolAssembler } from './storyToolAssembler';
 import { AiError, safeAiError } from './errors';
 import { requestInspections } from './inspection';
 import type { InspectionScope } from './inspection';
@@ -21,6 +22,8 @@ import type { RawResponseObservation, ResponseDiagnostics } from './responseCont
 export interface RequestOptions {
   /** Internal Story-only handoff: caller must strictly validate received content. */
   validateStoryOutputLimit?: boolean;
+  /** Opt-in Story output carrier only; never executes tools. */
+  storyToolOutput?: boolean;
   onResponseDiagnostics?: (diagnostics: ResponseDiagnostics) => void;
   signal?: AbortSignal;
   timeoutSeconds?: number;
@@ -142,7 +145,8 @@ export class AiClient {
     messages: readonly AiMessage[],
     options: RequestOptions = {},
   ): Promise<AiResponse> {
-    const wire = wireRequest(snapshot, messages, options.stream === true);
+    const carrier = options.storyToolOutput === true ? new StoryToolAssembler(snapshot.channel.protocol) : undefined;
+    const wire = wireRequest(snapshot, messages, options.stream === true, Boolean(carrier));
     let inspectionId: string | undefined;
     let observedUsage: Usage | undefined;
     let outputLimited = false;
@@ -164,22 +168,45 @@ export class AiClient {
         let think: LeadingThink | undefined;
         const events = readAiResponseEvents(
           () => this.response(wire.url, wire.init, signal, snapshot, options.onResponseDiagnostics ? observe : undefined),
-          protocol, options.stream === true, signal,
+          protocol, options.stream === true, signal, Boolean(carrier),
         );
         for await (const event of events) {
           if (event.type === 'error') throw event.error;
           if (event.type === 'aborted') throw new AiError('cancelled');
           if (event.type === 'opened') {
             streaming = event.source.transport === 'sse';
-            think = streaming && isOpenAiCompatible(protocol) ? new LeadingThink() : undefined;
+            think = !carrier && streaming && isOpenAiCompatible(protocol) ? new LeadingThink() : undefined;
             if (!signal.aborted) observe({ httpStatus: event.source.httpStatus, complete: false });
             continue;
           }
           if (event.type === 'end') {
+            carrier?.boundary(event);
             if (event.boundary === 'done-marker') terminal = true;
             continue;
           }
-          if (event.type === 'tool-start' || event.type === 'tool-identity-delta' || event.type === 'tool-arguments' || event.type === 'tool-end') throw new AiError('unsupported');
+          if (event.type === 'tool-start' || event.type === 'tool-identity-delta' || event.type === 'tool-arguments' || event.type === 'tool-end') {
+            if (!carrier) throw new AiError('unsupported');
+            carrier.event(event); continue;
+          }
+          if (carrier) {
+            if (!signal.aborted) observe({ ...event.diagnostics, httpStatus: event.source.httpStatus, complete: false });
+            if (event.usage) usage = { ...usage, ...event.usage };
+            observedUsage = usage;
+            if (!signal.aborted) {
+              options.onRawResponse?.(event.observation);
+              if (event.rawText) options.onRawTextDelta?.(event.rawText);
+              if (event.nativeReasoning) options.onNativeReasoningDelta?.(event.nativeReasoning);
+            }
+            if (event.providerError) throw new AiError('rejected');
+            if (event.filtered || event.diagnostics.refusal) throw new AiError('content_filter');
+            reasoning += event.nativeReasoning;
+            if (reasoning.length > 2_000_000) throw new AiError('invalid_output');
+            if (event.nativeReasoning && options.stream === true && !signal.aborted) {
+              options.onActivity?.('reasoning'); options.onReasoningDelta?.(event.nativeReasoning);
+            }
+            carrier.response(event);
+            continue;
+          }
           if (!streaming) {
             if (!signal.aborted) observe({ ...event.diagnostics, httpStatus: event.source.httpStatus, complete: true });
             usage = event.usage; observedUsage = usage;
@@ -247,7 +274,20 @@ export class AiClient {
           if (text.length > 8_000_000) throw new AiError('invalid_output');
           if (delta && !signal.aborted) options.onDelta?.(delta);
         }
-        if (streaming) {
+        if (carrier) {
+          text = carrier.complete();
+          if (isOpenAiCompatible(protocol)) {
+            const split = splitLeadingThink(text); text = split.content;
+            if (split.reasoning && !signal.aborted) options.onCompatibilityReasoningDelta?.(split.reasoning);
+            if (!reasoning && split.reasoning) {
+              reasoning = split.reasoning;
+              if (options.stream === true && !signal.aborted) options.onReasoningDelta?.(reasoning);
+            }
+          }
+          if (options.stream === true && text && !signal.aborted) { options.onActivity?.('content'); options.onDelta?.(text); }
+          if (!signal.aborted) observe({ transport: streaming ? 'sse' : 'json', complete: true });
+        }
+        if (streaming && !carrier) {
           if (think) {
             const rest = think.end();
             if (rest.content) { text += rest.content; if (!signal.aborted) { options.onActivity?.('content'); options.onDelta?.(rest.content); } }

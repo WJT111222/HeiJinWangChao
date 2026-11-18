@@ -1,3 +1,4 @@
+import { STORY_OUTPUT_TOOL, STORY_TOOL_DESCRIPTION, STORY_TOOL_PARAMETERS } from './storyToolContract';
 import type { RequestSnapshot } from './snapshot';
 import { secretFor } from './snapshot';
 import { AiError } from './errors';
@@ -62,6 +63,7 @@ export function wireRequest(
   snapshot: RequestSnapshot,
   messages: readonly AiMessage[],
   stream: boolean,
+  storyToolOutput = false,
 ) {
   if (!messages.length || !snapshot.model) throw new AiError('configuration');
   let userSeen = false;
@@ -72,6 +74,7 @@ export function wireRequest(
     else if (userSeen) throw new AiError('unsupported');
   }
   if (messages.at(-1)?.role === 'assistant' && !snapshot.useCot) throw new AiError('unsupported');
+  if (storyToolOutput && snapshot.stage !== 'story') throw new AiError('configuration');
   // 使用完整确认历史，以 user 收尾；不猜测中转的预填充/Prefix 能力。
   const ordered = messages.at(-1)?.role === 'assistant'
     ? [...messages, { role: 'user' as const, content: '请按已确认的本阶段协议生成当前回合。' }]
@@ -141,6 +144,22 @@ export function wireRequest(
       ...(thinking.anthropic ? { thinking: thinking.anthropic } : {}),
       ...(temperature !== undefined ? { temperature } : {}),
     };
+  }
+  if (storyToolOutput) {
+    if (isOpenAiCompatible(protocol)) {
+      body.tools = [{ type: 'function', function: { name: STORY_OUTPUT_TOOL, description: STORY_TOOL_DESCRIPTION, parameters: STORY_TOOL_PARAMETERS } }];
+      body.tool_choice = { type: 'function', function: { name: STORY_OUTPUT_TOOL } };
+      if (protocol === 'openai') body.parallel_tool_calls = false;
+    } else if (protocol === 'gemini') {
+      body.tools = [{ functionDeclarations: [{ name: STORY_OUTPUT_TOOL, description: STORY_TOOL_DESCRIPTION, parametersJsonSchema: STORY_TOOL_PARAMETERS }] }];
+      body.toolConfig = { functionCallingConfig: { mode: 'ANY', allowedFunctionNames: [STORY_OUTPUT_TOOL] } };
+    } else {
+      body.tools = [{ name: STORY_OUTPUT_TOOL, description: STORY_TOOL_DESCRIPTION, input_schema: STORY_TOOL_PARAMETERS }];
+      // Native thinking does not support forced tool choice. Keep the player's
+      // thinking parameters; auto may decline, which the strict carrier rejects.
+      body.tool_choice = thinking.anthropic ? { type: 'auto', disable_parallel_tool_use: true }
+        : { type: 'tool', name: STORY_OUTPUT_TOOL, disable_parallel_tool_use: true };
+    }
   }
   return {
     url: endpoint(snapshot, path),

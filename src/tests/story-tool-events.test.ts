@@ -6,25 +6,8 @@ import { StoryToolAssembler } from '../services/ai/storyToolAssembler';
 import { parseStoryToolArguments, STORY_OUTPUT_TOOL } from '../services/ai/storyToolContract';
 import { splitResponse } from './fixtures/responseEvents';
 
-const content = '<正文>中文🙂，3<5。</正文><短期记忆>事实</短期记忆><变量规划>[]</变量规划>';
-const args = JSON.stringify({ content });
-const frame = (data: unknown) => `data: ${JSON.stringify(data)}\n\n`;
-export function carrierResponse(protocol: Protocol, stream: boolean, value = args) {
-  if (protocol === 'openai' || protocol === 'deepseek') {
-    if (!stream) return new Response(JSON.stringify({ choices: [{ message: { tool_calls: [{ id: 'call-1', type: 'function', function: { name: STORY_OUTPUT_TOOL, arguments: value } }] }, finish_reason: 'tool_calls' }] }), { headers: { 'content-type': 'application/json' } });
-    return splitResponse(frame({ choices: [{ delta: { tool_calls: [{ index: 0, id: 'call-1', type: 'function', function: { name: STORY_OUTPUT_TOOL } }] } }] })
-      + [...value].map(text => frame({ choices: [{ delta: { tool_calls: [{ index: 0, function: { arguments: text } }] } }] })).join('')
-      + frame({ choices: [{ delta: {}, finish_reason: 'tool_calls' }] }) + 'data: [DONE]\n\n', 1);
-  }
-  if (protocol === 'anthropic') {
-    if (!stream) return new Response(JSON.stringify({ content: [{ type: 'tool_use', id: 'call-1', name: STORY_OUTPUT_TOOL, input: JSON.parse(value) }], stop_reason: 'tool_use' }), { headers: { 'content-type': 'application/json' } });
-    return splitResponse(frame({ type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'call-1', name: STORY_OUTPUT_TOOL, input: {} } })
-      + [...value].map(partial_json => frame({ type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json } })).join('')
-      + frame({ type: 'content_block_stop', index: 0 }) + frame({ type: 'message_delta', delta: { stop_reason: 'tool_use' } }) + frame({ type: 'message_stop' }), 1);
-  }
-  const data = { candidates: [{ content: { parts: [{ functionCall: { name: STORY_OUTPUT_TOOL, args: JSON.parse(value) } }] }, finishReason: 'STOP' }] };
-  return stream ? splitResponse(frame(data), 1) : new Response(JSON.stringify(data), { headers: { 'content-type': 'application/json' } });
-}
+import { toolStoryText as content, toolStoryArgs as args, toolFrame as frame, carrierResponse } from './fixtures/storyTools';
+
 async function assemble(protocol: Protocol, response: Response, stream: boolean) {
   const assembler = new StoryToolAssembler(protocol), events: AiResponseEvent[] = [];
   for await (const event of readAiResponseEvents(async () => response, protocol, stream, new AbortController().signal, true)) {

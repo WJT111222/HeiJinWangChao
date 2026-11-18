@@ -220,6 +220,7 @@ export function SettingsPanel({
                   ['useVariableStage', '变量管理'],
                   ['useWorldStage', '动态世界'],
                   ['streamStory', '正文生成 · 流式传输'],
+                  ['storyToolOutput', '正文生成 · 结构化输出（实验）'],
                   ['streamVariables', '变量管理 · 流式传输'],
                   ['streamWorld', '动态世界 · 流式传输'],
                 ] as const
@@ -238,6 +239,7 @@ export function SettingsPanel({
                   {label}
                 </label>
               ))}
+              <p className="muted">结构化输出仅用于正文；参数完整校验后展示正文。不支持时请关闭后主动重试，不会自动切换或重发。</p>
               <label>
                 请求超时（秒）
                 <input
