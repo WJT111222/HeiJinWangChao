@@ -1,3 +1,4 @@
+import { openStoredSave } from './helpers/home';
 import { workflowTrigger, openStoryInspection, openStageRaw } from './helpers/gameLayout';
 import { openWorldArchive, openSettings, goHome } from './helpers/gameLayout';
 import { openGameTools, openWorkflowDiagnostics } from './helpers/gameLayout';
@@ -254,7 +255,7 @@ test('快速重复点击、取消重试、迟到请求与切档隔离、刷新�
   expect((await stored(page)).draft.story).toBeUndefined();
   plans.push({ delay: 1500 }); await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
   await expect.poll(() => requests.length).toBe(2); await goHome(page);
-  await page.locator('.save-card').filter({ hasText: '另一个存档角色' }).getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page, true);
+  await openStoredSave(page, '另一个存档角色'); await openGameTools(page, true);
   await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
   expect((await stored(page)).draft.story).toBeUndefined(); expect((await stored(page, 'story-e2e-b')).draft.storyRevision).toBe(1); expect((await stored(page)).state).toBe(before);
   await page.goto('/#game/story-e2e-a'); await openGameTools(page);

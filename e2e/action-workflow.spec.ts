@@ -1,3 +1,4 @@
+import { openStoredSave } from './helpers/home';
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
 import { workflowTrigger, workflowSummary, goHome, openWorkflow, openBoundInput, openStageSwitches, closeWorkflowSheet } from './helpers/gameLayout';
@@ -99,7 +100,7 @@ test('一次创角确认自动执行开局三阶段，StrictMode和重复点击�
   await expect(page.locator('main')).not.toContainText('尚未公开的内部线索');
   await page.reload(); await ready(page); expect(await stored(page)).toEqual(result); expect(server.calls).toHaveLength(3);
   await goHome(page);
-  await page.getByRole('button', { name: /读取存档/ }).click(); await ready(page); expect(server.calls).toHaveLength(3);
+  await openStoredSave(page); await ready(page); expect(server.calls).toHaveLength(3);
 });
 
 test('缺少AI配置零请求，设置后不自动补发，只在明确开始时运行', async ({ page }) => {
@@ -185,7 +186,7 @@ test('快速离开并重读同一存档或新标签不能延续开局收费授�
   await prepare(page); const server = await mock(page), held = gate(); server.plan.hold = 'variables'; server.plan.gate = held.pending;
   await creation(page); await confirm(page); await expect.poll(() => server.calls.length).toBe(2);
   const url = page.url(); await goHome(page);
-  await page.getByRole('button', { name: /读取存档/ }).click();
+  await openStoredSave(page);
   await openWorkflow(page); await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeVisible();
   const other = await context.newPage(); let otherRequests = 0;
   await other.route('https://action.mock.invalid/**', async (route) => { otherRequests++; await route.abort(); });

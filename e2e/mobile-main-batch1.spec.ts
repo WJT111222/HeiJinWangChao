@@ -2,6 +2,8 @@ import {test,expect} from './helpers/test';
 import type {Page} from '@playwright/test';
 import {seedNightSeal,nightSealStored} from './helpers/nightSeal';
 import {openStageCandidates,openWorkflowDiagnostics,openWorkflowStage, openTurnTools } from './helpers/gameLayout';
+// 手机专项：只在 mobile 项目（Pixel 7，isMobile）运行；电脑端由各自的 PC 用例覆盖。PC 像素对照用例另由 E2E_PIXEL_COMPARE 控制。
+test.skip(({ isMobile }) => !isMobile, '手机专项，只在 mobile 项目运行');
 
 const shots='docs/mobile-main-batch1/screenshots';
 test.beforeEach(async({page})=>{
@@ -86,7 +88,7 @@ test('正式结算与发送复用原回调，开局不可撤回',async({page})=>
  await openTurnTools(page);await expect(page.getByRole('button',{name:'撤回',exact:true})).toBeDisabled();expect((await nightSealStored(page)).state.turnNumber).toBe(1);
 });
 
-for(const width of [901,1440])test(`桌面 ${width}px：与未修改 main 逐像素对照`,async({browser},info)=>{
+for(const width of [901,1440])test(`桌面 ${width}px：与未修改 main 逐像素对照`,async({browser},info)=>{test.skip(!process.env.E2E_PIXEL_COMPARE, '像素对照：需另外启动改动前后两个服务器，只在专门对照时设置 E2E_PIXEL_COMPARE 运行');
  const pages:Page[]=[];
  for(const port of [5232,5231]){
   const context=await browser.newContext({baseURL:`http://127.0.0.1:${port}`,viewport:{width,height:900},reducedMotion:'reduce',isMobile:false});await context.addInitScript(()=>{const now=new Date();localStorage.setItem('heijin.notices.hidden-on.v1',[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-'));});const page=await context.newPage();await page.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());await enter(page);pages.push(page);

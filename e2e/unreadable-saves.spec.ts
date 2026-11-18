@@ -1,4 +1,4 @@
-import { openLibrary } from './helpers/home';
+import { openLibrary, openStoredSave } from './helpers/home';
 import { goHome } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
@@ -66,7 +66,7 @@ test('混合存档列表独立展示，坏记录不触发全局错误，正常�
   await badCard(page).scrollIntoViewIfNeeded();
   await page.screenshot({path:info.outputPath('library-unreadable.png')});
   for (const id of ['save-a', 'save-b']) {
-    await page.locator('.save-card').filter({ hasText: `正常存档 ${id}` }).getByRole('button', { name: /读取存档/ }).click();
+    await openStoredSave(page, `正常存档 ${id}`);
     await openGameTools(page, true);
     await expect(page.getByRole('heading', { name: '林舟', exact: true })).toBeVisible();
     await goHome(page); await openLibrary(page);

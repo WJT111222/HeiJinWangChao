@@ -1,4 +1,4 @@
-import { openLibrary } from './helpers/home';
+import { openStoredSave } from './helpers/home';
 import { openWorldArchive, openSettings, openWorkflowDiagnostics } from './helpers/gameLayout';
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
@@ -46,7 +46,7 @@ async function seed(page: Page) {
     new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-memory-only');
   });
   await page.reload(); await openGameTools(page);
-  await openLibrary(page); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+  await openStoredSave(page); await openGameTools(page);
 }
 async function load(page: Page) {
   const state: unknown = await page.evaluate(async () => {

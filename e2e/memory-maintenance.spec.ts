@@ -1,4 +1,4 @@
-import { openLibrary } from './helpers/home';
+import { openStoredSave } from './helpers/home';
 import { openWorldArchive, openSettings, goHome } from './helpers/gameLayout';
 import { aiTab, follow, saveAi, stageModel } from './helpers/aiSettings';
 import { variableReply } from '../src/tests/fixtures/variableReply';
@@ -49,7 +49,7 @@ async function seed(page: Page, count = 31, automatic = false, ready = false) {
     new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-maintenance-secret');
   }, { count, automatic, ready });
   await page.reload(); await openGameTools(page);
-  await openLibrary(page); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+  await openStoredSave(page); await openGameTools(page);
 }
 async function load(page: Page) {
   const state: unknown = await page.evaluate(async () => {
@@ -153,7 +153,7 @@ test('跨标签真实Web Lock阻止第二次付费；取消/迟到和服务失�
   await memory.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
   await expect.poll(() => requests).toBe(1);
   const other = await context.newPage(); await other.goto('/');
-  await openLibrary(other); await other.getByRole('button', { name: /读取存档/ }).click();
+  await openStoredSave(other);
   const otherPanel = await panel(other);
   await otherPanel.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
   await expect(otherPanel).toContainText('另一个标签或任务正在总结此存档');
@@ -291,7 +291,7 @@ test('维护期间切档隔离旧任务，迟到结果不修改新档或原档�
   await expect.poll(() => requests).toBe(1);
   await maintenance.getByRole('button', { name: '关闭资料界面' }).click();
   await goHome(page);
-  await page.locator('.save-card').filter({ hasText: '第二人生' }).getByRole('button', { name: /读取存档/ }).click();
+  await openStoredSave(page, '第二人生');
   const other = await panel(page);
   await expect(other.getByRole('region', { name: '短期 → 中期', exact: true })).toContainText('当前合格未覆盖：31 条');
   await expect(other.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeEnabled();

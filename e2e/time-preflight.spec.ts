@@ -1,4 +1,4 @@
-import { openLibrary } from './helpers/home';
+import { openStoredSave } from './helpers/home';
 import { VariableStateProjectionSchema } from '../src/tests/fixtures/variableState';
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools, openWorkflowStage } from './helpers/gameLayout';
@@ -29,7 +29,7 @@ async function seed(page: Page, visitor = false, disabled = false, action = '睡
     config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' }; config.routes.world = { mode: 'independent', channelId: channel.id, modelId: 'world' };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'time-e2e-mock-secret');
   }, { visitor, disabled, action });
-  await page.reload(); await openGameTools(page); await openLibrary(page); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+  await page.reload(); await openGameTools(page); await openStoredSave(page); await openGameTools(page);
 }
 async function load(page: Page) {
   const value: unknown = await page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try { return await repo.loadGame('save-a'); } finally { repo.close(); } });

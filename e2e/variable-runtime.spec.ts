@@ -1,3 +1,4 @@
+import { openStoredSave } from './helpers/home';
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools, goHome, openWorkflowStage, openCandidateRaw, openStageCandidates, closeStageCandidates } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
@@ -241,11 +242,7 @@ test('错误 JSON 安全失败可重试；取消、重复点击和切档迟到�
   await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '重新生成变量候选', exact: true }).click();
   await expect.poll(() => count).toBe(4);
   await goHome(page);
-  await page
-    .locator('.save-card')
-    .filter({ hasText: '另一份变量存档' })
-    .getByRole('button', { name: /读取存档/ })
-    .click();
+  await openStoredSave(page, '另一份变量存档');
   await openGameTools(page, true);
   mode = 'good';
   await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();

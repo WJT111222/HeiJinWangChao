@@ -2,6 +2,8 @@ import {test,expect} from './helpers/test';
 import {seedTickets,ticketAt,rawSnapshot} from './helpers/mobileHome';
 import {readFile} from 'node:fs/promises';
 import type {Page} from '@playwright/test';
+// 手机专项：只在 mobile 项目（Pixel 7，isMobile）运行；电脑端由各自的 PC 用例覆盖。PC 像素对照用例另由 E2E_PIXEL_COMPARE 控制。
+test.skip(({ isMobile }) => !isMobile, '手机专项，只在 mobile 项目运行');
 const shots='docs/mobile-batch3/screenshots';
 async function shot(page:Page,name:string){await page.mouse.move(0,0);await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:`${shots}/${name}.png`,fullPage:true,animations:'disabled'});}
 async function drag(page:Page,dy:number,cancel=false){
