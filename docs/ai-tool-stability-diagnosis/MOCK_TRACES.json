@@ -1,0 +1,972 @@
+{
+  "source": "synthetic Mock observations, not player trace or live model timings",
+  "records": [
+    {
+      "case": "valid-final-args-and-finish-same-frame",
+      "trace": [
+        {
+          "type": "opened",
+          "sequence": 0,
+          "transport": "sse"
+        },
+        {
+          "type": "response",
+          "sequence": 1,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-start",
+          "sequence": 1,
+          "transport": "sse",
+          "slot": 0,
+          "idPresent": true,
+          "expectedName": true
+        },
+        {
+          "type": "response",
+          "sequence": 2,
+          "transport": "sse",
+          "finish": "tool_calls",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-arguments",
+          "sequence": 2,
+          "transport": "sse",
+          "delivery": "delta"
+        },
+        {
+          "type": "tool-end",
+          "sequence": 2,
+          "transport": "sse"
+        },
+        {
+          "type": "end",
+          "sequence": 3,
+          "transport": "sse",
+          "boundary": "done-marker"
+        }
+      ]
+    },
+    {
+      "case": "valid-usage-only-tail",
+      "trace": [
+        {
+          "type": "opened",
+          "sequence": 0,
+          "transport": "sse"
+        },
+        {
+          "type": "response",
+          "sequence": 1,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-start",
+          "sequence": 1,
+          "transport": "sse",
+          "slot": 0,
+          "idPresent": true,
+          "expectedName": true
+        },
+        {
+          "type": "response",
+          "sequence": 2,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-arguments",
+          "sequence": 2,
+          "transport": "sse",
+          "delivery": "delta"
+        },
+        {
+          "type": "response",
+          "sequence": 3,
+          "transport": "sse",
+          "finish": "tool_calls",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-end",
+          "sequence": 3,
+          "transport": "sse"
+        },
+        {
+          "type": "response",
+          "sequence": 4,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "end",
+          "sequence": 5,
+          "transport": "sse",
+          "boundary": "done-marker"
+        }
+      ]
+    },
+    {
+      "case": "duplicate-finish-in-usage-tail",
+      "trace": [
+        {
+          "type": "opened",
+          "sequence": 0,
+          "transport": "sse"
+        },
+        {
+          "type": "response",
+          "sequence": 1,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-start",
+          "sequence": 1,
+          "transport": "sse",
+          "slot": 0,
+          "idPresent": true,
+          "expectedName": true
+        },
+        {
+          "type": "response",
+          "sequence": 2,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-arguments",
+          "sequence": 2,
+          "transport": "sse",
+          "delivery": "delta"
+        },
+        {
+          "type": "response",
+          "sequence": 3,
+          "transport": "sse",
+          "finish": "tool_calls",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-end",
+          "sequence": 3,
+          "transport": "sse"
+        },
+        {
+          "type": "response",
+          "sequence": 4,
+          "transport": "sse",
+          "finish": "tool_calls",
+          "hasReasoning": false,
+          "messageStop": false
+        }
+      ],
+      "failure": {
+        "code": "tool_response",
+        "fieldPath": "storyTool.ordering"
+      }
+    },
+    {
+      "case": "parameter-delta-after-finish",
+      "trace": [
+        {
+          "type": "opened",
+          "sequence": 0,
+          "transport": "sse"
+        },
+        {
+          "type": "response",
+          "sequence": 1,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-start",
+          "sequence": 1,
+          "transport": "sse",
+          "slot": 0,
+          "idPresent": true,
+          "expectedName": true
+        },
+        {
+          "type": "response",
+          "sequence": 2,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-arguments",
+          "sequence": 2,
+          "transport": "sse",
+          "delivery": "delta"
+        },
+        {
+          "type": "response",
+          "sequence": 3,
+          "transport": "sse",
+          "finish": "tool_calls",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-end",
+          "sequence": 3,
+          "transport": "sse"
+        },
+        {
+          "type": "response",
+          "sequence": 4,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "error",
+          "sequence": 4,
+          "transport": "sse"
+        }
+      ],
+      "failure": {
+        "code": "tool_response",
+        "fieldPath": "storyTool.ordering"
+      }
+    },
+    {
+      "case": "reasoning-after-finish",
+      "trace": [
+        {
+          "type": "opened",
+          "sequence": 0,
+          "transport": "sse"
+        },
+        {
+          "type": "response",
+          "sequence": 1,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-start",
+          "sequence": 1,
+          "transport": "sse",
+          "slot": 0,
+          "idPresent": true,
+          "expectedName": true
+        },
+        {
+          "type": "response",
+          "sequence": 2,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-arguments",
+          "sequence": 2,
+          "transport": "sse",
+          "delivery": "delta"
+        },
+        {
+          "type": "response",
+          "sequence": 3,
+          "transport": "sse",
+          "finish": "tool_calls",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-end",
+          "sequence": 3,
+          "transport": "sse"
+        },
+        {
+          "type": "response",
+          "sequence": 4,
+          "transport": "sse",
+          "hasReasoning": true,
+          "messageStop": false
+        }
+      ],
+      "failure": {
+        "code": "tool_response",
+        "fieldPath": "storyTool.ordering"
+      }
+    },
+    {
+      "case": "tool-start-after-finish",
+      "trace": [
+        {
+          "type": "opened",
+          "sequence": 0,
+          "transport": "sse"
+        },
+        {
+          "type": "response",
+          "sequence": 1,
+          "transport": "sse",
+          "finish": "tool_calls",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "response",
+          "sequence": 2,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-start",
+          "sequence": 2,
+          "transport": "sse",
+          "slot": 0,
+          "idPresent": true,
+          "expectedName": true
+        }
+      ],
+      "failure": {
+        "code": "tool_response",
+        "fieldPath": "storyTool.ordering"
+      }
+    },
+    {
+      "case": "text-only-json-lookalike",
+      "trace": [
+        {
+          "type": "opened",
+          "sequence": 0,
+          "transport": "sse"
+        },
+        {
+          "type": "response",
+          "sequence": 1,
+          "transport": "sse",
+          "finish": "stop",
+          "hasReasoning": false,
+          "messageStop": false
+        }
+      ],
+      "failure": {
+        "code": "tool_response",
+        "fieldPath": "storyTool.mixed_text"
+      }
+    },
+    {
+      "case": "valid-tool-wrong-stop",
+      "trace": [
+        {
+          "type": "opened",
+          "sequence": 0,
+          "transport": "sse"
+        },
+        {
+          "type": "response",
+          "sequence": 1,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-start",
+          "sequence": 1,
+          "transport": "sse",
+          "slot": 0,
+          "idPresent": true,
+          "expectedName": true
+        },
+        {
+          "type": "response",
+          "sequence": 2,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-arguments",
+          "sequence": 2,
+          "transport": "sse",
+          "delivery": "delta"
+        },
+        {
+          "type": "response",
+          "sequence": 3,
+          "transport": "sse",
+          "finish": "stop",
+          "hasReasoning": false,
+          "messageStop": false
+        }
+      ],
+      "failure": {
+        "code": "tool_response",
+        "fieldPath": "storyTool.finish"
+      }
+    },
+    {
+      "case": "complete-arguments-no-native-finish",
+      "trace": [
+        {
+          "type": "opened",
+          "sequence": 0,
+          "transport": "sse"
+        },
+        {
+          "type": "response",
+          "sequence": 1,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-start",
+          "sequence": 1,
+          "transport": "sse",
+          "slot": 0,
+          "idPresent": true,
+          "expectedName": true
+        },
+        {
+          "type": "response",
+          "sequence": 2,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-arguments",
+          "sequence": 2,
+          "transport": "sse",
+          "delivery": "delta"
+        },
+        {
+          "type": "end",
+          "sequence": 3,
+          "transport": "sse",
+          "boundary": "done-marker"
+        }
+      ],
+      "failure": {
+        "code": "tool_response",
+        "fieldPath": "storyTool.incomplete"
+      }
+    },
+    {
+      "case": "reopened-closed-slot",
+      "trace": [
+        {
+          "type": "opened",
+          "sequence": 0,
+          "transport": "sse"
+        },
+        {
+          "type": "response",
+          "sequence": 1,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-start",
+          "sequence": 1,
+          "transport": "sse",
+          "slot": 0,
+          "idPresent": true,
+          "expectedName": true
+        },
+        {
+          "type": "response",
+          "sequence": 2,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-arguments",
+          "sequence": 2,
+          "transport": "sse",
+          "delivery": "delta"
+        },
+        {
+          "type": "response",
+          "sequence": 3,
+          "transport": "sse",
+          "finish": "tool_calls",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-end",
+          "sequence": 3,
+          "transport": "sse"
+        },
+        {
+          "type": "response",
+          "sequence": 4,
+          "transport": "sse",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "error",
+          "sequence": 4,
+          "transport": "sse"
+        }
+      ],
+      "failure": {
+        "code": "tool_response",
+        "fieldPath": "storyTool.ordering"
+      }
+    },
+    {
+      "case": "nonstream-json",
+      "trace": [
+        {
+          "type": "opened",
+          "sequence": 0,
+          "transport": "json"
+        },
+        {
+          "type": "response",
+          "sequence": 1,
+          "transport": "json",
+          "finish": "tool_calls",
+          "hasReasoning": false,
+          "messageStop": false
+        },
+        {
+          "type": "tool-start",
+          "sequence": 1,
+          "transport": "json",
+          "slot": 0,
+          "idPresent": true,
+          "expectedName": true
+        },
+        {
+          "type": "tool-arguments",
+          "sequence": 1,
+          "transport": "json",
+          "delivery": "snapshot"
+        },
+        {
+          "type": "tool-end",
+          "sequence": 1,
+          "transport": "json"
+        },
+        {
+          "type": "end",
+          "sequence": 1,
+          "transport": "json",
+          "boundary": "json-body"
+        }
+      ]
+    },
+    {
+      "case": "no-http-response-before-deadline",
+      "requestedStream": true,
+      "timeoutMs": 120000,
+      "requests": 1,
+      "result": {
+        "code": "timeout",
+        "at": 120000
+      },
+      "network": [
+        {
+          "type": "http-response",
+          "at": 121000,
+          "status": 200
+        }
+      ],
+      "observed": [],
+      "acceptedNarrativeCallbacks": 0
+    },
+    {
+      "case": "http-headers-only",
+      "requestedStream": true,
+      "timeoutMs": 120000,
+      "requests": 1,
+      "result": {
+        "code": "timeout",
+        "at": 120000
+      },
+      "network": [
+        {
+          "type": "http-response",
+          "at": 1000,
+          "status": 200
+        },
+        {
+          "type": "reader-cancel",
+          "at": 120000
+        }
+      ],
+      "observed": [
+        {
+          "type": "diagnostics",
+          "at": 1000,
+          "httpStatus": 200,
+          "complete": false
+        }
+      ],
+      "acceptedNarrativeCallbacks": 0
+    },
+    {
+      "case": "sse-pings-only",
+      "requestedStream": true,
+      "timeoutMs": 120000,
+      "requests": 1,
+      "result": {
+        "code": "timeout",
+        "at": 120000
+      },
+      "network": [
+        {
+          "type": "http-response",
+          "at": 1000,
+          "status": 200
+        },
+        {
+          "type": "body-bytes",
+          "at": 2000
+        },
+        {
+          "type": "body-bytes",
+          "at": 60000
+        },
+        {
+          "type": "body-bytes",
+          "at": 119000
+        },
+        {
+          "type": "reader-cancel",
+          "at": 120000
+        }
+      ],
+      "observed": [
+        {
+          "type": "diagnostics",
+          "at": 1000,
+          "httpStatus": 200,
+          "complete": false
+        }
+      ],
+      "acceptedNarrativeCallbacks": 0
+    },
+    {
+      "case": "arguments-keep-arriving-but-total-over-120s",
+      "requestedStream": true,
+      "timeoutMs": 120000,
+      "requests": 1,
+      "result": {
+        "code": "timeout",
+        "at": 120000
+      },
+      "network": [
+        {
+          "type": "http-response",
+          "at": 1000,
+          "status": 200
+        },
+        {
+          "type": "body-bytes",
+          "at": 2000
+        },
+        {
+          "type": "body-bytes",
+          "at": 3000
+        },
+        {
+          "type": "body-bytes",
+          "at": 60000
+        },
+        {
+          "type": "body-bytes",
+          "at": 119000
+        },
+        {
+          "type": "reader-cancel",
+          "at": 120000
+        }
+      ],
+      "observed": [
+        {
+          "type": "diagnostics",
+          "at": 1000,
+          "httpStatus": 200,
+          "complete": false
+        },
+        {
+          "type": "diagnostics",
+          "at": 2000,
+          "httpStatus": 200,
+          "complete": false
+        },
+        {
+          "type": "diagnostics",
+          "at": 3000,
+          "httpStatus": 200,
+          "complete": false
+        },
+        {
+          "type": "argument-observed",
+          "at": 3000
+        },
+        {
+          "type": "diagnostics",
+          "at": 60000,
+          "httpStatus": 200,
+          "complete": false
+        },
+        {
+          "type": "argument-observed",
+          "at": 60000
+        },
+        {
+          "type": "diagnostics",
+          "at": 119000,
+          "httpStatus": 200,
+          "complete": false
+        },
+        {
+          "type": "argument-observed",
+          "at": 119000
+        }
+      ],
+      "acceptedNarrativeCallbacks": 0
+    },
+    {
+      "case": "native-tool-finish-without-DONE-or-EOF",
+      "requestedStream": true,
+      "timeoutMs": 120000,
+      "requests": 1,
+      "result": {
+        "code": "timeout",
+        "at": 120000
+      },
+      "network": [
+        {
+          "type": "http-response",
+          "at": 1000,
+          "status": 200
+        },
+        {
+          "type": "body-bytes",
+          "at": 2000
+        },
+        {
+          "type": "body-bytes",
+          "at": 3000
+        },
+        {
+          "type": "body-bytes",
+          "at": 4000
+        },
+        {
+          "type": "reader-cancel",
+          "at": 120000
+        }
+      ],
+      "observed": [
+        {
+          "type": "diagnostics",
+          "at": 1000,
+          "httpStatus": 200,
+          "complete": false
+        },
+        {
+          "type": "diagnostics",
+          "at": 2000,
+          "httpStatus": 200,
+          "complete": false
+        },
+        {
+          "type": "diagnostics",
+          "at": 3000,
+          "httpStatus": 200,
+          "complete": false
+        },
+        {
+          "type": "argument-observed",
+          "at": 3000
+        },
+        {
+          "type": "diagnostics",
+          "at": 4000,
+          "httpStatus": 200,
+          "finish": [
+            "tool_calls"
+          ],
+          "complete": false
+        }
+      ],
+      "acceptedNarrativeCallbacks": 0
+    },
+    {
+      "case": "native-finish-then-real-EOF-at-119s",
+      "requestedStream": true,
+      "timeoutMs": 120000,
+      "requests": 1,
+      "result": {
+        "code": "success",
+        "at": 119000
+      },
+      "network": [
+        {
+          "type": "http-response",
+          "at": 1000,
+          "status": 200
+        },
+        {
+          "type": "body-bytes",
+          "at": 2000
+        },
+        {
+          "type": "body-bytes",
+          "at": 3000
+        },
+        {
+          "type": "body-bytes",
+          "at": 4000
+        },
+        {
+          "type": "body-eof",
+          "at": 119000
+        }
+      ],
+      "observed": [
+        {
+          "type": "diagnostics",
+          "at": 1000,
+          "httpStatus": 200,
+          "complete": false
+        },
+        {
+          "type": "diagnostics",
+          "at": 2000,
+          "httpStatus": 200,
+          "complete": false
+        },
+        {
+          "type": "diagnostics",
+          "at": 3000,
+          "httpStatus": 200,
+          "complete": false
+        },
+        {
+          "type": "argument-observed",
+          "at": 3000
+        },
+        {
+          "type": "diagnostics",
+          "at": 4000,
+          "httpStatus": 200,
+          "finish": [
+            "tool_calls"
+          ],
+          "complete": false
+        },
+        {
+          "type": "diagnostics",
+          "at": 119000,
+          "complete": true
+        }
+      ],
+      "acceptedNarrativeCallbacks": 1
+    },
+    {
+      "case": "DONE-finishes-without-waiting-HTTP-close",
+      "requestedStream": true,
+      "timeoutMs": 120000,
+      "requests": 1,
+      "result": {
+        "code": "success",
+        "at": 5000
+      },
+      "network": [
+        {
+          "type": "http-response",
+          "at": 1000,
+          "status": 200
+        },
+        {
+          "type": "body-bytes",
+          "at": 2000
+        },
+        {
+          "type": "body-bytes",
+          "at": 3000
+        },
+        {
+          "type": "body-bytes",
+          "at": 4000
+        },
+        {
+          "type": "body-bytes",
+          "at": 5000
+        },
+        {
+          "type": "reader-cancel",
+          "at": 5000
+        }
+      ],
+      "observed": [
+        {
+          "type": "diagnostics",
+          "at": 1000,
+          "httpStatus": 200,
+          "complete": false
+        },
+        {
+          "type": "diagnostics",
+          "at": 2000,
+          "httpStatus": 200,
+          "complete": false
+        },
+        {
+          "type": "diagnostics",
+          "at": 3000,
+          "httpStatus": 200,
+          "complete": false
+        },
+        {
+          "type": "argument-observed",
+          "at": 3000
+        },
+        {
+          "type": "diagnostics",
+          "at": 4000,
+          "httpStatus": 200,
+          "finish": [
+            "tool_calls"
+          ],
+          "complete": false
+        },
+        {
+          "type": "diagnostics",
+          "at": 5000,
+          "complete": true
+        }
+      ],
+      "acceptedNarrativeCallbacks": 1
+    }
+  ],
+  "productionCodeHead": "39676ec8e58b219360ab28b879f1e1f138821c0a",
+  "fixtureRoute": {
+    "protocol": "openai",
+    "model": "gemini4argon",
+    "kind": "injected Mock, no endpoint contacted"
+  }
+}

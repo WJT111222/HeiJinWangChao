@@ -1,0 +1,39 @@
+import {it,expect,vi,afterEach} from '/workspace/ai-response-events/node_modules/vitest/dist/index.js';
+import {IDBFactory} from '/workspace/ai-response-events/node_modules/fake-indexeddb/build/esm/index.js';
+import {AiClient} from '/workspace/ai-response-events/src/services/ai/client';
+import {StoryStage} from '/workspace/ai-response-events/src/workflows/storyStage';
+import {SaveRepository} from '/workspace/ai-response-events/src/services/storage/saveRepository';
+import {createTurnDraft} from '/workspace/ai-response-events/src/domain/drafts';
+import {game} from '/workspace/ai-response-events/src/tests/fixtures/game';
+import {runStageRequest} from '/workspace/ai-response-events/src/services/ai/runtime';
+import {stageResponses} from '/workspace/ai-response-events/src/services/ai/stageResponses';
+import {storyInspections} from '/workspace/ai-response-events/src/services/ai/storyInspection';
+import {requestInspections} from '/workspace/ai-response-events/src/services/ai/inspection';
+import {compatibilitySetup} from '/workspace/ai-response-events/src/tests/fixtures/storyCompatibility';
+import {toolStoryText as story,toolFrame as frame,carrierResponse} from '/workspace/ai-response-events/src/tests/fixtures/storyTools';
+import {splitResponse} from '/workspace/ai-response-events/src/tests/fixtures/responseEvents';
+import {STORY_OUTPUT_TOOL} from '/workspace/ai-response-events/src/services/ai/storyToolContract';
+function setup(){const s=compatibilitySetup('openai',true,true);s.channel.defaultModel='gemini4argon';s.config.routes.story={channelId:s.channel.id,modelId:'gemini4argon'};s.settings.prompts.minNarrativeChars=1;return s;}
+afterEach(()=>{stageResponses.clear();storyInspections.clear();requestInspections.clear();});
+const call=(arg:string)=>({choices:[{index:0,delta:{tool_calls:[{index:0,id:'synthetic-call',type:'function',function:{name:STORY_OUTPUT_TOOL,arguments:arg}}]}}]});
+const finish={choices:[{index:0,delta:{},finish_reason:'tool_calls'}]};
+it.each(['duplicate-finish','args-after-finish','filter','broken-arguments'] as const)('%s：真实 StoryStage/Repository 不保存候选或正式状态，只有一次 Mock 请求',async kind=>{
+ const s=setup(),repo=await SaveRepository.open('tool-diagnostic-'+kind,new IDBFactory());await repo.create(game());await repo.saveDraft(createTurnDraft('save-a',0,'turn-diag','opening','',true,true),null);
+ const before=await repo.loadGame('save-a');let frames:any[];
+ if(kind==='duplicate-finish')frames=[call(JSON.stringify({content:story})),finish,finish];
+ else if(kind==='args-after-finish')frames=[call('{"content":"partial'),finish,{choices:[{index:0,delta:{tool_calls:[{index:0,function:{arguments:'"}'}}]}}]}];
+ else if(kind==='filter')frames=[call(JSON.stringify({content:story})),{choices:[{index:0,delta:{},finish_reason:'content_filter'}]}];
+ else frames=[call('{"content":"partial'),finish];
+ const transport=vi.fn(async()=>splitResponse(frames.map(frame).join('')+'data: [DONE]\n\n',1));const save=vi.spyOn(repo,'saveDraft'),commit=vi.spyOn(repo,'commitTurn');const stage=new StoryStage(repo,new AiClient(transport));
+ try{await expect(stage.generate({...s,draft:before.draft!})).rejects.toMatchObject({code:kind==='filter'?'content_filter':'tool_response',...(kind==='duplicate-finish'||kind==='args-after-finish'?{details:{fieldPath:'storyTool.ordering'}}:{})});expect(transport).toHaveBeenCalledTimes(1);expect(save).not.toHaveBeenCalled();expect(commit).not.toHaveBeenCalled();expect(await repo.loadGame('save-a')).toEqual(before);expect(stageResponses.getSnapshot()[0].status).toBe('failed');expect(stageResponses.getSnapshot()[0].text).toBeDefined();}finally{stage.dispose();repo.close();}
+});
+it.each([
+ ['project-thinking-inside-content','<thinking>合成项目规划</thinking>'+story,true],
+ ['compat-think-prefix-inside-content','<think>合成兼容思考</think>'+story,true],
+ ['extra-JSON-thinking-field',JSON.stringify({content:story,thinking:'额外字段'}),false],
+ ['tag-outside-arguments','<thinking>合成规划</thinking>'+JSON.stringify({content:story}),false],
+] as const)('%s：标签问题与传输顺序独立分类',async(name,text,valid)=>{
+ const s=setup();const raw=name==='extra-JSON-thinking-field'||name==='tag-outside-arguments'?text:JSON.stringify({content:text});const transport=vi.fn(async()=>carrierResponse('openai',true,raw));const attempt=runStageRequest({stage:'story',mode:'opening',userInput:'',state:game(),settings:s.settings},s.config,s.vault,{stream:true},new AiClient(transport));
+ if(valid)expect((await attempt).result).toMatchObject({narrative:'中文🙂，3<5。'});else await expect(attempt).rejects.toMatchObject({code:'tool_response',details:{fieldPath:'storyTool.arguments'}});
+ expect(transport).toHaveBeenCalledTimes(1);
+});

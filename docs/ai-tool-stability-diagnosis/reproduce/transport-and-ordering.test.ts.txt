@@ -1,0 +1,92 @@
+import {it,expect,afterEach,afterAll,vi,describe} from '/workspace/ai-response-events/node_modules/vitest/dist/index.js';
+import {writeFileSync} from 'node:fs';
+import {AiClient} from '/workspace/ai-response-events/src/services/ai/client';
+import {readAiResponseEvents} from '/workspace/ai-response-events/src/services/ai/responseEvents';
+import {StoryToolAssembler} from '/workspace/ai-response-events/src/services/ai/storyToolAssembler';
+import {channelSnapshot} from '/workspace/ai-response-events/src/services/ai/snapshot';
+import {STORY_OUTPUT_TOOL} from '/workspace/ai-response-events/src/services/ai/storyToolContract';
+import {compatibilitySetup} from '/workspace/ai-response-events/src/tests/fixtures/storyCompatibility';
+import {toolStoryText as story,toolFrame as frame} from '/workspace/ai-response-events/src/tests/fixtures/storyTools';
+import {safeAiError} from '/workspace/ai-response-events/src/services/ai/errors';
+import {splitResponse} from '/workspace/ai-response-events/src/tests/fixtures/responseEvents';
+const evidence:any[]=[];
+afterEach(()=>vi.useRealTimers());
+afterAll(()=>writeFileSync('/workspace/pr191-tool-stability-evidence/timing-and-ordering.json',JSON.stringify({source:'synthetic Mock observations, not player trace or live model timings',records:evidence},null,2)));
+const args=JSON.stringify({content:story});
+const start={choices:[{index:0,delta:{tool_calls:[{index:0,id:'synthetic-call',type:'function',function:{name:STORY_OUTPUT_TOOL}}]}}]};
+const parameters=(text:string)=>({choices:[{index:0,delta:{tool_calls:[{index:0,function:{arguments:text}}]}}]});
+const finish={choices:[{index:0,delta:{},finish_reason:'tool_calls'}]};
+const usage={choices:[],usage:{prompt_tokens:100,completion_tokens:200,total_tokens:300}};
+function setup(){const input=compatibilitySetup('openai',true,true);input.channel.defaultModel='gemini4argon';return channelSnapshot(input.channel,input.vault,'gemini4argon');}
+const messages=[{role:'user' as const,content:'合成协议测试，不发送网络请求'}];
+async function observedFrames(values:any[],options:{done?:boolean,contentType?:string,stream?:boolean}={}){
+ let requests=0;const trace:any[]=[];const assembler=new StoryToolAssembler('openai');let failure:any;
+ const stream=options.stream!==false;const body=stream?values.map(frame).join('')+(options.done===false?'':'data: [DONE]\n\n'):JSON.stringify(values[0]);
+ const response=stream?splitResponse(body,1):new Response(body,{headers:{'content-type':options.contentType??'application/json'}});
+ try{for await(const event of readAiResponseEvents(async()=>{requests++;return response;},'openai',stream,new AbortController().signal,true)){
+  const projected:any={type:event.type,sequence:event.source.sequence,transport:event.source.transport};
+  if(event.type==='response'){if(typeof event.finishReason==='string')projected.finish=event.finishReason;projected.hasReasoning=Boolean(event.nativeReasoning);projected.messageStop=event.messageStop;}
+  if(event.type==='tool-start'){projected.slot=event.slot;projected.idPresent=Boolean(event.callId);projected.expectedName=event.name===STORY_OUTPUT_TOOL;}
+  if(event.type==='tool-arguments')projected.delivery=event.delivery;
+  if(event.type==='end')projected.boundary=event.boundary;
+  trace.push(projected);
+  if(event.type==='error')throw event.error;
+  if(event.type==='response')assembler.response(event);
+  else if(event.type==='end')assembler.boundary(event);
+  else if(event.type.startsWith('tool-'))assembler.event(event as any);
+ }assembler.complete();}catch(error){const e=safeAiError(error);failure={code:e.code,fieldPath:e.details?.fieldPath};}
+ expect(requests).toBe(1);return{trace,failure};
+}
+describe('真实投影器/组装器：同一 ordering 错误的不同机制',()=>{
+ const cases=[
+  ['valid-final-args-and-finish-same-frame',[start,{choices:[{index:0,delta:parameters(args).choices[0].delta,finish_reason:'tool_calls'}]}],undefined],
+  ['valid-usage-only-tail',[start,parameters(args),finish,usage],undefined],
+  ['duplicate-finish-in-usage-tail',[start,parameters(args),finish,{...usage,choices:[{index:0,delta:{},finish_reason:'tool_calls'}]}],'storyTool.ordering'],
+  ['parameter-delta-after-finish',[start,parameters(args.slice(0,-3)),finish,parameters(args.slice(-3))],'storyTool.ordering'],
+  ['reasoning-after-finish',[start,parameters(args),finish,{choices:[{index:0,delta:{reasoning_content:'合成公开思考'}}]}],'storyTool.ordering'],
+  ['tool-start-after-finish',[finish,start,parameters(args)],'storyTool.ordering'],
+  ['text-only-json-lookalike',[{choices:[{index:0,delta:{content:args},finish_reason:'stop'}]}],'storyTool.mixed_text'],
+  ['valid-tool-wrong-stop',[start,parameters(args),{choices:[{index:0,delta:{},finish_reason:'stop'}]}],'storyTool.finish'],
+  ['complete-arguments-no-native-finish',[start,parameters(args)],'storyTool.incomplete'],
+ ] as const;
+ it.each(cases)('%s',async(name,values,expected)=>{const result=await observedFrames([...values]);expect(result.failure?.fieldPath).toBe(expected);evidence.push({case:name,...result});});
+ it('重复参数闭合不是无害 usage：工具关闭后再次开始也会 ordering',async()=>{
+  const result=await observedFrames([start,parameters(args),finish,start]);expect(result.failure?.fieldPath).toBe('storyTool.ordering');evidence.push({case:'reopened-closed-slot',...result});
+ });
+ it('完整 JSON 没有跨帧顺序；同一完整载体可通过',async()=>{
+  const result=await observedFrames([{choices:[{index:0,message:{tool_calls:[{id:'synthetic-call',type:'function',function:{name:STORY_OUTPUT_TOOL,arguments:args}}]},finish_reason:'tool_calls'}]}],{stream:false});expect(result.failure).toBeUndefined();evidence.push({case:'nonstream-json',...result});
+ });
+});
+type Timing={name:string,httpAt:number,parts:Array<[number,string]>,closeAt?:number,expected:'timeout'|'success',expectedAt:number};
+const timingCases:Timing[]=[
+ {name:'no-http-response-before-deadline',httpAt:121000,parts:[],expected:'timeout',expectedAt:120000},
+ {name:'http-headers-only',httpAt:1000,parts:[[121000,frame(start)]],expected:'timeout',expectedAt:120000},
+ {name:'sse-pings-only',httpAt:1000,parts:[[2000,': ping\n\n'],[60000,': ping\n\n'],[119000,': ping\n\n']],expected:'timeout',expectedAt:120000},
+ {name:'arguments-keep-arriving-but-total-over-120s',httpAt:1000,parts:[[2000,frame(start)],[3000,frame(parameters(args.slice(0,5)))],[60000,frame(parameters(args.slice(5,10)))],[119000,frame(parameters(args.slice(10)))]],expected:'timeout',expectedAt:120000},
+ {name:'native-tool-finish-without-DONE-or-EOF',httpAt:1000,parts:[[2000,frame(start)],[3000,frame(parameters(args))],[4000,frame(finish)]],expected:'timeout',expectedAt:120000},
+ {name:'native-finish-then-real-EOF-at-119s',httpAt:1000,parts:[[2000,frame(start)],[3000,frame(parameters(args))],[4000,frame(finish)]],closeAt:119000,expected:'success',expectedAt:119000},
+ {name:'DONE-finishes-without-waiting-HTTP-close',httpAt:1000,parts:[[2000,frame(start)],[3000,frame(parameters(args))],[4000,frame(finish)],[5000,'data: [DONE]\n\n']],expected:'success',expectedAt:5000},
+];
+describe('正式 AiClient 的总超时，虚拟时钟、不等待真实 120 秒',()=>{
+ it.each(timingCases)('$name',async test=>{
+  vi.useFakeTimers();vi.setSystemTime(0);const before=Date.now();const network:any[]=[];const observed:any[]=[];let requests=0,renderCalls=0,cancelled=false;const pendingTimers:any[]=[];
+  const schedule=(at:number,f:()=>void)=>pendingTimers.push(setTimeout(f,Math.max(0,at-(Date.now()-before))));
+  const client=new AiClient((_url,init)=>{requests++;return new Promise<Response>(resolve=>{schedule(test.httpAt,()=>{
+   network.push({type:'http-response',at:Date.now()-before,status:200});
+   const body=new ReadableStream<Uint8Array>({start(c){for(const [at,part]of test.parts)schedule(at,()=>{if(!cancelled){network.push({type:'body-bytes',at:Date.now()-before});c.enqueue(new TextEncoder().encode(part));}});if(test.closeAt!==undefined)schedule(test.closeAt,()=>{if(!cancelled){network.push({type:'body-eof',at:Date.now()-before});c.close();}});},cancel(){cancelled=true;for(const t of pendingTimers)clearTimeout(t);network.push({type:'reader-cancel',at:Date.now()-before});}});
+   resolve(new Response(body,{headers:{'content-type':'text/event-stream'}}));
+  });});});
+  const outcome=client.generate(setup(),messages,{storyToolOutput:true,stream:true,timeoutSeconds:120,onDelta:()=>{renderCalls++;},onResponseDiagnostics:d=>{observed.push({type:'diagnostics',at:Date.now()-before,httpStatus:d.httpStatus,finish:d.finishReasons,complete:d.complete});},onRawTextDelta:()=>observed.push({type:'argument-observed',at:Date.now()-before})}).then(()=>({code:'success',at:Date.now()-before}),error=>({code:safeAiError(error).code,at:Date.now()-before}));
+  await vi.advanceTimersByTimeAsync(125000);const result=await outcome;
+  expect(result).toEqual({code:test.expected,at:test.expectedAt});expect(requests).toBe(1);expect(renderCalls).toBe(test.expected==='success'?1:0);
+  evidence.push({case:test.name,requestedStream:true,timeoutMs:120000,requests,result,network,observed,acceptedNarrativeCallbacks:renderCalls});
+  vi.clearAllTimers();
+ });
+ it('取消仍是 cancelled，不是 timeout，已收到参数不进入小说',async()=>{
+  vi.useFakeTimers();const stop=new AbortController();const calls=vi.fn(async()=>new Response(new ReadableStream<Uint8Array>({start(c){c.enqueue(new TextEncoder().encode(frame(start)+frame(parameters(args))));}}),{headers:{'content-type':'text/event-stream'}}));let rendered=0;
+  const promise=new AiClient(calls).generate(setup(),messages,{storyToolOutput:true,stream:true,signal:stop.signal,timeoutSeconds:120,onDelta:()=>{rendered++;}}).catch(error=>safeAiError(error));await vi.advanceTimersByTimeAsync(1000);stop.abort();expect((await promise).code).toBe('cancelled');expect(calls).toHaveBeenCalledTimes(1);expect(rendered).toBe(0);
+ });
+ it('流式请求收到 application/json：保留原 JSON 载体路径',async()=>{
+  const transport=vi.fn(async()=>Response.json({choices:[{message:{tool_calls:[{id:'synthetic-call',type:'function',function:{name:STORY_OUTPUT_TOOL,arguments:args}}]},finish_reason:'tool_calls'}]}));const r=await new AiClient(transport).generate(setup(),messages,{storyToolOutput:true,stream:true});expect(r.text).toBe(story);expect(transport).toHaveBeenCalledTimes(1);
+ });
+});

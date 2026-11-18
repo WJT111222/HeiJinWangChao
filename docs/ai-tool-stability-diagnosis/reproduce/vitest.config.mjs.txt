@@ -1,0 +1,1 @@
+export default {test:{environment:'node',include:['/workspace/pr191-tool-stability-evidence/reproduce/*.test.ts'],testTimeout:10000}};
