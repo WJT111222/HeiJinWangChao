@@ -16,9 +16,18 @@ on:
   workflow_dispatch:
     inputs:
       e2e:
-        description: 同时运行全量端到端测试（约 30 分钟）
+        description: 同时运行端到端测试（全量约 30 分钟）
         type: boolean
         default: true
+      specs:
+        description: 只跑指定的 e2e 文件（空格分隔，如 e2e/game.spec.ts e2e/time-preflight.spec.ts）；留空跑全量
+        type: string
+        default: ''
+      project:
+        description: 只跑电脑端或手机端
+        type: choice
+        options: [all, desktop, mobile]
+        default: all
 
 permissions:
   contents: read
@@ -113,9 +122,19 @@ jobs:
       - name: npm run test:e2e（第 ${{ matrix.shard }}/4 组）
         id: e2e
         continue-on-error: true
+        env:
+          SPECS: ${{ inputs.specs }}
+          PROJECT: ${{ inputs.project }}
         run: |
           set -o pipefail
-          npm run test:e2e -- --shard=${{ matrix.shard }}/4 2>&1 | tee e2e-output.txt
+          args=(--shard=${{ matrix.shard }}/4)
+          if [ -n "$PROJECT" ] && [ "$PROJECT" != all ]; then args+=(--project="$PROJECT"); fi
+          # 文件名只允许 e2e/ 下的 .spec.ts，防止把任意参数传给 Playwright。
+          for spec in $SPECS; do
+            [[ "$spec" =~ ^e2e/[A-Za-z0-9._/-]+\.spec\.ts(:[0-9]+)?$ ]] || { echo "不接受的文件：$spec"; exit 2; }
+            args+=("$spec")
+          done
+          npm run test:e2e -- "${args[@]}" 2>&1 | tee e2e-output.txt
 
       - name: 汇总本组结果
         if: always() && steps.e2e.outcome != 'skipped'
@@ -135,6 +154,16 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
           if [ "$OUTCOME" = failure ]; then echo "::warning title=端到端测试 第 ${SHARD}/4 组（仅供参考）::${counts}"; fi
+
+      # 每个失败用例的页面结构快照（error-context.md）直接打印到日志，方便不下载附件就能定位原因。
+      - name: 打印失败时的页面快照
+        if: always() && steps.e2e.outcome == 'failure'
+        run: |
+          find test-results -name error-context.md 2>/dev/null | sort | head -60 | while read -r file; do
+            echo "::group::$(dirname "$file" | sed 's#^test-results/##')"
+            head -c 6000 "$file"; echo
+            echo "::endgroup::"
+          done
 
       - name: 失败时上传测试记录与截图
         if: always() && steps.e2e.outcome == 'failure'
