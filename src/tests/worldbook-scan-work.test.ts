@@ -139,3 +139,79 @@ describe('规模边界：默认上限内的典型与极端负载', () => {
     expect(Date.now() - started).toBeLessThan(3000);
   });
 });
+
+describe('分组处理计入单次扫描工作量（独立审查 P2-5）', () => {
+  const names = (count: number, prefix = 'g') => Array.from({ length: count }, (_, i) => `${prefix}${i}`).join(',');
+  const grouped = (count: number, group: string, extra: Partial<WorldbookEntry> = {}) =>
+    Array.from({ length: count }, (_, i) => entry({ entryId: `m${i}`, constant: true, group, content: `成员${i}`, ...extra }));
+
+  it('大量分组名不能绕过上限：分组构建在耗尽前停止，组内候选不激活，诊断明确且结果可复现', () => {
+    const entries = [...grouped(300, names(400)), entry({ entryId: 'solo', constant: true, order: 50, content: '无分组' })];
+    // 上限够判断全部条目，但不够处理 300 × 400 个分组成员
+    const limit = 2_000_000;
+    const r = run(entries, ['码头'], { settings: { maxScanWork: limit } });
+    expect(r.work.exhausted).toBeDefined();
+    expect(r.work.used <= limit).toBe(true);
+    expect(r.activated.map((a) => a.entryId)).toEqual(['solo']); // 不属于任何分组的条目照常处理
+    const members = r.decisions.filter((d) => d.entryId.startsWith('m'));
+    expect(members.every((d) => d.status === 'not_activated' && d.reason === 'scan_limit_reached' && d.detail === '分组处理未完成')).toBe(true);
+    expect(JSON.stringify(run(entries, ['码头'], { settings: { maxScanWork: limit } }))).toBe(JSON.stringify(r));
+  });
+
+  it('同一组名重复出现：每次出现都计入工作量', () => {
+    const once = run(grouped(20, 'g'), ['码头']);
+    const repeated = run(grouped(20, Array(2000).fill('g').join(',')), ['码头']);
+    expect(repeated.work.used - once.work.used).toBeGreaterThan(20 * 2000 * 50);
+    expect(repeated.activated).toHaveLength(1);
+  });
+
+  it('评估阶段耗尽：已找到但同组成员未判断完的候选，不作为正常候选激活', () => {
+    const first = entry({ entryId: 'first', order: 300, keys: ['码头'], group: 'g', content: '先判断的组员' });
+    const plain = entry({ entryId: 'plain', order: 290, keys: ['码头'], content: '无分组' });
+    const filler = Array.from({ length: 200 }, (_, i) => entry({ entryId: `f${i}`, order: 200, keys: [`/x{1,40}${i}/`] }));
+    const last = entry({ entryId: 'last', order: 100, keys: ['码头'], group: 'g', content: '没轮到的组员' });
+    const r = run([first, plain, ...filler, last], ['码头'], { settings: { maxScanWork: 150_000 } });
+    expect(r.work.exhausted?.loop).toBe(1);
+    expect(r.activated.map((a) => a.entryId)).toEqual(['plain']);
+    expect(r.decisions.find((d) => d.entryId === 'first')).toMatchObject({ reason: 'scan_limit_reached', detail: '同组条目未判断完' });
+    expect(r.decisions.find((d) => d.entryId === 'last')!.reason).toBe('scan_limit_reached');
+  });
+
+  it('分组评分时耗尽：后面的分组也停止处理，不留下不完整的抽选结果', () => {
+    const scored = Array.from({ length: 3 }, (_, i) => entry({ entryId: `s${i}`, keys: ['码头'], group: 'a', useGroupScoring: true, secondaryKeys: ['/码{1,30}头/'], order: 200 }));
+    const weighted = Array.from({ length: 3 }, (_, i) => entry({ entryId: `w${i}`, keys: ['码头'], group: 'b', order: 100 }));
+    const entries = [...scored, ...weighted];
+    const text = ['码头'.repeat(500)];
+    const full = run(entries, text);
+    expect(full.activated).toHaveLength(2);
+    // 找到恰好在评分中耗尽的上限
+    let limit = full.work.used - 1;
+    let r = run(entries, text, { settings: { maxScanWork: limit } });
+    while (!r.decisions.some((d) => d.detail?.includes('评分未完成')) && limit > 0) {
+      limit -= 1000;
+      r = run(entries, text, { settings: { maxScanWork: limit } });
+    }
+    expect(r.work.exhausted).toBeDefined();
+    expect(r.activated).toEqual([]);
+    for (const id of ['w0', 'w1', 'w2']) expect(r.decisions.find((d) => d.entryId === id)).toMatchObject({ reason: 'scan_limit_reached', detail: '分组处理未完成' });
+  });
+
+  it('对抗性多组（大量条目 × 大量组名）：默认上限内停止，耗时受约束', () => {
+    const entries = grouped(1000, names(3000, 'gg'));
+    const started = Date.now();
+    const r = run(entries, ['码头']);
+    const elapsed = Date.now() - started;
+    expect(r.work.exhausted).toBeDefined();
+    expect(r.work.used <= DEFAULT_TRIGGER_SETTINGS.maxScanWork).toBe(true);
+    expect(r.activated).toEqual([]);
+    expect(elapsed).toBeLessThan(3000);
+  });
+
+  it('默认上限内的正常分组规模不受影响', () => {
+    const entries = Array.from({ length: 500 }, (_, i) => entry({ entryId: `n${i}`, constant: true, group: `组${i % 50}`, content: `${i}` }));
+    const r = run(entries, ['码头']);
+    expect(r.work.exhausted).toBeUndefined();
+    expect(r.activated).toHaveLength(50); // 每组留一条
+    expect(r.decisions.filter((d) => d.reason === 'group_weighted')).toHaveLength(450);
+  });
+});

@@ -80,3 +80,45 @@ describe('线性时间：对抗输入也很快', () => {
     }
   });
 });
+
+describe('忽略大小写的 Unicode 对照（独立审查 P2-3）', () => {
+  /** 拉丁扩展、希腊、西里尔、亚美尼亚、格鲁吉亚、切罗基、罗马数字、圈字母、全角等区段的全部 UTF-16 码元。 */
+  const RANGES: Array<[number, number]> = [
+    [0x0000, 0x058f], [0x10a0, 0x10ff], [0x13a0, 0x13ff], [0x1c80, 0x1cbf], [0x1d00, 0x1dbf], [0x1e00, 0x1fff],
+    [0x2100, 0x218f], [0x24b0, 0x24ff], [0x2c00, 0x2d2f], [0xa640, 0xa7ff], [0xab70, 0xabbf], [0xff00, 0xff5f],
+  ];
+  const SAMPLE: string[] = [];
+  for (const [lo, hi] of RANGES) for (let c = lo; c <= hi; c++) SAMPLE.push(String.fromCharCode(c));
+  const hex = (c: string) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`;
+  const tricky = [
+    'µ', 'μ', 'Μ', 'ς', 'σ', 'Σ', 'ǅ', 'Ǆ', 'ǆ', 'ǈ', 'ǋ', 'ǲ', 'K', 'k', 'K', 's', 'ſ', 'ß', 'ẞ', 'İ', 'ı', 'i', 'I',
+    'ϐ', 'β', 'ϑ', 'θ', 'ϕ', 'φ', 'ϰ', 'κ', 'ϱ', 'ρ', 'ϵ', 'ε', 'ͅ', 'ι', 'ι', 'ᾳ', 'Ω', 'ω', 'Å', 'å',
+    'ẛ', 'ꭰ', 'Ꭰ', 'ᏸ', 'Ａ', 'ａ', 'Ā', 'ā', 'Ç', 'ç', 'ÿ', 'Ÿ', 'ᲀ', 'в', 'ᲈ', 'ꙋ',
+  ];
+
+  it('单个特殊字符：与原生 RegExp 在各区段全部码元上的判断一致', () => {
+    for (const c of tricky) {
+      agree(hex(c), 'i', SAMPLE);
+      agree(`[${hex(c)}]`, 'i', SAMPLE);
+      agree(`[^${hex(c)}]`, 'i', SAMPLE);
+    }
+  });
+
+  it('字符类范围与内置类：与原生 RegExp 一致', () => {
+    const classes = ['[À-ÿ]', '[Ā-ſ]', '[ǄǅǆǇ-ǌ]', '[Ͱ-Ͽ]', '[α-ω]', '[Α-Ω]', '[а-я]', '[Ⅰ-ⅿ]', '[ⓐ-ⓩ]', '[ᏸ-ᏽ]', '[ꭰ-ꮿ]',
+      '[ａ-ｚ]', '[a-z]', '[^a-z]', '[A-Z]', '\\w', '\\W', '[\\w]', '[^\\W]', '[\\s\\S]', '[ⰰ-ⱟ]', '[ႠჅ]', '[k-k]', '[\\u2126\\u212a]'];
+    for (const source of classes) agree(source, 'i', SAMPLE);
+  });
+
+  it('多字符文本：特殊大小写映射（ß、ſ、İ、开尔文符号等）', () => {
+    const inputs = ['STRASSE', 'straße', 'STRAẞE', 'ſtraße', 'İstanbul', 'istanbul', 'ISTANBUL', 'ıstanbul', 'Kelvin', 'kelvin',
+      'ΣΟΦΙΑ', 'σοφια', 'σοφιας', 'ǅungla', 'ǆungla', 'ǄUNGLA', 'µm', 'μm', 'ΜM', 'ᲀᲁ', 'ВД'];
+    for (const source of ['straße', 'STRASSE', 'ſtraße', 'İstanbul', 'istanbul', 'kelvin', '\\u212aelvin', 'σοφιας', 'ΣΟΦΙΑΣ',
+      'ǆungla', 'ǅ\\w+', 'µm', '[µ]m', 'вд', '[в][д]', '^\\u1c80', '(?:ß|ss)+']) agree(source, 'i', inputs);
+  });
+
+  it('全部 65536 个码元：几个大小写等价类较大的字符逐一对照', () => {
+    const all = Array.from({ length: 0x10000 }, (_, c) => String.fromCharCode(c));
+    for (const c of ['µ', 'ǅ', 'Ǆ', 'K', 'θ', 'Σ', 'ᲀ', 'в']) agree(hex(c), 'i', all);
+  });
+});

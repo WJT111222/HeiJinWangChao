@@ -294,6 +294,57 @@ describe('插入计划', () => {
   });
 });
 
+describe('特殊 Outlet 与分组名称（独立审查 P2-2）', () => {
+  const SPECIAL = ['__proto__', 'constructor', 'prototype', 'toString', 'hasOwnProperty', 'valueOf', '__defineGetter__', 'isPrototypeOf'];
+
+  it('特殊 Outlet 名称：不抛错、各自独立收集、不影响对象原型', () => {
+    const entries = SPECIAL.flatMap((name, i) => [
+      entry({ entryId: `o${i}a`, constant: true, position: 7, outletName: name, order: 1, content: `${name}-1` }),
+      entry({ entryId: `o${i}b`, constant: true, position: 7, outletName: name, order: 2, content: `${name}-2` }),
+    ]);
+    const r = run(entries, []);
+    expect(Object.keys(r.plan.outlets).sort()).toEqual([...SPECIAL].sort());
+    for (const name of SPECIAL) {
+      expect(Object.hasOwn(r.plan.outlets, name)).toBe(true);
+      expect([...r.plan.outlets[name]].sort()).toEqual([`${name}-1`, `${name}-2`]);
+    }
+    expect(r.activated.every((a) => a.placed)).toBe(true);
+    // 普通对象的原型没有被改动
+    const probe: Record<string, unknown> = {};
+    expect(Object.getPrototypeOf(probe)).toBe(Object.prototype);
+    expect(typeof probe.toString).toBe('function');
+    expect(Object.hasOwn(Object.prototype, 'push')).toBe(false);
+  });
+
+  it('插入计划可以 JSON 序列化并原样还原（包括 "__proto__" 名称）', () => {
+    const r = run(SPECIAL.map((name, i) => entry({ entryId: `j${i}`, constant: true, position: 7, outletName: name, content: name })), []);
+    const back = JSON.parse(JSON.stringify(r.plan)) as typeof r.plan;
+    for (const name of SPECIAL) {
+      expect(Object.hasOwn(back.outlets, name)).toBe(true);
+      expect(back.outlets[name]).toEqual([name]);
+    }
+    expect(JSON.parse(JSON.stringify(r))).toEqual(JSON.parse(JSON.stringify(run(SPECIAL.map((name, i) => entry({ entryId: `j${i}`, constant: true, position: 7, outletName: name, content: name })), []))));
+  });
+
+  it('特殊名称组合：书 ID、条目 ID、分组、Outlet、计时效果同时使用特殊名称', () => {
+    const book = (entries: WorldbookEntry[]) => [{ bookId: '__proto__', versionId: 'constructor', entries }];
+    const entries = [
+      entry({ entryId: 'constructor', comment: 'toString', keys: ['码头'], group: '__proto__, toString', position: 7, outletName: 'constructor', content: '甲', sticky: 2 }),
+      entry({ entryId: '__proto__', comment: 'valueOf', keys: ['码头'], group: '__proto__,constructor', position: 7, outletName: '__proto__', content: '乙' }),
+      entry({ entryId: 'toString', constant: true, group: 'prototype', position: 7, outletName: 'hasOwnProperty', content: '丙' }),
+    ];
+    const first = run([], [], { books: book(entries), messages: ['码头'] });
+    // 同组「__proto__」只留一条；「prototype」组只有一条，照常激活
+    expect(first.activated.filter((a) => a.entryId !== 'toString')).toHaveLength(1);
+    expect(first.activated.map((a) => a.entryId)).toContain('toString');
+    expect(Object.getOwnPropertyDescriptor(first.plan.outlets, 'hasOwnProperty')?.value).toEqual(['丙']);
+    expect(first.decisions.map((d) => d.reason).filter((x) => x === 'group_weighted')).toHaveLength(1);
+    const again = run([], [], { books: book(entries), messages: ['茶馆'], messageCount: 3, timedState: first.nextTimedState });
+    expect(JSON.parse(JSON.stringify(again.nextTimedState))).toEqual(again.nextTimedState);
+    expect(Object.getPrototypeOf({})).toBe(Object.prototype);
+  });
+});
+
 describe('纯函数：预览不改变任何东西', () => {
   function deepFreeze<T>(value: T): T {
     if (value && typeof value === 'object') { Object.freeze(value); for (const v of Object.values(value)) deepFreeze(v); }

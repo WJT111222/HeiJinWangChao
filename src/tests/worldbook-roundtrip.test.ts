@@ -113,3 +113,65 @@ describe('确定性哈希与特殊键', () => {
     if (native.ok) expect(native.release.contentHash).toBe(imported.release.contentHash);
   });
 });
+
+describe('无损导出：宽松导入的原始字段形态（独立审查 P2-1）', () => {
+  /** 每次返回新对象。条目 0 用数字字符串，条目 1 用 0 / 1 表示真假，条目 2 用 null，条目 3 几乎什么都没写。 */
+  const looseBook = () => ({
+    name: '宽松写法',
+    extra: null,
+    entries: {
+      '0': { uid: 0, key: ['码头'], content: '甲', order: '50', depth: '6', probability: '35', position: '1', selectiveLogic: '2', scanDepth: '3', sticky: '2', groupWeight: '80' },
+      '1': { uid: 1, key: ['港口'], content: '乙', constant: 1, selective: 0, disable: 0, caseSensitive: 1, useProbability: 0, groupOverride: 1, ignoreBudget: 0 },
+      '2': { uid: null, key: ['茶楼'], content: '丙', comment: null, order: null, depth: null, scanDepth: null, group: null, sticky: null, extensions: null, customNull: null, customObject: { list: [1, null] } },
+      '3': { key: ['夜市'], content: '丁' },
+    },
+  });
+  const pick = (value: Record<string, unknown>, key: string) => (value.entries as Record<string, Record<string, unknown>>)[key];
+
+  it('数字字符串导入后不编辑直接导出：字段仍是原来的字符串', async () => {
+    const release = await ok(looseBook());
+    expect(release.entries.find((e) => e.sourceKey === '0')!.order).toBe(50); // 内部运行用规范化后的数字
+    const { value } = exportSillyTavern(release);
+    expect(pick(value, '0')).toEqual(looseBook().entries['0']);
+  });
+
+  it('0 / 1 表示的真假导入后直接导出：仍是 0 / 1', async () => {
+    const release = await ok(looseBook());
+    expect(release.entries.find((e) => e.sourceKey === '1')!.constant).toBe(true);
+    const { value } = exportSillyTavern(release);
+    expect(pick(value, '1')).toEqual(looseBook().entries['1']);
+  });
+
+  it('null、缺失字段、未知字段原样保留；整本文件逐字段一致', async () => {
+    const { value } = exportSillyTavern(await ok(looseBook()));
+    expect(pick(value, '2')).toEqual(looseBook().entries['2']);
+    expect(Object.keys(pick(value, '3')).sort()).toEqual(['content', 'key']);
+    expect(canonicalJson(value)).toBe(canonicalJson(looseBook()));
+  });
+
+  it('只编辑一个字段：该字段写出新值，其余未编辑字段保持原来的写法', async () => {
+    const release = await ok(looseBook());
+    const edited: WorldbookRelease = {
+      ...release,
+      entries: release.entries.map((e) => e.sourceKey === '0' ? { ...e, content: '改过的甲', order: 60 }
+        : e.sourceKey === '1' ? { ...e, constant: false } : e.sourceKey === '2' ? { ...e, depth: 9 } : e),
+    };
+    const { value } = exportSillyTavern(edited);
+    expect(pick(value, '0')).toEqual({ ...looseBook().entries['0'], content: '改过的甲', order: 60 });
+    expect(pick(value, '1')).toEqual({ ...looseBook().entries['1'], constant: false });
+    expect(pick(value, '2')).toEqual({ ...looseBook().entries['2'], depth: 9 });
+    expect(pick(value, '3')).toEqual(looseBook().entries['3']);
+  });
+
+  it('数组形式同样保持原写法', async () => {
+    const book = { entries: Object.values(looseBook().entries) };
+    const { value } = exportSillyTavern(await ok(book));
+    expect(canonicalJson(value)).toBe(canonicalJson({ entries: Object.values(looseBook().entries) }));
+  });
+
+  it('导出结果再导入：规范化条目不变', async () => {
+    const first = await ok(looseBook());
+    const second = await ok(exportSillyTavern(first).value);
+    expect(second.entries).toEqual(first.entries);
+  });
+});
