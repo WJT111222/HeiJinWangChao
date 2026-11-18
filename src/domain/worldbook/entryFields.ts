@@ -1,6 +1,7 @@
 import { canonicalJson } from './canonical';
 import { notice, type NoticeCollector } from './notices';
-import { classifyKey, regexRisk, MAX_REGEX_SOURCE_CHARS } from './regexKey';
+import { classifyKey } from './regexKey';
+import { compileSafeRegex, SAFE_REGEX_REASON_TEXT } from './safeRegex';
 import { ENTRY_POSITIONS, GENERATION_TRIGGERS, WORLDBOOK_LIMITS, isPlainObject, type WorldbookEntry } from './schema';
 
 /**
@@ -113,10 +114,9 @@ function checkKeys(keys: readonly string[], entryRef: string, field: string, not
     const kind = classifyKey(key);
     if (kind.kind === 'invalid-regex') notices.add(notice('regex_invalid', { entryRef, field }, { value: key }));
     if (kind.kind === 'regex') {
-      const risk = regexRisk(kind.source);
-      if (risk === 'too-long') notices.add(notice('regex_too_long', { entryRef, field }, { limit: MAX_REGEX_SOURCE_CHARS }));
-      if (risk === 'risky') notices.add(notice('regex_risky', { entryRef, field }, { value: key }));
-      if (/[gy]/.test(kind.flags)) notices.add(notice('regex_stateful_flag', { entryRef, field }, { value: key }));
+      const compiled = compileSafeRegex(kind.source, kind.flags);
+      if (!compiled.ok) notices.add(notice('regex_unsupported', { entryRef, field }, { value: key, limit: SAFE_REGEX_REASON_TEXT[compiled.reason] }));
+      else if (kind.flags.includes('y')) notices.add(notice('regex_sticky_flag', { entryRef, field }, { value: key }));
     }
   }
 }

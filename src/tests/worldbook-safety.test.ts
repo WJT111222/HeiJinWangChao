@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { canonicalJson } from '../domain/worldbook/canonical';
-import { classifyKey, regexRisk } from '../domain/worldbook/regexKey';
+import { classifyKey } from '../domain/worldbook/regexKey';
 import { importWorldbookText, importWorldbookValue, utf8Bytes } from '../domain/worldbook/importWorldbook';
 import { WORLDBOOK_LIMITS } from '../domain/worldbook/schema';
 
@@ -93,13 +93,13 @@ describe('不执行、不联网', () => {
     expect(result.release.entries[0].inert.automationId).toBe('auto');
   });
 
-  it('灾难性正则只做静态预检，导入很快完成', async () => {
-    const started = Date.now();
-    const result = await importWorldbookValue({ entries: { 0: { uid: 0, key: ['/(a+)+$/', '/^(\\w+\\s?)*$/'], content: 'a'.repeat(50) + '!' } } });
+  it('导入时只编译正则做支持性检查，不拿它匹配任何文本', async () => {
+    const result = await importWorldbookValue({ entries: { 0: { uid: 0, key: ['/(a+)+$/', '/(?=a)b/', '/\\p{L}/u'], content: 'a'.repeat(50) + '!' } } });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.release.compatibility.filter((n) => n.code === 'regex_risky')).toHaveLength(2);
-    expect(Date.now() - started).toBeLessThan(2000);
+    expect(result.release.compatibility.filter((n) => n.code === 'regex_unsupported').map((n) => n.message)).toEqual([
+      expect.stringContaining('前瞻或后顾'), expect.stringContaining('u / v 标志'),
+    ]);
   });
 });
 
@@ -116,11 +116,4 @@ describe('正则关键词分类（与参照版本行为一致）', () => {
     expect(classifyKey('//')).toEqual({ kind: 'text' });
   });
 
-  it('风险预检', () => {
-    expect(regexRisk('(a+)+')).toBe('risky');
-    expect(regexRisk('(\\w+){2,}')).toBe('risky');
-    expect(regexRisk('(a)\\1')).toBe('risky');
-    expect(regexRisk('码头\\d+号')).toBeNull();
-    expect(regexRisk('a'.repeat(1001))).toBe('too-long');
-  });
 });

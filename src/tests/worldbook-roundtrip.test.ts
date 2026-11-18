@@ -12,7 +12,7 @@ async function ok(value: unknown): Promise<WorldbookRelease> {
   if (!result.ok) throw new Error(JSON.stringify(result.notices));
   return result.release;
 }
-const withoutSourceKey = (release: WorldbookRelease) => release.entries.map(({ sourceKey: _sourceKey, ...rest }) => rest);
+const withoutSourceKey = (release: WorldbookRelease) => release.entries.map((e) => ({ ...e, sourceKey: null }));
 
 describe('酒馆格式回环', () => {
   it('对象形式：导出与原文件完全一致（缺省字段不会凭空增加，未知字段原样带回）', async () => {
@@ -44,9 +44,7 @@ describe('王朝格式回环', () => {
     const back = await importWorldbookText(exportNativeText(release));
     expect(back.ok).toBe(true);
     if (!back.ok) return;
-    const { compatibility: _a, ...left } = back.release;
-    const { compatibility: _b, ...right } = release;
-    expect(left).toEqual(right);
+    expect({ ...back.release, compatibility: [] }).toEqual({ ...release, compatibility: [] });
   });
 
   it('改动任何一个字都会因哈希对不上而被拒绝', async () => {

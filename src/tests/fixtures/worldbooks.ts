@@ -61,7 +61,7 @@ export function sillyTavernDictBook() {
     bookLevelUnknown: { keep: true },
     entries: {
       0: fullSillyTavernEntry(),
-      1: { uid: 1, key: ['/a(b+)+c/', '/渡口/g', '/a/b/', '张三'], keysecondary: [], content: '张三在渡口摆摊。', order: 50 },
+      1: { uid: 1, key: ['/a(b+)+c/', '/渡口/y', '/(码)\\1/', '/a/b/', '张三'], keysecondary: [], content: '张三在渡口摆摊。', order: 50 },
       5: { uid: 5, key: ['李四'], content: '李四是茶楼老板。' },
       7: { uid: 7, key: [], content: '没有关键词的条目。' },
     },

@@ -1,14 +1,13 @@
 import { contentHash } from './canonical';
 import { checkEntry } from './entryFields';
 import { notice, NoticeCollector } from './notices';
-import type { ImportOptions } from './release';
 import { WORLDBOOK_LIMITS, WorldbookFileSchema, type WorldbookImportResult, type WorldbookRelease } from './schema';
 
 /**
  * 王朝世界书格式：保留文件里的书 ID、版本 ID 和内容，重算哈希核对；
  * 来源一律改为 local，兼容提示按条目重新生成，不信任文件自带的这两项。
  */
-export async function importNative(root: Record<string, unknown>, _options: ImportOptions = {}): Promise<WorldbookImportResult> {
+export async function importNative(root: Record<string, unknown>): Promise<WorldbookImportResult> {
   const notices = new NoticeCollector();
   if (Array.isArray(root.entries) && root.entries.length > WORLDBOOK_LIMITS.maxEntries) {
     notices.add(notice('too_many_entries', {}, { value: root.entries.length, limit: WORLDBOOK_LIMITS.maxEntries }));

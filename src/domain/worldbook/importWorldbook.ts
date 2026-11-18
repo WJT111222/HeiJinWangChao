@@ -48,7 +48,7 @@ export function importWorldbookValue(value: unknown, options: ImportOptions = {}
   const detected = detectWorldbookFormat(value);
   if ('error' in detected) return Promise.resolve({ ok: false, notices: [detected.error] });
   switch (detected.format) {
-    case 'heijin': return importNative(value, options);
+    case 'heijin': return importNative(value);
     case 'character-card-v2': return importCharacterBook(value, options);
     case 'sillytavern': return importSillyTavern(value, options);
   }

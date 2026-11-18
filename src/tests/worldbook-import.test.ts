@@ -57,7 +57,7 @@ describe('酒馆世界书导入', () => {
 
   it('兼容提示覆盖正则、无关键词、不生效设置、宏和未知字段', async () => {
     const release = await ok(sillyTavernDictBook());
-    for (const code of ['regex_risky', 'regex_stateful_flag', 'regex_invalid', 'never_triggers', 'position_unmapped',
+    for (const code of ['regex_unsupported', 'regex_sticky_flag', 'regex_invalid', 'never_triggers', 'position_unmapped',
       'trigger_unmapped', 'character_filter_inert', 'match_source_inert', 'vectorized_inert', 'automation_ignored',
       'macro_preserved', 'unknown_fields_preserved']) expect(codes(release)).toContain(code);
     const never = release.compatibility.find((n) => n.code === 'never_triggers')!;
@@ -67,15 +67,20 @@ describe('酒馆世界书导入', () => {
     expect(release.compatibility.find((n) => n.code === 'unknown_fields_preserved')!.message).toContain('customFlag');
   });
 
-  it('正则关键词原样保留：不拆分、不转义；无效正则按普通文本处理并提示', async () => {
+  it('正则关键词原样保留：不拆分、不转义；无效正则按普通文本处理，不支持的写法明确提示', async () => {
     const entry = (await ok(sillyTavernDictBook())).entries.find((e) => e.entryId === '1')!;
-    expect(entry.keys).toEqual(['/a(b+)+c/', '/渡口/g', '/a/b/', '张三']);
+    expect(entry.keys).toEqual(['/a(b+)+c/', '/渡口/y', '/(码)\\1/', '/a/b/', '张三']);
+    const release = await ok(sillyTavernDictBook());
+    // 嵌套重复在安全子集内（线性时间匹配），不报不支持；反向引用不在子集内。
+    expect(release.compatibility.filter((n) => n.code === 'regex_unsupported').map((n) => n.message)).toEqual([
+      expect.stringContaining('/(码)\\1/'),
+    ]);
   });
 
   it('entries 为数组时与对象形式得到相同条目（只有 sourceKey 不同）', async () => {
     const dict = await ok(sillyTavernDictBook());
     const list = await ok(sillyTavernArrayBook());
-    const strip = (r: WorldbookRelease) => r.entries.map(({ sourceKey: _sourceKey, ...rest }) => rest);
+    const strip = (r: WorldbookRelease) => r.entries.map((e) => ({ ...e, sourceKey: null }));
     expect(strip(list)).toEqual(strip(dict));
     expect(list.entries.map((e) => e.sourceKey)).toEqual(['0', '1', '2', '3']);
   });
