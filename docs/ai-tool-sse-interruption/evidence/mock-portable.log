@@ -1,0 +1,29 @@
+
+ RUN  v5.0.5 /workspace/pr191-sse-interruption
+
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > reader-rejects-after-first-read 152ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > partial-utf8-then-reader-rejects 49ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > partial-utf8-then-eof-decoder-flush-fai… 37ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > invalid-utf8-while-reading 42ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > data-line-without-separator-then-read-e… 16ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > heartbeat-then-reader-rejects 17ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > heartbeat-only-clean-eof 14ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > blank-event-field-without-data-clean-eof 14ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > html-200-unrecognized-tail-at-eof 12ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > html-200-all-lines-terminated 21ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > json-error-mislabelled-text 13ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > correctly-labelled-json-error 14ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > truncated-data-json-at-clean-eof 15ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > valid-data-json-at-eof-but-no-provider-… 15ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > valid-tool-and-finish-at-eof-without-fi… 17ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > valid-lf-done-multibyte-split 15ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > valid-crlf-done 15ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > cr-only-framing-confirmed-gap 11ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > data-without-separator-total-timeout 108ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > partial-data-user-cancel 104ms
+ ✓ .pr191-sse-mock/sse-interruption.test.ts > 真实 AiClient 的 120s 总超时不因无分隔 data 或心跳重置，观察器两态一致 3ms
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+   Start at  23:51:05
+   Duration  1.79s (tests 43%, transform 42%, import 15%)

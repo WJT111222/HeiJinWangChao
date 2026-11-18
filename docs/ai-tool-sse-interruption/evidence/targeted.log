@@ -1,0 +1,8 @@
+
+ RUN  v5.0.5 /workspace/pr191-sse-interruption
+
+
+ Test Files  5 passed (5)
+      Tests  318 passed (318)
+   Start at  23:50:18
+   Duration  2.61s (transform 45%, tests 36%, import 18%)

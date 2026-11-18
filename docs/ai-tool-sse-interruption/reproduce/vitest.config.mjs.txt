@@ -1,0 +1,7 @@
+export default {
+  test: {
+    environment: 'node',
+    include: ['.pr191-sse-mock/sse-interruption.test.ts'],
+    testTimeout: 15000,
+  },
+};

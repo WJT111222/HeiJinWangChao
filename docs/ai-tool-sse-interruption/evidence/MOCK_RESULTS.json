@@ -1,0 +1,433 @@
+[
+  {
+    "name": "reader-rejects-after-first-read",
+    "readerErrorInjected": true,
+    "eofInjected": false,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": false,
+      "boundary": null,
+      "outcome": {
+        "code": "stream_interrupted",
+        "frame": 0,
+        "step": "waiting-sse-frame"
+      }
+    }
+  },
+  {
+    "name": "partial-utf8-then-reader-rejects",
+    "readerErrorInjected": true,
+    "eofInjected": false,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": false,
+      "boundary": null,
+      "outcome": {
+        "code": "stream_interrupted",
+        "frame": 0,
+        "step": "waiting-sse-frame"
+      }
+    }
+  },
+  {
+    "name": "partial-utf8-then-eof-decoder-flush-fails",
+    "readerErrorInjected": false,
+    "eofInjected": true,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": false,
+      "boundary": null,
+      "outcome": {
+        "code": "stream_interrupted",
+        "frame": 0,
+        "step": "waiting-sse-frame"
+      }
+    }
+  },
+  {
+    "name": "invalid-utf8-while-reading",
+    "readerErrorInjected": false,
+    "eofInjected": false,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": false,
+      "boundary": null,
+      "outcome": {
+        "code": "stream_interrupted",
+        "frame": 0,
+        "step": "waiting-sse-frame"
+      }
+    }
+  },
+  {
+    "name": "data-line-without-separator-then-read-error",
+    "readerErrorInjected": true,
+    "eofInjected": false,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": false,
+      "boundary": null,
+      "outcome": {
+        "code": "stream_interrupted",
+        "frame": 0,
+        "step": "waiting-sse-frame"
+      }
+    }
+  },
+  {
+    "name": "heartbeat-then-reader-rejects",
+    "readerErrorInjected": true,
+    "eofInjected": false,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": false,
+      "boundary": null,
+      "outcome": {
+        "code": "stream_interrupted",
+        "frame": 0,
+        "step": "waiting-sse-frame"
+      }
+    }
+  },
+  {
+    "name": "heartbeat-only-clean-eof",
+    "readerErrorInjected": false,
+    "eofInjected": true,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": false,
+      "boundary": "eof",
+      "outcome": {
+        "code": "tool_response",
+        "toolRule": "incomplete",
+        "frame": 0,
+        "step": "validating-carrier"
+      }
+    }
+  },
+  {
+    "name": "blank-event-field-without-data-clean-eof",
+    "readerErrorInjected": false,
+    "eofInjected": true,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": false,
+      "boundary": "eof",
+      "outcome": {
+        "code": "tool_response",
+        "toolRule": "incomplete",
+        "frame": 0,
+        "step": "validating-carrier"
+      }
+    }
+  },
+  {
+    "name": "html-200-unrecognized-tail-at-eof",
+    "readerErrorInjected": false,
+    "eofInjected": true,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": false,
+      "boundary": null,
+      "outcome": {
+        "code": "stream_interrupted",
+        "frame": 0,
+        "step": "waiting-sse-frame"
+      }
+    }
+  },
+  {
+    "name": "html-200-all-lines-terminated",
+    "readerErrorInjected": false,
+    "eofInjected": true,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": false,
+      "boundary": "eof",
+      "outcome": {
+        "code": "tool_response",
+        "toolRule": "incomplete",
+        "frame": 0,
+        "step": "validating-carrier"
+      }
+    }
+  },
+  {
+    "name": "json-error-mislabelled-text",
+    "readerErrorInjected": false,
+    "eofInjected": true,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": false,
+      "boundary": null,
+      "outcome": {
+        "code": "stream_interrupted",
+        "frame": 0,
+        "step": "waiting-sse-frame"
+      }
+    }
+  },
+  {
+    "name": "correctly-labelled-json-error",
+    "readerErrorInjected": false,
+    "eofInjected": true,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": false,
+      "firstFrameObserved": false,
+      "boundary": null,
+      "outcome": {
+        "code": "rejected",
+        "frame": 1,
+        "step": "reading-json"
+      }
+    }
+  },
+  {
+    "name": "truncated-data-json-at-clean-eof",
+    "readerErrorInjected": false,
+    "eofInjected": true,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": true,
+      "boundary": null,
+      "outcome": {
+        "code": "invalid_json",
+        "frame": 1,
+        "step": "waiting-tool"
+      }
+    }
+  },
+  {
+    "name": "valid-data-json-at-eof-but-no-provider-finish",
+    "readerErrorInjected": false,
+    "eofInjected": true,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": true,
+      "boundary": "eof",
+      "outcome": {
+        "code": "tool_response",
+        "toolRule": "incomplete",
+        "frame": 1,
+        "step": "validating-carrier"
+      }
+    }
+  },
+  {
+    "name": "valid-tool-and-finish-at-eof-without-final-empty-line",
+    "readerErrorInjected": false,
+    "eofInjected": true,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": true,
+    "failureMetadataSaved": false,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": true,
+      "boundary": "eof",
+      "outcome": {
+        "code": "received",
+        "frame": 2,
+        "step": null
+      }
+    }
+  },
+  {
+    "name": "valid-lf-done-multibyte-split",
+    "readerErrorInjected": false,
+    "eofInjected": false,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": true,
+    "failureMetadataSaved": false,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": true,
+      "boundary": "done-marker",
+      "outcome": {
+        "code": "received",
+        "frame": 3,
+        "step": null
+      }
+    }
+  },
+  {
+    "name": "valid-crlf-done",
+    "readerErrorInjected": false,
+    "eofInjected": false,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": true,
+    "failureMetadataSaved": false,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": true,
+      "boundary": "done-marker",
+      "outcome": {
+        "code": "received",
+        "frame": 3,
+        "step": null
+      }
+    }
+  },
+  {
+    "name": "cr-only-framing-confirmed-gap",
+    "readerErrorInjected": false,
+    "eofInjected": true,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": true,
+      "boundary": null,
+      "outcome": {
+        "code": "invalid_json",
+        "frame": 1,
+        "step": "waiting-tool"
+      }
+    }
+  },
+  {
+    "name": "data-without-separator-total-timeout",
+    "readerErrorInjected": false,
+    "eofInjected": false,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": true,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": false,
+      "boundary": null,
+      "outcome": {
+        "code": "timeout",
+        "frame": 0,
+        "step": "waiting-sse-frame"
+      }
+    }
+  },
+  {
+    "name": "partial-data-user-cancel",
+    "readerErrorInjected": false,
+    "eofInjected": false,
+    "requestCount": 1,
+    "permanentlyCommitted": false,
+    "candidateSaved": false,
+    "failureMetadataSaved": false,
+    "observerEquivalent": true,
+    "trace": {
+      "httpStatus": 200,
+      "hasBodyBytes": true,
+      "firstFrameObserved": false,
+      "boundary": null,
+      "outcome": {
+        "code": "cancelled",
+        "frame": 0,
+        "step": "waiting-sse-frame"
+      }
+    }
+  },
+  {
+    "name": "virtual-120-second-client-deadline",
+    "requestCount": 1,
+    "totalMs": 120000,
+    "observerEquivalent": true,
+    "code": "timeout"
+  }
+]

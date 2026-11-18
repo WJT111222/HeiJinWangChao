@@ -1,0 +1,229 @@
+import { afterAll, afterEach, expect, it, vi } from 'vitest';
+import { IDBFactory } from 'fake-indexeddb';
+import { createHash } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
+import { AiClient } from '../src/services/ai/client';
+import { safeAiError } from '../src/services/ai/errors';
+import { requestInspections } from '../src/services/ai/inspection';
+import { stageResponses, storyToolDiagnosticExport } from '../src/services/ai/stageResponses';
+import { storyInspections } from '../src/services/ai/storyInspection';
+import { STORY_OUTPUT_TOOL } from '../src/services/ai/storyToolContract';
+import { channelSnapshot } from '../src/services/ai/snapshot';
+import { createTurnDraft } from '../src/domain/drafts';
+import { SaveRepository } from '../src/services/storage/saveRepository';
+import { StoryStage } from '../src/workflows/storyStage';
+import { compatibilitySetup } from '../src/tests/fixtures/storyCompatibility';
+import { toolStoryText } from '../src/tests/fixtures/storyTools';
+import { game } from '../src/tests/fixtures/game';
+
+const frame = (value: unknown) => 'data: ' + JSON.stringify(value) + '\n\n';
+const nativeCall = frame({ choices: [{ index: 0, delta: { tool_calls: [
+  { index: 0, type: 'function', id: 'synthetic-call-id', function: {
+    name: STORY_OUTPUT_TOOL, arguments: JSON.stringify({ content: toolStoryText }),
+  } },
+] } }] });
+const nativeFinish = frame({ choices: [{ index: 0, delta: {}, finish_reason: 'tool_calls' }] });
+const done = 'data: [DONE]\n\n';
+const sse = 'text/event-stream';
+const bytes = new TextEncoder();
+type Tail = 'eof' | 'read-error' | 'open';
+type Scenario = {
+  name: string; chunks: (string | Uint8Array)[]; tail: Tail; contentType?: string;
+  code: string; frame: number; step: string | null; boundary: string | null; nonEmpty?: boolean;
+  interruption?: 'timeout' | 'cancel';
+};
+const scenarios: Scenario[] = [
+  { name: 'reader-rejects-after-first-read', chunks: ['data: {"choices":'], tail: 'read-error',
+    code: 'stream_interrupted', frame: 0, step: 'waiting-sse-frame', boundary: null },
+  { name: 'partial-utf8-then-reader-rejects', chunks: ['data: {"fixture":"', Uint8Array.of(0xe4, 0xb8)], tail: 'read-error',
+    code: 'stream_interrupted', frame: 0, step: 'waiting-sse-frame', boundary: null },
+  { name: 'partial-utf8-then-eof-decoder-flush-fails', chunks: ['data: {"fixture":"', Uint8Array.of(0xe4, 0xb8)], tail: 'eof',
+    code: 'stream_interrupted', frame: 0, step: 'waiting-sse-frame', boundary: null },
+  { name: 'invalid-utf8-while-reading', chunks: [Uint8Array.of(0xff)], tail: 'eof',
+    code: 'stream_interrupted', frame: 0, step: 'waiting-sse-frame', boundary: null },
+  { name: 'data-line-without-separator-then-read-error', chunks: [nativeCall.slice(0, -1)], tail: 'read-error',
+    code: 'stream_interrupted', frame: 0, step: 'waiting-sse-frame', boundary: null },
+  { name: 'heartbeat-then-reader-rejects', chunks: [': heartbeat\n\n', ': keepalive\n\n'], tail: 'read-error',
+    code: 'stream_interrupted', frame: 0, step: 'waiting-sse-frame', boundary: null },
+  { name: 'heartbeat-only-clean-eof', chunks: [': heartbeat\n\n'], tail: 'eof',
+    code: 'tool_response', frame: 0, step: 'validating-carrier', boundary: 'eof' },
+  { name: 'blank-event-field-without-data-clean-eof', chunks: ['event: ping\n\n'], tail: 'eof',
+    code: 'tool_response', frame: 0, step: 'validating-carrier', boundary: 'eof' },
+  { name: 'html-200-unrecognized-tail-at-eof', chunks: ['<!doctype html><title>SYNTHETIC_HTML</title>'], tail: 'eof', contentType: 'text/html',
+    code: 'stream_interrupted', frame: 0, step: 'waiting-sse-frame', boundary: null },
+  { name: 'html-200-all-lines-terminated', chunks: ['<!doctype html>\n<title>SYNTHETIC_HTML</title>\n'], tail: 'eof', contentType: 'text/html',
+    code: 'tool_response', frame: 0, step: 'validating-carrier', boundary: 'eof' },
+  { name: 'json-error-mislabelled-text', chunks: ['{"error":{"message":"SYNTHETIC_PRIVATE_ERROR"}}'], tail: 'eof', contentType: 'text/plain',
+    code: 'stream_interrupted', frame: 0, step: 'waiting-sse-frame', boundary: null },
+  { name: 'correctly-labelled-json-error', chunks: ['{"error":{"message":"SYNTHETIC_PRIVATE_ERROR"}}'], tail: 'eof', contentType: 'application/json',
+    code: 'rejected', frame: 1, step: 'reading-json', boundary: null, nonEmpty: false },
+  { name: 'truncated-data-json-at-clean-eof', chunks: ['data: {"choices":'], tail: 'eof',
+    code: 'invalid_json', frame: 1, step: 'waiting-tool', boundary: null },
+  { name: 'valid-data-json-at-eof-but-no-provider-finish', chunks: [nativeCall.trimEnd()], tail: 'eof',
+    code: 'tool_response', frame: 1, step: 'validating-carrier', boundary: 'eof' },
+  { name: 'valid-tool-and-finish-at-eof-without-final-empty-line', chunks: [nativeCall, nativeFinish.trimEnd()], tail: 'eof',
+    code: 'ok', frame: 2, step: null, boundary: 'eof' },
+  { name: 'valid-lf-done-multibyte-split', chunks: Array.from(bytes.encode(nativeCall + nativeFinish + done), b => Uint8Array.of(b)), tail: 'open',
+    code: 'ok', frame: 3, step: null, boundary: 'done-marker' },
+  { name: 'valid-crlf-done', chunks: [(nativeCall + nativeFinish + done).replaceAll('\n', '\r\n')], tail: 'open',
+    code: 'ok', frame: 3, step: null, boundary: 'done-marker' },
+  { name: 'cr-only-framing-confirmed-gap', chunks: [(nativeCall + nativeFinish + done).replaceAll('\n', '\r')], tail: 'eof',
+    code: 'invalid_json', frame: 1, step: 'waiting-tool', boundary: null },
+  { name: 'data-without-separator-total-timeout', chunks: [nativeCall.slice(0, -1)], tail: 'open', interruption: 'timeout',
+    code: 'timeout', frame: 0, step: 'waiting-sse-frame', boundary: null },
+  { name: 'partial-data-user-cancel', chunks: ['data: {"choices":'], tail: 'open', interruption: 'cancel',
+    code: 'cancelled', frame: 0, step: 'waiting-sse-frame', boundary: null },
+];
+
+const results: unknown[] = [];
+afterEach(() => {
+  vi.useRealTimers();
+  requestInspections.clear();
+  storyInspections.clear();
+  stageResponses.clear();
+});
+afterAll(() => writeFileSync(process.env.EXPECTED_EVIDENCE_PATH ?? '.pr191-sse-mock/MOCK_RESULTS.json', JSON.stringify(results, null, 2) + '\n'));
+
+function plannedBody(scenario: Scenario) {
+  let pulls = 0;
+  let readerErrorInjected = false;
+  let eofInjected = false;
+  const body = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      const chunk = scenario.chunks[pulls++];
+      if (chunk !== undefined) {
+        controller.enqueue(typeof chunk === 'string' ? bytes.encode(chunk) : chunk);
+        return;
+      }
+      if (scenario.tail === 'eof') { eofInjected = true; controller.close(); }
+      if (scenario.tail === 'read-error') { readerErrorInjected = true; controller.error(new TypeError('SYNTHETIC_PRIVATE_TRANSPORT_ERROR')); }
+    },
+  }, { highWaterMark: 0 });
+  return { body, get pulls() { return pulls; }, get readerErrorInjected() { return readerErrorInjected; }, get eofInjected() { return eofInjected; } };
+}
+
+it.each(scenarios)('$name', async scenario => {
+  async function run(enabled: boolean) {
+    stageResponses.clear();
+    const fixture = compatibilitySetup('openai', true, true);
+    fixture.settings.runtime.timeoutSeconds = 120;
+    fixture.settings.prompts.minNarrativeChars = 1;
+    const repo = await SaveRepository.open('isolated-sse-fixture', new IDBFactory());
+    const time = '2026-10-18T00:00:00.000Z';
+    const state = { ...game(), createdAt: time, updatedAt: time };
+    await repo.create(state);
+    const draft = createTurnDraft(state.saveId, 0, 'synthetic-turn', 'opening', '');
+    await repo.saveDraft(draft, null);
+    const before = await repo.loadGame(state.saveId);
+    const writes = vi.spyOn(repo, 'saveDraft'), commits = vi.spyOn(repo, 'commitTurn');
+    const planned = plannedBody(scenario);
+    const response = new Response(planned.body, { headers: { 'Content-Type': scenario.contentType ?? sse }, status: 200 });
+    const getReader = vi.spyOn(planned.body, 'getReader'), clone = vi.spyOn(response, 'clone');
+    const tee = vi.spyOn(planned.body, 'tee'), json = vi.spyOn(response, 'json');
+    const requestHashes: string[] = [];
+    let activeSignal: AbortSignal | null | undefined;
+    const transport = vi.fn(async (url: URL | RequestInfo, init?: RequestInit) => {
+      activeSignal = init?.signal;
+      requestHashes.push(createHash('sha256').update(JSON.stringify({ url: String(url), method: init?.method,
+        headers: [...new Headers(init?.headers)], body: init?.body })).digest('hex'));
+      return response;
+    });
+    const client = new AiClient(transport);
+    if (!enabled) {
+      const generate = client.generate.bind(client);
+      vi.spyOn(client, 'generate').mockImplementation((snapshot, messages, options) => generate(snapshot, messages,
+        { ...options, onStoryToolTrace: undefined }));
+    }
+    const stage = new StoryStage(repo, client);
+    const failureSaved = vi.fn();
+    try {
+      if (scenario.interruption === 'timeout') vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+      const pending = stage.generate({ ...fixture, draft: before.draft!, onFailureSaved: failureSaved })
+        .then(() => ({ code: 'ok' }), safeAiError);
+      if (scenario.interruption) {
+        await vi.waitFor(() => expect(planned.pulls).toBeGreaterThanOrEqual(2));
+        if (scenario.interruption === 'cancel') stage.cancel();
+        else await vi.advanceTimersByTimeAsync(120000);
+      }
+      const result = await pending;
+      const expectedCode = scenario.code;
+      expect(result.code).toBe(expectedCode);
+      expect(transport).toHaveBeenCalledTimes(1);
+      expect(clone).not.toHaveBeenCalled();
+      expect(tee).not.toHaveBeenCalled();
+      expect(json).toHaveBeenCalledTimes(scenario.contentType === 'application/json' ? 1 : 0);
+      if (scenario.contentType !== 'application/json') expect(getReader).toHaveBeenCalledTimes(1);
+      expect(commits).not.toHaveBeenCalled();
+      const after = await repo.loadGame(state.saveId);
+      if (expectedCode === 'ok') {
+        expect(writes).toHaveBeenCalledTimes(1);
+        expect(after.state).toEqual(before.state);
+        expect(after.draft?.story?.narrative).toBe('中文🙂，3<5。');
+        expect(failureSaved).not.toHaveBeenCalled();
+      } else if (expectedCode === 'cancelled') {
+        expect(writes).not.toHaveBeenCalled();
+        expect(failureSaved).not.toHaveBeenCalled();
+        expect(after).toEqual(before);
+      } else {
+        expect(writes).toHaveBeenCalledTimes(1);
+        expect(failureSaved).toHaveBeenCalledTimes(1);
+        expect(after.state).toEqual(before.state);
+        expect(after.draft?.story).toBeUndefined();
+        expect(after.draft?.storyPartial).toBeUndefined();
+        expect(after.draft?.stageStatus.story).toBe('failed');
+        expect(after.draft?.failures.at(-1)).toMatchObject({ stage: 'story', errorCode: expectedCode });
+      }
+      if (scenario.interruption) expect(activeSignal?.aborted).toBe(true);
+      const record = stageResponses.getSnapshot()[0];
+      const summary = storyToolDiagnosticExport(record);
+      if (!enabled) expect(summary).toBeUndefined();
+      else {
+        expect(summary).toMatchObject({ httpStatus: 200, boundary: scenario.boundary,
+          outcome: { code: expectedCode === 'ok' ? 'received' : expectedCode, frame: scenario.frame, step: scenario.step } });
+        if (scenario.nonEmpty !== false) expect(summary?.firstBodyChunkMs).toEqual(expect.any(Number));
+        if (scenario.frame === 0) expect(summary?.firstSseFrameMs).toBeNull();
+        if (scenario.code === 'tool_response') expect(summary?.outcome.toolRule).toBe('incomplete');
+        expect(JSON.stringify(summary)).not.toMatch(/fictional-phase3-key|SYNTHETIC_|synthetic-call-id|synthetic-turn|save-a|https?:\/\/|中文/);
+      }
+      return { result, requestHashes, after, summary, ...(enabled && { readerErrorInjected: planned.readerErrorInjected, eofInjected: planned.eofInjected }) };
+    } finally { vi.useRealTimers(); stage.dispose(); repo.close(); }
+  }
+  const on = await run(true), off = await run(false);
+  // Do not serialize the request, stable hash, whole state, or input bytes into evidence.
+  expect(on.requestHashes).toEqual(off.requestHashes);
+  expect(on.result).toEqual(off.result);
+  expect(on.after).toEqual(off.after);
+  results.push({ name: scenario.name, readerErrorInjected: on.readerErrorInjected, eofInjected: on.eofInjected,
+    requestCount: 1, permanentlyCommitted: false, candidateSaved: scenario.code === 'ok',
+    failureMetadataSaved: scenario.code !== 'ok' && scenario.code !== 'cancelled',
+    observerEquivalent: true, trace: { httpStatus: on.summary?.httpStatus, hasBodyBytes: on.summary?.firstBodyChunkMs !== null,
+      firstFrameObserved: on.summary?.firstSseFrameMs !== null, boundary: on.summary?.boundary, outcome: on.summary?.outcome } });
+});
+
+it('真实 AiClient 的 120s 总超时不因无分隔 data 或心跳重置，观察器两态一致', async () => {
+  for (const enabled of [true, false]) {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+    const fixture = compatibilitySetup('openai', true, true);
+    const snapshot = channelSnapshot(fixture.channel, fixture.vault);
+    const plan = plannedBody({ name: 'timeout', chunks: [': ping\n\n', nativeCall.slice(0, -1)], tail: 'open',
+      code: 'timeout', frame: 0, step: 'waiting-sse-frame', boundary: null });
+    const transport = vi.fn(async () => new Response(plan.body, { headers: { 'Content-Type': sse } }));
+    const trace = vi.fn();
+    const result = new AiClient(transport).generate(snapshot, [{ role: 'user', content: 'synthetic' }], {
+      stream: true, storyToolOutput: true, timeoutSeconds: 120, ...(enabled && { onStoryToolTrace: trace }),
+    }).catch(safeAiError);
+    await vi.advanceTimersByTimeAsync(119999);
+    expect(plan.pulls).toBeGreaterThanOrEqual(3);
+    expect(trace).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await result).toMatchObject({ code: 'timeout' });
+    expect(transport).toHaveBeenCalledTimes(1);
+    if (enabled) expect(trace).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      totalMs: 120000, firstSseFrameMs: null, boundary: null, httpStatus: 200,
+      outcome: expect.objectContaining({ code: 'timeout', step: 'waiting-sse-frame', frame: 0 }),
+    }));
+    else expect(trace).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  }
+  results.push({ name: 'virtual-120-second-client-deadline', requestCount: 1, totalMs: 120000, observerEquivalent: true, code: 'timeout' });
+});
