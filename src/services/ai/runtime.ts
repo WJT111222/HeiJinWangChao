@@ -150,8 +150,9 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   if (!rawObserved) received = append('', response.text, responseLimits.text);
   // Tool arguments remain raw observations, never a resumable Story prefix.
   addition = toolOutput ? response.text : received;
-  // 续写时诊断原文与解析输入都是拼接后的全文；非续写时与原来完全一致。
-  if (continuation) received = append('', merged(received), responseLimits.text);
+  // 普通文本续写保留原来的合并诊断；工具参数仍是实际收到的JSON，
+  // 不把上次正文前缀拼到工具原文。正式解析仍在下方合并已解码文本。
+  if (continuation && !toolOutput) received = append('', merged(received), responseLimits.text);
   stageResponses.update(responseId, { text: received, nativeReasoning: publicReasoning, diagnostics, truncated, ...display(), status: 'received' }, secrets);
   const responseText = merged(response.text);
   const envelope = (() => {

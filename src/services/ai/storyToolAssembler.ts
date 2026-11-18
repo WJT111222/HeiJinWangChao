@@ -10,6 +10,7 @@ import { parseStoryToolArguments, STORY_OUTPUT_TOOL, STORY_TOOL_ARGUMENT_LIMIT, 
 export class StoryToolAssembler {
   private call: { slot: number; id: string; name: string; chunks: string[]; chars: number; snapshot: boolean; closed: boolean } | undefined;
   private providerFinish = false;
+  private finishSequence: number | undefined;
   private messageStop = false;
   private transportEnd = false;
   private streaming = false;
@@ -17,7 +18,11 @@ export class StoryToolAssembler {
   response(event: ResponsePayloadEvent) {
     this.streaming = event.source.transport === 'sse';
     if (event.content.trim()) throw toolFailure('mixed_text');
-    if (event.messageStop) this.messageStop = true;
+    if (this.finishSequence !== undefined && event.source.sequence > this.finishSequence && event.nativeReasoning) throw toolFailure('ordering');
+    if (event.messageStop) {
+      if (this.messageStop || !this.call?.closed || !this.providerFinish) throw toolFailure('ordering');
+      this.messageStop = true;
+    }
     const reason = event.finishReason;
     if (reason === undefined || reason === null || reason === '') return;
     const expected = isOpenAiCompatible(this.protocol) ? 'tool_calls' : this.protocol === 'anthropic' ? 'tool_use' : 'STOP';
@@ -27,9 +32,10 @@ export class StoryToolAssembler {
       throw toolFailure('finish');
     }
     if (this.providerFinish) throw toolFailure('ordering');
-    this.providerFinish = true;
+    this.providerFinish = true; this.finishSequence = event.source.sequence;
   }
   event(event: ToolResponseEvent) {
+    if (this.messageStop || (this.finishSequence !== undefined && event.source.sequence > this.finishSequence)) throw toolFailure('ordering');
     if (event.type === 'tool-start') {
       if (this.call) throw toolFailure('multiple');
       if ((event.callId?.length ?? 0) > 512 || (event.name?.length ?? 0) > 512) throw toolFailure('identity');

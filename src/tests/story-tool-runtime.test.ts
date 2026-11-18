@@ -45,7 +45,7 @@ describe('Story工具模式请求与原严格解析', () => {
       expect(calls).toHaveLength(1); expect(calls[0].tools).toBeDefined();
       const raw = stageResponses.getSnapshot()[0];
       expect(raw.status).toBe('validated'); expect(raw.text).toBe(JSON.stringify({ content: toolStoryText }));
-      expect(JSON.parse(raw.text).content).toBe(toolStoryText);
+      expect(JSON.parse(raw.text!).content).toBe(toolStoryText);
       expect(raw.displayText).toBe(raw.text);
       if (stream) expect(onDelta.mock.calls.map(call => call[0]).join('')).toBe(toolStoryText);
       else expect(onDelta).not.toHaveBeenCalled();
@@ -91,6 +91,30 @@ describe('Story工具模式请求与原严格解析', () => {
     const transport=vi.fn(async()=>carrierResponse('deepseek',false,JSON.stringify({content:text})));
     await expect(runStageRequest({stage:'story',mode:'opening',userInput:'',state:game(),settings:input.settings},input.config,input.vault,{stream:false},new AiClient(transport))).rejects.toBeDefined();
     expect(transport).toHaveBeenCalledTimes(1); expect(stageResponses.getSnapshot()[0].status).toBe('failed');
+  });
+  it.each(['openai','deepseek','gemini','anthropic'] as const)('%s 请求流式但返回完整JSON工具响应，仅消费一次',async protocol=>{
+    const input=setup(protocol),transport=vi.fn(async()=>carrierResponse(protocol,false)),delta=vi.fn();
+    const result=await new AiClient(transport).generate(channelSnapshot(input.channel,input.vault),messages,{storyToolOutput:true,stream:true,onDelta:delta});
+    expect(result.text).toBe(toolStoryText);expect(delta).toHaveBeenCalledExactlyOnceWith(toolStoryText);expect(transport).toHaveBeenCalledTimes(1);
+  });
+  it('服务明确不支持工具：错误体仅消费一次，不回退重发',async()=>{
+    const input=setup(),response=Response.json({error:{message:'tool_choice not supported'}},{status:400}),read=vi.spyOn(response,'json'),transport=vi.fn(async()=>response);
+    await expect(new AiClient(transport).generate(channelSnapshot(input.channel,input.vault),messages,{storyToolOutput:true})).rejects.toMatchObject({code:'rejected'});
+    expect(read).toHaveBeenCalledTimes(1);expect(transport).toHaveBeenCalledTimes(1);
+  });
+  it('部分工具SSE后网络错误：保留原文片段，不发正文增量或新增请求',async()=>{
+    const input=setup(),raw:string[]=[],delta=vi.fn();let control!:ReadableStreamDefaultController<Uint8Array>;
+    const prefix=toolFrame({choices:[{delta:{tool_calls:[{index:0,id:'c',function:{name:STORY_OUTPUT_TOOL,arguments:'{"content":"真实片段'}}]}}]});
+    const transport=vi.fn(async()=>new Response(new ReadableStream<Uint8Array>({start(c){control=c;c.enqueue(new TextEncoder().encode(prefix));}}),{headers:{'content-type':'text/event-stream'}}));
+    await expect(new AiClient(transport).generate(channelSnapshot(input.channel,input.vault),messages,{storyToolOutput:true,stream:true,onDelta:delta,onRawTextDelta:text=>{raw.push(text);control.error(Error('synthetic network error'));}})).rejects.toMatchObject({code:'stream_interrupted'});
+    expect(raw.join('')).toContain('真实片段');expect(delta).not.toHaveBeenCalled();expect(transport).toHaveBeenCalledTimes(1);
+  });
+  it('工具请求超时仍使用原分类，禁止自动增加请求',async()=>{
+    vi.useFakeTimers();try{
+      const input=setup(),transport=vi.fn(()=>new Promise<Response>(()=>undefined));
+      const result=new AiClient(transport).generate(channelSnapshot(input.channel,input.vault),messages,{storyToolOutput:true,timeoutSeconds:1}).catch(e=>e);
+      await vi.advanceTimersByTimeAsync(1001);expect(await result).toMatchObject({code:'timeout'});expect(transport).toHaveBeenCalledTimes(1);
+    }finally{vi.useRealTimers();}
   });
   it('length与过滤即使参数已经闭合也不冒充工具成功，不自动重发', async () => {
     for(const reason of ['length','content_filter']) {
@@ -146,6 +170,13 @@ describe('正式StoryStage / Repository / 协调器保护',()=>{
     const original=IDBObjectStore.prototype.put;vi.spyOn(IDBObjectStore.prototype,'put').mockImplementation(function(this:IDBObjectStore,...args:Parameters<IDBObjectStore['put']>){if(this.name==='drafts')throw new DOMException('mock quota','QuotaExceededError');return original.apply(this,args);});
     await expect(stage.generate({...input,draft:before.draft!})).rejects.toBeDefined();expect(await repo.loadGame('save-a')).toEqual(before);stage.dispose();
   });
+  it.each([false,true])('运行设置中途变化不会改变已发请求的载体模式：initial=%s',async enabled=>{
+    const input=setup();input.settings.runtime.storyToolOutput=enabled;const before=await repo.loadGame('save-a');let release!:(r:Response)=>void;
+    const transport=vi.fn(()=>new Promise<Response>(r=>{release=r;})),stage=new StoryStage(repo,new AiClient(transport));
+    const pending=stage.generate({...input,draft:before.draft!});await vi.waitFor(()=>expect(transport).toHaveBeenCalledTimes(1));input.settings.runtime.storyToolOutput=!enabled;
+    release(enabled?carrierResponse('openai',false):Response.json({choices:[{message:{content:toolStoryText},finish_reason:'stop'}]}));
+    const saved=await pending;expect(saved.stageStatus.story).toBe('ready');expect(saved.story?.narrative).toBe('中文🙂，3<5。');expect(transport).toHaveBeenCalledTimes(1);stage.dispose();
+  });
   it('载体中的凭证回显仍被StoryStage拒绝，正式状态和草稿不变',async()=>{
     const input=setup(),before=await repo.loadGame('save-a');
     const text=toolStoryText.replace('中文🙂，3<5。','fictional-tool-key');
@@ -161,7 +192,7 @@ describe('正式StoryStage / Repository / 协调器保护',()=>{
     await expect(stage.generate({...input,draft:before.draft!,onFailureSaved:()=>undefined})).rejects.toBeDefined();
     const failed=(await repo.loadDraft('save-a'))!;expect(failed.storyPartial?.text).toBe(prefix);expect(failed.story).toBeUndefined();
     const result=await stage.generate({...input,draft:failed,continuation:true});
-    expect(result.stageStatus.story).toBe('ready');expect(result.story?.narrative).toBe('【旁白】雨水沿着站台落下。');expect(result.storyPartial).toBeUndefined();expect(transport).toHaveBeenCalledTimes(2);expect(await repo.load('save-a')).toEqual(before.state);stage.dispose();
+    expect(result.stageStatus.story).toBe('ready');expect(result.story?.narrative).toBe('【旁白】雨水沿着站台落下。');expect(result.storyPartial).toBeUndefined();expect(stageResponses.getSnapshot()[0].text).toBe(JSON.stringify({content:'</正文><短期记忆>等待</短期记忆><变量规划>[]</变量规划>'}));expect(transport).toHaveBeenCalledTimes(2);expect(await repo.load('save-a')).toEqual(before.state);stage.dispose();
   });
   it('参数未完整时仅保存既有失败元数据，绝不把原始JSON草稿冒充可续写正文',async()=>{
     const input=setup(),before=await repo.loadGame('save-a');

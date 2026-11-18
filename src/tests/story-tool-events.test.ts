@@ -69,3 +69,17 @@ describe('原生工具事件与单一 Story 载体', () => {
     await expect(assemble('gemini', new Response(JSON.stringify(data)), false)).rejects.toMatchObject({ code: 'tool_response' });
   });
 });
+
+it('大段文本与大量转义保持线性扫描；展示不改变参数或正文', () => {
+  const text = '中文\\路径\n"content":仍然是文字。'.repeat(20000);
+  expect(parseStoryToolArguments(JSON.stringify({content:text}))).toBe(text);
+});
+it('参数容量超限明确拒绝，不截短后继续校验', () => {
+  expect(() => parseStoryToolArguments('x'.repeat(8_000_001))).toThrow();
+});
+it.each(['early-message-stop','early-stop-reason'])('Anthropic结束顺序损坏不能被之后的合法参数掩盖：%s', async mode => {
+  const stop=frame({type:'message_stop'}), reason=frame({type:'message_delta',delta:{stop_reason:'tool_use'}});
+  const call=frame({type:'content_block_start',index:0,content_block:{type:'tool_use',id:'c',name:STORY_OUTPUT_TOOL,input:{content:'合法内容'}}})+frame({type:'content_block_stop',index:0});
+  const body=mode==='early-message-stop'?stop+call+reason:reason+call+stop;
+  await expect(assemble('anthropic',splitResponse(body,1),true)).rejects.toMatchObject({code:'tool_response'});
+});

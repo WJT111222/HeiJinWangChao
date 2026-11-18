@@ -19,7 +19,7 @@ function optionalString(value: unknown): string | undefined {
 }
 function json(value: unknown): string {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) throw toolFailure('arguments');
-  return JSON.stringify(value);
+  try { return JSON.stringify(value); } catch { throw toolFailure('arguments'); }
 }
 /** Native fields only. Does not guess IDs, decode escaped fragments, repair JSON,
  * choose a longest call or emit a tool end at transport EOF. */
@@ -52,6 +52,7 @@ export class ToolEventProjector {
         const slots = new Set<number>();
         for (const [position, raw] of array(message.tool_calls).entries()) {
           const call = record(raw), fn = record(call.function), slot = stream ? index(call.index) : position;
+          if (stream && slot !== 0) throw toolFailure('identity');
           if (slots.has(slot)) throw toolFailure('multiple');
           slots.add(slot);
           if (call.type !== undefined && call.type !== 'function') throw toolFailure('unsupported_shape');
@@ -121,7 +122,9 @@ export class ToolEventProjector {
  * object inputs use JSON serialization, not a claim to original wire bytes. */
 export function observedToolArguments(value: unknown, source: ResponseSource): string[] {
   const data = record(value), stream = source.transport === 'sse';
-  const safeJson = (input: unknown) => input && typeof input === 'object' ? JSON.stringify(input) : '';
+  const safeJson = (input: unknown) => {
+    try { return input && typeof input === 'object' ? JSON.stringify(input) : ''; } catch { return ''; }
+  };
   if (isOpenAiCompatible(source.protocol)) {
     const message = record(record(array(data.choices)[0])[stream ? 'delta' : 'message']);
     return array(message.tool_calls).map(call => record(record(call).function).arguments).filter((x): x is string => typeof x === 'string');

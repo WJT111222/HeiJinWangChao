@@ -21,9 +21,17 @@ export function parseStoryToolArguments(raw: string): string {
   if (!parsed.success) throw toolFailure('arguments');
   // JSON.parse accepts duplicate object keys. A valid carrier has exactly one key
   // and one string value. Tokenize complete JSON strings, not words inside content.
-  const strings = raw.matchAll(/"(?:\\[\s\S]|[^"\\])*"/g);
   let keys = 0;
-  for (const token of strings) if (/^\s*:/.test(raw.slice(token.index! + token[0].length))) keys++;
+  for (let i = 0; i < raw.length; i++) {
+    if (raw[i] !== '"') continue;
+    for (i++; i < raw.length; i++) {
+      if (raw[i] === '\\') i++; // Already validated by JSON.parse; skip escaped quotes.
+      else if (raw[i] === '"') break;
+    }
+    let next = i + 1;
+    while (/\s/.test(raw[next] ?? '') && next < raw.length) next++;
+    if (raw[next] === ':') keys++;
+  }
   if (keys !== 1) throw toolFailure('arguments');
   return parsed.data.content;
 }
