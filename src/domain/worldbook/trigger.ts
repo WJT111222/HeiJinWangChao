@@ -520,7 +520,9 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
         stop();
         return;
       }
-      const max = Math.max(...scores);
+      // 迭代求最大值：组员数量没有上限，Math.max(...scores) 超过约 12 万个参数会触发 V8 的 RangeError。
+      let max = -Infinity;
+      for (const value of scores) if (value > max) max = value;
       const kept: Item[] = [];
       for (let k = 0; k < group.length; k++) {
         if ((group[k].entry.useGroupScoring ?? settings.useGroupScoring) && scores[k] < max)
