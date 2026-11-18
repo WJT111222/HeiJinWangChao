@@ -131,6 +131,8 @@ export const WORLDBOOK_LIMITS = {
   maxContentChars: 200_000,
   maxKeysPerEntry: 500,
   maxKeyChars: 2_000,
+  /** JSON 嵌套层数上限（世界书正常不超过十几层；防止深嵌套让哈希等递归处理栈溢出）。 */
+  maxDepth: 100,
   /** 导入报告最多保留的条数（超出时合并为一条说明）。 */
   maxNotices: 2_000,
 } as const;

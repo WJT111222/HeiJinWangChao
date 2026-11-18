@@ -27,7 +27,13 @@ export async function importNative(root: Record<string, unknown>, _options: Impo
     if (ids.has(entry.entryId)) notices.add(notice('duplicate_entry_id', { entryRef: entry.entryId }, { value: entry.entryId }));
     ids.add(entry.entryId);
   }
-  const actual = await contentHash({ metadata: file.metadata, entries: file.entries, source: file.source });
+  let actual: string;
+  try {
+    actual = await contentHash({ metadata: file.metadata, entries: file.entries, source: file.source });
+  } catch {
+    notices.add(notice('hash_failed'));
+    return { ok: false, notices: notices.finish() };
+  }
   if (actual !== file.contentHash) notices.add(notice('hash_mismatch'));
   if (notices.hasErrors) return { ok: false, notices: notices.finish() };
 

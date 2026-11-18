@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { canonicalJson } from '../domain/worldbook/canonical';
 import { classifyKey, regexRisk } from '../domain/worldbook/regexKey';
 import { importWorldbookText, importWorldbookValue, utf8Bytes } from '../domain/worldbook/importWorldbook';
 import { WORLDBOOK_LIMITS } from '../domain/worldbook/schema';
@@ -37,6 +38,22 @@ describe('文件大小与结构上限', () => {
   it('嵌套极深的 JSON 不会让页面崩溃', async () => {
     const result = await importWorldbookText(`${'['.repeat(200_000)}${']'.repeat(200_000)}`);
     expect(result.ok).toBe(false);
+  });
+
+  it('来源数据里的深嵌套（如藏在 extensions 里）被拒绝，而不是让哈希栈溢出', async () => {
+    const deep = `${'['.repeat(200_000)}${']'.repeat(200_000)}`;
+    const result = await importWorldbookText(`{"entries":{"0":{"uid":0,"key":["a"],"extensions":{"x":${deep}}}}}`);
+    expect(result.ok).toBe(false);
+    expect(result.notices[0].code).toBe('too_deep');
+    // 正常的嵌套层数不受影响
+    const nested = JSON.stringify({ entries: { 0: { uid: 0, key: ['a'], extensions: { a: { b: { c: [[[1]]] } } } } } });
+    expect((await importWorldbookText(nested)).ok).toBe(true);
+  });
+
+  it('确定性 JSON 自身也有层数上限，超出时抛出可捕获的错误', () => {
+    let value: unknown = 1;
+    for (let i = 0; i < 200; i++) value = [value];
+    expect(() => canonicalJson(value)).toThrow();
   });
 
   it('条目不是对象、extensions 不是对象、关键词写成逗号字符串都报错，不猜测拆分', async () => {

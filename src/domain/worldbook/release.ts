@@ -56,7 +56,12 @@ export async function finishImport(input: FinishInput): Promise<WorldbookImportR
 
   const newId = input.options.newId ?? (() => crypto.randomUUID());
   const source = { format: input.format, payload: input.payload };
-  const hash = await contentHash({ metadata: metadata.data, entries: input.entries, source });
+  let hash: string;
+  try {
+    hash = await contentHash({ metadata: metadata.data, entries: input.entries, source });
+  } catch {
+    return { ok: false, notices: [...notices.finish(), notice('hash_failed')] };
+  }
   const all = notices.finish();
   const candidate: WorldbookRelease = {
     formatVersion: WORLDBOOK_FORMAT_VERSION,

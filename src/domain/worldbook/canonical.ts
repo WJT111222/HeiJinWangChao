@@ -5,7 +5,10 @@ import type { WorldbookRelease } from './schema';
  * 直接拼字符串，不重建对象，因此 "__proto__" 等特殊键也按普通键处理。
  * 只接受 JSON 能表达的值；遇到 undefined / 函数 / 非有限数字直接报错，避免两份“看起来一样”的内容得到不同哈希。
  */
-export function canonicalJson(value: unknown): string {
+export const MAX_CANONICAL_DEPTH = 128;
+
+export function canonicalJson(value: unknown, depth = 0): string {
+  if (depth > MAX_CANONICAL_DEPTH) throw new RangeError('canonicalJson: 嵌套过深');
   if (value === null) return 'null';
   switch (typeof value) {
     case 'string': return JSON.stringify(value);
@@ -14,13 +17,13 @@ export function canonicalJson(value: unknown): string {
       if (!Number.isFinite(value)) throw new TypeError('canonicalJson: 非有限数字无法序列化');
       return JSON.stringify(value);
     case 'object': {
-      if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+      if (Array.isArray(value)) return `[${value.map((item) => canonicalJson(item, depth + 1)).join(',')}]`;
       const keys = Object.keys(value).sort();
       const parts: string[] = [];
       for (const key of keys) {
         const item = (value as Record<string, unknown>)[key];
         if (item === undefined) continue; // 与 JSON.stringify 一致：省略 undefined 字段
-        parts.push(`${JSON.stringify(key)}:${canonicalJson(item)}`);
+        parts.push(`${JSON.stringify(key)}:${canonicalJson(item, depth + 1)}`);
       }
       return `{${parts.join(',')}}`;
     }

@@ -29,8 +29,22 @@ export function detectWorldbookFormat(root: Record<string, unknown>): { format: 
   return { error: notice('unknown_format') };
 }
 
+/** 非递归地计算 JSON 值的最大嵌套层数；超过 limit 后立即停止。 */
+export function jsonDepthExceeds(value: unknown, limit: number): boolean {
+  const stack: Array<[unknown, number]> = [[value, 1]];
+  while (stack.length) {
+    const [item, depth] = stack.pop()!;
+    if (item === null || typeof item !== 'object') continue;
+    if (depth > limit) return true;
+    for (const child of Array.isArray(item) ? item : Object.values(item)) stack.push([child, depth + 1]);
+  }
+  return false;
+}
+
 export function importWorldbookValue(value: unknown, options: ImportOptions = {}): Promise<WorldbookImportResult> {
   if (!isPlainObject(value)) return Promise.resolve({ ok: false, notices: [notice('invalid_root')] });
+  if (jsonDepthExceeds(value, WORLDBOOK_LIMITS.maxDepth))
+    return Promise.resolve({ ok: false, notices: [notice('too_deep', {}, { limit: WORLDBOOK_LIMITS.maxDepth })] });
   const detected = detectWorldbookFormat(value);
   if ('error' in detected) return Promise.resolve({ ok: false, notices: [detected.error] });
   switch (detected.format) {
