@@ -73,6 +73,10 @@ export interface InjectionPlan {
   before: string[]; after: string[]; authorNoteTop: string[]; authorNoteBottom: string[];
   exampleMessages: Array<{ position: 'before' | 'after'; content: string }>;
   atDepth: Array<{ depth: number; role: number; contents: string[] }>;
+  /**
+   * Outlet 名称 → 内容。无原型字典：名称是条目里的任意文本（可能是 "__proto__"、"constructor" 等），
+   * 只作为自有数据键使用。可直接 JSON 序列化；读取时请用 Object.hasOwn 判断。
+   */
   outlets: Record<string, string[]>;
 }
 export type DecisionReason =
@@ -121,7 +125,14 @@ interface Item {
   key: string; bookId: string; versionId: string; entry: WorldbookEntry;
   content: string; decorators: string[]; index: number; fingerprint: string; level: number;
 }
-const emptyPlan = (): InjectionPlan => ({ before: [], after: [], authorNoteTop: [], authorNoteBottom: [], exampleMessages: [], atDepth: [], outlets: {} });
+const emptyPlan = (): InjectionPlan => ({
+  before: [], after: [], authorNoteTop: [], authorNoteBottom: [], exampleMessages: [], atDepth: [], outlets: Object.create(null) as Record<string, string[]>,
+});
+/** 往无原型字典里追加；名称只作自有数据键，不会触及任何原型。 */
+function appendOwn(target: Record<string, string[]>, name: string, value: string) {
+  if (Object.hasOwn(target, name)) target[name].push(value);
+  else Object.defineProperty(target, name, { value: [value], enumerable: true, writable: true, configurable: true });
+}
 const levelOf = (value: boolean | number) => value === true ? 1 : value === false ? 0 : value;
 
 export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
@@ -386,7 +397,7 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
       }
       case ENTRY_POSITIONS.outlet:
         if (!e.outletName) continue;
-        (plan.outlets[e.outletName] ??= []).push(content);
+        appendOwn(plan.outlets, e.outletName, content);
         break;
       default: continue;
     }
