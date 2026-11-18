@@ -217,6 +217,10 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   const sceneWriteNotes = stripVariableSceneWrites(result, state, draft);
   if (sceneWriteNotes.length) {
     const retained = [...result.worldCommands, ...result.taskCommands, ...result.eventCommands];
+    // Normalization may make distinct raw writes identical; preserve the same
+    // duplicate-effect boundary when Commit revalidates this normalized result.
+    const retainedEffects = retained.map(command => fingerprint({ ...command, commandId: '' }));
+    requireWorld(new Set(retainedEffects).size === retainedEffects.length);
     try { projected = projectTurn(original, draft, retained); }
     catch (error) { throw worldProjectionError(error, result, original, draft, source); }
   }

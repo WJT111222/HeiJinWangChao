@@ -131,6 +131,16 @@ describe('#190 原始分组、ID和权限必须先于冲突剔除', () => {
     expect(error.details).toMatchObject({ commandIndex: 1, commandType: 'CreateLocation', fieldPath: 'worldCommands.1.location.parentId' });
     expect(JSON.stringify(error.details)).not.toContain('PRIVATE_MISSING_PARENT');
   });
+  it('不同原命令剔除后变成重复效果时仍整批拒绝，避免候选与Commit重验不一致', async () => {
+    const { state, draft } = await organizationCase();
+    const raw = organizationWorld([
+      { ...organizationUpdate('org-business', { operatingStatus: '推演甲', ownershipText: '同一独立字段' }), commandId: 'first-effect' },
+      { ...organizationUpdate('org-business', { operatingStatus: '推演乙', ownershipText: '同一独立字段' }), commandId: 'second-effect' },
+    ]);
+    const before = structuredClone({ state, draft, raw });
+    failure(() => parseWorld(JSON.stringify(raw), state, draft));
+    expect({ state, draft, raw }).toEqual(before);
+  });
   it('剔除后领域重验失败仍映射模型原始索引，不接受依赖临时覆盖的独立字段', async () => {
     const { state, draft } = await organizationCase();
     state.organizations.second = { ...structuredClone(state.organizations['org-business']), id: 'second', name: '第二家商行' };

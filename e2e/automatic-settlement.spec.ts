@@ -270,7 +270,9 @@ for (const group of ['taskCommands', 'eventCommands'] as const) {
     await page.screenshot({ path: info.outputPath(`world-rejected-${group}.png`) });
     // Explicit recovery only: do not rerun Story/Variables or keep any failed World candidate.
     server.control.world = JSON.stringify({ worldCommands: [repeated, independent], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
-    await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
+    await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
+    await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(1);
+    await settled(page);
     const committed = await stored(page);
     expect(committed.state.organizations['org-shop']).toMatchObject({ operatingStatus: '正文确认照常营业', ownershipText: 'World独立合法字段' });
     expect(committed.state.revision).toBe(1); expect(committed.state.journal).toHaveLength(1);

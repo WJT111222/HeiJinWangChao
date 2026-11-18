@@ -22,7 +22,7 @@
 4. 保留既有阶段承接规范化，逐条检查原始 NPC、组织、任务、事件权限。
 5. 使用原 `projectTurn()` 校验原始候选的完整领域约束，确保即将被剔除的字段也不能掩盖旧 revision、非法引用等问题。
 6. 原始候选合法后，仅在 worldCommands 中剔除与 Variables 重复的合法字段或关系命令。原来的金融依据清理、无剩余内容整条忽略策略保持不变。
-7. 只有确实发生剔除时，再对保留候选进行一次原有纯内存投影；后续到期事件、阶段成果、Commit 前重验均使用保留结果。无剔除时复用原投影。
+7. 只有确实发生剔除时，先继续检查保留候选的重复效果，再进行一次原有纯内存投影；后续到期事件、阶段成果、Commit 前重验均使用保留结果。无剔除时复用原投影。
 
 额外投影不产生模型请求或存档写入，不引入第二套解析器、权限或领域规则。先仅移动分组检查不足以保护会被删除的 NPC 授权、revision 和引用，因此保留完整原始领域校验是必要的安全边界。
 
@@ -38,7 +38,7 @@
 
 最初测试构造中有一个世界候选版本未递增的夹具错误，已补齐正式 `candidateRevision`；原日志 `red.log` 保留。随后在未修改生产代码的原 PR 上得到有效红测：22 项中 **14 失败、8 通过**（`red-confirmed.log`），包括非法分组被接受及索引偏移。
 
-最终新增安全文件 [world-scene-write-safety.test.ts](../../src/tests/world-scene-write-safety.test.ts) **23 项全绿**。使用真实 `parseWorld`、正式 Schema、领域投影及 Repository，不只测试过滤辅助函数。
+最终新增安全文件 [world-scene-write-safety.test.ts](../../src/tests/world-scene-write-safety.test.ts) **24 项全绿**。使用真实 `parseWorld`、正式 Schema、领域投影及 Repository，不只测试过滤辅助函数。
 
 | 场景 | 最终结果 |
 | --- | --- |
@@ -51,10 +51,13 @@
 | NPC 仍在场、旧 expectedRevision、缺失目标和非法引用 | 即使字段会被剔除也拒绝；诊断不泄露示例敏感值 |
 | 主角命令、错误组织类别字段 | 仍拒绝 |
 | 前一条被剔除、后一条权限或领域错误 | fieldPath 与 commandIndex 都指向模型原始第 2 条 |
+| 剔除后不同原命令变成相同效果 | 整批拒绝，避免首次验证通过而 Commit 重验拒绝 |
 | 过滤后保留字段依赖临时名称覆盖才能成立 | 重验仍拒绝，并正确定位原始第 2 条；未接受不合法投影 |
 | Variables 权威组织状态 + World 独立字段 | 正式保存两者的合法组合，Variables 值不被覆盖 |
 
 过滤后重验负例具体构造：Variables 已把第一家组织命名为 A；World 临时把它改为 B，并将第二家组织命名为 A。原始投影可成立，但忽略第一条重复名称后，第二条会造成同类组织重名。阶段必须拒绝，错误仍为 `worldCommands.1` / `commandIndex: 1`，不能因过滤改报第一条。
+
+交付前又补查出一项规范化幂等边界：原命令因重复字段的值不同而效果不同，剔除后可能变成相同效果。新增用例先得到 23 通过 / 1 失败（`post-strip-effects-red.log`），再用四行代码恢复剔除后的既有效果去重检查。原始候选与保留候选均检查，避免返回无法通过 Commit 重验的候选；没有合并或静默去掉重复的独立合法字段。
 
 原有 organization-system、world-validation、world-structural-reliability 的断言均保留，验证了 Variables 新建组织/关系、独立字段、NPC 合法离场、financialBasis 清理等 #186 行为。
 
@@ -80,15 +83,16 @@ Node **v24.19.0** / npm **11.9.0** / Vitest **5.0.5** / Playwright **1.64.1** / 
 | 原 PR 有效红测，22 项 | 8 / 14 / 0 | 1 | red-confirmed.log |
 | 首轮 `npm run check` | Vitest 4407 / 0 / 0；TypeScript 发现新增测试夹具漏填必需字段 | 2 | check-first.log |
 | 补齐夹具后 `npm run check` | 4407 / 0 / 0；Lint、TypeScript、catalog、Build 通过 | 0 | check-final.log |
-| 补充过滤后索引回归后的最终 `VITEST_MAX_WORKERS=2 npm run check` | **185 文件、4408 / 0 / 0；Lint、TypeScript、文件名、catalog、Build 全通过** | **0** | check-verified.log |
-| `npm run prompts:check` | **93 / 0 / 0** | **0** | prompts.log |
-| 最终十文件定向 Vitest | **275 / 0 / 0** | **0** | targeted-verified.log |
-| 最终新增安全文件单跑 | **23 / 0 / 0** | **0** | safety-final.log |
+| 过滤后索引回归的中间完整检查 | 185 文件、4408 / 0 / 0；工程检查通过 | 0 | check-verified.log |
+| 最终 `VITEST_MAX_WORKERS=2 npm run check` | **185 文件、4409 / 0 / 0；Lint、TypeScript、文件名、catalog、Build 全通过** | **0** | check-release.log |
+| `npm run prompts:check` | **93 / 0 / 0** | **0** | prompts-release.log |
+| 最终十文件定向 Vitest | **276 / 0 / 0** | **0** | targeted-release.log |
+| 最终新增安全文件单跑 | **24 / 0 / 0** | **0** | safety-release.log |
 | 最终 `git diff --check`、暂存区检查 | 通过 | 0 | diff-check.log / staged-diff-check.log |
 
 定向十文件包含：organization-system、world-validation、world-structural-reliability、world-scene-write-safety、world-stage、world-data-boundary、turn-commit、turn-coordinator、automatic-turn、stage-response-observation。
 
-Prompt 93 与专项测试属于完整 Vitest 的重叠集合，不叠加计数。早期 110、274 项等中间批次日志也保留，不与最终 4408 合并为一次全绿。TypeScript 的首轮错误是本轮新测试的构造错误，已补齐 UpdateProtagonist 的 protagonistId / expectedRevision，使该负例真正走 World 权限校验，而不是在通用 Schema 提前失败；没有改生产规则迁就测试。
+Prompt 93 与专项测试属于完整 Vitest 的重叠集合，不叠加计数。早期 110、274 项等中间批次日志也保留，不与最终 4409 合并为一次全绿。TypeScript 的首轮错误是本轮新测试的构造错误，已补齐 UpdateProtagonist 的 protagonistId / expectedRevision，使该负例真正走 World 权限校验，而不是在通用 Schema 提前失败；没有改生产规则迁就测试。
 
 ## 双端 Chromium 与失败归因
 
@@ -98,12 +102,15 @@ Prompt 93 与专项测试属于完整 Vitest 的重叠集合，不叠加计数�
 | --- | --- | --- | --- |
 | 首轮新增测试 | 4 / 2 / 0 | 1 | 手机诊断已自动打开，测试再次点击被原生模态遮挡的底层入口 |
 | 第二轮测试导航调整 | 4 / 2 / 0 | 1 | 新定位器未限定活动弹窗，匹配两处 runtime-log，严格定位失败 |
-| 最终整批 | **6 / 0 / 0** | **0** | PC 3、手机 3；正例与两种非法分组完整覆盖 |
+| 导航修正后的整批 | 6 / 0 / 0 | 0 | browser-verified.log，保留中间成功证据 |
+| 补强后首批 | 5 / 1 / 0 | 1 | desktop 等待器同时匹配进度状态和原文接收状态，严格定位失败；browser-release.log |
+| 最终整批 | **6 / 0 / 0** | **0** | PC 3、手机 3；正例与两种非法分组完整覆盖；browser-accepted.log |
 | 干净 main 手机模态对照 | **1 / 0 / 0** | **0** | 同 Node/锁文件/Chromium/原项目配置，证明已有原生模态和两份日志 DOM；关闭模态后可打开原文 |
+| 干净 main PC 接收状态对照 | **1 / 0 / 0** | **0** | 同环境证明原文接收中与工作流进度均为 status；正式提交后只剩已结算状态 |
 
-两项新增测试的导航已限定到活动诊断 Dialog，并正常点击关闭后再进入模型原文；没有 `.first()`、强制点击、skip、删除或放宽业务断言。未修改共享导航助手或正式 UI。首轮和第二轮的日志、错误上下文及 trace 都保留。
+两项新增测试的导航已限定到活动诊断 Dialog，并正常点击关闭后再进入模型原文；恢复时先断言 Repository 已正式推进回合，再检查原有“本回合已结算”状态，以免原文接收中的另一个 status 触发严格定位错误；没有 `.first()`、强制点击、skip、删除或放宽业务断言。最终 E2E 定位调整后另行 ESLint 退出码 0（release-e2e-lint.log）。未修改共享导航助手或正式 UI。首轮和第二轮的日志、错误上下文及 trace 都保留。
 
-同环境 main 对照为 `988a7dd6b9515350889df9b14b579e7f00fd4756`，临时测试源码为证据包 `main-modal-proof.spec.ts.txt`；正式 main 工作树测试后恢复干净。这些失败属于本轮新增测试对既有模态行为的导航/定位错误，不是生产权限修复引入的回归。没有借用作者 Node 22 环境的旧失败归因，也没有宣称未运行的其他旧 E2E 已通过。
+同环境 main 对照为 `988a7dd6b9515350889df9b14b579e7f00fd4756`，临时测试源码为证据包 `main-modal-proof.spec.ts.txt`、`main-status-proof.spec.ts.txt`；正式 main 工作树测试后恢复干净。这些失败属于本轮新增测试对既有模态行为的导航/定位错误，不是生产权限修复引入的回归。没有借用作者 Node 22 环境的旧失败归因，也没有宣称未运行的其他旧 E2E 已通过。
 
 PC、手机各三个最终场景：
 
@@ -117,7 +124,7 @@ PC、手机各三个最终场景：
 
 ![手机非法分组拒绝](screenshots/mobile-world-rejected-taskCommands.png)
 
-另附 PC 与手机两个错误分组截图，共六张。最终单批日志：browser-verified.log；原始失败：browser.log、browser-final.log；main 对照：main-browser.log。
+另附 PC 与手机两个错误分组截图，共六张。最终单批日志：browser-accepted.log；原始失败：browser.log、browser-final.log、browser-release.log；main 对照：main-browser.log、main-status-browser.log。
 
 ## 本轮修改文件
 
@@ -126,7 +133,7 @@ PC、手机各三个最终场景：
 | src/services/validation/worldOutput.ts | 调整原始验证、过滤、重投影的顺序；原始分组诊断 |
 | src/services/validation/worldSceneWrites.ts | 仅过滤合法 worldCommands |
 | src/services/validation/worldProjectionDiagnostics.ts | 过滤后诊断保留原始位置 |
-| src/tests/world-scene-write-safety.test.ts | 23 项安全及 Repository 回归 |
+| src/tests/world-scene-write-safety.test.ts | 24 项安全及 Repository 回归 |
 | e2e/automatic-settlement.spec.ts | 新增两种分组负例与主动恢复；活动诊断导航 |
 | docs/pr190-world-safety/REPORT.md、evidence.zip、screenshots/*.png | 本报告、全部日志/trace 和六张真实截图 |
 
