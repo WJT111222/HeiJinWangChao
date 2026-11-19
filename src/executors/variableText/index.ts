@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { commitCommands, fingerprint } from '../../domain/commands';
 import { CommandDataError, DataError } from '../../domain/common';
 import { validateSceneEventUpdate } from '../../domain/events/scenePermission';
-import { preparedVariableCommands } from '../../domain/turnProjection';
+import { prepareVariableProjection } from '../../domain/turnProjection';
 import { openingTimeBase } from '../../domain/openingTime';
 import { GameStateSchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
@@ -35,12 +35,13 @@ async function simulateChecked(plan: VariableExecutionPlan, state: GameState,
     return failed('revision_conflict');
   if (fingerprint(plan.commands) !== fingerprint(checked.value.commands) || fingerprint(plan.origins) !== fingerprint(checked.value.origins))
     return failed('duplicate_or_conflicting_command');
-  let commands: ReturnType<typeof preparedVariableCommands> = [];
+  let commands: ReturnType<typeof prepareVariableProjection>['commands'] = [];
   try {
-    commands = preparedVariableCommands(state, context.draft, checked.value.commands);
+    const prepared = prepareVariableProjection(state, context.draft, checked.value.commands);
+    commands = prepared.commands;
     // 整份批次只调用一次；不以逐条commit产生中间revision，不使用设备当前时间。
     const projected = commitCommands(openingTimeBase(state, context.draft), context.draft.turnId,
-      context.expectedRevision, commands, state.updatedAt,storySceneAuthority(state,context.draft,checked.value.commands));
+      context.expectedRevision, commands, state.updatedAt, storySceneAuthority(state,context.draft,checked.value.commands), prepared.acknowledgedReceipts);
     validateNarrationClock(state,context.draft,projected.worldClock);
     for (const [index, command] of checked.value.commands.entries()) {
       if (command.type !== 'SaveEvent') continue;

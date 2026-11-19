@@ -1,0 +1,45 @@
+{
+  "base": "399ab887e6f08346dc002e0df03c03e37f055674",
+  "reason": "Compared with phase 2. Only the shared Story output module and the World catalog change for fixed requests. No recovery context is injected without explicit authorization.",
+  "withTalentVariablesAndWorld": "1bbfa7039a4e6f127e01952c03004e0ae2d0e3bc87d06d718979ea77be4dccc8",
+  "results": [
+    {
+      "stage": "story",
+      "mode": "opening",
+      "messages": "1b2c8634d1145a622019673b1969593e29c27de551bf2f453fe9e84ebebbdbeb",
+      "modules": "c46898fdddcddd17cece930f6e7e9dfc5a25947e41f5f26ebfc605c7e6ec7810"
+    },
+    {
+      "stage": "story",
+      "mode": "regular",
+      "messages": "9ab8105bd3c2a497cb62d0926ecb7017c81d3219f0dfa94c86a0db96220ad29e",
+      "modules": "da6eeb10f76b01b5d7fffe306bea36283f42d52883eb8a5b190c9968b31048fa"
+    },
+    {
+      "stage": "variables",
+      "mode": "opening",
+      "messages": "1ea11ebeb3af26a5c1fb0f6725b9e4cab36294e0b4b422f2c6db7fdcb7933149",
+      "modules": "a9d39a4344084125dde3945621d2b454f2554c397977a3028beadf58f9585914"
+    },
+    {
+      "stage": "variables",
+      "mode": "regular",
+      "messages": "75fcd94da0a749f1673f9a51ab83b12e17c7911bbc8b33ac90cb5ce37ff78862",
+      "modules": "7dee8d5e169deac05fe67f0165eae72f7323f46c8e4658bf7503a1f929e31d37"
+    },
+    {
+      "stage": "world",
+      "mode": "opening",
+      "messages": "609cb965f7d5b4332ef9e7a4752db93d93dabe4ec44f01ca9fe19f1b728188ce",
+      "modules": "e8cb664504b69be0d09df8a39ddca8bdb0ecf367e9a00dd0d14d5d91faed6262",
+      "context": "f9bcf97e45f9fca1349731a970e413b04bb4ffdbaf1ce19cd6d8c094642b3827"
+    },
+    {
+      "stage": "world",
+      "mode": "regular",
+      "messages": "cc03efec59e46e8f924de75e54dae7b55676f9cea33630ed953d8fff7e42bc8c",
+      "modules": "e39f2f0b750b40177e78e2af9c990580db2a984909509f6669df30feb0bb6e13",
+      "context": "d48be28f141202b233219b5065f82a1bffd8e39f10398c72abf2a9dfaac6e74d"
+    }
+  ]
+}

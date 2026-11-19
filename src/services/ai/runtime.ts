@@ -164,7 +164,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   })();
   const story = envelope?.story;
   if (story) {
-    try { validateStoryEventInteractions(captured.state, story); }
+    try { validateStoryEventInteractions(captured.state, story,captured.legacyNotificationRecovery); }
     catch (error) {
       throw storyFailure(error);
     }

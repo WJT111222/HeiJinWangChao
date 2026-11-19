@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { TurnDraft } from '../../domain/drafts';
+import type { LegacyNotificationSelection } from '../../domain/events/legacyNotification';
 import type { CompanionProfile } from '../../services/local/companionProfile';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import { readAiConfig } from '../../services/ai/configuration';
@@ -35,9 +36,8 @@ export function useStoryGeneration(
     },
     [runner],
   );
-  async function generate() {
-    // The UI may start an empty/failed story, but cannot replace a valid saved story.
-    if (!draft || running.current || !mayStartStory(draft)) return;
+  async function generate(selection?: LegacyNotificationSelection) {
+    if (!draft || running.current || (!selection && !mayStartStory(draft))) return;
     running.current = true;
     errorTurn.current = turnKey(draft);
     const id = ++token.current;
@@ -47,6 +47,7 @@ export function useStoryGeneration(
     try {
       const saved = await runner.generate({
         draft,
+        legacyNotificationSelection: selection,
         settings,
         companionProfile,
         config: readAiConfig(localStorage),

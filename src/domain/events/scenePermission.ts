@@ -3,7 +3,7 @@ import type { TurnDraft } from '../drafts';
 import { requireData } from '../common';
 import type { GameState } from '../state';
 import type { WorldEvent } from './schema';
-import { SceneEventStateSchema } from './schema';
+import { isSceneEntryReceipt, SceneEventStateSchema } from './schema';
 import { fingerprint } from '../commands';
 
 type SceneState = GameState;
@@ -20,7 +20,7 @@ export function validateSceneEventUpdate(before: SceneState, after: SceneState, 
   const allNpcsPresent = original.actorRefs.every(ref => ref.kind !== 'npc' || presentNpc(ref.id));
   const entry=original.protagonistEntry, actual=after.events[event.id]?.protagonistEntry;
   const intervention=original.eventKind==='sub' && entry && actual?.id===entry.id && actual.handledTurnId===turnId
-    && !['pending','invalidated'].includes(actual.status);
+    && isSceneEntryReceipt(actual.status);
   const authored=story && storyEventNarrations(before,story).some(g=>g.eventNarration?.mode==='enter' && g.eventNarration.eventId===event.id);
   requireData((sceneRelated && allNpcsPresent) || intervention || authored, 'SCENE_PERMISSION', '变量只能更新与主角或本幕在场人物相关的现场事件');
   const mutable = new Set<string>([...SceneEventStateSchema.keyof().options, 'sourceTurnIds']);

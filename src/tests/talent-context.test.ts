@@ -7,7 +7,7 @@ import { estimateTokens } from '../prompts/statistics';
 import { sentContext } from './fixtures/contextAssertions';
 import { talentPromptInput as currentTalentPromptInput, talentMemoryInput as currentTalentMemoryInput } from './fixtures/talentPrompt';
 import baseline from './fixtures/talent-no-selection-baseline.json';
-import storyLengthBaseline from './fixtures/talent-story-length-baseline.json';
+import issue194PromptBaseline from './fixtures/talent-issue-194-prompt-baseline.json';
 
 // 仅本文件的历史字节对照固定为原七字段设置；其他请求测试继续使用新默认设置。
 function talentPromptInput(...args: Parameters<typeof currentTalentPromptInput>) {
@@ -54,8 +54,8 @@ describe('PR-B 条件式单项天赋上下文', () => {
     }
   });
 
-  it('有天赋 Variables/World 完整请求保持修改前 main 基线，通用边界与专属规则不变', async () => {
-    // Captured with the production composer at main 659df836, before changing Story rules.
+  it('有天赋 Variables/World 完整请求保留通用与专属规则及已核对的入场提示', async () => {
+    // Compared with phase 2 using the production composer: only the World command catalog differs for Variables/World.
     const requests = [];
     for (const definition of talentDefinitions) {
       for (const stage of ['variables', 'world'] as const) for (const mode of ['opening', 'regular'] as const) {
@@ -65,7 +65,7 @@ describe('PR-B 条件式单项天赋上下文', () => {
       const { commonRules, additionalRules } = talentContext(definition.id, 'story')!;
       requests.push({ definition, commonRules, additionalRules });
     }
-    expect(hash(requests)).toBe('d7f2989c549beb19710eee4e5d49b584f1fc6f201a56473381d9fbf78a928586');
+    expect(hash(requests)).toBe(issue194PromptBaseline.withTalentVariablesAndWorld);
   });
 
   it.each(talentDefinitions)('$name 在开局/普通三阶段读取同一正式全文，单份注入且不改输入', async definition => {
@@ -92,17 +92,15 @@ describe('PR-B 条件式单项天赋上下文', () => {
     }
   });
 
-  it.each(baseline.results.filter(r => r.stage !== 'memory'))('无天赋 $stage/$mode 保留 PR-A 上下文与非 Story 字节，仅 Story 篇幅规则更新', async expected => {
+  it.each(baseline.results.filter(r => r.stage !== 'memory'))('无天赋 $stage/$mode 保留 PR-A 上下文与经核对的正式请求', async expected => {
     const input = talentPromptInput(expected.stage as typeof stages[number], expected.mode as 'opening' | 'regular');
     const prompt = await composePrompt(input);
     expect(prompt.context).not.toHaveProperty('PROTAGONIST_TALENT');
     expect(sentContext(prompt.messages)).not.toHaveProperty('PROTAGONIST_TALENT');
-    // 已逐消息对照 main：Story 只改变篇幅模块与末尾篇幅提醒；不重录其他阶段或上下文。
-    const expectedText = expected.stage === 'story'
-      ? storyLengthBaseline.results.find(result => result.mode === expected.mode)!
-      : expected;
+    // 已逐消息对照第二阶段：只更新 Story 输出模块与 World 命令目录，其他上下文字段逐项比对保持一致。
+    const expectedText = issue194PromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode) ?? expected;
     expect(hash(prompt.messages)).toBe(expectedText.messages);
-    expect(hash(prompt.context)).toBe(expected.context);
+    expect(hash(prompt.context)).toBe(("context" in expectedText ? expectedText.context : undefined) ?? expected.context);
     expect(hash(prompt.modules)).toBe(expectedText.modules);
     expect(input.state.protagonist).not.toHaveProperty('talentId');
   });

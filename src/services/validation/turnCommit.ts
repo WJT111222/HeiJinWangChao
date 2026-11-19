@@ -1,3 +1,4 @@
+import { existingLegacyRecovery } from '../../domain/events/legacyNotification';
 import { validateStoryEventInteractions } from '../../domain/events/interactions';
 import { validateSceneEventUpdate } from '../../domain/events/scenePermission';
 import { requireData } from '../../domain/common';
@@ -13,7 +14,7 @@ import { validateCommittedTime, timeOutcome } from '../../domain/timePreflight';
 export function validateTurnCandidates(state: GameState, input: TurnDraft) {
   requireData(completeTurnDraft(input), 'TURN_INCOMPLETE', '正文或已启用阶段尚未完整完成');
   const draft = settlementDraft(input);
-  validateStoryEventInteractions(state, draft.story!);
+  validateStoryEventInteractions(state, draft.story!,existingLegacyRecovery(state,draft));
   timeOutcome(state, draft, true);
   if (draft.variables) parseVariables(JSON.stringify(draft.variables.result), state, draft);
   if (draft.world) {

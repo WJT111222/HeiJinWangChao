@@ -163,6 +163,10 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     const entry=event.protagonistEntry;
     if(entry) {
       location(entry.locationId, [...path('protagonistEntry'), 'locationId']);
+      if (entry.recoverySource) check(entry.status === 'acknowledged' && !event.entryIntent && event.eventKind === 'sub',
+        '旧通知恢复来源不合法', [...path('protagonistEntry'), 'recoverySource'], 'event_entry');
+      if (entry.status === 'acknowledged') check(event.entryIntent === 'notification' || entry.recoverySource,
+        '收悉需要纯通知类型或已确认的旧通知来源', path('entryIntent'), 'event_entry');
       check(Date.parse(entry.queuedAt)<=Date.parse(s.worldClock) && event.sourceTurnIds.includes(entry.sourceTurnId), '入场安排时间或来源不合法');
       check(entry.status==='pending' ? !entry.handledTurnId && !entry.textEvidence && !['resolved','cancelled'].includes(event.status)
         : Boolean(entry.handledTurnId && entry.textEvidence && event.sourceTurnIds.includes(entry.handledTurnId)), '入场处理缺少合法回执');

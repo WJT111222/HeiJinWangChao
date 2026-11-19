@@ -1,6 +1,7 @@
 import type { SceneIntervention } from './narration';
 import { requireData } from '../common';
 import type { GameState } from '../state';
+import { isSceneEntryReceipt, StoredWorldEventSchema } from './schema';
 import type { WorldEvent, RetiredEvent } from './schema';
 
 const ended = (e: {status:string}) => ['resolved','cancelled'].includes(e.status);
@@ -15,11 +16,11 @@ export function validateStageResult(event: WorldEvent | RetiredEvent) {
     'STAGE_RESULT','子事件终态与结果不一致');
 }
 /** Validate writes after the entire batch, not against the order of clock commands. */
-export function validateStageWrite(old:WorldEvent|undefined,event:WorldEvent,clock:string,turnId:string,intervention?:SceneIntervention) {
+export function validateStageWrite(old:WorldEvent|undefined,event:WorldEvent,clock:string,turnId:string,intervention?:SceneIntervention, acknowledgedReceipt = false) {
   if(event.eventKind!=='sub' || (old && ended(old)))return;
   const receipt=event.protagonistEntry;
   const scene=Boolean(old?.protagonistEntry && receipt?.id===old.protagonistEntry.id
-    && receipt.handledTurnId===turnId && receipt.status!=='pending' && receipt.status!=='invalidated');
+    && receipt.handledTurnId===turnId && isSceneEntryReceipt(receipt.status));
   if(ended(event)) {
     validateStageResult(event);
     requireData(Date.parse(event.resolvedAt!)===Date.parse(event.fixedEndAt!)
@@ -27,7 +28,10 @@ export function validateStageWrite(old:WorldEvent|undefined,event:WorldEvent,clo
         && Date.parse(event.resolvedAt!)<Date.parse(event.fixedEndAt!)),
     'STAGE_TIME','场外子事件实际结案时间必须为固定终止时间；提前结案仅限本轮现场回执');
   } else if(old && !scene && intervention?.eventId!==event.id) {
-    requireData(same(old,event),'STAGE_EARLY_WRITE','场外小事件不可例行改写，须到固定时间结案');
+    const metadataOnly = acknowledgedReceipt && same(StoredWorldEventSchema.parse(old),
+      StoredWorldEventSchema.parse({ ...event, sourceTurnIds:old.sourceTurnIds,
+        protagonistEntry:old.protagonistEntry, protagonistKnowledge:old.protagonistKnowledge }));
+    requireData(metadataOnly || same(old,event),'STAGE_EARLY_WRITE','场外小事件不可例行改写，须到固定时间结案');
   } else if(!old) requireData(Date.parse(clock)<Date.parse(event.fixedEndAt!),'STAGE_DUE','本窗口已到期的新阶段须保存最终结案对象');
 }
 /** Final World/turn boundary only: Variables may simulate a clock crossing before World runs. */
@@ -51,7 +55,8 @@ export function validateStageSettlement(before:GameState,after:GameState,turnId:
       requireData(!source || same(source.protagonistEntry,{...entry,status:'invalidated',handledTurnId:turnId,
         textEvidence:closed?'阶段到期，未呈现的原入场安排已结束':'阶段固定到期，入场职责转交后续事件'}),'STAGE_ENTRY','阶段不能伪造玩家处理回执');
       if(closed)continue;
-      requireData(next.length===1 && same(next[0].protagonistEntry,{...entry,id:`stage-entry:${before.revision}`}),
+      requireData(next.length===1 && next[0].entryIntent===event.entryIntent
+        && same(next[0].protagonistEntry,{...entry,id:`stage-entry:${before.revision}`}),
         'STAGE_ENTRY','到期入场必须由唯一后继互动事件承接，不能伪造接受或丢失参与');
     }
   }

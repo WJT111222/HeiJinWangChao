@@ -162,6 +162,8 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
           event.actorRefs.forEach((ref, index) => requireWorld(ref.kind === 'protagonist' ? ref.id === base.protagonist.id
             : ref.kind === 'organization' ? Boolean(causal.organizations[ref.id])
               : Boolean(causal.npc[ref.id]), 'permission', 'actor_permission', `event.actorRefs.${index}`));
+          requireWorld(old ? old.entryIntent === event.entryIntent : !event.entryIntent || event.continuation?.direction === 'protagonist',
+            'invalid_output','event_immutable','event.entryIntent');
           if (old) {
             requireWorld(old.startAt === event.startAt
               && old.completionCondition === event.completionCondition, 'invalid_output', 'event_immutable', old.startAt !== event.startAt ? 'event.startAt' : 'event.completionCondition');

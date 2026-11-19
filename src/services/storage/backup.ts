@@ -84,12 +84,14 @@ async function sha256(text: string): Promise<string | undefined> {
 }
 
 /** 草稿只有指向同一存档、且基于同一正式版本时才随备份恢复；否则跳过草稿，不影响存档。 */
-export function compatibleDraft(state: GameState, raw: unknown): { draft?: TurnDraft; dropped?: string } {
+export function compatibleDraft(state: GameState, raw: unknown, exportLocalRecovery = false): { draft?: TurnDraft; dropped?: string } {
   if (raw === undefined || raw === null) return {};
   const parsed = TurnDraftSchema.safeParse(raw);
   if (!parsed.success) return { dropped: '草稿结构无法通过校验，已跳过草稿。' };
   if (parsed.data.saveId !== state.saveId) return { dropped: '草稿不属于这份存档，已跳过草稿。' };
   if (parsed.data.baseSaveRevision !== state.revision) return { dropped: '草稿基于旧的回合，已过期，已跳过草稿。' };
+  if (parsed.data.legacyNotificationRecovery && !exportLocalRecovery)
+    return { dropped: '旧通知恢复授权只在原本机草稿有效，已跳过该未结算草稿，正式存档可导入。' };
   return { draft: parsed.data };
 }
 
