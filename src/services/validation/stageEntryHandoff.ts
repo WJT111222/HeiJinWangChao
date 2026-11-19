@@ -5,12 +5,14 @@ import type { GameState } from '../../domain/state';
 import { terminalEvent } from '../../domain/events/lifecycle';
 import { requireEventEntry, requireWorld } from './worldDiagnostics';
 
+type WorldResult = z.infer<typeof WorldResultSchema>;
+
 /** Carry an unfinished interaction to an explicit legacy successor, never accept/decline for the player. */
-export function normalizeStageEntryHandoffs(result: z.infer<typeof WorldResultSchema>, base: GameState, draft: TurnDraft) {
+export function normalizeStageEntryHandoffs(result: WorldResult, base: GameState, draft: TurnDraft, original: WorldResult) {
   const normalized = new Set<string>();
-  const offset = result.worldCommands.length + result.taskCommands.length;
-  const eventWrites = result.eventCommands.flatMap((command, index) =>
-    command.type === 'SaveEvent' ? [{ event: command.event, index }] : []);
+  const offset = original.worldCommands.length + original.taskCommands.length;
+  const eventWrites = result.eventCommands.flatMap(command =>
+    command.type === 'SaveEvent' ? [{ event: command.event, index: original.eventCommands.indexOf(command) }] : []);
   const scope = (index: number, field: string) => ({
     fieldPath: `eventCommands.${index}.event.${field}`, commandIndex: offset + index, commandType: 'SaveEvent',
   });

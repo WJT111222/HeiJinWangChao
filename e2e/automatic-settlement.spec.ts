@@ -279,3 +279,94 @@ for (const group of ['taskCommands', 'eventCommands'] as const) {
     expect(server.calls).toEqual(['story', 'variables', 'world', 'world']);
   });
 }
+
+test('#193 刷新后只重试World，取消、重复点击与跨标签竞争不重跑上游或重复结算', async ({ page, context, isMobile }, info) => {
+  test.setTimeout(90_000);
+  await seed(page, false, true);
+  const server = await mock(page);
+  await page.getByRole('button', {name:'自动生成开局',exact:true}).click();
+  await settled(page);
+  const baseline = await stored(page);
+  const boundAction = '在报亭买一份报纸，看看街边情况';
+  const worldChange = {type:'UpdateOrganization',commandId:'org-background',evidence:'合成背景行动',
+    organizationId:'org-shop',expectedRevision:baseline.state.revision,changes:{operatingStatus:'上午盘点后开门'}};
+  const task = {id:'stock-check-a',actorRef:{kind:'organization',id:'org-shop'},goal:'内部盘点合成样品',
+    startAt:'2026-10-18T08:10:00+08:00',dueAt:'2026-10-18T09:00:00+08:00',status:'active',prerequisites:[],blockers:[]};
+  const planned = {type:'SaveTask',commandId:'background-task',evidence:'合成内部说明',task};
+  const valid = {worldCommands:[worldChange],taskCommands:[planned],eventCommands:[],visibleHooks:[],unresolved:[]};
+  server.control.world = JSON.stringify({...valid,taskCommands:[planned,
+    {...planned,commandId:'duplicate-task',task:{...task,id:'stock-check-b'}}]});
+  await page.getByLabel('你的行动',{exact:true}).fill(boundAction);
+  await page.getByRole('button',{name:'发送',exact:true}).click();
+  await expect.poll(async () => (await stored(page)).draft.stageStatus.world).toBe('failed');
+  const failed = await stored(page);
+  expect(failed.state).toEqual(baseline.state);
+  expect(failed.draft).toMatchObject({userInput:boundAction,stageStatus:{story:'ready',variables:'ready',world:'failed'},
+    variables:{validation:'validated'}});
+  expect(failed.draft.world).toBeUndefined();
+  expect(server.calls).toEqual(['story','variables','world','story','variables','world']);
+  const modal = page.getByRole('dialog').filter({has:page.getByRole('heading',{name:'重试与变更详情',exact:true})});
+  if (!isMobile) await openWorkflowDiagnostics(page);
+  const log = isMobile ? modal.getByTestId('runtime-log') : page.getByTestId('runtime-log');
+  await expect(log).toContainText('task_duplicate');
+  await expect(log).toContainText('taskCommands.1.task.goal');
+  await expect(log).toContainText('SaveTask');
+  await expect(log).not.toContainText('内部盘点合成样品');
+  if (isMobile) await modal.getByRole('button',{name:'关闭资料界面',exact:true}).click();
+  await page.reload();
+  await openGameTools(page);
+  expect(await stored(page)).toEqual(failed);
+  expect(server.calls).toHaveLength(6);
+  const hint = page.locator(isMobile ? '.wf-ft .workflow-fee' : '.workflow-primary small');
+  await expect(hint).toBeVisible();
+  await expect(hint).toHaveText('本次仅重试动态世界，保留已通过的正文和变量。重新请求可能产生模型费用。');
+  await page.screenshot({path:info.outputPath('world-only-retry.png')});
+  const retry = page.getByRole('button',{name:'继续未完成阶段',exact:true});
+  const other = await context.newPage();
+  let release!: () => void;
+  server.control.hold = new Promise<void>(done => { release=done; });
+  server.control.world = JSON.stringify(valid);
+  try {
+    const credential = await page.evaluate(() => Object.entries(sessionStorage)
+      .find(([key]) => key.startsWith('heijin.credential.v1:')));
+    expect(credential).toBeDefined();
+    await other.addInitScript(([key,value]) => sessionStorage.setItem(key,value),credential!);
+    const second = await mock(other);
+    await other.goto('/#game/save-a');
+    await openGameTools(other);
+    await retry.evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
+    await expect.poll(() => server.calls.slice(6)).toEqual(['world']);
+    await other.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
+    await expect(other.getByText(/此存档已有阶段请求/).first()).toBeVisible();
+    expect(second.calls).toEqual([]);
+    expect((await stored(other)).state).toEqual(failed.state);
+    await page.getByRole('button',{name:'取消自动执行',exact:true}).click();
+    server.control.hold = undefined;
+    release();
+    await expect(retry).toBeEnabled();
+    const cancelled = await stored(page);
+    expect(cancelled.state).toEqual(failed.state);
+    expect(cancelled.draft).toMatchObject({userInput:boundAction,story:failed.draft.story,variables:failed.draft.variables});
+    expect(cancelled.draft.world).toBeUndefined();
+    expect(server.calls).toHaveLength(7);
+    await retry.click();
+    await settled(page);
+    const committed = await stored(page);
+    expect(committed.state.revision).toBe(baseline.state.revision+1);
+    expect(committed.state.journal).toHaveLength(baseline.state.journal.length+1);
+    expect(committed.state.journal.at(-1)?.turnId).toBe(failed.draft.turnId);
+    expect(committed.state.journal.at(-1)?.story).toEqual(failed.draft.story);
+    expect(committed.state.tasks['stock-check-a'].status).toBe('active');
+    expect(committed.state.tasks['stock-check-b']).toBeUndefined();
+    expect(committed.state.organizations['org-shop'].operatingStatus).toBe('上午盘点后开门');
+    expect(server.calls).toEqual(['story','variables','world','story','variables','world','world','world']);
+    await page.reload();
+    await openGameTools(page);
+    expect(await stored(page)).toEqual(committed);
+    expect(server.calls).toHaveLength(8);
+    expect(second.calls).toEqual([]);
+  } finally {
+    release();
+    await other.close();
+  }
+});
