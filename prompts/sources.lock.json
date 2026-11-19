@@ -1614,6 +1614,50 @@
         "notes": "剧情风格「荒诞喜剧」：项目原创写法要点、禁写清单与原创语感示例；参考作品只作笔法参照（附防火墙与背景锚定），未摘录任何作品原文；明确只作用于 <正文>，短期记忆、变量规划与行动选项保持中性事实规则；不改输出协议。",
         "sha256": "5a21908fb1acbbcc3fd5f5b3c8cb71619eb28e754db6af091718df2a6bd654a9"
       }
+    },
+    "creation/appearance.md": {
+      "origin": "project",
+      "treatment": "project-authored",
+      "sourcePath": "prompts/creation/appearance.md",
+      "sourceSha256": "aa3c69a9e40253f16b06ed935a90b2755d410a1e8e297d969b013020c3cfda0c",
+      "creationIdentityContext": {
+        "baseCommit": "2cf0d92d36b4bbbbc7f02dfff3f28d22e42304ca",
+        "notes": "四种创角补全参考玩家当前填写的姓名、年龄、性别，保留原有补全目标与输出协议。",
+        "sha256": "483a4356dad86a09c37a70b1cafc576f8ed0496e0ca673fa7b83c4a238a54e8e"
+      }
+    },
+    "creation/personality.md": {
+      "origin": "project",
+      "treatment": "project-authored",
+      "sourcePath": "prompts/creation/personality.md",
+      "sourceSha256": "d48cb702aab53d314ed7a721d244ac5816f487b9bb1b375a517e29b54c0acdf8",
+      "creationIdentityContext": {
+        "baseCommit": "2cf0d92d36b4bbbbc7f02dfff3f28d22e42304ca",
+        "notes": "四种创角补全参考玩家当前填写的姓名、年龄、性别，保留原有补全目标与输出协议。",
+        "sha256": "a4eaa1fc4614003b64b4da6c6e35ee98ea57c4e2a08c718173b9b6668b14b7c7"
+      }
+    },
+    "creation/profession.md": {
+      "origin": "project",
+      "treatment": "project-authored",
+      "sourcePath": "prompts/creation/profession.md",
+      "sourceSha256": "5c9117574299ff4822e25d873d2e2c98e8ec91a3d259abf6a4b751861fefc0e8",
+      "creationIdentityContext": {
+        "baseCommit": "2cf0d92d36b4bbbbc7f02dfff3f28d22e42304ca",
+        "notes": "四种创角补全参考玩家当前填写的姓名、年龄、性别，保留原有补全目标与输出协议。",
+        "sha256": "702261673ff2162c3491de2dd558ca0608104a2bac779db358bb3fbc7f480a56"
+      }
+    },
+    "creation/background.md": {
+      "origin": "project",
+      "treatment": "project-authored",
+      "sourcePath": "prompts/creation/background.md",
+      "sourceSha256": "a75e4918924f7c0ba1c158f3d4abb86f1a3e925a8ff9b74e3187886f5efbf240",
+      "creationIdentityContext": {
+        "baseCommit": "2cf0d92d36b4bbbbc7f02dfff3f28d22e42304ca",
+        "notes": "四种创角补全参考玩家当前填写的姓名、年龄、性别，保留原有补全目标与输出协议。",
+        "sha256": "e57f52fee1580eacf806b9cdc757cf521bf7a820c90e85bfbb3152f3b99940b5"
+      }
     }
   },
   "m5P6": {

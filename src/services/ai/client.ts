@@ -48,6 +48,8 @@ export interface RequestOptions {
   onCompatibilityReasoningDelta?: (text: string) => void;
   onActivity?: (kind: 'content' | 'reasoning') => void;
   inspection?: InspectionScope;
+  /** Form completions are transient and are not turn or connection-test inspections. */
+  recordInspection?: boolean;
 }
 export interface ModelListOptions extends RequestOptions {
   onDiagnostics?: (diagnostics: ModelListDiagnostics) => void;
@@ -188,7 +190,7 @@ export class AiClient {
         if (signal.aborted) throw new AiError('cancelled');
         const send = (wire: ReturnType<typeof wireRequest>, requestSignal: AbortSignal) => {
           diagnostics = wire.diagnostics;
-          try { inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection, wire.presetSamplingInspection); }
+          try { if (options.recordInspection !== false) inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection, wire.presetSamplingInspection); }
           catch { /* Inspection cannot affect transport. */ }
           return this.response(wire.url, wire.init, requestSignal, snapshot, options.onResponseDiagnostics ? observe : undefined,
             wire.presetSamplingInspection !== undefined);

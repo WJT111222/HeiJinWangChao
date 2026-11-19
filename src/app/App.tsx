@@ -410,6 +410,7 @@ export function App() {
         <CreationWizard
           form={form}
           onChange={changeForm}
+          timeoutSeconds={settings.runtime.timeoutSeconds}
           onCreate={() => void create()}
           busy={busy || !repository}
           onExit={() => navigate()}

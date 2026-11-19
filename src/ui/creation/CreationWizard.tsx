@@ -4,6 +4,8 @@ import { useDesktopFeedback } from '../Feedback';
 import { Dialog } from '../Dialog';
 import { MiniCreationTicket, FullCreationTicket, TemplateChips, CreationReviewCard, CreationGuilloche, creationCity, ticketMeta } from './MobileCreation';
 import { useCreationTear } from './useCreationTear';
+import { useCreationCompletion } from './useCreationCompletion';
+import './creation-completion.css';
 import './mobile-creation.css';
 import { cities, professions, professionCategories, professionProfile, validateStep, selectProfession } from './model';
 import type { Creation } from './model';
@@ -22,16 +24,18 @@ import './desktop-creation.css';
 const steps = ['基本信息', '职业与能力', '城市与背景', '初始同伴', '确认与开局'];
 export function CreationWizard({
   form,
-  onChange,
+  onChange: saveForm,
   onCreate,
   busy,
   onExit,
+  timeoutSeconds,
 }: {
   form: Creation;
   onChange: (form: Creation) => void;
   onCreate: () => void;
   busy: boolean;
   onExit: () => void;
+  timeoutSeconds?: number;
 }) {
   const [error, setError] = useState('');
   const mobile=!useDesktopFeedback(),[preview,setPreview]=useState(false),[direction,setDirection]=useState('forward'),[showPreset,setShowPreset]=useState(form.profession!=='custom');
@@ -51,6 +55,7 @@ export function CreationWizard({
     update();window.visualViewport?.addEventListener('resize',update);window.visualViewport?.addEventListener('scroll',update);return()=>{window.visualViewport?.removeEventListener('resize',update);window.visualViewport?.removeEventListener('scroll',update);};
   },[mobile]);
   useLayoutEffect(()=>{if(mobile&&card.current)card.current.scrollTop=0;},[form.step,mobile]);
+  const { changeForm: onChange, statuses, generate } = useCreationCompletion(form, saveForm, busy, timeoutSeconds);
   const change = (patch: Partial<Creation>) => onChange({ ...form, ...patch });
   const chooseTalent = (id?: TalentId) => {
     const next = { ...form };
@@ -70,27 +75,45 @@ export function CreationWizard({
   }
   const profile = professionProfile(form);
   const category = form.professionCategory ?? professionCategories[0];
-  const person = (key: keyof Creation['person'], label: string, multiline = false) => (
+  const completionField = (
+    field: keyof typeof statuses,
+    label: string,
+    value: string,
+    changeValue: (value: string) => void,
+    rows: number,
+    options: { showLabel?: boolean; placeholder?: string; disabled?: boolean } = {},
+  ) => {
+    const status = statuses[field];
+    const generating = status && 'pending' in status;
+    const error = status && 'error' in status ? status.error : undefined;
+    return <div className="creation-completion-field">
+      <label>
+        {options.showLabel ? label : null}
+        <textarea aria-label={label} value={value} onChange={event => changeValue(event.target.value)}
+          rows={rows} placeholder={options.placeholder} />
+      </label>
+      <div className="creation-completion-actions">
+        {error && <span role="alert" className="creation-completion-error">{error}</span>}
+        <button type="button" className="creation-completion-button" aria-label={`AI补全${label.replace(/（可选）$/u, '')}`}
+          aria-busy={generating || undefined} disabled={busy || generating || options.disabled}
+          title={options.disabled ? '请先填写职业名称' : undefined} onClick={() => void generate(field)}>
+          {generating ? '生成中…' : 'AI补全'}
+        </button>
+      </div>
+    </div>;
+  };
+  const person = (key: 'name' | 'age', label: string) => (
     <label key={key}>
       {label}
-      {multiline ? (
-        <textarea
-          aria-label={label}
-          value={form.person[key]}
-          onChange={(e) => change({ person: { ...form.person, [key]: e.target.value } })}
-          rows={4}
-        />
-      ) : (
-        <input
-          aria-label={label}
-          value={form.person[key]}
-          onChange={(e) => change({ person: { ...form.person, [key]: e.target.value } })}
-          type={key === 'age' ? 'number' : 'text'}
-          inputMode={mobile&&key==='age'?'numeric':undefined}
-          min={key === 'age' ? 0 : undefined}
-          required={['name', 'age', 'gender'].includes(key)}
-        />
-      )}
+      <input
+        aria-label={label}
+        value={form.person[key]}
+        onChange={(e) => change({ person: { ...form.person, [key]: e.target.value } })}
+        type={key === 'age' ? 'number' : 'text'}
+        inputMode={mobile&&key==='age'?'numeric':undefined}
+        min={key === 'age' ? 0 : undefined}
+        required
+      />
     </label>
   );
   const companion = (key: keyof Creation['companion'], label: string, multiline = false) => (
@@ -138,8 +161,8 @@ export function CreationWizard({
     <div className="custom-profession">
       <label>职业名称<input value={form.customProfession} required
         onChange={(e) => change({ customProfession: e.target.value })} /></label>
-      <label>职业介绍<textarea aria-label="职业介绍" rows={mobile ? 5 : 4} value={form.professionDescription ?? ''}
-        onChange={(e) => change({ professionDescription: e.target.value })} /></label>
+      {completionField('profession','职业介绍',form.professionDescription ?? '',
+        value => change({ professionDescription: value }), mobile ? 5 : 4, { showLabel: true, disabled: !form.customProfession.trim() })}
       <label>内置职业技能<textarea aria-label="内置职业技能" rows={4} value={form.skills} placeholder="每行一项"
         onChange={(e) => change({ skills: e.target.value, skillsSource: 'manual' })} /></label>
       <label>长期影响<textarea aria-label="长期影响" rows={mobile ? 5 : 4} value={form.professionLongTermImpact ?? ''}
@@ -237,7 +260,8 @@ export function CreationWizard({
               <div className="creation-templates">
                 {appearanceAndPersonality.map(({ field, label, templates, key, apply }) => <div key={field}>
                   <h3 className="creation-field-heading">{label}</h3><TemplateChips label={`${label}模板`} value={form[key]??'custom'} options={templates} onChange={apply}/>
-                  {person(field, label, true)}
+                  {completionField(field,label,form.person[field],
+                    value => change({ person: { ...form.person, [field]: value } }),4,{showLabel:true})}
                 </div>)}
               </div>
             </div>
@@ -252,8 +276,8 @@ export function CreationWizard({
                 {appearanceAndPersonality.map(({ field, label, templates, key, apply }) => <div key={field} className="creation-template-field">
                   <h3 className="creation-sub-heading">{label}<small>{field === 'appearance' ? '选模板会填入下方，可继续改写' : '同上'}</small></h3>
                   <TemplateCards label={`${label}模板`} value={form[key] ?? 'custom'} options={templates} onChange={apply} />
-                  <textarea aria-label={label} rows={4} value={form.person[field]}
-                    onChange={(e) => change({ person: { ...form.person, [field]: e.target.value } })} />
+                  {completionField(field,label,form.person[field],
+                    value => change({ person: { ...form.person, [field]: value } }),4)}
                 </div>)}
               </div>
             </div>
@@ -345,15 +369,10 @@ export function CreationWizard({
                 {!mobile&&<p className="muted creation-city-note">选择起点，不限制未来的目的地。</p>}
               </section>
               <section className="background-box">
-                <label>
-                  人物背景（可选）
-                  <textarea
-                    rows={mobile ? 5 : 4}
-                    value={form.background}
-                    onChange={(e) => change({ background: e.target.value })}
-                    placeholder="家庭、工作经历、个人秘密……也可以留白。切换城市不会改写这里的内容。"
-                  />
-                </label>
+                {completionField('background','人物背景（可选）',form.background,
+                  value => change({ background: value }),mobile ? 5 : 4,{
+                    showLabel:true,placeholder:'家庭、工作经历、个人秘密……也可以留白。切换城市不会改写这里的内容。',
+                  })}
                 <button type="button" className="text-button" onClick={() => move(4)}>
                   跳过背景，继续
                 </button>
