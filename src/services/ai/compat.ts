@@ -172,12 +172,17 @@ export function rememberPresetSamplingRejection(
   route: Route, url: string, model: string, raw: unknown, sent: Record<string, unknown>,
 ) {
   const error = object(object(raw).error);
-  const message = typeof error.message === 'string' ? error.message.trim() : '';
+  if (error.message != null && typeof error.message !== 'string') return false;
+  const message = error.message?.trim() ?? '';
   const code = error.code;
   if (code != null && code !== 'unsupported_parameter' && code !== 'unsupported_value') return false;
 
   const conditional = reasoningRejection.exec(message);
   const defaults = defaultOnlyRejection.exec(message);
+  // 部分中转用 param 指定字段，message 仅说明默认值。
+  const briefDefault = code === 'unsupported_value' && typeof error.param === 'string'
+    ? /^Only the default(?: \((-?\d+(?:\.\d+)?)\))? value is supported\.?$/i.exec(message)
+    : null;
   const plain = plainRejection.exec(message);
   const named = conditional?.[1] ?? defaults?.[1] ?? plain?.[1];
   const field = samplingFields.find((candidate) => candidate === (named ?? error.param));
@@ -186,7 +191,10 @@ export function rememberPresetSamplingRejection(
   if (typeof value !== 'number') return false;
 
   let rule: SamplingRule;
-  if (defaults && Number(defaults[2]) === value && (defaults[3] === undefined || Number(defaults[3]) !== value)) {
+  const fullDefaultMatch = defaults && Number(defaults[2]) === value
+    && (defaults[3] === undefined || Number(defaults[3]) !== value);
+  const briefDefaultMatch = briefDefault && (briefDefault[1] === undefined || Number(briefDefault[1]) !== value);
+  if (fullDefaultMatch || briefDefaultMatch) {
     // 默认值声明只证明本次值被拒，保留其他合法取值的出站机会。
     rule = { kind: 'default_only', rejectedValue: value };
   } else if (code === 'unsupported_value') {

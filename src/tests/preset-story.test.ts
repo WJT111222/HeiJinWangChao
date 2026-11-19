@@ -471,6 +471,9 @@ describe('预设正文采样兼容', () => {
     ['数值越界', { ...rejected('top_p'), message: 'top_p must be between 0 and 1' }, 400],
     ['一般 invalid_value', { ...rejected('top_p'), code: 'invalid_value' }, 422],
     ['错误字段与文字冲突', { ...rejected('top_p'), param: 'temperature' }, 400],
+    ['缺字段的默认值说明', { code: 'unsupported_value', message: 'Only the default (1) value is supported.' }, 422],
+    ['本次已发送所称默认值', { code: 'unsupported_value', param: 'top_p', message: 'Only the default (0) value is supported.' }, 422],
+    ['未识别的结构化条件', { ...rejected('top_p'), message: { condition: 'unknown' } }, 400],
     ['含糊提示', { message: 'Could not handle a sampling option' }, 400],
     ['普通 unsupported_value', { ...rejected('top_p'), code: 'unsupported_value', message: 'Invalid value supplied for top_p.' }, 400],
     ['未发送的字段', rejected('presence_penalty'), 400],
@@ -494,13 +497,16 @@ describe('预设正文采样兼容', () => {
     expect(body(1)).toEqual(body(0));
   });
 
-  it('只接受默认值时区分已拒绝值和可发送的 0', async () => {
+  it.each([
+    "Unsupported value: 'frequency_penalty' does not support -0.25 with this model. Only the default (0) value is supported.",
+    'Only the default (0) value is supported.',
+  ])('只接受默认值时区分已拒绝值和可发送的 0：%s', async (message) => {
     const { config, vault } = channelSetup();
     config.channels[0].baseUrl = 'https://relay.example/v1';
     const snapshot = requestSnapshot(config, 'story', vault);
     const { ai, body, fetcher } = transport({
       code: 'unsupported_value', param: 'frequency_penalty',
-      message: "Unsupported value: 'frequency_penalty' does not support -0.25 with this model. Only the default (0) value is supported.",
+      message,
     }, 422);
     const run = (frequency_penalty: number) =>
       ai.generate(snapshot, messages, { presetSampling: { ...sampling, frequency_penalty } });
