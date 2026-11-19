@@ -17,7 +17,7 @@ import { migrateSave } from './migrations';
 import { TurnSubmissionSchema, settleTurn, awaitingPlayerAction, rebindableAfterStoryStop } from '../../domain/turnCommit';
 import type { TurnSubmission } from '../../domain/turnCommit';
 import { validateTurnCandidates } from '../validation/turnCommit';
-import { reserveStageSession, withBrowserLock } from '../../workflows/stageGuard';
+import { enterHeldStage, reserveStageSession, withBrowserLock, type HeldStage } from '../../workflows/stageGuard';
 import { applyCompression, CompressionBatchSchema } from '../../domain/memories/compression';
 import type { CompressionBatch } from '../../domain/memories/compression';
 import { applyNpcSummary, NpcMemoryBatchSchema } from '../../domain/memories/npcMemory';
@@ -76,6 +76,11 @@ const emptySnapshot = (snapshot: LocalSnapshot) => snapshotStores.every((name) =
 /** 备份条目的确定性内容指纹：规范化后的正式存档与兼容草稿（同步计算，可在事务外比较）。 */
 const incomingFingerprint = (state: GameState, draft: TurnDraft | undefined) => fingerprint({ state, draft: draft ?? null });
 const replacedMessage = '这份存档已被替换（例如在其他标签导入了备份），本次没有修改。请刷新后重新操作。';
+
+/** 下一回合 ID 的格式：与仓库自己生成的完全相同（turn- 加小写 UUID v4）。 */
+export const NextTurnIdSchema = z.string().regex(/^turn-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+export function newTurnId(): string { return `turn-${crypto.randomUUID()}`; }
+export interface CommitTurnOptions { nextTurnId?: string; held?: HeldStage }
 
 const ReceiptSchema = z.strictObject({
   saveId: IdSchema,
@@ -556,97 +561,114 @@ export class SaveRepository {
   }
 
   // 完整回合唯一入口；摘要计算在事务外，事务中只等待同一 IDB 的请求。
-  async commitTurn(input: TurnSubmission): Promise<TurnCommitResult> {
+  /**
+   * 提交回合。options 均为可选，省略时行为与原来完全相同（自己占用会话、自己取锁、自己生成下一回合 ID）：
+   * - nextTurnId：调用方预先生成的下一回合 ID（必须是 turn- 加 UUID v4，与仓库自己生成的格式相同），
+   *   写入回执与下一份草稿，用作跨库提交证明。走重放分支时忽略它，返回第一次提交时的 ID。
+   * - held：调用方已持有的会话与锁（stageGuard 签发的持有凭据），验证通过后复用，不再重复占用；
+   *   伪造、失效、其他存档的凭据一律拒绝（LOCK_SCOPE_INVALID），不写入。
+   */
+  async commitTurn(input: TurnSubmission, options: CommitTurnOptions = {}): Promise<TurnCommitResult> {
     const parsed = TurnSubmissionSchema.parse(input);
+    const requested = options.nextTurnId;
+    if (requested !== undefined)
+      requireData(NextTurnIdSchema.safeParse(requested).success, 'INVALID_NEXT_TURN_ID', '下一回合 ID 必须是 turn- 加 UUID v4；本次没有修改。');
+    if (options.held !== undefined) {
+      const held = enterHeldStage(options.held, parsed.draft.saveId);
+      return this.commitTurnLocked(parsed, requested, held.check);
+    }
     const session = reserveStageSession(parsed.draft.saveId);
     try {
-      return await withBrowserLock(parsed.draft.saveId, async () => {
-        const digest = await crypto.subtle.digest(
-          'SHA-256',
-          new TextEncoder().encode(fingerprint(parsed)),
-        );
-        const requestHash = Array.from(new Uint8Array(digest), (byte) =>
-          byte.toString(16).padStart(2, '0'),
-        ).join('');
-        const nextTurnId = `turn-${crypto.randomUUID()}`;
-        const commit = (quotaFallback: boolean) => transaction(
-          this.database,
-          timelineStores,
-          'readwrite',
-          async (tx) => {
-            session.check();
-            const saves = tx.objectStore('saves'),
-              drafts = tx.objectStore('drafts'),
-              receipts = tx.objectStore('turnReceipts');
-            const state = await readStoredState(tx, parsed.draft.saveId);
-            const rawDraft: unknown = await request(drafts.get(parsed.draft.saveId));
-            const current = TurnDraftSchema.parse(rawDraft);
-            const prior: unknown = await request(receipts.get([state.saveId, parsed.draft.turnId]));
-            if (prior !== undefined) {
-              const receipt = ReceiptSchema.parse(prior);
-              requireData(
-                receipt.requestHash === requestHash,
-                'TURN_CONFLICT',
-                '相同回合的提交内容不同',
-              );
-              requireData(
-                state.journal.some(
-                  (entry) => entry.turnId === receipt.turnId && entry.revision === receipt.revision,
-                ) &&
-                  (current.turnId === receipt.nextTurnId || state.journal.some((entry) => entry.turnId === receipt.nextTurnId)) &&
-                  current.saveId === state.saveId &&
-                  current.baseSaveRevision === state.revision &&
-                  !state.journal.some((entry) => entry.turnId === current.turnId),
-                'CORRUPT_RECEIPT',
-                '提交回执与存档不一致',
-              );
-              return { state, draft: current, replayed: true };
-            }
-            requireData(
-              current.saveId === state.saveId && fingerprint(current) === fingerprint(parsed.draft),
-              'DRAFT_CONFLICT',
-              '草稿已变化，请重新读取',
-            );
-            requireData(
-              state.revision === current.baseSaveRevision,
-              'REVISION_CONFLICT',
-              '正式版本已改变',
-            );
-            validateTurnCandidates(state, current);
-            const next = settleTurn(state, current, new Date().toISOString());
-            requireData(!next.journal.some((entry) => entry.turnId === nextTurnId), 'DUPLICATE_TURN', '下一回合 ID 重复');
-            const draft = createTurnDraft(
-              state.saveId,
-              next.revision,
-              nextTurnId,
-              'regular',
-              parsed.nextAction,
-              parsed.useVariableStage,
-              parsed.useWorldStage,
-            );
-            const receipt = ReceiptSchema.parse({
-              saveId: state.saveId,
-              turnId: current.turnId,
-              requestHash,
-              revision: next.revision,
-              nextTurnId,
-            });
-            await recordUndo(tx, state, current, quotaFallback);
-            await request(saves.put(next));
-            await request(drafts.put(draft));
-            await request(receipts.add(receipt));
-            return { state: next, draft, replayed: false };
-          },
-        );
-        try { return await commit(false); } catch (error) {
-          if (!(error instanceof DOMException) || error.name !== 'QuotaExceededError') throw error;
-          // The entire first transaction aborted. Revalidate everything, keep the formal
-          // save first, and explicitly record that this turn has no undo point. No AI retry.
-          return commit(true);
-        }
-      });
+      return await withBrowserLock(parsed.draft.saveId, () => this.commitTurnLocked(parsed, requested, session.check));
     } finally {
       session.release();
+    }
+  }
+
+  /** 已持有会话与锁时的提交主体（原 commitTurn 锁内的全部逻辑，未改动）。 */
+  private async commitTurnLocked(parsed: TurnSubmission, requestedNextTurnId: string | undefined, check: () => void): Promise<TurnCommitResult> {
+    const digest = await crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(fingerprint(parsed)),
+    );
+    const requestHash = Array.from(new Uint8Array(digest), (byte) =>
+      byte.toString(16).padStart(2, '0'),
+    ).join('');
+    const nextTurnId = requestedNextTurnId ?? newTurnId();
+    const commit = (quotaFallback: boolean) => transaction(
+      this.database,
+      timelineStores,
+      'readwrite',
+      async (tx) => {
+        check();
+        const saves = tx.objectStore('saves'),
+          drafts = tx.objectStore('drafts'),
+          receipts = tx.objectStore('turnReceipts');
+        const state = await readStoredState(tx, parsed.draft.saveId);
+        const rawDraft: unknown = await request(drafts.get(parsed.draft.saveId));
+        const current = TurnDraftSchema.parse(rawDraft);
+        const prior: unknown = await request(receipts.get([state.saveId, parsed.draft.turnId]));
+        if (prior !== undefined) {
+          const receipt = ReceiptSchema.parse(prior);
+          requireData(
+            receipt.requestHash === requestHash,
+            'TURN_CONFLICT',
+            '相同回合的提交内容不同',
+          );
+          requireData(
+            state.journal.some(
+              (entry) => entry.turnId === receipt.turnId && entry.revision === receipt.revision,
+            ) &&
+              (current.turnId === receipt.nextTurnId || state.journal.some((entry) => entry.turnId === receipt.nextTurnId)) &&
+              current.saveId === state.saveId &&
+              current.baseSaveRevision === state.revision &&
+              !state.journal.some((entry) => entry.turnId === current.turnId),
+            'CORRUPT_RECEIPT',
+            '提交回执与存档不一致',
+          );
+          return { state, draft: current, replayed: true };
+        }
+        requireData(
+          current.saveId === state.saveId && fingerprint(current) === fingerprint(parsed.draft),
+          'DRAFT_CONFLICT',
+          '草稿已变化，请重新读取',
+        );
+        requireData(
+          state.revision === current.baseSaveRevision,
+          'REVISION_CONFLICT',
+          '正式版本已改变',
+        );
+        validateTurnCandidates(state, current);
+        const next = settleTurn(state, current, new Date().toISOString());
+        requireData(!next.journal.some((entry) => entry.turnId === nextTurnId), 'DUPLICATE_TURN', '下一回合 ID 重复');
+        const draft = createTurnDraft(
+          state.saveId,
+          next.revision,
+          nextTurnId,
+          'regular',
+          parsed.nextAction,
+          parsed.useVariableStage,
+          parsed.useWorldStage,
+        );
+        const receipt = ReceiptSchema.parse({
+          saveId: state.saveId,
+          turnId: current.turnId,
+          requestHash,
+          revision: next.revision,
+          nextTurnId,
+        });
+        await recordUndo(tx, state, current, quotaFallback);
+        await request(saves.put(next));
+        await request(drafts.put(draft));
+        await request(receipts.add(receipt));
+        return { state: next, draft, replayed: false };
+      },
+    );
+    try { return await commit(false); } catch (error) {
+      if (!(error instanceof DOMException) || error.name !== 'QuotaExceededError') throw error;
+      // The entire first transaction aborted. Revalidate everything, keep the formal
+      // save first, and explicitly record that this turn has no undo point. No AI retry.
+      return commit(true);
     }
   }
 
