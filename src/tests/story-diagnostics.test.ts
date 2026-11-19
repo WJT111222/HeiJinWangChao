@@ -41,7 +41,7 @@ describe('Story failures report the actual existing rejection branch', () => {
     expect(error.details).toMatchObject({ storyRule: 'actions_count', actualCount: count, minimumCount: 3, maximumCount: 5 });
   });
   it.each([
-    ['[{"group":"npc","observedFact":42}]', 'variableGuide.0.observedFact', 0],
+    ['[{"group":"time","observedFact":42}]', 'variableGuide.0.observedFact', 0],
     ['[{}, {"group":"secret-group","observedFact":"私密正文"}]', 'variableGuide.0.group', 0],
     ['[{"group":"npc","observedFact":"既有事实"},{"group":"time","observedFact":null}]', 'variableGuide.1.observedFact', 1],
     ['{"secret-key":"secret-value"}', 'variableGuide', undefined],
@@ -66,7 +66,7 @@ describe('Story failures report the actual existing rejection branch', () => {
     catch (error) { expect((error as AiError).details).toMatchObject({ storyRule: 'tag_unclosed', storyTag: '变量规划' }); }
   });
   it('valid Story still returns the same fields and options; optional options unchanged', () => {
-    expect(parseStoryEnvelope(body, 'regular', settings())).toEqual({ planning: '规划', story: {
+    expect(parseStoryEnvelope(body, 'regular', settings())).toEqual({ planning: '规划', notes: ['变量规划：按原有 JSON 数组协议解析。'], story: {
       turnKind: 'regular', narrative: '一二三四五六七八九十', summary: '已到站。', variableGuide: [], actionOptions: ['等候', '离开', '询问'],
     } });
     const noOptions = settings(); noOptions.prompts.actionOptions = false;

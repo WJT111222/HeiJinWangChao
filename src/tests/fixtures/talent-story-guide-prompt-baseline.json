@@ -1,0 +1,31 @@
+{
+  "baseCommit": "73239dd166d98acb1a6dfbebdf7a98906bdf5f7f",
+  "note": "逐消息对照原基线，只有 Story 输出和 Variables 参考资料提示更新。无坏项时上下文、World 实际出站和天赋规则保持原字节。",
+  "results": [
+    {
+      "stage": "story",
+      "mode": "opening",
+      "messages": "76b39f8b277a29d7b3083add96f5a55e580736695ef75f88c38e6f9b44e5d9db",
+      "modules": "50e0d5ade191c0e1920605b500d8b0836603bf784678a9ae3db7191311b52281"
+    },
+    {
+      "stage": "story",
+      "mode": "regular",
+      "messages": "04dd3692407db84a51be4501fa675a03c4ad7ba2d703e77016dff80b0821af92",
+      "modules": "a184d0ffd430ccf8cbfa7e616793f18600032ab2256cc3d80788bb8a2f3d9eb2"
+    },
+    {
+      "stage": "variables",
+      "mode": "opening",
+      "messages": "d33ac97ae31f872b21edbb649abdf091367586f03a6ac0028eb017e1a7263cb4",
+      "modules": "1b3c6cd253d037a20ac23712c241247ba9dd3340ee43445223a2f84724e7d283"
+    },
+    {
+      "stage": "variables",
+      "mode": "regular",
+      "messages": "e0849a56a3e7866d4f5d89d88de13a863861c305fafae9af1a4de819c932da62",
+      "modules": "a00a68027b1d80d1b78adb541d173fe081af37f36df1098f3f863b45b3ed824c"
+    }
+  ],
+  "withTalentVariablesAndWorld": "7964a19917d9bd2d70a31836d333a9288a741fce25588f5d5ef18029606c5008"
+}

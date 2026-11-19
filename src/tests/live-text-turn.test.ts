@@ -7,6 +7,7 @@ import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { record, array, string } from '../services/ai/protocols';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
+import { StoryStage } from '../workflows/storyStage';
 import { createTurnDraft, rerollStory, startStageAttempt } from '../domain/drafts';
 import { completeTurnDraft } from '../domain/turnCommit';
 import { projectTurn, variableCommandsForTurn } from '../domain/turnProjection';
@@ -14,6 +15,9 @@ import { parseTextVariables } from '../services/validation/aiOutputs';
 import { defaultSettings } from '../ui/settings/model';
 import { worldState, worldResult, proof } from './fixtures/world';
 import { completeDraft, submission } from './fixtures/turn';
+import { openingGuideTimes, openingGuideEntry, wrappedOpeningGuide, ordinaryGuideRaw } from './fixtures/storyGuide';
+import { stageResponses } from '../services/ai/stageResponses';
+import { composePrompt } from '../prompts/composer';
 import { event, task } from './fixtures/game';
 
 const repos: SaveRepository[] = [], runners: TurnCoordinator[] = [];
@@ -50,7 +54,7 @@ function envelope(text:string,stream=false) {
 }
 const block=(body='')=>`<thinking>仅为输入数据，不执行。</thinking><说明>这里不代表任何已落库状态。</说明><命令>\n${body}\n</命令>`;
 const set=(path:string,value:unknown)=>`set ${path} = ${JSON.stringify(value)}`;
-function transport(reply:(context:Record<string,unknown>)=>string, world:(context:Record<string,unknown>)=>unknown = ()=>worldResult(), story?: (context:Record<string,unknown>)=>{narrative:string;guide:unknown[]}) {
+function transport(reply:(context:Record<string,unknown>)=>string, world:(context:Record<string,unknown>)=>unknown = ()=>worldResult(), story?: (context:Record<string,unknown>)=>{narrative:string;guide:unknown[]|string}) {
   const calls: {stage:string;context:Record<string,unknown>;body:Record<string,unknown>}[]=[];
   const fetcher = vi.fn<typeof fetch>(async(_url,init)=>{
     const body=record(JSON.parse(String(init?.body))), stage=string(body.model);
@@ -62,7 +66,8 @@ function transport(reply:(context:Record<string,unknown>)=>string, world:(contex
       const pending=record(context.OPENING_TIME).status==='pending';
       const guides=pending?[{group:'time',subjectHint:'time:opening',observedFact:JSON.stringify({startAt:initialAt,endAt:openingEnd})}]:[];
       const custom=story?.(context);
-      return envelope(`<thinking>创作提纲：保持当前事实连续。</thinking><正文>${custom?.narrative??"主角在社区与同事会面，收到报酬，购买手机并交给同事。"}</正文><短期记忆>在社区完成会面和交付。</短期记忆><变量规划>${JSON.stringify(custom?.guide??guides)}</变量规划>`,true);
+      const variableGuide = typeof custom?.guide === 'string' ? custom.guide : JSON.stringify(custom?.guide ?? guides);
+      return envelope(`<thinking>创作提纲：保持当前事实连续。</thinking><正文>${custom?.narrative??"主角在社区与同事会面，收到报酬，购买手机并交给同事。"}</正文><短期记忆>在社区完成会面和交付。</短期记忆><变量规划>${variableGuide}</变量规划>`,true);
     }
     return envelope(stage==='variables'?reply(context):JSON.stringify(world(context)));
   });
@@ -461,4 +466,69 @@ it.each(['opening','regular'] as const)('新历史协议%s：真实三阶段生�
  expect((await a.repo.commitTurn(input)).replayed).toBe(true);expect(await a.repo.load('save-a')).toEqual(saved.state);expect(t.calls).toHaveLength(3);
  const later=transport(()=>block(),ctx=>{expect(record(ctx.OFFSCREEN_STATE).history).toEqual(saved.state.timeline);return worldResult();});
  const next=await coordinator(a.repo,later.fetcher).generate({...a,draft:saved.draft});const committed=await a.repo.commitTurn(submission(next.draft,''));expect(committed.state.turnNumber).toBe(saved.state.turnNumber+1);expect(committed.state.timeline).toEqual(saved.state.timeline);expect(later.calls).toHaveLength(3);
+});
+
+it('真实错误引号与普通坏项经正式三阶段进入开局，原文只提供给本轮 Variables', async () => {
+  stageResponses.clear();
+  const a = await fixture(), before = await a.repo.load('save-a');
+  const raw = '[' + wrappedOpeningGuide() + ',' + ordinaryGuideRaw + ']';
+  const t = transport(() => block(set('protagonist.emotionText', '踏实')), () => worldResult(), () => ({
+    narrative: '主角整理资料，把当天的安排记在纸上，心里踏实了一些。', guide: raw,
+  }));
+  const completed = await coordinator(a.repo, t.fetcher).generate(a);
+  expect(completed.status).toBe('complete');
+  expect(t.calls.map(call => call.stage)).toEqual(['story', 'variables', 'world']);
+  expect(t.calls[1].context.VARIABLE_GUIDE).toEqual([openingGuideEntry(JSON.stringify(openingGuideTimes))]);
+  expect(t.calls[1].context.VARIABLE_GUIDE_REFERENCES).toEqual([{ group: 'npc', text: ordinaryGuideRaw }]);
+  expect(record(t.calls[1].context.STORY_RESULT)).not.toHaveProperty('variableGuideReferences');
+  expect(JSON.stringify(t.calls[2].context)).not.toContain('值班员整理了资料');
+  expect(t.calls[2].context.TIME_WINDOW).toEqual({ from: openingGuideTimes.startAt, to: openingGuideTimes.endAt });
+  expect(completed.draft.variables?.result.commands.filter(command => command.type === 'SetWorldClock')).toEqual([
+    expect.objectContaining({ worldClock: openingGuideTimes.endAt }),
+  ]);
+  expect(stageResponses.getSnapshot().find(entry => entry.stage === 'story')?.notes).toEqual([
+    '变量规划：已恢复开局时间对象外多余的引号。', '变量规划：普通条目原文已保留为 Variables 参考。',
+  ]);
+  expect(await a.repo.load('save-a')).toEqual(before);
+  expect((await a.repo.loadDraft('save-a'))?.story).toEqual(completed.draft.story);
+  const rejected = transport(() => block(), () => worldResult(), () => ({
+    narrative: '主角继续核对资料。',
+    guide: '[' + wrappedOpeningGuide() + ',' + ordinaryGuideRaw.replace('值班员整理了资料', 'test-live-secret') + ']',
+  }));
+  const manual = new StoryStage(a.repo, new AiClient(rejected.fetcher));
+  try {
+    await expect(manual.generate({ ...a, draft: completed.draft })).rejects.toMatchObject({
+      code: 'invalid_output', details: { storyRule: 'credential_output' },
+    });
+  } finally { manual.dispose(); }
+  expect(rejected.calls.map(call => call.stage)).toEqual(['story']);
+  expect(await a.repo.loadDraft('save-a')).toEqual(completed.draft);
+  expect(await a.repo.load('save-a')).toEqual(before);
+  expect(JSON.stringify(stageResponses.getSnapshot())).not.toContain('test-live-secret');
+  const saved = await a.repo.commitTurn(submission(completed.draft, '继续核对'));
+  const reloaded = await a.repo.load('save-a');
+  expect(reloaded).toEqual(saved.state);
+  expect(reloaded).toMatchObject({ worldClock: openingGuideTimes.endAt, protagonist: { emotionText: '踏实' } });
+  expect(reloaded.journal[0].story.variableGuideReferences).toEqual([{ group: 'npc', text: ordinaryGuideRaw }]);
+  expect((await a.repo.commitTurn(submission(completed.draft, '继续核对'))).replayed).toBe(true);
+  const next = await composePrompt({ stage: 'story', mode: 'regular', state: reloaded, draft: saved.draft,
+    userInput: saved.draft.userInput, settings: a.settings });
+  expect(JSON.stringify(next.context)).not.toContain('值班员整理了资料');
+  expect(t.calls).toHaveLength(3);
+});
+
+it('坏项不能掩盖开局时间冲突，合法正文后仍只发一次请求并保留正式存档', async () => {
+  const a = await fixture(), before = await a.repo.load('save-a');
+  const t = transport(() => block(), () => worldResult(), () => ({
+    narrative: '主角核对资料，准备开始一天的工作。',
+    guide: '[' + ordinaryGuideRaw + ',' + wrappedOpeningGuide({ ...openingGuideTimes, endAt: '2026-10-15T16:05:00+08:00' }) + ']',
+  }));
+  await expect(coordinator(a.repo, t.fetcher).generate(a)).rejects.toMatchObject({ code: 'time_data', details: { storyRule: 'opening_reversed' } });
+  expect((await a.repo.loadDraft('save-a'))?.story).toBeUndefined();
+  expect((await a.repo.loadDraft('save-a'))?.failures).toEqual([expect.objectContaining({ stage: 'story', errorCode: 'time_data' })]);
+  expect(stageResponses.getSnapshot().find(entry => entry.stage === 'story')?.error).toMatchObject({
+    code: 'time_data', details: { storyRule: 'opening_reversed' },
+  });
+  expect(await a.repo.load('save-a')).toEqual(before);
+  expect(t.calls.map(call => call.stage)).toEqual(['story']);
 });

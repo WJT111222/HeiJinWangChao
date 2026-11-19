@@ -84,6 +84,7 @@ export function checkedInput(input: ComposeInput): ComposeInput {
 }
 export function contextFor(input: ComposeInput): Record<string, unknown> {
   const { stage, settings, draft } = input;
+  const { variableGuideReferences, ...story } = draft?.story ?? {};
   const original = input.state;
   const candidateStage = stage === 'variables' || stage === 'world';
   const state = candidateStage && original.openingTimePending && draft ? openingTimeBase(original, draft) : original;
@@ -154,8 +155,9 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {
           stage: 'variables', playerInput: draft!.userInput, storyText: draft!.story!.narrative, variableGuide: draft!.story!.variableGuide,
         }),
-      STORY_RESULT: draft!.story,
+      STORY_RESULT: story,
       VARIABLE_GUIDE: draft!.story!.variableGuide,
+      ...(variableGuideReferences ? { VARIABLE_GUIDE_REFERENCES: variableGuideReferences } : {}),
       TEXT_COMMAND_CATALOG: textVariableCatalog(),
       NPC_IMPORTANCE: Object.values(state.npc).map(npc=>({npcId:npc.id,identityKey:npc.identityKey,kind:npc.kind,playerPreference:npc.importancePreference??'automatic',profilePending:npc.kind==='special'&&Boolean(npc.profilePending),canRestoreProfile:Boolean(state.dormantNpcProfiles?.[npc.id])})),
     };
@@ -188,7 +190,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       EVENT_SCHEDULE: historicalPerspective(state,draft!) ? {readOnly:true,policy:'纯过去视角只读，不处理当前世界到期事件；原排程保留到正常世界回合。'} : worldEventSchedule(state, temporary),
       variablePending,
       PLAYER_ACTION: draft!.userInput,
-      STORY_RESULT: { ...draft!.story!, eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction), eventNarrations: draft!.story!.variableGuide.filter(guide=>guide.eventNarration) },
+      STORY_RESULT: { ...story, eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction), eventNarrations: draft!.story!.variableGuide.filter(guide=>guide.eventNarration) },
       VARIABLE_RESULT: variablePending ? undefined : draft!.variables,
       // 投影提供候选内容，不产生新的正式版本；模型的expectedRevision仍须使用正式基线。
       ...sharedContext({ ...temporary, revision: original.revision }, settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {

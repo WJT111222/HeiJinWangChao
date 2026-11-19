@@ -200,7 +200,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   const result = story ?? (captured.stage === 'variables'
         ? await parsePartialVariables(responseText, captured.state, captured.draft!)
         : await parsePartialWorld(responseText, captured.state, captured.draft!));
-  const notes = story ? undefined : worldNormalizationNotes.get(result);
+  const notes = envelope?.notes ?? worldNormalizationNotes.get(result);
   stageResponses.update(responseId, { status: 'validated', normalized: JSON.stringify(result, null, 2), ...(notes ? { notes } : {}) }, secrets);
   return {
     result,

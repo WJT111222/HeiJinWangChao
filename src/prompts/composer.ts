@@ -138,6 +138,7 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
     actionOptions: input.settings.prompts.actionOptions,
     minNarrativeChars: input.settings.prompts.minNarrativeChars,
     maxNarrativeChars: narrativeRange(input.settings.prompts).max,
+    openingTimePending: input.mode === 'opening' && input.state.openingTimePending === true,
   });
   if (confirmation) {
     const closing = tail ? `${tail}

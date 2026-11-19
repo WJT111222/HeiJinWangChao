@@ -238,7 +238,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 3167,
+      "characters": 3396,
       "version": "1.0.0-world-freedom-story-tags",
       "messageRole": "system",
       "activation": "always",
@@ -248,7 +248,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "ab308f7547ce1f4e7ebfa06c51bc5800008752f82d1210b4ccfa1f0134408c5f",
+      "contentSha256": "706eae712175a1e2900f47ec50cc4d854015c9eb9d37c0982f4a4a7554e19c25",
       "placeholders": [
         "minNarrativeChars"
       ]
@@ -267,7 +267,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 10167,
+      "characters": 10262,
       "version": "0.8.0-m8-p0a",
       "messageRole": "system",
       "activation": "always",
@@ -277,7 +277,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "815dadb0e544777bef826bc9ecdb4c13983580f297fb249037c9ebbbd06ae881",
+      "contentSha256": "89d253514df03e27a17cc0646dca7ff6d6bed4f1d2cc1ba246e503082bfb2481",
       "placeholders": []
     },
     {

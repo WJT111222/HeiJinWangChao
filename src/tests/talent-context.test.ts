@@ -9,6 +9,7 @@ import { talentPromptInput as currentTalentPromptInput, talentMemoryInput as cur
 import baseline from './fixtures/talent-no-selection-baseline.json';
 import partialSettlementPromptBaseline from './fixtures/talent-partial-settlement-prompt-baseline.json';
 import issue194PromptBaseline from './fixtures/talent-issue-194-prompt-baseline.json';
+import storyGuidePromptBaseline from './fixtures/talent-story-guide-prompt-baseline.json';
 
 // 仅本文件的历史字节对照固定为原七字段设置；其他请求测试继续使用新默认设置。
 function talentPromptInput(...args: Parameters<typeof currentTalentPromptInput>) {
@@ -56,7 +57,7 @@ describe('PR-B 条件式单项天赋上下文', () => {
   });
 
   it('有天赋 Variables/World 完整请求保留通用与专属规则及已核对的入场提示', async () => {
-    // Variables and World both intentionally changed their executable output protocol; Story and Memory retain their earlier snapshots.
+    // The new snapshot changes Variables reference guidance. World and talent rules retain their previous bytes.
     const requests = [];
     for (const definition of talentDefinitions) {
       for (const stage of ['variables', 'world'] as const) for (const mode of ['opening', 'regular'] as const) {
@@ -66,7 +67,7 @@ describe('PR-B 条件式单项天赋上下文', () => {
       const { commonRules, additionalRules } = talentContext(definition.id, 'story')!;
       requests.push({ definition, commonRules, additionalRules });
     }
-    expect(hash(requests)).toBe(partialSettlementPromptBaseline.withTalentVariablesAndWorld);
+    expect(hash(requests)).toBe(storyGuidePromptBaseline.withTalentVariablesAndWorld);
   });
 
   it.each(talentDefinitions)('$name 在开局/普通三阶段读取同一正式全文，单份注入且不改输入', async definition => {
@@ -98,11 +99,12 @@ describe('PR-B 条件式单项天赋上下文', () => {
     const prompt = await composePrompt(input);
     expect(prompt.context).not.toHaveProperty('PROTAGONIST_TALENT');
     expect(sentContext(prompt.messages)).not.toHaveProperty('PROTAGONIST_TALENT');
-    // 已逐消息对照第二阶段：只更新 Story 输出模块与 World 命令目录，其他上下文字段逐项比对保持一致。
-    const expectedText = partialSettlementPromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode)
+    const previous = partialSettlementPromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode)
       ?? issue194PromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode) ?? expected;
+    // 逐消息审计仅更新 Story 输出协议和 Variables 的参考材料说明，继续单独锁定旧上下文。
+    const expectedText = storyGuidePromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode) ?? previous;
     expect(hash(prompt.messages)).toBe(expectedText.messages);
-    expect(hash(prompt.context)).toBe(("context" in expectedText ? expectedText.context : undefined) ?? expected.context);
+    expect(hash(prompt.context)).toBe(("context" in previous ? previous.context : undefined) ?? expected.context);
     expect(hash(prompt.modules)).toBe(expectedText.modules);
     expect(input.state.protagonist).not.toHaveProperty('talentId');
   });

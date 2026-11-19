@@ -387,7 +387,7 @@ test('Story标签与变量规划诊断分别定位；只有玩家明确重试才
     [result().replace('本轮创作提纲：保持人物与场景连续，按行动呈现事实。', ' '), 'planning_empty', '正文规划区块为空'],
     [result().replace('等车</短期记忆>', ' </短期记忆>'), 'summary_empty', '<短期记忆> 内容为空'],
     [result().replace(/<变量规划>.*?<\/变量规划>/s, '<变量规划>[private-game-detail</变量规划>'), 'guide_json', '不是合法 JSON'],
-    [result().replace(/<变量规划>.*?<\/变量规划>/s, '<变量规划>[{"group":"npc","observedFact":42}]</变量规划>'), 'story_schema', 'variableGuide.0.observedFact'],
+    [result().replace(/<变量规划>.*?<\/变量规划>/s, '<变量规划>[{"group":"time","observedFact":42}]</变量规划>'), 'story_schema', 'variableGuide.0.observedFact'],
     [result().replace('看看站台\n留在原地\n询问路线', '等候\n离开'), 'actions_count', '实际：2 条'],
   ];
   for (const [index, [raw, rule, message]] of cases.entries()) {

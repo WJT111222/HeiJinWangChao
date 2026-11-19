@@ -13,6 +13,9 @@ import { eventById, validateEventLinks } from './events/lifecycle';
 import { MemoryStateSchema, npcKnowledgeKind } from './memories/schema';
 
 export const LocationSchema = z.strictObject({ id: IdSchema, name: TextSchema, parentId: IdSchema.optional() });
+export const ordinaryGuideGroup = z.enum(['protagonist', 'npc', 'items', 'economy', 'organization']);
+export const storyGuideReferenceLimit = 12;
+export const storyGuideReferenceChars = 4000;
 export const StorySchema = z.strictObject({
   turnKind: z.enum(['opening', 'regular']), narrative: TextSchema, summary: z.string(),
   variableGuide: z.array(z.strictObject({
@@ -20,7 +23,11 @@ export const StorySchema = z.strictObject({
     subjectHint: z.string().optional(), observedFact: TextSchema, textEvidence: z.string().optional(),
     eventInteraction: EventInteractionSchema.optional(),
     eventNarration: z.strictObject({eventId:IdSchema,mode:z.enum(['enter','mention']),at:GameTimeSchema}).optional(),
-  })), actionOptions: z.array(TextSchema).optional(),
+  })),
+  variableGuideReferences: z.array(z.strictObject({
+    group: ordinaryGuideGroup, text: z.string().min(1).max(storyGuideReferenceChars),
+  })).min(1).max(storyGuideReferenceLimit).optional(),
+  actionOptions: z.array(TextSchema).optional(),
 });
 export const SaveShape = {
   schemaVersion: z.literal(10), saveId: IdSchema, title: TextSchema,

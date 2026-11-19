@@ -52,7 +52,7 @@ describe('Story optional project planning, without relaxing mandatory payloads',
   });
   it.each([
     ['guide_json', '<变量规划>{broken json}</变量规划>'],
-    ['story_schema', '<变量规划>[{"group":"npc","observedFact":42}]</变量规划>'],
+    ['story_schema', '<变量规划>[{"group":"time","observedFact":42}]</变量规划>'],
   ])('同行恢复不绕过后续%s检查', (rule, guide) => {
     const raw = inlineRecoveryOutput().replace(/<变量规划>[\s\S]*?<\/变量规划>/, guide);
     expect(fails(raw).details).toMatchObject({ storyRule: rule });
@@ -164,7 +164,7 @@ describe('Story optional project planning, without relaxing mandatory payloads',
   it('恢复之后依然执行字数、JSON与 Schema 的全部正式规则', () => {
     expect(fails('【旁白】短。\n' + tail + choices).details).toMatchObject({ storyRule: 'narrative_short' });
     expect(fails(narrative + '<短期记忆>已核对。</短期记忆><变量规划>{坏JSON}</变量规划>' + choices).code).toBe('invalid_json');
-    expect(fails(narrative + '<短期记忆>已核对。</短期记忆><变量规划>[{"group":"npc","observedFact":42}]</变量规划>' + choices).details)
+    expect(fails(narrative + '<短期记忆>已核对。</短期记忆><变量规划>[{"group":"time","observedFact":42}]</变量规划>' + choices).details)
       .toMatchObject({ storyRule: 'story_schema' });
   });
 
@@ -293,7 +293,7 @@ describe('Unclosed closing-tag repair keeps every boundary unambiguous', () => {
   });
   it.each([
     ['guide_json', (raw: string) => raw.replace('<变量规划>[]</变量规划>', '<变量规划>{broken}</变量规划>')],
-    ['story_schema', (raw: string) => raw.replace('<变量规划>[]</变量规划>', '<变量规划>[{"group":"npc","observedFact":42}]</变量规划>')],
+    ['story_schema', (raw: string) => raw.replace('<变量规划>[]</变量规划>', '<变量规划>[{"group":"time","observedFact":42}]</变量规划>')],
     ['summary_empty', (raw: string) => raw.replace('<短期记忆>两人一起核对本周生活费。</短期记忆>', '<短期记忆> </短期记忆>')],
     ['actions_count', (raw: string) => raw.replace(choices, '<行动选项>继续核对\n留在原处</行动选项>')],
     ['narrative_short', (raw: string) => raw.replace(narrative, '短')],

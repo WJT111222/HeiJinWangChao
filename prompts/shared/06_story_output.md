@@ -13,6 +13,8 @@
 JSON数组。每项包含 group、subjectHint、observedFact、textEvidence；事件处理回执可带eventInteraction；主动叙事裁定可带eventNarration字段；若无更新写 []。group使用 protagonist / npc / items / economy / organization / time / event 中的一个；subjectHint为名称或现有ID字符串，textEvidence为正文里能定位的事实依据文字。不要在这里写数据库命令或进行未发生事件的推演。
 </变量规划>
 若已启用行动选项：<行动选项> 后列出 3～5 条短小中性的玩家可执行动作，每行一项；否则 **整个<行动选项>块不出现**。
+待定开局的时间条目用 {"group":"time","subjectHint":"time:opening","observedFact":{"startAt":"2026-10-15T17:45:00+08:00","endAt":"2026-10-15T18:05:00+08:00"}}。示例日期仅说明格式，使用本幕实际时间。只在这类条目直接给 observedFact 对象，不要在对象外加引号。普通规划用文本，事件和其他时间声明沿用各自结构。
+
 标注与实际内容不可互相混淆；变量规划块必须能作为严格JSON数组被解析，不得使用尾随逗号、注释、单引号或Markdown代码围栏。正文最低字数{{minNarrativeChars}}由程序对<正文>纯文本计数，属于硬性下限；未达标意味着本阶段失败，不应添加重复废话凑字数。
 如输出内容含文本中的“<正文>”字面量，应避免与结构标签形成同名闭合；必要时使用普通文字表述。输出完成前核对全部顶层块完整、角色名字、时间、事实一致、未越界代主角决定。
 

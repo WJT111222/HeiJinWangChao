@@ -1,6 +1,7 @@
 import { storySceneAuthority, validateNarrationClock } from '../../domain/events/narration';
 import { nestedStoryTag, storyEnvelopeDiagnostic, storySchemaError } from './storyDiagnostics';
 import { recoverStoryEnvelope, repairUnclosedTags } from './storyEnvelopeRecovery';
+import { parseStoryGuide } from './storyGuide';
 import { validateVariableWork } from './variableWork';
 import { validateSceneEventUpdate } from '../../domain/events/scenePermission';
 import { openingTimeBase } from '../../domain/openingTime';
@@ -116,18 +117,16 @@ export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', se
     : undefined;
   if (actions && (!actionOptions || actionOptions.length < 3 || actionOptions.length > 5))
     throw new AiError('invalid_output', undefined, { storyRule: 'actions_count', actualCount: actionOptions?.length ?? 0, minimumCount: 3, maximumCount: 5 });
-  let variableGuide: unknown;
-  try { variableGuide = json(envelope[4]); }
-  catch { throw new AiError('invalid_json', undefined, { storyRule: 'guide_json', storyTag: '变量规划' }); }
+  const { notes, ...guide } = parseStoryGuide(envelope[4]);
   const parsed = StorySchema.safeParse({
     turnKind: mode,
     narrative,
     summary,
-    variableGuide,
+    ...guide,
     ...(actions ? { actionOptions } : {}),
   });
   if (!parsed.success) throw storySchemaError(parsed.error);
-  return { story: parsed.data, planning };
+  return { story: parsed.data, planning, notes };
 }
 export function parseStory(text: string, mode: 'opening' | 'regular', settings: Settings) {
   return parseStoryEnvelope(text, mode, settings).story;

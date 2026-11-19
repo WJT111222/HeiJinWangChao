@@ -39,8 +39,8 @@ export function nestedStoryTag(part: string): StoryTag | undefined {
   const tag = match?.[1].toLowerCase();
   return storyTags.find(known => known === tag);
 }
-export function storySchemaError(error: z.ZodError) {
-  const issue = error.issues[0], path = issue?.path ?? [];
+export function storySchemaError(error: z.ZodError, prefix: readonly PropertyKey[] = []) {
+  const issue = error.issues[0], path = [...prefix, ...(issue?.path ?? [])];
   const guideIndex = path[0] === 'variableGuide' && typeof path[1] === 'number' ? path[1] : undefined;
   const status = path.includes('eventInteraction') && path.at(-1) === 'action';
   const rule = issue && ['invalid_type', 'invalid_value', 'too_small', 'unrecognized_keys', 'invalid_format'].includes(issue.code) ? issue.code : 'constraint';

@@ -42,6 +42,7 @@ export function selectVariableDomains(state: GameState, draft: TurnDraft) {
         failure.errorCode === 'permission',
     ) ||
     guide.some((g) => g.group === 'organization') ||
+    draft.story?.variableGuideReferences?.some((g) => g.group === 'organization') ||
     /组织|势力|机构|单位|他们|部门|负责人/.test(text) ||
     ![...reasons.keys()].some((d) => d.startsWith('org_'))
   )

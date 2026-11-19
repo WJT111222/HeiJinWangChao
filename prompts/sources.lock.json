@@ -574,6 +574,11 @@
         "baseCommit": "399ab887e6f08346dc002e0df03c03e37f055674",
         "notes": "说明播放器明确选择的旧通知恢复只能对指定入场确认收悉，仍保留决定与真实收悉边界。",
         "sha256": "ab308f7547ce1f4e7ebfa06c51bc5800008752f82d1210b4ccfa1f0134408c5f"
+      },
+      "storyGuideOpeningTime": {
+        "baseCommit": "73239dd166d98acb1a6dfbebdf7a98906bdf5f7f",
+        "notes": "开局时间使用直接对象，普通指导坏项只作为 Variables 参考，保留关键校验及既有执行协议。",
+        "sha256": "706eae712175a1e2900f47ec50cc4d854015c9eb9d37c0982f4a4a7554e19c25"
       }
     },
     "shared/07_command_output.md": {
@@ -664,6 +669,11 @@
       "partialSettlement": {
         "notes": "三段输出、可执行命令隔离和正式提交的局部容错契约。",
         "sha256": "815dadb0e544777bef826bc9ecdb4c13983580f297fb249037c9ebbbd06ae881"
+      },
+      "storyGuideOpeningTime": {
+        "baseCommit": "73239dd166d98acb1a6dfbebdf7a98906bdf5f7f",
+        "notes": "开局时间使用直接对象，普通指导坏项只作为 Variables 参考，保留关键校验及既有执行协议。",
+        "sha256": "89d253514df03e27a17cc0646dca7ff6d6bed4f1d2cc1ba246e503082bfb2481"
       }
     },
     "shared/08_world_output.md": {

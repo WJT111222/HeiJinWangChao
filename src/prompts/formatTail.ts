@@ -16,7 +16,7 @@ import type { AiStage } from '../services/ai/configuration';
  */
 export function formatTailMessage(
   stage: AiStage | 'memory',
-  options: { actionOptions: boolean; minNarrativeChars: number; maxNarrativeChars?: number },
+  options: { actionOptions: boolean; minNarrativeChars: number; maxNarrativeChars?: number; openingTimePending?: boolean },
 ): string | undefined {
   if (stage === 'story') {
     const actionsSkeleton = options.actionOptions ? '\n<行动选项>每行一条短行动</行动选项>' : '';
@@ -29,6 +29,7 @@ export function formatTailMessage(
       '<正文>完整连续的小说正文</正文>',
       '<短期记忆>本回合事实摘要</短期记忆>',
       `<变量规划>[]</变量规划>${actionsSkeleton}`,
+      ...(options.openingTimePending ? ['本次必须给出唯一 time:opening 条目，observedFact 直接填含 startAt、endAt 的 JSON 对象，不给对象套引号。'] : []),
       `要求：顶层标签顺序固定、各至多一次、打开必须闭合，各块内容中不得再出现顶层标签字面量；<正文>纯文本不少于 ${options.minNarrativeChars} 字${options.maxNarrativeChars && options.maxNarrativeChars > options.minNarrativeChars ? `（目标约 ${options.minNarrativeChars}～${options.maxNarrativeChars} 字，写到自然收束点即可）` : ''}；<变量规划>为严格JSON数组，有更新时把 [] 换成数组内容；${actionsRule}写完最后一个闭合标签立即结束输出。`,
     ].join('\n');
   }
