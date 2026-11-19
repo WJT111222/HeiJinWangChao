@@ -1,0 +1,12 @@
+{"kind":"total","http":51445,"first":51448,"total":90710,"failureSite":"reader_read","readerEof":false,"code":"stream_interrupted","reads":1,"comments":1,"frame":0,"calls":1,"candidate":false,"draftWrites":1,"commits":0}
+{"kind":"idle","http":51445,"first":51448,"total":90710,"failureSite":"reader_read","readerEof":false,"code":"stream_interrupted","reads":1,"comments":1,"frame":0,"calls":1,"candidate":false,"draftWrites":1,"commits":0}
+{"kind":"total","http":61445,"first":61448,"total":90710,"failureSite":"reader_read","readerEof":false,"code":"stream_interrupted","reads":1,"comments":1,"frame":0,"calls":1,"candidate":false,"draftWrites":1,"commits":0}
+{"kind":"idle","http":61445,"first":61448,"total":100710,"failureSite":"reader_read","readerEof":false,"code":"stream_interrupted","reads":1,"comments":1,"frame":0,"calls":1,"candidate":false,"draftWrites":1,"commits":0}
+{"kind":"heartbeats","http":51445,"first":51448,"total":110000,"failureSite":null,"readerEof":false,"code":"ok","reads":6,"comments":4,"frame":4,"calls":1,"candidate":true,"draftWrites":1,"commits":0}
+{"kind":"eof","http":51445,"first":51448,"total":90710,"failureSite":null,"readerEof":true,"code":"tool_response","reads":1,"comments":1,"frame":0,"calls":1,"candidate":false,"draftWrites":1,"commits":0}
+{"kind":"reset","http":51445,"first":51448,"total":70000,"failureSite":"reader_read","readerEof":false,"code":"stream_interrupted","reads":1,"comments":1,"frame":0,"calls":1,"candidate":false,"draftWrites":1,"commits":0}
+{"kind":"tool","http":51445,"first":51448,"total":81000,"failureSite":null,"readerEof":false,"code":"ok","reads":3,"comments":1,"frame":4,"calls":1,"candidate":true,"draftWrites":1,"commits":0}
+{"kind":"quiet-success","http":51445,"first":51448,"total":110000,"failureSite":null,"readerEof":false,"code":"ok","reads":3,"comments":1,"frame":4,"calls":1,"candidate":true,"draftWrites":1,"commits":0}
+{"kind":"cancel","http":51445,"first":51448,"total":90710,"failureSite":null,"readerEof":false,"code":"cancelled","reads":1,"comments":1,"frame":0,"calls":1,"candidate":false,"draftWrites":0,"commits":0}
+{"kind":"unmount","http":51445,"first":51448,"total":90710,"failureSite":null,"readerEof":false,"code":"cancelled","reads":1,"comments":1,"frame":0,"calls":1,"candidate":false,"draftWrites":0,"commits":0}
+{"kind":"timeout","http":51445,"first":51448,"total":120000,"failureSite":null,"readerEof":false,"code":"timeout","reads":1,"comments":1,"frame":0,"calls":1,"candidate":false,"draftWrites":1,"commits":0}

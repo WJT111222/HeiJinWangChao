@@ -1,0 +1,93 @@
+import { afterEach, it, expect, vi } from 'vitest';
+import { IDBFactory } from 'fake-indexeddb';
+import { AiClient } from '../src/services/ai/client';
+import { safeAiError } from '../src/services/ai/errors';
+import { stageResponses, storyToolDiagnosticExport } from '../src/services/ai/stageResponses';
+import { StoryStage } from '../src/workflows/storyStage';
+import { SaveRepository } from '../src/services/storage/saveRepository';
+import { createTurnDraft } from '../src/domain/drafts';
+import { game } from '../src/tests/fixtures/game';
+import { compatibilitySetup } from '../src/tests/fixtures/storyCompatibility';
+import { toolFrame, toolStoryArgs } from '../src/tests/fixtures/storyTools';
+import { STORY_OUTPUT_TOOL } from '../src/services/ai/storyToolContract';
+
+const heartbeat = ': ping\n\n'; // Eight synthetic bytes. The player's comment text is unknown.
+const argsFrame = (part: string, start = false) => toolFrame({ choices: [{ delta: { tool_calls: [{
+  index: 0, ...(start && { id: 'synthetic-tool' }), function: { ...(start && { name: STORY_OUTPUT_TOOL }), arguments: part },
+}] } }] });
+const complete = argsFrame(toolStoryArgs.slice(7)) + toolFrame({ choices: [{ delta: {}, finish_reason: 'tool_calls' }] }) + 'data: [DONE]\n\n';
+
+const cases = [
+  ['total',51448,90710,'stream_interrupted'], ['idle',51448,90710,'stream_interrupted'],
+  ['total',61448,90710,'stream_interrupted'], ['idle',61448,100710,'stream_interrupted'],
+  ['heartbeats',51448,110000,'ok'], ['eof',51448,90710,'tool_response'],
+  ['reset',51448,70000,'stream_interrupted'], ['tool',51448,81000,'ok'],
+  ['quiet-success',51448,110000,'ok'], ['cancel',51448,90710,'cancelled'],
+  ['unmount',51448,90710,'cancelled'], ['timeout',51448,120000,'timeout'],
+] as const;
+
+afterEach(() => { vi.useRealTimers(); stageResponses.clear(); });
+
+it.each(cases)('%s first=%i termination=%i', async (kind, first, end, code) => {
+  const repo = await SaveRepository.open('timing-fixture', new IDBFactory());
+  const state = game();
+  await repo.create(state);
+  const draft = await repo.saveDraft(createTurnDraft(state.saveId,0,'synthetic-turn','opening',''),null);
+  const before = await repo.loadGame(state.saveId);
+  const writes = vi.spyOn(repo,'saveDraft'), commits = vi.spyOn(repo,'commitTurn');
+  const setup = compatibilitySetup('openai',true,true);
+  setup.settings.runtime.timeoutSeconds = 120;
+  setup.settings.prompts.minNarrativeChars = 1;
+  const dispatched = Promise.withResolvers<void>();
+  let wire!: ReadableStreamDefaultController<Uint8Array>;
+  const encoder = new TextEncoder();
+  const transport = vi.fn(async () => {
+    const body = new ReadableStream<Uint8Array>({ start(c) { wire = c; } });
+    const send = (text: string) => wire.enqueue(encoder.encode(text));
+    const reset = () => wire.error(new TypeError('synthetic transport failure'));
+    if (kind === 'total') setTimeout(reset,90710);
+    setTimeout(() => {
+      send(heartbeat);
+      if (kind === 'idle') setTimeout(reset,39262);
+    },first);
+    if (kind === 'heartbeats') for (const t of [65000,80000,95000]) setTimeout(() => send(heartbeat),t);
+    if (kind === 'reset') setTimeout(reset,end);
+    if (kind === 'eof') setTimeout(() => wire.close(),end);
+    if (code === 'ok') {
+      setTimeout(() => send(argsFrame(toolStoryArgs.slice(0,7),true)),end-1000);
+      setTimeout(() => send(complete),end);
+    }
+    dispatched.resolve();
+    return new Promise<Response>(resolve => setTimeout(() => resolve(new Response(body, {headers:{'Content-Type':'text/event-stream'}})),first-3));
+  });
+  vi.useFakeTimers({ toFake: ['setTimeout','clearTimeout','performance'] });
+  const stage = new StoryStage(repo,new AiClient(transport));
+  try {
+    const result = stage.generate({ ...setup, draft, onFailureSaved: () => {} }).then(() => 'ok', e => safeAiError(e).code);
+    await dispatched.promise;
+    await vi.advanceTimersByTimeAsync(end);
+    if (kind === 'cancel') stage.cancel();
+    if (kind === 'unmount') stage.dispose();
+    expect(await result).toBe(code);
+    const trace = storyToolDiagnosticExport(stageResponses.getSnapshot()[0])!;
+    const after = await repo.loadGame(state.saveId);
+    expect(trace).toMatchObject({firstBodyChunkMs:first,httpMs:first-3,totalMs:end,
+      outcome:{ code: code==='ok'?'received':code },
+      sse:{ readerEof:kind==='eof', failureSite:code==='stream_interrupted'?'reader_read':null,
+        commentLines:kind==='heartbeats'?4:1 }});
+    expect(commits).not.toHaveBeenCalled();
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(after.state).toEqual(before.state);
+    expect(Boolean(after.draft?.story)).toBe(code==='ok');
+    expect(writes).toHaveBeenCalledTimes(code==='cancelled'?0:1);
+    if (code!=='ok') {
+      expect(trace).toMatchObject({firstToolEventMs:null,firstSseFrameMs:null,sse:{bytes:8,reads:1,blankLines:1}});
+      expect(after.draft?.storyPartial).toBeUndefined();
+    }
+    if (code==='cancelled') expect(after.draft).toEqual(before.draft);
+    else if (code!=='ok') expect(after.draft?.failures.at(-1)?.errorCode).toBe(code);
+    console.log(JSON.stringify({kind,http:trace.httpMs,first:trace.firstBodyChunkMs,total:trace.totalMs,
+      failureSite:trace.sse?.failureSite,readerEof:trace.sse?.readerEof,code,reads:trace.sse?.reads,comments:trace.sse?.commentLines,
+      frame:trace.outcome.frame,calls:transport.mock.calls.length,candidate:Boolean(after.draft?.story),draftWrites:writes.mock.calls.length,commits:commits.mock.calls.length}));
+  } finally { stage.dispose(); repo.close(); }
+});
