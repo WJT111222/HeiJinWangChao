@@ -6,7 +6,7 @@ import type { AiStage } from '../services/ai/configuration';
  * 掉格式的主要原因是输出协议写在系统消息里，与生成点之间隔着数千 token 的
  * 存档上下文，距离越远越容易被模型遗忘。这里只重复"输出长什么样"这一件事，
  * 不新增任何规则；内容必须与 shared/06~08 输出协议和解析器保持一致，改任何
- * 一方都要同步核对另一方（parseStoryEnvelope / VARIABLE_TEXT_V1 / World JSON）。
+ * 一方都要同步核对另一方（parseStoryEnvelope / VARIABLE_TEXT_V1 / World 命令块 JSON）。
  *
  * 骨架会被模型照抄，所以骨架自身必须是严格解析器可接受的形状：
  * - 各占位文字里不得出现任何保留标签字面量（否则照抄即 tag_nested）；
@@ -46,9 +46,13 @@ export function formatTailMessage(
   }
   if (stage === 'world') {
     return [
-      '【最终格式提醒】只输出一个严格JSON对象：第一个字符是 {，最后一个字符是 }，之外不得有任何文字、解释或Markdown代码围栏。五个顶层数组必须全部出现：',
+      '【最终格式提醒】依次给出三个顶层区块，只在命令块内放严格 JSON 对象，提供全部五个数组：',
+      '<thinking>世界演进规划摘要</thinking>',
+      '<说明>拟执行及未能处理的变化</说明>',
+      '<命令>',
       '{"worldCommands":[],"taskCommands":[],"eventCommands":[],"visibleHooks":[],"unresolved":[]}',
-      '先确认 EVENT_SCHEDULE 的到期事项都已处理；确无变化时就输出上面的空形状。',
+      '</命令>',
+      '先核对 EVENT_SCHEDULE 的到期事项。无变化时使用空数组，无法合法处理的事项写在说明中，保留其他完整更新。',
     ].join('\n');
   }
   return undefined;

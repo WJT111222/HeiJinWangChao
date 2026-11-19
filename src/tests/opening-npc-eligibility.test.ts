@@ -128,7 +128,7 @@ describe('真实创角同伴的开局资格与命令定位', () => {
     expect((await a.repo.commitTurn(submission(complete, ''))).replayed).toBe(true);
   });
 
-  it('真实 VariablesStage 的失败响应不保存候选、不会重发，只记安全失败元数据', async () => {
+  it('真实 VariablesStage 跳过不符合资格的档案，保留合法候选且不重发', async () => {
     const a = await fixture(), before = await a.repo.load(a.state.saveId);
     const channel = { ...newChannel(), defaultModel: 'mock-model' }, config = defaultAiConfig();
     config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: channel.defaultModel };
@@ -142,15 +142,13 @@ describe('真实创角同伴的开局资格与命令定位', () => {
       message: { content: response(initialize, privateLine, interaction) } }] }));
     const stage = new VariableStage(a.repo, new AiClient(fetcher));
     try {
-      await expect(stage.generate({ draft: a.draft, settings: a.settings, config, vault }))
-        .rejects.toMatchObject({ code: 'data_integrity', details: { commandIndex: 1,
-          commandType: 'UpdateNpc', domainRule: 'npc_kind', variableStep: 'simulation' } });
+      const saved = await stage.generate({ draft: a.draft, settings: a.settings, config, vault });
       expect(fetcher).toHaveBeenCalledTimes(1);
-      const failed = (await a.repo.loadDraft(a.state.saveId))!;
-      expect(failed.stageStatus.variables).toBe('failed'); expect(failed.variables).toBeUndefined();
-      expect(failed.story).toEqual(a.draft.story);
-      expect(failed.failures.at(-1)).toMatchObject({ stage: 'variables', errorCode: 'data_integrity' });
-      expect(JSON.stringify(failed)).not.toContain(privateMarker);
+      expect(saved.stageStatus.variables).toBe('ready');
+      expect(saved.variables?.result.settlement?.skipped).toMatchObject([{ commandIndex: 1, category: 'person' }]);
+      expect(saved.story).toEqual(a.draft.story);
+      expect(saved.failures).toEqual(a.draft.failures);
+      expect(JSON.stringify(saved)).not.toContain(privateMarker);
       expect(await a.repo.load(a.state.saveId)).toEqual(before);
     } finally { stage.dispose(); }
   });

@@ -103,7 +103,8 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
     it(`${protocol} Variables真实出站与严格三区块解析：${mode}`, async () => {
       const input = regular('variables');
       const command = mode === 'empty' ? '' : mode === 'valid' ? 'set protagonist.emotionText = "保持平静"' : 'set protagonist.notAFormalField = "bad"';
-      const { result } = await verify(protocol, `variables:${mode}`, input, variableTextEnvelope(`<命令>\n${command}\n</命令>`), false, mode === 'invalid' ? 'mapping' : undefined);
+      const { result } = await verify(protocol, `variables:${mode}`, input, variableTextEnvelope(`<命令>\n${command}\n</命令>`), false, undefined);
+      if (mode === 'invalid') expect(result?.result).toMatchObject({commands:[],settlement:{accepted:0,skipped:[{commandIndex:0}]}});
       if (mode === 'empty') expect(result?.result).toHaveProperty('commands', []);
       if (mode === 'valid') expect(result?.result).toHaveProperty('commands', [expect.objectContaining({ type: 'UpdateProtagonist', changes: { emotionText: '保持平静' } })]);
     });
@@ -115,9 +116,10 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
         const a = stageContext(); input = { ...input, mode: 'opening', state: a.state, draft: a.draft, userInput: a.draft.userInput };
         if (mode === 'due-handled') response = { ...a.response, eventCommands: [stageCommand(endStage(a.state.events['stage-one']))] };
       }
-      const { result, context } = await verify(protocol, `world:${mode}`, input, JSON.stringify(response), false, mode === 'due-omitted' ? 'stage_due' : undefined);
+      const { result, context } = await verify(protocol, `world:${mode}`, input, `<thinking>核对排程。</thinking><说明>说明本次安排。</说明><命令>${JSON.stringify(response)}</命令>`);
       if (mode === 'idle') expect(result?.result).toEqual(emptyWorld);
       else expect(record(context.EVENT_SCHEDULE).due).toEqual(expect.arrayContaining([expect.objectContaining({ eventId: 'stage-one', mode: 'stage_resolution' })]));
+      if (mode === 'due-omitted') expect(result?.result).toMatchObject({deferredEvents:['stage-one'],eventCommands:[]});
       if (mode === 'due-handled') expect(result?.result).toHaveProperty('eventCommands', [expect.objectContaining({ type: 'SaveEvent', event: expect.objectContaining({ id: 'stage-one', status: 'resolved' }) })]);
     });
   }

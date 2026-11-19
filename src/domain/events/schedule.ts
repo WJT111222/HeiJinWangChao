@@ -28,7 +28,7 @@ export function worldEventSchedule(before:GameState,projected:GameState) {
     pendingEntries:pendingEventEntries(projected),
     scenePending:due.filter(e=>!actionable(e)).map(e=>e.id),
     unplannedLegacy:Object.values(projected.events).filter(e=>!e.eventKind&&!terminalEvent(e)&&!e.estimatedEndAt).map(e=>e.id),
-    policy:'sub按fixedEndAt到期须在该时刻结案，结果由AI决定；未到期不例行修改；main估期不是截止期限。旧事件到期只要求评估，不代表完成。按预计时间和来源依赖在同一次World请求处理；终结或给出理由延期到窗口之后。场内缺少实际事实时不代主角行动；旧缺规划记录不补造历史日期。'
+    policy:'sub到期按原fixedEndAt结案，结果由AI决定；无法合法结案时保留原记录与入场，下回正常推进仍列为积压；未到期不例行修改；main估期不是截止期限。旧事件到期只要求评估，不代表完成。按预计时间和来源依赖在同一次World请求处理；终结或给出理由延期到窗口之后。场内缺少实际事实时不代主角行动；旧缺规划记录不补造历史日期。'
       + (actions.some(e=>e.entryHandoff)
         ? '业务无需后续就结束；entryHandoff 另外标明仍开放的入场，按共享契约处理，不编造后续互动。'
         : '无后续必要就结束清理，不强制承接。')};

@@ -11,7 +11,7 @@ import { AccountSchema } from './economy/schema';
 import { ProtagonistSchema } from './protagonist/schema';
 import { OrdinaryNpcSchema, SpecialProfileSchema, PromotionProfileSchema } from './npc/schema';
 import { NpcMemorySchema } from './memories/schema';
-import { ImportantItemSchema } from './items/schema';
+import { ImportantItemSchema, OwnedItemInputSchema } from './items/schema';
 import { LocationSchema } from './state';
 import type { GameState } from './state';
 
@@ -106,7 +106,7 @@ export const variableCommandSchemas = [
     amount: MoneySchema.refine((n) => n > 0),
     purpose: TextSchema,
   }),
-  z.strictObject({ ...base, type: z.literal('AcquireItem'), item: ImportantItemSchema }),
+  z.strictObject({ ...base, type: z.literal('AcquireItem'), item: OwnedItemInputSchema }),
   z
     .strictObject({
       ...base,

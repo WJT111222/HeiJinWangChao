@@ -34,12 +34,26 @@ export function validateStageWrite(old:WorldEvent|undefined,event:WorldEvent,clo
     requireData(metadataOnly || same(old,event),'STAGE_EARLY_WRITE','场外小事件不可例行改写，须到固定时间结案');
   } else if(!old) requireData(Date.parse(clock)<Date.parse(event.fixedEndAt!),'STAGE_DUE','本窗口已到期的新阶段须保存最终结案对象');
 }
+/** An existing due event may wait only if its authoritative record and links were left intact. */
+export function deferredStageIds(before: GameState, after: GameState) {
+  const now = Date.parse(after.worldClock);
+  return Object.values(before.events).filter(event =>
+    event.eventKind === 'sub' && !ended(event) && Date.parse(event.fixedEndAt!) <= now &&
+    same(event, after.events[event.id]) &&
+    !Object.values(after.events).some(next => next.predecessorEventIds?.includes(event.id) && !same(next, before.events[next.id]))
+  ).map(event => event.id).sort();
+}
 /** Final World/turn boundary only: Variables may simulate a clock crossing before World runs. */
-export function validateStageSettlement(before:GameState,after:GameState,turnId:string) {
+export function validateStageSettlement(before:GameState,after:GameState,turnId:string,deferred: readonly string[] = []) {
+  const exceptions = new Set(deferred);
+  if (exceptions.size) {
+    const eligible = new Set(deferredStageIds(before, after));
+    requireData(deferred.every(id => eligible.has(id)), 'STAGE_DUE', '暂缓阶段必须是本轮原样保留的到期记录');
+  }
   const now=Date.parse(after.worldClock);
   const candidates=new Map([...Object.values(after.events),...Object.values(before.events)].map(e=>[e.id,e]));
   for(const event of candidates.values()) {
-    if(event.eventKind!=='sub'||ended(event)||Date.parse(event.fixedEndAt!)>now)continue;
+    if(event.eventKind!=='sub'||ended(event)||Date.parse(event.fixedEndAt!)>now||exceptions.has(event.id))continue;
     const result=after.events[event.id]??after.retiredEvents[event.id];
     requireData(result && ended(result),'STAGE_DUE','到期子事件必须结案，不能以待入场或新预计时间无限延期');
     validateStageResult(result);

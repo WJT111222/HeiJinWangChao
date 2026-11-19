@@ -24,13 +24,12 @@ for(const firstFailure of [false,true])test(`固定阶段积压结算保留原�
   const response=await seed(page),initial=await stored(page);let invalid=firstFailure,calls=0;
   await page.route('https://event-stages.mock.invalid/**',async route=>{
     calls++;const reply=structuredClone(response);
-    if(invalid)delete reply.eventCommands[0].event.outcome;
-    await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:JSON.stringify(reply)},finish_reason:'stop'}]})});
+    await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:invalid ? '{"eventCommands": [' : JSON.stringify(reply)},finish_reason:'stop'}]})});
   });
   await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
   if(firstFailure){
     await openWorkflowDiagnostics(page);
-    await expect(page.getByRole('region', { name: '运行诊断', exact: true }).getByTestId('runtime-log')).toContainText('stage_result');
+    await expect(page.getByRole('region', { name: '运行诊断', exact: true }).getByTestId('runtime-log')).toContainText('invalid_json');
     const failed=await stored(page);expect(failed.state).toEqual(initial.state);expect(failed.draft.story).toEqual(initial.draft.story);expect(failed.draft.variables).toEqual(initial.draft.variables);
     expect(calls).toBe(1);await page.reload();await openGameTools(page);expect(calls).toBe(1);invalid=false;
     await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();

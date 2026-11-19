@@ -253,9 +253,8 @@ describe('变量阶段真实请求到草稿保存', () => {
   );
   it.each([
     '{not-json',
-    { ...result, commands: [{ ...result.commands[0], amount: 999999 }] },
-    '<命令>set unsupported.field = 1</命令>',
-  ])('非法候选整批拒绝并记录安全失败元数据，不污染正文或正式状态', async (value) => {
+    '<命令>set protagonist.skills = [</命令>',
+  ])('无法解析的候选拒绝并记录安全失败元数据，不污染正文或正式状态', async (value) => {
     const before = await repo.load('save-a');
     await expect(
       runner(async () => wire(value)).generate({ ...setup(), draft }),
@@ -269,6 +268,13 @@ describe('变量阶段真实请求到草稿保存', () => {
       storyRevision: 1,
       attempt: 1,
     });
+    expect(await repo.load('save-a')).toEqual(before);
+  });
+  it('可定位的余额不足单条跳过，保存准备结果且不提前扣款', async () => {
+    const before = await repo.load('save-a');
+    const saved = await runner(async () => wire({ ...result, commands: [{ ...result.commands[0], amount: 999999 }] })).generate({ ...setup(), draft });
+    expect(saved.variables?.result).toMatchObject({ commands: [], settlement: { accepted: 0, skipped: [{ commandIndex: 0, category: 'economy' }] } });
+    expect(saved.stageStatus.variables).toBe('ready');
     expect(await repo.load('save-a')).toEqual(before);
   });
   it('同页正文与变量共用锁，重复点击不发送第二个请求', async () => {

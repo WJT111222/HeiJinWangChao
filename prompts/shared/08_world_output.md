@@ -1,4 +1,10 @@
-输出严格JSON：{worldCommands,taskCommands,eventCommands,visibleHooks,unresolved}。各数组始终提供；先检查 EVENT_SCHEDULE 的必需到期事项，无需处理时才可全部为空；不输出自由脚本或整个GameState补丁。
+同一次响应依次输出且闭合三个顶层区块。规划摘要简短交代任务、到期事件和推进方向，只展示结论。说明写拟处理的变化及保留或无法处理的事项。命令块包含一个严格 JSON 对象，五个数组全部提供。只有命令块可执行；说明不证明已经保存。完整的无变化示例：
+<thinking>已核对事件排程、现有任务和组织活动，当前窗口内没有需要更新的事项。</thinking>
+<说明>场外现有安排保持原状。</说明>
+<命令>
+{"worldCommands":[],"taskCommands":[],"eventCommands":[],"visibleHooks":[],"unresolved":[]}
+</命令>
+发现有必要更新时使用下面的结构化命令。程序检查可定位的无效操作及依赖范围，允许无关合法更新继续。结案与必要承接、任务与直接关联事件作为整体检查。不得自填程序的跳过或暂缓元数据。
 
 ## 结构化命令与职责
 每条命令使用COMMAND_CATALOG中type专属同级字段：{commandId,type,evidence,...}。evidence是非执行说明，可自然概括，不是JSON凭据、逐字引用或审批请求。不要输出额外证据协议、正文锚点、decision或来源许可。
@@ -81,7 +87,7 @@ visibleHooks为{text,revealAfter?}数组；unresolved为说明字符串数组。
   {"type":"SaveEvent","commandId":"write:handoff-next","evidence":"保留原先确实待玩家回应的互动","event":{"id":"handoff-next","title":"核对清单的后续回应","status":"scheduled","startAt":"2026-05-17T14:00:00+08:00","estimatedEndAt":"2026-05-17T15:00:00+08:00","backgroundText":"核对阶段结束，原请求尚未回应","goalText":"保留玩家回应的机会","actorRefs":[{"kind":"organization","id":"org-stage-a"}],"linkedTaskIds":[],"prerequisites":[],"blockers":[],"visibility":"hidden","impact":"major","sourceTurnIds":["stage-current"],"predecessorEventIds":["handoff-source"],"continuation":{"direction":"protagonist","reason":"等待玩家回应已呈现的原请求","entry":{"channel":"电话","cue":"请核对样本清单","locationId":"chongqing"}}}}
 ]
 ```
-超长窗口无法在一次响应中完整表达全部必要阶段时，应报告unresolved并让整批安全失败供玩家调整行动；不得省略已经存在的到期阶段、伪造全部完成或增加自动付费请求。
+超长窗口无法在一次响应中完整表达全部必要阶段时，在说明和unresolved列出本次无法合法处理的事项，仍提交其余完整合法更新；不得省略已经存在的到期阶段、伪造全部完成或增加自动付费请求。
 
 【Story叙事最高裁定】读取STORY_RESULT.variableGuide中的eventNarration及eventInteraction：enter是本幕实际介入，mention只接触消息、不代表接受参与；没有记录不妨碍后台推演。observedFact/textEvidence记录Story已成立的说明，不用全文词匹配复审。合法Variables落实的提前结案优先，不再按原fixedEndAt重复结算；未确定的后台结果仍由本次World决定。只在TIME_WINDOW至已确认停止点内推演，不回溯替玩家决定。需要主角回应的新发展安排下一次Story，不增加额外模型调用。
 
@@ -131,4 +137,4 @@ privateProfile示例只说明原有字段，未知资料可以省略相应字段
 CreateLocation.parentId表示真实地理从属，不是存档默认根、角色国籍或主角所在国。瑞士苏黎世不能挂在china之下；应复用真实存在的瑞士地点ID，或先CreateLocation建立瑞士（根未确定时省略parentId），再以其ID作为苏黎世父级。若尚不能确定上级，可省略parentId，不编造父ID、不为挂树选错国家。复用已有地点，不改已有地图或地点层级来迁就新输出；程序仍只校验引用存在和无环，不替模型判断地理事实。
 
 ## 输出前结构自检
-仅在内部核对，不额外输出报告：字段是否在对应命令的正确层级；ID 是否复用已有或同批合法实体；expectedRevision 是否为正式基线；记忆/成果时间是否位于允许窗口；已有事件不可变字段和 sourceTurnIds 是否保留并包含当前回合；主子时间、任务结束依据与必要引用是否齐全。最后核对 EVENT_SCHEDULE 必需处理的到期事项及 entryHandoff，不能用空数组漏掉结算或靠虚构后继填补缺失回执。只返回规定的五个数组，不新增模型阶段或修复请求。
+命令输出前核对字段层级、稳定ID、版本、时间及必要引用，优先处理 EVENT_SCHEDULE 的到期事项与 entryHandoff。无法合法结案时保留原阶段和入场并说明原因，禁止修改固定终止时间或编造后继。写完三个区块结束，同一次请求内完成。

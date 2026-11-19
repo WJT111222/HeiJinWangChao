@@ -274,7 +274,7 @@ test('角色对白后换行的客观消费可保存候选，不改变正式资�
   });
 });
 
-test('场景引用不一致整批失败；合法离场可恢复为未结算候选', async ({ page }) => {
+test('场景冲突隔离；合法离场可主动更新未结算候选', async ({ page }) => {
   const text = '主角独自走进社区诊所。同事留在重庆。';
   const before = await seed(page, true, false, text, true);
   let follow = true;
@@ -306,14 +306,14 @@ test('场景引用不一致整批失败；合法离场可恢复为未结算候�
     }),
   );
   await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
-  await expect(page.getByRole('alert')).toBeVisible();
+  await ready(page);
   const rejected = await stored(page);
-  expect(rejected.draft.stageStatus.variables).toBe('failed');
-  expect(rejected.draft.variables).toBeUndefined();
+  expect(rejected.draft.stageStatus.variables).toBe('ready');
+  expect(rejected.draft.variables.result.settlement.skipped).not.toHaveLength(0);
   expect(rejected.draft.story.narrative).toBe(text);
   expect(rejected.formal).toBe(before);
   follow = false;
-  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '重新生成变量候选', exact: true }).click();
   await ready(page);
   const accepted = await stored(page);
   expect(accepted.draft.variables.result.commands[1].changes).toEqual({ onScene: false });
@@ -326,7 +326,7 @@ for (const scenario of [
   { kind: 'scene', denied: '不是同事和主角一起走进社区诊所' },
   { kind: 'scene', denied: '并非同事和主角一起走进社区诊所' },
 ] as const) {
-  test(`小说否定由模型判断；真正非法数据拒绝后可恢复：${scenario.denied}`, async ({ page }) => {
+  test(`小说否定由模型判断；真正非法数据可隔离并可主动更新：${scenario.denied}`, async ({ page }) => {
     const scene = scenario.kind === 'scene';
     const text = scene
       ? `${scenario.denied}。主角独自走进社区诊所，同事留在重庆。`
@@ -369,14 +369,14 @@ for (const scenario of [
       });
     });
     await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
-    await expect(page.getByRole('alert')).toBeVisible();
+    await ready(page);
     const rejected = await stored(page);
-    expect(rejected.draft.stageStatus.variables).toBe('failed');
-    expect(rejected.draft.variables).toBeUndefined();
+    expect(rejected.draft.stageStatus.variables).toBe('ready');
+    expect(rejected.draft.variables.result.settlement.skipped).not.toHaveLength(0);
     expect(rejected.draft.story.narrative).toBe(text);
     expect(rejected.formal).toBe(before);
     corrected = true;
-    await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+    await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '重新生成变量候选', exact: true }).click();
     await ready(page);
     const accepted = await stored(page);
     expect(accepted.formal).toBe(before);

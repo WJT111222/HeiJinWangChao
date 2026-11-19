@@ -2,9 +2,9 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './helpers/test';
 import { openGameTools, openStageSwitches, openWorkflowDiagnostics } from './helpers/gameLayout';
 
-async function seed(page: Page, notification: boolean | 'legacy' | 'legacy-decision' = false) {
+async function seed(page: Page, notification: boolean | 'legacy' | 'legacy-decision' | 'partial' = false, streamWorld = false) {
   await page.goto('/');
-  return page.evaluate(async notification => {
+  return page.evaluate(async ({ notification, streamWorld }) => {
     const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/issue194.ts',
       '/src/tests/fixtures/eventStages.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts', '/src/ui/settings/model.ts', '/src/domain/drafts.ts'];
     const [{ SaveRepository }, { issue194 }, { stageCommand }, { defaultAiConfig, newChannel, saveAiConfig },
@@ -12,11 +12,13 @@ async function seed(page: Page, notification: boolean | 'legacy' | 'legacy-decis
     const settings = defaultSettings();
     settings.prompts.minNarrativeChars = 1;
     settings.prompts.actionOptions = false;
+    if (notification === 'partial') settings.runtime.streamWorld = streamWorld;
     for (const value of Object.values(settings.memory.summaries) as { automatic: boolean }[]) value.automatic = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel();
     channel.baseUrl = 'https://event-entry-194.mock.invalid/v1';
     channel.defaultModel = 'entry-handoff-mock';
+    channel.compatibility.jsonMode = true;
     config.channels = [channel];
     config.routes.story = { channelId: channel.id, modelId: 'story' };
     config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' };
@@ -45,12 +47,12 @@ async function seed(page: Page, notification: boolean | 'legacy' | 'legacy-decis
     }
     const repo = await SaveRepository.open();
     try {
-      const entry = { state, draft: notification === true
+      const entry = { state, draft: notification === true || notification === 'partial'
         ? createTurnDraft(state.saveId, state.revision, draft.turnId, 'regular', '') : draft };
       await repo.importBackup(entry, (await repo.compareBackup(entry)).confirmation);
     } finally { repo.close(); }
     return { response, successor: stageCommand(successor) };
-  }, notification);
+  }, { notification, streamWorld });
 }
 
 async function stored(page: Page) {
@@ -61,15 +63,15 @@ async function stored(page: Page) {
   });
 }
 
-test('到期已呈现入场缺少后继时安全拒绝，主动重试后一次正式结算', async ({ page, isMobile }) => {
+test('World 响应截断后只重试 World，合法承接一次正式结算', async ({ page, isMobile }) => {
   const { response, successor } = await seed(page);
   const calls: { model: string; messages: { content: string }[] }[] = [];
   await page.route('https://event-entry-194.mock.invalid/**', async route => {
     expect(route.request().method()).toBe('POST');
     calls.push(route.request().postDataJSON());
-    const reply = calls.length === 1 ? response : { ...response, eventCommands: [...response.eventCommands, successor] };
+    const reply = calls.length === 1 ? '{"eventCommands":[' : JSON.stringify({ ...response, eventCommands: [...response.eventCommands, successor] });
     await route.fulfill({ contentType: 'application/json',
-      body: JSON.stringify({ choices: [{ message: { content: JSON.stringify(reply) }, finish_reason: 'stop' }] }) });
+      body: JSON.stringify({ choices: [{ message: { content: reply }, finish_reason: 'stop' }] }) });
   });
   await page.goto('/#game/save-a');
   await page.reload();
@@ -82,9 +84,7 @@ test('到期已呈现入场缺少后继时安全拒绝，主动重试后一次�
   const log = isMobile
     ? mobileDiagnostics.getByRole('tabpanel', { name: /运行日志/ }).getByTestId('runtime-log')
     : page.getByRole('region', { name: '运行诊断', exact: true }).getByTestId('runtime-log');
-  await expect(log).toContainText('event_entry');
-  await expect(log).toContainText('缺少承接原安排的后继互动');
-  await expect(log).toContainText('eventCommands.0.event.protagonistEntry');
+  await expect(log).toContainText('invalid_json');
   await expect(log).not.toContainText('请核对样本清单');
   await expect(log).not.toContainText('event-entry-mock-only');
   const failed = await stored(page);
@@ -366,4 +366,86 @@ test('关闭或放弃恢复零请求，待决不确认、生成失败、取消�
     await openRecovery(page);
     expect(attempts).toBe(3);
   } finally { unblock(); }
+});
+
+test('局部容错：两个阶段各自跳过，保留到期入场、重载并在下一轮结案', async ({ page, isMobile }, info) => {
+  const {response, successor}=await seed(page,'partial',isMobile);
+  const calls: string[] = [];
+  let worldCount=0;
+  await page.route('https://event-entry-194.mock.invalid/**',async route=>{
+    expect(route.request().method()).toBe('POST');
+    const request=route.request().postDataJSON();
+    const model: string=request.model;
+    calls.push(model);
+    const contextMessage=request.messages.find((message:{content:string})=>message.content.startsWith('<GAME_CONTEXT>'));
+    const context=JSON.parse(contextMessage.content.slice('<GAME_CONTEXT>\n'.length,-'\n</GAME_CONTEXT>'.length));
+    let reply: string;
+    if (model==='story') {
+      reply='<thinking>保留已有安排。</thinking><正文>主角在店里继续核对资料，耐心等待下一步。</正文><短期记忆>主角检查资料。</短期记忆><变量规划>[]</变量规划>';
+    } else if (model==='variables') {
+      const commands=worldCount===0
+        ? 'set worldClock = "2026-05-17T14:00:00+08:00"\nset items[missing-owner] = {"name":"合成文件","category":"document","quantity":1,"conditionText":"完好"}\nset protagonist.emotionText = "平静"'
+        : 'set protagonist.emotionText = "从容"';
+      reply=`<thinking>落实现场变化。</thinking><说明>待程序核对。</说明><命令>\n${commands}\n</命令>`;
+    } else {
+      expect(model).toBe('world');
+      expect(request.response_format).toBeUndefined();
+      expect(request.stream).toBe(isMobile);
+      expect(request.messages.at(-1).content).toMatch(/<thinking>[\s\S]*<说明>[\s\S]*<命令>/u);
+      expect(context.SAVE_STATE.items?.['missing-owner']).toBeUndefined();
+      expect(context.EVENT_SCHEDULE.due).toContainEqual(expect.objectContaining({
+        eventId:'handoff-source',fixedEndAt:'2026-05-17T14:00:00+08:00',entryHandoff:expect.objectContaining({status:'presented'}),
+      }));
+      let result: unknown;
+      if (++worldCount===1) {
+        expect(context.VARIABLE_RESULT.result.settlement.skipped).toMatchObject([{commandIndex:1,category:'item',field:'ownerRef'}]);
+        result={...response,worldCommands:[{type:'UpdateOrganization',commandId:'org-partial-valid',organizationId:'org-stage-a',
+          expectedRevision:context.BASE_SAVE_REVISION,changes:{operatingStatus:'正在核对材料'},evidence:'背景工作继续'}]};
+      } else {
+        const source=structuredClone(response.eventCommands[0]), followup=structuredClone(successor);
+        source.event.sourceTurnIds=source.event.sourceTurnIds.filter((id:string)=>context.SAVE_STATE.events['handoff-source'].sourceTurnIds.includes(id));
+        source.event.sourceTurnIds.push(context.TURN_CONTEXT.turnId);
+        followup.event.sourceTurnIds=[context.TURN_CONTEXT.turnId];
+        result={...response,eventCommands:[source,followup]};
+      }
+      reply=`<thinking>核对现有排程。</thinking><说明>后台继续处理。</说明><命令>\n${JSON.stringify(result)}\n</命令>`;
+    }
+    if (request.stream) {
+      const pivot=Math.floor(reply.length/2);
+      const fragments=[reply.slice(0,pivot),reply.slice(pivot)];
+      await route.fulfill({contentType:'text/event-stream',body:fragments.map(content=>`data: ${JSON.stringify({choices:[{delta:{content}}]})}\n\n`).join('')+'data: [DONE]\n\n'});
+    } else {
+      await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:reply},finish_reason:'stop'}]})});
+    }
+  });
+  await page.goto('/#game/save-a');
+  await page.reload();
+  const before=await stored(page);
+  await page.getByLabel('你的行动',{exact:true}).fill('核对现有材料');
+  await page.getByRole('button',{name:'发送',exact:true}).click();
+  const summary=page.getByText('本回合已结算，跳过 2 项更新，1 个到期阶段待处理',{exact:true});
+  await expect(summary).toBeVisible();
+  await summary.click();
+  await expect(page.getByText(/变量第 2 条.*物品.*ownerRef/u)).toBeVisible();
+  await expect(page.getByText(/动态世界第 2 条.*事件.*eventCommands\.0/u)).toBeVisible();
+  const first=(await stored(page)).state;
+  expect(first.turnNumber).toBe(before.state.turnNumber+1);
+  expect(first.items).toEqual(before.state.items);
+  expect(first.protagonist.emotionText).toBe('平静');
+  expect(first.organizations['org-stage-a'].operatingStatus).toBe('正在核对材料');
+  expect(first.events['handoff-source']).toEqual(before.state.events['handoff-source']);
+  expect(calls).toEqual(['story','variables','world']);
+  await page.screenshot({path:info.outputPath('局部容错结算.png')});
+  await page.reload();
+  await expect(summary).toBeVisible();
+  expect((await stored(page)).state).toEqual(first);
+  expect(calls).toHaveLength(3);
+  await page.getByLabel('你的行动',{exact:true}).fill('继续核对材料');
+  await page.getByRole('button',{name:'发送',exact:true}).click();
+  await expect.poll(async()=> (await stored(page)).state.turnNumber).toBe(first.turnNumber+1);
+  const second=(await stored(page)).state;
+  expect(second.events['handoff-source']).toMatchObject({status:'resolved',resolvedAt:'2026-05-17T14:00:00+08:00',protagonistEntry:{status:'invalidated'}});
+  expect(second.events['handoff-next'].protagonistEntry.status).toBe('presented');
+  expect(second.appliedCommands.filter((command:{commandId:string})=>command.commandId==='org-partial-valid')).toHaveLength(1);
+  expect(calls).toEqual(['story','variables','world','story','variables','world']);
 });

@@ -7,6 +7,7 @@ import { estimateTokens } from '../prompts/statistics';
 import { sentContext } from './fixtures/contextAssertions';
 import { talentPromptInput as currentTalentPromptInput, talentMemoryInput as currentTalentMemoryInput } from './fixtures/talentPrompt';
 import baseline from './fixtures/talent-no-selection-baseline.json';
+import partialSettlementPromptBaseline from './fixtures/talent-partial-settlement-prompt-baseline.json';
 import issue194PromptBaseline from './fixtures/talent-issue-194-prompt-baseline.json';
 
 // 仅本文件的历史字节对照固定为原七字段设置；其他请求测试继续使用新默认设置。
@@ -55,7 +56,7 @@ describe('PR-B 条件式单项天赋上下文', () => {
   });
 
   it('有天赋 Variables/World 完整请求保留通用与专属规则及已核对的入场提示', async () => {
-    // Compared with phase 2 using the production composer: only the World command catalog differs for Variables/World.
+    // Variables and World both intentionally changed their executable output protocol; Story and Memory retain their earlier snapshots.
     const requests = [];
     for (const definition of talentDefinitions) {
       for (const stage of ['variables', 'world'] as const) for (const mode of ['opening', 'regular'] as const) {
@@ -65,7 +66,7 @@ describe('PR-B 条件式单项天赋上下文', () => {
       const { commonRules, additionalRules } = talentContext(definition.id, 'story')!;
       requests.push({ definition, commonRules, additionalRules });
     }
-    expect(hash(requests)).toBe(issue194PromptBaseline.withTalentVariablesAndWorld);
+    expect(hash(requests)).toBe(partialSettlementPromptBaseline.withTalentVariablesAndWorld);
   });
 
   it.each(talentDefinitions)('$name 在开局/普通三阶段读取同一正式全文，单份注入且不改输入', async definition => {
@@ -98,7 +99,8 @@ describe('PR-B 条件式单项天赋上下文', () => {
     expect(prompt.context).not.toHaveProperty('PROTAGONIST_TALENT');
     expect(sentContext(prompt.messages)).not.toHaveProperty('PROTAGONIST_TALENT');
     // 已逐消息对照第二阶段：只更新 Story 输出模块与 World 命令目录，其他上下文字段逐项比对保持一致。
-    const expectedText = issue194PromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode) ?? expected;
+    const expectedText = partialSettlementPromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode)
+      ?? issue194PromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode) ?? expected;
     expect(hash(prompt.messages)).toBe(expectedText.messages);
     expect(hash(prompt.context)).toBe(("context" in expectedText ? expectedText.context : undefined) ?? expected.context);
     expect(hash(prompt.modules)).toBe(expectedText.modules);

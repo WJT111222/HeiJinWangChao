@@ -30,6 +30,7 @@ const allowedPatterns = [
   /^npc\[id\]\.(?:activeGoals(?:\[index\])?|affinityChange)$/,
   /^npc\[id\](?:\.(?:name|aliases|identity|relationshipText|healthText|locationId|onScene|lastInteractionAt|memories|longTermMemories|knownInformation|activeGoals|contact|specialProfile|phoneContact|usualLocations|detailedBackground|habits|relationshipNetwork))?$/,
   /^items\[id\](?:\.(?:conditionText|locationId|quantity|purchase|transfer|loss|description|referenceValue|itemDetails|category|questItem))?$/,
+  /^items\[id\](?:\.purchase)?\.ownerRef$/,
   /^locations\[id\]$/,
   /^organizations\[id\](?:\.protagonistRelation)?$/,
   /^events\[id\]\.sceneState$/,

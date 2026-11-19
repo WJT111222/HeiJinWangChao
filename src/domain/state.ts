@@ -1,3 +1,4 @@
+import { JournalSettlementSchema } from './updateSettlement';
 import { z } from 'zod';
 import { validateChronicles } from './history/validation';
 import { pendingOpeningClock } from './openingTime';
@@ -38,6 +39,7 @@ export const SaveShape = {
   journal: z.array(z.strictObject({
     turnId: IdSchema, revision: CountSchema, story: StorySchema, relatedActorRefs: z.array(ActorRefSchema),
     scene: z.strictObject({ worldClock: GameTimeSchema, locationId: IdSchema }).optional(),
+    settlement: JournalSettlementSchema.optional(),
   })),
   appliedCommands: z.array(z.strictObject({
     turnId: IdSchema, commandId: IdSchema, fingerprint: TextSchema,

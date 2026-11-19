@@ -4,7 +4,7 @@ import type { DomainCommand } from '../../domain/commands';
 import { IdSchema } from '../../domain/common';
 import type { ParsedVariableCommand } from '../../parsers/variableText';
 import { failed } from './model';
-import { diagnosticForObject, diagnosticForRule } from './diagnostics';
+import { diagnosticForObject, diagnosticForRule, safeVariablePath } from './diagnostics';
 import type { ExecutionResult } from './model';
 
 type TransactionType = 'ReceiveIncome' | 'Borrow' | 'TransferFunds' | 'RepayDebt'
@@ -83,5 +83,10 @@ export function compileTransaction(command: ParsedVariableCommand, common: {comm
     case 'SetEquipment': raw = {...common,type:path.type,equipment:data}; break;
   }
   const parsed = DomainCommandSchema.safeParse(raw);
-  return parsed.success ? {ok:true,value:parsed.data} : failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
+  if (parsed.success) return {ok:true,value:parsed.data};
+  const valuePath = safeVariablePath(command);
+  if (valuePath && (path.type === 'AcquireItem' || path.type === 'PurchaseItem')
+    && parsed.error.issues.some(issue => issue.path[0] === 'item' && issue.path[1] === 'ownerRef'))
+    return failed('type_mismatch', null, [], { validationRule: 'invalid_type', valuePath: `${valuePath}.ownerRef` });
+  return failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
 }

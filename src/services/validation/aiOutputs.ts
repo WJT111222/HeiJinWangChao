@@ -1,13 +1,14 @@
 import { storySceneAuthority, validateNarrationClock } from '../../domain/events/narration';
 import { nestedStoryTag, storyEnvelopeDiagnostic, storySchemaError } from './storyDiagnostics';
 import { recoverStoryEnvelope, repairUnclosedTags } from './storyEnvelopeRecovery';
+import { validateVariableWork } from './variableWork';
 import { validateSceneEventUpdate } from '../../domain/events/scenePermission';
 import { openingTimeBase } from '../../domain/openingTime';
 import { StorySchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
 import { VariableResultSchema } from '../../domain/drafts';
 import type { TurnDraft } from '../../domain/drafts';
-import { commitCommands } from '../../domain/commands';
+import { commitCommands, fingerprint } from '../../domain/commands';
 import { AiError } from '../ai/errors';
 import { validateWorldOutput } from './worldOutput';
 import { worldValidationError } from './worldDiagnostics';
@@ -16,6 +17,7 @@ import { prepareVariableProjection } from '../../domain/turnProjection';
 import { variableFailure, variableValidationError } from './variableDiagnostics';
 import { assessSummary } from '../../domain/memories/summary';
 import { validateTimeCommands, validateHistoricalWorld } from '../../domain/timePreflight';
+import type { ParsedVariableCommand } from '../../parsers/variableText';
 import { parseVariableText, parseVariableResponse } from '../../parsers/variableText';
 import { compileVariableCommands, simulateVariablePlan } from '../../executors/variableText';
 import type { ExecutionError } from '../../executors/variableText';
@@ -43,25 +45,29 @@ export async function parseTextVariables(text: string, state: GameState, draft: 
   if (!ast.ok) throw new AiError('variable_text_syntax', undefined, {
     variableStep: 'commands', fieldPath: `text.${ast.error.code}.line${ast.error.position.line}.column${ast.error.position.column}`,
     ...(ast.error.commandIndex === null ? {} : { commandIndex: ast.error.commandIndex - 1 }) });
+  return validateVariableStatements(ast.value, state, draft, Boolean(envelope.value.description.trim()));
+}
+
+export async function validateVariableStatements(ast: readonly ParsedVariableCommand[], state: GameState, draft: TurnDraft, hasDescription: boolean) {
   const context = { draft, expectedRevision: state.revision };
-  const compiled = await compileVariableCommands(ast.value, state, context);
+  const compiled = await compileVariableCommands(ast, state, context);
   if (!compiled.ok) throw textExecutionError(compiled.error, 'mapping');
   try { validateTimeCommands(state, draft, compiled.value.commands); }
   catch (error) { throw variableFailure(error, 'simulation'); }
   const simulated = await simulateVariablePlan(compiled.value, state, context);
   if (!simulated.ok) throw textExecutionError(simulated.error, 'simulation');
-  // 复用正式提交已有的场景权限底线；文本任务/事件不能冒充World后台操作。
-  try {
-  for (const [commandIndex, command] of compiled.value.commands.entries()) {
-    if (command.type === 'SaveEvent') validateSceneEventUpdate(state, simulated.value, command.event, draft.turnId,draft.story);
-    const actors = command.type === 'SaveTask' ? [command.task.actorRef] : [];
-    if (actors.some((actor) => actor.kind === 'npc' && !simulated.value.npc[actor.id]?.onScene))
-      throw new AiError('data_integrity', undefined, { fieldPath: 'commands.actorRef', commandIndex, commandType: command.type });
+  for (const [index, command] of compiled.value.commands.entries()) {
+    try { validateVariableWork(state, draft, simulated.value, command); }
+    catch (error) {
+      const failure = variableFailure(error, 'simulation');
+      const origin = compiled.value.origins[index];
+      throw new AiError(failure.code, failure.status, { ...failure.details, commandType: command.type,
+        ...(origin ? { commandIndex: origin.commandIndex - 1 } : {}) });
+    }
   }
-  // 分析及说明只保留于临时原文；不将它们提升成已执行事实。
+  // Analysis and descriptions are non-executable and remain in the transient inspection.
   return VariableResultSchema.parse({ commands: compiled.value.commands, rejectedSuggestions: [],
-    unresolved: envelope.value.description.trim() ? ['模型附带非执行说明；说明未转为命令或存档事实，只有列出的领域命令通过模拟。'] : [] });
-  } catch (error) { throw variableFailure(error, 'simulation'); }
+    unresolved: hasDescription ? ['模型附带非执行说明；说明未转为命令或存档事实，只有列出的领域命令通过模拟。'] : [] });
 }
 
 function json(text: string): unknown {
@@ -72,11 +78,11 @@ function json(text: string): unknown {
   }
 }
 /** Strip only a whole World JSON fence, never extract/repair a partial object. */
-function worldJson(text: string): unknown {
+export function worldJson(text: string): unknown {
   const trimmed = text.trim();
   const opening = /^```(?:json)?[ \t]*\r?\n/i.exec(trimmed);
   if (!opening) return json(text);
-  const body = trimmed.slice(opening[0].length).replace(/\r?\n```[ \t]*$/, '');
+  const body = trimmed.slice(opening[0].length).replace(/\r?\n```[ \t]*$/u, '');
   return json(body);
 }
 // 只解析结构；叙事规划不属于 StorySchema，也不检查文学步骤的内容质量。
@@ -131,6 +137,7 @@ export function parseVariables(text: string, state: GameState, draft: TurnDraft)
   const raw = json(text);
   const checked = VariableResultSchema.safeParse(raw);
   if (!checked.success) throw variableValidationError(checked.error, raw);
+  if (checked.data.settlement && checked.data.settlement.accepted !== checked.data.commands.filter(command => command.commandId.startsWith('text-v1:')).length) throw new AiError('candidate_conflict');
   if(checked.data.commands.some(c=>c.type==='DeleteEvent'||c.type==='RecordHistory'))throw new AiError('permission');
   if (!draft.story) throw new AiError('candidate_conflict');
   try { state = openingTimeBase(state, draft); } catch (error) { throw variableValidationError(error); }
@@ -146,14 +153,30 @@ export function parseVariables(text: string, state: GameState, draft: TurnDraft)
   } catch (error) { throw variableValidationError(error); }
   return checked.data;
 }
-export function parseWorld(text: string, state: GameState, draft: TurnDraft) {
-  if (draft.variables?.validation === 'validated')
-    parseVariables(JSON.stringify(draft.variables.result), state, draft);
+export function validateWorldCandidate(raw: unknown, state: GameState, draft: TurnDraft, allowDeferred = false) {
   try {
-    const result = validateWorldOutput(worldJson(text), state, draft);
+    const result = validateWorldOutput(raw, state, draft, allowDeferred);
     try { validateHistoricalWorld(state, draft, result); } catch { throw new AiError('time_preflight'); }
     return result;
   } catch (error) {
     throw worldValidationError(error);
   }
+}
+export function parseWorld(text: string, state: GameState, draft: TurnDraft) {
+  if (draft.variables?.validation === 'validated')
+    parseVariables(JSON.stringify(draft.variables.result), state, draft);
+  let raw: unknown;
+  try { raw = worldJson(text); } catch (error) { throw worldValidationError(error); }
+  if (raw && typeof raw === 'object' && ('settlement' in raw || 'deferredEvents' in raw))
+    throw new AiError('invalid_output', undefined, { worldRule: 'command_structure' });
+  return validateWorldCandidate(raw, state, draft);
+}
+export function revalidateWorld(state: GameState, draft: TurnDraft) {
+  const { settlement, deferredEvents, ...commands } = draft.world!.result;
+  const result = validateWorldCandidate(commands, state, draft, Boolean(deferredEvents));
+  if (fingerprint(result.deferredEvents) !== fingerprint(deferredEvents))
+    throw new AiError('candidate_conflict');
+  if (settlement && settlement.accepted !== result.worldCommands.length + result.taskCommands.length + result.eventCommands.length)
+    throw new AiError('candidate_conflict');
+  return { ...result, ...(settlement ? { settlement } : {}) };
 }

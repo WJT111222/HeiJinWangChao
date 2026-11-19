@@ -660,6 +660,10 @@
         "baseCommit": "cc4b763df6d2b01bd119c13388c9f76045f38f78",
         "notes": "Variables只应用收悉回执，不赋予现场许可。",
         "sha256": "14c0b17729a338f357e89b10a4271b235ff8ff3718ef4f34835f1894513342b5"
+      },
+      "partialSettlement": {
+        "notes": "三段输出、可执行命令隔离和正式提交的局部容错契约。",
+        "sha256": "815dadb0e544777bef826bc9ecdb4c13983580f297fb249037c9ebbbd06ae881"
       }
     },
     "shared/08_world_output.md": {
@@ -796,6 +800,10 @@
         "baseCommit": "cc4b763df6d2b01bd119c13388c9f76045f38f78",
         "notes": "进度与已确认收悉分离；保留待决入场类型和合法承接。",
         "sha256": "0a581a5ef1ac4f3be9f5419c522d77de05a0aeea0394fefc37c764b95ca0aadd"
+      },
+      "partialSettlement": {
+        "notes": "三段输出、可执行命令隔离和正式提交的局部容错契约。",
+        "sha256": "90ae47a9fd56db1e30266c465f7b11444f80e228260bcc48d5799630890f5fc2"
       }
     },
     "stages/opening/variables.md": {
@@ -864,6 +872,10 @@
         "baseCommit": "ac5942f541ac0ef751357c5fb101f8bb8a65b02a",
         "notes": "World命令层级、记忆记录窗口、任务结束依据、事件来源/不可变字段和输出自检；仅澄清既有契约，保留此前来源记录，不改变领域规则或增加模型请求。",
         "sha256": "5c57506d35a29f3d6ea69086adc8a43320801f145121fed7af2f20c6dc72db9a"
+      },
+      "partialSettlement": {
+        "notes": "三段输出、可执行命令隔离和正式提交的局部容错契约。",
+        "sha256": "7d47ccc68e1066b1a4c810a743e2c3cc0b99c8b55ea18da32c9652efcbc9e272"
       }
     },
     "stages/regular/variables.md": {
@@ -924,6 +936,10 @@
         "baseCommit": "089723c2e1e0aa608afe9820a87b1f6a36ef385b",
         "notes": "按 EVENT_SCHEDULE 核对仍开放的到期入场，勿编造后继。",
         "sha256": "9cf9538704bf789cb5fe72bbcc22d0117dc4bbbab169f481671112cd7840e27a"
+      },
+      "partialSettlement": {
+        "notes": "三段输出、可执行命令隔离和正式提交的局部容错契约。",
+        "sha256": "fb55c0063bef1cc3994515b22cf01d029f1d37a41f18bb2995f8d13935fdae8f"
       }
     },
     "variableGroups/protagonist/init.md": {
@@ -1417,6 +1433,10 @@
         "baseCommit": "b609d51061b76615acbaaa8f2fb280d612fce75c",
         "notes": "追加UpdateOrganization正式契约与权限说明，保留原历史内容及来源。",
         "sha256": "ec527327dc2a01cb29a404fd797a0fc863960e6c6956d8ab3bbcf6cbd7a8c864"
+      },
+      "partialSettlement": {
+        "notes": "三段输出、可执行命令隔离和正式提交的局部容错契约。",
+        "sha256": "c4137e9b29c3241b1840c685fc827ec1e9e060cf8c346892aa3295d4eb88c083"
       }
     },
     "docs/ASSEMBLY.md": {

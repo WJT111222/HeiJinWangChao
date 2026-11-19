@@ -37,7 +37,7 @@ describe('正式Variables文本请求',()=>{
   });
 });
 
-// JSON Mode只在Variables关闭，不影响其他阶段的原生参数与Anthropic严格提示协议。
+// JSON Mode只用于结构化记忆阶段。
 describe('三协议格式隔离',()=>{
   for (const protocol of ['openai','gemini','anthropic'] as const) {
     it.each(['story','world','memory'] as const)(`${protocol} %s 保持原格式与请求地址`,(stage)=>{
@@ -46,7 +46,7 @@ describe('三协议格式隔离',()=>{
       const snapshot=requestSnapshot(a.config,stage,a.vault);
       const sent=wireRequest(snapshot,[{role:'system',content:'本阶段原协议'},{role:'user',content:'输入'}],false);
       const body=record(JSON.parse(String(sent.init.body)));
-      const structured=stage!=='story';
+      const structured=stage==='memory';
       if(protocol==='openai')expect(body.response_format).toEqual(structured?{type:'json_object'}:undefined);
       if(protocol==='gemini')expect(record(body.generationConfig).responseMimeType).toBe(structured?'application/json':undefined);
       if(protocol==='anthropic'){expect(body).not.toHaveProperty('response_format');expect(sent.url).toMatch(/\/messages$/);if(structured)expect(sent.diagnostics).toContain('NATIVE_JSON_MODE_SKIPPED_STRICT_PROMPT_RETAINED');}

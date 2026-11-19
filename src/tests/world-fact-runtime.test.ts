@@ -9,7 +9,6 @@ import type { Protocol } from '../services/ai/configuration';
 import { createTurnDraft, rerollStory } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
 import { defaultSettings } from '../ui/settings/model';
-import { runtimeLogEvent } from '../ui/game/runtimeLog';
 import { schoolContext, schoolResult, schoolTask, syntheticSchoolBatch } from './fixtures/worldChineseFact';
 import { originalSchoolContext } from './fixtures/worldSchoolOriginalContext';
 
@@ -61,27 +60,19 @@ it.each(['openai', 'gemini', 'anthropic'] as const)('%s 实际 Runtime→WorldSt
   expect(fetcher).toHaveBeenCalledTimes(1);
 });
 
-it('不存在的行动者失败且只显示静态诊断；明确重试只补World，上游和正式状态不变', async () => {
-  const before = await repo.load('save-a');
-  let valid = false;
-  const fetcher = vi.fn<typeof fetch>(async () => {const command=schoolTask();if(!valid)command.task.actorRef.id='missing-organization';return wire(schoolResult(command));});
-  const stage = runner(fetcher), input = options();
-  let caught: unknown;
-  try { await stage.generate({ ...input, draft }); } catch (error) { caught = error; }
-  const log = runtimeLogEvent(1, 'world', 'failed', caught);
-  expect(log).toMatchObject({ worldRule: 'actor_permission', commandType: 'SaveTask', commandIndex: 1, fieldPath: 'taskCommands.0.task.actorRef' });
-  expect(JSON.stringify(log)).not.toContain('学校');
-  expect(JSON.stringify(log)).not.toContain('mock-school-key');
-  const failed = await repo.loadDraft('save-a');
-  expect(failed!.story).toEqual(draft.story);
-  expect(failed!.variables).toEqual(draft.variables);
-  expect(failed!.world).toBeUndefined();
+it('不存在的行动者被跳过；摘要保留安全位置和原因，原状态不变', async () => {
+  const before = await repo.load('save-a'), command=schoolTask();
+  command.task.actorRef.id='missing-organization';
+  const fetcher = vi.fn<typeof fetch>(async () => wire(schoolResult(command)));
+  const saved = await runner(fetcher).generate({ ...options(), draft });
+  const report = saved.world?.result.settlement;
+  expect(report).toMatchObject({accepted:0,skipped:[{group:'taskCommands',groupIndex:0,commandIndex:0,field:'actorRef',reason:'permission'}]});
+  expect(JSON.stringify(report)).not.toMatch(/学校|missing-organization|mock-school-key/);
+  expect(saved.story).toEqual(draft.story);
+  expect(saved.variables).toEqual(draft.variables);
+  expect(saved.world?.result.taskCommands).toEqual([]);
   expect(await repo.load('save-a')).toEqual(before);
-  valid = true;
-  const saved = await stage.generate({ ...input, draft: failed! });
-  expect(saved.stageStatus.world).toBe('ready');
-  expect(await repo.load('save-a')).toEqual(before);
-  expect(fetcher).toHaveBeenCalledTimes(2);
+  expect(fetcher).toHaveBeenCalledTimes(1);
 });
 
 it('原始响应命令在新协议容器中通过Runtime（原文件不变），保留上游与正式存档边界',async()=>{
