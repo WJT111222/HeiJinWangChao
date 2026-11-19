@@ -121,7 +121,7 @@ describe('#190 原始分组、ID和权限必须先于冲突剔除', () => {
   it('过滤会移除首条时，后续权限错误仍定位模型原始第 2 条', () => {
     const { state, draft, repeated } = npcCase();
     const error = failure(() => parseWorld(JSON.stringify(worldResult([repeated, { ...npcUpdate({ relationshipText: 'PRIVATE_RELATION' }), commandId: 'forbidden' }])), state, draft));
-    expect(error.details).toMatchObject({ commandIndex: 1, commandType: 'UpdateNpc', fieldPath: 'worldCommands.1' });
+    expect(error.details).toMatchObject({ commandIndex: 1, commandType: 'UpdateNpc', fieldPath: 'worldCommands.1.changes.relationshipText', worldRule:'actor_permission' });
     expect(JSON.stringify(error.details)).not.toContain('PRIVATE_RELATION');
   });
   it('过滤会移除首条时，后续领域错误仍定位模型原始第 2 条', async () => {

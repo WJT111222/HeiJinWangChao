@@ -55,7 +55,7 @@ it.each(['confirmation','confirmation-false','male-profile','minor-profile','unk
 
 it('原日志的阻断顺序：初始确认先拒绝，移除后男性档案仍拒绝；两处修正后才接受',()=>{
  const a=worldNpcCreation();a.create.npc.affinityConfirmed=true;Object.assign(a.create.npc,{privateProfile:{...fullPrivateProfile}});
- expect(()=>parse(a)).toThrow(expect.objectContaining({code:'permission',details:expect.objectContaining({worldRule:'actor_permission',fieldPath:'worldCommands.1',commandType:'CreateNpc'})}));
+ expect(()=>parse(a)).toThrow(expect.objectContaining({code:'permission',details:expect.objectContaining({worldRule:'actor_permission',fieldPath:'worldCommands.1.npc.affinityConfirmed',commandType:'CreateNpc'})}));
  delete a.create.npc.affinityConfirmed;
  expect(()=>parse(a)).toThrow(expect.objectContaining({code:'data_integrity',details:expect.objectContaining({worldRule:'domain_state',fieldPath:'worldCommands.1'})}));
  Reflect.deleteProperty(a.create.npc,'privateProfile');expect(()=>parse(a)).not.toThrow();

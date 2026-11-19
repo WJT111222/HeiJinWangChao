@@ -5,7 +5,7 @@ import { AiError } from '../ai/errors';
 
 export const worldRuleNames = {
   json: '世界响应不是合法JSON', schema: '世界输出字段缺失或类型不符',
-  constraint: '世界命令未满足执行约束', command_structure: '命令类型或分组不符合世界协议',
+  constraint: '世界命令未满足执行约束', command_structure: '世界命令的分组、类型或批内唯一性不合法',
   task_state: '任务状态、成果或执行时间不合法',
   task_plan: '任务必须提供 dueAt 或非空 completionCondition',
   task_immutable: '既有任务的目标、开始时间或完成条件不可改写',
@@ -44,7 +44,7 @@ export function worldValidationError(error: unknown, scope: Scope = {}, raw?: un
     const array = raw && typeof raw === 'object' && typeof group === 'string' && group in raw ? Reflect.get(raw, group) : undefined;
     const candidate: unknown = Array.isArray(array) && local !== undefined ? array[local] : undefined;
     const type = candidate && typeof candidate === 'object' && 'type' in candidate && DomainCommandSchema.options.some(option => option.shape.type.value === candidate.type) ? String(candidate.type) : scope.commandType;
-    const time = path.some(part => ['startAt','estimatedEndAt','resolvedAt','dueAt','at','occurredAt'].includes(String(part)));
+    const time = path.some(part => ['startAt','fixedEndAt','estimatedEndAt','resolvedAt','queuedAt','dueAt','at','occurredAt'].includes(String(part)));
     const groups = ['worldCommands', 'taskCommands', 'eventCommands'];
     const offset = groups.slice(0, groups.indexOf(String(group))).reduce((n, key) => n + (raw && typeof raw === 'object' && Array.isArray(Reflect.get(raw, key)) ? Reflect.get(raw, key).length : 0), 0);
     return new AiError(integrityRule === 'event_time' || (time && issue?.code !== 'invalid_type') ? 'time_data' : integrityRule ? 'data_integrity' : 'schema_fields', undefined, { worldRule: integrityRule ?? 'schema', ...scope,

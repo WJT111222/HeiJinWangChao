@@ -435,6 +435,11 @@ export function GameScreen({
     (draft?.stageStatus.variables !== 'ready' || draft.variables?.validation !== 'validated' || storyNeeded);
   const worldNeeded = settings.runtime.useWorldStage &&
     (!draft?.world || !['ready', 'preview'].includes(draft.stageStatus.world) || variablesNeeded || storyNeeded);
+  const retryWorldOnly = Boolean(validDraft && !stageSettingsChanged && !storyNeeded && !variablesNeeded && worldNeeded
+    && draft?.useVariableStage && draft.stageStatus.variables === 'ready' && draft.variables?.validation === 'validated'
+    && (draft.stageStatus.world === 'failed' || draft.failures.some(failure =>
+      failure.stage === 'world' && failure.storyRevision === draft.storyRevision)));
+  const worldRetryHint = '本次仅重试动态世界，保留已通过的正文和变量。重新请求可能产生模型费用。';
   const canGenerate = Boolean(validDraft && !awaitingAction && (storyNeeded || variablesNeeded || worldNeeded || stageSettingsChanged));
   const disabledGuidance = !settings.runtime.useVariableStage && !settings.runtime.useWorldStage
     ? '变量管理和动态世界已关闭：正文通过校验后正式结算。纯小说模式不更新世界变量和普通回合时钟。'
@@ -624,7 +629,7 @@ export function GameScreen({
     : workflowGuidance || (awaitingAction ? undefined
       : canCommit ? '候选已完成，可点击左侧按钮完成本回合结算；发送新行动将先结算，再绑定下一回合。'
       : nextStage === 'variables' || nextStage === 'world'
-        ? `本回合尚未结算，请点击输入框左侧${compactSidebars ? `“续”（${workflowAction.label}）` : `“${workflowAction.label}”`}。输入仅本页暂存，不会替换已绑定行动。`
+        ? `本回合尚未结算，请点击输入框左侧${compactSidebars ? `“续”（${workflowAction.label}）` : `“${workflowAction.label}”`}。${retryWorldOnly ? worldRetryHint : '输入仅本页暂存，不会替换已绑定行动。'}`
         : rebindAction ? `尚无正文候选。可修改回填行动后尝试发送；左侧“${compactSidebars ? '续' : workflowAction.label}”使用原已绑定行动。请求前仍会检查运行锁。`
         : '请先使用左侧按钮生成本回合正文，再继续必要阶段。');
   const workflowState = hasWorkflowError
@@ -643,6 +648,7 @@ export function GameScreen({
   const diagnosticRecovery = busy ? '当前仍在处理，请等待结束或使用原有取消操作。'
     : !validDraft ? '当前草稿版本不可继续，请重新读取存档后检查。'
     : !navigator.locks ? '当前浏览器缺少 Web Locks，不能安全启动请求；请更换支持的浏览器并重新读档。'
+    : retryWorldOnly ? `点击「继续未完成阶段」恢复本回合。${worldRetryHint}`
     : workflowAction.kind === 'continue' && !workflowAction.disabled ? `当前可主动${workflowAction.label}；生成可能产生费用，查看诊断不会发起请求。`
     : '当前暂不可继续，请检查阶段开关与现有操作按钮。';
   const errorFailures = draft?.failures.filter(failure => failure.storyRevision === draft.storyRevision).slice(-6) ?? [];
@@ -686,7 +692,7 @@ export function GameScreen({
           ? "正在执行本次已启用阶段"
           : canCommit
             ? "正文及已启用阶段的候选均已通过校验"
-            : "从第一个未完成的阶段继续"}
+            : retryWorldOnly ? worldRetryHint : "从第一个未完成的阶段继续"}
       </small>
     </div>
   ) : (
@@ -700,6 +706,7 @@ export function GameScreen({
                         onFollow={progress && !following ? followLatest : undefined}
                         notices={layout === 'sheet' && workflowView === 'diagnostics' ? <>{desktopNotices}<button type="button" onClick={() => setDiagnosticsOpen(true)}>重试与变更详情</button></> : desktopNotices}
                         primary={desktopPrimary}
+                        feeHint={layout === 'sheet' && retryWorldOnly && !busy ? worldRetryHint : undefined}
                         steps={progressSteps}
                         view={layout === 'desktop' && workflowView === 'home' ? autoWorkflowView : workflowView ?? (layout === 'sheet' ? 'home' : autoWorkflowView)}
                         onView={(view) => { setWorkflowView(view); setWorkflowTab("overview"); }}
