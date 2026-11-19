@@ -74,3 +74,19 @@
 改动文件为 `src/services/validation/{worldOutput,worldDiagnostics}.ts`、`src/ui/game/{GameScreen,WorkflowPanel}.tsx`、`src/tests/{world-stability-193,world-npc-creation-contract,world-scene-write-safety}.test.ts`、`e2e/automatic-settlement.spec.ts` 和本报告。后续阶段沿用同一 Draft PR，最终固定提交及 CI 见 PR 描述。
 
 尚未使用真实付费模型、真实玩家数据或真机。无法承诺生产模型的失效率变化或供应商重试费用。等价判定有意保守，剩余事件承接与通知语义仍依 #198 的审查结论。对无明确单条责任的批级错误保留通用诊断。公开 Beta 版本、生产存档、部署和公告未在本轮操作。
+
+## #198 合流后的 P2 诊断修复
+
+以普通 merge 将 main `0bdffc9d39b231b9b69a83181d979525e104fca9` 同步到 #200 原分支。同步无冲突，树为上一轮独立联合验收核对过的 `f494aba11169fc8682291ce3ee43cf2ed33f4f60`。三处重叠文件保留 #198 的通知协议、旧通知恢复入口和安全诊断，以及 #200 的终态复述过滤与 World 单阶段重试提示。 [PR #198](https://github.com/WJT111222/HeiJinWangChao/pull/198) · [PR #200](https://github.com/WJT111222/HeiJinWangChao/pull/200)
+
+两项改动合流后，专用入场承接器仍按照过滤后的数组生成诊断。现在承接仅处理过滤后保留的事件，位置通过命令对象在过滤前数组中的位置和原始各分组长度计算。规则和原因沿用既有 `event_entry` 与安全文本。合法候选保持原有规范化与提交行为，公开日志只展示固定路径、序号、规则和原因。 [原始候选与过滤](../src/services/validation/worldOutput.ts) · [入场承接](../src/services/validation/stageEntryHandoff.ts)
+
+| 同批诊断场景 | 修复前 | 修复后 |
+| --- | --- | --- |
+| 过滤一条历史复述，待决事件缺后继 | `eventCommands.1.event.protagonistEntry`，索引 2 | `eventCommands.2.event.protagonistEntry`，索引 3 |
+| 过滤一条历史复述，后继类型错用通知 | `eventCommands.2.event.entryIntent`，索引 3 | `eventCommands.3.event.entryIntent`，索引 4 |
+| 过滤三条分布在有效事件前后的历史复述，待决事件缺后继 | `eventCommands.1.event.protagonistEntry`，索引 3 | `eventCommands.4.event.protagonistEntry`，索引 6 |
+
+上表为原始零基扁平索引，运行日志继续采用一基序号。新增永久测试在同一有效批次验证纯通知收悉、按固定时间结案、终态复述无回执写入、合法任务保存和待决互动保留，并验证单次 Commit、再次提交幂等、重载与撤回。反例同时检查候选解析、运行日志脱敏、正式提交拒绝和存档未变。正式红测是 3 通过、3 失败，应用最小补丁后 6 项全部通过。验证过程另保留两次测试断言修正，分别按既有契约读取安全原因文字，并将 Repository 返回的存档实例标识纳入前后完整对照。 [永久回归](../src/tests/world-entry-diagnostics-integration.test.ts)
+
+返修文件为两个校验文件、永久回归和本报告。最终 HEAD 的 Node 24 全量、专项 Vitest、提示词、双端 Chromium 与 GitHub Actions 成绩及退出码记录在 PR #200 的最终联合验收区。该验收使用 Mock，真实模型和玩家生产存档仍保留为后续验证边界。 [最终联合验收记录](https://github.com/WJT111222/HeiJinWangChao/pull/200)

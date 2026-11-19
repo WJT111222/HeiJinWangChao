@@ -102,7 +102,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     return false;
   });
   const commands = [...result.worldCommands, ...result.taskCommands, ...result.eventCommands];
-  const stageHandoffs=normalizeStageEntryHandoffs(result,base,draft);
+  const stageHandoffs=normalizeStageEntryHandoffs(result,base,draft,source);
   const taskNotes: string[] = [];
   const createdNpcs = new Map(result.worldCommands.flatMap(c => c.type === 'CreateNpc' ? [[c.npc.id, c.npc] as const] : []));
   const createdOrgs = new Map(result.worldCommands.flatMap(c => c.type === 'CreateOrganization' ? [[c.organization.id, c.organization] as const] : []));
