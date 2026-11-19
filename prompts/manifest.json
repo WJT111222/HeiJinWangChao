@@ -238,7 +238,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 2838,
+      "characters": 2945,
       "version": "1.0.0-world-freedom-story-tags",
       "messageRole": "system",
       "activation": "always",
@@ -248,7 +248,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "a38a1d5fdcde622a8f1ef9b3d2ddd311e0416cc0161c79fa36b6ba3416b13beb",
+      "contentSha256": "6708495f8ba905a330d899738749f3b3e7c0ef18665bb5e053a36b031ca8565b",
       "placeholders": [
         "minNarrativeChars"
       ]
@@ -294,7 +294,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 15010,
+      "characters": 16692,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -304,7 +304,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "eb4de4b0f8b2abb1443967eb5e66386e6191db10cf8079df74680e8e72e7a12d",
+      "contentSha256": "c190eb40273063d40dcd70d56a27db513723ac4d0fd20550ccf09b9f93ef188b",
       "placeholders": []
     },
     {
@@ -455,7 +455,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1785,
+      "characters": 1817,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -465,7 +465,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "e44180488f476a5a66027b9c888a38a52374288a5dc43315a39c93f7d5a5cfab",
+      "contentSha256": "9cf9538704bf789cb5fe72bbcc22d0117dc4bbbab169f481671112cd7840e27a",
       "placeholders": []
     },
     {

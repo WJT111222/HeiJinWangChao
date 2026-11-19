@@ -1,6 +1,6 @@
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools, openWorkflowDiagnostics } from './helpers/gameLayout';
 async function seed(page:Page,clock?:string,unseen=false) {
   await page.goto('/');
   const response=await page.evaluate(async({clock,unseen})=>{
@@ -29,7 +29,8 @@ for(const firstFailure of [false,true])test(`固定阶段积压结算保留原�
   });
   await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
   if(firstFailure){
-    await expect(page.getByTestId('runtime-log')).toContainText('stage_result');
+    await openWorkflowDiagnostics(page);
+    await expect(page.getByRole('region', { name: '运行诊断', exact: true }).getByTestId('runtime-log')).toContainText('stage_result');
     const failed=await stored(page);expect(failed.state).toEqual(initial.state);expect(failed.draft.story).toEqual(initial.draft.story);expect(failed.draft.variables).toEqual(initial.draft.variables);
     expect(calls).toBe(1);await page.reload();await openGameTools(page);expect(calls).toBe(1);invalid=false;
     await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();

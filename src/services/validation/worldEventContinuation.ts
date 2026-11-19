@@ -3,7 +3,7 @@ import type { GameState } from '../../domain/state';
 import type { TurnDraft } from '../../domain/drafts';
 import { fingerprint } from '../../domain/commands';
 import { terminalEvent } from '../../domain/events/lifecycle';
-import { requireWorld } from './worldDiagnostics';
+import { requireEventEntry, requireWorld } from './worldDiagnostics';
 
 export function normalizeEventContinuation(event: WorldEvent, old: WorldEvent | undefined,
   base: GameState, draft: TurnDraft, locations: Readonly<GameState['locations']> = base.locations) {
@@ -27,7 +27,7 @@ export function normalizeEventContinuation(event: WorldEvent, old: WorldEvent | 
     else requireWorld(plan?.direction==='protagonist', 'invalid_output','event_entry');
   }
   // Models may omit, retain, or replay exact program metadata, never forge consumption/knowledge.
-  requireWorld(!event.protagonistEntry || fingerprint(event.protagonistEntry)===fingerprint(old?.protagonistEntry)
-    || fingerprint(event.protagonistEntry)===fingerprint(expected),'permission','event_entry');
+  requireEventEntry(!event.protagonistEntry || fingerprint(event.protagonistEntry)===fingerprint(old?.protagonistEntry)
+    || fingerprint(event.protagonistEntry)===fingerprint(expected),'permission','forged_entry',{fieldPath:'event.protagonistEntry'});
   if(expected) event.protagonistEntry=expected; else delete event.protagonistEntry;
 }

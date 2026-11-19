@@ -32,6 +32,19 @@ export const worldRuleNames = {
   secret_in_output: '输出含系统凭证，已阻止保存',
 } as const;
 export type WorldRule = keyof typeof worldRuleNames;
+export const eventEntryReasonNames = {
+  missing_successor: '缺少承接原安排的后继互动；只有存在真实待处理事项时才提交后继',
+  multiple_successors: '原入场安排对应多个后继互动，须由一个后继承接',
+  invalid_successor: '后继互动须为本批新建、非终态且无 eventKind 的事件',
+  mismatched_direction: '后继互动的 continuation.direction 须为 protagonist',
+  mismatched_entry: '后继互动的入场字段与原安排不一致',
+  forged_entry: '入场状态由程序根据合法回执维护，World 不得自行填写处理结果',
+  reused_successor: '一个后继互动不能承接多个原入场身份',
+} as const;
+export type EventEntryReason = keyof typeof eventEntryReasonNames;
+export const isEventEntryReason = (value: unknown): value is EventEntryReason =>
+  typeof value === 'string' && Object.hasOwn(eventEntryReasonNames, value);
+
 export const isWorldRule = (value: unknown): value is WorldRule => typeof value === 'string' && Object.hasOwn(worldRuleNames, value);
 const fields = new Set(('eventKind parentEventId fixedEndAt chronicle category scope scopeText basis milestoneId time endTime precision date year month season from to narrative process results impacts nature supportingTurnIds relations entryId locationText state entities locations tasks events retiredEvents organizations parentId location actorRef linkedEventId fromTaskId worldCommands taskCommands eventCommands visibleHooks unresolved timeline recordedAt occurredAt occurredTimeText sourceTurnId sourceRef sourceText relatedEntryIds summary eventId event task type commandId evidence kind at outcome status reason result resultKnowledge facts reported suspected id title startAt estimatedEndAt resolvedAt resolutionText backgroundText goalText actorRefs linkedTaskIds prerequisites blockers visibility impact sourceTurnIds predecessorEventIds protagonistKnowledge worldUpdateTurnId continuation direction reason entry channel cue followup protagonistEntry queuedAt handledTurnId notice textEvidence npcId expectedRevision changes healthText locationId onScene activeGoals memory text knowledgeKind knowledgeSource createdAtGameTime affectedEntityRefs ownerRef saveId revision npc identityKey name memories knownInformation goals resolution handoff dueAt completionCondition layer addToKnownInformation organization organizationId relationText').split(' '));
 export const safeWorldPath = (path: readonly PropertyKey[]) => path.map(part => typeof part === 'number' ? part : fields.has(String(part)) ? String(part) : 'field').join('.');
@@ -71,4 +84,8 @@ export function worldValidationError(error: unknown, scope: Scope = {}, raw?: un
 
 export function requireWorld(ok: unknown, code: 'invalid_output' | 'permission' = 'invalid_output', worldRule?: WorldRule, fieldPath?: string): asserts ok {
   if (!ok) throw new AiError(code, undefined, worldRule || fieldPath ? {worldRule, fieldPath} : undefined);
+}
+
+export function requireEventEntry(ok: unknown, code: 'invalid_output' | 'permission', eventEntryReason: EventEntryReason, scope: Omit<Scope, 'worldRule'>): asserts ok {
+  if (!ok) throw new AiError(code, undefined, { ...scope, worldRule: 'event_entry', eventEntryReason });
 }

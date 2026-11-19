@@ -1,0 +1,31 @@
+{
+  "base": "089723c2e1e0aa608afe9820a87b1f6a36ef385b",
+  "reason": "Compared with main using the same composer inputs. Update only affected Story and World request/module hashes. All fixed Game Context hashes and the Variables and Memory fixtures are unchanged.",
+  "withTalentVariablesAndWorld": "4a0b399979714a913e7db4dff1c251b21792c719f216174c09f91473059657e3",
+  "results": [
+    {
+      "stage": "story",
+      "mode": "opening",
+      "messages": "311a6866bdf0aeb11a46048b218ed32061086b168c783cafabf0440d71d1f52e",
+      "modules": "b0795408df18eaedc42de0175049aa4ddbb26c8a5e4f5cb86abca9def91978db"
+    },
+    {
+      "stage": "story",
+      "mode": "regular",
+      "messages": "64628d4c5bd6e2ac3c59f7e737536a1bc1f2110ad58c875c6825c220121fa2c4",
+      "modules": "3bc05115533ef33b3165e561222f8a1ad554fc6dc5cbc1ef6ce07f67faae9ee3"
+    },
+    {
+      "stage": "world",
+      "mode": "opening",
+      "messages": "099370942fda35bbd4e1b9d9112fe5254185a949a315b9e422daf17f99e8ae9c",
+      "modules": "1084b568a4e28bba4c90b4360087f6f6414992b05cfdd5fab39f4f450b4339cc"
+    },
+    {
+      "stage": "world",
+      "mode": "regular",
+      "messages": "43b929a0ac89c2a961348454f4339151996ef5236de30a43807220bc9d8201bc",
+      "modules": "821b91ab7608d4109edcc1fa699657eaf30cd57ac885399691c9d0119c23378c"
+    }
+  ]
+}
