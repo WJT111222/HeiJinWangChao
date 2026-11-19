@@ -1,4 +1,5 @@
 import { expect, test } from './helpers/test';
+import { closeWorkflowSheet, openGameTools } from './helpers/gameLayout';
 import type { Page } from '@playwright/test';
 
 async function settings(page: Page) {
@@ -175,6 +176,19 @@ test('自写模块及普通脚本在独立实例使用按钮、活配置、作�
         getChatMessages(range:number):{name:string}[];generateRaw():void;
       }};
       const b = instance('b') as typeof a;
+      const previousFetch = window.fetch;
+      const frameRequest = (a as unknown as {Request:typeof Request}).Request;
+      const {fetchGeneration} = await import('/src/presets/tavern/fetch.ts' as string);
+      let calls=0;
+      let crossRealm='';
+      try {
+        window.fetch = (input,init)=>previousFetch(new frameRequest(new URL(String(input),location.href),init));
+        const result = await fetchGeneration({path:'跨 iframe 构造器测试'},new AbortController().signal,async(req:Request)=>{
+          calls++;
+          return Response.json(await req.json());
+        });
+        crossRealm = (await result.json()).path;
+      } finally { window.fetch=previousFetch; }
       await pressScriptButton('a','同名按钮');
       const prefs = [a.TavernHelper.getVariables({type:'script'}),b.TavernHelper.getVariables({type:'script'})];
       a.TavernHelper.replaceVariables({private:'fixture'});
@@ -186,11 +200,11 @@ test('自写模块及普通脚本在独立实例使用按钮、活配置、作�
       await tavernTools.apply(data);
       const bad = {...scripts[0],id:'bad',name:'坏脚本',content:"throw Error('fixture-missing-api')"};
       const broken = await mountPresetScripts({...preset,scripts:[bad]}).then(()=>false,()=>true);
-      return { fixtureOrder,prefs,sameChat,nextChat,noModel,broken,body:data,rows:assistantView.snapshot().map((s:{id:string;status:string;error?:string})=>[s.id,s.status,s.error]) };
+      return { calls,crossRealm,fixtureOrder,prefs,sameChat,nextChat,noModel,broken,body:data,rows:assistantView.snapshot().map((s:{id:string;status:string;error?:string})=>[s.id,s.status,s.error]) };
     } finally { stop(); }
   });
   expect(result.fixtureOrder).toEqual(['kept','once','kept','a','kept','once','kept','b']);
-  expect(result).toMatchObject({ prefs:[{owner:'a',clicks:1},{owner:'b'}],sameChat:{private:'fixture'},nextChat:{},noModel:true,broken:true,body:{type:'normal'} });
+  expect(result).toMatchObject({ calls:1,crossRealm:'跨 iframe 构造器测试',prefs:[{owner:'a',clicks:1},{owner:'b'}],sameChat:{private:'fixture'},nextChat:{},noModel:true,broken:true,body:{type:'normal'} });
   expect(result.body).not.toHaveProperty('tools');
   expect(result.rows.map((r:string[])=>r.slice(0,2))).toEqual([['a','已初始化'],['b','已初始化'],['disabled','已停用'],['bad','出错']]);
 });
@@ -211,8 +225,13 @@ test('真实脚本保存采样后刷新生效，预览与恢复启动零传输�
       const [{AiClient},{newChannel},{CredentialVault},{channelSnapshot}] = await Promise.all(paths.map(p=>import(p)));
       const ch = newChannel('openai'); ch.id='fixture-native'; ch.baseUrl='https://assistant.mock.invalid/v1';
       const vault = new CredentialVault(sessionStorage,localStorage); vault.set(ch.id,'fixture-only');
+      const composer='/src/prompts/composer.ts', fixture='/src/tests/fixtures/talentPrompt.ts';
+      const {composePrompt,composeTextVariablesPrompt}=await import(composer);
+      const {talentMemoryInput,talentPromptInput}=await import(fixture);
       for (const stage of ['variables','world','memory','story']) {
-        await new AiClient().generate(channelSnapshot(ch,vault,stage,stage),[{role:'user',content:'同一份输入'}]);
+        const input=stage==='memory' ? talentMemoryInput() : talentPromptInput(stage,'regular');
+        const prompt=stage==='variables' ? await composeTextVariablesPrompt(input) : await composePrompt(input,null);
+        await new AiClient().generate(channelSnapshot(ch,vault,stage,stage),prompt.messages);
       }
     });
   }
@@ -268,6 +287,14 @@ test('真实脚本保存采样后刷新生效，预览与恢复启动零传输�
   await dialog.getByRole('button',{name:'保存预设并刷新'}).click();
   await expect(dialog.getByRole('alert')).toContainText('模拟存储失败');
   expect(wires).toHaveLength(9);
+  await page.evaluate(()=>localStorage.removeItem('heijin.story-presets.v1'));
+  await page.reload();
+  await page.evaluate(()=>localStorage.setItem('heijin.story-presets.v1','{bad'));
+  await page.reload();
+  const repair = await settings(page);
+  await Promise.all([page.waitForNavigation(),repair.getByRole('button',{name:'重置损坏的预设配置并刷新'}).click()]);
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('heijin.story-presets.v1')!))).toMatchObject({enabled:false,selected:null});
+  expect(wires).toHaveLength(9);
 });
 
 test('首次生成等待模块异步初始化，等待时取消及随后启动异常均保持原草稿', async ({ page }) => {
@@ -318,4 +345,82 @@ test('首次生成等待模块异步初始化，等待时取消及随后启动�
   expect(result).toMatchObject({loading:'加载中',cancelled:'cancelled',failed:'configuration',unchanged:true,revision:true});
   expect(result.error).toContain('fixture-init-error');
   expect(attempts).toBe(0);
+});
+
+test('正式游戏按钮跨存档生成，脚本保留普通正文并拒绝未处理工具', async ({page}) => {
+  const identities: string[] = [];
+  let foreign = false;
+  const body = '<正文>清早下起了小雨，街上的人撑着伞。</正文><短期记忆>街上下雨</短期记忆><变量规划>[]</变量规划>';
+  await page.route('**/*', route => {
+    const url = new URL(route.request().url());
+    if (url.hostname === 'assistant.mock.invalid') {
+      const wire = route.request().postDataJSON();
+      const description = wire.tools.find((t:{function:{name:string}})=>t.function.name==='wave_context_reference').function.description;
+      identities.push(description.includes('顾乙') ? '乙' : description.includes('林舟') ? '甲' : '未知');
+      const message = foreign ? {tool_calls:[{id:'foreign',type:'function',function:{name:'actual_content_extra',arguments:JSON.stringify({content:body})}}]} : {content:body};
+      return route.fulfill({json:{choices:[{message,finish_reason:foreign ? 'tool_calls' : 'stop'}]}});
+    }
+    return ['localhost','127.0.0.1'].includes(url.hostname) || url.protocol==='blob:' ? route.continue() : route.abort();
+  });
+  await page.goto('/');
+  await page.evaluate(async()=>{
+    const paths=['/src/services/storage/saveRepository.ts','/src/domain/drafts.ts','/src/tests/fixtures/game.ts','/src/ui/settings/model.ts',
+      '/src/services/ai/configuration.ts','/src/services/ai/credentials.ts','/src/presets/settings.ts'];
+    const [{SaveRepository},{createTurnDraft},{game},{defaultSettings,settingsKey},{newChannel,defaultAiConfig,saveAiConfig},{CredentialVault},{savePresetSettings}] =
+      await Promise.all(paths.map(p=>import(p)));
+    const repo = await SaveRepository.open();
+    try {
+      for (const [id,name] of [['assistant-a','林舟'],['assistant-b','顾乙']]) {
+        const s = game(id); s.protagonist.name=name;
+        await repo.create(s); await repo.saveDraft(createTurnDraft(id,s.revision,id,'opening',''),null);
+      }
+    } finally { repo.close(); }
+    const c=defaultAiConfig(), ch=newChannel('openai'); ch.baseUrl='https://assistant.mock.invalid/v1';ch.defaultModel='fixture';
+    c.channels=[ch];c.routes.story={channelId:ch.id,modelId:''};saveAiConfig(localStorage,c);
+    new CredentialVault(sessionStorage,localStorage).set(ch.id,'fixture-only');
+    const settings=defaultSettings();settings.runtime.streamStory=false;settings.prompts.actionOptions=false;settings.prompts.minNarrativeChars=5;
+    localStorage.setItem(settingsKey,JSON.stringify(settings));
+    savePresetSettings({enabled:true,selected:'peinture-1118',packages:{}});
+  });
+  await page.reload();
+  const records = (id:string) => page.evaluate(async key=>{
+    const path='/src/services/storage/saveRepository.ts', {SaveRepository}=await import(path), repo=await SaveRepository.open();
+    try {return await repo.loadGame(key);} finally {repo.close();}
+  },id);
+  for (const id of ['assistant-a','assistant-b']) {
+    await page.goto('/#game/'+id); await openGameTools(page);
+    await page.getByRole('button',{name:'生成开局正文',exact:true}).click();
+    await expect.poll(async()=>(await records(id)).draft?.story?.narrative).toBe('清早下起了小雨，街上的人撑着伞。');
+    await expect(page.locator('iframe[data-tavern-script]')).toHaveCount(2);
+    await page.goto('/');
+  }
+  foreign=true;
+  await page.goto('/#game/assistant-b'); await openGameTools(page);
+  const current=await records('assistant-b');
+  const error = await page.evaluate(async()=>{
+    const paths=['/src/workflows/storyStage.ts','/src/services/storage/saveRepository.ts','/src/services/ai/configuration.ts',
+      '/src/services/ai/credentials.ts','/src/ui/settings/model.ts'];
+    const [{StoryStage},{SaveRepository},{readAiConfig},{CredentialVault},{defaultSettings}] = await Promise.all(paths.map(p=>import(p)));
+    const repo=await SaveRepository.open(), settings=defaultSettings();
+    settings.runtime.streamStory=false; settings.prompts.actionOptions=false;settings.prompts.minNarrativeChars=5;
+    try {
+      return await new StoryStage(repo).generate({draft:await repo.loadDraft('assistant-b'),config:readAiConfig(localStorage),
+        settings,vault:new CredentialVault(sessionStorage,localStorage)}).then(()=>'',(e:{code:string})=>e.code);
+    } finally {repo.close();}
+  });
+  expect(error).toBe('invalid_output');
+  const after=await records('assistant-b');
+  expect(after.draft).toEqual(current.draft);
+  expect(after.state).toEqual(current.state);
+  expect(identities).toEqual(['甲','乙','乙']);
+  await closeWorkflowSheet(page);
+  await page.locator('#player-input').fill('尚未发送的下一步行动');
+  // The settings control invokes this same transition; this time a real game input is mounted.
+  await Promise.all([page.waitForNavigation(),page.evaluate(async()=>{
+    const path='/src/presets/tavern/hostState.ts', {switchPreset}=await import(path);
+    switchPreset(null);
+  })]);
+  await expect(page.locator('#player-input')).toHaveValue('尚未发送的下一步行动');
+  await expect(page.locator('iframe[data-tavern-script]')).toHaveCount(0);
+  expect(identities).toEqual(['甲','乙','乙']);
 });

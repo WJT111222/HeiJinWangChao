@@ -49,6 +49,7 @@ export interface PresetDefinition {
   id: string;
   version: string;
   lockedOff: readonly string[];
+  scriptEditions?: Readonly<Record<string, string>>;
 }
 export const packageOverride = z.strictObject({
   version: z.string(),

@@ -2,7 +2,7 @@ import type { ComposeInput } from '../../prompts/context';
 import type { PackageOverride } from '../package';
 import type { Protocol } from '../../services/ai/configuration';
 import { AiError } from '../../services/ai/errors';
-import { builtInPresets } from '../library';
+import { builtInPresets, captureStoryPreset } from '../library';
 import { readPresetSettings, savePresetSettings } from '../settings';
 import type { GenerationType } from './events';
 import { tavernEvents } from './events';
@@ -16,6 +16,7 @@ export interface ScriptInstance {
   buttons: ScriptButton[];
   phases: Record<string, string>;
   error?: string;
+  edition?: string;
 }
 const listeners = new Set<() => void>();
 let instances: ScriptInstance[] = [];
@@ -58,16 +59,17 @@ export async function withTavernRequest<T>(input: StoryContext, protocol: Protoc
 }
 let baseSettings: GenerationSettings | undefined;
 let savePending: (() => boolean) | undefined;
-export function registerRuntimeSettings(flush: () => boolean, defaults: GenerationSettings) {
-  savePending = flush; baseSettings = defaults;
+let snapshotChanges: ((override: PackageOverride) => void) | undefined;
+export function registerRuntimeSettings(flush: () => boolean, apply: (override: PackageOverride) => void, defaults: GenerationSettings) {
+  savePending = flush; snapshotChanges = apply; baseSettings = defaults;
 }
-export function switchPreset(id: string | null) {
+export function switchPreset(id: string | null, resetCorrupt = false) {
   if (request) throw new Error('请先完成或取消当前生成。');
   if (id && !builtInPresets.some(p => p.id === id)) throw new Error('所选内置预设不存在。');
   const rollbackInput = preparePageRefresh?.();
   try {
     savePending?.();
-    const settings = readPresetSettings();
+    const settings = resetCorrupt && new URLSearchParams(location.search).get('safe') === '1' ? { packages: {} } : readPresetSettings();
     savePresetSettings({ ...settings, enabled: Boolean(id), selected: id });
   } catch (error) {
     rollbackInput?.();
@@ -94,8 +96,14 @@ export function startAssistant() {
 }
 export function assistantStarting() { return startup && !initialized; }
 export function captureAssistantPreferences() {
+  const selected = captureStoryPreset();
+  if (!selected) return null;
   if (assistantView.snapshot().some(row => row.status === '出错')) throw new AiError('configuration', undefined, { fieldPath: 'tavern.initialization' });
-  return initialized && savePending?.();
+  if (initialized && snapshotChanges) {
+    const override = selected.overrides ??= { version: selected.definition.version, entries: {}, scripts: {} };
+    snapshotChanges(override); // Apply live edits to this request copy; only an explicit save persists them.
+  }
+  return selected;
 }
 export async function awaitAssistant(signal: AbortSignal) {
   if (!startup) return;

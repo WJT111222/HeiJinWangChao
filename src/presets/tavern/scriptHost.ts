@@ -46,6 +46,7 @@ function instanceEvents() {
 }
 type Registration = FunctionTool['function'] & { shouldRegister?: () => boolean | Promise<boolean> };
 async function preview(type: string, _options: unknown, dryRun: boolean) {
+  if (currentTavernRequest()) throw new Error('请在当前生成结束后预览。');
   const input = currentStoryContext();
   if (dryRun !== true || type !== 'normal' || !input) throw new Error('仅支持在游戏内预览当前正文请求');
   const { previewTavernStory } = await import('../../services/ai/runtime');
@@ -156,7 +157,10 @@ async function mount(script: Script, row: ScriptInstance, install: (realm: Windo
       const element = realm.document.createElement('script');
       if (script.module) {
         // Import in the owning realm. A module element's load event does not wait for top-level await.
-        Object.assign(realm, { finishTavernModule: resolve, failTavernModule: reject });
+        Object.assign(realm, { finishTavernModule: resolve, failTavernModule(error: { stack?: string }) {
+          const line = error?.stack?.split(url + ':')[1]?.match(/^\d+:\d+/)?.[0];
+          reject(new Error(script.name + (line ? ' ' + line : '') + ' · ' + String(error), { cause: error }));
+        } });
         element.type = 'module';
         element.textContent = 'import(' + JSON.stringify(url) + ').then(window.finishTavernModule, window.failTavernModule)';
       } else {
@@ -191,13 +195,13 @@ export async function mountPresetScripts(preset: LoadedPreset) {
   const config = runtimePreset(preset, () => assistantView.publish(), message => {
     assistantView.add({ id: 'settings', name: '脚本配置', status: '出错', error: message, buttons: [], phases: {} });
   });
-  registerRuntimeSettings(config.flush, { function_calling: preset.data.function_calling === true, squash_system_messages: preset.data.squash_system_messages === true });
+  registerRuntimeSettings(config.flush, config.applyChanges, { function_calling: preset.data.function_calling === true, squash_system_messages: preset.data.squash_system_messages === true });
   const variables = variableStore(preset);
   const failures: unknown[] = [];
   const ordered = scriptOrder(preset.scripts);
   if (new Set(ordered.map(script => script.id)).size !== ordered.length) throw new Error('脚本标识重复');
   for (const script of ordered) {
-    const row: ScriptInstance = { id: script.id, name: script.name, status: script.enabled ? '加载中' : '已停用',
+    const row: ScriptInstance = { id: script.id, name: script.name, edition: preset.definition.scriptEditions?.[script.id], status: script.enabled ? '加载中' : '已停用',
       buttons: script.button?.enabled ? script.button.buttons.filter(b => b.visible) : [], phases: {} };
     assistantView.add(row);
     if (!script.enabled) continue;

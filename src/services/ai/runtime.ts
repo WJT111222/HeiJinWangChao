@@ -1,6 +1,6 @@
-import { withTavernRequest } from '../../presets/tavern/hostState';
+import { captureAssistantPreferences, withTavernRequest } from '../../presets/tavern/hostState';
 import { promptReady, tavernGeneration, type GenerationType } from '../../presets/tavern/events';
-import { captureStoryPreset, type PresetSelection } from '../../presets/library';
+import type { PresetSelection } from '../../presets/library';
 import { parsePartialVariables, parsePartialWorld } from '../validation/partialOutputs';
 import { worldNormalizationNotes } from '../validation/worldSceneWrites';
 import { narrativeRange } from '../../ui/settings/model';
@@ -62,7 +62,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   if (frozenStoryChannel && (captured.stage !== 'story' || frozenStoryChannel.stage !== 'story')) throw new AiError('configuration');
   const snapshot = frozenStoryChannel ?? requestSnapshot(config, captured.stage, vault);
   const presetSelection = captured.stage === 'story' && suppliedSelection === undefined
-    ? captureStoryPreset() : suppliedSelection;
+    ? captureAssistantPreferences() : suppliedSelection;
   const type = requestedContinuation ? 'continue' : captured.draft?.story || captured.draft?.storyPartial
     || captured.draft?.failures.some(f => f.stage === 'story') ? 'regenerate' : 'normal';
   const generation = stageResponses.generation();
@@ -249,7 +249,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
 
 /** Run the same preset composer and preview events without a channel, transport or repository write. */
 export async function previewTavernStory(input: ComposeInput & { stage: 'story' }, type: GenerationType = 'normal') {
-  const selected = captureStoryPreset();
+  const selected = captureAssistantPreferences();
   if (!selected) throw new AiError('configuration');
   const captured = checkedInput(input);
   return tavernGeneration(type, undefined, true, 0, async () =>

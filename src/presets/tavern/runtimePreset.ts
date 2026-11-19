@@ -64,15 +64,16 @@ export function runtimePreset(preset: LoadedPreset, publish: () => void, report:
     packageOverride.parse({ ...edits, version: preset.definition.version, scripts: {} });
     return edits;
   }
+  function applyChanges(override: PackageOverride) {
+    const edits = changes();
+    Object.assign(override.entries, edits.entries);
+    Object.assign(override.assistant ??= {}, edits.assistant);
+    Object.assign(override.sampling ??= {}, edits.sampling);
+  }
   function flush() {
     clearTimeout(timer);
     if (!pending) return false;
-    const edits = changes();
-    editOverrides(preset, override => {
-      Object.assign(override.entries, edits.entries);
-      Object.assign(override.assistant ??= {}, edits.assistant);
-      Object.assign(override.sampling ??= {}, edits.sampling);
-    });
+    editOverrides(preset, applyChanges);
     Object.assign(baseline, structuredClone(native));
     pending = false;
     publish();
@@ -115,5 +116,5 @@ export function runtimePreset(preset: LoadedPreset, publish: () => void, report:
         character_name_prefix: ({'-1':'none','0':'default','2':'content','1':'completion'} as Record<string,string>)[String(native.names_behavior)],
         wrap_user_messages_in_quotes: !!native.wrap_in_quotes } });
   }
-  return { native, getPreset, getLoadedPresetName: () => name, saveSettingsDebounced, flush };
+  return { native, getPreset, getLoadedPresetName: () => name, saveSettingsDebounced, flush, applyChanges };
 }
