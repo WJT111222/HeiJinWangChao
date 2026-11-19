@@ -416,8 +416,6 @@ test('Story标签与变量规划诊断分别定位；只有玩家明确重试才
     [result().replace('</行动选项>', ''), 'tag_unclosed', '未闭合'], // 最后一段缺闭合＝可能被截断，仍拒绝；中间段缺闭合会按下一个开标签补回，见下方成功用例。
     [result().replace('本轮创作提纲：保持人物与场景连续，按行动呈现事实。', ' '), 'planning_empty', '正文规划区块为空'],
     [result().replace('等车</短期记忆>', ' </短期记忆>'), 'summary_empty', '<短期记忆> 内容为空'],
-    [result().replace(/<变量规划>.*?<\/变量规划>/s, '<变量规划>[private-game-detail</变量规划>'), 'guide_json', '不是合法 JSON'],
-    [result().replace(/<变量规划>.*?<\/变量规划>/s, '<变量规划>[{"group":"time","observedFact":42}]</变量规划>'), 'story_schema', 'variableGuide.0.observedFact'],
     [result().replace('看看站台\n留在原地\n询问路线', '等候\n离开'), 'actions_count', '实际：2 条'],
   ];
   let last = before;
@@ -426,17 +424,18 @@ test('Story标签与变量规划诊断分别定位；只有玩家明确重试才
     await expect(page.getByRole('alert')).toContainText(message);
     const latest = page.getByTestId('runtime-log').locator('li').first(); await expect(latest).toContainText(rule);
     await expect(latest).not.toContainText('private-game-detail'); await expect(latest).not.toContainText('mock-browser-key');
-    last = await expectFailedStory(page, last, rule === 'guide_json' ? 'invalid_json' : 'invalid_output',
+    last = await expectFailedStory(page, last, 'invalid_output',
       rule === 'tag_missing' || rule === 'tag_unclosed' ? raw : undefined);
     expect(requests).toHaveLength(index + 1);
     if (last.draft.storyPartial) last = await discardForRetry(page, last);
   }
   // 模型漏写 </正文> 直接开 <短期记忆>：边界无歧义，整回合照常保存，正文不混入后续段落（合法原协议的成功在本文件其他用例覆盖）。
-  plans.push({ chunks: [result().replace('</正文>', '')] });
+  plans.push({ chunks: [result().replace('</正文>', '').replace(/<变量规划>.*?<\/变量规划>/s, '<变量规划>[private-game-detail</变量规划>')] });
   await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
   expect((await stored(page)).draft.story.narrative).toBe(story);
   expect((await stored(page)).draft.story.summary).toBe('等车');
   expect((await stored(page)).state).toBe(before.state); expect(requests).toHaveLength(cases.length + 1);
+  expect((await stored(page)).draft.story.variableGuideRaw).toBe('[private-game-detail');
 });
 
 test('Story后置凭证拒绝同步到原文面板，诊断与原文均不泄露密钥', async ({ page }) => {

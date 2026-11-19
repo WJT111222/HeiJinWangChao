@@ -98,6 +98,11 @@
       "promptCacheOrderingV1": {
         "notes": "提示缓存友好：当前时间与星期不再以占位符写入靠前的系统模块（每回合变化会使其后的提示缓存失效），改为引用 GAME_CONTEXT.CURRENT_TIME；时间规则与星期计算要求不变。原始来源及历次适配记录保留。",
         "sha256": "60d6ab4706d108612a852990ef2c43f0d598d3942adef536e450e8bb680c6bee"
+      },
+      "variableGuideNotes": {
+        "baseCommit": "801ff4b05e72b293fc4d98185ae1a87d80b22c57",
+        "notes": "变量规划为可选参考；Variables 独立核对事实及正式时钟。",
+        "sha256": "c979702a82352de76fdc2796321be5c3035deff5f9303c0acf6476a6063b0d0a"
       }
     },
     "writing/natural_prose.md": {
@@ -491,6 +496,11 @@
         "baseCommit": "086ea8f6c25b028460b71b121e42b45ee5e965c2",
         "notes": "正文项目规划可选；禁用裸露Step/元指令；仅调整本次Story标签兼容说明，原始来源及历次适配记录保持。",
         "sha256": "78cbef11db6b8b0c31f8207282914f26ca53872958c8d038397e72f21580dc68"
+      },
+      "variableGuideNotes": {
+        "baseCommit": "801ff4b05e72b293fc4d98185ae1a87d80b22c57",
+        "notes": "变量规划为可选参考；Variables 独立核对事实及正式时钟。",
+        "sha256": "ebc029fb661eff9b37fec6c45f8074a069ebf02a830ecd89d9deafc94fdc6467"
       }
     },
     "shared/01_agency.md": {
@@ -579,6 +589,11 @@
         "baseCommit": "73239dd166d98acb1a6dfbebdf7a98906bdf5f7f",
         "notes": "开局时间使用直接对象，普通指导坏项只作为 Variables 参考，保留关键校验及既有执行协议。",
         "sha256": "706eae712175a1e2900f47ec50cc4d854015c9eb9d37c0982f4a4a7554e19c25"
+      },
+      "variableGuideNotes": {
+        "baseCommit": "801ff4b05e72b293fc4d98185ae1a87d80b22c57",
+        "notes": "变量规划为可选参考；Variables 独立核对事实及正式时钟。",
+        "sha256": "cbbfdc67f8547a110f850c9f19ae5302a12201b482d78a177c5053573ffe4adb"
       }
     },
     "shared/07_command_output.md": {
@@ -674,6 +689,11 @@
         "baseCommit": "73239dd166d98acb1a6dfbebdf7a98906bdf5f7f",
         "notes": "开局时间使用直接对象，普通指导坏项只作为 Variables 参考，保留关键校验及既有执行协议。",
         "sha256": "89d253514df03e27a17cc0646dca7ff6d6bed4f1d2cc1ba246e503082bfb2481"
+      },
+      "variableGuideNotes": {
+        "baseCommit": "801ff4b05e72b293fc4d98185ae1a87d80b22c57",
+        "notes": "变量规划为可选参考；Variables 独立核对事实及正式时钟。",
+        "sha256": "73e9f2d96a04f1fd75d82a88b2fe7d4e15e5959072f2e806baaa3f19271a2fd5"
       }
     },
     "shared/08_world_output.md": {
@@ -843,6 +863,11 @@
       "legacyCleanupV10": {
         "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "c2ef76f035f92c62017c9da0d4676556e992da285190814ad938c217dfe8ab48"
+      },
+      "variableGuideNotes": {
+        "baseCommit": "801ff4b05e72b293fc4d98185ae1a87d80b22c57",
+        "notes": "变量规划为可选参考；Variables 独立核对事实及正式时钟。",
+        "sha256": "0880d1cd44027f54eafd72b4cc6ddbe1f7568b26c27d12389fc3859fb28a2ef6"
       }
     },
     "stages/opening/world.md": {

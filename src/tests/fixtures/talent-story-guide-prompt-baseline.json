@@ -1,31 +1,49 @@
 {
-  "baseCommit": "73239dd166d98acb1a6dfbebdf7a98906bdf5f7f",
-  "note": "逐消息对照原基线，只有 Story 输出和 Variables 参考资料提示更新。无坏项时上下文、World 实际出站和天赋规则保持原字节。",
+  "baseCommit": "801ff4b05e72b293fc4d98185ae1a87d80b22c57",
+  "note": "三阶段共享时间政策及正文、变量说明已更新。固定合成输入、正式组装；Memory 基线独立保留。",
   "results": [
     {
       "stage": "story",
       "mode": "opening",
-      "messages": "76b39f8b277a29d7b3083add96f5a55e580736695ef75f88c38e6f9b44e5d9db",
-      "modules": "50e0d5ade191c0e1920605b500d8b0836603bf784678a9ae3db7191311b52281"
+      "messages": "5d7f43675f9c647d8bb754919a192b8c808feb822557eb3406a838acddd34eb3",
+      "modules": "2bbad4400a721a6328100b1d6cb7d8d9f2c77c3b395443db2ce48d02bde7c7d7",
+      "context": "6fbc886b96aa4f162df4fc6d86e66541c20ba38bedd549a1c70a6ae28489b2eb"
     },
     {
       "stage": "story",
       "mode": "regular",
-      "messages": "04dd3692407db84a51be4501fa675a03c4ad7ba2d703e77016dff80b0821af92",
-      "modules": "a184d0ffd430ccf8cbfa7e616793f18600032ab2256cc3d80788bb8a2f3d9eb2"
+      "messages": "fbeb033acfd281a3b3e1f199a92de14b788cc34b9de9f8697a931eadfd48ef2d",
+      "modules": "53d429a38041ec5116dd5f793a21ea18f9714e1aed9dbad8fddf4a9a96015b19",
+      "context": "20ee87e50e27b9b9490545bdc967fbf6f6413920bbb11a7e92a6c189c9d27a2e"
     },
     {
       "stage": "variables",
       "mode": "opening",
-      "messages": "d33ac97ae31f872b21edbb649abdf091367586f03a6ac0028eb017e1a7263cb4",
-      "modules": "1b3c6cd253d037a20ac23712c241247ba9dd3340ee43445223a2f84724e7d283"
+      "messages": "6545057a4524a4eea49ba90f8072597de6a61c3e5bfe5b9d5067429cec507602",
+      "modules": "2fcfdff8cf2b35bf0245ed8b98c9d22ca1fbdce14ba8d1050c957cac112c657f",
+      "context": "f24060cd5027773df12f205316e46bf4c96cb265a0d1b553a8da997dc7617bb7"
     },
     {
       "stage": "variables",
       "mode": "regular",
-      "messages": "e0849a56a3e7866d4f5d89d88de13a863861c305fafae9af1a4de819c932da62",
-      "modules": "a00a68027b1d80d1b78adb541d173fe081af37f36df1098f3f863b45b3ed824c"
+      "messages": "2fd73f58866829cf468a23013d4dc093111aea4946a19fa367257d62ddc9f05c",
+      "modules": "2fe225851151d05530dcc1c1c84f2d2f99de390e102fae5271d2bfd76e51aea5",
+      "context": "8326b58e87c212d82e4fda161222e8845a709addec2317e755ab43d06e055f40"
+    },
+    {
+      "stage": "world",
+      "mode": "opening",
+      "messages": "7d0af1967d68fe31de243fc621e1de3dfdabe35924ca95e51be7b5893f67b270",
+      "modules": "c226c45106f84507805febd80dab6680fc4ccf348e64efea782d2030ab4ef13a",
+      "context": "303ec0ce78465ce14f5d2d942830a12c9afb10efb7d8d1514619626975ba1105"
+    },
+    {
+      "stage": "world",
+      "mode": "regular",
+      "messages": "4fc080525ad09bd4cc28c8d63590b738dfc7190546c9e3b27c692ff2dc957e8e",
+      "modules": "a4c56db5d23baeb3684630c3a963939cb1281be864f73a3caeeeddd99200b9f8",
+      "context": "41f42882896bdc460b8569f2df5663a9e8034fc96967d05a361b6c803fb2ab9a"
     }
   ],
-  "withTalentVariablesAndWorld": "7964a19917d9bd2d70a31836d333a9288a741fce25588f5d5ef18029606c5008"
+  "withTalentVariablesAndWorld": "cc126b64b27a0a60beac263ccf80248e8a76627dce336ffb3b8284f675f342a1"
 }

@@ -4,6 +4,8 @@ import type { PresetSelection } from '../../presets/library';
 import { parsePartialVariables, parsePartialWorld } from '../validation/partialOutputs';
 import { worldNormalizationNotes } from '../validation/worldSceneWrites';
 import { narrativeRange } from '../../ui/settings/model';
+import { DataError } from '../../domain/common';
+import { historicalPerspective } from '../../domain/timePreflight';
 import { validateStoryEventInteractions } from '../../domain/events/interactions';
 import { AiError } from './errors';
 import { browserPromptOrder } from '../../prompts/order';
@@ -16,9 +18,8 @@ import type { CredentialVault } from './credentials';
 import { requestSnapshot, secretFor, type RequestSnapshot } from './snapshot';
 import { AiClient } from './client';
 import type { RequestOptions } from './client';
-import { variableFailure, variableValidationError } from '../validation/variableDiagnostics';
+import { variableFailure } from '../validation/variableDiagnostics';
 import { storyFailure } from '../validation/storyDiagnostics';
-import { timeOutcome } from '../../domain/timePreflight';
 import { stageResponses, safeStreamResponseText, responseLimitsFor } from './stageResponses';
 import { safeAiError } from './errors';
 import { mergeResponseDiagnostics } from './responseContent';
@@ -189,13 +190,22 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     }
   })();
   const story = envelope?.story;
-  if (story) {
-    try { validateStoryEventInteractions(captured.state, story,captured.legacyNotificationRecovery); }
+  if (story && envelope) {
+    const basis = { turnKind: captured.mode, userInput: captured.userInput, story };
+    try { historicalPerspective(captured.state, basis); }
     catch (error) {
-      throw storyFailure(error);
+      if (!(error instanceof DataError)) throw error;
+      story.variableGuide = story.variableGuide.filter(g => g.subjectHint !== 'time:retrospective' && !g.eventInteraction && !g.eventNarration);
+      envelope.notes.push('未确认的历史视角声明已保留在参考笔记中。');
     }
-    try { timeOutcome(captured.state, { userInput: captured.userInput, turnKind: captured.mode, story }, true); }
-    catch (error) { const failure = storyFailure(error); throw failure instanceof AiError ? failure : variableValidationError(error); }
+    try { validateStoryEventInteractions(captured.state, story, captured.legacyNotificationRecovery); }
+    catch (error) {
+      if (!(error instanceof DataError) || captured.legacyNotificationRecovery) throw storyFailure(error);
+      // A bad batch of receipts authorizes no event write. Keep its original
+      // evidence for Variables and leave existing entries untouched.
+      story.variableGuide = story.variableGuide.filter(g => !g.eventInteraction && !g.eventNarration);
+      envelope.notes.push('本幕事件回执未通过核验，未授予事件操作。');
+    }
   }
   const result = story ?? (captured.stage === 'variables'
         ? await parsePartialVariables(responseText, captured.state, captured.draft!)

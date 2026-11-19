@@ -1,10 +1,9 @@
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { chooseCustomProfession } from './helpers/creation';
-import { openWorkflow } from './helpers/gameLayout';
 import { openingGuideTimes, openingGuideEntry, wrappedOpeningGuide, ordinaryGuideRaw } from '../src/tests/fixtures/storyGuide';
 
-const narrative = '【旁白】主角走进资料室，核对今天的安排。';
+const narrative = '【旁白】主角走进资料室，核对今天的安排。他只询问费用，没有付款。';
 const url = 'https://story-guide.mock.invalid/v1';
 const ordinaryGuide = { group: 'protagonist', observedFact: '主角已核对今天的安排。' };
 const actions = ['查看今日清单', '向同事询问安排', '整理桌上的文件', '走到窗边观察'];
@@ -14,7 +13,8 @@ const variants = [
   { title: '真实嵌套引号', guide: '[' + wrappedOpeningGuide() + ']' },
   { title: '真实嵌套引号与四条行动选项', guide: '[' + wrappedOpeningGuide() + ',' + JSON.stringify(ordinaryGuide) + ']', actions },
   { title: '普通规划坏项', guide: '[' + ordinaryGuideRaw + ',' + JSON.stringify(openingGuideEntry(openingGuideTimes)) + ']', reference: true },
-  { title: '时间倒退', guide: '[' + wrappedOpeningGuide({ ...openingGuideTimes, endAt: '2026-10-15T15:00:00+08:00' }) + ']', fails: true },
+  { title: '自由笔记与错误付款建议', guide: '新分组：已付款（正文只询价）。', actions },
+  { title: '时间倒退的笔记由 Variables 纠正', guide: '[' + wrappedOpeningGuide({ ...openingGuideTimes, endAt: '2026-10-15T15:00:00+08:00' }) + ']' },
 ] as const;
 
 async function startOpening(page: Page, actionOptions: boolean) {
@@ -72,35 +72,13 @@ for (const variant of variants) test('开局变量规划：' + variant.title, as
       return;
     }
     const content = stage === 'variables'
-      ? '<thinking>检查本幕。</thinking><说明>保留现有记录。</说明><命令>\nset protagonist.emotionText = "踏实"\n</命令>'
+      ? `<thinking>检查本幕。</thinking><说明>仅询价。</说明><命令>\nset worldClock = "${openingGuideTimes.startAt}"\nset worldClock = "${openingGuideTimes.endAt}"\nset protagonist.emotionText = "踏实"\n</命令>`
       : JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
     await route.fulfill({ json: { choices: [{ message: { content }, finish_reason: 'stop' }] } });
   });
   await startOpening(page, 'actions' in variant);
-  if ('fails' in variant) {
-    await expect.poll(async () => (await stored(page)).draft.stageStatus.story).toBe('failed');
-    const failed = await stored(page);
-    expect(failed.state.turnNumber).toBe(0);
-    expect(failed.state.openingTimePending).toBe(true);
-    expect(failed.draft.story).toBeUndefined();
-    if ((page.viewportSize()?.width ?? 0) <= 900) {
-      const diagnostics = page.locator('.mobile-diagnostics-sheet');
-      await diagnostics.getByRole('tab', { name: '模型原文', exact: true }).click();
-      await diagnostics.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click();
-      await diagnostics.getByText('正文模型原文 · 未通过验收', { exact: true }).click();
-      await expect(diagnostics.getByText(/正文失败类型：opening_reversed · 开局结束时间早于开始时间/)).toBeVisible();
-    } else {
-      await openWorkflow(page);
-      await expect(page.getByRole('alert').filter({ hasText: /结束时间早于开始时间/ }).first()).toBeVisible();
-    }
-    await page.reload();
-    await expect(page.locator('.game-layout')).toBeVisible();
-    expect(await stored(page)).toEqual(failed);
-    expect(calls.map(call => call.stage)).toEqual(['story']);
-    return;
-  }
   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(1);
-  await expect(page.getByText('主角走进资料室，核对今天的安排。', { exact: false }).first()).toBeVisible();
+  await expect(page.getByText('主角走进资料室，核对今天的安排。他只询问费用，没有付款。', { exact: false }).first()).toBeVisible();
   const saved = await stored(page);
   if ('actions' in variant) {
     expect(saved.state.revision).toBe(1);
@@ -113,8 +91,9 @@ for (const variant of variants) test('开局变量规划：' + variant.title, as
   expect(saved.state.protagonist.emotionText).toBe('踏实');
   expect(saved.state.journal[0].story.narrative).toBe(narrative);
   expect(calls.map(call => call.stage)).toEqual(['story', 'variables', 'world']);
-  expect(calls[1].context.VARIABLE_GUIDE).toEqual([openingGuideEntry(JSON.stringify(openingGuideTimes)),
-    ...('actions' in variant ? [ordinaryGuide] : [])]);
+  expect(calls[1].context.OPENING_TIME).toMatchObject({ status: 'pending' });
+  expect(calls[1].context.VARIABLE_GUIDE_NOTES).toBe(variant.guide);
+  expect(calls[2].context).not.toHaveProperty('VARIABLE_GUIDE_NOTES');
   if ('reference' in variant)
     expect(calls[1].context.VARIABLE_GUIDE_REFERENCES).toEqual([{ group: 'npc', text: ordinaryGuideRaw }]);
   else expect(calls[1].context).not.toHaveProperty('VARIABLE_GUIDE_REFERENCES');

@@ -118,7 +118,7 @@ export function inlineCommandCatalog(stage: CatalogStage) {
       '组织UpdateOrganization按organizationUpdateFields白名单合并当前字段，id/kind/主角关系历史不可覆盖。金额更新需financialBasis={at,note}，只更新组织自己的人民币分整数估计，不是主角交易。无变化不更新，管理层公开姓名不自动建NPC，组织间关系稀疏可选且可单向。',
       '不存在的更新操作列入 unresolved；CreateNpc/CreateOrganization 不是更新命令。RegisterContact仅保留旧联系人登记协议，不代表已掌握电话号码。所有正式NPC永久保留档案；离场、死亡、失联不删除人物。',
       'Schema描述严格结构；程序校验权限、引用、归属、金额、时间、版本与幂等。剧情及世界演化由AI判断。角色知识按人物提供，命令仅写指定对象，不自动传播。',
-      '遵守TURN_TIME_POLICY：待定开局由程序统一应用Story结构化时钟，变量无需重复SetWorldClock。普通回合按实际行动估时，可零耗时，不固定步长，不要求正文时间词；禁止日期非法或倒退。有效HISTORICAL_PERSPECTIVE不更新当前变量或推演当前世界，World可以RecordHistory记录回顾内容，保持当前时钟。',
+      '遵守TURN_TIME_POLICY：待定开局由 Variables 确定起止时间。普通回合按实际行动估时，可零耗时，不固定步长，不要求正文时间词；禁止日期非法或倒退。有效HISTORICAL_PERSPECTIVE不更新当前变量或推演当前世界，World可以RecordHistory记录回顾内容，保持当前时钟。',
     ],
     ...(stage === 'world'
       ? {
@@ -130,7 +130,7 @@ export function inlineCommandCatalog(stage: CatalogStage) {
                 npcId: 'example-npc', changes: { healthText: '本轮发生的状态变化' }, activeGoals: ['当前行动目标'] },
             },
             RecordNpcMemory: {
-              time: 'TIME_WINDOW.from ≤ memory.createdAtGameTime ≤ TIME_WINDOW.to（按实际时间戳，含两端）；from 为正式起始时间，待定开局使用 Story 已确认开场时间；to 为合法 Variables 投影停止时间。variablePending 时没有已验证的新时间权限。',
+              time: 'TIME_WINDOW.from ≤ memory.createdAtGameTime ≤ TIME_WINDOW.to（按实际时间戳，含两端）；from 为正式起始时间，待定开局使用已校验的开场时间；to 为合法 Variables 投影停止时间。variablePending 时没有已验证的新时间权限。',
               meaning: '历史事件发生时间不等于本轮记忆记录时间。本轮确实收到旧事消息时可记录本轮获知经过并标明 reported/suspected 与实际来源；不能将旧事补写为本轮亲历，也不能伪造当前时间绕过窗口。已有记忆不重复新增。',
               ownership: '复用 npcId、稳定记忆 ID 和真实 sourceTurnIds/affectedEntityRefs；可引用本批合法创建的场外 NPC，不能写受保护人物或传播其他人的私人知识。',
             },

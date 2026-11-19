@@ -71,7 +71,8 @@ function transport(reply:(context:Record<string,unknown>)=>string, world:(contex
       const variableGuide = typeof custom?.guide === 'string' ? custom.guide : JSON.stringify(custom?.guide ?? guides);
       return envelope(`<thinking>创作提纲：保持当前事实连续。</thinking><正文>${custom?.narrative??"主角在社区与同事会面，收到报酬，购买手机并交给同事。"}</正文><短期记忆>在社区完成会面和交付。</短期记忆><变量规划>${variableGuide}</变量规划>`,true);
     }
-    return envelope(stage==='variables'?reply(context):JSON.stringify(world(context)));
+    if (stage === 'variables') return envelope(reply(context));
+    return envelope(JSON.stringify(world(context)));
   });
   return {fetcher,calls};
 }
@@ -82,7 +83,7 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
     const a=await fixture(mode), before=await a.repo.load('save-a');
     const end=mode==='opening'?openingEnd:'2026-10-18T08:10:00+08:00';
     const t=transport(()=>block([
-      ...(mode==='regular'?[set('worldClock',end)]:[]),
+      set('worldClock',end),
       set('locations[clinic]',{name:'社区诊所',parentId:'chongqing'}),set('protagonist.locationId','clinic'),
       set('npc[new-person]',{identityKey:'community-worker',kind:'ordinary',name:'周宁',aliases:[],skills:[],locationId:'clinic',onScene:true,affinity:0,relationshipText:'初次会面',memories:[],knownInformation:[]}),
       set('npc[new-person].affinityChange',{to:5,reason:'完成协作',relationshipText:'愿意协作'}),
@@ -101,7 +102,7 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
       affinityChange:{from:0,to:5,reason:'完成协作'},changes:{relationshipText:'愿意协作'},
     });
     expect(vars.filter(c=>c.type==='SetWorldClock')).toHaveLength(1);
-    if(mode==='opening')expect(vars[0].commandId).toBe('opening-clock:1');
+    if(mode==='opening')expect(vars[0].commandId).toBe('text-v1:s1:c1');
     expect(new Set(vars.map(c=>c.commandId)).size).toBe(vars.length);
     const wc=t.calls[2].context;
     expect(wc.worldClock).toBe(end);expect(wc.BASE_SAVE_REVISION).toBe(before.revision);
@@ -162,8 +163,8 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
     const saved=await a.repo.commitTurn(submission(done.draft));
     expect(saved.state.tasks.background).toBeUndefined();
   });
-  it.each(['',set('worldClock',openingEnd),set('items[note]',{name:'便条',category:'document',quantity:1,conditionText:'完好',ownerRef:{kind:'protagonist',id:'hero'}})])('开局空块/等值时钟/物品在刷新后只应用一次时钟：%s',async(body)=>{
-    const a=await fixture(),before=await a.repo.load('save-a'),t=transport(()=>block(body));
+  it.each(['',set('items[note]',{name:'便条',category:'document',quantity:1,conditionText:'完好',ownerRef:{kind:'protagonist',id:'hero'}})])('开局只设时钟或另外提供物品，在刷新后只应用一次时钟：%s',async(body)=>{
+    const a=await fixture(),before=await a.repo.load('save-a'),t=transport(()=>block([set('worldClock',openingEnd),body].join('\n')));
     const completed=await coordinator(a.repo,t.fetcher).generate(a);
     const reloaded=await a.repo.loadDraft('save-a');expect(reloaded).toEqual(completed.draft);
     if(!reloaded)throw new Error('missing persisted draft');
@@ -171,7 +172,7 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
     expect((await coordinator(a.repo,t.fetcher).generate({...a,draft:reloaded})).status).toBe('complete');
     expect(t.calls).toHaveLength(3);
     const saved=await a.repo.commitTurn(submission(reloaded));await a.repo.commitTurn(submission(reloaded));
-    expect(saved.state.appliedCommands.filter(c=>c.commandId.startsWith('opening-clock:'))).toHaveLength(1);
+    expect(saved.state.appliedCommands.filter(c=>JSON.parse(c.fingerprint).type === 'SetWorldClock')).toHaveLength(1);
     expect((await a.repo.load('save-a')).worldClock).toBe(openingEnd);
   });
   it.each(['{"commands":[],"rejectedSuggestions":[],"unresolved":[]}','<命令>set missing.field = 1',block('set protagonist.skills = [')])('非法新响应不回退、不请求World、不污染存档：%s',async(text)=>{
@@ -191,7 +192,7 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
     const result=await a.repo.commitTurn(submission(out.draft));expect(result.state.turnNumber).toBe(2);
   });
   it('数据库写入异常整体回滚，不重复扣款或保存半份记忆',async()=>{
-    const a=await fixture(),t=transport(()=>block('add economy.cash = -3000'));
+    const a=await fixture(),t=transport(()=>block([set('worldClock',openingEnd),'add economy.cash = -3000'].join('\n')));
     const done=await coordinator(a.repo,t.fetcher).generate(a),before=await a.repo.loadGame('save-a');
     const put=IDBObjectStore.prototype.put;
     const spy=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementation(function(this:IDBObjectStore,...args:Parameters<IDBObjectStore['put']>){if(this.name==='saves')throw new Error('mock database failure');return put.apply(this,args);});
@@ -203,7 +204,7 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
     const a=await fixture();let draft=a.draft,lastClock=initialAt,total=0;
     for(let n=1;n<=10;n++){
       const nextClock=n===1?openingEnd:new Date(Date.parse(lastClock)+30000).toISOString();
-      const t=transport(()=>block(n===1?'':set('worldClock',nextClock)));
+      const t=transport(()=>block(set('worldClock',nextClock)));
       const out=await coordinator(a.repo,t.fetcher).generate({...a,draft});total+=t.calls.length;
       const saved=await a.repo.commitTurn(submission(out.draft,`第${n+1}幕`));await a.repo.commitTurn(submission(out.draft,`第${n+1}幕`));
       expect(Date.parse(saved.state.worldClock)).toBe(Date.parse(nextClock));expect(saved.state.turnNumber).toBe(n);expect(saved.state.journal).toHaveLength(n);
@@ -361,7 +362,7 @@ it.each(['knowledge-shape', 'timeline-object', 'organization-history', 'interact
     const a = await fixture('opening'), before = await a.repo.load('save-a');
     let corrected = false;
     const t = transport(() => block([
-      set('protagonist.emotionText', '从容'),
+      set('worldClock', openingEnd), set('protagonist.emotionText', '从容'),
       ...(failure === 'interaction-time' ? [set('npc[scene].lastInteractionAt', corrected ? openingEnd : '2015-07-09T08:05:00+08:00')] : []),
       `push npc[scene].knownInformation = ${JSON.stringify(!corrected && failure === 'knowledge-shape'
         ? { text: '收到值班安排', source: '同事通知', learnedAt: openingEnd }
@@ -419,6 +420,7 @@ it.each(['opening', 'regular'] as const)('背包V2 %s：真实请求创建/更�
   const a = await fixture(mode), before = await a.repo.load('save-a');
   const owner = { kind: 'protagonist', id: 'hero' };
   const t = transport(() => block([
+    ...(mode === 'opening' ? [set('worldClock', openingEnd)] : []),
     set('items[coat].purchase', { account: 'cash', price: 2500, item: { name: '防寒外套', category: 'top', quantity: 1, ownerRef: owner,
       description: '黑色加厚外套', referenceValue: 18000, conditionText: '袖口略旧', itemDetails: { material: '棉布', size: 'L' } } }),
     set('items[coat].referenceValue', 16000), set('items[coat].questItem', true),
@@ -453,7 +455,7 @@ it.each(['opening', 'regular'] as const)('背包V2 %s：真实请求创建/更�
 
 it.each(['opening','regular'] as const)('新历史协议%s：真实三阶段生成独立历史、并行任务、参与者变化，原子保存后继续',async mode=>{
  const a=await fixture(mode),before=await a.repo.load('save-a');
- const t=transport(()=>block([set('locations[new-office]',{name:'办公室'}),set('protagonist.locationId','new-office')].join('\n')),ctx=>{
+ const t=transport(()=>block([...(mode === 'opening' ? [set('worldClock', openingEnd)] : []),set('locations[new-office]',{name:'办公室'}),set('protagonist.locationId','new-office')].join('\n')),ctx=>{
   const clock=mode==='opening'?openingEnd:before.worldClock;
   return {...worldResult(),worldCommands:[{type:'RecordHistory',commandId:'past',evidence:'人物透露大学经历',entry:{id:'past',title:'大学时期的合作',summary:'同事声称当时发生合作分歧',occurredTimeText:'大学时期',knowledgeKind:'reported',sourceRef:{kind:'npc',id:'npc-a'}}}],
     taskCommands:['planned','active','blocked'].map((status,i)=>({type:'SaveTask',commandId:'parallel-'+i,evidence:'独立职责',task:{...task('parallel-'+i),goal:'职责'+i,actorRef:{kind:'npc',id:'npc-a'},startAt:clock,dueAt:undefined,completionCondition:'相应事项处理完毕',status}})),
@@ -474,7 +476,7 @@ it('真实错误引号与普通坏项经正式三阶段进入开局，原文只�
   stageResponses.clear();
   const a = await fixture(), before = await a.repo.load('save-a');
   const raw = '[' + wrappedOpeningGuide() + ',' + ordinaryGuideRaw + ']';
-  const t = transport(() => block(set('protagonist.emotionText', '踏实')), () => worldResult(), () => ({
+  const t = transport(() => block([set('worldClock', openingGuideTimes.startAt), set('worldClock', openingGuideTimes.endAt), set('protagonist.emotionText', '踏实')].join('\n')), () => worldResult(), () => ({
     narrative: '主角整理资料，把当天的安排记在纸上，心里踏实了一些。', guide: raw,
   }));
   const completed = await coordinator(a.repo, t.fetcher).generate(a);
@@ -486,7 +488,7 @@ it('真实错误引号与普通坏项经正式三阶段进入开局，原文只�
   expect(JSON.stringify(t.calls[2].context)).not.toContain('值班员整理了资料');
   expect(t.calls[2].context.TIME_WINDOW).toEqual({ from: openingGuideTimes.startAt, to: openingGuideTimes.endAt });
   expect(completed.draft.variables?.result.commands.filter(command => command.type === 'SetWorldClock')).toEqual([
-    expect.objectContaining({ worldClock: openingGuideTimes.endAt }),
+    expect.objectContaining({ worldClock: openingGuideTimes.startAt }), expect.objectContaining({ worldClock: openingGuideTimes.endAt }),
   ]);
   expect(stageResponses.getSnapshot().find(entry => entry.stage === 'story')?.notes).toEqual([
     '变量规划：已恢复开局时间对象外多余的引号。', '变量规划：普通条目原文已保留为 Variables 参考。',
@@ -519,20 +521,18 @@ it('真实错误引号与普通坏项经正式三阶段进入开局，原文只�
   expect(t.calls).toHaveLength(3);
 });
 
-it('坏项不能掩盖开局时间冲突，合法正文后仍只发一次请求并保留正式存档', async () => {
+it('错误的开局建议不影响变量独立定钟，三个阶段各请求一次', async () => {
   const a = await fixture(), before = await a.repo.load('save-a');
-  const t = transport(() => block(), () => worldResult(), () => ({
+  const t = transport(() => block(set('worldClock', openingEnd)), () => worldResult(), () => ({
     narrative: '主角核对资料，准备开始一天的工作。',
     guide: '[' + ordinaryGuideRaw + ',' + wrappedOpeningGuide({ ...openingGuideTimes, endAt: '2026-10-15T16:05:00+08:00' }) + ']',
   }));
-  await expect(coordinator(a.repo, t.fetcher).generate(a)).rejects.toMatchObject({ code: 'time_data', details: { storyRule: 'opening_reversed' } });
-  expect((await a.repo.loadDraft('save-a'))?.story).toBeUndefined();
-  expect((await a.repo.loadDraft('save-a'))?.failures).toEqual([expect.objectContaining({ stage: 'story', errorCode: 'time_data' })]);
-  expect(stageResponses.getSnapshot().find(entry => entry.stage === 'story')?.error).toMatchObject({
-    code: 'time_data', details: { storyRule: 'opening_reversed' },
-  });
+  const finished = await coordinator(a.repo, t.fetcher).generate(a);
+  expect(finished.draft.story?.variableGuideRaw).toContain(ordinaryGuideRaw);
+  expect(finished.draft.stageStatus).toMatchObject({ story: 'ready', variables: 'ready', world: 'ready' });
+  expect(t.calls[2].context.TIME_WINDOW).toEqual({ from: openingEnd, to: openingEnd });
   expect(await a.repo.load('save-a')).toEqual(before);
-  expect(t.calls.map(call => call.stage)).toEqual(['story']);
+  expect(t.calls.map(call => call.stage)).toEqual(['story','variables','world']);
 });
 
 it('旧通知恢复保留其他事件裁定，当轮坏项原文只进入 Variables 请求', async () => {
@@ -575,4 +575,26 @@ it('旧通知恢复保留其他事件裁定，当轮坏项原文只进入 Variab
     expect(outbound).not.toContain('variableGuideReferences');
     expect(outbound).not.toContain('值班员整理了资料');
   } finally { stage.dispose(); }
+});
+
+it('开局未提供正式时钟时保留正文，重读草稿后只重试下游并原子结算', async () => {
+  const a = await fixture(), original = await a.repo.load('save-a');
+  let clockConfirmed = false;
+  const t = transport(() => block(clockConfirmed ? set('worldClock', openingEnd) : ''), undefined,
+    () => ({ narrative: '主角站在门口核对行程。', guide: '时间另核。' }));
+  const runner = coordinator(a.repo, t.fetcher);
+  await expect(runner.generate(a)).rejects.toThrow();
+  const saved = (await a.repo.loadGame('save-a')).draft!;
+  expect(await a.repo.load('save-a')).toEqual(original);
+  expect(saved.story).toMatchObject({ narrative: '主角站在门口核对行程。', variableGuideRaw: '时间另核。' });
+  expect(saved.variables).toBeUndefined();
+  expect(saved.world).toBeUndefined();
+  expect(t.calls.map(c => c.stage)).toEqual(['story', 'variables']);
+  clockConfirmed = true;
+  const recovered = await runner.generate({ ...a, draft: saved });
+  expect(recovered.draft.story).toEqual(saved.story);
+  const committed = await a.repo.commitTurn(submission(recovered.draft));
+  expect(committed.state.worldClock).toBe(openingEnd);
+  expect(committed.state.journal).toHaveLength(1);
+  expect(t.calls.map(c => c.stage)).toEqual(['story', 'variables', 'variables', 'world']);
 });

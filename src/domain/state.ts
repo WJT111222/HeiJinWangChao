@@ -16,6 +16,7 @@ export const LocationSchema = z.strictObject({ id: IdSchema, name: TextSchema, p
 export const ordinaryGuideGroup = z.enum(['protagonist', 'npc', 'items', 'economy', 'organization']);
 export const storyGuideReferenceLimit = 12;
 export const storyGuideReferenceChars = 4000;
+export const storyGuideRawLimit = storyGuideReferenceLimit * storyGuideReferenceChars;
 export const StorySchema = z.strictObject({
   turnKind: z.enum(['opening', 'regular']), narrative: TextSchema, summary: z.string(),
   variableGuide: z.array(z.strictObject({
@@ -24,6 +25,8 @@ export const StorySchema = z.strictObject({
     eventInteraction: EventInteractionSchema.optional(),
     eventNarration: z.strictObject({eventId:IdSchema,mode:z.enum(['enter','mention']),at:GameTimeSchema}).optional(),
   })),
+  variableGuideRaw: z.string().max(storyGuideRawLimit).optional(),
+  variableGuideRawTruncated: z.literal(true).optional(),
   variableGuideReferences: z.array(z.strictObject({
     group: ordinaryGuideGroup, text: z.string().min(1).max(storyGuideReferenceChars),
   })).min(1).max(storyGuideReferenceLimit).optional(),

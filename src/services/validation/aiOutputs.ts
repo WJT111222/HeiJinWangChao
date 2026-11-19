@@ -91,8 +91,8 @@ export function worldJson(text: string): unknown {
 export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', settings: Settings) {
   const actions = settings.prompts.actionOptions;
   const pattern = actions
-    ? /^\s*(?:<thinking>([\s\S]*?)<\/thinking>\s*)?<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*<变量规划>([\s\S]*?)<\/变量规划>\s*<行动选项>([\s\S]*?)<\/行动选项>\s*$/
-    : /^\s*(?:<thinking>([\s\S]*?)<\/thinking>\s*)?<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*<变量规划>([\s\S]*?)<\/变量规划>\s*$/;
+    ? /^\s*(?:<thinking>([\s\S]*?)<\/thinking>\s*)?<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*(?:<变量规划>([\s\S]*?)<\/变量规划>)?\s*<行动选项>([\s\S]*?)<\/行动选项>\s*$/
+    : /^\s*(?:<thinking>([\s\S]*?)<\/thinking>\s*)?<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*(?:<变量规划>([\s\S]*?)<\/变量规划>)?\s*$/;
   // 顺序：严格解析（含 #149 的双正文标签缺失恢复）→ 漏写闭合标签的确定性补全；诊断仍基于原始输出。
   const envelope = (recoverStoryEnvelope(text, actions) ?? text).match(pattern)
     ?? repairUnclosedTags(text, actions)?.match(pattern);
@@ -117,7 +117,7 @@ export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', se
     : undefined;
   if (actions && (!actionOptions || actionOptions.length < 3 || actionOptions.length > 5))
     throw new AiError('invalid_output', undefined, { storyRule: 'actions_count', actualCount: actionOptions?.length ?? 0, minimumCount: 3, maximumCount: 5 });
-  const { notes, ...guide } = parseStoryGuide(envelope[4]);
+  const { notes, ...guide } = parseStoryGuide(envelope[4] ?? '');
   const parsed = StorySchema.safeParse({
     turnKind: mode,
     narrative,
@@ -139,7 +139,7 @@ export function parseVariables(text: string, state: GameState, draft: TurnDraft)
   if (checked.data.settlement && checked.data.settlement.accepted !== checked.data.commands.filter(command => command.commandId.startsWith('text-v1:')).length) throw new AiError('candidate_conflict');
   if(checked.data.commands.some(c=>c.type==='DeleteEvent'||c.type==='RecordHistory'))throw new AiError('permission');
   if (!draft.story) throw new AiError('candidate_conflict');
-  try { state = openingTimeBase(state, draft); } catch (error) { throw variableValidationError(error); }
+  try { state = openingTimeBase(state, draft, checked.data.commands); } catch (error) { throw variableValidationError(error); }
   if (new Set(checked.data.commands.map((c) => c.commandId)).size !== checked.data.commands.length) throw new AiError('candidate_conflict');
   try {
     validateTimeCommands(timeState, draft, checked.data.commands);

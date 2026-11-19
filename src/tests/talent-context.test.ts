@@ -57,7 +57,7 @@ describe('PR-B 条件式单项天赋上下文', () => {
   });
 
   it('有天赋 Variables/World 完整请求保留通用与专属规则及已核对的入场提示', async () => {
-    // The new snapshot changes Variables reference guidance. World and talent rules retain their previous bytes.
+    // The new snapshot changes Variables reference guidance. Shared time policy applies to World; the talent definitions are unchanged.
     const requests = [];
     for (const definition of talentDefinitions) {
       for (const stage of ['variables', 'world'] as const) for (const mode of ['opening', 'regular'] as const) {
@@ -101,10 +101,10 @@ describe('PR-B 条件式单项天赋上下文', () => {
     expect(sentContext(prompt.messages)).not.toHaveProperty('PROTAGONIST_TALENT');
     const previous = partialSettlementPromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode)
       ?? issue194PromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode) ?? expected;
-    // 逐消息审计仅更新 Story 输出协议和 Variables 的参考材料说明，继续单独锁定旧上下文。
+    // 逐消息审计仅更新 Story 输出协议和 Variables 的参考材料说明，分别锁定共享时间政策上下文及提示词。
     const expectedText = storyGuidePromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode) ?? previous;
     expect(hash(prompt.messages)).toBe(expectedText.messages);
-    expect(hash(prompt.context)).toBe(("context" in previous ? previous.context : undefined) ?? expected.context);
+    expect(hash(prompt.context)).toBe(("context" in expectedText ? expectedText.context : undefined) ?? expected.context);
     expect(hash(prompt.modules)).toBe(expectedText.modules);
     expect(input.state.protagonist).not.toHaveProperty('talentId');
   });

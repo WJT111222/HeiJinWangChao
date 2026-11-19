@@ -89,8 +89,8 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
     || draft.turnKind !== (current.turnNumber === 0 ? 'opening' : 'regular')) return failed('domain_validation_failed');
   let base: GameState, clock: string, systemCommands: DomainCommand[];
   try {
-    base = openingTimeBase(current, draft);
-    clock = openingTimeSelection(current, draft)?.endAt ?? base.worldClock;
+    base = openingTimeBase(current, draft, []);
+    clock = openingTimeSelection(current, draft, [])?.endAt ?? base.worldClock;
     systemCommands = variableCommandsForTurn(current, draft, []);
     // 开局投影的精确重放：占位标记已在模拟副本清除，但保留原程序时钟幂等凭据。
     // 仅用同一Story重新校验该凭据，不把早于当前时间的startAt应用到已执行副本。
@@ -109,7 +109,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
     if (entry.operation !== 'set') return failed('unsupported_operation', origin);
     const time = GameTimeSchema.safeParse(entry.value);
     if (!time.success) return failed('type_mismatch', origin, [], diagnosticForSchema(entry, time.error));
-    // Story开局时间仍是唯一开局基线；等值文本不产生第二条时钟命令。
+    // 兼容旧草稿：已有程序开局命令时，等值文本不重复写入。
     if (openingClock && Date.parse(time.data) !== Date.parse(openingClock.worldClock)) return failed('domain_validation_failed', origin, [], {
       validationRule: 'domain_schema', domainRule: 'opening_clock_conflict', valuePath: 'worldClock', commandType: 'SetWorldClock',
     });

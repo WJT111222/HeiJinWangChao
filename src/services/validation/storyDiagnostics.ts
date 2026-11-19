@@ -6,7 +6,7 @@ import { AiError } from '../ai/errors';
 
 /** Diagnose only missing REQUIRED tags; an absent project <thinking> is valid. */
 export function storyEnvelopeDiagnostic(text: string, actions: boolean): StoryDiagnostic {
-  const required: StoryTag[] = ['正文', '短期记忆', '变量规划', ...(actions ? ['行动选项' as const] : [])];
+  const required: StoryTag[] = ['正文', '短期记忆', ...(/<\/?变量规划>/u.test(text) ? ['变量规划' as const] : []), ...(actions ? ['行动选项' as const] : [])];
   for (const tag of required) {
     const open = text.indexOf(`<${tag}>`), close = text.indexOf(`</${tag}>`);
     if (open < 0) return { storyRule: 'tag_missing', storyTag: tag };

@@ -1,16 +1,17 @@
 import { storySceneAuthority, validateNarrationClock } from './events/narration';
 import { timeOutcome, validateTimeCommands } from './timePreflight';
 import { eventInteractionCommands } from './events/interactions';
-import { openingTimeBase, openingTimeSelection } from './openingTime';
+import { openingTimeBase, openingTimeSelection, variablesChooseOpening } from './openingTime';
 import { commitCommands } from './commands';
 import type { DomainCommand } from './commands';
 import type { TurnDraft } from './drafts';
 import type { GameState } from './state';
 import { requireData } from './common';
 
-// 唯一开局时钟命令：既不持久化第二份候选，也不要求变量模型重复证明时间。
+// 新正文沿用 Variables 命令；旧草稿及纯小说开局从已验证的结构化时间生成兼容命令。
 // 旧草稿的等值SetWorldClock兼容为同一程序命令；不同值是数据冲突，不能静默丢弃。
 export function variableCommandsForTurn(state: GameState, draft: TurnDraft, commands: readonly DomainCommand[]): DomainCommand[] {
+  if (variablesChooseOpening(draft)) return [...commands];
   const selected = openingTimeSelection(state, draft);
   if (!selected) return [...commands];
   requireData(commands.filter((c) => c.type === 'SetWorldClock').every((c) => Date.parse(c.worldClock) === Date.parse(selected.endAt)),
@@ -26,7 +27,7 @@ export function prepareVariableProjection(state: GameState, draft: TurnDraft, co
     'OPENING_INITIALIZATION', '普通回合不能初始化原有生活状态');
   validateTimeCommands(state,draft,commands);
   let variables = variableCommandsForTurn(state, draft, commands);
-  if(draft.turnKind==='regular' && draft.story?.variableGuide.some(g=>g.group==='time'&&g.subjectHint==='time:pause')) {
+  if(draft.story?.variableGuideRaw === undefined && draft.turnKind==='regular' && draft.story?.variableGuide.some(g=>g.group==='time'&&g.subjectHint==='time:pause')) {
     const stop=timeOutcome(state,draft)!;
     variables=[{type:'SetWorldClock',commandId:`story-pause-clock:${draft.storyRevision}`,worldClock:stop.at,evidence:'所选Story结构化实际停止时间'},
       ...variables.filter(c=>c.type!=='SetWorldClock')];

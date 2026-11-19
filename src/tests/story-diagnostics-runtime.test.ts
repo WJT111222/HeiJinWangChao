@@ -8,7 +8,6 @@ import { pendingOpeningClock } from '../domain/openingTime';
 import { StoryStage, storyError } from '../workflows/storyStage';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { AiClient } from '../services/ai/client';
-import { safeAiError } from '../services/ai/errors';
 import { runStageRequest } from '../services/ai/runtime';
 import * as runtime from '../services/ai/runtime';
 import { stageResponses } from '../services/ai/stageResponses';
@@ -34,36 +33,30 @@ function route(text: string) {
 function pending() { const state = game(); state.openingTimePending = true; state.worldClock = pendingOpeningClock; return GameStateSchema.parse(state); }
 const startAt = '2015-07-08T09:00:00+08:00', endAt = '2015-07-08T09:01:00+08:00';
 const opening = (value: unknown) => ({ group: 'time', subjectHint: 'time:opening', observedFact: typeof value === 'string' ? value : JSON.stringify(value) });
-async function failedRuntime(state: GameState, text: string, rule: string, code: string, mode: 'opening' | 'regular' = 'opening') {
-  const r = route(text), before = structuredClone(state);
+async function acceptedNotes(state: GameState, guide: unknown, mode: 'opening' | 'regular' = 'opening') {
+  const text = envelope(guide), r = route(text), before = structuredClone(state);
   const draft = createTurnDraft(state.saveId, state.revision, 'test-story', mode, '');
-  let caught: unknown;
-  try { await runStageRequest({ stage: 'story', mode, state, draft, userInput: '', settings: r.settings }, r.config, r.vault, {}, r.client); }
-  catch (error) { caught = error; }
-  expect(caught).toMatchObject({ code, details: { storyRule: rule } });
-  expect(r.fetcher).toHaveBeenCalledTimes(1); expect(state).toEqual(before);
-  const record = stageResponses.getSnapshot()[0];
-  expect(record).toMatchObject({ status: 'failed', error: { code, details: { storyRule: rule } } });
-  expect(record.normalized).toBeUndefined(); expect(record.text).toBe(text);
-  const log = runtimeLogEvent(1, 'story', 'failed', caught);
-  expect(log.storyRule).toBe(rule); expect(log.message).toContain('本次正文未保存');
-  expect(JSON.stringify(log)).not.toContain('隐私材料');
-  return caught;
+  const response = await runStageRequest({ stage: 'story', mode, state, draft, userInput: '', settings: r.settings }, r.config, r.vault, {}, r.client);
+  expect(response.result).toMatchObject({ narrative: '【旁白】主角在街边等候。', variableGuideRaw: JSON.stringify(guide) });
+  expect(stageResponses.getSnapshot()[0]).toMatchObject({ status: 'validated', text });
+  expect(r.fetcher).toHaveBeenCalledTimes(1);
+  expect(state).toEqual(before);
+  return response.result;
 }
 afterEach(() => { stageResponses.clear(); vi.restoreAllMocks(); });
 
 describe('Story diagnostics through real Composer / client / validation', () => {
   it.each([
-    ['missing', [], 'opening_missing'],
-    ['duplicate', [opening({ startAt, endAt }), opening({ startAt, endAt })], 'opening_duplicate'],
-    ['bad JSON', [opening('{隐私材料')], 'opening_json'],
-    ['missing date', [opening({ endAt })], 'opening_format'],
-    ['bad calendar', [opening({ startAt: '2015-02-30T09:00:00+08:00', endAt })], 'opening_format'],
-    ['wrong type', [opening({ startAt: 42, endAt })], 'opening_format'],
-    ['timezone', [opening({ startAt: '2015-07-08T01:00:00Z', endAt: '2015-07-08T01:01:00Z' })], 'opening_timezone'],
-    ['reversed', [opening({ startAt: endAt, endAt: startAt })], 'opening_reversed'],
-    ['mixed protocol', [opening({ startAt, endAt }), { group: 'time', subjectHint: 'time:end', observedFact: endAt }], 'opening_protocol'],
-  ] as const)('opening %s', async (_name, guide, rule) => { await failedRuntime(pending(), envelope(guide), rule, 'time_data'); });
+    ['missing', []],
+    ['duplicate', [opening({ startAt, endAt }), opening({ startAt, endAt })]],
+    ['bad JSON', [opening('{隐私材料')]],
+    ['missing date', [opening({ endAt })]],
+    ['bad calendar', [opening({ startAt: '2015-02-30T09:00:00+08:00', endAt })]],
+    ['wrong type', [opening({ startAt: 42, endAt })]],
+    ['timezone', [opening({ startAt: '2015-07-08T01:00:00Z', endAt: '2015-07-08T01:01:00Z' })]],
+    ['reversed', [opening({ startAt: endAt, endAt: startAt })]],
+    ['mixed protocol', [opening({ startAt, endAt }), { group: 'time', subjectHint: 'time:end', observedFact: endAt }]],
+  ] as const)('opening %s', async (_name, guide) => { await acceptedNotes(pending(), guide); });
 
   it.each([
     ['time_duplicate', [{ group: 'time', subjectHint: 'time:end', observedFact: '2026-10-18T08:01:00+08:00' }, { group: 'time', subjectHint: 'time:pause', observedFact: '2026-10-18T08:02:00+08:00' }]],
@@ -74,9 +67,8 @@ describe('Story diagnostics through real Composer / client / validation', () => 
     ['retrospective_json', [{ group: 'time', subjectHint: 'time:retrospective', observedFact: '{private-json' }]],
     ['retrospective_schema', [{ group: 'time', subjectHint: 'time:retrospective', observedFact: '{}' }]],
     ['retrospective_source', [{ group: 'time', subjectHint: 'time:retrospective', observedFact: JSON.stringify({ npcId: 'absent-npc', perspectiveRequest: '切换同事视角', pastRequest: '昨日', temporalScope: 'past_only', currentPlotAdvances: false }) }]],
-  ] as const)('keeps regular time rules and their parent time_data code: %s', async (rule, guide) => {
-    const caught = await failedRuntime(game(), envelope(guide), rule, 'time_data', 'regular');
-    expect(JSON.stringify(safeAiError(caught))).not.toMatch(/private-|absent-npc/);
+  ] as const)('regular reference: %s', async (_rule, guide) => {
+    await acceptedNotes(game(), guide, 'regular');
   });
 
   function withEntry(status: 'pending' | 'presented' | 'declined' = 'pending') {
@@ -92,12 +84,11 @@ describe('Story diagnostics through real Composer / client / validation', () => 
     ['reference', [{ ...receipt, eventInteraction: { ...receipt.eventInteraction, entryId: 'private-invalid-id' } }]],
     ['evidence_empty', [{ ...receipt, textEvidence: ' \n ' }]],
     ['status', [{ ...receipt, eventInteraction: { ...receipt.eventInteraction, action: 'private-invalid-action' } }]],
-  ] as const)('event receipt %s', async (name, guide) => {
-    const caught = await failedRuntime(withEntry(), envelope(guide), `receipt_${name}`, name === 'status' ? 'invalid_output' : 'event_entry');
-    expect(JSON.stringify(safeAiError(caught))).not.toContain('private-invalid');
+  ] as const)('event receipt %s', async (_name, guide) => {
+    expect(await acceptedNotes(withEntry(), guide)).toMatchObject({ variableGuide: [] });
   });
-  it.each([['presented', 'receipt_repeated'], ['declined', 'receipt_closed']] as const)('existing %s entry', async (status, rule) => {
-    await failedRuntime(withEntry(status), envelope([receipt]), rule, 'event_entry');
+  it.each(['presented', 'declined'] as const)('existing %s entry', async status => {
+    expect(await acceptedNotes(withEntry(status), [receipt])).toMatchObject({ variableGuide: [] });
   });
   it('a legal opening time and a legal receipt still succeed, with one request', async () => {
     for (const [state, guide] of [[pending(), [opening({ startAt, endAt })]], [withEntry(), [receipt]]] as const) {
