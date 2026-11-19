@@ -53,7 +53,8 @@ async function expandSettlementSummary(page: Page, skipped: number) {
   return summary;
 }
 
-test('完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型', async ({ page }, info) => {
+test('完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型', async ({ page, isMobile }, info) => {
+  test.skip(isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
   await seed(page); const server = await mock(page);
   await page.getByRole('button', { name: '自动生成开局', exact: true }).click(); await settled(page);
   let data = await stored(page); expect(data.state.turnNumber).toBe(1); expect(data.state.economy.cash).toBe(7000); expect(data.draft.userInput).toBe(''); expect(server.calls).toEqual(['story','variables','world']);
@@ -82,7 +83,8 @@ test('World字段错误定位为跳过，临时原文可读，合规更新一次
   expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
 });
 
-test('发送下一条行动仅绑定草稿，commit日志必须等到三阶段完成才开始', async ({ page }) => {
+test('发送下一条行动仅绑定草稿，commit日志必须等到三阶段完成才开始', async ({ page, isMobile }) => {
+  test.skip(isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
   // 仅观察真实日志函数的调用，不替换返回值、工作流或存储行为。
   await page.route('**/src/ui/game/runtimeLog.ts*', async route => {
     // 仅本地 Vite 模块读取可重试一次 ECONNRESET；不重试任何模型或业务请求。
@@ -127,7 +129,8 @@ test('NPC场景位置与World字段错误各自隔离，独立主角状态照常
   expect(server.calls).toEqual(['story','variables','world']);
 });
 
-test('源三标签截断保留正文；明确恢复后四操作自动结算并完整显示原文', async ({ page }, info) => {
+test('源三标签截断保留正文；明确恢复后四操作自动结算并完整显示原文', async ({ page, isMobile }, info) => {
+  test.skip(isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
   await seed(page); const server = await mock(page), before = await stored(page);
   server.control.variables = '<thinking>本轮状态分析。</thinking><说明>- 更新本幕变量。</说明><命令>set protagonist.emotionText = "安心"';
   await page.getByRole('button', { name: '自动生成开局', exact: true }).click();
@@ -144,7 +147,8 @@ test('源三标签截断保留正文；明确恢复后四操作自动结算并�
   await page.reload(); await openGameTools(page); await settled(page); expect(await stored(page)).toEqual(data); expect(server.calls).toHaveLength(4);
 });
 
-test('候选写库配额失败显示具体步骤而非unknown，保留正文后只补失败阶段', async ({ page }) => {
+test('候选写库配额失败显示具体步骤而非unknown，保留正文后只补失败阶段', async ({ page, isMobile }) => {
+  test.skip(isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
   await seed(page); const server = await mock(page), before = await stored(page);
   await page.evaluate(async () => {
     const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), original = SaveRepository.prototype.saveDraft;

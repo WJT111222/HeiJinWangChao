@@ -1,7 +1,10 @@
+import { openStoredSave } from './helpers/home';
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools, goHome, openWorkflowStage, openCandidateRaw, openStageCandidates, closeStageCandidates } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
+// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
+test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
 const narrative = '主角已经用现金支付30元吃饭。';
 const result = {
   commands: [
@@ -249,11 +252,7 @@ test('错误 JSON 安全失败可重试；取消、重复点击和切档迟到�
   await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '重新生成变量候选', exact: true }).click();
   await expect.poll(() => count).toBe(4);
   await goHome(page);
-  await page
-    .locator('.save-card')
-    .filter({ hasText: '另一份变量存档' })
-    .getByRole('button', { name: /读取存档/ })
-    .click();
+  await openStoredSave(page, '另一份变量存档');
   await openGameTools(page, true);
   mode = 'good';
   await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();

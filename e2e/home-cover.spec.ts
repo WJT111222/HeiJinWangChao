@@ -1,5 +1,7 @@
 import { expect, test } from './helpers/test';
 import { openLibrary } from './helpers/home';
+// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
+test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
 
 test('四城轮换、手动重置与reduced-motion：无演示功能或外部调用', async ({page}) => {
   test.setTimeout(60000);

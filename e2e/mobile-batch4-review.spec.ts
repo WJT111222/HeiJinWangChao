@@ -1,5 +1,7 @@
 import { test, expect } from './helpers/test';
 import type { Page } from '@playwright/test';
+// 手机专项：只在 mobile 项目（Pixel 7，isMobile）运行；电脑端由各自的 PC 用例覆盖。PC 像素对照用例另由 E2E_PIXEL_COMPARE 控制。
+test.skip(({ isMobile }) => !isMobile, '手机专项，只在 mobile 项目运行');
 
 async function seed(page:Page, step:1|5, withPack=false) {
   await page.goto('/');

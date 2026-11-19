@@ -1,9 +1,11 @@
-import { openLibrary } from './helpers/home';
+import { openLibrary, openStoredSave } from './helpers/home';
 import { goHome } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { openGameTools } from './helpers/gameLayout';
+// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
+test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
 
 const broken = { saveId: 'broken', title: '无法解析的旧人生', schemaVersion: 99, original: { text: '【旁白】原始记录\n第二行', unknown: [null, 7] } };
 const draft = { saveId: 'broken', oldFormat: '不作迁移', story: { narrative: '未提交正文' } };
@@ -16,7 +18,7 @@ test.beforeEach(async ({ page }) => {
     else await route.continue();
   });
 });
-test.afterEach(() => expect(modelCalls).toBe(0));
+test.afterEach(() => expect(modelCalls ?? 0).toBe(0));
 
 async function seed(page: Page, onlyBroken = false) {
   await page.goto('/');
@@ -66,7 +68,7 @@ test('混合存档列表独立展示，坏记录不触发全局错误，正常�
   await badCard(page).scrollIntoViewIfNeeded();
   await page.screenshot({path:info.outputPath('library-unreadable.png')});
   for (const id of ['save-a', 'save-b']) {
-    await page.locator('.save-card').filter({ hasText: `正常存档 ${id}` }).getByRole('button', { name: /读取存档/ }).click();
+    await openStoredSave(page, `正常存档 ${id}`);
     await openGameTools(page, true);
     await expect(page.getByRole('heading', { name: '林舟', exact: true })).toBeVisible();
     await goHome(page); await openLibrary(page);

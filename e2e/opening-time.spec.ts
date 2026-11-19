@@ -6,6 +6,8 @@ import { record, array, string } from '../src/services/ai/protocols';
 import { chinaCalendar, pendingOpeningClock } from '../src/domain/openingTime';
 import { GameStateSchema } from '../src/domain/state';
 import { TurnDraftSchema } from '../src/domain/drafts';
+// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
+test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
 
 async function prepare(page: Page) {
   await page.goto('/');
