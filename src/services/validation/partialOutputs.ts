@@ -25,12 +25,16 @@ function workLinks(value: unknown) {
   return ['linkedEventId', 'linkedTaskIds', 'predecessorEventIds'].flatMap(key => structuredRefs(Reflect.get(value, key), key));
 }
 
-function worldUnit(input: unknown, group: WorldGroup, groupIndex: number, commandIndex: number, state: GameState): UpdateUnit<unknown> {
+function worldUnit(
+  input: unknown, group: WorldGroup, groupIndex: number, commandIndex: number,
+  state: GameState, existingLocations: ReadonlySet<string>,
+): UpdateUnit<unknown> {
   const value = input && typeof input === 'object' ? input as Record<string, unknown> : {};
   const writes: string[] = [];
   for (const key of ['npc', 'organization', 'location', 'event', 'task', 'entry']) {
     const record = value[key];
-    if (record && typeof record === 'object' && 'id' in record && typeof record.id === 'string') writes.push(record.id);
+    if (record && typeof record === 'object' && 'id' in record && typeof record.id === 'string'
+      && (key !== 'location' || !existingLocations.has(record.id))) writes.push(record.id);
   }
   if (value.type === 'DeleteEvent' && typeof value.eventId === 'string') writes.push(value.eventId);
   const category = group === 'taskCommands' ? 'task' : group === 'eventCommands' ? 'event'
@@ -55,10 +59,15 @@ export async function parsePartialWorld(text: string, state: GameState, draft: T
   try { raw = worldJson(envelope?.commands ?? text); } catch (error) { throw worldValidationError(error); }
   const parsed = rawWorldSchema.safeParse(raw);
   if (!parsed.success) throw worldValidationError(parsed.error, {}, raw);
+  const existingLocations = new Set(Object.keys(state.locations));
+  if (draft.variables?.validation === 'validated') {
+    const variables = parseVariables(JSON.stringify(draft.variables.result), state, draft);
+    for (const command of variables.commands)
+      if (command.type === 'CreateLocation') existingLocations.add(command.location.id);
+  }
   let index = 0;
-  const units = worldGroups.flatMap(group => parsed.data[group].map((input, groupIndex) => worldUnit(input, group, groupIndex, index++, state)));
-  if (draft.variables?.validation === 'validated')
-    parseVariables(JSON.stringify(draft.variables.result), state, draft);
+  const units = worldGroups.flatMap(group => parsed.data[group].map((input, groupIndex) =>
+    worldUnit(input, group, groupIndex, index++, state, existingLocations)));
   const { result, skipped } = await isolateUpdates(units, selected => {
     const raw = { ...parsed.data };
     for (const group of worldGroups) raw[group] = selected.filter(unit => unit.position.group === group).map(unit => unit.input);
@@ -70,22 +79,38 @@ export async function parsePartialWorld(text: string, state: GameState, draft: T
   return result;
 }
 
-function variableUnit(input: VariableStatement, commandIndex: number, hasLooseBalanceChange: boolean): UpdateUnit<VariableStatement> {
+function variablePath(input: VariableStatement) {
+  let path = input.ast?.path.nodes;
+  if (!path) {
+    const pathText = /^\s*[^\s=]+[\t ]+([^=\r\n]+?)[\t ]*(?:=|$)/u.exec(input.text)?.[1];
+    const recovered = pathText ? parseVariablePath(pathText) : undefined;
+    if (recovered?.ok) path = recovered.value.nodes;
+  }
+  if (!path) return [];
+  return path[0]?.name === 'gameState' ? path.slice(1) : path;
+}
+
+function variableUnit(input: VariableStatement, commandIndex: number, hasLooseBalanceChange: boolean, state: GameState): UpdateUnit<VariableStatement> {
   const { ast } = input;
-  const pathText = /^\s*[^\s=]+[\t ]+([^=\r\n]+?)[\t ]*(?:=|$)/u.exec(input.text)?.[1];
-  const recoveredPath = pathText ? parseVariablePath(pathText) : undefined;
-  const path = ast?.path.nodes ?? (recoveredPath?.ok ? recoveredPath.value.nodes : []);
-  const nodes = path[0]?.name === 'gameState' ? path.slice(1) : path;
-  const [root, target, action] = nodes;
+  const nodes = variablePath(input);
+  const [root, target, action, nestedAction] = nodes;
   const name = root?.kind === 'root' || root?.kind === 'field' ? root.name : undefined;
   const id = target?.kind === 'id' ? target.id : undefined;
-  const refs = structuredRefs(ast?.value);
-  if (name === 'protagonist' && nodes.some(node => node.kind === 'field' && node.name === 'currentWear') && typeof ast?.value === 'string') refs.push(ast.value);
+  const economyId = name === 'economy' && target?.kind === 'field' && action?.kind === 'id' ? action.id : undefined;
+  const field = nodes.slice(1).filter(node => node.kind === 'field').at(-1);
+  const refs = structuredRefs(ast?.value, field?.name ?? '');
   // Creators and linked work records bind references. Existing NPC field updates do not
   // force all unrelated changes to the same NPC into one transaction.
-  const writes = id && (!action || name === 'events' ||
-    (name === 'items' && action.kind === 'field' && action.name === 'purchase')) ? [id] : [];
-  if (id && !writes.length) refs.push(id);
+  const createsLocation = name === 'locations' && id && !Object.hasOwn(state.locations, id);
+  const createsEntity = name === 'locations' ? createsLocation : ast?.operation !== 'delete' && !action;
+  const writes = id && (createsEntity || name === 'events' ||
+    (name === 'items' && action?.kind === 'field' && action.name === 'purchase')) ? [id] : [];
+  if (economyId && target?.kind === 'field' && (
+    (target.name === 'incomes' || target.name === 'debts') && !nestedAction
+    || target.name === 'vehicles' && nestedAction?.kind === 'field' && nestedAction.name === 'purchase'
+  )) writes.push(economyId);
+  const subject = id ?? economyId;
+  if (subject && !writes.length) refs.push(subject);
   const atomicRefs = name === 'tasks' || name === 'events'
     ? workLinks(ast?.value) : [];
   const category: SkippedUpdate['category'] = name === 'items' ? 'item' : name === 'economy' ? 'economy'
@@ -108,6 +133,56 @@ function variableUnit(input: VariableStatement, commandIndex: number, hasLooseBa
     invalid: ast ? undefined : 'syntax' };
 }
 
+// Try concrete scene counterparts first. The formal projection still decides
+// whether the old scene or another accepted move is also sufficient.
+function addSceneDependencies(state: GameState, units: UpdateUnit<VariableStatement>[]) {
+  type Position = { unit: UpdateUnit<VariableStatement>; value: string | null };
+  type Presence = { unit: UpdateUnit<VariableStatement>; value: boolean };
+  const people = new Map<string, { location?: Position; presence?: Presence }>();
+  let hero: Position | undefined;
+  for (const unit of units) {
+    const ast = unit.input.ast;
+    if (ast?.operation !== 'set') continue;
+    const [root, target, field] = variablePath(unit.input);
+    if (root?.kind !== 'root' && root?.kind !== 'field') continue;
+    if (root.name === 'protagonist') {
+      const value = !target && ast.value && typeof ast.value === 'object' && 'locationId' in ast.value
+        ? ast.value.locationId : target?.kind === 'field' && target.name === 'locationId' ? ast.value : undefined;
+      if (typeof value === 'string') hero = { unit, value };
+    }
+    if (root.name !== 'npc' || target?.kind !== 'id') continue;
+    const person = people.get(target.id) ?? {};
+    const object = !field && ast.value && typeof ast.value === 'object' ? ast.value : undefined;
+    const location = field?.kind === 'field' && field.name === 'locationId' ? ast.value : object && 'locationId' in object ? object.locationId : undefined;
+    const presence = field?.kind === 'field' && field.name === 'onScene' ? ast.value : object && 'onScene' in object ? object.onScene : undefined;
+    if (typeof location === 'string' || location === null) person.location = { unit, value: location };
+    if (typeof presence === 'boolean') person.presence = { unit, value: presence };
+    people.set(target.id, person);
+  }
+  function tryAfter(unit: UpdateUnit<VariableStatement> | undefined, prerequisite: UpdateUnit<VariableStatement> | undefined) {
+    if (unit && prerequisite && unit !== prerequisite)
+      unit.verifyAfter = [...(unit.verifyAfter ?? []), prerequisite.position.commandIndex];
+  }
+  const oldHero = state.protagonist.locationId;
+  const destination = hero?.value ?? oldHero;
+  for (const [id, { location, presence }] of people) {
+    const before = state.npc[id];
+    const exact = location ? location.value : before?.locationId;
+    if ((presence?.value ?? before?.onScene) && exact && exact === destination) {
+      if (destination !== oldHero) {
+        // An already-present NPC moving first would violate the old scene.
+        if (before?.onScene || location?.unit === presence?.unit) tryAfter(location?.unit, hero?.unit);
+        if (presence?.value && before?.locationId !== oldHero) tryAfter(presence.unit, hero?.unit);
+      }
+      if (presence?.value && before?.locationId !== oldHero && before?.locationId !== destination)
+        tryAfter(presence.unit, location?.unit);
+    }
+    if (presence?.value === false && before?.onScene && location
+      && (location.value === null || destination === oldHero && location.value !== destination))
+      tryAfter(location.unit, presence.unit);
+  }
+}
+
 export async function parsePartialVariables(text: string, state: GameState, draft: TurnDraft) {
   const envelope = commandEnvelope(text);
   if (!envelope) throw new AiError('variable_text_syntax', undefined, { variableStep: 'envelope', fieldPath: 'text.block_structure' });
@@ -115,7 +190,8 @@ export async function parsePartialVariables(text: string, state: GameState, draf
   if (!statements.ok) throw new AiError('variable_text_syntax', undefined, { variableStep: 'commands', fieldPath: `text.${statements.error.code}` });
   const hasLooseBalanceChange = statements.value.some(unit =>
     /^\s*[^\s=]+\s+(?:gameState\.)?economy\.(?:cash|onlineBalance)\s*=/iu.test(unit.text));
-  const units = statements.value.map((statement,index) => variableUnit(statement,index,hasLooseBalanceChange));
+  const units = statements.value.map((statement,index) => variableUnit(statement,index,hasLooseBalanceChange,state));
+  addSceneDependencies(state, units);
   // A world-clock statement is the temporal basis shared by application groups.
   const clocks = units.filter(unit => unit.input.ast?.path.nodes.some(node => (node.kind === 'root' || node.kind === 'field') && node.name === 'worldClock') && unit.position.category === 'state');
   const optional = units.filter(unit => !clocks.includes(unit));

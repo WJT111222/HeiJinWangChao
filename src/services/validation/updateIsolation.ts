@@ -9,6 +9,7 @@ export interface UpdateUnit<T> {
   refs: readonly string[];
   atomicKeys?: readonly string[];
   atomicRefs?: readonly string[];
+  verifyAfter?: readonly number[];
   invalid?: 'syntax' | 'schema';
 }
 
@@ -19,12 +20,29 @@ export function settlementField(paths: readonly (string | undefined)[]) {
   }
 }
 
+const referenceFields = new Set([
+  'locationId', 'parentId', 'npcId', 'organizationId', 'itemId', 'taskId', 'eventId', 'parentEventId',
+  'linkedEventId', 'linkedTaskIds', 'predecessorEventIds', 'fromTaskId', 'offscreenTaskIds',
+  'currentTaskIds', 'keyNpcIds', 'mortgageDebtId', 'collateralAssetIds', 'debtId', 'relatedEntryIds',
+  'topItemId', 'bottomItemId', 'shoesItemId', 'primaryWeaponItemId', 'secondaryWeaponItemId',
+  'accessoryItemIds', 'currentVehicleAssetId',
+]);
+const referenceObjects = new Set([
+  'location', 'npc', 'organization', 'event', 'task', 'item', 'entry', 'vehicle', 'debt', 'memory', 'actorRef',
+  'actorRefs', 'ownerRef', 'affectedEntityRefs', 'expectedOwner', 'from', 'to', 'transfer', 'loss', 'changes',
+  'purchase', 'profile', 'specialProfile', 'usualLocations', 'relationshipNetwork', 'relations', 'leadership',
+  'handoff', 'continuation', 'protagonistEntry', 'currentWear', 'equipment', 'state',
+]);
+const actorObjects = new Set(['actorRef','actorRefs','ownerRef','affectedEntityRefs','expectedOwner','from','to']);
+
 export function structuredRefs(value: unknown, key = ''): string[] {
-  if (typeof value === 'string')
-    return /(?:^id$|(?:Id|Ids)$)/u.test(key) ? [value] : [];
+  if (typeof value === 'string') return referenceFields.has(key) ? [value] : [];
   if (Array.isArray(value)) return value.flatMap(item => structuredRefs(item, key));
-  if (!value || typeof value !== 'object') return [];
-  return Object.entries(value).flatMap(([name, item]) => structuredRefs(item, name));
+  if (!value || typeof value !== 'object' || key && !referenceObjects.has(key)) return [];
+  const refs = Object.entries(value).flatMap(([name, item]) => structuredRefs(item, name));
+  if (actorObjects.has(key) && 'kind' in value && 'id' in value && typeof value.id === 'string')
+    refs.push(value.id);
+  return refs;
 }
 
 function isolationGroups<T>(units: readonly UpdateUnit<T>[]) {
@@ -54,22 +72,69 @@ function isolationGroups<T>(units: readonly UpdateUnit<T>[]) {
     const owner = owners.get(ref);
     if (owner) join(owner, unit);
   }
+
   const groups = [...new Set(units.map(unit => group.get(unit)!))];
-  const dependencies = new Map(groups.map(members => [members, new Set<Set<UpdateUnit<T>>>()]));
+  type Group = typeof groups[number];
+  const dependencies = new Map(groups.map(members => [members, new Set<Group>()]));
   for (const unit of units) for (const ref of unit.refs) {
-    const owner = owners.get(ref), members = group.get(unit)!;
-    if (owner && group.get(owner) !== members) dependencies.get(members)!.add(group.get(owner)!);
+    const prior = owners.get(ref);
+    if (prior && group.get(prior) !== group.get(unit)) dependencies.get(group.get(unit)!)!.add(group.get(prior)!);
   }
-  const ordered: typeof groups = [];
-  const visited = new Set<Set<UpdateUnit<T>>>();
-  function visit(members: Set<UpdateUnit<T>>) {
-    if (visited.has(members)) return;
-    visited.add(members);
-    for (const dependency of dependencies.get(members)!) visit(dependency);
-    ordered.push(members);
+
+  // Condense strongly connected references before testing any prefix. A cycle in
+  // this graph means "verify together"; the domain still decides whether it is legal.
+  const reverse = new Map(groups.map(members => [members, new Set<Group>()]));
+  for (const [members, prerequisites] of dependencies)
+    for (const prior of prerequisites) reverse.get(prior)!.add(members);
+  const finished: Group[] = [], seen = new Set<Group>();
+  function visit(members: Group) {
+    if (seen.has(members)) return;
+    seen.add(members);
+    for (const prior of dependencies.get(members)!) visit(prior);
+    finished.push(members);
   }
   groups.forEach(visit);
-  return { group, dependencies, ordered };
+  seen.clear();
+  const cyclic = new Map<Group, Group>();
+  function collect(members: Group, component: Group) {
+    if (seen.has(members)) return;
+    seen.add(members);
+    cyclic.set(members, component);
+    for (const unit of members) component.add(unit);
+    for (const next of reverse.get(members)!) collect(next, component);
+  }
+  for (const members of [...finished].reverse()) if (!seen.has(members)) collect(members, new Set());
+
+  // Prerequisites first for trials, original text/World order for execution.
+  const ordered = [...new Set(finished.map(members => cyclic.get(members)!))];
+  const condensed = new Map(ordered.map(members => [members, new Set<Group>()]));
+  for (const [members, prerequisites] of dependencies) {
+    const component = cyclic.get(members)!;
+    for (const prior of prerequisites) {
+      const prerequisite = cyclic.get(prior)!;
+      if (component !== prerequisite) condensed.get(component)!.add(prerequisite);
+    }
+    for (const unit of members) group.set(unit, component);
+  }
+  // Scene counterparts may be satisfied by other legal writes or by the base.
+  // Use these hints for trial order. Only entity dependencies propagate rejection.
+  const byIndex = new Map(units.map(unit => [unit.position.commandIndex, unit]));
+  const earlier = new Map(ordered.map(members => [members, new Set<Group>()]));
+  for (const unit of units) for (const index of unit.verifyAfter ?? []) {
+    const prior = byIndex.get(index);
+    if (prior && group.get(prior) !== group.get(unit)) earlier.get(group.get(unit)!)!.add(group.get(prior)!);
+  }
+  seen.clear();
+  const topological: Group[] = [];
+  function order(members: Group) {
+    if (seen.has(members)) return;
+    seen.add(members);
+    for (const prior of condensed.get(members)!) order(prior);
+    for (const prior of earlier.get(members)!) order(prior);
+    topological.push(members);
+  }
+  ordered.forEach(order);
+  return { group, dependencies: condensed, ordered: topological };
 }
 
 function reason(error: AiError): SkippedUpdate['reason'] {
@@ -115,23 +180,37 @@ export async function isolateUpdates<T, R>(units: readonly UpdateUnit<T>[],
         remove(group, primary, reason(error), settlementField([error.details?.valuePath, error.details?.fieldPath]));
         continue;
       }
-      // A final state constraint may span a group or have no single command index.
-      // Keep only complete groups that independently lead to a verified state.
+      // Unattributed constraints may be temporary. Retry pending groups after
+      // a successful addition before deciding what cannot be part of the verified result.
       const accepted = new Set<UpdateUnit<T>>();
+      const failures = new Map<Set<UpdateUnit<T>>, { error: AiError; primary?: UpdateUnit<T> }>();
       let result = await verify([]);
-      for (const group of ordered) {
-        if (![...group].some(unit => active.has(unit))) continue;
-        try {
-          result = await verify(units.filter(unit => accepted.has(unit) || group.has(unit)));
-          for (const unit of group) accepted.add(unit);
-        } catch (failure) {
-          if (!(failure instanceof AiError) || failure.code === 'variable_runtime') throw failure;
+      let progress: boolean;
+      do {
+        progress = false;
+        for (const group of ordered) {
+          if (![...group].some(unit => active.has(unit) && !accepted.has(unit))) continue;
+          if ([...dependencies.get(group)!].some(prior => ![...prior].every(unit => accepted.has(unit)))) continue;
           const attempted = units.filter(unit => accepted.has(unit) || group.has(unit));
-          const index = failure.details?.commandIndex;
-          const located = typeof index === 'number' ? attempted[index] : undefined;
-          remove(group, located && group.has(located) ? located : [...group][0],
-            reason(failure), settlementField([failure.details?.valuePath, failure.details?.fieldPath]));
+          try {
+            result = await verify(attempted);
+            for (const unit of group) accepted.add(unit);
+            progress = true;
+          } catch (failure) {
+            if (!(failure instanceof AiError) || failure.code === 'variable_runtime') throw failure;
+            const index = failure.details?.commandIndex;
+            const primary = typeof index === 'number' ? attempted[index] : undefined;
+            failures.set(group, { error: failure, primary });
+          }
         }
+      } while (progress);
+      for (const group of ordered) {
+        const first = [...group].find(unit => active.has(unit) && !accepted.has(unit));
+        if (!first) continue;
+        const failure = failures.get(group);
+        const primary = failure?.primary && group.has(failure.primary) ? failure.primary : first;
+        remove(group, primary, failure ? reason(failure.error) : 'dependency',
+          settlementField([failure?.error.details?.valuePath, failure?.error.details?.fieldPath]));
       }
       return finish(result);
     }

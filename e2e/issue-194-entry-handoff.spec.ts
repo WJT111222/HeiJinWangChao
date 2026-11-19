@@ -1,8 +1,9 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './helpers/test';
+import { correctPlace, isolationNpcIds, locationIsolationCommands, wrapUpdates, wrongPlace } from '../src/tests/fixtures/locationIsolation';
 import { openGameTools, openStageSwitches, openWorkflowDiagnostics } from './helpers/gameLayout';
 
-async function seed(page: Page, notification: boolean | 'legacy' | 'legacy-decision' | 'partial' = false, streamWorld = false) {
+async function seed(page: Page, notification: boolean | 'legacy' | 'legacy-decision' | 'partial' | 'location-isolation' = false, streamWorld = false) {
   await page.goto('/');
   return page.evaluate(async ({ notification, streamWorld }) => {
     const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/issue194.ts',
@@ -12,7 +13,7 @@ async function seed(page: Page, notification: boolean | 'legacy' | 'legacy-decis
     const settings = defaultSettings();
     settings.prompts.minNarrativeChars = 1;
     settings.prompts.actionOptions = false;
-    if (notification === 'partial') settings.runtime.streamWorld = streamWorld;
+    if (notification === 'partial' || notification === 'location-isolation') settings.runtime.streamWorld = streamWorld;
     for (const value of Object.values(settings.memory.summaries) as { automatic: boolean }[]) value.automatic = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel();
@@ -26,6 +27,11 @@ async function seed(page: Page, notification: boolean | 'legacy' | 'legacy-decis
     saveAiConfig(localStorage, config);
     new CredentialVault(sessionStorage, localStorage).set(channel.id, 'event-entry-mock-only');
     const { state, draft, response, successor, terminal } = issue194();
+    if (notification === 'location-isolation') {
+      const fixturePath = '/src/tests/fixtures/locationIsolation.ts';
+      const { locationsForIsolation } = await import(fixturePath);
+      Object.assign(state, locationsForIsolation().state);
+    }
     if (notification === true) {
       const event = state.events['handoff-source'];
       const cue = '汇报三家分店谈判的结果，无需回应。';
@@ -47,7 +53,7 @@ async function seed(page: Page, notification: boolean | 'legacy' | 'legacy-decis
     }
     const repo = await SaveRepository.open();
     try {
-      const entry = { state, draft: notification === true || notification === 'partial'
+      const entry = { state, draft: notification === true || notification === 'partial' || notification === 'location-isolation'
         ? createTurnDraft(state.saveId, state.revision, draft.turnId, 'regular', '') : draft };
       await repo.importBackup(entry, (await repo.compareBackup(entry)).confirmation);
     } finally { repo.close(); }
@@ -448,4 +454,65 @@ test('局部容错：两个阶段各自跳过，保留到期入场、重载并�
   expect(second.events['handoff-next'].protagonistEntry.status).toBe('presented');
   expect(second.appliedCommands.filter((command:{commandId:string})=>command.commandId==='org-partial-valid')).toHaveLength(1);
   expect(calls).toEqual(['story','variables','world','story','variables','world']);
+});
+
+test('地点精确隔离：第 4 条跳过，25 条有效更新一次提交、重载与撤回', async ({ page, isMobile }, info) => {
+  await seed(page,'location-isolation',isMobile);
+  const calls: string[] = [];
+  await page.route('https://event-entry-194.mock.invalid/**',async route=>{
+    expect(route.request().method()).toBe('POST');
+    const request = route.request().postDataJSON();
+    calls.push(request.model);
+    let reply: string;
+    if (request.model === 'story') {
+      reply = '<thinking>按已发生的现场写入。</thinking><正文>五分钟后，主角与同伴到达样本工作间并核对物品。</正文><短期记忆>同伴一同登记样本。</短期记忆><变量规划>[]</变量规划>';
+    } else if (request.model === 'variables') {
+      reply = wrapUpdates(locationIsolationCommands().join('\n'));
+    } else {
+      expect(request.model).toBe('world');
+      const message = request.messages.find((item: { content: string }) => item.content.startsWith('<GAME_CONTEXT>'));
+      const context = JSON.parse(message.content.slice('<GAME_CONTEXT>\n'.length,-'\n</GAME_CONTEXT>'.length));
+      expect(context.VARIABLE_RESULT.result.settlement).toEqual({
+        accepted:25, skipped:[{group:'variables',commandIndex:3,groupIndex:3,category:'item',field:'locationId',reason:'reference'}],
+      });
+      expect(context.SAVE_STATE.protagonist.locationId).toBe(correctPlace);
+      reply = wrapUpdates(JSON.stringify({worldCommands:[],taskCommands:[],eventCommands:[],visibleHooks:[],unresolved:[]}));
+    }
+    await (request.stream
+      ? route.fulfill({contentType:'text/event-stream',body:`data: ${JSON.stringify({choices:[{delta:{content:reply}}]})}\n\ndata: [DONE]\n\n`})
+      : route.fulfill({json:{choices:[{message:{content:reply},finish_reason:'stop'}]}}));
+  });
+  await page.goto('/#game/save-a');
+  await page.reload();
+  const before = (await stored(page)).state;
+  await page.getByLabel('你的行动',{exact:true}).fill('登记合成样本');
+  await page.getByRole('button',{name:'发送',exact:true}).click();
+  const summary = page.getByText('本回合已结算，跳过 1 项更新',{exact:true});
+  await expect(summary).toBeVisible();
+  await summary.click();
+  await expect(page.getByText(/变量第 4 条.*物品.*locationId/u)).toBeVisible();
+  await expect(page.getByText(wrongPlace,{exact:false})).toHaveCount(0);
+  const committed = (await stored(page)).state;
+  expect(committed.turnNumber).toBe(before.turnNumber+1);
+  expect(committed.protagonist.locationId).toBe(correctPlace);
+  expect(committed.protagonist.currentWear).toEqual({accessoryItemIds:[]});
+  expect(committed.items['item-a']).toEqual(before.items['item-a']);
+  expect(committed.items['item-b'].locationId).toBe(correctPlace);
+  expect(committed.npc['npc-a']).toMatchObject({ locationId:correctPlace,onScene:true,affinity:35,memories:[{text:'合成记忆 npc-a'}] });
+  for (const id of isolationNpcIds)
+    expect(committed.npc[id]).toMatchObject({locationId:correctPlace,onScene:true,memories:[{text:`合成记忆 ${id}`}]});
+  expect(committed.locations[correctPlace]).toMatchObject({parentId:'place-parent'});
+  expect(committed.locations[wrongPlace]).toBeUndefined();
+  expect(calls).toEqual(['story','variables','world']);
+  await page.screenshot({path:info.outputPath('地点精确隔离.png')});
+  await page.reload();
+  await expect(summary).toBeVisible();
+  expect((await stored(page)).state).toEqual(committed);
+  await openGameTools(page);
+  await page.getByRole('button',{name:'撤回（1）',exact:true}).click();
+  await page.getByRole('button',{name:'确认撤回',exact:true}).click();
+  await expect.poll(async ()=>(await stored(page)).state.turnNumber).toBe(before.turnNumber);
+  const undone = (await stored(page)).state;
+  for (const field of ['npc','items','locations','protagonist','journal'] as const) expect(undone[field]).toEqual(before[field]);
+  expect(calls).toEqual(['story','variables','world']);
 });
