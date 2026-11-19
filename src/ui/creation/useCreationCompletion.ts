@@ -14,13 +14,16 @@ const steps: Record<Field, number> = { appearance: 1, personality: 1, profession
 
 function inputFor(field: Field, form: Creation): CreationCompletionInput | undefined {
   if (steps[field] !== form.step) return;
+  const { name, age, gender, appearance, personality } = form.person;
+  const person = { name, age, gender };
   switch (field) {
-    case 'appearance': return { kind: field, appearance: form.person.appearance };
-    case 'personality': return { kind: field, personality: form.person.personality };
-    case 'background': return { kind: field, background: form.background, profession: professionName(form), personality: form.person.personality };
+    case 'appearance': return { kind: field, person, appearance };
+    case 'personality': return { kind: field, person, personality };
+    case 'background': return { kind: field, person, background: form.background, profession: professionName(form), personality };
     case 'profession':
       if (form.profession === 'custom' && form.customProfession.trim()) return {
         kind: field,
+        person,
         profession: form.customProfession,
         professionDescription: form.professionDescription ?? '',
         professionSkills: form.skills,

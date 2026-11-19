@@ -11,11 +11,12 @@ const defaultJob = {
   professionLongTermImpact:'长期工作会积累专业判断、同行协作经验和稳定的信息检索习惯。事务高峰期也会带来时间安排压力。',
 };
 const longJob = {...defaultJob,professionSkills:[...defaultJob.professionSkills,'谈判支持','合规复核']};
+const basicInfo = {name:'林舟',age:'30',gender:'女性'};
 const person = (page:Page,label:string)=>page.getByLabel(label,{exact:true});
 const button = (page:Page,label:string)=>page.getByRole('button',{name:'AI补全'+label.replace('（可选）',''),exact:true});
 const next = (page:Page)=>page.getByRole('button',{name:/下一步/}).click();
 
-async function start(page:Page) {
+async function start(page:Page, fillBasics = true) {
   await page.addInitScript((baseUrl)=>{
     const channel={id:'creation-story',name:'正文测试渠道',baseUrl,protocol:'openai',defaultModel:'wrong-default',
       parameters:{temperature:0.68,maxOutputTokens:9000},compatibility:{temperature:true,maxOutputTokens:true,jsonMode:true,cotMode:'confirmation',cotModels:[]}};
@@ -25,9 +26,11 @@ async function start(page:Page) {
   },url);
   await page.goto('/');
   await page.getByRole('button',{name:/开始新游戏/}).click();
-  await person(page,'姓名').fill('林舟');
-  await person(page,'年龄').fill('30');
-  await page.getByRole('radio',{name:'女性',exact:true}).check();
+  if (fillBasics) {
+    await person(page,'姓名').fill(basicInfo.name);
+    await person(page,'年龄').fill(basicInfo.age);
+    await page.getByRole('radio',{name:basicInfo.gender,exact:true}).check();
+  }
 }
 
 async function checkPlacement(page:Page,label:string) {
@@ -47,7 +50,7 @@ function reply(content:string) {
 }
 
 test('四个独立入口，原样传入已有要求，职业默认与显式技能数量一次补齐',async({page},info)=>{
-  const requests: {system:string;input:Record<string,string>}[]=[];
+  const requests: {system:string;input:Record<string,unknown>}[]=[];
   let resumeAppearance!:()=>void;
   const holdAppearance=new Promise<void>(resolve=>{resumeAppearance=resolve;});
   await page.route(url+'/**',async route=>{
@@ -55,12 +58,12 @@ test('四个独立入口，原样传入已有要求，职业默认与显式技�
     expect(route.request().headers().authorization).toBe('Bearer fixture-browser-creation-key');
     expect(JSON.stringify(body)).not.toContain('fixture-browser-creation-key');
     expect(body).toMatchObject({model:'story-creation-mock',temperature:0.68,stream:false});
-    const [system,user]=body.messages, input=JSON.parse(user.content) as Record<string,string>;
+    const [system,user]=body.messages, input=JSON.parse(user.content) as Record<string,unknown>;
     requests.push({system:system.content,input});
     let text: string;
     if ('appearance' in input) { await holdAppearance; text=appearanceText; }
     else if ('background' in input) text=backgroundText;
-    else if ('professionSkills' in input) text=JSON.stringify(input.professionSkills.includes('6 项')?longJob:defaultJob);
+    else if (typeof input.professionSkills === 'string') text=JSON.stringify(input.professionSkills.includes('6 项')?longJob:defaultJob);
     else text=personalityText;
     await route.fulfill({json:reply(text)});
   });
@@ -77,16 +80,16 @@ test('四个独立入口，原样传入已有要求，职业默认与显式技�
     await expect(button(page,'外貌')).toHaveText('生成中…');
     await expect(button(page,'性格')).toBeEnabled();
     await expect.poll(()=>requests.length).toBe(1);
-    await person(page,'姓名').fill('林舟改');
     await button(page,'性格').click();
     await expect(personality).toHaveValue(personalityText);
     await expect(appearances).toHaveValue('身材高大，戴眼镜，帮我写 300 字。');
   } finally { resumeAppearance(); }
   await expect(appearances).toHaveValue(appearanceText);
   await expect(personality).toHaveValue(personalityText);
-  await expect(person(page,'姓名')).toHaveValue('林舟改');
-  expect(requests[0]).toMatchObject({system:expect.stringContaining('150–200'),input:{appearance:'身材高大，戴眼镜，帮我写 300 字。'}});
-  expect(requests[1]).toMatchObject({system:expect.stringContaining('性格补全'),input:{personality:'冷静谨慎、有野心，简单描述，100 字。'}});
+  expect(requests[0].system).toContain('150–200');
+  expect(requests[0].input).toEqual({person:basicInfo,appearance:'身材高大，戴眼镜，帮我写 300 字。'});
+  expect(requests[1].system).toContain('性格补全');
+  expect(requests[1].input).toEqual({person:basicInfo,personality:'冷静谨慎、有野心，简单描述，100 字。'});
   await button(page,'外貌').scrollIntoViewIfNeeded();
   await page.screenshot({path:info.outputPath('basic.png')});
 
@@ -102,15 +105,15 @@ test('四个独立入口，原样传入已有要求，职业默认与显式技�
   await expect(skills).toHaveValue(defaultJob.professionSkills.join('\n'));
   await expect(impact).toHaveValue(defaultJob.professionLongTermImpact);
   await expect(job).toHaveValue('社区律师');
-  expect(requests[2]).toMatchObject({system:expect.stringMatching(/150–200[\s\S]*4 项[\s\S]*100–150/u),
-    input:{profession:'社区律师',professionDescription:'',professionSkills:'',professionLongTermImpact:''}});
+  expect(requests[2].system).toMatch(/150–200[\s\S]*4 项[\s\S]*100–150/u);
+  expect(requests[2].input).toEqual({person:basicInfo,profession:'社区律师',professionDescription:'',professionSkills:'',professionLongTermImpact:''});
   await description.fill('保留合同工作，介绍写 200 字。');
   await skills.fill('技能 6 项');
   await impact.fill('保留客户沟通，长期影响写 180 字。');
   await button(page,'职业介绍').click();
   await expect(skills).toHaveValue(longJob.professionSkills.join('\n'));
   await expect(job).toHaveValue('社区律师');
-  expect(requests[3].input).toEqual({profession:'社区律师',professionDescription:'保留合同工作，介绍写 200 字。',
+  expect(requests[3].input).toEqual({person:basicInfo,profession:'社区律师',professionDescription:'保留合同工作，介绍写 200 字。',
     professionSkills:'技能 6 项',professionLongTermImpact:'保留客户沟通，长期影响写 180 字。'});
   await button(page,'职业介绍').scrollIntoViewIfNeeded();
   await page.screenshot({path:info.outputPath('profession.png')});
@@ -121,13 +124,68 @@ test('四个独立入口，原样传入已有要求，职业默认与显式技�
   await checkPlacement(page,backgroundLabel);
   await button(page,backgroundLabel).click();
   await expect(person(page,backgroundLabel)).toHaveValue(backgroundText);
-  expect(requests[4]).toMatchObject({system:expect.stringContaining('300–500'),
-    input:{background:'社区长大，扩写到 800 字。',profession:'社区律师',personality:personalityText}});
+  expect(requests[4].system).toContain('300–500');
+  expect(requests[4].input).toEqual({person:basicInfo,background:'社区长大，扩写到 800 字。',profession:'社区律师',personality:personalityText});
   await button(page,backgroundLabel).scrollIntoViewIfNeeded();
   await page.screenshot({path:info.outputPath('background.png')});
   await page.reload();
   await expect(person(page,backgroundLabel)).toHaveValue(backgroundText);
+  await page.getByRole('button',{name:'上一步',exact:true}).click();
+  await expect(job).toHaveValue('社区律师');
+  await page.getByRole('button',{name:'上一步',exact:true}).click();
+  await expect(person(page,'姓名')).toHaveValue(basicInfo.name);
+  await expect(person(page,'年龄')).toHaveValue(basicInfo.age);
+  await expect(page.getByRole('radio',{name:basicInfo.gender,exact:true})).toBeChecked();
   expect(requests).toHaveLength(5);
+});
+
+test('基本资料和补全文本可以留空，随后的姓名、年龄、性别编辑逐项丢弃迟到响应',async({page})=>{
+  const requestBodies: unknown[]=[];
+  let resume!:()=>void;
+  let finished:Promise<void>|undefined;
+  await page.route(url+'/**',async route=>{
+    const body=route.request().postDataJSON();
+    requestBodies.push(JSON.parse(body.messages[1].content));
+    if (requestBodies.length === 1) {
+      await route.fulfill({json:reply(appearanceText)});
+      return;
+    }
+    await new Promise<void>(resolve=>{resume=resolve;});
+    finished=route.fulfill({json:reply('迟到的旧设定')}).catch(()=>{ /* 编辑基本资料已中止请求。 */ });
+    await finished;
+  });
+  await start(page,false);
+  const appearances=person(page,'外貌'), buttonAppearance=button(page,'外貌');
+  await expect(appearances).toHaveValue('');
+  await buttonAppearance.click();
+  await expect(appearances).toHaveValue(appearanceText);
+  expect(requestBodies).toEqual([{person:{name:'',age:'',gender:''},appearance:''}]);
+
+  const current={name:'',age:'',gender:''};
+  const changes=[
+    ['name','林舟',()=>person(page,'姓名').fill('林舟')],
+    ['age','30',()=>person(page,'年龄').fill('30')],
+    ['gender','女性',()=>page.getByRole('radio',{name:'女性',exact:true}).check()],
+  ] as const;
+  for (const [index,[key,value,edit]] of changes.entries()) {
+    finished=undefined;
+    await buttonAppearance.click();
+    await expect.poll(()=>requestBodies.length).toBe(index+2);
+    expect(requestBodies[index+1]).toEqual({person:current,appearance:appearanceText});
+    try {
+      await expect(buttonAppearance).toBeDisabled();
+      await edit();
+      await expect(buttonAppearance).toBeEnabled();
+    } finally { resume(); }
+    await expect.poll(()=>finished !== undefined).toBe(true);
+    await finished;
+    current[key]=value;
+    await expect(appearances).toHaveValue(appearanceText);
+  }
+  await expect(person(page,'姓名')).toHaveValue(basicInfo.name);
+  await expect(person(page,'年龄')).toHaveValue(basicInfo.age);
+  await expect(page.getByRole('radio',{name:basicInfo.gender,exact:true})).toBeChecked();
+  expect(requestBodies).toHaveLength(4);
 });
 
 test('失败保留数据，编辑和跨步骤的迟到响应失效，普通建档不多发请求',async({page})=>{

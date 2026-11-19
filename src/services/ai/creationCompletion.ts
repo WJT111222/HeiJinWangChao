@@ -6,11 +6,12 @@ import type { CredentialVault } from './credentials';
 import { AiError } from './errors';
 import { channelSnapshot, resolveModelRoute } from './snapshot';
 
-export type CreationCompletionInput =
+export type CreationCompletionInput = { person: Readonly<{ name: string; age: string; gender: string }> } & (
   | { kind: 'appearance'; appearance: string }
   | { kind: 'personality'; personality: string }
   | { kind: 'background'; background: string; profession: string; personality: string }
-  | { kind: 'profession'; profession: string; professionDescription: string; professionSkills: string; professionLongTermImpact: string };
+  | { kind: 'profession'; profession: string; professionDescription: string; professionSkills: string; professionLongTermImpact: string }
+);
 
 const nonempty = z.string().trim().min(1);
 const professionResult = z.strictObject({
@@ -51,7 +52,7 @@ export async function completeCreation(
   options: { signal: AbortSignal; timeoutSeconds?: number },
   client = new AiClient(),
 ) {
-  const { kind, ...fields } = input;
+  const { kind, person, ...fields } = input;
   if (input.kind === 'profession' && !input.profession.trim()) throw new AiError('configuration');
   const { channel, model } = resolveModelRoute(config, 'story');
   const budget = outputBudget(kind, fields);
@@ -65,13 +66,13 @@ export async function completeCreation(
     catch { return textForms; }
   });
   const containsCredential = (text: string) => secrets.some(secret => text.includes(secret));
-  if (Object.values(fields).some(containsCredential)) throw new AiError('credentials');
+  if ([...Object.values(person), ...Object.values(fields)].some(containsCredential)) throw new AiError('credentials');
 
   const prompt = await readPromptResource(`creation.${kind}`);
   if (options.signal.aborted) throw new AiError('cancelled');
   const response = await client.generate(snapshot, [
     { role: 'system', content: prompt },
-    { role: 'user', content: JSON.stringify(fields) },
+    { role: 'user', content: JSON.stringify({ person, ...fields }) },
   ], { ...options, stream: false, recordInspection: false });
   const text = response.text.trim();
   if (!text || containsCredential(text)) throw new AiError('invalid_output');
