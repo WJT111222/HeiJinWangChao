@@ -1,9 +1,10 @@
 import type { WorldTask } from '../../domain/events/schema';
 import { requireWorld } from './worldDiagnostics';
 
-/** 只容许首尾空白、顿号旁的横向空格和全角数字差异。 */
+/** 只容许首尾空白、顿号两侧及指定中文标点后的普通/全角空格和全角数字差异。 */
 const taskTextKey = (text: string) => text.trim()
   .replace(/[ \u3000]*、[ \u3000]*/gu, '、')
+  .replace(/([，。；：！？])[ \u3000]+/gu, '$1')
   .replace(/[０-９]/gu, digit => String.fromCharCode(digit.charCodeAt(0) - 0xfee0));
 export function sameTaskText(a: string | undefined, b: string | undefined) {
   return a === b || (a !== undefined && b !== undefined && taskTextKey(a) === taskTextKey(b));
