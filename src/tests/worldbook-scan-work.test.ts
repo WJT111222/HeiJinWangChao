@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { WorkMeter } from '../domain/worldbook/keyMatch';
-import { PlainIndex } from '../domain/worldbook/plainIndex';
+import { WORK_WEIGHTS, WorkMeter } from '../domain/worldbook/keyMatch';
+import { PLAIN_INDEX_WEIGHTS, PlainIndex } from '../domain/worldbook/plainIndex';
 import type { WorldbookEntry } from '../domain/worldbook/schema';
 import { EMPTY_TIMED_STATE } from '../domain/worldbook/timedEffects';
 import { DEFAULT_TRIGGER_SETTINGS, runWorldbookTrigger, type TriggerInput, type TriggerResult } from '../domain/worldbook/trigger';
@@ -22,6 +22,25 @@ function run(entries: WorldbookEntry[], messages: string[], extra: Partial<Trigg
     books: [{ bookId: 'b', versionId: 'v', entries }], messages, contextTokens: 100_000, storyRemainingTokens: 50_000,
     trigger: 'normal', messageCount: 1, timedState: EMPTY_TIMED_STATE, seed: 's', ...extra,
   });
+}
+
+/**
+ * 恰好够判断完 ids 这些条目的最小工作量上限。
+ * 用来构造“超限发生在某几个条目之后”的场景，不依赖具体权重数值。
+ */
+function limitAfter(entries: WorldbookEntry[], messages: string[], ids: string[], extra: Partial<TriggerInput> = {}): number {
+  const done = (limit: number) => {
+    const r = run(entries, messages, { ...extra, settings: { ...extra.settings, maxScanWork: limit } });
+    // 已判断过：原因不是“未完成判断”；或已判断、但因同组成员未判断完而不激活（这条规则本身就要求本轮超限）。
+    return ids.every((id) => {
+      const d = r.decisions.find((x) => x.entryId === id);
+      return d !== undefined && (d.reason !== 'scan_limit_reached' || d.detail === '同组条目未判断完');
+    });
+  };
+  let lo = 0, hi = 1;
+  while (!done(hi)) hi *= 2;
+  while (hi - lo > 1) { const mid = Math.floor((lo + hi) / 2); if (done(mid)) hi = mid; else lo = mid; }
+  return hi;
 }
 
 describe('一次扫描索引与逐个判断结果一致', () => {
@@ -89,7 +108,8 @@ describe('单次扫描工作量上限', () => {
     const a = entry({ entryId: 'a', order: 300, keys: ['码头'], content: '搬运帮' });
     const b = entry({ entryId: 'b', order: 200, keys: ['搬运帮'] });
     const filler = Array.from({ length: 200 }, (_, i) => entry({ entryId: `f${i}`, order: 100, keys: [`/x{1,40}${i}/`] }));
-    const r = run([a, b, ...filler], ['码头'], { settings: { recursive: true, maxScanWork: 150_000 } });
+    const entries = [a, b, ...filler];
+    const r = run(entries, ['码头'], { settings: { recursive: true, maxScanWork: limitAfter(entries, ['码头'], ['a'], { settings: { recursive: true } }) } });
     expect(r.work.exhausted?.loop).toBe(1);
     expect(r.loops).toBe(1);
     expect(r.activated.map((x) => x.entryId)).toEqual(['a']);
@@ -172,7 +192,8 @@ describe('分组处理计入单次扫描工作量（独立审查 P2-5）', () =>
     const plain = entry({ entryId: 'plain', order: 290, keys: ['码头'], content: '无分组' });
     const filler = Array.from({ length: 200 }, (_, i) => entry({ entryId: `f${i}`, order: 200, keys: [`/x{1,40}${i}/`] }));
     const last = entry({ entryId: 'last', order: 100, keys: ['码头'], group: 'g', content: '没轮到的组员' });
-    const r = run([first, plain, ...filler, last], ['码头'], { settings: { maxScanWork: 150_000 } });
+    const entries = [first, plain, ...filler, last];
+    const r = run(entries, ['码头'], { settings: { maxScanWork: limitAfter(entries, ['码头'], ['first', 'plain']) } });
     expect(r.work.exhausted?.loop).toBe(1);
     expect(r.activated.map((a) => a.entryId)).toEqual(['plain']);
     expect(r.decisions.find((d) => d.entryId === 'first')).toMatchObject({ reason: 'scan_limit_reached', detail: '同组条目未判断完' });
@@ -259,12 +280,20 @@ describe('P2-5 剩余：超大分组、高预算与不计工作量的阶段（�
 
   it('评估阶段超限后移出分组候选：线性时间（分组与非分组交错 6 万条）', () => {
     const entries = Array.from({ length: 60_000 }, (_, i) => entry({ entryId: `x${i}`, constant: true, group: i % 2 ? '' : `g${i}`, content: '内' }));
+    const open = { contextTokens: 1e9, storyRemainingTokens: 1e9 };
+    // 上限取完整工作量的一半：分组阶段的开销远小于一半，超限必然发生在第 1 轮判断中，与具体权重无关。
+    const full = run(entries, ['码头'], { settings: { budgetCap: 1e9, maxScanWork: 1e13 }, ...open });
     const started = Date.now();
-    const r = run(entries, ['码头'], { settings: { budgetCap: 1e9 }, contextTokens: 1e9, storyRemainingTokens: 1e9 });
+    const r = run(entries, ['码头'], { settings: { budgetCap: 1e9, maxScanWork: Math.floor(full.work.used / 2) }, ...open });
     const elapsed = Date.now() - started;
     expect(r.work.exhausted?.loop).toBe(1);
     expect(r.activated.every((a) => !a.entryId || Number(a.entryId.slice(1)) % 2 === 1)).toBe(true);
-    expect(r.decisions.filter((d) => d.detail === '同组条目未判断完').length).toBeGreaterThan(20_000);
+    // 超限位置之前的每个分组条目都已判断、并被移出（偶数编号是分组条目）；规模不少于 1 万条。
+    const stoppedAt = Number(r.work.exhausted!.key.split('#x')[1]);
+    const removed = r.decisions.filter((d) => d.detail === '同组条目未判断完');
+    expect(removed.length).toBe(Math.ceil(stoppedAt / 2));
+    expect(removed.every((d) => Number(d.entryId.slice(1)) % 2 === 0 && Number(d.entryId.slice(1)) < stoppedAt)).toBe(true);
+    expect(removed.length).toBeGreaterThan(10_000);
     expect(elapsed).toBeLessThan(3000);
   }, 60_000);
 
@@ -303,6 +332,44 @@ describe('P2-5 剩余：超大分组、高预算与不计工作量的阶段（�
     for (const group of r.plan.atDepth) {
       expect(group.contents).toEqual(ordered.filter((a) => a.position === 4 && a.depth === group.depth && a.role === group.role).map((a) => a.content).reverse());
     }
+  });
+});
+
+describe('工作量权重重标定（第二轮审查批准）', () => {
+  const used = (entries: WorldbookEntry[], messages = ['茶馆'], settings: Partial<TriggerInput['settings']> = {}) =>
+    run(entries, messages, { settings: { maxScanWork: 1e13, ...settings } }).work.used;
+
+  it('建索引按新建结点计费：总字数相同，共享前缀的关键词比互不相同的便宜', () => {
+    const shared = [entry({ keys: Array.from({ length: 200 }, (_, i) => `码头码头码头码头码头${String.fromCharCode(0x4e00 + i)}`) })];
+    const unique = [entry({ keys: Array.from({ length: 200 }, (_, i) => Array.from({ length: 11 }, (_, k) => String.fromCharCode(0x5000 + i * 11 + k)).join('')) })];
+    const diff = used(unique) - used(shared);
+    // 200 个关键词各 11 字：共享前缀时约 200 + 10 个结点，互不相同时 2200 个结点
+    expect(diff).toBeGreaterThanOrEqual((2200 - 210) * PLAIN_INDEX_WEIGHTS.newNode);
+  });
+
+  it('登记关键词按字数计费：长关键词比短关键词贵', () => {
+    const short = used([entry({ keys: ['甲'] })]);
+    const long = used([entry({ keys: ['甲'.repeat(1000)] })]);
+    expect(long - short).toBeGreaterThanOrEqual(999 * WORK_WEIGHTS.registerChar);
+  });
+
+  it('命中的条目预付收尾开销；恰好付不起时按“未完成判断”处理，不激活', () => {
+    const hit = entry({ entryId: 'hit', keys: ['码头'] });
+    const miss = entry({ entryId: 'miss', keys: ['码头'] });
+    expect(used([hit], ['码头']) - used([miss], ['茶馆'])).toBeGreaterThanOrEqual(WORK_WEIGHTS.candidate);
+    const full = run([hit], ['码头'], { settings: { maxScanWork: 1e13 } });
+    const r = run([hit], ['码头'], { settings: { maxScanWork: full.work.used - 1 } });
+    expect(r.activated).toEqual([]);
+    expect(r.decisions[0]).toMatchObject({ entryId: 'hit', reason: 'scan_limit_reached' });
+  });
+
+  it('大量互不相同的长关键词：默认上限内停止，不会先建出巨大的索引', () => {
+    const entries = Array.from({ length: 4000 }, (_, i) => entry({ entryId: `l${i}`, keys: Array.from({ length: 20 }, (_, k) => `${i}_${k}_`.padEnd(40, String.fromCharCode(0x4e00 + ((i * 20 + k) % 20000)))) }));
+    const started = Date.now();
+    const r = run(entries, ['码头']);
+    expect(r.work.exhausted).toBeDefined();
+    expect(r.work.used <= DEFAULT_TRIGGER_SETTINGS.maxScanWork).toBe(true);
+    expect(Date.now() - started).toBeLessThan(3000);
   });
 });
 

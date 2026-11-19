@@ -43,12 +43,19 @@ export const WORK_WEIGHTS = {
   regexCompileState: 300,
   /** 每判断一个条目的固定开销（实测约 1.6 微秒）。 */
   entry: 2_000,
-  /** 每次关键词判断的固定开销（分类、转小写、查索引）。 */
-  keyCheck: 800,
-  /** 扫描前登记一个关键词。 */
+  /**
+   * 条目被判定命中时预付后续收尾的开销：排序、预算判断、写入插入计划与结果（实测每条约 1.1～1.6 微秒，含垃圾回收）。
+   * 收尾阶段本身不计费（不能在中途停下），所以在成为候选时预付；扣不下时该条目按“未完成判断”处理。
+   */
+  candidate: 2_500,
+  /** 每次关键词判断的固定开销（分类、转小写、拆分判断是否单词、查索引；实测约 1.4～1.7 微秒）。 */
+  keyCheck: 1_700,
+  /** 扫描前登记一个关键词：固定部分。 */
   register: 300,
-  /** 计算计时效果指纹：每个正文字符（实测约 14 纳秒）。 */
-  fingerprintChar: 16,
+  /** 登记关键词：每个字符（分类、转小写、放入集合；长关键词实测约 30 纳秒 / 字符）。 */
+  registerChar: 35,
+  /** 计算计时效果指纹：每个正文字符（实测约 14～19 纳秒）。 */
+  fingerprintChar: 22,
   /** 分组：拆分组名字符串，每个字符。 */
   groupChar: 8,
   /** 分组：每个“条目 × 组名”成员（重复的组名每次出现都算），预付登记、Sticky / 计时筛选、移出与抽选的开销。 */
@@ -89,7 +96,7 @@ export class KeyMatcher {
 
   /** 扫描前登记普通关键词（已做宏替换与去空白）；之后对这些关键词的判断走一次扫描索引。 */
   register(needle: string, caseSensitive: boolean) {
-    this.meter.charge(WORK_WEIGHTS.register);
+    this.meter.charge(WORK_WEIGHTS.register + needle.length * WORK_WEIGHTS.registerChar);
     if (classifyKey(needle).kind === 'regex') return;
     if (caseSensitive) this.plain.sensitive.add(needle);
     else this.plain.insensitive.add(needle.toLowerCase());

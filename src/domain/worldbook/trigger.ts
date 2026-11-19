@@ -308,7 +308,10 @@ export function runWorldbookTrigger(input: TriggerInput): TriggerResult {
       if (failedProbability.has(item.key) || activated.has(item.key)) continue;
       try {
         const hit = evaluate(item, state);
-        if (hit) found.push(hit);
+        if (hit) {
+          meter.charge(WORK_WEIGHTS.candidate); // 预付收尾开销；扣不下时与未判断的条目同样处理
+          found.push(hit);
+        }
       } catch (error) {
         if (!(error instanceof ScanLimitReached)) throw error;
         exhausted ??= { loop, key: item.key };

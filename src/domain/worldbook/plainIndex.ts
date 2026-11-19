@@ -9,8 +9,13 @@ import type { WorkMeter } from './keyMatch';
  * 判断结果与逐个 includes / 完整词边界检查完全相同（测试中做差分对照）。
  */
 export const PLAIN_INDEX_WEIGHTS = {
-  /** 建索引：每个关键词字符。 */
-  buildChar: 8,
+  /** 建索引：每个关键词字符的遍历（已有结点）。 */
+  buildChar: 40,
+  /**
+   * 建索引：每新建一个结点（在分配前扣除）。每个结点一个 Map，实测约 600 纳秒、约 270 字节内存（含失败链计算）。
+   * 按结点而不是按字符计，共享前缀的关键词仍然便宜；默认上限 1 亿单位下最多约 15 万个结点（约 40 MB），内存有界。
+   */
+  newNode: 650,
   /** 扫描：每个文本字符。 */
   scanChar: 6,
   /** 每处命中（含完整词边界检查，实测约 16 纳秒）。 */
@@ -54,7 +59,10 @@ export class PlainIndex {
       for (let i = 0; i < needle.length; i++) {
         const c = needle.charCodeAt(i);
         let next = children[node].get(c);
-        if (next === undefined) { next = children.length; children.push(new Map()); output.push(-1); children[node].set(c, next); }
+        if (next === undefined) {
+          meter.charge(PLAIN_INDEX_WEIGHTS.newNode);
+          next = children.length; children.push(new Map()); output.push(-1); children[node].set(c, next);
+        }
         node = next;
       }
       output[node] = id;
