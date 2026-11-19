@@ -4,7 +4,7 @@ import { importWorldbookValue } from '../domain/worldbook/importWorldbook';
 import { contentHash } from '../domain/worldbook/canonical';
 import type { WorldbookRelease } from '../domain/worldbook/schema';
 import { SaveRepository, saveDatabaseVersion } from '../services/storage/saveRepository';
-import { WORLDBOOK_LIBRARY_VERSION, WorldbookLibrary, type LibraryFailure } from '../services/storage/worldbookLibrary';
+import { LIBRARY_LIMITS, WORLDBOOK_LIBRARY_VERSION, WorldbookLibrary, type LibraryFailure, type LibraryLimits } from '../services/storage/worldbookLibrary';
 import { sillyTavernDictBook } from './fixtures/worldbooks';
 import { worldState } from './fixtures/world';
 
@@ -15,8 +15,8 @@ async function release(title = '码头志', extra: Record<string, unknown> = {})
   if (!result.ok) throw new Error('fixture import failed');
   return result.release;
 }
-async function open(name: string, factory: IDBFactory = new IDBFactory()) {
-  const opened = await WorldbookLibrary.open({ name, factory });
+async function open(name: string, factory: IDBFactory = new IDBFactory(), limits?: Partial<LibraryLimits>) {
+  const opened = await WorldbookLibrary.open({ name, factory, limits });
   if (!opened.ok) throw new Error(`open failed: ${opened.code}`);
   return opened.library;
 }
@@ -36,13 +36,13 @@ async function rawStore(factory: IDBFactory, name: string, store: string, edit: 
 describe('阶段 C1：本地书库（独立附属数据库）', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('建库：独立数据库与两张表，结构版本 1；不创建、不打开游戏主库', async () => {
+  it('建库：独立数据库与三张表，结构版本 2；不创建、不打开游戏主库', async () => {
     const factory = new IDBFactory(), name = uniqueName('schema');
     const library = await open(name, factory);
     library.close();
     const db = await new Promise<IDBDatabase>((resolve) => { const r = factory.open(name); r.onsuccess = () => resolve(r.result); });
     expect(db.version).toBe(WORLDBOOK_LIBRARY_VERSION);
-    expect([...db.objectStoreNames].sort()).toEqual(['books', 'releases']);
+    expect([...db.objectStoreNames].sort()).toEqual(['books', 'releases', 'summaries']);
     const tx = db.transaction('releases', 'readonly');
     expect([...tx.objectStore('releases').indexNames].sort()).toEqual(['bookId', 'contentHash']);
     db.close();
@@ -62,8 +62,10 @@ describe('阶段 C1：本地书库（独立附属数据库）', () => {
     const books = await library.listBooks();
     expect(books).toMatchObject({ ok: true, books: [{ bookId: r.bookId, versionCount: 1 }] });
     const versions = await library.listVersions(r.bookId);
-    expect(versions).toEqual({ ok: true, versions: [{ bookId: r.bookId, versionId: r.versionId, versionLabel: r.versionLabel, contentHash: r.contentHash,
-      title: '码头志', entryCount: r.entries.length, installedAt: 1000 }] });
+    const keyCount = r.entries.reduce((n, e) => n + e.keys.length + e.secondaryKeys.length, 0);
+    expect(versions).toMatchObject({ ok: true, versions: [{ bookId: r.bookId, versionId: r.versionId, versionLabel: r.versionLabel, contentHash: r.contentHash,
+      title: '码头志', entryCount: r.entries.length, keyCount, installedAt: 1000 }] });
+    expect((versions as { versions: Array<{ canonicalChars: number }> }).versions[0].canonicalChars).toBeGreaterThan(0);
     library.close();
   });
 
@@ -157,7 +159,7 @@ describe('阶段 C1：本地书库（独立附属数据库）', () => {
     library.close();
   });
 
-  it('库内记录损坏：读取与列表返回 invalid，不抛出；verifyHash 能发现内容被改', async () => {
+  it('库内记录损坏：读取返回 invalid，不抛出；列表只读摘要，摘要损坏时返回 invalid；verifyHash 能发现内容被改', async () => {
     const factory = new IDBFactory(), name = uniqueName('corrupt');
     const library = await open(name, factory);
     const r = await release(), r2 = await release('茶楼志', { name: '茶楼' });
@@ -168,10 +170,17 @@ describe('阶段 C1：本地书库（独立附属数据库）', () => {
       release: { ...r2, entries: r2.entries.map((e, i) => i === 0 ? { ...e, content: '被改过' } : e) } }));
     const reopened = await open(name, factory);
     expect(failed(await reopened.getRelease(r.bookId, r.versionId)).code).toBe('invalid');
-    expect(failed(await reopened.listVersions(r.bookId)).code).toBe('invalid');
-    expect(await reopened.getRelease(r2.bookId, r2.versionId)).toMatchObject({ ok: true });
-    expect(failed(await reopened.getRelease(r2.bookId, r2.versionId, { verifyHash: true })).code).toBe('hash_mismatch');
+    // 列表只读摘要表：版本正文损坏不影响列表；摘要本身损坏才报告
+    expect(await reopened.listVersions(r.bookId)).toMatchObject({ ok: true, versions: [{ versionId: r.versionId }] });
     reopened.close();
+    await rawStore(factory, name, 'summaries', (os) => os.put({ bookId: r.bookId, versionId: r.versionId, broken: true }));
+    const again = await open(name, factory);
+    expect(failed(await again.listVersions(r.bookId)).code).toBe('invalid');
+    again.close();
+    const third = await open(name, factory);
+    expect(await third.getRelease(r2.bookId, r2.versionId)).toMatchObject({ ok: true });
+    expect(failed(await third.getRelease(r2.bookId, r2.versionId, { verifyHash: true })).code).toBe('hash_mismatch');
+    third.close();
   });
 
   it('游戏主库不受影响：书库打不开时存档照常读写；书库写入后主库版本与表结构不变', async () => {
@@ -196,4 +205,59 @@ describe('阶段 C1：本地书库（独立附属数据库）', () => {
     expect(await again.list()).toEqual(before);
     again.close();
   });
+
+  it('安装资源上限：条目数、关键词数与长度、正文长度、确定性 JSON 大小，超限时拒绝且不写入', async () => {
+    const library = await open(uniqueName('limits'), new IDBFactory(), { maxEntries: 1, maxKeysPerEntry: 2, maxKeyChars: 5, maxContentChars: 10, maxCanonicalChars: 1_000_000 });
+    const r = await release();
+    const one = (patch: Partial<WorldbookRelease['entries'][number]>) => ({ ...r, entries: [{ ...r.entries[0], ...patch }] });
+    const withHash = async (x: WorldbookRelease) => ({ ...x, contentHash: await contentHash({ metadata: x.metadata, entries: x.entries, source: x.source }) });
+    expect(failed(await library.install(await withHash({ ...r, entries: [r.entries[0], { ...r.entries[0], entryId: 'second' }] }))).code).toBe('too_large');
+    expect(failed(await library.install(await withHash(one({ keys: ['a', 'b', 'c'] })))).code).toBe('too_large');
+    expect(failed(await library.install(await withHash(one({ secondaryKeys: ['a', 'b', 'c'] })))).code).toBe('too_large');
+    expect(failed(await library.install(await withHash(one({ keys: ['abcdef'] })))).code).toBe('too_large');
+    expect(failed(await library.install(await withHash(one({ keys: ['a'], content: '十'.repeat(11) })))).code).toBe('too_large');
+    const small = await open(uniqueName('canonical'), new IDBFactory(), { maxCanonicalChars: 100 });
+    expect(failed(await small.install(r)).code).toBe('too_large');
+    expect(await library.listBooks()).toEqual({ ok: true, books: [] });
+    library.close(); small.close();
+  });
+
+  it('书库合计上限：版本数或总容量达到上限时拒绝，已有版本不变', async () => {
+    const byCount = await open(uniqueName('full-count'), new IDBFactory(), { maxVersions: 1 });
+    const a = await release('甲'), b = await release('乙', { name: '乙' });
+    expect((await byCount.install(a)).ok).toBe(true);
+    expect(failed(await byCount.install(b)).code).toBe('library_full');
+    expect(await byCount.install(a)).toMatchObject({ ok: true, status: 'already_installed' });
+    byCount.close();
+    const bySize = await open(uniqueName('full-size'), new IDBFactory(), { maxTotalCanonicalChars: 1 });
+    expect(failed(await bySize.install(a)).code).toBe('library_full');
+    expect(await bySize.listBooks()).toEqual({ ok: true, books: [] });
+    bySize.close();
+    expect(LIBRARY_LIMITS.maxCanonicalChars).toBeGreaterThan(2 * 32 * 1024 * 1024);
+  });
+
+  it('从第 1 版附属库升级：保留已有版本并回填摘要；损坏的旧记录跳过、不阻塞升级', async () => {
+    const factory = new IDBFactory(), name = uniqueName('upgrade');
+    const r = await release();
+    const v1 = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = factory.open(name, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        const releases = db.createObjectStore('releases', { keyPath: ['bookId', 'versionId'] });
+        releases.createIndex('contentHash', 'contentHash'); releases.createIndex('bookId', 'bookId');
+        db.createObjectStore('books', { keyPath: 'bookId' });
+      };
+      req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error);
+    });
+    v1.close();
+    await rawStore(factory, name, 'releases', (os) => os.put({ release: r, bookId: r.bookId, versionId: r.versionId, contentHash: r.contentHash, installedAt: 5 }));
+    await rawStore(factory, name, 'releases', (os) => os.put({ release: { broken: true }, bookId: 'bad', versionId: 'bad', contentHash: 'x', installedAt: 5 }));
+    await rawStore(factory, name, 'books', (os) => os.put({ bookId: r.bookId, title: '码头志', latestVersionId: r.versionId, versionCount: 1, installedAt: 5, updatedAt: 5 }));
+    const library = await open(name, factory);
+    expect(await library.listVersions(r.bookId)).toMatchObject({ ok: true, versions: [{ versionId: r.versionId, entryCount: r.entries.length, installedAt: 5 }] });
+    expect(await library.getRelease(r.bookId, r.versionId, { verifyHash: true })).toEqual({ ok: true, release: r });
+    expect(await library.listVersions('bad')).toEqual({ ok: true, versions: [] });
+    library.close();
+  });
 });
+
