@@ -182,11 +182,13 @@ async function expectFailedStory(page: Page, before: Awaited<ReturnType<typeof s
 }
 async function discardForRetry(page: Page, failed: Awaited<ReturnType<typeof stored>>) {
   const sent = requests.length;
+  if (await page.locator('.workflow-disclosure[open]').count()) await workflowTrigger(page).click();
   await page.getByTestId('story-reader').getByRole('button', { name: '放弃这段' }).click();
   const expected = { state: failed.state, draft: { ...failed.draft,
     draftRevision: failed.draft.draftRevision + 1, storyPartial: undefined } };
   await expect.poll(() => stored(page)).toEqual(expected);
   expect(requests).toHaveLength(sent);
+  await openGameTools(page);
   return expected;
 }
 async function generated(page: Page) {
@@ -377,7 +379,8 @@ test('P6：截断请求不保存正文，明确预算诊断；失败重试无原
   plans.push({}); await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
   expect((await stored(page)).draft.storyRevision).toBe(1); expect(requests).toHaveLength(2);
   const inspection = await openStoryInspection(page);
-  await inspection.getByText('供应商公开返回的原生内容', { exact: true }).click(); await expect(inspection).toContainText('供应商未提供');
+  // 统一原文视图应精确显示重试响应；上次失败的独立思考不能混入。
+  await expect(inspection.getByRole('textbox', { name: '正文模型完整原文', exact: true })).toHaveValue(result());
 });
 
 test('Story精确诊断：1268/1500字符直接可见，可复制单条，原文仍可查看且不自动重试', async ({ page }) => {
