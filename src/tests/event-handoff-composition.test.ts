@@ -208,7 +208,7 @@ describe('R1/R2 replay, permissions and transaction boundaries',()=>{
   });
   it('late World failure, manual recovery, write rollback and replay preserve both prerequisite and handoff atomically',async()=>{
     const a=dependencies('task'),repo=await repoFor(a),before=structuredClone(a.state);let bad=true;
-    const r=route(()=>'',()=>bad?{...a.response,worldCommands:[{type:'UpdateNpc',commandId:'illegal-late',npcId:'scene',expectedRevision:a.state.revision,changes:{onScene:true},evidence:proof({at:'2026-10-18T08:09:00+08:00'})}]}:a.response);
+    const r=route(()=>'',()=>bad ? { ...a.response, eventCommands: null } : a.response);
     await expect(runWorld(repo,a.draft,r)).rejects.toThrow();expect(await repo.load('save-a')).toEqual(before);
     const failed=await repo.loadDraft('save-a');if(!failed)throw Error('missing failed World draft');
     expect(failed.stageStatus.world).toBe('failed');expect(failed.variables).toEqual(a.draft.variables);

@@ -10,7 +10,6 @@ import { defaultSettings } from '../ui/settings/model';
 import { createTurnDraft, rerollStory, TurnDraftSchema } from '../domain/drafts';
 import { submission } from './fixtures/turn';
 import { stageResponses } from '../services/ai/stageResponses';
-import { runtimeLogEvent } from '../ui/game/runtimeLog';
 import { parseWorld } from '../services/validation/aiOutputs';
 
 const resources:{dispose:()=>void}[]=[];
@@ -51,18 +50,18 @@ describe('合成展览筹备样例经真实Runtime、候选、Commit与重载',(
   a.repo.close();expect((await other.loadGame(a.state.saveId)).state).toEqual(committed.state);
   expect(a.transport).toHaveBeenCalledTimes(1);
  });
- it('无效父地点失败保留上游、提供安全定位；明确重试一次后可提交',async()=>{
-  const a=await setup(), original=structuredClone(a.response), before=await a.repo.load(a.state.saveId);
+ it('无效父地点和依赖命令被跳过，安全定位保留且可提交',async()=>{
+  const a=await setup(), before=await a.repo.load(a.state.saveId);
   a.response.worldCommands[0].location!.parentId='not-real-private-parent';
-  let caught:unknown;try{await a.stage.generate({...a.options,draft:a.draft});}catch(e){caught=e;}
-  expect(runtimeLogEvent(1,'world','failed',caught)).toMatchObject({code:'data_integrity',worldRule:'location_reference',commandIndex:1,commandType:'CreateLocation',fieldPath:'worldCommands.0.location.parentId'});
-  expect(JSON.stringify(runtimeLogEvent(1,'world','failed',caught))).not.toContain('not-real-private-parent');
-  const failed=(await a.repo.loadDraft(a.state.saveId))!;
-  expect(failed.stageStatus.world).toBe('failed');expect(failed.world).toBeUndefined();expect(failed.story).toEqual(a.draft.story);expect(failed.variables).toEqual(a.draft.variables);
-  expect(await a.repo.load(a.state.saveId)).toEqual(before);expect(a.transport).toHaveBeenCalledTimes(1);
-  a.response.worldCommands=original.worldCommands;
-  const candidate=await a.stage.generate({...a.options,draft:failed});
-  await a.repo.commitTurn(submission(candidate,''));expect(a.transport).toHaveBeenCalledTimes(2);
+  const candidate=await a.stage.generate({...a.options,draft:a.draft});
+  const report=candidate.world?.result.settlement;
+  expect(report?.skipped).toContainEqual(expect.objectContaining({commandIndex:0,group:'worldCommands',groupIndex:0,reason:'reference'}));
+  expect(JSON.stringify(report)).not.toContain('not-real-private-parent');
+  expect(candidate.story).toEqual(a.draft.story);expect(candidate.variables).toEqual(a.draft.variables);
+  expect(await a.repo.load(a.state.saveId)).toEqual(before);
+  const saved=await a.repo.commitTurn(submission(candidate,''));
+  expect(saved.state.locations).toEqual(before.locations);
+  expect(a.transport).toHaveBeenCalledTimes(1);
  });
  it('伪造validated候选仍在Commit重验拒绝，整个正式状态和草稿保持不变',async()=>{
   const a=await setup(),candidate=await a.stage.generate({...a.options,draft:a.draft});

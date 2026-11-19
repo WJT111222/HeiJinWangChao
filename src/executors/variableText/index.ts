@@ -1,6 +1,7 @@
 import { storySceneAuthority, validateNarrationClock } from '../../domain/events/narration';
 import { z } from 'zod';
 import { commitCommands, fingerprint } from '../../domain/commands';
+import type { DomainCommand } from '../../domain/commands';
 import { CommandDataError, DataError } from '../../domain/common';
 import { validateSceneEventUpdate } from '../../domain/events/scenePermission';
 import { prepareVariableProjection } from '../../domain/turnProjection';
@@ -9,7 +10,7 @@ import { GameStateSchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
 import { compileVariableCommands } from './compile';
 import { ExecutionContextSchema, failed } from './model';
-import { aggregateDomainDiagnostic } from './aggregateDiagnostics';
+import { aggregateDomainDiagnostic, stateIssueDiagnostic } from './aggregateDiagnostics';
 import type { ExecutionResult, VariableExecutionContext, VariableExecutionPlan } from './model';
 export { compileVariableCommands } from './compile';
 export type { VariableExecutionContext, VariableExecutionPlan, ExecutionError, ExecutionErrorCode, ExecutionResult, CommandOrigin } from './model';
@@ -56,8 +57,20 @@ async function simulateChecked(plan: VariableExecutionPlan, state: GameState,
     return { ok: true, value: projected };
   } catch (error) {
     const related = checked.value.origins.filter((origin) => origin !== null);
-    if (error instanceof z.ZodError)
+    if (error instanceof z.ZodError) {
+      const latestFirst = [...commands].reverse();
+      for (const issue of error.issues.map(stateIssueDiagnostic)) {
+        if (!issue.valuePath) continue;
+        // The final field belongs to its last actual writer. A synthesized command has no text origin.
+        const writer = latestFirst.find(command => writesLocationPath(command, issue.path));
+        if (!writer) continue;
+        const index = checked.value.commands.findIndex(command => command.commandId === writer.commandId && command.type === writer.type);
+        const origin = checked.value.origins[index];
+        if (origin) return failed('domain_validation_failed', origin, [], { validationRule:'domain_schema',
+          domainRule:issue.rule, valuePath:issue.valuePath, commandType:writer.type });
+      }
       return failed('domain_validation_failed', null, related, aggregateDomainDiagnostic(error));
+    }
     if (error instanceof DataError) {
       const diagnostic = aggregateDomainDiagnostic(error);
       const code = ['REVISION_CONFLICT', 'ENTITY_CONFLICT'].includes(error.code) ? 'revision_conflict'
@@ -79,5 +92,33 @@ async function simulateChecked(plan: VariableExecutionPlan, state: GameState,
       return failed(code, null, related, diagnostic);
     }
     return failed('transaction_failed', null, related);
+  }
+}
+
+function writesLocationPath(command: DomainCommand, path: readonly PropertyKey[]) {
+  const [table, id, field] = path;
+  switch (command.type) {
+    case 'UpdateProtagonist':
+      return table === 'protagonist' && id === 'locationId' && command.changes.locationId !== undefined;
+    case 'CreateLocation':
+      return table === 'locations' && id === command.location.id && field === 'parentId';
+    case 'CreateNpc':
+      return table === 'npc' && id === command.npc.id && field === 'locationId';
+    case 'UpdateNpc':
+      return table === 'npc' && id === command.npcId
+        && (field === 'locationId' || field === 'usualLocations') && command.changes[field] !== undefined;
+    case 'AcquireItem':
+    case 'PurchaseItem':
+      return table === 'items' && id === command.item.id && field === 'locationId';
+    case 'UpdateItem':
+    case 'LoseItem':
+      return table === 'items' && id === command.itemId && field === 'locationId'
+        && (command.type === 'LoseItem' ? command.locationId !== undefined : command.changes.locationId !== undefined);
+    case 'SaveTask':
+      return table === 'tasks' && id === command.task.id && field === 'locationId';
+    case 'SaveEvent':
+      return table === 'events' && id === command.event.id && ['continuation', 'protagonistEntry', 'locationId'].some(key => field === key);
+    default:
+      return false;
   }
 }

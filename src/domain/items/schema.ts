@@ -11,4 +11,5 @@ export const ImportantItemSchema = z.strictObject({
   questItem: z.boolean().optional(),
   createdByTurnId: IdSchema.optional(),
 });
+export const OwnedItemInputSchema = ImportantItemSchema.required({ ownerRef: true });
 export type ImportantItem = z.infer<typeof ImportantItemSchema>;

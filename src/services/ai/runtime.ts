@@ -1,3 +1,4 @@
+import { parsePartialVariables, parsePartialWorld } from '../validation/partialOutputs';
 import { worldNormalizationNotes } from '../validation/worldSceneWrites';
 import { narrativeRange } from '../../ui/settings/model';
 import { validateStoryEventInteractions } from '../../domain/events/interactions';
@@ -6,7 +7,7 @@ import { browserPromptOrder } from '../../prompts/order';
 import { composePrompt, composeTextVariablesPrompt } from '../../prompts/composer';
 import { checkedInput } from '../../prompts/context';
 import type { ComposeInput } from '../../prompts/context';
-import { parseStoryEnvelope, parseTextVariables, parseVariables, parseWorld } from '../validation/aiOutputs';
+import { parseStoryEnvelope, parseVariables } from '../validation/aiOutputs';
 import type { AiConfig, AiStage } from './configuration';
 import type { CredentialVault } from './credentials';
 import { requestSnapshot } from './snapshot';
@@ -172,8 +173,8 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     catch (error) { const failure = storyFailure(error); throw failure instanceof AiError ? failure : variableValidationError(error); }
   }
   const result = story ?? (captured.stage === 'variables'
-        ? await parseTextVariables(responseText, captured.state, captured.draft!)
-        : parseWorld(responseText, captured.state, captured.draft!));
+        ? await parsePartialVariables(responseText, captured.state, captured.draft!)
+        : await parsePartialWorld(responseText, captured.state, captured.draft!));
   const notes = story ? undefined : worldNormalizationNotes.get(result);
   stageResponses.update(responseId, { status: 'validated', normalized: JSON.stringify(result, null, 2), ...(notes ? { notes } : {}) }, secrets);
   return {

@@ -1,7 +1,6 @@
 import { test,expect } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { seedRoster,rosterGame } from './helpers/npcRoster';
-import { openGameTools } from './helpers/gameLayout';
 import { worldNpcCreationBatch } from '../src/tests/fixtures/worldNpcCreation';
 import { fullPrivateProfile } from '../src/tests/fixtures/npcUnified';
 
@@ -55,13 +54,16 @@ test('真实三阶段创建普通/特殊男性/成年女性，组织任务主子
  expect(server.calls).toEqual(['story','variables','world']);await page.reload();await expect(page.locator('.game-layout')).toBeVisible();expect((await rosterGame(page)).state).toEqual(saved.state);expect(server.calls).toHaveLength(3);
 });
 
-test('非法确认仍整批拒绝、保留Story、不自动请求；玩家明确继续才单独重试World并结算',async({page})=>{
+test('非法确认和依赖跳过，其他人物正常结算且不自动重试',async({page})=>{
  await seed(page);const before=await rosterGame(page),server=await mock(page,true);
  await page.getByLabel('你的行动',{exact:true}).fill('等待新的消息');await page.getByRole('button',{name:'发送',exact:true}).click();
- await expect.poll(async()=>(await rosterGame(page)).draft?.stageStatus.world,{timeout:20000}).toBe('failed');
- const failed=await rosterGame(page);expect(failed.state).toEqual(before.state);expect(failed.draft.story).toBeDefined();expect(failed.draft.variables.validation).toBe('validated');expect(failed.draft.world).toBeUndefined();expect(server.calls).toEqual(['story','variables','world']);
- await openGameTools(page);await expect(page.getByTestId('runtime-log')).toContainText('actor_permission');await expect(page.getByTestId('runtime-log')).toContainText('CreateNpc');
- server.control.bad=false;await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
  await expect.poll(async()=>(await rosterGame(page)).state.turnNumber,{timeout:20000}).toBe(before.state.turnNumber+1);
- const saved=await rosterGame(page);expect(saved.state.journal.at(-1).story).toEqual(failed.draft.story);expect(server.calls).toEqual(['story','variables','world','world']);expect(Date.parse(saved.state.worldClock)-Date.parse(before.state.worldClock)).toBe(600000);
+ const saved=await rosterGame(page);
+ expect(saved.state.npc['remote-relative']).toBeUndefined();
+ expect(saved.state.tasks['remote-duty']).toBeUndefined();
+ expect(saved.state.npc['new-ordinary']).toBeDefined();
+ expect(saved.state.npc['new-woman']).toBeDefined();
+ expect(saved.state.journal.at(-1).settlement.world.skipped).toContainEqual(expect.objectContaining({category:'person',reason:'permission'}));
+ expect(server.calls).toEqual(['story','variables','world']);
+ expect(Date.parse(saved.state.worldClock)-Date.parse(before.state.worldClock)).toBe(600000);
 });

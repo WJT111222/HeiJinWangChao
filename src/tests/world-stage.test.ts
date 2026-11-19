@@ -203,9 +203,9 @@ describe('世界阶段实际 Runtime → 候选，不提交正式状态', () => 
   });
   it.each([
     '{bad',
-    worldResult([{ ...npcUpdate(), npcId: 'scene' }]),
+    { ...worldResult(), worldCommands: null },
     { ...worldResult(), unresolved: ['mock-world-secret'] },
-  ])('错误 JSON/越权/凭证回显不产生候选 %#', async (value) => {
+  ])('错误 JSON/外层分组/凭证回显不产生候选 %#', async (value) => {
     const before = await repo.load('save-a');
     await expect(
       runner(async () => wire(value)).generate({ ...setup(), draft }),
@@ -236,8 +236,10 @@ describe('二轮审查错误通过真实 Runtime 安全失败', () => {
  const before=await repo.load('save-a'),result=worldResult();
  if(scenario==='event-result'){
  result.eventCommands=[{type:'SaveEvent',commandId:'premature',event:{...event(),actorRefs:[{kind:'npc',id:'npc-a'}],resolutionText:'未来行动已经成功'},evidence:proof({kind:'planned'})}];
- await expect(runner(async()=>wire(result)).generate({...setup(),draft})).rejects.toMatchObject({code:'invalid_output'});
- const saved=await repo.loadDraft('save-a');expect(saved?.world).toBeUndefined();expect(saved?.stageStatus.world).toBe('failed');expect(saved?.story).toEqual(draft.story);expect(saved?.variables).toEqual(draft.variables);
+ const saved=await runner(async()=>wire(result)).generate({...setup(),draft});
+ expect(saved.world?.result.eventCommands).toEqual([]);
+ expect(saved.world?.result.settlement?.skipped).toMatchObject([{commandIndex:0,category:'event'}]);
+ expect(saved.stageStatus.world).toBe('ready');expect(saved.story).toEqual(draft.story);expect(saved.variables).toEqual(draft.variables);
  }else{
  result.taskCommands=['a','b'].map(id=>({type:'SaveTask',commandId:'job-'+id,task:{...task(id),goal:'清点器材 '+id,actorRef:{kind:'npc',id:'npc-a'}},evidence:proof({kind:'planned'})}));
  await runner(async()=>wire(result)).generate({...setup(),draft});expect((await repo.loadDraft('save-a'))?.world?.result.taskCommands).toHaveLength(2);
@@ -349,7 +351,7 @@ describe('世界并发、迟到与取消', () => {
 });
 
 describe('A5 取消候选的真实保存边界', () => {
-  it.each(['task', 'event'] as const)('%s 非法结构整批失败，合法终止仅保存候选', async (kind) => {
+  it.each(['task', 'event'] as const)('%s 非法结构只跳过该操作，合法终止仅保存候选', async (kind) => {
     await repo.delete('save-a', 0);
     const actor = { kind: 'npc' as const, id: 'npc-a' },
       oldTask = { ...task(), actorRef: actor },
@@ -395,15 +397,14 @@ describe('A5 取消候选的真实保存边界', () => {
         ];
       return result;
     };
-    await expect(
-      runner(async () => wire(response(false))).generate({ ...setup(), draft }),
-    ).rejects.toMatchObject({ code: 'invalid_output' });
-    const failed = await repo.loadDraft('save-a');
-    expect(failed?.world).toBeUndefined();
+    const skipped = await runner(async () => wire(response(false))).generate({ ...setup(), draft });
+    expect(skipped.world?.result.settlement?.skipped).toHaveLength(1);
+    expect(skipped.world?.result.taskCommands).toEqual([]);
+    expect(skipped.world?.result.eventCommands).toEqual([]);
     expect(await repo.load('save-a')).toEqual(before);
     const saved = await runner(async () => wire(response(true))).generate({
       ...setup(),
-      draft: failed!,
+      draft: skipped,
     });
     expect(saved.stageStatus.world).toBe('ready');
     expect(saved.world?.validation).toBe('validated');
