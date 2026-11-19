@@ -13,7 +13,7 @@ const story=`<thinking>仅本次原文可见的规划。</thinking><正文>${nar
 const args=JSON.stringify({content:story});
 const frame=(data:unknown)=>`data: ${JSON.stringify(data)}\n\n`;
 let server:Server,active:ServerResponse|undefined,baseUrl:string,calls:{model:string;tools:boolean}[];
-let mode:'hold'|'mixed'|'multiple'|'incomplete'|'story-partial'|'ordering';
+let mode:'hold'|'mixed'|'multiple'|'incomplete'|'story-partial'|'ordering'|'sse-tail';
 function write(value:unknown){
   const bytes=Buffer.from(frame(value));for(let n=0;n<bytes.length;n+=3)active!.write(bytes.subarray(n,n+3));
 }
@@ -48,7 +48,12 @@ test.beforeEach(async({page,context})=>{
       const text=body.model==='variables'?variableTextEnvelope('<说明>用餐结束。</说明><命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nadd economy.cash = -3000\n</命令>'):JSON.stringify({worldCommands:[],taskCommands:[],eventCommands:[],visibleHooks:[],unresolved:[]});
       res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify({choices:[{message:{content:text},finish_reason:'stop'}]}));return;
     }
-    active=res;res.writeHead(200,{'Content-Type':'text/event-stream'});res.flushHeaders();
+    active=res;
+    if (mode === 'sse-tail') {
+      res.writeHead(200, {'Content-Type': 'text/html; fixture=SYNTHETIC_MIME_PARAM'}).end('<!doctype html>\n<div>SYNTHETIC_HTML_TAIL</div>');
+      return;
+    }
+    res.writeHead(200,{'Content-Type':'text/event-stream'});res.flushHeaders();
     if(mode==='hold')return;
     if(mode==='story-partial'){
       const content=calls.filter(c=>c.model==='story').length===1?'<正文>【旁白】雨水沿着站台落下。':'</正文><短期记忆>等待</短期记忆><变量规划>[]</变量规划>';
@@ -122,9 +127,9 @@ test('工具载体中的Story缺尾可刷新后主动续写；原文只保留真
   await closeDiagnostics(page);const panel=await openStageRaw(page,'story');await expect(panel.getByRole('textbox',{name:'正文模型完整原文',exact:true})).toHaveValue(JSON.stringify({content:tail}));await page.screenshot({path:info.outputPath('tool-continuation.png')});expect(await stored(page)).toEqual(after);
 });
 
-test('两端主动下载顺序诊断，仅导出时间及白名单元数据，刷新销毁临时记录', async ({page}, info) => {
+for (const failure of ['ordering', 'sse-tail'] as const) test(`两端主动下载 ${failure} 诊断，仅导出白名单元数据，刷新销毁临时记录`, async ({page}, info) => {
   const before = await seed(page, true, false, 'openai');
-  mode = 'ordering';
+  mode = failure;
   await start(page);
   await expect.poll(async () => (await stored(page)).draft?.stageStatus.story).toBe('failed');
   const after = await stored(page);
@@ -137,7 +142,7 @@ test('两端主动下载顺序诊断，仅导出时间及白名单元数据，�
   const panel = await openStageRaw(page, 'story');
   const button = panel.getByRole('button', {name:'导出诊断', exact:true});
   await expect(button).toBeVisible();
-  await expect(panel.getByRole('textbox', {name:'正文模型完整原文', exact:true})).toHaveCount(1);
+  await expect(panel.getByRole('textbox', {name:'正文模型完整原文', exact:true})).toHaveCount(failure === 'ordering' ? 1 : 0);
   await page.screenshot({path:info.outputPath('diagnostic-entry.png')});
   const [download] = await Promise.all([page.waitForEvent('download'), button.click()]);
   expect(download.suggestedFilename()).toBe('story-tool-diagnostics.json');
@@ -146,17 +151,30 @@ test('两端主动下载顺序诊断，仅导出时间及白名单元数据，�
   expect(summary).toMatchObject({
     protocol: 'openai', model: 'story', endpointKind: 'local', requestedStream: true, observedTransport: 'sse',
     httpStatus: 200, boundary: null, timeoutSeconds: 120,
-    counts: {'tool-start': 1, 'tool-arguments': 1, 'tool-end': 1, 'provider-finish': 2},
-    outcome: {code: 'tool_response', toolRule: 'ordering', orderingSite: 'duplicate_provider_finish'},
-    stage: {status: 'failed', errorCode: 'tool_response'},
   });
   expect(summary.httpMs).toBeLessThanOrEqual(summary.firstBodyChunkMs);
-  expect(summary.firstBodyChunkMs).toBeLessThanOrEqual(summary.firstSseFrameMs);
-  expect(summary.firstSseFrameMs).toBeLessThanOrEqual(summary.firstArgumentsMs);
-  expect(summary.lastArgumentsMs).toBeLessThanOrEqual(summary.firstProviderFinishMs);
-  expect(summary.firstProviderFinishMs).toBeLessThanOrEqual(summary.totalMs);
+  if (failure === 'ordering') {
+    expect(summary).toMatchObject({
+      contentType: 'event_stream', sse: {readerEof: false, failureSite: null},
+      counts: {'tool-start': 1, 'tool-arguments': 1, 'tool-end': 1, 'provider-finish': 2},
+      outcome: {code: 'tool_response', toolRule: 'ordering', orderingSite: 'duplicate_provider_finish'},
+      stage: {status: 'failed', errorCode: 'tool_response'},
+    });
+    expect(summary.firstBodyChunkMs).toBeLessThanOrEqual(summary.firstSseFrameMs);
+    expect(summary.firstSseFrameMs).toBeLessThanOrEqual(summary.firstArgumentsMs);
+    expect(summary.lastArgumentsMs).toBeLessThanOrEqual(summary.firstProviderFinishMs);
+    expect(summary.firstProviderFinishMs).toBeLessThanOrEqual(summary.totalMs);
+  } else {
+    expect(summary).toMatchObject({
+      contentType: 'html', firstSseFrameMs: null,
+      sse: {firstReadHadBytes: true, readerEof: true, failureSite: 'unrecognized_eof_tail', unrecognizedLines: 2, dataLines: 0},
+      outcome: {code: 'stream_interrupted', step: 'waiting-sse-frame', frame: 0},
+      stage: {status: 'failed', errorCode: 'stream_interrupted'},
+    });
+  }
   for (const value of [key, narrative, 'SYNTHETIC_PRIVATE_THOUGHT', '本次原文可见的规划', 'native-call-1', 'save-a',
-    'tool-browser-opening', baseUrl, 'Authorization', 'GAME_CONTEXT', STORY_OUTPUT_TOOL, 'requestBody']) expect(bytes).not.toContain(value);
+    'tool-browser-opening', baseUrl, 'Authorization', 'GAME_CONTEXT', STORY_OUTPUT_TOOL, 'requestBody',
+    'SYNTHETIC_MIME_PARAM', 'SYNTHETIC_HTML_TAIL']) expect(bytes).not.toContain(value);
   await download.saveAs(info.outputPath('redacted-export.json'));
   expect(await stored(page)).toEqual(after);
   await page.reload();

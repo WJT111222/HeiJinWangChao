@@ -18,6 +18,32 @@ const officialHosts: Record<Protocol, string> = {
   openai: 'api.openai.com', deepseek: 'api.deepseek.com', gemini: 'generativelanguage.googleapis.com', anthropic: 'api.anthropic.com',
 };
 const edgeSize = 32;
+const maxSseCount = 0x7fffffff;
+const emptySseCounts = {
+  reads: 0, nonEmptyReads: 0, bytes: 0,
+  dataLines: 0, commentLines: 0, blankLines: 0, unrecognizedLines: 0,
+  delimitedDataEvents: 0, eofDataEvents: 0,
+};
+type SseCount = keyof typeof emptySseCounts;
+type SseFailureSite = 'reader_read' | 'utf8_chunk' | 'utf8_eof' | 'unrecognized_eof_tail' | 'missing_body';
+type SseTrace = typeof emptySseCounts & {
+  firstReadHadBytes: boolean | null;
+  readerEof: boolean;
+  bufferedTail: boolean;
+  pendingData: boolean;
+  saturated: boolean;
+  failureSite: SseFailureSite | null;
+};
+
+function classifyContentType(header: string | null) {
+  const mime = (header ?? '').split(';', 1)[0].trim().toLowerCase();
+  if (!mime) return 'missing';
+  if (mime === 'text/event-stream') return 'event_stream';
+  if (mime === 'application/json') return 'json';
+  if (mime.endsWith('+json')) return 'other_json';
+  if (mime === 'text/html' || mime === 'application/xhtml+xml') return 'html';
+  return mime.startsWith('text/') ? 'text' : 'other';
+}
 
 type Boundary = 'done-marker' | 'eof' | 'json-body';
 type TraceEvent = {
@@ -82,6 +108,8 @@ export class StoryToolTraceRecorder {
   private boundaryKind: Boundary | null = null;
   private httpStatus: number | null = null;
   private observedTransport: ResponseSource['transport'] | null = null;
+  private contentType: ReturnType<typeof classifyContentType> | null = null;
+  private sse: SseTrace | null = null;
   private readonly head: TraceEvent[] = [];
   private readonly tail: TraceEvent[] = [];
   private readonly counts: Partial<Record<TraceEvent['kind'], number>> = {};
@@ -129,12 +157,46 @@ export class StoryToolTraceRecorder {
     this.observedTransport = 'http';
   }
 
-  opened(transport: ResponseSource['transport']) {
-    if (!this.closed) this.observedTransport = transport;
+  opened(transport: ResponseSource['transport'], header: string | null) {
+    if (this.closed) return;
+    this.observedTransport = transport;
+    this.contentType = classifyContentType(header);
+    if (transport === 'sse') this.sse = {
+      ...emptySseCounts, firstReadHadBytes: null, readerEof: false, bufferedTail: false, pendingData: false,
+      saturated: false, failureSite: null,
+    };
   }
 
-  bodyChunk() {
-    if (!this.closed) this.ms.firstBodyChunkMs ??= this.elapsed();
+  sseRead(byteLength: number | null) {
+    if (this.closed || !this.sse) return;
+    if (byteLength === null) {
+      this.sse.readerEof = true;
+      return;
+    }
+    this.sse.firstReadHadBytes ??= byteLength > 0;
+    this.sseCount('reads');
+    if (byteLength > 0) {
+      this.ms.firstBodyChunkMs ??= this.elapsed();
+      this.sseCount('nonEmptyReads');
+      this.sseCount('bytes', byteLength);
+    }
+  }
+
+  sseCount(field: SseCount, amount = 1) {
+    if (this.closed || !this.sse) return;
+    const next = this.sse[field] + amount;
+    if (next > maxSseCount) this.sse.saturated = true;
+    this.sse[field] = Math.min(next, maxSseCount);
+  }
+
+  sseBuffer(bufferedTail: boolean, pendingData: boolean) {
+    if (this.closed || !this.sse) return;
+    this.sse.bufferedTail = bufferedTail;
+    this.sse.pendingData = pendingData;
+  }
+
+  sseFailure(site: SseFailureSite) {
+    if (!this.closed && this.sse) this.sse.failureSite = site;
   }
 
   wireFrame(source: ResponseSource) {
@@ -223,7 +285,7 @@ export class StoryToolTraceRecorder {
     return {
       version: 1 as const, startedAt: this.startedAt, protocol: this.protocol, model: this.model, endpointKind: this.endpointKind,
       requestedStream: this.requestedStream, observedTransport: this.observedTransport, timeoutSeconds: this.timeoutSeconds,
-      httpStatus: this.httpStatus,
+      httpStatus: this.httpStatus, contentType: this.contentType, sse: this.sse && { ...this.sse },
       ...this.ms,
       totalMs: this.elapsed(), boundary: this.boundaryKind, firstProviderFinish: this.firstFinish,
       outcome: { ...outcome, frame: this.frame, step: outcome.code === 'received' ? null : this.step() },

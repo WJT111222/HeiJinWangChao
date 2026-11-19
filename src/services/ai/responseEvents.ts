@@ -136,8 +136,9 @@ export async function* readAiResponseEvents(
     if (signal.aborted) { yield { type: 'aborted', source }; return; }
     const response = await receive();
     if (signal.aborted) { yield { type: 'aborted', source }; return; }
-    source = { ...source, httpStatus: response.status, transport: !requestedStream || /application\/json/i.test(response.headers.get('content-type') ?? '') ? 'json' : 'sse' };
-    if (trace) observeToolTrace(() => trace.opened(source.transport));
+    const contentType = requestedStream ? response.headers.get('content-type') : null;
+    source = { ...source, httpStatus: response.status, transport: !requestedStream || /application\/json/i.test(contentType ?? '') ? 'json' : 'sse' };
+    if (trace) observeToolTrace(() => trace.opened(source.transport, requestedStream ? contentType : response.headers.get('content-type')));
     yield { type: 'opened', source };
     if (source.transport === 'json') {
       let data: unknown;
@@ -151,8 +152,11 @@ export async function* readAiResponseEvents(
       yield { type: 'end', source, boundary: 'json-body' };
       return;
     }
-    if (!response.body) throw new AiError('stream_interrupted');
-    for await (const event of readSse(response.body, signal, trace && (() => trace.bodyChunk()))) {
+    if (!response.body) {
+      if (trace) observeToolTrace(() => trace.sseFailure('missing_body'));
+      throw new AiError('stream_interrupted');
+    }
+    for await (const event of readSse(response.body, signal, trace)) {
       if (signal.aborted) { yield { type: 'aborted', source }; return; }
       source = { ...source, sequence: source.sequence + 1, eventName: event.event };
       if (trace) observeToolTrace(() => trace.wireFrame(source));

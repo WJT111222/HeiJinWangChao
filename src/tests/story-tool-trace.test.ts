@@ -82,10 +82,14 @@ it.each(compatibilityProtocols.flatMap(protocol => [true, false].map(stream => (
     const trace = traces[0];
     expect(traces).toHaveLength(1);
     expect(trace).toMatchObject({ protocol, requestedStream: stream, observedTransport: stream ? 'sse' : 'json', httpStatus: 200,
+      contentType: stream ? 'event_stream' : 'json',
       counts: { 'tool-start': 1, 'tool-end': 1, 'provider-finish': 1 },
       outcome: { code: 'received' }, boundary: !stream ? 'json-body' : protocol === 'openai' || protocol === 'deepseek' ? 'done-marker' : 'eof' });
     if (stream) expect(trace.firstBodyChunkMs).toBeLessThanOrEqual(trace.firstSseFrameMs!);
-    else expect(trace.firstBodyChunkMs).toBeNull();
+    else {
+      expect(trace.firstBodyChunkMs).toBeNull();
+      expect(trace.sse).toBeNull();
+    }
   },
 );
 
@@ -231,7 +235,7 @@ it('HTTP 失败和 JSON 回退保留实际传输，错误体只消费一次', as
   expect(traces[0]).toMatchObject({ observedTransport: 'http', httpStatus: 400, firstBodyChunkMs: null,
     outcome: { code: 'rejected' } });
   const fallback = await capture(() => carrierResponse('openai', false));
-  expect(fallback.traces[0]).toMatchObject({ requestedStream: true, observedTransport: 'json', firstBodyChunkMs: null });
+  expect(fallback.traces[0]).toMatchObject({ requestedStream: true, observedTransport: 'json', contentType: 'json', sse: null, firstBodyChunkMs: null });
   expect(fallback.result).toMatchObject({ text: toolStoryText });
 });
 
