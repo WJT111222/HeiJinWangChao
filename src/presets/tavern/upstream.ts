@@ -5,7 +5,19 @@ import { array, nativeReasoning, record, usageFrom, type Usage } from '../../ser
 import { responseContent, responseDiagnostics } from '../../services/ai/responseContent';
 import { readSse } from '../../services/ai/sse';
 
+import { identifyBody, safeMime } from './responseFormat';
+
 export interface UpstreamTrace {
+  requestedStream?: boolean;
+  contentType?: string | null;
+  formatEvidence?: 'json_object' | 'sse_field' | 'sse_comment';
+  readerEof?: boolean;
+  readError?: boolean;
+  wrapperFormat?: 'json' | 'sse' | 'unknown';
+  wrapperBodyRead?: boolean;
+  cancelled?: boolean;
+  restored?: boolean;
+  rawFinish?: string;
   calls: number;
   bytes: number;
   complete: boolean;
@@ -20,7 +32,7 @@ export interface UpstreamTrace {
 export const newTrace = (): UpstreamTrace => ({ calls: 0, bytes: 0, complete: false, normalized: 'pending', wrapper: 'pending' });
 function invalid(): never { throw new AiError('invalid_output', undefined, { fieldPath: 'tavern.upstream.tool' }); }
 function parse(text: string): unknown {
-  try { return JSON.parse(text); } catch { throw new AiError('invalid_json'); }
+  try { return JSON.parse(text); } catch { throw new AiError('invalid_json', undefined, { fieldPath: 'tavern.upstream.json' }); }
 }
 function objectArgs(value: unknown) { return value !== null && typeof value === 'object' && !Array.isArray(value); }
 function normalizedUsage(u?: Usage) {
@@ -52,23 +64,29 @@ class Frames {
     const d = record(value), p = this.protocol;
     const usage = usageFrom(d, p);
     if (usage) this.trace.usage = { ...this.trace.usage, ...usage };
-    if (d.error || d.type === 'error') throw new AiError('rejected');
+    if (d.error || d.type === 'error') throw new AiError('rejected', undefined, { fieldPath: 'tavern.upstream.error' });
     const info = responseDiagnostics(d, p, streaming);
-    if (info.filtered || info.refusal) {
-      this.trace.finish = info.finishReasons?.[0];
-      throw new AiError('content_filter');
-    }
     const choices = array(isOpenAiCompatible(p) ? d.choices : d.candidates);
     const choice = record(choices[0]);
+    const reason = isOpenAiCompatible(p) ? choice.finish_reason : p === 'gemini' ? choice.finishReason
+      : streaming ? record(d.delta).stop_reason : d.stop_reason;
+    if (typeof reason === 'string' && reason) {
+      this.trace.rawFinish = ['tool_calls', 'tool_use', 'cancelled', 'canceled'].includes(reason.toLowerCase())
+        ? reason : info.finishReasons?.[0] ?? 'unrecognized';
+    }
+    if (info.filtered || info.refusal) {
+      this.trace.finish = info.finishReasons?.[0];
+      throw new AiError('content_filter', undefined, { fieldPath: 'tavern.upstream.filter' });
+    }
+    if (streaming && isOpenAiCompatible(p) && choice.message !== undefined)
+      throw new AiError('unsupported', undefined, { fieldPath: 'tavern.upstream.sse_message' });
     if (choices.length > 1 || (choice.index !== undefined && choice.index !== 0)) throw new AiError('unsupported');
     const msg = record(streaming ? choice.delta : choice.message);
     const text = responseContent(d, p, streaming), reasoning = nativeReasoning(d, p, streaming);
     this.hasText ||= Boolean(text.trim());
     const calls = [];
-    let reason: unknown;
     if (isOpenAiCompatible(p)) {
       if (msg.function_call != null || (msg.tool_calls != null && !Array.isArray(msg.tool_calls))) invalid();
-      reason = choice.finish_reason;
       for (const [i, item] of array(msg.tool_calls).entries()) {
         const tool = record(item), fn = record(tool.function);
         if (tool.type !== undefined && tool.type !== 'function') invalid();
@@ -76,7 +94,6 @@ class Frames {
         calls.push(this.track(streaming ? Number(tool.index) : i, tool.id, fn.name, fn.arguments));
       }
     } else if (p === 'gemini') {
-      reason = choice.finishReason;
       const anonymousThisFrame: string[] = [];
       for (const part of array(record(choice.content).parts)) {
         const call = record(part).functionCall;
@@ -105,7 +122,6 @@ class Frames {
       }
       for (const identity of anonymousThisFrame) this.anonymousGeminiCalls.add(identity);
     } else {
-      reason = streaming ? record(d.delta).stop_reason : d.stop_reason;
       if (d.type === 'message_stop') { this.boundary = true; this.trace.boundary = 'message_stop'; }
       const blocks = streaming ? d.type === 'content_block_start' ? [d.content_block] : [] : array(d.content);
       for (const block of blocks) {
@@ -130,12 +146,16 @@ class Frames {
     if (reason != null && reason !== '') {
       if (reason !== 'tool_calls' && reason !== 'tool_use') {
         try { checkFinish(reason, true); }
-        catch (error) { this.trace.finish = info.finishReasons?.[0] ?? 'unrecognized'; throw error; }
+        catch (error) {
+          this.trace.finish = info.finishReasons?.[0] ?? 'unrecognized';
+          if (error instanceof AiError) throw new AiError(error.code, error.status, { fieldPath: 'tavern.upstream.finish_reason' });
+          throw error;
+        }
       }
       if (this.trace.finish && this.trace.finish !== reason) invalid();
       this.trace.finish = String(reason);
     }
-    const finish = reason == null ? null : ['length','max_tokens'].includes(String(reason).toLowerCase())
+    const finish = reason == null || reason === '' ? null : ['length','max_tokens'].includes(String(reason).toLowerCase())
       ? 'length' : this.tools.size ? 'tool_calls' : 'stop';
     const payload = { ...(streaming ? {} : { role: 'assistant' }), ...(text ? { content: text } : {}),
       ...(reasoning ? { reasoning_content: reasoning } : {}), ...(calls.length ? { tool_calls: calls } : {}) };
@@ -144,8 +164,8 @@ class Frames {
   }
   finish(streaming: boolean) {
     const finish = this.trace.finish;
-    if (!finish && !this.boundary) throw new AiError('stream_interrupted');
-    if (streaming && this.protocol === 'anthropic' && !this.boundary) throw new AiError('stream_interrupted');
+    if (!finish && !this.boundary) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.missing_finish' });
+    if (streaming && this.protocol === 'anthropic' && !this.boundary) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.message_stop' });
     if (streaming && this.protocol === 'anthropic' && this.blocks.size) invalid();
     if (this.tools.size || finish === 'tool_use' || finish === 'tool_calls') {
       if (!this.tools.size || !(finish === 'tool_use' || finish === 'tool_calls' || (this.protocol === 'gemini' && finish === 'STOP'))) {
@@ -164,27 +184,25 @@ class Frames {
 }
 export async function normalizeUpstream(response: Response, protocol: Protocol, stream: boolean, signal: AbortSignal, trace: UpstreamTrace) {
   trace.status = response.status;
+  trace.contentType = safeMime(response.headers);
+  trace.requestedStream = stream;
   const frames = new Frames(protocol, trace);
-  if (!response.body) throw new AiError('stream_interrupted');
+  if (!response.body) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.missing_body' });
   const stopped = new AbortController();
   const reading = AbortSignal.any([signal, stopped.signal]);
-  const counted = response.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
-    transform(chunk, controller) { trace.bytes += chunk.byteLength; controller.enqueue(chunk); },
-  }), { signal: reading });
-  if (!stream || response.headers.get('content-type')?.includes('application/json')) {
+  const counted = await identifyBody(response.body, reading, trace);
+  if (trace.normalized === 'json') {
     const payload = await new Response(counted).arrayBuffer();
-    trace.boundary = 'json';
     let source: string;
     try { source = new TextDecoder('utf-8', { fatal: true }).decode(payload); }
-    catch { throw new AiError('invalid_json'); }
+    catch { throw new AiError('invalid_json', undefined, { fieldPath: 'tavern.upstream.utf8' }); }
     const data = parse(source);
+    trace.boundary = 'json';
     const json = frames.project(data, false);
     frames.finish(false);
-    trace.normalized = 'json';
     return Response.json(json);
   }
-  trace.normalized = 'sse';
-  const iterator = readSse(counted, reading);
+  const iterator = readSse(counted, reading, { utf8: 'tavern.upstream.utf8', tail: 'tavern.upstream.sse_tail' });
   const encoder = new TextEncoder();
   const done = encoder.encode('data: [DONE]\n\n');
   let downstreamCancelled = false;
@@ -196,7 +214,7 @@ export async function normalizeUpstream(response: Response, protocol: Protocol, 
         if (next.done) {
           trace.boundary ??= 'eof';
         } else {
-          if (next.value.event === 'error') throw new AiError('rejected');
+          if (next.value.event === 'error') throw new AiError('rejected', undefined, { fieldPath: 'tavern.upstream.error' });
           if (isOpenAiCompatible(protocol) && next.value.data === '[DONE]') {
             frames.boundary = true;
             trace.boundary = 'done';

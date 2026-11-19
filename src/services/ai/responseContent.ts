@@ -61,6 +61,8 @@ export interface ResponseDiagnostics {
   transport?: 'json' | 'sse' | 'http';
   httpStatus?: number;
   tavern?: { calls: number; bytes: number; complete: boolean; upstreamStatus?: number; boundary?: string; upstreamFinish?: string;
+    requestedStream?: boolean; contentType?: string | null; formatEvidence?: string; readerEof: boolean; readError: boolean; cancelled: boolean;
+    rawFinish?: string; wrapperFormat?: string; wrapperBodyRead: boolean; restored: boolean;
     upstreamUsage?: import('./protocols').Usage; upstreamError?: string; normalized: string; wrapper: string };
   contentTypes?: string[];
   reasoningTypes?: string[];

@@ -12,6 +12,7 @@ export function StageResponseContent({ record, label }: { record?: StageResponse
   const order = record?.displayOrder ?? 'unknown';
   if (record && !story) return <ObservedResponse key={record.id} record={record} label={label} />;
   return <>
+    {story && <StoryDiagnostics key={record.id} record={record} />}
     {!text ? <p>{record?.status === 'pending' ? '请求尚未返回完整内容。' : '本页面没有可恢复的模型原文；已保存的候选不是模型原文，刷新后请查看规范化记录。'}</p>
       : story ? <textarea className="candidate-json story-raw-text" aria-label={`${label}模型完整原文`} readOnly spellCheck={false} value={text} />
         : <pre className="candidate-json" tabIndex={0} aria-label={`${label}模型完整原文`}>{text}</pre>}
@@ -19,6 +20,30 @@ export function StageResponseContent({ record, label }: { record?: StageResponse
     {story && text && order !== 'events' && <p className="field-hint">{order === 'unknown'
       ? '合并显示公开返回内容；非流式响应或缺少事件记录时，字段间真实返回先后不可知。'
       : '按收到的事件顺序显示；同一事件内的字段及内容块按响应排列，不代表生成先后。'}</p>}
+  </>;
+}
+
+function StoryDiagnostics({ record }: { record: StageResponse }) {
+  const [message, setMessage] = useState('');
+  const details = record.error && 'details' in record.error ? record.error.details : undefined;
+  const report = JSON.stringify({
+    attempt: record.id, protocol: record.protocol, status: record.status,
+    failureLayer: record.failureLayer, code: record.error?.code, fieldPath: details?.fieldPath,
+    storyRule: details?.storyRule, storyValidated: record.storyValidated === true, candidateSaved: record.candidateSaved === true,
+    httpStatus: record.diagnostics?.httpStatus, transport: record.diagnostics?.transport, tavern: record.diagnostics?.tavern,
+  }, null, 2);
+  async function copy() {
+    try { await navigator.clipboard.writeText(report); setMessage('已复制本次诊断'); }
+    catch { setMessage('请展开诊断并选中文字复制'); }
+  }
+  const layers = { request: '发出请求', upstream: '读取上游响应', wrapper: '预设还原', story_validation: '正文校验', draft: '保存草稿' };
+  return <>
+    {record.failureLayer && <p>失败位置：{layers[record.failureLayer]}</p>}
+    <button type="button" onClick={copy}>复制本次诊断</button>
+    {message && <small role="status">{message}</small>}
+    <details><summary>本次正文响应诊断</summary>
+      <pre className="candidate-json" tabIndex={0}>{report}</pre>
+    </details>
   </>;
 }
 

@@ -127,7 +127,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     // Only Story may evaluate a complete limit response; other stages remain strict.
     validateStoryOutputLimit: captured.stage === 'story',
     onResponseDiagnostics: (value) => {
-      if (sealed || options.signal?.aborted) return;
+      if (sealed || (options.signal?.aborted && !value.tavern)) return;
       diagnostics = mergeResponseDiagnostics(diagnostics, value); observe();
       options.onResponseDiagnostics?.(value);
     },
@@ -241,7 +241,14 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
         text: !continuation ? content : content.trim() ? merged(content) : continuation.partial });
     }
     clearTimeout(observationTimer);
-    stageResponses.update(responseId, { status: 'failed', text: preview(received),
+    const path = error instanceof AiError ? error.details?.fieldPath : undefined;
+    let storyLayer: 'request' | 'story_validation' | 'upstream' | 'wrapper' = 'request';
+    if (step === 'response') storyLayer = 'story_validation';
+    else if (diagnostics.tavern?.upstreamError || path?.startsWith('tavern.upstream.')) storyLayer = 'upstream';
+    else if (diagnostics.tavern && diagnostics.tavern.wrapper !== 'pending') storyLayer = 'wrapper';
+    stageResponses.update(responseId, { status: 'failed',
+      ...(captured.stage === 'story' ? { failureLayer: storyLayer } : {}),
+      text: preview(received),
       nativeReasoning: preview(publicReasoning), diagnostics, truncated, ...display(), error: safeAiError(failure) }, secrets);
     throw failure;
   }

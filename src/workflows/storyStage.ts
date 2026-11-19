@@ -134,6 +134,7 @@ export class StoryStage {
         readingPhase: !streaming ? 'waiting' : stream.bodyStarted ? 'body' : 'thinking',
         ...(!streaming || stream.bodyStarted ? {} : { planning: safeStreamResponseText(stream.planning, secrets), nativeReasoning: safeStreamResponseText(reasoning, secrets),
           compatibilityReasoning: safeStreamResponseText(compatibilityReasoning, secrets) }) });
+      let saving = false;
       let responseInspectionId: string | undefined;
       try {
         progress();
@@ -210,18 +211,25 @@ export class StoryStage {
           throw new AiError('invalid_output', undefined, { storyRule: 'credential_output' });
         if (recovery) validateRecoveredStory(state,draft.story!,story,recovery);
         current();
+        if (responseInspectionId) {
+          try { stageResponses.update(responseInspectionId, { storyValidated: true }, secrets); } catch { /* Display only. */ }
+        }
+        saving = true;
         attempt.saving();
         input.onProgress?.({ phase: 'saving', readingPhase: streaming ? 'body' : 'waiting', narrative: streaming ? story.narrative : '' });
         // 网络从不放入 IDB 事务；整份草稿用现有乐观锁原子替换。
         const saved = selection
           ? await this.repository.saveRecoveredStory!(draft,story,selection,attempt.signal)
           : await this.repository.saveDraft(rerollStory(draft,story), draft.draftRevision, attempt.signal, draft);
+        if (responseInspectionId) {
+          try { stageResponses.update(responseInspectionId, { candidateSaved: true }, secrets); } catch { /* Already persisted. */ }
+        }
         current();
         storyInspections.update(inspectionId, { status: 'saved' });
         return saved;
       } catch (error) {
         storyInspections.update(inspectionId, { status: 'failed' });
-        if (responseInspectionId) stageResponses.update(responseInspectionId, { status: 'failed', normalized: undefined, error: safeAiError(storyFailure(error)) }, secrets);
+        if (responseInspectionId) stageResponses.update(responseInspectionId, { status: 'failed', failureLayer: saving ? 'draft' : 'story_validation', normalized: undefined, error: safeAiError(storyFailure(error)) }, secrets);
         if (!recovery && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled') {
           current();
           const previousAttempt = draft.failures.filter(f => f.stage === 'story' && f.storyRevision === draft.storyRevision)

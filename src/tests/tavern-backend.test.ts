@@ -388,3 +388,78 @@ describe('第二批 P2 响应边界', () => {
     }
   });
 });
+
+describe('按响应字节选择预设上游解析器', () => {
+  const content = '中文 data: [DONE] "引号"\n下一行';
+  const json = JSON.stringify({ choices: [{ message: { content }, finish_reason: 'stop' }] }, null, 2);
+  const delta = { choices: [{ delta: { content }, finish_reason: 'stop' }] };
+  const cases = [
+    ...['application/json; charset=utf-8','Application/JSON','text/plain',undefined,'text/event-stream'].map(mime => ({
+      mime, stream:true, source:'\uFEFF \r\n'+json, format:'json',
+    })),
+    { mime: 'application/json', stream: false, source: frame(delta).trimEnd(), format: 'sse' },
+    ...['text/event-stream','text/plain','application/json',undefined].map(mime => ({
+      mime, stream:false, source:'\uFEFF\r\n: ping\n\n'+frame(delta), format:'sse',
+    })),
+  ];
+  it.each(cases)('$format, MIME=$mime, stream=$stream', async ({ mime, stream, source, format }) => {
+    const response = sse(source);
+    if (mime) response.headers.set('Content-Type', mime);
+    else response.headers.delete('Content-Type');
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(response);
+    const observed: ResponseDiagnostics[] = [];
+    const result = await new AiClient(fetcher).generate(snapshot('openai'), messages, {
+      tavernType: 'normal', stream, onResponseDiagnostics: d => observed.push(d),
+    });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(result.text).toBe(content);
+    expect(observed.at(-1)?.tavern).toMatchObject({ normalized: format, complete: true, bytes: new TextEncoder().encode(source).length });
+  });
+});
+
+describe('不完整的预设上游响应', () => {
+  const choice = (finish: string | null) => ({
+    choices: [{ message: { content: '<wave_delivery>合成内容</wave_delivery>' }, finish_reason: finish }],
+  });
+  it.each([
+    ['<html>private</html>', 'invalid_output', 'format'],
+    [' '.repeat(4096) + '{}', 'invalid_output', 'format'],
+    ['{"choices":', 'invalid_json', 'json'],
+    [JSON.stringify(choice(null)), 'stream_interrupted', 'missing_finish'],
+    [JSON.stringify(choice('cancelled')), 'stream_interrupted', 'finish_reason'],
+    [JSON.stringify(choice('private-upstream-text')), 'stream_interrupted', 'finish_reason'],
+    [JSON.stringify(choice('content_filter')), 'content_filter', 'filter'],
+    [frame(choice('stop')), 'unsupported', 'sse_message'],
+    [frame({ error: { message: 'private-upstream-text' } }), 'rejected', 'error'],
+  ])('拒绝并定位 %s', async (source, code, site) => {
+    const transport = vi.fn<typeof fetch>().mockResolvedValue(sse(source));
+    const observed: ResponseDiagnostics[] = [];
+    await expect(new AiClient(transport).generate(snapshot('openai'), messages, {
+      tavernType: 'normal', stream: true, onResponseDiagnostics: value => observed.push(value),
+    })).rejects.toMatchObject({ code, details: { fieldPath: 'tavern.upstream.' + site } });
+    expect(transport).toHaveBeenCalledTimes(1);
+    const trace = observed.at(-1)?.tavern;
+    expect(trace?.complete).toBe(false);
+    if (source.includes('"cancelled"')) expect(trace?.rawFinish).toBe('cancelled');
+    expect(JSON.stringify(trace)).not.toMatch(/private|wave_delivery/);
+  });
+  it.each(['json', 'sse', 'read'] as const)('区分读取与 UTF-8 解码失败 %s', async mode => {
+    let first = true;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (first) {
+          first = false;
+          controller.enqueue(new TextEncoder().encode(mode === 'json' ? '{"text":"' : 'data: '));
+        } else if (mode === 'read') controller.error(new Error('private'));
+        else { controller.enqueue(Uint8Array.of(0xff)); controller.close(); }
+      },
+    });
+    const transport = vi.fn<typeof fetch>().mockResolvedValue(new Response(body));
+    await expect(new AiClient(transport).generate(snapshot('openai'), messages, { tavernType: 'normal' }))
+      .rejects.toMatchObject({
+        code: mode === 'json' ? 'invalid_json' : 'stream_interrupted',
+        details: { fieldPath: mode === 'read' ? 'tavern.upstream.read' : 'tavern.upstream.utf8' },
+      });
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
+});

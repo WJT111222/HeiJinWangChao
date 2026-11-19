@@ -1,7 +1,8 @@
 import { nativeFetch } from '../../presets/tavern/fetch';
 import type { GenerationType } from '../../presets/tavern/events';
 import { sendTavern } from '../../presets/tavern/backend';
-import { newTrace } from '../../presets/tavern/upstream';
+import { safeMime } from '../../presets/tavern/responseFormat';
+import { newTrace, type UpstreamTrace } from '../../presets/tavern/upstream';
 import type { Sampling } from '../../presets/package';
 import { AiError, safeAiError } from './errors';
 import { requestInspections } from './inspection';
@@ -116,7 +117,7 @@ export class AiClient {
   constructor(private transport: typeof fetch = nativeFetch) {}
   private async response(
     url: string, init: RequestInit, signal: AbortSignal, snapshot?: RequestSnapshot,
-    observe?: (value: ResponseDiagnostics) => void, presetSampling = false,
+    observe?: (value: ResponseDiagnostics) => void, presetSampling = false, trace?: UpstreamTrace,
   ) {
     const response = await this.transport(url, {
       ...init,
@@ -126,6 +127,7 @@ export class AiClient {
       cache: 'no-store',
       referrerPolicy: 'no-referrer',
     });
+    if (trace) { trace.status = response.status; trace.contentType = safeMime(response.headers); }
     if (!response.ok) {
       const status = response.status;
       // Do not wait for an extra error body: preserve HTTP failure/retry timing.
@@ -193,7 +195,7 @@ export class AiClient {
           try { if (options.recordInspection !== false) inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection, wire.presetSamplingInspection); }
           catch { /* Inspection cannot affect transport. */ }
           return this.response(wire.url, wire.init, requestSignal, snapshot, options.onResponseDiagnostics ? observe : undefined,
-            wire.presetSamplingInspection !== undefined);
+            wire.presetSamplingInspection !== undefined, trace);
         };
         const response = trace && cleanup && options.tavernType
           ? await sendTavern(snapshot, options.tavernType, [...messages], options.presetSampling ?? {}, options.stream === true,
@@ -205,11 +207,12 @@ export class AiClient {
           usage: Usage | undefined;
         // 部分中转忽略 stream:true 直接返回完整 JSON；按非流式读取，再一次性交给进度回调。
         const wholeJson = options.stream === true && /application\/json/i.test(response.headers.get('content-type') ?? '');
-        const streaming = trace ? response.headers.get('content-type')?.includes('text/event-stream') : options.stream && !wholeJson;
+        const streaming = trace ? safeMime(response.headers) === 'text/event-stream' : options.stream && !wholeJson;
         if (!streaming) {
           let data: unknown;
           try {
             data = await response.json();
+            if (trace) trace.wrapperBodyRead = true;
           } catch {
             throw new AiError('invalid_json');
           }
@@ -312,33 +315,41 @@ export class AiClient {
             if (rest.reasoning && !signal.aborted) options.onCompatibilityReasoningDelta?.(rest.reasoning);
             if (rest.reasoning && !nativeSeen) { reasoning += rest.reasoning; if (!signal.aborted) options.onReasoningDelta?.(rest.reasoning); }
           }
-          if (!terminal) throw new AiError('stream_interrupted');
+          if (trace) trace.wrapperBodyRead = true;
+          if (!terminal) throw new AiError('stream_interrupted', undefined, trace ? { fieldPath: 'tavern.wrapper.missing_finish' } : undefined);
           if (!signal.aborted) observe({ transport: 'sse', complete: true });
         }
         if (text.length > 8_000_000 || reasoning.length > 2_000_000) throw new AiError('invalid_output');
         if (trace) {
           if (trace.error) throw trace.error;
-          if (!trace.complete || trace.calls !== 1) throw new AiError('stream_interrupted');
+          if (!trace.complete || trace.calls !== 1) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.incomplete' });
           if (unhandledTool) throw new AiError('invalid_output', undefined, { fieldPath: 'tavern.unhandled_tool' });
           usage = trace.usage;
           outputLimited ||= ['length', 'max_tokens'].includes(trace.finish?.toLowerCase() ?? '');
         }
         if (!text.trim()) throw new AiError('empty');
+        if (trace) trace.restored = true;
         try { if (inspectionId) requestInspections.finish(inspectionId, usage); }
         catch { /* 诊断观察器失败不改变响应。 */ }
         return { text, ...(outputLimited ? { outputLimited: true } : {}), ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics, protocol: snapshot.channel.protocol, model: snapshot.model };
       });
     } catch (error) {
       const failure = options.signal?.aborted || (error instanceof AiError && error.code === 'timeout') ? error : trace?.error ?? error;
-      if (trace && failure instanceof AiError) manualRetryOnly.add(failure);
+      if (trace && failure instanceof AiError) {
+        manualRetryOnly.add(failure);
+        trace.cancelled = failure.code === 'cancelled' || failure.code === 'timeout';
+      }
       try { if (inspectionId) requestInspections.finish(inspectionId, trace ? trace.usage : observedUsage, safeAiError(failure).code); }
       catch { /* 保留原始失败语义。 */ }
       throw failure;
     } finally {
-      cleanup?.abort();
       if (trace) observe({ tavern: { calls: trace.calls, bytes: trace.bytes, complete: trace.complete,
         upstreamStatus: trace.status, upstreamFinish: trace.finish, upstreamUsage: trace.usage, upstreamError: trace.error?.code,
+        requestedStream: trace.requestedStream, contentType: trace.contentType, formatEvidence: trace.formatEvidence,
+        cancelled: trace.cancelled === true, readerEof: trace.readerEof === true, readError: trace.readError === true, rawFinish: trace.rawFinish,
+        wrapperFormat: trace.wrapperFormat, wrapperBodyRead: trace.wrapperBodyRead === true, restored: trace.restored === true,
         boundary: trace.boundary, normalized: trace.normalized, wrapper: trace.wrapper } });
+      cleanup?.abort();
     }
   }
   async listModels(snapshot: RequestSnapshot, options: ModelListOptions = {}): Promise<string[]> {

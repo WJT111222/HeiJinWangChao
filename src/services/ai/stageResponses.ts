@@ -20,6 +20,9 @@ export interface StageResponse {
   baseSaveRevision?: number; draftRevision?: number; executionRevision?: number; stageRequestRevision?: number;
   basedOnVariableRevision?: number;
   diagnostics?: ResponseDiagnostics;
+  storyValidated?: boolean;
+  candidateSaved?: boolean;
+  failureLayer?: 'request' | 'upstream' | 'wrapper' | 'story_validation' | 'draft';
   truncated?: boolean;
   status: 'pending' | 'received' | 'validated' | 'failed';
   text?: string; normalized?: string; error?: ReturnType<typeof safeAiError>;
@@ -74,7 +77,7 @@ export class StageResponseStore {
     this.publish([freeze({ ...scope, id, status: 'pending' as const }), ...this.records].slice(0, 6));
     return id;
   }
-  update(id: string, patch: Partial<Pick<StageResponse, 'text' | 'nativeReasoning' | 'displayText' | 'displayOrder' | 'normalized' | 'status' | 'error' | 'diagnostics' | 'truncated' | 'notes'>>, secrets: readonly string[]) {
+  update(id: string, patch: Partial<Pick<StageResponse, 'text' | 'nativeReasoning' | 'displayText' | 'displayOrder' | 'normalized' | 'status' | 'error' | 'diagnostics' | 'truncated' | 'notes' | 'storyValidated' | 'candidateSaved' | 'failureLayer'>>, secrets: readonly string[]) {
     const current = this.records.find(item => item.id === id);
     if (!current) return;
     const limits = responseLimitsFor(current.stage);

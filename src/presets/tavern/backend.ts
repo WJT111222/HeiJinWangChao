@@ -5,6 +5,7 @@ import type { Sampling } from '../package';
 import { type GenerationData, type GenerationType, tavernEvents, tavernTools } from './events';
 import { fetchGeneration } from './fetch';
 import { type UpstreamTrace, normalizeUpstream } from './upstream';
+import { safeMime } from './responseFormat';
 import { tavernWire } from './wire';
 
 export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType, messages: AiMessage[], sampling: Sampling,
@@ -22,6 +23,7 @@ export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType
       try {
         const wire = tavernWire(snapshot, await request.json());
         actual.throwIfAborted();
+        trace.requestedStream = wire.stream;
         trace.calls++;
         const response = await send(wire, actual);
         return await normalizeUpstream(response, snapshot.channel.protocol, wire.stream, actual, trace);
@@ -32,6 +34,8 @@ export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType
       }
     });
     trace.wrapper = 'returned';
+    const mime = safeMime(result.headers);
+    trace.wrapperFormat = mime === 'text/event-stream' ? 'sse' : mime === 'application/json' ? 'json' : 'unknown';
     if (trace.error && !(trace.complete && trace.error.code === 'empty')) throw trace.error;
     if (!result.ok) throw new AiError('rejected', result.status, { fieldPath: 'tavern.wrapper.http' });
     return result;

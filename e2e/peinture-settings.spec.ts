@@ -1,6 +1,6 @@
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools, openStageRaw } from './helpers/gameLayout';
 import fixture from './fixtures/peinture-game.json' with { type: 'json' };
 
 type Protocol = 'openai' | 'deepseek' | 'anthropic' | 'gemini';
@@ -57,7 +57,7 @@ function upstream(protocol: Protocol, stream: boolean) {
 }
 
 // Synthetic save and opening draft produced with game() and createTurnDraft(); no production test hooks.
-async function prepare(page: Page, protocol: Protocol, stream: boolean, active: boolean) {
+async function prepare(page: Page, protocol: Protocol, stream: boolean, active: boolean, actionOptions = false) {
   const sent: string[] = [];
   await page.route('**/*', (route) => {
     const u = new URL(route.request().url());
@@ -90,7 +90,7 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
   await page.goto('/');
   await page.getByRole('button', { name: '设置', exact: true }).first().waitFor();
   await page.evaluate(
-    async ({ fixture, protocol, stream, active, pack }) => {
+    async ({ fixture, protocol, stream, active, pack, actionOptions }) => {
       const db = await new Promise<IDBDatabase>((ok, fail) => {
         const request = indexedDB.open('heijinwangchao');
         request.onsuccess = () => ok(request.result);
@@ -115,6 +115,7 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
       }
       fixture.config.channels[0].protocol = protocol;
       fixture.settings.runtime.streamStory = stream;
+      fixture.settings.prompts.actionOptions = actionOptions;
       localStorage.setItem('heijin.ai.v1', JSON.stringify(fixture.config));
       localStorage.setItem(fixture.settingsKey, JSON.stringify(fixture.settings));
       sessionStorage.setItem('heijin.credential.v1:fixture-channel', 'fixture-only');
@@ -124,7 +125,7 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
           JSON.stringify({ enabled: true, selected: pack, packages: {} }),
         );
     },
-    { fixture, protocol, stream, active, pack },
+    { fixture, protocol, stream, active, pack, actionOptions },
   );
   await page.reload();
   return sent;
@@ -291,3 +292,68 @@ test('保存失败保留编辑，脚本正文交付偏好随下一次请求生�
     toolName,
   );
 });
+
+for (const format of ['json', 'sse', 'interrupted', 'invalid-story'] as const) {
+  test('实际正文标记及本次诊断 ' + format, async ({ page, context }, testInfo) => {
+    const requestedStream = format !== 'sse';
+    const sent = await prepare(page, 'openai', requestedStream, true, true);
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.goto('/#game/peinture-smoke');
+    await openGameTools(page);
+    await page.getByRole('button', { name: '王朝预设设置', exact: true }).click();
+    const panel = page.getByRole('dialog', { name: '王朝预设设置' });
+    await panel.getByLabel('正文交付').selectOption('text');
+    await panel.getByRole('button', { name: '保存调整' }).click();
+    await expect(panel.getByRole('status')).toContainText('已保存');
+    await panel.getByRole('button', { name: '关闭预设设置' }).click();
+
+    const narrative = ('雨停后，林舟收起伞，望着写有“北岸”的路牌。\n').repeat(80).trim();
+    const story = envelope.replace('船靠岸了，林舟沿着石阶往上走。', narrative)
+      + '<行动选项>留在原地\n看看周围\n询问站台</行动选项>';
+    const content = '<wave_delivery>' + (format === 'invalid-story' ? story.replace('[]', 'not JSON') : story) + '</wave_delivery>';
+    const json = format === 'json' || format === 'invalid-story';
+    await page.route('https://peinture.mock.invalid/**', route => {
+      sent.push(route.request().postData()!);
+      const data = { choices: [{ message: { content }, finish_reason: 'stop' }], usage: { completion_tokens: 123 } };
+      const chunk = { choices: [{ delta: { content }, finish_reason: format === 'interrupted' ? null : 'stop' }] };
+      return route.fulfill({
+        contentType: format === 'sse' ? 'application/json' : 'text/plain',
+        body: json ? JSON.stringify(data) : 'data: ' + JSON.stringify(chunk) + '\n\n',
+      });
+    });
+    await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
+    const success = format === 'json' || format === 'sse';
+    await expect.poll(() => page.evaluate(async () => {
+      const db = await new Promise<IDBDatabase>(ok => {
+        const request = indexedDB.open('heijinwangchao');
+        request.onsuccess = () => ok(request.result);
+      });
+      try {
+        return await new Promise<string>(ok => {
+          const request = db.transaction('drafts').objectStore('drafts').get('peinture-smoke');
+          request.onsuccess = () => ok(request.result.story?.narrative ?? (request.result.failures.length ? 'failed' : ''));
+        });
+      } finally { db.close(); }
+    })).toBe(success ? narrative : 'failed');
+    if (!success && testInfo.project.name === 'mobile') {
+      const dialog = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: '重试与变更详情' }) });
+      await dialog.getByRole('tab', { name: '模型原文' }).click();
+      await dialog.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click();
+      await dialog.locator('summary').filter({ hasText: /^正文模型原文/ }).click();
+    } else {
+      await openStageRaw(page, 'story');
+    }
+    await page.getByRole('button', { name: '复制本次诊断' }).click();
+    const report = JSON.parse(await page.evaluate(() => navigator.clipboard.readText()));
+    expect(report).toMatchObject({
+      protocol: 'openai', tavern: { requestedStream, normalized: json ? 'json' : 'sse', calls: 1, complete: format !== 'interrupted' },
+      candidateSaved: success, storyValidated: success,
+    });
+    if (format === 'interrupted') expect(report).toMatchObject({ code: 'stream_interrupted', fieldPath: 'tavern.upstream.missing_finish', failureLayer: 'upstream' });
+    if (format === 'invalid-story') expect(report).toMatchObject({ failureLayer: 'story_validation', tavern: { rawFinish: 'stop', restored: true } });
+    if (json) expect(report.tavern.upstreamUsage.outputTokens).toBe(123);
+    expect(JSON.stringify(report)).not.toMatch(/林舟|fixture-only|peinture-smoke|wave_delivery/);
+    expect(sent).toHaveLength(1);
+    await testInfo.attach('本次诊断', { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
+  });
+}
