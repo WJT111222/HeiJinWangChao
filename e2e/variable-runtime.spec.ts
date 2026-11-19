@@ -94,7 +94,13 @@ async function seed(page: Page, ready = true, disabled = false, text = narrative
   );
   await page.goto('/#game/variable-e2e'); await openGameTools(page);
   await page.reload(); await openGameTools(page);
-  await expect(page.getByRole('heading', { name: '林舟', exact: true })).toBeVisible();
+  if ((page.viewportSize()?.width ?? 1440) > 900) {
+    await expect(page.getByRole('heading', { name: '林舟', exact: true })).toBeVisible();
+  } else if (ready) {
+    await expect(page.getByTestId('story-reader')).toContainText(text);
+  } else {
+    await expect(page.getByTestId('story-reader')).toBeVisible();
+  }
   return before;
 }
 async function stored(page: Page, saveId = 'variable-e2e') {
@@ -110,7 +116,9 @@ async function stored(page: Page, saveId = 'variable-e2e') {
   }, saveId);
 }
 async function ready(page: Page) {
-  await expect(page.getByRole('region', { name: '三阶段工作流' }).locator('.workflow-stages > li').nth(1)).toContainText('已完成');
+  const details = page.getByRole('region', { name: '变量管理详情', exact: true });
+  if (!await details.isVisible()) await openWorkflowStage(page, 'variables');
+  await expect(details).toContainText('已完成');
 }
 
 test('变量正常生成、真实独立路由/模块/usage，完整候选主动查看，刷新仍保留候选且正式资金不变', async ({

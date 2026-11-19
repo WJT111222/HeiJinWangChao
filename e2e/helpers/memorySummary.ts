@@ -32,6 +32,13 @@ export async function seedSummary(page: Page, options: { count?: number; publicL
     for (const stage of ['variables', 'world', 'memory']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-summary-secret');
   }, options);
+  if ((page.viewportSize()?.width ?? 1440) <= 900) {
+    // This fixture starts in the saved game. Mobile library entry has no desktop save card.
+    await page.goto('/#game/save-a');
+    await page.reload();
+    await expect(page.locator('.game-layout')).toBeVisible();
+    return;
+  }
   await page.reload(); await openLibrary(page); await page.locator('.save-card').getByRole('button', { name: /读取存档/ }).click();
   await expect(page.locator('.game-layout')).toBeVisible();
 }
