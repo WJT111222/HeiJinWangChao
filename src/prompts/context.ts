@@ -116,7 +116,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         LEGACY_NOTIFICATION_RECOVERY: {
           eventId:input.legacyNotificationRecovery.eventId, entryId:input.legacyNotificationRecovery.entryId,
           playerAction:'玩家确认此入场仅是无需决定的通知，并选择在本幕读完或听完这条通知，仅收悉。',
-          previousStory:draft!.story,
+          previousStory:story,
           rule:'重做当前未结算正文，保留已绑定行动与旧选定正文已成立的事实，原样保留其他事件的结构化裁定。明确写出实际读完或听完这条已呈现通知的过程。确实收悉时，只给指定旧入场补交 group=event、eventInteraction.action=acknowledged 及实际 textEvidence。仅呈现或开始播放不够。如果内容实际仍要求批准、选择、回应或参与，即使玩家将它选为纯通知，也不要提交收悉回执。此授权不分类其他事件，不接受、批准、拒绝或执行任何待决事项。不要改变时钟约束或凭空补充未收到的内容。',
         },
       } : {}),

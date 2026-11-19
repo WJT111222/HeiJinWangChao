@@ -164,6 +164,31 @@ async function stored(page: Page, id = 'story-e2e-a') {
     }
   }, id);
 }
+// 每次失败只允许写入本次失败摘要、草稿修订和可续写的原文。
+async function expectFailedStory(page: Page, before: Awaited<ReturnType<typeof stored>>, errorCode: string, partial?: string) {
+  const draft = before.draft;
+  const failed = await stored(page);
+  expect(failed).toEqual({
+    state: before.state,
+    draft: {
+      ...draft, draftRevision: draft.draftRevision + 1,
+      stageStatus: { ...draft.stageStatus, story: 'failed' },
+      failures: [...draft.failures, { stage: 'story', attempt: draft.failures.length + 1,
+        storyRevision: draft.storyRevision, errorCode, retryable: false }],
+      storyPartial: partial === undefined ? undefined : { text: partial, continuations: 0, storyRevision: draft.storyRevision },
+    },
+  });
+  return failed;
+}
+async function discardForRetry(page: Page, failed: Awaited<ReturnType<typeof stored>>) {
+  const sent = requests.length;
+  await page.getByTestId('story-reader').getByRole('button', { name: '放弃这段' }).click();
+  const expected = { state: failed.state, draft: { ...failed.draft,
+    draftRevision: failed.draft.draftRevision + 1, storyPartial: undefined } };
+  await expect.poll(() => stored(page)).toEqual(expected);
+  expect(requests).toHaveLength(sent);
+  return expected;
+}
 async function generated(page: Page) {
   await expect(page.getByRole('region', { name: '三阶段工作流' }).locator('.workflow-stages > li').nth(0)).toContainText('已完成');
 }
@@ -346,7 +371,9 @@ test('P6：截断请求不保存正文，明确预算诊断；失败重试无原
   await seed(page); const saved = await stored(page);
   plans.push({ reasoning: '只有临时原生内容', finishReason: 'length', chunks: ['<thinking>长规划尚未结束'] });
   await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('达到输出上限'); expect(await stored(page)).toEqual(saved); expect(requests).toHaveLength(1);
+  await expect(page.getByRole('alert')).toContainText('达到输出上限'); const failed = await expectFailedStory(page, saved, 'output_limit', '<thinking>长规划尚未结束');
+  expect(requests).toHaveLength(1);
+  await discardForRetry(page, failed);
   plans.push({}); await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
   expect((await stored(page)).draft.storyRevision).toBe(1); expect(requests).toHaveLength(2);
   const inspection = await openStoryInspection(page);
@@ -375,8 +402,8 @@ test('Story精确诊断：1268/1500字符直接可见，可复制单条，原文
   await expect(await openStageRaw(page, 'story')).toContainText('未通过验收');
   await expect(page.locator('.stage-responses')).toContainText('正文长度不足');
   expect(await page.getByLabel('正文模型完整原文').textContent()).toBe(raw);
-  expect(await stored(page)).toEqual(before); expect(requests).toHaveLength(1);
-  await page.reload(); await openGameTools(page); expect(await stored(page)).toEqual(before); expect(requests).toHaveLength(1);
+  const failed = await expectFailedStory(page, before, 'invalid_output'); expect(requests).toHaveLength(1);
+  await page.reload(); await openGameTools(page); expect(await stored(page)).toEqual(failed); expect(requests).toHaveLength(1);
 });
 
 test('Story标签与变量规划诊断分别定位；只有玩家明确重试才再次请求，合法原协议仍成功', async ({ page }) => {
@@ -390,12 +417,16 @@ test('Story标签与变量规划诊断分别定位；只有玩家明确重试才
     [result().replace(/<变量规划>.*?<\/变量规划>/s, '<变量规划>[{"group":"time","observedFact":42}]</变量规划>'), 'story_schema', 'variableGuide.0.observedFact'],
     [result().replace('看看站台\n留在原地\n询问路线', '等候\n离开'), 'actions_count', '实际：2 条'],
   ];
+  let last = before;
   for (const [index, [raw, rule, message]] of cases.entries()) {
     plans.push({ chunks: [raw] }); await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
     await expect(page.getByRole('alert')).toContainText(message);
     const latest = page.getByTestId('runtime-log').locator('li').first(); await expect(latest).toContainText(rule);
     await expect(latest).not.toContainText('private-game-detail'); await expect(latest).not.toContainText('mock-browser-key');
-    expect(await stored(page)).toEqual(before); expect(requests).toHaveLength(index + 1);
+    last = await expectFailedStory(page, last, rule === 'guide_json' ? 'invalid_json' : 'invalid_output',
+      rule === 'tag_missing' || rule === 'tag_unclosed' ? raw : undefined);
+    expect(requests).toHaveLength(index + 1);
+    if (last.draft.storyPartial) last = await discardForRetry(page, last);
   }
   // 模型漏写 </正文> 直接开 <短期记忆>：边界无歧义，整回合照常保存，正文不混入后续段落（合法原协议的成功在本文件其他用例覆盖）。
   plans.push({ chunks: [result().replace('</正文>', '')] });
@@ -412,7 +443,7 @@ test('Story后置凭证拒绝同步到原文面板，诊断与原文均不泄露
   const log = page.getByTestId('runtime-log'); await expect(log).toContainText('credential_output'); await expect(log).not.toContainText('mock-browser-key');
   const panel = await openStageRaw(page, 'story'); await expect(panel).toContainText('未通过验收'); await expect(panel).toContainText('credential_output'); await expect(panel).not.toContainText('mock-browser-key');
   await expect(panel.getByText('正文程序校验后的结果', { exact: true })).toHaveCount(0);
-  expect(await stored(page)).toEqual(before); expect(requests).toHaveLength(1);
+  await expectFailedStory(page, before, 'invalid_output'); expect(requests).toHaveLength(1);
 });
 
 test('Story保存版本冲突保留原DataError处理，原文面板显示具体失败而非校验成功', async ({ page }) => {

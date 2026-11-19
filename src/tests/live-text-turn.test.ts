@@ -1,3 +1,5 @@
+import { issue194 } from './fixtures/issue194';
+import { runStageRequest } from '../services/ai/runtime';
 import { variableTextEnvelope } from './fixtures/variableReply';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
@@ -531,4 +533,46 @@ it('坏项不能掩盖开局时间冲突，合法正文后仍只发一次请求�
   });
   expect(await a.repo.load('save-a')).toEqual(before);
   expect(t.calls.map(call => call.stage)).toEqual(['story']);
+});
+
+it('旧通知恢复保留其他事件裁定，当轮坏项原文只进入 Variables 请求', async () => {
+  const { state, draft, source } = issue194();
+  const selected = draft.story!;
+  const decision = { group: 'event' as const, observedFact: '主角开始核对资料。',
+    eventNarration: { eventId: 'main-stage', mode: 'enter' as const, at: state.worldClock } };
+  selected.variableGuide.push(decision);
+  const references = [{ group: 'npc' as const, text: ordinaryGuideRaw }];
+  selected.variableGuideReferences = references;
+  draft.stageStatus.world = 'failed';
+  draft.failures.push({ stage: 'world', attempt: 1, storyRevision: draft.storyRevision, errorCode: 'invalid_output', retryable: false });
+  const repo = await SaveRepository.open('reference-isolation', new IDBFactory());
+  repos.push(repo);
+  const backup = { state, draft };
+  await repo.importBackup(backup, (await repo.compareBackup(backup)).confirmation);
+  const current = await repo.loadGame(state.saveId);
+  const route = settingsAndRoute();
+  const receipt = { group: 'event', observedFact: '主角听完汇报。', textEvidence: '主角听完汇报。',
+    eventInteraction: { eventId: source.id, entryId: source.protagonistEntry.id, action: 'acknowledged' } };
+  const t = transport(() => block(set('worldClock', source.fixedEndAt)), undefined, () => ({
+    narrative: selected.narrative + receipt.textEvidence, guide: [decision, receipt],
+  }));
+  const client = new AiClient(t.fetcher);
+  await runStageRequest({ state: current.state, draft: current.draft!, settings: route.settings, stage: 'variables', mode: 'regular', userInput: draft.userInput },
+    route.config, route.vault, {}, client);
+  expect(t.calls[0].context.VARIABLE_GUIDE_REFERENCES).toEqual(references);
+  const stage = new StoryStage(repo, client);
+  try {
+    const saved = await stage.generate({ ...route, draft: current.draft!,
+      legacyNotificationSelection: { eventId: source.id, entryId: source.protagonistEntry.id, notificationOnly: true, finishReading: true } });
+    expect(saved.story?.variableGuide).toEqual([decision, receipt]);
+    expect(saved.storyRevision).toBe(draft.storyRevision + 1);
+    expect(await repo.load(state.saveId)).toEqual(current.state);
+    expect(t.calls.map(call => call.stage)).toEqual(['variables', 'story']);
+    const recovery = record(t.calls[1].context.LEGACY_NOTIFICATION_RECOVERY);
+    expect(recovery.previousStory).toEqual({ turnKind: selected.turnKind, narrative: selected.narrative,
+      summary: selected.summary, variableGuide: [decision] });
+    const outbound = array(t.calls[1].body.messages).map(message => string(record(message).content)).join('\n');
+    expect(outbound).not.toContain('variableGuideReferences');
+    expect(outbound).not.toContain('值班员整理了资料');
+  } finally { stage.dispose(); }
 });
