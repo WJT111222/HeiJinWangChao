@@ -1,3 +1,4 @@
+import { openStoredSave } from './helpers/home';
 import { workflowTrigger } from './helpers/gameLayout';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { expect, test } from './helpers/test';
@@ -126,7 +127,7 @@ test('PC 长状态限高、完整资料、九入口短屏可访问', async ({ pa
   test.setTimeout(60000);
   test.skip(info.project.name !== 'desktop');
   await seedNightSeal(page, true);
-  await page.getByRole('button', { name: /读取存档/ }).click();
+  await openStoredSave(page);
   const before = await nightSealStored(page);
   for (const size of [...sizes.filter(size => size.width > 900), { width: 901, height: 600 }, { width: 2560, height: 1080 }]) {
     await page.setViewportSize(size);

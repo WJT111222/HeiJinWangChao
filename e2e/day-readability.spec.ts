@@ -178,7 +178,7 @@ test('纸页隔离与外观保存：人物/世界/设置、未保存偏好、失
   await expect(page.locator('html')).toHaveAttribute('data-appearance', 'day'); expect(await repositoryValue(page)).toEqual(before);
 });
 
-test('夜间四城关键样式与修复前一致，其他三城日间铭牌不变', async ({ browser }, info) => {
+test('夜间四城关键样式与修复前一致，其他三城日间铭牌不变', async ({ browser }, info) => {test.skip(!process.env.E2E_PIXEL_COMPARE, '像素对照：需另外启动改动前后两个服务器，只在专门对照时设置 E2E_PIXEL_COMPARE 运行');
   const width = info.project.use.viewport!.width, height = info.project.use.viewport!.height, mobile = width <= 900;
   for (const city of cities) {
     const pictures: Buffer[] = [], fingerprints: unknown[] = [], dayPlates: unknown[] = [];
@@ -212,7 +212,7 @@ test('夜间四城关键样式与修复前一致，其他三城日间铭牌不�
   }
 });
 
-test('三项缺陷的同档修复前后量测与截图', async ({ browser }, info) => {
+test('三项缺陷的同档修复前后量测与截图', async ({ browser }, info) => {test.skip(!process.env.E2E_PIXEL_COMPARE, '像素对照：需另外启动改动前后两个服务器，只在专门对照时设置 E2E_PIXEL_COMPARE 运行');
   const width = info.project.use.viewport!.width, height = info.project.use.viewport!.height;
   const versions: Record<string, Record<string, Awaited<ReturnType<typeof paintedContrast>>>> = {};
   for (const [version, baseURL] of [['before', 'http://127.0.0.1:55324'], ['after', `http://127.0.0.1:${process.env.READABILITY_PORT ?? 55325}`]]) {

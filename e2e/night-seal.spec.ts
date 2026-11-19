@@ -1,3 +1,4 @@
+import { openStoredSave } from './helpers/home';
 import { mkdir } from 'node:fs/promises';
 import { expect, test } from './helpers/test';
 import { seedNightSeal, nightSealStored } from './helpers/nightSeal';
@@ -91,7 +92,7 @@ test('夜幕金印：真实已结算存档、四导航、阅读与视觉验收',
 test('长姓名、巨大金额及短横屏保持阅读与真实资料可访问', async ({ page }) => {
   test.setTimeout(60000);
   await seedNightSeal(page, true);
-  await page.getByRole('button', { name: /读取存档/ }).click();
+  await openStoredSave(page);
   for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 800 }, { width: 900, height: 700 }, { width: 390, height: 844 }, { width: 375, height: 667 }, { width: 320, height: 568 }, { width: 667, height: 375 }]) {
     await page.setViewportSize(viewport);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
