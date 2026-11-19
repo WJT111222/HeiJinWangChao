@@ -4,6 +4,8 @@ import { DataError } from '../domain/common';
 import { fingerprint } from '../domain/commands';
 import { rerollStory, TurnDraftSchema } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
+import type { LegacyNotificationSelection } from '../domain/events/legacyNotification';
+import { authorizeLegacyNotificationRecovery, validateRecoveredStory } from '../domain/legacyNotificationRecovery';
 import { StorySchema } from '../domain/state';
 import type { CompanionProfile } from '../services/local/companionProfile';
 import type { SaveRepository } from '../services/storage/saveRepository';
@@ -22,7 +24,8 @@ import { StoryStream } from './storyStream';
 import { StageGuard } from './stageGuard';
 import type { OrderPreferences } from '../prompts/order';
 
-type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>;
+type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>
+  & Partial<Pick<SaveRepository,'saveRecoveredStory'>>;
 export interface StoryProgress {
   phase: 'generating' | 'saving';
   narrative: string;
@@ -43,6 +46,7 @@ interface StoryInput {
   onFailureSaved?: (draft: TurnDraft) => void;
   /** 从草稿里保存的截断原文接着写（玩家点「续写正文」）。 */
   continuation?: boolean;
+  legacyNotificationSelection?: LegacyNotificationSelection;
 }
 
 /** 正文失败后应写入草稿的截断原文（已隐藏凭证；含凭证时不保存）。 */
@@ -68,6 +72,7 @@ export class StoryStage {
   }
   async generate(input: StoryInput): Promise<TurnDraft> {
     const expected = TurnDraftSchema.parse(input.draft);
+    const selection = input.legacyNotificationSelection && structuredClone(input.legacyNotificationSelection);
     return this.guard.run(expected.saveId, async (attempt) => {
       const current = attempt.check;
       // 在第一个 await 之前快照本次设置；运行开关始终取绑定草稿，不被界面切换重写。
@@ -89,6 +94,9 @@ export class StoryStage {
         (draft.turnKind === 'opening' && state.turnNumber !== 0)
       )
         throw new DataError('DRAFT_CONFLICT', '草稿或正式版本已变化，请重新读取存档。');
+      const recovery = selection ? authorizeLegacyNotificationRecovery(state,draft,selection) : undefined;
+      if (recovery && (!this.repository.saveRecoveredStory || input.continuation
+        || !settings.runtime.useVariableStage || !settings.runtime.useWorldStage)) throw new AiError('configuration');
       const continuation = Boolean(input.continuation);
       if (continuation && !canContinueStory(draft, settings.prompts.minNarrativeChars))
         throw new DataError('DRAFT_CONFLICT', '这段正文已不能续写，请重新生成。');
@@ -121,6 +129,7 @@ export class StoryStage {
             settings,
             companionProfile,
             orderPreferences: input.orderPreferences,
+            ...(recovery ? {legacyNotificationRecovery:recovery} : {}),
           },
           config,
           input.vault,
@@ -176,19 +185,21 @@ export class StoryStage {
           )
         )
           throw new AiError('invalid_output', undefined, { storyRule: 'credential_output' });
-        const next = rerollStory(draft, story);
+        if (recovery) validateRecoveredStory(state,draft.story!,story,recovery);
         current();
         attempt.saving();
         input.onProgress?.({ phase: 'saving', readingPhase: streaming ? 'body' : 'waiting', narrative: streaming ? story.narrative : '' });
         // 网络从不放入 IDB 事务；整份草稿用现有乐观锁原子替换。
-        const saved = await this.repository.saveDraft(next, draft.draftRevision, attempt.signal, draft);
+        const saved = selection
+          ? await this.repository.saveRecoveredStory!(draft,story,selection,attempt.signal)
+          : await this.repository.saveDraft(rerollStory(draft,story), draft.draftRevision, attempt.signal, draft);
         current();
         storyInspections.update(inspectionId, { status: 'saved' });
         return saved;
       } catch (error) {
         storyInspections.update(inspectionId, { status: 'failed' });
         if (responseInspectionId) stageResponses.update(responseInspectionId, { status: 'failed', normalized: undefined, error: safeAiError(storyFailure(error)) }, secrets);
-        if (input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled') {
+        if (!recovery && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled') {
           current();
           const previousAttempt = draft.failures.filter(f => f.stage === 'story' && f.storyRevision === draft.storyRevision)
             .reduce((last, failure) => Math.max(last, failure.attempt), 0);
@@ -221,5 +232,9 @@ export function storyError(error: unknown): string {
     return error.code === 'STORY_BUSY'
       ? '此存档已有阶段请求，请等待或取消。'
       : '存档或草稿版本已变化，本次结果未保存。请重新读取存档。';
+  if (error instanceof DataError && error.code === 'LEGACY_RECOVERY_STAGES')
+    return '结算旧通知需要启用变量管理和动态世界。';
+  if (error instanceof DataError && error.code === 'LEGACY_RECOVERY_RECEIPT')
+    return '新正文没有合法保留所选通知的收悉及其他事件裁定。原草稿已保留。';
   return safeAiError(error).message;
 }

@@ -559,6 +559,21 @@
         "baseCommit": "086ea8f6c25b028460b71b121e42b45ee5e965c2",
         "notes": "正文项目规划可选；禁用裸露Step/元指令；仅调整本次Story标签兼容说明，原始来源及历次适配记录保持。",
         "sha256": "a38a1d5fdcde622a8f1ef9b3d2ddd311e0416cc0161c79fa36b6ba3416b13beb"
+      },
+      "issue194EntryHandoff": {
+        "baseCommit": "089723c2e1e0aa608afe9820a87b1f6a36ef385b",
+        "notes": "澄清已呈现、已知晓与玩家处理的边界，保留现有回执协议。",
+        "sha256": "6708495f8ba905a330d899738749f3b3e7c0ef18665bb5e053a36b031ca8565b"
+      },
+      "issue194NotificationReceipt": {
+        "baseCommit": "cc4b763df6d2b01bd119c13388c9f76045f38f78",
+        "notes": "Story声明纯通知实际收悉；保留玩家行动边界与旧类型。",
+        "sha256": "24a07c289353f67929245cc6120fd3653c3ff1f9e58f8766319c8802c715600b"
+      },
+      "issue194LegacyRecovery": {
+        "baseCommit": "399ab887e6f08346dc002e0df03c03e37f055674",
+        "notes": "说明播放器明确选择的旧通知恢复只能对指定入场确认收悉，仍保留决定与真实收悉边界。",
+        "sha256": "ab308f7547ce1f4e7ebfa06c51bc5800008752f82d1210b4ccfa1f0134408c5f"
       }
     },
     "shared/07_command_output.md": {
@@ -640,6 +655,11 @@
       "legacyCleanupV10": {
         "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "abb4485c4adfa4811efc45084d2960f166842efac1338aa20e69d1fd67d16a7e"
+      },
+      "issue194NotificationReceipt": {
+        "baseCommit": "cc4b763df6d2b01bd119c13388c9f76045f38f78",
+        "notes": "Variables只应用收悉回执，不赋予现场许可。",
+        "sha256": "14c0b17729a338f357e89b10a4271b235ff8ff3718ef4f34835f1894513342b5"
       }
     },
     "shared/08_world_output.md": {
@@ -766,6 +786,16 @@
       "legacyCleanupV10": {
         "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "eb4de4b0f8b2abb1443967eb5e66386e6191db10cf8079df74680e8e72e7a12d"
+      },
+      "issue194EntryHandoff": {
+        "baseCommit": "089723c2e1e0aa608afe9820a87b1f6a36ef385b",
+        "notes": "区分业务结案与入场承接，说明通知、待决互动和缺证据边界，添加可执行承接示例。",
+        "sha256": "c190eb40273063d40dcd70d56a27db513723ac4d0fd20550ccf09b9f93ef188b"
+      },
+      "issue194NotificationReceipt": {
+        "baseCommit": "cc4b763df6d2b01bd119c13388c9f76045f38f78",
+        "notes": "进度与已确认收悉分离；保留待决入场类型和合法承接。",
+        "sha256": "0a581a5ef1ac4f3be9f5419c522d77de05a0aeea0394fefc37c764b95ca0aadd"
       }
     },
     "stages/opening/variables.md": {
@@ -889,6 +919,11 @@
         "baseCommit": "ac5942f541ac0ef751357c5fb101f8bb8a65b02a",
         "notes": "World命令层级、记忆记录窗口、任务结束依据、事件来源/不可变字段和输出自检；仅澄清既有契约，保留此前来源记录，不改变领域规则或增加模型请求。",
         "sha256": "e44180488f476a5a66027b9c888a38a52374288a5dc43315a39c93f7d5a5cfab"
+      },
+      "issue194EntryHandoff": {
+        "baseCommit": "089723c2e1e0aa608afe9820a87b1f6a36ef385b",
+        "notes": "按 EVENT_SCHEDULE 核对仍开放的到期入场，勿编造后继。",
+        "sha256": "9cf9538704bf789cb5fe72bbcc22d0117dc4bbbab169f481671112cd7840e27a"
       }
     },
     "variableGroups/protagonist/init.md": {

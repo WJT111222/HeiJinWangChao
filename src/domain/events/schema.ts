@@ -17,13 +17,14 @@ export const EventContinuationSchema = z.discriminatedUnion('direction', [
 ]);
 export const EventInteractionSchema = z.strictObject({
   eventId:IdSchema,entryId:IdSchema,
-  action:z.enum(['presented','declined','left','interrupted','invalidated']),
+  action:z.enum(['presented','declined','left','interrupted','invalidated','acknowledged']),
 });
 export const ProtagonistEventEntrySchema = z.strictObject({
   id:IdSchema,sourceTurnId:IdSchema,queuedAt:GameTimeSchema,
   channel:TextSchema.max(200),cue:TextSchema.max(2000),locationId:IdSchema.optional(),
-  status:z.enum(['pending','presented','declined','left','interrupted','invalidated']),
+  status:z.enum(['pending','presented','declined','left','interrupted','invalidated','acknowledged']),
   handledTurnId:IdSchema.optional(),textEvidence:TextSchema.max(8000).optional(),
+  recoverySource:z.literal('player-confirmed-legacy-notification').optional(),
 }).meta({readOnly:true,description:'程序维护；排队来自本次World验证，处理来自下一幕Story结构化回执，正式提交前不生效。'});
 // 程序保存主角此前已知的事件投影；世界更新不能借旧known标记传播新进展。
 export const ProtagonistEventKnowledgeSchema = z.strictObject({
@@ -48,6 +49,8 @@ export const StoredWorldEventSchema = z.strictObject({
   eventKind: z.enum(['main', 'sub']).optional(),
   parentEventId: IdSchema.optional(), fixedEndAt: GameTimeSchema.optional(),
   protagonistKnowledge: ProtagonistEventKnowledgeSchema.optional(),
+  // Declared on creation and retained even when the continuation changes to end.
+  entryIntent: z.enum(['notification','decision']).optional(),
   continuation: EventContinuationSchema.optional(),
   protagonistEntry: ProtagonistEventEntrySchema.optional(),
 });
@@ -120,4 +123,9 @@ export const TimelineEntrySchema = HistoryRecordSchema.extend({
   recordedAt: GameTimeSchema, sourceTurnId: IdSchema,
 });
 export type WorldEvent = z.infer<typeof StoredWorldEventSchema>;
+
+// Existing scene authorities are explicit. Receipt of a notification is never scene authority.
+export function isSceneEntryReceipt(status: z.infer<typeof ProtagonistEventEntrySchema>['status']) {
+  return status === 'presented' || status === 'declined' || status === 'left' || status === 'interrupted';
+}
 export type WorldTask = z.infer<typeof WorldTaskSchema>;

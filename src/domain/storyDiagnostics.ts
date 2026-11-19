@@ -23,6 +23,7 @@ export const storyRuleNames = {
   receipt_repeated: '已呈现的事件入场不能再次呈现', receipt_evidence_empty: '事件回执说明为空',
   narration_reference: '事件叙事裁定须引用真实事件且不能重复或混用入场回执',
   narration_time: '事件叙事裁定时间或入场状态无效',
+  receipt_notification: '收悉回执只适用于本幕实际接收的纯通知',
   receipt_status: '事件回执 action 状态不合法',
   request_basis: '当前响应与草稿版本不一致', draft_conflict: '存档或草稿版本已变化，请重新读取后继续',
   credential_output: '模型输出包含凭证内容，已阻止保存；凭证不会显示',

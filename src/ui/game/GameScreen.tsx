@@ -72,6 +72,8 @@ import './day-appearance.css';
 import {MobileCityBar,MobileStatus,mobileCitySeal} from './MobileCity';
 import {MobileActions} from './MobileActions';
 import {ComposerTools} from './ComposerTools';
+import { legacyNotificationRecoveryOptions } from '../../domain/legacyNotificationRecovery';
+import { LegacyNotificationRecoveryDialog } from './LegacyNotificationRecoveryDialog';
 import { mayStartStory } from './storyGenerationPolicy';
 import { canContinueStory, continuationBlock, discardStoryPartial, partialNarrative as countPartialNarrative, STORY_CONTINUATION_LIMIT, storyPartialVisible } from '../../domain/storyContinuation';
 import { StoryStream } from '../../workflows/storyStream';
@@ -162,6 +164,9 @@ export function GameScreen({
   }
   const [worldDirectoryOpen, setWorldDirectoryOpen] = useState(false);
   const [diagnosticsOpen,setDiagnosticsOpen]=useState(false);
+  const [legacyRecoveryDialog,setLegacyRecoveryDialog] = useState<string>();
+  const legacyRecoveryOptions = useMemo(() => legacyNotificationRecoveryOptions(state,draft),[state,draft]);
+  const recoveryDraftKey = draft && `${draft.saveId}:${draft.turnId}:${draft.draftRevision}`;
   // 玩家关掉的错误横幅：只记住当时那组错误，出现新的错误时会重新显示。
   const [dismissedError, setDismissedError] = useState('');
   const [mobileStatusOpen,setMobileStatusOpen]=useState(false),[mobileMini,setMobileMini]=useState(false);
@@ -441,7 +446,11 @@ export function GameScreen({
       failure.stage === 'world' && failure.storyRevision === draft.storyRevision)));
   const worldRetryHint = '本次仅重试动态世界，保留已通过的正文和变量。重新请求可能产生模型费用。';
   const canGenerate = Boolean(validDraft && !awaitingAction && (storyNeeded || variablesNeeded || worldNeeded || stageSettingsChanged));
-  const disabledGuidance = !settings.runtime.useVariableStage && !settings.runtime.useWorldStage
+  const recoveryStagesOff = Boolean(draft?.legacyNotificationRecovery
+    && (!settings.runtime.useVariableStage || !settings.runtime.useWorldStage));
+  const disabledGuidance = recoveryStagesOff
+    ? '结算旧通知需要启用变量管理和动态世界。'
+    : !settings.runtime.useVariableStage && !settings.runtime.useWorldStage
     ? '变量管理和动态世界已关闭：正文通过校验后正式结算。纯小说模式不更新世界变量和普通回合时钟。'
     : !settings.runtime.useVariableStage && draft?.variables?.validation !== 'validated'
       ? '动态世界依赖合法变量候选。变量管理已关闭，世界结果仅供预览，不能正式结算；请启用变量补算，或同时关闭动态世界。'
@@ -668,6 +677,17 @@ export function GameScreen({
           <button type="button" className="wf-banner-close" aria-label="关闭错误提示" title="关闭提示（运行诊断里仍保留完整记录）"
             onClick={() => setDismissedError(errorSignature)}>×</button>
         </div>
+      )}
+      {legacyRecoveryOptions.length > 0 && (
+        <div className="wf-banner" data-level="warn" role="note">
+          <span className="wf-banner-tag" aria-hidden="true">复</span>
+          <div className="wf-banner-msg"><p>发现到期的旧入场。纯通知可主动恢复，待决请求继续保留。</p></div>
+          <button type="button" disabled={busy || !navigator.locks || !settings.runtime.useVariableStage || !settings.runtime.useWorldStage}
+            onClick={() => setLegacyRecoveryDialog(recoveryDraftKey)}>修复旧通知回合</button>
+        </div>
+      )}
+      {draft?.legacyNotificationRecovery && !busy && !recoveryStagesOff && (
+        <p role="status" className="field-hint">修复正文已保存。可继续未完成阶段验证收悉并结算。</p>
       )}
       {workflowGuidance && (
         <div className="wf-banner" data-level="warn" role="note" aria-label="阶段设置提示">
@@ -960,6 +980,13 @@ export function GameScreen({
         <button data-mobile-tab="world" aria-current={worldDirectoryOpen||(panel&&panel!=='人物档案'&&panel!=='经济与资产')?'page':undefined} onClick={() => setWorldDirectoryOpen(true)}><span className="mobile-seal" aria-hidden="true">世</span>世界资料</button>
         <button data-settings-open aria-current={renderSettings?'page':undefined} onClick={onOpenSettings}><span className="mobile-seal" aria-hidden="true">设</span>设置</button>
       </nav>
+      {legacyRecoveryDialog && legacyRecoveryDialog === recoveryDraftKey && draft?.story && legacyRecoveryOptions.length > 0 && (
+        <LegacyNotificationRecoveryDialog options={legacyRecoveryOptions} narrative={draft.story.narrative}
+          onClose={() => setLegacyRecoveryDialog(undefined)} onConfirm={selection => {
+            setLegacyRecoveryDialog(undefined);
+            if (!busy) void generate(selection);
+          }} />
+      )}
       {compactSidebars&&<MobileDiagnostics saveId={state.saveId} turnId={rawTurnId} draft={draft} entries={runtimeLogs} recovery={diagnosticRecovery} onClear={()=>setRuntimeLogs([])} open={diagnosticsOpen} onOpen={()=>setDiagnosticsOpen(true)} onClose={()=>setDiagnosticsOpen(false)}/>}
       {compactSidebars && mobileStatusOpen && <Dialog title="此时此地" mobileVariant="sheet" sheetExpandable seal={mobileCitySeal(state)} eyebrow="NOW · HERE" className="mobile-status-sheet" onClose={()=>setMobileStatusOpen(false)} returnFocus={()=>document.querySelector<HTMLElement>('[data-mobile-status]')??mobileReturnFocus('hero')}>
         <MobileStatus state={state} equipment={equipment} onProfile={()=>{setMobileStatusOpen(false);setPanel('人物档案');}} onEconomy={()=>{setMobileStatusOpen(false);setPanel('经济与资产');}}/>

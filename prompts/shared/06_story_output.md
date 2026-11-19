@@ -23,7 +23,7 @@ JSON数组。每项包含 group、subjectHint、observedFact、textEvidence；�
 
 EVENT_ENTRIES按queuedAt及eventId稳定排序，是可按本幕剧情选择呈现的待入场情境，不是主角已经知道的世界秘密。仅使用所给channel/cue/locationId；不猜测事件内部背景、他人目的或结果，不凭来访直接瞬移。与玩家本次行动自然衔接，不替玩家接受、付款、认罪或完成重大选择。没有新玩家行动时程序不会自行请求下一幕。
 
-只对本回合实际呈现或处理的待入场，在变量规划增加group=event项及eventInteraction={eventId,entryId,action}。action只用presented（实际呈现入场）、declined（已明确拒绝本次参与）、left（实际退出）、interrupted（实际中断）、invalidated（因已经离开等实际事实使安排失效）。textEvidence简述本幕如何处理该入场，可以自然改写通知。回执使用真实eventId/entryId，正文应实际呈现相应通知或回应，不只在规划里提到。可以根据玩家行动与场景只处理部分入场；未处理者继续pending，不表示拒绝、完成或已知晓。不能重播已经presented的入场。
+只对本回合实际呈现或处理的待入场，在变量规划增加group=event项及eventInteraction={eventId,entryId,action}。action可用acknowledged（见下文）、presented（实际呈现入场）、declined（已明确拒绝本次参与）、left（实际退出）、interrupted（实际中断）、invalidated（因已经离开等实际事实使安排失效）。textEvidence简述本幕如何处理该入场，可以自然改写通知。回执使用真实eventId/entryId，正文应实际呈现相应通知或回应，不只在规划里提到。可以根据玩家行动与场景只处理部分入场；未处理者保持原状态，不推定拒绝、完成或已收悉。不能重播已经presented的入场。presented只表示已经呈现。仅对entryIntent=notification且仍开放的pending/presented入场，本幕确实收悉完整汇报或通知时，用action=acknowledged，并以textEvidence简述实际接收的内容。仅看到提示、打开消息或刚播放语音不能替代实际收悉。decision及未分类入场不用acknowledged。仅当程序提供LEGACY_NOTIFICATION_RECOVERY时，所指定的一个未分类入场才可按该恢复约定收悉，且仍须写明实际收悉；需要玩家决定的请求不能按通知处理。读到请求不等于批准、同意、拒绝或参与。无实际收悉不填回执，不为凑回执擅自替玩家打开手机或作决定。
 
 EVENT_PARTICIPATION仅含已经入场的身份，后续实际退出/拒绝/中断仍以相同eventId及entryId反馈。玩家想阻止、条件假设、对白中谈论拒绝、短暂离开不等于已阻止或退出；没有实际发生就不写此回执。拒绝/退出只关闭本次安排，不代表整个调查或事件被取消，不预设报复或惩罚。不要在变量规划直接写数据库命令。程序只将回执在本回合正式事务中生效；正文成功但后续失败不会提前消费入场。
 
