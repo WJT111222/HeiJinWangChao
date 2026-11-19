@@ -86,13 +86,20 @@ const messages: Record<AiErrorCode, string> = {
   content_filter: '模型服务的内容审核拦截了这次请求或输出，结果未保存。可以调整行动描述后重试，或换用审核更宽松的模型或服务。',
   parameter_adjusted: '服务明确拒绝了已发送的参数。下次主动生成时，将对符合本次条件的请求使用兼容写法。本次未自动重发、未生成内容，也未改动正式存档。',
 };
+const presetMessages = new Map<string, string>([
+  ['tavern.initialization', '预设脚本初始化失败，可到运行设置查看实例状态。'],
+  ['tavern.wrapper', '预设脚本处理响应时出错。'],
+  ['tavern.wrapper.http', '预设脚本返回了失败响应。'],
+  ['tavern.unhandled_tool', '预设脚本未将工具结果还原为正文。'],
+  ['tavern.upstream.tool', '上游工具数据不完整或结构无效。'],
+]);
 export class AiError extends Error {
   constructor(
     public readonly code: AiErrorCode,
     public readonly status?: number,
     public readonly details?: { fieldPath?: string; commandType?: string; commandIndex?: number; relatedCommandIndices?: number[]; worldRule?: WorldRule; eventEntryReason?: EventEntryReason; variableStep?: VariableStep } & Partial<ExecutionDiagnostic> & Partial<StoryDiagnostic>,
   ) {
-    super(details?.storyRule ? storyDiagnosticMessage(safeStoryDiagnostic(details)) : messages[code]
+    super(details?.storyRule ? storyDiagnosticMessage(safeStoryDiagnostic(details)) : (presetMessages.get(details?.fieldPath ?? '') ?? messages[code])
       + (isTimeDomainRule(details?.domainRule) ? ` ${details?.commandIndex === undefined ? '整批约束' : `第${details.commandIndex + 1}条命令`}：${domainRuleNames[details!.domainRule!]}。` : '')
       + (details?.fieldPath ? ` 字段：${details.fieldPath}${details.commandType ? `（${details.commandType}${details.commandIndex === undefined ? '' : `，第${details.commandIndex + 1}条`}）` : ''}。` : ''));
     if (details?.storyRule) this.details = safeStoryDiagnostic(details);

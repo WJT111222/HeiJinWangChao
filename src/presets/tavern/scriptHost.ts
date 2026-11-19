@@ -195,7 +195,7 @@ export async function mountPresetScripts(preset: LoadedPreset) {
   const config = runtimePreset(preset, () => assistantView.publish(), message => {
     assistantView.add({ id: 'settings', name: '脚本配置', status: '出错', error: message, buttons: [], phases: {} });
   });
-  registerRuntimeSettings(config.flush, config.applyChanges, { function_calling: preset.data.function_calling === true, squash_system_messages: preset.data.squash_system_messages === true });
+  registerRuntimeSettings(config.flush, config.applyChanges, { function_calling: preset.data.function_calling === true, squash_system_messages: preset.data.squash_system_messages === true }, config.syncSaved);
   const variables = variableStore(preset);
   const failures: unknown[] = [];
   const ordered = scriptOrder(preset.scripts);

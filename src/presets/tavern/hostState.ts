@@ -1,4 +1,5 @@
 import type { ComposeInput } from '../../prompts/context';
+import isEqual from 'lodash/isEqual';
 import type { PackageOverride } from '../package';
 import type { Protocol } from '../../services/ai/configuration';
 import { AiError } from '../../services/ai/errors';
@@ -60,7 +61,32 @@ export async function withTavernRequest<T>(input: StoryContext, protocol: Protoc
 let baseSettings: GenerationSettings | undefined;
 let savePending: (() => boolean) | undefined;
 let snapshotChanges: ((override: PackageOverride) => void) | undefined;
-export function registerRuntimeSettings(flush: () => boolean, apply: (override: PackageOverride) => void, defaults: GenerationSettings) {
+let syncSaved: ((override?: PackageOverride) => void) | undefined;
+export function readEditorOverride(id: string) {
+  savePending?.();
+  return readPresetSettings().packages[id];
+}
+export function storeEditorOverride(id: string, expected: PackageOverride | undefined, next?: PackageOverride) {
+  savePending?.();
+  const saved = readPresetSettings();
+  if (!isEqual(saved.packages[id], expected)) throw new Error('配置已在另一处更新，请重新打开后编辑。');
+  const active = saved.enabled && saved.selected === id;
+  const reload = active && !isEqual(expected?.scripts ?? {}, next?.scripts ?? {});
+  if (reload && request) throw new Error('恢复脚本启动偏好前，请完成或取消当前生成。');
+  const rollback = reload ? preparePageRefresh?.() : undefined;
+  try {
+    if (next) saved.packages[id] = next;
+    else delete saved.packages[id];
+    savePresetSettings(saved);
+  } catch (error) {
+    rollback?.();
+    throw error;
+  }
+  if (active) syncSaved?.(next);
+  return reload;
+}
+export function registerRuntimeSettings(flush: () => boolean, apply: (override: PackageOverride) => void, defaults: GenerationSettings, sync: (override?: PackageOverride) => void) {
+  syncSaved = sync;
   savePending = flush; snapshotChanges = apply; baseSettings = defaults;
 }
 export function switchPreset(id: string | null, resetCorrupt = false) {

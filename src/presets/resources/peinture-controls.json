@@ -1,0 +1,231 @@
+{
+  "mainScript": "86ab574f-a083-4590-944d-88e90585034f",
+  "sections": [
+    {
+      "name": "人物与关系",
+      "ids": [
+        "wave-core-character-motivation",
+        "wave-core-independent-regard",
+        "wave-core-knowledge-boundaries",
+        "wave-core-grounded-intimacy",
+        "wave-core-grounded-demeanor",
+        "wave-character-situated",
+        "wave-character-anti-default",
+        "wave-character-own-response",
+        "wave-portrait-clean"
+      ]
+    },
+    {
+      "name": "局势与节奏",
+      "ids": [
+        "wave-fortune-hostile",
+        "wave-fortune-neutral",
+        "wave-fortune-favored",
+        "wave-plot-revolution",
+        "wave-pace-slow",
+        "wave-pace-normal",
+        "wave-pace-fast",
+        "wave-ending-unasked",
+        "wave-ending-earned-question"
+      ]
+    },
+    {
+      "name": "互动与视角",
+      "ids": [
+        "wave-speech-on",
+        "wave-speech-off",
+        "wave-dialogue-more",
+        "wave-dialogue-medium",
+        "wave-dialogue-less",
+        "wave-dialogue-only",
+        "wave-restate-on",
+        "wave-restate-expand",
+        "wave-restate-off",
+        "wave-person-first",
+        "wave-person-second",
+        "wave-person-third",
+        "wave-person-character-third",
+        "wave-person-interaction-first",
+        "wave-person-omniscient",
+        "wave-mind-blackbox",
+        "wave-mind-folded",
+        "wave-mind-inline"
+      ]
+    },
+    {
+      "name": "篇幅与文风",
+      "ids": [
+        "wave-paragraph-length",
+        "wave-style-light-novel",
+        "wave-style-japanese-fantasy",
+        "wave-style-chinese-campus",
+        "wave-style-classical-vernacular",
+        "wave-style-xianxia",
+        "wave-style-urban",
+        "wave-style-rural",
+        "wave-style-western",
+        "wave-style-wuxia",
+        "wave-style-essay",
+        "wave-style-adaptive",
+        "wave-style-sensual",
+        "wave-style-ear-whisper"
+      ]
+    },
+    {
+      "name": "修辞与语言",
+      "ids": [
+        "wave-prose-word-ban",
+        "wave-prose-lived-language",
+        "wave-prose-modern-diction",
+        "wave-prose-vary-portrait",
+        "wave-prose-adjective-ban",
+        "wave-prose-metaphor",
+        "wave-prose-body-plain",
+        "wave-prose-language",
+        "wave-prose-language-purity",
+        "wave-prose-bilingual"
+      ]
+    },
+    {
+      "name": "亲密与形貌",
+      "ids": [
+        "wave-intimacy-terms",
+        "wave-intimacy-gentle",
+        "wave-intimacy-conquest",
+        "wave-age-light",
+        "wave-age-young",
+        "wave-age-mature",
+        "wave-grooming",
+        "wave-appearance",
+        "wave-body-chest",
+        "wave-body-hip",
+        "wave-body-leg",
+        "wave-body-foot",
+        "wave-body-stocking",
+        "wave-body-physics",
+        "wave-relation-intruder",
+        "wave-relation-yielding"
+      ]
+    },
+    {
+      "name": "附页与资料",
+      "ids": [
+        "wave-reference-canon",
+        "wave-reference-facts"
+      ]
+    },
+    {
+      "name": "自定义",
+      "ids": [
+        "wave-style-custom",
+        "wave-prose-private-ban",
+        "wave-custom-seam",
+        "wave-custom-intimacy"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "name": "局势难度",
+      "rule": "atMostOne",
+      "ids": [
+        "wave-fortune-hostile",
+        "wave-fortune-neutral",
+        "wave-fortune-favored"
+      ]
+    },
+    {
+      "name": "推进速度",
+      "rule": "atMostOne",
+      "ids": [
+        "wave-pace-slow",
+        "wave-pace-normal",
+        "wave-pace-fast"
+      ]
+    },
+    {
+      "name": "结尾问话",
+      "rule": "atMostOne",
+      "ids": [
+        "wave-ending-unasked",
+        "wave-ending-earned-question"
+      ]
+    },
+    {
+      "name": "抢话",
+      "rule": "atMostOne",
+      "ids": [
+        "wave-speech-on",
+        "wave-speech-off"
+      ]
+    },
+    {
+      "name": "对话比重",
+      "rule": "atMostOne",
+      "ids": [
+        "wave-dialogue-more",
+        "wave-dialogue-medium",
+        "wave-dialogue-less",
+        "wave-dialogue-only"
+      ]
+    },
+    {
+      "name": "转述",
+      "rule": "atMostOne",
+      "ids": [
+        "wave-restate-on",
+        "wave-restate-expand",
+        "wave-restate-off"
+      ]
+    },
+    {
+      "name": "视角",
+      "rule": "atMostOne",
+      "ids": [
+        "wave-person-first",
+        "wave-person-second",
+        "wave-person-third",
+        "wave-person-character-third",
+        "wave-person-interaction-first",
+        "wave-person-omniscient"
+      ]
+    },
+    {
+      "name": "心声",
+      "rule": "atMostOne",
+      "ids": [
+        "wave-mind-blackbox",
+        "wave-mind-folded",
+        "wave-mind-inline"
+      ]
+    },
+    {
+      "name": "文风",
+      "rule": "atMostOne",
+      "ids": [
+        "wave-style-light-novel",
+        "wave-style-japanese-fantasy",
+        "wave-style-chinese-campus",
+        "wave-style-classical-vernacular",
+        "wave-style-xianxia",
+        "wave-style-urban",
+        "wave-style-rural",
+        "wave-style-western",
+        "wave-style-wuxia",
+        "wave-style-essay",
+        "wave-style-adaptive",
+        "wave-style-sensual",
+        "wave-style-ear-whisper",
+        "wave-style-custom"
+      ]
+    },
+    {
+      "name": "亲密风格",
+      "rule": "atMostOne",
+      "ids": [
+        "wave-intimacy-gentle",
+        "wave-intimacy-conquest"
+      ]
+    }
+  ]
+}

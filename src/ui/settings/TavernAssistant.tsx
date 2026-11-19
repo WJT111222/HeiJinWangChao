@@ -28,6 +28,7 @@ export function TavernAssistant({ dirty }: { dirty: boolean }) {
     <button type="button" disabled={(!reset && selected === active) || dirty} onClick={() => {
       try { switchPreset(selected || null, reset); } catch (e) { setError(e instanceof Error ? e.message : '保存失败'); }
     }}>{reset ? '重置损坏的预设配置并刷新' : '保存预设并刷新'}</button>
+    {active && !recovery && <button type="button" onClick={()=>window.dispatchEvent(new Event('heijin:open-preset-settings'))}>王朝预设设置</button>}
     {dirty && <p>请先保存当前设置。</p>}
     {error && <p role="alert">{error}</p>}
     {recovery && <p>恢复模式：脚本已停用。</p>}

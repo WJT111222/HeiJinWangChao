@@ -85,6 +85,24 @@ export function runtimePreset(preset: LoadedPreset, publish: () => void, report:
     clearTimeout(timer);
     timer = setTimeout(() => { try { flush(); } catch (error) { report(String(error)); } }, 200);
   }
+  function syncSaved(override?: PackageOverride) {
+    // Keep live references held by scripts. Rebuild only the supported editing fields.
+    const defaults = preset.data.prompt_order.find(t => t.character_id === 100001)!.order;
+    for (const [i, item] of native.prompts.entries()) {
+      const original = preset.data.prompts[i];
+      const edit = override?.entries[item.identifier];
+      item.content = edit?.content ?? original.content;
+      const row = order.find(r => r.identifier === item.identifier);
+      if (row) {
+        row.enabled = !preset.definition.lockedOff.includes(item.identifier) && (edit?.enabled ?? defaults.find(r => r.identifier === item.identifier)?.enabled ?? false);
+        item.enabled = row.enabled;
+      }
+    }
+    for (const [live,key] of Object.entries(samplingKeys)) native[live] = override?.sampling?.[key] ?? preset.data[key];
+    for (const key of ['function_calling','squash_system_messages'] as const) native[key] = override?.assistant?.[key] ?? preset.data[key];
+    Object.assign(baseline, structuredClone(native));
+    publish();
+  }
   function getPreset(which = 'in_use') {
     if (which !== 'in_use' && which !== name) throw new Error('未知预设');
     const prompts = native.prompts.map(p => {
@@ -116,5 +134,5 @@ export function runtimePreset(preset: LoadedPreset, publish: () => void, report:
         character_name_prefix: ({'-1':'none','0':'default','2':'content','1':'completion'} as Record<string,string>)[String(native.names_behavior)],
         wrap_user_messages_in_quotes: !!native.wrap_in_quotes } });
   }
-  return { native, getPreset, getLoadedPresetName: () => name, saveSettingsDebounced, flush, applyChanges };
+  return { native, getPreset, getLoadedPresetName: () => name, saveSettingsDebounced, flush, applyChanges, syncSaved };
 }
