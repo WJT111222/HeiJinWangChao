@@ -14,6 +14,8 @@ import { defaultSettings } from '../ui/settings/model';
 import { game } from './fixtures/game';
 import { deepSeekUntagged, recoveryNarrative, recoverySummary, recoveryGuide, recoveryActions, inlineRecoveryOutput, inlineRecoveryNarrative, missingNarrativeCloseOutput } from './fixtures/storyRecovery';
 import { stageResponses } from '../services/ai/stageResponses';
+import { builtInPresets } from '../presets/library';
+import { savePresetSettings } from '../presets/settings';
 
 const narrative = '【旁白】街边的公交车缓缓驶过。\n\n你看着窗外的路灯，没有作出决定。';
 function output(body = narrative, actions = true) {
@@ -168,6 +170,39 @@ describe('真实正文入口与草稿原子替换', () => {
       expect(client).toHaveBeenCalledTimes(1);
     },
   );
+  it('预设参数被明确拒绝时保留已有正文和正式存档，玩家主动重试后才使用兼容请求', async () => {
+    const fixture = setup();
+    fixture.config.channels[0].baseUrl = 'https://relay.example/v1';
+    const formal = await repo.load(draft.saveId);
+    const transport = vi.fn<typeof fetch>(async () => sse(output()));
+    const stage = runner(transport);
+    const saved = await stage.generate({ ...fixture, draft });
+    const storage = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    });
+    try {
+      savePresetSettings({ enabled: true, selected: builtInPresets[0].id, packages: {} });
+      transport.mockImplementationOnce(async () => Response.json({ error: {
+        code: 'unsupported_parameter', param: 'top_p',
+        message: "Unsupported parameter: 'top_p' is not supported with this model.",
+      } }, { status: 400 }));
+      const generate = () => stage.generate({ ...fixture, draft: saved });
+      await expect(generate()).rejects.toMatchObject({ code: 'parameter_adjusted' });
+      expect(transport).toHaveBeenCalledTimes(2);
+      expect(JSON.parse(String(transport.mock.calls[1][1]?.body)).top_p).toBe(1);
+      expect(await repo.loadDraft(draft.saveId)).toEqual(saved);
+      expect(await repo.load(draft.saveId)).toEqual(formal);
+      const next = await generate();
+      expect(transport).toHaveBeenCalledTimes(3);
+      expect(JSON.parse(String(transport.mock.calls[2][1]?.body))).not.toHaveProperty('top_p');
+      expect(next.storyRevision).toBe(saved.storyRevision + 1);
+      expect(await repo.load(draft.saveId)).toEqual(formal);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
   it('真实 SSE 中无标签 Step 0–15 + 小说正文被安全恢复，只保存一次草稿且不改变正式状态', async () => {
     const before = await repo.load(draft.saveId);
     const steps = Array.from({ length: 16 }, (_, i) => `Step ${i}｜本轮创作判断\n- 维持真实人物关系与已有场景。`).join('\n');

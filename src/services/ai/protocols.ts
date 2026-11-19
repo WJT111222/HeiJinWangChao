@@ -3,7 +3,8 @@ import type { RequestSnapshot } from './snapshot';
 import { secretFor } from './snapshot';
 import { AiError } from './errors';
 import { thinkingParameters } from './thinking';
-import { checkFinish, skipsTemperature, usesCompletionTokens } from './compat';
+import { checkFinish, knownSamplingLimit, samplingFields, skipsPresetSampling, skipsTemperature, usesCompletionTokens } from './compat';
+import type { PresetSamplingInspection } from './compat';
 import { isOpenAiCompatible } from './configuration';
 export interface AiMessage {
   role: 'system' | 'user' | 'assistant';
@@ -85,9 +86,10 @@ export function wireRequest(
   const max = cap.maxOutputTokens ? params.maxOutputTokens : undefined;
   const thinking = thinkingParameters(snapshot.thinkingCapability, protocol === 'anthropic' ? max ?? 4096 : max);
   const desiredTemperature = sampling ? sampling.temperature : params.temperature;
+  const rememberedTemperature = protocol === 'openai' && skipsTemperature(snapshot.channel, snapshot.model);
   const temperature =
     cap.temperature && !thinking.anthropic && !(protocol === 'anthropic' && (desiredTemperature ?? 0) > 1)
-      && !(protocol === 'openai' && skipsTemperature(snapshot.channel, snapshot.model))
+      && !rememberedTemperature
       ? desiredTemperature
       : undefined;
   const completionTokens = protocol === 'openai' && usesCompletionTokens(snapshot.channel, snapshot.model);
@@ -147,10 +149,26 @@ export function wireRequest(
       ...(temperature !== undefined ? { temperature } : {}),
     };
   }
+  const url = endpoint(snapshot, path);
+  let presetSamplingInspection: PresetSamplingInspection[] | undefined;
   if (sampling) {
     if (isOpenAiCompatible(protocol)) {
-      for (const field of ['top_p', 'frequency_penalty', 'presence_penalty'] as const) {
-        if (sampling[field] !== undefined) body[field] = sampling[field];
+      presetSamplingInspection = [];
+      for (const field of samplingFields) {
+        const desired = sampling[field];
+        if (desired === undefined) continue;
+        const omission = field === 'temperature' && !cap.temperature ? 'channel_setting'
+          : knownSamplingLimit(snapshot.channel, url, snapshot.model, field, body) ? 'known_capability'
+          : (field === 'temperature' && rememberedTemperature)
+            || skipsPresetSampling(snapshot.channel, url, snapshot.model, field, desired, body) ? 'remembered_rejection'
+          : undefined;
+        if (omission) {
+          delete body[field];
+          presetSamplingInspection.push({ field, desired, omission });
+        } else {
+          body[field] = desired;
+          presetSamplingInspection.push({ field, desired, sent: desired });
+        }
       }
     } else if (protocol === 'gemini') {
       Object.assign(body.generationConfig as object, {
@@ -163,13 +181,14 @@ export function wireRequest(
     }
   }
   return {
-    url: endpoint(snapshot, path),
+    url,
     init: {
       method: 'POST',
       headers: { ...authHeaders(snapshot), 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     },
     diagnostics,
+    ...(presetSamplingInspection ? { presetSamplingInspection } : {}),
   };
 }
 const token = (v: unknown) =>

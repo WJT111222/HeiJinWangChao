@@ -84,7 +84,7 @@ const messages: Record<AiErrorCode, string> = {
   time_preflight: '时间预检与正文或变量停止时间不一致，候选未保存。请检查行动或重新生成正文。',
   money_unit: '候选金额与证据中的人民币元/分不一致。',
   content_filter: '模型服务的内容审核拦截了这次请求或输出，结果未保存。可以调整行动描述后重试，或换用审核更宽松的模型或服务。',
-  parameter_adjusted: '该模型不支持请求中的某个参数（如 max_tokens 或 temperature），已为这个渠道和模型改用兼容写法。请再试一次；本次没有生成内容，也未改动存档。',
+  parameter_adjusted: '服务明确拒绝了已发送的参数。下次主动生成时，将对符合本次条件的请求使用兼容写法。本次未自动重发、未生成内容，也未改动正式存档。',
 };
 export class AiError extends Error {
   constructor(

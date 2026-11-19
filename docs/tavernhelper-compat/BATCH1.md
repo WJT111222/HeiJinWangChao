@@ -37,3 +37,14 @@ Journal 提供最近 N 回合的完整正文，N 取现有 immediateWindowSize�
 本地 Node 24.19.0 使用锁文件依赖和正式 Vitest。专项套件见 [preset-story.test.ts](../../src/tests/preset-story.test.ts)，历史窗口及撤回测试见 [turn-undo.test.ts](../../src/tests/turn-undo.test.ts)。测试使用合成存档、内存配置和 Mock fetch；正式资源作为产品载入，私人原件未作为 CI 夹具。
 
 定向范围包括预设、撤回、Story 阶段、断点续写、七风格隔离和格式提醒出站。覆盖真实 role 与次序、无附页交稿、当前行动唯一、旧设置恢复、非法响应拒绝、单次请求、跨存档隔离，并逐项比对 Variables、World、Memory 的 messages、模块、上下文和序列化请求。全量结果对应 PR 提交的 Actions。没有新增 UI、浏览器截图或付费测试；真实供应商接受率、文学质量和脚本动态行为未验证。
+
+## #201 第一批复审：预设采样参数
+
+复现方式为真实请求入口配合 Mock transport：旧版在 OpenAI Chat Completions 兼容路径直接发送预设中的 `top_p` 和两个惩罚系数。关闭渠道温度也不会阻止 `top_p` 出站。对中转站明确拒绝这些字段的 400/422，旧版不会记住，玩家再次主动生成仍发送同一字段。
+
+- 截至 2026-11-19，只在 `https://api.openai.com/v1/chat/completions` 的 OpenAI 渠道前置应用已核实规则。`gpt-5`、`gpt-5-mini`、`gpt-5-nano` 及各自 `2025-08-07` 快照省略 `temperature` 和 `top_p`。两项惩罚系数逐项判断，文档未证实的模型限制不预先套用。参见 [GPT-5.2 采样兼容说明](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-5.2#parameter-compatibility) 和 [Chat Completions 参考](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)。
+- 官方 `gpt-5.1`、`gpt-5.2` 及其正式快照以实际 `reasoning_effort` 判断。游戏当前未发送该字段，两种型号使用官方明确的 `none` 默认值，保留 `temperature` 和 `top_p`。项目不改变推理档位，中转站同名模型、其他别名及未知推理配置不推定为官方默认。参见 [GPT-5.1 模型页](https://developers.openai.com/api/docs/models/gpt-5.1) 和 [GPT-5.2 模型页](https://developers.openai.com/api/docs/models/gpt-5.2)。
+- 收到明确指向实际发送字段的不支持错误时，本次照常失败。仅下一次主动生成会按渠道 ID、协议、地址、模型和实际推理配置使用内存兼容记录。对可确认的「只允许默认值」仅记住本次被拒绝的值。未知条件、数值越界、含糊错误、未发送字段、认证失败、限流和服务端错误均不写入该记录。记录沿用现有清理入口，独立于原生模式已有的参数兼容记忆。
+- 已有的 AI 请求检查逐项显示预设期望值、最终发送值或省略原因，例如已知模型限制、该路由此前明确拒绝。它不改变预设存储或出站凭证与渠道预算。Variables、World、Memory 的请求载荷不变。
+
+正式 Vitest 保留修改前的失败证据。测试直接捕获序列化请求体与传输次数，覆盖保留 0、官方规则、条件与路由隔离、未发送字段、旧 max_tokens 和 temperature 兼容，以及启用预设前后的原生四阶段请求。真实 StoryStage 和测试 IndexedDB 验证首次参数拒绝只发一次，原正文与正式存档仍在；第二次主动生成只再发一次。真实供应商、实际收费与第二批的 Gemini／Anthropic 消息布局未在本轮验证。

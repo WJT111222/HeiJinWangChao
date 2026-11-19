@@ -14,6 +14,8 @@ import { runStageRequest } from '../services/ai/runtime';
 import { recoveryNarrative, recoverySummary, recoveryGuide } from './fixtures/storyRecovery';
 import { requestSnapshot } from '../services/ai/snapshot';
 import { wireRequest } from '../services/ai/protocols';
+import { clearAdjustedParameters, knownSamplingLimit, skipsPresetSampling } from '../services/ai/compat';
+import { requestInspections } from '../services/ai/inspection';
 
 const def = { id: 'synthetic', version: 'v1', lockedOff: ['retired'] };
 const rows = [
@@ -323,5 +325,218 @@ describe('正式组装入口', () => {
     output = '<正文>孤立正文</正文>';
     await expect(run()).rejects.toThrow();
     expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('预设正文采样兼容', () => {
+  const sampling = { temperature: 0, top_p: 0, frequency_penalty: -0.25, presence_penalty: 0 };
+  const messages = [{ role: 'user' as const, content: '合成行动' }];
+  const ok = () => Response.json({ choices: [{ message: { content: '合成正文' }, finish_reason: 'stop' }] });
+  const rejected = (field: string) =>
+    ({ code: 'unsupported_parameter', param: field, message: `Unsupported parameter: '${field}' is not supported with this model.` });
+  function transport(error?: Record<string, unknown>, status = 400) {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => ok());
+    if (error) fetcher.mockImplementationOnce(async () => Response.json({ error }, { status }));
+    const ai = new AiClient(fetcher);
+    const body = (i: number) => JSON.parse(String(fetcher.mock.calls[i][1]?.body));
+    return { ai, fetcher, body };
+  }
+  beforeEach(() => { clearAdjustedParameters(); requestInspections.clear(); });
+  afterEach(() => { clearAdjustedParameters(); requestInspections.clear(); });
+
+  it.each(['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5-2025-08-07', 'gpt-5-mini-2025-08-07', 'gpt-5-nano-2025-08-07'])(
+    '官方 %s 第一次出站即省略 temperature 和 top_p，惩罚参数保留',
+    async (model) => {
+      const { config, vault } = channelSetup();
+      config.routes.story.modelId = model;
+      const { ai, fetcher, body } = transport();
+      await ai.generate(requestSnapshot(config, 'story', vault), messages, { presetSampling: sampling });
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      expect(body(0)).toMatchObject({ model, max_completion_tokens: 4096, frequency_penalty: -0.25, presence_penalty: 0 });
+      expect(body(0)).not.toHaveProperty('temperature');
+      expect(body(0)).not.toHaveProperty('top_p');
+      expect(requestInspections.getSnapshot()[0]).toMatchObject({
+        presetSampling: expect.arrayContaining([
+          { field: 'top_p', desired: 0, omission: 'known_capability' },
+          { field: 'presence_penalty', desired: 0, sent: 0 },
+        ]),
+      });
+    },
+  );
+
+  it.each([
+    ['gpt-5.2', 'https://api.openai.com/v1'],
+    ['gpt-5.1', 'https://api.openai.com/v1'],
+    ['gpt-5-custom', 'https://api.openai.com/v1'],
+    ['gpt-5', 'https://api.openai.com/proxy/v1'],
+    ['gpt-5-mini', 'https://relay.example/v1'],
+  ])('保留 %s 在 %s 的值，包括 0', async (model, url) => {
+    const { config, vault } = channelSetup();
+    config.routes.story.modelId = model;
+    config.channels[0].baseUrl = url;
+    const { ai, fetcher, body } = transport();
+    await ai.generate(requestSnapshot(config, 'story', vault), messages, { presetSampling: sampling });
+    expect(fetcher).toHaveBeenCalledExactlyOnceWith(`${url}/chat/completions`, expect.objectContaining({
+      headers: expect.objectContaining({ Authorization: 'Bearer fixture-credential' }),
+    }));
+    expect(body(0)).toMatchObject({ ...sampling, model });
+    expect(body(0).max_tokens ?? body(0).max_completion_tokens).toBe(4096);
+    expect(body(0)).not.toHaveProperty('reasoning_effort');
+  });
+
+  it('关闭渠道温度时，官方旧模型仍会独立检查 top_p', async () => {
+    const { config, vault } = channelSetup();
+    const channel = config.channels[0];
+    channel.compatibility.temperature = false;
+    config.routes.story.modelId = 'gpt-5';
+    const { ai, body } = transport();
+    await ai.generate(requestSnapshot(config, 'story', vault), messages, { presetSampling: sampling });
+    expect(body(0)).not.toHaveProperty('temperature');
+    expect(body(0)).not.toHaveProperty('top_p');
+    expect(requestInspections.getSnapshot()[0].presetSampling).toEqual(expect.arrayContaining([
+      { field: 'temperature', desired: 0, omission: 'channel_setting' },
+      { field: 'top_p', desired: 0, omission: 'known_capability' },
+    ]));
+  });
+
+  it('官方 GPT-5.2 默认 none 的实际发送和条件拒绝与其他推理设置隔离', async () => {
+    const { config, vault } = channelSetup();
+    const channel = config.channels[0], model = 'gpt-5.2';
+    const url = `${channel.baseUrl}/chat/completions`;
+    config.routes.story.modelId = model;
+    const snapshot = requestSnapshot(config, 'story', vault);
+    const { ai, body, fetcher } = transport({
+      code: 'unsupported_parameter', param: 'frequency_penalty',
+      message: "frequency_penalty is not supported when reasoning_effort is 'none'.",
+    });
+    const run = () => ai.generate(snapshot, messages, { presetSampling: sampling });
+    await expect(run()).rejects.toMatchObject({ code: 'parameter_adjusted' });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const sent = body(0);
+    expect(sent).toMatchObject(sampling);
+    expect(sent).not.toHaveProperty('reasoning_effort');
+    await run();
+    expect(body(1)).not.toHaveProperty('frequency_penalty');
+    expect(body(1).top_p).toBe(0);
+    // 当前游戏不写 reasoning_effort。验证以后传入真实配置时，规则只按对应值匹配。
+    const low = { ...sent, reasoning_effort: 'low' };
+    expect(knownSamplingLimit(channel, url, model, 'top_p', low)).toBe(true);
+    expect(knownSamplingLimit(channel, url, model, 'top_p', { ...sent, reasoning_effort: 'none' })).toBe(false);
+    expect(knownSamplingLimit(channel, url, model, 'top_p', { ...sent, reasoning_effort: 'unrecognized' })).toBe(false);
+    expect(skipsPresetSampling(channel, url, model, 'frequency_penalty', sampling.frequency_penalty, low)).toBe(false);
+    expect(skipsPresetSampling(channel, url, model, 'frequency_penalty', sampling.frequency_penalty, sent)).toBe(true);
+  });
+
+  it('同路由的原生四阶段完整实际请求不受预设学习影响', async () => {
+    const { config, vault } = channelSetup();
+    config.channels[0].baseUrl = 'https://relay.example/v1';
+    const { ai, body, fetcher } = transport();
+    const stages = ['story', 'variables', 'world', 'memory'] as const;
+    const native = () => Promise.all(stages.map((stage) => ai.generate(requestSnapshot(config, stage, vault), messages)));
+    await native();
+    fetcher.mockImplementationOnce(async () => Response.json({ error: rejected('temperature') }, { status: 400 }));
+    const preset = () => ai.generate(requestSnapshot(config, 'story', vault), messages, { presetSampling: sampling });
+    await expect(preset()).rejects.toMatchObject({ code: 'parameter_adjusted' });
+    await preset();
+    expect(body(5)).not.toHaveProperty('temperature');
+    await native();
+    expect(fetcher).toHaveBeenCalledTimes(10);
+    for (let i = 0; i < stages.length; i++) expect(body(6 + i)).toEqual(body(i));
+  });
+
+  it.each(['top_p', 'frequency_penalty', 'presence_penalty', 'temperature'] as const)(
+    '明确拒绝 %s 后，本次单次失败，下次主动生成才省略',
+    async (field) => {
+      const { config, vault } = channelSetup();
+      config.channels[0].baseUrl = 'https://relay.example/v1';
+      const snapshot = requestSnapshot(config, 'story', vault);
+      const { ai, fetcher, body } = transport(rejected(field));
+      const run = () => ai.generate(snapshot, messages, { presetSampling: sampling });
+      await expect(run()).rejects.toMatchObject({ code: 'parameter_adjusted' });
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      expect(body(0)).toMatchObject(sampling);
+      expect(requestInspections.getSnapshot()[0]).toMatchObject({ status: 'failed', body: sampling });
+      await run();
+      expect(fetcher).toHaveBeenCalledTimes(2);
+      expect(body(1)).not.toHaveProperty(field);
+      for (const key of Object.keys(sampling).filter((key) => key !== field))
+        expect(body(1)[key]).toBe(body(0)[key]);
+      expect(requestInspections.getSnapshot()[0]).toMatchObject({
+        presetSampling: expect.arrayContaining([{ field, desired: sampling[field], omission: 'remembered_rejection' }]),
+      });
+    },
+  );
+
+  it.each([
+    ['数值越界', { ...rejected('top_p'), message: 'top_p must be between 0 and 1' }, 400],
+    ['一般 invalid_value', { ...rejected('top_p'), code: 'invalid_value' }, 422],
+    ['错误字段与文字冲突', { ...rejected('top_p'), param: 'temperature' }, 400],
+    ['含糊提示', { message: 'Could not handle a sampling option' }, 400],
+    ['普通 unsupported_value', { ...rejected('top_p'), code: 'unsupported_value', message: 'Invalid value supplied for top_p.' }, 400],
+    ['未发送的字段', rejected('presence_penalty'), 400],
+    ['401', rejected('top_p'), 401],
+    ['403', rejected('top_p'), 403],
+    ['429', rejected('top_p'), 429],
+    ['500', rejected('top_p'), 500],
+    ['未知实际推理配置', { ...rejected('top_p'), message: "Unsupported parameter: 'top_p' is only supported when reasoning_effort is 'none'." }, 400],
+    ['其他未识别条件', { ...rejected('top_p'), message: 'top_p is not supported when tools are enabled.' }, 400],
+  ] as const)('%s 不记忆', async (name, error, status) => {
+    const { config, vault } = channelSetup();
+    config.channels[0].baseUrl = 'https://relay.example/v1';
+    const snapshot = requestSnapshot(config, 'story', vault);
+    const { ai, fetcher, body } = transport(error, status);
+    const sent = name === '未发送的字段' ? { ...sampling, presence_penalty: undefined } : sampling;
+    const run = () => ai.generate(snapshot, messages, { presetSampling: sent });
+    await expect(run()).rejects.not.toMatchObject({ code: 'parameter_adjusted' });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    await run();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(body(1)).toEqual(body(0));
+  });
+
+  it('只接受默认值时区分已拒绝值和可发送的 0', async () => {
+    const { config, vault } = channelSetup();
+    config.channels[0].baseUrl = 'https://relay.example/v1';
+    const snapshot = requestSnapshot(config, 'story', vault);
+    const { ai, body, fetcher } = transport({
+      code: 'unsupported_value', param: 'frequency_penalty',
+      message: "Unsupported value: 'frequency_penalty' does not support -0.25 with this model. Only the default (0) value is supported.",
+    }, 422);
+    const run = (frequency_penalty: number) =>
+      ai.generate(snapshot, messages, { presetSampling: { ...sampling, frequency_penalty } });
+    await expect(run(-0.25)).rejects.toMatchObject({ code: 'parameter_adjusted' });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    await run(-0.25);
+    await run(0);
+    expect(body(1)).not.toHaveProperty('frequency_penalty');
+    expect(body(2).frequency_penalty).toBe(0);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it('兼容记忆按渠道、模型、地址和协议隔离，并沿用清理入口', async () => {
+    const { config, vault } = channelSetup();
+    const channel = config.channels[0];
+    channel.baseUrl = 'https://relay.example/v1';
+    const { ai, body } = transport(rejected('top_p'));
+    const run = () => ai.generate(requestSnapshot(config, 'story', vault), messages, { presetSampling: sampling });
+    await expect(run()).rejects.toMatchObject({ code: 'parameter_adjusted' });
+    config.channels[0] = { ...channel, id: crypto.randomUUID() };
+    vault.set(config.channels[0].id, 'fixture-credential');
+    config.routes.story.channelId = config.channels[0].id;
+    await run();
+    config.channels[0] = { ...channel, protocol: 'deepseek' };
+    config.routes.story.channelId = channel.id;
+    await run();
+    config.channels[0] = { ...channel, baseUrl: 'https://other-relay.example/v1' };
+    await run();
+    config.channels[0] = channel;
+    config.routes.story.modelId = 'another-model';
+    await run();
+    config.routes.story.modelId = '';
+    await run();
+    clearAdjustedParameters();
+    await run();
+    expect([1, 2, 3, 4, 6].map((i) => body(i).top_p)).toEqual([0, 0, 0, 0, 0]);
+    expect(body(5)).not.toHaveProperty('top_p');
   });
 });

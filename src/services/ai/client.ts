@@ -19,7 +19,7 @@ import {
 import type { AiMessage, Usage } from './protocols';
 import { readSse } from './sse';
 import { rememberThinkingCapability, unsupportedThinkingParameter, blockThinkingCapability } from './thinking';
-import { checkFinish, LeadingThink, rememberUnsupported, splitLeadingThink, unsupportedParameter } from './compat';
+import { checkFinish, LeadingThink, rememberPresetSamplingRejection, rememberUnsupported, splitLeadingThink, unsupportedParameter } from './compat';
 import { isOpenAiCompatible } from './configuration';
 import { rawResponseObservation, responseContent, responseDiagnostics } from './responseContent';
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
@@ -100,7 +100,10 @@ async function operation<T>(
 }
 export class AiClient {
   constructor(private transport: typeof fetch = (input, init) => globalThis.fetch(input, init)) {}
-  private async response(url: string, init: RequestInit, signal: AbortSignal, snapshot?: RequestSnapshot, observe?: (value: ResponseDiagnostics) => void) {
+  private async response(
+    url: string, init: RequestInit, signal: AbortSignal, snapshot?: RequestSnapshot,
+    observe?: (value: ResponseDiagnostics) => void, presetSampling = false,
+  ) {
     const response = await this.transport(url, {
       ...init,
       signal,
@@ -114,15 +117,19 @@ export class AiClient {
       // Do not wait for an extra error body: preserve HTTP failure/retry timing.
       // Only the JSON already consumed for compatibility below is projected.
       if (!signal.aborted) observe?.({ transport: 'http', httpStatus: status, complete: false });
-      if (snapshot && (snapshot.thinkingCapability !== 'none' || snapshot.channel.protocol === 'openai') && [400, 422].includes(status)
+      if (snapshot && (snapshot.thinkingCapability !== 'none' || snapshot.channel.protocol === 'openai' || presetSampling) && [400, 422].includes(status)
         && response.headers.get('content-type')?.includes('application/json')) {
         try {
           const error: unknown = await response.json();
           if (!signal.aborted) observe?.({ ...responseDiagnostics(error, snapshot.channel.protocol), transport: 'http', httpStatus: status, complete: true });
           if (!signal.aborted && snapshot.thinkingCapability !== 'none' && unsupportedThinkingParameter(error)) blockThinkingCapability(snapshot.channel, snapshot.model);
           const sentBody = record(typeof init.body === 'string' ? JSON.parse(init.body) : undefined);
+          if (!signal.aborted && presetSampling && rememberPresetSamplingRejection(snapshot.channel, url, snapshot.model, error, sentBody))
+            throw new AiError('parameter_adjusted', status);
           const parameter = snapshot.channel.protocol === 'openai' ? unsupportedParameter(error, {
-            maxTokens: Object.hasOwn(sentBody, 'max_tokens'), temperature: Object.hasOwn(sentBody, 'temperature') }) : undefined;
+            maxTokens: Object.hasOwn(sentBody, 'max_tokens'),
+            temperature: !presetSampling && Object.hasOwn(sentBody, 'temperature'),
+          }) : undefined;
           if (!signal.aborted && parameter) {
             rememberUnsupported(snapshot.channel, snapshot.model, parameter);
             throw new AiError('parameter_adjusted', status);
@@ -163,9 +170,12 @@ export class AiClient {
     try {
       return await operation(options, async (signal) => {
         if (signal.aborted) throw new AiError('cancelled');
-        try { inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection); }
+        try { inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection, wire.presetSamplingInspection); }
         catch { /* 只读诊断失败不能阻断真实发送。 */ }
-        const response = await this.response(wire.url, wire.init, signal, snapshot, options.onResponseDiagnostics ? observe : undefined);
+        const response = await this.response(
+          wire.url, wire.init, signal, snapshot, options.onResponseDiagnostics ? observe : undefined,
+          wire.presetSamplingInspection !== undefined,
+        );
         const protocol = snapshot.channel.protocol;
         if (!signal.aborted) observe({ httpStatus: response.status, complete: false });
         let text = '', reasoning = '',

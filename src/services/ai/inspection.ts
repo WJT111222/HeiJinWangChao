@@ -1,5 +1,6 @@
 import type { ModuleRecord } from '../../prompts/composer';
 import type { AiMessage, Usage } from './protocols';
+import type { PresetSamplingInspection } from './compat';
 import { record, array, string } from './protocols';
 import type { RequestSnapshot } from './snapshot';
 import { isOpenAiCompatible } from './configuration';
@@ -36,6 +37,7 @@ export interface RequestInspection {
   body: Record<string, unknown>;
   messages: AiMessage[];
   outputTokenLimit?: number;
+  presetSampling?: readonly PresetSamplingInspection[];
   statistics: ReturnType<typeof contextStatistics>;
   contentRedacted: boolean;
 }
@@ -132,7 +134,10 @@ export class RequestInspectionStore {
     for (const listener of this.listeners) listener();
   }
   clear = () => { cancelBudgetAnalyses(); this.publish([]); };
-  start(snapshot: RequestSnapshot, serializedBody: string, scope?: InspectionScope) {
+  start(
+    snapshot: RequestSnapshot, serializedBody: string, scope?: InspectionScope,
+    presetSampling?: readonly PresetSamplingInspection[],
+  ) {
     const original = JSON.parse(serializedBody) as Record<string, unknown>;
     const messages = payloadMessages(original, snapshot.channel.protocol);
     // Measure the actual sent messages before redaction; retain no raw credentials.
@@ -151,6 +156,7 @@ export class RequestInspectionStore {
         scope,
         status: 'pending' as const,
         body: original,
+        ...(presetSampling?.length ? { presetSampling } : {}),
         messages,
         outputTokenLimit: typeof original.max_tokens === 'number' ? original.max_tokens
           : typeof original.max_completion_tokens === 'number' ? original.max_completion_tokens
