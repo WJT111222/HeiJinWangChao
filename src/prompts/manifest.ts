@@ -22,6 +22,7 @@ const ModuleSchema = z.strictObject({
     'relevant-domain',
     'memory-task',
     'protocol-compatibility',
+    'creation-action',
     'never',
   ]),
   permanent: z.boolean(),
@@ -34,6 +35,7 @@ const ModuleSchema = z.strictObject({
     'narrative_core',
     'writing',
     'stage',
+    'creation',
     'output',
     'variable_group',
     'memory',
@@ -49,6 +51,7 @@ const ModuleSchema = z.strictObject({
     'narrative_core',
     'writing',
     'stage',
+    'creation',
     'output',
     'variable_group',
     'memory',
@@ -145,6 +148,14 @@ export const PromptManifestSchema = z
             !module.configurable &&
             !module.reorderable,
           `${module.id} 非注入项不能具备运行配置`,
+        );
+      } else if (module.activation === 'creation-action') {
+        check(
+          module.kind === 'prompt' && module.messageRole === 'system' &&
+            module.category === 'creation' && module.orderGroup === 'creation' &&
+            !module.applicableStages.length && !module.modes.length &&
+            !module.configurable && !module.reorderable,
+          `${module.id} 创角资源只能由按钮直接加载`,
         );
       } else {
         check(
