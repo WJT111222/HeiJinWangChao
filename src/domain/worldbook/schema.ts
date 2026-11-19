@@ -33,7 +33,7 @@ export { plainObject as isPlainObject };
 
 const finite = z.number().finite();
 const nullableFinite = finite.nullable();
-const IdentifierSchema = z.string().regex(/^[A-Za-z0-9._:-]{1,128}$/, 'ID 只能包含字母、数字和 ._:-，最长 128 位');
+export const IdentifierSchema = z.string().regex(/^[A-Za-z0-9._:-]{1,128}$/, 'ID 只能包含字母、数字和 ._:-，最长 128 位');
 
 export const WorldbookEntrySchema = z.strictObject({
   /** 王朝稳定 ID，书内唯一。 */

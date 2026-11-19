@@ -312,6 +312,17 @@ export class WorldbookLibrary {
     return { ok: true, release: stored.release };
   }
 
+  /** 读取一个版本的摘要（不读条目正文）；不存在时 summary 为 null。 */
+  async getSummary(bookId: string, versionId: string): Promise<{ ok: true; summary: LibraryVersionSummary | null } | LibraryFailure> {
+    try {
+      const summary = await transaction(this.database, [SUMMARIES], 'readonly', async (tx) => {
+        const raw = await request(tx.objectStore(SUMMARIES).get([bookId, versionId]));
+        return raw === undefined ? null : readSummary(raw);
+      });
+      return { ok: true, summary };
+    } catch (error) { return failureOf(error); }
+  }
+
   /** 列出全部书目，按最近更新时间从新到旧，相同时按书 ID。 */
   async listBooks(): Promise<{ ok: true; books: LibraryBook[] } | LibraryFailure> {
     try {
