@@ -1,7 +1,7 @@
 import { variableTextEnvelope } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
-import { openGameTools, openWorkflowDiagnostics, openStageRaw, openStageTab } from './helpers/gameLayout';
+import { closeWorkflowSheet, openGameTools, openWorkflowDiagnostics, openStageRaw, openStageTab } from './helpers/gameLayout';
 
 async function seed(page: Page, remoteLocation = false, organization = false) {
   await page.goto('/');
@@ -43,6 +43,16 @@ async function mock(page: Page) {
 }
 const settled = (page: Page) => expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toContainText('本回合已结算');
 
+async function expandSettlementSummary(page: Page, skipped: number) {
+  await closeWorkflowSheet(page);
+  const close = page.getByRole('button',{name:'收起三阶段详情',exact:true});
+  if (await close.isVisible()) await close.click();
+  const summary = page.getByText(`本回合已结算，跳过 ${skipped} 项更新`,{exact:true});
+  await expect(summary).toBeVisible();
+  await summary.click({timeout:10_000});
+  return summary;
+}
+
 test('完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型', async ({ page }, info) => {
   await seed(page); const server = await mock(page);
   await page.getByRole('button', { name: '自动生成开局', exact: true }).click(); await settled(page);
@@ -62,8 +72,7 @@ test('完整原文可读，开局与下一条行动各自动结算一次，刷�
 test('World字段错误定位为跳过，临时原文可读，合规更新一次结算', async ({page}) => {
   await seed(page); const server = await mock(page); server.control.bad = true;
   await page.getByRole('button', {name:'自动生成开局',exact:true}).click();
-  const summary = page.getByText('本回合已结算，跳过 1 项更新',{exact:true});
-  await expect(summary).toBeVisible(); await summary.click();
+  await expandSettlementSummary(page,1);
   await expect(page.getByText(/动态世界第 1 条.*eventCommands\.0/u)).toBeVisible();
   const storedGame = await stored(page);
   expect(storedGame.state.events.review).toBeUndefined();
@@ -108,8 +117,7 @@ test('NPC场景位置与World字段错误各自隔离，独立主角状态照常
   server.control.variables='<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset npc[scene].locationId = null\nset protagonist.emotionText = "安心"\n</命令>';
   server.control.bad=true;
   await page.getByRole('button',{name:'自动生成开局',exact:true}).click();
-  const summary=page.getByText('本回合已结算，跳过 2 项更新',{exact:true});
-  await expect(summary).toBeVisible(); await summary.click();
+  await expandSettlementSummary(page,2);
   await expect(page.getByText(/变量第 2 条.*人物/u)).toBeVisible();
   await expect(page.getByText(/动态世界第 1 条.*事件/u)).toBeVisible();
   const settledGame=await stored(page);
@@ -163,8 +171,7 @@ test('时间诊断保留重排前文本编号，原文可读，独立更新刷�
   await seed(page); const server=await mock(page), before=await stored(page);
   server.control.variables='<命令>\nset protagonist.emotionText = "从容"\nset npc[scene].lastInteractionAt = "2026-10-18T09:00:00+08:00"\nset worldClock = "2026-10-18T08:10:00+08:00"\n</命令>';
   await page.getByRole('button',{name:'自动生成开局',exact:true}).click();
-  const summary=page.getByText('本回合已结算，跳过 1 项更新',{exact:true});
-  await expect(summary).toBeVisible(); await summary.click();
+  const summary=await expandSettlementSummary(page,1);
   await expect(page.getByText(/变量第 2 条.*人物.*时间/u)).toBeVisible();
   const committed=await stored(page);
   expect(committed.state.npc.scene.lastInteractionAt).toBe(before.state.npc.scene.lastInteractionAt);
@@ -230,8 +237,7 @@ for (const group of ['taskCommands','eventCommands'] as const) {
     const independent={...repeated,commandId:'independent-shop',changes:{ownershipText:'World独立合法字段'}};
     server.control.world=JSON.stringify({worldCommands:[repeated,independent],taskCommands:[],eventCommands:[],visibleHooks:[],unresolved:[],[group]:[{...repeated,commandId:'wrong-group'}]});
     await page.getByRole('button',{name:'自动生成开局',exact:true}).click();
-    const summary=page.getByText('本回合已结算，跳过 1 项更新',{exact:true});
-    await expect(summary).toBeVisible();await summary.click();
+    await expandSettlementSummary(page,1);
     await expect(page.getByText(`${group}.0`,{exact:false})).toBeVisible();
     const saved=await stored(page);
     expect(saved.state.organizations['org-shop']).toMatchObject({operatingStatus:'正文确认照常营业',ownershipText:'World独立合法字段'});
