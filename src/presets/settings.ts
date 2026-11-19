@@ -5,6 +5,7 @@ const key = 'heijin.story-presets.v1';
 const schema = z.strictObject({
   enabled: z.boolean(),
   selected: z.string().nullable(),
+  globalVariables: z.record(z.string(), z.json()).optional(),
   packages: z.record(z.string(), packageOverride),
 });
 export type PresetSettings = z.infer<typeof schema>;

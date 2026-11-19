@@ -1,3 +1,4 @@
+import { TavernAssistant } from './TavernAssistant';
 import type { FeedbackLevel } from '../Feedback';
 import { Feedback,useDesktopFeedback } from '../Feedback';
 import { MemorySummarySettings } from './MemorySummarySettings';
@@ -214,6 +215,7 @@ export function SettingsPanel({
         )}
         {tab === '运行' && (
           <>
+            <TavernAssistant dirty={localDirty || aiDirty || summaryDirty}/>
             <div className="settings-fields">
               {(
                 [

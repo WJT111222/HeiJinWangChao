@@ -24,6 +24,7 @@ export interface GenerationData extends Sampling {
 }
 type Start = [GenerationType, { signal?: AbortSignal }, boolean];
 interface Events {
+  [event: string]: unknown[];
   generation_started: Start;
   GENERATION_AFTER_COMMANDS: Start;
   chat_completion_prompt_ready: [{ chat: AiMessage[]; dryRun: boolean }];
@@ -73,11 +74,12 @@ export class TavernTools {
   private definitions = new Map<string, ToolDefinition>();
   register(definition: ToolDefinition) { this.definitions.set(definition.name, definition); }
   unregister(name: string) { this.definitions.delete(name); }
+  get tools() { return [...this.definitions.values()]; }
   async apply(data: GenerationData) {
     if (data.type === 'continue') return;
     const tools: FunctionTool[] = [];
     for (const definition of [...this.definitions.values()]) {
-      if (definition.shouldRegister && !await definition.shouldRegister()) continue;
+      if (definition.shouldRegister && !await definition.shouldRegister.call(definition)) continue;
       const { name, description, parameters, strict } = definition;
       tools.push({ type: 'function', function: { name, description, parameters, strict } });
     }

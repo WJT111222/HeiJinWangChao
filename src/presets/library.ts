@@ -16,6 +16,7 @@ export type PresetSelection = { definition: PresetDefinition; overrides?: Packag
 
 /** Capture preferences before awaiting either repository reads or a lazy package load. */
 export function captureStoryPreset(): PresetSelection {
+  if (new URLSearchParams(globalThis.location?.search).get('safe') === '1') return null;
   const settings = readPresetSettings();
   if (!settings.enabled) return null;
   const item = settings.selected && registry.get(settings.selected);

@@ -52,6 +52,9 @@ export interface PresetDefinition {
 }
 export const packageOverride = z.strictObject({
   version: z.string(),
+  assistant: z.strictObject({ function_calling: z.boolean().optional(), squash_system_messages: z.boolean().optional() }).optional(),
+  variables: z.record(z.string(), z.json()).optional(),
+  scriptVariables: z.record(z.string(), z.record(z.string(), z.json())).optional(),
   entries: z.record(
     z.string(),
     z.strictObject({ enabled: z.boolean().optional(), content: z.string().optional() }),

@@ -1,3 +1,4 @@
+import { awaitAssistant, assistantStarting, captureAssistantPreferences } from '../presets/tavern/hostState';
 import { captureStoryPreset } from '../presets/library';
 import { stageResponses, safeStreamResponseText, safeResponseText } from '../services/ai/stageResponses';
 import { storyFailure, storySchemaError } from '../services/validation/storyDiagnostics';
@@ -74,7 +75,9 @@ export class StoryStage {
   }
   async generate(input: StoryInput): Promise<TurnDraft> {
     const expected = TurnDraftSchema.parse(input.draft);
-    const presetSelection = captureStoryPreset();
+    let presetSelection = captureStoryPreset();
+    if (presetSelection && captureAssistantPreferences()) presetSelection = captureStoryPreset();
+    const waitingForScripts = assistantStarting();
     const selection = input.legacyNotificationSelection && structuredClone(input.legacyNotificationSelection);
     const continuation = Boolean(input.continuation);
     const captureInputs = () => {
@@ -92,6 +95,11 @@ export class StoryStage {
     const frozen = presetSelection ? captureInputs() : undefined;
     return this.guard.run(expected.saveId, async (attempt) => {
       const current = attempt.check;
+      if (presetSelection && waitingForScripts) {
+        await awaitAssistant(attempt.signal);
+        current();
+        presetSelection = captureStoryPreset();
+      }
       const { config, settings, companionProfile, orderPreferences, frozenStoryChannel, secrets } = frozen ?? captureInputs();
       const streaming = settings.runtime.streamStory;
       const [state, draft] = await Promise.all([

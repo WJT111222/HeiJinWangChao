@@ -9,11 +9,13 @@ export const nativeFetch: typeof fetch = (input, init) => original ? original(in
 
 function dispatch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const origin = globalThis.location?.origin ?? 'http://localhost';
-  const url = new URL(input instanceof Request ? input.url : String(input), origin);
-  const method = init?.method ?? (input instanceof Request ? input.method : 'GET');
+  // Request constructors differ across same-origin script frames.
+  const requestInput = typeof input === 'object' && 'url' in input && 'method' in input ? input : undefined;
+  const url = new URL(requestInput?.url ?? String(input), origin);
+  const method = init?.method ?? requestInput?.method ?? 'GET';
   if (url.origin !== origin || url.pathname !== generationPath || method.toUpperCase() !== 'POST')
     return nativeFetch(input, init);
-  const request = new Request(input instanceof Request ? input : url, init);
+  const request = new Request(requestInput ?? url, init);
   const id = request.headers.get(attemptHeader) ?? '';
   const handle = pending.get(id);
   if (!handle) return Promise.reject(new AiError('configuration', undefined, { fieldPath: 'tavern.attempt' }));

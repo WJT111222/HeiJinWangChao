@@ -1,3 +1,4 @@
+import { withTavernRequest } from '../../presets/tavern/hostState';
 import { promptReady, tavernGeneration, type GenerationType } from '../../presets/tavern/events';
 import { captureStoryPreset, type PresetSelection } from '../../presets/library';
 import { worldNormalizationNotes } from '../validation/worldSceneWrites';
@@ -68,7 +69,8 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   if (!presetSelection || captured.stage !== 'story') return run();
   const recent = captured.state.journal.slice(-captured.settings.memory.immediateWindowSize);
   const chatLength = 1 + recent.reduce((sum, entry) => sum + 1 + Number(Boolean(captured.historyActions?.[entry.turnId])), 0);
-  return tavernGeneration(type, options.signal, false, chatLength, run);
+  return withTavernRequest({ ...captured, stage: 'story' }, snapshot.channel.protocol, type, presetSelection.overrides,
+    () => tavernGeneration(type, options.signal, false, chatLength, run));
 }
 
 async function executePrepared(captured: ComposeInput & { stage: AiStage }, snapshot: RequestSnapshot,
