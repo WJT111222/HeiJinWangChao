@@ -43,6 +43,7 @@ export function DesktopWorkflowPanel(props: {
   onFollow?: () => void;
   notices: ReactNode;
   primary: ReactNode;
+  feeHint?: string;
   steps: readonly WorkflowStep[];
   view: WorkflowView;
   onView: (view: WorkflowView) => void;
@@ -151,7 +152,7 @@ export function DesktopWorkflowPanel(props: {
       </div>
       <footer className="wf-ft">
         {props.primary}
-        <span className="workflow-fee">生成可能产生费用。</span>
+        <span className="workflow-fee">{props.feeHint ?? '生成可能产生费用。'}</span>
       </footer>
     </div>
   );
