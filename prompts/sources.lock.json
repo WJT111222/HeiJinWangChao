@@ -1614,6 +1614,30 @@
         "notes": "剧情风格「荒诞喜剧」：项目原创写法要点、禁写清单与原创语感示例；参考作品只作笔法参照（附防火墙与背景锚定），未摘录任何作品原文；明确只作用于 <正文>，短期记忆、变量规划与行动选项保持中性事实规则；不改输出协议。",
         "sha256": "5a21908fb1acbbcc3fd5f5b3c8cb71619eb28e754db6af091718df2a6bd654a9"
       }
+    },
+    "creation/appearance.md": {
+      "origin": "project",
+      "treatment": "project-authored",
+      "sourcePath": "prompts/creation/appearance.md",
+      "sourceSha256": "aa3c69a9e40253f16b06ed935a90b2755d410a1e8e297d969b013020c3cfda0c"
+    },
+    "creation/personality.md": {
+      "origin": "project",
+      "treatment": "project-authored",
+      "sourcePath": "prompts/creation/personality.md",
+      "sourceSha256": "d48cb702aab53d314ed7a721d244ac5816f487b9bb1b375a517e29b54c0acdf8"
+    },
+    "creation/profession.md": {
+      "origin": "project",
+      "treatment": "project-authored",
+      "sourcePath": "prompts/creation/profession.md",
+      "sourceSha256": "5c9117574299ff4822e25d873d2e2c98e8ec91a3d259abf6a4b751861fefc0e8"
+    },
+    "creation/background.md": {
+      "origin": "project",
+      "treatment": "project-authored",
+      "sourcePath": "prompts/creation/background.md",
+      "sourceSha256": "a75e4918924f7c0ba1c158f3d4abb86f1a3e925a8ff9b74e3187886f5efbf240"
     }
   },
   "m5P6": {
