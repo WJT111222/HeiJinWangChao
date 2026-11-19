@@ -34,13 +34,13 @@ const stored = (page: Page) => page.evaluate(async () => {
   try { return await repo.loadGame('save-a'); } finally { repo.close(); }
 });
 
-for (const failFirst of [false, true]) test(`blocked任务与active事件保留阻碍，${failFirst ? '非法引用失败后仅重试World' : '直接自动结算'}，刷新不重复调用`, async ({ page }, info) => {
+for (const failFirst of [false, true]) test(`blocked任务与active事件保留阻碍，${failFirst ? '非法引用使关联任务和事件一起跳过' : '直接自动结算'}，刷新不重复调用`, async ({ page }, info) => {
   const fixture = await seed(page), initial = await stored(page);
-  let invalid = failFirst, calls = 0;
+  let calls = 0;
   await page.route('https://conditions.mock.invalid/**', async route => {
     calls++;
     const response = structuredClone(fixture.response);
-    if (invalid) {
+    if (failFirst) {
       const command = response.taskCommands[0];
       if (command.type !== 'SaveTask') throw Error('fixture type');
       command.task.actorRef = { kind: 'npc', id: 'absent-synthetic-npc' };
@@ -49,14 +49,17 @@ for (const failFirst of [false, true]) test(`blocked任务与active事件保留�
   });
   await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   if (failFirst) {
-    await expect(page.getByTestId('runtime-log')).toContainText('actor_permission');
-    await expect(page.getByTestId('runtime-log')).toContainText('taskCommands.0');
-    const failed = await stored(page);
-    expect(failed.state).toEqual(initial.state); expect(failed.draft.story).toEqual(initial.draft.story);
-    expect(failed.draft.variables).toEqual(initial.draft.variables); expect(failed.draft.world).toBeUndefined();
-    expect(calls).toBe(1); await page.reload(); await openGameTools(page); expect(calls).toBe(1);
-    invalid = false;
-    await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
+    const notice=page.getByText(/本回合已结算，跳过/u);
+    await expect(notice).toBeVisible();
+    const saved=await stored(page);
+    expect(saved.state.tasks[fixture.task.id]).toEqual(initial.state.tasks[fixture.task.id]);
+    expect(saved.state.events[fixture.event.id]).toEqual(initial.state.events[fixture.event.id]);
+    expect(saved.state.journal.at(-1).settlement.world.skipped).toEqual(expect.arrayContaining([
+      expect.objectContaining({group:'taskCommands',groupIndex:0}),
+      expect.objectContaining({group:'eventCommands',groupIndex:0,reason:'dependency'}),
+    ]));
+    expect(calls).toBe(1);
+    return;
   }
   await expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toContainText('本回合已结算');
   const saved = await stored(page);

@@ -19,6 +19,7 @@ import { MapPanel } from '../panels/MapPanel';
 import type { MapUiState } from '../panels/mapView';
 import { MemoryPanel } from '../panels/MemoryPanel';
 import type { MemoryUiState } from '../panels/MemoryPanel';
+import { SettlementNotice } from './SettlementNotice';
 import { TurnChanges } from './TurnChangesView';
 import { useTurnComparison } from './useTurnComparison';
 import { turnChangeBadges } from './turnChangeBadges';
@@ -818,6 +819,7 @@ export function GameScreen({
             <article className={`story-entry glass ${index < view.journal.length - 1 || draft?.story || progress ? 'past' : 'latest'}`} key={entry.turnId}>
               <CityChapter number={index + 1} state={state} scene={state.journal[index]?.scene} desktop={!compactSidebars} />
               <StoryReading narrative={entry.narrative} protagonistName={hero.name} />
+              <SettlementNotice settlement={state.journal[index]?.settlement} />
               {index===view.journal.length-1&&showChanges&&<TurnChanges state={state} comparison={turnComparison} mobile={compactSidebars} onOpen={openChange}/>}
             </article>
           ))}

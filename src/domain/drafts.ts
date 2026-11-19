@@ -1,3 +1,4 @@
+import { DeferredEventIdsSchema, UpdateSettlementSchema } from './updateSettlement';
 import { z } from 'zod';
 import { CountSchema, IdSchema, TextSchema, requireData } from './common';
 import { STORY_CONTINUATION_LIMIT, STORY_PARTIAL_MAX_CHARS } from './storyContinuation';
@@ -9,12 +10,15 @@ export const VariableResultSchema = z.strictObject({
   commands: z.array(DomainCommandSchema),
   rejectedSuggestions: z.array(z.strictObject({ reason: TextSchema, reference: z.string().optional() })),
   unresolved: z.array(TextSchema),
+  settlement: UpdateSettlementSchema.optional(),
 });
 export const WorldResultSchema = z.strictObject({
   worldCommands: z.array(DomainCommandSchema), taskCommands: z.array(DomainCommandSchema),
   eventCommands: z.array(DomainCommandSchema),
   visibleHooks: z.array(z.strictObject({ text: TextSchema, revealAfter: z.string().optional() })),
   unresolved: z.array(TextSchema),
+  settlement: UpdateSettlementSchema.optional(),
+  deferredEvents: DeferredEventIdsSchema.optional(),
 });
 const candidateBase = {
   storyRevision: CountSchema, candidateRevision: CountSchema.refine((n) => n > 0),

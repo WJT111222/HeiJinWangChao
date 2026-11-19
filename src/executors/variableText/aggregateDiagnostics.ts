@@ -9,6 +9,7 @@ export const domainRuleNames = {
   initial_value_conflict: '初始化不能覆盖已有明确数据',
   npc_scene_location: '在场 NPC 与主角的地点不一致',
   missing_location: '所引用地点不存在',
+  location_cycle: '地点层级引用形成循环',
   missing_actor: '人物或组织引用不存在',
   missing_reference: '命令引用的实体不存在',
   duplicate_entity_id: '实体 ID 重复',
@@ -128,6 +129,18 @@ const timeRules = new Set<DomainRule>(['invalid_time', 'clock_reversed', 'npc_in
   'event_result_future', 'state_time_range', 'task_handoff_time']);
 export const isTimeDomainRule = (rule: unknown): rule is DomainRule => isDomainRule(rule) && timeRules.has(rule);
 
+// Only the simulator uses the full path. Diagnostics exposed to the caller use fixed field names.
+export function stateIssueDiagnostic(issue: z.core.$ZodIssue) {
+  const integrity = issue.code === 'custom' ? issue.params?.integrityRule : undefined;
+  const rule: DomainRule = integrity === 'location_reference' ? 'missing_location'
+    : integrity === 'location_cycle' ? 'location_cycle'
+    : Object.hasOwn(stateIssues, issue.message) ? stateIssues[issue.message] : 'invalid_domain_state';
+  const leaf = issue.path.at(-1);
+  const valuePath = rule === 'missing_location' && (leaf === 'locationId' || leaf === 'parentId') ? leaf
+    : rule === 'location_cycle' ? 'parentId' : undefined;
+  return { rule, path: issue.path, valuePath };
+}
+
 export function aggregateDomainDiagnostic(error: z.ZodError | DataError): ExecutionDiagnostic {
   let rule: DomainRule = 'invalid_domain_state';
   let relatedNpcId: string | undefined;
@@ -147,11 +160,14 @@ export function aggregateDomainDiagnostic(error: z.ZodError | DataError): Execut
       if (parsed?.success) relatedNpcId = parsed.data;
     }
   } else {
-    const distinct = new Set(error.issues.map((issue) =>
-      Object.hasOwn(stateIssues, issue.message)
-        ? stateIssues[issue.message] : 'invalid_domain_state',
-    ));
-    if (distinct.size === 1) rule = [...distinct][0];
+    const issues = error.issues.map(stateIssueDiagnostic);
+    const distinct = new Set(issues.map(issue => issue.rule));
+    if (distinct.size === 1) {
+      rule = issues[0].rule;
+      const field = issues[0].valuePath;
+      if (field && issues.every(issue => issue.valuePath === field))
+        return { validationRule: 'domain_schema', domainRule: rule, valuePath: field };
+    }
     else if (distinct.size > 1) rule = 'multiple_domain_rules';
   }
   return { validationRule: 'domain_schema', domainRule: rule, ...(relatedNpcId ? { relatedNpcId } : {}) };

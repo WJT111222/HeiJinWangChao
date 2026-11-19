@@ -101,7 +101,7 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
     expect(record(wc.PROTECTED_SCENE).sceneNpcIds).toContain('new-person');
     expect(JSON.stringify(wc.VARIABLE_RESULT)).toContain('RecordNpcMemory');
     expect(record(record(wc.OFFSCREEN_STATE).organizations).shop).toMatchObject({name:'社区商行'});
-    expect(t.calls[1].body).not.toHaveProperty('response_format');expect(t.calls[2].body).toHaveProperty('response_format',{type:'json_object'});
+    expect(t.calls[1].body).not.toHaveProperty('response_format');expect(t.calls[2].body).not.toHaveProperty('response_format');
     expect(await a.repo.load('save-a')).toEqual(before);
     const projection=projectTurn(before,completed.draft);
     expect(projection.economy.cash).toBe(9000);expect(projection.protagonist.locationId).toBe('clinic');
@@ -148,9 +148,12 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
     const a=await fixture('regular'),before=await a.repo.load('save-a');
     const {id:_id,...value}=task('background');void _id;
     const t=transport(()=>block(set('tasks[background]',{...value,actorRef:{kind:'npc',id:'npc-a'},status:'active'})));
-    await expect(coordinator(a.repo,t.fetcher).generate(a)).rejects.toMatchObject({code:'data_integrity'});
-    expect(t.calls.map(c=>c.stage)).toEqual(['story','variables']);
+    const done=await coordinator(a.repo,t.fetcher).generate(a);
+    expect(t.calls.map(c=>c.stage)).toEqual(['story','variables','world']);
+    expect(done.draft.variables?.result.settlement?.skipped).toMatchObject([{commandIndex:0,category:'task'}]);
     expect(await a.repo.load('save-a')).toEqual(before);
+    const saved=await a.repo.commitTurn(submission(done.draft));
+    expect(saved.state.tasks.background).toBeUndefined();
   });
   it.each(['',set('worldClock',openingEnd),set('items[note]',{name:'便条',category:'document',quantity:1,conditionText:'完好',ownerRef:{kind:'protagonist',id:'hero'}})])('开局空块/等值时钟/物品在刷新后只应用一次时钟：%s',async(body)=>{
     const a=await fixture(),before=await a.repo.load('save-a'),t=transport(()=>block(body));
@@ -164,7 +167,7 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
     expect(saved.state.appliedCommands.filter(c=>c.commandId.startsWith('opening-clock:'))).toHaveLength(1);
     expect((await a.repo.load('save-a')).worldClock).toBe(openingEnd);
   });
-  it.each(['{"commands":[],"rejectedSuggestions":[],"unresolved":[]}',block('set missing.field = 1'),block('add economy.cash = -999999')])('非法新响应不回退、不请求World、不污染存档：%s',async(text)=>{
+  it.each(['{"commands":[],"rejectedSuggestions":[],"unresolved":[]}','<命令>set missing.field = 1',block('set protagonist.skills = [')])('非法新响应不回退、不请求World、不污染存档：%s',async(text)=>{
     const a=await fixture(),before=await a.repo.load('save-a'),t=transport(()=>text);
     await expect(coordinator(a.repo,t.fetcher).generate(a)).rejects.toThrow();
     expect(t.calls.map(c=>c.stage)).toEqual(['story','variables']);expect(await a.repo.load('save-a')).toEqual(before);
@@ -230,7 +233,7 @@ describe('事件生命周期贯通真实Runtime、协调器和存档事务',()=>
     return {...a,incident};
   }
   function dueTransport(a:Awaited<ReturnType<typeof dueFixture>>,badVariables=false) {
-    return transport(()=>block(badVariables?'add economy.cash = -999999':set('worldClock','2026-10-18T08:10:00+08:00')),(ctx)=>{
+    return transport(()=>block(badVariables?'set protagonist.skills = [':set('worldClock','2026-10-18T08:10:00+08:00')),(ctx)=>{
       expect(record(ctx.EVENT_SCHEDULE).due).toEqual([expect.objectContaining({eventId:'due-event'})]);
       const id=string(record(ctx.TURN_CONTEXT).turnId),result='同事完成清点并封存清单。';
       return {...worldResult(),eventCommands:[
@@ -347,7 +350,7 @@ it('真实Runtime允许入场延后到下一幕，未处理回执在提交和重
 
 // 本轮只依据已确认的错误形态构造中性 Mock，不冒充尚未取得的实机原文/存档。
 it.each(['knowledge-shape', 'timeline-object', 'organization-history', 'interaction-time'] as const)(
-  '协议可靠性 %s：真实请求失败保留Story，明确重试后Variables→World→Commit→重载', async failure => {
+  '协议可靠性 %s：局部错误独立跳过，外层错误允许仅重试World', async failure => {
     const a = await fixture('opening'), before = await a.repo.load('save-a');
     let corrected = false;
     const t = transport(() => block([
@@ -371,27 +374,37 @@ it.each(['knowledge-shape', 'timeline-object', 'organization-history', 'interact
       ...(!corrected && failure === 'timeline-object' ? { timelineCandidates: [{eventId:'routine-finished'}] } : {}),
     }));
     const runner = coordinator(a.repo, t.fetcher);
-    await expect(runner.generate(a)).rejects.toMatchObject({ code: failure === 'organization-history' ? 'permission' : failure === 'interaction-time' ? 'time_data' : 'schema_fields' });
-    const failed = await a.repo.loadDraft('save-a');
-    expect(failed?.story).toBeTruthy(); expect(failed?.world).toBeUndefined();
-    const variableFailure = failure === 'knowledge-shape' || failure === 'interaction-time';
-    expect(Boolean(failed?.variables)).toBe(!variableFailure);
-    expect(t.calls.map(call => call.stage)).toEqual(variableFailure ? ['story', 'variables'] : ['story', 'variables', 'world']);
+    if (failure === 'timeline-object') {
+      await expect(runner.generate(a)).rejects.toMatchObject({ code: 'schema_fields' });
+      const failed = (await a.repo.loadDraft('save-a'))!;
+      expect(failed.story).toBeTruthy(); expect(failed.world).toBeUndefined();
+      expect(t.calls.map(call => call.stage)).toEqual(['story','variables','world']);
+      expect(await a.repo.load('save-a')).toEqual(before);
+      corrected = true;
+      const recovered = await runner.generate({ ...a, draft: failed });
+      const committed = await a.repo.commitTurn(submission(recovered.draft, '继续工作'));
+      expect(committed.state.events['routine-finished']).toBeDefined();
+      expect(t.calls.map(call => call.stage)).toEqual(['story','variables','world','world']);
+      return;
+    }
+    const outcome = await runner.generate(a);
+    expect(outcome.status).toBe('complete');
+    const report = failure === 'organization-history' ? outcome.draft.world?.result.settlement : outcome.draft.variables?.result.settlement;
+    expect(report?.skipped).toHaveLength(failure === 'organization-history' ? 2 : 1);
+    expect(t.calls.map(call => call.stage)).toEqual(['story','variables','world']);
     expect(await a.repo.load('save-a')).toEqual(before);
-    corrected = true;
-    const outcome = await runner.generate({ ...a, draft: failed! });
-    expect(outcome.status).toBe('complete'); expect(outcome.draft.story).toEqual(failed!.story);
-    expect(t.calls.map(call => call.stage)).toEqual(variableFailure ? ['story', 'variables', 'variables', 'world'] : ['story', 'variables', 'world', 'world']);
+    const partial = await a.repo.commitTurn(submission(outcome.draft, '继续工作'));
+    expect(partial.state.protagonist.emotionText).toBe('从容');
+    if (failure === 'knowledge-shape') expect(partial.state.npc.scene.knownInformation).toEqual([]);
+    if (failure === 'interaction-time') expect(partial.state.npc.scene.lastInteractionAt).toBe(before.npc.scene.lastInteractionAt);
+    if (failure === 'organization-history') {
+      expect(partial.state.organizations['org-community']).toBeUndefined();
+      expect(partial.state.events['routine-finished']).toBeUndefined();
+    }
+    expect(await a.repo.load('save-a')).toEqual(partial.state);
     const request = t.calls.find(call => call.stage === 'world')!.context;
     expect(record(record(request.COMMAND_CATALOG).outputFields).timelineCandidates).toBeUndefined();
-    const receipt = await a.repo.commitTurn(submission(outcome.draft, '继续工作'));
-    expect(receipt.state.npc.scene.knownInformation).toEqual([{ text: '[转述]收到值班安排', source: '同事通知', learnedAt: openingEnd }]);
-    expect(receipt.state.npc['npc-a'].memories).toEqual(before.npc['npc-a'].memories);
-    expect(receipt.state.organizations['org-community'].relationHistory).toEqual([]);
-    expect(receipt.state.events['routine-finished'].status).toBe('resolved'); expect(receipt.state.timeline).toEqual([]);
-    expect(receipt.state.worldClock).toBe(openingEnd); expect(receipt.state.journal).toHaveLength(1);
-    expect((await a.repo.commitTurn(submission(outcome.draft, '继续工作'))).replayed).toBe(true);
-    expect(await a.repo.load('save-a')).toEqual(receipt.state); expect(t.calls).toHaveLength(4);
+    expect(partial.state.journal.at(-1)?.settlement).toBeDefined();
   },
 );
 

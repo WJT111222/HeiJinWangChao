@@ -13,7 +13,7 @@ import { AiError } from '../services/ai/errors';
 import { freeze, requestSnapshot } from '../services/ai/snapshot';
 import type { CompanionProfile } from '../services/local/companionProfile';
 import type { SaveRepository } from '../services/storage/saveRepository';
-import { parseVariables, parseWorld } from '../services/validation/aiOutputs';
+import { parseVariables, revalidateWorld } from '../services/validation/aiOutputs';
 import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { reserveStageSession, withBrowserLock } from './stageGuard';
@@ -150,7 +150,7 @@ export class TurnCoordinator {
           ['ready', 'preview'].includes(draft.stageStatus.world) && Boolean(draft.world);
         // 复用之前的结果前重新执行安全验证，不只信任持久化的 validated 字样。
         if (variableReady()) parseVariables(JSON.stringify(draft.variables!.result), state, draft);
-        if (worldReady()) parseWorld(JSON.stringify(draft.world!.result), state, draft);
+        if (worldReady()) revalidateWorld(state, draft);
         const needed: AiStage[] = [];
         if (!storyReady()) needed.push('story');
         if (settings.runtime.useVariableStage && (!variableReady() || needed.includes('story')))

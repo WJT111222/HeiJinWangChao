@@ -37,14 +37,18 @@ test('自然现场记录与JSON围栏：候选自动结算，原文保留围栏�
   expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(text);
   await page.reload();expect(await stored(page)).toEqual(saved);expect(calls).toBe(1);
 });
-test('无效人物引用保留失败原文和上游；明确恢复只请求World并结算', async ({page}) => {
-  const a=await seed(page), good=JSON.stringify(a.response);a.response.eventCommands[0].event.actorRefs[0].id='unknown-actor';
-  const bad=`\`\`\`json\n${JSON.stringify(a.response,null,2)}\n\`\`\``;let calls=0;
-  await page.route('https://scene-contract.mock.invalid/**',async route=>{calls++;await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:calls===1?bad:good},finish_reason:'stop'}]})});});
+test('无效人物引用跳过并保留临时原文，独立候选结算无附加请求', async ({page}) => {
+  const a=await seed(page);a.response.eventCommands[0].event.actorRefs[0].id='unknown-actor';
+  const bad=`\`\`\`json
+${JSON.stringify(a.response,null,2)}
+\`\`\``;let calls=0;
+  await page.route('https://scene-contract.mock.invalid/**',async route=>{calls++;await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:bad},finish_reason:'stop'}]})});});
   await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
-  await expect(page.getByTestId('runtime-log')).toContainText('actor_permission');
-  const failed=await stored(page);expect(failed.state).toEqual(a.state);expect(failed.draft.variables.validation).toBe('validated');expect(failed.draft.story.narrative).toBe(a.draft.story!.narrative);
+  const summary=page.getByText('本回合已结算，跳过 1 项更新',{exact:true});await expect(summary).toBeVisible();
+  const saved=await stored(page);
+  expect(saved.state.events).toEqual(a.state.events);
+  expect(saved.state.journal.at(-1).story.narrative).toBe(a.draft.story!.narrative);
   await openStageRaw(page,'world');
   expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(bad);
-  await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();await expect.poll(async()=>(await stored(page)).state.turnNumber).toBe(1);expect(calls).toBe(2);
+  await page.reload();await expect(summary).toBeVisible();expect(calls).toBe(1);
 });

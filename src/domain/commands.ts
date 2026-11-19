@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { AccountSchema, DebtRecordSchema, IncomeRecordSchema, VehicleAssetSchema } from './economy/schema';
 import { ActorRefSchema, CommandDataError, DataError, CountSchema, IdSchema, MoneySchema, TextSchema, GameTimeSchema, requireData } from './common';
 import { EquipmentSchema } from './protagonist/schema';
-import { ImportantItemSchema } from './items/schema';
+import { OwnedItemInputSchema } from './items/schema';
 import { NpcCreationSchema, NpcSchema } from './npc/schema';
 import { FinancialBasisSchema, OrganizationChangesSchema, OrganizationSchema, organizationChangeFields } from './organizations/schema';
 import { StoredWorldEventSchema, WorldTaskSchema, HistoryRecordSchema } from './events/schema';
@@ -21,7 +21,7 @@ const base = { commandId: IdSchema, evidence: TextSchema };
 const positiveMoney = MoneySchema.refine((amount) => amount > 0, '金额必须为正');
 export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('InitializeOpeningState'), changes: OpeningInitialStateSchema }),
-  z.strictObject({ ...base, type: z.literal('PurchaseItem'), account: AccountSchema, price: positiveMoney, item: ImportantItemSchema }),
+  z.strictObject({ ...base, type: z.literal('PurchaseItem'), account: AccountSchema, price: positiveMoney, item: OwnedItemInputSchema }),
   z.strictObject({ ...base, type: z.literal('PurchaseVehicle'), account: AccountSchema, price: positiveMoney, vehicle: VehicleAssetSchema }),
   z.strictObject({ ...base, type: z.literal('TransferFunds'), from: AccountSchema, to: AccountSchema, amount: positiveMoney }),
   z.strictObject({ ...base, type: z.literal('ReceiveIncome'), income: IncomeRecordSchema.extend({ amount: positiveMoney, status: z.literal('received'), receivedAt: GameTimeSchema }) }),

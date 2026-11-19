@@ -231,9 +231,11 @@ it('纯小说请求中第二标签会话不能发出第二笔请求；取消后�
   } finally { other.close(); }
 });
 
-it('Variables-only仍严格拒绝越权和非法命令，不能仅凭World关闭提交', async () => {
+it('Variables-only跳过越权命令，正文及安全结果仍可提交', async () => {
   const { state, draft } = await seed(); const commit = vi.spyOn(repo, 'commitTurn');
   const r = runner(async (_url, init) => json(JSON.parse(String(init!.body)).model === 'story' ? story() : variableReply({ commands: [{ type: 'UpdateProtagonist', commandId: 'bad', changes: { talentId: 'cyber_tyrant' } }], rejectedSuggestions: [], unresolved: [] })));
-  await expect(run(r, draft, setup(true, false))).rejects.toThrow();
-  expect(commit).not.toHaveBeenCalled(); expect(await repo.load(state.saveId)).toEqual(state);
+  const saved = (await run(r, draft, setup(true, false))).committed!;
+  expect(commit).toHaveBeenCalledTimes(1);
+  expect(saved.state.protagonist).toEqual(state.protagonist);
+  expect(saved.state.journal.at(-1)?.settlement?.variables?.skipped).toHaveLength(1);
 });

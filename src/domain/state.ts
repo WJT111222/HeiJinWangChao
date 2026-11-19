@@ -1,3 +1,4 @@
+import { JournalSettlementSchema } from './updateSettlement';
 import { z } from 'zod';
 import { validateChronicles } from './history/validation';
 import { pendingOpeningClock } from './openingTime';
@@ -38,6 +39,7 @@ export const SaveShape = {
   journal: z.array(z.strictObject({
     turnId: IdSchema, revision: CountSchema, story: StorySchema, relatedActorRefs: z.array(ActorRefSchema),
     scene: z.strictObject({ worldClock: GameTimeSchema, locationId: IdSchema }).optional(),
+    settlement: JournalSettlementSchema.optional(),
   })),
   appliedCommands: z.array(z.strictObject({
     turnId: IdSchema, commandId: IdSchema, fingerprint: TextSchema,
@@ -72,7 +74,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     if (end) check(Date.parse(end) >= Date.parse(start), '结束时间早于开始时间', path, 'event_time');
   }
   timeRange(s.createdAt, s.updatedAt);
-  location(s.protagonist.locationId);
+  location(s.protagonist.locationId, ['protagonist', 'locationId']);
   if (s.initialCompanionId) check(Boolean(s.npc[s.initialCompanionId]), '初始同伴必须保留正式身份');
   for (const id of s.contactNpcIds) check(Object.hasOwn(s.npc, id), '联系人必须保留完整 NPC');
   const identities = Object.values(s.npc).map((npc) => npc.identityKey);
@@ -91,7 +93,8 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     location(npc.locationId, ['npc', npc.id, 'locationId']);
     for (const [index, place] of (npc.usualLocations ?? []).entries())
       location(place.locationId, ['npc', npc.id, 'usualLocations', index, 'locationId']);
-    if (npc.onScene && npc.locationId) check(npc.locationId === s.protagonist.locationId, '在场 NPC 与主角地点不一致');
+    if (npc.onScene && npc.locationId) check(npc.locationId === s.protagonist.locationId,
+      '在场 NPC 与主角地点不一致', ['npc', npc.id, 'locationId'], 'npc_scene_location');
     if (npc.kind === 'special') validateSpecialProfile(npc, npc.id, ['npc', npc.id]);
     for (const memory of npc.memories) {
       for (const ref of memory.affectedEntityRefs) actor(ref);
@@ -128,7 +131,10 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     const vehicle = s.economy.vehicles[wear.currentVehicleAssetId];
     check(vehicle?.ownerRef.kind === 'protagonist' && vehicle?.ownerRef.id === s.protagonist.id, '载具引用归属错误');
   }
-  for (const item of Object.values(s.items)) { if (item.ownerRef) actor(item.ownerRef); location(item.locationId); }
+  for (const item of Object.values(s.items)) {
+    if (item.ownerRef) actor(item.ownerRef, ['items', item.id, 'ownerRef']);
+    location(item.locationId, ['items', item.id, 'locationId']);
+  }
   const assets = [...Object.values(s.economy.properties), ...Object.values(s.economy.vehicles), ...Object.values(s.economy.otherAssets)];
   for (const asset of assets) {
     actor(asset.ownerRef);

@@ -93,15 +93,17 @@ it('绝命赌徒主动押上真实筹码：只记录已支付保证金，不保�
   } finally { await dispose(test); }
 });
 
-it.each(['variables', 'world'] as const)('%s 模型试图改写天赋仍失败，不形成失败候选或正式部分提交', async stage => {
+it.each(['variables', 'world'] as const)('%s 模型试图改写天赋会被跳过，其他合法结果仍可正式保存', async stage => {
   const test = await setup('golden_edict', talentScenario, false, stage);
   try {
     const original = await test.repo.load('save-a');
-    await expect(test.coordinator.generate({ ...test.options, draft: test.draft })).rejects.toBeDefined();
+    const completed = await test.coordinator.generate({ ...test.options, draft: test.draft });
     expect(await test.repo.load('save-a')).toEqual(original);
-    const stored = await test.repo.loadDraft('save-a'); expect(stored?.stageStatus[stage]).toBe('failed');
-    expect(stored?.[stage]).toBeUndefined(); expect(original.protagonist.talentId).toBe('golden_edict');
-    expect(test.fetcher).toHaveBeenCalledTimes(stage === 'variables' ? 2 : 3);
+    expect(completed.draft.stageStatus[stage]).toBe('ready');
+    expect(completed.draft[stage]?.result.settlement?.skipped).toHaveLength(1);
+    const saved = await test.repo.commitTurn({draft:completed.draft,nextAction:'',useVariableStage:true,useWorldStage:true});
+    expect(saved.state.protagonist.talentId).toBe('golden_edict');
+    expect(test.fetcher).toHaveBeenCalledTimes(3);
   } finally { await dispose(test); }
 });
 

@@ -1,5 +1,6 @@
+import type { z } from 'zod';
 import { normalizeStageEntryHandoffs } from './stageEntryHandoff';
-import { validateStageSettlement } from '../../domain/events/stages';
+import { deferredStageIds, validateStageSettlement } from '../../domain/events/stages';
 import { normalizeEventContinuation } from './worldEventContinuation';
 import { historicalEvent, terminalEvent } from '../../domain/events/lifecycle';
 import { worldEventSchedule } from '../../domain/events/schedule';
@@ -33,14 +34,14 @@ function changedRecordField(prefix: 'task' | 'event', previous: Record<string, u
     .sort().find(key => fingerprint(previous[key]) !== fingerprint(candidate[key]));
   return field ? safeWorldPath([prefix,field]) : prefix;
 }
-export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnDraft) {
-  try { return validateWorldOutputChecked(raw, state, draft); }
+export function validateWorldOutput(raw: unknown, state: GameState, draft: TurnDraft, allowDeferred = false) {
+  try { return validateWorldOutputChecked(raw, state, draft, allowDeferred); }
   catch (error) { throw worldValidationError(error, {}, raw); }
 }
-function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnDraft) {
+function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnDraft, allowDeferred: boolean) {
   const original = state;
   state = openingTimeBase(state, draft);
-  const result = WorldResultSchema.parse(raw);
+  const result: z.infer<typeof WorldResultSchema> = WorldResultSchema.omit({ settlement: true, deferredEvents: true }).parse(raw);
   requireWorld(draft.story, 'invalid_output', 'command_structure');
   const base = projectTurn(original, draft), now = Date.parse(base.worldClock);
   const groups = ['worldCommands', 'taskCommands', 'eventCommands'] as const;
@@ -291,11 +292,23 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     try { projected = projectTurn(original, draft, retained); }
     catch (error) { throw worldProjectionError(error, result, original, draft, source); }
   }
-  if (draft.variables?.validation === 'validated' && !historicalPerspective(state,draft)) for (const due of worldEventSchedule(state,base).due.filter(e=>e.eventKind!=='sub')) {
-    const after=projected.events[due.eventId] ?? projected.retiredEvents[due.eventId];
-    requireWorld(after && (terminalEvent(after) || ('estimatedEndAt' in after && after.estimatedEndAt && Date.parse(after.estimatedEndAt)>Date.parse(base.worldClock)) || ('protagonistEntry' in after && ['pending','presented'].includes(after.protagonistEntry?.status??''))), 'invalid_output', 'due_event_unhandled');
+  if (draft.variables?.validation === 'validated' && !historicalPerspective(state,draft)) {
+    const deferredStages = allowDeferred ? deferredStageIds(base, projected) : [];
+    const deferred = [...deferredStages];
+    for (const due of worldEventSchedule(state,base).due.filter(event => event.eventKind !== 'sub')) {
+      const after = projected.events[due.eventId] ?? projected.retiredEvents[due.eventId];
+      if (allowDeferred && fingerprint(after) === fingerprint(base.events[due.eventId])) {
+        deferred.push(due.eventId);
+        continue;
+      }
+      requireWorld(after && (terminalEvent(after)
+        || ('estimatedEndAt' in after && after.estimatedEndAt && Date.parse(after.estimatedEndAt) > now)
+        || ('protagonistEntry' in after && ['pending','presented'].includes(after.protagonistEntry?.status ?? ''))),
+      'invalid_output', 'due_event_unhandled');
+    }
+    validateStageSettlement(base, projected, draft.turnId, deferredStages);
+    if (deferred.length) result.deferredEvents = deferred.sort();
   }
-  if(draft.variables?.validation==='validated' && !historicalPerspective(state,draft)) validateStageSettlement(base,projected,draft.turnId);
   for(const command of result.eventCommands) if(command.type==='SaveEvent' && !terminalEvent(command.event) && command.event.eventKind!=='main') {
     // V2 sub-events carry a fixed bound, never an estimated scheduling alias.
     // Sub-event dispatch uses fixedEndAt; untyped legacy events retain estimatedEndAt.

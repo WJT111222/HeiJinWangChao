@@ -7,11 +7,11 @@
 ## 阶段② 变量输出
 正式新请求使用 `VARIABLE_TEXT_V1`：同次响应依次完整输出 `<thinking>`、`<说明>`、`<命令>`；只执行唯一命令区块内的 `set/add/push 路径 = JSON值` 或 `delete 路径`；真实有限路径和类型由 `TEXT_COMMAND_CATALOG` 给出。`<thinking>`/`<说明>` 不执行，不要求整份模型回复为 JSON。
 
-程序解析、编译并整批模拟后，仍保存规范化对象 `{commands: DomainCommand[],rejectedSuggestions:{reason,reference}[],unresolved:string[]}`。已有 JSON 领域候选保持可读可复核；新模型请求不猜测协议、不回退 JSON、不追加修复请求。说明原文不复制到候选，仅记录固定非执行提示。
+程序隔离独立坏操作并严格模拟接受集合后，仍保存规范化对象 `{commands: DomainCommand[],rejectedSuggestions:{reason,reference}[],unresolved:string[]}`。已有 JSON 领域候选保持可读可复核；新模型请求不猜测协议、不回退 JSON、不追加修复请求。说明原文不复制到候选，仅记录固定非执行提示。
 `DomainCommand` 是严格的 `type` 判别联合，包含 `commandId/type/evidence` 及类型专属的同级字段，不接受旧 group/entityId/payload 包装。旧候选的 JSON 领域命令仍通过结构与副本业务验证；新请求通过 TEXT_COMMAND_CATALOG 的文本映射由程序生成 commandId/evidence/expectedRevision。模型不得自行输出这些程序元数据；候选不直接写入正式状态。
 
 ## 阶段③ 世界输出
-返回JSON对象`{worldCommands:DomainCommand[],taskCommands:DomainCommand[],eventCommands:DomainCommand[],visibleHooks:{text,revealAfter?}[],unresolved:string[]}`。未来计划仅通过SaveEvent创建和调度，不再重复填写镜像。独立历史使用worldCommands中的RecordHistory。新事件必需startAt、estimatedEndAt、backgroundText、goalText、有效actorRefs；Task仍用dueAt或completionCondition，到期不是自动成功。
+按 thinking → 说明 → 命令输出；命令块内为严格 JSON 对象`{worldCommands:DomainCommand[],taskCommands:DomainCommand[],eventCommands:DomainCommand[],visibleHooks:{text,revealAfter?}[],unresolved:string[]}`。未来计划仅通过SaveEvent创建和调度，不再重复填写镜像。独立历史使用worldCommands中的RecordHistory。新事件必需startAt、estimatedEndAt、backgroundText、goalText、有效actorRefs；Task仍用dueAt或completionCondition，到期不是自动成功。
 **与先前技术文档接口的调整说明：** 因开局世界阶段需要真正初始化场外组织，建议将原`WorldStageResult`扩展一个`worldCommands`字段，仅允许操作场外NPC与组织，代码层须严格校验权限。否则由变量阶段预先建组织将违反“只更新在场NPC”的设计分工。
 
 ## 三层不同时间与可见性
@@ -99,7 +99,7 @@
 
 ## 当前World候选运行契约
 
-World沿用JSON及DomainCommand结构；evidence是非执行说明，不再有证据JSON、来源令牌、中文语义分类或正文锚点。模型自主判断事实与知识传播；程序只检查字段、实体引用、命令权限、时间、生命周期及事务。
+World 按三段封套输出，命令块沿用 JSON 和 DomainCommand 结构；evidence是非执行说明，不再有证据JSON、来源令牌、中文语义分类或正文锚点。模型自主判断事实与知识传播；程序只检查字段、实体引用、命令权限、时间、生命周期及事务。
 
 任务直接输出resolution和必要handoff，事件直接输出结案字段。交接可概括成果，不要求原文片段。visibleHooks仅内部候选。RecordHistory记录独立历史，模型声明established/reported/suspected，不自动写入角色认知；NPC_KNOWLEDGE仍按ownerNpcId分组。
 
@@ -166,7 +166,7 @@ WorldEvent.resultKnowledge?沿用任务现有严格分类，不新增AI阶段。
 
 ## M8-P0A 变量候选最小必要校验
 
-evidence保持原字符串Schema，作为来源说明，不是逐字引用证明。AI负责计划/否定/事实、关系及技能变化的语义判断；程序不使用factEvidence/completedPayment或金额文本正则拒绝变量候选。严格JSON、命令白名单、整数分金额、余额、归属、引用、场景一致性、NPC知识类型与权限、生命周期和时间完整性、CAS、幂等及原子提交继续保留。任何单条数据底线错误整批拒绝，无静默部分接纳。空commands合法。
+evidence保持原字符串Schema，作为来源说明，不是逐字引用证明。AI负责计划/否定/事实、关系及技能变化的语义判断；程序不使用factEvidence/completedPayment或金额文本正则拒绝变量候选。严格JSON、命令白名单、整数分金额、余额、归属、引用、场景一致性、NPC知识类型与权限、生命周期和时间完整性、CAS、幂等及原子提交继续保留。可隔离的非法命令及依赖组被拒绝，无关操作可以在同一原子事务中保存。空命令与全跳过使用不同的程序结算摘要。
 
 失败安全分类：invalid_json、schema_fields、data_integrity、amount_balance、time_data、candidate_conflict，以及既有permission。可查看白名单字段路径/命令类型/序号，不包含值、原始校验异常、NPC私有内容或供应商响应。World同样不做自然语言来源审批；角色上下文按身份与可见性隔离。
 

@@ -8,7 +8,7 @@
 <命令>
 set protagonist.emotionText = "平静"
 </命令>
-分析仅是可展示的变量分析结果，不要求模型的真实隐藏推理；不参与命令执行。说明每行用“- ”，也不执行。命令块只放set/add/push/delete标准指令，以换行分隔；对象和数组可多行，字符串必须正确JSON转义。没有变化时保留三个完整标签并让命令块为空。缺少、重复、嵌套或截断区块不能作为成功结果。
+分析仅是可展示的变量分析结果，不要求模型的真实隐藏推理；不参与命令执行。说明每行用“- ”，也不执行。命令块只放set/add/push/delete标准指令，以换行分隔；对象和数组可多行，字符串必须正确JSON转义。没有变化时保留三个完整标签并让命令块为空。应完整输出三段。程序只执行唯一、完整且边界明确的命令块；分析或说明缺漏仅提示格式。
 不输出旧的领域命令JSON对象、commands/rejectedSuggestions/unresolved数组或代码围栏。程序生成稳定commandId、版本、记忆ID及当前回合元数据，AI不填这些程序字段。真实值结构见 TEXT_COMMAND_CATALOG，示例ID必须换成当前实体稳定ID。
 
 - set：标量设置最终值，数组替换为给定数组，目录内对象只合并白名单字段；也可设置列明数组的已有索引。设置目录中的最终字段值，或用稳定路径创建完整记录。不是任意JSON补丁；实体路径的创建值省略id，由路径绑定；opening.initialState.expectedIncomes数组内各收入记录必须带稳定id。已有NPC与组织不能通过再次set整个实体冒充更新。
@@ -18,7 +18,7 @@ set protagonist.emotionText = "平静"
 - 输出优先按先set/add、再push、最后delete组织，创建引用对象必须在使用之前。原有系统时钟应用顺序例外由程序处理。不得delete整个NPC、NPC原始记忆、组织、地点或经济账目；目标没有合法领域删除能力时明确写说明，不发明字段或跳过。可选gameState.前缀沿用源语法，根域仍使用本项目目录中的英文名称。
 
 AI根据选定Story理解已发生变化，不替World推演后台任务、事件或组织经营结果。原变量规划是线索，不是审批；没有额外凭据、覆盖许可、正文逐字引用或独立复核。不能处理的变化在说明中清楚列明，不伪造成功或静默遗漏。
-程序仅使用严格字段类型、稳定引用、金额、归属、数量、合法日期、版本、幂等及整批领域执行约束；任一非法操作整批失败，不返回半笔交易。
+程序仅使用严格字段类型、稳定引用、金额、归属、数量、合法日期、版本、幂等及整批领域执行约束；可定位的非法操作与依赖它的操作一并跳过，其他独立更新仍可保存。购买、转账、扣款与入库必须用目录内复合操作，不拆成分别可应用的指令。
 
 开局OPENING_TIME为candidate时，Story结构化endAt是唯一开局时钟候选，程序统一应用一次，不再输出时钟指令。普通回合可用 `set worldClock = "2026-10-18T09:00:00+08:00"` 更新，不能倒退或使用设备日期；没有实际耗时也可保持原值。回顾过去不改写现在，预计到期不代表任务完成。
 创建地点：`set locations[clinic] = {"name":"社区诊所","parentId":"chongqing"}`；人物地点引用需真实存在，主角移动时分别处理同行/留守NPC，不自动决定跟随。去向未知可set该NPC的onScene=false、locationId=null。
@@ -26,7 +26,7 @@ AI根据选定Story理解已发生变化，不替World推演后台任务、事�
 更新好感唯一写法：`set npc[npc_lin].affinityChange = {"to":35,"reason":"主角替自己挡下加急费，彼此更信任","relationshipText":"愿意继续协作"}`（示例ID、数值和原因必须换成实际剧情）。to是变化后的好感终值[-100,100]，可为负；reason写本回合具体剧情原因，不写空泛套话；relationshipText写当前关系与态度；三项都不可省略。前值由程序读取正式状态，同批连续更新按上一笔结果，不填from。不能借记忆补写伪造好感。好感与个人记忆可在同批分别写入，不是冲突操作。关系不等于恋爱。未确认同伴from=null，不把占位0当确认结果。登记联系人用 `set npc[npc_lin].contact = {"reason":"互换联系方式"}`，不撤销永久保护。
 记忆用 `push npc[npc_lin].memories = {"text":"工作室交付旧相机时，委托方临时提出加急费用。自己核对清单并请主角保留凭据、暂不承诺；主角出示书面确认后，对方同意暂缓收费、次日核算。费用仍未确定，这次合作让自己愿意继续协助核实，但不会把暂缓当成免除。","knowledgeKind":"observed","knowledgeSource":"当面经历","visibility":"npc_private"}`。亲历、转述reported、推测suspected由AI区分，后两类由程序保留标记；记忆只属于指定人物，不自动公开或传播。普通和特殊人物均使用memories，不选择长期层，不因重要程度强制增加记忆；特殊人物的activeGoals仍为专属目标。知晓信息用knownInformation路径，值结构同个人记忆。
 实际到账收入必须set economy.incomes[id]完整received记录，借款必须set economy.debts[id]完整债务；转账用push economy.transfers，还款用push economy.debts[id].repayments。均为整数人民币分；未知余额不能当0，不能透支，不能提前使用后面的收入。完整示例见经济组及目录。
-物品新增可选description（描述）、referenceValue（单件非负整数分，未知null/省略）、questItem（任务布尔标记）及itemDetails字符串资料；创建和购买使用同一ImportantItem结构。已有物品用set items[id].description/referenceValue/itemDetails/category/questItem更新对应字段，itemDetails整记录替换且保留有效旧属性，不是自由深层补丁。referenceValue不代表成交、不自动改余额；证件等不可交易物品不虚构市价。类别与适用资料见TEXT_COMMAND_CATALOG.itemDetailsGuide。
+物品新增可选description（描述）、referenceValue（单件非负整数分，未知null/省略）、questItem（任务布尔标记）及itemDetails字符串资料；创建必须明确填写ownerRef，购买在item中同样明确填写ownerRef。缺少归属的更新不执行，也不默认归主角。已有物品用set items[id].description/referenceValue/itemDetails/category/questItem更新对应字段，itemDetails整记录替换且保留有效旧属性，不是自由深层补丁。referenceValue不代表成交、不自动改余额；证件等不可交易物品不虚构市价。类别与适用资料见TEXT_COMMAND_CATALOG.itemDetailsGuide。
 物品获得set items[id]；购买set items[id].purchase一次扣款入库；转交set items[id].transfer；遗失set items[id].loss；数量用add items[id].quantity。装备用set protagonist.currentWear完整装备对象。车辆购买set economy.vehicles[id].purchase，车辆房产不重复进重要物品表。
 组织用set organizations[id]创建四类之一的完整对象；关系用set organizations[id].protagonistRelation={relation,reason}开放文字。已有组织使用set organizations[id].state白名单更新，不覆盖组织表。
 

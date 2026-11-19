@@ -99,7 +99,15 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
   );
   const world = draft.world?.result;
   const projected = projectTurn(current, draft, world ? [...world.worldCommands, ...world.taskCommands, ...world.eventCommands] : []);
-  if(draft.world && !historicalPerspective(current,draft)) validateStageSettlement(projectTurn(current,draft),projected,draft.turnId);
+  if (world && !historicalPerspective(current, draft)) {
+    const beforeWorld = projectTurn(current, draft);
+    validateStageSettlement(beforeWorld, projected, draft.turnId, world.deferredEvents?.filter(id => beforeWorld.events[id]?.eventKind === 'sub'));
+  }
+  const variableSettlement = draft.variables?.result.settlement;
+  const worldSettlement = world?.settlement;
+  const deferred = world?.deferredEvents?.length;
+  const settlement = variableSettlement || worldSettlement || deferred
+    ? { variables: variableSettlement, world: worldSettlement, deferred } : undefined;
   projected.updatedAt = now;
   delete projected.openingInitializationPending;
   requireData(draft.story!.summary.trim(), 'MISSING_SUMMARY', '正文缺少有效摘要，请重新生成正文后重试');
@@ -126,6 +134,7 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
         revision: current.revision + 1,
         story: draft.story!,
         relatedActorRefs: [],
+        ...(settlement ? { settlement } : {}),
         scene: {
           worldClock: openingTimeSelection(current, draft)?.startAt ?? current.worldClock,
           // The formal opening origin precedes any movement in this turn, just as in regular turns.
