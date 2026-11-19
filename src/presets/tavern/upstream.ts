@@ -81,9 +81,11 @@ class Frames {
       for (const part of array(record(choice.content).parts)) {
         const call = record(part).functionCall;
         if (call === undefined) continue;
-        const { id, name, args } = record(call);
-        if (record(call).partialArgs !== undefined || record(call).willContinue === true)
+        const functionCall = record(call);
+        const { id, name } = functionCall;
+        if (functionCall.partialArgs !== undefined || functionCall.willContinue === true)
           throw new AiError('unsupported', undefined, { fieldPath: 'tavern.gemini.partialArgs' });
+        const args = Object.hasOwn(functionCall, 'args') ? functionCall.args : {};
         if (typeof name !== 'string' || !objectArgs(args)) invalid();
         const encoded = JSON.stringify(args);
         if (typeof id === 'string') {
@@ -185,30 +187,46 @@ export async function normalizeUpstream(response: Response, protocol: Protocol, 
   const iterator = readSse(counted, reading);
   const encoder = new TextEncoder();
   const done = encoder.encode('data: [DONE]\n\n');
+  let downstreamCancelled = false;
   return new Response(new ReadableStream<Uint8Array>({
     async pull(controller) {
       try {
         const next = await iterator.next();
-        if (!next.done && next.value.event === 'error') throw new AiError('rejected');
-        if (next.done || (isOpenAiCompatible(protocol) && next.value.data === '[DONE]')) {
-          if (!next.done) { frames.boundary = true; trace.boundary = 'done'; }
-          else trace.boundary ??= 'eof';
-          frames.finish(true);
-          await iterator.return(undefined);
+        if (reading.aborted) throw new AiError('cancelled');
+        if (next.done) {
+          trace.boundary ??= 'eof';
+        } else {
+          if (next.value.event === 'error') throw new AiError('rejected');
+          if (isOpenAiCompatible(protocol) && next.value.data === '[DONE]') {
+            frames.boundary = true;
+            trace.boundary = 'done';
+          } else {
+            const frame = frames.project(parse(next.value.data), true);
+            controller.enqueue(encoder.encode('data: ' + JSON.stringify(frame) + '\n\n'));
+            // Anthropic can leave the HTTP body open after its terminal message_stop.
+            if (!frames.boundary) return;
+          }
+        }
+        frames.finish(true);
+        await iterator.return(undefined);
+        if (!downstreamCancelled) {
           controller.enqueue(done);
           controller.close();
-        } else {
-          const frame = frames.project(parse(next.value.data), true);
-          controller.enqueue(encoder.encode('data: ' + JSON.stringify(frame) + '\n\n'));
         }
       } catch (error) {
         trace.error = error instanceof AiError ? error : new AiError('stream_interrupted');
         await iterator.return(undefined);
-        // A wrapper may read this event, but cannot turn its upstream failure into a candidate.
-        controller.enqueue(encoder.encode('event: error\ndata: ' + JSON.stringify({ error: { code: safeAiError(trace.error).code } }) + '\n\n'));
-        controller.close();
+        if (!downstreamCancelled) {
+          // A wrapper may read this event, but cannot turn its upstream failure into a candidate.
+          controller.enqueue(encoder.encode('event: error\ndata: ' + JSON.stringify({ error: { code: safeAiError(trace.error).code } }) + '\n\n'));
+          controller.close();
+        }
       }
     },
-    async cancel() { stopped.abort(); await iterator.return(undefined); },
+    async cancel() {
+      downstreamCancelled = true;
+      stopped.abort();
+      await iterator.return(undefined);
+    },
   }), { headers: { 'Content-Type': 'text/event-stream' } });
 }

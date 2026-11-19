@@ -36,3 +36,14 @@
 ## 验证证据
 
 Node 24.19.0 定向 Vitest 共 11 个文件、389 项通过，ESLint、TypeScript、Vite Build 和差异检查通过。最终提交的全量 CI 单独计数，见 PR 验收留言。Playwright 在桌面与手机 Chromium 检查实际页面 fetch、监听器和包装器双重改写、工具还原正文、正式 Repository 草稿、取消及原生四阶段旁路。首次运行出现开发服务器的预设模块加载失败；在隔离端口运行当前提交，两端均通过。没有运行无关的全量浏览器套件。[协议与事件用例](../../src/tests/tavern-backend.test.ts) · [草稿与续写](../../src/tests/story-stage.test.ts) · [双端浏览器](../../e2e/tavern-backend.spec.ts)
+
+## 第二批独立复审返修
+
+复现基线为 `8b7f73c641c7e4e3dc67eb9a961d0ba9d358d7c9`。在 Node 24.19.0 的正式 Vitest 中，新增 11 个用例先得到 4 失败、7 通过。Anthropic 的文本与工具流在真实 `message_stop` 后保持 HTTP 响应体打开，两个用例均触发防挂看门狗。Gemini JSON 和 SSE 的无参调用都提前报 `tavern.upstream.tool`，包装器无法取得合法调用。
+
+| 路径 | 修复与验证 |
+| --- | --- |
+| Anthropic SSE | 虚拟后端先逐帧收集文本、工具增量、真实 finish 和 usage。解析到顶层 `message_stop` 后立即执行原结束检查，包括工具块闭合和参数完整性。成功时归一化流只交付一次 `[DONE]`，现有 SSE 迭代器在退出时取消上游读取并释放锁。保持连接打开的测试验证了这些结果，并检查底层取消恰好一次、原始流已解锁、诊断无错误。缺少真实边界、未闭合工具块、损坏 JSON、上游报错与完成前取消分别验证。 |
+| Gemini JSON、SSE | 完整 `functionCall` 仅在自身缺少 `args` 时按空对象序列化，再按原规则去重和分配索引。正式 AiClient 和页面包装器收到同 ID 的单一空参数调用，另两个匿名工具的身份、顺序和参数也与输入相符。原样返回这些调用时，客户端报 `tavern.unhandled_tool`，每次尝试只有一次 Mock 上游传输。显式非法值、部分参数、空名称和缺少结束原因继续失败。 |
+
+生产修改限于 [协议归一化](../../src/presets/tavern/upstream.ts)。新增 11 项全部转绿，随后运行的 15 个定向测试文件共 474 项通过，包含这 11 项。该批还覆盖四协议、原客户端、第一批预设采样、Story 续写、取消和正式保存。ESLint、TypeScript、生产构建与差异检查通过。既有 [Chromium 冒烟](../../e2e/tavern-backend.spec.ts) 桌面、手机各 1 项通过。完整 CI 以本次提交对应的 PR 检查为准。本轮使用合成响应，未验证真实供应商及第三方包装器，未运行无关的全量浏览器套件。

@@ -8,6 +8,7 @@ import { TavernEvents, tavernEvents, tavernTools, type FunctionTool } from '../p
 import { transientStageError } from '../workflows/turnCoordinator';
 import type { ResponseDiagnostics } from '../services/ai/responseContent';
 import { tavernWire } from '../presets/tavern/wire';
+import { newTrace, normalizeUpstream } from '../presets/tavern/upstream';
 
 const store = { getItem: () => 'fixture-secret', setItem() {}, removeItem() {} };
 const snapshot = (protocol: Protocol, model = 'fixture') => channelSnapshot(newChannel(protocol), new CredentialVault(store, store), model);
@@ -260,4 +261,130 @@ it('完整 JSON 的 reasoning-only 仍可观察公开思考，不能作为正文
     .rejects.toMatchObject({ code: 'empty' });
   expect(observed).toHaveBeenCalledWith('独立公开思考');
   expect(transport).toHaveBeenCalledTimes(1);
+});
+
+describe('第二批 P2 响应边界', () => {
+  it.each([false, true])('Anthropic 在上游保持打开时按 message_stop 收尾，工具=%s', async toolMode => {
+    const events = await fixture('anthropic', true, toolMode).text();
+    const cancel = vi.fn();
+    const source = new ReadableStream<Uint8Array>({
+      start(controller) { controller.enqueue(new TextEncoder().encode(events)); },
+      cancel,
+    });
+    const trace = newTrace();
+    const abort = new AbortController();
+    const response = await normalizeUpstream(new Response(source), 'anthropic', true, abort.signal, trace);
+    const read = response.text();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const watchdog = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('message_stop 后仍等待 EOF')), 1500);
+      });
+      const lines = (await Promise.race([read, watchdog])).trim().split('\n\n');
+      expect(lines.pop()).toBe('data: [DONE]');
+      const packets = lines.map(line => JSON.parse(line.slice(6)));
+      const deltas = packets.map(p => p.choices[0].delta);
+      if (toolMode) {
+        const calls = deltas.flatMap(d => d.tool_calls ?? []);
+        expect(calls[0]).toMatchObject({ id: 'call1', index: 0, function: { name: 'deliver' } });
+        expect(calls.map(c => c.function.arguments).join('')).toBe(args);
+      } else {
+        expect(deltas.map(d => d.content).join('')).toBe(text);
+      }
+      expect(packets.flatMap(p => p.choices[0].finish_reason ?? [])).toEqual([toolMode ? 'tool_calls' : 'stop']);
+      expect(packets.filter(p => p.usage).map(p => p.usage.completion_tokens)).toEqual([9]);
+      expect(trace).toMatchObject({ complete: true, boundary: 'message_stop', finish: toolMode ? 'tool_use' : 'end_turn', usage: { outputTokens: 9 } });
+      expect(trace.error).toBeUndefined();
+      expect(cancel).toHaveBeenCalledTimes(1);
+      expect(source.locked).toBe(false);
+    } finally {
+      clearTimeout(timer);
+      abort.abort();
+      await read.catch(() => undefined);
+    }
+  });
+
+  it.each([
+    ['missing-stop', 'stream_interrupted'],
+    ['open-block', 'invalid_output'],
+    ['bad-json', 'invalid_json'],
+    ['prior-error', 'rejected'],
+  ])('Anthropic %s 时包装器的成功不能取代上游结果', async (mode, code) => {
+    const events = frame({ type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'a', name: 'deliver', input: {} } })
+      + frame({ type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: mode === 'bad-json' ? '{' : args } })
+      + (mode === 'open-block' ? '' : frame({ type: 'content_block_stop', index: 0 }))
+      + frame({ type: 'message_delta', delta: { stop_reason: 'tool_use' } })
+      + (mode === 'prior-error' ? frame({ type: 'error' }) : '')
+      + frame(mode === 'missing-stop' ? { metadata: { type: 'message_stop' } } : { type: 'message_stop' });
+    const transport = vi.fn<typeof fetch>().mockResolvedValueOnce(sse(events));
+    wrap(async r => { await r.text(); return fixture('openai', false, false); });
+    await expect(new AiClient(transport).generate(snapshot('anthropic'), messages, { tavernType: 'normal', stream: true }))
+      .rejects.toMatchObject({ code });
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
+
+  it('Anthropic 收到正文后、message_stop 前取消', async () => {
+    const cancel = vi.fn();
+    const fragment = frame({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } });
+    const source = new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(fragment)); }, cancel });
+    const transport = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response(source));
+    const abort = new AbortController();
+    const seen = vi.fn(() => abort.abort());
+    await expect(new AiClient(transport).generate(snapshot('anthropic'), messages, {
+      tavernType: 'normal', stream: true, signal: abort.signal, onDelta: seen,
+    })).rejects.toMatchObject({ code: 'cancelled' });
+    expect(seen).toHaveBeenCalledWith(text);
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
+
+  function geminiCandidate(calls: unknown[], finished: boolean) {
+    return { candidates: [{ content: { parts: calls.map(functionCall => ({ functionCall })) },
+      ...(finished ? { finishReason: 'STOP' } : {}) }] };
+  }
+
+  it.each([false, true])('Gemini stream=%s 无参快照等价并保留无 ID 调用的索引，残留工具不执行', async stream => {
+    const noop = { id: 'g', name: 'noop' };
+    const other = [{ name: 'empty', args: {} }, { name: 'second', args: { n: 0 } }];
+    const repeated = { ...noop, args: {} };
+    const source = stream
+      ? sse(frame(geminiCandidate([noop], false)) + frame(geminiCandidate([repeated, ...other], true)))
+      : Response.json(geminiCandidate([noop, repeated, ...other], true));
+    const transport = vi.fn<typeof fetch>().mockResolvedValueOnce(source);
+    const observed = vi.fn();
+    wrap(async response => {
+      const data = await response.text();
+      const calls = stream
+        ? data.split('\n').filter(line => line.startsWith('data: {'))
+          .flatMap(line => JSON.parse(line.slice(6)).choices[0].delta.tool_calls ?? [])
+        : JSON.parse(data).choices[0].message.tool_calls;
+      observed(calls);
+      return new Response(data, { headers: response.headers });
+    });
+    await expect(new AiClient(transport).generate(snapshot('gemini'), messages, { tavernType: 'normal', stream }))
+      .rejects.toMatchObject({ code: 'invalid_output', details: { fieldPath: 'tavern.unhandled_tool' } });
+    expect(observed).toHaveBeenCalledWith([
+      { index: 0, id: 'g', type: 'function', function: { name: 'noop', arguments: '{}' } },
+      { index: 1, id: 'gemini-call-1', type: 'function', function: { name: 'empty', arguments: '{}' } },
+      { index: 2, id: 'gemini-call-2', type: 'function', function: { name: 'second', arguments: '{"n":0}' } },
+    ]);
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([false, true])('Gemini stream=%s 拒绝显式非法值、残缺参数、空名称和缺少结束', async stream => {
+    const cases = [
+      ...[null, [], '', 0].map(args => ({ call: { name: 'noop', args }, code: 'invalid_output', finished: true })),
+      { call: { name: 'noop', partialArgs: [] }, code: 'unsupported', finished: true },
+      { call: { name: 'noop', willContinue: true }, code: 'unsupported', finished: true },
+      { call: { name: '', args: {} }, code: 'invalid_output', finished: true },
+      { call: { name: 'noop', args: {} }, code: 'stream_interrupted', finished: false },
+    ];
+    for (const { call, code, finished } of cases) {
+      const data = geminiCandidate([call], finished);
+      const transport = vi.fn<typeof fetch>().mockResolvedValueOnce(stream ? sse(frame(data)) : Response.json(data));
+      await expect(new AiClient(transport).generate(snapshot('gemini'), messages, { tavernType: 'normal', stream }))
+        .rejects.toMatchObject({ code });
+      expect(transport).toHaveBeenCalledTimes(1);
+    }
+  });
 });
