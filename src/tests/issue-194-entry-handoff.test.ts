@@ -9,7 +9,7 @@ import { composePrompt } from '../prompts/composer';
 import { defaultSettings } from '../ui/settings/model';
 import { runtimeLogEvent } from '../ui/game/runtimeLog';
 import { worldEventSchedule } from '../domain/events/schedule';
-import { EventInteractionSchema } from '../domain/events/schema';
+import { validateStoryEventInteractions } from '../domain/events/interactions';
 import { projectTurn } from '../domain/turnProjection';
 
 const parse = (a: ReturnType<typeof issue194>) => parseWorld(JSON.stringify(a.response), a.state, a.draft);
@@ -100,7 +100,9 @@ it('纯汇报已播放也不能由程序猜测回执，旧 presented 原样读�
   const event = a.state.events[a.source.id];
   event.protagonistEntry!.cue = '告知资料已归档，无需回应。';
   const before = structuredClone(event);
-  expect(EventInteractionSchema.safeParse({ eventId: event.id, entryId: event.protagonistEntry!.id, action: 'acknowledged' }).success).toBe(false);
+  expect(() => validateStoryEventInteractions(a.state, { ...a.draft.story!, variableGuide: [{ group:'event',
+    observedFact:'听完汇报',textEvidence:'听完汇报',eventInteraction:{eventId:event.id,entryId:event.protagonistEntry!.id,action:'acknowledged'},
+  }] })).toThrow(expect.objectContaining({ diagnostic: expect.objectContaining({ storyRule:'receipt_notification' }) }));
   expect(() => parse(a)).toThrow(expect.objectContaining(errorShape('missing_successor', 0, 'protagonistEntry')));
   expect(projectTurn(a.state, a.draft).events[event.id]).toEqual(before);
   expect(a.state.events[event.id]).toEqual(before);
@@ -140,7 +142,7 @@ it('真实 World 请求清楚标识到期承接，只投影本轮仍待处理的
   expect(messages).toContain('子事件结案和主角入场处理是两个独立事项');
   expect(messages).toContain('即使源子事件选择 continuation.direction=end');
   expect(messages).toContain('不虚构邀请、选择、答复或后继来通过校验');
-  expect(messages).toContain('当前协议没有“已知晓且无需回应”回执');
+  expect(messages).toContain('Story已使纯通知进入acknowledged时，按原fixedEndAt结案');
   const example = messages.match(/例如：资料核对阶段已完成[\s\S]*?```json\n([\s\S]*?)\n```/);
   expect(example).toBeTruthy();
   const parsedExample = parseWorld(JSON.stringify({ ...a.response, eventCommands: JSON.parse(example![1]) }), a.state, a.draft);
@@ -151,7 +153,7 @@ it('真实 World 请求清楚标识到期承接，只投影本轮仍待处理的
   expect(handled.due).toHaveLength(1);
   expect(handled.due[0]).not.toHaveProperty('entryHandoff');
   const story = await composePrompt({ stage: 'story', mode: 'regular', state: a.state, draft: a.draft, userInput: a.draft.userInput, settings: defaultSettings() });
-  expect(story.messages.some(message => message.content.includes('现有回执没有专门的“已知晓且无需回应”动作'))).toBe(true);
+  expect(story.messages.some(message => message.content.includes('本幕确实收悉完整汇报或通知时，用action=acknowledged'))).toBe(true);
   const pending = (await composedWorld(issue194('pending'))).context.EVENT_SCHEDULE;
   expect(pending.due[0].entryHandoff).toMatchObject({ status: 'pending' });
 });

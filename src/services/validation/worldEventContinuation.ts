@@ -14,7 +14,7 @@ export function normalizeEventContinuation(event: WorldEvent, old: WorldEvent | 
   const due=event.eventKind==='sub' ? !old && Date.parse(event.startAt)<=Date.parse(base.worldClock)
     : !event.eventKind && event.estimatedEndAt && Date.parse(event.estimatedEndAt)<=Date.parse(base.worldClock);
   if(plan?.direction==='protagonist' && due && !terminalEvent(event)) {
-    const renewed=expected && expected.status!=='pending' && expected.status!=='presented'
+    const renewed=expected && expected.status!=='pending' && expected.status!=='presented' && expected.status!=='acknowledged'
       && plan.entry.cue!==expected.cue;
     if(!expected || renewed) {
       expected={id:`entry:${draft.baseSaveRevision}:${draft.storyRevision}`,sourceTurnId:draft.turnId,queuedAt:base.worldClock,

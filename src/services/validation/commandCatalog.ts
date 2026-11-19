@@ -168,7 +168,7 @@ export function inlineCommandCatalog(stage: CatalogStage) {
             '任务可通过handoff={fromTaskId,at,channel,content,necessity,knowledgeKind}承接终态任务成果。content可以概括；引用真实前序ID且时间有序，不要求摘抄结果或额外来源令牌。无人需要承接则不创建新任务。',
             'NPC和组织均可有多个planned/active/blocked任务，不按数量或区间重叠拒绝。任务行动者、目标、开始时间和完成条件不可改写；终态不可重新执行；交接仍须前序成果和时间合法。',
             '事件predecessorEventIds引用实际已结束且时间不晚于新事件开始的前序。DeleteEvent清理无未处理入场、无必要任务/因果/知识/历史引用的终态，V2终态安全退役保留detail中的阶段经过、实际结果、参与者、时间和认知分类；父子与前序可引用退役身份。旧事件保留轻量身份；不按impact判断清理或历史资格。',
-            'continuation指定protagonist/world/end及reason。protagonist提供entry的channel/cue；旧事件到期、新sub开始后程序排队；Story通过结构化eventInteraction回执回应，合法现场结果可以提前结束sub。sub的world终态需要真实显式后继（可同窗已结案、可并行或跨父关联）；旧world终态需要同批非终态后继；end不强制续篇。protagonistEntry与protagonistKnowledge为程序元数据，不得伪造。',
+            'continuation指定protagonist/world/end及reason。protagonist提供entry的channel/cue；新事件在event顶层声明entryIntent=notification/decision；已有事件入场类型不改，旧缺省不补。旧事件到期、新sub开始后程序排队；Story通过结构化eventInteraction回执回应，合法现场结果可以提前结束sub；acknowledged只关闭纯通知，不是现场许可。sub的world终态需要真实显式后继（可同窗已结案、可并行或跨父关联）；旧world终态需要同批非终态后继；end不强制续篇。protagonistEntry与protagonistKnowledge为程序元数据，不得伪造。',
             '事件客观进展不自动刷新主角旧知情快照。SAVE_STATE.npc[id].memories 和 knownInformation 仅属于该人物；亲历、转述、推测由AI区分，不能把其他人物秘密当作本人已知或把猜测当作已确认。visibleHooks仅内部候选，不公开角色知识。',
             '所有正式NPC永久保留档案、记忆与关系；死亡、失联、离开是状态变化，不是删除。',
             '主角资金、物品和交易仍无后台变更权限。组织现状使用UpdateOrganization：仅本类白名单字段，金额仅funds/assetsEstimate/liquidityEstimate且须financialBasis与合法时间，不覆盖Variables本轮已确认字段或主角关系。不以事件说明假装已写入资产。',

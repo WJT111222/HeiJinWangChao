@@ -13,13 +13,14 @@ export function pendingEventEntries(state: GameState) {
   return Object.values(state.events).flatMap(event => {
     const entry = event.protagonistEntry;
     return entry?.status === 'pending' ? [{eventId:event.id,entryId:entry.id,queuedAt:entry.queuedAt,
-      channel:entry.channel,cue:entry.cue,...(entry.locationId ? {locationId:entry.locationId} : {})}] : [];
+      channel:entry.channel,cue:entry.cue,...(event.entryIntent ? {entryIntent:event.entryIntent} : {}),...(entry.locationId ? {locationId:entry.locationId} : {})}] : [];
   }).sort((a,b)=>Date.parse(a.queuedAt)-Date.parse(b.queuedAt)||a.eventId.localeCompare(b.eventId));
 }
 export function validateStoryEventInteractions(state: GameState, story: Story) {
   storyEventNarrations(state,story);
   const interactions = story.variableGuide.filter(guide=>guide.eventInteraction !== undefined);
   const seen = new Set<string>();
+  const pastOnly = story.variableGuide.some(guide => guide.group === 'time' && guide.subjectHint === 'time:retrospective');
   for(const guide of interactions) {
     const guideIndex = story.variableGuide.indexOf(guide);
     const fieldPath = `variableGuide.${guideIndex}.eventInteraction`;
@@ -29,6 +30,10 @@ export function validateStoryEventInteractions(state: GameState, story: Story) {
         storyRule: guide.group !== 'event' ? 'receipt_group' : seen.has(receipt.eventId) ? 'receipt_duplicate' : 'receipt_reference', guideIndex, fieldPath });
     requireStoryData(!terminalEvent(event) && (entry.status==='pending' || entry.status==='presented'),'EVENT_ENTRY','已关闭的入场不能再次处理', { storyRule: 'receipt_closed', guideIndex, fieldPath });
     requireStoryData(!(entry.status==='presented' && receipt.action==='presented'),'EVENT_ENTRY','已呈现入场不能重播', { storyRule: 'receipt_repeated', guideIndex, fieldPath });
+    if (receipt.action === 'acknowledged') {
+      requireStoryData(event.entryIntent === 'notification' && !pastOnly, 'EVENT_ENTRY', '只能收悉本幕的纯通知',
+        { storyRule: 'receipt_notification', guideIndex, fieldPath: `${fieldPath}.action` });
+    }
     requireStoryData(guide.textEvidence?.trim(),'EVENT_ENTRY','承接回执说明不能为空', { storyRule: 'receipt_evidence_empty', guideIndex, fieldPath: `variableGuide.${guideIndex}.textEvidence` });
     seen.add(receipt.eventId);
   }

@@ -163,6 +163,8 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     const entry=event.protagonistEntry;
     if(entry) {
       location(entry.locationId, [...path('protagonistEntry'), 'locationId']);
+      if (entry.status === 'acknowledged') check(event.entryIntent === 'notification',
+        '收悉仅适用于已分类为纯通知的入场', path('entryIntent'), 'event_entry');
       check(Date.parse(entry.queuedAt)<=Date.parse(s.worldClock) && event.sourceTurnIds.includes(entry.sourceTurnId), '入场安排时间或来源不合法');
       check(entry.status==='pending' ? !entry.handledTurnId && !entry.textEvidence && !['resolved','cancelled'].includes(event.status)
         : Boolean(entry.handledTurnId && entry.textEvidence && event.sourceTurnIds.includes(entry.handledTurnId)), '入场处理缺少合法回执');

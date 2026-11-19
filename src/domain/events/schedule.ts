@@ -14,7 +14,7 @@ export function worldEventSchedule(before:GameState,projected:GameState) {
   const actions=due.filter(actionable).map(e=>{
     const entry=e.eventKind==='sub'?e.protagonistEntry:undefined;
     const entryHandoff=entry?.status==='pending'||entry?.status==='presented' ? {
-      status:entry.status, channel:entry.channel, cue:entry.cue, locationId:entry.locationId,
+      status:entry.status, ...(e.entryIntent ? {entryIntent:e.entryIntent} : {}), channel:entry.channel, cue:entry.cue, locationId:entry.locationId,
     } : undefined;
     return {eventId:e.id,eventKind:e.eventKind,parentEventId:e.parentEventId,
       fixedEndAt:e.eventKind==='sub'?e.fixedEndAt:undefined,estimatedEndAt:e.eventKind==='sub'?undefined:e.estimatedEndAt,

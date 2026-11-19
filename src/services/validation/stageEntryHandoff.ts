@@ -42,6 +42,7 @@ export function normalizeStageEntryHandoffs(result: z.infer<typeof WorldResultSc
     requireEventEntry(targets.length === 1, 'invalid_output', 'multiple_successors', sourceScope);
     const { event: target, index: targetIndex, plan } = targets[0];
     requireEventEntry(!base.events[target.id], 'permission', 'invalid_successor', scope(targetIndex, 'id'));
+    requireEventEntry(target.entryIntent === old.entryIntent, 'permission', 'mismatched_entry', scope(targetIndex, 'entryIntent'));
     const mismatch = (['cue', 'channel', 'locationId'] as const).find(field => plan[field] !== entry[field]);
     if (mismatch) requireEventEntry(false, 'permission', 'mismatched_entry', scope(targetIndex, `continuation.entry.${mismatch}`));
     const invalidated = { ...entry, status: 'invalidated' as const, handledTurnId: draft.turnId, textEvidence: '阶段固定到期，入场职责转交后续事件' };

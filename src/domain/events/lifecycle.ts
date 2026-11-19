@@ -17,8 +17,13 @@ export function historicalEvent(state: EventState, id: string) {
 const same = (a: unknown,b: unknown)=>JSON.stringify(a)===JSON.stringify(b);
 /** 新规划必须完整；历史旧记录只读容忍缺规划，不把条件当调度时间。 */
 export function validateEventWrite(old: WorldEvent | undefined, event: WorldEvent) {
-  if(!old) plannedEventSchema(event).parse(event);
+  if(!old) {
+    plannedEventSchema(event).parse(event);
+    requireData(!event.entryIntent || event.continuation?.direction === 'protagonist',
+      'EVENT_CONTEXT', '入场类型须随新建主角入场规划确定');
+  }
   else {
+    requireData(old.entryIntent === event.entryIntent, 'EVENT_CONTEXT', '既有入场类型不可改写');
     requireData(old.eventKind===event.eventKind && old.parentEventId===event.parentEventId
       && old.fixedEndAt===event.fixedEndAt, 'EVENT_CONTEXT','事件类型、父事件与固定终止时间不可改写');
     requireData(old.startAt===event.startAt

@@ -30,7 +30,7 @@ scheduled/active/blocked不得预存resolvedAt、resolutionText、resultKnowledg
 同一批每个任务或事件只保存一个最终对象。predecessorEventIds引用已结束且实际结案时间不晚于新事件开始的前序，依赖不得成环。计划事件只输出SaveEvent，程序从正式事件状态派生未来调度，不要求重复镜像。事件当前actorRefs可新增或移除有效参与者，保留稳定ID和startAt；参与身份不等于行动授权。
 
 ## 承接与清理
-continuation选择protagonist/world/end并说明reason。protagonist提供最小entry={channel,cue,locationId?}，不暴露不必要的后台秘密；旧事件到期由程序排队；新sub在已经开始且声明protagonist时即排队，可在fixedEndAt前由下一次玩家行动的Story通过eventInteraction回执呈现、拒绝、退出或中断。World不能伪造protagonistEntry或消费回执；到期sub的入场按下文处理。sub的world方向需要真实显式后继，后继也可在本窗口已经结束，或与其他互动后继并存，不强制同父；旧事件的world方向仍需非终态后继。end不要求业务续篇。不为了活跃度无限制造事件。
+continuation选择protagonist/world/end并说明reason。protagonist提供最小entry={channel,cue,locationId?}。新建主角入场计划同时在event顶层写entryIntent：notification为无需回应的纯通知，decision为需要玩家处理。现有事件保留原类型，缺省沿用旧规则，无需补值。旧事件到期由程序排队；新sub在已经开始且声明protagonist时即排队，可在fixedEndAt前由下一次玩家行动的Story通过eventInteraction回执呈现、拒绝、退出或中断。World不能伪造protagonistEntry或消费回执；到期sub的入场按下文处理。sub的world方向需要真实显式后继，后继也可在本窗口已经结束，或与其他互动后继并存，不强制同父；旧事件的world方向仍需非终态后继。end不要求业务续篇。不为了活跃度无限制造事件。
 V2小事件结案必填outcome、resolvedAt、resolutionText，保留已有resultKnowledge分类和sourceTurnIds；resolutionText用几句话记录经过及结果，不把传闻推测升级为事实。DeleteEvent将完整阶段原子转换为retiredEvents.detail成果，ID始终只有一份权威记录。EVENT_STAGE_RESULTS从活跃或退役记录只读聚合；不再复制到主事件字段。任务、前序和历史等结构化引用可解析退役身份；不明确的知识/规划引用保守保留完整对象。父事件可终结而不要求子事件成功；尚有未结束子事件时保留完整父事件，子事件结束后主事件可紧凑退役，退役子事件仍引用正式父身份。旧事件沿用原清理规则。
 ## 史料记录与重大纪事
 World自行判断哪些过去或当前的经历、关系转折、秘密披露、个人声明值得记录，不要求每回合新增。worldCommands使用RecordHistory；无需先建事件、结案或评为major。impact只是事件描述，不决定历史资格。
@@ -68,8 +68,8 @@ visibleHooks为{text,revealAfter?}数组；unresolved为说明字符串数组。
 ## 固定阶段与主角入场
 子事件结案和主角入场处理是两个独立事项。Story已成立的事实及合法Variables现场结案优先，World不覆盖终态，也不能自行提前结案。检查 EVENT_SCHEDULE.due 中的 entryHandoff：它只列出该到期子事件在本轮合法投影中仍开放的入场；已经合法处理的入场无需重复承接。勿用正文措辞推断玩家回执。
 
-- presented只证明入场曾被呈现。它既可能是单纯汇报，也可能等待玩家批准、选择或参与。当前协议没有“已知晓且无需回应”回执；缺少合法处理证据时，不得把读取消息或业务完成推定为入场完成。
-- 到期子事件按原fixedEndAt结案。存在真实待处理互动时，即使源子事件选择 continuation.direction=end，也要同批新建唯一非终态后继互动：省略eventKind，predecessorEventIds包含源事件ID，continuation.direction=protagonist，entry的channel/cue/locationId与原安排一致（原无地点则省略）。程序转移原入场身份；不要填写protagonistEntry或替主角作决定。后继只承接待处理互动，不延长已结束的业务。
+- 只按投影执行状态协议：Story已使纯通知进入acknowledged时，按原fixedEndAt结案，源事件可用end且无需后继。业务结果不依赖主角知情；未开放入场的后台阶段照常结算。仍为presented的入场未关闭，World不补回执。
+- 到期子事件按原fixedEndAt结案。存在真实待处理互动时，即使源子事件选择 continuation.direction=end，也要同批新建唯一非终态后继互动：省略eventKind，predecessorEventIds包含源事件ID，continuation.direction=protagonist，event的entryIntent及entry的channel/cue/locationId与原安排一致（原缺字段继续省略）。程序转移原入场身份；不要填写protagonistEntry或替主角作决定。后继只承接待处理互动，不延长已结束的业务。
 - 若现有事实无法支持任何真实后继，也没有合法回执关闭presented，现行校验会拒绝直接结案。保留歧义，不虚构邀请、选择、答复或后继来通过校验。已合法处理的入场不触发这一约束。
 - 尚未呈现的pending在阶段按期结束且不再声明protagonist方向时，可由程序失效，保持原业务结果。终态sub若仍声明protagonist方向，必须同批落地为合法的新互动。
 

@@ -43,6 +43,6 @@ export function validateNarrationClock(state:GameState,draft:Pick<TurnDraft,'sto
 export function storyEventIndex(state:GameState) {
   return Object.values(state.events).map(e=>({eventId:e.id,eventKind:e.eventKind,parentEventId:e.parentEventId,
     status:e.status,startAt:e.startAt,fixedEndAt:e.fixedEndAt,estimatedEndAt:e.estimatedEndAt,
-    actorRefs:e.actorRefs,locationId:e.locationId,visibility:e.visibility,protagonistEntry:e.protagonistEntry?{id:e.protagonistEntry.id,status:e.protagonistEntry.status,queuedAt:e.protagonistEntry.queuedAt,channel:e.protagonistEntry.channel,cue:e.protagonistEntry.cue,locationId:e.protagonistEntry.locationId}:undefined,
+    actorRefs:e.actorRefs,locationId:e.locationId,visibility:e.visibility,protagonistEntry:e.protagonistEntry?{entryIntent:e.entryIntent,id:e.protagonistEntry.id,status:e.protagonistEntry.status,queuedAt:e.protagonistEntry.queuedAt,channel:e.protagonistEntry.channel,cue:e.protagonistEntry.cue,locationId:e.protagonistEntry.locationId}:undefined,
     protagonistKnowledge:e.protagonistKnowledge}));
 }

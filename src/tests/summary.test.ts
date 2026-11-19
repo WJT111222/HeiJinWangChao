@@ -45,7 +45,7 @@ describe('逐回合事实摘要：100～200汉字质量目标，不机械截断�
     expect(protocol.replace(/\s/g, '')).toContain('目标约100～200汉字');
     expect(protocol).toContain('同一次正文生成请求');
     expect(protocol).toContain('不另行请求模型');
-    expect(protocol).toContain('未处理者继续pending');
+    expect(protocol).toContain('未处理者保持原状态，不推定拒绝、完成或已收悉');
     expect(protocol).not.toContain('本幕必须处理');
     expect(prompt.modules.filter((module) => module.id === 'shared.06_story_output')).toHaveLength(1);
     expect(prompt.modules.find((module) => module.id === 'shared.06_story_output')?.version).toBe('1.0.0-world-freedom-story-tags');

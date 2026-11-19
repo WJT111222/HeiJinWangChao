@@ -55,7 +55,7 @@ describe('PR-B 条件式单项天赋上下文', () => {
   });
 
   it('有天赋 Variables/World 完整请求保留通用与专属规则及已核对的入场提示', async () => {
-    // Compared with main using the production composer: only the shared and regular World handoff modules differ.
+    // Compared with main using the production composer: only the Variables/World handoff instructions and the World command catalog differ.
     const requests = [];
     for (const definition of talentDefinitions) {
       for (const stage of ['variables', 'world'] as const) for (const mode of ['opening', 'regular'] as const) {
@@ -97,10 +97,10 @@ describe('PR-B 条件式单项天赋上下文', () => {
     const prompt = await composePrompt(input);
     expect(prompt.context).not.toHaveProperty('PROTAGONIST_TALENT');
     expect(sentContext(prompt.messages)).not.toHaveProperty('PROTAGONIST_TALENT');
-    // 已逐消息对照 main：只更新受影响的 Story/World 消息及模块字节，不重录 Variables 或上下文。
+    // 已逐消息对照 main：只更新受影响的三阶段输出模块与 World 命令目录，其他上下文字段逐项比对保持一致。
     const expectedText = issue194PromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode) ?? expected;
     expect(hash(prompt.messages)).toBe(expectedText.messages);
-    expect(hash(prompt.context)).toBe(expected.context);
+    expect(hash(prompt.context)).toBe(("context" in expectedText ? expectedText.context : undefined) ?? expected.context);
     expect(hash(prompt.modules)).toBe(expectedText.modules);
     expect(input.state.protagonist).not.toHaveProperty('talentId');
   });

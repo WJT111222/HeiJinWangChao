@@ -97,7 +97,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       EVENT_NARRATION_INDEX:storyEventIndex(state),
       EVENT_ENTRIES: pendingEventEntries(state),
       EVENT_PARTICIPATION: Object.values(state.events).flatMap(event=>event.protagonistEntry?.status==='presented' && !['resolved','cancelled'].includes(event.status)
-        ? [{eventId:event.id,entryId:event.protagonistEntry.id,status:'presented'}] : []),
+        ? [{eventId:event.id,entryId:event.protagonistEntry.id,status:'presented',...(event.entryIntent ? {entryIntent:event.entryIntent} : {})}] : []),
       PLAYER_ACTION: input.userInput,
       OPENING_TIME: opening,
       TURN_TIME_POLICY: turnTimePolicy,

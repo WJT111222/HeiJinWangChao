@@ -12,7 +12,7 @@ import { AiError } from '../ai/errors';
 import { validateWorldOutput } from './worldOutput';
 import { worldValidationError } from './worldDiagnostics';
 import type { Settings } from '../../ui/settings/model';
-import { preparedVariableCommands } from '../../domain/turnProjection';
+import { prepareVariableProjection } from '../../domain/turnProjection';
 import { variableFailure, variableValidationError } from './variableDiagnostics';
 import { assessSummary } from '../../domain/memories/summary';
 import { validateTimeCommands, validateHistoricalWorld } from '../../domain/timePreflight';
@@ -137,7 +137,9 @@ export function parseVariables(text: string, state: GameState, draft: TurnDraft)
   if (new Set(checked.data.commands.map((c) => c.commandId)).size !== checked.data.commands.length) throw new AiError('candidate_conflict');
   try {
     validateTimeCommands(timeState, draft, checked.data.commands);
-    const projected = commitCommands(state, draft.turnId, state.revision, preparedVariableCommands(timeState, draft, checked.data.commands), state.updatedAt,storySceneAuthority(timeState,draft,checked.data.commands));
+    const prepared = prepareVariableProjection(timeState, draft, checked.data.commands);
+    const projected = commitCommands(state, draft.turnId, state.revision, prepared.commands, state.updatedAt,
+      storySceneAuthority(timeState,draft,checked.data.commands), prepared.acknowledgedReceipts);
     validateNarrationClock(timeState,draft,projected.worldClock);
     for (const command of checked.data.commands)
       if (command.type === 'SaveEvent') validateSceneEventUpdate(state, projected, command.event, draft.turnId,draft.story);

@@ -2,15 +2,16 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './helpers/test';
 import { openGameTools, openStageSwitches, openWorkflowDiagnostics } from './helpers/gameLayout';
 
-async function seed(page: Page) {
+async function seed(page: Page, notification = false) {
   await page.goto('/');
-  return page.evaluate(async () => {
+  return page.evaluate(async notification => {
     const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/issue194.ts',
-      '/src/tests/fixtures/eventStages.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts', '/src/ui/settings/model.ts'];
+      '/src/tests/fixtures/eventStages.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts', '/src/ui/settings/model.ts', '/src/domain/drafts.ts'];
     const [{ SaveRepository }, { issue194 }, { stageCommand }, { defaultAiConfig, newChannel, saveAiConfig },
-      { CredentialVault }, { defaultSettings, settingsKey }] = await Promise.all(paths.map(path => import(path)));
+      { CredentialVault }, { defaultSettings, settingsKey }, { createTurnDraft }] = await Promise.all(paths.map(path => import(path)));
     const settings = defaultSettings();
     settings.prompts.minNarrativeChars = 1;
+    settings.prompts.actionOptions = false;
     for (const value of Object.values(settings.memory.summaries) as { automatic: boolean }[]) value.automatic = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel();
@@ -22,14 +23,23 @@ async function seed(page: Page) {
     config.routes.world = { mode: 'independent', channelId: channel.id, modelId: 'world' };
     saveAiConfig(localStorage, config);
     new CredentialVault(sessionStorage, localStorage).set(channel.id, 'event-entry-mock-only');
-    const { state, draft, response, successor } = issue194();
+    const { state, draft, response, successor, terminal } = issue194();
+    if (notification) {
+      const event = state.events['handoff-source'];
+      const cue = '汇报三家分店谈判的结果，无需回应。';
+      event.entryIntent = 'notification';
+      event.protagonistEntry.cue = cue;
+      event.continuation.entry.cue = cue;
+      response.eventCommands = [stageCommand({ ...terminal, entryIntent: 'notification' })];
+    }
     const repo = await SaveRepository.open();
     try {
-      const entry = { state, draft };
+      const entry = { state, draft: notification
+        ? createTurnDraft(state.saveId, state.revision, draft.turnId, 'regular', '') : draft };
       await repo.importBackup(entry, (await repo.compareBackup(entry)).confirmation);
     } finally { repo.close(); }
     return { response, successor: stageCommand(successor) };
-  });
+  }, notification);
 }
 
 async function stored(page: Page) {
@@ -99,4 +109,78 @@ test('到期已呈现入场缺少后继时安全拒绝，主动重试后一次�
   await page.reload();
   expect((await stored(page)).state).toEqual(saved.state);
   expect(calls.map(call => call.model)).toEqual(['world', 'world']);
+});
+
+test('工作结果纯通知从 Story 收悉走完整三阶段、刷新和撤回', async ({ page }) => {
+  const { response } = await seed(page, true);
+  const calls: string[] = [];
+  await page.route('https://event-entry-194.mock.invalid/**', async route => {
+    expect(route.request().method()).toBe('POST');
+    const { model, messages } = route.request().postDataJSON();
+    calls.push(model);
+    const wire = messages.find((message: {content: string}) => message.content.startsWith('<GAME_CONTEXT>')).content;
+    const context = JSON.parse(wire.match(/<GAME_CONTEXT>\n([\s\S]*?)\n<\/GAME_CONTEXT>/)[1]);
+    const evidence = '主角听完语音，收悉三家分店的谈判结果。';
+    const receipt = { eventId:'handoff-source', entryId:'entry:1:1', action:'acknowledged' };
+    if (model === 'story') {
+      expect(context.EVENT_PARTICIPATION).toContainEqual({
+        eventId:receipt.eventId, entryId:receipt.entryId, status:'presented', entryIntent:'notification',
+      });
+      const guide = [{group:'event', observedFact:'收悉工作汇报',textEvidence:evidence,eventInteraction:receipt}];
+      const reply = `<thinking>按玩家行动听取工作汇报。</thinking><正文>十分钟后，${evidence}</正文><短期记忆>主角已经收悉三家分店的谈判汇报。</短期记忆><变量规划>${JSON.stringify(guide)}</变量规划>`;
+      await route.fulfill({contentType:'text/event-stream',
+        body:`data: ${JSON.stringify({choices:[{delta:{content:reply}}]})}
+
+data: [DONE]
+
+`});
+      return;
+    }
+    let text: string;
+    if (model === 'variables') {
+      expect(context.STORY_RESULT.variableGuide[0].eventInteraction).toEqual(receipt);
+      text = '<thinking>只落实本幕经过的时间。</thinking><说明>工作汇报收悉由程序处理。</说明><命令>set worldClock = "2026-05-17T14:00:00+08:00"</命令>';
+    } else {
+      expect(model).toBe('world');
+      expect(context.SAVE_STATE.events['handoff-source']).toMatchObject({
+        status:'active', entryIntent:'notification', protagonistEntry:{status:'acknowledged', textEvidence:evidence},
+      });
+      const due = context.EVENT_SCHEDULE.due.find((item: {eventId: string}) => item.eventId === 'handoff-source');
+      expect(due).toMatchObject({fixedEndAt:'2026-05-17T14:00:00+08:00'});
+      expect(due).not.toHaveProperty('entryHandoff');
+      expect(response.eventCommands).toHaveLength(1);
+      text = JSON.stringify(response);
+    }
+    await route.fulfill({contentType:'application/json',
+      body:JSON.stringify({choices:[{message:{content:text},finish_reason:'stop'}]})});
+  });
+
+  await page.goto('/#game/save-a');
+  await page.reload();
+  const before = await stored(page);
+  await page.getByLabel('你的行动', { exact:true }).fill('听完这段谈判结果汇报');
+  await page.getByRole('button', { name:'发送', exact:true }).click();
+  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(before.state.turnNumber + 1);
+  const saved = (await stored(page)).state;
+  expect(saved.revision).toBe(before.state.revision + 1);
+  expect(saved.events['handoff-source']).toMatchObject({
+    status:'resolved', resolvedAt:'2026-05-17T14:00:00+08:00', continuation:{direction:'end'},
+    protagonistEntry:{status:'acknowledged',handledTurnId:saved.journal.at(-1).turnId},
+  });
+  expect(saved.protagonist).toEqual(before.state.protagonist);
+  expect(saved.economy).toEqual(before.state.economy);
+  expect(Object.keys(saved.events)).toEqual(Object.keys(before.state.events));
+  expect(calls).toEqual(['story','variables','world']);
+
+  await page.reload();
+  await expect(page.getByRole('button', { name:'撤回（1）',exact:true })).toBeVisible();
+  expect((await stored(page)).state).toEqual(saved);
+  await page.getByRole('button', { name:'撤回（1）',exact:true }).click();
+  await page.getByRole('button', { name:'确认撤回',exact:true }).click();
+  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(before.state.turnNumber);
+  const restored = (await stored(page)).state;
+  expect(restored.events).toEqual(before.state.events);
+  expect(restored.journal).toEqual(before.state.journal);
+  expect(restored.worldClock).toBe(before.state.worldClock);
+  expect(calls).toEqual(['story','variables','world']);
 });

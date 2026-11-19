@@ -1,31 +1,45 @@
 {
-  "base": "089723c2e1e0aa608afe9820a87b1f6a36ef385b",
-  "reason": "Compared with main using the same composer inputs. Update only affected Story and World request/module hashes. All fixed Game Context hashes and the Variables and Memory fixtures are unchanged.",
-  "withTalentVariablesAndWorld": "4a0b399979714a913e7db4dff1c251b21792c719f216174c09f91473059657e3",
+  "base": "cc4b763df6d2b01bd119c13388c9f76045f38f78",
+  "reason": "Compared with reviewed phase 1. Only the Story/Variables/World output modules and the World COMMAND_CATALOG change. All other context fields, module order, Memory requests and talent definitions/rules stay byte-identical.",
+  "withTalentVariablesAndWorld": "b530dce5aeba20d8ce395e130ec61f42cdb818efa056625052fcc916f31cb1de",
   "results": [
     {
       "stage": "story",
       "mode": "opening",
-      "messages": "311a6866bdf0aeb11a46048b218ed32061086b168c783cafabf0440d71d1f52e",
-      "modules": "b0795408df18eaedc42de0175049aa4ddbb26c8a5e4f5cb86abca9def91978db"
+      "messages": "b4d9b244efe14e4f2fa7b3c7d45dba6e22b86dfed5131e55dc5762705df21f51",
+      "modules": "97599665cd508986fa9ed0083414736b7bee84b50eb515b497d73a53bacf914c"
     },
     {
       "stage": "story",
       "mode": "regular",
-      "messages": "64628d4c5bd6e2ac3c59f7e737536a1bc1f2110ad58c875c6825c220121fa2c4",
-      "modules": "3bc05115533ef33b3165e561222f8a1ad554fc6dc5cbc1ef6ce07f67faae9ee3"
+      "messages": "70a4ecdaf4aa21acbfcd62cfe60144411a5b3611dc5b67dde092bd635c5ab395",
+      "modules": "95e558ec1f782d26a7169c080d7297fc76dce6aae3b04b88610b2f7c12319e58"
+    },
+    {
+      "stage": "variables",
+      "mode": "opening",
+      "messages": "1ea11ebeb3af26a5c1fb0f6725b9e4cab36294e0b4b422f2c6db7fdcb7933149",
+      "modules": "a9d39a4344084125dde3945621d2b454f2554c397977a3028beadf58f9585914"
+    },
+    {
+      "stage": "variables",
+      "mode": "regular",
+      "messages": "75fcd94da0a749f1673f9a51ab83b12e17c7911bbc8b33ac90cb5ce37ff78862",
+      "modules": "7dee8d5e169deac05fe67f0165eae72f7323f46c8e4658bf7503a1f929e31d37"
     },
     {
       "stage": "world",
       "mode": "opening",
-      "messages": "099370942fda35bbd4e1b9d9112fe5254185a949a315b9e422daf17f99e8ae9c",
-      "modules": "1084b568a4e28bba4c90b4360087f6f6414992b05cfdd5fab39f4f450b4339cc"
+      "messages": "8e65353868254ca613b46721400fe6c0f16ed1c8cf2d71f2468474ff63e393d1",
+      "modules": "e8cb664504b69be0d09df8a39ddca8bdb0ecf367e9a00dd0d14d5d91faed6262",
+      "context": "851c3e445abdefa7d9eb308636f35be90ae4057505567fec1a3aaf28c161e6a6"
     },
     {
       "stage": "world",
       "mode": "regular",
-      "messages": "43b929a0ac89c2a961348454f4339151996ef5236de30a43807220bc9d8201bc",
-      "modules": "821b91ab7608d4109edcc1fa699657eaf30cd57ac885399691c9d0119c23378c"
+      "messages": "8ed07c435863fa275887be212dbf7cbce0e5a2de5e408a7477ea9d4564b258c6",
+      "modules": "e39f2f0b750b40177e78e2af9c990580db2a984909509f6669df30feb0bb6e13",
+      "context": "c705195f1411bc73712bcdf311297567e52f656677c28b973c18e917c6cbcdee"
     }
   ]
 }
