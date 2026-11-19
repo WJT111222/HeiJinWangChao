@@ -11,6 +11,7 @@ import { StorySchema } from '../domain/state';
 import type { CompanionProfile } from '../services/local/companionProfile';
 import type { SaveRepository } from '../services/storage/saveRepository';
 import { AiClient } from '../services/ai/client';
+import { requestSnapshot } from '../services/ai/snapshot';
 import { AiConfigSchema } from '../services/ai/configuration';
 import { storyInspections } from '../services/ai/storyInspection';
 import type { AiConfig } from '../services/ai/configuration';
@@ -75,14 +76,24 @@ export class StoryStage {
     const expected = TurnDraftSchema.parse(input.draft);
     const presetSelection = captureStoryPreset();
     const selection = input.legacyNotificationSelection && structuredClone(input.legacyNotificationSelection);
+    const continuation = Boolean(input.continuation);
+    const captureInputs = () => {
+      const config = AiConfigSchema.parse(input.config);
+      return {
+        config,
+        settings: SettingsSchema.parse(input.settings),
+        companionProfile: input.companionProfile && structuredClone(input.companionProfile),
+        orderPreferences: input.orderPreferences && structuredClone(input.orderPreferences),
+        frozenStoryChannel: presetSelection ? requestSnapshot(config, 'story', input.vault) : undefined,
+        secrets: config.channels.map(channel => input.vault.get(channel.id)).filter(Boolean),
+      };
+    };
+    // 浏览器取得 Web Lock 本身也是异步的。预设、渠道与凭证在调用入口一起选定。
+    const frozen = presetSelection ? captureInputs() : undefined;
     return this.guard.run(expected.saveId, async (attempt) => {
       const current = attempt.check;
-      // 在第一个 await 之前快照本次设置；运行开关始终取绑定草稿，不被界面切换重写。
-      const settings = SettingsSchema.parse(input.settings);
+      const { config, settings, companionProfile, orderPreferences, frozenStoryChannel, secrets } = frozen ?? captureInputs();
       const streaming = settings.runtime.streamStory;
-      const config = AiConfigSchema.parse(input.config);
-      const companionProfile = input.companionProfile && structuredClone(input.companionProfile);
-      const secrets = config.channels.map((channel) => input.vault.get(channel.id)).filter(Boolean);
       const [state, draft] = await Promise.all([
         this.repository.load(expected.saveId),
         this.repository.loadDraft(expected.saveId),
@@ -97,9 +108,8 @@ export class StoryStage {
       )
         throw new DataError('DRAFT_CONFLICT', '草稿或正式版本已变化，请重新读取存档。');
       const recovery = selection ? authorizeLegacyNotificationRecovery(state,draft,selection) : undefined;
-      if (recovery && (!this.repository.saveRecoveredStory || input.continuation
+      if (recovery && (!this.repository.saveRecoveredStory || continuation
         || !settings.runtime.useVariableStage || !settings.runtime.useWorldStage)) throw new AiError('configuration');
-      const continuation = Boolean(input.continuation);
       if (continuation && !canContinueStory(draft, settings.prompts.minNarrativeChars))
         throw new DataError('DRAFT_CONFLICT', '这段正文已不能续写，请重新生成。');
       const partial = continuation ? trimIncompleteTag(draft.storyPartial!.text) : '';
@@ -134,14 +144,14 @@ export class StoryStage {
             settings,
             companionProfile,
             historyActions,
-            orderPreferences: input.orderPreferences,
+            orderPreferences,
             ...(recovery ? {legacyNotificationRecovery:recovery} : {}),
           },
           config,
           input.vault,
           {
             stream: streaming,
-            presetSelection,
+            presetSelection, frozenStoryChannel,
             signal: attempt.signal,
             ...(continuation ? { continuation: { partial } } : {}),
             onDelta: (delta) => {

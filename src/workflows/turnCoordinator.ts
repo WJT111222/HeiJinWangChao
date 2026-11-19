@@ -5,7 +5,7 @@ import { TurnDraftSchema, configureTurnStages } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
 import { browserPromptOrder } from '../prompts/order';
 import type { OrderPreferences } from '../prompts/order';
-import { AiClient } from '../services/ai/client';
+import { AiClient, manualRetryOnly } from '../services/ai/client';
 import { AiConfigSchema } from '../services/ai/configuration';
 import type { AiConfig, AiStage } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
@@ -59,7 +59,7 @@ interface ActiveTurn {
 export function transientStageError(error: unknown) {
   return (
     error instanceof AiError &&
-    error.code === 'server' &&
+    error.code === 'server' && !manualRetryOnly.has(error) &&
     [500, 502, 503, 504].includes(error.status ?? 0)
   );
 }

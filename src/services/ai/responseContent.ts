@@ -60,6 +60,8 @@ export function responseContent(value: unknown, protocol: Protocol, streaming = 
 export interface ResponseDiagnostics {
   transport?: 'json' | 'sse' | 'http';
   httpStatus?: number;
+  tavern?: { calls: number; bytes: number; complete: boolean; upstreamStatus?: number; boundary?: string; upstreamFinish?: string;
+    upstreamUsage?: import('./protocols').Usage; upstreamError?: string; normalized: string; wrapper: string };
   contentTypes?: string[];
   reasoningTypes?: string[];
   finishReasons?: string[];

@@ -671,3 +671,31 @@ describe('真实正文入口与草稿原子替换', () => {
     expect(saved.useWorldStage).toBe(true);
   });
 });
+
+it('兼容预设保留真实 length 断点；主动 continue 及完整 length 共用正式校验和草稿 CAS', async () => {
+  const { tavernEvents } = await import('../presets/tavern/events');
+  const storage = new Map<string,string>();
+  vi.stubGlobal('localStorage', { getItem: (k: string) => storage.get(k) ?? null, setItem: (k: string,v: string) => storage.set(k,v) });
+  const types: string[] = [];
+  const hook = tavernEvents.on('chat_completion_settings_ready', d => { types.push(d.type); });
+  try {
+    savePresetSettings({ enabled: true, selected: builtInPresets[0].id, packages: {} });
+    const input = setup(); input.settings.runtime.streamStory = false;
+    const raw = output(), cut = raw.indexOf(narrative) + 10;
+    const part = raw.slice(0,cut);
+    const json = (content: string) => Response.json({ choices: [{ message: { content }, finish_reason: 'length' }] });
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(json(part)).mockResolvedValueOnce(json(raw.slice(cut)));
+    const stage = runner(fetcher);
+    await expect(stage.generate({ ...input, draft, onFailureSaved() {} })).rejects.toMatchObject({ code: 'output_limit' });
+    const failed = (await repo.loadDraft(draft.saveId))!;
+    expect(failed.storyPartial?.text).toBe(part);
+    expect(failed.story).toBeUndefined();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const saved = await stage.generate({ ...input, draft: failed, continuation: true });
+    expect(saved.story?.narrative).toBe(narrative);
+    expect(saved.stageStatus.story).toBe('ready');
+    expect((await repo.load(draft.saveId)).revision).toBe(draft.baseSaveRevision);
+    expect(types).toEqual(['normal','continue']);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  } finally { hook.stop(); vi.unstubAllGlobals(); }
+});

@@ -10,7 +10,8 @@ import { newCreation, buildCreationState } from '../ui/creation/model';
 import { AiClient } from '../services/ai/client';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
-import { runStageRequest } from '../services/ai/runtime';
+import { tavernEvents } from '../presets/tavern/events';
+import { previewTavernStory, runStageRequest } from '../services/ai/runtime';
 import { recoveryNarrative, recoverySummary, recoveryGuide } from './fixtures/storyRecovery';
 import { requestSnapshot } from '../services/ai/snapshot';
 import { wireRequest } from '../services/ai/protocols';
@@ -267,21 +268,40 @@ describe('正式组装入口', () => {
     expect(assembled.modules.map((m) => m.id)).toContain('worldbooks.heijin.worldview');
     expect(input).toEqual(original);
   });
-  it('需要中途 system 的预设在不支持的协议发送前明确拒绝', async () => {
+  it('干跑组装真实预设，发出预览事件，不调用 fetch', async () => {
+    const input = talentPromptInput('story', 'regular');
+    savePresetSettings(selection());
+    const order: string[] = [];
+    const hooks = [
+      tavernEvents.on('generation_started', (type, _options, dry) => order.push(type + dry)),
+      tavernEvents.on('GENERATION_AFTER_COMMANDS', () => order.push('commands')),
+      tavernEvents.on('chat_completion_prompt_ready', e => { order.push('prompt'); expect(e.dryRun).toBe(true); }),
+      tavernEvents.on('generate_after_data', (d, dry) => { order.push('data' + dry); d.prompt.push({ role: 'user', content: '预览标记' }); }),
+      tavernEvents.on('chat_completion_settings_ready', () => order.push('send')),
+    ];
+    const fetcher = vi.spyOn(globalThis, 'fetch');
+    try {
+      const preview = await previewTavernStory({ ...input, stage: 'story' });
+      expect(preview.at(-1)?.content).toBe('预览标记');
+      expect(preview.some(m => m.content.includes(input.userInput))).toBe(true);
+      expect(order).toEqual(['normaltrue','commands','prompt','datatrue']);
+      expect(fetcher).not.toHaveBeenCalled();
+    } finally { hooks.forEach(h => h.stop()); fetcher.mockRestore(); }
+  });
+  it('Anthropic 预设将中途 system 留在原位置，以标记的 user 文本发送；原生路径仍拒绝', async () => {
     const { config, vault } = channelSetup();
     config.channels[0].protocol = 'anthropic';
     savePresetSettings(selection());
-    const fetcher = vi.fn<typeof fetch>();
-    await expect(
-      runStageRequest(
-        talentPromptInput('story', 'regular'),
-        config,
-        vault,
-        { stream: false },
-        new AiClient(fetcher),
-      ),
-    ).rejects.toMatchObject({ code: 'unsupported' });
-    expect(fetcher).not.toHaveBeenCalled();
+    const input = talentPromptInput('story', 'regular');
+    const snap = requestSnapshot(config, 'story', vault);
+    const { messages } = await composePrompt({ ...input, cotAllowed: snap.useCot });
+    expect(() => wireRequest(snap, messages, false)).toThrow();
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json({ type: 'error', error: {} }));
+    await expect(runStageRequest(input, config, vault, { stream: false }, new AiClient(fetcher))).rejects.toMatchObject({ code: 'rejected' });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(String(fetcher.mock.calls[0][1]?.body));
+    const history = messages.slice(messages.findIndex(m => m.role !== 'system'));
+    expect(body.messages).toEqual(history.map(m => m.role === 'system' ? { role: 'user', content: '[system]\n' + m.content } : m));
   });
   it.each(['variables', 'world', 'memory'] as const)('%s 完整出站载荷不受选择影响', async (stage) => {
     const input = stage === 'memory' ? talentMemoryInput() : talentPromptInput(stage, 'regular');

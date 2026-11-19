@@ -1,7 +1,10 @@
+import { installTavernFetch } from './presets/tavern/fetch';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
 import './app/styles.css';
+
+installTavernFetch();
 
 const root = document.getElementById('root');
 

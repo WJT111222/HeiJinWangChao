@@ -1,3 +1,7 @@
+import { nativeFetch } from '../../presets/tavern/fetch';
+import type { GenerationType } from '../../presets/tavern/events';
+import { sendTavern } from '../../presets/tavern/backend';
+import { newTrace } from '../../presets/tavern/upstream';
 import type { Sampling } from '../../presets/package';
 import { AiError, safeAiError } from './errors';
 import { requestInspections } from './inspection';
@@ -26,6 +30,7 @@ import type { RawResponseObservation, ResponseDiagnostics } from './responseCont
 
 export interface RequestOptions {
   presetSampling?: Sampling;
+  tavernType?: GenerationType;
   /** Internal Story-only handoff: caller must strictly validate received content. */
   validateStoryOutputLimit?: boolean;
   onResponseDiagnostics?: (diagnostics: ResponseDiagnostics) => void;
@@ -98,8 +103,15 @@ async function operation<T>(
     if (rejectAbort) controller.signal.removeEventListener('abort', rejectAbort);
   }
 }
+export const manualRetryOnly = new WeakSet<AiError>();
+function residualTool(data: unknown, delta: boolean) {
+  return array(record(data).choices).some(value => {
+    const choice = record(value), message = record(delta ? choice.delta : choice.message);
+    return array(message.tool_calls).length > 0 || message.function_call != null || choice.finish_reason === 'tool_calls';
+  });
+}
 export class AiClient {
-  constructor(private transport: typeof fetch = (input, init) => globalThis.fetch(input, init)) {}
+  constructor(private transport: typeof fetch = nativeFetch) {}
   private async response(
     url: string, init: RequestInit, signal: AbortSignal, snapshot?: RequestSnapshot,
     observe?: (value: ResponseDiagnostics) => void, presetSampling = false,
@@ -156,12 +168,16 @@ export class AiClient {
     messages: readonly AiMessage[],
     options: RequestOptions = {},
   ): Promise<AiResponse> {
-    const wire = wireRequest(snapshot, messages, options.stream === true, options.presetSampling);
+    const compat = snapshot.stage === 'story' && options.tavernType !== undefined;
+    const trace = compat ? newTrace() : undefined;
+    const cleanup = compat ? new AbortController() : undefined;
+    let diagnostics: string[] = [];
     let inspectionId: string | undefined;
     let observedUsage: Usage | undefined;
-    let outputLimited = false;
+    let outputLimited = false, unhandledTool = false;
     const finish = (reason: unknown) => {
       if (options.validateStoryOutputLimit && typeof reason === 'string' && ['length', 'max_tokens'].includes(reason.toLowerCase())) outputLimited = true;
+      if (trace && reason === 'tool_calls') return true;
       return checkFinish(reason, options.validateStoryOutputLimit === true);
     };
     const observe = (value: ResponseDiagnostics) => {
@@ -170,19 +186,25 @@ export class AiClient {
     try {
       return await operation(options, async (signal) => {
         if (signal.aborted) throw new AiError('cancelled');
-        try { inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection, wire.presetSamplingInspection); }
-        catch { /* 只读诊断失败不能阻断真实发送。 */ }
-        const response = await this.response(
-          wire.url, wire.init, signal, snapshot, options.onResponseDiagnostics ? observe : undefined,
-          wire.presetSamplingInspection !== undefined,
-        );
-        const protocol = snapshot.channel.protocol;
+        const send = (wire: ReturnType<typeof wireRequest>, requestSignal: AbortSignal) => {
+          diagnostics = wire.diagnostics;
+          try { inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection, wire.presetSamplingInspection); }
+          catch { /* Inspection cannot affect transport. */ }
+          return this.response(wire.url, wire.init, requestSignal, snapshot, options.onResponseDiagnostics ? observe : undefined,
+            wire.presetSamplingInspection !== undefined);
+        };
+        const response = trace && cleanup && options.tavernType
+          ? await sendTavern(snapshot, options.tavernType, [...messages], options.presetSampling ?? {}, options.stream === true,
+            AbortSignal.any([signal, cleanup.signal]), trace, send)
+          : await send(wireRequest(snapshot, messages, options.stream === true, options.presetSampling), signal);
+        const protocol = trace ? 'openai' : snapshot.channel.protocol;
         if (!signal.aborted) observe({ httpStatus: response.status, complete: false });
         let text = '', reasoning = '',
           usage: Usage | undefined;
         // 部分中转忽略 stream:true 直接返回完整 JSON；按非流式读取，再一次性交给进度回调。
         const wholeJson = options.stream === true && /application\/json/i.test(response.headers.get('content-type') ?? '');
-        if (!options.stream || wholeJson) {
+        const streaming = trace ? response.headers.get('content-type')?.includes('text/event-stream') : options.stream && !wholeJson;
+        if (!streaming) {
           let data: unknown;
           try {
             data = await response.json();
@@ -190,6 +212,7 @@ export class AiClient {
             throw new AiError('invalid_json');
           }
           if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol), httpStatus: response.status, complete: true });
+          if (trace && residualTool(data, false)) throw new AiError('invalid_output', undefined, { fieldPath: 'tavern.unhandled_tool' });
           usage = usageFrom(data, protocol); observedUsage = usage;
           if (!signal.aborted) {
             if (options.onRawResponse) options.onRawResponse(rawResponseObservation(data, protocol));
@@ -233,6 +256,7 @@ export class AiClient {
             if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol, true), httpStatus: response.status, complete: false });
             if (data.error || data.type === 'error' || event.event === 'error')
               throw new AiError('rejected');
+            if (trace && residualTool(data, true)) unhandledTool = true;
             const rawDelta = responseContent(data, protocol, true), native = nativeReasoning(data, protocol, true);
             if (!signal.aborted) {
               if (options.onRawResponse) options.onRawResponse(rawResponseObservation(data, protocol, true));
@@ -290,15 +314,29 @@ export class AiClient {
           if (!signal.aborted) observe({ transport: 'sse', complete: true });
         }
         if (text.length > 8_000_000 || reasoning.length > 2_000_000) throw new AiError('invalid_output');
+        if (trace) {
+          if (trace.error) throw trace.error;
+          if (!trace.complete || trace.calls !== 1) throw new AiError('stream_interrupted');
+          if (unhandledTool) throw new AiError('invalid_output', undefined, { fieldPath: 'tavern.unhandled_tool' });
+          usage = trace.usage;
+          outputLimited ||= ['length', 'max_tokens'].includes(trace.finish?.toLowerCase() ?? '');
+        }
         if (!text.trim()) throw new AiError('empty');
         try { if (inspectionId) requestInspections.finish(inspectionId, usage); }
         catch { /* 诊断观察器失败不改变响应。 */ }
-        return { text, ...(outputLimited ? { outputLimited: true } : {}), ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics: wire.diagnostics, protocol, model: snapshot.model };
+        return { text, ...(outputLimited ? { outputLimited: true } : {}), ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics, protocol: snapshot.channel.protocol, model: snapshot.model };
       });
     } catch (error) {
-      try { if (inspectionId) requestInspections.finish(inspectionId, observedUsage, safeAiError(error).code); }
+      const failure = options.signal?.aborted || (error instanceof AiError && error.code === 'timeout') ? error : trace?.error ?? error;
+      if (trace && failure instanceof AiError) manualRetryOnly.add(failure);
+      try { if (inspectionId) requestInspections.finish(inspectionId, trace ? trace.usage : observedUsage, safeAiError(failure).code); }
       catch { /* 保留原始失败语义。 */ }
-      throw error;
+      throw failure;
+    } finally {
+      cleanup?.abort();
+      if (trace) observe({ tavern: { calls: trace.calls, bytes: trace.bytes, complete: trace.complete,
+        upstreamStatus: trace.status, upstreamFinish: trace.finish, upstreamUsage: trace.usage, upstreamError: trace.error?.code,
+        boundary: trace.boundary, normalized: trace.normalized, wrapper: trace.wrapper } });
     }
   }
   async listModels(snapshot: RequestSnapshot, options: ModelListOptions = {}): Promise<string[]> {

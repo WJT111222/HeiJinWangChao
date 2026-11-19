@@ -1,4 +1,5 @@
-import type { PresetSelection } from '../../presets/library';
+import { promptReady, tavernGeneration, type GenerationType } from '../../presets/tavern/events';
+import { captureStoryPreset, type PresetSelection } from '../../presets/library';
 import { worldNormalizationNotes } from '../validation/worldSceneWrites';
 import { narrativeRange } from '../../ui/settings/model';
 import { validateStoryEventInteractions } from '../../domain/events/interactions';
@@ -10,7 +11,7 @@ import type { ComposeInput } from '../../prompts/context';
 import { parseStoryEnvelope, parseTextVariables, parseVariables, parseWorld } from '../validation/aiOutputs';
 import type { AiConfig, AiStage } from './configuration';
 import type { CredentialVault } from './credentials';
-import { requestSnapshot } from './snapshot';
+import { requestSnapshot, secretFor, type RequestSnapshot } from './snapshot';
 import { AiClient } from './client';
 import type { RequestOptions } from './client';
 import { variableFailure, variableValidationError } from '../validation/variableDiagnostics';
@@ -25,7 +26,7 @@ import type { StoryFailureText } from '../../domain/storyContinuation';
 import { splitLeadingThink } from './compat';
 
 /** 正文续写：已写出的截断原文（已隐藏凭证）。只用于正文阶段。 */
-export interface StageRequestOptions extends RequestOptions { presetSelection?: PresetSelection; continuation?: { partial: string } }
+export interface StageRequestOptions extends Omit<RequestOptions, 'tavernType'> { frozenStoryChannel?: RequestSnapshot; presetSelection?: PresetSelection; continuation?: { partial: string } }
 /**
  * 正文请求失败时收到的内容（去掉前导 <think> 推理；续写时为与已写部分拼接后的全文），供上层保存为可续写的截断正文。
  * 以失败对象为键，不进入错误消息或诊断展示。
@@ -45,7 +46,7 @@ export async function runStageRequest(
 }
 async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }, config: AiConfig,
   vault: CredentialVault, stageOptions: StageRequestOptions, client: AiClient) {
-  const { continuation: requestedContinuation, presetSelection, ...options } = stageOptions;
+  const { continuation: requestedContinuation, frozenStoryChannel, presetSelection: suppliedSelection, ...options } = stageOptions;
   if (requestedContinuation && input.stage !== 'story') throw new AiError('configuration');
   if (input.orderOverrides && input.orderPreferences) throw new AiError('configuration');
   const captured = checkedInput({
@@ -56,8 +57,23 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   }) as ComposeInput & { stage: AiStage };
   if (captured.stage === 'world' && captured.draft?.variables?.validation === 'validated')
     parseVariables(JSON.stringify(captured.draft.variables.result), captured.state, captured.draft);
+  if (frozenStoryChannel && (captured.stage !== 'story' || frozenStoryChannel.stage !== 'story')) throw new AiError('configuration');
+  const snapshot = frozenStoryChannel ?? requestSnapshot(config, captured.stage, vault);
+  const presetSelection = captured.stage === 'story' && suppliedSelection === undefined
+    ? captureStoryPreset() : suppliedSelection;
+  const type = requestedContinuation ? 'continue' : captured.draft?.story || captured.draft?.storyPartial
+    || captured.draft?.failures.some(f => f.stage === 'story') ? 'regenerate' : 'normal';
   const generation = stageResponses.generation();
-  const snapshot = requestSnapshot(config, captured.stage, vault);
+  const run = () => executePrepared(captured, snapshot, presetSelection, type, config, vault, options, requestedContinuation, client, generation);
+  if (!presetSelection || captured.stage !== 'story') return run();
+  const recent = captured.state.journal.slice(-captured.settings.memory.immediateWindowSize);
+  const chatLength = 1 + recent.reduce((sum, entry) => sum + 1 + Number(Boolean(captured.historyActions?.[entry.turnId])), 0);
+  return tavernGeneration(type, options.signal, false, chatLength, run);
+}
+
+async function executePrepared(captured: ComposeInput & { stage: AiStage }, snapshot: RequestSnapshot,
+  presetSelection: PresetSelection | undefined, type: GenerationType, config: AiConfig, vault: CredentialVault,
+  options: RequestOptions, requestedContinuation: StageRequestOptions['continuation'], client: AiClient, generation: number) {
   const prompt = captured.stage === 'variables'
     ? await composeTextVariablesPrompt({ ...captured, stage: 'variables', cotAllowed: snapshot.useCot })
     : await composePrompt({ ...captured, cotAllowed: snapshot.useCot }, presetSelection);
@@ -75,6 +91,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     stageRequestRevision: captured.stage === 'story' ? undefined : captured.draft?.stageRequestRevisions[captured.stage],
     basedOnVariableRevision: captured.stage === 'world' ? captured.draft?.variables?.candidateRevision : undefined }, generation);
   const secrets = config.channels.map(channel => vault.get(channel.id)).filter(Boolean);
+  if (prompt.preset) secrets.push(secretFor(snapshot));
   const responseLimits = responseLimitsFor(captured.stage);
   let received = '', sealed = false, truncated = false;
   let diagnostics: ResponseDiagnostics = {};
@@ -100,8 +117,9 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   // 本次请求模型返回的原始文字（续写时不含已写部分）；诊断展示用的 received 在续写成功接收后会换成拼接全文。
   let addition: string | undefined;
   try {
-  const response = await client.generate(snapshot, messages, {
+  const response = await client.generate(snapshot, prompt.preset ? await promptReady(messages, false) : messages, {
     ...options,
+    tavernType: prompt.preset ? type : undefined,
     presetSampling: prompt.preset?.sampling,
     // Only Story may evaluate a complete limit response; other stages remain strict.
     validateStoryOutputLimit: captured.stage === 'story',
@@ -208,7 +226,10 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     audience: 'internal' as const,
   };
   } catch (error) {
-    const failure = captured.stage === 'variables' ? variableFailure(error, step) : captured.stage === 'story' ? storyFailure(error, true) : error;
+    // 兼容包装和协议错误已有具体位置；仅将实际正文错误归入 Story 格式诊断。
+    const compatibilityError = prompt.preset && error instanceof AiError && error.details?.fieldPath?.startsWith('tavern.');
+    const failure = captured.stage === 'variables' ? variableFailure(error, step)
+      : captured.stage === 'story' && !compatibilityError ? storyFailure(error, true) : error;
     sealed = true;
     if (captured.stage === 'story' && failure && typeof failure === 'object') {
       // 兼容渠道会把推理写成开头的 <think>…</think>：与正式解析一致先去掉，推理不进入可续写的正文。
@@ -221,4 +242,13 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
       nativeReasoning: preview(publicReasoning), diagnostics, truncated, ...display(), error: safeAiError(failure) }, secrets);
     throw failure;
   }
+}
+
+/** Run the same preset composer and preview events without a channel, transport or repository write. */
+export async function previewTavernStory(input: ComposeInput & { stage: 'story' }, type: GenerationType = 'normal') {
+  const selected = captureStoryPreset();
+  if (!selected) throw new AiError('configuration');
+  const captured = checkedInput(input);
+  return tavernGeneration(type, undefined, true, 0, async () =>
+    promptReady((await composePrompt(captured, selected)).messages, true));
 }
