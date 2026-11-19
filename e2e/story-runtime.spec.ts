@@ -6,6 +6,8 @@ import { createServer } from 'node:http';
 import type { Server } from 'node:http';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
+// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
+test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
 
 type Plan = { chunks?: string[]; status?: number; gap?: number; delay?: number; reasoning?: string; finishReason?: string };
 const story = '【旁白】公交车在街边缓缓停下。\n\n行人沿着站台散开，你仍站在原地。';
@@ -78,6 +80,7 @@ test.beforeEach(async () => {
   baseUrl = `http://127.0.0.1:${address.port}/v1`;
 });
 test.afterEach(async () => {
+  if (!server) return; // 被跳过的用例没有启动模拟服务器
   timers.forEach(clearTimeout);
   timers.clear();
   server.closeAllConnections();
@@ -427,5 +430,3 @@ test('Story保存版本冲突保留原DataError处理，原文面板显示具体
   await expect(page.locator('.stage-responses')).toContainText('draft_conflict');
   expect(await stored(page)).toEqual(before); expect(requests).toHaveLength(1);
 });
-// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
-test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');

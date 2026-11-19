@@ -4,6 +4,8 @@ import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { openGameTools } from './helpers/gameLayout';
+// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
+test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
 
 const broken = { saveId: 'broken', title: '无法解析的旧人生', schemaVersion: 99, original: { text: '【旁白】原始记录\n第二行', unknown: [null, 7] } };
 const draft = { saveId: 'broken', oldFormat: '不作迁移', story: { narrative: '未提交正文' } };
@@ -16,7 +18,7 @@ test.beforeEach(async ({ page }) => {
     else await route.continue();
   });
 });
-test.afterEach(() => expect(modelCalls).toBe(0));
+test.afterEach(() => expect(modelCalls ?? 0).toBe(0));
 
 async function seed(page: Page, onlyBroken = false) {
   await page.goto('/');
@@ -159,5 +161,3 @@ test('导出和删除失败分别可定位且保留全部记录；重试删除�
   await page.getByRole('button', { name: '确认删除' }).click(); await expect(page.locator('.save-card')).toHaveCount(2);
   await expect(page.getByRole('alert')).toHaveCount(0); await expect(page.getByText(/导出失败/)).toHaveCount(0);
 });
-// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
-test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
