@@ -2,6 +2,10 @@
 
 > **项目负责人确认：V1.0 已达到正式可玩里程碑。** 本目录记录当前实现与未来任务，不等于已有 GitHub v1.0.0 Release；实际状态以最新 `main` 和已合并 PR 为准。
 
+## 设计审查
+
+- [TavernHelper 兼容运行时 · 阶段 A 源码审计与架构决策](tavernhelper-compat/README.md)
+
 ## 现行入口
 
 - [项目介绍、运行及当前里程碑](../README.md)
