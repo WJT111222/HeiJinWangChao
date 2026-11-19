@@ -123,6 +123,10 @@ export async function* readAiResponseEvents(
         argumentsPresent: calls.some(call => Object.hasOwn(record(record(call).function), 'arguments')),
         toolIdentityPresent: calls.some(call => Object.hasOwn(record(call), 'id') || Object.hasOwn(record(record(call).function), 'name')),
       } : undefined);
+      if (source.transport === 'sse' && result.providerError) {
+        if (wire.error) observeToolTrace(() => trace.providerErrorSignal(source.sequence, 'error_field'));
+        if (wire.type === 'error') observeToolTrace(() => trace.providerErrorSignal(source.sequence, 'type_error'));
+      }
     });
     if (toolResponses && (result.finishReason === 'tool_calls' || result.finishReason === 'tool_use'))
       result.diagnostics.finishReasons = [String(result.finishReason)];
@@ -160,6 +164,9 @@ export async function* readAiResponseEvents(
       if (signal.aborted) { yield { type: 'aborted', source }; return; }
       source = { ...source, sequence: source.sequence + 1, eventName: event.event };
       if (trace) observeToolTrace(() => trace.wireFrame(source));
+      // The SSE name is known even for DONE and frames whose data is not valid JSON.
+      if (trace && event.event === 'error')
+        observeToolTrace(() => trace.providerErrorSignal(source.sequence, 'event_error'));
       if (event.data === '[DONE]' && isOpenAiCompatible(protocol)) {
         if (toolResponses && event.event === 'error') throw new AiError('rejected');
         yield { type: 'end', source, boundary: 'done-marker' };

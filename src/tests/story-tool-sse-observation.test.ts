@@ -23,14 +23,21 @@ const begin = toolFrame({ choices: [{ delta: { tool_calls: [{ index: 0, id: 'PRI
 }] } }] });
 const finish = toolFrame({ choices: [{ delta: {}, finish_reason: 'tool_calls' }] });
 const done = 'data: [DONE]\n\n';
+const errorObject = { error: { message: 'PRIVATE_ERROR_MESSAGE', code: 'PRIVATE_ERROR_CODE', type: 'PRIVATE_ERROR_TYPE' } };
+const errorEvent = (value: unknown) => 'event: error\n' + toolFrame(value);
+const reasoning = toolFrame({ choices: [{ delta: { reasoning_content: 'PRIVATE_THINKING' } }] });
+const finishReason = (reason: string) => toolFrame({ choices: [{ finish_reason: reason }] });
 
 type Scenario = {
   name: string;
   chunks: readonly (string | Uint8Array)[];
   tail?: 'error' | 'open';
   noBody?: boolean;
+  status?: number;
   contentType?: string | null;
   mimeClass?: StoryToolTrace['contentType'];
+  transport?: 'http' | 'json';
+  provider?: { frame: number; signals: readonly string[] };
   interrupt?: 'cancelled' | 'timeout';
   code: AiErrorCode | 'ok';
   expected: Partial<NonNullable<StoryToolTrace['sse']>>;
@@ -71,6 +78,40 @@ const scenarios: Scenario[] = [
     code: 'cancelled', expected: { readerEof: false, failureSite: null, bufferedTail: true } },
   { name: '心跳和无分隔数据不重置 120 秒计时', chunks: [': ping\n\n', begin.slice(0, -1)],
     tail: 'open', interrupt: 'timeout', code: 'timeout', expected: { readerEof: false, failureSite: null, pendingData: true } },
+  { name: '已收到三帧，首次工具出现前遇到 error 对象', chunks: [reasoning, toolFrame({ choices: [] }), toolFrame(errorObject)],
+    code: 'rejected', provider: { frame: 3, signals: ['error_field'] }, expected: { readerEof: false, failureSite: null } },
+  { name: 'type:error 单独触发，根类型之外的任意信息不导出',
+    chunks: [toolFrame({ type: 'error', message: 'PRIVATE_ERROR_MESSAGE' })], code: 'rejected',
+    provider: { frame: 1, signals: ['type_error'] }, expected: {} },
+  { name: '原生工具参数之后遇到 event:error，候选仍未保存', chunks: [begin, errorEvent({ message: 'PRIVATE_ERROR_MESSAGE' })],
+    code: 'rejected', provider: { frame: 2, signals: ['event_error'] }, expected: {} },
+  { name: '同帧保留三种信号，供应商错误在 refusal 和 length 前',
+    chunks: [errorEvent({ ...errorObject, type: 'error', choices: [{ delta: { refusal: 'PRIVATE_REFUSAL' }, finish_reason: 'length' }] })],
+    code: 'rejected', provider: { frame: 1, signals: ['error_field', 'type_error', 'event_error'] }, expected: {} },
+  { name: 'event:error 携带 DONE 仍拒绝，不认作结束边界', chunks: ['event: error\n' + done],
+    code: 'rejected', provider: { frame: 1, signals: ['event_error'] }, expected: { readerEof: false } },
+  { name: '无效 JSON 的事件名已观察到，错误仍是 invalid_json', chunks: ['event: error\ndata: PRIVATE_INVALID_JSON\n\n'],
+    code: 'invalid_json', provider: { frame: 1, signals: ['event_error'] }, expected: {} },
+  { name: '真值 error 字段即使不是对象，仍沿用供应商拒绝',
+    chunks: [toolFrame({ error: 'PRIVATE_SCALAR_ERROR' })], code: 'rejected',
+    provider: { frame: 1, signals: ['error_field'] }, expected: {} },
+  { name: '内嵌明确筛查错误码仍保留供应商错误优先级',
+    chunks: [toolFrame({ error: { code: 'content_filter', message: 'PRIVATE_ERROR_MESSAGE' } })], code: 'rejected',
+    provider: { frame: 1, signals: ['error_field'] }, expected: {} },
+  { name: '正常 content_filter 结束不添加供应商错误信号', chunks: [finishReason('content_filter')],
+    code: 'content_filter', expected: {} },
+  { name: 'refusal 增量不添加供应商错误信号', chunks: [toolFrame({ choices: [{ delta: { refusal: 'PRIVATE_REFUSAL' } }] })],
+    code: 'content_filter', expected: {} },
+  { name: 'refusal 结束原因不添加供应商错误信号', chunks: [finishReason('refusal')], code: 'content_filter', expected: {} },
+  { name: 'length 结束不添加供应商错误信号', chunks: [finishReason('length')], code: 'output_limit', expected: {} },
+  { name: '空 error 字段不会阻止合法工具完成', chunks: [toolFrame({ error: null }), begin, finish, done], tail: 'open',
+    code: 'ok', expected: {} },
+  { name: '非 2xx 不读取额外错误体', chunks: [JSON.stringify(errorObject)], status: 418, contentType: 'application/json',
+    transport: 'http', code: 'rejected', expected: {} },
+  { name: 'HTTP 400 兼容分支仍仅消费 JSON 一次', chunks: [JSON.stringify(errorObject)], status: 400, contentType: 'application/json',
+    transport: 'http', code: 'rejected', expected: {} },
+  { name: 'HTTP 200 的完整 JSON 错误没有 SSE 帧归因', chunks: [JSON.stringify(errorObject)], contentType: 'application/json',
+    mimeClass: 'json', transport: 'json', code: 'rejected', expected: {} },
 ];
 
 afterEach(() => {
@@ -94,7 +135,7 @@ function plannedResponse(scenario: Scenario) {
     cancel,
   }, { highWaterMark: 0 });
   const mime = scenario.contentType === undefined ? 'text/event-stream' : scenario.contentType;
-  const response = new Response(body, { headers: mime ? { 'Content-Type': mime } : {} });
+  const response = new Response(body, { status: scenario.status, headers: mime ? { 'Content-Type': mime } : {} });
   return { response, cancel, get pulls() { return pulls; }, getReader: body && vi.spyOn(body, 'getReader'),
     tee: body && vi.spyOn(body, 'tee'), clone: vi.spyOn(response, 'clone'), json: vi.spyOn(response, 'json') };
 }
@@ -127,7 +168,10 @@ it.each(scenarios)('$name：三种观察器状态与 Repository 结果一致', a
       vi.spyOn(client, 'generate').mockImplementation((snapshot, messages, options) =>
         generate(snapshot, messages, { ...options, onStoryToolTrace: undefined }));
     }
-    const observations = mode === 'throws' ? (['opened', 'sseRead', 'sseBuffer', 'sseCount', 'sseFailure'] as const)
+    const errorObserver = mode === 'throws' && scenario.provider
+      ? vi.spyOn(StoryToolTraceRecorder.prototype, 'providerErrorSignal').mockImplementation(() => { throw Error('PRIVATE_OBSERVER_ERROR'); })
+      : undefined;
+    const observations = mode === 'throws' && !errorObserver ? (['opened', 'sseRead', 'sseBuffer', 'sseCount', 'sseFailure'] as const)
       .map(method => vi.spyOn(StoryToolTraceRecorder.prototype, method).mockImplementation(() => { throw Error('PRIVATE_OBSERVER_ERROR'); })) : [];
     const stage = new StoryStage(repo, client);
     const failureSaved = vi.fn();
@@ -143,10 +187,11 @@ it.each(scenarios)('$name：三种观察器状态与 Repository 结果一致', a
       const result = await pending;
       expect(result.code).toBe(scenario.code);
       expect(transport).toHaveBeenCalledTimes(1);
-      if (plan.getReader) expect(plan.getReader).toHaveBeenCalledTimes(1);
+      if (plan.getReader && scenario.transport !== 'json' && scenario.status !== 400)
+        expect(plan.getReader).toHaveBeenCalledTimes(scenario.transport === 'http' ? 0 : 1);
       if (plan.tee) expect(plan.tee).not.toHaveBeenCalled();
       expect(plan.clone).not.toHaveBeenCalled();
-      expect(plan.json).not.toHaveBeenCalled();
+      expect(plan.json).toHaveBeenCalledTimes(scenario.transport === 'json' || scenario.status === 400 ? 1 : 0);
       if (scenario.tail === 'open') expect(plan.cancel).toHaveBeenCalledTimes(1);
       expect(commit).not.toHaveBeenCalled();
       const after = await repo.loadGame(state.saveId);
@@ -165,24 +210,39 @@ it.each(scenarios)('$name：三种观察器状态与 Repository 结果一致', a
         expect(after.draft?.storyPartial).toBeUndefined();
         expect(after.draft?.failures.at(-1)).toMatchObject({ stage: 'story', errorCode: scenario.code });
       }
-      if (mode === 'throws') {
+      if (scenario.code !== 'cancelled')
+        expect(save).toHaveBeenCalledWith(expect.any(Object), draft.draftRevision, expect.any(AbortSignal), draft);
+      if (observations.length && scenario.transport !== 'http') {
         expect(observations[0]).toHaveBeenCalledTimes(1);
-        if (!scenario.noBody) expect(observations[1]).toHaveBeenCalled();
+        if (!scenario.noBody && !scenario.transport) expect(observations[1]).toHaveBeenCalled();
         if (scenario.expected.failureSite) expect(observations[4]).toHaveBeenCalledExactlyOnceWith(scenario.expected.failureSite);
       }
       const summary = storyToolDiagnosticExport(stageResponses.getSnapshot()[0]);
       if (mode === 'off') expect(summary).toBeUndefined();
-      if (mode === 'on') {
-        const contentType = scenario.mimeClass ?? 'event_stream';
+      if (mode === 'on' || errorObserver) {
+        const contentType = scenario.transport === 'http' ? null : scenario.mimeClass ?? 'event_stream';
         const boundary = scenario.code === 'ok' ? scenario.tail === 'open' ? 'done-marker' : 'eof'
           : scenario.code === 'tool_response' ? 'eof' : null;
-        expect(summary).toMatchObject({ contentType, boundary, sse: scenario.expected });
+        expect(summary).toMatchObject({ contentType, boundary, observedTransport: scenario.transport ?? 'sse', sse: scenario.transport ? null : scenario.expected });
         if (scenario.code === 'stream_interrupted' && !scenario.noBody)
           expect(summary).toMatchObject({ firstBodyChunkMs: expect.any(Number), firstSseFrameMs: null, outcome: { frame: 0 } });
         expect(JSON.stringify(summary)).not.toMatch(/PRIVATE_|[\u4e00-\u9fff]|fictional-phase3-key|https?:\/\//);
+        if (errorObserver && scenario.provider) {
+          const { frame, signals } = scenario.provider;
+          expect(errorObserver).toHaveBeenCalledTimes(signals.length);
+          for (const signal of signals) expect(errorObserver).toHaveBeenCalledWith(frame, signal);
+        }
+        if (scenario.provider && !errorObserver) {
+          expect(summary).toMatchObject({ providerErrorFrame: scenario.provider.frame, providerErrorSignals: scenario.provider.signals,
+            outcome: { code: scenario.code, frame: scenario.provider.frame } });
+        } else {
+          expect(summary).not.toHaveProperty('providerErrorFrame');
+          expect(summary).not.toHaveProperty('providerErrorSignals');
+        }
       }
       return { result, outbound, after };
     } finally {
+      errorObserver?.mockRestore();
       for (const observer of observations) observer.mockRestore();
       vi.useRealTimers();
       stage.dispose();

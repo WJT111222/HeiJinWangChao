@@ -14,6 +14,8 @@ const providerEventNames = new Set([
   'message_start', 'message_delta', 'message_stop', 'content_block_start', 'content_block_delta', 'content_block_stop',
   'ping', 'error',
 ]);
+const providerErrorSignals = ['error_field', 'type_error', 'event_error'] as const;
+type ProviderErrorSignal = typeof providerErrorSignals[number];
 const officialHosts: Record<Protocol, string> = {
   openai: 'api.openai.com', deepseek: 'api.deepseek.com', gemini: 'generativelanguage.googleapis.com', anthropic: 'api.anthropic.com',
 };
@@ -110,6 +112,7 @@ export class StoryToolTraceRecorder {
   private observedTransport: ResponseSource['transport'] | null = null;
   private contentType: ReturnType<typeof classifyContentType> | null = null;
   private sse: SseTrace | null = null;
+  private providerError?: { frame: number; signals: Set<ProviderErrorSignal> };
   private readonly head: TraceEvent[] = [];
   private readonly tail: TraceEvent[] = [];
   private readonly counts: Partial<Record<TraceEvent['kind'], number>> = {};
@@ -199,6 +202,12 @@ export class StoryToolTraceRecorder {
     if (!this.closed && this.sse) this.sse.failureSite = site;
   }
 
+  providerErrorSignal(frame: number, signal: ProviderErrorSignal) {
+    if (this.closed) return;
+    const observed = this.providerError ??= { frame, signals: new Set() };
+    if (observed.frame === frame) observed.signals.add(signal);
+  }
+
   wireFrame(source: ResponseSource) {
     if (this.closed) return;
     this.frame = source.sequence;
@@ -286,6 +295,10 @@ export class StoryToolTraceRecorder {
       version: 1 as const, startedAt: this.startedAt, protocol: this.protocol, model: this.model, endpointKind: this.endpointKind,
       requestedStream: this.requestedStream, observedTransport: this.observedTransport, timeoutSeconds: this.timeoutSeconds,
       httpStatus: this.httpStatus, contentType: this.contentType, sse: this.sse && { ...this.sse },
+      ...(this.providerError && {
+        providerErrorFrame: this.providerError.frame,
+        providerErrorSignals: providerErrorSignals.filter(signal => this.providerError?.signals.has(signal)),
+      }),
       ...this.ms,
       totalMs: this.elapsed(), boundary: this.boundaryKind, firstProviderFinish: this.firstFinish,
       outcome: { ...outcome, frame: this.frame, step: outcome.code === 'received' ? null : this.step() },
