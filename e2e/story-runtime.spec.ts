@@ -1,3 +1,4 @@
+import { openStoredSave } from './helpers/home';
 import { workflowTrigger, openStoryInspection, openStageRaw } from './helpers/gameLayout';
 import { openWorldArchive, openSettings, goHome } from './helpers/gameLayout';
 import { openGameTools, openWorkflowDiagnostics } from './helpers/gameLayout';
@@ -5,6 +6,8 @@ import { createServer } from 'node:http';
 import type { Server } from 'node:http';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
+// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
+test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
 
 type Plan = { chunks?: string[]; status?: number; gap?: number; delay?: number; reasoning?: string; finishReason?: string };
 const story = '【旁白】公交车在街边缓缓停下。\n\n行人沿着站台散开，你仍站在原地。';
@@ -77,6 +80,7 @@ test.beforeEach(async () => {
   baseUrl = `http://127.0.0.1:${address.port}/v1`;
 });
 test.afterEach(async () => {
+  if (!server) return; // 被跳过的用例没有启动模拟服务器
   timers.forEach(clearTimeout);
   timers.clear();
   server.closeAllConnections();
@@ -254,7 +258,7 @@ test('快速重复点击、取消重试、迟到请求与切档隔离、刷新�
   expect((await stored(page)).draft.story).toBeUndefined();
   plans.push({ delay: 1500 }); await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
   await expect.poll(() => requests.length).toBe(2); await goHome(page);
-  await page.locator('.save-card').filter({ hasText: '另一个存档角色' }).getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page, true);
+  await openStoredSave(page, '另一个存档角色'); await openGameTools(page, true);
   await page.getByRole('button', { name: '生成开局正文', exact: true }).click(); await generated(page);
   expect((await stored(page)).draft.story).toBeUndefined(); expect((await stored(page, 'story-e2e-b')).draft.storyRevision).toBe(1); expect((await stored(page)).state).toBe(before);
   await page.goto('/#game/story-e2e-a'); await openGameTools(page);

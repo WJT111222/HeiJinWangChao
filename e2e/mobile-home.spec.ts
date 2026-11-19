@@ -2,6 +2,8 @@ import {test,expect} from './helpers/test';
 import {seedTickets,ticketAt,rawSnapshot} from './helpers/mobileHome';
 import {readFile} from 'node:fs/promises';
 import type {Page} from '@playwright/test';
+// 手机专项：只在 mobile 项目（Pixel 7，isMobile）运行；电脑端由各自的 PC 用例覆盖。PC 像素对照用例另由 E2E_PIXEL_COMPARE 控制。
+test.skip(({ isMobile }) => !isMobile, '手机专项，只在 mobile 项目运行');
 const shots='docs/mobile-batch3/screenshots';
 async function shot(page:Page,name:string){await page.mouse.move(0,0);await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:`${shots}/${name}.png`,fullPage:true,animations:'disabled'});}
 async function drag(page:Page,dy:number,cancel=false){
@@ -11,7 +13,7 @@ async function drag(page:Page,dy:number,cancel=false){
 }
 const postCalls=new WeakMap<Page,number>();
 test.beforeEach(async({page})=>{postCalls.set(page,0);await page.route('**/*',r=>{if(r.request().method()==='POST'){postCalls.set(page,(postCalls.get(page)??0)+1);return r.abort('blockedbyclient');}return r.continue();});});
-test.afterEach(({page})=>expect(postCalls.get(page)).toBe(0));
+test.afterEach(({page})=>expect(postCalls.get(page) ?? 0).toBe(0));
 
 test('排序、四城、中性、页码、键盘与横滑纯浏览不写入',async({page})=>{
  await seedTickets(page);const before=await rawSnapshot(page),selection=await page.evaluate(()=>localStorage.getItem('heijin.selected.v1'));

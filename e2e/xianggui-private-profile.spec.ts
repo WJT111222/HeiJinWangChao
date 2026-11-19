@@ -1,3 +1,4 @@
+import { openStoredSave } from './helpers/home';
 import { selectNpc } from './helpers/npcRoster';
 import { openWorldArchive } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
@@ -18,7 +19,7 @@ async function seedSave(page: Page, npcs: Record<string, unknown>[]) {
   }, npcs);
   await page.reload();
   await openGameTools(page);
-  await page.getByRole('button', { name: /读取存档/ }).click();
+  await openStoredSave(page);
   await openGameTools(page);
 }
 

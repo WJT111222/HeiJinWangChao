@@ -5,6 +5,8 @@ import {selectNpc,rosterGame} from './helpers/npcRoster';
 import {fullPrivateProfile} from '../src/tests/fixtures/npcUnified';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {seedMobileArchives,storedArchives,openArchive,openEconomy,openPaperSettings,archiveFits,enterArchiveGame} from './helpers/mobileArchives';
+// 手机专项：只在 mobile 项目（Pixel 7，isMobile）运行；电脑端由各自的 PC 用例覆盖。PC 像素对照用例另由 E2E_PIXEL_COMPARE 控制。
+test.skip(({ isMobile }) => !isMobile, '手机专项，只在 mobile 项目运行');
 const shots='docs/mobile-batch5/screenshots';mkdirSync(shots,{recursive:true});mkdirSync('docs/mobile-batch5/validation',{recursive:true});
 test.beforeEach(async({page})=>{await page.route('**/*',r=>['127.0.0.1','localhost'].includes(new URL(r.request().url()).hostname)?r.continue():r.abort());});
 async function readonly(page:Page){let calls=0;const errors:string[]=[];page.on('request',r=>{if(r.method()==='POST')calls++;});page.on('pageerror',e=>errors.push(e.message));return()=>{expect(calls).toBe(0);expect(errors).toEqual([]);};}
@@ -64,7 +66,7 @@ test('设置分类、AI/记忆未保存保护、手动保存与存储失败、�
  await paper.getByRole('button',{name:'记忆',exact:true}).click();const toggle=paper.getByRole('checkbox').first();await toggle.click();await paper.getByRole('button',{name:'返回设置',exact:true}).click();confirm=page.getByRole('dialog',{name:'记忆设置尚未保存',exact:true});await expect(confirm).toBeVisible();await confirm.getByRole('button',{name:'放弃本次修改',exact:true}).click();
  await paper.getByRole('button',{name:'提示词管理',exact:true}).click();await expect(paper.getByRole('button',{name:'保存本地设置',exact:true})).toBeVisible();await shot(page,'提示词管理-390x844');await expect(paper).not.toContainText('校验与失败恢复');await archiveFits(page);await page.keyboard.press('Escape');await page.reload();expect(await storedArchives(page)).toEqual(before);verify();
 });
-for(const width of [901,1440])test(`PC ${width}px：档案与设置和未修改 main 真实像素对照`,async({browser})=>{
+for(const width of [901,1440])test(`PC ${width}px：档案与设置和未修改 main 真实像素对照`,async({browser})=>{test.skip(!process.env.E2E_PIXEL_COMPARE, '像素对照：需另外启动改动前后两个服务器，只在专门对照时设置 E2E_PIXEL_COMPARE 运行');
  test.setTimeout(120000);const contexts=[];const pages:Page[]=[];let state:unknown;
  for(const [index,port] of [5176,5271].entries()){
   const ctx=await browser.newContext({baseURL:`http://127.0.0.1:${port}`,viewport:{width,height:900},isMobile:false,hasTouch:false,deviceScaleFactor:1,reducedMotion:'reduce'});contexts.push(ctx);await ctx.addInitScript(()=>{const d=new Date();localStorage.setItem('heijin.notices.hidden-on.v1',[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'));});const page=await ctx.newPage();await page.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());

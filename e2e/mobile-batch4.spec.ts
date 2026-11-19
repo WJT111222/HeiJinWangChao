@@ -2,6 +2,8 @@ import {test,expect} from '@playwright/test';
 import type {Page} from '@playwright/test';
 import {disclaimer} from '../src/ui/notices/disclaimer';
 import {announcement} from '../src/ui/notices/announcement';
+// 手机专项：只在 mobile 项目（Pixel 7，isMobile）运行；电脑端由各自的 PC 用例覆盖。PC 像素对照用例另由 E2E_PIXEL_COMPARE 控制。
+test.skip(({ isMobile }) => !isMobile, '手机专项，只在 mobile 项目运行');
 const shots='docs/mobile-batch4/screenshots';
 const doc=(p:Page)=>p.getByRole('dialog',{name:disclaimer.title,exact:true});
 const draft=(p:Page)=>p.evaluate(()=>JSON.parse(localStorage.getItem('heijin.creation.v1')!));

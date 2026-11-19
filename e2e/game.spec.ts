@@ -1,3 +1,4 @@
+import { openStoredSave } from './helpers/home';
 import { openGameTools, goHome, openWorldArchive, openProfile } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
@@ -245,7 +246,7 @@ test('自定义职业、跳过同伴，多存档选择切换与确认删除', as
 });
 test('七面板一键打开、键盘关闭、全量资料只读且保留阅读位置', async ({ page }) => {
   await seed(page);
-  await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+  await openStoredSave(page); await openGameTools(page);
   const reader = page.getByTestId('story-reader');
   await reader.evaluate((el) => {
     el.scrollTop = 500;

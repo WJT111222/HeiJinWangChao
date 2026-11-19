@@ -4,6 +4,8 @@ import {seedNightSeal,nightSealStored} from './helpers/nightSeal';
 import {seedSummary} from './helpers/memorySummary';
 import {openStageCandidates,openStageRaw,openWorkflowDiagnostics,openWorkflowStage} from './helpers/gameLayout';
 import {aiTab,openChannel} from './helpers/aiSettings';
+// 手机专项：只在 mobile 项目（Pixel 7，isMobile）运行；电脑端由各自的 PC 用例覆盖。PC 像素对照用例另由 E2E_PIXEL_COMPARE 控制。
+test.skip(({ isMobile }) => !isMobile, '手机专项，只在 mobile 项目运行');
 const dir='docs/mobile-batch2/screenshots';
 test.beforeEach(async({page})=>{await page.route('**/*',route=>['127.0.0.1','localhost'].includes(new URL(route.request().url()).hostname)?route.continue():route.abort());});
 async function fit(page:Page){expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&document.documentElement.scrollHeight<=innerHeight)).toBe(true);}
@@ -97,7 +99,7 @@ test('reduced-motion 与显式刷新禁用：不增加列表或生成请求',asy
  let release!:()=>void;const gate=new Promise<void>(r=>{release=r;});let gets=0;await page.route('https://mobile2.mock.invalid/**',async route=>{gets++;await gate;await route.fulfill({json:{data:[{id:'mock-chat'}]}}).catch(()=>undefined);});await seedReady(page);const st=await settings(page);await st.getByRole('combobox',{name:'正文生成模型',exact:true}).click();await expect.poll(()=>gets).toBe(1);const picker=page.getByRole('dialog',{name:'正文生成模型'});await expect(picker).toHaveCSS('animation-name','none');await page.keyboard.press('Escape');await expect(st.getByRole('button',{name:'刷新正文生成模型',exact:true})).toBeDisabled();expect(gets).toBe(1);release();await expect(st.getByRole('button',{name:'刷新正文生成模型',exact:true})).toBeEnabled();await page.screenshot({path:`${dir}/react-model-status-390.png`});
 });
 
-for(const width of [901,1440])test(`桌面 ${width}px：原工作流、候选、选择器和确认保持像素一致`,async({browser})=>{
+for(const width of [901,1440])test(`桌面 ${width}px：原工作流、候选、选择器和确认保持像素一致`,async({browser})=>{test.skip(!process.env.E2E_PIXEL_COMPARE, '像素对照：需另外启动改动前后两个服务器，只在专门对照时设置 E2E_PIXEL_COMPARE 运行');
  const pages:Page[]=[];for(const port of [5242,5241]){const c=await browser.newContext({baseURL:`http://127.0.0.1:${port}`,viewport:{width,height:900},reducedMotion:'reduce',isMobile:false});await c.addInitScript(()=>{const n=new Date();localStorage.setItem('heijin.notices.hidden-on.v1',[n.getFullYear(),String(n.getMonth()+1).padStart(2,'0'),String(n.getDate()).padStart(2,'0')].join('-'));});const page=await c.newPage();await page.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());await seedReady(page);pages.push(page);}
  for(const scene of ['main','workflow','candidate','selector','unsaved','undo'] as const){const images=[];for(const [i,page]of pages.entries()){
   if(scene==='workflow')await page.locator('.workflow-toggle').click();

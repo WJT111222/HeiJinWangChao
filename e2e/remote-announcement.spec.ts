@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { announcement } from '../src/ui/notices/announcement';
+// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
+test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
 const title = '黑金王朝 · 游玩须知与免责声明';
 const remote = { version: 'mock-next', title: '王朝公告', theme: '远程合成公告', updates: ['<script>window.remoteExecuted=true</script>', '第二条更新'], message: '测试寄语' };
 test('远程公告迟到仍更新打开的弹窗，顺序/免打扰/手动查看不变，零AI请求', async ({ page }) => {
