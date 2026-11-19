@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import type { AiError } from '../services/ai/errors';
 import { AiClient } from '../services/ai/client';
 import { newChannel, type Protocol } from '../services/ai/configuration';
 import { channelSnapshot } from '../services/ai/snapshot';
@@ -461,5 +462,167 @@ describe('不完整的预设上游响应', () => {
         details: { fieldPath: mode === 'read' ? 'tavern.upstream.read' : 'tavern.upstream.utf8' },
       });
     expect(transport).toHaveBeenCalledTimes(1);
+  });
+});
+
+it.each(['done', 'malformed'] as const)('包装流 %s：未决的取消清理不能吞掉已确定的结果', async mode => {
+  const transport = vi.fn<typeof fetch>().mockResolvedValue(fixture('openai', true, false));
+  let release!: () => void;
+  const pendingCleanup = new Promise<void>(resolve => { release = resolve; });
+  const cancel = vi.fn(() => pendingCleanup);
+  const encoder = new TextEncoder();
+  wrap(async normalized => {
+    // Drain the actual upstream first. A script can return its own stream whose
+    // cleanup depends on another branch (e.g. a Response clone).
+    const result = await normalized.text();
+    return new Response(new ReadableStream({
+      start(controller) { controller.enqueue(encoder.encode(mode === 'done' ? result : 'data: malformed\n\n')); }, cancel,
+    }), { headers: { 'content-type': 'text/event-stream' } });
+  });
+  try {
+    const result = new AiClient(transport).generate(snapshot('openai'), messages, {
+      tavernType: 'normal', stream: true, timeoutSeconds: 0.5,
+    });
+    if (mode === 'done') await expect(result).resolves.toMatchObject({ text });
+    else await expect(result).rejects.toMatchObject({ code: 'invalid_json' });
+    expect(cancel).toHaveBeenCalledTimes(1);
+  } finally { release(); }
+  expect(transport).toHaveBeenCalledTimes(1);
+});
+
+const pausedCases = [
+  ['json', 'ok'], ['sse', 'ok'], ['heartbeat', 'timeout'], ['partial-frame', 'timeout'],
+  ['late-first', 'ok'], ['pauses', 'ok'], ['reasoning', 'timeout'], ['wrapper-stall', 'timeout'],
+  ['cancel', 'cancelled'], ['disconnect', 'stream_interrupted'],
+  ['cancelled_no_content', 'stream_interrupted'], ['cancelled', 'stream_interrupted'],
+  ['length', 'ok'], ['tool', 'ok'], ['wrapper-error', 'invalid_output'], ['await-headers', 'timeout'],
+] as const;
+describe('相同配置与输入的单次传输稳定性矩阵', () => {
+  it.each(pausedCases)('%s → %s', async (scenario, expected) => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+    try {
+      const snap = snapshot('openai');
+      const traces: NonNullable<ResponseDiagnostics['tavern']>[] = [];
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const lifetime = new AbortController();
+        const observations: ResponseDiagnostics[] = [];
+        let signalSent!: () => void;
+        const sent = new Promise<void>(ok => { signalSent = ok; });
+        let incoming!: ReadableStreamDefaultController<Uint8Array>;
+        const bytes = (s: string) => incoming.enqueue(new TextEncoder().encode(s));
+        const delta = (part: object, reason: string | null = null) => frame({ choices: [{ delta: part, finish_reason: reason }] });
+        const transport = vi.fn<typeof fetch>().mockImplementation(async () => {
+          signalSent();
+          await new Promise<void>(ok => setTimeout(ok, scenario === 'await-headers' ? 1100 : 100));
+          if (scenario === 'json') return fixture('openai', false, false);
+          return new Response(new ReadableStream({ start(c) { incoming = c; } }), { headers: { 'content-type': 'text/event-stream' } });
+        });
+        const wrapper = scenario.startsWith('wrapper-') || scenario === 'tool' ? wrap(async normalized => {
+          const source = await normalized.text();
+          if (scenario === 'wrapper-error') throw Error('synthetic wrapper error');
+          if (scenario === 'wrapper-stall') {
+            await new Promise<void>(ok => lifetime.signal.addEventListener('abort', () => ok(), { once: true }));
+          }
+          if (scenario === 'tool') {
+            const parts = source.split('\n').filter(line => line.startsWith('data: {'))
+              .flatMap(line => JSON.parse(line.slice(6)).choices[0].delta.tool_calls ?? []);
+            const restored = JSON.parse(parts.map(part => part.function.arguments ?? '').join('')).body;
+            return Response.json({ choices: [{ message: { content: restored }, finish_reason: 'stop' }] });
+          }
+          return Response.json({});
+        }) : undefined;
+        const began = performance.now();
+        const result = new AiClient(transport).generate(snap, messages, {
+          tavernType: 'normal', stream: true, timeoutSeconds: 1, validateStoryOutputLimit: true,
+          signal: lifetime.signal, onResponseDiagnostics: d => observations.push(d),
+        }).then(value => ({ code: 'ok', text: value.text, limited: value.outputLimited }), (e: AiError) => ({ code: e.code, text: '', limited: false })).then(value => ({ ...value, elapsedMs: performance.now() - began }));
+        await sent;
+        await vi.advanceTimersByTimeAsync(100);
+        if (scenario !== 'json' && scenario !== 'await-headers') {
+          await vi.advanceTimersByTimeAsync(50);
+          if (scenario === 'partial-frame') bytes('data: {"cho');
+          else if (scenario === 'heartbeat' || scenario === 'late-first') bytes(': ping\n\n');
+          else if (scenario === 'reasoning') bytes(delta({ reasoning_content: '推演' }));
+          else if (scenario === 'tool') bytes(delta({ tool_calls: [{ index: 0, id: 'fixture', function: { name: 'chapter', arguments: '{"body":' } }] }));
+          else bytes(delta({ content: text }));
+          await vi.advanceTimersByTimeAsync(scenario === 'late-first' ? 680 : 100);
+          if (scenario === 'cancel') lifetime.abort();
+          else if (scenario === 'disconnect') incoming.error(new Error('private network message'));
+          else if (scenario === 'heartbeat') bytes(': ping\n\n');
+          else if (!['partial-frame','reasoning'].includes(scenario)) {
+            if (scenario === 'pauses') {
+              bytes(delta({ content: '乙' }));
+              await vi.advanceTimersByTimeAsync(300);
+            }
+            if (scenario === 'late-first') bytes(delta({ content: text }));
+            if (scenario === 'tool') bytes(delta({ tool_calls: [{ index: 0, function: { arguments: JSON.stringify(text) + '}' } }] }));
+            const finish = ['cancelled', 'cancelled_no_content','length'].includes(scenario) ? scenario : scenario === 'tool' ? 'tool_calls' : 'stop';
+            bytes(delta({}, finish) + 'data: [DONE]\n\n');
+            incoming.close();
+          }
+        }
+        await vi.advanceTimersByTimeAsync(1100);
+        const outcome = await result;
+        expect(outcome.code).toBe(expected);
+        if (expected === 'ok') expect(outcome.text).toBe(text + (scenario === 'pauses' ? '乙' : ''));
+        if (scenario === 'length') expect(outcome.limited).toBe(true);
+        expect(transport).toHaveBeenCalledTimes(1);
+        const trace = observations.at(-1)?.tavern;
+        expect(trace).toBeDefined();
+        traces.push(trace!);
+        if (process.env.PRESET_MOCK_EVIDENCE) console.info('MOCK_ATTEMPT', JSON.stringify({
+          scenario, attempt, outcome: outcome.code, elapsedMs: outcome.elapsedMs, calls: transport.mock.calls.length, timeline: trace?.timeline,
+        }));
+        lifetime.abort();
+        wrapper?.mockRestore();
+      }
+      for (const trace of traces) {
+        const t = trace.timeline;
+        expect(t).toMatchObject({ budgetStartMs: 0, sentMs: 0, timeoutSeconds: 1 });
+        if (scenario !== 'await-headers') expect(t?.headersMs).toBe(100);
+        if (expected === 'timeout') {
+          const phase = scenario === 'await-headers' ? 'awaiting_headers' : scenario === 'wrapper-stall' ? 'wrapper_restore' : 'upstream_read';
+          expect(t).toMatchObject({ deadlineMs: 1000, deadlinePhase: phase, clientEndMs: 1000 });
+        }
+        if (scenario === 'cancel') expect(t).toMatchObject({ userCancelMs: 250, userCancelPhase: 'upstream_read' });
+        if (scenario === 'heartbeat') expect(t).toMatchObject({ comments: 2, dataEvents: 0, lastByteMs: 250 });
+        if (['heartbeat','partial-frame','reasoning'].includes(scenario)) expect(t?.firstContentMs).toBeUndefined();
+        if (scenario === 'reasoning') expect(t).toMatchObject({ firstReasoningMs: 150, lastProgressMs: 150, dataEvents: 1 });
+        if (scenario === 'tool') expect(t).toMatchObject({ firstArgumentsMs: 150, lastProgressMs: 250, restoredMs: 250 });
+        if (scenario === 'late-first') expect(t).toMatchObject({ firstByteMs: 150, firstContentMs: 830, upstreamCompleteMs: 830 });
+        if (scenario === 'pauses') expect(t).toMatchObject({ firstContentMs: 150, lastProgressMs: 250, upstreamCompleteMs: 550 });
+        if (scenario === 'wrapper-stall' || scenario === 'wrapper-error') expect(t?.upstreamCompleteMs).toBe(250);
+        if (scenario === 'cancelled_no_content') expect(trace?.rawFinish).toBe(scenario);
+        if (scenario === 'disconnect') expect(trace.readError).toBe(true);
+      }
+    } finally { vi.useRealTimers(); }
+  });
+});
+
+describe.each([false, true])('固定渠道、相同超时：预设=%s', preset => {
+  it.each(['json', 'sse', 'stall', 'cancel'] as const)('%s 每次传输一次，使用调用者的取消信号和总预算', async mode => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+    try {
+      const abort = new AbortController();
+      let sent!: () => void;
+      const started = new Promise<void>(ok => { sent = ok; });
+      const transport = vi.fn<typeof fetch>().mockImplementation(async () => {
+        sent();
+        if (mode === 'json' || mode === 'sse') return fixture('openai', mode === 'sse', false);
+        return new Response(new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(': keep\n\n')); } }),
+          { headers: { 'content-type': 'text/event-stream' } });
+      });
+      // Native transport uses the identical snapshot, inputs and deadline.
+      const run = new AiClient(transport).generate(snapshot('openai'), messages.slice(0, 2), {
+        ...(preset ? { tavernType: 'normal' as const } : {}), timeoutSeconds: 1,
+        signal: abort.signal, stream: mode !== 'json',
+      }).then(reply => reply.text, (error: AiError) => error.code);
+      await started;
+      await vi.advanceTimersByTimeAsync(300);
+      if (mode === 'cancel') abort.abort();
+      await vi.advanceTimersByTimeAsync(700);
+      expect(await run).toBe(mode === 'cancel' ? 'cancelled' : mode === 'stall' ? 'timeout' : text);
+      expect(transport).toHaveBeenCalledTimes(1);
+    } finally { vi.useRealTimers(); }
   });
 });

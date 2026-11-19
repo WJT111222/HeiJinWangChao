@@ -424,3 +424,103 @@ test('正式游戏按钮跨存档生成，脚本保留普通正文并拒绝未�
   await expect(page.locator('iframe[data-tavern-script]')).toHaveCount(0);
   expect(identities).toEqual(['甲','乙','乙']);
 });
+
+test('独立档案预设使用同一宿主、传输、超时、取消与草稿事务', async ({ page }) => {
+  const { folioId, folioPreset } = await import('./fixtures/folioPreset');
+  let synthetic = true;
+  await page.route('**/*', route => {
+    const url = new URL(route.request().url());
+    // Replace only the catalog's resource imports in this browser's test module graph.
+    if (synthetic && url.pathname.endsWith('/peinture-manifest.json'))
+      return route.fulfill({ contentType: 'text/javascript', body: 'export default ' + JSON.stringify({ id: folioId, title: '合成档案', version: 'test', lockedOff: [] }) });
+    if (synthetic && url.pathname.endsWith('/peinture-1118.json') && url.search.includes('raw'))
+      return route.fulfill({ contentType: 'text/javascript', body: 'export default ' + JSON.stringify(JSON.stringify(folioPreset)) });
+    return ['localhost','127.0.0.1'].includes(url.hostname) || url.protocol === 'blob:' ? route.continue() : route.abort();
+  });
+  await page.addInitScript(id => {
+    if (!localStorage.getItem('heijin.story-presets.v1')) {
+      localStorage.setItem('heijin.story-presets.v1', JSON.stringify({ enabled: true, selected: id, packages: {
+        'peinture-1118': { version: 'heijin.1', entries: {}, scripts: {}, sampling: { top_p: 0.83 } },
+        [id]: { version: 'test', entries: {}, scripts: {}, sampling: { top_p: 0.37 }, scriptVariables: { 'folio-reader': { boots: 7 } } },
+      } }));
+    }
+  }, folioId);
+  await page.goto('/');
+  await expect(page.locator('iframe[data-tavern-script="folio-reader"]')).toBeAttached();
+  const result = await page.evaluate(async () => {
+    const paths = ['/src/workflows/storyStage.ts','/src/services/storage/saveRepository.ts','/src/domain/drafts.ts','/src/tests/fixtures/game.ts',
+      '/src/ui/settings/model.ts','/src/services/ai/configuration.ts','/src/services/ai/credentials.ts','/src/services/ai/client.ts','/src/services/ai/stageResponses.ts'];
+    const [{ StoryStage }, { SaveRepository }, { createTurnDraft }, { game }, { defaultSettings }, { newChannel, defaultAiConfig },
+      { CredentialVault }, { AiClient }, { stageResponses }] = await Promise.all(paths.map(path => import(path)));
+    const repo = await SaveRepository.open();
+    try {
+      const state = await repo.create(game('folio-qa'));
+      let draft = createTurnDraft(state.saveId, state.revision, 'opening-folio', 'opening', '');
+      await repo.saveDraft(draft, null);
+      const settings = defaultSettings(), vault = new CredentialVault(sessionStorage, localStorage);
+      settings.prompts.minNarrativeChars = 5;
+      settings.prompts.actionOptions = false;
+      settings.runtime.timeoutSeconds = 1;
+      const config = defaultAiConfig();
+      const envelope = '<正文>小舟沿岸停靠，旅人合上手中的册子。</正文><短期记忆>旅人上岸</短期记忆><变量规划>[]</变量规划>';
+      const content = JSON.stringify({ folio: envelope });
+      let calls = 0;
+      const rows = [];
+      for (const mode of ['initial', 'repeat', 'timeout', 'cancel', 'malformed', 'recover']) {
+        const protocol = mode === 'repeat' ? 'gemini' : 'openai';
+        settings.runtime.streamStory = protocol === 'gemini' || mode === 'timeout' || mode === 'cancel';
+        const channel = newChannel(protocol);
+        channel.baseUrl = 'https://folio.mock.invalid/v1'; channel.defaultModel = 'fixture';
+        config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: '' };
+        vault.set(channel.id, 'fixture-only');
+        let request = '';
+        const transport = async (_url: string, init: RequestInit) => {
+          calls++; request = String(init.body);
+          if (mode === 'timeout' || mode === 'cancel') {
+            if (mode === 'cancel') setTimeout(() => stage.cancel(), 20);
+            return new Response(new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(': keepalive\n\n')); } }), { headers: { 'Content-Type': 'text/event-stream' } });
+          }
+          if (protocol === 'gemini') {
+            const frame = { candidates: [{ content: { parts: [{ text: content }] }, finishReason: 'STOP' }] };
+            return new Response('data: ' + JSON.stringify(frame) + '\n\n', { headers: { 'Content-Type': 'text/event-stream' } });
+          }
+          return Response.json({ choices: [{ message: { content: mode === 'malformed' ? '{}' : content }, finish_reason: 'stop' }] });
+        };
+        const stage = new StoryStage(repo, new AiClient(transport));
+        const before = JSON.stringify(draft);
+        const work = stage.generate({ draft, config, vault, settings }).then(() => 'ok', (e: Error & { code?: string }) => {
+          if (mode === 'initial' || !e.code) throw e;
+          return e.code;
+        });
+        if (mode === 'initial') {
+          // The actual host is loading; this wait exceeds the eventual client budget.
+          await new Promise(ok => setTimeout(ok, 1150));
+          window.dispatchEvent(new Event('folio-ready'));
+        }
+        const code = await work;
+        draft = await repo.loadDraft(state.saveId);
+        const record = stageResponses.getSnapshot()[0];
+        rows.push({ mode, code, marker: request.includes('folio-fixture-only'), old: JSON.stringify(draft) === before,
+          story: draft.story?.narrative, timeline: record.diagnostics?.tavern?.timeline, calls: record.diagnostics?.tavern?.calls });
+      }
+      const saved = JSON.parse(localStorage.getItem('heijin.story-presets.v1')!);
+      const originalState = JSON.stringify(await repo.load(state.saveId)) === JSON.stringify(state);
+      saved.selected = 'peinture-1118';
+      localStorage.setItem('heijin.story-presets.v1', JSON.stringify(saved));
+      return { rows, calls, packages: saved.packages, originalState };
+    } finally { repo.close(); }
+  });
+  expect(result.rows.map(row => row.code)).toEqual(['ok', 'ok', 'timeout', 'cancelled', 'invalid_output', 'ok']);
+  expect(result.rows[0].timeline.budgetStartMs).toBeGreaterThanOrEqual(1000);
+  expect(result.rows[2].timeline).toMatchObject({ timeoutSeconds: 1, deadlinePhase: 'upstream_read', comments: 1 });
+  expect(result.rows.map(row => row.old)).toEqual([false, false, true, true, true, false]);
+  expect(result.rows.every(row => row.marker && row.calls === 1 && row.story === '小舟沿岸停靠，旅人合上手中的册子。')).toBe(true);
+  expect(result.calls).toBe(6);
+  expect(result.originalState).toBe(true);
+  expect(result.packages[folioId].scriptVariables['folio-reader']).toEqual({ boots: 8 });
+  expect(result.packages['peinture-1118']).toEqual({ version: 'heijin.1', entries: {}, scripts: {}, sampling: { top_p: 0.83 } });
+  synthetic = false;
+  await page.reload();
+  await expect(page.locator('iframe[data-tavern-script]').first()).toBeAttached();
+  await expect(page.locator('iframe[data-tavern-script="folio-reader"]')).toHaveCount(0);
+});

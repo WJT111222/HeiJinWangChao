@@ -71,7 +71,10 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   const recent = captured.state.journal.slice(-captured.settings.memory.immediateWindowSize);
   const chatLength = 1 + recent.reduce((sum, entry) => sum + 1 + Number(Boolean(captured.historyActions?.[entry.turnId])), 0);
   return withTavernRequest({ ...captured, stage: 'story' }, snapshot.channel.protocol, type, presetSelection.overrides,
-    () => tavernGeneration(type, options.signal, false, chatLength, run));
+    () => tavernGeneration(type, options.signal, false, chatLength, () => {
+      options.storyClock?.first('generationEventsDoneMs');
+      return run();
+    }));
 }
 
 async function executePrepared(captured: ComposeInput & { stage: AiStage }, snapshot: RequestSnapshot,
@@ -243,11 +246,16 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     clearTimeout(observationTimer);
     const path = error instanceof AiError ? error.details?.fieldPath : undefined;
     let storyLayer: 'request' | 'story_validation' | 'upstream' | 'wrapper' = 'request';
+    const deadline = diagnostics.tavern?.timeline?.deadlinePhase;
     if (step === 'response') storyLayer = 'story_validation';
+    else if (deadline === 'wrapper_restore') storyLayer = 'wrapper';
+    else if (deadline === 'upstream_read' || deadline === 'awaiting_headers' || deadline === 'awaiting_bytes') storyLayer = 'upstream';
+    else if (deadline) storyLayer = 'request';
     else if (diagnostics.tavern?.upstreamError || path?.startsWith('tavern.upstream.')) storyLayer = 'upstream';
     else if (diagnostics.tavern && diagnostics.tavern.wrapper !== 'pending') storyLayer = 'wrapper';
     stageResponses.update(responseId, { status: 'failed',
       ...(captured.stage === 'story' ? { failureLayer: storyLayer } : {}),
+      ...(storyLayer === 'story_validation' && options.storyClock ? { validationEndMs: options.storyClock.elapsed() } : {}),
       text: preview(received),
       nativeReasoning: preview(publicReasoning), diagnostics, truncated, ...display(), error: safeAiError(failure) }, secrets);
     throw failure;

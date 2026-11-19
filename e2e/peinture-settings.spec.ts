@@ -49,7 +49,8 @@ function upstream(protocol: Protocol, stream: boolean) {
       usage: { completion_tokens: 12 },
     };
     sse =
-      event({ choices: [{ delta: { tool_calls: [{ index: 0, ...call }] } }] }) +
+      event({ choices: [{ delta: { tool_calls: [{ ...call, index: 0, function: { ...call.function, arguments: call.function.arguments.slice(0, 6) } }] } }] }) +
+      event({ choices: [{ delta: { tool_calls: [{ index: 0, function: { arguments: call.function.arguments.slice(6) } }] } }] }) +
       event({ choices: [{ delta: {}, finish_reason: 'tool_calls' }], usage: { completion_tokens: 12 } }) +
       'data: [DONE]\n\n';
   }
@@ -153,9 +154,21 @@ async function generate(page: Page, id = 'peinture-smoke') {
     )
     .toBe('船靠岸了，林舟沿着石阶往上走。');
 }
+async function copyStoryReport(page: Page, mobileFailure = false) {
+  if (mobileFailure) {
+    const dialog = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: '重试与变更详情' }) });
+    await dialog.getByRole('tab', { name: '模型原文' }).click();
+    await dialog.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click();
+    await dialog.locator('summary').filter({ hasText: /^正文模型原文/ }).click();
+  } else {
+    await openStageRaw(page, 'story');
+  }
+  await page.getByRole('button', { name: '复制本次诊断' }).click();
+  return JSON.parse(await page.evaluate(() => navigator.clipboard.readText()));
+}
 for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
   for (const stream of [false, true])
-    test(protocol + ' ' + (stream ? 'SSE' : 'JSON') + ' 正式游戏、主脚本和候选', async ({ page }) => {
+    test(protocol + ' ' + (stream ? 'SSE' : 'JSON') + ' 正式游戏、主脚本和候选', async ({ page, context }, info) => {
       const sent = await prepare(page, protocol, stream, true);
       await generate(page);
       expect(sent).toHaveLength(1);
@@ -167,6 +180,12 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
             ? body.tools.map((t: { name: string }) => t.name)
             : body.tools.map((t: { function: { name: string } }) => t.function.name);
       expect(names).toEqual(expect.arrayContaining(['wave_context_reference', toolName]));
+      await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+      const report = await copyStoryReport(page);
+      expect(report).toMatchObject({ candidateSaved: true, tavern: { calls: 1, restored: true, complete: true } });
+      expect(report.tavern.timeline.firstArgumentsMs).toBeGreaterThanOrEqual(report.tavern.timeline.firstByteMs);
+      expect(report.draftSavedMs).toBeGreaterThanOrEqual(report.tavern.timeline.upstreamCompleteMs);
+      await info.attach('timeline', { body: JSON.stringify(report.tavern.timeline), contentType: 'application/json' });
       expect(sent[0]).toContain('林舟');
     });
 }
@@ -335,25 +354,65 @@ for (const format of ['json', 'sse', 'interrupted', 'invalid-story'] as const) {
         });
       } finally { db.close(); }
     })).toBe(success ? narrative : 'failed');
-    if (!success && testInfo.project.name === 'mobile') {
-      const dialog = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: '重试与变更详情' }) });
-      await dialog.getByRole('tab', { name: '模型原文' }).click();
-      await dialog.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click();
-      await dialog.locator('summary').filter({ hasText: /^正文模型原文/ }).click();
-    } else {
-      await openStageRaw(page, 'story');
-    }
-    await page.getByRole('button', { name: '复制本次诊断' }).click();
-    const report = JSON.parse(await page.evaluate(() => navigator.clipboard.readText()));
+    const report = await copyStoryReport(page, !success && testInfo.project.name === 'mobile');
     expect(report).toMatchObject({
       protocol: 'openai', tavern: { requestedStream, normalized: json ? 'json' : 'sse', calls: 1, complete: format !== 'interrupted' },
       candidateSaved: success, storyValidated: success,
     });
+    const timing = report.tavern.timeline;
+    expect(timing.sentMs).toBeGreaterThanOrEqual(timing.budgetStartMs);
+    expect(timing.headersMs).toBeGreaterThanOrEqual(timing.sentMs);
+    expect(timing.firstByteMs).toBeGreaterThanOrEqual(timing.headersMs);
+    expect(timing.firstContentMs).toBeGreaterThanOrEqual(timing.firstByteMs);
+    if (success) {
+      expect(report.validationEndMs).toBeGreaterThanOrEqual(timing.restoredMs);
+      expect(report.draftSavedMs).toBeGreaterThanOrEqual(report.validationEndMs);
+    }
     if (format === 'interrupted') expect(report).toMatchObject({ code: 'stream_interrupted', fieldPath: 'tavern.upstream.missing_finish', failureLayer: 'upstream' });
-    if (format === 'invalid-story') expect(report).toMatchObject({ failureLayer: 'story_validation', tavern: { rawFinish: 'stop', restored: true } });
+    if (format === 'invalid-story') {
+      expect(report).toMatchObject({ failureLayer: 'story_validation', tavern: { rawFinish: 'stop', restored: true } });
+      expect(report.validationEndMs).toBeGreaterThanOrEqual(timing.restoredMs);
+      expect(report.draftSavedMs).toBeUndefined();
+    }
     if (json) expect(report.tavern.upstreamUsage.outputTokens).toBe(123);
     expect(JSON.stringify(report)).not.toMatch(/林舟|fixture-only|peinture-smoke|wave_delivery/);
     expect(sent).toHaveLength(1);
     await testInfo.attach('本次诊断', { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
   });
 }
+
+test('仅有上游心跳时真实脚本按配置超时，失败面板可复制本次时间线', async ({ page, context }, info) => {
+  await page.addInitScript(() => {
+    const original = window.fetch.bind(window);
+    window.fetch = async (input, init) => {
+      if (!String(input).startsWith('https://peinture.mock.invalid/')) return original(input, init);
+      sessionStorage.setItem('mock-heartbeat-count', String(Number(sessionStorage.getItem('mock-heartbeat-count') ?? 0) + 1));
+      return new Response(new ReadableStream({
+        start(c) { c.enqueue(new TextEncoder().encode(': synthetic keepalive\n\n')); },
+        cancel() { sessionStorage.setItem('mock-heartbeat-cleanup', 'released'); },
+      }), { headers: { 'content-type': 'text/event-stream' } });
+    };
+  });
+  await prepare(page, 'openai', true, true);
+  await page.evaluate(key => {
+    const settings = JSON.parse(localStorage.getItem(key)!);
+    settings.runtime.timeoutSeconds = 1;
+    localStorage.setItem(key, JSON.stringify(settings));
+  }, fixture.settingsKey);
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.reload();
+  await page.goto('/#game/peinture-smoke');
+  await openGameTools(page);
+  await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('mock-heartbeat-cleanup'))).toBe('released');
+  const report = await copyStoryReport(page, info.project.name === 'mobile');
+  expect(report).toMatchObject({ code: 'timeout', failureLayer: 'upstream', candidateSaved: false, storyValidated: false,
+    tavern: { calls: 1, complete: false, readerEof: false, upstreamStatus: 200, timeline: {
+      timeoutSeconds: 1, deadlinePhase: 'upstream_read', comments: 1, dataEvents: 0, byteChunks: 1,
+    } },
+  });
+  expect(report.tavern.timeline.firstContentMs).toBeUndefined();
+  expect(report.tavern.timeline.deadlineMs - report.tavern.timeline.budgetStartMs).toBeGreaterThanOrEqual(995);
+  expect(await page.evaluate(() => sessionStorage.getItem('mock-heartbeat-count'))).toBe('1');
+  await info.attach('timeline', { body: JSON.stringify(report.tavern.timeline), contentType: 'application/json' });
+});

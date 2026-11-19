@@ -16,6 +16,7 @@ export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType
   try { await tavernTools.apply(data); }
   catch { throw new AiError('configuration', undefined, { fieldPath: 'tavern.shouldRegister' }); }
   await tavernEvents.emit('chat_completion_settings_ready', data);
+  trace.clock.first('settingsReadyMs');
   signal.throwIfAborted();
   try {
     const result = await fetchGeneration(data, signal, async request => {
@@ -34,6 +35,7 @@ export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType
       }
     });
     trace.wrapper = 'returned';
+    trace.clock.first('wrapperReturnedMs');
     const mime = safeMime(result.headers);
     trace.wrapperFormat = mime === 'text/event-stream' ? 'sse' : mime === 'application/json' ? 'json' : 'unknown';
     if (trace.error && !(trace.complete && trace.error.code === 'empty')) throw trace.error;

@@ -30,6 +30,7 @@ function StoryDiagnostics({ record }: { record: StageResponse }) {
     attempt: record.id, protocol: record.protocol, status: record.status,
     failureLayer: record.failureLayer, code: record.error?.code, fieldPath: details?.fieldPath,
     storyRule: details?.storyRule, storyValidated: record.storyValidated === true, candidateSaved: record.candidateSaved === true,
+    validationEndMs: record.validationEndMs, draftSavedMs: record.draftSavedMs,
     httpStatus: record.diagnostics?.httpStatus, transport: record.diagnostics?.transport, tavern: record.diagnostics?.tavern,
   }, null, 2);
   async function copy() {
@@ -37,7 +38,20 @@ function StoryDiagnostics({ record }: { record: StageResponse }) {
     catch { setMessage('请展开诊断并选中文字复制'); }
   }
   const layers = { request: '发出请求', upstream: '读取上游响应', wrapper: '预设还原', story_validation: '正文校验', draft: '保存草稿' };
+  const waits = {
+    request_preparation: '预设正在准备请求', awaiting_headers: '正在等待上游响应头',
+    awaiting_bytes: '已收到响应头，尚未读到数据', upstream_read: '正在等待下一块上游数据',
+    upstream_incomplete: '上游响应尚未完整消费', wrapper_restore: '上游已结束，正在等待包装响应交付完成',
+  };
+  const timing = record.diagnostics?.tavern?.timeline;
+  const deadline = timing?.deadlinePhase;
   return <>
+    {deadline && <p>达到超时时限时：{waits[deadline]}。
+      {timing.firstContentMs === undefined && timing.firstArgumentsMs === undefined
+        ? timing.firstReasoningMs !== undefined ? '已收到独立思考，尚未观察到正文或工具参数。'
+          : '尚未观察到正文或工具参数。'
+        : '已收到部分正文或工具参数。'}
+    </p>}
     {record.failureLayer && <p>失败位置：{layers[record.failureLayer]}</p>}
     <button type="button" onClick={copy}>复制本次诊断</button>
     {message && <small role="status">{message}</small>}

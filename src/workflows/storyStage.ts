@@ -1,3 +1,4 @@
+import { StoryClock } from '../presets/tavern/timing';
 import { awaitAssistant, assistantStarting, captureAssistantPreferences } from '../presets/tavern/hostState';
 import { stageResponses, safeStreamResponseText, safeResponseText } from '../services/ai/stageResponses';
 import { storyFailure, storySchemaError } from '../services/validation/storyDiagnostics';
@@ -73,9 +74,15 @@ export class StoryStage {
     this.guard.dispose();
   }
   async generate(input: StoryInput): Promise<TurnDraft> {
+    const started = performance.now();
     const expected = TurnDraftSchema.parse(input.draft);
     let presetSelection = captureAssistantPreferences();
+    const clock = presetSelection ? new StoryClock(started) : undefined;
     const waitingForScripts = assistantStarting();
+    if (clock) {
+      clock.marks.waitedForInitialization = Boolean(waitingForScripts);
+      if (!waitingForScripts) clock.first('assistantReadyMs');
+    }
     const selection = input.legacyNotificationSelection && structuredClone(input.legacyNotificationSelection);
     const continuation = Boolean(input.continuation);
     const captureInputs = () => {
@@ -95,6 +102,7 @@ export class StoryStage {
       const current = attempt.check;
       if (presetSelection && waitingForScripts) {
         await awaitAssistant(attempt.signal);
+        clock?.first('assistantReadyMs');
         current();
         presetSelection = captureAssistantPreferences();
       }
@@ -157,7 +165,7 @@ export class StoryStage {
           config,
           input.vault,
           {
-            stream: streaming,
+            stream: streaming, storyClock: clock,
             presetSelection, frozenStoryChannel,
             signal: attempt.signal,
             ...(continuation ? { continuation: { partial } } : {}),
@@ -212,7 +220,7 @@ export class StoryStage {
         if (recovery) validateRecoveredStory(state,draft.story!,story,recovery);
         current();
         if (responseInspectionId) {
-          try { stageResponses.update(responseInspectionId, { storyValidated: true }, secrets); } catch { /* Display only. */ }
+          try { stageResponses.update(responseInspectionId, { storyValidated: true, validationEndMs: clock?.elapsed() }, secrets); } catch { /* Display only. */ }
         }
         saving = true;
         attempt.saving();
@@ -222,14 +230,15 @@ export class StoryStage {
           ? await this.repository.saveRecoveredStory!(draft,story,selection,attempt.signal)
           : await this.repository.saveDraft(rerollStory(draft,story), draft.draftRevision, attempt.signal, draft);
         if (responseInspectionId) {
-          try { stageResponses.update(responseInspectionId, { candidateSaved: true }, secrets); } catch { /* Already persisted. */ }
+          try { stageResponses.update(responseInspectionId, { candidateSaved: true, draftSavedMs: clock?.elapsed() }, secrets); } catch { /* Already persisted. */ }
         }
         current();
         storyInspections.update(inspectionId, { status: 'saved' });
         return saved;
       } catch (error) {
         storyInspections.update(inspectionId, { status: 'failed' });
-        if (responseInspectionId) stageResponses.update(responseInspectionId, { status: 'failed', failureLayer: saving ? 'draft' : 'story_validation', normalized: undefined, error: safeAiError(storyFailure(error)) }, secrets);
+        if (responseInspectionId) stageResponses.update(responseInspectionId, { status: 'failed', failureLayer: saving ? 'draft' : 'story_validation',
+          ...(!saving && clock ? { validationEndMs: clock.elapsed() } : {}), normalized: undefined, error: safeAiError(storyFailure(error)) }, secrets);
         if (!recovery && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled') {
           current();
           const previousAttempt = draft.failures.filter(f => f.stage === 'story' && f.storyRevision === draft.storyRevision)

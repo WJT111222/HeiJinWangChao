@@ -23,16 +23,20 @@ export async function identifyBody(body: ReadableStream<Uint8Array>, signal: Abo
   async function read() {
     try {
       signal.throwIfAborted();
+      trace.clock.reading = true;
       const chunk = await reader.read();
       signal.throwIfAborted();
       if (chunk.done) trace.readerEof = true;
-      else trace.bytes += chunk.value.byteLength;
+      else if (chunk.value.byteLength) {
+        trace.bytes += chunk.value.byteLength;
+        trace.clock.bytes();
+      }
       return chunk;
     } catch {
       if (signal.aborted) throw new AiError('cancelled');
       trace.readError = true;
       throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.read' });
-    }
+    } finally { trace.clock.reading = false; }
   }
   const prefix = new Uint8Array(4096);
   const chunks: Uint8Array[] = [];

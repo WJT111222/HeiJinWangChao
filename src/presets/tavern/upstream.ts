@@ -7,7 +7,10 @@ import { readSse } from '../../services/ai/sse';
 
 import { identifyBody, safeMime } from './responseFormat';
 
+import { StoryClock } from './timing';
+
 export interface UpstreamTrace {
+  clock: StoryClock;
   requestedStream?: boolean;
   contentType?: string | null;
   formatEvidence?: 'json_object' | 'sse_field' | 'sse_comment';
@@ -29,7 +32,7 @@ export interface UpstreamTrace {
   normalized: 'pending' | 'json' | 'sse';
   wrapper: 'pending' | 'returned' | 'failed';
 }
-export const newTrace = (): UpstreamTrace => ({ calls: 0, bytes: 0, complete: false, normalized: 'pending', wrapper: 'pending' });
+export const newTrace = (clock = new StoryClock()): UpstreamTrace => ({ clock, calls: 0, bytes: 0, complete: false, normalized: 'pending', wrapper: 'pending' });
 function invalid(): never { throw new AiError('invalid_output', undefined, { fieldPath: 'tavern.upstream.tool' }); }
 function parse(text: string): unknown {
   try { return JSON.parse(text); } catch { throw new AiError('invalid_json', undefined, { fieldPath: 'tavern.upstream.json' }); }
@@ -71,7 +74,7 @@ class Frames {
     const reason = isOpenAiCompatible(p) ? choice.finish_reason : p === 'gemini' ? choice.finishReason
       : streaming ? record(d.delta).stop_reason : d.stop_reason;
     if (typeof reason === 'string' && reason) {
-      this.trace.rawFinish = ['tool_calls', 'tool_use', 'cancelled', 'canceled'].includes(reason.toLowerCase())
+      this.trace.rawFinish = ['tool_calls', 'tool_use', 'cancelled', 'canceled', 'cancelled_no_content'].includes(reason.toLowerCase())
         ? reason : info.finishReasons?.[0] ?? 'unrecognized';
     }
     if (info.filtered || info.refusal) {
@@ -83,7 +86,11 @@ class Frames {
     if (choices.length > 1 || (choice.index !== undefined && choice.index !== 0)) throw new AiError('unsupported');
     const msg = record(streaming ? choice.delta : choice.message);
     const text = responseContent(d, p, streaming), reasoning = nativeReasoning(d, p, streaming);
-    this.hasText ||= Boolean(text.trim());
+    if (text.trim()) {
+      this.hasText = true;
+      this.trace.clock.progress('firstContentMs');
+    }
+    if (reasoning.trim()) this.trace.clock.progress('firstReasoningMs');
     const calls = [];
     if (isOpenAiCompatible(p)) {
       if (msg.function_call != null || (msg.tool_calls != null && !Array.isArray(msg.tool_calls))) invalid();
@@ -91,6 +98,7 @@ class Frames {
         const tool = record(item), fn = record(tool.function);
         if (tool.type !== undefined && tool.type !== 'function') invalid();
         if (streaming && (typeof tool.index !== 'number' || !Number.isSafeInteger(tool.index))) invalid();
+        if (typeof fn.arguments === 'string' && fn.arguments.length) this.trace.clock.progress('firstArgumentsMs');
         calls.push(this.track(streaming ? Number(tool.index) : i, tool.id, fn.name, fn.arguments));
       }
     } else if (p === 'gemini') {
@@ -117,6 +125,7 @@ class Frames {
           if (this.anonymousGeminiCalls.has(identity)) invalid();
           anonymousThisFrame.push(identity);
         }
+        if (Object.hasOwn(functionCall, 'args')) this.trace.clock.progress('firstArgumentsMs');
         const index = this.tools.size;
         calls.push(this.track(index, id ?? 'gemini-call-' + index, name, encoded));
       }
@@ -131,11 +140,13 @@ class Frames {
         this.blocks.set(Number(d.index), index);
         const args = b.input;
         if (!objectArgs(args)) invalid();
+        if (!streaming || Object.keys(record(args)).length) this.trace.clock.progress('firstArgumentsMs');
         calls.push(this.track(index, b.id, b.name, streaming && !Object.keys(record(args)).length ? '' : JSON.stringify(args)));
       }
       const index = this.blocks.get(Number(d.index));
       if (d.type === 'content_block_delta' && record(d.delta).type === 'input_json_delta') {
         if (index === undefined || typeof record(d.delta).partial_json !== 'string') invalid();
+        if (record(d.delta).partial_json) this.trace.clock.progress('firstArgumentsMs');
         calls.push(this.track(index, undefined, undefined, record(d.delta).partial_json));
       }
       if (d.type === 'content_block_stop' && index !== undefined) {
@@ -180,6 +191,7 @@ class Frames {
     // A clean reasoning-only response remains observable, but a wrapper cannot invent its missing content.
     if (!this.tools.size && !this.hasText) this.trace.error = new AiError('empty');
     this.trace.complete = true;
+    this.trace.clock.first('upstreamCompleteMs');
   }
 }
 export async function normalizeUpstream(response: Response, protocol: Protocol, stream: boolean, signal: AbortSignal, trace: UpstreamTrace) {
@@ -202,7 +214,7 @@ export async function normalizeUpstream(response: Response, protocol: Protocol, 
     frames.finish(false);
     return Response.json(json);
   }
-  const iterator = readSse(counted, reading, { utf8: 'tavern.upstream.utf8', tail: 'tavern.upstream.sse_tail' });
+  const iterator = readSse(counted, reading, { utf8: 'tavern.upstream.utf8', tail: 'tavern.upstream.sse_tail', onComment: () => { trace.clock.marks.comments++; } });
   const encoder = new TextEncoder();
   const done = encoder.encode('data: [DONE]\n\n');
   let downstreamCancelled = false;
@@ -214,6 +226,7 @@ export async function normalizeUpstream(response: Response, protocol: Protocol, 
         if (next.done) {
           trace.boundary ??= 'eof';
         } else {
+          trace.clock.frame();
           if (next.value.event === 'error') throw new AiError('rejected', undefined, { fieldPath: 'tavern.upstream.error' });
           if (isOpenAiCompatible(protocol) && next.value.data === '[DONE]') {
             frames.boundary = true;

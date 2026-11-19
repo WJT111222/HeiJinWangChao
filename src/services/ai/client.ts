@@ -30,6 +30,7 @@ import { rawResponseObservation, responseContent, responseDiagnostics } from './
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
 
 export interface RequestOptions {
+  storyClock?: import('../../presets/tavern/timing').StoryClock;
   presetSampling?: Sampling;
   tavernType?: GenerationType;
   /** Internal Story-only handoff: caller must strictly validate received content. */
@@ -68,6 +69,7 @@ export interface AiResponse {
 async function operation<T>(
   options: RequestOptions,
   run: (signal: AbortSignal) => Promise<T>,
+  clock?: RequestOptions['storyClock'],
 ): Promise<T> {
   if (options.signal?.aborted) throw new AiError('cancelled');
   if (
@@ -78,9 +80,14 @@ async function operation<T>(
     throw new AiError('configuration');
   const controller = new AbortController();
   let timedOut = false;
-  const cancel = () => controller.abort();
+  const cancel = () => { clock?.userCancel(); controller.abort(); };
+  if (clock) {
+    clock.marks.timeoutSeconds = options.timeoutSeconds ?? 120;
+    clock.first('budgetStartMs');
+  }
   const timeout = setTimeout(
     () => {
+      clock?.deadline();
       timedOut = true;
       controller.abort();
     },
@@ -119,6 +126,7 @@ export class AiClient {
     url: string, init: RequestInit, signal: AbortSignal, snapshot?: RequestSnapshot,
     observe?: (value: ResponseDiagnostics) => void, presetSampling = false, trace?: UpstreamTrace,
   ) {
+    trace?.clock.first('sentMs');
     const response = await this.transport(url, {
       ...init,
       signal,
@@ -127,6 +135,7 @@ export class AiClient {
       cache: 'no-store',
       referrerPolicy: 'no-referrer',
     });
+    trace?.clock.first('headersMs');
     if (trace) { trace.status = response.status; trace.contentType = safeMime(response.headers); }
     if (!response.ok) {
       const status = response.status;
@@ -173,7 +182,7 @@ export class AiClient {
     options: RequestOptions = {},
   ): Promise<AiResponse> {
     const compat = snapshot.stage === 'story' && options.tavernType !== undefined;
-    const trace = compat ? newTrace() : undefined;
+    const trace = compat ? newTrace(options.storyClock) : undefined;
     const cleanup = compat ? new AbortController() : undefined;
     let diagnostics: string[] = [];
     let inspectionId: string | undefined;
@@ -247,7 +256,7 @@ export class AiClient {
           if (!response.body) throw new AiError('stream_interrupted');
           let terminal = false, nativeSeen = false;
           const think = isOpenAiCompatible(protocol) ? new LeadingThink() : undefined;
-          for await (const event of readSse(response.body, signal)) {
+          for await (const event of readSse(response.body, signal, trace ? { detachCleanup: true } : undefined)) {
             if (event.data === '[DONE]' && isOpenAiCompatible(protocol)) {
               terminal = true;
               break;
@@ -328,11 +337,14 @@ export class AiClient {
           outputLimited ||= ['length', 'max_tokens'].includes(trace.finish?.toLowerCase() ?? '');
         }
         if (!text.trim()) throw new AiError('empty');
-        if (trace) trace.restored = true;
+        if (trace) {
+          trace.restored = true;
+          trace.clock.first('restoredMs');
+        }
         try { if (inspectionId) requestInspections.finish(inspectionId, usage); }
         catch { /* 诊断观察器失败不改变响应。 */ }
         return { text, ...(outputLimited ? { outputLimited: true } : {}), ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics, protocol: snapshot.channel.protocol, model: snapshot.model };
-      });
+      }, trace?.clock);
     } catch (error) {
       const failure = options.signal?.aborted || (error instanceof AiError && error.code === 'timeout') ? error : trace?.error ?? error;
       if (trace && failure instanceof AiError) {
@@ -343,7 +355,8 @@ export class AiClient {
       catch { /* 保留原始失败语义。 */ }
       throw failure;
     } finally {
-      if (trace) observe({ tavern: { calls: trace.calls, bytes: trace.bytes, complete: trace.complete,
+      trace?.clock.first('clientEndMs');
+      if (trace) observe({ tavern: { timeline: { ...trace.clock.marks }, calls: trace.calls, bytes: trace.bytes, complete: trace.complete,
         upstreamStatus: trace.status, upstreamFinish: trace.finish, upstreamUsage: trace.usage, upstreamError: trace.error?.code,
         requestedStream: trace.requestedStream, contentType: trace.contentType, formatEvidence: trace.formatEvidence,
         cancelled: trace.cancelled === true, readerEof: trace.readerEof === true, readError: trace.readError === true, rawFinish: trace.rawFinish,
