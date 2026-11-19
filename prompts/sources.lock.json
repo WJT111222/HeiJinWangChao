@@ -569,6 +569,11 @@
         "baseCommit": "cc4b763df6d2b01bd119c13388c9f76045f38f78",
         "notes": "Story声明纯通知实际收悉；保留玩家行动边界与旧类型。",
         "sha256": "24a07c289353f67929245cc6120fd3653c3ff1f9e58f8766319c8802c715600b"
+      },
+      "issue194LegacyRecovery": {
+        "baseCommit": "399ab887e6f08346dc002e0df03c03e37f055674",
+        "notes": "说明播放器明确选择的旧通知恢复只能对指定入场确认收悉，仍保留决定与真实收悉边界。",
+        "sha256": "ab308f7547ce1f4e7ebfa06c51bc5800008752f82d1210b4ccfa1f0134408c5f"
       }
     },
     "shared/07_command_output.md": {

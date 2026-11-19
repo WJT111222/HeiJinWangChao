@@ -9,6 +9,9 @@ import { GameStateSchema } from '../domain/state';
 import type { GameState } from '../domain/state';
 import { TurnDraftSchema } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
+import { authorizeLegacyNotificationRecovery } from '../domain/legacyNotificationRecovery';
+import type { LegacyNotificationRecovery } from '../domain/events/legacyNotification';
+import { fingerprint } from '../domain/commands';
 import { projectTurn } from '../domain/turnProjection';
 import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
@@ -29,6 +32,7 @@ export interface ComposeInput {
   settings: Settings;
   userInput: string;
   draft?: TurnDraft;
+  legacyNotificationRecovery?: LegacyNotificationRecovery;
   domains?: string[];
   memoryTask?: string;
   npcId?: string;
@@ -64,6 +68,13 @@ export function checkedInput(input: ComposeInput): ComposeInput {
       (input.stage === 'world' && !draft?.useWorldStage)
     )
       throw new Error();
+    const recovery = input.legacyNotificationRecovery;
+    if (recovery) {
+      if (input.stage !== 'story' || !draft) throw new Error();
+      const { eventId, entryId, notificationOnly, finishReading } = recovery;
+      if (fingerprint(authorizeLegacyNotificationRecovery(state,draft,{eventId,entryId,notificationOnly,finishReading}))
+        !== fingerprint(recovery)) throw new Error();
+    }
     return { ...structuredClone(input), state, settings, draft };
   } catch {
     throw new AiError('configuration');
@@ -98,6 +109,14 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       EVENT_ENTRIES: pendingEventEntries(state),
       EVENT_PARTICIPATION: Object.values(state.events).flatMap(event=>event.protagonistEntry?.status==='presented' && !['resolved','cancelled'].includes(event.status)
         ? [{eventId:event.id,entryId:event.protagonistEntry.id,status:'presented',...(event.entryIntent ? {entryIntent:event.entryIntent} : {})}] : []),
+      ...(input.legacyNotificationRecovery ? {
+        LEGACY_NOTIFICATION_RECOVERY: {
+          eventId:input.legacyNotificationRecovery.eventId, entryId:input.legacyNotificationRecovery.entryId,
+          playerAction:'玩家确认此入场仅是无需决定的通知，并选择在本幕读完或听完这条通知，仅收悉。',
+          previousStory:draft!.story,
+          rule:'重做当前未结算正文，保留已绑定行动与旧选定正文已成立的事实，原样保留其他事件的结构化裁定。明确写出实际读完或听完这条已呈现通知的过程。确实收悉时，只给指定旧入场补交 group=event、eventInteraction.action=acknowledged 及实际 textEvidence。仅呈现或开始播放不够。如果内容实际仍要求批准、选择、回应或参与，即使玩家将它选为纯通知，也不要提交收悉回执。此授权不分类其他事件，不接受、批准、拒绝或执行任何待决事项。不要改变时钟约束或凭空补充未收到的内容。',
+        },
+      } : {}),
       PLAYER_ACTION: input.userInput,
       OPENING_TIME: opening,
       TURN_TIME_POLICY: turnTimePolicy,

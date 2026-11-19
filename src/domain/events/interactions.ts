@@ -3,6 +3,8 @@ import { requireStoryData } from '../storyDiagnostics';
 import { fingerprint } from '../commands';
 import { requireData } from '../common';
 import { terminalEvent } from './lifecycle';
+import { existingLegacyRecovery, legacyPresentedEntry } from './legacyNotification';
+import type { LegacyNotificationRecovery } from './legacyNotification';
 import type { GameState } from '../state';
 import type { TurnDraft } from '../drafts';
 import type { DomainCommand } from '../commands';
@@ -16,7 +18,7 @@ export function pendingEventEntries(state: GameState) {
       channel:entry.channel,cue:entry.cue,...(event.entryIntent ? {entryIntent:event.entryIntent} : {}),...(entry.locationId ? {locationId:entry.locationId} : {})}] : [];
   }).sort((a,b)=>Date.parse(a.queuedAt)-Date.parse(b.queuedAt)||a.eventId.localeCompare(b.eventId));
 }
-export function validateStoryEventInteractions(state: GameState, story: Story) {
+export function validateStoryEventInteractions(state: GameState, story: Story, recovery?: LegacyNotificationRecovery) {
   storyEventNarrations(state,story);
   const interactions = story.variableGuide.filter(guide=>guide.eventInteraction !== undefined);
   const seen = new Set<string>();
@@ -31,7 +33,9 @@ export function validateStoryEventInteractions(state: GameState, story: Story) {
     requireStoryData(!terminalEvent(event) && (entry.status==='pending' || entry.status==='presented'),'EVENT_ENTRY','已关闭的入场不能再次处理', { storyRule: 'receipt_closed', guideIndex, fieldPath });
     requireStoryData(!(entry.status==='presented' && receipt.action==='presented'),'EVENT_ENTRY','已呈现入场不能重播', { storyRule: 'receipt_repeated', guideIndex, fieldPath });
     if (receipt.action === 'acknowledged') {
-      requireStoryData(event.entryIntent === 'notification' && !pastOnly, 'EVENT_ENTRY', '只能收悉本幕的纯通知',
+      const selectedLegacy = recovery && recovery.saveId === state.saveId && recovery.baseSaveRevision === state.revision
+        && recovery.eventId === receipt.eventId && recovery.entryId === receipt.entryId && legacyPresentedEntry(state,recovery);
+      requireStoryData((event.entryIntent === 'notification' || selectedLegacy) && !pastOnly, 'EVENT_ENTRY', '只能收悉本幕的纯通知',
         { storyRule: 'receipt_notification', guideIndex, fieldPath: `${fieldPath}.action` });
     }
     requireStoryData(guide.textEvidence?.trim(),'EVENT_ENTRY','承接回执说明不能为空', { storyRule: 'receipt_evidence_empty', guideIndex, fieldPath: `variableGuide.${guideIndex}.textEvidence` });
@@ -42,7 +46,8 @@ export function validateStoryEventInteractions(state: GameState, story: Story) {
 /** Computed from the formal baseline and selected Story, never writes storage. */
 export function eventInteractionCommands(state: GameState, draft: TurnDraft, events: Readonly<GameState['events']>): DomainCommand[] {
   if(!draft.story) return [];
-  const guides=validateStoryEventInteractions(state,draft.story);
+  const recovery = existingLegacyRecovery(state,draft);
+  const guides=validateStoryEventInteractions(state,draft.story,recovery);
   return guides.map((guide,index)=>{
     const receipt=guide.eventInteraction!,event=events[receipt.eventId],original=state.events[receipt.eventId];
     requireData(event?.protagonistEntry?.id===receipt.entryId,'EVENT_ENTRY','候选不能删除或替换待处理入场');
@@ -52,6 +57,8 @@ export function eventInteractionCommands(state: GameState, draft: TurnDraft, eve
     return {type:'SaveEvent',commandId:`story-entry:${draft.storyRevision}:${index}`,evidence:'所选正文的事件处理回执',
       event:{...event,sourceTurnIds:[...new Set([...event.sourceTurnIds,draft.turnId])],
         protagonistKnowledge:{worldUpdateTurnId:draft.turnId,title:guide.textEvidence!,notice:guide.textEvidence,knowledgeKind:'reported'},
-        protagonistEntry:{...event.protagonistEntry,status:receipt.action,handledTurnId:draft.turnId,textEvidence:guide.textEvidence}}};
+        protagonistEntry:{...event.protagonistEntry,status:receipt.action,handledTurnId:draft.turnId,textEvidence:guide.textEvidence,
+          ...(receipt.action === 'acknowledged' && receipt.eventId === recovery?.eventId
+            ? {recoverySource:'player-confirmed-legacy-notification' as const} : {})}}};
   });
 }

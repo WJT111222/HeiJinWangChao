@@ -138,7 +138,9 @@ function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedRecei
       const sameEntry = fingerprint(previous) === fingerprint(entry);
       requireData(previous?.status !== 'acknowledged' || sameEntry, 'EVENT_ENTRY', '已收悉的回执不可改写');
       if (entry?.status === 'acknowledged' && !sameEntry) {
-        requireData(acknowledgedReceipts.has(c.commandId) && old?.entryIntent === 'notification'
+        requireData(acknowledgedReceipts.has(c.commandId)
+          && (old?.entryIntent === 'notification' || (old?.entryIntent === undefined && old?.eventKind === 'sub'
+            && previous?.status === 'presented' && entry.recoverySource === 'player-confirmed-legacy-notification'))
           && previous?.id === entry.id && (previous.status === 'pending' || previous.status === 'presented'),
           'EVENT_ENTRY', '收悉状态只能来自本轮合法 Story 回执');
       }

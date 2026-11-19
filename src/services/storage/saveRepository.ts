@@ -11,8 +11,10 @@ import type { DomainCommand } from '../../domain/commands';
 import { GameStateSchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
 import { normalizeOpeningCity } from '../../domain/openingCity';
-import { TurnDraftSchema, validateDraftUpdate, createTurnDraft } from '../../domain/drafts';
+import { TurnDraftSchema, validateDraftUpdate, createTurnDraft, rerollStory } from '../../domain/drafts';
 import type { TurnDraft } from '../../domain/drafts';
+import type { LegacyNotificationSelection } from '../../domain/events/legacyNotification';
+import { authorizeLegacyNotificationRecovery, validateRecoveredStory } from '../../domain/legacyNotificationRecovery';
 import { migrateSave } from './migrations';
 import { TurnSubmissionSchema, settleTurn, awaitingPlayerAction, rebindableAfterStoryStop } from '../../domain/turnCommit';
 import type { TurnSubmission } from '../../domain/turnCommit';
@@ -442,7 +444,7 @@ export class SaveRepository {
       const entries: BackupEntry[] = [];
       for (const saveId of saveIds) {
         const state = readState(await request(tx.objectStore('saves').get(saveId)), saveId);
-        const { draft } = compatibleDraft(state, await request(tx.objectStore('drafts').get(saveId)));
+        const { draft } = compatibleDraft(state, await request(tx.objectStore('drafts').get(saveId)), true);
         entries.push({ summary: backupSummary(state), state, ...(draft ? { draft } : {}) });
       }
       return entries;
@@ -682,6 +684,26 @@ export class SaveRepository {
         await request(store.put(next)); return next;
       }), { required: true });
     } finally { session.release(); }
+  }
+
+  // StoryStage holds the browser execution lock. This transaction only replaces the
+  // selected draft after the full CAS and eligibility check, and never writes GameState.
+  async saveRecoveredStory(basedOn: TurnDraft, story: NonNullable<TurnDraft['story']>,
+    selection: LegacyNotificationSelection, signal?: AbortSignal): Promise<TurnDraft> {
+    const base = TurnDraftSchema.parse(basedOn);
+    return transaction(this.database, ['saves','drafts'], 'readwrite', async tx => {
+      const state = await readStoredState(tx,base.saveId);
+      const store = tx.objectStore('drafts');
+      const current = TurnDraftSchema.parse(await request(store.get(base.saveId)));
+      requireData(fingerprint(current) === fingerprint(base), 'DRAFT_CONFLICT', '草稿已被其他操作更新');
+      const recovery = authorizeLegacyNotificationRecovery(state,current,selection);
+      const replacement = rerollStory(current,story);
+      validateRecoveredStory(state,current.story!,replacement.story!,recovery);
+      validateDraftUpdate(current,replacement);
+      const next = TurnDraftSchema.parse({ ...replacement, legacyNotificationRecovery:recovery });
+      await request(store.put(next));
+      return next;
+    },signal);
   }
 
   /**

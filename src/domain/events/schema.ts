@@ -24,6 +24,7 @@ export const ProtagonistEventEntrySchema = z.strictObject({
   channel:TextSchema.max(200),cue:TextSchema.max(2000),locationId:IdSchema.optional(),
   status:z.enum(['pending','presented','declined','left','interrupted','invalidated','acknowledged']),
   handledTurnId:IdSchema.optional(),textEvidence:TextSchema.max(8000).optional(),
+  recoverySource:z.literal('player-confirmed-legacy-notification').optional(),
 }).meta({readOnly:true,description:'程序维护；排队来自本次World验证，处理来自下一幕Story结构化回执，正式提交前不生效。'});
 // 程序保存主角此前已知的事件投影；世界更新不能借旧known标记传播新进展。
 export const ProtagonistEventKnowledgeSchema = z.strictObject({
