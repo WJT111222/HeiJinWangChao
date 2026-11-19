@@ -1,3 +1,4 @@
+import type { Sampling } from '../../presets/package';
 import type { RequestSnapshot } from './snapshot';
 import { secretFor } from './snapshot';
 import { AiError } from './errors';
@@ -62,14 +63,17 @@ export function wireRequest(
   snapshot: RequestSnapshot,
   messages: readonly AiMessage[],
   stream: boolean,
+  presetSampling?: Sampling,
 ) {
   if (!messages.length || !snapshot.model) throw new AiError('configuration');
+  const sampling = snapshot.stage === 'story' ? presetSampling : undefined;
+  const mixedSystemAllowed = !!sampling && isOpenAiCompatible(snapshot.channel.protocol);
   let userSeen = false;
   for (const message of messages) {
     if (!['system', 'user', 'assistant'].includes(message.role) || !message.content.trim())
       throw new AiError('configuration');
     if (message.role !== 'system') userSeen = true;
-    else if (userSeen) throw new AiError('unsupported');
+    else if (userSeen && !mixedSystemAllowed) throw new AiError('unsupported');
   }
   if (messages.at(-1)?.role === 'assistant' && !snapshot.useCot) throw new AiError('unsupported');
   // 使用完整确认历史，以 user 收尾；不猜测中转的预填充/Prefix 能力。
@@ -80,14 +84,15 @@ export function wireRequest(
   const diagnostics = [...snapshot.diagnostics];
   const max = cap.maxOutputTokens ? params.maxOutputTokens : undefined;
   const thinking = thinkingParameters(snapshot.thinkingCapability, protocol === 'anthropic' ? max ?? 4096 : max);
+  const desiredTemperature = sampling ? sampling.temperature : params.temperature;
   const temperature =
-    cap.temperature && !thinking.anthropic && !(protocol === 'anthropic' && (params.temperature ?? 0) > 1)
+    cap.temperature && !thinking.anthropic && !(protocol === 'anthropic' && (desiredTemperature ?? 0) > 1)
       && !(protocol === 'openai' && skipsTemperature(snapshot.channel, snapshot.model))
-      ? params.temperature
+      ? desiredTemperature
       : undefined;
   const completionTokens = protocol === 'openai' && usesCompletionTokens(snapshot.channel, snapshot.model);
   if (completionTokens && max !== undefined) diagnostics.push('MAX_COMPLETION_TOKENS_FIELD');
-  if (params.temperature !== undefined && temperature === undefined)
+  if (desiredTemperature !== undefined && temperature === undefined)
     diagnostics.push('TEMPERATURE_SKIPPED_UNSUPPORTED');
   if (params.maxOutputTokens !== undefined && max === undefined)
     diagnostics.push('MAX_TOKENS_SKIPPED_UNSUPPORTED');
@@ -141,6 +146,21 @@ export function wireRequest(
       ...(thinking.anthropic ? { thinking: thinking.anthropic } : {}),
       ...(temperature !== undefined ? { temperature } : {}),
     };
+  }
+  if (sampling) {
+    if (isOpenAiCompatible(protocol)) {
+      for (const field of ['top_p', 'frequency_penalty', 'presence_penalty'] as const) {
+        if (sampling[field] !== undefined) body[field] = sampling[field];
+      }
+    } else if (protocol === 'gemini') {
+      Object.assign(body.generationConfig as object, {
+        topP: sampling.top_p, frequencyPenalty: sampling.frequency_penalty, presencePenalty: sampling.presence_penalty,
+      });
+    } else {
+      if (sampling.top_p !== undefined && temperature === undefined && !thinking.anthropic) body.top_p = sampling.top_p;
+      else if (sampling.top_p !== undefined) diagnostics.push('PRESET_TOP_P_SKIPPED');
+      if (sampling.frequency_penalty !== undefined || sampling.presence_penalty !== undefined) diagnostics.push('PRESET_PENALTIES_UNSUPPORTED');
+    }
   }
   return {
     url: endpoint(snapshot, path),

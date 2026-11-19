@@ -1,3 +1,4 @@
+import { captureStoryPreset } from '../presets/library';
 import { stageResponses, safeStreamResponseText, safeResponseText } from '../services/ai/stageResponses';
 import { storyFailure, storySchemaError } from '../services/validation/storyDiagnostics';
 import { DataError } from '../domain/common';
@@ -25,7 +26,7 @@ import { StageGuard } from './stageGuard';
 import type { OrderPreferences } from '../prompts/order';
 
 type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>
-  & Partial<Pick<SaveRepository,'saveRecoveredStory'>>;
+  & Partial<Pick<SaveRepository,'saveRecoveredStory' | 'recentStoryActions'>>;
 export interface StoryProgress {
   phase: 'generating' | 'saving';
   narrative: string;
@@ -72,6 +73,7 @@ export class StoryStage {
   }
   async generate(input: StoryInput): Promise<TurnDraft> {
     const expected = TurnDraftSchema.parse(input.draft);
+    const presetSelection = captureStoryPreset();
     const selection = input.legacyNotificationSelection && structuredClone(input.legacyNotificationSelection);
     return this.guard.run(expected.saveId, async (attempt) => {
       const current = attempt.check;
@@ -119,6 +121,9 @@ export class StoryStage {
       let responseInspectionId: string | undefined;
       try {
         progress();
+        const historyActions = presetSelection && state.journal.length
+          ? await this.repository.recentStoryActions?.(state, settings.memory.immediateWindowSize) : undefined;
+        current();
         const response = await runStageRequest(
           {
             stage: 'story',
@@ -128,6 +133,7 @@ export class StoryStage {
             userInput: draft.userInput,
             settings,
             companionProfile,
+            historyActions,
             orderPreferences: input.orderPreferences,
             ...(recovery ? {legacyNotificationRecovery:recovery} : {}),
           },
@@ -135,6 +141,7 @@ export class StoryStage {
           input.vault,
           {
             stream: streaming,
+            presetSelection,
             signal: attempt.signal,
             ...(continuation ? { continuation: { partial } } : {}),
             onDelta: (delta) => {

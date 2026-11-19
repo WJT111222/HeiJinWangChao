@@ -70,6 +70,16 @@ it('完整恢复前回合，原输入持久回填，消费快照并保留单一�
   await expect(undo()).rejects.toThrow();
   expect((await repo.exportRaw('save-a')).records.turnReceipts).toHaveLength(0);
 });
+it('预设历史只读取当前时间线窗口中留存的行动，撤回后旧行动不可见', async () => {
+  await turn(); await turn('甲行动'); const third = await turn('乙行动');
+  const history = third.state.journal;
+  const all = await repo.recentStoryActions(third.state, 10);
+  expect(all).toEqual({ [history[1].turnId]: '甲行动', [history[2].turnId]: '乙行动' });
+  expect(await repo.recentStoryActions(third.state, 1)).toEqual({ [history[2].turnId]: '乙行动' });
+  const restored = await undo();
+  await expect(repo.recentStoryActions(third.state, 10)).rejects.toThrow();
+  expect(await repo.recentStoryActions(restored.state, 10)).toEqual({ [history[1].turnId]: '甲行动' });
+});
 it('连续五次撤回，窗口安全滑动且重新打开仍可用', async () => {
   for (let i = 0; i < 8; i++) await turn(`行动${i}`);
   repo.close(); repo = await SaveRepository.open('undo', factory);

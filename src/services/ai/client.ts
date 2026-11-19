@@ -1,3 +1,4 @@
+import type { Sampling } from '../../presets/package';
 import { AiError, safeAiError } from './errors';
 import { requestInspections } from './inspection';
 import type { InspectionScope } from './inspection';
@@ -24,6 +25,7 @@ import { rawResponseObservation, responseContent, responseDiagnostics } from './
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
 
 export interface RequestOptions {
+  presetSampling?: Sampling;
   /** Internal Story-only handoff: caller must strictly validate received content. */
   validateStoryOutputLimit?: boolean;
   onResponseDiagnostics?: (diagnostics: ResponseDiagnostics) => void;
@@ -147,7 +149,7 @@ export class AiClient {
     messages: readonly AiMessage[],
     options: RequestOptions = {},
   ): Promise<AiResponse> {
-    const wire = wireRequest(snapshot, messages, options.stream === true);
+    const wire = wireRequest(snapshot, messages, options.stream === true, options.presetSampling);
     let inspectionId: string | undefined;
     let observedUsage: Usage | undefined;
     let outputLimited = false;

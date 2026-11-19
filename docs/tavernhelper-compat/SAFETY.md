@@ -1,5 +1,7 @@
 # 信任边界、状态与恢复
 
+> 路线已更新。阶段 A 调研留档。第一批按负责人审核的可信脚本路线实施，旧隔离原型和 A–E 审批流程已停止执行。[现行 Issue #199](https://github.com/WJT111222/HeiJinWangChao/issues/199) · [第一批实现与验证](BATCH1.md)
+
 包、脚本、正则替换、显示 HTML、导入文件以及模型响应都可能携带不可信内容。最敏感的资产是渠道凭证、剧情/记忆、一次付费授权和正式回合的写入权。上游 predefine 会取得父窗口对象；王朝凭证与 wire 构造则在原生客户端。由这项差异推导以下设计，用 B 的负例实测后才能承诺隔离。[H·predefine.js L1](https://github.com/N0VI028/JS-Slash-Runner/blob/c13105d6e2abd2871a4b77f0e7251869dd840a3f/src/iframe/predefine.js#L1) [G·credentials.ts L1](https://github.com/WJT111222/HeiJinWangChao/blob/0bdffc9d39b231b9b69a83181d979525e104fca9/src/services/ai/credentials.ts#L1) [G·protocols.ts L27](https://github.com/WJT111222/HeiJinWangChao/blob/0bdffc9d39b231b9b69a83181d979525e104fca9/src/services/ai/protocols.ts#L27)
 
 ### 隔离与终止

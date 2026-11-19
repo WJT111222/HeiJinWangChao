@@ -1,7 +1,7 @@
 import { HistoryRepository } from './history/repository';
 import { clearManualHistory, historyStores } from './history/model';
 import { setNpcImportance } from '../../domain/npc/profiles';
-import { timelineStores, newSaveControl, readControl, writeControl, controlInstance, clearUndoRecords, recordUndo, inspectUndo, restoreSnapshot, assertMemoryLineage, readTurnComparison } from './turnUndo';
+import { timelineStores, newSaveControl, readControl, writeControl, controlInstance, clearUndoRecords, recordUndo, inspectUndo, restoreSnapshot, assertMemoryLineage, readTurnComparison, SnapshotSchema } from './turnUndo';
 import type { MemoryLineage, UndoStatus, TurnComparison } from './turnUndo';
 import { request, transaction } from './idb';
 import { CountSchema, DataError, IdSchema, requireData } from '../../domain/common';
@@ -266,6 +266,26 @@ export class SaveRepository {
     IdSchema.parse(saveId);
     return transaction(this.database, ['saves', 'saveControls', 'turnUndo'], 'readonly', async tx =>
       inspectUndo(tx, readState(await request(tx.objectStore('saves').get(saveId)), saveId)));
+  }
+
+  /** The journal stores the narrative. Only verified records on its active undo suffix retain the exact action. */
+  async recentStoryActions(expected: GameState, windowSize: number): Promise<Record<string, string>> {
+    return transaction(this.database, ['saves', 'saveControls', 'turnUndo'], 'readonly', async tx => {
+      const state = readState(await request(tx.objectStore('saves').get(expected.saveId)), expected.saveId);
+      requireData(fingerprint(state) === fingerprint(expected), 'DRAFT_CONFLICT', '读取行动历史时存档已变化。');
+      const control = await readControl(tx, state.saveId);
+      const records = control?.records ?? [];
+      const start = state.journal.length - records.length;
+      const actions: Record<string, string> = Object.create(null);
+      if (start < 1 || records.some((r, i) => r.turnId !== state.journal[start + i]?.turnId ||
+        r.beforeTurnId !== state.journal[start + i - 1]?.turnId)) return actions;
+      for (const descriptor of records.slice(-windowSize)) {
+        const row = SnapshotSchema.safeParse(await request(tx.objectStore('turnUndo').get([state.saveId, descriptor.turnId])));
+        if (row.success && row.data.saveId === state.saveId && row.data.turnId === descriptor.turnId &&
+          row.data.beforeTurnId === descriptor.beforeTurnId) actions[descriptor.turnId] = row.data.input;
+      }
+      return actions;
+    });
   }
 
   /** Consistent read only: use the existing migration projection, never normalize by writing.

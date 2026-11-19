@@ -1,0 +1,32 @@
+{
+  "id": "peinture-1118",
+  "version": "heijin.1",
+  "lockedOff": [
+    "wave-noise-anchor",
+    "wave-attention-dilution",
+    "main",
+    "wave-license",
+    "nsfw",
+    "wave-length-800-1000",
+    "wave-length-dynamic-more",
+    "wave-length-dynamic-less",
+    "wave-timebar",
+    "wave-extra-options",
+    "wave-extra-summary",
+    "wave-extra-review",
+    "wave-extra-comment",
+    "wave-extra-parallel",
+    "wave-mvu-adapter",
+    "wave-custom-format",
+    "wave-custom-content",
+    "wave-custom-cot",
+    "wave-archive-memory",
+    "wave-native-thinking-detour",
+    "wave-summary-all",
+    "wave-chat-with-wave",
+    "wave-thinking-tail"
+  ],
+  "title": "我即浪潮 · 1118 peinture",
+  "author": "⁺✞ʚ界徐盛重度依赖ɞ✟",
+  "sourceSha256": "cd5480618e9e6ccf2acc33c569a84c9e5bb4b33c0882b55fbcd420160ebf55cf"
+}

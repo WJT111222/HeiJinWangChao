@@ -4,7 +4,7 @@
 
 ## 设计审查
 
-- [TavernHelper 兼容运行时 · 阶段 A 源码审计与架构决策](tavernhelper-compat/README.md)
+- [TavernHelper 兼容运行时 · 预设接入与源码审计](tavernhelper-compat/README.md)
 
 ## 现行入口
 

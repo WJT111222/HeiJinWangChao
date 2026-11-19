@@ -38,6 +38,8 @@ export interface ComposeInput {
   npcId?: string;
   npcSummaryThreshold?: number;
   companionProfile?: CompanionProfile;
+  /** Read-only actions retained on this timeline, keyed by journal turn. */
+  historyActions?: Record<string,string>;
   orderOverrides?: Record<string, number>;
   orderPreferences?: Record<string, number>;
   cotAllowed?: boolean;

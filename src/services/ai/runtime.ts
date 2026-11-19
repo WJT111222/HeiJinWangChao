@@ -1,3 +1,4 @@
+import type { PresetSelection } from '../../presets/library';
 import { worldNormalizationNotes } from '../validation/worldSceneWrites';
 import { narrativeRange } from '../../ui/settings/model';
 import { validateStoryEventInteractions } from '../../domain/events/interactions';
@@ -24,7 +25,7 @@ import type { StoryFailureText } from '../../domain/storyContinuation';
 import { splitLeadingThink } from './compat';
 
 /** 正文续写：已写出的截断原文（已隐藏凭证）。只用于正文阶段。 */
-export interface StageRequestOptions extends RequestOptions { continuation?: { partial: string } }
+export interface StageRequestOptions extends RequestOptions { presetSelection?: PresetSelection; continuation?: { partial: string } }
 /**
  * 正文请求失败时收到的内容（去掉前导 <think> 推理；续写时为与已写部分拼接后的全文），供上层保存为可续写的截断正文。
  * 以失败对象为键，不进入错误消息或诊断展示。
@@ -44,7 +45,7 @@ export async function runStageRequest(
 }
 async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }, config: AiConfig,
   vault: CredentialVault, stageOptions: StageRequestOptions, client: AiClient) {
-  const { continuation: requestedContinuation, ...options } = stageOptions;
+  const { continuation: requestedContinuation, presetSelection, ...options } = stageOptions;
   if (requestedContinuation && input.stage !== 'story') throw new AiError('configuration');
   if (input.orderOverrides && input.orderPreferences) throw new AiError('configuration');
   const captured = checkedInput({
@@ -59,7 +60,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   const snapshot = requestSnapshot(config, captured.stage, vault);
   const prompt = captured.stage === 'variables'
     ? await composeTextVariablesPrompt({ ...captured, stage: 'variables', cotAllowed: snapshot.useCot })
-    : await composePrompt({ ...captured, cotAllowed: snapshot.useCot });
+    : await composePrompt({ ...captured, cotAllowed: snapshot.useCot }, presetSelection);
   // 续写：上下文与原请求完全相同（缓存前缀不变），末尾追加已写部分（assistant）与续写指令（user）。
   const continuation = requestedContinuation ? { partial: trimIncompleteTag(requestedContinuation.partial) } : undefined;
   const messages = continuation
@@ -101,6 +102,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   try {
   const response = await client.generate(snapshot, messages, {
     ...options,
+    presetSampling: prompt.preset?.sampling,
     // Only Story may evaluate a complete limit response; other stages remain strict.
     validateStoryOutputLimit: captured.stage === 'story',
     onResponseDiagnostics: (value) => {
@@ -184,6 +186,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     usage: response.usage,
     diagnostics: response.diagnostics,
     modules: prompt.modules,
+    ...(prompt.preset ? { preset: prompt.preset } : {}),
     baseSaveRevision: prompt.baseSaveRevision,
     storyRevision: prompt.storyRevision,
     requestBasis: {
