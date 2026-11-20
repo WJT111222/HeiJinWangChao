@@ -169,7 +169,7 @@ export function SettingsPanel({
                   <option value="third">第三人称</option>
                 </select>
               </label>
-              <fieldset disabled={presetOwnsWriting} style={{border:0,padding:0,margin:0}}><StyleField value={editing.prompts.style} onChange={(value) => prompt('style', value)} /></fieldset>
+              <fieldset className="style-fieldset" disabled={presetOwnsWriting} style={{border:0,padding:0,margin:0}}><StyleField value={editing.prompts.style} onChange={(value) => prompt('style', value)} /></fieldset>
               <LengthField
                 min={editing.prompts.minNarrativeChars}
                 max={editing.prompts.maxNarrativeChars}

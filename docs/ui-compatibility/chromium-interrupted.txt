@@ -1,0 +1,545 @@
+[WebServer] (node:195204) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 20 tests using 1 worker
+
+(node:195226) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [desktop] › e2e/ai-model-selection.spec.ts:125:1 › 主题浮层的搜索、键盘、Escape、Tab与窄屏内部滚动 (12.3s)
+  ✓   2 [desktop] › e2e/history-saves.spec.ts:188:1 › 自动五节点只读预览、取消覆盖、旧链不变、日夜与窄屏截图 (14.3s)
+  ✓   3 [desktop] › e2e/history-visual.spec.ts:48:73 › 历史档案视觉 day short=false (42.0s)
+AI editor day { modelWidth: 131.140625, height: 128.265625, pane: 417.671875 }
+[WebServer] Killed
+style day 1199 647.03125 647.03125
+style day 1200 576.8125 576.8125
+style day 1440 804.015625 804.015625
+  ✓   4 [desktop] › e2e/ui-compatibility.spec.ts:51:3 › 路由实际命中及保存、风格跨列与断点 day (15.3s)
+  ✘   5 [desktop] › e2e/ui-compatibility.spec.ts:97:3 › 预设编辑区与保存栏独立操作 day (693ms)
+(node:196056) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   6 [desktop] › e2e/ui-compatibility.spec.ts:128:3 › 历史地图人物、同刻纪事及纸面地图配色 day (868ms)
+(node:196211) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   7 [desktop] › e2e/ui-compatibility.spec.ts:51:3 › 路由实际命中及保存、风格跨列与断点 night (887ms)
+(node:196363) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   8 [desktop] › e2e/ui-compatibility.spec.ts:97:3 › 预设编辑区与保存栏独立操作 night (616ms)
+(node:196507) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   9 [desktop] › e2e/ui-compatibility.spec.ts:128:3 › 历史地图人物、同刻纪事及纸面地图配色 night (884ms)
+(node:196652) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  10 [desktop] › e2e/ui-compatibility.spec.ts:211:1 › 首页独立设置窗口在断点两侧都完整使用表单宽度 (578ms)
+(node:196812) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  11 [mobile] › e2e/ai-model-selection.spec.ts:125:1 › 主题浮层的搜索、键盘、Escape、Tab与窄屏内部滚动 (1.1s)
+(node:197029) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  12 [mobile] › e2e/history-saves.spec.ts:188:1 › 自动五节点只读预览、取消覆盖、旧链不变、日夜与窄屏截图 (876ms)
+(node:197184) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  13 [mobile] › e2e/history-visual.spec.ts:48:73 › 历史档案视觉 day short=false (665ms)
+(node:197324) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  14 [mobile] › e2e/ui-compatibility.spec.ts:51:3 › 路由实际命中及保存、风格跨列与断点 day (976ms)
+(node:197485) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  15 [mobile] › e2e/ui-compatibility.spec.ts:97:3 › 预设编辑区与保存栏独立操作 day (788ms)
+(node:197618) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  16 [mobile] › e2e/ui-compatibility.spec.ts:128:3 › 历史地图人物、同刻纪事及纸面地图配色 day (529ms)
+(node:197768) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  17 [mobile] › e2e/ui-compatibility.spec.ts:51:3 › 路由实际命中及保存、风格跨列与断点 night (519ms)
+(node:197913) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  18 [mobile] › e2e/ui-compatibility.spec.ts:97:3 › 预设编辑区与保存栏独立操作 night (691ms)
+(node:198083) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  19 [mobile] › e2e/ui-compatibility.spec.ts:128:3 › 历史地图人物、同刻纪事及纸面地图配色 night (762ms)
+(node:198230) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  20 [mobile] › e2e/ui-compatibility.spec.ts:211:1 › 首页独立设置窗口在断点两侧都完整使用表单宽度 (715ms)
+
+
+  1) [desktop] › e2e/ui-compatibility.spec.ts:97:3 › 预设编辑区与保存栏独立操作 day ─────────────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+       at helpers/mobileArchives.ts:4
+
+      2 | import type {Page} from '@playwright/test';
+      3 | export async function seedMobileArchives(page:Page,extra=0,roster=false){
+    > 4 |  await page.goto('/');const state=await page.evaluate(async ({extra,roster})=>{
+        |             ^
+      5 |   const paths=[roster?'/src/tests/fixtures/npcRoster.ts':'/src/tests/fixtures/mobileArchives.ts','/src/services/storage/saveRepository.ts','/src/domain/drafts.ts','/src/ui/settings/model.ts'];
+      6 |   const [fixture,{SaveRepository},{createTurnDraft},{defaultSettings,settingsKey}]=await Promise.all(paths.map(p=>import(p))),state=roster?fixture.npcRosterState():fixture.mobileArchivesState(extra);
+      7 |   const settings=defaultSettings();for(const option of Object.values(settings.memory.summaries) as {automatic:boolean}[])option.automatic=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
+        at seedMobileArchives (/workspace/ui-compat/e2e/helpers/mobileArchives.ts:4:13)
+        at setup (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:37:9)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:99:21
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/ui-compatibility-预设编辑区与保存栏独立操作-day-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/ui-compatibility-预设编辑区与保存栏独立操作-day-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/ui-compatibility-预设编辑区与保存栏独立操作-day-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [desktop] › e2e/ui-compatibility.spec.ts:128:3 › 历史地图人物、同刻纪事及纸面地图配色 day ───────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+       at helpers/mobileArchives.ts:4
+
+      2 | import type {Page} from '@playwright/test';
+      3 | export async function seedMobileArchives(page:Page,extra=0,roster=false){
+    > 4 |  await page.goto('/');const state=await page.evaluate(async ({extra,roster})=>{
+        |             ^
+      5 |   const paths=[roster?'/src/tests/fixtures/npcRoster.ts':'/src/tests/fixtures/mobileArchives.ts','/src/services/storage/saveRepository.ts','/src/domain/drafts.ts','/src/ui/settings/model.ts'];
+      6 |   const [fixture,{SaveRepository},{createTurnDraft},{defaultSettings,settingsKey}]=await Promise.all(paths.map(p=>import(p))),state=roster?fixture.npcRosterState():fixture.mobileArchivesState(extra);
+      7 |   const settings=defaultSettings();for(const option of Object.values(settings.memory.summaries) as {automatic:boolean}[])option.automatic=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
+        at seedMobileArchives (/workspace/ui-compat/e2e/helpers/mobileArchives.ts:4:13)
+        at setup (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:37:9)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:130:21
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-day-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-day-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-day-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [desktop] › e2e/ui-compatibility.spec.ts:51:3 › 路由实际命中及保存、风格跨列与断点 night ───────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+       at helpers/mobileArchives.ts:4
+
+      2 | import type {Page} from '@playwright/test';
+      3 | export async function seedMobileArchives(page:Page,extra=0,roster=false){
+    > 4 |  await page.goto('/');const state=await page.evaluate(async ({extra,roster})=>{
+        |             ^
+      5 |   const paths=[roster?'/src/tests/fixtures/npcRoster.ts':'/src/tests/fixtures/mobileArchives.ts','/src/services/storage/saveRepository.ts','/src/domain/drafts.ts','/src/ui/settings/model.ts'];
+      6 |   const [fixture,{SaveRepository},{createTurnDraft},{defaultSettings,settingsKey}]=await Promise.all(paths.map(p=>import(p))),state=roster?fixture.npcRosterState():fixture.mobileArchivesState(extra);
+      7 |   const settings=defaultSettings();for(const option of Object.values(settings.memory.summaries) as {automatic:boolean}[])option.automatic=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
+        at seedMobileArchives (/workspace/ui-compat/e2e/helpers/mobileArchives.ts:4:13)
+        at setup (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:37:9)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:53:21
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/ui-compatibility-路由实际命中及保存、风格跨列与断点-night-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/ui-compatibility-路由实际命中及保存、风格跨列与断点-night-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/ui-compatibility-路由实际命中及保存、风格跨列与断点-night-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [desktop] › e2e/ui-compatibility.spec.ts:97:3 › 预设编辑区与保存栏独立操作 night ───────────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+       at helpers/mobileArchives.ts:4
+
+      2 | import type {Page} from '@playwright/test';
+      3 | export async function seedMobileArchives(page:Page,extra=0,roster=false){
+    > 4 |  await page.goto('/');const state=await page.evaluate(async ({extra,roster})=>{
+        |             ^
+      5 |   const paths=[roster?'/src/tests/fixtures/npcRoster.ts':'/src/tests/fixtures/mobileArchives.ts','/src/services/storage/saveRepository.ts','/src/domain/drafts.ts','/src/ui/settings/model.ts'];
+      6 |   const [fixture,{SaveRepository},{createTurnDraft},{defaultSettings,settingsKey}]=await Promise.all(paths.map(p=>import(p))),state=roster?fixture.npcRosterState():fixture.mobileArchivesState(extra);
+      7 |   const settings=defaultSettings();for(const option of Object.values(settings.memory.summaries) as {automatic:boolean}[])option.automatic=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
+        at seedMobileArchives (/workspace/ui-compat/e2e/helpers/mobileArchives.ts:4:13)
+        at setup (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:37:9)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:99:21
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/ui-compatibility-预设编辑区与保存栏独立操作-night-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/ui-compatibility-预设编辑区与保存栏独立操作-night-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/ui-compatibility-预设编辑区与保存栏独立操作-night-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [desktop] › e2e/ui-compatibility.spec.ts:128:3 › 历史地图人物、同刻纪事及纸面地图配色 night ─────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+       at helpers/mobileArchives.ts:4
+
+      2 | import type {Page} from '@playwright/test';
+      3 | export async function seedMobileArchives(page:Page,extra=0,roster=false){
+    > 4 |  await page.goto('/');const state=await page.evaluate(async ({extra,roster})=>{
+        |             ^
+      5 |   const paths=[roster?'/src/tests/fixtures/npcRoster.ts':'/src/tests/fixtures/mobileArchives.ts','/src/services/storage/saveRepository.ts','/src/domain/drafts.ts','/src/ui/settings/model.ts'];
+      6 |   const [fixture,{SaveRepository},{createTurnDraft},{defaultSettings,settingsKey}]=await Promise.all(paths.map(p=>import(p))),state=roster?fixture.npcRosterState():fixture.mobileArchivesState(extra);
+      7 |   const settings=defaultSettings();for(const option of Object.values(settings.memory.summaries) as {automatic:boolean}[])option.automatic=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
+        at seedMobileArchives (/workspace/ui-compat/e2e/helpers/mobileArchives.ts:4:13)
+        at setup (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:37:9)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:130:21
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-night-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-night-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-night-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [desktop] › e2e/ui-compatibility.spec.ts:211:1 › 首页独立设置窗口在断点两侧都完整使用表单宽度 ───────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+      210 |
+      211 | test('首页独立设置窗口在断点两侧都完整使用表单宽度', async ({ page, isMobile }) => {
+    > 212 |   await page.goto('/');
+          |              ^
+      213 |   await page.evaluate(async () => {
+      214 |     const path = '/src/ui/settings/model.ts', { defaultSettings, settingsKey } = await import(path);
+      215 |     const settings = defaultSettings();
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:212:14
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/ui-compatibility-首页独立设置窗口在断点两侧都完整使用表单宽度-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/ui-compatibility-首页独立设置窗口在断点两侧都完整使用表单宽度-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/ui-compatibility-首页独立设置窗口在断点两侧都完整使用表单宽度-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) [mobile] › e2e/ai-model-selection.spec.ts:125:1 › 主题浮层的搜索、键盘、Escape、Tab与窄屏内部滚动 ────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+       5 |
+       6 | async function seed(page: Page) {
+    >  7 |   await page.goto('/');
+         |              ^
+       8 |   const ids = await page.evaluate(async () => {
+       9 |     const configPath = '/src/services/ai/configuration.ts', keyPath = '/src/services/ai/credentials.ts';
+      10 |     const { defaultAiConfig, newChannel, saveAiConfig } = await import(configPath), { CredentialVault } = await import(keyPath);
+        at seed (/workspace/ui-compat/e2e/ai-model-selection.spec.ts:7:14)
+        at /workspace/ui-compat/e2e/ai-model-selection.spec.ts:127:30
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/ai-model-selection-主题浮层的搜索、键盘、Escape、Tab与窄屏内部滚动-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/ai-model-selection-主题浮层的搜索、键盘、Escape、Tab与窄屏内部滚动-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/ai-model-selection-主题浮层的搜索、键盘、Escape、Tab与窄屏内部滚动-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) [mobile] › e2e/history-saves.spec.ts:188:1 › 自动五节点只读预览、取消覆盖、旧链不变、日夜与窄屏截图 ──────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+       8 |
+       9 | async function seed(page: Page, turns = 7) {
+    > 10 |   await page.goto('/');
+         |              ^
+      11 |   await page.evaluate(async turns => {
+      12 |     const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/world.ts', '/src/tests/fixtures/turn.ts',
+      13 |       '/src/ui/settings/model.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts'];
+        at seed (/workspace/ui-compat/e2e/history-saves.spec.ts:10:14)
+        at /workspace/ui-compat/e2e/history-saves.spec.ts:189:9
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/history-saves-自动五节点只读预览、取消覆盖、旧链不变、日夜与窄屏截图-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/history-saves-自动五节点只读预览、取消覆盖、旧链不变、日夜与窄屏截图-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/history-saves-自动五节点只读预览、取消覆盖、旧链不变、日夜与窄屏截图-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  9) [mobile] › e2e/history-visual.spec.ts:48:73 › 历史档案视觉 day short=false ──────────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+      4 | import {settingsTextContrast} from './helpers/settingsContrast';
+      5 | async function seed(page: Page, turns = 7) {
+    > 6 |   await page.goto('/');
+        |              ^
+      7 |   await page.evaluate(async turns => {
+      8 |     const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/world.ts', '/src/tests/fixtures/turn.ts',
+      9 |       '/src/ui/settings/model.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts'];
+        at seed (/workspace/ui-compat/e2e/history-visual.spec.ts:6:14)
+        at /workspace/ui-compat/e2e/history-visual.spec.ts:51:8
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/history-visual-历史档案视觉-day-short-false-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/history-visual-历史档案视觉-day-short-false-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/history-visual-历史档案视觉-day-short-false-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10) [mobile] › e2e/ui-compatibility.spec.ts:51:3 › 路由实际命中及保存、风格跨列与断点 day ─────────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+       at helpers/mobileArchives.ts:4
+
+      2 | import type {Page} from '@playwright/test';
+      3 | export async function seedMobileArchives(page:Page,extra=0,roster=false){
+    > 4 |  await page.goto('/');const state=await page.evaluate(async ({extra,roster})=>{
+        |             ^
+      5 |   const paths=[roster?'/src/tests/fixtures/npcRoster.ts':'/src/tests/fixtures/mobileArchives.ts','/src/services/storage/saveRepository.ts','/src/domain/drafts.ts','/src/ui/settings/model.ts'];
+      6 |   const [fixture,{SaveRepository},{createTurnDraft},{defaultSettings,settingsKey}]=await Promise.all(paths.map(p=>import(p))),state=roster?fixture.npcRosterState():fixture.mobileArchivesState(extra);
+      7 |   const settings=defaultSettings();for(const option of Object.values(settings.memory.summaries) as {automatic:boolean}[])option.automatic=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
+        at seedMobileArchives (/workspace/ui-compat/e2e/helpers/mobileArchives.ts:4:13)
+        at setup (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:37:9)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:53:21
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/ui-compatibility-路由实际命中及保存、风格跨列与断点-day-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/ui-compatibility-路由实际命中及保存、风格跨列与断点-day-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/ui-compatibility-路由实际命中及保存、风格跨列与断点-day-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  11) [mobile] › e2e/ui-compatibility.spec.ts:97:3 › 预设编辑区与保存栏独立操作 day ─────────────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+       at helpers/mobileArchives.ts:4
+
+      2 | import type {Page} from '@playwright/test';
+      3 | export async function seedMobileArchives(page:Page,extra=0,roster=false){
+    > 4 |  await page.goto('/');const state=await page.evaluate(async ({extra,roster})=>{
+        |             ^
+      5 |   const paths=[roster?'/src/tests/fixtures/npcRoster.ts':'/src/tests/fixtures/mobileArchives.ts','/src/services/storage/saveRepository.ts','/src/domain/drafts.ts','/src/ui/settings/model.ts'];
+      6 |   const [fixture,{SaveRepository},{createTurnDraft},{defaultSettings,settingsKey}]=await Promise.all(paths.map(p=>import(p))),state=roster?fixture.npcRosterState():fixture.mobileArchivesState(extra);
+      7 |   const settings=defaultSettings();for(const option of Object.values(settings.memory.summaries) as {automatic:boolean}[])option.automatic=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
+        at seedMobileArchives (/workspace/ui-compat/e2e/helpers/mobileArchives.ts:4:13)
+        at setup (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:37:9)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:99:21
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/ui-compatibility-预设编辑区与保存栏独立操作-day-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/ui-compatibility-预设编辑区与保存栏独立操作-day-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/ui-compatibility-预设编辑区与保存栏独立操作-day-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  12) [mobile] › e2e/ui-compatibility.spec.ts:128:3 › 历史地图人物、同刻纪事及纸面地图配色 day ───────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+       at helpers/mobileArchives.ts:4
+
+      2 | import type {Page} from '@playwright/test';
+      3 | export async function seedMobileArchives(page:Page,extra=0,roster=false){
+    > 4 |  await page.goto('/');const state=await page.evaluate(async ({extra,roster})=>{
+        |             ^
+      5 |   const paths=[roster?'/src/tests/fixtures/npcRoster.ts':'/src/tests/fixtures/mobileArchives.ts','/src/services/storage/saveRepository.ts','/src/domain/drafts.ts','/src/ui/settings/model.ts'];
+      6 |   const [fixture,{SaveRepository},{createTurnDraft},{defaultSettings,settingsKey}]=await Promise.all(paths.map(p=>import(p))),state=roster?fixture.npcRosterState():fixture.mobileArchivesState(extra);
+      7 |   const settings=defaultSettings();for(const option of Object.values(settings.memory.summaries) as {automatic:boolean}[])option.automatic=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
+        at seedMobileArchives (/workspace/ui-compat/e2e/helpers/mobileArchives.ts:4:13)
+        at setup (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:37:9)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:130:21
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-day-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-day-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-day-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  13) [mobile] › e2e/ui-compatibility.spec.ts:51:3 › 路由实际命中及保存、风格跨列与断点 night ───────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+       at helpers/mobileArchives.ts:4
+
+      2 | import type {Page} from '@playwright/test';
+      3 | export async function seedMobileArchives(page:Page,extra=0,roster=false){
+    > 4 |  await page.goto('/');const state=await page.evaluate(async ({extra,roster})=>{
+        |             ^
+      5 |   const paths=[roster?'/src/tests/fixtures/npcRoster.ts':'/src/tests/fixtures/mobileArchives.ts','/src/services/storage/saveRepository.ts','/src/domain/drafts.ts','/src/ui/settings/model.ts'];
+      6 |   const [fixture,{SaveRepository},{createTurnDraft},{defaultSettings,settingsKey}]=await Promise.all(paths.map(p=>import(p))),state=roster?fixture.npcRosterState():fixture.mobileArchivesState(extra);
+      7 |   const settings=defaultSettings();for(const option of Object.values(settings.memory.summaries) as {automatic:boolean}[])option.automatic=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
+        at seedMobileArchives (/workspace/ui-compat/e2e/helpers/mobileArchives.ts:4:13)
+        at setup (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:37:9)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:53:21
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/ui-compatibility-路由实际命中及保存、风格跨列与断点-night-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/ui-compatibility-路由实际命中及保存、风格跨列与断点-night-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/ui-compatibility-路由实际命中及保存、风格跨列与断点-night-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  14) [mobile] › e2e/ui-compatibility.spec.ts:97:3 › 预设编辑区与保存栏独立操作 night ───────────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+       at helpers/mobileArchives.ts:4
+
+      2 | import type {Page} from '@playwright/test';
+      3 | export async function seedMobileArchives(page:Page,extra=0,roster=false){
+    > 4 |  await page.goto('/');const state=await page.evaluate(async ({extra,roster})=>{
+        |             ^
+      5 |   const paths=[roster?'/src/tests/fixtures/npcRoster.ts':'/src/tests/fixtures/mobileArchives.ts','/src/services/storage/saveRepository.ts','/src/domain/drafts.ts','/src/ui/settings/model.ts'];
+      6 |   const [fixture,{SaveRepository},{createTurnDraft},{defaultSettings,settingsKey}]=await Promise.all(paths.map(p=>import(p))),state=roster?fixture.npcRosterState():fixture.mobileArchivesState(extra);
+      7 |   const settings=defaultSettings();for(const option of Object.values(settings.memory.summaries) as {automatic:boolean}[])option.automatic=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
+        at seedMobileArchives (/workspace/ui-compat/e2e/helpers/mobileArchives.ts:4:13)
+        at setup (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:37:9)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:99:21
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/ui-compatibility-预设编辑区与保存栏独立操作-night-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/ui-compatibility-预设编辑区与保存栏独立操作-night-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/ui-compatibility-预设编辑区与保存栏独立操作-night-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  15) [mobile] › e2e/ui-compatibility.spec.ts:128:3 › 历史地图人物、同刻纪事及纸面地图配色 night ─────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+       at helpers/mobileArchives.ts:4
+
+      2 | import type {Page} from '@playwright/test';
+      3 | export async function seedMobileArchives(page:Page,extra=0,roster=false){
+    > 4 |  await page.goto('/');const state=await page.evaluate(async ({extra,roster})=>{
+        |             ^
+      5 |   const paths=[roster?'/src/tests/fixtures/npcRoster.ts':'/src/tests/fixtures/mobileArchives.ts','/src/services/storage/saveRepository.ts','/src/domain/drafts.ts','/src/ui/settings/model.ts'];
+      6 |   const [fixture,{SaveRepository},{createTurnDraft},{defaultSettings,settingsKey}]=await Promise.all(paths.map(p=>import(p))),state=roster?fixture.npcRosterState():fixture.mobileArchivesState(extra);
+      7 |   const settings=defaultSettings();for(const option of Object.values(settings.memory.summaries) as {automatic:boolean}[])option.automatic=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
+        at seedMobileArchives (/workspace/ui-compat/e2e/helpers/mobileArchives.ts:4:13)
+        at setup (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:37:9)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:130:21
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-night-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-night-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-night-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  16) [mobile] › e2e/ui-compatibility.spec.ts:211:1 › 首页独立设置窗口在断点两侧都完整使用表单宽度 ───────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5174/
+    Call log:
+      - navigating to "http://127.0.0.1:5174/", waiting until "load"
+
+
+      210 |
+      211 | test('首页独立设置窗口在断点两侧都完整使用表单宽度', async ({ page, isMobile }) => {
+    > 212 |   await page.goto('/');
+          |              ^
+      213 |   await page.evaluate(async () => {
+      214 |     const path = '/src/ui/settings/model.ts', { defaultSettings, settingsKey } = await import(path);
+      215 |     const settings = defaultSettings();
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:212:14
+
+    Error Context: ../../dev/shm/ui-compat-deps/joint/ui-compatibility-首页独立设置窗口在断点两侧都完整使用表单宽度-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/joint/ui-compatibility-首页独立设置窗口在断点两侧都完整使用表单宽度-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/joint/ui-compatibility-首页独立设置窗口在断点两侧都完整使用表单宽度-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  16 failed
+    [desktop] › e2e/ui-compatibility.spec.ts:97:3 › 预设编辑区与保存栏独立操作 day ──────────────────────────────
+    [desktop] › e2e/ui-compatibility.spec.ts:128:3 › 历史地图人物、同刻纪事及纸面地图配色 day ────────────────────────
+    [desktop] › e2e/ui-compatibility.spec.ts:51:3 › 路由实际命中及保存、风格跨列与断点 night ────────────────────────
+    [desktop] › e2e/ui-compatibility.spec.ts:97:3 › 预设编辑区与保存栏独立操作 night ────────────────────────────
+    [desktop] › e2e/ui-compatibility.spec.ts:128:3 › 历史地图人物、同刻纪事及纸面地图配色 night ──────────────────────
+    [desktop] › e2e/ui-compatibility.spec.ts:211:1 › 首页独立设置窗口在断点两侧都完整使用表单宽度 ────────────────────────
+    [mobile] › e2e/ai-model-selection.spec.ts:125:1 › 主题浮层的搜索、键盘、Escape、Tab与窄屏内部滚动 ─────────────────
+    [mobile] › e2e/history-saves.spec.ts:188:1 › 自动五节点只读预览、取消覆盖、旧链不变、日夜与窄屏截图 ───────────────────────
+    [mobile] › e2e/history-visual.spec.ts:48:73 › 历史档案视觉 day short=false ───────────────────────────
+    [mobile] › e2e/ui-compatibility.spec.ts:51:3 › 路由实际命中及保存、风格跨列与断点 day ───────────────────────────
+    [mobile] › e2e/ui-compatibility.spec.ts:97:3 › 预设编辑区与保存栏独立操作 day ───────────────────────────────
+    [mobile] › e2e/ui-compatibility.spec.ts:128:3 › 历史地图人物、同刻纪事及纸面地图配色 day ─────────────────────────
+    [mobile] › e2e/ui-compatibility.spec.ts:51:3 › 路由实际命中及保存、风格跨列与断点 night ─────────────────────────
+    [mobile] › e2e/ui-compatibility.spec.ts:97:3 › 预设编辑区与保存栏独立操作 night ─────────────────────────────
+    [mobile] › e2e/ui-compatibility.spec.ts:128:3 › 历史地图人物、同刻纪事及纸面地图配色 night ───────────────────────
+    [mobile] › e2e/ui-compatibility.spec.ts:211:1 › 首页独立设置窗口在断点两侧都完整使用表单宽度 ─────────────────────────
+  4 passed (1.9m)

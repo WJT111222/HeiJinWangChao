@@ -259,7 +259,8 @@
 @media(max-width:1199px){.app-shell .settings-layout .settings-fields>.length-field{grid-template-columns:minmax(0,1fr);gap:.6rem}.app-shell .settings-layout .length-field-title{padding-top:0}}
 @media(max-width:520px){.app-shell .settings-layout .length-tiers{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* 剧情风格：电脑端七枚按钮（4 + 3）+ 下方一段当前说明；手机端竖排列表，说明在选中项内展开。 */
-.app-shell .settings-layout .settings-fields>.style-field{grid-column:1/-1;display:grid;grid-template-columns:minmax(9rem,40%) minmax(0,1fr);gap:1.2rem;align-items:start;padding:.85rem 0;border-bottom:1px dashed var(--hair,#2a26221a)}
+.app-shell .settings-layout .settings-fields>.style-fieldset{grid-column:1/-1;min-width:0}
+.app-shell .settings-layout .style-field{display:grid;gap:.6rem;align-items:start;padding:.85rem 0;border-bottom:1px dashed var(--hair,#2a26221a)}
 .app-shell .settings-layout .style-field-title{padding-top:.75rem;color:var(--text,#2B2723)}
 .app-shell .settings-layout .style-field-body{display:grid;gap:.6rem;min-width:0}
 .app-shell .settings-layout .style-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.45rem}
@@ -277,7 +278,7 @@
 .app-shell .settings-layout .style-explain{margin:0;padding:.85rem 1.05rem;border-radius:10px;border:1px solid #2a262226;background:#EAE1CD;color:#2B2723;font-size:.9rem;line-height:1.85}
 .app-shell .settings-layout .style-explain b{font-family:var(--font-title);color:#1F1B17;letter-spacing:.08em;margin-right:.45em}
 .app-shell .settings-layout .style-field .field-hint{margin:0!important}
-@media(max-width:1199px){.app-shell .settings-layout .settings-fields>.style-field{grid-template-columns:minmax(0,1fr);gap:.6rem}.app-shell .settings-layout .style-field-title{padding-top:0}}
+@media(max-width:1199px){.app-shell .settings-layout .style-field-title{padding-top:0}}
 @media(max-width:900px){
 .app-shell .settings-layout .style-options{grid-template-columns:minmax(0,1fr)}
 .app-shell .settings-layout .style-item>label.style-option{justify-content:flex-start;min-height:3.25rem;padding:.5rem .9rem!important}

@@ -244,6 +244,9 @@
     .peinture-identity { margin-block: 3px; padding-block: 3px; }
     .peinture-panel:has(.peinture-reset) .peinture-identity { display: none; }
   }
+  @container (max-height: 18rem) {
+    .peinture-identity { display: none; }
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .peinture-panel :is(button, input, textarea) { transition: none; }

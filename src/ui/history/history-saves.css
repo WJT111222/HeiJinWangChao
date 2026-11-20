@@ -160,7 +160,13 @@ dialog.history-saves :is(button, input, select, textarea) { transition: box-shad
 .history-preview-header { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 9px 12px; margin: 12px 0; }
 .history-saves .history-preview-header h3 { font-size: 20px; }
 .history-saves .history-preview-header p { margin: 3px 0 0; font-size: 13px; color: var(--history-muted); }
-.history-saves .history-world { display: grid; grid-template-columns: 9rem minmax(0, 1fr) 17.5rem; align-items: start; gap: 12px; }
+:root[data-appearance=day] .history-reading :is(.npc-directory-tools, .organization-directory-tools) { background: var(--history-card); color: var(--history-text); }
+:root[data-appearance=day] .history-reading :is(.npc-detail-heading, .map-surface) { background-color: var(--history-card); }
+:root[data-appearance=day] .history-reading .npc-detail-heading .avatar { color: var(--history-gold); }
+.history-reading .mobile-map-box { position: relative; isolation: isolate; }
+.history-reading .mobile-map-box > .river { z-index: -1; }
+:root[data-appearance=day] .history-saves.mobile-sheet > .modal-heading > .dialog-seal { color: var(--history-gold); }
+.history-saves .history-preview-layout { display: grid; grid-template-columns: 9rem minmax(0, 1fr) 17.5rem; align-items: start; gap: 12px; }
 .history-reading-nav, .history-continue { position: sticky; top: 0; min-width: 0; }
 .history-reading-nav { display: grid; gap: 2px; }
 .history-saves .history-reading-nav button { text-align: start; }
@@ -173,18 +179,18 @@ dialog.history-saves :is(button, input, select, textarea) { transition: box-shad
 .history-saves .history-restart p { margin-bottom: 0; color: var(--history-muted); font-size: 13px; }
 .history-saves .history-story { white-space: pre-wrap; line-height: 2; max-width: 46rem; margin: 1rem auto; font-size: 16px; }
 .history-saves .history-story :is(p, .story-dialogue, .story-narration) { font-size: inherit; line-height: inherit; }
-.history-saves .history-world .pf-entry button:last-child { display: none; }
+.history-saves .history-preview-layout .pf-entry button:last-child { display: none; }
 
 /* Embedded character and economy panels keep their existing read-only contents. */
-.history-saves .history-world .metric-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px; }
-.history-saves .history-world .metric { min-width: 0; background: var(--history-card); border: 1px solid var(--history-line); padding: 14px; color: var(--history-text); border-radius: 6px; }
-.history-saves .history-world .metric :is(b, em, p) { color: var(--history-text); overflow-wrap: anywhere; }
-.history-saves .history-world .metric small { color: var(--history-muted); }
+.history-saves .history-preview-layout .metric-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px; }
+.history-saves .history-preview-layout .metric { min-width: 0; background: var(--history-card); border: 1px solid var(--history-line); padding: 14px; color: var(--history-text); border-radius: 6px; }
+.history-saves .history-preview-layout .metric :is(b, em, p) { color: var(--history-text); overflow-wrap: anywhere; }
+.history-saves .history-preview-layout .metric small { color: var(--history-muted); }
 @media (min-width: 901px) {
   .app-shell dialog.modal.history-saves { width: min(1120px, calc(100vw - 40px)); height: min(880px, calc(100dvh - 40px)); max-height: calc(100dvh - 40px); }
 }
 @media (max-width: 1080px) {
-  .history-saves .history-world { grid-template-columns: minmax(0, 1fr) 16rem; }
+  .history-saves .history-preview-layout { grid-template-columns: minmax(0, 1fr) 16rem; }
   .history-reading-nav { grid-column: 1 / -1; position: static; display: flex; overflow-x: auto; scrollbar-width: none; padding: 3px; }
   .history-saves .history-reading-nav button { flex: none; white-space: nowrap; border-radius: 999px; border: 1px solid var(--history-line); }
   .history-saves .history-reading-nav .history-reading-break { margin-top: 0; }
@@ -197,7 +203,7 @@ dialog.history-saves :is(button, input, select, textarea) { transition: box-shad
   .history-saves .modal-heading h2 { font-size: 19px; }
   .history-saves .modal-heading > button { min-width: 44px; min-height: 44px; width: 44px; height: 44px; padding: 0; font-size: 0; }
   .history-saves .modal-heading > button span { font-size: 18px; }
-  .history-saves :is(.history-toolbar, .history-list-layout, .history-world) { grid-template-columns: minmax(0, 1fr); display: grid; gap: 9px; }
+  .history-saves :is(.history-toolbar, .history-list-layout, .history-preview-layout) { grid-template-columns: minmax(0, 1fr); display: grid; gap: 9px; }
   .history-saves .history-save-side, .history-saves .history-continue { position: static; }
   .history-saves .history-save-legend { display: none; }
   .history-saves .history-toolbar .history-tabs > button { flex: 1; }

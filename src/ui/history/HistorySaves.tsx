@@ -31,14 +31,17 @@ function HistoryTurn({ turn, kind }: { turn?: number; kind: keyof typeof history
 }
 
 function HistoryWorld({ preview, actions }: { preview: HistoryPreview; actions: ReactNode }) {
-  const [panel, setPanel] = useState<typeof historyPanels[number]>('正文');
+  type ReadingPanel = typeof historyPanels[number];
+  const [reading, setReading] = useState<{ panel: ReadingPanel; id?: string }>({ panel: '正文' });
+  const { panel } = reading;
+  const setPanel = (panel: ReadingPanel, id?: string) => setReading({ panel, id });
   const state = preview.state, view = useMemo(() => playerView(state), [state]);
   const wear = state.protagonist.currentWear, item = (id?: string) => id ? state.items[id]?.name ?? '无' : '无';
   const equipment: [string, string][] = [['上衣', item(wear.topItemId)], ['下装', item(wear.bottomItemId)], ['鞋子', item(wear.shoesItemId)],
     ['饰品', wear.accessoryItemIds.map(item).join('、') || '无'], ['主武器', item(wear.primaryWeaponItemId)], ['副武器', item(wear.secondaryWeaponItemId)],
     ['载具', wear.currentVehicleAssetId ? state.economy.vehicles[wear.currentVehicleAssetId]?.name ?? '无' : '无']];
   const [chapter, setChapter] = useState(state.journal.length - 1), story = state.journal[chapter]?.story;
-  return <section className="history-world" aria-label="只读历史世界">
+  return <section className="history-preview-layout" aria-label="只读历史世界">
     <nav className="history-reading-nav" aria-label="历史阅读内容">
       {historyPanels.map((name, index) => <button key={name} type="button" aria-current={panel === name ? 'true' : undefined}
         className={index === 3 ? 'history-reading-break' : undefined} onClick={() => setPanel(name)}>{name}</button>)}
@@ -52,7 +55,10 @@ function HistoryWorld({ preview, actions }: { preview: HistoryPreview; actions: 
       </div>
       {panel === '正文' ? <article className="history-story">{story && <StoryReading narrative={story.narrative} protagonistName={state.protagonist.name}/>}</article>
         : panel === '人物档案' ? <ProfilePanel state={state} equipment={equipment} onEconomy={() => setPanel('经济与资产')} onNpc={() => setPanel('NPC')} onSaves={() => setPanel('正文')}/>
-          : panel === '经济与资产' ? <EconomyPanel view={view}/> : <Panels name={panel as PanelName} view={view}/>}
+          : panel === '经济与资产' ? <EconomyPanel view={view}/> : <Panels name={panel as PanelName} view={view} initialId={reading.id}
+            links={panel === '地图' ? {
+              npc: id => setPanel('NPC', id), event: id => setPanel('世界事件', id), organization: id => setPanel('势力组织', id),
+            } : undefined}/>}
     </div>
     <aside className="history-continue">{actions}</aside>
   </section>;
