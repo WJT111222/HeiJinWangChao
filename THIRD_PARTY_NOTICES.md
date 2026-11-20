@@ -28,6 +28,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## 《我即浪潮 · 1118 peinture》内置适配
+
+- 原作品作者为 ⁺✞ʚ界徐盛重度依赖ɞ✟。
+- 输出防截断相关技术来自 S喵 昆仑。
+- 酒馆助手与王朝兼容的技术指导由小猫之神提供。
+
+本仓分发已获二传许可的王朝适配正文与两份脚本。许可记录见[首批资源与授权说明](docs/tavernhelper-compat/BATCH1.md#资源与授权)。
+
 ## 酒馆助手运行库
 
 jQuery 3.7.1 与 Lodash 4.17.23 随内置助手打包。以下为发行包附带的许可与署名。
