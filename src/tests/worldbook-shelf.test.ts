@@ -6,8 +6,9 @@ import { EMPTY_TIMED_STATE } from '../domain/worldbook/timedEffects';
 import { MAX_ENABLED_BOOKS, WorldbookLibrary, type LibraryFailure } from '../services/storage/worldbookLibrary';
 import { LibraryReader } from '../services/worldbook/libraryReader';
 import { libraryFallback } from '../services/worldbook/libraryFallback';
-import { prepareStoryWorldbook, type StoryWorldbookInput } from '../services/worldbook/storyWorldbook';
+import { prepareStoryWorldbook, previewWorldbook, type StoryWorldbookInput } from '../services/worldbook/storyWorldbook';
 import { WorldbookTriggerHost, type TriggerOutcome } from '../services/worldbook/triggerHost';
+import { exportSillyTavern } from '../domain/worldbook/export';
 import { sillyTavernDictBook } from './fixtures/worldbooks';
 
 let counter = 0;
@@ -209,6 +210,107 @@ describe('简化版世界书：正文入口 prepareStoryWorldbook', () => {
     // 关闭后同样的输入不再带世界书。
     await library.setEnabled(a.bookId, false);
     expect(await prepareStoryWorldbook(input, {}, { openLibrary: () => WorldbookLibrary.open({ name, factory }), host })).toEqual({ status: 'off' });
+    library.close();
+  });
+});
+
+describe('简化版世界书：修改条目（停用 / 常驻）', () => {
+  const idOf = (r: WorldbookRelease, content: string) => r.entries.find((e) => e.content === content)!.entryId;
+
+  it('修改后生成新版本并替换旧版本：哈希有效、启用状态保留、生成时引用新版本、导出体现修改', async () => {
+    const library = await open(uniqueName('revise'));
+    const r = await installed(library, '江城');
+    await library.setEnabled(r.bookId, true);
+    const lisi = idOf(r, '李四是茶楼老板。'), bare = idOf(r, '没有关键词的条目。');
+    const result = await library.reviseBook(r.bookId, { [lisi]: { disabled: true }, [bare]: { constant: true } }, { now: () => 99, newId: () => 'v-edit-1' });
+    expect(result.ok && result.changed).toBe(true);
+    if (!result.ok) return;
+    expect(result.release.versionId).toBe('v-edit-1');
+    expect(result.release.contentHash).not.toBe(r.contentHash);
+    expect(result.book).toMatchObject({ latestVersionId: 'v-edit-1', versionCount: 1, updatedAt: 99 });
+    // 新版本可通过哈希校验；旧版本与旧摘要已删除。
+    expect(await library.getRelease(r.bookId, 'v-edit-1', { verifyHash: true })).toEqual({ ok: true, release: result.release });
+    expect(await library.getRelease(r.bookId, r.versionId)).toEqual({ ok: true, release: null });
+    const versions = await library.listVersions(r.bookId);
+    expect(versions.ok && versions.versions.map((v) => v.versionId)).toEqual(['v-edit-1']);
+    // 只改了这两个字段，其余条目与来源不变。
+    const after = result.release.entries;
+    expect(after.find((e) => e.entryId === lisi)).toEqual({ ...r.entries.find((e) => e.entryId === lisi)!, disabled: true });
+    expect(after.find((e) => e.entryId === bare)).toEqual({ ...r.entries.find((e) => e.entryId === bare)!, constant: true });
+    expect(after.filter((e) => e.entryId !== lisi && e.entryId !== bare)).toEqual(r.entries.filter((e) => e.entryId !== lisi && e.entryId !== bare));
+    expect(result.release.source).toEqual(r.source);
+    const enabled = await library.enabledBooks();
+    expect(enabled.ok && enabled.books.map((b) => b.ref)).toEqual([{ bookId: r.bookId, versionId: 'v-edit-1', contentHash: result.release.contentHash }]);
+    const exported = exportSillyTavern(result.release).value.entries as Record<string, Record<string, unknown>>;
+    expect(Object.values(exported).find((e) => e.content === '李四是茶楼老板。')).toMatchObject({ disable: true });
+    expect(Object.values(exported).find((e) => e.content === '没有关键词的条目。')).toMatchObject({ constant: true });
+    library.close();
+  });
+
+  it('没有实际变化时不写入；未知条目、不存在的书返回 not_found', async () => {
+    const library = await open(uniqueName('revise-noop'));
+    const r = await installed(library, '江城');
+    const lisi = idOf(r, '李四是茶楼老板。');
+    expect(await library.reviseBook(r.bookId, { [lisi]: { disabled: false, constant: false } })).toMatchObject({ ok: true, changed: false, release: r });
+    const versions = await library.listVersions(r.bookId);
+    expect(versions.ok && versions.versions.map((v) => v.versionId)).toEqual([r.versionId]);
+    expect(failed(await library.reviseBook(r.bookId, { 'entry-missing': { disabled: true } })).code).toBe('not_found');
+    expect(failed(await library.reviseBook('book-missing', { [lisi]: { disabled: true } })).code).toBe('not_found');
+    library.close();
+  });
+
+  it('两个页面同时修改同一本书：只有一个成功，另一个返回 version_conflict，书库保持一致', async () => {
+    const factory = new IDBFactory(), name = uniqueName('revise-race');
+    const a = await open(name, factory), b = await open(name, factory);
+    const r = await installed(a, '江城');
+    const lisi = idOf(r, '李四是茶楼老板。'), bare = idOf(r, '没有关键词的条目。');
+    const results = await Promise.all([a.reviseBook(r.bookId, { [lisi]: { disabled: true } }), b.reviseBook(r.bookId, { [bare]: { constant: true } })]);
+    const codes = results.map((x) => (x.ok ? 'ok' : x.code)).sort();
+    expect(codes).toEqual(['ok', 'version_conflict']);
+    const versions = await a.listVersions(r.bookId);
+    expect(versions.ok && versions.versions.length).toBe(1);
+    const shelf = await a.shelf();
+    const winner = results.find((x) => x.ok)!;
+    expect(shelf.ok && winner.ok && shelf.books[0].book.latestVersionId).toBe(winner.ok && winner.release.versionId);
+    a.close(); b.close();
+  });
+
+  it('端到端：改为常驻的条目不需要关键词也会带入；停用的条目即使命中也不带入', async () => {
+    const factory = new IDBFactory(), name = uniqueName('revise-e2e');
+    const library = await open(name, factory);
+    const r = await installed(library, '江城');
+    await library.setEnabled(r.bookId, true);
+    const lisi = idOf(r, '李四是茶楼老板。'), bare = idOf(r, '没有关键词的条目。');
+    expect((await library.reviseBook(r.bookId, { [lisi]: { disabled: true }, [bare]: { constant: true } })).ok).toBe(true);
+    const host = new WorldbookTriggerHost({ createWorker: () => { throw new Error('no worker'); }, fallback: libraryFallback(library) });
+    const outcome = await prepareStoryWorldbook(input, {}, { openLibrary: () => WorldbookLibrary.open({ name, factory }), host });
+    expect(outcome.status).toBe('ok');
+    if (outcome.status !== 'ok') return;
+    const contents = outcome.activated.map((e) => e.content);
+    expect(contents).toContain('没有关键词的条目。');
+    expect(contents).not.toContain('李四是茶楼老板。');
+    library.close();
+  });
+});
+
+describe('简化版世界书：触发预览', () => {
+  it('预览返回每个条目是否触发及原因；不需要启用；失败转为带说明的 skipped', async () => {
+    const library = await open(uniqueName('preview'));
+    const r = await installed(library, '江城');
+    const host = new WorldbookTriggerHost({ createWorker: () => { throw new Error('no worker'); }, fallback: libraryFallback(library) });
+    const ref = { bookId: r.bookId, versionId: r.versionId, contentHash: r.contentHash };
+    const outcome = await previewWorldbook([ref], '李四推门进来', {}, { host });
+    expect(outcome.status).toBe('ok');
+    if (outcome.status !== 'ok') return;
+    const byContent = (content: string) => outcome.result.decisions.find((d) => d.entryId === r.entries.find((e) => e.content === content)!.entryId)!;
+    expect(byContent('李四是茶楼老板。')).toMatchObject({ status: 'activated', reason: 'primary_match' });
+    expect(byContent('张三在渡口摆摊。')).toMatchObject({ status: 'not_activated' });
+    expect(byContent('没有关键词的条目。')).toMatchObject({ status: 'not_activated', reason: 'no_keys' });
+    expect(outcome.result.decisions).toHaveLength(r.entries.length);
+    const run = vi.fn(async (): Promise<TriggerOutcome> => ({ status: 'timeout', timeoutMs: 5000 }));
+    const skipped = await previewWorldbook([ref], '李四', {}, { host: { run } });
+    expect(skipped).toMatchObject({ status: 'skipped', reason: 'timeout' });
+    expect((skipped as { message: string }).message).toContain('预览未完成');
     library.close();
   });
 });

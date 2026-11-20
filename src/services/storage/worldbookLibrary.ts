@@ -1,6 +1,7 @@
 import { canonicalJson, sha256Hex } from '../../domain/worldbook/canonical';
 import { WORLDBOOK_LIMITS, WorldbookReleaseSchema, type WorldbookRelease } from '../../domain/worldbook/schema';
 import { TRIGGER_RESOURCE_LIMITS, type BookRef } from '../../domain/worldbook/triggerRequest';
+import { reviseRelease, type EntryEdit } from '../../domain/worldbook/release';
 import { request, transaction } from './idb';
 
 /**
@@ -373,6 +374,62 @@ export class WorldbookLibrary {
         const record: EnabledRecord = { bookId, enabledAt: (options.now ?? Date.now)() };
         await request(store.add(record));
         return { ok: true as const, enabled: true };
+      });
+    } catch (error) { return failureOf(error); }
+  }
+
+  /**
+   * 修改一本书的条目（停用 / 常驻），保存为新版本并替换旧版本：
+   * - 先读最近版本、在事务外生成新版本并计算哈希，再在一个事务里核对「最近版本没被别的页面改过」，
+   *   删除这本书的全部旧版本与摘要、写入新版本、更新书目；启用状态（按书 ID）保持不变；
+   * - 简化版不绑定存档，旧版本没有引用，所以直接删除，不占空间；
+   * - 没有实际变化时不写入。
+   */
+  async reviseBook(bookId: string, edits: Readonly<Record<string, EntryEdit>>, options: { now?: () => number; newId?: () => string } = {}):
+    Promise<{ ok: true; changed: boolean; release: WorldbookRelease; book: LibraryBook } | LibraryFailure> {
+    let base: { book: LibraryBook; release: WorldbookRelease };
+    try {
+      const read = await transaction(this.database, [BOOKS, RELEASES], 'readonly', async (tx) => {
+        const rawBook = await request(tx.objectStore(BOOKS).get(bookId));
+        if (rawBook === undefined) return null;
+        const book = readBook(rawBook);
+        const raw = await request(tx.objectStore(RELEASES).get([bookId, book.latestVersionId]));
+        if (raw === undefined) throw new LibraryAbort(fail('invalid', '书库中缺少这本书的最近版本。'));
+        return { book, release: readStored(raw).release };
+      });
+      if (!read) return fail('not_found', MESSAGES.not_found);
+      base = read;
+    } catch (error) { return failureOf(error); }
+    let revised: Awaited<ReturnType<typeof reviseRelease>>;
+    try { revised = await reviseRelease(base.release, edits, { newId: options.newId }); }
+    catch { return fail('invalid', MESSAGES.invalid); }
+    if (!revised.ok) return fail('not_found', '要修改的条目不在这本书里，可能书已在其他页面更新，请刷新。');
+    if (!revised.changed) return { ok: true, changed: false, release: base.release, book: base.book };
+    const release = revised.release;
+    const hashed = await hashWithinLimit(release, this.limits.maxCanonicalChars);
+    if (!hashed.ok) return hashed;
+    const now = (options.now ?? Date.now)();
+    try {
+      return await transaction(this.database, [RELEASES, SUMMARIES, BOOKS], 'readwrite', async (tx) => {
+        const releases = tx.objectStore(RELEASES), summaries = tx.objectStore(SUMMARIES), books = tx.objectStore(BOOKS);
+        const rawBook = await request(books.get(bookId));
+        if (rawBook === undefined) throw new LibraryAbort(fail('not_found', MESSAGES.not_found));
+        const current = readBook(rawBook);
+        if (current.latestVersionId !== base.book.latestVersionId)
+          throw new LibraryAbort(fail('version_conflict', '这本书刚在其他页面被修改过，请刷新后重试。'));
+        const old = (await request(summaries.index('bookId').getAll(bookId))).map(readSummary);
+        const all = (await request(summaries.getAll())).map(readSummary);
+        const total = all.reduce((sum, item) => sum + item.canonicalChars, 0) - old.reduce((sum, item) => sum + item.canonicalChars, 0);
+        if (all.length - old.length + 1 > this.limits.maxVersions || total + hashed.chars > this.limits.maxTotalCanonicalChars)
+          throw new LibraryAbort(fail('library_full', MESSAGES.library_full));
+        for (const key of await request(releases.index('bookId').getAllKeys(bookId))) await request(releases.delete(key));
+        for (const key of await request(summaries.index('bookId').getAllKeys(bookId))) await request(summaries.delete(key));
+        const record: StoredRelease = { release, bookId, versionId: release.versionId, contentHash: release.contentHash, installedAt: now };
+        await request(releases.add(record));
+        await request(summaries.add(toSummary(release, now, hashed.chars)));
+        const book: LibraryBook = { ...current, latestVersionId: release.versionId, versionCount: 1, updatedAt: now };
+        await request(books.put(book));
+        return { ok: true as const, changed: true, release, book };
       });
     } catch (error) { return failureOf(error); }
   }

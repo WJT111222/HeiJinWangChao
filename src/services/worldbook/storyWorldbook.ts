@@ -145,3 +145,31 @@ export async function prepareStoryWorldbook(
     return skipped('internal');
   }
 }
+
+export type WorldbookPreviewOutcome =
+  | { status: 'ok'; result: TriggerResult; via: 'worker' | 'main-thread' }
+  | { status: 'skipped'; reason: StorySkipReason; message: string };
+
+/** 触发预览用的固定参数：延迟视为已满足；概率条目用固定种子抽签（实际生成时可能不同）。 */
+export const PREVIEW_SETTINGS = { contextTokens: 32_000, storyRemainingTokens: 4_096, messageCount: 1_000_000, seed: 'preview' } as const;
+
+/**
+ * 触发预览（管理界面用）：把一段文字当作最新一条消息，看指定的书会触发哪些条目、每条为什么触发或没触发。
+ * 与正文共用同一个 Worker 与资源上限；不读写存档，不保存任何状态。
+ */
+export async function previewWorldbook(
+  books: readonly BookRef[], text: string, run: StoryWorldbookRun = {}, deps: Pick<StoryWorldbookDeps, 'host'> = {},
+): Promise<WorldbookPreviewOutcome> {
+  try {
+    if (run.signal?.aborted) return { status: 'skipped', reason: 'cancelled', message: SKIP_TEXT.cancelled };
+    const outcome = await (deps.host ?? defaultHost()).run({
+      books: [...books], messages: [text], contextTokens: PREVIEW_SETTINGS.contextTokens, storyRemainingTokens: PREVIEW_SETTINGS.storyRemainingTokens,
+      trigger: 'normal', messageCount: PREVIEW_SETTINGS.messageCount, timedState: EMPTY_TIMED_STATE, seed: PREVIEW_SETTINGS.seed, settings: undefined,
+    }, run);
+    if (outcome.status === 'ok') return { status: 'ok', result: outcome.result, via: outcome.via };
+    const skip = fromOutcome(outcome, []);
+    return skip.status === 'skipped' ? { status: 'skipped', reason: skip.reason, message: skip.message.replace('本次未使用玩家世界书', '预览未完成') } : { status: 'skipped', reason: 'internal', message: SKIP_TEXT.internal };
+  } catch {
+    return { status: 'skipped', reason: 'internal', message: '预览出错。' };
+  }
+}

@@ -83,3 +83,37 @@ export async function finishImport(input: FinishInput): Promise<WorldbookImportR
   // 以 candidate 为准：校验通过即可，避免 zod 复制对象后影响哈希覆盖的数据。
   return { ok: true, release: candidate, notices: all };
 }
+
+/** 玩家在王朝里对单个条目的修改：是否停用、是否常驻（否则按关键词唤醒）。 */
+export interface EntryEdit { disabled?: boolean; constant?: boolean }
+export type ReviseResult =
+  | { ok: true; changed: false }
+  | { ok: true; changed: true; release: WorldbookRelease }
+  | { ok: false; reason: 'unknown_entry'; entryId: string };
+
+/**
+ * 基于一个版本生成修改后的新版本（版本不可变，修改即新版本）：
+ * - 只改条目的 disabled / constant，其余字段、书级信息与原始来源原样保留，导出酒馆格式时体现修改；
+ * - 重新计算内容哈希；书 ID 不变，版本 ID 新生成；没有实际变化时不生成新版本。
+ */
+export async function reviseRelease(
+  release: WorldbookRelease, edits: Readonly<Record<string, EntryEdit>>, options: Pick<ImportOptions, 'newId'> = {},
+): Promise<ReviseResult> {
+  const known = new Set(release.entries.map((entry) => entry.entryId));
+  for (const entryId of Object.keys(edits)) if (!known.has(entryId)) return { ok: false, reason: 'unknown_entry', entryId };
+  let changed = false;
+  const entries = release.entries.map((entry) => {
+    const edit = Object.hasOwn(edits, entry.entryId) ? edits[entry.entryId] : undefined;
+    if (!edit) return entry;
+    const disabled = edit.disabled ?? entry.disabled, constant = edit.constant ?? entry.constant;
+    if (disabled === entry.disabled && constant === entry.constant) return entry;
+    changed = true;
+    return { ...entry, disabled, constant };
+  });
+  if (!changed) return { ok: true, changed: false };
+  const hash = await contentHash({ metadata: release.metadata, entries, source: release.source });
+  return {
+    ok: true, changed: true,
+    release: { ...release, versionId: (options.newId ?? (() => crypto.randomUUID()))(), versionLabel: '本地修改', contentHash: hash, entries },
+  };
+}
