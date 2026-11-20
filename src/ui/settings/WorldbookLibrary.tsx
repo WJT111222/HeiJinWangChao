@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ImportNotice } from '../../domain/worldbook/schema';
+import type { EntryEdit } from '../../domain/worldbook/release';
+import type { ImportNotice, WorldbookRelease } from '../../domain/worldbook/schema';
 import { MAX_ENABLED_BOOKS, WorldbookLibrary, type LibraryFailureCode, type ShelfBook } from '../../services/storage/worldbookLibrary';
 import { importIntoLibrary, type ImportOutcome } from '../../services/worldbook/libraryImport';
 import { STORY_WORLDBOOK_CONNECTED } from '../../services/worldbook/storyWorldbook';
 import { Feedback, type FeedbackLevel } from '../Feedback';
+import { WorldbookBookDetail } from './WorldbookBookDetail';
 import './worldbook-library.css';
 
 /**
- * 玩家世界书（简化版）：导入酒馆世界书、全局开关、删除。
+ * 玩家世界书（简化版）：导入酒馆世界书、全局开关、删除；点开一本书可查看条目、
+ * 单条启用 / 停用、选择关键词唤醒或常驻、导出、触发预览。
  * 启用状态对所有存档生效，保存在独立的世界书书库里，不改动存档；两本内置基础世界书不在这里，始终启用。
  */
 const LIBRARY_TEXT: Partial<Record<LibraryFailureCode, string>> = {
@@ -18,6 +21,7 @@ const LIBRARY_TEXT: Partial<Record<LibraryFailureCode, string>> = {
   library_full: '书库容量已满，请先删除不用的世界书。',
   quota: '浏览器存储空间不足，未导入。',
   not_found: '这本世界书已不在书库中，可能已在其他页面删除。',
+  version_conflict: '这本书刚在其他页面被修改过，已重新读取，请再改一次。',
   too_many_enabled: `最多同时启用 ${MAX_ENABLED_BOOKS} 本，请先关闭不用的。`,
 };
 const EFFECT = STORY_WORLDBOOK_CONNECTED ? '从下一次生成正文开始生效' : '正文接入完成后生效';
@@ -44,7 +48,9 @@ export function WorldbookLibraryPanel() {
   const [message, setMessage] = useState<{ level: FeedbackLevel; text: string } | null>(null);
   const [notices, setNotices] = useState<ImportNotice[]>([]);
   const [busy, setBusy] = useState(false);
-  const [confirming, setConfirming] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [release, setRelease] = useState<WorldbookRelease | null>(null);
+  const [dirty, setDirty] = useState(0);
   // 每次选择文件后换一个新的 input：再次选择同一个文件时也能触发导入。
   const [inputKey, setInputKey] = useState(0);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -67,6 +73,38 @@ export function WorldbookLibraryPanel() {
   }, [withLibrary]);
   useEffect(() => { void refresh(); }, [refresh]);
 
+  const selectedItem = books?.find((b) => b.book.bookId === selected) ?? null;
+  const selectedVersion = selectedItem?.book.latestVersionId ?? null;
+  useEffect(() => {
+    if (!selected || !selectedVersion) { setRelease(null); return; }
+    let live = true;
+    void withLibrary((library) => library.getRelease(selected, selectedVersion)).then((result) => {
+      if (!live || !mounted.current) return;
+      if (result.ok && result.release) setRelease(result.release);
+      else { setRelease(null); setMessage({ level: 'err', text: result.ok ? failureText('not_found') : failureText(result.code) }); }
+    });
+    return () => { live = false; };
+  }, [selected, selectedVersion, withLibrary]);
+  // 书被删除（本页或其他页面）后退出详情。
+  useEffect(() => { if (books && selected && !books.some((b) => b.book.bookId === selected)) setSelected(null); }, [books, selected]);
+
+  function select(bookId: string | null) {
+    if (bookId === selected) return;
+    if (dirty > 0) { setMessage({ level: 'warn', text: '当前这本书有未保存的修改，请先保存或放弃。' }); return; }
+    setSelected(bookId);
+  }
+
+  async function save(bookId: string, edits: Record<string, EntryEdit>): Promise<boolean> {
+    setBusy(true);
+    const result = await withLibrary((library) => library.reviseBook(bookId, edits));
+    if (!mounted.current) return false;
+    if (result.ok) setMessage({ level: 'ok', text: `已保存 ${Object.keys(edits).length} 条修改，${EFFECT}。` });
+    else setMessage({ level: 'err', text: failureText(result.code) });
+    await refresh();
+    if (mounted.current) setBusy(false);
+    return result.ok;
+  }
+
   async function importFile(file: File) {
     setBusy(true); setMessage({ level: 'info', text: `正在导入「${file.name}」…` }); setNotices([]);
     const controller = new AbortController();
@@ -86,6 +124,8 @@ export function WorldbookLibraryPanel() {
       setMessage(result);
       setNotices(outcome.notices.filter((n) => n.level !== 'info'));
       await refresh();
+      // 书目刷新之后再打开详情（否则会被「书已不存在」的检查立即关掉）。
+      if (outcome.ok && dirty === 0 && mounted.current) setSelected(outcome.summary.bookId);
     } catch {
       if (mounted.current) setMessage({ level: 'err', text: '读取文件失败。' });
     } finally {
@@ -104,7 +144,7 @@ export function WorldbookLibraryPanel() {
   }
 
   async function remove(book: ShelfBook) {
-    setConfirming(null); setBusy(true);
+    setBusy(true);
     const result = await withLibrary((library) => library.deleteBook(book.book.bookId));
     if (!mounted.current) return;
     setMessage(result.ok ? { level: 'ok', text: `已删除「${book.book.title}」。` } : { level: 'err', text: failureText(result.code) });
@@ -137,27 +177,32 @@ export function WorldbookLibraryPanel() {
       {books === null ? <p className="muted">正在读取书库…</p> : books.length === 0 ? (
         <p className="wb-empty muted">还没有导入任何世界书。</p>
       ) : (
-        <ul className="wb-list" aria-label="已导入的世界书">
-          {books.map((item) => (
-            <li key={item.book.bookId} className="wb-item" data-enabled={item.enabled || undefined}>
-              <div className="wb-info">
-                <strong>{item.book.title}</strong>
-                <small>{item.latest ? `${item.latest.entryCount} 条` : '摘要缺失'} · 导入于 {new Date(item.book.updatedAt).toLocaleDateString('zh-CN')}</small>
-              </div>
-              <label className="toggle">
-                <input type="checkbox" checked={item.enabled} disabled={busy} aria-label={`启用「${item.book.title}」`}
-                  onChange={(e) => void toggle(item, e.target.checked)} />
-                <span className="wb-state">{item.enabled ? '已启用' : '未启用'}</span>
-              </label>
-              {confirming === item.book.bookId ? (
-                <span className="wb-confirm">
-                  <button className="danger" disabled={busy} onClick={() => void remove(item)}>确认删除</button>
-                  <button disabled={busy} onClick={() => setConfirming(null)}>取消</button>
-                </span>
-              ) : <button disabled={busy} onClick={() => setConfirming(item.book.bookId)} aria-label={`删除「${item.book.title}」`}>删除</button>}
-            </li>
-          ))}
-        </ul>
+        <div className="wb-layout" data-view={selected ? 'detail' : 'list'}>
+          <ul className="wb-list" aria-label="已导入的世界书">
+            {books.map((item) => (
+              <li key={item.book.bookId} className="wb-item" data-enabled={item.enabled || undefined} data-selected={item.book.bookId === selected || undefined}>
+                <button className="wb-info" onClick={() => select(item.book.bookId)} aria-current={item.book.bookId === selected || undefined}>
+                  <strong>{item.book.title}</strong>
+                  <small>{item.latest ? `${item.latest.entryCount} 条` : '摘要缺失'} · {new Date(item.book.updatedAt).toLocaleDateString('zh-CN')}</small>
+                </button>
+                <label className="toggle">
+                  <input type="checkbox" checked={item.enabled} disabled={busy} aria-label={`启用「${item.book.title}」`}
+                    onChange={(e) => void toggle(item, e.target.checked)} />
+                </label>
+              </li>
+            ))}
+          </ul>
+          <div className="wb-pane">
+            {!selectedItem ? <p className="wb-empty muted wb-pick">选择左侧的一本书，查看和调整它的条目。</p>
+              : !release || release.versionId !== selectedItem.book.latestVersionId ? <p className="muted">正在读取条目…</p>
+                : <WorldbookBookDetail item={selectedItem} release={release} busy={busy}
+                  onSave={(edits) => save(selectedItem.book.bookId, edits)}
+                  onToggleBook={(enabled) => void toggle(selectedItem, enabled)}
+                  onDelete={() => void remove(selectedItem)}
+                  onBack={() => select(null)}
+                  onDirtyChange={setDirty} />}
+          </div>
+        </div>
       )}
       <p className="field-hint">
         {'说明：酒馆里的 Sticky / Cooldown（持续、冷却回合）设置会原样保存，但当前版本暂不生效；其余关键词、常驻、概率、分组照常判断。'}
