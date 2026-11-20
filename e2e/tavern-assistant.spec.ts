@@ -579,6 +579,8 @@ test('独立主脚本处理普通回合，截断参数不能覆盖原候选', as
     wires.push(route.request().postData()!);
     const ok = wires.length === 1;
     const content = '<正文>主角取出记事本核对资料。</正文><短期记忆>核对资料</短期记忆>';
+    if (wires.length === 3) return route.fulfill({json:{ choices:[{ message:{content:
+      '<正文>陌生人正在公园里练拳。</正文><短期记忆>公园练拳</短期记忆>'}, finish_reason:'stop' }] }});
     return route.fulfill({json:{ choices:[{ message:{ tool_calls:[{ type:'function', id:'call-one',
       function:{name:'actual_content', arguments:ok ? JSON.stringify({content}) : '{"content":"未写完'} }] },
       finish_reason:ok ? 'tool_calls' : 'length' }] }});
@@ -593,6 +595,7 @@ test('独立主脚本处理普通回合，截断参数不能覆盖原候选', as
     const [{StoryStage},{SaveRepository},{talentPromptInput},{newChannel,defaultAiConfig},{CredentialVault}] =
       await Promise.all(paths.map(path => import(path)));
     const input = talentPromptInput('story','regular');
+    input.userInput = '我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。';
     const repo = await SaveRepository.open();
     try {
       const draftPath = '/src/domain/drafts.ts';
@@ -610,13 +613,22 @@ test('独立主脚本处理普通回合，截断参数不能覆盖原候选', as
       const generate = (draft: typeof input.draft) => stage.generate({draft,config,vault,settings:input.settings});
       const saved = await generate(await repo.loadDraft(input.state.saveId));
       const failure = await generate(saved).catch((e:{ code:string }) => e.code);
+      const ignored = await generate(saved).then(() => 'saved', (e:{details?:{fieldPath?:string}}) => e.details?.fieldPath);
       localStorage.setItem('heijin.story-presets.v1',JSON.stringify({enabled:true,selected:'peinture-1118',packages:{}}));
       const stale = await generate(saved).catch((e:{details?:{fieldPath?:string}}) => e.details?.fieldPath);
-      return { text:saved.story.narrative, failure, stale, draftPreserved:JSON.stringify(await repo.loadDraft(input.state.saveId)) === JSON.stringify(saved),
+      return { text:saved.story.narrative, failure, ignored, stale, draftPreserved:JSON.stringify(await repo.loadDraft(input.state.saveId)) === JSON.stringify(saved),
         revision:(await repo.load(input.state.saveId)).revision, oldRevision:input.state.revision };
     } finally { repo.close(); }
   });
-  expect(result).toMatchObject({ text:'主角取出记事本核对资料。', failure:'output_limit', stale:'tavern.refresh_required', draftPreserved:true, revision:result.oldRevision });
-  expect(wires).toHaveLength(2);
-  expect(JSON.parse(wires[0]).tools[0].function.description).toContain('talent-history-0');
+  expect(result).toMatchObject({ text:'主角取出记事本核对资料。', failure:'output_limit', ignored:'tavern.native_delivery.response', stale:'tavern.refresh_required', draftPreserved:true, revision:result.oldRevision });
+  expect(wires).toHaveLength(3);
+  for (const wire of wires) {
+    const { messages, tools } = JSON.parse(wire);
+    expect(messages.at(-1)).toMatchObject({role:'user',content:expect.stringContaining('我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。')});
+    const world = messages.find((m: {role: string; content: string}) => m.role === 'user' && m.content.startsWith('<GAME_CONTEXT>'));
+    const facts = JSON.parse(world.content.slice('<GAME_CONTEXT>'.length, -'</GAME_CONTEXT>'.length));
+    expect(facts.TIME_PREFLIGHT.actionKind).toBe('none'); // Only classifies explicit passage of time.
+    expect(facts.MEMORY_CONTEXT.recentTurns.map((t: {turnId: string}) => t.turnId)).toContain('talent-history-0');
+    expect(tools[0].function.description).toContain('NPC_CONTEXT');
+  }
 });

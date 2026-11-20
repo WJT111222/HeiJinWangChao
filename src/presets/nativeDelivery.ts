@@ -1,4 +1,4 @@
-import { contextMessage } from '../prompts/context';
+import { contextMessage } from '../prompts/contextMessage';
 import type { AiMessage } from '../services/ai/protocols';
 import { AiError } from '../services/ai/errors';
 
@@ -6,16 +6,30 @@ import { AiError } from '../services/ai/errors';
 const begin = '[[WAVE_CONTEXT_BEGIN_07_8d2c91]]';
 const end = '[[WAVE_CONTEXT_END_07_8d2c91]]';
 
+export const nativeOutputTool = 'actual_content';
+
 export function deliveryContext(context: Record<string, unknown>): AiMessage[] {
-  const { SAVE_STATE, NPC_CONTEXT, CREATION_PROFILE, MEMORY_CONTEXT, PLAYER_ACTION, ...instructions } = context;
-  const { summaryPolicy, ...memories } = MEMORY_CONTEXT as Record<string, unknown>;
+  const { NPC_CONTEXT, MEMORY_CONTEXT, PLAYER_ACTION, ...current } = context;
+  const { policy, ...npcIndex } = NPC_CONTEXT as Record<string, unknown>;
+  const { recalledTurns, recallDiagnostics, ...memory } = MEMORY_CONTEXT as Record<string, unknown>;
   return [
-    { role: 'user', content: contextMessage({ ...instructions, MEMORY_CONTEXT: { summaryPolicy } }) },
+    { role: 'user', content: contextMessage({ ...current, NPC_CONTEXT: { policy }, MEMORY_CONTEXT: memory }) },
     { role: 'user', content: begin },
-    { role: 'user', content: contextMessage({ SAVE_STATE, NPC_CONTEXT, CREATION_PROFILE, MEMORY_CONTEXT: memories }) },
-    { role: 'user', content: contextMessage({ PLAYER_ACTION }) },
+    { role: 'user', content: contextMessage({ NPC_CONTEXT: npcIndex, MEMORY_CONTEXT: { recalledTurns, recallDiagnostics } }) },
     { role: 'user', content: end },
+    { role: 'user', content: contextMessage({ PLAYER_ACTION }) },
   ];
+}
+
+/** Called after the page script has appended its delivery instructions, before protocol conversion. */
+export function finalizeNativeDelivery(messages: AiMessage[], tools: ReadonlySet<string>, action: string): AiMessage[] {
+  if (!tools.has('wave_context_reference') || !tools.has(nativeOutputTool))
+    throw new AiError('unsupported', undefined, { fieldPath: 'tavern.native_delivery.tools' });
+  const content = contextMessage({ PLAYER_ACTION: action });
+  const others = messages.filter(message => !(message.role === 'user' && message.content === content));
+  if (others.length !== messages.length - 1)
+    throw new AiError('configuration', undefined, { fieldPath: 'tavern.native_delivery.action' });
+  return [...others, { role: 'user', content: '本回合玩家行动以以下 PLAYER_ACTION 为准。资料工具只补充背景，时间预检只判断时间安排。按既定正文协议回应。\n' + content }];
 }
 
 export function checkDeliveryBoundaries(messages: readonly AiMessage[]) {

@@ -1,5 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { AiError } from '../services/ai/errors';
+import { contextMessage } from '../prompts/context';
 import { AiClient } from '../services/ai/client';
 import { newChannel, type Protocol } from '../services/ai/configuration';
 import { channelSnapshot } from '../services/ai/snapshot';
@@ -106,6 +107,64 @@ describe.each(['openai', 'deepseek', 'gemini', 'anthropic'] as const)('%s 虚拟
     else expect(result.tool_choice).toEqual(choice);
   });
 });
+const action = '联系仓库负责人，核对“手机”与 <货单>。\n 保留空格 ';
+const actionMessage = {role: 'user' as const, content: contextMessage({PLAYER_ACTION: action})};
+const deliveryNames = ['wave_context_reference', 'actual_content'];
+function nativeHook(names: string[], choice: 'auto' | 'none' = 'auto') {
+  return tavernEvents.on('chat_completion_settings_ready', data => {
+    data.tools = names.map(name => ({type: 'function', function: {...tool.function, name}}));
+    data.tool_choice = choice;
+  });
+}
+
+it.each([
+  { names: ['actual_content'], action, path: 'tools' },
+  { names: ['wave_context_reference'], action, path: 'tools' },
+  { names: deliveryNames, action, path: 'tools', disabled: true },
+  { names: deliveryNames, action: '另一草稿', path: 'action' },
+])('独立交付缺声明或行动不匹配时在传输前拒绝 $path', async row => {
+  const fetcher = vi.fn<typeof fetch>();
+  const hook = nativeHook(row.names, row.disabled ? 'none' : 'auto');
+  try {
+    await expect(new AiClient(fetcher).generate(snapshot('openai'), [actionMessage], {
+      tavernType: 'normal', nativeDeliveryAction: row.action,
+    })).rejects.toMatchObject({details: {fieldPath: 'tavern.native_delivery.' + row.path}});
+    expect(fetcher).not.toHaveBeenCalled();
+  } finally { hook.stop(); }
+});
+
+it.each([false, true])('独立交付只接受可核对的上游正文；stream=%s', async stream => {
+  const fetcher = vi.fn<typeof fetch>();
+  const hook = nativeHook(deliveryNames);
+  // The wrapper returns the same candidate in every case; only original upstream evidence changes.
+  wrap(async response => {
+    await response.text();
+    return Response.json({choices: [{message: {content: text}, finish_reason: 'stop'}]});
+  });
+  try {
+    const run = () => new AiClient(fetcher).generate(snapshot('openai'), [actionMessage], {
+      tavernType: 'regenerate', stream, nativeDeliveryAction: action,
+    });
+    for (const [name, carried, expected] of [
+      [undefined, undefined, false], ['other', text, false], ['actual_content', '不同正文', false],
+      ['actual_content', undefined, false], ['actual_content', text, true],
+    ] as const) {
+      const message = {content: text, ...(name ? {tool_calls: [{...toolCall, index: 0,
+        function: {name, arguments: JSON.stringify({content: carried})}}]} : {})};
+      const choice = { [stream ? 'delta' : 'message']: message, finish_reason: name ? 'tool_calls' : 'stop' };
+      fetcher.mockResolvedValueOnce(stream ? sse(frame({choices: [choice]}) + 'data: [DONE]\n\n') : Response.json({choices: [choice]}));
+      if (expected) await expect(run()).resolves.toMatchObject({text});
+      else await expect(run()).rejects.toMatchObject({code: 'unsupported', details: {fieldPath: 'tavern.native_delivery.response'}});
+    }
+    expect(fetcher).toHaveBeenCalledTimes(5);
+    for (const [, init] of fetcher.mock.calls) {
+      const last = JSON.parse(String(init?.body)).messages.at(-1);
+      expect(last.role).toBe('user');
+      expect(last.content).toContain(actionMessage.content);
+    }
+  } finally { hook.stop(); }
+});
+
 it('真实上游中断不能被包装器替换为成功；失败不会触发协调器自动重试', async () => {
   const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(sse(frame({ choices: [{ delta: { content: '半截' } }] })))
     .mockResolvedValueOnce(Response.json({ error: {} }, { status: 503 }));

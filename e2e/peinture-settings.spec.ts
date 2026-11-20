@@ -11,9 +11,12 @@ const pack = 'peinture-1118';
 const envelope =
   '<正文>船靠岸了，林舟沿着石阶往上走。</正文><短期记忆>林舟上岸</短期记忆><变量规划>[]</变量规划>';
 const toolName = 'actual_content';
-const args = { content: envelope };
+const playerAction = '我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。';
+const warehouseStory = '林舟拿起手机，向仓库负责人询问这批货物的具体位置。';
+const warehouseEnvelope = '<正文>' + warehouseStory + '</正文><短期记忆>林舟致电仓库</短期记忆><变量规划>[]</变量规划>';
 
-function upstream(protocol: Protocol, stream: boolean) {
+function upstream(protocol: Protocol, stream: boolean, content = envelope) {
+  const args = { content };
   const event = (value: unknown) => 'data: ' + JSON.stringify(value) + '\n\n';
   let full: unknown;
   let sse: string;
@@ -61,7 +64,7 @@ function upstream(protocol: Protocol, stream: boolean) {
 }
 
 // Synthetic save and opening draft produced with game() and createTurnDraft(); no production test hooks.
-async function prepare(page: Page, protocol: Protocol, stream: boolean, active: boolean, actionOptions = false) {
+async function prepare(page: Page, protocol: Protocol, stream: boolean, active: boolean, actionOptions = false, action?: string) {
   const sent: string[] = [];
   await page.route('**/*', (route) => {
     const u = new URL(route.request().url());
@@ -85,7 +88,7 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
             ],
           },
         });
-      return route.fulfill(upstream(protocol, stream));
+      return route.fulfill(upstream(protocol, stream, action === playerAction ? warehouseEnvelope : envelope));
     }
     return ['localhost', '127.0.0.1'].includes(u.hostname) || u.protocol === 'blob:'
       ? route.continue()
@@ -94,7 +97,7 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
   await page.goto('/');
   await page.getByRole('button', { name: '设置', exact: true }).first().waitFor();
   await page.evaluate(
-    async ({ fixture, protocol, stream, active, pack, actionOptions }) => {
+    async ({ fixture, protocol, stream, active, pack, actionOptions, action }) => {
       const db = await new Promise<IDBDatabase>((ok, fail) => {
         const request = indexedDB.open('heijinwangchao');
         request.onsuccess = () => ok(request.result);
@@ -104,6 +107,7 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
         const tx = db.transaction(['saves', 'drafts'], 'readwrite');
         for (const { name, records } of fixture.rows)
           for (const value of records) {
+            if ('userInput' in value && action !== undefined) value.userInput = action;
             tx.objectStore(name).put(value);
             const other = structuredClone(value);
             other.saveId = 'peinture-second';
@@ -129,12 +133,12 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
           JSON.stringify({ enabled: true, selected: pack, packages: {} }),
         );
     },
-    { fixture, protocol, stream, active, pack, actionOptions },
+    { fixture, protocol, stream, active, pack, actionOptions, action },
   );
   await page.reload();
   return sent;
 }
-async function generate(page: Page, id = 'peinture-smoke') {
+async function generate(page: Page, id = 'peinture-smoke', expected = '船靠岸了，林舟沿着石阶往上走。') {
   await page.goto('/#game/' + id);
   await openGameTools(page);
   await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
@@ -155,7 +159,7 @@ async function generate(page: Page, id = 'peinture-smoke') {
         }
       }, id),
     )
-    .toBe('船靠岸了，林舟沿着石阶往上走。');
+    .toBe(expected);
 }
 async function copyStoryReport(page: Page, mobileFailure = false) {
   if (mobileFailure) {
@@ -205,7 +209,7 @@ async function applyMode(page: Page, dialog: Locator) {
 }
 for (const protocol of ['openai','deepseek','gemini','anthropic'] as const) {
   for (const stream of [false, true]) test('原生交付使用渠道参数并保存正文 ' + protocol + (stream ? ' SSE' : ' JSON'), async ({ page }, info) => {
-    const sent = await prepare(page, protocol, stream, false);
+    const sent = await prepare(page, protocol, stream, false, false, playerAction);
     await page.evaluate(() => {
       const config = JSON.parse(localStorage.getItem('heijin.ai.v1')!);
       config.channels[0].parameters.temperature = 0;
@@ -219,14 +223,34 @@ for (const protocol of ['openai','deepseek','gemini','anthropic'] as const) {
     await expect(frames).toHaveCount(1);
     await expect(frames).toHaveAttribute('data-tavern-script', controls.mainScript);
     expect(sent).toHaveLength(0);
-    await generate(page);
+    await generate(page, 'peinture-smoke', warehouseStory);
     expect(sent).toHaveLength(1);
     const body = JSON.parse(sent[0]);
     const tools = protocol === 'gemini' ? body.tools[0].functionDeclarations
       : protocol === 'anthropic' ? body.tools : body.tools.map((t: {function: unknown}) => t.function);
     const names = tools.map((t: {name: string}) => t.name);
     expect(names).toEqual(['wave_context_reference', toolName]);
-    expect(tools[0].description).toContain('林舟');
+    const choice = body.toolConfig?.functionCallingConfig.mode ?? body.tool_choice?.type ?? body.tool_choice;
+    expect(choice).toBe(protocol === 'gemini' ? 'AUTO' : 'auto');
+    const schema = tools[1].parameters ?? tools[1].parametersJsonSchema ?? tools[1].input_schema;
+    expect(schema).toMatchObject({type: 'object', properties: {content: {type: 'string'}}, required: ['content']});
+    const outgoing = body.messages ?? body.contents;
+    const last = outgoing.at(-1);
+    expect(last.role).toBe('user');
+    const lastText = last.parts?.[0].text ?? last.content;
+    expect(lastText).toContain(playerAction);
+    const actionJson = lastText.match(/<GAME_CONTEXT>\s*([\s\S]*?)\s*<\/GAME_CONTEXT>/u)?.[1];
+    expect(JSON.parse(actionJson)).toEqual({ PLAYER_ACTION: playerAction });
+    expect(tools[0].description).not.toContain(playerAction);
+    expect(tools[0].description).toContain('NPC_CONTEXT');
+    const current = outgoing.find((m: {role: string; content?: string; parts?: {text:string}[]}) =>
+      m.role === 'user' && (m.parts?.[0]?.text ?? m.content)?.startsWith('<GAME_CONTEXT>'));
+    const currentText = current.parts?.[0].text ?? current.content;
+    const facts = JSON.parse(currentText.slice('<GAME_CONTEXT>'.length, -'</GAME_CONTEXT>'.length));
+    expect(facts.SAVE_STATE.protagonist.name).toBe('林舟');
+    expect(facts.CREATION_PROFILE.protagonist).toEqual(facts.SAVE_STATE.protagonist);
+    expect(facts.MEMORY_CONTEXT.recentTurns).toEqual([]);
+    expect(facts.NPC_CONTEXT.policy).toBeTruthy();
     expect(tools[0].description).not.toContain('NPC_KNOWLEDGE_POLICY');
     const messages = JSON.stringify(body.messages ?? body.contents);
     expect(messages).toContain('NPC_KNOWLEDGE_POLICY');
@@ -236,7 +260,9 @@ for (const protocol of ['openai','deepseek','gemini','anthropic'] as const) {
     const maxOutput = body.generationConfig?.maxOutputTokens ?? body.max_completion_tokens ?? body.max_tokens;
     expect(maxOutput).toBe(8192);
     await info.attach('native-delivery-wire', { contentType: 'application/json',
-      body: JSON.stringify({ protocol, stream, names, calls: sent.length, temperature, maxOutput, candidate: 'saved' }) });
+      body: JSON.stringify({ protocol, stream, names, choice, calls: sent.length, temperature, maxOutput,
+        lastRole: last.role, boundActionMatches: JSON.parse(actionJson).PLAYER_ACTION === playerAction,
+        ordinaryWorldState: Boolean(facts.SAVE_STATE), candidate: 'saved' }) });
   });
 }
 

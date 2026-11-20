@@ -89,6 +89,9 @@ const messages: Record<AiErrorCode, string> = {
 const presetMessages = new Map<string, string>([
   ['tavern.refresh_required', '正文模式已在其他页面变更，请刷新后再生成。'],
   ['tavern.context_boundary', '正文资料与交付标记冲突，本次未发送。'],
+  ['tavern.native_delivery.tools', '未能准备本次正文所需的工具。请关闭破甲模式或检查渠道后再生成。'],
+  ['tavern.native_delivery.action', '本回合的玩家行动与草稿不一致，本次未发送。'],
+  ['tavern.native_delivery.response', '渠道未返回可核对的正文工具结果，本次未保存。可关闭破甲模式后手动生成。'],
   ['tavern.initialization', '预设脚本初始化失败，可到运行设置查看实例状态。'],
   ['tavern.wrapper', '预设脚本处理响应时出错。'],
   ['tavern.wrapper.http', '预设脚本返回了失败响应。'],

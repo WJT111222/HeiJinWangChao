@@ -133,7 +133,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     ...options,
     tavernType: scripted ? type : undefined,
     presetSampling: prompt.preset?.sampling,
-    nativeStorySampling: presetSelection === nativeDeliveryId,
+    nativeDeliveryAction: presetSelection === nativeDeliveryId ? captured.userInput : undefined,
     // Only Story may evaluate a complete limit response; other stages remain strict.
     validateStoryOutputLimit: captured.stage === 'story',
     onResponseDiagnostics: (value) => {
