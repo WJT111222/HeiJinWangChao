@@ -153,3 +153,107 @@ for (const [source, content, module] of [
     expect(JSON.stringify(result)).not.toContain(privateText);
   });
 }
+
+test('初始化失败清理后，已等待的 iframe 任务不能恢复注册', async ({ page }) => {
+  await openPreset(page, [{
+    id: 'a-abandoned', name: '失效脚本', module: true,
+    content: `
+      const host = parent;
+      const { eventOn: listen, eventEmit: emit, registerFunctionTool: register,
+        unregisterFunctionTool: unregister, appendInexistentScriptButtons: addButtons } = TavernHelper;
+      const counters = host.document.body.dataset;
+      const onEvent = () => { counters.failedListenerCalls = String(Number(counters.failedListenerCalls || 0) + 1); };
+      const tool = (name, description) => ({ name, description, parameters: { type: 'object' } });
+      listen('fixture:lifecycle', onEvent);
+      register(tool('fixture_removed', '待清理'));
+      register(tool('fixture_shared', '旧定义'));
+      const wait = new host.Promise(resolve => { host.finishAbandonedInit = resolve; });
+
+      $(async () => {
+        counters.abandonedJobStarted = 'yes';
+        await wait;
+        // Cache API references before waiting. Detached iframe tasks can still hold them.
+        const operations = [
+          () => listen('fixture:lifecycle', onEvent),
+          () => listen('fixture:lifecycle', onEvent),
+          () => register(tool('fixture_restored', '迟到定义')),
+          () => register(tool('fixture_shared', '迟到覆盖')),
+          () => unregister('fixture_healthy'),
+          () => addButtons([{ name: '迟到按钮', visible: true }]),
+          () => emit('fixture:lifecycle'),
+        ];
+        const results = [];
+        for (const run of operations) {
+          try { await run(); results.push('registered'); }
+          catch (error) { results.push(error.message); }
+        }
+        counters.abandonedJobResults = JSON.stringify(results);
+      });
+
+      await new Promise(resolve => { host.failAbandonedInit = resolve; });
+      void Promise.reject(new Error(${JSON.stringify(privateText + ' / ' + narrative)}));
+      await wait;
+    `,
+  }, {
+    id: 'b-healthy', name: '有效脚本', module: true,
+    content: `
+      eventOn('fixture:lifecycle', () => {
+        const counters = parent.document.body.dataset;
+        counters.healthyListenerCalls = String(Number(counters.healthyListenerCalls || 0) + 1);
+      });
+      registerFunctionTool({ name: 'fixture_shared', description: '有效定义', parameters: { type: 'object' } });
+      registerFunctionTool({ name: 'fixture_healthy', description: '独立定义', parameters: { type: 'object' } });
+      appendInexistentScriptButtons([{ name: '正常按钮', visible: true }]);
+    `,
+  }]);
+
+  await page.waitForFunction(() => document.body.dataset.abandonedJobStarted === 'yes' && 'failAbandonedInit' in window);
+  const read = () => page.evaluate(async () => {
+    const hostPath = '/src/presets/tavern/hostState.ts', eventsPath = '/src/presets/tavern/events.ts';
+    const { assistantView } = await import(hostPath);
+    const { tavernTools } = await import(eventsPath);
+    return {
+      rows: structuredClone(assistantView.snapshot()),
+      tools: tavernTools.tools.map(({ name, description }: { name: string; description: string }) => ({ name, description })),
+    };
+  });
+  const during = await read();
+  expect(during.tools.map((tool: { name: string }) => tool.name)).toContain('fixture_removed');
+  await page.evaluate(async () => {
+    const path = '/src/presets/tavern/hostState.ts';
+    const { startAssistant } = await import(path);
+    (window as unknown as { failAbandonedInit(): void }).failAbandonedInit();
+    await startAssistant().catch(() => undefined);
+  });
+  await expect(page.locator('iframe[data-tavern-script="a-abandoned"]')).toHaveCount(0);
+  const cleaned = await read();
+  expect(cleaned.rows).toEqual([
+    expect.objectContaining({ id: 'a-abandoned', status: '出错', error: expect.stringContaining('初始化失败'), buttons: [] }),
+    expect.objectContaining({ id: 'b-healthy', status: '已初始化', buttons: [{ name: '正常按钮', visible: true }] }),
+  ]);
+  expect(cleaned.tools).toEqual([
+    { name: 'fixture_shared', description: '有效定义' },
+    { name: 'fixture_healthy', description: '独立定义' },
+  ]);
+
+  await page.evaluate(() => (window as unknown as { finishAbandonedInit(): void }).finishAbandonedInit());
+  await expect(page.locator('body')).toHaveAttribute('data-abandoned-job-results', /.+/u);
+  const after = await read();
+  expect.soft(after.tools).toEqual(cleaned.tools);
+  expect.soft(after.rows).toEqual(cleaned.rows);
+  const calls = await page.evaluate(async () => {
+    const path = '/src/presets/tavern/events.ts';
+    const { tavernEvents } = await import(path);
+    await tavernEvents.emit('fixture:lifecycle');
+    const { failedListenerCalls, healthyListenerCalls } = document.body.dataset;
+    return { failed: Number(failedListenerCalls ?? 0), healthy: Number(healthyListenerCalls ?? 0) };
+  });
+  expect.soft(calls).toEqual({ failed: 0, healthy: 1 });
+  await expect.soft(page.locator('body')).toHaveAttribute('data-abandoned-job-results', JSON.stringify(Array(7).fill('脚本实例已停止')), { timeout: 1000 });
+
+  const result = await generate(page);
+  expect(result).toMatchObject({ first: 'tavern.initialization', calls: 0, rows: cleaned.rows });
+  expect(result.story).toBeUndefined();
+  expect(JSON.stringify(result)).not.toContain(privateText);
+  expect(JSON.stringify(result)).not.toContain(narrative);
+});

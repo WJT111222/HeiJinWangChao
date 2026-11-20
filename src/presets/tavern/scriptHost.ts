@@ -22,13 +22,19 @@ export function scriptOrder(nodes: LoadedPreset['scripts'], enabled = true): Scr
 }
 type Callback = (...args: unknown[]) => unknown;
 type ReportScriptError = (source: string, error: unknown) => void;
-function instanceEvents(report: ReportScriptError) {
+function requireActive(active: boolean) {
+  if (!active) throw new Error('脚本实例已停止');
+}
+
+function instanceEvents(isActive: () => boolean, report: ReportScriptError) {
   const owned = new Set<{ key: string; fn: Callback; stop(): void }>();
   const clear = (key?: string) => { for (const row of [...owned]) if (!key || key === row.key) row.stop(); };
   const remove = (key: string, fn: Callback) => [...owned].find(row => row.key === key && row.fn === fn)?.stop();
   function on(key: string, fn: Callback, order?: 'first' | 'last' | 'once') {
+    requireActive(isActive());
     if (order === 'first' || order === 'last') remove(key, fn);
     const handle = tavernEvents.on(key, (...args) => {
+      if (!isActive()) return;
       if (order === 'once') row.stop();
       return fn(...args);
     }, order, error => report('事件 ' + tavernEventName(key), error));
@@ -38,8 +44,15 @@ function instanceEvents(report: ReportScriptError) {
   }
   return { eventOn: on, eventOnce: (k: string, f: Callback) => on(k,f,'once'),
     eventMakeFirst: (k: string, f: Callback) => on(k,f,'first'), eventMakeLast: (k: string, f: Callback) => on(k,f,'last'),
-    eventRemoveListener: remove, eventClearAll: clear, eventEmit: tavernEvents.emit.bind(tavernEvents),
-    eventEmitAndWait: tavernEvents.emitAndWait.bind(tavernEvents) };
+    eventRemoveListener: remove, eventClearAll: clear,
+    async eventEmit(key: string, ...args: unknown[]) {
+      requireActive(isActive());
+      await tavernEvents.emit(key, ...args);
+    },
+    eventEmitAndWait(key: string, ...args: unknown[]) {
+      requireActive(isActive());
+      tavernEvents.emitAndWait(key, ...args);
+    } };
 }
 type Registration = FunctionTool['function'] & { shouldRegister?: () => boolean | Promise<boolean> };
 async function preview(type: string, _options: unknown, dryRun: boolean) {
@@ -51,16 +64,19 @@ async function preview(type: string, _options: unknown, dryRun: boolean) {
 }
 function instanceApi(script: Script, row: ScriptInstance, preset: LoadedPreset, config: ReturnType<typeof runtimePreset>,
   vars: ReturnType<ReturnType<typeof variableStore>>, realm: Window, report: ReportScriptError) {
-  const events = instanceEvents((source, error) => {
+  let active = true;
+  const events = instanceEvents(() => active, (source, error) => {
     // During startup the error only blocks initialization if it escapes a startup task.
-    if (row.status === '已初始化') report(source, error);
+    if (active && row.status === '已初始化') report(source, error);
   });
   const ownedTools = new Map<string, Registration>();
   function unregisterFunctionTool(name: string) {
+    requireActive(active);
     tavernTools.unregister(name);
     ownedTools.delete(name);
   }
   function registerFunctionTool(spec: Registration) {
+    requireActive(active);
     if (!spec.name || !spec.parameters) throw new Error('无效工具声明');
     const tool = { ...spec, toFunctionOpenAI(): FunctionTool {
       const { name, description, parameters, strict } = this;
@@ -82,12 +98,14 @@ function instanceApi(script: Script, row: ScriptInstance, preset: LoadedPreset, 
     saveSettingsDebounced: config.saveSettingsDebounced, name1: currentStoryContext()?.state.protagonist.name,
     chatId: currentStoryContext()?.state.saveId, chat: storyFloors().map(f => ({ name: f.name, is_user: f.role === 'user', mes: f.message })) });
   const builtin = { promptManager: { render() {
+    requireActive(active);
     const count = config.getPreset().prompts.filter(p => p.enabled).length;
     row.phases['预设'] = '已启用 ' + count + ' 个条目';
     assistantView.publish();
   } } };
   let buttons = structuredClone(script.button?.buttons ?? []);
   const replaceButtons = (items: unknown) => {
+    requireActive(active);
     buttons = buttonsSchema.parse(items);
     row.buttons = script.button?.enabled === false ? [] : buttons.filter(b => b.visible);
     assistantView.publish();
@@ -112,23 +130,45 @@ function instanceApi(script: Script, row: ScriptInstance, preset: LoadedPreset, 
       return start === undefined || end === undefined ? [] : floors.slice(start,end+1);
     },
     generateRaw() { throw new Error('不支持由脚本发送正式模型请求'); },
-    reportScriptPhase(part: string, state: string) { row.phases[part] = state; assistantView.publish(); },
+    reportScriptPhase(part: string, state: string) {
+      requireActive(active);
+      row.phases[part] = state;
+      assistantView.publish();
+    },
   };
-  const notify = (message: string) => { row.phases['提示'] = String(message).slice(0,220); assistantView.publish(); };
+  const notify = (message: string) => {
+    requireActive(active);
+    row.phases['提示'] = String(message).slice(0,220);
+    assistantView.publish();
+  };
   // The parent jQuery uses the game document as its default selector context.
   const readyJobs: Promise<unknown>[] = [];
   const scopedJquery = new Proxy(jquery, { apply(target, receiver, args) {
     if (typeof args[0] !== 'function') return Reflect.apply(target, receiver, args);
+    requireActive(active);
     const callback = args[0];
-    const job = Promise.resolve(jquery.ready).then(() => callback.call(document, scopedJquery))
+    const job = Promise.resolve(jquery.ready).then(() => {
+      if (active) return callback.call(document, scopedJquery);
+    })
       .catch(error => report('jQuery ready 任务失败', error));
     if (row.status === '加载中') readyJobs.push(job);
     return jquery(document);
   } });
   Object.assign(realm, api, { TavernHelper: api, SillyTavern: { getContext: context }, tavern_events: names, event_types: names,
     $: scopedJquery, jQuery: scopedJquery, _: lodash, toastr: { info: notify, warning: notify, success: notify, error: notify } });
-  return { cleanup() { events.eventClearAll(); for (const [name,tool] of ownedTools) if (tavernTools.tools.includes(tool)) unregisterFunctionTool(name); },
-    async ready() { for (const job of readyJobs) await job; readyJobs.length = 0; } };
+  return {
+    cleanup() {
+      if (!active) return;
+      // Detached iframe jobs can still hold these API functions. Revoke them before removing resources.
+      active = false;
+      events.eventClearAll();
+      for (const [name, tool] of ownedTools) if (tavernTools.tools.includes(tool)) tavernTools.unregister(name);
+      ownedTools.clear();
+      row.buttons = [];
+      readyJobs.length = 0;
+    },
+    async ready() { for (const job of readyJobs) await job; readyJobs.length = 0; },
+  };
 }
 
 const errorKinds = new Set(['Error', 'TypeError', 'ReferenceError', 'SyntaxError', 'RangeError', 'URIError', 'AbortError', 'AggregateError']);
