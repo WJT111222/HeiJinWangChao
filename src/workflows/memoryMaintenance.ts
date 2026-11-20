@@ -1,8 +1,8 @@
 import { DataError, requireData } from '../domain/common';
 import type { GameState } from '../domain/state';
 import { fingerprint } from '../domain/commands';
-import { planNpcSummary, npcSummaryInput, parseNpcSummary } from '../domain/memories/npcMemory';
-import { planCompression, compressionInput, parseCompression, memoryTask, compressionPolicy } from '../domain/memories/compression';
+import { npcSummaryCandidates, planNpcSummary, npcSummaryInput, parseNpcSummary } from '../domain/memories/npcMemory';
+import { compressionCandidates, planCompression, compressionInput, parseCompression, memoryTask, compressionPolicy, sourceUnion } from '../domain/memories/compression';
 import { selectPromptModules } from '../prompts/selection';
 import { readPromptResource } from '../prompts/loader';
 import { contextMessage } from '../prompts/context';
@@ -17,12 +17,14 @@ import { defaultSummaryConfig, SummaryConfigSchema } from '../domain/memories/co
 import type { SummaryConfig, SummaryKind } from '../domain/memories/configuration';
 import { AiError } from '../services/ai/errors';
 
+import {
+  authorizedSources, hasLegacySummaryFingerprint, legacyBatchMismatchMessage, legacyBatchUnverifiableMessage,
+  pendingFor, SummaryRecords, summaryErrorCode, unconfirmedSummaryMessage,
+} from './memorySummaryRecords';
+import type { PendingSummary } from './memorySummaryRecords';
+export { summaryAttemptKey } from './memorySummaryRecords';
+
 export type MemoryLock = <T>(saveId: string, work: () => Promise<T>) => Promise<T>;
-// The legacy ledger stores a result ID, not an epoch or a reliable request outcome.
-// Never infer from an undo that a possibly paid attempt may be retried automatically.
-export const unconfirmedSummaryMessage = '此类总结有尚未确认保存的请求，可能已计费。撤回、刷新或发送行动不会自动重试；请手动重新生成或暂停本项自动总结。';
-export const summaryAttemptKey = (state: GameState, kind: SummaryKind | undefined) =>
-  `heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`;
 export const browserMemoryLock: MemoryLock = async (saveId, work) => {
   if (typeof navigator === 'undefined' || !navigator.locks)
     throw new DataError('MEMORY_LOCK_UNAVAILABLE', '浏览器不支持安全跨标签互斥，未发起记忆请求');
@@ -39,91 +41,151 @@ export class MemoryMaintenance {
     if (this.active?.saving) return false;
     this.active?.controller.abort(); return true;
   }
-  async run(input: { saveId: string; config: AiConfig; vault: CredentialVault; timeoutSeconds: number; task?: 'public' | 'npc'; npcId?: string;
+  async reconcile(saveId: string, storage: Pick<Storage, 'getItem' | 'setItem'>) {
+    await this.lock(saveId, async () => {
+      const { state } = await this.repository.loadMemoryContext(saveId);
+      new SummaryRecords(storage, state).recover();
+    });
+  }
+  async run(input: { saveId: string; config: AiConfig | (() => AiConfig); vault: CredentialVault; timeoutSeconds: number; task?: 'public' | 'npc'; npcId?: string;
     kind?: SummaryKind; summaryConfig?: SummaryConfig; immediate?: boolean; attempts?: Pick<Storage, 'getItem' | 'setItem'>; automatic?: boolean;
+    retryId?: string; readSettings?: () => { summaryConfig: SummaryConfig; timeoutSeconds: number };
     onPhase?: (phase: 'generating' | 'saving') => void }): Promise<GameState | undefined> {
     const frozenConfig = input.summaryConfig ? SummaryConfigSchema.parse(structuredClone(input.summaryConfig)) : undefined;
     if (this.active) throw new DataError('MEMORY_BUSY', '记忆维护已在运行');
     const attempt = { controller: new AbortController(), saving: false };
     this.active = attempt;
     const check = () => { if (attempt.controller.signal.aborted) throw new AiError('cancelled'); };
+    const kind = input.kind ?? (input.task === 'npc' ? 'npc' : undefined);
+    const npcId = input.npcId;
+    const currentSettings = () => input.readSettings?.() ?? { summaryConfig: frozenConfig, timeoutSeconds: input.timeoutSeconds };
+    const candidates = (state: GameState) => kind === 'npc' && npcId ? npcSummaryCandidates(state, npcId) :
+      kind === 'short' || kind === 'medium' ? compressionCandidates(state, kind) : [];
+    const selectRetry = (records: SummaryRecords | undefined, state: GameState) => {
+      if (!records || !kind) return;
+      const blocked = pendingFor(records, kind, candidates(state));
+      if (input.retryId) {
+        const pending = blocked.find(item => item.retryId === input.retryId);
+        const canAuthorize = pending && blocked.every(item => item === pending ||
+          (!pending.legacy && item.legacy && (!item.npcId || item.npcId === npcId)));
+        requireData(input.immediate && pending && canAuthorize && (!pending.npcId || pending.npcId === npcId) &&
+          (!pending.identityKey || (npcId && state.npc[npcId]?.identityKey === pending.identityKey)),
+        'MEMORY_RETRY_CHANGED', '待确认请求已变化，请重新核对。');
+        requireData(!pending.legacy || hasLegacySummaryFingerprint(pending.resultId),
+          'MEMORY_LEGACY_BATCH_UNVERIFIABLE', legacyBatchUnverifiableMessage);
+        return pending;
+      }
+      requireData(!blocked.length, 'MEMORY_PREVIOUS', unconfirmedSummaryMessage);
+    };
     try {
       return await this.lock(input.saveId, async () => {
-        check();
-        const { state, lineage, paused } = await this.repository.loadMemoryContext(input.saveId);
-        // Reload/timer wakes after undo never authorize a new paid request.
-        // Send lifts this pause, but unresolved paid attempts still need manual handling.
-        if (paused && input.automatic) return undefined;
-        const kind = input.kind ?? (input.task === 'npc' ? 'npc' : undefined);
-        const config = SummaryConfigSchema.parse(frozenConfig ?? defaultSummaryConfig(kind ?? 'short'));
-        if (input.immediate && kind === 'npc') requireData(Boolean(input.npcId), 'NPC_MEMORY_CONFLICT', '立即总结必须明确选择人物');
-        if (input.attempts && kind) recoverCompletedSummary(state, kind, input.attempts);
-        const batch = kind === 'npc' ? planNpcSummary(state, input.npcId, { config, immediate: input.immediate })
-          : planCompression(state, kind ? { layer: kind, config, immediate: input.immediate } : undefined);
-        if (!batch) return undefined;
-        const task = 'npcId' in batch ? 'memory.npc_summarize' : memoryTask(batch.layer);
-        const snapshot = requestSnapshot(input.config, 'memory', input.vault);
-        const keys = input.config.channels.map((channel) => input.vault.get(channel.id)).filter((key): key is string => Boolean(key));
-        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(fingerprint(batch)));
-        const id = 'memory-' + Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
-        const selected = selectPromptModules({ stage: 'memory', mode: 'regular', settings: defaultSettings(), memoryTask: task });
-        const resources = await Promise.all(selected.map(async (module) => ({ module, text: (await readPromptResource(module.id)).replace(/\{\{(npcId|npcSummaryThreshold)\}\}/g, (_, key: string) =>
-          key === 'npcId' && 'npcId' in batch ? batch.npcId : String(config.threshold)) })));
-        const modules = resources.map(({ module, text }) => ({ id: module.id, version: module.version, contentSha256: module.contentSha256,
-          role: 'system' as const, order: module.defaultOrder, characters: Array.from(text).length, estimatedTokens: estimateTokens(text).estimatedTokens }));
-        const contentPrompt = frozenConfig?.prompt ?? defaultSummaryConfig('npcId' in batch ? 'npc' : batch.layer).prompt;
-        const messages = [{ role: 'system' as const, content: contentPrompt }, ...resources.map(({ text }) => ({ role: 'system' as const, content: text })),
-          { role: 'user' as const, content: contextMessage({ MEMORY_TASK: 'npcId' in batch ? npcSummaryInput(batch) : compressionInput(batch) }) }];
-        const size = contextStatistics(messages);
-        requireData(size.characters <= compressionPolicy.requestCharacters && size.estimatedTokens <= compressionPolicy.requestEstimatedTokens, 'MEMORY_BUDGET', '完整请求超出预算，未调用模型');
-        requireData(!keys.some((key) => [key, encodeURIComponent(key), JSON.stringify(key).slice(1, -1)].some((value) => JSON.stringify(messages).includes(value))),
-          'MEMORY_PERMISSION', '输入包含凭证内容，未发送；原条目已保留');
-        check();
-        await this.repository.checkMemoryLineage(lineage);
-        check();
-        const attemptKey = summaryAttemptKey(state, kind);
-        if (input.attempts) requireData(!input.automatic || !input.attempts.getItem(attemptKey),
-          'MEMORY_PREVIOUS', unconfirmedSummaryMessage);
-        if (input.automatic && input.attempts) {
-          const key = `heijin.summary.rate:${state.saveId}:${state.createdAt}`;
-          const recent = (JSON.parse(input.attempts.getItem(key) || '[]') as number[]).filter(time => Number.isFinite(time) && time > Date.now() - 3600000);
-          requireData(recent.length < 12 && recent.filter(time => time > Date.now() - 60000).length < 3,
-            'MEMORY_THROTTLED', '后台总结已达到本小时或本分钟的请求限额，待下一调度窗口检查');
-          input.attempts.setItem(key, JSON.stringify([...recent, Date.now()]));
-        }
-        if (input.attempts) input.attempts.setItem(attemptKey, id);
-        input.onPhase?.('generating');
-        const response = await this.client.generate(snapshot, messages, { timeoutSeconds: input.timeoutSeconds, signal: attempt.controller.signal,
-          inspection: { kind: 'memory', memoryTask: task, mode: 'regular', saveId: state.saveId, revision: state.revision, modules } });
-        check();
-        if ([secretFor(snapshot), ...keys].some((key) => [key, encodeURIComponent(key), JSON.stringify(key).slice(1, -1)].some((value) => response.text.includes(value))))
-          throw new AiError('invalid_output');
-        if ('npcId' in batch) {
-          const results = parseNpcSummary(response.text, batch, id);
-          if ([secretFor(snapshot), ...keys].some((key) => results.some((result) => result.text.includes(key)))) throw new AiError('invalid_output');
+        let records: SummaryRecords | undefined;
+        let started: PendingSummary | undefined;
+        let identityKey: string | undefined;
+        try {
+          check();
+          const { state, lineage, paused } = await this.repository.loadMemoryContext(input.saveId);
+          check();
+          if (input.attempts && kind) {
+            records = new SummaryRecords(input.attempts, state);
+            records.recover();
+          }
+          if (kind === 'npc' && input.immediate) requireData(Boolean(npcId), 'NPC_MEMORY_CONFLICT', '立即总结必须明确选择人物');
+          identityKey = npcId ? state.npc[npcId]?.identityKey : undefined;
+          const settings = currentSettings();
+          const config = SummaryConfigSchema.parse(settings.summaryConfig ?? defaultSummaryConfig(kind ?? 'short'));
+          if (input.automatic && (paused || !config.automatic)) return;
+          const retry = selectRetry(records, state);
+          const sourceIds = retry && authorizedSources(retry, candidates(state));
+          const plan = (state: GameState) => kind === 'npc'
+            ? planNpcSummary(state, npcId, { config, immediate: input.immediate, sourceIds })
+            : planCompression(state, { layer: kind, config, immediate: input.immediate, sourceIds });
+          const batch = plan(state);
+          if (!batch) {
+            requireData(!retry?.legacy, 'MEMORY_LEGACY_BATCH_MISMATCH', legacyBatchMismatchMessage);
+            if (kind) records?.clearPreflight(kind, npcId);
+            return;
+          }
+          const task = 'npcId' in batch ? 'memory.npc_summarize' : memoryTask(batch.layer);
+          const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(fingerprint(batch)));
+          const id = 'memory-' + Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+          // Old receipts have no source list. Only an exact batch fingerprint can authorize reuse of the receipt.
+          requireData(!retry?.legacy || id === retry.resultId, 'MEMORY_LEGACY_BATCH_MISMATCH', legacyBatchMismatchMessage);
+          const selected = selectPromptModules({ stage: 'memory', mode: 'regular', settings: defaultSettings(), memoryTask: task });
+          const resources = await Promise.all(selected.map(async (module) => ({ module, text: (await readPromptResource(module.id)).replace(/\{\{(npcId|npcSummaryThreshold)\}\}/g, (_, key: string) =>
+            key === 'npcId' && 'npcId' in batch ? batch.npcId : String(config.threshold)) })));
+          const modules = resources.map(({ module, text }) => ({ id: module.id, version: module.version, contentSha256: module.contentSha256,
+            role: 'system' as const, order: module.defaultOrder, characters: Array.from(text).length, estimatedTokens: estimateTokens(text).estimatedTokens }));
+          const contentPrompt = settings.summaryConfig?.prompt ?? defaultSummaryConfig('npcId' in batch ? 'npc' : batch.layer).prompt;
+          const messages = [{ role: 'system' as const, content: contentPrompt }, ...resources.map(({ text }) => ({ role: 'system' as const, content: text })),
+            { role: 'user' as const, content: contextMessage({ MEMORY_TASK: 'npcId' in batch ? npcSummaryInput(batch) : compressionInput(batch) }) }];
+          const size = contextStatistics(messages);
+          requireData(size.characters <= compressionPolicy.requestCharacters && size.estimatedTokens <= compressionPolicy.requestEstimatedTokens, 'MEMORY_BUDGET', '完整请求超出预算，未调用模型');
+          // Prompt assembly can yield. Check the actual saved settings, lineage, batch and ledger again
+          // while still holding the save's memory lock, immediately before a possible paid request.
+          const latest = await this.repository.loadMemoryContext(input.saveId);
+          check();
+          const freshSettings = currentSettings();
+          if (input.automatic && (latest.paused || freshSettings.summaryConfig?.automatic === false)) return;
+          requireData(latest.lineage.epoch === lineage.epoch, 'MEMORY_TIMELINE_CHANGED', '准备期间时间线已变化。');
+          requireData(fingerprint(freshSettings) === fingerprint(settings) && fingerprint(plan(latest.state)) === fingerprint(batch),
+            'MEMORY_CHANGED', '准备期间配置或来源已变化。');
+          if (input.attempts && kind) {
+            records = new SummaryRecords(input.attempts, latest.state);
+            records.recover();
+            selectRetry(records, latest.state);
+          }
+          const channel = typeof input.config === 'function' ? input.config() : input.config;
+          const snapshot = requestSnapshot(channel, 'memory', input.vault);
+          const keys = channel.channels.map(item => input.vault.get(item.id)).filter((key): key is string => Boolean(key));
+          requireData(!keys.some(key => [key, encodeURIComponent(key), JSON.stringify(key).slice(1, -1)].some(value => JSON.stringify(messages).includes(value))),
+            'MEMORY_PERMISSION', '输入包含凭证内容，未发送；原条目已保留');
+          if (input.automatic && input.attempts) {
+            const key = `heijin.summary.rate:${state.saveId}:${state.createdAt}`;
+            const recent = (JSON.parse(input.attempts.getItem(key) || '[]') as number[]).filter(time => Number.isFinite(time) && time > Date.now() - 3600000);
+            requireData(recent.length < 12 && recent.filter(time => time > Date.now() - 60000).length < 3,
+              'MEMORY_THROTTLED', '后台总结已达到本小时或本分钟的请求限额，待下一调度窗口检查');
+            input.attempts.setItem(key, JSON.stringify([...recent, Date.now()]));
+          }
+          if (kind && records) {
+            const sentIds = batch.entries.map(entry => entry.id);
+            const turnIds = kind === 'npc' ? undefined : sourceUnion(batch.entries);
+            const previousIds = retry?.sourceIds && [...retry.sourceIds, ...(retry.previousIds ?? [])].filter(source => !sentIds.includes(source));
+            const previousTurnIds = retry?.turnIds && [...retry.turnIds, ...(retry.previousTurnIds ?? [])].filter(turn => !turnIds?.includes(turn));
+            const marker = { status: 'pending' as const, kind, npcId, identityKey, resultId: id, sourceIds: sentIds,
+              code: 'MEMORY_PREVIOUS', manual: input.immediate, retryId: crypto.randomUUID(), turnIds, previousIds, previousTurnIds,
+              legacyRetryId: retry?.legacy ? retry.retryId : retry?.legacyRetryId };
+            records.begin(marker, retry);
+            started = marker;
+          }
+          input.onPhase?.('generating');
+          const response = await this.client.generate(snapshot, messages, { timeoutSeconds: freshSettings.timeoutSeconds, signal: attempt.controller.signal,
+            inspection: { kind: 'memory', memoryTask: task, mode: 'regular', saveId: state.saveId, revision: state.revision, modules } });
+          check();
+          if ([secretFor(snapshot), ...keys].some((key) => [key, encodeURIComponent(key), JSON.stringify(key).slice(1, -1)].some((value) => response.text.includes(value))))
+            throw new AiError('invalid_output');
+          if ('npcId' in batch) {
+            const results = parseNpcSummary(response.text, batch, id);
+            if ([secretFor(snapshot), ...keys].some((key) => results.some((result) => result.text.includes(key)))) throw new AiError('invalid_output');
+            check(); attempt.saving = true; input.onPhase?.('saving');
+            const saved = await this.repository.saveNpcSummary(batch, results, lineage, attempt.controller.signal);
+            if (started && records) records.confirm(started);
+            return saved;
+          }
+          const result = parseCompression(response.text, batch, id);
+          if ([secretFor(snapshot), ...keys].some((key) => result.text.includes(key))) throw new AiError('invalid_output');
           check(); attempt.saving = true; input.onPhase?.('saving');
-          const saved = await this.repository.saveNpcSummary(batch, results, lineage, attempt.controller.signal);
-          if (input.attempts) input.attempts.setItem(attemptKey, '');
+          const saved = await this.repository.saveMemoryCompression(batch, result, lineage, attempt.controller.signal);
+          if (started && records) records.confirm(started);
           return saved;
+        } catch (error) {
+          const code = summaryErrorCode(error);
+          if (started) records?.fail(started.retryId, code);
+          else if (kind && !['MEMORY_BUSY', 'MEMORY_THROTTLED', 'MEMORY_PREVIOUS', 'cancelled', 'MEMORY_CHANGED'].includes(code))
+            records?.preflight({ status: 'preflight', kind, npcId, identityKey, code, manual: input.immediate });
+          throw error;
         }
-        const result = parseCompression(response.text, batch, id);
-        if ([secretFor(snapshot), ...keys].some((key) => result.text.includes(key))) throw new AiError('invalid_output');
-        check(); attempt.saving = true; input.onPhase?.('saving');
-        const saved = await this.repository.saveMemoryCompression(batch, result, lineage, attempt.controller.signal);
-        if (input.attempts) input.attempts.setItem(attemptKey, '');
-        return saved;
       });
     } finally { if (this.active === attempt) this.active = undefined; }
   }
-}
-
-// IndexedDB save and local settings are separate stores: acknowledge a committed result after a crash,
-// rather than charging for its already-covered sources again or permanently blocking later work.
-export function recoverCompletedSummary(state: GameState, kind: SummaryKind, storage: Pick<Storage, 'getItem' | 'setItem'>) {
-  const key = summaryAttemptKey(state, kind), id = storage.getItem(key);
-  if (!id) return false;
-  const saved = kind === 'npc' ? Object.values(state.memories.npcSummaries).flat().some(entry => entry.id.startsWith(id + '-'))
-    : [...state.memories.medium, ...state.memories.long].some(entry => entry.id === id);
-  if (saved) storage.setItem(key, '');
-  return saved;
 }

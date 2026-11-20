@@ -88,6 +88,17 @@ export function App() {
   const shell = useGameViewport(gameRoute);
   const [saves, setSaves] = useState<SaveSummary[]>([]);
   const [settings, setSettings] = useState(initial.settings);
+  useEffect(() => {
+    function syncSettings(event: StorageEvent) {
+      if (event.storageArea !== localStorage || event.key !== settingsKey) return;
+      try {
+        const next = readDocument(localStorage, settingsKey, SettingsSchema);
+        if (next) setSettings(next);
+      } catch { /* Existing settings remain visible. Memory dispatch independently verifies storage. */ }
+    }
+    window.addEventListener('storage', syncSettings);
+    return () => window.removeEventListener('storage', syncSettings);
+  }, []);
   useAppearance(settings.display.appearance);
   const [form, setForm] = useState(initial.form);
   const [hasDraft, setHasDraft] = useState(initial.hasDraft);

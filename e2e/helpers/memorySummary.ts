@@ -53,3 +53,9 @@ export function requestTask(body: { messages: { role: string; content: string }[
   const text = body.messages.find(message => message.role === 'user' && message.content.startsWith('<GAME_CONTEXT>'))!.content;
   return JSON.parse(text.slice('<GAME_CONTEXT>\n'.length, -'\n</GAME_CONTEXT>'.length)).MEMORY_TASK as Record<string, unknown>;
 }
+
+export const memoryMockCors = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'POST, OPTIONS',
+  'access-control-allow-headers': 'authorization, content-type',
+};

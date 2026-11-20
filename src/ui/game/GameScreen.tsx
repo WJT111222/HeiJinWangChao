@@ -224,6 +224,10 @@ export function GameScreen({
     return () => { disposed = true; };
   }, [openingStart, state, draft, automatic.generate]);
   const memory = useMemoryMaintenance(repository, state.saveId, settings, onMemorySaved, onSettings);
+  const summaryFailure = memory.popup;
+  const memoryState = memory.snapshot.state;
+  const settingsMemoryState = memoryState?.saveId === state.saveId && memoryState.createdAt === state.createdAt &&
+    memoryState.revision >= state.revision ? memoryState : state;
   function handleSettled(result: TurnCommitResult) {
     onCommitted(result);
     if (!result.replayed) void memory.run(true);
@@ -1088,57 +1092,41 @@ export function GameScreen({
           )}
         </Dialog>
       )}
-      {renderSettings?.(<MemorySummarySettings state={state} settings={settings} onSave={next => {
+      {renderSettings?.(<MemorySummarySettings state={settingsMemoryState} settings={settings} onSave={next => {
         onSettings(next);
         const saved = SettingsSchema.parse(JSON.parse(localStorage.getItem(settingsKey) || 'null'));
         if (fingerprint(saved.memory) !== fingerprint(next.memory)) throw new Error('memory settings not saved');
-      }} phase={memory.phase} activeKind={memory.activeKind} notice={memory.notice}
-        onRun={(kind, npcId) => void memory.run(false, kind, npcId)} onCancel={memory.cancel} />)}
-      {memory.failures[0] && (
+      }} phase={memory.phase} activity={memory.activity} notice={memory.notice}
+        failures={memory.snapshot.failures} paused={memory.snapshot.paused} busy={memory.snapshot.busy}
+        onRun={(kind, npcId, retryId) => void memory.run(false, kind, npcId, retryId)} onCancel={memory.cancel} />)}
+      {summaryFailure && (
         <Dialog
-          title={summaryFailureTitle(memory.failures[0])}
+          title={summaryFailureTitle(summaryFailure)}
           small
-          feedback={
-            summaryFailureTitle(memory.failures[0]).includes("待确认")
-              ? "warn"
-              : "err"
-          }
-          seal="忆" mobileVariant="confirm" footer={<button onClick={()=>memory.closeFailure(memory.failures[0].kind)}>关闭</button>}
-          onClose={() => memory.closeFailure(memory.failures[0].kind)}
+          feedback={summaryFailure.pending ? 'warn' : 'err'}
+          seal="忆" mobileVariant="confirm"
+          footer={<button onClick={() => memory.closeFailure(summaryFailure)}>关闭</button>}
+          onClose={() => memory.closeFailure(summaryFailure)}
         >
-          <p>{memory.failures[0].message}</p>
-          <p>原始记忆仍保留；重新生成可能产生费用。</p>
+          {summaryFailure.npcId && <p>{state.npc[summaryFailure.npcId]?.name ?? '原人物'}</p>}
+          <p>{summaryFailure.message}</p>
+          {summaryFailure.pending && !summaryFailure.legacy && <p>本次请求可能已计费。选择重新生成会再发一次请求。</p>}
           <div className="feedback-dialog-actions memory-feedback-actions">
-            {memory.failures[0].kind === "npc" && !memory.failures[0].npcId ? (
-              <button
-                className="primary"
-                disabled={Boolean(memory.phase)}
+            {summaryFailure.retryId && !summaryFailure.legacy && (summaryFailure.kind !== 'npc' || summaryFailure.npcId) ? (
+              <button className="primary" disabled={Boolean(memory.phase) || memory.snapshot.busy}
                 onClick={() => {
-                  memory.closeFailure("npc");
-                  onOpenSettings();
-                }}
-              >
-                前往设置选择人物
-              </button>
-            ) : (
-              <button
-                className="primary"
-                disabled={Boolean(memory.phase)}
-                onClick={() =>
-                  void memory.run(
-                    false,
-                    memory.failures[0].kind,
-                    memory.failures[0].npcId,
-                  )
-                }
-              >
+                  const failure = summaryFailure;
+                  void memory.run(false, failure.kind, failure.npcId, failure.retryId);
+                }}>
                 重新生成
               </button>
+            ) : (
+              <button className="primary" onClick={() => {
+                memory.closeFailure(summaryFailure);
+                onOpenSettings();
+              }}>前往记忆设置</button>
             )}
-            <button
-              disabled={Boolean(memory.phase)}
-              onClick={() => memory.pause(memory.failures[0].kind)}
-            >
+            <button disabled={Boolean(memory.phase)} onClick={() => memory.pause(summaryFailure)}>
               暂停自动总结
             </button>
           </div>

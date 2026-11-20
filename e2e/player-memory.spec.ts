@@ -95,7 +95,7 @@ test('没有游玩的有效存档时，设置高级维护安全不可操作且�
 });
 
 
-test('空记忆与新存档四层均可读；已选存档不等于正在游玩，回首页后维护不可操作', async ({ page }) => {
+test('空记忆与新存档四层均可读；已选存档不等于正在游玩，回首页后维护不可操作', async ({ page, isMobile }) => {
   let requests = 0; await page.route('https://reader-memory.mock.invalid/**', async (route) => { requests++; await route.abort(); });
   const panel = await seed(page, true), before = await saved(page);
   for (const name of ['即时记忆', '短期记忆', '中期记忆', '长期记忆', '永久正文档案']) {
@@ -104,7 +104,7 @@ test('空记忆与新存档四层均可读；已选存档不等于正在游玩�
   expect(await saved(page)).toEqual(before); expect(requests).toBe(0);
   await panel.getByRole('button', { name: '关闭资料界面' }).click();
   await goHome(page);
-  await page.getByRole('button',{name:'封面',exact:true}).click();
+  if (!isMobile) await page.getByRole('button', { name: '封面', exact: true }).click();
   await openSettings(page);
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
   await settings.getByRole('button', { name: '记忆', exact: true }).click();

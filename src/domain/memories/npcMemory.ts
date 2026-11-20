@@ -59,15 +59,18 @@ export function npcSummaryInput(batch: NpcMemoryBatch) {
   }
   return { task: 'memory.npc_summarize', npcId: batch.npcId, groups: [...groups.values()] };
 }
-export function planNpcSummary(state: GameState, npcId?: string, options?: { config?: SummaryConfig; immediate?: boolean }): NpcMemoryBatch | undefined {
+export function planNpcSummary(state: GameState, npcId?: string, options?: { config?: SummaryConfig; immediate?: boolean; sourceIds?: readonly string[] }): NpcMemoryBatch | undefined {
   if (npcId) { IdSchema.parse(npcId); requireData(Object.hasOwn(state.npc, npcId), 'NPC_MEMORY_CONFLICT', '人物来源已变化，未发起维护'); }
   const sharedIds = npcMemoryIdCounts(state);
   for (const npc of Object.values(state.npc).filter((person) => !npcId || person.id === npcId).sort((a, b) => a.id.localeCompare(b.id))) {
     const candidates = npcSummaryCandidates(state, npc.id, sharedIds);
     const config = SummaryConfigSchema.parse(options?.config ?? defaultSummaryConfig('npc'));
-    if (candidates.length < config.batchSize || (!options?.immediate && candidates.length < config.threshold)) continue;
+    const selected = options?.sourceIds;
+    if (!selected && (candidates.length < config.batchSize || (!options?.immediate && candidates.length < config.threshold))) continue;
+    const entries = selected ? candidates.filter(entry => selected.includes(entry.id)) : candidates.slice(0, config.batchSize);
+    if (!entries.length) continue;
     const batch: NpcMemoryBatch = { saveId: state.saveId, saveCreatedAt: state.createdAt, npcId: npc.id, identityKey: npc.identityKey,
-      expectedCount: config.batchSize, entries: candidates.slice(0, config.batchSize) };
+      expectedCount: entries.length, entries };
     const text = JSON.stringify(npcSummaryInput(batch)).replace(/[<>&]/g, ch => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`);
     requireData(text.length <= compressionPolicy.inputCharacters && estimateTokens(text).estimatedTokens <= compressionPolicy.inputEstimatedTokens,
       'MEMORY_BUDGET', '完整NPC批次超出预算，原始记录保留，未缩小批次');
