@@ -1,6 +1,6 @@
 # 全站 UI 巡检修复与验证
 
-基线为 `main@57ce029e202b84eb391399b6413f5644c4324b53`，与发现问题时一致。表中的修复前图片来自该基线的 Chromium 巡检，修复后图片来自同一仓库的真实 React 应用。所有存档、人物、模型名和渠道均为合成夹具。模型列表使用 Mock GET；检查设置与历史资料的流程对模型 POST 次数断言为零。
+开工基线为 `main@57ce029e202b84eb391399b6413f5644c4324b53`，与巡检基线一致。验收期间主干合入 #211，本分支通过普通 merge 同步至 `main@556e42bfed1308a19a487ba8417bba287cd223df`。合流没有文本冲突，主干的浪潮维护和预设资源更新完整保留。表中的修复前图片来自 57ce029 的 Chromium 巡检，修复后图片来自同一仓库的真实 React 应用。所有存档、人物、模型名和渠道均为合成夹具。模型列表使用 Mock GET；检查设置与历史资料的流程对模型 POST 次数断言为零。
 
 ## 逐项结果
 
@@ -43,15 +43,23 @@
 
 ## 工程与浏览器验证
 
-Node 24.19.0，Chromium 154.0.8037.57，Playwright 桌面和 Pixel 7 项目。依赖使用本分支的 package.json 与相同锁文件，在独立可写卷执行 `npm ci --no-audit --no-fund`，退出码 0。完整检查采用 `VITEST_MAX_WORKERS=1 npm run check`，退出码 0；197 个文件、4,738 项 Vitest 通过，0 失败、0 跳过；文件名、ESLint、显示目录、TypeScript 和生产构建均通过。Vite 报告大于 500kB 的构建分块提示。`npm run prompts:check` 退出码 0，3 个文件、93 项通过，0 失败、0 跳过；这是专项复测，单独计数。新增首页断点场景后再次运行 ESLint，退出码 0。
+合流后在产品代码提交 `28842f587297c82532df7be193faabc9309f10ba` 重新执行下列检查；其后的证据提交仅整理本目录的报告、日志和截图。Node 24.19.0，Chromium 154.0.8037.57，Playwright 桌面和 Pixel 7 项目。依赖使用本分支的 package.json 与相同锁文件，在独立可写卷执行 `npm ci --no-audit --no-fund`，退出码 0。完整检查采用 `VITEST_MAX_WORKERS=1 npm run check`，退出码 0；197 个文件、4,741 项 Vitest 通过，0 失败、0 跳过；文件名、ESLint、显示目录、TypeScript 和生产构建均通过。Vite 报告大于 500kB 的构建分块提示。`npm run prompts:check` 退出码 0，3 个文件、93 项通过，0 失败、0 跳过；这是专项复测，单独计数。
 
-1. `CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/ui-compatibility.spec.ts --workers=1 --timeout=60000` 验证日夜×双端的十二个主场景。桌面 6/6，手机 6/6，退出码 0。模型选择完成后读取持久化路由；键盘缩高后真实点击、输入并读回保存的自定义文本；历史导航前后比较正式状态和草稿。
-2. 首页断点及既有回归使用 `npx playwright test e2e/ui-compatibility.spec.ts e2e/history-saves.spec.ts e2e/ai-model-selection.spec.ts e2e/history-visual.spec.ts --grep '首页独立设置|自动五节点只读预览|主题浮层的搜索|历史档案视觉 day short=false' --workers=1`。此组桌面 4/4、手机 4/4，退出码 0。两组共 20 个不同的 Chromium 用例执行，桌面 10、手机 10，0 失败、0 跳过。
-3. `git diff --check` 以及暂存差异检查均用于核对提交。
+浏览器合流验收使用单次定向运行：
 
-[依赖安装](npm-ci.txt) · [完整工程日志](engineering.txt) · [提示词专项](prompt-results.txt) · [十二个主场景](chromium.txt) · [首页与既有回归](chromium-related.txt)
+```sh
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test \
+  e2e/ui-compatibility.spec.ts e2e/history-saves.spec.ts \
+  e2e/history-visual.spec.ts e2e/ai-model-selection.spec.ts \
+  --grep 'ui-compatibility.spec.ts|自动五节点只读预览|主题浮层的搜索|历史档案视觉 day short=false' \
+  --workers=1 --timeout=60000
+```
 
-首次安装遇到工作盘空间不足，改用独立卷完成锁文件安装。首次并发巡检期间 Vite 被系统终止，浏览器后续导航失败；改为单浏览器 worker。早期预设场景用全页按钮定位，内容区和设置窗口都有同名入口，改为在设置对话框内定位。沙箱初次阻止公告单测启动本地 sh，完整检查在允许该子进程的环境重跑。原有断言和超时业务规则均保留。
+本次运行 20/20 项通过，桌面与手机各 10 项，0 失败、0 跳过，退出码 0。覆盖路由点击与实际保存、抽屉缩高后重新聚焦并编辑、历史只读详情、同刻卡片操作、首页风格组宽度、键盘导航与历史覆盖确认取消。`git diff --check` 与暂存差异检查退出码均为 0。
+
+[依赖安装](npm-ci.txt) · [完整工程日志](engineering.txt) · [提示词专项](prompt-results.txt) · [双端 Chromium 全部场景](chromium.txt)
+
+首次安装遇到工作盘空间不足，改用独立卷完成锁文件安装。合流后首次同时运行完整 Vitest 和 Chromium，Vite 在第 4 个浏览器用例期间被系统终止。此次有 4 项通过、16 项因无法连接本地站点失败，退出码 1。[失败日志](chromium-interrupted.txt) 保留了服务终止与导航错误。同一时段两项单测文件的 worker 收到 SIGKILL，工程检查退出码 1，[工程中断日志](engineering-interrupted.txt) 已保留。随后将工程和浏览器套件分时执行，浏览器使用单 worker。早期预设场景用全页按钮定位，内容区和设置窗口都有同名入口，改为在设置对话框内定位。沙箱初次阻止公告单测启动本地 sh，完整检查在允许该子进程的环境重跑。原有断言和超时业务规则均保留。
 
 ## 范围与后续复验
 
