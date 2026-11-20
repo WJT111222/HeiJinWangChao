@@ -343,7 +343,8 @@ test('首次生成等待模块异步初始化，等待时取消及随后启动�
     } finally {repo.close();}
   });
   expect(result).toMatchObject({loading:'加载中',cancelled:'cancelled',failed:'configuration',unchanged:true,revision:true});
-  expect(result.error).toContain('fixture-init-error');
+  expect(result.error).toMatch(/延迟初始化夹具.*初始化失败.*模块加载或求值失败.*位置 \d+:\d+/u);
+  expect(result.error).not.toContain('fixture-init-error');
   expect(attempts).toBe(0);
 });
 
