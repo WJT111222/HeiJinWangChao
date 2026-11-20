@@ -1,3 +1,6 @@
+import { captureStoryPreset, resolveStoryPreset, type PresetSelection } from '../presets/library';
+import { assemblePreset } from '../presets/messages';
+import { storyMaterials } from '../presets/storyMaterials';
 import { narrativeRange } from '../ui/settings/model';
 import { openingTimeSelection } from '../domain/openingTime';
 import { selectPromptModules } from './selection';
@@ -35,15 +38,18 @@ function cacheFriendlyContext(context: Record<string, unknown>, extra: { PROMPT_
   for (const [key, value] of Object.entries(all)) if (!(key in ordered)) ordered[key] = value;
   return ordered;
 }
-export async function composePrompt(unchecked: ComposeInput) {
-  return compose(unchecked);
+export async function composePrompt(
+  unchecked: ComposeInput,
+  selection = unchecked.stage === 'story' ? captureStoryPreset() : null,
+) {
+  return compose(unchecked, selection);
 }
 /** 正式Variables及离线预览共用同一组装器；组装本身不请求模型或写库。 */
 export async function composeTextVariablesPrompt(input: ComposeInput & { stage: 'variables' }) {
   if (input.stage !== 'variables') throw new AiError('configuration');
   return compose(input);
 }
-async function compose(unchecked: ComposeInput) {
+async function compose(unchecked: ComposeInput, selection: PresetSelection = null) {
   const input = checkedInput(unchecked);
   const selected = selectPromptModules(input);
   if (input.orderOverrides && input.orderPreferences) throw new AiError('configuration');
@@ -69,7 +75,7 @@ async function compose(unchecked: ComposeInput) {
   const context = contextFor(input);
   const clock =
     typeof context.worldClock === 'string' ? context.worldClock : input.state.openingTimePending
-      ? input.stage === 'variables' || input.stage === 'world' ? openingTimeSelection(input.state, input.draft!)?.endAt : undefined
+      ? input.stage === 'variables' || input.stage === 'world' ? openingTimeSelection(input.state, input.draft!, input.stage === 'variables' ? [] : undefined)?.endAt : undefined
       : input.state.worldClock;
   const replacements: Record<string, string | number | undefined> = {
     playerName: input.state.protagonist.name,
@@ -81,10 +87,15 @@ async function compose(unchecked: ComposeInput) {
     npcId: input.npcId,
     npcSummaryThreshold: input.npcSummaryThreshold,
   };
+  const preset = input.stage === 'story' && selection ? await resolveStoryPreset(selection) : undefined;
+  const worldview: string[] = [];
   const records: ModuleRecord[] = [];
   const messages: AiMessage[] = [];
   let confirmation: AiMessage | undefined;
   for (const module of selected) {
+    // Keep domain boundaries and the player's output contract while the preset owns literary preferences.
+    if (preset && module.category === 'writing' &&
+      !['writing.action_options', 'writing.min_length', 'writing.intimacy_boundaries'].includes(module.id)) continue;
     let content = await readPromptResource(module.id);
     content = content.replace(/\{\{([A-Za-z][A-Za-z0-9]*)\}\}/g, (_, key: string) => {
       const value = replacements[key];
@@ -103,13 +114,16 @@ async function compose(unchecked: ComposeInput) {
       characters: Array.from(content).length,
       estimatedTokens: estimateTokens(content).estimatedTokens,
     });
-    if (role === 'assistant') confirmation = { role, content };
+    if (preset && module.category === 'worldbook') worldview.push(content);
+    else if (role === 'assistant') confirmation = { role, content };
     else messages.push({ role, content });
   }
   // 剧情风格只作用于正文：非 Story 阶段出站的 PROMPT_SETTINGS 一律投影为原有的 style:'general'，
   // 字段与顺序不变；不修改玩家保存的设置，也不影响其他写作偏好。
   const promptSettings = input.stage === 'story' ? input.settings.prompts : { ...input.settings.prompts, style: 'general' as const };
-  messages.push({
+  const assembled = preset ? assemblePreset(preset, storyMaterials(input, context, worldview.join('\n\n'))) : undefined;
+  if (assembled) messages.push(...assembled.messages);
+  else messages.push({
     role: 'user',
     // 只调整正文 / 变量 / 世界三阶段；独立的记忆维护请求保持原来的字段与顺序。
     content: contextMessage(input.stage === 'memory'
@@ -124,6 +138,7 @@ async function compose(unchecked: ComposeInput) {
     actionOptions: input.settings.prompts.actionOptions,
     minNarrativeChars: input.settings.prompts.minNarrativeChars,
     maxNarrativeChars: narrativeRange(input.settings.prompts).max,
+    openingTimePending: input.mode === 'opening' && input.state.openingTimePending === true,
   });
   if (confirmation) {
     const closing = tail ? `${tail}
@@ -132,10 +147,14 @@ async function compose(unchecked: ComposeInput) {
   } else if (tail) {
     messages.push({ role: 'user', content: tail });
   }
-  if (messages.some((m) => /\{\{[^{}]*\}\}/.test(m.content))) throw new AiError('placeholder');
+  if (!preset && messages.some((m) => /\{\{[^{}]*\}\}/.test(m.content))) throw new AiError('placeholder');
   return {
     messages,
     modules: records,
+    ...(preset && assembled ? { preset: {
+      id: preset.definition.id, version: preset.definition.version,
+      sampling: preset.sampling, unknownMacros: assembled.unknownMacros,
+    } } : {}),
     context,
     baseSaveRevision: input.state.revision,
     storyRevision: input.draft?.storyRevision,

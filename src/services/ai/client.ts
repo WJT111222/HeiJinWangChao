@@ -1,3 +1,9 @@
+import { nativeFetch } from '../../presets/tavern/fetch';
+import type { GenerationType } from '../../presets/tavern/events';
+import { sendTavern } from '../../presets/tavern/backend';
+import { safeMime } from '../../presets/tavern/responseFormat';
+import { newTrace, type UpstreamTrace } from '../../presets/tavern/upstream';
+import type { Sampling } from '../../presets/package';
 import { AiError, safeAiError } from './errors';
 import { requestInspections } from './inspection';
 import type { InspectionScope } from './inspection';
@@ -18,12 +24,15 @@ import {
 import type { AiMessage, Usage } from './protocols';
 import { readSse } from './sse';
 import { rememberThinkingCapability, unsupportedThinkingParameter, blockThinkingCapability } from './thinking';
-import { checkFinish, LeadingThink, rememberUnsupported, splitLeadingThink, unsupportedParameter } from './compat';
+import { checkFinish, LeadingThink, rememberPresetSamplingRejection, rememberUnsupported, splitLeadingThink, unsupportedParameter } from './compat';
 import { isOpenAiCompatible } from './configuration';
 import { rawResponseObservation, responseContent, responseDiagnostics } from './responseContent';
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
 
 export interface RequestOptions {
+  storyClock?: import('../../presets/tavern/timing').StoryClock;
+  presetSampling?: Sampling;
+  tavernType?: GenerationType;
   /** Internal Story-only handoff: caller must strictly validate received content. */
   validateStoryOutputLimit?: boolean;
   onResponseDiagnostics?: (diagnostics: ResponseDiagnostics) => void;
@@ -60,6 +69,7 @@ export interface AiResponse {
 async function operation<T>(
   options: RequestOptions,
   run: (signal: AbortSignal) => Promise<T>,
+  clock?: RequestOptions['storyClock'],
 ): Promise<T> {
   if (options.signal?.aborted) throw new AiError('cancelled');
   if (
@@ -70,9 +80,14 @@ async function operation<T>(
     throw new AiError('configuration');
   const controller = new AbortController();
   let timedOut = false;
-  const cancel = () => controller.abort();
+  const cancel = () => { clock?.userCancel(); controller.abort(); };
+  if (clock) {
+    clock.marks.timeoutSeconds = options.timeoutSeconds ?? 120;
+    clock.first('budgetStartMs');
+  }
   const timeout = setTimeout(
     () => {
+      clock?.deadline();
       timedOut = true;
       controller.abort();
     },
@@ -98,9 +113,20 @@ async function operation<T>(
     if (rejectAbort) controller.signal.removeEventListener('abort', rejectAbort);
   }
 }
+export const manualRetryOnly = new WeakSet<AiError>();
+function residualTool(data: unknown, delta: boolean) {
+  return array(record(data).choices).some(value => {
+    const choice = record(value), message = record(delta ? choice.delta : choice.message);
+    return array(message.tool_calls).length > 0 || message.function_call != null || choice.finish_reason === 'tool_calls';
+  });
+}
 export class AiClient {
-  constructor(private transport: typeof fetch = (input, init) => globalThis.fetch(input, init)) {}
-  private async response(url: string, init: RequestInit, signal: AbortSignal, snapshot?: RequestSnapshot, observe?: (value: ResponseDiagnostics) => void) {
+  constructor(private transport: typeof fetch = nativeFetch) {}
+  private async response(
+    url: string, init: RequestInit, signal: AbortSignal, snapshot?: RequestSnapshot,
+    observe?: (value: ResponseDiagnostics) => void, presetSampling = false, trace?: UpstreamTrace,
+  ) {
+    trace?.clock.first('sentMs');
     const response = await this.transport(url, {
       ...init,
       signal,
@@ -109,20 +135,26 @@ export class AiClient {
       cache: 'no-store',
       referrerPolicy: 'no-referrer',
     });
+    trace?.clock.first('headersMs');
+    if (trace) { trace.status = response.status; trace.contentType = safeMime(response.headers); }
     if (!response.ok) {
       const status = response.status;
       // Do not wait for an extra error body: preserve HTTP failure/retry timing.
       // Only the JSON already consumed for compatibility below is projected.
       if (!signal.aborted) observe?.({ transport: 'http', httpStatus: status, complete: false });
-      if (snapshot && (snapshot.thinkingCapability !== 'none' || snapshot.channel.protocol === 'openai') && [400, 422].includes(status)
+      if (snapshot && (snapshot.thinkingCapability !== 'none' || snapshot.channel.protocol === 'openai' || presetSampling) && [400, 422].includes(status)
         && response.headers.get('content-type')?.includes('application/json')) {
         try {
           const error: unknown = await response.json();
           if (!signal.aborted) observe?.({ ...responseDiagnostics(error, snapshot.channel.protocol), transport: 'http', httpStatus: status, complete: true });
           if (!signal.aborted && snapshot.thinkingCapability !== 'none' && unsupportedThinkingParameter(error)) blockThinkingCapability(snapshot.channel, snapshot.model);
           const sentBody = record(typeof init.body === 'string' ? JSON.parse(init.body) : undefined);
+          if (!signal.aborted && presetSampling && rememberPresetSamplingRejection(snapshot.channel, url, snapshot.model, error, sentBody))
+            throw new AiError('parameter_adjusted', status);
           const parameter = snapshot.channel.protocol === 'openai' ? unsupportedParameter(error, {
-            maxTokens: Object.hasOwn(sentBody, 'max_tokens'), temperature: Object.hasOwn(sentBody, 'temperature') }) : undefined;
+            maxTokens: Object.hasOwn(sentBody, 'max_tokens'),
+            temperature: !presetSampling && Object.hasOwn(sentBody, 'temperature'),
+          }) : undefined;
           if (!signal.aborted && parameter) {
             rememberUnsupported(snapshot.channel, snapshot.model, parameter);
             throw new AiError('parameter_adjusted', status);
@@ -149,12 +181,16 @@ export class AiClient {
     messages: readonly AiMessage[],
     options: RequestOptions = {},
   ): Promise<AiResponse> {
-    const wire = wireRequest(snapshot, messages, options.stream === true);
+    const compat = snapshot.stage === 'story' && options.tavernType !== undefined;
+    const trace = compat ? newTrace(options.storyClock) : undefined;
+    const cleanup = compat ? new AbortController() : undefined;
+    let diagnostics: string[] = [];
     let inspectionId: string | undefined;
     let observedUsage: Usage | undefined;
-    let outputLimited = false;
+    let outputLimited = false, unhandledTool = false;
     const finish = (reason: unknown) => {
       if (options.validateStoryOutputLimit && typeof reason === 'string' && ['length', 'max_tokens'].includes(reason.toLowerCase())) outputLimited = true;
+      if (trace && reason === 'tool_calls') return true;
       return checkFinish(reason, options.validateStoryOutputLimit === true);
     };
     const observe = (value: ResponseDiagnostics) => {
@@ -163,23 +199,34 @@ export class AiClient {
     try {
       return await operation(options, async (signal) => {
         if (signal.aborted) throw new AiError('cancelled');
-        try { if (options.recordInspection !== false) inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection); }
-        catch { /* 只读诊断失败不能阻断真实发送。 */ }
-        const response = await this.response(wire.url, wire.init, signal, snapshot, options.onResponseDiagnostics ? observe : undefined);
-        const protocol = snapshot.channel.protocol;
+        const send = (wire: ReturnType<typeof wireRequest>, requestSignal: AbortSignal) => {
+          diagnostics = wire.diagnostics;
+          try { if (options.recordInspection !== false) inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection, wire.presetSamplingInspection); }
+          catch { /* Inspection cannot affect transport. */ }
+          return this.response(wire.url, wire.init, requestSignal, snapshot, options.onResponseDiagnostics ? observe : undefined,
+            wire.presetSamplingInspection !== undefined, trace);
+        };
+        const response = trace && cleanup && options.tavernType
+          ? await sendTavern(snapshot, options.tavernType, [...messages], options.presetSampling ?? {}, options.stream === true,
+            AbortSignal.any([signal, cleanup.signal]), trace, send)
+          : await send(wireRequest(snapshot, messages, options.stream === true, options.presetSampling), signal);
+        const protocol = trace ? 'openai' : snapshot.channel.protocol;
         if (!signal.aborted) observe({ httpStatus: response.status, complete: false });
         let text = '', reasoning = '',
           usage: Usage | undefined;
         // 部分中转忽略 stream:true 直接返回完整 JSON；按非流式读取，再一次性交给进度回调。
         const wholeJson = options.stream === true && /application\/json/i.test(response.headers.get('content-type') ?? '');
-        if (!options.stream || wholeJson) {
+        const streaming = trace ? safeMime(response.headers) === 'text/event-stream' : options.stream && !wholeJson;
+        if (!streaming) {
           let data: unknown;
           try {
             data = await response.json();
+            if (trace) trace.wrapperBodyRead = true;
           } catch {
             throw new AiError('invalid_json');
           }
           if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol), httpStatus: response.status, complete: true });
+          if (trace && residualTool(data, false)) throw new AiError('invalid_output', undefined, { fieldPath: 'tavern.unhandled_tool' });
           usage = usageFrom(data, protocol); observedUsage = usage;
           if (!signal.aborted) {
             if (options.onRawResponse) options.onRawResponse(rawResponseObservation(data, protocol));
@@ -209,7 +256,7 @@ export class AiClient {
           if (!response.body) throw new AiError('stream_interrupted');
           let terminal = false, nativeSeen = false;
           const think = isOpenAiCompatible(protocol) ? new LeadingThink() : undefined;
-          for await (const event of readSse(response.body, signal)) {
+          for await (const event of readSse(response.body, signal, trace ? { detachCleanup: true } : undefined)) {
             if (event.data === '[DONE]' && isOpenAiCompatible(protocol)) {
               terminal = true;
               break;
@@ -223,6 +270,7 @@ export class AiClient {
             if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol, true), httpStatus: response.status, complete: false });
             if (data.error || data.type === 'error' || event.event === 'error')
               throw new AiError('rejected');
+            if (trace && residualTool(data, true)) unhandledTool = true;
             const rawDelta = responseContent(data, protocol, true), native = nativeReasoning(data, protocol, true);
             if (!signal.aborted) {
               if (options.onRawResponse) options.onRawResponse(rawResponseObservation(data, protocol, true));
@@ -276,19 +324,45 @@ export class AiClient {
             if (rest.reasoning && !signal.aborted) options.onCompatibilityReasoningDelta?.(rest.reasoning);
             if (rest.reasoning && !nativeSeen) { reasoning += rest.reasoning; if (!signal.aborted) options.onReasoningDelta?.(rest.reasoning); }
           }
-          if (!terminal) throw new AiError('stream_interrupted');
+          if (trace) trace.wrapperBodyRead = true;
+          if (!terminal) throw new AiError('stream_interrupted', undefined, trace ? { fieldPath: 'tavern.wrapper.missing_finish' } : undefined);
           if (!signal.aborted) observe({ transport: 'sse', complete: true });
         }
         if (text.length > 8_000_000 || reasoning.length > 2_000_000) throw new AiError('invalid_output');
+        if (trace) {
+          if (trace.error) throw trace.error;
+          if (!trace.complete || trace.calls !== 1) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.incomplete' });
+          if (unhandledTool) throw new AiError('invalid_output', undefined, { fieldPath: 'tavern.unhandled_tool' });
+          usage = trace.usage;
+          outputLimited ||= ['length', 'max_tokens'].includes(trace.finish?.toLowerCase() ?? '');
+        }
         if (!text.trim()) throw new AiError('empty');
+        if (trace) {
+          trace.restored = true;
+          trace.clock.first('restoredMs');
+        }
         try { if (inspectionId) requestInspections.finish(inspectionId, usage); }
         catch { /* 诊断观察器失败不改变响应。 */ }
-        return { text, ...(outputLimited ? { outputLimited: true } : {}), ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics: wire.diagnostics, protocol, model: snapshot.model };
-      });
+        return { text, ...(outputLimited ? { outputLimited: true } : {}), ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics, protocol: snapshot.channel.protocol, model: snapshot.model };
+      }, trace?.clock);
     } catch (error) {
-      try { if (inspectionId) requestInspections.finish(inspectionId, observedUsage, safeAiError(error).code); }
+      const failure = options.signal?.aborted || (error instanceof AiError && error.code === 'timeout') ? error : trace?.error ?? error;
+      if (trace && failure instanceof AiError) {
+        manualRetryOnly.add(failure);
+        trace.cancelled = failure.code === 'cancelled' || failure.code === 'timeout';
+      }
+      try { if (inspectionId) requestInspections.finish(inspectionId, trace ? trace.usage : observedUsage, safeAiError(failure).code); }
       catch { /* 保留原始失败语义。 */ }
-      throw error;
+      throw failure;
+    } finally {
+      trace?.clock.first('clientEndMs');
+      if (trace) observe({ tavern: { timeline: { ...trace.clock.marks }, calls: trace.calls, bytes: trace.bytes, complete: trace.complete,
+        upstreamStatus: trace.status, upstreamFinish: trace.finish, upstreamUsage: trace.usage, upstreamError: trace.error?.code,
+        requestedStream: trace.requestedStream, contentType: trace.contentType, formatEvidence: trace.formatEvidence,
+        cancelled: trace.cancelled === true, readerEof: trace.readerEof === true, readError: trace.readError === true, rawFinish: trace.rawFinish,
+        wrapperFormat: trace.wrapperFormat, wrapperBodyRead: trace.wrapperBodyRead === true, restored: trace.restored === true,
+        boundary: trace.boundary, normalized: trace.normalized, wrapper: trace.wrapper } });
+      cleanup?.abort();
     }
   }
   async listModels(snapshot: RequestSnapshot, options: ModelListOptions = {}): Promise<string[]> {

@@ -74,7 +74,7 @@ it('真实创角开局只请求Story，初始化唯一开局时钟并保存Journ
 it.each([{ guides: [] }, { guides: [{ group: 'time', subjectHint: 'time:opening', observedFact: '{}' }] }])('真实待定开局缺失或非法时间拒绝，不能用关闭阶段绕过初始化', async ({ guides }) => {
   const { state, draft } = await seed(true), commit = vi.spyOn(repo, 'commitTurn');
   await expect(run(runner(async () => json(story(guides))), draft)).rejects.toThrow();
-  expect(commit).not.toHaveBeenCalled(); expect(await repo.load(state.saveId)).toEqual(state);
+  expect(commit).toHaveBeenCalledTimes(1); expect(await repo.loadDraft(state.saveId)).toMatchObject({ story: { narrative: body }, stageStatus: { story: 'ready' } }); expect(await repo.load(state.saveId)).toEqual(state);
 });
 
 it.each([true, false])('普通回合结构化 time:pause=%s 也不更新纯小说世界；重新开启后恢复三阶段', async pause => {

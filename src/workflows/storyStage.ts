@@ -1,3 +1,5 @@
+import { StoryClock } from '../presets/tavern/timing';
+import { awaitAssistant, assistantStarting, captureAssistantPreferences } from '../presets/tavern/hostState';
 import { stageResponses, safeStreamResponseText, safeResponseText } from '../services/ai/stageResponses';
 import { storyFailure, storySchemaError } from '../services/validation/storyDiagnostics';
 import { DataError } from '../domain/common';
@@ -10,6 +12,7 @@ import { StorySchema } from '../domain/state';
 import type { CompanionProfile } from '../services/local/companionProfile';
 import type { SaveRepository } from '../services/storage/saveRepository';
 import { AiClient } from '../services/ai/client';
+import { requestSnapshot } from '../services/ai/snapshot';
 import { AiConfigSchema } from '../services/ai/configuration';
 import { storyInspections } from '../services/ai/storyInspection';
 import type { AiConfig } from '../services/ai/configuration';
@@ -25,7 +28,7 @@ import { StageGuard } from './stageGuard';
 import type { OrderPreferences } from '../prompts/order';
 
 type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>
-  & Partial<Pick<SaveRepository,'saveRecoveredStory'>>;
+  & Partial<Pick<SaveRepository,'saveRecoveredStory' | 'recentStoryActions'>>;
 export interface StoryProgress {
   phase: 'generating' | 'saving';
   narrative: string;
@@ -71,16 +74,40 @@ export class StoryStage {
     this.guard.dispose();
   }
   async generate(input: StoryInput): Promise<TurnDraft> {
+    const started = performance.now();
     const expected = TurnDraftSchema.parse(input.draft);
+    let presetSelection = captureAssistantPreferences();
+    const clock = presetSelection ? new StoryClock(started) : undefined;
+    const waitingForScripts = assistantStarting();
+    if (clock) {
+      clock.marks.waitedForInitialization = Boolean(waitingForScripts);
+      if (!waitingForScripts) clock.first('assistantReadyMs');
+    }
     const selection = input.legacyNotificationSelection && structuredClone(input.legacyNotificationSelection);
+    const continuation = Boolean(input.continuation);
+    const captureInputs = () => {
+      const config = AiConfigSchema.parse(input.config);
+      return {
+        config,
+        settings: SettingsSchema.parse(input.settings),
+        companionProfile: input.companionProfile && structuredClone(input.companionProfile),
+        orderPreferences: input.orderPreferences && structuredClone(input.orderPreferences),
+        frozenStoryChannel: presetSelection ? requestSnapshot(config, 'story', input.vault) : undefined,
+        secrets: config.channels.map(channel => input.vault.get(channel.id)).filter(Boolean),
+      };
+    };
+    // 浏览器取得 Web Lock 本身也是异步的。预设、渠道与凭证在调用入口一起选定。
+    const frozen = presetSelection ? captureInputs() : undefined;
     return this.guard.run(expected.saveId, async (attempt) => {
       const current = attempt.check;
-      // 在第一个 await 之前快照本次设置；运行开关始终取绑定草稿，不被界面切换重写。
-      const settings = SettingsSchema.parse(input.settings);
+      if (presetSelection && waitingForScripts) {
+        await awaitAssistant(attempt.signal);
+        clock?.first('assistantReadyMs');
+        current();
+        presetSelection = captureAssistantPreferences();
+      }
+      const { config, settings, companionProfile, orderPreferences, frozenStoryChannel, secrets } = frozen ?? captureInputs();
       const streaming = settings.runtime.streamStory;
-      const config = AiConfigSchema.parse(input.config);
-      const companionProfile = input.companionProfile && structuredClone(input.companionProfile);
-      const secrets = config.channels.map((channel) => input.vault.get(channel.id)).filter(Boolean);
       const [state, draft] = await Promise.all([
         this.repository.load(expected.saveId),
         this.repository.loadDraft(expected.saveId),
@@ -95,9 +122,8 @@ export class StoryStage {
       )
         throw new DataError('DRAFT_CONFLICT', '草稿或正式版本已变化，请重新读取存档。');
       const recovery = selection ? authorizeLegacyNotificationRecovery(state,draft,selection) : undefined;
-      if (recovery && (!this.repository.saveRecoveredStory || input.continuation
+      if (recovery && (!this.repository.saveRecoveredStory || continuation
         || !settings.runtime.useVariableStage || !settings.runtime.useWorldStage)) throw new AiError('configuration');
-      const continuation = Boolean(input.continuation);
       if (continuation && !canContinueStory(draft, settings.prompts.minNarrativeChars))
         throw new DataError('DRAFT_CONFLICT', '这段正文已不能续写，请重新生成。');
       const partial = continuation ? trimIncompleteTag(draft.storyPartial!.text) : '';
@@ -116,9 +142,13 @@ export class StoryStage {
         readingPhase: !streaming ? 'waiting' : stream.bodyStarted ? 'body' : 'thinking',
         ...(!streaming || stream.bodyStarted ? {} : { planning: safeStreamResponseText(stream.planning, secrets), nativeReasoning: safeStreamResponseText(reasoning, secrets),
           compatibilityReasoning: safeStreamResponseText(compatibilityReasoning, secrets) }) });
+      let saving = false;
       let responseInspectionId: string | undefined;
       try {
         progress();
+        const historyActions = presetSelection && state.journal.length
+          ? await this.repository.recentStoryActions?.(state, settings.memory.immediateWindowSize) : undefined;
+        current();
         const response = await runStageRequest(
           {
             stage: 'story',
@@ -128,13 +158,15 @@ export class StoryStage {
             userInput: draft.userInput,
             settings,
             companionProfile,
-            orderPreferences: input.orderPreferences,
+            historyActions,
+            orderPreferences,
             ...(recovery ? {legacyNotificationRecovery:recovery} : {}),
           },
           config,
           input.vault,
           {
-            stream: streaming,
+            stream: streaming, storyClock: clock,
+            presetSelection, frozenStoryChannel,
             signal: attempt.signal,
             ...(continuation ? { continuation: { partial } } : {}),
             onDelta: (delta) => {
@@ -187,18 +219,26 @@ export class StoryStage {
           throw new AiError('invalid_output', undefined, { storyRule: 'credential_output' });
         if (recovery) validateRecoveredStory(state,draft.story!,story,recovery);
         current();
+        if (responseInspectionId) {
+          try { stageResponses.update(responseInspectionId, { storyValidated: true, validationEndMs: clock?.elapsed() }, secrets); } catch { /* Display only. */ }
+        }
+        saving = true;
         attempt.saving();
         input.onProgress?.({ phase: 'saving', readingPhase: streaming ? 'body' : 'waiting', narrative: streaming ? story.narrative : '' });
         // 网络从不放入 IDB 事务；整份草稿用现有乐观锁原子替换。
         const saved = selection
           ? await this.repository.saveRecoveredStory!(draft,story,selection,attempt.signal)
           : await this.repository.saveDraft(rerollStory(draft,story), draft.draftRevision, attempt.signal, draft);
+        if (responseInspectionId) {
+          try { stageResponses.update(responseInspectionId, { candidateSaved: true, draftSavedMs: clock?.elapsed() }, secrets); } catch { /* Already persisted. */ }
+        }
         current();
         storyInspections.update(inspectionId, { status: 'saved' });
         return saved;
       } catch (error) {
         storyInspections.update(inspectionId, { status: 'failed' });
-        if (responseInspectionId) stageResponses.update(responseInspectionId, { status: 'failed', normalized: undefined, error: safeAiError(storyFailure(error)) }, secrets);
+        if (responseInspectionId) stageResponses.update(responseInspectionId, { status: 'failed', failureLayer: saving ? 'draft' : 'story_validation',
+          ...(!saving && clock ? { validationEndMs: clock.elapsed() } : {}), normalized: undefined, error: safeAiError(storyFailure(error)) }, secrets);
         if (!recovery && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled') {
           current();
           const previousAttempt = draft.failures.filter(f => f.stage === 'story' && f.storyRevision === draft.storyRevision)

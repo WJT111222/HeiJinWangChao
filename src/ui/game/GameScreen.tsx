@@ -1,3 +1,5 @@
+import { assistantView, bindTavernPage, enterTavernChat } from '../../presets/tavern/hostState';
+import { ScriptButtons } from '../settings/TavernAssistant';
 import { stageResponses } from '../../services/ai/stageResponses';
 import { MobileWorkflowDrawer } from './MobileWorkflowDrawer';
 import {MobileDiagnostics} from './MobileDiagnostics';
@@ -172,7 +174,9 @@ export function GameScreen({
   const [dismissedError, setDismissedError] = useState('');
   const [mobileStatusOpen,setMobileStatusOpen]=useState(false),[mobileMini,setMobileMini]=useState(false);
   const readerY=useRef(0),inputElement=useRef<HTMLTextAreaElement>(null);
-  const [input, setInput] = useState('');
+  const inputKey = JSON.stringify(['tavern-reload-input', state.saveId, instance, state.revision, draft?.turnId, draft?.draftRevision]);
+  const [input, setInput] = useState(() => { try { return sessionStorage.getItem(inputKey) ?? ''; } catch { return ''; } });
+  useEffect(() => { try { sessionStorage.removeItem(inputKey); } catch { /* storage may be unavailable */ } }, [inputKey]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [concurrencyBlocked, setConcurrencyBlocked] = useState(false);
@@ -233,6 +237,25 @@ export function GameScreen({
   );
   const npcManagement = useNpcManagement(repository, state, draft, workflowBusy, onNpcManaged, instance);
   const busy = workflowBusy || Boolean(npcManagement.pendingId);
+  useEffect(() => { enterTavernChat(state.saveId, instance); }, [state.saveId, instance]);
+  const recentActions = useRef<{ state: GameState; actions: Record<string, string> }>(undefined);
+  useEffect(() => {
+    if (!assistantView.snapshot().length || !state.journal.length) return;
+    let alive = true;
+    void repository.recentStoryActions(state, settings.memory.immediateWindowSize).then(actions => {
+      if (alive) recentActions.current = { state, actions };
+    }).catch(() => { /* A concurrent timeline change invalidates this optional preview. */ });
+    return () => { alive = false; };
+  }, [repository, state, settings.memory.immediateWindowSize]);
+  useEffect(() => bindTavernPage(() => ({
+    stage: 'story', saveInstance: instance, historyActions: recentActions.current?.state === state ? recentActions.current.actions : undefined, mode: draft?.turnKind ?? 'regular', state, draft, userInput: input || draft?.userInput || '', settings, companionProfile,
+  }), () => {
+    if (busy) throw new Error('请先完成或取消当前操作。');
+    if (input) {
+      sessionStorage.setItem(inputKey, input);
+      return () => sessionStorage.removeItem(inputKey);
+    }
+  }), [state,draft,input,settings,companionProfile,busy,inputKey,instance]);
   const reader = useRef<HTMLDivElement>(null);
   const runtimeSwitches = useRef<HTMLOListElement | HTMLDivElement>(null);
   const workflowToggle = useRef<HTMLButtonElement>(null);
@@ -781,6 +804,7 @@ export function GameScreen({
         >
           <div className="reader-heading">
             <span className="eyebrow">THE STORY</span>
+            {!compactSidebars && <ScriptButtons/>}
             <span className="tag">
               {progress
                 ? progress.readingPhase === 'waiting' ? '完整响应 · 尚未保存' : '生成预览 · 尚未保存'
@@ -890,7 +914,7 @@ export function GameScreen({
                     <span className="mobile-progress-segments" aria-hidden="true">{progressSteps.map(step=><i key={step.stage} data-s={step.visual}/>)}</span>
                     <strong role="status" aria-live="polite"><span className="sr-only">三阶段 · </span>{workflowLabel}</strong><span className="more">详情 ›</span>
                   </button></div>
-                  {workflowOpen&&<MobileWorkflowDrawer inputRef={inputElement} onClose={closeWorkflow}>{renderWorkflow('sheet')}</MobileWorkflowDrawer>}
+                  {workflowOpen&&<MobileWorkflowDrawer inputRef={inputElement} onClose={closeWorkflow}><ScriptButtons/>{renderWorkflow('sheet')}</MobileWorkflowDrawer>}
                 </div>
               ) : (
                 <div

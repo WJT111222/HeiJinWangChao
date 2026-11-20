@@ -1,6 +1,11 @@
+import { captureAssistantPreferences, withTavernRequest } from '../../presets/tavern/hostState';
+import { promptReady, tavernGeneration, type GenerationType } from '../../presets/tavern/events';
+import type { PresetSelection } from '../../presets/library';
 import { parsePartialVariables, parsePartialWorld } from '../validation/partialOutputs';
 import { worldNormalizationNotes } from '../validation/worldSceneWrites';
 import { narrativeRange } from '../../ui/settings/model';
+import { DataError } from '../../domain/common';
+import { historicalPerspective } from '../../domain/timePreflight';
 import { validateStoryEventInteractions } from '../../domain/events/interactions';
 import { AiError } from './errors';
 import { browserPromptOrder } from '../../prompts/order';
@@ -10,12 +15,11 @@ import type { ComposeInput } from '../../prompts/context';
 import { parseStoryEnvelope, parseVariables } from '../validation/aiOutputs';
 import type { AiConfig, AiStage } from './configuration';
 import type { CredentialVault } from './credentials';
-import { requestSnapshot } from './snapshot';
+import { requestSnapshot, secretFor, type RequestSnapshot } from './snapshot';
 import { AiClient } from './client';
 import type { RequestOptions } from './client';
-import { variableFailure, variableValidationError } from '../validation/variableDiagnostics';
+import { variableFailure } from '../validation/variableDiagnostics';
 import { storyFailure } from '../validation/storyDiagnostics';
-import { timeOutcome } from '../../domain/timePreflight';
 import { stageResponses, safeStreamResponseText, responseLimitsFor } from './stageResponses';
 import { safeAiError } from './errors';
 import { mergeResponseDiagnostics } from './responseContent';
@@ -25,7 +29,7 @@ import type { StoryFailureText } from '../../domain/storyContinuation';
 import { splitLeadingThink } from './compat';
 
 /** 正文续写：已写出的截断原文（已隐藏凭证）。只用于正文阶段。 */
-export interface StageRequestOptions extends RequestOptions { continuation?: { partial: string } }
+export interface StageRequestOptions extends Omit<RequestOptions, 'tavernType'> { frozenStoryChannel?: RequestSnapshot; presetSelection?: PresetSelection; continuation?: { partial: string } }
 /**
  * 正文请求失败时收到的内容（去掉前导 <think> 推理；续写时为与已写部分拼接后的全文），供上层保存为可续写的截断正文。
  * 以失败对象为键，不进入错误消息或诊断展示。
@@ -45,7 +49,7 @@ export async function runStageRequest(
 }
 async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }, config: AiConfig,
   vault: CredentialVault, stageOptions: StageRequestOptions, client: AiClient) {
-  const { continuation: requestedContinuation, ...options } = stageOptions;
+  const { continuation: requestedContinuation, frozenStoryChannel, presetSelection: suppliedSelection, ...options } = stageOptions;
   if (requestedContinuation && input.stage !== 'story') throw new AiError('configuration');
   if (input.orderOverrides && input.orderPreferences) throw new AiError('configuration');
   const captured = checkedInput({
@@ -56,11 +60,30 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   }) as ComposeInput & { stage: AiStage };
   if (captured.stage === 'world' && captured.draft?.variables?.validation === 'validated')
     parseVariables(JSON.stringify(captured.draft.variables.result), captured.state, captured.draft);
+  if (frozenStoryChannel && (captured.stage !== 'story' || frozenStoryChannel.stage !== 'story')) throw new AiError('configuration');
+  const snapshot = frozenStoryChannel ?? requestSnapshot(config, captured.stage, vault);
+  const presetSelection = captured.stage === 'story' && suppliedSelection === undefined
+    ? captureAssistantPreferences() : suppliedSelection;
+  const type = requestedContinuation ? 'continue' : captured.draft?.story || captured.draft?.storyPartial
+    || captured.draft?.failures.some(f => f.stage === 'story') ? 'regenerate' : 'normal';
   const generation = stageResponses.generation();
-  const snapshot = requestSnapshot(config, captured.stage, vault);
+  const run = () => executePrepared(captured, snapshot, presetSelection, type, config, vault, options, requestedContinuation, client, generation);
+  if (!presetSelection || captured.stage !== 'story') return run();
+  const recent = captured.state.journal.slice(-captured.settings.memory.immediateWindowSize);
+  const chatLength = 1 + recent.reduce((sum, entry) => sum + 1 + Number(Boolean(captured.historyActions?.[entry.turnId])), 0);
+  return withTavernRequest({ ...captured, stage: 'story' }, snapshot.channel.protocol, type, presetSelection.overrides,
+    () => tavernGeneration(type, options.signal, false, chatLength, () => {
+      options.storyClock?.first('generationEventsDoneMs');
+      return run();
+    }));
+}
+
+async function executePrepared(captured: ComposeInput & { stage: AiStage }, snapshot: RequestSnapshot,
+  presetSelection: PresetSelection | undefined, type: GenerationType, config: AiConfig, vault: CredentialVault,
+  options: RequestOptions, requestedContinuation: StageRequestOptions['continuation'], client: AiClient, generation: number) {
   const prompt = captured.stage === 'variables'
     ? await composeTextVariablesPrompt({ ...captured, stage: 'variables', cotAllowed: snapshot.useCot })
-    : await composePrompt({ ...captured, cotAllowed: snapshot.useCot });
+    : await composePrompt({ ...captured, cotAllowed: snapshot.useCot }, presetSelection);
   // 续写：上下文与原请求完全相同（缓存前缀不变），末尾追加已写部分（assistant）与续写指令（user）。
   const continuation = requestedContinuation ? { partial: trimIncompleteTag(requestedContinuation.partial) } : undefined;
   const messages = continuation
@@ -75,6 +98,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     stageRequestRevision: captured.stage === 'story' ? undefined : captured.draft?.stageRequestRevisions[captured.stage],
     basedOnVariableRevision: captured.stage === 'world' ? captured.draft?.variables?.candidateRevision : undefined }, generation);
   const secrets = config.channels.map(channel => vault.get(channel.id)).filter(Boolean);
+  if (prompt.preset) secrets.push(secretFor(snapshot));
   const responseLimits = responseLimitsFor(captured.stage);
   let received = '', sealed = false, truncated = false;
   let diagnostics: ResponseDiagnostics = {};
@@ -100,12 +124,14 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   // 本次请求模型返回的原始文字（续写时不含已写部分）；诊断展示用的 received 在续写成功接收后会换成拼接全文。
   let addition: string | undefined;
   try {
-  const response = await client.generate(snapshot, messages, {
+  const response = await client.generate(snapshot, prompt.preset ? await promptReady(messages, false) : messages, {
     ...options,
+    tavernType: prompt.preset ? type : undefined,
+    presetSampling: prompt.preset?.sampling,
     // Only Story may evaluate a complete limit response; other stages remain strict.
     validateStoryOutputLimit: captured.stage === 'story',
     onResponseDiagnostics: (value) => {
-      if (sealed || options.signal?.aborted) return;
+      if (sealed || (options.signal?.aborted && !value.tavern)) return;
       diagnostics = mergeResponseDiagnostics(diagnostics, value); observe();
       options.onResponseDiagnostics?.(value);
     },
@@ -164,18 +190,27 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     }
   })();
   const story = envelope?.story;
-  if (story) {
-    try { validateStoryEventInteractions(captured.state, story,captured.legacyNotificationRecovery); }
+  if (story && envelope) {
+    const basis = { turnKind: captured.mode, userInput: captured.userInput, story };
+    try { historicalPerspective(captured.state, basis); }
     catch (error) {
-      throw storyFailure(error);
+      if (!(error instanceof DataError)) throw error;
+      story.variableGuide = story.variableGuide.filter(g => g.subjectHint !== 'time:retrospective' && !g.eventInteraction && !g.eventNarration);
+      envelope.notes.push('未确认的历史视角声明已保留在参考笔记中。');
     }
-    try { timeOutcome(captured.state, { userInput: captured.userInput, turnKind: captured.mode, story }, true); }
-    catch (error) { const failure = storyFailure(error); throw failure instanceof AiError ? failure : variableValidationError(error); }
+    try { validateStoryEventInteractions(captured.state, story, captured.legacyNotificationRecovery); }
+    catch (error) {
+      if (!(error instanceof DataError) || captured.legacyNotificationRecovery) throw storyFailure(error);
+      // A bad batch of receipts authorizes no event write. Keep its original
+      // evidence for Variables and leave existing entries untouched.
+      story.variableGuide = story.variableGuide.filter(g => !g.eventInteraction && !g.eventNarration);
+      envelope.notes.push('本幕事件回执未通过核验，未授予事件操作。');
+    }
   }
   const result = story ?? (captured.stage === 'variables'
         ? await parsePartialVariables(responseText, captured.state, captured.draft!)
         : await parsePartialWorld(responseText, captured.state, captured.draft!));
-  const notes = story ? undefined : worldNormalizationNotes.get(result);
+  const notes = envelope?.notes ?? worldNormalizationNotes.get(result);
   stageResponses.update(responseId, { status: 'validated', normalized: JSON.stringify(result, null, 2), ...(notes ? { notes } : {}) }, secrets);
   return {
     result,
@@ -185,6 +220,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     usage: response.usage,
     diagnostics: response.diagnostics,
     modules: prompt.modules,
+    ...(prompt.preset ? { preset: prompt.preset } : {}),
     baseSaveRevision: prompt.baseSaveRevision,
     storyRevision: prompt.storyRevision,
     requestBasis: {
@@ -206,7 +242,10 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     audience: 'internal' as const,
   };
   } catch (error) {
-    const failure = captured.stage === 'variables' ? variableFailure(error, step) : captured.stage === 'story' ? storyFailure(error, true) : error;
+    // 兼容包装和协议错误已有具体位置；仅将实际正文错误归入 Story 格式诊断。
+    const compatibilityError = prompt.preset && error instanceof AiError && error.details?.fieldPath?.startsWith('tavern.');
+    const failure = captured.stage === 'variables' ? variableFailure(error, step)
+      : captured.stage === 'story' && !compatibilityError ? storyFailure(error, true) : error;
     sealed = true;
     if (captured.stage === 'story' && failure && typeof failure === 'object') {
       // 兼容渠道会把推理写成开头的 <think>…</think>：与正式解析一致先去掉，推理不进入可续写的正文。
@@ -215,8 +254,29 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
         text: !continuation ? content : content.trim() ? merged(content) : continuation.partial });
     }
     clearTimeout(observationTimer);
-    stageResponses.update(responseId, { status: 'failed', text: preview(received),
+    const path = error instanceof AiError ? error.details?.fieldPath : undefined;
+    let storyLayer: 'request' | 'story_validation' | 'upstream' | 'wrapper' = 'request';
+    const deadline = diagnostics.tavern?.timeline?.deadlinePhase;
+    if (step === 'response') storyLayer = 'story_validation';
+    else if (deadline === 'wrapper_restore') storyLayer = 'wrapper';
+    else if (deadline === 'upstream_read' || deadline === 'awaiting_headers' || deadline === 'awaiting_bytes') storyLayer = 'upstream';
+    else if (deadline) storyLayer = 'request';
+    else if (diagnostics.tavern?.upstreamError || path?.startsWith('tavern.upstream.')) storyLayer = 'upstream';
+    else if (diagnostics.tavern && diagnostics.tavern.wrapper !== 'pending') storyLayer = 'wrapper';
+    stageResponses.update(responseId, { status: 'failed',
+      ...(captured.stage === 'story' ? { failureLayer: storyLayer } : {}),
+      ...(storyLayer === 'story_validation' && options.storyClock ? { validationEndMs: options.storyClock.elapsed() } : {}),
+      text: preview(received),
       nativeReasoning: preview(publicReasoning), diagnostics, truncated, ...display(), error: safeAiError(failure) }, secrets);
     throw failure;
   }
+}
+
+/** Run the same preset composer and preview events without a channel, transport or repository write. */
+export async function previewTavernStory(input: ComposeInput & { stage: 'story' }, type: GenerationType = 'normal') {
+  const selected = captureAssistantPreferences();
+  if (!selected) throw new AiError('configuration');
+  const captured = checkedInput(input);
+  return tavernGeneration(type, undefined, true, 0, async () =>
+    promptReady((await composePrompt(captured, selected)).messages, true));
 }

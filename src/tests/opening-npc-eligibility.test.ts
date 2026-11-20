@@ -273,7 +273,7 @@ it.each(['opening', 'regular'] as const)('%s正式 Variables 提示词包含有�
   expect(sent.includes('没有可靠依据时保持未知并省略 privateProfile'), '没有可靠依据时保持未知并省略 privateProfile').toBe(true);
   expect(sent.includes('未发生的 firstExperienceTarget/firstExperienceTime/firstExperienceText 必须省略，不填 null'), '未发生的 firstExperienceTarget/firstExperienceTime/firstExperienceText 必须省略，不填 null').toBe(true);
   if (mode === 'opening') {
-    expect(sent.includes('lastInteractionAt 不得晚于 Story 的 endAt'), 'lastInteractionAt 不得晚于 Story 的 endAt').toBe(true);
+    expect(sent.includes('lastInteractionAt 不得晚于本幕合法窗口的 endAt'), 'lastInteractionAt 不得晚于本幕合法窗口的 endAt').toBe(true);
     expect(sent).toContain(startAt); expect(sent).toContain(endAt);
   }
 });

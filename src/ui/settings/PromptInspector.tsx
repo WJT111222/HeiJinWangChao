@@ -867,6 +867,14 @@ export function PromptInspector({
                           ? '发送尝试进行中'
                           : `请求失败：${actual.errorCode}`}
                     </p>
+                    {actual.presetSampling && <ul aria-label="预设采样参数">
+                      {actual.presetSampling.map((item) => (
+                        <li key={item.field}>
+                          {item.field} · 预设 {item.desired} · {'sent' in item ? `已发送 ${item.sent}` :
+                            `未发送（${{ known_capability: '已知模型限制', remembered_rejection: '该路由此前明确拒绝', channel_setting: '渠道设置关闭' }[item.omission]}）`}
+                        </li>
+                      ))}
+                    </ul>}
                     <ol>
                       {actual.scope?.modules.map((item) => (
                         <li key={item.id}>

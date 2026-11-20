@@ -73,7 +73,9 @@ describe('200回合共享召回：真实Coordinator、Runtime与Mock网络', () 
         const text = `<thinking>根据原文保持连续性。</thinking><正文>${story.narrative}</正文><短期记忆>${story.summary}</短期记忆><变量规划>${JSON.stringify(story.variableGuide)}</变量规划>`;
         return new Response(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`, { headers: { 'content-type': 'text/event-stream' } });
       }
-      expect(call.context.STORY_RESULT).toMatchObject(draft.story!);
+      const { variableGuideRaw, ...selected } = draft.story!;
+      expect(call.context.STORY_RESULT).toMatchObject(call.stage === 'variables' ? selected : { ...selected, variableGuide: [] });
+      expect(call.context.VARIABLE_GUIDE_NOTES).toBe(call.stage === 'variables' ? variableGuideRaw : undefined);
       if (call.stage === 'variables') return response(variableReply(a.draft.variables!.result));
       expect(call.context.variablePending).toBe(false);
       expect(call.context.VARIABLE_RESULT).toEqual(draft.variables);
@@ -106,7 +108,10 @@ describe('200回合共享召回：真实Coordinator、Runtime与Mock网络', () 
     expect((await second.commitTurn(submission(outcome.draft, '下一步'))).replayed).toBe(true);
     expect(fetcher).toHaveBeenCalledTimes(3);
     const next = sentContext((await composePrompt({ state: committed.state, settings: a.settings, stage: 'story', mode: 'regular', userInput: '下一步' })).messages);
-    expect(array(record(next.MEMORY_CONTEXT).recentTurns).at(-1)).toMatchObject(outcome.draft.story!);
+    const { variableGuideRaw, ...history } = outcome.draft.story!;
+    expect(variableGuideRaw).toBeDefined();
+    expect(array(record(next.MEMORY_CONTEXT).recentTurns).at(-1)).toMatchObject({ ...history, variableGuide: [] });
+    expect(array(record(next.MEMORY_CONTEXT).recentTurns).at(-1)).not.toHaveProperty('variableGuideRaw');
   });
 
   it.each(['missing', 'preview'] as const)('World实际请求忽略%s Variables的状态与检索线索，不能提交', async validation => {

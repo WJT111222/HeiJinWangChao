@@ -190,10 +190,11 @@ async function runtime(preference = '') {
       const text = `<thinking>本轮创作提纲：保持时间与人物连续。</thinking><正文>${story.narrative}</正文><短期记忆>${story.summary}</短期记忆><变量规划>${JSON.stringify(story.variableGuide)}</变量规划>`;
       return new Response(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`, { headers: { 'content-type': 'text/event-stream' } });
     }
-    const value = model === 'variables' ? variables(context.OPENING_TIME ? string(record(context.OPENING_TIME).endAt)
+    const window = JSON.parse(plan.story.variableGuide[0].observedFact) as { startAt: string; endAt: string };
+    const value = model === 'variables' ? variables(context.OPENING_TIME ? window.endAt
       : new Date(Date.parse(string(record(context.SAVE_STATE).worldClock)) + 15000).toISOString())
       : { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] };
-    return Response.json({ choices: [{ message: { content: model==='variables'?variableReply(value):JSON.stringify(value) } }] });
+    return Response.json({ choices: [{ message: { content: model==='variables' ? (context.OPENING_TIME ? variableReply(value).replace('<命令>', `<命令>\nset worldClock = "${window.startAt}"`) : variableReply(value)) : JSON.stringify(value) } }] });
   });
   const runner = new TurnCoordinator(repo, client); cleanup.push(() => runner.dispose());
   const generate = async () => runner.generate({ draft: (await repo.loadDraft(state.saveId))!, config, vault, settings });
@@ -205,13 +206,13 @@ describe('开局时间真实Runtime、投影与原子事务', () => {
     const run = await runtime('故事发生在2015年夏天。'), result = await run.generate();
     expect(run.calls).toEqual(['story', 'variables', 'world']); expect(await run.repo.load(run.state.saveId)).toEqual(run.state);
     expect(record(run.contexts[0].SAVE_STATE).worldClock).toBeNull();
-    expect(run.contexts[1].SAVE_STATE).toHaveProperty('worldClock', end);
+    expect(run.contexts[1].SAVE_STATE).toHaveProperty('worldClock', null);
     expect(run.contexts[2].TIME_WINDOW).toEqual({ from: start, to: end });
     for (const context of run.contexts) expect(record(context.SAVE_STATE).revision).toBe(run.state.revision);
     expect(run.contexts[2].BASE_SAVE_REVISION).toBe(run.state.revision);
     expect(record(run.contexts[2].TURN_CONTEXT).baseSaveRevision).toBe(run.state.revision);
     expect(record(run.contexts[2].SAVE_STATE).worldClock).toBe(end);
-    expect(result.draft.variables!.result.commands.filter(command => command.type === 'SetWorldClock')).toHaveLength(1);
+    expect(result.draft.variables!.result.commands.filter(command => command.type === 'SetWorldClock').map(c => c.worldClock)).toEqual([start, end]);
     expect(JSON.stringify(run.contexts)).not.toContain(pendingOpeningClock);
     const committed = await run.repo.commitTurn(submission(result.draft));
     expect(committed.state.journal[0].scene).toEqual({ worldClock: start, locationId: run.state.protagonist.locationId });
@@ -256,7 +257,7 @@ describe('开局时间真实Runtime、投影与原子事务', () => {
     const stage = new StoryStage(run.repo, run.client); cleanup.push(() => stage.dispose());
     const next = await stage.generate({ ...run, draft: result.draft });
     expect(next.variables).toBeUndefined(); expect(next.world).toBeUndefined();
-    expect(openingTimeSelection(run.state, next)?.startAt).toBe('2008-08-10T10:00:00+08:00');
+    expect(openingTimeSelection(run.state, next)).toBeUndefined();
     expect(await run.repo.load(run.state.saveId)).toEqual(run.state);
     expect((await run.generate()).status).toBe('complete');
     expect(run.contexts.at(-1)?.TIME_WINDOW).toEqual({ from: '2008-08-10T10:00:00+08:00', to: '2008-08-10T10:05:00+08:00' });

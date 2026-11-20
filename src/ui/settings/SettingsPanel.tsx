@@ -1,3 +1,5 @@
+import { captureStoryPreset } from '../../presets/library';
+import { TavernAssistant } from './TavernAssistant';
 import type { FeedbackLevel } from '../Feedback';
 import { Feedback,useDesktopFeedback } from '../Feedback';
 import { MemorySummarySettings } from './MemorySummarySettings';
@@ -54,6 +56,8 @@ export function SettingsPanel({
   const [notice, setNotice] = useState('');
   const [noticeLevel, setNoticeLevel] = useState<FeedbackLevel>('info');
   const [aiDirty, setAiDirty] = useState(false);
+  let presetOwnsWriting = false;
+  try { presetOwnsWriting = Boolean(captureStoryPreset()); } catch { /* Recovery remains available in runtime settings. */ }
   const [summaryDirty, setSummaryDirty] = useState(false);
   const summaryDirtyChanged = useCallback((dirty: boolean) => { setSummaryDirty(dirty); onSummaryDirtyChange?.(dirty); }, [onSummaryDirtyChange]);
   const [pendingTab, setPendingTab] = useState<(typeof tabs)[number]|'home'>();
@@ -150,12 +154,12 @@ export function SettingsPanel({
         {tab === 'AI 连接' && <AiConnections timeoutSeconds={settings.runtime.timeoutSeconds} onDirtyChange={aiDirtyChanged} />}
         {tab === '提示词' && (
           <>
-            <p className="muted">七项叙事偏好用于下一次正文请求的提示词与输出校验。</p>
+            <p className="muted">{presetOwnsWriting ? '文风、人称和叙事偏好由预设接管；篇幅和行动选项继续由游戏控制。关闭预设后沿用原偏好。' : '七项叙事偏好用于下一次正文请求的提示词与输出校验。'}</p>
             <div className="settings-fields">
               <label>
                 叙事人称
                 <select
-                  value={editing.prompts.perspective}
+                  disabled={presetOwnsWriting} value={editing.prompts.perspective}
                   onChange={(e) =>
                     prompt('perspective', e.target.value as Settings['prompts']['perspective'])
                   }
@@ -165,7 +169,7 @@ export function SettingsPanel({
                   <option value="third">第三人称</option>
                 </select>
               </label>
-              <StyleField value={editing.prompts.style} onChange={(value) => prompt('style', value)} />
+              <fieldset disabled={presetOwnsWriting} style={{border:0,padding:0,margin:0}}><StyleField value={editing.prompts.style} onChange={(value) => prompt('style', value)} /></fieldset>
               <LengthField
                 min={editing.prompts.minNarrativeChars}
                 max={editing.prompts.maxNarrativeChars}
@@ -187,7 +191,7 @@ export function SettingsPanel({
                 <label className="toggle" key={key}>
                   <input
                     type="checkbox"
-                    checked={editing.prompts[key]}
+                    disabled={presetOwnsWriting && key !== 'actionOptions'} checked={editing.prompts[key]}
                     onChange={(e) => prompt(key, e.target.checked)}
                   />
                   {label}
@@ -214,6 +218,7 @@ export function SettingsPanel({
         )}
         {tab === '运行' && (
           <>
+            <TavernAssistant dirty={localDirty || aiDirty || summaryDirty}/>
             <div className="settings-fields">
               {(
                 [

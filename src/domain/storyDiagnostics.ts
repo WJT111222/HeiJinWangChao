@@ -7,6 +7,7 @@ export const storyRuleNames = {
   tag_nested: '区块内出现重复或嵌套的保留标签', tag_unexpected: '出现当前设置不允许的结构标签',
   planning_empty: '正文规划区块为空', narrative_short: '正文长度不足', summary_empty: '<短期记忆> 内容为空',
   guide_json: '<变量规划> 不是合法 JSON，解析失败', story_schema: '正文字段未通过 Schema 校验',
+  guide_reference_limit: '需保留的普通变量参考超过容量限制',
   actions_count: '行动选项数量不符合要求',
   opening_context: '待定开局时间与回合状态不一致', opening_protocol: '待定开局混用了普通回合时间声明',
   opening_missing: '缺少结构化开局时间', opening_duplicate: '结构化开局时间重复',
@@ -38,7 +39,7 @@ export interface StoryDiagnostic {
   storyIssue?: typeof issues[number];
 }
 export const isStoryRule = (value: unknown): value is StoryRule => typeof value === 'string' && Object.hasOwn(storyRuleNames, value);
-const fields = new Set(['narrative', 'summary', 'turnKind', 'variableGuide', 'group', 'subjectHint', 'observedFact',
+const fields = new Set(['narrative', 'summary', 'turnKind', 'variableGuide', 'variableGuideReferences', 'group', 'subjectHint', 'observedFact',
   'textEvidence', 'eventNarration', 'mode', 'at', 'eventInteraction', 'eventId', 'entryId', 'action', 'actionOptions', 'openingTime', 'startAt', 'endAt', 'field']);
 export function storyFieldPath(path: readonly PropertyKey[]) {
   return path.map(part => typeof part === 'number' && Number.isSafeInteger(part) && part >= 0 ? part : fields.has(String(part)) ? part : 'field').join('.');

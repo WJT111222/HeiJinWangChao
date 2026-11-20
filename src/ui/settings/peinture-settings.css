@@ -1,0 +1,69 @@
+.peinture-panel details {
+  margin-block: 0.6rem;
+  border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+  border-radius: 0.4rem;
+  padding: 0.65rem 0.8rem;
+}
+.peinture-panel summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.25rem 0;
+}
+.peinture-panel label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-block: 0.35rem;
+}
+.peinture-panel select,
+.peinture-panel input[type='number'],
+.peinture-panel textarea {
+  max-width: min(65%, 24rem);
+  min-width: 0;
+  color: inherit;
+  font: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 0.25rem;
+  padding: 0.35rem;
+}
+.peinture-panel select option {
+  background: Canvas;
+  color: CanvasText;
+}
+.peinture-panel input[type='number'] {
+  width: 6em;
+}
+.peinture-panel label:has(input[type='checkbox']) {
+  justify-content: flex-start;
+}
+.peinture-panel label:has(textarea) {
+  display: block;
+}
+.peinture-panel input[type='checkbox'] {
+  width: 1.15em;
+  height: 1.15em;
+  flex: none;
+}
+.peinture-panel textarea {
+  display: block;
+  max-width: 100%;
+  width: 100%;
+}
+.peinture-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: 0.3rem 0.8rem;
+}
+.peinture-panel .modal-body {
+  overflow-wrap: anywhere;
+}
+.peinture-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
