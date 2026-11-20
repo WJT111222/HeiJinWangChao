@@ -538,18 +538,15 @@ test('预设名片显示仍可用脚本的运行时诊断', async ({ page }) => 
   const sent = await prepare(page, 'openai', false, true);
   const panel = await editPreset(page);
   await expect(panel.getByText('脚本运行中', { exact: true })).toBeVisible();
-  await page.evaluate(async () => {
-    const host = '/src/presets/tavern/hostState.ts';
-    const { assistantView } = await import(host);
-    assistantView.add({
-      id: 'synthetic-ready-script', name: '合成脚本', status: '已初始化', buttons: [], phases: {},
-      error: '合成脚本 · 运行时异常：TypeError',
-    });
+  // Exercise the same iframe listener in the built app; dist does not serve source modules.
+  await page.frameLocator('iframe[data-tavern-script="' + controls.mainScript + '"]').locator('body').evaluate(() => {
+    window.setTimeout(() => { throw new TypeError('synthetic-private-error'); }, 0);
   });
   await expect(panel.getByText('脚本运行时异常', { exact: true })).toBeVisible();
   await panel.getByRole('button', { name: '浪潮 · 状态', exact: true }).click();
   await panel.getByText('合成脚本 · 已初始化', { exact: true }).click();
-  await expect(panel.getByRole('alert')).toHaveText('合成脚本 · 运行时异常：TypeError');
+  await expect(panel.getByRole('alert')).toHaveText(/我即浪潮.*运行时异常.*TypeError/u);
+  await expect(panel.getByRole('alert')).not.toContainText('synthetic-private-error');
   expect(sent).toHaveLength(0);
 });
 
