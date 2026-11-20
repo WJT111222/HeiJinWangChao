@@ -196,7 +196,7 @@ describe('供应商实际公开的原生内容', () => {
 describe('结构隔离、流式与事务', () => {
   it('规划仅作为创作资料返回，Story不增加字段，字数只统计正文', () => {
     const a = setup(), parsed = parseStoryEnvelope(output(), 'opening', a.settings);
-    expect(parsed.planning).toBe(planning); expect(parsed.story).toEqual({ turnKind: 'opening', narrative, summary: '在街边喝水。', variableGuide: [] });
+    expect(parsed.planning).toBe(planning); expect(parsed.story).toEqual({ turnKind: 'opening', narrative, summary: '在街边喝水。', variableGuide: [], variableGuideRaw: '[]' });
     a.settings.prompts.minNarrativeChars = 100;
     expect(() => parseStory(output('短', '详'.repeat(500)), 'regular', a.settings)).toThrow();
   });

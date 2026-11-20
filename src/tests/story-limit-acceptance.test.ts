@@ -48,7 +48,7 @@ for(const stream of [false,true])for(const c of cases){it(`matrix stream=${strea
  if(c.id==='complete-stop'){expect(draft.story).toBeDefined();expect(out!.status).toBe('complete');}
  if(c.id==='complete-length'){expect(error).toBeUndefined();expect(draft.story).toBeDefined();expect(got.partial).toBe(false);expect(strict.ok).toBe(true);}
  if(c.id==='closed-short-length')expect(error!.details?.storyRule).toBe('narrative_short');
- if(c.id==='invalid-guide-length'){expect(error!.code).toBe('invalid_json');expect(got.continuable).toBe(false);}
+ if(c.id.startsWith('invalid-guide')){expect(error).toBeUndefined();expect(draft.story?.variableGuideRaw).toBe('{bad}');expect(got.continuable).toBe(false);}
  });}
 
 for(const stream of [false,true])for(const protocol of ['openai','deepseek','gemini','anthropic'] as const)it(`四协议完整limit严格保存 ${protocol} stream=${stream}`,async()=>{

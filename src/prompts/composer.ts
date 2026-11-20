@@ -75,7 +75,7 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
   const context = contextFor(input);
   const clock =
     typeof context.worldClock === 'string' ? context.worldClock : input.state.openingTimePending
-      ? input.stage === 'variables' || input.stage === 'world' ? openingTimeSelection(input.state, input.draft!)?.endAt : undefined
+      ? input.stage === 'variables' || input.stage === 'world' ? openingTimeSelection(input.state, input.draft!, input.stage === 'variables' ? [] : undefined)?.endAt : undefined
       : input.state.worldClock;
   const replacements: Record<string, string | number | undefined> = {
     playerName: input.state.protagonist.name,
@@ -138,6 +138,7 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
     actionOptions: input.settings.prompts.actionOptions,
     minNarrativeChars: input.settings.prompts.minNarrativeChars,
     maxNarrativeChars: narrativeRange(input.settings.prompts).max,
+    openingTimePending: input.mode === 'opening' && input.state.openingTimePending === true,
   });
   if (confirmation) {
     const closing = tail ? `${tail}

@@ -48,7 +48,7 @@ function scenario(mode:'enter'|'mention'|'none'='enter') {
   const guides=[{group:'time' as const,subjectHint:mode==='enter'?'time:pause':'time:end',observedFact:mode==='enter'?stop:target,textEvidence:'本轮实际停止时间'},...(mode==='none'?[]:[narration])];
   const draft=rerollStory(base,{turnKind:'regular',narrative:'【旁白】你收到了资料室的电话。\n【同事】“请核对资料。”',summary:'本轮实际接触资料。',variableGuide:guides});
   const scene={status:'resolved',resolvedAt:stop,outcome:'changed',resolutionText:'主角实际介入，使本轮核查提前结束。'};
-  const variables='<thinking>落实所选正文。</thinking><说明>只写本幕变化。</说明><命令>'+ (mode==='enter'?`set events[stage-one].sceneState = ${JSON.stringify(scene)}`:`set worldClock = ${JSON.stringify(target)}`)+'</命令>';
+  const variables='<thinking>落实所选正文。</thinking><说明>只写本幕变化。</说明><命令>'+ (mode==='enter'?`set worldClock = ${JSON.stringify(stop)}\nset events[stage-one].sceneState = ${JSON.stringify(scene)}`:`set worldClock = ${JSON.stringify(target)}`)+'</命令>';
   return {state,base,draft,variables,scene};
 }
 const withVariables=(draft:ReturnType<typeof scenario>['draft'],result:Awaited<ReturnType<typeof parseTextVariables>>)=>TurnDraftSchema.parse({...draft,variables:{storyRevision:draft.storyRevision,candidateRevision:1,requestRevision:draft.stageRequestRevisions.variables,validation:'validated',result},stageStatus:{...draft.stageStatus,variables:'ready'}});

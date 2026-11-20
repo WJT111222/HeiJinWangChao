@@ -17,6 +17,8 @@ import { requestSnapshot } from '../services/ai/snapshot';
 import { wireRequest } from '../services/ai/protocols';
 import { clearAdjustedParameters, knownSamplingLimit, skipsPresetSampling } from '../services/ai/compat';
 import { requestInspections } from '../services/ai/inspection';
+import { openingGuideTimes, openingGuideEntry, wrappedOpeningGuide } from './fixtures/storyGuide';
+import { pendingOpeningClock } from '../domain/openingTime';
 
 const def = { id: 'synthetic', version: 'v1', lockedOff: ['retired'] };
 const rows = [
@@ -345,6 +347,22 @@ describe('正式组装入口', () => {
     output = '<正文>孤立正文</正文>';
     await expect(run()).rejects.toThrow();
     expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+  it('内置预设的真实出站提示与恢复后的开局时刻共用 Story 契约', async () => {
+    savePresetSettings(selection());
+    const { config, vault } = channelSetup();
+    const input = talentPromptInput('story', 'opening');
+    input.state.openingTimePending = true;
+    input.state.worldClock = pendingOpeningClock;
+    const output = '<正文>' + recoveryNarrative + '</正文><短期记忆>' + recoverySummary
+      + '</短期记忆><变量规划>[' + wrappedOpeningGuide() + ']</变量规划>';
+    const fetcher = vi.fn<typeof fetch>(async () =>
+      Response.json({ choices: [{ message: { content: output }, finish_reason: 'stop' }] }));
+    const result = await runStageRequest(input, config, vault, { stream: false }, new AiClient(fetcher));
+    expect(result.result).toMatchObject({ variableGuide: [openingGuideEntry(JSON.stringify(openingGuideTimes))] });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(String(fetcher.mock.calls[0][1]?.body));
+    expect(body.messages.at(-1).content).toContain('observedFact 直接填含 startAt、endAt 的 JSON 对象');
   });
 });
 

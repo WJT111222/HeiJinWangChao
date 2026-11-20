@@ -22,7 +22,7 @@ import { textVariableCatalog } from '../executors/variableText/catalog';
 import { AiError } from '../services/ai/errors';
 import type { AiStage } from '../services/ai/configuration';
 import { planNpcSummary, npcSummaryInput } from '../domain/memories/npcMemory';
-import { sharedContext } from './sharedContext';
+import { sharedContext, storyForSubsequentStages } from './sharedContext';
 import { timePreflight, turnTimePolicy, historicalPerspective } from '../domain/timePreflight';
 
 export interface ComposeInput {
@@ -84,11 +84,14 @@ export function checkedInput(input: ComposeInput): ComposeInput {
 }
 export function contextFor(input: ComposeInput): Record<string, unknown> {
   const { stage, settings, draft } = input;
+  const { variableGuideRaw, variableGuideRawTruncated, variableGuideReferences, ...story } = draft?.story ?? {};
   const original = input.state;
   const candidateStage = stage === 'variables' || stage === 'world';
-  const state = candidateStage && original.openingTimePending && draft ? openingTimeBase(original, draft) : original;
+  const selected = candidateStage && original.openingTimePending && draft
+    ? openingTimeSelection(original, draft, stage === 'variables' ? [] : undefined) : undefined;
+  const state = selected && draft ? openingTimeBase(original, draft) : original;
   const opening = stage === 'story' ? openingTimeContext(original, input.userInput)
-    : candidateStage && original.openingTimePending && draft ? { status: 'candidate', ...openingTimeSelection(original, draft) } : undefined;
+    : candidateStage && original.openingTimePending && draft ? selected ? { status: 'candidate', ...selected } : { status: 'pending' } : undefined;
   if (stage === 'story') {
     const events = Object.values(state.events).flatMap((event) => {
       const known = protagonistKnownEvent(event);
@@ -115,7 +118,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         LEGACY_NOTIFICATION_RECOVERY: {
           eventId:input.legacyNotificationRecovery.eventId, entryId:input.legacyNotificationRecovery.entryId,
           playerAction:'玩家确认此入场仅是无需决定的通知，并选择在本幕读完或听完这条通知，仅收悉。',
-          previousStory:draft!.story,
+          previousStory:storyForSubsequentStages(draft!.story!),
           rule:'重做当前未结算正文，保留已绑定行动与旧选定正文已成立的事实，原样保留其他事件的结构化裁定。明确写出实际读完或听完这条已呈现通知的过程。确实收悉时，只给指定旧入场补交 group=event、eventInteraction.action=acknowledged 及实际 textEvidence。仅呈现或开始播放不够。如果内容实际仍要求批准、选择、回应或参与，即使玩家将它选为纯通知，也不要提交收悉回执。此授权不分类其他事件，不接受、批准、拒绝或执行任何待决事项。不要改变时钟约束或凭空补充未收到的内容。',
         },
       } : {}),
@@ -150,16 +153,21 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       HISTORICAL_PERSPECTIVE: historicalPerspective(state, draft!),
       PLAYER_ACTION: draft!.userInput,
       SELECTED_VARIABLE_DOMAINS: input.domains ?? [],
-      ...sharedContext(opening?.status === 'candidate' ? { ...state, worldClock: openingTimeSelection(original, draft!)!.endAt } : state,
+      ...sharedContext(selected ? { ...state, worldClock: selected.endAt } : state,
         settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {
           stage: 'variables', playerInput: draft!.userInput, storyText: draft!.story!.narrative, variableGuide: draft!.story!.variableGuide,
         }),
-      STORY_RESULT: draft!.story,
+      STORY_RESULT: story,
+      ...(variableGuideRaw !== undefined ? { VARIABLE_GUIDE_NOTES: variableGuideRaw,
+        ...(variableGuideRawTruncated ? { VARIABLE_GUIDE_NOTES_TRUNCATED: true } : {}) } : {}),
       VARIABLE_GUIDE: draft!.story!.variableGuide,
+      ...(variableGuideReferences ? { VARIABLE_GUIDE_REFERENCES: variableGuideReferences } : {}),
       TEXT_COMMAND_CATALOG: textVariableCatalog(),
       NPC_IMPORTANCE: Object.values(state.npc).map(npc=>({npcId:npc.id,identityKey:npc.identityKey,kind:npc.kind,playerPreference:npc.importancePreference??'automatic',profilePending:npc.kind==='special'&&Boolean(npc.profilePending),canRestoreProfile:Boolean(state.dormantNpcProfiles?.[npc.id])})),
     };
   if (stage === 'world') {
+    if (original.openingTimePending && !selected)
+      throw new AiError('time_data', undefined, { storyRule: 'opening_missing', fieldPath: 'worldClock' });
     const variablePending = !draft?.variables || draft.variables.validation !== 'validated';
     let temporary = original.openingTimePending ? projectTurn(original, draft!) : state;
     if (!variablePending) {
@@ -188,11 +196,11 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       EVENT_SCHEDULE: historicalPerspective(state,draft!) ? {readOnly:true,policy:'纯过去视角只读，不处理当前世界到期事件；原排程保留到正常世界回合。'} : worldEventSchedule(state, temporary),
       variablePending,
       PLAYER_ACTION: draft!.userInput,
-      STORY_RESULT: { ...draft!.story!, eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction), eventNarrations: draft!.story!.variableGuide.filter(guide=>guide.eventNarration) },
+      STORY_RESULT: { ...storyForSubsequentStages(draft!.story!), eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction), eventNarrations: draft!.story!.variableGuide.filter(guide=>guide.eventNarration) },
       VARIABLE_RESULT: variablePending ? undefined : draft!.variables,
       // 投影提供候选内容，不产生新的正式版本；模型的expectedRevision仍须使用正式基线。
       ...sharedContext({ ...temporary, revision: original.revision }, settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {
-        stage: 'world', playerInput: draft!.userInput, storyText: draft!.story!.narrative, variableGuide: draft!.story!.variableGuide,
+        stage: 'world', playerInput: draft!.userInput, storyText: draft!.story!.narrative, variableGuide: storyForSubsequentStages(draft!.story!).variableGuide,
         validatedVariables: variablePending ? undefined : draft!.variables!.result, from: state.worldClock,
       }),
       PROTAGONIST_PROFILE: temporary.protagonist,

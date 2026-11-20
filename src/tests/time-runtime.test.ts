@@ -154,7 +154,7 @@ describe('真实三阶段、正式事务及恢复中的时间预检', () => {
     const result = await coordinator(repo, async (_url, init) => context(init).model === 'story' ? wireStory(true) : jsonWire(context(init).model === 'variables' ? variableResult(state, draft, true) : worldResult())).generate({ draft, ...setup() });
     const add = IDBObjectStore.prototype.add; vi.spyOn(IDBObjectStore.prototype, 'add').mockImplementation(function (this: IDBObjectStore, ...args: Parameters<IDBObjectStore['add']>) { if (this.name === 'turnReceipts') throw new DOMException('failed', 'QuotaExceededError'); return add.apply(this, args); });
     await expect(repo.commitTurn(submission(result.draft))).rejects.toThrow(); expect(await repo.load(state.saveId)).toEqual(state); expect(await repo.loadDraft(state.saveId)).toEqual(result.draft);
-    const wrong = { ...variableResult(state, draft, true), commands: [{ type: 'SetWorldClock', commandId: 'late', worldClock: '2027-01-01T08:00:00+08:00', evidence: '凌晨03:00，已约定访客敲门声将你唤醒。' }] };
+    const wrong = { ...variableResult(state, draft, true), commands: [{ type: 'SetWorldClock', commandId: 'reversed', worldClock: '2026-12-30T08:00:00+08:00', evidence: '凌晨03:00，已约定访客敲门声将你唤醒。' }] };
     expect(() => parseVariables(JSON.stringify(wrong), state, result.draft)).toThrow();
   });
 });

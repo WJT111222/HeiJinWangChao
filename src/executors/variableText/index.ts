@@ -41,7 +41,7 @@ async function simulateChecked(plan: VariableExecutionPlan, state: GameState,
     const prepared = prepareVariableProjection(state, context.draft, checked.value.commands);
     commands = prepared.commands;
     // 整份批次只调用一次；不以逐条commit产生中间revision，不使用设备当前时间。
-    const projected = commitCommands(openingTimeBase(state, context.draft), context.draft.turnId,
+    const projected = commitCommands(openingTimeBase(state, context.draft, checked.value.commands), context.draft.turnId,
       context.expectedRevision, commands, state.updatedAt, storySceneAuthority(state,context.draft,checked.value.commands), prepared.acknowledgedReceipts);
     validateNarrationClock(state,context.draft,projected.worldClock);
     for (const [index, command] of checked.value.commands.entries()) {

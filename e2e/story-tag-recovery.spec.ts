@@ -83,7 +83,9 @@ async function shot(page: Page, info: TestInfo, name: string) {
 async function raw(page: Page, expected: string, info: TestInfo, name: string) {
   await closeDiagnostics(page); const panel = await openStageRaw(page, 'story');
   const box = panel.getByRole('textbox', { name: '正文模型完整原文', exact: true });
-  await expect(panel.locator('textarea')).toHaveCount(1); await expect(panel.locator('pre')).toHaveCount(0);
+  await expect(panel.locator('textarea')).toHaveCount(1);
+  // 安全诊断有自己的 pre；模型原文只在可选择、可复制的文本框中完整呈现。
+  expect(await panel.locator('pre').allTextContents()).not.toContain(expected);
   await expect(box).toHaveAttribute('readonly', ''); await expect(box).toHaveValue(expected);
   await expect(panel.getByLabel('供应商公开原生思考全文')).toHaveCount(0);
   await box.focus(); await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.press('ControlOrMeta+C');
@@ -230,7 +232,7 @@ for (const [name, brokenTag] of [['question', '<正文?bad>'], ['colon', '<正�
 }
 
 for (const mode of ['ambiguous', 'time', 'event'] as const) {
-  test(`恢复拒绝 ${mode}：不猜测边界，后续校验仍有效，无任何部分保存`, async ({ page }, info) => {
+  test(`恢复验证 ${mode}：核对正文边界与变量参考`, async ({ page }, info) => {
     const before = await seed(page); await start(page);
     let output = deepSeekUntagged;
     if (mode === 'ambiguous') output = output.replace('### Step 12｜', '### Step 13｜');
@@ -240,11 +242,22 @@ for (const mode of ['ambiguous', 'time', 'event'] as const) {
       output = output.replace(/<变量规划>[\s\S]*?<\/变量规划>/, '<变量规划>' + JSON.stringify(guide) + '</变量规划>');
     }
     send(output); finish(); await expect(page.getByRole('article', { name: '流式正文预览', exact: true })).toHaveCount(0);
-    expect(await stored(page)).toEqual(before);
+    if (mode !== 'ambiguous') {
+      await expect.poll(async () => (await stored(page)).draft.stageStatus.story).toBe('ready');
+      const saved = await stored(page);
+      expect(saved.state).toEqual(before.state);
+      expect(saved.draft.story.narrative).toBe(recoveryNarrative);
+      if (mode === 'event') expect(saved.draft.story.variableGuide).toEqual([]);
+      expect(saved.draft.story.variableGuideRaw).toBe(output.match(/<变量规划>(.*?)<\/变量规划>/s)![1]);
+      return;
+    }
+    await expect.poll(async () => (await stored(page)).draft.failures.length).toBeGreaterThan(0);
+    const failed = await stored(page);
+    expect(failed.state).toEqual(before.state);
+    expect(failed.draft.story).toEqual(before.draft.story);
+    expect(failed.draft.stageStatus.story).not.toBe('ready');
     const error = await page.evaluate(async () => { const p = '/src/services/ai/stageResponses.ts'; return (await import(p)).stageResponses.getSnapshot()[0].error; });
-    if (mode === 'time') expect(error).toMatchObject({ code: 'time_data', details: { storyRule: 'time_invalid_or_reversed' } });
-    else if (mode === 'event') expect(error).toMatchObject({ code: 'event_entry', details: { storyRule: 'narration_reference' } });
-    else expect(error).toMatchObject({ code: 'invalid_output' });
-    await raw(page, output, info, `rejected-${mode}-raw`); expect(await stored(page)).toEqual(before);
+    expect(error).toMatchObject({ code: 'invalid_output' });
+    await raw(page, output, info, `rejected-${mode}-raw`); expect(await stored(page)).toEqual(failed);
   });
 }

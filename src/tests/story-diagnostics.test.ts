@@ -21,7 +21,6 @@ describe('Story failures report the actual existing rejection branch', () => {
     ['nested', body.replace('一二三四五六七八九十', '<judge>私密内容</judge>一二三四五六七八九十'), 'tag_nested', 'judge'],
     ['empty planning', body.replace('>规划<', '> \n <'), 'planning_empty', 'thinking'],
     ['empty summary', body.replace('已到站。', ' \n '), 'summary_empty', '短期记忆'],
-    ['invalid guide JSON', body.replace('[]', '[secret-value'), 'guide_json', '变量规划'],
     ['unrecognized', 'secret-prefix' + body, 'structure_unrecognized', undefined],
   ])('%s', (_name, text, rule, tag) => {
     const error = failure(text!);
@@ -41,14 +40,15 @@ describe('Story failures report the actual existing rejection branch', () => {
     expect(error.details).toMatchObject({ storyRule: 'actions_count', actualCount: count, minimumCount: 3, maximumCount: 5 });
   });
   it.each([
-    ['[{"group":"npc","observedFact":42}]', 'variableGuide.0.observedFact', 0],
-    ['[{}, {"group":"secret-group","observedFact":"私密正文"}]', 'variableGuide.0.group', 0],
-    ['[{"group":"npc","observedFact":"既有事实"},{"group":"time","observedFact":null}]', 'variableGuide.1.observedFact', 1],
-    ['{"secret-key":"secret-value"}', 'variableGuide', undefined],
-  ])('identifies guide Schema field and index, never invalid input: %s', (guide, path, index) => {
-    const error = failure(body.replace('[]', guide));
-    expect(error.details).toMatchObject({ storyRule: 'story_schema', fieldPath: path, ...(index === undefined ? {} : { guideIndex: index }) });
-    expect(JSON.stringify(safeAiError(error))).not.toMatch(/secret-|私密正文/);
+    '[{"group":"time","observedFact":42}]',
+    '[{}, {"group":"secret-group","observedFact":"私密正文"}]',
+    '[{"group":"npc","observedFact":"既有事实"},{"group":"time","observedFact":null}]',
+    '{"secret-key":"secret-value"}',
+  ])('retains malformed notes without exposing them in diagnostics: %s', guide => {
+    const parsed = parseStoryEnvelope(body.replace('[]', guide), 'regular', settings());
+    expect(parsed.story.variableGuideRaw).toBe(guide);
+    expect(parsed.story.variableGuide).toEqual([]);
+    expect(JSON.stringify(parsed.notes)).not.toMatch(/secret-|私密正文/);
   });
   it.each([
     ['unclosed thinking', body.replace('</thinking>', '')],
@@ -66,8 +66,8 @@ describe('Story failures report the actual existing rejection branch', () => {
     catch (error) { expect((error as AiError).details).toMatchObject({ storyRule: 'tag_unclosed', storyTag: '变量规划' }); }
   });
   it('valid Story still returns the same fields and options; optional options unchanged', () => {
-    expect(parseStoryEnvelope(body, 'regular', settings())).toEqual({ planning: '规划', story: {
-      turnKind: 'regular', narrative: '一二三四五六七八九十', summary: '已到站。', variableGuide: [], actionOptions: ['等候', '离开', '询问'],
+    expect(parseStoryEnvelope(body, 'regular', settings())).toEqual({ planning: '规划', notes: ['变量规划：按原有 JSON 数组协议解析。'], story: {
+      turnKind: 'regular', narrative: '一二三四五六七八九十', summary: '已到站。', variableGuideRaw: '[]', variableGuide: [], actionOptions: ['等候', '离开', '询问'],
     } });
     const noOptions = settings(); noOptions.prompts.actionOptions = false;
     expect(parseStoryEnvelope(body.split('<行动选项>')[0], 'regular', noOptions).story.actionOptions).toBeUndefined();
@@ -77,9 +77,10 @@ describe('Story failures report the actual existing rejection branch', () => {
 
 describe('Story diagnostic privacy and compatibility', () => {
   it('unknown Schema keys and supplied values never enter diagnostics', () => {
-    const error = failure(body.replace('[]', '[{"group":"npc","observedFact":"private-game-detail","private-secret-key":42}]'));
-    expect(error.details).toMatchObject({ storyRule: 'story_schema', storyIssue: 'unrecognized_keys', fieldPath: 'variableGuide.0' });
-    expect(JSON.stringify(safeAiError(error))).not.toContain('private-');
+    const source = '[{"group":"npc","observedFact":"private-game-detail","private-secret-key":42}]';
+    const parsed = parseStoryEnvelope(body.replace('[]', source), 'regular', settings());
+    expect(parsed.story.variableGuideRaw).toBe(source);
+    expect(JSON.stringify(parsed.notes)).not.toContain('private-');
   });
   it('forged diagnostic metadata cannot export arbitrary text, tags or nonfinite counts', () => {
     const details = { storyRule: 'narrative_short', storyTag: 'private-secret-tag', fieldPath: 'private-secret-path', actualCount: NaN, minimumCount: Infinity, guideIndex: -1, storyIssue: 'private-secret-rule' } as unknown as StoryDiagnostic;
@@ -92,8 +93,8 @@ describe('Story diagnostic privacy and compatibility', () => {
     expect(value).toMatchObject({ code: 'invalid_output', details: { storyRule: 'structure_unrecognized' } });
     expect(value.message).toContain('正文输出结构无法识别'); expect(value.message).toContain('临时模型原文');
   });
-  it('keeps the invalid_json parent code and existing 3/5 option acceptance boundaries', () => {
-    expect(failure(body.replace('[]', '{')).code).toBe('invalid_json');
+  it('accepts malformed notes and keeps the existing 3/5 option boundaries', () => {
+    expect(parseStoryEnvelope(body.replace('[]', '{'), 'regular', settings()).story.variableGuideRaw).toBe('{');
     for (const count of [3, 5]) {
       const raw = body.replace('等候\n离开\n询问', Array.from({ length: count }, () => '等候').join('\n'));
       expect(parseStoryEnvelope(raw, 'regular', settings()).story.actionOptions).toHaveLength(count);

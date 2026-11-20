@@ -237,7 +237,7 @@ describe('真实正文入口与草稿原子替换', () => {
     const configuration = setup('deepseek'); if (inline) configuration.settings.prompts.minNarrativeChars = 1500;
     const transport = vi.fn<typeof fetch>(async () => sse(raw, 'deepseek'));
     const saved = await runner(transport).generate({ ...configuration, draft, onProgress: p => progress.push(p.narrative) });
-    expect(saved.story).toEqual({ turnKind: 'regular', narrative: expectedNarrative, summary: recoverySummary, variableGuide: recoveryGuide, actionOptions: recoveryActions });
+    expect(saved.story).toEqual({ turnKind: 'regular', narrative: expectedNarrative, summary: recoverySummary, variableGuide: recoveryGuide, variableGuideRaw: JSON.stringify(recoveryGuide), actionOptions: recoveryActions });
     expect(progress.every(value => value === '' || value === expectedNarrative)).toBe(true);
     expect(JSON.stringify(saved.story)).not.toContain('规划独有标记');
     expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: raw, displayText: raw, status: 'validated' });
@@ -264,7 +264,7 @@ describe('真实正文入口与草稿原子替换', () => {
     expect(thoughts).toContain(native);
     expect(visible.some(value => value.length > 0 && value.length < inlineRecoveryNarrative.length)).toBe(true);
     expect(visible.every(value => (inlineRecoveryNarrative + '\n').startsWith(value))).toBe(true);
-    expect(saved.story).toEqual({ turnKind: 'regular', narrative: inlineRecoveryNarrative, summary: recoverySummary, variableGuide: recoveryGuide, actionOptions: recoveryActions });
+    expect(saved.story).toEqual({ turnKind: 'regular', narrative: inlineRecoveryNarrative, summary: recoverySummary, variableGuide: recoveryGuide, variableGuideRaw: JSON.stringify(recoveryGuide), actionOptions: recoveryActions });
     expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: missingNarrativeCloseOutput, displayText: native + missingNarrativeCloseOutput, status: 'validated' });
     expect(await repo.load(draft.saveId)).toEqual(before.state);
     expect(await repo.loadDraft(draft.saveId)).toEqual(saved);
@@ -281,17 +281,18 @@ describe('真实正文入口与草稿原子替换', () => {
   });
   for (const inline of [false, true, 'unclosed'] as const) {
     it.each([
-      ['时间倒退', [{ group: 'time', subjectHint: 'time:end', observedFact: '2026-10-18T07:00:00+08:00' }], 'time_data', 'time_invalid_or_reversed'],
-      ['不存在的事件', [{ group: 'event', observedFact: '不存在的事件', eventNarration: { eventId: 'absent-event', mode: 'enter', at: '2026-10-18T08:00:00+08:00' } }], 'event_entry', 'narration_reference'],
-    ] as const)(`已恢复的正文仍受%s校验，失败不能写任何草稿或状态（同行=${inline}）`, async (_name, guide, code, storyRule) => {
+      ['时间倒退', [{ group: 'time', subjectHint: 'time:end', observedFact: '2026-10-18T07:00:00+08:00' }]],
+      ['不存在的事件', [{ group: 'event', observedFact: '不存在的事件', eventNarration: { eventId: 'absent-event', mode: 'enter', at: '2026-10-18T08:00:00+08:00' } }]],
+    ] as const)(`已恢复的正文遇到%s保留参考笔记，不改变正式状态（同行=${inline}）`, async (_name, guide) => {
       await repo.deleteDraft(draft.saveId, draft.draftRevision);
       draft = await repo.saveDraft(createTurnDraft(draft.saveId, 0, 'recovery-invalid', 'regular', ''), null);
       const before = await repo.loadGame(draft.saveId), save = vi.spyOn(repo, 'saveDraft');
       const raw = (inline === 'unclosed' ? missingNarrativeCloseOutput : inline ? inlineRecoveryOutput() : deepSeekUntagged).replace(/<变量规划>[\s\S]*?<\/变量规划>/, `<变量规划>${JSON.stringify(guide)}</变量规划>`);
       const transport = vi.fn<typeof fetch>(async () => sse(raw, 'deepseek'));
-      await expect(runner(transport).generate({ ...setup('deepseek'), draft })).rejects.toMatchObject({ code, details: { storyRule } });
-      expect(await repo.loadGame(draft.saveId)).toEqual(before); expect(save).not.toHaveBeenCalled(); expect(transport).toHaveBeenCalledTimes(1);
-      expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: raw, status: 'failed' });
+      const saved = await runner(transport).generate({ ...setup('deepseek'), draft });
+      expect(saved.story).toMatchObject({ variableGuideRaw: JSON.stringify(guide), variableGuide: guide[0].group === 'event' ? [] : guide });
+      expect(await repo.load(draft.saveId)).toEqual(before.state); expect(save).toHaveBeenCalledTimes(1); expect(transport).toHaveBeenCalledTimes(1);
+      expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: raw, status: 'validated' });
     });
   }
   it.each([false, true, 'unclosed'] as const)('恢复成功后IDB已排入草稿put仍能原子回滚，不能把请求成功当作保存成功（同行=%s）', async inline => {
