@@ -1,7 +1,12 @@
+import { createHash } from 'node:crypto';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { memoryMockCors, seedSummary, summaryState, requestTask, summaryWire } from './helpers/memorySummary';
 import { openSettings } from './helpers/gameLayout';
+import { fingerprint } from '../src/domain/commands';
+import { defaultSummaryConfig } from '../src/domain/memories/configuration';
+import { planCompression } from '../src/domain/memories/compression';
+import { planNpcSummary } from '../src/domain/memories/npcMemory';
 
 async function prepare(page: Page, kind: 'short' | 'npc') {
   await seedSummary(page, { count: 90, npcCount: 60, automatic: false });
@@ -93,25 +98,98 @@ test('真实 HTTP 失败经撤回仍保留，暂停本类不会启用其他自�
   expect(values).toEqual([false, false, false]);
 });
 
-test('只有遗留 NPC 尝试 ID、没有目标回执时，必须明确选择人物才请求模型', async ({ page }) => {
-  let calls = 0;
-  await page.route('https://summary.mock.invalid/**', async route => { calls++; await route.fulfill({ json: summaryWire(requestTask(route.request().postDataJSON())) }); });
-  await seedSummary(page, { count: 90, npcCount: 60, automatic: false, secondNpc: true });
-  await page.evaluate(() => {
-    const settings = JSON.parse(localStorage.getItem('heijin.settings.v1')!); settings.memory.summaries.npc.automatic = true;
+async function openLegacySummarySettings(page: Page, kind: 'short' | 'npc', title: string, created: string, resultId?: string) {
+  const attemptKey = `heijin.summary.attempt:save-a:${created}:${kind}`;
+  await page.evaluate(({ kind, attemptKey, resultId }) => {
+    const settings = JSON.parse(localStorage.getItem('heijin.settings.v1')!);
+    settings.memory.summaries[kind].automatic = true;
     localStorage.setItem('heijin.settings.v1', JSON.stringify(settings));
-  });
-  const state = await summaryState(page);
-  await page.evaluate(created => localStorage.setItem(`heijin.summary.attempt:save-a:${created}:npc`, 'memory-unacknowledged-test'), state.createdAt);
-  await page.reload(); const pending = page.getByRole('dialog', { name: 'NPC 短期 → 中期总结待确认', exact: true });
-  await expect(pending).toContainText('发送行动不会自动重试'); expect(calls).toBe(0);
-  await expect(pending.getByRole('button', { name: '重新生成', exact: true })).toHaveCount(0);
+    localStorage.setItem('heijin.summary.failures:save-a', JSON.stringify([{ kind, code: 'server' }]));
+    if (resultId) localStorage.setItem(attemptKey, resultId);
+  }, { kind, attemptKey, resultId });
+  await page.reload();
+  const pending = page.getByRole('dialog', { name: `${title}总结待确认`, exact: true });
+  await expect(pending).toBeVisible();
+  await expect(pending.getByRole('button', { name: /重新生成|核对原批并重试/ })).toHaveCount(0);
   await pending.getByRole('button', { name: '前往记忆设置' }).click();
-  const settings = page.getByRole('dialog', { name: '设置', exact: true }); await settings.getByRole('button', { name: '记忆', exact: true }).click();
-  const summarize = settings.getByRole('button', { name: '重新生成此批（可能计费）', exact: true });
-  await expect(summarize).toBeDisabled(); await settings.getByLabel('总结目标 NPC').selectOption('npc-a'); await summarize.click();
-  await expect.poll(async () => (await summaryState(page)).memories.npcSummaries['npc-a']?.length).toBe(1);
-  expect((await summaryState(page)).memories.npcSummaries['npc-b']).toBeUndefined(); expect(calls).toBe(1);
-  expect(await page.evaluate(created => localStorage.getItem(`heijin.summary.attempt:save-a:${created}:npc`), state.createdAt))
-    .toBe('memory-unacknowledged-test');
-});
+  const settings = page.getByRole('dialog', { name: '设置', exact: true });
+  await settings.getByRole('button', { name: '记忆', exact: true }).click();
+  return { attemptKey, dialog: settings, card: settings.getByRole('region', { name: title, exact: true }) };
+}
+
+for (const [kind, title] of [['short', '短期 → 中期'], ['npc', 'NPC 短期 → 中期']] as const) {
+  test(`${title} 旧账本缺少指纹时保留保护且不提供重试入口`, async ({ page }) => {
+    let calls = 0;
+    await page.route('https://summary.mock.invalid/**', async route => {
+      calls++;
+      await route.abort();
+    });
+    await seedSummary(page, { count: 45, npcCount: 25, automatic: false, secondNpc: true });
+    const state = await summaryState(page);
+    const { attemptKey, card } = await openLegacySummarySettings(page, kind, title, state.createdAt);
+    if (kind === 'npc') await card.getByLabel('总结目标 NPC').selectOption('npc-a');
+    await expect(card).toContainText('无法安全恢复原批');
+    await expect(card).toContainText('待确认记录仍保留');
+    await expect(card.getByRole('button', { name: /重新生成|核对原批并重试|立即总结/ })).toHaveCount(0);
+    expect(calls).toBe(0);
+    expect(await summaryState(page)).toEqual(state);
+    expect(await page.evaluate(key => [localStorage.getItem(key), JSON.parse(localStorage.getItem('heijin.summary.failures:save-a')!)], attemptKey))
+      .toEqual([null, [{ kind, code: 'server' }]]);
+  });
+
+  test(`${title} 旧账本指纹只授权原批，修改批次数拒绝且恢复后仅发送一次`, async ({ page }) => {
+    test.setTimeout(60000);
+    const requests: Record<string, unknown>[] = [];
+    await page.route('https://summary.mock.invalid/**', async route => {
+      if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: memoryMockCors });
+      const task = requestTask(route.request().postDataJSON());
+      requests.push(task);
+      await route.fulfill({ headers: memoryMockCors, json: summaryWire(task) });
+    });
+    await seedSummary(page, { count: 45, npcCount: 25, automatic: false, secondNpc: true });
+    const state = await summaryState(page);
+    const config = defaultSummaryConfig(kind);
+    const batch = kind === 'npc' ? planNpcSummary(state, 'npc-a', { config })! : planCompression(state, { layer: kind, config })!;
+    const resultId = 'memory-' + createHash('sha256').update(fingerprint(batch)).digest('hex');
+    const { attemptKey, dialog, card } = await openLegacySummarySettings(page, kind, title, state.createdAt, resultId);
+    const retry = card.getByRole('button', { name: '核对原批并重试（可能计费）', exact: true });
+    const rejected = '当前批次与旧记录不一致，未发送请求';
+    if (kind === 'npc') {
+      await expect(retry).toBeDisabled();
+      await card.getByLabel('总结目标 NPC').selectOption('npc-b');
+      await retry.click();
+      await expect(card).toContainText(rejected);
+      expect(requests).toHaveLength(0);
+      await card.getByLabel('总结目标 NPC').selectOption('npc-a');
+    }
+    const batchSize = card.getByLabel(`每次总结条数 · ${title}`, { exact: true });
+    const save = dialog.getByRole('button', { name: '保存记忆设置', exact: true });
+    await batchSize.fill(String(config.batchSize - 1));
+    await save.click();
+    await retry.click();
+    await expect(card).toContainText(rejected);
+    expect(requests).toHaveLength(0);
+    expect(await page.evaluate(key => localStorage.getItem(key), attemptKey)).toBe(resultId);
+    expect(await summaryState(page)).toEqual(state);
+
+    await batchSize.fill(String(config.batchSize));
+    await save.click();
+    await retry.click();
+    await expect(dialog).toContainText('总结已保存，原始历史与来源完整保留。');
+    expect(requests).toHaveLength(1);
+    const task = requests[0];
+    const sent = (task.entries as { id: string }[] | undefined) ??
+      (task.groups as { entries: { id: string }[] }[]).flatMap(group => group.entries);
+    expect(sent.map(entry => entry.id).sort()).toEqual(batch.entries.map(entry => entry.id).sort());
+    const after = await summaryState(page);
+    if (kind === 'npc') {
+      expect(task.npcId).toBe('npc-a');
+      expect(after.memories.npcSummaries['npc-a'][0].id).toBe(resultId + '-0');
+      expect(after.memories.npcSummaries['npc-b']).toBeUndefined();
+    } else {
+      expect(after.memories.medium.map((entry: { id: string }) => entry.id)).toEqual([resultId]);
+    }
+    expect(await page.evaluate(key => localStorage.getItem(key), attemptKey)).toBe('');
+    expect(after.journal).toEqual(state.journal);
+  });
+}

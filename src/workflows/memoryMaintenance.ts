@@ -17,7 +17,10 @@ import { defaultSummaryConfig, SummaryConfigSchema } from '../domain/memories/co
 import type { SummaryConfig, SummaryKind } from '../domain/memories/configuration';
 import { AiError } from '../services/ai/errors';
 
-import { authorizedSources, pendingFor, SummaryRecords, summaryErrorCode, unconfirmedSummaryMessage } from './memorySummaryRecords';
+import {
+  authorizedSources, hasLegacySummaryFingerprint, legacyBatchMismatchMessage, legacyBatchUnverifiableMessage,
+  pendingFor, SummaryRecords, summaryErrorCode, unconfirmedSummaryMessage,
+} from './memorySummaryRecords';
 import type { PendingSummary } from './memorySummaryRecords';
 export { summaryAttemptKey } from './memorySummaryRecords';
 
@@ -68,6 +71,8 @@ export class MemoryMaintenance {
         requireData(input.immediate && pending && canAuthorize && (!pending.npcId || pending.npcId === npcId) &&
           (!pending.identityKey || (npcId && state.npc[npcId]?.identityKey === pending.identityKey)),
         'MEMORY_RETRY_CHANGED', '待确认请求已变化，请重新核对。');
+        requireData(!pending.legacy || hasLegacySummaryFingerprint(pending.resultId),
+          'MEMORY_LEGACY_BATCH_UNVERIFIABLE', legacyBatchUnverifiableMessage);
         return pending;
       }
       requireData(!blocked.length, 'MEMORY_PREVIOUS', unconfirmedSummaryMessage);
@@ -97,12 +102,15 @@ export class MemoryMaintenance {
             : planCompression(state, { layer: kind, config, immediate: input.immediate, sourceIds });
           const batch = plan(state);
           if (!batch) {
+            requireData(!retry?.legacy, 'MEMORY_LEGACY_BATCH_MISMATCH', legacyBatchMismatchMessage);
             if (kind) records?.clearPreflight(kind, npcId);
             return;
           }
           const task = 'npcId' in batch ? 'memory.npc_summarize' : memoryTask(batch.layer);
           const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(fingerprint(batch)));
           const id = 'memory-' + Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+          // Old receipts have no source list. Only an exact batch fingerprint can authorize reuse of the receipt.
+          requireData(!retry?.legacy || id === retry.resultId, 'MEMORY_LEGACY_BATCH_MISMATCH', legacyBatchMismatchMessage);
           const selected = selectPromptModules({ stage: 'memory', mode: 'regular', settings: defaultSettings(), memoryTask: task });
           const resources = await Promise.all(selected.map(async (module) => ({ module, text: (await readPromptResource(module.id)).replace(/\{\{(npcId|npcSummaryThreshold)\}\}/g, (_, key: string) =>
             key === 'npcId' && 'npcId' in batch ? batch.npcId : String(config.threshold)) })));
@@ -146,7 +154,7 @@ export class MemoryMaintenance {
             const previousTurnIds = retry?.turnIds && [...retry.turnIds, ...(retry.previousTurnIds ?? [])].filter(turn => !turnIds?.includes(turn));
             const marker = { status: 'pending' as const, kind, npcId, identityKey, resultId: id, sourceIds: sentIds,
               code: 'MEMORY_PREVIOUS', manual: input.immediate, retryId: crypto.randomUUID(), turnIds, previousIds, previousTurnIds,
-              legacyRetryId: retry?.legacy && retry.resultId === id ? retry.retryId : retry?.legacyRetryId };
+              legacyRetryId: retry?.legacy ? retry.retryId : retry?.legacyRetryId };
             records.begin(marker, retry);
             started = marker;
           }

@@ -27,6 +27,9 @@ export type SummaryIssue = {
 };
 
 export const unconfirmedSummaryMessage = '有未确认保存的请求，可能已计费。发送行动不会自动重试，须由你确认重新生成。';
+export const legacyBatchUnverifiableMessage = '旧记录缺少可核验的结果 ID，无法安全恢复原批。待确认记录仍保留。';
+export const legacyBatchMismatchMessage = '当前批次与旧记录不一致，未发送请求。请核对原批条数和来源，待确认记录仍保留。';
+export const hasLegacySummaryFingerprint = (id?: string) => id !== undefined && /^memory-[0-9a-f]{64}$/.test(id);
 export const summaryAttemptKey = (state: GameState, kind: SummaryKind) =>
   `heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`;
 export const summaryRecordsKey = (state: GameState) => `heijin.summary.records:${state.saveId}:${state.createdAt}`;
@@ -55,7 +58,7 @@ function storedLegacy(storage: StorageAccess, state: GameState, kind: SummaryKin
 }
 function hasResult(state: GameState, item: PendingSummary) {
   const id = item.resultId;
-  if (!id) return false;
+  if (!id || (item.legacy && !hasLegacySummaryFingerprint(id))) return false;
   if (item.kind !== 'npc') return [...state.memories.medium, ...state.memories.long].some(entry => entry.id === id);
   return Object.entries(state.memories.npcSummaries).some(([npcId, entries]) =>
     (!item.npcId || npcId === item.npcId) && entries.some(entry => entry.id.startsWith(id + '-') &&
@@ -151,7 +154,7 @@ export function authorizedSources(retry: PendingSummary, entries: readonly Sourc
     entry.sourceTurnIds.length > 0 && entry.sourceTurnIds.every(turn => turns.has(turn))).map(entry => entry.id);
 }
 
-export function summaryIssue(item: { kind: SummaryKind; code: string; npcId?: string; identityKey?: string; status?: string; retryId?: string; legacy?: true; manual?: boolean }): SummaryIssue {
+export function summaryIssue(item: { kind: SummaryKind; code: string; npcId?: string; identityKey?: string; status?: string; retryId?: string; resultId?: string; legacy?: true; manual?: boolean }): SummaryIssue {
   const reasons: Partial<Record<string, string>> = {
     MEMORY_STORAGE: '无法核对本地总结记录。请检查存储权限，再刷新重试。',
     MEMORY_LOCK_UNAVAILABLE: '浏览器不支持安全跨标签互斥，未发送请求。',
@@ -165,13 +168,18 @@ export function summaryIssue(item: { kind: SummaryKind; code: string; npcId?: st
     MEMORY_SOURCE: '记忆来源无法安全核对。',
     MEMORY_CHANGED: '配置或来源在准备期间更新，将在下次调度重新检查。',
     MEMORY_RETRY_CHANGED: '待处理请求已变化。请核对当前状态，再决定是否重新生成。',
+    MEMORY_LEGACY_BATCH_UNVERIFIABLE: legacyBatchUnverifiableMessage,
+    MEMORY_LEGACY_BATCH_MISMATCH: legacyBatchMismatchMessage,
   };
   const fallback = safeAiError(new AiError(item.code as ConstructorParameters<typeof AiError>[0])).message;
+  const canCheckOriginal = !item.legacy || hasLegacySummaryFingerprint(item.resultId);
+  const message = item.legacy
+    ? '有未确认保存的请求，可能已计费。' + (canCheckOriginal ? '只有核对到原批后才会发送重试。' : legacyBatchUnverifiableMessage)
+    : reasons[item.code] ?? (fallback && fallback !== 'undefined' ? fallback : '总结未完成，请检查设置和存档状态。');
   return {
     kind: item.kind, code: item.code, npcId: item.npcId, identityKey: item.identityKey,
-    message: (reasons[item.code] ?? (fallback && fallback !== 'undefined' ? fallback : '总结未完成，请检查设置和存档状态。'))
-      + (item.status === 'pending' && item.code !== 'MEMORY_PREVIOUS' ? ' 发送行动不会自动重试。' : ''),
-    pending: item.status === 'pending', retryId: item.retryId, legacy: item.legacy, manual: item.manual,
+    message: message + (item.status === 'pending' && item.code !== 'MEMORY_PREVIOUS' ? ' 发送行动不会自动重试。' : ''),
+    pending: item.status === 'pending', retryId: canCheckOriginal ? item.retryId : undefined, legacy: item.legacy, manual: item.manual,
   };
 }
 export const summaryErrorCode = (error: unknown) => error instanceof DataError ? error.code : safeAiError(error).code;

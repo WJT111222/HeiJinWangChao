@@ -1110,9 +1110,9 @@ export function GameScreen({
         >
           {summaryFailure.npcId && <p>{state.npc[summaryFailure.npcId]?.name ?? '原人物'}</p>}
           <p>{summaryFailure.message}</p>
-          {summaryFailure.pending && <p>本次请求可能已计费。选择重新生成会再发一次请求。</p>}
+          {summaryFailure.pending && !summaryFailure.legacy && <p>本次请求可能已计费。选择重新生成会再发一次请求。</p>}
           <div className="feedback-dialog-actions memory-feedback-actions">
-            {summaryFailure.pending && (summaryFailure.kind !== 'npc' || summaryFailure.npcId) ? (
+            {summaryFailure.retryId && !summaryFailure.legacy && (summaryFailure.kind !== 'npc' || summaryFailure.npcId) ? (
               <button className="primary" disabled={Boolean(memory.phase) || memory.snapshot.busy}
                 onClick={() => {
                   const failure = summaryFailure;

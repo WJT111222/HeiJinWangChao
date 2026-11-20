@@ -86,7 +86,7 @@ export function MemorySummarySettings({ settings, onSave, state, phase, activity
       const config = editing[kind], saved = settings.memory.summaries[kind];
       const total = kind === 'npc' ? shownPeople.reduce((sum, { person }) => sum + person.memories.length, 0) : kind === 'short' ? shortTotal : state?.memories[kind].length ?? 0;
       const count = kind === 'npc' ? shownPeople.reduce((sum, item) => sum + item.eligible, 0) : state ? compressionCandidates(state, kind).length : 0;
-      const issues = failures.filter(item => item.kind === kind && (kind !== 'npc' || !selectedNpc || !item.npcId || item.npcId === selectedNpc));
+      const issues = failures.filter(item => item.kind === kind && (kind !== 'npc' || item.legacy || !selectedNpc || !item.npcId || item.npcId === selectedNpc));
       const pending = issues.find(item => item.pending);
       const inProgress = activity?.kind === kind && (kind !== 'npc' || !selectedNpc || activity.npcId === selectedNpc);
       const ready = kind === 'npc' ? shownPeople.some(item => item.eligible >= saved.threshold) : count > saved.threshold;
@@ -96,12 +96,12 @@ export function MemorySummarySettings({ settings, onSave, state, phase, activity
         : !saved.automatic ? '已暂停自动总结' : paused ? '已暂停，提交新行动后恢复检查'
           : issues.length ? busy && issues.every(issue => issue.pending && issue.code === 'MEMORY_PREVIOUS') ? '其他标签正在处理' : '失败待处理'
             : ready ? '已达阈值，等待调度' : '等待达到阈值';
-      const canRetry = pending?.retryId && issues.every(item => !item.pending || item === pending || (!pending.legacy && item.legacy)) &&
-        (!pending.identityKey || state?.npc[selectedNpc]?.identityKey === pending.identityKey);
+      const canRetry = pending?.retryId && issues.every(item => !item.pending || item === pending || (!pending.legacy && item.legacy && (!item.npcId || item.npcId === selectedNpc))) &&
+        (!pending.npcId || pending.npcId === selectedNpc) && (!pending.identityKey || state?.npc[selectedNpc]?.identityKey === pending.identityKey);
       return <section className="card" key={kind} aria-label={summaryNames[kind]}>
         <header className="summary-module-heading"><h4>{summaryNames[kind]}</h4>
-          {pending ? <button disabled={!state || !onRun || dirty || Boolean(phase) || busy || !canRetry || !count || (kind === 'npc' && !selectedNpc)}
-            onClick={() => runSummary(kind, pending.retryId)}>重新生成此批（可能计费）</button>
+          {pending ? pending.retryId && <button disabled={!state || !onRun || dirty || Boolean(phase) || busy || !canRetry || !count || (kind === 'npc' && !selectedNpc)}
+            onClick={() => runSummary(kind, pending.retryId)}>{pending.legacy ? '核对原批并重试（可能计费）' : '重新生成此批（可能计费）'}</button>
             : <button disabled={!state || !onRun || dirty || Boolean(phase) || count < saved.batchSize || (kind === 'npc' && !selectedNpc)}
               onClick={() => runSummary(kind)}>立即总结 · {summaryNames[kind]}</button>}</header>
         <label className="toggle"><input type="checkbox" checked={config.automatic} onChange={e => change(kind, { automatic: e.target.checked })} />自动总结 {summaryNames[kind]}</label>
@@ -119,7 +119,7 @@ export function MemorySummarySettings({ settings, onSave, state, phase, activity
           {oldSummary && <p>此人物有来源无法核对的旧总结，已保留记录并暂停自动整理。</p>}
           {issues.map((issue, index) => <p key={`${issue.kind}-${issue.npcId}-${issue.code}-${index}`}>
             {kind === 'npc' && issue.npcId && <>{state.npc[issue.npcId]?.name ?? '原人物'} · </>}
-            {issue.message}{issue.legacy && ' 旧记录缺少批次资料，只有核对到原结果才能自动解除。'}{issue.pending && issue.code !== 'MEMORY_PREVIOUS' && ' 此请求可能已计费，等待你确认处理。'}
+            {issue.message}{issue.pending && issue.code !== 'MEMORY_PREVIOUS' && ' 此请求可能已计费，等待你确认处理。'}
           </p>)}
         </>}
         <label>完整内容提示词 · {summaryNames[kind]}<textarea rows={12} value={config.prompt} onChange={e => change(kind, { prompt: e.target.value })} /></label>

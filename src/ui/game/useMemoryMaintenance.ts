@@ -119,7 +119,8 @@ export function useMemoryMaintenance(repository: SaveRepository, saveId: string,
       closeFailure(failure);
     } catch { setNotice('暂停设置保存失败，请检查本地存储。'); }
   }
-  const popup = snapshot.failures.find(item => (settings.memory.summaries[item.kind].automatic || (item.manual && !item.pending)) && !dismissed.includes(failureKey(item)) &&
+  const popup = snapshot.failures.find(item => item.code !== 'MEMORY_LEGACY_BATCH_MISMATCH' &&
+    (settings.memory.summaries[item.kind].automatic || (item.manual && !item.pending)) && !dismissed.includes(failureKey(item)) &&
     !(snapshot.busy && item.pending && item.code === 'MEMORY_PREVIOUS'));
   return { phase, activity, notice, snapshot, popup, run, pause, closeFailure, cancel: () => runner.cancel() };
 }

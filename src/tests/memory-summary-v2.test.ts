@@ -28,6 +28,8 @@ import { CredentialVault } from '../services/ai/credentials';
 import { applyCompression, parseCompression } from '../domain/memories/compression';
 import { describe, vi } from 'vitest';
 import { DataError } from '../domain/common';
+import { createHash } from 'node:crypto';
+import { fingerprint } from '../domain/commands';
 const store = () => { const values = new Map<string, string>(); return { getItem: (key: string) => values.get(key) ?? null,
   setItem: (key: string, value: string) => { values.set(key, value); } }; };
 const publicOutput = { summary: '这段时期的经历与关系发生了变化。', importantEvents: ['游戏内记录的一个重要约定及其后续。'] };
@@ -252,6 +254,74 @@ it('旧版无法确定来源的NPC账本继续阻断，手动选择另一人物�
   await queue.immediate('npc', 'npc-b', new SummaryRecords(storage, state).pending[0].retryId);
   expect(a.transport).not.toHaveBeenCalled();
   expect(storage.getItem(summaryAttemptKey(state, 'npc'))).toBe('legacy-result');
+});
+
+describe.each(['short', 'medium', 'npc'] as const)('%s 旧账本授权', kind => {
+  const npcId = kind === 'npc' ? 'npc-a' : undefined;
+  function fixture() {
+    const state = kind === 'npc' ? npcMemoryState(20) : compressionState(kind);
+    const config = defaultSummaryConfig(kind);
+    const batch = kind === 'npc' ? planNpcSummary(state, npcId, { config })! : planCompression(state, { layer: kind, config })!;
+    const output = 'npcId' in batch ? npcSummaryOutput(batch) : publicOutput;
+    return { state, config, batch, response: () => Response.json({ choices: [{ message: { content: JSON.stringify(output) } }] }) };
+  }
+  const legacyId = (batch: unknown) => 'memory-' + createHash('sha256').update(fingerprint(batch)).digest('hex');
+
+  it.each([
+    ['调整批次数', 'MEMORY_LEGACY_BATCH_MISMATCH'],
+    ['原来源内容改变', 'MEMORY_LEGACY_BATCH_MISMATCH'],
+    ['缺少结果 ID', 'MEMORY_LEGACY_BATCH_UNVERIFIABLE'],
+    ['结果 ID 不是旧格式指纹', 'MEMORY_LEGACY_BATCH_UNVERIFIABLE'],
+  ] as const)('%s时拒绝已提交的重试授权，保留旧账', async (change, code) => {
+    const { state, config, batch, response } = fixture();
+    const resultId = change === '缺少结果 ID' ? null : change === '结果 ID 不是旧格式指纹' ? 'unverified-legacy-id' : legacyId(batch);
+    if (change === '调整批次数') config.batchSize--;
+    if (change === '原来源内容改变') {
+      const entries = kind === 'npc' ? state.npc['npc-a'].memories : state.memories[kind];
+      entries.find(entry => entry.id === batch.entries[0].id)!.text += '原始来源已修订。';
+    }
+    const a = setupRuntime(state, response);
+    const key = summaryAttemptKey(state, kind);
+    const failureKey = `heijin.summary.failures:${state.saveId}`;
+    const originalFailure = JSON.stringify([{ kind, code: 'server', npcId }]);
+    a.storage.setItem(failureKey, originalFailure);
+    if (resultId !== null) a.storage.setItem(key, resultId);
+    const [old] = new SummaryRecords(a.storage, state).pending;
+    expect(old.sourceIds).toBeUndefined();
+    const input = { ...a, saveId: state.saveId, kind, npcId, summaryConfig: config, attempts: a.storage, timeoutSeconds: 10 };
+    await expect(a.runner.run({ ...input, immediate: true, retryId: old.retryId })).rejects.toMatchObject({ code });
+    await expect(a.runner.run({ ...input, immediate: true })).rejects.toMatchObject({ code: 'MEMORY_PREVIOUS' });
+    expect(a.transport).not.toHaveBeenCalled();
+    expect(a.current()).toEqual(state);
+    expect(a.storage.getItem(key)).toBe(resultId);
+    expect(a.storage.getItem(failureKey)).toBe(originalFailure);
+    expect(new SummaryRecords(a.storage, state).pending).toEqual([old]);
+    if (resultId === null || change === '结果 ID 不是旧格式指纹')
+      expect(new SummaryRecords(a.storage, state).issues.find(item => item.pending)?.retryId).toBeUndefined();
+  });
+
+  it('只重试指纹完全匹配的原批，沿用原结果 ID 并拒绝过期授权', async () => {
+    const { state, config, batch, response } = fixture();
+    const a = setupRuntime(state, response);
+    const id = legacyId(batch), key = summaryAttemptKey(state, kind);
+    a.storage.setItem(key, id);
+    const retryId = new SummaryRecords(a.storage, state).issues[0].retryId;
+    expect(retryId).toBeTruthy();
+    const input = { ...a, saveId: state.saveId, kind, npcId, summaryConfig: config, attempts: a.storage, timeoutSeconds: 10, immediate: true, retryId };
+    const saved = await a.runner.run(input);
+    expect(saved).toBeDefined();
+    const wire = JSON.parse(String(a.transport.mock.calls[0][1]?.body)).messages as { role: string; content: string }[];
+    const { MEMORY_TASK: task } = JSON.parse(wire.find(message => message.role === 'user')!.content.slice('<GAME_CONTEXT>\n'.length, -'\n</GAME_CONTEXT>'.length));
+    const ids = (task.entries ?? task.groups.flatMap((group: { entries: unknown[] }) => group.entries)).map((entry: { id: string }) => entry.id);
+    expect(ids.sort()).toEqual(batch.entries.map(entry => entry.id).sort());
+    const savedEntries = kind === 'npc' ? saved!.memories.npcSummaries['npc-a'] : saved!.memories[kind === 'short' ? 'medium' : 'long'];
+    const expectedIds = 'npcId' in batch ? npcSummaryOutput(batch).summaries.map((_, index) => `${id}-${index}`) : [id];
+    expect(savedEntries.map(entry => entry.id)).toEqual(expectedIds);
+    expect(a.storage.getItem(key)).toBe('');
+    expect(new SummaryRecords(a.storage, saved!).pending).toEqual([]);
+    await expect(a.runner.run(input)).rejects.toMatchObject({ code: 'MEMORY_RETRY_CHANGED' });
+    expect(a.transport).toHaveBeenCalledTimes(1);
+  });
 });
 
 it('锁内二次读取识别准备期间关闭自动或变更来源，均不发请求', async () => {
