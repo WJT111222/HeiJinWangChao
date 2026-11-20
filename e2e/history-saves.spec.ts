@@ -190,7 +190,7 @@ test('自动五节点只读预览、取消覆盖、旧链不变、日夜与窄�
   await expect(page.locator('.history-node-list > li')).toHaveCount(5);
   await page.screenshot({ path: info.outputPath('automatic-night.png') });
   await choose(page, 2); await page.getByRole('navigation', { name: '历史阅读内容' }).getByRole('button', { name: '人物档案', exact: true }).click();
-  await expect(page.locator('.history-world')).toContainText(before.state.protagonist.name);
+  await expect(page.getByRole('region', { name: '只读历史世界', exact: true })).toContainText(before.state.protagonist.name);
   await page.getByRole('navigation', { name: '历史阅读内容' }).getByRole('button', { name: '正文', exact: true }).click();
   await page.getByLabel('从此历史节点开始的行动').fill('取消的选择');
   await page.getByRole('button', { name: '发送新行动（先确认覆盖）' }).click();

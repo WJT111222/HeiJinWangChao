@@ -81,6 +81,7 @@
 }
 :root[data-appearance=day] .app-shell-game .mobile-sheet .mobile-sheet-grab i { background:#2a262233; }
 :root[data-appearance=day] .app-shell-game .mobile-sheet .modal-heading>.dialog-seal { background:linear-gradient(145deg,#8E6C251a,#EFE8D9); box-shadow:inset 0 0 0 2px #EFE8D9,inset 0 0 0 3px #8E6C2540; }
+:root[data-appearance=day] .app-shell-game .mobile-archive .modal-heading>.dialog-seal { color:#873827; }
 :root[data-appearance=day] .app-shell-game .mobile-sheet .modal-heading>button { background:#2a26220d; }
 :root[data-appearance=day] .app-shell-game dialog.modal.mobile-confirm>:is(.modal-heading,.modal-body,.mobile-sheet-footer) { background:#EFE8D9; }
 :root[data-appearance=day] .app-shell-game .mobile-sheet pre { background:#F6F1E6; color:#2B2723; border-color:#2a26221f; }

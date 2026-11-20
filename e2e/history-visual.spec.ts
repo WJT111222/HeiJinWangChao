@@ -84,7 +84,7 @@ for(const appearance of ['night','day'])for(const short of [false,true])test(`�
  await root.locator('.history-story').evaluate(el=>el.lastElementChild?.scrollIntoView({block:'end'}));
  await expect(root.getByRole('button',{name:'关闭资料界面',exact:true})).toBeInViewport();
  await capture('long-reading-bottom');
- await page.getByRole('navigation', { name: '历史阅读内容' }).getByRole('button', { name: '人物档案', exact: true }).click();await root.locator('.history-world').scrollIntoViewIfNeeded();await capture('profile');await page.getByRole('navigation', { name: '历史阅读内容' }).getByRole('button', { name: '经济与资产', exact: true }).click();await capture('economy');
+ await page.getByRole('navigation', { name: '历史阅读内容' }).getByRole('button', { name: '人物档案', exact: true }).click();await root.getByRole('region', { name: '只读历史世界', exact: true }).scrollIntoViewIfNeeded();await capture('profile');await page.getByRole('navigation', { name: '历史阅读内容' }).getByRole('button', { name: '经济与资产', exact: true }).click();await capture('economy');
  await page.getByRole('navigation', { name: '历史阅读内容' }).getByRole('button', { name: '正文', exact: true }).click();
  if (mobile && short) await page.setViewportSize({ width: 375, height: 420 });
  await page.getByLabel('从此历史节点开始的行动').fill('先核对再决定');await page.getByRole('button',{name:'发送新行动（先确认覆盖）',exact:true}).click();await root.getByRole('heading',{name:'确认覆盖并继续？'}).scrollIntoViewIfNeeded();await capture('overwrite');
