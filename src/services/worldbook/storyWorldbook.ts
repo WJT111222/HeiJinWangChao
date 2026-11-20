@@ -14,6 +14,12 @@ import { WorldbookTriggerHost, type MainThreadFallback, type TriggerOutcome } fr
  * - 不读写游戏主库，不读写存档；两本内置基础世界书不经过这里，照旧由原有提示词装配。
  * - 计时效果（Sticky / Cooldown）简化版不跨回合保存：每次都以空计时状态运行；Delay 照常按 messageCount 判断。
  */
+/**
+ * 正文是否已经调用 prepareStoryWorldbook。接入正文的提交把它改为 true；
+ * 管理界面据此告诉玩家启用后是否立即生效。
+ */
+export const STORY_WORLDBOOK_CONNECTED: boolean = false;
+
 export interface StoryWorldbookInput {
   /** 可扫描的逻辑消息，最新的在前（玩家行动、已结算正文；不含隐藏状态）。 */
   messages: readonly string[];

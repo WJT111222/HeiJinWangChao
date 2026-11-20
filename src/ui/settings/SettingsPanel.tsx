@@ -17,9 +17,12 @@ import type { NoticeKind } from '../notices/useNotices';
 const PromptInspector = lazy(() =>
   import('./PromptInspector').then((module) => ({ default: module.PromptInspector })),
 );
+const WorldbookLibraryPanel = lazy(() =>
+  import('./WorldbookLibrary').then((module) => ({ default: module.WorldbookLibraryPanel })),
+);
 
-const descriptions={'AI 连接':'渠道、密钥与模型路由','提示词':'叙事人称、风格与开关','记忆':'即时记忆与记忆总结','运行':'阶段开关与超时','外观':'日间 / 夜间配色','提示词管理':'查看与编辑提示词'};
-const tabs = ['AI 连接', '提示词', '记忆', '运行', '外观', '提示词管理'] as const;
+const descriptions={'AI 连接':'渠道、密钥与模型路由','提示词':'叙事人称、风格与开关','记忆':'即时记忆与记忆总结','运行':'阶段开关与超时','外观':'日间 / 夜间配色','世界书':'导入酒馆世界书与开关','提示词管理':'查看与编辑提示词'};
+const tabs = ['AI 连接', '提示词', '记忆', '运行', '外观', '世界书', '提示词管理'] as const;
 const appearances = [['night', '夜间', '黑金配色，适合夜里或暗处'], ['day', '日间', '浅色纸页，适合白天或光线充足时'], ['system', '跟随系统', '随设备的深浅色自动切换']] as const;
 export function SettingsPanel({
   settings,
@@ -129,7 +132,7 @@ export function SettingsPanel({
               showCategory(name);
             }}
           >
-            <i aria-hidden="true">{{'AI 连接':'连','提示词':'词','记忆':'忆','运行':'运','外观':'色','提示词管理':'管'}[name]}</i>{desktop?<span>{name}</span>:<span className="settings-row-text"><strong>{name}</strong><small>{descriptions[name]}</small></span>}{((name==='AI 连接'&&aiDirty)||(name==='记忆'&&summaryDirty)||((name==='提示词'||name==='运行')&&localDirty))&&<span className="dirty" aria-hidden="true" title="有未保存的修改"/>}{!desktop&&<span aria-hidden="true">›</span>}
+            <i aria-hidden="true">{{'AI 连接':'连','提示词':'词','记忆':'忆','运行':'运','外观':'色','世界书':'书','提示词管理':'管'}[name]}</i>{desktop?<span>{name}</span>:<span className="settings-row-text"><strong>{name}</strong><small>{descriptions[name]}</small></span>}{((name==='AI 连接'&&aiDirty)||(name==='记忆'&&summaryDirty)||((name==='提示词'||name==='运行')&&localDirty))&&<span className="dirty" aria-hidden="true" title="有未保存的修改"/>}{!desktop&&<span aria-hidden="true">›</span>}
           </button>
         ))}
         {onOpenNotice && <NoticeLinks onOpen={onOpenNotice} />}
@@ -145,6 +148,11 @@ export function SettingsPanel({
               activeSaveId={activeSaveId}
               onPromptChange={prompt}
             />
+          </Suspense>
+        )}
+        {tab === '世界书' && (
+          <Suspense fallback={<p>正在打开世界书…</p>}>
+            <WorldbookLibraryPanel />
           </Suspense>
         )}
         {tab === 'AI 连接' && <AiConnections timeoutSeconds={settings.runtime.timeoutSeconds} onDirtyChange={aiDirtyChanged} />}
@@ -265,7 +273,7 @@ export function SettingsPanel({
           </>
         )}
         <div className="local-save-bar"><Feedback role="status" level={noticeLevel} className="field-hint">{notice||(localDirty&&(tab==='提示词管理'||(desktop&&(tab==='提示词'||tab==='运行')))?'本地设置尚未保存。':'')}</Feedback>
-        {tab !== 'AI 连接' && tab !== '记忆' && tab !== '外观' && (
+        {tab !== 'AI 连接' && tab !== '记忆' && tab !== '外观' && tab !== '世界书' && (
           <button className="primary" onClick={save}>
             保存本地设置
           </button>

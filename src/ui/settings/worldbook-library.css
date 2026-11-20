@@ -1,0 +1,23 @@
+/* 玩家世界书（简化版）管理列表。只用设置页已有的颜色变量。 */
+.worldbook-library{display:grid;gap:.8rem;min-width:0}
+.worldbook-library .wb-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem}
+.worldbook-library .wb-count{margin-left:auto;font-size:.78rem}
+.worldbook-library .wb-list{list-style:none;margin:0;padding:0;display:grid;gap:.5rem}
+.worldbook-library .wb-item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:.8rem;padding:.75rem .9rem;border:1px solid var(--line-2,#ffffff22);border-radius:8px;min-width:0}
+.worldbook-library .wb-item[data-enabled]{border-color:var(--gold-lo,var(--gold,#b79755))}
+.worldbook-library .wb-info{display:grid;gap:.15rem;min-width:0}
+.worldbook-library .wb-info strong{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.worldbook-library .wb-info small{font-size:.74rem;color:var(--dim,var(--muted))}
+.worldbook-library .wb-state{font-size:.78rem;color:var(--muted)}
+.worldbook-library .wb-confirm{display:inline-flex;gap:.4rem}
+.worldbook-library .wb-notices summary{cursor:pointer;font-size:.8rem;color:var(--muted)}
+.worldbook-library .wb-notices ul{margin:.4rem 0 0;padding-left:1.2rem;display:grid;gap:.25rem;font-size:.78rem;max-height:14rem;overflow:auto;overflow-wrap:anywhere}
+.worldbook-library .wb-notices li[data-level=error]{color:var(--neg,#c0392b)}
+.worldbook-library .wb-empty{padding:1.2rem 0;text-align:center}
+@media(max-width:900px){
+  .worldbook-library .wb-item{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"info toggle" "del del"}
+  .worldbook-library .wb-info{grid-area:info}
+  .worldbook-library .wb-item>.toggle{grid-area:toggle}
+  .worldbook-library .wb-item>button,.worldbook-library .wb-confirm{grid-area:del;justify-self:end}
+  .worldbook-library .wb-count{margin-left:0;width:100%}
+}
