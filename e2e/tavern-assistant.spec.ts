@@ -11,9 +11,13 @@ async function settings(page: Page) {
   return dialog;
 }
 test('启用内置脚本：首次 Story、JSON/SSE、状态按钮、取消与刷新', async ({ page }, info) => {
+  const externalFontRequests: string[] = [];
+  await page.emulateMedia({ colorScheme: 'light' });
   await page.route('**/*', route => {
-    const u = new URL(route.request().url());
-    return ['127.0.0.1','localhost'].includes(u.hostname) || u.protocol === 'blob:' ? route.continue() : route.abort();
+    const request = route.request(), url = new URL(request.url());
+    if (['127.0.0.1', 'localhost'].includes(url.hostname) || url.protocol === 'blob:') return route.continue();
+    if (['stylesheet', 'font'].includes(request.resourceType())) externalFontRequests.push(url.hostname);
+    return route.abort();
   });
   await page.addInitScript(() => {
     const native = window.fetch.bind(window);
@@ -103,6 +107,8 @@ test('启用内置脚本：首次 Story、JSON/SSE、状态按钮、取消与刷
         names:sent.at(-1)?.tools?.map(t=>t.function.name) }), { cause: error });
     } finally { repo.close(); }
   });
+  const sendsComment = await page.evaluate(() => JSON.stringify((window as unknown as { sent: unknown[] }).sent).includes('{{//'));
+  expect(sendsComment, '真实内置预设不应把注释宏发给模型').toBe(false);
   expect(result.requests).toBe(5);
   expect(result).toMatchObject({ types:['normal','regenerate','regenerate','regenerate','continue','regenerate'],
     afterCancel:'电车驶过石桥，林舟站在街口。', rejected:'configuration', unchanged:true });
@@ -117,9 +123,26 @@ test('启用内置脚本：首次 Story、JSON/SSE、状态按钮、取消与刷
   await page.goto('/#game/assistant-qa');
   if (info.project.name === 'mobile') await page.getByRole('button',{ name:'三阶段工作流详情' }).click();
   await page.getByRole('button',{name:'浪潮·状态', exact:true}).click();
-  await expect(page.getByRole('dialog',{name:'浪潮状态面板'})).toBeVisible();
-  await info.attach('原脚本状态面板', {body:await page.screenshot({ path: info.outputPath('status.png') }),contentType:'image/png'});
-  await page.getByRole('button',{name:'关闭资料发送状态'}).click();
+  const panel = page.getByRole('dialog', { name: '浪潮状态面板' });
+  const heading = panel.getByRole('heading', { name: '浪潮 · 状态面板' });
+  const theme = panel.getByRole('button', { name: '切换日夜配色' });
+  await expect(panel).toBeVisible();
+  await expect(panel.locator('[data-wave-shield-mode]')).toHaveCount(0);
+  for (const appearance of ['day', 'night'] as const) {
+    await expect(panel).toHaveAttribute('data-wave-theme', appearance);
+    await expect(heading).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    expect.soft(await heading.evaluate(element => getComputedStyle(element).fontFamily)).toContain('Noto Serif SC');
+    const bounds = (await panel.boundingBox())!;
+    const viewport = page.viewportSize()!;
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width + 1);
+    await info.attach('浪潮状态面板 ' + appearance, { body: await page.screenshot({ path: info.outputPath('status-' + appearance + '.png') }), contentType: 'image/png' });
+    if (appearance === 'day') await theme.click();
+  }
+  expect.soft(externalFontRequests).toEqual([]);
+  await panel.getByRole('button', { name: '关闭资料发送状态' }).click();
+  await expect(panel).toBeHidden();
   await page.goto('/');
   const reopened = await settings(page);
   await expect(reopened.getByLabel('正文预设')).toHaveValue('peinture-1118');

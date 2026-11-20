@@ -1,3 +1,5 @@
+const maxDepth = 64;
+
 /** 每次组装使用一个实例；游戏资料作为值插入，不再次解释为模板。 */
 export function presetMacros(user: string, char: string, random: () => number = Math.random) {
   const vars = new Map<string, string>(),
@@ -5,7 +7,7 @@ export function presetMacros(user: string, char: string, random: () => number = 
   function expand(source: string): string {
     let pos = 0;
     function read(stopAtArgument: boolean, depth: number): string {
-      if (depth > 64) throw new Error('预设宏嵌套过深');
+      if (depth > maxDepth) throw new Error('预设宏嵌套过深');
       let out = '';
       while (pos < source.length) {
         if (stopAtArgument && (source.startsWith('::', pos) || source.startsWith('}}', pos))) break;
@@ -20,23 +22,30 @@ export function presetMacros(user: string, char: string, random: () => number = 
           continue;
         }
         const start = pos;
-        const head = /^\{\{\s*([\w-]+)\s*/.exec(source.slice(pos));
+        const head = /^\{\{\s*(\/\/|[\w-]+)\s*/.exec(source.slice(pos));
         const name = head?.[1].toLowerCase();
-        if (!head || !name || !['setvar', 'getvar', 'random', 'user', 'char'].includes(name)) {
-          unknown.add(head?.[1] ?? (source.startsWith('{{//', start) ? '//' : '(未知语法)'));
+        const comment = name === '//';
+        if (comment || !head || !name || !['setvar', 'getvar', 'random', 'user', 'char'].includes(name)) {
+          // Balance the whole span without expanding macros inside comments or unknown syntax.
           let level = 1;
           pos += 2;
           while (level && pos < source.length) {
             if (source[pos] === '\\') pos += 2;
             else if (source.startsWith('{{', pos)) {
               level++;
+              if (comment && depth + level - 1 > maxDepth) throw new Error('预设宏嵌套过深');
               pos += 2;
             } else if (source.startsWith('}}', pos)) {
               level--;
               pos += 2;
             } else pos++;
           }
-          out += source.slice(start, pos);
+          if (comment) {
+            if (level) throw new Error('预设宏未闭合或参数无效：//');
+          } else {
+            unknown.add(head?.[1] ?? '(未知语法)');
+            out += source.slice(start, pos);
+          }
           continue;
         }
         pos += head[0].length;
