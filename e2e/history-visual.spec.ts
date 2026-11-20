@@ -46,7 +46,8 @@ async function open(page: Page) {
 }
 
 for(const appearance of ['night','day'])for(const short of [false,true])test(`历史档案视觉 ${appearance} short=${short}`,async({page},info)=>{
- test.setTimeout(120000);const mobile=info.project.name==='mobile';await page.setViewportSize(mobile?short?{width:375,height:667}:{width:390,height:844}:short?{width:901,height:600}:{width:1440,height:900});
+ test.setTimeout(120000);const mobile=info.project.name==='mobile';
+ if (!mobile || short) await page.setViewportSize(mobile ? {width:375,height:667} : short ? {width:901,height:600} : {width:1440,height:900});
  await seed(page);await page.evaluate(a=>{document.documentElement.dataset.appearance=a},appearance);let posts=0;await page.route('**/*',async r=>{if(r.request().method()==='POST'){posts++;throw Error('Unexpected model request')}const u=new URL(r.request().url());if(['localhost','127.0.0.1'].includes(u.hostname))return r.continue();return r.abort()});
  await open(page);const root=page.locator('dialog.history-saves'),metrics:unknown[]=[];const contrasts:Awaited<ReturnType<typeof settingsTextContrast>>[]=[];const buttonChecks:{text:string;ratio:number;minHeight:number}[]=[];
  async function capture(name:string){await page.screenshot({animations:'disabled',path:info.outputPath(`${appearance}-${short?'short':'normal'}-${name}.png`)});buttonChecks.push(...await root.locator('button').evaluateAll(elements=>{
@@ -69,13 +70,25 @@ for(const appearance of ['night','day'])for(const short of [false,true])test(`�
  await open(page);await page.getByRole('button',{name:'手动收藏',exact:true}).click();await expect(root.locator('.history-node-list>li')).toHaveCount(20);const before=await read(page);
  await capture('manual');await page.getByRole('button',{name:'下一页',exact:true}).click();await expect(root.locator('.history-node-list>li')).toHaveCount(4);await capture('page2-old');
  const old=root.locator('.history-node-list>li').filter({hasText:'雨夜转折'});if(!await old.count())await page.getByRole('button',{name:'上一页',exact:true}).click();await old.scrollIntoViewIfNeeded();await old.getByRole('button',{name:'删除收藏',exact:true}).click();await capture('delete');await page.getByRole('button',{name:'保留收藏',exact:true}).click();
- await old.getByRole('button',{name:/预览第/}).click();await root.getByRole('heading',{name:'雨夜转折',exact:false}).scrollIntoViewIfNeeded();await capture('preview');
+ await old.getByRole('button',{name:/预览第/}).click();
+ const reading = root.getByRole('region', { name: '只读历史世界' });
+ await expect(reading).toBeVisible();
+ expect(await reading.evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length))
+   .toBe(mobile ? 1 : short ? 2 : 3);
+ await root.locator('.history-preview-header').scrollIntoViewIfNeeded();
+ await capture('preview');
+ const currentChapter = await root.getByLabel('历史章节').inputValue();
+ await root.getByLabel('历史章节').selectOption('0');
+ await expect(root.getByLabel('历史章节')).toHaveValue('0');
+ await root.getByLabel('历史章节').selectOption(currentChapter);
  await root.locator('.history-story').evaluate(el=>el.lastElementChild?.scrollIntoView({block:'end'}));
  await expect(root.getByRole('button',{name:'关闭资料界面',exact:true})).toBeInViewport();
  await capture('long-reading-bottom');
- await page.getByLabel('历史阅读内容').selectOption('人物档案');await root.locator('.history-world').scrollIntoViewIfNeeded();await capture('profile');await page.getByLabel('历史阅读内容').selectOption('经济与资产');await capture('economy');
- await page.getByLabel('历史阅读内容').selectOption('正文');await page.getByLabel('从此历史节点开始的行动').fill('先核对再决定');await page.getByRole('button',{name:'发送新行动（先确认覆盖）',exact:true}).click();await root.getByRole('heading',{name:'确认覆盖并继续？'}).scrollIntoViewIfNeeded();await capture('overwrite');
- await expect(root.getByRole('region',{name:'覆盖时间线确认'})).toContainText('无法撤销');await expect(root).toContainText('手动收藏会保留');await page.getByRole('button',{name:'取消，保留原进度',exact:true}).click();await page.getByRole('button',{name:'返回历史列表',exact:true}).click();
+ await page.getByRole('navigation', { name: '历史阅读内容' }).getByRole('button', { name: '人物档案', exact: true }).click();await root.locator('.history-world').scrollIntoViewIfNeeded();await capture('profile');await page.getByRole('navigation', { name: '历史阅读内容' }).getByRole('button', { name: '经济与资产', exact: true }).click();await capture('economy');
+ await page.getByRole('navigation', { name: '历史阅读内容' }).getByRole('button', { name: '正文', exact: true }).click();
+ if (mobile && short) await page.setViewportSize({ width: 375, height: 420 });
+ await page.getByLabel('从此历史节点开始的行动').fill('先核对再决定');await page.getByRole('button',{name:'发送新行动（先确认覆盖）',exact:true}).click();await root.getByRole('heading',{name:'确认覆盖并继续？'}).scrollIntoViewIfNeeded();await capture('overwrite');
+ await expect(root.getByRole('region',{name:'覆盖时间线确认'})).toContainText('无法撤销');await expect(root.getByRole('button',{name:'确认覆盖并继续',exact:true})).toHaveClass(/history-overwrite/);await expect(root).toContainText('手动收藏会保留');await page.getByRole('button',{name:'取消，保留原进度',exact:true}).click();await page.getByRole('button',{name:'返回历史列表',exact:true}).click();
  expect(await read(page)).toEqual(before);expect(posts).toBe(0);
  await writeFile(info.outputPath('computed-contrast.json'),JSON.stringify({contrasts,metrics,buttonChecks},null,2));
  expect(buttonChecks.filter(c=>c.ratio<3)).toEqual([]);if(mobile)expect(buttonChecks.every(c=>c.minHeight>=44)).toBe(true);

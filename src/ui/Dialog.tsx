@@ -25,8 +25,9 @@ export function Dialog({
   feedback,
   seal,
   eyebrow,
+  subtitle,
   badge,
-  nonmodal=false,archiveHeading,returnFocus,mobileVariant,sheetFull=false,sheetExpandable=false,footer,beforeBody,closeDisabled=false,
+  nonmodal=false,archiveHeading,returnFocus,mobileVariant,sheetFull=false,sheetExpandable=false,footer,beforeBody,closeDisabled=false,fitVisualViewport=false,
 }: {
   title: string;
   onClose: () => void;
@@ -37,9 +38,11 @@ export function Dialog({
   feedback?: FeedbackLevel;
   seal?: string;
   eyebrow?: string;
+  subtitle?: ReactNode;
   badge?: ReactNode;
   nonmodal?:boolean;archiveHeading?:ArchiveHeading;returnFocus?:()=>HTMLElement|null;
   mobileVariant?:'sheet'|'actions'|'confirm'|'select';sheetFull?:boolean;sheetExpandable?:boolean;footer?:ReactNode;beforeBody?:ReactNode;closeDisabled?:boolean;
+  fitVisualViewport?: boolean;
 }) {
   const desktop = useDesktopFeedback();
   const sheet = !desktop && !nonmodal && Boolean(mobileVariant);
@@ -64,6 +67,27 @@ export function Dialog({
     scrollRestore.current = undefined;
   }, [expanded]);
   useSheetGesture(ref,sheet,close,expansion);
+  useLayoutEffect(() => {
+    const viewport = window.visualViewport, dialog = ref.current;
+    if (!fitVisualViewport || !sheet || !viewport || !dialog) return;
+    const clear = () => {
+      dialog.style.removeProperty('--game-viewport-height');
+      dialog.style.removeProperty('--game-viewport-top');
+    };
+    const update = () => {
+      if (viewport.scale !== 1) { clear(); return; }
+      dialog.style.setProperty('--game-viewport-height', `${viewport.height}px`);
+      dialog.style.setProperty('--game-viewport-top', `${viewport.offsetTop}px`);
+    };
+    update();
+    viewport.addEventListener('resize', update);
+    viewport.addEventListener('scroll', update);
+    return () => {
+      viewport.removeEventListener('resize', update);
+      viewport.removeEventListener('scroll', update);
+      clear();
+    };
+  }, [fitVisualViewport, sheet]);
   useEffect(() => {
     close.current = onClose;
   }, [onClose]);
@@ -144,10 +168,11 @@ export function Dialog({
           </span>
         )}
         <div>
-          <p className="eyebrow" aria-hidden={(desktop||sheet) && eyebrow ? true : undefined}>
+          {subtitle === undefined && <p className="eyebrow" aria-hidden={(desktop||sheet) && eyebrow ? true : undefined}>
             {(desktop||sheet) && eyebrow ? eyebrow : 'HEIJIN / ARCHIVE'}
-          </p>
+          </p>}
           <h2 id={titleId} title={sheet?title:undefined}>{title}</h2>
+          {subtitle && <p className="dialog-subtitle">{subtitle}</p>}
         </div>
         {desktop && badge}
         {sheet && sheetExpandable && <button type="button" className="mobile-sheet-size-toggle" aria-expanded={expanded}
