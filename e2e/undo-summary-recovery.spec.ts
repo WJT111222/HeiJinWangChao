@@ -112,4 +112,6 @@ test('只有遗留 NPC 尝试 ID、没有目标回执时，必须明确选择人
   await expect(summarize).toBeDisabled(); await settings.getByLabel('总结目标 NPC').selectOption('npc-a'); await summarize.click();
   await expect.poll(async () => (await summaryState(page)).memories.npcSummaries['npc-a']?.length).toBe(1);
   expect((await summaryState(page)).memories.npcSummaries['npc-b']).toBeUndefined(); expect(calls).toBe(1);
+  expect(await page.evaluate(created => localStorage.getItem(`heijin.summary.attempt:save-a:${created}:npc`), state.createdAt))
+    .toBe('memory-unacknowledged-test');
 });

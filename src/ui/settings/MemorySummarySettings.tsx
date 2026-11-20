@@ -49,6 +49,11 @@ export function MemorySummarySettings({ settings, onSave, state, phase, activity
   const selectedNpc = people.some(item => item.person.id === npcId) ? npcId : readyPeople.length === 1 ? readyPeople[0].person.id
     : people.length === 1 ? people[0].person.id : '';
   const shownPeople = selectedNpc ? people.filter(item => item.person.id === selectedNpc) : people;
+  function runSummary(kind: SummaryKind, retryId?: string) {
+    const target = kind === 'npc' ? selectedNpc : undefined;
+    if (target) setNpcId(target);
+    onRun?.(kind, target, retryId);
+  }
   function save() {
     try {
       const raw = localStorage.getItem(settingsKey);
@@ -96,9 +101,9 @@ export function MemorySummarySettings({ settings, onSave, state, phase, activity
       return <section className="card" key={kind} aria-label={summaryNames[kind]}>
         <header className="summary-module-heading"><h4>{summaryNames[kind]}</h4>
           {pending ? <button disabled={!state || !onRun || dirty || Boolean(phase) || busy || !canRetry || !count || (kind === 'npc' && !selectedNpc)}
-            onClick={() => onRun?.(kind, kind === 'npc' ? selectedNpc : undefined, pending.retryId)}>重新生成此批（可能计费）</button>
+            onClick={() => runSummary(kind, pending.retryId)}>重新生成此批（可能计费）</button>
             : <button disabled={!state || !onRun || dirty || Boolean(phase) || count < saved.batchSize || (kind === 'npc' && !selectedNpc)}
-              onClick={() => onRun?.(kind, kind === 'npc' ? selectedNpc : undefined)}>立即总结 · {summaryNames[kind]}</button>}</header>
+              onClick={() => runSummary(kind)}>立即总结 · {summaryNames[kind]}</button>}</header>
         <label className="toggle"><input type="checkbox" checked={config.automatic} onChange={e => change(kind, { automatic: e.target.checked })} />自动总结 {summaryNames[kind]}</label>
         <div className="settings-fields">
           <label>触发阈值 · {summaryNames[kind]}<input type="number" min="1" max="10000" value={Number.isNaN(config.threshold) ? '' : config.threshold} onChange={e => change(kind, { threshold: e.target.valueAsNumber })} /></label>
