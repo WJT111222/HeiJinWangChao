@@ -14,6 +14,7 @@ import { CreationWizard } from '../ui/creation/CreationWizard';
 import { CreationSchema, creationKey, newCreation, createProfileSave } from '../ui/creation/model';
 import type { Creation } from '../ui/creation/model';
 import { SettingsPanel } from '../ui/settings/SettingsPanel';
+import { PeintureLauncher } from '../ui/settings/PeintureLauncher';
 import { UnsavedAiChanges } from '../ui/settings/UnsavedAiChanges';
 import { SettingsSchema, defaultSettings, settingsKey } from '../ui/settings/model';
 import { useAppearance } from './useAppearance';
@@ -505,7 +506,8 @@ export function App() {
       {!gameRoute && route !== '#create' && <input ref={importInput} type="file" accept=".json,application/json" hidden aria-label="选择备份文件"
         onChange={event => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) setImporting({ file }); }} />}
       {historySaveId && repository && <Suspense fallback={<Dialog title="历史存档" onClose={() => setHistorySaveId(undefined)}><p>正在打开历史存档…</p></Dialog>}>
-        <HistorySaves repository={repository} saveId={historySaveId} settings={settings} onClose={() => setHistorySaveId(undefined)}
+        <HistorySaves repository={repository} saveId={historySaveId} settings={settings}
+          summary={readableSaves.find(save => save.saveId === historySaveId)} onClose={() => setHistorySaveId(undefined)}
           onRestored={result => {
             setHistorySaveId(undefined); openSave(result.state.saveId, authorizeHistoryStart(result.state, result.draft));
           }}/>
@@ -529,6 +531,7 @@ export function App() {
       {notices.kind && <NoticeDialog announcement={notices.announcement} key={desktopUi?notices.kind:'mobile-notice'} automatic={notices.automatic} kind={notices.kind} muted={notices.muted}
         onMutedChange={notices.setMuted} onClose={notices.close} />}
       {settingsOpen && !(gameRoute && loaded) && renderSettings()}
+      <PeintureLauncher />
       {settingsOpen && confirmSettingsClose && <UnsavedAiChanges subject={summarySettingsDirty ? '记忆设置' : undefined} onContinue={() => {setConfirmSettingsClose(false);settingsDestination.current=undefined;}} onDiscard={() => {
         setConfirmSettingsClose(false);
         setAiSettingsDirty(false); setSummarySettingsDirty(false);

@@ -1,7 +1,15 @@
 import { useState, useSyncExternalStore } from 'react';
 import { builtInPresets } from '../../presets/library';
 import { readPresetSettings } from '../../presets/settings';
-import { assistantView, pressScriptButton, switchPreset } from '../../presets/tavern/hostState';
+import { assistantView, pressScriptButton, switchPreset, type ScriptInstance } from '../../presets/tavern/hostState';
+
+export function ScriptStatusRows({ rows }: { rows: ScriptInstance[] }) {
+  return <>{rows.map(row => <details key={row.id}><summary>{row.name} · {row.status}</summary>
+    {row.edition && <p>{row.edition}</p>}
+    {row.error && <p role="alert">{row.error}</p>}
+    {Object.entries(row.phases).map(([key,value]) => <p key={key}>{key} · {value}</p>)}
+  </details>)}</>;
+}
 
 export function ScriptButtons() {
   const rows = useSyncExternalStore(assistantView.subscribe, assistantView.snapshot);
@@ -32,10 +40,6 @@ export function TavernAssistant({ dirty }: { dirty: boolean }) {
     {dirty && <p>请先保存当前设置。</p>}
     {error && <p role="alert">{error}</p>}
     {recovery && <p>恢复模式：脚本已停用。</p>}
-    {rows.map(row => <details key={row.id}><summary>{row.name} · {row.status}</summary>
-      {row.edition && <p>{row.edition}</p>}
-      {row.error && <p role="alert">{row.error}</p>}
-      {Object.entries(row.phases).map(([key,value]) => <p key={key}>{key} · {value}</p>)}
-    </details>)}
+    <ScriptStatusRows rows={rows}/>
   </section>;
 }

@@ -1,6 +1,9 @@
 import { expect, test } from './helpers/test';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { openGameTools, openStageRaw } from './helpers/gameLayout';
+import { settingsTextContrast } from './helpers/settingsContrast';
+import { writeFile } from 'node:fs/promises';
+import controls from '../src/presets/resources/peinture-controls.json' with { type: 'json' };
 import fixture from './fixtures/peinture-game.json' with { type: 'json' };
 
 type Protocol = 'openai' | 'deepseek' | 'anthropic' | 'gemini';
@@ -202,6 +205,15 @@ async function editPreset(page: Page) {
   await settings.getByRole('button', { name: '王朝预设设置' }).click();
   return page.getByRole('dialog', { name: '王朝预设设置' });
 }
+function sectionButton(panel: Locator, name: string) {
+  return panel.getByRole('navigation', { name: '预设设置分区' }).getByRole('button').filter({
+    has: panel.page().getByText(name, { exact: true }),
+  });
+}
+function delivery(panel: Locator, name: string) {
+  return panel.getByRole('group', { name: '正文交付' }).getByRole('button', { name, exact: true });
+}
+function paceGroup(panel: Locator) { return panel.getByRole('group', { name: '推进速度', exact: true }); }
 test('设置保存、重开、恢复默认和关闭，每次仅生成一次', async ({ page }, info) => {
   test.slow(); // Two saves, two real opening drafts and multiple full page reloads.
   const sent = await prepare(page, 'openai', false, false);
@@ -212,30 +224,35 @@ test('设置保存、重开、恢复默认和关闭，每次仅生成一次', as
     settings.getByRole('button', { name: '保存预设并刷新' }).click(),
   ]);
   let panel = await editPreset(page);
-  await panel.getByText('局势与节奏', { exact: true }).click();
-  const pace = panel.getByLabel('推进速度');
-  const initial = await pace.inputValue();
-  const temp = await panel.getByLabel('温度').inputValue();
-  await panel.getByLabel('正文交付').selectOption('text');
+  const temp = await panel.getByLabel('温度', { exact: true }).inputValue();
+  await sectionButton(panel, '局势与节奏').click();
+  const pace = paceGroup(panel);
+  const initial = await pace.getByRole('button', { pressed: true }).getAttribute('aria-label')
+    ?? await pace.getByRole('button', { pressed: true }).evaluate(button =>
+      [...button.childNodes].filter(node => node.nodeType === Node.TEXT_NODE).map(node => node.textContent).join('').trim());
+  await sectionButton(panel, '采样与输出').click();
+  await delivery(panel, '文本标记').click();
   await panel.getByRole('button', { name: '保存调整' }).click();
   await expect(panel.getByRole('status')).toContainText('已保存');
   await panel.getByRole('button', { name: '关闭预设设置' }).click();
   await settings.getByRole('button', { name: '王朝预设设置' }).click();
-  await expect(panel.getByLabel('正文交付')).toHaveValue('text');
-  await panel.getByLabel('正文交付').selectOption('native');
-  await panel.getByText('局势与节奏', { exact: true }).click();
-  await pace.selectOption('wave-pace-fast');
-  await panel.getByLabel('温度').fill('0');
+  await expect(delivery(panel, '文本标记')).toHaveAttribute('aria-pressed', 'true');
+  await delivery(panel, '工具参数').click();
+  await sectionButton(panel, '局势与节奏').click();
+  await pace.getByRole('button', { name: '疾步向前', exact: true }).click();
+  await sectionButton(panel, '采样与输出').click();
+  await panel.getByLabel('温度', { exact: true }).fill('0');
   await panel.getByRole('button', { name: '保存调整' }).click();
   await expect(panel.getByRole('status')).toContainText('已保存');
   expect(await panel.evaluate((d) => d.scrollWidth <= d.clientWidth + 1)).toBe(true);
-  await panel.getByText('采样与输出', { exact: true }).scrollIntoViewIfNeeded();
+  await sectionButton(panel, '采样与输出').scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath('settings.png') });
   await page.reload();
   panel = await editPreset(page);
-  await panel.getByText('局势与节奏', { exact: true }).click();
-  await expect(panel.getByLabel('推进速度')).toHaveValue('wave-pace-fast');
-  await expect(panel.getByLabel('温度')).toHaveValue('0');
+  await sectionButton(panel, '局势与节奏').click();
+  await expect(paceGroup(panel).getByRole('button', { name: '疾步向前', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await sectionButton(panel, '采样与输出').click();
+  await expect(panel.getByLabel('温度', { exact: true })).toHaveValue('0');
   expect(sent).toHaveLength(0);
   await page.goto('/');
   await generate(page);
@@ -244,15 +261,23 @@ test('设置保存、重开、恢复默认和关闭，每次仅生成一次', as
   expect(sent[0]).toContain('当前推进速度：疾步向前');
   await page.goto('/');
   panel = await editPreset(page);
-  page.once('dialog', (d) => d.accept());
-  await panel.getByRole('button', { name: '恢复默认' }).click();
+  const reset = panel.getByRole('button', { name: '恢复默认', exact: true });
+  await reset.click();
+  const confirmation = panel.getByRole('region', { name: '确认恢复默认' });
+  await expect(confirmation).toContainText('点击保存后生效');
+  await confirmation.getByRole('button', { name: '取消', exact: true }).click();
+  await expect(reset).toBeFocused();
+  await expect(panel.getByLabel('温度', { exact: true })).toHaveValue('0');
+  await reset.click();
+  await confirmation.getByRole('button', { name: '确认恢复默认', exact: true }).click();
   await panel.getByRole('button', { name: '保存调整' }).click();
   await expect(panel.getByRole('status')).toContainText('已保存');
   await page.reload();
   panel = await editPreset(page);
-  await panel.getByText('局势与节奏', { exact: true }).click();
-  await expect(panel.getByLabel('推进速度')).toHaveValue(initial);
-  await expect(panel.getByLabel('温度')).toHaveValue(temp);
+  await sectionButton(panel, '局势与节奏').click();
+  await expect(paceGroup(panel).getByRole('button', { name: initial, exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await sectionButton(panel, '采样与输出').click();
+  await expect(panel.getByLabel('温度', { exact: true })).toHaveValue(temp);
   await page.goto('/');
   await generate(page, 'peinture-second');
   expect(sent[1]).toContain('顾乙');
@@ -276,11 +301,13 @@ test('保存失败保留编辑，脚本正文交付偏好随下一次请求生�
   await openGameTools(page);
   await page.getByRole('button', { name: '王朝预设设置', exact: true }).click();
   const panel = page.getByRole('dialog', { name: '王朝预设设置' });
-  await panel.getByText('兼容与预览', { exact: true }).click();
+  await sectionButton(panel, '兼容与预览').click();
   await panel.getByRole('button', { name: '估算已保存配置' }).click();
   await expect(panel.getByRole('status')).toContainText('本地估算');
 
-  await panel.getByLabel('正文交付').selectOption('text');
+  await sectionButton(panel, '采样与输出').click();
+
+  await delivery(panel, '文本标记').click();
   await panel.getByLabel('还原额外转义').check();
   await page.evaluate(() => {
     const set = Storage.prototype.setItem;
@@ -294,7 +321,7 @@ test('保存失败保留编辑，脚本正文交付偏好随下一次请求生�
   });
   await panel.getByRole('button', { name: '保存调整' }).click();
   await expect(panel.getByRole('alert')).toContainText('合成存储失败');
-  await expect(panel.getByLabel('正文交付')).toHaveValue('text');
+  await expect(delivery(panel, '文本标记')).toHaveAttribute('aria-pressed', 'true');
   await expect(panel.getByRole('status')).toHaveCount(0);
   await panel.getByRole('button', { name: '保存调整' }).click();
   await expect(panel.getByRole('status')).toContainText('已保存');
@@ -321,7 +348,7 @@ for (const format of ['json', 'sse', 'interrupted', 'invalid-story'] as const) {
     await openGameTools(page);
     await page.getByRole('button', { name: '王朝预设设置', exact: true }).click();
     const panel = page.getByRole('dialog', { name: '王朝预设设置' });
-    await panel.getByLabel('正文交付').selectOption('text');
+    await delivery(panel, '文本标记').click();
     await panel.getByRole('button', { name: '保存调整' }).click();
     await expect(panel.getByRole('status')).toContainText('已保存');
     await panel.getByRole('button', { name: '关闭预设设置' }).click();
@@ -329,7 +356,8 @@ for (const format of ['json', 'sse', 'interrupted', 'invalid-story'] as const) {
     const narrative = ('雨停后，林舟收起伞，望着写有“北岸”的路牌。\n').repeat(80).trim();
     const story = envelope.replace('船靠岸了，林舟沿着石阶往上走。', narrative)
       + '<行动选项>留在原地\n看看周围\n询问站台</行动选项>';
-    const content = '<wave_delivery>' + (format === 'invalid-story' ? story.replace('[]', 'not JSON') : story) + '</wave_delivery>';
+    // 辅助变量规划允许原文参考，空的必需短期记忆仍应由 Story 校验拒绝。
+    const content = '<wave_delivery>' + (format === 'invalid-story' ? story.replace('林舟上岸</短期记忆>', ' </短期记忆>') : story) + '</wave_delivery>';
     const json = format === 'json' || format === 'invalid-story';
     await page.route('https://peinture.mock.invalid/**', route => {
       sent.push(route.request().postData()!);
@@ -415,4 +443,111 @@ test('仅有上游心跳时真实脚本按配置超时，失败面板可复制�
   expect(report.tavern.timeline.deadlineMs - report.tavern.timeline.budgetStartMs).toBeGreaterThanOrEqual(995);
   expect(await page.evaluate(() => sessionStorage.getItem('mock-heartbeat-count'))).toBe('1');
   await info.attach('timeline', { body: JSON.stringify(report.tavern.timeline), contentType: 'application/json' });
+});
+
+for (const appearance of ['night', 'day']) test('预设纸档布局与完整条目 ' + appearance, async ({ page }, info) => {
+  test.slow();
+  const mobile = info.project.name === 'mobile';
+  if (!mobile) await page.setViewportSize({ width: 1440, height: 900 });
+  const sent = await prepare(page, 'openai', false, true);
+  await page.evaluate(value => { document.documentElement.dataset.appearance = value; }, appearance);
+  const panel = await editPreset(page);
+  const content = panel.getByLabel('预设分区内容');
+  const temperature = panel.getByLabel('温度', { exact: true });
+  const slider = panel.getByRole('slider', { name: '温度滑块' });
+  await expect(temperature).toBeVisible();
+  await page.screenshot({ animations: 'disabled', path: info.outputPath('preset-' + appearance + '.png') });
+  await temperature.fill('0.4');
+  await expect(slider).toHaveValue('0.4');
+  await slider.press('End');
+  await expect(temperature).toHaveValue((await temperature.getAttribute('max'))!);
+  await temperature.fill('3');
+  await panel.getByRole('button', { name: '保存调整', exact: true }).click();
+  await expect(panel.getByRole('alert')).toContainText('温度须在 0 到 2 之间。');
+  await expect(temperature).toHaveValue('3');
+  await temperature.fill('0.4');
+  const contrast = [await settingsTextContrast(panel)];
+  const initialStorage = await page.evaluate(() => localStorage.getItem('heijin.story-presets.v1'));
+  const allDisplayed: string[] = [];
+  const grouped = new Set(controls.groups.flatMap(group => group.ids));
+  for (const section of controls.sections) {
+    await sectionButton(panel, section.name).click();
+    await expect(content.getByRole('heading', { name: section.name, exact: true })).toBeVisible();
+    await expect(sectionButton(panel, section.name).locator('.peinture-count')).toHaveText(new RegExp('/' + section.ids.length + '$'));
+    // A custom style is counted under 自定义, but belongs to the full 文风 radio group.
+    const options = controls.groups.filter(group => section.ids.includes(group.ids[0])).flatMap(group => group.ids);
+    const displayed = await content.locator('input[type=checkbox], .peinture-chips button[value]').evaluateAll(
+      elements => elements.map(element => element.getAttribute('value') ?? '').sort(),
+    );
+    expect(displayed).toEqual([...section.ids.filter(id => !grouped.has(id)), ...options].sort());
+    allDisplayed.push(...displayed);
+    if (section.name === '局势与节奏') {
+      const group = paceGroup(panel);
+      await group.getByRole('button', { name: '疾步向前', exact: true }).click();
+      await expect(group.getByRole('button', { pressed: true })).toHaveText('疾步向前');
+      await group.getByRole('button', { name: '不指定', exact: true }).press('Enter');
+      await expect(group.getByRole('button', { pressed: true })).toHaveText('不指定');
+      await expect(sectionButton(panel, section.name).getByTitle('有未保存的修改')).toBeVisible();
+      contrast.push(await settingsTextContrast(panel));
+      await page.screenshot({ animations: 'disabled', path: info.outputPath('preset-groups-' + appearance + '.png') });
+    }
+    if (section.name === '自定义') {
+      await expect(content.locator('textarea')).toHaveCount(4);
+      await content.locator('textarea').last().fill('合成测试文字');
+      await expect(content.locator('textarea').last()).toHaveValue('合成测试文字');
+    }
+  }
+  expect(allDisplayed).toHaveLength(82);
+  expect(allDisplayed.sort()).toEqual(controls.sections.flatMap(section => section.ids).sort());
+  if (!mobile) {
+    const search = panel.getByRole('searchbox', { name: '搜索预设条目' });
+    await search.fill('疾步向前');
+    await expect(paceGroup(panel)).toBeVisible();
+    await search.fill('无匹配测试42');
+    await expect(content).toContainText('没有匹配的条目。');
+    await search.fill('');
+    await expect(content.getByRole('heading', { name: '自定义', exact: true })).toBeVisible();
+  }
+  for (const viewport of mobile ? [{ width: 375, height: 520 }, { width: 392, height: 420 }]
+    : [{ width: 859, height: 600 }, { width: 1024, height: 520 }]) {
+    await page.setViewportSize(viewport);
+    await sectionButton(panel, '自定义').click();
+    const lastInput = content.locator('textarea').last();
+    await lastInput.click();
+    await lastInput.fill('矮视口编辑');
+    await expect(lastInput).toHaveValue('矮视口编辑');
+    const reset = panel.getByRole('button', { name: '恢复默认', exact: true });
+    await expect(reset).toBeInViewport();
+    await reset.click();
+    const confirmation = panel.getByRole('region', { name: '确认恢复默认' });
+    await expect(confirmation.getByRole('button', { name: '确认恢复默认', exact: true })).toBeInViewport();
+    await page.screenshot({ animations: 'disabled', path: info.outputPath(`preset-short-${appearance}-${viewport.width}.png`) });
+    await page.keyboard.press('Escape');
+    await expect(confirmation).not.toBeVisible();
+    await expect(reset).toBeFocused();
+    const save = panel.getByRole('button', { name: '保存调整', exact: true });
+    await expect(save).toBeInViewport();
+    if (viewport.width < 860) {
+      const actions = await panel.locator('.peinture-actions').boundingBox();
+      expect(Math.abs((await reset.boundingBox())!.width - (await save.boundingBox())!.width)).toBeLessThan(1);
+      expect(actions!.width).toBeGreaterThan(viewport.width - 44);
+    }
+    expect(await panel.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await writeFile(info.outputPath('preset-contrast.json'), JSON.stringify(contrast.map(result => ({
+    text: result.rows.map(({ text, ratio, threshold, foreground, background }) => ({ text, ratio, threshold, foreground, background })),
+    controls: result.controls,
+  })), null, 2));
+  expect(contrast.flatMap(result => result.failures.map(({text, ratio}) => ({text, ratio})))).toEqual([]);
+  expect(contrast.flatMap(result => result.controlFailures)).toEqual([]);
+  const close = panel.getByRole('button', { name: '关闭预设设置' });
+  page.once('dialog', dialog => dialog.dismiss());
+  await close.click();
+  await expect(panel).toBeVisible();
+  page.once('dialog', dialog => dialog.accept());
+  await close.click();
+  await expect(panel).not.toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('heijin.story-presets.v1'))).toBe(initialStorage);
+  expect(sent).toHaveLength(0);
 });
