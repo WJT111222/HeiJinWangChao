@@ -232,6 +232,45 @@ test('自写模块及普通脚本在独立实例使用按钮、活配置、作�
   expect(result.rows.map((r:string[])=>r.slice(0,2))).toEqual([['a','已初始化'],['b','已初始化'],['disabled','已停用'],['bad','出错']]);
 });
 
+async function nativeRequests(page: Page, stages = ['variables','world','memory','story']) {
+  await page.evaluate(async stages => {
+    const paths = ['/src/services/ai/client.ts','/src/services/ai/configuration.ts','/src/services/ai/credentials.ts','/src/services/ai/snapshot.ts'];
+    const [{AiClient},{newChannel},{CredentialVault},{channelSnapshot}] = await Promise.all(paths.map(p=>import(p)));
+    const ch = newChannel('openai'); ch.id='fixture-native'; ch.baseUrl='https://assistant.mock.invalid/v1';
+    const vault = new CredentialVault(sessionStorage,localStorage); vault.set(ch.id,'fixture-only');
+    const composer='/src/prompts/composer.ts', fixture='/src/tests/fixtures/talentPrompt.ts';
+    const {composePrompt,composeTextVariablesPrompt}=await import(composer);
+    const {talentMemoryInput,talentPromptInput}=await import(fixture);
+    for (const stage of stages) {
+      const input=stage==='memory' ? talentMemoryInput() : talentPromptInput(stage,'regular');
+      const prompt=stage==='variables' ? await composeTextVariablesPrompt(input) : await composePrompt(input,stage === 'story' ? null : undefined);
+      await new AiClient().generate(channelSnapshot(ch,vault,stage,stage),prompt.messages);
+    }
+  }, stages);
+}
+
+test('独立主脚本启用前后其他三阶段实际请求逐字节一致', async ({ page }) => {
+  const bodies: string[] = [];
+  await page.route('https://assistant.mock.invalid/**', route => {
+    bodies.push(route.request().postData()!);
+    return route.fulfill({json:{choices:[{message:{content:'测试文本'},finish_reason:'stop'}]}});
+  });
+  await page.goto('/');
+  const stages = ['variables','world','memory'];
+  await nativeRequests(page, stages);
+  const nativeSettings = await settings(page);
+  await nativeSettings.getByLabel('防截断破甲模式').check();
+  await Promise.all([page.waitForNavigation(), nativeSettings.getByRole('button',{name:'保存预设并刷新'}).click()]);
+  await page.evaluate(async () => {
+    const path = '/src/presets/tavern/hostState.ts';
+    await (await import(path)).startAssistant();
+  });
+  await expect(page.locator('iframe[data-tavern-script]')).toHaveCount(1);
+  await nativeRequests(page, stages);
+  expect(bodies).toHaveLength(6);
+  expect(bodies.slice(3)).toEqual(bodies.slice(0,3));
+});
+
 test('真实脚本保存采样后刷新生效，预览与恢复启动零传输，原生请求逐字段相同', async ({ page }) => {
   const wires: string[] = [];
   await page.route('**/*', async route => {
@@ -242,24 +281,8 @@ test('真实脚本保存采样后刷新生效，预览与恢复启动零传输�
     }
     return ['127.0.0.1','localhost'].includes(url.hostname) || url.protocol === 'blob:' ? route.continue() : route.abort();
   });
-  async function nativeRequests() {
-    await page.evaluate(async () => {
-      const paths = ['/src/services/ai/client.ts','/src/services/ai/configuration.ts','/src/services/ai/credentials.ts','/src/services/ai/snapshot.ts'];
-      const [{AiClient},{newChannel},{CredentialVault},{channelSnapshot}] = await Promise.all(paths.map(p=>import(p)));
-      const ch = newChannel('openai'); ch.id='fixture-native'; ch.baseUrl='https://assistant.mock.invalid/v1';
-      const vault = new CredentialVault(sessionStorage,localStorage); vault.set(ch.id,'fixture-only');
-      const composer='/src/prompts/composer.ts', fixture='/src/tests/fixtures/talentPrompt.ts';
-      const {composePrompt,composeTextVariablesPrompt}=await import(composer);
-      const {talentMemoryInput,talentPromptInput}=await import(fixture);
-      for (const stage of ['variables','world','memory','story']) {
-        const input=stage==='memory' ? talentMemoryInput() : talentPromptInput(stage,'regular');
-        const prompt=stage==='variables' ? await composeTextVariablesPrompt(input) : await composePrompt(input,null);
-        await new AiClient().generate(channelSnapshot(ch,vault,stage,stage),prompt.messages);
-      }
-    });
-  }
   await page.goto('/');
-  await nativeRequests();
+  await nativeRequests(page);
   const before = [...wires];
   await page.evaluate(() => localStorage.setItem('heijin.story-presets.v1',JSON.stringify({ enabled:true, selected:'peinture-1118',packages:{} })));
   await page.reload();
@@ -298,7 +321,7 @@ test('真实脚本保存采样后刷新生效，预览与恢复启动零传输�
   });
   expect(wires).toHaveLength(5);
   expect(JSON.parse(wires[4])).toMatchObject({ temperature:0.37 });
-  await nativeRequests();
+  await nativeRequests(page);
   expect(wires.slice(5)).toEqual(before);
   await page.goto('/?safe=1');
   await expect(page.getByRole('button',{name:'设置',exact:true}).first()).toBeVisible();
@@ -318,6 +341,7 @@ test('真实脚本保存采样后刷新生效，预览与恢复启动零传输�
   await Promise.all([page.waitForNavigation(),repair.getByRole('button',{name:'重置损坏的预设配置并刷新'}).click()]);
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('heijin.story-presets.v1')!))).toMatchObject({enabled:false,selected:null});
   expect(wires).toHaveLength(9);
+
 });
 
 test('首次生成等待模块异步初始化，等待时取消及随后启动异常均保持原草稿', async ({ page }) => {
@@ -547,4 +571,52 @@ test('独立档案预设使用同一宿主、传输、超时、取消与草稿�
   await page.reload();
   await expect(page.locator('iframe[data-tavern-script]').first()).toBeAttached();
   await expect(page.locator('iframe[data-tavern-script="folio-reader"]')).toHaveCount(0);
+});
+
+test('独立主脚本处理普通回合，截断参数不能覆盖原候选', async ({ page }) => {
+  const wires: string[] = [];
+  await page.route('https://delivery.mock.invalid/**', async route => {
+    wires.push(route.request().postData()!);
+    const ok = wires.length === 1;
+    const content = '<正文>主角取出记事本核对资料。</正文><短期记忆>核对资料</短期记忆>';
+    return route.fulfill({json:{ choices:[{ message:{ tool_calls:[{ type:'function', id:'call-one',
+      function:{name:'actual_content', arguments:ok ? JSON.stringify({content}) : '{"content":"未写完'} }] },
+      finish_reason:ok ? 'tool_calls' : 'length' }] }});
+  });
+  await page.goto('/');
+  const dialog = await settings(page);
+  await dialog.getByLabel('防截断破甲模式').check();
+  await Promise.all([page.waitForNavigation(), dialog.getByRole('button',{name:'保存预设并刷新'}).click()]);
+  const result = await page.evaluate(async () => {
+    const paths = ['/src/workflows/storyStage.ts','/src/services/storage/saveRepository.ts','/src/tests/fixtures/talentPrompt.ts',
+      '/src/services/ai/configuration.ts','/src/services/ai/credentials.ts'];
+    const [{StoryStage},{SaveRepository},{talentPromptInput},{newChannel,defaultAiConfig},{CredentialVault}] =
+      await Promise.all(paths.map(path => import(path)));
+    const input = talentPromptInput('story','regular');
+    const repo = await SaveRepository.open();
+    try {
+      const draftPath = '/src/domain/drafts.ts';
+      const {createTurnDraft} = await import(draftPath);
+      input.draft = createTurnDraft(input.state.saveId,input.state.revision,'native-delivery-turn','regular',input.userInput);
+      const backup = { state:input.state, draft:input.draft };
+      await repo.importBackup(backup,(await repo.compareBackup(backup)).confirmation);
+      const config = defaultAiConfig(), channel = newChannel('openai');
+      channel.baseUrl = 'https://delivery.mock.invalid/v1'; channel.defaultModel = 'fixture';
+      config.channels = [channel]; config.routes.story = {channelId:channel.id,modelId:''};
+      const vault = new CredentialVault(sessionStorage, localStorage);
+      vault.set(channel.id,'fixture-only');
+      input.settings.runtime.streamStory = false;
+      const stage = new StoryStage(repo);
+      const generate = (draft: typeof input.draft) => stage.generate({draft,config,vault,settings:input.settings});
+      const saved = await generate(await repo.loadDraft(input.state.saveId));
+      const failure = await generate(saved).catch((e:{ code:string }) => e.code);
+      localStorage.setItem('heijin.story-presets.v1',JSON.stringify({enabled:true,selected:'peinture-1118',packages:{}}));
+      const stale = await generate(saved).catch((e:{details?:{fieldPath?:string}}) => e.details?.fieldPath);
+      return { text:saved.story.narrative, failure, stale, draftPreserved:JSON.stringify(await repo.loadDraft(input.state.saveId)) === JSON.stringify(saved),
+        revision:(await repo.load(input.state.saveId)).revision, oldRevision:input.state.revision };
+    } finally { repo.close(); }
+  });
+  expect(result).toMatchObject({ text:'主角取出记事本核对资料。', failure:'output_limit', stale:'tavern.refresh_required', draftPreserved:true, revision:result.oldRevision });
+  expect(wires).toHaveLength(2);
+  expect(JSON.parse(wires[0]).tools[0].function.description).toContain('talent-history-0');
 });

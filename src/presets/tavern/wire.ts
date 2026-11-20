@@ -21,7 +21,7 @@ const request = z.object({
 });
 function unsupported(fieldPath: string): never { throw new AiError('unsupported', undefined, { fieldPath: 'tavern.' + fieldPath }); }
 
-export function tavernWire(snapshot: RequestSnapshot, raw: unknown) {
+export function tavernWire(snapshot: RequestSnapshot, raw: unknown, nativeSampling = false) {
   const parsed = request.safeParse(raw);
   if (!parsed.success) unsupported('request');
   const { messages, tools = [], tool_choice: choice, parallel_tool_calls: parallel, stream, temperature, top_p, frequency_penalty, presence_penalty } = parsed.data;
@@ -33,7 +33,7 @@ export function tavernWire(snapshot: RequestSnapshot, raw: unknown) {
     if (!conversation || message.role !== 'system' || isOpenAiCompatible(protocol)) return message;
     return { role: 'user' as const, content: '[system]\n' + message.content };
   });
-  const wire = wireRequest(snapshot, adapted, stream, { temperature, top_p, frequency_penalty, presence_penalty });
+  const wire = wireRequest(snapshot, adapted, stream, nativeSampling ? undefined : { temperature, top_p, frequency_penalty, presence_penalty });
   const body = JSON.parse(wire.init.body) as Record<string, unknown>;
   const names = new Set(tools.map(t => t.function.name));
   const selected = typeof choice === 'object' ? choice.function.name : undefined;

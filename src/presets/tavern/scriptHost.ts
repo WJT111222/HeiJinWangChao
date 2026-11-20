@@ -2,9 +2,10 @@ import jquery from 'jquery';
 import lodash from 'lodash';
 import { z } from 'zod';
 import { estimateTokens } from '../../prompts/statistics';
-import { captureStoryPreset, resolveStoryPreset } from '../library';
+import { loadNativeDeliveryScript, resolveStoryPreset, type AssistantSelection } from '../library';
 import type { LoadedPreset } from '../package';
 import { tavernEvents, tavernTools, tavernEventName, tavernEventTypes as names, type FunctionTool } from './events';
+import { nativeDeliveryId } from '../settings';
 import { assistantView, buttonEvent, currentStoryContext, currentTavernRequest, registerRuntimeSettings, type ScriptInstance } from './hostState';
 import { runtimePreset } from './runtimePreset';
 import { storyFloors, variableStore } from './scriptVariables';
@@ -269,10 +270,8 @@ async function mount(script: Script, row: ScriptInstance, install: (realm: Windo
   }
   window.addEventListener('pagehide', leave);
 }
-export async function loadAssistant() {
-  const selected = captureStoryPreset();
-  if (!selected) return;
-  await mountPresetScripts(await resolveStoryPreset(selected));
+export async function loadAssistant(selected: NonNullable<AssistantSelection>) {
+  await mountPresetScripts(selected === nativeDeliveryId ? await loadNativeDeliveryScript() : await resolveStoryPreset(selected));
 }
 export async function mountPresetScripts(preset: LoadedPreset) {
   const config = runtimePreset(preset, () => assistantView.publish(), message => {

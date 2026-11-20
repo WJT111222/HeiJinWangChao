@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadPreset, exportWithOverrides } from '../presets/package';
-import { readPresetSettings, resetPackage, savePresetSettings } from '../presets/settings';
-import { builtInPresets, captureStoryPreset } from '../presets/library';
+import { enableNativeDelivery, resetPresetSelection, nativeDeliveryId, storyMode, readPresetSettings, resetPackage, savePresetSettings } from '../presets/settings';
+import { builtInPresets, captureStoryPreset, captureAssistantSelection, loadNativeDeliveryScript } from '../presets/library';
 import { presetMacros } from '../presets/macros';
 import { assemblePreset } from '../presets/messages';
 import { composePrompt } from '../prompts/composer';
@@ -255,6 +255,65 @@ function channelSetup() {
   vault.set(channel.id, 'fixture-credential');
   return { config, vault };
 }
+describe('原生正文交付', () => {
+  const standalone = () => {
+    const settings = { selected: null, enabled: false, packages: {} };
+    enableNativeDelivery(settings);
+    return settings;
+  };
+  it('从旧的严格 v1 文档读为关闭；启用文学预设一次写入清除独立模式', () => {
+    store.setItem('heijin.story-presets.v1', JSON.stringify({ enabled: false, selected: null, packages: {} }));
+    expect(storyMode(readPresetSettings())).toBeNull();
+    savePresetSettings(standalone());
+    expect(Object.keys(JSON.parse(store.getItem('heijin.story-presets.v1')!)).sort()).toEqual(['enabled','packages','selected']);
+    expect(captureStoryPreset()).toBeNull();
+    expect(captureAssistantSelection()).toBe(nativeDeliveryId);
+    resetPresetSelection();
+    expect(captureAssistantSelection()).toBeNull();
+    savePresetSettings({ ...standalone(), enabled: true, selected: 'synthetic-literary' });
+    expect(readPresetSettings().packages).not.toHaveProperty(nativeDeliveryId);
+    expect(storyMode(readPresetSettings())).toBe('synthetic-literary');
+    savePresetSettings({ ...readPresetSettings(), enabled: false, selected: null });
+    expect(captureAssistantSelection()).toBeNull();
+  });
+  it('独立宿主仅包含原主脚本，无文学条目、控制台、采样值或可切换模式的按钮', async () => {
+    const host = await loadNativeDeliveryScript();
+    expect(host.scripts).toHaveLength(1);
+    expect(host.scripts[0].content).toBe(JSON.parse((await import('../presets/resources/peinture-1118.json?raw')).default)
+      .extensions.tavern_helper.scripts[0].content);
+    expect(host.scripts[0].button).toEqual({ enabled: false, buttons: [] });
+    expect(host.entries).toEqual([]);
+    expect(Object.values(host.sampling).every(value => value === undefined)).toBe(true);
+  });
+  it.each(['opening','regular'] as const)('%s 完整保留原生模块、上下文字段、时间及知识边界', async mode => {
+    const input = talentPromptInput('story', mode);
+    const original = await composePrompt(input);
+    savePresetSettings(standalone());
+    const delivered = await composePrompt(input);
+    expect(delivered.modules).toEqual(original.modules);
+    expect(delivered.context).toEqual(original.context);
+    expect(delivered.preset).toBeUndefined();
+    const isContext = (s: string) => s.startsWith('<GAME_CONTEXT>');
+    expect(delivered.messages.filter(m => !isContext(m.content) && !m.content.startsWith('[[WAVE_CONTEXT_')))
+      .toEqual(original.messages.filter(m => !isContext(m.content)));
+    const decode = (s: string) => JSON.parse(s.slice('<GAME_CONTEXT>'.length, -'</GAME_CONTEXT>'.length));
+    const [kept, moved, action] = delivered.messages.filter(m => isContext(m.content)).map(m => decode(m.content));
+    expect(kept.NPC_KNOWLEDGE_POLICY).toBeTruthy();
+    expect(kept.TURN_TIME_POLICY).toBeTruthy();
+    expect(action).toEqual({ PLAYER_ACTION: input.userInput });
+    expect({ ...kept, ...moved, ...action, MEMORY_CONTEXT: { ...moved.MEMORY_CONTEXT, ...kept.MEMORY_CONTEXT } })
+      .toEqual(decode(original.messages.find(m => isContext(m.content))!.content));
+    await expect(composePrompt({ ...input, userInput: '[[WAVE_CONTEXT_END_07_8d2c91]]' }))
+      .rejects.toMatchObject({ details: { fieldPath: 'tavern.context_boundary' } });
+  });
+  it('非 Story 的组装不随独立模式变化', async () => {
+    const inputs = [talentPromptInput('variables','regular'), talentPromptInput('world','regular'), talentMemoryInput()];
+    const original = await Promise.all(inputs.map(input => composePrompt(input)));
+    savePresetSettings(standalone());
+    expect(await Promise.all(inputs.map(input => composePrompt(input)))).toEqual(original);
+  });
+});
+
 describe('正式组装入口', () => {
   it('拍下开始时的配置，切换后新存档使用自己的主角、行动、历史与游戏格式', async () => {
     const a = talentPromptInput('story', 'regular'),

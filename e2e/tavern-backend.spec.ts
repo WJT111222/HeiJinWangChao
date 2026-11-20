@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test';
+import preset from '../src/presets/resources/peinture-manifest.json' with { type: 'json' };
 
 test('启动捕获的传输、预设 Story 包装、候选保存与重新生成取消', async ({ page }) => {
   await page.addInitScript(() => {
@@ -22,14 +23,20 @@ test('启动捕获的传输、预设 Story 包装、候选保存与重新生成�
         : Response.json({ choices: [{ message: { content: '原生传输' }, finish_reason: 'stop' }] });
     };
   });
+  // The synthetic listeners below replace the bundled scripts; select this mode before the page host starts.
+  await page.addInitScript(p => {
+    localStorage.setItem('heijin.story-presets.v1', JSON.stringify({ enabled: true, selected: p.id, packages: {
+      [p.id]: { version: p.version, entries: {}, scripts: Object.fromEntries(Object.keys(p.scriptEditions).map(id => [id,{enabled:false}])) },
+    } }));
+  }, preset);
   await page.goto('/');
   const result = await page.evaluate(async () => {
     const paths = ['/src/main.tsx','/src/workflows/storyStage.ts','/src/services/storage/saveRepository.ts',
       '/src/domain/drafts.ts','/src/tests/fixtures/game.ts','/src/ui/settings/model.ts','/src/services/ai/configuration.ts',
-      '/src/services/ai/credentials.ts','/src/presets/settings.ts','/src/presets/library.ts','/src/presets/tavern/events.ts',
+      '/src/services/ai/credentials.ts','/src/presets/tavern/events.ts',
       '/src/services/ai/client.ts','/src/services/ai/snapshot.ts','/src/services/ai/stageResponses.ts'];
     const [, { StoryStage }, { SaveRepository }, { createTurnDraft }, { game }, { defaultSettings },
-      { newChannel, defaultAiConfig }, { CredentialVault }, { savePresetSettings }, { builtInPresets }, { tavernEvents },
+      { newChannel, defaultAiConfig }, { CredentialVault }, { tavernEvents },
       { AiClient }, { channelSnapshot }, { stageResponses }] = await Promise.all(paths.map(p => import(p)));
     const repo = await SaveRepository.open('tavern-browser-fixture'), state = await repo.create(game());
     const draft = createTurnDraft(state.saveId, state.revision, 'browser-test', 'opening', '');
@@ -40,7 +47,6 @@ test('启动捕获的传输、预设 Story 包装、候选保存与重新生成�
     channel.baseUrl = 'https://tavern.mock.invalid/v1'; channel.defaultModel = 'fixture-model';
     config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: '' };
     vault.set(channel.id, 'fixture-only-key');
-    savePresetSettings({ enabled: true, selected: builtInPresets[0].id, packages: {} });
     const expectedMax = channel.parameters.maxOutputTokens;
     const order: string[] = [], stage = new StoryStage(repo);
     const hooks = [

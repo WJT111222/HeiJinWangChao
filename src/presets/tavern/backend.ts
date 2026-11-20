@@ -8,7 +8,7 @@ import { type UpstreamTrace, normalizeUpstream } from './upstream';
 import { safeMime } from './responseFormat';
 import { tavernWire } from './wire';
 
-export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType, messages: AiMessage[], sampling: Sampling,
+export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType, messages: AiMessage[], sampling: Sampling | undefined,
   stream: boolean, signal: AbortSignal, trace: UpstreamTrace,
   send: (wire: ReturnType<typeof tavernWire>, signal: AbortSignal) => Promise<Response>) {
   const data: GenerationData = { type, messages, ...sampling, stream, n: 1, enable_web_search: false, request_images: false, model: snapshot.model,
@@ -22,7 +22,7 @@ export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType
     const result = await fetchGeneration(data, signal, async request => {
       const actual = AbortSignal.any([signal, request.signal]);
       try {
-        const wire = tavernWire(snapshot, await request.json());
+        const wire = tavernWire(snapshot, await request.json(), sampling === undefined);
         actual.throwIfAborted();
         trace.requestedStream = wire.stream;
         trace.calls++;

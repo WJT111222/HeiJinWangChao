@@ -1,4 +1,6 @@
-import { captureStoryPreset, resolveStoryPreset, type PresetSelection } from '../presets/library';
+import { captureAssistantSelection, resolveStoryPreset, type AssistantSelection, type PresetSelection } from '../presets/library';
+import { nativeDeliveryId } from '../presets/settings';
+import { deliveryContext, checkDeliveryBoundaries } from '../presets/nativeDelivery';
 import { assemblePreset } from '../presets/messages';
 import { storyMaterials } from '../presets/storyMaterials';
 import { narrativeRange } from '../ui/settings/model';
@@ -40,16 +42,16 @@ function cacheFriendlyContext(context: Record<string, unknown>, extra: { PROMPT_
 }
 export async function composePrompt(
   unchecked: ComposeInput,
-  selection = unchecked.stage === 'story' ? captureStoryPreset() : null,
+  selection: AssistantSelection = unchecked.stage === 'story' ? captureAssistantSelection() : null,
 ) {
-  return compose(unchecked, selection);
+  return compose(unchecked, selection === nativeDeliveryId ? null : selection, selection === nativeDeliveryId);
 }
 /** 正式Variables及离线预览共用同一组装器；组装本身不请求模型或写库。 */
 export async function composeTextVariablesPrompt(input: ComposeInput & { stage: 'variables' }) {
   if (input.stage !== 'variables') throw new AiError('configuration');
   return compose(input);
 }
-async function compose(unchecked: ComposeInput, selection: PresetSelection = null) {
+async function compose(unchecked: ComposeInput, selection: PresetSelection = null, nativeDelivery = false) {
   const input = checkedInput(unchecked);
   const selected = selectPromptModules(input);
   if (input.orderOverrides && input.orderPreferences) throw new AiError('configuration');
@@ -123,16 +125,16 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
   const promptSettings = input.stage === 'story' ? input.settings.prompts : { ...input.settings.prompts, style: 'general' as const };
   const assembled = preset ? assemblePreset(preset, storyMaterials(input, context, worldview.join('\n\n'))) : undefined;
   if (assembled) messages.push(...assembled.messages);
-  else messages.push({
-    role: 'user',
-    // 只调整正文 / 变量 / 世界三阶段；独立的记忆维护请求保持原来的字段与顺序。
-    content: contextMessage(input.stage === 'memory'
+  else {
+    const ordered = input.stage === 'memory'
       ? { ...context, PROMPT_SETTINGS: promptSettings }
       : cacheFriendlyContext(context, {
         PROMPT_SETTINGS: promptSettings,
         CURRENT_TIME: { worldClock: replacements.worldClock, worldWeekday: replacements.worldWeekday },
-      })),
-  });
+      });
+    if (nativeDelivery && input.stage === 'story') messages.push(...deliveryContext(ordered));
+    else messages.push({ role: 'user', content: contextMessage(ordered) });
+  }
   // 最终格式提醒紧贴生成点：有确认历史时并入收尾 user 消息；否则作为末尾独立 user 消息。
   const tail = formatTailMessage(input.stage, {
     actionOptions: input.settings.prompts.actionOptions,
@@ -147,6 +149,7 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
   } else if (tail) {
     messages.push({ role: 'user', content: tail });
   }
+  if (nativeDelivery && input.stage === 'story') checkDeliveryBoundaries(messages);
   if (!preset && messages.some((m) => /\{\{[^{}]*\}\}/.test(m.content))) throw new AiError('placeholder');
   return {
     messages,

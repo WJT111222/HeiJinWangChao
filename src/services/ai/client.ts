@@ -33,6 +33,7 @@ export interface RequestOptions {
   storyClock?: import('../../presets/tavern/timing').StoryClock;
   presetSampling?: Sampling;
   tavernType?: GenerationType;
+  nativeStorySampling?: boolean;
   /** Internal Story-only handoff: caller must strictly validate received content. */
   validateStoryOutputLimit?: boolean;
   onResponseDiagnostics?: (diagnostics: ResponseDiagnostics) => void;
@@ -207,7 +208,7 @@ export class AiClient {
             wire.presetSamplingInspection !== undefined, trace);
         };
         const response = trace && cleanup && options.tavernType
-          ? await sendTavern(snapshot, options.tavernType, [...messages], options.presetSampling ?? {}, options.stream === true,
+          ? await sendTavern(snapshot, options.tavernType, [...messages], options.nativeStorySampling ? undefined : options.presetSampling ?? {}, options.stream === true,
             AbortSignal.any([signal, cleanup.signal]), trace, send)
           : await send(wireRequest(snapshot, messages, options.stream === true, options.presetSampling), signal);
         const protocol = trace ? 'openai' : snapshot.channel.protocol;

@@ -87,6 +87,8 @@ const messages: Record<AiErrorCode, string> = {
   parameter_adjusted: '服务明确拒绝了已发送的参数。下次主动生成时，将对符合本次条件的请求使用兼容写法。本次未自动重发、未生成内容，也未改动正式存档。',
 };
 const presetMessages = new Map<string, string>([
+  ['tavern.refresh_required', '正文模式已在其他页面变更，请刷新后再生成。'],
+  ['tavern.context_boundary', '正文资料与交付标记冲突，本次未发送。'],
   ['tavern.initialization', '预设脚本初始化失败，可到运行设置查看实例状态。'],
   ['tavern.wrapper', '预设脚本处理响应时出错。'],
   ['tavern.wrapper.http', '预设脚本返回了失败响应。'],

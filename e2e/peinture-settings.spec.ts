@@ -79,7 +79,7 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
           json: {
             choices: [
               {
-                message: { content: '<wave_delivery>' + envelope + '</wave_delivery>' },
+                message: { content: sent.at(-1)!.includes('<wave_delivery>') ? '<wave_delivery>' + envelope + '</wave_delivery>' : envelope },
                 finish_reason: 'stop',
               },
             ],
@@ -200,6 +200,95 @@ async function runtimeSettings(page: Page) {
   await dialog.getByRole('button', { name: '运行', exact: true }).click();
   return dialog;
 }
+async function applyMode(page: Page, dialog: Locator) {
+  await Promise.all([page.waitForNavigation(), dialog.getByRole('button', { name: '保存预设并刷新' }).click()]);
+}
+for (const protocol of ['openai','deepseek','gemini','anthropic'] as const) {
+  for (const stream of [false, true]) test('原生交付使用渠道参数并保存正文 ' + protocol + (stream ? ' SSE' : ' JSON'), async ({ page }, info) => {
+    const sent = await prepare(page, protocol, stream, false);
+    await page.evaluate(() => {
+      const config = JSON.parse(localStorage.getItem('heijin.ai.v1')!);
+      config.channels[0].parameters.temperature = 0;
+      localStorage.setItem('heijin.ai.v1', JSON.stringify(config));
+    });
+    const dialog = await runtimeSettings(page);
+    await expect(dialog.getByLabel('防截断破甲模式')).not.toBeChecked();
+    await dialog.getByLabel('防截断破甲模式').check();
+    await applyMode(page, dialog);
+    const frames = page.locator('iframe[data-tavern-script]');
+    await expect(frames).toHaveCount(1);
+    await expect(frames).toHaveAttribute('data-tavern-script', controls.mainScript);
+    expect(sent).toHaveLength(0);
+    await generate(page);
+    expect(sent).toHaveLength(1);
+    const body = JSON.parse(sent[0]);
+    const tools = protocol === 'gemini' ? body.tools[0].functionDeclarations
+      : protocol === 'anthropic' ? body.tools : body.tools.map((t: {function: unknown}) => t.function);
+    const names = tools.map((t: {name: string}) => t.name);
+    expect(names).toEqual(['wave_context_reference', toolName]);
+    expect(tools[0].description).toContain('林舟');
+    expect(tools[0].description).not.toContain('NPC_KNOWLEDGE_POLICY');
+    const messages = JSON.stringify(body.messages ?? body.contents);
+    expect(messages).toContain('NPC_KNOWLEDGE_POLICY');
+    expect(messages).not.toMatch(/WAVE_CONTEXT_BEGIN|<wave_plan>|<wave_writing_tail>/u);
+    const temperature = body.generationConfig?.temperature ?? body.temperature;
+    expect(temperature).toBe(0);
+    const maxOutput = body.generationConfig?.maxOutputTokens ?? body.max_completion_tokens ?? body.max_tokens;
+    expect(maxOutput).toBe(8192);
+    await info.attach('native-delivery-wire', { contentType: 'application/json',
+      body: JSON.stringify({ protocol, stream, names, calls: sent.length, temperature, maxOutput, candidate: 'saved' }) });
+  });
+}
+
+test('原生模式、文学预设和关闭状态在双端保存后互斥', async ({ page }, info) => {
+  const sent = await prepare(page, 'openai', false, false);
+  let dialog = await runtimeSettings(page);
+  const checkbox = () => dialog.getByLabel('防截断破甲模式');
+  await checkbox().check();
+  await applyMode(page, dialog);
+  dialog = await runtimeSettings(page);
+  await expect(checkbox()).toBeChecked();
+  await checkbox().scrollIntoViewIfNeeded();
+  await expect(checkbox()).toBeInViewport();
+  await info.attach('原生开启', { body: await page.screenshot({path: info.outputPath('native-on.png')}), contentType: 'image/png' });
+  await dialog.getByLabel('正文预设').selectOption(pack);
+  await applyMode(page, dialog);
+  dialog = await runtimeSettings(page);
+  await expect(checkbox()).toBeDisabled();
+  await expect(checkbox()).not.toBeChecked();
+  await expect(dialog.getByText('使用文学预设时此模式关闭。关闭预设后可手动开启。')).toBeVisible();
+  await expect(page.locator('iframe[data-tavern-script="' + controls.mainScript + '"]')).toHaveCount(1);
+  await checkbox().scrollIntoViewIfNeeded();
+  await info.attach('文学预设启用', { body: await page.screenshot({path: info.outputPath('literary-on.png')}), contentType: 'image/png' });
+  await dialog.getByLabel('正文预设').selectOption('');
+  await applyMode(page, dialog);
+  await expect(page.locator('iframe[data-tavern-script]')).toHaveCount(0);
+  dialog = await runtimeSettings(page);
+  await expect(checkbox()).toBeEnabled();
+  await expect(checkbox()).not.toBeChecked();
+  expect(sent).toHaveLength(0);
+  await page.goto('/');
+  await generate(page);
+  expect(sent).toHaveLength(1);
+  expect(JSON.parse(sent[0]).tools).toBeUndefined();
+});
+test('另一标签启用文学预设后旧页面显示关闭并提示刷新', async ({ page, context }) => {
+  const sent = await prepare(page, 'openai', false, false);
+  let dialog = await runtimeSettings(page);
+  await dialog.getByLabel('防截断破甲模式').check();
+  await applyMode(page, dialog);
+  dialog = await runtimeSettings(page);
+  const other = await context.newPage();
+  await other.goto('/');
+  const otherSettings = await runtimeSettings(other);
+  await otherSettings.getByLabel('正文预设').selectOption(pack);
+  await applyMode(other, otherSettings);
+  await expect(dialog.getByLabel('防截断破甲模式')).toBeDisabled();
+  await expect(dialog.getByText('正文设置已在另一页面更改，请保存并刷新后生成。')).toBeVisible();
+  await applyMode(page, dialog);
+  await expect(page.locator('iframe[data-tavern-script="' + controls.mainScript + '"]')).toHaveCount(1);
+  expect(sent).toHaveLength(0);
+});
 async function editPreset(page: Page) {
   const settings = await runtimeSettings(page);
   await settings.getByRole('button', { name: '王朝预设设置' }).click();
