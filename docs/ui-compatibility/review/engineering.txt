@@ -1,0 +1,174 @@
+> heijinwangchao@1.0.0-beta check
+> npm run filenames:check && npm run lint && npm run test && npm run build
+
+
+> heijinwangchao@1.0.0-beta filenames:check
+> node scripts/check-source-filenames.mjs
+
+Filename check: 4571 paths; Git index + untracked files.
+No case-insensitive path or extensionless module collisions.
+
+> heijinwangchao@1.0.0-beta lint
+> eslint . --max-warnings=0
+
+
+> heijinwangchao@1.0.0-beta test
+> vitest run
+
+
+ RUN  v5.0.5 /workspace/ui-compat
+
+
+ Test Files  197 passed (197)
+      Tests  4741 passed (4741)
+   Start at  04:09:13
+   Duration  168.82s (tests 74%, import 24%, transform 1%, worker 1%)
+
+    Isolate  197 workers spawned · ~97ms startup each (spawn + environment, per file)
+             at least ~18.92s faster with isolate: false — reuses workers across files instead of one per file
+
+
+> heijinwangchao@1.0.0-beta build
+> npm run filenames:check && npm run catalog:check && npm run typecheck && vite build
+
+
+> heijinwangchao@1.0.0-beta filenames:check
+> node scripts/check-source-filenames.mjs
+
+Filename check: 4589 paths; Git index + untracked files.
+No case-insensitive path or extensionless module collisions.
+
+> heijinwangchao@1.0.0-beta catalog:check
+> node scripts/refresh-command-catalog.mjs --check
+
+World/Variables display schemas match current runtime schemas.
+
+> heijinwangchao@1.0.0-beta typecheck
+> tsc --noEmit
+
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 600 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                    0.81 kB │ gzip:   0.50 kB
+dist/assets/budgetInspection.worker-CvoWe2hX.js    7.16 kB
+dist/assets/codec.worker-7ZWJQYua.js             153.46 kB
+dist/assets/PromptInspector-CyMWMYC6.css          10.57 kB │ gzip:   2.71 kB
+dist/assets/PeintureSettings-D6XMI7fk.css         13.16 kB │ gzip:   3.45 kB
+dist/assets/HistorySaves-DlxFn_IC.css             14.59 kB │ gzip:   3.17 kB
+dist/assets/GameScreen-B4_N75R3.css              144.67 kB │ gzip:  24.58 kB
+dist/assets/index-dGkAFYKi.css                   398.01 kB │ gzip:  67.82 kB
+dist/assets/cot_legacy-NbBMqO2C.js                 0.26 kB │ gzip:   0.23 kB
+dist/assets/00_world-BDNfXdvE.js                   0.33 kB │ gzip:   0.33 kB
+dist/assets/perspective_second-DKUXH0EE.js         0.35 kB │ gzip:   0.32 kB
+dist/assets/perspective_third-ChTn5ind.js          0.37 kB │ gzip:   0.34 kB
+dist/assets/style_general-BISIExJ-.js              0.44 kB │ gzip:   0.40 kB
+dist/assets/perspective_first-N44qSniH.js          0.48 kB │ gzip:   0.41 kB
+dist/assets/cot_format_ack-C-HE4Nw4.js             0.57 kB │ gzip:   0.48 kB
+dist/assets/medium_to_long-CM_7dQ1o.js             0.61 kB │ gzip:   0.52 kB
+dist/assets/short_to_medium-CM_7dQ1o.js            0.61 kB │ gzip:   0.52 kB
+dist/assets/no_control-fgVUowVl.js                 0.64 kB │ gzip:   0.52 kB
+dist/assets/min_length-hW4VvrGw.js                 0.71 kB │ gzip:   0.55 kB
+dist/assets/appearance-Bv49319e.js                 0.72 kB │ gzip:   0.57 kB
+dist/assets/personality-DCFeHL2s.js                0.76 kB │ gzip:   0.59 kB
+dist/assets/details--zMfGlPj.js                    0.77 kB │ gzip:   0.54 kB
+dist/assets/real_world-aM-kzASh.js                 0.79 kB │ gzip:   0.63 kB
+dist/assets/story_sample-BAJoKY61.js               0.83 kB │ gzip:   0.66 kB
+dist/assets/init_world-50L8NxXu.js                 0.84 kB │ gzip:   0.67 kB
+dist/assets/background-BFUFOfNO.js                 0.87 kB │ gzip:   0.65 kB
+dist/assets/offscreen-WPSdKie_.js                  0.92 kB │ gzip:   0.73 kB
+dist/assets/world_sample-DosRxc8G.js               0.94 kB │ gzip:   0.51 kB
+dist/assets/offscreen-D0UP3Zbt.js                  0.95 kB │ gzip:   0.73 kB
+dist/assets/init_world-B0gPLRc3.js                 0.95 kB │ gzip:   0.74 kB
+dist/assets/npc_summarize-BtfnrGwi.js              0.97 kB │ gzip:   0.78 kB
+dist/assets/recall_select-72aDVARZ.js              0.98 kB │ gzip:   0.77 kB
+dist/assets/init_world-BZs1QT7P.js                 1.00 kB │ gzip:   0.75 kB
+dist/assets/offscreen-DS5J8vaa.js                  1.02 kB │ gzip:   0.80 kB
+dist/assets/09_dialogue_labels-BI5dfMjF.js         1.04 kB │ gzip:   0.75 kB
+dist/assets/variables-0oyr8sIa.js                  1.04 kB │ gzip:   0.82 kB
+dist/assets/init_world-W_7y6o3N.js                 1.09 kB │ gzip:   0.83 kB
+dist/assets/variables_sample-BNVqSp-i.js           1.12 kB │ gzip:   0.63 kB
+dist/assets/timeline_entry-CxL0XhfG.js             1.20 kB │ gzip:   0.83 kB
+dist/assets/01_agency-CSRHmPTU.js                  1.33 kB │ gzip:   0.95 kB
+dist/assets/offscreen-7KmK4RcY.js                  1.34 kB │ gzip:   1.01 kB
+dist/assets/offscreen-CwHDCFJv.js                  1.38 kB │ gzip:   1.03 kB
+dist/assets/action_options-D_LHG16U.js             1.47 kB │ gzip:   1.02 kB
+dist/assets/emotion_guard-GmL7mvk7.js              1.49 kB │ gzip:   1.03 kB
+dist/assets/macros-0FFP5hNc.js                     1.49 kB │ gzip:   0.77 kB
+dist/assets/action_feasibility-Dbo35xkk.js         1.52 kB │ gzip:   1.07 kB
+dist/assets/profession-TNu_aTSz.js                 1.55 kB │ gzip:   1.02 kB
+dist/assets/04_state_authority-C5069CPR.js         1.71 kB │ gzip:   1.19 kB
+dist/assets/init-CVg9TfkC.js                       1.73 kB │ gzip:   1.15 kB
+dist/assets/init-CLiq2v4i.js                       1.75 kB │ gzip:   1.17 kB
+dist/assets/offscreen-Mahnr_FZ.js                  1.77 kB │ gzip:   1.27 kB
+dist/assets/conflict_pacing-BPKvKLqp.js            1.78 kB │ gzip:   1.21 kB
+dist/assets/init-BSqgxxR9.js                       1.78 kB │ gzip:   1.17 kB
+dist/assets/update-C43WT7Fd.js                     1.79 kB │ gzip:   1.18 kB
+dist/assets/init-DUBALHGu.js                       1.81 kB │ gzip:   1.20 kB
+dist/assets/update-D9hUOWv4.js                     1.81 kB │ gzip:   1.20 kB
+dist/assets/offscreen-CDo0zTj6.js                  1.83 kB │ gzip:   1.31 kB
+dist/assets/update-BmAcP78h.js                     1.85 kB │ gzip:   1.20 kB
+dist/assets/update-DAFtu-yv.js                     1.87 kB │ gzip:   1.23 kB
+dist/assets/offscreen-DHUQcd87.js                  1.95 kB │ gzip:   1.37 kB
+dist/assets/intimacy_boundaries-DFvKdpU1.js        1.98 kB │ gzip:   1.24 kB
+dist/assets/offscreen-C2pjGl1h.js                  2.06 kB │ gzip:   1.42 kB
+dist/assets/style_docu-DuWmXrBA.js                 2.20 kB │ gzip:   1.38 kB
+dist/assets/style_noir-CkgItbPO.js                 2.22 kB │ gzip:   1.43 kB
+dist/assets/update-C0ku1YKh.js                     2.33 kB │ gzip:   1.45 kB
+dist/assets/fusheng-CwlnR8vu.js                    2.40 kB │ gzip:   1.50 kB
+dist/assets/story-D4S7f9cB.js                      2.42 kB │ gzip:   1.65 kB
+dist/assets/style_jianghu-DQ6kO8YZ.js              2.46 kB │ gzip:   1.55 kB
+dist/assets/style_power-bTtDZrah.js                2.47 kB │ gzip:   1.58 kB
+dist/assets/style_shuang-DJfMyyVb.js               2.48 kB │ gzip:   1.56 kB
+dist/assets/style_absurd-B3lCDpte.js               2.54 kB │ gzip:   1.60 kB
+dist/assets/update-Df4O-8ql.js                     2.55 kB │ gzip:   1.63 kB
+dist/assets/02_knowledge-CtGPAs5k.js               2.60 kB │ gzip:   1.65 kB
+dist/assets/init-Tn9-1pg3.js                       2.66 kB │ gzip:   1.67 kB
+dist/assets/variables-DAuoRXeF.js                  3.06 kB │ gzip:   2.01 kB
+dist/assets/init-BNNBm0oX.js                       3.08 kB │ gzip:   2.02 kB
+dist/assets/nsfw-OV3ZXOdd.js                       3.31 kB │ gzip:   1.73 kB
+dist/assets/README-T7rk71Ht.js                     3.36 kB │ gzip:   2.26 kB
+dist/assets/update-n2s72439.js                     3.44 kB │ gzip:   2.17 kB
+dist/assets/init-DNnfvYFL.js                       3.47 kB │ gzip:   2.19 kB
+dist/assets/update-C_HvOkvE.js                     3.54 kB │ gzip:   2.21 kB
+dist/assets/init-Cyjgm1wn.js                       3.57 kB │ gzip:   2.22 kB
+dist/assets/story-BtHoqe97.js                      3.61 kB │ gzip:   2.20 kB
+dist/assets/ACCEPTANCE-CsL9Ukhr.js                 3.94 kB │ gzip:   2.64 kB
+dist/assets/world-Czx2_Tcp.js                      4.18 kB │ gzip:   2.57 kB
+dist/assets/05_context_protocol-BijUDbHk.js        4.20 kB │ gzip:   2.51 kB
+dist/assets/world-BWmELRqp.js                      4.85 kB │ gzip:   2.97 kB
+dist/assets/natural_prose-DFNlv9fM.js              4.91 kB │ gzip:   2.91 kB
+dist/assets/update-BonjmicR.js                     6.77 kB │ gzip:   3.77 kB
+dist/assets/init-DO5I--X6.js                       6.80 kB │ gzip:   3.77 kB
+dist/assets/06_story_output-D1Ac2vcj.js            7.73 kB │ gzip:   4.34 kB
+dist/assets/01_worldview-DAXN6Tjt.js               7.78 kB │ gzip:   4.23 kB
+dist/assets/jsx-runtime-BI9hYGWZ.js                8.23 kB │ gzip:   3.10 kB
+dist/assets/03_time_events-DVmyuBf4.js             8.52 kB │ gzip:   4.74 kB
+dist/assets/opening-CedLPqzb.js                   10.31 kB │ gzip:   5.34 kB
+dist/assets/02_modern_underworld-B4Z_BUMT.js      12.57 kB │ gzip:   6.33 kB
+dist/assets/ASSEMBLY-B-xIOtPH.js                  13.18 kB │ gzip:   7.54 kB
+dist/assets/HistorySaves-EP1Mm4DZ.js              14.04 kB │ gzip:   5.10 kB
+dist/assets/regular-14sEXJYc.js                   15.90 kB │ gzip:   7.71 kB
+dist/assets/PeintureSettings-DmxRgtAy.js          18.51 kB │ gzip:   6.90 kB
+dist/assets/07_command_output-e1Yi-FLu.js         21.82 kB │ gzip:  10.93 kB
+dist/assets/runtime-DRYKon8W.js                   22.00 kB │ gzip:   8.49 kB
+dist/assets/OUTPUT_CONTRACT-DeIXo_PV.js           29.28 kB │ gzip:  14.27 kB
+dist/assets/08_world_output-DKr_dGmJ.js           32.40 kB │ gzip:  14.74 kB
+dist/assets/PromptInspector-DwBYNCMm.js           32.52 kB │ gzip:  11.84 kB
+dist/assets/composer-B4YfbsnU.js                  54.43 kB │ gzip:  22.89 kB
+dist/assets/manifest-BtttSd6F.js                  69.69 kB │ gzip:  10.12 kB
+dist/assets/StoryReadingView-D7BFhp-3.js         111.61 kB │ gzip:  31.38 kB
+dist/assets/sources.lock-BuZYd9Rd.js             113.79 kB │ gzip:  28.61 kB
+dist/assets/errors-DG1Husxe.js                   119.51 kB │ gzip:  36.33 kB
+dist/assets/GameScreen-Djoe9FgV.js               159.39 kB │ gzip:  51.43 kB
+dist/assets/scriptHost-m5mC-oVi.js               173.79 kB │ gzip:  62.80 kB
+dist/assets/peinture-1118-IstqgvwN.js            780.40 kB │ gzip: 154.26 kB
+dist/assets/index-CViorFoG.js                    960.31 kB │ gzip: 297.68 kB
+
+✓ built in 715ms
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.

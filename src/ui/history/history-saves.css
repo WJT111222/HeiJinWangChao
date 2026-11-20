@@ -161,6 +161,8 @@ dialog.history-saves :is(button, input, select, textarea) { transition: box-shad
 .history-saves .history-preview-header h3 { font-size: 20px; }
 .history-saves .history-preview-header p { margin: 3px 0 0; font-size: 13px; color: var(--history-muted); }
 :root[data-appearance=day] .history-reading :is(.npc-directory-tools, .organization-directory-tools) { background: var(--history-card); color: var(--history-text); }
+:root[data-appearance=day] .history-reading :is(.npc-detail-heading, .map-surface) { background-color: var(--history-card); }
+:root[data-appearance=day] .history-reading .npc-detail-heading .avatar { color: var(--history-gold); }
 .history-reading .mobile-map-box { position: relative; isolation: isolate; }
 .history-reading .mobile-map-box > .river { z-index: -1; }
 :root[data-appearance=day] .history-saves.mobile-sheet > .modal-heading > .dialog-seal { color: var(--history-gold); }

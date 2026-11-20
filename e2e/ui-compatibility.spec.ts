@@ -16,6 +16,34 @@ function textContrast(color: string, background: string) {
   const a = luminance(color), b = luminance(background);
   return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
 }
+
+// Sample Chromium's painted background, including translucent fills and the map grid.
+// Text is transparent only in the measurement screenshot.
+async function expectReadable(target: Locator, label: string) {
+  const color = await target.evaluate(el => getComputedStyle(el).color);
+  const pixels = await target.screenshot({ scale: 'css', animations: 'disabled',
+    style: '.history-reading, .history-reading * { -webkit-text-fill-color: transparent; text-shadow: none; }' });
+  const backgrounds = await target.page().evaluate(async base64 => {
+    const img = new Image();
+    img.src = 'data:image/png;base64,' + base64;
+    await img.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0);
+    // Sample the interior, excluding the control border and focus outline.
+    const x = Math.floor(img.width / 4), y = Math.floor(img.height / 3);
+    const { data } = ctx.getImageData(x, y, Math.max(1, Math.floor(img.width / 2)), Math.max(1, Math.floor(img.height / 3)));
+    const colors = new Set<string>();
+    for (let i = 0; i < data.length; i += 4) colors.add(`rgb(${data[i]}, ${data[i + 1]}, ${data[i + 2]})`);
+    return [...colors];
+  }, pixels.toString('base64'));
+  const worst = backgrounds.map(bg => ({ bg, ratio: textContrast(color, bg) })).sort((a, b) => a.ratio - b.ratio)[0];
+  console.log(label, color, worst.bg, worst.ratio.toFixed(2));
+  expect.soft(worst.ratio, label).toBeGreaterThanOrEqual(4.5);
+}
+
 async function sealEvidence(dialog: Locator, name: string) {
   const seal = dialog.locator('.modal-heading > .dialog-seal');
   await expect(seal).toBeVisible();
@@ -183,12 +211,30 @@ for (const theme of ['day', 'night']) {
     await expect(river.locator('path').first()).not.toHaveCSS('stroke', 'none');
     await reading.locator('.mobile-map-box').scrollIntoViewIfNeeded();
     await screenshot(page, 'history-map');
+    const place = reading.getByRole('region', { name: '地点详情' });
+    const selectedZone = reading.locator('.map-zone[aria-pressed=true] strong');
+    const placeName = place.locator('.pc-title h3');
+    await expect(placeName).toHaveText(await selectedZone.innerText());
+    await expectReadable(selectedZone, '选中地点');
+    await expectReadable(placeName, '地点名称');
+    await expectReadable(place.locator('.pc-title .lv'), '地点层级');
+    await expectReadable(place.locator('.derived-note'), '地点说明');
+    await expectReadable(place.locator('.pc-crumb button').first(), '地点路径按钮');
+    await placeName.scrollIntoViewIfNeeded();
+    await screenshot(page, 'place-detail');
     const person = reading.getByRole('region', { name: '此地人物', exact: true }).getByRole('button').first();
     const name = await person.innerText();
     await person.click();
     await expect(button(nav, 'NPC')).toHaveAttribute('aria-current', 'true');
     const title = reading.getByRole('heading', { name, exact: true });
     await expect(title).toBeVisible();
+    await title.scrollIntoViewIfNeeded();
+    const detail = reading.getByRole('region', { name: '人物详情' });
+    await expectReadable(title, '人物姓名');
+    await expectReadable(detail.locator('.npc-detail-heading .tag'), '人物身份标记');
+    await expectReadable(detail.locator('.npc-detail-heading .avatar'), '人物姓名印记');
+    await expectReadable(detail.locator('[data-npc-section=profile] h4'), '人物档案标题');
+    await expectReadable(detail.locator('dd').first(), '人物资料值');
     await title.scrollIntoViewIfNeeded();
     await screenshot(page, 'history-map-person');
     await button(nav, '历史时间轴').click();
