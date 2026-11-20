@@ -1,9 +1,10 @@
 import { canonicalJson, sha256Hex } from '../../domain/worldbook/canonical';
 import { WORLDBOOK_LIMITS, WorldbookReleaseSchema, type WorldbookRelease } from '../../domain/worldbook/schema';
+import { TRIGGER_RESOURCE_LIMITS, type BookRef } from '../../domain/worldbook/triggerRequest';
 import { request, transaction } from './idb';
 
 /**
- * 世界书本地书库（阶段 C1）：独立的附属 IndexedDB，只保存不可变的世界书版本与书目索引。
+ * 世界书本地书库：独立的附属 IndexedDB，保存不可变的世界书版本、书目索引与全局启用状态。
  *
  * 边界（详见 docs/WORLDBOOK_COMPATIBILITY.md「阶段 C1：本地书库」）：
  * - 与游戏主库 `heijinwangchao` 完全分离：不打开、不读写主库，主库版本号保持 5；
@@ -13,21 +14,26 @@ import { request, transaction } from './idb';
  * - 所有操作都返回结果对象，**不向调用方抛出**；书库打不开、被阻塞、超时或空间不足时只返回失败原因，
  *   不会影响存档的列表、打开、推进、撤回、历史与备份（C1 也没有接入任何存档流程）。
  * - 版本一经写入不再修改；同一书 ID + 版本 ID 内容不同时拒绝，绝不覆盖。
- * - 暂不包含：存档绑定、计时持久化、回合事务、历史锚点、版本删除、新版备份导入（C2 / C3 另行审批）。
+ * - 简化版（2026-11-20 决定）：启用状态是全局的，对所有存档生效；不绑定存档，不随撤回 / 回溯 / 备份变化。
+ *   删除一本书在同一个事务里删掉它的全部版本、摘要与启用状态。
  */
 export const WORLDBOOK_LIBRARY_DB = 'heijinwangchao-worldbooks';
 /**
  * 附属库自己的结构版本，与主库版本无关。
  * - 第 1 版：releases、books。
  * - 第 2 版：增加 summaries（版本摘要，列表与资源判断只读它，不读整本书）；升级时从已有版本回填。
+ * - 第 3 版：增加 enabled（全局启用的书，键为书 ID）。
  * 只读的读取器（触发 Worker）按 LIBRARY_READABLE_VERSIONS 判断能否读取，不触发升级。
  */
-export const WORLDBOOK_LIBRARY_VERSION = 2;
+export const WORLDBOOK_LIBRARY_VERSION = 3;
 /** 只读访问（只用 releases 表）能识别的结构版本。将来升版时在这里登记，读取器才会接受。 */
-export const LIBRARY_READABLE_VERSIONS: readonly number[] = [1, 2];
+export const LIBRARY_READABLE_VERSIONS: readonly number[] = [1, 2, 3];
 const RELEASES = 'releases';
 const BOOKS = 'books';
 const SUMMARIES = 'summaries';
+const ENABLED = 'enabled';
+/** 同时启用的书数上限，与单次触发请求的书数上限一致。 */
+export const MAX_ENABLED_BOOKS = TRIGGER_RESOURCE_LIMITS.maxBooks;
 
 /**
  * 安装入口的资源上限。单本限制与导入器一致（导入器已经检查过，这里独立再查一次，不信任调用方）；
@@ -53,6 +59,8 @@ export type LibraryFailureCode =
   | 'version_conflict' // 同一书 ID + 版本 ID 已有不同内容
   | 'too_large' // 单本超过安装资源上限
   | 'library_full' // 书库版本数或总量达到上限
+  | 'not_found' // 书不存在（可能已在其他页面删除）
+  | 'too_many_enabled' // 同时启用的书已达上限
   | 'quota' // 存储空间不足
   | 'failed'; // 其他读写失败（事务已回滚）
 export interface LibraryFailure { ok: false; code: LibraryFailureCode; message: string }
@@ -82,6 +90,11 @@ export interface LibraryVersionSummary {
   canonicalChars: number;
   installedAt: number;
 }
+/** 书架上的一本书：书目、最近版本的摘要与是否启用。 */
+export interface ShelfBook { book: LibraryBook; latest: LibraryVersionSummary | null; enabled: boolean }
+/** 一本启用的书在生成时的引用（最近版本）。 */
+export interface EnabledBook { ref: BookRef; title: string }
+interface EnabledRecord { bookId: string; enabledAt: number }
 interface StoredRelease { release: WorldbookRelease; bookId: string; versionId: string; contentHash: string; installedAt: number }
 
 export type InstallStatus = 'installed' | 'already_installed' | 'duplicate_content';
@@ -116,6 +129,8 @@ const MESSAGES: Record<LibraryFailureCode, string> = {
   version_conflict: '书库中已有相同版本号但内容不同的版本，已拒绝，原版本保持不变。',
   too_large: '世界书超过书库的单本上限，未保存。',
   library_full: '本地书库的版本数或总容量已达上限，请先清理不用的版本。',
+  not_found: '这本世界书已不在书库中，可能已在其他页面删除。',
+  too_many_enabled: `最多同时启用 ${TRIGGER_RESOURCE_LIMITS.maxBooks} 本世界书，请先关闭不用的。`,
   quota: '浏览器存储空间不足，世界书未保存。存档不受影响。',
   failed: '书库读写失败，本次操作已回滚。存档不受影响。',
 };
@@ -210,6 +225,7 @@ export class WorldbookLibrary {
           releases.createIndex('bookId', 'bookId');
         }
         if (!db.objectStoreNames.contains(BOOKS)) db.createObjectStore(BOOKS, { keyPath: 'bookId' });
+        if (!db.objectStoreNames.contains(ENABLED)) db.createObjectStore(ENABLED, { keyPath: 'bookId' });
         if (!db.objectStoreNames.contains(SUMMARIES)) {
           const summaries = db.createObjectStore(SUMMARIES, { keyPath: ['bookId', 'versionId'] });
           summaries.createIndex('bookId', 'bookId');
@@ -340,6 +356,82 @@ export class WorldbookLibrary {
         (await request(tx.objectStore(SUMMARIES).index('bookId').getAll(bookId))).map(readSummary));
       versions.sort((a, b) => b.installedAt - a.installedAt || (a.versionId < b.versionId ? -1 : a.versionId > b.versionId ? 1 : 0));
       return { ok: true, versions };
+    } catch (error) { return failureOf(error); }
+  }
+  /**
+   * 打开或关闭一本书（全局，对所有存档生效）。书必须存在；同时启用的书数有上限。
+   * 重复设置为相同状态是幂等的。
+   */
+  async setEnabled(bookId: string, enabled: boolean, options: { now?: () => number } = {}): Promise<{ ok: true; enabled: boolean } | LibraryFailure> {
+    try {
+      return await transaction(this.database, [BOOKS, ENABLED], 'readwrite', async (tx) => {
+        const books = tx.objectStore(BOOKS), store = tx.objectStore(ENABLED);
+        if (!enabled) { await request(store.delete(bookId)); return { ok: true as const, enabled: false }; }
+        if ((await request(books.get(bookId))) === undefined) throw new LibraryAbort(fail('not_found', MESSAGES.not_found));
+        if ((await request(store.get(bookId))) !== undefined) return { ok: true as const, enabled: true };
+        if ((await request(store.count())) >= MAX_ENABLED_BOOKS) throw new LibraryAbort(fail('too_many_enabled', MESSAGES.too_many_enabled));
+        const record: EnabledRecord = { bookId, enabledAt: (options.now ?? Date.now)() };
+        await request(store.add(record));
+        return { ok: true as const, enabled: true };
+      });
+    } catch (error) { return failureOf(error); }
+  }
+
+  /** 删除一本书：在同一个事务里删掉它的全部版本、摘要、书目与启用状态。不存在时返回 not_found。 */
+  async deleteBook(bookId: string): Promise<{ ok: true } | LibraryFailure> {
+    try {
+      return await transaction(this.database, [RELEASES, SUMMARIES, BOOKS, ENABLED], 'readwrite', async (tx) => {
+        const books = tx.objectStore(BOOKS);
+        if ((await request(books.get(bookId))) === undefined) throw new LibraryAbort(fail('not_found', MESSAGES.not_found));
+        const releases = tx.objectStore(RELEASES), summaries = tx.objectStore(SUMMARIES);
+        for (const key of await request(releases.index('bookId').getAllKeys(bookId))) await request(releases.delete(key));
+        for (const key of await request(summaries.index('bookId').getAllKeys(bookId))) await request(summaries.delete(key));
+        await request(books.delete(bookId));
+        await request(tx.objectStore(ENABLED).delete(bookId));
+        return { ok: true as const };
+      });
+    } catch (error) { return failureOf(error); }
+  }
+
+  /** 书架：全部书目、各自最近版本的摘要与启用状态。排序同 listBooks。只读摘要，不读条目正文。 */
+  async shelf(): Promise<{ ok: true; books: ShelfBook[] } | LibraryFailure> {
+    try {
+      const items = await transaction(this.database, [BOOKS, SUMMARIES, ENABLED], 'readonly', async (tx) => {
+        const books = (await request(tx.objectStore(BOOKS).getAll())).map(readBook);
+        const enabled = new Set((await request(tx.objectStore(ENABLED).getAllKeys())).map(String));
+        const out: ShelfBook[] = [];
+        for (const book of books) {
+          const raw = await request(tx.objectStore(SUMMARIES).get([book.bookId, book.latestVersionId]));
+          out.push({ book, latest: raw === undefined ? null : readSummary(raw), enabled: enabled.has(book.bookId) });
+        }
+        return out;
+      });
+      items.sort((a, b) => b.book.updatedAt - a.book.updatedAt || (a.book.bookId < b.book.bookId ? -1 : a.book.bookId > b.book.bookId ? 1 : 0));
+      return { ok: true, books: items };
+    } catch (error) { return failureOf(error); }
+  }
+
+  /**
+   * 生成时使用：启用的书各自最近版本的引用（书 ID、版本 ID、内容哈希），按启用时间先后、相同时按书 ID。
+   * 书目或摘要缺失的启用记录（不应出现）跳过，不报错。
+   */
+  async enabledBooks(): Promise<{ ok: true; books: EnabledBook[] } | LibraryFailure> {
+    try {
+      return await transaction(this.database, [BOOKS, SUMMARIES, ENABLED], 'readonly', async (tx) => {
+        const records = (await request(tx.objectStore(ENABLED).getAll())) as EnabledRecord[];
+        records.sort((a, b) => a.enabledAt - b.enabledAt || (a.bookId < b.bookId ? -1 : a.bookId > b.bookId ? 1 : 0));
+        const books: EnabledBook[] = [];
+        for (const record of records) {
+          const rawBook = await request(tx.objectStore(BOOKS).get(record.bookId));
+          if (rawBook === undefined) continue;
+          const book = readBook(rawBook);
+          const rawSummary = await request(tx.objectStore(SUMMARIES).get([book.bookId, book.latestVersionId]));
+          if (rawSummary === undefined) continue;
+          const summary = readSummary(rawSummary);
+          books.push({ ref: { bookId: book.bookId, versionId: book.latestVersionId, contentHash: summary.contentHash }, title: book.title });
+        }
+        return { ok: true as const, books };
+      });
     } catch (error) { return failureOf(error); }
   }
 }

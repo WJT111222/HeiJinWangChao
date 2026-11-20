@@ -207,20 +207,20 @@ describe('书库只读读取器：附属库版本兼容', () => {
     const factory = new IDBFactory(), db = name('missing');
     expect(await new LibraryReader({ name: db, factory }).read('a', 'v1')).toEqual({ ok: false, reason: 'missing_library' });
     expect((await factory.databases()).map((d: IDBDatabaseInfo) => d.name)).not.toContain(db);
-    // 之后主线程照常建库（第 2 版，三张表）
+    // 之后主线程照常建库（当前版本）
     const opened = await WorldbookLibrary.open({ name: db, factory });
     expect(opened.ok).toBe(true);
     if (opened.ok) opened.library.close();
   });
 
-  it('第 1 版与第 2 版都能读取；不认识的第 3 版返回 unsupported_version', async () => {
+  it('第 1、2、3 版都能读取；不认识的第 4 版返回 unsupported_version', async () => {
     const factory = new IDBFactory(), r = await makeRelease('a', 'v1', entries('a', 3));
     const v1 = name('v1');
     const d1 = await rawOpen(factory, v1, 1, (d) => { d.createObjectStore('releases', { keyPath: ['bookId', 'versionId'] }); d.createObjectStore('books', { keyPath: 'bookId' }); });
     await new Promise<void>((resolve) => { const tx = d1.transaction('releases', 'readwrite'); tx.objectStore('releases').put({ release: r, bookId: 'a', versionId: 'v1', contentHash: r.contentHash, installedAt: 1 }); tx.oncomplete = () => resolve(); });
     d1.close();
     expect(await new LibraryReader({ name: v1, factory }).read('a', 'v1')).toEqual({ ok: true, release: r });
-    const v2 = name('v2');
+    const v2 = name('v2'); // 由当前代码建库（第 3 版）
     const lib = await WorldbookLibrary.open({ name: v2, factory });
     if (!lib.ok) throw new Error('open');
     await lib.library.install(r); lib.library.close();
@@ -228,9 +228,9 @@ describe('书库只读读取器：附属库版本兼容', () => {
     expect(await reader2.read('a', 'v1')).toEqual({ ok: true, release: r });
     expect(await reader2.read('a', 'missing')).toEqual({ ok: true, release: null });
     reader2.close();
-    const v3 = name('v3');
-    (await rawOpen(factory, v3, 3, (d) => { d.createObjectStore('releases', { keyPath: ['bookId', 'versionId'] }); })).close();
-    expect(await new LibraryReader({ name: v3, factory }).read('a', 'v1')).toEqual({ ok: false, reason: 'unsupported_version' });
+    const v4 = name('v4');
+    (await rawOpen(factory, v4, 4, (d) => { d.createObjectStore('releases', { keyPath: ['bookId', 'versionId'] }); })).close();
+    expect(await new LibraryReader({ name: v4, factory }).read('a', 'v1')).toEqual({ ok: false, reason: 'unsupported_version' });
   });
 
   it('读取器持有连接时，主线程升级书库不被阻塞；读取器重新打开后按新版本判断', async () => {
@@ -240,7 +240,7 @@ describe('书库只读读取器：附属库版本兼容', () => {
     lib.library.close();
     const reader = new LibraryReader({ name: db, factory });
     expect(await reader.read('a', 'v1')).toEqual({ ok: true, release: null });
-    const upgraded = await rawOpen(factory, db, 3, () => { /* 模拟将来的第 3 版 */ });
+    const upgraded = await rawOpen(factory, db, 4, () => { /* 模拟将来的第 4 版 */ });
     upgraded.close();
     expect(await reader.read('a', 'v1')).toEqual({ ok: false, reason: 'unsupported_version' });
   });

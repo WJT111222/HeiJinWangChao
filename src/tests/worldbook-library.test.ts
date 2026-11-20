@@ -36,13 +36,13 @@ async function rawStore(factory: IDBFactory, name: string, store: string, edit: 
 describe('阶段 C1：本地书库（独立附属数据库）', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('建库：独立数据库与三张表，结构版本 2；不创建、不打开游戏主库', async () => {
+  it('建库：独立数据库与四张表（第 3 版新增全局启用表）；不创建、不打开游戏主库', async () => {
     const factory = new IDBFactory(), name = uniqueName('schema');
     const library = await open(name, factory);
     library.close();
     const db = await new Promise<IDBDatabase>((resolve) => { const r = factory.open(name); r.onsuccess = () => resolve(r.result); });
     expect(db.version).toBe(WORLDBOOK_LIBRARY_VERSION);
-    expect([...db.objectStoreNames].sort()).toEqual(['books', 'releases', 'summaries']);
+    expect([...db.objectStoreNames].sort()).toEqual(['books', 'enabled', 'releases', 'summaries']);
     const tx = db.transaction('releases', 'readonly');
     expect([...tx.objectStore('releases').indexNames].sort()).toEqual(['bookId', 'contentHash']);
     db.close();
