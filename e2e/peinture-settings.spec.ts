@@ -544,7 +544,7 @@ test('预设名片显示仍可用脚本的运行时诊断', async ({ page }) => 
   });
   await expect(panel.getByText('脚本运行时异常', { exact: true })).toBeVisible();
   await panel.getByRole('button', { name: '浪潮 · 状态', exact: true }).click();
-  await panel.getByText('合成脚本 · 已初始化', { exact: true }).click();
+  await panel.getByText('我即浪潮 · 已初始化', { exact: true }).click();
   await expect(panel.getByRole('alert')).toHaveText(/我即浪潮.*运行时异常.*TypeError/u);
   await expect(panel.getByRole('alert')).not.toContainText('synthetic-private-error');
   expect(sent).toHaveLength(0);
