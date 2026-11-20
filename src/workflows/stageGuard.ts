@@ -8,27 +8,6 @@ const sessions = new Map<string, symbol>();
 export type BrowserLockScope = object;
 const lockScopes = new WeakMap<BrowserLockScope, string>();
 
-/**
- * 持有凭据：证明调用方当前同时持有某个存档的阶段会话与跨标签锁，供需要“在同一把锁内完成多步”的
- * 仓库方法复用（例如附属库预写 → 主库提交 → 确认），避免它们再次占用会话、再次取锁（锁不可重入）。
- * 只能由 reserveStageSession 返回的会话、在该存档的 withBrowserLock 回调内签发；
- * 锁回调结束、会话释放或被替换后立即失效；其他存档、伪造的对象都不能通过 enterHeldStage。
- */
-declare const heldBrand: unique symbol;
-export type HeldStage = { readonly [heldBrand]: true };
-const heldStages = new WeakMap<object, { saveId: string; sessionId: symbol; scope: BrowserLockScope }>();
-const invalidHeld = () => new DataError('LOCK_SCOPE_INVALID', '提供的会话或锁已失效、属于其他存档或无效；本次没有修改。');
-
-/** 验证持有凭据并返回在事务内复查用的 check（与普通路径的 session.check 对应）。 */
-export function enterHeldStage(token: unknown, saveId: string): { check: () => void } {
-  const verify = () => {
-    const held = typeof token === 'object' && token !== null ? heldStages.get(token) : undefined;
-    if (!held || held.saveId !== saveId || lockScopes.get(held.scope) !== saveId || sessions.get(saveId) !== held.sessionId) throw invalidHeld();
-  };
-  verify();
-  return { check: verify };
-}
-
 // 会话只保留跨阶段的所有权，不持有内部执行锁。手动阶段也检查同一会话表。
 export function reserveStageSession(saveId: string) {
   if (active.has(saveId) || sessions.has(saveId))
@@ -42,13 +21,6 @@ export function reserveStageSession(saveId: string) {
     },
     release: () => {
       if (sessions.get(saveId) === id) sessions.delete(saveId);
-    },
-    /** 在本存档的锁回调内签发持有凭据（见 HeldStage）。 */
-    hold: (scope: BrowserLockScope): HeldStage => {
-      if (lockScopes.get(scope) !== saveId || sessions.get(saveId) !== id) throw invalidHeld();
-      const token = Object.freeze({});
-      heldStages.set(token, { saveId, sessionId: id, scope });
-      return token as HeldStage;
     },
   };
 }
