@@ -445,6 +445,25 @@ test('仅有上游心跳时真实脚本按配置超时，失败面板可复制�
   await info.attach('timeline', { body: JSON.stringify(report.tavern.timeline), contentType: 'application/json' });
 });
 
+test('预设名片显示仍可用脚本的运行时诊断', async ({ page }) => {
+  const sent = await prepare(page, 'openai', false, true);
+  const panel = await editPreset(page);
+  await expect(panel.getByText('脚本运行中', { exact: true })).toBeVisible();
+  await page.evaluate(async () => {
+    const host = '/src/presets/tavern/hostState.ts';
+    const { assistantView } = await import(host);
+    assistantView.add({
+      id: 'synthetic-ready-script', name: '合成脚本', status: '已初始化', buttons: [], phases: {},
+      error: '合成脚本 · 运行时异常：TypeError',
+    });
+  });
+  await expect(panel.getByText('脚本运行时异常', { exact: true })).toBeVisible();
+  await panel.getByRole('button', { name: '浪潮 · 状态', exact: true }).click();
+  await panel.getByText('合成脚本 · 已初始化', { exact: true }).click();
+  await expect(panel.getByRole('alert')).toHaveText('合成脚本 · 运行时异常：TypeError');
+  expect(sent).toHaveLength(0);
+});
+
 for (const appearance of ['night', 'day']) test('预设纸档布局与完整条目 ' + appearance, async ({ page }, info) => {
   test.slow();
   const mobile = info.project.name === 'mobile';

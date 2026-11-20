@@ -220,8 +220,9 @@ export default function PeintureSettings({ close }: { close(): void }) {
   const delivery = deliveryModes.find(mode => mode.id === prefs?.mode);
   const [presetName, ...subtitle] = definition.title.split(' · ');
   const scriptState = scripts.some(row => row.status === '出错') ? '出错'
-    : scripts.some(row => row.status === '加载中') ? '加载中'
-      : scripts.some(row => row.status === '已初始化') ? '运行中' : '未运行';
+    : scripts.some(row => row.status === '已初始化' && row.error) ? '运行时异常'
+      : scripts.some(row => row.status === '加载中') ? '加载中'
+        : scripts.some(row => row.status === '已初始化') ? '运行中' : '未运行';
   const term = search.trim().toLowerCase();
   const matches = (value: string) => value.toLowerCase().includes(term);
   const activeSection = controls.sections.find(section => section.name === sectionName);

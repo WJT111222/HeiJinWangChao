@@ -81,7 +81,7 @@
   background: var(--muted);
 }
 .peinture-script[data-state=运行中]::before, .peinture-feedback [role=status]::before { background: var(--pos); }
-.peinture-script[data-state=出错]::before, .peinture-dirty::before, .peinture-dot { background: var(--neg); }
+.peinture-script:is([data-state=出错], [data-state=运行时异常])::before, .peinture-dirty::before, .peinture-dot { background: var(--neg); }
 .peinture-dirty::before, .peinture-feedback [role=status]::before { margin-inline-end: .5em; vertical-align: .11em; }
 .peinture-workspace { display: grid; grid-template-columns: 14.5rem minmax(0, 1fr); flex: 1; min-height: 0; }
 .peinture-nav, .peinture-content { min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain; }
