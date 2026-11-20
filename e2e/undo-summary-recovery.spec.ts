@@ -175,7 +175,8 @@ for (const [kind, title] of [['short', '短期 → 中期'], ['npc', 'NPC 短期
     await batchSize.fill(String(config.batchSize));
     await save.click();
     await retry.click();
-    await expect(dialog).toContainText('总结已保存，原始历史与来源完整保留。');
+    await expect.poll(() => page.evaluate(key => localStorage.getItem(key), attemptKey)).toBe('');
+    await expect(retry).toHaveCount(0);
     expect(requests).toHaveLength(1);
     const task = requests[0];
     const sent = (task.entries as { id: string }[] | undefined) ??
