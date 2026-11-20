@@ -38,18 +38,20 @@ export function compressionCandidates(state: GameState, layer: CompressionBatch[
 export function compressionInput(batch: CompressionBatch) {
   return { task: memoryTask(batch.layer), entries: batch.entries };
 }
-export function planCompression(state: GameState, options?: { layer?: 'short' | 'medium'; config?: SummaryConfig; immediate?: boolean }): CompressionBatch | undefined {
+export function planCompression(state: GameState, options?: { layer?: 'short' | 'medium'; config?: SummaryConfig; immediate?: boolean; sourceIds?: readonly string[] }): CompressionBatch | undefined {
   for (const layer of options?.layer ? [options.layer] : ['short', 'medium'] as const) {
     const config = SummaryConfigSchema.parse(options?.config ?? defaultSummaryConfig(layer));
     const candidates = compressionCandidates(state, layer);
-    if (candidates.length < config.batchSize || (!options?.immediate && candidates.length <= config.threshold)) continue;
-    const entries = candidates.slice(0, config.batchSize);
+    const selected = options?.sourceIds;
+    if (!selected && (candidates.length < config.batchSize || (!options?.immediate && candidates.length <= config.threshold))) continue;
+    const entries = selected ? candidates.filter(entry => selected.includes(entry.id)) : candidates.slice(0, config.batchSize);
+    if (!entries.length) continue;
     const text = JSON.stringify(compressionInput({ layer, entries } as CompressionBatch)).replace(/[<>&]/g, ch => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`);
     requireData(text.length <= compressionPolicy.inputCharacters && estimateTokens(text).estimatedTokens <= compressionPolicy.inputEstimatedTokens,
       'MEMORY_BUDGET', '完整批次超出输入预算，未缩小批次或调用模型');
     requireData(new Set(entries.map(entry => entry.id)).size === entries.length, 'MEMORY_SOURCE', '记忆 ID 重复，不能安全整理');
     return CompressionBatchSchema.parse({ saveId: state.saveId, saveCreatedAt: state.createdAt, layer, entries,
-      expectedCount: config.batchSize,
+      expectedCount: entries.length,
       journalProofs: sourceUnion(entries).map(id => ({ turnId: id, fingerprint: fingerprint(state.journal.find(entry => entry.turnId === id)) })) });
   }
 }

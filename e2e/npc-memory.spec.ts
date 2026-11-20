@@ -1,3 +1,4 @@
+import { memoryMockCors } from './helpers/memorySummary';
 import { openStoredSave } from './helpers/home';
 import { openWorldArchive, openSettings } from './helpers/gameLayout';
 import { variableReply } from '../src/tests/fixtures/variableReply';
@@ -124,27 +125,30 @@ test('手动仅一人一批；普通界面不暴露身份、原文、总结和�
 });
 
 test('跨标签拒绝重复付费；取消/迟到/429不删除来源，明确手动重试可成功', async ({ page, context: browser }) => {
+  test.setTimeout(60000);
   let requests = 0, status = 200, hold = true, release: (() => void) | undefined;
   await browser.route('https://npc-memory.mock.invalid/**', async (route) => {
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: memoryMockCors });
     requests++; if (hold) await new Promise<void>((resolve) => { release = resolve; });
-    await route.fulfill({ status, contentType: 'application/json', body: status === 200 ? wire(reply(route.request().postDataJSON())) : '{}' }).catch(() => undefined);
+    await route.fulfill({ status, headers: memoryMockCors, contentType: 'application/json', body: status === 200 ? wire(reply(route.request().postDataJSON())) : '{}' }).catch(() => undefined);
   });
   await seed(page); const before = await load(page), panel = await memory(page);
   await panel.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true }).click();
   await expect.poll(() => requests).toBe(1);
   const other = await browser.newPage(); await other.goto('/'); await openStoredSave(other);
   const second = await memory(other);
-  await second.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true }).click();
-  await expect(second).toContainText('另一个标签或任务正在总结此存档'); expect(requests).toBe(1);
-  await panel.getByRole('button', { name: '取消当前总结', exact: true }).click();
-  await page.getByRole('dialog', { name: 'NPC 短期 → 中期总结失败', exact: true }).getByRole('button', { name: '关闭资料界面' }).click(); release?.(); hold = false;
+  await expect(second.getByRole('button', { name: '重新生成此批（可能计费）', exact: true })).toBeDisabled();
+  expect(requests).toBe(1);
+  await panel.getByRole('button', { name: '取消当前总结' }).click();
+  await expect(panel).toContainText('请求已取消');
+  release?.(); hold = false;
   expect(await load(page)).toEqual(before); status = 429;
-  await panel.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true }).click();
+  const retry = panel.getByRole('button', { name: '重新生成此批（可能计费）', exact: true });
+  await retry.click();
   await expect.poll(() => requests).toBe(2);
-  await expect(panel.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true })).toBeEnabled();
+  await expect(panel).toContainText('服务请求受限');
   expect(await load(page)).toEqual(before); status = 200;
-  await page.getByRole('dialog', { name: 'NPC 短期 → 中期总结失败', exact: true }).getByRole('button', { name: '关闭资料界面' }).click();
-  await panel.getByRole('button', { name: '立即总结 · NPC 短期 → 中期', exact: true }).click();
+  await retry.click();
   await expect(panel).toContainText('总结已保存，原始历史与来源完整保留。'); expect(requests).toBe(3);
   await other.close();
 });

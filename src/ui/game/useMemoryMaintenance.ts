@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameState } from '../../domain/state';
 import type { Settings } from '../settings/model';
-import { SettingsSchema, settingsKey } from '../settings/model';
+import { defaultSettings, SettingsSchema, settingsKey } from '../settings/model';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import { readAiConfig } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
 import { DataError } from '../../domain/common';
 import { MemoryMaintenance } from '../../workflows/memoryMaintenance';
 import { MemorySummaryQueue } from '../../workflows/memorySummaryQueue';
-import type { SummaryFailure } from '../../workflows/memorySummaryQueue';
+import type { SummaryFailure, SummaryQueueSnapshot } from '../../workflows/memorySummaryQueue';
 import { summaryKinds } from '../../domain/memories/configuration';
 import type { SummaryKind } from '../../domain/memories/configuration';
 
@@ -20,69 +20,106 @@ export function memoryScheduleKey(settings: Settings) {
   }));
 }
 
+function readMemorySettings() {
+  try {
+    const raw = localStorage.getItem(settingsKey);
+    return raw === null ? defaultSettings() : SettingsSchema.parse(JSON.parse(raw));
+  } catch {
+    throw new DataError('MEMORY_STORAGE', '无法核对已保存的记忆设置。');
+  }
+}
+
+const failureKey = (failure: SummaryFailure) => failure.retryId ?? JSON.stringify([failure.kind, failure.npcId, failure.code]);
+
 export function useMemoryMaintenance(repository: SaveRepository, saveId: string, settings: Settings, onSaved: (state: GameState) => void,
   onSettings?: (settings: Settings) => void) {
   const runner = useMemo(() => new MemoryMaintenance(repository), [repository, saveId]);
   const [phase, setPhase] = useState<'generating' | 'saving'>();
-  const [activeKind, setActiveKind] = useState<SummaryKind>();
-  const [failures, setFailures] = useState<SummaryFailure[]>([]);
-  const [dismissed, setDismissed] = useState<SummaryKind[]>([]);
+  const [activity, setActivity] = useState<{ kind: SummaryKind; npcId?: string }>();
+  const [snapshot, setSnapshot] = useState<SummaryQueueSnapshot>({ paused: false, failures: [] });
+  const [dismissed, setDismissed] = useState<string[]>([]);
   const [notice, setNotice] = useState('');
-  const current = useRef({ settings, onSaved, onSettings }); current.current = { settings, onSaved, onSettings };
+  const current = useRef({ onSaved, onSettings }); current.current = { onSaved, onSettings };
   const queue = useRef<MemorySummaryQueue | undefined>(undefined);
   const scheduleKey = memoryScheduleKey(settings);
   const previousScheduleKey = useRef(scheduleKey);
+  const keyAtMount = useRef(scheduleKey);
+  keyAtMount.current = scheduleKey;
   useEffect(() => {
     let mounted = true;
-    const tasks = new MemorySummaryQueue({ saveId, storage: { getItem: key => localStorage.getItem(key), setItem: (key, value) => localStorage.setItem(key, value) },
-      settings: () => current.current.settings, load: () => repository.load(saveId),
-      changed: next => { if (mounted) { setFailures(next); if (next.length) setNotice(next.map(item => `${item.code}：${item.message}`).join(' ')); } },
-      execute: async (kind, immediate, npcId) => {
+    const tasks = new MemorySummaryQueue({ saveId, storage: localStorage, settings: readMemorySettings,
+      load: async () => {
+        const { state, paused } = await repository.loadMemoryContext(saveId);
+        const locks = await navigator.locks?.query?.().catch(() => undefined);
+        return { state, paused, busy: locks?.held?.some(lock => lock.name === `heijin.memory:${saveId}`) };
+      },
+      reconcile: () => runner.reconcile(saveId, localStorage),
+      changed: next => { if (mounted) setSnapshot(next); },
+      execute: async (kind, immediate, npcId, retryId) => {
         if (!mounted) return;
-        const frozen = structuredClone(current.current.settings);
         try {
-          const state = await runner.run({ saveId, kind, npcId, immediate, automatic: !immediate,
-            summaryConfig: frozen.memory.summaries[kind], attempts: localStorage,
-            config: readAiConfig(localStorage), vault: new CredentialVault(sessionStorage, localStorage),
-            timeoutSeconds: frozen.runtime.timeoutSeconds,
-            onPhase: next => { if (mounted) { setPhase(next); setActiveKind(kind); } } });
+          const state = await runner.run({ saveId, kind, npcId, retryId, immediate, automatic: !immediate,
+            attempts: localStorage, config: () => readAiConfig(localStorage),
+            vault: new CredentialVault(sessionStorage, localStorage), timeoutSeconds: readMemorySettings().runtime.timeoutSeconds,
+            readSettings: () => {
+              const saved = readMemorySettings();
+              return { summaryConfig: saved.memory.summaries[kind], timeoutSeconds: saved.runtime.timeoutSeconds };
+            },
+            onPhase: next => { if (mounted) { setPhase(next); setActivity({ kind, npcId }); } } });
           if (mounted) {
             if (state) current.current.onSaved(state);
-            if (state || immediate) setNotice(state ? '总结已保存，原始历史与来源完整保留。' : '合格记忆不足所设批次数量，未请求模型。');
+            if (state || immediate) setNotice(state ? '总结已保存，原始历史与来源完整保留。' : '合格记忆不足，未请求模型。');
           }
         } catch (error) {
           if (mounted && error instanceof DataError && ['MEMORY_BUSY', 'MEMORY_THROTTLED'].includes(error.code))
-            setNotice(error.code === 'MEMORY_BUSY' ? '另一个标签或任务正在总结此存档，未重复请求。' : '后台请求达到节流限额，稍后检查；不会自动加量。');
+            setNotice(error.code === 'MEMORY_BUSY' ? '另一个标签或任务正在总结此存档，未重复请求。' : '达到自动请求限额，等待下一次检查。');
           throw error;
-        } finally { if (mounted) { setPhase(undefined); setActiveKind(undefined); } }
+        } finally { if (mounted) { setPhase(undefined); setActivity(undefined); } }
       },
     });
     queue.current = tasks;
-    // 初始化已经唤醒一次；记录最新配置，避免后面的配置 Effect 再次触发。
-    previousScheduleKey.current = memoryScheduleKey(current.current.settings);
+    previousScheduleKey.current = keyAtMount.current;
     void tasks.wake();
+    const sync = (event: StorageEvent) => {
+      if (event.storageArea !== localStorage) return;
+      if (event.key === null || event.key === `heijin.summary.failures:${saveId}` ||
+        event.key.startsWith(`heijin.summary.records:${saveId}:`) || event.key.startsWith(`heijin.summary.attempt:${saveId}:`)) {
+        void tasks.refresh();
+      }
+    };
+    window.addEventListener('storage', sync);
     const timer = setInterval(() => { void tasks.wake(); }, 60000);
-    return () => { mounted = false; clearInterval(timer); tasks.stop(); runner.cancel(); if (queue.current === tasks) queue.current = undefined; };
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+      window.removeEventListener('storage', sync);
+      tasks.stop();
+      runner.cancel();
+      if (queue.current === tasks) queue.current = undefined;
+    };
   }, [repository, runner, saveId]);
   useEffect(() => {
     if (previousScheduleKey.current === scheduleKey) return;
     previousScheduleKey.current = scheduleKey;
     void queue.current?.wake();
   }, [scheduleKey]);
-  async function run(automatic = false, kind: SummaryKind = 'short', npcId?: string) {
+  async function run(automatic = false, kind: SummaryKind = 'short', npcId?: string, retryId?: string) {
     if (automatic) await queue.current?.wake();
-    else { setDismissed(value => value.filter(item => item !== kind)); await queue.current?.immediate(kind, npcId); }
+    else await queue.current?.immediate(kind, npcId, retryId);
   }
-  function pause(kind: SummaryKind) {
+  function closeFailure(failure: SummaryFailure) {
+    setDismissed(value => [...value, failureKey(failure)]);
+  }
+  function pause(failure: SummaryFailure) {
     try {
-      const next = structuredClone(current.current.settings);
-      next.memory.summaries[kind].automatic = false;
+      const next = readMemorySettings();
+      next.memory.summaries[failure.kind].automatic = false;
       current.current.onSettings?.(next);
-      const saved = SettingsSchema.parse(JSON.parse(localStorage.getItem(settingsKey) || 'null'));
-      if (saved.memory.summaries[kind].automatic) throw new Error();
-      queue.current?.dismiss(kind);
-    } catch { setNotice('暂停设置保存失败，未清除失败记录，请检查本地存储。'); }
+      if (readMemorySettings().memory.summaries[failure.kind].automatic) throw new Error();
+      closeFailure(failure);
+    } catch { setNotice('暂停设置保存失败，请检查本地存储。'); }
   }
-  return { phase, activeKind, notice, failures: failures.filter(item => !dismissed.includes(item.kind)), run, pause,
-    closeFailure: (kind: SummaryKind) => setDismissed(value => [...value, kind]), cancel: () => runner.cancel() };
+  const popup = snapshot.failures.find(item => (settings.memory.summaries[item.kind].automatic || (item.manual && !item.pending)) && !dismissed.includes(failureKey(item)) &&
+    !(snapshot.busy && item.pending && item.code === 'MEMORY_PREVIOUS'));
+  return { phase, activity, notice, snapshot, popup, run, pause, closeFailure, cancel: () => runner.cancel() };
 }
