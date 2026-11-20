@@ -33,12 +33,33 @@ interface Events {
   generation_stopped: [];
   generation_ended: [number];
 }
+export const tavernEventTypes = { GENERATION_STARTED: 'generation_started', GENERATION_AFTER_COMMANDS: 'GENERATION_AFTER_COMMANDS',
+  GENERATE_AFTER_DATA: 'generate_after_data', CHAT_COMPLETION_PROMPT_READY: 'chat_completion_prompt_ready',
+  CHAT_COMPLETION_SETTINGS_READY: 'chat_completion_settings_ready', GENERATION_ENDED: 'generation_ended',
+  GENERATION_STOPPED: 'generation_stopped', CHAT_CHANGED: 'chat_id_changed', OAI_PRESET_CHANGED_AFTER: 'oai_preset_changed_after' };
+const knownEvents = new Set<string>(Object.values(tavernEventTypes));
+export function tavernEventName(key: keyof Events) {
+  if (typeof key !== 'string') return 'script_event';
+  return knownEvents.has(key) ? key : key.startsWith('["script_button",') ? 'script_button' : 'script_event';
+}
+
 type Listener<K extends keyof Events> = (...args: Events[K]) => unknown;
+interface ListenerRow {
+  key: keyof Events;
+  fn: Listener<never>;
+  once: boolean;
+  onError?: (error: unknown) => void;
+}
+
+function reportListenerError(row: ListenerRow, error: unknown) {
+  try { row.onError?.(error); } catch { /* The diagnostic cannot replace the dispatch result. */ }
+}
+
 export class TavernEvents {
-  private rows: { key: keyof Events; fn: Listener<never>; once: boolean }[] = [];
-  on<K extends keyof Events>(key: K, fn: Listener<K>, order?: 'first' | 'last' | 'once') {
+  private rows: ListenerRow[] = [];
+  on<K extends keyof Events>(key: K, fn: Listener<K>, order?: 'first' | 'last' | 'once', onError?: ListenerRow['onError']) {
     if (order === 'first' || order === 'last') this.remove(key, fn);
-    const row = { key, fn: fn as Listener<never>, once: order === 'once' };
+    const row = { key, fn: fn as Listener<never>, once: order === 'once', onError };
     if (order === 'first') this.rows.unshift(row);
     else this.rows.push(row);
     return { stop: () => { this.rows = this.rows.filter(item => item !== row); } };
@@ -53,19 +74,29 @@ export class TavernEvents {
         if (!this.rows.includes(row)) continue;
         this.rows = this.rows.filter(item => item !== row);
       }
-      yield row.fn as Listener<K>;
+      yield { row, fn: row.fn as Listener<K> };
     }
   }
   async emit<K extends keyof Events>(key: K, ...args: Events[K]) {
-    for (const fn of this.listeners(key)) {
+    for (const { row, fn } of this.listeners(key)) {
       try { await fn(...args); }
-      catch { throw new AiError('configuration', undefined, { fieldPath: 'tavern.' + key }); }
+      catch (error) {
+        reportListenerError(row, error);
+        throw new AiError('configuration', undefined, { fieldPath: 'tavern.' + tavernEventName(key) });
+      }
     }
   }
   emitAndWait<K extends keyof Events>(key: K, ...args: Events[K]) {
-    for (const fn of this.listeners(key)) {
-      try { void Promise.resolve(fn(...args)).catch(() => console.warn('酒馆同步分派的异步监听失败', key)); }
-      catch { throw new AiError('configuration', undefined, { fieldPath: 'tavern.' + key }); }
+    for (const { row, fn } of this.listeners(key)) {
+      try {
+        void Promise.resolve(fn(...args)).catch(error => {
+          reportListenerError(row, error);
+          if (!row.onError) console.warn('酒馆同步分派的异步监听失败', tavernEventName(key));
+        });
+      } catch (error) {
+        reportListenerError(row, error);
+        throw new AiError('configuration', undefined, { fieldPath: 'tavern.' + tavernEventName(key) });
+      }
     }
   }
 }

@@ -16,6 +16,7 @@ export interface ScriptInstance {
   status: '加载中' | '已初始化' | '已停用' | '出错';
   buttons: ScriptButton[];
   phases: Record<string, string>;
+  /** Latest safe diagnostic. A ready instance can report runtime errors. */
   error?: string;
   edition?: string;
 }
@@ -114,7 +115,7 @@ export function startAssistant() {
     const { loadAssistant } = await import('./scriptHost');
     await loadAssistant();
   })().then(() => { initialized = true; }).catch(error => {
-    if (!instances.some(i => i.status === '出错')) assistantView.add({ id: 'loader', name: '酒馆助手', status: '出错', buttons: [], phases: {}, error: String(error) });
+    if (!instances.some(i => i.status === '出错')) assistantView.add({ id: 'loader', name: '酒馆助手', status: '出错', buttons: [], phases: {}, error: '酒馆助手 · 初始化失败：预设资源或脚本宿主未能加载。' });
     throw error;
   });
   void startup.catch(() => undefined); // Startup errors stay visible, and are rethrown at the generation gate.

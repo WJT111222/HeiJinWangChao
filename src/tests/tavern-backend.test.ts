@@ -156,6 +156,31 @@ it('first、last、once、重入、删除、同步分派及异步 emit', async (
   await Promise.resolve(); expect(seen.at(-1)).toBe('async');
   await events.emit('generation_stopped'); expect(seen.slice(-2)).toEqual(['a','async']);
 });
+it('监听异常交给登记方，保留等待分派和同步分派语义', async () => {
+  const events = new TavernEvents();
+  const failure = new Error('fixture-private-context');
+  const report = vi.fn();
+  const next = vi.fn();
+  const handle = events.on('generation_stopped', async () => { throw failure; }, undefined, report);
+  events.on('generation_stopped', next);
+  await expect(events.emit('generation_stopped')).rejects.toMatchObject({
+    code: 'configuration', details: { fieldPath: 'tavern.generation_stopped' },
+  });
+  expect(report).toHaveBeenCalledExactlyOnceWith(failure);
+  expect(next).not.toHaveBeenCalled();
+
+  report.mockClear();
+  events.emitAndWait('generation_stopped');
+  expect(next).toHaveBeenCalledTimes(1);
+  await Promise.resolve();
+  expect(report).toHaveBeenCalledExactlyOnceWith(failure);
+
+  handle.stop();
+  events.on('private-fixture-event', () => { throw failure; }, undefined, report);
+  expect(() => events.emitAndWait('private-fixture-event')).toThrow('tavern.script_event');
+  expect(report).toHaveBeenCalledTimes(2);
+});
+
 it('交错请求独立持有路由、诊断、取消信号，另一次生成仍可完成', async () => {
   let started!: () => void, aborted!: () => void;
   const pending = new Promise<void>(resolve => { started = resolve; });
