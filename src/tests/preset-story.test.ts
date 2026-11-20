@@ -194,6 +194,42 @@ describe('单请求宏与历史发送', () => {
     expect([...m.unknown]).toEqual(['unknown']);
     expect(presetMacros('丙', '丁').expand('{{getvar::x}}')).toBe('');
   });
+  it('注释支持换行和嵌套，且不会执行注释里的宏', () => {
+    const roll = vi.fn(() => 0.75);
+    const macros = presetMacros('甲', '乙', roll);
+    expect(macros.expand('前{{//第一行\n{{setvar::x::秘密}}{{random::a::b}}{{unknown}}}}后{{getvar::x}}')).toBe('前后');
+    expect(macros.expand('A{{  // 说明 }}B{{//}}C')).toBe('ABC');
+    expect(macros.expand('{{setvar::x::前{{// 说明::{{char}} }}后}}{{getvar::x}}')).toBe('前后');
+    expect(roll).not.toHaveBeenCalled();
+    expect([...macros.unknown]).toEqual([]);
+  });
+
+  it('保留转义和未知宏边界，非法预设宏仍失败', () => {
+    const macros = presetMacros('甲', '乙');
+    expect(macros.expand(String.raw`\{\{// 字面内容\}\} {{unknown::{{// 原样保留 }}}} {{// \}\} }}尾`))
+      .toBe('{{// 字面内容}} {{unknown::{{// 原样保留 }}}} 尾');
+    expect([...macros.unknown]).toEqual(['unknown']);
+    expect(() => macros.expand('{{// 漏掉闭合')).toThrow('预设宏未闭合或参数无效');
+    expect(() => macros.expand('{{setvar::x}}')).toThrow('预设宏参数无效');
+    expect(() => macros.expand('{{setvar::x::'.repeat(70) + '}}'.repeat(70))).toThrow('预设宏嵌套过深');
+    expect(() => macros.expand('{{//'.repeat(70) + '}}'.repeat(70))).toThrow('预设宏嵌套过深');
+  });
+
+  it('只清理出站模板，不改预设、保存覆盖、游戏资料和玩家输入', () => {
+    const edited = '前{{// 保存时原样保留 }}{{user}}后';
+    const player = '{{// 玩家照常输入 }}';
+    const edit = { version: def.version, scripts: {}, entries: { intro: { content: edited } } };
+    const loaded = loadPreset(raw, def, edit);
+    const original = structuredClone(loaded);
+    const assembled = assemblePreset(loaded, { ...materials, user: player, history: [{ role: 'user', content: player }] });
+    expect(assembled.messages[0]).toEqual({ role: 'system', content: '前' + player + '后' });
+    expect(assembled.messages.at(-1)).toEqual({ role: 'user', content: player });
+    expect(assembled.unknownMacros).toEqual([]);
+    expect(loaded).toEqual(original);
+    expect(edit.entries.intro.content).toBe(edited);
+    expect(JSON.parse(exportWithOverrides(raw, def, edit)).prompts.find((entry: { identifier: string }) => entry.identifier === 'intro').content).toBe(edited);
+  });
+
   it('合并角色、深度与顺序，在副本上只执行权威来源的发送类正则', () => {
     const assembled = assemblePreset(loadPreset(raw, def), materials);
     expect(assembled.messages.map((m) => [m.role, m.content])).toEqual([
@@ -231,9 +267,10 @@ describe('正式组装入口', () => {
     a.historyActions = { 'talent-history-0': '合成前回合行动' };
     const adapted = await composePrompt(a, snap),
       second = await composePrompt(b, snap);
-    expect(adapted.preset?.unknownMacros).toEqual(['//']);
+    expect(adapted.preset?.unknownMacros).toEqual([]);
     const sent = adapted.messages.map((m) => m.content).join('\n');
     expect(sent.split(a.userInput)).toHaveLength(2);
+    expect(sent).not.toContain('{{//');
     expect(sent.indexOf('[[WAVE_CONTEXT_BEGIN_07_8d2c91]]')).toBeLessThan(sent.indexOf(a.userInput));
     expect(sent.indexOf(a.userInput)).toBeLessThan(sent.indexOf('[[WAVE_CONTEXT_END_07_8d2c91]]'));
     expect(sent.indexOf('[[WAVE_CONTEXT_END_07_8d2c91]]')).toBeLessThan(sent.indexOf('【最终格式提醒】'));
