@@ -50,6 +50,7 @@ class Frames {
   private snapshots = new Map<string, { name: string; args: string }>();
   private anonymousGeminiCalls = new Set<string>();
   private hasText = false;
+  private preToolPaddingLength = 0;
   boundary = false;
   constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string) {}
   private track(index: number, id: unknown, name: unknown, args: unknown) {
@@ -88,6 +89,8 @@ class Frames {
     if (choices.length > 1 || (choice.index !== undefined && choice.index !== 0)) throw new AiError('unsupported');
     const msg = record(streaming ? choice.delta : choice.message);
     const text = responseContent(d, p, streaming), reasoning = nativeReasoning(d, p, streaming);
+    if (this.expectedContentTool && streaming && !this.tools.size && !this.hasText && text && !/[^ \t\r\n]/u.test(text))
+      this.preToolPaddingLength += text.length;
     if (text.trim()) {
       this.hasText = true;
       this.trace.clock.progress('firstContentMs');
@@ -192,8 +195,13 @@ class Frames {
         if (this.expectedContentTool === tool.name && this.tools.size === 1) {
           const content = record(args).content;
           // The wrapper can prefer a competing plain answer. Check what the client actually received.
-          if (typeof content === 'string' && content.trim())
-            this.trace.matchesDelivery = restored => restored === content || restored === splitLeadingThink(content).content;
+          if (typeof content === 'string' && content.trim()) {
+            const padding = this.preToolPaddingLength;
+            this.trace.matchesDelivery = restored => restored === content || restored === splitLeadingThink(content).content ||
+              // A wrapper can already have forwarded whitespace-only SSE deltas before seeing the tool.
+              (padding > 0 && restored.length === padding + content.length && restored.endsWith(content) &&
+                !/[^ \t\r\n]/u.test(restored.slice(0, padding)));
+          }
         }
         ids.add(tool.id);
       }

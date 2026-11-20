@@ -12,11 +12,17 @@ const envelope =
   '<正文>船靠岸了，林舟沿着石阶往上走。</正文><短期记忆>林舟上岸</短期记忆><变量规划>[]</变量规划>';
 const toolName = 'actual_content';
 const playerAction = '我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。';
-const warehouseStory = '林舟拿起手机，向仓库负责人询问这批货物的具体位置。';
+const warehouseStory = '林舟拨通仓库负责人的电话，核对发货单上的“货号 A”，确认货物的具体位置。'.repeat(320) + '最后一行。';
 const warehouseEnvelope = '<正文>' + warehouseStory + '</正文><短期记忆>林舟致电仓库</短期记忆><变量规划>[]</变量规划>';
 
 function upstream(protocol: Protocol, stream: boolean, content = envelope) {
   const args = { content };
+  const longDelivery = content === warehouseEnvelope;
+  const serialized = JSON.stringify(args);
+  const fragments = longDelivery
+    ? serialized.match(/[\s\S]{1,127}/gu)!
+    : [serialized.slice(0, 6), serialized.slice(6)];
+  const padding = ' \n\t';
   const event = (value: unknown) => 'data: ' + JSON.stringify(value) + '\n\n';
   let full: unknown;
   let sse: string;
@@ -27,18 +33,22 @@ function upstream(protocol: Protocol, stream: boolean, content = envelope) {
       ],
       usageMetadata: { candidatesTokenCount: 12 },
     };
-    sse = event(full);
+    const prefix = { candidates: [{ content: { parts: [{ text: padding }] } }] };
+    sse = (longDelivery ? event(prefix) : '') + event(full);
   } else if (protocol === 'anthropic') {
+    const index = longDelivery ? 1 : 0;
     const block = { type: 'tool_use', id: 'fixture-call', name: toolName, input: args };
     full = { content: [block], stop_reason: 'tool_use', usage: { output_tokens: 12 } };
     sse = [
-      { type: 'content_block_start', index: 0, content_block: { ...block, input: {} } },
-      {
-        type: 'content_block_delta',
-        index: 0,
-        delta: { type: 'input_json_delta', partial_json: JSON.stringify(args) },
-      },
-      { type: 'content_block_stop', index: 0 },
+      ...(longDelivery ? [
+        { type: 'content_block_start', index: 0, content_block: { type: 'text', text: padding } },
+        { type: 'content_block_stop', index: 0 },
+      ] : []),
+      { type: 'content_block_start', index, content_block: { ...block, input: {} } },
+      ...fragments.map(partial_json => ({
+        type: 'content_block_delta', index, delta: { type: 'input_json_delta', partial_json },
+      })),
+      { type: 'content_block_stop', index },
       { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 12 } },
       { type: 'message_stop' },
     ]
@@ -48,15 +58,21 @@ function upstream(protocol: Protocol, stream: boolean, content = envelope) {
     const call = {
       type: 'function',
       id: 'fixture-call',
-      function: { name: toolName, arguments: JSON.stringify(args) },
+      function: { name: toolName, arguments: serialized },
     };
     full = {
       choices: [{ message: { tool_calls: [call] }, finish_reason: 'tool_calls' }],
       usage: { completion_tokens: 12 },
     };
+    const toolFrames = fragments.map((part, i) => {
+      const chunk = i === 0
+        ? { ...call, index: 0, function: { ...call.function, arguments: part } }
+        : { index: 0, function: { arguments: part } };
+      return event({ choices: [{ delta: { tool_calls: [chunk] } }] });
+    });
     sse =
-      event({ choices: [{ delta: { tool_calls: [{ ...call, index: 0, function: { ...call.function, arguments: call.function.arguments.slice(0, 6) } }] } }] }) +
-      event({ choices: [{ delta: { tool_calls: [{ index: 0, function: { arguments: call.function.arguments.slice(6) } }] } }] }) +
+      (longDelivery ? event({ choices: [{ delta: { content: padding } }] }) : '') +
+      toolFrames.join('') +
       event({ choices: [{ delta: {}, finish_reason: 'tool_calls' }], usage: { completion_tokens: 12 } }) +
       'data: [DONE]\n\n';
   }
@@ -239,6 +255,10 @@ for (const protocol of ['openai','deepseek','gemini','anthropic'] as const) {
     expect(last.role).toBe('user');
     const lastText = last.parts?.[0].text ?? last.content;
     expect(lastText).toContain(playerAction);
+    const control = 'Call the `actual_content` function exactly once';
+    expect(lastText).not.toContain('回应其中最新的真实用户输入');
+    expect(lastText.indexOf(control)).toBeGreaterThan(lastText.indexOf(playerAction));
+    expect(JSON.stringify(outgoing).split(control)).toHaveLength(2);
     const actionJson = lastText.match(/<GAME_CONTEXT>\s*([\s\S]*?)\s*<\/GAME_CONTEXT>/u)?.[1];
     expect(JSON.parse(actionJson)).toEqual({ PLAYER_ACTION: playerAction });
     expect(tools[0].description).not.toContain(playerAction);

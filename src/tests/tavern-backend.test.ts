@@ -114,6 +114,7 @@ function nativeHook(names: string[], choice: 'auto' | 'none' = 'auto') {
   return tavernEvents.on('chat_completion_settings_ready', data => {
     data.tools = names.map(name => ({type: 'function', function: {...tool.function, name}}));
     data.tool_choice = choice;
+    data.messages.push({role: 'user', content: '测试交付说明：请使用 actual_content 提交本回合正文。'});
   });
 }
 
@@ -163,6 +164,27 @@ it.each([false, true])('独立交付只接受可核对的上游正文；stream=%
       expect(last.content).toContain(actionMessage.content);
     }
   } finally { hook.stop(); }
+});
+
+it('独立交付只允许上游工具帧前实际出现的空白，不接受任何额外正文或参数内部差异', async () => {
+  const padding = ' \n\t';
+  const content = '<正文>第一行\n第二行</正文>';
+  const receive = async (prefix: string) => {
+    const trace = newTrace();
+    const call = {...toolCall, index: 0, function: {name: 'actual_content', arguments: JSON.stringify({content})}};
+    const response = await normalizeUpstream(sse(frame({choices: [{delta: {content: prefix}}]})
+      + frame({choices: [{delta: {tool_calls: [call]}, finish_reason: 'tool_calls'}]}) + 'data: [DONE]\n\n'),
+      'openai', true, new AbortController().signal, trace, 'actual_content');
+    await response.text();
+    expect(trace.complete).toBe(true);
+    return trace.matchesDelivery!;
+  };
+  const matches = await receive(padding);
+  expect(matches(padding + content)).toBe(true);
+  expect(matches(content)).toBe(true);
+  for (const altered of [padding + content.replace('\n', ' '), '旁白' + content, '\u200b\n\t' + content, content + padding])
+    expect(matches(altered)).toBe(false);
+  expect((await receive(''))(padding + content)).toBe(false);
 });
 
 it('真实上游中断不能被包装器替换为成功；失败不会触发协调器自动重试', async () => {

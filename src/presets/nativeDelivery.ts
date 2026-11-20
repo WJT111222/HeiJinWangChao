@@ -29,7 +29,13 @@ export function finalizeNativeDelivery(messages: AiMessage[], tools: ReadonlySet
   const others = messages.filter(message => !(message.role === 'user' && message.content === content));
   if (others.length !== messages.length - 1)
     throw new AiError('configuration', undefined, { fieldPath: 'tavern.native_delivery.action' });
-  return [...others, { role: 'user', content: '本回合玩家行动以以下 PLAYER_ACTION 为准。资料工具只补充背景，时间预检只判断时间安排。按既定正文协议回应。\n' + content }];
+  const closing = others.pop();
+  if (!closing || closing !== messages.at(-1) || closing.role !== 'user' || !closing.content.includes(nativeOutputTool))
+    throw new AiError('unsupported', undefined, { fieldPath: 'tavern.native_delivery.tools' });
+  // The pinned script refers to an action inside its reference tool. Native Story keeps that action here.
+  const delivery = closing.content.replace('回应其中最新的真实用户输入', '回应本消息 PLAYER_ACTION 中的玩家行动');
+  const binding = '本回合玩家行动以以下 PLAYER_ACTION 为准。资料工具只补充背景，时间预检只判断时间安排。按既定正文协议回应。';
+  return [...others, { role: 'user', content: [binding, content, delivery].join('\n\n') }];
 }
 
 export function checkDeliveryBoundaries(messages: readonly AiMessage[]) {
