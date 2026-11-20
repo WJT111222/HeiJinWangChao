@@ -119,9 +119,16 @@ export class WorldbookTriggerHost {
         finish(fromReply(data.reply, 'worker'), false);
       };
       const broken = () => {
-        // 启动后从未成功回复就出错（模块加载失败、被安全策略禁止等）：以后不再尝试 Worker。
-        if (!this.everReplied) this.workerUnavailable = true;
-        finish({ status: 'failed', reason: 'worker_error' }, true);
+        if (this.everReplied) { finish({ status: 'failed', reason: 'worker_error' }, true); return; }
+        // 启动后从未成功回复就出错（模块加载失败、被安全策略禁止等）：以后不再尝试 Worker，
+        // 这一次也直接改走主线程降级（受同样的规模限制；没有降级数据源时暂停），不让第一次请求白白失败。
+        this.workerUnavailable = true;
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        options.signal?.removeEventListener('abort', onAbort);
+        this.kill();
+        resolve(this.runOnMainThread(check.request, options.signal));
       };
       worker.onerror = broken;
       worker.onmessageerror = () => finish({ status: 'failed', reason: 'worker_error' }, true);

@@ -125,10 +125,25 @@ describe('触发 Worker：协议、资源上限、确定性', () => {
     const { loader } = memoryLoader([a]);
     let created = 0;
     const host = new WorldbookTriggerHost({ createWorker: () => { created++; return new InProcessWorker(new TriggerExecutor(loader), 'broken'); } });
-    expect(await host.run(request([a]))).toEqual({ status: 'failed', reason: 'worker_error' });
+    // 第一次请求就改走降级路径；没有降级数据源 → 暂停（此前是返回 worker_error）。
+    expect(await host.run(request([a]))).toEqual({ status: 'paused', reason: 'worker_unavailable' });
     expect(host.degraded).toBe(true);
     expect(await host.run(request([a]))).toEqual({ status: 'paused', reason: 'worker_unavailable' });
     expect(created).toBe(1);
+  });
+
+  it('Worker 启动即出错且有降级数据源：同一次请求立即在主线程完成，结果与 Worker 一致', async () => {
+    const a = await makeRelease('a', 'v1', entries('a', 5));
+    const { loader } = memoryLoader([a]);
+    const fallback: MainThreadFallback = { async size() { return { entryCount: 5, keyChars: 10, contentChars: 10 }; }, load: loader };
+    const host = new WorldbookTriggerHost({ createWorker: () => new InProcessWorker(new TriggerExecutor(loader), 'broken'), fallback });
+    const viaFallback = await host.run(request([a]));
+    expect(viaFallback).toMatchObject({ status: 'ok', via: 'main-thread' });
+    const reference = await new WorldbookTriggerHost({ createWorker: () => new InProcessWorker(new TriggerExecutor(loader)) }).run(request([a]));
+    // 主线程降级用更低的工作量上限（work.limit 不同），触发结果本身一致。
+    const pick = (o: typeof viaFallback) => (o.status === 'ok' ? { activated: o.result.activated, plan: o.result.plan, decisions: o.result.decisions, budget: o.result.budget } : null);
+    expect(pick(viaFallback)).toEqual(pick(reference));
+    expect(pick(viaFallback)).not.toBeNull();
   });
 
   it('无法创建 Worker：小规模在主线程运行（工作量再降级）；超过降级上限则暂停', async () => {
