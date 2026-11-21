@@ -121,6 +121,13 @@ function checkKeys(keys: readonly string[], entryRef: string, field: string, not
   }
 }
 
+/** 在王朝里新建的条目：全部字段取参照版本的默认值，没有原文件来源。 */
+export function blankEntry(entryId: string): WorldbookEntry {
+  const out: Record<string, unknown> = {};
+  for (const [, key, , fallback] of MAIN_FIELDS) out[key] = Array.isArray(fallback) ? [] : fallback;
+  return { entryId, sourceUid: null, sourceKey: null, ...out, inert: {}, extensions: {} } as WorldbookEntry;
+}
+
 export interface EntryContext { entryId: string; sourceKey: string; notices: NoticeCollector }
 
 /** 酒馆形状的条目对象 → 规范化条目。有任何字段错误时返回 null（错误已记入 notices）。 */
