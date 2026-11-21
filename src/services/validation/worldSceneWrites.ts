@@ -16,7 +16,7 @@ export const worldNormalizationNotes = new WeakMap<object, readonly string[]>();
 
 type WorldResult = z.infer<typeof WorldResultSchema>;
 /** World 无权写入的人物字段（身份、关系、互动、重新入场）。这些字段不剔除，留给权限校验直接拒绝，避免冲突处理掩盖越权。 */
-const worldForbiddenNpcFields = ['name','aliases','identity','phoneContact','usualLocations','detailedBackground','habits','relationshipNetwork','relationshipText','lastInteractionAt'];
+const worldForbiddenNpcFields = ['name','aliases','identity','addressing','phoneContact','usualLocations','detailedBackground','habits','relationshipNetwork','relationshipText','lastInteractionAt'];
 export function worldForbiddenNpcChange(key: string, value: unknown) {
   return worldForbiddenNpcFields.includes(key) || key === 'onScene' && value === true;
 }

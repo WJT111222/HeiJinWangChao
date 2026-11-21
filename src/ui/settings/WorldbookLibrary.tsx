@@ -43,7 +43,7 @@ function importMessage(outcome: ImportOutcome): { level: FeedbackLevel; text: st
   }
 }
 
-export function WorldbookLibraryPanel() {
+export function WorldbookLibraryPanel({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) => void }) {
   const [books, setBooks] = useState<ShelfBook[] | null>(null);
   const [message, setMessage] = useState<{ level: FeedbackLevel; text: string } | null>(null);
   const [notices, setNotices] = useState<ImportNotice[]>([]);
@@ -51,6 +51,9 @@ export function WorldbookLibraryPanel() {
   const [selected, setSelected] = useState<string | null>(null);
   const [release, setRelease] = useState<WorldbookRelease | null>(null);
   const [dirty, setDirty] = useState(0);
+  const hasChanges = dirty > 0;
+  useEffect(() => { onDirtyChange?.(hasChanges); }, [hasChanges, onDirtyChange]);
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
   // 每次选择文件后换一个新的 input：再次选择同一个文件时也能触发导入。
   const [inputKey, setInputKey] = useState(0);
   const fileInput = useRef<HTMLInputElement>(null);

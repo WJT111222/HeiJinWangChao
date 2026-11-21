@@ -49,7 +49,7 @@ export function inlineCommandCatalog(stage: CatalogStage) {
       $schema: 'http://json-schema.org/draft-07/schema#',
       oneOf: options.map((option) => {
         const modelOption = stage === 'world' && option.shape.type.value === 'UpdateNpc'
-          ? variableCommandSchemas[1].safeExtend({changes:variableCommandSchemas[1].shape.changes.omit({name:true,aliases:true,identity:true,phoneContact:true,usualLocations:true,detailedBackground:true,habits:true,relationshipNetwork:true})})
+          ? variableCommandSchemas[1].safeExtend({changes:variableCommandSchemas[1].shape.changes.omit({name:true,aliases:true,identity:true,addressing:true,phoneContact:true,usualLocations:true,detailedBackground:true,habits:true,relationshipNetwork:true})})
           : option.shape.type.value === 'CreateNpc'
           ? option.extend({ npc: z.discriminatedUnion('kind', [OrdinaryNpcCreationSchema, SpecialNpcCreationSchema.omit({longTermMemories:true})]) })
           : option.shape.type.value==='SaveEvent' ? option.extend({event:z.union([WorldEventSchema,StoredWorldEventSchema.extend({status:z.enum(['resolved','cancelled'])})])}) : option;
@@ -68,6 +68,7 @@ export function inlineCommandCatalog(stage: CatalogStage) {
             if (typeof variant !== 'object' || !variant.properties) continue;
             const properties = variant.properties;
             // Describe existing World permissions to the model. Runtime/legacy schemas stay unchanged.
+            delete properties.addressing;
             delete properties.affinityConfirmed;
             delete properties.lastInteractionAt;
             properties.onScene = { type: 'boolean', const: false };

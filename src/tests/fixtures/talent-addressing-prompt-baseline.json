@@ -1,0 +1,20 @@
+{
+  "baseCommit": "6ea62b15fc4ce46183bdabe1ff45b89a4b0ce1ae",
+  "results": [
+    {
+      "stage": "variables",
+      "mode": "opening",
+      "messages": "e89d04301c1a1b22c790a9ee8ba967a0bdbe83d8dffb9ad16584c2f1b78e0374",
+      "context": "ee20271a57324c41e0e60003c1e5edf0649e5fe5345fa6bcdf23dc8fdbcdf929",
+      "modules": "2fcfdff8cf2b35bf0245ed8b98c9d22ca1fbdce14ba8d1050c957cac112c657f"
+    },
+    {
+      "stage": "variables",
+      "mode": "regular",
+      "messages": "0746f8f74b7c4fe296ec73e570f00585867e55065e96184de359b77a11ad175f",
+      "context": "24dff0b91efbd66508781d0088496bca5ba93c4b8c413fa576d0700bf392b38d",
+      "modules": "2fe225851151d05530dcc1c1c84f2d2f99de390e102fae5271d2bfd76e51aea5"
+    }
+  ],
+  "withTalentVariablesAndWorld": "0c5b4f7cb8b0b60df7f97f1ebce7f95a4faded550d7727ac2c5690cc47796601"
+}

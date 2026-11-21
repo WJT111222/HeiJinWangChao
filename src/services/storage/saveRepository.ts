@@ -8,6 +8,7 @@ import { CountSchema, DataError, IdSchema, requireData } from '../../domain/comm
 import { commitCommands, fingerprint } from '../../domain/commands';
 import { z } from 'zod';
 import type { DomainCommand } from '../../domain/commands';
+import { validateVariableEdit } from '../../domain/playerVariables';
 import { GameStateSchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
 import { normalizeOpeningCity } from '../../domain/openingCity';
@@ -186,6 +187,23 @@ async function deleteRecords(tx: IDBTransaction, key: IDBValidKey): Promise<void
   await request(tx.objectStore('saves').delete(key));
 }
 
+export interface VariableSnapshot {
+  state: GameState;
+  draft?: TurnDraft;
+  instance?: string;
+  epoch?: string;
+}
+
+async function variableSnapshot(tx: IDBTransaction, saveId: string): Promise<VariableSnapshot> {
+  const state = readState(await request(tx.objectStore('saves').get(saveId)), saveId);
+  const raw: unknown = await request(tx.objectStore('drafts').get(saveId));
+  const draft = raw === undefined ? undefined : TurnDraftSchema.parse(raw);
+  requireData(!draft || (draft.saveId === saveId && draft.baseSaveRevision === state.revision),
+    'DRAFT_CONFLICT', '当前草稿与正式存档版本不符，请先恢复草稿。');
+  const control = await readControl(tx, saveId);
+  return { state, draft, instance: control?.instanceId, epoch: control?.epoch };
+}
+
 export class SaveRepository {
   readonly history: HistoryRepository;
   private constructor(private readonly database: IDBDatabase) { this.history = new HistoryRepository(database); }
@@ -224,6 +242,46 @@ export class SaveRepository {
   /** Management CAS is separate from narrative revision: retain the entire draft,
    * increment its CAS revision, and invalidate pre-management summary/phase responses. */
   /** expectedInstance：载入时拿到的实例身份（原存档省略或 null）；存档被导入替换后，旧页面的管理操作一律拒绝。 */
+  loadVariableSnapshot(saveId: string): Promise<VariableSnapshot> {
+    IdSchema.parse(saveId);
+    return transaction(this.database, ['saves','drafts','saveControls'], 'readonly', tx => variableSnapshot(tx, saveId));
+  }
+
+  async savePlayerVariables(expected: VariableSnapshot, edited: unknown): Promise<VariableSnapshot> {
+    const saveId = IdSchema.parse(expected.state.saveId);
+    // Capture caller-owned editor data before the first asynchronous boundary.
+    const basedOn = fingerprint(expected);
+    const candidate = structuredClone(edited);
+    const session = reserveStageSession(saveId);
+    try {
+      return await withBrowserLock(saveId, () => transaction(this.database, ['saves','drafts','saveControls'], 'readwrite', async tx => {
+        session.check();
+        const current = await variableSnapshot(tx, saveId);
+        requireData(fingerprint(current) === basedOn, 'REVISION_CONFLICT', '存档、时间线或草稿已变化。请先保留修改，再重新读取。');
+        const next = validateVariableEdit(current.state, candidate);
+        if (fingerprint(current.state) === fingerprint(next)) return current;
+        next.npcManagementRevision = (current.state.npcManagementRevision ?? 0) + 1;
+        next.updatedAt = new Date().toISOString();
+        const state = GameStateSchema.parse(next);
+        const old = current.draft;
+        const draft = old && TurnDraftSchema.parse({
+          ...createTurnDraft(saveId, state.revision, old.turnId, old.turnKind, old.userInput, old.useVariableStage, old.useWorldStage),
+          draftRevision: old.draftRevision + 1,
+        });
+        const control = await readControl(tx,saveId) ?? newSaveControl(saveId);
+        control.epoch = `epoch-${crypto.randomUUID()}`;
+        delete control.lastUndo;
+        delete control.lastNpcManagement;
+        await request(tx.objectStore('saves').put(state));
+        if (draft) await request(tx.objectStore('drafts').put(draft));
+        await writeControl(tx,control);
+        return {state, draft, instance:control.instanceId, epoch:control.epoch};
+      }), {required:true});
+    } finally {
+      session.release();
+    }
+  }
+
   async setNpcImportance(input: {saveId:string;expectedRevision:number;expectedManagementRevision:number;
     expectedDraftRevision?:number;expectedTurnId?:string;npcId:string;identityKey:string;choice:'ordinary'|'special';operationId:string;
     expectedInstance?:string|null}) {

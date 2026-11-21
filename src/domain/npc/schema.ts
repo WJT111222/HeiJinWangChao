@@ -16,6 +16,10 @@ const base = {
   id: IdSchema, identityKey: TextSchema, aliases: StringsSchema,
   name: TextSchema, age: z.number().int().nonnegative().optional(),
   gender: z.enum(['female', 'male', 'unknown']).optional(),
+  addressing: z.strictObject({
+    playerToNpc: TextSchema.optional(),
+    npcToPlayer: TextSchema.optional(),
+  }).optional(),
   identity: z.string().optional(), appearance: z.string().optional(), temperament: z.string().optional(),
   background: z.string().optional(), skills: StringsSchema,
   locationId: IdSchema.optional(), onScene: z.boolean(),

@@ -39,6 +39,7 @@ const npcChanges = OrdinaryNpcSchema.pick({
   healthText: true,
   lastInteractionAt: true,
   gender: true,
+  addressing: true,
   phoneContact: true, usualLocations: true,
 })
   .partial()
@@ -231,7 +232,7 @@ export function applyVariableCommand(
           'NPC_TIME',
           '互动时间未发生或倒退',
         );
-      const { locationId, privateProfile, gender, detailedBackground, habits, relationshipNetwork, ...changes } = command.changes;
+      const { addressing, locationId, privateProfile, gender, detailedBackground, habits, relationshipNetwork, ...changes } = command.changes;
       if (detailedBackground !== undefined || habits !== undefined || relationshipNetwork !== undefined) {
         requireData(npc.kind === 'special', 'NPC_KIND', '普通人物不能写入休眠专属资料');
         if (detailedBackground !== undefined) npc.detailedBackground = detailedBackground;
@@ -256,6 +257,7 @@ export function applyVariableCommand(
         delete npc.privateProfile;
       }
       if (gender !== undefined) npc.gender = gender;
+      if (addressing) npc.addressing = { ...npc.addressing, ...addressing };
       Object.assign(npc, changes);
       // null 是命令层的显式清除，正式 NPC 仍使用原 Schema 的可选地点。
       if (locationId === null) {

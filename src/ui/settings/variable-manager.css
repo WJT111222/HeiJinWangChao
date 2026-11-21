@@ -1,0 +1,210 @@
+@media (min-width: 901px) {
+  .app-shell .settings-paper[data-tone='paper'] .settings-layout[data-tab='变量管理'],
+  .settings-layout.st-wrap[data-tab='变量管理'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.settings-layout[data-tab='变量管理'] .local-save-bar {
+  display: none;
+}
+.vm-back {
+  margin: 0 0 0.65rem;
+}
+.variable-manager {
+  min-width: 0;
+  padding-bottom: 0.8rem;
+  color: var(--text);
+}
+.vm-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #27241e;
+  color: #f6ecd5;
+  border-left: 3px solid #ae8c46;
+}
+.vm-header strong {
+  font-family: var(--font-title);
+  overflow-wrap: anywhere;
+}
+.vm-header span {
+  flex: none;
+  font-size: 0.84rem;
+  color: #dfcfad;
+}
+.variable-manager .vm-workspace {
+  display: grid;
+  grid-template-columns: minmax(7rem, 17%) minmax(0, 1fr);
+  min-width: 0;
+  gap: 1rem;
+}
+.app-shell .settings-layout .variable-manager fieldset.vm-workspace {
+  margin: 0.75rem 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.vm-domains {
+  align-self: start;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+}
+.vm-domains button {
+  text-align: left;
+}
+/* Paper archives tint generic hovered buttons; keep the selected ink pair together. */
+.settings-layout[data-tab='变量管理']
+  .variable-manager
+  :is(.vm-domains, .vm-modes)
+  button[aria-pressed='true'],
+.settings-layout[data-tab='变量管理']
+  .variable-manager
+  :is(.vm-domains, .vm-modes)
+  button[aria-pressed='true']:hover:not(:disabled) {
+  color: #ffefd1;
+  background: #463925;
+  border-color: #79613c;
+}
+.vm-content,
+.variable-editor,
+.vm-diff {
+  min-width: 0;
+}
+.vm-content h4,
+.vm-diff h4 {
+  margin: 0 0 0.5rem;
+  color: var(--head);
+  font-family: var(--font-title);
+}
+.vm-modes,
+.vm-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.vm-modes {
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 0.6rem;
+}
+.variable-manager :is(button, select, input, textarea) {
+  max-width: 100%;
+  min-width: 0;
+}
+.variable-manager :is(code, pre, button, summary, strong, li) {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.variable-manager pre {
+  white-space: pre-wrap;
+}
+.variable-manager label,
+.variable-editor {
+  display: grid;
+  gap: 0.35rem;
+}
+.variable-manager :is(textarea, input, select) {
+  box-sizing: border-box;
+  width: 100%;
+}
+.variable-editor {
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  margin: 0.3rem 0;
+  gap: 0.6rem;
+}
+.variable-editor textarea {
+  resize: vertical;
+}
+.variable-tree,
+.variable-tree ul,
+.vm-registry ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.variable-tree ul {
+  margin-left: 0.3rem;
+  padding-left: 0.65rem;
+  border-left: 1px solid var(--line);
+}
+.variable-tree li {
+  padding: 0.18rem 0;
+}
+.variable-tree small,
+.vm-registry small {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+.variable-tree .vm-branch {
+  text-align: left;
+  width: 100%;
+  font-weight: 600;
+  background: transparent;
+}
+.vm-branch small {
+  float: right;
+}
+.vm-leaf {
+  display: grid;
+  grid-template-columns: minmax(6rem, 0.8fr) minmax(0, 1.6fr);
+  align-items: baseline;
+  gap: 0.4rem;
+  border-bottom: 1px solid var(--line);
+}
+.vm-leaf button {
+  text-align: left;
+}
+.vm-registry li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.vm-diff {
+  border-left: 3px solid var(--gold);
+  padding: 0.65rem 0.85rem;
+}
+.variable-manager [role='status']:empty {
+  display: none;
+}
+.variable-manager footer {
+  margin: 0.6rem 0;
+}
+@media (max-width: 900px) {
+  .variable-manager .vm-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.8rem;
+  }
+  .vm-domains {
+    display: flex;
+    overflow-x: auto;
+  }
+  .vm-domains button {
+    flex: none;
+  }
+  .vm-domains button,
+  .vm-modes button,
+  .variable-manager footer button {
+    min-height: 44px;
+  }
+  .vm-modes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .vm-leaf {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .variable-tree ul {
+    padding-left: 0.45rem;
+  }
+}
