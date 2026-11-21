@@ -211,3 +211,26 @@ test('分区工作台可在结构树、路径登记表与 JSON 之间审阅同�
   expect(await summaryState(page)).toEqual(before);
   expect(posts).toEqual([]);
 });
+
+test('变量管理器手动保存天气与环境，刷新后保留且没有模型请求', async ({ page }) => {
+  const calls: string[] = [];
+  await page.route('https://summary.mock.invalid/**', route => {
+    calls.push(route.request().method());
+    return route.abort();
+  });
+  await seedSummary(page, { count: 3, npcCount: 2, automatic: false });
+  await page.reload();
+  const before = await summaryState(page);
+  const panel = await manager(page);
+  await panel.getByRole('navigation', { name: '变量分区' }).getByRole('button', { name: '世界', exact: true }).click();
+  await panel.getByRole('button', { name: '分区 JSON' }).click();
+  const raw = panel.getByLabel('原始分区 JSON');
+  const scene = { weatherText: '阵雨', environmentText: '街口有临时便道，巴士已恢复通行。' };
+  await raw.fill(JSON.stringify({ ...JSON.parse(await raw.inputValue()), ...scene }));
+  await panel.getByRole('button', { name: '加入待保存修改' }).click();
+  await panel.getByRole('button', { name: '保存变量修改' }).click();
+  await expect(panel.getByRole('status').filter({ hasText: '已保存' })).toBeVisible();
+  await page.reload();
+  expect(await summaryState(page)).toMatchObject({ ...scene, journal: before.journal, turnNumber: before.turnNumber });
+  expect(calls).toEqual([]);
+});

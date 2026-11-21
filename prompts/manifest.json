@@ -1811,7 +1811,7 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 14567,
+      "characters": 14685,
       "version": "1.2.0-variable-source-port",
       "messageRole": null,
       "activation": "never",
@@ -1821,7 +1821,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "4e7f46d608acf8cceda352d7a4aa547c6774f0b4b579a23ba35e07137adc1c26",
+      "contentSha256": "ca75a25e2b9f297e54736a342b3800127846420a456411ec34bd8ab796682fa8",
       "placeholders": [
         "immediateMemoryTurns",
         "maxNarrativeChars",

@@ -19,6 +19,7 @@ import { OpeningInitialStateSchema, initializeOpeningState } from './openingInit
 
 const base = { commandId: IdSchema, evidence: TextSchema };
 const positiveMoney = MoneySchema.refine((amount) => amount > 0, '金额必须为正');
+export const SceneDescriptionField = z.enum(['weatherText', 'environmentText']);
 export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('InitializeOpeningState'), changes: OpeningInitialStateSchema }),
   z.strictObject({ ...base, type: z.literal('PurchaseItem'), account: AccountSchema, price: positiveMoney, item: OwnedItemInputSchema }),
@@ -30,6 +31,7 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('CreateNpc'), npc: NpcCreationSchema }),
   z.strictObject({ ...base, type: z.literal('SetEquipment'), equipment: EquipmentSchema }),
   z.strictObject({ ...base, type: z.literal('TransferItem'), itemId: IdSchema, from: ActorRefSchema.nullable(), to: ActorRefSchema }),
+  z.strictObject({ ...base, type: z.literal('SetSceneDescription'), field: SceneDescriptionField, value: z.string() }),
   z.strictObject({ ...base, type: z.literal('SetWorldClock'), worldClock: GameTimeSchema }),
   z.strictObject({ ...base, type: z.literal('SaveEvent'), event: StoredWorldEventSchema }),
   z.strictObject({ ...base, type: z.literal('DeleteEvent'), eventId: IdSchema, expectedStatus: z.enum(['resolved','cancelled']), reason: TextSchema }),
@@ -126,6 +128,10 @@ function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedRecei
       }
       break;
     }
+    case 'SetSceneDescription':
+      requireData(s.turnNumber > 0, 'OPENING_INITIALIZATION', '开局天气与环境须通过开局初始化写入');
+      s[c.field] = c.value;
+      break;
     case 'SetWorldClock':
       requireData(Date.parse(c.worldClock) >= Date.parse(s.worldClock), 'TIME_REVERSED', '游戏时间不可倒退');
       s.worldClock = c.worldClock; break;

@@ -341,3 +341,34 @@ test('#193 刷新后只重试World，取消、重复点击与跨标签竞争不�
     await other.close();
   }
 });
+
+test('普通回合天气与环境结算后重载，下一次 Story 使用已保存的两个字段', async ({ page }) => {
+  await seed(page);
+  const server = await mock(page);
+  await page.getByRole('button', { name: '自动生成开局', exact: true }).click();
+  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(1);
+  const scene = { weatherText: '小雨，微风，略有凉意', environmentText: '商业街人流渐密，店铺灯牌陆续亮起。' };
+  server.control.variables = '<命令>\n' + Object.entries(scene)
+    .map(([field, value]) => `set ${field} = ${JSON.stringify(value)}`).join('\n') + '\n</命令>';
+  await closeWorkflowSheet(page);
+  const action = page.getByLabel('你的行动', { exact: true });
+  const send = page.getByRole('button', { name: '发送', exact: true });
+  await action.fill('穿过商业街');
+  await send.click();
+  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);
+  await page.reload();
+  expect((await stored(page)).state).toMatchObject(scene);
+  expect(server.calls).toEqual(['story', 'variables', 'world', 'story', 'variables', 'world']);
+
+  server.control.variables = '<命令></命令>';
+  await action.fill('在街口等人');
+  const next = page.waitForRequest(request => request.url().includes('auto-settlement.mock.invalid')
+    && request.method() === 'POST' && request.postDataJSON().model === 'story');
+  await send.click();
+  const messages: { role: string; content: string }[] = (await next).postDataJSON().messages;
+  const context = messages.find(m => m.role === 'user' && m.content.startsWith('<GAME_CONTEXT>'))!;
+  expect(JSON.parse(context.content.slice('<GAME_CONTEXT>\n'.length, -'\n</GAME_CONTEXT>'.length)).SAVE_STATE).toMatchObject(scene);
+  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(3);
+  expect((await stored(page)).state).toMatchObject(scene);
+  expect(server.calls).toEqual(['story', 'variables', 'world', 'story', 'variables', 'world', 'story', 'variables', 'world']);
+});
