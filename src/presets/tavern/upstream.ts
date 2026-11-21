@@ -1,4 +1,4 @@
-import { checkFinish } from '../../services/ai/compat';
+import { checkFinish, splitLeadingThink } from '../../services/ai/compat';
 import { isOpenAiCompatible, type Protocol } from '../../services/ai/configuration';
 import { AiError, safeAiError } from '../../services/ai/errors';
 import { array, nativeReasoning, record, usageFrom, type Usage } from '../../services/ai/protocols';
@@ -20,6 +20,8 @@ export interface UpstreamTrace {
   wrapperBodyRead?: boolean;
   cancelled?: boolean;
   restored?: boolean;
+  /** Request-local check for the native adapter. Never export a tool argument in diagnostics. */
+  matchesDelivery?: (restored: string) => boolean;
   rawFinish?: string;
   calls: number;
   bytes: number;
@@ -48,8 +50,9 @@ class Frames {
   private snapshots = new Map<string, { name: string; args: string }>();
   private anonymousGeminiCalls = new Set<string>();
   private hasText = false;
+  private preToolPaddingLength = 0;
   boundary = false;
-  constructor(private protocol: Protocol, private trace: UpstreamTrace) {}
+  constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string) {}
   private track(index: number, id: unknown, name: unknown, args: unknown) {
     if (!Number.isSafeInteger(index) || index < 0) invalid();
     const tool = this.tools.get(index) ?? { id: '', name: '', args: '' };
@@ -86,6 +89,8 @@ class Frames {
     if (choices.length > 1 || (choice.index !== undefined && choice.index !== 0)) throw new AiError('unsupported');
     const msg = record(streaming ? choice.delta : choice.message);
     const text = responseContent(d, p, streaming), reasoning = nativeReasoning(d, p, streaming);
+    if (this.expectedContentTool && streaming && !this.tools.size && !this.hasText && text && !/[^ \t\r\n]/u.test(text))
+      this.preToolPaddingLength += text.length;
     if (text.trim()) {
       this.hasText = true;
       this.trace.clock.progress('firstContentMs');
@@ -184,7 +189,20 @@ class Frames {
       }
       const ids = new Set<string>();
       for (const tool of this.tools.values()) {
-        if (!tool.id || !tool.name || ids.has(tool.id) || !objectArgs(parse(tool.args))) invalid();
+        if (!tool.id || !tool.name || ids.has(tool.id)) invalid();
+        const args = parse(tool.args);
+        if (!objectArgs(args)) invalid();
+        if (this.expectedContentTool === tool.name && this.tools.size === 1) {
+          const content = record(args).content;
+          // The wrapper can prefer a competing plain answer. Check what the client actually received.
+          if (typeof content === 'string' && content.trim()) {
+            const padding = this.preToolPaddingLength;
+            this.trace.matchesDelivery = restored => restored === content || restored === splitLeadingThink(content).content ||
+              // A wrapper can already have forwarded whitespace-only SSE deltas before seeing the tool.
+              (padding > 0 && restored.length === padding + content.length && restored.endsWith(content) &&
+                !/[^ \t\r\n]/u.test(restored.slice(0, padding)));
+          }
+        }
         ids.add(tool.id);
       }
     }
@@ -194,11 +212,11 @@ class Frames {
     this.trace.clock.first('upstreamCompleteMs');
   }
 }
-export async function normalizeUpstream(response: Response, protocol: Protocol, stream: boolean, signal: AbortSignal, trace: UpstreamTrace) {
+export async function normalizeUpstream(response: Response, protocol: Protocol, stream: boolean, signal: AbortSignal, trace: UpstreamTrace, expectedContentTool?: string) {
   trace.status = response.status;
   trace.contentType = safeMime(response.headers);
   trace.requestedStream = stream;
-  const frames = new Frames(protocol, trace);
+  const frames = new Frames(protocol, trace, expectedContentTool);
   if (!response.body) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.missing_body' });
   const stopped = new AbortController();
   const reading = AbortSignal.any([signal, stopped.signal]);

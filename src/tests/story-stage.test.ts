@@ -15,7 +15,7 @@ import { game } from './fixtures/game';
 import { deepSeekUntagged, recoveryNarrative, recoverySummary, recoveryGuide, recoveryActions, inlineRecoveryOutput, inlineRecoveryNarrative, missingNarrativeCloseOutput } from './fixtures/storyRecovery';
 import { stageResponses } from '../services/ai/stageResponses';
 import { builtInPresets } from '../presets/library';
-import { savePresetSettings } from '../presets/settings';
+import { enableNativeDelivery, savePresetSettings } from '../presets/settings';
 
 const narrative = '【旁白】街边的公交车缓缓驶过。\n\n你看着窗外的路灯，没有作出决定。';
 function output(body = narrative, actions = true) {
@@ -699,4 +699,30 @@ it('兼容预设保留真实 length 断点；主动 continue 及完整 length �
     expect(types).toEqual(['normal','continue']);
     expect(fetcher).toHaveBeenCalledTimes(2);
   } finally { hook.stop(); vi.unstubAllGlobals(); }
+});
+
+it('已启用独立交付时，显式续写仍使用普通消息并保留原断点和草稿 CAS', async () => {
+  const values = new Map<string, string>();
+  vi.stubGlobal('localStorage', { getItem: (k: string) => values.get(k) ?? null, setItem: (k: string, v: string) => values.set(k, v) });
+  try {
+    const input = setup();
+    input.settings.runtime.streamStory = false;
+    const raw = output(), cut = raw.indexOf(narrative) + 10;
+    const json = (content: string, finish_reason: string) => Response.json({choices: [{message: {content}, finish_reason}]});
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(json(raw.slice(0, cut), 'length'))
+      .mockResolvedValueOnce(json(raw.slice(cut), 'stop'));
+    const stage = runner(fetcher);
+    await expect(stage.generate({ ...input, draft, onFailureSaved() {} })).rejects.toMatchObject({code: 'output_limit'});
+    const failed = (await repo.loadDraft(draft.saveId))!;
+    const presets = {enabled: false, selected: null, packages: {}};
+    enableNativeDelivery(presets);
+    savePresetSettings(presets);
+    const saved = await stage.generate({ ...input, draft: failed, continuation: true });
+    expect(saved.story?.narrative).toBe(narrative);
+    expect((await repo.load(draft.saveId)).revision).toBe(draft.baseSaveRevision);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    const wire = JSON.parse(String(fetcher.mock.calls[1][1]?.body));
+    expect(wire.tools).toBeUndefined();
+    expect(wire.messages.at(-2)).toEqual({role: 'assistant', content: raw.slice(0, cut)});
+  } finally { vi.unstubAllGlobals(); }
 });

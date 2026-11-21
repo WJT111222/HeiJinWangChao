@@ -1,5 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { AiError } from '../services/ai/errors';
+import { contextMessage } from '../prompts/context';
 import { AiClient } from '../services/ai/client';
 import { newChannel, type Protocol } from '../services/ai/configuration';
 import { channelSnapshot } from '../services/ai/snapshot';
@@ -106,6 +107,96 @@ describe.each(['openai', 'deepseek', 'gemini', 'anthropic'] as const)('%s 虚拟
     else expect(result.tool_choice).toEqual(choice);
   });
 });
+const action = '联系仓库负责人，核对“手机”与 <货单>。\n 保留空格 ';
+const currentTurn = { source: 'draft.userInput', turnId: 'turn-two', turnKind: 'regular', draftRevision: 1 };
+const actionMessage = { role: 'user' as const, content: contextMessage({CURRENT_TURN: currentTurn, PLAYER_ACTION: action}) };
+const background = { role: 'user' as const, content: contextMessage({ SAVE_STATE: { revision: 2 } }) };
+const reference = [background, actionMessage];
+const deliveryNames = ['wave_context_reference', 'actual_content'];
+function nativeHook(names: string[], choice: 'auto' | 'none' = 'auto', leak = false) {
+  return tavernEvents.on('chat_completion_settings_ready', data => {
+    const records = data.messages.splice(0);
+    data.tools = names.map(name => ({ type: 'function', function: { ...tool.function, name,
+      description: name === deliveryNames[0] ? '测试资料\n' + JSON.stringify(records) : tool.function.description } }));
+    if (leak) data.messages.push(actionMessage);
+    data.tool_choice = choice;
+    data.messages.push({role: 'user', content: '回应其中最新的真实用户输入。请使用 actual_content 提交本回合正文。'});
+  });
+}
+
+it.each([
+  { names: ['actual_content'], expected: reference, path: 'tools' },
+  { names: ['wave_context_reference'], expected: reference, path: 'tools' },
+  { names: deliveryNames, expected: reference, path: 'tools', disabled: true },
+  { names: deliveryNames, expected: [actionMessage], path: 'action' },
+  { names: deliveryNames, expected: [background, {...actionMessage, content: actionMessage.content.replace('turn-two', 'turn-one')}], path: 'action' },
+  { names: deliveryNames, expected: [background, {...actionMessage, content: actionMessage.content.replace('联系', '通知')}], path: 'action' },
+  { names: deliveryNames, expected: reference, path: 'action', leak: true },
+])('独立交付缺声明、错绑、缺资料或普通消息泄漏行动块时在传输前拒绝 $path', async row => {
+  const fetcher = vi.fn<typeof fetch>();
+  const hook = nativeHook(row.names, row.disabled ? 'none' : 'auto', row.leak);
+  try {
+    await expect(new AiClient(fetcher).generate(snapshot('openai'), reference, {
+      tavernType: 'normal', nativeDeliveryReference: row.expected,
+    })).rejects.toMatchObject({details: {fieldPath: 'tavern.native_delivery.' + row.path}});
+    expect(fetcher).not.toHaveBeenCalled();
+  } finally { hook.stop(); }
+});
+
+it.each([false, true])('独立交付只接受可核对的上游正文；stream=%s', async stream => {
+  const fetcher = vi.fn<typeof fetch>();
+  const hook = nativeHook(deliveryNames);
+  // The wrapper returns the same candidate in every case; only original upstream evidence changes.
+  wrap(async response => {
+    await response.text();
+    return Response.json({choices: [{message: {content: text}, finish_reason: 'stop'}]});
+  });
+  try {
+    const run = () => new AiClient(fetcher).generate(snapshot('openai'), reference, {
+      tavernType: 'regenerate', stream, nativeDeliveryReference: reference,
+    });
+    for (const [name, carried, expected] of [
+      [undefined, undefined, false], ['other', text, false], ['actual_content', '不同正文', false],
+      ['actual_content', undefined, false], ['actual_content', text, true],
+    ] as const) {
+      const message = {content: text, ...(name ? {tool_calls: [{...toolCall, index: 0,
+        function: {name, arguments: JSON.stringify({content: carried})}}]} : {})};
+      const choice = { [stream ? 'delta' : 'message']: message, finish_reason: name ? 'tool_calls' : 'stop' };
+      fetcher.mockResolvedValueOnce(stream ? sse(frame({choices: [choice]}) + 'data: [DONE]\n\n') : Response.json({choices: [choice]}));
+      if (expected) await expect(run()).resolves.toMatchObject({text});
+      else await expect(run()).rejects.toMatchObject({code: 'unsupported', details: {fieldPath: 'tavern.native_delivery.response'}});
+    }
+    expect(fetcher).toHaveBeenCalledTimes(5);
+    for (const [, init] of fetcher.mock.calls) {
+      const last = JSON.parse(String(init?.body)).messages.at(-1);
+      expect(last.role).toBe('user');
+      expect(last.content).toContain('PLAYER_ACTION');
+      expect(last.content).not.toContain(actionMessage.content);
+    }
+  } finally { hook.stop(); }
+});
+
+it('独立交付只允许上游工具帧前实际出现的空白，不接受任何额外正文或参数内部差异', async () => {
+  const padding = ' \n\t';
+  const content = '<正文>第一行\n第二行</正文>';
+  const receive = async (prefix: string) => {
+    const trace = newTrace();
+    const call = {...toolCall, index: 0, function: {name: 'actual_content', arguments: JSON.stringify({content})}};
+    const response = await normalizeUpstream(sse(frame({choices: [{delta: {content: prefix}}]})
+      + frame({choices: [{delta: {tool_calls: [call]}, finish_reason: 'tool_calls'}]}) + 'data: [DONE]\n\n'),
+      'openai', true, new AbortController().signal, trace, 'actual_content');
+    await response.text();
+    expect(trace.complete).toBe(true);
+    return trace.matchesDelivery!;
+  };
+  const matches = await receive(padding);
+  expect(matches(padding + content)).toBe(true);
+  expect(matches(content)).toBe(true);
+  for (const altered of [padding + content.replace('\n', ' '), '旁白' + content, '\u200b\n\t' + content, content + padding])
+    expect(matches(altered)).toBe(false);
+  expect((await receive(''))(padding + content)).toBe(false);
+});
+
 it('真实上游中断不能被包装器替换为成功；失败不会触发协调器自动重试', async () => {
   const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(sse(frame({ choices: [{ delta: { content: '半截' } }] })))
     .mockResolvedValueOnce(Response.json({ error: {} }, { status: 503 }));

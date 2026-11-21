@@ -1,3 +1,4 @@
+import { nativeDeliveryId } from '../presets/settings';
 import { StoryClock } from '../presets/tavern/timing';
 import { awaitAssistant, assistantStarting, captureAssistantPreferences } from '../presets/tavern/hostState';
 import { stageResponses, safeStreamResponseText, safeResponseText } from '../services/ai/stageResponses';
@@ -76,7 +77,8 @@ export class StoryStage {
   async generate(input: StoryInput): Promise<TurnDraft> {
     const started = performance.now();
     const expected = TurnDraftSchema.parse(input.draft);
-    let presetSelection = captureAssistantPreferences();
+    const allowNativeDelivery = !input.continuation && !input.legacyNotificationSelection;
+    let presetSelection = captureAssistantPreferences(allowNativeDelivery);
     const clock = presetSelection ? new StoryClock(started) : undefined;
     const waitingForScripts = assistantStarting();
     if (clock) {
@@ -104,7 +106,7 @@ export class StoryStage {
         await awaitAssistant(attempt.signal);
         clock?.first('assistantReadyMs');
         current();
-        presetSelection = captureAssistantPreferences();
+        presetSelection = captureAssistantPreferences(allowNativeDelivery);
       }
       const { config, settings, companionProfile, orderPreferences, frozenStoryChannel, secrets } = frozen ?? captureInputs();
       const streaming = settings.runtime.streamStory;
@@ -146,7 +148,7 @@ export class StoryStage {
       let responseInspectionId: string | undefined;
       try {
         progress();
-        const historyActions = presetSelection && state.journal.length
+        const historyActions = presetSelection && presetSelection !== nativeDeliveryId && state.journal.length
           ? await this.repository.recentStoryActions?.(state, settings.memory.immediateWindowSize) : undefined;
         current();
         const response = await runStageRequest(

@@ -3,8 +3,8 @@ import isEqual from 'lodash/isEqual';
 import type { PackageOverride } from '../package';
 import type { Protocol } from '../../services/ai/configuration';
 import { AiError } from '../../services/ai/errors';
-import { builtInPresets, captureStoryPreset } from '../library';
-import { readPresetSettings, savePresetSettings } from '../settings';
+import { builtInPresets, captureAssistantSelection, type AssistantSelection } from '../library';
+import { enableNativeDelivery, nativeDeliveryId, readPresetSettings, savePresetSettings, storyMode } from '../settings';
 import type { GenerationType } from './events';
 import { tavernEvents } from './events';
 
@@ -90,14 +90,24 @@ export function registerRuntimeSettings(flush: () => boolean, apply: (override: 
   syncSaved = sync;
   savePending = flush; snapshotChanges = apply; baseSettings = defaults;
 }
-export function switchPreset(id: string | null, resetCorrupt = false) {
+export function switchPreset(id: string | null, resetCorrupt = false, expectedMode?: string | null) {
+  const apply = () => applyMode(id, resetCorrupt, expectedMode);
+  // Two tabs may confirm different choices from the same displayed state.
+  return navigator.locks ? navigator.locks.request('heijin.story-presets.mode', apply) : apply();
+}
+function applyMode(id: string | null, resetCorrupt: boolean, expectedMode?: string | null) {
   if (request) throw new Error('请先完成或取消当前生成。');
-  if (id && !builtInPresets.some(p => p.id === id)) throw new Error('所选内置预设不存在。');
+  if (id && id !== nativeDeliveryId && !builtInPresets.some(p => p.id === id)) throw new Error('所选内置预设不存在。');
   const rollbackInput = preparePageRefresh?.();
   try {
     savePending?.();
-    const settings = resetCorrupt && new URLSearchParams(location.search).get('safe') === '1' ? { packages: {} } : readPresetSettings();
-    savePresetSettings({ ...settings, enabled: Boolean(id), selected: id });
+    const settings = resetCorrupt && new URLSearchParams(location.search).get('safe') === '1' ? { enabled: false, selected: null, packages: {} } : readPresetSettings();
+    if (expectedMode !== undefined && storyMode(settings) !== expectedMode) throw new Error('设置已在其他页面更改，请刷新后重试。');
+    if (id === nativeDeliveryId && settings.enabled) throw new Error('请先关闭文学预设。');
+    const native = id === nativeDeliveryId;
+    if (native) enableNativeDelivery(settings);
+    else delete settings.packages[nativeDeliveryId];
+    savePresetSettings({ ...settings, enabled: !!id && !native, selected: native ? null : id });
   } catch (error) {
     rollbackInput?.();
     throw error;
@@ -106,14 +116,22 @@ export function switchPreset(id: string | null, resetCorrupt = false) {
 }
 let initialized = false;
 let startup: Promise<void> | undefined;
+function modeOf(selected: AssistantSelection) {
+  return typeof selected === 'string' ? selected : selected?.definition.id ?? null;
+}
+let pageMode: string | null | undefined;
+export function hostNeedsRefresh(mode: string | null) {
+  return pageMode !== undefined && mode !== pageMode;
+}
 export function startAssistant() {
   if (startup) return startup;
   startup = (async () => {
     if (new URLSearchParams(location.search).get('safe') === '1') return;
-    const settings = readPresetSettings();
-    if (!settings.enabled) return;
+    const selected = captureAssistantSelection();
+    pageMode = modeOf(selected);
+    if (!selected) return;
     const { loadAssistant } = await import('./scriptHost');
-    await loadAssistant();
+    await loadAssistant(selected);
   })().then(() => { initialized = true; }).catch(error => {
     if (!instances.some(i => i.status === '出错')) assistantView.add({ id: 'loader', name: '酒馆助手', status: '出错', buttons: [], phases: {}, error: '酒馆助手 · 初始化失败：预设资源或脚本宿主未能加载。' });
     throw error;
@@ -121,11 +139,19 @@ export function startAssistant() {
   void startup.catch(() => undefined); // Startup errors stay visible, and are rethrown at the generation gate.
   return startup;
 }
+export async function ensureNativeDeliveryHost(signal?: AbortSignal) {
+  if (!startup || pageMode !== nativeDeliveryId)
+    throw new AiError('configuration', undefined, { fieldPath: 'tavern.initialization' });
+  if (!initialized) await awaitAssistant(signal ?? new AbortController().signal);
+}
 export function assistantStarting() { return startup && !initialized; }
-export function captureAssistantPreferences() {
-  const selected = captureStoryPreset();
+export function captureAssistantPreferences(allowNativeDelivery = true): AssistantSelection {
+  const selected = captureAssistantSelection();
+  if (hostNeedsRefresh(modeOf(selected))) throw new AiError('configuration', undefined, { fieldPath: 'tavern.refresh_required' });
+  if (selected === nativeDeliveryId && !allowNativeDelivery) return null;
   if (!selected) return null;
   if (assistantView.snapshot().some(row => row.status === '出错')) throw new AiError('configuration', undefined, { fieldPath: 'tavern.initialization' });
+  if (selected === nativeDeliveryId) return nativeDeliveryId;
   if (initialized && snapshotChanges) {
     const override = selected.overrides ??= { version: selected.definition.version, entries: {}, scripts: {} };
     snapshotChanges(override); // Apply live edits to this request copy; only an explicit save persists them.

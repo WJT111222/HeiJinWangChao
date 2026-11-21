@@ -11,9 +11,27 @@ const pack = 'peinture-1118';
 const envelope =
   '<正文>船靠岸了，林舟沿着石阶往上走。</正文><短期记忆>林舟上岸</短期记忆><变量规划>[]</变量规划>';
 const toolName = 'actual_content';
-const args = { content: envelope };
+const playerAction = '我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。';
+const warehouseStory = '林舟拨通仓库负责人的电话，核对发货单上的“货号 A”，确认货物的具体位置。'.repeat(320) + '最后一行。';
+const warehouseEnvelope = '<正文>' + warehouseStory + '</正文><短期记忆>林舟致电仓库</短期记忆><变量规划>[]</变量规划>';
 
-function upstream(protocol: Protocol, stream: boolean) {
+const museumAction = '我去市博物馆，向馆员核对展品编号。';
+const museumStory = '林舟来到市博物馆，向馆员逐项核对展品编号。'.repeat(1200) + '编号一致。';
+const museumEnvelope = '<正文>' + museumStory + '</正文><短期记忆>林舟核对展品</短期记忆><变量规划>[]</变量规划>';
+
+function readReference(description: string) {
+  const records = JSON.parse(description.slice(description.lastIndexOf('\n') + 1)) as { role: string; content: string }[];
+  return records.map(m => JSON.parse(m.content.slice('<GAME_CONTEXT>\n'.length, -'\n</GAME_CONTEXT>'.length)));
+}
+
+function upstream(protocol: Protocol, stream: boolean, content = envelope) {
+  const args = { content };
+  const longDelivery = content === warehouseEnvelope || content === museumEnvelope;
+  const serialized = JSON.stringify(args);
+  const fragments = longDelivery
+    ? serialized.match(/[\s\S]{1,127}/gu)!
+    : [serialized.slice(0, 6), serialized.slice(6)];
+  const padding = ' \n\t';
   const event = (value: unknown) => 'data: ' + JSON.stringify(value) + '\n\n';
   let full: unknown;
   let sse: string;
@@ -24,18 +42,22 @@ function upstream(protocol: Protocol, stream: boolean) {
       ],
       usageMetadata: { candidatesTokenCount: 12 },
     };
-    sse = event(full);
+    const prefix = { candidates: [{ content: { parts: [{ text: padding }] } }] };
+    sse = (longDelivery ? event(prefix) : '') + event(full);
   } else if (protocol === 'anthropic') {
+    const index = longDelivery ? 1 : 0;
     const block = { type: 'tool_use', id: 'fixture-call', name: toolName, input: args };
     full = { content: [block], stop_reason: 'tool_use', usage: { output_tokens: 12 } };
     sse = [
-      { type: 'content_block_start', index: 0, content_block: { ...block, input: {} } },
-      {
-        type: 'content_block_delta',
-        index: 0,
-        delta: { type: 'input_json_delta', partial_json: JSON.stringify(args) },
-      },
-      { type: 'content_block_stop', index: 0 },
+      ...(longDelivery ? [
+        { type: 'content_block_start', index: 0, content_block: { type: 'text', text: padding } },
+        { type: 'content_block_stop', index: 0 },
+      ] : []),
+      { type: 'content_block_start', index, content_block: { ...block, input: {} } },
+      ...fragments.map(partial_json => ({
+        type: 'content_block_delta', index, delta: { type: 'input_json_delta', partial_json },
+      })),
+      { type: 'content_block_stop', index },
       { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 12 } },
       { type: 'message_stop' },
     ]
@@ -45,15 +67,21 @@ function upstream(protocol: Protocol, stream: boolean) {
     const call = {
       type: 'function',
       id: 'fixture-call',
-      function: { name: toolName, arguments: JSON.stringify(args) },
+      function: { name: toolName, arguments: serialized },
     };
     full = {
       choices: [{ message: { tool_calls: [call] }, finish_reason: 'tool_calls' }],
       usage: { completion_tokens: 12 },
     };
+    const toolFrames = fragments.map((part, i) => {
+      const chunk = i === 0
+        ? { ...call, index: 0, function: { ...call.function, arguments: part } }
+        : { index: 0, function: { arguments: part } };
+      return event({ choices: [{ delta: { tool_calls: [chunk] } }] });
+    });
     sse =
-      event({ choices: [{ delta: { tool_calls: [{ ...call, index: 0, function: { ...call.function, arguments: call.function.arguments.slice(0, 6) } }] } }] }) +
-      event({ choices: [{ delta: { tool_calls: [{ index: 0, function: { arguments: call.function.arguments.slice(6) } }] } }] }) +
+      (longDelivery ? event({ choices: [{ delta: { content: padding } }] }) : '') +
+      toolFrames.join('') +
       event({ choices: [{ delta: {}, finish_reason: 'tool_calls' }], usage: { completion_tokens: 12 } }) +
       'data: [DONE]\n\n';
   }
@@ -61,7 +89,7 @@ function upstream(protocol: Protocol, stream: boolean) {
 }
 
 // Synthetic save and opening draft produced with game() and createTurnDraft(); no production test hooks.
-async function prepare(page: Page, protocol: Protocol, stream: boolean, active: boolean, actionOptions = false) {
+async function prepare(page: Page, protocol: Protocol, stream: boolean, active: boolean, actionOptions = false, action?: string, regular = false) {
   const sent: string[] = [];
   await page.route('**/*', (route) => {
     const u = new URL(route.request().url());
@@ -79,12 +107,23 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
           json: {
             choices: [
               {
-                message: { content: '<wave_delivery>' + envelope + '</wave_delivery>' },
+                message: { content: sent.at(-1)!.includes('<wave_delivery>') ? '<wave_delivery>' + envelope + '</wave_delivery>' : envelope },
                 finish_reason: 'stop',
               },
             ],
           },
         });
+      if (action !== undefined) {
+        if (regular && sent.length === 1) return route.fulfill({json: {error: {type: 'synthetic_failure'}}});
+        const body = route.request().postDataJSON();
+        const tools = protocol === 'gemini' ? body.tools[0].functionDeclarations
+          : protocol === 'anthropic' ? body.tools : body.tools.map((t: {function: unknown}) => t.function);
+        const description = tools.find((t: {name: string}) => t.name === 'wave_context_reference')?.description;
+        const current = description && readReference(description).at(-1);
+        // The Mock selects its reply from the received current record, even when history describes the other action.
+        const replies = new Map([[playerAction, warehouseEnvelope], [museumAction, museumEnvelope]]);
+        return route.fulfill(upstream(protocol, stream, replies.get(current?.PLAYER_ACTION) ?? envelope));
+      }
       return route.fulfill(upstream(protocol, stream));
     }
     return ['localhost', '127.0.0.1'].includes(u.hostname) || u.protocol === 'blob:'
@@ -94,7 +133,7 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
   await page.goto('/');
   await page.getByRole('button', { name: '设置', exact: true }).first().waitFor();
   await page.evaluate(
-    async ({ fixture, protocol, stream, active, pack, actionOptions }) => {
+    async ({ fixture, protocol, stream, active, pack, actionOptions, action, regular, historicalAction }) => {
       const db = await new Promise<IDBDatabase>((ok, fail) => {
         const request = indexedDB.open('heijinwangchao');
         request.onsuccess = () => ok(request.result);
@@ -104,8 +143,14 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
         const tx = db.transaction(['saves', 'drafts'], 'readwrite');
         for (const { name, records } of fixture.rows)
           for (const value of records) {
-            tx.objectStore(name).put(value);
-            const other = structuredClone(value);
+            if ('userInput' in value && action !== undefined) value.userInput = action;
+            const seeded = !regular ? value : 'userInput' in value
+              ? { ...value, turnKind: 'regular', turnId: 'museum-turn', baseSaveRevision: 1 }
+              : { ...value, revision: 1, turnNumber: 1, journal: [{ turnId: 'previous-turn', revision: 1,
+                story: { turnKind: 'opening', narrative: historicalAction, summary: '此前询问仓库', variableGuide: [] },
+                relatedActorRefs: [] }] };
+            tx.objectStore(name).put(seeded);
+            const other = structuredClone(seeded);
             other.saveId = 'peinture-second';
             if ('protagonist' in other) other.protagonist.name = '顾乙';
             tx.objectStore(name).put(other);
@@ -129,15 +174,15 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
           JSON.stringify({ enabled: true, selected: pack, packages: {} }),
         );
     },
-    { fixture, protocol, stream, active, pack, actionOptions },
+    { fixture, protocol, stream, active, pack, actionOptions, action, regular, historicalAction: playerAction },
   );
   await page.reload();
   return sent;
 }
-async function generate(page: Page, id = 'peinture-smoke') {
+async function generate(page: Page, id = 'peinture-smoke', expected = '船靠岸了，林舟沿着石阶往上走。', button = '生成开局正文') {
   await page.goto('/#game/' + id);
   await openGameTools(page);
-  await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
+  await page.getByRole('button', { name: button, exact: true }).click();
   await expect
     .poll(() =>
       page.evaluate(async (id) => {
@@ -148,14 +193,14 @@ async function generate(page: Page, id = 'peinture-smoke') {
         try {
           return await new Promise<string>((ok) => {
             const r = db.transaction('drafts').objectStore('drafts').get(id);
-            r.onsuccess = () => ok(r.result?.story?.narrative ?? r.result?.failures?.at(-1)?.code ?? '');
+            r.onsuccess = () => ok(r.result?.story?.narrative ?? r.result?.failures?.at(-1)?.errorCode ?? '');
           });
         } finally {
           db.close();
         }
       }, id),
     )
-    .toBe('船靠岸了，林舟沿着石阶往上走。');
+    .toBe(expected);
 }
 async function copyStoryReport(page: Page, mobileFailure = false) {
   if (mobileFailure) {
@@ -200,6 +245,151 @@ async function runtimeSettings(page: Page) {
   await dialog.getByRole('button', { name: '运行', exact: true }).click();
   return dialog;
 }
+async function applyMode(page: Page, dialog: Locator) {
+  await Promise.all([page.waitForNavigation(), dialog.getByRole('button', { name: '保存预设并刷新' }).click()]);
+}
+for (const protocol of ['openai','deepseek','gemini','anthropic'] as const) {
+  for (const stream of [false, true]) test('原生交付使用渠道参数并保存正文 ' + protocol + (stream ? ' SSE' : ' JSON'), async ({ page, context }, info) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    const sent = await prepare(page, protocol, stream, false, false, playerAction);
+    await page.evaluate(() => {
+      const config = JSON.parse(localStorage.getItem('heijin.ai.v1')!);
+      config.channels[0].parameters.temperature = 0;
+      localStorage.setItem('heijin.ai.v1', JSON.stringify(config));
+    });
+    const dialog = await runtimeSettings(page);
+    await expect(dialog.getByLabel('防截断破甲模式')).not.toBeChecked();
+    await dialog.getByLabel('防截断破甲模式').check();
+    await applyMode(page, dialog);
+    const frames = page.locator('iframe[data-tavern-script]');
+    await expect(frames).toHaveCount(1);
+    await expect(frames).toHaveAttribute('data-tavern-script', controls.mainScript);
+    expect(sent).toHaveLength(0);
+    await generate(page, 'peinture-smoke', warehouseStory);
+    expect(sent).toHaveLength(1);
+    expect(await copyStoryReport(page)).toMatchObject({storyValidated: true, candidateSaved: true,
+      tavern: {calls: 1, restored: true, complete: true}});
+    const body = JSON.parse(sent[0]);
+    const tools = protocol === 'gemini' ? body.tools[0].functionDeclarations
+      : protocol === 'anthropic' ? body.tools : body.tools.map((t: {function: unknown}) => t.function);
+    const names = tools.map((t: {name: string}) => t.name);
+    expect(names).toEqual(['wave_context_reference', toolName]);
+    const choice = body.toolConfig?.functionCallingConfig.mode ?? body.tool_choice?.type ?? body.tool_choice;
+    expect(choice).toBe(protocol === 'gemini' ? 'AUTO' : 'auto');
+    const schema = tools[1].parameters ?? tools[1].parametersJsonSchema ?? tools[1].input_schema;
+    expect(schema).toMatchObject({type: 'object', properties: {content: {type: 'string'}}, required: ['content']});
+    const outgoing = body.messages ?? body.contents;
+    const last = outgoing.at(-1);
+    expect(last.role).toBe('user');
+    const lastText = last.parts?.[0].text ?? last.content;
+    const control = 'Call the `actual_content` function exactly once';
+    expect(lastText).not.toContain('回应其中最新的真实用户输入');
+    expect(lastText).toContain('PLAYER_ACTION');
+    expect(lastText.indexOf(control)).toBeGreaterThan(lastText.indexOf('PLAYER_ACTION'));
+    expect(JSON.stringify(outgoing).split(control)).toHaveLength(2);
+    expect(JSON.stringify(outgoing)).not.toContain(playerAction);
+    const [facts, current] = readReference(tools[0].description);
+    expect(current).toEqual({ CURRENT_TURN: { source: 'draft.userInput', turnId: 'fixture-turn',
+      draftRevision: 0, turnKind: 'opening' }, PLAYER_ACTION: playerAction });
+    expect(facts.SAVE_STATE.protagonist.name).toBe('林舟');
+    expect(facts.CREATION_PROFILE.protagonist).toEqual(facts.SAVE_STATE.protagonist);
+    expect(facts.MEMORY_CONTEXT.recentTurns).toEqual([]);
+    expect(facts.NPC_CONTEXT.policy).toBeTruthy();
+    expect(tools[0].description).not.toContain('NPC_KNOWLEDGE_POLICY');
+    const messages = JSON.stringify(body.messages ?? body.contents);
+    expect(messages).toContain('NPC_KNOWLEDGE_POLICY');
+    expect(messages).not.toMatch(/WAVE_CONTEXT_BEGIN|<wave_plan>|<wave_writing_tail>/u);
+    const temperature = body.generationConfig?.temperature ?? body.temperature;
+    expect(temperature).toBe(0);
+    const maxOutput = body.generationConfig?.maxOutputTokens ?? body.max_completion_tokens ?? body.max_tokens;
+    expect(maxOutput).toBe(8192);
+    await info.attach('native-delivery-wire', { contentType: 'application/json',
+      body: JSON.stringify({ protocol, stream, names, choice, calls: sent.length, temperature, maxOutput,
+        lastRole: last.role, boundActionMatches: current.PLAYER_ACTION === playerAction,
+        referenceWorldState: Boolean(facts.SAVE_STATE), candidate: 'saved' }) });
+  });
+}
+
+for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
+  for (const stream of [false, true]) test(`普通回合与显式重生成读取本轮资料 ${protocol} ${stream ? 'SSE' : 'JSON'}`, async ({page, context, isMobile}) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    const sent = await prepare(page, protocol, stream, false, false, museumAction, true);
+    const dialog = await runtimeSettings(page);
+    await dialog.getByLabel('防截断破甲模式').check();
+    await applyMode(page, dialog);
+    await generate(page, 'peinture-smoke', 'rejected', '生成本回合正文');
+    expect(sent).toHaveLength(1);
+    if (isMobile) {
+      const failure = page.getByRole('dialog').filter({has: page.getByRole('heading', {name: '重试与变更详情'})});
+      await failure.getByRole('button', {name: '关闭资料界面'}).click();
+    }
+    await generate(page, 'peinture-smoke', museumStory, '生成本回合正文');
+    expect(sent).toHaveLength(2);
+    expect(await copyStoryReport(page)).toMatchObject({storyValidated: true, candidateSaved: true,
+      tavern: {calls: 1, restored: true, complete: true}});
+    for (const [index, wire] of sent.entries()) {
+      const body = JSON.parse(wire);
+      const tools = protocol === 'gemini' ? body.tools[0].functionDeclarations
+        : protocol === 'anthropic' ? body.tools : body.tools.map((t: {function: unknown}) => t.function);
+      const [facts, current] = readReference(tools[0].description);
+      expect(facts.MEMORY_CONTEXT.recentTurns[0].narrative).toBe(playerAction);
+      expect(current.PLAYER_ACTION).toBe(museumAction);
+      expect(current.CURRENT_TURN).toMatchObject({turnId: 'museum-turn', source: 'draft.userInput', turnKind: 'regular'});
+      expect(current.CURRENT_TURN.draftRevision).toBe(index);
+      expect(JSON.stringify(body.messages ?? body.contents)).not.toContain(museumAction);
+    }
+  });
+}
+
+test('原生模式、文学预设和关闭状态在双端保存后互斥', async ({ page }, info) => {
+  const sent = await prepare(page, 'openai', false, false);
+  let dialog = await runtimeSettings(page);
+  const checkbox = () => dialog.getByLabel('防截断破甲模式');
+  await checkbox().check();
+  await applyMode(page, dialog);
+  dialog = await runtimeSettings(page);
+  await expect(checkbox()).toBeChecked();
+  await checkbox().scrollIntoViewIfNeeded();
+  await expect(checkbox()).toBeInViewport();
+  await info.attach('原生开启', { body: await page.screenshot({path: info.outputPath('native-on.png')}), contentType: 'image/png' });
+  await dialog.getByLabel('正文预设').selectOption(pack);
+  await applyMode(page, dialog);
+  dialog = await runtimeSettings(page);
+  await expect(checkbox()).toBeDisabled();
+  await expect(checkbox()).not.toBeChecked();
+  await expect(dialog.getByText('使用文学预设时此模式关闭。关闭预设后可手动开启。')).toBeVisible();
+  await expect(page.locator('iframe[data-tavern-script="' + controls.mainScript + '"]')).toHaveCount(1);
+  await checkbox().scrollIntoViewIfNeeded();
+  await info.attach('文学预设启用', { body: await page.screenshot({path: info.outputPath('literary-on.png')}), contentType: 'image/png' });
+  await dialog.getByLabel('正文预设').selectOption('');
+  await applyMode(page, dialog);
+  await expect(page.locator('iframe[data-tavern-script]')).toHaveCount(0);
+  dialog = await runtimeSettings(page);
+  await expect(checkbox()).toBeEnabled();
+  await expect(checkbox()).not.toBeChecked();
+  expect(sent).toHaveLength(0);
+  await page.goto('/');
+  await generate(page);
+  expect(sent).toHaveLength(1);
+  expect(JSON.parse(sent[0]).tools).toBeUndefined();
+});
+test('另一标签启用文学预设后旧页面显示关闭并提示刷新', async ({ page, context }) => {
+  const sent = await prepare(page, 'openai', false, false);
+  let dialog = await runtimeSettings(page);
+  await dialog.getByLabel('防截断破甲模式').check();
+  await applyMode(page, dialog);
+  dialog = await runtimeSettings(page);
+  const other = await context.newPage();
+  await other.goto('/');
+  const otherSettings = await runtimeSettings(other);
+  await otherSettings.getByLabel('正文预设').selectOption(pack);
+  await applyMode(other, otherSettings);
+  await expect(dialog.getByLabel('防截断破甲模式')).toBeDisabled();
+  await expect(dialog.getByText('正文设置已在另一页面更改，请保存并刷新后生成。')).toBeVisible();
+  await applyMode(page, dialog);
+  await expect(page.locator('iframe[data-tavern-script="' + controls.mainScript + '"]')).toHaveCount(1);
+  expect(sent).toHaveLength(0);
+});
 async function editPreset(page: Page) {
   const settings = await runtimeSettings(page);
   await settings.getByRole('button', { name: '王朝预设设置' }).click();
@@ -449,18 +639,15 @@ test('预设名片显示仍可用脚本的运行时诊断', async ({ page }) => 
   const sent = await prepare(page, 'openai', false, true);
   const panel = await editPreset(page);
   await expect(panel.getByText('脚本运行中', { exact: true })).toBeVisible();
-  await page.evaluate(async () => {
-    const host = '/src/presets/tavern/hostState.ts';
-    const { assistantView } = await import(host);
-    assistantView.add({
-      id: 'synthetic-ready-script', name: '合成脚本', status: '已初始化', buttons: [], phases: {},
-      error: '合成脚本 · 运行时异常：TypeError',
-    });
+  // Exercise the same iframe listener in the built app; dist does not serve source modules.
+  await page.frameLocator('iframe[data-tavern-script="' + controls.mainScript + '"]').locator('body').evaluate(() => {
+    window.setTimeout(() => { throw new TypeError('synthetic-private-error'); }, 0);
   });
   await expect(panel.getByText('脚本运行时异常', { exact: true })).toBeVisible();
   await panel.getByRole('button', { name: '浪潮 · 状态', exact: true }).click();
-  await panel.getByText('合成脚本 · 已初始化', { exact: true }).click();
-  await expect(panel.getByRole('alert')).toHaveText('合成脚本 · 运行时异常：TypeError');
+  await panel.getByText('我即浪潮 · 已初始化', { exact: true }).click();
+  await expect(panel.getByRole('alert')).toHaveText(/我即浪潮.*运行时异常.*TypeError/u);
+  await expect(panel.getByRole('alert')).not.toContainText('synthetic-private-error');
   expect(sent).toHaveLength(0);
 });
 
