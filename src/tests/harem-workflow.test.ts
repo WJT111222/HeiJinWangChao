@@ -1,3 +1,4 @@
+import { textVariableCatalog } from '../executors/variableText/catalog';
 import { IDBFactory } from 'fake-indexeddb';
 import { describe, expect, it } from 'vitest';
 import { GameStateSchema } from '../domain/state';
@@ -177,4 +178,15 @@ describe('后宫经过正式 Variables、World 权限与存储链', () => {
       );
     },
   );
+});
+
+it('家庭目录仅列在 Variables 文本协议里；所有压缩引用可在该值结构内解析', () => {
+  const entry = textVariableCatalog().entries.find((row) => row.path === 'harem.changes');
+  expect(entry?.commandType).toBe('ApplyHaremChanges');
+  const schema = JSON.parse(JSON.stringify(entry!.valueSchema));
+  const refs = [...JSON.stringify(schema).matchAll(/"\$ref":"#\/definitions\/([^"]+)"/g)].map(
+    (match) => match[1],
+  );
+  expect(refs.length).toBeGreaterThan(0);
+  for (const ref of refs) expect(Object.hasOwn(schema.definitions, ref)).toBe(true);
 });

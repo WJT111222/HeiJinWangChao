@@ -71,3 +71,15 @@ for (const build of ['development', 'production'] as const) {
     expect(posts).toEqual([]);
   });
 }
+
+test('旧 V10 空家庭只展示占位，不生成候选或写入家庭字段', async ({ page }) => {
+  const { seedMobileArchives, storedArchives } = await import('./helpers/mobileArchives');
+  await seedMobileArchives(page);
+  const before = await storedArchives(page),
+    panel = await openArchive(page, '后宫');
+  await expect(panel.getByText('暂无正式后宫成员')).toBeVisible();
+  await expect(panel.getByText('暂无正宫')).toBeVisible();
+  await expect(panel.locator('.household-card')).toHaveCount(0);
+  expect(await storedArchives(page)).toEqual(before);
+  expect(before.state).not.toHaveProperty('harem');
+});

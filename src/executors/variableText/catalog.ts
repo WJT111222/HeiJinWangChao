@@ -1,3 +1,4 @@
+import { describeTimeFormats } from '../../services/validation/catalogCompaction';
 import { HaremChangesSchema } from '../../domain/harem/schema';
 import { PromotionProfileSchema } from '../../domain/npc/schema';
 import { z } from 'zod';
@@ -71,6 +72,11 @@ const entries:Entry[] = [
   {operation:'set',path:'protagonist.currentWear',commandType:'SetEquipment',value:EquipmentSchema},
   {operation:'set',path:'economy.vehicles[id].purchase',commandType:'PurchaseVehicle',value:z.strictObject({account:AccountSchema,price:positive,vehicle:VehicleAssetSchema.omit({id:true})})},
 ];
+// The nine operations share IDs, timestamps and reasons. Keep the wire schema
+// resolvable while sending these definitions only once per catalog.
+const haremValueSchema = describeTimeFormats(z.toJSONSchema(HaremChangesSchema, {
+  target: 'draft-7', unrepresentable: 'any', reused: 'ref',
+}));
 /** 正式及离线文本组装共用的值结构目录；不执行、审批或写入状态。 */
 export function textVariableCatalog(mode: 'opening' | 'regular' = 'regular') {
   const sceneEntries = mode === 'regular' ? SceneDescriptionField.options.map((path): Entry => ({
@@ -79,7 +85,7 @@ export function textVariableCatalog(mode: 'opening' | 'regular' = 'regular') {
   return { protocol:'VARIABLE_TEXT_V1', currencyUnit:'CNY_FEN_INTEGER', limits:variableTextLimits,
     organizationUpdateFields: organizationChangeFields,
     itemDetailsGuide: { categoryGroups: itemCategoryGroup, suggestedStringFields: itemDetailFields },
-    entries:[...entries, ...sceneEntries].map(({value,...entry})=>({...entry,...(entry.operation==='delete'?{valueRequired:false}:{}),valueSchema:{...z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'}),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
+    entries:[...entries, ...sceneEntries].map(({value,...entry})=>({...entry,...(entry.operation==='delete'?{valueRequired:false}:{}),valueSchema:{...(value === HaremChangesSchema ? haremValueSchema : z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'})),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
     usageExamples: {
       addressing: 'set npc[example-npc].addressing = {"npcToPlayer":"老大"}；根据本回合剧情更新适用方向。playerToNpc 是主角称呼该人物，npcToPlayer 是该人物称呼主角。省略的方向保持原值。',
       affinityChange: 'set npc[example-npc].affinityChange = {"to":35,"reason":"共同核对材料后彼此更信任","relationshipText":"愿意继续协作"}',

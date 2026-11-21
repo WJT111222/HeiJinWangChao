@@ -90,7 +90,7 @@ test('顶部状态不挤压正文；完整人物资料独立滚动并恢复焦�
   await fit(page); expect(await stored(page)).toEqual(before);
 });
 
-test('滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回', async ({ page }, info) => {
+test('滚轮在资料弹窗内滚动，不带动正文；世界资料入口可返回', async ({ page }, info) => {
   await seed(page);
   await page.setViewportSize({ width: info.project.name === 'desktop' ? 1100 : 392, height: 480 });
   const reader = page.getByTestId('story-reader');
