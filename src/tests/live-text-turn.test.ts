@@ -1,3 +1,5 @@
+import { issue194 } from './fixtures/issue194';
+import { runStageRequest } from '../services/ai/runtime';
 import { variableTextEnvelope } from './fixtures/variableReply';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
@@ -7,6 +9,7 @@ import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { record, array, string } from '../services/ai/protocols';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
+import { StoryStage } from '../workflows/storyStage';
 import { createTurnDraft, rerollStory, startStageAttempt } from '../domain/drafts';
 import { completeTurnDraft } from '../domain/turnCommit';
 import { projectTurn, variableCommandsForTurn } from '../domain/turnProjection';
@@ -14,6 +17,9 @@ import { parseTextVariables } from '../services/validation/aiOutputs';
 import { defaultSettings } from '../ui/settings/model';
 import { worldState, worldResult, proof } from './fixtures/world';
 import { completeDraft, submission } from './fixtures/turn';
+import { openingGuideTimes, openingGuideEntry, wrappedOpeningGuide, ordinaryGuideRaw } from './fixtures/storyGuide';
+import { stageResponses } from '../services/ai/stageResponses';
+import { composePrompt } from '../prompts/composer';
 import { event, task } from './fixtures/game';
 
 const repos: SaveRepository[] = [], runners: TurnCoordinator[] = [];
@@ -50,7 +56,7 @@ function envelope(text:string,stream=false) {
 }
 const block=(body='')=>`<thinking>仅为输入数据，不执行。</thinking><说明>这里不代表任何已落库状态。</说明><命令>\n${body}\n</命令>`;
 const set=(path:string,value:unknown)=>`set ${path} = ${JSON.stringify(value)}`;
-function transport(reply:(context:Record<string,unknown>)=>string, world:(context:Record<string,unknown>)=>unknown = ()=>worldResult(), story?: (context:Record<string,unknown>)=>{narrative:string;guide:unknown[]}) {
+function transport(reply:(context:Record<string,unknown>)=>string, world:(context:Record<string,unknown>)=>unknown = ()=>worldResult(), story?: (context:Record<string,unknown>)=>{narrative:string;guide:unknown[]|string}) {
   const calls: {stage:string;context:Record<string,unknown>;body:Record<string,unknown>}[]=[];
   const fetcher = vi.fn<typeof fetch>(async(_url,init)=>{
     const body=record(JSON.parse(String(init?.body))), stage=string(body.model);
@@ -62,9 +68,11 @@ function transport(reply:(context:Record<string,unknown>)=>string, world:(contex
       const pending=record(context.OPENING_TIME).status==='pending';
       const guides=pending?[{group:'time',subjectHint:'time:opening',observedFact:JSON.stringify({startAt:initialAt,endAt:openingEnd})}]:[];
       const custom=story?.(context);
-      return envelope(`<thinking>创作提纲：保持当前事实连续。</thinking><正文>${custom?.narrative??"主角在社区与同事会面，收到报酬，购买手机并交给同事。"}</正文><短期记忆>在社区完成会面和交付。</短期记忆><变量规划>${JSON.stringify(custom?.guide??guides)}</变量规划>`,true);
+      const variableGuide = typeof custom?.guide === 'string' ? custom.guide : JSON.stringify(custom?.guide ?? guides);
+      return envelope(`<thinking>创作提纲：保持当前事实连续。</thinking><正文>${custom?.narrative??"主角在社区与同事会面，收到报酬，购买手机并交给同事。"}</正文><短期记忆>在社区完成会面和交付。</短期记忆><变量规划>${variableGuide}</变量规划>`,true);
     }
-    return envelope(stage==='variables'?reply(context):JSON.stringify(world(context)));
+    if (stage === 'variables') return envelope(reply(context));
+    return envelope(JSON.stringify(world(context)));
   });
   return {fetcher,calls};
 }
@@ -75,7 +83,7 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
     const a=await fixture(mode), before=await a.repo.load('save-a');
     const end=mode==='opening'?openingEnd:'2026-10-18T08:10:00+08:00';
     const t=transport(()=>block([
-      ...(mode==='regular'?[set('worldClock',end)]:[]),
+      set('worldClock',end),
       set('locations[clinic]',{name:'社区诊所',parentId:'chongqing'}),set('protagonist.locationId','clinic'),
       set('npc[new-person]',{identityKey:'community-worker',kind:'ordinary',name:'周宁',aliases:[],skills:[],locationId:'clinic',onScene:true,affinity:0,relationshipText:'初次会面',memories:[],knownInformation:[]}),
       set('npc[new-person].affinityChange',{to:5,reason:'完成协作',relationshipText:'愿意协作'}),
@@ -94,14 +102,14 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
       affinityChange:{from:0,to:5,reason:'完成协作'},changes:{relationshipText:'愿意协作'},
     });
     expect(vars.filter(c=>c.type==='SetWorldClock')).toHaveLength(1);
-    if(mode==='opening')expect(vars[0].commandId).toBe('opening-clock:1');
+    if(mode==='opening')expect(vars[0].commandId).toBe('text-v1:s1:c1');
     expect(new Set(vars.map(c=>c.commandId)).size).toBe(vars.length);
     const wc=t.calls[2].context;
     expect(wc.worldClock).toBe(end);expect(wc.BASE_SAVE_REVISION).toBe(before.revision);
     expect(record(wc.PROTECTED_SCENE).sceneNpcIds).toContain('new-person');
     expect(JSON.stringify(wc.VARIABLE_RESULT)).toContain('RecordNpcMemory');
     expect(record(record(wc.OFFSCREEN_STATE).organizations).shop).toMatchObject({name:'社区商行'});
-    expect(t.calls[1].body).not.toHaveProperty('response_format');expect(t.calls[2].body).toHaveProperty('response_format',{type:'json_object'});
+    expect(t.calls[1].body).not.toHaveProperty('response_format');expect(t.calls[2].body).not.toHaveProperty('response_format');
     expect(await a.repo.load('save-a')).toEqual(before);
     const projection=projectTurn(before,completed.draft);
     expect(projection.economy.cash).toBe(9000);expect(projection.protagonist.locationId).toBe('clinic');
@@ -148,12 +156,15 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
     const a=await fixture('regular'),before=await a.repo.load('save-a');
     const {id:_id,...value}=task('background');void _id;
     const t=transport(()=>block(set('tasks[background]',{...value,actorRef:{kind:'npc',id:'npc-a'},status:'active'})));
-    await expect(coordinator(a.repo,t.fetcher).generate(a)).rejects.toMatchObject({code:'data_integrity'});
-    expect(t.calls.map(c=>c.stage)).toEqual(['story','variables']);
+    const done=await coordinator(a.repo,t.fetcher).generate(a);
+    expect(t.calls.map(c=>c.stage)).toEqual(['story','variables','world']);
+    expect(done.draft.variables?.result.settlement?.skipped).toMatchObject([{commandIndex:0,category:'task'}]);
     expect(await a.repo.load('save-a')).toEqual(before);
+    const saved=await a.repo.commitTurn(submission(done.draft));
+    expect(saved.state.tasks.background).toBeUndefined();
   });
-  it.each(['',set('worldClock',openingEnd),set('items[note]',{name:'便条',category:'document',quantity:1,conditionText:'完好',ownerRef:{kind:'protagonist',id:'hero'}})])('开局空块/等值时钟/物品在刷新后只应用一次时钟：%s',async(body)=>{
-    const a=await fixture(),before=await a.repo.load('save-a'),t=transport(()=>block(body));
+  it.each(['',set('items[note]',{name:'便条',category:'document',quantity:1,conditionText:'完好',ownerRef:{kind:'protagonist',id:'hero'}})])('开局只设时钟或另外提供物品，在刷新后只应用一次时钟：%s',async(body)=>{
+    const a=await fixture(),before=await a.repo.load('save-a'),t=transport(()=>block([set('worldClock',openingEnd),body].join('\n')));
     const completed=await coordinator(a.repo,t.fetcher).generate(a);
     const reloaded=await a.repo.loadDraft('save-a');expect(reloaded).toEqual(completed.draft);
     if(!reloaded)throw new Error('missing persisted draft');
@@ -161,10 +172,10 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
     expect((await coordinator(a.repo,t.fetcher).generate({...a,draft:reloaded})).status).toBe('complete');
     expect(t.calls).toHaveLength(3);
     const saved=await a.repo.commitTurn(submission(reloaded));await a.repo.commitTurn(submission(reloaded));
-    expect(saved.state.appliedCommands.filter(c=>c.commandId.startsWith('opening-clock:'))).toHaveLength(1);
+    expect(saved.state.appliedCommands.filter(c=>JSON.parse(c.fingerprint).type === 'SetWorldClock')).toHaveLength(1);
     expect((await a.repo.load('save-a')).worldClock).toBe(openingEnd);
   });
-  it.each(['{"commands":[],"rejectedSuggestions":[],"unresolved":[]}',block('set missing.field = 1'),block('add economy.cash = -999999')])('非法新响应不回退、不请求World、不污染存档：%s',async(text)=>{
+  it.each(['{"commands":[],"rejectedSuggestions":[],"unresolved":[]}','<命令>set missing.field = 1',block('set protagonist.skills = [')])('非法新响应不回退、不请求World、不污染存档：%s',async(text)=>{
     const a=await fixture(),before=await a.repo.load('save-a'),t=transport(()=>text);
     await expect(coordinator(a.repo,t.fetcher).generate(a)).rejects.toThrow();
     expect(t.calls.map(c=>c.stage)).toEqual(['story','variables']);expect(await a.repo.load('save-a')).toEqual(before);
@@ -181,7 +192,7 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
     const result=await a.repo.commitTurn(submission(out.draft));expect(result.state.turnNumber).toBe(2);
   });
   it('数据库写入异常整体回滚，不重复扣款或保存半份记忆',async()=>{
-    const a=await fixture(),t=transport(()=>block('add economy.cash = -3000'));
+    const a=await fixture(),t=transport(()=>block([set('worldClock',openingEnd),'add economy.cash = -3000'].join('\n')));
     const done=await coordinator(a.repo,t.fetcher).generate(a),before=await a.repo.loadGame('save-a');
     const put=IDBObjectStore.prototype.put;
     const spy=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementation(function(this:IDBObjectStore,...args:Parameters<IDBObjectStore['put']>){if(this.name==='saves')throw new Error('mock database failure');return put.apply(this,args);});
@@ -193,7 +204,7 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
     const a=await fixture();let draft=a.draft,lastClock=initialAt,total=0;
     for(let n=1;n<=10;n++){
       const nextClock=n===1?openingEnd:new Date(Date.parse(lastClock)+30000).toISOString();
-      const t=transport(()=>block(n===1?'':set('worldClock',nextClock)));
+      const t=transport(()=>block(set('worldClock',nextClock)));
       const out=await coordinator(a.repo,t.fetcher).generate({...a,draft});total+=t.calls.length;
       const saved=await a.repo.commitTurn(submission(out.draft,`第${n+1}幕`));await a.repo.commitTurn(submission(out.draft,`第${n+1}幕`));
       expect(Date.parse(saved.state.worldClock)).toBe(Date.parse(nextClock));expect(saved.state.turnNumber).toBe(n);expect(saved.state.journal).toHaveLength(n);
@@ -230,7 +241,7 @@ describe('事件生命周期贯通真实Runtime、协调器和存档事务',()=>
     return {...a,incident};
   }
   function dueTransport(a:Awaited<ReturnType<typeof dueFixture>>,badVariables=false) {
-    return transport(()=>block(badVariables?'add economy.cash = -999999':set('worldClock','2026-10-18T08:10:00+08:00')),(ctx)=>{
+    return transport(()=>block(badVariables?'set protagonist.skills = [':set('worldClock','2026-10-18T08:10:00+08:00')),(ctx)=>{
       expect(record(ctx.EVENT_SCHEDULE).due).toEqual([expect.objectContaining({eventId:'due-event'})]);
       const id=string(record(ctx.TURN_CONTEXT).turnId),result='同事完成清点并封存清单。';
       return {...worldResult(),eventCommands:[
@@ -347,11 +358,11 @@ it('真实Runtime允许入场延后到下一幕，未处理回执在提交和重
 
 // 本轮只依据已确认的错误形态构造中性 Mock，不冒充尚未取得的实机原文/存档。
 it.each(['knowledge-shape', 'timeline-object', 'organization-history', 'interaction-time'] as const)(
-  '协议可靠性 %s：真实请求失败保留Story，明确重试后Variables→World→Commit→重载', async failure => {
+  '协议可靠性 %s：局部错误独立跳过，外层错误允许仅重试World', async failure => {
     const a = await fixture('opening'), before = await a.repo.load('save-a');
     let corrected = false;
     const t = transport(() => block([
-      set('protagonist.emotionText', '从容'),
+      set('worldClock', openingEnd), set('protagonist.emotionText', '从容'),
       ...(failure === 'interaction-time' ? [set('npc[scene].lastInteractionAt', corrected ? openingEnd : '2015-07-09T08:05:00+08:00')] : []),
       `push npc[scene].knownInformation = ${JSON.stringify(!corrected && failure === 'knowledge-shape'
         ? { text: '收到值班安排', source: '同事通知', learnedAt: openingEnd }
@@ -371,27 +382,37 @@ it.each(['knowledge-shape', 'timeline-object', 'organization-history', 'interact
       ...(!corrected && failure === 'timeline-object' ? { timelineCandidates: [{eventId:'routine-finished'}] } : {}),
     }));
     const runner = coordinator(a.repo, t.fetcher);
-    await expect(runner.generate(a)).rejects.toMatchObject({ code: failure === 'organization-history' ? 'permission' : failure === 'interaction-time' ? 'time_data' : 'schema_fields' });
-    const failed = await a.repo.loadDraft('save-a');
-    expect(failed?.story).toBeTruthy(); expect(failed?.world).toBeUndefined();
-    const variableFailure = failure === 'knowledge-shape' || failure === 'interaction-time';
-    expect(Boolean(failed?.variables)).toBe(!variableFailure);
-    expect(t.calls.map(call => call.stage)).toEqual(variableFailure ? ['story', 'variables'] : ['story', 'variables', 'world']);
+    if (failure === 'timeline-object') {
+      await expect(runner.generate(a)).rejects.toMatchObject({ code: 'schema_fields' });
+      const failed = (await a.repo.loadDraft('save-a'))!;
+      expect(failed.story).toBeTruthy(); expect(failed.world).toBeUndefined();
+      expect(t.calls.map(call => call.stage)).toEqual(['story','variables','world']);
+      expect(await a.repo.load('save-a')).toEqual(before);
+      corrected = true;
+      const recovered = await runner.generate({ ...a, draft: failed });
+      const committed = await a.repo.commitTurn(submission(recovered.draft, '继续工作'));
+      expect(committed.state.events['routine-finished']).toBeDefined();
+      expect(t.calls.map(call => call.stage)).toEqual(['story','variables','world','world']);
+      return;
+    }
+    const outcome = await runner.generate(a);
+    expect(outcome.status).toBe('complete');
+    const report = failure === 'organization-history' ? outcome.draft.world?.result.settlement : outcome.draft.variables?.result.settlement;
+    expect(report?.skipped).toHaveLength(failure === 'organization-history' ? 2 : 1);
+    expect(t.calls.map(call => call.stage)).toEqual(['story','variables','world']);
     expect(await a.repo.load('save-a')).toEqual(before);
-    corrected = true;
-    const outcome = await runner.generate({ ...a, draft: failed! });
-    expect(outcome.status).toBe('complete'); expect(outcome.draft.story).toEqual(failed!.story);
-    expect(t.calls.map(call => call.stage)).toEqual(variableFailure ? ['story', 'variables', 'variables', 'world'] : ['story', 'variables', 'world', 'world']);
+    const partial = await a.repo.commitTurn(submission(outcome.draft, '继续工作'));
+    expect(partial.state.protagonist.emotionText).toBe('从容');
+    if (failure === 'knowledge-shape') expect(partial.state.npc.scene.knownInformation).toEqual([]);
+    if (failure === 'interaction-time') expect(partial.state.npc.scene.lastInteractionAt).toBe(before.npc.scene.lastInteractionAt);
+    if (failure === 'organization-history') {
+      expect(partial.state.organizations['org-community']).toBeUndefined();
+      expect(partial.state.events['routine-finished']).toBeUndefined();
+    }
+    expect(await a.repo.load('save-a')).toEqual(partial.state);
     const request = t.calls.find(call => call.stage === 'world')!.context;
     expect(record(record(request.COMMAND_CATALOG).outputFields).timelineCandidates).toBeUndefined();
-    const receipt = await a.repo.commitTurn(submission(outcome.draft, '继续工作'));
-    expect(receipt.state.npc.scene.knownInformation).toEqual([{ text: '[转述]收到值班安排', source: '同事通知', learnedAt: openingEnd }]);
-    expect(receipt.state.npc['npc-a'].memories).toEqual(before.npc['npc-a'].memories);
-    expect(receipt.state.organizations['org-community'].relationHistory).toEqual([]);
-    expect(receipt.state.events['routine-finished'].status).toBe('resolved'); expect(receipt.state.timeline).toEqual([]);
-    expect(receipt.state.worldClock).toBe(openingEnd); expect(receipt.state.journal).toHaveLength(1);
-    expect((await a.repo.commitTurn(submission(outcome.draft, '继续工作'))).replayed).toBe(true);
-    expect(await a.repo.load('save-a')).toEqual(receipt.state); expect(t.calls).toHaveLength(4);
+    expect(partial.state.journal.at(-1)?.settlement).toBeDefined();
   },
 );
 
@@ -399,6 +420,7 @@ it.each(['opening', 'regular'] as const)('背包V2 %s：真实请求创建/更�
   const a = await fixture(mode), before = await a.repo.load('save-a');
   const owner = { kind: 'protagonist', id: 'hero' };
   const t = transport(() => block([
+    ...(mode === 'opening' ? [set('worldClock', openingEnd)] : []),
     set('items[coat].purchase', { account: 'cash', price: 2500, item: { name: '防寒外套', category: 'top', quantity: 1, ownerRef: owner,
       description: '黑色加厚外套', referenceValue: 18000, conditionText: '袖口略旧', itemDetails: { material: '棉布', size: 'L' } } }),
     set('items[coat].referenceValue', 16000), set('items[coat].questItem', true),
@@ -433,7 +455,7 @@ it.each(['opening', 'regular'] as const)('背包V2 %s：真实请求创建/更�
 
 it.each(['opening','regular'] as const)('新历史协议%s：真实三阶段生成独立历史、并行任务、参与者变化，原子保存后继续',async mode=>{
  const a=await fixture(mode),before=await a.repo.load('save-a');
- const t=transport(()=>block([set('locations[new-office]',{name:'办公室'}),set('protagonist.locationId','new-office')].join('\n')),ctx=>{
+ const t=transport(()=>block([...(mode === 'opening' ? [set('worldClock', openingEnd)] : []),set('locations[new-office]',{name:'办公室'}),set('protagonist.locationId','new-office')].join('\n')),ctx=>{
   const clock=mode==='opening'?openingEnd:before.worldClock;
   return {...worldResult(),worldCommands:[{type:'RecordHistory',commandId:'past',evidence:'人物透露大学经历',entry:{id:'past',title:'大学时期的合作',summary:'同事声称当时发生合作分歧',occurredTimeText:'大学时期',knowledgeKind:'reported',sourceRef:{kind:'npc',id:'npc-a'}}}],
     taskCommands:['planned','active','blocked'].map((status,i)=>({type:'SaveTask',commandId:'parallel-'+i,evidence:'独立职责',task:{...task('parallel-'+i),goal:'职责'+i,actorRef:{kind:'npc',id:'npc-a'},startAt:clock,dueAt:undefined,completionCondition:'相应事项处理完毕',status}})),
@@ -448,4 +470,131 @@ it.each(['opening','regular'] as const)('新历史协议%s：真实三阶段生�
  expect((await a.repo.commitTurn(input)).replayed).toBe(true);expect(await a.repo.load('save-a')).toEqual(saved.state);expect(t.calls).toHaveLength(3);
  const later=transport(()=>block(),ctx=>{expect(record(ctx.OFFSCREEN_STATE).history).toEqual(saved.state.timeline);return worldResult();});
  const next=await coordinator(a.repo,later.fetcher).generate({...a,draft:saved.draft});const committed=await a.repo.commitTurn(submission(next.draft,''));expect(committed.state.turnNumber).toBe(saved.state.turnNumber+1);expect(committed.state.timeline).toEqual(saved.state.timeline);expect(later.calls).toHaveLength(3);
+});
+
+it('真实错误引号与普通坏项经正式三阶段进入开局，原文只提供给本轮 Variables', async () => {
+  stageResponses.clear();
+  const a = await fixture(), before = await a.repo.load('save-a');
+  const raw = '[' + wrappedOpeningGuide() + ',' + ordinaryGuideRaw + ']';
+  const t = transport(() => block([set('worldClock', openingGuideTimes.startAt), set('worldClock', openingGuideTimes.endAt), set('protagonist.emotionText', '踏实')].join('\n')), () => worldResult(), () => ({
+    narrative: '主角整理资料，把当天的安排记在纸上，心里踏实了一些。', guide: raw,
+  }));
+  const completed = await coordinator(a.repo, t.fetcher).generate(a);
+  expect(completed.status).toBe('complete');
+  expect(t.calls.map(call => call.stage)).toEqual(['story', 'variables', 'world']);
+  expect(t.calls[1].context.VARIABLE_GUIDE).toEqual([openingGuideEntry(JSON.stringify(openingGuideTimes))]);
+  expect(t.calls[1].context.VARIABLE_GUIDE_REFERENCES).toEqual([{ group: 'npc', text: ordinaryGuideRaw }]);
+  expect(record(t.calls[1].context.STORY_RESULT)).not.toHaveProperty('variableGuideReferences');
+  expect(JSON.stringify(t.calls[2].context)).not.toContain('值班员整理了资料');
+  expect(t.calls[2].context.TIME_WINDOW).toEqual({ from: openingGuideTimes.startAt, to: openingGuideTimes.endAt });
+  expect(completed.draft.variables?.result.commands.filter(command => command.type === 'SetWorldClock')).toEqual([
+    expect.objectContaining({ worldClock: openingGuideTimes.startAt }), expect.objectContaining({ worldClock: openingGuideTimes.endAt }),
+  ]);
+  expect(stageResponses.getSnapshot().find(entry => entry.stage === 'story')?.notes).toEqual([
+    '变量规划：已恢复开局时间对象外多余的引号。', '变量规划：普通条目原文已保留为 Variables 参考。',
+  ]);
+  expect(await a.repo.load('save-a')).toEqual(before);
+  expect((await a.repo.loadDraft('save-a'))?.story).toEqual(completed.draft.story);
+  const rejected = transport(() => block(), () => worldResult(), () => ({
+    narrative: '主角继续核对资料。',
+    guide: '[' + wrappedOpeningGuide() + ',' + ordinaryGuideRaw.replace('值班员整理了资料', 'test-live-secret') + ']',
+  }));
+  const manual = new StoryStage(a.repo, new AiClient(rejected.fetcher));
+  try {
+    await expect(manual.generate({ ...a, draft: completed.draft })).rejects.toMatchObject({
+      code: 'invalid_output', details: { storyRule: 'credential_output' },
+    });
+  } finally { manual.dispose(); }
+  expect(rejected.calls.map(call => call.stage)).toEqual(['story']);
+  expect(await a.repo.loadDraft('save-a')).toEqual(completed.draft);
+  expect(await a.repo.load('save-a')).toEqual(before);
+  expect(JSON.stringify(stageResponses.getSnapshot())).not.toContain('test-live-secret');
+  const saved = await a.repo.commitTurn(submission(completed.draft, '继续核对'));
+  const reloaded = await a.repo.load('save-a');
+  expect(reloaded).toEqual(saved.state);
+  expect(reloaded).toMatchObject({ worldClock: openingGuideTimes.endAt, protagonist: { emotionText: '踏实' } });
+  expect(reloaded.journal[0].story.variableGuideReferences).toEqual([{ group: 'npc', text: ordinaryGuideRaw }]);
+  expect((await a.repo.commitTurn(submission(completed.draft, '继续核对'))).replayed).toBe(true);
+  const next = await composePrompt({ stage: 'story', mode: 'regular', state: reloaded, draft: saved.draft,
+    userInput: saved.draft.userInput, settings: a.settings });
+  expect(JSON.stringify(next.context)).not.toContain('值班员整理了资料');
+  expect(t.calls).toHaveLength(3);
+});
+
+it('错误的开局建议不影响变量独立定钟，三个阶段各请求一次', async () => {
+  const a = await fixture(), before = await a.repo.load('save-a');
+  const t = transport(() => block(set('worldClock', openingEnd)), () => worldResult(), () => ({
+    narrative: '主角核对资料，准备开始一天的工作。',
+    guide: '[' + ordinaryGuideRaw + ',' + wrappedOpeningGuide({ ...openingGuideTimes, endAt: '2026-10-15T16:05:00+08:00' }) + ']',
+  }));
+  const finished = await coordinator(a.repo, t.fetcher).generate(a);
+  expect(finished.draft.story?.variableGuideRaw).toContain(ordinaryGuideRaw);
+  expect(finished.draft.stageStatus).toMatchObject({ story: 'ready', variables: 'ready', world: 'ready' });
+  expect(t.calls[2].context.TIME_WINDOW).toEqual({ from: openingEnd, to: openingEnd });
+  expect(await a.repo.load('save-a')).toEqual(before);
+  expect(t.calls.map(call => call.stage)).toEqual(['story','variables','world']);
+});
+
+it('旧通知恢复保留其他事件裁定，当轮坏项原文只进入 Variables 请求', async () => {
+  const { state, draft, source } = issue194();
+  const selected = draft.story!;
+  const decision = { group: 'event' as const, observedFact: '主角开始核对资料。',
+    eventNarration: { eventId: 'main-stage', mode: 'enter' as const, at: state.worldClock } };
+  selected.variableGuide.push(decision);
+  const references = [{ group: 'npc' as const, text: ordinaryGuideRaw }];
+  selected.variableGuideReferences = references;
+  draft.stageStatus.world = 'failed';
+  draft.failures.push({ stage: 'world', attempt: 1, storyRevision: draft.storyRevision, errorCode: 'invalid_output', retryable: false });
+  const repo = await SaveRepository.open('reference-isolation', new IDBFactory());
+  repos.push(repo);
+  const backup = { state, draft };
+  await repo.importBackup(backup, (await repo.compareBackup(backup)).confirmation);
+  const current = await repo.loadGame(state.saveId);
+  const route = settingsAndRoute();
+  const receipt = { group: 'event', observedFact: '主角听完汇报。', textEvidence: '主角听完汇报。',
+    eventInteraction: { eventId: source.id, entryId: source.protagonistEntry.id, action: 'acknowledged' } };
+  const t = transport(() => block(set('worldClock', source.fixedEndAt)), undefined, () => ({
+    narrative: selected.narrative + receipt.textEvidence, guide: [decision, receipt],
+  }));
+  const client = new AiClient(t.fetcher);
+  await runStageRequest({ state: current.state, draft: current.draft!, settings: route.settings, stage: 'variables', mode: 'regular', userInput: draft.userInput },
+    route.config, route.vault, {}, client);
+  expect(t.calls[0].context.VARIABLE_GUIDE_REFERENCES).toEqual(references);
+  const stage = new StoryStage(repo, client);
+  try {
+    const saved = await stage.generate({ ...route, draft: current.draft!,
+      legacyNotificationSelection: { eventId: source.id, entryId: source.protagonistEntry.id, notificationOnly: true, finishReading: true } });
+    expect(saved.story?.variableGuide).toEqual([decision, receipt]);
+    expect(saved.storyRevision).toBe(draft.storyRevision + 1);
+    expect(await repo.load(state.saveId)).toEqual(current.state);
+    expect(t.calls.map(call => call.stage)).toEqual(['variables', 'story']);
+    const recovery = record(t.calls[1].context.LEGACY_NOTIFICATION_RECOVERY);
+    expect(recovery.previousStory).toEqual({ turnKind: selected.turnKind, narrative: selected.narrative,
+      summary: selected.summary, variableGuide: [decision] });
+    const outbound = array(t.calls[1].body.messages).map(message => string(record(message).content)).join('\n');
+    expect(outbound).not.toContain('variableGuideReferences');
+    expect(outbound).not.toContain('值班员整理了资料');
+  } finally { stage.dispose(); }
+});
+
+it('开局未提供正式时钟时保留正文，重读草稿后只重试下游并原子结算', async () => {
+  const a = await fixture(), original = await a.repo.load('save-a');
+  let clockConfirmed = false;
+  const t = transport(() => block(clockConfirmed ? set('worldClock', openingEnd) : ''), undefined,
+    () => ({ narrative: '主角站在门口核对行程。', guide: '时间另核。' }));
+  const runner = coordinator(a.repo, t.fetcher);
+  await expect(runner.generate(a)).rejects.toThrow();
+  const saved = (await a.repo.loadGame('save-a')).draft!;
+  expect(await a.repo.load('save-a')).toEqual(original);
+  expect(saved.story).toMatchObject({ narrative: '主角站在门口核对行程。', variableGuideRaw: '时间另核。' });
+  expect(saved.variables).toBeUndefined();
+  expect(saved.world).toBeUndefined();
+  expect(t.calls.map(c => c.stage)).toEqual(['story', 'variables']);
+  clockConfirmed = true;
+  const recovered = await runner.generate({ ...a, draft: saved });
+  expect(recovered.draft.story).toEqual(saved.story);
+  const committed = await a.repo.commitTurn(submission(recovered.draft));
+  expect(committed.state.worldClock).toBe(openingEnd);
+  expect(committed.state.journal).toHaveLength(1);
+  expect(t.calls.map(c => c.stage)).toEqual(['story', 'variables', 'variables', 'world']);
 });

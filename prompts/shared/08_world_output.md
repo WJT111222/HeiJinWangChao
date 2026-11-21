@@ -1,4 +1,10 @@
-输出严格JSON：{worldCommands,taskCommands,eventCommands,visibleHooks,unresolved}。各数组始终提供；先检查 EVENT_SCHEDULE 的必需到期事项，无需处理时才可全部为空；不输出自由脚本或整个GameState补丁。
+同一次响应依次输出且闭合三个顶层区块。规划摘要简短交代任务、到期事件和推进方向，只展示结论。说明写拟处理的变化及保留或无法处理的事项。命令块包含一个严格 JSON 对象，五个数组全部提供。只有命令块可执行；说明不证明已经保存。完整的无变化示例：
+<thinking>已核对事件排程、现有任务和组织活动，当前窗口内没有需要更新的事项。</thinking>
+<说明>场外现有安排保持原状。</说明>
+<命令>
+{"worldCommands":[],"taskCommands":[],"eventCommands":[],"visibleHooks":[],"unresolved":[]}
+</命令>
+发现有必要更新时使用下面的结构化命令。程序检查可定位的无效操作及依赖范围，允许无关合法更新继续。结案与必要承接、任务与直接关联事件作为整体检查。不得自填程序的跳过或暂缓元数据。
 
 ## 结构化命令与职责
 每条命令使用COMMAND_CATALOG中type专属同级字段：{commandId,type,evidence,...}。evidence是非执行说明，可自然概括，不是JSON凭据、逐字引用或审批请求。不要输出额外证据协议、正文锚点、decision或来源许可。
@@ -24,13 +30,13 @@ visibleHooks是内部候选，revealAfter不等于公开授权，不自动注入
 
 ## 事件生命周期
 新事件使用稳定ID，包含startAt、backgroundText、goalText、actorRefs、状态和所需引用。新V2事件声明eventKind=main/sub；main提供estimatedEndAt；sub提供parentEventId和fixedEndAt，禁止同时填写estimatedEndAt。无eventKind的旧V6事件仍按原estimatedEndAt契约，不自动转型。completionCondition不能替代时间。旧缺规划事件可以终结且不补造过去日期；继续调度时补齐真实规划。
-读取EVENT_SCHEDULE：main的estimatedEndAt仅供参考，超过估期不强制结案、延期或改写估期。sub未到fixedEndAt不例行改写；到期及积压阶段必须在同一次World请求结案，resolvedAt使用原fixedEndAt，不一律写窗口末尾。sub不得修改fixedEndAt延期；需要继续则新建ID和新固定范围，用predecessorEventIds引用已结案阶段。不同势力可并行、重叠，结局由AI决定，不强迫有后继。长跳跃可以同批新建并完成多轮连续阶段，每个ID只输出一个最终对象。仅无eventKind的旧事件可按原预计时间语义结案或合理延期，旧pending/presented规则不变。
+读取EVENT_SCHEDULE：main的estimatedEndAt仅供参考，超过估期不强制结案、延期或改写估期。sub未到fixedEndAt不例行改写；到期及积压阶段必须在同一次World请求结案，resolvedAt使用原fixedEndAt，不一律写窗口末尾。sub不得修改fixedEndAt延期；需要继续则新建ID和新固定范围，用predecessorEventIds引用已结案阶段。不同势力可并行、重叠，业务结局由AI决定；待处理的入场单独按下文核对。长跳跃可以同批新建并完成多轮连续阶段，每个ID只输出一个最终对象。仅无eventKind的旧事件可按原预计时间语义结案或合理延期，旧pending/presented规则不变。
 scheduled/active/blocked不得预存resolvedAt、resolutionText、resultKnowledge。resolved必须记录实际resolvedAt和非空resolutionText，outcome可success/failure/changed。cancelled可在未来安排开始前发生，不强制填写resolved字段。
 任务—事件允许单侧关联：task.linkedEventId或event.linkedTaskIds填写一侧即可，程序补齐反向ID；两侧都填须一致，同一任务只能关联一个事件。被引用对象须已存在或本批创建；不能借补齐改写既有终态记录，不推断未提供的关系。已有地点、人物、组织、任务和事件复用稳定ID，不重复创建。
 同一批每个任务或事件只保存一个最终对象。predecessorEventIds引用已结束且实际结案时间不晚于新事件开始的前序，依赖不得成环。计划事件只输出SaveEvent，程序从正式事件状态派生未来调度，不要求重复镜像。事件当前actorRefs可新增或移除有效参与者，保留稳定ID和startAt；参与身份不等于行动授权。
 
 ## 承接与清理
-continuation选择protagonist/world/end并说明reason。protagonist提供最小entry={channel,cue,locationId?}，不暴露不必要的后台秘密；旧事件到期由程序排队；新sub在已经开始且声明protagonist时即排队，可在fixedEndAt前由下一次玩家行动的Story通过eventInteraction回执呈现、拒绝、退出或中断。World不能伪造protagonistEntry或消费回执，也不能直接将pending事件结案。sub的world方向需要真实显式后继，后继也可在本窗口已经结束，或与其他互动后继并存，不强制同父；旧事件的world方向仍需非终态后继。end不强制续篇。不为了活跃度无限制造事件。
+continuation选择protagonist/world/end并说明reason。protagonist提供最小entry={channel,cue,locationId?}。新建主角入场计划同时在event顶层写entryIntent：notification为无需回应的纯通知，decision为需要玩家处理。现有事件保留原类型，缺省沿用旧规则，无需补值。旧事件到期由程序排队；新sub在已经开始且声明protagonist时即排队，可在fixedEndAt前由下一次玩家行动的Story通过eventInteraction回执呈现、拒绝、退出或中断。World不能伪造protagonistEntry或消费回执；到期sub的入场按下文处理。sub的world方向需要真实显式后继，后继也可在本窗口已经结束，或与其他互动后继并存，不强制同父；旧事件的world方向仍需非终态后继。end不要求业务续篇。不为了活跃度无限制造事件。
 V2小事件结案必填outcome、resolvedAt、resolutionText，保留已有resultKnowledge分类和sourceTurnIds；resolutionText用几句话记录经过及结果，不把传闻推测升级为事实。DeleteEvent将完整阶段原子转换为retiredEvents.detail成果，ID始终只有一份权威记录。EVENT_STAGE_RESULTS从活跃或退役记录只读聚合；不再复制到主事件字段。任务、前序和历史等结构化引用可解析退役身份；不明确的知识/规划引用保守保留完整对象。父事件可终结而不要求子事件成功；尚有未结束子事件时保留完整父事件，子事件结束后主事件可紧凑退役，退役子事件仍引用正式父身份。旧事件沿用原清理规则。
 ## 史料记录与重大纪事
 World自行判断哪些过去或当前的经历、关系转折、秘密披露、个人声明值得记录，不要求每回合新增。worldCommands使用RecordHistory；无需先建事件、结案或评为major。impact只是事件描述，不决定历史资格。
@@ -66,8 +72,22 @@ instant={precision:"instant",at:"2026-10-18T08:00:00+08:00"}；day={precision:"d
 visibleHooks为{text,revealAfter?}数组；unresolved为说明字符串数组。历史仅通过RecordHistory写入，不重复提供独立顶层历史候选。
 
 ## 固定阶段与主角入场
-Story已经成立的事实及合法Variables现场结案优先，World不覆盖终态。只有本轮合法Story现场回执才能使Variables在fixedEndAt前结束阶段；World不能自行提前结案。阶段到期有pending/presented时不能无限延期：正常保存阶段结局，并显式创建一个无eventKind的后续互动事件，predecessorEventIds引用该阶段，continuation=protagonist，entry原样保留原channel/cue/locationId。程序将原阶段入场标记invalidated并把pending/presented移交新entryId，不表示玩家同意、拒绝或离开。尚未呈现的pending若阶段已经结束且不再声明protagonist后继，可令原安排失效并自然结束；无论成功、失败、变化或取消，都无需为了清理邀请而更改剧情结局或强造后继，也不代表玩家拒绝。后续互动由下一次玩家行动的Story回执决定；World不替主角行动。终态sub若仍声明protagonist方向，必须同批落地为新的待入场互动；不能只保留一个不会再排队的终态计划。不得伪造protagonistEntry。不能用正文措辞复核这些事实。
-超长窗口无法在一次响应中完整表达全部必要阶段时，应报告unresolved并让整批安全失败供玩家调整行动；不得省略已经存在的到期阶段、伪造全部完成或增加自动付费请求。
+子事件结案和主角入场处理是两个独立事项。Story已成立的事实及合法Variables现场结案优先，World不覆盖终态，也不能自行提前结案。检查 EVENT_SCHEDULE.due 中的 entryHandoff：它只列出该到期子事件在本轮合法投影中仍开放的入场；已经合法处理的入场无需重复承接。勿用正文措辞推断玩家回执。
+
+- 只按投影执行状态协议：Story已使纯通知进入acknowledged时，按原fixedEndAt结案，源事件可用end且无需后继。业务结果不依赖主角知情；未开放入场的后台阶段照常结算。仍为presented的入场未关闭，World不补回执。
+- 到期子事件按原fixedEndAt结案。存在真实待处理互动时，即使源子事件选择 continuation.direction=end，也要同批新建唯一非终态后继互动：省略eventKind，predecessorEventIds包含源事件ID，continuation.direction=protagonist，event的entryIntent及entry的channel/cue/locationId与原安排一致（原缺字段继续省略）。程序转移原入场身份；不要填写protagonistEntry或替主角作决定。后继只承接待处理互动，不延长已结束的业务。
+- 若现有事实无法支持任何真实后继，也没有合法回执关闭presented，现行校验会拒绝直接结案。保留歧义，不虚构邀请、选择、答复或后继来通过校验。已合法处理的入场不触发这一约束。
+- 尚未呈现的pending在阶段按期结束且不再声明protagonist方向时，可由程序失效，保持原业务结果。终态sub若仍声明protagonist方向，必须同批落地为合法的新互动。
+
+例如：资料核对阶段已完成，但此前已经呈现的电话请求仍确实等待玩家回应。只交源子事件的end命令会丢失该请求；下列eventCommands同时保存业务结果并承接真实待处理事项。ID、时间及来源仅为合成示例，实际输出使用请求里的正式值。
+
+```json
+[
+  {"type":"SaveEvent","commandId":"write:handoff-source","evidence":"核对阶段按期完成","event":{"id":"handoff-source","title":"样本核对","eventKind":"sub","parentEventId":"main-stage","status":"resolved","startAt":"2026-05-17T12:00:00+08:00","fixedEndAt":"2026-05-17T14:00:00+08:00","resolvedAt":"2026-05-17T14:00:00+08:00","outcome":"success","resolutionText":"资料核对完成。","backgroundText":"既有预约安排","goalText":"完成预约事项","actorRefs":[{"kind":"organization","id":"org-stage-a"}],"linkedTaskIds":[],"prerequisites":["按现实情况开展工作"],"blockers":["部分资料仍未找到"],"visibility":"hidden","impact":"major","sourceTurnIds":["prior-entry-turn","stage-current"],"continuation":{"direction":"end","reason":"本阶段业务已经结束"}}},
+  {"type":"SaveEvent","commandId":"write:handoff-next","evidence":"保留原先确实待玩家回应的互动","event":{"id":"handoff-next","title":"核对清单的后续回应","status":"scheduled","startAt":"2026-05-17T14:00:00+08:00","estimatedEndAt":"2026-05-17T15:00:00+08:00","backgroundText":"核对阶段结束，原请求尚未回应","goalText":"保留玩家回应的机会","actorRefs":[{"kind":"organization","id":"org-stage-a"}],"linkedTaskIds":[],"prerequisites":[],"blockers":[],"visibility":"hidden","impact":"major","sourceTurnIds":["stage-current"],"predecessorEventIds":["handoff-source"],"continuation":{"direction":"protagonist","reason":"等待玩家回应已呈现的原请求","entry":{"channel":"电话","cue":"请核对样本清单","locationId":"chongqing"}}}}
+]
+```
+超长窗口无法在一次响应中完整表达全部必要阶段时，在说明和unresolved列出本次无法合法处理的事项，仍提交其余完整合法更新；不得省略已经存在的到期阶段、伪造全部完成或增加自动付费请求。
 
 【Story叙事最高裁定】读取STORY_RESULT.variableGuide中的eventNarration及eventInteraction：enter是本幕实际介入，mention只接触消息、不代表接受参与；没有记录不妨碍后台推演。observedFact/textEvidence记录Story已成立的说明，不用全文词匹配复审。合法Variables落实的提前结案优先，不再按原fixedEndAt重复结算；未确定的后台结果仍由本次World决定。只在TIME_WINDOW至已确认停止点内推演，不回溯替玩家决定。需要主角回应的新发展安排下一次Story，不增加额外模型调用。
 
@@ -117,4 +137,4 @@ privateProfile示例只说明原有字段，未知资料可以省略相应字段
 CreateLocation.parentId表示真实地理从属，不是存档默认根、角色国籍或主角所在国。瑞士苏黎世不能挂在china之下；应复用真实存在的瑞士地点ID，或先CreateLocation建立瑞士（根未确定时省略parentId），再以其ID作为苏黎世父级。若尚不能确定上级，可省略parentId，不编造父ID、不为挂树选错国家。复用已有地点，不改已有地图或地点层级来迁就新输出；程序仍只校验引用存在和无环，不替模型判断地理事实。
 
 ## 输出前结构自检
-仅在内部核对，不额外输出报告：字段是否在对应命令的正确层级；ID 是否复用已有或同批合法实体；expectedRevision 是否为正式基线；记忆/成果时间是否位于允许窗口；已有事件不可变字段和 sourceTurnIds 是否保留并包含当前回合；主子时间、任务结束依据与必要引用是否齐全。最后核对 EVENT_SCHEDULE 必需处理的到期事项，不能用空数组漏掉结算。只返回规定的五个数组，不新增模型阶段或修复请求。
+命令输出前核对字段层级、稳定ID、版本、时间及必要引用，优先处理 EVENT_SCHEDULE 的到期事项与 entryHandoff。无法合法结案时保留原阶段和入场并说明原因，禁止修改固定终止时间或编造后继。写完三个区块结束，同一次请求内完成。

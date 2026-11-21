@@ -1,6 +1,8 @@
 import { test, expect } from './helpers/test';
 import type { Page, Locator } from '@playwright/test';
 import { openWorkflowStage } from './helpers/gameLayout';
+// 手机专项：只在 mobile 项目（Pixel 7，isMobile）运行；电脑端由各自的 PC 用例覆盖。PC 像素对照用例另由 E2E_PIXEL_COMPARE 控制。
+test.skip(({ isMobile }) => !isMobile, '手机专项，只在 mobile 项目运行');
 const modelPosts = new WeakMap<Page, number>();
 function watchRequests(page: Page) {
   if (modelPosts.has(page)) return;
@@ -119,7 +121,7 @@ test('手机: 视口工具栏、横竖屏、安全区预留、取消手势和原
   await info.attach('read-only', { body: 'Formal Repository state, draft and instance identity are identical before/after browsing.', contentType: 'text/plain' });
 });
 
-test('PC: 901/1440 主界面、人物与 NPC 在相同 main 状态下像素一致', async ({ browser }, info) => {
+test('PC: 901/1440 主界面、人物与 NPC 在相同 main 状态下像素一致', async ({ browser }, info) => {test.skip(!process.env.E2E_PIXEL_COMPARE, '像素对照：需另外启动改动前后两个服务器，只在专门对照时设置 E2E_PIXEL_COMPARE 运行');
   const pictures: Buffer[][] = [], width = info.project.use.viewport!.width;
   for (const port of [Number(process.env.SHEET_COMPARE_PORT ?? process.env.SHEET_PORT ?? 54151), Number(process.env.SHEET_MAIN_PORT ?? 54152)]) {
     const ctx = await browser.newContext({ baseURL: `http://127.0.0.1:${port}`, viewport: { width, height: 900 }, reducedMotion: 'reduce' });

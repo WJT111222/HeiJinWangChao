@@ -1,13 +1,19 @@
+import { nativeDeliveryId } from '../presets/settings';
+import { StoryClock } from '../presets/tavern/timing';
+import { awaitAssistant, assistantStarting, captureAssistantPreferences } from '../presets/tavern/hostState';
 import { stageResponses, safeStreamResponseText, safeResponseText } from '../services/ai/stageResponses';
 import { storyFailure, storySchemaError } from '../services/validation/storyDiagnostics';
 import { DataError } from '../domain/common';
 import { fingerprint } from '../domain/commands';
 import { rerollStory, TurnDraftSchema } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
+import type { LegacyNotificationSelection } from '../domain/events/legacyNotification';
+import { authorizeLegacyNotificationRecovery, validateRecoveredStory } from '../domain/legacyNotificationRecovery';
 import { StorySchema } from '../domain/state';
 import type { CompanionProfile } from '../services/local/companionProfile';
 import type { SaveRepository } from '../services/storage/saveRepository';
 import { AiClient } from '../services/ai/client';
+import { requestSnapshot } from '../services/ai/snapshot';
 import { AiConfigSchema } from '../services/ai/configuration';
 import { storyInspections } from '../services/ai/storyInspection';
 import type { AiConfig } from '../services/ai/configuration';
@@ -22,7 +28,8 @@ import { StoryStream } from './storyStream';
 import { StageGuard } from './stageGuard';
 import type { OrderPreferences } from '../prompts/order';
 
-type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>;
+type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>
+  & Partial<Pick<SaveRepository,'saveRecoveredStory' | 'recentStoryActions'>>;
 export interface StoryProgress {
   phase: 'generating' | 'saving';
   narrative: string;
@@ -43,6 +50,7 @@ interface StoryInput {
   onFailureSaved?: (draft: TurnDraft) => void;
   /** 从草稿里保存的截断原文接着写（玩家点「续写正文」）。 */
   continuation?: boolean;
+  legacyNotificationSelection?: LegacyNotificationSelection;
 }
 
 /** 正文失败后应写入草稿的截断原文（已隐藏凭证；含凭证时不保存）。 */
@@ -67,15 +75,41 @@ export class StoryStage {
     this.guard.dispose();
   }
   async generate(input: StoryInput): Promise<TurnDraft> {
+    const started = performance.now();
     const expected = TurnDraftSchema.parse(input.draft);
+    const allowNativeDelivery = !input.continuation && !input.legacyNotificationSelection;
+    let presetSelection = captureAssistantPreferences(allowNativeDelivery);
+    const clock = presetSelection ? new StoryClock(started) : undefined;
+    const waitingForScripts = assistantStarting();
+    if (clock) {
+      clock.marks.waitedForInitialization = Boolean(waitingForScripts);
+      if (!waitingForScripts) clock.first('assistantReadyMs');
+    }
+    const selection = input.legacyNotificationSelection && structuredClone(input.legacyNotificationSelection);
+    const continuation = Boolean(input.continuation);
+    const captureInputs = () => {
+      const config = AiConfigSchema.parse(input.config);
+      return {
+        config,
+        settings: SettingsSchema.parse(input.settings),
+        companionProfile: input.companionProfile && structuredClone(input.companionProfile),
+        orderPreferences: input.orderPreferences && structuredClone(input.orderPreferences),
+        frozenStoryChannel: presetSelection ? requestSnapshot(config, 'story', input.vault) : undefined,
+        secrets: config.channels.map(channel => input.vault.get(channel.id)).filter(Boolean),
+      };
+    };
+    // 浏览器取得 Web Lock 本身也是异步的。预设、渠道与凭证在调用入口一起选定。
+    const frozen = presetSelection ? captureInputs() : undefined;
     return this.guard.run(expected.saveId, async (attempt) => {
       const current = attempt.check;
-      // 在第一个 await 之前快照本次设置；运行开关始终取绑定草稿，不被界面切换重写。
-      const settings = SettingsSchema.parse(input.settings);
+      if (presetSelection && waitingForScripts) {
+        await awaitAssistant(attempt.signal);
+        clock?.first('assistantReadyMs');
+        current();
+        presetSelection = captureAssistantPreferences(allowNativeDelivery);
+      }
+      const { config, settings, companionProfile, orderPreferences, frozenStoryChannel, secrets } = frozen ?? captureInputs();
       const streaming = settings.runtime.streamStory;
-      const config = AiConfigSchema.parse(input.config);
-      const companionProfile = input.companionProfile && structuredClone(input.companionProfile);
-      const secrets = config.channels.map((channel) => input.vault.get(channel.id)).filter(Boolean);
       const [state, draft] = await Promise.all([
         this.repository.load(expected.saveId),
         this.repository.loadDraft(expected.saveId),
@@ -89,7 +123,9 @@ export class StoryStage {
         (draft.turnKind === 'opening' && state.turnNumber !== 0)
       )
         throw new DataError('DRAFT_CONFLICT', '草稿或正式版本已变化，请重新读取存档。');
-      const continuation = Boolean(input.continuation);
+      const recovery = selection ? authorizeLegacyNotificationRecovery(state,draft,selection) : undefined;
+      if (recovery && (!this.repository.saveRecoveredStory || continuation
+        || !settings.runtime.useVariableStage || !settings.runtime.useWorldStage)) throw new AiError('configuration');
       if (continuation && !canContinueStory(draft, settings.prompts.minNarrativeChars))
         throw new DataError('DRAFT_CONFLICT', '这段正文已不能续写，请重新生成。');
       const partial = continuation ? trimIncompleteTag(draft.storyPartial!.text) : '';
@@ -108,9 +144,13 @@ export class StoryStage {
         readingPhase: !streaming ? 'waiting' : stream.bodyStarted ? 'body' : 'thinking',
         ...(!streaming || stream.bodyStarted ? {} : { planning: safeStreamResponseText(stream.planning, secrets), nativeReasoning: safeStreamResponseText(reasoning, secrets),
           compatibilityReasoning: safeStreamResponseText(compatibilityReasoning, secrets) }) });
+      let saving = false;
       let responseInspectionId: string | undefined;
       try {
         progress();
+        const historyActions = presetSelection && presetSelection !== nativeDeliveryId && state.journal.length
+          ? await this.repository.recentStoryActions?.(state, settings.memory.immediateWindowSize) : undefined;
+        current();
         const response = await runStageRequest(
           {
             stage: 'story',
@@ -120,12 +160,15 @@ export class StoryStage {
             userInput: draft.userInput,
             settings,
             companionProfile,
-            orderPreferences: input.orderPreferences,
+            historyActions,
+            orderPreferences,
+            ...(recovery ? {legacyNotificationRecovery:recovery} : {}),
           },
           config,
           input.vault,
           {
-            stream: streaming,
+            stream: streaming, storyClock: clock,
+            presetSelection, frozenStoryChannel,
             signal: attempt.signal,
             ...(continuation ? { continuation: { partial } } : {}),
             onDelta: (delta) => {
@@ -176,19 +219,29 @@ export class StoryStage {
           )
         )
           throw new AiError('invalid_output', undefined, { storyRule: 'credential_output' });
-        const next = rerollStory(draft, story);
+        if (recovery) validateRecoveredStory(state,draft.story!,story,recovery);
         current();
+        if (responseInspectionId) {
+          try { stageResponses.update(responseInspectionId, { storyValidated: true, validationEndMs: clock?.elapsed() }, secrets); } catch { /* Display only. */ }
+        }
+        saving = true;
         attempt.saving();
         input.onProgress?.({ phase: 'saving', readingPhase: streaming ? 'body' : 'waiting', narrative: streaming ? story.narrative : '' });
         // 网络从不放入 IDB 事务；整份草稿用现有乐观锁原子替换。
-        const saved = await this.repository.saveDraft(next, draft.draftRevision, attempt.signal, draft);
+        const saved = selection
+          ? await this.repository.saveRecoveredStory!(draft,story,selection,attempt.signal)
+          : await this.repository.saveDraft(rerollStory(draft,story), draft.draftRevision, attempt.signal, draft);
+        if (responseInspectionId) {
+          try { stageResponses.update(responseInspectionId, { candidateSaved: true, draftSavedMs: clock?.elapsed() }, secrets); } catch { /* Already persisted. */ }
+        }
         current();
         storyInspections.update(inspectionId, { status: 'saved' });
         return saved;
       } catch (error) {
         storyInspections.update(inspectionId, { status: 'failed' });
-        if (responseInspectionId) stageResponses.update(responseInspectionId, { status: 'failed', normalized: undefined, error: safeAiError(storyFailure(error)) }, secrets);
-        if (input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled') {
+        if (responseInspectionId) stageResponses.update(responseInspectionId, { status: 'failed', failureLayer: saving ? 'draft' : 'story_validation',
+          ...(!saving && clock ? { validationEndMs: clock.elapsed() } : {}), normalized: undefined, error: safeAiError(storyFailure(error)) }, secrets);
+        if (!recovery && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled') {
           current();
           const previousAttempt = draft.failures.filter(f => f.stage === 'story' && f.storyRevision === draft.storyRevision)
             .reduce((last, failure) => Math.max(last, failure.attempt), 0);
@@ -221,5 +274,9 @@ export function storyError(error: unknown): string {
     return error.code === 'STORY_BUSY'
       ? '此存档已有阶段请求，请等待或取消。'
       : '存档或草稿版本已变化，本次结果未保存。请重新读取存档。';
+  if (error instanceof DataError && error.code === 'LEGACY_RECOVERY_STAGES')
+    return '结算旧通知需要启用变量管理和动态世界。';
+  if (error instanceof DataError && error.code === 'LEGACY_RECOVERY_RECEIPT')
+    return '新正文没有合法保留所选通知的收悉及其他事件裁定。原草稿已保留。';
   return safeAiError(error).message;
 }

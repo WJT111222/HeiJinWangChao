@@ -78,7 +78,15 @@ export function splitLeadingThink(text: string) {
 // 官方地址直接使用新字段；其他地址只在服务明确报「不支持该参数」后，对同一渠道和模型记住，下次请求生效，不自动重发。
 type Route = Pick<Channel, 'id' | 'protocol' | 'baseUrl'>;
 export type AdjustedParameter = 'max_tokens' | 'temperature';
+type Reasoning = 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+export const samplingFields = ['temperature', 'top_p', 'frequency_penalty', 'presence_penalty'] as const;
+type SamplingField = typeof samplingFields[number];
+export type PresetSamplingInspection = { field: SamplingField; desired: number } & (
+  { sent: number } | { omission: 'known_capability' | 'remembered_rejection' | 'channel_setting' }
+);
+type SamplingRule = { kind: 'unsupported' } | { kind: 'default_only'; rejectedValue: number };
 const adjusted = new Map<string, Set<AdjustedParameter>>();
+const presetAdjustments = new Map<string, Map<string, SamplingRule>>();
 const keyFor = (route: Route, model: string) => JSON.stringify([route.id, route.protocol, route.baseUrl, model]);
 function officialOpenAi(route: Route) {
   try { return route.protocol === 'openai' && new URL(route.baseUrl).hostname === 'api.openai.com'; } catch { return false; }
@@ -118,4 +126,98 @@ export function rememberUnsupported(route: Route, model: string, parameter: Adju
   if (!adjusted.has(key) && adjusted.size >= 500) adjusted.delete(adjusted.keys().next().value ?? '');
   const set = adjusted.get(key) ?? new Set<AdjustedParameter>(); set.add(parameter); adjusted.set(key, set);
 }
-export function clearAdjustedParameters() { adjusted.clear(); }
+export function clearAdjustedParameters() { adjusted.clear(); presetAdjustments.clear(); }
+
+// OpenAI 官方 Chat Completions，仅使用已核对的模型 ID 和参数限制（见 BATCH1.md）。
+const officialChat = 'https://api.openai.com/v1/chat/completions';
+const withoutTemperatureOrTopP = new Set([
+  'gpt-5', 'gpt-5-2025-08-07', 'gpt-5-mini', 'gpt-5-mini-2025-08-07', 'gpt-5-nano', 'gpt-5-nano-2025-08-07',
+]);
+const samplingWithReasoningNone = new Set(['gpt-5.1', 'gpt-5.1-2025-11-13', 'gpt-5.2', 'gpt-5.2-2025-12-11']);
+const reasoningLevels = new Set<string>(['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max']);
+function isOfficialChat(route: Route, url: string) {
+  return route.protocol === 'openai' && url === officialChat;
+}
+function reasoningEffort(route: Route, url: string, model: string, body: Record<string, unknown>): Reasoning | undefined {
+  if (typeof body.reasoning_effort === 'string' && reasoningLevels.has(body.reasoning_effort))
+    return body.reasoning_effort as Reasoning;
+  if (!Object.hasOwn(body, 'reasoning_effort') && isOfficialChat(route, url) && samplingWithReasoningNone.has(model))
+    return 'none';
+}
+export function knownSamplingLimit(route: Route, url: string, model: string, field: SamplingField, body: Record<string, unknown>) {
+  if ((field !== 'temperature' && field !== 'top_p') || !isOfficialChat(route, url)) return false;
+  if (withoutTemperatureOrTopP.has(model)) return true;
+  const effort = reasoningEffort(route, url, model, body);
+  return samplingWithReasoningNone.has(model) && effort !== undefined && effort !== 'none';
+}
+function samplingKey(route: Route, url: string, model: string, field: SamplingField, body: Record<string, unknown>) {
+  // 未指定的中转推理设置只与同样未指定的请求匹配，不把它当成 none。
+  const effort = reasoningEffort(route, url, model, body);
+  if (!effort && Object.hasOwn(body, 'reasoning_effort')) return;
+  return `${field}:${effort ?? 'unspecified'}`;
+}
+export function skipsPresetSampling(
+  route: Route, url: string, model: string, field: SamplingField, desired: number, body: Record<string, unknown>,
+) {
+  const bucket = samplingKey(route, url, model, field, body);
+  if (!bucket) return false;
+  const rule = presetAdjustments.get(keyFor(route, model))?.get(bucket);
+  return rule?.kind === 'unsupported' || (rule?.kind === 'default_only' && rule.rejectedValue === desired);
+}
+const plainRejection = /^(?:unsupported parameter:\s*)?['"`]?(temperature|top_p|frequency_penalty|presence_penalty)['"`]?(?:\s+(?:is\s+)?(?:not supported|unsupported)(?:\s+(?:with|by|for) this model)?)?\.?$/i;
+const reasoningRejection = /^(?:unsupported parameter:\s*)?['"`]?(temperature|top_p|frequency_penalty|presence_penalty)['"`]?\s+is\s+(only supported|not supported) when reasoning_effort (?:is|=) ['"`]?(none|minimal|low|medium|high|xhigh|max)['"`]?\.?$/i;
+const defaultOnlyRejection = /^Unsupported value:\s*['"`](temperature|top_p|frequency_penalty|presence_penalty)['"`] does not support (-?\d+(?:\.\d+)?) with this model\. Only the default(?: \((-?\d+(?:\.\d+)?)\))? value is supported\.?$/i;
+
+export function rememberPresetSamplingRejection(
+  route: Route, url: string, model: string, raw: unknown, sent: Record<string, unknown>,
+) {
+  const error = object(object(raw).error);
+  if (error.message != null && typeof error.message !== 'string') return false;
+  const message = error.message?.trim() ?? '';
+  const code = error.code;
+  if (code != null && code !== 'unsupported_parameter' && code !== 'unsupported_value') return false;
+
+  const conditional = reasoningRejection.exec(message);
+  const defaults = defaultOnlyRejection.exec(message);
+  // 部分中转用 param 指定字段，message 仅说明默认值。
+  const briefDefault = code === 'unsupported_value' && typeof error.param === 'string'
+    ? /^Only the default(?: \((-?\d+(?:\.\d+)?)\))? value is supported\.?$/i.exec(message)
+    : null;
+  const plain = plainRejection.exec(message);
+  const named = conditional?.[1] ?? defaults?.[1] ?? plain?.[1];
+  const field = samplingFields.find((candidate) => candidate === (named ?? error.param));
+  if (!field || (error.param != null && error.param !== field) || !Object.hasOwn(sent, field)) return false;
+  const value = sent[field];
+  if (typeof value !== 'number') return false;
+
+  let rule: SamplingRule;
+  const fullDefaultMatch = defaults && Number(defaults[2]) === value
+    && (defaults[3] === undefined || Number(defaults[3]) !== value);
+  const briefDefaultMatch = briefDefault && (briefDefault[1] === undefined || Number(briefDefault[1]) !== value);
+  if (fullDefaultMatch || briefDefaultMatch) {
+    // 默认值声明只证明本次值被拒，保留其他合法取值的出站机会。
+    rule = { kind: 'default_only', rejectedValue: value };
+  } else if (code === 'unsupported_value') {
+    return false;
+  } else if (conditional) {
+    const effort = reasoningEffort(route, url, model, sent);
+    const namedEffort = conditional[3].toLowerCase();
+    const rejectedEffort = conditional[2].toLowerCase() === 'only supported'
+      ? effort !== namedEffort : effort === namedEffort;
+    if (!effort || !rejectedEffort) return false;
+    rule = { kind: 'unsupported' };
+  } else if ((plain && /unsupported|not supported/i.test(message)) || (!message && code === 'unsupported_parameter')) {
+    rule = { kind: 'unsupported' };
+  } else {
+    return false;
+  }
+  const bucket = samplingKey(route, url, model, field, sent);
+  if (!bucket) return false;
+  const key = keyFor(route, model);
+  if (!presetAdjustments.has(key) && presetAdjustments.size >= 500)
+    presetAdjustments.delete(presetAdjustments.keys().next().value ?? '');
+  const rules = presetAdjustments.get(key) ?? new Map<string, SamplingRule>();
+  rules.set(bucket, rule);
+  presetAdjustments.set(key, rules);
+  return true;
+}

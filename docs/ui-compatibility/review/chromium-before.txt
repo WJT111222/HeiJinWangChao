@@ -1,0 +1,345 @@
+[WebServer] (node:206188) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:206213) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+history-seal {
+  color: 'rgb(115, 83, 27)',
+  box: {
+    x: 185,
+    y: 50.421875,
+    width: 36,
+    height: 33.59375,
+    top: 50.421875,
+    right: 221,
+    bottom: 84.015625,
+    left: 185
+  }
+}
+NPC day [ 'rgb(48, 41, 31)', 'rgb(247, 241, 229)' ] 12.763510242293007
+势力组织 day [ 'rgb(48, 41, 31)', 'rgb(247, 241, 229)' ] 12.763510242293007
+选中地点 rgb(48, 41, 31) rgb(247, 241, 229) 12.76
+地点名称 rgb(48, 41, 31) rgb(26, 34, 26) 1.14
+地点层级 rgb(48, 41, 31) rgb(26, 34, 26) 1.14
+地点说明 rgb(48, 41, 31) rgb(30, 39, 29) 1.07
+地点路径按钮 rgb(48, 41, 31) rgb(247, 241, 229) 12.76
+人物姓名 rgb(48, 41, 31) rgb(19, 22, 20) 1.27
+人物身份标记 rgb(102, 86, 59) rgb(19, 22, 20) 2.57
+人物姓名印记 rgb(227, 203, 138) rgb(31, 32, 25) 10.30
+人物档案标题 rgb(115, 83, 27) rgb(247, 241, 229) 6.26
+人物资料值 rgb(48, 41, 31) rgb(247, 241, 229) 12.76
+  ✘  1 [desktop] › e2e/ui-compatibility.spec.ts:156:3 › 历史地图人物、同刻纪事及纸面地图配色 day (18.5s)
+(node:206418) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+history-seal {
+  color: 'rgb(224, 193, 126)',
+  box: {
+    x: 185,
+    y: 50.421875,
+    width: 36,
+    height: 33.59375,
+    top: 50.421875,
+    right: 221,
+    bottom: 84.015625,
+    left: 185
+  }
+}
+NPC night [ 'rgb(238, 230, 214)', 'rgb(19, 22, 20)' ] 14.684912267081069
+势力组织 night [ 'rgb(238, 230, 214)', 'rgb(19, 22, 20)' ] 14.684912267081069
+选中地点 rgb(238, 230, 214) rgb(28, 35, 30) 12.93
+地点名称 rgb(238, 230, 214) rgb(26, 34, 26) 13.14
+地点层级 rgb(238, 230, 214) rgb(26, 34, 26) 13.14
+地点说明 rgb(238, 230, 214) rgb(30, 39, 29) 12.42
+地点路径按钮 rgb(238, 230, 214) rgb(28, 35, 30) 12.93
+人物姓名 rgb(238, 230, 214) rgb(19, 22, 20) 14.68
+人物身份标记 rgb(193, 180, 155) rgb(19, 22, 20) 8.91
+人物姓名印记 rgb(227, 203, 138) rgb(31, 32, 25) 10.30
+人物档案标题 rgb(224, 193, 126) rgb(28, 35, 30) 9.25
+人物资料值 rgb(238, 230, 214) rgb(28, 35, 30) 12.93
+  ✓  2 [desktop] › e2e/ui-compatibility.spec.ts:156:3 › 历史地图人物、同刻纪事及纸面地图配色 night (16.2s)
+(node:206584) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+map contrast day [ 6.4719899847721285, 5.766941847407008, 5.766941847407008 ]
+archive-seal {
+  color: 'rgb(135, 56, 39)',
+  box: {
+    x: 14,
+    y: 36.578125,
+    width: 35.1875,
+    height: 35.1875,
+    top: 36.578125,
+    right: 49.1875,
+    bottom: 71.765625,
+    left: 14
+  }
+}
+history-seal {
+  color: 'rgb(115, 83, 27)',
+  box: {
+    x: 15,
+    y: 231.3943328857422,
+    width: 35.1875,
+    height: 35.18751525878906,
+    top: 231.3943328857422,
+    right: 50.1875,
+    bottom: 266.58184814453125,
+    left: 15
+  }
+}
+NPC day [ 'rgb(48, 41, 31)', 'rgb(247, 241, 229)' ] 12.763510242293007
+势力组织 day [ 'rgb(48, 41, 31)', 'rgb(247, 241, 229)' ] 12.763510242293007
+选中地点 rgb(48, 41, 31) rgb(247, 241, 229) 12.76
+地点名称 rgb(48, 41, 31) rgb(26, 34, 26) 1.14
+地点层级 rgb(48, 41, 31) rgb(26, 34, 26) 1.14
+地点说明 rgb(48, 41, 31) rgb(30, 39, 29) 1.07
+地点路径按钮 rgb(48, 41, 31) rgb(247, 241, 229) 12.76
+人物姓名 rgb(48, 41, 31) rgb(19, 22, 20) 1.27
+人物身份标记 rgb(102, 86, 59) rgb(19, 22, 20) 2.57
+人物姓名印记 rgb(227, 203, 138) rgb(31, 32, 25) 10.30
+人物档案标题 rgb(115, 83, 27) rgb(247, 241, 229) 6.26
+人物资料值 rgb(48, 41, 31) rgb(247, 241, 229) 12.76
+  ✘  3 [mobile] › e2e/ui-compatibility.spec.ts:156:3 › 历史地图人物、同刻纪事及纸面地图配色 day (12.5s)
+(node:206742) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+map contrast night [ 6.4719899847721285, 5.766941847407008, 5.766941847407008 ]
+archive-seal {
+  color: 'rgb(244, 237, 224)',
+  box: {
+    x: 14,
+    y: 36.578125,
+    width: 35.1875,
+    height: 35.1875,
+    top: 36.578125,
+    right: 49.1875,
+    bottom: 71.765625,
+    left: 14
+  }
+}
+history-seal {
+  color: 'rgb(232, 209, 150)',
+  box: {
+    x: 15,
+    y: 189.99009704589844,
+    width: 35.1875,
+    height: 35.1875,
+    top: 189.99009704589844,
+    right: 50.1875,
+    bottom: 225.17759704589844,
+    left: 15
+  }
+}
+NPC night [ 'rgb(238, 230, 214)', 'rgb(19, 22, 20)' ] 14.684912267081069
+势力组织 night [ 'rgb(238, 230, 214)', 'rgb(19, 22, 20)' ] 14.684912267081069
+选中地点 rgb(238, 230, 214) rgb(28, 35, 30) 12.93
+地点名称 rgb(238, 230, 214) rgb(26, 34, 26) 13.14
+地点层级 rgb(238, 230, 214) rgb(26, 34, 26) 13.14
+地点说明 rgb(238, 230, 214) rgb(30, 39, 29) 12.42
+地点路径按钮 rgb(238, 230, 214) rgb(28, 35, 30) 12.93
+人物姓名 rgb(238, 230, 214) rgb(19, 22, 20) 14.68
+人物身份标记 rgb(193, 180, 155) rgb(19, 22, 20) 8.91
+人物姓名印记 rgb(227, 203, 138) rgb(31, 32, 25) 10.30
+人物档案标题 rgb(224, 193, 126) rgb(28, 35, 30) 9.25
+人物资料值 rgb(238, 230, 214) rgb(28, 35, 30) 12.93
+  ✓  4 [mobile] › e2e/ui-compatibility.spec.ts:156:3 › 历史地图人物、同刻纪事及纸面地图配色 night (12.7s)
+
+
+  1) [desktop] › e2e/ui-compatibility.spec.ts:156:3 › 历史地图人物、同刻纪事及纸面地图配色 day ───────────────────────
+
+    Error: 地点名称
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 4.5
+    Received:    1.1358964866320749
+
+      42 |   const worst = backgrounds.map(bg => ({ bg, ratio: textContrast(color, bg) })).sort((a, b) => a.ratio - b.ratio)[0];
+      43 |   console.log(label, color, worst.bg, worst.ratio.toFixed(2));
+    > 44 |   expect.soft(worst.ratio, label).toBeGreaterThanOrEqual(4.5);
+         |                                   ^
+      45 | }
+      46 |
+      47 | async function sealEvidence(dialog: Locator, name: string) {
+        at expectReadable (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:44:35)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:219:5
+
+    Error: 地点层级
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 4.5
+    Received:    1.1358964866320749
+
+      42 |   const worst = backgrounds.map(bg => ({ bg, ratio: textContrast(color, bg) })).sort((a, b) => a.ratio - b.ratio)[0];
+      43 |   console.log(label, color, worst.bg, worst.ratio.toFixed(2));
+    > 44 |   expect.soft(worst.ratio, label).toBeGreaterThanOrEqual(4.5);
+         |                                   ^
+      45 | }
+      46 |
+      47 | async function sealEvidence(dialog: Locator, name: string) {
+        at expectReadable (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:44:35)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:220:5
+
+    Error: 地点说明
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 4.5
+    Received:    1.0729804772581584
+
+      42 |   const worst = backgrounds.map(bg => ({ bg, ratio: textContrast(color, bg) })).sort((a, b) => a.ratio - b.ratio)[0];
+      43 |   console.log(label, color, worst.bg, worst.ratio.toFixed(2));
+    > 44 |   expect.soft(worst.ratio, label).toBeGreaterThanOrEqual(4.5);
+         |                                   ^
+      45 | }
+      46 |
+      47 | async function sealEvidence(dialog: Locator, name: string) {
+        at expectReadable (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:44:35)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:221:5
+
+    Error: 人物姓名
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 4.5
+    Received:    1.2690390535476797
+
+      42 |   const worst = backgrounds.map(bg => ({ bg, ratio: textContrast(color, bg) })).sort((a, b) => a.ratio - b.ratio)[0];
+      43 |   console.log(label, color, worst.bg, worst.ratio.toFixed(2));
+    > 44 |   expect.soft(worst.ratio, label).toBeGreaterThanOrEqual(4.5);
+         |                                   ^
+      45 | }
+      46 |
+      47 | async function sealEvidence(dialog: Locator, name: string) {
+        at expectReadable (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:44:35)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:233:5
+
+    Error: 人物身份标记
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 4.5
+    Received:    2.567535678913596
+
+      42 |   const worst = backgrounds.map(bg => ({ bg, ratio: textContrast(color, bg) })).sort((a, b) => a.ratio - b.ratio)[0];
+      43 |   console.log(label, color, worst.bg, worst.ratio.toFixed(2));
+    > 44 |   expect.soft(worst.ratio, label).toBeGreaterThanOrEqual(4.5);
+         |                                   ^
+      45 | }
+      46 |
+      47 | async function sealEvidence(dialog: Locator, name: string) {
+        at expectReadable (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:44:35)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:234:5
+
+    Error Context: ../../dev/shm/ui-compat-deps/review212red/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-day-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/review212red/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-day-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/review212red/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-day-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [mobile] › e2e/ui-compatibility.spec.ts:156:3 › 历史地图人物、同刻纪事及纸面地图配色 day ────────────────────────
+
+    Error: 地点名称
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 4.5
+    Received:    1.1358964866320749
+
+      42 |   const worst = backgrounds.map(bg => ({ bg, ratio: textContrast(color, bg) })).sort((a, b) => a.ratio - b.ratio)[0];
+      43 |   console.log(label, color, worst.bg, worst.ratio.toFixed(2));
+    > 44 |   expect.soft(worst.ratio, label).toBeGreaterThanOrEqual(4.5);
+         |                                   ^
+      45 | }
+      46 |
+      47 | async function sealEvidence(dialog: Locator, name: string) {
+        at expectReadable (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:44:35)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:219:5
+
+    Error: 地点层级
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 4.5
+    Received:    1.1358964866320749
+
+      42 |   const worst = backgrounds.map(bg => ({ bg, ratio: textContrast(color, bg) })).sort((a, b) => a.ratio - b.ratio)[0];
+      43 |   console.log(label, color, worst.bg, worst.ratio.toFixed(2));
+    > 44 |   expect.soft(worst.ratio, label).toBeGreaterThanOrEqual(4.5);
+         |                                   ^
+      45 | }
+      46 |
+      47 | async function sealEvidence(dialog: Locator, name: string) {
+        at expectReadable (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:44:35)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:220:5
+
+    Error: 地点说明
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 4.5
+    Received:    1.0729804772581584
+
+      42 |   const worst = backgrounds.map(bg => ({ bg, ratio: textContrast(color, bg) })).sort((a, b) => a.ratio - b.ratio)[0];
+      43 |   console.log(label, color, worst.bg, worst.ratio.toFixed(2));
+    > 44 |   expect.soft(worst.ratio, label).toBeGreaterThanOrEqual(4.5);
+         |                                   ^
+      45 | }
+      46 |
+      47 | async function sealEvidence(dialog: Locator, name: string) {
+        at expectReadable (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:44:35)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:221:5
+
+    Error: 人物姓名
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 4.5
+    Received:    1.2690390535476797
+
+      42 |   const worst = backgrounds.map(bg => ({ bg, ratio: textContrast(color, bg) })).sort((a, b) => a.ratio - b.ratio)[0];
+      43 |   console.log(label, color, worst.bg, worst.ratio.toFixed(2));
+    > 44 |   expect.soft(worst.ratio, label).toBeGreaterThanOrEqual(4.5);
+         |                                   ^
+      45 | }
+      46 |
+      47 | async function sealEvidence(dialog: Locator, name: string) {
+        at expectReadable (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:44:35)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:233:5
+
+    Error: 人物身份标记
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 4.5
+    Received:    2.567535678913596
+
+      42 |   const worst = backgrounds.map(bg => ({ bg, ratio: textContrast(color, bg) })).sort((a, b) => a.ratio - b.ratio)[0];
+      43 |   console.log(label, color, worst.bg, worst.ratio.toFixed(2));
+    > 44 |   expect.soft(worst.ratio, label).toBeGreaterThanOrEqual(4.5);
+         |                                   ^
+      45 | }
+      46 |
+      47 | async function sealEvidence(dialog: Locator, name: string) {
+        at expectReadable (/workspace/ui-compat/e2e/ui-compatibility.spec.ts:44:35)
+        at /workspace/ui-compat/e2e/ui-compatibility.spec.ts:234:5
+
+    Error Context: ../../dev/shm/ui-compat-deps/review212red/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-day-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../dev/shm/ui-compat-deps/review212red/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-day-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../dev/shm/ui-compat-deps/review212red/ui-compatibility-历史地图人物、同刻纪事及纸面地图配色-day-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [desktop] › e2e/ui-compatibility.spec.ts:156:3 › 历史地图人物、同刻纪事及纸面地图配色 day ────────────────────────
+    [mobile] › e2e/ui-compatibility.spec.ts:156:3 › 历史地图人物、同刻纪事及纸面地图配色 day ─────────────────────────
+  2 passed (1.1m)

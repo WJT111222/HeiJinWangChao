@@ -14,6 +14,7 @@ import { CreationWizard } from '../ui/creation/CreationWizard';
 import { CreationSchema, creationKey, newCreation, createProfileSave } from '../ui/creation/model';
 import type { Creation } from '../ui/creation/model';
 import { SettingsPanel } from '../ui/settings/SettingsPanel';
+import { PeintureLauncher } from '../ui/settings/PeintureLauncher';
 import { UnsavedAiChanges } from '../ui/settings/UnsavedAiChanges';
 import { SettingsSchema, defaultSettings, settingsKey } from '../ui/settings/model';
 import { useAppearance } from './useAppearance';
@@ -87,6 +88,17 @@ export function App() {
   const shell = useGameViewport(gameRoute);
   const [saves, setSaves] = useState<SaveSummary[]>([]);
   const [settings, setSettings] = useState(initial.settings);
+  useEffect(() => {
+    function syncSettings(event: StorageEvent) {
+      if (event.storageArea !== localStorage || event.key !== settingsKey) return;
+      try {
+        const next = readDocument(localStorage, settingsKey, SettingsSchema);
+        if (next) setSettings(next);
+      } catch { /* Existing settings remain visible. Memory dispatch independently verifies storage. */ }
+    }
+    window.addEventListener('storage', syncSettings);
+    return () => window.removeEventListener('storage', syncSettings);
+  }, []);
   useAppearance(settings.display.appearance);
   const [form, setForm] = useState(initial.form);
   const [hasDraft, setHasDraft] = useState(initial.hasDraft);
@@ -410,6 +422,7 @@ export function App() {
         <CreationWizard
           form={form}
           onChange={changeForm}
+          timeoutSeconds={settings.runtime.timeoutSeconds}
           onCreate={() => void create()}
           busy={busy || !repository}
           onExit={() => navigate()}
@@ -504,7 +517,8 @@ export function App() {
       {!gameRoute && route !== '#create' && <input ref={importInput} type="file" accept=".json,application/json" hidden aria-label="选择备份文件"
         onChange={event => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) setImporting({ file }); }} />}
       {historySaveId && repository && <Suspense fallback={<Dialog title="历史存档" onClose={() => setHistorySaveId(undefined)}><p>正在打开历史存档…</p></Dialog>}>
-        <HistorySaves repository={repository} saveId={historySaveId} settings={settings} onClose={() => setHistorySaveId(undefined)}
+        <HistorySaves repository={repository} saveId={historySaveId} settings={settings}
+          summary={readableSaves.find(save => save.saveId === historySaveId)} onClose={() => setHistorySaveId(undefined)}
           onRestored={result => {
             setHistorySaveId(undefined); openSave(result.state.saveId, authorizeHistoryStart(result.state, result.draft));
           }}/>
@@ -528,6 +542,7 @@ export function App() {
       {notices.kind && <NoticeDialog announcement={notices.announcement} key={desktopUi?notices.kind:'mobile-notice'} automatic={notices.automatic} kind={notices.kind} muted={notices.muted}
         onMutedChange={notices.setMuted} onClose={notices.close} />}
       {settingsOpen && !(gameRoute && loaded) && renderSettings()}
+      <PeintureLauncher />
       {settingsOpen && confirmSettingsClose && <UnsavedAiChanges subject={summarySettingsDirty ? '记忆设置' : undefined} onContinue={() => {setConfirmSettingsClose(false);settingsDestination.current=undefined;}} onDiscard={() => {
         setConfirmSettingsClose(false);
         setAiSettingsDirty(false); setSummarySettingsDirty(false);

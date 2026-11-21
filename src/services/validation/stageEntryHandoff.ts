@@ -3,40 +3,64 @@ import type { WorldResultSchema, TurnDraft } from '../../domain/drafts';
 import type { z } from 'zod';
 import type { GameState } from '../../domain/state';
 import { terminalEvent } from '../../domain/events/lifecycle';
-import { requireWorld } from './worldDiagnostics';
+import { requireEventEntry, requireWorld } from './worldDiagnostics';
+
+type WorldResult = z.infer<typeof WorldResultSchema>;
 
 /** Carry an unfinished interaction to an explicit legacy successor, never accept/decline for the player. */
-export function normalizeStageEntryHandoffs(result:z.infer<typeof WorldResultSchema>,base:GameState,draft:TurnDraft) {
-  const normalized=new Set<string>();
-  for(const source of result.eventCommands) {
-    if(source.type!=='SaveEvent'||source.event.eventKind!=='sub'||!terminalEvent(source.event))continue;
-    const old=base.events[source.event.id],entry=old?.protagonistEntry;
-    if(!entry||!['pending','presented'].includes(entry.status))continue;
-    requireWorld(Date.parse(source.event.resolvedAt!)===Date.parse(source.event.fixedEndAt!), 'invalid_output','event_time');
-    const targets=result.eventCommands.filter(c=>c.type==='SaveEvent'&&!c.event.eventKind&&!terminalEvent(c.event)
-      && c.event.predecessorEventIds?.includes(source.event.id)&&c.event.continuation?.direction==='protagonist');
-    if(entry.status==='pending' && targets.length===0 && source.event.continuation?.direction!=='protagonist') {
-      const closed={...entry,status:'invalidated' as const,handledTurnId:draft.turnId,textEvidence:'阶段到期，未呈现的原入场安排已结束'};
-      requireWorld(!source.event.protagonistEntry || fingerprint(source.event.protagonistEntry)===fingerprint(entry)
-        || fingerprint(source.event.protagonistEntry)===fingerprint(closed),'permission','event_entry');
-      source.event.protagonistEntry=closed; normalized.add(source.event.id); continue;
+export function normalizeStageEntryHandoffs(result: WorldResult, base: GameState, draft: TurnDraft, original: WorldResult) {
+  const normalized = new Set<string>();
+  const offset = original.worldCommands.length + original.taskCommands.length;
+  const eventWrites = result.eventCommands.flatMap(command =>
+    command.type === 'SaveEvent' ? [{ event: command.event, index: original.eventCommands.indexOf(command) }] : []);
+  const scope = (index: number, field: string) => ({
+    fieldPath: `eventCommands.${index}.event.${field}`, commandIndex: offset + index, commandType: 'SaveEvent',
+  });
+  for (const { event: source, index } of eventWrites) {
+    if (source.eventKind !== 'sub' || !terminalEvent(source)) continue;
+    const old = base.events[source.id], entry = old?.protagonistEntry;
+    if (!entry || (entry.status !== 'pending' && entry.status !== 'presented')) continue;
+    requireWorld(Date.parse(source.resolvedAt!) === Date.parse(source.fixedEndAt!), 'invalid_output', 'event_time');
+    const referencing = eventWrites.filter(({ event }) => event.predecessorEventIds?.includes(source.id));
+    const eligible = referencing.filter(({ event }) => !event.eventKind && !terminalEvent(event));
+    const targets = eligible.flatMap(({ event, index }) => event.continuation?.direction === 'protagonist'
+      ? [{ event, index, plan: event.continuation.entry }] : []);
+    const sourceScope = scope(index, 'protagonistEntry');
+    if (entry.status === 'pending' && targets.length === 0 && source.continuation?.direction !== 'protagonist') {
+      const closed = { ...entry, status: 'invalidated' as const, handledTurnId: draft.turnId, textEvidence: '阶段到期，未呈现的原入场安排已结束' };
+      requireEventEntry(!source.protagonistEntry || fingerprint(source.protagonistEntry) === fingerprint(entry)
+        || fingerprint(source.protagonistEntry) === fingerprint(closed), 'permission', 'forged_entry', sourceScope);
+      source.protagonistEntry = closed;
+      normalized.add(source.id);
+      continue;
     }
-    requireWorld(targets.length===1 && targets[0].type==='SaveEvent','invalid_output','event_entry');
-    const target=targets[0].event;
-    requireWorld(!base.events[target.id] && target.continuation?.direction==='protagonist'
-      && target.continuation.entry.cue===entry.cue && target.continuation.entry.channel===entry.channel
-      && target.continuation.entry.locationId===entry.locationId,'permission','event_entry');
-    const invalidated={...entry,status:'invalidated' as const,handledTurnId:draft.turnId,textEvidence:'阶段固定到期，入场职责转交后续事件'};
-    const transferred={...entry,id:`stage-entry:${base.revision}`};
-    requireWorld(!normalized.has(target.id),'invalid_output','event_entry');
+    if (!targets.length) {
+      requireEventEntry(referencing.length, 'invalid_output', 'missing_successor', sourceScope);
+      const first = referencing[0];
+      requireEventEntry(eligible.length, 'invalid_output', 'invalid_successor',
+        scope(first.index, first.event.eventKind ? 'eventKind' : 'status'));
+      requireEventEntry(false, 'invalid_output', 'mismatched_direction', scope(eligible[0].index, 'continuation.direction'));
+    }
+    requireEventEntry(targets.length === 1, 'invalid_output', 'multiple_successors', sourceScope);
+    const { event: target, index: targetIndex, plan } = targets[0];
+    requireEventEntry(!base.events[target.id], 'permission', 'invalid_successor', scope(targetIndex, 'id'));
+    requireEventEntry(target.entryIntent === old.entryIntent, 'permission', 'mismatched_entry', scope(targetIndex, 'entryIntent'));
+    const mismatch = (['cue', 'channel', 'locationId'] as const).find(field => plan[field] !== entry[field]);
+    if (mismatch) requireEventEntry(false, 'permission', 'mismatched_entry', scope(targetIndex, `continuation.entry.${mismatch}`));
+    const invalidated = { ...entry, status: 'invalidated' as const, handledTurnId: draft.turnId, textEvidence: '阶段固定到期，入场职责转交后续事件' };
+    const transferred = { ...entry, id: `stage-entry:${base.revision}` };
+    requireEventEntry(!normalized.has(target.id), 'invalid_output', 'reused_successor', scope(targetIndex, 'predecessorEventIds'));
     // Entry IDs are scoped by target event ID, as in the existing entry protocol.
-    requireWorld(transferred.id.length<=128,'invalid_output','event_entry');
-    requireWorld(!source.event.protagonistEntry || fingerprint(source.event.protagonistEntry)===fingerprint(entry)
-      || fingerprint(source.event.protagonistEntry)===fingerprint(invalidated),'permission','event_entry');
-    requireWorld(!target.protagonistEntry || fingerprint(target.protagonistEntry)===fingerprint(transferred),'permission','event_entry');
-    normalized.add(source.event.id); normalized.add(target.id);
-    source.event.protagonistEntry=invalidated; target.protagonistEntry=transferred;
-    target.sourceTurnIds=[...new Set([...target.sourceTurnIds,...old.sourceTurnIds])];
+    requireWorld(transferred.id.length <= 128, 'invalid_output', 'event_entry');
+    requireEventEntry(!source.protagonistEntry || fingerprint(source.protagonistEntry) === fingerprint(entry)
+      || fingerprint(source.protagonistEntry) === fingerprint(invalidated), 'permission', 'forged_entry', sourceScope);
+    requireEventEntry(!target.protagonistEntry || fingerprint(target.protagonistEntry) === fingerprint(transferred),
+      'permission', 'forged_entry', scope(targetIndex, 'protagonistEntry'));
+    normalized.add(source.id);
+    normalized.add(target.id);
+    source.protagonistEntry = invalidated;
+    target.protagonistEntry = transferred;
+    target.sourceTurnIds = [...new Set([...target.sourceTurnIds, ...old.sourceTurnIds])];
   }
   return normalized;
 }

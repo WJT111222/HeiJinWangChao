@@ -5,9 +5,11 @@ import { AiError } from '../ai/errors';
 
 export const worldRuleNames = {
   json: '世界响应不是合法JSON', schema: '世界输出字段缺失或类型不符',
-  constraint: '世界命令未满足执行约束', command_structure: '命令类型或分组不符合世界协议',
+  constraint: '世界命令未满足执行约束', command_structure: '世界命令的分组、类型或批内唯一性不合法',
   task_state: '任务状态、成果或执行时间不合法',
   task_plan: '任务必须提供 dueAt 或非空 completionCondition',
+  task_immutable: '既有任务的目标、开始时间或完成条件不可改写',
+  task_duplicate: '同一行动者已有相同目标与开始时间的任务，请复用原任务ID',
   memory_time_window: 'NPC 记忆记录时间必须位于正式起始时间与本轮投影停止时间之间',
   event_sources: '事件来源须包含当前回合、保留全部旧来源，且只能引用正式历史或当前回合',
   event_immutable: '事件类型或父子字段组合不合法，或既有起点、固定结束时间、完成条件被改写',
@@ -30,8 +32,21 @@ export const worldRuleNames = {
   secret_in_output: '输出含系统凭证，已阻止保存',
 } as const;
 export type WorldRule = keyof typeof worldRuleNames;
+export const eventEntryReasonNames = {
+  missing_successor: '缺少承接原安排的后继互动；只有存在真实待处理事项时才提交后继',
+  multiple_successors: '原入场安排对应多个后继互动，须由一个后继承接',
+  invalid_successor: '后继互动须为本批新建、非终态且无 eventKind 的事件',
+  mismatched_direction: '后继互动的 continuation.direction 须为 protagonist',
+  mismatched_entry: '后继互动的入场字段与原安排不一致（含入场类型）',
+  forged_entry: '入场状态由程序根据合法回执维护，World 不得自行填写处理结果',
+  reused_successor: '一个后继互动不能承接多个原入场身份',
+} as const;
+export type EventEntryReason = keyof typeof eventEntryReasonNames;
+export const isEventEntryReason = (value: unknown): value is EventEntryReason =>
+  typeof value === 'string' && Object.hasOwn(eventEntryReasonNames, value);
+
 export const isWorldRule = (value: unknown): value is WorldRule => typeof value === 'string' && Object.hasOwn(worldRuleNames, value);
-const fields = new Set(('eventKind parentEventId fixedEndAt chronicle category scope scopeText basis milestoneId time endTime precision date year month season from to narrative process results impacts nature supportingTurnIds relations entryId locationText state entities locations tasks events retiredEvents organizations parentId location actorRef linkedEventId fromTaskId worldCommands taskCommands eventCommands visibleHooks unresolved timeline recordedAt occurredAt occurredTimeText sourceTurnId sourceRef sourceText relatedEntryIds summary eventId event task type commandId evidence kind at outcome status reason result resultKnowledge facts reported suspected id title startAt estimatedEndAt resolvedAt resolutionText backgroundText goalText actorRefs linkedTaskIds prerequisites blockers visibility impact sourceTurnIds predecessorEventIds protagonistKnowledge worldUpdateTurnId continuation direction reason entry channel cue followup protagonistEntry queuedAt handledTurnId notice textEvidence npcId expectedRevision changes healthText locationId onScene activeGoals memory text knowledgeKind knowledgeSource createdAtGameTime affectedEntityRefs ownerRef saveId revision npc identityKey name memories knownInformation goals resolution handoff dueAt completionCondition layer addToKnownInformation organization organizationId relationText').split(' '));
+const fields = new Set(('eventKind entryIntent parentEventId fixedEndAt chronicle category scope scopeText basis milestoneId time endTime precision date year month season from to narrative process results impacts nature supportingTurnIds relations entryId locationText state entities locations tasks events retiredEvents organizations parentId location actorRef linkedEventId fromTaskId worldCommands taskCommands eventCommands visibleHooks unresolved timeline recordedAt occurredAt occurredTimeText sourceTurnId sourceRef sourceText relatedEntryIds summary eventId event task type commandId evidence kind at outcome status reason result resultKnowledge facts reported suspected id title startAt estimatedEndAt resolvedAt resolutionText backgroundText goalText actorRefs linkedTaskIds prerequisites blockers visibility impact sourceTurnIds predecessorEventIds protagonistKnowledge worldUpdateTurnId continuation direction reason entry channel cue followup protagonistEntry queuedAt handledTurnId recoverySource notice textEvidence npcId expectedRevision changes healthText locationId onScene activeGoals memory text knowledgeKind knowledgeSource createdAtGameTime affectedEntityRefs ownerRef saveId revision npc identityKey name memories knownInformation goals resolution handoff dueAt completionCondition layer addToKnownInformation organization organizationId relationText').split(' '));
 export const safeWorldPath = (path: readonly PropertyKey[]) => path.map(part => typeof part === 'number' ? part : fields.has(String(part)) ? String(part) : 'field').join('.');
 interface Scope { fieldPath?: string; commandIndex?: number; commandType?: string; worldRule?: WorldRule }
 export function worldValidationError(error: unknown, scope: Scope = {}, raw?: unknown): AiError {
@@ -42,7 +57,7 @@ export function worldValidationError(error: unknown, scope: Scope = {}, raw?: un
     const array = raw && typeof raw === 'object' && typeof group === 'string' && group in raw ? Reflect.get(raw, group) : undefined;
     const candidate: unknown = Array.isArray(array) && local !== undefined ? array[local] : undefined;
     const type = candidate && typeof candidate === 'object' && 'type' in candidate && DomainCommandSchema.options.some(option => option.shape.type.value === candidate.type) ? String(candidate.type) : scope.commandType;
-    const time = path.some(part => ['startAt','estimatedEndAt','resolvedAt','dueAt','at','occurredAt'].includes(String(part)));
+    const time = path.some(part => ['startAt','fixedEndAt','estimatedEndAt','resolvedAt','queuedAt','dueAt','at','occurredAt'].includes(String(part)));
     const groups = ['worldCommands', 'taskCommands', 'eventCommands'];
     const offset = groups.slice(0, groups.indexOf(String(group))).reduce((n, key) => n + (raw && typeof raw === 'object' && Array.isArray(Reflect.get(raw, key)) ? Reflect.get(raw, key).length : 0), 0);
     return new AiError(integrityRule === 'event_time' || (time && issue?.code !== 'invalid_type') ? 'time_data' : integrityRule ? 'data_integrity' : 'schema_fields', undefined, { worldRule: integrityRule ?? 'schema', ...scope,
@@ -69,4 +84,8 @@ export function worldValidationError(error: unknown, scope: Scope = {}, raw?: un
 
 export function requireWorld(ok: unknown, code: 'invalid_output' | 'permission' = 'invalid_output', worldRule?: WorldRule, fieldPath?: string): asserts ok {
   if (!ok) throw new AiError(code, undefined, worldRule || fieldPath ? {worldRule, fieldPath} : undefined);
+}
+
+export function requireEventEntry(ok: unknown, code: 'invalid_output' | 'permission', eventEntryReason: EventEntryReason, scope: Omit<Scope, 'worldRule'>): asserts ok {
+  if (!ok) throw new AiError(code, undefined, { ...scope, worldRule: 'event_entry', eventEntryReason });
 }

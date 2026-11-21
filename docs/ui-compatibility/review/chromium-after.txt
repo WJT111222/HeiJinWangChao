@@ -1,0 +1,180 @@
+[WebServer] (node:206964) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 20 tests using 1 worker
+
+(node:206983) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [desktop] › e2e/ai-model-selection.spec.ts:125:1 › 主题浮层的搜索、键盘、Escape、Tab与窄屏内部滚动 (7.2s)
+  ✓   2 [desktop] › e2e/history-saves.spec.ts:188:1 › 自动五节点只读预览、取消覆盖、旧链不变、日夜与窄屏截图 (8.7s)
+  ✓   3 [desktop] › e2e/history-visual.spec.ts:48:73 › 历史档案视觉 day short=false (23.2s)
+AI editor day { modelWidth: 131.140625, height: 128.265625, pane: 417.671875 }
+style day 1199 647.03125 647.03125
+style day 1200 576.8125 576.8125
+style day 1440 804.015625 804.015625
+  ✓   4 [desktop] › e2e/ui-compatibility.spec.ts:79:3 › 路由实际命中及保存、风格跨列与断点 day (10.1s)
+preset day { x: 253, y: 280.265625, width: 627, height: 180.734375 } { x: 21, y: 461, width: 859, height: 63 }
+  ✓   5 [desktop] › e2e/ui-compatibility.spec.ts:125:3 › 预设编辑区与保存栏独立操作 day (9.2s)
+history-seal {
+  color: 'rgb(115, 83, 27)',
+  box: {
+    x: 185,
+    y: 50.421875,
+    width: 36,
+    height: 33.59375,
+    top: 50.421875,
+    right: 221,
+    bottom: 84.015625,
+    left: 185
+  }
+}
+NPC day [ 'rgb(48, 41, 31)', 'rgb(247, 241, 229)' ] 12.763510242293007
+势力组织 day [ 'rgb(48, 41, 31)', 'rgb(247, 241, 229)' ] 12.763510242293007
+选中地点 rgb(48, 41, 31) rgb(247, 241, 229) 12.76
+地点名称 rgb(48, 41, 31) rgb(238, 233, 220) 11.84
+地点层级 rgb(48, 41, 31) rgb(238, 233, 220) 11.84
+地点说明 rgb(48, 41, 31) rgb(229, 225, 211) 10.97
+地点路径按钮 rgb(48, 41, 31) rgb(247, 241, 229) 12.76
+人物姓名 rgb(48, 41, 31) rgb(247, 241, 229) 12.76
+人物身份标记 rgb(102, 86, 59) rgb(247, 241, 229) 6.31
+人物姓名印记 rgb(115, 83, 27) rgb(243, 236, 219) 5.98
+人物档案标题 rgb(115, 83, 27) rgb(247, 241, 229) 6.26
+人物资料值 rgb(48, 41, 31) rgb(247, 241, 229) 12.76
+  ✓   6 [desktop] › e2e/ui-compatibility.spec.ts:156:3 › 历史地图人物、同刻纪事及纸面地图配色 day (16.6s)
+AI editor night { modelWidth: 131.140625, height: 128.265625, pane: 417.671875 }
+style night 1199 647.03125 647.03125
+style night 1200 576.8125 576.8125
+style night 1440 804.015625 804.015625
+  ✓   7 [desktop] › e2e/ui-compatibility.spec.ts:79:3 › 路由实际命中及保存、风格跨列与断点 night (11.4s)
+preset night { x: 253, y: 280.265625, width: 627, height: 180.734375 } { x: 21, y: 461, width: 859, height: 63 }
+  ✓   8 [desktop] › e2e/ui-compatibility.spec.ts:125:3 › 预设编辑区与保存栏独立操作 night (9.8s)
+history-seal {
+  color: 'rgb(224, 193, 126)',
+  box: {
+    x: 185,
+    y: 50.421875,
+    width: 36,
+    height: 33.59375,
+    top: 50.421875,
+    right: 221,
+    bottom: 84.015625,
+    left: 185
+  }
+}
+NPC night [ 'rgb(238, 230, 214)', 'rgb(19, 22, 20)' ] 14.684912267081069
+势力组织 night [ 'rgb(238, 230, 214)', 'rgb(19, 22, 20)' ] 14.684912267081069
+选中地点 rgb(238, 230, 214) rgb(28, 35, 30) 12.93
+地点名称 rgb(238, 230, 214) rgb(26, 34, 26) 13.14
+地点层级 rgb(238, 230, 214) rgb(26, 34, 26) 13.14
+地点说明 rgb(238, 230, 214) rgb(30, 39, 29) 12.42
+地点路径按钮 rgb(238, 230, 214) rgb(28, 35, 30) 12.93
+人物姓名 rgb(238, 230, 214) rgb(19, 22, 20) 14.68
+人物身份标记 rgb(193, 180, 155) rgb(19, 22, 20) 8.91
+人物姓名印记 rgb(227, 203, 138) rgb(31, 32, 25) 10.30
+人物档案标题 rgb(224, 193, 126) rgb(28, 35, 30) 9.25
+人物资料值 rgb(238, 230, 214) rgb(28, 35, 30) 12.93
+  ✓   9 [desktop] › e2e/ui-compatibility.spec.ts:156:3 › 历史地图人物、同刻纪事及纸面地图配色 night (17.2s)
+home style 1199 888.0625 888.0625
+home style 1200 837.8125 837.8125
+home style 1440 845.8125 845.8125
+  ✓  10 [desktop] › e2e/ui-compatibility.spec.ts:257:1 › 首页独立设置窗口在断点两侧都完整使用表单宽度 (4.1s)
+(node:207617) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  11 [mobile] › e2e/ai-model-selection.spec.ts:125:1 › 主题浮层的搜索、键盘、Escape、Tab与窄屏内部滚动 (5.8s)
+  ✓  12 [mobile] › e2e/history-saves.spec.ts:188:1 › 自动五节点只读预览、取消覆盖、旧链不变、日夜与窄屏截图 (5.5s)
+  ✓  13 [mobile] › e2e/history-visual.spec.ts:48:73 › 历史档案视觉 day short=false (16.2s)
+style day 900 543.999979019165 543.9999933242798
+style day 360 332 332
+  ✓  14 [mobile] › e2e/ui-compatibility.spec.ts:79:3 › 路由实际命中及保存、风格跨列与断点 day (9.1s)
+preset day { x: 1, y: 147.65625, width: 358, height: 85.953125 } { x: 1, y: 233.609375, width: 358, height: 85.390625 }
+  ✓  15 [mobile] › e2e/ui-compatibility.spec.ts:125:3 › 预设编辑区与保存栏独立操作 day (9.6s)
+map contrast day [ 6.4719899847721285, 5.766941847407008, 5.766941847407008 ]
+archive-seal {
+  color: 'rgb(135, 56, 39)',
+  box: {
+    x: 14,
+    y: 36.578125,
+    width: 35.1875,
+    height: 35.1875,
+    top: 36.578125,
+    right: 49.1875,
+    bottom: 71.765625,
+    left: 14
+  }
+}
+history-seal {
+  color: 'rgb(115, 83, 27)',
+  box: {
+    x: 15,
+    y: 115.75947570800781,
+    width: 35.1875,
+    height: 35.1875,
+    top: 115.75947570800781,
+    right: 50.1875,
+    bottom: 150.9469757080078,
+    left: 15
+  }
+}
+NPC day [ 'rgb(48, 41, 31)', 'rgb(247, 241, 229)' ] 12.763510242293007
+势力组织 day [ 'rgb(48, 41, 31)', 'rgb(247, 241, 229)' ] 12.763510242293007
+选中地点 rgb(48, 41, 31) rgb(247, 241, 229) 12.76
+地点名称 rgb(48, 41, 31) rgb(238, 233, 220) 11.84
+地点层级 rgb(48, 41, 31) rgb(238, 233, 220) 11.84
+地点说明 rgb(48, 41, 31) rgb(229, 225, 211) 10.97
+地点路径按钮 rgb(48, 41, 31) rgb(247, 241, 229) 12.76
+人物姓名 rgb(48, 41, 31) rgb(247, 241, 229) 12.76
+人物身份标记 rgb(102, 86, 59) rgb(247, 241, 229) 6.31
+人物姓名印记 rgb(115, 83, 27) rgb(243, 236, 219) 5.98
+人物档案标题 rgb(115, 83, 27) rgb(247, 241, 229) 6.26
+人物资料值 rgb(48, 41, 31) rgb(247, 241, 229) 12.76
+  ✓  16 [mobile] › e2e/ui-compatibility.spec.ts:156:3 › 历史地图人物、同刻纪事及纸面地图配色 day (12.3s)
+style night 900 543.9999904632568 544.0000162124634
+style night 360 332 332
+  ✓  17 [mobile] › e2e/ui-compatibility.spec.ts:79:3 › 路由实际命中及保存、风格跨列与断点 night (9.4s)
+preset night { x: 1, y: 147.65625, width: 358, height: 85.953125 } { x: 1, y: 233.609375, width: 358, height: 85.390625 }
+  ✓  18 [mobile] › e2e/ui-compatibility.spec.ts:125:3 › 预设编辑区与保存栏独立操作 night (9.7s)
+map contrast night [ 6.4719899847721285, 5.766941847407008, 5.766941847407008 ]
+archive-seal {
+  color: 'rgb(244, 237, 224)',
+  box: {
+    x: 14,
+    y: 36.578125,
+    width: 35.1875,
+    height: 35.1875,
+    top: 36.578125,
+    right: 49.1875,
+    bottom: 71.765625,
+    left: 14
+  }
+}
+history-seal {
+  color: 'rgb(232, 209, 150)',
+  box: {
+    x: 15,
+    y: 189.90634155273438,
+    width: 35.1875,
+    height: 35.1875,
+    top: 189.90634155273438,
+    right: 50.1875,
+    bottom: 225.09384155273438,
+    left: 15
+  }
+}
+NPC night [ 'rgb(238, 230, 214)', 'rgb(19, 22, 20)' ] 14.684912267081069
+势力组织 night [ 'rgb(238, 230, 214)', 'rgb(19, 22, 20)' ] 14.684912267081069
+选中地点 rgb(238, 230, 214) rgb(28, 35, 30) 12.93
+地点名称 rgb(238, 230, 214) rgb(26, 34, 26) 13.14
+地点层级 rgb(238, 230, 214) rgb(26, 34, 26) 13.14
+地点说明 rgb(238, 230, 214) rgb(30, 39, 29) 12.42
+地点路径按钮 rgb(238, 230, 214) rgb(28, 35, 30) 12.93
+人物姓名 rgb(238, 230, 214) rgb(19, 22, 20) 14.68
+人物身份标记 rgb(193, 180, 155) rgb(19, 22, 20) 8.91
+人物姓名印记 rgb(227, 203, 138) rgb(31, 32, 25) 10.30
+人物档案标题 rgb(224, 193, 126) rgb(28, 35, 30) 9.25
+人物资料值 rgb(238, 230, 214) rgb(28, 35, 30) 12.93
+  ✓  19 [mobile] › e2e/ui-compatibility.spec.ts:156:3 › 历史地图人物、同刻纪事及纸面地图配色 night (12.3s)
+home style 900 544 544
+home style 360 332 332
+  ✓  20 [mobile] › e2e/ui-compatibility.spec.ts:257:1 › 首页独立设置窗口在断点两侧都完整使用表单宽度 (3.0s)
+
+  20 passed (3.6m)

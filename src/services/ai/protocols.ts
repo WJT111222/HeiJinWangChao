@@ -1,8 +1,10 @@
+import type { Sampling } from '../../presets/package';
 import type { RequestSnapshot } from './snapshot';
 import { secretFor } from './snapshot';
 import { AiError } from './errors';
 import { thinkingParameters } from './thinking';
-import { checkFinish, skipsTemperature, usesCompletionTokens } from './compat';
+import { checkFinish, knownSamplingLimit, samplingFields, skipsPresetSampling, skipsTemperature, usesCompletionTokens } from './compat';
+import type { PresetSamplingInspection } from './compat';
 import { isOpenAiCompatible } from './configuration';
 export interface AiMessage {
   role: 'system' | 'user' | 'assistant';
@@ -62,14 +64,17 @@ export function wireRequest(
   snapshot: RequestSnapshot,
   messages: readonly AiMessage[],
   stream: boolean,
+  presetSampling?: Sampling,
 ) {
   if (!messages.length || !snapshot.model) throw new AiError('configuration');
+  const sampling = snapshot.stage === 'story' ? presetSampling : undefined;
+  const mixedSystemAllowed = !!sampling && isOpenAiCompatible(snapshot.channel.protocol);
   let userSeen = false;
   for (const message of messages) {
     if (!['system', 'user', 'assistant'].includes(message.role) || !message.content.trim())
       throw new AiError('configuration');
     if (message.role !== 'system') userSeen = true;
-    else if (userSeen) throw new AiError('unsupported');
+    else if (userSeen && !mixedSystemAllowed) throw new AiError('unsupported');
   }
   if (messages.at(-1)?.role === 'assistant' && !snapshot.useCot) throw new AiError('unsupported');
   // 使用完整确认历史，以 user 收尾；不猜测中转的预填充/Prefix 能力。
@@ -80,19 +85,21 @@ export function wireRequest(
   const diagnostics = [...snapshot.diagnostics];
   const max = cap.maxOutputTokens ? params.maxOutputTokens : undefined;
   const thinking = thinkingParameters(snapshot.thinkingCapability, protocol === 'anthropic' ? max ?? 4096 : max);
+  const desiredTemperature = sampling ? sampling.temperature : params.temperature;
+  const rememberedTemperature = protocol === 'openai' && skipsTemperature(snapshot.channel, snapshot.model);
   const temperature =
-    cap.temperature && !thinking.anthropic && !(protocol === 'anthropic' && (params.temperature ?? 0) > 1)
-      && !(protocol === 'openai' && skipsTemperature(snapshot.channel, snapshot.model))
-      ? params.temperature
+    cap.temperature && !thinking.anthropic && !(protocol === 'anthropic' && (desiredTemperature ?? 0) > 1)
+      && !rememberedTemperature
+      ? desiredTemperature
       : undefined;
   const completionTokens = protocol === 'openai' && usesCompletionTokens(snapshot.channel, snapshot.model);
   if (completionTokens && max !== undefined) diagnostics.push('MAX_COMPLETION_TOKENS_FIELD');
-  if (params.temperature !== undefined && temperature === undefined)
+  if (desiredTemperature !== undefined && temperature === undefined)
     diagnostics.push('TEMPERATURE_SKIPPED_UNSUPPORTED');
   if (params.maxOutputTokens !== undefined && max === undefined)
     diagnostics.push('MAX_TOKENS_SKIPPED_UNSUPPORTED');
   if (thinking.gemini || thinking.anthropic) diagnostics.push('NATIVE_THINKING_AUTO_ENABLED');
-  const structured = snapshot.stage === 'world' || snapshot.stage === 'memory';
+  const structured = snapshot.stage === 'memory';
   if (snapshot.stage === 'variables' && cap.jsonMode) diagnostics.push('VARIABLE_TEXT_MODE_JSON_DISABLED');
   if (structured && (!cap.jsonMode || protocol === 'anthropic'))
     diagnostics.push('NATIVE_JSON_MODE_SKIPPED_STRICT_PROMPT_RETAINED');
@@ -142,14 +149,46 @@ export function wireRequest(
       ...(temperature !== undefined ? { temperature } : {}),
     };
   }
+  const url = endpoint(snapshot, path);
+  let presetSamplingInspection: PresetSamplingInspection[] | undefined;
+  if (sampling) {
+    if (isOpenAiCompatible(protocol)) {
+      presetSamplingInspection = [];
+      for (const field of samplingFields) {
+        const desired = sampling[field];
+        if (desired === undefined) continue;
+        const omission = field === 'temperature' && !cap.temperature ? 'channel_setting'
+          : knownSamplingLimit(snapshot.channel, url, snapshot.model, field, body) ? 'known_capability'
+          : (field === 'temperature' && rememberedTemperature)
+            || skipsPresetSampling(snapshot.channel, url, snapshot.model, field, desired, body) ? 'remembered_rejection'
+          : undefined;
+        if (omission) {
+          delete body[field];
+          presetSamplingInspection.push({ field, desired, omission });
+        } else {
+          body[field] = desired;
+          presetSamplingInspection.push({ field, desired, sent: desired });
+        }
+      }
+    } else if (protocol === 'gemini') {
+      Object.assign(body.generationConfig as object, {
+        topP: sampling.top_p, frequencyPenalty: sampling.frequency_penalty, presencePenalty: sampling.presence_penalty,
+      });
+    } else {
+      if (sampling.top_p !== undefined && temperature === undefined && !thinking.anthropic) body.top_p = sampling.top_p;
+      else if (sampling.top_p !== undefined) diagnostics.push('PRESET_TOP_P_SKIPPED');
+      if (sampling.frequency_penalty !== undefined || sampling.presence_penalty !== undefined) diagnostics.push('PRESET_PENALTIES_UNSUPPORTED');
+    }
+  }
   return {
-    url: endpoint(snapshot, path),
+    url,
     init: {
       method: 'POST',
       headers: { ...authHeaders(snapshot), 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     },
     diagnostics,
+    ...(presetSamplingInspection ? { presetSamplingInspection } : {}),
   };
 }
 const token = (v: unknown) =>

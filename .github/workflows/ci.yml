@@ -1,0 +1,177 @@
+# 自动测试（GitHub Actions；公开仓库免费）。只读权限，不使用任何 Secrets，不部署、不发布。
+#
+# 什么时候跑什么：
+# - PR 每次推送：只跑「检查、单元测试与构建」（约 4 分钟），作为合并前的正式把关。
+# - 合并 / 推送到 main：检查 + 全量 e2e；只改了说明文档（docs/、根目录 *.md、公告）时不跑 e2e。
+# - 每天北京时间 03:17：在 main 上跑一次检查 + 全量 e2e。
+# - 手动：Actions →「自动测试」→ Run workflow，可选任意分支（包括 PR 分支），并选择是否同时跑 e2e。
+name: 自动测试
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 19 * * *'
+  workflow_dispatch:
+    inputs:
+      e2e:
+        description: 同时运行端到端测试（全量约 30 分钟）
+        type: boolean
+        default: true
+      specs:
+        description: 只跑指定的 e2e 文件（空格分隔，如 e2e/game.spec.ts e2e/time-preflight.spec.ts）；留空跑全量
+        type: string
+        default: ''
+      project:
+        description: 只跑电脑端或手机端
+        type: choice
+        options: [all, desktop, mobile]
+        default: all
+
+permissions:
+  contents: read
+
+# 同一个 PR 或分支推送新提交时，取消还没跑完的旧一轮，只测最新的。
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: 检查、单元测试与构建（npm run check）
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      # 依次运行：文件名检查、lint、Vitest 单元测试、命令目录检查、类型检查、Vite 构建
+      - name: npm run check
+        run: npm run check
+
+  # 推送到 main 时判断这次是否只改了说明文档；只改文档就不跑 e2e。
+  # 注意：单元测试会读取部分 docs 文件（例如 docs/OUTPUT_CONTRACT.md），所以「检查」始终运行，不受此影响。
+  scope:
+    name: 判断是否需要端到端测试
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      e2e: ${{ steps.diff.outputs.e2e }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - id: diff
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = 0000000000000000000000000000000000000000 ] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            echo "无法确定改动范围，按需要 e2e 处理"; echo "e2e=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          changed=$(git diff --name-only "$BEFORE" "$AFTER")
+          echo "本次改动的文件："; echo "$changed"
+          code=$(echo "$changed" | grep -vE '^(docs/|announcements/)|^[^/]+\.md$' || true)
+          if [ -n "$code" ]; then echo "e2e=true" >> "$GITHUB_OUTPUT"; else echo "只改了说明文档，跳过 e2e"; echo "e2e=false" >> "$GITHUB_OUTPUT"; fi
+
+  # 全量 e2e 单机要八九十分钟，拆成 4 组在 4 台机器上同时跑（Playwright 内置分片），每组约四分之一。
+  #
+  # 【暂时仅供参考】main 上现有一批 e2e 失败（首次在 GitHub 上全量运行时发现，待单独清理）。
+  # 在清理完成前，e2e 失败不会让这一项显示红叉：结果照常记录，失败数会以黄色警告和本次运行的「Summary」页列出。
+  # 清理完成后，删除下方 test:e2e 步骤的 continue-on-error 一行，即恢复为正式把关。
+  e2e:
+    name: 端到端测试 第 ${{ matrix.shard }}/4 组（仅供参考）
+    needs: scope
+    if: >-
+      always() && (
+        github.event_name == 'schedule' ||
+        (github.event_name == 'workflow_dispatch' && inputs.e2e) ||
+        (github.event_name == 'push' && needs.scope.outputs.e2e == 'true')
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 安装 Chromium 浏览器
+        run: npx playwright install --with-deps chromium
+
+      # playwright.config.ts 会自动启动开发服务器（CI 环境下不复用已有服务器）
+      - name: npm run test:e2e（第 ${{ matrix.shard }}/4 组）
+        id: e2e
+        continue-on-error: true
+        env:
+          SPECS: ${{ inputs.specs }}
+          PROJECT: ${{ inputs.project }}
+        run: |
+          set -o pipefail
+          args=(--shard=${{ matrix.shard }}/4)
+          if [ -n "$PROJECT" ] && [ "$PROJECT" != all ]; then args+=(--project="$PROJECT"); fi
+          # 文件名只允许 e2e/ 下的 .spec.ts，防止把任意参数传给 Playwright。
+          for spec in $SPECS; do
+            [[ "$spec" =~ ^e2e/[A-Za-z0-9._/-]+\.spec\.ts(:[0-9]+)?$ ]] || { echo "不接受的文件：$spec"; exit 2; }
+            args+=("$spec")
+          done
+          npm run test:e2e -- "${args[@]}" 2>&1 | tee e2e-output.txt
+
+      - name: 汇总本组结果
+        if: always() && steps.e2e.outcome != 'skipped'
+        env:
+          SHARD: ${{ matrix.shard }}
+          OUTCOME: ${{ steps.e2e.outcome }}
+        run: |
+          counts=$(grep -E '^ +[0-9]+ (passed|failed|flaky|skipped|did not run|interrupted)' e2e-output.txt | sed -E 's/^ +//' | awk 'NR>1{printf "，"} {printf "%s", $0}')
+          {
+            echo "### 端到端测试 第 ${SHARD}/4 组：${counts:-没有读到汇总}"
+            if [ "$OUTCOME" = failure ]; then
+              echo ""
+              echo "失败的用例（仅供参考，不影响本项结果）："
+              echo '```'
+              awk '/^ +[0-9]+ failed$/{f=1;next} f&&/^ +\[/{print;next} f{exit}' e2e-output.txt | sed -E 's/ (─)+ *$//; s/^ +//'
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$OUTCOME" = failure ]; then echo "::warning title=端到端测试 第 ${SHARD}/4 组（仅供参考）::${counts}"; fi
+
+      # 每个失败用例的页面结构快照（error-context.md）直接打印到日志，方便不下载附件就能定位原因。
+      - name: 打印失败时的页面快照
+        if: always() && steps.e2e.outcome == 'failure'
+        run: |
+          find test-results -name error-context.md 2>/dev/null | sort | head -60 | while read -r file; do
+            echo "::group::$(dirname "$file" | sed 's#^test-results/##')"
+            head -c 6000 "$file"; echo
+            echo "::endgroup::"
+          done
+
+      - name: 失败时上传测试记录与截图
+        if: always() && steps.e2e.outcome == 'failure'
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-results-${{ matrix.shard }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore

@@ -1,3 +1,5 @@
+import { assistantView, bindTavernPage, enterTavernChat } from '../../presets/tavern/hostState';
+import { ScriptButtons } from '../settings/TavernAssistant';
 import { stageResponses } from '../../services/ai/stageResponses';
 import { MobileWorkflowDrawer } from './MobileWorkflowDrawer';
 import {MobileDiagnostics} from './MobileDiagnostics';
@@ -17,6 +19,7 @@ import { MapPanel } from '../panels/MapPanel';
 import type { MapUiState } from '../panels/mapView';
 import { MemoryPanel } from '../panels/MemoryPanel';
 import type { MemoryUiState } from '../panels/MemoryPanel';
+import { SettlementNotice } from './SettlementNotice';
 import { TurnChanges } from './TurnChangesView';
 import { useTurnComparison } from './useTurnComparison';
 import { turnChangeBadges } from './turnChangeBadges';
@@ -72,6 +75,8 @@ import './day-appearance.css';
 import {MobileCityBar,MobileStatus,mobileCitySeal} from './MobileCity';
 import {MobileActions} from './MobileActions';
 import {ComposerTools} from './ComposerTools';
+import { legacyNotificationRecoveryOptions } from '../../domain/legacyNotificationRecovery';
+import { LegacyNotificationRecoveryDialog } from './LegacyNotificationRecoveryDialog';
 import { mayStartStory } from './storyGenerationPolicy';
 import { canContinueStory, continuationBlock, discardStoryPartial, partialNarrative as countPartialNarrative, STORY_CONTINUATION_LIMIT, storyPartialVisible } from '../../domain/storyContinuation';
 import { StoryStream } from '../../workflows/storyStream';
@@ -162,11 +167,16 @@ export function GameScreen({
   }
   const [worldDirectoryOpen, setWorldDirectoryOpen] = useState(false);
   const [diagnosticsOpen,setDiagnosticsOpen]=useState(false);
+  const [legacyRecoveryDialog,setLegacyRecoveryDialog] = useState<string>();
+  const legacyRecoveryOptions = useMemo(() => legacyNotificationRecoveryOptions(state,draft),[state,draft]);
+  const recoveryDraftKey = draft && `${draft.saveId}:${draft.turnId}:${draft.draftRevision}`;
   // 玩家关掉的错误横幅：只记住当时那组错误，出现新的错误时会重新显示。
   const [dismissedError, setDismissedError] = useState('');
   const [mobileStatusOpen,setMobileStatusOpen]=useState(false),[mobileMini,setMobileMini]=useState(false);
   const readerY=useRef(0),inputElement=useRef<HTMLTextAreaElement>(null);
-  const [input, setInput] = useState('');
+  const inputKey = JSON.stringify(['tavern-reload-input', state.saveId, instance, state.revision, draft?.turnId, draft?.draftRevision]);
+  const [input, setInput] = useState(() => { try { return sessionStorage.getItem(inputKey) ?? ''; } catch { return ''; } });
+  useEffect(() => { try { sessionStorage.removeItem(inputKey); } catch { /* storage may be unavailable */ } }, [inputKey]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [concurrencyBlocked, setConcurrencyBlocked] = useState(false);
@@ -214,6 +224,10 @@ export function GameScreen({
     return () => { disposed = true; };
   }, [openingStart, state, draft, automatic.generate]);
   const memory = useMemoryMaintenance(repository, state.saveId, settings, onMemorySaved, onSettings);
+  const summaryFailure = memory.popup;
+  const memoryState = memory.snapshot.state;
+  const settingsMemoryState = memoryState?.saveId === state.saveId && memoryState.createdAt === state.createdAt &&
+    memoryState.revision >= state.revision ? memoryState : state;
   function handleSettled(result: TurnCommitResult) {
     onCommitted(result);
     if (!result.replayed) void memory.run(true);
@@ -227,6 +241,25 @@ export function GameScreen({
   );
   const npcManagement = useNpcManagement(repository, state, draft, workflowBusy, onNpcManaged, instance);
   const busy = workflowBusy || Boolean(npcManagement.pendingId);
+  useEffect(() => { enterTavernChat(state.saveId, instance); }, [state.saveId, instance]);
+  const recentActions = useRef<{ state: GameState; actions: Record<string, string> }>(undefined);
+  useEffect(() => {
+    if (!assistantView.snapshot().length || !state.journal.length) return;
+    let alive = true;
+    void repository.recentStoryActions(state, settings.memory.immediateWindowSize).then(actions => {
+      if (alive) recentActions.current = { state, actions };
+    }).catch(() => { /* A concurrent timeline change invalidates this optional preview. */ });
+    return () => { alive = false; };
+  }, [repository, state, settings.memory.immediateWindowSize]);
+  useEffect(() => bindTavernPage(() => ({
+    stage: 'story', saveInstance: instance, historyActions: recentActions.current?.state === state ? recentActions.current.actions : undefined, mode: draft?.turnKind ?? 'regular', state, draft, userInput: input || draft?.userInput || '', settings, companionProfile,
+  }), () => {
+    if (busy) throw new Error('请先完成或取消当前操作。');
+    if (input) {
+      sessionStorage.setItem(inputKey, input);
+      return () => sessionStorage.removeItem(inputKey);
+    }
+  }), [state,draft,input,settings,companionProfile,busy,inputKey,instance]);
   const reader = useRef<HTMLDivElement>(null);
   const runtimeSwitches = useRef<HTMLOListElement | HTMLDivElement>(null);
   const workflowToggle = useRef<HTMLButtonElement>(null);
@@ -435,8 +468,17 @@ export function GameScreen({
     (draft?.stageStatus.variables !== 'ready' || draft.variables?.validation !== 'validated' || storyNeeded);
   const worldNeeded = settings.runtime.useWorldStage &&
     (!draft?.world || !['ready', 'preview'].includes(draft.stageStatus.world) || variablesNeeded || storyNeeded);
+  const retryWorldOnly = Boolean(validDraft && !stageSettingsChanged && !storyNeeded && !variablesNeeded && worldNeeded
+    && draft?.useVariableStage && draft.stageStatus.variables === 'ready' && draft.variables?.validation === 'validated'
+    && (draft.stageStatus.world === 'failed' || draft.failures.some(failure =>
+      failure.stage === 'world' && failure.storyRevision === draft.storyRevision)));
+  const worldRetryHint = '本次仅重试动态世界，保留已通过的正文和变量。重新请求可能产生模型费用。';
   const canGenerate = Boolean(validDraft && !awaitingAction && (storyNeeded || variablesNeeded || worldNeeded || stageSettingsChanged));
-  const disabledGuidance = !settings.runtime.useVariableStage && !settings.runtime.useWorldStage
+  const recoveryStagesOff = Boolean(draft?.legacyNotificationRecovery
+    && (!settings.runtime.useVariableStage || !settings.runtime.useWorldStage));
+  const disabledGuidance = recoveryStagesOff
+    ? '结算旧通知需要启用变量管理和动态世界。'
+    : !settings.runtime.useVariableStage && !settings.runtime.useWorldStage
     ? '变量管理和动态世界已关闭：正文通过校验后正式结算。纯小说模式不更新世界变量和普通回合时钟。'
     : !settings.runtime.useVariableStage && draft?.variables?.validation !== 'validated'
       ? '动态世界依赖合法变量候选。变量管理已关闭，世界结果仅供预览，不能正式结算；请启用变量补算，或同时关闭动态世界。'
@@ -624,7 +666,7 @@ export function GameScreen({
     : workflowGuidance || (awaitingAction ? undefined
       : canCommit ? '候选已完成，可点击左侧按钮完成本回合结算；发送新行动将先结算，再绑定下一回合。'
       : nextStage === 'variables' || nextStage === 'world'
-        ? `本回合尚未结算，请点击输入框左侧${compactSidebars ? `“续”（${workflowAction.label}）` : `“${workflowAction.label}”`}。输入仅本页暂存，不会替换已绑定行动。`
+        ? `本回合尚未结算，请点击输入框左侧${compactSidebars ? `“续”（${workflowAction.label}）` : `“${workflowAction.label}”`}。${retryWorldOnly ? worldRetryHint : '输入仅本页暂存，不会替换已绑定行动。'}`
         : rebindAction ? `尚无正文候选。可修改回填行动后尝试发送；左侧“${compactSidebars ? '续' : workflowAction.label}”使用原已绑定行动。请求前仍会检查运行锁。`
         : '请先使用左侧按钮生成本回合正文，再继续必要阶段。');
   const workflowState = hasWorkflowError
@@ -643,6 +685,7 @@ export function GameScreen({
   const diagnosticRecovery = busy ? '当前仍在处理，请等待结束或使用原有取消操作。'
     : !validDraft ? '当前草稿版本不可继续，请重新读取存档后检查。'
     : !navigator.locks ? '当前浏览器缺少 Web Locks，不能安全启动请求；请更换支持的浏览器并重新读档。'
+    : retryWorldOnly ? `点击「继续未完成阶段」恢复本回合。${worldRetryHint}`
     : workflowAction.kind === 'continue' && !workflowAction.disabled ? `当前可主动${workflowAction.label}；生成可能产生费用，查看诊断不会发起请求。`
     : '当前暂不可继续，请检查阶段开关与现有操作按钮。';
   const errorFailures = draft?.failures.filter(failure => failure.storyRevision === draft.storyRevision).slice(-6) ?? [];
@@ -662,6 +705,17 @@ export function GameScreen({
           <button type="button" className="wf-banner-close" aria-label="关闭错误提示" title="关闭提示（运行诊断里仍保留完整记录）"
             onClick={() => setDismissedError(errorSignature)}>×</button>
         </div>
+      )}
+      {legacyRecoveryOptions.length > 0 && (
+        <div className="wf-banner" data-level="warn" role="note">
+          <span className="wf-banner-tag" aria-hidden="true">复</span>
+          <div className="wf-banner-msg"><p>发现到期的旧入场。纯通知可主动恢复，待决请求继续保留。</p></div>
+          <button type="button" disabled={busy || !navigator.locks || !settings.runtime.useVariableStage || !settings.runtime.useWorldStage}
+            onClick={() => setLegacyRecoveryDialog(recoveryDraftKey)}>修复旧通知回合</button>
+        </div>
+      )}
+      {draft?.legacyNotificationRecovery && !busy && !recoveryStagesOff && (
+        <p role="status" className="field-hint">修复正文已保存。可继续未完成阶段验证收悉并结算。</p>
       )}
       {workflowGuidance && (
         <div className="wf-banner" data-level="warn" role="note" aria-label="阶段设置提示">
@@ -686,7 +740,7 @@ export function GameScreen({
           ? "正在执行本次已启用阶段"
           : canCommit
             ? "正文及已启用阶段的候选均已通过校验"
-            : "从第一个未完成的阶段继续"}
+            : retryWorldOnly ? worldRetryHint : "从第一个未完成的阶段继续"}
       </small>
     </div>
   ) : (
@@ -700,6 +754,7 @@ export function GameScreen({
                         onFollow={progress && !following ? followLatest : undefined}
                         notices={layout === 'sheet' && workflowView === 'diagnostics' ? <>{desktopNotices}<button type="button" onClick={() => setDiagnosticsOpen(true)}>重试与变更详情</button></> : desktopNotices}
                         primary={desktopPrimary}
+                        feeHint={layout === 'sheet' && retryWorldOnly && !busy ? worldRetryHint : undefined}
                         steps={progressSteps}
                         view={layout === 'desktop' && workflowView === 'home' ? autoWorkflowView : workflowView ?? (layout === 'sheet' ? 'home' : autoWorkflowView)}
                         onView={(view) => { setWorkflowView(view); setWorkflowTab("overview"); }}
@@ -753,6 +808,7 @@ export function GameScreen({
         >
           <div className="reader-heading">
             <span className="eyebrow">THE STORY</span>
+            {!compactSidebars && <ScriptButtons/>}
             <span className="tag">
               {progress
                 ? progress.readingPhase === 'waiting' ? '完整响应 · 尚未保存' : '生成预览 · 尚未保存'
@@ -767,6 +823,7 @@ export function GameScreen({
             <article className={`story-entry glass ${index < view.journal.length - 1 || draft?.story || progress ? 'past' : 'latest'}`} key={entry.turnId}>
               <CityChapter number={index + 1} state={state} scene={state.journal[index]?.scene} desktop={!compactSidebars} />
               <StoryReading narrative={entry.narrative} protagonistName={hero.name} />
+              <SettlementNotice settlement={state.journal[index]?.settlement} />
               {index===view.journal.length-1&&showChanges&&<TurnChanges state={state} comparison={turnComparison} mobile={compactSidebars} onOpen={openChange}/>}
             </article>
           ))}
@@ -861,7 +918,7 @@ export function GameScreen({
                     <span className="mobile-progress-segments" aria-hidden="true">{progressSteps.map(step=><i key={step.stage} data-s={step.visual}/>)}</span>
                     <strong role="status" aria-live="polite"><span className="sr-only">三阶段 · </span>{workflowLabel}</strong><span className="more">详情 ›</span>
                   </button></div>
-                  {workflowOpen&&<MobileWorkflowDrawer inputRef={inputElement} onClose={closeWorkflow}>{renderWorkflow('sheet')}</MobileWorkflowDrawer>}
+                  {workflowOpen&&<MobileWorkflowDrawer inputRef={inputElement} onClose={closeWorkflow}><ScriptButtons/>{renderWorkflow('sheet')}</MobileWorkflowDrawer>}
                 </div>
               ) : (
                 <div
@@ -953,6 +1010,13 @@ export function GameScreen({
         <button data-mobile-tab="world" aria-current={worldDirectoryOpen||(panel&&panel!=='人物档案'&&panel!=='经济与资产')?'page':undefined} onClick={() => setWorldDirectoryOpen(true)}><span className="mobile-seal" aria-hidden="true">世</span>世界资料</button>
         <button data-settings-open aria-current={renderSettings?'page':undefined} onClick={onOpenSettings}><span className="mobile-seal" aria-hidden="true">设</span>设置</button>
       </nav>
+      {legacyRecoveryDialog && legacyRecoveryDialog === recoveryDraftKey && draft?.story && legacyRecoveryOptions.length > 0 && (
+        <LegacyNotificationRecoveryDialog options={legacyRecoveryOptions} narrative={draft.story.narrative}
+          onClose={() => setLegacyRecoveryDialog(undefined)} onConfirm={selection => {
+            setLegacyRecoveryDialog(undefined);
+            if (!busy) void generate(selection);
+          }} />
+      )}
       {compactSidebars&&<MobileDiagnostics saveId={state.saveId} turnId={rawTurnId} draft={draft} entries={runtimeLogs} recovery={diagnosticRecovery} onClear={()=>setRuntimeLogs([])} open={diagnosticsOpen} onOpen={()=>setDiagnosticsOpen(true)} onClose={()=>setDiagnosticsOpen(false)}/>}
       {compactSidebars && mobileStatusOpen && <Dialog title="此时此地" mobileVariant="sheet" sheetExpandable seal={mobileCitySeal(state)} eyebrow="NOW · HERE" className="mobile-status-sheet" onClose={()=>setMobileStatusOpen(false)} returnFocus={()=>document.querySelector<HTMLElement>('[data-mobile-status]')??mobileReturnFocus('hero')}>
         <MobileStatus state={state} equipment={equipment} onProfile={()=>{setMobileStatusOpen(false);setPanel('人物档案');}} onEconomy={()=>{setMobileStatusOpen(false);setPanel('经济与资产');}}/>
@@ -1028,57 +1092,41 @@ export function GameScreen({
           )}
         </Dialog>
       )}
-      {renderSettings?.(<MemorySummarySettings state={state} settings={settings} onSave={next => {
+      {renderSettings?.(<MemorySummarySettings state={settingsMemoryState} settings={settings} onSave={next => {
         onSettings(next);
         const saved = SettingsSchema.parse(JSON.parse(localStorage.getItem(settingsKey) || 'null'));
         if (fingerprint(saved.memory) !== fingerprint(next.memory)) throw new Error('memory settings not saved');
-      }} phase={memory.phase} activeKind={memory.activeKind} notice={memory.notice}
-        onRun={(kind, npcId) => void memory.run(false, kind, npcId)} onCancel={memory.cancel} />)}
-      {memory.failures[0] && (
+      }} phase={memory.phase} activity={memory.activity} notice={memory.notice}
+        failures={memory.snapshot.failures} paused={memory.snapshot.paused} busy={memory.snapshot.busy}
+        onRun={(kind, npcId, retryId) => void memory.run(false, kind, npcId, retryId)} onCancel={memory.cancel} />)}
+      {summaryFailure && (
         <Dialog
-          title={summaryFailureTitle(memory.failures[0])}
+          title={summaryFailureTitle(summaryFailure)}
           small
-          feedback={
-            summaryFailureTitle(memory.failures[0]).includes("待确认")
-              ? "warn"
-              : "err"
-          }
-          seal="忆" mobileVariant="confirm" footer={<button onClick={()=>memory.closeFailure(memory.failures[0].kind)}>关闭</button>}
-          onClose={() => memory.closeFailure(memory.failures[0].kind)}
+          feedback={summaryFailure.pending ? 'warn' : 'err'}
+          seal="忆" mobileVariant="confirm"
+          footer={<button onClick={() => memory.closeFailure(summaryFailure)}>关闭</button>}
+          onClose={() => memory.closeFailure(summaryFailure)}
         >
-          <p>{memory.failures[0].message}</p>
-          <p>原始记忆仍保留；重新生成可能产生费用。</p>
+          {summaryFailure.npcId && <p>{state.npc[summaryFailure.npcId]?.name ?? '原人物'}</p>}
+          <p>{summaryFailure.message}</p>
+          {summaryFailure.pending && !summaryFailure.legacy && <p>本次请求可能已计费。选择重新生成会再发一次请求。</p>}
           <div className="feedback-dialog-actions memory-feedback-actions">
-            {memory.failures[0].kind === "npc" && !memory.failures[0].npcId ? (
-              <button
-                className="primary"
-                disabled={Boolean(memory.phase)}
+            {summaryFailure.retryId && !summaryFailure.legacy && (summaryFailure.kind !== 'npc' || summaryFailure.npcId) ? (
+              <button className="primary" disabled={Boolean(memory.phase) || memory.snapshot.busy}
                 onClick={() => {
-                  memory.closeFailure("npc");
-                  onOpenSettings();
-                }}
-              >
-                前往设置选择人物
-              </button>
-            ) : (
-              <button
-                className="primary"
-                disabled={Boolean(memory.phase)}
-                onClick={() =>
-                  void memory.run(
-                    false,
-                    memory.failures[0].kind,
-                    memory.failures[0].npcId,
-                  )
-                }
-              >
+                  const failure = summaryFailure;
+                  void memory.run(false, failure.kind, failure.npcId, failure.retryId);
+                }}>
                 重新生成
               </button>
+            ) : (
+              <button className="primary" onClick={() => {
+                memory.closeFailure(summaryFailure);
+                onOpenSettings();
+              }}>前往记忆设置</button>
             )}
-            <button
-              disabled={Boolean(memory.phase)}
-              onClick={() => memory.pause(memory.failures[0].kind)}
-            >
+            <button disabled={Boolean(memory.phase)} onClick={() => memory.pause(summaryFailure)}>
               暂停自动总结
             </button>
           </div>

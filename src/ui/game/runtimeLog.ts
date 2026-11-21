@@ -11,7 +11,7 @@ import { isDomainRule } from '../../executors/variableText/aggregateDiagnostics'
 import type { DomainRule } from '../../executors/variableText/aggregateDiagnostics';
 import type { DiagnosticType, DiagnosticRule } from '../../executors/variableText/diagnostics';
 import type { AiStage } from '../../services/ai/configuration';
-import { isWorldRule } from '../../services/validation/worldDiagnostics';
+import { eventEntryReasonNames, isEventEntryReason, isWorldRule } from '../../services/validation/worldDiagnostics';
 import type { WorldRule } from '../../services/validation/worldDiagnostics';
 
 export type RuntimeLogStage = AiStage | 'workflow' | 'commit';
@@ -100,8 +100,10 @@ export function runtimeLogEvent(
   const status = 'status' in safe ? safe.status : undefined;
   const path = details?.fieldPath;
   const type = details?.commandType;
+  const entryReason = details?.worldRule === 'event_entry' && isEventEntryReason(details.eventEntryReason)
+    ? eventEntryReasonNames[details.eventEntryReason] : undefined;
   return {
-    ...entry, code: safe.code, message: isStoryRule(details?.storyRule) ? safe.message : safe.message.split(' 字段：')[0],
+    ...entry, code: safe.code, message: isStoryRule(details?.storyRule) ? safe.message : safe.message.split(' 字段：')[0] + (entryReason ? ` ${entryReason}。` : ''),
     ...(isStoryRule(details?.storyRule) ? safeStoryDiagnostic(details) : {}),
     ...(typeof status === 'number' && status >= 100 && status < 600
       ? { httpStatus: status } : {}),

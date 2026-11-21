@@ -115,15 +115,18 @@ describe('real WorldStage/Runtime -> candidate -> Commit -> reload', () => {
     const saved = await a.repo.commitTurn(submission(persisted!,''));
     expect(saved.state.journal).toHaveLength(1); expect(a.fetcher).toHaveBeenCalledTimes(1);
   });
-  it('failed reference validation keeps upstream candidates and raw output; explicit World retry succeeds', async () => {
-    const a = await live(), valid = a.reply.text;
+  it('invalid reference is isolated, preserving upstream and temporary raw output', async () => {
+    const a = await live();
     a.response.eventCommands[0].event.actorRefs[0].id = 'nonexistent-actor';
     a.reply.text = `\`\`\`json\n${JSON.stringify(a.response)}\n\`\`\``;
-    await expect(a.run()).rejects.toThrow(failure('actor_permission'));
-    expect(stageResponses.getSnapshot()[0]).toMatchObject({text:a.reply.text,status:'failed'});
-    const failed = await a.repo.loadDraft('save-a'); expect(failed!.story).toEqual(a.draft.story); expect(failed!.variables).toEqual(a.draft.variables); expect(failed!.world).toBeUndefined();
+    const ready = await a.run();
+    expect(stageResponses.getSnapshot()[0]).toMatchObject({text:a.reply.text,status:'validated'});
+    expect(ready.story).toEqual(a.draft.story); expect(ready.variables).toEqual(a.draft.variables);
+    expect(ready.world?.result.settlement?.skipped).toMatchObject([{group:'eventCommands',field:'actorRefs',reason:'permission'}]);
     expect(await a.repo.load('save-a')).toEqual(a.state);
-    a.reply.text = valid; const ready = await a.run(failed!); await a.repo.commitTurn(submission(ready,'')); expect(a.fetcher).toHaveBeenCalledTimes(2);
+    const saved = await a.repo.commitTurn(submission(ready,''));
+    expect(saved.state.events).toEqual(a.state.events);
+    expect(a.fetcher).toHaveBeenCalledTimes(1);
   });
 });
 

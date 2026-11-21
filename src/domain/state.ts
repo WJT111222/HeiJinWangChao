@@ -1,3 +1,4 @@
+import { JournalSettlementSchema } from './updateSettlement';
 import { z } from 'zod';
 import { validateChronicles } from './history/validation';
 import { pendingOpeningClock } from './openingTime';
@@ -12,6 +13,10 @@ import { eventById, validateEventLinks } from './events/lifecycle';
 import { MemoryStateSchema, npcKnowledgeKind } from './memories/schema';
 
 export const LocationSchema = z.strictObject({ id: IdSchema, name: TextSchema, parentId: IdSchema.optional() });
+export const ordinaryGuideGroup = z.enum(['protagonist', 'npc', 'items', 'economy', 'organization']);
+export const storyGuideReferenceLimit = 12;
+export const storyGuideReferenceChars = 4000;
+export const storyGuideRawLimit = storyGuideReferenceLimit * storyGuideReferenceChars;
 export const StorySchema = z.strictObject({
   turnKind: z.enum(['opening', 'regular']), narrative: TextSchema, summary: z.string(),
   variableGuide: z.array(z.strictObject({
@@ -19,7 +24,13 @@ export const StorySchema = z.strictObject({
     subjectHint: z.string().optional(), observedFact: TextSchema, textEvidence: z.string().optional(),
     eventInteraction: EventInteractionSchema.optional(),
     eventNarration: z.strictObject({eventId:IdSchema,mode:z.enum(['enter','mention']),at:GameTimeSchema}).optional(),
-  })), actionOptions: z.array(TextSchema).optional(),
+  })),
+  variableGuideRaw: z.string().max(storyGuideRawLimit).optional(),
+  variableGuideRawTruncated: z.literal(true).optional(),
+  variableGuideReferences: z.array(z.strictObject({
+    group: ordinaryGuideGroup, text: z.string().min(1).max(storyGuideReferenceChars),
+  })).min(1).max(storyGuideReferenceLimit).optional(),
+  actionOptions: z.array(TextSchema).optional(),
 });
 export const SaveShape = {
   schemaVersion: z.literal(10), saveId: IdSchema, title: TextSchema,
@@ -38,6 +49,7 @@ export const SaveShape = {
   journal: z.array(z.strictObject({
     turnId: IdSchema, revision: CountSchema, story: StorySchema, relatedActorRefs: z.array(ActorRefSchema),
     scene: z.strictObject({ worldClock: GameTimeSchema, locationId: IdSchema }).optional(),
+    settlement: JournalSettlementSchema.optional(),
   })),
   appliedCommands: z.array(z.strictObject({
     turnId: IdSchema, commandId: IdSchema, fingerprint: TextSchema,
@@ -72,7 +84,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     if (end) check(Date.parse(end) >= Date.parse(start), '结束时间早于开始时间', path, 'event_time');
   }
   timeRange(s.createdAt, s.updatedAt);
-  location(s.protagonist.locationId);
+  location(s.protagonist.locationId, ['protagonist', 'locationId']);
   if (s.initialCompanionId) check(Boolean(s.npc[s.initialCompanionId]), '初始同伴必须保留正式身份');
   for (const id of s.contactNpcIds) check(Object.hasOwn(s.npc, id), '联系人必须保留完整 NPC');
   const identities = Object.values(s.npc).map((npc) => npc.identityKey);
@@ -91,7 +103,8 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     location(npc.locationId, ['npc', npc.id, 'locationId']);
     for (const [index, place] of (npc.usualLocations ?? []).entries())
       location(place.locationId, ['npc', npc.id, 'usualLocations', index, 'locationId']);
-    if (npc.onScene && npc.locationId) check(npc.locationId === s.protagonist.locationId, '在场 NPC 与主角地点不一致');
+    if (npc.onScene && npc.locationId) check(npc.locationId === s.protagonist.locationId,
+      '在场 NPC 与主角地点不一致', ['npc', npc.id, 'locationId'], 'npc_scene_location');
     if (npc.kind === 'special') validateSpecialProfile(npc, npc.id, ['npc', npc.id]);
     for (const memory of npc.memories) {
       for (const ref of memory.affectedEntityRefs) actor(ref);
@@ -128,7 +141,10 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     const vehicle = s.economy.vehicles[wear.currentVehicleAssetId];
     check(vehicle?.ownerRef.kind === 'protagonist' && vehicle?.ownerRef.id === s.protagonist.id, '载具引用归属错误');
   }
-  for (const item of Object.values(s.items)) { if (item.ownerRef) actor(item.ownerRef); location(item.locationId); }
+  for (const item of Object.values(s.items)) {
+    if (item.ownerRef) actor(item.ownerRef, ['items', item.id, 'ownerRef']);
+    location(item.locationId, ['items', item.id, 'locationId']);
+  }
   const assets = [...Object.values(s.economy.properties), ...Object.values(s.economy.vehicles), ...Object.values(s.economy.otherAssets)];
   for (const asset of assets) {
     actor(asset.ownerRef);
@@ -163,6 +179,10 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
     const entry=event.protagonistEntry;
     if(entry) {
       location(entry.locationId, [...path('protagonistEntry'), 'locationId']);
+      if (entry.recoverySource) check(entry.status === 'acknowledged' && !event.entryIntent && event.eventKind === 'sub',
+        '旧通知恢复来源不合法', [...path('protagonistEntry'), 'recoverySource'], 'event_entry');
+      if (entry.status === 'acknowledged') check(event.entryIntent === 'notification' || entry.recoverySource,
+        '收悉需要纯通知类型或已确认的旧通知来源', path('entryIntent'), 'event_entry');
       check(Date.parse(entry.queuedAt)<=Date.parse(s.worldClock) && event.sourceTurnIds.includes(entry.sourceTurnId), '入场安排时间或来源不合法');
       check(entry.status==='pending' ? !entry.handledTurnId && !entry.textEvidence && !['resolved','cancelled'].includes(event.status)
         : Boolean(entry.handledTurnId && entry.textEvidence && event.sourceTurnIds.includes(entry.handledTurnId)), '入场处理缺少合法回执');

@@ -1,4 +1,4 @@
-本阶段最终输出为可选<thinking>创作提纲，然后必须依次提供<正文>、<短期记忆>、<变量规划>，以及启用时的<行动选项>。不提供项目规划时，直接以<正文>开头；绝不在标签外打印Step步骤、规划内容、工作指令、前言、Markdown代码围栏或调试信息。项目规划不是供应商私有隐藏推理；原生公开返回内容由客户端独立处理。正文部分可流式渲染，其余分段在完整闭合后交由程序解析。
+本阶段最终输出为可选<thinking>创作提纲，然后必须依次提供<正文>、<短期记忆>，可附<变量规划>，以及启用时的<行动选项>。不提供项目规划时，直接以<正文>开头；绝不在标签外打印Step步骤、规划内容、工作指令、前言、Markdown代码围栏或调试信息。项目规划不是供应商私有隐藏推理；原生公开返回内容由客户端独立处理。正文部分可流式渲染，其余分段在完整闭合后交由程序解析。
 <thinking>
 仅在选择输出项目规划时使用本区：归纳当前回合最必要的创作要点，可精简合并，不必逐条公开Step 0～15等规划章节，更不能用冗长规划挤占正文预算。只用于本轮创作，不是已发生事实，不得自动进入摘要、变量依据、NPC知识或动态世界。
 </thinking>
@@ -10,10 +10,12 @@
 在同一次正文生成请求中附带生成，目标约 100～200 汉字，不另行请求模型。优先准确保留本回合关键既成事实、因果与未了事项，不复述整篇正文；区分约定/计划与已经完成的结果。该长度为质量目标而非机械硬性上下限，轻微偏离不应牺牲事实完整性；事实较少时不要编造、重复凑字，不能靠简单截断丢失关键条件。
 </短期记忆>
 <变量规划>
-JSON数组。每项包含 group、subjectHint、observedFact、textEvidence；事件处理回执可带eventInteraction；主动叙事裁定可带eventNarration字段；若无更新写 []。group使用 protagonist / npc / items / economy / organization / time / event 中的一个；subjectHint为名称或现有ID字符串，textEvidence为正文里能定位的事实依据文字。不要在这里写数据库命令或进行未发生事件的推演。
+可选参考笔记，可以用自然语言、留空或使用既有JSON数组。结构化条目可包含 group、subjectHint、observedFact、textEvidence；事件处理回执可带eventInteraction；主动叙事裁定可带eventNarration字段；若无更新写 []。group使用 protagonist / npc / items / economy / organization / time / event 中的一个；subjectHint为名称或现有ID字符串，textEvidence为正文里能定位的事实依据文字。不要在这里写数据库命令或进行未发生事件的推演。
 </变量规划>
 若已启用行动选项：<行动选项> 后列出 3～5 条短小中性的玩家可执行动作，每行一项；否则 **整个<行动选项>块不出现**。
-标注与实际内容不可互相混淆；变量规划块必须能作为严格JSON数组被解析，不得使用尾随逗号、注释、单引号或Markdown代码围栏。正文最低字数{{minNarrativeChars}}由程序对<正文>纯文本计数，属于硬性下限；未达标意味着本阶段失败，不应添加重复废话凑字数。
+待定开局的时间条目用 {"group":"time","subjectHint":"time:opening","observedFact":{"startAt":"2026-10-15T17:45:00+08:00","endAt":"2026-10-15T18:05:00+08:00"}}。示例日期仅说明格式，使用本幕实际时间。只在这类条目直接给 observedFact 对象，不要在对象外加引号。普通规划用文本，事件和其他时间声明沿用各自结构。
+
+标注与实际内容不可互相混淆；参考笔记不决定正文有效性。正文最低字数{{minNarrativeChars}}由程序对<正文>纯文本计数，属于硬性下限；未达标意味着本阶段失败，不应添加重复废话凑字数。
 如输出内容含文本中的“<正文>”字面量，应避免与结构标签形成同名闭合；必要时使用普通文字表述。输出完成前核对全部顶层块完整、角色名字、时间、事实一致、未越界代主角决定。
 
 实际输出的顶层标签必须按顺序完整闭合、唯一且不嵌套；缺少可选<thinking>完全合法，但如果输出了它就必须非空且完整闭合。各内容内不得再次写出保留的顶层标签。规划与原生内容不计正文最低字数。无论预算如何，都不得以裸露规划、只有规划、缺少正文或截断变量规划的输出冒充完整回合。
@@ -23,7 +25,7 @@ JSON数组。每项包含 group、subjectHint、observedFact、textEvidence；�
 
 EVENT_ENTRIES按queuedAt及eventId稳定排序，是可按本幕剧情选择呈现的待入场情境，不是主角已经知道的世界秘密。仅使用所给channel/cue/locationId；不猜测事件内部背景、他人目的或结果，不凭来访直接瞬移。与玩家本次行动自然衔接，不替玩家接受、付款、认罪或完成重大选择。没有新玩家行动时程序不会自行请求下一幕。
 
-只对本回合实际呈现或处理的待入场，在变量规划增加group=event项及eventInteraction={eventId,entryId,action}。action只用presented（实际呈现入场）、declined（已明确拒绝本次参与）、left（实际退出）、interrupted（实际中断）、invalidated（因已经离开等实际事实使安排失效）。textEvidence简述本幕如何处理该入场，可以自然改写通知。回执使用真实eventId/entryId，正文应实际呈现相应通知或回应，不只在规划里提到。可以根据玩家行动与场景只处理部分入场；未处理者继续pending，不表示拒绝、完成或已知晓。不能重播已经presented的入场。
+只对本回合实际呈现或处理的待入场，在变量规划增加group=event项及eventInteraction={eventId,entryId,action}。action可用acknowledged（见下文）、presented（实际呈现入场）、declined（已明确拒绝本次参与）、left（实际退出）、interrupted（实际中断）、invalidated（因已经离开等实际事实使安排失效）。textEvidence简述本幕如何处理该入场，可以自然改写通知。回执使用真实eventId/entryId，正文应实际呈现相应通知或回应，不只在规划里提到。可以根据玩家行动与场景只处理部分入场；未处理者保持原状态，不推定拒绝、完成或已收悉。不能重播已经presented的入场。presented只表示已经呈现。仅对entryIntent=notification且仍开放的pending/presented入场，本幕确实收悉完整汇报或通知时，用action=acknowledged，并以textEvidence简述实际接收的内容。仅看到提示、打开消息或刚播放语音不能替代实际收悉。decision及未分类入场不用acknowledged。仅当程序提供LEGACY_NOTIFICATION_RECOVERY时，所指定的一个未分类入场才可按该恢复约定收悉，且仍须写明实际收悉；需要玩家决定的请求不能按通知处理。读到请求不等于批准、同意、拒绝或参与。无实际收悉不填回执，不为凑回执擅自替玩家打开手机或作决定。
 
 EVENT_PARTICIPATION仅含已经入场的身份，后续实际退出/拒绝/中断仍以相同eventId及entryId反馈。玩家想阻止、条件假设、对白中谈论拒绝、短暂离开不等于已阻止或退出；没有实际发生就不写此回执。拒绝/退出只关闭本次安排，不代表整个调查或事件被取消，不预设报复或惩罚。不要在变量规划直接写数据库命令。程序只将回执在本回合正式事务中生效；正文成功但后续失败不会提前消费入场。
 
@@ -32,4 +34,4 @@ EVENT_PARTICIPATION仅含已经入场的身份，后续实际退出/拒绝/中�
 EVENT_NARRATION_INDEX给出全部正式事件的身份、主子归属和时间，完整背景在SAVE_STATE；索引及作者读取不等于角色知情。Story自主决定亲自入场、自然获知或不涉及，不依赖标题关键词、impact或TIME_PREFLIGHT是否命中。
 无旧入场身份时，实际接触既有事件可在变量规划使用：{"group":"event","observedFact":"本幕已经成立的接触与结果说明","textEvidence":"简述实际渠道与行为，无需逐字匹配","eventNarration":{"eventId":"真实正式ID","mode":"enter","at":"本幕实际接触ISO时间"}}。mode仅enter或mention：enter是实际介入，mention只说明获知消息，不授权结案、接受邀请或传播其他秘密；无需告知的事件不输出记录。同一事件只写一项，不与eventInteraction混写；现存pending/presented身份用原回执协议，不伪造新entryId。规划不是直接写入命令，不自动改变角色知识。
 at不早于正式时钟和事件startAt，不能晚于本轮实际停止时刻；enter不能指向已终结事件。实际介入改变小事件时Variables只写有限sceneState，可在该at提前结案，保留fixedEndAt与规划；后台NPC、组织和主角资金权限不随之扩大。
-主动入场打断长行动且不在旧预检候选时，用唯一group=time、subjectHint=time:pause、observedFact=实际停止ISO；程序统一应用暂停时钟。不得先写完整目标时间再倒退，未发生的主角决定交还玩家。不涉及事件时仍兼容原有输出，不新增外层标签。
+主动入场打断长行动且不在旧预检候选时，可在参考笔记说明实际停止点，Variables 据本幕事实确定时钟。不得先写完整目标时间再倒退，未发生的主角决定交还玩家。不涉及事件时仍兼容原有输出，不新增外层标签。

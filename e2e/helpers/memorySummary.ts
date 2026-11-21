@@ -1,4 +1,4 @@
-import { openLibrary } from './home';
+import { openStoredSave } from './home';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openSettings } from './gameLayout';
@@ -32,7 +32,7 @@ export async function seedSummary(page: Page, options: { count?: number; publicL
     for (const stage of ['variables', 'world', 'memory']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-summary-secret');
   }, options);
-  await page.reload(); await openLibrary(page); await page.locator('.save-card').getByRole('button', { name: /读取存档/ }).click();
+  await page.reload(); await openStoredSave(page);
   await expect(page.locator('.game-layout')).toBeVisible();
 }
 export async function summaryPage(page: Page) {
@@ -53,3 +53,9 @@ export function requestTask(body: { messages: { role: string; content: string }[
   const text = body.messages.find(message => message.role === 'user' && message.content.startsWith('<GAME_CONTEXT>'))!.content;
   return JSON.parse(text.slice('<GAME_CONTEXT>\n'.length, -'\n</GAME_CONTEXT>'.length)).MEMORY_TASK as Record<string, unknown>;
 }
+
+export const memoryMockCors = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'POST, OPTIONS',
+  'access-control-allow-headers': 'authorization, content-type',
+};

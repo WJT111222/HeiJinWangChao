@@ -1,0 +1,63 @@
+> heijinwangchao@1.0.0-beta check
+> npm run filenames:check && npm run lint && npm run test && npm run build
+
+
+> heijinwangchao@1.0.0-beta filenames:check
+> node scripts/check-source-filenames.mjs
+
+Filename check: 4570 paths; Git index + untracked files.
+No case-insensitive path or extensionless module collisions.
+
+> heijinwangchao@1.0.0-beta lint
+> eslint . --max-warnings=0
+
+
+> heijinwangchao@1.0.0-beta test
+> vitest run
+
+
+ RUN  v5.0.5 /workspace/ui-compat
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 2 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-pool]: Worker forks emitted error.
+ ❯ EventEmitter.onTaskError ../../dev/shm/ui-compat-deps/node_modules/vitest/dist/chunks/index.1TqnEahn.js:5915:21
+ ❯ EventEmitter.emit node:events:509:28
+ ❯ ChildProcess.emitUnexpectedExit ../../dev/shm/ui-compat-deps/node_modules/vitest/dist/chunks/index.1TqnEahn.js:5390:22
+ ❯ ChildProcess.emit node:events:509:28
+ ❯ ChildProcess._handle.onexit node:internal/child_process:295:12
+
+Caused by: Error: Worker exited unexpectedly with signal SIGKILL during started state while running test file /workspace/ui-compat/src/tests/turn-undo.test.ts
+ ❯ ChildProcess.emitUnexpectedExit ../../dev/shm/ui-compat-deps/node_modules/vitest/dist/chunks/index.1TqnEahn.js:5388:33
+ ❯ ChildProcess.emit node:events:509:28
+ ❯ ChildProcess._handle.onexit node:internal/child_process:295:12
+
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-pool]: Worker forks emitted error.
+ ❯ EventEmitter.onTaskError ../../dev/shm/ui-compat-deps/node_modules/vitest/dist/chunks/index.1TqnEahn.js:5915:21
+ ❯ EventEmitter.emit node:events:509:28
+ ❯ ChildProcess.emitUnexpectedExit ../../dev/shm/ui-compat-deps/node_modules/vitest/dist/chunks/index.1TqnEahn.js:5390:22
+ ❯ ChildProcess.emit node:events:509:28
+ ❯ ChildProcess._handle.onexit node:internal/child_process:295:12
+
+Caused by: Error: Worker exited unexpectedly with signal SIGKILL during started state while running test file /workspace/ui-compat/src/tests/history-saves.test.ts
+ ❯ ChildProcess.emitUnexpectedExit ../../dev/shm/ui-compat-deps/node_modules/vitest/dist/chunks/index.1TqnEahn.js:5388:33
+ ❯ ChildProcess.emit node:events:509:28
+ ❯ ChildProcess._handle.onexit node:internal/child_process:295:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  195 passed (197)
+      Tests  4728 passed (4741)
+     Errors  2 errors
+   Start at  03:39:24
+   Duration  219.97s (tests 73%, import 23%, transform 3%, worker 1%)
+
+    Isolate  197 workers spawned · ~116ms startup each (spawn + environment, per file)
+             at least ~22.65s faster with isolate: false — reuses workers across files instead of one per file

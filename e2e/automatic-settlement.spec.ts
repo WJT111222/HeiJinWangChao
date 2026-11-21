@@ -1,7 +1,7 @@
 import { variableTextEnvelope } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
-import { openGameTools, openWorkflowDiagnostics, openStageRaw, openStageTab } from './helpers/gameLayout';
+import { closeWorkflowSheet, openGameTools, openWorkflowDiagnostics, openStageRaw, openStageTab } from './helpers/gameLayout';
 
 async function seed(page: Page, remoteLocation = false, organization = false) {
   await page.goto('/');
@@ -43,7 +43,18 @@ async function mock(page: Page) {
 }
 const settled = (page: Page) => expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toContainText('本回合已结算');
 
-test('完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型', async ({ page }, info) => {
+async function expandSettlementSummary(page: Page, skipped: number) {
+  await closeWorkflowSheet(page);
+  const close = page.getByRole('button',{name:'收起三阶段详情',exact:true});
+  if (await close.isVisible()) await close.click();
+  const summary = page.getByText(`本回合已结算，跳过 ${skipped} 项更新`,{exact:true});
+  await expect(summary).toBeVisible();
+  await summary.click({timeout:10_000});
+  return summary;
+}
+
+test('完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型', async ({ page, isMobile }, info) => {
+  test.skip(isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
   await seed(page); const server = await mock(page);
   await page.getByRole('button', { name: '自动生成开局', exact: true }).click(); await settled(page);
   let data = await stored(page); expect(data.state.turnNumber).toBe(1); expect(data.state.economy.cash).toBe(7000); expect(data.draft.userInput).toBe(''); expect(server.calls).toEqual(['story','variables','world']);
@@ -59,17 +70,21 @@ test('完整原文可读，开局与下一条行动各自动结算一次，刷�
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('auto-settlement-raw-output.png') });
 });
-test('World字段错误可定位并查看完整失败原文，不提交；恢复仅请求World并自动结算', async ({ page }) => {
+test('World字段错误定位为跳过，临时原文可读，合规更新一次结算', async ({page}) => {
   await seed(page); const server = await mock(page); server.control.bad = true;
-  await page.getByRole('button', { name: '自动生成开局', exact: true }).click();
-  await expect(page.getByTestId('runtime-log')).toContainText('estimatedEndAt'); await expect(page.getByTestId('runtime-log')).toContainText('SaveEvent');
-  const before = await stored(page); expect(before.state.revision).toBe(0); expect(before.draft.story).toBeDefined(); expect(before.draft.variables.validation).toBe('validated'); expect(before.draft.stageStatus.world).toBe('failed');
-  await openStageRaw(page, 'world'); expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
-  server.control.bad = false; await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
-  expect((await stored(page)).state.turnNumber).toBe(1); expect(server.calls).toEqual(['story','variables','world','world']);
+  await page.getByRole('button', {name:'自动生成开局',exact:true}).click();
+  await expandSettlementSummary(page,1);
+  await expect(page.getByText(/动态世界第 1 条.*eventCommands\.0/u)).toBeVisible();
+  const storedGame = await stored(page);
+  expect(storedGame.state.events.review).toBeUndefined();
+  expect(storedGame.state.turnNumber).toBe(1);
+  expect(server.calls).toEqual(['story','variables','world']);
+  await openStageRaw(page,'world');
+  expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
 });
 
-test('发送下一条行动仅绑定草稿，commit日志必须等到三阶段完成才开始', async ({ page }) => {
+test('发送下一条行动仅绑定草稿，commit日志必须等到三阶段完成才开始', async ({ page, isMobile }) => {
+  test.skip(isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
   // 仅观察真实日志函数的调用，不替换返回值、工作流或存储行为。
   await page.route('**/src/ui/game/runtimeLog.ts*', async route => {
     // 仅本地 Vite 模块读取可重试一次 ECONNRESET；不重试任何模型或业务请求。
@@ -98,38 +113,24 @@ test('发送下一条行动仅绑定草稿，commit日志必须等到三阶段�
   await page.reload(); await openGameTools(page); await settled(page); expect(server.calls).toHaveLength(6);
 });
 
-test('NPC场景ID诊断与World规则同时保留，逐阶段恢复后只结算一次', async ({ page }, info) => {
+test('NPC场景位置与World字段错误各自隔离，独立主角状态照常结算', async ({page}) => {
   await seed(page, true); const server = await mock(page);
-  server.control.variables = '<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset npc[scene].locationId = null\n</命令>';
-  server.control.bad = true;
-  await page.getByRole('button', { name: '自动生成开局', exact: true }).click();
-  const log = page.getByTestId('runtime-log');
-  await expect(log).toContainText('在场 NPC 缺少明确地点（NPC：scene）');
-  expect(server.calls).toEqual(['story', 'variables']);
-  const initial = await stored(page); expect(initial.state.revision).toBe(0);
-  expect(initial.draft.stageStatus.variables).toBe('failed'); expect(initial.draft.world).toBeUndefined();
-
-  server.control.variables = '<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset protagonist.locationId = "remote"\nset npc[scene].locationId = "remote"\n</命令>';
-  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
-  await expect(log).toContainText('estimatedEndAt'); await expect(log).toContainText('世界校验：event_plan');
-  await expect(log).toContainText('（NPC：scene）');
-  const worldFailed = await stored(page); expect(worldFailed.state).toEqual(initial.state);
-  expect(worldFailed.draft.variables.validation).toBe('validated'); expect(worldFailed.draft.stageStatus.world).toBe('failed');
-  expect(server.calls).toEqual(['story', 'variables', 'variables', 'world']);
-  await expect(log).not.toContainText('mock-auto-settlement-key');
-  await page.screenshot({ path: info.outputPath('world-and-npc-diagnostics.png') });
-
-  server.control.bad = false;
-  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
-  const committed = await stored(page); expect(committed.state.turnNumber).toBe(1); expect(committed.state.journal).toHaveLength(1);
-  expect(committed.state.protagonist.locationId).toBe('remote'); expect(committed.state.npc.scene.locationId).toBe('remote');
-  expect(committed.draft.userInput).toBe(''); expect(server.calls).toEqual(['story', 'variables', 'variables', 'world', 'world']);
-  await expect(log).toContainText('世界校验：event_plan'); await expect(log).toContainText('（NPC：scene）');
-  await page.reload(); await openGameTools(page); await settled(page); expect(server.calls).toHaveLength(5);
-  expect(await stored(page)).toEqual(committed);
+  const before=await stored(page);
+  server.control.variables='<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset npc[scene].locationId = null\nset protagonist.emotionText = "安心"\n</命令>';
+  server.control.bad=true;
+  await page.getByRole('button',{name:'自动生成开局',exact:true}).click();
+  await expandSettlementSummary(page,2);
+  await expect(page.getByText(/变量第 2 条.*人物/u)).toBeVisible();
+  await expect(page.getByText(/动态世界第 1 条.*事件/u)).toBeVisible();
+  const settledGame=await stored(page);
+  expect(settledGame.state.npc.scene).toEqual(before.state.npc.scene);
+  expect(settledGame.state.protagonist.emotionText).toBe('安心');
+  expect(settledGame.state.events.review).toBeUndefined();
+  expect(server.calls).toEqual(['story','variables','world']);
 });
 
-test('源三标签截断保留正文；明确恢复后四操作自动结算并完整显示原文', async ({ page }, info) => {
+test('源三标签截断保留正文；明确恢复后四操作自动结算并完整显示原文', async ({ page, isMobile }, info) => {
+  test.skip(isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
   await seed(page); const server = await mock(page), before = await stored(page);
   server.control.variables = '<thinking>本轮状态分析。</thinking><说明>- 更新本幕变量。</说明><命令>set protagonist.emotionText = "安心"';
   await page.getByRole('button', { name: '自动生成开局', exact: true }).click();
@@ -146,7 +147,8 @@ test('源三标签截断保留正文；明确恢复后四操作自动结算并�
   await page.reload(); await openGameTools(page); await settled(page); expect(await stored(page)).toEqual(data); expect(server.calls).toHaveLength(4);
 });
 
-test('候选写库配额失败显示具体步骤而非unknown，保留正文后只补失败阶段', async ({ page }) => {
+test('候选写库配额失败显示具体步骤而非unknown，保留正文后只补失败阶段', async ({ page, isMobile }) => {
+  test.skip(isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
   await seed(page); const server = await mock(page), before = await stored(page);
   await page.evaluate(async () => {
     const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), original = SaveRepository.prototype.saveDraft;
@@ -169,53 +171,46 @@ test('候选写库配额失败显示具体步骤而非unknown，保留正文后�
   expect(server.calls).toEqual(['story','variables','variables','world']);
 });
 
-test('时间诊断保留重排前文本编号；失败原文可读，恢复自动结算且刷新不重发', async ({ page }) => {
-  await seed(page); const server = await mock(page), before = await stored(page);
-  server.control.variables = '<命令>\nset protagonist.emotionText = "从容"\nset npc[scene].lastInteractionAt = "2026-10-18T09:00:00+08:00"\nset worldClock = "2026-10-18T08:10:00+08:00"\n</命令>';
-  await page.getByRole('button', { name: '自动生成开局', exact: true }).click();
-  await openWorkflowDiagnostics(page);
-  const log = page.getByTestId('runtime-log');
-  await expect(log).toContainText('错误码：time_data'); await expect(log).toContainText('命令序号：第 2 条');
-  await expect(log).toContainText('命令类型：UpdateNpc'); await expect(log).toContainText('NPC 互动时间晚于执行时的游戏时钟');
-  await expect(log).not.toContainText('相关命令：'); await expect(log).not.toContainText('mock-auto-settlement-key');
-  const failed = await stored(page); expect(failed.state).toEqual(before.state); expect(failed.draft.story).toBeDefined(); expect(failed.draft.variables).toBeUndefined();
-  expect(server.calls).toEqual(['story', 'variables']);
-  await openStageRaw(page, 'variables');
-  await expect(page.locator('.stage-responses')).toContainText('第2条命令：NPC 互动时间');
+test('时间诊断保留重排前文本编号，原文可读，独立更新刷新后仍在', async ({page}) => {
+  await seed(page); const server=await mock(page), before=await stored(page);
+  server.control.variables='<命令>\nset protagonist.emotionText = "从容"\nset npc[scene].lastInteractionAt = "2026-10-18T09:00:00+08:00"\nset worldClock = "2026-10-18T08:10:00+08:00"\n</命令>';
+  await page.getByRole('button',{name:'自动生成开局',exact:true}).click();
+  const summary=await expandSettlementSummary(page,1);
+  await expect(page.getByText(/变量第 2 条.*人物.*时间/u)).toBeVisible();
+  const committed=await stored(page);
+  expect(committed.state.npc.scene.lastInteractionAt).toBe(before.state.npc.scene.lastInteractionAt);
+  expect(committed.state.protagonist.emotionText).toBe('从容');
+  await openStageRaw(page,'variables');
   expect(await page.getByLabel('变量模型完整原文').textContent()).toBe(server.responses.variables);
-  server.control.variables = server.control.variables.replace('09:00:00', '08:10:00');
-  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
-  const committed = await stored(page); expect(committed.state.turnNumber).toBe(1); expect(committed.state.npc.scene.lastInteractionAt).toBe('2026-10-18T08:10:00+08:00');
-  expect(server.calls).toEqual(['story', 'variables', 'variables', 'world']);
-  await page.reload(); await openGameTools(page); await settled(page); expect(await stored(page)).toEqual(committed); expect(server.calls).toHaveLength(4);
+  await page.reload(); await expect(summary).toBeVisible(); expect(await stored(page)).toEqual(committed);
+  expect(server.calls).toEqual(['story','variables','world']);
 });
 
-test('认知格式、时间线对象和组织历史逐项拒绝，明确修正后保留Story并一次结算', async ({ page }) => {
-  await seed(page); const server = await mock(page), before = await stored(page);
-  server.control.variables = '<命令>\npush npc[scene].knownInformation = {"text":"收到安排","source":"当面通知","learnedAt":"2026-10-18T08:00:00+08:00"}\n</命令>';
-  const world = { worldCommands: [{ type: 'CreateOrganization', commandId: 'create-community', evidence: '登记社区团队', organization: {
-    id: 'org-community', name: '社区团队', kind: 'civil', description: '日常协调', protagonistRelation: '暂无往来', relationHistory: ['不应预填的历史'], keyNpcIds: [], currentTaskIds: [], activities: [],
-  } }], taskCommands: [], eventCommands: [], visibleHooks: [], timelineCandidates: [{ eventId: 'invented' }], unresolved: [] };
-  server.control.world = JSON.stringify(world);
-  await page.getByRole('button', { name: '自动生成开局', exact: true }).click(); await openWorkflowDiagnostics(page);
-  const log = page.getByTestId('runtime-log'); await expect(log).toContainText('npc[id].knownInformation.knowledgeKind');
-  const story = (await stored(page)).draft.story; expect(story).toBeDefined(); expect((await stored(page)).state).toEqual(before.state);
-  server.control.variables = '<命令>\npush npc[scene].knownInformation = {"text":"收到安排","knowledgeKind":"reported","knowledgeSource":"当面通知","visibility":"npc_private"}\n</命令>';
-  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await expect(log).toContainText('schema_fields');
-  // 旧 Variables 错误也含 schema_fields；等待本次 World 错误，才更换下一次响应。
-  await expect(log.getByRole('listitem').filter({ hasText: '动态世界' })).toContainText('错误码：schema_fields');
-  expect(server.calls).toEqual(['story', 'variables', 'variables', 'world']);
-  expect((await stored(page)).state).toEqual(before.state); expect((await stored(page)).draft.variables.validation).toBe('validated');
-  Reflect.deleteProperty(world, 'timelineCandidates'); server.control.world = JSON.stringify(world);
-  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await expect(log).toContainText('organization_initialization');
-  expect((await stored(page)).state).toEqual(before.state);
-  world.worldCommands[0].organization.relationHistory = []; server.control.world = JSON.stringify(world);
-  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await settled(page);
-  const committed = await stored(page); expect(committed.state.turnNumber).toBe(1); expect(committed.state.journal[0].story).toEqual(story);
-  expect(committed.state.npc.scene.knownInformation).toEqual([{ text: '[转述]收到安排', source: '当面通知', learnedAt: '2026-10-18T08:00:00+08:00' }]);
-  expect(committed.state.npc['npc-a'].memories).toEqual(before.state.npc['npc-a'].memories); expect(committed.state.timeline).toEqual([]);
-  expect(server.calls).toEqual(['story', 'variables', 'variables', 'world', 'world', 'world']);
-  await page.reload(); await openGameTools(page); await settled(page); expect(await stored(page)).toEqual(committed); expect(server.calls).toHaveLength(6);
+test('认知与组织字段错误各自隔离，World外层不合法时只重试World', async ({page}) => {
+  await seed(page); const server=await mock(page), before=await stored(page);
+  server.control.variables='<命令>\npush npc[scene].knownInformation = {"text":"收到安排","source":"当面通知","learnedAt":"2026-10-18T08:00:00+08:00"}\n</命令>';
+  const world = {worldCommands:[{type:'CreateOrganization',commandId:'create-community',evidence:'登记社区团队',organization:{
+    id:'org-community',name:'社区团队',kind:'civil',description:'日常协调',protagonistRelation:'暂无往来',
+    relationHistory:['不应预填的历史'],keyNpcIds:[],currentTaskIds:[],activities:[],
+  }}],taskCommands:[],eventCommands:[],visibleHooks:[],unresolved:[]};
+  server.control.world=JSON.stringify({...world,timelineCandidates:[{eventId:'invented'}]});
+  await page.getByRole('button',{name:'自动生成开局',exact:true}).click();
+  await expect.poll(async()=>(await stored(page)).draft.stageStatus.world).toBe('failed');
+  const failed=await stored(page);
+  expect(failed.state).toEqual(before.state);
+  expect(failed.draft.variables.result.settlement.skipped).toMatchObject([{commandIndex:0,category:'person'}]);
+  const dialog=page.getByRole('dialog',{name:'重试与变更详情',exact:true});
+  if(await dialog.isVisible()) await dialog.getByRole('button',{name:'关闭资料界面',exact:true}).click();
+  server.control.world=JSON.stringify(world);
+  await openGameTools(page);
+  await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
+  await expect(page.getByText('本回合已结算，跳过 2 项更新',{exact:true})).toBeVisible();
+  const saved=await stored(page);
+  expect(saved.state.journal.at(-1)?.story).toEqual(failed.draft.story);
+  expect(saved.state.npc.scene.knownInformation).toEqual(before.state.npc.scene.knownInformation);
+  expect(saved.state.organizations['org-community']).toBeUndefined();
+  expect(saved.state.timeline).toEqual(before.state.timeline);
+  expect(server.calls).toEqual(['story','variables','world','world']);
 });
 
 test('#186 World重复写入Variables本轮组织字段：以Variables为准剔除，阶段不失败，只在诊断页说明', async ({ page }, info) => {
@@ -238,44 +233,111 @@ test('#186 World重复写入Variables本轮组织字段：以Variables为准剔�
   await page.screenshot({ path: info.outputPath('world-scene-write-notes.png') });
 });
 
-for (const group of ['taskCommands', 'eventCommands'] as const) {
-  test(`#190 ${group} 的非法重复组织命令必须整批拒绝，主动修正后仅重试World`, async ({ page }, info) => {
-    await seed(page, false, true); const server = await mock(page), before = await stored(page);
-    server.control.variables = '<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset organizations[org-shop].state = {"operatingStatus":"正文确认照常营业"}\n</命令>';
-    const repeated = { type: 'UpdateOrganization', commandId: 'repeated-shop', evidence: '后台', organizationId: 'org-shop', expectedRevision: 0,
-      changes: { operatingStatus: 'World重复值' } };
-    const independent = { ...repeated, commandId: 'independent-shop', changes: { ownershipText: 'World独立合法字段' } };
-    const wrong = { ...repeated, commandId: 'wrong-group' };
-    server.control.world = JSON.stringify({ worldCommands: [repeated, independent], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [], [group]: [wrong] });
-    await page.getByRole('button', { name: '自动生成开局', exact: true }).click();
-    await expect.poll(async () => (await stored(page)).draft.stageStatus.world).toBe('failed');
-    const failed = await stored(page);
-    expect(failed.state).toEqual(before.state); expect(failed.draft.world).toBeUndefined();
-    expect(failed.draft.variables.validation).toBe('validated');
-    expect(server.calls).toEqual(['story', 'variables', 'world']);
-    // Mobile opens failed-request diagnostics automatically; do not click the
-    // workflow behind that modal. Desktop still uses its existing diagnostics rail.
-    const mobile = (page.viewportSize()?.width ?? 0) <= 900;
-    const diagnosticDialog = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: '重试与变更详情', exact: true }) });
-    if (!mobile) await openWorkflowDiagnostics(page);
-    const log = mobile ? diagnosticDialog.getByTestId('runtime-log') : page.getByTestId('runtime-log');
-    await expect(log).toBeVisible();
-    await expect(log).toContainText(`${group}.0`);
-    await expect(log).toContainText('UpdateOrganization');
-    // Close the active diagnostics modal before switching the underlying sheet.
-    if (mobile) await diagnosticDialog.getByRole('button', { name: '关闭资料界面', exact: true }).click();
-    await openStageRaw(page, 'world');
+for (const group of ['taskCommands','eventCommands'] as const) {
+  test(`#190 ${group} 的非法分组命令跳过，独立 World 字段仍保存`,async ({page},info)=>{
+    await seed(page,false,true);const server=await mock(page);
+    server.control.variables='<命令>\nset worldClock = "2026-10-18T08:10:00+08:00"\nset organizations[org-shop].state = {"operatingStatus":"正文确认照常营业"}\n</命令>';
+    const repeated={type:'UpdateOrganization',commandId:'repeated-shop',evidence:'后台',organizationId:'org-shop',expectedRevision:0,changes:{operatingStatus:'World重复值'}};
+    const independent={...repeated,commandId:'independent-shop',changes:{ownershipText:'World独立合法字段'}};
+    server.control.world=JSON.stringify({worldCommands:[repeated,independent],taskCommands:[],eventCommands:[],visibleHooks:[],unresolved:[],[group]:[{...repeated,commandId:'wrong-group'}]});
+    await page.getByRole('button',{name:'自动生成开局',exact:true}).click();
+    await expandSettlementSummary(page,1);
+    await expect(page.getByText(`${group}.0`,{exact:false})).toBeVisible();
+    const saved=await stored(page);
+    expect(saved.state.organizations['org-shop']).toMatchObject({operatingStatus:'正文确认照常营业',ownershipText:'World独立合法字段'});
+    expect(saved.state.revision).toBe(1);expect(saved.state.journal).toHaveLength(1);
+    expect(server.calls).toEqual(['story','variables','world']);
+    await openStageRaw(page,'world');
     expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
-    expect(await stored(page)).toEqual(failed);
-    await page.screenshot({ path: info.outputPath(`world-rejected-${group}.png`) });
-    // Explicit recovery only: do not rerun Story/Variables or keep any failed World candidate.
-    server.control.world = JSON.stringify({ worldCommands: [repeated, independent], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
-    await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
-    await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(1);
-    await settled(page);
-    const committed = await stored(page);
-    expect(committed.state.organizations['org-shop']).toMatchObject({ operatingStatus: '正文确认照常营业', ownershipText: 'World独立合法字段' });
-    expect(committed.state.revision).toBe(1); expect(committed.state.journal).toHaveLength(1);
-    expect(server.calls).toEqual(['story', 'variables', 'world', 'world']);
+    expect(await stored(page)).toEqual(saved);
+    await page.screenshot({path:info.outputPath(`world-skipped-${group}.png`)});
   });
 }
+
+test('#193 刷新后只重试World，取消、重复点击与跨标签竞争不重跑上游或重复结算', async ({ page, context, isMobile }, info) => {
+  test.setTimeout(90_000);
+  await seed(page, false, true);
+  const server = await mock(page);
+  await page.getByRole('button', {name:'自动生成开局',exact:true}).click();
+  await settled(page);
+  const baseline = await stored(page);
+  const boundAction = '在报亭买一份报纸，看看街边情况';
+  const worldChange = {type:'UpdateOrganization',commandId:'org-background',evidence:'合成背景行动',
+    organizationId:'org-shop',expectedRevision:baseline.state.revision,changes:{operatingStatus:'上午盘点后开门'}};
+  const task = {id:'stock-check-a',actorRef:{kind:'organization',id:'org-shop'},goal:'内部盘点合成样品',
+    startAt:'2026-10-18T08:10:00+08:00',dueAt:'2026-10-18T09:00:00+08:00',status:'active',prerequisites:[],blockers:[]};
+  const planned = {type:'SaveTask',commandId:'background-task',evidence:'合成内部说明',task};
+  const valid = {worldCommands:[worldChange],taskCommands:[planned],eventCommands:[],visibleHooks:[],unresolved:[]};
+  server.control.world = '{"worldCommands": [';
+  await page.getByLabel('你的行动',{exact:true}).fill(boundAction);
+  await page.getByRole('button',{name:'发送',exact:true}).click();
+  await expect.poll(async () => (await stored(page)).draft.stageStatus.world).toBe('failed');
+  const failed = await stored(page);
+  expect(failed.state).toEqual(baseline.state);
+  expect(failed.draft).toMatchObject({userInput:boundAction,stageStatus:{story:'ready',variables:'ready',world:'failed'},
+    variables:{validation:'validated'}});
+  expect(failed.draft.world).toBeUndefined();
+  expect(server.calls).toEqual(['story','variables','world','story','variables','world']);
+  const modal = page.getByRole('dialog').filter({has:page.getByRole('heading',{name:'重试与变更详情',exact:true})});
+  if (!isMobile) await openWorkflowDiagnostics(page);
+  const log = isMobile ? modal.getByTestId('runtime-log') : page.getByTestId('runtime-log');
+  await expect(log).toContainText('invalid_json');
+  await expect(log).not.toContainText('内部盘点合成样品');
+  if (isMobile) await modal.getByRole('button',{name:'关闭资料界面',exact:true}).click();
+  await page.reload();
+  await openGameTools(page);
+  expect(await stored(page)).toEqual(failed);
+  expect(server.calls).toHaveLength(6);
+  const hint = page.locator(isMobile ? '.wf-ft .workflow-fee' : '.workflow-primary small');
+  await expect(hint).toBeVisible();
+  await expect(hint).toHaveText('本次仅重试动态世界，保留已通过的正文和变量。重新请求可能产生模型费用。');
+  await page.screenshot({path:info.outputPath('world-only-retry.png')});
+  const retry = page.getByRole('button',{name:'继续未完成阶段',exact:true});
+  const other = await context.newPage();
+  let release!: () => void;
+  server.control.hold = new Promise<void>(done => { release=done; });
+  server.control.world = JSON.stringify(valid);
+  try {
+    const credential = await page.evaluate(() => Object.entries(sessionStorage)
+      .find(([key]) => key.startsWith('heijin.credential.v1:')));
+    expect(credential).toBeDefined();
+    await other.addInitScript(([key,value]) => sessionStorage.setItem(key,value),credential!);
+    const second = await mock(other);
+    await other.goto('/#game/save-a');
+    await openGameTools(other);
+    await retry.evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
+    await expect.poll(() => server.calls.slice(6)).toEqual(['world']);
+    await other.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
+    await expect(other.getByText(/此存档已有阶段请求/).first()).toBeVisible();
+    expect(second.calls).toEqual([]);
+    expect((await stored(other)).state).toEqual(failed.state);
+    await page.getByRole('button',{name:'取消自动执行',exact:true}).click();
+    server.control.hold = undefined;
+    release();
+    await expect(retry).toBeEnabled();
+    const cancelled = await stored(page);
+    expect(cancelled.state).toEqual(failed.state);
+    expect(cancelled.draft).toMatchObject({userInput:boundAction,story:failed.draft.story,variables:failed.draft.variables});
+    expect(cancelled.draft.world).toBeUndefined();
+    expect(server.calls).toHaveLength(7);
+    await retry.click();
+    await settled(page);
+    const committed = await stored(page);
+    expect(committed.state.revision).toBe(baseline.state.revision+1);
+    expect(committed.state.journal).toHaveLength(baseline.state.journal.length+1);
+    expect(committed.state.journal.at(-1)?.turnId).toBe(failed.draft.turnId);
+    expect(committed.state.journal.at(-1)?.story).toEqual(failed.draft.story);
+    expect(committed.state.tasks['stock-check-a'].status).toBe('active');
+    expect(committed.state.tasks['stock-check-b']).toBeUndefined();
+    expect(committed.state.organizations['org-shop'].operatingStatus).toBe('上午盘点后开门');
+    expect(server.calls).toEqual(['story','variables','world','story','variables','world','world','world']);
+    await page.reload();
+    await openGameTools(page);
+    expect(await stored(page)).toEqual(committed);
+    expect(server.calls).toHaveLength(8);
+    expect(second.calls).toEqual([]);
+  } finally {
+    release();
+    await other.close();
+  }
+});

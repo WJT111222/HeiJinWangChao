@@ -14,6 +14,8 @@ import { defaultSettings } from '../ui/settings/model';
 import { game } from './fixtures/game';
 import { deepSeekUntagged, recoveryNarrative, recoverySummary, recoveryGuide, recoveryActions, inlineRecoveryOutput, inlineRecoveryNarrative, missingNarrativeCloseOutput } from './fixtures/storyRecovery';
 import { stageResponses } from '../services/ai/stageResponses';
+import { builtInPresets } from '../presets/library';
+import { enableNativeDelivery, savePresetSettings } from '../presets/settings';
 
 const narrative = '【旁白】街边的公交车缓缓驶过。\n\n你看着窗外的路灯，没有作出决定。';
 function output(body = narrative, actions = true) {
@@ -168,6 +170,39 @@ describe('真实正文入口与草稿原子替换', () => {
       expect(client).toHaveBeenCalledTimes(1);
     },
   );
+  it('预设参数被明确拒绝时保留已有正文和正式存档，玩家主动重试后才使用兼容请求', async () => {
+    const fixture = setup();
+    fixture.config.channels[0].baseUrl = 'https://relay.example/v1';
+    const formal = await repo.load(draft.saveId);
+    const transport = vi.fn<typeof fetch>(async () => sse(output()));
+    const stage = runner(transport);
+    const saved = await stage.generate({ ...fixture, draft });
+    const storage = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    });
+    try {
+      savePresetSettings({ enabled: true, selected: builtInPresets[0].id, packages: {} });
+      transport.mockImplementationOnce(async () => Response.json({ error: {
+        code: 'unsupported_parameter', param: 'top_p',
+        message: "Unsupported parameter: 'top_p' is not supported with this model.",
+      } }, { status: 400 }));
+      const generate = () => stage.generate({ ...fixture, draft: saved });
+      await expect(generate()).rejects.toMatchObject({ code: 'parameter_adjusted' });
+      expect(transport).toHaveBeenCalledTimes(2);
+      expect(JSON.parse(String(transport.mock.calls[1][1]?.body)).top_p).toBe(1);
+      expect(await repo.loadDraft(draft.saveId)).toEqual(saved);
+      expect(await repo.load(draft.saveId)).toEqual(formal);
+      const next = await generate();
+      expect(transport).toHaveBeenCalledTimes(3);
+      expect(JSON.parse(String(transport.mock.calls[2][1]?.body))).not.toHaveProperty('top_p');
+      expect(next.storyRevision).toBe(saved.storyRevision + 1);
+      expect(await repo.load(draft.saveId)).toEqual(formal);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
   it('真实 SSE 中无标签 Step 0–15 + 小说正文被安全恢复，只保存一次草稿且不改变正式状态', async () => {
     const before = await repo.load(draft.saveId);
     const steps = Array.from({ length: 16 }, (_, i) => `Step ${i}｜本轮创作判断\n- 维持真实人物关系与已有场景。`).join('\n');
@@ -202,7 +237,7 @@ describe('真实正文入口与草稿原子替换', () => {
     const configuration = setup('deepseek'); if (inline) configuration.settings.prompts.minNarrativeChars = 1500;
     const transport = vi.fn<typeof fetch>(async () => sse(raw, 'deepseek'));
     const saved = await runner(transport).generate({ ...configuration, draft, onProgress: p => progress.push(p.narrative) });
-    expect(saved.story).toEqual({ turnKind: 'regular', narrative: expectedNarrative, summary: recoverySummary, variableGuide: recoveryGuide, actionOptions: recoveryActions });
+    expect(saved.story).toEqual({ turnKind: 'regular', narrative: expectedNarrative, summary: recoverySummary, variableGuide: recoveryGuide, variableGuideRaw: JSON.stringify(recoveryGuide), actionOptions: recoveryActions });
     expect(progress.every(value => value === '' || value === expectedNarrative)).toBe(true);
     expect(JSON.stringify(saved.story)).not.toContain('规划独有标记');
     expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: raw, displayText: raw, status: 'validated' });
@@ -229,7 +264,7 @@ describe('真实正文入口与草稿原子替换', () => {
     expect(thoughts).toContain(native);
     expect(visible.some(value => value.length > 0 && value.length < inlineRecoveryNarrative.length)).toBe(true);
     expect(visible.every(value => (inlineRecoveryNarrative + '\n').startsWith(value))).toBe(true);
-    expect(saved.story).toEqual({ turnKind: 'regular', narrative: inlineRecoveryNarrative, summary: recoverySummary, variableGuide: recoveryGuide, actionOptions: recoveryActions });
+    expect(saved.story).toEqual({ turnKind: 'regular', narrative: inlineRecoveryNarrative, summary: recoverySummary, variableGuide: recoveryGuide, variableGuideRaw: JSON.stringify(recoveryGuide), actionOptions: recoveryActions });
     expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: missingNarrativeCloseOutput, displayText: native + missingNarrativeCloseOutput, status: 'validated' });
     expect(await repo.load(draft.saveId)).toEqual(before.state);
     expect(await repo.loadDraft(draft.saveId)).toEqual(saved);
@@ -246,17 +281,18 @@ describe('真实正文入口与草稿原子替换', () => {
   });
   for (const inline of [false, true, 'unclosed'] as const) {
     it.each([
-      ['时间倒退', [{ group: 'time', subjectHint: 'time:end', observedFact: '2026-10-18T07:00:00+08:00' }], 'time_data', 'time_invalid_or_reversed'],
-      ['不存在的事件', [{ group: 'event', observedFact: '不存在的事件', eventNarration: { eventId: 'absent-event', mode: 'enter', at: '2026-10-18T08:00:00+08:00' } }], 'event_entry', 'narration_reference'],
-    ] as const)(`已恢复的正文仍受%s校验，失败不能写任何草稿或状态（同行=${inline}）`, async (_name, guide, code, storyRule) => {
+      ['时间倒退', [{ group: 'time', subjectHint: 'time:end', observedFact: '2026-10-18T07:00:00+08:00' }]],
+      ['不存在的事件', [{ group: 'event', observedFact: '不存在的事件', eventNarration: { eventId: 'absent-event', mode: 'enter', at: '2026-10-18T08:00:00+08:00' } }]],
+    ] as const)(`已恢复的正文遇到%s保留参考笔记，不改变正式状态（同行=${inline}）`, async (_name, guide) => {
       await repo.deleteDraft(draft.saveId, draft.draftRevision);
       draft = await repo.saveDraft(createTurnDraft(draft.saveId, 0, 'recovery-invalid', 'regular', ''), null);
       const before = await repo.loadGame(draft.saveId), save = vi.spyOn(repo, 'saveDraft');
       const raw = (inline === 'unclosed' ? missingNarrativeCloseOutput : inline ? inlineRecoveryOutput() : deepSeekUntagged).replace(/<变量规划>[\s\S]*?<\/变量规划>/, `<变量规划>${JSON.stringify(guide)}</变量规划>`);
       const transport = vi.fn<typeof fetch>(async () => sse(raw, 'deepseek'));
-      await expect(runner(transport).generate({ ...setup('deepseek'), draft })).rejects.toMatchObject({ code, details: { storyRule } });
-      expect(await repo.loadGame(draft.saveId)).toEqual(before); expect(save).not.toHaveBeenCalled(); expect(transport).toHaveBeenCalledTimes(1);
-      expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: raw, status: 'failed' });
+      const saved = await runner(transport).generate({ ...setup('deepseek'), draft });
+      expect(saved.story).toMatchObject({ variableGuideRaw: JSON.stringify(guide), variableGuide: guide[0].group === 'event' ? [] : guide });
+      expect(await repo.load(draft.saveId)).toEqual(before.state); expect(save).toHaveBeenCalledTimes(1); expect(transport).toHaveBeenCalledTimes(1);
+      expect(stageResponses.getSnapshot()[0]).toMatchObject({ text: raw, status: 'validated' });
     });
   }
   it.each([false, true, 'unclosed'] as const)('恢复成功后IDB已排入草稿put仍能原子回滚，不能把请求成功当作保存成功（同行=%s）', async inline => {
@@ -635,4 +671,58 @@ describe('真实正文入口与草稿原子替换', () => {
     expect(saved.useVariableStage).toBe(false);
     expect(saved.useWorldStage).toBe(true);
   });
+});
+
+it('兼容预设保留真实 length 断点；主动 continue 及完整 length 共用正式校验和草稿 CAS', async () => {
+  const { tavernEvents } = await import('../presets/tavern/events');
+  const storage = new Map<string,string>();
+  vi.stubGlobal('localStorage', { getItem: (k: string) => storage.get(k) ?? null, setItem: (k: string,v: string) => storage.set(k,v) });
+  const types: string[] = [];
+  const hook = tavernEvents.on('chat_completion_settings_ready', d => { types.push(d.type); });
+  try {
+    savePresetSettings({ enabled: true, selected: builtInPresets[0].id, packages: {} });
+    const input = setup(); input.settings.runtime.streamStory = false;
+    const raw = output(), cut = raw.indexOf(narrative) + 10;
+    const part = raw.slice(0,cut);
+    const json = (content: string) => Response.json({ choices: [{ message: { content }, finish_reason: 'length' }] });
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(json(part)).mockResolvedValueOnce(json(raw.slice(cut)));
+    const stage = runner(fetcher);
+    await expect(stage.generate({ ...input, draft, onFailureSaved() {} })).rejects.toMatchObject({ code: 'output_limit' });
+    const failed = (await repo.loadDraft(draft.saveId))!;
+    expect(failed.storyPartial?.text).toBe(part);
+    expect(failed.story).toBeUndefined();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const saved = await stage.generate({ ...input, draft: failed, continuation: true });
+    expect(saved.story?.narrative).toBe(narrative);
+    expect(saved.stageStatus.story).toBe('ready');
+    expect((await repo.load(draft.saveId)).revision).toBe(draft.baseSaveRevision);
+    expect(types).toEqual(['normal','continue']);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  } finally { hook.stop(); vi.unstubAllGlobals(); }
+});
+
+it('已启用独立交付时，显式续写仍使用普通消息并保留原断点和草稿 CAS', async () => {
+  const values = new Map<string, string>();
+  vi.stubGlobal('localStorage', { getItem: (k: string) => values.get(k) ?? null, setItem: (k: string, v: string) => values.set(k, v) });
+  try {
+    const input = setup();
+    input.settings.runtime.streamStory = false;
+    const raw = output(), cut = raw.indexOf(narrative) + 10;
+    const json = (content: string, finish_reason: string) => Response.json({choices: [{message: {content}, finish_reason}]});
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(json(raw.slice(0, cut), 'length'))
+      .mockResolvedValueOnce(json(raw.slice(cut), 'stop'));
+    const stage = runner(fetcher);
+    await expect(stage.generate({ ...input, draft, onFailureSaved() {} })).rejects.toMatchObject({code: 'output_limit'});
+    const failed = (await repo.loadDraft(draft.saveId))!;
+    const presets = {enabled: false, selected: null, packages: {}};
+    enableNativeDelivery(presets);
+    savePresetSettings(presets);
+    const saved = await stage.generate({ ...input, draft: failed, continuation: true });
+    expect(saved.story?.narrative).toBe(narrative);
+    expect((await repo.load(draft.saveId)).revision).toBe(draft.baseSaveRevision);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    const wire = JSON.parse(String(fetcher.mock.calls[1][1]?.body));
+    expect(wire.tools).toBeUndefined();
+    expect(wire.messages.at(-2)).toEqual({role: 'assistant', content: raw.slice(0, cut)});
+  } finally { vi.unstubAllGlobals(); }
 });

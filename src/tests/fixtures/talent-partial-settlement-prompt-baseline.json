@@ -1,0 +1,33 @@
+{
+  "withTalentVariablesAndWorld": "ce70c84fbab992bcacc1ca5c05feb2913eb09bf72c16f2c0758acad324a81c2c",
+  "results": [
+    {
+      "stage": "variables",
+      "mode": "opening",
+      "messages": "d7dbc9fb1080544755c1a89e45223befdaa2d996babdd360ff352be679c7fbac",
+      "context": "1470d8b15380c6687dc8a154abf3efeca2585c9bf5f265fc651f157669adc670",
+      "modules": "2a1e9626d79cfc99c0d8921125380431004c98f58024f36a0194f15597df78e2"
+    },
+    {
+      "stage": "variables",
+      "mode": "regular",
+      "messages": "287dac21118d9946cea37dce8d2bf4b8ec3e468b01972131527d2a3ae793fa57",
+      "context": "3d35b2a53d970cc65347edb7c762d2eedfb2b2b94e936f64872559edae038073",
+      "modules": "2a509b31ca3b5aa47933c019529e447bbea27d452d9f10ec269f2f0adc2daf63"
+    },
+    {
+      "stage": "world",
+      "mode": "opening",
+      "messages": "9055f68954a61286e9aa92a9b7a0131e2f3f61f649e5ee3daefd0d7bd89dc4a6",
+      "context": "2ed9ab42308b1800eba11135ac839e1cf36841528a9c1639b439688eaf5f43ff",
+      "modules": "9ddcc7e5c51c9a34fa62903fed9c6520a25df4a24aa2d163519f2d676c1ec542"
+    },
+    {
+      "stage": "world",
+      "mode": "regular",
+      "messages": "e0fdd97550946e410874d279138523461222747a50432cc3b61c246777e4a973",
+      "context": "09c67490aafe18e6d840d4b087b323a4e1341d68282238fc5eb246e08984c8e5",
+      "modules": "fd98f1b16ff5772fd4ae4c4b54e87f8b24fa0b5f4f267f0b862fc6f5cdfeae8a"
+    }
+  ]
+}

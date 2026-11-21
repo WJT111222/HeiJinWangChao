@@ -1,6 +1,6 @@
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
-import { openGameTools } from './helpers/gameLayout';
+import { openGameTools, openWorkflowDiagnostics } from './helpers/gameLayout';
 async function seed(page:Page,clock?:string,unseen=false) {
   await page.goto('/');
   const response=await page.evaluate(async({clock,unseen})=>{
@@ -20,16 +20,18 @@ async function seed(page:Page,clock?:string,unseen=false) {
   await page.goto('/#game/save-a');await page.reload();await openGameTools(page);return response;
 }
 const stored=(page:Page)=>page.evaluate(async()=>{const path='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(path),repo=await SaveRepository.open();try{return await repo.loadGame('save-a');}finally{repo.close();}});
-for(const firstFailure of [false,true])test(`固定阶段积压结算保留原时刻并退役，${firstFailure?'失败仅重试World':'直接自动提交'}后刷新不重复请求`,async({page})=>{
+for(const firstFailure of [false,true])test(`固定阶段积压结算保留原时刻并退役，${firstFailure?'失败仅重试World':'直接自动提交'}后刷新不重复请求`,async({page,isMobile})=>{
   const response=await seed(page),initial=await stored(page);let invalid=firstFailure,calls=0;
   await page.route('https://event-stages.mock.invalid/**',async route=>{
     calls++;const reply=structuredClone(response);
-    if(invalid)delete reply.eventCommands[0].event.outcome;
-    await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:JSON.stringify(reply)},finish_reason:'stop'}]})});
+    await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:invalid ? '{"eventCommands": [' : JSON.stringify(reply)},finish_reason:'stop'}]})});
   });
   await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
   if(firstFailure){
-    await expect(page.getByTestId('runtime-log')).toContainText('stage_result');
+    const diagnostics = page.getByRole('dialog',{name:'重试与变更详情',exact:true});
+    if (!isMobile) await openWorkflowDiagnostics(page);
+    const log = (isMobile ? diagnostics : page.getByRole('region',{name:'运行诊断',exact:true})).getByTestId('runtime-log');
+    await expect(log).toContainText('invalid_json');
     const failed=await stored(page);expect(failed.state).toEqual(initial.state);expect(failed.draft.story).toEqual(initial.draft.story);expect(failed.draft.variables).toEqual(initial.draft.variables);
     expect(calls).toBe(1);await page.reload();await openGameTools(page);expect(calls).toBe(1);invalid=false;
     await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();

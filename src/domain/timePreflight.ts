@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { openingTimeSelection } from './openingTime';
+import { openingTimeSelection, variablesChooseOpening } from './openingTime';
 import { GameTimeSchema, requireData } from './common';
 import type { GameState } from './state';
 import type { TurnDraft } from './drafts';
@@ -112,7 +112,8 @@ export function timePreflight(state: GameState, action: string) {
     const triggerAt = Date.parse(event.startAt) >= Date.parse(state.worldClock) ? event.startAt
       : event.estimatedEndAt && Date.parse(event.estimatedEndAt) >= Date.parse(state.worldClock) && Date.parse(event.estimatedEndAt) <= Date.parse(end) ? event.estimatedEndAt : undefined;
     if (!triggerAt) continue;
-    if (state.journal.some((entry) => entry.story.variableGuide.some((guide) => guide.group === 'time' &&
+    // 旧回执保留原语义。新笔记只有在正式事件也引用该回合时，才用于去重提示。
+    if (state.journal.some((entry) => (entry.story.variableGuideRaw === undefined || event.sourceTurnIds.includes(entry.turnId)) && entry.story.variableGuide.some((guide) => guide.group === 'time' &&
       guide.subjectHint === `time:interrupt:${event.id}` && Date.parse(guide.observedFact) === Date.parse(triggerAt)))) continue;
     const own = event.actorRefs.some((ref) => ref.kind === 'protagonist' && ref.id === state.protagonist.id);
     const sameScene = event.locationId === state.protagonist.locationId && Boolean(state.locations[state.protagonist.locationId]?.parentId);
@@ -128,7 +129,7 @@ export function timePreflight(state: GameState, action: string) {
   candidates.sort((a, b) => Date.parse(a.at) - Date.parse(b.at) || a.id.localeCompare(b.id));
   return { ...intent, from: state.worldClock, locationId: state.protagonist.locationId, candidates,
     policy: '这是旧辅助候选，不是Story入场许可清单；完整事件身份与时间另见EVENT_NARRATION_INDEX。预计终止节点不表示完成、通知或必然中断。需有实际敲门/声音/可及时获知通讯/直接阻碍的正文事实；不能因到期自动完成，不代替玩家接受或回应。没有实际中断可继续原行动。时间只由后续变量候选及正式事务提交。',
-    guideContract: '明确/有界长行动须在变量规划给出一条group=time，subjectHint=time:end（完成）、time:pause（其他真实原因提前停下）或time:interrupt:<候选id>；observedFact填写本轮实际停止时间ISO（+08:00），textEvidence简述实际行动或停止原因，可概括而无需逐字引用。旧interrupt只能停在候选时间；Story自主入场可用time:pause声明实际停止点，不需要预检候选。暂停时程序采用该停止时间，变量不得越过或另写时间。不能先到终点再回写。估计不是保证抵达，可在窗口内交还控制权；早晨6至12点仅为估计语义范围，不是固定唤醒时间。' };
+    guideContract: '按实际行动描述经过和停止点，预计抵达不代表已经抵达。Variables 根据已发生的事实决定时钟；纯回顾保持当前世界不变。' };
 }
 // 语义分类由同一次正文请求完成；程序验证人物和两段玩家原请求来源，不解析小说文风。
 const HistoricalPerspectiveSchema = z.strictObject({
@@ -152,18 +153,18 @@ export function historicalPerspective(state: GameState, draft: Pick<TurnDraft, '
     proof.perspectiveRequest !== proof.pastRequest &&
     draft.userInput.includes(proof.perspectiveRequest) && draft.userInput.includes(proof.pastRequest),
     'TIME_PREFLIGHT', '历史视角缺少人物或玩家原请求的独立依据');
-  requireData(!draft.story?.variableGuide.some((guide) => guide.group === 'time' &&
+  requireData(draft.story?.variableGuideRaw !== undefined || !draft.story?.variableGuide.some((guide) => guide.group === 'time' &&
     guide.subjectHint?.startsWith('time:') && guide.subjectHint !== 'time:retrospective'),
     'TIME_PREFLIGHT', '过去回顾不能混合当前时间推进');
   return proof;
 }
 export const turnTimePolicy = {
-  normal: '世界时钟采用合法结构化候选。待定开局以Story的OPENING_TIME为唯一时钟候选，由程序统一应用，变量无需重复SetWorldClock。普通回合由变量AI根据实际行动合理估时，允许零耗时，无固定步长，不要求正文写出时间或逐字证据。只能前进或保持，不能倒退。明确中断不能越过实际停止点；预计时间不证明事件已经发生。',
+  normal: '世界时钟采用合法结构化候选。待定开局由 Variables 根据已选正文及玩家设定给出开局窗口。普通回合由变量AI根据实际行动合理估时，允许零耗时，无固定步长，不要求正文写出时间或逐字证据。只能前进或保持，不能倒退。明确中断不能越过实际停止点；预计时间不证明事件已经发生。',
   retrospective: '纯历史视角属于只读当前世界的特殊语义，并非零耗时的必要条件：玩家明确要求其他已有NPC视角，且只回顾此前发生的事。正文在变量规划用group=time、subjectHint=time:retrospective，observedFact为JSON：{npcId,perspectiveRequest,pastRequest,temporalScope:"past_only",currentPlotAdvances:false}。两段Request分别完整引用玩家要求切换人物和回顾过去的不同原文，不能引用AI自插回忆；textEvidence可概括回顾内容，无需逐字引用。当前人物视角、NPC讲往事、现在的其他人物视角、过去与现在混合均不适用；不明确时按普通时间规则处理，可零耗时但不可倒退。纯回顾不更新任何当前事实或推演当前世界，World可以RecordHistory记录历史披露而不改变当前时钟；仍遵守既有事实和NPC认知边界，不授予私有知识。',
 };
 export function timeOutcome(state: GameState, draft: Pick<TurnDraft, 'userInput' | 'turnKind' | 'story'>, _required = false) {
   void _required;
-  if (!draft.story) return undefined;
+  if (!draft.story || draft.story.variableGuideRaw !== undefined) return undefined;
   if (state.openingTimePending) {
     const selected = openingTimeSelection(state, draft)!;
     return { at: selected.endAt, evidence: selected.evidence };
@@ -184,6 +185,11 @@ export function timeOutcome(state: GameState, draft: Pick<TurnDraft, 'userInput'
   return { at: guide.observedFact, evidence };
 }
 export function validateTimeCommands(state: GameState, draft: TurnDraft, commands: readonly DomainCommand[]) {
+  if (state.openingTimePending && variablesChooseOpening(draft)) {
+    requireData(!historicalPerspective(state, draft), 'TIME_PREFLIGHT', '纯历史回顾不能初始化当前世界时钟');
+    requireData(openingTimeSelection(state, draft, commands), 'OPENING_TIME', '请在变量命令中给出本幕实际开局时钟');
+    return;
+  }
   const opening = openingTimeSelection(state, draft);
   if (opening) {
     requireData(commands.filter((c) => c.type === 'SetWorldClock').every((c) => Date.parse(c.worldClock) === Date.parse(opening.endAt)),
@@ -195,6 +201,7 @@ export function validateTimeCommands(state: GameState, draft: TurnDraft, command
       'TIME_PREFLIGHT', '历史回顾不能更改当前世界或时钟');
     return;
   }
+  if (draft.story?.variableGuideRaw !== undefined) return;
   // 只保护明确结构化中断上界，不从小说关键词推算必须经过多少秒。
   if (draft.story?.variableGuide.some((g) => g.group==='time' && g.subjectHint==='time:pause')) {
     const outcome=timeOutcome(state,draft)!;

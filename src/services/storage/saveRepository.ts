@@ -1,7 +1,7 @@
 import { HistoryRepository } from './history/repository';
 import { clearManualHistory, historyStores } from './history/model';
 import { setNpcImportance } from '../../domain/npc/profiles';
-import { timelineStores, newSaveControl, readControl, writeControl, controlInstance, clearUndoRecords, recordUndo, inspectUndo, restoreSnapshot, assertMemoryLineage, readTurnComparison } from './turnUndo';
+import { timelineStores, newSaveControl, readControl, writeControl, controlInstance, clearUndoRecords, recordUndo, inspectUndo, restoreSnapshot, assertMemoryLineage, readTurnComparison, SnapshotSchema } from './turnUndo';
 import type { MemoryLineage, UndoStatus, TurnComparison } from './turnUndo';
 import { request, transaction } from './idb';
 import { CountSchema, DataError, IdSchema, requireData } from '../../domain/common';
@@ -11,8 +11,10 @@ import type { DomainCommand } from '../../domain/commands';
 import { GameStateSchema } from '../../domain/state';
 import type { GameState } from '../../domain/state';
 import { normalizeOpeningCity } from '../../domain/openingCity';
-import { TurnDraftSchema, validateDraftUpdate, createTurnDraft } from '../../domain/drafts';
+import { TurnDraftSchema, validateDraftUpdate, createTurnDraft, rerollStory } from '../../domain/drafts';
 import type { TurnDraft } from '../../domain/drafts';
+import type { LegacyNotificationSelection } from '../../domain/events/legacyNotification';
+import { authorizeLegacyNotificationRecovery, validateRecoveredStory } from '../../domain/legacyNotificationRecovery';
 import { migrateSave } from './migrations';
 import { TurnSubmissionSchema, settleTurn, awaitingPlayerAction, rebindableAfterStoryStop } from '../../domain/turnCommit';
 import type { TurnSubmission } from '../../domain/turnCommit';
@@ -266,6 +268,26 @@ export class SaveRepository {
       inspectUndo(tx, readState(await request(tx.objectStore('saves').get(saveId)), saveId)));
   }
 
+  /** The journal stores the narrative. Only verified records on its active undo suffix retain the exact action. */
+  async recentStoryActions(expected: GameState, windowSize: number): Promise<Record<string, string>> {
+    return transaction(this.database, ['saves', 'saveControls', 'turnUndo'], 'readonly', async tx => {
+      const state = readState(await request(tx.objectStore('saves').get(expected.saveId)), expected.saveId);
+      requireData(fingerprint(state) === fingerprint(expected), 'DRAFT_CONFLICT', '读取行动历史时存档已变化。');
+      const control = await readControl(tx, state.saveId);
+      const records = control?.records ?? [];
+      const start = state.journal.length - records.length;
+      const actions: Record<string, string> = Object.create(null);
+      if (start < 1 || records.some((r, i) => r.turnId !== state.journal[start + i]?.turnId ||
+        r.beforeTurnId !== state.journal[start + i - 1]?.turnId)) return actions;
+      for (const descriptor of records.slice(-windowSize)) {
+        const row = SnapshotSchema.safeParse(await request(tx.objectStore('turnUndo').get([state.saveId, descriptor.turnId])));
+        if (row.success && row.data.saveId === state.saveId && row.data.turnId === descriptor.turnId &&
+          row.data.beforeTurnId === descriptor.beforeTurnId) actions[descriptor.turnId] = row.data.input;
+      }
+      return actions;
+    });
+  }
+
   /** Consistent read only: use the existing migration projection, never normalize by writing.
    * IDB serializes this transaction with commits/undo; no stage session is reserved. */
   async turnComparison(expected:GameState):Promise<TurnComparison>{
@@ -442,7 +464,7 @@ export class SaveRepository {
       const entries: BackupEntry[] = [];
       for (const saveId of saveIds) {
         const state = readState(await request(tx.objectStore('saves').get(saveId)), saveId);
-        const { draft } = compatibleDraft(state, await request(tx.objectStore('drafts').get(saveId)));
+        const { draft } = compatibleDraft(state, await request(tx.objectStore('drafts').get(saveId)), true);
         entries.push({ summary: backupSummary(state), state, ...(draft ? { draft } : {}) });
       }
       return entries;
@@ -682,6 +704,26 @@ export class SaveRepository {
         await request(store.put(next)); return next;
       }), { required: true });
     } finally { session.release(); }
+  }
+
+  // StoryStage holds the browser execution lock. This transaction only replaces the
+  // selected draft after the full CAS and eligibility check, and never writes GameState.
+  async saveRecoveredStory(basedOn: TurnDraft, story: NonNullable<TurnDraft['story']>,
+    selection: LegacyNotificationSelection, signal?: AbortSignal): Promise<TurnDraft> {
+    const base = TurnDraftSchema.parse(basedOn);
+    return transaction(this.database, ['saves','drafts'], 'readwrite', async tx => {
+      const state = await readStoredState(tx,base.saveId);
+      const store = tx.objectStore('drafts');
+      const current = TurnDraftSchema.parse(await request(store.get(base.saveId)));
+      requireData(fingerprint(current) === fingerprint(base), 'DRAFT_CONFLICT', '草稿已被其他操作更新');
+      const recovery = authorizeLegacyNotificationRecovery(state,current,selection);
+      const replacement = rerollStory(current,story);
+      validateRecoveredStory(state,current.story!,replacement.story!,recovery);
+      validateDraftUpdate(current,replacement);
+      const next = TurnDraftSchema.parse({ ...replacement, legacyNotificationRecovery:recovery });
+      await request(store.put(next));
+      return next;
+    },signal);
   }
 
   /**

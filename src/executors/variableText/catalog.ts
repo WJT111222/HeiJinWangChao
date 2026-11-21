@@ -5,7 +5,7 @@ import { ActorRefSchema, GameTimeSchema, MoneySchema, TextSchema } from '../../d
 import { OrdinaryNpcCreationSchema, SpecialNpcCreationSchema } from '../../domain/npc/schema';
 import { GangOrgSchema, GovernmentOrgSchema, CivilOrgSchema, BusinessOrgSchema, OrganizationChangesSchema, FinancialBasisSchema, organizationChangeFields } from '../../domain/organizations/schema';
 import { AccountSchema, IncomeRecordSchema, DebtRecordSchema, VehicleAssetSchema } from '../../domain/economy/schema';
-import { ImportantItemSchema } from '../../domain/items/schema';
+import { OwnedItemInputSchema } from '../../domain/items/schema';
 import { itemDetailFields, itemCategoryGroup } from '../../domain/items/details';
 import { EquipmentSchema } from '../../domain/protagonist/schema';
 import { LocationSchema } from '../../domain/state';
@@ -60,8 +60,8 @@ const entries:Entry[] = [
   {operation:'push',path:'economy.transfers',commandType:'TransferFunds',value:z.strictObject({from:AccountSchema,to:AccountSchema,amount:positive})},
   {operation:'set',path:'economy.debts[id]',commandType:'Borrow',value:z.strictObject({account:AccountSchema,debt:DebtRecordSchema.omit({id:true}).extend({principal:positive,outstanding:positive,status:z.literal('active')})})},
   {operation:'push',path:'economy.debts[id].repayments',commandType:'RepayDebt',value:z.strictObject({account:AccountSchema,amount:positive})},
-  {operation:'set',path:'items[id]',commandType:'AcquireItem',value:ImportantItemSchema.omit({id:true})},
-  {operation:'set',path:'items[id].purchase',commandType:'PurchaseItem',value:z.strictObject({account:AccountSchema,price:positive,item:ImportantItemSchema.omit({id:true})})},
+  {operation:'set',path:'items[id]',commandType:'AcquireItem',value:OwnedItemInputSchema.omit({id:true})},
+  {operation:'set',path:'items[id].purchase',commandType:'PurchaseItem',value:z.strictObject({account:AccountSchema,price:positive,item:OwnedItemInputSchema.omit({id:true})})},
   {operation:'set',path:'items[id].transfer',commandType:'TransferItem',value:z.strictObject({from:ActorRefSchema.nullable(),to:ActorRefSchema})},
   {operation:'set',path:'items[id].loss',commandType:'LoseItem',value:variableCommandSchemas[7].omit({type:true,commandId:true,evidence:true,expectedRevision:true,itemId:true})},
   {operation:'add',path:'items[id].quantity',commandType:'UpdateItem',value:z.number().int().refine(n=>n!==0)},
@@ -82,6 +82,7 @@ export function textVariableCatalog() {
     },
     rules:[
       'events[id].sceneState只写本轮Story实际成立且满足现场权限的变化；active仍为active不是变化，提及、讨论风险、等待发展均不授予介入权限。eventNarration.mode=enter与既有eventInteraction沿用正式语义，mention不授权，不得靠改状态绕过权限。没有合法事件变化省略此命令，其他合法人物、情绪、好感和记忆仍完整记录。合法现场更新和提前结案不禁用；后台推进属于World。无交易不生成经济命令。',
+      '新增物品和购买的item都必须明确填写ownerRef。购买和转账使用完整复合命令，不另写扣款，不从说明推导交易。',
       '物品description是稳定外观/功能/背景，conditionText是当前状态；referenceValue为单件参考价值（人民币非负整数分），未知省略或null，不用0代替未知，不代表购买price，不生成交易。不可交易证件不编造市价。itemDetails复用字符串附加资料，按itemDetailsGuide选适用字段，未知省略；set items[id].itemDetails替换该记录，保留仍有效的旧属性，不支持任意深层赋值。tool为工具类，weapon仍为武器；旧other不按名称猜类。questItem仅在确有任务用途时标true。',
       '同一次响应依次输出完整<thinking>、<说明>、<命令>。只执行命令块；set/add/push 路径 = JSON值；delete 路径，无操作数。以换行分隔，值可多行。不输出DomainCommand JSON、commandId、evidence、expectedRevision。',
       '可选gameState.前缀与源仓库一致，根和字段仍以本目录为准；[index]仅用于列明的普通数组，NPC/实体表必须用稳定ID。[id]替换为真实稳定ID；创建对象省略id，由路径注入。条目是有限操作入口，不是任意深层赋值。',

@@ -45,7 +45,7 @@ function jsonNodes(text: string, offset: number): Node {
 function category(path: string[]): Category {
   const [top, field, third, fourth] = path;
   if (['TEXT_COMMAND_CATALOG', 'COMMAND_CATALOG'].includes(top)) return 'catalog';
-  if (['PLAYER_ACTION', 'STORY_RESULT', 'VARIABLE_RESULT', 'VARIABLE_GUIDE'].includes(top)) return 'candidate';
+  if (['PLAYER_ACTION', 'STORY_RESULT', 'VARIABLE_RESULT', 'VARIABLE_GUIDE', 'VARIABLE_GUIDE_REFERENCES'].includes(top)) return 'candidate';
   if (top === 'MEMORY_CONTEXT' && field === 'recentTurns') return 'recent';
   if (top === 'MEMORY_CONTEXT' && ['recalledTurns', 'recallDiagnostics', 'recallPolicy'].includes(field)) return 'recall';
   if (top === 'NPC_CONTEXT' || top === 'SCENE_NPC_IDS' || top === 'OFFSCREEN_STATE' && field === 'npcIds') return 'npc';

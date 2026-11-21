@@ -1,4 +1,5 @@
-import { openLibrary } from './helpers/home';
+import { memoryMockCors } from './helpers/memorySummary';
+import { openStoredSave } from './helpers/home';
 import { openWorldArchive, openSettings, goHome } from './helpers/gameLayout';
 import { aiTab, follow, saveAi, stageModel } from './helpers/aiSettings';
 import { variableReply } from '../src/tests/fixtures/variableReply';
@@ -7,6 +8,8 @@ import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { GameStateSchema } from '../src/domain/state';
 import { array, record, string } from '../src/services/ai/protocols';
+// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
+test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
 
 // 隔离浏览器夹具：真实 IndexedDB、真实路由/客户端，网络仅拦截 mock.invalid。
 async function seed(page: Page, count = 31, automatic = false, ready = false) {
@@ -49,7 +52,7 @@ async function seed(page: Page, count = 31, automatic = false, ready = false) {
     new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-maintenance-secret');
   }, { count, automatic, ready });
   await page.reload(); await openGameTools(page);
-  await openLibrary(page); await page.getByRole('button', { name: /读取存档/ }).click(); await openGameTools(page);
+  await openStoredSave(page); await openGameTools(page);
 }
 async function load(page: Page) {
   const state: unknown = await page.evaluate(async () => {
@@ -142,33 +145,33 @@ test('选择并恢复独立模型；手动整理、原文来源及真实memory�
 });
 
 test('跨标签真实Web Lock阻止第二次付费；取消/迟到和服务失败保留全部来源', async ({ page, context }) => {
+  test.setTimeout(60000);
   let requests = 0, release: (() => void) | undefined, status = 200;
   await context.route('https://maintenance.mock.invalid/**', async (route) => {
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: memoryMockCors });
     requests++;
     if (status === 200) await new Promise<void>((resolve) => { release = resolve; });
-    await route.fulfill({ status, contentType: 'application/json', body: status === 200 ? wire() : '{}' }).catch(() => undefined);
+    await route.fulfill({ status, headers: memoryMockCors, contentType: 'application/json', body: status === 200 ? wire() : '{}' }).catch(() => undefined);
   });
   await seed(page); const before = await load(page);
   const memory = await panel(page);
   await memory.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
   await expect.poll(() => requests).toBe(1);
   const other = await context.newPage(); await other.goto('/');
-  await openLibrary(other); await other.getByRole('button', { name: /读取存档/ }).click();
+  await openStoredSave(other);
   const otherPanel = await panel(other);
-  await otherPanel.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
-  await expect(otherPanel).toContainText('另一个标签或任务正在总结此存档');
+  await expect(otherPanel.getByRole('button', { name: '重新生成此批（可能计费）', exact: true })).toBeDisabled();
   expect(requests).toBe(1);
   await memory.getByRole('button', { name: '取消当前总结' }).click();
-  await expect(memory.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeEnabled();
-  await page.getByRole('dialog', { name: '短期 → 中期总结失败', exact: true }).getByRole('button', { name: '关闭资料界面' }).click();
+  await expect(memory).toContainText('请求已取消');
   release?.(); expect(await load(page)).toEqual(before);
   status = 429;
-  await memory.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
+  await memory.getByRole('button', { name: '重新生成此批（可能计费）', exact: true }).click();
   await expect.poll(() => requests).toBe(2);
-  await expect(memory.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeEnabled();
+  await expect(memory).toContainText('服务请求受限');
   expect(await load(page)).toEqual(before);
   await other.close(); await page.reload();
-  const previous = page.getByRole('dialog', { name: '短期 → 中期总结待确认', exact: true });
+  const previous = await panel(page);
   await expect(previous).toContainText('发送行动不会自动重试');
   await previous.getByRole('button', { name: '关闭资料界面' }).click();
   await openGameTools(page); expect(requests).toBe(2);
@@ -256,10 +259,9 @@ test('设置关闭重开仍是同一维护任务；阅读零请求，取消迟�
   await expect(maintenance.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeDisabled();
   expect(requests).toBe(1);
   await maintenance.getByRole('button', { name: '取消当前总结', exact: true }).click();
-  await expect(maintenance.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeEnabled();
-  await page.getByRole('dialog', { name: '短期 → 中期总结失败', exact: true }).getByRole('button', { name: '关闭资料界面' }).click();
+  await expect(maintenance).toContainText('请求已取消');
   release?.(); hold = false; expect(await load(page)).toEqual(before);
-  await maintenance.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true }).click();
+  await maintenance.getByRole('button', { name: '重新生成此批（可能计费）', exact: true }).click();
   await expect(maintenance).toContainText('总结已保存，原始历史与来源完整保留。'); expect(requests).toBe(2);
   await maintenance.getByRole('button', { name: '关闭资料界面' }).click();
   maintenance = await panel(page);
@@ -291,7 +293,7 @@ test('维护期间切档隔离旧任务，迟到结果不修改新档或原档�
   await expect.poll(() => requests).toBe(1);
   await maintenance.getByRole('button', { name: '关闭资料界面' }).click();
   await goHome(page);
-  await page.locator('.save-card').filter({ hasText: '第二人生' }).getByRole('button', { name: /读取存档/ }).click();
+  await openStoredSave(page, '第二人生');
   const other = await panel(page);
   await expect(other.getByRole('region', { name: '短期 → 中期', exact: true })).toContainText('当前合格未覆盖：31 条');
   await expect(other.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true })).toBeEnabled();

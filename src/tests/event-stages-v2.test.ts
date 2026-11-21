@@ -140,7 +140,7 @@ it('真实WorldStage单次Mock失败保留上游，手动重试后按原候选�
   const a=stageContext(),repo=await SaveRepository.open('stage-runtime',new IDBFactory());repos.push(repo);await repo.create(a.state);
   const selected=await completeDraft(repo,{variables:a.draft.variables!.result}),source=endStage(a.state.events['stage-one']);source.sourceTurnIds=[selected.turnId];
   let invalid=true;
-  const fetcher=vi.fn<typeof fetch>(async()=>Response.json({choices:[{message:{content:JSON.stringify({...a.response,eventCommands:[stageCommand({...source,...(invalid?{outcome:undefined}:{})})]})},finish_reason:'stop'}]}));
+  const fetcher=vi.fn<typeof fetch>(async()=>Response.json({choices:[{message:{content:invalid ? '<命令>{' : JSON.stringify({...a.response,eventCommands:[stageCommand(source)]})},finish_reason:'stop'}]}));
   const config=defaultAiConfig(),channel=newChannel();channel.defaultModel='stage-mock';config.channels=[channel];config.routes.story={channelId:channel.id,modelId:'stage-mock'};
   const values=new Map<string,string>(),storage={getItem:(key:string)=>values.get(key)??null,setItem:(key:string,value:string)=>{values.set(key,value);},removeItem:(key:string)=>{values.delete(key);}};
   const vault=new CredentialVault(storage,storage);vault.set(channel.id,'stage-test-only');

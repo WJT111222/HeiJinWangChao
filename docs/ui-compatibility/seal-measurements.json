@@ -1,0 +1,92 @@
+[
+  {
+    "view": "desktop-day",
+    "seal": "history-seal",
+    "foreground": [
+      115,
+      83,
+      27
+    ],
+    "background": [
+      233,
+      225,
+      207
+    ],
+    "ratio": 5.41
+  },
+  {
+    "view": "desktop-night",
+    "seal": "history-seal",
+    "foreground": [
+      224,
+      193,
+      126
+    ],
+    "background": [
+      20,
+      26,
+      23
+    ],
+    "ratio": 10.17
+  },
+  {
+    "view": "mobile-day",
+    "seal": "history-seal",
+    "foreground": [
+      115,
+      83,
+      27
+    ],
+    "background": [
+      230,
+      220,
+      197
+    ],
+    "ratio": 5.17
+  },
+  {
+    "view": "mobile-night",
+    "seal": "history-seal",
+    "foreground": [
+      232,
+      209,
+      150
+    ],
+    "background": [
+      36,
+      39,
+      30
+    ],
+    "ratio": 10.11
+  },
+  {
+    "view": "mobile-day",
+    "seal": "archive-seal",
+    "foreground": [
+      135,
+      56,
+      39
+    ],
+    "background": [
+      229,
+      220,
+      201
+    ],
+    "ratio": 5.87
+  },
+  {
+    "view": "mobile-night",
+    "seal": "archive-seal",
+    "foreground": [
+      244,
+      237,
+      224
+    ],
+    "background": [
+      163,
+      65,
+      46
+    ],
+    "ratio": 5.38
+  }
+]

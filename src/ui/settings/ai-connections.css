@@ -2,7 +2,7 @@
 .ai-conn{--ac-head:var(--head,#1F1B17);--ac-text:var(--text,#2B2723);--ac-muted:var(--muted,#5F574C);--ac-dim:var(--dim,#857B6C);
   --ac-line:var(--line,#2a26221f);--ac-line-2:var(--line-2,#2a262233);--ac-card:var(--card,#EFE8D9);--ac-field:#F8F4EA;
   --ac-gold:var(--gold,#8E6C25);--ac-ok:var(--pos,#2F7A58);--ac-err:var(--neg,#A3412E);--ac-warn:#9A6A12;--ac-info:var(--info,#2D5E7D);
-  display:flex;flex-direction:column;gap:1rem;min-width:0;color:var(--ac-text);font-size:.86rem}
+  container: ai-settings / inline-size;display:flex;flex-direction:column;gap:1rem;min-width:0;color:var(--ac-text);font-size:.86rem}
 .ai-conn button{min-height:0;margin:0}
 .ai-conn .ai-lede{margin:-.2rem 0 0;color:var(--ac-muted);font-size:.82rem;line-height:1.7}
 .ai-conn .ai-link{border:0;background:none;padding:0;color:var(--ac-info);font-size:inherit;border-bottom:1px dashed currentColor;border-radius:0;cursor:pointer}
@@ -113,6 +113,16 @@
 .ai-conn .ai-save-bar{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .8rem}
 .ai-conn .ai-save-bar .ai-save-msg{flex:1;min-width:0;margin:0}
 .ai-conn .ai-save-bar .ai-btn.ghost{margin-left:auto}
+
+/* The in-game archive shares its width with two sidebars. Size routes to the editor. */
+@container ai-settings (max-width: 43rem) {
+  .ai-conn:not(.is-mobile) .ai-use { grid-template-columns: minmax(0, 1fr) auto; }
+  .ai-conn:not(.is-mobile) .ai-use > :is(.ai-route-pick, .ai-inherit) { grid-column: 1 / -1; }
+  .ai-conn:not(.is-mobile) .ai-route-pick { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 2.3rem; }
+}
+@container ai-settings (max-width: 32rem) {
+  .app-shell .settings-paper[data-tone=paper] .ai-conn .ai-save-bar .feedback { flex-basis: 100%; }
+}
 
 /* 手机：单列；渠道编辑以「点开 → 返回」的方式切换 */
 .ai-conn.is-mobile{gap:.8rem}

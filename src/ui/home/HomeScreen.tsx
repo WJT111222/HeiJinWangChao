@@ -57,7 +57,7 @@ export function HomeScreen({ count, loading, canCreate, active, hasDraft, notice
       <header className="topbar">{brand('HEIJINWANGCHAO')}<span className="spacer" /><button className="ghost-btn" data-go="library" onClick={() => showLibrary(true)}>存档馆</button><button className="ghost-btn" onClick={onSettings}>设置</button><span className="ver">{PRODUCT_VERSION}</span></header>
       <div className="hero">
         <p className="eyebrow">MODERN CITY / OPEN WORLD</p><h1 className="title">黑金王朝</h1>
-        <p className="tagline">起点有冲突，人生不预设结局。</p>
+        <p className="tagline">没有既定的终点，只有不断延续的人生。</p>
         <p className="desc">一款 AI 驱动的现代都市开放世界文字角色扮演游戏。<br />在熟悉的城市里，写下属于你的人生。</p>
         <div className="actions">
           <button ref={coverButton} className="btn-start" disabled={!canCreate} onClick={onCreate}>开始新游戏 <span aria-hidden="true">↗</span></button>

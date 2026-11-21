@@ -1,0 +1,12 @@
+
+> heijinwangchao@1.0.0-beta prompts:check
+> vitest run src/tests/prompts.test.ts src/tests/prompt-runtime.test.ts src/tests/prompt-inspector.test.ts
+
+
+ RUN  v5.0.5 /workspace/ui-compat
+
+
+ Test Files  3 passed (3)
+      Tests  93 passed (93)
+   Start at  03:50:04
+   Duration  2.72s (tests 64%, import 25%, transform 10%)

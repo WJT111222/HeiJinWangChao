@@ -121,7 +121,7 @@ it.each(['opening','regular'] as const)('%s真实messages的层级示例、时�
  expect(text).not.toContain('NPC_KNOWLEDGE每项');
 });
 
-it.each([false,true])('真实WorldStage→Mock→候选→Commit/拒绝：越界=%s，单次请求',async invalid=>{
+it.each([false,true])('真实WorldStage→Mock→候选→Commit/隔离：越界=%s，单次请求',async invalid=>{
  const a=worldNpcCreation(),factory=new IDBFactory(),name=`contract-${invalid}`,repo=await SaveRepository.open(name,factory);
  const config=defaultAiConfig(),channel=newChannel();channel.defaultModel='mock-world';config.channels=[channel];config.routes.story={channelId:channel.id,modelId:'mock-world'};
  const data=new Map<string,string>(),storage={getItem:(k:string)=>data.get(k)??null,setItem:(k:string,v:string)=>{data.set(k,v);},removeItem:(k:string)=>{data.delete(k);}},vault=new CredentialVault(storage,storage);vault.set(channel.id,'mock-contract-key');
@@ -137,17 +137,19 @@ it.each([false,true])('真实WorldStage→Mock→候选→Commit/拒绝：越界
  try{
   await repo.create(a.state);await repo.saveDraft(createTurnDraft(a.state.saveId,0,a.draft.turnId,'opening',''),null);
   const upstream=await completeDraft(repo,{variables:a.draft.variables!.result});
-  if(invalid){
-   await expect(stage.generate({draft:upstream,settings:defaultSettings(),config,vault})).rejects.toMatchObject({details:{worldRule:'memory_time_window'}});
-   expect((await repo.loadDraft(a.state.saveId))?.story).toEqual(upstream.story);expect(await repo.load(a.state.saveId)).toEqual(a.state);
-  }else{
-   const ready=await stage.generate({draft:upstream,settings:defaultSettings(),config,vault});expect(ready.world?.validation).toBe('validated');
-   expect(await repo.load(a.state.saveId)).toEqual(a.state);
-   const committed=await repo.commitTurn(submission(ready,''));expect((await repo.commitTurn(submission(ready,''))).replayed).toBe(true);
-   expect(committed.state.npc['npc-a']).toMatchObject({activeGoals:['核对新的工作安排']});
-   expect(committed.state.npc[a.person.id].memories[0].text).toContain('自己在远方收到工作安排');
-   repo.close();const reopened=await SaveRepository.open(name,factory);try{expect(await reopened.load(a.state.saveId)).toEqual(committed.state);}finally{reopened.close();}
+  const ready=await stage.generate({draft:upstream,settings:defaultSettings(),config,vault});
+  expect(ready.world?.validation).toBe('validated');
+  expect(await repo.load(a.state.saveId)).toEqual(a.state);
+  const committed=await repo.commitTurn(submission(ready,''));
+  expect((await repo.commitTurn(submission(ready,''))).replayed).toBe(true);
+  expect(committed.state.npc['npc-a']).toMatchObject({activeGoals:['核对新的工作安排']});
+  if (invalid) {
+    expect(ready.world?.result.settlement?.skipped).toContainEqual(expect.objectContaining({commandIndex:2,reason:'time'}));
+    expect(committed.state.npc[a.person.id].memories).toEqual([]);
+  } else {
+    expect(committed.state.npc[a.person.id].memories[0].text).toContain('自己在远方收到工作安排');
   }
+  repo.close();const reopened=await SaveRepository.open(name,factory);try{expect(await reopened.load(a.state.saveId)).toEqual(committed.state);}finally{reopened.close();}
   expect(fetcher).toHaveBeenCalledTimes(1);
  }finally{stage.dispose();repo.close();}
 });

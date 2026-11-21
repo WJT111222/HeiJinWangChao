@@ -38,6 +38,7 @@ const categories: Record<string, string> = {
   planning: '叙事规划',
   writing: '写作规则',
   stage: '阶段模板',
+  creation: '创角补全',
   output: '输出协议',
   variable_group: '变量域',
   memory: '记忆模块',
@@ -50,7 +51,7 @@ const categories: Record<string, string> = {
 const groups = [
   { key: 'core', label: '核心设定', categories: ['identity', 'worldbook', 'shared', 'narrative_core'], note: '身份、世界观和每个阶段都会用到的共享规则' },
   { key: 'writing', label: '写作设定', categories: ['writing'], note: '正文怎么写：人称、风格和几项可开关的写法' },
-  { key: 'flow', label: '流程与输出', categories: ['planning', 'stage', 'output', 'compatibility'], note: '每一回合的规划、各阶段主提示词和输出格式' },
+  { key: 'flow', label: '流程与输出', categories: ['planning', 'stage', 'output', 'compatibility', 'creation'], note: '流程提示词、规划、输出格式及按需创角补全' },
   { key: 'variables', label: '变量规则', categories: ['variable_group'], note: '涉及哪类对象，就带上哪组规则' },
   { key: 'memory', label: '记忆', categories: ['memory'], note: '只在记忆维护任务里使用' },
   { key: 'reference', label: '参考资料', categories: ['documentation', 'example', 'reference'], note: '说明文档和示例，不会发给模型' },
@@ -78,6 +79,7 @@ function moduleState(item: PromptModule, prompts: PromptSettings): { kind: 'swit
   if (item.activation === 'relevant-domain') return { kind: 'ondemand', label: '按需' };
   if (item.activation === 'memory-task') return { kind: 'ondemand', label: '记忆任务' };
   if (item.activation === 'protocol-compatibility') return { kind: 'ondemand', label: '兼容时' };
+  if (item.activation === 'creation-action') return { kind: 'ondemand', label: '创角补全' };
   if (item.activation === 'never') return { kind: 'never', label: '不注入' };
   return { kind: 'always', label: '常驻' };
 }
@@ -93,6 +95,7 @@ function usage(item: PromptModule) {
     'relevant-domain': `本回合涉及「${domainNames[item.domain ?? ''] ?? item.domain}」时，才会加进${used}请求。`,
     'memory-task': '只在记忆维护任务里使用。',
     'protocol-compatibility': '模型协议需要兼容处理时才会带上。',
+    'creation-action': '仅点击对应的创角 AI 补全按钮时使用。',
     never: '只是参考资料，不会发送给模型。',
   }[item.activation];
 }
@@ -477,7 +480,7 @@ export function PromptInspector({
             <p className="pm-chips">
               <span>{groupOf(module).label}</span>
               <span>{module.characters.toLocaleString()} 字</span>
-              <span>{module.applicableStages.map((value) => stageNames[value]).join(' / ') || '不注入'}</span>
+              <span>{module.applicableStages.map((value) => stageNames[value]).join(' / ') || (module.activation === 'creation-action' ? '创角' : '不注入')}</span>
               <span>{currentState?.kind === 'switch' ? '可开关' : currentState?.label}</span>
             </p>
             {variable && (
@@ -554,7 +557,7 @@ export function PromptInspector({
                 </dd>
                 <dt>阶段 / 模式</dt>
                 <dd>
-                  {module.applicableStages.join('、') || '非注入'} /{' '}
+                  {module.applicableStages.join('、') || (module.activation === 'creation-action' ? '创角' : '非注入')} /{' '}
                   {module.modes.join('、') || '非注入'}
                 </dd>
                 <dt>激活条件</dt>
@@ -864,6 +867,14 @@ export function PromptInspector({
                           ? '发送尝试进行中'
                           : `请求失败：${actual.errorCode}`}
                     </p>
+                    {actual.presetSampling && <ul aria-label="预设采样参数">
+                      {actual.presetSampling.map((item) => (
+                        <li key={item.field}>
+                          {item.field} · 预设 {item.desired} · {'sent' in item ? `已发送 ${item.sent}` :
+                            `未发送（${{ known_capability: '已知模型限制', remembered_rejection: '该路由此前明确拒绝', channel_setting: '渠道设置关闭' }[item.omission]}）`}
+                        </li>
+                      ))}
+                    </ul>}
                     <ol>
                       {actual.scope?.modules.map((item) => (
                         <li key={item.id}>

@@ -60,11 +60,11 @@ describe('原生 DeepSeek 协议（Chat Completions）', () => {
     expect(payloadMessages(body, 'deepseek')).toEqual(messages);
   });
 
-  it('World 可选 JSON 模式；Variables 不套用 JSON 模式', () => {
+  it('World 与 Variables 都不套用 JSON 模式', () => {
     const a = setup(); a.channel.compatibility.jsonMode = true;
     const world = JSON.parse(String(wireRequest(channelSnapshot(a.channel, a.vault, 'deepseek-flash', 'world'), messages, false).init.body));
     const variables = JSON.parse(String(wireRequest(channelSnapshot(a.channel, a.vault, 'deepseek-flash', 'variables'), messages, false).init.body));
-    expect(world.response_format).toEqual({ type: 'json_object' });
+    expect(world).not.toHaveProperty('response_format');
     expect(variables).not.toHaveProperty('response_format');
   });
 

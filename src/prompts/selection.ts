@@ -10,6 +10,8 @@ export type SelectionInput = Pick<
 export function moduleActivation(module: PromptModule, input: SelectionInput) {
   if (module.activation === 'never')
     return { status: 'not-applicable', reason: '参考/文档资源，永不注入' } as const;
+  if (module.activation === 'creation-action')
+    return { status: 'not-applicable', reason: '仅点击创角 AI 补全时使用' } as const;
   if (!module.applicableStages.includes(input.stage) || !module.modes.includes(input.mode))
     return { status: 'not-applicable', reason: '不适用当前阶段或回合模式' } as const;
   let enabled = false;

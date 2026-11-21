@@ -1,6 +1,5 @@
 import { expect, test } from './helpers/test';
 import { seedSummary, summaryPage, summaryState, summaryWire, requestTask } from './helpers/memorySummary';
-import { mkdir } from 'node:fs/promises';
 
 test('独立默认开关、参数和完整提示词保存、恢复、未保存提醒、刷新与手机输入', async ({ page }, info) => {
   let requests = 0; await page.route('https://summary.mock.invalid/**', async route => { requests++; await route.fulfill({ json: summaryWire(requestTask(route.request().postDataJSON())) }); });
@@ -30,7 +29,7 @@ test('独立默认开关、参数和完整提示词保存、恢复、未保存�
   await settings.getByLabel('完整内容提示词 · 中期 → 长期').scrollIntoViewIfNeeded(); await expect(settings.getByLabel('完整内容提示词 · 中期 → 长期')).toBeVisible();
   await page.evaluate(() => { const viewport = window.visualViewport!; Object.defineProperty(viewport, 'height', { configurable: true, value: innerHeight }); viewport.dispatchEvent(new Event('resize')); });
   await settings.getByRole('heading', { name: '记忆总结', exact: true }).scrollIntoViewIfNeeded();
-  await mkdir('docs/memory-summary-v2/screenshots', { recursive: true }); await page.screenshot({ path: `docs/memory-summary-v2/screenshots/settings-${info.project.name}.png` });
+  await page.screenshot({ path: info.outputPath('memory-summary-settings.png') });
   expect(requests).toBe(0);
 });
 
@@ -54,10 +53,10 @@ test('NPC先失败也不阻断公共两类，失败重试仅一次；暂停只�
   // Start below threshold, then authorize default automatic configurations by saved settings.
   await seedSummary(page, { count: 90, npcCount: 20, automatic: false, allKinds: true });
   await page.evaluate(() => { localStorage.setItem('heijin.summary.schedule:save-a', JSON.stringify({ cursor: 2 })); const settings = JSON.parse(localStorage.getItem('heijin.settings.v1')!); for (const value of Object.values(settings.memory.summaries) as { automatic: boolean }[]) value.automatic = true; localStorage.setItem('heijin.settings.v1', JSON.stringify(settings)); });
-  await page.reload(); const failure = page.getByRole('dialog', { name: 'NPC 短期 → 中期总结失败', exact: true }); await expect(failure).toBeVisible();
+  await page.reload(); const failure = page.getByRole('dialog', { name: 'NPC 短期 → 中期总结待确认', exact: true }); await expect(failure).toBeVisible();
   await expect.poll(() => tasks.length).toBe(3); expect(tasks[0]).toBe('memory.npc_summarize');
   expect((await summaryState(page)).memories.long).toHaveLength(1); await expect(failure).not.toContainText('mock-summary-secret');
-  await mkdir('docs/memory-summary-v2/screenshots', { recursive: true }); await page.screenshot({ path: `docs/memory-summary-v2/screenshots/failure-${info.project.name}.png` }); await page.screenshot({path:`docs/workflow-feedback/screenshots/react-memory-failure-${info.project.name}.png`});
+  await page.screenshot({ path: info.outputPath('memory-summary-failure.png') });
   failNpc = false; await failure.getByRole('button', { name: '重新生成', exact: true }).click(); await expect(failure).toHaveCount(0); expect(tasks).toHaveLength(4);
   await expect.poll(async () => (await summaryState(page)).memories.npcSummaries['npc-a']?.[0]?.npcProvenance.sourceMemoryIds.length).toBe(15);
   // Create another NPC batch, fail it, then explicitly pause only the NPC function.
@@ -75,7 +74,7 @@ test('NPC先失败也不阻断公共两类，失败重试仅一次；暂停只�
 for (const [kind, name, count] of [['short', '短期 → 中期', 31], ['medium', '中期 → 长期', 51]] as const) test(`${name}失败暂停独立持久化，不关闭另外两类`, async ({ page }) => {
   let calls = 0; await page.route('https://summary.mock.invalid/**', async route => { calls++; await route.fulfill({ status: 429, json: {} }); });
   await seedSummary(page, { count, publicLayer: kind }); const original = await summaryState(page);
-  const failed = page.getByRole('dialog', { name: `${name}总结失败`, exact: true }); await expect(failed).toBeVisible();
+  const failed = page.getByRole('dialog', { name: `${name}总结待确认`, exact: true }); await expect(failed).toBeVisible();
   await failed.getByRole('button', { name: '暂停自动总结', exact: true }).click(); await page.reload();
   const settings = await summaryPage(page); await expect(settings.getByLabel(`自动总结 ${name}`, { exact: true })).not.toBeChecked();
   for (const other of ['短期 → 中期', '中期 → 长期', 'NPC 短期 → 中期']) if (other !== name) await expect(settings.getByLabel(`自动总结 ${other}`, { exact: true })).toBeChecked();
@@ -89,7 +88,7 @@ test('三类同时失败只顺序显示一个弹窗，各自暂停且刷新不�
   await expect.poll(() => requests).toBe(3);
   for (const name of ['短期 → 中期', '中期 → 长期', 'NPC 短期 → 中期']) {
     await expect(page.getByRole('dialog')).toHaveCount(1);
-    const failure = page.getByRole('dialog', { name: `${name}总结失败`, exact: true });
+    const failure = page.getByRole('dialog', { name: `${name}总结待确认`, exact: true });
     await expect(failure).toBeVisible(); await failure.getByRole('button', { name: '暂停自动总结', exact: true }).click();
   }
   await expect(page.getByRole('dialog')).toHaveCount(0); await page.reload();

@@ -1,19 +1,24 @@
+import { DeferredEventIdsSchema, UpdateSettlementSchema } from './updateSettlement';
 import { z } from 'zod';
 import { CountSchema, IdSchema, TextSchema, requireData } from './common';
 import { STORY_CONTINUATION_LIMIT, STORY_PARTIAL_MAX_CHARS } from './storyContinuation';
 import { DomainCommandSchema, fingerprint } from './commands';
 import { StorySchema } from './state';
+import { LegacyNotificationRecoverySchema, recoveryMatchesDraft } from './events/legacyNotification';
 
 export const VariableResultSchema = z.strictObject({
   commands: z.array(DomainCommandSchema),
   rejectedSuggestions: z.array(z.strictObject({ reason: TextSchema, reference: z.string().optional() })),
   unresolved: z.array(TextSchema),
+  settlement: UpdateSettlementSchema.optional(),
 });
 export const WorldResultSchema = z.strictObject({
   worldCommands: z.array(DomainCommandSchema), taskCommands: z.array(DomainCommandSchema),
   eventCommands: z.array(DomainCommandSchema),
   visibleHooks: z.array(z.strictObject({ text: TextSchema, revealAfter: z.string().optional() })),
   unresolved: z.array(TextSchema),
+  settlement: UpdateSettlementSchema.optional(),
+  deferredEvents: DeferredEventIdsSchema.optional(),
 });
 const candidateBase = {
   storyRevision: CountSchema, candidateRevision: CountSchema.refine((n) => n > 0),
@@ -39,6 +44,7 @@ export const TurnDraftSchema = z.strictObject({
     variables: z.enum(['pending', 'preview', 'ready', 'failed', 'skipped']),
     world: z.enum(['pending', 'preview', 'ready', 'failed', 'skipped']),
   }),
+  legacyNotificationRecovery: LegacyNotificationRecoverySchema.optional(),
   failures: z.array(z.strictObject({
     stage: z.enum(['story', 'variables', 'world']), attempt: CountSchema,
     storyRevision: CountSchema, errorCode: TextSchema, retryable: z.boolean(),
@@ -51,6 +57,9 @@ export const TurnDraftSchema = z.strictObject({
   }).optional(),
 }).superRefine((draft, ctx) => {
   function check(ok: unknown, message: string) { if (!ok) ctx.addIssue({ code: 'custom', message }); }
+  if (draft.legacyNotificationRecovery) check(
+    draft.turnKind === 'regular' && draft.stageStatus.story === 'ready' && draft.useVariableStage && draft.useWorldStage
+      && recoveryMatchesDraft(draft.legacyNotificationRecovery,draft), '旧通知恢复授权引用过期的正文或回合');
   if (draft.storyPartial) {
     check(!draft.story, '已有完整正文时不能保留截断正文');
     check(draft.storyPartial.storyRevision === draft.storyRevision, '截断正文引用旧正文版本');
@@ -91,7 +100,9 @@ export function createTurnDraft(saveId: string, baseSaveRevision: number, turnId
 }
 
 export function rerollStory(draft: TurnDraft, story: z.infer<typeof StorySchema>): TurnDraft {
-  return TurnDraftSchema.parse({ ...draft, draftRevision: draft.draftRevision + 1, storyRevision: draft.storyRevision + 1,
+  const next = { ...draft };
+  delete next.legacyNotificationRecovery;
+  return TurnDraftSchema.parse({ ...next, draftRevision: draft.draftRevision + 1, storyRevision: draft.storyRevision + 1,
     story, variables: undefined, world: undefined, storyPartial: undefined,
     stageStatus: { story: 'ready', variables: draft.useVariableStage ? 'pending' : 'skipped', world: draft.useWorldStage ? 'pending' : 'skipped' },
   });
@@ -130,6 +141,8 @@ export function startStageAttempt(draft: TurnDraft, stages: readonly DraftStage[
 // 在执行锁内、请求开始前应用玩家设置。已验证候选仍可复用；未执行不伪装为 ready。
 export function configureTurnStages(draft: TurnDraft, config: { useVariableStage: boolean; useWorldStage: boolean }): TurnDraft {
   const current = TurnDraftSchema.parse(draft);
+  requireData(!current.legacyNotificationRecovery || (config.useVariableStage && config.useWorldStage),
+    'LEGACY_RECOVERY_STAGES', '结算旧通知需要启用变量管理和动态世界。');
   if (current.useVariableStage === config.useVariableStage && current.useWorldStage === config.useWorldStage) return current;
   const variables = current.variables?.validation === 'validated' ? current.variables : undefined;
   const world = current.world?.validation === 'validated'
@@ -159,6 +172,9 @@ export function validateDraftUpdate(old: TurnDraft, next: TurnDraft) {
   for (const key of ['saveId', 'turnId', 'baseSaveRevision', 'turnKind', 'userInput'] as const) {
     requireData(old[key] === next[key], 'DRAFT_CONTEXT', '同次草稿的输入不可悄然改变');
   }
+  requireData(fingerprint(next.legacyNotificationRecovery) === fingerprint(
+    next.storyRevision === old.storyRevision ? old.legacyNotificationRecovery : undefined),
+  'DRAFT_CONTEXT', '只能通过明确确认的旧通知恢复创建授权');
   if ((old.useVariableStage !== next.useVariableStage || old.useWorldStage !== next.useWorldStage)
     && fingerprint(next) === fingerprint(configureTurnStages(old, next))) return;
   if (next.executionRevision !== old.executionRevision) {

@@ -3,7 +3,8 @@ import { resolveCatalogRefs } from '../services/validation/catalogCompaction';
 import { IDBFactory } from 'fake-indexeddb';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
-import { MemoryMaintenance, summaryAttemptKey } from '../workflows/memoryMaintenance';
+import { MemoryMaintenance } from '../workflows/memoryMaintenance';
+import { SummaryRecords } from '../workflows/memorySummaryRecords';
 import { AiClient } from '../services/ai/client';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
@@ -217,15 +218,16 @@ it('真实总结HTTP进行中取消星标：迟到结果拒绝，已发请求账
   const managed = await a.repo.setNpcImportance({ saveId: 'save-a', expectedRevision: a.state.revision, expectedManagementRevision: 0, expectedTurnId: a.initial.turnId, expectedDraftRevision: a.initial.draftRevision,
     npcId: 'special', identityKey: a.state.npc.special.identityKey, choice: 'ordinary', operationId: 'star-during-summary' });
   release(); await rejection;
-  expect(await a.repo.load('save-a')).toEqual(managed.state); expect(attempts.getItem(summaryAttemptKey(state, 'npc'))).toBeTruthy();
+  expect(await a.repo.load('save-a')).toEqual(managed.state); const pending = new SummaryRecords(attempts, managed.state).pending;
+  expect(pending).toEqual([expect.objectContaining({ npcId: 'special', identityKey: state.npc.special.identityKey, sourceIds: batch.entries.map(entry => entry.id) })]);
   const rateKey = `heijin.summary.rate:${state.saveId}:${state.createdAt}`;
   expect(JSON.parse(attempts.getItem(rateKey)!)).toHaveLength(1);
-  await expect(maintenance.run(input)).rejects.toThrow(/尚未确认保存/); expect(fetcher).toHaveBeenCalledTimes(1);
-  const manual = await maintenance.run({ ...input, automatic: false, immediate: true });
+  await expect(maintenance.run(input)).rejects.toThrow(/未确认保存/); expect(fetcher).toHaveBeenCalledTimes(1);
+  const manual = await maintenance.run({ ...input, automatic: false, immediate: true, retryId: pending[0].retryId });
   expect(fetcher).toHaveBeenCalledTimes(2); expect(manual!.npc.special.memories).toEqual(state.npc.special.memories);
   expect(manual!.memories.npcSummaries.special).toHaveLength(3); expect(manual!.npc.special.kind).toBe('ordinary');
   expect(manual!.dormantNpcProfiles!.special.profile.privateProfile).toEqual(fullPrivateProfile);
-  expect(attempts.getItem(summaryAttemptKey(state, 'npc'))).toBe(''); expect(JSON.parse(attempts.getItem(rateKey)!)).toHaveLength(1);
+  expect(new SummaryRecords(attempts, manual!).pending).toEqual([]); expect(JSON.parse(attempts.getItem(rateKey)!)).toHaveLength(1);
 });
 
 it('旧Mock只读解析器匹配第四批实际请求，省略兼容空标记但不补造或接受休眠/额外字段', async () => {

@@ -4,6 +4,17 @@ import { recallJournal } from '../domain/memories/recall';
 import type { RecallCues } from '../domain/memories/recall';
 import { talentContext } from './talentContext';
 
+/** 普通笔记只供当轮 Variables。旧草稿保留原有结构化上下文。 */
+export function storyForSubsequentStages(story: GameState['journal'][number]['story']) {
+  const { variableGuideRaw, variableGuideRawTruncated, variableGuideReferences, ...facts } = story;
+  void variableGuideRawTruncated;
+  void variableGuideReferences;
+  if (variableGuideRaw !== undefined)
+    facts.variableGuide = facts.variableGuide.filter(guide => guide.eventInteraction || guide.eventNarration ||
+      (guide.group === 'time' && guide.subjectHint === 'time:retrospective'));
+  return facts;
+}
+
 /** 三阶段共用的模型只读背景。调用方决定正式基线或合法 Variables 投影；
  * 阅读范围不参与任何命令授权。永久 journal 保持现有窗口/检索，幂等凭据不注入。 */
 export function sharedContext(state: GameState, windowSize: number, query: string, recall: boolean, cues: RecallCues = { stage: 'story', playerInput: query }) {
@@ -26,14 +37,11 @@ export function sharedContext(state: GameState, windowSize: number, query: strin
       summaries: [],
       summarySource: 'SAVE_STATE.memories',
       summaryPolicy: '分层记忆完整保留，人物记忆按NPC_CONTEXT只读投影；同一sourceTurnId在近期正文、旧史原文与多层总结中表示同一来源，不是多次独立事件，不重新记账。',
-      // 完整已提交 Story，包括变量指导和行动选项；当前候选只在 STORY_RESULT 中。
-      recentTurns: recent.map((entry, index) => ({
-        turnId: entry.turnId,
-        turnNumber: journal.length - recent.length + index + 1,
-        revision: entry.revision,
-        relatedActorRefs: entry.relatedActorRefs,
-        ...entry.story,
-      })),
+      // 普通坏项原文只供生成当轮 Variables，和历史事实、检索材料分开。
+      recentTurns: recent.map((entry, index) => {
+        return { turnId: entry.turnId, turnNumber: journal.length - recent.length + index + 1,
+          revision: entry.revision, relatedActorRefs: entry.relatedActorRefs, ...storyForSubsequentStages(entry.story) };
+      }),
     },
     NPC_CONTEXT: people.index,
     NPC_KNOWLEDGE_POLICY: '人物资料以SAVE_STATE.npc稳定ID归属，总结以SAVE_STATE.memories.npcSummaries同ID归属；模型可读取世界作者背景，分层不授予其他角色知识，阅读不授予主角或其他NPC知识。亲历、转述、推测及可见性标记保留；总结是历史认知，较新原始记忆中的纠正优先。初始同伴缺少affinityConfirmed时，好感数值仍是未确认占位。客观事件、参与者列表和历史记录不表示每个人已经知晓。Story以全局作者视角保持因果连续，人物言行与叙事披露仍须符合各自知情范围，不自动泄露私人背景。完整状态仅供阅读，不扩大Variables/World命令权限；World仍遵守PROTECTED_SCENE与命令目录。',

@@ -6,7 +6,7 @@ import type { AiStage } from '../services/ai/configuration';
  * 掉格式的主要原因是输出协议写在系统消息里，与生成点之间隔着数千 token 的
  * 存档上下文，距离越远越容易被模型遗忘。这里只重复"输出长什么样"这一件事，
  * 不新增任何规则；内容必须与 shared/06~08 输出协议和解析器保持一致，改任何
- * 一方都要同步核对另一方（parseStoryEnvelope / VARIABLE_TEXT_V1 / World JSON）。
+ * 一方都要同步核对另一方（parseStoryEnvelope / VARIABLE_TEXT_V1 / World 命令块 JSON）。
  *
  * 骨架会被模型照抄，所以骨架自身必须是严格解析器可接受的形状：
  * - 各占位文字里不得出现任何保留标签字面量（否则照抄即 tag_nested）；
@@ -16,7 +16,7 @@ import type { AiStage } from '../services/ai/configuration';
  */
 export function formatTailMessage(
   stage: AiStage | 'memory',
-  options: { actionOptions: boolean; minNarrativeChars: number; maxNarrativeChars?: number },
+  options: { actionOptions: boolean; minNarrativeChars: number; maxNarrativeChars?: number; openingTimePending?: boolean },
 ): string | undefined {
   if (stage === 'story') {
     const actionsSkeleton = options.actionOptions ? '\n<行动选项>每行一条短行动</行动选项>' : '';
@@ -29,7 +29,8 @@ export function formatTailMessage(
       '<正文>完整连续的小说正文</正文>',
       '<短期记忆>本回合事实摘要</短期记忆>',
       `<变量规划>[]</变量规划>${actionsSkeleton}`,
-      `要求：顶层标签顺序固定、各至多一次、打开必须闭合，各块内容中不得再出现顶层标签字面量；<正文>纯文本不少于 ${options.minNarrativeChars} 字${options.maxNarrativeChars && options.maxNarrativeChars > options.minNarrativeChars ? `（目标约 ${options.minNarrativeChars}～${options.maxNarrativeChars} 字，写到自然收束点即可）` : ''}；<变量规划>为严格JSON数组，有更新时把 [] 换成数组内容；${actionsRule}写完最后一个闭合标签立即结束输出。`,
+      ...(options.openingTimePending ? ['可用 time:opening 建议开局窗口；纯小说开局请提供此条目，observedFact 直接填含 startAt、endAt 的 JSON 对象，不给对象套引号。'] : []),
+      `要求：顶层标签顺序固定、各至多一次、打开必须闭合，各块内容中不得再出现顶层标签字面量；<正文>纯文本不少于 ${options.minNarrativeChars} 字${options.maxNarrativeChars && options.maxNarrativeChars > options.minNarrativeChars ? `（目标约 ${options.minNarrativeChars}～${options.maxNarrativeChars} 字，写到自然收束点即可）` : ''}；<变量规划>只作参考，可用文字或数组，也可留空或省略；${actionsRule}写完最后一个闭合标签立即结束输出。`,
     ].join('\n');
   }
   if (stage === 'variables') {
@@ -46,9 +47,13 @@ export function formatTailMessage(
   }
   if (stage === 'world') {
     return [
-      '【最终格式提醒】只输出一个严格JSON对象：第一个字符是 {，最后一个字符是 }，之外不得有任何文字、解释或Markdown代码围栏。五个顶层数组必须全部出现：',
+      '【最终格式提醒】依次给出三个顶层区块，只在命令块内放严格 JSON 对象，提供全部五个数组：',
+      '<thinking>世界演进规划摘要</thinking>',
+      '<说明>拟执行及未能处理的变化</说明>',
+      '<命令>',
       '{"worldCommands":[],"taskCommands":[],"eventCommands":[],"visibleHooks":[],"unresolved":[]}',
-      '先确认 EVENT_SCHEDULE 的到期事项都已处理；确无变化时就输出上面的空形状。',
+      '</命令>',
+      '先核对 EVENT_SCHEDULE 的到期事项。无变化时使用空数组，无法合法处理的事项写在说明中，保留其他完整更新。',
     ].join('\n');
   }
   return undefined;
