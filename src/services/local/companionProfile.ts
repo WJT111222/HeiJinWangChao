@@ -37,6 +37,7 @@ export function initialCompanionProfile(state: GameState): CompanionProfile | un
     person.kind !== 'special' ||
     person.identityKey !== `${state.saveId}:initial-companion` ||
     state.revision !== 0 ||
+    (state.npcManagementRevision ?? 0) !== 0 ||
     state.turnNumber !== 0 ||
     state.journal.length ||
     state.appliedCommands.length
