@@ -1,6 +1,6 @@
 import { expect, test } from './helpers/test';
 import type { Locator, Page } from '@playwright/test';
-import { openGameTools, openStageRaw } from './helpers/gameLayout';
+import { openGameTools, openSettings, openStageRaw } from './helpers/gameLayout';
 import { settingsTextContrast } from './helpers/settingsContrast';
 import { writeFile } from 'node:fs/promises';
 import controls from '../src/presets/resources/peinture-controls.json' with { type: 'json' };
@@ -248,6 +248,36 @@ async function runtimeSettings(page: Page) {
 async function applyMode(page: Page, dialog: Locator) {
   await Promise.all([page.waitForNavigation(), dialog.getByRole('button', { name: '保存预设并刷新' }).click()]);
 }
+
+for (const mode of ['原生破甲', '文学预设']) {
+  test(`${mode}和玩家世界书同时进入正式 Story`, async ({ page }) => {
+    const sent = await prepare(page, 'openai', false, mode === '文学预设');
+    if (mode === '原生破甲') {
+      const settings = await runtimeSettings(page);
+      await settings.getByLabel('防截断破甲模式').check();
+      await applyMode(page, settings);
+    }
+    await openSettings(page);
+    const settings = page.getByRole('dialog', { name: '设置', exact: true });
+    await settings.getByRole('button', { name: '世界书', exact: true }).click();
+    const reference = '码头边有一座蓝顶值班室。{{user}}';
+    const book = { name: '码头档案', entries: { '1': { uid: 1, constant: true, content: reference } } };
+    await settings.getByLabel('选择世界书文件').setInputFiles({ name: 'pier.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(book)) });
+    await expect(settings.getByRole('checkbox', { name: '启用整本「码头档案」', exact: true })).toBeChecked();
+    await settings.getByRole('button', { name: '关闭资料界面' }).click();
+    expect(sent).toHaveLength(0);
+
+    await generate(page);
+    expect(sent).toHaveLength(1);
+    const body = JSON.parse(sent[0]);
+    expect(body.messages.filter((message: { content: string }) => message.content.startsWith('<PLAYER_WORLDBOOK>'))).toEqual([
+      { role: 'user', content: expect.stringContaining(reference) },
+    ]);
+    expect(body.tools.map((tool: { function: { name: string } }) => tool.function.name)).toEqual(['wave_context_reference', toolName]);
+    expect(body.tools[0].function.description).not.toContain(reference);
+  });
+}
+
 for (const protocol of ['openai','deepseek','gemini','anthropic'] as const) {
   for (const stream of [false, true]) test('原生交付使用渠道参数并保存正文 ' + protocol + (stream ? ' SSE' : ' JSON'), async ({ page, context }, info) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
