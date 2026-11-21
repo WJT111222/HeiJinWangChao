@@ -1,3 +1,4 @@
+import { HaremPanel } from './HaremPanel';
 import { WorldEventsPanel } from './WorldEventsPanel';
 import { MapPanel } from './MapPanel';
 import { OrganizationPanel } from './OrganizationPanel';
@@ -17,9 +18,11 @@ export const panelNames = [
   '世界事件',
   '历史时间轴',
   '记忆',
+  '后宫',
 ] as const;
 export type PanelName = (typeof panelNames)[number];
 export function Panels({ name, view, onOpenHistory, npcManagement, initialId, links }: { name: PanelName; view: PlayerView; onOpenHistory?:()=>void; npcManagement?: NpcManagement; initialId?: string; links?: ArchiveLinks }) {
+  if (name === '后宫') return <HaremPanel view={view} management={npcManagement}/>;
   if (name === 'NPC') return <NpcPanel view={view} management={npcManagement} initialId={initialId} onOpenOrganization={links?.organization} />;
   if (name === '势力组织') return <OrganizationPanel view={view} initialId={initialId} links={links}/>;
   if (name === '地图') return <MapPanel view={view} mobile initialId={initialId} onNpc={id=>links?.npc(id)} onEvent={id=>links?.event(id)} />;

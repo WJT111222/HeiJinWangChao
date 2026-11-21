@@ -103,7 +103,7 @@ test('滚轮在资料弹窗内滚动，不带动正文；七项世界入口可�
   expect(await reader.evaluate(el => el.scrollTop)).toBe(260);
   await page.keyboard.press('Escape');
   await openWorldArchive(page);
-  await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(7);
+  await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(8);
   if (info.project.name === 'mobile') {
     await page.keyboard.press('Escape');
     await expect(page.getByRole('navigation', { name: '底部导航' }).getByRole('button', { name: '世界资料', exact: true })).toBeFocused();

@@ -1,3 +1,4 @@
+import { playerHousehold } from '../../domain/harem/projection';
 import type { GameState } from '../../domain/state';
 import { initialCompanionProfile, matchesCompanion } from '../../services/local/companionProfile';
 import type { CompanionProfile } from '../../services/local/companionProfile';
@@ -55,6 +56,7 @@ export function playerView(state: GameState, authoredCompanion?: CompanionProfil
     summaries: state.memories.npcSummaries[person.id] ?? [],
   }));
   return {
+    ...(state.harem ? {harem:playerHousehold(state.harem)} : {}),
     worldClock:state.worldClock,
     npc, organizations: Object.values(state.organizations), items: Object.values(state.items),
     locations: Object.values(state.locations), events: Object.values(state.events),
