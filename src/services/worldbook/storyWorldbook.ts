@@ -18,7 +18,7 @@ import { WorldbookTriggerHost, type MainThreadFallback, type TriggerOutcome } fr
  * 正文是否已经调用 prepareStoryWorldbook。接入正文的提交把它改为 true；
  * 管理界面据此告诉玩家启用后是否立即生效。
  */
-export const STORY_WORLDBOOK_CONNECTED: boolean = false;
+export const STORY_WORLDBOOK_CONNECTED: boolean = true;
 
 export interface StoryWorldbookInput {
   /** 可扫描的逻辑消息，最新的在前（玩家行动、已结算正文；不含隐藏状态）。 */

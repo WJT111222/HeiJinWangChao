@@ -1,5 +1,6 @@
 import { nativeFetch } from '../../presets/tavern/fetch';
 import type { GenerationType } from '../../presets/tavern/events';
+import { insertPlayerWorldbook, type PlayerWorldbook } from '../../prompts/playerWorldbook';
 import { sendTavern } from '../../presets/tavern/backend';
 import { safeMime } from '../../presets/tavern/responseFormat';
 import { newTrace, type UpstreamTrace } from '../../presets/tavern/upstream';
@@ -37,6 +38,7 @@ export interface RequestOptions {
   nativeDeliveryReference?: readonly AiMessage[];
   /** Internal Story-only handoff: caller must strictly validate received content. */
   validateStoryOutputLimit?: boolean;
+  playerWorldbook?: PlayerWorldbook;
   onResponseDiagnostics?: (diagnostics: ResponseDiagnostics) => void;
   signal?: AbortSignal;
   timeoutSeconds?: number;
@@ -208,10 +210,11 @@ export class AiClient {
           return this.response(wire.url, wire.init, requestSignal, snapshot, options.onResponseDiagnostics ? observe : undefined,
             wire.presetSamplingInspection !== undefined, trace);
         };
+        const playerWorldbook = snapshot.stage === 'story' ? options.playerWorldbook : undefined;
         const response = trace && cleanup && options.tavernType
           ? await sendTavern(snapshot, options.tavernType, [...messages], options.nativeDeliveryReference !== undefined ? undefined : options.presetSampling ?? {}, options.stream === true,
-            AbortSignal.any([signal, cleanup.signal]), trace, send, options.nativeDeliveryReference)
-          : await send(wireRequest(snapshot, messages, options.stream === true, options.presetSampling), signal);
+            AbortSignal.any([signal, cleanup.signal]), trace, send, options.nativeDeliveryReference, playerWorldbook)
+          : await send(wireRequest(snapshot, insertPlayerWorldbook(messages, playerWorldbook), options.stream === true, options.presetSampling), signal);
         const protocol = trace ? 'openai' : snapshot.channel.protocol;
         if (!signal.aborted) observe({ httpStatus: response.status, complete: false });
         let text = '', reasoning = '',

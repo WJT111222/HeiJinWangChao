@@ -158,6 +158,7 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
       id: preset.definition.id, version: preset.definition.version,
       sampling: preset.sampling, unknownMacros: assembled.unknownMacros,
     } } : {}),
+    ...(assembled ? { presetHistory: assembled.history } : {}),
     context,
     baseSaveRevision: input.state.revision,
     storyRevision: input.draft?.storyRevision,

@@ -1,3 +1,6 @@
+import { logicalMessageCount } from '../../domain/worldbook/timedEffects';
+import { prepareStoryWorldbook } from '../worldbook/storyWorldbook';
+import type { PlayerWorldbook } from '../../prompts/playerWorldbook';
 import { nativeReferenceRecords } from '../../presets/nativeDelivery';
 import { captureAssistantPreferences, ensureNativeDeliveryHost, withTavernRequest } from '../../presets/tavern/hostState';
 import { promptReady, tavernGeneration, type GenerationType } from '../../presets/tavern/events';
@@ -31,7 +34,7 @@ import type { StoryFailureText } from '../../domain/storyContinuation';
 import { splitLeadingThink } from './compat';
 
 /** 正文续写：已写出的截断原文（已隐藏凭证）。只用于正文阶段。 */
-export interface StageRequestOptions extends Omit<RequestOptions, 'tavernType'> { frozenStoryChannel?: RequestSnapshot; presetSelection?: AssistantSelection; continuation?: { partial: string } }
+export interface StageRequestOptions extends Omit<RequestOptions, 'tavernType' | 'playerWorldbook'> { frozenStoryChannel?: RequestSnapshot; presetSelection?: AssistantSelection; continuation?: { partial: string } }
 /**
  * 正文请求失败时收到的内容（去掉前导 <think> 推理；续写时为与已写部分拼接后的全文），供上层保存为可续写的截断正文。
  * 以失败对象为键，不进入错误消息或诊断展示。
@@ -129,6 +132,34 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   // 本次请求模型返回的原始文字（续写时不含已写部分）；诊断展示用的 received 在续写成功接收后会换成拼接全文。
   let addition: string | undefined;
   try {
+  let playerWorldbook: PlayerWorldbook | undefined;
+  const storyNotes: string[] = [];
+  if (captured.stage === 'story') {
+    if (options.signal?.aborted) throw new AiError('cancelled');
+    const { state, draft, settings } = captured;
+    const failedAttempts = draft?.failures.filter(failure => failure.stage === 'story') ?? [];
+    const retry = draft?.stageStatus.story === 'failed' || failedAttempts.some(f => f.storyRevision === draft?.storyRevision);
+    try {
+      const worldbook = await prepareStoryWorldbook({
+        messages: [draft?.userInput ?? captured.userInput,
+          ...state.journal.slice(-Math.min(settings.memory.immediateWindowSize, 10)).reverse().map(entry => entry.story.narrative)],
+        // Routes currently have no verified model context window or input allowance.
+        contextTokens: 32_000,
+        storyRemainingTokens: 4_096,
+        trigger: type === 'continue' ? type : retry ? 'normal' : type,
+        messageCount: logicalMessageCount(state.turnNumber),
+        seed: `${state.saveId}:${draft?.turnId ?? state.turnNumber}:${(draft?.storyRevision ?? 0) + failedAttempts.length + 1}`,
+      }, { signal: options.signal });
+      if (worldbook.status === 'ok') {
+        playerWorldbook = { plan: worldbook.plan, history: prompt.presetHistory };
+        if (worldbook.incomplete) storyNotes.push('世界书达到扫描工作量上限，本次使用已找到的资料。');
+      } else if (worldbook.status === 'skipped') storyNotes.push(worldbook.message);
+    } catch {
+      storyNotes.push('世界书准备失败，本次未使用玩家世界书。');
+    }
+    if (storyNotes.length) stageResponses.update(responseId, { notes: storyNotes }, secrets);
+    if (options.signal?.aborted) throw new AiError('cancelled');
+  }
   const scripted = captured.stage === 'story' && !!presetSelection;
   if (presetSelection === nativeDeliveryId && !captured.draft)
     throw new AiError('configuration', undefined, { fieldPath: 'tavern.native_delivery.action' });
@@ -136,6 +167,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   const response = await client.generate(snapshot, scripted ? await promptReady(messages, false) : messages, {
     ...options,
     tavernType: scripted ? type : undefined,
+    playerWorldbook,
     presetSampling: prompt.preset?.sampling,
     nativeDeliveryReference,
     // Only Story may evaluate a complete limit response; other stages remain strict.
@@ -220,7 +252,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   const result = story ?? (captured.stage === 'variables'
         ? await parsePartialVariables(responseText, captured.state, captured.draft!)
         : await parsePartialWorld(responseText, captured.state, captured.draft!));
-  const notes = envelope?.notes ?? worldNormalizationNotes.get(result);
+  const notes = envelope ? [...storyNotes, ...envelope.notes] : worldNormalizationNotes.get(result);
   stageResponses.update(responseId, { status: 'validated', normalized: JSON.stringify(result, null, 2), ...(notes ? { notes } : {}) }, secrets);
   return {
     result,

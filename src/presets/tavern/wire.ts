@@ -1,3 +1,4 @@
+import { insertPlayerWorldbook, type PlayerWorldbook } from '../../prompts/playerWorldbook';
 import { z } from 'zod';
 import { isOpenAiCompatible } from '../../services/ai/configuration';
 import { AiError } from '../../services/ai/errors';
@@ -22,7 +23,7 @@ const request = z.object({
 });
 function unsupported(fieldPath: string): never { throw new AiError('unsupported', undefined, { fieldPath: 'tavern.' + fieldPath }); }
 
-export function tavernWire(snapshot: RequestSnapshot, raw: unknown, nativeReference?: readonly AiMessage[]) {
+export function tavernWire(snapshot: RequestSnapshot, raw: unknown, nativeReference?: readonly AiMessage[], playerWorldbook?: PlayerWorldbook) {
   const parsed = request.safeParse(raw);
   if (!parsed.success) unsupported('request');
   const { messages, tools = [], tool_choice: choice, parallel_tool_calls: parallel, stream, temperature, top_p, frequency_penalty, presence_penalty } = parsed.data;
@@ -37,7 +38,10 @@ export function tavernWire(snapshot: RequestSnapshot, raw: unknown, nativeRefere
     if (!conversation || message.role !== 'system' || isOpenAiCompatible(protocol)) return message;
     return { role: 'user' as const, content: '[system]\n' + message.content };
   });
-  const wire = wireRequest(snapshot, adapted, stream, nativeReference !== undefined ? undefined : { temperature, top_p, frequency_penalty, presence_penalty });
+  const withWorldbook = playerWorldbook && snapshot.stage === 'story'
+    ? insertPlayerWorldbook(adapted, playerWorldbook, ordered)
+    : adapted;
+  const wire = wireRequest(snapshot, withWorldbook, stream, nativeReference !== undefined ? undefined : { temperature, top_p, frequency_penalty, presence_penalty });
   const body = JSON.parse(wire.init.body) as Record<string, unknown>;
   const selected = typeof choice === 'object' ? choice.function.name : undefined;
   if (names.size !== tools.length || (selected && !names.has(selected)) || (!tools.length && (choice && choice !== 'none' || parallel !== undefined)))

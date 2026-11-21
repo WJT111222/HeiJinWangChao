@@ -23,7 +23,7 @@ import { composePrompt } from '../prompts/composer';
 import { event, task } from './fixtures/game';
 
 const repos: SaveRepository[] = [], runners: TurnCoordinator[] = [];
-afterEach(() => { runners.splice(0).forEach(r => r.dispose()); repos.splice(0).forEach(r => r.close()); vi.restoreAllMocks(); });
+afterEach(() => { runners.splice(0).forEach(r => r.dispose()); repos.splice(0).forEach(r => r.close()); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 const initialAt = '2015-07-08T08:00:00+08:00', openingEnd = '2015-07-08T08:05:00+08:00';
 function settingsAndRoute() {
   const config = defaultAiConfig(), channel = newChannel(); channel.defaultModel = 'story'; channel.compatibility.jsonMode = true;
@@ -36,7 +36,9 @@ function settingsAndRoute() {
   return {config,vault,settings};
 }
 async function fixture(mode:'opening'|'regular' = 'opening') {
-  const repo = await SaveRepository.open('live-text',new IDBFactory()); repos.push(repo);
+  const factory = new IDBFactory();
+  vi.stubGlobal('indexedDB', factory);
+  const repo = await SaveRepository.open('live-text',factory); repos.push(repo);
   const state = worldState();
   if (mode === 'opening') { state.openingTimePending = true; state.worldClock = '0001-01-01T00:00:00+08:00'; }
   // Scene transfers in this fixture are explicitly controlled by text commands.
